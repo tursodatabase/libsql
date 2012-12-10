@@ -1,5 +1,5 @@
-C Remove\sa\sreference\sto\sJumpOnce\sfrom\sa\scomment\sin\svdbe.c.\sNo\scode\schanges.
-D 2012-12-10T09:08:17.304
+C Modify\sreleasetest.tcl\sso\sthat\sit\sruns\sthe\s"checksymbols"\stest\son\sa\sbuild\swithout\sSQLITE_DEBUG\sdefined.\sIf\sSQLITE_DEBUG\sis\sdefined,\sthe\ssqlite3WhereTrace\svariable\scauses\sthe\stest\sto\sfail.
+D 2012-12-10T10:22:48.067
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -666,7 +666,7 @@ F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test c267d050a1d9a6a321de502b737daf28821a518d
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
-F test/releasetest.tcl e48fd8e0e8abad89f30e08620790533ae4e02010
+F test/releasetest.tcl 06d289d8255794073a58d2850742f627924545ce
 F test/rollback.test a1b4784b864331eae8b2a98c189efa2a8b11ff07
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test f777404492adb0e00868fd706a3721328fd3af48
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 92c9ab56b1c67b9468bec57ab1d2c483a69a2810
-R 2fd74e1da240a2ddf2869176f4bfa3b0
+P ee662c039d67f118008485d95603c5a43fcac75f
+R 99976229de7a1d73e2300bb3e2610e17
 U dan
-Z 3ebdd624f50ae598ba1c6acf15c0ccaa
+Z 60b80bb1966596bbdb0785b6ee10792d
