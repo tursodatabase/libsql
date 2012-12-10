@@ -1270,6 +1270,7 @@ case OP_Subtract:              /* same as TK_MINUS, in1, in2, out3 */
 case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
 case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
 case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
+  char bIntint;   /* Started out as two integer operands */
   int flags;      /* Combined MEM_* flags from both inputs */
   i64 iA;         /* Integer value of left operand */
   i64 iB;         /* Integer value of right operand */
@@ -1286,6 +1287,7 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   if( (pIn1->flags & pIn2->flags & MEM_Int)==MEM_Int ){
     iA = pIn1->u.i;
     iB = pIn2->u.i;
+    bIntint = 1;
     switch( pOp->opcode ){
       case OP_Add:       if( sqlite3AddInt64(&iB,iA) ) goto fp_math;  break;
       case OP_Subtract:  if( sqlite3SubInt64(&iB,iA) ) goto fp_math;  break;
@@ -1306,6 +1308,7 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     pOut->u.i = iB;
     MemSetTypeFlag(pOut, MEM_Int);
   }else{
+    bIntint = 0;
 fp_math:
     rA = sqlite3VdbeRealValue(pIn1);
     rB = sqlite3VdbeRealValue(pIn2);
@@ -1337,7 +1340,7 @@ fp_math:
     }
     pOut->r = rB;
     MemSetTypeFlag(pOut, MEM_Real);
-    if( (flags & MEM_Real)==0 ){
+    if( (flags & MEM_Real)==0 && !bIntint ){
       sqlite3VdbeIntegerAffinity(pOut);
     }
 #endif

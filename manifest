@@ -1,5 +1,5 @@
-C Modify\sreleasetest.tcl\sso\sthat\sit\sruns\sthe\s"checksymbols"\stest\son\sa\sbuild\swithout\sSQLITE_DEBUG\sdefined.\sIf\sSQLITE_DEBUG\sis\sdefined,\sthe\ssqlite3WhereTrace\svariable\scauses\sthe\stest\sto\sfail.
-D 2012-12-10T10:22:48.067
+C When\san\sarithmetic\soperation\swith\stwo\sinteger\soperands\smust\sgive\sa\s\nfloating-point\sanswer\sdue\sto\soverflow,\smake\ssure\sthe\sanswer\sis\snot\nrounded\sback\sto\sinteger\sby\saffinity.
+D 2012-12-10T22:19:14.915
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c fb1d2b75d3674cbad68a8c810f0bd27e977369c4
+F src/vdbe.c f51eb3207594703d24e91335cb16906e894b48aa
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ee662c039d67f118008485d95603c5a43fcac75f
-R 99976229de7a1d73e2300bb3e2610e17
-U dan
-Z 60b80bb1966596bbdb0785b6ee10792d
+P 75e545a9e2614fae7db86ecfb84e41ecbe4097ba
+R 181353fe376d2fba8949034c976d8829
+U drh
+Z d04d8a3f1a11b6d0d53258b48058f73d
