@@ -1587,7 +1587,7 @@ struct sqlite3_mem_methods {
 ** [SQLITE_USE_URI] symbol defined.
 **
 ** [[SQLITE_CONFIG_COVERING_INDEX_SCAN]] <dt>SQLITE_CONFIG_COVERING_INDEX_SCAN
-** <dd> This option taks a single integer argument which is interpreted as
+** <dd> This option takes a single integer argument which is interpreted as
 ** a boolean in order to enable or disable the use of covering indices for
 ** full table scans in the query optimizer.  The default setting is determined
 ** by the [SQLITE_ALLOW_COVERING_INDEX_SCAN] compile-time option, or is "on"

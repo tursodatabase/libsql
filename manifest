@@ -1,5 +1,5 @@
-C When\san\sarithmetic\soperation\swith\stwo\sinteger\soperands\smust\sgive\sa\s\nfloating-point\sanswer\sdue\sto\soverflow,\smake\ssure\sthe\sanswer\sis\snot\nrounded\sback\sto\sinteger\sby\saffinity.
-D 2012-12-10T22:19:14.915
+C Fix\sa\stypo\sin\sa\scomment\sthat\sis\sused\sto\sgenerate\ndocumentation.\s\sNo\schanges\sto\scode.
+D 2012-12-11T19:10:37.876
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/resolve.c cdd546d62da7763119ea1fa455a898959e03457f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c e6daa524bbdfa98f4abdb8cb281498f0047d3161
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
-F src/sqlite.h.in e5552743b5b74dc675ebbdedd849ba8283424fa9
+F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
 F src/sqliteInt.h d1f0866c69d94fe018a32f78c31a043e3fc0d0de
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 75e545a9e2614fae7db86ecfb84e41ecbe4097ba
-R 181353fe376d2fba8949034c976d8829
+P bd7aeeb691fee69dd6a562138a7aba8e8e192272
+R ff669a65bfe277dd417809f40c6cce8f
 U drh
-Z d04d8a3f1a11b6d0d53258b48058f73d
+Z 76b4a41a9e5a46c1b5883e541d2a2817
