@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sthat\sis\sused\sto\sgenerate\ndocumentation.\s\sNo\schanges\sto\scode.
-D 2012-12-11T19:10:37.876
+C Update\srequirements\smarks\sand\stest\scases\sfor\smulti-VALUE\sINSERT\sand\sto\sfix\ntypos\sin\srequirements\stext.
+D 2012-12-11T19:40:03.452
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -385,13 +385,13 @@ F test/e_dropview.test 583411e470458c5d76148542cfb5a5fa84c8f93e
 F test/e_expr.test 5489424d3d9a452ac3701cdf4b680ae31a157894
 F test/e_fkey.test a79ab1d3213c7ac64621eec28f8e8bb219775445
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
-F test/e_insert.test c6ac239a97cb16dfbd0c16496f8cd871b4068c0c
+F test/e_insert.test d5331cc95e101af2508159fc98b6801631659ffe
 F test/e_reindex.test dfedfc32c5a282b0596c6537cbcd4217fbb1a216
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test 07e8d81268ba1ffcaf1dc4bec48956af150c42f9
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
 F test/e_update.test 161d5dc6a3ed9dd08f5264d13e20735d7a89f00c
-F test/e_uri.test 9e190ca799d9190eec6e43f2aadf1d10c06a57a3
+F test/e_uri.test bc240fbc6cbbbdff832ee05858432a25961ab36a
 F test/e_vacuum.test 331da289ae186656cf5f2eb27f577a89c0c221af
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 796c59832e2b9a52842f382ffda8f3e989db03ad
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bd7aeeb691fee69dd6a562138a7aba8e8e192272
-R ff669a65bfe277dd417809f40c6cce8f
+P e38adb60a7952ca9e28e496b4e4658c724a368d2
+R 6da93546e03c634583a9df9f228276ed
 U drh
-Z 76b4a41a9e5a46c1b5883e541d2a2817
+Z 5bbcc49314c9f500d1f73110b0fcc62a
