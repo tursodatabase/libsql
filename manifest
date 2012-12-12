@@ -1,5 +1,5 @@
-C Update\srequirements\smarks\sand\stest\scases\sfor\smulti-VALUE\sINSERT\sand\sto\sfix\ntypos\sin\srequirements\stext.
-D 2012-12-11T19:40:03.452
+C Version\s3.7.15
+D 2012-12-12T13:36:53.477
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1025,7 +1025,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e38adb60a7952ca9e28e496b4e4658c724a368d2
+P 81d9ee0f0df7f283e69ba1c2845339ea3318cd66
 R 6da93546e03c634583a9df9f228276ed
-U drh
-Z 5bbcc49314c9f500d1f73110b0fcc62a
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.15 *
+U dan
+Z c2b6a5ded805ac723be241fad17cc751
