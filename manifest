@@ -1,12 +1,12 @@
-C Allow\sthe\serror\smessage\sfrom\s"PRAGMA\sintegrity_check"\sto\sbe\slonger\sthan\n20,000\sbytes.
-D 2012-12-12T14:30:03.521
+C Increase\sthe\sversion\snumber\sto\s3.7.16\sin\sadvance\sof\sadding\snew\sfeatures\nfor\sthe\snext\srelease.
+D 2012-12-13T18:51:53.652
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 5a3b6f34d263b01f8b798c291fac1529fd650308
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION edab4af5a4623f8198833ea481ce98ab53750a8d
+F VERSION 6d4f66eaebabc42ef8c2a4d2d0caf4ce7ee81137
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 252992f6588107ebd5d17c956d90cf7484580c6f x
+F configure 00d3a5fda47ee7dd3e68dc9dad7eeb439cd1ffea x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cd0b37c52658bfdf992b1e3dc467bae1835a94ae
-R c074324819c1cb0b1b063013401b3d51
+P 120c82d56ecb574f46db01679317b8062d8779ed
+R b094590aecd4a0f996453171da31d150
 U drh
-Z 0c15681c6bbc86d62fafd9ce06645760
+Z 0c1a6c038401cf9c1a2250c525824afb
