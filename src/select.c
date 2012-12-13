@@ -3160,34 +3160,43 @@ static int flattenSubquery(
 #endif /* !defined(SQLITE_OMIT_SUBQUERY) || !defined(SQLITE_OMIT_VIEW) */
 
 /*
-** Analyze the SELECT statement passed as an argument to see if it
-** is a min() or max() query. Return WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX if 
-** it is, or 0 otherwise. At present, a query is considered to be
-** a min()/max() query if:
+** Based on the contents of the AggInfo structure indicated by the first
+** argument, this function checks if the following are true:
 **
-**   1. There is a single object in the FROM clause.
+**    * the query contains just a single aggregate function,
+**    * the aggregate function is either min() or max(), and
+**    * the argument to the aggregate function is a column value.
 **
-**   2. There is a single expression in the result set, and it is
-**      either min(x) or max(x), where x is a column reference.
+** If all of the above are true, then WHERE_ORDERBY_MIN or WHERE_ORDERBY_MAX
+** is returned as appropriate. Also, *ppMinMax is set to point to the 
+** list of arguments passed to the aggregate before returning.
+**
+** Or, if the conditions above are not met, *ppMinMax is set to 0 and
+** WHERE_ORDERBY_NORMAL is returned.
 */
-static u8 minMaxQuery(Select *p){
-  Expr *pExpr;
-  ExprList *pEList = p->pEList;
+static u8 minMaxQuery(AggInfo *pAggInfo, ExprList **ppMinMax){
+  int eRet = WHERE_ORDERBY_NORMAL;          /* Return value */
 
-  if( pEList->nExpr!=1 ) return WHERE_ORDERBY_NORMAL;
-  pExpr = pEList->a[0].pExpr;
-  if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
-  if( NEVER(ExprHasProperty(pExpr, EP_xIsSelect)) ) return 0;
-  pEList = pExpr->x.pList;
-  if( pEList==0 || pEList->nExpr!=1 ) return 0;
-  if( pEList->a[0].pExpr->op!=TK_AGG_COLUMN ) return WHERE_ORDERBY_NORMAL;
-  assert( !ExprHasProperty(pExpr, EP_IntValue) );
-  if( sqlite3StrICmp(pExpr->u.zToken,"min")==0 ){
-    return WHERE_ORDERBY_MIN;
-  }else if( sqlite3StrICmp(pExpr->u.zToken,"max")==0 ){
-    return WHERE_ORDERBY_MAX;
+  *ppMinMax = 0;
+  if( pAggInfo->nFunc==1 ){
+    Expr *pExpr = pAggInfo->aFunc[0].pExpr; /* Aggregate function */
+    ExprList *pEList = pExpr->x.pList;      /* Arguments to agg function */
+
+    assert( pExpr->op==TK_AGG_FUNCTION );
+    if( pEList && pEList->nExpr==1 && pEList->a[0].pExpr->op==TK_AGG_COLUMN ){
+      const char *zFunc = pExpr->u.zToken;
+      if( sqlite3StrICmp(zFunc, "min")==0 ){
+        eRet = WHERE_ORDERBY_MIN;
+        *ppMinMax = pEList;
+      }else if( sqlite3StrICmp(zFunc, "max")==0 ){
+        eRet = WHERE_ORDERBY_MAX;
+        *ppMinMax = pEList;
+      }
+    }
   }
-  return WHERE_ORDERBY_NORMAL;
+
+  assert( *ppMinMax==0 || (*ppMinMax)->nExpr==1 );
+  return eRet;
 }
 
 /*
@@ -4527,11 +4536,17 @@ int sqlite3Select(
         **     Refer to code and comments in where.c for details.
         */
         ExprList *pMinMax = 0;
-        u8 flag = minMaxQuery(p);
+        u8 flag = WHERE_ORDERBY_NORMAL;
+        
+        assert( p->pGroupBy==0 );
+        assert( flag==0 );
+        if( p->pHaving==0 ){
+          flag = minMaxQuery(&sAggInfo, &pMinMax);
+        }
+        assert( flag==0 || (pMinMax!=0 && pMinMax->nExpr==1) );
+
         if( flag ){
-          assert( !ExprHasProperty(p->pEList->a[0].pExpr, EP_xIsSelect) );
-          assert( p->pEList->a[0].pExpr->x.pList->nExpr==1 );
-          pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->x.pList,0);
+          pMinMax = sqlite3ExprListDup(db, pMinMax, 0);
           pDel = pMinMax;
           if( pMinMax && !db->mallocFailed ){
             pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN ?1:0;
