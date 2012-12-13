@@ -1,5 +1,5 @@
-C Allow\sthe\serror\smessage\sfrom\s"PRAGMA\sintegrity_check"\sto\sbe\slonger\sthan\n20,000\sbytes.
-D 2012-12-12T14:30:03.521
+C Attempt\sto\sfurther\sgeneralize\sthe\smin/max\soptimization\sso\sthat,\sif\san\sappropriate\sindex\sexists,\sit\scan\sbe\sused\sby\sany\saggregate\squery\sthat\scontains\sonly\sa\ssingle\saggregate\sof\sthe\sform\smax(colname)\sor\smin(colname)\sand\sdoes\snot\scontain\sa\sGROUP\sBY\sclause.
+D 2012-12-13T16:37:10.621
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c cdd546d62da7763119ea1fa455a898959e03457f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c e6daa524bbdfa98f4abdb8cb281498f0047d3161
+F src/select.c f6c73171209b4af4d6b4258b6740415790415e2e
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -613,7 +613,7 @@ F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test a8f9e37567453a5d1d9d37ec102d4d88ab6be33f
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
-F test/minmax.test c61518429e66e228efc79661fbd2dc3e4924ec44
+F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 536a3360470633a177e42fbc19660d146b51daef
@@ -1025,7 +1025,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cd0b37c52658bfdf992b1e3dc467bae1835a94ae
-R c074324819c1cb0b1b063013401b3d51
-U drh
-Z 0c15681c6bbc86d62fafd9ce06645760
+P 120c82d56ecb574f46db01679317b8062d8779ed
+R 39203e605a8f25e92556c6b1c71c785c
+T *branch * minmax-opt
+T *sym-minmax-opt *
+T -sym-trunk *
+U dan
+Z ab1716797ba85b3e90d83237db257cf3
