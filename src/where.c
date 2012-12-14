@@ -2247,12 +2247,16 @@ static void bestVirtualIndex(WhereBestIdx *p){
   assert( sqlite3GetVTable(pParse->db, pTab) );
 
   /* Try once or twice.  On the first attempt, allow IN optimizations.
-  ** If an IN optimization is accepted, but does not set the
-  ** pInfo->aConstrainUsage.omit flag, then it will not work (because it
-  ** will allow duplicate rows in the result set) so try again with
-  ** IN optimizations disabled.
+  ** If an IN optimization is accepted by the virtual table xBestIndex
+  ** method, but the  pInfo->aConstrainUsage.omit flag is not set, then
+  ** the query will not work because it might allow duplicate rows in
+  ** output.  In that case, run the xBestIndex method a second time
+  ** without the IN constraints.  Usually this loop only runs once.
+  ** The loop will exit using a "break" statement.
   */
-  for(bAllowIN=1; bAllowIN>=0; bAllowIN--){
+  for(bAllowIN=1; 1; bAllowIN--){
+    assert( bAllowIN==0 || bAllowIN==1 );
+
     /* Set the aConstraint[].usable fields and initialize all 
     ** output variables to zero.
     **

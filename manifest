@@ -1,5 +1,5 @@
-C Merge\sin\sall\sthe\strunk\schanges\sthat\shave\soccurred\ssince\sthis\sbranch\swas\nopened.
-D 2012-12-14T15:54:05.684
+C Remove\san\sunreachable\sbranch.\s\sImprovements\sto\scomments.
+D 2012-12-14T17:48:08.139
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 6bcd38a2bc9a2d2ed8dc9b622625efb8c53e8911
+F src/where.c 7bdfde434b14ff88cc52ae41ac235ee1acb6b1e1
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d6e045f89c5a4b500b1da7ea1224b132909bafc6 52e755943f87354febe214e5dc3b423a1e38ba80
-R 31359f190d617098d7e9f461bfe956e6
+P 6d507e4de924e2f4556ea4a03ee0fa7d647bf8bb
+R fea13d1ea2e8500bc200a6665b5fa212
 U drh
-Z 9b9491b018acf588c19d70e23c3069cb
+Z b1649d740bfab2686a02d105140cda9c
