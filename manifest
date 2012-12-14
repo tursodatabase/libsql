@@ -1,5 +1,5 @@
-C Enable\soptimization\sof\sIN\soperators\son\sconstraints\sto\svirtual\stables.
-D 2012-10-16T23:17:14.207
+C Fix\sthe\svirtual\stable\sIN\soptimizer\sso\sthat\sit\swork\seven\sif\sthe\svirtual\stable\nimplementation\sleaves\sthe\ssqlite3_index_info.aConstraintUsage[].omit\sflag\nclear\sfor\san\sequality\sconstraint\sthat\sit\sintends\sto\suse.
+D 2012-12-14T15:36:17.947
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5f4f26109f9d80829122e0e09f9cda008fa065fb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vtab.c 9c64ae18af78c740610df841c6f49fc2d240a279
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 62f667db8cdbb81028bf1c55ba4b0e845b79622c
+F src/where.c 87c95ca9005909af852a3a1b62451a43cf76fb6a
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 0be144b453e0622a085fae8665c32f5676708e00
@@ -1021,10 +1021,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 67d8a99aceb56384a81b3f30d6c71743146d2cc9
-P 2c3af657fee6153842d660a6ce29aa7d791ebd38
-R 5cbef12c646a3899761eba454f8c4105
-T *branch * vtab-IN-opt
-T *sym-vtab-IN-opt *
-T -sym-trunk *
+P aa650746b19e4a6a373f7e47effff3ab2f48e78c
+R 53d6793b7f79df12237947dc6769b11d
 U drh
-Z 07568d163c180c755b6278e856d28eda
+Z b558501f7c6a3f6651858b319af65966

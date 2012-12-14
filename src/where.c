@@ -2193,6 +2193,7 @@ static void bestVirtualIndex(WhereBestIdx *p){
   WhereTerm *pTerm;
   int i, j;
   int nOrderBy;
+  int bAllowIN;                   /* Allow IN optimizations */
   double rCost;
 
   /* Make sure wsFlags is initialized to some sane value. Otherwise, if the 
@@ -2227,59 +2228,83 @@ static void bestVirtualIndex(WhereBestIdx *p){
   assert( pTab->azModuleArg && pTab->azModuleArg[0] );
   assert( sqlite3GetVTable(pParse->db, pTab) );
 
-  /* Set the aConstraint[].usable fields and initialize all 
-  ** output variables to zero.
-  **
-  ** aConstraint[].usable is true for constraints where the right-hand
-  ** side contains only references to tables to the left of the current
-  ** table.  In other words, if the constraint is of the form:
-  **
-  **           column = expr
-  **
-  ** and we are evaluating a join, then the constraint on column is 
-  ** only valid if all tables referenced in expr occur to the left
-  ** of the table containing column.
-  **
-  ** The aConstraints[] array contains entries for all constraints
-  ** on the current table.  That way we only have to compute it once
-  ** even though we might try to pick the best index multiple times.
-  ** For each attempt at picking an index, the order of tables in the
-  ** join might be different so we have to recompute the usable flag
-  ** each time.
+  /* Try once or twice.  On the first attempt, allow IN optimizations.
+  ** If an IN optimization is accepted, but does not set the
+  ** pInfo->aConstrainUsage.omit flag, then it will not work (because it
+  ** will allow duplicate rows in the result set) so try again with
+  ** IN optimizations disabled.
   */
-  pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
-  pUsage = pIdxInfo->aConstraintUsage;
-  for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
-    j = pIdxCons->iTermOffset;
-    pTerm = &pWC->a[j];
-    pIdxCons->usable = (pTerm->prereqRight&p->notReady) ? 0 : 1;
-  }
-  memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
-  if( pIdxInfo->needToFreeIdxStr ){
-    sqlite3_free(pIdxInfo->idxStr);
-  }
-  pIdxInfo->idxStr = 0;
-  pIdxInfo->idxNum = 0;
-  pIdxInfo->needToFreeIdxStr = 0;
-  pIdxInfo->orderByConsumed = 0;
-  /* ((double)2) In case of SQLITE_OMIT_FLOATING_POINT... */
-  pIdxInfo->estimatedCost = SQLITE_BIG_DBL / ((double)2);
-  nOrderBy = pIdxInfo->nOrderBy;
-  if( !p->pOrderBy ){
-    pIdxInfo->nOrderBy = 0;
-  }
-
-  if( vtabBestIndex(pParse, pTab, pIdxInfo) ){
-    return;
-  }
-
-  pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
-  for(i=0; i<pIdxInfo->nConstraint; i++){
-    if( pUsage[i].argvIndex>0 ){
-      p->cost.used |= pWC->a[pIdxCons[i].iTermOffset].prereqRight;
+  for(bAllowIN=1; bAllowIN>=0; bAllowIN--){
+    /* Set the aConstraint[].usable fields and initialize all 
+    ** output variables to zero.
+    **
+    ** aConstraint[].usable is true for constraints where the right-hand
+    ** side contains only references to tables to the left of the current
+    ** table.  In other words, if the constraint is of the form:
+    **
+    **           column = expr
+    **
+    ** and we are evaluating a join, then the constraint on column is 
+    ** only valid if all tables referenced in expr occur to the left
+    ** of the table containing column.
+    **
+    ** The aConstraints[] array contains entries for all constraints
+    ** on the current table.  That way we only have to compute it once
+    ** even though we might try to pick the best index multiple times.
+    ** For each attempt at picking an index, the order of tables in the
+    ** join might be different so we have to recompute the usable flag
+    ** each time.
+    */
+    pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
+    pUsage = pIdxInfo->aConstraintUsage;
+    for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
+      j = pIdxCons->iTermOffset;
+      pTerm = &pWC->a[j];
+      if( (pTerm->prereqRight&p->notReady)==0
+       && (bAllowIN || pTerm->eOperator!=WO_IN)
+      ){
+        pIdxCons->usable = 1;
+      }else{
+        pIdxCons->usable = 0;
+      }
     }
+    memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
+    if( pIdxInfo->needToFreeIdxStr ){
+      sqlite3_free(pIdxInfo->idxStr);
+    }
+    pIdxInfo->idxStr = 0;
+    pIdxInfo->idxNum = 0;
+    pIdxInfo->needToFreeIdxStr = 0;
+    pIdxInfo->orderByConsumed = 0;
+    /* ((double)2) In case of SQLITE_OMIT_FLOATING_POINT... */
+    pIdxInfo->estimatedCost = SQLITE_BIG_DBL / ((double)2);
+    nOrderBy = pIdxInfo->nOrderBy;
+    if( !p->pOrderBy ){
+      pIdxInfo->nOrderBy = 0;
+    }
+  
+    if( vtabBestIndex(pParse, pTab, pIdxInfo) ){
+      return;
+    }
+  
+    pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
+    for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
+      if( pUsage[i].argvIndex>0 ){
+        j = pIdxCons->iTermOffset;
+        pTerm = &pWC->a[j];
+        p->cost.used |= pTerm->prereqRight;
+        if( pTerm->eOperator==WO_IN && pUsage[i].omit==0 ){
+          /* Do not attempt to use an IN constraint if the virtual table
+          ** says that the equivalent EQ constraint cannot be safely omitted.
+          ** If we do attempt to use such a constraint, some rows might be
+          ** repeated in the output. */
+          break;
+        }
+      }
+    }
+    if( i>=pIdxInfo->nConstraint ) break;
   }
-
+  
   /* If there is an ORDER BY clause, and the selected virtual table index
   ** does not satisfy it, increase the cost of the scan accordingly. This
   ** matches the processing for non-virtual tables in bestBtreeIndex().
