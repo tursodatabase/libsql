@@ -1,5 +1,5 @@
-C Generalize\sthe\smin/max\soptimization\sso\sthat\sif\san\sappropriate\sindex\sexists,\nthe\sindex\sit\scan\sbe\sused\sby\sany\saggregate\squery\sthat\scontains\sonly\sa\ssingle\nmax()\sor\smin()\sand\sdoes\snot\scontain\sa\sGROUP\sBY\sclause.
-D 2012-12-13T18:57:31.980
+C Optimize\sIN\soperators\sin\sthe\sWHERE\sclause\sof\squeries\susing\svirtual\stables.
+D 2012-12-14T17:54:38.979
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 53b991af50dab230b319b098bcb90fc7cd82da47
+F src/where.c 7bdfde434b14ff88cc52ae41ac235ee1acb6b1e1
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -918,7 +918,7 @@ F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
 F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
-F test/vtab1.test 36c9935e4be3b6350b31b6b697561b6fc3ab349a
+F test/vtab1.test 4403f987860ebddef1ce2de6db7216421035339d
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8bcf5f51d8a6ea47ba4eb8de001d7a30e0a5f2c3 7280e14cd8f55896451847b432171e8750a07c81
-R dd1fb1ab301b504c23fc61d7da06adfc
+P 52e755943f87354febe214e5dc3b423a1e38ba80 d2fb7619b063b329b6d7ba9a16a7290e5d868f23
+R fea13d1ea2e8500bc200a6665b5fa212
 U drh
-Z c76dfaa5ec5d18c5fce102d2fd745bf3
+Z 55c2c2e92a55016f5394cb88b53de07c

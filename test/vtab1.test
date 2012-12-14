@@ -1091,12 +1091,54 @@ do_test vtab1.13-3 {
 } {15 {} 16}
 
 
+do_test vtab1-14.001 {
+  execsql {SELECT rowid, * FROM echo_c WHERE +rowid IN (1,2,3)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.002 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid IN (1,2,3)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.003 {
+  execsql {SELECT rowid, * FROM echo_c WHERE +rowid IN (0,1,5,2,'a',3,NULL)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.004 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid IN (0,1,5,'a',2,3,NULL)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.005 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid NOT IN (0,1,5,'a',2,3)}
+} {}
+do_test vtab1-14.006 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid NOT IN (0,5,'a',2,3)}
+} {1 3 G H}
+do_test vtab1-14.007 {
+  execsql {SELECT rowid, * FROM echo_c WHERE +rowid NOT IN (0,5,'a',2,3,NULL)}
+} {}
+do_test vtab1-14.008 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid NOT IN (0,5,'a',2,3,NULL)}
+} {}
+do_test vtab1-14.011 {
+  execsql {SELECT * FROM echo_c WHERE +a IN (1,3,8,'x',NULL,15,24)}
+} {3 G H 15 {} 16}
+do_test vtab1-14.012 {
+  execsql {SELECT * FROM echo_c WHERE a IN (1,3,8,'x',NULL,15,24)}
+} {3 G H 15 {} 16}
+do_test vtab1-14.013 {
+  execsql {SELECT * FROM echo_c WHERE a NOT IN (1,8,'x',15,24)}
+} {3 G H}
+do_test vtab1-14.014 {
+  execsql {SELECT * FROM echo_c WHERE a NOT IN (1,8,'x',NULL,15,24)}
+} {}
+do_test vtab1-14.015 {
+  execsql {SELECT * FROM echo_c WHERE +a NOT IN (1,8,'x',NULL,15,24)}
+} {}
+
+
+
 do_test vtab1-14.1 {
   execsql { DELETE FROM c }
   set echo_module ""
   execsql { SELECT * FROM echo_c WHERE rowid IN (1, 2, 3) }
   set echo_module
-} [list xBestIndex {SELECT rowid, * FROM 'c'} xFilter {SELECT rowid, * FROM 'c'}]
+} {/xBestIndex {SELECT rowid, . FROM 'c' WHERE rowid = .} xFilter {SELECT rowid, . FROM 'c' WHERE rowid = .} 1/}
 
 do_test vtab1-14.2 {
   set echo_module ""
@@ -1114,7 +1156,7 @@ do_test vtab1-14.4 {
   set echo_module ""
   execsql { SELECT * FROM echo_c WHERE a IN (1, 2) }
   set echo_module
-} [list xBestIndex {SELECT rowid, * FROM 'c'} xFilter {SELECT rowid, * FROM 'c'}]
+} {/xBestIndex {SELECT rowid, . FROM 'c' WHERE a = .} xFilter {SELECT rowid, . FROM 'c' WHERE a = .} 1/}
 
 do_test vtab1-15.1 {
   execsql {
