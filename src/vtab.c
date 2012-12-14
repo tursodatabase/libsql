@@ -495,7 +495,6 @@ static int vtabCallConstructor(
   pVTable->db = db;
   pVTable->pMod = pMod;
 
-  assert( pTab->azModuleArg[1]==0 );
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   pTab->azModuleArg[1] = db->aDb[iDb].zName;
 
@@ -509,7 +508,6 @@ static int vtabCallConstructor(
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
   db->pVtabCtx = pPriorCtx;
   if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
-  pTab->azModuleArg[1] = 0;
 
   if( SQLITE_OK!=rc ){
     if( zErr==0 ){

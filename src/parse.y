@@ -815,7 +815,7 @@ expr(A) ::= VARIABLE(X).     {
   spanSet(&A, &X, &X);
 }
 expr(A) ::= expr(E) COLLATE ids(C). {
-  A.pExpr = sqlite3ExprSetCollByToken(pParse, E.pExpr, &C);
+  A.pExpr = sqlite3ExprAddCollateToken(pParse, E.pExpr, &C);
   A.zStart = E.zStart;
   A.zEnd = &C.z[C.n];
 }
@@ -1140,22 +1140,14 @@ uniqueflag(A) ::= .        {A = OE_None;}
 idxlist_opt(A) ::= .                         {A = 0;}
 idxlist_opt(A) ::= LP idxlist(X) RP.         {A = X;}
 idxlist(A) ::= idxlist(X) COMMA nm(Y) collate(C) sortorder(Z).  {
-  Expr *p = 0;
-  if( C.n>0 ){
-    p = sqlite3Expr(pParse->db, TK_COLUMN, 0);
-    sqlite3ExprSetCollByToken(pParse, p, &C);
-  }
+  Expr *p = sqlite3ExprAddCollateToken(pParse, 0, &C);
   A = sqlite3ExprListAppend(pParse,X, p);
   sqlite3ExprListSetName(pParse,A,&Y,1);
   sqlite3ExprListCheckLength(pParse, A, "index");
   if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
 }
 idxlist(A) ::= nm(Y) collate(C) sortorder(Z). {
-  Expr *p = 0;
-  if( C.n>0 ){
-    p = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
-    sqlite3ExprSetCollByToken(pParse, p, &C);
-  }
+  Expr *p = sqlite3ExprAddCollateToken(pParse, 0, &C);
   A = sqlite3ExprListAppend(pParse,0, p);
   sqlite3ExprListSetName(pParse, A, &Y, 1);
   sqlite3ExprListCheckLength(pParse, A, "index");

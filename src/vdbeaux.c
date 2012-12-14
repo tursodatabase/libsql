@@ -53,7 +53,7 @@ Vdbe *sqlite3VdbeCreate(sqlite3 *db){
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
   assert( isPrepareV2==1 || isPrepareV2==0 );
   if( p==0 ) return;
-#ifdef SQLITE_OMIT_TRACE
+#if defined(SQLITE_OMIT_TRACE) && !defined(SQLITE_ENABLE_SQLLOG)
   if( !isPrepareV2 ) return;
 #endif
   assert( p->zSql==0 );
@@ -723,6 +723,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     addr = p->nOp - 1;
   }
   pOp = &p->aOp[addr];
+  assert( pOp->p4type==P4_NOTUSED || pOp->p4type==P4_INT32 );
   freeP4(db, pOp->p4type, pOp->p4.p);
   pOp->p4.p = 0;
   if( n==P4_INT32 ){
@@ -865,22 +866,18 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       i = sqlite3Strlen30(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
-        if( pColl ){
-          int n = sqlite3Strlen30(pColl->zName);
-          if( i+n>nTemp-6 ){
-            memcpy(&zTemp[i],",...",4);
-            break;
-          }
-          zTemp[i++] = ',';
-          if( pKeyInfo->aSortOrder[j] ){
-            zTemp[i++] = '-';
-          }
-          memcpy(&zTemp[i], pColl->zName,n+1);
-          i += n;
-        }else if( i+4<nTemp-6 ){
-          memcpy(&zTemp[i],",nil",4);
-          i += 4;
+        const char *zColl = pColl ? pColl->zName : "nil";
+        int n = sqlite3Strlen30(zColl);
+        if( i+n>nTemp-6 ){
+          memcpy(&zTemp[i],",...",4);
+          break;
         }
+        zTemp[i++] = ',';
+        if( pKeyInfo->aSortOrder[j] ){
+          zTemp[i++] = '-';
+        }
+        memcpy(&zTemp[i], zColl, n+1);
+        i += n;
       }
       zTemp[i++] = ')';
       zTemp[i] = 0;
@@ -2326,6 +2323,27 @@ int sqlite3VdbeTransferError(Vdbe *p){
   return rc;
 }
 
+#ifdef SQLITE_ENABLE_SQLLOG
+/*
+** If an SQLITE_CONFIG_SQLLOG hook is registered and the VM has been run, 
+** invoke it.
+*/
+static void vdbeInvokeSqllog(Vdbe *v){
+  if( sqlite3GlobalConfig.xSqllog && v->rc==SQLITE_OK && v->zSql && v->pc>=0 ){
+    char *zExpanded = sqlite3VdbeExpandSql(v, v->zSql);
+    assert( v->db->init.busy==0 );
+    if( zExpanded ){
+      sqlite3GlobalConfig.xSqllog(
+          sqlite3GlobalConfig.pSqllogArg, v->db, zExpanded, 1
+      );
+      sqlite3DbFree(v->db, zExpanded);
+    }
+  }
+}
+#else
+# define vdbeInvokeSqllog(x)
+#endif
+
 /*
 ** Clean up a VDBE after execution but do not delete the VDBE just yet.
 ** Write any error messages into *pzErrMsg.  Return the result code.
@@ -2353,6 +2371,7 @@ int sqlite3VdbeReset(Vdbe *p){
   ** instructions yet, leave the main database error information unchanged.
   */
   if( p->pc>=0 ){
+    vdbeInvokeSqllog(p);
     sqlite3VdbeTransferError(p);
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = 0;
@@ -2434,12 +2453,14 @@ void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
 }
 
 /*
-** Free all memory associated with the Vdbe passed as the second argument.
+** Free all memory associated with the Vdbe passed as the second argument,
+** except for object itself, which is preserved.
+**
 ** The difference between this function and sqlite3VdbeDelete() is that
 ** VdbeDelete() also unlinks the Vdbe from the list of VMs associated with
-** the database connection.
+** the database connection and frees the object itself.
 */
-void sqlite3VdbeDeleteObject(sqlite3 *db, Vdbe *p){
+void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   SubProgram *pSub, *pNext;
   int i;
   assert( p->db==0 || p->db==db );
@@ -2457,10 +2478,9 @@ void sqlite3VdbeDeleteObject(sqlite3 *db, Vdbe *p){
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);
 #if defined(SQLITE_ENABLE_TREE_EXPLAIN)
-  sqlite3DbFree(db, p->zExplain);
+  sqlite3_free(p->zExplain);
   sqlite3DbFree(db, p->pExplain);
 #endif
-  sqlite3DbFree(db, p);
 }
 
 /*
@@ -2472,6 +2492,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   if( NEVER(p==0) ) return;
   db = p->db;
   assert( sqlite3_mutex_held(db->mutex) );
+  sqlite3VdbeClearObject(db, p);
   if( p->pPrev ){
     p->pPrev->pNext = p->pNext;
   }else{
@@ -2483,7 +2504,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   }
   p->magic = VDBE_MAGIC_DEAD;
   p->db = 0;
-  sqlite3VdbeDeleteObject(db, p);
+  sqlite3DbFree(db, p);
 }
 
 /*

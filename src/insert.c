@@ -25,7 +25,7 @@ void sqlite3OpenTable(
   int opcode      /* OP_OpenRead or OP_OpenWrite */
 ){
   Vdbe *v;
-  if( IsVirtual(pTab) ) return;
+  assert( !IsVirtual(pTab) );
   v = sqlite3GetVdbe(p);
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
   sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
@@ -1274,25 +1274,20 @@ void sqlite3GenerateConstraintChecks(
     onError = overrideError!=OE_Default ? overrideError : OE_Abort;
     for(i=0; i<pCheck->nExpr; i++){
       int allOk = sqlite3VdbeMakeLabel(v);
-      Expr *pDup = sqlite3ExprDup(db, pCheck->a[i].pExpr, 0);
-      if( !db->mallocFailed ){
-        assert( pDup!=0 );
-        sqlite3ExprIfTrue(pParse, pDup, allOk, SQLITE_JUMPIFNULL);
-        if( onError==OE_Ignore ){
-          sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
+      sqlite3ExprIfTrue(pParse, pCheck->a[i].pExpr, allOk, SQLITE_JUMPIFNULL);
+      if( onError==OE_Ignore ){
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
+      }else{
+        char *zConsName = pCheck->a[i].zName;
+        if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
+        if( zConsName ){
+          zConsName = sqlite3MPrintf(db, "constraint %s failed", zConsName);
         }else{
-          char *zConsName = pCheck->a[i].zName;
-          if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
-          if( zConsName ){
-            zConsName = sqlite3MPrintf(db, "constraint %s failed", zConsName);
-          }else{
-            zConsName = 0;
-          }
-          sqlite3HaltConstraint(pParse, onError, zConsName, P4_DYNAMIC);
+          zConsName = 0;
         }
-        sqlite3VdbeResolveLabel(v, allOk);
+        sqlite3HaltConstraint(pParse, onError, zConsName, P4_DYNAMIC);
       }
-      sqlite3ExprDelete(db, pDup);
+      sqlite3VdbeResolveLabel(v, allOk);
     }
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */

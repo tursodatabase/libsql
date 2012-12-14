@@ -1941,12 +1941,13 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       ** file should be closed and deleted. If this connection writes to
       ** the database file, it will do so using an in-memory journal. 
       */
+      int bDelete = (!pPager->tempFile && sqlite3JournalExists(pPager->jfd));
       assert( pPager->journalMode==PAGER_JOURNALMODE_DELETE 
            || pPager->journalMode==PAGER_JOURNALMODE_MEMORY 
            || pPager->journalMode==PAGER_JOURNALMODE_WAL 
       );
       sqlite3OsClose(pPager->jfd);
-      if( !pPager->tempFile ){
+      if( bDelete ){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
     }
@@ -3159,6 +3160,7 @@ static int pagerOpenWalIfPresent(Pager *pPager){
     if( rc ) return rc;
     if( nPage==0 ){
       rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
+      if( rc==SQLITE_IOERR_DELETE_NOENT ) rc = SQLITE_OK;
       isWal = 0;
     }else{
       rc = sqlite3OsAccess(
@@ -3484,7 +3486,7 @@ void sqlite3PagerSetBusyhandler(
     void **ap = (void **)&pPager->xBusyHandler;
     assert( ((int(*)(void *))(ap[0]))==xBusyHandler );
     assert( ap[1]==pBusyHandlerArg );
-    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
+    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_BUSYHANDLER, (void *)ap);
   }
 }
 
@@ -5885,7 +5887,7 @@ int sqlite3PagerCommitPhaseOne(
   
       /* If this transaction has made the database smaller, then all pages
       ** being discarded by the truncation must be written to the journal
-      ** file. This can only happen in auto-vacuum mode.
+      ** file.
       **
       ** Before reading the pages with page numbers larger than the 
       ** current value of Pager.dbSize, set dbSize back to the value
@@ -5893,7 +5895,6 @@ int sqlite3PagerCommitPhaseOne(
       ** calls to sqlite3PagerGet() return zeroed pages instead of 
       ** reading data from the database file.
       */
-  #ifndef SQLITE_OMIT_AUTOVACUUM
       if( pPager->dbSize<pPager->dbOrigSize 
        && pPager->journalMode!=PAGER_JOURNALMODE_OFF
       ){
@@ -5913,7 +5914,6 @@ int sqlite3PagerCommitPhaseOne(
         }
         pPager->dbSize = dbSize;
       } 
-  #endif
   
       /* Write the master journal name into the journal file. If a master 
       ** journal file name has already been written to the journal file, 

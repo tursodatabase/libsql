@@ -91,7 +91,7 @@ do_test tkt-31338-3.1 {
     INSERT INTO t3 VALUES(4);
     CREATE TABLE t4(h);
     INSERT INTO t4 VALUES(5);
-    
+
     SELECT * FROM t3 LEFT JOIN t1 ON d=g LEFT JOIN t4 ON c=h
      WHERE (a=1 AND h=4)
          OR (b IN (

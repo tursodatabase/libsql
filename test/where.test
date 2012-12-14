@@ -1079,6 +1079,7 @@ do_test where-13.12 {
 # When optimizing out ORDER BY clauses, make sure that trailing terms
 # of the ORDER BY clause do not reference other tables in a join.
 #
+if {[permutation] != "no_optimization"} {
 do_test where-14.1 {
   execsql {
     CREATE TABLE t8(a INTEGER PRIMARY KEY, b TEXT UNIQUE);
@@ -1156,6 +1157,7 @@ do_test where-14.12 {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.b, y.a||x.b DESC
   } 
 } {4/4 4/1 1/4 1/1 sort}
+} ;# {permutation != "no_optimization"}
 
 # Ticket #2445.
 #

@@ -6,6 +6,49 @@
 :: Multi-Platform Build Tool for MSVC
 ::
 
+REM
+REM This batch script is used to build the SQLite DLL for multiple platforms
+REM and configurations using MSVC.  The built SQLite DLLs, their associated
+REM import libraries, and optionally their symbols files, are placed within
+REM the directory specified on the command line, in sub-directories named for
+REM their respective platforms and configurations.  This batch script must be
+REM run from inside a Visual Studio Command Prompt for the desired version of
+REM Visual Studio ^(the initial platform configured for the command prompt does
+REM not really matter^).  Exactly one command line argument is required, the
+REM name of an existing directory to be used as the final destination directory
+REM for the generated output files, which will be placed in sub-directories
+REM created therein.  Ideally, the directory specified should be empty.
+REM
+REM Example:
+REM
+REM                        CD /D C:\dev\sqlite\core
+REM                        tool\build-all-msvc.bat C:\Temp
+REM
+REM In the example above, "C:\dev\sqlite\core" represents the root of the
+REM source tree for SQLite and "C:\Temp" represents the final destination
+REM directory for the generated output files.
+REM
+REM There are several environment variables that may be set to modify the
+REM behavior of this batch script and its associated Makefile.  The list of
+REM platforms to build may be overriden by using the PLATFORMS environment
+REM variable, which should contain a list of platforms ^(e.g. x86 x86_amd64
+REM x86_arm^).  All platforms must be supported by the version of Visual Studio
+REM being used.  The list of configurations to build may be overridden by
+REM setting the CONFIGURATIONS environment variable, which should contain a
+REM list of configurations to build ^(e.g. Debug Retail^).  Neither of these
+REM variable values may contain any double quotes, surrounding or embedded.
+REM Finally, the NCRTLIBPATH and NSDKLIBPATH environment variables may be set
+REM to specify the location of the CRT and SDK, respectively, needed to compile
+REM executables native to the architecture of the build machine during any
+REM cross-compilation that may be necessary, depending on the platforms to be
+REM built.  These values in these two variables should be surrounded by double
+REM quotes if they contain spaces.
+REM
+REM Please note that the SQLite build process performed by the Makefile
+REM associated with this batch script requires both Gawk ^(gawk.exe^) and Tcl
+REM 8.5 ^(tclsh85.exe^) to be present in a directory contained in the PATH
+REM environment variable unless a pre-existing amalgamation file is used.
+REM
 SETLOCAL
 
 REM SET __ECHO=ECHO
@@ -94,17 +137,35 @@ IF NOT DEFINED PLATFORMS (
 %_VECHO% Platforms = '%PLATFORMS%'
 
 REM
+REM NOTE: If the list of configurations is not already set, use the default
+REM       list.
+REM
+IF NOT DEFINED CONFIGURATIONS (
+  SET CONFIGURATIONS=Debug Retail
+)
+
+%_VECHO% Configurations = '%CONFIGURATIONS%'
+
+REM
 REM NOTE: Setup environment variables to translate between the MSVC platform
 REM       names and the names to be used for the platform-specific binary
 REM       directories.
 REM
+SET amd64_NAME=x64
+SET arm_NAME=ARM
+SET x64_NAME=x64
 SET x86_NAME=x86
 SET x86_amd64_NAME=x64
 SET x86_arm_NAME=ARM
+SET x86_x64_NAME=x64
 
+%_VECHO% amd64_Name = '%amd64_NAME%'
+%_VECHO% arm_Name = '%arm_NAME%'
+%_VECHO% x64_Name = '%x64_NAME%'
 %_VECHO% x86_Name = '%x86_NAME%'
 %_VECHO% x86_amd64_Name = '%x86_amd64_NAME%'
 %_VECHO% x86_arm_Name = '%x86_arm_NAME%'
+%_VECHO% x86_x64_Name = '%x86_x64_NAME%'
 
 REM
 REM NOTE: Check for the external tools needed during the build process ^(i.e.
@@ -113,6 +174,24 @@ REM       along the PATH.
 REM
 FOR %%T IN (gawk.exe tclsh85.exe) DO (
   SET %%T_PATH=%%~dp$PATH:T
+)
+
+REM
+REM NOTE: The Gawk executable "gawk.exe" is required during the SQLite build
+REM       process unless a pre-existing amalgamation file is used.
+REM
+IF NOT DEFINED gawk.exe_PATH (
+  ECHO The Gawk executable "gawk.exe" is required to be in the PATH.
+  GOTO errors
+)
+
+REM
+REM NOTE: The Tcl 8.5 executable "tclsh85.exe" is required during the SQLite
+REM       build process unless a pre-existing amalgamation file is used.
+REM
+IF NOT DEFINED tclsh85.exe_PATH (
+  ECHO The Tcl 8.5 executable "tclsh85.exe" is required to be in the PATH.
+  GOTO errors
 )
 
 REM
@@ -128,10 +207,29 @@ REM NOTE: Check for MSVC 2012 because the Windows SDK directory handling is
 REM       slightly different for that version.
 REM
 IF "%VisualStudioVersion%" == "11.0" (
-  SET SET_NSDKLIBPATH=1
+  REM
+  REM NOTE: If the Windows SDK library path has already been set, do not set
+  REM       it to something else later on.
+  REM
+  IF NOT DEFINED NSDKLIBPATH (
+    SET SET_NSDKLIBPATH=1
+  )
 ) ELSE (
   CALL :fn_UnsetVariable SET_NSDKLIBPATH
 )
+
+REM
+REM NOTE: Check if this is the Windows Phone SDK.  If so, a different batch
+REM       file is necessary to setup the build environment.  Since the variable
+REM       values involved here may contain parenthesis, using GOTO instead of
+REM       an IF block is required.
+REM
+IF DEFINED WindowsPhoneKitDir GOTO set_vcvarsall_phone
+SET VCVARSALL=%VCINSTALLDIR%\vcvarsall.bat
+GOTO set_vcvarsall_done
+:set_vcvarsall_phone
+SET VCVARSALL=%VCINSTALLDIR%\WPSDK\WP80\vcvarsphoneall.bat
+:set_vcvarsall_done
 
 REM
 REM NOTE: This is the outer loop.  There should be exactly one iteration per
@@ -173,6 +271,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     CALL :fn_UnsetVariable Platform
     REM CALL :fn_UnsetVariable VCINSTALLDIR
     CALL :fn_UnsetVariable VSINSTALLDIR
+    CALL :fn_UnsetVariable WindowsPhoneKitDir
     CALL :fn_UnsetVariable WindowsSdkDir
     CALL :fn_UnsetVariable WindowsSdkDir_35
     CALL :fn_UnsetVariable WindowsSdkDir_old
@@ -182,7 +281,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM
     SET PATH=%TOOLPATH%;%SystemRoot%\System32;%SystemRoot%
 
-    FOR %%B IN (Debug Retail) DO (
+    FOR %%B IN (%CONFIGURATIONS%) DO (
       REM
       REM NOTE: When preparing the debug build, set the DEBUG and MEMDEBUG
       REM       environment variables to be picked up by the MSVC makefile
@@ -215,10 +314,10 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM
         REM NOTE: Attempt to setup the MSVC environment for this platform.
         REM
-        %__ECHO3% CALL "%VCINSTALLDIR%\vcvarsall.bat" %%P
+        %__ECHO3% CALL "%VCVARSALL%" %%P
 
         IF ERRORLEVEL 1 (
-          ECHO Failed to call "%VCINSTALLDIR%\vcvarsall.bat" for platform %%P.
+          ECHO Failed to call "%VCVARSALL%" for platform %%P.
           GOTO errors
         )
 
@@ -228,10 +327,12 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       as current versions of their official batch file do not set
         REM       the exit code upon failure.
         REM
-        IF NOT DEFINED __ECHO (
-          IF NOT DEFINED WindowsSdkDir (
-            ECHO Cannot build, Windows SDK not found for platform %%P.
-            GOTO errors
+        IF NOT DEFINED __ECHO3 (
+          IF NOT DEFINED WindowsPhoneKitDir (
+            IF NOT DEFINED WindowsSdkDir (
+              ECHO Cannot build, Windows SDK not found for platform %%P.
+              GOTO errors
+            )
           )
         )
 
@@ -245,8 +346,13 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       file used to setup the MSVC environment.
         REM
         IF DEFINED SET_NSDKLIBPATH (
-          CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
-          CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
+          IF DEFINED WindowsPhoneKitDir (
+            CALL :fn_CopyVariable WindowsPhoneKitDir NSDKLIBPATH
+            CALL :fn_AppendVariable NSDKLIBPATH \lib\x86
+          ) ELSE IF DEFINED WindowsSdkDir (
+            CALL :fn_CopyVariable WindowsSdkDir NSDKLIBPATH
+            CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
+          )
         )
 
         REM

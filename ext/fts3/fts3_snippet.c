@@ -576,7 +576,7 @@ static int fts3SnippetShift(
         return rc;
       }
       while( rc==SQLITE_OK && iCurrent<(nSnippet+nDesired) ){
-        const char *ZDUMMY; int DUMMY1, DUMMY2, DUMMY3;
+        const char *ZDUMMY; int DUMMY1 = 0, DUMMY2 = 0, DUMMY3 = 0;
         rc = pMod->xNext(pC, &ZDUMMY, &DUMMY1, &DUMMY2, &DUMMY3, &iCurrent);
       }
       pMod->xClose(pC);
@@ -620,8 +620,6 @@ static int fts3SnippetText(
   int iCol = pFragment->iCol+1;   /* Query column to extract text from */
   sqlite3_tokenizer_module *pMod; /* Tokenizer module methods object */
   sqlite3_tokenizer_cursor *pC;   /* Tokenizer cursor open on zDoc/nDoc */
-  const char *ZDUMMY;             /* Dummy argument used with tokenizer */
-  int DUMMY1;                     /* Dummy argument used with tokenizer */
   
   zDoc = (const char *)sqlite3_column_text(pCsr->pStmt, iCol);
   if( zDoc==0 ){
@@ -640,10 +638,23 @@ static int fts3SnippetText(
   }
 
   while( rc==SQLITE_OK ){
-    int iBegin;                   /* Offset in zDoc of start of token */
-    int iFin;                     /* Offset in zDoc of end of token */
-    int isHighlight;              /* True for highlighted terms */
+    const char *ZDUMMY;           /* Dummy argument used with tokenizer */
+    int DUMMY1 = -1;              /* Dummy argument used with tokenizer */
+    int iBegin = 0;               /* Offset in zDoc of start of token */
+    int iFin = 0;                 /* Offset in zDoc of end of token */
+    int isHighlight = 0;          /* True for highlighted terms */
 
+    /* Variable DUMMY1 is initialized to a negative value above. Elsewhere
+    ** in the FTS code the variable that the third argument to xNext points to
+    ** is initialized to zero before the first (*but not necessarily
+    ** subsequent*) call to xNext(). This is done for a particular application
+    ** that needs to know whether or not the tokenizer is being used for
+    ** snippet generation or for some other purpose.
+    **
+    ** Extreme care is required when writing code to depend on this
+    ** initialization. It is not a documented part of the tokenizer interface.
+    ** If a tokenizer is used directly by any code outside of FTS, this
+    ** convention might not be respected.  */
     rc = pMod->xNext(pC, &ZDUMMY, &DUMMY1, &iBegin, &iFin, &iCurrent);
     if( rc!=SQLITE_OK ){
       if( rc==SQLITE_DONE ){
@@ -1333,8 +1344,6 @@ void sqlite3Fts3Offsets(
 ){
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
   sqlite3_tokenizer_module const *pMod = pTab->pTokenizer->pModule;
-  const char *ZDUMMY;             /* Dummy argument used with xNext() */
-  int NDUMMY;                     /* Dummy argument used with xNext() */
   int rc;                         /* Return Code */
   int nToken;                     /* Number of tokens in query */
   int iCol;                       /* Column currently being processed */
@@ -1367,9 +1376,11 @@ void sqlite3Fts3Offsets(
   */
   for(iCol=0; iCol<pTab->nColumn; iCol++){
     sqlite3_tokenizer_cursor *pC; /* Tokenizer cursor */
-    int iStart;
-    int iEnd;
-    int iCurrent;
+    const char *ZDUMMY;           /* Dummy argument used with xNext() */
+    int NDUMMY = 0;               /* Dummy argument used with xNext() */
+    int iStart = 0;
+    int iEnd = 0;
+    int iCurrent = 0;
     const char *zDoc;
     int nDoc;
 
