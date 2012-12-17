@@ -1174,14 +1174,19 @@ void sqlite3Pragma(
           assert( x==0 );
           addrOk = sqlite3VdbeMakeLabel(v);
           if( pIdx==0 ){
-            sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, pFK->aCol[0].iFrom,
-                                              regRow);
-            sqlite3VdbeAddOp1(v, OP_MustBeInt, regRow);
+            int iKey = pFK->aCol[0].iFrom;
+            if( iKey>=0 && iKey!=pTab->iPKey ){
+              sqlite3VdbeAddOp3(v, OP_Column, 0, iKey, regRow);
+              sqlite3ColumnDefault(v, pTab, iKey, regRow);
+              sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk);
+              sqlite3VdbeAddOp2(v, OP_MustBeInt, regRow,
+                 sqlite3VdbeCurrentAddr(v)+3);
+            }else{
+              sqlite3VdbeAddOp2(v, OP_Rowid, 0, regRow);
+            }
             sqlite3VdbeAddOp3(v, OP_NotExists, i, 0, regRow);
             sqlite3VdbeAddOp2(v, OP_Goto, 0, addrOk);
-            x = sqlite3VdbeCurrentAddr(v);
-            sqlite3VdbeJumpHere(v, x-2);
-            sqlite3VdbeJumpHere(v, x-3);
+            sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
           }else{
             for(j=0; j<pFK->nCol; j++){
               sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, pFK->aCol[j].iFrom,

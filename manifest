@@ -1,5 +1,5 @@
-C Prototype\sfor\sPRAGMA\sthat\schecks\sall\sforeign\skey\sconstraints\son\sa\stable.
-D 2012-12-17T16:46:37.634
+C Fix\san\sissue\swith\schild\skeys\sthat\sare\snot\sINTEGER\sPRIMARY\sKEY\nreferencing\sINTEGER\sPRIMARY\sKEY\sin\sthe\sparent.
+D 2012-12-17T18:05:54.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/parse.y c2b4a6454ad77299b1443e2c483a560a9f16e724
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c 52adf60a59ee30717ffc24d5dffbf8305e2b0532
+F src/pragma.c 599af02bcc13c8f41a6670a19185119ffae18e6d
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -1025,10 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3d65c70343196b8f69c5293e7703839846fade85
-R d2dffba8202bff8058b0bdfbf2948311
-T *branch * foreign-key-check
-T *sym-foreign-key-check *
-T -sym-trunk *
+P 01c980e9bbdf82e0b37667b6403c19ed8c73ee62
+R abb2e93db46b538d88f02500430c7bfd
 U drh
-Z c27ac5b11b52c35a742b54038f8a6374
+Z 4013a6f2f3fe7fcef30b92f6b8b3c386
