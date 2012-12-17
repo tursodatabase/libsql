@@ -1,5 +1,5 @@
-C Add\sto\sthe\sforeign_key_check\spragma\san\sextra\soutput\scolumn\s"parent"\sthat\ncontains\sthe\sname\sof\sthe\sparent\stable\sfor\sthe\sconstraint\sthat\sfailed.
-D 2012-12-17T20:57:15.968
+C Added\stest\scases\sfor\sPRAGMA\sforeign_key_check.\s\sFixed\sa\sbug\sthat\sappears\nwhen\sthe\scolumn\sorder\sof\sthe\schild\sand\sparent\sdiffer.
+D 2012-12-17T22:32:14.381
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/parse.y c2b4a6454ad77299b1443e2c483a560a9f16e724
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c c6e9ed9de9a4019cf2a049c78833b58c9a535fae
+F src/pragma.c 312d9ea0d9b98583514f6f8e92cb7e8f526ff4c6
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -412,6 +412,7 @@ F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test 5aa44e7153928a1f002803f94aaab4c76a7ceac2
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
+F test/fkey5.test 0bf64f2d19ad80433ca0b24edbf604a18b353d5f
 F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
@@ -1025,7 +1026,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0f9963526c299757ff95c153fb05a67cddb6af28
-R 09c7edec1884f69df7657ebe62d33418
+P 97f7f7377259ecf562019f62ebed0897cfae236e
+R e825c339f2d84a956eae42ef385eea53
 U drh
-Z bca5ca1c6b7b99510bae2f63ea5f8e69
+Z 0751ac95be4abd3e28a98e71458d0c00

@@ -1129,6 +1129,7 @@ void sqlite3Pragma(
     int regRow;            /* Registers to hold a row from pTab */
     int addrTop;           /* Top of a loop checking foreign keys */
     int addrOk;            /* Jump here if the key is OK */
+    int *aiCols;           /* child to parent column mapping */
 
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     regResult = pParse->nMem+1;
@@ -1183,7 +1184,8 @@ void sqlite3Pragma(
         pParent = sqlite3LocateTable(pParse, 0, pFK->zTo, zDb);
         assert( pParent!=0 );
         pIdx = 0;
-        x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, 0);
+        aiCols = 0;
+        x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, &aiCols);
         assert( x==0 );
         addrOk = sqlite3VdbeMakeLabel(v);
         if( pIdx==0 ){
@@ -1202,8 +1204,8 @@ void sqlite3Pragma(
           sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
         }else{
           for(j=0; j<pFK->nCol; j++){
-            sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, pFK->aCol[j].iFrom,
-                                            regRow+j);
+            sqlite3ExprCodeGetColumnOfTable(v, pTab, 0,
+                            aiCols ? aiCols[j] : pFK->aCol[0].iFrom, regRow+j);
             sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk);
           }
           sqlite3VdbeAddOp3(v, OP_MakeRecord, regRow, pFK->nCol, regKey);
@@ -1217,6 +1219,7 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_Integer, i-1, regResult+3);
         sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 4);
         sqlite3VdbeResolveLabel(v, addrOk);
+        sqlite3DbFree(db, aiCols);
       }
       sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop+1);
       sqlite3VdbeJumpHere(v, addrTop);
