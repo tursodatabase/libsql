@@ -275,7 +275,9 @@ int sqlite3FkLocateIndex(
 
   if( !pIdx ){
     if( !pParse->disableTriggers ){
-      sqlite3ErrorMsg(pParse, "foreign key mismatch");
+      sqlite3ErrorMsg(pParse,
+           "foreign key mismatch - \"%w\" referencing \"%w\"",
+           pFKey->pFrom->zName, pFKey->zTo);
     }
     sqlite3DbFree(pParse->db, aiCol);
     return 1;

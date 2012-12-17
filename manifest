@@ -1,5 +1,5 @@
-C "PRAGMA\sforeign_key_check"\swith\sno\sargument\schecks\sthe\sforeign\skeys\son\sall\ntables.
-D 2012-12-17T18:43:02.925
+C Enhance\sthe\serror\smessage\sfor\s"foreign\skey\smismatch"\sto\sinclude\sthe\snames\sof\nthe\schild\sand\sparent\stables.\s\sBegin\sadding\stest\scases\sfor\s\nPRAGMA\sforeign_key_check.\s\sMake\ssure\sPRAGMA\sforeign_key_check\sgets\sall\nnecessary\stable\slocks.
+D 2012-12-17T20:40:39.698
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -132,7 +132,7 @@ F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c 0e41d66d868b37dbc0e041c342e0036fad27e705
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 21fb59849f5ce409d82736a34c1c21612d029e59
+F src/fkey.c 5b7a12e2f8620e855b0478a9a6798df9967bb277
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -168,7 +168,7 @@ F src/parse.y c2b4a6454ad77299b1443e2c483a560a9f16e724
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c b98dfe89b961d41be6d502d23adf18ed02dbb410
+F src/pragma.c 5cc87af77dd57e037258410e0ee5a9dab51a8a5a
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -383,7 +383,7 @@ F test/e_delete.test 89aa84d3d1bd284a0689ede04bce10226a5aeaa5
 F test/e_droptrigger.test afd5c4d27dec607f5997a66bf7e2498a082cb235
 F test/e_dropview.test 583411e470458c5d76148542cfb5a5fa84c8f93e
 F test/e_expr.test 5489424d3d9a452ac3701cdf4b680ae31a157894
-F test/e_fkey.test a79ab1d3213c7ac64621eec28f8e8bb219775445
+F test/e_fkey.test 89a2ff734a33693b997534eff90724573948be7b
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test d5331cc95e101af2508159fc98b6801631659ffe
 F test/e_reindex.test dfedfc32c5a282b0596c6537cbcd4217fbb1a216
@@ -409,7 +409,7 @@ F test/fallocate.test b5d34437bd7ab01d41b1464b8117aefd4d32160e
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test ffa17b5aebc3eb4b1e3be1ccb5ee906ffbd97f6e
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 080969fe219b3b082b0e097ac18c6af2e5b0631f
+F test/fkey2.test 5aa44e7153928a1f002803f94aaab4c76a7ceac2
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
 F test/fkey_malloc.test c3a12acd053c976de09036498eef09b83afa4a80
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 603b695bf094b9da905f877a13dcb134463db92a
-R 838d64421c46ea50daf2c57db5adcb2d
+P 57d47423a65d183cb1efcb95b28cb143e788b953
+R 48149676f68d877f18e0c8a269ce004d
 U drh
-Z f327b298aa59d7b1bf00c17e68686c2c
+Z 4108a840f9ef999ff91109d05e04ab7d

@@ -1150,7 +1150,8 @@ void sqlite3Pragma(
         pTab = (Table*)sqliteHashData(k);
         k = sqliteHashNext(k);
       }
-      if( pTab->pFKey==0 ) continue;
+      if( pTab==0 || pTab->pFKey==0 ) continue;
+      sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
       if( pTab->nCol+regRow>pParse->nMem ) pParse->nMem = pTab->nCol + regRow;
       sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
       sqlite3VdbeAddOp4(v, OP_String8, 0, regResult, 0, pTab->zName,
@@ -1159,6 +1160,7 @@ void sqlite3Pragma(
         pParent = sqlite3LocateTable(pParse, 0, pFK->zTo, zDb);
         if( pParent==0 ) break;
         pIdx = 0;
+        sqlite3TableLock(pParse, iDb, pParent->tnum, 0, pParent->zName);
         x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, 0);
         if( x==0 ){
           if( pIdx==0 ){
