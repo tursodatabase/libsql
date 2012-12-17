@@ -1114,6 +1114,98 @@ void sqlite3Pragma(
   }else
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
 
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+  if( sqlite3StrICmp(zLeft, "foreign_key_check")==0 && zRight ){
+    FKey *pFK;
+    Table *pTab;
+    Table *pParent;
+    Index *pIdx;
+    int i, j;
+    int x;
+    int *aiCols;
+
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+    pTab = sqlite3LocateTable(pParse, 0, zRight, zDb);
+    if( pTab && pTab->pFKey ){
+      int regResult;
+      int regRow;
+      int regKey;
+      v = sqlite3GetVdbe(pParse);
+      sqlite3VdbeSetNumCols(v, 2);
+      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "fkid", SQLITE_STATIC);
+      sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "rowid", SQLITE_STATIC);
+      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3OpenTable(pParse, 0, iDb, pTab, OP_OpenRead);
+      for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
+        pParent = sqlite3LocateTable(pParse, 0, pFK->zTo, zDb);
+        if( pParent==0 ) break;
+        pIdx = 0;
+        aiCols = 0;
+        x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, &aiCols);
+        if( x==0 ){
+          if( pIdx==0 ){
+            sqlite3OpenTable(pParse, i, iDb, pParent, OP_OpenRead);
+          }else{
+            KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
+            sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iDb);
+            sqlite3VdbeChangeP4(v, -1, (char*)pKey, P4_KEYINFO_HANDOFF);
+          }
+        }else{
+          break;
+        }
+        sqlite3DbFree(db, aiCols);
+      }
+      pParse->nTab = i;
+      if( pFK==0 ){
+        int addrTop;
+        int addrOk;
+        addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, 0);
+        regResult = pParse->nMem+1;
+        pParse->nMem += 2;
+        regRow = pParse->nMem+1;
+        pParse->nMem += pTab->nCol;
+        regKey = ++pParse->nMem;
+        for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
+          pParent = sqlite3LocateTable(pParse, 0, pFK->zTo, zDb);
+          assert( pParent!=0 );
+          pIdx = 0;
+          aiCols = 0;
+          x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, &aiCols);
+          assert( x==0 );
+          addrOk = sqlite3VdbeMakeLabel(v);
+          if( pIdx==0 ){
+            sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, pFK->aCol[0].iFrom,
+                                              regRow);
+            sqlite3VdbeAddOp1(v, OP_MustBeInt, regRow);
+            sqlite3VdbeAddOp3(v, OP_NotExists, i, 0, regRow);
+            sqlite3VdbeAddOp2(v, OP_Goto, 0, addrOk);
+            x = sqlite3VdbeCurrentAddr(v);
+            sqlite3VdbeJumpHere(v, x-2);
+            sqlite3VdbeJumpHere(v, x-3);
+          }else{
+            for(j=0; j<pFK->nCol; j++){
+              sqlite3ExprCodeGetColumnOfTable(v, pTab, 0, pFK->aCol[j].iFrom,
+                                              regRow+j);
+              sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk);
+            }
+            sqlite3VdbeAddOp3(v, OP_MakeRecord, regRow, pFK->nCol, regKey);
+            sqlite3VdbeChangeP4(v, -1,
+                     sqlite3IndexAffinityStr(v,pIdx), P4_TRANSIENT);
+            sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
+          }
+          sqlite3DbFree(db, aiCols);
+          sqlite3VdbeAddOp2(v, OP_Integer, i-1, regResult);
+          sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
+          sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 2);
+          sqlite3VdbeResolveLabel(v, addrOk);
+        }
+        sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop+1);
+        sqlite3VdbeJumpHere(v, addrTop);
+      }
+    }
+  }else
+#endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
+
 #ifndef NDEBUG
   if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
     if( zRight ){

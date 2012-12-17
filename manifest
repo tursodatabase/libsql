@@ -1,5 +1,5 @@
-C Optimize\sIN\soperators\sin\sthe\sWHERE\sclause\sof\squeries\susing\svirtual\stables.
-D 2012-12-14T17:54:38.979
+C Prototype\sfor\sPRAGMA\sthat\schecks\sall\sforeign\skey\sconstraints\son\sa\stable.
+D 2012-12-17T16:46:37.634
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -132,7 +132,7 @@ F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c 0e41d66d868b37dbc0e041c342e0036fad27e705
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c dcb7c37a4bf526ded7b24a01a60fe071bcd160a2
+F src/fkey.c 21fb59849f5ce409d82736a34c1c21612d029e59
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -168,7 +168,7 @@ F src/parse.y c2b4a6454ad77299b1443e2c483a560a9f16e724
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c 015723c48072781d2740e310ab04dc92956b76d1
+F src/pragma.c 52adf60a59ee30717ffc24d5dffbf8305e2b0532
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -179,7 +179,7 @@ F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h d1f0866c69d94fe018a32f78c31a043e3fc0d0de
+F src/sqliteInt.h fed3071c8d1b7ccfe37f509def6ea5421988577c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1025,7 +1025,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 52e755943f87354febe214e5dc3b423a1e38ba80 d2fb7619b063b329b6d7ba9a16a7290e5d868f23
-R fea13d1ea2e8500bc200a6665b5fa212
+P 3d65c70343196b8f69c5293e7703839846fade85
+R d2dffba8202bff8058b0bdfbf2948311
+T *branch * foreign-key-check
+T *sym-foreign-key-check *
+T -sym-trunk *
 U drh
-Z 55c2c2e92a55016f5394cb88b53de07c
+Z c27ac5b11b52c35a742b54038f8a6374
