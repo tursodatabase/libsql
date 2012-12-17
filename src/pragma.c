@@ -1132,14 +1132,15 @@ void sqlite3Pragma(
 
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     regResult = pParse->nMem+1;
-    pParse->nMem += 3;
+    pParse->nMem += 4;
     regKey = ++pParse->nMem;
     regRow = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
-    sqlite3VdbeSetNumCols(v, 3);
+    sqlite3VdbeSetNumCols(v, 4);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "table", SQLITE_STATIC);
     sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "rowid", SQLITE_STATIC);
-    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "fkid", SQLITE_STATIC);
+    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "parent", SQLITE_STATIC);
+    sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "fkid", SQLITE_STATIC);
     sqlite3CodeVerifySchema(pParse, iDb);
     k = sqliteHashFirst(&db->aDb[iDb].pSchema->tblHash);
     while( k ){
@@ -1211,8 +1212,10 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
         }
         sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
-        sqlite3VdbeAddOp2(v, OP_Integer, i-1, regResult+2);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 3);
+        sqlite3VdbeAddOp4(v, OP_String8, 0, regResult+2, 0, 
+                          pFK->zTo, P4_TRANSIENT);
+        sqlite3VdbeAddOp2(v, OP_Integer, i-1, regResult+3);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, 4);
         sqlite3VdbeResolveLabel(v, addrOk);
       }
       sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop+1);

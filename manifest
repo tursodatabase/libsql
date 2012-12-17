@@ -1,5 +1,5 @@
-C Enhance\sthe\serror\smessage\sfor\s"foreign\skey\smismatch"\sto\sinclude\sthe\snames\sof\nthe\schild\sand\sparent\stables.\s\sBegin\sadding\stest\scases\sfor\s\nPRAGMA\sforeign_key_check.\s\sMake\ssure\sPRAGMA\sforeign_key_check\sgets\sall\nnecessary\stable\slocks.
-D 2012-12-17T20:40:39.698
+C Add\sto\sthe\sforeign_key_check\spragma\san\sextra\soutput\scolumn\s"parent"\sthat\ncontains\sthe\sname\sof\sthe\sparent\stable\sfor\sthe\sconstraint\sthat\sfailed.
+D 2012-12-17T20:57:15.968
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/parse.y c2b4a6454ad77299b1443e2c483a560a9f16e724
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c 5cc87af77dd57e037258410e0ee5a9dab51a8a5a
+F src/pragma.c c6e9ed9de9a4019cf2a049c78833b58c9a535fae
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -412,7 +412,7 @@ F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test 5aa44e7153928a1f002803f94aaab4c76a7ceac2
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
-F test/fkey_malloc.test c3a12acd053c976de09036498eef09b83afa4a80
+F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -1025,7 +1025,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 57d47423a65d183cb1efcb95b28cb143e788b953
-R 48149676f68d877f18e0c8a269ce004d
+P 0f9963526c299757ff95c153fb05a67cddb6af28
+R 09c7edec1884f69df7657ebe62d33418
 U drh
-Z 4108a840f9ef999ff91109d05e04ab7d
+Z bca5ca1c6b7b99510bae2f63ea5f8e69
