@@ -1,5 +1,5 @@
-C Resolve\snames\sin\sFROM-clause\ssubqueries\sprior\sto\sresolving\snames\sin\sthe\nresult\sset\sexpressions\sof\sa\sSELECT\sstatement.
-D 2012-12-18T16:07:08.090
+C Optimize\sthe\sdegenerate\scase\sof\sa\sFROM\sclause\stable\sname\senclosed\sall\sby\nitself\sinside\sparentheses.\s\sGenerate\scode\sas\sif\sthe\sparentheses\sdid\snot\nexist,\srather\sthan\sthe\sold\sbehavior\sof\smanifesting\sthe\sparenthesized\stable\ninto\sa\stransient\stable.\s\sAlso,\stag\severy\sFROM-clause\sSELECT\ssubquery\sthat\sis\ngenerated\sby\sa\sparenthesized\sFROM-clause\sexpression\susing\sthe\sSF_NestedFrom\nflag.\s\sThe\snew\sSF_NestedFrom\sflag\sis\snot\syet\sused\sfor\sanything.
+D 2012-12-18T19:36:11.944
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os_unix.c ad459bb62eb6f3f6aae26d97b1a28fbac7bf0260
 F src/os_win.c ce1f5db8a7bb4d6f2092b1b2cb9631bec54a6320
 F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
-F src/parse.y 15fdc2c98cbde920c2f6a0fcfd31ace646c45947
+F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
@@ -174,12 +174,12 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 52331299f4095397d6d00715b70cd153baa11931
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c f6c73171209b4af4d6b4258b6740415790415e2e
+F src/select.c 5eab6941c0ac97355817f846b77cd20bfdf5a82e
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h d1f0866c69d94fe018a32f78c31a043e3fc0d0de
+F src/sqliteInt.h f7581eb79d822a6993d6aa31baf1e67e6ff17d19
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -969,9 +969,9 @@ F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5c566388f0cc318b0032ce860f4ac5548e3c265a
-F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
+F test/where8.test 02619a9bfc6df7b19979a02852bac09c3c99477a
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test bcab47eff78f1412a6aec1d6b8a3939d4a9db098
+F test/where9.test 0157862ccf0cfdf1a4622cdf697e5e2f09a8de44
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
@@ -1026,7 +1026,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7e30c021abe5a559918efaa5fc0b21db8ca782ad
-R cf6ce0613e2ebca30b9d8e27d1083ff8
+P 9b67c633d932f3e566f521ee6a9cf3be193436fa
+R d9a19320be87db9daf2926b8e71a7df8
 U drh
-Z 59025edc3e6d7e0bdfe9bc1ec0c29fc3
+Z bc761a01222fad0c80ad013442fb2ec8

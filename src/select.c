@@ -55,7 +55,7 @@ Select *sqlite3SelectNew(
   ExprList *pGroupBy,   /* the GROUP BY clause */
   Expr *pHaving,        /* the HAVING clause */
   ExprList *pOrderBy,   /* the ORDER BY clause */
-  int isDistinct,       /* true if the DISTINCT keyword is present */
+  u16 selFlags,         /* Flag parameters, such as SF_Distinct */
   Expr *pLimit,         /* LIMIT value.  NULL means not used */
   Expr *pOffset         /* OFFSET value.  NULL means no offset */
 ){
@@ -79,7 +79,7 @@ Select *sqlite3SelectNew(
   pNew->pGroupBy = pGroupBy;
   pNew->pHaving = pHaving;
   pNew->pOrderBy = pOrderBy;
-  pNew->selFlags = isDistinct ? SF_Distinct : 0;
+  pNew->selFlags = selFlags;
   pNew->op = TK_SELECT;
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;

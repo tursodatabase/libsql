@@ -435,8 +435,8 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
 // present and false (0) if it is not.
 //
-%type distinct {int}
-distinct(A) ::= DISTINCT.   {A = 1;}
+%type distinct {u16}
+distinct(A) ::= DISTINCT.   {A = SF_Distinct;}
 distinct(A) ::= ALL.        {A = 0;}
 distinct(A) ::= .           {A = 0;}
 
@@ -513,10 +513,20 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I)
                     as(Z) on_opt(N) using_opt(U). {
     if( X==0 && Z.n==0 && N==0 && U==0 ){
       A = F;
+    }else if( F->nSrc==1 ){
+      A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,0,N,U);
+      if( A ){
+        struct SrcList_item *pNew = &A->a[A->nSrc-1];
+        struct SrcList_item *pOld = F->a;
+        pNew->zName = pOld->zName;
+        pNew->zDatabase = pOld->zDatabase;
+        pOld->zName = pOld->zDatabase = 0;
+      }
+      sqlite3SrcListDelete(pParse->db, F);
     }else{
       Select *pSubquery;
       sqlite3SrcListShiftJoinType(F);
-      pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,0,0,0);
+      pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,SF_NestedFrom,0,0);
       A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,pSubquery,N,U);
     }
   }

@@ -2102,6 +2102,7 @@ struct Select {
 #define SF_UseSorter       0x0040  /* Sort using a sorter */
 #define SF_Values          0x0080  /* Synthesized from VALUES clause */
 #define SF_Materialize     0x0100  /* Force materialization of views */
+#define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 
 
 /*
@@ -2814,7 +2815,7 @@ Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
 void sqlite3DropIndex(Parse*, SrcList*, int);
 int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
-                         Expr*,ExprList*,int,Expr*,Expr*);
+                         Expr*,ExprList*,u16,Expr*,Expr*);
 void sqlite3SelectDelete(sqlite3*, Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
