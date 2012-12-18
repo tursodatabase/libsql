@@ -59,6 +59,14 @@ static int createFile(JournalFile *p){
         assert(p->iSize<=p->nBuf);
         rc = sqlite3OsWrite(p->pReal, p->zBuf, p->iSize, 0);
       }
+      if( rc!=SQLITE_OK ){
+        /* If an error occurred while writing to the file, close it before
+        ** returning. This way, SQLite uses the in-memory journal data to 
+        ** roll back changes made to the internal page-cache before this
+        ** function was called.  */
+        sqlite3OsClose(pReal);
+        p->pReal = 0;
+      }
     }
   }
   return rc;

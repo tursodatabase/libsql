@@ -1,5 +1,5 @@
-C Optimize\sIN\soperators\sin\sthe\sWHERE\sclause\sof\squeries\susing\svirtual\stables.
-D 2012-12-14T17:54:38.979
+C On\satomic-write\scapable\ssystems,\sif\scopying\sthe\scontents\sof\san\sin-memory\sjournal\sto\sdisk\sfails,\sclose\sthe\s(on\sdisk)\sjournal\sfile\sbefore\sreturning\sthe\serror\sto\sthe\scaller.\sThis\scauses\sthe\ssubsequent\srollback\soperation\sto\suse\sthe\sin-memory\sjournal.\sFix\sfor\s[df678d738adb].
+D 2012-12-18T11:59:39.046
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c dc197aa9293a26d300eb5378880e701f7b20fefa
-F src/journal.c eb7b9f5e783266521bcd9b2b93d419a219411f71
+F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
@@ -555,6 +555,7 @@ F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
+F test/ioerr6.test 13f0f9c31d706f0dd575995c369af07c0227e9a2
 F test/join.test 8d63cc4d230a7affafa4b6ab0b97c49b8ccb365c
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -1025,7 +1026,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 52e755943f87354febe214e5dc3b423a1e38ba80 d2fb7619b063b329b6d7ba9a16a7290e5d868f23
-R fea13d1ea2e8500bc200a6665b5fa212
-U drh
-Z 55c2c2e92a55016f5394cb88b53de07c
+P 3d65c70343196b8f69c5293e7703839846fade85
+R e1810ef3af67331248d21f17d27662cf
+U dan
+Z 4ee7a84627eefb575e0cd9aa392cf624
