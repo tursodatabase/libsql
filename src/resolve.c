@@ -1033,23 +1033,6 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       return WRC_Abort;
     }
   
-    /* Set up the local name-context to pass to sqlite3ResolveExprNames() to
-    ** resolve the result-set expression list.
-    */
-    sNC.ncFlags = NC_AllowAgg;
-    sNC.pSrcList = p->pSrc;
-    sNC.pNext = pOuterNC;
-  
-    /* Resolve names in the result set. */
-    pEList = p->pEList;
-    assert( pEList!=0 );
-    for(i=0; i<pEList->nExpr; i++){
-      Expr *pX = pEList->a[i].pExpr;
-      if( sqlite3ResolveExprNames(&sNC, pX) ){
-        return WRC_Abort;
-      }
-    }
-  
     /* Recursively resolve names in all subqueries
     */
     for(i=0; i<p->pSrc->nSrc; i++){
@@ -1074,6 +1057,23 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         for(pNC=pOuterNC; pNC; pNC=pNC->pNext) nRef -= pNC->nRef;
         assert( pItem->isCorrelated==0 && nRef<=0 );
         pItem->isCorrelated = (nRef!=0);
+      }
+    }
+  
+    /* Set up the local name-context to pass to sqlite3ResolveExprNames() to
+    ** resolve the result-set expression list.
+    */
+    sNC.ncFlags = NC_AllowAgg;
+    sNC.pSrcList = p->pSrc;
+    sNC.pNext = pOuterNC;
+  
+    /* Resolve names in the result set. */
+    pEList = p->pEList;
+    assert( pEList!=0 );
+    for(i=0; i<pEList->nExpr; i++){
+      Expr *pX = pEList->a[i].pExpr;
+      if( sqlite3ResolveExprNames(&sNC, pX) ){
+        return WRC_Abort;
       }
     }
   

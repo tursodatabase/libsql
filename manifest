@@ -1,5 +1,5 @@
-C Remove\sold\scommented-out\scode\sfrom\sparse.y.\s\sFix\ssome\sover-length\ssource\slines\nin\sparse.y.\s\sNo\slogical\schanges.
-D 2012-12-18T13:12:03.056
+C Resolve\snames\sin\sFROM-clause\ssubqueries\sprior\sto\sresolving\snames\sin\sthe\nresult\sset\sexpressions\sof\sa\sSELECT\sstatement.
+D 2012-12-18T16:07:08.090
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/pragma.c 015723c48072781d2740e310ab04dc92956b76d1
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c cdd546d62da7763119ea1fa455a898959e03457f
+F src/resolve.c 52331299f4095397d6d00715b70cd153baa11931
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c f6c73171209b4af4d6b4258b6740415790415e2e
 F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
@@ -280,7 +280,7 @@ F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
 F test/auth.test 304e82f31592820d3bde26ab6b75deaa123e1a6f
-F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
+F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
 F test/autoindex1.test 058d0b331ae6840a61bbee910d8cbae27bfd5991
@@ -1026,7 +1026,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8183d8d7ae1ff4bad2fcc01adb923b966b347832
-R daafcb2309a3c630a36e62d610f5b299
+P 7e30c021abe5a559918efaa5fc0b21db8ca782ad
+R cf6ce0613e2ebca30b9d8e27d1083ff8
 U drh
-Z 712edd7eaa373607183a91c32998bfdc
+Z 59025edc3e6d7e0bdfe9bc1ec0c29fc3
