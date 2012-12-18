@@ -1,5 +1,5 @@
-C On\satomic-write\scapable\ssystems,\sif\scopying\sthe\scontents\sof\san\sin-memory\sjournal\sto\sdisk\sfails,\sclose\sthe\s(on\sdisk)\sjournal\sfile\sbefore\sreturning\sthe\serror\sto\sthe\scaller.\sThis\scauses\sthe\ssubsequent\srollback\soperation\sto\suse\sthe\sin-memory\sjournal.\sFix\sfor\s[df678d738adb].
-D 2012-12-18T11:59:39.046
+C Remove\sold\scommented-out\scode\sfrom\sparse.y.\s\sFix\ssome\sover-length\ssource\slines\nin\sparse.y.\s\sNo\slogical\schanges.
+D 2012-12-18T13:12:03.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/os_unix.c ad459bb62eb6f3f6aae26d97b1a28fbac7bf0260
 F src/os_win.c ce1f5db8a7bb4d6f2092b1b2cb9631bec54a6320
 F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
-F src/parse.y c2b4a6454ad77299b1443e2c483a560a9f16e724
+F src/parse.y 15fdc2c98cbde920c2f6a0fcfd31ace646c45947
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
@@ -1026,7 +1026,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3d65c70343196b8f69c5293e7703839846fade85
-R e1810ef3af67331248d21f17d27662cf
-U dan
-Z 4ee7a84627eefb575e0cd9aa392cf624
+P 8183d8d7ae1ff4bad2fcc01adb923b966b347832
+R daafcb2309a3c630a36e62d610f5b299
+U drh
+Z 712edd7eaa373607183a91c32998bfdc
