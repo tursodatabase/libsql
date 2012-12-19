@@ -1,12 +1,12 @@
-C Version\s3.7.15
-D 2012-12-12T13:36:53.477
+C Backport\sto\sthe\s3.7.15\sbranch\s\nthe\sfix\sto\sthe\ssegfault\sproblem\sof\sticket\s[a7b7803e8d1e869]\swhich\sinvolved\nthe\suse\sof\s"AS"\snamed\sresult\scolumns\sas\slogical\sterms\sof\sthe\sWHERE\sclause.\nAlso,\schange\sthe\sversion\snumber\sto\s3.7.15.1.
+D 2012-12-19T17:10:16.499
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 5a3b6f34d263b01f8b798c291fac1529fd650308
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION edab4af5a4623f8198833ea481ce98ab53750a8d
+F VERSION 9f73b1223dd440610dbd758b233c59a7af234434
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 252992f6588107ebd5d17c956d90cf7484580c6f x
+F configure 7b407a89c39c477e064e3ce128b613a533317d80 x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 53b991af50dab230b319b098bcb90fc7cd82da47
+F src/where.c 74d72b1613aac386f9baf1a46c75f67784f082ba
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -783,6 +783,7 @@ F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test fa9c71192f7e2ea2d51bf078bc34e8da6088bf71
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
+F test/tkt-a7b7803e.test 159ef554234fa1f9fb318c751b284bd1cf858da4
 F test/tkt-b1d3a2e531.test 610ef582413171b379652663111b1f996d9f8f78
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test a95e8cdad0b98af1853ac7f0afd4ab27b77bf5f3
@@ -1025,10 +1026,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 81d9ee0f0df7f283e69ba1c2845339ea3318cd66
-R 6da93546e03c634583a9df9f228276ed
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.15 *
-U dan
-Z c2b6a5ded805ac723be241fad17cc751
+P cd0b37c52658bfdf992b1e3dc467bae1835a94ae
+R 37df6a77f239e5cf5347f1930acc76e7
+T *branch * branch-3.7.15
+T *sym-branch-3.7.15 *
+T -sym-trunk *
+U drh
+Z eb40a4838ecc9791bafcdeaed13051da
