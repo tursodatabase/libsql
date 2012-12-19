@@ -3392,7 +3392,8 @@ static int selectExpander(Walker *pWalker, Select *p){
     ExprList *pNew = 0;
     int flags = pParse->db->flags;
     int longNames = (flags & SQLITE_FullColNames)!=0
-                      && (flags & SQLITE_ShortColNames)==0;
+                      && (flags & SQLITE_ShortColNames)==0
+                      && (p->selFlags & SF_NestedFrom)==0;
 
     for(k=0; k<pEList->nExpr; k++){
       Expr *pE = a[k].pExpr;
@@ -3479,6 +3480,9 @@ static int selectExpander(Walker *pWalker, Select *p){
             sColname.z = zColname;
             sColname.n = sqlite3Strlen30(zColname);
             sqlite3ExprListSetName(pParse, pNew, &sColname, 0);
+            if( pNew && (p->selFlags & SF_NestedFrom)!=0 ){
+              pNew->a[pNew->nExpr-1].zSpan = sqlite3DbStrDup(db, zTabName);
+            }
             sqlite3DbFree(db, zToFree);
           }
         }

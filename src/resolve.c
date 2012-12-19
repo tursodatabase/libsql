@@ -206,6 +206,20 @@ static int lookupName(
   pExpr->pTab = 0;
   ExprSetIrreducible(pExpr);
 
+  /* Translate the schema name in zDb into a pointer to the corresponding
+  ** schema.  If not found, pSchema will remain NULL and nothing will match
+  ** resulting in an appropriate error message toward the end of this routine
+  */
+  if( zDb ){
+    for(i=0; i<db->nDb; i++){
+      assert( db->aDb[i].zName );
+      if( sqlite3StrICmp(db->aDb[i].zName,zDb)==0 ){
+        pSchema = db->aDb[i].pSchema;
+        break;
+      }
+    }
+  }
+
   /* Start at the inner-most context and move outward until a match is found */
   while( pNC && cnt==0 ){
     ExprList *pEList;
@@ -214,31 +228,36 @@ static int lookupName(
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
         Table *pTab;
-        int iDb;
         Column *pCol;
   
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
-        iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
         assert( pTab->nCol>0 );
+        if( zDb && pTab->pSchema!=pSchema ){
+          continue;
+        }
+        if( pItem->pSelect && (pItem->pSelect->selFlags & SF_NestedFrom)!=0 ){
+          ExprList *pEList = pItem->pSelect->pEList;
+          int hit = 0;
+          for(j=0; j<pEList->nExpr; j++){
+            if( zTab && sqlite3StrICmp(pEList->a[j].zSpan, zTab)!=0 ) continue;
+            if( sqlite3StrICmp(pEList->a[j].zName, zCol)==0 ){
+              cnt++;
+              cntTab = 2;
+              pMatch = pItem;
+              pExpr->iColumn = j;
+            }
+          }
+          if( hit || zTab==0 ) continue;
+        }
         if( zTab ){
-          if( pItem->zAlias ){
-            char *zTabName = pItem->zAlias;
-            if( sqlite3StrICmp(zTabName, zTab)!=0 ) continue;
-          }else{
-            char *zTabName = pTab->zName;
-            if( NEVER(zTabName==0) || sqlite3StrICmp(zTabName, zTab)!=0 ){
-              continue;
-            }
-            if( zDb!=0 && sqlite3StrICmp(db->aDb[iDb].zName, zDb)!=0 ){
-              continue;
-            }
+          const char *zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;
+          assert( zTabName!=0 );
+          if( sqlite3StrICmp(zTabName, zTab)!=0 ){
+            continue;
           }
         }
         if( 0==(cntTab++) ){
-          pExpr->iTable = pItem->iCursor;
-          pExpr->pTab = pTab;
-          pSchema = pTab->pSchema;
           pMatch = pItem;
         }
         for(j=0, pCol=pTab->aCol; j<pTab->nCol; j++, pCol++){
@@ -252,17 +271,19 @@ static int lookupName(
               if( nameInUsingClause(pItem->pUsing, zCol) ) continue;
             }
             cnt++;
-            pExpr->iTable = pItem->iCursor;
-            pExpr->pTab = pTab;
             pMatch = pItem;
-            pSchema = pTab->pSchema;
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
             pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
             break;
           }
         }
       }
-    }
+      if( pMatch ){
+        pExpr->iTable = pMatch->iCursor;
+        pExpr->pTab = pMatch->pTab;
+        pSchema = pExpr->pTab->pSchema;
+      }
+    } /* if( pSrcList ) */
 
 #ifndef SQLITE_OMIT_TRIGGER
     /* If we have not already resolved the name, then maybe 
