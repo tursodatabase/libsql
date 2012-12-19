@@ -403,7 +403,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
-  pTerm->pExpr = p;
+  pTerm->pExpr = sqlite3ExprSkipCollate(p);
   pTerm->wtFlags = wtFlags;
   pTerm->pWC = pWC;
   pTerm->iParent = -1;
@@ -1188,7 +1188,8 @@ static void exprAnalyze(
   }
   pTerm = &pWC->a[idxTerm];
   pMaskSet = pWC->pMaskSet;
-  pExpr = sqlite3ExprSkipCollate(pTerm->pExpr);
+  pExpr = pTerm->pExpr;
+  assert( pExpr->op!=TK_AS && pExpr->op!=TK_COLLATE );
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
