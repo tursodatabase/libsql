@@ -1,5 +1,5 @@
-C Better\sresolution\sof\stable\sand\scolumn\snames\sin\sjoins\swhere\ssome\sof\sthe\nterms\sof\sthe\sFROM\sclause\sare\sparenthesized.
-D 2012-12-19T02:36:45.854
+C Add\scommentary\sto\sthe\sExprList\sobject\sto\sexplain\show\szSpan\sis\soverloaded.\nAdd\stest\scases\sfor\sthe\snew\sname\sresolution\sfunctionality.
+D 2012-12-19T13:41:03.688
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h f7581eb79d822a6993d6aa31baf1e67e6ff17d19
+F src/sqliteInt.h c708c868f10c491bd32a7e1210f4a314448fa728
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -698,6 +698,7 @@ F test/select9.test c0ca3cd87a8ebb04de2cb1402c77df55d911a0ea
 F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
+F test/selectD.test 243db87cd12f62aca4fe3f8b9465dfeab30b4d7a
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1026,10 +1027,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7fecced466d86a66b0b751c5b5608141e134fe2d
-R edfa9398c5c900d8f6d5f20d3c0d802e
-T *branch * name-resolution-fix
-T *sym-name-resolution-fix *
-T -sym-trunk *
+P 7344e791b9456286ecdca6d45f2f5260fb3f10e2
+R be36637b6c87220d87a455d3dd649bed
 U drh
-Z 3b6c2dbf5da1f286c0c463d165d85b47
+Z 4a19eec8d8a61f22fdf7238cb2d39c20
