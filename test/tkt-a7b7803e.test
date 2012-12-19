@@ -1,0 +1,29 @@
+# 2012 December 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests that ticket [a7b7803e8d1e8699cd8a460a38133b98892d2e17] has
+# been fixed.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+
+do_test tkt-a7b7803e.1 {
+  db eval {
+    CREATE TABLE t1(a);
+    SELECT (t1.a==0) AS x
+      FROM t1
+     WHERE a=0 OR x;
+  }
+} {}
+finish_test
