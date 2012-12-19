@@ -1,5 +1,5 @@
-C Proposed\sfix\sfor\sticket\s[a7b7803e8d1e8699cd8a].
-D 2012-12-19T15:53:51.227
+C Additional\stest\scases\sinvolving\sthe\suse\sof\sa\sresult\scolumn\sspecified\sby\sits\n"AS"\sname\sas\sa\slogical\sterm\sof\sthe\sWHERE\sclause.\nTicket\s[a7b7803e8d1e8699cd].
+D 2012-12-19T16:25:55.128
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -784,7 +784,7 @@ F test/tkt-8454a207b9.test c583a9f814a82a2b5ba95207f55001c9f0cd816c
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test fa9c71192f7e2ea2d51bf078bc34e8da6088bf71
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
-F test/tkt-a7b7803e.test 0baef2d1e7566e20a35bf6821d76a307ed78e3aa
+F test/tkt-a7b7803e.test 86a86ba1912ac82b04137483a79e3d16b0d90583
 F test/tkt-b1d3a2e531.test 610ef582413171b379652663111b1f996d9f8f78
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test a95e8cdad0b98af1853ac7f0afd4ab27b77bf5f3
@@ -1027,10 +1027,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7fecced466d86a66b0b751c5b5608141e134fe2d
-R 8b56234d9cc98530620effaeba3830d6
-T *branch * tkt-a7b7803e
-T *sym-tkt-a7b7803e *
-T -sym-trunk *
+P 3d0e00c731c39af91bad74c6d74853375bac356e
+R 0f7d6d3c7840770b9dfff3dff8a63da9
 U drh
-Z 4056ade20a6836865fb5397034c830dc
+Z 77f4cb693913cee8634bb5c81a279a20
