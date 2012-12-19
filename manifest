@@ -1,5 +1,5 @@
-C Backport\sto\sthe\s3.7.15\sbranch\s\nthe\sfix\sto\sthe\ssegfault\sproblem\sof\sticket\s[a7b7803e8d1e869]\swhich\sinvolved\nthe\suse\sof\s"AS"\snamed\sresult\scolumns\sas\slogical\sterms\sof\sthe\sWHERE\sclause.\nAlso,\schange\sthe\sversion\snumber\sto\s3.7.15.1.
-D 2012-12-19T17:10:16.499
+C Version\s3.7.15.1
+D 2012-12-19T20:39:10.454
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1026,10 +1026,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cd0b37c52658bfdf992b1e3dc467bae1835a94ae
+P bae528f486f51d0516c3ff2a983cb2e61a6a173f
 R 37df6a77f239e5cf5347f1930acc76e7
-T *branch * branch-3.7.15
-T *sym-branch-3.7.15 *
-T -sym-trunk *
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.15.1 *
 U drh
-Z eb40a4838ecc9791bafcdeaed13051da
+Z 25a70064211c8733a6471f87a4c276bc
