@@ -65,5 +65,20 @@ do_test tkt-a7b7803e.6 {
      ORDER BY M.a, N.a
   }
 } {1 fuzzy 1 first}
+do_test tkt-a7b7803e.7 {
+  db eval {
+    SELECT (M.a=99) AS x, M.b, (N.b='first') AS y, N.b
+      FROM t1 M JOIN t1 N ON x AND y
+     ORDER BY M.a, N.a
+  }
+} {1 fuzzy 1 first}
+do_test tkt-a7b7803e.8 {
+  db eval {
+    SELECT (M.a=99) AS x, M.b, (N.b='first') AS y, N.b
+      FROM t1 M JOIN t1 N ON x
+     ORDER BY M.a, N.a
+  }
+} {1 fuzzy 1 first 1 fuzzy 0 fuzzy}
+
 
 finish_test
