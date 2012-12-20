@@ -1,5 +1,5 @@
-C Fix\sthe\ssegfault\sproblem\sof\sticket\s[a7b7803e8d1e869]\swhich\sinvolved\nthe\suse\sof\s"AS"\snamed\sresult\scolumns\sas\slogical\sterms\sof\sthe\sWHERE\sclause.
-D 2012-12-19T16:58:02.074
+C Add\sPRAGMA\sforeign_key_check.\s\sName\sthe\schild\sand\sparent\stables\sas\spart\sof\na\s"foreign\skey\smismatch"\serror.
+D 2012-12-20T01:15:20.959
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -132,7 +132,7 @@ F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c 0e41d66d868b37dbc0e041c342e0036fad27e705
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c dcb7c37a4bf526ded7b24a01a60fe071bcd160a2
+F src/fkey.c 5b7a12e2f8620e855b0478a9a6798df9967bb277
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -168,7 +168,7 @@ F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c 015723c48072781d2740e310ab04dc92956b76d1
+F src/pragma.c 1ff115f620d9496fe5018306b644ab9ef7e26a3c
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -179,7 +179,7 @@ F src/shell.c e392dd1ccbb77cc1d75a8367a89b473c24bea019
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h f7581eb79d822a6993d6aa31baf1e67e6ff17d19
+F src/sqliteInt.h 2e5d50f26abf7cbc6162117735379d412f4091da
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -383,7 +383,7 @@ F test/e_delete.test 89aa84d3d1bd284a0689ede04bce10226a5aeaa5
 F test/e_droptrigger.test afd5c4d27dec607f5997a66bf7e2498a082cb235
 F test/e_dropview.test 583411e470458c5d76148542cfb5a5fa84c8f93e
 F test/e_expr.test 5489424d3d9a452ac3701cdf4b680ae31a157894
-F test/e_fkey.test a79ab1d3213c7ac64621eec28f8e8bb219775445
+F test/e_fkey.test 89a2ff734a33693b997534eff90724573948be7b
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test d5331cc95e101af2508159fc98b6801631659ffe
 F test/e_reindex.test dfedfc32c5a282b0596c6537cbcd4217fbb1a216
@@ -409,10 +409,11 @@ F test/fallocate.test b5d34437bd7ab01d41b1464b8117aefd4d32160e
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test ffa17b5aebc3eb4b1e3be1ccb5ee906ffbd97f6e
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 080969fe219b3b082b0e097ac18c6af2e5b0631f
+F test/fkey2.test 5aa44e7153928a1f002803f94aaab4c76a7ceac2
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test c6c8f9f9be885f95c85c7bceb26f243ad906fd49
-F test/fkey_malloc.test c3a12acd053c976de09036498eef09b83afa4a80
+F test/fkey5.test 0bf64f2d19ad80433ca0b24edbf604a18b353d5f
+F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -1027,7 +1028,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7fecced466d86a66b0b751c5b5608141e134fe2d 0ae142178d5ff874a4df58d699adad3a41e3d8d2
-R 50795a0c6ec500ee7d72d138c83ca2b4
+P b3c9e8f81275fe07272c01f66b16c16417f034af b5a8f3160b5dc1397312add3c5410e7e0a12b75e
+R c25a7b70b2b47eedc79e89bea857f6d5
 U drh
-Z dd417560d581bba91dab25239d7f612a
+Z 54888f90388c5aea5593479ed7ab2502
