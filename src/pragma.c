@@ -1190,7 +1190,8 @@ void sqlite3Pragma(
         addrOk = sqlite3VdbeMakeLabel(v);
         if( pIdx==0 ){
           int iKey = pFK->aCol[0].iFrom;
-          if( iKey>=0 && iKey!=pTab->iPKey ){
+          assert( iKey>=0 && iKey<pTab->nCol );
+          if( iKey!=pTab->iPKey ){
             sqlite3VdbeAddOp3(v, OP_Column, 0, iKey, regRow);
             sqlite3ColumnDefault(v, pTab, iKey, regRow);
             sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk);
