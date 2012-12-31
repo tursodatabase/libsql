@@ -342,13 +342,13 @@ static int re_hex(int c, int *pV){
   if( c>='0' && c<='9' ){
     c -= '0';
   }else if( c>='a' && c<='f' ){
-    c -= 'a' + 10;
+    c -= 'a' - 10;
   }else if( c>='A' && c<='F' ){
-    c -= 'A' + 10;
+    c -= 'A' - 10;
   }else{
     return 0;
   }
-  *pV = (*pV)*16 + c;
+  *pV = (*pV)*16 + (c & 0xff);
   return 1;
 }
 
@@ -356,7 +356,7 @@ static int re_hex(int c, int *pV){
 ** return its intepretation.
 */
 static unsigned re_esc_char(ReCompiled *p){
-  static const char zEsc[] = "afnrtv\\()*.+?[$^{|";
+  static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
   static const char zTrans[] = "\a\f\n\r\t\v";
   int i, v = 0;
   char c = p->zIn[0];
@@ -381,7 +381,7 @@ static unsigned re_esc_char(ReCompiled *p){
   }
   for(i=0; zEsc[i] && zEsc[i]!=c; i++){}
   if( zEsc[i] ){
-    if( c<6 ) c = zTrans[i];
+    if( i<6 ) c = zTrans[i];
     p->zIn++;
   }else{
     p->zErr = "unknown \\ escape";

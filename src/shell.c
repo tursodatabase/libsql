@@ -1482,7 +1482,7 @@ static void open_db(struct callback_data *p){
 #endif
 #ifdef SQLITE_ENABLE_REGEXP
     {
-      extern sqlite3_add_regexp_func(sqlite3*);
+      extern int sqlite3_add_regexp_func(sqlite3*);
       sqlite3_add_regexp_func(db);
     }
 #endif
