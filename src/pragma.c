@@ -948,9 +948,11 @@ void sqlite3Pragma(
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
-      int i;
+      int i, k;
       int nHidden = 0;
       Column *pCol;
+      Index *pPk;
+      for(pPk=pTab->pIndex; pPk && pPk->autoIndex!=2; pPk=pPk->pNext){}
       sqlite3VdbeSetNumCols(v, 6);
       pParse->nMem = 6;
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cid", SQLITE_STATIC);
@@ -975,8 +977,14 @@ void sqlite3Pragma(
         }else{
           sqlite3VdbeAddOp2(v, OP_Null, 0, 5);
         }
-        sqlite3VdbeAddOp2(v, OP_Integer,
-                            (pCol->colFlags&COLFLAG_PRIMKEY)!=0, 6);
+        if( (pCol->colFlags & COLFLAG_PRIMKEY)==0 ){
+          k = 0;
+        }else if( pPk==0 ){
+          k = 1;
+        }else{
+          for(k=1; ALWAYS(k<=pTab->nCol) && pPk->aiColumn[k-1]!=i; k++){}
+        }
+        sqlite3VdbeAddOp2(v, OP_Integer, k, 6);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
       }
     }
