@@ -1,5 +1,5 @@
-C Enhance\sthe\stable_info\spragma\sso\sthat\sthe\spk\scolumn\sshows\sthe\sorder\sof\sthe\ncolumns\sin\sa\smulti-column\sprimary\skey.
-D 2013-01-01T13:55:31.529
+C Reduce\sthe\ssize\sof\sthe\sIndex\sobject\s(by\s8\sbytes\son\sx64).
+D 2013-01-01T14:01:28.252
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 2e5d50f26abf7cbc6162117735379d412f4091da
+F src/sqliteInt.h 2091fb64a2274434a791951cb97ef8b1bd44c29b
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1030,7 +1030,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a611c75061c8e821cb266fcb09759100d4a646b0
-R e68c4dd2b29a4a981e4da04205873c7d
+P 3076a89015071e9b40e728bd55160e3a6ed98820
+R ec755f0b3e93517441aaf44db561d61d
 U drh
-Z 9a369736ae7dc5da841cecf2065e7d10
+Z 0e046cc23277e52323ecef741dd3466e
