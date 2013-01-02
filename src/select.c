@@ -1375,6 +1375,9 @@ static int selectColumnsFromExprList(
     for(j=cnt=0; j<i; j++){
       if( sqlite3StrICmp(aCol[j].zName, zName)==0 ){
         char *zNewName;
+        int k;
+        for(k=nName-1; k>1 && sqlite3Isdigit(zName[k]); k--){}
+        if( zName[k]==':' ) nName = k;
         zName[nName] = 0;
         zNewName = sqlite3MPrintf(db, "%s:%d", zName, ++cnt);
         sqlite3DbFree(db, zName);

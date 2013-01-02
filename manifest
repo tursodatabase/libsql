@@ -1,5 +1,5 @@
-C Merge\sall\sthe\slatest\strunk\schanges\sinto\sthe\sname-resolution\senhancement\sbranch.
-D 2013-01-02T12:29:05.642
+C When\sresolving\sresult-set\sname\scollisions,\smake\sthem\sx:1,\sx:2,\sx:3,\setc.\ninstead\sof\sx:1,\sx:1:1,\sx:1;1;1.
+D 2013-01-02T14:57:32.750
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 3104a5e4c2cb6e3a813b7266cbd541dc91e26fad
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 3cce5b09cae6eaf23276bb2e5551a9d22cd7ae3d
+F src/select.c bdede5fc109ab090dd6ce5edf6090434dc41bc0e
 F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1031,7 +1031,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3e7d84db7861911c9b2c7dcdabe0b213bf483d79 5a2ac944839ec0c5b9147a035c6cbf0935f3d202
-R b00123b22cae8fcb124aaeac1cbbab83
+P a5f4d2b641f7fafb6f1a312efeffb10f213d2d0a
+R c34797fdba8f90f34f8f47a91737b456
 U drh
-Z 0dd559531357e580f4a230ac4f1af1d6
+Z 110af146cb022182bd89fc0a02fd1d9b
