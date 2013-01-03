@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sassert()\sstatement\s(ticket\s[beba9cae6345a]).\s\sFix\sother\nminor\sproblems\sin\sthe\sname\sresolution\slogic.
-D 2013-01-03T16:54:20.331
+C Further\scorner-case\sfixes\sto\sthe\sname\sresolution\slogic.
+D 2013-01-03T17:34:28.998
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,9 +172,9 @@ F src/pragma.c 8907c559d3127729d3bcedb1fe5c59fc196d3a17
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 2b3ae4d8578384caf2f19b42c5ccc0512ead84c3
+F src/resolve.c 521bdc0f6c7cf8246c0b9167d726d84005097c30
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 962a028bbb5d0bce997a0802ee806fe72403df4d
+F src/select.c 395e458a6dc611cbe1179f424753f0c344957607
 F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1031,7 +1031,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4cf5ed7ea198abc32f8118e79490e77f847f08c1
-R 7012a50322397b26dcf2d91c29b5b20b
+P afe96a118c8a9627819ba5960aa83a607e734087
+R f686e430b5e8ddbc351355c5b12308be
 U drh
-Z 261d0c48c10993cca01d26b0f623d70a
+Z 596a0ebdf23f364031e40c92982646b7

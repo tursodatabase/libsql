@@ -271,6 +271,7 @@ static int lookupName(
               cntTab = 2;
               pMatch = pItem;
               pExpr->iColumn = j;
+              hit = 1;
             }
           }
           if( hit || zTab==0 ) continue;

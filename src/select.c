@@ -3394,8 +3394,14 @@ static int selectExpander(Walker *pWalker, Select *p){
     ExprList *pNew = 0;
     int flags = pParse->db->flags;
     int longNames = (flags & SQLITE_FullColNames)!=0
-                      && (flags & SQLITE_ShortColNames)==0
-                      && (p->selFlags & SF_NestedFrom)==0;
+                      && (flags & SQLITE_ShortColNames)==0;
+
+    /* When processing FROM-clause subqueries, it is always the case
+    ** that full_column_names=OFF and short_column_names=ON.  The
+    ** sqlite3ResultSetOfSelect() routine makes it so. */
+    assert( (p->selFlags & SF_NestedFrom)==0
+          || ((flags & SQLITE_FullColNames)==0 &&
+              (flags & SQLITE_ShortColNames)!=0) );
 
     for(k=0; k<pEList->nExpr; k++){
       pE = a[k].pExpr;
@@ -3484,7 +3490,7 @@ static int selectExpander(Walker *pWalker, Select *p){
               Expr *pLeft;
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
-              if( zSchemaName && iDb>0 ){
+              if( zSchemaName ){
                 pLeft = sqlite3Expr(db, TK_ID, zSchemaName);
                 pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr, 0);
               }
