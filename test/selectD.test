@@ -25,10 +25,12 @@ for {set i 1} {$i<=2} {incr i} {
   }
   do_test selectD-$i.0 {
     db eval {
+      ATTACH ':memory:' AS aux1;
       CREATE TABLE t1(a,b); INSERT INTO t1 VALUES(111,'x1');
       CREATE TABLE t2(a,b); INSERT INTO t2 VALUES(222,'x2');
       CREATE TEMP TABLE t3(a,b); INSERT INTO t3 VALUES(333,'x3');
-      CREATE TABLE t4(a,b); INSERT INTO t4 VALUES(444,'x4');
+      CREATE TABLE main.t4(a,b); INSERT INTO main.t4 VALUES(444,'x4');
+      CREATE TABLE aux1.t4(a,b); INSERT INTO aux1.t4 VALUES(555,'x5');
     }
   } {}
   do_test selectD-$i.1 {
@@ -72,6 +74,38 @@ for {set i 1} {$i<=2} {incr i} {
                      ON t2.a=t1.a+111;
     }
   } {333 x3 222 x2}
+  do_test selectD-$i.2.4 {
+    db eval {
+      SELECT *
+        FROM t1 JOIN (t2 JOIN (main.t4 JOIN aux1.t4 ON aux1.t4.a=main.t4.a+111)
+                              ON main.t4.a=t2.a+222)
+                     ON t2.a=t1.a+111;
+    }
+  } {111 x1 222 x2 444 x4 555 x5}
+  do_test selectD-$i.2.5 {
+    db eval {
+      SELECT *
+        FROM t1 JOIN (t2 JOIN (main.t4 AS x JOIN aux1.t4 ON aux1.t4.a=x.a+111)
+                              ON x.a=t2.a+222)
+                     ON t2.a=t1.a+111;
+    }
+  } {111 x1 222 x2 444 x4 555 x5}
+  do_test selectD-$i.2.6 {
+    catchsql {
+      SELECT *
+        FROM t1 JOIN (t2 JOIN (main.t4 JOIN aux.t4 ON aux.t4.a=main.t4.a+111)
+                              ON main.t4.a=t2.a+222)
+                     ON t2.a=t1.a+111;
+    }
+  } {1 {no such table: aux.t4}}
+  do_test selectD-$i.2.7 {
+    db eval {
+      SELECT x.a, y.b
+        FROM t1 JOIN (t2 JOIN (main.t4 x JOIN aux1.t4 y ON y.a=x.a+111)
+                              ON x.a=t2.a+222)
+                     ON t2.a=t1.a+111;
+    }
+  } {444 x5}
   do_test selectD-$i.3 {
     db eval {
       UPDATE t2 SET a=111;

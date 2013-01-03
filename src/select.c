@@ -1336,8 +1336,6 @@ static int selectColumnsFromExprList(
     /* Get an appropriate name for the column
     */
     p = sqlite3ExprSkipCollate(pEList->a[i].pExpr);
-    assert( p->pRight==0 || ExprHasProperty(p->pRight, EP_IntValue)
-               || p->pRight->u.zToken==0 || p->pRight->u.zToken[0]!=0 );
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
       zName = sqlite3DbStrDup(db, zName);
@@ -3429,18 +3427,18 @@ static int selectExpander(Walker *pWalker, Select *p){
           Select *pSub = pFrom->pSelect;
           char *zTabName = pFrom->zAlias;
           const char *zSchemaName = 0;
+          int iDb;
           if( zTabName==0 ){
             zTabName = pTab->zName;
           }
           if( db->mallocFailed ) break;
           if( pSub==0 || (pSub->selFlags & SF_NestedFrom)==0 ){
-            int iDb;
             pSub = 0;
             if( zTName && sqlite3StrICmp(zTName, zTabName)!=0 ){
               continue;
             }
             iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-            zSchemaName = iDb>=0 ? db->aDb[i].zName : "*";
+            zSchemaName = iDb>=0 ? db->aDb[iDb].zName : "*";
           }
           for(j=0; j<pTab->nCol; j++){
             char *zName = pTab->aCol[j].zName;
@@ -3448,6 +3446,7 @@ static int selectExpander(Walker *pWalker, Select *p){
             char *zToFree;   /* Malloced string that needs to be freed */
             Token sColname;  /* Computed column name as a token */
 
+            assert( zName );
             if( zTName && pSub
              && sqlite3MatchSpanName(pSub->pEList->a[j].zSpan, 0, zTName, 0)==0
             ){
@@ -3485,6 +3484,10 @@ static int selectExpander(Walker *pWalker, Select *p){
               Expr *pLeft;
               pLeft = sqlite3Expr(db, TK_ID, zTabName);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
+              if( zSchemaName && iDb>0 ){
+                pLeft = sqlite3Expr(db, TK_ID, zSchemaName);
+                pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pExpr, 0);
+              }
               if( longNames ){
                 zColname = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
                 zToFree = zColname;
@@ -3500,9 +3503,11 @@ static int selectExpander(Walker *pWalker, Select *p){
               struct ExprList_item *pX = &pNew->a[pNew->nExpr-1];
               if( pSub ){
                 pX->zSpan = sqlite3DbStrDup(db, pSub->pEList->a[j].zSpan);
+                testcase( pX->zSpan==0 );
               }else{
                 pX->zSpan = sqlite3MPrintf(db, "%s.%s.%s",
                                            zSchemaName, zTabName, zColname);
+                testcase( pX->zSpan==0 );
               }
               pX->bSpanIsTab = 1;
             }

@@ -262,9 +262,6 @@ static int lookupName(
         pTab = pItem->pTab;
         assert( pTab!=0 && pTab->zName!=0 );
         assert( pTab->nCol>0 );
-        if( zDb && pTab->pSchema!=pSchema ){
-          continue;
-        }
         if( pItem->pSelect && (pItem->pSelect->selFlags & SF_NestedFrom)!=0 ){
           ExprList *pEList = pItem->pSelect->pEList;
           int hit = 0;
@@ -277,6 +274,9 @@ static int lookupName(
             }
           }
           if( hit || zTab==0 ) continue;
+        }
+        if( zDb && pTab->pSchema!=pSchema ){
+          continue;
         }
         if( zTab ){
           const char *zTabName = pItem->zAlias ? pItem->zAlias : pTab->zName;
