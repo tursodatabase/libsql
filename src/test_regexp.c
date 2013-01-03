@@ -88,19 +88,30 @@ typedef struct ReStateSet {
   ReStateNumber *aState;      /* Current states */
 } ReStateSet;
 
+/* An input string read one character at a time.
+*/
+typedef struct ReInput ReInput;
+struct ReInput {
+  const unsigned char *z;  /* All text */
+  int i;                   /* Next byte to read */
+  int mx;                  /* EOF when i>=mx */
+};
+
 /* A compiled NFA (or an NFA that is in the process of being compiled) is
 ** an instance of the following object.
 */
-typedef struct ReCompiled {
-  const unsigned char *zIn;   /* Regular expression text */
+typedef struct ReCompiled ReCompiled;
+struct ReCompiled {
+  ReInput sIn;                /* Regular expression text */
   const char *zErr;           /* Error message to return */
   char *aOp;                  /* Operators for the virtual machine */
   int *aArg;                  /* Arguments to each operator */
+  unsigned (*xNextChar)(ReInput*);  /* Next character function */
   char zInit[12];             /* Initial text to match */
   int nInit;                  /* Number of characters in zInit */
   unsigned nState;            /* Number of entries in aOp[] and aArg[] */
   unsigned nAlloc;            /* Slots allocated for aOp[] and aArg[] */
-} ReCompiled;
+};
 
 /* Add a state to the given state set if it is not already there */
 static void re_add_state(ReStateSet *pSet, int newState){
@@ -114,29 +125,34 @@ static void re_add_state(ReStateSet *pSet, int newState){
 ** be clear:  this routine converts utf8 to unicode.  This routine is 
 ** optimized for the common case where the next character is a single byte.
 */
-static unsigned re_next_char(const unsigned char **pzIn){
-  unsigned c = **pzIn;
-  if( c>0 ) (*pzIn)++;
+static unsigned re_next_char(ReInput *p){
+  unsigned c;
+  if( p->i>=p->mx ) return 0;
+  c = p->z[p->i++];
   if( c>0x80 ){
-    if( (c&0xe0)==0xc0 && ((*pzIn)[0]&0xc0)==0x80 ){
-      c = (c&0x1f)<<6 | ((*pzIn)[0]&0x3f);
-      (*pzIn)++;
+    if( (c&0xe0)==0xc0 && p->i<p->mx && (p->z[p->i]&0xc0)==0x80 ){
+      c = (c&0x1f)<<6 | (p->z[p->i++]&0x3f);
       if( c<0x80 ) c = 0xfffd;
-    }else if( (c&0xf0)==0xe0 && ((*pzIn)[0]&0xc0)==0x80
-           && ((*pzIn)[1]&0xc0)==0x80 ){
-      c = (c&0x0f)<<12 | (((*pzIn)[0]&0x3f)<<6) | ((*pzIn)[1]&0x3f);
-      *pzIn += 2;
+    }else if( (c&0xf0)==0xe0 && p->i+1<p->mx && (p->z[p->i]&0xc0)==0x80
+           && (p->z[p->i+1]&0xc0)==0x80 ){
+      c = (c&0x0f)<<12 | ((p->z[p->i]&0x3f)<<6) | (p->z[p->i+1]&0x3f);
+      p->i += 2;
       if( c<0x3ff || (c>=0xd800 && c<=0xdfff) ) c = 0xfffd;
-    }else if( (c&0xf8)==0xf0 && ((*pzIn)[0]&0xc0)==0x80
-           && ((*pzIn)[1]&0xc0)==0x80 && ((*pzIn)[2]&0xc0)==0x80 ){
-      c = (c&0x07)<<18 | (((*pzIn)[0]&0x3f)<<12) | (((*pzIn)[1]&0x3f)<<6)
-                       | ((*pzIn)[2]&0x3f);
-      *pzIn += 3;
+    }else if( (c&0xf8)==0xf0 && p->i+3<p->mx && (p->z[p->i]&0xc0)==0x80
+           && (p->z[p->i+1]&0xc0)==0x80 && (p->z[p->i+2]&0xc0)==0x80 ){
+      c = (c&0x07)<<18 | ((p->z[p->i]&0x3f)<<12) | ((p->z[p->i+1]&0x3f)<<6)
+                       | (p->z[p->i+2]&0x3f);
+      p->i += 3;
       if( c<0xffff ) c = 0xfffd;
     }else{
       c = 0xfffd;
     }
   }
+  return c;
+}
+static unsigned re_next_char_nocase(ReInput *p){
+  unsigned c = re_next_char(p);
+  if( c>='A' && c<='Z' ) c += 'a' - 'A';
   return c;
 }
 
@@ -159,7 +175,7 @@ static int re_space_char(int c){
 /* Run a compiled regular expression on the zero-terminated input
 ** string zIn[].  Return true on a match and false if there is no match.
 */
-static int re_exec(ReCompiled *pRe, const unsigned char *zIn){
+int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
   ReStateSet aStateSet[2], *pThis, *pNext;
   ReStateNumber aSpace[100];
   ReStateNumber *pToFree;
@@ -168,19 +184,25 @@ static int re_exec(ReCompiled *pRe, const unsigned char *zIn){
   int c = RE_EOF+1;
   int cPrev = 0;
   int rc = 0;
-  
+  ReInput in;
+
+  in.z = zIn;
+  in.i = 0;
+  in.mx = nIn>=0 ? nIn : strlen((char*)zIn);
   if( pRe->nInit ){
     unsigned char x = pRe->zInit[0];
-    while( zIn[0] && (zIn[0]!=x || memcmp(zIn, pRe->zInit, pRe->nInit)!=0) ){
-      zIn++;
+    while( in.i+pRe->nInit<=in.mx 
+        && (zIn[in.i]!=x || memcmp(zIn+in.i, pRe->zInit, pRe->nInit)!=0)
+    ){
+      in.i++;
     }
-    if( zIn[0]==0 ) return 0;
+    if( in.i+pRe->nInit>in.mx ) return 0;
   }
   if( pRe->nState<=(sizeof(aSpace)/(sizeof(aSpace[0])*2)) ){
     pToFree = 0;
     aStateSet[0].aState = aSpace;
   }else{
-    pToFree = malloc( sizeof(ReStateNumber)*2*pRe->nState );
+    pToFree = sqlite3_malloc( sizeof(ReStateNumber)*2*pRe->nState );
     if( pToFree==0 ) return -1;
     aStateSet[0].aState = pToFree;
   }
@@ -190,7 +212,7 @@ static int re_exec(ReCompiled *pRe, const unsigned char *zIn){
   re_add_state(pNext, 0);
   while( c!=RE_EOF && pNext->nState>0 ){
     cPrev = c;
-    c = re_next_char(&zIn);
+    c = pRe->xNextChar(&in);
     pThis = pNext;
     pNext = &aStateSet[iSwap];
     iSwap = 1 - iSwap;
@@ -250,7 +272,7 @@ static int re_exec(ReCompiled *pRe, const unsigned char *zIn){
         }
         case RE_OP_ACCEPT: {
           rc = 1;
-          goto re_exec_end;
+          goto re_match_end;
         }
         case RE_OP_CC_INC:
         case RE_OP_CC_EXC: {
@@ -282,8 +304,8 @@ static int re_exec(ReCompiled *pRe, const unsigned char *zIn){
   for(i=0; i<pNext->nState; i++){
     if( pRe->aOp[pNext->aState[i]]==RE_OP_ACCEPT ){ rc = 1; break; }
   }
-re_exec_end:
-  free(pToFree);
+re_match_end:
+  sqlite3_free(pToFree);
   return rc;
 }
 
@@ -292,10 +314,10 @@ re_exec_end:
 static int re_resize(ReCompiled *p, int N){
   char *aOp;
   int *aArg;
-  aOp = realloc(p->aOp, N*sizeof(p->aOp[0]));
+  aOp = sqlite3_realloc(p->aOp, N*sizeof(p->aOp[0]));
   if( aOp==0 ) return 1;
   p->aOp = aOp;
-  aArg = realloc(p->aArg, N*sizeof(p->aArg[0]));
+  aArg = sqlite3_realloc(p->aArg, N*sizeof(p->aArg[0]));
   if( aArg==0 ) return 1;
   p->aArg = aArg;
   p->nAlloc = N;
@@ -359,30 +381,33 @@ static unsigned re_esc_char(ReCompiled *p){
   static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";
   static const char zTrans[] = "\a\f\n\r\t\v";
   int i, v = 0;
-  char c = p->zIn[0];
-  if( c=='u' ){
+  char c;
+  if( p->sIn.i>=p->sIn.mx ) return 0;
+  c = p->sIn.z[p->sIn.i];
+  if( c=='u' && p->sIn.i+5<p->sIn.mx ){
     v = 0;
-    if( re_hex(p->zIn[1],&v)
-     && re_hex(p->zIn[2],&v)
-     && re_hex(p->zIn[3],&v)
-     && re_hex(p->zIn[4],&v)
+    const unsigned char *zIn = p->sIn.z + p->sIn.i;
+    if( re_hex(zIn[1],&v)
+     && re_hex(zIn[2],&v)
+     && re_hex(zIn[3],&v)
+     && re_hex(zIn[4],&v)
     ){
-      p->zIn += 5;
+      p->sIn.i += 5;
       return v;
     }
   }
   if( c=='x' ){
     v = 0;
-    for(i=1; re_hex(p->zIn[i], &v); i++){}
+    for(i=1; p->sIn.i<p->sIn.mx && re_hex(p->sIn.z[p->sIn.i+i], &v); i++){}
     if( i>1 ){
-      p->zIn += i;
+      p->sIn.i += i;
       return v;
     }
   }
   for(i=0; zEsc[i] && zEsc[i]!=c; i++){}
   if( zEsc[i] ){
     if( i<6 ) c = zTrans[i];
-    p->zIn++;
+    p->sIn.i++;
   }else{
     p->zErr = "unknown \\ escape";
   }
@@ -391,6 +416,11 @@ static unsigned re_esc_char(ReCompiled *p){
 
 /* Forward declaration */
 static const char *re_subcompile_string(ReCompiled*);
+
+/* Peek at the next byte of input */
+static unsigned char rePeek(ReCompiled *p){
+  return p->sIn.i<p->sIn.mx ? p->sIn.z[p->sIn.i] : 0;
+}
 
 /* Compile RE text into a sequence of opcodes.  Continue up to the
 ** first unmatched ")" character, then return.  If an error is found,
@@ -402,11 +432,11 @@ static const char *re_subcompile_re(ReCompiled *p){
   iStart = p->nState;
   zErr = re_subcompile_string(p);
   if( zErr ) return zErr;
-  while( p->zIn[0]=='|' ){
+  while( rePeek(p)=='|' ){
     iEnd = p->nState;
     re_insert(p, iStart, RE_OP_FORK, iEnd + 2 - iStart);
     iGoto = re_append(p, RE_OP_GOTO, 0);
-    p->zIn++;
+    p->sIn.i++;
     zErr = re_subcompile_string(p);
     if( zErr ) return zErr;
     p->aArg[iGoto] = p->nState - iGoto;
@@ -423,26 +453,26 @@ static const char *re_subcompile_string(ReCompiled *p){
   int iStart;
   unsigned c;
   const char *zErr;
-  while( (c = re_next_char(&p->zIn))!=0 ){
+  while( (c = p->xNextChar(&p->sIn))!=0 ){
     iStart = p->nState;
     switch( c ){
       case '|':
       case '$': 
       case ')': {
-        p->zIn--;
+        p->sIn.i--;
         return 0;
       }
       case '(': {
         zErr = re_subcompile_re(p);
         if( zErr ) return zErr;
-        if( p->zIn[0]!=')' ) return "unmatched '('";
-        p->zIn++;
+        if( rePeek(p)!=')' ) return "unmatched '('";
+        p->sIn.i++;
         break;
       }
       case '.': {
-        if( p->zIn[0]=='*' ){
+        if( rePeek(p)=='*' ){
           re_append(p, RE_OP_ANYSTAR, 0);
-          p->zIn++;
+          p->sIn.i++;
         }else{ 
           re_append(p, RE_OP_ANY, 0);
         }
@@ -468,16 +498,16 @@ static const char *re_subcompile_string(ReCompiled *p){
         int m = 0, n = 0;
         int sz, j;
         if( iPrev<0 ) return "'{m,n}' without operand";
-        while( (c=p->zIn[0])>='0' && c<='9' ){ m = m*10 + c - '0'; p->zIn++; }
+        while( (c=rePeek(p))>='0' && c<='9' ){ m = m*10 + c - '0'; p->sIn.i++; }
         n = m;
         if( c==',' ){
-          p->zIn++;
+          p->sIn.i++;
           n = 0;
-          while( (c=p->zIn[0])>='0' && c<='9' ){ n = n*10 + c - '0'; p->zIn++; }
+          while( (c=rePeek(p))>='0' && c<='9' ){ n = n*10 + c-'0'; p->sIn.i++; }
         }
         if( c!='}' ) return "unmatched '{'";
         if( n>0 && n<m ) return "n less than m in '{m,n}'";
-        p->zIn++;
+        p->sIn.i++;
         sz = p->nState - iPrev;
         if( m==0 ){
           if( n==0 ) return "both m and n are zero in '{m,n}'";
@@ -497,27 +527,27 @@ static const char *re_subcompile_string(ReCompiled *p){
       }
       case '[': {
         int iFirst = p->nState;
-        if( p->zIn[0]=='^' ){
+        if( rePeek(p)=='^' ){
           re_append(p, RE_OP_CC_EXC, 0);
-          p->zIn++;
+          p->sIn.i++;
         }else{
           re_append(p, RE_OP_CC_INC, 0);
         }
-        while( (c = re_next_char(&p->zIn))!=0 ){
-          if( c=='[' && p->zIn[0]==':' ){
+        while( (c = p->xNextChar(&p->sIn))!=0 ){
+          if( c=='[' && rePeek(p)==':' ){
             return "POSIX character classes not supported";
           }
           if( c=='\\' ) c = re_esc_char(p);
-          if( p->zIn[0]=='-' && p->zIn[1] ){
+          if( rePeek(p)=='-' ){
             re_append(p, RE_OP_CC_RANGE, c);
-            p->zIn++;
-            c = re_next_char(&p->zIn);
+            p->sIn.i++;
+            c = p->xNextChar(&p->sIn);
             if( c=='\\' ) c = re_esc_char(p);
             re_append(p, RE_OP_CC_RANGE, c);
           }else{
             re_append(p, RE_OP_CC_VALUE, c);
           }
-          if( p->zIn[0]==']' ){ p->zIn++; break; }
+          if( rePeek(p)==']' ){ p->sIn.i++; break; }
         }
         if( c==0 ) return "unclosed '['";
         p->aArg[iFirst] = p->nState - iFirst;
@@ -525,7 +555,7 @@ static const char *re_subcompile_string(ReCompiled *p){
       }
       case '\\': {
         int specialOp = 0;
-        switch( p->zIn[0] ){
+        switch( rePeek(p) ){
           case 'b': specialOp = RE_OP_BOUNDARY;   break;
           case 'd': specialOp = RE_OP_DIGIT;      break;
           case 'D': specialOp = RE_OP_NOTDIGIT;   break;
@@ -535,7 +565,7 @@ static const char *re_subcompile_string(ReCompiled *p){
           case 'W': specialOp = RE_OP_NOTWORD;    break;
         }
         if( specialOp ){
-          p->zIn++;
+          p->sIn.i++;
           re_append(p, specialOp, 0);
         }else{
           c = re_esc_char(p);
@@ -557,30 +587,32 @@ static const char *re_subcompile_string(ReCompiled *p){
 ** regular expression.  Applications should invoke this routine once
 ** for every call to re_compile() to avoid memory leaks.
 */
-static void re_free(ReCompiled *pRe){
+void re_free(ReCompiled *pRe){
   if( pRe ){
-    free(pRe->aOp);
-    free(pRe->aArg);
+    sqlite3_free(pRe->aOp);
+    sqlite3_free(pRe->aArg);
+    sqlite3_free(pRe);
   }
 }
 
 /*
 ** Compile a textual regular expression in zIn[] into a compiled regular
-** expression suitable for us by re_exec() and return a pointer to the
+** expression suitable for us by re_match() and return a pointer to the
 ** compiled regular expression in *ppRe.  Return NULL on success or an
 ** error message if something goes wrong.
 */
-static const char *re_compile(ReCompiled **ppRe, const char *zIn){
+const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   ReCompiled *pRe;
   const char *zErr;
   int i, j;
 
   *ppRe = 0;
-  pRe = malloc( sizeof(*pRe) );
+  pRe = sqlite3_malloc( sizeof(*pRe) );
   if( pRe==0 ){
     return "out of memory";
   }
   memset(pRe, 0, sizeof(*pRe));
+  pRe->xNextChar = noCase ? re_next_char_nocase : re_next_char;
   if( re_resize(pRe, 30) ){
     re_free(pRe);
     return "out of memory";
@@ -590,17 +622,19 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn){
   }else{
     re_append(pRe, RE_OP_ANYSTAR, 0);
   }
-  pRe->zIn = (unsigned char*)zIn;
+  pRe->sIn.z = (unsigned char*)zIn;
+  pRe->sIn.i = 0;
+  pRe->sIn.mx = strlen((char*)pRe->sIn.z);
   zErr = re_subcompile_re(pRe);
   if( zErr ){
     re_free(pRe);
     return zErr;
   }
-  if( pRe->zIn[0]=='$' && pRe->zIn[1]==0 ){
+  if( rePeek(pRe)=='$' && pRe->sIn.i+1>=pRe->sIn.mx ){
     re_append(pRe, RE_OP_MATCH, RE_EOF);
     re_append(pRe, RE_OP_ACCEPT, 0);
     *ppRe = pRe;
-  }else if( pRe->zIn[0]==0 ){
+  }else if( pRe->sIn.i>=pRe->sIn.mx ){
     re_append(pRe, RE_OP_ACCEPT, 0);
     *ppRe = pRe;
   }else{
@@ -623,6 +657,7 @@ static const char *re_compile(ReCompiled **ppRe, const char *zIn){
         break;
       }
     }
+    if( j>0 && pRe->zInit[j-1]==0 ) j--;
     pRe->nInit = j;
   }
   return pRe->zErr;
@@ -651,8 +686,9 @@ static void re_sql_func(
   if( pRe==0 ){
     zPattern = (const char*)sqlite3_value_text(argv[0]);
     if( zPattern==0 ) return;
-    zErr = re_compile(&pRe, zPattern);
+    zErr = re_compile(&pRe, zPattern, 0);
     if( zErr ){
+      re_free(pRe);
       sqlite3_result_error(context, zErr, -1);
       return;
     }
@@ -664,7 +700,7 @@ static void re_sql_func(
   }
   zStr = (const unsigned char*)sqlite3_value_text(argv[1]);
   if( zStr!=0 ){
-    sqlite3_result_int(context, re_exec(pRe, zStr));
+    sqlite3_result_int(context, re_match(pRe, zStr, -1));
   }
 }
 
