@@ -1771,18 +1771,27 @@ struct Expr {
 ** list of "ID = expr" items in an UPDATE.  A list of expressions can
 ** also be used as the argument to a function, in which case the a.zName
 ** field is not used.
+**
+** By default the Expr.zSpan field holds a human-readable description of
+** the expression that is used in the generation of error messages and
+** column labels.  In this case, Expr.zSpan is typically the text of a
+** column expression as it exists in a SELECT statement.  However, if
+** the bSpanIsTab flag is set, then zSpan is overloaded to mean the name
+** of the result column in the form: DATABASE.TABLE.COLUMN.  This later
+** form is used for name resolution with nested FROM clauses.
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   int iECursor;          /* VDBE Cursor associated with this ExprList */
   struct ExprList_item { /* For each expression in the list */
-    Expr *pExpr;           /* The list of expressions */
-    char *zName;           /* Token associated with this expression */
-    char *zSpan;           /* Original text of the expression */
-    u8 sortOrder;          /* 1 for DESC or 0 for ASC */
-    u8 done;               /* A flag to indicate when processing is finished */
-    u16 iOrderByCol;       /* For ORDER BY, column number in result set */
-    u16 iAlias;            /* Index into Parse.aAlias[] for zName */
+    Expr *pExpr;            /* The list of expressions */
+    char *zName;            /* Token associated with this expression */
+    char *zSpan;            /* Original text of the expression */
+    u8 sortOrder;           /* 1 for DESC or 0 for ASC */
+    unsigned done :1;       /* A flag to indicate when processing is finished */
+    unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
+    u16 iOrderByCol;        /* For ORDER BY, column number in result set */
+    u16 iAlias;             /* Index into Parse.aAlias[] for zName */
   } *a;                  /* Alloc a power of two greater or equal to nExpr */
 };
 
@@ -3072,6 +3081,7 @@ void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*);
 int sqlite3CodeSubselect(Parse *, Expr *, int, int);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
+int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
 int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
