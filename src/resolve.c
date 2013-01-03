@@ -150,6 +150,35 @@ static int nameInUsingClause(IdList *pUsing, const char *zCol){
   return 0;
 }
 
+/*
+** Subqueries stores the original database, table and column names for their
+** result sets in ExprList.a[].zSpan, in the form "DATABASE.TABLE.COLUMN".
+** Check to see if the zSpan given to this routine matches the zDb, zTab,
+** and zCol.  If any of zDb, zTab, and zCol are NULL then those fields will
+** match anything.
+*/
+int sqlite3MatchSpanName(
+  const char *zSpan,
+  const char *zCol,
+  const char *zTab,
+  const char *zDb
+){
+  int n;
+  for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
+  if( zDb && sqlite3StrNICmp(zSpan, zDb, n)!=0 ){
+    return 0;
+  }
+  zSpan += n+1;
+  for(n=0; ALWAYS(zSpan[n]) && zSpan[n]!='.'; n++){}
+  if( zTab && sqlite3StrNICmp(zSpan, zTab, n)!=0 ){
+    return 0;
+  }
+  zSpan += n+1;
+  if( zCol && sqlite3StrICmp(zSpan, zCol)!=0 ){
+    return 0;
+  }
+  return 1;
+}
 
 /*
 ** Given the name of a column of the form X.Y.Z or Y.Z or just Z, look up
@@ -240,8 +269,7 @@ static int lookupName(
           ExprList *pEList = pItem->pSelect->pEList;
           int hit = 0;
           for(j=0; j<pEList->nExpr; j++){
-            if( zTab && sqlite3StrICmp(pEList->a[j].zSpan, zTab)!=0 ) continue;
-            if( sqlite3StrICmp(pEList->a[j].zName, zCol)==0 ){
+            if( sqlite3MatchSpanName(pEList->a[j].zSpan, zCol, zTab, zDb) ){
               cnt++;
               cntTab = 2;
               pMatch = pItem;
