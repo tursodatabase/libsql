@@ -627,7 +627,8 @@ proc test_efkey_57 {tn isError sql} {
   execsql $sql
   do_test e_fkey-18.$tn {
     catchsql { INSERT INTO t2 VALUES(NULL) }
-  } [lindex {{0 {}} {1 {foreign key mismatch}}} $isError]
+  } [lindex {{0 {}} {/1 {foreign key mismatch - ".*" referencing ".*"}/}} \
+     $isError]
 }
 test_efkey_57 2 0 { CREATE TABLE t1(x PRIMARY KEY) }
 test_efkey_57 3 0 { CREATE TABLE t1(x UNIQUE) }
@@ -698,16 +699,16 @@ do_test e_fkey-19.2 {
 } {}
 do_test e_fkey-19.2 {
   catchsql { INSERT INTO child4 VALUES('xxx', 5) }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child4" referencing "parent"}}
 do_test e_fkey-19.3 {
   catchsql { INSERT INTO child5 VALUES('xxx', 6) }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child5" referencing "parent"}}
 do_test e_fkey-19.4 {
   catchsql { INSERT INTO child6 VALUES(2, 3) }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child6" referencing "parent"}}
 do_test e_fkey-19.5 {
   catchsql { INSERT INTO child7 VALUES(3) }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child7" referencing "parent"}}
 
 #-------------------------------------------------------------------------
 # Test errors in the database schema that are detected while preparing
@@ -765,12 +766,12 @@ do_test e_fkey-20.1 {
 
 foreach {tn tbl ptbl err} {
   2 c1 {} "no such table: main.nosuchtable"
-  3 c2 p2 "foreign key mismatch"
-  4 c3 p3 "foreign key mismatch"
-  5 c4 p4 "foreign key mismatch"
-  6 c5 p5 "foreign key mismatch"
-  7 c6 p6 "foreign key mismatch"
-  8 c7 p7 "foreign key mismatch"
+  3 c2 p2 "foreign key mismatch - \"c2\" referencing \"p2\""
+  4 c3 p3 "foreign key mismatch - \"c3\" referencing \"p3\""
+  5 c4 p4 "foreign key mismatch - \"c4\" referencing \"p4\""
+  6 c5 p5 "foreign key mismatch - \"c5\" referencing \"p5\""
+  7 c6 p6 "foreign key mismatch - \"c6\" referencing \"p6\""
+  8 c7 p7 "foreign key mismatch - \"c7\" referencing \"p7\""
 } {
   do_test e_fkey-20.$tn.1 {
     catchsql "INSERT INTO $tbl VALUES('a', 'b')"
@@ -820,22 +821,22 @@ do_test e_fkey-21.2 {
 } {}
 do_test e_fkey-21.3 {
   catchsql { INSERT INTO child9 VALUES('I') }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child9" referencing "parent2"}}
 do_test e_fkey-21.4 {
   catchsql { INSERT INTO child9 VALUES('II') }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child9" referencing "parent2"}}
 do_test e_fkey-21.5 {
   catchsql { INSERT INTO child9 VALUES(NULL) }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child9" referencing "parent2"}}
 do_test e_fkey-21.6 {
   catchsql { INSERT INTO child10 VALUES('I', 'II', 'III') }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child10" referencing "parent2"}}
 do_test e_fkey-21.7 {
   catchsql { INSERT INTO child10 VALUES(1, 2, 3) }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child10" referencing "parent2"}}
 do_test e_fkey-21.8 {
   catchsql { INSERT INTO child10 VALUES(NULL, NULL, NULL) }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "child10" referencing "parent2"}}
 
 #-------------------------------------------------------------------------
 # Test errors that are reported when creating the child table. 
@@ -1151,7 +1152,7 @@ do_test e_fkey-28.8 {
     CREATE TABLE c(a, b, FOREIGN KEY(a,b) REFERENCES p);
   }
   catchsql {DELETE FROM p}
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "c" referencing "p"}}
 do_test e_fkey-28.9 {
   drop_all_tables
   execsql {
@@ -1159,7 +1160,7 @@ do_test e_fkey-28.9 {
     CREATE TABLE c(a REFERENCES p);
   }
   catchsql {DELETE FROM p}
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "c" referencing "p"}}
 
 
 #-------------------------------------------------------------------------
@@ -2729,11 +2730,11 @@ do_test e_fkey-60.3 {
 do_test e_fkey-60.4 {
   execsql { CREATE TABLE nosuchtable(x PRIMARY KEY) }
   catchsql { DELETE FROM p }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "c2" referencing "p"}}
 do_test e_fkey-60.5 {
   execsql { DROP TABLE c1 }
   catchsql { DELETE FROM p }
-} {1 {foreign key mismatch}}
+} {1 {foreign key mismatch - "c2" referencing "p"}}
 do_test e_fkey-60.6 {
   execsql { DROP TABLE c2 }
   execsql { DELETE FROM p }

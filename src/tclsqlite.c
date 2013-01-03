@@ -3833,6 +3833,8 @@ static void init_all(Tcl_Interp *interp){
 #if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     extern int TestSession_Init(Tcl_Interp*);
 #endif
+    extern int Sqlitetestregexp_Init(Tcl_Interp*);
+
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     extern int Sqlitetestfts3_Init(Tcl_Interp *interp);
 #endif
@@ -3878,6 +3880,8 @@ static void init_all(Tcl_Interp *interp){
 #if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
     TestSession_Init(interp);
 #endif
+    Sqlitetestregexp_Init(interp);
+
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
     Sqlitetestfts3_Init(interp);
 #endif

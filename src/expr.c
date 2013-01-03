@@ -3281,6 +3281,12 @@ void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
       sqlite3ExplainPush(pOut);
       sqlite3ExplainExpr(pOut, pList->a[i].pExpr);
       sqlite3ExplainPop(pOut);
+      if( pList->a[i].zName ){
+        sqlite3ExplainPrintf(pOut, " AS %s", pList->a[i].zName);
+      }
+      if( pList->a[i].bSpanIsTab ){
+        sqlite3ExplainPrintf(pOut, " (%s)", pList->a[i].zSpan);
+      }
       if( i<pList->nExpr-1 ){
         sqlite3ExplainNL(pOut);
       }

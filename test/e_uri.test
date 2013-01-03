@@ -261,9 +261,9 @@ foreach {tn uri error} "
 }
 
 
-# EVIDENCE-OF: R-09651-31805 If "ro" is specified, then the database is
+# EVIDENCE-OF: R-43036-46756 If "ro" is specified, then the database is
 # opened for read-only access, just as if the SQLITE_OPEN_READONLY flag
-# had been set in the third argument to sqlite3_prepare_v2().
+# had been set in the third argument to sqlite3_open_v2().
 #
 # EVIDENCE-OF: R-40137-26050 If the mode option is set to "rw", then the
 # database is opened for read-write (but not create) access, as if

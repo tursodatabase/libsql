@@ -290,6 +290,20 @@ do_test where8-3.15 {
   }
 } {I I I I I I I I I I II II II II II II II II II II III III III III III 9 1}
 
+
+do_test where8-3.21 {
+  execsql_status {
+    SELECT a, d FROM t1, (t2) WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+do_test where8-3.22 {
+  execsql_status {
+    SELECT a, d FROM ((((((t1))), (((t2))))))
+     WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+
+
 #-----------------------------------------------------------------------
 # The following tests - where8-4.* - verify that adding or removing 
 # indexes does not change the results returned by various queries.
