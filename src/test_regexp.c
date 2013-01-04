@@ -385,8 +385,8 @@ static unsigned re_esc_char(ReCompiled *p){
   if( p->sIn.i>=p->sIn.mx ) return 0;
   c = p->sIn.z[p->sIn.i];
   if( c=='u' && p->sIn.i+5<p->sIn.mx ){
-    v = 0;
     const unsigned char *zIn = p->sIn.z + p->sIn.i;
+    v = 0;
     if( re_hex(zIn[1],&v)
      && re_hex(zIn[2],&v)
      && re_hex(zIn[3],&v)

@@ -1,5 +1,5 @@
-C Fix\sthe\szInit[]\soptimization\sof\stest_regexp.c\swhen\sthe\sinitial\sstring\ncontains\s3-byte\sUTF8\scharacters.
-D 2013-01-04T14:06:24.780
+C Fix\san\sout-of-order\slocal\svariable\sdeclaration\sin\stest_regexp.c.
+D 2013-01-04T19:22:33.550
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 0e0e2e3bf6766b101ecccd8c042b66e44e9be8f5
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_regexp.c 8412a929f032161e05faf1dccf1eaf35dfcd33d0
+F src/test_regexp.c f32daf8e08466df5e81617f6694e96172d98fcd2
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -1031,7 +1031,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 45c158b1a015e0295244982e7a61ecc55cca8436
-R dfda34464b7f03b42f200d90bee227fb
+P 357231ec970adb5dfcdaf9665499141004cb1198
+R a527dbc47b1658d5a418c0dfd6c81b54
 U drh
-Z e8d27e55703874a67ca5ac33b5152982
+Z 08645dc8f534cbd544c716793612e513
