@@ -1,5 +1,5 @@
-C Fix\san\sout-of-order\slocal\svariable\sdeclaration\sin\stest_regexp.c.
-D 2013-01-04T19:22:33.550
+C Do\snot\suse\sumask()\ssince\sit\schange\sthe\sumask\sfor\sthe\sentire\sprocess,\snot\sjust\nthe\sthread\susing\sSQLite.\s\sMake\swhatever\spermission\schanges\sare\sneeded\susing\nfchmod()\safter\sthe\sfile\sis\screated,\sinstead.
+D 2013-01-04T20:45:13.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c ad459bb62eb6f3f6aae26d97b1a28fbac7bf0260
+F src/os_unix.c dfdc04b126f7b05dcb2e2cc5c1262f98acbb49d9
 F src/os_win.c ce1f5db8a7bb4d6f2092b1b2cb9631bec54a6320
 F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
@@ -643,7 +643,7 @@ F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test f33968647da5c546528fe4d2bf86c6a6a2e5a7ae
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test f4c57e14583da2183fe31555c67fb32feda96092
+F test/pager1.test 8e14e7cfd2fbfe65eabead73af10ceeb2fc676aa
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -854,7 +854,7 @@ F test/tkt3357.test 77c37c6482b526fe89941ce951c22d011f5922ed
 F test/tkt3419.test 1bbf36d7ea03b638c15804251287c2391f5c1f6b
 F test/tkt3424.test 61f831bd2b071bd128fa5d00fbda57e656ca5812
 F test/tkt3442.test 0adb70e9fe9cb750a702065a68ad647409dbc158
-F test/tkt3457.test eb68bb3b19c8677cff06c639ff15d206dbf17fd6
+F test/tkt3457.test 9399bb34a42b4fd9d2152d3911059da6bcb9ed58
 F test/tkt3461.test 228ea328a5a21e8663f80ee3d212a6ad92549a19
 F test/tkt3493.test 1686cbde85f8721fc1bdc0ee72f2ef2f63139218
 F test/tkt3508.test d75704db9501625c7f7deec119fcaf1696aefb7d
@@ -1031,7 +1031,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 357231ec970adb5dfcdaf9665499141004cb1198
-R a527dbc47b1658d5a418c0dfd6c81b54
+P 8285b15a058811a9a8b452837f52e6a065868115
+R b31d73bc3af8c64e681b0e111a88b9c8
 U drh
-Z 08645dc8f534cbd544c716793612e513
+Z f0d816558f207d702a01b8e7c2fe1c14
