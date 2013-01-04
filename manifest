@@ -1,5 +1,5 @@
-C Do\snot\suse\sumask()\ssince\sit\schange\sthe\sumask\sfor\sthe\sentire\sprocess,\snot\sjust\nthe\sthread\susing\sSQLite.\s\sMake\swhatever\spermission\schanges\sare\sneeded\susing\nfchmod()\safter\sthe\sfile\sis\screated,\sinstead.
-D 2013-01-04T20:45:13.018
+C Remove\ssuperfluous\stext\sfrom\sa\scomment.
+D 2013-01-04T22:26:47.761
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -854,7 +854,7 @@ F test/tkt3357.test 77c37c6482b526fe89941ce951c22d011f5922ed
 F test/tkt3419.test 1bbf36d7ea03b638c15804251287c2391f5c1f6b
 F test/tkt3424.test 61f831bd2b071bd128fa5d00fbda57e656ca5812
 F test/tkt3442.test 0adb70e9fe9cb750a702065a68ad647409dbc158
-F test/tkt3457.test 9399bb34a42b4fd9d2152d3911059da6bcb9ed58
+F test/tkt3457.test 44e980fe5334753dcc27b94fa4deabc485a92f74
 F test/tkt3461.test 228ea328a5a21e8663f80ee3d212a6ad92549a19
 F test/tkt3493.test 1686cbde85f8721fc1bdc0ee72f2ef2f63139218
 F test/tkt3508.test d75704db9501625c7f7deec119fcaf1696aefb7d
@@ -1031,7 +1031,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8285b15a058811a9a8b452837f52e6a065868115
-R b31d73bc3af8c64e681b0e111a88b9c8
-U drh
-Z f0d816558f207d702a01b8e7c2fe1c14
+P 6c4c2b7dbadedac384d380efd54f12f6ccbf4ca9
+R 03d4aa554ff3262e05c30977fa9109df
+U mistachkin
+Z e183cfa598aad0d3bd7483fe9e033a09

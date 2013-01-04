@@ -32,7 +32,7 @@ if {$tcl_platform(platform) != "unix"} {
 #   tkt3457-1.3: Application has write but not read permission on
 #                the hot-journal file. Result: SQLITE_CANTOPEN.
 #
-#   tkt3457-1.4: Application has read but not write permission ongrep
+#   tkt3457-1.4: Application has read but not write permission on
 #                the hot-journal file. Result: SQLITE_CANTOPEN.
 #
 #   tkt3457-1.5: Application has read/write permission on the hot-journal 
