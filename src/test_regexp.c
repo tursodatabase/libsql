@@ -652,7 +652,7 @@ const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
       }else if( x<=0xffff ){
         pRe->zInit[j++] = 0xd0 | (x>>12);
         pRe->zInit[j++] = 0x80 | ((x>>6)&0x3f);
-        pRe->zInit[j++] = 0x80 | ((x>>6)&0x3f);
+        pRe->zInit[j++] = 0x80 | (0x3f);
       }else{
         break;
       }
