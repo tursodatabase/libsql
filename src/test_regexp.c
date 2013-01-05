@@ -129,7 +129,7 @@ static unsigned re_next_char(ReInput *p){
   unsigned c;
   if( p->i>=p->mx ) return 0;
   c = p->z[p->i++];
-  if( c>0x80 ){
+  if( c>=0x80 ){
     if( (c&0xe0)==0xc0 && p->i<p->mx && (p->z[p->i]&0xc0)==0x80 ){
       c = (c&0x1f)<<6 | (p->z[p->i++]&0x3f);
       if( c<0x80 ) c = 0xfffd;
@@ -137,13 +137,13 @@ static unsigned re_next_char(ReInput *p){
            && (p->z[p->i+1]&0xc0)==0x80 ){
       c = (c&0x0f)<<12 | ((p->z[p->i]&0x3f)<<6) | (p->z[p->i+1]&0x3f);
       p->i += 2;
-      if( c<0x3ff || (c>=0xd800 && c<=0xdfff) ) c = 0xfffd;
+      if( c<=0x3ff || (c>=0xd800 && c<=0xdfff) ) c = 0xfffd;
     }else if( (c&0xf8)==0xf0 && p->i+3<p->mx && (p->z[p->i]&0xc0)==0x80
            && (p->z[p->i+1]&0xc0)==0x80 && (p->z[p->i+2]&0xc0)==0x80 ){
       c = (c&0x07)<<18 | ((p->z[p->i]&0x3f)<<12) | ((p->z[p->i+1]&0x3f)<<6)
                        | (p->z[p->i+2]&0x3f);
       p->i += 3;
-      if( c<0xffff ) c = 0xfffd;
+      if( c<=0xffff || c>0x10ffff ) c = 0xfffd;
     }else{
       c = 0xfffd;
     }
@@ -169,7 +169,7 @@ static int re_digit_char(int c){
 
 /* Return true if c is a perl "space" character:  [ \t\r\n\v\f] */
 static int re_space_char(int c){
-  return c==' ' || c=='\t' || c=='\n' || c=='\v' || c=='\f';
+  return c==' ' || c=='\t' || c=='\n' || c=='\r' || c=='\v' || c=='\f';
 }
 
 /* Run a compiled regular expression on the zero-terminated input
@@ -188,7 +188,9 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
 
   in.z = zIn;
   in.i = 0;
-  in.mx = nIn>=0 ? nIn : strlen((char*)zIn);
+  in.mx = nIn>=0 ? nIn : strlen((char const*)zIn);
+
+  /* Look for the initial prefix match, if there is one. */
   if( pRe->nInit ){
     unsigned char x = pRe->zInit[0];
     while( in.i+pRe->nInit<=in.mx 
@@ -198,6 +200,7 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
     }
     if( in.i+pRe->nInit>in.mx ) return 0;
   }
+
   if( pRe->nState<=(sizeof(aSpace)/(sizeof(aSpace[0])*2)) ){
     pToFree = 0;
     aStateSet[0].aState = aSpace;
@@ -624,7 +627,7 @@ const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   }
   pRe->sIn.z = (unsigned char*)zIn;
   pRe->sIn.i = 0;
-  pRe->sIn.mx = strlen((char*)pRe->sIn.z);
+  pRe->sIn.mx = strlen(zIn);
   zErr = re_subcompile_re(pRe);
   if( zErr ){
     re_free(pRe);
@@ -641,6 +644,15 @@ const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
     re_free(pRe);
     return "unrecognized character";
   }
+
+  /* The following is a performance optimization.  If the regex begins with
+  ** ".*" (if the input regex lacks an initial "^") and afterwards there are
+  ** one or more matching characters, enter those matching characters into
+  ** zInit[].  The re_match() routine can then search ahead in the input 
+  ** string looking for the initial match without having to run the whole
+  ** regex engine over the string.  Do not worry able trying to match
+  ** unicode characters beyond plane 0 - those are very rare and this is
+  ** just an optimization. */
   if( pRe->aOp[0]==RE_OP_ANYSTAR ){
     for(j=0, i=1; j<sizeof(pRe->zInit)-2 && pRe->aOp[i]==RE_OP_MATCH; i++){
       unsigned x = pRe->aArg[i];
@@ -652,7 +664,7 @@ const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
       }else if( x<=0xffff ){
         pRe->zInit[j++] = 0xd0 | (x>>12);
         pRe->zInit[j++] = 0x80 | ((x>>6)&0x3f);
-        pRe->zInit[j++] = 0x80 | (0x3f);
+        pRe->zInit[j++] = 0x80 | (x&0x3f);
       }else{
         break;
       }

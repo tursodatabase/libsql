@@ -1,5 +1,5 @@
-C Remove\ssuperfluous\stext\sfrom\sa\scomment.
-D 2013-01-04T22:26:47.761
+C More\sbug\sfixes\sto\sthe\stest_regexp.c\smodule.\s\sBring\stest_regexp.c\sinto\salignment\nwith\sthe\sregexp.c\sfile\sin\sthe\sFossil\ssources.
+D 2013-01-05T17:17:21.332
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 0e0e2e3bf6766b101ecccd8c042b66e44e9be8f5
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_regexp.c f32daf8e08466df5e81617f6694e96172d98fcd2
+F src/test_regexp.c 935a1bfb48c7a6857514aa9cedf6df048f8b9928
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -1031,7 +1031,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6c4c2b7dbadedac384d380efd54f12f6ccbf4ca9
-R 03d4aa554ff3262e05c30977fa9109df
-U mistachkin
-Z e183cfa598aad0d3bd7483fe9e033a09
+P e9ac5339603766c120c775bda8ae816d0ccb1503
+R b07326038178e7051b1863f2d68963fe
+U drh
+Z 66007f41514d49327911f47fbc5d3001
