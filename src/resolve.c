@@ -611,38 +611,39 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       int auth;                   /* Authorization to use the function */
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
-      FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       testcase( pExpr->op==TK_CONST_FUNC );
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
-      pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
-      if( pDef==0 ){
-        pDef = sqlite3FindFunction(pParse->db, zId, nId, -2, enc, 0);
+      if( pParse->db->init.busy==0 ){
+        FuncDef *pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
         if( pDef==0 ){
-          no_such_func = 1;
-        }else{
-          wrong_num_args = 1;
-        }
-      }else{
-        is_agg = pDef->xFunc==0;
-      }
-#ifndef SQLITE_OMIT_AUTHORIZATION
-      if( pDef ){
-        auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, pDef->zName, 0);
-        if( auth!=SQLITE_OK ){
-          if( auth==SQLITE_DENY ){
-            sqlite3ErrorMsg(pParse, "not authorized to use function: %s",
-                                    pDef->zName);
-            pNC->nErr++;
+          pDef = sqlite3FindFunction(pParse->db, zId, nId, -2, enc, 0);
+          if( pDef==0 ){
+            no_such_func = 1;
+          }else{
+            wrong_num_args = 1;
           }
-          pExpr->op = TK_NULL;
-          return WRC_Prune;
+        }else{
+          is_agg = pDef->xFunc==0;
         }
-      }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+        if( pDef ){
+          auth = sqlite3AuthCheck(pParse, SQLITE_FUNCTION, 0, pDef->zName, 0);
+          if( auth!=SQLITE_OK ){
+            if( auth==SQLITE_DENY ){
+              sqlite3ErrorMsg(pParse, "not authorized to use function: %s",
+                  pDef->zName);
+              pNC->nErr++;
+            }
+            pExpr->op = TK_NULL;
+            return WRC_Prune;
+          }
+        }
 #endif
+      }
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
         sqlite3ErrorMsg(pParse, "misuse of aggregate function %.*s()", nId,zId);
         pNC->nErr++;
