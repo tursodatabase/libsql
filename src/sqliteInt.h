@@ -1484,20 +1484,20 @@ struct UnpackedRecord {
 ** element.
 */
 struct Index {
-  char *zName;     /* Name of this index */
-  int *aiColumn;   /* Which columns are used by this index.  1st is 0 */
-  tRowcnt *aiRowEst; /* Result of ANALYZE: Est. rows selected by each column */
-  Table *pTable;   /* The SQL table being indexed */
-  char *zColAff;   /* String defining the affinity of each column */
-  Index *pNext;    /* The next index associated with the same table */
-  Schema *pSchema; /* Schema containing this index */
-  u8 *aSortOrder;  /* Array of size Index.nColumn. True==DESC, False==ASC */
-  char **azColl;   /* Array of collation sequence names for index */
-  int nColumn;     /* Number of columns in the table used by this index */
-  int tnum;        /* Page containing root of this index in database file */
-  u8 onError;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
-  u8 autoIndex;    /* True if is automatically created (ex: by UNIQUE) */
-  u8 bUnordered;   /* Use this index for == or IN queries only */
+  char *zName;             /* Name of this index */
+  int *aiColumn;           /* Which columns are used by this index.  1st is 0 */
+  tRowcnt *aiRowEst;       /* From ANALYZE: Est. rows selected by each column */
+  Table *pTable;           /* The SQL table being indexed */
+  char *zColAff;           /* String defining the affinity of each column */
+  Index *pNext;            /* The next index associated with the same table */
+  Schema *pSchema;         /* Schema containing this index */
+  u8 *aSortOrder;          /* for each column: True==DESC, False==ASC */
+  char **azColl;           /* Array of collation sequence names for index */
+  int tnum;                /* DB Page containing root of this index */
+  u16 nColumn;             /* Number of columns in table used by this index */
+  u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
+  unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
+  unsigned bUnordered:1;   /* Use this index for == or IN queries only */
 #ifdef SQLITE_ENABLE_STAT3
   int nSample;             /* Number of elements in aSample[] */
   tRowcnt avgEq;           /* Average nEq value for key values not in aSample */
@@ -1678,7 +1678,6 @@ struct Expr {
     ExprList *pList;     /* Function arguments or in "<expr> IN (<expr-list)" */
     Select *pSelect;     /* Used for sub-selects and "<expr> IN (<select>)" */
   } x;
-  CollSeq *pColl;        /* The collation type of the column or 0 */
 
   /* If the EP_Reduced flag is set in the Expr.flags mask, then no
   ** space is allocated for the fields below this point. An attempt to
@@ -1714,7 +1713,7 @@ struct Expr {
 #define EP_VarSelect  0x0020  /* pSelect is correlated, not constant */
 #define EP_DblQuoted  0x0040  /* token.z was originally in "..." */
 #define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
-#define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
+#define EP_Collate    0x0100  /* Tree contains a TK_COLLATE opeartor */
 #define EP_FixedDest  0x0200  /* Result needed in a specific register */
 #define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
 #define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
@@ -1772,18 +1771,27 @@ struct Expr {
 ** list of "ID = expr" items in an UPDATE.  A list of expressions can
 ** also be used as the argument to a function, in which case the a.zName
 ** field is not used.
+**
+** By default the Expr.zSpan field holds a human-readable description of
+** the expression that is used in the generation of error messages and
+** column labels.  In this case, Expr.zSpan is typically the text of a
+** column expression as it exists in a SELECT statement.  However, if
+** the bSpanIsTab flag is set, then zSpan is overloaded to mean the name
+** of the result column in the form: DATABASE.TABLE.COLUMN.  This later
+** form is used for name resolution with nested FROM clauses.
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
   int iECursor;          /* VDBE Cursor associated with this ExprList */
   struct ExprList_item { /* For each expression in the list */
-    Expr *pExpr;           /* The list of expressions */
-    char *zName;           /* Token associated with this expression */
-    char *zSpan;           /* Original text of the expression */
-    u8 sortOrder;          /* 1 for DESC or 0 for ASC */
-    u8 done;               /* A flag to indicate when processing is finished */
-    u16 iOrderByCol;       /* For ORDER BY, column number in result set */
-    u16 iAlias;            /* Index into Parse.aAlias[] for zName */
+    Expr *pExpr;            /* The list of expressions */
+    char *zName;            /* Token associated with this expression */
+    char *zSpan;            /* Original text of the expression */
+    u8 sortOrder;           /* 1 for DESC or 0 for ASC */
+    unsigned done :1;       /* A flag to indicate when processing is finished */
+    unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
+    u16 iOrderByCol;        /* For ORDER BY, column number in result set */
+    u16 iAlias;             /* Index into Parse.aAlias[] for zName */
   } *a;                  /* Alloc a power of two greater or equal to nExpr */
 };
 
@@ -2103,6 +2111,7 @@ struct Select {
 #define SF_UseSorter       0x0040  /* Sort using a sorter */
 #define SF_Values          0x0080  /* Synthesized from VALUES clause */
 #define SF_Materialize     0x0100  /* Force materialization of views */
+#define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 
 
 /*
@@ -2331,6 +2340,7 @@ struct AuthContext {
 #define OPFLAG_TYPEOFARG     0x80    /* OP_Column only used for typeof() */
 #define OPFLAG_BULKCSR       0x01    /* OP_Open** used to open bulk cursor */
 #define OPFLAG_P2ISREG       0x02    /* P2 to OP_Open** is a register number */
+#define OPFLAG_PERMUTE       0x01    /* OP_Compare: use the permutation */
 
 /*
  * Each trigger present in the database schema is stored as an instance of
@@ -2815,7 +2825,7 @@ Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
 void sqlite3DropIndex(Parse*, SrcList*, int);
 int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
-                         Expr*,ExprList*,int,Expr*,Expr*);
+                         Expr*,ExprList*,u16,Expr*,Expr*);
 void sqlite3SelectDelete(sqlite3*, Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
@@ -3023,8 +3033,9 @@ int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
-Expr *sqlite3ExprSetColl(Expr*, CollSeq*);
-Expr *sqlite3ExprSetCollByToken(Parse *pParse, Expr*, Token*);
+Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, Token*);
+Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
+Expr *sqlite3ExprSkipCollate(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
 int sqlite3CheckObjectName(Parse *, const char *);
 void sqlite3VdbeSetChanges(sqlite3 *, int);
@@ -3071,6 +3082,7 @@ void sqlite3NestedParse(Parse*, const char*, ...);
 void sqlite3ExpirePreparedStatements(sqlite3*);
 int sqlite3CodeSubselect(Parse *, Expr *, int, int);
 void sqlite3SelectPrep(Parse*, Select*, NameContext*);
+int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
 int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
@@ -3209,8 +3221,10 @@ const char *sqlite3JournalModename(int);
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   void sqlite3FkDelete(sqlite3 *, Table*);
+  int sqlite3FkLocateIndex(Parse*,Table*,FKey*,Index**,int**);
 #else
   #define sqlite3FkDelete(a,b)
+  #define sqlite3FkLocateIndex(a,b,c,d,e)
 #endif
 
 

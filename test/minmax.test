@@ -17,6 +17,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set ::testprefix minmax
 
 do_test minmax-1.0 {
   execsql {
@@ -536,7 +537,96 @@ do_test minmax-12.17 {
   }
 } {5}
 
+#-------------------------------------------------------------------------
+reset_db
 
+proc do_test_13 {op name sql1 sql2 res} {
+  set ::sqlite_search_count 0
+  uplevel [list do_execsql_test $name.1 $sql1 $res]
+  set a $::sqlite_search_count
+
+  set ::sqlite_search_count 0
+  uplevel [list do_execsql_test $name.2 $sql2 $res]
+  set b $::sqlite_search_count
+
+  uplevel [list do_test $name.3 [list expr "$a $op $b"] 1]
+}
+
+# Run a test named $name. Check that SQL statements $sql1 and $sql2 both
+# return the same result, but that $sql2 increments the $sqlite_search_count
+# variable more often (indicating that it is visiting more rows to determine
+# the result).
+#
+proc do_test_13_opt {name sql1 sql2 res} {
+  uplevel [list do_test_13 < $name $sql1 $sql2 $res]
+}
+
+# Like [do_test_13_noopt], except this time check that the $sqlite_search_count
+# variable is incremented the same number of times by both SQL statements.
+#
+proc do_test_13_noopt {name sql1 sql2 res} {
+  uplevel [list do_test_13 == $name $sql1 $sql2 $res]
+}
+
+do_execsql_test 13.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('a', 1, 1);
+  INSERT INTO t1 VALUES('b', 6, 6);
+  INSERT INTO t1 VALUES('c', 5, 5);
+  INSERT INTO t1 VALUES('a', 4, 4);
+  INSERT INTO t1 VALUES('a', 5, 5);
+  INSERT INTO t1 VALUES('c', 6, 6);
+  INSERT INTO t1 VALUES('b', 4, 4);
+  INSERT INTO t1 VALUES('c', 7, 7);
+  INSERT INTO t1 VALUES('b', 2, 2);
+  INSERT INTO t1 VALUES('b', 3, 3);
+  INSERT INTO t1 VALUES('a', 3, 3);
+  INSERT INTO t1 VALUES('b', 5, 5);
+  INSERT INTO t1 VALUES('c', 4, 4);
+  INSERT INTO t1 VALUES('c', 3, 3);
+  INSERT INTO t1 VALUES('a', 2, 2);
+  SELECT * FROM t1 ORDER BY a, b, c;
+} {a 1 1 a 2 2 a 3 3 a 4 4 a 5 5
+   b 2 2 b 3 3 b 4 4 b 5 5 b 6 6
+   c 3 3 c 4 4 c 5 5 c 6 6 c 7 7
+}
+do_execsql_test 13.2 { CREATE INDEX i1 ON t1(a, b, c) }
+
+do_test_13_opt 13.3 {
+  SELECT min(b) FROM t1 WHERE a='b'
+} {
+  SELECT min(c) FROM t1 WHERE a='b'
+} {2}
+
+do_test_13_opt 13.4 {
+  SELECT a, min(b) FROM t1 WHERE a='b'
+} {
+  SELECT a, min(c) FROM t1 WHERE a='b'
+} {b 2}
+
+do_test_13_opt 13.4 {
+  SELECT a||c, max(b)+4 FROM t1 WHERE a='c'
+} {
+  SELECT a||c, max(c)+4 FROM t1 WHERE a='c'
+} {c7 11}
+
+do_test_13_noopt 13.5 {
+  SELECT a||c, max(b+1) FROM t1 WHERE a='c'
+} {
+  SELECT a||c, max(c+1) FROM t1 WHERE a='c'
+} {c7 8}
+
+do_test_13_noopt 13.6 {
+  SELECT count(b) FROM t1 WHERE a='c'
+} {
+  SELECT count(c) FROM t1 WHERE a='c'
+} {5}
+
+do_test_13_noopt 13.7 {
+  SELECT min(b), count(b) FROM t1 WHERE a='a';
+} {
+  SELECT min(c), count(c) FROM t1 WHERE a='a';
+} {1 5}
 
 
 finish_test

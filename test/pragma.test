@@ -534,12 +534,20 @@ do_test pragma-6.2.2 {
       b DEFAULT (5+3),
       c TEXT,
       d INTEGER DEFAULT NULL,
-      e TEXT DEFAULT ''
+      e TEXT DEFAULT '',
+      UNIQUE(b,c,d),
+      PRIMARY KEY(e,b,c)
     );
     PRAGMA table_info(t5);
   }
-} {0 a TEXT 0 CURRENT_TIMESTAMP 0 1 b {} 0 5+3 0 2 c TEXT 0 <<NULL>> 0 3 d INTEGER 0 NULL 0 4 e TEXT 0 '' 0}
+} {0 a TEXT 0 CURRENT_TIMESTAMP 0 1 b {} 0 5+3 2 2 c TEXT 0 <<NULL>> 3 3 d INTEGER 0 NULL 0 4 e TEXT 0 '' 1}
 db nullvalue {}
+do_test pragma-6.2.3 {
+  execsql {
+    CREATE TABLE t2_3(a,b INTEGER PRIMARY KEY,c);
+    pragma table_info(t2_3)
+  }
+} {0 a {} 0 {} 0 1 b INTEGER 0 {} 1 2 c {} 0 {} 0}
 ifcapable {foreignkey} {
   do_test pragma-6.3.1 {
     execsql {
@@ -1619,5 +1627,3 @@ do_test 22.4.3 {
 } {ok}
 
 finish_test
-
-

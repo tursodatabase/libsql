@@ -1480,6 +1480,12 @@ static void open_db(struct callback_data *p){
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
 #endif
+#ifdef SQLITE_ENABLE_REGEXP
+    {
+      extern int sqlite3_add_regexp_func(sqlite3*);
+      sqlite3_add_regexp_func(db);
+    }
+#endif
   }
 }
 

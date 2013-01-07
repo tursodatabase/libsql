@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set ::testprefix check
 
 # Only run these tests if the build includes support for CHECK constraints
 ifcapable !check {
@@ -412,5 +413,43 @@ do_test check-6.15 {
 
 
 }
+
+#--------------------------------------------------------------------------
+# If a connection opens a database that contains a CHECK constraint that
+# uses an unknown UDF, the schema should not be considered malformed.
+# Attempting to modify the table should fail (since the CHECK constraint
+# cannot be tested).
+#
+reset_db
+proc myfunc {x} {expr $x < 10}
+db func myfunc myfunc
+
+do_execsql_test  7.1 { CREATE TABLE t6(a CHECK (myfunc(a))) }
+do_execsql_test  7.2 { INSERT INTO t6 VALUES(9)  }
+do_catchsql_test 7.3 { INSERT INTO t6 VALUES(11) } {1 {constraint failed}}
+
+do_test 7.4 {
+  sqlite3 db2 test.db
+  execsql { SELECT * FROM t6 } db2 
+} {9}
+
+do_test 7.5 {
+  catchsql { INSERT INTO t6 VALUES(8) } db2
+} {1 {unknown function: myfunc()}}
+
+do_test 7.6 {
+  catchsql { CREATE TABLE t7(a CHECK (myfunc(a))) } db2
+} {1 {no such function: myfunc}}
+
+do_test 7.7 {
+  db2 func myfunc myfunc
+  execsql { INSERT INTO t6 VALUES(8) } db2
+} {}
+
+do_test 7.8 {
+  db2 func myfunc myfunc
+  catchsql { INSERT INTO t6 VALUES(12) } db2
+} {1 {constraint failed}}
+
 
 finish_test
