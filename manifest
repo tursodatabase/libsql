@@ -1,5 +1,5 @@
-C More\sbug\sfixes\sto\sthe\stest_regexp.c\smodule.\s\sBring\stest_regexp.c\sinto\salignment\nwith\sthe\sregexp.c\sfile\sin\sthe\sFossil\ssources.
-D 2013-01-05T17:17:21.332
+C Do\snot\sraise\san\serror\sif\san\sunknown\sSQL\sfunction\sis\sfound\sin\sa\sCHECK\nconstraint\swhile\sparsing\sthe\sschema\sof\san\sexisting\sdatabase.
+D 2013-01-08T12:48:10.683
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/pragma.c 8907c559d3127729d3bcedb1fe5c59fc196d3a17
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 521bdc0f6c7cf8246c0b9167d726d84005097c30
+F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 395e458a6dc611cbe1179f424753f0c344957607
 F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
@@ -322,7 +322,7 @@ F test/capi3c.test 93d24621c9ff84da9da060f30431e0453db1cdb0
 F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
-F test/check.test 193f47ed43a8d29aca12b30cd30ceb105fbe710d
+F test/check.test 2eb93611139a7dfaed3be80067c7dc5ceb5fb287
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
@@ -1031,7 +1031,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e9ac5339603766c120c775bda8ae816d0ccb1503
-R b07326038178e7051b1863f2d68963fe
+P 7695b88fe0d73fd0a36fb7d8f95350b80615a89e
+R d208b87926befaabc0152564810a2c30
 U drh
-Z 66007f41514d49327911f47fbc5d3001
+Z 406b832608500677fb00b4e113908c12
