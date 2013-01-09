@@ -3270,7 +3270,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
       pc.plan.nOBSat = isSortingIndex(p, pProbe, iCur, &bRev);
       WHERETRACE(("      --> after  isSortingIndex: bRev=%d nOBSat=%d\n",
                   bRev, pc.plan.nOBSat));
-      if( nPriorSat<pc.plan.nOBSat || (pc.plan.wsFlags & WHERE_UNIQUE)!=0 ){
+      if( nPriorSat<pc.plan.nOBSat || (pc.plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
         pc.plan.wsFlags |= WHERE_ORDERED;
       }
       if( nOrderBy==pc.plan.nOBSat ){

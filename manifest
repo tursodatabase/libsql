@@ -1,5 +1,5 @@
-C Version\s3.7.15.1
-D 2012-12-19T20:39:10.454
+C Fix\san\sover-aggressive\soptimization\sof\sORDER\sBY\son\sa\sthree-way\sjoin\swhere\sthe\nsecond\stable\sis\sUNIQUE\sand\sthe\sORDER\sBY\soccurs\son\sthe\sthird\stable.\nTicket\s[598f5f7596b0557].
+D 2013-01-09T11:44:20.158
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -250,7 +250,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 74d72b1613aac386f9baf1a46c75f67784f082ba
+F src/where.c 613a89f1c9cf965b66e9d90f7f3e7a870596ac80
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1026,10 +1026,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bae528f486f51d0516c3ff2a983cb2e61a6a173f
-R 37df6a77f239e5cf5347f1930acc76e7
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.15.1 *
+P 6b85b767d0ff7975146156a99ad673f2c1a23318
+R a08db9923166ffdaf1a4c151d7c91f6b
 U drh
-Z 25a70064211c8733a6471f87a4c276bc
+Z 8d53597e23c54520b067b562fa6b9b11
