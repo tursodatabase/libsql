@@ -883,12 +883,20 @@ do_execsql_test pager1.4.7.1 {
 tv filter {}
 db close
 tv delete 
+catch {
+  test_syscall install fchmod
+  test_syscall fault 1 1
+}
 do_test pager1.4.7.2 {
   faultsim_restore_and_reopen
   catch {file attributes test.db-journal -permissions r--------}
   catch {file attributes test.db-journal -readonly 1}
   catchsql { SELECT * FROM t1 }
 } {1 {unable to open database file}}
+catch {
+  test_syscall reset
+  test_syscall fault 0 0
+}
 do_test pager1.4.7.3 {
   db close
   catch {file attributes test.db-journal -permissions rw-rw-rw-}

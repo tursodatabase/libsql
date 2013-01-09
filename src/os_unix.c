@@ -412,11 +412,7 @@ static struct unix_syscall {
 #define osPwrite64  ((ssize_t(*)(int,const void*,size_t,off_t))\
                     aSyscall[13].pCurrent)
 
-#if SQLITE_ENABLE_LOCKING_STYLE
   { "fchmod",       (sqlite3_syscall_ptr)fchmod,     0  },
-#else
-  { "fchmod",       (sqlite3_syscall_ptr)0,          0  },
-#endif
 #define osFchmod    ((int(*)(int,mode_t))aSyscall[14].pCurrent)
 
 #if defined(HAVE_POSIX_FALLOCATE) && HAVE_POSIX_FALLOCATE
@@ -440,9 +436,6 @@ static struct unix_syscall {
 
   { "fchown",       (sqlite3_syscall_ptr)posixFchown,     0 },
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
-
-  { "umask",        (sqlite3_syscall_ptr)umask,           0 },
-#define osUmask     ((mode_t(*)(mode_t))aSyscall[21].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -548,14 +541,7 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 */
 static int robust_open(const char *z, int f, mode_t m){
   int fd;
-  mode_t m2;
-  mode_t origM = 0;
-  if( m==0 ){
-    m2 = SQLITE_DEFAULT_FILE_PERMISSIONS;
-  }else{
-    m2 = m;
-    origM = osUmask(0);
-  }
+  mode_t m2 = m ? m : SQLITE_DEFAULT_FILE_PERMISSIONS;
   do{
 #if defined(O_CLOEXEC)
     fd = osOpen(z,f|O_CLOEXEC,m2);
@@ -563,12 +549,17 @@ static int robust_open(const char *z, int f, mode_t m){
     fd = osOpen(z,f,m2);
 #endif
   }while( fd<0 && errno==EINTR );
-  if( m ){
-    osUmask(origM);
-  }
+  if( fd>=0 ){
+    if( m!=0 ){
+      struct stat statbuf;
+      if( osFstat(fd, &statbuf)==0 && (statbuf.st_mode&0777)!=m ){
+        osFchmod(fd, m);
+      }
+    }
 #if defined(FD_CLOEXEC) && (!defined(O_CLOEXEC) || O_CLOEXEC==0)
-  if( fd>=0 ) osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
+    osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif
+  }
   return fd;
 }
 
@@ -6994,7 +6985,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==22 );
+  assert( ArraySize(aSyscall)==21 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
