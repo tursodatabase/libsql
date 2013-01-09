@@ -1,5 +1,5 @@
-C Do\snot\sraise\san\serror\sif\san\sunknown\sSQL\sfunction\sis\sfound\sin\sa\sCHECK\nconstraint\swhile\sparsing\sthe\sschema\sof\san\sexisting\sdatabase.
-D 2013-01-08T12:48:10.683
+C Add\sa\stest\scase\sthat\sdemonstrates\sticket\s[956e4d7f8958e7065f].
+D 2013-01-09T11:25:27.507
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -642,6 +642,7 @@ F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test f33968647da5c546528fe4d2bf86c6a6a2e5a7ae
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
+F test/orderby3.test 9b31f7688524250f5d74bc887bfae27f722ab1b4
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 8e14e7cfd2fbfe65eabead73af10ceeb2fc676aa
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
@@ -1031,7 +1032,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7695b88fe0d73fd0a36fb7d8f95350b80615a89e
-R d208b87926befaabc0152564810a2c30
+P cda790280a52d65f98a45bacb9123367b159ac7c
+R 0a18eb1c0a86a8cbd651ecda4e319f37
 U drh
-Z 406b832608500677fb00b4e113908c12
+Z e4a4c2c77e3392dd7f778367ed007375
