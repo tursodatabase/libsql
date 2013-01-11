@@ -1,5 +1,5 @@
-C Check\sin\san\sextra\stest\sfor\sthe\sfts4\s"content="\soption.\sNo\scode\schanges.
-D 2013-01-09T15:44:23.023
+C Add\sanother\stest\sfor\sthe\sfts4\scontent=\soption.
+D 2013-01-11T09:58:54.381
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 718265bbf49a846c6898b4da09593eef4068fa39
+F main.mk 404cd38114d1a94ef6ad5aa01a1c8bb46da36161
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -183,7 +183,7 @@ F src/sqliteInt.h e998703742455b2241731424c6ec142fd8d0258f
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 5203bb7b71a302bea8896f176cd178e38d7803a4
+F src/tclsqlite.c 3213f3101e3b85f047d6e389da5a53d76d3d7540
 F src/test1.c f62769c989146149590662ab02de4a813813a9c5
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
@@ -200,6 +200,7 @@ F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c 09781397ccc24268cb895be0d4c21b4aad651486
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
+F src/test_fs.c 7d3337933e92c198d06dd600375cc39259cc66b3
 F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
 F src/test_fuzzer.c 1d26aa965120420bc14807da29d4d4541bfa6148
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
@@ -500,7 +501,7 @@ F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts4aa.test 95f448fb02c4a976968b08d1b4ce134e720946ae
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
-F test/fts4content.test b8032a15a6cd91df41cf6f335167e02b4a037ed5
+F test/fts4content.test 6efc53b4fd03cab167e6998d2b0b7d4b7d419ee6
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
@@ -1032,7 +1033,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5774f2175ce621dfc4b6b93f7ee13fd66f3ec2b9
-R 55e61a393f7fda758ca2247ac64f35c5
+P 0d0e5ab8f16c890629ec1120c78168ef6be9e419
+R 8314e970c84b41ce51cf4e3af788943a
 U dan
-Z 742a4d1e5d57ee15d6514285ba4dd6df
+Z af1374dc5de33897a8a4ab326451d45f

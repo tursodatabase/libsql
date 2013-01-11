@@ -3671,6 +3671,7 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitetestschema_Init(Tcl_Interp*);
     extern int Sqlitetestsse_Init(Tcl_Interp*);
     extern int Sqlitetesttclvar_Init(Tcl_Interp*);
+    extern int Sqlitetestfs_Init(Tcl_Interp*);
     extern int SqlitetestThread_Init(Tcl_Interp*);
     extern int SqlitetestOnefile_Init();
     extern int SqlitetestOsinst_Init(Tcl_Interp*);
@@ -3715,6 +3716,7 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetest_mutex_Init(interp);
     Sqlitetestschema_Init(interp);
     Sqlitetesttclvar_Init(interp);
+    Sqlitetestfs_Init(interp);
     SqlitetestThread_Init(interp);
     SqlitetestOnefile_Init(interp);
     SqlitetestOsinst_Init(interp);
