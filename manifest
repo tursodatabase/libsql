@@ -1,5 +1,5 @@
-C Add\sanother\stest\sfor\sthe\sfts4\scontent=\soption.
-D 2013-01-11T09:58:54.381
+C Clarification\sto\sa\scomment\sin\swhere.c.\s\sNo\scode\schanges.
+D 2013-01-15T16:15:28.864
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 4c7fec9cfa3af06597ae039e5f0ec03cbee34c58
+F src/where.c 9df0419ef7210a531a4fda890ab88f2baeea9755
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1033,7 +1033,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0d0e5ab8f16c890629ec1120c78168ef6be9e419
-R 8314e970c84b41ce51cf4e3af788943a
-U dan
-Z af1374dc5de33897a8a4ab326451d45f
+P 7e6007a0002f6989bd489abeba8db52acb4a6854
+R d0bbf16dad26659cda0048aa7cd24d37
+U drh
+Z e1bea2ae72c72e050882322d94f05fc5

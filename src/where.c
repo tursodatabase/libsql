@@ -5105,10 +5105,8 @@ WhereInfo *sqlite3WhereBegin(
     ** strategies were found by the first iteration. This second iteration
     ** is used to search for the lowest cost scan overall.
     **
-    ** Previous versions of SQLite performed only the second iteration -
-    ** the next outermost loop was always that with the lowest overall
-    ** cost. However, this meant that SQLite could select the wrong plan
-    ** for scripts such as the following:
+    ** Without the optimal scan step (the first iteration) a suboptimal
+    ** plan might be chosen for queries like this:
     **   
     **   CREATE TABLE t1(a, b); 
     **   CREATE TABLE t2(c, d);
