@@ -3569,8 +3569,9 @@ static void bestBtreeIndex(WhereBestIdx *p){
        || p->cost.plan.u.pIdx==pSrc->pIndex 
   );
 
-  WHERETRACE(("   best index is: %s\n",
-         p->cost.plan.u.pIdx ? p->cost.plan.u.pIdx->zName : "ipk"));
+  WHERETRACE(("   best index is %s cost=%.1f\n",
+         p->cost.plan.u.pIdx ? p->cost.plan.u.pIdx->zName : "ipk",
+         p->cost.rCost));
   
   bestOrClauseIndex(p);
   bestAutomaticIndex(p);
@@ -5161,7 +5162,7 @@ WhereInfo *sqlite3WhereBegin(
         if( isOptimal ){
           pWInfo->a[j].rOptCost = sWBI.cost.rCost;
         }else if( iFrom<nTabList-1 ){
-          /* If two or more tables have nearly the same outer loop cost,
+          /* If two or more tables have nearly the same outer loop cost, but
           ** very different inner loop (optimal) cost, we want to choose
           ** for the outer loop that table which benefits the least from
           ** being in the inner loop.  The following code scales the 
