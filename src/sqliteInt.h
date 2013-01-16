@@ -576,6 +576,11 @@ struct BusyHandler {
 #define ArraySize(X)    ((int)(sizeof(X)/sizeof(X[0])))
 
 /*
+** Determine if the argument is a power of two
+*/
+#define IsPowerOfTwo(X) (((X)&((X)-1))==0)
+
+/*
 ** The following value as a destructor means to use sqlite3DbFree().
 ** The sqlite3DbFree() routine requires two parameters instead of the 
 ** one parameter that destructors normally want.  So we have to introduce 

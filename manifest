@@ -1,5 +1,5 @@
-C Improvements\sto\squery\splanning\sfor\sjoins:\s\sAvoid\sunnecessary\scalls\sto\n"optimal\sscan"\schecks\sin\scases\swhere\stable\sreordering\sis\snot\spossible.\nMake\ssure\soptimal\sscan\schecks\sare\scarried\sout\sfor\sCROSS\sJOINs\sand\sLEFT\nJOINs.
-D 2013-01-16T00:46:09.175
+C Enhance\sthe\squery\splanner\sto\sexploit\stransitivity\sof\sjoin\sconstraints\sin\na\smulti-way\sjoin.
+D 2013-01-16T17:08:58.150
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h e998703742455b2241731424c6ec142fd8d0258f
+F src/sqliteInt.h a6b3f816df7abd24bbb62b13867b47c2255b11a4
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c d48a57d8afd97c51f1b772ebd72431a43a0e48b3
+F src/where.c eb1e1dfc17ff26ba9dc35d6df097e0ecc41d9880
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1033,7 +1033,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ac4e119a87497f2e422ff1cb711112ed8594bfa9
-R 604db48c0336d28f8c2561951db4000b
+P d5ebb7877885839e93eee3b322624d4c4215c1c4
+R 3bb8dbee120cecd828508038284032c9
+T *branch * transitive-constraints
+T *sym-transitive-constraints *
+T -sym-trunk *
 U drh
-Z 14d78037173bf002814299854e4b798b
+Z 258dff7809c25174ed1f5fdd919be15b
