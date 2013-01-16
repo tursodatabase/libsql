@@ -1733,7 +1733,7 @@ void sqlite3Pragma(
   }else
 #endif
 #if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
-  if( sqlite3StrICmp(zLeft, "activate_extensions")==0 ){
+  if( sqlite3StrICmp(zLeft, "activate_extensions")==0 && zRight ){
 #ifdef SQLITE_HAS_CODEC
     if( sqlite3StrNICmp(zRight, "see-", 4)==0 ){
       sqlite3_activate_see(&zRight[4]);
