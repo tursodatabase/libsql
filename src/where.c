@@ -5072,6 +5072,7 @@ WhereInfo *sqlite3WhereBegin(
     int bestJ = -1;             /* The value of j */
     Bitmask m;                  /* Bitmask value for j or bestJ */
     int isOptimal;              /* Iterator for optimal/non-optimal search */
+    int ckOptimal;              /* Do the optimal scan check */
     int nUnconstrained;         /* Number tables without INDEXED BY */
     Bitmask notIndexed;         /* Mask of tables that cannot use an index */
 
@@ -5122,15 +5123,39 @@ WhereInfo *sqlite3WhereBegin(
     */
     nUnconstrained = 0;
     notIndexed = 0;
-    for(isOptimal=(iFrom<nTabList-1); isOptimal>=0 && bestJ<0; isOptimal--){
+
+    /* The optimal scan check only occurs if there are two or more tables
+    ** available to be reordered */
+    if( iFrom==nTabList-1 ){
+      ckOptimal = 0;  /* Common case of just one table in the FROM clause */
+    }else{
+      ckOptimal = -1;
       for(j=iFrom, sWBI.pSrc=&pTabList->a[j]; j<nTabList; j++, sWBI.pSrc++){
-        int doNotReorder;    /* True if this table should not be reordered */
-  
-        doNotReorder =  (sWBI.pSrc->jointype & (JT_LEFT|JT_CROSS))!=0;
-        if( j!=iFrom && doNotReorder ) break;
         m = getMask(pMaskSet, sWBI.pSrc->iCursor);
         if( (m & sWBI.notValid)==0 ){
           if( j==iFrom ) iFrom++;
+          continue;
+        }
+        if( j>iFrom && (sWBI.pSrc->jointype & (JT_LEFT|JT_CROSS))!=0 ) break;
+        if( ++ckOptimal ) break;
+        if( (sWBI.pSrc->jointype & JT_LEFT)!=0 ) break;
+      }
+    }
+    assert( ckOptimal==0 || ckOptimal==1 );
+
+    for(isOptimal=ckOptimal; isOptimal>=0 && bestJ<0; isOptimal--){
+      for(j=iFrom, sWBI.pSrc=&pTabList->a[j]; j<nTabList; j++, sWBI.pSrc++){
+        if( j>iFrom && (sWBI.pSrc->jointype & (JT_LEFT|JT_CROSS))!=0 ){
+          /* This break and one like it in the ckOptimal computation loop
+          ** above prevent table reordering across LEFT and CROSS JOINs.
+          ** The LEFT JOIN case is necessary for correctness.  The prohibition
+          ** against reordering across a CROSS JOIN is an SQLite feature that
+          ** allows the developer to control table reordering */
+          break;
+        }
+        m = getMask(pMaskSet, sWBI.pSrc->iCursor);
+        if( (m & sWBI.notValid)==0 ){
+          assert( j>iFrom );
           continue;
         }
         sWBI.notReady = (isOptimal ? m : sWBI.notValid);
@@ -5161,7 +5186,7 @@ WhereInfo *sqlite3WhereBegin(
         }
         if( isOptimal ){
           pWInfo->a[j].rOptCost = sWBI.cost.rCost;
-        }else if( iFrom<nTabList-1 ){
+        }else if( ckOptimal ){
           /* If two or more tables have nearly the same outer loop cost, but
           ** very different inner loop (optimal) cost, we want to choose
           ** for the outer loop that table which benefits the least from
@@ -5207,11 +5232,19 @@ WhereInfo *sqlite3WhereBegin(
           bestPlan = sWBI.cost;
           bestJ = j;
         }
-        if( doNotReorder ) break;
+
+        /* In a join like "w JOIN x LEFT JOIN y JOIN z"  make sure that
+        ** table y (and not table z) is always the next inner loop inside
+        ** of table x. */
+        if( (sWBI.pSrc->jointype & JT_LEFT)!=0 ) break;
       }
     }
     assert( bestJ>=0 );
     assert( sWBI.notValid & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
+    assert( bestJ==iFrom || (pTabList->a[iFrom].jointype & JT_LEFT)==0 );
+    testcase( bestJ>iFrom && (pTabList->a[iFrom].jointype & JT_CROSS)!=0 );
+    testcase( bestJ>iFrom && bestJ<nTabList-1
+                          && (pTabList->a[bestJ+1].jointype & JT_LEFT)!=0 );
     WHERETRACE(("*** Optimizer selects table %d (%s) for loop %d with:\n"
                 "    cost=%.1f, nRow=%.1f, nOBSat=%d, wsFlags=0x%08x\n",
                 bestJ, pTabList->a[bestJ].pTab->zName,
