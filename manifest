@@ -1,5 +1,5 @@
-C Improved\serror\smessages\son\sthe\sRTREE\svirtual\stable.\s\sMake\sthe\s"fs"\svirtual\ntable\sused\sfor\stesting\savailable\son\swindows.
-D 2013-01-17T17:05:28.012
+C Enhance\sthe\squery\splanner\sto\sexploit\stransitivity\sof\sjoin\sconstraints.
+D 2013-01-17T17:20:49.316
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h e998703742455b2241731424c6ec142fd8d0258f
+F src/sqliteInt.h fb4109b7a77d985a39bbd04f1fbc49c940d4e410
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c d48a57d8afd97c51f1b772ebd72431a43a0e48b3
+F src/where.c 374a6c8190f863b3c69780b441d799e8a6b9e21b
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -285,7 +285,7 @@ F test/auth.test 304e82f31592820d3bde26ab6b75deaa123e1a6f
 F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
-F test/autoindex1.test 058d0b331ae6840a61bbee910d8cbae27bfd5991
+F test/autoindex1.test f88146c4c889ea0afbb620e49d83b5fbf5ee4d06
 F test/autovacuum.test 9f22a7733f39c56ef6a5665d10145ac25d8cb574
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -896,6 +896,7 @@ F test/trace2.test c1dc104a8d11a347c870cfea6235e3fc6f6cb06d
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
+F test/transitive1.test d04aa9023e425d6f2d4aa61dd81ee9e102f89062
 F test/trigger1.test 30f343f91586765874a28ad539c06f5a5f049931
 F test/trigger2.test 834187beafd1db383af0c659cfa49b0576832816
 F test/trigger3.test d2c60d8be271c355d61727411e753181e877230a
@@ -1033,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6195ebd83323eaad92a0aa095cce1094bf8e2ba6 652233d646236d3fbca629813b20d075f00f3ed6
-R 6de5433403d98c9088f8c6d2808c6cc6
+P c0b90d75a86b01f7fafec755cbe046c14d725341 593d67c8b0908daf7a70b2a310ed85515d384cbf
+R 19cb0000f7ea18bbcd69f74a26ccdcaa
 U drh
-Z 0204ef4d219a8c63e57ef7237c96ae79
+Z bcbd2dcec0eed1962ecdbd3953e8a1f1
