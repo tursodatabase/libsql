@@ -37,8 +37,14 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <fcntl.h>
+
+#if SQLITE_OS_UNIX
+# include <unistd.h>
+#endif
+#if SQLITE_OS_WIN
+# include <io.h>
+#endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
