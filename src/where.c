@@ -630,6 +630,24 @@ static u16 operatorMask(int op){
 ** where X is a reference to the iColumn of table iCur and <op> is one of
 ** the WO_xx operator codes specified by the op parameter.
 ** Return a pointer to the term.  Return 0 if not found.
+**
+** The term returned might by Y=<expr> if there is another constraint in
+** the WHERE clause that specifies that X=Y.  Any such constraints will be
+** identified by the WO_EQUIV bit in the pTerm->eOperator field.  The
+** aEquiv[] array holds X and all its equivalents, with each SQL variable
+** taking up two slots in aEquiv[].  The first slot is for the cursor number
+** and the second is for the column number.  There are 22 slots in aEquiv[]
+** so that means we can look for X plus up to 10 other equivalent values.
+** Hence a search for X will return <expr> if X=A1 and A1=A2 and A2=A3
+** and ... and A9=A10 and A10=<expr>.
+**
+** If there are multiple terms in the WHERE clause of the form "X <op> <expr>"
+** then try for the one with no dependencies on <expr> - in other words where
+** <expr> is a constant expression of some kind.  Only return entries of
+** the form "X <op> Y" where Y is a column in another table if no terms of
+** the form "X <op> <const-expr>" exist.  Other than this priority, if there
+** are two or more terms that match, then the choice of which term to return
+** is arbitrary.
 */
 static WhereTerm *findTerm(
   WhereClause *pWC,     /* The WHERE clause to be searched */
@@ -639,15 +657,15 @@ static WhereTerm *findTerm(
   u32 op,               /* Mask of WO_xx values describing operator */
   Index *pIdx           /* Must be compatible with this index, if not NULL */
 ){
-  WhereTerm *pTerm;
-  WhereTerm *pResult = 0;
-  WhereClause *pWCOrig = pWC;
-  int j, k;
-  int aEquiv[8];
-  int nEquiv = 2;
-  int iEquiv = 2;
-  Expr *pX;
-  Parse *pParse;
+  WhereTerm *pTerm;            /* Term being examined as possible result */
+  WhereTerm *pResult = 0;      /* The answer to return */
+  WhereClause *pWCOrig = pWC;  /* Original pWC value */
+  int j, k;                    /* Loop counters */
+  Expr *pX;                /* Pointer to an expression */
+  Parse *pParse;           /* Parsing context */
+  int nEquiv = 2;          /* Number of entires in aEquiv[] */
+  int iEquiv = 2;          /* Number of entries of aEquiv[] processed so far */
+  int aEquiv[22];          /* iCur,iColumn and up to 10 other equivalents */
 
   assert( iCur>=0 );
   aEquiv[0] = iCur;
@@ -1187,7 +1205,9 @@ static void exprAnalyzeOrTerm(
 static int isEquivalenceExpr(Parse *pParse, Expr *pExpr){
   const CollSeq *pCLeft, *pCRight;
   if( pExpr->op!=TK_EQ ) return 0;
-  if( ExprHasProperty(pExpr, EP_FromJoin) ) return 0;
+  if( ExprHasProperty(pExpr, EP_FromJoin) ){
+    return 0;
+  }
   assert( sqlite3ExprSkipCollate(pExpr->pRight)->op==TK_COLUMN );
   assert( sqlite3ExprSkipCollate(pExpr->pLeft)->op==TK_COLUMN );
   if( sqlite3ExprAffinity(pExpr->pLeft)!=sqlite3ExprAffinity(pExpr->pRight) ){
@@ -1196,7 +1216,9 @@ static int isEquivalenceExpr(Parse *pParse, Expr *pExpr){
   pCLeft = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
   if( pCLeft ){
     pCRight = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-    if( pCRight && pCRight!=pCLeft ) return 0;
+    if( pCRight && pCRight!=pCLeft ){
+      return 0;
+    }
   }
   return 1;
 }
