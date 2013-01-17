@@ -663,6 +663,7 @@ static WhereTerm *findTerm(
   int j, k;                    /* Loop counters */
   Expr *pX;                /* Pointer to an expression */
   Parse *pParse;           /* Parsing context */
+  int iOrigCol = iColumn;  /* Original value of iColumn */
   int nEquiv = 2;          /* Number of entires in aEquiv[] */
   int iEquiv = 2;          /* Number of entries of aEquiv[] processed so far */
   int aEquiv[22];          /* iCur,iColumn and up to 10 other equivalents */
@@ -675,16 +676,17 @@ static WhereTerm *findTerm(
       for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
         if( pTerm->leftCursor==iCur
           && pTerm->u.leftColumn==iColumn
-          && (pTerm->eOperator & op & WO_ALL)!=0
         ){
-          if( (pTerm->prereqRight & notReady)==0 ){
-            if( iColumn>=0 && pIdx && (pTerm->eOperator & WO_ISNULL)==0 ){
+          if( (pTerm->prereqRight & notReady)==0
+           && (pTerm->eOperator & op & WO_ALL)!=0
+          ){
+            if( iOrigCol>=0 && pIdx && (pTerm->eOperator & WO_ISNULL)==0 ){
               CollSeq *pColl;
               char idxaff;
       
               pX = pTerm->pExpr;
               pParse = pWC->pParse;
-              idxaff = pIdx->pTable->aCol[iColumn].affinity;
+              idxaff = pIdx->pTable->aCol[iOrigCol].affinity;
               if( !sqlite3IndexAffinityOk(pX, idxaff) ) continue;
       
               /* Figure out the collation sequence required from an index for
@@ -695,7 +697,7 @@ static WhereTerm *findTerm(
               pColl = sqlite3BinaryCompareCollSeq(pParse,pX->pLeft,pX->pRight);
               if( pColl==0 ) pColl = pParse->db->pDfltColl;
       
-              for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
+              for(j=0; pIdx->aiColumn[j]!=iOrigCol; j++){
                 if( NEVER(j>=pIdx->nColumn) ) return 0;
               }
               if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
@@ -703,8 +705,7 @@ static WhereTerm *findTerm(
             pResult = pTerm;
             if( pTerm->prereqRight==0 ) goto findTerm_success;
           }
-          if( (op&WO_EQ)!=0
-           && (pTerm->eOperator & WO_EQUIV)!=0
+          if( (pTerm->eOperator & WO_EQUIV)!=0
            && nEquiv<ArraySize(aEquiv)
           ){
             pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight);
@@ -724,7 +725,6 @@ static WhereTerm *findTerm(
     if( iEquiv>=nEquiv ) break;
     iCur = aEquiv[iEquiv++];
     iColumn = aEquiv[iEquiv++];
-    op &= WO_EQ;
   }
 findTerm_success:
   return pResult;
@@ -1005,7 +1005,6 @@ static void exprAnalyzeOrTerm(
   for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0 && indexable; i--, pOrTerm++){
     if( (pOrTerm->eOperator & WO_SINGLE)==0 ){
       WhereAndInfo *pAndInfo;
-      assert( pOrTerm->eOperator==0 );
       assert( (pOrTerm->wtFlags & (TERM_ANDINFO|TERM_ORINFO))==0 );
       chngToIN = 0;
       pAndInfo = sqlite3DbMallocRaw(db, sizeof(*pAndInfo));
@@ -1291,13 +1290,14 @@ static void exprAnalyze(
   pTerm->leftCursor = -1;
   pTerm->iParent = -1;
   pTerm->eOperator = 0;
-  if( allowedOp(op) && (pTerm->prereqRight & prereqLeft)==0 ){
+  if( allowedOp(op) ){
     Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
     Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
+    u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
       pTerm->u.leftColumn = pLeft->iColumn;
-      pTerm->eOperator = operatorMask(op);
+      pTerm->eOperator = operatorMask(op) & opMask;
     }
     if( pRight && pRight->op==TK_COLUMN ){
       WhereTerm *pNew;
@@ -1332,7 +1332,7 @@ static void exprAnalyze(
       testcase( (prereqLeft | extraRight) != prereqLeft );
       pNew->prereqRight = prereqLeft | extraRight;
       pNew->prereqAll = prereqAll;
-      pNew->eOperator = operatorMask(pDup->op) + eExtraOp;
+      pNew->eOperator = (operatorMask(pDup->op) + eExtraOp) & opMask;
     }
   }
 
