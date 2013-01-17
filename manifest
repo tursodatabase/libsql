@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scollating\ssequence\sand\saffinity\srestrictions\son\sthe\suse\nof\stransitivity.\s\sAdd\stest\scases\sto\sshow\sthat\sthe\srestrictions\sare\snot\s\nneeded.
-D 2013-01-17T16:18:55.615
+C Add\sthe\sability\sto\sdisable\stransitive\sconstraints\susing\sthe\s\nsqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS)\sinterface.
+D 2013-01-17T16:43:33.274
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h a6b3f816df7abd24bbb62b13867b47c2255b11a4
+F src/sqliteInt.h fb4109b7a77d985a39bbd04f1fbc49c940d4e410
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 79c257691c5cbe92fae9dc35465392cbd11c3e31
+F src/where.c 374a6c8190f863b3c69780b441d799e8a6b9e21b
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d96762841a461e192fb2f317d684d000376350dd
-R da60dbccb0041de3b6506adfaa629abe
+P 56549f45666b53876012df5c2bdf813474e10925
+R b61f05e227461d8fcbb8f5f454dfcd80
 U drh
-Z 92f034648a2e7d96254ca815101088e3
+Z 910e0211c204296308c40151d2a7d00a
