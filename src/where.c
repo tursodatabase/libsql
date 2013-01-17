@@ -687,7 +687,9 @@ static WhereTerm *findTerm(
               pX = pTerm->pExpr;
               pParse = pWC->pParse;
               idxaff = pIdx->pTable->aCol[iOrigCol].affinity;
-              if( !sqlite3IndexAffinityOk(pX, idxaff) ) continue;
+              if( !sqlite3IndexAffinityOk(pX, idxaff) ){
+                continue;
+              }
       
               /* Figure out the collation sequence required from an index for
               ** it to be useful for optimising expression pX. Store this
@@ -700,7 +702,9 @@ static WhereTerm *findTerm(
               for(j=0; pIdx->aiColumn[j]!=iOrigCol; j++){
                 if( NEVER(j>=pIdx->nColumn) ) return 0;
               }
-              if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
+              if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ){
+                continue;
+              }
             }
             pResult = pTerm;
             if( pTerm->prereqRight==0 ) goto findTerm_success;
@@ -1197,32 +1201,6 @@ static void exprAnalyzeOrTerm(
 #endif /* !SQLITE_OMIT_OR_OPTIMIZATION && !SQLITE_OMIT_SUBQUERY */
 
 /*
-** Check to see if pExpr is an expression of the form A==B where both
-** A and B are columns with the same affinity and collating sequence.
-** If A and B are equivalent, return true.
-*/
-static int isEquivalenceExpr(Parse *pParse, Expr *pExpr){
-  const CollSeq *pCLeft, *pCRight;
-  if( pExpr->op!=TK_EQ ) return 0;
-  if( ExprHasProperty(pExpr, EP_FromJoin) ){
-    return 0;
-  }
-  assert( sqlite3ExprSkipCollate(pExpr->pRight)->op==TK_COLUMN );
-  assert( sqlite3ExprSkipCollate(pExpr->pLeft)->op==TK_COLUMN );
-  if( sqlite3ExprAffinity(pExpr->pLeft)!=sqlite3ExprAffinity(pExpr->pRight) ){
-    return 0;
-  }
-  pCLeft = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-  if( pCLeft ){
-    pCRight = sqlite3ExprCollSeq(pParse, pExpr->pRight);
-    if( pCRight && pCRight!=pCLeft ){
-      return 0;
-    }
-  }
-  return 1;
-}
-
-/*
 ** The input to this routine is an WhereTerm structure with only the
 ** "pExpr" field filled in.  The job of this routine is to analyze the
 ** subexpression and populate all the other fields of the WhereTerm
@@ -1317,7 +1295,7 @@ static void exprAnalyze(
         pTerm = &pWC->a[idxTerm];
         pTerm->nChild = 1;
         pTerm->wtFlags |= TERM_COPIED;
-        if( isEquivalenceExpr(pParse, pExpr) ){
+        if( pExpr->op==TK_EQ && !ExprHasProperty(pExpr, EP_FromJoin) ){
           pTerm->eOperator |= WO_EQUIV;
           eExtraOp = WO_EQUIV;
         }

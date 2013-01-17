@@ -1,5 +1,5 @@
-C Make\smore\saggressive\suse\sof\stransitivity\sin\soptimizing\squeries.\s\sAdd\sa\stest\ncase.
-D 2013-01-17T15:05:17.153
+C Avoid\sunnecessary\scollating\ssequence\sand\saffinity\srestrictions\son\sthe\suse\nof\stransitivity.\s\sAdd\stest\scases\sto\sshow\sthat\sthe\srestrictions\sare\snot\s\nneeded.
+D 2013-01-17T16:18:55.615
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 701c32fecbcf44d749a8fdacb887ffdcec21a3e5
+F src/where.c 79c257691c5cbe92fae9dc35465392cbd11c3e31
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -896,6 +896,7 @@ F test/trace2.test c1dc104a8d11a347c870cfea6235e3fc6f6cb06d
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
+F test/transitive1.test d04aa9023e425d6f2d4aa61dd81ee9e102f89062
 F test/trigger1.test 30f343f91586765874a28ad539c06f5a5f049931
 F test/trigger2.test 834187beafd1db383af0c659cfa49b0576832816
 F test/trigger3.test d2c60d8be271c355d61727411e753181e877230a
@@ -1033,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fe152f8b048c9a18f99fa6096ff0e68dd630c318
-R f7b812e14ccd12b59aae7b48f0da1945
+P d96762841a461e192fb2f317d684d000376350dd
+R da60dbccb0041de3b6506adfaa629abe
 U drh
-Z eaf427dd060ebdbe2c55df9e5c68a5b1
+Z 92f034648a2e7d96254ca815101088e3
