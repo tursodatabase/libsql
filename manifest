@@ -1,5 +1,5 @@
-C Make\sthe\s'fs'\svirtual\stable\smodule\sportable\sto\sWindows.
-D 2013-01-17T03:18:14.519
+C Enhance\sRTree\svirtual\stable\screation\serror\smessages\sthat\sinvolve\sthe\sgetNodeSize()\sfunction.
+D 2013-01-17T03:18:38.278
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -83,7 +83,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 47064ee2995a396bfb626337d2b43f12cc0af687
+F ext/rtree/rtree.c ebd07d0f06dc167f1424ff3940a5711a3a039982
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test e474a2b5eff231496dbd073fe67e5fbaf7f444c9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1033,10 +1033,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6195ebd83323eaad92a0aa095cce1094bf8e2ba6
-R 391d1ca86287065efd5d1c0418e3ba47
-T *branch * fsVfsWin
-T *sym-fsVfsWin *
-T -sym-trunk *
+P dd473cae5b6ea02b73168b30365f0af5556ee24d
+R 6de5433403d98c9088f8c6d2808c6cc6
+T *branch * rtreeErrMsg
+T *sym-rtreeErrMsg *
+T -sym-fsVfsWin *
 U mistachkin
-Z 13b4bb0aa5332689b2ba5723b1c52e70
+Z f672a1a0e379d040e98c12d6bd28ded3
