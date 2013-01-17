@@ -1,9 +1,9 @@
-C Fix\sthe\sactivate_extensions\spragma\sso\sthat\sit\sis\sa\sno-op\swhen\sthe\srequired\nargument\sis\somitted.
-D 2013-01-16T20:33:02.794
+C Improved\serror\smessages\son\sthe\sRTREE\svirtual\stable.\s\sMake\sthe\s"fs"\svirtual\ntable\sused\sfor\stesting\savailable\son\swindows.
+D 2013-01-17T17:05:28.012
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 2b8371775ea8df029d1acf0c3d4c3782d3bd5711
+F Makefile.msc 1bed3bca025ee90441bb0c9f95f36f42b70bd839
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 6d4f66eaebabc42ef8c2a4d2d0caf4ce7ee81137
@@ -83,7 +83,7 @@ F ext/icu/README.txt bf8461d8cdc6b8f514c080e4e10dc3b2bbdfefa9
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 47064ee2995a396bfb626337d2b43f12cc0af687
+F ext/rtree/rtree.c ebd07d0f06dc167f1424ff3940a5711a3a039982
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test e474a2b5eff231496dbd073fe67e5fbaf7f444c9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -200,7 +200,7 @@ F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c 09781397ccc24268cb895be0d4c21b4aad651486
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
-F src/test_fs.c 7d3337933e92c198d06dd600375cc39259cc66b3
+F src/test_fs.c 1c51e203b2c20235d8c3739f8c1fb13a7502915b
 F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
 F src/test_fuzzer.c 1d26aa965120420bc14807da29d4d4541bfa6148
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
@@ -1033,7 +1033,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d5ebb7877885839e93eee3b322624d4c4215c1c4
-R 7e1018eedcfc760a5a5a61f3eb36bf10
+P 6195ebd83323eaad92a0aa095cce1094bf8e2ba6 652233d646236d3fbca629813b20d075f00f3ed6
+R 6de5433403d98c9088f8c6d2808c6cc6
 U drh
-Z cc9e1bb14175b94a3737a5872056637d
+Z 0204ef4d219a8c63e57ef7237c96ae79
