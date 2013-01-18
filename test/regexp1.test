@@ -197,12 +197,12 @@ do_execsql_test regexp1-2.15 {
 do_execsql_test regexp1-2.20 {
   SELECT 'abc$¢€xyz' REGEXP '^abc\u0024\u00a2\u20acxyz$',
          'abc$¢€xyz' REGEXP '^abc\u0024\u00A2\u20ACxyz$',
-         'abc$¢€xyz' REGEXP '^abc\x24\xa2\x20acxyz$'
+         'abc$¢€xyz' REGEXP '^abc\x24\xa2\u20acxyz$'
 } {1 1 1}
 do_execsql_test regexp1-2.21 {
   SELECT 'abc$¢€xyz' REGEXP '^abc[\u0024][\u00a2][\u20ac]xyz$',
          'abc$¢€xyz' REGEXP '^abc[\u0024\u00A2\u20AC]{3}xyz$',
-         'abc$¢€xyz' REGEXP '^abc[\x24][\xa2\x20ac]+xyz$'
+         'abc$¢€xyz' REGEXP '^abc[\x24][\xa2\u20ac]+xyz$'
 } {1 1 1}
 do_execsql_test regexp1-2.22 {
   SELECT 'abc$¢€xyz' REGEXP '^abc[^\u0025-X][^ -\u007f][^\u20ab]xyz$'

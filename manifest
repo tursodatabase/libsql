@@ -1,5 +1,5 @@
-C Enhance\sthe\squery\splanner\sto\sexploit\stransitivity\sof\sjoin\sconstraints.
-D 2013-01-17T17:20:49.316
+C The\s\\xXX\sescape\sin\sthe\stest_regexp.c\smust\sbe\sfollowed\sby\sexactly\stwo\shex\ndigits.
+D 2013-01-18T03:35:14.887
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 0e0e2e3bf6766b101ecccd8c042b66e44e9be8f5
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_regexp.c 935a1bfb48c7a6857514aa9cedf6df048f8b9928
+F src/test_regexp.c b70fbbf4dca5913fe404ddf909dae92a88488d61
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -669,7 +669,7 @@ F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
 F test/rdonly.test c267d050a1d9a6a321de502b737daf28821a518d
-F test/regexp1.test bbcb74e1bbdc20a7c0b9b2360deda14c4df1b46a
+F test/regexp1.test 5cbb6e7122ca51260d71079cf9245b63b8f64e1a
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
 F test/releasetest.tcl 06d289d8255794073a58d2850742f627924545ce
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c0b90d75a86b01f7fafec755cbe046c14d725341 593d67c8b0908daf7a70b2a310ed85515d384cbf
-R 19cb0000f7ea18bbcd69f74a26ccdcaa
+P 38852f158ab20bb4d7b264af987ec1538052bec3
+R 949bb425bbb85c4c863787918f541c43
 U drh
-Z bcbd2dcec0eed1962ecdbd3953e8a1f1
+Z f3f2e37133d258307d52a0baf870b3d9
