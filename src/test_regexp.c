@@ -378,7 +378,7 @@ static int re_hex(int c, int *pV){
 }
 
 /* A backslash character has been seen, read the next character and
-** return its intepretation.
+** return its interpretation.
 */
 static unsigned re_esc_char(ReCompiled *p){
   static const char zEsc[] = "afnrtv\\()*.+?[$^{|}]";

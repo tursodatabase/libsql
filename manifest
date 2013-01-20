@@ -1,5 +1,5 @@
-C The\s\\xXX\sescape\sin\sthe\stest_regexp.c\smust\sbe\sfollowed\sby\sexactly\stwo\shex\ndigits.
-D 2013-01-18T03:35:14.887
+C Fix\sa\stypo\sin\sa\scomment\sin\sthe\stest_regexp.c\stest\sfile.
+D 2013-01-20T00:18:49.354
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 0e0e2e3bf6766b101ecccd8c042b66e44e9be8f5
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_regexp.c b70fbbf4dca5913fe404ddf909dae92a88488d61
+F src/test_regexp.c 58e0349f155bc307dfa209df4b03add0a7749866
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 38852f158ab20bb4d7b264af987ec1538052bec3
-R 949bb425bbb85c4c863787918f541c43
+P 82957495aa0729468a020c2a0a45ed60019b6e07
+R 096f4ba1914ea3795c9296fd5f0e033f
 U drh
-Z f3f2e37133d258307d52a0baf870b3d9
+Z 22234c37912a7dbc9b6a20f58b6fea63
