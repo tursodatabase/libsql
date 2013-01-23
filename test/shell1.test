@@ -253,7 +253,7 @@ do_test shell1-2.4.2 {
 # .backup ?DB? FILE      Backup DB (default "main") to FILE
 do_test shell1-3.1.1 {
   catchcmd "test.db" ".backup"
-} {1 {Error: unknown command or invalid arguments:  "backup". Enter ".help" for help}}
+} {1 {missing FILENAME argument on .backup}}
 do_test shell1-3.1.2 {
   catchcmd "test.db" ".backup FOO"
 } {0 {}}
@@ -263,7 +263,7 @@ do_test shell1-3.1.3 {
 do_test shell1-3.1.4 {
   # too many arguments
   catchcmd "test.db" ".backup FOO BAR BAD"
-} {1 {Error: unknown command or invalid arguments:  "backup". Enter ".help" for help}}
+} {1 {too many arguments to .backup}}
 
 # .bail ON|OFF           Stop after hitting an error.  Default OFF
 do_test shell1-3.2.1 {

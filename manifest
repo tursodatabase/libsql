@@ -1,5 +1,5 @@
-C Fix\sa\sdouble-free()\scall\sthat\scan\soccur\nwhen\sSQLITE_ENABLE_TREE_EXPLAIN\sis\sdefined.
-D 2013-01-23T18:44:22.359
+C Improved\sparsing\sof\sthe\sarguments\sto\sthe\s".backup"\scommand\sin\sthe\s\ncommand-line\sshell.
+D 2013-01-23T18:53:23.246
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 395e458a6dc611cbe1179f424753f0c344957607
-F src/shell.c 11c9611580bb2ffce3a232f31f7f8cc310df0843
+F src/shell.c af0309c2491a0d82ded1c2af3f64fcdb29d26ad5
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -715,7 +715,7 @@ F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test b7896eb84028f3bc8300caf1fc796a73728aad0b
+F test/shell1.test 392a265895e63cff2de1c78554e3b5b1cbbe9b8a
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 68346af70bc43baf791227a381e54f9aca802c72
-R a6ba8189eb28518f1cd4dc399aac4272
+P 5bfb5967d70433bf41d39b57506b7ec167a1b6a0
+R 08c8109626ac00561b249e6640d8f589
 U drh
-Z e0c36470802c92592f633e73329b9c27
+Z c715715f0fc3823fbef7e95ac29cf308

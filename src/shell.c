@@ -1629,24 +1629,50 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( nArg==0 ) return 0; /* no tokens, no error */
   n = strlen30(azArg[0]);
   c = azArg[0][0];
-  if( c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0 && nArg>1 && nArg<4){
-    const char *zDestFile;
-    const char *zDb;
+  if( c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0 ){
+    const char *zDestFile = 0;
+    const char *zDb = 0;
+    const char *zKey = 0;
     sqlite3 *pDest;
     sqlite3_backup *pBackup;
-    if( nArg==2 ){
-      zDestFile = azArg[1];
-      zDb = "main";
-    }else{
-      zDestFile = azArg[2];
-      zDb = azArg[1];
+    int j;
+    for(j=1; j<nArg; j++){
+      const char *z = azArg[j];
+      if( z[0]=='-' ){
+        while( z[0]=='-' ) z++;
+        if( strcmp(z,"key")==0 && j<nArg-1 ){
+          zKey = azArg[++j];
+        }else
+        {
+          fprintf(stderr, "unknown option: %s\n", azArg[j]);
+          return 1;
+        }
+      }else if( zDestFile==0 ){
+        zDestFile = azArg[j];
+      }else if( zDb==0 ){
+        zDb = zDestFile;
+        zDestFile = azArg[j];
+      }else{
+        fprintf(stderr, "too many arguments to .backup\n");
+        return 1;
+      }
     }
+    if( zDestFile==0 ){
+      fprintf(stderr, "missing FILENAME argument on .backup\n");
+      return 1;
+    }
+    if( zDb==0 ) zDb = "main";
     rc = sqlite3_open(zDestFile, &pDest);
     if( rc!=SQLITE_OK ){
       fprintf(stderr, "Error: cannot open \"%s\"\n", zDestFile);
       sqlite3_close(pDest);
       return 1;
     }
+#ifdef SQLITE_HAS_CODEC
+    sqlite3_key(pDest, zKey, (int)strlen(zKey));
+#else
+    (void)zKey;
+#endif
     open_db(p);
     pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
     if( pBackup==0 ){
