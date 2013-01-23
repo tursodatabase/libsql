@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sa\scomment\sin\sthe\stest_regexp.c\stest\sfile.
-D 2013-01-20T00:18:49.354
+C Fix\sa\sdouble-free()\scall\sthat\scan\soccur\nwhen\sSQLITE_ENABLE_TREE_EXPLAIN\sis\sdefined.
+D 2013-01-23T18:44:22.359
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -243,7 +243,7 @@ F src/vdbe.c f51eb3207594703d24e91335cb16906e894b48aa
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c 7658c5d9db838db5780f6a1c4d1280d0646e3569
+F src/vdbeaux.c 7c3231498470049b6f1ce05d3992c48f615d2b5d
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 82957495aa0729468a020c2a0a45ed60019b6e07
-R 096f4ba1914ea3795c9296fd5f0e033f
+P 68346af70bc43baf791227a381e54f9aca802c72
+R a6ba8189eb28518f1cd4dc399aac4272
 U drh
-Z 22234c37912a7dbc9b6a20f58b6fea63
+Z e0c36470802c92592f633e73329b9c27
