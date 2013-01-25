@@ -1,5 +1,5 @@
-C Add\sbtree-page\sdecoding\slogic\sto\sshowwal.c.\s\sCommands\sof\sthe\sform:\n"showwal\s$FILE\s123bmc"\sshow\sthe\scontent\sof\sthe\sbtree\spage\sin\sframe\n123.\s\s"b"\smeans\sdecode\sthe\sbtree.\s\s"c"\smeans\sshow\scell\scontent.\n"m"\smeans\sgive\sa\smap\sof\sthe\sbtree\spage.
-D 2013-01-25T15:59:55.661
+C Enhance\sthe\scommand-line\sshell\sso\sthat\sadding\sa\snon-zero\snumeric\sargument\nto\sthe\s".exit"\scommand\scauses\san\simmediate\sexit\swithout\scleaning\sup.\s\sThis\ncan\sbe\sused\s(for\sexample)\sto\scause\sjournal\sfiles\sto\sbe\sleft\sbehind.
+D 2013-01-25T18:33:43.155
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 395e458a6dc611cbe1179f424753f0c344957607
-F src/shell.c af0309c2491a0d82ded1c2af3f64fcdb29d26ad5
+F src/shell.c db1b04cc1f0039b40d87d3b12382a55b8041edb3
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -715,7 +715,7 @@ F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test 392a265895e63cff2de1c78554e3b5b1cbbe9b8a
+F test/shell1.test b9b45c3591b892dcda59687f0b23606d065aeee0
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4e2bf57549a8d50fc0993386c724eb4a2b35c9fe
-R 77bd3fc673a5a4823c7d3950cb50d684
+P 93b159da5d2570946fdcd7da120bf7eb82b840f3
+R 406acb5b4563a45b5fb4ca4f5d25c7e8
 U drh
-Z 3c8d1d2fa3c0372f4e65d42510e07e23
+Z e3f5a516951f63a749e29f3ec2e96b93

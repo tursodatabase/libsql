@@ -1774,7 +1774,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     p->echoOn = booleanValue(azArg[1]);
   }else
 
-  if( c=='e' && strncmp(azArg[0], "exit", n)==0  && nArg==1 ){
+  if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
+    if( nArg>1 && (rc = atoi(azArg[1]))!=0 ) exit(rc);
     rc = 2;
   }else
 
