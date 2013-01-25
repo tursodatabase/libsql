@@ -1486,6 +1486,12 @@ static void open_db(struct callback_data *p){
       sqlite3_add_regexp_func(db);
     }
 #endif
+#ifdef SQLITE_ENABLE_SPELLFIX
+    {
+      extern int sqlite3_spellfix1_register(sqlite3*);
+      sqlite3_spellfix1_register(db);
+    }
+#endif
   }
 }
 

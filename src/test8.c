@@ -1389,7 +1389,7 @@ static int register_spellfix_module(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
 
-  sqlite3Spellfix1Register(db);
+  sqlite3_spellfix1_register(db);
   return TCL_OK;
 }
 
