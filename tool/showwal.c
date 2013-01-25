@@ -231,8 +231,13 @@ static void print_oneline_frame(int iFrame, Cksum *pCksum){
           getInt32(aData+12),
           s0,
           s1,
-          (s0==pCksum->s0 && s1==pCksum->s1) ? "cksum-ok" : "cksum-fail"
+          (s0==pCksum->s0 && s1==pCksum->s1) ? "" : "cksum-fail"
   );
+
+  /* Reset the checksum so that a single frame checksum failure will not
+  ** cause all subsequent frames to also show a failure. */
+  pCksum->s0 = s0;
+  pCksum->s1 = s1;
   free(aData);
 }
 
