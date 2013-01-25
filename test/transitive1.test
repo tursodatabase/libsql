@@ -1,0 +1,50 @@
+# 2013 April 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing of transitive WHERE clause constraints
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test transitive1-100 {
+  CREATE TABLE t1(a TEXT, b TEXT, c TEXT COLLATE NOCASE);
+  INSERT INTO t1 VALUES('abc','abc','Abc');
+  INSERT INTO t1 VALUES('def','def','def');
+  INSERT INTO t1 VALUES('ghi','ghi','GHI');
+  CREATE INDEX t1a1 ON t1(a);
+  CREATE INDEX t1a2 ON t1(a COLLATE nocase);
+
+  SELECT * FROM t1 WHERE a=b AND c=b AND c='DEF';
+} {def def def}
+do_execsql_test transitive1-110 {
+  SELECT * FROM t1 WHERE a=b AND c=b AND c>='DEF' ORDER BY +a;
+} {def def def ghi ghi GHI}
+do_execsql_test transitive1-120 {
+  SELECT * FROM t1 WHERE a=b AND c=b AND c<='DEF' ORDER BY +a;
+} {abc abc Abc def def def}
+
+do_execsql_test transitive1-200 {
+  CREATE TABLE t2(a INTEGER, b INTEGER, c TEXT);
+  INSERT INTO t2 VALUES(100,100,100);
+  INSERT INTO t2 VALUES(20,20,20);
+  INSERT INTO t2 VALUES(3,3,3);
+
+  SELECT * FROM t2 WHERE a=b AND c=b AND c=20;
+} {20 20 20}
+do_execsql_test transitive1-210 {
+  SELECT * FROM t2 WHERE a=b AND c=b AND c>=20 ORDER BY +a;
+} {3 3 3 20 20 20}
+do_execsql_test transitive1-220 {
+  SELECT * FROM t2 WHERE a=b AND c=b AND c<=20 ORDER BY +a;
+} {20 20 20 100 100 100}
+
+finish_test

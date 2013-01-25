@@ -3049,7 +3049,8 @@ static int getIntFromStmt(sqlite3 *db, const char *zSql, int *piVal){
 static int getNodeSize(
   sqlite3 *db,                    /* Database handle */
   Rtree *pRtree,                  /* Rtree handle */
-  int isCreate                    /* True for xCreate, false for xConnect */
+  int isCreate,                   /* True for xCreate, false for xConnect */
+  char **pzErr                    /* OUT: Error message, if any */
 ){
   int rc;
   char *zSql;
@@ -3062,6 +3063,8 @@ static int getNodeSize(
       if( (4+pRtree->nBytesPerCell*RTREE_MAXCELLS)<pRtree->iNodeSize ){
         pRtree->iNodeSize = 4+pRtree->nBytesPerCell*RTREE_MAXCELLS;
       }
+    }else{
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }
   }else{
     zSql = sqlite3_mprintf(
@@ -3069,6 +3072,9 @@ static int getNodeSize(
         pRtree->zDb, pRtree->zName
     );
     rc = getIntFromStmt(db, zSql, &pRtree->iNodeSize);
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    }
   }
 
   sqlite3_free(zSql);
@@ -3132,7 +3138,7 @@ static int rtreeInit(
   memcpy(pRtree->zName, argv[2], nName);
 
   /* Figure out the node size to use. */
-  rc = getNodeSize(db, pRtree, isCreate);
+  rc = getNodeSize(db, pRtree, isCreate, pzErr);
 
   /* Create/Connect to the underlying relational database schema. If
   ** that is successful, call sqlite3_declare_vtab() to configure

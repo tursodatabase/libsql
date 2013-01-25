@@ -46,6 +46,8 @@ ifcapable !fts3 {
 #   8.* - Test that if the content=xxx and prefix options are used together,
 #         the 'rebuild' command still works.
 #
+#   9.* - Test using content=xxx where xxx is a virtual table.
+#
 
 do_execsql_test 1.1.1 {
   CREATE TABLE t1(a, b, c);
@@ -522,4 +524,103 @@ do_execsql_test 8.4 { SELECT rowid FROM ft10 WHERE a MATCH 'ab*';      } {1 2 3}
 do_execsql_test 8.5 { SELECT rowid FROM ft10 WHERE b MATCH 'abav*';    } {3}
 do_execsql_test 8.6 { SELECT rowid FROM ft10 WHERE ft10 MATCH 'abas*'; } {1}
 
+#-------------------------------------------------------------------------
+# Test cases 9.*
+# 
+reset_db
+register_echo_module [sqlite3_connection_pointer db]
+
+do_execsql_test 9.1 {
+  CREATE TABLE tbl1(a, b);
+  INSERT INTO tbl1 VALUES('a b', 'c d');
+  INSERT INTO tbl1 VALUES('e f', 'a b');
+  CREATE VIRTUAL TABLE e1 USING echo(tbl1);
+  CREATE VIRTUAL TABLE ft1 USING fts4(content=e1);
+  INSERT INTO ft1(ft1) VALUES('rebuild');
+}
+
+do_execsql_test 9.2 {
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'e'
+} {2 {e f} {a b}}
+
+do_execsql_test 9.3 {
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'a'
+} {1 {a b} {c d} 2 {e f} {a b}}
+
+do_execsql_test 9.4 { 
+  DELETE FROM ft1 WHERE docid=1;
+}
+
+do_execsql_test 9.5 {
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'a'
+} {2 {e f} {a b}}
+
+do_execsql_test 9.6 {
+  INSERT INTO ft1(ft1) VALUES('rebuild');
+  SELECT rowid, * FROM ft1 WHERE ft1 MATCH 'a'
+} {1 {a b} {c d} 2 {e f} {a b}}
+
+
+#-------------------------------------------------------------------------
+# Test cases 10.*
+# 
+reset_db
+register_fs_module [sqlite3_connection_pointer db]
+
+proc write_file {path text} {
+  set fd [open $path w]
+  puts -nonewline $fd $text
+  close $fd
+}
+
+write_file t1.txt {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+write_file t2.txt {a b c d e f g h i j k l m a b c d e f g h i j k l m}
+write_file t3.txt {n o p q r s t u v w x y z n o p q r s t u v w x y z}
+
+do_execsql_test 10.1 {
+  CREATE TABLE idx(id INTEGER PRIMARY KEY, path TEXT);
+  INSERT INTO idx VALUES (1, 't1.txt');
+  INSERT INTO idx VALUES (2, 't2.txt');
+  INSERT INTO idx VALUES (3, 't3.txt');
+
+  CREATE VIRTUAL TABLE vt USING fs(idx);
+  SELECT * FROM vt;
+} {
+  1 {a b c d e f g h i j k l m n o p q r s t u v w x y z} 
+  2 {a b c d e f g h i j k l m a b c d e f g h i j k l m}
+  3 {n o p q r s t u v w x y z n o p q r s t u v w x y z}
+}
+
+do_execsql_test 10.2 {
+  SELECT * FROM vt WHERE rowid = 2;
+} {
+  2 {a b c d e f g h i j k l m a b c d e f g h i j k l m}
+}
+
+do_execsql_test 10.3 {
+  CREATE VIRTUAL TABLE ft USING fts4(content=vt);
+  INSERT INTO ft(ft) VALUES('rebuild');
+}
+
+do_execsql_test 10.4 {
+  SELECT snippet(ft, '[', ']', '...', -1, 5) FROM ft WHERE ft MATCH 'e'
+} {
+  {...c d [e] f g...} {...c d [e] f g...}
+}
+
+do_execsql_test 10.5 {
+  SELECT snippet(ft, '[', ']', '...', -1, 5) FROM ft WHERE ft MATCH 't'
+} {
+  {...r s [t] u v...} {...r s [t] u v...}
+}
+
+do_execsql_test 10.6 { DELETE FROM ft WHERE docid=2 }
+
+do_execsql_test 10.7 {
+  SELECT snippet(ft, '[', ']', '...', -1, 5) FROM ft WHERE ft MATCH 'e'
+} {
+  {...c d [e] f g...}
+}
+
 finish_test
+

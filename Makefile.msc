@@ -683,6 +683,7 @@ TESTSRC = \
   $(TOP)\src\test_config.c \
   $(TOP)\src\test_demovfs.c \
   $(TOP)\src\test_devsym.c \
+  $(TOP)\src\test_fs.c \
   $(TOP)\src\test_func.c \
   $(TOP)\src\test_fuzzer.c \
   $(TOP)\src\test_hexio.c \

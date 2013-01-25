@@ -576,6 +576,11 @@ struct BusyHandler {
 #define ArraySize(X)    ((int)(sizeof(X)/sizeof(X[0])))
 
 /*
+** Determine if the argument is a power of two
+*/
+#define IsPowerOfTwo(X) (((X)&((X)-1))==0)
+
+/*
 ** The following value as a destructor means to use sqlite3DbFree().
 ** The sqlite3DbFree() routine requires two parameters instead of the 
 ** one parameter that destructors normally want.  So we have to introduce 
@@ -981,6 +986,7 @@ struct sqlite3 {
 #define SQLITE_CoverIdxScan   0x0040   /* Covering index scans */
 #define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */
 #define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
+#define SQLITE_Transitive     0x0200   /* Transitive constraints */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
