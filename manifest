@@ -1,5 +1,5 @@
-C Improved\sparsing\sof\sthe\sarguments\sto\sthe\s".backup"\scommand\sin\sthe\s\ncommand-line\sshell.
-D 2013-01-23T18:53:23.246
+C Enhance\sthe\s"showwal"\sutility\sprogram\sto\sshow\schecksum\sfailures\son\sframes.
+D 2013-01-25T15:09:41.890
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1016,7 +1016,7 @@ F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/showdb.c aca2644aa4de7c0cad5821e50bbd55397e0974b8
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
-F tool/showwal.c f09e5a80a293919290ec85a6a37c85a5ddcf37d9
+F tool/showwal.c 2ef22ea67806f0e9fdba8083989c30e4bf4002e3
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl 76f583a246a0b027f423252339e711f13198932e
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5bfb5967d70433bf41d39b57506b7ec167a1b6a0
-R 08c8109626ac00561b249e6640d8f589
+P f1127e87b90c7ba049404ec68cb4e99009c22185
+R 20e35b503c10c06065f1e1625b37816e
 U drh
-Z c715715f0fc3823fbef7e95ac29cf308
+Z fa08d05e69180548469496ecb5ae134e

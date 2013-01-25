@@ -18,6 +18,65 @@ static int perLine = 16;        /* HEX elements to print per line */
 
 typedef long long int i64;      /* Datatype for 64-bit integers */
 
+/* Information for computing the checksum */
+typedef struct Cksum Cksum;
+struct Cksum {
+  int bSwap;           /* True to do byte swapping on 32-bit words */
+  unsigned s0, s1;     /* Current checksum value */
+};
+
+/*
+** extract a 32-bit big-endian integer
+*/
+static unsigned int getInt32(const unsigned char *a){
+  unsigned int x = (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3];
+  return x;
+}
+
+/*
+** Swap bytes on a 32-bit unsigned integer
+*/
+static unsigned int swab32(unsigned int x){
+  return (((x)&0x000000FF)<<24) + (((x)&0x0000FF00)<<8)
+         + (((x)&0x00FF0000)>>8)  + (((x)&0xFF000000)>>24);
+}
+
+/* Extend the checksum.  Reinitialize the checksum if bInit is true.
+*/
+static void extendCksum(
+  Cksum *pCksum,
+  unsigned char *aData,
+  unsigned int nByte,
+  int bInit
+){
+  unsigned int *a32;
+  if( bInit ){
+    int a = 0;
+    *((char*)&a) = 1;
+    if( a==1 ){
+      /* Host is little-endian */
+      pCksum->bSwap = getInt32(aData)!=0x377f0682;
+    }else{
+      /* Host is big-endian */
+      pCksum->bSwap = getInt32(aData)!=0x377f0683;
+    }
+    pCksum->s0 = 0;
+    pCksum->s1 = 0;
+  }
+  a32 = (unsigned int*)aData;
+  while( nByte>0 ){
+    unsigned int x0 = a32[0];
+    unsigned int x1 = a32[1];
+    if( pCksum->bSwap ){
+      x0 = swab32(x0);
+      x1 = swab32(x1);
+    }
+    pCksum->s0 += x0 + pCksum->s1;
+    pCksum->s1 += x1 + pCksum->s0;
+    nByte -= 8;
+    a32 += 2;
+  }
+}
 
 /*
 ** Convert the var-int format into i64.  Return the number of bytes
@@ -152,29 +211,27 @@ static void print_frame(int iFrame){
 }
 
 /*
-** extract a 32-bit big-endian integer
+** Summarize a single frame on a single line.
 */
-static unsigned int getInt32(const unsigned char *a){
-  unsigned int x = (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3];
-  return x;
-}
-
-/*
-** Print an entire page of content as hex
-*/
-static void print_oneline_frame(int iFrame){
+static void print_oneline_frame(int iFrame, Cksum *pCksum){
   int iStart;
   unsigned char *aData;
+  unsigned int s0, s1;
   iStart = 32 + (iFrame-1)*(pagesize+24);
   aData = getContent(iStart, 24);
-  fprintf(stdout, "Frame %4d: %6d %6d 0x%08x 0x%08x 0x%08x 0x%08x\n",
+  extendCksum(pCksum, aData, 8, 0);
+  extendCksum(pCksum, getContent(iStart+24, pagesize), pagesize, 0);
+  s0 = getInt32(aData+16);
+  s1 = getInt32(aData+20);
+  fprintf(stdout, "Frame %4d: %6d %6d 0x%08x,%08x 0x%08x,%08x %s\n",
           iFrame, 
           getInt32(aData),
           getInt32(aData+4),
           getInt32(aData+8),
           getInt32(aData+12),
-          getInt32(aData+16),
-          getInt32(aData+20)
+          s0,
+          s1,
+          (s0==pCksum->s0 && s1==pCksum->s1) ? "cksum-ok" : "cksum-fail"
   );
   free(aData);
 }
@@ -182,9 +239,13 @@ static void print_oneline_frame(int iFrame){
 /*
 ** Decode the WAL header.
 */
-static void print_wal_header(void){
+static void print_wal_header(Cksum *pCksum){
   unsigned char *aData;
   aData = getContent(0, 32);
+  if( pCksum ){
+    extendCksum(pCksum, aData, 24, 1);
+    printf("Checksum byte order: %s\n", pCksum->bSwap ? "swapped" : "native");
+  }
   printf("WAL Header:\n");
   print_decode_line(aData, 0, 4,1,"Magic.  0x377f0682 (le) or 0x377f0683 (be)");
   print_decode_line(aData, 4, 4, 0, "File format");
@@ -194,6 +255,14 @@ static void print_wal_header(void){
   print_decode_line(aData, 20,4, 1, "Salt-2");
   print_decode_line(aData, 24,4, 1, "Checksum-1");
   print_decode_line(aData, 28,4, 1, "Checksum-2");
+  if( pCksum ){
+    if( pCksum->s0!=getInt32(aData+24) ){
+      printf("**** cksum-1 mismatch: 0x%08x\n", pCksum->s0);
+    }
+    if( pCksum->s1!=getInt32(aData+28) ){
+      printf("**** cksum-2 mismatch: 0x%08x\n", pCksum->s1);
+    }
+  }
   free(aData);
 }
 
@@ -298,15 +367,18 @@ int main(int argc, char **argv){
   printf("Available pages: 1..%d\n", mxFrame);
   if( argc==2 ){
     int i;
-    print_wal_header();
-    for(i=1; i<=mxFrame; i++) print_oneline_frame(i);
+    Cksum x;
+    print_wal_header(&x);
+    for(i=1; i<=mxFrame; i++){
+      print_oneline_frame(i, &x);
+    }
   }else{
     int i;
     for(i=2; i<argc; i++){
       int iStart, iEnd;
       char *zLeft;
       if( strcmp(argv[i], "header")==0 ){
-        print_wal_header();
+        print_wal_header(0);
         continue;
       }
       if( !isdigit(argv[i][0]) ){
