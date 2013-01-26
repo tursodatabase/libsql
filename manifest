@@ -1,5 +1,5 @@
-C Version\s3.7.15.2\srelease\scandidate
-D 2013-01-09T11:53:05.549
+C Add\sa\ssingle\stest\scase\sto\sfts4unicode.test\sto\sverify\sthat\stitle-case\nmaps\sto\slower\scase.
+D 2013-01-26T19:26:11.931
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 690d441a758cbffd13e814dc2724a721a6ebd400
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -503,7 +503,7 @@ F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
-F test/fts4unicode.test aad033abdcfa0f87ce5f56468f59fdf2a0acbcef
+F test/fts4unicode.test 25ccad45896f8e50f6a694cff738a35f798cdb40
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test 0d89043dab9a8853358d14c68e028ee0093bf066
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -1026,7 +1026,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3d0609c958040d049b86f69d750ffcef764417df
-R 9f4348d1a37f598f7d9d8be10eff6aea
+P c0e09560d26f0a6456be9dd3447f5311eb4f238f
+R 3e0c5cc4b9c96b0e0609f8d891db3502
 U drh
-Z 2c8e31332e45b7b8f7af42318006a1b7
+Z 5d42eca2a5a6e0b7349db0e503335417
