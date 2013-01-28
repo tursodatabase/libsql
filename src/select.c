@@ -4746,7 +4746,10 @@ void sqlite3ExplainSelect(Vdbe *pVdbe, Select *p){
     sqlite3ExplainPrintf(pVdbe, "(null-select)");
     return;
   }
-  while( p->pPrior ) p = p->pPrior;
+  while( p->pPrior ){
+    p->pPrior->pNext = p;
+    p = p->pPrior;
+  }
   sqlite3ExplainPush(pVdbe);
   while( p ){
     explainOneSelect(pVdbe, p);

@@ -1,5 +1,5 @@
-C Issue\san\serror\smessage\sand\squit\s(rather\sthan\soverflowing\sa\sreference\scounter)\nif\sthe\snumber\sof\sreferences\sto\sa\stable\sexceeds\sthe\smaximum\sdue\sto\snested\nUNION\sviews.\s\sFix\sfor\sticket\s[d58ccbb3f1].
-D 2013-01-28T19:00:20.786
+C Fix\san\sissue\swith\sthe\sSQLITE_TESTCTRL_EXPLAIN_STMT\sand\scompound\squeries\swith\nmultiple\sterms.
+D 2013-01-28T22:52:34.785
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c d1e0c173ef9c8aeb7fdfd6bb3474404eaa3f29b5
+F src/select.c 51232abd81ba0a1359297f07df98ba4926a0b32d
 F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b4d94947fc11bd63180cbc27554b3bbb60abe7ff
-R 8be0f1d3c454c23195917422328f2d24
+P c2462a95ed8e1e69886681400d673207d906bf1b
+R 2764eebe1b9b63463757357d22ceb722
 U drh
-Z fc03c6951678032f2061e289aef39e13
+Z 9ef42cd81768a3cc2df7a3bc9ba7e903
