@@ -1537,17 +1537,18 @@ static void resolve_backslashes(char *z){
 ** Interpret zArg as a boolean value.  Return either 0 or 1.
 */
 static int booleanValue(char *zArg){
-  int val = atoi(zArg);
-  int j;
-  for(j=0; zArg[j]; j++){
-    zArg[j] = ToLower(zArg[j]);
+  int i;
+  for(i=0; zArg[i]>='0' && zArg[i]<='9'; i++){}
+  if( i>0 && zArg[i]==0 ) return atoi(zArg);
+  if( sqlite3_stricmp(zArg, "on")==0 || sqlite3_stricmp(zArg,"yes")==0 ){
+    return 1;
   }
-  if( strcmp(zArg,"on")==0 ){
-    val = 1;
-  }else if( strcmp(zArg,"yes")==0 ){
-    val = 1;
+  if( sqlite3_stricmp(zArg, "off")==0 || sqlite3_stricmp(zArg,"no")==0 ){
+    return 0;
   }
-  return val;
+  fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n",
+          zArg);
+  return 0;
 }
 
 /*

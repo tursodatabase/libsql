@@ -1,5 +1,5 @@
-C Add\sa\ssingle\stest\scase\sto\sfts4unicode.test\sto\sverify\sthat\stitle-case\nmaps\sto\slower\scase.
-D 2013-01-26T19:31:42.851
+C Cause\sthe\scommand-line\sshell\sto\sissue\san\serror\smessage\sif\syou\sgive\ssomething\nthat\sdoes\snot\slook\slike\sa\sboolean\svalue\sto\sa\sdot-command\sthat\swants\sa\sboolean\nargument.
+D 2013-01-28T18:18:26.777
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 395e458a6dc611cbe1179f424753f0c344957607
-F src/shell.c 215278ae0c4d06a373f885a030b8a522ccb34423
+F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
@@ -715,7 +715,7 @@ F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
-F test/shell1.test b9b45c3591b892dcda59687f0b23606d065aeee0
+F test/shell1.test 4a2f57952719972c6f862134463f8712e953c038
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7813b17d8b9fe48ddc841fe1c4bb75f7747073de
-R 2d27720c240fd9feb8b6d8ff72484bc3
+P 955a9459dabad231aa8d6282676975ab7fba244e
+R 66b9882bd300b48db89596b4965fc6ad
 U drh
-Z 8f172a225fdae03e0e13eca34bff7bb5
+Z 250538fa0a3f3f5cd6c8e21a5b90ee24

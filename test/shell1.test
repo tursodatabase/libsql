@@ -220,7 +220,7 @@ do_test shell1-2.3.2 {
 } {0 {}}
 do_test shell1-2.3.3 {
   catchcmd "test.db" ".explain \"1 2 3\""
-} {0 {}}
+} {1 {ERROR: Not a boolean value: "1 2 3". Assuming "no".}}
 do_test shell1-2.3.4 {
   catchcmd "test.db" ".explain \"OFF\""
 } {0 {}}
