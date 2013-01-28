@@ -1,5 +1,5 @@
-C Cause\sthe\scommand-line\sshell\sto\sissue\san\serror\smessage\sif\syou\sgive\ssomething\nthat\sdoes\snot\slook\slike\sa\sboolean\svalue\sto\sa\sdot-command\sthat\swants\sa\sboolean\nargument.
-D 2013-01-28T18:18:26.777
+C Issue\san\serror\smessage\sand\squit\s(rather\sthan\soverflowing\sa\sreference\scounter)\nif\sthe\snumber\sof\sreferences\sto\sa\stable\sexceeds\sthe\smaximum\sdue\sto\snested\nUNION\sviews.\s\sFix\sfor\sticket\s[d58ccbb3f1].
+D 2013-01-28T19:00:20.786
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 395e458a6dc611cbe1179f424753f0c344957607
+F src/select.c d1e0c173ef9c8aeb7fdfd6bb3474404eaa3f29b5
 F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -241,9 +241,9 @@ F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
 F src/vdbe.c f51eb3207594703d24e91335cb16906e894b48aa
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
-F src/vdbeInt.h 79abf9b31be406d35ca77d6999cb2d42aaf91e78
+F src/vdbeInt.h c5b337e571752a52aa7157d2ad991b33603b91b9
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c 7c3231498470049b6f1ce05d3992c48f615d2b5d
+F src/vdbeaux.c ec83f5db5b99db762eefefed1f5e19b513cca38a
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -926,7 +926,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
-F test/view.test b182a67ec43f490b156b5a710827a341be83dd17
+F test/view.test 977eb3fa17b44f73fc2b636172dc9136311024ce
 F test/vtab1.test 4403f987860ebddef1ce2de6db7216421035339d
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 955a9459dabad231aa8d6282676975ab7fba244e
-R 66b9882bd300b48db89596b4965fc6ad
+P b4d94947fc11bd63180cbc27554b3bbb60abe7ff
+R 8be0f1d3c454c23195917422328f2d24
 U drh
-Z 250538fa0a3f3f5cd6c8e21a5b90ee24
+Z fc03c6951678032f2061e289aef39e13
