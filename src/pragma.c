@@ -184,6 +184,9 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "sql_trace",                SQLITE_SqlTrace      },
     { "vdbe_listing",             SQLITE_VdbeListing   },
     { "vdbe_trace",               SQLITE_VdbeTrace     },
+    { "vdbe_addoptrace",          SQLITE_VdbeAddopTrace},
+    { "vdbe_debug",    SQLITE_SqlTrace | SQLITE_VdbeListing
+                               | SQLITE_VdbeTrace      },
 #endif
 #ifndef SQLITE_OMIT_CHECK
     { "ignore_check_constraints", SQLITE_IgnoreChecks  },
