@@ -1707,6 +1707,8 @@ static int multiSelect(
       int addr = 0;
       int nLimit;
       assert( !pPrior->pLimit );
+      pPrior->iLimit = p->iLimit;
+      pPrior->iOffset = p->iOffset;
       pPrior->pLimit = p->pLimit;
       pPrior->pOffset = p->pOffset;
       explainSetInteger(iSub1, pParse->iNextSelectId);
@@ -2963,12 +2965,15 @@ static int flattenSubquery(
     Select *pNew;
     ExprList *pOrderBy = p->pOrderBy;
     Expr *pLimit = p->pLimit;
+    Expr *pOffset = p->pOffset;
     Select *pPrior = p->pPrior;
     p->pOrderBy = 0;
     p->pSrc = 0;
     p->pPrior = 0;
     p->pLimit = 0;
+    p->pOffset = 0;
     pNew = sqlite3SelectDup(db, p, 0);
+    p->pOffset = pOffset;
     p->pLimit = pLimit;
     p->pOrderBy = pOrderBy;
     p->pSrc = pSrc;

@@ -1,5 +1,5 @@
-C New\sdebugging\spragmas:\s\sPRAGMA\svdbe_debug=ON\sis\sshort-hand\sfor\sthe\ssql_trace,\nvdbe_listing,\sand\svdbe_trace\spragmas.\s\sPRAGMA\svdbe_debug\senables\stracing\sof\nsqlite3VdbeAddOp()\scalls.\s\sNone\sof\sthis\sis\sactive\sunless\scompiled\swith\nSQLITE_DEBUG.
-D 2013-01-29T19:14:31.718
+C Fix\sLIMIT\sand\sOFFSET\sso\sthat\sthey\swork\sand\sdo\snot\sleak\smemory\seven\son\ncomplex\squeries\sinvolving\sdeeply\snested\sviews\sof\sUNION\sALL\scompounds.\nTicket\s[db4d96798da8].\s\sSecondary\sto\sticket\s[d58ccbb3f1b7].
+D 2013-01-29T23:55:50.355
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 51232abd81ba0a1359297f07df98ba4926a0b32d
+F src/select.c 741c623c70c09b5fbe55d8ae6413d9215c1dedbf
 F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -576,7 +576,7 @@ F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 0e5412f4dac4a849f613e1ef8b529d56a6e31d08
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
+F test/limit.test d31ab07cd32672b4520f98edb85998b8ee06ee67
 F test/loadext.test 2b5e249c51c986a5aff1f0950cf7ba30976c8f22
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a6499c2521637931661ed4d3afc4f96f91c69785
-R 1966f971ee35330a9cfdb2fe42a708ea
+P ae565ff3e0836b0cb45cc0ba7f27fa8cb2d21d77
+R a56ec092a082ca5a9e2e733b6db84cc8
 U drh
-Z 4b24169152f5fb24a8eeab17cd2e55a2
+Z c238cfe2534c4131063084d96b99dd3f
