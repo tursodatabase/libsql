@@ -468,11 +468,6 @@ do_test limit-12.4 {
   }
 } {1 {no such column: x}}
 
-db close
-sqlite3_shutdown
-sqlite3_config_lookaside 0 0
-sqlite3_initialize
-sqlite3 db :memory:
 # Ticket [db4d96798da8b]
 # LIMIT does not work with nested views containing UNION ALL 
 #

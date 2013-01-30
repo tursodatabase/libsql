@@ -1,5 +1,5 @@
-C Fix\sLIMIT\sand\sOFFSET\sso\sthat\sthey\swork\sand\sdo\snot\sleak\smemory\seven\son\ncomplex\squeries\sinvolving\sdeeply\snested\sviews\sof\sUNION\sALL\scompounds.\nTicket\s[db4d96798da8].\s\sSecondary\sto\sticket\s[d58ccbb3f1b7].
-D 2013-01-29T23:55:50.355
+C Remove\ssome\sdebugging\slogic\saccidently\sleft\sin\sthe\slimit.test\smodule.
+D 2013-01-30T01:46:06.896
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -576,7 +576,7 @@ F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 0e5412f4dac4a849f613e1ef8b529d56a6e31d08
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/limit.test d31ab07cd32672b4520f98edb85998b8ee06ee67
+F test/limit.test cc0ab63385239b63c72452b0e93700bf5e8f0b99
 F test/loadext.test 2b5e249c51c986a5aff1f0950cf7ba30976c8f22
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ae565ff3e0836b0cb45cc0ba7f27fa8cb2d21d77
-R a56ec092a082ca5a9e2e733b6db84cc8
+P 497ee36cb8d07c936e6896135163c5cd7e94bdde
+R 8631ea06030b6f0bbf98e234aaa48a26
 U drh
-Z c238cfe2534c4131063084d96b99dd3f
+Z 6b49c42c9eab49f950915ec166638d14
