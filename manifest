@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-02-07T09:33:56.594
+C Allow\san\sindex\sto\sbe\sused\sfor\ssorting\seven\sif\sprior\sterms\sof\sthe\sindex\nare\sconstrained\sby\sIN\soperators.
+D 2013-02-07T21:15:14.299
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 427c6ec07c2150e6d2bd28aefd98ab234cc374c3
+F src/where.c 74f8a582895bd27e74885858f598cdf54c32682d
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -970,8 +970,8 @@ F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test 9714e6f292d70c22e78e1cecb3d896457186b9b7
-F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
+F test/where.test 55f6780f986b38b870e0fc50c3d842c13e7946a0
+F test/where2.test 61acb16d8e67e0d8717b2ad1a132f3b1ad81fd62
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1034,7 +1034,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e1640876df7ed6fb4e84292e5ce1f78635df64ab
-R ed650c137d06abf5e97862ecc9965eee
+P 4a7b4ee011fea911b981206c242e3d5553303b52
+R 5cc9a6226d6ff2cc56ed201a94d58505
+T *branch * IN-with-ORDERBY
+T *sym-IN-with-ORDERBY *
+T -sym-trunk *
 U drh
-Z 0e5ff063c96a5d0e787292d2749e52de
+Z 6d9a20d9ee8461cef5a45f6f7cc942b7

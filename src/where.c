@@ -3010,10 +3010,15 @@ static int isSortingIndex(
     if( pConstraint==0 ){
       isEq = 0;
     }else if( (pConstraint->eOperator & WO_IN)!=0 ){
+#if 0
       /* Constraints of the form: "X IN ..." cannot be used with an ORDER BY
       ** because we do not know in what order the values on the RHS of the IN
       ** operator will occur. */
       break;
+#else
+      if( termSortOrder ) break;
+      isEq = 0;
+#endif
     }else if( (pConstraint->eOperator & WO_ISNULL)!=0 ){
       uniqueNotNull = 0;
       isEq = 1;  /* "X IS NULL" means X has only a single value */
@@ -3317,8 +3322,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** indicate this to the caller.
     **
     ** Otherwise, if the search may find more than one row, test to see if
-    ** there is a range constraint on indexed column (pc.plan.nEq+1) that can be 
-    ** optimized using the index. 
+    ** there is a range constraint on indexed column (pc.plan.nEq+1) that
+    ** can be optimized using the index. 
     */
     if( pc.plan.nEq==pProbe->nColumn && pProbe->onError!=OE_None ){
       testcase( pc.plan.wsFlags & WHERE_COLUMN_IN );
