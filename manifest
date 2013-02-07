@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sskip\sdefining\sthe\slocaltime()\sfunction\swhen\sbeing\scompiled\sfor\sWinCE.
-D 2013-02-07T05:12:25.598
+C Fix\sharmless\scompiler\swarnings.
+D 2013-02-07T09:33:56.594
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/pragma.c eb9d39e30f00e3ba51892749ddf9d7b86541c43e
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 0bca3bf694f14f96a13873d87f62d6a6f38f913f
+F src/resolve.c 652ae6dc0f185b01b4536bb2fa7d878f13f0f1df
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 741c623c70c09b5fbe55d8ae6413d9215c1dedbf
 F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
@@ -184,7 +184,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 3213f3101e3b85f047d6e389da5a53d76d3d7540
-F src/test1.c 266c7ff1ca7a4be000f5ee19ef624f8e9c21693d
+F src/test1.c 834e38420a5c604d4351741c27ebe6d78a1be907
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -241,7 +241,7 @@ F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
 F src/vdbe.c f51eb3207594703d24e91335cb16906e894b48aa
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
-F src/vdbeInt.h c5b337e571752a52aa7157d2ad991b33603b91b9
+F src/vdbeInt.h 396bb03eec560f768d1b86092b00f46c25575d3b
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
 F src/vdbeaux.c 8b5d13a2e0a2430f35881eceec762fab8d24e64d
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 374a6c8190f863b3c69780b441d799e8a6b9e21b
+F src/where.c 427c6ec07c2150e6d2bd28aefd98ab234cc374c3
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7d346250e8a212880c4635a455cc9c98a1395c4c
-R 67f010e06a589b4f3cacdf24185f6947
-U mistachkin
-Z 545e88ce182d63880d035c13790df377
+P e1640876df7ed6fb4e84292e5ce1f78635df64ab
+R ed650c137d06abf5e97862ecc9965eee
+U drh
+Z 0e5ff063c96a5d0e787292d2749e52de

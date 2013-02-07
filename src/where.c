@@ -4174,8 +4174,8 @@ static Bitmask codeOneLoopStart(
     for(j=1; j<=nConstraint; j++){
       for(k=0; k<nConstraint; k++){
         if( aUsage[k].argvIndex==j ){
-          WhereTerm *pTerm = &pWC->a[aConstraint[k].iTermOffset];
           int iTarget = iReg+j+1;
+          pTerm = &pWC->a[aConstraint[k].iTermOffset];
           if( pTerm->eOperator & WO_IN ){
             codeEqualityTerm(pParse, pTerm, pLevel, iTarget);
             addrNotFound = pLevel->addrNxt;
