@@ -1621,9 +1621,10 @@ static void logIoerr(int nRetry){
 /*************************************************************************
 ** This section contains code for WinCE only.
 */
+#if !defined(SQLITE_MSVC_LOCALTIME_API) || !SQLITE_MSVC_LOCALTIME_API
 /*
-** Windows CE does not have a localtime() function.  So create a
-** substitute.
+** The MSVC CRT on Windows CE may not have a localtime() function.  So
+** create a substitute.
 */
 #include <time.h>
 struct tm *__cdecl localtime(const time_t *t)
@@ -1647,6 +1648,7 @@ struct tm *__cdecl localtime(const time_t *t)
   y.tm_sec = pTm.wSecond;
   return &y;
 }
+#endif
 
 #define HANDLE_TO_WINFILE(a) (winFile*)&((char*)a)[-(int)offsetof(winFile,h)]
 
