@@ -2270,8 +2270,9 @@ static void bestVirtualIndex(WhereBestIdx *p){
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_constraint_usage *pUsage;
   WhereTerm *pTerm;
-  int i, j;
+  int i, j, k;
   int nOrderBy;
+  int sortOrder;                  /* Sort order for IN clauses */
   int bAllowIN;                   /* Allow IN optimizations */
   double rCost;
 
@@ -2370,18 +2371,27 @@ static void bestVirtualIndex(WhereBestIdx *p){
       return;
     }
   
+    sortOrder = SQLITE_SO_ASC;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
     for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
       if( pUsage[i].argvIndex>0 ){
         j = pIdxCons->iTermOffset;
         pTerm = &pWC->a[j];
         p->cost.used |= pTerm->prereqRight;
-        if( (pTerm->eOperator & WO_IN)!=0 && pUsage[i].omit==0 ){
-          /* Do not attempt to use an IN constraint if the virtual table
-          ** says that the equivalent EQ constraint cannot be safely omitted.
-          ** If we do attempt to use such a constraint, some rows might be
-          ** repeated in the output. */
-          break;
+        if( (pTerm->eOperator & WO_IN)!=0 ){
+          if( pUsage[i].omit==0 ){
+            /* Do not attempt to use an IN constraint if the virtual table
+            ** says that the equivalent EQ constraint cannot be safely omitted.
+            ** If we do attempt to use such a constraint, some rows might be
+            ** repeated in the output. */
+            break;
+          }
+          for(k=0; k<pIdxInfo->nOrderBy; k++){
+            if( pIdxInfo->aOrderBy[k].iColumn==pIdxCons->iColumn ){
+              sortOrder = pIdxInfo->aOrderBy[k].desc;
+              break;
+            }
+          }
         }
       }
     }
@@ -2411,7 +2421,8 @@ static void bestVirtualIndex(WhereBestIdx *p){
   }
   p->cost.plan.u.pVtabIdx = pIdxInfo;
   if( pIdxInfo->orderByConsumed ){
-    p->cost.plan.wsFlags |= WHERE_ORDERED;
+    assert( sortOrder==0 || sortOrder==1 );
+    p->cost.plan.wsFlags |= WHERE_ORDERED + sortOrder*WHERE_REVERSE;
     p->cost.plan.nOBSat = nOrderBy;
   }else{
     p->cost.plan.nOBSat = p->i ? p->aLevel[p->i-1].plan.nOBSat : 0;
