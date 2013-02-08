@@ -1,5 +1,5 @@
-C Allow\san\sindex\sto\sbe\sused\sfor\ssorting\seven\sif\sprior\sterms\sof\sthe\sindex\nare\sconstrained\sby\sIN\soperators.
-D 2013-02-07T21:15:14.299
+C Allow\sthe\s"a=?1\sOR\sa=?2"\sto\s"a\sIN\s(?1,?2)"\stransformation\sto\swork\son\svirtual\ntables\sagain.\s\sThis\swas\sformerly\srestricted\sbecause\svirtual\stables\scould\snot\noptimize\sIN\sterms.\s\s(See\scheck-in\s[fad88e71cf195e].)\s\sBut\sIN\sterms\sare\snow\nused\sby\svirtual\stables\s(as\sof\scheck-in\s[3d65c70343])\sso\sthe\srestriction\scan\nnow\sbe\sremoved.
+D 2013-02-08T16:04:19.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 74f8a582895bd27e74885858f598cdf54c32682d
+F src/where.c e09d21a4506a19c0a8b17e9614d362043c9ffeb1
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1034,10 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4a7b4ee011fea911b981206c242e3d5553303b52
-R 5cc9a6226d6ff2cc56ed201a94d58505
-T *branch * IN-with-ORDERBY
-T *sym-IN-with-ORDERBY *
-T -sym-trunk *
+P 98bf668ab1a8683b46ee8c94cb60f8215aabc517
+R 77749b931237e0163d95186ceeef39fd
 U drh
-Z 6d9a20d9ee8461cef5a45f6f7cc942b7
+Z afe286dca485d6e9ab8ba5a0ac8b0dbf

@@ -140,7 +140,6 @@ struct WhereTerm {
 struct WhereClause {
   Parse *pParse;           /* The parser context */
   WhereMaskSet *pMaskSet;  /* Mapping of table cursor numbers to bitmasks */
-  Bitmask vmask;           /* Bitmask identifying virtual table cursors */
   WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
   u16 wctrlFlags;          /* Might include WHERE_AND_ONLY */
@@ -317,7 +316,6 @@ static void whereClauseInit(
   pWC->nTerm = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
-  pWC->vmask = 0;
   pWC->wctrlFlags = wctrlFlags;
 }
 
@@ -917,7 +915,7 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 **
 ** CASE 1:
 **
-** If all subterms are of the form T.C=expr for some single column of C
+** If all subterms are of the form T.C=expr for some single column of C and
 ** a single table T (as shown in example B above) then create a new virtual
 ** term that is an equivalent IN expression.  In other words, if the term
 ** being analyzed is:
@@ -1005,7 +1003,7 @@ static void exprAnalyzeOrTerm(
   ** Compute the set of tables that might satisfy cases 1 or 2.
   */
   indexable = ~(Bitmask)0;
-  chngToIN = ~(pWC->vmask);
+  chngToIN = ~(Bitmask)0;
   for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0 && indexable; i--, pOrTerm++){
     if( (pOrTerm->eOperator & WO_SINGLE)==0 ){
       WhereAndInfo *pAndInfo;
@@ -5062,24 +5060,13 @@ WhereInfo *sqlite3WhereBegin(
   ** bitmask for all tables to the left of the join.  Knowing the bitmask
   ** for all tables to the left of a left join is important.  Ticket #3015.
   **
-  ** Configure the WhereClause.vmask variable so that bits that correspond
-  ** to virtual table cursors are set. This is used to selectively disable 
-  ** the OR-to-IN transformation in exprAnalyzeOrTerm(). It is not helpful 
-  ** with virtual tables.
-  **
   ** Note that bitmasks are created for all pTabList->nSrc tables in
   ** pTabList, not just the first nTabList tables.  nTabList is normally
   ** equal to pTabList->nSrc but might be shortened to 1 if the
   ** WHERE_ONETABLE_ONLY flag is set.
   */
-  assert( sWBI.pWC->vmask==0 && pMaskSet->n==0 );
   for(ii=0; ii<pTabList->nSrc; ii++){
     createMask(pMaskSet, pTabList->a[ii].iCursor);
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( ALWAYS(pTabList->a[ii].pTab) && IsVirtual(pTabList->a[ii].pTab) ){
-      sWBI.pWC->vmask |= ((Bitmask)1 << ii);
-    }
-#endif
   }
 #ifndef NDEBUG
   {
