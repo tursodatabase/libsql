@@ -3665,7 +3665,8 @@ static void bestIndex(WhereBestIdx *p){
     sqlite3_index_info *pIdxInfo = 0;
     p->ppIdxInfo = &pIdxInfo;
     bestVirtualIndex(p);
-    if( pIdxInfo->needToFreeIdxStr ){
+    assert( pIdxInfo!=0 || p->pParse->db->mallocFailed );
+    if( pIdxInfo && pIdxInfo->needToFreeIdxStr ){
       sqlite3_free(pIdxInfo->idxStr);
     }
     sqlite3DbFree(p->pParse->db, pIdxInfo);
