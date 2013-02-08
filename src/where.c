@@ -3008,15 +3008,7 @@ static int isSortingIndex(
     if( pConstraint==0 ){
       isEq = 0;
     }else if( (pConstraint->eOperator & WO_IN)!=0 ){
-#if 0
-      /* Constraints of the form: "X IN ..." cannot be used with an ORDER BY
-      ** because we do not know in what order the values on the RHS of the IN
-      ** operator will occur. */
-      break;
-#else
-      if( termSortOrder ) break;
       isEq = 0;
-#endif
     }else if( (pConstraint->eOperator & WO_ISNULL)!=0 ){
       uniqueNotNull = 0;
       isEq = 1;  /* "X IS NULL" means X has only a single value */
@@ -3786,12 +3778,13 @@ static int codeEqualityTerm(
     int eType;
     int iTab;
     struct InLoop *pIn;
+    u8 bRev = (pLevel->plan.wsFlags & WHERE_REVERSE)!=0;
 
     assert( pX->op==TK_IN );
     iReg = iTarget;
     eType = sqlite3FindInIndex(pParse, pX, 0);
     iTab = pX->iTable;
-    sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
+    sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
     assert( pLevel->plan.wsFlags & WHERE_IN_ABLE );
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(v);
@@ -3809,6 +3802,7 @@ static int codeEqualityTerm(
       }else{
         pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
       }
+      pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
       sqlite3VdbeAddOp1(v, OP_IsNull, iReg);
     }else{
       pLevel->u.in.nIn = 0;
@@ -5550,7 +5544,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeResolveLabel(v, pLevel->addrNxt);
       for(j=pLevel->u.in.nIn, pIn=&pLevel->u.in.aInLoop[j-1]; j>0; j--, pIn--){
         sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
-        sqlite3VdbeAddOp2(v, OP_Next, pIn->iCur, pIn->addrInTop);
+        sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
         sqlite3VdbeJumpHere(v, pIn->addrInTop-1);
       }
       sqlite3DbFree(db, pLevel->u.in.aInLoop);

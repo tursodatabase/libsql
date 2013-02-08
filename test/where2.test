@@ -182,7 +182,7 @@ ifcapable subquery {
          AND y IN (10000,10001,10002,10003,10004,10005)
        ORDER BY x DESC
     }
-  } {99 6 10000 10006 sort t1 i1xy}
+  } {99 6 10000 10006 nosort t1 i1xy}
   do_test where2-4.6c {
     queryplan {
       SELECT * FROM t1
@@ -246,7 +246,7 @@ ifcapable subquery {
     queryplan {
       SELECT * FROM t1 WHERE w IN (99) ORDER BY w DESC
     }
-  } {99 6 10000 10006 sort t1 i1w}
+  } {99 6 10000 10006 nosort t1 i1w}
 }
 
 # Verify that OR clauses get translated into IN operators.

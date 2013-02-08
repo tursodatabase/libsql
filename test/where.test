@@ -398,7 +398,7 @@ ifcapable subquery {
     count {
       SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1 DESC;
     }
-  } {3 1 16 2 1 9 1 0 4 14}
+  } {3 1 16 2 1 9 1 0 4 12}
   do_test where-5.4 {
     count {
       SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
@@ -467,6 +467,30 @@ ifcapable subquery {
       SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,16) ORDER BY 1;
     }
   } {2 1 9 3 1 16 11}
+  do_test where-5.100 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x, y
+    }
+  } {2 1 9 54 5 3025 62 5 3969}
+  do_test where-5.101 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x DESC, y DESC
+    }
+  } {62 5 3969 54 5 3025 2 1 9}
+  do_test where-5.102 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x DESC, y
+    }
+  } {54 5 3025 62 5 3969 2 1 9}
+  do_test where-5.103 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x, y DESC
+    }
+  } {2 1 9 62 5 3969 54 5 3025}
 }
 
 # This procedure executes the SQL.  Then it checks to see if the OP_Sort
@@ -535,7 +559,7 @@ ifcapable subquery {
     cksort {
       SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a DESC LIMIT 3
     }
-  } {9 92 100 7 94 64 5 96 36 sort}
+  } {9 92 100 7 94 64 5 96 36 nosort}
 }
 do_test where-6.9.1 {
   cksort {

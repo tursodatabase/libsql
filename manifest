@@ -1,5 +1,5 @@
-C Allow\sthe\s"a=?1\sOR\sa=?2"\sto\s"a\sIN\s(?1,?2)"\stransformation\sto\swork\son\svirtual\ntables\sagain.\s\sThis\swas\sformerly\srestricted\sbecause\svirtual\stables\scould\snot\noptimize\sIN\sterms.\s\s(See\scheck-in\s[fad88e71cf195e].)\s\sBut\sIN\sterms\sare\snow\nused\sby\svirtual\stables\s(as\sof\scheck-in\s[3d65c70343])\sso\sthe\srestriction\scan\nnow\sbe\sremoved.
-D 2013-02-08T16:04:19.844
+C Loop\sthrough\sthe\selements\son\sthe\sRHS\sof\san\sIN\soperator\sin\sreverse\sorder\swhen\nthe\sORDER\sBY\sclauses\sspecifies\sDESC.
+D 2013-02-08T18:48:23.501
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 6267485592261a1420ae9195e388242d9e451bdb
+F src/sqliteInt.h c1e7fe135ec1957d4305f0f8016b5a12d339cd53
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c e09d21a4506a19c0a8b17e9614d362043c9ffeb1
+F src/where.c 36370580f2e3f805df161db44288bfb7d9ac007a
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -970,8 +970,8 @@ F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test 55f6780f986b38b870e0fc50c3d842c13e7946a0
-F test/where2.test 61acb16d8e67e0d8717b2ad1a132f3b1ad81fd62
+F test/where.test 15ac8611c9439a2c5f4a6ac10cfe4c1ec9854c24
+F test/where2.test 399b3178289925a0aa976b3d60ef139740540ecd
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 98bf668ab1a8683b46ee8c94cb60f8215aabc517
-R 77749b931237e0163d95186ceeef39fd
+P a917c1f09254b54e03e31b119cc49c551269d82e
+R f8ff7e2997f1e9085eb15a7df82507fc
 U drh
-Z afe286dca485d6e9ab8ba5a0ac8b0dbf
+Z d65a74f3ef1f6a5ee91ecd28380ca50d
