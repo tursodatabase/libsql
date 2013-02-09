@@ -869,7 +869,7 @@ case OP_Halt: {
   if( rc==SQLITE_BUSY ){
     p->rc = rc = SQLITE_BUSY;
   }else{
-    assert( rc==SQLITE_OK || p->rc==SQLITE_CONSTRAINT );
+    assert( rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT );
     assert( rc==SQLITE_OK || db->nDeferredCons>0 );
     rc = p->rc ? SQLITE_ERROR : SQLITE_DONE;
   }
@@ -6063,7 +6063,7 @@ case OP_VUpdate: {
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );
       db->lastRowid = lastRowid = rowid;
     }
-    if( rc==SQLITE_CONSTRAINT && pOp->p4.pVtab->bConstraint ){
+    if( (rc&0xff)==SQLITE_CONSTRAINT && pOp->p4.pVtab->bConstraint ){
       if( pOp->p5==OE_Ignore ){
         rc = SQLITE_OK;
       }else{

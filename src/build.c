@@ -2447,8 +2447,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     sqlite3VdbeAddOp2(v, OP_Goto, 0, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_SorterCompare, iSorter, j2, regRecord);
-    sqlite3HaltConstraint(
-        pParse, OE_Abort, "indexed columns are not unique", P4_STATIC
+    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_UNIQUE,
+        OE_Abort, "indexed columns are not unique", P4_STATIC
     );
   }else{
     addr2 = sqlite3VdbeCurrentAddr(v);
@@ -2474,8 +2474,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     ** since sqlite3ReleaseTempRange() was called, it is safe to do so.
     */
     sqlite3VdbeAddOp4(v, OP_IsUnique, iIdx, j2, regRowid, pRegKey, P4_INT32);
-    sqlite3HaltConstraint(
-        pParse, OE_Abort, "indexed columns are not unique", P4_STATIC);
+    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_UNIQUE,
+        "indexed columns are not unique", P4_STATIC);
   }
   sqlite3VdbeAddOp3(v, OP_IdxInsert, iIdx, regRecord, 0);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
@@ -3692,12 +3692,19 @@ void sqlite3MayAbort(Parse *pParse){
 ** error. The onError parameter determines which (if any) of the statement
 ** and/or current transaction is rolled back.
 */
-void sqlite3HaltConstraint(Parse *pParse, int onError, char *p4, int p4type){
+void sqlite3HaltConstraint(
+  Parse *pParse,    /* Parsing context */
+  int errCode,      /* extended error code */
+  int onError,      /* Constraint type */
+  char *p4,         /* Error message */
+  int p4type        /* P4_STATIC or P4_TRANSIENT */
+){
   Vdbe *v = sqlite3GetVdbe(pParse);
+  assert( (errCode&0xff)==SQLITE_CONSTRAINT );
   if( onError==OE_Abort ){
     sqlite3MayAbort(pParse);
   }
-  sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0, p4, p4type);
+  sqlite3VdbeAddOp4(v, OP_Halt, errCode, onError, 0, p4, p4type);
 }
 
 /*

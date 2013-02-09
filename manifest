@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-02-07T09:33:56.594
+C Add\sextended\serror\scodes\sfor\sconstraint\serrors.
+D 2013-02-09T13:58:25.162
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,21 +124,21 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 7a80e4a67f32a2494c383a28a495bf3bd71cc230
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
-F src/build.c f4f86c07002c6f3ee96c1e34e0e993a962ef2c73
+F src/build.c 73ca65f32938e4e0d94e831b61b5749b211b79be
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
-F src/expr.c 4dff0b04eaaf133789279c6b8cd69175dfbb1691
+F src/expr.c 44714c8f0e553de54e9648815ef940b20eb6fb4b
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 5b7a12e2f8620e855b0478a9a6798df9967bb277
+F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
 F src/func.c 8147799b048065a1590805be464d05b4913e652c
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c dc197aa9293a26d300eb5378880e701f7b20fefa
+F src/insert.c f7cb141e8ce257cb6b15c497f09e4e23d6055599
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -176,15 +176,15 @@ F src/resolve.c 652ae6dc0f185b01b4536bb2fa7d878f13f0f1df
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 741c623c70c09b5fbe55d8ae6413d9215c1dedbf
 F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
-F src/sqlite.h.in 39cc33bb08897c748fe3383c29ccf56585704177
+F src/sqlite.h.in 7cf6485b8a5cd88139e9d05c2a73368dd79863af
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 6904f4aadf976f95241311fbffb00823075d9477
-F src/sqliteInt.h 6267485592261a1420ae9195e388242d9e451bdb
+F src/sqliteInt.h 8e01aa31d5337ca0c0d0000745994f63762ec1bb
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 3213f3101e3b85f047d6e389da5a53d76d3d7540
-F src/test1.c 834e38420a5c604d4351741c27ebe6d78a1be907
+F src/test1.c ca2a9870a6654dd6d5b8fe5666e64ac31b6647f2
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -222,7 +222,7 @@ F src/test_regexp.c 58e0349f155bc307dfa209df4b03add0a7749866
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
-F src/test_spellfix.c 4b3fb3ef465736499e5c34ccb51fad6c53ee1e78
+F src/test_spellfix.c 860eb723100d4e3cff846ba5d25e02815b2a5cac
 F src/test_sqllog.c 8acb843ddb9928dea8962e31bb09f421a72ffccb
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
@@ -239,11 +239,11 @@ F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c f51eb3207594703d24e91335cb16906e894b48aa
+F src/vdbe.c 292f8f7ced59c29c63fe17830cbe5f5a0230cdf0
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 396bb03eec560f768d1b86092b00f46c25575d3b
 F src/vdbeapi.c 4c2418161cf45392ba76a7ca92f9a5f06b96f89c
-F src/vdbeaux.c 8b5d13a2e0a2430f35881eceec762fab8d24e64d
+F src/vdbeaux.c 735a6905df302a7f3c715a82bd3af06dc7d74ef2
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -1034,7 +1034,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e1640876df7ed6fb4e84292e5ce1f78635df64ab
-R ed650c137d06abf5e97862ecc9965eee
+P 4a7b4ee011fea911b981206c242e3d5553303b52
+R 270848b00a612583295cde2d6d289ebe
+T *branch * constraint-error-codes
+T *sym-constraint-error-codes *
+T -sym-trunk *
 U drh
-Z 0e5ff063c96a5d0e787292d2749e52de
+Z e6d281a3555aa6072b0a1a3d4e35cfe5
