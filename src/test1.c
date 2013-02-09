@@ -139,7 +139,7 @@ const char *sqlite3TestErrorName(int rc){
     case SQLITE_TOOBIG:              zName = "SQLITE_TOOBIG";            break;
     case SQLITE_CONSTRAINT:          zName = "SQLITE_CONSTRAINT";        break;
     case SQLITE_CONSTRAINT_UNIQUE:   zName = "SQLITE_CONSTRAINT_UNIQUE"; break;
-    case SQLITE_CONSTRAINT_RAISE:    zName = "SQLITE_CONSTRAINT_RAISE";  break;
+    case SQLITE_CONSTRAINT_TRIGGER:  zName = "SQLITE_CONSTRAINT_TRIGGER";break;
     case SQLITE_CONSTRAINT_FOREIGNKEY:
                                  zName = "SQLITE_CONSTRAINT_FOREIGNKEY"; break;
     case SQLITE_CONSTRAINT_CHECK:    zName = "SQLITE_CONSTRAINT_CHECK";  break;

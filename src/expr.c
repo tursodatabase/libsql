@@ -2935,7 +2935,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3VdbeAddOp4(
             v, OP_Halt, SQLITE_OK, OE_Ignore, 0, pExpr->u.zToken,0);
       }else{
-        sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_RAISE,
+        sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_TRIGGER,
                               pExpr->affinity, pExpr->u.zToken, 0);
       }
 

@@ -48,6 +48,7 @@ do_test unique-1.3 {
     INSERT INTO t1(a,b,c) VALUES(1,3,4)
   }
 } {1 {column a is not unique}}
+verify_ex_errcode unique-1.3b SQLITE_CONSTRAINT_UNIQUE
 do_test unique-1.4 {
   execsql {
     SELECT * FROM t1 ORDER BY a;
@@ -58,6 +59,7 @@ do_test unique-1.5 {
     INSERT INTO t1(a,b,c) VALUES(3,2,4)
   }
 } {1 {column b is not unique}}
+verify_ex_errcode unique-1.5b SQLITE_CONSTRAINT_UNIQUE
 do_test unique-1.6 {
   execsql {
     SELECT * FROM t1 ORDER BY a;
@@ -99,6 +101,7 @@ do_test unique-2.3 {
     INSERT INTO t2 VALUES(1,5);
   }
 } {1 {column a is not unique}}
+verify_ex_errcode unique-2.3b SQLITE_CONSTRAINT_UNIQUE
 do_test unique-2.4 {
   catchsql {
     SELECT * FROM t2 ORDER BY a
@@ -125,6 +128,7 @@ do_test unique-2.8 {
     CREATE UNIQUE INDEX i2 ON t2(a);
   }
 } {1 {indexed columns are not unique}}
+verify_ex_errcode unique-2.8b SQLITE_CONSTRAINT_UNIQUE
 do_test unique-2.9 {
   catchsql {
     CREATE INDEX i2 ON t2(a);
@@ -163,6 +167,7 @@ do_test unique-3.4 {
     SELECT * FROM t3 ORDER BY a,b,c,d;
   }
 } {1 {columns a, c, d are not unique}}
+verify_ex_errcode unique-3.4b SQLITE_CONSTRAINT_UNIQUE
 integrity_check unique-3.5
 
 # Make sure NULLs are distinct as far as the UNIQUE tests are
@@ -217,6 +222,7 @@ do_test unique-4.9 {
 do_test unique-4.10 {
   catchsql {CREATE UNIQUE INDEX i4c ON t4(b)}
 } {1 {indexed columns are not unique}}
+verify_ex_errcode unique-4.10b SQLITE_CONSTRAINT_UNIQUE
 integrity_check unique-4.99
 
 # Test the error message generation logic.  In particular, make sure we
@@ -249,5 +255,7 @@ do_test unique-5.2 {
     INSERT INTO t5 VALUES(1,2,3,4,5,6);
   }
 } {1 {columns first_column_with_long_name, second_column_with_long_name, third_column_with_long_name, fourth_column_with_long_name, fifth_column_with_long_name, sixth_column_with_long_name are not unique}}
+verify_ex_errcode unique-5.2b SQLITE_CONSTRAINT_UNIQUE
+
 
 finish_test

@@ -48,6 +48,7 @@ do_test notnull-1.2 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-1.2b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-1.3 {
   catchsql {
     DELETE FROM t1;
@@ -62,6 +63,7 @@ do_test notnull-1.4 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-1.4b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-1.5 {
   catchsql {
     DELETE FROM t1;
@@ -69,6 +71,7 @@ do_test notnull-1.5 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-1.5b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-1.6 {
   catchsql {
     DELETE FROM t1;
@@ -104,6 +107,7 @@ do_test notnull-1.10 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.b may not be NULL}}
+verify_ex_errcode notnull-1.10b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-1.11 {
   catchsql {
     DELETE FROM t1;
@@ -146,6 +150,7 @@ do_test notnull-1.16 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.c may not be NULL}}
+verify_ex_errcode notnull-1.16b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-1.17 {
   catchsql {
     DELETE FROM t1;
@@ -153,6 +158,7 @@ do_test notnull-1.17 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.d may not be NULL}}
+verify_ex_errcode notnull-1.17b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-1.18 {
   catchsql {
     DELETE FROM t1;
@@ -174,6 +180,7 @@ do_test notnull-1.20 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.e may not be NULL}}
+verify_ex_errcode notnull-1.20b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-1.21 {
   catchsql {
     DELETE FROM t1;
@@ -190,6 +197,7 @@ do_test notnull-2.1 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-2.1b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-2.2 {
   catchsql {
     DELETE FROM t1;
@@ -198,6 +206,7 @@ do_test notnull-2.2 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-2.2b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-2.3 {
   catchsql {
     DELETE FROM t1;
@@ -214,6 +223,7 @@ do_test notnull-2.4 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-2.4b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-2.5 {
   catchsql {
     DELETE FROM t1;
@@ -222,6 +232,7 @@ do_test notnull-2.5 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.b may not be NULL}}
+verify_ex_errcode notnull-2.6b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-2.6 {
   catchsql {
     DELETE FROM t1;
@@ -262,6 +273,7 @@ do_test notnull-2.10 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.e may not be NULL}}
+verify_ex_errcode notnull-2.10b SQLITE_CONSTRAINT_NOTNULL
 
 do_test notnull-3.0 {
   execsql {
@@ -287,6 +299,7 @@ do_test notnull-3.2 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-3.2b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-3.3 {
   catchsql {
     DELETE FROM t1;
@@ -301,6 +314,7 @@ do_test notnull-3.4 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-3.4b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-3.5 {
   catchsql {
     DELETE FROM t1;
@@ -308,6 +322,7 @@ do_test notnull-3.5 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-3.5b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-3.6 {
   catchsql {
     DELETE FROM t1;
@@ -343,6 +358,7 @@ do_test notnull-3.10 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.b may not be NULL}}
+verify_ex_errcode notnull-3.10b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-3.11 {
   catchsql {
     DELETE FROM t1;
@@ -385,6 +401,7 @@ do_test notnull-3.16 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.c may not be NULL}}
+verify_ex_errcode notnull-3.16b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-3.17 {
   catchsql {
     DELETE FROM t1;
@@ -392,6 +409,7 @@ do_test notnull-3.17 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.d may not be NULL}}
+verify_ex_errcode notnull-3.17b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-3.18 {
   catchsql {
     DELETE FROM t1;
@@ -413,6 +431,7 @@ do_test notnull-3.20 {
     SELECT * FROM t1 order by a;
   }
 } {1 {t1.e may not be NULL}}
+verify_ex_errcode notnull-3.20b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-3.21 {
   catchsql {
     DELETE FROM t1;
@@ -429,6 +448,7 @@ do_test notnull-4.1 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-4.1b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-4.2 {
   catchsql {
     DELETE FROM t1;
@@ -437,6 +457,7 @@ do_test notnull-4.2 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-4.2b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-4.3 {
   catchsql {
     DELETE FROM t1;
@@ -453,6 +474,7 @@ do_test notnull-4.4 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.a may not be NULL}}
+verify_ex_errcode notnull-4.4b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-4.5 {
   catchsql {
     DELETE FROM t1;
@@ -461,6 +483,7 @@ do_test notnull-4.5 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.b may not be NULL}}
+verify_ex_errcode notnull-4.5b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-4.6 {
   catchsql {
     DELETE FROM t1;
@@ -501,6 +524,7 @@ do_test notnull-4.10 {
     SELECT * FROM t1 ORDER BY a;
   }
 } {1 {t1.e may not be NULL}}
+verify_ex_errcode notnull-4.10b SQLITE_CONSTRAINT_NOTNULL
 
 # Test that bug 29ab7be99f is fixed.
 #
@@ -519,6 +543,7 @@ do_test notnull-5.2 {
     INSERT INTO t1 SELECT * FROM t2;
   }
 } {1 {t1.b may not be NULL}}
+verify_ex_errcode notnull-5.2b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-5.3 {
   execsql { SELECT * FROM t1 }
 } {1 2}
@@ -531,9 +556,9 @@ do_test notnull-5.4 {
     COMMIT;
   }
 } {1 {t1.b may not be NULL}}
+verify_ex_errcode notnull-5.4b SQLITE_CONSTRAINT_NOTNULL
 do_test notnull-5.5 {
   execsql { SELECT * FROM t1 }
 } {1 2}
 
 finish_test
-
