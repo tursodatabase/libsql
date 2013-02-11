@@ -423,6 +423,7 @@ do_test trigger1-6.2 {
 do_test trigger1-6.3 {
   catchsql {DELETE FROM t2}
 } {1 {deletes are not permitted}}
+verify_ex_errcode trigger1-6.3b SQLITE_CONSTRAINT_TRIGGER
 do_test trigger1-6.4 {
   execsql {SELECT * FROM t2}
 } {3 4 7 8}

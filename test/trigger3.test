@@ -45,6 +45,7 @@ do_test trigger3-1.1 {
         INSERT INTO tbl VALUES (1, 5, 6);
     }
 } {1 {Trigger abort}}
+verify_ex_errcode trigger3-1.1b SQLITE_CONSTRAINT_TRIGGER
 do_test trigger3-1.2 {
     execsql {
         SELECT * FROM tbl;
@@ -63,6 +64,7 @@ do_test trigger3-2.1 {
         INSERT INTO tbl VALUES (2, 5, 6);
     }
 } {1 {Trigger fail}}
+verify_ex_errcode trigger3-2.1b SQLITE_CONSTRAINT_TRIGGER
 do_test trigger3-2.2 {
     execsql {
         SELECT * FROM tbl;
@@ -77,6 +79,7 @@ do_test trigger3-3.1 {
         INSERT INTO tbl VALUES (3, 5, 6);
     }
 } {1 {Trigger rollback}}
+verify_ex_errcode trigger3-3.1b SQLITE_CONSTRAINT_TRIGGER
 do_test trigger3-3.2 {
     execsql {
         SELECT * FROM tbl;
@@ -92,6 +95,7 @@ do_test trigger3-3.3 {
         INSERT INTO tbl VALUES (3, 9, 10);
     }
 } {1 {Trigger rollback}}
+verify_ex_errcode trigger3-3.3b SQLITE_CONSTRAINT_TRIGGER
 do_test trigger3-3.4 {
     execsql {SELECT * FROM tbl}
 } {}
@@ -172,6 +176,7 @@ do_test trigger3-7.1 {
         INSERT INTO tbl_view VALUES(1, 2, 3);
     }
 } {1 {View rollback}}
+verify_ex_errcode trigger3-7.1b SQLITE_CONSTRAINT_TRIGGER
 do_test trigger3-7.2 {
     catchsql {
         INSERT INTO tbl_view VALUES(2, 2, 3);
@@ -182,6 +187,7 @@ do_test trigger3-7.3 {
         INSERT INTO tbl_view VALUES(3, 2, 3);
     }
 } {1 {View abort}}
+verify_ex_errcode trigger3-7.3b SQLITE_CONSTRAINT_TRIGGER
 
 } ;# ifcapable view
 

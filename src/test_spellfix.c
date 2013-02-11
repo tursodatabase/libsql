@@ -2673,7 +2673,7 @@ static int spellfix1Update(
       if( zCmd==0 ){
         pVTab->zErrMsg = sqlite3_mprintf("%s.word may not be NULL",
                                          p->zTableName);
-        return SQLITE_CONSTRAINT;
+        return SQLITE_CONSTRAINT_NOTNULL;
       }
       if( strcmp(zCmd,"reset")==0 ){
         /* Reset the  edit cost table (if there is one). */

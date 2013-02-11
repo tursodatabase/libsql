@@ -74,6 +74,7 @@ do_test hook-3.6 {
     INSERT INTO t2 VALUES(6,7);
   }
 } {1 {constraint failed}}
+verify_ex_errcode hook-3.6b SQLITE_CONSTRAINT_COMMITHOOK
 do_test hook-3.7 {
   set ::commit_cnt
 } {1 2 2 3 3 4 4 5 5 6 6 7}
