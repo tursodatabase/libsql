@@ -1,5 +1,5 @@
-C Add\sextended\serror\scodes\sfor\sall\sSQLITE_CONSTRAINT\serrors.
-D 2013-02-11T13:47:39.039
+C Improve\smemory\sallocation\serror\shandling\son\sWinCE.
+D 2013-02-12T09:46:48.810
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c dfdc04b126f7b05dcb2e2cc5c1262f98acbb49d9
-F src/os_win.c d19aae35a7b06f3dbaebb033eff5a68903856791
+F src/os_win.c e988c2de4266fbb3b8c58e4b5550a2e17f541327
 F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1034,7 +1034,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4a7b4ee011fea911b981206c242e3d5553303b52 3f67437536591a1b0742a25b983707933aaa16d5
-R 3e5bf93d528119a300b3cfbe9643fae2
-U drh
-Z 3a7fd1a084dac5a1a2f87b7b22126c80
+P 939d8282748b00a7032cdd72e5d3bf3086ebfc97
+R c401d0f64d91c49092b5d167ad9b4b56
+T *branch * wince
+T *sym-wince *
+T -sym-trunk *
+U mistachkin
+Z 7666d75ce0c62ebd1a3a9ee46fc0b14d
