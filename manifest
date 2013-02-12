@@ -1,5 +1,5 @@
-C Add\sextended\serror\scodes\sfor\sall\sSQLITE_CONSTRAINT\serrors.
-D 2013-02-11T13:47:39.039
+C A\sbug\sreport\scoming\sfrom\sfrom\sFirefox\s\n([https://bugzilla.mozilla.org/show_bug.cgi?id=840377])\ndescribes\san\sinfinite\srecursion.\s\sWe\sare\sunable\sto\sreproduce\sthe\sproblem.\nNevertheless,\sthis\scheck-in\sshould\sprevent\sthe\sproblem\sfrom\sever\soccurring\nagain.
+D 2013-02-12T22:09:48.258
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 652ae6dc0f185b01b4536bb2fa7d878f13f0f1df
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 741c623c70c09b5fbe55d8ae6413d9215c1dedbf
+F src/select.c 7818b5c9b497499d8bd8c6d0e347a3cf67724867
 F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 6296506a8fba279d8fa31f4abf01ab0cc92738a6
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4a7b4ee011fea911b981206c242e3d5553303b52 3f67437536591a1b0742a25b983707933aaa16d5
-R 3e5bf93d528119a300b3cfbe9643fae2
+P 939d8282748b00a7032cdd72e5d3bf3086ebfc97
+R 315866cdde25bff040d2fc0949d76051
 U drh
-Z 3a7fd1a084dac5a1a2f87b7b22126c80
+Z 1ea5eb7aafa433a1482988aad7ac5a55

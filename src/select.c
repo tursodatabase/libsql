@@ -3298,14 +3298,15 @@ static int selectExpander(Walker *pWalker, Select *p){
   struct SrcList_item *pFrom;
   sqlite3 *db = pParse->db;
   Expr *pE, *pRight, *pExpr;
+  u16 selFlags = p->selFlags;
 
+  p->selFlags |= SF_Expanded;
   if( db->mallocFailed  ){
     return WRC_Abort;
   }
-  if( NEVER(p->pSrc==0) || (p->selFlags & SF_Expanded)!=0 ){
+  if( NEVER(p->pSrc==0) || (selFlags & SF_Expanded)!=0 ){
     return WRC_Prune;
   }
-  p->selFlags |= SF_Expanded;
   pTabList = p->pSrc;
   pEList = p->pEList;
 
@@ -3666,6 +3667,7 @@ void sqlite3SelectPrep(
   sqlite3 *db;
   if( NEVER(p==0) ) return;
   db = pParse->db;
+  if( db->mallocFailed ) return;
   if( p->selFlags & SF_HasTypeInfo ) return;
   sqlite3SelectExpand(pParse, p);
   if( pParse->nErr || db->mallocFailed ) return;
