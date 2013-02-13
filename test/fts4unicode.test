@@ -44,12 +44,12 @@ proc do_unicode_token_test3 {tn args} {
 }
 
 do_unicode_token_test 1.0 {a B c D} {0 a a 1 b B 2 c c 3 d D}
-do_unicode_token_test 1.1 {ƒ ÷ ‹} {0 ‰ ƒ 1 ˆ ÷ 2 ¸ ‹}
-do_unicode_token_test 1.2 {xƒx x÷x x‹x} {0 x‰x xƒx 1 xˆx x÷x 2 x¸x x‹x}
+do_unicode_token_test 1.1 {√Ñ √ñ √ú} {0 √§ √Ñ 1 √∂ √ñ 2 √º √ú}
+do_unicode_token_test 1.2 {x√Ñx x√ñx x√úx} {0 x√§x x√Ñx 1 x√∂x x√ñx 2 x√ºx x√úx}
 
 # 0x00DF is a small "sharp s". 0x1E9E is a capital sharp s.
 do_unicode_token_test 1.3 "\uDF" "0 \uDF \uDF"
-do_unicode_token_test 1.4 "\u1E9E" "0 ﬂ \u1E9E"
+do_unicode_token_test 1.4 "\u1E9E" "0 √ü \u1E9E"
 do_unicode_token_test 1.5 "\u1E9E" "0 \uDF \u1E9E"
 
 do_unicode_token_test 1.6 "The quick brown fox" {
@@ -60,12 +60,15 @@ do_unicode_token_test 1.7 "The\u00bfquick\u224ebrown\u2263fox" {
 }
 
 do_unicode_token_test2 1.8  {a B c D} {0 a a 1 b B 2 c c 3 d D}
-do_unicode_token_test2 1.9  {ƒ ÷ ‹} {0 a ƒ 1 o ÷ 2 u ‹}
-do_unicode_token_test2 1.10 {xƒx x÷x x‹x} {0 xax xƒx 1 xox x÷x 2 xux x‹x}
+do_unicode_token_test2 1.9  {√Ñ √ñ √ú} {0 a √Ñ 1 o √ñ 2 u √ú}
+do_unicode_token_test2 1.10 {x√Ñx x√ñx x√úx} {0 xax x√Ñx 1 xox x√ñx 2 xux x√úx}
 
 # Check that diacritics are removed if remove_diacritics=1 is specified.
 # And that they do not break tokens.
-do_unicode_token_test2 1.10 "xx\u0301xx" "0 xxxx xx\u301xx"
+do_unicode_token_test2 1.11 "xx\u0301xx" "0 xxxx xx\u301xx"
+
+# Title-case mappings work
+do_unicode_token_test 1.12 "\u01c5" "0 \u01c6 \u01c5"
 
 #-------------------------------------------------------------------------
 #
@@ -383,5 +386,3 @@ foreach T $tokenizers {
 
 
 finish_test
-
-

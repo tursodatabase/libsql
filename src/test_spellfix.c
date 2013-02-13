@@ -21,6 +21,11 @@
 # include <stdio.h>
 # include <stdlib.h>
 # include "sqlite3ext.h"
+# include <assert.h>
+# define ALWAYS(X)  1
+# define NEVER(X)   0
+  typedef unsigned char u8;
+  typedef unsigned short u16;
   SQLITE_EXTENSION_INIT1
 #endif /* !SQLITE_CORE */
 #include <ctype.h>
@@ -2668,7 +2673,7 @@ static int spellfix1Update(
       if( zCmd==0 ){
         pVTab->zErrMsg = sqlite3_mprintf("%s.word may not be NULL",
                                          p->zTableName);
-        return SQLITE_CONSTRAINT;
+        return SQLITE_CONSTRAINT_NOTNULL;
       }
       if( strcmp(zCmd,"reset")==0 ){
         /* Reset the  edit cost table (if there is one). */
@@ -2809,7 +2814,7 @@ static int spellfix1Register(sqlite3 *db){
 /*
 ** Register the spellfix1 virtual table and its associated functions.
 */
-int sqlite3Spellfix1Register(sqlite3 *db){
+int sqlite3_spellfix1_register(sqlite3 *db){
   return spellfix1Register(db);
 }
 #endif
@@ -2819,7 +2824,7 @@ int sqlite3Spellfix1Register(sqlite3 *db){
 /*
 ** Extension load function.
 */
-int sqlite3_extension_init(
+int sqlite3_spellfix1_init(
   sqlite3 *db, 
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi

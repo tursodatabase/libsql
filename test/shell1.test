@@ -220,7 +220,7 @@ do_test shell1-2.3.2 {
 } {0 {}}
 do_test shell1-2.3.3 {
   catchcmd "test.db" ".explain \"1 2 3\""
-} {0 {}}
+} {1 {ERROR: Not a boolean value: "1 2 3". Assuming "no".}}
 do_test shell1-2.3.4 {
   catchcmd "test.db" ".explain \"OFF\""
 } {0 {}}
@@ -326,10 +326,6 @@ do_test shell1-3.5.4 {
 do_test shell1-3.6.1 {
   catchcmd "test.db" ".exit"
 } {0 {}}
-do_test shell1-3.6.2 {
-  # too many arguments
-  catchcmd "test.db" ".exit BAD"
-} {1 {Error: unknown command or invalid arguments:  "exit". Enter ".help" for help}}
 
 # .explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
 do_test shell1-3.7.1 {

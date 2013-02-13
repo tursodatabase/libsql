@@ -957,7 +957,7 @@ struct sqlite3 {
 #define SQLITE_SqlTrace       0x00000040  /* Debug print SQL as it executes */
 #define SQLITE_VdbeListing    0x00000080  /* Debug listings of VDBE programs */
 #define SQLITE_WriteSchema    0x00000100  /* OK to update SQLITE_MASTER */
-                         /*   0x00000200  Unused */
+#define SQLITE_VdbeAddopTrace 0x00000200  /* Trace sqlite3VdbeAddOp() calls */
 #define SQLITE_IgnoreChecks   0x00000400  /* Do not enforce check constraints */
 #define SQLITE_ReadUncommitted 0x0000800  /* For shared-cache mode */
 #define SQLITE_LegacyFileFmt  0x00001000  /* Create new databases in format 1 */
@@ -1973,6 +1973,7 @@ struct WhereLevel {
       struct InLoop {
         int iCur;              /* The VDBE cursor used by this IN operator */
         int addrInTop;         /* Top of the IN loop */
+        u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
       } *aInLoop;           /* Information about each nested IN operator */
     } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
@@ -2916,7 +2917,7 @@ int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 void sqlite3MultiWrite(Parse*);
 void sqlite3MayAbort(Parse*);
-void sqlite3HaltConstraint(Parse*, int, char*, int);
+void sqlite3HaltConstraint(Parse*, int, int, char*, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
 ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);

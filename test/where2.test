@@ -167,24 +167,54 @@ ifcapable subquery {
       }
     } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
   }
-  do_test where2-4.6 {
+  do_test where2-4.6a {
     queryplan {
       SELECT * FROM t1
        WHERE x IN (1,2,3,4,5,6,7,8)
          AND y IN (10000,10001,10002,10003,10004,10005)
-       ORDER BY 2
+       ORDER BY x
+    }
+  } {99 6 10000 10006 nosort t1 i1xy}
+  do_test where2-4.6b {
+    queryplan {
+      SELECT * FROM t1
+       WHERE x IN (1,2,3,4,5,6,7,8)
+         AND y IN (10000,10001,10002,10003,10004,10005)
+       ORDER BY x DESC
+    }
+  } {99 6 10000 10006 nosort t1 i1xy}
+  do_test where2-4.6c {
+    queryplan {
+      SELECT * FROM t1
+       WHERE x IN (1,2,3,4,5,6,7,8)
+         AND y IN (10000,10001,10002,10003,10004,10005)
+       ORDER BY x, y
+    }
+  } {99 6 10000 10006 nosort t1 i1xy}
+  do_test where2-4.6d {
+    queryplan {
+      SELECT * FROM t1
+       WHERE x IN (1,2,3,4,5,6,7,8)
+         AND y IN (10000,10001,10002,10003,10004,10005)
+       ORDER BY x, y DESC
     }
   } {99 6 10000 10006 sort t1 i1xy}
 
   # Duplicate entires on the RHS of an IN operator do not cause duplicate
   # output rows.
   #
-  do_test where2-4.6 {
+  do_test where2-4.6x {
     queryplan {
       SELECT * FROM t1 WHERE z IN (10207,10006,10006,10207)
       ORDER BY w
     }
   } {99 6 10000 10006 100 6 10201 10207 sort t1 i1zyx}
+  do_test where2-4.6y {
+    queryplan {
+      SELECT * FROM t1 WHERE z IN (10207,10006,10006,10207)
+      ORDER BY w DESC
+    }
+  } {100 6 10201 10207 99 6 10000 10006 sort t1 i1zyx}
   ifcapable compound {
     do_test where2-4.7 {
       queryplan {
@@ -207,11 +237,16 @@ do_test where2-5.1 {
 } {99 6 10000 10006 nosort t1 i1w}
 
 ifcapable subquery {
-  do_test where2-5.2 {
+  do_test where2-5.2a {
     queryplan {
       SELECT * FROM t1 WHERE w IN (99) ORDER BY w
     }
-  } {99 6 10000 10006 sort t1 i1w}
+  } {99 6 10000 10006 nosort t1 i1w}
+  do_test where2-5.2b {
+    queryplan {
+      SELECT * FROM t1 WHERE w IN (99) ORDER BY w DESC
+    }
+  } {99 6 10000 10006 nosort t1 i1w}
 }
 
 # Verify that OR clauses get translated into IN operators.

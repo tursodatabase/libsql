@@ -138,6 +138,18 @@ const char *sqlite3TestErrorName(int rc){
     case SQLITE_SCHEMA:              zName = "SQLITE_SCHEMA";            break;
     case SQLITE_TOOBIG:              zName = "SQLITE_TOOBIG";            break;
     case SQLITE_CONSTRAINT:          zName = "SQLITE_CONSTRAINT";        break;
+    case SQLITE_CONSTRAINT_UNIQUE:   zName = "SQLITE_CONSTRAINT_UNIQUE"; break;
+    case SQLITE_CONSTRAINT_TRIGGER:  zName = "SQLITE_CONSTRAINT_TRIGGER";break;
+    case SQLITE_CONSTRAINT_FOREIGNKEY:
+                                 zName = "SQLITE_CONSTRAINT_FOREIGNKEY"; break;
+    case SQLITE_CONSTRAINT_CHECK:    zName = "SQLITE_CONSTRAINT_CHECK";  break;
+    case SQLITE_CONSTRAINT_PRIMARYKEY:
+                                 zName = "SQLITE_CONSTRAINT_PRIMARYKEY"; break;
+    case SQLITE_CONSTRAINT_NOTNULL:  zName = "SQLITE_CONSTRAINT_NOTNULL";break;
+    case SQLITE_CONSTRAINT_COMMITHOOK:
+                                 zName = "SQLITE_CONSTRAINT_COMMITHOOK"; break;
+    case SQLITE_CONSTRAINT_VTAB:     zName = "SQLITE_CONSTRAINT_VTAB";   break;
+    case SQLITE_CONSTRAINT_FUNCTION: zName = "SQLITE_CONSTRAINT_FUNCTION";break;
     case SQLITE_MISMATCH:            zName = "SQLITE_MISMATCH";          break;
     case SQLITE_MISUSE:              zName = "SQLITE_MISUSE";            break;
     case SQLITE_NOLFS:               zName = "SQLITE_NOLFS";             break;
@@ -6236,7 +6248,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_DEBUG
   extern int sqlite3WhereTrace;
   extern int sqlite3OSTrace;
-  extern int sqlite3VdbeAddopTrace;
   extern int sqlite3WalTrace;
 #endif
 #ifdef SQLITE_TEST
@@ -6299,8 +6310,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
 #endif
 #ifdef SQLITE_DEBUG
-  Tcl_LinkVar(interp, "sqlite_addop_trace",
-      (char*)&sqlite3VdbeAddopTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_where_trace",
       (char*)&sqlite3WhereTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",

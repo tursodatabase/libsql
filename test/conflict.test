@@ -580,6 +580,7 @@ do_test conflict-9.19 {
     SELECT * FROM t2;
   }
 } {1 {column e is not unique}}
+verify_ex_errcode conflict-9.21b SQLITE_CONSTRAINT_UNIQUE
 do_test conflict-9.20 {
   catch {execsql {COMMIT}}
   execsql {SELECT * FROM t3}
@@ -592,6 +593,7 @@ do_test conflict-9.21 {
     SELECT * FROM t2;
   }
 } {1 {column e is not unique}}
+verify_ex_errcode conflict-9.21b SQLITE_CONSTRAINT_UNIQUE
 do_test conflict-9.22 {
   catch {execsql {COMMIT}}
   execsql {SELECT * FROM t3}
@@ -781,6 +783,7 @@ do_test conflict-12.3 {
     UPDATE t5 SET a=a+1 WHERE a=1;
   }
 } {1 {PRIMARY KEY must be unique}}
+verify_ex_errcode conflict-12.3b SQLITE_CONSTRAINT_PRIMARYKEY
 do_test conflict-12.4 {
   execsql {
     UPDATE OR REPLACE t5 SET a=a+1 WHERE a=1;
@@ -802,6 +805,7 @@ do_test conflict-13.1 {
     REPLACE INTO t13 VALUES(2);
   }
 } {1 {constraint failed}}
+verify_ex_errcode conflict-13.1b SQLITE_CONSTRAINT_CHECK
 do_test conflict-13.2 {
   execsql {
     REPLACE INTO t13 VALUES(3);

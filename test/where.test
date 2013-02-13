@@ -379,11 +379,26 @@ ifcapable subquery {
       SELECT * FROM t1 WHERE rowid+0 IN (1,2,3,1234) order by 1;
     }
   } {1 0 4 2 1 9 3 1 16 102}
-  do_test where-5.3 {
+  do_test where-5.3a {
     count {
       SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1;
     }
-  } {1 0 4 2 1 9 3 1 16 14}
+  } {1 0 4 2 1 9 3 1 16 13}
+  do_test where-5.3b {
+    count {
+      SELECT * FROM t1 WHERE w IN (3,-1,1,2) order by 1;
+    }
+  } {1 0 4 2 1 9 3 1 16 13}
+  do_test where-5.3c {
+    count {
+      SELECT * FROM t1 WHERE w IN (3,2,-1,1,2) order by 1;
+    }
+  } {1 0 4 2 1 9 3 1 16 13}
+  do_test where-5.3d {
+    count {
+      SELECT * FROM t1 WHERE w IN (-1,1,2,3) order by 1 DESC;
+    }
+  } {3 1 16 2 1 9 1 0 4 12}
   do_test where-5.4 {
     count {
       SELECT * FROM t1 WHERE w+0 IN (-1,1,2,3) order by 1;
@@ -452,6 +467,30 @@ ifcapable subquery {
       SELECT * FROM t1 WHERE x IN (1,7) AND y IN (9,16) ORDER BY 1;
     }
   } {2 1 9 3 1 16 11}
+  do_test where-5.100 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x, y
+    }
+  } {2 1 9 54 5 3025 62 5 3969}
+  do_test where-5.101 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x DESC, y DESC
+    }
+  } {62 5 3969 54 5 3025 2 1 9}
+  do_test where-5.102 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x DESC, y
+    }
+  } {54 5 3025 62 5 3969 2 1 9}
+  do_test where-5.103 {
+    db eval {
+      SELECT w, x, y FROM t1 WHERE x IN (1,5) AND y IN (9,8,3025,1000,3969)
+       ORDER BY x, y DESC
+    }
+  } {2 1 9 62 5 3969 54 5 3025}
 }
 
 # This procedure executes the SQL.  Then it checks to see if the OP_Sort
@@ -511,11 +550,16 @@ do_test where-6.7 {
   }
 } {1 100 4 2 99 9 3 98 16 nosort}
 ifcapable subquery {
-  do_test where-6.8 {
+  do_test where-6.8a {
     cksort {
       SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a LIMIT 3
     }
-  } {1 100 4 2 99 9 3 98 16 sort}
+  } {1 100 4 2 99 9 3 98 16 nosort}
+  do_test where-6.8b {
+    cksort {
+      SELECT * FROM t3 WHERE a IN (3,5,7,1,9,4,2) ORDER BY a DESC LIMIT 3
+    }
+  } {9 92 100 7 94 64 5 96 36 nosort}
 }
 do_test where-6.9.1 {
   cksort {

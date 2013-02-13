@@ -54,6 +54,7 @@
 #      do_ioerr_test          TESTNAME ARGS...
 #      crashsql               ARGS...
 #      integrity_check        TESTNAME ?DB?
+#      verify_ex_errcode      TESTNAME EXPECTED ?DB?
 #      do_test                TESTNAME SCRIPT EXPECTED
 #      do_execsql_test        TESTNAME SQL EXPECTED
 #      do_catchsql_test       TESTNAME SQL EXPECTED
@@ -972,6 +973,12 @@ proc integrity_check {name {db db}} {
   ifcapable integrityck {
     do_test $name [list execsql {PRAGMA integrity_check} $db] {ok}
   }
+}
+
+# Check the extended error code
+#
+proc verify_ex_errcode {name expected {db db}} {
+  do_test $name [list sqlite3_extended_errcode $db] $expected
 }
 
 

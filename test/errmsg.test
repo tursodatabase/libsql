@@ -80,12 +80,14 @@ do_test 2.2 {
     SQLITE_ERROR      {SQL logic error or missing database} 
     SQLITE_CONSTRAINT {column b is not unique}
 }]
+verify_ex_errcode 2.2b SQLITE_CONSTRAINT_UNIQUE
 do_test 2.3 {
   error_messages_v2 "INSERT INTO t1 VALUES('ghi', 'def')"
 } [list {*}{
     SQLITE_CONSTRAINT {column b is not unique}
     SQLITE_CONSTRAINT {column b is not unique}
 }]
+verify_ex_errcode 2.3b SQLITE_CONSTRAINT_UNIQUE
 
 #-------------------------------------------------------------------------
 # Test SQLITE_SCHEMA errors. And, for _v2(), test that if the schema

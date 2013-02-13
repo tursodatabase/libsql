@@ -140,7 +140,6 @@ struct WhereTerm {
 struct WhereClause {
   Parse *pParse;           /* The parser context */
   WhereMaskSet *pMaskSet;  /* Mapping of table cursor numbers to bitmasks */
-  Bitmask vmask;           /* Bitmask identifying virtual table cursors */
   WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
   u16 wctrlFlags;          /* Might include WHERE_AND_ONLY */
@@ -317,7 +316,6 @@ static void whereClauseInit(
   pWC->nTerm = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
-  pWC->vmask = 0;
   pWC->wctrlFlags = wctrlFlags;
 }
 
@@ -917,7 +915,7 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 **
 ** CASE 1:
 **
-** If all subterms are of the form T.C=expr for some single column of C
+** If all subterms are of the form T.C=expr for some single column of C and
 ** a single table T (as shown in example B above) then create a new virtual
 ** term that is an equivalent IN expression.  In other words, if the term
 ** being analyzed is:
@@ -1005,7 +1003,7 @@ static void exprAnalyzeOrTerm(
   ** Compute the set of tables that might satisfy cases 1 or 2.
   */
   indexable = ~(Bitmask)0;
-  chngToIN = ~(pWC->vmask);
+  chngToIN = ~(Bitmask)0;
   for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0 && indexable; i--, pOrTerm++){
     if( (pOrTerm->eOperator & WO_SINGLE)==0 ){
       WhereAndInfo *pAndInfo;
@@ -2272,8 +2270,9 @@ static void bestVirtualIndex(WhereBestIdx *p){
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_constraint_usage *pUsage;
   WhereTerm *pTerm;
-  int i, j;
+  int i, j, k;
   int nOrderBy;
+  int sortOrder;                  /* Sort order for IN clauses */
   int bAllowIN;                   /* Allow IN optimizations */
   double rCost;
 
@@ -2372,18 +2371,27 @@ static void bestVirtualIndex(WhereBestIdx *p){
       return;
     }
   
+    sortOrder = SQLITE_SO_ASC;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
     for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
       if( pUsage[i].argvIndex>0 ){
         j = pIdxCons->iTermOffset;
         pTerm = &pWC->a[j];
         p->cost.used |= pTerm->prereqRight;
-        if( (pTerm->eOperator & WO_IN)!=0 && pUsage[i].omit==0 ){
-          /* Do not attempt to use an IN constraint if the virtual table
-          ** says that the equivalent EQ constraint cannot be safely omitted.
-          ** If we do attempt to use such a constraint, some rows might be
-          ** repeated in the output. */
-          break;
+        if( (pTerm->eOperator & WO_IN)!=0 ){
+          if( pUsage[i].omit==0 ){
+            /* Do not attempt to use an IN constraint if the virtual table
+            ** says that the equivalent EQ constraint cannot be safely omitted.
+            ** If we do attempt to use such a constraint, some rows might be
+            ** repeated in the output. */
+            break;
+          }
+          for(k=0; k<pIdxInfo->nOrderBy; k++){
+            if( pIdxInfo->aOrderBy[k].iColumn==pIdxCons->iColumn ){
+              sortOrder = pIdxInfo->aOrderBy[k].desc;
+              break;
+            }
+          }
         }
       }
     }
@@ -2413,7 +2421,8 @@ static void bestVirtualIndex(WhereBestIdx *p){
   }
   p->cost.plan.u.pVtabIdx = pIdxInfo;
   if( pIdxInfo->orderByConsumed ){
-    p->cost.plan.wsFlags |= WHERE_ORDERED;
+    assert( sortOrder==0 || sortOrder==1 );
+    p->cost.plan.wsFlags |= WHERE_ORDERED + sortOrder*WHERE_REVERSE;
     p->cost.plan.nOBSat = nOrderBy;
   }else{
     p->cost.plan.nOBSat = p->i ? p->aLevel[p->i-1].plan.nOBSat : 0;
@@ -3010,10 +3019,7 @@ static int isSortingIndex(
     if( pConstraint==0 ){
       isEq = 0;
     }else if( (pConstraint->eOperator & WO_IN)!=0 ){
-      /* Constraints of the form: "X IN ..." cannot be used with an ORDER BY
-      ** because we do not know in what order the values on the RHS of the IN
-      ** operator will occur. */
-      break;
+      isEq = 0;
     }else if( (pConstraint->eOperator & WO_ISNULL)!=0 ){
       uniqueNotNull = 0;
       isEq = 1;  /* "X IS NULL" means X has only a single value */
@@ -3317,8 +3323,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** indicate this to the caller.
     **
     ** Otherwise, if the search may find more than one row, test to see if
-    ** there is a range constraint on indexed column (pc.plan.nEq+1) that can be 
-    ** optimized using the index. 
+    ** there is a range constraint on indexed column (pc.plan.nEq+1) that
+    ** can be optimized using the index. 
     */
     if( pc.plan.nEq==pProbe->nColumn && pProbe->onError!=OE_None ){
       testcase( pc.plan.wsFlags & WHERE_COLUMN_IN );
@@ -3659,7 +3665,8 @@ static void bestIndex(WhereBestIdx *p){
     sqlite3_index_info *pIdxInfo = 0;
     p->ppIdxInfo = &pIdxInfo;
     bestVirtualIndex(p);
-    if( pIdxInfo->needToFreeIdxStr ){
+    assert( pIdxInfo!=0 || p->pParse->db->mallocFailed );
+    if( pIdxInfo && pIdxInfo->needToFreeIdxStr ){
       sqlite3_free(pIdxInfo->idxStr);
     }
     sqlite3DbFree(p->pParse->db, pIdxInfo);
@@ -3783,12 +3790,13 @@ static int codeEqualityTerm(
     int eType;
     int iTab;
     struct InLoop *pIn;
+    u8 bRev = (pLevel->plan.wsFlags & WHERE_REVERSE)!=0;
 
     assert( pX->op==TK_IN );
     iReg = iTarget;
     eType = sqlite3FindInIndex(pParse, pX, 0);
     iTab = pX->iTable;
-    sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
+    sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
     assert( pLevel->plan.wsFlags & WHERE_IN_ABLE );
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(v);
@@ -3806,6 +3814,7 @@ static int codeEqualityTerm(
       }else{
         pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
       }
+      pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
       sqlite3VdbeAddOp1(v, OP_IsNull, iReg);
     }else{
       pLevel->u.in.nIn = 0;
@@ -4174,8 +4183,8 @@ static Bitmask codeOneLoopStart(
     for(j=1; j<=nConstraint; j++){
       for(k=0; k<nConstraint; k++){
         if( aUsage[k].argvIndex==j ){
-          WhereTerm *pTerm = &pWC->a[aConstraint[k].iTermOffset];
           int iTarget = iReg+j+1;
+          pTerm = &pWC->a[aConstraint[k].iTermOffset];
           if( pTerm->eOperator & WO_IN ){
             codeEqualityTerm(pParse, pTerm, pLevel, iTarget);
             addrNotFound = pLevel->addrNxt;
@@ -5057,24 +5066,13 @@ WhereInfo *sqlite3WhereBegin(
   ** bitmask for all tables to the left of the join.  Knowing the bitmask
   ** for all tables to the left of a left join is important.  Ticket #3015.
   **
-  ** Configure the WhereClause.vmask variable so that bits that correspond
-  ** to virtual table cursors are set. This is used to selectively disable 
-  ** the OR-to-IN transformation in exprAnalyzeOrTerm(). It is not helpful 
-  ** with virtual tables.
-  **
   ** Note that bitmasks are created for all pTabList->nSrc tables in
   ** pTabList, not just the first nTabList tables.  nTabList is normally
   ** equal to pTabList->nSrc but might be shortened to 1 if the
   ** WHERE_ONETABLE_ONLY flag is set.
   */
-  assert( sWBI.pWC->vmask==0 && pMaskSet->n==0 );
   for(ii=0; ii<pTabList->nSrc; ii++){
     createMask(pMaskSet, pTabList->a[ii].iCursor);
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( ALWAYS(pTabList->a[ii].pTab) && IsVirtual(pTabList->a[ii].pTab) ){
-      sWBI.pWC->vmask |= ((Bitmask)1 << ii);
-    }
-#endif
   }
 #ifndef NDEBUG
   {
@@ -5558,7 +5556,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeResolveLabel(v, pLevel->addrNxt);
       for(j=pLevel->u.in.nIn, pIn=&pLevel->u.in.aInLoop[j-1]; j>0; j--, pIn--){
         sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
-        sqlite3VdbeAddOp2(v, OP_Next, pIn->iCur, pIn->addrInTop);
+        sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
         sqlite3VdbeJumpHere(v, pIn->addrInTop-1);
       }
       sqlite3DbFree(db, pLevel->u.in.aInLoop);

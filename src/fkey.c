@@ -21,8 +21,9 @@
 ** --------------------------
 **
 ** Foreign keys in SQLite come in two flavours: deferred and immediate.
-** If an immediate foreign key constraint is violated, SQLITE_CONSTRAINT
-** is returned and the current statement transaction rolled back. If a 
+** If an immediate foreign key constraint is violated,
+** SQLITE_CONSTRAINT_FOREIGNKEY is returned and the current
+** statement transaction rolled back. If a 
 ** deferred foreign key constraint is violated, no action is taken 
 ** immediately. However if the application attempts to commit the 
 ** transaction before fixing the constraint violation, the attempt fails.
@@ -86,7 +87,8 @@
 ** Immediate constraints are usually handled similarly. The only difference 
 ** is that the counter used is stored as part of each individual statement
 ** object (struct Vdbe). If, after the statement has run, its immediate
-** constraint counter is greater than zero, it returns SQLITE_CONSTRAINT
+** constraint counter is greater than zero,
+** it returns SQLITE_CONSTRAINT_FOREIGNKEY
 ** and the statement transaction is rolled back. An exception is an INSERT
 ** statement that inserts a single row only (no triggers). In this case,
 ** instead of using a counter, an exception is thrown immediately if the
@@ -426,8 +428,8 @@ static void fkLookupParent(
     ** incrementing a counter. This is necessary as the VM code is being
     ** generated for will not open a statement transaction.  */
     assert( nIncr==1 );
-    sqlite3HaltConstraint(
-        pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
+    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
+        OE_Abort, "foreign key constraint failed", P4_STATIC
     );
   }else{
     if( nIncr>0 && pFKey->isDeferred==0 ){
@@ -667,8 +669,8 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     ** any modifications to the schema are made. This is because statement
     ** transactions are not able to rollback schema changes.  */
     sqlite3VdbeAddOp2(v, OP_FkIfZero, 0, sqlite3VdbeCurrentAddr(v)+2);
-    sqlite3HaltConstraint(
-        pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
+    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
+        OE_Abort, "foreign key constraint failed", P4_STATIC
     );
 
     if( iSkip ){
