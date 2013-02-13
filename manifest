@@ -1,5 +1,5 @@
-C Add\srecent\sAPI\sadditions\sto\sthe\sextension\smechanism.
-D 2013-02-13T14:04:28.390
+C On\sWinCE,\sfill\sin\sthe\swinFile\sstructure\safter\swinceCreateLock\shas\ssucceeded.
+D 2013-02-13T22:54:03.955
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c dfdc04b126f7b05dcb2e2cc5c1262f98acbb49d9
-F src/os_win.c e988c2de4266fbb3b8c58e4b5550a2e17f541327
+F src/os_win.c e27fafe8d04841bbe8d925003a4276b80fb59e73
 F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2cef8b68f0e1216cf68bb7dd45a5a9a330748070
-R cabc7a2fdbd232266103a87943ce9702
-U drh
-Z afea31491ba485b5cd581a2534ab702a
+P 7e10a62d0eb1cb2bdafb6752b78a9d368e9f21f5
+R 6de95ef06bdbb69d4dc56118d603276a
+U mistachkin
+Z cedfeda70156e3f731cd5d4242d033d6

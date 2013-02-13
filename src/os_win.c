@@ -2076,6 +2076,7 @@ static int winClose(sqlite3_file *id){
   assert( pFile->pShm==0 );
 #endif
   OSTRACE(("CLOSE %d\n", pFile->h));
+  assert( pFile->h!=NULL && pFile->h!=INVALID_HANDLE_VALUE );
   do{
     rc = osCloseHandle(pFile->h);
     /* SimulateIOError( rc=0; cnt=MX_CLOSE_ATTEMPT; ); */
@@ -3687,8 +3688,9 @@ static int winOpen(
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
-  assert( id!=0 );
-  UNUSED_PARAMETER(pVfs);
+  assert( pFile!=0 );
+  memset(pFile, 0, sizeof(winFile));
+  pFile->h = INVALID_HANDLE_VALUE;
 
 #if SQLITE_OS_WINRT
   if( !sqlite3_temp_directory ){
@@ -3696,8 +3698,6 @@ static int winOpen(
         "sqlite3_temp_directory variable should be set for WinRT");
   }
 #endif
-
-  pFile->h = INVALID_HANDLE_VALUE;
 
   /* If the second argument to this function is NULL, generate a 
   ** temporary file name to use 
@@ -3841,19 +3841,6 @@ static int winOpen(
     }
   }
 
-  memset(pFile, 0, sizeof(*pFile));
-  pFile->pMethod = &winIoMethod;
-  pFile->h = h;
-  pFile->lastErrno = NO_ERROR;
-  pFile->pVfs = pVfs;
-#ifndef SQLITE_OMIT_WAL
-  pFile->pShm = 0;
-#endif
-  pFile->zPath = zName;
-  if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
-    pFile->ctrlFlags |= WINFILE_PSOW;
-  }
-
 #if SQLITE_OS_WINCE
   if( isReadWrite && eType==SQLITE_OPEN_MAIN_DB
        && (rc = winceCreateLock(zName, pFile))!=SQLITE_OK
@@ -3869,6 +3856,15 @@ static int winOpen(
   {
     sqlite3_free(zConverted);
   }
+
+  pFile->pMethod = &winIoMethod;
+  pFile->pVfs = pVfs;
+  pFile->h = h;
+  if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+    pFile->ctrlFlags |= WINFILE_PSOW;
+  }
+  pFile->lastErrno = NO_ERROR;
+  pFile->zPath = zName;
 
   OpenCounter(+1);
   return rc;
