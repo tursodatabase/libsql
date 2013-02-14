@@ -1,5 +1,5 @@
-C On\sWinCE,\sfill\sin\sthe\swinFile\sstructure\safter\swinceCreateLock\shas\ssucceeded.
-D 2013-02-13T22:54:03.955
+C Verify\sthat\sthe\sschema\shas\snot\schanged\sbefore\srunning\sPRAGMA\stable_info,\nindex_list,\sindex_info,\sand\sforeign_key_list.
+D 2013-02-14T16:16:05.951
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c eb9d39e30f00e3ba51892749ddf9d7b86541c43e
+F src/pragma.c bdb484d0283965c431d4153f28c30f836a1f16b1
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -656,7 +656,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/permutations.test 360b92859c0af814b3fe10b68746936389606501
-F test/pragma.test 5ce333cae37d86cfe9b3add840906e375e2272b0
+F test/pragma.test 60d29cd3d8098a2c20bf4c072810f99e3bf2757a
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7e10a62d0eb1cb2bdafb6752b78a9d368e9f21f5
-R 6de95ef06bdbb69d4dc56118d603276a
-U mistachkin
-Z cedfeda70156e3f731cd5d4242d033d6
+P ec13544ce336e8a02b34d574ced5912b06c82c0e
+R 2ef63d6ca4f42c051984cca4b5f3160e
+U drh
+Z accaf6a360627091cc9269e7b19cca54

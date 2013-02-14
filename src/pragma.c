@@ -958,6 +958,7 @@ void sqlite3Pragma(
       for(pPk=pTab->pIndex; pPk && pPk->autoIndex!=2; pPk=pPk->pNext){}
       sqlite3VdbeSetNumCols(v, 6);
       pParse->nMem = 6;
+      sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cid", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "type", SQLITE_STATIC);
@@ -1003,6 +1004,7 @@ void sqlite3Pragma(
       pTab = pIdx->pTable;
       sqlite3VdbeSetNumCols(v, 3);
       pParse->nMem = 3;
+      sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seqno", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "cid", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "name", SQLITE_STATIC);
@@ -1029,6 +1031,7 @@ void sqlite3Pragma(
         int i = 0; 
         sqlite3VdbeSetNumCols(v, 3);
         pParse->nMem = 3;
+        sqlite3CodeVerifySchema(pParse, iDb);
         sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
         sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
         sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "unique", SQLITE_STATIC);
@@ -1092,6 +1095,7 @@ void sqlite3Pragma(
         int i = 0; 
         sqlite3VdbeSetNumCols(v, 8);
         pParse->nMem = 8;
+        sqlite3CodeVerifySchema(pParse, iDb);
         sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "id", SQLITE_STATIC);
         sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "seq", SQLITE_STATIC);
         sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "table", SQLITE_STATIC);
