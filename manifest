@@ -1,5 +1,5 @@
-C Verify\sthat\sthe\sschema\shas\snot\schanged\sbefore\srunning\sPRAGMA\stable_info,\nindex_list,\sindex_info,\sand\sforeign_key_list.
-D 2013-02-14T16:16:05.951
+C Check\sfor\sa\sNULL\shandle\sprior\sto\smanually\scalling\swinClose.
+D 2013-02-15T04:21:01.777
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c dfdc04b126f7b05dcb2e2cc5c1262f98acbb49d9
-F src/os_win.c e27fafe8d04841bbe8d925003a4276b80fb59e73
+F src/os_win.c eabd00b813577d36bd66271cb08dd64ea0589dac
 F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ec13544ce336e8a02b34d574ced5912b06c82c0e
-R 2ef63d6ca4f42c051984cca4b5f3160e
-U drh
-Z accaf6a360627091cc9269e7b19cca54
+P 82952d08f3e3aa80a7f51e80dbc89742cb4a09f0
+R 1a81a87cce363420c7383bdc29f10671
+U mistachkin
+Z 6e06285ee204b9b14328949d07dc3790

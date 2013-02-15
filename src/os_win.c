@@ -2993,7 +2993,7 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
                  (int)osGetCurrentProcessId(), i,
                  bRc ? "ok" : "failed"));
       }
-      if( p->hFile.h != INVALID_HANDLE_VALUE ){
+      if( p->hFile.h!=NULL && p->hFile.h!=INVALID_HANDLE_VALUE ){
         SimulateIOErrorBenign(1);
         winClose((sqlite3_file *)&p->hFile);
         SimulateIOErrorBenign(0);
