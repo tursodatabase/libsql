@@ -1,5 +1,5 @@
-C Check\sfor\sa\sNULL\shandle\sprior\sto\smanually\scalling\swinClose.
-D 2013-02-15T04:21:01.777
+C Fix\san\sunsafe\sVM\sregister\sdeallocation.
+D 2013-02-16T02:41:01.780
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 652ae6dc0f185b01b4536bb2fa7d878f13f0f1df
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 7818b5c9b497499d8bd8c6d0e347a3cf67724867
+F src/select.c e1c6f6abdf9f359f4e735cb8ae11d2f359bf52a9
 F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 6296506a8fba279d8fa31f4abf01ab0cc92738a6
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 82952d08f3e3aa80a7f51e80dbc89742cb4a09f0
-R 1a81a87cce363420c7383bdc29f10671
-U mistachkin
-Z 6e06285ee204b9b14328949d07dc3790
+P 843e1c543aabab8cd62f28742d5818887d36bcb7
+R cbf020f2dfe84836eeb7827fde2edff0
+U drh
+Z a30ad478221935586b899d8baf64a9ed
