@@ -619,11 +619,12 @@ static void page_usage_freelist(int pgno){
 ** Try to figure out how every page in the database file is being used.
 */
 static void page_usage_report(const char *zDbName){
-  int i;
+  int i, j;
   int rc;
   sqlite3 *db;
   sqlite3_stmt *pStmt;
   unsigned char *a;
+  char zQuery[200];
 
   /* Avoid the pathological case */
   if( mxPage<1 ){
@@ -650,18 +651,23 @@ static void page_usage_report(const char *zDbName){
   page_usage_freelist(decodeInt32(a+32));
   free(a);
   page_usage_btree(1, 0, 0, "sqlite_master");
-  rc = sqlite3_prepare_v2(db,
-           "SELECT type, name, rootpage FROM SQLITE_MASTER WHERE rootpage",
-           -1, &pStmt, 0);
-  if( rc==SQLITE_OK ){
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
-      int pgno = sqlite3_column_int(pStmt, 2);
-      page_usage_btree(pgno, 0, 0, sqlite3_column_text(pStmt, 1));
+  sqlite3_exec(db, "PRAGMA writable_schema=ON", 0, 0, 0);
+  for(j=0; j<2; j++){
+    sqlite3_snprintf(sizeof(zQuery), zQuery,
+             "SELECT type, name, rootpage FROM SQLITE_MASTER WHERE rootpage"
+             " ORDER BY rowid %s", j?"DESC":"");
+    rc = sqlite3_prepare_v2(db, zQuery, -1, &pStmt, 0);
+    if( rc==SQLITE_OK ){
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        int pgno = sqlite3_column_int(pStmt, 2);
+        page_usage_btree(pgno, 0, 0, sqlite3_column_text(pStmt, 1));
+      }
+    }else{
+      printf("ERROR: cannot query database: %s\n", sqlite3_errmsg(db));
     }
-  }else{
-    printf("ERROR: cannot query database: %s\n", sqlite3_errmsg(db));
+    rc = sqlite3_finalize(pStmt);
+    if( rc==SQLITE_OK ) break;
   }
-  sqlite3_finalize(pStmt);
   sqlite3_close(db);
 
   /* Print the report and free memory used */

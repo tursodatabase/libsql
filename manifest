@@ -1,5 +1,5 @@
-C Do\snot\srollback\sthe\sschema\sif\sa\sparsing\serror\soccurs\swhile\sparsing\sthe\sschema\nand\swritable_schema\sis\sset.
-D 2013-02-19T18:34:45.417
+C Enhance\sthe\spgidx\sof\sthe\sshowdb\sutility\sso\sthat\sit\sprovides\sbetter\sinformation\neven\sif\sthe\ssqlite_master\stable\sis\scorrupt.
+D 2013-02-19T18:45:11.538
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1014,7 +1014,7 @@ F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c aca2644aa4de7c0cad5821e50bbd55397e0974b8
+F tool/showdb.c 8fa54c57cdbbe8ed42d47f19d1d54bf3debb32f4
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d71abab08518f0be1eb73c7068566ab813652318
-R bae530288ea7159e1aaf9a39decdf9bb
+P 680d3ab56b578bd4b0170559f9e35615ff43cf2c
+R 60574b1dc9c1930236960e8450f1f431
 U drh
-Z a4669efab8929bd31e07170c5f4c2a01
+Z bb6a18ed85184e9966fde92c116bc017
