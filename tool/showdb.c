@@ -479,7 +479,7 @@ static void page_usage_msg(int pgno, const char *zFormat, ...){
   if( zPageUse[pgno]!=0 ){
     printf("ERROR: page %d used multiple times:\n", pgno);
     printf("ERROR:    previous: %s\n", zPageUse[pgno]);
-    printf("ERROR:    current:  %s\n", zPageUse[pgno]);
+    printf("ERROR:    current:  %s\n", zMsg);
     sqlite3_free(zPageUse[pgno]);
   }
   zPageUse[pgno] = zMsg;
