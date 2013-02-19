@@ -1,5 +1,5 @@
-C Truncate\sover-length\ssource\slines\sin\ssqliteInt.h\sto\s80\scharacters\sor\sless.
-D 2013-02-19T18:34:12.933
+C Do\snot\srollback\sthe\sschema\sif\sa\sparsing\serror\soccurs\swhile\sparsing\sthe\sschema\nand\swritable_schema\sis\sset.
+D 2013-02-19T18:34:45.417
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
-F src/main.c 448564ee3795b13c373bbc5c8590df8fbfe1d64c
+F src/main.c 8d204866d1abf5100503dcd54d3187b88f6846b7
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 89d6368250f9ba2f49e930bbe5524f3da615ce70
-R ad93dc9e7473cd19fa3fc210214b9d33
+P d71abab08518f0be1eb73c7068566ab813652318
+R bae530288ea7159e1aaf9a39decdf9bb
 U drh
-Z 704858c203a3733218f2f3535c035e6c
+Z a4669efab8929bd31e07170c5f4c2a01
