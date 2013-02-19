@@ -1,5 +1,5 @@
-C Add\sthe\sedit_cost_table=\scommand\sto\sthe\sspellfix1\svirtual\stable,\spermitting\nthe\sedit\sdistance\scost\stable\sto\sbe\schanged\sat\sruntime.
-D 2013-02-19T11:51:27.137
+C Truncate\sover-length\ssource\slines\sin\ssqliteInt.h\sto\s80\scharacters\sor\sless.
+D 2013-02-19T18:34:12.933
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
 F src/sqlite.h.in 6296506a8fba279d8fa31f4abf01ab0cc92738a6
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
-F src/sqliteInt.h 758285f17a55bc37b6f042aa3a2464e74327f4a5
+F src/sqliteInt.h 601c887f6d9c92e75551873c0a34711fff745bed
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cfba2c8dadbf1fa6f1602a327933570820a3b134
-R 9b9c12c2a5a4863f535d3439db5387d0
+P 89d6368250f9ba2f49e930bbe5524f3da615ce70
+R ad93dc9e7473cd19fa3fc210214b9d33
 U drh
-Z 6e5d7f1f0806fdc66b4d3ab8e7314ebf
+Z 704858c203a3733218f2f3535c035e6c
