@@ -2681,6 +2681,18 @@ static int spellfix1Update(
         p->pConfig3 = 0;
         return SQLITE_OK;
       }
+      if( memcmp(zCmd,"edit_cost_table=",16)==0 ){
+        editDist3ConfigDelete(p->pConfig3);
+        p->pConfig3 = 0;
+        sqlite3_free(p->zCostTable);
+        p->zCostTable = spellfix1Dequote(zCmd+16);
+        if( p->zCostTable==0 ) return SQLITE_NOMEM;
+        if( p->zCostTable[0]==0 || sqlite3_stricmp(p->zCostTable,"null")==0 ){
+          sqlite3_free(p->zCostTable);
+          p->zCostTable = 0;
+        }
+        return SQLITE_OK;
+      }
       pVTab->zErrMsg = sqlite3_mprintf("unknown value for %s.command: \"%w\"",
                                        p->zTableName, zCmd);
       return SQLITE_ERROR;
