@@ -1,5 +1,5 @@
-C Fix\sthe\sshowdb\sutility\sso\sthat\sit\sdisplays\sthe\scorrect\ssecondary\susage\sof\na\spage\swhen\sreporting\son\san\serror\sof\sa\spage\sbeing\sused\smore\sthan\sonce.
-D 2013-02-19T20:25:16.107
+C Enhance\sthe\sshowdb\stool\swith\soptions\sto\sshow\sPTRMAP\susage\sand\scontent.
+D 2013-02-19T22:26:51.195
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1014,7 +1014,7 @@ F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 2292b901840eb0e3390af9e8115d54dfee7613a0
+F tool/showdb.c 16960a5ce59d8b1d70dc3bdc51e2c0fe7bb91359
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d14263a719101d9c70054f2fc37e7788f73aab28
-R c7d3b3e1fb8a10f0748991954af9d6f6
+P 4507f0b3d409cd14bb2b9c29c92c76aa3ccb22b6
+R b76888af58f22e925445fcabab8c63d9
 U drh
-Z 8fc5bc0346e01701458f5c2865bfe0c3
+Z 14b66e62b1a3bf33a2d26df6fe5962d7

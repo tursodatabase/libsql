@@ -616,6 +616,22 @@ static void page_usage_freelist(int pgno){
 }
 
 /*
+** Determine pages used as PTRMAP pages
+*/
+static void page_usage_ptrmap(unsigned char *a){
+  if( a[55] ){
+    int usable = pagesize - a[20];
+    int pgno = 2;
+    int perPage = usable/5;
+    while( pgno<=mxPage ){
+      page_usage_msg(pgno, "PTRMAP page covering %d..%d",
+                           pgno+1, pgno+perPage);
+      pgno += perPage + 1;
+    }
+  }
+}
+
+/*
 ** Try to figure out how every page in the database file is being used.
 */
 static void page_usage_report(const char *zDbName){
@@ -649,6 +665,7 @@ static void page_usage_report(const char *zDbName){
   /* Discover the usage of each page */
   a = getContent(0, 100);
   page_usage_freelist(decodeInt32(a+32));
+  page_usage_ptrmap(a);
   free(a);
   page_usage_btree(1, 0, 0, "sqlite_master");
   sqlite3_exec(db, "PRAGMA writable_schema=ON", 0, 0, 0);
@@ -680,6 +697,53 @@ static void page_usage_report(const char *zDbName){
 }
 
 /*
+** Try to figure out how every page in the database file is being used.
+*/
+static void ptrmap_coverage_report(const char *zDbName){
+  unsigned int pgno;
+  unsigned char *aHdr;
+  unsigned char *a;
+  int usable;
+  int perPage;
+  unsigned int i;
+
+  /* Avoid the pathological case */
+  if( mxPage<1 ){
+    printf("empty database\n");
+    return;
+  }
+
+  /* Make sure PTRMAPs are used in this database */
+  aHdr = getContent(0, 100);
+  if( aHdr[55]==0 ){
+    printf("database does not use PTRMAP pages\n");
+    return;
+  }
+  usable = pagesize - aHdr[20];
+  perPage = usable/5;
+  free(aHdr);
+  printf("%5d: root of sqlite_master\n", 1);
+  for(pgno=2; pgno<=mxPage; pgno += perPage+1){
+    printf("%5d: PTRMAP page covering %d..%d\n", pgno,
+           pgno+1, pgno+perPage);
+    a = getContent((pgno-1)*pagesize, usable);
+    for(i=0; i+5<=usable && pgno+1+i/5<=mxPage; i+=5){
+      const char *zType = "???";
+      unsigned int iFrom = decodeInt32(&a[i+1]);
+      switch( a[i] ){
+        case 1:  zType = "b-tree root page";        break;
+        case 2:  zType = "freelist page";           break;
+        case 3:  zType = "first page of overflow";  break;
+        case 4:  zType = "later page of overflow";  break;
+        case 5:  zType = "b-tree non-root page";    break;
+      }
+      printf("%5d: %s, parent=%u\n", pgno+1+i/5, zType, iFrom);
+    }
+    free(a);
+  }
+}
+
+/*
 ** Print a usage comment
 */
 static void usage(const char *argv0){
@@ -688,6 +752,7 @@ static void usage(const char *argv0){
     "args:\n"
     "    dbheader        Show database header\n"
     "    pgidx           Index of how each page is used\n"
+    "    ptrmap          Show all PTRMAP page content\n"
     "    NNN..MMM        Show hex of pages NNN through MMM\n"
     "    NNN..end        Show hex of pages NNN through end of file\n"
     "    NNNb            Decode btree page NNN\n"
@@ -735,6 +800,14 @@ int main(int argc, char **argv){
       }
       if( strcmp(argv[i], "pgidx")==0 ){
         page_usage_report(argv[1]);
+        continue;
+      }
+      if( strcmp(argv[i], "ptrmap")==0 ){
+        ptrmap_coverage_report(argv[1]);
+        continue;
+      }
+      if( strcmp(argv[i], "help")==0 ){
+        usage(argv[0]);
         continue;
       }
       if( !isdigit(argv[i][0]) ){
