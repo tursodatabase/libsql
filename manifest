@@ -1,5 +1,5 @@
-C Enhance\sthe\sshowdb\stool\swith\soptions\sto\sshow\sPTRMAP\susage\sand\scontent.
-D 2013-02-19T22:26:51.195
+C On\sMinix,\sdisable\sthe\s".timer"\scommand\sin\sthe\sshell\sin\sorder\sto\savoid\ncalling\sgetrusage().
+D 2013-02-20T00:54:21.855
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 652ae6dc0f185b01b4536bb2fa7d878f13f0f1df
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c e1c6f6abdf9f359f4e735cb8ae11d2f359bf52a9
-F src/shell.c 266791241d7add796ccce2317977ae6c3c67d77f
+F src/shell.c 7c41bfcd9e5bf9d96b9215f79b03a5b2b44a3bca
 F src/sqlite.h.in 6296506a8fba279d8fa31f4abf01ab0cc92738a6
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4507f0b3d409cd14bb2b9c29c92c76aa3ccb22b6
-R b76888af58f22e925445fcabab8c63d9
+P 06bd91305ed6752315c5224be5f89e87cafa6687
+R 14c0fedf89f00b14b7845aeac312ffca
 U drh
-Z 14b66e62b1a3bf33a2d26df6fe5962d7
+Z 673b617e6189db9a51be1e6b0160e6d4
