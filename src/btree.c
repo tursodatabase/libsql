@@ -5061,14 +5061,24 @@ static int allocateBtreePage(
         unsigned char *aData = pTrunk->aData;
         if( nearby>0 ){
           u32 i;
-          int dist;
           closest = 0;
-          dist = sqlite3AbsInt32(get4byte(&aData[8]) - nearby);
-          for(i=1; i<k; i++){
-            int d2 = sqlite3AbsInt32(get4byte(&aData[8+i*4]) - nearby);
-            if( d2<dist ){
-              closest = i;
-              dist = d2;
+          if( eMode==BTALLOC_LE ){
+            for(i=0; i<k; i++){
+              iPage = get4byte(&aData[8+i*4]);
+              if( iPage<nearby ){
+                closest = i;
+                break;
+              }
+            }
+          }else{
+            int dist;
+            dist = sqlite3AbsInt32(get4byte(&aData[8]) - nearby);
+            for(i=1; i<k; i++){
+              int d2 = sqlite3AbsInt32(get4byte(&aData[8+i*4]) - nearby);
+              if( d2<dist ){
+                closest = i;
+                dist = d2;
+              }
             }
           }
         }else{
