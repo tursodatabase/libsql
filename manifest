@@ -1,5 +1,5 @@
-C On\sMinix,\sdisable\sthe\s".timer"\scommand\sin\sthe\sshell\sin\sorder\sto\savoid\ncalling\sgetrusage().
-D 2013-02-20T00:54:21.855
+C Avoid\smoving\spages\smore\sthan\sonce\sin\san\sincremental\svacuum\soperation.
+D 2013-02-22T20:16:34.273
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 32e35a3a4ea55b45c0e5f74eeb793aec71491517
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 7a80e4a67f32a2494c383a28a495bf3bd71cc230
+F src/btree.c 960274cb93c1d85e82bd106094e0890d89434ab8
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
 F src/build.c 73ca65f32938e4e0d94e831b61b5749b211b79be
@@ -1034,7 +1034,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 06bd91305ed6752315c5224be5f89e87cafa6687
-R 14c0fedf89f00b14b7845aeac312ffca
-U drh
-Z 673b617e6189db9a51be1e6b0160e6d4
+P 9bd9bd9cab8c804c1a51d472199459176044a633
+R d336ad839cab7fc86035cb53790f3fce
+T *branch * incr-vacuum-opt
+T *sym-incr-vacuum-opt *
+T -sym-trunk *
+U dan
+Z cd58f1fbd68ec5de5d0f48d285a49284
