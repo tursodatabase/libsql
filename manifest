@@ -1,5 +1,5 @@
-C On\sMinix,\sdisable\sthe\s".timer"\scommand\sin\sthe\sshell\sin\sorder\sto\savoid\ncalling\sgetrusage().
-D 2013-02-20T00:54:21.855
+C Two\snew\sSQL\sfunctions:\sunicode()\sand\schar().
+D 2013-02-22T19:34:25.685
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c f6c20285bd36e87ec47f4d840e90a32755e2a90c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
-F src/func.c 8147799b048065a1590805be464d05b4913e652c
+F src/func.c 18b120b9a34daf6d38d50969b6f3471c09b2934a
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -508,7 +508,7 @@ F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4unicode.test 25ccad45896f8e50f6a694cff738a35f798cdb40
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test 0d89043dab9a8853358d14c68e028ee0093bf066
+F test/func.test 0ea54895539c0586e86e2dcea59b05cc9e7dd6b2
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -1034,7 +1034,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 06bd91305ed6752315c5224be5f89e87cafa6687
-R 14c0fedf89f00b14b7845aeac312ffca
+P 9bd9bd9cab8c804c1a51d472199459176044a633
+R 57460c96631f0b503379401f124964ab
+T *branch * unicode-function
+T *sym-unicode-function *
+T -sym-trunk *
 U drh
-Z 673b617e6189db9a51be1e6b0160e6d4
+Z ff410097880c23c389e99514cc7f5a15
