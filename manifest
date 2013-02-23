@@ -1,5 +1,5 @@
-C Fix\soff-by-one\sbug\sin\s[c3939d2491]\suncovered\sby\sth3.
-D 2013-02-23T17:49:16.450
+C Enhancements\sto\stest\sscripts.\sNo\scode\schanges.
+D 2013-02-23T18:58:11.423
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
-F src/test_vfs.c c6260ef238c1142c8f8bd402db02216afd182ae3
+F src/test_vfs.c fb16b2d9938cf0c1afc5a423b55b952fcc024275
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -534,7 +534,7 @@ F test/incrblob_err.test d2562d2771ebffd4b3af89ef64c140dd44371597
 F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test d2a6ddf5e429720b5fe502766af747915ccf6c32
 F test/incrvacuum2.test 379eeb8740b0ef60c372c439ad4cbea20b34bb9b
-F test/incrvacuum_ioerr.test 22f208d01c528403240e05beecc41dc98ed01637
+F test/incrvacuum_ioerr.test 293f2714571255539c8c789da2f7de4ec3f7101e
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
@@ -752,7 +752,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test 51edd31c65ed1560dd600b1796e8325df96318e2
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 0560b09498876da7714fff680c5d892b9228862f
+F test/tester.tcl 2918ebca150b67ca25b1682f8ecd857af77fab05
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b73847f17b7ae1298dfc52de6c4c4bc809bc77a3
-R 34a70e559a11e4b7cf3c06168257f235
+P 66f9faa9a969d004486ee38d492fb3eda6cdebab
+R 87b39f8ba9e2866ed1adab1a9b990f83
 U dan
-Z 1b7c8c9ddd8f5c22095277131689ae60
+Z c23ef7906674057cc290bb43146b99c4
