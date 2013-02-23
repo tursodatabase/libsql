@@ -3041,7 +3041,6 @@ static Pgno finalDbSize(BtShared *pBt, Pgno nOrig, Pgno nFree){
   while( PTRMAP_ISPAGE(pBt, nFin) || nFin==PENDING_BYTE_PAGE(pBt) ){
     nFin--;
   }
-  if( nFin>nOrig ) return SQLITE_CORRUPT_BKPT;
 
   return nFin;
 }
