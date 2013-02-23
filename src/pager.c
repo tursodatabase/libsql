@@ -1838,6 +1838,8 @@ static int pager_error(Pager *pPager, int rc){
   return rc;
 }
 
+static int pager_truncate(Pager *pPager, Pgno nPage);
+
 /*
 ** This routine ends a transaction. A transaction is usually ended by 
 ** either a COMMIT or a ROLLBACK operation. This routine may be called 
@@ -1891,7 +1893,7 @@ static int pager_error(Pager *pPager, int rc){
 ** to the first error encountered (the journal finalization one) is
 ** returned.
 */
-static int pager_end_transaction(Pager *pPager, int hasMaster){
+static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
   int rc = SQLITE_OK;      /* Error code from journal finalization operation */
   int rc2 = SQLITE_OK;     /* Error code from db file unlock operation */
 
@@ -1977,7 +1979,17 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     */
     rc2 = sqlite3WalEndWriteTransaction(pPager->pWal);
     assert( rc2==SQLITE_OK );
+  }else if( rc==SQLITE_OK && bCommit && pPager->dbFileSize>pPager->dbSize ){
+    /* This branch is taken when committing a transaction in rollback-journal
+    ** mode if the database file on disk is larger than the database image.
+    ** At this point the journal has been finalized and the transaction 
+    ** successfully committed, but the EXCLUSIVE lock is still held on the
+    ** file. So it is safe to truncate the database file to its minimum
+    ** required size.  */
+    assert( pPager->eLock==EXCLUSIVE_LOCK );
+    rc = pager_truncate(pPager, pPager->dbSize);
   }
+
   if( !pPager->exclusiveMode 
    && (!pagerUseWal(pPager) || sqlite3WalExclusiveMode(pPager->pWal, 0))
   ){
@@ -2016,7 +2028,7 @@ static void pagerUnlockAndRollback(Pager *pPager){
       sqlite3EndBenignMalloc();
     }else if( !pPager->exclusiveMode ){
       assert( pPager->eState==PAGER_READER );
-      pager_end_transaction(pPager, 0);
+      pager_end_transaction(pPager, 0, 0);
     }
   }
   pager_unlock(pPager);
@@ -2791,7 +2803,7 @@ end_playback:
     rc = sqlite3PagerSync(pPager);
   }
   if( rc==SQLITE_OK ){
-    rc = pager_end_transaction(pPager, zMaster[0]!='\0');
+    rc = pager_end_transaction(pPager, zMaster[0]!='\0', 0);
     testcase( rc!=SQLITE_OK );
   }
   if( rc==SQLITE_OK && zMaster[0] && res ){
@@ -5885,36 +5897,6 @@ int sqlite3PagerCommitPhaseOne(
   #endif
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
   
-      /* If this transaction has made the database smaller, then all pages
-      ** being discarded by the truncation must be written to the journal
-      ** file.
-      **
-      ** Before reading the pages with page numbers larger than the 
-      ** current value of Pager.dbSize, set dbSize back to the value
-      ** that it took at the start of the transaction. Otherwise, the
-      ** calls to sqlite3PagerGet() return zeroed pages instead of 
-      ** reading data from the database file.
-      */
-      if( pPager->dbSize<pPager->dbOrigSize 
-       && pPager->journalMode!=PAGER_JOURNALMODE_OFF
-      ){
-        Pgno i;                                   /* Iterator variable */
-        const Pgno iSkip = PAGER_MJ_PGNO(pPager); /* Pending lock page */
-        const Pgno dbSize = pPager->dbSize;       /* Database image size */ 
-        pPager->dbSize = pPager->dbOrigSize;
-        for( i=dbSize+1; i<=pPager->dbOrigSize; i++ ){
-          if( !sqlite3BitvecTest(pPager->pInJournal, i) && i!=iSkip ){
-            PgHdr *pPage;             /* Page to journal */
-            rc = sqlite3PagerGet(pPager, i, &pPage);
-            if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
-            rc = sqlite3PagerWrite(pPage);
-            sqlite3PagerUnref(pPage);
-            if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
-          }
-        }
-        pPager->dbSize = dbSize;
-      } 
-  
       /* Write the master journal name into the journal file. If a master 
       ** journal file name has already been written to the journal file, 
       ** or if zMaster is NULL (no master journal), then this call is a no-op.
@@ -5942,11 +5924,14 @@ int sqlite3PagerCommitPhaseOne(
         goto commit_phase_one_exit;
       }
       sqlite3PcacheCleanAll(pPager->pPCache);
-  
-      /* If the file on disk is not the same size as the database image,
-      ** then use pager_truncate to grow or shrink the file here.
-      */
-      if( pPager->dbSize!=pPager->dbFileSize ){
+
+      /* If the file on disk is smaller than the database image, use 
+      ** pager_truncate to grow the file here. This can happen if the database
+      ** image was extended as part of the current transaction and then the
+      ** last page in the db image moved to the free-list. In this case the
+      ** last page is never written out to disk, leaving the database file
+      ** undersized. Fix this now if it is the case.  */
+      if( pPager->dbSize>pPager->dbFileSize ){
         Pgno nNew = pPager->dbSize - (pPager->dbSize==PAGER_MJ_PGNO(pPager));
         assert( pPager->eState==PAGER_WRITER_DBMOD );
         rc = pager_truncate(pPager, nNew);
@@ -6019,7 +6004,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   }
 
   PAGERTRACE(("COMMIT %d\n", PAGERID(pPager)));
-  rc = pager_end_transaction(pPager, pPager->setMaster);
+  rc = pager_end_transaction(pPager, pPager->setMaster, 1);
   return pager_error(pPager, rc);
 }
 
@@ -6064,11 +6049,11 @@ int sqlite3PagerRollback(Pager *pPager){
   if( pagerUseWal(pPager) ){
     int rc2;
     rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_ROLLBACK, -1);
-    rc2 = pager_end_transaction(pPager, pPager->setMaster);
+    rc2 = pager_end_transaction(pPager, pPager->setMaster, 0);
     if( rc==SQLITE_OK ) rc = rc2;
   }else if( !isOpen(pPager->jfd) || pPager->eState==PAGER_WRITER_LOCKED ){
     int eState = pPager->eState;
-    rc = pager_end_transaction(pPager, 0);
+    rc = pager_end_transaction(pPager, 0, 0);
     if( !MEMDB && eState>PAGER_WRITER_LOCKED ){
       /* This can happen using journal_mode=off. Move the pager to the error 
       ** state to indicate that the contents of the cache may not be trusted.

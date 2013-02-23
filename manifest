@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sprevious\scommit.
-D 2013-02-22T20:57:47.269
+C If\sa\srollback\smode\stransaction\sreduces\sthe\ssize\sof\sthe\sdatabase\sfile,\savoid\sactually\struncating\sthe\sfile\suntil\safter\sthe\stransaction\shas\sbeen\scommitted\s(but\sbefore\sthe\sdb\shas\sbeen\sunlocked).\sThis\smeans\spages\sthat\sare\sremoved\sfrom\sthe\sdatabase\sby\struncating\sthe\sfile\sneed\snot\sbe\sjournalled.
+D 2013-02-23T16:40:46.526
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,12 +118,12 @@ F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c 7553068d21e32a57fc33ab6b2393fc8c1ba41410
 F src/attach.c ea5247f240e2c08afd608e9beb380814b86655e1
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 32e35a3a4ea55b45c0e5f74eeb793aec71491517
+F src/backup.c 0b8d2108a10ada00e642525921960b0c27451955
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 76f063ffd70aba11b3f4701d216c157e1a81b51d
+F src/btree.c f021a7f59fd340577c2f9b7d6e951576af335cfb
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
-F src/btreeInt.h 4e5c2bd0f9b36b2a815a6d84f771a61a65830621
+F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 73ca65f32938e4e0d94e831b61b5749b211b79be
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c dfdc04b126f7b05dcb2e2cc5c1262f98acbb49d9
 F src/os_win.c eabd00b813577d36bd66271cb08dd64ea0589dac
-F src/pager.c 4092c907222cfd451c74fe6bd2fd64b342f7190f
+F src/pager.c 0dbf5ff5d5d7d3a21fcab82e9e4d129b6fe6314f
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -871,7 +871,7 @@ F test/tkt3718.test 3b59dcb5c4e7754dacd91e7fd353a61492cc402a
 F test/tkt3731.test 0c5f4cbffe102d43c3b2188af91a9e36348f974b
 F test/tkt3757.test 10cd679a88675c880533083fc79ac04324525595
 F test/tkt3761.test b95ea9c98f21cf91325f18a984887e62caceab33
-F test/tkt3762.test 2a9f3b03df44ec49ec0cfa8d5da6574c2a7853df
+F test/tkt3762.test 4d439ff7abdc8d9323150269d182c37c2d514576
 F test/tkt3773.test 7bca904d2a647a6a4a291bd86d7fd7c73855b789
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
 F test/tkt3793.test d90ffd75c52413908d15e1c44fc2ea9c80fcc449
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c3939d249119b47bd57baa11a5ed7cc6014fc795
-R f58494bafc2bb0d7737cf9b62d925506
+P 720a3ceafc35b81936ed2eb1f07a7187d104f0a0
+R 2fcb8a3a4c948e70b98e89248d0d9b21
 U dan
-Z 7eeaf98ba8f2d987bdc515914ba34037
+Z 61c42a3e0f1600d37d1de1cf170b2233

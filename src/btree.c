@@ -2595,6 +2595,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   if( p->inTrans==TRANS_WRITE || (p->inTrans==TRANS_READ && !wrflag) ){
     goto trans_begun;
   }
+  assert( pBt->bDoTruncate==0 );
 
   /* Write transactions are not possible on a read-only database */
   if( (pBt->btsFlags & BTS_READ_ONLY)!=0 && wrflag ){
@@ -3003,10 +3004,7 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg, int bCommit){
       }while( bCommit && iFreePg>nFin );
       assert( iFreePg<iLastPg );
       
-      rc = sqlite3PagerWrite(pLastPg->pDbPage);
-      if( rc==SQLITE_OK ){
-        rc = relocatePage(pBt, pLastPg, eType, iPtrPage, iFreePg, nFin!=0);
-      }
+      rc = relocatePage(pBt, pLastPg, eType, iPtrPage, iFreePg, nFin!=0);
       releasePage(pLastPg);
       if( rc!=SQLITE_OK ){
         return rc;
@@ -3015,23 +3013,10 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg, int bCommit){
   }
 
   if( bCommit==0 ){
-    iLastPg--;
-    while( iLastPg==PENDING_BYTE_PAGE(pBt)||PTRMAP_ISPAGE(pBt, iLastPg) ){
-      if( PTRMAP_ISPAGE(pBt, iLastPg) ){
-        MemPage *pPg;
-        rc = btreeGetPage(pBt, iLastPg, &pPg, 0);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-        rc = sqlite3PagerWrite(pPg->pDbPage);
-        releasePage(pPg);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-      }
+    do {
       iLastPg--;
-    }
-    sqlite3PagerTruncateImage(pBt->pPager, iLastPg);
+    }while( iLastPg==PENDING_BYTE_PAGE(pBt) || PTRMAP_ISPAGE(pBt, iLastPg) );
+    pBt->bDoTruncate = 1;
     pBt->nPage = iLastPg;
   }
   return SQLITE_OK;
@@ -3141,7 +3126,7 @@ static int autoVacuumCommit(BtShared *pBt){
       put4byte(&pBt->pPage1->aData[32], 0);
       put4byte(&pBt->pPage1->aData[36], 0);
       put4byte(&pBt->pPage1->aData[28], nFin);
-      sqlite3PagerTruncateImage(pBt->pPager, nFin);
+      pBt->bDoTruncate = 1;
       pBt->nPage = nFin;
     }
     if( rc!=SQLITE_OK ){
@@ -3196,6 +3181,9 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
         return rc;
       }
     }
+    if( pBt->bDoTruncate ){
+      sqlite3PagerTruncateImage(pBt->pPager, pBt->nPage);
+    }
 #endif
     rc = sqlite3PagerCommitPhaseOne(pBt->pPager, zMaster, 0);
     sqlite3BtreeLeave(p);
@@ -3211,6 +3199,9 @@ static void btreeEndTransaction(Btree *p){
   BtShared *pBt = p->pBt;
   assert( sqlite3BtreeHoldsMutex(p) );
 
+#ifndef SQLITE_OMIT_AUTOVACUUM
+  pBt->bDoTruncate = 0;
+#endif
   btreeClearHasContent(pBt);
   if( p->inTrans>TRANS_NONE && p->db->activeVdbeCnt>1 ){
     /* If there are other active statements that belong to this database
@@ -5121,8 +5112,26 @@ static int allocateBtreePage(
       pPrevTrunk = 0;
     }while( searchList );
   }else{
-    /* There are no pages on the freelist, so create a new page at the
-    ** end of the file */
+    /* There are no pages on the freelist, so append a new page to the
+    ** database image.
+    **
+    ** Normally, new pages allocated by this block can be requested from the
+    ** pager layer with the 'no-content' flag set. This prevents the pager
+    ** from trying to read the pages content from disk. However, if the
+    ** current transaction has already run one or more incremental-vacuum
+    ** steps, then the page we are about to allocate may contain content
+    ** that is required in the event of a rollback. In this case, do
+    ** not set the no-content flag. This causes the pager to load and journal
+    ** the current page content before overwriting it.
+    **
+    ** Note that the pager will not actually attempt to load or journal 
+    ** content for any page that really does lie past the end of the database
+    ** file on disk. So the effects of disabling the no-content optimization
+    ** here are confined to those pages that lie between the end of the
+    ** database image and the end of the database file.
+    */
+    int bNoContent = (0==pBt->bDoTruncate);
+
     rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
     if( rc ) return rc;
     pBt->nPage++;
@@ -5137,7 +5146,7 @@ static int allocateBtreePage(
       MemPage *pPg = 0;
       TRACE(("ALLOCATE: %d from end of file (pointer-map page)\n", pBt->nPage));
       assert( pBt->nPage!=PENDING_BYTE_PAGE(pBt) );
-      rc = btreeGetPage(pBt, pBt->nPage, &pPg, 1);
+      rc = btreeGetPage(pBt, pBt->nPage, &pPg, bNoContent);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerWrite(pPg->pDbPage);
         releasePage(pPg);
@@ -5151,7 +5160,7 @@ static int allocateBtreePage(
     *pPgno = pBt->nPage;
 
     assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
-    rc = btreeGetPage(pBt, *pPgno, ppPage, 1);
+    rc = btreeGetPage(pBt, *pPgno, ppPage, bNoContent);
     if( rc ) return rc;
     rc = sqlite3PagerWrite((*ppPage)->pDbPage);
     if( rc!=SQLITE_OK ){
