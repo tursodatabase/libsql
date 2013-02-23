@@ -1,5 +1,5 @@
-C If\sa\srollback\smode\stransaction\sreduces\sthe\ssize\sof\sthe\sdatabase\sfile,\savoid\sactually\struncating\sthe\sfile\suntil\safter\sthe\stransaction\shas\sbeen\scommitted\s(but\sbefore\sthe\sdb\shas\sbeen\sunlocked).\sThis\smeans\spages\sthat\sare\sremoved\sfrom\sthe\sdatabase\sby\struncating\sthe\sfile\sneed\snot\sbe\sjournalled.
-D 2013-02-23T16:40:46.526
+C Fix\soff-by-one\sbug\sin\s[c3939d2491]\suncovered\sby\sth3.
+D 2013-02-23T17:49:16.450
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 0b8d2108a10ada00e642525921960b0c27451955
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c f021a7f59fd340577c2f9b7d6e951576af335cfb
+F src/btree.c bcd64dff70af19e3a166853b7b728887cd4cc975
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 73ca65f32938e4e0d94e831b61b5749b211b79be
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 720a3ceafc35b81936ed2eb1f07a7187d104f0a0
-R 2fcb8a3a4c948e70b98e89248d0d9b21
+P b73847f17b7ae1298dfc52de6c4c4bc809bc77a3
+R 34a70e559a11e4b7cf3c06168257f235
 U dan
-Z 61c42a3e0f1600d37d1de1cf170b2233
+Z 1b7c8c9ddd8f5c22095277131689ae60

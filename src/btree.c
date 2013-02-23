@@ -5056,7 +5056,7 @@ static int allocateBtreePage(
           if( eMode==BTALLOC_LE ){
             for(i=0; i<k; i++){
               iPage = get4byte(&aData[8+i*4]);
-              if( iPage<nearby ){
+              if( iPage<=nearby ){
                 closest = i;
                 break;
               }
