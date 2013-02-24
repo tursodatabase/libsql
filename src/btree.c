@@ -3066,7 +3066,9 @@ int sqlite3BtreeIncrVacuum(Btree *p){
     Pgno nFree = get4byte(&pBt->pPage1->aData[36]);
     Pgno nFin = finalDbSize(pBt, nOrig, nFree);
 
-    if( nFree>0 ){
+    if( nOrig<nFin ){
+      rc = SQLITE_CORRUPT_BKPT;
+    }else if( nFree>0 ){
       invalidateAllOverflowCache(pBt);
       rc = incrVacuumStep(pBt, nFin, nOrig, 0);
       if( rc==SQLITE_OK ){
