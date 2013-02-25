@@ -504,7 +504,9 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
               }
             }
           }
-          rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
+          if( rc==SQLITE_OK ){
+            rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1);
+          }
 
           /* Write the extra pages and truncate the database file as required */
           iEnd = MIN(PENDING_BYTE + pgszDest, iSize);

@@ -1,5 +1,5 @@
-C Fix\sa\scase\swhere\sdatabase\scorruption\smay\scause\san\sassert()\sto\sfail.
-D 2013-02-24T11:50:43.950
+C Catch\sa\sdropped\serror\scode\sin\sbackup.c.
+D 2013-02-25T07:12:40.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c 7553068d21e32a57fc33ab6b2393fc8c1ba41410
 F src/attach.c ea5247f240e2c08afd608e9beb380814b86655e1
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 0b8d2108a10ada00e642525921960b0c27451955
+F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c cbad71970cfadfa342fc137ca5e319f98b2d0da1
@@ -1034,7 +1034,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4cd30c72629a7f44b18026a70103aa0bb8a3b959
-R 4b714cf37fc577e9e0a95ce1f9383dd9
+P ba33bb059ed4f4547da2880dbc8bd827c06fae34
+R 2d999113323b8a278783fe6edad2f381
 U dan
-Z 57f0815a503efb202bba1a714e0db419
+Z 36585c74ecb2f209e8dc6af8304c9567
