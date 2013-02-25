@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\stest\sscript\sindex5.test.
-D 2013-02-25T13:44:56.570
+C Strengthen\sthe\sfinal\stest\scase\sin\sindex5.test.\s\sAlso\sprovide\sadditional\ndiagnostic\sinformation\sout\sthe\soutput.
+D 2013-02-25T13:55:59.837
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -540,7 +540,7 @@ F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
-F test/index5.test 7af36009155f091526454b371482eaffa07e9fb8
+F test/index5.test 5616266b2387003bf83c39df626c7292622d58de
 F test/indexedby.test be501e381b82b2f8ab406309ba7aac46e221f4ad
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1035,7 +1035,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 26e235b7a4cd4d0dc9725774d70174c4d369cb98
-R 0cfcb8f301b9cfa0a465c09c870c162d
-U dan
-Z 886833d22a3b2590790bb996461e3c36
+P d87e5acf2802d2887e20f79a8bd4990b2cd47b91
+R eab578b1b57353b6c3cb7f5f6faef55f
+U drh
+Z 0e128646425d74587780af38946ae84f
