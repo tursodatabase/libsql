@@ -963,6 +963,56 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 
 /*
+** The unicode() function.  Return the integer unicode code-point value
+** for the first character of the input string. 
+*/
+static void unicodeFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const unsigned char *z = sqlite3_value_text(argv[0]);
+  if( z && z[0] ) sqlite3_result_int(context, sqlite3Utf8Read(&z));
+}
+
+/*
+** The char() function takes zero or more arguments, each of which is
+** an integer.  It constructs a string where each character of the string
+** is the unicode character for the corresponding integer argument.
+*/
+static void charFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  unsigned char *z, *zOut;
+  int i;
+  zOut = z = sqlite3_malloc( argc*4 );
+  if( z==0 ){
+    sqlite3_result_error_nomem(context);
+    return;
+  }
+  for(i=0; i<argc; i++){
+    sqlite3_int64 x = sqlite3_value_int64(argv[i]);
+    unsigned c;
+    x = sqlite3_value_int64(argv[i]);
+    if( x<0 || x>0x10ffff ) x = 0xfffd;
+    c = (unsigned)(x & 0x1fffff);
+    if( c<=0xFFFF ){
+      *zOut++ = (u8)(c&0x00FF);
+      *zOut++ = (u8)((c>>8)&0x00FF);
+    }else{
+      if( c>=0xd800 && c<=0xdbff ) c = 0xfffd;
+      *zOut++ = (u8)(((c>>10)&0x003F) + (((c-0x10000)>>10)&0x00C0));
+      *zOut++ = (u8)(0x00D8 + (((c-0x10000)>>18)&0x03));
+      *zOut++ = (u8)(c&0x00FF);
+      *zOut++ = (u8)(0x00DC + ((c>>8)&0x03));
+    }
+  }
+  sqlite3_result_text16le(context, (char*)z, (int)(zOut-z), sqlite3_free);
+}
+
+/*
 ** The hex() function.  Interpret the argument as a blob.  Return
 ** a hexadecimal rendering as text.
 */
@@ -1589,6 +1639,8 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
+    FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
+    FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
 #ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
