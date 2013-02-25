@@ -36,11 +36,10 @@ db close
 testvfs tvfs
 tvfs filter xWrite
 tvfs script write_cb
-proc write_cb {xCall file handle iOfst} {
+proc write_cb {xCall file handle iOfst args} {
   if {[file tail $file]=="test.db"} {
     lappend ::write_list [expr $iOfst/1024]
   }
-  puts "$xCall $file $args"
 }
 
 do_test 1.2 {
