@@ -1,5 +1,5 @@
-C Add\snew\sSQL\sfunctions\sunicode()\sand\schar().
-D 2013-02-25T14:39:47.361
+C Remove\sextra\suse\sof\sthe\ssqlite3_value_int64()\sfunction.
+D 2013-02-26T05:42:30.002
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c f6c20285bd36e87ec47f4d840e90a32755e2a90c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
-F src/func.c 18b120b9a34daf6d38d50969b6f3471c09b2934a
+F src/func.c cac45cca7bbe29bbefef46116174e89e1284763b
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -1035,7 +1035,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 47b6418242bb2cd718d1a73b0cb73a43ee74e503 209b21085b9767f10f6ffb7c7cac756fcb74ded5
-R acbb3126cf444e9dd94bf56c3bd8260d
-U drh
-Z f91250c13344084844a40baa07a182ba
+P be2493905281e12c7f4c146ab17c8872e52da350
+R a60abe17b21bf1359d9c1679d089205f
+U mistachkin
+Z 59402f1761566765a916d1a7046c0b39

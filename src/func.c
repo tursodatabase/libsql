@@ -993,7 +993,7 @@ static void charFunc(
     return;
   }
   for(i=0; i<argc; i++){
-    sqlite3_int64 x = sqlite3_value_int64(argv[i]);
+    sqlite3_int64 x;
     unsigned c;
     x = sqlite3_value_int64(argv[i]);
     if( x<0 || x>0x10ffff ) x = 0xfffd;
