@@ -1,5 +1,5 @@
-C Remove\sextra\suse\sof\sthe\ssqlite3_value_int64()\sfunction.
-D 2013-02-26T05:42:30.002
+C Change\sthe\sway\stest\sscript\sincrvacuum3.test\scopies\sdatabase\sfiles\sin\sorder\sto\savoid\strying\sto\sread\sthe\s(locked)\s512\sbyte\s'pending-byte'\sregion.
+D 2013-02-26T06:14:27.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -534,7 +534,7 @@ F test/incrblob_err.test d2562d2771ebffd4b3af89ef64c140dd44371597
 F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test d2a6ddf5e429720b5fe502766af747915ccf6c32
 F test/incrvacuum2.test 379eeb8740b0ef60c372c439ad4cbea20b34bb9b
-F test/incrvacuum3.test 1159ec2b3e7bafbde5718867bc7328ba58863313
+F test/incrvacuum3.test 7198a60267beda6eb49bb65ab40db35873ec8d0d
 F test/incrvacuum_ioerr.test 293f2714571255539c8c789da2f7de4ec3f7101e
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
@@ -1035,7 +1035,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P be2493905281e12c7f4c146ab17c8872e52da350
-R a60abe17b21bf1359d9c1679d089205f
-U mistachkin
-Z 59402f1761566765a916d1a7046c0b39
+P 6d7973524a7d3bf3158fdac58975945da7f51740
+R 538583335e104793ae2aa040823d6e4d
+U dan
+Z 05d687700aaf72f6488f6d2b4316e01c

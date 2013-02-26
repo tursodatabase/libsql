@@ -34,15 +34,31 @@ ifcapable {!autovacuum || !pragma} {
 
 proc check_on_disk {} {
 
-  # Copy the files for database "test.db" to "test2.db".
+  # Copy the wal and journal files for database "test.db" to "test2.db".
   forcedelete test2.db test2.db-journal test2.db-wal
-  forcecopy test.db test2.db
   if {[file exists test.db-journal]} { 
     forcecopy test.db-journal test2.db-journal 
   }
   if {[file exists test.db-wal]} { 
     forcecopy test.db-wal test2.db-wal 
   }
+
+  # Now copy the database file itself. Do this using open/read/puts
+  # instead of the [file copy] command in order to avoid attempting
+  # to read the 512 bytes begining at offset $sqlite_pending_byte.
+  #
+  set sz [file size test.db]
+  set fd [open test.db]
+  set fd2 [open test2.db w]
+  fconfigure $fd  -encoding binary -translation binary
+  fconfigure $fd2 -encoding binary -translation binary
+  if {$sz>$::sqlite_pending_byte} {
+    puts -nonewline $fd2 [read $fd $::sqlite_pending_byte]
+    seek $fd [expr $::sqlite_pending_byte+512]
+    seek $fd2 [expr $::sqlite_pending_byte+512]
+  }
+  puts -nonewline $fd2 [read $fd]
+  close $fd2
 
   # Open "test2.db" and check it is Ok.
   sqlite3 dbcheck test2.db
