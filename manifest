@@ -1,5 +1,5 @@
-C Change\sthe\sway\stest\sscript\sincrvacuum3.test\scopies\sdatabase\sfiles\sin\sorder\sto\savoid\strying\sto\sread\sthe\s(locked)\s512\sbyte\s'pending-byte'\sregion.
-D 2013-02-26T06:14:27.544
+C When\scomparing\snames\sduring\sname\sresolution,\smake\ssure\sthe\snames\smatch\nexactly\sand\sthat\sone\sname\sisn't\smerely\sa\sprefix\sof\sthe\sother.\nFix\sfor\sticket\s[7a31705a7e6c95d51].
+D 2013-02-26T12:57:42.514
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/pragma.c bdb484d0283965c431d4153f28c30f836a1f16b1
 F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 652ae6dc0f185b01b4536bb2fa7d878f13f0f1df
+F src/resolve.c 9079da7d59aed2bb14ec8315bc7f720dd85b5b65
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c e1c6f6abdf9f359f4e735cb8ae11d2f359bf52a9
 F src/shell.c 7c41bfcd9e5bf9d96b9215f79b03a5b2b44a3bca
@@ -784,6 +784,7 @@ F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 9db6e1d7209dc0794948b260d6f82b2b1de83a9f
 F test/tkt-752e1646fc.test ea78d88d14fe9866bdd991c634483334639e13bf
 F test/tkt-78e04e52ea.test 703e0bfb23d543edf0426a97e3bbd0ca346508ec
+F test/tkt-7a31705a7e6.test 5a7889fdb095ffbe1622413e0145de1637d421bd
 F test/tkt-7bbfb7d442.test dfa5c8097a8c353ae40705d6cddeb1f99c18b81a
 F test/tkt-80ba201079.test 105a721e6aad0ae3c5946d7615d1e4d03f6145b8
 F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
@@ -1035,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6d7973524a7d3bf3158fdac58975945da7f51740
-R 538583335e104793ae2aa040823d6e4d
-U dan
-Z 05d687700aaf72f6488f6d2b4316e01c
+P fa1842e462049b1366909fe36d6d81b634be3953
+R f34c00396e68edbafc7e03b1d894fd28
+U drh
+Z a7d367b0a7c33935bece18346d0a84c6
