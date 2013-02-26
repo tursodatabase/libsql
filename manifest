@@ -1,5 +1,5 @@
-C When\scomparing\snames\sduring\sname\sresolution,\smake\ssure\sthe\snames\smatch\nexactly\sand\sthat\sone\sname\sisn't\smerely\sa\sprefix\sof\sthe\sother.\nFix\sfor\sticket\s[7a31705a7e6c95d51].
-D 2013-02-26T12:57:42.514
+C In\sthe\sincrvacuum3\stest,\sadd\smissing\scall\sto\sthe\sTcl\sclose\scommand.
+D 2013-02-26T18:54:18.663
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -534,7 +534,7 @@ F test/incrblob_err.test d2562d2771ebffd4b3af89ef64c140dd44371597
 F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test d2a6ddf5e429720b5fe502766af747915ccf6c32
 F test/incrvacuum2.test 379eeb8740b0ef60c372c439ad4cbea20b34bb9b
-F test/incrvacuum3.test 7198a60267beda6eb49bb65ab40db35873ec8d0d
+F test/incrvacuum3.test 2ffa9e4a23f072bd7902b9ae6471f8822a6522a7
 F test/incrvacuum_ioerr.test 293f2714571255539c8c789da2f7de4ec3f7101e
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fa1842e462049b1366909fe36d6d81b634be3953
-R f34c00396e68edbafc7e03b1d894fd28
-U drh
-Z a7d367b0a7c33935bece18346d0a84c6
+P c2d5a23b1ab39918e97c596cf75c42f86a5fe2b7
+R 687a470b4afc6de785d4ede326493d08
+U mistachkin
+Z 915aa22c53fd0f2da96b96267104ce14

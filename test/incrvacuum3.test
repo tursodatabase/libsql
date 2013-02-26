@@ -59,6 +59,7 @@ proc check_on_disk {} {
   }
   puts -nonewline $fd2 [read $fd]
   close $fd2
+  close $fd
 
   # Open "test2.db" and check it is Ok.
   sqlite3 dbcheck test2.db
