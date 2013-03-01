@@ -999,10 +999,10 @@ static void charFunc(
     if( x<0 || x>0x10ffff ) x = 0xfffd;
     c = (unsigned)(x & 0x1fffff);
     if( c<=0xFFFF ){
+      if( c>=0xd800 && c<=0xdfff ) c = 0xfffd;
       *zOut++ = (u8)(c&0x00FF);
       *zOut++ = (u8)((c>>8)&0x00FF);
     }else{
-      if( c>=0xd800 && c<=0xdbff ) c = 0xfffd;
       *zOut++ = (u8)(((c>>10)&0x003F) + (((c-0x10000)>>10)&0x00C0));
       *zOut++ = (u8)(0x00D8 + (((c-0x10000)>>18)&0x03));
       *zOut++ = (u8)(c&0x00FF);

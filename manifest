@@ -1,5 +1,5 @@
-C Always\suse\sstrncmp()\srather\sthan\smemcmp()\swhen\scomparing\sstrings\swhere\sone\nor\sother\sstring\smight\sbe\sless\sthan\sthe\slength\sparameter,\ssince\soptimized\nversions\sof\smemcmp()\smight\sread\spast\sthe\sfirst\sdifference\sand\sin\sso\sdoing\ngenerate\san\saccess\sviolation.
-D 2013-03-01T01:07:17.783
+C Fix\sthe\shandling\sof\sUTF16\ssurrogate\spairs\sin\sthe\schar()\sfunction.
+D 2013-03-01T15:02:52.567
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c a23b4aac2a455b2e76b55bef5dcfbe62b665375c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
-F src/func.c cac45cca7bbe29bbefef46116174e89e1284763b
+F src/func.c b45b6a171511e3a8e50bf6f8503e54a76f608e02
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cd8067238439638bcfd3966d55d2a3990f36d702
-R 5a3dd033106407aa4f07779dd0d49c1d
+P d73435587ba7459e2e2c32980d0e17abdeceb4bc
+R 48156f858977f4911d9fde2269d57dd5
 U drh
-Z dd2b43e4a7c5d5f8a543e6614ead6c72
+Z b513f3d6b5034b3ba33391fbf8f8fd07
