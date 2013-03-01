@@ -1,5 +1,5 @@
-C Fix\sthe\shandling\sof\sUTF16\ssurrogate\spairs\sin\sthe\schar()\sfunction.
-D 2013-03-01T15:02:52.567
+C Fix\san\soverly\srestrictive\sassert()\sin\sthe\spager.
+D 2013-03-01T21:01:05.889
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 8964f621aaab1f2c9804fbbff4450d9811ef5548
 F src/os_win.c eabd00b813577d36bd66271cb08dd64ea0589dac
-F src/pager.c 0dbf5ff5d5d7d3a21fcab82e9e4d129b6fe6314f
+F src/pager.c 9e51c2a37a2f2c3ed4689c25204e2977b5450ac0
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d73435587ba7459e2e2c32980d0e17abdeceb4bc
-R 48156f858977f4911d9fde2269d57dd5
+P ff67d87894eeb0036374235c5723e267536909f9
+R 912868010935445e46f6a91a1025b5f5
 U drh
-Z b513f3d6b5034b3ba33391fbf8f8fd07
+Z 09f1606c478c2565bc28a5eade8e4146
