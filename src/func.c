@@ -972,6 +972,7 @@ static void unicodeFunc(
   sqlite3_value **argv
 ){
   const unsigned char *z = sqlite3_value_text(argv[0]);
+  (void)argc;
   if( z && z[0] ) sqlite3_result_int(context, sqlite3Utf8Read(&z));
 }
 

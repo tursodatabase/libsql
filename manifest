@@ -1,5 +1,5 @@
-C Update\sthe\scygwin\sinterface\sto\suse\sthe\snewer\s1.7\sAPIs\sinstead\sof\sthe\n1.5\sAPIs.\s\sAlso\sshorten\sover-length\ssource\scode\slines\sin\sos_win.c.
-D 2013-03-01T23:24:04.416
+C Complete\sthe\sinitialization\sof\sthe\sloadable\sextension\sthunk\stable.\s\sAlso\nfix\sother\s(harmless)\scompiler\swarnings.
+D 2013-03-01T23:40:26.913
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c a23b4aac2a455b2e76b55bef5dcfbe62b665375c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
-F src/func.c b45b6a171511e3a8e50bf6f8503e54a76f608e02
+F src/func.c 91bc65eb68ef6cf29198aac92f11489fa85a8de4
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -142,7 +142,7 @@ F src/insert.c f7cb141e8ce257cb6b15c497f09e4e23d6055599
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
-F src/loadext.c f20382fbaeec832438a1ba7797bee3d3c8a6d51d
+F src/loadext.c 1422eba4aa2b1fb5f7b3aef574752272477d21e2
 F src/main.c 8d204866d1abf5100503dcd54d3187b88f6846b7
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -218,7 +218,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 1ec82e02fd3643899e9a5de9684515e84641c91f
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_regexp.c 08748a68ddb3b29329dbdade5ede849a749f0c07
+F src/test_regexp.c 5ff0eafd66c9a209417142fa319006f7028fbda8
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c9c2b82c86fff457a0b32d5be84ec66639065ae1
-R f939bbf001afa25b994d8ca6deefd57b
+P 6b2838336a31e34c540210ccc9c934d4ba94757c
+R db69dd670ef335759c7475908d848a42
 U drh
-Z d24cb65108217f32a1099dd98d4c4743
+Z d35d3652e81b05a9c2009fdff0b4ddbd
