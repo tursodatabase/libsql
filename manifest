@@ -1,5 +1,5 @@
-C Prevent\sTcl\sfile\sencoding\sissues\sin\sthe\stests\sfor\sthe\sunicode()\sand\schar()\sfunctions.
-D 2013-03-01T23:13:37.546
+C Update\sthe\scygwin\sinterface\sto\suse\sthe\snewer\s1.7\sAPIs\sinstead\sof\sthe\n1.5\sAPIs.\s\sAlso\sshorten\sover-length\ssource\scode\slines\sin\sos_win.c.
+D 2013-03-01T23:24:04.416
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 8964f621aaab1f2c9804fbbff4450d9811ef5548
-F src/os_win.c eabd00b813577d36bd66271cb08dd64ea0589dac
+F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
 F src/pager.c 9e51c2a37a2f2c3ed4689c25204e2977b5450ac0
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f476eace86102fd5442cfbba169c18f6ee44eae2 d2e7dfca5a92074a7984032deb6a4e3681389c72
-R 8f643957234789baf5ec785ee72ea00a
-U mistachkin
-Z d27776955493f492e2d5a7d687e61dbc
+P c9c2b82c86fff457a0b32d5be84ec66639065ae1
+R f939bbf001afa25b994d8ca6deefd57b
+U drh
+Z d24cb65108217f32a1099dd98d4c4743
