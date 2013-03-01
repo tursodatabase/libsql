@@ -194,7 +194,7 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
   if( pRe->nInit ){
     unsigned char x = pRe->zInit[0];
     while( in.i+pRe->nInit<=in.mx 
-        && (zIn[in.i]!=x || memcmp(zIn+in.i, pRe->zInit, pRe->nInit)!=0)
+        && (zIn[in.i]!=x || strncmp(zIn+in.i, pRe->zInit, pRe->nInit)!=0)
     ){
       in.i++;
     }

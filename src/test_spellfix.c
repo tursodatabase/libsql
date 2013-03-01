@@ -744,22 +744,22 @@ static int utf8Len(unsigned char c, int N){
 }
 
 /*
-** Return TRUE (non-zero) of the To side of the given cost matches
+** Return TRUE (non-zero) if the To side of the given cost matches
 ** the given string.
 */
 static int matchTo(EditDist3Cost *p, const char *z, int n){
   if( p->nTo>n ) return 0;
-  if( memcmp(p->a+p->nFrom, z, p->nTo)!=0 ) return 0;
+  if( strncmp(p->a+p->nFrom, z, p->nTo)!=0 ) return 0;
   return 1;
 }
 
 /*
-** Return TRUE (non-zero) of the To side of the given cost matches
+** Return TRUE (non-zero) if the From side of the given cost matches
 ** the given string.
 */
 static int matchFrom(EditDist3Cost *p, const char *z, int n){
   assert( p->nFrom<=n );
-  if( memcmp(p->a, z, p->nFrom)!=0 ) return 0;
+  if( strncmp(p->a, z, p->nFrom)!=0 ) return 0;
   return 1;
 }
 
@@ -1952,7 +1952,7 @@ static int spellfix1Init(
       );
     }
     for(i=3; rc==SQLITE_OK && i<argc; i++){
-      if( memcmp(argv[i],"edit_cost_table=",16)==0 && pNew->zCostTable==0 ){
+      if( strncmp(argv[i],"edit_cost_table=",16)==0 && pNew->zCostTable==0 ){
         pNew->zCostTable = spellfix1Dequote(&argv[i][16]);
         if( pNew->zCostTable==0 ) rc = SQLITE_NOMEM;
         continue;
@@ -2681,7 +2681,7 @@ static int spellfix1Update(
         p->pConfig3 = 0;
         return SQLITE_OK;
       }
-      if( memcmp(zCmd,"edit_cost_table=",16)==0 ){
+      if( strncmp(zCmd,"edit_cost_table=",16)==0 ){
         editDist3ConfigDelete(p->pConfig3);
         p->pConfig3 = 0;
         sqlite3_free(p->zCostTable);

@@ -1198,7 +1198,7 @@ int sqlite3VdbeParameterIndex(Vdbe *p, const char *zName, int nName){
   if( zName ){
     for(i=0; i<p->nzVar; i++){
       const char *z = p->azVar[i];
-      if( z && memcmp(z,zName,nName)==0 && z[nName]==0 ){
+      if( z && strncmp(z,zName,nName)==0 && z[nName]==0 ){
         return i+1;
       }
     }

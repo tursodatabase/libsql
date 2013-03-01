@@ -4752,7 +4752,7 @@ static int fillInUnixFile(
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
   }
-  if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
+  if( strcmp(pVfs->zName,"unix-excl")==0 ){
     pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
 
