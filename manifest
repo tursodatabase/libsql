@@ -1,5 +1,5 @@
-C Complete\sthe\sinitialization\sof\sthe\sloadable\sextension\sthunk\stable.\s\sAlso\nfix\sother\s(harmless)\scompiler\swarnings.
-D 2013-03-01T23:40:26.913
+C Update\scomments\son\sthe\sfree-page\sallocator\sto\saccurately\sreflect\sthe\nlatest\simplementation.\s\sAdd\snew\sasserts\sto\sthe\sfree-page\sallocator.
+D 2013-03-02T03:25:55.218
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in a48faa9e7dd7d556d84f5456eabe5825dd8a6282
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c cbad71970cfadfa342fc137ca5e319f98b2d0da1
+F src/btree.c ea4cc870674e608cd9349798d6f7811feeb85643
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 375e5df716e03b9343c5e1211be3b24e6d6dff05
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6b2838336a31e34c540210ccc9c934d4ba94757c
-R db69dd670ef335759c7475908d848a42
+P 780d06c5e54590f677f993fa9c313989c2eab8c7
+R f5753609ff29532bc332844f7d251f42
 U drh
-Z d35d3652e81b05a9c2009fdff0b4ddbd
+Z ee29f611b55f3013b3ce8fc0c9bc38da

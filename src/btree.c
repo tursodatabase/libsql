@@ -4875,21 +4875,23 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
 ** an error.  *ppPage and *pPgno are undefined in the event of an error.
 ** Do not invoke sqlite3PagerUnref() on *ppPage if an error is returned.
 **
-** If the "nearby" parameter is not 0, then a (feeble) effort is made to 
+** If the "nearby" parameter is not 0, then an effort is made to 
 ** locate a page close to the page number "nearby".  This can be used in an
 ** attempt to keep related pages close to each other in the database file,
 ** which in turn can make database access faster.
 **
-** If the "exact" parameter is not 0, and the page-number nearby exists 
-** anywhere on the free-list, then it is guarenteed to be returned. This
-** is only used by auto-vacuum databases when allocating a new table.
+** If the eMode parameter is BTALLOC_EXACT and the nearby page exists
+** anywhere on the free-list, then it is guaranteed to be returned.  If
+** eMode is BTALLOC_LT then the page returned will be less than or equal
+** to nearby if any such page exists.  If eMode is BTALLOC_ANY then there
+** are no restrictions on which page is returned.
 */
 static int allocateBtreePage(
-  BtShared *pBt, 
-  MemPage **ppPage, 
-  Pgno *pPgno, 
-  Pgno nearby,
-  u8 eMode
+  BtShared *pBt,         /* The btree */
+  MemPage **ppPage,      /* Store pointer to the allocated page here */
+  Pgno *pPgno,           /* Store the page number here */
+  Pgno nearby,           /* Search for a page near this one */
+  u8 eMode               /* BTALLOC_EXACT, BTALLOC_LT, or BTALLOC_ANY */
 ){
   MemPage *pPage1;
   int rc;
@@ -4900,6 +4902,7 @@ static int allocateBtreePage(
   Pgno mxPage;     /* Total size of the database file */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
+  assert( eMode==BTALLOC_ANY || (nearby>0 && pBt->autoVacuum) );
   pPage1 = pBt->pPage1;
   mxPage = btreePagecount(pBt);
   n = get4byte(&pPage1->aData[36]);
@@ -4912,7 +4915,7 @@ static int allocateBtreePage(
     Pgno iTrunk;
     u8 searchList = 0; /* If the free-list must be searched for 'nearby' */
     
-    /* If the 'exact' parameter was true and a query of the pointer-map
+    /* If eMode==BTALLOC_EXACT and a query of the pointer-map
     ** shows that the page 'nearby' is somewhere on the free-list, then
     ** the entire-list will be searched for that page.
     */
@@ -4942,7 +4945,8 @@ static int allocateBtreePage(
 
     /* The code within this loop is run only once if the 'searchList' variable
     ** is not true. Otherwise, it runs once for each trunk-page on the
-    ** free-list until the page 'nearby' is located.
+    ** free-list until the page 'nearby' is located (eMode==BTALLOC_EXACT)
+    ** or until a page less than 'nearby' is located (eMode==BTALLOC_LT)
     */
     do {
       pPrevTrunk = pTrunk;
