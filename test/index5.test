@@ -67,7 +67,7 @@ do_test 1.3 {
   puts -nonewline \
       " (forward=$nForward, back=$nBackward, noncontiguous=$nNoncont)"
 
-  expr {$nForward > 25*($nBackward + $nNoncont)}
+  expr {$nForward > 2*($nBackward + $nNoncont)}
 } {1}
 db close
 tvfs delete
