@@ -3755,12 +3755,26 @@ static void assertTruncateConstraint(Pager *pPager){
 ** function does not actually modify the database file on disk. It 
 ** just sets the internal state of the pager object so that the 
 ** truncation will be done when the current transaction is committed.
+**
+** This function is only called right before committing a transaction.
+** Once this function has been called, the transaction must either be
+** rolled back or committed. It is not safe to call this function and
+** then continue writing to the database.
 */
 void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
   assert( pPager->dbSize>=nPage );
   assert( pPager->eState>=PAGER_WRITER_CACHEMOD );
   pPager->dbSize = nPage;
-  assertTruncateConstraint(pPager);
+
+  /* At one point the code here called assertTruncateConstraint() to
+  ** ensure that all pages being truncated away by this operation are,
+  ** if one or more savepoints are open, present in the savepoint 
+  ** journal so that they can be restored if the savepoint is rolled
+  ** back. This is no longer necessary as this function is now only
+  ** called right before committing a transaction. So although the 
+  ** Pager object may still have open savepoints (Pager.nSavepoint!=0), 
+  ** they cannot be rolled back. So the assertTruncateConstraint() call
+  ** is no longer correct. */
 }
 
 

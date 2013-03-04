@@ -1,5 +1,5 @@
-C Add\sthe\stest_fs.c\stest\smodule\sto\sMakefile.in.\s\sAdjust\sthe\ssuccess\scriteria\non\sindex5-1.3\sso\sthat\sit\sworks\sunder\sauto_vacuum\sconfigurations.
-D 2013-03-03T20:26:46.744
+C Remove\san\sassert()\sstatement\sthat\shas\sbeen\sincorrect\ssince\sthe\srecent\sincremental-vacuum\srelated\schanges\sin\s[26e235b7a4].
+D 2013-03-04T16:35:06.413
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 8964f621aaab1f2c9804fbbff4450d9811ef5548
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
-F src/pager.c 9e51c2a37a2f2c3ed4689c25204e2977b5450ac0
+F src/pager.c bbe1eca2d1c81dcf163836ca317a6a6ea84441d8
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9a135e37b696b8544da8dbddf9d1041b8fa6f1c2
-R 9293e988d26790e7e84c28eec0d1e5f0
-U drh
-Z ffeccda697146da2c5f1e0fb0eff3d20
+P b457c8870ac5ef58f2b7f8daed723c0cf0c07340
+R 7554fffb7ea77fca9105b89fb46d1a5e
+U dan
+Z 6be45ce5fd9d36a4a4ba22a061a3da5d
