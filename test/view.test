@@ -602,11 +602,13 @@ do_test view-21.1 {
     CREATE VIEW vx AS SELECT * FROM v32768 UNION SELECT * FROM v32768;
   }
 } {1 {too many references to "v1": max 65535}}
-do_test view-21.2 {
-  db progress 1000 {expr 1}
-  catchsql {
-    SELECT * FROM v32768;
-  }
-} {1 interrupted}
+ifcapable progress {
+  do_test view-21.2 {
+    db progress 1000 {expr 1}
+    catchsql {
+      SELECT * FROM v32768;
+    }
+  } {1 interrupted}
+}
 
 finish_test

@@ -1,5 +1,5 @@
-C Remove\san\sassert()\sstatement\sthat\shas\sbeen\sincorrect\ssince\sthe\srecent\sincremental-vacuum\srelated\schanges\sin\s[26e235b7a4].
-D 2013-03-04T16:35:06.413
+C Omit\sa\stest\sthat\suses\sthe\sprogress\shandler\scallback\sfrom\sview.test\sif\sOMIT_PROGRESS_HANDLER\sis\sdefined.
+D 2013-03-04T17:41:32.501
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -928,7 +928,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
-F test/view.test 977eb3fa17b44f73fc2b636172dc9136311024ce
+F test/view.test 4057630287bfa5955628fe90a13d4c225d1c7352
 F test/vtab1.test 4403f987860ebddef1ce2de6db7216421035339d
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b457c8870ac5ef58f2b7f8daed723c0cf0c07340
-R 7554fffb7ea77fca9105b89fb46d1a5e
+P 090a47127fde90616a92a324d26bf9ddd4053120
+R 6934d41f0981fdd51befb5693c74c199
 U dan
-Z 6be45ce5fd9d36a4a4ba22a061a3da5d
+Z 2cadb001785412dcf064c155dea5de1b
