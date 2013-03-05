@@ -471,7 +471,7 @@ static void page_usage_msg(int pgno, const char *zFormat, ...){
   zMsg = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( pgno<=0 || pgno>mxPage ){
-    printf("ERROR: page %d out of bounds.  Range=1..%d.  Msg: %s\n",
+    printf("ERROR: page %d out of range 1..%d: %s\n",
             pgno, mxPage, zMsg);
     sqlite3_free(zMsg);
     return;

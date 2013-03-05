@@ -1,5 +1,5 @@
-C Omit\sa\stest\sthat\suses\sthe\sprogress\shandler\scallback\sfrom\sview.test\sif\sOMIT_PROGRESS_HANDLER\sis\sdefined.
-D 2013-03-04T17:41:32.501
+C Simplified\serror\smessage\son\sthe\sshowdb\sutility.
+D 2013-03-05T01:46:26.107
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1016,7 +1016,7 @@ F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 16960a5ce59d8b1d70dc3bdc51e2c0fe7bb91359
+F tool/showdb.c acd24ea035a3bd2ffe266f1ef8a161812c29b2f0
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1036,7 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 090a47127fde90616a92a324d26bf9ddd4053120
-R 6934d41f0981fdd51befb5693c74c199
-U dan
-Z 2cadb001785412dcf064c155dea5de1b
+P f40552ada57622825d2974d392356aa34612d5ee
+R e74a37a3f1e9384492860c906eed95aa
+U drh
+Z b5a881064edd7a6340015d7ebf25b267
