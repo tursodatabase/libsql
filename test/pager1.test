@@ -752,7 +752,7 @@ sqlite3 db test.db -readonly 1
 do_catchsql_test pager1.4.5.6 {
   SELECT * FROM t1;
   SELECT * FROM t2;
-} {1 {disk I/O error}}
+} {1 {attempt to write a readonly database}}
 db close
 
 # Snapshot the file-system just before multi-file commit. Save the name

@@ -4827,6 +4827,11 @@ int sqlite3PagerSharedLock(Pager *pPager){
       goto failed;
     }
     if( bHotJournal ){
+      if( pPager->readOnly ){
+        rc = SQLITE_READONLY_ROLLBACK;
+        goto failed;
+      }
+
       /* Get an EXCLUSIVE lock on the database file. At this point it is
       ** important that a RESERVED lock is not obtained on the way to the
       ** EXCLUSIVE lock. If it were, another process might open the
