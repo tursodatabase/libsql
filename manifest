@@ -1,5 +1,5 @@
-C Add\sextended\serror\scode\sSQLITE_READONLY_ROLLBACK.\sReturned\sif\sa\sread-only\sconnection\scannot\sread\sthe\sdatabase\sbecause\sdoing\sso\swould\srequire\sit\sto\sroll\sback\sa\shot-journal.
-D 2013-03-05T15:09:25.827
+C Do\snot\sattempt\sto\sset\sthe\spermissions\son\san\sexisting\sjournal\sor\swal\sfile.\sDo\sthis\sonly\simmediately\safter\screating\sa\snew\sfile\s(or\sopening\sone\szero\sbytes\sin\ssize).
+D 2013-03-05T15:27:34.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 8964f621aaab1f2c9804fbbff4450d9811ef5548
+F src/os_unix.c d8ab3f4bae870ebd8032a08be10501213487c6e1
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
 F src/pager.c 582f8da52d0bd4b43d3bdaeba0ea7702c1f23702
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
@@ -646,7 +646,7 @@ F test/orderby1.test f33968647da5c546528fe4d2bf86c6a6a2e5a7ae
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 8e14e7cfd2fbfe65eabead73af10ceeb2fc676aa
+F test/pager1.test 31c04bec797dda1bde337810b52efa08d1f1f08e
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
@@ -1036,10 +1036,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 717863fca6d58828bf9321bc8b169e385ad4263f
-R b78ae2bf1dec51f1a9a8371984f07596
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 39247b14a52b0c0222fe5a848bf0aef0854058c4
+R cdff7116ca1269af949fd381129331e4
 U dan
-Z 99ffc2717f24e39ecc7d3dce830bdc34
+Z 72d9794671122cfd955b2358dcd76229
