@@ -178,6 +178,7 @@ const char *sqlite3TestErrorName(int rc){
     case SQLITE_CORRUPT_VTAB:        zName = "SQLITE_CORRUPT_VTAB";      break;
     case SQLITE_READONLY_RECOVERY:   zName = "SQLITE_READONLY_RECOVERY"; break;
     case SQLITE_READONLY_CANTLOCK:   zName = "SQLITE_READONLY_CANTLOCK"; break;
+    case SQLITE_READONLY_ROLLBACK:   zName = "SQLITE_READONLY_ROLLBACK"; break;
     default:                         zName = "SQLITE_Unknown";           break;
   }
   return zName;
