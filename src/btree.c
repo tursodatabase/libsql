@@ -3004,7 +3004,7 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg, int bCommit){
       }while( bCommit && iFreePg>nFin );
       assert( iFreePg<iLastPg );
       
-      rc = relocatePage(pBt, pLastPg, eType, iPtrPage, iFreePg, nFin!=0);
+      rc = relocatePage(pBt, pLastPg, eType, iPtrPage, iFreePg, bCommit);
       releasePage(pLastPg);
       if( rc!=SQLITE_OK ){
         return rc;
