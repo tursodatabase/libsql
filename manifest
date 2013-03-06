@@ -1,5 +1,5 @@
-C Fix\sa\sbug\s(ticket\s[fc7bd6358f59])\sthat\scaused\sincorrect\squery\sresults\sin\nthree\sway\squeries\sthat\sinvolved\scomparing\sINTEGER\sand\sTEXT\scolumns\sfor\nequality.
-D 2013-03-06T01:55:27.319
+C Fix\sa\sproblem\sin\sincrvacuum_ioerr.test.\sDo\snot\srun\sioerr6.test\swith\san\sin-memory\sjournal.
+D 2013-03-06T11:44:57.252
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -535,7 +535,7 @@ F test/incrblobfault.test 917c0292224c64a56ef7215fd633a3a82f805be0
 F test/incrvacuum.test d2a6ddf5e429720b5fe502766af747915ccf6c32
 F test/incrvacuum2.test 379eeb8740b0ef60c372c439ad4cbea20b34bb9b
 F test/incrvacuum3.test 2ffa9e4a23f072bd7902b9ae6471f8822a6522a7
-F test/incrvacuum_ioerr.test 293f2714571255539c8c789da2f7de4ec3f7101e
+F test/incrvacuum_ioerr.test 6ae2f783424e47a0033304808fe27789cf93e635
 F test/index.test b5429732b3b983fa810e3ac867d7ca85dae35097
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
@@ -559,7 +559,7 @@ F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
-F test/ioerr6.test 13f0f9c31d706f0dd575995c369af07c0227e9a2
+F test/ioerr6.test cf25523b921d1a6a0e5b536cd4acb3c3d979ea52
 F test/join.test 8d63cc4d230a7affafa4b6ab0b97c49b8ccb365c
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
@@ -1037,7 +1037,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ce4ac66a4b623a3cee1a63089dd5ba8341244f1e
-R d68087991aff1a0f42c82b57cc68e943
-U drh
-Z 8c08911ad7848ca72da641a08c68b6f0
+P 7097241c1220ada318f8eda938c3e3430b94a606
+R 4976ca071b3f68a2f418baae58735e49
+U dan
+Z 03010a9e81700441187a98150a3de05e

@@ -20,6 +20,15 @@ ifcapable !atomicwrite {
   finish_test
   return
 }
+
+if {[permutation]=="inmemory_journal"} {
+  # These tests will not work with in-memory journals (as persistent VFS
+  # errors commencing after a transaction has started to write to the db
+  # cannot be recovered from).
+  finish_test
+  return
+}
+
 faultsim_save_and_close
 
 do_test 1.1 {
@@ -63,7 +72,7 @@ do_faultsim_test 2 -faults full* -prep {
   }
 }
 
-do_faultsim_test 2 -faults full* -prep {
+do_faultsim_test 3 -faults full* -prep {
   shmfault devchar atomic
   faultsim_restore
   sqlite3 db test.db
