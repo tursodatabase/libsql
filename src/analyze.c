@@ -473,7 +473,7 @@ static void analyzeOneTable(
     /* Do not gather statistics on views or virtual tables */
     return;
   }
-  if( memcmp(pTab->zName, "sqlite_", 7)==0 ){
+  if( sqlite3_strnicmp(pTab->zName, "sqlite_", 7)==0 ){
     /* Do not gather statistics on system tables */
     return;
   }
@@ -883,7 +883,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
     if( pIndex==0 ) break;
     pIndex->aiRowEst[i] = v;
     if( *z==' ' ) z++;
-    if( memcmp(z, "unordered", 10)==0 ){
+    if( strcmp(z, "unordered")==0 ){
       pIndex->bUnordered = 1;
       break;
     }

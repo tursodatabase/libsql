@@ -10,8 +10,8 @@
 #***********************************************************************
 #
 # Ticket #3762:  Make sure that an incremental vacuum that reduces the
-# size of the database file such that a pointer-map page is elemented
-# can be correctly rolled back.
+# size of the database file such that if a pointer-map page is eliminated
+# it can be correctly rolled back.
 #
 # That ticket #3762 has been fixed has already been verified by the
 # savepoint6.test test script.  But this script is simplier and a

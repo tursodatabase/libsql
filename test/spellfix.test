@@ -136,16 +136,52 @@ do_test 3.2 {
   }
 } {}
 
-breakpoint
 foreach {tn word res} {
   1   kos*     {kosher 3 kiosk 4 kudo 2 kiss 3 kissed 3}
   2   kellj*   {killjoy 5 kill 4 killed 4 killer 4 killers 4}
   3   kellj    {kill 4 kills 5 killjoy 7 keel 4 killed 6}
 } {
-  do_execsql_test 1.2.$tn {
+  do_execsql_test 3.2.$tn {
     SELECT word, matchlen FROM t3 WHERE word MATCH $word
      ORDER BY score, word LIMIT 5
   } $res
-} 
+}
+
+do_execsql_test 4.0 {
+  INSERT INTO t3(command) VALUES('edit_cost_table=NULL');
+}
+foreach {tn word res} {
+  1   kosher     {kosher 0 kisser 51 kissers 76 kissed 126 kisses 126}
+  2   kellj      {keels 60 killjoy 68 kills 80 keel 120 kill 125}
+  3   kashar     {kosher 80 kisser 91 kissers 116 kissed 166 kisses 166}
+} {
+  do_execsql_test 4.1.$tn {
+    SELECT word, distance FROM t3 WHERE word MATCH $word
+     ORDER BY score, word LIMIT 5
+  } $res
+}
+do_execsql_test 5.0 {
+  CREATE TABLE costs2(iLang, cFrom, cTo, iCost);
+  INSERT INTO costs2 VALUES(0, 'a', 'o', 1);
+  INSERT INTO costs2 VALUES(0, 'e', 'o', 4);
+  INSERT INTO costs2 VALUES(0, 'i', 'o', 8);
+  INSERT INTO costs2 VALUES(0, 'u', 'o', 16);
+  INSERT INTO t3(command) VALUES('edit_cost_table="costs2"');
+}
+
+foreach {tn word res} {
+  1   kasher     {kosher 1}
+  2   kesher     {kosher 4}
+  3   kisher     {kosher 8}
+  4   kosher     {kosher 0}
+  5   kusher     {kosher 16}
+} {
+  do_execsql_test 5.1.$tn {
+    SELECT word, distance FROM t3 WHERE word MATCH $word
+     ORDER BY score, word LIMIT 1
+  } $res
+}
+
+
 
 finish_test

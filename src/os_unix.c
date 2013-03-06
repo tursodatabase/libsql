@@ -552,7 +552,10 @@ static int robust_open(const char *z, int f, mode_t m){
   if( fd>=0 ){
     if( m!=0 ){
       struct stat statbuf;
-      if( osFstat(fd, &statbuf)==0 && (statbuf.st_mode&0777)!=m ){
+      if( osFstat(fd, &statbuf)==0 
+       && statbuf.st_size==0
+       && (statbuf.st_mode&0777)!=m 
+      ){
         osFchmod(fd, m);
       }
     }
@@ -4752,7 +4755,7 @@ static int fillInUnixFile(
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
   }
-  if( memcmp(pVfs->zName,"unix-excl",10)==0 ){
+  if( strcmp(pVfs->zName,"unix-excl")==0 ){
     pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
 

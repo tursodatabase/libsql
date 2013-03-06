@@ -638,7 +638,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       */
       ynVar i;
       for(i=0; i<pParse->nzVar; i++){
-        if( pParse->azVar[i] && memcmp(pParse->azVar[i],z,n+1)==0 ){
+        if( pParse->azVar[i] && strcmp(pParse->azVar[i],z)==0 ){
           pExpr->iColumn = x = (ynVar)i+1;
           break;
         }

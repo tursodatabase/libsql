@@ -1626,4 +1626,48 @@ do_test 22.4.3 {
   execsql { PRAGMA aux.integrity_check; }
 } {ok}
 
+db close
+forcedelete test.db test.db-wal test.db-journal
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 23.1 {
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY,b,c,d);
+    CREATE INDEX i1 ON t1(b,c);
+    CREATE INDEX i2 ON t1(c,d);
+    CREATE TABLE t2(x INTEGER REFERENCES t1);
+  }
+  db2 eval {SELECT name FROM sqlite_master}
+} {t1 i1 i2 t2}
+do_test 23.2 {
+  db eval {
+    DROP INDEX i2;
+    CREATE INDEX i2 ON t1(c,d,b);
+  }
+  db2 eval {PRAGMA index_info(i2)}
+} {0 2 c 1 3 d 2 1 b}
+do_test 23.3 {
+  db eval {
+    CREATE INDEX i3 ON t1(d,b,c);
+  }
+  db2 eval {PRAGMA index_list(t1)}
+} {0 i3 0 1 i2 0 2 i1 0}
+do_test 23.4 {
+  db eval {
+    ALTER TABLE t1 ADD COLUMN e;
+  }
+  db2 eval {
+    PRAGMA table_info(t1);
+  }
+} {/4 e {} 0 {} 0/}
+do_test 23.5 {
+  db eval {
+    DROP TABLE t2;
+    CREATE TABLE t2(x, y INTEGER REFERENCES t1);
+  }
+  db2 eval {
+    PRAGMA foreign_key_list(t2);
+  }
+} {0 0 t1 y {} {NO ACTION} {NO ACTION} NONE}
+
 finish_test

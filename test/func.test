@@ -1289,6 +1289,21 @@ do_test func-29.6 {
   if {$x<5} {set x 1}
   set x
 } {1}
-  
+
+do_execsql_test func-30.1 {SELECT unicode('$');} 36
+do_execsql_test func-30.2 [subst {SELECT unicode('\u00A2');}] 162
+do_execsql_test func-30.3 [subst {SELECT unicode('\u20AC');}] 8364
+do_execsql_test func-30.4 {SELECT char(36,162,8364);} [subst {$\u00A2\u20AC}]
+
+for {set i 1} {$i<0xd800} {incr i 13} {
+  do_execsql_test func-30.5.$i {SELECT unicode(char($i))} $i
+}
+for {set i 57344} {$i<=0xfffd} {incr i 17} {
+  if {$i==0xfeff} continue
+  do_execsql_test func-30.5.$i {SELECT unicode(char($i))} $i
+}
+for {set i 65536} {$i<=0x10ffff} {incr i 139} {
+  do_execsql_test func-30.5.$i {SELECT unicode(char($i))} $i
+}
 
 finish_test

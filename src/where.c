@@ -643,9 +643,8 @@ static u16 operatorMask(int op){
 ** then try for the one with no dependencies on <expr> - in other words where
 ** <expr> is a constant expression of some kind.  Only return entries of
 ** the form "X <op> Y" where Y is a column in another table if no terms of
-** the form "X <op> <const-expr>" exist.  Other than this priority, if there
-** are two or more terms that match, then the choice of which term to return
-** is arbitrary.
+** the form "X <op> <const-expr>" exist.   If no terms with a constant RHS
+** exist, try to return a term that does not use WO_EQUIV.
 */
 static WhereTerm *findTerm(
   WhereClause *pWC,     /* The WHERE clause to be searched */
@@ -704,8 +703,12 @@ static WhereTerm *findTerm(
                 continue;
               }
             }
-            pResult = pTerm;
-            if( pTerm->prereqRight==0 ) goto findTerm_success;
+            if( pTerm->prereqRight==0 ){
+              pResult = pTerm;
+              goto findTerm_success;
+            }else if( pResult==0 ){
+              pResult = pTerm;
+            }
           }
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && nEquiv<ArraySize(aEquiv)
@@ -4231,6 +4234,7 @@ static Bitmask codeOneLoopStart(
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addrNxt, iRowidReg);
+    sqlite3ExprCacheAffinityChange(pParse, iRowidReg, 1);
     sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
     VdbeComment((v, "pk"));
     pLevel->op = OP_Noop;

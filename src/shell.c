@@ -90,7 +90,8 @@ static int enableTimer = 0;
 #define IsDigit(X)  isdigit((unsigned char)X)
 #define ToLower(X)  (char)tolower((unsigned char)X)
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(_WRS_KERNEL)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(_WRS_KERNEL) \
+ && !defined(__minux)
 #include <sys/time.h>
 #include <sys/resource.h>
 

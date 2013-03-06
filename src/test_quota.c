@@ -1295,7 +1295,7 @@ int sqlite3_quota_remove(const char *zFilename){
   if( pGroup ){
     for(pFile=pGroup->pFiles; pFile && rc==SQLITE_OK; pFile=pNextFile){
       pNextFile = pFile->pNext;
-      diff = memcmp(zFull, pFile->zFilename, nFull);
+      diff = strncmp(zFull, pFile->zFilename, nFull);
       if( diff==0 && ((c = pFile->zFilename[nFull])==0 || c=='/' || c=='\\') ){
         if( pFile->nRef ){
           pFile->deleteOnClose = 1;

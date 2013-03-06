@@ -107,7 +107,7 @@ struct ReCompiled {
   char *aOp;                  /* Operators for the virtual machine */
   int *aArg;                  /* Arguments to each operator */
   unsigned (*xNextChar)(ReInput*);  /* Next character function */
-  char zInit[12];             /* Initial text to match */
+  unsigned char zInit[12];    /* Initial text to match */
   int nInit;                  /* Number of characters in zInit */
   unsigned nState;            /* Number of entries in aOp[] and aArg[] */
   unsigned nAlloc;            /* Slots allocated for aOp[] and aArg[] */
@@ -194,7 +194,8 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
   if( pRe->nInit ){
     unsigned char x = pRe->zInit[0];
     while( in.i+pRe->nInit<=in.mx 
-        && (zIn[in.i]!=x || memcmp(zIn+in.i, pRe->zInit, pRe->nInit)!=0)
+     && (zIn[in.i]!=x ||
+         strncmp((const char*)zIn+in.i, (const char*)pRe->zInit, pRe->nInit)!=0)
     ){
       in.i++;
     }

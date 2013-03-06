@@ -1124,6 +1124,25 @@ proc crashsql {args} {
   lappend r $msg
 }
 
+proc run_ioerr_prep {} {
+  set ::sqlite_io_error_pending 0
+  catch {db close}
+  catch {db2 close}
+  catch {forcedelete test.db}
+  catch {forcedelete test.db-journal}
+  catch {forcedelete test2.db}
+  catch {forcedelete test2.db-journal}
+  set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
+  sqlite3_extended_result_codes $::DB $::ioerropts(-erc)
+  if {[info exists ::ioerropts(-tclprep)]} {
+    eval $::ioerropts(-tclprep)
+  }
+  if {[info exists ::ioerropts(-sqlprep)]} {
+    execsql $::ioerropts(-sqlprep)
+  }
+  expr 0
+}
+
 # Usage: do_ioerr_test <test number> <options...>
 #
 # This proc is used to implement test cases that check that IO errors
@@ -1156,10 +1175,26 @@ proc do_ioerr_test {testname args} {
   # TEMPORARY: For 3.5.9, disable testing of extended result codes. There are
   # a couple of obscure IO errors that do not return them.
   set ::ioerropts(-erc) 0
+  
+  # Create a single TCL script from the TCL and SQL specified
+  # as the body of the test.
+  set ::ioerrorbody {}
+  if {[info exists ::ioerropts(-tclbody)]} {
+    append ::ioerrorbody "$::ioerropts(-tclbody)\n"
+  }
+  if {[info exists ::ioerropts(-sqlbody)]} {
+    append ::ioerrorbody "db eval {$::ioerropts(-sqlbody)}"
+  }
+
+  save_prng_state
+  if {$::ioerropts(-cksum)} {
+    run_ioerr_prep
+    eval $::ioerrorbody
+    set ::goodcksum [cksum]
+  }
 
   set ::go 1
   #reset_prng_state
-  save_prng_state
   for {set n $::ioerropts(-start)} {$::go} {incr n} {
     set ::TN $n
     incr ::ioerropts(-count) -1
@@ -1176,27 +1211,12 @@ proc do_ioerr_test {testname args} {
     # Delete the files test.db and test2.db, then execute the TCL and 
     # SQL (in that order) to prepare for the test case.
     do_test $testname.$n.1 {
-      set ::sqlite_io_error_pending 0
-      catch {db close}
-      catch {db2 close}
-      catch {forcedelete test.db}
-      catch {forcedelete test.db-journal}
-      catch {forcedelete test2.db}
-      catch {forcedelete test2.db-journal}
-      set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
-      sqlite3_extended_result_codes $::DB $::ioerropts(-erc)
-      if {[info exists ::ioerropts(-tclprep)]} {
-        eval $::ioerropts(-tclprep)
-      }
-      if {[info exists ::ioerropts(-sqlprep)]} {
-        execsql $::ioerropts(-sqlprep)
-      }
-      expr 0
+      run_ioerr_prep
     } {0}
 
     # Read the 'checksum' of the database.
     if {$::ioerropts(-cksum)} {
-      set checksum [cksum]
+      set ::checksum [cksum]
     }
 
     # Set the Nth IO error to fail.
@@ -1204,20 +1224,10 @@ proc do_ioerr_test {testname args} {
       set ::sqlite_io_error_persist $::ioerropts(-persist)
       set ::sqlite_io_error_pending $n
     }] $n
-  
-    # Create a single TCL script from the TCL and SQL specified
-    # as the body of the test.
-    set ::ioerrorbody {}
-    if {[info exists ::ioerropts(-tclbody)]} {
-      append ::ioerrorbody "$::ioerropts(-tclbody)\n"
-    }
-    if {[info exists ::ioerropts(-sqlbody)]} {
-      append ::ioerrorbody "db eval {$::ioerropts(-sqlbody)}"
-    }
 
-    # Execute the TCL Script created in the above block. If
-    # there are at least N IO operations performed by SQLite as
-    # a result of the script, the Nth will fail.
+    # Execute the TCL script created for the body of this test. If
+    # at least N IO operations performed by SQLite as a result of 
+    # the script, the Nth will fail.
     do_test $testname.$n.3 {
       set ::sqlite_io_error_hit 0
       set ::sqlite_io_error_hardhit 0
@@ -1321,8 +1331,15 @@ proc do_ioerr_test {testname args} {
         catch {db close}
         catch {db2 close}
         set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
-        cksum
-      } $checksum
+        set nowcksum [cksum]
+        set res [expr {$nowcksum==$::checksum || $nowcksum==$::goodcksum}]
+        if {$res==0} {
+          puts "now=$nowcksum"
+          puts "the=$::checksum"
+          puts "fwd=$::goodcksum"
+        }
+        set res
+      } 1
     }
 
     set ::sqlite_io_error_hardhit 0
