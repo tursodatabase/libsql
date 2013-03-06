@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_READONLY_ROLLBACK\sextended\serror\scode.\nDo\snot\stry\sto\sset\sthe\spermissions\son\sjournal\sor\swal\sfiles\sexcept\sif\sthe\nfilesize\sis\sinitially\szero\s(indicating\sthat\sit\sis\sa\snew\sfile.)
-D 2013-03-06T01:48:20.423
+C Fix\sa\sbug\s(ticket\s[fc7bd6358f59])\sthat\scaused\sincorrect\squery\sresults\sin\nthree\sway\squeries\sthat\sinvolved\scomparing\sINTEGER\sand\sTEXT\scolumns\sfor\nequality.
+D 2013-03-06T01:55:27.319
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 43e05406f0e05960a62d4719ed77f551f8204d3f
+F src/where.c 8b7690cae8700b385d8a53a39387cf8054d8cc47
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -809,6 +809,7 @@ F test/tkt-f7b4edec.test d998a08ff2b18b7f62edce8e3044317c45efe6c7
 F test/tkt-f973c7ac31.test 1da0ed15ec2c7749fb5ce2828cd69d07153ad9f4
 F test/tkt-fa7bf5ec.test 9102dfea58aa371d78969da735f9392c57e2e035
 F test/tkt-fc62af4523.test 72825d3febdedcd5593a27989fc05accdbfc2bb4
+F test/tkt-fc7bd6358f.test 634bb4af7d661e82d6b61b80c86727bad698e08f
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
 F test/tkt1443.test bacc311da5c96a227bf8c167e77a30c99f8e8368
 F test/tkt1444.test a9d72f9e942708bd82dde6c707da61c489e213e9
@@ -1036,7 +1037,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 717863fca6d58828bf9321bc8b169e385ad4263f 4f5f3aebe81c3cbe539db3e33ec38fa3de47e90b
-R 4624808bc8666139dd43b7c21e0d98ea
+P ce4ac66a4b623a3cee1a63089dd5ba8341244f1e
+R d68087991aff1a0f42c82b57cc68e943
 U drh
-Z 5a1f66c8d1d16d93a8aa4820fbcfcadc
+Z 8c08911ad7848ca72da641a08c68b6f0
