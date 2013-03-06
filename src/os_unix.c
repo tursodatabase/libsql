@@ -552,7 +552,10 @@ static int robust_open(const char *z, int f, mode_t m){
   if( fd>=0 ){
     if( m!=0 ){
       struct stat statbuf;
-      if( osFstat(fd, &statbuf)==0 && (statbuf.st_mode&0777)!=m ){
+      if( osFstat(fd, &statbuf)==0 
+       && statbuf.st_size==0
+       && (statbuf.st_mode&0777)!=m 
+      ){
         osFchmod(fd, m);
       }
     }

@@ -488,6 +488,34 @@ do_test misc7-21.1 {
   list $rc $msg
 } {1 {unable to open database file}}
 
+# Try to do hot-journal rollback with a read-only connection. The 
+# error code should be SQLITE_READONLY_ROLLBACK.
+#
+do_test misc7-22.1 {
+  db close
+  forcedelete test.db copy.db-journal
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  db close
+  sqlite3 db test.db -readonly 1
+  catchsql {
+    INSERT INTO t1 VALUES(5, 6);
+  }
+} {1 {attempt to write a readonly database}}
+do_test misc7-22.2 { execsql { SELECT * FROM t1 } } {1 2 3 4}
+do_test misc7-22.3 { 
+  set fd [open test.db-journal w]
+  puts $fd [string repeat abc 1000]
+  close $fd
+  catchsql { SELECT * FROM t1 }
+} {1 {attempt to write a readonly database}}
+do_test misc7-22.4 { 
+  sqlite3_extended_errcode db
+} SQLITE_READONLY_ROLLBACK
 
 db close
 forcedelete test.db
