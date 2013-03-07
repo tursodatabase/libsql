@@ -1,5 +1,5 @@
-C Fix\stwo\scompilation\sissues,\sone\swarning\sand\sone\serror,\sthat\soccur\sonly\swhen\sSQLITE_OMIT_UTF16\sis\sdefined.
-D 2013-03-07T06:42:53.416
+C Skip\stests\sthat\srequire\sUTF-16\ssupport\swhen\scompiled\swith\sSQLITE_OMIT_UTF16.
+D 2013-03-07T09:39:18.757
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -462,7 +462,7 @@ F test/fts3ae.test ce32a13b34b0260928e4213b4481acf801533bda
 F test/fts3af.test d394978c534eabf22dd0837e718b913fd66b499c
 F test/fts3ag.test 0b7d303f61ae5d620c4efb5e825713ea34ff9441
 F test/fts3ah.test dc9f66c32c296f1bc8bcc4535126bddfeca62894
-F test/fts3ai.test d29cee6ed653e30de478066881cec8aa766531b2
+F test/fts3ai.test 24058fdc6e9e5102c1fd8459591b114b6a85d285
 F test/fts3aj.test 0ed71e1dd9b03b843a857dc3eb9b15630e0104fc
 F test/fts3ak.test bd14deafe9d1586e8e9bf032411026ac4f8c925d
 F test/fts3al.test 07d64326e79bbdbab20ee87fc3328fbf01641c9f
@@ -508,7 +508,7 @@ F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4unicode.test 25ccad45896f8e50f6a694cff738a35f798cdb40
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test b058483c17952eff7797b837bbb61e27e6b05606
+F test/func.test 2d243cc61d11f1a8b984bdf5ac8a44683836b5dd
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -606,7 +606,7 @@ F test/mallocC.test 3dffe16532f109293ce1ccecd0c31dca55ef08c4
 F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
 F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
-F test/mallocG.test 4584d0d8ddb8009f16ca0c8bab1fa37f6358efa2
+F test/mallocG.test 0ff91b65c50bdaba680fb75d87fe4ad35bb7934f
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
@@ -1037,7 +1037,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 66576b450a0f0329571e344280994a964c967f8f
-R 5e4b0b7eaf253c885db9372ffc66a2b3
+P 10ace06be7fbe9a76a201c418b2af453c7a69043
+R 4a6c0696fed39506ac10ad23e245be27
 U mistachkin
-Z 1464b55cac3d8b1a9f8ec7cbbf4ad03a
+Z 2203d346668b3376e187a4b6cb595762
