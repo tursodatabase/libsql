@@ -1,5 +1,5 @@
-C Backport\sVSIX\stooling\sand\spackaging\sfixes\sand\senhancements.
-D 2012-12-07T04:46:53.606
+C Avoid\san\sassertion\sfault\sand/or\sfreeing\smemory\swhile\sit\sis\sstill\sin\suse\swhen\nan\serror\soccurs\sduring\svirtual\stable\sconstruction.\sCherrypick\sof\s[a02599ad85d].
+D 2013-03-07T11:03:51.343
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in abd5c10d21d1395f140d9e50ea999df8fa4d6376
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -247,7 +247,7 @@ F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
 F src/vdbesort.c 0dc1b274dcb4d4c8e71b0b2b15261f286caba39b
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
-F src/vtab.c bf61d2b47fbe544cf128f176d950a95ab9fa7990
+F src/vtab.c 940ea10c126f6e288725e80bb173f606670430f3
 F src/wal.c 5acb3e7bbd31f10ba39acad9ce6b399055337a9d
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
@@ -1015,7 +1015,7 @@ F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 325364a984e9a5c0825810bf50f57e026ff3b8dd
-R b6cebc4c5e41527b0959f9cee96db5b7
-U mistachkin
-Z b5160dec06b175ffc06bc0e43cb2677f
+P e890bcde34370079f4da011da39e4ba8224ffab4
+R 3aee953b86407273366f5f75f4c5ca92
+U dan
+Z 1435144ed9b3c053d9bb36c7383b5519
