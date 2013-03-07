@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sincrvacuum_ioerr.test.\sDo\snot\srun\sioerr6.test\swith\san\sin-memory\sjournal.
-D 2013-03-06T11:44:57.252
+C Fix\stwo\scompilation\sissues,\sone\swarning\sand\sone\serror,\sthat\soccur\sonly\swhen\sSQLITE_OMIT_UTF16\sis\sdefined.
+D 2013-03-07T06:42:53.416
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
 F src/expr.c a23b4aac2a455b2e76b55bef5dcfbe62b665375c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
-F src/func.c 91bc65eb68ef6cf29198aac92f11489fa85a8de4
+F src/func.c f829e79fe7c7150659bee6d521b1edbda4a97dc3
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -245,7 +245,7 @@ F src/vdbeInt.h 396bb03eec560f768d1b86092b00f46c25575d3b
 F src/vdbeapi.c 9616986209cc77822aa9f7d91cf9e6880516d557
 F src/vdbeaux.c 735a6905df302a7f3c715a82bd3af06dc7d74ef2
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
-F src/vdbemem.c cb55e84b8e2c15704968ee05f0fae25883299b74
+F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
@@ -1037,7 +1037,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7097241c1220ada318f8eda938c3e3430b94a606
-R 4976ca071b3f68a2f418baae58735e49
-U dan
-Z 03010a9e81700441187a98150a3de05e
+P 66576b450a0f0329571e344280994a964c967f8f
+R 5e4b0b7eaf253c885db9372ffc66a2b3
+U mistachkin
+Z 1464b55cac3d8b1a9f8ec7cbbf4ad03a

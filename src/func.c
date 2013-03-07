@@ -981,6 +981,7 @@ static void unicodeFunc(
 ** an integer.  It constructs a string where each character of the string
 ** is the unicode character for the corresponding integer argument.
 */
+#ifndef SQLITE_OMIT_UTF16
 static void charFunc(
   sqlite3_context *context,
   int argc,
@@ -1012,6 +1013,7 @@ static void charFunc(
   }
   sqlite3_result_text16le(context, (char*)z, (int)(zOut-z), sqlite3_free);
 }
+#endif
 
 /*
 ** The hex() function.  Interpret the argument as a blob.  Return
@@ -1641,7 +1643,9 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
+#ifndef SQLITE_OMIT_UTF16
     FUNCTION(char,              -1, 0, 0, charFunc         ),
+#endif
     FUNCTION(abs,                1, 0, 0, absFunc          ),
 #ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
