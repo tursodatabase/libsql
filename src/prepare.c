@@ -259,11 +259,15 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   if( meta[BTREE_TEXT_ENCODING-1] ){  /* text encoding */
     if( iDb==0 ){
+#ifndef SQLITE_OMIT_UTF16
       u8 encoding;
       /* If opening the main database, set ENC(db). */
       encoding = (u8)meta[BTREE_TEXT_ENCODING-1] & 3;
       if( encoding==0 ) encoding = SQLITE_UTF8;
       ENC(db) = encoding;
+#else
+      ENC(db) = SQLITE_UTF8;
+#endif
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( meta[BTREE_TEXT_ENCODING-1]!=ENC(db) ){
