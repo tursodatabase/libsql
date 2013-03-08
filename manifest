@@ -1,5 +1,5 @@
-C Skip\stests\sthat\srequire\sUTF-16\ssupport\swhen\scompiled\swith\sSQLITE_OMIT_UTF16.
-D 2013-03-07T09:39:18.757
+C If\sSQLITE_OMIT_UTF16\sis\sdefined,\savoid\ssetting\sthe\s'enc'\sfield\sof\sSchema\sobjects\sto\sany\svalue\sexcept\sSQLITE_UTF8.\sOtherwise,\sassert()\sstatements\smay\sfail\sor\sspurious\sSQLITE_NOMEM\serrors\smay\sbe\sreturned\sat\sthe\svdbe\slevel\slater\son.
+D 2013-03-08T07:10:37.045
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +169,7 @@ F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
 F src/pragma.c bdb484d0283965c431d4153f28c30f836a1f16b1
-F src/prepare.c 931ad0d852a0df48f79adcba6ce79ca5f475625c
+F src/prepare.c 78cd7ae8cd0d8de8ef8a8b5352fc5f38693a0852
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9079da7d59aed2bb14ec8315bc7f720dd85b5b65
@@ -1037,7 +1037,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 10ace06be7fbe9a76a201c418b2af453c7a69043
-R 4a6c0696fed39506ac10ad23e245be27
-U mistachkin
-Z 2203d346668b3376e187a4b6cb595762
+P e39391422e748407d74853d3de297dc1ea6b991d
+R 3289616a77804b5f23977ebea41b37fc
+T *branch * experimental
+T *sym-experimental *
+T -sym-trunk *
+U dan
+Z 244b3a671be0f30c11055ae03af7e004
