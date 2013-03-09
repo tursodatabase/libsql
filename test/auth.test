@@ -2262,7 +2262,9 @@ do_test auth-4.3 {
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   {} \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_SELECT {}     {} {} v1   \
   SQLITE_READ   v1     x  main v1 \
   SQLITE_INSERT v1chng {} main r2 \
   SQLITE_READ   v1     x  main r2 \
@@ -2288,7 +2290,9 @@ do_test auth-4.5 {
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   {} \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_SELECT {}     {} {} v1   \
   SQLITE_READ   v1     x  main v1 \
   SQLITE_INSERT v1chng {} main r3 \
   SQLITE_READ   v1     x  main r3 \

@@ -1,5 +1,5 @@
-C If\sSQLITE_OMIT_UTF16\sis\sdefined,\savoid\ssetting\sthe\s'enc'\sfield\sof\sSchema\sobjects\sto\sany\svalue\sexcept\sSQLITE_UTF8.\sOtherwise,\sassert()\sstatements\smay\sfail\sor\sspurious\sSQLITE_NOMEM\serrors\smay\sbe\sreturned\sat\sthe\svdbe\slevel\slater\son.
-D 2013-03-08T18:16:33.140
+C Fix\sa\sproblem\swith\sresolving\s"db.view.column"\sreferences\sthat\sappear\sin\sUPDATE\sor\sDELETE\sstatements\sexecuted\sagainst\sviews.
+D 2013-03-09T14:40:24.766
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -129,7 +129,7 @@ F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
-F src/delete.c 9b8d308979114991e5dc7cee958316e07186941d
+F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
 F src/expr.c a23b4aac2a455b2e76b55bef5dcfbe62b665375c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
@@ -281,7 +281,7 @@ F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
-F test/auth.test 304e82f31592820d3bde26ab6b75deaa123e1a6f
+F test/auth.test 1b21145e888130d60a03db0cb829d59df8f29266
 F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
@@ -1037,7 +1037,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P af542c82e8e7f0415530b639fa397429c5f377f6 69746ef787680a4b7590bd1d3c86b229d9d0dac4
-R e97d0ad1e92cdccc17daefa782beb60d
+P f2fecfb2d32cf666e16a87032042dc163ac30250
+R 8c93ed3584e3133a96b48993d9b635f2
 U dan
-Z d719a1d020564eef061f40b2dc07a141
+Z 4ebc42e0d4abdd999f85b14fd7bae980
