@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sresolving\s"db.view.column"\sreferences\sthat\sappear\sin\sUPDATE\sor\sDELETE\sstatements\sexecuted\sagainst\sviews.
-D 2013-03-09T14:40:24.766
+C Add\sa\stest\scase\sfor\sthe\sproblem\sfixed\sby\sthe\sprevious\scommit.
+D 2013-03-09T14:49:07.597
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -909,7 +909,7 @@ F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test b39e6dee1debe0ff9c2ef66326668f149f07c9c4
 F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
-F test/triggerA.test e0aaba16d3547193d36bbd82a1b0ed75e9c88d40
+F test/triggerA.test fe5597f47ee21bacb4936dc827994ed94161e332
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test a7b4367392c755bc5fd5fff88011753e6b6afe90
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
@@ -1037,7 +1037,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f2fecfb2d32cf666e16a87032042dc163ac30250
-R 8c93ed3584e3133a96b48993d9b635f2
+P ddee56c9b2b591b9386b1072c3b3a699f7c1f853
+R 0685395d6c72f7d3eee9637a399e2144
 U dan
-Z 4ebc42e0d4abdd999f85b14fd7bae980
+Z 77cf7ba50ad60c04d236fa95e2bf9a03
