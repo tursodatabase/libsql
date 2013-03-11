@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\sproblem\sfixed\sby\sthe\sprevious\scommit.
-D 2013-03-09T14:49:07.597
+C Fixes\sfor\scompiling\swith\sSQLITE_OMIT_AUTOVACUUM\sand/or\sSQLITE_OMIT_TRIGGER\sdefined.
+D 2013-03-11T11:49:03.189
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c c7ce6045f023ba6426d5cca63fab5e1e3d282309
+F src/btree.c 746c4dafae8565b3be6fb9ce3bb1fa9f1e67cc59
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 375e5df716e03b9343c5e1211be3b24e6d6dff05
@@ -168,7 +168,7 @@ F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h 1b5dcc3dc8103d03e625b177023ee67764fa6b7c
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c bdb484d0283965c431d4153f28c30f836a1f16b1
+F src/pragma.c 9f0ee3d74a7f33eeeff40a4b014fc3abf8182ce2
 F src/prepare.c 78cd7ae8cd0d8de8ef8a8b5352fc5f38693a0852
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -1037,7 +1037,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ddee56c9b2b591b9386b1072c3b3a699f7c1f853
-R 0685395d6c72f7d3eee9637a399e2144
+P e899b058a703158012c054974bd9a909d75144d8
+R 769137243190ff2093b112f59a144071
+T *branch * omit-fixes
+T *sym-omit-fixes *
+T -sym-trunk *
 U dan
-Z 77cf7ba50ad60c04d236fa95e2bf9a03
+Z 6114da9985cb574374ef28f435a1a3f9
