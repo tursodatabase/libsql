@@ -1,5 +1,5 @@
-C Add\sexperimental\stointeger()\sand\stodouble()\sSQL\sfunctions.
-D 2013-03-11T01:23:37.658
+C Add\smore\stests.
+D 2013-03-11T06:24:46.255
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -511,7 +511,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test b058483c17952eff7797b837bbb61e27e6b05606
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
-F test/func4.test f87bfeee439933de8170e96d2a89db7eaf3b42a5
+F test/func4.test 86f48cf1982a47001447a1924f5573d3c1e17ccf
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -1038,10 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e899b058a703158012c054974bd9a909d75144d8
-R b5370fb9874f2982950e0680a1d54689
-T *branch * toTypeFuncs
-T *sym-toTypeFuncs *
-T -sym-trunk *
+P 465fd853d3e3544cb06b15ffa32ce25774d816c7
+R de601f18e2d7c1d69cbd21be32cf69bf
 U mistachkin
-Z ce323d9c5c5aa4b2dbf9898a0e2eb8db
+Z 349394d9a983439850a7e1f0ab403301

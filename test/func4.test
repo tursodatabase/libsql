@@ -315,4 +315,81 @@ ifcapable floatingpoint {
   } {1.84467440737096e+19}
 }
 
+ifcapable check {
+  set i 0
+  do_execsql_test func4-3.[incr i] {
+    CREATE TABLE t1(
+      x INTEGER CHECK(tointeger(x) IS NOT NULL AND x = CAST(x AS INTEGER))
+    );
+  } {}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (NULL);
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (NULL);
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES ('');
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES ('bad');
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES ('1234bad');
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (1234);
+    }
+  } {0 {}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (1234.56);
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES ('1234');
+    }
+  } {0 {}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES ('1234.56');
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (ZEROBLOB(4));
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (X'');
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (X'1234');
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
+      INSERT INTO t1 (x) VALUES (X'12345678');
+    }
+  } {1 {constraint failed}}
+  do_execsql_test func4-3.[incr i] {
+    SELECT x FROM t1 ORDER BY x;
+  } {1234 1234}
+}
+
 finish_test
