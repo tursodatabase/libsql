@@ -66,6 +66,10 @@
 # define _GNU_SOURCE
 #endif
 
+#if defined(__OpenBSD__) && !defined(_BSD_SOURCE)
+# define _BSD_SOURCE
+#endif
+
 /*
 ** Include standard header files as necessary
 */
