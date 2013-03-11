@@ -963,6 +963,112 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 
 /*
+** EXPERIMENTAL - This is not an official function.  The interface may
+** change.  This function may disappear.  Do not write code that depends
+** on this function.
+**
+** Implementation of the TOINTEGER() function.  This function takes a
+** single argument.  If the argument is an integer or is a double that
+** can be losslessly converted to an integer, the return value is the
+** same as the argument.  If the argument is a double that cannot be
+** losslessly represented as an integer, the return value is undefined.
+** If the argument is NULL, the return value is NULL.  Otherwise, an
+** attempt is made to convert the argument to an integer.  If the
+** conversion is successful, the integer value is returned; otherwise,
+** NULL is returned.
+*/
+static void tointegerFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_FLOAT:
+    case SQLITE_INTEGER: {
+      sqlite3_result_int64(context, sqlite3_value_int64(argv[0]));
+      break;
+    }
+    case SQLITE_BLOB:
+    case SQLITE_TEXT: {
+      const unsigned char *zStr = sqlite3_value_text(argv[0]);
+      if( zStr ){
+        int nStr = sqlite3_value_bytes(argv[0]);
+        if( nStr ){
+          i64 iVal;
+          if( !sqlite3Atoi64(zStr, &iVal, nStr, SQLITE_UTF8) ){
+            sqlite3_result_int64(context, iVal);
+            return;
+          }
+        }
+      }
+      sqlite3_result_null(context);
+      break;
+    }
+    default: {
+      assert( sqlite3_value_type(argv[0])==SQLITE_NULL );
+      sqlite3_result_null(context);
+      break;
+    }
+  }
+}
+
+/*
+** EXPERIMENTAL - This is not an official function.  The interface may
+** change.  This function may disappear.  Do not write code that depends
+** on this function.
+**
+** Implementation of the TODOUBLE() function.  This function takes a
+** single argument.  If the argument is a double or is an integer that
+** can be losslessly converted to a double, the return value is the
+** same as the argument.  If the argument is an integer that cannot be
+** losslessly represented as a double, the return value is undefined.
+** If the argument is NULL, the return value is NULL.  Otherwise, an
+** attempt is made to convert the argument to a double.  If the
+** conversion is successful, the double value is returned; otherwise,
+** NULL is returned.
+*/
+#ifndef SQLITE_OMIT_FLOATING_POINT
+static void todoubleFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  switch( sqlite3_value_type(argv[0]) ){
+    case SQLITE_FLOAT:
+    case SQLITE_INTEGER: {
+      sqlite3_result_double(context, sqlite3_value_double(argv[0]));
+      break;
+    }
+    case SQLITE_BLOB:
+    case SQLITE_TEXT: {
+      const unsigned char *zStr = sqlite3_value_text(argv[0]);
+      if( zStr ){
+        int nStr = sqlite3_value_bytes(argv[0]);
+        if( nStr ){
+          double rVal;
+          if( sqlite3AtoF(zStr, &rVal, nStr, SQLITE_UTF8) ){
+            sqlite3_result_double(context, rVal);
+            return;
+          }
+        }
+      }
+      sqlite3_result_null(context);
+      break;
+    }
+    default: {
+      assert( sqlite3_value_type(argv[0])==SQLITE_NULL );
+      sqlite3_result_null(context);
+      break;
+    }
+  }
+}
+#endif
+
+/*
 ** The unicode() function.  Return the integer unicode code-point value
 ** for the first character of the input string. 
 */
@@ -1670,6 +1776,10 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
+    FUNCTION(tointeger,          1, 0, 0, tointegerFunc    ),
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    FUNCTION(todouble,           1, 0, 0, todoubleFunc     ),
+#endif
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
     FUNCTION(changes,            0, 0, 0, changes          ),
     FUNCTION(total_changes,      0, 0, 0, total_changes    ),

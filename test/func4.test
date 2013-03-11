@@ -1,0 +1,318 @@
+# 2013 March 10
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The
+# focus of this file is testing the TOINTEGER() and TODOUBLE()
+# functions.
+#
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+set i 0
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(NULL);
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('   ');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('1234');
+} {1234}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('   1234');
+} {1234}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('bad');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('0xBAD');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('123BAD');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('0x123BAD');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('123NO');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('0x123NO');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('-0x1');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('-0x0');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('0x0');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger('0x1');
+} {{}}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-1);
+} {-1}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-0);
+} {0}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(0);
+} {0}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(1);
+} {1}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-1.79769313486232e308 - 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-1.79769313486232e308);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-1.79769313486232e308 + 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-9223372036854775808 - 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-9223372036854775808);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-9223372036854775808 + 1);
+} {-9223372036854775807}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-2147483648 - 1);
+} {-2147483649}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-2147483648);
+} {-2147483648}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(-2147483648 + 1);
+} {-2147483647}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(2147483647 - 1);
+} {2147483646}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(2147483647);
+} {2147483647}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(2147483647 + 1);
+} {2147483648}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9223372036854775807 - 1);
+} {9223372036854775806}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9223372036854775807);
+} {9223372036854775807}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9223372036854775807 + 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(1.79769313486232e308 - 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(1.79769313486232e308);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(1.79769313486232e308 + 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(4503599627370496 - 1);
+} {4503599627370495}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(4503599627370496);
+} {4503599627370496}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(4503599627370496 + 1);
+} {4503599627370497}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9007199254740992 - 1);
+} {9007199254740991}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9007199254740992);
+} {9007199254740992}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9007199254740992 + 1);
+} {9007199254740993}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9223372036854775808 - 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9223372036854775808);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(9223372036854775808 + 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(18446744073709551616 - 1);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(18446744073709551616);
+} {-9223372036854775808}
+do_execsql_test func4-1.[incr i] {
+  SELECT tointeger(18446744073709551616 + 1);
+} {-9223372036854775808}
+
+ifcapable floatingpoint {
+  set i 0
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(NULL);
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('   ');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('1234');
+  } {1234.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('   1234');
+  } {1234.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('bad');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('0xBAD');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('123BAD');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('0x123BAD');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('123NO');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('0x123NO');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('-0x1');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('-0x0');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('0x0');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble('0x1');
+  } {{}}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-1);
+  } {-1.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-0);
+  } {0.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(0);
+  } {0.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(1);
+  } {1.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-1.79769313486232e308 - 1);
+  } {-Inf}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-1.79769313486232e308);
+  } {-Inf}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-1.79769313486232e308 + 1);
+  } {-Inf}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-9223372036854775808 - 1);
+  } {-9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-9223372036854775808);
+  } {-9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-9223372036854775808 + 1);
+  } {-9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-2147483648 - 1);
+  } {-2147483649.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-2147483648);
+  } {-2147483648.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(-2147483648 + 1);
+  } {-2147483647.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(2147483647 - 1);
+  } {2147483646.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(2147483647);
+  } {2147483647.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(2147483647 + 1);
+  } {2147483648.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9223372036854775807 - 1);
+  } {9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9223372036854775807);
+  } {9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9223372036854775807 + 1);
+  } {9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(1.79769313486232e308 - 1);
+  } {Inf}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(1.79769313486232e308);
+  } {Inf}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(1.79769313486232e308 + 1);
+  } {Inf}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(4503599627370496 - 1);
+  } {4503599627370500.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(4503599627370496);
+  } {4503599627370500.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(4503599627370496 + 1);
+  } {4503599627370500.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9007199254740992 - 1);
+  } {9007199254740990.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9007199254740992);
+  } {9007199254740990.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9007199254740992 + 1);
+  } {9007199254740990.0}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9223372036854775808 - 1);
+  } {9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9223372036854775808);
+  } {9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(9223372036854775808 + 1);
+  } {9.22337203685478e+18}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(18446744073709551616 - 1);
+  } {1.84467440737096e+19}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(18446744073709551616);
+  } {1.84467440737096e+19}
+  do_execsql_test func4-2.[incr i] {
+    SELECT todouble(18446744073709551616 + 1);
+  } {1.84467440737096e+19}
+}
+
+finish_test
