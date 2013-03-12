@@ -3799,11 +3799,12 @@ static int codeEqualityTerm(
     if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 
       && pLevel->plan.u.pIdx->aSortOrder[iEq]
     ){
-      bRev = 1 - bRev;
+      bRev = !bRev;
     }
     assert( pX->op==TK_IN );
     iReg = iTarget;
     eType = sqlite3FindInIndex(pParse, pX, 0);
+    if( eType==IN_INDEX_INDEX_DESC ) bRev = !bRev;
     iTab = pX->iTable;
     sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
     assert( pLevel->plan.wsFlags & WHERE_IN_ABLE );
