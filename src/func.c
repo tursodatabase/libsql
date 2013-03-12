@@ -19,6 +19,9 @@
 #include "sqliteInt.h"
 #include <stdlib.h>
 #include <assert.h>
+#ifndef SQLITE_OMIT_FLOATING_POINT
+# include <math.h>
+#endif
 #include "vdbeInt.h"
 
 /*
@@ -986,6 +989,19 @@ static void tointegerFunc(
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_FLOAT:
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    {
+      double rVal = sqlite3_value_double(argv[0]);
+      double rIntVal = 0.0;
+      if( !sqlite3IsNaN(rVal) && modf(rVal, &rIntVal)==0.0 &&
+          rIntVal>=SMALLEST_INT64 && rIntVal<=LARGEST_INT64 ){
+        sqlite3_result_int64(context, (i64)rIntVal);
+        return;
+      }
+      sqlite3_result_null(context);
+      break;
+    }
+#endif
     case SQLITE_INTEGER: {
       sqlite3_result_int64(context, sqlite3_value_int64(argv[0]));
       break;
@@ -1038,9 +1054,18 @@ static void todoubleFunc(
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_FLOAT:
-    case SQLITE_INTEGER: {
+    case SQLITE_FLOAT: {
       sqlite3_result_double(context, sqlite3_value_double(argv[0]));
+      break;
+    }
+    case SQLITE_INTEGER: {
+      i64 iVal = sqlite3_value_int64(argv[0]);
+      double rVal = (double)iVal;
+      if( iVal==rVal ){
+        sqlite3_result_double(context, rVal);
+        return;
+      }
+      sqlite3_result_null(context);
       break;
     }
     case SQLITE_BLOB:

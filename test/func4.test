@@ -75,13 +75,13 @@ do_execsql_test func4-1.[incr i] {
 } {1}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(-1.79769313486232e308 - 1);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(-1.79769313486232e308);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(-1.79769313486232e308 + 1);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(-9223372036854775808 - 1);
 } {-9223372036854775808}
@@ -120,13 +120,13 @@ do_execsql_test func4-1.[incr i] {
 } {-9223372036854775808}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(1.79769313486232e308 - 1);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(1.79769313486232e308);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(1.79769313486232e308 + 1);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(4503599627370496 - 1);
 } {4503599627370495}
@@ -156,13 +156,13 @@ do_execsql_test func4-1.[incr i] {
 } {-9223372036854775808}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(18446744073709551616 - 1);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(18446744073709551616);
-} {-9223372036854775808}
+} {{}}
 do_execsql_test func4-1.[incr i] {
   SELECT tointeger(18446744073709551616 + 1);
-} {-9223372036854775808}
+} {{}}
 
 ifcapable floatingpoint {
   set i 0
@@ -349,6 +349,11 @@ ifcapable check {
   } {1 {constraint failed}}
   do_test func4-3.[incr i] {
     catchsql {
+      INSERT INTO t1 (x) VALUES ('1234.56bad');
+    }
+  } {1 {constraint failed}}
+  do_test func4-3.[incr i] {
+    catchsql {
       INSERT INTO t1 (x) VALUES (1234);
     }
   } {0 {}}
@@ -390,6 +395,88 @@ ifcapable check {
   do_execsql_test func4-3.[incr i] {
     SELECT x FROM t1 ORDER BY x;
   } {1234 1234}
+
+  ifcapable floatingpoint {
+    set i 0
+    do_execsql_test func4-4.[incr i] {
+      CREATE TABLE t2(
+        x REAL CHECK(todouble(x) IS NOT NULL)
+      );
+    } {}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (NULL);
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (NULL);
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES ('');
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES ('bad');
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES ('1234bad');
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES ('1234.56bad');
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (1234);
+      }
+    } {0 {}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (1234.56);
+      }
+    } {0 {}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES ('1234');
+      }
+    } {0 {}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES ('1234.56');
+      }
+    } {0 {}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (ZEROBLOB(4));
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (X'');
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (X'1234');
+      }
+    } {1 {constraint failed}}
+    do_test func4-4.[incr i] {
+      catchsql {
+        INSERT INTO t2 (x) VALUES (X'12345678');
+      }
+    } {1 {constraint failed}}
+    do_execsql_test func4-4.[incr i] {
+      SELECT x FROM t2 ORDER BY x;
+    } {1234.0 1234.0 1234.56 1234.56}
+  }
 }
 
 finish_test
