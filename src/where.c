@@ -3794,14 +3794,13 @@ static int codeEqualityTerm(
     int eType;
     int iTab;
     struct InLoop *pIn;
-    u8 bRev;
+    u8 bRev = (pLevel->plan.wsFlags & WHERE_REVERSE)!=0;
 
-    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
-      bRev = pLevel->plan.u.pIdx->aSortOrder[iEq];
-    }else{
-      bRev = 0;
+    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 
+      && pLevel->plan.u.pIdx->aSortOrder[iEq]
+    ){
+      bRev = 1 - bRev;
     }
-    if( pLevel->plan.wsFlags & WHERE_REVERSE ) bRev = 1 - bRev;
     assert( pX->op==TK_IN );
     iReg = iTarget;
     eType = sqlite3FindInIndex(pParse, pX, 0);
