@@ -283,7 +283,7 @@ typedef sqlite_uint64 sqlite3_uint64;
 ** [sqlite3_blob_close | close] all [BLOB handles], and 
 ** [sqlite3_backup_finish | finish] all [sqlite3_backup] objects associated
 ** with the [sqlite3] object prior to attempting to close the object.  ^If
-** sqlite3_close() is called on a [database connection] that still has
+** sqlite3_close_v2() is called on a [database connection] that still has
 ** outstanding [prepared statements], [BLOB handles], and/or
 ** [sqlite3_backup] objects then it returns SQLITE_OK but the deallocation
 ** of resources is deferred until all [prepared statements], [BLOB handles],
