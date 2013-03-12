@@ -1,5 +1,5 @@
-C Define\s_BSD_SOURCE\swhen\sbuilding\son\sOpenBSD.\sThis\sis\srequired\sfor\sfchmod().
-D 2013-03-11T13:37:52.519
+C Fix\stypo\sin\ssqlite3_close()\sfunction\sdocumentation\sreported\son\sthe\smailing\slist.
+D 2013-03-12T20:58:21.853
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/resolve.c 9079da7d59aed2bb14ec8315bc7f720dd85b5b65
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c e1c6f6abdf9f359f4e735cb8ae11d2f359bf52a9
 F src/shell.c 7c41bfcd9e5bf9d96b9215f79b03a5b2b44a3bca
-F src/sqlite.h.in 31045976254225e6bf046a96e87b40fa4c1d55e4
+F src/sqlite.h.in f2fa32f440dda59ca47e22889966b2a6eb3b491c
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 59477c6ddb25e7ed8d8b67f4c58ded254371182e
@@ -1037,7 +1037,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1da15adba8f6eec69c24ec6385d6f1a7905a388f
-R 23658f0952d1a2fe0f61c5471a6869f3
-U dan
-Z 6b791dcdadf138e4fa4768d3023bd490
+P f9027cb47bdec8dcebf1f038921b28d9e9928c18
+R 2b8e011f63f1ea6b304ed54d625b070b
+T *branch * docTypo
+T *sym-docTypo *
+T -sym-trunk *
+U mistachkin
+Z dcdca813dff9ba7b609032afb852ad4f
