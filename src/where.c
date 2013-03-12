@@ -1834,6 +1834,7 @@ static void bestOrClauseIndex(WhereBestIdx *p){
         p->cost.used = used;
         p->cost.plan.nRow = nRow;
         p->cost.plan.nOBSat = p->i ? p->aLevel[p->i-1].plan.nOBSat : 0;
+        p->cost.plan.iOBSat = p->cost.plan.nOBSat;
         p->cost.plan.wsFlags = flags;
         p->cost.plan.u.pTerm = pTerm;
       }
@@ -3775,7 +3776,8 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
 static int codeEqualityTerm(
   Parse *pParse,      /* The parsing context */
   WhereTerm *pTerm,   /* The term of the WHERE clause to be coded */
-  WhereLevel *pLevel, /* When level of the FROM clause we are working on */
+  WhereLevel *pLevel, /* The level of the FROM clause we are working on */
+  int iEq,            /* Index of the equality term within this level */
   int iTarget         /* Attempt to leave results in this register */
 ){
   Expr *pX = pTerm->pExpr;
@@ -3793,8 +3795,15 @@ static int codeEqualityTerm(
     int eType;
     int iTab;
     struct InLoop *pIn;
-    u8 bRev = (pLevel->plan.wsFlags & WHERE_REVERSE)!=0;
+    u8 bRev;
 
+    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+      Index *pIdx = pLevel->plan.u.pIdx;
+      bRev = pIdx->aSortOrder[iEq+pLevel->plan.iOBSat];
+    }else{
+      bRev = 0;
+    }
+    if( pLevel->plan.wsFlags & WHERE_REVERSE ) bRev = 1 - bRev;
     assert( pX->op==TK_IN );
     iReg = iTarget;
     eType = sqlite3FindInIndex(pParse, pX, 0);
@@ -3912,7 +3921,7 @@ static int codeAllEqualityTerms(
     ** Ex: CREATE INDEX i1 ON t1(a,b,a); SELECT * FROM t1 WHERE a=0 AND b=0; */
     testcase( (pTerm->wtFlags & TERM_CODED)!=0 );
     testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
-    r1 = codeEqualityTerm(pParse, pTerm, pLevel, regBase+j);
+    r1 = codeEqualityTerm(pParse, pTerm, pLevel, j, regBase+j);
     if( r1!=regBase+j ){
       if( nReg==1 ){
         sqlite3ReleaseTempReg(pParse, regBase);
@@ -4189,7 +4198,7 @@ static Bitmask codeOneLoopStart(
           int iTarget = iReg+j+1;
           pTerm = &pWC->a[aConstraint[k].iTermOffset];
           if( pTerm->eOperator & WO_IN ){
-            codeEqualityTerm(pParse, pTerm, pLevel, iTarget);
+            codeEqualityTerm(pParse, pTerm, pLevel, k, iTarget);
             addrNotFound = pLevel->addrNxt;
           }else{
             sqlite3ExprCode(pParse, pTerm->pExpr->pRight, iTarget);
@@ -4230,7 +4239,7 @@ static Bitmask codeOneLoopStart(
     assert( pTerm->pExpr!=0 );
     assert( omitTable==0 );
     testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
-    iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, iReleaseReg);
+    iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, iReleaseReg);
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addrNxt, iRowidReg);
