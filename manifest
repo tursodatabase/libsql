@@ -1,5 +1,5 @@
-C Revised\sfix\sfor\sthe\sDESC\sORDER\sBY\sand\sIN\sconstraint\sbug,\nticket\s[4dd95f6943fbd18].\s\sThe\sprevious\scheck-in\swas\sincorrect.
-D 2013-03-12T18:40:20.150
+C Add\stest\scases\sfor\s[4dd95f6943].
+D 2013-03-12T18:44:49.167
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -778,6 +778,7 @@ F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
 F test/tkt-3a77c9714e.test 32bb28afa8c63fc76e972e996193139b63551ed9
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
+F test/tkt-4dd95f6943.test 906062d9d09a9373f4db23d07afc91efab792149
 F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
 F test/tkt-5d863f876e.test c9f36ca503fa154a3655f92a69d2c30da1747bfa
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
@@ -1037,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 614a038ad2fe111687d2bc1c0aa716d7eb8fdd7c
-R 2313f5d24d87760ccf57697a6a9ba832
-U drh
-Z 3b6f4b92866e810112286b959abeaefd
+P 8b2eb7a43b4580f04c14ea8600cf080e0e7f384d
+R 9034788cece44d65e62540f59178537b
+U dan
+Z 993779e9755bd8c64570dcd5012e8aeb
