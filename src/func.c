@@ -999,18 +999,23 @@ static void charFunc(
     x = sqlite3_value_int64(argv[i]);
     if( x<0 || x>0x10ffff ) x = 0xfffd;
     c = (unsigned)(x & 0x1fffff);
-    if( c<=0xFFFF ){
-      if( c>=0xd800 && c<=0xdfff ) c = 0xfffd;
-      *zOut++ = (u8)(c&0x00FF);
-      *zOut++ = (u8)((c>>8)&0x00FF);
+    if( c<0x00080 ){
+      *zOut++ = (u8)(c&0xFF);
+    }else if( c<0x00800 ){
+      *zOut++ = 0xC0 + (u8)((c>>6)&0x1F);
+      *zOut++ = 0x80 + (u8)(c & 0x3F);
+    }else if( c<0x10000 ){
+      *zOut++ = 0xE0 + (u8)((c>>12)&0x0F);
+      *zOut++ = 0x80 + (u8)((c>>6) & 0x3F);
+      *zOut++ = 0x80 + (u8)(c & 0x3F);
     }else{
-      *zOut++ = (u8)(((c>>10)&0x003F) + (((c-0x10000)>>10)&0x00C0));
-      *zOut++ = (u8)(0x00D8 + (((c-0x10000)>>18)&0x03));
-      *zOut++ = (u8)(c&0x00FF);
-      *zOut++ = (u8)(0x00DC + ((c>>8)&0x03));
-    }
+      *zOut++ = 0xF0 + (u8)((c>>18) & 0x07);
+      *zOut++ = 0x80 + (u8)((c>>12) & 0x3F);
+      *zOut++ = 0x80 + (u8)((c>>6) & 0x3F);
+      *zOut++ = 0x80 + (u8)(c & 0x3F);
+    }                                                    \
   }
-  sqlite3_result_text16le(context, (char*)z, (int)(zOut-z), sqlite3_free);
+  sqlite3_result_text(context, (char*)z, (int)(zOut-z), sqlite3_free);
 }
 
 /*

@@ -192,6 +192,13 @@ do_test triggerA-2.10 {
      SELECT * FROM result4 ORDER BY a;
   }
 } {3 305 3 9900305 4 404 4 9900404 5 504 5 9900504}
+do_test triggerA-2.11 {
+  db eval {
+     DELETE FROM result4;
+     UPDATE v5 SET b = main.v5.b+9900000 WHERE main.v5.x BETWEEN 3 AND 5;
+     SELECT * FROM result4 ORDER BY a;
+  }
+} {3 305 3 9900305 4 404 4 9900404 5 504 5 9900504}
 
 # Only run the reamining tests if memory debugging is turned on.
 #
