@@ -1834,7 +1834,6 @@ static void bestOrClauseIndex(WhereBestIdx *p){
         p->cost.used = used;
         p->cost.plan.nRow = nRow;
         p->cost.plan.nOBSat = p->i ? p->aLevel[p->i-1].plan.nOBSat : 0;
-        p->cost.plan.iOBSat = p->cost.plan.nOBSat;
         p->cost.plan.wsFlags = flags;
         p->cost.plan.u.pTerm = pTerm;
       }
@@ -3798,8 +3797,7 @@ static int codeEqualityTerm(
     u8 bRev;
 
     if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
-      Index *pIdx = pLevel->plan.u.pIdx;
-      bRev = pIdx->aSortOrder[iEq+pLevel->plan.iOBSat];
+      bRev = pLevel->plan.u.pIdx->aSortOrder[iEq];
     }else{
       bRev = 0;
     }

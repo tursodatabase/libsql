@@ -1,5 +1,5 @@
-C A\sproposed\sfix\sfor\sthe\sDESC\sORDER\sBY\sbug\sof\sticket\s[4dd95f6943fbd18].\nSeems\sto\swork,\sbut\slots\smore\stesting\sis\sneeded\sprior\sto\smoving\sto\strunk.
-D 2013-03-12T18:34:50.356
+C Revised\sfix\sfor\sthe\sDESC\sORDER\sBY\sand\sIN\sconstraint\sbug,\nticket\s[4dd95f6943fbd18].\s\sThe\sprevious\scheck-in\swas\sincorrect.
+D 2013-03-12T18:40:20.150
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/shell.c 7c41bfcd9e5bf9d96b9215f79b03a5b2b44a3bca
 F src/sqlite.h.in 31045976254225e6bf046a96e87b40fa4c1d55e4
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
-F src/sqliteInt.h e390bfafb5d65418555ce2464d5a4ad6e57e8c71
+F src/sqliteInt.h 59477c6ddb25e7ed8d8b67f4c58ded254371182e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 3db35b6231f3da4147294f59e7a1d339c987af32
+F src/where.c 6c2940f1fabea37d06a80770d2ad71971cf712b5
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1037,10 +1037,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f9027cb47bdec8dcebf1f038921b28d9e9928c18
-R 095810c67d8046e935e9a69945867a0f
-T *branch * desc-orderby-fix-1
-T *sym-desc-orderby-fix-1 *
-T -sym-trunk *
+P 614a038ad2fe111687d2bc1c0aa716d7eb8fdd7c
+R 2313f5d24d87760ccf57697a6a9ba832
 U drh
-Z 8fce222dd4f4c4a0834625ece5c0e872
+Z 3b6f4b92866e810112286b959abeaefd
