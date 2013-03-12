@@ -1,5 +1,5 @@
-C Fix\sthe\sORDER\sBY\soptimization\swith\sIN\sconstraints\swhen\sthe\sRHS\sof\sthe\nIN\sconstraint\sis\sa\sdescending\sindex.
-D 2013-03-12T20:38:51.980
+C Fix\sa\stest\scase\sthat\shad\san\sambiguous\sresult.
+D 2013-03-12T22:13:33.818
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -376,7 +376,7 @@ F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test 533dcbda614b0463b0ea029527fd27e5a9ab2d66
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
-F test/descidx3.test fe720e8b37d59f4cef808b0bf4e1b391c2e56b6f
+F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 84da1414b2e6887fffd5ed571311b344c5b082ce
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
@@ -1038,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3ce7eb0265b5be4e23264ae41332b947011ff1ad
-R 18267d07fe1bd58129b86fe1181a82df
+P 62316ebaca933f7e5df2018e8360a2b74234f30a
+R 79ce1fde79ba1a1f337a01fab19de6ab
 U drh
-Z f2422d1eba1fcbdba1a4cf32638de827
+Z ee8768f6007874088c82d4e86c289fa1
