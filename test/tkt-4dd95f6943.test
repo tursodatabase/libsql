@@ -86,5 +86,16 @@ foreach {tn1 idx} {
   }
 }
 
-finish_test
+do_execsql_test 3.0 {
+  CREATE TABLE t7(x);
+  INSERT INTO t7 VALUES (1), (2), (3);
+  CREATE INDEX i7 ON t7(x);
 
+  CREATE TABLE t8(y);
+  INSERT INTO t8 VALUES (1), (2), (3);
+
+  CREATE UNIQUE INDEX i8 ON t8(y DESC);
+  SELECT x FROM t7 WHERE x IN (SELECT y FROM t8) ORDER BY x ASC;
+} {1 2 3}
+
+finish_test

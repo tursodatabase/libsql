@@ -3799,12 +3799,19 @@ static int codeEqualityTerm(
     if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 
       && pLevel->plan.u.pIdx->aSortOrder[iEq]
     ){
+      testcase( iEq==0 );
+      testcase( iEq==pLevel->plan.u.pIdx->nColumn-1 );
+      testcase( iEq>0 && iEq+1<pLevel->plan.u.pIdx->nColumn );
+      testcase( bRev );
       bRev = !bRev;
     }
     assert( pX->op==TK_IN );
     iReg = iTarget;
     eType = sqlite3FindInIndex(pParse, pX, 0);
-    if( eType==IN_INDEX_INDEX_DESC ) bRev = !bRev;
+    if( eType==IN_INDEX_INDEX_DESC ){
+      testcase( bRev );
+      bRev = !bRev;
+    }
     iTab = pX->iTable;
     sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
     assert( pLevel->plan.wsFlags & WHERE_IN_ABLE );

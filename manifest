@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sthat\shad\san\sambiguous\sresult.
-D 2013-03-12T22:13:33.818
+C Add\sa\ssingle\snew\stest\scase\sto\sthe\sORDER\sBY\swith\sIN\slogic\sverify\sthat\sif\sthe\nRHS\sof\sthe\sIN\sis\sa\sdescending\sindex\sthat\sit\sstill\sworks.\s\sAdd\stestcase()\nmacros\sto\sthe\sORDER\sBY\swith\sIN\slogic\sto\shelp\sverify\sthat\scorner\scases\sare\ntested.
+D 2013-03-12T23:58:42.037
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 6fdacd2cd56995aaef80209f2697d97a92d6a96f
+F src/where.c bdbbfa7ef4ea04c8d9b09585b45d4717a72f980a
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -778,7 +778,7 @@ F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
 F test/tkt-3a77c9714e.test 32bb28afa8c63fc76e972e996193139b63551ed9
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
-F test/tkt-4dd95f6943.test 906062d9d09a9373f4db23d07afc91efab792149
+F test/tkt-4dd95f6943.test b7fad82ce61a2650fa4861f903ee002c253730c3
 F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
 F test/tkt-5d863f876e.test c9f36ca503fa154a3655f92a69d2c30da1747bfa
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
@@ -1038,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 62316ebaca933f7e5df2018e8360a2b74234f30a
-R 79ce1fde79ba1a1f337a01fab19de6ab
+P 38c6bddf8cf15fb358858da6da457046f40b61ce
+R 2dfce1e78b3d8600ba8f21b6bcbf51de
 U drh
-Z ee8768f6007874088c82d4e86c289fa1
+Z 8bb717049072de8821087ba5a31c44c6
