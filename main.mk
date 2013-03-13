@@ -207,6 +207,9 @@ SRC += \
 SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
+SRC += \
+  $(TOP)/ext/session/sqlite3session.c \
+  $(TOP)/ext/session/sqlite3session.h
 
 
 # Generated source code files
@@ -533,7 +536,8 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 -o tclsqlite3 \
 		$(TOP)/src/tclsqlite.c libsqlite3.a $(LIBTCL) $(THREADLIB)
 
-sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TOP)/tool/spaceanal.tcl
+sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c \
+                    $(TOP)/tool/spaceanal.tcl
 	echo "#define TCLSH 2" > $@
 	cat sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c >> $@
 	echo "static const char *tclsh_main_loop(void){" >> $@
@@ -581,7 +585,8 @@ test:	testfixture$(EXE) sqlite3$(EXE)
 # threadtest runs a few thread-safety tests that are implemented in C. This
 # target is invoked by the releasetest.tcl script.
 # 
-threadtest3$(EXE): sqlite3.o $(TOP)/test/threadtest3.c $(TOP)/test/tt3_checkpoint.c
+threadtest3$(EXE): sqlite3.o $(TOP)/test/threadtest3.c \
+                   $(TOP)/test/tt3_checkpoint.c
 	$(TCCX) -O2 sqlite3.o $(TOP)/test/threadtest3.c \
 		-o threadtest3$(EXE) $(THREADLIB)
 
