@@ -970,11 +970,11 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** change.  This function may disappear.  Do not write code that depends
 ** on this function.
 **
-** Implementation of the TOINTEGER() function.  This function takes a
+** Implementation of the tointeger() function.  This function takes a
 ** single argument.  If the argument is an integer or is a double that
 ** can be losslessly converted to an integer, the return value is the
 ** same as the argument.  If the argument is a double that cannot be
-** losslessly represented as an integer, the return value is undefined.
+** losslessly represented as an integer, the return value is NULL.
 ** If the argument is NULL, the return value is NULL.  Otherwise, an
 ** attempt is made to convert the argument to an integer.  If the
 ** conversion is successful, the integer value is returned; otherwise,
@@ -1035,18 +1035,18 @@ static void tointegerFunc(
 ** change.  This function may disappear.  Do not write code that depends
 ** on this function.
 **
-** Implementation of the TODOUBLE() function.  This function takes a
+** Implementation of the toreal() function.  This function takes a
 ** single argument.  If the argument is a double or is an integer that
 ** can be losslessly converted to a double, the return value is the
 ** same as the argument.  If the argument is an integer that cannot be
-** losslessly represented as a double, the return value is undefined.
+** losslessly represented as a double, the return value is NULL.
 ** If the argument is NULL, the return value is NULL.  Otherwise, an
 ** attempt is made to convert the argument to a double.  If the
 ** conversion is successful, the double value is returned; otherwise,
 ** NULL is returned.
 */
 #ifndef SQLITE_OMIT_FLOATING_POINT
-static void todoubleFunc(
+static void torealFunc(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
@@ -1803,7 +1803,7 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(tointeger,          1, 0, 0, tointegerFunc    ),
 #ifndef SQLITE_OMIT_FLOATING_POINT
-    FUNCTION(todouble,           1, 0, 0, todoubleFunc     ),
+    FUNCTION(toreal,             1, 0, 0, torealFunc       ),
 #endif
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
     FUNCTION(changes,            0, 0, 0, changes          ),

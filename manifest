@@ -1,5 +1,5 @@
-C Increase\sstrictness\sof\sthe\snew\sexperimental\sfunctions\sand\sadd\smore\stests.
-D 2013-03-12T09:07:25.371
+C Rename\sthe\sexperimental\stodouble()\sfunction\sto\storeal(),\supdate\scomments.
+D 2013-03-13T06:48:05.170
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
 F src/expr.c a23b4aac2a455b2e76b55bef5dcfbe62b665375c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
-F src/func.c cdf7b604909be1feca6e928ceb4c511b79c085f3
+F src/func.c d83c67a1d247389af7ad8a4c05b3665027658a17
 F src/global.c e59ecd2c553ad0d4bfbc84ca71231336f8993a7a
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -511,7 +511,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test b058483c17952eff7797b837bbb61e27e6b05606
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
-F test/func4.test 161f051a028d8347cdf044ba84b3cb353980b01f
+F test/func4.test cf09a622b456d3e2f33a3fb1a2be8eec7a8e35e2
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -1038,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f9468e334d6086b8a80c6a4204ec4e03fe59cf96
-R 4e552e5f44d1389ed4af9199ab9f91b5
+P 05c4463ec5f36dde50f6eb116624dc40142f2c8c
+R 64196e5fa6ca1fac5ad547b6cea78dab
 U mistachkin
-Z 362f229b782fa4883f52597e4e59d3e0
+Z b2ce5eefc524290638881e73eb677e9a

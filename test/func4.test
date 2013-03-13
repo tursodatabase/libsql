@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 # This file implements regression tests for SQLite library. The
-# focus of this file is testing the TOINTEGER() and TODOUBLE()
+# focus of this file is testing the tointeger() and toreal()
 # functions.
 #
 set testdir [file dirname $argv0]
@@ -167,151 +167,151 @@ do_execsql_test func4-1.[incr i] {
 ifcapable floatingpoint {
   set i 0
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(NULL);
+    SELECT toreal(NULL);
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('');
+    SELECT toreal('');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('   ');
+    SELECT toreal('   ');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('1234');
+    SELECT toreal('1234');
   } {1234.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('   1234');
+    SELECT toreal('   1234');
   } {1234.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('bad');
+    SELECT toreal('bad');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('0xBAD');
+    SELECT toreal('0xBAD');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('123BAD');
+    SELECT toreal('123BAD');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('0x123BAD');
+    SELECT toreal('0x123BAD');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('123NO');
+    SELECT toreal('123NO');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('0x123NO');
+    SELECT toreal('0x123NO');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('-0x1');
+    SELECT toreal('-0x1');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('-0x0');
+    SELECT toreal('-0x0');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('0x0');
+    SELECT toreal('0x0');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble('0x1');
+    SELECT toreal('0x1');
   } {{}}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-1);
+    SELECT toreal(-1);
   } {-1.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-0);
+    SELECT toreal(-0);
   } {0.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(0);
+    SELECT toreal(0);
   } {0.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(1);
+    SELECT toreal(1);
   } {1.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-1.79769313486232e308 - 1);
+    SELECT toreal(-1.79769313486232e308 - 1);
   } {-Inf}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-1.79769313486232e308);
+    SELECT toreal(-1.79769313486232e308);
   } {-Inf}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-1.79769313486232e308 + 1);
+    SELECT toreal(-1.79769313486232e308 + 1);
   } {-Inf}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-9223372036854775808 - 1);
+    SELECT toreal(-9223372036854775808 - 1);
   } {-9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-9223372036854775808);
+    SELECT toreal(-9223372036854775808);
   } {-9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-9223372036854775808 + 1);
+    SELECT toreal(-9223372036854775808 + 1);
   } {-9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-2147483648 - 1);
+    SELECT toreal(-2147483648 - 1);
   } {-2147483649.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-2147483648);
+    SELECT toreal(-2147483648);
   } {-2147483648.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(-2147483648 + 1);
+    SELECT toreal(-2147483648 + 1);
   } {-2147483647.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(2147483647 - 1);
+    SELECT toreal(2147483647 - 1);
   } {2147483646.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(2147483647);
+    SELECT toreal(2147483647);
   } {2147483647.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(2147483647 + 1);
+    SELECT toreal(2147483647 + 1);
   } {2147483648.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9223372036854775807 - 1);
+    SELECT toreal(9223372036854775807 - 1);
   } {9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9223372036854775807);
+    SELECT toreal(9223372036854775807);
   } {9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9223372036854775807 + 1);
+    SELECT toreal(9223372036854775807 + 1);
   } {9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(1.79769313486232e308 - 1);
+    SELECT toreal(1.79769313486232e308 - 1);
   } {Inf}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(1.79769313486232e308);
+    SELECT toreal(1.79769313486232e308);
   } {Inf}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(1.79769313486232e308 + 1);
+    SELECT toreal(1.79769313486232e308 + 1);
   } {Inf}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(4503599627370496 - 1);
+    SELECT toreal(4503599627370496 - 1);
   } {4503599627370500.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(4503599627370496);
+    SELECT toreal(4503599627370496);
   } {4503599627370500.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(4503599627370496 + 1);
+    SELECT toreal(4503599627370496 + 1);
   } {4503599627370500.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9007199254740992 - 1);
+    SELECT toreal(9007199254740992 - 1);
   } {9007199254740990.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9007199254740992);
+    SELECT toreal(9007199254740992);
   } {9007199254740990.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9007199254740992 + 1);
+    SELECT toreal(9007199254740992 + 1);
   } {9007199254740990.0}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9223372036854775808 - 1);
+    SELECT toreal(9223372036854775808 - 1);
   } {9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9223372036854775808);
+    SELECT toreal(9223372036854775808);
   } {9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(9223372036854775808 + 1);
+    SELECT toreal(9223372036854775808 + 1);
   } {9.22337203685478e+18}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(18446744073709551616 - 1);
+    SELECT toreal(18446744073709551616 - 1);
   } {1.84467440737096e+19}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(18446744073709551616);
+    SELECT toreal(18446744073709551616);
   } {1.84467440737096e+19}
   do_execsql_test func4-2.[incr i] {
-    SELECT todouble(18446744073709551616 + 1);
+    SELECT toreal(18446744073709551616 + 1);
   } {1.84467440737096e+19}
 }
 
@@ -400,7 +400,7 @@ ifcapable check {
     set i 0
     do_execsql_test func4-4.[incr i] {
       CREATE TABLE t2(
-        x REAL CHECK(todouble(x) IS NOT NULL)
+        x REAL CHECK(toreal(x) IS NOT NULL)
       );
     } {}
     do_test func4-4.[incr i] {
