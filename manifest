@@ -1,5 +1,5 @@
-C Fix\sthe\sORDER\sBY\swith\sIN\sconstraint\slogic\sso\sthat\sit\sworks\swith\sall\ncombinations\sof\sDESC\son\sthe\sORDER\sBY\sclause,\son\sthe\sRHS\sof\sthe\sIN\soperator,\nand\sin\sthe\sindex\sused\sby\sORDER\sBY\sand\sIN.\s\s\nFix\sfor\sticket\s[4dd95f6943fbd18].
-D 2013-03-13T00:13:25.181
+C Enhance\stests\sfor\sticket\s[4dd95f6943].
+D 2013-03-13T07:02:04.083
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -778,7 +778,7 @@ F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
 F test/tkt-3a77c9714e.test 32bb28afa8c63fc76e972e996193139b63551ed9
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
-F test/tkt-4dd95f6943.test b7fad82ce61a2650fa4861f903ee002c253730c3
+F test/tkt-4dd95f6943.test 3d0ce415d2ee15d3d564121960016b9c7be79407
 F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
 F test/tkt-5d863f876e.test c9f36ca503fa154a3655f92a69d2c30da1747bfa
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
@@ -1038,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c9a75d890f06cf3806d7b8879824a11d3a8e7016 7e7356f1552cd53ea363d1ded3b2c221c9d0be01
-R cf70d6af777786d8b14ff574243c0031
-U drh
-Z ef3fb703f5f65c616953904db1b81e9f
+P 839aa91faf1db7025d90fa3c65e50efb829b053b
+R ad71abb6cd4a6ebc6857153126653bad
+U dan
+Z 69b39b8becc09fc4758d1b797bf5f4f2
