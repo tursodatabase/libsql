@@ -1,9 +1,9 @@
-C Merge\slatest\strunk\schanges\sinto\sthis\sbranch.
-D 2013-03-13T06:34:51.061
+C Fix\sa\scompiler\swarning\sin\ssqlite3VdbePreUpdateHook().\nAdd\ssqlite3session.c\sto\sthe\samalgamation.\nFix\sthe\sMakefile.in\sto\swork\swith\ssessions.
+D 2013-03-13T11:42:00.694
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
+F Makefile.in f33fad60e6fa3cc15f6a39609a256b340a1c12d9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5de508f802789aae3e96d86261c5cf633d67ce00
+F Makefile.msc 29bce8fa86dc10ffeb5ac11537c0e12c3a3e6887
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 6d4f66eaebabc42ef8c2a4d2d0caf4ce7ee81137
@@ -255,7 +255,7 @@ F src/vdbe.c 9e4164ac85aa01e1a563e6c7f565b106ff0bf67b
 F src/vdbe.h 1223e2548e0970cf96f573ff6b99f804a36ad683
 F src/vdbeInt.h 0112cab1c820a599005c6bcc9504bdb17f5dbcdb
 F src/vdbeapi.c b816227ece97354aee7a741c1fc3c5445202d8bb
-F src/vdbeaux.c 684c159170453c8a118786b9c174627ece825f3a
+F src/vdbeaux.c b49b277bcac5ac1e14165f13b7cd320b5333f420
 F src/vdbeblob.c 11248c6362389569764682eb0f59ce910f3cc381
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
@@ -1022,7 +1022,7 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
+F tool/mksqlite3c.tcl bb8afe0948d88d5d9e6f80d75f2b89face94af08
 F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 62adb0e0d70e619becb68ffd2625d979bcc777cd 839aa91faf1db7025d90fa3c65e50efb829b053b
-R f971c8bcbe5e7e01d3f1960cb48792c9
-U dan
-Z 72580c54b4ef9e18ca4a1b86983b9c48
+P d6cd3c780c6bc718d37e0f0b884e3e9a423d57be
+R 8d8bef3ec05b88293bab641b3f53c396
+U drh
+Z 2a31f3327a39b82b184325a96aea6d38

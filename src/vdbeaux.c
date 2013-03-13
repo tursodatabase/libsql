@@ -3313,7 +3313,7 @@ void sqlite3VdbePreUpdateHook(
   preupdate.keyinfo.db = db;
   preupdate.keyinfo.enc = ENC(db);
   preupdate.keyinfo.nField = pTab->nCol;
-  preupdate.keyinfo.aSortOrder = &fakeSortOrder;
+  preupdate.keyinfo.aSortOrder = (u8*)&fakeSortOrder;
   preupdate.iKey1 = iKey1;
   preupdate.iKey2 = iKey2;
   preupdate.iPKey = pTab->iPKey;

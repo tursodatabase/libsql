@@ -108,6 +108,7 @@ foreach hdr {
    parse.h
    pcache.h
    rtree.h
+   sqlite3session.h
    sqlite3ext.h
    sqlite3.h
    sqliteicu.h
@@ -319,6 +320,8 @@ foreach file {
    rtree.c
    icu.c
    fts3_icu.c
+
+   sqlite3session.c
 } {
   copy_file tsrc/$file
 }
