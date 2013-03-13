@@ -1,9 +1,9 @@
-C Fix\smain.mk\sso\sthat\sit\sbuilds\sthe\samalgamation\scorrectly.
-D 2013-03-13T12:20:15.110
+C Fix\stypos\sin\sMSVC\smakefile.
+D 2013-03-13T19:02:39.185
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f33fad60e6fa3cc15f6a39609a256b340a1c12d9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 29bce8fa86dc10ffeb5ac11537c0e12c3a3e6887
+F Makefile.msc 50121cf9f55dd2bd06ed70007c9c48d89f2c230b
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 6d4f66eaebabc42ef8c2a4d2d0caf4ce7ee81137
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e54b0225f226a163ec874df7d4b738efba12b3a7
-R df3120294f1b47f95d03bbfec72e5f33
-U drh
-Z 1665add974d8ea78c75d5773b499e48a
+P 0b84e277245f10f928c010ea5958923681c6d582
+R 8936b43e7cb6239a57717295926fbe09
+U mistachkin
+Z 90881652b49d2ff478c663d912137eaa

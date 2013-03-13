@@ -233,6 +233,7 @@ RCC = $(RCC) -I$(TOP)\ext\fts3
 TCC = $(TCC) -I$(TOP)\ext\rtree
 RCC = $(RCC) -I$(TOP)\ext\rtree
 TCC = $(TCC) -I$(TOP)\ext\session
+RCC = $(RCC) -I$(TOP)\ext\session
 !ENDIF
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
@@ -1200,7 +1201,7 @@ fts3_write.lo:	$(TOP)\ext\fts3\fts3_write.c $(HDR) $(EXTHDR)
 rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\rtree\rtree.c
 
-rtree.lo:	$(TOP)\ext\session\sqlite3sesion.c $(HDR) $(EXTHDR)
+sqlite3session.lo:	$(TOP)\ext\session\sqlite3sesion.c $(HDR) $(EXTHDR)
 	$(LTCOMPILE) -DSQLITE_CORE -c $(TOP)\ext\session\sqlite3session.c
 
 
