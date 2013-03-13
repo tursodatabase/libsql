@@ -132,11 +132,11 @@ ifcapable subquery {
   # the IN(...) operator is not available. Hence these tests cannot be 
   # run.
   do_test descidx3-4.1 {
-    execsql {
+    lsort [execsql {
       UPDATE t1 SET a=2 WHERE i<6;
       SELECT i FROM t1 WHERE a IN (1,2) AND b>0 AND b<'zzz';
-    }
-  } {8 6 2 4 3}
+    }]
+  } {2 3 4 6 8}
   do_test descidx3-4.2 {
     execsql {
       UPDATE t1 SET a=1;
