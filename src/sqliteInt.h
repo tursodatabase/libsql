@@ -66,6 +66,10 @@
 # define _GNU_SOURCE
 #endif
 
+#if defined(__OpenBSD__) && !defined(_BSD_SOURCE)
+# define _BSD_SOURCE
+#endif
+
 /*
 ** Include standard header files as necessary
 */
@@ -3261,7 +3265,8 @@ const char *sqlite3JournalModename(int);
 
 #define IN_INDEX_ROWID           1
 #define IN_INDEX_EPH             2
-#define IN_INDEX_INDEX           3
+#define IN_INDEX_INDEX_ASC       3
+#define IN_INDEX_INDEX_DESC      4
 int sqlite3FindInIndex(Parse *, Expr *, int*);
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE

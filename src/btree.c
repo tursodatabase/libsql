@@ -43,6 +43,25 @@ int sqlite3BtreeTrace=1;  /* True to enable tracing */
 */
 #define get2byteNotZero(X)  (((((int)get2byte(X))-1)&0xffff)+1)
 
+/*
+** Values passed as the 5th argument to allocateBtreePage()
+*/
+#define BTALLOC_ANY   0           /* Allocate any page */
+#define BTALLOC_EXACT 1           /* Allocate exact page if possible */
+#define BTALLOC_LE    2           /* Allocate any page <= the parameter */
+
+/*
+** Macro IfNotOmitAV(x) returns (x) if SQLITE_OMIT_AUTOVACUUM is not 
+** defined, or 0 if it is. For example:
+**
+**   bIncrVacuum = IfNotOmitAV(pBtShared->incrVacuum);
+*/
+#ifndef SQLITE_OMIT_AUTOVACUUM
+#define IfNotOmitAV(expr) (expr)
+#else
+#define IfNotOmitAV(expr) 0
+#endif
+
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** A list of BtShared objects that are eligible for participation
@@ -2595,7 +2614,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   if( p->inTrans==TRANS_WRITE || (p->inTrans==TRANS_READ && !wrflag) ){
     goto trans_begun;
   }
-  assert( pBt->bDoTruncate==0 );
+  assert( IfNotOmitAV(pBt->bDoTruncate)==0 );
 
   /* Write transactions are not possible on a read-only database */
   if( (pBt->btsFlags & BTS_READ_ONLY)!=0 && wrflag ){
@@ -2910,9 +2929,6 @@ static int relocatePage(
 
 /* Forward declaration required by incrVacuumStep(). */
 static int allocateBtreePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
-#define BTALLOC_ANY   0           /* Allocate any page */
-#define BTALLOC_EXACT 1           /* Allocate exact page if possible */
-#define BTALLOC_LE    2           /* Allocate any page <= the parameter */
 
 /*
 ** Perform a single step of an incremental-vacuum. If successful, return
@@ -4902,7 +4918,7 @@ static int allocateBtreePage(
   Pgno mxPage;     /* Total size of the database file */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  assert( eMode==BTALLOC_ANY || (nearby>0 && pBt->autoVacuum) );
+  assert( eMode==BTALLOC_ANY || (nearby>0 && IfNotOmitAV(pBt->autoVacuum)) );
   pPage1 = pBt->pPage1;
   mxPage = btreePagecount(pBt);
   n = get4byte(&pPage1->aData[36]);
@@ -5135,7 +5151,7 @@ static int allocateBtreePage(
     ** here are confined to those pages that lie between the end of the
     ** database image and the end of the database file.
     */
-    int bNoContent = (0==pBt->bDoTruncate);
+    int bNoContent = (0==IfNotOmitAV(pBt->bDoTruncate));
 
     rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
     if( rc ) return rc;

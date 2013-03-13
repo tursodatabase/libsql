@@ -1130,6 +1130,7 @@ void sqlite3Pragma(
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
+#ifndef SQLITE_OMIT_TRIGGER
   if( sqlite3StrICmp(zLeft, "foreign_key_check")==0 ){
     FKey *pFK;             /* A foreign key constraint */
     Table *pTab;           /* Child table contain "REFERENCES" keyword */
@@ -1241,6 +1242,7 @@ void sqlite3Pragma(
       sqlite3VdbeJumpHere(v, addrTop);
     }
   }else
+#endif /* !defined(SQLITE_OMIT_TRIGGER) */
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
 
 #ifndef NDEBUG
