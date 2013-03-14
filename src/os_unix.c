@@ -3623,6 +3623,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_GETFD: {
+      *(int*)pArg = pFile->h;
+      return SQLITE_OK;
+    }
 #ifdef SQLITE_DEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and

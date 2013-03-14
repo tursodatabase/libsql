@@ -2565,6 +2565,34 @@ int sqlite3BtreeNewDb(Btree *p){
 }
 
 /*
+** If the shared-btree passed as the only argument is holding references
+** to mmap pages, replace them with read/write pages. Return SQLITE_OK
+** if successful, or an error code otherwise.
+*/
+static int btreeSwapOutMmap(BtShared *pBt){
+  BtCursor *pCsr;
+  for(pCsr=pBt->pCursor; pCsr; pCsr=pCsr->pNext){
+    int i;
+    for(i=0; i<=pCsr->iPage; i++){
+      MemPage *pPg = pCsr->apPage[i];
+      if( pPg->pDbPage->flags & PGHDR_MMAP ){
+        int rc;
+        MemPage *pNew = 0;
+        rc = btreeGetPage(pBt, pPg->pgno, &pNew, 0);
+        if( rc==SQLITE_OK && i==pCsr->iPage ){
+          pCsr->info.pCell = pNew->aData + (pCsr->info.pCell - pPg->aData);
+        }
+        pCsr->apPage[i] = pNew;
+        releasePage(pPg);
+        if( rc!=SQLITE_OK ) return rc;
+      }
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/*
 ** Attempt to start a new transaction. A write-transaction
 ** is started if the second argument is nonzero, otherwise a read-
 ** transaction.  If the second argument is 2 or more and exclusive
@@ -2670,6 +2698,9 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
         rc = SQLITE_READONLY;
       }else{
         rc = sqlite3PagerBegin(pBt->pPager,wrflag>1,sqlite3TempInMemory(p->db));
+        if( rc==SQLITE_OK ){
+          rc = btreeSwapOutMmap(pBt);
+        }
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
         }

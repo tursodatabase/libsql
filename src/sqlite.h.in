@@ -900,6 +900,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_PRAGMA                 14
 #define SQLITE_FCNTL_BUSYHANDLER            15
 #define SQLITE_FCNTL_TEMPFILENAME           16
+#define SQLITE_FCNTL_GETFD                  17
 
 /*
 ** CAPI3REF: Mutex Handle

@@ -655,6 +655,11 @@ struct Pager {
   PagerSavepoint *aSavepoint; /* Array of active savepoints */
   int nSavepoint;             /* Number of elements in aSavepoint[] */
   char dbFileVers[16];        /* Changes whenever database file changes */
+
+  void *pMap;                 /* Memory mapped prefix of database file */
+  i64 nMap;                   /* Size of mapping at pMap in bytes */ 
+  int nMmapOut;               /* Number of mmap pages currently outstanding */
+  PgHdr *pFree;               /* List of free mmap page headers (pDirty) */
   /*
   ** End of the routinely-changing class members
   ***************************************************************************/
@@ -3803,6 +3808,105 @@ static int pagerSyncHotJournal(Pager *pPager){
   return rc;
 }
 
+#include <sys/mman.h>
+
+/*
+** Unmap any mapping of the database file.
+*/
+static int pagerUnmap(Pager *pPager){
+  if( pPager->pMap ){
+    munmap(pPager->pMap, pPager->nMap);
+    pPager->pMap = 0;
+    pPager->nMap = 0;
+  }
+  return SQLITE_OK;
+}
+
+static int pagerMap(Pager *pPager){
+  int rc;
+  i64 sz = 0;
+
+  assert( pPager->pMap==0 && pPager->nMap==0 );
+
+  rc = sqlite3OsFileSize(pPager->fd, &sz);
+  if( rc==SQLITE_OK && sz>0 ){
+    int fd;
+    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_GETFD, (void *)&fd);
+    if( rc==SQLITE_OK ){
+      void *pMap = mmap(0, sz, PROT_READ, MAP_SHARED, fd, 0);
+      if( pMap==MAP_FAILED ){
+      assert( 0 );
+        return SQLITE_IOERR;
+      }
+      pPager->pMap = pMap;
+      pPager->nMap = sz;
+    }
+  }
+
+  return rc;
+}
+
+static int pagerAcquireMapPage(Pager *pPager, Pgno pgno, PgHdr **ppPage){
+  int rc;
+  *ppPage = 0;
+
+  assert( pPager->pWal==0 );
+
+  if( MEMDB==0 && pPager->tempFile==0 ){
+    if( pPager->pMap==0 ){
+      rc = pagerMap(pPager);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+
+    if( pgno!=1 && pPager->pMap && pPager->nMap>=((i64)pgno*pPager->pageSize) ){
+      PgHdr *p;
+      if( pPager->pFree ){
+        p = pPager->pFree;
+        pPager->pFree = p->pDirty;
+        p->pDirty = 0;
+        memset(p->pExtra, 0, pPager->nExtra);
+      }else{
+        p = (PgHdr *)sqlite3MallocZero(sizeof(PgHdr) + pPager->nExtra);
+        if( p==0 ) return SQLITE_NOMEM;
+        p->pExtra = (void *)&p[1];
+        p->flags = PGHDR_MMAP;
+        p->nRef = 1;
+        p->pPager = pPager;
+      }
+
+      assert( p->pExtra==(void *)&p[1] );
+      assert( p->pPage==0 );
+      assert( p->flags==PGHDR_MMAP );
+      assert( p->pPager==pPager );
+      assert( p->nRef==1 );
+
+      p->pData = &((u8 *)pPager->pMap)[(i64)(pgno-1) * pPager->pageSize];
+      p->pgno = pgno;
+      pPager->nMmapOut++;
+      *ppPage = p;
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+static void pagerReleaseMapPage(PgHdr *pPg){
+  Pager *pPager = pPg->pPager;
+  pPager->nMmapOut--;
+  pPg->pDirty = pPager->pFree;
+  pPager->pFree = pPg;
+}
+
+static void pagerFreeMapHdrs(Pager *pPager){
+  PgHdr *p;
+  PgHdr *pNext;
+  for(p=pPager->pFree; p; p=pNext){
+    pNext = p->pDirty;
+    sqlite3_free(p);
+  }
+}
+
+
 /*
 ** Shutdown the page cache.  Free all memory and close all files.
 **
@@ -3823,6 +3927,8 @@ int sqlite3PagerClose(Pager *pPager){
   assert( assert_pager_state(pPager) );
   disable_simulated_io_errors();
   sqlite3BeginBenignMalloc();
+  pagerUnmap(pPager);
+  pagerFreeMapHdrs(pPager);
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
@@ -4966,6 +5072,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
 
       if( memcmp(pPager->dbFileVers, dbFileVers, sizeof(dbFileVers))!=0 ){
         pager_reset(pPager);
+        pagerUnmap(pPager);
       }
     }
 
@@ -5007,7 +5114,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
 ** nothing to rollback, so this routine is a no-op.
 */ 
 static void pagerUnlockIfUnused(Pager *pPager){
-  if( (sqlite3PcacheRefCount(pPager->pPCache)==0) ){
+  if( (sqlite3PcacheRefCount(pPager->pPCache)==0) && pPager->nMmapOut==0 ){
     pagerUnlockAndRollback(pPager);
   }
 }
@@ -5083,6 +5190,15 @@ int sqlite3PagerAcquire(
   if( pPager->errCode!=SQLITE_OK ){
     rc = pPager->errCode;
   }else{
+    if( pPager->eState==PAGER_READER && pPager->pWal==0 ){
+      rc = pagerAcquireMapPage(pPager, pgno, &pPg);
+      if( rc!=SQLITE_OK ) goto pager_acquire_err;
+      if( pPg ){
+        *ppPage = pPg;
+        return SQLITE_OK;
+      }
+    }
+
     rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 1, ppPage);
   }
 
@@ -5196,7 +5312,11 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
 void sqlite3PagerUnref(DbPage *pPg){
   if( pPg ){
     Pager *pPager = pPg->pPager;
-    sqlite3PcacheRelease(pPg);
+    if( pPg->flags & PGHDR_MMAP ){
+      pagerReleaseMapPage(pPg);
+    }else{
+      sqlite3PcacheRelease(pPg);
+    }
     pagerUnlockIfUnused(pPager);
   }
 }
@@ -5312,6 +5432,8 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   if( pPager->errCode ) return pPager->errCode;
   assert( pPager->eState>=PAGER_READER && pPager->eState<PAGER_ERROR );
   pPager->subjInMemory = (u8)subjInMemory;
+
+  pagerUnmap(pPager);
 
   if( ALWAYS(pPager->eState==PAGER_READER) ){
     assert( pPager->pInJournal==0 );
@@ -5534,6 +5656,9 @@ int sqlite3PagerWrite(DbPage *pDbPage){
   assert( pPager->eState>=PAGER_WRITER_LOCKED );
   assert( pPager->eState!=PAGER_ERROR );
   assert( assert_pager_state(pPager) );
+
+  /* There must not be any outstanding mmap pages at this point */
+  assert( pPager->nMmapOut==0 );
 
   if( nPagePerSector>1 ){
     Pgno nPageCount;          /* Total number of pages in database file */
