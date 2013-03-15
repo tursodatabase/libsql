@@ -1,5 +1,5 @@
-C Allow\sread-only\scursors\sto\suse\smmap\spages\seven\sif\sthere\sis\san\sopen\swrite\stransaction.
-D 2013-03-15T18:29:18.146
+C Fix\sa\sdropped\serror\scode\sin\spager.c.
+D 2013-03-15T19:13:42.183
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 2a4cd96aabf413f39cf562baebb27aa9993f6f54
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
-F src/pager.c 734578514314a3d923fa1399c9722acbcc4f7e6b
+F src/pager.c bdbcfe676cda9295572e4ce95a3fae827082f9f0
 F src/pager.h 81ac95f4fcfe21981f495146f6d7f2fe51afd110
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1038,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6f21d9cbf5d457e63a7282015a89ae785526cf6d
-R 94aae53403ccd6ebc7d159fa0d23eb33
+P b387e2f9d24dccac1fd040e309f6fc7ec1cfffba
+R 53728d59c72e59e92889436c2f9b085b
 U dan
-Z 133f9be54c97c4ee392fb0706f346b90
+Z 3a434ac42175412fea267939fd915765

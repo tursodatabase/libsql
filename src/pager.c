@@ -5220,7 +5220,9 @@ int sqlite3PagerAcquire(
   }else{
 
     if( bMmapOk ){
-      if( pPager->pMap==0 ) rc = pagerMap(pPager);
+      if( pPager->pMap==0 ){
+        rc = pagerMap(pPager);
+      }
       if( rc==SQLITE_OK && pPager->nMap>=((i64)pgno * pPager->pageSize) ){
         if( pPager->eState>PAGER_READER ){
           (void)sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &pPg);
@@ -5232,9 +5234,10 @@ int sqlite3PagerAcquire(
           assert( rc==SQLITE_OK );
           *ppPage = pPg;
           return SQLITE_OK;
-        }else if( rc!=SQLITE_OK ){
-          goto pager_acquire_err;
         }
+      }
+      if( rc!=SQLITE_OK ){
+        goto pager_acquire_err;
       }
     }
 
