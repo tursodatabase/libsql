@@ -1,5 +1,5 @@
-C Use\smmap()\sto\sread\sfrom\sthe\sdatabase\sfile\sin\srollback\smode.\sThis\sbranch\sis\sunix\sonly\sfor\snow.
-D 2013-03-14T18:34:37.796
+C Allow\sread-only\scursors\sto\suse\smmap\spages\seven\sif\sthere\sis\san\sopen\swrite\stransaction.
+D 2013-03-15T18:29:18.146
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c c1a956c6762f2a45188c945e1070daec29f5253f
+F src/btree.c 934921ec91456c264f61ce671ca62cb826af977a
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 375e5df716e03b9343c5e1211be3b24e6d6dff05
@@ -162,8 +162,8 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 2a4cd96aabf413f39cf562baebb27aa9993f6f54
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
-F src/pager.c 4e7e66c2959ee43caf8a7000712d6a4121b0888a
-F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
+F src/pager.c 734578514314a3d923fa1399c9722acbcc4f7e6b
+F src/pager.h 81ac95f4fcfe21981f495146f6d7f2fe51afd110
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
@@ -1038,10 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0b452734faa0839c817f040322e7733e423bfce2
-R d4c281f6a900c9b41816881ffb3c2331
-T *branch * experimental-mmap
-T *sym-experimental-mmap *
-T -sym-trunk *
+P 6f21d9cbf5d457e63a7282015a89ae785526cf6d
+R 94aae53403ccd6ebc7d159fa0d23eb33
 U dan
-Z f16a594407ec9e95c26319dfbc751443
+Z 133f9be54c97c4ee392fb0706f346b90
