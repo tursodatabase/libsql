@@ -1,5 +1,5 @@
-C Fix\sa\sdropped\serror\scode\sin\spager.c.
-D 2013-03-15T19:13:42.183
+C When\spossible,\suse\smemcpy()\sto\sand\sfrom\sthe\smapped\sregion\sinstead\sof\sxWrite()\sand\sxRead().
+D 2013-03-16T20:19:21.766
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 2a4cd96aabf413f39cf562baebb27aa9993f6f54
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
-F src/pager.c bdbcfe676cda9295572e4ce95a3fae827082f9f0
+F src/pager.c 495c5344392d5932ea5072f20bfbd8a58cf19d67
 F src/pager.h 81ac95f4fcfe21981f495146f6d7f2fe51afd110
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -184,7 +184,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 3213f3101e3b85f047d6e389da5a53d76d3d7540
-F src/test1.c ff3e68eedfbd858c9b89cf03e3db233cd29be1d0
+F src/test1.c 3dac8d76be8852d65ff8b9ce4b50ed08b999ed59
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -1038,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b387e2f9d24dccac1fd040e309f6fc7ec1cfffba
-R 53728d59c72e59e92889436c2f9b085b
+P 022fdc986b33701abfd39621072ac3d9f9f7d43e
+R e9d1b00daf0ae79f0e154b8607fa8ad8
 U dan
-Z 3a434ac42175412fea267939fd915765
+Z 82853c015b40f8bb1665068f9eea77d4

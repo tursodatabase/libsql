@@ -2865,9 +2865,13 @@ static int readDbPage(PgHdr *pPg){
   }
   if( rc==SQLITE_OK && !isInWal ){
     i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
-    rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
-    if( rc==SQLITE_IOERR_SHORT_READ ){
-      rc = SQLITE_OK;
+    if( pPager->pMap && pPager->nMapValid>=iOffset+pPager->pageSize ){
+      memcpy(pPg->pData, &((u8 *)(pPager->pMap))[iOffset], pPager->pageSize);
+    }else{
+      rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
+      if( rc==SQLITE_IOERR_SHORT_READ ){
+        rc = SQLITE_OK;
+      }
     }
   }
 
@@ -3834,13 +3838,14 @@ static int pagerMap(Pager *pPager){
   assert( pPager->pMap==0 && pPager->nMap==0 );
 
   rc = sqlite3OsFileSize(pPager->fd, &sz);
+  sz = sz & ~(4096-1);
+
   if( rc==SQLITE_OK && sz>0 ){
     int fd;
     rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_GETFD, (void *)&fd);
     if( rc==SQLITE_OK ){
-      void *pMap = mmap(0, sz, PROT_READ, MAP_SHARED, fd, 0);
+      void *pMap = mmap(0, sz, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
       if( pMap==MAP_FAILED ){
-      assert( 0 );
         return SQLITE_IOERR;
       }
       pPager->pMap = pMap;
@@ -3849,6 +3854,22 @@ static int pagerMap(Pager *pPager){
   }
 
   return rc;
+}
+
+static int pagerRemap(Pager *pPager, Pgno nPage){
+  i64 sz = (i64)nPage * pPager->pageSize;
+  sz = sz & ~(4096-1);
+
+  if( pPager->nMap!=sz ){
+    void *pMap = mremap(pPager->pMap, pPager->nMap, sz, MREMAP_MAYMOVE);    
+    if( pMap==MAP_FAILED ){
+      return SQLITE_IOERR;
+    }
+    pPager->pMap = pMap;
+    pPager->nMapValid = pPager->nMap = sz;
+  }
+
+  return SQLITE_OK;
 }
 
 static int pagerAcquireMapPage(Pager *pPager, Pgno pgno, PgHdr **ppPage){
@@ -4225,7 +4246,11 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
       CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM, pData);
 
       /* Write out the page data. */
-      rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize, offset);
+      if( pPager->nMapValid>=(offset+pPager->pageSize) ){
+        memcpy(&((u8 *)(pPager->pMap))[offset], pData, pPager->pageSize);
+      }else{
+        rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize, offset);
+      }
 
       /* If page 1 was just written, update Pager.dbFileVers to match
       ** the value now stored in the database file. If writing this 
@@ -5089,8 +5114,8 @@ int sqlite3PagerSharedLock(Pager *pPager){
         ** to be the right size but is not actually valid. Avoid this
         ** possibility by unmapping the db here. */
         pagerUnmap(pPager);
-      }else if( ((i64)nPage*pPager->pageSize)!=pPager->nMap ){
-        pagerUnmap(pPager);
+      }else if( pPager->pMap ){
+        pagerRemap(pPager, nPage);
       }
     }
 
