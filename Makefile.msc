@@ -767,8 +767,8 @@ TESTSRC2 = \
 # Source code to the library files needed by the test fixture
 # (amalgamation)
 #
-TESTSRC3 = \
-  $(TOP)\ext\session\sqlite3session.c
+TESTSRC3 =
+
 
 # Header files used by all library source files.
 #

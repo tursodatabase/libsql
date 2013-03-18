@@ -1,9 +1,9 @@
-C Fix\stypos\sin\sMSVC\smakefile.
-D 2013-03-13T19:02:39.185
+C Adjust\sthe\sMSVC\smakefile\sso\sthat\sit\scorrectly\shandles\sthe\ssessions\nextension\sbeing\sincluded\sin\sthe\samalgamation.\s\sImport\sthe\stest\scase\nchanges\sthat\sappeared\sin\s3.7.16\sfinal.
+D 2013-03-18T16:24:33.543
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f33fad60e6fa3cc15f6a39609a256b340a1c12d9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 50121cf9f55dd2bd06ed70007c9c48d89f2c230b
+F Makefile.msc c56c19e93d5de6dde495d68d28d8455a5bab9917
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 6d4f66eaebabc42ef8c2a4d2d0caf4ce7ee81137
@@ -791,7 +791,7 @@ F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
 F test/tkt-3a77c9714e.test 32bb28afa8c63fc76e972e996193139b63551ed9
 F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
-F test/tkt-4dd95f6943.test b7fad82ce61a2650fa4861f903ee002c253730c3
+F test/tkt-4dd95f6943.test 3d0ce415d2ee15d3d564121960016b9c7be79407
 F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
 F test/tkt-5d863f876e.test c9f36ca503fa154a3655f92a69d2c30da1747bfa
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0b84e277245f10f928c010ea5958923681c6d582
-R 8936b43e7cb6239a57717295926fbe09
-U mistachkin
-Z 90881652b49d2ff478c663d912137eaa
+P 2d15c2685750b930c5b7e2f06cb056b24a037967 66d5f2b76750f3520eb7a495f6247206758f5b90
+R 2176dc6cddaef86d42b3729c5996485e
+U drh
+Z 1f183a91c30c6bc258b1a36f7025012a
