@@ -1,5 +1,5 @@
-C Version\s3.7.16
-D 2013-03-18T11:39:23.116
+C Clarifications\sto\sthe\sdocumentation\sfor\sthe\ssqlite3_aggregate_context()\sAPI.\nAlso,\sshorten\san\sover-length\ssource\sline\sin\ssqlite.h.in.
+D 2013-03-18T17:18:18.835
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/resolve.c 9079da7d59aed2bb14ec8315bc7f720dd85b5b65
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c e1c6f6abdf9f359f4e735cb8ae11d2f359bf52a9
 F src/shell.c 7c41bfcd9e5bf9d96b9215f79b03a5b2b44a3bca
-F src/sqlite.h.in f2fa32f440dda59ca47e22889966b2a6eb3b491c
+F src/sqlite.h.in e0ace39d7c14dc9e988cf579f75aaf2a7db7ae77
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 0f8f05ee4db4ba9120b38f7a3992b325698f6e8a
@@ -1038,10 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0b452734faa0839c817f040322e7733e423bfce2
-R ad71abb6cd4a6ebc6857153126653bad
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.16 *
+P 66d5f2b76750f3520eb7a495f6247206758f5b90
+R 6b3383461c64bf451ee04663b065cc63
 U drh
-Z d73f3a9c465960162106ae1e090c862c
+Z f8cab3c95e26c38e205a97060fe1ac3e
