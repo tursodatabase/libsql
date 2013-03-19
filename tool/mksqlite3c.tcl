@@ -23,7 +23,7 @@
 #
 
 # Begin by reading the "sqlite3.h" header file.  Extract the version number
-# from in this file.  The versioon number is needed to generate the header
+# from in this file.  The version number is needed to generate the header
 # comment of the amalgamation.
 #
 if {[lsearch $argv --nostatic]>=0} {
@@ -121,6 +121,7 @@ foreach hdr {
   set available_hdr($hdr) 1
 }
 set available_hdr(sqliteInt.h) 0
+set available_hdr(sqlite3session.h) 0
 
 # 78 stars used for comment formatting.
 set s78 \
@@ -182,7 +183,7 @@ proc copy_file {filename} {
       if {[regexp $declpattern $line all funcname]} {
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
-        if {[regexp {^sqlite3_} $funcname]} {
+        if {[regexp {^sqlite3(session)?_} $funcname]} {
           puts $out "SQLITE_API $line"
         } else {
           puts $out "SQLITE_PRIVATE $line"

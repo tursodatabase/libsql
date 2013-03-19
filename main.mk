@@ -391,6 +391,8 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
+	cp tsrc/shell.c tsrc/sqlite3ext.h .
+	cp $(TOP)/ext/session/sqlite3session.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
@@ -558,9 +560,11 @@ testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) libsqlite3.a $(THREADLIB)
 
-amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
+amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c  \
+				$(TOP)/ext/session/test_session.c
 	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
+		$(TOP)/ext/session/test_session.c                            \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
