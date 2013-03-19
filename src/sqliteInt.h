@@ -746,6 +746,7 @@ struct Schema {
   u8 enc;              /* Text encoding used by this database */
   u16 flags;           /* Flags associated with this schema */
   int cache_size;      /* Number of pages to use in the cache */
+  int mmap_size;       /* Number of pages to memory map */
 };
 
 /*

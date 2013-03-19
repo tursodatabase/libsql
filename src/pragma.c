@@ -745,6 +745,30 @@ void sqlite3Pragma(
   }else
 
   /*
+  **  PRAGMA [database.]mmap_size
+  **  PRAGMA [database.]mmap_size=N
+  **
+  ** Used to set or query the mapping size limit. The mapping size limit is
+  ** used to limit the aggregate size of all memory mapped regions of the
+  ** database file. If this parameter is set to zero, then memory mapping
+  ** is not used at all. If it is set to a positive value, then it is
+  ** interpreted as a maximum size in pages. If set to less than zero, then
+  ** the absolute value is interpreted as a size limit in KB.
+  **
+  ** The default value is zero (do not use memory mapped IO).
+  */
+  if( sqlite3StrICmp(zLeft,"mmap_size")==0 ){
+    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    if( !zRight ){
+      returnSingleInt(pParse, "mmap_size", pDb->pSchema->mmap_size);
+    }else{
+      int size = sqlite3Atoi(zRight);
+      pDb->pSchema->mmap_size = size;
+      sqlite3BtreeSetMmapSize(pDb->pBt, pDb->pSchema->mmap_size);
+    }
+  }else
+
+  /*
   **   PRAGMA temp_store
   **   PRAGMA temp_store = "default"|"memory"|"file"
   **

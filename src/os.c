@@ -140,6 +140,9 @@ int sqlite3OsShmMap(
   DO_OS_MALLOC_TEST(id);
   return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
+int sqlite3OsMremap(sqlite3_file *id, i64 iOff, i64 nOld, i64 nNew, void **pp){
+  return id->pMethods->xMremap(id, iOff, nOld, nNew, pp);
+}
 
 /*
 ** The next group of routines are convenience wrappers around the

@@ -4430,6 +4430,42 @@ static int unixShmUnmap(
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
+** Map, remap or unmap part of the database file.
+*/
+static int unixMremap(
+  sqlite3_file *fd,               /* Main database file */
+  sqlite3_int64 iOff,             /* Offset to start mapping at */
+  sqlite3_int64 nOld,             /* Size of old mapping, or zero */
+  sqlite3_int64 nNew,             /* Size of new mapping, or zero */
+  void **ppMap                    /* IN/OUT: Old/new mappings */
+){
+  unixFile *p = (unixFile *)fd;   /* The underlying database file */
+  int rc = SQLITE_OK;             /* Return code */
+  void *pNew = 0;                 /* New mapping */
+
+  assert( iOff==0 );
+
+  if( nOld!=0 ){
+    void *pOld = *ppMap;
+    munmap(pOld, nOld);
+  }
+
+  if( nNew>0 ){
+    int flags = PROT_READ;
+    if( (p->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
+    nNew = (nNew+4095) & ~(i64)((1 << 12)-1);
+    pNew = mmap(0, nNew, flags, MAP_SHARED, p->h, iOff);
+    if( pNew==MAP_FAILED ){
+      pNew = 0;
+      rc = SQLITE_IOERR;
+    }
+  }
+
+  *ppMap = pNew;
+  return rc;
+}
+
+/*
 ** Here ends the implementation of all sqlite3_file methods.
 **
 ********************** End sqlite3_file Methods *******************************
@@ -4487,7 +4523,8 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixShmMap,                 /* xShmMap */                                 \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
-   unixShmUnmap                /* xShmUnmap */                               \
+   unixShmUnmap,               /* xShmUnmap */                               \
+   unixMremap,                 /* xMremap */                                 \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \
@@ -4504,7 +4541,7 @@ static const sqlite3_io_methods *(*const FINDER)(const char*,unixFile *p)    \
 IOMETHODS(
   posixIoFinder,            /* Finder function name */
   posixIoMethods,           /* sqlite3_io_methods object name */
-  2,                        /* shared memory is enabled */
+  3,                        /* shared memory and mmap are enabled */
   unixClose,                /* xClose method */
   unixLock,                 /* xLock method */
   unixUnlock,               /* xUnlock method */

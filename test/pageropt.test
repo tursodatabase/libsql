@@ -92,7 +92,7 @@ do_test pageropt-1.5 {
   pagercount_sql {
     SELECT hex(x) FROM t1
   }
-} [list 6 0 0 $blobcontent]
+} [list [expr {[permutation]=="mmap" ? 1 : 6}] 0 0 $blobcontent]
 do_test pageropt-1.6 {
   pagercount_sql {
     SELECT hex(x) FROM t1

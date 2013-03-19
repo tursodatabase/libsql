@@ -706,6 +706,24 @@ struct sqlite3_file {
 ** fails to zero-fill short reads might seem to work.  However,
 ** failure to zero-fill short reads will eventually lead to
 ** database corruption.
+**
+** Assuming parameter nNew is non-zero, the xMremap method should attempt
+** to memory map a region nNew bytes in size starting at offset iOffset
+** of the file.  If successful, it should set *ppMap to point to the
+** mapping and return SQLITE_OK. If the file is opened for read-write
+** access, then the mapping should also be read-write.
+**
+** If nOld is non-zero, then the initial value of *ppMap points to a
+** mapping returned by a previous call to xMremap. The existing mapping
+** is nOld bytes in size and starts at offset iOffset of the file. In
+** this case the xMremap method is expected to unmap the existing mapping
+** and overwrite *ppMap with the pointer to the new mapping. If nOld is
+** zero, then the initial value of *ppMap is undefined.
+**
+** If nNew is zero, then no new mapping should be created. Any old
+** mapping must still be unmapped if nOld is non-zero. If the nOld
+** parameter is non-zero, then the existing mapping is always unmapped -
+** even if an error occurs.
 */
 typedef struct sqlite3_io_methods sqlite3_io_methods;
 struct sqlite3_io_methods {
@@ -728,6 +746,9 @@ struct sqlite3_io_methods {
   void (*xShmBarrier)(sqlite3_file*);
   int (*xShmUnmap)(sqlite3_file*, int deleteFlag);
   /* Methods above are valid for version 2 */
+  int (*xMremap)(sqlite3_file *fd, 
+      sqlite3_int64 iOff, sqlite3_int64 nOld, sqlite3_int64 nNew, void **ppMap);
+  /* Methods above are valid for version 3 */
   /* Additional methods may be added in future releases */
 };
 

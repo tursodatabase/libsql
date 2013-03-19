@@ -5859,9 +5859,9 @@ static int test_getrusage(
   getrusage(RUSAGE_SELF, &r);
 
   sprintf(buf, "ru_utime=%d.%06d ru_stime=%d.%06d ru_minflt=%d ru_majflt=%d", 
-    r.ru_utime.tv_sec, r.ru_utime.tv_usec, 
-    r.ru_stime.tv_sec, r.ru_stime.tv_usec, 
-    r.ru_minflt, r.ru_majflt
+    (int)r.ru_utime.tv_sec, (int)r.ru_utime.tv_usec, 
+    (int)r.ru_stime.tv_sec, (int)r.ru_stime.tv_usec, 
+    (int)r.ru_minflt, (int)r.ru_majflt
   );
   Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
   return TCL_OK;

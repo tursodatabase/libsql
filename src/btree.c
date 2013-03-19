@@ -2131,6 +2131,19 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
 }
 
 /*
+** Change the limit on the amount of the database file that may be
+** memory mapped.
+*/
+int sqlite3BtreeSetMmapSize(Btree *p, int nMap){
+  BtShared *pBt = p->pBt;
+  assert( sqlite3_mutex_held(p->db->mutex) );
+  sqlite3BtreeEnter(p);
+  sqlite3PagerSetMmapsize(pBt->pPager, nMap);
+  sqlite3BtreeLeave(p);
+  return SQLITE_OK;
+}
+
+/*
 ** Change the way data is synced to disk in order to increase or decrease
 ** how well the database resists damage due to OS crashes and power
 ** failures.  Level 1 is the same as asynchronous (no syncs() occur and
