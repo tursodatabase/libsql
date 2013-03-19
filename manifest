@@ -1,5 +1,5 @@
-C Include\sthe\ssqlite3session.h\sheader\sfile\sin\swith\ssqlite3.h.\s\sMake\ssure\nthe\ssession\sAPIs\sare\sall\spublic.
-D 2013-03-19T15:23:18.846
+C Also\sexport\sthe\ssqlite3changeset\sinterfaces\sin\sthe\samalgamated\sversion\sof\nthe\ssessions\sextension.
+D 2013-03-19T17:10:10.376
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 174bfca74e57f38699e3412a984f6b38106750fa
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
-F ext/session/sqlite3session.c 57d04e1d6a3579e673e61dea29f214fb4e0fc505
+F ext/session/sqlite3session.c 7d7ca693bd581243835ee47b41b491bd909a26f4
 F ext/session/sqlite3session.h f374c9c4c96e08f67ac418871c29d423245c7673
 F ext/session/test_session.c ea4dc9b4a1895c8e6bddcbfe3838d7eb57df2d99
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -1022,7 +1022,7 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl aa76553fe5f5fc93772f3bb1d1626421b454e7e5
+F tool/mksqlite3c.tcl 521b39c2d2987c4257919b97a3cfb3bd4a394bf1
 F tool/mksqlite3h.tcl 280a819542c2a001c342e4bfe829974a76cb449e
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
@@ -1045,13 +1045,13 @@ F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/split-sqlite3c.tcl d9be87f1c340285a3e081eb19b4a247981ed290c
 F tool/stack_usage.tcl f8e71b92cdb099a147dad572375595eae55eca43
 F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
-F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
+F tool/symbols.sh c5a617b8c61a0926747a56c65f5671ef8ac0e148
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9bac09a99aef5f18386037b409869d760c520d53
-R f21fcc9e1243effe28692f83a9850041
+P ec490336bc6629d3910667ece1bbc4685a199546
+R feb292609e6100e1f2edd6a494c7d523
 U drh
-Z b7b8384c096e1370a180493dde9bfbdb
+Z 6c74b8c2b0cc569ec1ecb44db9287f05

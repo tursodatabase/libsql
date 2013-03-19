@@ -1125,7 +1125,7 @@ int sqlite3session_create(
 ** Free the list of table objects passed as the first argument. The contents
 ** of the changed-rows hash tables are also deleted.
 */
-void sessionDeleteTable(SessionTable *pList){
+static void sessionDeleteTable(SessionTable *pList){
   SessionTable *pNext;
   SessionTable *pTab;
 
@@ -3074,7 +3074,7 @@ static int sessionChangeMerge(
 ** Add all changes in the changeset passed via the first two arguments to
 ** hash tables.
 */
-int sessionConcatChangeset(
+static int sessionConcatChangeset(
   int nChangeset,                 /* Number of bytes in pChangeset */
   void *pChangeset,               /* Changeset buffer */
   SessionTable **ppTabList        /* IN/OUT: List of table objects */
