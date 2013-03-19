@@ -23,7 +23,7 @@
 #
 
 # Begin by reading the "sqlite3.h" header file.  Extract the version number
-# from in this file.  The versioon number is needed to generate the header
+# from in this file.  The version number is needed to generate the header
 # comment of the amalgamation.
 #
 if {[lsearch $argv --nostatic]>=0} {

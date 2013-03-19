@@ -1,9 +1,9 @@
-C Clarifications\sto\sthe\sdocumentation\sfor\sthe\ssqlite3_aggregate_context()\sAPI.\nAlso,\sshorten\san\sover-length\ssource\sline\sin\ssqlite.h.in.
-D 2013-03-18T17:18:18.835
+C Bring\smakefiles\sand\sbuild\sscripts\sinto\salignment\swith\sthe\ssessions\sbranch.\nNo\schanges\sto\scode.
+D 2013-03-19T16:12:40.639
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
+F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 1bed3bca025ee90441bb0c9f95f36f42b70bd839
+F Makefile.msc 0c1abc21c8deefc88e8a32ad6a07e5f96e158761
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 6d4f66eaebabc42ef8c2a4d2d0caf4ce7ee81137
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 404cd38114d1a94ef6ad5aa01a1c8bb46da36161
+F main.mk c5437f64aad34844d18efe7b2d2adaa36efca49c
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -1009,8 +1009,8 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl 589c7f44e990be1b8443cfe4808dce392b0327fa
-F tool/mksqlite3h.tcl 78013ad79a5e492e5f764f3c7a8ef834255061f8
+F tool/mksqlite3c.tcl a570a0b0847f5659482087f70e409ac45ce93b91
+F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1038,7 +1038,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 66d5f2b76750f3520eb7a495f6247206758f5b90
-R 6b3383461c64bf451ee04663b065cc63
+P 4fe2db1d866c80fe51f7fddbf9ce6753fb55b5f6
+R 7758dd15e3a5f0387c3f17443ec025d8
 U drh
-Z f8cab3c95e26c38e205a97060fe1ac3e
+Z 7c5d1dfbeba3270fc7d5841fae61579f

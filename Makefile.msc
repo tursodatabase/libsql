@@ -830,6 +830,8 @@ sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
 
 sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl
+	copy tsrc\shell.c .
+	copy tsrc\sqlite3ext.h .
 
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
