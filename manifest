@@ -1,5 +1,5 @@
-C When\spossible,\suse\smemory\smapping\swhen\sappending\snew\spages\sto\sa\sdatabase\sfile.
-D 2013-03-20T14:26:59.370
+C Optimize\sthe\sxMremap\smethod\sin\sos_unix.c\ssome.
+D 2013-03-20T18:25:49.737
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 87ea1cd1259c5840848e34007d72e772a2ab7528
 F src/os.h 8d92f87f5fe14b060a853ca704b8ef6d3daee79b
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c aedd47c2145edd49051452afbe82fa6f54a49b2a
+F src/os_unix.c c96bdc9e912c0f8226a03cd025566b5a43e1c387
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
 F src/pager.c d59af9a70aa2d7222b127351fa3cbe70660e4150
 F src/pager.h 241d72dc0905df042da165f086d03505cb0bb50c
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P aee1f53a74e636776cbbc11bdd5516432ad50533
-R 041b09b1e247c8054516280d9526a179
+P 14135da3cdbafd699563a29608f32347cda28338
+R ae7e97a190e1fdc49e8b167e558562e7
 U dan
-Z 8c309d7c56b08fcba504ca346091b196
+Z a86246ff854d247b1925a564cb8b08dc

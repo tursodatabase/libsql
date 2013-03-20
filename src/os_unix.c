@@ -4430,6 +4430,16 @@ static int unixShmUnmap(
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
+** Arguments x and y are both integers. Argument y must be a power of 2.
+** Round x up to the nearest integer multiple of y. For example:
+**
+**     ROUNDUP(0,  8) ->  0
+**     ROUNDUP(13, 8) -> 16
+**     ROUNDUP(32, 8) -> 32
+*/
+#define ROUNDUP(x,y)     (((x)+y-1)&~(y-1))
+
+/*
 ** Map, remap or unmap part of the database file.
 */
 static int unixMremap(
@@ -4443,10 +4453,10 @@ static int unixMremap(
   unixFile *p = (unixFile *)fd;   /* The underlying database file */
   int rc = SQLITE_OK;             /* Return code */
   void *pNew = 0;                 /* New mapping */
-  i64 nRnd;                       /* nNew rounded up to 4096 */
+  i64 nNewRnd;                    /* nNew rounded up */
+  i64 nOldRnd;                    /* nOld rounded up */
 
   assert( iOff==0 );
-  nRnd = (nNew+4095) & ~(i64)((1 << 12)-1);
 
   /* If the SQLITE_MREMAP_EXTEND flag is set, then the size of the requested 
   ** mapping (nNew bytes) may be greater than the size of the database file.
@@ -4461,10 +4471,43 @@ static int unixMremap(
     if( rc!=SQLITE_OK ) return rc;
   }
 
+  /* According to some sources, the effect of changing the size of the
+  ** underlying file on mapped regions that correspond to the added or
+  ** removed pages is undefined. However, there is reason to believe that
+  ** on modern platforms like Linux or OSX, things just work. For example,
+  ** it is possible to create a mapping larger than the file on disk and
+  ** extend the file on disk later on.
+  **
+  ** Exploit this on OSX to reduce the number of munmap()/mmap() calls
+  ** if the file size is changing. In this case all mappings are rounded
+  ** up to the nearest 4MB. And if a new mapping is requested that has the
+  ** same rounded size as an old mapping, the old mapping can simply be
+  ** reused as is.
+  **
+  ** It would be possible to do the above on Linux too. However, Linux has
+  ** the non-standard mremap() call to resize existing mappings, which can
+  ** be used instead.  */
+#if defined(__APPLE__)
+  nNewRnd = ROUNDUP(nNew, 4096*1024);
+  nOldRnd = ROUNDUP(nOld, 4096*1024);
+#else
+  nNewRnd = ROUNDUP(nNew, 4096*1);
+  nOldRnd = ROUNDUP(nOld, 4096*1);
+#endif
+
+  /* On OSX or Linux, reuse the old mapping if it is the right size. */
+#if defined(__APPLE__) || defined(__linux__)
+  if( nNewRnd==nOldRnd ){
+    return SQLITE_OK;
+  }
+#endif
+
+  /* On Linux, if there is both an old and new mapping, resize the old 
+  ** mapping using the non-standard mremap() call.  */
 #if defined(_GNU_SOURCE) && defined(__linux__)
-  if( nRnd && nOld ){
+  if( nNewRnd && nOldRnd ){
     void *pOld = *ppMap;
-    *ppMap = pNew = mremap(pOld, nOld, nNew, MREMAP_MAYMOVE);
+    *ppMap = pNew = mremap(pOld, nOldRnd, nNewRnd, MREMAP_MAYMOVE);
     if( pNew==MAP_FAILED ){
       *ppMap = 0;
       return SQLITE_IOERR_MREMAP;
@@ -4473,15 +4516,17 @@ static int unixMremap(
   }
 #endif
 
-  if( nOld!=0 ){
+  /* If we get this far, unmap any old mapping. */
+  if( nOldRnd!=0 ){
     void *pOld = *ppMap;
-    munmap(pOld, nOld);
+    munmap(pOld, nOldRnd);
   }
 
-  if( nNew>0 ){
+  /* And, if required, use mmap() to create a new mapping. */
+  if( nNewRnd>0 ){
     int flags = PROT_READ;
     if( (p->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
-    pNew = mmap(0, nRnd, flags, MAP_SHARED, p->h, iOff);
+    pNew = mmap(0, nNewRnd, flags, MAP_SHARED, p->h, iOff);
     if( pNew==MAP_FAILED ){
       pNew = 0;
       rc = SQLITE_IOERR_MREMAP;
