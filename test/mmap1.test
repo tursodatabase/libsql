@@ -1,0 +1,84 @@
+# 2013 March 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+set testprefix mmap1
+
+proc nRead {db} {
+  set bt [btree_from_db $db]
+  db_enter $db
+  array set stats [btree_pager_stats $bt]
+  db_leave $db
+  return $stats(read)
+}
+
+foreach {t mmap_size nRead} {
+  1 { PRAGMA mmap_size = -65536 }   4
+  2 { PRAGMA mmap_size = -50    } 156
+  3 { PRAGMA mmap_size = 0      } 344
+} {
+  do_multiclient_test tn {
+    sql1 $mmap_size
+
+    code2 {
+      set ::rcnt 0
+      proc rblob {n} {
+        set ::rcnt [expr (($::rcnt << 3) + $::rcnt + 456) & 0xFFFFFFFF]
+        set str [format %.8x [expr $::rcnt ^ 0xbdf20da3]] 
+        string range [string repeat $str [expr $n/4]] 1 $n
+      }
+      db2 func rblob rblob
+    }
+
+    sql2 { 
+      PRAGMA auto_vacuum = 1;
+      CREATE TABLE t1(a, b, UNIQUE(a, b));
+      INSERT INTO t1 VALUES(rblob(500), rblob(500));
+      INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    2
+      INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    4
+      INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    8
+      INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   16
+      INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   32
+    }
+    do_test $t.$tn.1 {
+      sql1 "SELECT count(*) FROM t1; PRAGMA integrity_check ; PRAGMA page_count"
+    } {32 ok 77}
+
+    # Have connection 2 shrink the file. Check connection 1 can still read it.
+    sql2 { DELETE FROM t1 WHERE rowid%2; }
+    do_test $t.$tn.2 {
+      sql1 "SELECT count(*) FROM t1; PRAGMA integrity_check ; PRAGMA page_count"
+    } {16 ok 42}
+
+    # Have connection 2 grow the file. Check connection 1 can still read it.
+    sql2 { INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1 }
+    do_test $t.$tn.3 {
+      sql1 "SELECT count(*) FROM t1; PRAGMA integrity_check ; PRAGMA page_count"
+    } {32 ok 79}
+
+    # Have connection 2 grow the file again. Check connection 1 is still ok.
+    sql2 { INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1 }
+    do_test $t.$tn.4 {
+      sql1 "SELECT count(*) FROM t1; PRAGMA integrity_check ; PRAGMA page_count"
+    } {64 ok 149}
+
+    # Check that the number of pages read by connection 1 indicates that the
+    # "PRAGMA mmap_size" command worked.
+    do_test $t.$tn.5 { nRead db } $nRead
+  }
+}
+
+
+finish_test
+

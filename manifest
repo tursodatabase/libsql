@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_io_methods.xMremap()\smethod\sto\sthe\sVFS\sinterface.\sAlso\s"PRAGMA\smmap_size".
-D 2013-03-19T19:28:06.473
+C Add\stest\sfile\smmap1.test.
+D 2013-03-20T10:07:43.411
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -630,6 +630,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
+F test/mmap1.test 46ff4038b6d300bb9b39d3f89ea1aef3dff9b88f
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -1038,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f8ca5622d99bedca957caa9ad311d798f63b3ce9
-R 1add721bf7e9669d3b4d4c28d41bb13b
+P 6183f1bd86ceed76d22d9762f3d7eb33262c62d1
+R 1501a2a578b96ab1d025c2aefaaa8f35
 U dan
-Z 3a3766130d03f0bab6c4936a9c26c7a5
+Z a7aa76ce5b116a8f55025f0891a0dfbb
