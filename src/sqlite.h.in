@@ -470,6 +470,7 @@ int sqlite3_exec(
 #define SQLITE_IOERR_SHMMAP            (SQLITE_IOERR | (21<<8))
 #define SQLITE_IOERR_SEEK              (SQLITE_IOERR | (22<<8))
 #define SQLITE_IOERR_DELETE_NOENT      (SQLITE_IOERR | (23<<8))
+#define SQLITE_IOERR_MREMAP            (SQLITE_IOERR | (24<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_CANTOPEN_NOTEMPDIR      (SQLITE_CANTOPEN | (1<<8))
@@ -746,11 +747,13 @@ struct sqlite3_io_methods {
   void (*xShmBarrier)(sqlite3_file*);
   int (*xShmUnmap)(sqlite3_file*, int deleteFlag);
   /* Methods above are valid for version 2 */
-  int (*xMremap)(sqlite3_file *fd, 
+  int (*xMremap)(sqlite3_file *fd, int flags,
       sqlite3_int64 iOff, sqlite3_int64 nOld, sqlite3_int64 nNew, void **ppMap);
   /* Methods above are valid for version 3 */
   /* Additional methods may be added in future releases */
 };
+
+#define SQLITE_MREMAP_EXTEND  0x0001        /* xMremap call may extend file */
 
 /*
 ** CAPI3REF: Standard File Control Opcodes

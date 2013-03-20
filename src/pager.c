@@ -3854,7 +3854,7 @@ static int pagerSyncHotJournal(Pager *pPager){
 */
 static int pagerUnmap(Pager *pPager){
   if( pPager->pMap ){
-    sqlite3OsMremap(pPager->fd, 0, pPager->nMap, 0, &pPager->pMap);
+    sqlite3OsMremap(pPager->fd, 0, 0, pPager->nMap, 0, &pPager->pMap);
     pPager->nMap = 0;
     pPager->nMapValid = 0;
   }
@@ -3864,7 +3864,7 @@ static int pagerUnmap(Pager *pPager){
 /*
 ** Create, or recreate, the memory mapping of the database file.
 */
-static int pagerMap(Pager *pPager){
+static int pagerMap(Pager *pPager, int bExtend){
   int rc = SQLITE_OK;             /* Return code */
   Pgno nPg;                       /* Size of mapping to request in pages */
   i64 sz;                         /* Size of mapping to request in bytes */
@@ -3882,7 +3882,8 @@ static int pagerMap(Pager *pPager){
   if( sz>pPager->nMapLimit ) sz = pPager->nMapLimit;
 
   if( sz!=pPager->nMapValid ){
-    rc = sqlite3OsMremap(pPager->fd, 0, pPager->nMap, sz, &pPager->pMap);
+    int flags = (bExtend ? SQLITE_MREMAP_EXTEND : 0);
+    rc = sqlite3OsMremap(pPager->fd, flags, 0, pPager->nMap, sz, &pPager->pMap);
     if( rc==SQLITE_OK ){
       assert( pPager->pMap!=0 );
       pPager->nMap = sz;
@@ -4246,10 +4247,17 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   ** file size will be.
   */
   assert( rc!=SQLITE_OK || isOpen(pPager->fd) );
-  if( rc==SQLITE_OK && pPager->dbSize>pPager->dbHintSize ){
+  if( rc==SQLITE_OK 
+   && (pList->pDirty ? pPager->dbSize : pList->pgno+1)>pPager->dbHintSize 
+  ){
     sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
     sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
     pPager->dbHintSize = pPager->dbSize;
+
+    if( pPager->nMmapOut==0 && pPager->nMapLimit>0 ){
+      pPager->dbFileSize = pPager->dbSize;
+      pagerMap(pPager, 1);
+    }
   }
 
   while( rc==SQLITE_OK && pList ){
@@ -5273,7 +5281,7 @@ int sqlite3PagerAcquire(
 
     if( bMmapOk ){
       if( pPager->pMap==0 || (pPager->bMapResize && pPager->nMmapOut==0) ){
-        rc = pagerMap(pPager);
+        rc = pagerMap(pPager, 0);
       }
       if( rc==SQLITE_OK && pPager->nMap>=((i64)pgno * pPager->pageSize) ){
         if( pPager->eState>PAGER_READER ){

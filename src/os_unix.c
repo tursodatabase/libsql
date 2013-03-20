@@ -4434,6 +4434,7 @@ static int unixShmUnmap(
 */
 static int unixMremap(
   sqlite3_file *fd,               /* Main database file */
+  int flags,                      /* Mask of SQLITE_MREMAP_XXX flags */
   sqlite3_int64 iOff,             /* Offset to start mapping at */
   sqlite3_int64 nOld,             /* Size of old mapping, or zero */
   sqlite3_int64 nNew,             /* Size of new mapping, or zero */
@@ -4442,8 +4443,35 @@ static int unixMremap(
   unixFile *p = (unixFile *)fd;   /* The underlying database file */
   int rc = SQLITE_OK;             /* Return code */
   void *pNew = 0;                 /* New mapping */
+  i64 nRnd;                       /* nNew rounded up to 4096 */
 
   assert( iOff==0 );
+  nRnd = (nNew+4095) & ~(i64)((1 << 12)-1);
+
+  /* If the SQLITE_MREMAP_EXTEND flag is set, then the size of the requested 
+  ** mapping (nNew bytes) may be greater than the size of the database file.
+  ** If this is the case, extend the file on disk using ftruncate().  */
+  assert( nNew>0 || (flags & SQLITE_MREMAP_EXTEND)==0 );
+  if( flags & SQLITE_MREMAP_EXTEND ){
+    struct stat statbuf;          /* Low-level file information */
+    rc = osFstat(p->h, &statbuf);
+    if( rc==SQLITE_OK && nNew>statbuf.st_size ){
+      rc = robust_ftruncate(p->h, nNew);
+    }
+    if( rc!=SQLITE_OK ) return rc;
+  }
+
+#if defined(_GNU_SOURCE) && defined(__linux__)
+  if( nRnd && nOld ){
+    void *pOld = *ppMap;
+    *ppMap = pNew = mremap(pOld, nOld, nNew, MREMAP_MAYMOVE);
+    if( pNew==MAP_FAILED ){
+      *ppMap = 0;
+      return SQLITE_IOERR_MREMAP;
+    }
+    return SQLITE_OK;
+  }
+#endif
 
   if( nOld!=0 ){
     void *pOld = *ppMap;
@@ -4453,11 +4481,10 @@ static int unixMremap(
   if( nNew>0 ){
     int flags = PROT_READ;
     if( (p->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
-    nNew = (nNew+4095) & ~(i64)((1 << 12)-1);
-    pNew = mmap(0, nNew, flags, MAP_SHARED, p->h, iOff);
+    pNew = mmap(0, nRnd, flags, MAP_SHARED, p->h, iOff);
     if( pNew==MAP_FAILED ){
       pNew = 0;
-      rc = SQLITE_IOERR;
+      rc = SQLITE_IOERR_MREMAP;
     }
   }
 
