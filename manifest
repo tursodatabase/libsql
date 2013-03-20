@@ -1,5 +1,5 @@
-C Bring\smakefiles\sand\sbuild\sscripts\sinto\salignment\swith\sthe\ssessions\sbranch.\nNo\schanges\sto\scode.
-D 2013-03-19T16:12:40.639
+C Fix\stext-to-numeric\stype\scasting\sso\sthat\sit\sworks\scorrectly\son\sUTF16\nstrings\sthat\scontain\scharacters\swhere\sthe\sLSB\sis\snumeric\sbut\sthe\sMSB\nis\snon-zero.\s\sTicket\s[689137afb6da41]
+D 2013-03-20T12:04:29.291
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c cd95ac64efa60e39faf9b5597443192ff27a22fa
 F src/update.c 28d2d098b43a2c70dae399896ea8a02f622410ef
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
-F src/util.c 0af2e515dc0dabacec931bca39525f6c3f1c5455
+F src/util.c 550f2b6a5c0085153a4d00462719fb17ee242792
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
 F src/vdbe.c 292f8f7ced59c29c63fe17830cbe5f5a0230cdf0
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
@@ -641,6 +641,7 @@ F test/notify2.test 9503e51b9a272a5405c205ad61b7623d5a9ca489
 F test/notify3.test a86259abbfb923aa27d30f0fc038c88e5251488a
 F test/notnull.test 2afad748d18fd66d01f66463de73b3e2501fb226
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
+F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
 F test/orderby1.test f33968647da5c546528fe4d2bf86c6a6a2e5a7ae
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
@@ -1038,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4fe2db1d866c80fe51f7fddbf9ce6753fb55b5f6
-R 7758dd15e3a5f0387c3f17443ec025d8
+P d1f41089aba075eef45fd696599e5d3a74c84d0c
+R ccf3378e4accef01a0ea31a61ac073d2
 U drh
-Z 7c5d1dfbeba3270fc7d5841fae61579f
+Z 400c45055ef48421e523d8328d092a1b
