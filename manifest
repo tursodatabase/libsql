@@ -1,5 +1,5 @@
-C Do\snot\suse\sthe\sLinux\smremap()\scall.\sUse\sthe\ssame\sstrategy\sfor\sxMremap()\sas\son\sOSX\sinstead.
-D 2013-03-21T14:47:47.427
+C Fix\sa\sproblem\swhen\sopening\sa\swrite-transaction\swhile\sthere\sexist\sread-only\sb-tree\scursors\sin\smmap\smode.
+D 2013-03-21T15:57:32.562
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c d4d551f05a555926a7c0f49c2e263f7ee2b1c59f
+F src/btree.c dd4683fa671f0b2b4bc0831036adaa2a5d1806ee
 F src/btree.h d3259057a38494c4c4358e377032158c762e3d8b
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 375e5df716e03b9343c5e1211be3b24e6d6dff05
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9529ed88a71fee02fae72dc86f0669bd6856ff92
-R 7e61f02cabbded666ed9e0992a636a37
+P 5ed8ad780c991d2ca44003ee84350fb5e95ad58e
+R fc9bd174ea58046e3b5bc29693aabeb6
 U dan
-Z 67f89f7e2101ab4157bb24e7a7ac302a
+Z 811da101d49a049638aae5d61fad1590
