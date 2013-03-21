@@ -106,7 +106,7 @@ struct ParseContext {
 ** This function is equivalent to the standard isspace() function. 
 **
 ** The standard isspace() can be awkward to use safely, because although it
-** is defined to accept an argument of type int, its behaviour when passed
+** is defined to accept an argument of type int, its behavior when passed
 ** an integer that falls outside of the range of the unsigned char type
 ** is undefined (and sometimes, "undefined" means segfault). This wrapper
 ** is defined to accept an argument of type char, and always returns 0 for

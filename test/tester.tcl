@@ -123,7 +123,7 @@ if {[info command sqlite_orig]==""} {
       set res
     } else {
       # This command is not opening a new database connection. Pass the 
-      # arguments through to the C implemenation as the are.
+      # arguments through to the C implementation as the are.
       #
       uplevel 1 sqlite_orig $args
     }
@@ -1037,7 +1037,7 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
 # boolean, indicating whether or not the process actually crashed or
 # reported some other error. The second element in the returned list is the
 # error message. This is "child process exited abnormally" if the crash
-# occured.
+# occurred.
 #
 #   crashsql -delay CRASHDELAY -file CRASHFILE ?-blocksize BLOCKSIZE? $sql
 #
@@ -1317,7 +1317,7 @@ proc do_ioerr_test {testname args} {
       }
     }
 
-    # If an IO error occured, then the checksum of the database should
+    # If an IO error occurred, then the checksum of the database should
     # be the same as before the script that caused the IO error was run.
     #
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {

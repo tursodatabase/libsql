@@ -505,7 +505,7 @@ if {[permutation] != "memsubsys1"} {
 sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 #-----------------------------------------------------------------------
-# The following tests verify the behaviour of the incremental IO
+# The following tests verify the behavior of the incremental IO
 # APIs in the following cases:
 #
 #     7.1 A row that containing an open blob is modified.
@@ -516,7 +516,7 @@ sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 #     7.3 An INCREMENTAL VACUUM moves an overflow page that is part
 #         of an open blob.
 #
-# In the first case above, correct behaviour is for all subsequent
+# In the first case above, correct behavior is for all subsequent
 # read/write operations on the blob-handle to return SQLITE_ABORT.
 # More accurately, blob-handles are invalidated whenever the table
 # they belong to is written to.

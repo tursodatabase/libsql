@@ -337,7 +337,7 @@ static int openDirectory(const char*, int*);
 ** to all overrideable system calls.
 */
 static struct unix_syscall {
-  const char *zName;            /* Name of the sytem call */
+  const char *zName;            /* Name of the system call */
   sqlite3_syscall_ptr pCurrent; /* Current value of the system call */
   sqlite3_syscall_ptr pDefault; /* Default value */
 } aSyscall[] = {
@@ -1909,7 +1909,7 @@ static int nolockClose(sqlite3_file *id) {
 /******************************************************************************
 ************************* Begin dot-file Locking ******************************
 **
-** The dotfile locking implementation uses the existance of separate lock
+** The dotfile locking implementation uses the existence of separate lock
 ** files (really a directory) to control access to the database.  This works
 ** on just about every filesystem imaginable.  But there are serious downsides:
 **
@@ -1924,7 +1924,7 @@ static int nolockClose(sqlite3_file *id) {
 **
 ** Dotfile locking works by creating a subdirectory in the same directory as
 ** the database and with the same name but with a ".lock" extension added.
-** The existance of a lock directory implies an EXCLUSIVE lock.  All other
+** The existence of a lock directory implies an EXCLUSIVE lock.  All other
 ** lock types (SHARED, RESERVED, PENDING) are mapped into EXCLUSIVE.
 */
 
@@ -3413,7 +3413,7 @@ static int unixSync(sqlite3_file *id, int flags){
   }
 
   /* Also fsync the directory containing the file if the DIRSYNC flag
-  ** is set.  This is a one-time occurrance.  Many systems (examples: AIX)
+  ** is set.  This is a one-time occurrence.  Many systems (examples: AIX)
   ** are unable to fsync a directory, so ignore errors on the fsync.
   */
   if( pFile->ctrlFlags & UNIXFILE_DIRSYNC ){
@@ -4787,7 +4787,7 @@ static int fillInUnixFile(
     unixEnterMutex();
     rc = findInodeInfo(pNew, &pNew->pInode);
     if( rc!=SQLITE_OK ){
-      /* If an error occured in findInodeInfo(), close the file descriptor
+      /* If an error occurred in findInodeInfo(), close the file descriptor
       ** immediately, before releasing the mutex. findInodeInfo() may fail
       ** in two scenarios:
       **
@@ -5425,7 +5425,7 @@ static int unixDelete(
 }
 
 /*
-** Test the existance of or access permissions of file zPath. The
+** Test the existence of or access permissions of file zPath. The
 ** test performed depends on the value of flags:
 **
 **     SQLITE_ACCESS_EXISTS: Return 1 if the file exists

@@ -267,7 +267,7 @@ static int fts3_near_match_cmd(
 **
 ** Whether or not the arguments are present, this command returns a list of
 ** two integers - the initial chunksize and threshold when the command is
-** invoked. This can be used to restore the default behaviour after running
+** invoked. This can be used to restore the default behavior after running
 ** tests. For example:
 **
 **    # Override incr-load settings for testing:

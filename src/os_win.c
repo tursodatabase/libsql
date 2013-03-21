@@ -308,7 +308,7 @@ static int sqlite3_os_type = 0;
 ** to all overrideable system calls.
 */
 static struct win_syscall {
-  const char *zName;            /* Name of the sytem call */
+  const char *zName;            /* Name of the system call */
   sqlite3_syscall_ptr pCurrent; /* Current value of the system call */
   sqlite3_syscall_ptr pDefault; /* Default value */
 } aSyscall[] = {
@@ -2025,7 +2025,7 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
   ** containing the lower 32-bits of the new file-offset. Or, if it fails,
   ** it returns INVALID_SET_FILE_POINTER. However according to MSDN, 
   ** INVALID_SET_FILE_POINTER may also be a valid new offset. So to determine 
-  ** whether an error has actually occured, it is also necessary to call 
+  ** whether an error has actually occurred, it is also necessary to call 
   ** GetLastError().
   */
   dwRet = osSetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
@@ -2171,7 +2171,7 @@ static int winWrite(
   int amt,                        /* Number of bytes to write */
   sqlite3_int64 offset            /* Offset into the file to begin writing at */
 ){
-  int rc = 0;                     /* True if error has occured, else false */
+  int rc = 0;                     /* True if error has occurred, else false */
   winFile *pFile = (winFile*)id;  /* File handle */
   int nRetry = 0;                 /* Number of retries */
 
@@ -3993,7 +3993,7 @@ static int winDelete(
 }
 
 /*
-** Check the existance and status of a file.
+** Check the existence and status of a file.
 */
 static int winAccess(
   sqlite3_vfs *pVfs,         /* Not used on win32 */

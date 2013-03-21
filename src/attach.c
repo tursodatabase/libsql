@@ -109,7 +109,7 @@ static void attachFunc(
     }
   }
 
-  /* Allocate the new entry in the db->aDb[] array and initialise the schema
+  /* Allocate the new entry in the db->aDb[] array and initialize the schema
   ** hash tables.
   */
   if( db->aDb==db->aDbStatic ){
@@ -126,7 +126,7 @@ static void attachFunc(
 
   /* Open the database file. If the btree is successfully opened, use
   ** it to obtain the database schema. At this point the schema may
-  ** or may not be initialised.
+  ** or may not be initialized.
   */
   flags = db->openFlags;
   rc = sqlite3ParseUri(db->pVfs->zName, zFile, &flags, &pVfs, &zPath, &zErr);

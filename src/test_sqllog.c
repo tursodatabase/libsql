@@ -32,7 +32,7 @@
 **
 **   Usually, if the application opens the same database file more than once
 **   (either by attaching it or by using more than one database handle), only
-**   a single copy is made. This behaviour may be overridden (so that a 
+**   a single copy is made. This behavior may be overridden (so that a 
 **   separate copy is taken each time the database file is opened or attached)
 **   by setting the environment variable SQLITE_SQLLOG_REUSE_FILES to 0.
 **

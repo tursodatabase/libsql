@@ -562,7 +562,7 @@ static int allowedOp(int op){
 ** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
 **
-** If left/right precendence rules come into play when determining the
+** If left/right precedence rules come into play when determining the
 ** collating
 ** side of the comparison, it remains associated with the same side after
 ** the commutation. So "Y collate NOCASE op X" becomes 
@@ -3628,7 +3628,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
   /* If there is no ORDER BY clause and the SQLITE_ReverseOrder flag
   ** is set, then reverse the order that the index will be scanned
   ** in. This is used for application testing, to help find cases
-  ** where application behaviour depends on the (undefined) order that
+  ** where application behavior depends on the (undefined) order that
   ** SQLite outputs rows in in the absence of an ORDER BY clause.  */
   if( !p->pOrderBy && pParse->db->flags & SQLITE_ReverseOrder ){
     p->cost.plan.wsFlags |= WHERE_REVERSE;

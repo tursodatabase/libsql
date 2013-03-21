@@ -4570,7 +4570,7 @@ int sqlite3Select(
         ** value of x, the only row required).
         **
         ** A special flag must be passed to sqlite3WhereBegin() to slightly
-        ** modify behaviour as follows:
+        ** modify behavior as follows:
         **
         **   + If the query is a "SELECT min(x)", then the loop coded by
         **     where.c should not iterate over any values with a NULL value

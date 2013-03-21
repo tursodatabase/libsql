@@ -1005,7 +1005,7 @@ static int DbTransPostCmd(
       /* This is a tricky scenario to handle. The most likely cause of an
       ** error is that the exec() above was an attempt to commit the 
       ** top-level transaction that returned SQLITE_BUSY. Or, less likely,
-      ** that an IO-error has occured. In either case, throw a Tcl exception
+      ** that an IO-error has occurred. In either case, throw a Tcl exception
       ** and try to rollback the transaction.
       **
       ** But it could also be that the user executed one or more BEGIN, 

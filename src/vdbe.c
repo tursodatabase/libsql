@@ -5784,7 +5784,7 @@ case OP_VOpen: {
     /* Initialize sqlite3_vtab_cursor base class */
     pVtabCursor->pVtab = pVtab;
 
-    /* Initialise vdbe cursor object */
+    /* Initialize vdbe cursor object */
     pCur = allocateCursor(p, pOp->p1, 0, -1, 0);
     if( pCur ){
       pCur->pVtabCursor = pVtabCursor;

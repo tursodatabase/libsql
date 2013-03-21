@@ -179,7 +179,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
 
   /* zMasterSchema and zInitScript are set to point at the master schema
   ** and initialisation script appropriate for the database being
-  ** initialised. zMasterName is the name of the master table.
+  ** initialized. zMasterName is the name of the master table.
   */
   if( !OMIT_TEMPDB && iDb==1 ){
     zMasterSchema = temp_master_schema;
@@ -404,7 +404,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
     }
   }
 
-  /* Once all the other databases have been initialised, load the schema
+  /* Once all the other databases have been initialized, load the schema
   ** for the TEMP database. This is loaded last, as the TEMP database
   ** schema may contain references to objects in other databases.
   */
@@ -427,7 +427,7 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
 }
 
 /*
-** This routine is a no-op if the database schema is already initialised.
+** This routine is a no-op if the database schema is already initialized.
 ** Otherwise, the schema is loaded. An error code is returned.
 */
 int sqlite3ReadSchema(Parse *pParse){
