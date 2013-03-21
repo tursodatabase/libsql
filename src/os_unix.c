@@ -4478,16 +4478,12 @@ static int unixMremap(
   ** it is possible to create a mapping larger than the file on disk and
   ** extend the file on disk later on.
   **
-  ** Exploit this on OSX to reduce the number of munmap()/mmap() calls
-  ** if the file size is changing. In this case all mappings are rounded
-  ** up to the nearest 4MB. And if a new mapping is requested that has the
-  ** same rounded size as an old mapping, the old mapping can simply be
-  ** reused as is.
-  **
-  ** It would be possible to do the above on Linux too. However, Linux has
-  ** the non-standard mremap() call to resize existing mappings, which can
-  ** be used instead.  */
-#if defined(__APPLE__)
+  ** Exploit this on Linux and OSX to reduce the number of munmap()/mmap() 
+  ** calls required if the file size is changing. In this case all mappings 
+  ** are rounded up to the nearest 4MB. And if a new mapping is requested 
+  ** that has the same rounded size as an old mapping, the old mapping can 
+  ** be reused as is. */
+#if defined(__APPLE__) || defined(__linux__)
   nNewRnd = ROUNDUP(nNew, 4096*1024);
   nOldRnd = ROUNDUP(nOld, 4096*1024);
 #else
@@ -4498,20 +4494,6 @@ static int unixMremap(
   /* On OSX or Linux, reuse the old mapping if it is the right size. */
 #if defined(__APPLE__) || defined(__linux__)
   if( nNewRnd==nOldRnd ){
-    return SQLITE_OK;
-  }
-#endif
-
-  /* On Linux, if there is both an old and new mapping, resize the old 
-  ** mapping using the non-standard mremap() call.  */
-#if defined(_GNU_SOURCE) && defined(__linux__)
-  if( nNewRnd && nOldRnd ){
-    void *pOld = *ppMap;
-    *ppMap = pNew = mremap(pOld, nOldRnd, nNewRnd, MREMAP_MAYMOVE);
-    if( pNew==MAP_FAILED ){
-      *ppMap = 0;
-      return SQLITE_IOERR_MREMAP;
-    }
     return SQLITE_OK;
   }
 #endif
