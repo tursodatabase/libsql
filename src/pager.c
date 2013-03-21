@@ -5130,9 +5130,13 @@ int sqlite3PagerSharedLock(Pager *pPager){
       rc = pagerPagecount(pPager, &nPage);
       if( rc ) goto failed;
 
-      if( nPage>0 ){
+      if( nPage>0 || pPager->pMap ){
         IOTRACE(("CKVERS %p %d\n", pPager, sizeof(dbFileVers)));
-        rc = sqlite3OsRead(pPager->fd, &dbFileVers, sizeof(dbFileVers), 24);
+        if( pPager->pMap ){
+          memcpy(&dbFileVers, &((u8 *)(pPager->pMap))[24], sizeof(dbFileVers));
+        }else{
+          rc = sqlite3OsRead(pPager->fd, &dbFileVers, sizeof(dbFileVers), 24);
+        }
         if( rc!=SQLITE_OK ){
           goto failed;
         }
