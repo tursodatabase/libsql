@@ -1,5 +1,5 @@
-C Avoid\scalling\sxRead()\son\sa\spart\sof\sthe\sdatabase\sfile\sthat\sis\smemory\smapped.
-D 2013-03-21T20:00:07.703
+C Fix\scases\swhere\sxRead()\swas\sbeing\sused\sto\sread\sfrom\sa\smemory\smapped\spart\sof\sthe\sdatabase\sfile.
+D 2013-03-21T20:39:55.225
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 8d92f87f5fe14b060a853ca704b8ef6d3daee79b
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c be66c31337361a72227638d6f41c7f2031739642
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
-F src/pager.c 5ee2ec6a10aa3d85548e6f0337260f0b2a670899
+F src/pager.c 520001015155efee9599c807dfd38e5fff9c6e36
 F src/pager.h 241d72dc0905df042da165f086d03505cb0bb50c
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 32e0bbb73609ac3ad096a60f1de3095bc79fb0cc
-R 78d8196d81dc00ab1ac5a50caf4d157f
+P c8eac290a7240d69494bd0dad5ed1fdc2505f703
+R 0cdb7517bc23cd336050741c62097e56
 U dan
-Z e76f59323062e94934c6de1e92e548e8
+Z 0dd43854f08b06a022f11b1a174cdf13

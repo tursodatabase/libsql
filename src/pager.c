@@ -2088,6 +2088,24 @@ static void pagerReportSize(Pager *pPager){
 #endif
 
 /*
+** Write nBuf bytes of data from buffer pBuf to offset iOff of the 
+** database file. If this part of the database file is memory mapped,
+** use memcpy() to do so. Otherwise, call sqlite3OsWrite().
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error 
+** occurs.
+*/
+static int pagerWriteData(Pager *pPager, const void *pBuf, int nBuf, i64 iOff){
+  int rc = SQLITE_OK;
+  if( pPager->nMapValid>=(iOff+nBuf) ){
+    memcpy(&((u8 *)(pPager->pMap))[iOff], pBuf, nBuf);
+  }else{
+    rc = sqlite3OsWrite(pPager->fd, pBuf, nBuf, iOff);
+  }
+  return rc;
+}
+
+/*
 ** Read a single page from either the journal file (if isMainJrnl==1) or
 ** from the sub-journal (if isMainJrnl==0) and playback that page.
 ** The page begins at offset *pOffset into the file. The *pOffset
@@ -2261,7 +2279,7 @@ static int pager_playback_one_page(
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
     testcase( !isSavepnt && pPg!=0 && (pPg->flags&PGHDR_NEED_SYNC)!=0 );
     assert( !pagerUseWal(pPager) );
-    rc = sqlite3OsWrite(pPager->fd, (u8*)aData, pPager->pageSize, ofst);
+    rc = pagerWriteData(pPager, aData, pPager->pageSize, ofst);
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
@@ -3853,6 +3871,7 @@ static int pagerSyncHotJournal(Pager *pPager){
 ** Unmap any memory mapping of the database file.
 */
 static int pagerUnmap(Pager *pPager){
+  assert( pPager->nMmapOut==0 );
   if( pPager->pMap ){
     sqlite3OsMremap(pPager->fd, 0, 0, pPager->nMap, 0, &pPager->pMap);
     pPager->nMap = 0;
@@ -4282,11 +4301,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
       CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM, pData);
 
       /* Write out the page data. */
-      if( pPager->nMapValid>=(offset+pPager->pageSize) ){
-        memcpy(&((u8 *)(pPager->pMap))[offset], pData, pPager->pageSize);
-      }else{
-        rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize, offset);
-      }
+      pagerWriteData(pPager, pData, pPager->pageSize, offset);
 
       /* If page 1 was just written, update Pager.dbFileVers to match
       ** the value now stored in the database file. If writing this 
@@ -7085,6 +7100,8 @@ int sqlite3PagerOpenWal(
   assert( pPager->eState==PAGER_READER || !pbOpen );
   assert( pbOpen==0 || *pbOpen==0 );
   assert( pbOpen!=0 || (!pPager->tempFile && !pPager->pWal) );
+
+  pagerUnmap(pPager);
 
   if( !pPager->tempFile && !pPager->pWal ){
     if( !sqlite3PagerWalSupported(pPager) ) return SQLITE_CANTOPEN;
