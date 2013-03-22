@@ -249,6 +249,8 @@ struct unixFile {
   unsigned char transCntrChng;   /* True if the transaction counter changed */
   unsigned char dbUpdate;        /* True if any part of database file changed */
   unsigned char inNormalWrite;   /* True if in a normal write operation */
+  sqlite3_int64 mmapSize;        /* Size of xMremap() */
+  void *pMapRegion;              /* Area memory mapped */
 #endif
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
@@ -3072,6 +3074,7 @@ static int unixRead(
   unixFile *pFile = (unixFile *)id;
   int got;
   assert( id );
+  assert( offset>=pFile->mmapSize );  /* Never read from the mmapped region */
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
@@ -3154,6 +3157,7 @@ static int unixWrite(
   int wrote = 0;
   assert( id );
   assert( amt>0 );
+  assert( offset>=pFile->mmapSize );   /* Never write into the mmapped region */
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
@@ -4457,6 +4461,8 @@ static int unixMremap(
   i64 nOldRnd;                    /* nOld rounded up */
 
   assert( iOff==0 );
+  assert( p->mmapSize==nOld );
+  assert( p->pMapRegion==0 || p->pMapRegion==(*ppMap) );
 
   /* If the SQLITE_MREMAP_EXTEND flag is set, then the size of the requested 
   ** mapping (nNew bytes) may be greater than the size of the database file.
@@ -4494,6 +4500,7 @@ static int unixMremap(
   /* On OSX or Linux, reuse the old mapping if it is the right size. */
 #if defined(__APPLE__) || defined(__linux__)
   if( nNewRnd==nOldRnd ){
+    VVA_ONLY( p->mmapSize = nNew; )
     return SQLITE_OK;
   }
 #endif
@@ -4502,6 +4509,7 @@ static int unixMremap(
   if( nOldRnd!=0 ){
     void *pOld = *ppMap;
     munmap(pOld, nOldRnd);
+    VVA_ONLY( p->mmapSize = 0; p->pMapRegion = 0; );
   }
 
   /* And, if required, use mmap() to create a new mapping. */
@@ -4511,7 +4519,10 @@ static int unixMremap(
     pNew = mmap(0, nNewRnd, flags, MAP_SHARED, p->h, iOff);
     if( pNew==MAP_FAILED ){
       pNew = 0;
+      VVA_ONLY( p->mmapSize = 0; p->pMapRegion = 0; )
       rc = SQLITE_IOERR_MREMAP;
+    }else{
+      VVA_ONLY( p->mmapSize = nNew; p->pMapRegion = pNew; )
     }
   }
 
@@ -4846,6 +4857,7 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
+  VVA_ONLY( pNew->mmapSize = 0; )
   if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
