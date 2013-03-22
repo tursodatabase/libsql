@@ -1,5 +1,5 @@
-C Add\sa\sfix\sfor\sthe\sassert()\sstatements\sadded\sby\sthe\sprevious\scommit.
-D 2013-03-22T17:46:11.890
+C Allow\sthe\sdatabase\sfile\sto\sbe\smemory\smapped\sin\swal\smode.
+D 2013-03-22T18:20:14.143
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,8 +162,8 @@ F src/os.h 8d92f87f5fe14b060a853ca704b8ef6d3daee79b
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 55d110879332831b734fd510cfbc5700e96a83cf
 F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
-F src/pager.c 520001015155efee9599c807dfd38e5fff9c6e36
-F src/pager.h 241d72dc0905df042da165f086d03505cb0bb50c
+F src/pager.c 12b8ff12519fe529a92884c4cdb99afecb1bea3c
+F src/pager.h bbc9170281c9d5d603b2175fdc8ea908e47269a7
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
@@ -249,8 +249,8 @@ F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
-F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
-F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
+F src/wal.c 7fec703bb0770d9faad5190f49897a8bc8eb239f
+F src/wal.h d99ce512ac60f9147a0640e9e6fb67dd1057b781
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
 F src/where.c bdbbfa7ef4ea04c8d9b09585b45d4717a72f980a
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 765615f9fba7c1765eb741cb98a09a28b464ee55
-R 125e508e18383c5f0a5b411a39a78cab
+P 19345416ed5e1ab5b0b35993b0b9069c2fb1683b
+R 7243a86b7c03fc5d49450319f9d9b1bf
 U dan
-Z 4d1b2a2cebcc3fe5bdd2b5af2205540b
+Z 7b1a30ba76756800b3f32db2afc843bf

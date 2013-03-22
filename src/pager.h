@@ -174,6 +174,10 @@ int sqlite3SectorSize(sqlite3_file *);
 
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);
+int sqlite3PagerSetFilesize(Pager *, i64);
+
+/* Write data to the database file */
+int sqlite3PagerWriteData(Pager *pPager, const void *pBuf, int nBuf, i64 iOff);
 
 #if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_WAL)
 void *sqlite3PagerCodec(DbPage *);

@@ -2095,7 +2095,7 @@ static void pagerReportSize(Pager *pPager){
 ** Return SQLITE_OK if successful, or an SQLite error code if an error 
 ** occurs.
 */
-static int pagerWriteData(Pager *pPager, const void *pBuf, int nBuf, i64 iOff){
+int sqlite3PagerWriteData(Pager *pPager, const void *pBuf, int nBuf, i64 iOff){
   int rc = SQLITE_OK;
   if( pPager->nMapValid>=(iOff+nBuf) ){
     memcpy(&((u8 *)(pPager->pMap))[iOff], pBuf, nBuf);
@@ -2279,7 +2279,7 @@ static int pager_playback_one_page(
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
     testcase( !isSavepnt && pPg!=0 && (pPg->flags&PGHDR_NEED_SYNC)!=0 );
     assert( !pagerUseWal(pPager) );
-    rc = pagerWriteData(pPager, aData, pPager->pageSize, ofst);
+    rc = sqlite3PagerWriteData(pPager, aData, pPager->pageSize, ofst);
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
@@ -2864,11 +2864,10 @@ end_playback:
 ** If an IO error occurs, then the IO error is returned to the caller.
 ** Otherwise, SQLITE_OK is returned.
 */
-static int readDbPage(PgHdr *pPg){
+static int readDbPage(PgHdr *pPg, u32 iFrame){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
   Pgno pgno = pPg->pgno;       /* Page number to read */
   int rc = SQLITE_OK;          /* Return code */
-  int isInWal = 0;             /* True if page is in log file */
   int pgsz = pPager->pageSize; /* Number of bytes to read */
 
   assert( pPager->eState>=PAGER_READER && !MEMDB );
@@ -2880,11 +2879,10 @@ static int readDbPage(PgHdr *pPg){
     return SQLITE_OK;
   }
 
-  if( pagerUseWal(pPager) ){
+  if( iFrame ){
     /* Try to pull the page from the write-ahead log. */
-    rc = sqlite3WalRead(pPager->pWal, pgno, &isInWal, pgsz, pPg->pData);
-  }
-  if( rc==SQLITE_OK && !isInWal ){
+    rc = sqlite3WalReadFrame(pPager->pWal, iFrame, pgsz, pPg->pData);
+  }else{
     i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
     if( pPager->pMap && pPager->nMapValid>=iOffset+pPager->pageSize ){
       memcpy(pPg->pData, &((u8 *)(pPager->pMap))[iOffset], pPager->pageSize);
@@ -2972,7 +2970,13 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
     if( sqlite3PcachePageRefcount(pPg)==1 ){
       sqlite3PcacheDrop(pPg);
     }else{
-      rc = readDbPage(pPg);
+      u32 iFrame = 0;
+      if( pagerUseWal(pPager) ){
+        rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
+      }
+      if( rc==SQLITE_OK ){
+        rc = readDbPage(pPg, iFrame);
+      }
       if( rc==SQLITE_OK ){
         pPager->xReiniter(pPg);
       }
@@ -3388,7 +3392,6 @@ static void pagerFixMaplimit(Pager *pPager){
    || pPager->fd->pMethods->iVersion<3 
    || pPager->fd->pMethods->xMremap==0 
    || pPager->tempFile 
-   || pPager->pWal 
   ){
     pPager->nMapLimit = 0;
   }else if( pPager->nMapCfgLimit<0 ){
@@ -3888,9 +3891,9 @@ static int pagerMap(Pager *pPager, int bExtend){
   Pgno nPg;                       /* Size of mapping to request in pages */
   i64 sz;                         /* Size of mapping to request in bytes */
 
-  assert( pPager->pWal==0 && isOpen(pPager->fd) && pPager->tempFile==0 );
+  assert( isOpen(pPager->fd) && pPager->tempFile==0 );
   assert( pPager->pMap==0 || pPager->nMap>0 );
-  assert( pPager->eState>=1 );
+  /* assert( pPager->eState>=1 ); */
   assert( pPager->nMmapOut==0 );
   assert( pPager->nMapLimit>0 );
 
@@ -4214,6 +4217,46 @@ static int syncJournal(Pager *pPager, int newHdr){
 }
 
 /*
+** This is called by the wal.c module at the start of a checkpoint. If the
+** checkpoint runs to completion, it will set the database file size to
+** szReq bytes. This function performs two tasks:
+**
+**   * If the file is currently less than szReq bytes in size, an
+**     xFileControl(SQLITE_FNCTL_SIZE_HINT) is issued to inform the OS
+**     layer of the expected file size, and
+**
+**   * If mmap is being used, then the mapping is extended to szReq
+**     bytes in size.
+**
+** SQLITE_OK is returned if successful, or an error code if an error occurs.
+*/
+int sqlite3PagerSetFilesize(Pager *pPager, i64 szReq){
+  int rc;
+  sqlite3_int64 sz;
+
+  assert( pPager->eState==PAGER_OPEN );
+  assert( pPager->nMmapOut==0 );
+
+  rc = sqlite3OsFileSize(pPager->fd, &sz);
+  if( rc==SQLITE_OK ){
+    if( sz>szReq ){
+      sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &sz);
+    }
+  }
+
+  if( rc==SQLITE_OK 
+   && pPager->nMapLimit>0 
+   && pPager->nMapValid<szReq 
+   && pPager->nMapValid<pPager->nMapLimit 
+  ){
+    pPager->dbFileSize = (szReq / pPager->pageSize);
+    rc = pagerMap(pPager, 1);
+  }
+
+  return rc;
+}
+
+/*
 ** The argument is the first in a linked list of dirty pages connected
 ** by the PgHdr.pDirty pointer. This function writes each one of the
 ** in-memory pages in the list to the database file. The argument may
@@ -4275,7 +4318,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
 
     if( pPager->nMmapOut==0 && pPager->nMapLimit>0 ){
       pPager->dbFileSize = pPager->dbSize;
-      pagerMap(pPager, 1);
+      rc = pagerMap(pPager, 1);
     }
   }
 
@@ -4301,7 +4344,7 @@ static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
       CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM, pData);
 
       /* Write out the page data. */
-      pagerWriteData(pPager, pData, pPager->pageSize, offset);
+      rc = sqlite3PagerWriteData(pPager, pData, pPager->pageSize, offset);
 
       /* If page 1 was just written, update Pager.dbFileVers to match
       ** the value now stored in the database file. If writing this 
@@ -5275,6 +5318,7 @@ int sqlite3PagerAcquire(
 ){
   int rc = SQLITE_OK;
   PgHdr *pPg = 0;
+  u32 iFrame = 0;                 /* Frame to read from WAL file */
   const int noContent = (flags & PAGER_ACQUIRE_NOCONTENT);
 
   /* It is acceptable to use a read-only (mmap) page for any page except
@@ -5287,6 +5331,7 @@ int sqlite3PagerAcquire(
 
   assert( pPager->eState>=PAGER_READER );
   assert( assert_pager_state(pPager) );
+  assert( noContent==0 || bMmapOk==0 );
 
   if( pgno==0 ){
     return SQLITE_CORRUPT_BKPT;
@@ -5298,7 +5343,12 @@ int sqlite3PagerAcquire(
     rc = pPager->errCode;
   }else{
 
-    if( bMmapOk ){
+    if( bMmapOk && pagerUseWal(pPager) ){
+      rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
+      if( rc!=SQLITE_OK ) goto pager_acquire_err;
+    }
+
+    if( iFrame==0 && bMmapOk ){
       if( pPager->pMap==0 || (pPager->bMapResize && pPager->nMmapOut==0) ){
         rc = pagerMap(pPager, 0);
       }
@@ -5378,9 +5428,13 @@ int sqlite3PagerAcquire(
       memset(pPg->pData, 0, pPager->pageSize);
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{
+      if( pagerUseWal(pPager) && bMmapOk==0 ){
+        rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
+        if( rc!=SQLITE_OK ) goto pager_acquire_err;
+      }
       assert( pPg->pPager==pPager );
       pPager->aStat[PAGER_STAT_MISS]++;
-      rc = readDbPage(pPg);
+      rc = readDbPage(pPg, iFrame);
       if( rc!=SQLITE_OK ){
         goto pager_acquire_err;
       }
@@ -7063,7 +7117,7 @@ static int pagerOpenWal(Pager *pPager){
   ** (e.g. due to malloc() failure), return an error code.
   */
   if( rc==SQLITE_OK ){
-    rc = sqlite3WalOpen(pPager->pVfs, 
+    rc = sqlite3WalOpen(pPager->pVfs, pPager,
         pPager->fd, pPager->zWal, pPager->exclusiveMode,
         pPager->journalSizeLimit, &pPager->pWal
     );
