@@ -3470,6 +3470,14 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     if( pFile->inNormalWrite && nByte==0 ){
       pFile->transCntrChng = 1;
     }
+
+    /* If the file was just truncated to a size smaller than the currently
+    ** mapped region, reduce the effective mapping size as well. SQLite will
+    ** use read() and write() to access data beyond this point from now on.  
+    */
+    if( nByte<pFile->mmapSize ){
+      pFile->mmapSize = nByte;
+    }
 #endif
 
     return SQLITE_OK;
@@ -4461,7 +4469,7 @@ static int unixMremap(
   i64 nOldRnd;                    /* nOld rounded up */
 
   assert( iOff==0 );
-  assert( p->mmapSize==nOld );
+  /* assert( p->mmapSize==nOld ); */
   assert( p->pMapRegion==0 || p->pMapRegion==(*ppMap) );
 
   /* If the SQLITE_MREMAP_EXTEND flag is set, then the size of the requested 
