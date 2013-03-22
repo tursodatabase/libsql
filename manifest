@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sNULL-pointer\sdereference\sin\sbtreeSwapOutMmap().
-D 2013-03-22T19:56:27.789
+C Update\swal\smode\stests\sso\sthat\sthey\swork\swith\sthe\smmap\stest\spermutation.
+D 2013-03-22T20:15:31.365
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -657,7 +657,7 @@ F test/pageropt.test 290cd59782b1890f02bb33795571facfc5ccac43
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test 4381ffc2811884cb4c2063176e4e4a849f236adc
+F test/permutations.test cf5d475f024cfd3fbb0255b8e43bf0c6887c6bb4
 F test/pragma.test 60d29cd3d8098a2c20bf4c072810f99e3bf2757a
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -950,11 +950,11 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
-F test/wal.test a040047d7f2b9f34bc4d597964e5e7c09609c635
+F test/wal.test 5baa9a0e682c0394012aa9a06a3d06cf92655fbf
 F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
-F test/wal5.test f58ed4b8b542f71c7441da12fbd769d99b362437
+F test/wal5.test 091bf7500e97087f1a87b346c8707e93f42d4f80
 F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test b3ee739fe8f7586aaebdc2367f477ebcf3e3b034
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c8d67aefff7299dd5c8abeb2a3a52109c0a823ee
-R dc31f859ef6cd2199f40f19f84f2b02e
-U drh
-Z 7f958188506961f9abc2573e8dff7118
+P e81ccdcd87a1387f7ca08d4d7c899311e2180d32
+R f5bd57e0d254253276d114325fd2ea6d
+U dan
+Z 0c2e4f926a5fed4f3d574bc2f3c43e20
