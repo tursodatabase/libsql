@@ -520,7 +520,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
             rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
             if( rc==SQLITE_OK ){
               u8 *zData = sqlite3PagerGetData(pSrcPg);
-              rc = sqlite3OsWrite(pFile, zData, pgszSrc, iOff);
+              rc = sqlite3PagerWriteData(pDestPager, zData, pgszSrc, iOff);
             }
             sqlite3PagerUnref(pSrcPg);
           }
