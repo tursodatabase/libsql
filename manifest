@@ -1,5 +1,5 @@
-C Fix\sa\scase\swhere\sthe\smapped\spart\sof\sa\sdatabase\sfile\smay\sbe\swritten\sduring\sa\sbackup\soperation.
-D 2013-03-22T19:17:45.777
+C Fix\sa\spotential\sNULL-pointer\sdereference\sin\sbtreeSwapOutMmap().
+D 2013-03-22T19:56:27.789
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 6256400ab8be4a15a2512277d8b214dbd44ff8ce
 F src/bitvec.c 26675fe8e431dc555e6f2d0e11e651d172234aa1
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c dd4683fa671f0b2b4bc0831036adaa2a5d1806ee
+F src/btree.c f5ea8d3d658887b5cae0369ef10a427d7469a768
 F src/btree.h d3259057a38494c4c4358e377032158c762e3d8b
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 375e5df716e03b9343c5e1211be3b24e6d6dff05
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d190ddabc386bc9654b99e33fb81b2f6e67b54d6
-R d5a852613692dd4e943f0ee647615880
-U dan
-Z db771a6d89978ace4423b73d7feafccd
+P c8d67aefff7299dd5c8abeb2a3a52109c0a823ee
+R dc31f859ef6cd2199f40f19f84f2b02e
+U drh
+Z 7f958188506961f9abc2573e8dff7118

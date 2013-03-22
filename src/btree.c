@@ -2593,7 +2593,7 @@ static int btreeSwapOutMmap(BtShared *pBt){
   for(pCsr=pBt->pCursor; pCsr && rc==SQLITE_OK; pCsr=pCsr->pNext){
     if( pCsr->iPage>=0 ){
       MemPage *pPg = pCsr->apPage[0];
-      if( pPg->pDbPage->flags & PGHDR_MMAP ){
+      if( pPg && pPg->pDbPage->flags & PGHDR_MMAP ){
         MemPage *pNew = 0;
         rc = getAndInitPage(pBt, pPg->pgno, &pNew, 0);
         if( rc==SQLITE_OK && pCsr->iPage==0 ){
