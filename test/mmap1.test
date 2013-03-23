@@ -23,13 +23,17 @@ proc nRead {db} {
   return $stats(read)
 }
 
-foreach {t mmap_size nRead} {
-  1 { PRAGMA mmap_size = -65536 }   4
-  2 { PRAGMA mmap_size = -50    } 156
-  3 { PRAGMA mmap_size = 0      } 344
+foreach {t mmap_size nRead c2init} {
+  1.1 { PRAGMA mmap_size = -65536 }   4 {}
+  1.2 { PRAGMA mmap_size = -50    } 156 {}
+  1.3 { PRAGMA mmap_size = 0      } 344 {}
+  1.4 { PRAGMA mmap_size = -65536 }   4 {PRAGMA mmap_size = -65536}
+  1.5 { PRAGMA mmap_size = -50    } 156 {PRAGMA mmap_size = -65536}
+  1.6 { PRAGMA mmap_size = 0      } 344 {PRAGMA mmap_size = -65536}
 } {
   do_multiclient_test tn {
     sql1 $mmap_size
+    sql2 $c2init
 
     code2 {
       set ::rcnt 0
@@ -79,6 +83,51 @@ foreach {t mmap_size nRead} {
   }
 }
 
+set ::rcnt 0
+proc rblob {n} {
+  set ::rcnt [expr (($::rcnt << 3) + $::rcnt + 456) & 0xFFFFFFFF]
+  set str [format %.8x [expr $::rcnt ^ 0xbdf20da3]] 
+  string range [string repeat $str [expr $n/4]] 1 $n
+}
+
+reset_db
+db func rblob rblob
+
+do_execsql_test 2.1 {
+  PRAGMA auto_vacuum = 1;
+  PRAGMA mmap_size = -65536;
+  PRAGMA journal_mode = wal;
+  CREATE TABLE t1(a, b, UNIQUE(a, b));
+  INSERT INTO t1 VALUES(rblob(500), rblob(500));
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    2
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    4
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    8
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   16
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   32
+  PRAGMA wal_checkpoint;
+} {wal 0 103 103}
+
+do_execsql_test 2.2 {
+  PRAGMA auto_vacuum;
+  SELECT count(*) FROM t1;
+} {1 32}
+
+do_test 2.3 {
+  sqlite3 db2 test.db
+  db2 func rblob rblob
+  db2 eval { 
+    DELETE FROM t1 WHERE (rowid%4);
+    PRAGMA wal_checkpoint;
+  }
+  db2 eval { 
+    INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    16
+    SELECT count(*) FROM t1;
+  }
+} {16}
+
+do_execsql_test 2.4 {
+  PRAGMA wal_checkpoint;
+} {0 24 24}
 
 finish_test
 

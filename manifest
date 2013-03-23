@@ -1,5 +1,5 @@
-C In\sthe\swinMremap\sVFS\sfunction,\sunmap\sthe\sregion\sprior\sto\sattempting\sto\struncate\sthe\sfile.
-D 2013-03-23T12:15:27.020
+C Fix\sa\scase\swhere\sa\scheckpoint\soperation\scould\swrite\sto\san\sinvalid\spart\sof\sa\smemory\smapped\sregion.
+D 2013-03-23T14:20:42.975
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 8d92f87f5fe14b060a853ca704b8ef6d3daee79b
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 55d110879332831b734fd510cfbc5700e96a83cf
 F src/os_win.c 386f8c034b177b672f7819ddc5d80be6c8d593ac
-F src/pager.c 12b8ff12519fe529a92884c4cdb99afecb1bea3c
+F src/pager.c cffcfe753445ef3a3d3830efd5f807fc171e7262
 F src/pager.h bbc9170281c9d5d603b2175fdc8ea908e47269a7
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -630,7 +630,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/mmap1.test 46ff4038b6d300bb9b39d3f89ea1aef3dff9b88f
+F test/mmap1.test e3391ef6c069e5f5733b8339652ce37fd97e3487
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -730,7 +730,7 @@ F test/softheap1.test c16709a16ad79fa43b32929b2e623d1d117ccf53
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
-F test/speed1p.test 2577211a9b054ffc973780f5b8708f02a0c7422d
+F test/speed1p.test c4a469f29f135f4d76c55b1f2a52f36e209466cc
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f57a9c91e993f76ce8b923e06e721414980e8e61
-R a68c203c916fb468751938d0762a7812
-U mistachkin
-Z c2b92e0c0a8c400cb287f5f47ed82e78
+P 8870c4cc6cda07154936644f7df25bd81d6ba38a
+R 0b90a49ac5025c5ac7d6b4eb49fe1878
+U dan
+Z c9ca2a38d0bbfc316a52f1d1e135baf9

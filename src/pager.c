@@ -4232,7 +4232,7 @@ static int syncJournal(Pager *pPager, int newHdr){
 */
 int sqlite3PagerSetFilesize(Pager *pPager, i64 szReq){
   int rc;
-  sqlite3_int64 sz;
+  i64 sz;                         /* Size of file on disk in bytes */
 
   assert( pPager->eState==PAGER_OPEN );
   assert( pPager->nMmapOut==0 );
@@ -4244,13 +4244,13 @@ int sqlite3PagerSetFilesize(Pager *pPager, i64 szReq){
     }
   }
 
-  if( rc==SQLITE_OK 
-   && pPager->nMapLimit>0 
-   && pPager->nMapValid<szReq 
-   && pPager->nMapValid<pPager->nMapLimit 
-  ){
-    pPager->dbFileSize = (szReq / pPager->pageSize);
-    rc = pagerMap(pPager, 1);
+
+  if( rc==SQLITE_OK ){
+    i64 szMap = (szReq > pPager->nMapLimit) ? pPager->nMapLimit : szReq;
+    if( pPager->nMapValid!=pPager->nMap || szMap!=pPager->nMap ){
+      pPager->dbFileSize = (szReq / pPager->pageSize);
+      rc = pagerMap(pPager, 1);
+    }
   }
 
   return rc;
