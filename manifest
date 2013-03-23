@@ -1,5 +1,5 @@
-C Preliminary\schanges\sto\ssupport\sthe\sxMremap\sVFS\smethod\son\sWindows.
-D 2013-03-23T09:56:39.403
+C Do\snot\sunmap\sthe\smapped\sfile\sregion\sin\swinTruncate\sas\sthere\smay\sbe\soutstanding\spointers\sto\sit.
+D 2013-03-23T10:09:46.701
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c 87ea1cd1259c5840848e34007d72e772a2ab7528
 F src/os.h 8d92f87f5fe14b060a853ca704b8ef6d3daee79b
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 55d110879332831b734fd510cfbc5700e96a83cf
-F src/os_win.c 46d2bbad7a65d2867ec0e9afb4aa28478402e9dc
+F src/os_win.c 8f7de0046d5107be715aa91d7deebbf91d577644
 F src/pager.c 12b8ff12519fe529a92884c4cdb99afecb1bea3c
 F src/pager.h bbc9170281c9d5d603b2175fdc8ea908e47269a7
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f7295872a36539d10edaf0c633f935f25cf73657
-R 33ae184619389f0a2e2f45e36bcba41c
+P 75a85a1c6ac59f2d021c28fa2161afb1118deea4
+R 2ac6e41fa14b2fcb69f496caa13f7e10
 U mistachkin
-Z 7a5b6171912da74b28162981ae14cd6f
+Z 3096704ce1da72ac81b0db8561977d4e

@@ -2270,9 +2270,6 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   OSTRACE(("TRUNCATE %d %lld\n", pFile->h, nByte));
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
 
-  rc = winUnmap(id);
-  if( rc!=SQLITE_OK ) return rc;
-
   /* If the user has configured a chunk-size for this file, truncate the
   ** file so that it consists of an integer number of chunks (i.e. the
   ** actual file size after the operation may be larger than the requested
