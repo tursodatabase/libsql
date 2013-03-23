@@ -3560,7 +3560,10 @@ static int winMremap(
     sqlite3_int64 oldSz;
     rc = winFileSize(id, &oldSz);
     if( rc==SQLITE_OK && nNewRnd>oldSz ){
-      rc = winTruncate(id, nNewRnd);
+      rc = winUnmap(id); /* Cannot truncate the file with an open mapping. */
+      if( rc==SQLITE_OK ){
+        rc = winTruncate(id, nNewRnd);
+      }
     }
     if( rc!=SQLITE_OK ) return rc;
   }
