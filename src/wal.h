@@ -53,8 +53,7 @@
 typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
-int sqlite3WalOpen(
-  sqlite3_vfs*, Pager *, sqlite3_file*, const char *, int, i64, Wal**);
+int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *, int, i64, Wal**);
 int sqlite3WalClose(Wal *pWal, int sync_flags, int, u8 *);
 
 /* Set the limiting size of a WAL file. */

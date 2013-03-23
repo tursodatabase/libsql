@@ -412,7 +412,6 @@ struct Wal {
   sqlite3_vfs *pVfs;         /* The VFS used to create pDbFd */
   sqlite3_file *pDbFd;       /* File handle for the database file */
   sqlite3_file *pWalFd;      /* File handle for WAL file */
-  Pager *pPager;             /* Pager object */
   u32 iCallback;             /* Value to pass to log callback (or 0) */
   i64 mxWalSize;             /* Truncate WAL to this size upon reset */
   int nWiData;               /* Size of array apWiData */
@@ -1252,7 +1251,6 @@ static void walIndexClose(Wal *pWal, int isDelete){
 */
 int sqlite3WalOpen(
   sqlite3_vfs *pVfs,              /* vfs module to open wal and wal-index */
-  Pager *pPager,                  /* Pager object handle */
   sqlite3_file *pDbFd,            /* The open database file */
   const char *zWalName,           /* Name of the WAL file */
   int bNoShm,                     /* True to run in heap-memory mode */
@@ -1293,7 +1291,6 @@ int sqlite3WalOpen(
   pRet->zWalName = zWalName;
   pRet->syncHeader = 1;
   pRet->padToSectorBoundary = 1;
-  pRet->pPager = pPager;
   pRet->exclusiveMode = (bNoShm ? WAL_HEAPMEMORY_MODE: WAL_NORMAL_MODE);
 
   /* Open file handle on the write-ahead log file. */
@@ -1725,18 +1722,17 @@ static int walCheckpoint(
       rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
     }
 
-    /* If the database file is currently smaller than mxPage pages in size,
-    ** the call below issues an SQLITE_FCNTL_SIZE_HINT to the OS layer to
-    ** inform it that it is likely to grow to that size.
-    **
-    ** Additionally, if the pager is using mmap(), then the call to 
-    ** SetFilesize() guarantees that the mapping is not larger than mxPage
-    ** pages. This makes the sqlite3OsTruncate() call below safe - no pages
-    ** that are part of the mapped region will be truncated away.  */
+    /* If the database may grow as a result of this checkpoint, hint
+    ** about the eventual size of the db file to the VFS layer.
+    */
     if( rc==SQLITE_OK ){
       i64 nReq = ((i64)mxPage * szPage);
-      rc = sqlite3PagerSetFilesize(pWal->pPager, nReq);
+      rc = sqlite3OsFileSize(pWal->pDbFd, &nSize);
+      if( rc==SQLITE_OK && nSize<nReq ){
+        sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
+      }
     }
+
 
     /* Iterate through the contents of the WAL, copying data to the db file. */
     while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
@@ -1749,7 +1745,7 @@ static int walCheckpoint(
       if( rc!=SQLITE_OK ) break;
       iOffset = (iDbpage-1)*(i64)szPage;
       testcase( IS_BIG_INT(iOffset) );
-      rc = sqlite3PagerWriteData(pWal->pPager, zBuf, szPage, iOffset);
+      rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
       if( rc!=SQLITE_OK ) break;
     }
 

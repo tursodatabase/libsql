@@ -140,15 +140,12 @@ int sqlite3OsShmMap(
   DO_OS_MALLOC_TEST(id);
   return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
-int sqlite3OsMremap(
-  sqlite3_file *id,               /* Database file handle */
-  int flags,                      /* SQLITE_MREMAP_XXX flags */
-  i64 iOff,                       /* Offset at which mapping(s) start */
-  i64 nOld,                       /* Size of old mapping */
-  i64 nNew,                       /* Size of requested mapping */
-  void **pp                       /* IN/OUT: Pointer to mapped region */
-){
-  return id->pMethods->xMremap(id, flags, iOff, nOld, nNew, pp);
+
+int sqlite3OsFetch(sqlite3_file *id, i64 iOff, int iAmt, void **pp){
+  return id->pMethods->xFetch(id, iOff, iAmt, pp);
+}
+int sqlite3OsUnfetch(sqlite3_file *id, void *p){
+  return id->pMethods->xUnfetch(id, p);
 }
 
 /*

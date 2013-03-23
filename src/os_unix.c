@@ -249,9 +249,14 @@ struct unixFile {
   unsigned char transCntrChng;   /* True if the transaction counter changed */
   unsigned char dbUpdate;        /* True if any part of database file changed */
   unsigned char inNormalWrite;   /* True if in a normal write operation */
-  sqlite3_int64 mmapSize;        /* Size of xMremap() */
-  void *pMapRegion;              /* Area memory mapped */
+
 #endif
+  sqlite3_int64 mmapSize;         /* Usable size of mapping at pMapRegion */
+  sqlite3_int64 mmapOrigsize;     /* Actual size of mapping at pMapRegion */
+  sqlite3_int64 mmapLimit;        /* Configured FCNTL_MMAP_SIZE value */
+  void *pMapRegion;               /* Memory mapped region */
+  int nFetchOut;                  /* Number of outstanding xFetch refs */
+
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
   ** it is larger than the struct CrashFile defined in test6.c.
@@ -1805,6 +1810,9 @@ static int unixUnlock(sqlite3_file *id, int eFileLock){
   return posixUnlock(id, eFileLock, 0);
 }
 
+static int unixMapfile(unixFile *pFd, i64 nByte);
+static void unixUnmapfile(unixFile *pFd);
+
 /*
 ** This function performs the parts of the "close file" operation 
 ** common to all locking schemes. It closes the directory and file
@@ -1817,6 +1825,7 @@ static int unixUnlock(sqlite3_file *id, int eFileLock){
 */
 static int closeUnixFile(sqlite3_file *id){
   unixFile *pFile = (unixFile*)id;
+  unixUnmapfile(pFile);
   if( pFile->h>=0 ){
     robust_close(pFile, pFile->h, __LINE__);
     pFile->h = -1;
@@ -3074,7 +3083,6 @@ static int unixRead(
   unixFile *pFile = (unixFile *)id;
   int got;
   assert( id );
-  assert( offset>=pFile->mmapSize );  /* Never read from the mmapped region */
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
@@ -3084,6 +3092,21 @@ static int unixRead(
        || offset+amt<=PENDING_BYTE 
   );
 #endif
+
+  /* Deal with as much of this write request as possible by transfering
+  ** data to the memory mapping using memcpy().  */
+  if( offset<pFile->mmapSize ){
+    if( offset+amt <= pFile->mmapSize ){
+      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], amt);
+      return SQLITE_OK;
+    }else{
+      int nCopy = pFile->mmapSize - offset;
+      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], nCopy);
+      pBuf = &((u8 *)pBuf)[nCopy];
+      amt -= nCopy;
+      offset += nCopy;
+    }
+  }
 
   got = seekAndRead(pFile, offset, pBuf, amt);
   if( got==amt ){
@@ -3157,7 +3180,6 @@ static int unixWrite(
   int wrote = 0;
   assert( id );
   assert( amt>0 );
-  assert( offset>=pFile->mmapSize );   /* Never write into the mmapped region */
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
@@ -3189,6 +3211,21 @@ static int unixWrite(
     }
   }
 #endif
+
+  /* Deal with as much of this write request as possible by transfering
+  ** data from the memory mapping using memcpy().  */
+  if( offset<pFile->mmapSize ){
+    if( offset+amt <= pFile->mmapSize ){
+      memcpy(&((u8 *)(pFile->pMapRegion))[offset], pBuf, amt);
+      return SQLITE_OK;
+    }else{
+      int nCopy = pFile->mmapSize - offset;
+      memcpy(&((u8 *)(pFile->pMapRegion))[offset], pBuf, nCopy);
+      pBuf = &((u8 *)pBuf)[nCopy];
+      amt -= nCopy;
+      offset += nCopy;
+    }
+  }
 
   while( amt>0 && (wrote = seekAndWrite(pFile, offset, pBuf, amt))>0 ){
     amt -= wrote;
@@ -3470,6 +3507,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     if( pFile->inNormalWrite && nByte==0 ){
       pFile->transCntrChng = 1;
     }
+#endif
 
     /* If the file was just truncated to a size smaller than the currently
     ** mapped region, reduce the effective mapping size as well. SQLite will
@@ -3478,7 +3516,6 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     if( nByte<pFile->mmapSize ){
       pFile->mmapSize = nByte;
     }
-#endif
 
     return SQLITE_OK;
   }
@@ -3568,6 +3605,19 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     }
   }
 
+  if( pFile->mmapLimit>0 ){
+    int rc;
+    if( pFile->szChunk<=0 ){
+      if( robust_ftruncate(pFile->h, nByte) ){
+        pFile->lastErrno = errno;
+        return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
+      }
+    }
+
+    rc = unixMapfile(pFile, nByte);
+    return rc;
+  }
+
   return SQLITE_OK;
 }
 
@@ -3635,8 +3685,8 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
-    case SQLITE_FCNTL_GETFD: {
-      *(int*)pArg = pFile->h;
+    case SQLITE_FCNTL_MMAP_SIZE: {
+      pFile->mmapLimit = *(i64*)pArg;
       return SQLITE_OK;
     }
 #ifdef SQLITE_DEBUG
@@ -4451,91 +4501,86 @@ static int unixShmUnmap(
 */
 #define ROUNDUP(x,y)     (((x)+y-1)&~(y-1))
 
-/*
-** Map, remap or unmap part of the database file.
-*/
-static int unixMremap(
-  sqlite3_file *fd,               /* Main database file */
-  int flags,                      /* Mask of SQLITE_MREMAP_XXX flags */
-  sqlite3_int64 iOff,             /* Offset to start mapping at */
-  sqlite3_int64 nOld,             /* Size of old mapping, or zero */
-  sqlite3_int64 nNew,             /* Size of new mapping, or zero */
-  void **ppMap                    /* IN/OUT: Old/new mappings */
-){
-  unixFile *p = (unixFile *)fd;   /* The underlying database file */
-  int rc = SQLITE_OK;             /* Return code */
-  void *pNew = 0;                 /* New mapping */
-  i64 nNewRnd;                    /* nNew rounded up */
-  i64 nOldRnd;                    /* nOld rounded up */
+static void unixUnmapfile(unixFile *pFd){
+  assert( pFd->nFetchOut==0 );
+  if( pFd->pMapRegion ){
+    munmap(pFd->pMapRegion, pFd->mmapOrigsize);
+    pFd->pMapRegion = 0;
+    pFd->mmapSize = 0;
+    pFd->mmapOrigsize = 0;
+  }
+}
 
-  assert( iOff==0 );
-  /* assert( p->mmapSize==nOld ); */
-  assert( p->pMapRegion==0 || p->pMapRegion==(*ppMap) );
+static int unixMapfile(unixFile *pFd, i64 nByte){
+  i64 nMap = nByte;
+  int rc;
 
-  /* If the SQLITE_MREMAP_EXTEND flag is set, then the size of the requested 
-  ** mapping (nNew bytes) may be greater than the size of the database file.
-  ** If this is the case, extend the file on disk using ftruncate().  */
-  assert( nNew>0 || (flags & SQLITE_MREMAP_EXTEND)==0 );
-  if( flags & SQLITE_MREMAP_EXTEND ){
+  assert( nMap>=0 || pFd->nFetchOut==0 );
+  if( pFd->nFetchOut>0 ) return SQLITE_OK;
+
+  if( nMap<0 ){
     struct stat statbuf;          /* Low-level file information */
-    rc = osFstat(p->h, &statbuf);
-    if( rc==SQLITE_OK && nNew>statbuf.st_size ){
-      rc = robust_ftruncate(p->h, nNew);
+    rc = osFstat(pFd->h, &statbuf);
+    if( rc!=SQLITE_OK ){
+      return SQLITE_IOERR_FSTAT;
     }
-    if( rc!=SQLITE_OK ) return rc;
+    nMap = statbuf.st_size;
+  }
+  if( nMap>pFd->mmapLimit ){
+    nMap = pFd->mmapLimit;
   }
 
-  /* According to some sources, the effect of changing the size of the
-  ** underlying file on mapped regions that correspond to the added or
-  ** removed pages is undefined. However, there is reason to believe that
-  ** on modern platforms like Linux or OSX, things just work. For example,
-  ** it is possible to create a mapping larger than the file on disk and
-  ** extend the file on disk later on.
-  **
-  ** Exploit this on Linux and OSX to reduce the number of munmap()/mmap() 
-  ** calls required if the file size is changing. In this case all mappings 
-  ** are rounded up to the nearest 4MB. And if a new mapping is requested 
-  ** that has the same rounded size as an old mapping, the old mapping can 
-  ** be reused as is. */
-#if defined(__APPLE__) || defined(__linux__)
-  nNewRnd = ROUNDUP(nNew, 4096*1024);
-  nOldRnd = ROUNDUP(nOld, 4096*1024);
-#else
-  nNewRnd = ROUNDUP(nNew, 4096*1);
-  nOldRnd = ROUNDUP(nOld, 4096*1);
-#endif
+  if( nMap!=pFd->mmapSize ){
+    void *pNew;
+    unixUnmapfile(pFd);
 
-  /* On OSX or Linux, reuse the old mapping if it is the right size. */
-#if defined(__APPLE__) || defined(__linux__)
-  if( nNewRnd==nOldRnd ){
-    VVA_ONLY( p->mmapSize = nNew; )
-    return SQLITE_OK;
-  }
-#endif
+    if( nMap>0 ){
+      void *pNew;
+      int flags = PROT_READ;
+      if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
+      pNew = mmap(0, ROUNDUP(nMap, 4096), flags, MAP_SHARED, pFd->h, 0);
+      if( pNew==MAP_FAILED ){
+        return SQLITE_IOERR_MREMAP;
+      }
 
-  /* If we get this far, unmap any old mapping. */
-  if( nOldRnd!=0 ){
-    void *pOld = *ppMap;
-    munmap(pOld, nOldRnd);
-    VVA_ONLY( p->mmapSize = 0; p->pMapRegion = 0; );
-  }
-
-  /* And, if required, use mmap() to create a new mapping. */
-  if( nNewRnd>0 ){
-    int flags = PROT_READ;
-    if( (p->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
-    pNew = mmap(0, nNewRnd, flags, MAP_SHARED, p->h, iOff);
-    if( pNew==MAP_FAILED ){
-      pNew = 0;
-      VVA_ONLY( p->mmapSize = 0; p->pMapRegion = 0; )
-      rc = SQLITE_IOERR_MREMAP;
-    }else{
-      VVA_ONLY( p->mmapSize = nNew; p->pMapRegion = pNew; )
+      pFd->pMapRegion = pNew;
+      pFd->mmapOrigsize = pFd->mmapSize = nMap;
     }
   }
 
-  *ppMap = pNew;
-  return rc;
+  return SQLITE_OK;
+}
+
+static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
+  unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
+  *pp = 0;
+
+  if( pFd->mmapLimit>0 ){
+    if( pFd->pMapRegion==0 ){
+      int rc = unixMapfile(pFd, -1);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    if( pFd->mmapSize >= iOff+nAmt ){
+      *pp = &((u8 *)pFd->pMapRegion)[iOff];
+      pFd->nFetchOut++;
+    }
+  }
+  return SQLITE_OK;
+}
+
+static int unixUnfetch(sqlite3_file *fd, void *p){
+  unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
+
+  assert( (p==0)==(pFd->nFetchOut==0) );
+
+  if( p ){
+    pFd->nFetchOut--;
+  }else{
+    unixUnmapfile(pFd);
+  }
+
+  assert( pFd->nFetchOut>=0 );
+  return SQLITE_OK;
 }
 
 /*
@@ -4597,7 +4642,8 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
    unixShmUnmap,               /* xShmUnmap */                               \
-   unixMremap,                 /* xMremap */                                 \
+   unixFetch,                  /* xFetch */                                  \
+   unixUnfetch,                /* xUnfetch */                                \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \
@@ -4865,7 +4911,6 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
-  VVA_ONLY( pNew->mmapSize = 0; )
   if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
