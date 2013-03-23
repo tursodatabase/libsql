@@ -1,5 +1,5 @@
-C Fix\sa\scase\swhere\sa\scheckpoint\soperation\scould\swrite\sto\san\sinvalid\spart\sof\sa\smemory\smapped\sregion.
-D 2013-03-23T14:20:42.975
+C Improve\sa\scomment\sin\swal.c.\sNo\scode\schanges.
+D 2013-03-23T17:29:06.036
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
-F src/wal.c 7fec703bb0770d9faad5190f49897a8bc8eb239f
+F src/wal.c 923d90992fc3b069571cf3fbd635c54c3e839e55
 F src/wal.h d99ce512ac60f9147a0640e9e6fb67dd1057b781
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
 F src/where.c bdbbfa7ef4ea04c8d9b09585b45d4717a72f980a
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8870c4cc6cda07154936644f7df25bd81d6ba38a
-R 0b90a49ac5025c5ac7d6b4eb49fe1878
+P 8dbe89d05ce91428c69003f0da79d883fa23e2b5
+R b063a8588944a5f842812de15381707f
 U dan
-Z c9ca2a38d0bbfc316a52f1d1e135baf9
+Z 350cbe536c1fd5aa73b476fafae6db5c

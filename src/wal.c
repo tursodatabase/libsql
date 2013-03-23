@@ -1725,12 +1725,17 @@ static int walCheckpoint(
       rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
     }
 
-    /* If the database file may grow as a result of this checkpoint, hint
-    ** about the eventual size of the db file to the VFS layer. 
-    */
+    /* If the database file is currently smaller than mxPage pages in size,
+    ** the call below issues an SQLITE_FCNTL_SIZE_HINT to the OS layer to
+    ** inform it that it is likely to grow to that size.
+    **
+    ** Additionally, if the pager is using mmap(), then the call to 
+    ** SetFilesize() guarantees that the mapping is not larger than mxPage
+    ** pages. This makes the sqlite3OsTruncate() call below safe - no pages
+    ** that are part of the mapped region will be truncated away.  */
     if( rc==SQLITE_OK ){
       i64 nReq = ((i64)mxPage * szPage);
-      rc = sqlite3PagerSetFilesize(pWal->pPager, nReq); 
+      rc = sqlite3PagerSetFilesize(pWal->pPager, nReq);
     }
 
     /* Iterate through the contents of the WAL, copying data to the db file. */
