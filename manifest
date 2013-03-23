@@ -1,5 +1,5 @@
-C Update\swal\smode\stests\sso\sthat\sthey\swork\swith\sthe\smmap\stest\spermutation.
-D 2013-03-22T20:15:31.365
+C Preliminary\schanges\sto\ssupport\sthe\sxMremap\sVFS\smethod\son\sWindows.
+D 2013-03-23T09:56:39.403
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c 87ea1cd1259c5840848e34007d72e772a2ab7528
 F src/os.h 8d92f87f5fe14b060a853ca704b8ef6d3daee79b
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 55d110879332831b734fd510cfbc5700e96a83cf
-F src/os_win.c f7da4dc0a2545c0a430080380809946ae4d676d6
+F src/os_win.c 46d2bbad7a65d2867ec0e9afb4aa28478402e9dc
 F src/pager.c 12b8ff12519fe529a92884c4cdb99afecb1bea3c
 F src/pager.h bbc9170281c9d5d603b2175fdc8ea908e47269a7
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -184,7 +184,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 3213f3101e3b85f047d6e389da5a53d76d3d7540
-F src/test1.c 39378e3e14a8162e29dc90d1e05399d12e8a569e
+F src/test1.c 26e66b839f42c2eed6833f9023e0098f0d863f35
 F src/test2.c 4178056dd1e7d70f954ad8a1e3edb71a2a784daf
 F src/test3.c 3c3c2407fa6ec7a19e24ae23f7cb439d0275a60d
 F src/test4.c bf9fa9bece01de08e6f5e02314e4af5c13590dfa
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e81ccdcd87a1387f7ca08d4d7c899311e2180d32
-R f5bd57e0d254253276d114325fd2ea6d
-U dan
-Z 0c2e4f926a5fed4f3d574bc2f3c43e20
+P f7295872a36539d10edaf0c633f935f25cf73657
+R 33ae184619389f0a2e2f45e36bcba41c
+U mistachkin
+Z 7a5b6171912da74b28162981ae14cd6f
