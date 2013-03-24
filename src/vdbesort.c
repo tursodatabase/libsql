@@ -18,7 +18,6 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
-#ifndef SQLITE_OMIT_MERGE_SORT
 
 typedef struct VdbeSorterIter VdbeSorterIter;
 typedef struct SorterRecord SorterRecord;
@@ -1037,5 +1036,3 @@ int sqlite3VdbeSorterCompare(
   vdbeSorterCompare(pCsr, 1, pVal->z, pVal->n, pKey, nKey, pRes);
   return SQLITE_OK;
 }
-
-#endif /* #ifndef SQLITE_OMIT_MERGE_SORT */

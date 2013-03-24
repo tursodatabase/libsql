@@ -1,5 +1,5 @@
-C Many\sspelling\sfixes\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2013-03-21T21:20:32.533
+C Remove\sthe\sSQLITE_OMIT_MERGE_SORT\scompile-time\soption\sand\sits\srelated\scode.\nThe\smerge\ssorter\sis\snow\sa\srequired\scomponent.
+D 2013-03-24T22:56:49.538
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,10 +124,10 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 3cebaa69db81a528e115b463a5506133a0043710
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c b85db6cb50fc63e44776b741452250626bad491a
+F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 72a70dcfda75d3a1f81041ce4573e7afddcd8e4e
+F src/ctime.c 2a5f251fcd7393808df77ccfc817e7058df08c4c
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
 F src/expr.c 48048fca951eedbc74aa32262154410d56c83812
@@ -197,7 +197,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
-F src/test_config.c 09781397ccc24268cb895be0d4c21b4aad651486
+F src/test_config.c ab6605a41f2020912d5e44b8dd4b9fb21bd75ac0
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c 1c51e203b2c20235d8c3739f8c1fb13a7502915b
@@ -239,14 +239,14 @@ F src/update.c a2a5631d618cbe240fc83725fa9e95c56ae0084c
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c 550f2b6a5c0085153a4d00462719fb17ee242792
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
-F src/vdbe.c f9622d5b222f7dd929d7f4a4d42278d47d2b24ab
+F src/vdbe.c 1d56617d816098a41bdbe73536a67dcdefad52bd
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
-F src/vdbeInt.h 396bb03eec560f768d1b86092b00f46c25575d3b
+F src/vdbeInt.h 3bb8531d6768379f086e1576b31d52331f6eb982
 F src/vdbeapi.c 56f9ad6329d093f54b5dd321a2b4a643f89a6cb6
 F src/vdbeaux.c ecb43014bcd3019e5aa2b5561e5c3a447f007a08
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
-F src/vdbesort.c c61ca318681c0e7267da8be3abfca8469652a7e9
+F src/vdbesort.c 4fad64071ae120c25f39dcac572d716b9cadeb7f
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5b22053f918d16f593227a432a5d5b4c195bb0b5
-R 0ed9a71acb145119af7cea3063285aea
-U mistachkin
-Z eedfaec177b15430293d5b03ecbc6bec
+P 6f6e2d50941e444ebc83604daddcc034137a05b7
+R c9af7e9245b15a89c65f60e3499063d2
+U drh
+Z b277505b37d3e408ea130ed65856e826

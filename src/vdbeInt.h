@@ -429,15 +429,6 @@ int sqlite3VdbeFrameRestore(VdbeFrame *);
 void sqlite3VdbeMemStoreType(Mem *pMem);
 int sqlite3VdbeTransferError(Vdbe *p);
 
-#ifdef SQLITE_OMIT_MERGE_SORT
-# define sqlite3VdbeSorterInit(Y,Z)      SQLITE_OK
-# define sqlite3VdbeSorterWrite(X,Y,Z)   SQLITE_OK
-# define sqlite3VdbeSorterClose(Y,Z)
-# define sqlite3VdbeSorterRowkey(Y,Z)    SQLITE_OK
-# define sqlite3VdbeSorterRewind(X,Y,Z)  SQLITE_OK
-# define sqlite3VdbeSorterNext(X,Y,Z)    SQLITE_OK
-# define sqlite3VdbeSorterCompare(X,Y,Z) SQLITE_OK
-#else
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
@@ -445,7 +436,6 @@ int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);
 int sqlite3VdbeSorterRewind(sqlite3 *, const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(sqlite3 *, const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int *);
-#endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
   void sqlite3VdbeEnter(Vdbe*);
