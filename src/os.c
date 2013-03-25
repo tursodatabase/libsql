@@ -142,6 +142,7 @@ int sqlite3OsShmMap(
 }
 
 int sqlite3OsFetch(sqlite3_file *id, i64 iOff, int iAmt, void **pp){
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xFetch(id, iOff, iAmt, pp);
 }
 int sqlite3OsUnfetch(sqlite3_file *id, i64 iOff, void *p){

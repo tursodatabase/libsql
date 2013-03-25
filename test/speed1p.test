@@ -65,6 +65,7 @@ proc number_name {n} {
 #
 do_test speed1p-1.0 {
   execsql {
+    PRAGMA mmap_size=1000000;
     PRAGMA page_size=1024;
     PRAGMA cache_size=500;
     PRAGMA locking_mode=EXCLUSIVE;

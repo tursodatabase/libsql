@@ -1,5 +1,5 @@
-C Change\sthe\ssignature\sof\sthe\sxUnfetch\smethod\sto\s"int\s(*xUnfetch)(sqlite3_file*,\ssqlite3_int64\siOfst,\svoid\s*p)".
-D 2013-03-25T17:00:24.194
+C Simulate\sOOM\serrors\sin\sthe\ssqlite3OsFetch()\sfunction.\sRun\smalloc.test\sas\spart\sof\sthe\s"mmap"\spermutation.
+D 2013-03-25T18:25:49.003
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
 F src/mutex_w32.c 32a9b3841e2d757355f0012b860b1bc5e01eafa0
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c 17c6e6e4a17135ec1c7c468f8d0b97ec6f8a9264
+F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 664fc178a9478246f6c84e46292e77fb5bee4431
@@ -657,7 +657,7 @@ F test/pageropt.test 290cd59782b1890f02bb33795571facfc5ccac43
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test cf5d475f024cfd3fbb0255b8e43bf0c6887c6bb4
+F test/permutations.test 5b5397f33b9d129b734b9c57a5091ad494e025c5
 F test/pragma.test 60d29cd3d8098a2c20bf4c072810f99e3bf2757a
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -730,7 +730,7 @@ F test/softheap1.test c16709a16ad79fa43b32929b2e623d1d117ccf53
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
-F test/speed1p.test c4a469f29f135f4d76c55b1f2a52f36e209466cc
+F test/speed1p.test 9912e8f915f1de2c82fc019a63920bf9dcfc69f7
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dce35c01a5fe66d2970075b1e3f0376026485e4c
-R 12377e21e3793332cede5cbfb008d2ac
+P 115b830509e8f0aa9d5965c1e9cd4f2ed9d01938
+R 81bdcfaea4ca0021abe5572b7c1cd51d
 U dan
-Z 1c478466922e4f7b4b376664d80146c7
+Z 1c0203030ba88df7bcf075001cefd19c
