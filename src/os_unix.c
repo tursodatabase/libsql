@@ -4544,21 +4544,28 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
   }
 
   if( nMap!=pFd->mmapSize ){
-    unixUnmapfile(pFd);
+    void *pNew = 0;
 
-    if( nMap>0 ){
-      void *pNew;
-      int flags = PROT_READ;
-      if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
-      pNew = osMmap(0, nMap, flags, MAP_SHARED, pFd->h, 0);
-      if( pNew==MAP_FAILED ){
-        return SQLITE_IOERR_MMAP;
+#if defined(__linux__) && defined(_GNU_SOURCE)
+    if( pFd->pMapRegion && nMap>0 ){
+      pNew = mremap(pFd->pMapRegion, pFd->mmapOrigsize, nMap, MREMAP_MAYMOVE);
+    }else
+#endif
+    {
+      unixUnmapfile(pFd);
+      if( nMap>0 ){
+        int flags = PROT_READ;
+        if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
+        pNew = osMmap(0, nMap, flags, MAP_SHARED, pFd->h, 0);
       }
-
-      pFd->pMapRegion = pNew;
-      pFd->mmapSize = nMap;
-      pFd->mmapOrigsize = nMap;
     }
+
+    if( pNew==MAP_FAILED ){
+      return SQLITE_IOERR_MMAP;
+    }
+    pFd->pMapRegion = pNew;
+    pFd->mmapSize = nMap;
+    pFd->mmapOrigsize = nMap;
   }
 
   return SQLITE_OK;
