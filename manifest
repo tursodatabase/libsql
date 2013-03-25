@@ -1,5 +1,5 @@
-C In\sfts3,\swhen\sfiltering\slists\sfor\shits\sin\sa\sspecific\scolumn,\sedit\sthe\slist\sin\splace\sin\sthe\ssame\sway\sas\sit\sis\sfor\sNEAR\sfiltering.\sFix\sfor\s[38b1ae018f].
-D 2013-03-25T11:38:44.860
+C Add\sa\ssecond\stest\sfor\s[38b1ae018f].
+D 2013-03-25T12:02:45.865
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -491,7 +491,7 @@ F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test ecb08f586d027eb03941bcfcded6cb9d8ccb3a66
-F test/fts3near.test f78c79a92b1da496cb2a239ba24af35f33445698
+F test/fts3near.test 12895557870b0f9af7cc0be81a0171abb2d12f12
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8b44d6fb159e85267095e846cded2764c3bcb895
-R 6c0c94d8e550f4b716beb89e2de0d44b
+P f85f9103cffa5c8ba6a63a68beb90817147ba080
+R 8636831e10a59eea94894795b6da6922
 U dan
-Z f4ab0250caa5559575a04c2c550a6a93
+Z 40d326d8e18513e2868148c4279af040
