@@ -444,6 +444,9 @@ static struct unix_syscall {
   { "fchown",       (sqlite3_syscall_ptr)posixFchown,     0 },
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
 
+  { "mmap",       (sqlite3_syscall_ptr)mmap,     0 },
+#define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[21].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -4547,7 +4550,7 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
       void *pNew;
       int flags = PROT_READ;
       if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
-      pNew = mmap(0, nMap, flags, MAP_SHARED, pFd->h, 0);
+      pNew = osMmap(0, nMap, flags, MAP_SHARED, pFd->h, 0);
       if( pNew==MAP_FAILED ){
         return SQLITE_IOERR_MMAP;
       }
@@ -7186,7 +7189,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==21 );
+  assert( ArraySize(aSyscall)==22 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

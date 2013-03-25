@@ -1,5 +1,5 @@
-C Simulate\sOOM\serrors\sin\sthe\ssqlite3OsFetch()\sfunction.\sRun\smalloc.test\sas\spart\sof\sthe\s"mmap"\spermutation.
-D 2013-03-25T18:25:49.003
+C Add\sa\stest\sthat\ssimulates\san\serror\sin\smmap().
+D 2013-03-25T19:05:07.846
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 664fc178a9478246f6c84e46292e77fb5bee4431
+F src/os_unix.c 6815e3dd9a1507f2e36ba5a8dcd36b67ac60f3b0
 F src/os_win.c 386f8c034b177b672f7819ddc5d80be6c8d593ac
 F src/pager.c d0cdf47664e487f735b4bea485ee70637ed34a55
 F src/pager.h 241d72dc0905df042da165f086d03505cb0bb50c
@@ -226,7 +226,7 @@ F src/test_spellfix.c 56dfa6d583ac34f61af0834d7b58d674e7e18e13
 F src/test_sqllog.c 8acb843ddb9928dea8962e31bb09f421a72ffccb
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
-F src/test_syscall.c a992d8c80ea91fbf21fb2dd570db40e77dd7e6ae
+F src/test_syscall.c fe018f95049d4f24e036d1d649516b60689b4e57
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
 F src/test_vfs.c fb16b2d9938cf0c1afc5a423b55b952fcc024275
@@ -611,7 +611,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl 2930895b0962823ec679853e67e58dd6d8198b3c
+F test/malloc_common.tcl 9a98856549bfb3fab205edbc1317216edc52e70d
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
@@ -747,7 +747,7 @@ F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test bea9bf329bff733c791310244617c2a76974e64a
-F test/sysfault.test c79441d88d23696fbec7b147dba98d42a04f523f
+F test/sysfault.test 3258d6c8213b44f2669994d798a5eb5327b40146
 F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 115b830509e8f0aa9d5965c1e9cd4f2ed9d01938
-R 81bdcfaea4ca0021abe5572b7c1cd51d
+P 77443ef2cd0b29b7822eea544ab8c6c4a93cb67b
+R 602dbedb509e1b6f815316de036c2541
 U dan
-Z 1c0203030ba88df7bcf075001cefd19c
+Z 3ee6172e1f5d6ed5486bb4fa69d324f2

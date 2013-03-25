@@ -23,7 +23,7 @@
 **
 **         open        close      access   getcwd   stat      fstat    
 **         ftruncate   fcntl      read     pread    pread64   write
-**         pwrite      pwrite64   fchmod   fallocate
+**         pwrite      pwrite64   fchmod   fallocate mmap
 **
 **   test_syscall uninstall
 **     Uninstall all wrapper functions.
@@ -81,6 +81,7 @@
 /* From test1.c */
 extern const char *sqlite3TestErrorName(int);
 
+#include <sys/mman.h>
 #include <sys/types.h>
 #include <errno.h>
 
@@ -106,6 +107,7 @@ static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off);
 static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, off_t off);
 static int ts_fchmod(int fd, mode_t mode);
 static int ts_fallocate(int fd, off_t off, off_t len);
+static void *ts_mmap(void *, size_t, int, int, int, off_t);
 
 
 struct TestSyscallArray {
@@ -131,6 +133,7 @@ struct TestSyscallArray {
   /* 13 */ { "pwrite64",  (sqlite3_syscall_ptr)ts_pwrite64,  0, 0, 0 },
   /* 14 */ { "fchmod",    (sqlite3_syscall_ptr)ts_fchmod,    0, 0, 0 },
   /* 15 */ { "fallocate", (sqlite3_syscall_ptr)ts_fallocate, 0, 0, 0 },
+  /* 16 */ { "mmap",      (sqlite3_syscall_ptr)ts_mmap,      0, 0, 0 },
            { 0, 0, 0, 0, 0 }
 };
 
@@ -152,6 +155,7 @@ struct TestSyscallArray {
                        aSyscall[13].xOrig)
 #define orig_fchmod    ((int(*)(int,mode_t))aSyscall[14].xOrig)
 #define orig_fallocate ((int(*)(int,off_t,off_t))aSyscall[15].xOrig)
+#define orig_mmap      ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[16].xOrig)
 
 /*
 ** This function is called exactly once from within each invocation of a
@@ -375,6 +379,20 @@ static int ts_fallocate(int fd, off_t off, off_t len){
     return tsErrno("fallocate");
   }
   return orig_fallocate(fd, off, len);
+}
+
+static void *ts_mmap(
+  void *pAddr, 
+  size_t nByte, 
+  int prot, 
+  int flags, 
+  int fd, 
+  off_t iOff
+){
+  if( tsIsFailErrno("mmap") ){
+    return MAP_FAILED;
+  }
+  return orig_mmap(pAddr, nByte, prot, flags, fd, iOff);
 }
 
 static int test_syscall_install(
