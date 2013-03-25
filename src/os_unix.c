@@ -447,6 +447,16 @@ static struct unix_syscall {
   { "mmap",       (sqlite3_syscall_ptr)mmap,     0 },
 #define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[21].pCurrent)
 
+  { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
+#define osMunmap ((void*(*)(void*,size_t))aSyscall[22].pCurrent)
+
+#if defined(__linux__) && defined(_GNU_SOURCE)
+  { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
+#else
+  { "mremap",       (sqlite3_syscall_ptr)0,               0 },
+#endif
+#define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[23].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -4005,7 +4015,7 @@ static void unixShmPurge(unixFile *pFd){
     sqlite3_mutex_free(p->mutex);
     for(i=0; i<p->nRegion; i++){
       if( p->h>=0 ){
-        munmap(p->apRegion[i], p->szRegion);
+        osMunmap(p->apRegion[i], p->szRegion);
       }else{
         sqlite3_free(p->apRegion[i]);
       }
@@ -4278,7 +4288,7 @@ static int unixShmMap(
     while(pShmNode->nRegion<=iRegion){
       void *pMem;
       if( pShmNode->h>=0 ){
-        pMem = mmap(0, szRegion,
+        pMem = osMmap(0, szRegion,
             pShmNode->isReadonly ? PROT_READ : PROT_READ|PROT_WRITE, 
             MAP_SHARED, pShmNode->h, szRegion*(i64)pShmNode->nRegion
         );
@@ -4501,7 +4511,7 @@ static int unixShmUnmap(
 static void unixUnmapfile(unixFile *pFd){
   assert( pFd->nFetchOut==0 );
   if( pFd->pMapRegion ){
-    munmap(pFd->pMapRegion, pFd->mmapOrigsize);
+    osMunmap(pFd->pMapRegion, pFd->mmapOrigsize);
     pFd->pMapRegion = 0;
     pFd->mmapSize = 0;
     pFd->mmapOrigsize = 0;
@@ -4548,7 +4558,7 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
 
 #if defined(__linux__) && defined(_GNU_SOURCE)
     if( pFd->pMapRegion && nMap>0 ){
-      pNew = mremap(pFd->pMapRegion, pFd->mmapOrigsize, nMap, MREMAP_MAYMOVE);
+      pNew = osMremap(pFd->pMapRegion, pFd->mmapOrigsize, nMap, MREMAP_MAYMOVE);
     }else
 #endif
     {
@@ -7196,7 +7206,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==22 );
+  assert( ArraySize(aSyscall)==24 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
