@@ -60,7 +60,7 @@ proc cksort {sql} {
 #
 # Because these tests also exercise all the different ways indices 
 # can be created, they also serve to verify that indices are correctly 
-# initialised with user-defined collation sequences when they are
+# initialized with user-defined collation sequences when they are
 # created.
 #
 # Tests named collate4-1.1.* use indices with a single column. Tests

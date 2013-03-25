@@ -87,7 +87,7 @@ typedef struct WriteBuffer WriteBuffer;
 **   an aligned write() of an integer number of 512 byte regions, then
 **   option (3) above is never selected. Instead, each 512 byte region
 **   is either correctly written or left completely untouched. Similar
-**   logic governs the behaviour if any of the other ATOMICXXX flags
+**   logic governs the behavior if any of the other ATOMICXXX flags
 **   is set.
 **
 **   If either the IOCAP_SAFEAPPEND or IOCAP_SEQUENTIAL flags are set

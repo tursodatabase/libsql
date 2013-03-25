@@ -2741,8 +2741,8 @@ do_test e_fkey-60.6 {
 } {}
 
 #-------------------------------------------------------------------------
-# Test that the special behaviours of ALTER and DROP TABLE are only
-# activated when foreign keys are enabled. Special behaviours are:
+# Test that the special behaviors of ALTER and DROP TABLE are only
+# activated when foreign keys are enabled. Special behaviors are:
 #
 #   1. ADD COLUMN not allowing a REFERENCES clause with a non-NULL 
 #      default value.
@@ -2837,7 +2837,7 @@ foreach zMatch [list SIMPLE PARTIAL FULL Simple parTIAL FuLL ] {
   do_test e_fkey-62.$zMatch.2 {
     execsql { INSERT INTO p VALUES(1, 2, 3)         }
 
-    # MATCH SIMPLE behaviour: Allow any child key that contains one or more
+    # MATCH SIMPLE behavior: Allow any child key that contains one or more
     # NULL value to be inserted. Non-NULL values do not have to map to any
     # parent key values, so long as at least one field of the child key is
     # NULL.

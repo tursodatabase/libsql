@@ -98,7 +98,7 @@ SQLite. Documentation follows.
         <string> REGEXP <re-pattern>
 
     This extension uses the ICU defaults for regular expression matching
-    behaviour. Specifically, this means that:
+    behavior. Specifically, this means that:
 
         * Matching is case-sensitive,
         * Regular expression comments are not allowed within patterns, and

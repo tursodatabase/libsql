@@ -1227,7 +1227,7 @@ do_select_tests e_select-5.1 {
 # the entire set of result rows are returned by the SELECT.
 #
 # EVIDENCE-OF: R-47911-02086 If neither ALL or DISTINCT are present,
-# then the behaviour is as if ALL were specified.
+# then the behavior is as if ALL were specified.
 #
 # EVIDENCE-OF: R-14442-41305 If the simple SELECT is a SELECT DISTINCT,
 # then duplicate rows are removed from the set of result rows before it

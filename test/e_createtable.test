@@ -1257,7 +1257,7 @@ do_createtable_tests 4.4 {
 # SQLite allows NULL values in a PRIMARY KEY column.
 #
 #     If the column is an integer primary key, attempting to insert a NULL
-#     into the column triggers the auto-increment behaviour. Attempting
+#     into the column triggers the auto-increment behavior. Attempting
 #     to use UPDATE to set an ipk column to a NULL value is an error.
 #
 do_createtable_tests 4.5.1 {

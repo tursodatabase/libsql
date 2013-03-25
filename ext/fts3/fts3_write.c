@@ -1482,6 +1482,7 @@ static int fts3SegReaderNextDocid(
       *pnOffsetList = (int)(p - pReader->pOffsetList - 1);
     }
 
+    /* List may have been edited in place by fts3EvalNearTrim() */
     while( p<pEnd && *p==0 ) p++;
   
     /* If there are no more entries in the doclist, set pOffsetList to
@@ -2497,9 +2498,13 @@ static int fts3DeleteSegdir(
 **
 ** If there are no entries in the input position list for column iCol, then
 ** *pnList is set to zero before returning.
+**
+** If parameter bZero is non-zero, then any part of the input list following
+** the end of the output list is zeroed before returning.
 */
 static void fts3ColumnFilter(
   int iCol,                       /* Column to filter on */
+  int bZero,                      /* Zero out anything following *ppList */
   char **ppList,                  /* IN/OUT: Pointer to position list */
   int *pnList                     /* IN/OUT: Size of buffer *ppList in bytes */
 ){
@@ -2528,6 +2533,9 @@ static void fts3ColumnFilter(
     p += sqlite3Fts3GetVarint32(p, &iCurrent);
   }
 
+  if( bZero && &pList[nList]!=pEnd ){
+    memset(&pList[nList], 0, pEnd - &pList[nList]);
+  }
   *ppList = pList;
   *pnList = nList;
 }
@@ -2601,19 +2609,19 @@ int sqlite3Fts3MsrIncrNext(
       if( rc!=SQLITE_OK ) return rc;
       fts3SegReaderSort(pMsr->apSegment, nMerge, j, xCmp);
 
+      if( nList>0 && fts3SegReaderIsPending(apSegment[0]) ){
+        rc = fts3MsrBufferData(pMsr, pList, nList+1);
+        if( rc!=SQLITE_OK ) return rc;
+        assert( (pMsr->aBuffer[nList] & 0xFE)==0x00 );
+        pList = pMsr->aBuffer;
+      }
+
       if( pMsr->iColFilter>=0 ){
-        fts3ColumnFilter(pMsr->iColFilter, &pList, &nList);
+        fts3ColumnFilter(pMsr->iColFilter, 1, &pList, &nList);
       }
 
       if( nList>0 ){
-        if( fts3SegReaderIsPending(apSegment[0]) ){
-          rc = fts3MsrBufferData(pMsr, pList, nList+1);
-          if( rc!=SQLITE_OK ) return rc;
-          *paPoslist = pMsr->aBuffer;
-          assert( (pMsr->aBuffer[nList] & 0xFE)==0x00 );
-        }else{
-          *paPoslist = pList;
-        }
+        *paPoslist = pList;
         *piDocid = iDocid;
         *pnPoslist = nList;
         break;
@@ -2856,7 +2864,7 @@ int sqlite3Fts3SegReaderStep(
         }
 
         if( isColFilter ){
-          fts3ColumnFilter(pFilter->iCol, &pList, &nList);
+          fts3ColumnFilter(pFilter->iCol, 0, &pList, &nList);
         }
 
         if( !isIgnoreEmpty || nList>0 ){

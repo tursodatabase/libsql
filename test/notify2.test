@@ -150,9 +150,9 @@ set sql $zSql
       # Hit some other kind of error. This is a malfunction.
       error $msg
     } else {
-      # No error occured. Check that any SELECT statements in the transaction
+      # No error occurred. Check that any SELECT statements in the transaction
       # returned "1". Otherwise, the invariant was false, indicating that
-      # some malfunction has occured.
+      # some malfunction has occurred.
       foreach r $msg { if {$r != 1} { puts "Invariant check failed: $msg" } }
     }
   }
