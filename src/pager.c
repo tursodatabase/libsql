@@ -3870,6 +3870,7 @@ static int pagerAcquireMapPage(
   }else{
     *ppPage = p = (PgHdr *)sqlite3MallocZero(sizeof(PgHdr) + pPager->nExtra);
     if( p==0 ){
+      sqlite3OsUnfetch(pPager->fd, pData);
       return SQLITE_NOMEM;
     }
     p->pExtra = (void *)&p[1];

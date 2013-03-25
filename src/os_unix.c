@@ -1807,6 +1807,7 @@ end_unlock:
 ** the requested locking level, this routine is a no-op.
 */
 static int unixUnlock(sqlite3_file *id, int eFileLock){
+  assert( eFileLock==SHARED_LOCK || ((unixFile *)id)->nFetchOut==0 );
   return posixUnlock(id, eFileLock, 0);
 }
 
@@ -4531,7 +4532,6 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
   }
 
   if( nMap!=pFd->mmapSize ){
-    void *pNew;
     unixUnmapfile(pFd);
 
     if( nMap>0 ){
