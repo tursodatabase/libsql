@@ -225,6 +225,11 @@ struct unixFile {
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
+  int nFetchOut;                      /* Number of outstanding xFetch refs */
+  sqlite3_int64 mmapSize;             /* Usable size of mapping at pMapRegion */
+  sqlite3_int64 mmapOrigsize;         /* Actual size of mapping at pMapRegion */
+  sqlite3_int64 mmapLimit;            /* Configured FCNTL_MMAP_LIMIT value */
+  void *pMapRegion;                   /* Memory mapped region */
 #ifdef __QNXNTO__
   int sectorSize;                     /* Device sector size */
   int deviceCharacteristics;          /* Precomputed device characteristics */
@@ -251,11 +256,6 @@ struct unixFile {
   unsigned char inNormalWrite;   /* True if in a normal write operation */
 
 #endif
-  sqlite3_int64 mmapSize;         /* Usable size of mapping at pMapRegion */
-  sqlite3_int64 mmapOrigsize;     /* Actual size of mapping at pMapRegion */
-  sqlite3_int64 mmapLimit;        /* Configured FCNTL_MMAP_SIZE value */
-  void *pMapRegion;               /* Memory mapped region */
-  int nFetchOut;                  /* Number of outstanding xFetch refs */
 
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
@@ -3699,7 +3699,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
-    case SQLITE_FCNTL_MMAP_SIZE: {
+    case SQLITE_FCNTL_MMAP_LIMIT: {
       pFile->mmapLimit = *(i64*)pArg;
       return SQLITE_OK;
     }
@@ -4528,7 +4528,7 @@ static void unixUnmapfile(unixFile *pFd){
 ** the mapping to create. Otherwise, if nByte is less than zero, then the 
 ** requested size is the size of the file on disk. The actual size of the
 ** created mapping is either the requested size or the value configured 
-** using SQLITE_FCNTL_MMAP_SIZE, whichever is smaller.
+** using SQLITE_FCNTL_MMAP_LIMIT, whichever is smaller.
 **
 ** SQLITE_OK is returned if no error occurs (even if the mapping is not
 ** recreated as a result of outstanding references) or an SQLite error
@@ -4969,6 +4969,7 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
+  pNew->mmapLimit = SQLITE_DEFAULT_MMAP_LIMIT;
   if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;

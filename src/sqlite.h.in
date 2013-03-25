@@ -886,9 +886,9 @@ struct sqlite3_io_methods {
 ** written into memory obtained from [sqlite3_malloc()].  The caller should
 ** invoke [sqlite3_free()] on the result to avoid a memory leak.
 **
-** <li>[[SQLITE_FCNTL_MMAP_SIZE]]
-** The argument is assumed to point to a value of type sqlite3_int64. An
-** advisory maximum amount of this file to memory map in bytes.
+** <li>[[SQLITE_FCNTL_MMAP_LIMIT]]
+** The argument is assumed to pointer to a value of type sqlite3_int64 that
+** is an advisory maximum number of bytes in the file to memory map.
 **
 ** </ul>
 */
@@ -908,7 +908,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_PRAGMA                 14
 #define SQLITE_FCNTL_BUSYHANDLER            15
 #define SQLITE_FCNTL_TEMPFILENAME           16
-#define SQLITE_FCNTL_MMAP_SIZE              18
+#define SQLITE_FCNTL_MMAP_LIMIT             18
 
 /*
 ** CAPI3REF: Mutex Handle

@@ -262,7 +262,7 @@ do_faultsim_test 4 -faults vfsfault-* -prep {
   faultsim_restore_and_reopen
   file_control_chunksize_test db main 8192
   execsql { 
-    PRAGMA mmap_size = 1000000;
+    PRAGMA mmap_limit = 1000000;
   }
 } -body {
   test_syscall errno mmap     EACCES
@@ -275,4 +275,3 @@ do_faultsim_test 4 -faults vfsfault-* -prep {
 }
 
 finish_test
-

@@ -657,8 +657,8 @@ struct Pager {
   char dbFileVers[16];        /* Changes whenever database file changes */
 
   u8 bUseFetch;               /* True to use xFetch() */
-  int nMapCfgLimit;           /* Configured limit value */
   int nMmapOut;               /* Number of mmap pages currently outstanding */
+  sqlite3_int64 mxMmap;       /* Desired maximum mmap size */
   PgHdr *pFree;               /* List of free mmap page headers (pDirty) */
   /*
   ** End of the routinely-changing class members
@@ -3354,23 +3354,15 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 }
 
 /*
-** Invoke SQLITE_FCNTL_MMAP_SIZE based on the current value of nMapCfgLimit.
+** Invoke SQLITE_FCNTL_MMAP_LIMIT based on the current value of mxMmap.
 */
 static void pagerFixMaplimit(Pager *pPager){
   sqlite3_file *fd = pPager->fd;
   if( isOpen(fd) ){
-    pPager->bUseFetch = (fd->pMethods->iVersion>=3) && pPager->nMapCfgLimit!=0;
+    pPager->bUseFetch = (fd->pMethods->iVersion>=3) && pPager->mxMmap>0;
     if( pPager->bUseFetch ){
-      void *p;
-      i64 nMapLimit;
-      if( pPager->nMapCfgLimit<0 ){
-        nMapLimit = (i64)pPager->nMapCfgLimit * -1024;
-      }else{
-        nMapLimit = (i64)pPager->nMapCfgLimit * pPager->pageSize;
-      }
-
-      p = (void *)&nMapLimit;
-      sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_SIZE, p);
+      sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_LIMIT,
+                               (void*)&pPager->mxMmap);
     }
   }
 }
@@ -3378,8 +3370,8 @@ static void pagerFixMaplimit(Pager *pPager){
 /*
 ** Change the maximum size of any memory mapping made of the database file.
 */
-void sqlite3PagerSetMmapsize(Pager *pPager, int nMap){
-  pPager->nMapCfgLimit = nMap;
+void sqlite3PagerSetMmapLimit(Pager *pPager, sqlite3_int64 mxMmap){
+  pPager->mxMmap = mxMmap;
   pagerFixMaplimit(pPager);
 }
 

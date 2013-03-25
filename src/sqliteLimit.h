@@ -206,3 +206,10 @@
 #ifndef SQLITE_MAX_TRIGGER_DEPTH
 # define SQLITE_MAX_TRIGGER_DEPTH 1000
 #endif
+
+/*
+** Default maximum size of memory used by xFetch in the VFS.
+*/
+#ifndef SQLITE_DEFAULT_MMAP_LIMIT
+# define SQLITE_DEFAULT_MMAP_LIMIT (256*1024*1024)
+#endif

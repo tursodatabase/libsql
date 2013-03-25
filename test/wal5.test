@@ -241,8 +241,8 @@ foreach {testprefix do_wal_checkpoint} {
     # [sql2] commmand above. So normally, the db is 1 page in size here.
     # However, in mmap() mode, the db is pre-allocated to 2 pages at the
     # start of the checkpoint, even though page 2 cannot be written.
-    set nDb 1
-    if {[permutation]=="mmap"} {set nDb 2}
+    set nDb 2
+    if {[permutation]=="no-mmap"} {set nDb 1}
     do_test 2.3.$tn.8 { file_page_counts } [list $nDb 4 2 4]
   }
 
@@ -351,4 +351,3 @@ foreach {testprefix do_wal_checkpoint} {
 
 
 finish_test
-

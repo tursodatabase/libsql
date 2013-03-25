@@ -23,16 +23,16 @@ proc nRead {db} {
   return $stats(read)
 }
 
-foreach {t mmap_size nRead c2init} {
-  1.1 { PRAGMA mmap_size = -65536 }   4 {}
-  1.2 { PRAGMA mmap_size = -50    } 156 {}
-  1.3 { PRAGMA mmap_size = 0      } 344 {}
-  1.4 { PRAGMA mmap_size = -65536 }   4 {PRAGMA mmap_size = -65536}
-  1.5 { PRAGMA mmap_size = -50    } 156 {PRAGMA mmap_size = -65536}
-  1.6 { PRAGMA mmap_size = 0      } 344 {PRAGMA mmap_size = -65536}
+foreach {t mmap_limit nRead c2init} {
+  1.1 { PRAGMA mmap_limit = 70000000 }   4 {}
+  1.2 { PRAGMA mmap_limit =    51200 } 156 {}
+  1.3 { PRAGMA mmap_limit =        0 } 344 {}
+  1.4 { PRAGMA mmap_limit = 70000000 }   4 {PRAGMA mmap_limit = 70000000 }
+  1.5 { PRAGMA mmap_limit =    51200 } 156 {PRAGMA mmap_limit = 70000000 }
+  1.6 { PRAGMA mmap_limit =        0 } 344 {PRAGMA mmap_limit = 70000000 }
 } {
   do_multiclient_test tn {
-    sql1 $mmap_size
+    sql1 $mmap_limit
     sql2 $c2init
 
     code2 {
@@ -78,7 +78,7 @@ foreach {t mmap_size nRead c2init} {
     } {64 ok 149}
 
     # Check that the number of pages read by connection 1 indicates that the
-    # "PRAGMA mmap_size" command worked.
+    # "PRAGMA mmap_limit" command worked.
     do_test $t.$tn.5 { nRead db } $nRead
   }
 }
@@ -95,7 +95,7 @@ db func rblob rblob
 
 do_execsql_test 2.1 {
   PRAGMA auto_vacuum = 1;
-  PRAGMA mmap_size = -65536;
+  PRAGMA mmap_limit = 70000000;
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(a, b, UNIQUE(a, b));
   INSERT INTO t1 VALUES(rblob(500), rblob(500));
@@ -130,4 +130,3 @@ do_execsql_test 2.4 {
 } {0 24 24}
 
 finish_test
-

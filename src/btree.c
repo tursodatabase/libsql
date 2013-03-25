@@ -2134,11 +2134,11 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
 ** Change the limit on the amount of the database file that may be
 ** memory mapped.
 */
-int sqlite3BtreeSetMmapSize(Btree *p, int nMap){
+int sqlite3BtreeSetMmapLimit(Btree *p, sqlite3_int64 mxMmap){
   BtShared *pBt = p->pBt;
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
-  sqlite3PagerSetMmapsize(pBt->pPager, nMap);
+  sqlite3PagerSetMmapLimit(pBt->pPager, mxMmap);
   sqlite3BtreeLeave(p);
   return SQLITE_OK;
 }
