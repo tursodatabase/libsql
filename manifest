@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\sthe\spager\swhere\san\sxFetch()\sreference\swas\sbeing\sleaked\sfollowing\san\sOOM\serror.
-D 2013-03-25T13:50:49.946
+C Do\snot\sreturn\sSQLITE_IOERR\swhen\sthe\suser\sattempts\sto\sopen\sa\ssmall\sfile\sthat\sis\snot\sa\sdatabase\swith\smmap\senabled.\sInstead\sreturn\sSQLITE_NOTADB.
+D 2013-03-25T14:31:39.689
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h 782980cd0d840b4240a6e29ba9f8ef0ca0d750ca
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 1e61abcb664f3430ce13e5c5f32b2b2e204a6f23
 F src/os_win.c 386f8c034b177b672f7819ddc5d80be6c8d593ac
-F src/pager.c 3da35f3287791354f170824fd847e75ba9f2a0dc
+F src/pager.c 2dd59f366b519d01d08b44f615058e7cfacd0bd7
 F src/pager.h 241d72dc0905df042da165f086d03505cb0bb50c
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1431be95579160fb70408d43e17fc23c7b69ab4a
-R 2702651dc0367254a02a7905a85901b0
+P 5885ba6ce768658ec25b60747430d147b315b55c
+R c243df2223b3431445e14c1469df7b20
 U dan
-Z 4827c382c08dac8144315d5de3ed2c37
+Z 6b851eca8762089c75296a1160d8987e
