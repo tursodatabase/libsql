@@ -4591,19 +4591,25 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 }
 
 /*
-** If the second argument is non-NULL, then this function releases a 
-** reference obtained by an earlier call to unixFetch(). Or, if the second
-** argument is NULL, then this function is being called to inform the VFS
-** layer that, according to POSIX, any existing mapping may now be invalid
-** and should be unmapped.
+** If the third argument is non-NULL, then this function releases a 
+** reference obtained by an earlier call to unixFetch(). The second
+** argument passed to this function must be the same as the corresponding
+** argument that was passed to the unixFetch() invocation. 
+**
+** Or, if the third argument is NULL, then this function is being called 
+** to inform the VFS layer that, according to POSIX, any existing mapping 
+** may now be invalid and should be unmapped.
 */
-static int unixUnfetch(sqlite3_file *fd, void *p){
+static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
 
   /* If p==0 (unmap the entire file) then there must be no outstanding 
   ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),
   ** then there must be at least one outstanding.  */
   assert( (p==0)==(pFd->nFetchOut==0) );
+
+  /* If p!=0, it must match the iOff value. */
+  assert( p==0 || p==&((u8 *)pFd->pMapRegion)[iOff] );
 
   if( p ){
     pFd->nFetchOut--;

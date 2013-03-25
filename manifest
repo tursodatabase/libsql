@@ -1,5 +1,5 @@
-C Remove\sunnecessary\scode\sto\sround\sthe\ssize\sof\sa\smemory\smapping\sto\s4KB\sfrom\sos_unix.c.\sRename\sSQLITE_IOERR_MREMAP\sto\sSQLITE_IOERR_MMAP.\sFix\sother\ssmall\sissues\sin\sos_unix.c.
-D 2013-03-25T16:28:54.437
+C Change\sthe\ssignature\sof\sthe\sxUnfetch\smethod\sto\s"int\s(*xUnfetch)(sqlite3_file*,\ssqlite3_int64\siOfst,\svoid\s*p)".
+D 2013-03-25T17:00:24.194
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 9a804abbd3cae82d196e4d33aba13239e32522a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,12 +157,12 @@ F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
 F src/mutex_w32.c 32a9b3841e2d757355f0012b860b1bc5e01eafa0
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c a7ec2ddc43fb2684bfd8cb30db15ea6cce3298e9
-F src/os.h 782980cd0d840b4240a6e29ba9f8ef0ca0d750ca
+F src/os.c 17c6e6e4a17135ec1c7c468f8d0b97ec6f8a9264
+F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 82efc58c818c69e191f5560935037af365f99ff5
+F src/os_unix.c 664fc178a9478246f6c84e46292e77fb5bee4431
 F src/os_win.c 386f8c034b177b672f7819ddc5d80be6c8d593ac
-F src/pager.c 2dd59f366b519d01d08b44f615058e7cfacd0bd7
+F src/pager.c d0cdf47664e487f735b4bea485ee70637ed34a55
 F src/pager.h 241d72dc0905df042da165f086d03505cb0bb50c
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -176,7 +176,7 @@ F src/resolve.c 9079da7d59aed2bb14ec8315bc7f720dd85b5b65
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c e1c6f6abdf9f359f4e735cb8ae11d2f359bf52a9
 F src/shell.c 7c41bfcd9e5bf9d96b9215f79b03a5b2b44a3bca
-F src/sqlite.h.in a0866dafaa412d1e89abbc78d2b44b12cf95d1d1
+F src/sqlite.h.in b04790da19184e883da788d07688f16230d2cb6b
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 2c3d830ae78b046ebf939c905c023610e43c2796
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bbcaab3e80d0ff776d8567094b137d1483b3377b
-R fd25f18074b1cc787a38214a338c9127
+P dce35c01a5fe66d2970075b1e3f0376026485e4c
+R 12377e21e3793332cede5cbfb008d2ac
 U dan
-Z ae05d407cd866087491e3302af269873
+Z 1c478466922e4f7b4b376664d80146c7

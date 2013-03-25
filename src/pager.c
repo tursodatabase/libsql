@@ -3091,7 +3091,7 @@ static int pagerBeginReadTransaction(Pager *pPager){
   rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
   if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
-    if( pPager->bUseFetch ) sqlite3OsUnfetch(pPager->fd, 0);
+    if( pPager->bUseFetch ) sqlite3OsUnfetch(pPager->fd, 0, 0);
   }
 
   return rc;
@@ -3870,7 +3870,7 @@ static int pagerAcquireMapPage(
   }else{
     *ppPage = p = (PgHdr *)sqlite3MallocZero(sizeof(PgHdr) + pPager->nExtra);
     if( p==0 ){
-      sqlite3OsUnfetch(pPager->fd, pData);
+      sqlite3OsUnfetch(pPager->fd, (i64)(pgno-1) * pPager->pageSize, pData);
       return SQLITE_NOMEM;
     }
     p->pExtra = (void *)&p[1];
@@ -3903,7 +3903,7 @@ static void pagerReleaseMapPage(PgHdr *pPg){
   pPager->pFree = pPg;
 
   assert( pPager->fd->pMethods->iVersion>=3 );
-  sqlite3OsUnfetch(pPager->fd, pPg->pData);
+  sqlite3OsUnfetch(pPager->fd, (i64)(pPg->pgno-1)*pPager->pageSize, pPg->pData);
 }
 
 /*
@@ -5095,7 +5095,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
         ** to be the right size but is not actually valid. Avoid this
         ** possibility by unmapping the db here. */
         if( pPager->bUseFetch ){
-          sqlite3OsUnfetch(pPager->fd, 0);
+          sqlite3OsUnfetch(pPager->fd, 0, 0);
         }
       }
     }
@@ -5245,7 +5245,7 @@ int sqlite3PagerAcquire(
         if( pPg==0 ){
           rc = pagerAcquireMapPage(pPager, pgno, pData, &pPg);
         }else{
-          sqlite3OsUnfetch(pPager->fd, pData);
+          sqlite3OsUnfetch(pPager->fd, (i64)(pgno-1)*pPager->pageSize, pData);
         }
         if( pPg ){
           assert( rc==SQLITE_OK );

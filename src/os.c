@@ -144,8 +144,8 @@ int sqlite3OsShmMap(
 int sqlite3OsFetch(sqlite3_file *id, i64 iOff, int iAmt, void **pp){
   return id->pMethods->xFetch(id, iOff, iAmt, pp);
 }
-int sqlite3OsUnfetch(sqlite3_file *id, void *p){
-  return id->pMethods->xUnfetch(id, p);
+int sqlite3OsUnfetch(sqlite3_file *id, i64 iOff, void *p){
+  return id->pMethods->xUnfetch(id, iOff, p);
 }
 
 /*
