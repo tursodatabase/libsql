@@ -1,5 +1,5 @@
-C Remove\sthe\sSQLITE_OMIT_MERGE_SORT\scompile-time\soption\sand\sits\srelated\scode.\nThe\smerge\ssorter\sis\snow\sa\srequired\scomponent.
-D 2013-03-24T22:56:49.538
+C In\sfts3,\swhen\sfiltering\slists\sfor\shits\sin\sa\sspecific\scolumn,\sedit\sthe\slist\sin\splace\sin\sthe\ssame\sway\sas\sit\sis\sfor\sNEAR\sfiltering.\sFix\sfor\s[38b1ae018f].
+D 2013-03-25T11:38:44.860
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -72,7 +72,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c a863f05f758af36777dffc2facc898bc73fec896
-F ext/fts3/fts3_write.c c2166f7148a4ad8bcdad99a99d647b1091744e6b
+F ext/fts3/fts3_write.c d92c6cbe07363791cfe8b62b4dee67e6f8afc9e2
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -491,7 +491,7 @@ F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
 F test/fts3matchinfo.test ecb08f586d027eb03941bcfcded6cb9d8ccb3a66
-F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
+F test/fts3near.test f78c79a92b1da496cb2a239ba24af35f33445698
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
@@ -1039,7 +1039,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6f6e2d50941e444ebc83604daddcc034137a05b7
-R c9af7e9245b15a89c65f60e3499063d2
-U drh
-Z b277505b37d3e408ea130ed65856e826
+P 8b44d6fb159e85267095e846cded2764c3bcb895
+R 6c0c94d8e550f4b716beb89e2de0d44b
+U dan
+Z f4ab0250caa5559575a04c2c550a6a93
