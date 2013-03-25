@@ -4493,15 +4493,8 @@ static int unixShmUnmap(
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
-** Arguments x and y are both integers. Argument y must be a power of 2.
-** Round x up to the nearest integer multiple of y. For example:
-**
-**     ROUNDUP(0,  8) ->  0
-**     ROUNDUP(13, 8) -> 16
-**     ROUNDUP(32, 8) -> 32
+** If it is currently memory mapped, unmap file pFd.
 */
-#define ROUNDUP(x,y)     (((x)+y-1)&~(y-1))
-
 static void unixUnmapfile(unixFile *pFd){
   assert( pFd->nFetchOut==0 );
   if( pFd->pMapRegion ){
@@ -4512,6 +4505,22 @@ static void unixUnmapfile(unixFile *pFd){
   }
 }
 
+/*
+** Memory map or remap the file opened by file-descriptor pFd (if the file
+** is already mapped, the existing mapping is replaced by the new). Or, if 
+** there already exists a mapping for this file, and there are still 
+** outstanding xFetch() references to it, this function is a no-op.
+**
+** If parameter nByte is non-negative, then it is the requested size of 
+** the mapping to create. Otherwise, if nByte is less than zero, then the 
+** requested size is the size of the file on disk. The actual size of the
+** created mapping is either the requested size or the value configured 
+** using SQLITE_FCNTL_MMAP_SIZE, whichever is smaller.
+**
+** SQLITE_OK is returned if no error occurs (even if the mapping is not
+** recreated as a result of outstanding references) or an SQLite error
+** code otherwise.
+*/
 static int unixMapfile(unixFile *pFd, i64 nByte){
   i64 nMap = nByte;
   int rc;
@@ -4538,19 +4547,32 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
       void *pNew;
       int flags = PROT_READ;
       if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
-      pNew = mmap(0, ROUNDUP(nMap, 4096), flags, MAP_SHARED, pFd->h, 0);
+      pNew = mmap(0, nMap, flags, MAP_SHARED, pFd->h, 0);
       if( pNew==MAP_FAILED ){
-        return SQLITE_IOERR_MREMAP;
+        return SQLITE_IOERR_MMAP;
       }
 
       pFd->pMapRegion = pNew;
-      pFd->mmapOrigsize = pFd->mmapSize = nMap;
+      pFd->mmapSize = nMap;
+      pFd->mmapOrigsize = nMap;
     }
   }
 
   return SQLITE_OK;
 }
 
+/*
+** If possible, return a pointer to a mapping of file fd starting at offset
+** iOff. The mapping must be valid for at least nAmt bytes.
+**
+** If such a pointer can be obtained, store it in *pp and return SQLITE_OK.
+** Or, if one cannot but no error occurs, set *pp to 0 and return SQLITE_OK.
+** Finally, if an error does occur, return an SQLite error code. The final
+** value of *pp is undefined in this case.
+**
+** If this function does return a pointer, the caller must eventually 
+** release the reference by calling unixUnfetch().
+*/
 static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
   *pp = 0;
@@ -4568,9 +4590,19 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
   return SQLITE_OK;
 }
 
+/*
+** If the second argument is non-NULL, then this function releases a 
+** reference obtained by an earlier call to unixFetch(). Or, if the second
+** argument is NULL, then this function is being called to inform the VFS
+** layer that, according to POSIX, any existing mapping may now be invalid
+** and should be unmapped.
+*/
 static int unixUnfetch(sqlite3_file *fd, void *p){
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
 
+  /* If p==0 (unmap the entire file) then there must be no outstanding 
+  ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),
+  ** then there must be at least one outstanding.  */
   assert( (p==0)==(pFd->nFetchOut==0) );
 
   if( p ){
