@@ -3185,7 +3185,9 @@ static int autoVacuumCommit(BtShared *pBt){
     nFree = get4byte(&pBt->pPage1->aData[36]);
     nFin = finalDbSize(pBt, nOrig, nFree);
     if( nFin>nOrig ) return SQLITE_CORRUPT_BKPT;
-
+    if( nFin<nOrig ){
+      rc = saveAllCursors(pBt, 0, 0);
+    }
     for(iFree=nOrig; iFree>nFin && rc==SQLITE_OK; iFree--){
       rc = incrVacuumStep(pBt, nFin, iFree, 1);
     }
@@ -3202,7 +3204,7 @@ static int autoVacuumCommit(BtShared *pBt){
     }
   }
 
-  assert( nRef==sqlite3PagerRefcount(pPager) );
+  assert( nRef>=sqlite3PagerRefcount(pPager) );
   return rc;
 }
 

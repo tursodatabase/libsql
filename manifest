@@ -1,5 +1,5 @@
-C Previous\scheck-in\saccidently\sleft\smmap\sturned\soff\sby\sdefault.\sThis\scheckin\nfixes\sthat.\s\sUnfortunately,\sshared.test\sis\snow\ssegfaulting.\s\sAll\sother\nveryquick\stests\sappear\sto\swork,\showever.
-D 2013-03-26T01:07:50.891
+C In\sbtree.c,\ssave\sthe\spositions\sof\sany\sopen\scursors\sbefore\smoving\sany\spages\saround\sto\sauto-vacuum\sthe\sdatabase\son\scommit.
+D 2013-03-26T14:16:20.450
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 771f0391556317de19e02c9533b256e8299dd59b
+F src/btree.c 19b587b32569d4b92651b5eaa9de2e59c6f8f704
 F src/btree.h d9490cd37aaeb530a41b07f06e1262950b1be916
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1b37c4effdd03aa2ea938a71b4f22ed27391689b
-R 66cf00b9dd2b30a0d14b8b5c617a6bbb
-U drh
-Z c802a777b217fa0e42ce25209bcf7fef
+P a850c7319c20b5757983443df05cf2aa4250053b
+R 211ffabed726a7468ad9f8d3eeabe8a8
+U dan
+Z 3ec7da7f1db0278991c8541b22037fbf
