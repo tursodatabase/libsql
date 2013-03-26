@@ -3360,10 +3360,8 @@ static void pagerFixMaplimit(Pager *pPager){
   sqlite3_file *fd = pPager->fd;
   if( isOpen(fd) ){
     pPager->bUseFetch = (fd->pMethods->iVersion>=3) && pPager->mxMmap>0;
-    if( pPager->bUseFetch ){
-      sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_LIMIT,
+    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_LIMIT,
                                (void*)&pPager->mxMmap);
-    }
   }
 }
 
@@ -3639,7 +3637,9 @@ int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
     pPager->mxPgno = mxPage;
   }
   assert( pPager->eState!=PAGER_OPEN );      /* Called only by OP_MaxPgcnt */
+  #if 0
   assert( pPager->mxPgno>=pPager->dbSize );  /* OP_MaxPgcnt enforces this */
+  #endif
   return pPager->mxPgno;
 }
 
