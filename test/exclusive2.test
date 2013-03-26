@@ -28,7 +28,7 @@ ifcapable {!pager_pragmas} {
 # Tests in this file verify that locking_mode=exclusive causes SQLite to
 # use cached pages even if the database is changed on disk. This doesn't
 # work with mmap.
-if {[permutation]=="mmap"} {
+if {[permutation]!="nommap"} {
   finish_test
   return
 }

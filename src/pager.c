@@ -4749,6 +4749,7 @@ int sqlite3PagerOpen(
   /* pPager->pBusyHandlerArg = 0; */
   pPager->xReiniter = xReinit;
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
+  pPager->mxMmap = SQLITE_DEFAULT_MMAP_LIMIT;
 
   *ppPager = pPager;
   return SQLITE_OK;

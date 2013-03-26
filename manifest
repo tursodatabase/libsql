@@ -1,5 +1,5 @@
-C Memory-mapped\sI/O\sis\snow\son\sby\sdefault.\s\sThe\s"PRAGMA\smmap_limit(N)"\scan\sbe\nused\sto\sissue\sa\shint\sto\sthe\sVFS\sto\slimit\smmap\sspace\sto\sN\sbytes.\s\sThe\sVFS\nis\sfree\sto\signore\sthat\shint\sif\sdesired.\s\sHowever,\sif\s"PRAGMA\smmap_limit(0)"\nis\sused,\sxFetch\sis\snever\scalled.
-D 2013-03-25T23:09:28.646
+C Previous\scheck-in\saccidently\sleft\smmap\sturned\soff\sby\sdefault.\sThis\scheckin\nfixes\sthat.\s\sUnfortunately,\sshared.test\sis\snow\ssegfaulting.\s\sAll\sother\nveryquick\stests\sappear\sto\swork,\showever.
+D 2013-03-26T01:07:50.891
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 57306f1d2a2d783dae4365446b9f9a5da8958559
 F src/os_win.c e4f17ddf79f2a9373e33ed70565e765d65324589
-F src/pager.c c532d51ccc74de8551a28eb932f3b1a1034017d3
+F src/pager.c 8ac98fd95106e759870e92ff316b188e78f469cf
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -403,7 +403,7 @@ F test/eqp.test 46aa946dd55c90635327898275d3e533d23a9845
 F test/errmsg.test 050717f1c6a5685de9c79f5f9f6b83d7c592f73a
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test a1b324cb21834a490cd052d409d34789cfef57cb
-F test/exclusive2.test 881193eccec225cfed9d7f744b65e57f26adee25
+F test/exclusive2.test 354bdabe299a2546c898dff42f79079ff1590d88
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
 F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
@@ -508,7 +508,7 @@ F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4unicode.test 25ccad45896f8e50f6a694cff738a35f798cdb40
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test b0fc34fdc36897769651975a2b0a606312753643
+F test/func.test a4f24707e6af0bcd4cb5b856af4462db40b047b1
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -654,11 +654,11 @@ F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
-F test/pageropt.test 290cd59782b1890f02bb33795571facfc5ccac43
+F test/pageropt.test 32cb5a6ed7ccddf8e8c842cb44240bd9340223ce
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test d298a74abae42b72b3640dc5505d19d8a3eddc9e
+F test/permutations.test b6cb45ce4d3193b831231025c9d30c77317dd240
 F test/pragma.test 60d29cd3d8098a2c20bf4c072810f99e3bf2757a
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -951,7 +951,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
-F test/wal.test 5baa9a0e682c0394012aa9a06a3d06cf92655fbf
+F test/wal.test bbd98ac09d8fbcaa80ec233757056eb1bbb7cd95
 F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8776047bd776bbf266eb9c3b56683badb84ae73e
-R 1fba4ef23570acddc66df7d627b1cb5f
+P 1b37c4effdd03aa2ea938a71b4f22ed27391689b
+R 66cf00b9dd2b30a0d14b8b5c617a6bbb
 U drh
-Z c62aae7ee656f659e8aebd3681920a9a
+Z c802a777b217fa0e42ce25209bcf7fef

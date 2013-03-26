@@ -1273,7 +1273,7 @@ do_test func-29.3 {
   sqlite3_db_status db CACHE_MISS 1
   db eval {SELECT typeof(+x) FROM t29 ORDER BY id}
 } {integer null real blob text}
-if {[permutation] != "mmap"} {
+if {[permutation] == "nommap"} {
   do_test func-29.4 {
     set x [lindex [sqlite3_db_status db CACHE_MISS 1] 1]
     if {$x>100} {set x many}
