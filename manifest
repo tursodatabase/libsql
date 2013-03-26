@@ -1,5 +1,5 @@
-C In\sbtree.c,\ssave\sthe\spositions\sof\sany\sopen\scursors\sbefore\smoving\sany\spages\saround\sto\sauto-vacuum\sthe\sdatabase\son\scommit.
-D 2013-03-26T14:16:20.450
+C Change\sthe\sname\sof\sthe\sPager.pFree\sfield\sto\sPager.pMmapFreelist.
+D 2013-03-26T14:36:11.815
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 57306f1d2a2d783dae4365446b9f9a5da8958559
 F src/os_win.c e4f17ddf79f2a9373e33ed70565e765d65324589
-F src/pager.c 8ac98fd95106e759870e92ff316b188e78f469cf
+F src/pager.c 2b9980e87296812a6ce51121a3335550ae25e3ec
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a850c7319c20b5757983443df05cf2aa4250053b
-R 211ffabed726a7468ad9f8d3eeabe8a8
-U dan
-Z 3ec7da7f1db0278991c8541b22037fbf
+P 30c0a69363931a72d1c34e5be71646932398d172
+R 11ebc3388f5e3939639a27582f5015a5
+U drh
+Z 2c5cf3d5be983a0c21f765acf3ca05b3

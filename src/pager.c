@@ -659,7 +659,7 @@ struct Pager {
   u8 bUseFetch;               /* True to use xFetch() */
   int nMmapOut;               /* Number of mmap pages currently outstanding */
   sqlite3_int64 mxMmap;       /* Desired maximum mmap size */
-  PgHdr *pFree;               /* List of free mmap page headers (pDirty) */
+  PgHdr *pMmapFreelist;       /* List of free mmap page headers (pDirty) */
   /*
   ** End of the routinely-changing class members
   ***************************************************************************/
@@ -3854,9 +3854,9 @@ static int pagerAcquireMapPage(
 ){
   PgHdr *p;                       /* Memory mapped page to return */
 
-  if( pPager->pFree ){
-    *ppPage = p = pPager->pFree;
-    pPager->pFree = p->pDirty;
+  if( pPager->pMmapFreelist ){
+    *ppPage = p = pPager->pMmapFreelist;
+    pPager->pMmapFreelist = p->pDirty;
     p->pDirty = 0;
     memset(p->pExtra, 0, pPager->nExtra);
   }else{
@@ -3891,20 +3891,20 @@ static int pagerAcquireMapPage(
 static void pagerReleaseMapPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
   pPager->nMmapOut--;
-  pPg->pDirty = pPager->pFree;
-  pPager->pFree = pPg;
+  pPg->pDirty = pPager->pMmapFreelist;
+  pPager->pMmapFreelist = pPg;
 
   assert( pPager->fd->pMethods->iVersion>=3 );
   sqlite3OsUnfetch(pPager->fd, (i64)(pPg->pgno-1)*pPager->pageSize, pPg->pData);
 }
 
 /*
-** Free all PgHdr objects stored in the Pager.pFree list.
+** Free all PgHdr objects stored in the Pager.pMmapFreelist list.
 */
 static void pagerFreeMapHdrs(Pager *pPager){
   PgHdr *p;
   PgHdr *pNext;
-  for(p=pPager->pFree; p; p=pNext){
+  for(p=pPager->pMmapFreelist; p; p=pNext){
     pNext = p->pDirty;
     sqlite3_free(p);
   }
