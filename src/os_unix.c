@@ -3107,8 +3107,8 @@ static int unixRead(
   );
 #endif
 
-  /* Deal with as much of this write request as possible by transfering
-  ** data to the memory mapping using memcpy().  */
+  /* Deal with as much of this read request as possible by transfering
+  ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
     if( offset+amt <= pFile->mmapSize ){
       memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], amt);
