@@ -1,5 +1,5 @@
-C A\sfix\san\stest-case\sfor\sthe\sORDER\sBY\sproblem\sidentified\sby\sticket\s[a179fe7465].\nThis\schange\scauses\ssorting\sto\soccur\sin\ssome\scases\swhere\sit\sis\snot\sstrictly\nnecessary.\s\sFurther\swork\sis\sneeded\sto\savoid\sthose\sextra\ssorts.
-D 2013-03-27T15:04:28.049
+C Improved\soptimization\sof\sORDER\sBY.
+D 2013-03-27T16:05:30.603
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,7 +252,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 979868386da8fa8e50d74bde97216849add43db2
+F src/where.c fc912c1d321f765840b2cf63a903cf795c871386
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1041,10 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 322a5f086d9ee46017f750df81527799a54ae258
-R b585a02d8fa68b00b6cca0df4ff7837d
-T *branch * orderby-fix
-T *sym-orderby-fix *
-T -sym-trunk *
+P 488089e615e375c01b31544f06e801af950ae3db
+R 7011d42dba6b11445611fd2df04727aa
 U drh
-Z 030131c01bf39bf419a41cdbf4bff578
+Z 55f146dee0dda61d0272032f415b56a9

@@ -3486,7 +3486,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** So this computation assumes table records are about twice as big
     ** as index records
     */
-    if( (pc.plan.wsFlags&~(WHERE_REVERSE|WHERE_ORDERED))==WHERE_IDX_ONLY
+    if( (pc.plan.wsFlags&~(WHERE_REVERSE|WHERE_ORDERED|WHERE_OB_UNIQUE))
+                                                              ==WHERE_IDX_ONLY
      && (pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
      && sqlite3GlobalConfig.bUseCis
      && OptimizationEnabled(pParse->db, SQLITE_CoverIdxScan)
