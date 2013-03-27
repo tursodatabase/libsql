@@ -21,7 +21,7 @@ ifcapable !wal {finish_test ; return }
 
 set testprefix wal5
 
-proc db_page_count  {{file test.db}} { expr [file size $file] / 1024 }
+proc db_page_count  {{file test.db}} { file_page_count $file }
 proc wal_page_count {{file test.db}} { wal_frame_count ${file}-wal 1024 }
 
 
@@ -101,8 +101,8 @@ foreach {testprefix do_wal_checkpoint} {
         INSERT INTO t1 VALUES(2, zeroblob(1200));
         INSERT INTO t1 VALUES(3, zeroblob(1200));
       }
-      expr [file size test.db] / 1024
-    } {2}
+      list [file_page_count test.db] [file_page_size test.db]
+    } {2 1024}
 
     # Have connection 2 grab a read-lock on the current snapshot.
     do_test 1.$tn.2 { sql2 { BEGIN; SELECT x FROM t1 } } {1 2 3}

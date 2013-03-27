@@ -321,8 +321,12 @@ struct unixFile {
 #define threadid 0
 #endif
 
+#if !defined(HAVE_MREMAP)
 #if defined(__linux__) && defined(_GNU_SOURCE)
-# define HAVE_MREMAP
+# define HAVE_MREMAP 1
+#else
+# define HAVE_MREMAP 0
+#endif
 #endif
 
 /*
@@ -462,7 +466,7 @@ static struct unix_syscall {
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
 #define osMunmap ((void*(*)(void*,size_t))aSyscall[22].pCurrent)
 
-#if defined(HAVE_MREMAP)
+#if HAVE_MREMAP
   { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
 #else
   { "mremap",       (sqlite3_syscall_ptr)0,               0 },
@@ -4602,15 +4606,15 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
     void *pNew = 0;
 
     /* If the request is for a mapping zero bytes in size, or there are 
-     ** currently already two mapping regions, or there is already a mapping
-     ** region that is not a multiple of the page-size in size, unmap
-     ** everything.  */
+    ** currently already two mapping regions, or there is already a mapping
+    ** region that is not a multiple of the page-size in size, unmap
+    ** everything.  */
     if( nMap==0 
-#ifndef HAVE_MREMAP
-        || (pFd->aMmap[0].pMapRegion && pFd->aMmap[1].pMapRegion) 
-        || (pFd->aMmap[0].mmapSize % pFd->szSyspage)
+#if !HAVE_MREMAP
+     || (pFd->aMmap[0].pMapRegion && pFd->aMmap[1].pMapRegion) 
+     || (pFd->aMmap[0].mmapSize % pFd->szSyspage)
 #endif
-      ){
+    ){
       unixUnmapfile(pFd);
     }
     assert( pFd->aMmap[1].pMapRegion==0 );
@@ -4629,7 +4633,7 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
         pFd->aMmap[0].mmapSize = nMap;
         pFd->aMmap[0].mmapOrigsize = nMap;
       }
-#ifdef HAVE_MREMAP
+#if HAVE_MREMAP
       /* If we have an mremap() call, resize the existing mapping. */
       else{
         unixMapping *pMap = &pFd->aMmap[0];

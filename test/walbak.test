@@ -50,8 +50,8 @@ do_test walbak-1.0 {
 do_test walbak-1.1 {
   forcedelete bak.db bak.db-journal bak.db-wal
   db backup bak.db
-  file size bak.db
-} [expr 3*1024]
+  file_page_count bak.db
+} 3
 do_test walbak-1.2 {
   sqlite3 db2 bak.db
   execsql { 
@@ -73,8 +73,8 @@ do_test walbak-1.4 {
   }
 } {wal}
 do_test walbak-1.5 {
-  list [file size test.db] [file size test.db-wal]
-} [list 1024 [wal_file_size 6 1024]]
+  list [file_page_count test.db] [file size test.db-wal]
+} [list 1 [wal_file_size 6 1024]]
 do_test walbak-1.6 {
   execsql { PRAGMA wal_checkpoint }
   list [file size test.db] [file size test.db-wal]

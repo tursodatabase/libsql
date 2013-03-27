@@ -20,6 +20,7 @@ set ::testprefix dbstatus2
 do_execsql_test 1.0 {
   PRAGMA page_size = 1024;
   PRAGMA auto_vacuum = 0;
+  PRAGMA mmap_limit = 0;
 
   CREATE TABLE t1(a PRIMARY KEY, b);
   INSERT INTO t1 VALUES(1, randomblob(600));

@@ -42,7 +42,7 @@ proc create_db {{sql ""}} {
     }
   }
 
-  return [expr {[file size test.db] / 1024}]
+  return [file_page_count test.db]
 }
 
 # This proc returns the number of contiguous blocks of pages that make up

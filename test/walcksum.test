@@ -176,8 +176,8 @@ foreach endian {big little} {
     forcecopy test.db-wal test2.db-wal
     db close
 
-    list [file size test2.db] [file size test2.db-wal]
-  } [list [expr 1024*3] [wal_file_size 6 1024]]
+    list [file_page_count test2.db] [file size test2.db-wal]
+  } [list 3 [wal_file_size 6 1024]]
 
   # Verify that the checksums are valid for all frames and that they
   # are calculated by interpreting data in native byte-order.
@@ -213,8 +213,8 @@ foreach endian {big little} {
       PRAGMA synchronous = NORMAL;
       INSERT INTO t1 VALUES(34, 'thirtyfour');
     }
-    list [file size test.db] [file size test.db-wal]
-  } [list [expr 1024*3] [wal_file_size 8 1024]]
+    list [file_page_count test.db] [file size test.db-wal]
+  } [list 3 [wal_file_size 8 1024]]
   for {set f 1} {$f <= 8} {incr f} {
     do_test walcksum-1.$endian.5.$f {
       log_checksum_verify test.db-wal $f $endian
@@ -237,8 +237,8 @@ foreach endian {big little} {
       PRAGMA synchronous = NORMAL;
       INSERT INTO t1 VALUES(55, 'fiftyfive');
     } db2
-    list [file size test.db] [file size test.db-wal]
-  } [list [expr 1024*3] [wal_file_size 10 1024]]
+    list [file_page_count test.db] [file size test.db-wal]
+  } [list 3 [wal_file_size 10 1024]]
   for {set f 1} {$f <= 10} {incr f} {
     do_test walcksum-1.$endian.7.$f {
       log_checksum_verify test.db-wal $f $endian

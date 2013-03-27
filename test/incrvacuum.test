@@ -149,21 +149,21 @@ do_test incrvacuum-3.2 {
   #   4 -> table tbl2
   #   5 -> table tbl2 overflow page.
   #
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {5}
 do_test incrvacuum-3.3 {
   execsql {
     DROP TABLE abc;
     DELETE FROM tbl2;
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {5}
 do_test incrvacuum-3.4 {
   execsql {
     PRAGMA auto_vacuum = 1;
     INSERT INTO tbl2 VALUES('hello world');
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {3}
 
 #---------------------------------------------------------------------
@@ -178,14 +178,14 @@ do_test incrvacuum-4.1 {
     INSERT INTO tbl2 VALUES($::str);
     CREATE TABLE tbl1(a, b, c);
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {5}
 do_test incrvacuum-4.2 {
   execsql {
     DELETE FROM tbl2;
     DROP TABLE tbl1;
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {5}
 do_test incrvacuum-4.3 {
   set ::nStep 0
@@ -221,7 +221,7 @@ do_test incrvacuum-5.2.1 {
     PRAGMA incremental_vacuum;                 -- this is a no-op.
     COMMIT;
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {4}
 do_test incrvacuum-5.2.2 {
   set ::str [string repeat abcdefghij 110]
@@ -232,7 +232,7 @@ do_test incrvacuum-5.2.2 {
     DELETE FROM tbl1 WHERE oid%2;        -- Put 2 overflow pages on free-list.
     COMMIT;
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {7}
 do_test incrvacuum-5.2.3 {
   execsql {
@@ -242,7 +242,7 @@ do_test incrvacuum-5.2.3 {
     INSERT INTO tbl2 VALUES('a nice string');
     COMMIT;
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {6}
 do_test incrvacuum-5.2.4 {
   execsql {
@@ -255,7 +255,7 @@ do_test incrvacuum-5.2.5 {
     DROP TABLE tbl2;
     PRAGMA incremental_vacuum;
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {1}
 
 
@@ -527,7 +527,7 @@ do_test incrvacuum-10.1 {
     DROP TABLE t1;
     DROP TABLE t2;
   }
-  expr [file size test.db] / 1024
+  file_page_count test.db
 } {29}
 
 do_test incrvacuum-10.2 {

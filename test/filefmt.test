@@ -65,6 +65,7 @@ ifcapable pager_pragmas {
        db close
        forcedelete test.db
        sqlite3 db test.db
+       db eval "PRAGMA mmap_limit=0"
        db eval "PRAGMA auto_vacuum=OFF"
        db eval "PRAGMA page_size=$pagesize"
        db eval {CREATE TABLE t1(x)}
@@ -215,6 +216,7 @@ do_execsql_test filefmt-3.3 {
 
 reset_db
 do_execsql_test filefmt-4.1 {
+  PRAGMA mmap_limit = 0;
   PRAGMA auto_vacuum = 1;
   CREATE TABLE t1(x, y);
   CREATE TABLE t2(x, y);

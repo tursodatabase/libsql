@@ -26,8 +26,8 @@ do_test tkt2920-1.1 {
     PRAGMA auto_vacuum=0;
     CREATE TABLE filler (fill);
   }
-  file size test.db
-} {2048}
+  list [file_page_count test.db] [file_page_size test.db]
+} {2 1024}
 do_test tkt2920-1.2 {
   db eval BEGIN
   for {set i 0} {$i<34} {incr i} {

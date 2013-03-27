@@ -52,8 +52,8 @@ for {set av 0} {$av<=$upperBound} {incr av} {
   }
 
   do_test createtab-$av.2 {
-    file size test.db
-  } [expr {1024*(4+($av!=0)+(${isUtf16}*2))}]
+    file_page_count test.db
+  } [expr {4+($av!=0)+(${isUtf16}*2)}]
   
   # Start reading the table
   #

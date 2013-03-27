@@ -262,6 +262,7 @@ do_test pragma-3.1 {
   forcedelete test.db test.db-journal
   sqlite3 db test.db
   execsql {
+    PRAGMA mmap_limit=0;
     PRAGMA auto_vacuum=OFF;
     BEGIN;
     CREATE TABLE t2(a,b,c);
@@ -284,6 +285,7 @@ ifcapable attach {
       hexio_write test.db $offset 0a00000000040000000000
       db close
       sqlite3 db test.db
+      execsql {PRAGMA mmap_limit=0}
       execsql {PRAGMA integrity_check}
     } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.3 {
@@ -1251,8 +1253,8 @@ ifcapable pager_pragmas {
 
   do_test pragma-14.4 {
     set page_size [db one {pragma page_size}]
-    expr [file size test.db] / $page_size
-  } {2}
+    list [file_page_count test.db] $page_size
+  } [list 2 [file_page_size test.db]]
 
   do_test pragma-14.5 {
     execsql {

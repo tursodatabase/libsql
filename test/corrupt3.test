@@ -40,8 +40,8 @@ do_test corrupt3-1.1 {
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES($bigstring);
   }
-  file size test.db
-} [expr {1024*3}]
+  list [file_page_count test.db] [file_page_size test.db]
+} {3 1024}
 
 # Verify that the file format is as we expect.  The page size
 # should be 1024 bytes.  The only record should have a single

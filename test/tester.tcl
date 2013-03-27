@@ -1636,6 +1636,7 @@ proc sql36231 {sql} {
   set B [hexio_read test.db 92 8]
   set A [hexio_read test.db 28 4]
   sqlite3 db36231 test.db
+  db36231 eval { PRAGMA mmap_limit = 0 }
   catch { db36231 func a_string a_string }
   execsql $sql db36231
   db36231 close
@@ -1672,6 +1673,23 @@ proc db_delete_and_reopen {{file test.db}} {
   catch { db close }
   foreach f [glob -nocomplain test.db*] { forcedelete $f }
   sqlite3 db $file
+}
+
+# Return the number of pages in the database file $zFile, according to 
+# the database header.
+#
+proc file_page_count {zFile} {
+  set nPg [hexio_get_int [hexio_read $zFile 28 4]]
+  return $nPg
+}
+
+# Return the page size of database file $zFile, according to the database 
+# header.
+#
+proc file_page_size {zFile} {
+  set pgsz [hexio_get_int [hexio_read $zFile 16 2]]
+  if {$pgsz==1} {set pgsz 65536}
+  return $pgsz
 }
 
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set

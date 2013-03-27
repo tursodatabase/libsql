@@ -661,7 +661,7 @@ do_test backup-6.1 {
   }
 } {}
 do_test backup-6.2 {
-  set nTotal [expr {[file size test.db]/1024}]
+  set nTotal [file_page_count test.db]
   sqlite3_backup B db2 main db main
   B step 1
 } {SQLITE_OK}

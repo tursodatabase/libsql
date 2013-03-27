@@ -1109,6 +1109,7 @@ do_test pager1-5.5.2 {
 do_test pager1-6.1 {
   faultsim_delete_and_reopen
   execsql {
+    PRAGMA page_size = 4096;
     PRAGMA auto_vacuum = none;
     PRAGMA max_page_count = 10;
     CREATE TABLE t2(a, b);
@@ -1357,8 +1358,8 @@ do_test pager1-9.3.3 {
   db2 close
   db close
   tv delete
-  file size test.db2
-} [file size test.db]
+  file_page_count test.db2
+} [file_page_count test.db]
 
 do_test pager1-9.4.1 {
   faultsim_delete_and_reopen
@@ -1471,8 +1472,8 @@ do_test pager1.10.x.2 {
     CREATE TABLE t2(x);
     DROP TABLE t2;
   }
-  file size test.db
-} {33792}
+  list [file_page_count test.db] [file_page_size test.db]
+} {33 1024}
 do_test pager1.10.x.3 {
   execsql {
     BEGIN;
@@ -1552,7 +1553,7 @@ foreach pagesize {
       PRAGMA page_size = $pagesize;
       CREATE VIEW v AS SELECT * FROM sqlite_master;
     " db2
-    file size test.db
+    file_page_size test.db
   } $eff
   do_test pager1-12.$pagesize.2 {
     sqlite3 db2 test.db
@@ -2388,15 +2389,15 @@ do_test pager1-29.1 {
     CREATE TABLE t1(a, b);
     INSERT INTO t1 VALUES(1, 2);
   }
-  file size test.db
-} [expr 1024*3]
+  list [file_page_count test.db] [file_page_size test.db]
+} {3 1024}
 do_test pager1-29.2 {
   execsql {
     PRAGMA page_size = 4096;
     VACUUM;
   }
-  file size test.db
-} [expr 4096*3]
+  list [file_page_count test.db] [file_page_size test.db]
+} {3 4096}
 
 #-------------------------------------------------------------------------
 # Test that if an empty database file (size 0 bytes) is opened in 

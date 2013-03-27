@@ -41,8 +41,8 @@ do_test corrupt6-1.1 {
     INSERT INTO t1(x) VALUES('varint32-01234567890123456789012345678901234567890123456789');
     INSERT INTO t1(x) VALUES('varint32-01234567890123456789012345678901234567890123456789');
   }
-  file size test.db
-} [expr {1024*2}]
+  file_page_count test.db
+} {2}
 
 # Verify that the file format is as we expect.  The page size
 # should be 1024 bytes.

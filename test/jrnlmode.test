@@ -521,7 +521,9 @@ ifcapable pragma {
       PRAGMA user_version;
     }
   } {memory 5}
-  do_test jrnlmode-7.2 { file size test.db } {1024}
+  do_test jrnlmode-7.2 { 
+    list [file_page_count test.db] [file_page_size test.db]
+  } {1 1024}
 }
 
 do_execsql_test jrnlmode-8.1  { PRAGMA locking_mode=EXCLUSIVE } {exclusive}

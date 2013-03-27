@@ -56,7 +56,7 @@ do_test 1.1 { create_test_db } {}
 # Check the db is as we expect. 6 pages in total, with 3 and 4 on the free
 # list. Page 3 is the free list trunk and page 4 is a leaf.
 #
-do_test 1.2 { file size test.db } [expr 6*1024]
+do_test 1.2 { file_page_count test.db } 6
 do_test 1.3 { hexio_read test.db 32 4 } 00000003
 do_test 1.4 { hexio_read test.db [expr 2*1024] 12 } 000000000000000100000004
 
@@ -109,7 +109,7 @@ for {set i 0} {$i < 128} {incr i} {
 }
 
 do_test 2.1 { create_test_db } {}
-do_test 2.2 { file size test.db } [expr 6*1024]
+do_test 2.2 { file_page_count test.db } 6
 do_test 2.3 { hexio_read test.db 32 4 } 00000003
 do_test 2.4 { hexio_read test.db [expr 2*1024] 12 } 000000000000000100000004
 

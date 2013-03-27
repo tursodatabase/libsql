@@ -35,20 +35,20 @@ do_test tkt1512-1.1 {
   }
 } {1 2 3 4}
 do_test tkt1512-1.2 {
-  file size test.db
-} {2048}
+  file_page_count test.db
+} {2}
 do_test tkt1512-1.3 {
   execsql {
     DROP TABLE t1;
   }
-  file size test.db
-} {2048}
+  file_page_count test.db
+} {2}
 do_test tkt1512-1.4 {
   execsql {
     VACUUM;
   }
-  file size test.db
-} {1024}
+  file_page_count test.db
+} {1}
 
 
 finish_test

@@ -32,7 +32,7 @@ proc make_str {char len} {
 
 # Return the number of pages in the file test.db by looking at the file system.
 proc file_pages {} {
-  return [expr [file size test.db] / 1024]
+  file_page_count test.db
 }
 
 #-------------------------------------------------------------------------
@@ -614,7 +614,7 @@ do_test autovacuum-7.1 {
     INSERT INTO t1 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 32
   }
 
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {73}
 
 do_test autovacuum-7.2 {
@@ -628,7 +628,7 @@ do_test autovacuum-7.2 {
     CREATE TABLE t5(a, b, PRIMARY KEY(a, b));
     INSERT INTO t5 SELECT randstr(400,400), randstr(400,400) FROM t1; -- 2
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {354}
 
 do_test autovacuum-7.3 {
@@ -640,7 +640,7 @@ do_test autovacuum-7.3 {
     COMMIT;
     SELECT count(*) FROM t1;
   }
-  expr {[file size test.db] / 1024}
+  file_page_count test.db
 } {286}
 
 #------------------------------------------------------------------------

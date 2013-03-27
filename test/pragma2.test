@@ -86,8 +86,8 @@ ifcapable attach {
     }
   } {0}
   do_test pragma2-2.4 {
-    expr {[file size test2.db] / 1024}
-  } {11}
+    list [file_page_count test2.db] [file_page_size test2.db]
+  } {11 1024}
   do_test pragma2-2.5 {
     execsql {
       DELETE FROM aux.abc;

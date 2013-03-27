@@ -334,7 +334,7 @@ ifcapable autovacuum {
     INSERT INTO t1 VALUES(3, randomblob(2500));
     DELETE FROM t1 WHERE a = 1;
   } -corrupt {
-    set nPage [expr [file size corrupt.db] / 1024]
+    set nPage [file_page_count corrupt.db]
     hexio_write corrupt.db [expr 1024 + ($nPage-3)*5] 010000000
   } -test {
     do_test corrupt2-6.3 {

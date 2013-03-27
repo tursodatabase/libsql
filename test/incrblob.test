@@ -619,7 +619,7 @@ do_test incrblob-7.3.1 {
   read $::b
 } $::otherdata
 do_test incrblob-7.3.2 {
-  expr [file size test.db]/1024
+  file_page_count test.db
 } 30
 do_test incrblob-7.3.3 {
   execsql {

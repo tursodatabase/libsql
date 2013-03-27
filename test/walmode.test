@@ -42,8 +42,8 @@ do_test walmode-1.1 {
   execsql { PRAGMA journal_mode = wal }
 } {wal}
 do_test walmode-1.2 {
-  file size test.db
-} {1024}
+  file_page_count test.db
+} {1}
 
 set expected_sync_count 3
 if {$::tcl_platform(platform)!="windows"} {
@@ -60,8 +60,8 @@ do_test walmode-1.4 {
 } {0}
 do_test walmode-1.5 {
   execsql { CREATE TABLE t1(a, b) }
-  file size test.db
-} {1024}
+  file_page_count test.db
+} {1}
 do_test walmode-1.6 {
   file exists test.db-wal
 } {1}

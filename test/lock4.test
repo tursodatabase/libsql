@@ -33,8 +33,8 @@ do_test lock4-1.1 {
      CREATE TABLE t2(x)
   }
   db2 close
-  list [file size test.db] [file size test2.db]
-} {2048 2048}
+  list [file_page_count test.db] [file_page_count test2.db]
+} {2 2}
 
 # Create a script to drive a separate process that will
 #

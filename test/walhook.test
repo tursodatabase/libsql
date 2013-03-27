@@ -49,8 +49,8 @@ do_test walhook-1.2 {
 do_test walhook-1.3 {
   proc wal_hook {args} { db eval {PRAGMA wal_checkpoint}; return 0 }
   execsql { INSERT INTO t1 VALUES(2, 'two') }
-  file size test.db
-} [expr 3*1024]
+  file_page_count test.db
+} 3
 do_test walhook-1.4 {
   proc wal_hook {zDb nEntry} { 
     execsql { PRAGMA wal_checkpoint }

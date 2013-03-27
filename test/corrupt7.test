@@ -44,8 +44,8 @@ do_test corrupt7-1.1 {
     INSERT INTO t1(x) SELECT x+4 FROM t1;
     INSERT INTO t1(x) SELECT x+8 FROM t1;
   }
-  file size test.db
-} [expr {1024*2}]
+  file_page_count test.db
+} {2}
 
 # Verify that the file format is as we expect.  The page size
 # should be 1024 bytes.
