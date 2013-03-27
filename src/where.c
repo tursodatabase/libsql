@@ -2927,8 +2927,9 @@ static int isSortingIndex(
     nPriorSat = 0;
     outerObUnique = 1;
   }else{
+    u32 wsFlags = p->aLevel[p->i-1].plan.wsFlags;
     nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
-    if( (p->aLevel[p->i-1].plan.wsFlags & WHERE_ORDERED)==0 ){
+    if( (wsFlags & WHERE_ORDERED)==0 ){
       /* This loop cannot be ordered unless the next outer loop is
       ** also ordered */
       return nPriorSat;
@@ -2938,7 +2939,9 @@ static int isSortingIndex(
       ** optimization is disabled */
       return nPriorSat;
     }
-    outerObUnique = (p->aLevel[p->i-1].plan.wsFlags & WHERE_OB_UNIQUE)!=0;
+    testcase( wsFlags & WHERE_OB_UNIQUE );
+    testcase( wsFlags & WHERE_ALL_UNIQUE );
+    outerObUnique = (wsFlags & (WHERE_OB_UNIQUE|WHERE_ALL_UNIQUE))!=0;
   }
   pOrderBy = p->pOrderBy;
   assert( pOrderBy!=0 );
