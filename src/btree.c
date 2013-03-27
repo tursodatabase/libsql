@@ -576,6 +576,19 @@ static void btreeClearHasContent(BtShared *pBt){
 }
 
 /*
+** Release all of the apPage[] pages for a cursor.
+*/
+static void btreeReleaseAllCursorPages(BtCursor *pCur){
+  int i;
+  for(i=0; i<=pCur->iPage; i++){
+    releasePage(pCur->apPage[i]);
+    pCur->apPage[i] = 0;
+  }
+  pCur->iPage = -1;
+}
+
+
+/*
 ** Save the current cursor position in the variables BtCursor.nKey 
 ** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
 **
@@ -614,12 +627,7 @@ static int saveCursorPosition(BtCursor *pCur){
   assert( !pCur->apPage[0]->intKey || !pCur->pKey );
 
   if( rc==SQLITE_OK ){
-    int i;
-    for(i=0; i<=pCur->iPage; i++){
-      releasePage(pCur->apPage[i]);
-      pCur->apPage[i] = 0;
-    }
-    pCur->iPage = -1;
+    btreeReleaseAllCursorPages(pCur);
     pCur->eState = CURSOR_REQUIRESEEK;
   }
 
@@ -637,11 +645,15 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pExcept==0 || pExcept->pBt==pBt );
   for(p=pBt->pCursor; p; p=p->pNext){
-    if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) && 
-        p->eState==CURSOR_VALID ){
-      int rc = saveCursorPosition(p);
-      if( SQLITE_OK!=rc ){
-        return rc;
+    if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ){
+      if( p->eState==CURSOR_VALID ){
+        int rc = saveCursorPosition(p);
+        if( SQLITE_OK!=rc ){
+          return rc;
+        }
+      }else{
+        testcase( p->iPage>0 );
+        btreeReleaseAllCursorPages(p);
       }
     }
   }

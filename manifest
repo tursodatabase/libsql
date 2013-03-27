@@ -1,5 +1,5 @@
-C Add\sa\ssecond\stest\sfor\s[38b1ae018f].
-D 2013-03-25T12:02:45.865
+C Candidate\sfix\sfor\sticket\s[6bfb98dfc0c]:\sMake\ssure\sinvalid\scursors\sdrop\sall\nreferences\sto\sdatabase\spages\sprior\sto\sdoing\sany\sinsert\sor\supdate.
+D 2013-03-27T03:15:23.329
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 3cebaa69db81a528e115b463a5506133a0043710
+F src/btree.c 62ba5954765efc711c873a20a53f60d9fc2843ba
 F src/btree.h 3ad7964d6c5b1c7bff569aab6adfa075f8bf06cd
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
@@ -784,6 +784,7 @@ F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
 F test/tkt-5d863f876e.test c9f36ca503fa154a3655f92a69d2c30da1747bfa
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 9db6e1d7209dc0794948b260d6f82b2b1de83a9f
+F test/tkt-6bfb98dfc0.test 24780633627b5cfc0635a5500c2389ebfb563336
 F test/tkt-752e1646fc.test ea78d88d14fe9866bdd991c634483334639e13bf
 F test/tkt-78e04e52ea.test 703e0bfb23d543edf0426a97e3bbd0ca346508ec
 F test/tkt-7a31705a7e6.test 5a7889fdb095ffbe1622413e0145de1637d421bd
@@ -1039,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f85f9103cffa5c8ba6a63a68beb90817147ba080
-R 8636831e10a59eea94894795b6da6922
-U dan
-Z 40d326d8e18513e2868148c4279af040
+P 5062db672c00c3365d51cd6b39815078f5b6b525
+R 444ec66222f6e3876b5a1bc78bf6602c
+U drh
+Z 3d135e15ecdab16eb6decd45c9d13940
