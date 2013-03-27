@@ -1,12 +1,12 @@
-C In\sorder\sto\soptimize\sout\sthe\sORDER\sBY\sclause,\s\nouter\sloops\smust\sgenerate\svalues\sfor\sORDER\sBY\sterms\sthat\sare\sunique\sor\selse\nthe\sinner\sloops\smust\sgenerate\sno\smore\sthan\sa\ssingle\srow.\nFix\sfor\sticket\s[a179fe7465].
-D 2013-03-27T17:20:10.024
+C Increment\sthe\sversion\snumber\sto\s3.7.16.1.
+D 2013-03-27T19:46:33.857
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 0c1abc21c8deefc88e8a32ad6a07e5f96e158761
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 6d4f66eaebabc42ef8c2a4d2d0caf4ce7ee81137
+F VERSION 05604ccde96fe1b37f922eddbdcb5654308261db
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 00d3a5fda47ee7dd3e68dc9dad7eeb439cd1ffea x
+F configure 2f9994fd2e2005753809a2246c7a0816c80b2d2f x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1041,7 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 322a5f086d9ee46017f750df81527799a54ae258 c77ee6e20d3a8c91a8bf4c9063c36a95c70e17cf
-R 7a3bcce0c2bcd988dcd25474f2b83a5d
+P 2936f7466e162dfb003bda26d35358d1b3063112
+R 26cbf43287127f8a1cfd09b97c6bcc02
 U drh
-Z 25cf293fe59d9bbc42bbcd9448a91b58
+Z 184f78ab5133d283510134f5a6061c7a
