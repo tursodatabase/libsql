@@ -1,5 +1,5 @@
-C Increment\sthe\sversion\snumber\sto\s3.7.16.1.
-D 2013-03-27T19:46:33.857
+C Fix\sharmless\scompiler\swarnings\scoming\sfrom\sMSVC64\sin\stest\scode.\s\sNo\nchanges\sto\sthe\score.
+D 2013-03-27T20:41:15.391
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -200,7 +200,7 @@ F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c ab6605a41f2020912d5e44b8dd4b9fb21bd75ac0
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
-F src/test_fs.c 1c51e203b2c20235d8c3739f8c1fb13a7502915b
+F src/test_fs.c 8f786bfd0ad48030cf2a06fb1f050e9c60a150d7
 F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
 F src/test_fuzzer.c 1d26aa965120420bc14807da29d4d4541bfa6148
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
@@ -218,7 +218,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 1ec82e02fd3643899e9a5de9684515e84641c91f
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_regexp.c 5ff0eafd66c9a209417142fa319006f7028fbda8
+F src/test_regexp.c 06ae8138d41a793330f62351283dd6f6f21104f4
 F src/test_rtree.c aba603c949766c4193f1068b91c787f57274e0d9
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
@@ -1041,7 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2936f7466e162dfb003bda26d35358d1b3063112
-R 26cbf43287127f8a1cfd09b97c6bcc02
+P 7e32eb7b66290ba7323520f7ea92ffa584ee7193
+R 146cc38cc60deb4264a54dc6e7f5cc2c
 U drh
-Z 184f78ab5133d283510134f5a6061c7a
+Z 01cce950cabd5af1f79f5298131f812c

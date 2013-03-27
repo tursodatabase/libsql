@@ -99,7 +99,7 @@ static int fsConnect(
   }
   zTbl = argv[3];
 
-  nByte = sizeof(fs_vtab) + strlen(zTbl) + 1 + strlen(zDb) + 1;
+  nByte = sizeof(fs_vtab) + (int)strlen(zTbl) + 1 + (int)strlen(zDb) + 1;
   pVtab = (fs_vtab *)sqlite3MallocZero( nByte );
   if( !pVtab ) return SQLITE_NOMEM;
 
