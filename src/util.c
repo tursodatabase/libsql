@@ -520,7 +520,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
   testcase( i==18 );
   testcase( i==19 );
   testcase( i==20 );
-  if( (c+nonNum!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum) || i>19*incr ){
+  if( (c!=0 && &zNum[i]<zEnd) || (i==0 && zStart==zNum) || i>19*incr || nonNum ){
     /* zNum is empty or contains non-numeric text or is longer
     ** than 19 digits (thus guaranteeing that it is too large) */
     return 1;

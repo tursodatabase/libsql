@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\scoming\sfrom\sMSVC64\sin\stest\scode.\s\sNo\nchanges\sto\sthe\score.
-D 2013-03-27T20:41:15.391
+C Adjustment\sto\san\sextreme\scorner\scase\sin\sthe\ssqlite3Atoi64()\sroutine.
+D 2013-03-28T11:40:14.945
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -237,7 +237,7 @@ F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c cd95ac64efa60e39faf9b5597443192ff27a22fa
 F src/update.c a2a5631d618cbe240fc83725fa9e95c56ae0084c
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
-F src/util.c 550f2b6a5c0085153a4d00462719fb17ee242792
+F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
 F src/vdbe.c 1d56617d816098a41bdbe73536a67dcdefad52bd
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
@@ -1041,7 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7e32eb7b66290ba7323520f7ea92ffa584ee7193
-R 146cc38cc60deb4264a54dc6e7f5cc2c
+P 274d2a22660c7b34b8bbd85f3c29cbafbcb1b4e7
+R e8e4e98970281a95c0de62c6e5f4d562
 U drh
-Z 01cce950cabd5af1f79f5298131f812c
+Z e440add500ad1771a8d916396dcab1f1
