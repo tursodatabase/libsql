@@ -125,7 +125,7 @@ static int unicodeDestroy(sqlite3_tokenizer *pTokenizer){
 **
 ** If a standalone diacritic mark (one that sqlite3FtsUnicodeIsdiacritic()
 ** identifies as a diacritic) occurs in the zIn/nIn string it is ignored.
-** It is not possible to change the behaviour of the tokenizer with respect
+** It is not possible to change the behavior of the tokenizer with respect
 ** to these codepoints.
 */
 static int unicodeAddExceptions(

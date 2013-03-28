@@ -361,7 +361,7 @@ foreach {tn uri error} "
 #
 # EVIDENCE-OF: R-19510-48080 If sqlite3_open_v2() is used and the
 # "cache" parameter is present in a URI filename, its value overrides
-# any behaviour requested by setting SQLITE_OPEN_PRIVATECACHE or
+# any behavior requested by setting SQLITE_OPEN_PRIVATECACHE or
 # SQLITE_OPEN_SHAREDCACHE flag.
 #
 set orig [sqlite3_enable_shared_cache]

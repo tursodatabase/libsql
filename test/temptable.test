@@ -150,7 +150,7 @@ do_test temptable-3.4 {
 # Check for correct name collision processing. A name collision can
 # occur when process A creates a temporary table T then process B
 # creates a permanent table also named T.  The temp table in process A
-# hides the existance of the permanent table.
+# hides the existence of the permanent table.
 #
 do_test temptable-4.1 {
   execsql {

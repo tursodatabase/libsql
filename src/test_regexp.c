@@ -188,7 +188,7 @@ int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
 
   in.z = zIn;
   in.i = 0;
-  in.mx = nIn>=0 ? nIn : strlen((char const*)zIn);
+  in.mx = nIn>=0 ? nIn : (int)strlen((char const*)zIn);
 
   /* Look for the initial prefix match, if there is one. */
   if( pRe->nInit ){
@@ -628,7 +628,7 @@ const char *re_compile(ReCompiled **ppRe, const char *zIn, int noCase){
   }
   pRe->sIn.z = (unsigned char*)zIn;
   pRe->sIn.i = 0;
-  pRe->sIn.mx = strlen(zIn);
+  pRe->sIn.mx = (int)strlen(zIn);
   zErr = re_subcompile_re(pRe);
   if( zErr ){
     re_free(pRe);

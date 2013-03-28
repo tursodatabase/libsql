@@ -162,11 +162,7 @@ int sqlite3_found_count = 0;
        && sqlite3VdbeMemMakeWriteable(P) ){ goto no_mem;}
 
 /* Return true if the cursor was opened using the OP_OpenSorter opcode. */
-#ifdef SQLITE_OMIT_MERGE_SORT
-# define isSorter(x) 0
-#else
 # define isSorter(x) ((x)->pSorter!=0)
-#endif
 
 /*
 ** Argument pMem points at a register that will be passed to a
@@ -3331,17 +3327,12 @@ case OP_OpenEphemeral: {
 case OP_SorterOpen: {
   VdbeCursor *pCx;
 
-#ifndef SQLITE_OMIT_MERGE_SORT
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
   pCx->pKeyInfo->enc = ENC(p->db);
   pCx->isSorter = 1;
   rc = sqlite3VdbeSorterInit(db, pCx);
-#else
-  pOp->opcode = OP_OpenEphemeral;
-  pc--;
-#endif
   break;
 }
 
@@ -4266,15 +4257,10 @@ case OP_SorterCompare: {
 case OP_SorterData: {
   VdbeCursor *pC;
 
-#ifndef SQLITE_OMIT_MERGE_SORT
   pOut = &aMem[pOp->p2];
   pC = p->apCsr[pOp->p1];
   assert( pC->isSorter );
   rc = sqlite3VdbeSorterRowkey(pC, pOut);
-#else
-  pOp->opcode = OP_RowKey;
-  pc--;
-#endif
   break;
 }
 
@@ -4473,9 +4459,6 @@ case OP_Last: {        /* jump */
 ** correctly optimizing out sorts.
 */
 case OP_SorterSort:    /* jump */
-#ifdef SQLITE_OMIT_MERGE_SORT
-  pOp->opcode = OP_Sort;
-#endif
 case OP_Sort: {        /* jump */
 #ifdef SQLITE_TEST
   sqlite3_sort_count++;
@@ -4554,9 +4537,6 @@ case OP_Rewind: {        /* jump */
 ** number P5-1 in the prepared statement is incremented.
 */
 case OP_SorterNext:    /* jump */
-#ifdef SQLITE_OMIT_MERGE_SORT
-  pOp->opcode = OP_Next;
-#endif
 case OP_Prev:          /* jump */
 case OP_Next: {        /* jump */
   VdbeCursor *pC;
@@ -4607,9 +4587,6 @@ case OP_Next: {        /* jump */
 ** for tables is OP_Insert.
 */
 case OP_SorterInsert:       /* in2 */
-#ifdef SQLITE_OMIT_MERGE_SORT
-  pOp->opcode = OP_IdxInsert;
-#endif
 case OP_IdxInsert: {        /* in2 */
   VdbeCursor *pC;
   BtCursor *pCrsr;
@@ -5836,7 +5813,7 @@ case OP_VOpen: {
     /* Initialize sqlite3_vtab_cursor base class */
     pVtabCursor->pVtab = pVtab;
 
-    /* Initialise vdbe cursor object */
+    /* Initialize vdbe cursor object */
     pCur = allocateCursor(p, pOp->p1, 0, -1, 0);
     if( pCur ){
       pCur->pVtabCursor = pVtabCursor;

@@ -885,7 +885,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
 
   /* If we reach this point, it means that the database connection has
   ** closed all sqlite3_stmt and sqlite3_backup objects and has been
-  ** pased to sqlite3_close (meaning that it is a zombie).  Therefore,
+  ** passed to sqlite3_close (meaning that it is a zombie).  Therefore,
   ** go ahead and free all resources.
   */
 

@@ -207,7 +207,7 @@ do_test io-2.5.3 {
 # Changed 2010-03-27:  The size of the database is now stored in 
 # bytes 28..31 and so when a page is added to the database, page 1
 # is immediately modified and the journal file immediately comes into
-# existance.  To fix this test, the BEGIN is changed into a a
+# existence.  To fix this test, the BEGIN is changed into a a
 # BEGIN IMMEDIATE and the INSERT is omitted.
 #
 do_test io-2.6.1 {

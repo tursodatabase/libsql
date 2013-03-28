@@ -273,7 +273,7 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 **    * A write transaction is active.
 **    * An EXCLUSIVE or greater lock is held on the database file.
 **    * All writing and syncing of journal and database data has finished.
-**      If no error occured, all that remains is to finalize the journal to
+**      If no error occurred, all that remains is to finalize the journal to
 **      commit the transaction. If an error did occur, the caller will need
 **      to rollback the transaction. 
 **
@@ -521,7 +521,7 @@ struct PagerSavepoint {
 **
 ** doNotSpill, doNotSyncSpill
 **
-**   These two boolean variables control the behaviour of cache-spills
+**   These two boolean variables control the behavior of cache-spills
 **   (calls made by the pcache module to the pagerStress() routine to
 **   write cached data to the file-system in order to free up memory).
 **
@@ -1399,7 +1399,7 @@ static int writeJournalHdr(Pager *pPager){
     memset(zHeader, 0, sizeof(aJournalMagic)+4);
   }
 
-  /* The random check-hash initialiser */ 
+  /* The random check-hash initializer */ 
   sqlite3_randomness(sizeof(pPager->cksumInit), &pPager->cksumInit);
   put32bits(&zHeader[sizeof(aJournalMagic)+4], pPager->cksumInit);
   /* The initial database size */
@@ -3731,7 +3731,7 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
 ** dirty page were to be discarded from the cache via the pagerStress()
 ** routine, pagerStress() would not write the current page content to
 ** the database file. If a savepoint transaction were rolled back after
-** this happened, the correct behaviour would be to restore the current
+** this happened, the correct behavior would be to restore the current
 ** content of the page. However, since this content is not present in either
 ** the database file or the portion of the rollback journal and 
 ** sub-journal rolled back the content could not be restored and the

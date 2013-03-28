@@ -262,6 +262,8 @@ struct WhereCost {
 #define WHERE_REVERSE      0x01000000  /* Scan in reverse order */
 #define WHERE_UNIQUE       0x02000000  /* Selects no more than one row */
 #define WHERE_ALL_UNIQUE   0x04000000  /* This and all prior have one row */
+#define WHERE_OB_UNIQUE    0x00004000  /* Values in ORDER BY columns are 
+                                       ** different for every output row */
 #define WHERE_VIRTUALTABLE 0x08000000  /* Use virtual-table processing */
 #define WHERE_MULTI_OR     0x10000000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x20000000  /* Uses an ephemeral index */
@@ -562,7 +564,7 @@ static int allowedOp(int op){
 ** Commute a comparison operator.  Expressions of the form "X op Y"
 ** are converted into "Y op X".
 **
-** If left/right precendence rules come into play when determining the
+** If left/right precedence rules come into play when determining the
 ** collating
 ** side of the comparison, it remains associated with the same side after
 ** the commutation. So "Y collate NOCASE op X" becomes 
@@ -2903,7 +2905,8 @@ static int isSortingIndex(
   WhereBestIdx *p,    /* Best index search context */
   Index *pIdx,        /* The index we are testing */
   int base,           /* Cursor number for the table to be sorted */
-  int *pbRev          /* Set to 1 for reverse-order scan of pIdx */
+  int *pbRev,         /* Set to 1 for reverse-order scan of pIdx */
+  int *pbObUnique     /* ORDER BY column values will different in every row */
 ){
   int i;                        /* Number of pIdx terms used */
   int j;                        /* Number of ORDER BY terms satisfied */
@@ -2917,12 +2920,16 @@ static int isSortingIndex(
   int nPriorSat;                /* ORDER BY terms satisfied by outer loops */
   int seenRowid = 0;            /* True if an ORDER BY rowid term is seen */
   int uniqueNotNull;            /* pIdx is UNIQUE with all terms are NOT NULL */
+  int outerObUnique;            /* Outer loops generate different values in
+                                ** every row for the ORDER BY columns */
 
   if( p->i==0 ){
     nPriorSat = 0;
+    outerObUnique = 1;
   }else{
+    u32 wsFlags = p->aLevel[p->i-1].plan.wsFlags;
     nPriorSat = p->aLevel[p->i-1].plan.nOBSat;
-    if( (p->aLevel[p->i-1].plan.wsFlags & WHERE_ORDERED)==0 ){
+    if( (wsFlags & WHERE_ORDERED)==0 ){
       /* This loop cannot be ordered unless the next outer loop is
       ** also ordered */
       return nPriorSat;
@@ -2932,6 +2939,9 @@ static int isSortingIndex(
       ** optimization is disabled */
       return nPriorSat;
     }
+    testcase( wsFlags & WHERE_OB_UNIQUE );
+    testcase( wsFlags & WHERE_ALL_UNIQUE );
+    outerObUnique = (wsFlags & (WHERE_OB_UNIQUE|WHERE_ALL_UNIQUE))!=0;
   }
   pOrderBy = p->pOrderBy;
   assert( pOrderBy!=0 );
@@ -3073,10 +3083,25 @@ static int isSortingIndex(
       uniqueNotNull = 0;
     }
   }
+  if( seenRowid ){
+    uniqueNotNull = 1;
+  }else if( uniqueNotNull==0 || i<pIdx->nColumn ){
+    uniqueNotNull = 0;
+  }
 
   /* If we have not found at least one ORDER BY term that matches the
   ** index, then show no progress. */
   if( pOBItem==&pOrderBy->a[nPriorSat] ) return nPriorSat;
+
+  /* Either the outer queries must generate rows where there are no two
+  ** rows with the same values in all ORDER BY columns, or else this
+  ** loop must generate just a single row of output.  Example:  Suppose
+  ** the outer loops generate A=1 and A=1, and this loop generates B=3
+  ** and B=4.  Then without the following test, ORDER BY A,B would 
+  ** generate the wrong order output: 1,3 1,4 1,3 1,4
+  */
+  if( outerObUnique==0 && uniqueNotNull==0 ) return nPriorSat;
+  *pbObUnique = uniqueNotNull;
 
   /* Return the necessary scan order back to the caller */
   *pbRev = sortOrder & 1;
@@ -3085,7 +3110,7 @@ static int isSortingIndex(
   ** possible for a single row from this table to match, then skip over
   ** any additional ORDER BY terms dealing with this table.
   */
-  if( seenRowid || (uniqueNotNull && i>=pIdx->nColumn) ){
+  if( uniqueNotNull ){
     /* Advance j over additional ORDER BY terms associated with base */
     WhereMaskSet *pMS = p->pWC->pMaskSet;
     Bitmask m = ~getMask(pMS, base);
@@ -3369,12 +3394,14 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** variable.  */
     if( bSort && (pSrc->jointype & JT_LEFT)==0 ){
       int bRev = 2;
-      WHERETRACE(("      --> before isSortingIndex: nPriorSat=%d\n",nPriorSat));
-      pc.plan.nOBSat = isSortingIndex(p, pProbe, iCur, &bRev);
-      WHERETRACE(("      --> after  isSortingIndex: bRev=%d nOBSat=%d\n",
-                  bRev, pc.plan.nOBSat));
+      int bObUnique = 0;
+      WHERETRACE(("      --> before isSortIndex: nPriorSat=%d\n",nPriorSat));
+      pc.plan.nOBSat = isSortingIndex(p, pProbe, iCur, &bRev, &bObUnique);
+      WHERETRACE(("      --> after  isSortIndex: bRev=%d bObU=%d nOBSat=%d\n",
+                  bRev, bObUnique, pc.plan.nOBSat));
       if( nPriorSat<pc.plan.nOBSat || (pc.plan.wsFlags & WHERE_ALL_UNIQUE)!=0 ){
         pc.plan.wsFlags |= WHERE_ORDERED;
+        if( bObUnique ) pc.plan.wsFlags |= WHERE_OB_UNIQUE;
       }
       if( nOrderBy==pc.plan.nOBSat ){
         bSort = 0;
@@ -3468,7 +3495,8 @@ static void bestBtreeIndex(WhereBestIdx *p){
     ** So this computation assumes table records are about twice as big
     ** as index records
     */
-    if( (pc.plan.wsFlags&~(WHERE_REVERSE|WHERE_ORDERED))==WHERE_IDX_ONLY
+    if( (pc.plan.wsFlags&~(WHERE_REVERSE|WHERE_ORDERED|WHERE_OB_UNIQUE))
+                                                              ==WHERE_IDX_ONLY
      && (pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
      && sqlite3GlobalConfig.bUseCis
      && OptimizationEnabled(pParse->db, SQLITE_CoverIdxScan)
@@ -3628,7 +3656,7 @@ static void bestBtreeIndex(WhereBestIdx *p){
   /* If there is no ORDER BY clause and the SQLITE_ReverseOrder flag
   ** is set, then reverse the order that the index will be scanned
   ** in. This is used for application testing, to help find cases
-  ** where application behaviour depends on the (undefined) order that
+  ** where application behavior depends on the (undefined) order that
   ** SQLite outputs rows in in the absence of an ORDER BY clause.  */
   if( !p->pOrderBy && pParse->db->flags & SQLITE_ReverseOrder ){
     p->cost.plan.wsFlags |= WHERE_REVERSE;

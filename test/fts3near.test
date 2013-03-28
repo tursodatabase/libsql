@@ -580,5 +580,19 @@ do_test fts3near-6.5 {
   }
 } {3}
 
+# Ticket 38b1ae018f.
+#
+do_execsql_test fts3near-7.1 {
+  CREATE VIRTUAL TABLE x USING fts4(y,z);
+  INSERT INTO x VALUES('aaa bbb ccc ddd', 'bbb ddd aaa ccc');
+  SELECT * FROM x where y MATCH 'bbb NEAR/6 aaa';
+} {{aaa bbb ccc ddd} {bbb ddd aaa ccc}}
+
+do_execsql_test fts3near-7.2 {
+  CREATE VIRTUAL TABLE t2 USING fts4(a, b);
+  INSERT INTO t2 VALUES('A B C', 'A D E');
+  SELECT * FROM t2 where t2 MATCH 'a:A NEAR E'
+} {}
+
 
 finish_test

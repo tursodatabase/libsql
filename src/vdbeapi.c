@@ -445,7 +445,7 @@ end_of_step:
   assert( p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE );
   if( p->isPrepareV2 && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
     /* If this statement was prepared using sqlite3_prepare_v2(), and an
-    ** error has occured, then return the error code in p->rc to the
+    ** error has occurred, then return the error code in p->rc to the
     ** caller. Set the error code in the database handle to the same value.
     */ 
     rc = sqlite3VdbeTransferError(p);

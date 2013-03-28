@@ -60,7 +60,7 @@
 
 /* 
 ** These should be defined to be the same as the values in 
-** sqliteInt.h.  They are defined seperately here so that
+** sqliteInt.h.  They are defined separately here so that
 ** the multiplex VFS shim can be built as a loadable 
 ** module.
 */
