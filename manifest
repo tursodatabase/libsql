@@ -1,5 +1,5 @@
-C Avoid\sassuming\sthe\spage-size\sis\s4096\sbytes\sin\sos_unix.c.
-D 2013-03-29T11:24:15.742
+C Fix\sa\sproblem\sin\sbtree.c\sthat\scould\scause\sa\scrash\sfollowing\san\sOOM.\sAlso\svarious\stest\sscript\sproblems.
+D 2013-03-29T18:52:56.780
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 19b587b32569d4b92651b5eaa9de2e59c6f8f704
+F src/btree.c 84c9a4a20b827a6f7dbcbcda59607dbee57af446
 F src/btree.h d9490cd37aaeb530a41b07f06e1262950b1be916
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 68b5606c0b7540e8cca8b57e39d2504da3e9d825
+F src/os_unix.c 0bebbe673f2831ce29c8da5f58f74e6c40c231ab
 F src/os_win.c e4f17ddf79f2a9373e33ed70565e765d65324589
 F src/pager.c 30009ae5800f80e21da1f118fabfc72b34d8c722
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -607,7 +607,7 @@ F test/mallocD.test f78c295e8e18ea3029e65ca08278690e00c22100
 F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 0ff91b65c50bdaba680fb75d87fe4ad35bb7934f
-F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
+F test/mallocH.test c43a1899a56833ad42cf7a159f7d2eeb364833e6
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
@@ -651,7 +651,7 @@ F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test aa819efb5c58cef7afd0504849f3ab27eaa926a3
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
+F test/pagerfault.test 0c12520f6c8883ec401b8b7b5406ca24657566a1
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 32cb5a6ed7ccddf8e8c842cb44240bd9340223ce
@@ -755,7 +755,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl e96eee651b5cea4c3a1b6f504b218e1da95c6980
+F test/tester.tcl b40aa7ab9616ad148bf2c97758700c2edc7dfa2b
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0e3d5119273fd8e3512b3aa4272a873847e7ca40
-R 0258b214f7324bb0bb55e8d7d2f07b38
+P 3b7ec8d79e35e38df990e315c4ef9c7ab678bcbf
+R c70b3a1f7e66852328a5f388646bf53c
 U dan
-Z 2a10b8594aa4021d16da3af2824221c8
+Z f06400ae1e815eb0188e6d5288e4e140

@@ -1680,6 +1680,18 @@ proc db_delete_and_reopen {{file test.db}} {
 #
 proc file_page_count {zFile} {
   set nPg [hexio_get_int [hexio_read $zFile 28 4]]
+  set pgsz [file_page_size $zFile]
+  set filesz [file size $zFile]
+  set syspgsz 4096
+
+  # Check that the file size is consistent with the database page size,
+  # the page count, and the system page size.
+  if {($filesz < ($nPg * $pgsz))
+   || ($filesz > (((($nPg * $pgsz)+$syspgsz-1) / $syspgsz) * $syspgsz))
+  } {
+    error "file_size=$filesz. page_count=$nPg. page_size=$pgsz."
+  }
+
   return $nPg
 }
 

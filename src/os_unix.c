@@ -4645,7 +4645,7 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
         unixMapping *pMap = &pFd->aMmap[0];
         pNew = osMremap(
             pMap->pMapRegion, pMap->mmapOrigsize, nMap, MREMAP_MAYMOVE
-            );
+        );
         if( pNew==MAP_FAILED ){
           return SQLITE_IOERR_MMAP;
         }

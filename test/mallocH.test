@@ -62,6 +62,7 @@ ifcapable explain {
 # Malloc failure during integrity_check pragma.
 #
 do_malloc_test mallocH-5 -sqlprep {
+   PRAGMA mmap_limit = 0;
    CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
    CREATE TABLE t2(x,y);
    INSERT INTO t1 VALUES(1,2);
