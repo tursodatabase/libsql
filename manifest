@@ -1,10 +1,10 @@
-C Version\s3.7.16.1
-D 2013-03-29T13:44:34.265
+C For\sthe\sclean\starget,\stidy\sup\sa\scouple\smore\sgenerated\s(or\scopied)\ssource\sfiles.
+D 2013-03-29T19:52:04.965
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
+F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 0c1abc21c8deefc88e8a32ad6a07e5f96e158761
-F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
+F Makefile.msc 9ab787d472c9cb8bad29c2c4aeba15b06fba7bc4
+F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05604ccde96fe1b37f922eddbdcb5654308261db
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk c5437f64aad34844d18efe7b2d2adaa36efca49c
+F main.mk b25a7a0b657409b2dcf9b09d39562703d5df702d
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -1041,10 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 39534b4baa53b9360696a9d5ee8cc2108af34592
-R e8e4e98970281a95c0de62c6e5f4d562
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.16.1 *
-U drh
-Z 17d1076ce5eb9d83e75734278cd22a73
+P 527231bc67285f01fb18d4451b28f61da3c4e39d
+R c463228a20804b5f57c5669f0d0e45b8
+U mistachkin
+Z bfb2a9ca80a29b00e5f7b4db495d38d4

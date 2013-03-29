@@ -662,4 +662,6 @@ clean:
 	rm -rf tsrc target_source
 	rm -f testloadext.dll libtestloadext.so
 	rm -f sqlite3.c fts?amal.c tclsqlite3.c
+	rm -f sqlite3rc.h
+	rm -f shell.c sqlite3ext.h
 	rm -f $(SHPREFIX)sqlite3.$(SO)
