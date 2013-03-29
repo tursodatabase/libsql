@@ -4564,7 +4564,13 @@ static void unixUnmapfile(unixFile *pFd){
 ** Return the system page size somehow.
 */
 static int unixGetPagesize(void){
-  return 4096;
+#if HAVE_REMAP
+  return 512;
+#elif _BSD_SOURCE
+  return getpagesize();
+#else
+  return (int)sysconf(_SC_PAGESIZE);
+#endif
 }
 
 /*

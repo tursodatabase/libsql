@@ -1,5 +1,5 @@
-C Modify\svarious\stest\scases\sso\sthat\sthey\swork\sif\sthe\sfile\sis\sextended\sin\sunits\sof\sthe\ssystem\spage-size.
-D 2013-03-27T19:53:55.881
+C Avoid\sassuming\sthe\spage-size\sis\s4096\sbytes\sin\sos_unix.c.
+D 2013-03-29T11:24:15.742
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 3894d0620bfdc1bb00edbfd9ad773141ec0369ee
+F src/os_unix.c 68b5606c0b7540e8cca8b57e39d2504da3e9d825
 F src/os_win.c e4f17ddf79f2a9373e33ed70565e765d65324589
 F src/pager.c 30009ae5800f80e21da1f118fabfc72b34d8c722
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e7698cba9bcffbfadd30d9319669add4d60fcc65
-R d25a34a1ec81e5ce1633847acb69238a
+P 0e3d5119273fd8e3512b3aa4272a873847e7ca40
+R 0258b214f7324bb0bb55e8d7d2f07b38
 U dan
-Z 396bda74f7a9986ff7f7f3b4d6a84b50
+Z 2a10b8594aa4021d16da3af2824221c8
