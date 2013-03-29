@@ -1,5 +1,5 @@
-C Adjustment\sto\san\sextreme\scorner\scase\sin\sthe\ssqlite3Atoi64()\sroutine.
-D 2013-03-28T11:40:14.945
+C Version\s3.7.16.1
+D 2013-03-29T13:44:34.265
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1041,7 +1041,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 274d2a22660c7b34b8bbd85f3c29cbafbcb1b4e7
+P 39534b4baa53b9360696a9d5ee8cc2108af34592
 R e8e4e98970281a95c0de62c6e5f4d562
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.16.1 *
 U drh
-Z e440add500ad1771a8d916396dcab1f1
+Z 17d1076ce5eb9d83e75734278cd22a73
