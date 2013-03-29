@@ -330,7 +330,7 @@ do_test crash-5.1 {
   }
 } {}
 do_test crash-5.2 {
-  expr [file size test.db] / 1024
+  file_page_count test.db
 } [expr [string match [execsql {pragma auto_vacuum}] 1] ? 11 : 10]
 set sig [signature]
 do_test crash-5.3 {

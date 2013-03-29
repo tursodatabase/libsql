@@ -534,7 +534,7 @@ do_test sqllimits1-7.7.1 {
     INSERT INTO abc SELECT b, a, c FROM abc;
     INSERT INTO abc SELECT c, b, a FROM abc;
   }
-  expr [file size test.db] / 1024
+  file_page_count test.db
 } $fsize
 do_test sqllimits1-7.7.2 {
   db close
@@ -550,7 +550,7 @@ do_test sqllimits1-7.7.3 {
   execsql {
     PRAGMA max_page_count;
   }
-} $fsize
+} [expr [file size test.db] / 1024]
 do_test sqllimits1-7.7.4 {
   execsql {
     DROP TABLE abc;

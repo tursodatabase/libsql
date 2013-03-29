@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sbtree.c\sthat\scould\scause\sa\scrash\sfollowing\san\sOOM.\sAlso\svarious\stest\sscript\sproblems.
-D 2013-03-29T18:52:56.780
+C Further\sfixes\sfor\stest\sscripts.
+D 2013-03-29T19:38:52.044
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -349,13 +349,13 @@ F test/corrupt8.test 48eb37ffb9a03bceada62219e2bd4c92f4b0cb75
 F test/corrupt9.test 959179e68dc0b7b99f424cf3e0381c86dcdd0112
 F test/corruptA.test fafa652aa585753be4f6b62ff0bb250266eaf7ce
 F test/corruptB.test 20d4a20cbed23958888c3e8995b424a47223d647
-F test/corruptC.test 62a767fe64acb1975f58cc6171192839c783edbb
+F test/corruptC.test b2d0e0163827591207cb6dd0123dca250d016dda
 F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
 F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
 F test/corruptF.test e8c366f5784105e57284d99c88b2e8dcfd87a01f
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
-F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
+F test/crash.test a47f6d26ae443e577596b25357e38b34b982a3c5
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 8f5de9d32ab9ab95475a9efe7f47a940aa889418
 F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
@@ -658,7 +658,7 @@ F test/pageropt.test 32cb5a6ed7ccddf8e8c842cb44240bd9340223ce
 F test/pagesize.test a8890ca1b19a5a25b1f0d8f6982bbdeb2ae045b5
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test b6cb45ce4d3193b831231025c9d30c77317dd240
+F test/permutations.test 22f3b488d057a8410687dabe13456587c358d770
 F test/pragma.test ffcad56b3058c8661a4cf54205ce44894f7263e2
 F test/pragma2.test dcb2dafab8b16268017879c84b5bf99034d40284
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -738,7 +738,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/spellfix.test 52ae2680b1247c52b9e2b2116de3fd26a78e6bd2
-F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
+F test/sqllimits1.test 861cbb85ecd4fc3b2bdf26e84fbd1ebd13aa28aa
 F test/stat.test be8d477306006ec696bc86757cfb34bec79447ce
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
 F test/subquery.test 869562de9e8c5d8147e0451a2ce5b58cf55ce389
@@ -928,7 +928,7 @@ F test/uri.test 63e03df051620a18f794b4f4adcdefb3c23b6751
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test af432e6e3bfc0ea20a80cb86a03c7d9876d38324
-F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
+F test/vacuum3.test 099997a910ffa862731bb74a2ae1d90fbb5f374d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 7701bb609fe8bf6535514e8b849a309e8f00573b
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3b7ec8d79e35e38df990e315c4ef9c7ab678bcbf
-R c70b3a1f7e66852328a5f388646bf53c
+P e8bcdf938eee2c307c24d60d0295e5529291373b
+R cc0ac784c7ba54170d377b8c12f52908
 U dan
-Z f06400ae1e815eb0188e6d5288e4e140
+Z d70c61b9811bd758a9987aa7e37737bb

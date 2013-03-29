@@ -168,7 +168,7 @@ test_suite "full" -prefix "" -description {
 } -files [ 
   test_set $alltests 
 ] -initialize {
-  unset -nocomplain ::G(isquick)
+  # unset -nocomplain ::G(isquick)
 }
 
 test_suite "threads" -prefix "" -description {
