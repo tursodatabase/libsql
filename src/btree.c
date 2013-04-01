@@ -2596,12 +2596,13 @@ static int btreeSwapOutMmap(BtShared *pBt){
       if( pPg && pPg->pDbPage->flags & PGHDR_MMAP ){
         MemPage *pNew = 0;
         rc = getAndInitPage(pBt, pPg->pgno, &pNew, 0);
-        if( rc==SQLITE_OK && pCsr->iPage==0 ){
-          pCsr->info.pCell = pNew->aData + (pCsr->info.pCell - pPg->aData);
+        if( rc==SQLITE_OK ){
+          if( pCsr->iPage==0 ){
+            pCsr->info.pCell = pNew->aData + (pCsr->info.pCell - pPg->aData);
+          }
+          pCsr->apPage[0] = pNew;
+          releasePage(pPg);
         }
-        pCsr->apPage[0] = pNew;
-        releasePage(pPg);
-        if( rc!=SQLITE_OK ) return rc;
       }
     }
   }
