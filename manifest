@@ -1,5 +1,5 @@
-C In\swindows,\sround\sdown\sthe\ssize\sof\sthe\smemory\smapped\sregion\sto\sthe\snext\nsmaller\smultiple\sof\sthe\spage\ssize.
-D 2013-04-01T18:15:50.853
+C Add\sa\scomment\sto\sxUnfetch\son\swindows\sto\ssay\sthat\sthe\scall\sto\swinUnmapfile()\nmight\sbe\sunnecessary.
+D 2013-04-01T18:25:48.030
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c d136eca0cff2f8a5ac2f45867d5e5153d60e377c
-F src/os_win.c 4cb9b2621f4869e17c8caa627903dc114b1dfb37
+F src/os_win.c a2f41c9dfb9b065285ba94d4a40a31ca2e2b6ea3
 F src/pager.c 2b9980e87296812a6ce51121a3335550ae25e3ec
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5f4437c0e35c8aa740515aac3e81e0146716d2bb
-R bde1c152af7414f4a8d87d63f33cdc11
+P 0e44ed1badde6d766f18d1373d968e5b286b15bd
+R 8c3ade0fe410bf8f08819b27491eb958
 U drh
-Z 9887751c05c44b393c15dab1850774d3
+Z 1d97c5c3c6a55788c16fe769f3e976ae

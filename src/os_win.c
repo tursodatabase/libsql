@@ -3676,6 +3676,10 @@ static int winUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   if( p ){
     pFd->nFetchOut--;
   }else{
+    /* FIXME:  If Windows truly always prevents truncating or deleting a
+    ** file while a mapping is held, then the following winUnmapfile() call
+    ** is unnecessary can can be omitted - potentially improving
+    ** performance.  */
     winUnmapfile(pFd);
   }
 
