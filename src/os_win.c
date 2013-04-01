@@ -3568,6 +3568,7 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
   if( nMap>pFd->mmapLimit ){
     nMap = pFd->mmapLimit;
   }
+  nMap &= ~(sqlite3_int64)(winSysInfo.dwPageSize - 1);
  
   if( nMap==0 && pFd->mmapSize>0 ){
     winUnmapfile(pFd);
