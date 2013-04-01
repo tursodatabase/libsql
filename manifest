@@ -1,5 +1,5 @@
-C Attempt\sto\semulate\smremap()\son\snon-Linux\ssystems\sby\sallocating\sa\ssecond\smapping\simmediately\sfollowing\sthe\sfirst\sin\svirtual\smemory.
-D 2013-04-01T17:56:59.408
+C Merge\saccidental\sfork.
+D 2013-04-01T17:58:10.824
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c d136eca0cff2f8a5ac2f45867d5e5153d60e377c
-F src/os_win.c f705e7ce230f86104dedcc2987a21d564b236659
+F src/os_win.c 390653f5c9b216bd445366f3c2b4863e52d51c24
 F src/pager.c 2b9980e87296812a6ce51121a3335550ae25e3ec
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a1653a257d6af6e8b10c819e68b12f6c2f485811
-R 144bfd1ec5d6fde06365c0d3ea4b879a
+P 4d67433db8fb4754ae6b192945e479f3d7bad579 ee4d188e207efa24a26776fa4f025c6ac39cce73
+R 5abed6f6d2f091dbf577966219204ad2
 U dan
-Z 4e8a79b712821b5d3d9730a626894d79
+Z 994fbbedca554dbff615409d58ee1a84

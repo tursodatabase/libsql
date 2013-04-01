@@ -3555,7 +3555,6 @@ static int winUnmapfile(winFile *pFile){
 static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
   sqlite3_int64 nMap = nByte;
   int rc;
-  HANDLE hMap = NULL;             /* New mapping handle */
 
   assert( nMap>=0 || pFd->nFetchOut==0 );
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
@@ -3584,17 +3583,17 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
       flags |= FILE_MAP_WRITE;
     }
 #if SQLITE_OS_WINRT
-    hMap = osCreateFileMappingFromApp(pFd->h, NULL, protect, nMap, NULL);
+    pFd->hMap = osCreateFileMappingFromApp(pFd->h, NULL, protect, nMap, NULL);
 #elif defined(SQLITE_WIN32_HAS_WIDE)
-    hMap = osCreateFileMappingW(pFd->h, NULL, protect,
+    pFd->hMap = osCreateFileMappingW(pFd->h, NULL, protect,
                                 (DWORD)((nMap>>32) & 0xffffffff),
                                 (DWORD)(nMap & 0xffffffff), NULL);
 #elif defined(SQLITE_WIN32_HAS_ANSI)
-    hMap = osCreateFileMappingA(pFd->h, NULL, protect,
+    pFd->hMap = osCreateFileMappingA(pFd->h, NULL, protect,
                                 (DWORD)((nMap>>32) & 0xffffffff),
                                 (DWORD)(nMap & 0xffffffff), NULL);
 #endif
-    if( hMap==NULL ){
+    if( pFd->hMap==NULL ){
       pFd->lastErrno = osGetLastError();
       rc = winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
                        "winMapfile", pFd->zPath);
@@ -3603,13 +3602,13 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
     }
     assert( (nNewRnd % winSysInfo.dwPageSize)==0 );
 #if SQLITE_OS_WINRT
-    pNew = osMapViewOfFileFromApp(hMap, flags, 0, nMap);
+    pNew = osMapViewOfFileFromApp(pFd->hMap, flags, 0, nMap);
 #else
-    pNew = osMapViewOfFile(hMap, flags, 0, 0, (SIZE_T)nMap);
+    pNew = osMapViewOfFile(pFd->hMap, flags, 0, 0, (SIZE_T)nMap);
 #endif
     if( pNew==NULL ){
-      osCloseHandle(hMap);
-      hMap = NULL;
+      osCloseHandle(pFd->hMap);
+      pFd->hMap = NULL;
       pFd->lastErrno = osGetLastError();
       winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
                   "winMapfile", pFd->zPath);
