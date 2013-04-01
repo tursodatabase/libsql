@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_CONFIG_MMAP_LIMIT\sconfiguration\soption\sfor\soverriding\sthe\nSQLITE_DEFAULT_MMAP_LIMIT\scompile-time\ssetting.\s\sEnhance\s"PRAGMA\smmap_limit"\nso\sthat\swithout\sa\sspecific\sdatabase\sname,\sit\ssets\sthe\slimit\son\sall\sdatabase\nfiles\sand\schanges\sthe\sdefault\sfor\sany\sfuture\sdatabases\sthat\smight\sbe\sadded\nusing\sATTACH.
-D 2013-04-01T22:38:06.929
+C Remove\sa\sdebugging\sprintf()\saccidently\sleft\sin\sthe\sprevious\scheck-in.
+D 2013-04-01T22:42:48.981
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 9912ab0cfcd7fa2b058544d861a9fead3adac8da
+F src/os_unix.c d136eca0cff2f8a5ac2f45867d5e5153d60e377c
 F src/os_win.c a2f41c9dfb9b065285ba94d4a40a31ca2e2b6ea3
 F src/pager.c 072512d05dacd61b1f147736825bd32fdc890ba4
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e3c63c31a21b27806592d066a013a111b280c61f
-R 6d1c950d2134f5ef56d487146725ba7a
+P 78141d0a16dd1d56b575fccd149de7fa789cb06c
+R fed26fbe7b97d6a5db36e7e764991fa9
 U drh
-Z 72c1547cadf3e5127066e34139489015
+Z c0440f45f7713ec5c0ea751d4cf10d7e

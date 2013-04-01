@@ -3711,7 +3711,6 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_FCNTL_MMAP_LIMIT: {
       pFile->mmapLimit = *(i64*)pArg;
-printf("MMAP-LIMIT(%s) -> %lld\n", pFile->zPath, pFile->mmapLimit);
       return SQLITE_OK;
     }
 #ifdef SQLITE_DEBUG
