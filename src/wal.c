@@ -1208,7 +1208,7 @@ finished:
     */
     if( pWal->hdr.nPage ){
       sqlite3_log(SQLITE_OK, "Recovered %d frames from WAL file %s",
-          pWal->hdr.nPage, pWal->zWalName
+          pWal->hdr.mxFrame, pWal->zWalName
       );
     }
   }

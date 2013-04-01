@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sbtree.c\sthat\scould\scause\sa\scrash\sfollowing\san\sOOM.
-D 2013-04-01T14:29:33.960
+C Fix\sa\stypo\sin\sa\slog\smessage\sin\swal.c.
+D 2013-04-01T14:35:01.078
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -249,7 +249,7 @@ F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 4fad64071ae120c25f39dcac572d716b9cadeb7f
 F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
-F src/wal.c e84eff498c57ec2d79ca4496a3f4a638af378fb3
+F src/wal.c 04029f2691e937d7f5dd638580679a560fec93bf
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
 F src/where.c 9a16c0b84bbeb054d11fda96e9e037ae310bd54e
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 72813b8ec924b91583c679668f7c4561dff82a02
-R ff1f51b04ee42accb0ddfde388849db6
+P b724aa5889f2e09cf0cbef133a672e6486755104
+R 96d4d8288650bd963603cf34d02b8e9c
 U dan
-Z fbb073bc333f3d3b9c496b3226200b28
+Z 48fdc69d5f63c210da250932a430f955
