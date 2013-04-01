@@ -314,6 +314,17 @@ struct unixFile {
 #endif
 
 /*
+** HAVE_MREMAP defaults to true on Linux and false everywhere else.
+*/
+#if !defined(HAVE_MREMAP)
+# if defined(__linux__) && defined(_GNU_SOURCE)
+#  define HAVE_MREMAP 1
+# else
+#  define HAVE_MREMAP 0
+# endif
+#endif
+
+/*
 ** Different Unix systems declare open() in different ways.  Same use
 ** open(const char*,int,mode_t).  Others use open(const char*,int,...).
 ** The difference is important when using a pointer to the function.
@@ -450,7 +461,7 @@ static struct unix_syscall {
   { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
 #define osMunmap ((void*(*)(void*,size_t))aSyscall[22].pCurrent)
 
-#if defined(__linux__) && defined(_GNU_SOURCE)
+#if HAVE_MREMAP
   { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
 #else
   { "mremap",       (sqlite3_syscall_ptr)0,               0 },
@@ -1124,7 +1135,6 @@ static int unixLogErrorAtLine(
   zErr = strerror(iErrno);
 #endif
 
-  assert( errcode!=SQLITE_OK );
   if( zPath==0 ) zPath = "";
   sqlite3_log(errcode,
       "os_unix.c:%d: (%d) %s(%s) - %s",
@@ -3619,7 +3629,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     }
   }
 
-  if( pFile->mmapLimit>0 ){
+  if( pFile->mmapLimit>0 && nByte>pFile->mmapSize ){
     int rc;
     if( pFile->szChunk<=0 ){
       if( robust_ftruncate(pFile->h, nByte) ){
@@ -4519,6 +4529,104 @@ static void unixUnmapfile(unixFile *pFd){
 }
 
 /*
+** Return the system page size.
+*/
+static int unixGetPagesize(void){
+#if HAVE_MREMAP
+  return 512;
+#elif _BSD_SOURCE
+  return getpagesize();
+#else
+  return (int)sysconf(_SC_PAGESIZE);
+#endif
+}
+
+/*
+** Attempt to set the size of the memory mapping maintained by file 
+** descriptor pFd to nNew bytes. Any existing mapping is discarded.
+**
+** If successful, this function sets the following variables:
+**
+**       unixFile.pMapRegion
+**       unixFile.mmapSize
+**       unixFile.mmapOrigsize
+**
+** If unsuccessful, an error message is logged via sqlite3_log() and
+** the three variables above are zeroed. In this case SQLite should
+** continue accessing the database using the xRead() and xWrite()
+** methods.
+*/
+static void unixRemapfile(
+  unixFile *pFd,                  /* File descriptor object */
+  i64 nNew                        /* Required mapping size */
+){
+  int h = pFd->h;                      /* File descriptor open on db file */
+  u8 *pOrig = (u8 *)pFd->pMapRegion;   /* Pointer to current file mapping */
+  i64 nOrig = pFd->mmapOrigsize;       /* Size of pOrig region in bytes */
+  u8 *pNew = 0;                        /* Location of new mapping */
+  int flags = PROT_READ;               /* Flags to pass to mmap() */
+
+  assert( pFd->nFetchOut==0 );
+  assert( nNew>pFd->mmapSize );
+  assert( nNew<=pFd->mmapLimit );
+  assert( nNew>0 );
+  assert( pFd->mmapOrigsize>=pFd->mmapSize );
+
+  if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
+
+  if( pOrig ){
+    const int szSyspage = unixGetPagesize();
+    i64 nReuse = (pFd->mmapSize & ~(szSyspage-1));
+    u8 *pReq = &pOrig[nReuse];
+
+    /* Unmap any pages of the existing mapping that cannot be reused. */
+    if( nReuse!=nOrig ){
+      osMunmap(pReq, nOrig-nReuse);
+    }
+
+#if HAVE_MREMAP
+    pNew = osMremap(pOrig, nReuse, nNew, MREMAP_MAYMOVE);
+#else
+    pNew = osMmap(pReq, nNew-nReuse, flags, MAP_SHARED, h, nReuse);
+    if( pNew!=MAP_FAILED ){
+      if( pNew!=pReq ){
+        osMunmap(pNew, nNew - nReuse);
+        pNew = MAP_FAILED;
+      }else{
+        pNew = pOrig;
+      }
+    }
+#endif
+
+    /* The attempt to extend the existing mapping failed. Free the existing
+    ** mapping and set pNew to NULL so that the code below will create a
+    ** new mapping from scratch.  */
+    if( pNew==MAP_FAILED ){
+      pNew = 0;
+      osMunmap(pOrig, nReuse);
+    }
+  }
+
+  /* If pNew is still NULL, try to create an entirely new mapping. */
+  if( pNew==0 ){
+    pNew = osMmap(0, nNew, flags, MAP_SHARED, h, 0);
+    if( pNew==MAP_FAILED ){
+      pNew = 0;
+      nNew = 0;
+      unixLogError(SQLITE_OK, "mmap", pFd->zPath);
+
+      /* If the mmap() above failed, assume that all subsequent mmap() calls
+      ** will probably fail too. Fall back to using xRead/xWrite exclusively
+      ** in this case.  */
+      pFd->mmapLimit = 0;
+    }
+  }
+
+  pFd->pMapRegion = (void *)pNew;
+  pFd->mmapSize = pFd->mmapOrigsize = nNew;
+}
+
+/*
 ** Memory map or remap the file opened by file-descriptor pFd (if the file
 ** is already mapped, the existing mapping is replaced by the new). Or, if 
 ** there already exists a mapping for this file, and there are still 
@@ -4554,28 +4662,11 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
   }
 
   if( nMap!=pFd->mmapSize ){
-    void *pNew = 0;
-
-#if defined(__linux__) && defined(_GNU_SOURCE)
-    if( pFd->pMapRegion && nMap>0 ){
-      pNew = osMremap(pFd->pMapRegion, pFd->mmapOrigsize, nMap, MREMAP_MAYMOVE);
-    }else
-#endif
-    {
+    if( nMap>0 ){
+      unixRemapfile(pFd, nMap);
+    }else{
       unixUnmapfile(pFd);
-      if( nMap>0 ){
-        int flags = PROT_READ;
-        if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
-        pNew = osMmap(0, nMap, flags, MAP_SHARED, pFd->h, 0);
-      }
     }
-
-    if( pNew==MAP_FAILED ){
-      return SQLITE_IOERR_MMAP;
-    }
-    pFd->pMapRegion = pNew;
-    pFd->mmapSize = nMap;
-    pFd->mmapOrigsize = nMap;
   }
 
   return SQLITE_OK;
