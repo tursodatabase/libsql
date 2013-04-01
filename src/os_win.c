@@ -150,9 +150,12 @@ struct winFile {
   winceLock local;        /* Locks obtained by this instance of winFile */
   winceLock *shared;      /* Global shared lock memory for the file  */
 #endif
-  HANDLE hMap;            /* Handle for accessing memory mapping */
-  void *pMapRegion;       /* Area memory mapped */
-  sqlite3_int64 mmapSize; /* Size of xMremap() */
+  int nFetchOut;               /* Number of outstanding xFetch references */
+  HANDLE hMap;                 /* Handle for accessing memory mapping */
+  void *pMapRegion;            /* Area memory mapped */
+  sqlite3_int64 mmapSize;      /* Usable size of mapped region */
+  sqlite3_int64 mmapOrigsize;  /* Actual size of mapped region */
+  sqlite3_int64 mmapLimit;     /* Configured FCNTL_MMAP_LIMIT value */
 };
 
 /*
@@ -2066,7 +2069,7 @@ static int seekWinFile(winFile *pFile, sqlite3_int64 iOffset){
 }
 
 /* Forward references to VFS methods */
-static int winUnmap(sqlite3_file *);
+static int winUnmapfile(winFile*);
 
 /*
 ** Close a file.
@@ -2090,7 +2093,7 @@ static int winClose(sqlite3_file *id){
   OSTRACE(("CLOSE %d\n", pFile->h));
   assert( pFile->h!=NULL && pFile->h!=INVALID_HANDLE_VALUE );
 
-  rc = winUnmap(id);
+  rc = winUnmapfile(pFile);
   if( rc!=SQLITE_OK ) return rc;
 
   do{
@@ -2142,9 +2145,23 @@ static int winRead(
 
   assert( id!=0 );
   assert( amt>0 );
-  assert( offset>=pFile->mmapSize ); /* Never read from the mmapped region */
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE(("READ %d lock=%d\n", pFile->h, pFile->locktype));
+
+  /* Deal with as much of this read request as possible by transfering
+  ** data from the memory mapping using memcpy().  */
+  if( offset<pFile->mmapSize ){
+    if( offset+amt <= pFile->mmapSize ){
+      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], amt);
+      return SQLITE_OK;
+    }else{
+      int nCopy = (int)(pFile->mmapSize - offset);
+      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], nCopy);
+      pBuf = &((u8 *)pBuf)[nCopy];
+      amt -= nCopy;
+      offset += nCopy;
+    }
+  }
 
 #if SQLITE_OS_WINCE
   if( seekWinFile(pFile, offset) ){
@@ -2189,12 +2206,26 @@ static int winWrite(
   int nRetry = 0;                 /* Number of retries */
 
   assert( amt>0 );
-  assert( offset>=pFile->mmapSize ); /* Never write into the mmapped region */
   assert( pFile );
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
 
   OSTRACE(("WRITE %d lock=%d\n", pFile->h, pFile->locktype));
+
+  /* Deal with as much of this write request as possible by transfering
+  ** data from the memory mapping using memcpy().  */
+  if( offset<pFile->mmapSize ){
+    if( offset+amt <= pFile->mmapSize ){
+      memcpy(&((u8 *)(pFile->pMapRegion))[offset], pBuf, amt);
+      return SQLITE_OK;
+    }else{
+      int nCopy = (int)(pFile->mmapSize - offset);
+      memcpy(&((u8 *)(pFile->pMapRegion))[offset], pBuf, nCopy);
+      pBuf = &((u8 *)pBuf)[nCopy];
+      amt -= nCopy;
+      offset += nCopy;
+    }
+  }
 
 #if SQLITE_OS_WINCE
   rc = seekWinFile(pFile, offset);
@@ -2288,14 +2319,14 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
     pFile->lastErrno = lastErrno;
     rc = winLogError(SQLITE_IOERR_TRUNCATE, pFile->lastErrno,
                      "winTruncate2", pFile->zPath);
-  }else{
-    /* If the file was just truncated to a size smaller than the currently
-    ** mapped region, reduce the effective mapping size as well. SQLite will
-    ** use read() and write() to access data beyond this point from now on.
-    */
-    if( pFile->pMapRegion && nByte<pFile->mmapSize ){
-      pFile->mmapSize = nByte;
-    }
+  }
+
+  /* If the file was truncated to a size smaller than the currently
+  ** mapped region, reduce the effective mapping size as well. SQLite will
+  ** use read() and write() to access data beyond this point from now on.
+  */
+  if( pFile->pMapRegion && nByte<pFile->mmapSize ){
+    pFile->mmapSize = nByte;
   }
 
   OSTRACE(("TRUNCATE %d %lld %s\n", pFile->h, nByte, rc ? "failed" : "ok"));
@@ -2803,6 +2834,10 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
         getTempname(pFile->pVfs->mxPathname, zTFile);
         *(char**)pArg = zTFile;
       }
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_MMAP_LIMIT: {
+      pFile->mmapLimit = *(i64*)pArg;
       return SQLITE_OK;
     }
   }
@@ -3476,36 +3511,24 @@ shmpage_out:
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
-** Arguments x and y are both integers. Argument y must be a power of 2.
-** Round x up to the nearest integer multiple of y. For example:
-**
-**     ROUNDUP(0,  8) ->  0
-**     ROUNDUP(13, 8) -> 16
-**     ROUNDUP(32, 8) -> 32
-*/
-#define ROUNDUP(x,y)     (((x)+y-1)&~(y-1))
-
-/*
 ** Cleans up the mapped region of the specified file, if any.
 */
-static int winUnmap(
-  sqlite3_file *id
-){
-  winFile *pFile = (winFile*)id;
+static int winUnmapfile(winFile *pFile){
   assert( pFile!=0 );
   if( pFile->pMapRegion ){
     if( !osUnmapViewOfFile(pFile->pMapRegion) ){
       pFile->lastErrno = osGetLastError();
-      return winLogError(SQLITE_IOERR_MREMAP, pFile->lastErrno,
+      return winLogError(SQLITE_IOERR_MMAP, pFile->lastErrno,
                          "winUnmap1", pFile->zPath);
     }
     pFile->pMapRegion = 0;
     pFile->mmapSize = 0;
+    pFile->mmapOrigsize = 0;
   }
   if( pFile->hMap!=NULL ){
     if( !osCloseHandle(pFile->hMap) ){
       pFile->lastErrno = osGetLastError();
-      return winLogError(SQLITE_IOERR_MREMAP, pFile->lastErrno,
+      return winLogError(SQLITE_IOERR_MMAP, pFile->lastErrno,
                          "winUnmap2", pFile->zPath);
     }
     pFile->hMap = NULL;
@@ -3514,116 +3537,150 @@ static int winUnmap(
 }
 
 /*
-** Map, remap or unmap part of the database file.
+** Memory map or remap the file opened by file-descriptor pFd (if the file
+** is already mapped, the existing mapping is replaced by the new). Or, if 
+** there already exists a mapping for this file, and there are still 
+** outstanding xFetch() references to it, this function is a no-op.
+**
+** If parameter nByte is non-negative, then it is the requested size of 
+** the mapping to create. Otherwise, if nByte is less than zero, then the 
+** requested size is the size of the file on disk. The actual size of the
+** created mapping is either the requested size or the value configured 
+** using SQLITE_FCNTL_MMAP_LIMIT, whichever is smaller.
+**
+** SQLITE_OK is returned if no error occurs (even if the mapping is not
+** recreated as a result of outstanding references) or an SQLite error
+** code otherwise.
 */
-static int winMremap(
-  sqlite3_file *id,               /* Main database file */
-  int flags,                      /* Mask of SQLITE_MREMAP_XXX flags */
-  sqlite3_int64 iOff,             /* Offset to start mapping at */
-  sqlite3_int64 nOld,             /* Size of old mapping, or zero */
-  sqlite3_int64 nNew,             /* Size of new mapping, or zero */
-  void **ppMap                    /* IN/OUT: Old/new mappings */
-){
-  winFile *pFile = (winFile*)id;  /* The underlying database file */
-  int rc = SQLITE_OK;             /* Return code */
+static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
+  sqlite3_int64 nMap = nByte;
+  int rc;
   HANDLE hMap = NULL;             /* New mapping handle */
-  void *pNew = 0;                 /* New mapping */
-  i64 nNewRnd;                    /* nNew rounded up */
-  i64 nOldRnd;                    /* nOld rounded up */
 
-  assert( pFile!=0 );
-  assert( iOff==0 );
-  assert( nOld>=0 );
-  assert( nOld==0 || pFile->pMapRegion==(*ppMap) );
-  assert( nNew>=0 );
-  assert( ppMap );
-  assert( pFile->hMap==NULL || pFile->pMapRegion==(*ppMap) );
-  assert( pFile->pMapRegion==0 || pFile->pMapRegion==(*ppMap) );
-  /* assert( pFile->mmapSize==nOld ); */
+  assert( nMap>=0 || pFd->nFetchOut==0 );
+  if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
-  assert( winSysInfo.dwPageSize>0 );
-  nNewRnd = ROUNDUP(nNew, winSysInfo.dwPageSize*1);
-  assert( nNewRnd>=0 );
-  nOldRnd = ROUNDUP(nOld, winSysInfo.dwPageSize*1);
-  assert( nOldRnd>=0 );
-
-  if( nNewRnd==nOldRnd ){
-    pFile->mmapSize = nNew;
-    return SQLITE_OK;
-  }
-
-  /* If the SQLITE_MREMAP_EXTEND flag is set, then the size of the requested
-  ** mapping (nNew bytes) may be greater than the size of the database file.
-  ** If this is the case, extend the file on disk using ftruncate().  */
-  assert( nNewRnd>0 || (flags & SQLITE_MREMAP_EXTEND)==0 );
-  if( flags & SQLITE_MREMAP_EXTEND ){
-    sqlite3_int64 oldSz;
-    rc = winFileSize(id, &oldSz);
-    if( rc==SQLITE_OK && nNewRnd>oldSz ){
-      rc = winUnmap(id); /* Cannot truncate the file with an open mapping. */
-      if( rc==SQLITE_OK ){
-        rc = winTruncate(id, nNewRnd);
-      }
+  if( nMap<0 ){
+    rc = winFileSize((sqlite3_file*)pFd, &nMap);
+    if( rc ){
+      return SQLITE_IOERR_FSTAT;
     }
-    if( rc!=SQLITE_OK ) return rc;
   }
-
-  /* If we get this far, unmap any old mapping. */
-  rc = winUnmap(id);
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* And, if required, create a new mapping. */
-  if( nNewRnd>0 ){
-    i64 offset = ((iOff / winSysInfo.dwAllocationGranularity) *
-                  (winSysInfo.dwAllocationGranularity));
+  if( nMap>pFd->mmapLimit ){
+    nMap = pFd->mmapLimit;
+  }
+ 
+  if( nMap==0 && pFd->mmapSize>0 ){
+    winUnmapfile(pFd);
+  }
+  if( nMap!=pFd->mmapSize ){
+    void *pNew = 0;
     DWORD protect = PAGE_READONLY;
     DWORD flags = FILE_MAP_READ;
-    if( (pFile->ctrlFlags & WINFILE_RDONLY)==0 ){
+
+    winUnmapfile(pFd);
+    if( (pFd->ctrlFlags & WINFILE_RDONLY)==0 ){
       protect = PAGE_READWRITE;
       flags |= FILE_MAP_WRITE;
     }
 #if SQLITE_OS_WINRT
-    hMap = osCreateFileMappingFromApp(pFile->h, NULL, protect, nNewRnd, NULL);
+    hMap = osCreateFileMappingFromApp(pFd->h, NULL, protect, nMap, NULL);
 #elif defined(SQLITE_WIN32_HAS_WIDE)
-    hMap = osCreateFileMappingW(pFile->h, NULL, protect,
-                                (DWORD)((nNewRnd>>32) & 0xffffffff),
-                                (DWORD)(nNewRnd & 0xffffffff), NULL);
+    hMap = osCreateFileMappingW(pFd->h, NULL, protect,
+                                (DWORD)((nMap>>32) & 0xffffffff),
+                                (DWORD)(nMap & 0xffffffff), NULL);
 #elif defined(SQLITE_WIN32_HAS_ANSI)
-    hMap = osCreateFileMappingA(pFile->h, NULL, protect,
-                                (DWORD)((nNewRnd>>32) & 0xffffffff),
-                                (DWORD)(nNewRnd & 0xffffffff), NULL);
+    hMap = osCreateFileMappingA(pFd->h, NULL, protect,
+                                (DWORD)((nMap>>32) & 0xffffffff),
+                                (DWORD)(nMap & 0xffffffff), NULL);
 #endif
     if( hMap==NULL ){
-      pFile->lastErrno = osGetLastError();
-      rc = winLogError(SQLITE_IOERR_MREMAP, pFile->lastErrno,
-                       "winMremap1", pFile->zPath);
-      return rc;
+      pFd->lastErrno = osGetLastError();
+      rc = winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
+                       "winMapfile", pFd->zPath);
+      /* Log the error, but continue normal operation using xRead/xWrite */
+      return SQLITE_OK;
     }
     assert( (nNewRnd % winSysInfo.dwPageSize)==0 );
 #if SQLITE_OS_WINRT
-    pNew = osMapViewOfFileFromApp(hMap, flags, offset, nNewRnd);
+    pNew = osMapViewOfFileFromApp(hMap, flags, 0, nMap);
 #else
-    assert( sizeof(SIZE_T)==sizeof(sqlite3_int64) || nNewRnd<=0xffffffff );
-    pNew = osMapViewOfFile(hMap, flags,
-                           (DWORD)((offset>>32) & 0xffffffff),
-                           (DWORD)(offset & 0xffffffff),
-                           (SIZE_T)nNewRnd);
+    pNew = osMapViewOfFile(hMap, flags, 0, 0, (SIZE_T)nMap);
 #endif
     if( pNew==NULL ){
       osCloseHandle(hMap);
       hMap = NULL;
-      pFile->lastErrno = osGetLastError();
-      rc = winLogError(SQLITE_IOERR_MREMAP, pFile->lastErrno,
-                       "winMremap2", pFile->zPath);
+      pFd->lastErrno = osGetLastError();
+      winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
+                  "winMapfile", pFd->zPath);
+      return SQLITE_OK;
     }
+    pFd->pMapRegion = pNew;
+    pFd->mmapSize = nMap;
+    pFd->mmapOrigsize = nMap;
   }
 
-  pFile->hMap = hMap;
-  pFile->pMapRegion = pNew;
-  pFile->mmapSize = nNew;
+  return SQLITE_OK;
+}
 
-  *ppMap = pNew;
-  return rc;
+/*
+** If possible, return a pointer to a mapping of file fd starting at offset
+** iOff. The mapping must be valid for at least nAmt bytes.
+**
+** If such a pointer can be obtained, store it in *pp and return SQLITE_OK.
+** Or, if one cannot but no error occurs, set *pp to 0 and return SQLITE_OK.
+** Finally, if an error does occur, return an SQLite error code. The final
+** value of *pp is undefined in this case.
+**
+** If this function does return a pointer, the caller must eventually 
+** release the reference by calling unixUnfetch().
+*/
+static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
+  winFile *pFd = (winFile*)fd;   /* The underlying database file */
+  *pp = 0;
+
+  if( pFd->mmapLimit>0 ){
+    if( pFd->pMapRegion==0 ){
+      int rc = winMapfile(pFd, -1);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    if( pFd->mmapSize >= iOff+nAmt ){
+      *pp = &((u8 *)pFd->pMapRegion)[iOff];
+      pFd->nFetchOut++;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** If the third argument is non-NULL, then this function releases a 
+** reference obtained by an earlier call to unixFetch(). The second
+** argument passed to this function must be the same as the corresponding
+** argument that was passed to the unixFetch() invocation. 
+**
+** Or, if the third argument is NULL, then this function is being called 
+** to inform the VFS layer that, according to POSIX, any existing mapping 
+** may now be invalid and should be unmapped.
+*/
+static int winUnfetch(sqlite3_file *fd, i64 iOff, void *p){
+  winFile *pFd = (winFile*)fd;   /* The underlying database file */
+
+  /* If p==0 (unmap the entire file) then there must be no outstanding 
+  ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),
+  ** then there must be at least one outstanding.  */
+  assert( (p==0)==(pFd->nFetchOut==0) );
+
+  /* If p!=0, it must match the iOff value. */
+  assert( p==0 || p==&((u8 *)pFd->pMapRegion)[iOff] );
+
+  if( p ){
+    pFd->nFetchOut--;
+  }else{
+    winUnmapfile(pFd);
+  }
+
+  assert( pFd->nFetchOut>=0 );
+  return SQLITE_OK;
 }
 
 /*
@@ -3654,7 +3711,8 @@ static const sqlite3_io_methods winIoMethod = {
   winShmLock,                     /* xShmLock */
   winShmBarrier,                  /* xShmBarrier */
   winShmUnmap,                    /* xShmUnmap */
-  winMremap,                      /* xMremap */
+  winFetch,                       /* xFetch */
+  winUnfetch                      /* xUnfetch */
 };
 
 /****************************************************************************
@@ -4052,6 +4110,8 @@ static int winOpen(
   pFile->hMap = NULL;
   pFile->pMapRegion = 0;
   pFile->mmapSize = 0;
+  pFile->mmapOrigsize = 0;
+  pFile->mmapLimit = SQLITE_DEFAULT_MMAP_LIMIT;
 
   OpenCounter(+1);
   return rc;
