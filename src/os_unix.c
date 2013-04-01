@@ -4590,12 +4590,17 @@ static int unixGetPagesize(void){
 ** code otherwise.
 */
 static int unixMapfile(unixFile *pFd, i64 nByte){
-  i64 nMap = nByte;
+  i64 nMap;                       /* Number of bytes of file to map */
   int rc;
 
   assert( nMap>=0 || pFd->nFetchOut==0 );
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
+  /* Set variable nMap to the number of bytes of the file to map. This is
+  ** the smaller of argument nByte and the limit configured by
+  ** SQLITE_FCNTL_MMAP_LIMIT. Or, if nByte is less than zero, the smaller
+  ** of the file size or the SQLITE_FCNTL_MMAP_LIMIT value.  */
+  nMap = nByte;
   if( nMap<0 ){
     struct stat statbuf;          /* Low-level file information */
     rc = osFstat(pFd->h, &statbuf);
@@ -4609,7 +4614,6 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
   }
 
   if( nMap!=(pFd->aMmap[0].mmapSize + pFd->aMmap[1].mmapSize) ){
-    void *pNew = 0;
 
     /* If the request is for a mapping zero bytes in size, or there are 
     ** currently already two mapping regions, or there is already a mapping
@@ -4617,7 +4621,7 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
     ** everything.  */
     if( nMap==0 
 #if !HAVE_MREMAP
-     || (pFd->aMmap[0].pMapRegion && pFd->aMmap[1].pMapRegion) 
+     || (pFd->aMmap[0].pMapRegion && pFd->aMmap[1].pMapRegion)
      || (pFd->aMmap[0].mmapSize % pFd->szSyspage)
 #endif
     ){
@@ -4626,61 +4630,53 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
     assert( pFd->aMmap[1].pMapRegion==0 );
 
     if( nMap>0 ){
+      unixMapping *pMap = &pFd->aMmap[0];   /* First mapping object */
+      void *pNew = 0;
+      int iNew = 0;
       int flags = PROT_READ;
       if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
 
       /* If there are currently no mappings, create a new one */
-      if( pFd->aMmap[0].pMapRegion==0 ){
+      if( pMap->pMapRegion==0 ){
         pNew = osMmap(0, nMap, flags, MAP_SHARED, pFd->h, 0);
-        if( pNew==MAP_FAILED ){
-          return SQLITE_IOERR_MMAP;
-        }
-        pFd->aMmap[0].pMapRegion = pNew;
-        pFd->aMmap[0].mmapSize = nMap;
-        pFd->aMmap[0].mmapOrigsize = nMap;
       }
 #if HAVE_MREMAP
       /* If we have an mremap() call, resize the existing mapping. */
       else{
-        unixMapping *pMap = &pFd->aMmap[0];
         pNew = osMremap(
             pMap->pMapRegion, pMap->mmapOrigsize, nMap, MREMAP_MAYMOVE
         );
-        if( pNew==MAP_FAILED ){
-          return SQLITE_IOERR_MMAP;
-        }
-        pFd->aMmap[0].pMapRegion = pNew;
-        pFd->aMmap[0].mmapSize = nMap;
-        pFd->aMmap[0].mmapOrigsize = nMap;
       }
 #else
       /* Otherwise, create a second mapping. If the existing mapping is
       ** a multiple of the page-size in size, then request that the new
       ** mapping immediately follow the old in virtual memory.  */
       else{
-        unixMapping *pMap = &pFd->aMmap[0];
-        void *pAddr = 0;
+        i64 nNew;                 /* Bytes to map with this call */
+        void *pAddr = 0;          /* Virtual address to request mapping at */
 
-        nMap -= pMap->mmapSize;
-
+        nNew = nMap - pMap->mmapSize;
         if( pMap->mmapSize==pMap->mmapOrigsize ){
           pAddr = (void *)&((u8 *)pMap->pMapRegion)[pMap->mmapSize];
         }
 
-        pNew = osMmap(pAddr, nMap, flags, MAP_SHARED, pFd->h, pMap->mmapSize);
-        if( pNew==MAP_FAILED ){
-          return SQLITE_IOERR_MMAP;
-        }
-        if( pNew==pAddr ){
-          pMap->mmapOrigsize += nMap;
-          pMap->mmapSize += nMap;
+        pNew = osMmap(pAddr, nNew, flags, MAP_SHARED, pFd->h, pMap->mmapSize);
+
+        if( pAddr && pNew==pAddr ){
+          pNew = pMap->pMapRegion;
         }else{
-          pFd->aMmap[1].pMapRegion = pNew;
-          pFd->aMmap[1].mmapSize = nMap;
-          pFd->aMmap[1].mmapOrigsize = nMap;
+          iNew = 1;
+          nMap = nNew;
         }
       }
 #endif
+
+      if( pNew==MAP_FAILED ){
+        return SQLITE_IOERR_MMAP;
+      }
+      pFd->aMmap[iNew].pMapRegion = pNew;
+      pFd->aMmap[iNew].mmapSize = nMap;
+      pFd->aMmap[iNew].mmapOrigsize = nMap;
     }
   }
 
