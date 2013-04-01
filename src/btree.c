@@ -1864,6 +1864,7 @@ int sqlite3BtreeOpen(
     rc = sqlite3PagerOpen(pVfs, &pBt->pPager, zFilename,
                           EXTRA_SIZE, flags, vfsFlags, pageReinit);
     if( rc==SQLITE_OK ){
+      sqlite3PagerSetMmapLimit(pBt->pPager, db->mxMmap);
       rc = sqlite3PagerReadFileheader(pBt->pPager,sizeof(zDbHeader),zDbHeader);
     }
     if( rc!=SQLITE_OK ){

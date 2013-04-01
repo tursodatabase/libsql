@@ -834,6 +834,7 @@ struct sqlite3 {
   int nDb;                      /* Number of backends currently in use */
   int flags;                    /* Miscellaneous flags. See below */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
+  i64 mxMmap;                   /* Default mmap_limit setting */
   unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
@@ -2505,6 +2506,7 @@ struct Sqlite3Config {
   void *pHeap;                      /* Heap storage space */
   int nHeap;                        /* Size of pHeap[] */
   int mnReq, mxReq;                 /* Min and max heap requests sizes */
+  sqlite3_int64 mxMmap;             /* Maximum mmap() space per open file */
   void *pScratch;                   /* Scratch memory */
   int szScratch;                    /* Size of each scratch buffer */
   int nScratch;                     /* Number of scratch buffers */

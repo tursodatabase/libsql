@@ -750,7 +750,9 @@ void sqlite3Pragma(
   ** Used to set mapping size limit. The mapping size limit is
   ** used to limit the aggregate size of all memory mapped regions of the
   ** database file. If this parameter is set to zero, then memory mapping
-  ** is not used at all. The parameter N is measured in bytes.
+  ** is not used at all.  If N is negative, then the default memory map
+  ** limit determined by sqlite3_config(SQLITE_CONFIG_MMAP_LIMIT) is set.
+  ** The parameter N is measured in bytes.
   **
   ** This value is advisory.  The underlying VFS is free to memory map
   ** as little or as much as it wants.  Except, if N is set to 0 then the
@@ -760,8 +762,15 @@ void sqlite3Pragma(
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( zRight ){
       sqlite3_int64 size;
+      int ii;
       sqlite3Atoi64(zRight, &size, 1000, SQLITE_UTF8);
-      sqlite3BtreeSetMmapLimit(pDb->pBt, size);
+      if( size<0 ) size = sqlite3GlobalConfig.mxMmap;
+      if( pId2->n==0 ) db->mxMmap = size;
+      for(ii=db->nDb-1; ii>=0; ii--){
+        if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
+          sqlite3BtreeSetMmapLimit(db->aDb[ii].pBt, size);
+        }
+      }
     }
   }else
 

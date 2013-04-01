@@ -1637,6 +1637,19 @@ struct sqlite3_mem_methods {
 ** points to has just been executed. Or, if the fourth parameter is 2, then
 ** the connection being passed as the second parameter is being closed. The
 ** third parameter is passed NULL In this case.
+**
+** [[SQLITE_CONFIG_MMAP_LIMIT]]
+** <dt>SQLITE_CONFIG_MMAP_LIMIT
+** <dd>The sole argument should be a 64-bit integer (an sqlite3_int64) that
+** is the default maximum number of bytes of process address space that
+** should be used for accessing each database file using memory mapping.
+** The default setting can be overridden by each database connection using
+** either the [PRAGMA mmap_limit] command or the "mmaplimit" query parameter
+** on the [URI filename] when opening the databaes file or by using the
+** [SQLITE_FCNTL_MMAP_LIMIT] file control.  The value set here overrides the
+** compile-time default that is set using the [SQLITE_DEFAULT_MMAP_LIMIT]
+** compile-time option.  If the argument to this option is negative, then
+** the memory map limit is set to the compile-time default.
 ** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
@@ -1660,6 +1673,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_GETPCACHE2   19  /* sqlite3_pcache_methods2* */
 #define SQLITE_CONFIG_COVERING_INDEX_SCAN 20  /* int */
 #define SQLITE_CONFIG_SQLLOG       21  /* xSqllog, void* */
+#define SQLITE_CONFIG_MMAP_LIMIT   22  /* sqlite3_int64 */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options
