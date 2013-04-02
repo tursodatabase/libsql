@@ -1,5 +1,5 @@
-C Reorder\stwo\sconditions\sto\smake\scoverage\stesting\seasier.
-D 2013-04-02T01:45:10.945
+C Proposed\stemplate\spreprocessor\smagic\sfor\sactivating\smmap\sonly\son\splatforms\nwhere\swe\sknow\sit\sworks.
+D 2013-04-02T10:29:13.935
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/sqlite.h.in 42c69ea00dfcce84394d6ce0d8dac7bb3d2ecff2
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 1664dc5ad6f8d4dab871416628aa3271044d66c0
-F src/sqliteLimit.h 83d0cd0ce3050a80930406d3c7aecb48c1ccdfc5
+F src/sqliteLimit.h 4d8d04c43bf2886d94f1ab7992fee5081e09a7f5
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 9a716c737590d2f129d71c8fc7065e5aba0e7222
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3628e86bf131cb205f08a4b299d84007cd6b25c3
-R 5022c5197e31d50bddc957f6984f11f1
+P 793ba4e996426522eeaa86589a9e974fa1fc1522
+R 2b5ee6ceec98b53d533d4ea410a1bfc7
 U drh
-Z 379e6b5efd0a997c87c1f9a5494b7aa5
+Z ead310385cbe70188969099b54288940
