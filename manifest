@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\sos_win.c\sVFS.
-D 2013-04-02T14:37:40.848
+C Add\snew\stest\sfile\sbtreefault.test.
+D 2013-04-02T15:37:30.257
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -314,6 +314,7 @@ F test/boundary3.tcl 8901d6a503d0bf64251dd81cc74e5ad3add4b119
 F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
+F test/btreefault.test 06899a377f31a8c1a3048ec69831522d4e5c6045
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/capi2.test e8b18cc61090b6e5e388f54d6b125d711d1b265a
@@ -1041,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3098a3c1e7305033904a496ef534cb312a876fab
-R 3eb86ed3ddaa0095d1a3da7f2b0ccdb4
-U drh
-Z 7afe4013f9081817d8523bb6f04fa909
+P fd6ee54969322203c02ce9bd8744e095faf6a69c
+R afe8ecd9cb367696b6be602590bc8be6
+U dan
+Z 42e6019db12bcc782c7a96e67c5fd3c7
