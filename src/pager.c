@@ -2936,15 +2936,14 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
   Pager *pPager = (Pager *)pCtx;
   PgHdr *pPg;
 
+  assert( pagerUseWal(pPager) );
   pPg = sqlite3PagerLookup(pPager, iPg);
   if( pPg ){
     if( sqlite3PcachePageRefcount(pPg)==1 ){
       sqlite3PcacheDrop(pPg);
     }else{
       u32 iFrame = 0;
-      if( pagerUseWal(pPager) ){
-        rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
-      }
+      rc = sqlite3WalFindFrame(pPager->pWal, pPg->pgno, &iFrame);
       if( rc==SQLITE_OK ){
         rc = readDbPage(pPg, iFrame);
       }
