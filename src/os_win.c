@@ -3605,6 +3605,7 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
 #if SQLITE_OS_WINRT
     pNew = osMapViewOfFileFromApp(pFd->hMap, flags, 0, nMap);
 #else
+    assert( sizeof(SIZE_T)==sizeof(sqlite3_int64) || nMap<=0xffffffff );
     pNew = osMapViewOfFile(pFd->hMap, flags, 0, 0, (SIZE_T)nMap);
 #endif
     if( pNew==NULL ){

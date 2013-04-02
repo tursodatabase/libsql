@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\smmap1.test\sand\spagerfault.test.
-D 2013-04-02T18:33:55.243
+C Add\sassert\sto\sthe\sWindows\sVFS\spertaining\sto\sthe\ssize\sof\sthe\sSIZE_T\stype.
+D 2013-04-02T20:13:04.021
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 42684a59b06b912b3ab80a8ad9f4295c0572a1f4
-F src/os_win.c 6822b2cda33f025ce7fe240ec050b9bcba213903
+F src/os_win.c 6a7a1017fb6a0783a3aa7c3f5eadd9b1600a9ddf
 F src/pager.c e26184d451207542d56bd09b84339252a194791e
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d641d3d20d80fdb86d91de31fcf2eb5ca3c5c715
-R 93a80e505d81032f015b51889ab16396
-U dan
-Z 374a5f4f4b29eb3200a93246d589254e
+P 3050136be962427cc4dcced6077ef29b2a941405
+R 69136e8e9adf1c4824020b7a88c6a9a7
+U mistachkin
+Z 0311bae3bb3a8c1122f90eda3126446b
