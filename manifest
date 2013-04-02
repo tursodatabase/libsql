@@ -1,5 +1,5 @@
-C Change\san\sassert\sin\spager.c\sto\sacknowledge\sthat\sit\sis\spossible\sfor\ssqlite3PagerRollback()\sto\sreturn\sSQLITE_CORRUPT.
-D 2013-04-02T18:31:29.703
+C Add\stest\scases\sto\smmap1.test\sand\spagerfault.test.
+D 2013-04-02T18:33:55.243
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -631,7 +631,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/mmap1.test 9fb71daaca72f66fcc7a3b3a37fc3db99988b57a
+F test/mmap1.test 245eb4a6280d4b31523eb79486863afadac4f3c6
 F test/mmap2.test bb0c97cdac0db06a5acdc6836eef9866815481b1
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
@@ -653,7 +653,7 @@ F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 31c04bec797dda1bde337810b52efa08d1f1f08e
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test 452f2cc23e3bfcfa935f4442aec1da4fe1dc0442
+F test/pagerfault.test fc2e37b2da626826dd54bb13720b4d721719b660
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 32cb5a6ed7ccddf8e8c842cb44240bd9340223ce
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d36ce0bbad58445c983597ee93438fe07b659cdc
-R 338634a1c64bdacb6f3ed638ff14c520
+P d641d3d20d80fdb86d91de31fcf2eb5ca3c5c715
+R 93a80e505d81032f015b51889ab16396
 U dan
-Z 2347325502a78b990959c6fe11156215
+Z 374a5f4f4b29eb3200a93246d589254e

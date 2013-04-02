@@ -129,4 +129,29 @@ do_execsql_test 2.4 {
   PRAGMA wal_checkpoint;
 } {0 24 24}
 
+
+reset_db
+db func rblob rblob
+do_execsql_test 3.1 {
+  PRAGMA auto_vacuum = 1;
+
+  CREATE TABLE t1(a, b, UNIQUE(a, b));
+  INSERT INTO t1 VALUES(rblob(500), rblob(500));
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    2
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    4
+  INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    8
+
+  CREATE TABLE t2(a, b, UNIQUE(a, b));
+  INSERT INTO t2 SELECT * FROM t1;
+} {}
+
+do_test 3.2 {
+  set nRow 0
+  db eval {SELECT * FROM t2 ORDER BY a, b} {
+    if {$nRow==4} { db eval { DELETE FROM t1 } }
+    incr nRow
+  }
+  set nRow
+} {8}
+
 finish_test
