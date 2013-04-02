@@ -53,6 +53,11 @@ static int findNextHostParameter(const char *zSql, int *pnToken){
 ** then the returned string holds a copy of zRawSql with "-- " prepended
 ** to each line of text.
 **
+** If the SQLITE_TRACE_SIZE_LIMIT macro is defined to an integer, then
+** then long strings and blobs are truncated to that many bytes.  This
+** can be used to prevent unreasonably large trace strings when dealing
+** with large (multi-megabyte) strings and blobs.
+**
 ** The calling function is responsible for making sure the memory returned
 ** is eventually freed.
 **
@@ -123,30 +128,49 @@ char *sqlite3VdbeExpandSql(
       }else if( pVar->flags & MEM_Real ){
         sqlite3XPrintf(&out, "%!.15g", pVar->r);
       }else if( pVar->flags & MEM_Str ){
+        int n;  /* Number of bytes of the string text to include in output */
 #ifndef SQLITE_OMIT_UTF16
         u8 enc = ENC(db);
+        Mem utf8;
         if( enc!=SQLITE_UTF8 ){
-          Mem utf8;
           memset(&utf8, 0, sizeof(utf8));
           utf8.db = db;
           sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, enc, SQLITE_STATIC);
           sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8);
-          sqlite3XPrintf(&out, "'%.*q'", utf8.n, utf8.z);
-          sqlite3VdbeMemRelease(&utf8);
-        }else
-#endif
-        {
-          sqlite3XPrintf(&out, "'%.*q'", pVar->n, pVar->z);
+          pVar = &utf8;
         }
+#endif
+        n = pVar->n;
+#ifdef SQLITE_TRACE_SIZE_LIMIT
+        if( n>SQLITE_TRACE_SIZE_LIMIT ){
+          n = SQLITE_TRACE_SIZE_LIMIT;
+          while( n<pVar->n && (pVar->z[n]&0xc0)==0x80 ){ n++; }
+        }
+#endif    
+        sqlite3XPrintf(&out, "'%.*q'", n, pVar->z);
+#ifdef SQLITE_TRACE_SIZE_LIMIT
+        if( n<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-n);
+#endif
+#ifndef SQLITE_OMIT_UTF16
+        if( enc!=SQLITE_UTF8 ) sqlite3VdbeMemRelease(&utf8);
+#endif
       }else if( pVar->flags & MEM_Zero ){
         sqlite3XPrintf(&out, "zeroblob(%d)", pVar->u.nZero);
       }else{
+        int n;  /* Number of bytes of the blob to include in output */
         assert( pVar->flags & MEM_Blob );
         sqlite3StrAccumAppend(&out, "x'", 2);
-        for(i=0; i<pVar->n; i++){
+        n = pVar->n;
+#ifdef SQLITE_TRACE_SIZE_LIMIT
+        if( n>SQLITE_TRACE_SIZE_LIMIT ) n = SQLITE_TRACE_SIZE_LIMIT;
+#endif
+        for(i=0; i<n; i++){
           sqlite3XPrintf(&out, "%02x", pVar->z[i]&0xff);
         }
         sqlite3StrAccumAppend(&out, "'", 1);
+#ifdef SQLITE_TRACE_SIZE_LIMIT
+        if( n<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-n);
+#endif
       }
     }
   }

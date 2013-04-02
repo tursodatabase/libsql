@@ -1,5 +1,5 @@
-C For\sthe\sclean\starget,\stidy\sup\sa\scouple\smore\sgenerated\s(or\scopied)\ssource\sfiles.
-D 2013-03-29T19:52:04.965
+C If\sthe\sSQLITE_TRACE_SIZE_LIMIT\scompile-time\sparameter\sis\sset\sto\sa\spositive\ninteger\sthen\slimit\sthe\sexpansion\sof\sstrings\sand\sblobs\sin\strace\soutput\sto\napproximately\sthat\smany\sbytes.
+D 2013-04-02T13:56:53.795
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -247,7 +247,7 @@ F src/vdbeaux.c ecb43014bcd3019e5aa2b5561e5c3a447f007a08
 F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 4fad64071ae120c25f39dcac572d716b9cadeb7f
-F src/vdbetrace.c 8bd5da325fc90f28464335e4cc4ad1407fe30835
+F src/vdbetrace.c a22263ab47f6ba4fcd176515cec1e732866b25f0
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c f5c7b5027d0ed0e9bc9afeb4a3a8dfea762ec7d2
 F src/wal.h 29c197540b19044e6cd73487017e5e47a1d3dac6
@@ -1041,7 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 527231bc67285f01fb18d4451b28f61da3c4e39d
-R c463228a20804b5f57c5669f0d0e45b8
-U mistachkin
-Z bfb2a9ca80a29b00e5f7b4db495d38d4
+P 5687e5ee7bafa00d2b353c3eda1e5dfb219cb185
+R b688b887865b3d8981922c40426941a0
+U drh
+Z 66f86621cb15eccea274cb5b5e71ec26
