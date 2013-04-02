@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\smmap2.test\sthat\swas\sleaving\san\sinvalid\ssqlite3_log()\scallback\sinstalled,\scausing\sa\scrash.
-D 2013-04-02T20:19:22.780
+C Adjustments\sto\smmap1.test\sso\sthat\sit\sworks\sbetter\son\swindows.\s\sIt\sstill\sgets\nsome\sanswers\swrong,\sbut\sit\sno\slonger\scrashes.
+D 2013-04-02T20:29:33.219
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -631,7 +631,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/mmap1.test 245eb4a6280d4b31523eb79486863afadac4f3c6
+F test/mmap1.test 95f8f90b7f4e1ef3499ea5cc69a9c3e7b1d36227
 F test/mmap2.test c0cbb978eda8d06d755ba8d9e59ec06ebf60c5cb
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4eeea58354e21797ca1f4dc4ea785d0330381f0b
-R 6d15151e9d49c450ba09b87b5b0a03e1
-U dan
-Z 90fc4c0a95395512a6e1551c81a3562f
+P c0cdaa07355f51bd217881b5b91ec2a609fa56f4
+R 2d6cafbf0f715d3130e0ad2821f95af0
+U drh
+Z eb8137777309edfff1693e4a3a7e15de
