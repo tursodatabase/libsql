@@ -74,6 +74,10 @@ foreach syscall {mmap mremap} {
   }
 }
 
+db close
 test_syscall uninstall 
+sqlite3_shutdown
+test_sqlite3_log 
+sqlite3_initialize
 finish_test
 

@@ -1,5 +1,5 @@
-C Add\sassert\sto\sthe\sWindows\sVFS\spertaining\sto\sthe\ssize\sof\sthe\sSIZE_T\stype.
-D 2013-04-02T20:13:04.021
+C Fix\sa\sbug\sin\smmap2.test\sthat\swas\sleaving\san\sinvalid\ssqlite3_log()\scallback\sinstalled,\scausing\sa\scrash.
+D 2013-04-02T20:19:22.780
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -632,7 +632,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/mmap1.test 245eb4a6280d4b31523eb79486863afadac4f3c6
-F test/mmap2.test bb0c97cdac0db06a5acdc6836eef9866815481b1
+F test/mmap2.test c0cbb978eda8d06d755ba8d9e59ec06ebf60c5cb
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3050136be962427cc4dcced6077ef29b2a941405
-R 69136e8e9adf1c4824020b7a88c6a9a7
-U mistachkin
-Z 0311bae3bb3a8c1122f90eda3126446b
+P 4eeea58354e21797ca1f4dc4ea785d0330381f0b
+R 6d15151e9d49c450ba09b87b5b0a03e1
+U dan
+Z 90fc4c0a95395512a6e1551c81a3562f
