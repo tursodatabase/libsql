@@ -3601,7 +3601,7 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
       /* Log the error, but continue normal operation using xRead/xWrite */
       return SQLITE_OK;
     }
-    assert( (nNewRnd % winSysInfo.dwPageSize)==0 );
+    assert( (nMap % winSysInfo.dwPageSize)==0 );
 #if SQLITE_OS_WINRT
     pNew = osMapViewOfFileFromApp(pFd->hMap, flags, 0, nMap);
 #else

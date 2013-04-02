@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\serrors\sin\smmap()\sor\smremap()\sis\sos_unix.c.
-D 2013-04-02T12:04:09.729
+C Fix\sa\sfaulty\sassert()\sin\sthe\sos_win.c\sVFS.
+D 2013-04-02T14:37:40.848
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 42684a59b06b912b3ab80a8ad9f4295c0572a1f4
-F src/os_win.c a2f41c9dfb9b065285ba94d4a40a31ca2e2b6ea3
+F src/os_win.c 6822b2cda33f025ce7fe240ec050b9bcba213903
 F src/pager.c 46fa7d8b29e7fb8baa6111690d900c9111a5a397
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1041,7 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d96272f031102514b02bd839aac9e37618872200
-R 323dfbce5d7140c5ce46f22a5112dcc8
-U dan
-Z 3d1807f4fa3a8cf06a6141b170b215ce
+P 3098a3c1e7305033904a496ef534cb312a876fab
+R 3eb86ed3ddaa0095d1a3da7f2b0ccdb4
+U drh
+Z 7afe4013f9081817d8523bb6f04fa909
