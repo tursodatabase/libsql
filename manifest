@@ -1,5 +1,5 @@
-C Fix\sthe\sbuild\sfor\sMac.
-D 2013-04-02T18:25:04.196
+C Change\san\sassert\sin\spager.c\sto\sacknowledge\sthat\sit\sis\spossible\sfor\ssqlite3PagerRollback()\sto\sreturn\sSQLITE_CORRUPT.
+D 2013-04-02T18:31:29.703
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 42684a59b06b912b3ab80a8ad9f4295c0572a1f4
 F src/os_win.c 6822b2cda33f025ce7fe240ec050b9bcba213903
-F src/pager.c 46fa7d8b29e7fb8baa6111690d900c9111a5a397
+F src/pager.c e26184d451207542d56bd09b84339252a194791e
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -953,7 +953,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
-F test/wal.test bbd98ac09d8fbcaa80ec233757056eb1bbb7cd95
+F test/wal.test 62454b2cf00b311e9e65f898aad0fef536ed561a
 F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7fe908afeba16f64edc16824c67b396138581a8f
-R 1e903cf5fbaea8405561162b82cab3c1
-U drh
-Z 5ee32a75ebc407142eddeaec11f8a36d
+P d36ce0bbad58445c983597ee93438fe07b659cdc
+R 338634a1c64bdacb6f3ed638ff14c520
+U dan
+Z 2347325502a78b990959c6fe11156215
