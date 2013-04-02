@@ -4560,6 +4560,7 @@ static void unixRemapfile(
   unixFile *pFd,                  /* File descriptor object */
   i64 nNew                        /* Required mapping size */
 ){
+  const char *zErr = "mmap";
   int h = pFd->h;                      /* File descriptor open on db file */
   u8 *pOrig = (u8 *)pFd->pMapRegion;   /* Pointer to current file mapping */
   i64 nOrig = pFd->mmapOrigsize;       /* Size of pOrig region in bytes */
@@ -4571,6 +4572,7 @@ static void unixRemapfile(
   assert( nNew<=pFd->mmapLimit );
   assert( nNew>0 );
   assert( pFd->mmapOrigsize>=pFd->mmapSize );
+  assert( MAP_FAILED!=0 );
 
   if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
 
@@ -4586,12 +4588,13 @@ static void unixRemapfile(
 
 #if HAVE_MREMAP
     pNew = osMremap(pOrig, nReuse, nNew, MREMAP_MAYMOVE);
+    zErr = "mremap";
 #else
     pNew = osMmap(pReq, nNew-nReuse, flags, MAP_SHARED, h, nReuse);
     if( pNew!=MAP_FAILED ){
       if( pNew!=pReq ){
         osMunmap(pNew, nNew - nReuse);
-        pNew = MAP_FAILED;
+        pNew = 0;
       }else{
         pNew = pOrig;
       }
@@ -4602,7 +4605,6 @@ static void unixRemapfile(
     ** mapping and set pNew to NULL so that the code below will create a
     ** new mapping from scratch.  */
     if( pNew==MAP_FAILED ){
-      pNew = 0;
       osMunmap(pOrig, nReuse);
     }
   }
@@ -4610,18 +4612,18 @@ static void unixRemapfile(
   /* If pNew is still NULL, try to create an entirely new mapping. */
   if( pNew==0 ){
     pNew = osMmap(0, nNew, flags, MAP_SHARED, h, 0);
-    if( pNew==MAP_FAILED ){
-      pNew = 0;
-      nNew = 0;
-      unixLogError(SQLITE_OK, "mmap", pFd->zPath);
-
-      /* If the mmap() above failed, assume that all subsequent mmap() calls
-      ** will probably fail too. Fall back to using xRead/xWrite exclusively
-      ** in this case.  */
-      pFd->mmapLimit = 0;
-    }
   }
 
+  if( pNew==MAP_FAILED ){
+    pNew = 0;
+    nNew = 0;
+    unixLogError(SQLITE_OK, zErr, pFd->zPath);
+
+    /* If the mmap() above failed, assume that all subsequent mmap() calls
+    ** will probably fail too. Fall back to using xRead/xWrite exclusively
+    ** in this case.  */
+    pFd->mmapLimit = 0;
+  }
   pFd->pMapRegion = (void *)pNew;
   pFd->mmapSize = pFd->mmapOrigsize = nNew;
 }

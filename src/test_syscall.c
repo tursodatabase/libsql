@@ -108,7 +108,7 @@ static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, off_t off);
 static int ts_fchmod(int fd, mode_t mode);
 static int ts_fallocate(int fd, off_t off, off_t len);
 static void *ts_mmap(void *, size_t, int, int, int, off_t);
-
+static void *ts_mremap(void*, size_t, size_t, int, ...);
 
 struct TestSyscallArray {
   const char *zName;
@@ -134,6 +134,7 @@ struct TestSyscallArray {
   /* 14 */ { "fchmod",    (sqlite3_syscall_ptr)ts_fchmod,    0, 0, 0 },
   /* 15 */ { "fallocate", (sqlite3_syscall_ptr)ts_fallocate, 0, 0, 0 },
   /* 16 */ { "mmap",      (sqlite3_syscall_ptr)ts_mmap,      0, 0, 0 },
+  /* 17 */ { "mremap",    (sqlite3_syscall_ptr)ts_mremap,    0, 0, 0 },
            { 0, 0, 0, 0, 0 }
 };
 
@@ -156,6 +157,7 @@ struct TestSyscallArray {
 #define orig_fchmod    ((int(*)(int,mode_t))aSyscall[14].xOrig)
 #define orig_fallocate ((int(*)(int,off_t,off_t))aSyscall[15].xOrig)
 #define orig_mmap      ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[16].xOrig)
+#define orig_mremap    ((void*(*)(void*,size_t,size_t,int,...))aSyscall[17].xOrig)
 
 /*
 ** This function is called exactly once from within each invocation of a
@@ -393,6 +395,17 @@ static void *ts_mmap(
     return MAP_FAILED;
   }
   return orig_mmap(pAddr, nByte, prot, flags, fd, iOff);
+}
+
+static void *ts_mremap(void *a, size_t b, size_t c, int d, ...){
+  va_list ap;
+  void *pArg;
+  if( tsIsFailErrno("mremap") ){
+    return MAP_FAILED;
+  }
+  va_start(ap, d);
+  pArg = va_arg(ap, void *);
+  return orig_mremap(a, b, c, d, pArg);
 }
 
 static int test_syscall_install(

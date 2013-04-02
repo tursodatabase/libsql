@@ -1,5 +1,5 @@
-C Proposed\stemplate\spreprocessor\smagic\sfor\sactivating\smmap\sonly\son\splatforms\nwhere\swe\sknow\sit\sworks.
-D 2013-04-02T10:29:13.935
+C Add\stest\scases\sfor\serrors\sin\smmap()\sor\smremap()\sis\sos_unix.c.
+D 2013-04-02T12:04:09.729
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c d136eca0cff2f8a5ac2f45867d5e5153d60e377c
+F src/os_unix.c 42684a59b06b912b3ab80a8ad9f4295c0572a1f4
 F src/os_win.c a2f41c9dfb9b065285ba94d4a40a31ca2e2b6ea3
 F src/pager.c 46fa7d8b29e7fb8baa6111690d900c9111a5a397
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -226,7 +226,7 @@ F src/test_spellfix.c 56dfa6d583ac34f61af0834d7b58d674e7e18e13
 F src/test_sqllog.c bc50e5afeb7fb50e77b4594e42302df9d05446aa
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
-F src/test_syscall.c fe018f95049d4f24e036d1d649516b60689b4e57
+F src/test_syscall.c 7e8293e4e6971b0f44c7f7f37b1315a8cc9f6018
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
 F src/test_vfs.c fb16b2d9938cf0c1afc5a423b55b952fcc024275
@@ -631,6 +631,7 @@ F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/mmap1.test 9fb71daaca72f66fcc7a3b3a37fc3db99988b57a
+F test/mmap2.test bb0c97cdac0db06a5acdc6836eef9866815481b1
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -731,7 +732,7 @@ F test/softheap1.test c16709a16ad79fa43b32929b2e623d1d117ccf53
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
-F test/speed1p.test c4a469f29f135f4d76c55b1f2a52f36e209466cc
+F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
 F test/speed2.test 53177056baf6556dcbdcf032bbdfc41c1aa74ded
 F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
@@ -1040,7 +1041,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 793ba4e996426522eeaa86589a9e974fa1fc1522
-R 2b5ee6ceec98b53d533d4ea410a1bfc7
-U drh
-Z ead310385cbe70188969099b54288940
+P d96272f031102514b02bd839aac9e37618872200
+R 323dfbce5d7140c5ce46f22a5112dcc8
+U dan
+Z 3d1807f4fa3a8cf06a6141b170b215ce
