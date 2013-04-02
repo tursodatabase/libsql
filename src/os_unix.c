@@ -4601,10 +4601,8 @@ static void unixRemapfile(
     }
 #endif
 
-    /* The attempt to extend the existing mapping failed. Free the existing
-    ** mapping and set pNew to NULL so that the code below will create a
-    ** new mapping from scratch.  */
-    if( pNew==MAP_FAILED ){
+    /* The attempt to extend the existing mapping failed. Free it. */
+    if( pNew==MAP_FAILED || pNew==0 ){
       osMunmap(pOrig, nReuse);
     }
   }
