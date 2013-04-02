@@ -5128,7 +5128,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
 ** nothing to rollback, so this routine is a no-op.
 */ 
 static void pagerUnlockIfUnused(Pager *pPager){
-  if( (sqlite3PcacheRefCount(pPager->pPCache)==0) && pPager->nMmapOut==0 ){
+  if( pPager->nMmapOut==0 && (sqlite3PcacheRefCount(pPager->pPCache)==0) ){
     pagerUnlockAndRollback(pPager);
   }
 }

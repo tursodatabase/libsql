@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\scondition\sfrom\spager.c.
-D 2013-04-02T00:41:18.590
+C Reorder\stwo\sconditions\sto\smake\scoverage\stesting\seasier.
+D 2013-04-02T01:45:10.945
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c d136eca0cff2f8a5ac2f45867d5e5153d60e377c
 F src/os_win.c a2f41c9dfb9b065285ba94d4a40a31ca2e2b6ea3
-F src/pager.c 37ac3175cb46bf4eba5c23005c49700b33ed2dbe
+F src/pager.c 46fa7d8b29e7fb8baa6111690d900c9111a5a397
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1040,7 +1040,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 01ffdabbad30f1c157f2b33b1e85ee4d6c4632dd
-R 683cfbd9fb419480e60db9265a2009fc
+P 3628e86bf131cb205f08a4b299d84007cd6b25c3
+R 5022c5197e31d50bddc957f6984f11f1
 U drh
-Z c53b9215e567f2251d489b56e620483a
+Z 379e6b5efd0a997c87c1f9a5494b7aa5
