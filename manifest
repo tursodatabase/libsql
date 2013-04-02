@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\sbtreefault.test.
-D 2013-04-02T15:37:30.257
+C Fix\sthe\sbuild\sfor\sMac.
+D 2013-04-02T18:25:04.196
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/sqlite.h.in 42c69ea00dfcce84394d6ce0d8dac7bb3d2ecff2
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 1664dc5ad6f8d4dab871416628aa3271044d66c0
-F src/sqliteLimit.h 4d8d04c43bf2886d94f1ab7992fee5081e09a7f5
+F src/sqliteLimit.h edc1e61e6b745dc26ea16542838c100cef02df0e
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 9a716c737590d2f129d71c8fc7065e5aba0e7222
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fd6ee54969322203c02ce9bd8744e095faf6a69c
-R afe8ecd9cb367696b6be602590bc8be6
-U dan
-Z 42e6019db12bcc782c7a96e67c5fd3c7
+P 7fe908afeba16f64edc16824c67b396138581a8f
+R 1e903cf5fbaea8405561162b82cab3c1
+U drh
+Z 5ee32a75ebc407142eddeaec11f8a36d

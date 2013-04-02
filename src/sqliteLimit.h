@@ -211,7 +211,7 @@
 ** Default maximum size of memory used by xFetch in the VFS.
 */
 #ifdef __APPLE__
-# include <TargetConditions.h>
+# include <TargetConditionals.h>
 # if defined(TARGET_OS_IPHONE)
 #   define SQLITE_DEFAULT_MMAP_LIMIT 0
 # endif
