@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sin\sthe\sdirect\sblob\sI/O\slogic\sof\sbtree.c.
-D 2013-04-03T20:04:04.697
+C Release\sresources\sprior\sto\sbailing\sout\sof\sthe\sbtreeCreateTable()\sroutine\nfollowing\san\sOOM\serror.
+D 2013-04-03T21:23:28.794
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b266767351ae2d847716c56fcb2a1fea7c761c03
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 4e3d07b3781a41e6ba9ea13ca97d7baab0a252a3
+F src/btree.c 58c4d68415ca7b13a501b682a9c0ad1e287bcacb
 F src/btree.h d9490cd37aaeb530a41b07f06e1262950b1be916
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ac1432b3a8e968be4cbc138b4a35f34187c0c36f
-R d830cc1d5cf92f6d3df5e32e65cb6d76
+P f97d7274f48e3bb98ed17eae11abb55064134874
+R 133fe42d87ba7d3deff6d35af20e1f64
 U drh
-Z d56f9eb968ec676dc0a522c6c207a8e6
+Z 8d00d860d2c818ad1f98631f4c1a926a
