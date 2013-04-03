@@ -1,5 +1,5 @@
-C When\smoving\sa\spage\sto\smake\sway\sfor\sthe\sroot\spage\sof\sa\snew\stable\sor\sindex\sin\san\sauto-vacuum\sdatabase,\ssave\sthe\spositions\sof\sany\scursors\sthat\smay\sbe\sholding\sxFetch\sreferences\sto\sthe\spage\sbeing\smoved.
-D 2013-04-03T11:38:36.388
+C Remove\sthe\srestriction\son\susing\sxFetch\sto\sload\sthe\sroot\spages\sof\stables\sand\sindexes.\sIt\sappears\sto\shave\sbeen\sbased\son\sa\smisconception.
+D 2013-04-03T11:52:16.489
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b266767351ae2d847716c56fcb2a1fea7c761c03
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 4f4b23941b38f68db425f68960f26031204d9807
+F src/btree.c fd492d65eee0eb35f4000ddf478215c99dca6838
 F src/btree.h d9490cd37aaeb530a41b07f06e1262950b1be916
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3f09fba18f7e61e21381ffea13c31b968efd7d77
-R 7ec6dcb52e20c580b46b605bb884042f
+P 9d9b1da54a555e8fb6037d63d1952458c12956d2
+R a9b149f10f100efb054372d5cd9076ff
 U dan
-Z c27841a9d742e32f5c92b396fb592137
+Z cc4101c000adda873dbba809b24aeeeb

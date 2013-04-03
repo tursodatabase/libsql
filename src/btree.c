@@ -2584,34 +2584,6 @@ int sqlite3BtreeNewDb(Btree *p){
 }
 
 /*
-** Ensure that any root page references held by open cursors are not
-** mmap pages.
-*/
-static int btreeSwapOutMmap(BtShared *pBt){
-  int rc = SQLITE_OK;             /* Return code */
-  BtCursor *pCsr;                 /* Used to iterate through all open cursors */
-
-  for(pCsr=pBt->pCursor; pCsr && rc==SQLITE_OK; pCsr=pCsr->pNext){
-    if( pCsr->iPage>=0 ){
-      MemPage *pPg = pCsr->apPage[0];
-      if( pPg && pPg->pDbPage->flags & PGHDR_MMAP ){
-        MemPage *pNew = 0;
-        rc = getAndInitPage(pBt, pPg->pgno, &pNew, 0);
-        if( rc==SQLITE_OK ){
-          if( pCsr->iPage==0 ){
-            pCsr->info.pCell = pNew->aData + (pCsr->info.pCell - pPg->aData);
-          }
-          pCsr->apPage[0] = pNew;
-          releasePage(pPg);
-        }
-      }
-    }
-  }
-
-  return rc;
-}
-
-/*
 ** Attempt to start a new transaction. A write-transaction
 ** is started if the second argument is nonzero, otherwise a read-
 ** transaction.  If the second argument is 2 or more and exclusive
@@ -2717,9 +2689,6 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
         rc = SQLITE_READONLY;
       }else{
         rc = sqlite3PagerBegin(pBt->pPager,wrflag>1,sqlite3TempInMemory(p->db));
-        if( rc==SQLITE_OK ){
-          rc = btreeSwapOutMmap(pBt);
-        }
         if( rc==SQLITE_OK ){
           rc = newDatabase(pBt);
         }
@@ -4419,7 +4388,7 @@ static int moveToRoot(BtCursor *pCur){
     pCur->eState = CURSOR_INVALID;
     return SQLITE_OK;
   }else{
-    rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->apPage[0], 0);
+    rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->apPage[0], pCur->wrFlag==0);
     if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
       return rc;
