@@ -1,5 +1,5 @@
-C Add\sthe\s-mmap\soption\sto\sthe\scommand-line\sshell,\sfor\ssetting\sthe\sdefault\nmmap_limit.
-D 2013-04-03T01:26:54.789
+C Make\suse\sof\sxFetch,\sif\sit\sis\savailable\swhen\sdoing\sa\sVACUUM\sor\sa\sbackup.
+D 2013-04-03T03:53:15.647
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -118,7 +118,7 @@ F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c d5f895810e8ff9737c9ec7b76abc3dcff5860335
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c b2cac9f7993f3f9588827b824b1501d0c820fa68
+F src/backup.c b266767351ae2d847716c56fcb2a1fea7c761c03
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c bb679fddb7269dd7cfb950f845b1b18f19df4f4a
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1dd42ef4144ee08fb4ee1676d934a56a0e34bac2
-R 414201a51e65d2b5d08b22317803af41
+P fc30d06c94c8212abb0477fb4cec4520d05bea34
+R 8f21f6233365f9239c040421dd942d16
 U drh
-Z ee0a75b1373c6c61317486123f3b4064
+Z fab31801d3b721c34a1407901bd055e3
