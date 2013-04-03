@@ -205,7 +205,46 @@ do_test 4.4 {
 
 do_execsql_test 4.5 { COMMIT }
 
-finish_test
+#-------------------------------------------------------------------------
+# Ensure that existing cursors holding xFetch() references are not 
+# confused if those pages are moved to make way for the root page of a
+# new table or index.
+#
+reset_db
+do_execsql_test 5.1 {
+  PRAGMA auto_vacuum = 2;
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES($aaa);
+  INSERT INTO t1 VALUES($bbb);
+  INSERT INTO t1 VALUES($ccc);
+  INSERT INTO t1 VALUES($ddd);
 
+  PRAGMA auto_vacuum;
+  SELECT * FROM t1;
+} [list 2 $aaa $bbb $ccc $ddd]
+
+do_test 5.2 {
+  set ::STMT [sqlite3_prepare db "SELECT * FROM t1 ORDER BY rowid" -1 dummy]
+  sqlite3_step $::STMT
+  sqlite3_column_text $::STMT 0
+} $aaa
+
+do_execsql_test 5.3 {
+  CREATE TABLE t2(x);
+  INSERT INTO t2 VALUES('tricked you!');
+  INSERT INTO t2 VALUES('tricked you!');
+}
+
+do_test 5.4 {
+  sqlite3_step $::STMT
+  sqlite3_column_text $::STMT 0
+} $bbb
+
+do_test 5.5 {
+  sqlite3_finalize $::STMT
+} SQLITE_OK
+
+finish_test
 
 

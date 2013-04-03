@@ -7269,6 +7269,14 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
       u8 eType = 0;
       Pgno iPtrPage = 0;
 
+      /* Save the positions of any open cursors. This is required in
+      ** case they are holding a reference to an xFetch reference
+      ** corresponding to page pgnoRoot.  */
+      rc = saveAllCursors(pBt, 0, 0);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+
       releasePage(pPageMove);
 
       /* Move the page currently at pgnoRoot to pgnoMove. */

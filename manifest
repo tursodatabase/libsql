@@ -1,5 +1,5 @@
-C In\sbtree.c,\ssave\sthe\spositions\sof\sother\scursors\sopen\son\sthe\ssame\stable\swhen\swriting\svia\san\sincremental\sblob\shandle.\sOtherwise,\sthey\smay\sbe\sleft\sholding\san\sout-of-date\sxFetch\spage\sreference.
-D 2013-04-03T11:17:39.067
+C When\smoving\sa\spage\sto\smake\sway\sfor\sthe\sroot\spage\sof\sa\snew\stable\sor\sindex\sin\san\sauto-vacuum\sdatabase,\ssave\sthe\spositions\sof\sany\scursors\sthat\smay\sbe\sholding\sxFetch\sreferences\sto\sthe\spage\sbeing\smoved.
+D 2013-04-03T11:38:36.388
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b266767351ae2d847716c56fcb2a1fea7c761c03
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c b38cb3a1758d46e76bec080994fed7313622687d
+F src/btree.c 4f4b23941b38f68db425f68960f26031204d9807
 F src/btree.h d9490cd37aaeb530a41b07f06e1262950b1be916
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
@@ -631,7 +631,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/mmap1.test 9f4cee0877549c80b13acd688c775254b2d61ec7
+F test/mmap1.test 5a662d506c367b082b24cb9186acb11efa6cbe3d
 F test/mmap2.test c0cbb978eda8d06d755ba8d9e59ec06ebf60c5cb
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 24bab7596bb7385981a5d331df5eeb05353547f7
-R 5d2a80f93297e2bae93eb7d43d59c6c0
+P 3f09fba18f7e61e21381ffea13c31b968efd7d77
+R 7ec6dcb52e20c580b46b605bb884042f
 U dan
-Z a5b2fa9ebb6e4e86d546b82b43bf4939
+Z c27841a9d742e32f5c92b396fb592137
