@@ -888,7 +888,9 @@ struct sqlite3_io_methods {
 **
 ** <li>[[SQLITE_FCNTL_MMAP_LIMIT]]
 ** The argument is assumed to pointer to a value of type sqlite3_int64 that
-** is an advisory maximum number of bytes in the file to memory map.
+** is an advisory maximum number of bytes in the file to memory map.  The
+** pointer is overwritten with the old value.  The limit is not changed if
+** the original value pointed to is negative.
 **
 ** </ul>
 */

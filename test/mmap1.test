@@ -108,7 +108,7 @@ do_execsql_test 2.1 {
   INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   16
   INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --   32
   PRAGMA wal_checkpoint;
-} {wal 0 103 103}
+} {67108864 wal 0 103 103}
 
 do_execsql_test 2.2 {
   PRAGMA auto_vacuum;

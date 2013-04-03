@@ -759,18 +759,22 @@ void sqlite3Pragma(
   ** upper layers will never invoke the xFetch interfaces to the VFS.
   */
   if( sqlite3StrICmp(zLeft,"mmap_limit")==0 ){
+    sqlite3_int64 mx;
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( zRight ){
-      sqlite3_int64 size;
       int ii;
-      sqlite3Atoi64(zRight, &size, 1000, SQLITE_UTF8);
-      if( size<0 ) size = sqlite3GlobalConfig.mxMmap;
-      if( pId2->n==0 ) db->mxMmap = size;
+      sqlite3Atoi64(zRight, &mx, 1000, SQLITE_UTF8);
+      if( mx<0 ) mx = sqlite3GlobalConfig.mxMmap;
+      if( pId2->n==0 ) db->mxMmap = mx;
       for(ii=db->nDb-1; ii>=0; ii--){
         if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
-          sqlite3BtreeSetMmapLimit(db->aDb[ii].pBt, size);
+          sqlite3BtreeSetMmapLimit(db->aDb[ii].pBt, mx);
         }
       }
+    }
+    mx = -1;
+    if( sqlite3_file_control(db,zDb,SQLITE_FCNTL_MMAP_LIMIT,&mx)==SQLITE_OK ){
+      returnSingleInt(pParse, "mmap_limit", mx);
     }
   }else
 

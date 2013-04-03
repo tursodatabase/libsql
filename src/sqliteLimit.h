@@ -219,13 +219,9 @@
 #ifndef SQLITE_DEFAULT_MMAP_LIMIT
 # if defined(__linux__) \
   || defined(_WIN32) \
-  || (defined(__APPLE__) && defined(__MACH__)  && !defined(TARGET_OS_IPHONE)) \
-  || defined(__sun) \
-  || defined(__DragonFly__) \
-  || defined(__FreeBSD__) \
-  || defined(__NetBSD__) \
-  || defined(__OpenBSD__)
-#   define SQLITE_DEFAULT_MMAP_LIMIT (256*1024*1024)
+  || (defined(__APPLE__) && defined(__MACH__)) \
+  || defined(__sun)
+#   define SQLITE_DEFAULT_MMAP_LIMIT 268435456 /* = 256*1024*1024 */
 # else
 #   define SQLITE_DEFAULT_MMAP_LIMIT 0
 # endif
