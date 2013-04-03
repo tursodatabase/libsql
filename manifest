@@ -1,5 +1,5 @@
-C Make\suse\sof\sxFetch,\sif\sit\sis\savailable\swhen\sdoing\sa\sVACUUM\sor\sa\sbackup.
-D 2013-04-03T03:53:15.647
+C Initialize\sthe\smmap_limit\sof\stemporary\sfiles\sto\sthe\sconfigured\smmap_limit.
+D 2013-04-03T10:50:02.049
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,8 +160,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c f7d8c6ef5f45111f62a77984053c17e767f9679e
-F src/os_win.c 6a7a1017fb6a0783a3aa7c3f5eadd9b1600a9ddf
+F src/os_unix.c 626ddccfd5b1be0c91ca5a9d147c8c3e824d7013
+F src/os_win.c 6718b053fe8295ede770b7a1e48ba4ef73310e9c
 F src/pager.c e26184d451207542d56bd09b84339252a194791e
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fc30d06c94c8212abb0477fb4cec4520d05bea34
-R 8f21f6233365f9239c040421dd942d16
+P 83bc37af07857960c11275891f853a358dcbbf05
+R 32aa00c0c8e64a488f9b37d8aa36924f
 U drh
-Z fab31801d3b721c34a1407901bd055e3
+Z db8bee74489339af40a69aa3740a7e67

@@ -5060,7 +5060,7 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
-  pNew->mmapLimit = SQLITE_DEFAULT_MMAP_LIMIT;
+  pNew->mmapLimit = sqlite3GlobalConfig.mxMmap;
   if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
