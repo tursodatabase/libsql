@@ -1,5 +1,5 @@
-C Change\sthe\smmap_limit\spragma\sto\sreport\sthe\snew\slimit,\sor\sto\sreport\sthe\nexisting\slimit\sif\scalled\swith\sno\sarguments.\s\sReport\sthe\sdefault\smmap_limit\nas\spart\sof\sPRAGMA\scompile_options.\s\sSet\sthe\sdefault\smmmap_limit\sto\s0\sfor\nall\ssystems\sother\sthan\slinux,\smac,\swindows,\sand\ssolaris.
-D 2013-04-03T13:09:18.208
+C Fix\sa\sbug\sin\sthe\sdetection\sof\siOS\swhen\ssetting\sthe\sdefault\smmap_limit.
+D 2013-04-03T13:38:46.133
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/sqlite.h.in faeb6b3470193e599d79289f77f984b8a78136e1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 1664dc5ad6f8d4dab871416628aa3271044d66c0
-F src/sqliteLimit.h 299a15148feccc4b85db3b9f3c652ee5b60267b4
+F src/sqliteLimit.h 1097d2c541147d303e66515040067c6bfcf8cf21
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 9a716c737590d2f129d71c8fc7065e5aba0e7222
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5b082efead488a2fccc18171e640e0aa5252d1d0
-R 779b4d1891b69fa3c237308161c44940
+P 2d9f1327fe79e40435ce1e2594d7cd9a5aea0ef2
+R e2d5c255f4ba7e0fb00c083dac088003
 U drh
-Z c380833e5cb3768ffb9f1e28bd39c0ad
+Z 519f2edad4b962613f9e09a344e900e8
