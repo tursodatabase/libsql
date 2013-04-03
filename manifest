@@ -1,5 +1,5 @@
-C Fix\sa\sresource\sleak\sin\sos_unix.c.
-D 2013-04-02T20:55:01.697
+C Fix\sthe\sunix\sdriver\sto\scheck\sdefined(_BSD_SOURCE)\srather\sthan\sjust\sthe\splain\n_BSD_SOURCE\smacro.\s\sThis\sfixes\sthe\sbuild\sfor\sOpenBSD.
+D 2013-04-03T00:42:01.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c e8e76c95425e60a4d0c749c1ed5d6e00109782f5
+F src/os_unix.c f7d8c6ef5f45111f62a77984053c17e767f9679e
 F src/os_win.c 6a7a1017fb6a0783a3aa7c3f5eadd9b1600a9ddf
 F src/pager.c e26184d451207542d56bd09b84339252a194791e
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -1042,7 +1042,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ee8d3ceeec40d84adb8798f084b6f1215ab56d92
-R 40861d78d26ec4eddf163e4d116b8b4f
-U dan
-Z 36ae50dfb6860cc1a436ea46d4e8b8f3
+P b29cda03fe4e8d8f5b5acbbea2d69f284a2bdf23
+R 12d119a8bfdd7260b7f76958004bb415
+U drh
+Z 8724856398770e48d9cea9c9c7fa6257

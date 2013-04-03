@@ -4534,7 +4534,7 @@ static void unixUnmapfile(unixFile *pFd){
 static int unixGetPagesize(void){
 #if HAVE_MREMAP
   return 512;
-#elif _BSD_SOURCE
+#elif defined(_BSD_SOURCE)
   return getpagesize();
 #else
   return (int)sysconf(_SC_PAGESIZE);
