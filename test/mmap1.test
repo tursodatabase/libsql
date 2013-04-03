@@ -157,4 +157,55 @@ do_test 3.2 {
   set nRow
 } {8}
 
+#-------------------------------------------------------------------------
+# Ensure that existing cursors using xFetch() pages see changes made
+# to rows using the incrblob API.
+#
+reset_db
+set aaa [string repeat a 400]
+set bbb [string repeat b 400]
+set ccc [string repeat c 400]
+set ddd [string repeat d 400]
+set eee [string repeat e 400]
+
+do_execsql_test 4.1 {
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES($aaa);
+  INSERT INTO t1 VALUES($bbb);
+  INSERT INTO t1 VALUES($ccc);
+  INSERT INTO t1 VALUES($ddd);
+  SELECT * FROM t1;
+  BEGIN;
+} [list $aaa $bbb $ccc $ddd]
+
+do_test 4.2 {
+  set ::STMT [sqlite3_prepare db "SELECT * FROM t1 ORDER BY rowid" -1 dummy]
+  sqlite3_step $::STMT
+  sqlite3_column_text $::STMT 0
+} $aaa
+
+do_test 4.3 {
+  foreach r {2 3 4} {
+    set fd [db incrblob t1 x $r]
+    puts -nonewline $fd $eee
+    close $fd
+  }
+
+  set res [list]
+  while {"SQLITE_ROW" == [sqlite3_step $::STMT]} {
+    lappend res [sqlite3_column_text $::STMT 0]
+  }
+  set res
+} [list $eee $eee $eee]
+
+do_test 4.4 {
+  sqlite3_finalize $::STMT
+} SQLITE_OK
+
+do_execsql_test 4.5 { COMMIT }
+
 finish_test
+
+
+

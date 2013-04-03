@@ -8400,6 +8400,15 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
     return SQLITE_ABORT;
   }
 
+  /* Save the positions of all other cursors open on this table. This is
+  ** required in case any of them are holding references to an xFetch
+  ** version of the b-tree page modified by the accessPayload call below.
+  */
+  rc = saveAllCursors(pCsr->pBt, pCsr->pgnoRoot, pCsr);
+  if( rc!=SQLITE_OK ){
+    return SQLITE_OK;
+  }
+
   /* Check some assumptions: 
   **   (a) the cursor is open for writing,
   **   (b) there is a read/write transaction open,
