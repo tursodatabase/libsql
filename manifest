@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sfile-control\sdocumentation.\s\sNo\schanges\sto\scode.
-D 2013-04-04T01:54:10.804
+C Disable\smemory-mapped\sI/O\sfor\sthe\swin32lock.test\smodule
+D 2013-04-04T17:28:11.286
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -997,7 +997,7 @@ F test/whereD.test 3f3ee93825c94804f1fc91eef2de0d365981759a
 F test/whereE.test 7bd34945797efef15819368479bacc34215e4e1d
 F test/whereF.test a0e296643cabe5278379bc1a0aa158cf3c54a1c9
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/win32lock.test b2a539e85ae6b2d78475e016a9636b4451dc7fb9
+F test/win32lock.test 21810396eee150680cc398970839e6abdcb807b9
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test e7f77fded01dfcdf92ac2c5400f1e35d7a21463c
 F tool/build-all-msvc.bat 74fb6e5cca66ebdb6c9bbafb2f8b802f08146d38 x
@@ -1044,7 +1044,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5c8c5a2a12f3f5e29c91c4d16e8b4afd4307354e
-R 88aa21f5b7ea257c6d372937f19d04ff
+P 51fab480d0487107709e6c9e00bc0512b82ef1aa
+R c0f8ddd1641a176c1bcbffa647af40c5
 U drh
-Z 1441bae4ec4fe09d305292864aa8123c
+Z f901f35bfd9928cf6d746ecf21982f94
