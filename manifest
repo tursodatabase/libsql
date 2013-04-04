@@ -1,12 +1,12 @@
-C Try\sto\suse\smmap()\sto\sspeed\saccess\sto\sthe\sdatabase\sfile\son\swindows,\slinux,\nand\smac.
-D 2013-04-04T00:40:17.148
+C Increase\sthe\sversion\snumber\sto\s3.7.17.
+D 2013-04-04T00:51:14.877
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 9ab787d472c9cb8bad29c2c4aeba15b06fba7bc4
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 05604ccde96fe1b37f922eddbdcb5654308261db
+F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 2f9994fd2e2005753809a2246c7a0816c80b2d2f x
+F configure 8bb8bd13d3c918c4c1c73480930e81f955ac298a x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1044,7 +1044,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e5b710849dd66673ba0e0d935b103cb29abfcc4b b2a72be9bab77f050bef75477a278a6294d3e854
-R 60af9b4d9e73e7757090b3abb77cbb41
+P fff2be60779571c8fb89158db976ec3755e9a223
+R 31e6af012b822f077ea81ef26342c1b3
 U drh
-Z d05e425b384f57133414b300483bca27
+Z 4751dcf9197532f06483d5731e95cbb0
