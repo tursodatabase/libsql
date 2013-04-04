@@ -868,7 +868,8 @@ struct sqlite3_io_methods {
 ** it is able to override built-in [PRAGMA] statements.
 **
 ** <li>[[SQLITE_FCNTL_BUSYHANDLER]]
-** ^This file-control may be invoked by SQLite on the database file handle
+** ^The [SQLITE_FCNTL_BUSYHANDLER]
+** file-control may be invoked by SQLite on the database file handle
 ** shortly after it is opened in order to provide a custom VFS with access
 ** to the connections busy-handler callback. The argument is of type (void **)
 ** - an array of two (void *) values. The first (void *) actually points
@@ -879,7 +880,8 @@ struct sqlite3_io_methods {
 ** current operation.
 **
 ** <li>[[SQLITE_FCNTL_TEMPFILENAME]]
-** ^Application can invoke this file-control to have SQLite generate a
+** ^Application can invoke the [SQLITE_FCNTL_TEMPFILENAME] file-control
+** to have SQLite generate a
 ** temporary filename using the same algorithm that is followed to generate
 ** temporary filenames for TEMP tables and other internal uses.  The
 ** argument should be a char** which will be filled with the filename
@@ -887,10 +889,14 @@ struct sqlite3_io_methods {
 ** invoke [sqlite3_free()] on the result to avoid a memory leak.
 **
 ** <li>[[SQLITE_FCNTL_MMAP_LIMIT]]
-** The argument is assumed to pointer to a value of type sqlite3_int64 that
+** The [SQLITE_FCNTL_MMAP_LIMIT] file control is used to query or set the
+** maximum number of bytes that will be used for memory-mapped I/O.
+** The argument is a pointer to a value of type sqlite3_int64 that
 ** is an advisory maximum number of bytes in the file to memory map.  The
 ** pointer is overwritten with the old value.  The limit is not changed if
-** the original value pointed to is negative.
+** the originally pointed to is negative, and so the current limit can be
+** queried by passing in a pointer to a negative number.  This file-control
+** is used internally to implement [PRAGMA mmap_limit].
 **
 ** </ul>
 */
@@ -1646,11 +1652,10 @@ struct sqlite3_mem_methods {
 ** is the default maximum number of bytes of process address space that
 ** should be used for accessing each database file using memory mapping.
 ** The default setting can be overridden by each database connection using
-** either the [PRAGMA mmap_limit] command or the "mmaplimit" query parameter
-** on the [URI filename] when opening the databaes file or by using the
+** either the [PRAGMA mmap_limit] command, or by using the
 ** [SQLITE_FCNTL_MMAP_LIMIT] file control.  The value set here overrides the
-** compile-time default that is set using the [SQLITE_DEFAULT_MMAP_LIMIT]
-** compile-time option.  If the argument to this option is negative, then
+** compile-time default that is set using [SQLITE_DEFAULT_MMAP_LIMIT].
+** If the argument to this option is negative, then
 ** the memory map limit is set to the compile-time default.
 ** </dl>
 */

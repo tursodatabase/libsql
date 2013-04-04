@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.7.17.
-D 2013-04-04T00:51:14.877
+C Updates\sto\sthe\sfile-control\sdocumentation.\s\sNo\schanges\sto\scode.
+D 2013-04-04T01:54:10.804
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/resolve.c 9079da7d59aed2bb14ec8315bc7f720dd85b5b65
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 01540bcd3df3c8f1187158e77986028b1c667258
 F src/shell.c 319b7791cee6c763b60fde1b590bfaf62613cf37
-F src/sqlite.h.in faeb6b3470193e599d79289f77f984b8a78136e1
+F src/sqlite.h.in 5fdc866a06ac82fd3c6ccb9f59a100151a36568c
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 1664dc5ad6f8d4dab871416628aa3271044d66c0
@@ -1044,7 +1044,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fff2be60779571c8fb89158db976ec3755e9a223
-R 31e6af012b822f077ea81ef26342c1b3
+P 5c8c5a2a12f3f5e29c91c4d16e8b4afd4307354e
+R 88aa21f5b7ea257c6d372937f19d04ff
 U drh
-Z 4751dcf9197532f06483d5731e95cbb0
+Z 1441bae4ec4fe09d305292864aa8123c
