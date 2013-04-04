@@ -138,6 +138,14 @@ test_suite "veryquick" -prefix "" -description {
   test_set $allquicktests -exclude *malloc* *ioerr* *fault*
 ]
 
+test_suite "nommap" -prefix "nomm-" -description {
+  Similar to veryquick. Except with memory mapping disabled.
+} -presql {
+  pragma mmap_limit = 0;
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* -include malloc.test
+]
+
 test_suite "valgrind" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.

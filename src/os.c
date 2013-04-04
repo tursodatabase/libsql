@@ -141,6 +141,14 @@ int sqlite3OsShmMap(
   return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
 
+int sqlite3OsFetch(sqlite3_file *id, i64 iOff, int iAmt, void **pp){
+  DO_OS_MALLOC_TEST(id);
+  return id->pMethods->xFetch(id, iOff, iAmt, pp);
+}
+int sqlite3OsUnfetch(sqlite3_file *id, i64 iOff, void *p){
+  return id->pMethods->xUnfetch(id, iOff, p);
+}
+
 /*
 ** The next group of routines are convenience wrappers around the
 ** VFS methods.

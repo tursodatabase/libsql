@@ -225,6 +225,11 @@ struct unixFile {
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
+  int nFetchOut;                      /* Number of outstanding xFetch refs */
+  sqlite3_int64 mmapSize;             /* Usable size of mapping at pMapRegion */
+  sqlite3_int64 mmapOrigsize;         /* Actual size of mapping at pMapRegion */
+  sqlite3_int64 mmapLimit;            /* Configured FCNTL_MMAP_LIMIT value */
+  void *pMapRegion;                   /* Memory mapped region */
 #ifdef __QNXNTO__
   int sectorSize;                     /* Device sector size */
   int deviceCharacteristics;          /* Precomputed device characteristics */
@@ -249,7 +254,9 @@ struct unixFile {
   unsigned char transCntrChng;   /* True if the transaction counter changed */
   unsigned char dbUpdate;        /* True if any part of database file changed */
   unsigned char inNormalWrite;   /* True if in a normal write operation */
+
 #endif
+
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
   ** it is larger than the struct CrashFile defined in test6.c.
@@ -304,6 +311,17 @@ struct unixFile {
 #define threadid pthread_self()
 #else
 #define threadid 0
+#endif
+
+/*
+** HAVE_MREMAP defaults to true on Linux and false everywhere else.
+*/
+#if !defined(HAVE_MREMAP)
+# if defined(__linux__) && defined(_GNU_SOURCE)
+#  define HAVE_MREMAP 1
+# else
+#  define HAVE_MREMAP 0
+# endif
 #endif
 
 /*
@@ -436,6 +454,19 @@ static struct unix_syscall {
 
   { "fchown",       (sqlite3_syscall_ptr)posixFchown,     0 },
 #define osFchown    ((int(*)(int,uid_t,gid_t))aSyscall[20].pCurrent)
+
+  { "mmap",       (sqlite3_syscall_ptr)mmap,     0 },
+#define osMmap ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[21].pCurrent)
+
+  { "munmap",       (sqlite3_syscall_ptr)munmap,          0 },
+#define osMunmap ((void*(*)(void*,size_t))aSyscall[22].pCurrent)
+
+#if HAVE_MREMAP
+  { "mremap",       (sqlite3_syscall_ptr)mremap,          0 },
+#else
+  { "mremap",       (sqlite3_syscall_ptr)0,               0 },
+#endif
+#define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[23].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -1104,7 +1135,6 @@ static int unixLogErrorAtLine(
   zErr = strerror(iErrno);
 #endif
 
-  assert( errcode!=SQLITE_OK );
   if( zPath==0 ) zPath = "";
   sqlite3_log(errcode,
       "os_unix.c:%d: (%d) %s(%s) - %s",
@@ -1800,8 +1830,12 @@ end_unlock:
 ** the requested locking level, this routine is a no-op.
 */
 static int unixUnlock(sqlite3_file *id, int eFileLock){
+  assert( eFileLock==SHARED_LOCK || ((unixFile *)id)->nFetchOut==0 );
   return posixUnlock(id, eFileLock, 0);
 }
+
+static int unixMapfile(unixFile *pFd, i64 nByte);
+static void unixUnmapfile(unixFile *pFd);
 
 /*
 ** This function performs the parts of the "close file" operation 
@@ -1815,6 +1849,7 @@ static int unixUnlock(sqlite3_file *id, int eFileLock){
 */
 static int closeUnixFile(sqlite3_file *id){
   unixFile *pFile = (unixFile*)id;
+  unixUnmapfile(pFile);
   if( pFile->h>=0 ){
     robust_close(pFile, pFile->h, __LINE__);
     pFile->h = -1;
@@ -3082,6 +3117,21 @@ static int unixRead(
   );
 #endif
 
+  /* Deal with as much of this read request as possible by transfering
+  ** data from the memory mapping using memcpy().  */
+  if( offset<pFile->mmapSize ){
+    if( offset+amt <= pFile->mmapSize ){
+      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], amt);
+      return SQLITE_OK;
+    }else{
+      int nCopy = pFile->mmapSize - offset;
+      memcpy(pBuf, &((u8 *)(pFile->pMapRegion))[offset], nCopy);
+      pBuf = &((u8 *)pBuf)[nCopy];
+      amt -= nCopy;
+      offset += nCopy;
+    }
+  }
+
   got = seekAndRead(pFile, offset, pBuf, amt);
   if( got==amt ){
     return SQLITE_OK;
@@ -3185,6 +3235,21 @@ static int unixWrite(
     }
   }
 #endif
+
+  /* Deal with as much of this write request as possible by transfering
+  ** data from the memory mapping using memcpy().  */
+  if( offset<pFile->mmapSize ){
+    if( offset+amt <= pFile->mmapSize ){
+      memcpy(&((u8 *)(pFile->pMapRegion))[offset], pBuf, amt);
+      return SQLITE_OK;
+    }else{
+      int nCopy = pFile->mmapSize - offset;
+      memcpy(&((u8 *)(pFile->pMapRegion))[offset], pBuf, nCopy);
+      pBuf = &((u8 *)pBuf)[nCopy];
+      amt -= nCopy;
+      offset += nCopy;
+    }
+  }
 
   while( amt>0 && (wrote = seekAndWrite(pFile, offset, pBuf, amt))>0 ){
     amt -= wrote;
@@ -3468,6 +3533,14 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     }
 #endif
 
+    /* If the file was just truncated to a size smaller than the currently
+    ** mapped region, reduce the effective mapping size as well. SQLite will
+    ** use read() and write() to access data beyond this point from now on.  
+    */
+    if( nByte<pFile->mmapSize ){
+      pFile->mmapSize = nByte;
+    }
+
     return SQLITE_OK;
   }
 }
@@ -3556,6 +3629,19 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     }
   }
 
+  if( pFile->mmapLimit>0 && nByte>pFile->mmapSize ){
+    int rc;
+    if( pFile->szChunk<=0 ){
+      if( robust_ftruncate(pFile->h, nByte) ){
+        pFile->lastErrno = errno;
+        return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
+      }
+    }
+
+    rc = unixMapfile(pFile, nByte);
+    return rc;
+  }
+
   return SQLITE_OK;
 }
 
@@ -3621,6 +3707,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
         unixGetTempname(pFile->pVfs->mxPathname, zTFile);
         *(char**)pArg = zTFile;
       }
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_MMAP_LIMIT: {
+      i64 newLimit = *(i64*)pArg;
+      *(i64*)pArg = pFile->mmapLimit;
+      if( newLimit>=0 ) pFile->mmapLimit = newLimit;
       return SQLITE_OK;
     }
 #ifdef SQLITE_DEBUG
@@ -3935,7 +4027,7 @@ static void unixShmPurge(unixFile *pFd){
     sqlite3_mutex_free(p->mutex);
     for(i=0; i<p->nRegion; i++){
       if( p->h>=0 ){
-        munmap(p->apRegion[i], p->szRegion);
+        osMunmap(p->apRegion[i], p->szRegion);
       }else{
         sqlite3_free(p->apRegion[i]);
       }
@@ -4208,7 +4300,7 @@ static int unixShmMap(
     while(pShmNode->nRegion<=iRegion){
       void *pMem;
       if( pShmNode->h>=0 ){
-        pMem = mmap(0, szRegion,
+        pMem = osMmap(0, szRegion,
             pShmNode->isReadonly ? PROT_READ : PROT_READ|PROT_WRITE, 
             MAP_SHARED, pShmNode->h, szRegion*(i64)pShmNode->nRegion
         );
@@ -4426,6 +4518,223 @@ static int unixShmUnmap(
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
+** If it is currently memory mapped, unmap file pFd.
+*/
+static void unixUnmapfile(unixFile *pFd){
+  assert( pFd->nFetchOut==0 );
+  if( pFd->pMapRegion ){
+    osMunmap(pFd->pMapRegion, pFd->mmapOrigsize);
+    pFd->pMapRegion = 0;
+    pFd->mmapSize = 0;
+    pFd->mmapOrigsize = 0;
+  }
+}
+
+/*
+** Return the system page size.
+*/
+static int unixGetPagesize(void){
+#if HAVE_MREMAP
+  return 512;
+#elif defined(_BSD_SOURCE)
+  return getpagesize();
+#else
+  return (int)sysconf(_SC_PAGESIZE);
+#endif
+}
+
+/*
+** Attempt to set the size of the memory mapping maintained by file 
+** descriptor pFd to nNew bytes. Any existing mapping is discarded.
+**
+** If successful, this function sets the following variables:
+**
+**       unixFile.pMapRegion
+**       unixFile.mmapSize
+**       unixFile.mmapOrigsize
+**
+** If unsuccessful, an error message is logged via sqlite3_log() and
+** the three variables above are zeroed. In this case SQLite should
+** continue accessing the database using the xRead() and xWrite()
+** methods.
+*/
+static void unixRemapfile(
+  unixFile *pFd,                  /* File descriptor object */
+  i64 nNew                        /* Required mapping size */
+){
+  const char *zErr = "mmap";
+  int h = pFd->h;                      /* File descriptor open on db file */
+  u8 *pOrig = (u8 *)pFd->pMapRegion;   /* Pointer to current file mapping */
+  i64 nOrig = pFd->mmapOrigsize;       /* Size of pOrig region in bytes */
+  u8 *pNew = 0;                        /* Location of new mapping */
+  int flags = PROT_READ;               /* Flags to pass to mmap() */
+
+  assert( pFd->nFetchOut==0 );
+  assert( nNew>pFd->mmapSize );
+  assert( nNew<=pFd->mmapLimit );
+  assert( nNew>0 );
+  assert( pFd->mmapOrigsize>=pFd->mmapSize );
+  assert( MAP_FAILED!=0 );
+
+  if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
+
+  if( pOrig ){
+    const int szSyspage = unixGetPagesize();
+    i64 nReuse = (pFd->mmapSize & ~(szSyspage-1));
+    u8 *pReq = &pOrig[nReuse];
+
+    /* Unmap any pages of the existing mapping that cannot be reused. */
+    if( nReuse!=nOrig ){
+      osMunmap(pReq, nOrig-nReuse);
+    }
+
+#if HAVE_MREMAP
+    pNew = osMremap(pOrig, nReuse, nNew, MREMAP_MAYMOVE);
+    zErr = "mremap";
+#else
+    pNew = osMmap(pReq, nNew-nReuse, flags, MAP_SHARED, h, nReuse);
+    if( pNew!=MAP_FAILED ){
+      if( pNew!=pReq ){
+        osMunmap(pNew, nNew - nReuse);
+        pNew = 0;
+      }else{
+        pNew = pOrig;
+      }
+    }
+#endif
+
+    /* The attempt to extend the existing mapping failed. Free it. */
+    if( pNew==MAP_FAILED || pNew==0 ){
+      osMunmap(pOrig, nReuse);
+    }
+  }
+
+  /* If pNew is still NULL, try to create an entirely new mapping. */
+  if( pNew==0 ){
+    pNew = osMmap(0, nNew, flags, MAP_SHARED, h, 0);
+  }
+
+  if( pNew==MAP_FAILED ){
+    pNew = 0;
+    nNew = 0;
+    unixLogError(SQLITE_OK, zErr, pFd->zPath);
+
+    /* If the mmap() above failed, assume that all subsequent mmap() calls
+    ** will probably fail too. Fall back to using xRead/xWrite exclusively
+    ** in this case.  */
+    pFd->mmapLimit = 0;
+  }
+  pFd->pMapRegion = (void *)pNew;
+  pFd->mmapSize = pFd->mmapOrigsize = nNew;
+}
+
+/*
+** Memory map or remap the file opened by file-descriptor pFd (if the file
+** is already mapped, the existing mapping is replaced by the new). Or, if 
+** there already exists a mapping for this file, and there are still 
+** outstanding xFetch() references to it, this function is a no-op.
+**
+** If parameter nByte is non-negative, then it is the requested size of 
+** the mapping to create. Otherwise, if nByte is less than zero, then the 
+** requested size is the size of the file on disk. The actual size of the
+** created mapping is either the requested size or the value configured 
+** using SQLITE_FCNTL_MMAP_LIMIT, whichever is smaller.
+**
+** SQLITE_OK is returned if no error occurs (even if the mapping is not
+** recreated as a result of outstanding references) or an SQLite error
+** code otherwise.
+*/
+static int unixMapfile(unixFile *pFd, i64 nByte){
+  i64 nMap = nByte;
+  int rc;
+
+  assert( nMap>=0 || pFd->nFetchOut==0 );
+  if( pFd->nFetchOut>0 ) return SQLITE_OK;
+
+  if( nMap<0 ){
+    struct stat statbuf;          /* Low-level file information */
+    rc = osFstat(pFd->h, &statbuf);
+    if( rc!=SQLITE_OK ){
+      return SQLITE_IOERR_FSTAT;
+    }
+    nMap = statbuf.st_size;
+  }
+  if( nMap>pFd->mmapLimit ){
+    nMap = pFd->mmapLimit;
+  }
+
+  if( nMap!=pFd->mmapSize ){
+    if( nMap>0 ){
+      unixRemapfile(pFd, nMap);
+    }else{
+      unixUnmapfile(pFd);
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** If possible, return a pointer to a mapping of file fd starting at offset
+** iOff. The mapping must be valid for at least nAmt bytes.
+**
+** If such a pointer can be obtained, store it in *pp and return SQLITE_OK.
+** Or, if one cannot but no error occurs, set *pp to 0 and return SQLITE_OK.
+** Finally, if an error does occur, return an SQLite error code. The final
+** value of *pp is undefined in this case.
+**
+** If this function does return a pointer, the caller must eventually 
+** release the reference by calling unixUnfetch().
+*/
+static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
+  unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
+  *pp = 0;
+
+  if( pFd->mmapLimit>0 ){
+    if( pFd->pMapRegion==0 ){
+      int rc = unixMapfile(pFd, -1);
+      if( rc!=SQLITE_OK ) return rc;
+    }
+    if( pFd->mmapSize >= iOff+nAmt ){
+      *pp = &((u8 *)pFd->pMapRegion)[iOff];
+      pFd->nFetchOut++;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** If the third argument is non-NULL, then this function releases a 
+** reference obtained by an earlier call to unixFetch(). The second
+** argument passed to this function must be the same as the corresponding
+** argument that was passed to the unixFetch() invocation. 
+**
+** Or, if the third argument is NULL, then this function is being called 
+** to inform the VFS layer that, according to POSIX, any existing mapping 
+** may now be invalid and should be unmapped.
+*/
+static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
+  unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
+
+  /* If p==0 (unmap the entire file) then there must be no outstanding 
+  ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),
+  ** then there must be at least one outstanding.  */
+  assert( (p==0)==(pFd->nFetchOut==0) );
+
+  /* If p!=0, it must match the iOff value. */
+  assert( p==0 || p==&((u8 *)pFd->pMapRegion)[iOff] );
+
+  if( p ){
+    pFd->nFetchOut--;
+  }else{
+    unixUnmapfile(pFd);
+  }
+
+  assert( pFd->nFetchOut>=0 );
+  return SQLITE_OK;
+}
+
+/*
 ** Here ends the implementation of all sqlite3_file methods.
 **
 ********************** End sqlite3_file Methods *******************************
@@ -4483,7 +4792,9 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixShmMap,                 /* xShmMap */                                 \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
-   unixShmUnmap                /* xShmUnmap */                               \
+   unixShmUnmap,               /* xShmUnmap */                               \
+   unixFetch,                  /* xFetch */                                  \
+   unixUnfetch,                /* xUnfetch */                                \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \
@@ -4500,7 +4811,7 @@ static const sqlite3_io_methods *(*const FINDER)(const char*,unixFile *p)    \
 IOMETHODS(
   posixIoFinder,            /* Finder function name */
   posixIoMethods,           /* sqlite3_io_methods object name */
-  2,                        /* shared memory is enabled */
+  3,                        /* shared memory and mmap are enabled */
   unixClose,                /* xClose method */
   unixLock,                 /* xLock method */
   unixUnlock,               /* xUnlock method */
@@ -4751,6 +5062,7 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
+  pNew->mmapLimit = sqlite3GlobalConfig.mxMmap;
   if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
@@ -6988,7 +7300,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==21 );
+  assert( ArraySize(aSyscall)==24 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){

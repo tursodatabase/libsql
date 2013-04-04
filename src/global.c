@@ -156,6 +156,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    (void*)0,                  /* pHeap */
    0,                         /* nHeap */
    0, 0,                      /* mnHeap, mxHeap */
+   SQLITE_DEFAULT_MMAP_LIMIT, /* mxMmap */                       
    (void*)0,                  /* pScratch */
    0,                         /* szScratch */
    0,                         /* nScratch */

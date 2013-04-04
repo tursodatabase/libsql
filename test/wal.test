@@ -727,6 +727,8 @@ do_test wal-11.9 {
   list [expr [file size test.db]/1024] [log_deleted test.db-wal]
 } {37 1}
 sqlite3_wal db test.db
+set nWal 39
+if {[permutation]=="nommap"} {set nWal 37}
 do_test wal-11.10 {
   execsql {
     PRAGMA cache_size = 10;
@@ -735,7 +737,7 @@ do_test wal-11.10 {
       SELECT count(*) FROM t1;
   }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 37 1024]]
+} [list 37 [wal_file_size $nWal 1024]]
 do_test wal-11.11 {
   execsql {
       SELECT count(*) FROM t1;
@@ -745,7 +747,7 @@ do_test wal-11.11 {
 } {32 16}
 do_test wal-11.12 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 37 1024]]
+} [list 37 [wal_file_size $nWal 1024]]
 do_test wal-11.13 {
   execsql {
     INSERT INTO t1 VALUES( blob(900) );
@@ -755,7 +757,7 @@ do_test wal-11.13 {
 } {17 ok}
 do_test wal-11.14 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 37 1024]]
+} [list 37 [wal_file_size $nWal 1024]]
 
 
 #-------------------------------------------------------------------------
@@ -1566,6 +1568,26 @@ ifcapable autovacuum {
     file size test.db-wal
   } [wal_file_size 1 1024]
 }
+
+reset_db
+do_test 25 {
+  sqlite3 db test.db
+
+  execsql {
+    CREATE TABLE t1(x, y);
+    PRAGMA journal_mode = WAL;
+    INSERT INTO t1 VALUES(1, 2);
+  }
+
+  execsql {
+    BEGIN;
+      CREATE TABLE t2(a, b);
+  }
+
+  hexio_write test.db-shm [expr 16*1024] [string repeat 0055 8192]
+  catchsql ROLLBACK
+} {0 {}}
+
 
 db close
 sqlite3_shutdown

@@ -5844,6 +5844,31 @@ static int test_test_control(
   return TCL_OK;
 }
 
+#if SQLITE_OS_UNIX
+#include <sys/time.h>
+#include <sys/resource.h>
+
+static int test_getrusage(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char buf[1024];
+  struct rusage r;
+  memset(&r, 0, sizeof(r));
+  getrusage(RUSAGE_SELF, &r);
+
+  sprintf(buf, "ru_utime=%d.%06d ru_stime=%d.%06d ru_minflt=%d ru_majflt=%d", 
+    (int)r.ru_utime.tv_sec, (int)r.ru_utime.tv_usec, 
+    (int)r.ru_stime.tv_sec, (int)r.ru_stime.tv_usec, 
+    (int)r.ru_minflt, (int)r.ru_majflt
+  );
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+  return TCL_OK;
+}
+#endif
+
 #if SQLITE_OS_WIN
 /*
 ** Information passed from the main thread into the windows file locker
@@ -6233,6 +6258,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "print_explain_query_plan", test_print_eqp, 0  },
 #endif
      { "sqlite3_test_control", test_test_control },
+#if SQLITE_OS_UNIX
+     { "getrusage", test_getrusage },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

@@ -259,6 +259,8 @@ int sqlite3OsShmMap(sqlite3_file *,int,int,int,void volatile **);
 int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
 void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmUnmap(sqlite3_file *id, int);
+int sqlite3OsFetch(sqlite3_file *id, i64, int, void **);
+int sqlite3OsUnfetch(sqlite3_file *, i64, void *);
 
 
 /* 

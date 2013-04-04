@@ -496,6 +496,13 @@ int sqlite3_config(int op, ...){
     }
 #endif
 
+    case SQLITE_CONFIG_MMAP_LIMIT: {
+      sqlite3_int64 mxMmap = va_arg(ap, sqlite3_int64);
+      if( mxMmap<0 ) mxMmap = SQLITE_DEFAULT_MMAP_LIMIT;
+      sqlite3GlobalConfig.mxMmap = mxMmap;
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;
@@ -2316,6 +2323,7 @@ static int openDatabase(
   memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
   db->autoCommit = 1;
   db->nextAutovac = -1;
+  db->mxMmap = sqlite3GlobalConfig.mxMmap;
   db->nextPagesize = 0;
   db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex | SQLITE_EnableTrigger
 #if SQLITE_DEFAULT_FILE_FORMAT<4
