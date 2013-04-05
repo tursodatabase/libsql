@@ -1569,26 +1569,6 @@ ifcapable autovacuum {
   } [wal_file_size 1 1024]
 }
 
-reset_db
-do_test 25 {
-  sqlite3 db test.db
-
-  execsql {
-    CREATE TABLE t1(x, y);
-    PRAGMA journal_mode = WAL;
-    INSERT INTO t1 VALUES(1, 2);
-  }
-
-  execsql {
-    BEGIN;
-      CREATE TABLE t2(a, b);
-  }
-
-  hexio_write test.db-shm [expr 16*1024] [string repeat 0055 8192]
-  catchsql ROLLBACK
-} {0 {}}
-
-
 db close
 sqlite3_shutdown
 test_sqlite3_log

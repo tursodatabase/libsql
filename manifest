@@ -1,5 +1,5 @@
-C Add\sfurther\smulti-client\stests\sto\smmap1.test.
-D 2013-04-04T19:32:53.279
+C Improve\sthe\scode\scoverage\sof\s"permutations.test\scoverage-pager".
+D 2013-04-05T20:40:43.227
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 7e8293e4e6971b0f44c7f7f37b1315a8cc9f6018
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
-F src/test_vfs.c fb16b2d9938cf0c1afc5a423b55b952fcc024275
+F src/test_vfs.c 8e6087a8b3dcc260282074b0efba14b76311120c
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
@@ -651,10 +651,10 @@ F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 31c04bec797dda1bde337810b52efa08d1f1f08e
+F test/pager1.test 622bfaea80604a96010f35256a4fc22fce584e95
 F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test fc2e37b2da626826dd54bb13720b4d721719b660
+F test/pagerfault.test 636c01bdbdb2bb2baf68532d6c4ef4c633022743
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 32cb5a6ed7ccddf8e8c842cb44240bd9340223ce
@@ -955,7 +955,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
-F test/wal.test 62454b2cf00b311e9e65f898aad0fef536ed561a
+F test/wal.test bbd98ac09d8fbcaa80ec233757056eb1bbb7cd95
 F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -971,7 +971,7 @@ F test/walcksum.test f5447800a157c9e2234fbb8e80243f0813941bde
 F test/walcrash.test 4457436593be8c136f9148487c7dccd5e9013af2
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
 F test/walcrash3.test 595e44c6197f0d0aa509fc135be2fd0209d11a2c
-F test/walfault.test 97394d8de82a99f7abf1c12ed229640607fd0ad2
+F test/walfault.test 54ad6e849c727f4da463964b9eb8c8e8e155cf82
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
@@ -1044,7 +1044,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2b3d9805a28e51f646113e22c2dff2272342306e
-R 4c631120a8e96e37be49975ee7d63ac7
+P a107f75d93b8acd3403d8473a75137378041a833
+R 6d11c98ab18b87c4b8798ffe987d9d38
 U dan
-Z d6d074a538192756f7d91b52bba8b7ce
+Z 50aa2590d101ae076870fa94f81e976a
