@@ -22,6 +22,7 @@
 ** Recommended options:
 **
 **    -DHAVE_USLEEP
+**    -DSQLITE_MAX_SCHEMA_RETRY=100
 **    -DSQLITE_NO_SYNC
 **    -DSQLITE_THREADSAFE=0
 **    -DSQLITE_OMIT_LOAD_EXTENSION
@@ -542,14 +543,35 @@ static int finishScript(int iClient, int taskId, int bShutdown){
 static void startClient(int iClient){
   runSql("INSERT OR IGNORE INTO client VALUES(%d,0)", iClient);
   if( sqlite3_changes(g.db) ){
+#if defined(__unix__)
     char *zSys;
     zSys = sqlite3_mprintf(
                  "%s \"%s\" --client %d --trace %d %s&",
                  g.argv0, g.zDbFile, iClient, g.iTrace,
                  g.bSqlTrace ? "--sqltrace " : "");
-
     system(zSys);
     sqlite3_free(zSys);
+#endif
+#if defined(_WIN32)
+    char *argv[10];
+    char zClient[20];
+    char zTrace[20];
+    argv[0] = g.argv0;
+    argv[1] = g.zDbFile;
+    argv[2] = "--client";
+    sqlite3_snprintf(sizeof(zClient),zClient,"%d",iClient);
+    argv[3] = zClient;
+    argv[4] = "--trace";
+    sqlite3_snprintf(sizeof(zTrace),zTrace,"%d",g.iTrace);
+    argv[5] = zTrace;
+    if( g.bSqlTrace ){
+      argv[6] = "--sqltrace";
+      argv[7] = 0;
+    }else{
+      argv[6] = 0;
+    }
+    _spawnv(_P_NOWAIT, g.argv0, argv);
+#endif
   }
 }
 

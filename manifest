@@ -1,5 +1,5 @@
-C Many\simprovements\sto\sthe\smptest\sprogram.\s\sAdded\sa\ssimple\stest\sscript.
-D 2013-04-06T13:09:11.141
+C Get\sthe\smptest\sprogram\srunning\son\swindows.
+D 2013-04-06T14:04:22.154
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -111,7 +111,7 @@ F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
 F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 058a9bc2b0db710d36003ab06dc1618566f27b52
-F mptest/mptest.c d73b294c354719f33086d8d3ebc273553b26073c
+F mptest/mptest.c 7dcc7afacc87be958c181f36a8494ef145ebd131
 F mptest/multiwrite01.test aef0af17f1ce1beacd158e403a45a21008d7a70c
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1047,7 +1047,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c318fafe686120d7fb8e487eb3bb4942d497665c
-R e5c361902695f1e216fb1ed024ee2204
+P 07b0401a9b61b1664fc6dcddac3b5969fc0f481a
+R 61768559c8a66440452ca26012ff3963
 U drh
-Z 1a794dfe7c097a8f7d97d3bcdba2a731
+Z 2d9f9bfb3324d80756ef1485b1717ef9
