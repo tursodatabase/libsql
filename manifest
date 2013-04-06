@@ -1,5 +1,5 @@
-C Improve\sthe\scode\scoverage\sof\s"permutations.test\scoverage-pager".
-D 2013-04-05T20:40:43.227
+C Add\stests\sto\s"permutations.test\scoverage-pager"\sto\scover\suncovered\sbranches.
+D 2013-04-06T11:03:09.144
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -651,10 +651,10 @@ F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 622bfaea80604a96010f35256a4fc22fce584e95
-F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
+F test/pager1.test 134144862f6a98f862dc2edda1b10ff499141bfa
+F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test 636c01bdbdb2bb2baf68532d6c4ef4c633022743
+F test/pagerfault.test bba948be0564254b823ec6ca1fd95fbbfb0839a3
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 32cb5a6ed7ccddf8e8c842cb44240bd9340223ce
@@ -1044,7 +1044,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a107f75d93b8acd3403d8473a75137378041a833
-R 6d11c98ab18b87c4b8798ffe987d9d38
+P b095e2cdb61ca8487255687f58fb1024d40f3986
+R bbe90127c799120f0deb57d78c345328
 U dan
-Z 50aa2590d101ae076870fa94f81e976a
+Z 0a43fd582a2aa921b5f65df032585318

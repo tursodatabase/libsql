@@ -1483,6 +1483,67 @@ do_faultsim_test pagerfault-34 -prep {
   faultsim_test_result {0 {}}
 } 
 
+do_test pagerfault-35-pre {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+testvfs tv -default 1
+tv sectorsize 8192;
+tv devchar [list]
+do_faultsim_test pagerfault-35 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { UPDATE t1 SET x=randomblob(200) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+catch {db close}
+tv delete
+
+sqlite3_shutdown
+sqlite3_config_uri 1
+do_test pagerfault-36-pre {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-36 -prep {
+  faultsim_restore
+  sqlite3 db file:test.db?cache=shared
+  sqlite3 db2 file:test.db?cache=shared
+  db2 eval {
+    BEGIN;
+    SELECT count(*) FROM sqlite_master;
+  }
+  db eval {
+    PRAGMA cache_size = 1;
+    BEGIN;
+      UPDATE t1 SET x = randomblob(200);
+  }
+} -body {
+  execsql ROLLBACK db
+} -test {
+  catch { db eval {UPDATE t1 SET x = randomblob(200)} }
+  faultsim_test_result {0 {}}
+  catch { db close }
+  catch { db2 close }
+}
+
+sqlite3_shutdown
+sqlite3_config_uri 0
 
 finish_test
 
