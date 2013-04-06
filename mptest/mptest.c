@@ -22,7 +22,6 @@
 ** Recommended options:
 **
 **    -DHAVE_USLEEP
-**    -DSQLITE_MAX_SCHEMA_RETRY=100
 **    -DSQLITE_NO_SYNC
 **    -DSQLITE_THREADSAFE=0
 **    -DSQLITE_OMIT_LOAD_EXTENSION
@@ -824,11 +823,21 @@ static void runScript(
     ** Run a subscript from a separate file.
     */
     if( strcmp(zCmd, "source")==0 ){
-      char *zNewFile = azArg[0];
-      char *zNewScript = readFile(zNewFile);
+      char *zNewFile, *zNewScript;
+      char *zToDel = 0;
+      zNewFile = azArg[0];
+      if( zNewFile[0]!='/' ){
+        int k;
+        for(k=(int)strlen(zFilename)-1; k>=0 && zFilename[k]!='/'; k--){}
+        if( k>0 ){
+          zNewFile = zToDel = sqlite3_mprintf("%.*s/%s", k,zFilename,zNewFile);
+        }
+      }
+      zNewScript = readFile(zNewFile);
       if( g.iTrace ) logMessage("begin script [%s]\n", zNewFile);
       runScript(0, 0, zNewScript, zNewFile);
       sqlite3_free(zNewScript);
+      sqlite3_free(zToDel);
       if( g.iTrace ) logMessage("end script [%s]\n", zNewFile);
     }else
 
@@ -987,17 +996,26 @@ static void unrecognizedArguments(
 int main(int argc, char **argv){
   const char *zClient;
   int iClient;
-  int n;
+  int n, i;
   int openFlags = SQLITE_OPEN_READWRITE;
   int rc;
   char *zScript;
   int taskId;
   const char *zTrace;
+  const char *zCOption;
 
   g.argv0 = argv[0];
   g.iTrace = 1;
   if( argc<2 ) usage(argv[0]);
   g.zDbFile = argv[1];
+  if( strglob("*.test", g.zDbFile) ) usage(argv[0]);
+  if( strcmp(sqlite3_sourceid(), SQLITE_SOURCE_ID)!=0 ){
+    fprintf(stderr, "SQLite library and header mismatch\n"
+                    "Library: %s\n"
+                    "Header:  %s\n",
+                    sqlite3_sourceid(), SQLITE_SOURCE_ID);
+    exit(1);
+  }
   n = argc-2;
   sqlite3_snprintf(sizeof(g.zName), g.zName, "mptest");
   g.zVfs = findOption(argv+2, &n, "vfs", 1);
@@ -1024,6 +1042,13 @@ int main(int argc, char **argv){
     if( iClient<1 ) fatalError("illegal client number: %d\n", iClient);
     sqlite3_snprintf(sizeof(g.zName), g.zName, "client%02d", iClient);
   }else{
+    if( g.iTrace>0 ){
+      printf("With SQLite " SQLITE_VERSION " " SQLITE_SOURCE_ID "\n" );
+      for(i=0; (zCOption = sqlite3_compileoption_get(i))!=0; i++){
+        printf("-DSQLITE_%s\n", zCOption);
+      }
+      fflush(stdout);
+    }
     iClient =  0;
     unlink(g.zDbFile);
     openFlags |= SQLITE_OPEN_CREATE;
