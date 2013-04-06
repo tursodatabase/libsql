@@ -1,5 +1,5 @@
-C Get\sthe\sbuild\sof\smptest\sworking\son\smac.
-D 2013-04-06T14:16:41.777
+C Add\sSQLITE_CONFIG_LOG\serror\slogging\sto\sthe\smptest\sprogram.
+D 2013-04-06T14:30:29.439
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -111,7 +111,7 @@ F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
 F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 058a9bc2b0db710d36003ab06dc1618566f27b52
-F mptest/mptest.c 5d48c89704556ccf01602627fb26b9ec920ae0a6
+F mptest/mptest.c 4f1a7ad2b9d089fb1bfbbac8cd9f6fe840575f10
 F mptest/multiwrite01.test aef0af17f1ce1beacd158e403a45a21008d7a70c
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1047,7 +1047,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3966b33284355325afda627ed6f4e26f967438f8
-R 8058bb54d4c385606834ce76ac0c79c1
+P a0bae686c9d7f08afac00f66067f5147be6231e0
+R 861169f81b752fa53a7328f523d2af55
 U drh
-Z 71f79ad69c84c0cc8a1fd074e63ccdd7
+Z 4d9e999545d1ee7e59c6e7a0f5ed5b2c

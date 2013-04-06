@@ -290,6 +290,14 @@ static void sqlTraceCallback(void *NotUsed1, const char *zSql){
 }
 
 /*
+** SQL error log callback
+*/
+static void sqlErrorCallback(void *pArg, int iErrCode, const char *zMsg){
+  if( (iErrCode&0xff)==SQLITE_SCHEMA && g.iTrace<3 ) return;
+  errorMessage("(errcode=%d) %s", iErrCode, zMsg);
+}
+
+/*
 ** Prepare an SQL statement.  Issue a fatal error if unable.
 */
 static sqlite3_stmt *prepareSql(const char *zFormat, ...){
@@ -1010,6 +1018,7 @@ int main(int argc, char **argv){
   }else{
     g.pLog = stdout;
   }
+  sqlite3_config(SQLITE_CONFIG_LOG, sqlErrorCallback, 0);
   if( zClient ){
     iClient = atoi(zClient);
     if( iClient<1 ) fatalError("illegal client number: %d\n", iClient);
