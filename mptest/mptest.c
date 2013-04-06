@@ -57,7 +57,12 @@ static struct Global {
   int iTrace;            /* Tracing level */
   int bSqlTrace;         /* True to trace SQL commands */
   int nError;            /* Number of errors */
+  int nTest;             /* Number of --match operators */
+  int iTimeout;          /* Milliseconds until a busy timeout */
 } g;
+
+/* Default timeout */
+#define DEFAULT_TIMEOUT 10000
 
 /*
 ** Print a message adding zPrefix[] to the beginning of every line.
@@ -226,7 +231,9 @@ static void fatalError(const char *zFormat, ...){
   sqlite3_free(zMsg);
   if( g.db ){
     int nTry = 0;
-    while( trySql("CREATE TABLE halt(x);")==SQLITE_BUSY && (nTry++)<100 ){
+    g.iTimeout = 0;
+    while( trySql("UPDATE client SET wantHalt=1;")==SQLITE_BUSY
+           && (nTry++)<100 ){
       sqlite3_sleep(10);
     }
   }
@@ -260,6 +267,18 @@ static int clipLength(const char *z){
   int n = (int)strlen(z);
   while( n>0 && isspace(z[n-1]) ){ n--; }
   return n;
+}
+
+/*
+** Busy handler with a g.iTimeout-millisecond timeout
+*/
+static int busyHandler(void *pCD, int count){
+  if( count*10>g.iTimeout ){
+    if( g.iTimeout>0 ) errorMessage("timeout after %dms", g.iTimeout);
+    return 0;
+  }
+  sqlite3_sleep(10);
+  return 1;
 }
 
 /*
@@ -408,6 +427,7 @@ static int evalSql(String *p, const char *zFormat, ...){
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
+  assert( g.iTimeout>0 );
   rc = sqlite3_exec(g.db, zSql, evalCallback, p, &zErrMsg);
   sqlite3_free(zSql);
   if( rc ){
@@ -435,21 +455,34 @@ static int startScript(
   sqlite3_stmt *pStmt = 0;
   int taskId;
   int rc;
+  int totalTime = 0;
 
   *pzScript = 0;
+  g.iTimeout = 0;
   while(1){
-    if( trySql("SELECT * FROM halt")==SQLITE_OK ) return SQLITE_DONE;
     rc = trySql("BEGIN IMMEDIATE");
     if( rc==SQLITE_BUSY ){
       sqlite3_sleep(10);
+      totalTime += 10;
       continue;
     }
     if( rc!=SQLITE_OK ){
       fatalError("%s\nBEGIN IMMEDIATE", sqlite3_errmsg(g.db));
     }
-    if( g.nError ){
-      runSql("UPDATE clienterror SET cnt=cnt+%d", g.nError);
+    if( g.nError || g.nTest ){
+      runSql("UPDATE counters SET nError=nError+%d, nTest=nTest+%d",
+             g.nError, g.nTest);
       g.nError = 0;
+      g.nTest = 0;
+    }
+    pStmt = prepareSql("SELECT 1 FROM client WHERE id=%d AND wantHalt",iClient);
+    rc = sqlite3_step(pStmt);
+    sqlite3_finalize(pStmt);
+    if( rc==SQLITE_ROW ){
+      runSql("DELETE FROM client WHERE id=%d", iClient);
+      runSql("COMMIT");
+      g.iTimeout = DEFAULT_TIMEOUT;
+      return SQLITE_DONE;
     }
     pStmt = prepareSql(
               "SELECT script, id FROM task"
@@ -466,37 +499,58 @@ static int startScript(
              "   SET starttime=strftime('%%Y-%%m-%%d %%H:%%M:%%f','now')"
              " WHERE id=%d;", taskId);
       runSql("COMMIT;");
+      g.iTimeout = DEFAULT_TIMEOUT;
       return SQLITE_OK;
     }
     sqlite3_finalize(pStmt);
     if( rc==SQLITE_DONE ){
+      if( totalTime>30000 ){
+        errorMessage("Waited over 30 seconds with no work.  Giving up.");
+        runSql("DELETE FROM client WHERE id=%d; COMMIT;", iClient);
+        sqlite3_close(g.db);
+        exit(1);
+      }
       runSql("COMMIT;");
       sqlite3_sleep(100);
+      totalTime += 100;
       continue;
     }
     fatalError("%s", sqlite3_errmsg(g.db));
   }
+  g.iTimeout = DEFAULT_TIMEOUT;
 }
 
 /*
-** Mark a script as having finished.
+** Mark a script as having finished.   Remove the CLIENT table entry
+** if bShutdown is true.
 */
-static int finishScript(int taskId){
-  sqlite3_stmt *pStmt;
-  int rc;
-  pStmt = prepareSql(
-             "UPDATE task"
-             "   SET endtime=strftime('%%Y-%%m-%%d %%H:%%M:%%f','now')"
-             " WHERE id=%d;", taskId);
-  do{
-    rc = sqlite3_step(pStmt);
-    sqlite3_reset(pStmt);
-  }while( rc==SQLITE_BUSY );
-  sqlite3_finalize(pStmt);
-  if( rc!=SQLITE_DONE ){
-    fatalError("%s\n", sqlite3_errmsg(g.db));
+static int finishScript(int iClient, int taskId, int bShutdown){
+  runSql("UPDATE task"
+         "   SET endtime=strftime('%%Y-%%m-%%d %%H:%%M:%%f','now')"
+         " WHERE id=%d;", taskId);
+  if( bShutdown ){
+    runSql("DELETE FROM client WHERE id=%d", iClient);
   }
-  return rc; 
+  return SQLITE_OK;
+}
+
+/*
+** Start up a client process for iClient, if it is not already
+** running.  If the client is already running, then this routine
+** is a no-op.
+*/
+static void startClient(int iClient){
+  runSql("INSERT OR IGNORE INTO client VALUES(%d,0)", iClient);
+  if( sqlite3_changes(g.db) ){
+    char *zSys;
+    zSys = sqlite3_mprintf(
+                 "%s \"%s\" --client %d --trace %d %s&",
+                 g.argv0, g.zDbFile, iClient, g.iTrace,
+                 g.bSqlTrace ? "--sqltrace " : "");
+
+    system(zSys);
+    sqlite3_free(zSys);
+  }
 }
 
 /*
@@ -597,13 +651,18 @@ static void waitForClient(int iClient, int iTimeout, char *zErrPrefix){
   int rc;
   if( iClient>0 ){
     pStmt = prepareSql(
-               "SELECT 1 FROM task WHERE client=%d AND endtime IS NULL",
+               "SELECT 1 FROM task"
+               " WHERE client=%d"
+               "   AND client IN (SELECT id FROM client)"
+               "  AND endtime IS NULL",
                iClient);
   }else{
     pStmt = prepareSql(
-               "SELECT 1 FROM task WHERE client=%d AND endtime IS NULL",
-               iClient);
+               "SELECT 1 FROM task"
+               " WHERE client IN (SELECT id FROM client)"
+               "   AND endtime IS NULL");
   }
+  g.iTimeout = 0;
   while( ((rc = sqlite3_step(pStmt))==SQLITE_BUSY || rc==SQLITE_ROW)
     && iTimeout>0
   ){
@@ -612,6 +671,7 @@ static void waitForClient(int iClient, int iTimeout, char *zErrPrefix){
     iTimeout -= 50;
   }
   sqlite3_finalize(pStmt);
+  g.iTimeout = DEFAULT_TIMEOUT;
   if( rc!=SQLITE_DONE ){
     if( zErrPrefix==0 ) zErrPrefix = "";
     if( iClient>0 ){
@@ -639,16 +699,13 @@ static void runScript(
   int ii = 0;
   int iBegin = 0;
   int n, c, j;
-  int rc;
   int len;
   int nArg;
   String sResult;
   char zCmd[30];
   char zError[1000];
   char azArg[MX_ARG][100];
-  unsigned char isRunning[100];
 
-  memset(isRunning, 0, sizeof(isRunning));
   memset(&sResult, 0, sizeof(sResult));
   stringReset(&sResult);
   while( (c = zScript[ii])!=0 ){
@@ -699,7 +756,7 @@ static void runScript(
     */
     if( strcmp(zCmd, "exit")==0 ){
       int rc = atoi(azArg[0]);
-      finishScript(taskId);
+      finishScript(iClient, taskId, 1);
       if( rc==0 ) sqlite3_close(g.db);
       exit(rc);
     }else
@@ -727,6 +784,7 @@ static void runScript(
         errorMessage("line %d of %s:\nExpected [%.*s]\n     Got [%s]",
           prevLine, zFilename, len-jj-1, zAns, sResult.z);
       }
+      g.nTest++;
       stringReset(&sResult);
     }else
 
@@ -736,7 +794,7 @@ static void runScript(
     ** Run a subscript from a separate file.
     */
     if( strcmp(zCmd, "source")==0 ){
-      char *zNewFile = azArg[1];
+      char *zNewFile = azArg[0];
       char *zNewScript = readFile(zNewFile);
       if( g.iTrace ) logMessage("begin script [%s]\n", zNewFile);
       runScript(0, 0, zNewScript, zNewFile);
@@ -762,26 +820,9 @@ static void runScript(
     */
     if( strcmp(zCmd, "start")==0 ){
       int iNewClient = atoi(azArg[0]);
-      char *zSys;
-      if( iNewClient<1 || iNewClient>=sizeof(isRunning) ){
-        errorMessage("line %d of %s: bad client number: %d",
-                   prevLine, zFilename, iNewClient);
-        goto start_error;
+      if( iNewClient>0 ){
+        startClient(iNewClient);
       }
-      if( isRunning[iNewClient] ){
-        errorMessage("line %d of %s: client already running: %d",
-                     prevLine, zFilename, iNewClient);
-        goto start_error;
-      }
-      zSys = sqlite3_mprintf(
-                 "%s \"%s\" --client %d --trace %d %s&",
-                 g.argv0, g.zDbFile, iNewClient, g.iTrace,
-                 g.bSqlTrace ? "--sqltrace " : "");
-
-      system(zSys);
-      sqlite3_free(zSys);
-      isRunning[iNewClient] = 1;
-      start_error:  {/* no-op */}
     }else
 
     /*
@@ -803,30 +844,24 @@ static void runScript(
     **     <task-content-here>
     **  --end
     **
-    ** Assign work to a client.
+    ** Assign work to a client.  Start the client if it is not running
+    ** already.
     */
     if( strcmp(zCmd, "task")==0 ){
       int iTarget = atoi(azArg[0]);
       int iEnd;
       char *zTask;
-      sqlite3_stmt *pStmt;
       iEnd = findEnd(zScript+ii+len, &lineno);
-      if( iTarget<0 || iTarget>=sizeof(isRunning)
-            || !isRunning[iTarget] ){
-        errorMessage("line %d of %s: client %d is not running",
+      if( iTarget<0 ){
+        errorMessage("line %d of %s: bad client number: %d",
                      prevLine, zFilename, iTarget);
-        goto task_error;
+      }else{
+        zTask = sqlite3_mprintf("%.*s", iEnd, zScript+ii+len);
+        startClient(iTarget);
+        runSql("INSERT INTO task(client,script)"
+               " VALUES(%d,'%q')", iTarget, zTask);
+        sqlite3_free(zTask);
       }
-      zTask = sqlite3_mprintf("%.*s", iEnd, zScript+ii+len);
-      pStmt = prepareSql("INSERT INTO task(client,script)"
-                         " VALUES(%d,'%q')", iTarget, zTask);
-      sqlite3_free(zTask);
-      while( (rc = sqlite3_step(pStmt))==SQLITE_BUSY ){
-        sqlite3_reset(pStmt);
-        sqlite3_sleep(10);
-      }
-      sqlite3_finalize(pStmt);
-      task_error:
       iEnd += tokenLength(zScript+ii+len+iEnd, &lineno);
       len += iEnd;
       iBegin = ii+len;
@@ -964,6 +999,8 @@ int main(int argc, char **argv){
   }
   rc = sqlite3_open_v2(g.zDbFile, &g.db, openFlags, g.zVfs);
   if( rc ) fatalError("cannot open [%s]", g.zDbFile);
+  sqlite3_busy_handler(g.db, busyHandler, 0);
+  g.iTimeout = DEFAULT_TIMEOUT;
   if( g.bSqlTrace ) sqlite3_trace(g.db, sqlTraceCallback, 0);
   if( iClient>0 ){
     if( n>0 ) unrecognizedArguments(argv[0], n, argv+2);
@@ -977,12 +1014,13 @@ int main(int argc, char **argv){
                        iClient, taskId);
       runScript(iClient, taskId, zScript, zTaskName);
       if( g.iTrace ) logMessage("end task %d", taskId);
-      finishScript(taskId);
+      finishScript(iClient, taskId, 0);
       sqlite3_sleep(10);
     }
     if( g.iTrace ) logMessage("end-client");
   }else{
     sqlite3_stmt *pStmt;
+    int iTimeout;
     if( n==0 ){
       fatalError("missing script filename");
     }
@@ -995,8 +1033,11 @@ int main(int argc, char **argv){
       "  endtime DATE,\n"
       "  script TEXT\n"
       ");"
-      "CREATE TABLE clienterror(cnt);\n"
-      "INSERT INTO clienterror VALUES(0);\n"
+      "CREATE INDEX task_i1 ON task(client, starttime);\n"
+      "CREATE INDEX task_i2 ON task(client, endtime);\n"
+      "CREATE TABLE counters(nError,nTest);\n"
+      "INSERT INTO counters VALUES(0,0);\n"
+      "CREATE TABLE client(id INTEGER PRIMARY KEY, wantHalt);\n"
     );
     zScript = readFile(argv[2]);
     if( g.iTrace ) logMessage("begin script [%s]\n", argv[2]);
@@ -1004,16 +1045,25 @@ int main(int argc, char **argv){
     sqlite3_free(zScript);
     if( g.iTrace ) logMessage("end script [%s]\n", argv[2]);
     waitForClient(0, 2000, "during shutdown...\n");
-    while( trySql("CREATE TABLE halt(x);")==SQLITE_BUSY ){
+    trySql("UPDATE client SET wantHalt=1");
+    sqlite3_sleep(10);
+    g.iTimeout = 0;
+    iTimeout = 1000;
+    while( ((rc = trySql("SELECT 1 FROM client"))==SQLITE_BUSY
+        || rc==SQLITE_ROW) && iTimeout>0 ){
       sqlite3_sleep(10);
+      iTimeout -= 10;
     }
     sqlite3_sleep(100);
-    pStmt = prepareSql("SELECT cnt FROM clienterror");
-    while( (rc = sqlite3_step(pStmt))==SQLITE_BUSY ){
+    pStmt = prepareSql("SELECT nError, nTest FROM counters");
+    iTimeout = 1000;
+    while( (rc = sqlite3_step(pStmt))==SQLITE_BUSY && iTimeout>0 ){
       sqlite3_sleep(10);
+      iTimeout -= 10;
     }
     if( rc==SQLITE_ROW ){
       g.nError += sqlite3_column_int(pStmt, 0);
+      g.nTest += sqlite3_column_int(pStmt, 1);
     }
     sqlite3_finalize(pStmt);
   }
@@ -1021,11 +1071,7 @@ int main(int argc, char **argv){
   maybeClose(g.pLog);
   maybeClose(g.pErrLog);
   if( iClient==0 ){
-    if( g.nError ){
-      printf("ERRORS: %d\n", g.nError);
-    }else if( g.iTrace ){
-      printf("All OK\n");
-    }
+    printf("Summary: %d errors in %d tests\n", g.nError, g.nTest);
   }
   return g.nError>0;
 }
