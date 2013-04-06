@@ -1,5 +1,5 @@
-C Add\sSQLITE_CONFIG_LOG\serror\slogging\sto\sthe\smptest\sprogram.
-D 2013-04-06T14:30:29.439
+C Merge\strunk\schanges\sinto\sthe\smptest\sbranch.\s\sThe\smptest\sneeds\sthe\nSQLITE_MAX_SCHEMA_RETRY\sfix\sin\sparticular.
+D 2013-04-06T18:10:27.166
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c f7cb141e8ce257cb6b15c497f09e4e23d6055599
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
-F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
+F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 1422eba4aa2b1fb5f7b3aef574752272477d21e2
 F src/main.c 54a841854734b6731c4d026834788cac6a19f3d1
@@ -172,7 +172,7 @@ F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
 F src/pragma.c 682e97f3e3b77fd6c9b569eabfbf4a14c987aca3
-F src/prepare.c 310eaff1ee5f3c700b3545afb095cfe9346efc3a
+F src/prepare.c 743e484233c51109666d402f470523553b41797c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9079da7d59aed2bb14ec8315bc7f720dd85b5b65
@@ -244,10 +244,10 @@ F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
 F src/vdbe.c 1d56617d816098a41bdbe73536a67dcdefad52bd
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
-F src/vdbeInt.h 3bb8531d6768379f086e1576b31d52331f6eb982
-F src/vdbeapi.c 56f9ad6329d093f54b5dd321a2b4a643f89a6cb6
+F src/vdbeInt.h c1e830268b75f04a2901dd895b51a637a26c7045
+F src/vdbeapi.c 085cf9bf169b859a6c8fa43791702bac805cb7aa
 F src/vdbeaux.c ecb43014bcd3019e5aa2b5561e5c3a447f007a08
-F src/vdbeblob.c 32f2a4899d67f69634ea4dd93e3f651936d732cb
+F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 4fad64071ae120c25f39dcac572d716b9cadeb7f
 F src/vdbetrace.c a22263ab47f6ba4fcd176515cec1e732866b25f0
@@ -654,10 +654,10 @@ F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
-F test/pager1.test 622bfaea80604a96010f35256a4fc22fce584e95
-F test/pager2.test 745b911dde3d1f24ae0870bd433dfa83d7c658c1
+F test/pager1.test 134144862f6a98f862dc2edda1b10ff499141bfa
+F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pagerfault.test 636c01bdbdb2bb2baf68532d6c4ef4c633022743
+F test/pagerfault.test bba948be0564254b823ec6ca1fd95fbbfb0839a3
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pagerfault3.test f16e2efcb5fc9996d1356f7cbc44c998318ae1d7
 F test/pageropt.test 32cb5a6ed7ccddf8e8c842cb44240bd9340223ce
@@ -1047,7 +1047,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a0bae686c9d7f08afac00f66067f5147be6231e0
-R 861169f81b752fa53a7328f523d2af55
+P 716c25bd125c8934499c1fb59a60d7e844c0691c c1d7304c80c4a6244c8a9f6fad1eebd0f339c724
+R 865d94cb53d70dd89436e58ffa63ebac
 U drh
-Z 4d9e999545d1ee7e59c6e7a0f5ed5b2c
+Z 83b40ff56b301adcba03b758b3b36603

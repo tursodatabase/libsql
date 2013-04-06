@@ -2245,7 +2245,6 @@ do_test pager1-25-1 {
   }
   db close
 } {}
-breakpoint
 do_test pager1-25-2 {
   faultsim_delete_and_reopen
   execsql {
@@ -2543,7 +2542,6 @@ foreach {tn pragma strsize} {
     CREATE TABLE t1(a, b);
     INSERT INTO t1 VALUES(1, 2);
   }
-  breakpoint
   do_execsql_test 34.$tn.2 {
     BEGIN;
     INSERT INTO t1 VALUES(2, a_string($strsize));
@@ -2605,14 +2603,21 @@ foreach {tn uri} {
   do_test 37.$tn {
     catch { db close }
     sqlite3_shutdown
-      sqlite3_config_uri 1
-      sqlite3 db $uri
+    sqlite3_config_uri 1
+    sqlite3 db $uri
+
     db eval {
       CREATE TABLE t1(x);
       INSERT INTO t1 VALUES(1);
       SELECT * FROM t1;
     }
   } {1}
+
+  do_execsql_test 37.$tn.2 {
+    VACUUM;
+    SELECT * FROM t1;
+  } {1}
+
   db close
   sqlite3_shutdown
   sqlite3_config_uri 0
@@ -2730,6 +2735,84 @@ do_test 41.2 {
     PRAGMA integrity_check;
   }
 } {ok}
+db close
+tv delete
 
+set pending_prev [sqlite3_test_control_pending_byte 0x1000000]
+do_test 42.1 {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  db close
+  sqlite3_test_control_pending_byte 0x0010000
+  sqlite3 db test.db
+  db eval { PRAGMA mmap_limit = 0 }
+  catchsql { SELECT sum(length(y)) FROM t1 }
+} {1 {database disk image is malformed}}
+do_test 42.2 {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  db close
+
+  testvfs tv -default 1
+  tv sectorsize 16384;
+  tv devchar [list]
+  sqlite3 db test.db -vfs tv
+  execsql { UPDATE t1 SET x = randomblob(200) }
+} {}
+db close
+tv delete
+sqlite3_test_control_pending_byte $pending_prev
+
+do_test 43.1 {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1, 2);
+    CREATE TABLE t2(x, y);
+    INSERT INTO t2 VALUES(1, 2);
+    CREATE TABLE t3(x, y);
+    INSERT INTO t3 VALUES(1, 2);
+  }
+  db close
+  sqlite3 db test.db
+
+  db eval { PRAGMA mmap_limit = 0 }
+  db eval { SELECT * FROM t1 }
+  sqlite3_db_status db CACHE_MISS 0
+} {0 2 0}
+
+do_test 43.2 {
+  db eval { SELECT * FROM t2 }
+  sqlite3_db_status db CACHE_MISS 1
+} {0 3 0}
+
+do_test 43.3 {
+  db eval { SELECT * FROM t3 }
+  sqlite3_db_status db CACHE_MISS 0
+} {0 1 0}
 
 finish_test
+
