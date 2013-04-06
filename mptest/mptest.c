@@ -543,7 +543,7 @@ static int finishScript(int iClient, int taskId, int bShutdown){
 static void startClient(int iClient){
   runSql("INSERT OR IGNORE INTO client VALUES(%d,0)", iClient);
   if( sqlite3_changes(g.db) ){
-#if defined(__unix__)
+#if !defined(_WIN32)
     char *zSys;
     zSys = sqlite3_mprintf(
                  "%s \"%s\" --client %d --trace %d %s&",
