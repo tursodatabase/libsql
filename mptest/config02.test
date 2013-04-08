@@ -103,3 +103,11 @@ DELETE FROM pgsz;
 --wait all
 SELECT sz FROM pgsz;
 --match 16384 16384 16384 16384 16384
+PRAGMA auto_vacuum=FULL;
+VACUUM;
+--source multiwrite01.test
+--wait all
+PRAGMA auto_vacuum=FULL;
+PRAGMA page_size=512;
+VACUUM;
+--source multiwrite01.test
