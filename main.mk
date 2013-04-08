@@ -365,6 +365,10 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
+mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
+	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
+		$(TLIBS) $(THREADLIB)
+
 sqlite3.o:	sqlite3.c
 	$(TCCX) -c sqlite3.c
 
@@ -626,3 +630,4 @@ clean:
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
+	rm -f mptest mptest.exe

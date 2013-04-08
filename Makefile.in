@@ -502,6 +502,11 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 		-o $@ $(TOP)/src/shell.c libsqlite3.la \
 		$(LIBREADLINE) $(TLIBS) -rpath "$(libdir)"
 
+mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
+	$(LTLINK) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
+		$(TLIBS) -rpath "$(libdir)"
+
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header
@@ -950,6 +955,7 @@ clean:
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
+	rm -f mptest mptest.exe
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc
