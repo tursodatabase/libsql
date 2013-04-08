@@ -1,9 +1,9 @@
-C Fix\sharmless\scompiler\swarnings\sin\smptest.c.
-D 2013-04-08T13:59:11.021
+C Add\sthe\s"mptester"\starget\sto\sthe\smakefiles.\s\sMake\smptester\srun\swith\nsynchronous\soff\sby\sdefault.
+D 2013-04-08T14:28:33.142
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
+F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 9ab787d472c9cb8bad29c2c4aeba15b06fba7bc4
+F Makefile.msc a244e5b5ba2493625db95b4d46b79201ea868bfe
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -103,7 +103,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk b25a7a0b657409b2dcf9b09d39562703d5df702d
+F main.mk 1c26f3cc57d7c357da5218ae2928b7ca5acfecde
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -111,7 +111,7 @@ F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
 F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3f4ddeb152a4f83872f0fa7fcb48d9fd609893da
-F mptest/mptest.c fb46946df7d6f2e8be8c028b21a580a977326f24
+F mptest/mptest.c 739950807a48af97fb3e432256fef96540d0e936
 F mptest/multiwrite01.test aef0af17f1ce1beacd158e403a45a21008d7a70c
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1047,7 +1047,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 91397a147ce4f67a7ea1182f06a7dda3a96ec465
-R ede2c5555feb77dd0a5488dbe1f8d502
+P 59bdbb10ed67bf79e0991e2ad58a28321dedb959
+R 1f9c112eec8d81ff124d0eb10d39eea3
 U drh
-Z 8e0fdcf5a1bb9a273c7156627676f7a5
+Z 523cf56f3e6158426b3e246d7dff8e8c

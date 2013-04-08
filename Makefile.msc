@@ -813,6 +813,10 @@ sqlite3.exe:	$(TOP)\src\shell.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
 		$(TOP)\src\shell.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
 
+mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
+	$(LTLINK) $(TOP)\mptest\mptest.c \
+		/link $(LTLINKOPTS) $(LTLIBPATHS) libsqlite3.lib $(LIBRESOBJS) $(LIBREADLINE) $(LTLIBS) $(TLIBS)
+
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
 # build on the target system.  Some of the C source code and header
@@ -1253,6 +1257,7 @@ clean:
 	del /Q shell.c sqlite3ext.h
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
 	del /Q sqlite-*-output.vsix
+	del /Q mptester.exe
 
 # Dynamic link library section.
 #

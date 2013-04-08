@@ -35,7 +35,11 @@
 */
 #include "sqlite3.h"
 #include <stdio.h>
-#include <unistd.h>
+#if defined(_WIN32)
+# include <process.h>
+#else
+# include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -62,6 +66,7 @@ static struct Global {
   int nError;            /* Number of errors */
   int nTest;             /* Number of --match operators */
   int iTimeout;          /* Milliseconds until a busy timeout */
+  int bSync;             /* Call fsync() */
 } g;
 
 /* Default timeout */
@@ -604,11 +609,15 @@ static void startClient(int iClient){
   if( sqlite3_changes(g.db) ){
 #if !defined(_WIN32)
     char *zSys;
+    int rc;
     zSys = sqlite3_mprintf(
-                 "%s \"%s\" --client %d --trace %d %s&",
+                 "%s \"%s\" --client %d --trace %d %s%s&",
                  g.argv0, g.zDbFile, iClient, g.iTrace,
-                 g.bSqlTrace ? "--sqltrace " : "");
-    system(zSys);
+                 g.bSqlTrace ? "--sqltrace " : "",
+                 g.bSync ? "--sync " : ""
+    );
+    rc = system(zSys);
+    if( rc ) errorMessage("system() fails with error code %d", rc);
     sqlite3_free(zSys);
 #endif
 #if defined(_WIN32)
@@ -922,8 +931,8 @@ static void runScript(
       if( g.iTrace ) logMessage("begin script [%s]\n", zNewFile);
       runScript(0, 0, zNewScript, zNewFile);
       sqlite3_free(zNewScript);
-      sqlite3_free(zToDel);
       if( g.iTrace ) logMessage("end script [%s]\n", zNewFile);
+      sqlite3_free(zToDel);
     }else
 
     /*
@@ -1148,6 +1157,7 @@ int main(int argc, char **argv){
   if( zTrace ) g.iTrace = atoi(zTrace);
   if( findOption(argv+2, &n, "quiet", 0)!=0 ) g.iTrace = 0;
   g.bSqlTrace = findOption(argv+2, &n, "sqltrace", 0)!=0;
+  g.bSync = findOption(argv+2, &n, "sync", 0)!=0;
   if( g.zErrLog ){
     g.pErrLog = fopen(g.zErrLog, "a");
   }else{
@@ -1184,6 +1194,7 @@ int main(int argc, char **argv){
                           evalFunc, 0, 0);
   g.iTimeout = DEFAULT_TIMEOUT;
   if( g.bSqlTrace ) sqlite3_trace(g.db, sqlTraceCallback, 0);
+  if( !g.bSync ) trySql("PRAGMA synchronous=OFF");
   if( iClient>0 ){
     if( n>0 ) unrecognizedArguments(argv[0], n, argv+2);
     if( g.iTrace ) logMessage("start-client");
