@@ -1,5 +1,5 @@
-C Still\smore\stests\susing\smptester.\s\sAdded\stest\scases\sthat\sleave\srollback\njournals\sthat\smust\sbe\srecovered\sby\sother\sthreads.
-D 2013-04-08T18:58:00.322
+C In\smptester,\shandle\sstartScript\sno-change\scommits\susing\sa\sretry\srather\nthan\sgrabbing\san\sexclusive\stransaction.
+D 2013-04-08T19:13:48.566
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F mptest/config01.test 3f4ddeb152a4f83872f0fa7fcb48d9fd609893da
 F mptest/config02.test 962913ed2b537d60de4126db7fe54716865cdd22
 F mptest/crash01.test a5f31998ed48de8267d6620e8af107ec148e5f12
 F mptest/crash02.subtest c4647feafa04109e1dc60121a895b6cba8d63ceb
-F mptest/mptest.c 76c8cb03f9cc91811907d8f9ccf2a5253bbb229d
+F mptest/mptest.c e31bb60d3de960aa0f7d08af7ae59c6dfecc552b
 F mptest/multiwrite01.test d6cb707062268e65396bd71eb53e9d5edb5519c0
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e121adceb1e267e032dcbadb74eaa692a12a65bb
-R 82dd3ae164ec063cf354b1e10f2e05ba
+P 437b674f00610e2b925dc00ca27b5022e3858994
+R 609e885f5484356f11d8798a6d9ad296
 U drh
-Z f4809a26a66812142b3835cff8ebb4b8
+Z f55865a5fe0b6f2c658b1f5dce1b30e8

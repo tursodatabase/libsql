@@ -526,7 +526,7 @@ static int startScript(
   *pzScript = 0;
   g.iTimeout = 0;
   while(1){
-    rc = trySql("BEGIN EXCLUSIVE");
+    rc = trySql("BEGIN IMMEDIATE");
     if( rc==SQLITE_BUSY ){
       sqlite3_sleep(10);
       totalTime += 10;
@@ -546,8 +546,8 @@ static int startScript(
     sqlite3_finalize(pStmt);
     if( rc==SQLITE_ROW ){
       runSql("DELETE FROM client WHERE id=%d", iClient);
-      runSql("COMMIT");
       g.iTimeout = DEFAULT_TIMEOUT;
+      runSql("COMMIT TRANSACTION;");
       return SQLITE_DONE;
     }
     pStmt = prepareSql(
@@ -557,15 +557,15 @@ static int startScript(
     rc = sqlite3_step(pStmt);
     if( rc==SQLITE_ROW ){
       int n = sqlite3_column_bytes(pStmt, 0);
-      *pzScript = sqlite3_malloc( n+ 1 );
+      *pzScript = sqlite3_malloc(n+1);
       strcpy(*pzScript, (const char*)sqlite3_column_text(pStmt, 0));
       *pTaskId = taskId = sqlite3_column_int(pStmt, 1);
       sqlite3_finalize(pStmt);
       runSql("UPDATE task"
              "   SET starttime=strftime('%%Y-%%m-%%d %%H:%%M:%%f','now')"
              " WHERE id=%d;", taskId);
-      runSql("COMMIT;");
       g.iTimeout = DEFAULT_TIMEOUT;
+      runSql("COMMIT TRANSACTION;");
       return SQLITE_OK;
     }
     sqlite3_finalize(pStmt);
@@ -576,7 +576,10 @@ static int startScript(
         sqlite3_close(g.db);
         exit(1);
       }
-      runSql("COMMIT;");
+      while( trySql("COMMIT")==SQLITE_BUSY ){
+        sqlite3_sleep(10);
+        totalTime += 10;
+      }
       sqlite3_sleep(100);
       totalTime += 100;
       continue;
