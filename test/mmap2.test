@@ -25,6 +25,10 @@ if {$::tcl_platform(platform)!="unix" || [test_syscall defaultvfs] != "unix"} {
   finish_test
   return
 }
+ifcapable !mmap {
+  finish_test
+  return
+}
 
 db close
 sqlite3_shutdown

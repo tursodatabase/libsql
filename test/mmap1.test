@@ -12,6 +12,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable !mmap {
+  finish_test
+  return
+}
 source $testdir/lock_common.tcl
 set testprefix mmap1
 
@@ -311,5 +315,3 @@ foreach {tn1 mmap1 mmap2} {
 
 
 finish_test
-
-

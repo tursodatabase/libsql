@@ -539,6 +539,14 @@ extern const int sqlite3one;
 # define EIGHT_BYTE_ALIGNMENT(X)   ((((char*)(X) - (char*)0)&7)==0)
 #endif
 
+/*
+** Disable MMAP on platforms where it is not supported
+*/
+#if defined(__OpenBSD__) || defined(__QNXNTO__)
+# undef SQLITE_DISABLE_MMAP
+# define SQLITE_DISABLE_MMAP 1
+#endif
+
 
 /*
 ** An instance of the following structure is used to store the busy-handler

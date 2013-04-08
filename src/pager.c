@@ -771,6 +771,16 @@ static const unsigned char aJournalMagic[] = {
 #endif
 
 /*
+** The macro USEFETCH is true if we are allowed to use the xFetch and xUnfetch
+** interfaces to access the database using memory-mapped I/O.
+*/
+#ifdef SQLITE_DISABLE_MMAP
+# define USEFETCH(x) 0
+#else
+# define USEFETCH(x) ((x)->bUseFetch)
+#endif
+
+/*
 ** The maximum legal page number is (2^31 - 1).
 */
 #define PAGER_MAX_PGNO 2147483647
@@ -3090,7 +3100,7 @@ static int pagerBeginReadTransaction(Pager *pPager){
   rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
   if( rc!=SQLITE_OK || changed ){
     pager_reset(pPager);
-    if( pPager->bUseFetch ) sqlite3OsUnfetch(pPager->fd, 0, 0);
+    if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
   }
 
   return rc;
@@ -3356,6 +3366,7 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 ** Invoke SQLITE_FCNTL_MMAP_LIMIT based on the current value of mxMmap.
 */
 static void pagerFixMaplimit(Pager *pPager){
+#if !defined(SQLITE_DISABLE_MMAP)
   sqlite3_file *fd = pPager->fd;
   if( isOpen(fd) ){
     sqlite3_int64 mx;
@@ -3363,6 +3374,7 @@ static void pagerFixMaplimit(Pager *pPager){
     mx = pPager->mxMmap;
     sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_LIMIT, &mx);
   }
+#endif
 }
 
 /*
@@ -5042,7 +5054,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
     if( !pPager->tempFile && (
         pPager->pBackup 
      || sqlite3PcachePagecount(pPager->pPCache)>0 
-     || pPager->bUseFetch
+     || USEFETCH(pPager)
     )){
       /* The shared-lock has just been acquired on the database file
       ** and there are already pages in the cache (from a previous
@@ -5085,7 +5097,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
         ** In this case there may exist a Pager.pMap mapping that appears
         ** to be the right size but is not actually valid. Avoid this
         ** possibility by unmapping the db here. */
-        if( pPager->bUseFetch ){
+        if( USEFETCH(pPager) ){
           sqlite3OsUnfetch(pPager->fd, 0, 0);
         }
       }
@@ -5199,7 +5211,7 @@ int sqlite3PagerAcquire(
   ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
   ** flag was specified by the caller. And so long as the db is not a 
   ** temporary or in-memory database.  */
-  const int bMmapOk = (pgno!=1 && pPager->bUseFetch
+  const int bMmapOk = (pgno!=1 && USEFETCH(pPager)
    && (pPager->eState==PAGER_READER || (flags & PAGER_ACQUIRE_READONLY))
   );
 

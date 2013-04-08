@@ -774,6 +774,9 @@ void sqlite3Pragma(
     }
     mx = -1;
     if( sqlite3_file_control(db,zDb,SQLITE_FCNTL_MMAP_LIMIT,&mx)==SQLITE_OK ){
+#if defined(SQLITE_DISABLE_MMAP)
+      mx = 0;
+#endif
       returnSingleInt(pParse, "mmap_limit", mx);
     }
   }else

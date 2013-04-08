@@ -66,6 +66,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_DISABLE_LFS
   "DISABLE_LFS",
 #endif
+#ifdef SQLITE_DISABLE_MMAP
+  "DISABLE_MMAP",
+#endif
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   "ENABLE_ATOMIC_WRITE",
 #endif
