@@ -1,5 +1,5 @@
-C Merge\sthe\smulti-process\stester\sinto\strunk.
-D 2013-04-08T14:41:34.434
+C Handle\sthe\scase\sin\sos_unix.c\swhere\sSQLITE_FCNTL_MMAP_LIMIT\srequests\sthat\sthe\smmap\slimit\sbe\sset\sto\sa\svalue\ssmaller\sthan\sthe\scurrent\smapping.
+D 2013-04-08T15:30:41.180
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 809d0707cec693e1b9b376ab229271ad74c3d35d
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c f0ecce40d92469d5cc737ae883e776eb3e5c0af5
+F src/os_unix.c 6d584190db2ed442e5c849b7f73dcfbbac7c032e
 F src/os_win.c 3265df8c762e0b8caf8d02b3352fa8c22e91ae6b
 F src/pager.c 2e68df46d4086027cb6b527d47a6dedbf1a6b7ec
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -1048,7 +1048,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 320b5295da57023399c7b9eed82eae40cf619803 1397830bfead3699a7e6b1858ae67ae15259b89e
-R 518213540ee221b372b2870b99865f42
-U drh
-Z 23b5a3829f6928c651f9b0e92776d749
+P ea53c45d79772986d2ad289f4f56f333541747e7
+R 1216631425c14cd22746e029dd206b1f
+U dan
+Z a5b14b8642cd44330c439704b21c4b8f

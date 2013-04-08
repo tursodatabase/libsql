@@ -3712,7 +3712,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     case SQLITE_FCNTL_MMAP_LIMIT: {
       i64 newLimit = *(i64*)pArg;
       *(i64*)pArg = pFile->mmapLimit;
-      if( newLimit>=0 ) pFile->mmapLimit = newLimit;
+      if( newLimit>=0 ){
+        pFile->mmapLimit = newLimit;
+        if( newLimit<pFile->mmapSize ) pFile->mmapSize = newLimit;
+      }
       return SQLITE_OK;
     }
 #ifdef SQLITE_DEBUG
