@@ -662,12 +662,36 @@ static int extractToken(const char *zIn, int nIn, char *zOut, int nOut){
 }
 
 /*
-** Find the number of characters up to the next "--end" token.
+** Find the number of characters up to the start of the next "--end" token.
 */
 static int findEnd(const char *z, int *pnLine){
   int n = 0;
   while( z[n] && (strncmp(z+n,"--end",5) || !isspace(z[n+5])) ){
     n += tokenLength(z+n, pnLine);
+  }
+  return n;
+}
+
+/*
+** Find the number of characters up to the first character past the
+** of the next "--endif"  or "--else" token. Nested --if commands are
+** also skipped.
+*/
+static int findEndif(const char *z, int stopAtElse, int *pnLine){
+  int n = 0;
+  while( z[n] ){
+    int len = tokenLength(z+n, pnLine);
+    if( (strncmp(z+n,"--endif",7)==0 && isspace(z[n+7]))
+     || (stopAtElse && strncmp(z+n,"--else",6)==0 && isspace(z[n+6]))
+    ){
+      return n+len;
+    }
+    if( strncmp(z+n,"--if",4)==0 && isspace(z[n+4]) ){
+      int skip = findEndif(z+n+len, 0, pnLine);
+      n += skip + len;
+    }else{
+      n += len;
+    }
   }
   return n;
 }
@@ -712,7 +736,7 @@ static void waitForClient(int iClient, int iTimeout, char *zErrPrefix){
 }
 
 /* Maximum number of arguments to a --command */
-#define MX_ARG 5
+#define MX_ARG 2
 
 /*
 ** Run a script.
@@ -791,7 +815,7 @@ static void runScript(
     }else
 
     /*
-    **  --result
+    **  --reset
     **
     ** Reset accumulated results back to an empty string
     */
@@ -853,11 +877,48 @@ static void runScript(
     }else
 
     /*
+    **  --if EXPR
+    **
+    ** Skip forward to the next matching --endif or --else if EXPR is false.
+    */
+    if( strcmp(zCmd, "if")==0 ){
+      int jj, rc;
+      sqlite3_stmt *pStmt;
+      for(jj=4; jj<len && isspace(zScript[ii+jj]); jj++){}
+      pStmt = prepareSql("SELECT %.*s", len-jj, zScript+ii+jj);
+      rc = sqlite3_step(pStmt);
+      if( rc!=SQLITE_ROW || sqlite3_column_int(pStmt, 0)==0 ){
+        ii += findEndif(zScript+ii+len, 1, &lineno);
+      }
+      sqlite3_finalize(pStmt);
+    }else
+
+    /*
+    **  --else
+    **
+    ** This command can only be encountered if currently inside an --if that
+    ** is true.  Skip forward to the next matching --endif.
+    */
+    if( strcmp(zCmd, "else")==0 ){
+      ii += findEndif(zScript+ii+len, 0, &lineno);
+    }else
+
+    /*
+    **  --endif
+    **
+    ** This command can only be encountered if currently inside an --if that
+    ** is true or an --else of a false if.  This is a no-op.
+    */
+    if( strcmp(zCmd, "endif")==0 ){
+      /* no-op */
+    }else
+
+    /*
     **  --start CLIENT
     **
     ** Start up the given client.
     */
-    if( strcmp(zCmd, "start")==0 ){
+    if( strcmp(zCmd, "start")==0 && iClient==0 ){
       int iNewClient = atoi(azArg[0]);
       if( iNewClient>0 ){
         startClient(iNewClient);
@@ -871,7 +932,7 @@ static void runScript(
     ** "all" then wait for all clients to complete.  Wait no longer than
     ** TIMEOUT milliseconds (default 10,000)
     */
-    if( strcmp(zCmd, "wait")==0 ){
+    if( strcmp(zCmd, "wait")==0 && iClient==0 ){
       int iTimeout = nArg>=2 ? atoi(azArg[1]) : 10000;
       sqlite3_snprintf(sizeof(zError),zError,"line %d of %s\n",
                        prevLine, zFilename);
@@ -886,7 +947,7 @@ static void runScript(
     ** Assign work to a client.  Start the client if it is not running
     ** already.
     */
-    if( strcmp(zCmd, "task")==0 ){
+    if( strcmp(zCmd, "task")==0 && iClient==0 ){
       int iTarget = atoi(azArg[0]);
       int iEnd;
       char *zTask;
