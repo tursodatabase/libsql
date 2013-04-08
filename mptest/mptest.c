@@ -41,6 +41,9 @@
 #include <assert.h>
 #include <ctype.h>
 
+/* Mark a parameter as unused to suppress compiler warnings */
+#define UNUSED_PARAMETER(x)  (void)x
+
 /* Global data
 */
 static struct Global {
@@ -279,6 +282,8 @@ static void vfsNameFunc(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   char *zVfs = 0;
+  UNUSED_PARAMETER(argc);
+  UNUSED_PARAMETER(argv);
   sqlite3_file_control(db, "main", SQLITE_FCNTL_VFSNAME, &zVfs);
   if( zVfs ){
     sqlite3_result_text(context, zVfs, -1, sqlite3_free);
@@ -289,6 +294,7 @@ static void vfsNameFunc(
 ** Busy handler with a g.iTimeout-millisecond timeout
 */
 static int busyHandler(void *pCD, int count){
+  UNUSED_PARAMETER(pCD);
   if( count*10>g.iTimeout ){
     if( g.iTimeout>0 ) errorMessage("timeout after %dms", g.iTimeout);
     return 0;
@@ -301,6 +307,7 @@ static int busyHandler(void *pCD, int count){
 ** SQL Trace callback
 */
 static void sqlTraceCallback(void *NotUsed1, const char *zSql){
+  UNUSED_PARAMETER(NotUsed1);
   logMessage("[%.*s]", clipLength(zSql), zSql);
 }
 
@@ -308,6 +315,7 @@ static void sqlTraceCallback(void *NotUsed1, const char *zSql){
 ** SQL error log callback
 */
 static void sqlErrorCallback(void *pArg, int iErrCode, const char *zMsg){
+  UNUSED_PARAMETER(pArg);
   if( (iErrCode&0xff)==SQLITE_SCHEMA && g.iTrace<3 ) return;
   errorMessage("(errcode=%d) %s", iErrCode, zMsg);
 }
@@ -435,6 +443,7 @@ static void stringAppendTerm(String *p, const char *z){
 static int evalCallback(void *pCData, int argc, char **argv, char **azCol){
   String *p = (String*)pCData;
   int i;
+  UNUSED_PARAMETER(azCol);
   for(i=0; i<argc; i++) stringAppendTerm(p, argv[i]);
   return 0;
 }
@@ -479,6 +488,7 @@ static void evalFunc(
   String res;
   char *zErrMsg = 0;
   int rc;
+  UNUSED_PARAMETER(argc);
   memset(&res, 0, sizeof(res));
   rc = sqlite3_exec(db, zSql, evalCallback, &res, &zErrMsg);
   if( zErrMsg ){
@@ -619,7 +629,7 @@ static void startClient(int iClient){
     }else{
       argv[6] = 0;
     }
-    _spawnv(_P_NOWAIT, g.argv0, argv);
+    _spawnv(_P_NOWAIT, g.argv0, (const char*const*)argv);
 #endif
   }
 }
