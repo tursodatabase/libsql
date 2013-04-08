@@ -526,14 +526,14 @@ static int startScript(
   *pzScript = 0;
   g.iTimeout = 0;
   while(1){
-    rc = trySql("BEGIN IMMEDIATE");
+    rc = trySql("BEGIN EXCLUSIVE");
     if( rc==SQLITE_BUSY ){
       sqlite3_sleep(10);
       totalTime += 10;
       continue;
     }
     if( rc!=SQLITE_OK ){
-      fatalError("%s\nBEGIN IMMEDIATE", sqlite3_errmsg(g.db));
+      fatalError("in startScript: %s", sqlite3_errmsg(g.db));
     }
     if( g.nError || g.nTest ){
       runSql("UPDATE counters SET nError=nError+%d, nTest=nTest+%d",
@@ -869,11 +869,21 @@ static void runScript(
     ** Exit this process.  If N>0 then exit without shutting down
     ** SQLite.  (In other words, simulate a crash.)
     */
-    if( strcmp(zCmd, "exit")==0 ){
+    if( strcmp(zCmd, "exit")==0 && iClient>0 ){
       int rc = atoi(azArg[0]);
       finishScript(iClient, taskId, 1);
       if( rc==0 ) sqlite3_close(g.db);
       exit(rc);
+    }else
+
+    /*
+    **   --finish
+    **
+    ** Mark the current task as having finished, even if it is not.
+    ** This can be used in conjunction with --exit to simulate a crash.
+    */
+    if( strcmp(zCmd, "finish")==0 && iClient>0 ){
+      finishScript(iClient, taskId, 1);
     }else
 
     /*
@@ -1203,11 +1213,11 @@ int main(int argc, char **argv){
       char zTaskName[50];
       rc = startScript(iClient, &zScript, &taskId);
       if( rc==SQLITE_DONE ) break;
-      if( g.iTrace ) logMessage("begin task %d", taskId);
       sqlite3_snprintf(sizeof(zTaskName), zTaskName, "client%02d-task-%d",
                        iClient, taskId);
+      if( g.iTrace ) logMessage("begin %s", zTaskName);
       runScript(iClient, taskId, zScript, zTaskName);
-      if( g.iTrace ) logMessage("end task %d", taskId);
+      if( g.iTrace ) logMessage("end %s", zTaskName);
       finishScript(iClient, taskId, 0);
       sqlite3_sleep(10);
     }

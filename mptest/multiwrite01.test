@@ -402,3 +402,4 @@ PRAGMA integrity_check;
    ORDER BY t3.a LIMIT 7
   --match 45 46 47 48 49 50 51
 --end
+--wait all

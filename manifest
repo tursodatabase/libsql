@@ -1,5 +1,5 @@
-C Adding\stests\sto\sthe\smptester\sscripts.
-D 2013-04-08T17:57:26.382
+C Still\smore\stests\susing\smptester.\s\sAdded\stest\scases\sthat\sleave\srollback\njournals\sthat\smust\sbe\srecovered\sby\sother\sthreads.
+D 2013-04-08T18:58:00.322
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -111,9 +111,11 @@ F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
 F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3f4ddeb152a4f83872f0fa7fcb48d9fd609893da
-F mptest/config02.test baaee6bba0122f45c895a88c7ac8b62ff77c6b70
-F mptest/mptest.c 7048030a410707f77845c0fda9c4a223c7069e0b
-F mptest/multiwrite01.test 16f9bb13640dfe1be1e544d49b16aa9e7503ae2d
+F mptest/config02.test 962913ed2b537d60de4126db7fe54716865cdd22
+F mptest/crash01.test a5f31998ed48de8267d6620e8af107ec148e5f12
+F mptest/crash02.subtest c4647feafa04109e1dc60121a895b6cba8d63ceb
+F mptest/mptest.c 76c8cb03f9cc91811907d8f9ccf2a5253bbb229d
+F mptest/multiwrite01.test d6cb707062268e65396bd71eb53e9d5edb5519c0
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
@@ -1048,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d77407ae6a9e09dea124dd59b14fdbbc36ed3d4e
-R 8e0a5a89df2079b6986569045ce512eb
+P e121adceb1e267e032dcbadb74eaa692a12a65bb
+R 82dd3ae164ec063cf354b1e10f2e05ba
 U drh
-Z a3e7b3daf8fd9801ae226170daba9d61
+Z f4809a26a66812142b3835cff8ebb4b8

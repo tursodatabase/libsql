@@ -15,6 +15,7 @@ PRAGMA page_size=512;
   PRAGMA mmap_limit=65536;
 --end
 --source multiwrite01.test
+--source crash02.subtest
 PRAGMA page_size=1024;
 VACUUM;
 CREATE TABLE pgsz(taskid, sz INTEGER);
@@ -34,6 +35,7 @@ CREATE TABLE pgsz(taskid, sz INTEGER);
   INSERT INTO pgsz VALUES(5, eval('PRAGMA page_size'));
 --end
 --source multiwrite01.test
+--source crash02.subtest
 --wait all
 SELECT sz FROM pgsz;
 --match 1024 1024 1024 1024 1024
@@ -56,6 +58,7 @@ DELETE FROM pgsz;
   INSERT INTO pgsz VALUES(5, eval('PRAGMA page_size'));
 --end
 --source multiwrite01.test
+--source crash02.subtest
 --wait all
 SELECT sz FROM pgsz;
 --match 2048 2048 2048 2048 2048
@@ -78,6 +81,7 @@ DELETE FROM pgsz;
   INSERT INTO pgsz VALUES(5, eval('PRAGMA page_size'));
 --end
 --source multiwrite01.test
+--source crash02.subtest
 --wait all
 SELECT sz FROM pgsz;
 --match 8192 8192 8192 8192 8192
@@ -100,14 +104,17 @@ DELETE FROM pgsz;
   INSERT INTO pgsz VALUES(5, eval('PRAGMA page_size'));
 --end
 --source multiwrite01.test
+--source crash02.subtest
 --wait all
 SELECT sz FROM pgsz;
 --match 16384 16384 16384 16384 16384
 PRAGMA auto_vacuum=FULL;
 VACUUM;
 --source multiwrite01.test
+--source crash02.subtest
 --wait all
 PRAGMA auto_vacuum=FULL;
 PRAGMA page_size=512;
 VACUUM;
 --source multiwrite01.test
+--source crash02.subtest
