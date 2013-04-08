@@ -3515,7 +3515,7 @@ case OP_SeekGt: {       /* jump, in3 */
       **     r.flags = 0;
       **   }
       */
-      r.flags = (u16)(UNPACKED_INCRKEY * (1 & (oc - OP_SeekLt)));
+      r.flags = (u8)(UNPACKED_INCRKEY * (1 & (oc - OP_SeekLt)));
       assert( oc!=OP_SeekGt || r.flags==UNPACKED_INCRKEY );
       assert( oc!=OP_SeekLe || r.flags==UNPACKED_INCRKEY );
       assert( oc!=OP_SeekGe || r.flags==0 );
