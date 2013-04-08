@@ -270,6 +270,22 @@ static int clipLength(const char *z){
 }
 
 /*
+** Auxiliary SQL function to return the name of the VFS
+*/
+static void vfsNameFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  char *zVfs = 0;
+  sqlite3_file_control(db, "main", SQLITE_FCNTL_VFSNAME, &zVfs);
+  if( zVfs ){
+    sqlite3_result_text(context, zVfs, -1, sqlite3_free);
+  }
+}
+
+/*
 ** Busy handler with a g.iTimeout-millisecond timeout
 */
 static int busyHandler(void *pCD, int count){
@@ -448,6 +464,32 @@ static int evalSql(String *p, const char *zFormat, ...){
     }
   }
   return rc;
+}
+
+/*
+** Auxiliary SQL function to recursively evaluate SQL.
+*/
+static void evalFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  const char *zSql = (const char*)sqlite3_value_text(argv[0]);
+  String res;
+  char *zErrMsg = 0;
+  int rc;
+  memset(&res, 0, sizeof(res));
+  rc = sqlite3_exec(db, zSql, evalCallback, &res, &zErrMsg);
+  if( zErrMsg ){
+    sqlite3_result_error(context, zErrMsg, -1);
+    sqlite3_free(zErrMsg);
+  }else if( rc ){
+    sqlite3_result_error_code(context, rc);
+  }else{
+    sqlite3_result_text(context, res.z, -1, SQLITE_TRANSIENT);
+  }
+  stringFree(&res);
 }
 
 /*
@@ -842,6 +884,15 @@ static void runScript(
     }else
 
     /*
+    **  --output
+    **
+    ** Output the result of the previous SQL.
+    */
+    if( strcmp(zCmd, "output")==0 ){
+      logMessage("%s", sResult.z);
+    }else
+
+    /*
     **  --source FILENAME
     **
     ** Run a subscript from a separate file.
@@ -1117,6 +1168,10 @@ int main(int argc, char **argv){
   rc = sqlite3_open_v2(g.zDbFile, &g.db, openFlags, g.zVfs);
   if( rc ) fatalError("cannot open [%s]", g.zDbFile);
   sqlite3_busy_handler(g.db, busyHandler, 0);
+  sqlite3_create_function(g.db, "vfsname", 0, SQLITE_UTF8, 0,
+                          vfsNameFunc, 0, 0);
+  sqlite3_create_function(g.db, "eval", 1, SQLITE_UTF8, 0,
+                          evalFunc, 0, 0);
   g.iTimeout = DEFAULT_TIMEOUT;
   if( g.bSqlTrace ) sqlite3_trace(g.db, sqlTraceCallback, 0);
   if( iClient>0 ){

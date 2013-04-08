@@ -1,5 +1,5 @@
-C Add\s--if,\s--else,\s--endif\sprocessing\sto\smptest.c.
-D 2013-04-08T13:13:43.458
+C Add\sthe\svfsname()\sand\seval()\sSQL\sfunctions\sto\smptest.c.\s\nEnhancements\sto\sthe\stest/config01.test\sscript.
+D 2013-04-08T13:48:29.192
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aafa71d66bab7e87fb2f348152340645f79f0244
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,8 +110,8 @@ F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
 F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
 F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
-F mptest/config01.test 058a9bc2b0db710d36003ab06dc1618566f27b52
-F mptest/mptest.c b4030a7ef4a2bfd2913062d637ae3f55fb9443c2
+F mptest/config01.test 3f4ddeb152a4f83872f0fa7fcb48d9fd609893da
+F mptest/mptest.c 6614ad2110ce44a78b4745036880275ef939bc6e
 F mptest/multiwrite01.test aef0af17f1ce1beacd158e403a45a21008d7a70c
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1047,7 +1047,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 15cb0db7583c3a24cbea0c72576047a93fba0801
-R ebe6490efbbe63db101a13263cb552f3
+P 51265acae3088a51ac0ce6ab8731e6e15a48d4ae
+R 70ae859a3e60d8d3ce14cc3f23701768
 U drh
-Z bd1b6a8c139e5f3d36fca35a646773b9
+Z 17c730545a4fcc3406090d39f090bdb3
