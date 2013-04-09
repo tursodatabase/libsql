@@ -26,7 +26,7 @@
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --output
   --match ok
 --end
@@ -34,7 +34,7 @@
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --output
   --match ok
 --end
@@ -42,7 +42,7 @@
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --output
   --match ok
 --end
@@ -50,7 +50,7 @@
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --output
   --match ok
 --end

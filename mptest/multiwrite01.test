@@ -225,35 +225,35 @@ SELECT count(*), total(length(b)) FROM t5;
 --task 5
   DROP INDEX t5b;
   --sleep 5
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --match ok
   CREATE INDEX t5b ON t5(b DESC);
 --end
 --task 3
   DROP INDEX t3b;
   --sleep 5
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --match ok
   CREATE INDEX t3b ON t3(b DESC);
 --end
 --task 1
   DROP INDEX t1b;
   --sleep 5
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --match ok
   CREATE INDEX t1b ON t1(b DESC);
 --end
 --task 2
   DROP INDEX t2b;
   --sleep 5
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --match ok
   CREATE INDEX t2b ON t2(b DESC);
 --end
 --task 4
   DROP INDEX t4b;
   --sleep 5
-  PRAGMA integrity_check;
+  PRAGMA integrity_check(10);
   --match ok
   CREATE INDEX t4b ON t4(b DESC);
 --end
@@ -312,7 +312,7 @@ SELECT count(*), total(length(b)) FROM t5;
 --wait all
 
 VACUUM;
-PRAGMA integrity_check;
+PRAGMA integrity_check(10);
 --match ok
 
 --task 1

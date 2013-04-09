@@ -1,5 +1,5 @@
-C Change\sthe\srollback\sjournal\sso\sthat\sit\sinvokes\ssqlite3_log()\smake\sa\srecord\nof\sa\srecovery,\sjust\sas\sthe\sWAL\sjournal\sdoes.
-D 2013-04-09T18:36:36.048
+C Limit\sintegrity_check\soutput\sto\s10\slines\sin\smptester\sscripts.
+D 2013-04-09T20:04:09.979
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,9 +113,9 @@ F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3f4ddeb152a4f83872f0fa7fcb48d9fd609893da
 F mptest/config02.test 962913ed2b537d60de4126db7fe54716865cdd22
 F mptest/crash01.test a5f31998ed48de8267d6620e8af107ec148e5f12
-F mptest/crash02.subtest c4647feafa04109e1dc60121a895b6cba8d63ceb
+F mptest/crash02.subtest 86641730725895da7baf6443bc26aa1c8e781711
 F mptest/mptest.c c9fc81464dcd2de18ceb5317c5e1b075cb3b9fce
-F mptest/multiwrite01.test d6cb707062268e65396bd71eb53e9d5edb5519c0
+F mptest/multiwrite01.test 8fa273e97284edaa855f0b0e99d78216e204be15
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c1e2523c9051782569291fff998140f7e0b70b6d
-R 0d15a7f4fe4e9fd889905fd047909cd0
+P 7cd3f6cd3a39ed1c4bbf9e3508824150632c5bd9
+R c57dbdff2c71d3b29909dfda1d0fd94f
 U drh
-Z 5a68f7be27490e18f34eef73cb3a90fe
+Z 71d9517d85d0a37449eba7c0abca70d4
