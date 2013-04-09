@@ -1,5 +1,5 @@
-C Disable\sthe\suse\sof\smemory-mapped\sI/O\sif\sthe\sSQLITE_DISABLE_MMAP\smacro\sis\ndefined.\s\sAutomatically\sdefine\sthis\smacro\sfor\sOpenBSD\sand\sQNX.\s\sOther\nsystems\sare\slikely\sto\sbe\sadded\sto\sthe\sdisabled\slist\sover\stime.
-D 2013-04-08T20:47:49.018
+C Add\sextra\s#ifndef\sstatements\sin\sos_unix.c\sand\sos_win.c\sto\smake\ssure\sthe\nmemory\smapped\sI/O\sreally\sis\sdisabled\swhen\sSQLITE_DISABLE_MMAP\sis\sset.
+D 2013-04-09T16:19:20.624
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,8 +166,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c ca679b293a6233327e418fd1dde2cd5db3e90932
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 6d584190db2ed442e5c849b7f73dcfbbac7c032e
-F src/os_win.c 3265df8c762e0b8caf8d02b3352fa8c22e91ae6b
+F src/os_unix.c a6e9caadd8956a39153d1bd920e459211a281388
+F src/os_win.c 3aec291c40048653c00a153fee96d3a442ab85ee
 F src/pager.c eb6d272f4dc1ade4b8f664599cd54a9c95cb2729
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ae8bb24bfb014bdcb8aaa8159ddae0cd376afe99
-R 7e782b1e3841573f5a2d86903a4acfcf
+P 8a4314a398c6c6efb25e6993c826b7e60d9bb1f9
+R 815c6131bff16243fe333d79ef346ae3
 U drh
-Z a7d6d975495e51a139482ed48c14db14
+Z 73d68bfce668b2e7f104132473fd4e42

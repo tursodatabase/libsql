@@ -3117,6 +3117,7 @@ static int unixRead(
   );
 #endif
 
+#if !defined(SQLITE_DISABLE_MMAP)
   /* Deal with as much of this read request as possible by transfering
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
@@ -3131,6 +3132,7 @@ static int unixRead(
       offset += nCopy;
     }
   }
+#endif
 
   got = seekAndRead(pFile, offset, pBuf, amt);
   if( got==amt ){
@@ -3236,6 +3238,7 @@ static int unixWrite(
   }
 #endif
 
+#if !defined(SQLITE_DISABLE_MMAP)
   /* Deal with as much of this write request as possible by transfering
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
@@ -3250,6 +3253,7 @@ static int unixWrite(
       offset += nCopy;
     }
   }
+#endif
 
   while( amt>0 && (wrote = seekAndWrite(pFile, offset, pBuf, amt))>0 ){
     amt -= wrote;
@@ -4525,12 +4529,14 @@ static int unixShmUnmap(
 */
 static void unixUnmapfile(unixFile *pFd){
   assert( pFd->nFetchOut==0 );
+#ifndef SQLITE_DISABLE_MMAP
   if( pFd->pMapRegion ){
     osMunmap(pFd->pMapRegion, pFd->mmapOrigsize);
     pFd->pMapRegion = 0;
     pFd->mmapSize = 0;
     pFd->mmapOrigsize = 0;
   }
+#endif
 }
 
 /*
@@ -4546,6 +4552,7 @@ static int unixGetPagesize(void){
 #endif
 }
 
+#ifndef SQLITE_DISABLE_MMAP
 /*
 ** Attempt to set the size of the memory mapping maintained by file 
 ** descriptor pFd to nNew bytes. Any existing mapping is discarded.
@@ -4630,6 +4637,7 @@ static void unixRemapfile(
   pFd->pMapRegion = (void *)pNew;
   pFd->mmapSize = pFd->mmapOrigsize = nNew;
 }
+#endif
 
 /*
 ** Memory map or remap the file opened by file-descriptor pFd (if the file
@@ -4651,6 +4659,7 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
   i64 nMap = nByte;
   int rc;
 
+#ifndef SQLITE_DISABLE_MMAP
   assert( nMap>=0 || pFd->nFetchOut==0 );
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
@@ -4673,6 +4682,7 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
       unixUnmapfile(pFd);
     }
   }
+#endif
 
   return SQLITE_OK;
 }
@@ -4693,6 +4703,7 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
   *pp = 0;
 
+#ifndef SQLITE_DISABLE_MMAP
   if( pFd->mmapLimit>0 ){
     if( pFd->pMapRegion==0 ){
       int rc = unixMapfile(pFd, -1);
@@ -4703,6 +4714,7 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
       pFd->nFetchOut++;
     }
   }
+#endif
   return SQLITE_OK;
 }
 
