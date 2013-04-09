@@ -1966,6 +1966,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
       sqlite3OsClose(pPager->jfd);
       if( bDelete ){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
+assert( rc!=SQLITE_IOERR_DELETE_NOENT );
       }
     }
   }
@@ -2473,6 +2474,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
  
   sqlite3OsClose(pMaster);
   rc = sqlite3OsDelete(pVfs, zMaster, 0);
+assert( rc!=SQLITE_IOERR_DELETE_NOENT );
 
 delmaster_out:
   sqlite3_free(zMasterJournal);

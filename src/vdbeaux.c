@@ -1931,6 +1931,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     ** transaction files are deleted.
     */
     rc = sqlite3OsDelete(pVfs, zMaster, 1);
+assert( rc!=SQLITE_IOERR_DELETE_NOENT );
     sqlite3DbFree(db, zMaster);
     zMaster = 0;
     if( rc ){

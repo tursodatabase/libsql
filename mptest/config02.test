@@ -6,13 +6,13 @@ PRAGMA page_size=512;
   PRAGMA mmap_limit=0;
 --end
 --task 2
-  PRAGMA mmap_limit=28672;
+  PRAGMA mmap_limit=0;
 --end
 --task 3
-  PRAGMA mmap_limit=8192;
+  PRAGMA mmap_limit=0;
 --end
 --task 4
-  PRAGMA mmap_limit=65536;
+  PRAGMA mmap_limit=0;
 --end
 --source multiwrite01.test
 --source crash02.subtest

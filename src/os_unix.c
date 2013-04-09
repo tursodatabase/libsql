@@ -1879,6 +1879,8 @@ static int unixClose(sqlite3_file *id){
   unixUnlock(id, NO_LOCK);
   unixEnterMutex();
 
+access(pFile->zPath, F_OK);
+
   /* unixFile.pInode is always valid here. Otherwise, a different close
   ** routine (e.g. nolockClose()) would be called instead.
   */
@@ -3213,6 +3215,8 @@ static int unixWrite(
        || offset+amt<=PENDING_BYTE 
   );
 #endif
+
+access(pFile->zPath, F_OK);
 
 #ifdef SQLITE_DEBUG
   /* If we are doing a normal write to a database file (as opposed to
@@ -5574,6 +5578,7 @@ static int unixOpen(
       return rc;
     }
     fd = robust_open(zName, openFlags, openMode);
+    access(zName, F_OK);
     OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
     if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
       /* Failed to open the file for read/write access. Try read-only. */
@@ -5709,6 +5714,7 @@ static int unixDelete(
   int rc = SQLITE_OK;
   UNUSED_PARAMETER(NotUsed);
   SimulateIOError(return SQLITE_IOERR_DELETE);
+  access(zPath, F_OK);
   if( osUnlink(zPath)==(-1) ){
     if( errno==ENOENT ){
       rc = SQLITE_IOERR_DELETE_NOENT;
