@@ -1,5 +1,5 @@
-C Add\sextra\s#ifndef\sstatements\sin\sos_unix.c\sand\sos_win.c\sto\smake\ssure\sthe\nmemory\smapped\sI/O\sreally\sis\sdisabled\swhen\sSQLITE_DISABLE_MMAP\sis\sset.
-D 2013-04-09T16:19:20.624
+C Change\sthe\srollback\sjournal\sso\sthat\sit\sinvokes\ssqlite3_log()\smake\sa\srecord\nof\sa\srecovery,\sjust\sas\sthe\sWAL\sjournal\sdoes.
+D 2013-04-09T18:36:36.048
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F mptest/config01.test 3f4ddeb152a4f83872f0fa7fcb48d9fd609893da
 F mptest/config02.test 962913ed2b537d60de4126db7fe54716865cdd22
 F mptest/crash01.test a5f31998ed48de8267d6620e8af107ec148e5f12
 F mptest/crash02.subtest c4647feafa04109e1dc60121a895b6cba8d63ceb
-F mptest/mptest.c e31bb60d3de960aa0f7d08af7ae59c6dfecc552b
+F mptest/mptest.c c9fc81464dcd2de18ceb5317c5e1b075cb3b9fce
 F mptest/multiwrite01.test d6cb707062268e65396bd71eb53e9d5edb5519c0
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -168,7 +168,7 @@ F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c a6e9caadd8956a39153d1bd920e459211a281388
 F src/os_win.c 3aec291c40048653c00a153fee96d3a442ab85ee
-F src/pager.c eb6d272f4dc1ade4b8f664599cd54a9c95cb2729
+F src/pager.c cc60816e677528e4c2e23bbf56ee5c81f4cdfe58
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8a4314a398c6c6efb25e6993c826b7e60d9bb1f9
-R 815c6131bff16243fe333d79ef346ae3
+P c1e2523c9051782569291fff998140f7e0b70b6d
+R 0d15a7f4fe4e9fd889905fd047909cd0
 U drh
-Z 73d68bfce668b2e7f104132473fd4e42
+Z 5a68f7be27490e18f34eef73cb3a90fe

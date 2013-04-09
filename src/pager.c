@@ -2658,6 +2658,7 @@ static int pager_playback(Pager *pPager, int isHot){
   int res = 1;             /* Value returned by sqlite3OsAccess() */
   char *zMaster = 0;       /* Name of master journal file if any */
   int needPagerReset;      /* True to reset page prior to first page rollback */
+  int nPlayback = 0;       /* Total number of pages restored from journal */
 
   /* Figure out how many records are in the journal.  Abort early if
   ** the journal is empty.
@@ -2758,7 +2759,9 @@ static int pager_playback(Pager *pPager, int isHot){
         needPagerReset = 0;
       }
       rc = pager_playback_one_page(pPager,&pPager->journalOff,0,1,0);
-      if( rc!=SQLITE_OK ){
+      if( rc==SQLITE_OK ){
+        nPlayback++;
+      }else{
         if( rc==SQLITE_DONE ){
           pPager->journalOff = szJ;
           break;
@@ -2827,6 +2830,10 @@ end_playback:
     */
     rc = pager_delmaster(pPager, zMaster);
     testcase( rc!=SQLITE_OK );
+  }
+  if( isHot && nPlayback ){
+    sqlite3_log(SQLITE_OK, "Recovered %d pages from %s",
+                nPlayback, pPager->zJournal);
   }
 
   /* The Pager.sectorSize variable may have been updated while rolling

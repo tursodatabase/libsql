@@ -323,7 +323,11 @@ static void sqlErrorCallback(void *pArg, int iErrCode, const char *zMsg){
   UNUSED_PARAMETER(pArg);
   if( (iErrCode&0xff)==SQLITE_SCHEMA && g.iTrace<3 ) return;
   if( g.iTimeout==0 && (iErrCode&0xff)==SQLITE_BUSY && g.iTrace<3 ) return;
-  errorMessage("(errcode=%d) %s", iErrCode, zMsg);
+  if( iErrCode==SQLITE_OK ){
+    logMessage("(info) %s", zMsg);
+  }else{
+    errorMessage("(errcode=%d) %s", iErrCode, zMsg);
+  }
 }
 
 /*
