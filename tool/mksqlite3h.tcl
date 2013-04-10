@@ -78,6 +78,9 @@ set filelist [subst {
 #
 foreach file $filelist {
   set in [open $file]
+  if {![regexp {sqlite.h.in} $file]} {
+    puts "/******** Begin file [file tail $file] *********/"
+  }
   while {![eof $in]} {
   
     set line [gets $in]
@@ -109,4 +112,7 @@ foreach file $filelist {
     puts $line
   }
   close $in
+  if {![regexp {sqlite.h.in} $file]} {
+    puts "/******** End of [file tail $file] *********/"
+  }
 }

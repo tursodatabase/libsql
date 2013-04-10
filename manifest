@@ -1,5 +1,5 @@
-C Merge\sthe\schanges\sfor\sthe\s3.7.16.1\srelease\scandidate\sinto\sthe\ssessions\sbranch.
-D 2013-03-28T01:19:26.359
+C Designate\sthe\sbeginning\sand\sthe\send\sof\sthe\ssqlite3session.h\sfile\sin\sthe\nconstructed\ssqlite3.h\sfile.
+D 2013-04-10T15:01:36.565
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 174bfca74e57f38699e3412a984f6b38106750fa
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1026,7 +1026,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl 521b39c2d2987c4257919b97a3cfb3bd4a394bf1
-F tool/mksqlite3h.tcl 280a819542c2a001c342e4bfe829974a76cb449e
+F tool/mksqlite3h.tcl c26c2c00f6402dff490b9d088b35022a65079f9b
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
@@ -1054,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5b399f2bc43612c52ea2289001d852d7ba6f9750 274d2a22660c7b34b8bbd85f3c29cbafbcb1b4e7
-R b02a4b1d8d4060ecab7247b46b1af3cb
+P ee35a89712b8ea9f4e70d61a29150348896b519f
+R 100e7ec13abd2ea8455e764a279a1723
 U drh
-Z 8200523e839d9fbff750764d761a16eb
+Z 4925298600da5fcf8376b1bdce3109e3
