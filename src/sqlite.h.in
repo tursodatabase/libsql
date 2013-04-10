@@ -6838,6 +6838,21 @@ int sqlite3_stricmp(const char *, const char *);
 int sqlite3_strnicmp(const char *, const char *, int);
 
 /*
+** CAPI3REF: String Globbing
+*
+** ^The [sqlite3_strglob(P,X)] interface returns zero if string X matches
+** the glob pattern P, and it returns non-zero if string X does not match
+** the glob pattern P.  ^The definition of glob pattern matching used in
+** [sqlite3_strglob(P,X) is the same as for the "X GLOB P" operator in the
+** SQL dialect used by SQLite.  ^The sqlite3_strglob(P,X) function is case
+** sensitive.
+**
+** Note that this routine returns zero on a match and non-zero if the strings
+** do not match, the same as [sqlite3_stricmp()] and [sqlite3_strnicmp()].
+*/
+int sqlite3_strglob(const char *zGlob, const char *zStr);
+
+/*
 ** CAPI3REF: Error Logging Interface
 **
 ** ^The [sqlite3_log()] interface writes a message into the error log
