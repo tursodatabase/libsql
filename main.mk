@@ -630,4 +630,4 @@ clean:
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
-	rm -f mptest mptest.exe
+	rm -f mptester mptester.exe

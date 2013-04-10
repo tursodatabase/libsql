@@ -955,7 +955,7 @@ clean:
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer$(TEXE) sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
-	rm -f mptest mptest.exe
+	rm -f mptester mptester.exe
 
 distclean:	clean
 	rm -f config.log config.status libtool Makefile sqlite3.pc
