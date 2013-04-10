@@ -4,7 +4,7 @@
 ** journal in client 1, then crash client 1.
 ** Then in the other clients, do an integrity check.
 */
---task 1
+--task 1 leave-hot-journal
   --sleep 5
   --finish
   PRAGMA cache_size=10;
@@ -22,36 +22,32 @@
   --print Task one crashing an incomplete transaction
   --exit 1
 --end
---task 2
+--task 2 integrity_check-2
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
   PRAGMA integrity_check(10);
-  --output
   --match ok
 --end
---task 3
+--task 3 integrity_check-3
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
   PRAGMA integrity_check(10);
-  --output
   --match ok
 --end
---task 4
+--task 4 integrity_check-4
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
   PRAGMA integrity_check(10);
-  --output
   --match ok
 --end
---task 5
+--task 5 integrity_check-5
   SELECT count(*) FROM t1;
   --match 64
   --sleep 100
   PRAGMA integrity_check(10);
-  --output
   --match ok
 --end
 --wait all

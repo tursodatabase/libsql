@@ -520,7 +520,8 @@ static void evalFunc(
 static int startScript(
   int iClient,              /* The client number */
   char **pzScript,          /* Write task script here */
-  int *pTaskId              /* Write task number here */
+  int *pTaskId,             /* Write task number here */
+  char **pzTaskName         /* Name of the task */
 ){
   sqlite3_stmt *pStmt = 0;
   int taskId;
@@ -555,7 +556,7 @@ static int startScript(
       return SQLITE_DONE;
     }
     pStmt = prepareSql(
-              "SELECT script, id FROM task"
+              "SELECT script, id, name FROM task"
               " WHERE client=%d AND starttime IS NULL"
               " ORDER BY id LIMIT 1", iClient);
     rc = sqlite3_step(pStmt);
@@ -564,6 +565,7 @@ static int startScript(
       *pzScript = sqlite3_malloc(n+1);
       strcpy(*pzScript, (const char*)sqlite3_column_text(pStmt, 0));
       *pTaskId = taskId = sqlite3_column_int(pStmt, 1);
+      *pzTaskName = sqlite3_mprintf("%s", sqlite3_column_text(pStmt, 2));
       sqlite3_finalize(pStmt);
       runSql("UPDATE task"
              "   SET starttime=strftime('%%Y-%%m-%%d %%H:%%M:%%f','now')"
@@ -804,6 +806,14 @@ static void waitForClient(int iClient, int iTimeout, char *zErrPrefix){
   }
 }
 
+/* Return a pointer to the tail of a filename
+*/
+static char *filenameTail(char *z){
+  int i, j;
+  for(i=j=0; z[i]; i++) if( z[i]=='/' ) j = i+1;
+  return z+j;
+}
+
 /* Maximum number of arguments to a --command */
 #define MX_ARG 2
 
@@ -1039,16 +1049,23 @@ static void runScript(
       int iTarget = atoi(azArg[0]);
       int iEnd;
       char *zTask;
+      char *zTName;
       iEnd = findEnd(zScript+ii+len, &lineno);
       if( iTarget<0 ){
         errorMessage("line %d of %s: bad client number: %d",
                      prevLine, zFilename, iTarget);
       }else{
         zTask = sqlite3_mprintf("%.*s", iEnd, zScript+ii+len);
+        if( nArg>1 ){
+          zTName = sqlite3_mprintf("%s", azArg[1]);
+        }else{
+          zTName = sqlite3_mprintf("%s:%d", filenameTail(zFilename), prevLine);
+        }
         startClient(iTarget);
-        runSql("INSERT INTO task(client,script)"
-               " VALUES(%d,'%q')", iTarget, zTask);
+        runSql("INSERT INTO task(client,script,name)"
+               " VALUES(%d,'%q',%Q)", iTarget, zTask, zTName);
         sqlite3_free(zTask);
+        sqlite3_free(zTName);
       }
       iEnd += tokenLength(zScript+ii+len+iEnd, &lineno);
       len += iEnd;
@@ -1217,15 +1234,14 @@ int main(int argc, char **argv){
     if( n>0 ) unrecognizedArguments(argv[0], n, argv+2);
     if( g.iTrace ) logMessage("start-client");
     while(1){
-      char zTaskName[50];
-      rc = startScript(iClient, &zScript, &taskId);
+      char *zTaskName = 0;
+      rc = startScript(iClient, &zScript, &taskId, &zTaskName);
       if( rc==SQLITE_DONE ) break;
-      sqlite3_snprintf(sizeof(zTaskName), zTaskName, "client%02d-task-%d",
-                       iClient, taskId);
-      if( g.iTrace ) logMessage("begin %s", zTaskName);
+      if( g.iTrace ) logMessage("begin %s (%d)", zTaskName, taskId);
       runScript(iClient, taskId, zScript, zTaskName);
-      if( g.iTrace ) logMessage("end %s", zTaskName);
+      if( g.iTrace ) logMessage("end %s (%d)", zTaskName, taskId);
       finishScript(iClient, taskId, 0);
+      sqlite3_free(zTaskName);
       sqlite3_sleep(10);
     }
     if( g.iTrace ) logMessage("end-client");
@@ -1239,6 +1255,7 @@ int main(int argc, char **argv){
     runSql(
       "CREATE TABLE task(\n"
       "  id INTEGER PRIMARY KEY,\n"
+      "  name TEXT,\n"
       "  client INTEGER,\n"
       "  starttime DATE,\n"
       "  endtime DATE,\n"
