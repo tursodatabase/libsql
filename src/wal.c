@@ -1207,7 +1207,8 @@ finished:
     ** checkpointing the log file.
     */
     if( pWal->hdr.nPage ){
-      sqlite3_log(SQLITE_OK, "Recovered %d frames from WAL file %s",
+      sqlite3_log(SQLITE_NOTICE_RECOVER_WAL,
+          "recovered %d frames from WAL file %s",
           pWal->hdr.mxFrame, pWal->zWalName
       );
     }

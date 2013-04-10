@@ -2832,7 +2832,7 @@ end_playback:
     testcase( rc!=SQLITE_OK );
   }
   if( isHot && nPlayback ){
-    sqlite3_log(SQLITE_OK, "Recovered %d pages from %s",
+    sqlite3_log(SQLITE_NOTICE_RECOVER_ROLLBACK, "recovered %d pages from %s",
                 nPlayback, pPager->zJournal);
   }
 

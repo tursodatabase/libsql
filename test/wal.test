@@ -1515,7 +1515,7 @@ do_test wal-23.3 {
 set nPage [expr 2+$AUTOVACUUM]
 do_test wal-23.4 { 
   set ::log 
-} [list SQLITE_OK "Recovered $nPage frames from WAL file $walfile"]
+} [list SQLITE_NOTICE "recovered $nPage frames from WAL file $walfile"]
 
 
 ifcapable autovacuum {
