@@ -1,5 +1,5 @@
-C Limit\sintegrity_check\soutput\sto\s10\slines\sin\smptester\sscripts.
-D 2013-04-09T20:04:09.979
+C Correct\stest\snumbering\son\sseveral\srtree\stests.
+D 2013-04-10T02:56:24.509
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 6a6a8c548822302d3a9a651f0296bbc3dad55e83
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -85,11 +85,11 @@ F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test e474a2b5eff231496dbd073fe67e5fbaf7f444c9
+F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
-F ext/rtree/rtree5.test 9a229678a00f40e6aedb40cb3a07ec5444af892c
+F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
 F ext/rtree/rtree6.test 3ff9113b4a872fa935309e3511cd9b7cdb4d2472
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7cd3f6cd3a39ed1c4bbf9e3508824150632c5bd9
-R c57dbdff2c71d3b29909dfda1d0fd94f
-U drh
-Z 71d9517d85d0a37449eba7c0abca70d4
+P 67ee0dc0f4de5dc2ae92fb98932f1fdda3e76bdf
+R 1390797dd2d0e0c300030d714045b447
+U mistachkin
+Z 8596d7b58bb179eaa78f2319025347e8
