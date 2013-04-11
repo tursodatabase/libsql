@@ -38,8 +38,11 @@
 #if defined(_WIN32)
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
+# include <process.h>
+# define GETPID _getpid
 #else
 # include <unistd.h>
+# define GETPID getpid
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -67,7 +70,7 @@ static struct Global {
   FILE *pErrLog;         /* Where to write errors */
   char *zLog;            /* Name of output log file */
   FILE *pLog;            /* Where to write log messages */
-  char zName[12];        /* Symbolic name of this process */
+  char zName[32];        /* Symbolic name of this process */
   int taskId;            /* Task ID.  0 means supervisor. */
   int iTrace;            /* Tracing level */
   int bSqlTrace;         /* True to trace SQL commands */
@@ -331,7 +334,7 @@ static void sqlErrorCallback(void *pArg, int iErrCode, const char *zMsg){
   UNUSED_PARAMETER(pArg);
   if( (iErrCode&0xff)==SQLITE_SCHEMA && g.iTrace<3 ) return;
   if( g.iTimeout==0 && (iErrCode&0xff)==SQLITE_BUSY && g.iTrace<3 ) return;
-  if( iErrCode==SQLITE_OK ){
+  if( (iErrCode&0xff)==SQLITE_NOTICE ){
     logMessage("(info) %s", zMsg);
   }else{
     errorMessage("(errcode=%d) %s", iErrCode, zMsg);
@@ -1189,7 +1192,7 @@ int main(int argc, char **argv){
     exit(1);
   }
   n = argc-2;
-  sqlite3_snprintf(sizeof(g.zName), g.zName, "mptest");
+  sqlite3_snprintf(sizeof(g.zName), g.zName, "%05d.mptest", GETPID());
   g.zVfs = findOption(argv+2, &n, "vfs", 1);
   zClient = findOption(argv+2, &n, "client", 1);
   g.zErrLog = findOption(argv+2, &n, "errlog", 1);
@@ -1209,11 +1212,13 @@ int main(int argc, char **argv){
   }else{
     g.pLog = stdout;
   }
+  
   sqlite3_config(SQLITE_CONFIG_LOG, sqlErrorCallback, 0);
   if( zClient ){
     iClient = atoi(zClient);
     if( iClient<1 ) fatalError("illegal client number: %d\n", iClient);
-    sqlite3_snprintf(sizeof(g.zName), g.zName, "client%02d", iClient);
+    sqlite3_snprintf(sizeof(g.zName), g.zName, "%05d.client%02d",
+                     GETPID(), iClient);
   }else{
     if( g.iTrace>0 ){
       printf("With SQLite " SQLITE_VERSION " " SQLITE_SOURCE_ID "\n" );
