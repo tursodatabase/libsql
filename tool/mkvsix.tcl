@@ -255,6 +255,7 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set shortName SQLite.WinRT
   set displayName "SQLite for Windows Runtime"
   set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.0
   set extraSdkPath ""
   set extraFileListAttributes [appendArgs \
       "\r\n    " {AppliesTo="WindowsAppContainer"} \
@@ -263,10 +264,19 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set shortName SQLite.WP80
   set displayName "SQLite for Windows Phone"
   set targetPlatformIdentifier "Windows Phone"
+  set targetPlatformVersion v8.0
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes ""
+} elseif {[string equal -nocase $packageFlavor Win32]} then {
+  set shortName SQLite.Win32
+  set displayName "SQLite for Windows"
+  set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.0
+  set extraSdkPath ""
+  set extraFileListAttributes [appendArgs \
+      "\r\n    " {AppliesTo="VisualC"}]
 } else {
-  fail "unsupported package flavor, must be \"WinRT\" or \"WP80\""
+  fail "unsupported package flavor, must be \"WinRT\", \"WP80\", or \"Win32\""
 }
 
 if {$argc >= 4} then {
