@@ -1,12 +1,12 @@
-C Version\s3.7.16.1
-D 2013-03-29T13:44:34.265
+C Increase\sthe\sversion\snumber\sto\s3.7.16.2\sand\scherrypick\sthe\nfix\sfor\sticket\s[7ff3120e4fa54abb55].\s\sThis\scheck-in\sis\sa\srelease\ncandidate.
+D 2013-04-11T19:04:20.543
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 0c1abc21c8deefc88e8a32ad6a07e5f96e158761
 F Makefile.vxworks b18ad88e9a8c6a001f5cf4a389116a4f1a7ab45f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 05604ccde96fe1b37f922eddbdcb5654308261db
+F VERSION 0dee4d2e0c64791ff0085277424fb5c07d79fc9a
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -15,7 +15,7 @@ F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 2f9994fd2e2005753809a2246c7a0816c80b2d2f x
+F configure 1a5f411b3c5053495a161609c274393281db12cc x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -161,7 +161,7 @@ F src/os.c e1acdc09ff3ac2412945cca9766e2dcf4675f31c
 F src/os.h 027491c77d2404c0a678bb3fb06286f331eb9b57
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 21a36fa0b3753609b6606b30d9338d4bb6b24696
-F src/os_win.c 9fe5356f943425ab8431237bd3a4297044928b70
+F src/os_win.c c96990935e7fd799b43a7f0ee74798f45f06e21a
 F src/pager.c 3e9a15939684b0af441325f05335331b15979c9d
 F src/pager.h 1109a06578ec5574dc2c74cf8d9f69daf36fe3e0
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1041,10 +1041,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 39534b4baa53b9360696a9d5ee8cc2108af34592
-R e8e4e98970281a95c0de62c6e5f4d562
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.16.1 *
+P 527231bc67285f01fb18d4451b28f61da3c4e39d
+R c66fa2b9be1b92880a65bec11685cd9d
+T *branch * branch-3.7.16
+T *sym-branch-3.7.16 *
+T -sym-trunk *
 U drh
-Z 17d1076ce5eb9d83e75734278cd22a73
+Z 2720d0b49f6dbe5c13feb9b59916963e
