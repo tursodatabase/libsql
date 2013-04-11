@@ -1,5 +1,5 @@
-C Enhance\smulti-process\stester\sintegration\swith\sthe\sWin32\sAPI.
-D 2013-04-11T00:09:44.820
+C Have\sthe\sUNIX\sVFS\sissue\swarnings\svia\ssqlite3_log()\sif\sa\sdatabase\sfile\sis\nrenamed\sor\sunlinked\sor\slinked\sto\smore\sthan\sone\sname\swhile\sthe\sfile\sis\sopen.
+D 2013-04-11T01:16:15.249
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c ca679b293a6233327e418fd1dde2cd5db3e90932
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c a6e9caadd8956a39153d1bd920e459211a281388
+F src/os_unix.c 5707fcb125f043e2d3376ea862e8ec83633c5e0e
 F src/os_win.c 3aec291c40048653c00a153fee96d3a442ab85ee
 F src/pager.c 28f45e60d9a173368872d6e688e7a848c3926344
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P be7d2c5482c41baf000d7fb5dccc31b974e91064
-R 255ee63faf4906e3f01e118bd1c7af53
-U mistachkin
-Z 56dc3349791505b3e20ff09949e0bcd7
+P 0fdc743583c67a3a017b9ad812c62a5104b9aee7
+R 6358d94b9e9fcf447041dc89384ceff9
+U drh
+Z 7f7d7e8aee1747123050111170b5d1bc

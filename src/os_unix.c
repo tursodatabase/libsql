@@ -280,6 +280,7 @@ struct unixFile {
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
+#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings have been issued */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -799,7 +800,6 @@ static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
 }
 
 
-
 /******************************************************************************
 ****************** Begin Unique File ID Utility Used By VxWorks ***************
 **
@@ -1297,6 +1297,50 @@ static int findInodeInfo(
   }
   *ppInode = pInode;
   return SQLITE_OK;
+}
+
+
+/*
+** Check a unixFile that is a database.  Verify the following:
+**
+** (1) There is exactly one hard link on the file
+** (2) The file is not a symbolic link
+** (3) The file has not been renamed or unlinked
+**
+** Issue sqlite3_log(SQLITE_WARNING,...) messages if anything is not right.
+*/
+static void verifyDbFile(unixFile *pFile){
+  struct stat buf;
+  int rc;
+  if( pFile->ctrlFlags & UNIXFILE_WARNED ){
+    /* One or more of the following warnings have already been issued.  Do not
+    ** repeat them so as not to clutter the error log */
+    return;
+  }
+  rc = osFstat(pFile->h, &buf);
+  if( rc!=0 ){
+    sqlite3_log(SQLITE_WARNING, "cannot fstat db file %s", pFile->zPath);
+    pFile->ctrlFlags |= UNIXFILE_WARNED;
+    return;
+  }
+  if( buf.st_nlink==0 && (pFile->ctrlFlags & UNIXFILE_DELETE)==0 ){
+    sqlite3_log(SQLITE_WARNING, "file unlinked while open: %s", pFile->zPath);
+    pFile->ctrlFlags |= UNIXFILE_WARNED;
+    return;
+  }
+  if( buf.st_nlink>1 ){
+    sqlite3_log(SQLITE_WARNING, "multiple links to file: %s", pFile->zPath);
+    pFile->ctrlFlags |= UNIXFILE_WARNED;
+    return;
+  }
+  if( pFile->pInode!=0
+   && ((rc = osStat(pFile->zPath, &buf))!=0
+       || buf.st_ino!=pFile->pInode->fileId.ino)
+  ){
+    sqlite3_log(SQLITE_WARNING, "file renamed while open: %s", pFile->zPath);
+    pFile->ctrlFlags |= UNIXFILE_WARNED;
+    return;
+  }
 }
 
 
@@ -1876,6 +1920,7 @@ static int closeUnixFile(sqlite3_file *id){
 static int unixClose(sqlite3_file *id){
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile *)id;
+  verifyDbFile(pFile);
   unixUnlock(id, NO_LOCK);
   unixEnterMutex();
 
@@ -4539,6 +4584,7 @@ static void unixUnmapfile(unixFile *pFd){
 #endif
 }
 
+#ifndef SQLITE_DISABLE_MMAP
 /*
 ** Return the system page size.
 */
@@ -4551,6 +4597,7 @@ static int unixGetPagesize(void){
   return (int)sysconf(_SC_PAGESIZE);
 #endif
 }
+#endif /* SQLITE_DISABLE_MMAP */
 
 #ifndef SQLITE_DISABLE_MMAP
 /*
@@ -4656,10 +4703,10 @@ static void unixRemapfile(
 ** code otherwise.
 */
 static int unixMapfile(unixFile *pFd, i64 nByte){
+#ifndef SQLITE_DISABLE_MMAP
   i64 nMap = nByte;
   int rc;
 
-#ifndef SQLITE_DISABLE_MMAP
   assert( nMap>=0 || pFd->nFetchOut==0 );
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
@@ -4700,7 +4747,9 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
 ** release the reference by calling unixUnfetch().
 */
 static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
+#ifndef SQLITE_DISABLE_MMAP
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
+#endif
   *pp = 0;
 
 #ifndef SQLITE_DISABLE_MMAP
@@ -5222,6 +5271,7 @@ static int fillInUnixFile(
   }else{
     pNew->pMethod = pLockingStyle;
     OpenCounter(+1);
+    verifyDbFile(pNew);
   }
   return rc;
 }
