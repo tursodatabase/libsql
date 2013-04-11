@@ -319,7 +319,7 @@ void sqlite3Pragma(
   int rc;                      /* return value form SQLITE_FCNTL_PRAGMA */
   sqlite3 *db = pParse->db;    /* The database connection */
   Db *pDb;                     /* The specific database being pragmaed */
-  Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(db);  /* Prepared statement */
+  Vdbe *v = sqlite3GetVdbe(pParse);  /* Prepared statement */
 
   if( v==0 ) return;
   sqlite3VdbeRunOnlyOnce(v);
@@ -402,11 +402,12 @@ void sqlite3Pragma(
     static const VdbeOpList getCacheSize[] = {
       { OP_Transaction, 0, 0,        0},                         /* 0 */
       { OP_ReadCookie,  0, 1,        BTREE_DEFAULT_CACHE_SIZE},  /* 1 */
-      { OP_IfPos,       1, 7,        0},
+      { OP_IfPos,       1, 8,        0},
       { OP_Integer,     0, 2,        0},
       { OP_Subtract,    1, 2,        1},
-      { OP_IfPos,       1, 7,        0},
+      { OP_IfPos,       1, 8,        0},
       { OP_Integer,     0, 1,        0},                         /* 6 */
+      { OP_Noop,        0, 0,        0},
       { OP_ResultRow,   1, 1,        0},
     };
     int addr;

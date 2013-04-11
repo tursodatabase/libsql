@@ -1,5 +1,5 @@
-C Show\sthe\sprocess-id\son\slog\smessages\sfrom\smptester.
-D 2013-04-11T11:53:45.288
+C Fix\spragma\scode\sgeneration\sso\sthat\sit\salways\soutputs\san\sOP_Trace\sopcode\sso\nthat\spragmas\sare\sshown\sin\ssqlite3_trace()\soutput.
+D 2013-04-11T13:26:18.388
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c 8bbc8c8697d13f76394e592dcecafce3491ed8ba
+F src/pragma.c 216d6c24520f7b2e267a2356e5d3269d28690f49
 F src/prepare.c 743e484233c51109666d402f470523553b41797c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e238dcf9189c029fbdcf89339e21d9cdd8fbf2c5
-R 961d2f18ca03b287ca1083092d6feb69
+P 6748a83dc5c02db37ecd963e678c5c69db142cac
+R d345752e155752ef7baeb6380027dfce
 U drh
-Z d718ebcef0d40f58f76fbe3a2824e294
+Z c8c7d1ee07a5c8a52f14de0a5a9d5c85
