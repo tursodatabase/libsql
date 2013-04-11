@@ -1,5 +1,5 @@
-C Fix\spragma\scode\sgeneration\sso\sthat\sit\salways\soutputs\san\sOP_Trace\sopcode\sso\nthat\spragmas\sare\sshown\sin\ssqlite3_trace()\soutput.
-D 2013-04-11T13:26:18.388
+C Fix\sthe\sxCheckReservedLock()\smethod\son\sthe\swindows\sVFS\sso\sthat\sit\scannot\nreturn\sa\sfalse\spositive\swhen\stwo\sor\smore\sprocesses\suse\sit\sat\sthe\ssame\stime\non\sthe\ssame\sfile.\s\sTicket\s[7ff3120e4fa54abb55]
+D 2013-04-11T18:28:55.139
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.c ca679b293a6233327e418fd1dde2cd5db3e90932
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 5707fcb125f043e2d3376ea862e8ec83633c5e0e
-F src/os_win.c 3aec291c40048653c00a153fee96d3a442ab85ee
+F src/os_win.c 426563476ac4b0939c1bb2a59c6330e6864db5b0
 F src/pager.c 28f45e60d9a173368872d6e688e7a848c3926344
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6748a83dc5c02db37ecd963e678c5c69db142cac
-R d345752e155752ef7baeb6380027dfce
+P 663f04bd48bc6f302230a22bd22b82bde2353943
+R bd2e6ca88b98f09bd2a36a3fcc06c9f0
 U drh
-Z c8c7d1ee07a5c8a52f14de0a5a9d5c85
+Z 2e31b5ec3b1e364139cb9a99bd138f76
