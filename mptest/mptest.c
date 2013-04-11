@@ -36,7 +36,8 @@
 #include "sqlite3.h"
 #include <stdio.h>
 #if defined(_WIN32)
-# include <process.h>
+# define WIN32_LEAN_AND_MEAN
+# include <windows.h>
 #else
 # include <unistd.h>
 #endif
@@ -44,6 +45,13 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
+
+/* The suffix to append to the child command lines, if any */
+#if defined(_WIN32)
+# define CMDLINE_SUFFIX ""
+#else
+# define CMDLINE_SUFFIX "&"
+#endif
 
 /* Mark a parameter as unused to suppress compiler warnings */
 #define UNUSED_PARAMETER(x)  (void)x
@@ -617,39 +625,37 @@ static int finishScript(int iClient, int taskId, int bShutdown){
 static void startClient(int iClient){
   runSql("INSERT OR IGNORE INTO client VALUES(%d,0)", iClient);
   if( sqlite3_changes(g.db) ){
-#if !defined(_WIN32)
     char *zSys;
     int rc;
     zSys = sqlite3_mprintf(
-                 "%s \"%s\" --client %d --trace %d %s%s&",
+                 "%s \"%s\" --client %d --trace %d %s%s%s",
                  g.argv0, g.zDbFile, iClient, g.iTrace,
                  g.bSqlTrace ? "--sqltrace " : "",
-                 g.bSync ? "--sync " : ""
+                 g.bSync ? "--sync " : "",
+                 CMDLINE_SUFFIX
     );
+#if !defined(_WIN32)
     rc = system(zSys);
     if( rc ) errorMessage("system() fails with error code %d", rc);
-    sqlite3_free(zSys);
-#endif
-#if defined(_WIN32)
-    char *argv[10];
-    char zClient[20];
-    char zTrace[20];
-    argv[0] = g.argv0;
-    argv[1] = g.zDbFile;
-    argv[2] = "--client";
-    sqlite3_snprintf(sizeof(zClient),zClient,"%d",iClient);
-    argv[3] = zClient;
-    argv[4] = "--trace";
-    sqlite3_snprintf(sizeof(zTrace),zTrace,"%d",g.iTrace);
-    argv[5] = zTrace;
-    if( g.bSqlTrace ){
-      argv[6] = "--sqltrace";
-      argv[7] = 0;
-    }else{
-      argv[6] = 0;
+#else
+    {
+      STARTUPINFOA startupInfo;
+      PROCESS_INFORMATION processInfo;
+      memset(&startupInfo, 0, sizeof(startupInfo));
+      startupInfo.cb = sizeof(startupInfo);
+      memset(&processInfo, 0, sizeof(processInfo));
+      rc = CreateProcessA(NULL, zSys, NULL, NULL, FALSE, 0, NULL, NULL,
+                        &startupInfo, &processInfo);
+      if( rc ){
+        CloseHandle(processInfo.hThread);
+        CloseHandle(processInfo.hProcess);
+      }else{
+        errorMessage("CreateProcessA() fails with error code %lu",
+                     GetLastError());
+      }
     }
-    _spawnv(_P_NOWAIT, g.argv0, (const char*const*)argv);
 #endif
+    sqlite3_free(zSys);
   }
 }
 
