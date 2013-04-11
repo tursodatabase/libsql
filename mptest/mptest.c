@@ -38,11 +38,8 @@
 #if defined(_WIN32)
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
-# include <process.h>
-# define GETPID _getpid
 #else
 # include <unistd.h>
-# define GETPID getpid
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -52,8 +49,10 @@
 /* The suffix to append to the child command lines, if any */
 #if defined(_WIN32)
 # define CMDLINE_SUFFIX ""
+# define GETPID (int)GetCurrentProcessId
 #else
 # define CMDLINE_SUFFIX "&"
+# define GETPID getpid
 #endif
 
 /* Mark a parameter as unused to suppress compiler warnings */
