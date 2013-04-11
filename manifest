@@ -1,5 +1,5 @@
-C For\sthe\smulti-process\stester\son\sWin32,\smake\suse\sof\sthe\sGetCurrentProcessId\sAPI.
-D 2013-04-11T21:13:10.779
+C Expand\sscope\sof\sthe\sSQLITE_DISABLE_MMAP\sdefine\sfor\sthe\sWin32\sVFS.
+D 2013-04-11T22:52:44.089
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/os.c ca679b293a6233327e418fd1dde2cd5db3e90932
 F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 5707fcb125f043e2d3376ea862e8ec83633c5e0e
-F src/os_win.c 426563476ac4b0939c1bb2a59c6330e6864db5b0
+F src/os_win.c 190be0e689be61b3dcb8c1d253bc967e09c1866e
 F src/pager.c 28f45e60d9a173368872d6e688e7a848c3926344
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -1050,7 +1050,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dd3510bb20ade173c81c9874c05466011c8a249d
-R 69eb3039bde7025dc2da94e69ac2fbdc
+P f1b524b9d9ea3db96d54ac55c39f15e6879085bd
+R 81fda886c4b87168bc8522f21db6569f
+T *branch * winDisableMmap
+T *sym-winDisableMmap *
+T -sym-trunk *
 U mistachkin
-Z 5b9c93ebe8aafa80e045145422e5fe06
+Z d00cd2eed7d26c94b83b76365b3988fe
