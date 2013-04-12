@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.7.16.2\sand\scherrypick\sthe\nfix\sfor\sticket\s[7ff3120e4fa54abb55].\s\sThis\scheck-in\sis\sa\srelease\ncandidate.
-D 2013-04-11T19:04:20.543
+C Version\s3.7.16.2
+D 2013-04-12T11:52:43.886
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in df3e48659d80e1b7765785d8d66c86b320f72cc7
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1041,10 +1041,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 527231bc67285f01fb18d4451b28f61da3c4e39d
+P 86f26f9152988e47d7e1cfcca9eedf5e6265a225
 R c66fa2b9be1b92880a65bec11685cd9d
-T *branch * branch-3.7.16
-T *sym-branch-3.7.16 *
-T -sym-trunk *
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.16.2 *
 U drh
-Z 2720d0b49f6dbe5c13feb9b59916963e
+Z daf56eb23d2f90e92e4839bc9c04cfb7
