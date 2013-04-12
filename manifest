@@ -1,5 +1,5 @@
-C Change\sthe\sfts4aux\svirtual\stable\smodule\sso\sthat\sfts4aux\stables\screated\sin\sthe\stemp\sdatabase\smay\sreport\son\sfts3/fts4\stables\sin\sany\sattached\sdatabase.
-D 2013-04-12T16:47:27.407
+C Add\sa\stest\scase\sfor\sdetaching\sa\sdatabase\sreferenced\sby\san\sfts4aux\stable\screated\sin\sthe\stemp\sschema.
+D 2013-04-12T16:53:19.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -478,7 +478,7 @@ F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test e7b80272efcced57d1d087a9da5c690dd7c21fd9
 F test/fts3atoken.test fb398ab50aa232489e2a17f9b29d7ad3a3885f36
 F test/fts3auto.test 74315a7377403a57ba82a652a33704197fe1e4be
-F test/fts3aux1.test 575cc4b46320d96be10b878c954a0a08573b53b2
+F test/fts3aux1.test 03cec2dea379931c219dd4406817485caa69d1d8
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 55718ae3462b2b6e0774d49e1c4c74143bc9e3a5
-R dc56d874edc4dcec111c7be4534352ac
+P 546a187f1361dad340ed8f6c28dd89e6c19f9c33
+R 05383c39b4618f3bdf18eec38f2fc283
 U dan
-Z fb78d8a2b290ae6166ab0175cd5b9a72
+Z db66ae2fc0950c0cd2f83a29d6b2c3f8

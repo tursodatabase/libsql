@@ -513,5 +513,10 @@ do_test 8.1 {
   catchsql { CREATE VIRTUAL TABLE att.aux3 USING fts4aux(main, ft1) }
 } {1 {invalid arguments to fts4aux constructor}}
 
+do_test 8.2 {
+  execsql {DETACH att}
+  catchsql { SELECT * FROM aux2 }
+} {1 {SQL logic error or missing database}}
+
 finish_test
 
