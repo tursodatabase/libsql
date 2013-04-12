@@ -1,5 +1,5 @@
-C For\sthe\smulti-process\stester\son\sWin32,\smake\suse\sof\sthe\sGetCurrentProcessId\sAPI.
-D 2013-04-11T21:13:10.779
+C In\smptester:\simprove\sthe\sway\sthat\schild\sprocesses\sare\sdispatched.\s\sPass\nthe\s--vfs\soption\sthrough\sto\schildren.\s\sLog\sthe\scommand\sused\sto\sstart\nchild\sprocesses\swhen\sthe\stracing\slevel\sis\shigh\senough.
+D 2013-04-12T01:04:36.558
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F mptest/config01.test 3f4ddeb152a4f83872f0fa7fcb48d9fd609893da
 F mptest/config02.test 962913ed2b537d60de4126db7fe54716865cdd22
 F mptest/crash01.test a5f31998ed48de8267d6620e8af107ec148e5f12
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 53066ffe4ae6f0c4de451cc77985b88d0fee2aec
+F mptest/mptest.c 2a263e88f18762ac5d7fb56749d2d2ea8e22cb93
 F mptest/multiwrite01.test 81fbc17657964889b60750bd7bbb1deffe8f4d42
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1050,7 +1050,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dd3510bb20ade173c81c9874c05466011c8a249d
-R 69eb3039bde7025dc2da94e69ac2fbdc
-U mistachkin
-Z 5b9c93ebe8aafa80e045145422e5fe06
+P f1b524b9d9ea3db96d54ac55c39f15e6879085bd
+R 42c876901a232f69407f221f508add46
+U drh
+Z f52bc6984c23b912a4265566462deba4

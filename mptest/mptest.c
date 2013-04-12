@@ -48,10 +48,8 @@
 
 /* The suffix to append to the child command lines, if any */
 #if defined(_WIN32)
-# define CMDLINE_SUFFIX ""
 # define GETPID (int)GetCurrentProcessId
 #else
-# define CMDLINE_SUFFIX "&"
 # define GETPID getpid
 #endif
 
@@ -629,14 +627,20 @@ static void startClient(int iClient){
   if( sqlite3_changes(g.db) ){
     char *zSys;
     int rc;
-    zSys = sqlite3_mprintf(
-                 "%s \"%s\" --client %d --trace %d %s%s%s",
-                 g.argv0, g.zDbFile, iClient, g.iTrace,
-                 g.bSqlTrace ? "--sqltrace " : "",
-                 g.bSync ? "--sync " : "",
-                 CMDLINE_SUFFIX
-    );
+    zSys = sqlite3_mprintf("%s \"%s\" --client %d --trace %d",
+                 g.argv0, g.zDbFile, iClient, g.iTrace);
+    if( g.bSqlTrace ){
+      zSys = sqlite3_mprintf("%z --sqltrace", zSys);
+    }
+    if( g.bSync ){
+      zSys = sqlite3_mprintf("%z --sync", zSys);
+    }
+    if( g.zVfs ){
+      zSys = sqlite3_mprintf("%z --vfs \"%s\"", zSys, g.zVfs);
+    }
+    if( g.iTrace>=2 ) logMessage("system('%q')", zSys);
 #if !defined(_WIN32)
+    zSys = sqlite3_mprintf("%z &", zSys);
     rc = system(zSys);
     if( rc ) errorMessage("system() fails with error code %d", rc);
 #else
