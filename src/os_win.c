@@ -2641,7 +2641,7 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
     rc = 1;
     OSTRACE(("TEST WR-LOCK %d %d (local)\n", pFile->h, rc));
   }else{
-    rc = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS, RESERVED_BYTE, 0, 1, 0);
+    rc = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS,RESERVED_BYTE, 0, 1, 0);
     if( rc ){
       winUnlockFile(&pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
