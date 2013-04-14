@@ -2079,6 +2079,8 @@ struct NameContext {
 #define NC_HasAgg    0x02    /* One or more aggregate functions seen */
 #define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
+#define NC_AsMaybe   0x10    /* Resolve to AS terms of the result set only
+                             ** if no other resolution is available */
 
 /*
 ** An instance of the following structure contains all information
