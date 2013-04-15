@@ -141,7 +141,7 @@ int sqlite3OsShmMap(
   return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
 
-#if !defined(SQLITE_DISABLE_MMAP)
+#if SQLITE_MAX_MMAP_SIZE>0
 /* The real implementation of xFetch and xUnfetch */
 int sqlite3OsFetch(sqlite3_file *id, i64 iOff, int iAmt, void **pp){
   DO_OS_MALLOC_TEST(id);

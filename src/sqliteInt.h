@@ -540,13 +540,46 @@ extern const int sqlite3one;
 #endif
 
 /*
-** Disable MMAP on platforms where it is not supported
+** Disable MMAP on platforms where it is known to not work
 */
 #if defined(__OpenBSD__) || defined(__QNXNTO__)
-# undef SQLITE_DISABLE_MMAP
-# define SQLITE_DISABLE_MMAP 1
+# undef SQLITE_MAX_MMAP_SIZE
+# define SQLITE_MAX_MMAP_SIZE 0
 #endif
 
+/*
+** Default maximum size of memory used by memory-mapped I/O in the VFS
+*/
+#ifdef __APPLE__
+# include <TargetConditionals.h>
+# if TARGET_OS_IPHONE
+#   undef SQLITE_MAX_MMAP_SIZE
+#   define SQLITE_MAX_MMAP_SIZE 0
+# endif
+#endif
+#ifndef SQLITE_MAX_MMAP_SIZE
+# if defined(__linux__) \
+  || defined(_WIN32) \
+  || (defined(__APPLE__) && defined(__MACH__)) \
+  || defined(__sun)
+#   define SQLITE_MAX_MMAP_SIZE 2147483648
+# else
+#   define SQLITE_MAX_MMAP_SIZE 0
+# endif
+#endif
+
+/*
+** The default MMAP_SIZE is zero on all platforms.  Or, even if a larger
+** default MMAP_SIZE is specified at compile-time, make sure that it does
+** not exceed the maximum mmap size.
+*/
+#ifndef SQLITE_DEFAULT_MMAP_SIZE
+# define SQLITE_DEFAULT_MMAP_SIZE 0
+#endif
+#if SQLITE_DEFAULT_MMAP_SIZE>SQLITE_MAX_MMAP_SIZE
+# undef SQLITE_DEFAULT_MMAP_SIZE
+# define SQLITE_DEFAULT_MMAP_SIZE SQLITE_MAX_MMAP_SIZE
+#endif
 
 /*
 ** An instance of the following structure is used to store the busy-handler
@@ -842,7 +875,7 @@ struct sqlite3 {
   int nDb;                      /* Number of backends currently in use */
   int flags;                    /* Miscellaneous flags. See below */
   i64 lastRowid;                /* ROWID of most recent insert (see above) */
-  i64 mxMmap;                   /* Default mmap_limit setting */
+  i64 szMmap;                   /* Default mmap_size setting */
   unsigned int openFlags;       /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
@@ -2516,7 +2549,8 @@ struct Sqlite3Config {
   void *pHeap;                      /* Heap storage space */
   int nHeap;                        /* Size of pHeap[] */
   int mnReq, mxReq;                 /* Min and max heap requests sizes */
-  sqlite3_int64 mxMmap;             /* Maximum mmap() space per open file */
+  sqlite3_int64 szMmap;             /* mmap() space per open file */
+  sqlite3_int64 mxMmap;             /* Maximum value for szMmap */
   void *pScratch;                   /* Scratch memory */
   int szScratch;                    /* Size of each scratch buffer */
   int nScratch;                     /* Number of scratch buffers */

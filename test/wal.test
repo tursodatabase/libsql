@@ -728,7 +728,7 @@ do_test wal-11.9 {
 } {37 1}
 sqlite3_wal db test.db
 set nWal 39
-if {[permutation]=="nommap"} {set nWal 37}
+if {[permutation]!="mmap"} {set nWal 37}
 ifcapable !mmap {set nWal 37}
 do_test wal-11.10 {
   execsql {

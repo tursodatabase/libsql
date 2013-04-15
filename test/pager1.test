@@ -2530,9 +2530,9 @@ if {$::tcl_platform(platform)=="unix"} {
 # an error.
 #
 foreach {tn pragma strsize} {
-  1 { PRAGMA mmap_limit = 0 } 2400
+  1 { PRAGMA mmap_size = 0 } 2400
   2 { }                       2400
-  3 { PRAGMA mmap_limit = 0 } 4400
+  3 { PRAGMA mmap_size = 0 } 4400
   4 { }                       4400
 } {
   reset_db
@@ -2757,7 +2757,7 @@ do_test 42.1 {
   db close
   sqlite3_test_control_pending_byte 0x0010000
   sqlite3 db test.db
-  db eval { PRAGMA mmap_limit = 0 }
+  db eval { PRAGMA mmap_size = 0 }
   catchsql { SELECT sum(length(y)) FROM t1 }
 } {1 {database disk image is malformed}}
 do_test 42.2 {
@@ -2799,7 +2799,7 @@ do_test 43.1 {
   db close
   sqlite3 db test.db
 
-  db eval { PRAGMA mmap_limit = 0 }
+  db eval { PRAGMA mmap_size = 0 }
   db eval { SELECT * FROM t1 }
   sqlite3_db_status db CACHE_MISS 0
 } {0 2 0}

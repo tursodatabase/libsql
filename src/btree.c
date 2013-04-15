@@ -1876,7 +1876,7 @@ int sqlite3BtreeOpen(
     rc = sqlite3PagerOpen(pVfs, &pBt->pPager, zFilename,
                           EXTRA_SIZE, flags, vfsFlags, pageReinit);
     if( rc==SQLITE_OK ){
-      sqlite3PagerSetMmapLimit(pBt->pPager, db->mxMmap);
+      sqlite3PagerSetMmapLimit(pBt->pPager, db->szMmap);
       rc = sqlite3PagerReadFileheader(pBt->pPager,sizeof(zDbHeader),zDbHeader);
     }
     if( rc!=SQLITE_OK ){
@@ -2147,11 +2147,11 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
 ** Change the limit on the amount of the database file that may be
 ** memory mapped.
 */
-int sqlite3BtreeSetMmapLimit(Btree *p, sqlite3_int64 mxMmap){
+int sqlite3BtreeSetMmapLimit(Btree *p, sqlite3_int64 szMmap){
   BtShared *pBt = p->pBt;
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
-  sqlite3PagerSetMmapLimit(pBt->pPager, mxMmap);
+  sqlite3PagerSetMmapLimit(pBt->pPager, szMmap);
   sqlite3BtreeLeave(p);
   return SQLITE_OK;
 }

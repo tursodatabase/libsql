@@ -3060,7 +3060,8 @@ int main(int argc, char **argv){
       sqlite3_multiplex_initialize(0, 1);
 #endif
     }else if( strcmp(z,"-mmap")==0 ){
-      sqlite3_config(SQLITE_CONFIG_MMAP_LIMIT, integerValue(cmdline_option_value(argc,argv,++i)));
+      sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
+      sqlite3_config(SQLITE_CONFIG_MMAP_SIZE, sz, sz);
     }else if( strcmp(z,"-vfs")==0 ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(cmdline_option_value(argc,argv,++i));
       if( pVfs ){

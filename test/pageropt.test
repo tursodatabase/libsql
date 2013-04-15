@@ -88,7 +88,7 @@ do_test pageropt-1.4 {
 # must refill.
 #
 ifcapable mmap {
-  set x [expr {[permutation]=="nommap" ? 6 : 1}]
+  set x [expr {[permutation]=="mmap" ? 1 : 6}]
 } else {
   set x 6
 }

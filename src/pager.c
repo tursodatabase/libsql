@@ -658,7 +658,7 @@ struct Pager {
 
   u8 bUseFetch;               /* True to use xFetch() */
   int nMmapOut;               /* Number of mmap pages currently outstanding */
-  sqlite3_int64 mxMmap;       /* Desired maximum mmap size */
+  sqlite3_int64 szMmap;       /* Desired maximum mmap size */
   PgHdr *pMmapFreelist;       /* List of free mmap page headers (pDirty) */
   /*
   ** End of the routinely-changing class members
@@ -774,10 +774,10 @@ static const unsigned char aJournalMagic[] = {
 ** The macro USEFETCH is true if we are allowed to use the xFetch and xUnfetch
 ** interfaces to access the database using memory-mapped I/O.
 */
-#ifdef SQLITE_DISABLE_MMAP
-# define USEFETCH(x) 0
-#else
+#if SQLITE_MAX_MMAP_SIZE>0
 # define USEFETCH(x) ((x)->bUseFetch)
+#else
+# define USEFETCH(x) 0
 #endif
 
 /*
@@ -3370,16 +3370,16 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 }
 
 /*
-** Invoke SQLITE_FCNTL_MMAP_LIMIT based on the current value of mxMmap.
+** Invoke SQLITE_FCNTL_MMAP_SIZE based on the current value of szMmap.
 */
 static void pagerFixMaplimit(Pager *pPager){
-#if !defined(SQLITE_DISABLE_MMAP)
+#if SQLITE_MAX_MMAP_SIZE>0
   sqlite3_file *fd = pPager->fd;
   if( isOpen(fd) ){
-    sqlite3_int64 mx;
-    pPager->bUseFetch = (fd->pMethods->iVersion>=3) && pPager->mxMmap>0;
-    mx = pPager->mxMmap;
-    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_LIMIT, &mx);
+    sqlite3_int64 sz;
+    pPager->bUseFetch = (fd->pMethods->iVersion>=3) && pPager->szMmap>0;
+    sz = pPager->szMmap;
+    sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_SIZE, &sz);
   }
 #endif
 }
@@ -3387,8 +3387,8 @@ static void pagerFixMaplimit(Pager *pPager){
 /*
 ** Change the maximum size of any memory mapping made of the database file.
 */
-void sqlite3PagerSetMmapLimit(Pager *pPager, sqlite3_int64 mxMmap){
-  pPager->mxMmap = mxMmap;
+void sqlite3PagerSetMmapLimit(Pager *pPager, sqlite3_int64 szMmap){
+  pPager->szMmap = szMmap;
   pagerFixMaplimit(pPager);
 }
 
@@ -4766,7 +4766,7 @@ int sqlite3PagerOpen(
   /* pPager->pBusyHandlerArg = 0; */
   pPager->xReiniter = xReinit;
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
-  /* pPager->mxMmap = SQLITE_DEFAULT_MMAP_LIMIT // will be set by btree.c */
+  /* pPager->szMmap = SQLITE_DEFAULT_MMAP_SIZE // will be set by btree.c */
 
   *ppPager = pPager;
   return SQLITE_OK;

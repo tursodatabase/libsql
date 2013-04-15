@@ -40,17 +40,17 @@ proc register_rblob_code {dbname seed} {
   }]
 }
 
-foreach {t mmap_limit nRead c2init} {
-  1.1 { PRAGMA mmap_limit = 67108864 }   4 {PRAGMA mmap_limit = 0}
-  1.2 { PRAGMA mmap_limit =    53248 } 150 {PRAGMA mmap_limit = 0}
-  1.3 { PRAGMA mmap_limit =        0 } 344 {PRAGMA mmap_limit = 0}
-  1.4 { PRAGMA mmap_limit = 67108864 }   4 {PRAGMA mmap_limit = 67108864 }
-  1.5 { PRAGMA mmap_limit =    53248 } 150 {PRAGMA mmap_limit = 67108864 }
-  1.6 { PRAGMA mmap_limit =        0 } 344 {PRAGMA mmap_limit = 67108864 }
+foreach {t mmap_size nRead c2init} {
+  1.1 { PRAGMA mmap_size = 67108864 }   4 {PRAGMA mmap_size = 0}
+  1.2 { PRAGMA mmap_size =    53248 } 150 {PRAGMA mmap_size = 0}
+  1.3 { PRAGMA mmap_size =        0 } 344 {PRAGMA mmap_size = 0}
+  1.4 { PRAGMA mmap_size = 67108864 }   4 {PRAGMA mmap_size = 67108864 }
+  1.5 { PRAGMA mmap_size =    53248 } 150 {PRAGMA mmap_size = 67108864 }
+  1.6 { PRAGMA mmap_size =        0 } 344 {PRAGMA mmap_size = 67108864 }
 } {
   do_multiclient_test tn {
     sql1 {PRAGMA page_size=1024}
-    sql1 $mmap_limit
+    sql1 $mmap_size
     sql2 $c2init
 
     code2 [register_rblob_code db2 0]
@@ -89,7 +89,7 @@ foreach {t mmap_limit nRead c2init} {
     } {64 ok 149}
 
     # Check that the number of pages read by connection 1 indicates that the
-    # "PRAGMA mmap_limit" command worked.
+    # "PRAGMA mmap_size" command worked.
     do_test $t.$tn.5 { nRead db } $nRead
   }
 }
@@ -106,7 +106,7 @@ db func rblob rblob
 
 do_execsql_test 2.1 {
   PRAGMA auto_vacuum = 1;
-  PRAGMA mmap_limit = 67108864;
+  PRAGMA mmap_size = 67108864;
   PRAGMA journal_mode = wal;
   CREATE TABLE t1(a, b, UNIQUE(a, b));
   INSERT INTO t1 VALUES(rblob(500), rblob(500));
@@ -254,7 +254,7 @@ do_test 5.5 {
 } SQLITE_OK
 
 #-------------------------------------------------------------------------
-# Test various mmap_limit settings.
+# Test various mmap_size settings.
 #
 foreach {tn1 mmap1 mmap2} {
      1 6144       167773
@@ -279,8 +279,8 @@ foreach {tn1 mmap1 mmap2} {
     code1 [register_rblob_code db  0]
     code2 [register_rblob_code db2 444]
 
-    sql1 "PRAGMA mmap_limit = $mmap1"
-    sql2 "PRAGMA mmap_limit = $mmap2"
+    sql1 "PRAGMA mmap_size = $mmap1"
+    sql2 "PRAGMA mmap_size = $mmap2"
 
     do_test $tn1.$tn { 
       for {set i 1} {$i <= 100} {incr i} {

@@ -87,10 +87,10 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "lfs", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_DISABLE_MMAP
-  Tcl_SetVar2(interp, "sqlite_options", "mmap", "0", TCL_GLOBAL_ONLY);
-#else
+#if SQLITE_MAX_MMAP_SIZE>0
   Tcl_SetVar2(interp, "sqlite_options", "mmap", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "mmap", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #if 1 /* def SQLITE_MEMDEBUG */

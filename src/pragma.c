@@ -746,39 +746,39 @@ void sqlite3Pragma(
   }else
 
   /*
-  **  PRAGMA [database.]mmap_limit(N)
+  **  PRAGMA [database.]mmap_size(N)
   **
   ** Used to set mapping size limit. The mapping size limit is
   ** used to limit the aggregate size of all memory mapped regions of the
   ** database file. If this parameter is set to zero, then memory mapping
   ** is not used at all.  If N is negative, then the default memory map
-  ** limit determined by sqlite3_config(SQLITE_CONFIG_MMAP_LIMIT) is set.
+  ** limit determined by sqlite3_config(SQLITE_CONFIG_MMAP_SIZE) is set.
   ** The parameter N is measured in bytes.
   **
   ** This value is advisory.  The underlying VFS is free to memory map
   ** as little or as much as it wants.  Except, if N is set to 0 then the
   ** upper layers will never invoke the xFetch interfaces to the VFS.
   */
-  if( sqlite3StrICmp(zLeft,"mmap_limit")==0 ){
-    sqlite3_int64 mx;
+  if( sqlite3StrICmp(zLeft,"mmap_size")==0 ){
+    sqlite3_int64 sz;
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( zRight ){
       int ii;
-      sqlite3Atoi64(zRight, &mx, 1000, SQLITE_UTF8);
-      if( mx<0 ) mx = sqlite3GlobalConfig.mxMmap;
-      if( pId2->n==0 ) db->mxMmap = mx;
+      sqlite3Atoi64(zRight, &sz, 1000, SQLITE_UTF8);
+      if( sz<0 ) sz = sqlite3GlobalConfig.szMmap;
+      if( pId2->n==0 ) db->szMmap = sz;
       for(ii=db->nDb-1; ii>=0; ii--){
         if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
-          sqlite3BtreeSetMmapLimit(db->aDb[ii].pBt, mx);
+          sqlite3BtreeSetMmapLimit(db->aDb[ii].pBt, sz);
         }
       }
     }
-    mx = -1;
-    if( sqlite3_file_control(db,zDb,SQLITE_FCNTL_MMAP_LIMIT,&mx)==SQLITE_OK ){
-#if defined(SQLITE_DISABLE_MMAP)
-      mx = 0;
+    sz = -1;
+    if( sqlite3_file_control(db,zDb,SQLITE_FCNTL_MMAP_SIZE,&sz)==SQLITE_OK ){
+#if SQLITE_MAX_MMAP_SIZE==0
+      sz = 0;
 #endif
-      returnSingleInt(pParse, "mmap_limit", mx);
+      returnSingleInt(pParse, "mmap_size", sz);
     }
   }else
 

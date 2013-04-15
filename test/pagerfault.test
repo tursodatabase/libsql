@@ -1282,7 +1282,7 @@ faultsim_save_and_close
 
 do_faultsim_test pagerfault-28a -faults oom* -prep {
   faultsim_restore_and_reopen
-  execsql { PRAGMA mmap_limit=0 }
+  execsql { PRAGMA mmap_size=0 }
 
   sqlite3 db2 test.db
   db2 eval { SELECT count(*) FROM t2 }

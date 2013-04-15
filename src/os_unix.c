@@ -227,8 +227,8 @@ struct unixFile {
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
   int nFetchOut;                      /* Number of outstanding xFetch refs */
   sqlite3_int64 mmapSize;             /* Usable size of mapping at pMapRegion */
-  sqlite3_int64 mmapOrigsize;         /* Actual size of mapping at pMapRegion */
-  sqlite3_int64 mmapLimit;            /* Configured FCNTL_MMAP_LIMIT value */
+  sqlite3_int64 mmapSizeActual;       /* Actual size of mapping at pMapRegion */
+  sqlite3_int64 mmapSizeMax;          /* Configured FCNTL_MMAP_SIZE value */
   void *pMapRegion;                   /* Memory mapped region */
 #ifdef __QNXNTO__
   int sectorSize;                     /* Device sector size */
@@ -3162,7 +3162,7 @@ static int unixRead(
   );
 #endif
 
-#if !defined(SQLITE_DISABLE_MMAP)
+#if SQLITE_MAX_MMAP_SIZE>0
   /* Deal with as much of this read request as possible by transfering
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
@@ -3283,7 +3283,7 @@ static int unixWrite(
   }
 #endif
 
-#if !defined(SQLITE_DISABLE_MMAP)
+#if SQLITE_MAX_MMAP_SIZE>0
   /* Deal with as much of this write request as possible by transfering
   ** data from the memory mapping using memcpy().  */
   if( offset<pFile->mmapSize ){
@@ -3678,7 +3678,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     }
   }
 
-  if( pFile->mmapLimit>0 && nByte>pFile->mmapSize ){
+  if( pFile->mmapSizeMax>0 && nByte>pFile->mmapSize ){
     int rc;
     if( pFile->szChunk<=0 ){
       if( robust_ftruncate(pFile->h, nByte) ){
@@ -3758,11 +3758,14 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
-    case SQLITE_FCNTL_MMAP_LIMIT: {
+    case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;
-      *(i64*)pArg = pFile->mmapLimit;
+      if( newLimit>sqlite3GlobalConfig.mxMmap ){
+        newLimit = sqlite3GlobalConfig.mxMmap;
+      }
+      *(i64*)pArg = pFile->mmapSizeMax;
       if( newLimit>=0 ){
-        pFile->mmapLimit = newLimit;
+        pFile->mmapSizeMax = newLimit;
         if( newLimit<pFile->mmapSize ) pFile->mmapSize = newLimit;
       }
       return SQLITE_OK;
@@ -4574,17 +4577,17 @@ static int unixShmUnmap(
 */
 static void unixUnmapfile(unixFile *pFd){
   assert( pFd->nFetchOut==0 );
-#ifndef SQLITE_DISABLE_MMAP
+#if SQLITE_MAX_MMAP_SIZE>0
   if( pFd->pMapRegion ){
-    osMunmap(pFd->pMapRegion, pFd->mmapOrigsize);
+    osMunmap(pFd->pMapRegion, pFd->mmapSizeActual);
     pFd->pMapRegion = 0;
     pFd->mmapSize = 0;
-    pFd->mmapOrigsize = 0;
+    pFd->mmapSizeActual = 0;
   }
 #endif
 }
 
-#ifndef SQLITE_DISABLE_MMAP
+#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Return the system page size.
 */
@@ -4597,9 +4600,9 @@ static int unixGetPagesize(void){
   return (int)sysconf(_SC_PAGESIZE);
 #endif
 }
-#endif /* SQLITE_DISABLE_MMAP */
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
 
-#ifndef SQLITE_DISABLE_MMAP
+#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Attempt to set the size of the memory mapping maintained by file 
 ** descriptor pFd to nNew bytes. Any existing mapping is discarded.
@@ -4608,7 +4611,7 @@ static int unixGetPagesize(void){
 **
 **       unixFile.pMapRegion
 **       unixFile.mmapSize
-**       unixFile.mmapOrigsize
+**       unixFile.mmapSizeActual
 **
 ** If unsuccessful, an error message is logged via sqlite3_log() and
 ** the three variables above are zeroed. In this case SQLite should
@@ -4622,15 +4625,15 @@ static void unixRemapfile(
   const char *zErr = "mmap";
   int h = pFd->h;                      /* File descriptor open on db file */
   u8 *pOrig = (u8 *)pFd->pMapRegion;   /* Pointer to current file mapping */
-  i64 nOrig = pFd->mmapOrigsize;       /* Size of pOrig region in bytes */
+  i64 nOrig = pFd->mmapSizeActual;     /* Size of pOrig region in bytes */
   u8 *pNew = 0;                        /* Location of new mapping */
   int flags = PROT_READ;               /* Flags to pass to mmap() */
 
   assert( pFd->nFetchOut==0 );
   assert( nNew>pFd->mmapSize );
-  assert( nNew<=pFd->mmapLimit );
+  assert( nNew<=pFd->mmapSizeMax );
   assert( nNew>0 );
-  assert( pFd->mmapOrigsize>=pFd->mmapSize );
+  assert( pFd->mmapSizeActual>=pFd->mmapSize );
   assert( MAP_FAILED!=0 );
 
   if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
@@ -4679,10 +4682,10 @@ static void unixRemapfile(
     /* If the mmap() above failed, assume that all subsequent mmap() calls
     ** will probably fail too. Fall back to using xRead/xWrite exclusively
     ** in this case.  */
-    pFd->mmapLimit = 0;
+    pFd->mmapSizeMax = 0;
   }
   pFd->pMapRegion = (void *)pNew;
-  pFd->mmapSize = pFd->mmapOrigsize = nNew;
+  pFd->mmapSize = pFd->mmapSizeActual = nNew;
 }
 #endif
 
@@ -4703,7 +4706,7 @@ static void unixRemapfile(
 ** code otherwise.
 */
 static int unixMapfile(unixFile *pFd, i64 nByte){
-#ifndef SQLITE_DISABLE_MMAP
+#if SQLITE_MAX_MMAP_SIZE>0
   i64 nMap = nByte;
   int rc;
 
@@ -4718,8 +4721,8 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
     }
     nMap = statbuf.st_size;
   }
-  if( nMap>pFd->mmapLimit ){
-    nMap = pFd->mmapLimit;
+  if( nMap>pFd->mmapSizeMax ){
+    nMap = pFd->mmapSizeMax;
   }
 
   if( nMap!=pFd->mmapSize ){
@@ -4747,13 +4750,13 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
 ** release the reference by calling unixUnfetch().
 */
 static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
-#ifndef SQLITE_DISABLE_MMAP
+#if SQLITE_MAX_MMAP_SIZE>0
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
 #endif
   *pp = 0;
 
-#ifndef SQLITE_DISABLE_MMAP
-  if( pFd->mmapLimit>0 ){
+#if SQLITE_MAX_MMAP_SIZE>0
+  if( pFd->mmapSizeMax>0 ){
     if( pFd->pMapRegion==0 ){
       int rc = unixMapfile(pFd, -1);
       if( rc!=SQLITE_OK ) return rc;
@@ -5126,7 +5129,7 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
-  pNew->mmapLimit = sqlite3GlobalConfig.mxMmap;
+  pNew->mmapSizeMax = sqlite3GlobalConfig.mxMmap;
   if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;

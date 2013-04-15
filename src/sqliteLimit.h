@@ -206,27 +206,3 @@
 #ifndef SQLITE_MAX_TRIGGER_DEPTH
 # define SQLITE_MAX_TRIGGER_DEPTH 1000
 #endif
-
-/*
-** Default maximum size of memory used by xFetch in the VFS.
-*/
-#ifdef SQLITE_DISABLE_MMAP
-# undef SQLITE_DEFAULT_MMAP_LIMIT
-# define SQLITE_DEFAULT_MMAP_LIMIT 0
-#endif
-#ifdef __APPLE__
-# include <TargetConditionals.h>
-# if TARGET_OS_IPHONE
-#   define SQLITE_DEFAULT_MMAP_LIMIT 0
-# endif
-#endif
-#ifndef SQLITE_DEFAULT_MMAP_LIMIT
-# if defined(__linux__) \
-  || defined(_WIN32) \
-  || (defined(__APPLE__) && defined(__MACH__)) \
-  || defined(__sun)
-#   define SQLITE_DEFAULT_MMAP_LIMIT 268435456 /* = 256*1024*1024 */
-# else
-#   define SQLITE_DEFAULT_MMAP_LIMIT 0
-# endif
-#endif
