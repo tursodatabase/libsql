@@ -6847,7 +6847,7 @@ int sqlite3_strnicmp(const char *, const char *, int);
 ** ^The [sqlite3_strglob(P,X)] interface returns zero if string X matches
 ** the glob pattern P, and it returns non-zero if string X does not match
 ** the glob pattern P.  ^The definition of glob pattern matching used in
-** [sqlite3_strglob(P,X) is the same as for the "X GLOB P" operator in the
+** [sqlite3_strglob(P,X)] is the same as for the "X GLOB P" operator in the
 ** SQL dialect used by SQLite.  ^The sqlite3_strglob(P,X) function is case
 ** sensitive.
 **

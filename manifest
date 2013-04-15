@@ -1,5 +1,5 @@
-C Only\sconsider\sAS\snames\sfrom\sthe\sresult\sset\sas\scandidates\sfor\sresolving\nidentifiers\sin\sthe\sWHERE\sclause\sif\sthere\sare\sno\sother\smatches.\nIn\sthe\sORDER\sBY\sclause,\sAS\snames\stake\spriority\sover\sany\scolumn\snames.\nFix\sfor\sticket\s[2500cdb9be].
-D 2013-04-14T23:51:27.821
+C Fix\sa\sformatting\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2013-04-15T13:10:30.554
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/resolve.c 10a1b332e3eb36e5d561085e18c58a8578cd7d73
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 01540bcd3df3c8f1187158e77986028b1c667258
 F src/shell.c 319b7791cee6c763b60fde1b590bfaf62613cf37
-F src/sqlite.h.in f606903594d314d1b63e677affb1a03e3c9a49c7
+F src/sqlite.h.in 696ecfc764a32b47daaaf0e10438ff2aaa0739e0
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
 F src/sqliteInt.h 7580edf7e7e13af8dff6152666e4ea32535abf8c
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6d6f0592abe237256dbdf30ab0ba0bb0c365dd95 ad53924dcadffb95c6497c46c228c67e8f5370e4
-R b0858137a1ee08b4782056449cba9377
+P d0d5af79a005de30194863c57c5018ee75e03581
+R 18db1cd249206022b16580a94625cafa
 U drh
-Z c608eb98c484fd069203789a0c999b98
+Z 4a78dc5e25d8c90b818007b69b504f95
