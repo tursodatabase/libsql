@@ -1,5 +1,5 @@
-C Expand\sscope\sof\sthe\sSQLITE_MAX_MMAP_SIZE\sdefine\sfor\sthe\sWin32\sVFS.
-D 2013-04-15T20:08:27.655
+C Disable\smemory-mapped\sI/O\swhen\sthe\scodec\sis\senabled.
+D 2013-04-16T14:52:47.532
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 0a561eae5965c9371300b0419027f5ae9f847af2
 F src/os_win.c 673b3e3d1fa3040d8d95a7f1f5e0e553aed56cfb
-F src/pager.c a55adacb1842b83354198c408e7adde95ecd1189
+F src/pager.c 6c3a8a5d665498b0344395a2c9f82d5abc4cc771
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ea1404a10abd7f68e1f8e0708c8a3199d1f79665
-R 4ce5175815a884ac178e2248b6e66ee1
-U mistachkin
-Z 55620fd00464e5f458c15f94b0f9c9d2
+P f4b8faab45e217f227bd7ce65d4741754731b8cd
+R 6717674ae7188e500403f1978f39e75b
+U drh
+Z 9185ac7186177dd4c0f45720166ae532

@@ -5220,6 +5220,9 @@ int sqlite3PagerAcquire(
   ** temporary or in-memory database.  */
   const int bMmapOk = (pgno!=1 && USEFETCH(pPager)
    && (pPager->eState==PAGER_READER || (flags & PAGER_ACQUIRE_READONLY))
+#ifdef SQLITE_HAS_CODEC
+   && pPager->xCodec==0
+#endif
   );
 
   assert( pPager->eState>=PAGER_READER );
