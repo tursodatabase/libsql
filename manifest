@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sSQLITE_CURDIR\smacro.
-D 2013-04-16T14:58:52.577
+C Omit\ssqlite3_compileoption_used()\sentries\sthat\sare\snot\sexplicitly\sstated\non\sthe\scompiler\scommand-line,\sexcept\skeep\sSQLITE_THREADSAFE\saround\sso\sthat\nthere\sis\salways\sat\sleast\sone\scompilation\soption.
+D 2013-04-16T18:24:34.635
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c cb3cd5bf69bdf4ff3e1fc8ca3b1f0e405729dd80
+F src/ctime.c 387589abe92946f47dac6fa1d4479af977b4f11b
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
 F src/expr.c 48048fca951eedbc74aa32262154410d56c83812
@@ -185,7 +185,7 @@ F src/shell.c 06bca04044b312ccadc43bf72385e7440cf60d1b
 F src/sqlite.h.in d897fd15b9c74d4e78e4c42319484ceb1649c5d7
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
-F src/sqliteInt.h 9933ad95b2c1e017f16428e9c0a929867598c2ae
+F src/sqliteInt.h 2a83cfec9963372b636b0cabd4b200c1f1074a99
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 340cca3079cd7aac2f51071435666e9e00ed8bd5
-R 189962300d1abed770df02e09aa73052
+P 16f7ba4afaa69f6150b4defd4ddf5800f5d23084
+R 28c9578f8f913595ef0f108427330fb4
 U drh
-Z 5f64b27d98cd9642b02d695bfb0e5a2b
+Z e5270d047eef465302b7108533238f0a
