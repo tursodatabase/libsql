@@ -1,5 +1,5 @@
-C Disable\smemory-mapped\sI/O\swhen\sthe\scodec\sis\senabled.
-D 2013-04-16T14:52:47.532
+C Remove\sthe\sunused\sSQLITE_CURDIR\smacro.
+D 2013-04-16T14:58:52.577
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 726e88b7282e7f348f805437db3222f97a136d35
+F src/ctime.c cb3cd5bf69bdf4ff3e1fc8ca3b1f0e405729dd80
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
 F src/expr.c 48048fca951eedbc74aa32262154410d56c83812
@@ -164,7 +164,7 @@ F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
 F src/mutex_w32.c 32a9b3841e2d757355f0012b860b1bc5e01eafa0
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
-F src/os.h ae08bcc5f6ec6b339f4a2adf3931bb88cc14c3e4
+F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 0a561eae5965c9371300b0419027f5ae9f847af2
 F src/os_win.c 673b3e3d1fa3040d8d95a7f1f5e0e553aed56cfb
@@ -203,7 +203,7 @@ F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
-F src/test_config.c 49c99b714c1dab68aa6b37d53681a4278982be8d
+F src/test_config.c 95bb33e9dcaa340a296c0bf0e0ba3d1a1c8004c0
 F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c 8f786bfd0ad48030cf2a06fb1f050e9c60a150d7
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f4b8faab45e217f227bd7ce65d4741754731b8cd
-R 6717674ae7188e500403f1978f39e75b
+P 340cca3079cd7aac2f51071435666e9e00ed8bd5
+R 189962300d1abed770df02e09aa73052
 U drh
-Z 9185ac7186177dd4c0f45720166ae532
+Z 5f64b27d98cd9642b02d695bfb0e5a2b
