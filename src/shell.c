@@ -3166,7 +3166,7 @@ int main(int argc, char **argv){
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
         rc = do_meta_command(z, &data);
-        if( rc && bail_on_error ) return rc;
+        if( rc && bail_on_error ) return rc==2 ? 0 : rc;
       }else{
         open_db(&data);
         rc = shell_exec(data.db, z, shell_callback, &data, &zErrMsg);
@@ -3190,6 +3190,7 @@ int main(int argc, char **argv){
     */
     if( zFirstCmd[0]=='.' ){
       rc = do_meta_command(zFirstCmd, &data);
+      if( rc==2 ) rc = 0;
     }else{
       open_db(&data);
       rc = shell_exec(data.db, zFirstCmd, shell_callback, &data, &zErrMsg);
