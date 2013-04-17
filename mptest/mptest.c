@@ -945,7 +945,7 @@ static void runScript(
       char *zAns = zScript+ii;
       for(jj=7; jj<len-1 && isspace(zAns[jj]); jj++){}
       zAns += jj;
-      if( strncmp(sResult.z, zAns, len-jj-1) ){
+      if( len-jj-1!=sResult.n || strncmp(sResult.z, zAns, len-jj-1) ){
         errorMessage("line %d of %s:\nExpected [%.*s]\n     Got [%s]",
           prevLine, zFilename, len-jj-1, zAns, sResult.z);
       }

@@ -1,5 +1,5 @@
-C In\sthe\smptester,\sadd\s--glob\sand\s--notglob\sand\s--testcase.\s\sMake\s--exit\swork\non\sthe\smain\sthread.\s\sEnable\sthe\sload_extension()\sSQL\sfunction.
-D 2013-04-17T18:56:16.833
+C Fix\sthe\s--match\scommand\sin\smptester\sso\sthat\sit\schecks\sthe\sentire\sresult,\nnot\sjust\sa\sprefix\sof\sthe\sresult.
+D 2013-04-17T19:42:17.479
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test a5f31998ed48de8267d6620e8af107ec148e5f12
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
-F mptest/mptest.c 36c511bf0b562ccadede7cd31208dc1ec75b7ce2
+F mptest/mptest.c 23365b9f65f220f1206caed7bcee651538a31559
 F mptest/multiwrite01.test 81fbc17657964889b60750bd7bbb1deffe8f4d42
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e2c94ab930f0e5a6dbe8cdd34ebb8cfeeedca56c
-R d244e7c9ac86257619e9ec497e6803a5
+P c273c171f511475045ef0aa68ecf8e22b8351996
+R c2176482a0665dc72d6ff4f34c638c84
 U drh
-Z 0c9d37cd97d14173f04c5765259a70d1
+Z 66ee4dc6efdb5b603ad21e244f0428fb
