@@ -898,11 +898,22 @@ static void runScript(
     ** Exit this process.  If N>0 then exit without shutting down
     ** SQLite.  (In other words, simulate a crash.)
     */
-    if( strcmp(zCmd, "exit")==0 && iClient>0 ){
+    if( strcmp(zCmd, "exit")==0 ){
       int rc = atoi(azArg[0]);
       finishScript(iClient, taskId, 1);
       if( rc==0 ) sqlite3_close(g.db);
       exit(rc);
+    }else
+
+    /*
+    **   --testcase NAME
+    **
+    ** Exit this process.  If N>0 then exit without shutting down
+    ** SQLite.  (In other words, simulate a crash.)
+    */
+    if( strcmp(zCmd, "testcase")==0 ){
+      if( g.iTrace==1 ) logMessage("%.*s", len - 1, zScript+ii);
+      stringReset(&sResult);
     }else
 
     /*
@@ -938,6 +949,30 @@ static void runScript(
         errorMessage("line %d of %s:\nExpected [%.*s]\n     Got [%s]",
           prevLine, zFilename, len-jj-1, zAns, sResult.z);
       }
+      g.nTest++;
+      stringReset(&sResult);
+    }else
+
+    /*
+    **  --glob ANSWER...
+    **  --notglob ANSWER....
+    **
+    ** Check to see if output does or does not match the glob pattern
+    ** ANSWER.
+    */
+    if( strcmp(zCmd, "glob")==0 || strcmp(zCmd, "notglob")==0 ){
+      int jj;
+      char *zAns = zScript+ii;
+      char *zCopy;
+      int isGlob = (zCmd[0]=='g');
+      for(jj=9-3*isGlob; jj<len-1 && isspace(zAns[jj]); jj++){}
+      zAns += jj;
+      zCopy = sqlite3_mprintf("%.*s", len-jj-1, zAns);
+      if( (sqlite3_strglob(zCopy, sResult.z)==0)^isGlob ){
+        errorMessage("line %d of %s:\nExpected [%s]\n     Got [%s]",
+          prevLine, zFilename, zCopy, sResult.z);
+      }
+      sqlite3_free(zCopy);
       g.nTest++;
       stringReset(&sResult);
     }else
@@ -1236,6 +1271,7 @@ int main(int argc, char **argv){
   }
   rc = sqlite3_open_v2(g.zDbFile, &g.db, openFlags, g.zVfs);
   if( rc ) fatalError("cannot open [%s]", g.zDbFile);
+  sqlite3_enable_load_extension(g.db, 1);
   sqlite3_busy_handler(g.db, busyHandler, 0);
   sqlite3_create_function(g.db, "vfsname", 0, SQLITE_UTF8, 0,
                           vfsNameFunc, 0, 0);
