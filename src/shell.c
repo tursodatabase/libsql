@@ -2784,6 +2784,10 @@ static int process_input(struct callback_data *p, FILE *in){
       free(zSql);
       zSql = 0;
       nSql = 0;
+    }else if( zSql && _all_whitespace(zSql) ){
+      free(zSql);
+      zSql = 0;
+      nSql = 0;
     }
   }
   if( zSql ){
