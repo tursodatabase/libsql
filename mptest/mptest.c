@@ -71,6 +71,7 @@ static struct Global {
   int taskId;            /* Task ID.  0 means supervisor. */
   int iTrace;            /* Tracing level */
   int bSqlTrace;         /* True to trace SQL commands */
+  int bIgnoreSqlErrors;  /* Ignore errors in SQL statements */
   int nError;            /* Number of errors */
   int nTest;             /* Number of --match operators */
   int iTimeout;          /* Milliseconds until a busy timeout */
@@ -329,6 +330,7 @@ static void sqlTraceCallback(void *NotUsed1, const char *zSql){
 */
 static void sqlErrorCallback(void *pArg, int iErrCode, const char *zMsg){
   UNUSED_PARAMETER(pArg);
+  if( iErrCode==SQLITE_ERROR && g.bIgnoreSqlErrors ) return;
   if( (iErrCode&0xff)==SQLITE_SCHEMA && g.iTrace<3 ) return;
   if( g.iTimeout==0 && (iErrCode&0xff)==SQLITE_BUSY && g.iTrace<3 ) return;
   if( (iErrCode&0xff)==SQLITE_NOTICE ){
@@ -826,6 +828,30 @@ static char *filenameTail(char *z){
   return z+j;
 }
 
+/*
+** Interpret zArg as a boolean value.  Return either 0 or 1.
+*/
+static int booleanValue(char *zArg){
+  int i;
+  if( zArg==0 ) return 0;
+  for(i=0; zArg[i]>='0' && zArg[i]<='9'; i++){}
+  if( i>0 && zArg[i]==0 ) return atoi(zArg);
+  if( sqlite3_stricmp(zArg, "on")==0 || sqlite3_stricmp(zArg,"yes")==0 ){
+    return 1;
+  }
+  if( sqlite3_stricmp(zArg, "off")==0 || sqlite3_stricmp(zArg,"no")==0 ){
+    return 0;
+  }
+  errorMessage("unknown boolean: [%s]", zArg);
+  return 0;
+}
+
+
+/* This routine exists as a convenient place to set a debugger
+** breakpoint.
+*/
+static void test_breakpoint(void){ static volatile int cnt = 0; cnt++; }
+
 /* Maximum number of arguments to a --command */
 #define MX_ARG 2
 
@@ -1118,6 +1144,26 @@ static void runScript(
       len += iEnd;
       iBegin = ii+len;
     }else
+
+    /*
+    **  --breakpoint
+    **
+    ** This command calls "test_breakpoint()" which is a routine provided
+    ** as a convenient place to set a debugger breakpoint.
+    */
+    if( strcmp(zCmd, "breakpoint")==0 ){
+      test_breakpoint();
+    }else
+
+    /*
+    **  --show-sql-errors BOOLEAN
+    **
+    ** Turn display of SQL errors on and off.
+    */
+    if( strcmp(zCmd, "show-sql-errors")==0 ){
+      g.bIgnoreSqlErrors = nArg>=1 ? !booleanValue(azArg[0]) : 1;
+    }else
+
 
     /* error */{
       errorMessage("line %d of %s: unknown command --%s",
