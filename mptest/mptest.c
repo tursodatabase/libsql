@@ -934,8 +934,8 @@ static void runScript(
     /*
     **   --testcase NAME
     **
-    ** Exit this process.  If N>0 then exit without shutting down
-    ** SQLite.  (In other words, simulate a crash.)
+    ** Begin a new test case.  Announce in the log that the test case
+    ** has begun.
     */
     if( strcmp(zCmd, "testcase")==0 ){
       if( g.iTrace==1 ) logMessage("%.*s", len - 1, zScript+ii);
