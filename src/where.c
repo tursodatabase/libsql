@@ -2275,9 +2275,8 @@ static void bestVirtualIndex(WhereBestIdx *p){
   struct sqlite3_index_constraint *pIdxCons;
   struct sqlite3_index_constraint_usage *pUsage;
   WhereTerm *pTerm;
-  int i, j, k;
+  int i, j;
   int nOrderBy;
-  int sortOrder;                  /* Sort order for IN clauses */
   int bAllowIN;                   /* Allow IN optimizations */
   double rCost;
 
@@ -2376,7 +2375,6 @@ static void bestVirtualIndex(WhereBestIdx *p){
       return;
     }
   
-    sortOrder = SQLITE_SO_ASC;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
     for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
       if( pUsage[i].argvIndex>0 ){
@@ -2391,12 +2389,12 @@ static void bestVirtualIndex(WhereBestIdx *p){
             ** repeated in the output. */
             break;
           }
-          for(k=0; k<pIdxInfo->nOrderBy; k++){
-            if( pIdxInfo->aOrderBy[k].iColumn==pIdxCons->iColumn ){
-              sortOrder = pIdxInfo->aOrderBy[k].desc;
-              break;
-            }
-          }
+          /* A virtual table that is constrained by an IN clause may not
+          ** consume the ORDER BY clause because (1) the order of IN terms
+          ** is not necessarily related to the order of output terms and
+          ** (2) Multiple outputs from a single IN value will not merge
+          ** together.  */
+          pIdxInfo->orderByConsumed = 0;
         }
       }
     }
@@ -2426,8 +2424,7 @@ static void bestVirtualIndex(WhereBestIdx *p){
   }
   p->cost.plan.u.pVtabIdx = pIdxInfo;
   if( pIdxInfo->orderByConsumed ){
-    assert( sortOrder==0 || sortOrder==1 );
-    p->cost.plan.wsFlags |= WHERE_ORDERED + sortOrder*WHERE_REVERSE;
+    p->cost.plan.wsFlags |= WHERE_ORDERED;
     p->cost.plan.nOBSat = nOrderBy;
   }else{
     p->cost.plan.nOBSat = p->i ? p->aLevel[p->i-1].plan.nOBSat : 0;

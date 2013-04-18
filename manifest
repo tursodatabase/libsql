@@ -1,5 +1,5 @@
-C Fix\sthe\s--match\scommand\sin\smptester\sso\sthat\sit\schecks\sthe\sentire\sresult,\nnot\sjust\sa\sprefix\sof\sthe\sresult.
-D 2013-04-17T19:42:17.479
+C Do\snot\ssuppress\sthe\sORDER\sBY\sclause\son\sa\svirtual\stable\squery\sif\san\sIN\nconstraint\sis\sused.\s\sFix\sfor\sticket\s[f69b96e3076e].\s\sTesting\sdone\son\nTH3\susing\scov1/where37.test.
+D 2013-04-18T02:55:54.826
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -258,7 +258,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c 4ad2329c439a30ddb915a780f6f80bdffafe3a64
+F src/where.c e63f84e5583133c77573b78d3696dccd97bfd00d
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c273c171f511475045ef0aa68ecf8e22b8351996
-R c2176482a0665dc72d6ff4f34c638c84
+P 3e3ecad2b5d6c97032f2a9fb920c1b8a16ab8ef5
+R 6fada9489bb28405c28c5a46dce1bedb
 U drh
-Z 66ee4dc6efdb5b603ad21e244f0428fb
+Z da33d363d10fd9678c928e7a78f01d61
