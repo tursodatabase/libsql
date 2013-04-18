@@ -1,5 +1,5 @@
-C Do\snot\ssuppress\sthe\sORDER\sBY\sclause\son\sa\svirtual\stable\squery\sif\san\sIN\nconstraint\sis\sused.\s\sFix\sfor\sticket\s[f69b96e3076e].\s\sTesting\sdone\son\nTH3\susing\scov1/where37.test.
-D 2013-04-18T02:55:54.826
+C Fix\sa\scompiler\swarning\sin\ssqlite3_compileoption_used().
+D 2013-04-18T03:10:43.014
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 387589abe92946f47dac6fa1d4479af977b4f11b
+F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
 F src/expr.c 48048fca951eedbc74aa32262154410d56c83812
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3e3ecad2b5d6c97032f2a9fb920c1b8a16ab8ef5
-R 6fada9489bb28405c28c5a46dce1bedb
+P 61b2a7be3b9c04bf45bffa93a7d3a480fc5c947a
+R 6659de1ffecbe8f368709b1c4cb6dc19
 U drh
-Z da33d363d10fd9678c928e7a78f01d61
+Z 0f74e436c879f4a5d6bdb52557a8b2af
