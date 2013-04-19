@@ -1,5 +1,5 @@
-C Experiments\sin\smaking\sloadable\sextensions\seasier\sto\sprogram.\s\sThe\nshared\slibrary\sfilename\stries\svarious\soperating-system\sspecific\sextensions\nif\sthe\sbare\slibrary\sname\sdoes\snot\swork.\s\sAnd\sthe\sentry\spoint\sis\sderived\nfrom\sthe\sfilename\sis\sthe\slegacy\sentry\spoint\sname\s"sqlite3_extension_init"\nis\snot\sfound.
-D 2013-04-18T22:56:42.784
+C Make\sthe\sSQLITE_EXTENSION_INIT1\sand\sSQLITE_EXTENSION_INIT2\smacros\sinto\nno-ops\sif\sthe\sextension\sis\sstatically\slinked.
+D 2013-04-19T01:23:06.788
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/select.c 01540bcd3df3c8f1187158e77986028b1c667258
 F src/shell.c aca9d94653decd4496846dee0c7ba83eaf96a46d
 F src/sqlite.h.in a291a999d28ebc16cd1fe7fdd010dfe5266ef767
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
-F src/sqlite3ext.h 7183ab832e23db0f934494f16928da127a571d75
+F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
 F src/sqliteInt.h 2a83cfec9963372b636b0cabd4b200c1f1074a99
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
@@ -200,7 +200,7 @@ F src/test7.c f4b894b7931f8cf9f5cbf37cfa0727703f526a40
 F src/test8.c 58ea1d9698f3947e4662107ef98f429e84ae20e0
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 0612a752896fad42d55c3999a5122af10dcf22ad
-F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
+F src/test_autoext.c 5c95b5d435eaa09d6c0e7d90371c5ca8cd567701
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c 95bb33e9dcaa340a296c0bf0e0ba3d1a1c8004c0
@@ -1051,10 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e94783f36ade43ef9d5b94db278622bcbce4179b
-R 5eb9b691174dd0ce00c815b019b68747
-T *branch * loadext
-T *sym-loadext *
-T -sym-trunk *
+P 6cfa1d73d79b9f0be8157f0a37c264dd95b031c8
+R 6c3fdd8d85d98822b9ca8decd52bbb5c
 U drh
-Z 1611e9ed5f0542b10fe5f2f8888ad81f
+Z 311c6fc82989346d7dcdfa6c2765eba0
