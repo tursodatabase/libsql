@@ -5017,11 +5017,20 @@ int sqlite3_table_column_metadata(
 ** ^This interface loads an SQLite extension library from the named file.
 **
 ** ^The sqlite3_load_extension() interface attempts to load an
-** [SQLite extension] library contained in the file zFile.
+** [SQLite extension] library contained in the file zFile.  If
+** the file cannot be loaded directly, attempts are made to load
+** with various operating-system specific extensions added.
+** So for example, if "samplelib" cannot be loaded, then names like
+** "samplelib.so" or "samplelib.dylib" or "samplelib.dll" might
+** be tried also.
 **
 ** ^The entry point is zProc.
-** ^zProc may be 0, in which case the name of the entry point
-** defaults to "sqlite3_extension_init".
+** ^(zProc may be 0, in which case SQLite will try to come up with an
+** entry point name on its own.  It first tries "sqlite3_extension_init".
+** If that does not work, it constructs a name "sqlite3_X_init" where the
+** X is consists of the lower-case equivalent of all ASCII alphabetic
+** characters in the filename from the last "/" to the first following
+** "." and omitting any initial "lib".)^
 ** ^The sqlite3_load_extension() interface returns
 ** [SQLITE_OK] on success and [SQLITE_ERROR] if something goes wrong.
 ** ^If an error occurs and pzErrMsg is not 0, then the
