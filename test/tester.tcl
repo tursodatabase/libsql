@@ -462,6 +462,7 @@ if {0==[info exists ::SLAVE]} {
   set TC(count)     0
   set TC(fail_list) [list]
   set TC(omit_list) [list]
+  set TC(warn_list) [list]
 
   proc set_test_counter {counter args} {
     if {[llength $args]} {
@@ -495,6 +496,18 @@ proc fail_test {name} {
     finalize_testing
   }
 }
+
+# Remember a warning message to be displayed at the conclusion of all testing
+#
+proc warning {msg {append 1}} {
+  puts "Warning: $msg"
+  set warnList [set_test_counter warn_list]
+  if {$append} {
+    lappend warnList $msg
+  }
+  set_test_counter warn_list $warnList
+}
+
 
 # Increment the number of tests run
 #
@@ -783,6 +796,9 @@ proc finalize_testing {} {
   puts "$nErr errors out of $nTest tests"
   if {$nErr>0} {
     puts "Failures on these tests: [set_test_counter fail_list]"
+  }
+  foreach warning [set_test_counter warn_list] {
+    puts "Warning: $warning"
   }
   run_thread_tests 1
   if {[llength $omitList]>0} {

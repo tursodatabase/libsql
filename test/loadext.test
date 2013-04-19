@@ -139,20 +139,22 @@ do_test loadext-2.1 {
     sqlite3_load_extension db "${testextension}xx"
   } msg]
   list $rc $msg
-} [list 1 [format $dlerror_nosuchfile ${testextension}xx]]
+} /[list 1 [format $dlerror_nosuchfile ${testextension}xx.*]]/
 
 # Try to load an extension for which the file is not a shared object
 #
 do_test loadext-2.2 {
-  set fd [open "${testextension}xx" w]
+  set fd [open "./notasharedlib.so" w]
+  puts $fd blah
+  close $fd
+  set fd [open "./notasharedlib.dll" w]
   puts $fd blah
   close $fd
   set rc [catch {
-    sqlite3_load_extension db "${testextension}xx"
+    sqlite3_load_extension db "./notasharedlib"
   } msg]
-  set expected_error_pattern [format $dlerror_notadll ${testextension}xx]
-  list $rc [string match $expected_error_pattern $msg]
-} [list 1 1]
+  list $rc $msg
+} /[list 1 [format $dlerror_notadll ./notasharedlib.*]]/
 
 # Try to load an extension for which the file is present but the
 # entry point is not.
@@ -196,7 +198,7 @@ do_test loadext-3.2 {
     regsub {0x[1234567890abcdefABCDEF]*} $res XXX res
   }
   set res
-} [list 1 [format $dlerror_nosymbol $testextension sqlite3_extension_init]]
+} /[list 1 [format $dlerror_nosymbol $testextension sqlite3_.*_init]]/
 do_test loadext-3.3 {
   catchsql {
     SELECT load_extension($::testextension,'testloadext_init')

@@ -1,5 +1,5 @@
-C Enhance\sthe\sextension\sloading\smechanism\sso\sthat\sthe\ssame\ssource\scode\ncan\sbe\sused\sfor\srun-time\sloadable\sextensions\sand\sstatically\slinked\nextensions,\sand\sto\smask\sarchitectural\sdifferences\sin\sshared\slibraries.
-D 2013-04-19T02:47:05.486
+C Add\sthe\s"warning"\scommand\sto\sthe\sTCL\stest\sinfrastructure.\s\sFix\sproblems\nwith\sthe\sloadext.test\smodule.
+D 2013-04-19T12:32:52.666
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -585,7 +585,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 0e5412f4dac4a849f613e1ef8b529d56a6e31d08
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test cc0ab63385239b63c72452b0e93700bf5e8f0b99
-F test/loadext.test 2b5e249c51c986a5aff1f0950cf7ba30976c8f22
+F test/loadext.test 92e6dfefd1229c3ef4aaabd87419efd8fa57a7a5
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
@@ -765,7 +765,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 0d95028653ad6782e17400b7a32a046b87c67a48
+F test/tester.tcl 3b08771e6d601612fe62d13787db0e50aac4cf7b
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e94783f36ade43ef9d5b94db278622bcbce4179b 86eb3eed4c70730dba0e319f243f8cb4fa8de06c
-R 6c3fdd8d85d98822b9ca8decd52bbb5c
+P a85b6ecefa14fcfe6ebfceabf910f00c3721be7d
+R 2c3aca07297ff95a6b74db849941a18d
 U drh
-Z 0d2df06bcea7e6410ce186a367eefd17
+Z bfc695f8f3325c7943f46501f9086d37
