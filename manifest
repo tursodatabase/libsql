@@ -1,5 +1,5 @@
-C Add\sthe\s"warning"\scommand\sto\sthe\sTCL\stest\sinfrastructure.\s\sFix\sproblems\nwith\sthe\sloadext.test\smodule.
-D 2013-04-19T12:32:52.666
+C Use\stransitivity\sto\smove\sconstraints\sinto\sthe\souter\sloops\sof\sa\sjoin\swhenever\npossible,\sthereby\sreducing\sthe\samount\sof\swork\sthat\sneeds\sto\soccur\sin\ninner\sloops.
+D 2013-04-22T02:39:10.341
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -258,7 +258,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c e63f84e5583133c77573b78d3696dccd97bfd00d
+F src/where.c c7c74fe8e354b60dee0810ea8b954c5ccb9e0f3c
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1051,7 +1051,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a85b6ecefa14fcfe6ebfceabf910f00c3721be7d
-R 2c3aca07297ff95a6b74db849941a18d
+P 514adbbd8cf3e296f55e8f803bddaac8ad8b2c96
+R a81fa97db156009318d49bf4c6dae35e
 U drh
-Z bfc695f8f3325c7943f46501f9086d37
+Z 1c3c5b72018db605301d161eada3f156

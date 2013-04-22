@@ -4161,6 +4161,7 @@ static Bitmask codeOneLoopStart(
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
+  Bitmask newNotReady;      /* Return value */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -4171,6 +4172,7 @@ static Bitmask codeOneLoopStart(
   bRev = (pLevel->plan.wsFlags & WHERE_REVERSE)!=0;
   omitTable = (pLevel->plan.wsFlags & WHERE_IDX_ONLY)!=0 
            && (wctrlFlags & WHERE_FORCE_TABLE)==0;
+  VdbeNoopComment((v, "Begin Join Loop %d", iLevel));
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -4821,7 +4823,7 @@ static Bitmask codeOneLoopStart(
     pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
     pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
   }
-  notReady &= ~getMask(pWC->pMaskSet, iCur);
+  newNotReady = notReady & ~getMask(pWC->pMaskSet, iCur);
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
@@ -4835,7 +4837,7 @@ static Bitmask codeOneLoopStart(
     testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* IMP: R-30575-11662 */
     testcase( pTerm->wtFlags & TERM_CODED );
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( (pTerm->prereqAll & notReady)!=0 ){
+    if( (pTerm->prereqAll & newNotReady)!=0 ){
       testcase( pWInfo->untestedTerms==0
                && (pWInfo->wctrlFlags & WHERE_ONETABLE_ONLY)!=0 );
       pWInfo->untestedTerms = 1;
@@ -4850,6 +4852,32 @@ static Bitmask codeOneLoopStart(
     pTerm->wtFlags |= TERM_CODED;
   }
 
+  /* Insert code to test for implied constraints based on transitivity
+  ** of the "==" operator.
+  **
+  ** Example: If the WHERE clause contains "t1.a=t2.b" and "t2.b=123"
+  ** and we are coding the t1 loop and the t2 loop has not yet coded,
+  ** then we cannot use the "t1.a=t2.b" constraint, but we can code
+  ** the implied "t1.a=123" constraint.
+  */
+  for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
+    Expr *pE;
+    WhereTerm *pAlt;
+    Expr sEq;
+    if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+    if( pTerm->eOperator!=(WO_EQUIV|WO_EQ) ) continue;
+    if( pTerm->leftCursor!=iCur ) continue;
+    pE = pTerm->pExpr;
+    assert( !ExprHasProperty(pE, EP_FromJoin) );
+    assert( (pTerm->prereqRight & newNotReady)!=0 );
+    pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady, WO_EQ|WO_IN, 0);
+    if( pAlt==0 ) continue;
+    VdbeNoopComment((v, "begin transitive constraint"));
+    sEq = *pAlt->pExpr;
+    sEq.pLeft = pE->pLeft;
+    sqlite3ExprIfFalse(pParse, &sEq, addrCont, SQLITE_JUMPIFNULL);
+  }
+
   /* For a LEFT OUTER JOIN, generate code that will record the fact that
   ** at least one row of the right table has matched the left table.  
   */
@@ -4862,7 +4890,7 @@ static Bitmask codeOneLoopStart(
       testcase( pTerm->wtFlags & TERM_VIRTUAL );  /* IMP: R-30575-11662 */
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-      if( (pTerm->prereqAll & notReady)!=0 ){
+      if( (pTerm->prereqAll & newNotReady)!=0 ){
         assert( pWInfo->untestedTerms );
         continue;
       }
@@ -4873,7 +4901,7 @@ static Bitmask codeOneLoopStart(
   }
   sqlite3ReleaseTempReg(pParse, iReleaseReg);
 
-  return notReady;
+  return newNotReady;
 }
 
 #if defined(SQLITE_TEST)
