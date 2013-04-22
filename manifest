@@ -1,9 +1,9 @@
-C Add\svirtual\stable\smodule\s'fts3tokenize'\sto\sfts3.\sfts3tokenize\sprovides\sSQL\saccess\sto\sFTS\stokenizer\simplementations.
-D 2013-04-22T15:30:37.451
+C Update\sMSCV\smakefile\sfor\sthe\sfts3tokenize\svirtual\stable.\s\sClear\ssome\nharmless\scompiler\swarnings\sin\sthe\sfts3tokenize\scode.
+D 2013-04-22T17:07:56.175
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a244e5b5ba2493625db95b4d46b79201ea868bfe
+F Makefile.msc 67d9db478186d7d4a498c794fff049f7231a9626
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -57,7 +57,7 @@ F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 784aadfb4c2a217c3eb1feaecac924989f29728f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 1e58825246b56259267382d2f9902774c049460a
+F ext/fts3/fts3Int.h 352c8a83ee4c6a14ced1759a39dd890ab947cbe0
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
 F ext/fts3/fts3_expr.c 6cb4410f87676ae633bd7923bbc78526cb839c4d
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -67,7 +67,7 @@ F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c 5fcfcafff46a2a3a63b8e59fcb51987d01c74695
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c f9a1a1702db1bfad3e2d0064746eeb808f125489
-F ext/fts3/fts3_tokenize_vtab.c 1019e24b7f12d234c902053ad8e70f43424d360a
+F ext/fts3/fts3_tokenize_vtab.c e097c2e19126249b812a4002e76309d5fef3495b
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
@@ -1054,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 206caf21f6f6963aa38a9aa0f6ea11c7230bb726
-R 36a7a566fbf2ef5cbf69a5b7a4283f26
-U dan
-Z 5ed9f520f4f2e158b055381052a84fbc
+P c5a4b21a15bd8a184380817ff41657acbccb866d
+R 8cef88af587ec812976b521330718bb2
+U drh
+Z 6d195d8624ede0ee30827cabebff2ea8

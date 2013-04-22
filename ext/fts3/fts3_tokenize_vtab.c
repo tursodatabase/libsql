@@ -92,7 +92,7 @@ static int fts3tokQueryTokenizer(
   sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
     if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
-      memcpy(pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
+      memcpy((void*)pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
     }
   }
 
@@ -125,7 +125,7 @@ static int fts3tokDequoteArray(
     char **azDequote;
 
     for(i=0; i<argc; i++){
-      nByte += (strlen(argv[i]) + 1);
+      nByte += (int)(strlen(argv[i]) + 1);
     }
 
     *pazDequote = azDequote = sqlite3_malloc(sizeof(char *)*argc + nByte);
@@ -134,7 +134,7 @@ static int fts3tokDequoteArray(
     }else{
       char *pSpace = (char *)&azDequote[argc];
       for(i=0; i<argc; i++){
-        int n = strlen(argv[i]);
+        int n = (int)strlen(argv[i]);
         azDequote[i] = pSpace;
         memcpy(pSpace, argv[i], n+1);
         sqlite3Fts3Dequote(pSpace);
