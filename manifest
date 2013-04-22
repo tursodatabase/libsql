@@ -1,5 +1,5 @@
-C Update\sMSCV\smakefile\sfor\sthe\sfts3tokenize\svirtual\stable.\s\sClear\ssome\nharmless\scompiler\swarnings\sin\sthe\sfts3tokenize\scode.
-D 2013-04-22T17:07:56.175
+C Do\snot\sallow\sa\svirtual\stable\sto\scancel\sthe\sORDER\sBY\sclause\sunless\sall\nouter\sloops\sare\sguaranteed\sto\sreturn\sno\smore\sthan\sone\srow\sresult.\nCandidate\sfix\sfor\sticket\s[ba82a4a41eac1].
+D 2013-04-22T19:56:12.702
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -259,7 +259,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
-F src/where.c c7c74fe8e354b60dee0810ea8b954c5ccb9e0f3c
+F src/where.c d54e63087b52c309550aa2defdb20ef27add9f9a
 F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1054,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c5a4b21a15bd8a184380817ff41657acbccb866d
-R 8cef88af587ec812976b521330718bb2
+P 2b3fed09eb89f1e9d6a5f7487ef526b46eb51490
+R c15aea6fcd9f9126da1de54ee794b8c9
 U drh
-Z 6d195d8624ede0ee30827cabebff2ea8
+Z 5c7507bd8ad3ff74a1cf8b492f137aec

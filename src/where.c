@@ -2400,6 +2400,17 @@ static void bestVirtualIndex(WhereBestIdx *p){
     }
     if( i>=pIdxInfo->nConstraint ) break;
   }
+
+  /* The orderByConsumed signal is only valid if all outer loops collectively
+  ** generate just a single row of output.
+  */
+  if( pIdxInfo->orderByConsumed ){
+    for(i=0; i<p->i; i++){
+      if( (p->aLevel[i].plan.wsFlags & WHERE_UNIQUE)==0 ){
+        pIdxInfo->orderByConsumed = 0;
+      }
+    }
+  }
   
   /* If there is an ORDER BY clause, and the selected virtual table index
   ** does not satisfy it, increase the cost of the scan accordingly. This
