@@ -1,7 +1,7 @@
-C Enhanced\sdocumentation\sfor\sthe\sSQLITE_CONFIG_SQLLOG\smechanism\sand\sthe\ntest_sqllog.c\sdemonstration\sfile.\s\sNo\schanges\sto\scode.
-D 2013-04-22T13:51:09.759
+C Add\svirtual\stable\smodule\s'fts3tokenize'\sto\sfts3.\sfts3tokenize\sprovides\sSQL\saccess\sto\sFTS\stokenizer\simplementations.
+D 2013-04-22T15:30:37.451
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 3dd3fcb87b70c78d99b2c8a03e44ec86d6ca9ce2
+F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc a244e5b5ba2493625db95b4d46b79201ea868bfe
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
@@ -55,7 +55,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 0eaedfc6d2eb22563ef1d044dcfed93b70ec79f2
+F ext/fts3/fts3.c 784aadfb4c2a217c3eb1feaecac924989f29728f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 1e58825246b56259267382d2f9902774c049460a
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -67,6 +67,7 @@ F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c 5fcfcafff46a2a3a63b8e59fcb51987d01c74695
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c f9a1a1702db1bfad3e2d0064746eeb808f125489
+F ext/fts3/fts3_tokenize_vtab.c 1019e24b7f12d234c902053ad8e70f43424d360a
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
@@ -103,7 +104,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk dcb05737414488383369b93e33cf1a1484c4b6e6
+F main.mk e97fbfe4c69060560574e1b59c43f4f88a38a0ec
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -506,6 +507,8 @@ F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
+F test/fts3tok1.test 05ff5c57098282bacba7192507702b17f4061295
+F test/fts3tok_err.test 41e5413139c2ef536ffadfcd1584ee50b1665ec0
 F test/fts4aa.test 95f448fb02c4a976968b08d1b4ce134e720946ae
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 6efc53b4fd03cab167e6998d2b0b7d4b7d419ee6
@@ -1022,7 +1025,7 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl a570a0b0847f5659482087f70e409ac45ce93b91
+F tool/mksqlite3c.tcl a61fe62a2895ca6458c463fccf1211ca1c000fcf
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
@@ -1051,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5f4907e1c6230e3dd904bd99e1c48c576c669f63
-R 3f851c92fc64d9ebdb6dc226b2109b9c
-U drh
-Z 928e878ceb923ac2280cddfe9d967aac
+P 206caf21f6f6963aa38a9aa0f6ea11c7230bb726
+R 36a7a566fbf2ef5cbf69a5b7a4283f26
+U dan
+Z 5ed9f520f4f2e158b055381052a84fbc
