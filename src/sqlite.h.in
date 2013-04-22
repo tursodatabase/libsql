@@ -1633,12 +1633,12 @@ struct sqlite3_mem_methods {
 ** <dt>SQLITE_CONFIG_PCACHE and SQLITE_CONFIG_GETPCACHE
 ** <dd> These options are obsolete and should not be used by new code.
 ** They are retained for backwards compatibility but are now no-ops.
-** </dl>
+** </dd>
 **
 ** [[SQLITE_CONFIG_SQLLOG]]
 ** <dt>SQLITE_CONFIG_SQLLOG
 ** <dd>This option is only available if sqlite is compiled with the
-** SQLITE_ENABLE_SQLLOG pre-processor macro defined. The first argument should
+** [SQLITE_ENABLE_SQLLOG] pre-processor macro defined. The first argument should
 ** be a pointer to a function of type void(*)(void*,sqlite3*,const char*, int).
 ** The second should be of type (void*). The callback is invoked by the library
 ** in three separate circumstances, identified by the value passed as the
@@ -1648,7 +1648,9 @@ struct sqlite3_mem_methods {
 ** fourth parameter is 1, then the SQL statement that the third parameter
 ** points to has just been executed. Or, if the fourth parameter is 2, then
 ** the connection being passed as the second parameter is being closed. The
-** third parameter is passed NULL In this case.
+** third parameter is passed NULL In this case.  An example of using this
+** configuration option can be seen in the "test_sqllog.c" source file in
+** the canonical SQLite source tree.</dd>
 **
 ** [[SQLITE_CONFIG_MMAP_SIZE]]
 ** <dt>SQLITE_CONFIG_MMAP_SIZE
