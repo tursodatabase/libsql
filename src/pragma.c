@@ -319,7 +319,7 @@ void sqlite3Pragma(
   int rc;                      /* return value form SQLITE_FCNTL_PRAGMA */
   sqlite3 *db = pParse->db;    /* The database connection */
   Db *pDb;                     /* The specific database being pragmaed */
-  Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(db);  /* Prepared statement */
+  Vdbe *v = sqlite3GetVdbe(pParse);  /* Prepared statement */
 
   if( v==0 ) return;
   sqlite3VdbeRunOnlyOnce(v);
@@ -402,11 +402,12 @@ void sqlite3Pragma(
     static const VdbeOpList getCacheSize[] = {
       { OP_Transaction, 0, 0,        0},                         /* 0 */
       { OP_ReadCookie,  0, 1,        BTREE_DEFAULT_CACHE_SIZE},  /* 1 */
-      { OP_IfPos,       1, 7,        0},
+      { OP_IfPos,       1, 8,        0},
       { OP_Integer,     0, 2,        0},
       { OP_Subtract,    1, 2,        1},
-      { OP_IfPos,       1, 7,        0},
+      { OP_IfPos,       1, 8,        0},
       { OP_Integer,     0, 1,        0},                         /* 6 */
+      { OP_Noop,        0, 0,        0},
       { OP_ResultRow,   1, 1,        0},
     };
     int addr;
@@ -741,6 +742,43 @@ void sqlite3Pragma(
       int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
+    }
+  }else
+
+  /*
+  **  PRAGMA [database.]mmap_size(N)
+  **
+  ** Used to set mapping size limit. The mapping size limit is
+  ** used to limit the aggregate size of all memory mapped regions of the
+  ** database file. If this parameter is set to zero, then memory mapping
+  ** is not used at all.  If N is negative, then the default memory map
+  ** limit determined by sqlite3_config(SQLITE_CONFIG_MMAP_SIZE) is set.
+  ** The parameter N is measured in bytes.
+  **
+  ** This value is advisory.  The underlying VFS is free to memory map
+  ** as little or as much as it wants.  Except, if N is set to 0 then the
+  ** upper layers will never invoke the xFetch interfaces to the VFS.
+  */
+  if( sqlite3StrICmp(zLeft,"mmap_size")==0 ){
+    sqlite3_int64 sz;
+    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+    if( zRight ){
+      int ii;
+      sqlite3Atoi64(zRight, &sz, 1000, SQLITE_UTF8);
+      if( sz<0 ) sz = sqlite3GlobalConfig.szMmap;
+      if( pId2->n==0 ) db->szMmap = sz;
+      for(ii=db->nDb-1; ii>=0; ii--){
+        if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
+          sqlite3BtreeSetMmapLimit(db->aDb[ii].pBt, sz);
+        }
+      }
+    }
+    sz = -1;
+    if( sqlite3_file_control(db,zDb,SQLITE_FCNTL_MMAP_SIZE,&sz)==SQLITE_OK ){
+#if SQLITE_MAX_MMAP_SIZE==0
+      sz = 0;
+#endif
+      returnSingleInt(pParse, "mmap_size", sz);
     }
   }else
 

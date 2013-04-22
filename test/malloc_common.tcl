@@ -264,7 +264,7 @@ proc faultsim_test_result_int {args} {
   set t [list $testrc $testresult]
   set r $args
   if { ($testnfail==0 && $t != [lindex $r 0]) || [lsearch $r $t]<0 } {
-    error "nfail=$testnfail rc=$testrc result=$testresult"
+    error "nfail=$testnfail rc=$testrc result=$testresult list=$r"
   }
 }
 

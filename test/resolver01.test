@@ -1,0 +1,39 @@
+# 2013-04-13
+#
+# The author disclaims copyright to this source code. In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file tests features of the name resolver (the component that
+# figures out what identifiers in the SQL statement refer to) that
+# were fixed by ticket [2500cdb9be]
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test resolver01-1.1 {
+  catchsql {
+    CREATE TABLE t1(x, y); INSERT INTO t1 VALUES(11,22);
+    CREATE TABLE t2(y, z); INSERT INTO t2 VALUES(33,44);
+    SELECT 1 AS y FROM t1, t2 ORDER BY y;
+  }
+} {0 1}
+do_test resolver01-1.2 {
+  catchsql {
+    SELECT 2 AS y FROM t1, t2 ORDER BY y COLLATE nocase;
+  }
+} {0 2}
+do_test resolver01-1.3 {
+  catchsql {
+    SELECT 3 AS y FROM t1, t2 ORDER BY +y;
+  }
+} {0 3}
+
+
+finish_test

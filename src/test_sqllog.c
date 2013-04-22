@@ -13,22 +13,32 @@
 ** OVERVIEW
 **
 **   This file contains experimental code used to record data from live
-**   SQLite applications that may be useful for offline analysis. Specifically:
+**   SQLite applications that may be useful for offline analysis. 
+**   Specifically, this module can be used to capture the following
+**   information:
 **
 **     1) The initial contents of all database files opened by the 
 **        application, and
 **
 **     2) All SQL statements executed by the application.
 **
+**   The captured information can then be used to run (for example)
+**   performance analysis looking for slow queries or to look for
+**   optimization opportunities in either the application or in SQLite
+**   itself.
+**
 ** USAGE
 **
 **   To use this module, SQLite must be compiled with the SQLITE_ENABLE_SQLLOG
-**   pre-processor symbol defined and this file linked into the application
-**   somehow.
+**   pre-processor symbol defined and this file linked into the application.
+**   One way to link this file into the application is to append the content
+**   of this file onto the end of the "sqlite3.c" amalgamation and then 
+**   recompile the application as normal except with the addition  of the
+**   -DSQLITE_ENABLE_SQLLOG option.
 **
 **   At runtime, logging is enabled by setting environment variable
 **   SQLITE_SQLLOG_DIR to the name of a directory in which to store logged 
-**   data. The directory must already exist.
+**   data. The logging directory must already exist.
 **
 **   Usually, if the application opens the same database file more than once
 **   (either by attaching it or by using more than one database handle), only
@@ -57,14 +67,16 @@
 **   logging proceeds as expected. Errors are logged by calling sqlite3_log().
 */
 
+#ifndef _SQLITE3_H_
 #include "sqlite3.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "assert.h"
+#endif
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
-#include "sys/types.h"
-#include "unistd.h"
+#include <sys/types.h>
+#include <unistd.h>
 static int getProcessId(void){
 #if SQLITE_OS_WIN
   return (int)_getpid();
@@ -73,7 +85,7 @@ static int getProcessId(void){
 #endif
 }
 
-
+/* Names of environment variables to be used */
 #define ENVIRONMENT_VARIABLE1_NAME "SQLITE_SQLLOG_DIR"
 #define ENVIRONMENT_VARIABLE2_NAME "SQLITE_SQLLOG_REUSE_FILES"
 
@@ -86,6 +98,9 @@ static int getProcessId(void){
 */
 #define MAX_CONNECTIONS 256
 
+/* There is one instance of this object for each SQLite database connection
+** that is being logged.
+*/
 struct SLConn {
   int isErr;                      /* True if an error has occurred */
   sqlite3 *db;                    /* Connection handle */
@@ -93,7 +108,9 @@ struct SLConn {
   FILE *fd;                       /* File descriptor for log file */
 };
 
-struct SLGlobal {
+/* This object is a singleton that keeps track of all data loggers.
+*/
+static struct SLGlobal {
   /* Protected by MUTEX_STATIC_MASTER */
   sqlite3_mutex *mutex;           /* Recursive mutex */
   int nConn;                      /* Size of aConn[] array */
@@ -388,6 +405,24 @@ static void testSqllogStmt(struct SLConn *p, const char *zSql){
 
 /*
 ** The SQLITE_CONFIG_SQLLOG callback registered by sqlite3_init_sqllog().
+**
+** The eType parameter has the following values:
+**
+**    0:  Opening a new database connection.  zSql is the name of the
+**        file being opened.  db is a pointer to the newly created database
+**        connection.
+**
+**    1:  An SQL statement has run to completion.  zSql is the text of the
+**        SQL statement with all parameters expanded to their actual values.
+**
+**    2:  Closing a database connection.  zSql is NULL.  The db pointer to
+**        the database connection being closed has already been shut down
+**        and cannot be used for any further SQL.
+**
+** The pCtx parameter is a copy of the pointer that was originally passed
+** into the sqlite3_config(SQLITE_CONFIG_SQLLOG) statement.  In this
+** particular implementation, pCtx is always a pointer to the 
+** sqllogglobal global variable define above.
 */
 static void testSqllog(void *pCtx, sqlite3 *db, const char *zSql, int eType){
   struct SLConn *p = 0;

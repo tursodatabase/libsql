@@ -27,6 +27,7 @@ proc xLog {error_code msg} {
   lappend ::log $msg 
 }
 sqlite3 db test.db
+db eval {PRAGMA mmap_size=0}
 
 do_test win32lock-1.1 {
   db eval {

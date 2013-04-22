@@ -3593,6 +3593,9 @@ int sqlite3Fts3Init(sqlite3 *db){
   rc = sqlite3Fts3InitAux(db);
   if( rc!=SQLITE_OK ) return rc;
 
+  rc = sqlite3Fts3InitTok(db);
+  if( rc!=SQLITE_OK ) return rc;
+
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
 

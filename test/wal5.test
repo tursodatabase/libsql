@@ -235,7 +235,16 @@ foreach {testprefix do_wal_checkpoint} {
     do_test 2.3.$tn.5 { sql1 { INSERT INTO t2 VALUES(3, 4) } } {}
     do_test 2.3.$tn.6 { file_page_counts } {1 4 1 4}
     do_test 2.3.$tn.7 { code1 { do_wal_checkpoint db -mode full } } {1 4 3}
-    do_test 2.3.$tn.8 { file_page_counts } {1 4 2 4}
+
+    # The checkpoint above only writes page 1 of the db file. The other
+    # page (page 2) is locked by the read-transaction opened by the
+    # [sql2] commmand above. So normally, the db is 1 page in size here.
+    # However, in mmap() mode, the db is pre-allocated to 2 pages at the
+    # start of the checkpoint, even though page 2 cannot be written.
+    set nDb 2
+    if {[permutation]!="mmap"} {set nDb 1}
+    ifcapable !mmap {set nDb 1}
+    do_test 2.3.$tn.8 { file_page_counts } [list $nDb 4 2 4]
   }
 
   # Check that checkpoints block on the correct locks. And respond correctly
@@ -343,4 +352,3 @@ foreach {testprefix do_wal_checkpoint} {
 
 
 finish_test
-

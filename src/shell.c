@@ -1553,6 +1553,43 @@ static int booleanValue(char *zArg){
 }
 
 /*
+** Interpret zArg as an integer value, possibly with suffixes.
+*/
+static sqlite3_int64 integerValue(const char *zArg){
+  sqlite3_int64 v = 0;
+  static const struct { char *zSuffix; int iMult; } aMult[] = {
+    { "KiB", 1024 },
+    { "MiB", 1024*1024 },
+    { "GiB", 1024*1024*1024 },
+    { "KB",  1000 },
+    { "MB",  1000000 },
+    { "GB",  1000000000 },
+    { "K",   1000 },
+    { "M",   1000000 },
+    { "G",   1000000000 },
+  };
+  int i;
+  int isNeg = 0;
+  if( zArg[0]=='-' ){
+    isNeg = 1;
+    zArg++;
+  }else if( zArg[0]=='+' ){
+    zArg++;
+  }
+  while( isdigit(zArg[0]) ){
+    v = v*10 + zArg[0] - '0';
+    zArg++;
+  }
+  for(i=0; i<sizeof(aMult)/sizeof(aMult[0]); i++){
+    if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
+      v *= aMult[i].iMult;
+      break;
+    }
+  }
+  return isNeg? -v : v;
+}
+
+/*
 ** Close an output file, assuming it is not stderr or stdout
 */
 static void output_file_close(FILE *f){
@@ -2469,7 +2506,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         /* sqlite3_test_control(int, uint) */
         case SQLITE_TESTCTRL_PENDING_BYTE:        
           if( nArg==3 ){
-            unsigned int opt = (unsigned int)atoi(azArg[2]);        
+            unsigned int opt = (unsigned int)integerValue(azArg[2]);        
             rc = sqlite3_test_control(testctrl, opt);
             printf("%d (0x%08x)\n", rc, rc);
           } else {
@@ -2561,7 +2598,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 #if defined(SQLITE_DEBUG) && defined(SQLITE_ENABLE_WHERETRACE)
   if( c=='w' && strncmp(azArg[0], "wheretrace", n)==0 ){
     extern int sqlite3WhereTrace;
-    sqlite3WhereTrace = atoi(azArg[1]);
+    sqlite3WhereTrace = booleanValue(azArg[1]);
   }else
 #endif
 
@@ -2747,6 +2784,10 @@ static int process_input(struct callback_data *p, FILE *in){
       free(zSql);
       zSql = 0;
       nSql = 0;
+    }else if( zSql && _all_whitespace(zSql) ){
+      free(zSql);
+      zSql = 0;
+      nSql = 0;
     }
   }
   if( zSql ){
@@ -2882,6 +2923,7 @@ static const char zOptions[] =
   "   -interactive         force interactive I/O\n"
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
+  "   -mmap N              default mmap size set to N\n"
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
@@ -3001,12 +3043,7 @@ int main(int argc, char **argv){
       sqlite3_int64 szHeap;
 
       zSize = cmdline_option_value(argc, argv, ++i);
-      szHeap = atoi(zSize);
-      for(j=0; (c = zSize[j])!=0; j++){
-        if( c=='M' ){ szHeap *= 1000000; break; }
-        if( c=='K' ){ szHeap *= 1000; break; }
-        if( c=='G' ){ szHeap *= 1000000000; break; }
-      }
+      szHeap = integerValue(zSize);
       if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #endif
@@ -3026,6 +3063,9 @@ int main(int argc, char **argv){
       extern int sqlite3_multiple_initialize(const char*,int);
       sqlite3_multiplex_initialize(0, 1);
 #endif
+    }else if( strcmp(z,"-mmap")==0 ){
+      sqlite3_int64 sz = integerValue(cmdline_option_value(argc,argv,++i));
+      sqlite3_config(SQLITE_CONFIG_MMAP_SIZE, sz, sz);
     }else if( strcmp(z,"-vfs")==0 ){
       sqlite3_vfs *pVfs = sqlite3_vfs_find(cmdline_option_value(argc,argv,++i));
       if( pVfs ){
@@ -3111,6 +3151,8 @@ int main(int argc, char **argv){
       stdin_is_interactive = 0;
     }else if( strcmp(z,"-heap")==0 ){
       i++;
+    }else if( strcmp(z,"-mmap")==0 ){
+      i++;
     }else if( strcmp(z,"-vfs")==0 ){
       i++;
 #ifdef SQLITE_ENABLE_VFSTRACE
@@ -3128,7 +3170,7 @@ int main(int argc, char **argv){
       z = cmdline_option_value(argc,argv,++i);
       if( z[0]=='.' ){
         rc = do_meta_command(z, &data);
-        if( rc && bail_on_error ) return rc;
+        if( rc && bail_on_error ) return rc==2 ? 0 : rc;
       }else{
         open_db(&data);
         rc = shell_exec(data.db, z, shell_callback, &data, &zErrMsg);
@@ -3152,6 +3194,7 @@ int main(int argc, char **argv){
     */
     if( zFirstCmd[0]=='.' ){
       rc = do_meta_command(zFirstCmd, &data);
+      if( rc==2 ) rc = 0;
     }else{
       open_db(&data);
       rc = shell_exec(data.db, zFirstCmd, shell_callback, &data, &zErrMsg);

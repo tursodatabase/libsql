@@ -116,71 +116,76 @@ int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
 
 const char *sqlite3TestErrorName(int rc){
   const char *zName = 0;
-  switch( rc ){
-    case SQLITE_OK:                  zName = "SQLITE_OK";                break;
-    case SQLITE_ERROR:               zName = "SQLITE_ERROR";             break;
-    case SQLITE_INTERNAL:            zName = "SQLITE_INTERNAL";          break;
-    case SQLITE_PERM:                zName = "SQLITE_PERM";              break;
-    case SQLITE_ABORT:               zName = "SQLITE_ABORT";             break;
-    case SQLITE_BUSY:                zName = "SQLITE_BUSY";              break;
-    case SQLITE_LOCKED:              zName = "SQLITE_LOCKED";            break;
-    case SQLITE_LOCKED_SHAREDCACHE:  zName = "SQLITE_LOCKED_SHAREDCACHE";break;
-    case SQLITE_NOMEM:               zName = "SQLITE_NOMEM";             break;
-    case SQLITE_READONLY:            zName = "SQLITE_READONLY";          break;
-    case SQLITE_INTERRUPT:           zName = "SQLITE_INTERRUPT";         break;
-    case SQLITE_IOERR:               zName = "SQLITE_IOERR";             break;
-    case SQLITE_CORRUPT:             zName = "SQLITE_CORRUPT";           break;
-    case SQLITE_NOTFOUND:            zName = "SQLITE_NOTFOUND";          break;
-    case SQLITE_FULL:                zName = "SQLITE_FULL";              break;
-    case SQLITE_CANTOPEN:            zName = "SQLITE_CANTOPEN";          break;
-    case SQLITE_PROTOCOL:            zName = "SQLITE_PROTOCOL";          break;
-    case SQLITE_EMPTY:               zName = "SQLITE_EMPTY";             break;
-    case SQLITE_SCHEMA:              zName = "SQLITE_SCHEMA";            break;
-    case SQLITE_TOOBIG:              zName = "SQLITE_TOOBIG";            break;
-    case SQLITE_CONSTRAINT:          zName = "SQLITE_CONSTRAINT";        break;
-    case SQLITE_CONSTRAINT_UNIQUE:   zName = "SQLITE_CONSTRAINT_UNIQUE"; break;
-    case SQLITE_CONSTRAINT_TRIGGER:  zName = "SQLITE_CONSTRAINT_TRIGGER";break;
-    case SQLITE_CONSTRAINT_FOREIGNKEY:
-                                 zName = "SQLITE_CONSTRAINT_FOREIGNKEY"; break;
-    case SQLITE_CONSTRAINT_CHECK:    zName = "SQLITE_CONSTRAINT_CHECK";  break;
-    case SQLITE_CONSTRAINT_PRIMARYKEY:
-                                 zName = "SQLITE_CONSTRAINT_PRIMARYKEY"; break;
-    case SQLITE_CONSTRAINT_NOTNULL:  zName = "SQLITE_CONSTRAINT_NOTNULL";break;
-    case SQLITE_CONSTRAINT_COMMITHOOK:
-                                 zName = "SQLITE_CONSTRAINT_COMMITHOOK"; break;
-    case SQLITE_CONSTRAINT_VTAB:     zName = "SQLITE_CONSTRAINT_VTAB";   break;
-    case SQLITE_CONSTRAINT_FUNCTION: zName = "SQLITE_CONSTRAINT_FUNCTION";break;
-    case SQLITE_MISMATCH:            zName = "SQLITE_MISMATCH";          break;
-    case SQLITE_MISUSE:              zName = "SQLITE_MISUSE";            break;
-    case SQLITE_NOLFS:               zName = "SQLITE_NOLFS";             break;
-    case SQLITE_AUTH:                zName = "SQLITE_AUTH";              break;
-    case SQLITE_FORMAT:              zName = "SQLITE_FORMAT";            break;
-    case SQLITE_RANGE:               zName = "SQLITE_RANGE";             break;
-    case SQLITE_NOTADB:              zName = "SQLITE_NOTADB";            break;
-    case SQLITE_ROW:                 zName = "SQLITE_ROW";               break;
-    case SQLITE_DONE:                zName = "SQLITE_DONE";              break;
-    case SQLITE_IOERR_READ:          zName = "SQLITE_IOERR_READ";        break;
-    case SQLITE_IOERR_SHORT_READ:    zName = "SQLITE_IOERR_SHORT_READ";  break;
-    case SQLITE_IOERR_WRITE:         zName = "SQLITE_IOERR_WRITE";       break;
-    case SQLITE_IOERR_FSYNC:         zName = "SQLITE_IOERR_FSYNC";       break;
-    case SQLITE_IOERR_DIR_FSYNC:     zName = "SQLITE_IOERR_DIR_FSYNC";   break;
-    case SQLITE_IOERR_TRUNCATE:      zName = "SQLITE_IOERR_TRUNCATE";    break;
-    case SQLITE_IOERR_FSTAT:         zName = "SQLITE_IOERR_FSTAT";       break;
-    case SQLITE_IOERR_UNLOCK:        zName = "SQLITE_IOERR_UNLOCK";      break;
-    case SQLITE_IOERR_RDLOCK:        zName = "SQLITE_IOERR_RDLOCK";      break;
-    case SQLITE_IOERR_DELETE:        zName = "SQLITE_IOERR_DELETE";      break;
-    case SQLITE_IOERR_BLOCKED:       zName = "SQLITE_IOERR_BLOCKED";     break;
-    case SQLITE_IOERR_NOMEM:         zName = "SQLITE_IOERR_NOMEM";       break;
-    case SQLITE_IOERR_ACCESS:        zName = "SQLITE_IOERR_ACCESS";      break;
-    case SQLITE_IOERR_CHECKRESERVEDLOCK:
-                               zName = "SQLITE_IOERR_CHECKRESERVEDLOCK"; break;
-    case SQLITE_IOERR_LOCK:          zName = "SQLITE_IOERR_LOCK";        break;
-    case SQLITE_CORRUPT_VTAB:        zName = "SQLITE_CORRUPT_VTAB";      break;
-    case SQLITE_READONLY_RECOVERY:   zName = "SQLITE_READONLY_RECOVERY"; break;
-    case SQLITE_READONLY_CANTLOCK:   zName = "SQLITE_READONLY_CANTLOCK"; break;
-    case SQLITE_READONLY_ROLLBACK:   zName = "SQLITE_READONLY_ROLLBACK"; break;
-    default:                         zName = "SQLITE_Unknown";           break;
+  int i;
+  for(i=0; i<2 && zName==0; i++, rc &= 0xff){
+    switch( rc ){
+      case SQLITE_OK:                  zName = "SQLITE_OK";                break;
+      case SQLITE_ERROR:               zName = "SQLITE_ERROR";             break;
+      case SQLITE_INTERNAL:            zName = "SQLITE_INTERNAL";          break;
+      case SQLITE_PERM:                zName = "SQLITE_PERM";              break;
+      case SQLITE_ABORT:               zName = "SQLITE_ABORT";             break;
+      case SQLITE_BUSY:                zName = "SQLITE_BUSY";              break;
+      case SQLITE_LOCKED:              zName = "SQLITE_LOCKED";            break;
+      case SQLITE_LOCKED_SHAREDCACHE:  zName = "SQLITE_LOCKED_SHAREDCACHE";break;
+      case SQLITE_NOMEM:               zName = "SQLITE_NOMEM";             break;
+      case SQLITE_READONLY:            zName = "SQLITE_READONLY";          break;
+      case SQLITE_INTERRUPT:           zName = "SQLITE_INTERRUPT";         break;
+      case SQLITE_IOERR:               zName = "SQLITE_IOERR";             break;
+      case SQLITE_CORRUPT:             zName = "SQLITE_CORRUPT";           break;
+      case SQLITE_NOTFOUND:            zName = "SQLITE_NOTFOUND";          break;
+      case SQLITE_FULL:                zName = "SQLITE_FULL";              break;
+      case SQLITE_CANTOPEN:            zName = "SQLITE_CANTOPEN";          break;
+      case SQLITE_PROTOCOL:            zName = "SQLITE_PROTOCOL";          break;
+      case SQLITE_EMPTY:               zName = "SQLITE_EMPTY";             break;
+      case SQLITE_SCHEMA:              zName = "SQLITE_SCHEMA";            break;
+      case SQLITE_TOOBIG:              zName = "SQLITE_TOOBIG";            break;
+      case SQLITE_CONSTRAINT:          zName = "SQLITE_CONSTRAINT";        break;
+      case SQLITE_CONSTRAINT_UNIQUE:   zName = "SQLITE_CONSTRAINT_UNIQUE"; break;
+      case SQLITE_CONSTRAINT_TRIGGER:  zName = "SQLITE_CONSTRAINT_TRIGGER";break;
+      case SQLITE_CONSTRAINT_FOREIGNKEY:
+                                   zName = "SQLITE_CONSTRAINT_FOREIGNKEY"; break;
+      case SQLITE_CONSTRAINT_CHECK:    zName = "SQLITE_CONSTRAINT_CHECK";  break;
+      case SQLITE_CONSTRAINT_PRIMARYKEY:
+                                   zName = "SQLITE_CONSTRAINT_PRIMARYKEY"; break;
+      case SQLITE_CONSTRAINT_NOTNULL:  zName = "SQLITE_CONSTRAINT_NOTNULL";break;
+      case SQLITE_CONSTRAINT_COMMITHOOK:
+                                   zName = "SQLITE_CONSTRAINT_COMMITHOOK"; break;
+      case SQLITE_CONSTRAINT_VTAB:     zName = "SQLITE_CONSTRAINT_VTAB";   break;
+      case SQLITE_CONSTRAINT_FUNCTION: zName = "SQLITE_CONSTRAINT_FUNCTION";break;
+      case SQLITE_MISMATCH:            zName = "SQLITE_MISMATCH";          break;
+      case SQLITE_MISUSE:              zName = "SQLITE_MISUSE";            break;
+      case SQLITE_NOLFS:               zName = "SQLITE_NOLFS";             break;
+      case SQLITE_AUTH:                zName = "SQLITE_AUTH";              break;
+      case SQLITE_FORMAT:              zName = "SQLITE_FORMAT";            break;
+      case SQLITE_RANGE:               zName = "SQLITE_RANGE";             break;
+      case SQLITE_NOTADB:              zName = "SQLITE_NOTADB";            break;
+      case SQLITE_ROW:                 zName = "SQLITE_ROW";               break;
+      case SQLITE_NOTICE:              zName = "SQLITE_NOTICE";            break;
+      case SQLITE_WARNING:             zName = "SQLITE_WARNING";           break;
+      case SQLITE_DONE:                zName = "SQLITE_DONE";              break;
+      case SQLITE_IOERR_READ:          zName = "SQLITE_IOERR_READ";        break;
+      case SQLITE_IOERR_SHORT_READ:    zName = "SQLITE_IOERR_SHORT_READ";  break;
+      case SQLITE_IOERR_WRITE:         zName = "SQLITE_IOERR_WRITE";       break;
+      case SQLITE_IOERR_FSYNC:         zName = "SQLITE_IOERR_FSYNC";       break;
+      case SQLITE_IOERR_DIR_FSYNC:     zName = "SQLITE_IOERR_DIR_FSYNC";   break;
+      case SQLITE_IOERR_TRUNCATE:      zName = "SQLITE_IOERR_TRUNCATE";    break;
+      case SQLITE_IOERR_FSTAT:         zName = "SQLITE_IOERR_FSTAT";       break;
+      case SQLITE_IOERR_UNLOCK:        zName = "SQLITE_IOERR_UNLOCK";      break;
+      case SQLITE_IOERR_RDLOCK:        zName = "SQLITE_IOERR_RDLOCK";      break;
+      case SQLITE_IOERR_DELETE:        zName = "SQLITE_IOERR_DELETE";      break;
+      case SQLITE_IOERR_BLOCKED:       zName = "SQLITE_IOERR_BLOCKED";     break;
+      case SQLITE_IOERR_NOMEM:         zName = "SQLITE_IOERR_NOMEM";       break;
+      case SQLITE_IOERR_ACCESS:        zName = "SQLITE_IOERR_ACCESS";      break;
+      case SQLITE_IOERR_CHECKRESERVEDLOCK:
+                                 zName = "SQLITE_IOERR_CHECKRESERVEDLOCK"; break;
+      case SQLITE_IOERR_LOCK:          zName = "SQLITE_IOERR_LOCK";        break;
+      case SQLITE_CORRUPT_VTAB:        zName = "SQLITE_CORRUPT_VTAB";      break;
+      case SQLITE_READONLY_RECOVERY:   zName = "SQLITE_READONLY_RECOVERY"; break;
+      case SQLITE_READONLY_CANTLOCK:   zName = "SQLITE_READONLY_CANTLOCK"; break;
+      case SQLITE_READONLY_ROLLBACK:   zName = "SQLITE_READONLY_ROLLBACK"; break;
+    }
   }
+  if( zName==0 ) zName = "SQLITE_Unknown";
   return zName;
 }
 #define t1ErrorName sqlite3TestErrorName
@@ -5844,6 +5849,31 @@ static int test_test_control(
   return TCL_OK;
 }
 
+#if SQLITE_OS_UNIX
+#include <sys/time.h>
+#include <sys/resource.h>
+
+static int test_getrusage(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  char buf[1024];
+  struct rusage r;
+  memset(&r, 0, sizeof(r));
+  getrusage(RUSAGE_SELF, &r);
+
+  sprintf(buf, "ru_utime=%d.%06d ru_stime=%d.%06d ru_minflt=%d ru_majflt=%d", 
+    (int)r.ru_utime.tv_sec, (int)r.ru_utime.tv_usec, 
+    (int)r.ru_stime.tv_sec, (int)r.ru_stime.tv_usec, 
+    (int)r.ru_minflt, (int)r.ru_majflt
+  );
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+  return TCL_OK;
+}
+#endif
+
 #if SQLITE_OS_WIN
 /*
 ** Information passed from the main thread into the windows file locker
@@ -6233,6 +6263,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "print_explain_query_plan", test_print_eqp, 0  },
 #endif
      { "sqlite3_test_control", test_test_control },
+#if SQLITE_OS_UNIX
+     { "getrusage", test_getrusage },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

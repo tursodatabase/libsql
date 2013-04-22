@@ -79,6 +79,12 @@ typedef struct PgHdr DbPage;
 #define PAGER_JOURNALMODE_WAL         5   /* Use write-ahead logging */
 
 /*
+** Flags that make up the mask passed to sqlite3PagerAcquire().
+*/
+#define PAGER_ACQUIRE_NOCONTENT     0x01  /* Do not load data from disk */
+#define PAGER_ACQUIRE_READONLY      0x02  /* Read-only page is acceptable */
+
+/*
 ** The remainder of this file contains the declarations of the functions
 ** that make up the Pager sub-system API. See source code comments for 
 ** a detailed description of each routine.
@@ -102,6 +108,7 @@ void sqlite3PagerSetBusyhandler(Pager*, int(*)(void *), void *);
 int sqlite3PagerSetPagesize(Pager*, u32*, int);
 int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
+void sqlite3PagerSetMmapLimit(Pager *, sqlite3_int64);
 void sqlite3PagerShrink(Pager*);
 void sqlite3PagerSetSafetyLevel(Pager*,int,int,int);
 int sqlite3PagerLockingMode(Pager *, int);
