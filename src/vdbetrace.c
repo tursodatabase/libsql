@@ -128,7 +128,7 @@ char *sqlite3VdbeExpandSql(
       }else if( pVar->flags & MEM_Real ){
         sqlite3XPrintf(&out, "%!.15g", pVar->r);
       }else if( pVar->flags & MEM_Str ){
-        int n;  /* Number of bytes of the string text to include in output */
+        int nOut;  /* Number of bytes of the string text to include in output */
 #ifndef SQLITE_OMIT_UTF16
         u8 enc = ENC(db);
         Mem utf8;
@@ -140,16 +140,16 @@ char *sqlite3VdbeExpandSql(
           pVar = &utf8;
         }
 #endif
-        n = pVar->n;
+        nOut = pVar->n;
 #ifdef SQLITE_TRACE_SIZE_LIMIT
         if( n>SQLITE_TRACE_SIZE_LIMIT ){
-          n = SQLITE_TRACE_SIZE_LIMIT;
-          while( n<pVar->n && (pVar->z[n]&0xc0)==0x80 ){ n++; }
+          nOut = SQLITE_TRACE_SIZE_LIMIT;
+          while( nOut<pVar->n && (pVar->z[n]&0xc0)==0x80 ){ n++; }
         }
 #endif    
-        sqlite3XPrintf(&out, "'%.*q'", n, pVar->z);
+        sqlite3XPrintf(&out, "'%.*q'", nOut, pVar->z);
 #ifdef SQLITE_TRACE_SIZE_LIMIT
-        if( n<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-n);
+        if( nOut<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-n);
 #endif
 #ifndef SQLITE_OMIT_UTF16
         if( enc!=SQLITE_UTF8 ) sqlite3VdbeMemRelease(&utf8);
@@ -157,19 +157,19 @@ char *sqlite3VdbeExpandSql(
       }else if( pVar->flags & MEM_Zero ){
         sqlite3XPrintf(&out, "zeroblob(%d)", pVar->u.nZero);
       }else{
-        int n;  /* Number of bytes of the blob to include in output */
+        int nOut;  /* Number of bytes of the blob to include in output */
         assert( pVar->flags & MEM_Blob );
         sqlite3StrAccumAppend(&out, "x'", 2);
-        n = pVar->n;
+        nOut = pVar->n;
 #ifdef SQLITE_TRACE_SIZE_LIMIT
-        if( n>SQLITE_TRACE_SIZE_LIMIT ) n = SQLITE_TRACE_SIZE_LIMIT;
+        if( nOut>SQLITE_TRACE_SIZE_LIMIT ) nOut = SQLITE_TRACE_SIZE_LIMIT;
 #endif
-        for(i=0; i<n; i++){
+        for(i=0; i<nOut; i++){
           sqlite3XPrintf(&out, "%02x", pVar->z[i]&0xff);
         }
         sqlite3StrAccumAppend(&out, "'", 1);
 #ifdef SQLITE_TRACE_SIZE_LIMIT
-        if( n<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-n);
+        if( nOut<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-n);
 #endif
       }
     }

@@ -4782,6 +4782,7 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 */
 static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
+  UNUSED_PARAMETER(iOff);
 
   /* If p==0 (unmap the entire file) then there must be no outstanding 
   ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),

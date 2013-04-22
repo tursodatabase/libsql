@@ -121,7 +121,7 @@ static int fts3tokDequoteArray(
     *pazDequote = 0;
   }else{
     int i;
-    int nByte;
+    int nByte = 0;
     char **azDequote;
 
     for(i=0; i<argc; i++){
@@ -175,6 +175,7 @@ static int fts3tokConnectMethod(
   int rc;
   char **azDequote = 0;
   int nDequote;
+  UNUSED_PARAMETER(pUnused);
 
   rc = sqlite3_declare_vtab(db, FTS3_TOK_SCHEMA);
   if( rc!=SQLITE_OK ) return rc;
@@ -244,6 +245,7 @@ static int fts3tokBestIndexMethod(
   sqlite3_index_info *pInfo
 ){
   int i;
+  UNUSED_PARAMETER(pVTab);
 
   for(i=0; i<pInfo->nConstraint; i++){
     if( pInfo->aConstraint[i].usable 
@@ -269,6 +271,7 @@ static int fts3tokBestIndexMethod(
 */
 static int fts3tokOpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
   Fts3tokCursor *pCsr;
+  UNUSED_PARAMETER(pVTab);
 
   pCsr = (Fts3tokCursor *)sqlite3_malloc(sizeof(Fts3tokCursor));
   if( pCsr==0 ){
@@ -346,6 +349,8 @@ static int fts3tokFilterMethod(
   int rc = SQLITE_ERROR;
   Fts3tokCursor *pCsr = (Fts3tokCursor *)pCursor;
   Fts3tokTable *pTab = (Fts3tokTable *)(pCursor->pVtab);
+  UNUSED_PARAMETER(idxStr);
+  UNUSED_PARAMETER(nVal);
 
   fts3tokResetCursor(pCsr);
   if( idxNum==1 ){

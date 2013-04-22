@@ -1,5 +1,5 @@
-C Do\snot\sallow\sa\svirtual\stable\sto\scancel\sthe\sORDER\sBY\sclause\sunless\sall\nouter\sloops\sare\sguaranteed\sto\sreturn\sno\smore\sthan\sone\srow\sresult.\nCandidate\sfix\sfor\sticket\s[ba82a4a41eac1].
-D 2013-04-22T19:56:12.702
+C Fix\sharmless\scompiler\swarnings.
+D 2013-04-22T23:38:50.007
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -67,7 +67,7 @@ F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c 5fcfcafff46a2a3a63b8e59fcb51987d01c74695
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c f9a1a1702db1bfad3e2d0064746eeb808f125489
-F ext/fts3/fts3_tokenize_vtab.c e097c2e19126249b812a4002e76309d5fef3495b
+F ext/fts3/fts3_tokenize_vtab.c a29f126b9e6c6a6f1021a8f7440bf125e68af1f9
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
@@ -157,7 +157,7 @@ F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
-F src/memjournal.c 0ebce851677a7ac035ba1512a7e65851b34530c6
+F src/memjournal.c 41a598445c8f249bd9b26ecae700c60dcf34cbf3
 F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
@@ -167,7 +167,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 0a561eae5965c9371300b0419027f5ae9f847af2
+F src/os_unix.c 5a9ac4a566fb566a2ff9b9e3a9d723075d9d26a7
 F src/os_win.c 673b3e3d1fa3040d8d95a7f1f5e0e553aed56cfb
 F src/pager.c 6c3a8a5d665498b0344395a2c9f82d5abc4cc771
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -254,7 +254,7 @@ F src/vdbeaux.c ecb43014bcd3019e5aa2b5561e5c3a447f007a08
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 4fad64071ae120c25f39dcac572d716b9cadeb7f
-F src/vdbetrace.c a22263ab47f6ba4fcd176515cec1e732866b25f0
+F src/vdbetrace.c 3ad1b4e92b60c082a02ac563da4a2735cc7d297c
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
@@ -1054,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2b3fed09eb89f1e9d6a5f7487ef526b46eb51490
-R c15aea6fcd9f9126da1de54ee794b8c9
+P 49cfa14fceeef2d55b449eb927c283ce6f650c07
+R 83c630a254d9cc209b10e1a83d85002b
 U drh
-Z 5c7507bd8ad3ff74a1cf8b492f137aec
+Z a7a8588b07b6fce1e57eced049fe41f1
