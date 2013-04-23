@@ -16,7 +16,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 do_test regexp1-1.1 {
-  sqlite3_add_regexp_func db
+  load_static_extension db regexp
   db eval {
     CREATE TABLE t1(x INTEGER PRIMARY KEY, y TEXT);
     INSERT INTO t1 VALUES(1, 'For since by man came death,');
