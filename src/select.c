@@ -4047,7 +4047,7 @@ int sqlite3Select(
       pItem->addrFillSub = topAddr+1;
       VdbeNoopComment((v, "materialize %s", pItem->pTab->zName));
       if( pItem->isCorrelated==0 ){
-        /* If the subquery is no correlated and if we are not inside of
+        /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */
         onceAddr = sqlite3CodeOnce(pParse);

@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-04-22T23:38:50.007
+C Fix\sa\ssimple\scomment\stypo.\s\sNo\schanges\sto\scode.
+D 2013-04-24T13:50:09.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 10a1b332e3eb36e5d561085e18c58a8578cd7d73
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 01540bcd3df3c8f1187158e77986028b1c667258
+F src/select.c 8d097454ff56bdda38c4d877757f592a3c823d15
 F src/shell.c aca9d94653decd4496846dee0c7ba83eaf96a46d
 F src/sqlite.h.in ec279b782bea05db63b8b29481f9642b406004af
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -1054,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 49cfa14fceeef2d55b449eb927c283ce6f650c07
-R 83c630a254d9cc209b10e1a83d85002b
+P 1a1cf5aa86734c832d845e07780262a178188d56
+R 52301974d4ec9029bc00a43d1015330a
 U drh
-Z a7a8588b07b6fce1e57eced049fe41f1
+Z d70e5c91a8e7a901cc898018c72d77a1
