@@ -16,7 +16,7 @@ set testprefix spellfix
 
 ifcapable !vtab { finish_test ; return }
 
-register_spellfix_module db
+load_static_extension db spellfix
 
 set vocab {
 rabbi rabbit rabbits rabble rabid rabies raccoon raccoons race raced racer

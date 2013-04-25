@@ -12,7 +12,16 @@
 **
 ** The code in this file implements a compact but reasonably
 ** efficient regular-expression matcher for posix extended regular
-** expressions against UTF8 text.  The following syntax is supported:
+** expressions against UTF8 text.
+**
+** This file is an SQLite extension.  It registers a single function
+** named "regexp(A,B)" where A is the regular expression and B is the
+** string to be matched.  By registering this function, SQLite will also
+** then implement the "B regexp A" operator.  Note that with the function
+** the regular expression comes first, but with the operator it comes
+** second.
+**
+**  The following regular expression syntax is supported:
 **
 **     X*      zero or more occurrences of X
 **     X+      one or more occurrences of X
@@ -49,7 +58,17 @@
 */
 #include <string.h>
 #include <stdlib.h>
-#include "sqlite3.h"
+#include "sqlite3ext.h"
+SQLITE_EXTENSION_INIT1
+
+/*
+** The following #defines change the names of some functions implemented in
+** this file to prevent name collisions with C-library functions of the
+** same name.
+*/
+#define re_match   sqlite3re_match
+#define re_compile sqlite3re_compile
+#define re_free    sqlite3re_free
 
 /* The end-of-input character */
 #define RE_EOF            0    /* End of input */
@@ -175,7 +194,7 @@ static int re_space_char(int c){
 /* Run a compiled regular expression on the zero-terminated input
 ** string zIn[].  Return true on a match and false if there is no match.
 */
-int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
+static int re_match(ReCompiled *pRe, const unsigned char *zIn, int nIn){
   ReStateSet aStateSet[2], *pThis, *pNext;
   ReStateNumber aSpace[100];
   ReStateNumber *pToFree;
@@ -718,53 +737,20 @@ static void re_sql_func(
 }
 
 /*
-** Invoke this routine in order to install the REGEXP function in an
+** Invoke this routine to register the regexp() function with the
 ** SQLite database connection.
-**
-** Use:
-**
-**      sqlite3_auto_extension(sqlite3_add_regexp_func);
-**
-** to cause this extension to be automatically loaded into each new
-** database connection.
 */
-int sqlite3_add_regexp_func(sqlite3 *db){
-  return sqlite3_create_function(db, "regexp", 2, SQLITE_UTF8, 0,
-                                 re_sql_func, 0, 0);
-}
-
-
-/***************************** Test Code ***********************************/
-#ifdef SQLITE_TEST
-#include <tcl.h>
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
-
-/* Implementation of the TCL command:
-**
-**      sqlite3_add_regexp_func $DB
-*/
-static int tclSqlite3AddRegexpFunc(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_regexp_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
 ){
-  sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  sqlite3_add_regexp_func(db);
-  return TCL_OK;
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+  rc = sqlite3_create_function(db, "regexp", 2, SQLITE_UTF8, 0,
+                                 re_sql_func, 0, 0);
+  return rc;
 }
-
-/* Register the sqlite3_add_regexp_func TCL command with the TCL interpreter.
-*/
-int Sqlitetestregexp_Init(Tcl_Interp *interp){
-  Tcl_CreateObjCommand(interp, "sqlite3_add_regexp_func",
-                       tclSqlite3AddRegexpFunc, 0, 0);
-  return TCL_OK;
-}
-#endif /* SQLITE_TEST */
-/**************************** End Of Test Code *******************************/
