@@ -272,6 +272,7 @@ TESTSRC = \
 TESTSRC += \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/wholenumber.c
 
 

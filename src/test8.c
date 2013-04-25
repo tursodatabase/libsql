@@ -1370,29 +1370,6 @@ static int declare_vtab(
   return TCL_OK;
 }
 
-#include "test_spellfix.c"
-
-/*
-** Register the spellfix virtual table module.
-*/
-static int register_spellfix_module(
-  ClientData clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  sqlite3 *db;
-
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-
-  sqlite3_spellfix1_register(db);
-  return TCL_OK;
-}
-
 #endif /* ifndef SQLITE_OMIT_VIRTUALTABLE */
 
 /*
@@ -1406,7 +1383,6 @@ int Sqlitetest8_Init(Tcl_Interp *interp){
      void *clientData;
   } aObjCmd[] = {
      { "register_echo_module",       register_echo_module, 0 },
-     { "register_spellfix_module",   register_spellfix_module, 0 },
      { "sqlite3_declare_vtab",       declare_vtab, 0 },
   };
   int i;

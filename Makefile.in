@@ -390,6 +390,7 @@ TESTSRC = \
 TESTSRC += \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/wholenumber.c
 
 # Source code to the library files needed by the test fixture
