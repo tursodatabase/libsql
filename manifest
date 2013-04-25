@@ -1,9 +1,9 @@
-C Fix\sthe\stool/build-shell.sh\sscript\sto\sremove\sreferences\sto\sfiles\sthat\sare\nnow\sloadable\sextensions.
-D 2013-04-25T17:27:08.281
+C Added\sthe\snextchar.c\sextension.\s\sMinor\schanges\sto\sthe\sspellfix.c\sextension\nso\sthat\sit\scan\sbe\sappended\sto\san\samalgamation\sand\scompiled\swithout\sduplicating\nsymbols.
+D 2013-04-25T19:31:33.149
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 38a45083d4df568eefd31d27d67381850f35a016
+F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc d03cde9073d5752d6ddcaa6807a8bdda277e48f2
+F Makefile.msc 8f4ee0dab220a5276d5da61149dfd6cd5d1dd5b8
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -88,8 +88,9 @@ F ext/misc/closure.c fec0c8537c69843e0b7631d500a14c0527962cd6
 F ext/misc/editdist3.wiki 06100a0c558921a563cbc40e0d0151902b1eef6d
 F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
+F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
-F ext/misc/spellfix.c 8bb699116e36cc5e68d7ddf1810b638a3090c744
+F ext/misc/spellfix.c e323eebb877d735bc64404c16a6d758ab17a0b7a
 F ext/misc/spellfix1.wiki dd1830444c14cf0f54dd680cc044df2ace2e9d09
 F ext/misc/wholenumber.c ce362368b9381ea48cbd951ade8df867eeeab014
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -113,7 +114,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 9535835509ac58a1902ba85ed77bcce9840d62d4
+F main.mk 1b25be82452366abc27cc9ab2acf3244a773d5a1
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -200,7 +201,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
-F src/test1.c e9562428421bf0cdbf11bf5f60ab0cdabee45885
+F src/test1.c 2b0ec224983403312a4d1db8546e1e1c45694251
 F src/test2.c 29e7154112f7448d64204e8d31179cf497ecf425
 F src/test3.c 96aed72a8e1d542fed127e3e8350ae357712fa82
 F src/test4.c cea2c55110241e4674e66d476d29c914627999f5
@@ -756,7 +757,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/spellfix.test a85915ab25af7fcfb0d99cb1951e6ef15e26202c
+F test/spellfix.test bea537caf587df30d430c2c6a8fe9f64b8712834
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test be8d477306006ec696bc86757cfb34bec79447ce
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1060,7 +1061,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 381564e91bbf619f99a48b0b7a94ac586cb9ee79
-R dfc5d9e4a45d231ac8d29e1b5d10bc7e
+P aabeea98f53edde68f484f1794ae70789dac3889
+R 77b136ceb7e3bfd54c75649b938a3e12
 U drh
-Z 8c5379cfdd83f28d6a14d88089c63be6
+Z fb4502a56cfa201ec6c890343c386675

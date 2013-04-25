@@ -17,15 +17,17 @@
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
-#define ALWAYS(X)  1
-#define NEVER(X)   0
-typedef unsigned char u8;
-typedef unsigned short u16;
-#include <ctype.h>
+#ifndef SQLITE_AMALGAMATION
+# include <string.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <assert.h>
+# define ALWAYS(X)  1
+# define NEVER(X)   0
+  typedef unsigned char u8;
+  typedef unsigned short u16;
+# include <ctype.h>
+#endif
 
 /*
 ** Character classes for ASCII characters:
