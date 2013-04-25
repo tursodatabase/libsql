@@ -1,0 +1,464 @@
+<title>The Spellfix1 Virtual Table</title>
+
+This spellfix1 virtual table is used to search
+a large vocabulary for close matches.  For example, spellfix1
+can be used to suggest corrections to misspelled words.  Or,
+it could be used with FTS4 to do full-text search using potentially
+misspelled words.
+
+Create an instance of the spellfix1 virtual table like this:
+
+<blockquote><pre>
+CREATE VIRTUAL TABLE demo USING spellfix1;
+</pre></blockquote>
+
+The "spellfix1" term is the name of this module and must be entered as
+shown.  The "demo" term is the
+name of the virtual table you will be creating and can be altered
+to suit the needs of your application.  The virtual table is initially
+empty.  In order for the virtual table to be useful, you will need to
+populate it with your vocabulary.  Suppose you
+have a list of words in a table named "big_vocabulary".  Then do this:
+
+<blockquote><pre>
+INSERT INTO demo(word) SELECT word FROM big_vocabulary;
+</pre></blockquote>
+
+If you intend to use this virtual table in cooperation with an FTS4
+table (for spelling correctly of search terms) then you might extract
+the vocabulary using an fts3aux table:
+
+<blockquote><pre>
+INSERT INTO demo(word) SELECT term FROM search_aux WHERE col='*';
+</pre></blockquote>
+
+You can also provide the virtual table with a "rank" for each word.
+The "rank" is an estimate of how common the word is.  Larger numbers
+mean the word is more common.  If you omit the rank when populating
+the table, then a rank of 1 is assumed.  But if you have rank 
+information, you can supply it and the virtual table will show a
+slight preference for selecting more commonly used terms.  To
+populate the rank from an fts4aux table "search_aux" do something
+like this:
+
+<blockquote><pre>
+INSERT INTO demo(word,rank)
+   SELECT term, documents FROM search_aux WHERE col='*';
+</pre></blockquote>
+
+To query the virtual table, include a MATCH operator in the WHERE
+clause.  For example:
+
+<blockquote><pre>
+SELECT word FROM demo WHERE word MATCH 'kennasaw';
+</pre></blockquote>
+
+Using a dataset of American place names (derived from
+[http://geonames.usgs.gov/domestic/download_data.htm]) the query above
+returns 20 results beginning with:
+
+<blockquote><pre>
+kennesaw
+kenosha
+kenesaw
+kenaga
+keanak
+</pre></blockquote>
+
+If you append the character '*' to the end of the pattern, then
+a prefix search is performed.  For example:
+
+<blockquote><pre>
+SELECT word FROM demo WHERE word MATCH 'kennes*';
+</pre></blockquote>
+
+Yields 20 results beginning with:
+
+<blockquote><pre>
+kennesaw
+kennestone
+kenneson
+kenneys
+keanes
+keenes
+</pre></blockquote>
+
+<h2>Search Refinements</h2>
+
+By default, the spellfix1 table returns no more than 20 results.
+(It might return less than 20 if there were fewer good matches.)
+You can change the upper bound on the number of returned rows by
+adding a "top=N" term to the WHERE clause of your query, where N
+is the new maximum.  For example, to see the 5 best matches:
+
+<blockquote><pre>
+SELECT word FROM demo WHERE word MATCH 'kennes*' AND top=5;
+</pre></blockquote>
+
+Each entry in the spellfix1 virtual table is associated with a
+a particular language, identified by the integer "langid" column.
+The default langid is 0 and if no other actions are taken, the
+entire vocabulary is a part of the 0 language.  But if your application
+needs to operate in multiple languages, then you can specify different
+vocabulary items for each language by specifying the langid field
+when populating the table.  For example:
+
+<blockquote><pre>
+INSERT INTO demo(word,langid) SELECT word, 0 FROM en_vocabulary;
+INSERT INTO demo(word,langid) SELECT word, 1 FROM de_vocabulary;
+INSERT INTO demo(word,langid) SELECT word, 2 FROM fr_vocabulary;
+INSERT INTO demo(word,langid) SELECT word, 3 FROM ru_vocabulary;
+INSERT INTO demo(word,langid) SELECT word, 4 FROM cn_vocabulary;
+</pre></blockquote>
+
+After the virtual table has been populated with items from multiple
+languages, specify the language of interest using a "langid=N" term
+in the WHERE clause of the query:
+
+<blockquote><pre>
+SELECT word FROM demo WHERE word MATCH 'hildes*' AND langid=1;
+</pre></blockquote>
+
+Note that if you do not include the "langid=N" term in the WHERE clause,
+the search will be against language 0 (English in the example above.)
+All spellfix1 searches are against a single language id.  There is no
+way to search all languages at once.
+ 
+
+<h2>Virtual Table Details</h2>
+
+The virtual table actually has a unique rowid with seven columns plus five
+extra hidden columns.  The columns are as follows:
+
+<blockquote><dl>
+<dt><b>rowid</b><dd>
+A unique integer number associated with each
+vocabulary item in the table.  This can be used
+as a foreign key on other tables in the database.
+
+<dt><b>word</b><dd>
+The text of the word that matches the pattern.
+Both word and pattern can contains unicode characters
+and can be mixed case.
+
+<dt><b>rank</b><dd>
+This is the rank of the word, as specified in the
+original INSERT statement.
+
+
+<dt><b>distance</b><dd>
+This is an edit distance or Levensthein distance going
+from the pattern to the word.
+
+<dt><b>langid</b><dd>
+This is the language-id of the word.  All queries are
+against a single language-id, which defaults to 0.
+For any given query this value is the same on all rows.
+
+<dt><b>score</b><dd>
+The score is a combination of rank and distance.  The
+idea is that a lower score is better.  The virtual table
+attempts to find words with the lowest score and 
+by default (unless overridden by ORDER BY) returns
+results in order of increasing score.
+
+<dt><b>matchlen</b><dd>
+In a prefix search, the matchlen is the number of characters in
+the string that match against the prefix.  For a non-prefix search,
+this is the same as length(word).
+
+<dt><b>phonehash</b><dd>
+This column shows the phonetic hash prefix that was used to restrict
+the search.  For any given query, this column should be the same for
+every row.  This information is available for diagnostic purposes and
+is not normally considered useful in real applications.
+
+<dt><b>top</b><dd>
+(HIDDEN)  For any query, this value is the same on all
+rows.  It is an integer which is the maximum number of
+rows that will be output.  The actually number of rows
+output might be less than this number, but it will never
+be greater.  The default value for top is 20, but that
+can be changed for each query by including a term of
+the form "top=N" in the WHERE clause of the query.
+
+<dt><b>scope</b><dd>
+(HIDDEN)  For any query, this value is the same on all
+rows.  The scope is a measure of how widely the virtual
+table looks for matching words.  Smaller values of
+scope cause a broader search.  The scope is normally
+choosen automatically and is capped at 4.  Applications
+can change the scope by including a term of the form
+"scope=N" in the WHERE clause of the query.  Increasing
+the scope will make the query run faster, but will reduce
+the possible corrections.
+
+<dt><b>srchcnt</b><dd>
+(HIDDEN)  For any query, this value is the same on all
+rows.  This value is an integer which is the number of
+of words examined using the edit-distance algorithm to
+find the top matches that are ultimately displayed.  This
+value is for diagnostic use only.
+
+<dt><b>soundslike</b><dd>
+(HIDDEN)  When inserting vocabulary entries, this field
+can be set to an spelling that matches what the word
+sounds like.  See the DEALING WITH UNUSUAL AND DIFFICULT
+SPELLINGS section below for details.
+
+<dt><b>command</b><dd>
+(HIDDEN)  The value of the "command" column is always NULL.  However,
+applications can insert special strings into the "command" column in order
+to provoke certain behaviors in the spellfix1 virtual table.
+For example, inserting the string 'reset' into the "command" column
+will cause the virtual table will reread its edit distance weights
+(if there are any).
+</dl></blockquote>
+
+<h2>Algorithm</h2>
+
+The spellfix1 virtual table creates a single
+shadow table named "%_vocab" (where the % is replaced by the name of
+the virtual table; Ex: "demo_vocab" for the "demo" virtual table).  
+the shadow table contains the following columns:
+
+<blockquote><dl>
+<dt><b>id</b><dd>
+The unique id (INTEGER PRIMARY KEY)
+
+<dt><b>rank</b><dd>
+The rank of word.
+
+<dt><b>langid</b><dd>
+The language id for this entry.
+
+<dt><b>word</b><dd>
+The original UTF8 text of the vocabulary word
+
+<dt><b>k1</b><dd>
+The word transliterated into lower-case ASCII.  
+There is a standard table of mappings from non-ASCII
+characters into ASCII.  Examples: "æ" -> "ae",
+"þ" -> "th", "ß" -> "ss", "á" -> "a", ...  The
+accessory function spellfix1_translit(X) will do
+the non-ASCII to ASCII mapping.  The built-in lower(X)
+function will convert to lower-case.  Thus:
+k1 = lower(spellfix1_translit(word)).
+
+<dt><b>k2</b><dd>
+This field holds a phonetic code derived from k1.  Letters
+that have similar sounds are mapped into the same symbol.
+For example, all vowels and vowel clusters become the
+single symbol "A".  And the letters "p", "b", "f", and
+"v" all become "B".  All nasal sounds are represented
+as "N".  And so forth.  The mapping is base on
+ideas found in Soundex, Metaphone, and other
+long-standing phonetic matching systems.  This key can
+be generated by the function spellfix1_phonehash(X).  
+Hence: k2 = spellfix1_phonehash(k1)
+</dl></blockquote>
+
+There is also a function for computing the Wagner edit distance or the
+Levenshtein distance between a pattern and a word.  This function
+is exposed as spellfix1_editdist(X,Y).  The edit distance function
+returns the "cost" of converting X into Y.  Some transformations
+cost more than others.  Changing one vowel into a different vowel,
+for example is relatively cheap, as is doubling a constant, or
+omitting the second character of a double-constant.  Other transformations
+or more expensive.  The idea is that the edit distance function returns
+a low cost of words that are similar and a higher cost for words
+that are futher apart.  In this implementation, the maximum cost
+of any single-character edit (delete, insert, or substitute) is 100,
+with lower costs for some edits (such as transforming vowels).
+
+The "score" for a comparison is the edit distance between the pattern
+and the word, adjusted down by the base-2 logorithm of the word rank.
+For example, a match with distance 100 but rank 1000 would have a
+score of 122 (= 100 - log2(1000) + 32) where as a match with distance
+100 with a rank of 1 would have a score of 131 (100 - log2(1) + 32).
+(NB:  The constant 32 is added to each score to keep it from going
+negative in case the edit distance is zero.)  In this way, frequently
+used words get a slightly lower cost which tends to move them toward
+the top of the list of alternative spellings.
+
+A straightforward implementation of a spelling corrector would be
+to compare the search term against every word in the vocabulary
+and select the 20 with the lowest scores.  However, there will 
+typically be hundreds of thousands or millions of words in the
+vocabulary, and so this approach is not fast enough.
+
+Suppose the term that is being spell-corrected is X.  To limit
+the search space, X is converted to a k2-like key using the
+equivalent of:
+
+<blockquote><pre>
+   key = spellfix1_phonehash(lower(spellfix1_translit(X)))
+</pre></blockquote>
+
+This key is then limited to "scope" characters.  The default scope
+value is 4, but an alternative scope can be specified using the
+"scope=N" term in the WHERE clause.  After the key has been truncated,
+the edit distance is run against every term in the vocabulary that
+has a k2 value that begins with the abbreviated key.
+
+For example, suppose the input word is "Paskagula".  The phonetic 
+key is "BACACALA" which is then truncated to 4 characters "BACA".
+The edit distance is then run on the 4980 entries (out of
+272,597 entries total) of the vocabulary whose k2 values begin with
+BACA, yielding "Pascagoula" as the best match.
+
+Only terms of the vocabulary with a matching langid are searched.
+Hence, the same table can contain entries from multiple languages
+and only the requested language will be used.  The default langid
+is 0.
+
+<h2>Configurable Edit Distance</h2>
+
+The built-in Wagner edit-distance function with fixed weights can be
+replaced by the [./editdist3.wiki | editdist3()] edit-distance function
+with application-defined weights and support for unicode, by specifying
+the "edit_cost_table=<i>TABLENAME</i>" parameter to the spellfix1 module
+when the virtual table is created.
+For example:
+
+<blockquote><pre>
+CREATE VIRTUAL TABLE demo2 USING spellfix1(edit_cost_table=APPCOST);
+</pre></blockquote>
+
+In the example above, the APPCOST table would be interrogated to find
+the edit distance coefficients.  It is the presence of the "edit_cost_table="
+parameter to the spellfix1 module name that causes editdist3() to be used
+in place of the built-in edit distance function.
+
+The edit distance coefficients are normally read from the APPCOST table
+once and there after stored in memory.  Hence, run-time changes to the
+APPCOST table will not normally effect the edit distance results.
+However, inserting the special string 'reset' into the "command" column of the
+virtual table causes the edit distance coefficients to be reread the
+APPCOST table.  Hence, applications should run a SQL statement similar
+to the following when changes to the APPCOST table occur:
+
+<blockquote>
+INSERT INTO demo2(command) VALUES('reset');
+</blockquote>
+
+The tables used for edit distance costs can be changed using a command
+like the following:
+
+<blockquote>
+INSERT INTO demo2(command) VALUES('edit_cost_table=APPCOST2');
+</blockquote>
+
+In the example above, any prior edit distance costs would be discarded and
+all future queries would use the costs found in the APPCOST2 table.  If the
+name of the table specified by the "edit_cost_table" command is "NULL", then
+theh built-in Wagner edit-distance function will be used instead of the
+editdist3() function in all future queries.
+
+<h2>Dealing With Unusual And Difficult Spellings</h2>
+
+The algorithm above works quite well for most cases, but there are
+exceptions.  These exceptions can be dealt with by making additional
+entries in the virtual table using the "soundslike" column.
+
+For example, many words of Greek origin begin with letters "ps" where
+the "p" is silent.  Ex:  psalm, pseudonym, psoriasis, psyche.  In
+another example, many Scottish surnames can be spelled with an
+initial "Mac" or "Mc".  Thus, "MacKay" and "McKay" are both pronounced
+the same.
+
+Accommodation can be made for words that are not spelled as they
+sound by making additional entries into the virtual table for the
+same word, but adding an alternative spelling in the "soundslike"
+column.  For example, the canonical entry for "psalm" would be this:
+
+<blockquote><pre>
+  INSERT INTO demo(word) VALUES('psalm');
+</pre></blockquote>
+
+To enhance the ability to correct the spelling of "salm" into
+"psalm", make an addition entry like this:
+
+<blockquote><pre>
+  INSERT INTO demo(word,soundslike) VALUES('psalm','salm');
+</pre></blockquote>
+
+It is ok to make multiple entries for the same word as long as
+each entry has a different soundslike value.  Note that if no
+soundslike value is specified, the soundslike defaults to the word
+itself.
+
+Listed below are some cases where it might make sense to add additional
+soundslike entries.  The specific entries will depend on the application
+and the target language.
+
+  *   Silent "p" in words beginning with "ps":  psalm, psyche
+
+  *   Silent "p" in words beginning with "pn":  pneumonia, pneumatic
+
+  *   Silent "p" in words beginning with "pt":  pterodactyl, ptolemaic
+
+  *   Silent "d" in words beginning with "dj":  djinn, Djikarta
+
+  *   Silent "k" in words beginning with "kn":  knight, Knuthson
+
+  *   Silent "g" in words beginning with "gn":  gnarly, gnome, gnat
+
+  *   "Mac" versus "Mc" beginning Scottish surnames
+
+  *   "Tch" sounds in Slavic words:  Tchaikovsky vs. Chaykovsky
+
+  *   The letter "j" pronounced like "h" in Spanish:  LaJolla
+
+  *   Words beginning with "wr" versus "r":  write vs. rite
+
+  *   Miscellanous problem words such as "debt", "tsetse",
+      "Nguyen", "Van Nuyes".
+
+<h2>Auxiliary Functions</h2>
+
+The source code module that implements the spellfix1 virtual table also
+implements several SQL functions that might be useful to applications
+that employ spellfix1 or for testing or diagnostic work while developing
+applications that use spellfix1.  The following auxiliary functions are
+available:
+
+<blockquote><dl>
+<dt><b>editdist3(P,W)<br>editdist2(P,W,L)<br>editdist3(T)</b><dd>
+These routines provide direct access to the version of the Wagner
+edit-distance function that allows for application-defined weights
+on edit operations.  The first two forms of this function compare
+pattern P against word W and return the edit distance.  In the first
+function, the langid is assumed to be 0 and in the second, the
+langid is given by the L parameter.  The third form of this function
+reloads edit distance coefficience from the table named by T.
+
+<dt><b>spellfix1_editdist(P,W)</b><dd>
+This routine provides access to the built-in Wagner edit-distance
+function that uses default, fixed costs.  The value returned is
+the edit distance needed to transform W into P.
+
+<dt><b>spellfix1_phonehash(X)</b><dd>
+This routine constructs a phonetic hash of the pure ascii input word X
+and returns that hash.  This routine is used internally by spellfix1 in
+order to transform the K1 column of the shadow table into the K2
+column.
+
+<dt><b>spellfix1_scriptcode(X)</b><dd>
+Given an input string X, this routine attempts to determin the dominant
+script of that input and returns the ISO-15924 numeric code for that
+script.  The current implementation understands the following scripts:
+<ul>
+<li> 215 - Latin
+<li> 220 - Cyrillic
+<li> 200 - Greek
+</ul>
+Additional language codes might be added in future releases.
+
+<dt><b>spellfix1_translit(X)</b><dd>
+This routine transliterates unicode text into pure ascii, returning
+the pure ascii representation of the input text X.  This is the function
+that is used internally to transform vocabulary words into the K1
+column of the shadow table.
+
+</dl></blockquote>
