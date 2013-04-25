@@ -2588,6 +2588,7 @@ struct Walker {
   int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
   Parse *pParse;                            /* Parser context.  */
   int walkerDepth;                          /* Number of subqueries */
+  u8 bSelectDepthFirst;                     /* Do subqueries first */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                          /* Naming context */
     int i;                                     /* Integer value */

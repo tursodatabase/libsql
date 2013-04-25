@@ -3576,6 +3576,7 @@ static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 */
 static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   Walker w;
+  memset(&w, 0, sizeof(w));
   w.xSelectCallback = selectExpander;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
@@ -3634,9 +3635,11 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
 static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
 #ifndef SQLITE_OMIT_SUBQUERY
   Walker w;
+  memset(&w, 0, sizeof(w));
   w.xSelectCallback = selectAddSubqueryTypeInfo;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
+  w.bSelectDepthFirst = 1;
   sqlite3WalkSelect(&w, pSelect);
 #endif
 }

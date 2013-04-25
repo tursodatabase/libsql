@@ -1214,6 +1214,7 @@ static int selectNodeIsConstant(Walker *pWalker, Select *NotUsed){
 }
 static int exprIsConst(Expr *p, int initFlag){
   Walker w;
+  memset(&w, 0, sizeof(w));
   w.u.i = initFlag;
   w.xExprCallback = exprNodeIsConstant;
   w.xSelectCallback = selectNodeIsConstant;
@@ -3428,8 +3429,8 @@ void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
   Walker w;
   if( pParse->cookieGoto ) return;
   if( OptimizationDisabled(pParse->db, SQLITE_FactorOutConst) ) return;
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = evalConstExpr;
-  w.xSelectCallback = 0;
   w.pParse = pParse;
   sqlite3WalkExpr(&w, pExpr);
 }
