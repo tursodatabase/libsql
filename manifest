@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-04-22T23:38:50.007
+C Rebalance\sFTS\sexpressions\safter\sparsing\sto\slimit\srecursion\sduring\sevaluation.\sAvoid\srecursion\swhen\sdeleting\sFTS\sexpression\strees.\sEnforce\sa\slimit\son\sthe\sdepth\sof\san\sexpression\stree.
+D 2013-04-25T20:34:02.667
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -59,7 +59,7 @@ F ext/fts3/fts3.c 784aadfb4c2a217c3eb1feaecac924989f29728f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 352c8a83ee4c6a14ced1759a39dd890ab947cbe0
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
-F ext/fts3/fts3_expr.c 6cb4410f87676ae633bd7923bbc78526cb839c4d
+F ext/fts3/fts3_expr.c a01c0a2e00d0e848f7cdda3b4114fe03b560f59b
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -494,6 +494,7 @@ F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
+F test/fts3expr3.test aed4e71aa40ac1dcba860d1c43e7e23aa812eb1c
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
@@ -670,7 +671,7 @@ F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test d2918e9ee6d0008292e5a70e90eed23b0440ca88
+F test/permutations.test 3d0bab9c49c1ec08b868059e30a3e1956f2162e2
 F test/pragma.test 60d29cd3d8098a2c20bf4c072810f99e3bf2757a
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1054,7 +1055,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 49cfa14fceeef2d55b449eb927c283ce6f650c07
-R 83c630a254d9cc209b10e1a83d85002b
-U drh
-Z a7a8588b07b6fce1e57eced049fe41f1
+P 1a1cf5aa86734c832d845e07780262a178188d56
+R 821db2ca4e9de1c38e42323dffba1c12
+T *branch * fts3-expr-rebalance
+T *sym-fts3-expr-rebalance *
+T -sym-trunk *
+U dan
+Z 130034041e106884ea2e83109b05e05e
