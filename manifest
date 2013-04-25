@@ -1,9 +1,9 @@
-C Convert\sthe\sfuzzer\svirtual\stable\sinto\sa\sloadable\sextension\sand\smove\sit\nto\sthe\sext/misc/fuzzer.c\sfile.
-D 2013-04-25T14:31:46.866
+C Fix\sthe\sMSVC\smakefile\sso\sthat\sit\sworks\swith\sthe\sext/misc/*.c\sextensions.
+D 2013-04-25T14:36:28.444
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 422a8541e3595e4fd4d962a46f52fbe095a31bd2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc ef00ccb017f6da580ab934d096b08da40d81f1a5
+F Makefile.msc 3657134d4304934fd9a2c81ff6a2bd7e2187954b
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -83,7 +83,7 @@ F ext/fts3/unicode/mkunicode.tcl 7a9bc018e2962abb79563c5a39fe581fcbf2f675
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
-F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f w src/test_fuzzer.c
+F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f
 F ext/misc/regexp.c c0fdb8af86981ff9890d776cfb97fe66297cc3b2
 F ext/misc/wholenumber.c ce362368b9381ea48cbd951ade8df867eeeab014
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1054,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P efcc9dd012b5f193324dfc2ee9c2410c16fc1b3b
-R 2b859f3329d083b32ee90e4538687497
+P c8c69307f60c1d07ac666ae3797b7e3f286fd491
+R 3a7355d9d00cf8a32d1b35340d234e67
 U drh
-Z 672d17ed58c8e3fac84edc0141a68b79
+Z 8dc283cf0c63ecf74b33a1f0701aa7d4

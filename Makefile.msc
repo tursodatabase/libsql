@@ -707,7 +707,7 @@ TESTSRC = \
 
 # Statically linked extensions
 #
-TESTSRC += \
+TESTEXT = \
   $(TOP)\ext\misc\fuzzer.c \
   $(TOP)\ext\misc\regexp.c \
   $(TOP)\ext\misc\wholenumber.c
@@ -1209,8 +1209,8 @@ rtree.lo:	$(TOP)\ext\rtree\rtree.c $(HDR) $(EXTHDR)
 TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
 
-TESTFIXTURE_SRC0 = $(TESTSRC2) libsqlite3.lib
-TESTFIXTURE_SRC1 = sqlite3.c
+TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2) libsqlite3.lib
+TESTFIXTURE_SRC1 = $(TESTEXT) sqlite3.c
 !IF $(USE_AMALGAMATION)==0
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 !ELSE
