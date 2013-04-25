@@ -365,7 +365,7 @@ do_test memdb-6.15 {
 
 ifcapable subquery&&vtab {
   do_test memdb-7.1 {
-    register_wholenumber_module db
+    load_static_extension db wholenumber
     execsql {
       CREATE TABLE t6(x);
       CREATE VIRTUAL TABLE nums USING wholenumber;

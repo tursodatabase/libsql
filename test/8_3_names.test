@@ -150,7 +150,7 @@ db close
 forcedelete test.db
 do_test 8_3_names-5.0 {
   sqlite3 db file:./test.db?8_3_names=1
-  register_wholenumber_module db
+  load_static_extension db wholenumber
   db eval {
     PRAGMA journal_mode=WAL;
     CREATE TABLE t1(x);
@@ -160,7 +160,7 @@ do_test 8_3_names-5.0 {
     UPDATE t1 SET x=x*2;
   }
   sqlite3 db2 file:./test.db?8_3_names=1
-  register_wholenumber_module db2
+  load_static_extension db2 wholenumber
   db2 eval {
     BEGIN;
     SELECT sum(x) FROM t1;

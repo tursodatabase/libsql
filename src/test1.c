@@ -6058,11 +6058,13 @@ static int tclLoadStaticExtensionCmd(
   Tcl_Obj *CONST objv[]
 ){
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
   static const struct {
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
   } aExtension[] = {
-    {  "regexp",    sqlite3_regexp_init },
+    { "regexp",                sqlite3_regexp_init               },
+    { "wholenumber",           sqlite3_wholenumber_init          },
   };
   sqlite3 *db;
   const char *zName;

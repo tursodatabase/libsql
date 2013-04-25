@@ -1,5 +1,5 @@
-C Make\s"test_regexp.c"\sinto\sa\sloadable\sextension\sand\smove\sit\sover\sto\next/misc/regexp.c.\s\sAdd\sthe\s"load_static_extension"\scommand\sfor\stesting\npurposes.
-D 2013-04-23T20:10:13.518
+C Make\stest_wholenumber.c\sinto\sa\sloadable\sextension\sand\smove\sit\sto\next/misc/wholenumber.c.
+D 2013-04-25T11:58:36.453
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -83,7 +83,8 @@ F ext/fts3/unicode/mkunicode.tcl 7a9bc018e2962abb79563c5a39fe581fcbf2f675
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
-F ext/misc/regexp.c c0fdb8af86981ff9890d776cfb97fe66297cc3b2 w src/test_regexp.c
+F ext/misc/regexp.c c0fdb8af86981ff9890d776cfb97fe66297cc3b2
+F ext/misc/wholenumber.c ce362368b9381ea48cbd951ade8df867eeeab014 w src/test_wholenumber.c
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -105,7 +106,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 8f410dfbb97943889298a2da779be0f8f3dcb750
+F main.mk 2a6938f243a367e34905f02855606a1f3e5ef9d1
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -191,8 +192,8 @@ F src/sqliteInt.h 2a83cfec9963372b636b0cabd4b200c1f1074a99
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c fd60f5950535fd880ce32f357fa9da62db65c490
-F src/test1.c 317741fa810b8acbdf849891202175ea762d68e9
+F src/tclsqlite.c 454a2ec58de93cc3eb49a08d205935484b2be3be
+F src/test1.c fdbf02675c1b16099bbd33a41d40c0d86754419b
 F src/test2.c 29e7154112f7448d64204e8d31179cf497ecf425
 F src/test3.c 96aed72a8e1d542fed127e3e8350ae357712fa82
 F src/test4.c cea2c55110241e4674e66d476d29c914627999f5
@@ -238,7 +239,6 @@ F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c e286f2173563f2a1747c24bcda6b9d030bf4f4e4
 F src/test_vfs.c 8e6087a8b3dcc260282074b0efba14b76311120c
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
-F src/test_wholenumber.c 3d2b9ed1505c40ad5c5ca2ad16ae7a289d6cc251
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c cd95ac64efa60e39faf9b5597443192ff27a22fa
@@ -260,7 +260,7 @@ F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 3d75ba73de15e0f8cd0737643badbeb0e002f07b
 F src/where.c d54e63087b52c309550aa2defdb20ef27add9f9a
-F test/8_3_names.test 631ea964a3edb091cf73c3b540f6bcfdb36ce823
+F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
@@ -275,7 +275,7 @@ F test/analyze3.test c3c7f6c3951900c188cf94b2d5ee3246d6b3ff89
 F test/analyze4.test 757b37875cf9bb528d46f74497bc789c88365045
 F test/analyze5.test 713354664c5ff1853ab2cbcb740f0cf5cb7c802e
 F test/analyze6.test aa8dae5066bbed35c5f45a507fb87f2d342f2c99
-F test/analyze7.test d3587aa5af75c9048d031b94fceca2534fa75d1d
+F test/analyze7.test bd09e89264c664d8d8d2450b6866dcdfae080a13
 F test/analyze8.test 4ca170de2ba30ccb1af2c0406803db72262f9691
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -624,7 +624,7 @@ F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
 F test/malloc_common.tcl 9a98856549bfb3fab205edbc1317216edc52e70d
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
-F test/memdb.test 708a028d6d373e5b3842e4bdc8ba80998c9a4da6
+F test/memdb.test db5260330676de007be8530d6ecc7c9ab2b06ad3
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
 F test/memsubsys1.test a8f9e37567453a5d1d9d37ec102d4d88ab6be33f
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
@@ -783,7 +783,7 @@ F test/threadtest3.c 0ed13e09690f6204d7455fac3b0e8ece490f6eef
 F test/tkt-02a8e81d44.test 6c80d9c7514e2a42d4918bf87bf6bc54f379110c
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2a5629202f.test 1ab32e084e9fc3d36be6dee2617530846a0eb0b6
-F test/tkt-2d1a5c67d.test b028a811049eb472cb2d3a43fc8ce4f6894eebda
+F test/tkt-2d1a5c67d.test d371279946622698ab393ff88cad9f5f6d82960b
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-31338dca7e.test 6fb8807851964da0d24e942f2e19c7c705b9fb58
 F test/tkt-313723c356.test c47f8a9330523e6f35698bf4489bcb29609b53ac
@@ -1009,7 +1009,7 @@ F test/whereF.test a0e296643cabe5278379bc1a0aa158cf3c54a1c9
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
-F test/zerodamage.test e7f77fded01dfcdf92ac2c5400f1e35d7a21463c
+F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 74fb6e5cca66ebdb6c9bbafb2f8b802f08146d38 x
 F tool/build-shell.sh a9c34a606e2e522ba9eeca1e07090f67dce8c912
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
@@ -1054,10 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1a1cf5aa86734c832d845e07780262a178188d56
-R d55f2fee19b165fc6c487ed43598c861
-T *branch * std-ext
-T *sym-std-ext *
-T -sym-trunk *
+P 860fc393bff27045e0593c3c51bf5577accd0b79
+R 8c941fbad237823d93a73098db175706
 U drh
-Z 87544ad6dda5ce727b201c9348b14476
+Z 60829cfbed93a547344be462cee5c545
