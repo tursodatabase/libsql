@@ -1,5 +1,5 @@
-C Add\swiki\sdocumentation\sfiles\sfor\sthe\sspellfix1\svirtual\stable.
-D 2013-04-25T17:07:26.477
+C Fix\sthe\stool/build-shell.sh\sscript\sto\sremove\sreferences\sto\sfiles\sthat\sare\nnow\sloadable\sextensions.
+D 2013-04-25T17:27:08.281
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 38a45083d4df568eefd31d27d67381850f35a016
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1017,7 +1017,7 @@ F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 74fb6e5cca66ebdb6c9bbafb2f8b802f08146d38 x
-F tool/build-shell.sh a9c34a606e2e522ba9eeca1e07090f67dce8c912
+F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bbe607c7d17c50b667990360e2ccfab8dd22f161
-R 7f8f6b4f826c162e581af7818370c158
+P 381564e91bbf619f99a48b0b7a94ac586cb9ee79
+R dfc5d9e4a45d231ac8d29e1b5d10bc7e
 U drh
-Z c739a22e46c39eecc65136d2af6019ff
+Z 8c5379cfdd83f28d6a14d88089c63be6
