@@ -17,7 +17,7 @@ source $testdir/tester.tcl
 ifcapable !vtab { finish_test ; return }
 set ::testprefix fuzzerfault
 
-register_fuzzer_module db
+load_static_extension db fuzzer
 
 do_test 1-pre1 {
   execsql {

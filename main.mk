@@ -244,7 +244,6 @@ TESTSRC = \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_fs.c \
   $(TOP)/src/test_func.c \
-  $(TOP)/src/test_fuzzer.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_init.c \
   $(TOP)/src/test_intarray.c \
@@ -256,7 +255,6 @@ TESTSRC = \
   $(TOP)/src/test_osinst.c \
   $(TOP)/src/test_pcache.c \
   $(TOP)/src/test_quota.c \
-  $(TOP)/ext/misc/regexp.c \
   $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
@@ -267,8 +265,15 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
-  $(TOP)/ext/misc/wholenumber.c \
   $(TOP)/src/test_wsd.c
+
+# Extensions to be statically loaded.
+#
+TESTSRC += \
+  $(TOP)/ext/misc/fuzzer.c \
+  $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/wholenumber.c
+
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c

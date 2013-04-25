@@ -1,9 +1,9 @@
-C Make\stest_wholenumber.c\sinto\sa\sloadable\sextension\sand\smove\sit\sto\next/misc/wholenumber.c.
-D 2013-04-25T11:58:36.453
+C Convert\sthe\sfuzzer\svirtual\stable\sinto\sa\sloadable\sextension\sand\smove\sit\nto\sthe\sext/misc/fuzzer.c\sfile.
+D 2013-04-25T14:31:46.866
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 87591ea5bf7d6ed521ad42d5bc69c124debe11a5
+F Makefile.in 422a8541e3595e4fd4d962a46f52fbe095a31bd2
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 67d9db478186d7d4a498c794fff049f7231a9626
+F Makefile.msc ef00ccb017f6da580ab934d096b08da40d81f1a5
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -83,8 +83,9 @@ F ext/fts3/unicode/mkunicode.tcl 7a9bc018e2962abb79563c5a39fe581fcbf2f675
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
+F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f w src/test_fuzzer.c
 F ext/misc/regexp.c c0fdb8af86981ff9890d776cfb97fe66297cc3b2
-F ext/misc/wholenumber.c ce362368b9381ea48cbd951ade8df867eeeab014 w src/test_wholenumber.c
+F ext/misc/wholenumber.c ce362368b9381ea48cbd951ade8df867eeeab014
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -106,7 +107,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 2a6938f243a367e34905f02855606a1f3e5ef9d1
+F main.mk bf3cf721c54c97e0eb02856d7d67828ac9738c4e
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -192,8 +193,8 @@ F src/sqliteInt.h 2a83cfec9963372b636b0cabd4b200c1f1074a99
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 454a2ec58de93cc3eb49a08d205935484b2be3be
-F src/test1.c fdbf02675c1b16099bbd33a41d40c0d86754419b
+F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
+F src/test1.c aba32f14372febad3e7c14798b25bdd9fd0b7c61
 F src/test2.c 29e7154112f7448d64204e8d31179cf497ecf425
 F src/test3.c 96aed72a8e1d542fed127e3e8350ae357712fa82
 F src/test4.c cea2c55110241e4674e66d476d29c914627999f5
@@ -211,7 +212,6 @@ F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c 8f786bfd0ad48030cf2a06fb1f050e9c60a150d7
 F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
-F src/test_fuzzer.c 1d26aa965120420bc14807da29d4d4541bfa6148
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
 F src/test_intarray.c 07ddcebe4097d400ffca362770f1d883c112387a
@@ -527,8 +527,8 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzer1.test a2e93bb1e19513dd6bf9c63d3d7c4673c983ca19
-F test/fuzzerfault.test ff2282c81797b6a355f0748d8b54c7287c5d2b25
+F test/fuzzer1.test 41bd5aa6ae0cf18d06342a4476e3cad98604ae48
+F test/fuzzerfault.test f96773292b82ce40f7e6614f04ab2166c4ed3c28
 F test/hook.test 45cb22b940c3cc0af616ba7430f666e245711a48
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 5941096407d8c133b9eff15bd3e666624b6cbde3
@@ -1054,7 +1054,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 860fc393bff27045e0593c3c51bf5577accd0b79
-R 8c941fbad237823d93a73098db175706
+P efcc9dd012b5f193324dfc2ee9c2410c16fc1b3b
+R 2b859f3329d083b32ee90e4538687497
 U drh
-Z 60829cfbed93a547344be462cee5c545
+Z 672d17ed58c8e3fac84edc0141a68b79
