@@ -270,7 +270,10 @@ TESTSRC = \
 # Extensions to be statically loaded.
 #
 TESTSRC += \
+  $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/closure.c \
   $(TOP)/ext/misc/fuzzer.c \
+  $(TOP)/ext/misc/ieee754.c \
   $(TOP)/ext/misc/regexp.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/wholenumber.c

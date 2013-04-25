@@ -12,7 +12,16 @@
 **
 ** The code in this file implements a compact but reasonably
 ** efficient regular-expression matcher for posix extended regular
-** expressions against UTF8 text.  The following syntax is supported:
+** expressions against UTF8 text.
+**
+** This file is an SQLite extension.  It registers a single function
+** named "regexp(A,B)" where A is the regular expression and B is the
+** string to be matched.  By registering this function, SQLite will also
+** then implement the "B regexp A" operator.  Note that with the function
+** the regular expression comes first, but with the operator it comes
+** second.
+**
+**  The following regular expression syntax is supported:
 **
 **     X*      zero or more occurrences of X
 **     X+      one or more occurrences of X

@@ -6057,7 +6057,10 @@ static int tclLoadStaticExtensionCmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6065,7 +6068,10 @@ static int tclLoadStaticExtensionCmd(
     const char *zExtName;
     int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
   } aExtension[] = {
+    { "amatch",                sqlite3_amatch_init               },
+    { "closure",               sqlite3_closure_init              },
     { "fuzzer",                sqlite3_fuzzer_init               },
+    { "ieee754",               sqlite3_ieee_init                 },
     { "regexp",                sqlite3_regexp_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "wholenumber",           sqlite3_wholenumber_init          },

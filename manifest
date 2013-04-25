@@ -1,9 +1,9 @@
-C Move\sthe\stest_spellfix.c\smodule\sto\sext/misc/spellfix.c.
-D 2013-04-25T14:59:01.366
+C Added\sthe\stransitive_closure,\sieee754,\sand\samatch\sextensions.
+D 2013-04-25T16:42:55.478
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 10c635460b6c3a20741d71c3a1b65b0ebec7558b
+F Makefile.in 38a45083d4df568eefd31d27d67381850f35a016
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 97a23e910afb8c2d23db0217c343481d59045acb
+F Makefile.msc d03cde9073d5752d6ddcaa6807a8bdda277e48f2
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -83,9 +83,12 @@ F ext/fts3/unicode/mkunicode.tcl 7a9bc018e2962abb79563c5a39fe581fcbf2f675
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
+F ext/misc/amatch.c 3369b2b544066e620d986f0085d039c77d1ef17f
+F ext/misc/closure.c fec0c8537c69843e0b7631d500a14c0527962cd6
 F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f
-F ext/misc/regexp.c c0fdb8af86981ff9890d776cfb97fe66297cc3b2
-F ext/misc/spellfix.c 8bb699116e36cc5e68d7ddf1810b638a3090c744 w src/test_spellfix.c
+F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
+F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
+F ext/misc/spellfix.c 8bb699116e36cc5e68d7ddf1810b638a3090c744
 F ext/misc/wholenumber.c ce362368b9381ea48cbd951ade8df867eeeab014
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
@@ -108,7 +111,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk a6183110637d782988fdf3735f7d125b19639967
+F main.mk 9535835509ac58a1902ba85ed77bcce9840d62d4
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -195,7 +198,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
-F src/test1.c 1c7fa0a36703508130d7ed65325883a9e453bf72
+F src/test1.c e9562428421bf0cdbf11bf5f60ab0cdabee45885
 F src/test2.c 29e7154112f7448d64204e8d31179cf497ecf425
 F src/test3.c 96aed72a8e1d542fed127e3e8350ae357712fa82
 F src/test4.c cea2c55110241e4674e66d476d29c914627999f5
@@ -332,6 +335,7 @@ F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 2eb93611139a7dfaed3be80067c7dc5ceb5fb287
+F test/closure01.test 6194a899cdbba561d0439c0d6cc7bcdf4fc413e7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
@@ -1054,7 +1058,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 680822e892f3efdb702eea3b321bc5785239dd56
-R f6325e95c7057e7590cfe9f4379a5b36
+P de556add10150140981a2e34b3712e96a7c262e3
+R 9481b1895542c76cd21821bef5dac0b1
 U drh
-Z 2d983c030ad222dceb5985301e41e8c4
+Z 540c4ff1b6a2b03d38328f53c71b1af7
