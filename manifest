@@ -1,5 +1,5 @@
-C Avoid\susing\sposix_fallocate()\sin\sWAL\smode,\sas\sit\sis\snot\ssupported\sby\sall\sfile-systems.
-D 2013-04-26T17:00:52.665
+C Avoid\sunnecessarily\sreseting\sthe\spager\scache\safter\scommitting\sa\stransaction\sthat\stakes\sadvantage\sof\sthe\sSQLITE_IOCAP_ATOMIC\srelated\soptimization.
+D 2013-04-26T18:36:58.055
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c f86cd628ffb9ccf3adcc5c15b02c00a64eaf598e
 F src/os_win.c 673b3e3d1fa3040d8d95a7f1f5e0e553aed56cfb
-F src/pager.c 6c3a8a5d665498b0344395a2c9f82d5abc4cc771
+F src/pager.c 4a9160d268977e56ae2df90182050ab30fca715d
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -571,7 +571,7 @@ F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
 F test/intpkey.test 7af30f6ae852d8d1c2b70e4bf1551946742e92d8
-F test/io.test a4be25a446a99a0604ceecc039ee7363c56e4185
+F test/io.test b90105d295225a712e2e9cb685876101712058b5
 F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
 F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 640eb54ad6aac9bc7109cba167389a9bcec3f21e 9c7523dabf4aee609287732ce787c9b9a9087e7f
-R b4ea9ecffc738493e7005d865dad4b9a
+P 1bbb4be1a25947f75b2b0c6f368199016b6f7de3
+R 50c4e22fb69fce6bfb1bbec0cac61356
 U dan
-Z 8914d43d4bd2278afd40d03ae3982d74
+Z 042ff5429ace151fb0c673232d14fee9
