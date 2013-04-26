@@ -895,7 +895,7 @@ static int fts3ExprBalance(Fts3Expr **pp, int nMaxDepth){
         for(i=0; i<nMaxDepth; i++){
           sqlite3Fts3ExprFree(apLeaf[i]);
         }
-        while( pDel=pFree ){
+        while( (pDel=pFree)!=0 ){
           pFree = pDel->pParent;
           sqlite3_free(pDel);
         }
@@ -935,7 +935,6 @@ static int fts3ExprParseUnbalanced(
   const char *z, int n,               /* Text of MATCH query */
   Fts3Expr **ppExpr                   /* OUT: Parsed query structure */
 ){
-  static const int MAX_EXPR_DEPTH = 12;
   int nParsed;
   int rc;
   ParseContext sParse;
