@@ -16,7 +16,7 @@ set testprefix spellfix
 
 ifcapable !vtab { finish_test ; return }
 
-register_spellfix_module db
+load_static_extension db spellfix nextchar
 
 set vocab {
 rabbi rabbit rabbits rabble rabid rabies raccoon raccoons race raced racer
@@ -84,6 +84,26 @@ foreach {tn word res} {
   } $res
 }
 
+# Tests of the next_char function.
+#
+do_test 1.10 {
+  db eval {
+    CREATE TABLE vocab(w TEXT PRIMARY KEY);
+    INSERT INTO vocab SELECT word FROM t1;
+  }
+} {}
+do_execsql_test 1.11 {
+  SELECT next_char('re','vocab','w');
+} {a}
+do_execsql_test 1.12 {
+  SELECT next_char('r','vocab','w');
+} {ae}
+do_execsql_test 1.13 {
+  SELECT next_char('','vocab','w');
+} {r}
+do_test 1.14 {
+  catchsql {SELECT next_char('','xyzzy','a')}
+} {1 {no such table: xyzzy}}
 
 do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE t2 USING spellfix1;

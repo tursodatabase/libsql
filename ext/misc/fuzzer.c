@@ -141,13 +141,14 @@
 ** of the strings in the second or third column of the fuzzer data table
 ** is 50 bytes.  The maximum cost on a rule is 1000.
 */
+#include "sqlite3ext.h"
+SQLITE_EXTENSION_INIT1
 
 /* If SQLITE_DEBUG is not defined, disable assert statements. */
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG)
 # define NDEBUG
 #endif
 
-#include "sqlite3.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -1155,61 +1156,16 @@ static sqlite3_module fuzzerModule = {
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 
-/*
-** Register the fuzzer virtual table
-*/
-int fuzzer_register(sqlite3 *db){
-  int rc = SQLITE_OK;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-  rc = sqlite3_create_module(db, "fuzzer", &fuzzerModule, 0);
+#ifdef _WIN32
+__declspec(dllexport)
 #endif
+int sqlite3_fuzzer_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+  rc = sqlite3_create_module(db, "fuzzer", &fuzzerModule, 0);
   return rc;
 }
-
-#ifdef SQLITE_TEST
-#include <tcl.h>
-/*
-** Decode a pointer to an sqlite3 object.
-*/
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
-
-/*
-** Register the echo virtual table module.
-*/
-static int register_fuzzer_module(
-  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int objc,              /* Number of arguments */
-  Tcl_Obj *CONST objv[]  /* Command arguments */
-){
-  sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-  getDbPointer(interp, Tcl_GetString(objv[1]), &db);
-  fuzzer_register(db);
-  return TCL_OK;
-}
-
-
-/*
-** Register commands with the TCL interpreter.
-*/
-int Sqlitetestfuzzer_Init(Tcl_Interp *interp){
-  static struct {
-     char *zName;
-     Tcl_ObjCmdProc *xProc;
-     void *clientData;
-  } aObjCmd[] = {
-     { "register_fuzzer_module",   register_fuzzer_module, 0 },
-  };
-  int i;
-  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
-        aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
-  }
-  return TCL_OK;
-}
-
-#endif /* SQLITE_TEST */

@@ -6045,6 +6045,69 @@ static int optimization_control(
   return TCL_OK;
 }
 
+typedef struct sqlite3_api_routines sqlite3_api_routines;
+/*
+**     load_static_extension DB NAME ...
+**
+** Load one or more statically linked extensions.
+*/
+static int tclLoadStaticExtensionCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int sqlite3_amatch_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_closure_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
+  static const struct {
+    const char *zExtName;
+    int (*pInit)(sqlite3*,char**,const sqlite3_api_routines*);
+  } aExtension[] = {
+    { "amatch",                sqlite3_amatch_init               },
+    { "closure",               sqlite3_closure_init              },
+    { "fuzzer",                sqlite3_fuzzer_init               },
+    { "ieee754",               sqlite3_ieee_init                 },
+    { "nextchar",              sqlite3_nextchar_init             },
+    { "regexp",                sqlite3_regexp_init               },
+    { "spellfix",              sqlite3_spellfix_init             },
+    { "wholenumber",           sqlite3_wholenumber_init          },
+  };
+  sqlite3 *db;
+  const char *zName;
+  int i, j, rc;
+  char *zErrMsg = 0;
+  if( objc<3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB NAME ...");
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  for(j=2; j<objc; j++){
+    zName = Tcl_GetString(objv[j]);
+    for(i=0; i<ArraySize(aExtension); i++){
+      if( strcmp(zName, aExtension[i].zExtName)==0 ) break;
+    }
+    if( i>=ArraySize(aExtension) ){
+      Tcl_AppendResult(interp, "no such extension: ", zName, (char*)0);
+      return TCL_ERROR;
+    }
+    rc = aExtension[i].pInit(db, &zErrMsg, 0);
+    if( rc!=SQLITE_OK || zErrMsg ){
+      Tcl_AppendResult(interp, "initialization of ", zName, " failed: ", zErrMsg,
+                       (char*)0);
+      sqlite3_free(zErrMsg);
+      return TCL_ERROR;
+    }
+  }
+  return TCL_OK;
+}
+
+
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -6266,6 +6329,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #if SQLITE_OS_UNIX
      { "getrusage", test_getrusage },
 #endif
+     { "load_static_extension", tclLoadStaticExtensionCmd },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

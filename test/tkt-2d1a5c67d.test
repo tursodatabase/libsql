@@ -46,7 +46,7 @@ for {set ii 1} {$ii<=10} {incr ii} {
 db close
 forcedelete test.db test.db-wal
 sqlite3 db test.db
-register_wholenumber_module db
+load_static_extension db wholenumber
 db eval {
   PRAGMA journal_mode=WAL;
   CREATE TABLE t1(a,b);

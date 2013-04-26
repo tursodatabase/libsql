@@ -26,7 +26,7 @@ ifcapable {!analyze||!vtab} {
 # Generate some test data
 #
 do_test analyze7-1.0 {
-  register_wholenumber_module db
+  load_static_extension db wholenumber
   execsql {
     CREATE TABLE t1(a,b,c,d);
     CREATE INDEX t1a ON t1(a);

@@ -1283,6 +1283,7 @@ int sqlite3ResolveExprNames(
 #endif
   savedHasAgg = pNC->ncFlags & NC_HasAgg;
   pNC->ncFlags &= ~NC_HasAgg;
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
   w.pParse = pNC->pParse;
@@ -1323,6 +1324,7 @@ void sqlite3ResolveSelectNames(
   Walker w;
 
   assert( p!=0 );
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
   w.pParse = pParse;

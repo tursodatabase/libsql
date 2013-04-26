@@ -24,12 +24,7 @@ ifcapable !vtab {
 
 set ::testprefix fuzzer1
 
-# Test of test code. Only here to make the coverage metric better.
-do_test 0.1 {
-  list [catch { register_fuzzer_module a b c } msg] $msg
-} {1 {wrong # args: should be "register_fuzzer_module DB"}}
-
-register_fuzzer_module db
+load_static_extension db fuzzer
 
 # Check configuration errors.
 #

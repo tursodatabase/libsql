@@ -14,21 +14,20 @@
 ** to search a large vocabulary for close matches.  See separate
 ** documentation files (spellfix1.wiki and editdist3.wiki) for details.
 */
-#if SQLITE_CORE
-# include "sqliteInt.h"
-#else
+#include "sqlite3ext.h"
+SQLITE_EXTENSION_INIT1
+
+#ifndef SQLITE_AMALGAMATION
 # include <string.h>
 # include <stdio.h>
 # include <stdlib.h>
-# include "sqlite3ext.h"
 # include <assert.h>
 # define ALWAYS(X)  1
 # define NEVER(X)   0
   typedef unsigned char u8;
   typedef unsigned short u16;
-  SQLITE_EXTENSION_INIT1
-#endif /* !SQLITE_CORE */
-#include <ctype.h>
+# include <ctype.h>
+#endif
 
 /*
 ** Character classes for ASCII characters:
@@ -2822,21 +2821,13 @@ static int spellfix1Register(sqlite3 *db){
   return rc;
 }
 
-#if SQLITE_CORE || defined(SQLITE_TEST)
-/*
-** Register the spellfix1 virtual table and its associated functions.
-*/
-int sqlite3_spellfix1_register(sqlite3 *db){
-  return spellfix1Register(db);
-}
-#endif
-
-
-#if !SQLITE_CORE
 /*
 ** Extension load function.
 */
-int sqlite3_spellfix1_init(
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_spellfix_init(
   sqlite3 *db, 
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi
@@ -2844,4 +2835,3 @@ int sqlite3_spellfix1_init(
   SQLITE_EXTENSION_INIT2(pApi);
   return spellfix1Register(db);
 }
-#endif /* !SQLITE_CORE */
