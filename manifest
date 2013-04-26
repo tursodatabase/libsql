@@ -1,5 +1,5 @@
-C Avoid\sunnecessarily\sreseting\sthe\spager\scache\safter\scommitting\sa\stransaction\sthat\stakes\sadvantage\sof\sthe\sSQLITE_IOCAP_ATOMIC\srelated\soptimization.
-D 2013-04-26T18:36:58.055
+C Fix\sa\sformatting\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2013-04-26T19:33:34.383
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -193,7 +193,7 @@ F src/resolve.c 83cc2d942ee216bc56956c6e6fadb691c1727fa1
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 6bfbe11e2fef81c5e18d30513ab6c69f171667eb
 F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
-F src/sqlite.h.in f5efcffff16619129bcb92ac352a77fa758f86c1
+F src/sqlite.h.in e6c241170da854abf6f15ec7e6c565348b690169
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
 F src/sqliteInt.h de835c584032769461c123a564381f9808542c0e
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1bbb4be1a25947f75b2b0c6f368199016b6f7de3
-R 50c4e22fb69fce6bfb1bbec0cac61356
-U dan
-Z 042ff5429ace151fb0c673232d14fee9
+P c47144e98c0a0f9e09780c945de10c57b6a495ea
+R 9aa1f84a471b601353c6669ae1266379
+U drh
+Z 18431ca135b1f0070cd379da7401fa7c
