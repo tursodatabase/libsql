@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sFTS\sexpression\sparser.
-D 2013-04-26T13:14:19.396
+C Merge\sanother\strunk\schange.
+D 2013-04-26T14:04:28.048
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
 F src/sqlite.h.in ec279b782bea05db63b8b29481f9642b406004af
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h 3585ea1bb8776baa9f2675e9ef3d9170e7aeda29
+F src/sqliteInt.h de835c584032769461c123a564381f9808542c0e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4d08e74d34e82f3be588049c9576a5c1008435e7
-R a62e327052722b023f8b56bfc3226b16
-U drh
-Z 0ddc594c1b1b9290fe656a6228646bb0
+P 3c78af8c535e16518f18733325f4cd1df7ec8282 460752b8575320163d2659bb7ff24aff41e2bb66
+R 3adacbaf5ab67ae1f94478e13972158e
+U dan
+Z af116ad57155e6cb0c1adbdd0027b7df
