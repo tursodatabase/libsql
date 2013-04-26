@@ -1,5 +1,5 @@
-C Rebalance\sFTS\sexpressions\safter\sparsing\sto\slimit\srecursion\sduring\sevaluation.\sAvoid\srecursion\swhen\sdeleting\sFTS\sexpression\strees.\sEnforce\sa\slimit\s(currently\s12)\son\sthe\sdepth\sof\san\sexpression\stree.
-D 2013-04-26T14:13:15.156
+C Update\sdocumentation\swith\snew\shyperlinks.\s\sNo\schanges\sto\scode.
+D 2013-04-26T15:55:57.095
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -193,7 +193,7 @@ F src/resolve.c 83cc2d942ee216bc56956c6e6fadb691c1727fa1
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 6bfbe11e2fef81c5e18d30513ab6c69f171667eb
 F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
-F src/sqlite.h.in ec279b782bea05db63b8b29481f9642b406004af
+F src/sqlite.h.in f5efcffff16619129bcb92ac352a77fa758f86c1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
 F src/sqliteInt.h de835c584032769461c123a564381f9808542c0e
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 460752b8575320163d2659bb7ff24aff41e2bb66 2648966f17bc1b783ef6d3b2368c613f6e02945e
-R 3adacbaf5ab67ae1f94478e13972158e
-U dan
-Z 40f0df5151b2a7d6fa4a01e133941564
+P 49d23ef61f9ce2ffe13237b51a0e01b0b46ba96b
+R 9dfdc1bbf9c2e5197fa469091ec011ea
+U drh
+Z 247eb74d6133c2eb692e1fce731d0d35
