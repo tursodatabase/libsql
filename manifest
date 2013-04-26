@@ -1,5 +1,5 @@
-C Update\sdocumentation\swith\snew\shyperlinks.\s\sNo\schanges\sto\scode.
-D 2013-04-26T15:55:57.095
+C Avoid\susing\sposix_fallocate()\sin\sWAL\smode,\sas\sit\sis\snot\ssupported\sby\sall\sfile-systems.
+D 2013-04-26T17:00:52.665
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 5a9ac4a566fb566a2ff9b9e3a9d723075d9d26a7
+F src/os_unix.c f86cd628ffb9ccf3adcc5c15b02c00a64eaf598e
 F src/os_win.c 673b3e3d1fa3040d8d95a7f1f5e0e553aed56cfb
 F src/pager.c 6c3a8a5d665498b0344395a2c9f82d5abc4cc771
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 49d23ef61f9ce2ffe13237b51a0e01b0b46ba96b
-R 9dfdc1bbf9c2e5197fa469091ec011ea
-U drh
-Z 247eb74d6133c2eb692e1fce731d0d35
+P 640eb54ad6aac9bc7109cba167389a9bcec3f21e 9c7523dabf4aee609287732ce787c9b9a9087e7f
+R b4ea9ecffc738493e7005d865dad4b9a
+U dan
+Z 8914d43d4bd2278afd40d03ae3982d74
