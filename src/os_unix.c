@@ -5287,9 +5287,8 @@ static int fillInUnixFile(
     if( h>=0 ) robust_close(pNew, h, __LINE__);
     h = -1;
     osUnlink(zFilename);
-    isDelete = 0;
+    pNew->ctrlFlags |= UNIXFILE_DELETE;
   }
-  if( isDelete ) pNew->ctrlFlags |= UNIXFILE_DELETE;
 #endif
   if( rc!=SQLITE_OK ){
     if( h>=0 ) robust_close(pNew, h, __LINE__);
