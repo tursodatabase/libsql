@@ -1,5 +1,5 @@
-C Remove\sspellfix\svirtual\stable\sdocumentation\sfrom\sthe\ssource\stree.\nReference\sthe\sseparate\sdocumentation\son\sthe\swebsite\sinstead.
-D 2013-04-27T18:06:40.561
+C Initial\swork\son\sreforming\susage\sof\sOSTRACE\sby\sthe\sWindows\sVFS.
+D 2013-04-28T01:44:43.497
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,7 +158,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c de47c3e6b68f512b9e64ba2533ee4eecc9d501c1
+F src/main.c d89118abab8becbefd22e88f14dccbff4aef0aa6
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -176,7 +176,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 5a214c5431fd005dbb3b8bbaaa306433e8e9b48f
-F src/os_win.c 673b3e3d1fa3040d8d95a7f1f5e0e553aed56cfb
+F src/os_win.c 79bf8963cfb91a544b03c4be07b67488f892e929
 F src/pager.c 4a9160d268977e56ae2df90182050ab30fca715d
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
@@ -194,7 +194,7 @@ F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
 F src/sqlite.h.in e6c241170da854abf6f15ec7e6c565348b690169
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h de835c584032769461c123a564381f9808542c0e
+F src/sqliteInt.h 1a2b576d605505f6584b0ed6c59f3e85eb8ff5dc
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1060,7 +1060,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f14d55cf358b0392d3b8cd61dc85f43a610a8edf
-R 1d8237b86dffdd5327eb650dcb291120
-U drh
-Z 369cfa66c298e6ca3c71b08895115463
+P adcf78909ff9064b6e3c4dd15ccd3245c8cf270b
+R f41b19fed2521384396fcf0a1effb849
+T *branch * winOsTrace
+T *sym-winOsTrace *
+T -sym-trunk *
+U mistachkin
+Z fd47dbd9998a9c91c0e16a40715c418b
