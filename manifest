@@ -1,5 +1,5 @@
-C More\srefinements\sto\sWindows\sOSTRACE\susage.\s\sReplace\sall\susage\sof\ssqlite3TestErrorName()\swith\ssqlite3ErrName()\sand\sadd\smissing\sreturn\scodes.
-D 2013-04-29T03:09:10.647
+C Merge\supdates\sfrom\strunk.
+D 2013-04-29T08:56:49.008
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -534,7 +534,7 @@ F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzer1.test 41bd5aa6ae0cf18d06342a4476e3cad98604ae48
-F test/fuzzerfault.test f96773292b82ce40f7e6614f04ab2166c4ed3c28
+F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/hook.test 45cb22b940c3cc0af616ba7430f666e245711a48
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 5941096407d8c133b9eff15bd3e666624b6cbde3
@@ -569,7 +569,7 @@ F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
 F test/intpkey.test 7af30f6ae852d8d1c2b70e4bf1551946742e92d8
-F test/io.test b90105d295225a712e2e9cb685876101712058b5
+F test/io.test 0147ed5fdbce3286d6128f5f7e3b76ee8352d652
 F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
 F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b347b5d1a01301f44e6fd20ee03a9529ffd25788
-R b3ab158a0ee89a318d762b36a446cf00
+P 05ba5e23fcc5da416d47a8ad5e667ed6a0c7a34a e81e9ca11db09424dd310bbc91686a5daa618cb1
+R cbea6b19af175a78e920dc5a0be06f24
 U mistachkin
-Z 697f524cff7a4e0ba7e5e291adbbfd2e
+Z c57c4f0f878083d5f09ceb7503607ae1

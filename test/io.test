@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set ::testprefix io
 
 db close
 sqlite3_simulate_device
@@ -628,6 +629,7 @@ foreach {tn sql} {
   # to be flushed. Which is a bug.
   hexio_write test.db [expr 1024 * 5] [string repeat 00 2048]
   do_execsql_test 6.2.$tn.3 { PRAGMA integrity_check } {ok}
+  db close
 }
 
 sqlite3_simulate_device -char {} -sectorsize 0
