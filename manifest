@@ -1,5 +1,5 @@
-C Fix\san\soff-by-one\sin\sthe\scode\sfor\slimiting\sthe\sdepth\sof\sFTS\sexpression\strees.
-D 2013-04-29T17:12:06.416
+C Improve\sthe\serror\smessage\sissued\swhen\san\sFTS\squery\sexceeds\sthe\smaximum\sallowable\stree\sdepth.
+D 2013-04-29T18:07:37.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -55,11 +55,11 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 784aadfb4c2a217c3eb1feaecac924989f29728f
+F ext/fts3/fts3.c 5c3d44d16701cc4bc81ebf0bb9d5bff136d42de0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 352c8a83ee4c6a14ced1759a39dd890ab947cbe0
+F ext/fts3/fts3Int.h 23ea0a2bb7258d2539376ed60220cce28ba25765
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
-F ext/fts3/fts3_expr.c 2449c3f31b87c3376b66999cdd10d23be0b0bd42
+F ext/fts3/fts3_expr.c 44b4a3c4983ddbf1958c4a40468efb4ff2e0549a
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 52417eac3ecaec2dbbde170334358f5ddbd32501
-R 9ce2a78bcb94198e11ae7a2e16b98558
+P 72ac73189c3577740a77d2ea2fc7118391c0703f
+R 845f7187fab8dee39261b18defdba512
 U dan
-Z 54156ad010a8fff228c493eff10ae743
+Z 0f3ad9cc69769334523e8cc24ad50e47

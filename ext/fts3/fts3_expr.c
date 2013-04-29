@@ -756,7 +756,7 @@ static int fts3ExprCheckDepth(Fts3Expr *p, int nMaxDepth){
   int rc = SQLITE_OK;
   if( p ){
     if( nMaxDepth<0 ){ 
-      rc = SQLITE_ERROR;
+      rc = SQLITE_TOOBIG;
     }else{
       rc = fts3ExprCheckDepth(p->pLeft, nMaxDepth-1);
       if( rc==SQLITE_OK ){
@@ -841,7 +841,7 @@ static int fts3ExprBalance(Fts3Expr **pp, int nMaxDepth){
         }
         if( p ){
           sqlite3Fts3ExprFree(p);
-          rc = SQLITE_ERROR;
+          rc = SQLITE_TOOBIG;
           break;
         }
 
@@ -996,7 +996,8 @@ int sqlite3Fts3ExprParse(
   int nCol,                           /* Number of entries in azCol[] */
   int iDefaultCol,                    /* Default column to query */
   const char *z, int n,               /* Text of MATCH query */
-  Fts3Expr **ppExpr                   /* OUT: Parsed query structure */
+  Fts3Expr **ppExpr,                  /* OUT: Parsed query structure */
+  char **pzErr                        /* OUT: Error message (sqlite3_malloc) */
 ){
   static const int MAX_EXPR_DEPTH = 12;
   int rc = fts3ExprParseUnbalanced(
@@ -1011,9 +1012,18 @@ int sqlite3Fts3ExprParse(
       rc = fts3ExprCheckDepth(*ppExpr, MAX_EXPR_DEPTH);
     }
   }
+
   if( rc!=SQLITE_OK ){
     sqlite3Fts3ExprFree(*ppExpr);
     *ppExpr = 0;
+    if( rc==SQLITE_TOOBIG ){
+      *pzErr = sqlite3_mprintf(
+          "FTS expression tree is too large (maximum depth %d)", MAX_EXPR_DEPTH
+      );
+      rc = SQLITE_ERROR;
+    }else if( rc==SQLITE_ERROR ){
+      *pzErr = sqlite3_mprintf("malformed MATCH expression: [%s]", z);
+    }
   }
 
   return rc;
@@ -1216,10 +1226,12 @@ static void fts3ExprTest(
   }
 
   if( sqlite3_user_data(context) ){
+    char *zDummy = 0;
     rc = sqlite3Fts3ExprParse(
-        pTokenizer, 0, azCol, 0, nCol, nCol, zExpr, nExpr, &pExpr
+        pTokenizer, 0, azCol, 0, nCol, nCol, zExpr, nExpr, &pExpr, &zDummy
     );
     assert( rc==SQLITE_OK || pExpr==0 );
+    sqlite3_free(zDummy);
   }else{
     rc = fts3ExprParseUnbalanced(
         pTokenizer, 0, azCol, 0, nCol, nCol, zExpr, nExpr, &pExpr
