@@ -149,7 +149,7 @@ for {set i 1} {$i < 100} {incr i} {
 
 # Try trees of AND nodes with leaves that are themselves trees of OR nodes.
 #
-for {set i 2} {$i < 32} {incr i} {
+for {set i 2} {$i < 64} {incr i 4} {
   do_test 3.$i {
     test_fts3expr2 [random_andor_query $i]
   } [balanced_andor_tree $i]
@@ -157,7 +157,7 @@ for {set i 2} {$i < 32} {incr i} {
 
 # These exceed the depth limit. 
 #
-for {set i 33} {$i < 40} {incr i} {
+for {set i 65} {$i < 70} {incr i} {
   do_test 3.$i {
     list [catch {test_fts3expr2 [random_andor_query $i]} msg] $msg
   } {1 {Error parsing expression}}
@@ -165,13 +165,21 @@ for {set i 33} {$i < 40} {incr i} {
 
 # This also exceeds the depth limit. 
 #
-do_test 4.1 {
+
+do_test 4.1.1 {
   set q "1"
   for {set i 2} {$i < 5000} {incr i} {
     append q " AND $i"
   }
   list [catch {test_fts3expr2 $q} msg] $msg
 } {1 {Error parsing expression}}
+do_test 4.1.2 {
+  set q "1"
+  for {set i 2} {$i < 4000} {incr i} {
+    append q " AND $i"
+  }
+  catch {test_fts3expr2 $q}
+} {0}
 
 proc create_toggle_tree {nDepth} {
   if {$nDepth == 0} { return xxx }

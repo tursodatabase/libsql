@@ -755,7 +755,7 @@ exprparse_out:
 static int fts3ExprCheckDepth(Fts3Expr *p, int nMaxDepth){
   int rc = SQLITE_OK;
   if( p ){
-    if( nMaxDepth==0 ){ 
+    if( nMaxDepth<0 ){ 
       rc = SQLITE_ERROR;
     }else{
       rc = fts3ExprCheckDepth(p->pLeft, nMaxDepth-1);
