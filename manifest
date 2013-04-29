@@ -1,5 +1,5 @@
-C Update\s'fuzzerfault'\stest\sfor\sits\snew\smodule\sloading\scommand.\s\sFix\sseveral\stest\snames\sin\s'io.test'\sand\smake\ssure\sthe\sdatabase\sgets\sclosed\sbetween\stests.
-D 2013-04-29T07:01:23.073
+C Fix\smmap1.test\sso\sthat\sit\spasses\son\swindows\sas\swell\sas\sunix.
+D 2013-04-29T09:17:42.276
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -646,7 +646,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/mmap1.test 0b5802cf64acaa509ea889b3c708196cc6eb9d31
+F test/mmap1.test 8696aa1b0bd88961c2f16af2a3f7a69d701cea50
 F test/mmap2.test a5ba639f90b5fc487400a49e158e14e465943e98
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P adcf78909ff9064b6e3c4dd15ccd3245c8cf270b
-R 263b9a6fce3f45179cbdd8291a5dbd19
-U mistachkin
-Z c1a76ab097fbf09032c65307a2000f74
+P e81e9ca11db09424dd310bbc91686a5daa618cb1
+R 0b5ca68b3c8f8712e6440b0981a1650e
+U dan
+Z 3af177977b6ccb1ab6aa9597c01ddcc6
