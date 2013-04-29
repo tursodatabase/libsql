@@ -1,5 +1,5 @@
-C Merge\supdates\sfrom\strunk.
-D 2013-04-29T08:56:49.008
+C Adjust\sa\sWAL\stest\sresult\sdue\sto\schanges\sin\sthe\scorresponding\sreturn\scode\sname.
+D 2013-04-29T08:58:00.604
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -971,7 +971,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
-F test/wal.test 0b4837cd5e9283c116d30810a6859bed7425a95e
+F test/wal.test e6dcf26e3e5cce2adb2f2f57eda53bc2c54c580c
 F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 05ba5e23fcc5da416d47a8ad5e667ed6a0c7a34a e81e9ca11db09424dd310bbc91686a5daa618cb1
-R cbea6b19af175a78e920dc5a0be06f24
+P 3a245a832d4843802c3c57f8cda3e4e1d0d52622
+R 1a463c1687098b31a5ca5a9b6654d1e1
 U mistachkin
-Z c57c4f0f878083d5f09ceb7503607ae1
+Z 6828b536c59e8064e8c8cfbf273b3447
