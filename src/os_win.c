@@ -1523,7 +1523,7 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
   }
 #endif
   if( 0 == dwLen ){
-    sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", lastErrno, lastErrno);
+    sqlite3_snprintf(nBuf, zBuf, "OsError 0x%lx (%lu)", lastErrno, lastErrno);
   }else{
     /* copy a maximum of nBuf chars to output buffer */
     sqlite3_snprintf(nBuf, zBuf, "%s", zOut);
@@ -1566,7 +1566,7 @@ static int winLogErrorAtLine(
   for(i=0; zMsg[i] && zMsg[i]!='\r' && zMsg[i]!='\n'; i++){}
   zMsg[i] = 0;
   sqlite3_log(errcode,
-      "os_win.c:%d: (%d) %s(%s) - %s",
+      "os_win.c:%d: (%lu) %s(%s) - %s",
       iLine, lastErrno, zFunc, zPath, zMsg
   );
 
@@ -2325,7 +2325,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
 
   assert( pFile );
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
-  OSTRACE(("TRUNCATE file=%d, size=%lld, lock=%d\n",
+  OSTRACE(("TRUNCATE file=%p, size=%lld, lock=%d\n",
            pFile->h, nByte, pFile->locktype));
 
   /* If the user has configured a chunk-size for this file, truncate the
@@ -3089,9 +3089,9 @@ static int winShmSystemLock(
     rc = SQLITE_BUSY;
   }
 
-  OSTRACE(("SHM-LOCK file=%p, func=%s, errno=%d, rc=%s\n", pFile->hFile.h,
-           (lockType == _SHM_UNLCK) ? "winUnlockFile" : "winLockFile",
-           pFile->lastErrno, sqlite3ErrName(rc)));
+  OSTRACE(("SHM-LOCK file=%p, func=%s, errno=%lu, rc=%s\n",
+           pFile->hFile.h, (lockType == _SHM_UNLCK) ? "winUnlockFile" :
+           "winLockFile", pFile->lastErrno, sqlite3ErrName(rc)));
 
   return rc;
 }
@@ -3111,8 +3111,8 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   winShmNode *p;
   BOOL bRc;
   assert( winShmMutexHeld() );
-  OSTRACE(("SHM-PURGE pid=%d, deleteFlag=%d\n",
-           (int)osGetCurrentProcessId(), deleteFlag));
+  OSTRACE(("SHM-PURGE pid=%lu, deleteFlag=%d\n",
+           osGetCurrentProcessId(), deleteFlag));
   pp = &winShmNodeList;
   while( (p = *pp)!=0 ){
     if( p->nRef==0 ){
@@ -3120,13 +3120,11 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
       if( p->mutex ) sqlite3_mutex_free(p->mutex);
       for(i=0; i<p->nRegion; i++){
         bRc = osUnmapViewOfFile(p->aRegion[i].pMap);
-        OSTRACE(("SHM-PURGE-UNMAP pid=%d, region=%d, rc=%s\n",
-                 (int)osGetCurrentProcessId(), i,
-                 bRc ? "ok" : "failed"));
+        OSTRACE(("SHM-PURGE-UNMAP pid=%lu, region=%d, rc=%s\n",
+                 osGetCurrentProcessId(), i, bRc ? "ok" : "failed"));
         bRc = osCloseHandle(p->aRegion[i].hMap);
-        OSTRACE(("SHM-PURGE-CLOSE pid=%d, region=%d, rc=%s\n",
-                 (int)osGetCurrentProcessId(), i,
-                 bRc ? "ok" : "failed"));
+        OSTRACE(("SHM-PURGE-CLOSE pid=%lu, region=%d, rc=%s\n",
+                 osGetCurrentProcessId(), i, bRc ? "ok" : "failed"));
       }
       if( p->hFile.h!=NULL && p->hFile.h!=INVALID_HANDLE_VALUE ){
         SimulateIOErrorBenign(1);
@@ -3405,8 +3403,8 @@ static int winShmLock(
     }
   }
   sqlite3_mutex_leave(pShmNode->mutex);
-  OSTRACE(("SHM-LOCK pid=%d, id=%d, sharedMask=%03x, exclMask=%03x, rc=%s\n",
-           (int)osGetCurrentProcessId(), p->id, p->sharedMask, p->exclMask,
+  OSTRACE(("SHM-LOCK pid=%lu, id=%d, sharedMask=%03x, exclMask=%03x, rc=%s\n",
+           osGetCurrentProcessId(), p->id, p->sharedMask, p->exclMask,
            sqlite3ErrName(rc)));
   return rc;
 }
@@ -3528,8 +3526,8 @@ static int winShmMap(
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
 #endif
-      OSTRACE(("SHM-MAP-CREATE pid=%d, region=%d, size=%d, rc=%s\n",
-               (int)osGetCurrentProcessId(), pShmNode->nRegion, nByte,
+      OSTRACE(("SHM-MAP-CREATE pid=%lu, region=%d, size=%d, rc=%s\n",
+               osGetCurrentProcessId(), pShmNode->nRegion, nByte,
                hMap ? "ok" : "failed"));
       if( hMap ){
         int iOffset = pShmNode->nRegion*szRegion;
@@ -3543,8 +3541,8 @@ static int winShmMap(
             0, iOffset - iOffsetShift, szRegion + iOffsetShift
         );
 #endif
-        OSTRACE(("SHM-MAP-MAP pid=%d, region=%d, offset=%d, size=%d, rc=%s\n",
-                 (int)osGetCurrentProcessId(), pShmNode->nRegion, iOffset,
+        OSTRACE(("SHM-MAP-MAP pid=%lu, region=%d, offset=%d, size=%d, rc=%s\n",
+                 osGetCurrentProcessId(), pShmNode->nRegion, iOffset,
                  szRegion, pMap ? "ok" : "failed"));
       }
       if( !pMap ){
@@ -3587,17 +3585,16 @@ shmpage_out:
 #if SQLITE_MAX_MMAP_SIZE>0
 static int winUnmapfile(winFile *pFile){
   assert( pFile!=0 );
-  OSTRACE(("UNMAP-FILE pid=%d, pFile=%p, hMap=%p, pMapRegion=%p, "
+  OSTRACE(("UNMAP-FILE pid=%lu, pFile=%p, hMap=%p, pMapRegion=%p, "
            "mmapSize=%lld, mmapSizeActual=%lld, mmapSizeMax=%lld\n",
-           (int)osGetCurrentProcessId(), pFile, pFile->hMap,
-           pFile->pMapRegion, pFile->mmapSize, pFile->mmapSizeActual,
-           pFile->mmapSizeMax));
+           osGetCurrentProcessId(), pFile, pFile->hMap, pFile->pMapRegion,
+           pFile->mmapSize, pFile->mmapSizeActual, pFile->mmapSizeMax));
   if( pFile->pMapRegion ){
     if( !osUnmapViewOfFile(pFile->pMapRegion) ){
       pFile->lastErrno = osGetLastError();
-      OSTRACE(("UNMAP-FILE pid=%d, pFile=%p, pMapRegion=%p, "
-               "rc=SQLITE_IOERR_MMAP\n", (int)osGetCurrentProcessId(),
-               pFile, pFile->pMapRegion));
+      OSTRACE(("UNMAP-FILE pid=%lu, pFile=%p, pMapRegion=%p, "
+               "rc=SQLITE_IOERR_MMAP\n", osGetCurrentProcessId(), pFile,
+               pFile->pMapRegion));
       return winLogError(SQLITE_IOERR_MMAP, pFile->lastErrno,
                          "winUnmap1", pFile->zPath);
     }
@@ -3608,15 +3605,15 @@ static int winUnmapfile(winFile *pFile){
   if( pFile->hMap!=NULL ){
     if( !osCloseHandle(pFile->hMap) ){
       pFile->lastErrno = osGetLastError();
-      OSTRACE(("UNMAP-FILE pid=%d, pFile=%p, hMap=%p, rc=SQLITE_IOERR_MMAP\n",
-               (int)osGetCurrentProcessId(), pFile, pFile->hMap));
+      OSTRACE(("UNMAP-FILE pid=%lu, pFile=%p, hMap=%p, rc=SQLITE_IOERR_MMAP\n",
+               osGetCurrentProcessId(), pFile, pFile->hMap));
       return winLogError(SQLITE_IOERR_MMAP, pFile->lastErrno,
                          "winUnmap2", pFile->zPath);
     }
     pFile->hMap = NULL;
   }
-  OSTRACE(("UNMAP-FILE pid=%d, pFile=%p, rc=SQLITE_OK\n",
-           (int)osGetCurrentProcessId(), pFile));
+  OSTRACE(("UNMAP-FILE pid=%lu, pFile=%p, rc=SQLITE_OK\n",
+           osGetCurrentProcessId(), pFile));
   return SQLITE_OK;
 }
 
@@ -3641,16 +3638,16 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
   int rc;
 
   assert( nMap>=0 || pFd->nFetchOut==0 );
-  OSTRACE(("MAP-FILE pid=%d, pFile=%p, size=%lld\n",
-           (int)osGetCurrentProcessId(), pFd, nByte));
+  OSTRACE(("MAP-FILE pid=%lu, pFile=%p, size=%lld\n",
+           osGetCurrentProcessId(), pFd, nByte));
 
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
   if( nMap<0 ){
     rc = winFileSize((sqlite3_file*)pFd, &nMap);
     if( rc ){
-      OSTRACE(("MAP-FILE pid=%d, pFile=%p, rc=SQLITE_IOERR_FSTAT\n",
-               (int)osGetCurrentProcessId(), pFd));
+      OSTRACE(("MAP-FILE pid=%lu, pFile=%p, rc=SQLITE_IOERR_FSTAT\n",
+               osGetCurrentProcessId(), pFd));
       return SQLITE_IOERR_FSTAT;
     }
   }
@@ -3688,8 +3685,8 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
       rc = winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
                        "winMapfile", pFd->zPath);
       /* Log the error, but continue normal operation using xRead/xWrite */
-      OSTRACE(("MAP-FILE-CREATE pid=%d, pFile=%p, rc=SQLITE_IOERR_MMAP\n",
-               (int)osGetCurrentProcessId(), pFd));
+      OSTRACE(("MAP-FILE-CREATE pid=%lu, pFile=%p, rc=SQLITE_IOERR_MMAP\n",
+               osGetCurrentProcessId(), pFd));
       return SQLITE_OK;
     }
     assert( (nMap % winSysInfo.dwPageSize)==0 );
@@ -3705,8 +3702,8 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
       pFd->lastErrno = osGetLastError();
       winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
                   "winMapfile", pFd->zPath);
-      OSTRACE(("MAP-FILE-MAP pid=%d, pFile=%p, rc=SQLITE_IOERR_MMAP\n",
-               (int)osGetCurrentProcessId(), pFd));
+      OSTRACE(("MAP-FILE-MAP pid=%lu, pFile=%p, rc=SQLITE_IOERR_MMAP\n",
+               osGetCurrentProcessId(), pFd));
       return SQLITE_OK;
     }
     pFd->pMapRegion = pNew;
@@ -3714,8 +3711,8 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
     pFd->mmapSizeActual = nMap;
   }
 
-  OSTRACE(("MAP-FILE pid=%d, pFile=%p, rc=SQLITE_OK\n",
-           (int)osGetCurrentProcessId(), pFd));
+  OSTRACE(("MAP-FILE pid=%lu, pFile=%p, rc=SQLITE_OK\n",
+           osGetCurrentProcessId(), pFd));
   return SQLITE_OK;
 }
 #endif /* SQLITE_MAX_MMAP_SIZE>0 */
@@ -3730,7 +3727,7 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
 ** value of *pp is undefined in this case.
 **
 ** If this function does return a pointer, the caller must eventually 
-** release the reference by calling unixUnfetch().
+** release the reference by calling winUnfetch().
 */
 static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 #if SQLITE_MAX_MMAP_SIZE>0
@@ -3738,16 +3735,16 @@ static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 #endif
   *pp = 0;
 
-  OSTRACE(("FETCH pid=%d, pFile=%p, offset=%lld, amount=%d, pp=%p\n",
-           (int)osGetCurrentProcessId(), fd, iOff, nAmt, pp));
+  OSTRACE(("FETCH pid=%lu, pFile=%p, offset=%lld, amount=%d, pp=%p\n",
+           osGetCurrentProcessId(), fd, iOff, nAmt, pp));
 
 #if SQLITE_MAX_MMAP_SIZE>0
   if( pFd->mmapSizeMax>0 ){
     if( pFd->pMapRegion==0 ){
       int rc = winMapfile(pFd, -1);
       if( rc!=SQLITE_OK ){
-        OSTRACE(("FETCH pid=%d, pFile=%p, rc=%s\n",
-                 (int)osGetCurrentProcessId(), pFd, sqlite3ErrName(rc)));
+        OSTRACE(("FETCH pid=%lu, pFile=%p, rc=%s\n",
+                 osGetCurrentProcessId(), pFd, sqlite3ErrName(rc)));
         return rc;
       }
     }
@@ -3758,16 +3755,16 @@ static int winFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
   }
 #endif
 
-  OSTRACE(("FETCH pid=%d, pFile=%p, pp=%p, *pp=%p, rc=SQLITE_OK\n",
-           (int)osGetCurrentProcessId(), fd, pp, pp ? *pp : 0));
+  OSTRACE(("FETCH pid=%lu, pFile=%p, pp=%p, *pp=%p, rc=SQLITE_OK\n",
+           osGetCurrentProcessId(), fd, pp, *pp));
   return SQLITE_OK;
 }
 
 /*
 ** If the third argument is non-NULL, then this function releases a 
-** reference obtained by an earlier call to unixFetch(). The second
+** reference obtained by an earlier call to winFetch(). The second
 ** argument passed to this function must be the same as the corresponding
-** argument that was passed to the unixFetch() invocation. 
+** argument that was passed to the winFetch() invocation. 
 **
 ** Or, if the third argument is NULL, then this function is being called 
 ** to inform the VFS layer that, according to POSIX, any existing mapping 
@@ -3785,8 +3782,8 @@ static int winUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   /* If p!=0, it must match the iOff value. */
   assert( p==0 || p==&((u8 *)pFd->pMapRegion)[iOff] );
 
-  OSTRACE(("UNFETCH pid=%d, pFile=%p, offset=%lld, p=%p\n",
-           (int)osGetCurrentProcessId(), pFd, iOff, p));
+  OSTRACE(("UNFETCH pid=%lu, pFile=%p, offset=%lld, p=%p\n",
+           osGetCurrentProcessId(), pFd, iOff, p));
 
   if( p ){
     pFd->nFetchOut--;
@@ -3801,8 +3798,8 @@ static int winUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   assert( pFd->nFetchOut>=0 );
 #endif
 
-  OSTRACE(("UNFETCH pid=%d, pFile=%p, rc=SQLITE_OK\n",
-           (int)osGetCurrentProcessId(), fd));
+  OSTRACE(("UNFETCH pid=%lu, pFile=%p, rc=SQLITE_OK\n",
+           osGetCurrentProcessId(), fd));
   return SQLITE_OK;
 }
 
@@ -4073,8 +4070,7 @@ static int winOpen(
     memset(zTmpname, 0, MAX_PATH+2);
     rc = getTempname(MAX_PATH+2, zTmpname);
     if( rc!=SQLITE_OK ){
-      OSTRACE(("OPEN name=%s, rc=%s",
-               zUtf8Name, sqlite3ErrName(rc)));
+      OSTRACE(("OPEN name=%s, rc=%s", zUtf8Name, sqlite3ErrName(rc)));
       return rc;
     }
     zUtf8Name = zTmpname;
@@ -4211,6 +4207,10 @@ static int winOpen(
       *pOutFlags = SQLITE_OPEN_READONLY;
     }
   }
+
+  OSTRACE(("OPEN file=%p, name=%s, access=%lx, pOutFlags=%p, *pOutFlags=%d, "
+           "rc=%s\n", h, zUtf8Name, dwDesiredAccess, pOutFlags, pOutFlags ?
+           *pOutFlags : 0, (h==INVALID_HANDLE_VALUE) ? "failed" : "ok"));
 
 #if SQLITE_OS_WINCE
   if( isReadWrite && eType==SQLITE_OPEN_MAIN_DB

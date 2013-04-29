@@ -1325,7 +1325,7 @@ struct TclQuotaCallback {
   Tcl_Obj *pScript;      /* Script to be run */
 };
 
-extern const char *sqlite3TestErrorName(int);
+extern const char *sqlite3ErrName(int);
 
 
 /*
@@ -1407,7 +1407,7 @@ static int test_quota_initialize(
 
   /* Call sqlite3_quota_initialize() */
   rc = sqlite3_quota_initialize(zName, makeDefault);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 
   return TCL_OK;
 }
@@ -1430,7 +1430,7 @@ static int test_quota_shutdown(
 
   /* Call sqlite3_quota_shutdown() */
   rc = sqlite3_quota_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 
   return TCL_OK;
 }
@@ -1485,7 +1485,7 @@ static int test_quota_set(
   /* Invoke sqlite3_quota_set() */
   rc = sqlite3_quota_set(zPattern, iLimit, xCallback, (void*)p, xDestroy);
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
   return TCL_OK;
 }
 
@@ -1511,7 +1511,7 @@ static int test_quota_file(
   /* Invoke sqlite3_quota_file() */
   rc = sqlite3_quota_file(zFilename);
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
   return TCL_OK;
 }
 
