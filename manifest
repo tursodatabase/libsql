@@ -1,5 +1,5 @@
-C Define\sthe\ssqlite3ErrName()\sfunction\sonly\swhen\snecessary.\sMore\srobust\shandling\sof\sunknown\sreturn\scodes.
-D 2013-04-30T07:54:42.804
+C Add\sthe\s#ifdefs\sfor\ssqlite3ErrName()\sto\ssqliteInt.h\sas\swell.
+D 2013-04-30T07:58:15.668
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
 F src/sqlite.h.in e6c241170da854abf6f15ec7e6c565348b690169
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h 1a2b576d605505f6584b0ed6c59f3e85eb8ff5dc
+F src/sqliteInt.h 4cc782c9a89b3ddd663e7f68af3fa9e5af596f8b
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 95811877fdcbede4f61269ff1c7a6d9554f669cd
-R 4704202ed1648bd727fc4e08e48da493
+P e47cd314371c2be6e00d96392b3892a7f3015f98
+R 70f2f4bd9f342d0b45d8fabecab1b397
 U mistachkin
-Z df16913f315861e242e8bc99c3932e49
+Z 9f1f55618d07d0d16d8083682b6c561d

@@ -3092,7 +3092,12 @@ void sqlite3Error(sqlite3*, int, const char*,...);
 void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
+
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST) || \
+    defined(SQLITE_DEBUG_OS_TRACE)
 const char *sqlite3ErrName(int);
+#endif
+
 const char *sqlite3ErrStr(int);
 int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
