@@ -1,5 +1,5 @@
-C Merge\smmap\stest\sfix\sfrom\strunk.
-D 2013-04-29T09:20:06.908
+C Define\sthe\ssqlite3ErrName()\sfunction\sonly\swhen\snecessary.\sMore\srobust\shandling\sof\sunknown\sreturn\scodes.
+D 2013-04-30T07:54:42.804
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,7 +158,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c 64c76b9acc7381d08ae1ea609852559ec5caa34e
+F src/main.c 7531758e3167006f55cd65678d9c72a3c1a6759a
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9272009f7932b3f18006f73776e36b8ef8770d3e 52417eac3ecaec2dbbde170334358f5ddbd32501
-R cae271d9506bb2366270e651f8369050
+P 95811877fdcbede4f61269ff1c7a6d9554f669cd
+R 4704202ed1648bd727fc4e08e48da493
 U mistachkin
-Z f51e73792b7552ee4009f7c1e977bae2
+Z df16913f315861e242e8bc99c3932e49

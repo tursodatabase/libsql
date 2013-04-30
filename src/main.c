@@ -1033,9 +1033,11 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 ** Return a static string containing the name corresponding to the error code
 ** specified in the argument.
 */
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST) || \
+    defined(SQLITE_DEBUG_OS_TRACE)
 const char *sqlite3ErrName(int rc){
   const char *zName = 0;
-  int i;
+  int i, origRc = rc;
   for(i=0; i<2 && zName==0; i++, rc &= 0xff){
     switch( rc ){
       case SQLITE_OK:                 zName = "SQLITE_OK";                break;
@@ -1122,9 +1124,14 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_DONE:               zName = "SQLITE_DONE";              break;
     }
   }
-  if( zName==0 ) zName = "SQLITE_Unknown";
+  if( zName==0 ){
+    static char zBuf[50];
+    sqlite3_snprintf(sizeof(zBuf), zBuf, "SQLITE_UNKNOWN(%d)", origRc);
+    zName = zBuf;
+  }
   return zName;
 }
+#endif
 
 /*
 ** Return a static string that describes the kind of error specified in the
