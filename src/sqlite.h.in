@@ -3270,6 +3270,9 @@ typedef struct sqlite3_context sqlite3_context;
 ** parameter [SQLITE_LIMIT_VARIABLE_NUMBER] (default value: 999).
 **
 ** ^The third argument is the value to bind to the parameter.
+** ^If the third parameter to sqlite3_bind_text() or sqlite3_bind_text16()
+** or sqlite3_bind_blob() is a NULL pointer then the fourth parameter
+** is ignored and the end result is the same as sqlite3_bind_null().
 **
 ** ^(In those routines that have a fourth argument, its value is the
 ** number of bytes in the parameter.  To be clear: the value is the

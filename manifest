@@ -1,5 +1,5 @@
-C Make\ssure\sextra\sparentheses\saround\ssubqueries\sin\sthe\sFROM\sclause\sare\sharmless.\nTicket\s[28c6e830f239ea5].
-D 2013-04-30T14:06:57.299
+C Update\sthe\sdocumentation\sto\sexplain\sthat\swhen\sthe\s3rd\sparameter\sto\nsqlite3_bind_text()\sand\sfriends\sis\sNULL\sthe\sresult\sis\sto\sbind\sa\sNULL\nSQL\svalue.\s\sTicket\s[19b44e35753ba]
+D 2013-04-30T14:25:32.967
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -191,7 +191,7 @@ F src/resolve.c 83cc2d942ee216bc56956c6e6fadb691c1727fa1
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 6bfbe11e2fef81c5e18d30513ab6c69f171667eb
 F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
-F src/sqlite.h.in e6c241170da854abf6f15ec7e6c565348b690169
+F src/sqlite.h.in 5a5a22a9b192d81a9e5dee00274e3a0484c4afb1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
 F src/sqliteInt.h de835c584032769461c123a564381f9808542c0e
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f480b1fe6012f36c59cd0525efdc6df74143ccd0
-R 741140f0e346ccf75acdb75c67b0b716
+P 1c79569226db3d5a73e65a35877635ea8b478866
+R d47a972814ae8bb4214b1f841a420de6
 U drh
-Z 1f58c2b83ff706000e8e5b26ed1b3eec
+Z 88df79255fe6b8c77c4c16bff1d52cd7
