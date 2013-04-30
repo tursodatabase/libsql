@@ -520,7 +520,9 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I)
         struct SrcList_item *pOld = F->a;
         pNew->zName = pOld->zName;
         pNew->zDatabase = pOld->zDatabase;
+        pNew->pSelect = pOld->pSelect;
         pOld->zName = pOld->zDatabase = 0;
+        pOld->pSelect = 0;
       }
       sqlite3SrcListDelete(pParse->db, F);
     }else{

@@ -1,5 +1,5 @@
-C Improve\sthe\serror\smessage\sissued\swhen\san\sFTS\squery\sexceeds\sthe\smaximum\sallowable\stree\sdepth.
-D 2013-04-29T18:07:37.241
+C Make\ssure\sextra\sparentheses\saround\ssubqueries\sin\sthe\sFROM\sclause\sare\sharmless.\nTicket\s[28c6e830f239ea5].
+D 2013-04-30T14:06:57.299
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/os_unix.c 5a214c5431fd005dbb3b8bbaaa306433e8e9b48f
 F src/os_win.c 673b3e3d1fa3040d8d95a7f1f5e0e553aed56cfb
 F src/pager.c 4a9160d268977e56ae2df90182050ab30fca715d
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
-F src/parse.y 5d5e12772845805fdfeb889163516b84fbb9ae95
+F src/parse.y 9708365594eea519cdc8504dee425c0a41c79502
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
@@ -1003,7 +1003,7 @@ F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5c566388f0cc318b0032ce860f4ac5548e3c265a
-F test/where8.test 02619a9bfc6df7b19979a02852bac09c3c99477a
+F test/where8.test d9f889e62dccddb9d790b0c84dfc7861e03a162c
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test 0157862ccf0cfdf1a4622cdf697e5e2f09a8de44
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 72ac73189c3577740a77d2ea2fc7118391c0703f
-R 845f7187fab8dee39261b18defdba512
-U dan
-Z 0f3ad9cc69769334523e8cc24ad50e47
+P f480b1fe6012f36c59cd0525efdc6df74143ccd0
+R 741140f0e346ccf75acdb75c67b0b716
+U drh
+Z 1f58c2b83ff706000e8e5b26ed1b3eec
