@@ -4883,6 +4883,7 @@ static Bitmask codeOneLoopStart(
     assert( (pTerm->prereqRight & newNotReady)!=0 );
     pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady, WO_EQ|WO_IN, 0);
     if( pAlt==0 ) continue;
+    if( pAlt->wtFlags & (TERM_CODED) ) continue;
     VdbeNoopComment((v, "begin transitive constraint"));
     sEq = *pAlt->pExpr;
     sEq.pLeft = pE->pLeft;

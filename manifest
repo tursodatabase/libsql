@@ -1,5 +1,5 @@
-C Update\sthe\sdocumentation\sto\sexplain\sthat\swhen\sthe\s3rd\sparameter\sto\nsqlite3_bind_text()\sand\sfriends\sis\sNULL\sthe\sresult\sis\sto\sbind\sa\sNULL\nSQL\svalue.\s\sTicket\s[19b44e35753ba]
-D 2013-04-30T14:25:32.967
+C Avoid\sredundant\sconstraint\schecking\sdue\sto\stransitive\sconstraints.
+D 2013-05-01T17:22:38.014
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -263,7 +263,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c d54e63087b52c309550aa2defdb20ef27add9f9a
+F src/where.c e36bbfbf565c7a2ce49c5cd3101ca7310cd379af
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1c79569226db3d5a73e65a35877635ea8b478866
-R d47a972814ae8bb4214b1f841a420de6
+P bd92de0e8d922b96513c5d431493800dda7e7562
+R 98be73d126ba545d3f3d37ca997eaf1d
 U drh
-Z 88df79255fe6b8c77c4c16bff1d52cd7
+Z df56d0b87948c58bd48a65ece4cb954b
