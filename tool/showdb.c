@@ -176,7 +176,7 @@ static void print_db_header(void){
   print_decode_line(aData, 56, 4, "Text encoding");
   print_decode_line(aData, 60, 4, "User version");
   print_decode_line(aData, 64, 4, "Incremental-vacuum mode");
-  print_decode_line(aData, 68, 4, "meta[7]");
+  print_decode_line(aData, 68, 4, "Application ID");
   print_decode_line(aData, 72, 4, "meta[8]");
   print_decode_line(aData, 76, 4, "meta[9]");
   print_decode_line(aData, 80, 4, "meta[10]");

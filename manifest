@@ -1,5 +1,5 @@
-C Do\snot\suse\sa\stransitive\sconstraint\sto\san\sIN\soperator\swhere\sthe\sRHS\sis\sa\nconstant\sif\sthere\sexists\sa\sdirect\s==\soperator\sto\sanother\stable\sin\san\souter\nloop.
-D 2013-05-01T17:58:35.871
+C Allocate\s4\sbytes\sof\sunused\sheader\sspace\sfor\san\s"Application\sID".\s\sAdd\nthe\s"PRAGMA\sapplication_id"\scommand\sto\sset\sand\squery\sthis\sidentifier.\nAdd\sthe\s"magic.txt"\sfile\sto\sshow\show\sthe\sposix\sfile\scommand\smight\suse\nthis\sapplication\sid.
+D 2013-05-01T19:49:27.740
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,6 +112,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
+F magic.txt 4255db3a17f0da4b3f561a904585a6605fe6a6b8
 F main.mk 1b25be82452366abc27cc9ab2acf3244a773d5a1
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
@@ -137,7 +138,7 @@ F src/backup.c b266767351ae2d847716c56fcb2a1fea7c761c03
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 480a6d255cc4f066029daf23dd54acf152cd0e13
-F src/btree.h d9490cd37aaeb530a41b07f06e1262950b1be916
+F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
@@ -183,7 +184,7 @@ F src/parse.y 9708365594eea519cdc8504dee425c0a41c79502
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 9fd22671c270b35131ef480bbc00392b8b5f8ab9
-F src/pragma.c 3eacf001cbf4becbd494f8d82d08fdf1648cf8cb
+F src/pragma.c 8779308bc1ea1901c4bc94dfe9a83d436f73f52c
 F src/prepare.c 743e484233c51109666d402f470523553b41797c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -677,7 +678,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/permutations.test 3d0bab9c49c1ec08b868059e30a3e1956f2162e2
-F test/pragma.test 60d29cd3d8098a2c20bf4c072810f99e3bf2757a
+F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
@@ -1040,7 +1041,7 @@ F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c acd24ea035a3bd2ffe266f1ef8a161812c29b2f0
+F tool/showdb.c 525ecc443578647703051308ad50a93de6ba2c4b
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1060,7 +1061,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 329478cbed06f93652de50abdb31a6b41af02b9e
-R cc457983507eee39e1b071292dee5b26
+P faedaeace9c7ed9a8aaf96700caee09db0c0c061
+R 4f1b06c15d2f5747c86dc6db3cebcf91
+T *branch * application-id
+T *sym-application-id *
+T -sym-trunk *
 U drh
-Z 944723cfd5dfa8d16765eaab2fd82886
+Z 76bc7425f1509081256079e29083992d
