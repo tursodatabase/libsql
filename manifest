@@ -1,5 +1,5 @@
-C Allocate\s4\sbytes\sof\sunused\sheader\sspace\sfor\san\s"Application\sID".\s\sAdd\nthe\s"PRAGMA\sapplication_id"\scommand\sto\sset\sand\squery\sthis\sidentifier.\nAdd\sthe\s"magic.txt"\sfile\sto\sshow\show\sthe\sposix\sfile\scommand\smight\suse\nthis\sapplication\sid.
-D 2013-05-01T19:49:27.740
+C Preserve\sthe\sapplication-ID\sacross\sVACUUM.\s\sUpdates\sto\sthe\smagic\snumber\nfile.
+D 2013-05-01T20:36:23.594
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F magic.txt 4255db3a17f0da4b3f561a904585a6605fe6a6b8
+F magic.txt 626cd2e726c22440f94d5342e872011990f90401
 F main.mk 1b25be82452366abc27cc9ab2acf3244a773d5a1
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
@@ -250,7 +250,7 @@ F src/trigger.c cd95ac64efa60e39faf9b5597443192ff27a22fa
 F src/update.c a2a5631d618cbe240fc83725fa9e95c56ae0084c
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
-F src/vacuum.c 2727bdd08847fcb6b2d2da6d14f018910e8645d3
+F src/vacuum.c ddf21cc9577c4cb459d08bee9863a78ec000c5bb
 F src/vdbe.c 5f0047130f80c7fd0bc41bc51a653b5542c4fbd5
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h c1e830268b75f04a2901dd895b51a637a26c7045
@@ -1061,10 +1061,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P faedaeace9c7ed9a8aaf96700caee09db0c0c061
-R 4f1b06c15d2f5747c86dc6db3cebcf91
-T *branch * application-id
-T *sym-application-id *
-T -sym-trunk *
+P 28c9e7fdee2471a3026ee05ff591194d5f398131
+R eb1c61fca07cfc02ebd6d8ced912d19c
 U drh
-Z 76bc7425f1509081256079e29083992d
+Z b916c83ab322021bf56be2467b81fddd

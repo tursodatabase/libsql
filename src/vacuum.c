@@ -289,6 +289,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
        BTREE_DEFAULT_CACHE_SIZE, 0,  /* Preserve the default page cache size */
        BTREE_TEXT_ENCODING,      0,  /* Preserve the text encoding */
        BTREE_USER_VERSION,       0,  /* Preserve the user version */
+       BTREE_APPLICATION_ID,     0,  /* Preserve the application id */
     };
 
     assert( 1==sqlite3BtreeIsInTrans(pTemp) );

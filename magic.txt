@@ -17,12 +17,13 @@
 # The Monotone application used "PRAGMA user_version=1598903374;" to set
 # its identifier long before "PRAGMA application_id" became available.
 # The user_version is very similar to application_id except that it is
-# stored at offset 60 instead of offset 68.  The user of 
+# stored at offset 68 instead of offset 60.  The user of 
 # "PRAGMA application_id" is preferred now.  The rules using offset 60
 # for Monotone are for historical compatibility only.
 #
 0    string  =SQLite\ format\ 3
->68  string  =_FSL     Fossil repository
->68  belong  =0
->>60 string  =_MTN     Monotone source repository
->>60 string  !_MTN     SQLite 3.x database
+>68  belong  =0x0f055111  Fossil repository -
+>68  belong  =0x0f055112  Fossil checkout - 
+>68  belong  =0x0f055113  Fossil global configuration - 
+>60  belong  =0x5f4d544e  Monotone source repository -
+>0   string  =SQLite      SQLite3 database
