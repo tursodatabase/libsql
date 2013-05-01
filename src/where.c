@@ -705,7 +705,7 @@ static WhereTerm *findTerm(
                 continue;
               }
             }
-            if( pTerm->prereqRight==0 ){
+            if( pTerm->prereqRight==0 && (pTerm->eOperator&WO_EQ)!=0 ){
               pResult = pTerm;
               goto findTerm_success;
             }else if( pResult==0 ){
