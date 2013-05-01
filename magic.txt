@@ -9,17 +9,14 @@
 #     PRAGMA application_id = INTEGER;
 #
 # INTEGER can be any signed 32-bit integer.  That integer is written as
-# a 4-byte big-endian integer into offset 68 of the database header.  In
-# the tests below, this integer is sometimes rendered as a string.  For
-# example, instead of "belong =1598444364" we write "string =_FSL" and
-# instead of "belong =1598903374" we write "string =_MTN".
+# a 4-byte big-endian integer into offset 68 of the database header. 
 #
 # The Monotone application used "PRAGMA user_version=1598903374;" to set
 # its identifier long before "PRAGMA application_id" became available.
 # The user_version is very similar to application_id except that it is
-# stored at offset 68 instead of offset 60.  The user of 
-# "PRAGMA application_id" is preferred now.  The rules using offset 60
-# for Monotone are for historical compatibility only.
+# stored at offset 68 instead of offset 60.  The application_id pragma
+# is preferred.  The rule using offset 60 for Monotone is for historical
+# compatibility only.
 #
 0    string  =SQLite\ format\ 3
 >68  belong  =0x0f055111  Fossil repository -

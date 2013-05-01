@@ -1,5 +1,5 @@
-C Preserve\sthe\sapplication-ID\sacross\sVACUUM.\s\sUpdates\sto\sthe\smagic\snumber\nfile.
-D 2013-05-01T20:36:23.594
+C Fix\scomments\sin\sthe\smagic\snumber\sfile.
+D 2013-05-01T20:40:46.379
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F magic.txt 626cd2e726c22440f94d5342e872011990f90401
+F magic.txt 291863ca976425e2e7bf3f775eb98ece4dd120f6
 F main.mk 1b25be82452366abc27cc9ab2acf3244a773d5a1
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
@@ -1061,7 +1061,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 28c9e7fdee2471a3026ee05ff591194d5f398131
-R eb1c61fca07cfc02ebd6d8ced912d19c
+P 4a190bea18e156b6fa4dc9f21c3ad32409049603
+R 22c224f485fe7b9b09b8cd93def953de
 U drh
-Z b916c83ab322021bf56be2467b81fddd
+Z f2d15752a1c82c60eb5f877e525be03c
