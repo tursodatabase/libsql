@@ -43,6 +43,7 @@
 # define sqlite3WalExclusiveMode(y,z)            0
 # define sqlite3WalHeapMemory(z)                 0
 # define sqlite3WalFramesize(z)                  0
+# define sqlite3WalFindFrame(x,y,z)              0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4

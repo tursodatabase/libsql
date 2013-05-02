@@ -126,7 +126,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
-#ifndef SQLITE_OMIT_WAL
+#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
 #include <sys/mman.h>
 #endif
 
