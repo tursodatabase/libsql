@@ -2065,6 +2065,7 @@ struct WhereInfo {
   int iBreak;               /* Jump here to break out of the loop */
   int nLevel;               /* Number of nested loop */
   struct WhereClause *pWC;  /* Decomposition of the WHERE clause */
+  struct WhereLoop *pLoops; /* List of all WhereLoop objects */
   double savedNQueryLoop;   /* pParse->nQueryLoop outside the WHERE loop */
   double nRowOut;           /* Estimated number of output rows */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */

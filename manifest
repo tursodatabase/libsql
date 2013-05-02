@@ -1,5 +1,5 @@
-C Do\snot\suse\sa\stransitive\sconstraint\sto\san\sIN\soperator\swhere\sthe\sRHS\sis\sa\nconstant\sif\sthere\sexists\sa\sdirect\s==\soperator\sto\sanother\stable\sin\san\souter\nloop.
-D 2013-05-01T17:58:35.871
+C Begin\sinserting\ssome\sexperimental\scode\sfor\sthe\snext\sgeneration\squery\splanner.
+D 2013-05-02T00:15:01.231
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
 F src/sqlite.h.in 5a5a22a9b192d81a9e5dee00274e3a0484c4afb1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h de835c584032769461c123a564381f9808542c0e
+F src/sqliteInt.h 0d76a0aa7c64536c6f55d11a8f9f40df0636af6a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -263,7 +263,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 12d4200eb6ae991cad02367c391db076ac1af1b0
+F src/where.c fc62bea654f27d5787bc428cd8f3f176d764f785
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1060,7 +1060,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 329478cbed06f93652de50abdb31a6b41af02b9e
-R cc457983507eee39e1b071292dee5b26
+P faedaeace9c7ed9a8aaf96700caee09db0c0c061
+R 84f8c9b09f28282800936ed72686b19f
+T *branch * nextgen-query-plan-exp
+T *sym-nextgen-query-plan-exp *
+T -sym-trunk *
 U drh
-Z 944723cfd5dfa8d16765eaab2fd82886
+Z 18faca4b1f68b4b3514e189f395d77ff
