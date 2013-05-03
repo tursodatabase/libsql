@@ -1567,6 +1567,11 @@ void sqlite3Pragma(
   **   PRAGMA [database.]user_version
   **   PRAGMA [database.]user_version = <integer>
   **
+  **   PRAGMA [database.]freelist_count = <integer>
+  **
+  **   PRAGMA [database.]application_id
+  **   PRAGMA [database.]application_id = <integer>
+  **
   ** The pragma's schema_version and user_version are used to set or get
   ** the value of the schema-version and user-version, respectively. Both
   ** the schema-version and the user-version are 32-bit signed integers
@@ -1588,10 +1593,14 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft, "schema_version")==0 
    || sqlite3StrICmp(zLeft, "user_version")==0 
    || sqlite3StrICmp(zLeft, "freelist_count")==0 
+   || sqlite3StrICmp(zLeft, "application_id")==0 
   ){
     int iCookie;   /* Cookie index. 1 for schema-cookie, 6 for user-cookie. */
     sqlite3VdbeUsesBtree(v, iDb);
     switch( zLeft[0] ){
+      case 'a': case 'A':
+        iCookie = BTREE_APPLICATION_ID;
+        break;
       case 'f': case 'F':
         iCookie = BTREE_FREE_PAGE_COUNT;
         break;
