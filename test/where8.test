@@ -296,13 +296,27 @@ do_test where8-3.21 {
     SELECT a, d FROM t1, (t2) WHERE (a=d OR b=e) AND a<5 ORDER BY a
   }
 } {1 1 2 2 3 3 4 2 4 4 0 0}
+do_test where8-3.21.1 {
+  execsql_status {
+    SELECT a, d FROM t1, ((t2)) AS t3 WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+do_test where8-3.21.2 {
+  execsql_status {
+    SELECT a, d FROM t1, ((SELECT * FROM t2)) AS t3 WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
 do_test where8-3.22 {
   execsql_status {
     SELECT a, d FROM ((((((t1))), (((t2))))))
      WHERE (a=d OR b=e) AND a<5 ORDER BY a
   }
 } {1 1 2 2 3 3 4 2 4 4 0 0}
-
+do_test where8-3.23 {
+  execsql_status {
+    SELECT * FROM ((SELECT * FROM t2)) AS t3;
+  }
+} {1 {} I 2 four IV 3 {} IX 4 sixteen XVI 5 {} XXV 6 thirtysix XXXVI 7 fortynine XLIX 8 sixtyeight LXIV 9 eightyone LXXXIX 10 {} C 9 0}
 
 #-----------------------------------------------------------------------
 # The following tests - where8-4.* - verify that adding or removing 

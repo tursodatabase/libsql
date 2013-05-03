@@ -2871,10 +2871,13 @@ static int readDbPage(PgHdr *pPg, u32 iFrame){
     return SQLITE_OK;
   }
 
+#ifndef SQLITE_OMIT_WAL
   if( iFrame ){
     /* Try to pull the page from the write-ahead log. */
     rc = sqlite3WalReadFrame(pPager->pWal, iFrame, pgsz, pPg->pData);
-  }else{
+  }else
+#endif
+  {
     i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
     rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
     if( rc==SQLITE_IOERR_SHORT_READ ){
@@ -5927,6 +5930,11 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
           pPager->aStat[PAGER_STAT_WRITE]++;
         }
         if( rc==SQLITE_OK ){
+          /* Update the pager's copy of the change-counter. Otherwise, the
+          ** next time a read transaction is opened the cache will be
+          ** flushed (as the change-counter values will not match).  */
+          const void *pCopy = (const void *)&((const char *)zBuf)[24];
+          memcpy(&pPager->dbFileVers, pCopy, sizeof(pPager->dbFileVers));
           pPager->changeCountDone = 1;
         }
       }else{
