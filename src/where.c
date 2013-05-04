@@ -42,6 +42,8 @@ typedef struct WhereCost WhereCost;
 typedef struct WhereLoop WhereLoop;
 typedef struct WherePath WherePath;
 typedef struct WhereTerm WhereTerm;
+typedef struct WhereLoopBuilder WhereLoopBuilder;
+typedef struct WhereScan WhereScan;
 
 /*
 ** Each instance of this object represents a way of evaluating one
@@ -60,7 +62,7 @@ struct WhereLoop {
   u16 nEq;              /* Number of equality constraints */
   u16 nTerm;            /* Number of entries in aTerm[] */
   Index *pIndex;        /* Index used */
-  WhereTerm *aTerm;     /* WhereTerms used */
+  WhereTerm **aTerm;    /* WhereTerms used */
   WhereLoop *pNextLoop; /* Next WhereLoop object in the WhereClause */
 };
 
@@ -162,6 +164,23 @@ struct WhereTerm {
 #endif
 
 /*
+** An instance of the WhereScan object is used as an iterator for locating
+** terms in the WHERE clause that are useful to the query planner.
+*/
+struct WhereScan {
+  WhereTerm *pCurrent;       /* Most recent match */
+  WhereClause *pOrigWC;      /* Original, innermost WhereClause */
+  WhereClause *pWC;          /* WhereClause currently being scanned */
+  char *zCollName;           /* Must have this collating sequence, if not NULL */
+  char idxaff;               /* Must match this affinity, if zCollName!=NULL */
+  unsigned char nEquiv;      /* Number of entries in aEquiv[] */
+  unsigned char iEquiv;      /* Next unused slot in aEquiv[] */
+  u32 opMask;                /* Acceptable operators */
+  int k;                     /* Resume scanning at this->pWC->a[this->k] */
+  int aEquiv[22];            /* Cursor,Column pairs for equivalence classes */
+};
+
+/*
 ** An instance of the following structure holds all information about a
 ** WHERE clause.  Mostly this is a container for one or more WhereTerms.
 **
@@ -245,6 +264,19 @@ struct WhereCost {
   WherePlan plan;    /* The lookup strategy */
   double rCost;      /* Overall cost of pursuing this search strategy */
   Bitmask used;      /* Bitmask of cursors used by this plan */
+};
+
+/*
+** This object is a factory for WhereLoop objects for a particular query.
+*/
+struct WhereLoopBuilder {
+  WhereInfo *pWInfo;        /* Information about this WHERE */
+  sqlite3 *db;              /* Database connection */
+  Parse *pParse;            /* Parsing context */
+  WhereClause *pWC;         /* WHERE clause terms */
+  SrcList *pTabList;        /* FROM clause */
+  ExprList *pOrderBy;       /* ORDER BY clause */
+  WhereLoop *pNew;          /* Template WhereLoop */
 };
 
 /*
@@ -662,6 +694,114 @@ static u16 operatorMask(int op){
 }
 
 /*
+** Advance to the next WhereTerm that matches according to the criteria
+** established when the pScan object was initialized by whereScanInit().
+** Return NULL if there are no more matching WhereTerms.
+*/
+WhereTerm *whereScanNext(WhereScan *pScan){
+  int iCur;            /* The cursor on the LHS of the term */
+  int iColumn;         /* The column on the LHS of the term.  -1 for IPK */
+  Expr *pX;            /* An expression being tested */
+  WhereClause *pWC;    /* Shorthand for pScan->pWC */
+  WhereTerm *pTerm;    /* The term being tested */
+
+  while( pScan->iEquiv<=pScan->nEquiv ){
+    iCur = pScan->aEquiv[pScan->iEquiv-2];
+    iColumn = pScan->aEquiv[pScan->iEquiv-1];
+    while( (pWC = pScan->pWC)!=0 ){
+      for(pTerm=pWC->a+pScan->k; pScan->k<pWC->nTerm; pScan->k++, pTerm++){
+        if( pTerm->leftCursor==iCur && pTerm->u.leftColumn==iColumn ){
+          if( (pTerm->eOperator & WO_EQUIV)!=0
+           && pScan->nEquiv<ArraySize(pScan->aEquiv)
+          ){
+            int j;
+            pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight);
+            assert( pX->op==TK_COLUMN );
+            for(j=0; j<pScan->nEquiv; j+=2){
+              if( pScan->aEquiv[j]==pX->iTable
+               && pScan->aEquiv[j+1]==pX->iColumn ){
+                  break;
+              }
+            }
+            if( j==pScan->nEquiv ){
+              pScan->aEquiv[j] = pX->iTable;
+              pScan->aEquiv[j+1] = pX->iColumn;
+              pScan->nEquiv += 2;
+            }
+          }
+          if( (pTerm->eOperator & pScan->opMask)!=0 ){
+            /* Verify the affinity and collating sequence match */
+            if( pScan->zCollName && (pTerm->eOperator & WO_ISNULL)==0 ){
+              CollSeq *pColl;
+              pX = pTerm->pExpr;
+              if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
+                continue;
+              }
+              assert(pX->pLeft);
+              pColl = sqlite3BinaryCompareCollSeq(pWC->pParse,
+                                                  pX->pLeft, pX->pRight);
+              if( pColl==0 ) pColl = pWC->pParse->db->pDfltColl;
+              if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
+                continue;
+              }
+            }
+            pScan->pCurrent = pTerm;
+            pScan->k++;
+            return pTerm;
+          }
+        }
+      }
+      pWC = pScan->pWC = pScan->pWC->pOuter;
+      pScan->k = 0;
+    }
+    pScan->pWC = pScan->pOrigWC;
+    pScan->k = 0;
+    pScan->iEquiv += 2;
+  }
+  pScan->pCurrent = 0;
+  return 0;
+}
+
+/*
+** Initialize a WHERE clause scanner object.  Return a pointer to the
+** first match.  Return NULL if there are no matches.
+**
+** The scanner will be searching the WHERE clause pWC.  It will look
+** for terms of the form "X <op> <expr>" where X is column iColumn of table
+** iCur.  The <op> must be one of the operators described by opMask.
+**
+** If X is not the INTEGER PRIMARY KEY then X must be compatible with
+** index pIdx.
+*/
+WhereTerm *whereScanInit(
+  WhereScan *pScan,       /* The WhereScan object being initialized */
+  WhereClause *pWC,       /* The WHERE clause to be scanned */
+  int iCur,               /* Cursor to scan for */
+  int iColumn,            /* Column to scan for */
+  u32 opMask,             /* Operator(s) to scan for */
+  Index *pIdx             /* Must be compatible with this index */
+){
+  int j;
+
+  memset(pScan, 0, sizeof(*pScan));
+  pScan->pOrigWC = pWC;
+  pScan->pWC = pWC;
+  if( pIdx && iColumn>=0 ){
+    pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
+    for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
+      if( NEVER(j>=pIdx->nColumn) ) return 0;
+    }
+    pScan->zCollName = pIdx->azColl[j];
+  }
+  pScan->opMask = opMask;
+  pScan->aEquiv[0] = iCur;
+  pScan->aEquiv[1] = iColumn;
+  pScan->nEquiv = 2;
+  pScan->iEquiv = 2;
+  return whereScanNext(pScan);
+}
+
+/*
 ** Search for a term in the WHERE clause that is of the form "X <op> <expr>"
 ** where X is a reference to the iColumn of table iCur and <op> is one of
 ** the WO_xx operator codes specified by the op parameter.
@@ -692,84 +832,20 @@ static WhereTerm *findTerm(
   u32 op,               /* Mask of WO_xx values describing operator */
   Index *pIdx           /* Must be compatible with this index, if not NULL */
 ){
-  WhereTerm *pTerm;            /* Term being examined as possible result */
-  WhereTerm *pResult = 0;      /* The answer to return */
-  WhereClause *pWCOrig = pWC;  /* Original pWC value */
-  int j, k;                    /* Loop counters */
-  Expr *pX;                /* Pointer to an expression */
-  Parse *pParse;           /* Parsing context */
-  int iOrigCol = iColumn;  /* Original value of iColumn */
-  int nEquiv = 2;          /* Number of entires in aEquiv[] */
-  int iEquiv = 2;          /* Number of entries of aEquiv[] processed so far */
-  int aEquiv[22];          /* iCur,iColumn and up to 10 other equivalents */
+  WhereTerm *pResult = 0;
+  WhereTerm *p;
+  WhereScan scan;
 
-  assert( iCur>=0 );
-  aEquiv[0] = iCur;
-  aEquiv[1] = iColumn;
-  for(;;){
-    for(pWC=pWCOrig; pWC; pWC=pWC->pOuter){
-      for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
-        if( pTerm->leftCursor==iCur
-          && pTerm->u.leftColumn==iColumn
-        ){
-          if( (pTerm->prereqRight & notReady)==0
-           && (pTerm->eOperator & op & WO_ALL)!=0
-          ){
-            if( iOrigCol>=0 && pIdx && (pTerm->eOperator & WO_ISNULL)==0 ){
-              CollSeq *pColl;
-              char idxaff;
-      
-              pX = pTerm->pExpr;
-              pParse = pWC->pParse;
-              idxaff = pIdx->pTable->aCol[iOrigCol].affinity;
-              if( !sqlite3IndexAffinityOk(pX, idxaff) ){
-                continue;
-              }
-      
-              /* Figure out the collation sequence required from an index for
-              ** it to be useful for optimising expression pX. Store this
-              ** value in variable pColl.
-              */
-              assert(pX->pLeft);
-              pColl = sqlite3BinaryCompareCollSeq(pParse,pX->pLeft,pX->pRight);
-              if( pColl==0 ) pColl = pParse->db->pDfltColl;
-      
-              for(j=0; pIdx->aiColumn[j]!=iOrigCol; j++){
-                if( NEVER(j>=pIdx->nColumn) ) return 0;
-              }
-              if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ){
-                continue;
-              }
-            }
-            if( pTerm->prereqRight==0 && (pTerm->eOperator&WO_EQ)!=0 ){
-              pResult = pTerm;
-              goto findTerm_success;
-            }else if( pResult==0 ){
-              pResult = pTerm;
-            }
-          }
-          if( (pTerm->eOperator & WO_EQUIV)!=0
-           && nEquiv<ArraySize(aEquiv)
-          ){
-            pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight);
-            assert( pX->op==TK_COLUMN );
-            for(j=0; j<nEquiv; j+=2){
-              if( aEquiv[j]==pX->iTable && aEquiv[j+1]==pX->iColumn ) break;
-            }
-            if( j==nEquiv ){
-              aEquiv[j] = pX->iTable;
-              aEquiv[j+1] = pX->iColumn;
-              nEquiv += 2;
-            }
-          }
-        }
+  p = whereScanInit(&scan, pWC, iCur, iColumn, op, pIdx);
+  while( p ){
+    if( (p->prereqRight & notReady)==0 ){
+      if( p->prereqRight==0 && (p->eOperator&WO_EQ)!=0 ){
+        return p;
       }
+      if( pResult==0 ) pResult = p;
     }
-    if( iEquiv>=nEquiv ) break;
-    iCur = aEquiv[iEquiv++];
-    iColumn = aEquiv[iEquiv++];
+    p = whereScanNext(&scan);
   }
-findTerm_success:
   return pResult;
 }
 
@@ -5058,9 +5134,11 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
   p->pNextLoop = pWInfo->pLoops;
   pWInfo->pLoops = p;
   if( pTemplate->nTerm<=0 ) return SQLITE_OK;
+  if( p->pIndex && p->pIndex->tnum==0 ) p->pIndex = 0;
   p->aTerm = sqlite3DbMallocRaw(db, pTemplate->nTerm*sizeof(p->aTerm[0]));
   if( p->aTerm==0 ){
     p->nTerm = 0;
+    sqlite3DbFree(db, p);
     return SQLITE_NOMEM;
   }
   memcpy(p->aTerm, pTemplate->aTerm, pTemplate->nTerm*sizeof(p->aTerm[0]));
@@ -5068,28 +5146,127 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
 }
 
 /*
+** We have so far matched pBuilder->pNew->nEq terms of the index pIndex.
+** Try to match one more.
+**
+** If pProbe->tnum==0, that means pIndex is a fake index used for the
+** INTEGER PRIMARY KEY.
+*/
+static void whereLoopAddBtreeIndex(
+  WhereLoopBuilder *pBuilder,     /* The WhereLoop factory */
+  struct SrcList_item *pSrc,      /* FROM clause term being analyzed */
+  Index *pProbe,                  /* An index on pSrc */
+  int nInMul                      /* Number of iterations due to IN */
+){
+  sqlite3 *db;                    /* Database connection malloc context */
+  WhereLoop *pNew;                /* Template WhereLoop under construction */
+  WhereTerm *pTerm;               /* A WhereTerm under consideration */
+  int eqTermMask;                 /* Valid equality operators */
+  WhereScan scan;                 /* Iterator for WHERE terms */
+
+  db = pBuilder->db;
+  pNew = pBuilder->pNew;
+  if( db->mallocFailed ) return;
+
+  if( pProbe->tnum<=0 || (pSrc->jointype & JT_LEFT)!=0 ){
+    eqTermMask = WO_EQ|WO_IN;
+  }else{
+    eqTermMask = WO_EQ|WO_IN|WO_ISNULL;
+  }
+
+
+  if( pNew->nEq<pProbe->nColumn ){
+    int iCol;            /* Index of the column in the table */
+
+
+    iCol = pProbe->aiColumn[pNew->nEq];
+    pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
+                          eqTermMask, iCol>=0 ? pProbe : 0);
+    pNew->nEq++;
+    for(; pTerm!=0; pTerm = whereScanNext(&scan)){
+      pNew->aTerm[pNew->nEq-1] = pTerm;
+      
+    }
+    pNew->nEq--;
+
+  }
+}
+
+/*
 ** Add all WhereLoop objects for the iTab-th table of the join.  That
 ** table is guaranteed to be a b-tree table, not a virtual table.
 */
 static void whereLoopAddBtree(
-  WhereInfo *pWInfo,        /* WHERE clause information */
-  int iTab,                 /* The table to process */
-  Bitmask mExtra            /* Extra prerequesites for using this table */
+  WhereLoopBuilder *pBuilder, /* WHERE clause information */
+  int iTab,                   /* The table to process */
+  Bitmask mExtra              /* Extra prerequesites for using this table */
 ){
-  WhereLoop *pNew;          /* Template WhereLoop object */
-  sqlite3 *db = pWInfo->pParse->db;
+  Index *pProbe;              /* An index we are evaluating */
+  int eqTermMask;             /* Current mask of valid equality operators */
+  Index sPk;                  /* A fake index object for the primary key */
+  tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
+  int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
+  struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
+  sqlite3 *db;                /* The database connection */
+  WhereLoop *pNew;            /* Template WhereLoop object */
 
-  pNew = sqlite3DbMallocZero(db, sizeof(*pNew));
-  if( pNew==0 ) return;
-  
+  pNew = pBuilder->pNew;
+  db = pBuilder->db;
+  pSrc = pBuilder->pTabList->a + iTab;
+
+  if( pSrc->pIndex ){
+    /* An INDEXED BY clause specifies a particular index to use */
+    pProbe = pSrc->pIndex;
+  }else{
+    /* There is no INDEXED BY clause.  Create a fake Index object in local
+    ** variable sPk to represent the rowid primary key index.  Make this
+    ** fake index the first in a chain of Index objects with all of the real
+    ** indices to follow */
+    Index *pFirst;                  /* First of real indices on the table */
+    memset(&sPk, 0, sizeof(Index));
+    sPk.nColumn = 1;
+    sPk.aiColumn = &aiColumnPk;
+    sPk.aiRowEst = aiRowEstPk;
+    sPk.onError = OE_Replace;
+    sPk.pTable = pSrc->pTab;
+    aiRowEstPk[0] = pSrc->pTab->nRowEst;
+    aiRowEstPk[1] = 1;
+    pFirst = pSrc->pTab->pIndex;
+    if( pSrc->notIndexed==0 ){
+      /* The real indices of the table are only considered if the
+      ** NOT INDEXED qualifier is omitted from the FROM clause */
+      sPk.pNext = pFirst;
+    }
+    pProbe = &sPk;
+  }
+
+  /* Loop over all indices
+  */
+  for(; pProbe; pProbe=pProbe->pNext){
+    pNew->prereq = mExtra;
+    pNew->iTab = iTab;
+    pNew->nEq = 0;
+    pNew->nTerm = 0;
+    pNew->aTerm = sqlite3DbRealloc(db, pNew->aTerm,
+                                   (pProbe->nColumn+1)*sizeof(pNew->aTerm[0]));
+    if( pNew->aTerm==0 ) break;
+    pNew->pIndex = pProbe;
+
+    whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 1);
+
+    /* If there was an INDEXED BY clause, then only that one index is
+    ** considered. */
+    if( pSrc->pIndex ) break;
+  }
+
+#if 0  
   /* Insert a full table scan */
   pNew->iTab = iTab;
   pNew->rSetup = (double)0;
   pNew->rRun = (double)1000000;
   pNew->nOut = (double)1000000;
-  whereLoopInsert(pWInfo, pNew);
-
-  whereLoopDelete(db, pNew);
+  whereLoopInsert(pBuilder->pWInfo, pNew);
+#endif
 }
 
 /*
@@ -5097,30 +5274,32 @@ static void whereLoopAddBtree(
 ** table is guaranteed to be a virtual table.
 */
 static void whereLoopAddVirtual(
-  WhereInfo *pWInfo,        /* WHERE clause information */
-  int iTab,                 /* The table to process */
-  Bitmask mExtra            /* Extra prerequesites for using this table */
+  WhereLoopBuilder *pBuilder,  /* WHERE clause information */
+  int iTab,                    /* The table to process */
+  Bitmask mExtra               /* Extra prerequesites for using this table */
 ){
 }
 
 /*
 ** Add all WhereLoop objects for all tables 
 */
-static void whereLoopAddAll(WhereInfo *pWInfo){
+static void whereLoopAddAll(WhereLoopBuilder *pBuilder){
   Bitmask mExtra = 0;
   Bitmask mPrior = 0;
   int iTab;
-  SrcList *pTabList = pWInfo->pTabList;
+  SrcList *pTabList = pBuilder->pTabList;
   struct SrcList_item *pItem;
-  WhereClause *pWC = pWInfo->pWC;
-  sqlite3 *db = pWInfo->pParse->db;
+  WhereClause *pWC = pBuilder->pWC;
+  sqlite3 *db = pBuilder->db;
 
   /* Loop over the tables in the join, from left to right */
+  pBuilder->pNew = sqlite3DbMallocZero(db, sizeof(WhereLoop));
+  if( pBuilder->pNew==0 ) return;
   for(iTab=0, pItem=pTabList->a; iTab<pTabList->nSrc; iTab++, pItem++){
     if( IsVirtual(pItem->pTab) ){
-      whereLoopAddVirtual(pWInfo, iTab, mExtra);
+      whereLoopAddVirtual(pBuilder, iTab, mExtra);
     }else{
-      whereLoopAddBtree(pWInfo, iTab, mExtra);
+      whereLoopAddBtree(pBuilder, iTab, mExtra);
     }
     mPrior |= getMask(pWC->pMaskSet, pItem->iCursor);
     if( (pItem->jointype & (JT_LEFT|JT_CROSS))!=0 ){
@@ -5128,6 +5307,8 @@ static void whereLoopAddAll(WhereInfo *pWInfo){
     }
     if( db->mallocFailed ) break;
   }
+  whereLoopDelete(db, pBuilder->pNew);
+  pBuilder->pNew = 0;
 }
 
 
@@ -5234,6 +5415,7 @@ WhereInfo *sqlite3WhereBegin(
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
   Bitmask notReady;          /* Cursors that are not yet positioned */
   WhereBestIdx sWBI;         /* Best index search context */
+  WhereLoopBuilder sWLB;     /* The WhereLoop builder */
   WhereMaskSet *pMaskSet;    /* The expression mask set */
   WhereLevel *pLevel;        /* A single level in pWInfo->a[] */
   int iFrom;                 /* First unused FROM clause element */
@@ -5245,6 +5427,11 @@ WhereInfo *sqlite3WhereBegin(
   /* Variable initialization */
   memset(&sWBI, 0, sizeof(sWBI));
   sWBI.pParse = pParse;
+  memset(&sWLB, 0, sizeof(sWLB));
+  sWLB.pParse = pParse;
+  sWLB.db = pParse->db;
+  sWLB.pTabList = pTabList;
+  sWLB.pOrderBy = pOrderBy;
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
@@ -5290,6 +5477,8 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
   pMaskSet = (WhereMaskSet*)&sWBI.pWC[1];
   sWBI.aLevel = pWInfo->a;
+  sWLB.pWInfo = pWInfo;
+  sWLB.pWC = pWInfo->pWC;
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
   ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
@@ -5362,7 +5551,7 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(("*** Optimizer Start ***\n"));
-  whereLoopAddAll(pWInfo);
+  /*whereLoopAddAll(&sWLB);*/
 
   /* Display all of the WhereLoop objects if wheretrace is enabled */
 #if defined(SQLITE_DEBUG) \
