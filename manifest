@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sauthorizer\scallback\sgets\sa\svalid\spointer\sto\s"ROWID"\sfor\sthe\ncolumn-name\sparameter\swhen\sdoing\san\sUPDATE\sthat\schanges\sthe\srowid.\nFix\sfor\sticket\s[0eb70d77cb05bb2272].
-D 2013-05-06T13:22:50.843
+C Add\san\sassert()\sto\sfts3_expr.c\sin\sorder\sto\ssilence\sa\sclang\swarning.
+D 2013-05-06T14:57:48.666
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -59,7 +59,7 @@ F ext/fts3/fts3.c 5c3d44d16701cc4bc81ebf0bb9d5bff136d42de0
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 23ea0a2bb7258d2539376ed60220cce28ba25765
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
-F ext/fts3/fts3_expr.c 44b4a3c4983ddbf1958c4a40468efb4ff2e0549a
+F ext/fts3/fts3_expr.c 193d6fc156d744ab548a2ed06c31869e54dac739
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -1061,7 +1061,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9314b08099e7ac99a507a4799f2c6cdd6d597abb
-R 838a83e273da8f276170acdb509d4aac
+P 26a59bb88d4082758eb281b365b57f9a0c059d89
+R 2feea6cda3683eb0bf228ac73380638e
 U drh
-Z be0fc56bce8babfb180ef06d811f28d4
+Z ca81a07ef0e1a560e388493dc60b3a68
