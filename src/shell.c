@@ -2413,9 +2413,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       for(i=0; i<nPrintRow; i++){
         for(j=i; j<nRow; j+=nPrintRow){
           char *zSp = j<nPrintRow ? "" : "  ";
-          printf("%s%-*s", zSp, maxlen, azResult[j] ? azResult[j] : "");
+          fprintf(p->out, "%s%-*s", zSp, maxlen, azResult[j] ? azResult[j] : "");
         }
-        printf("\n");
+        fprintf(p->out, "\n");
       }
     }
     for(ii=0; ii<nRow; ii++) sqlite3_free(azResult[ii]);
@@ -2472,7 +2472,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           if( nArg==3 ){
             int opt = (int)strtol(azArg[2], 0, 0);        
             rc = sqlite3_test_control(testctrl, p->db, opt);
-            printf("%d (0x%08x)\n", rc, rc);
+            fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           } else {
             fprintf(stderr,"Error: testctrl %s takes a single int option\n",
                     azArg[1]);
@@ -2485,7 +2485,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         case SQLITE_TESTCTRL_PRNG_RESET:
           if( nArg==2 ){
             rc = sqlite3_test_control(testctrl);
-            printf("%d (0x%08x)\n", rc, rc);
+            fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           } else {
             fprintf(stderr,"Error: testctrl %s takes no options\n", azArg[1]);
           }
@@ -2496,7 +2496,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           if( nArg==3 ){
             unsigned int opt = (unsigned int)integerValue(azArg[2]);        
             rc = sqlite3_test_control(testctrl, opt);
-            printf("%d (0x%08x)\n", rc, rc);
+            fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           } else {
             fprintf(stderr,"Error: testctrl %s takes a single unsigned"
                            " int option\n", azArg[1]);
@@ -2509,7 +2509,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           if( nArg==3 ){
             int opt = atoi(azArg[2]);        
             rc = sqlite3_test_control(testctrl, opt);
-            printf("%d (0x%08x)\n", rc, rc);
+            fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           } else {
             fprintf(stderr,"Error: testctrl %s takes a single int option\n",
                             azArg[1]);
@@ -2522,7 +2522,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           if( nArg==3 ){
             const char *opt = azArg[2];        
             rc = sqlite3_test_control(testctrl, opt);
-            printf("%d (0x%08x)\n", rc, rc);
+            fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           } else {
             fprintf(stderr,"Error: testctrl %s takes a single char * option\n",
                             azArg[1]);
@@ -2567,7 +2567,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='v' && strncmp(azArg[0], "version", n)==0 ){
-    printf("SQLite %s %s\n" /*extra-version-info*/,
+    fprintf(p->out, "SQLite %s %s\n" /*extra-version-info*/,
         sqlite3_libversion(), sqlite3_sourceid());
   }else
 
@@ -2577,7 +2577,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( p->db ){
       sqlite3_file_control(p->db, zDbName, SQLITE_FCNTL_VFSNAME, &zVfsName);
       if( zVfsName ){
-        printf("%s\n", zVfsName);
+        fprintf(p->out, "%s\n", zVfsName);
         sqlite3_free(zVfsName);
       }
     }
