@@ -2278,8 +2278,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
           "WHERE lower(tbl_name) LIKE shellstatic()"
           "  AND type!='meta' AND sql NOTNULL "
-          "ORDER BY substr(type,2,1), "
-                  " CASE type WHEN 'view' THEN rowid ELSE name END",
+          "ORDER BY rowid",
           callback, &data, &zErrMsg);
         zShellStatic = 0;
       }
@@ -2290,8 +2289,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
          "     FROM sqlite_master UNION ALL"
          "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
          "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%'"
-         "ORDER BY substr(type,2,1),"
-                  " CASE type WHEN 'view' THEN rowid ELSE name END",
+         "ORDER BY rowid",
          callback, &data, &zErrMsg
       );
     }
