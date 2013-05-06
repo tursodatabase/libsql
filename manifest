@@ -1,5 +1,5 @@
-C Add\smagic\snumbers\sfor\sBentley\sSystems\sapplication\sfiles.
-D 2013-05-03T20:08:16.683
+C Make\ssure\sthe\sauthorizer\scallback\sgets\sa\svalid\spointer\sto\s"ROWID"\sfor\sthe\ncolumn-name\sparameter\swhen\sdoing\san\sUPDATE\sthat\schanges\sthe\srowid.\nFix\sfor\sticket\s[0eb70d77cb05bb2272].
+D 2013-05-06T13:22:50.843
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -247,7 +247,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
 F src/trigger.c cd95ac64efa60e39faf9b5597443192ff27a22fa
-F src/update.c a2a5631d618cbe240fc83725fa9e95c56ae0084c
+F src/update.c 4c0c6864c4349ba292042e984a56d15985b57f4e
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c ddf21cc9577c4cb459d08bee9863a78ec000c5bb
@@ -293,7 +293,7 @@ F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
-F test/auth.test 1b21145e888130d60a03db0cb829d59df8f29266
+F test/auth.test 4a4c3b034fff7750513520defa910f376c96ab49
 F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
@@ -1061,7 +1061,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b2efe4f225adc5f4c2e3080bf459cc52fff82e18
-R 0b688f16fe96205d735d9d6969fa7bcb
+P 9314b08099e7ac99a507a4799f2c6cdd6d597abb
+R 838a83e273da8f276170acdb509d4aac
 U drh
-Z b278f2182b5b0ccf50dbdcca9690db25
+Z be0fc56bce8babfb180ef06d811f28d4
