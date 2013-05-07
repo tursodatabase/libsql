@@ -76,27 +76,22 @@ struct Fts3tokCursor {
 */
 static int fts3tokQueryTokenizer(
   sqlite3 *db,
+  Fts3Hash *pHash,
   const char *zName,
-  const sqlite3_tokenizer_module **pp
+  const sqlite3_tokenizer_module **pp,
+  char **pzErr
 ){
-  int rc;
-  sqlite3_stmt *pStmt;
-  const char *zSql = "SELECT fts3_tokenizer(?)";
+  sqlite3_tokenizer_module *p;
+  int nName = strlen(zName);
 
-  *pp = 0;
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  if( rc!=SQLITE_OK ){
-    return rc;
+  p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
+  if( !p ){
+    *pzErr = sqlite3_mprintf("unknown tokenizer: %s", zName);
+    return SQLITE_ERROR;
   }
 
-  sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
-  if( SQLITE_ROW==sqlite3_step(pStmt) ){
-    if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
-      memcpy((void*)pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
-    }
-  }
-
-  return sqlite3_finalize(pStmt);
+  *pp = p;
+  return SQLITE_OK;
 }
 
 /*
@@ -163,7 +158,7 @@ static int fts3tokDequoteArray(
 */
 static int fts3tokConnectMethod(
   sqlite3 *db,                    /* Database connection */
-  void *pUnused,                  /* Unused */
+  void *pHash,                    /* Hash table of tokenizers */
   int argc,                       /* Number of elements in argv array */
   const char * const *argv,       /* xCreate/xConnect argument array */
   sqlite3_vtab **ppVtab,          /* OUT: New sqlite3_vtab object */
@@ -175,7 +170,6 @@ static int fts3tokConnectMethod(
   int rc;
   char **azDequote = 0;
   int nDequote;
-  UNUSED_PARAMETER(pUnused);
 
   rc = sqlite3_declare_vtab(db, FTS3_TOK_SCHEMA);
   if( rc!=SQLITE_OK ) return rc;
@@ -190,14 +184,11 @@ static int fts3tokConnectMethod(
     }else{
       zModule = azDequote[0];
     }
-    rc = fts3tokQueryTokenizer(db, zModule, &pMod);
+    rc = fts3tokQueryTokenizer(db, (Fts3Hash *)pHash, zModule, &pMod, pzErr);
   }
 
-  if( rc!=SQLITE_OK ){
-    *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
-  }else if( pMod==0 ){
-    rc = SQLITE_ERROR;
-  }else{
+  assert( (rc==SQLITE_OK)==(pMod!=0) );
+  if( rc==SQLITE_OK ){
     const char * const *azArg = (const char * const *)&azDequote[1];
     rc = pMod->xCreate((nDequote>1 ? nDequote-1 : 0), azArg, &pTok);
   }
@@ -429,7 +420,7 @@ static int fts3tokRowidMethod(
 ** Register the fts3tok module with database connection db. Return SQLITE_OK
 ** if successful or an error code if sqlite3_create_module() fails.
 */
-int sqlite3Fts3InitTok(sqlite3 *db){
+int sqlite3Fts3InitTok(sqlite3 *db, Fts3Hash *pHash){
   static const sqlite3_module fts3tok_module = {
      0,                           /* iVersion      */
      fts3tokConnectMethod,        /* xCreate       */
@@ -457,7 +448,7 @@ int sqlite3Fts3InitTok(sqlite3 *db){
   };
   int rc;                         /* Return code */
 
-  rc = sqlite3_create_module(db, "fts3tokenize", &fts3tok_module, 0);
+  rc = sqlite3_create_module(db, "fts3tokenize", &fts3tok_module, (void*)pHash);
   return rc;
 }
 
