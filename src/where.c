@@ -315,6 +315,7 @@ struct WhereLoopBuilder {
 */
 #define WHERE_ROWID_EQ     0x00001000  /* rowid=EXPR or rowid IN (...) */
 #define WHERE_ROWID_RANGE  0x00002000  /* rowid<EXPR and/or rowid>EXPR */
+#define WHERE_IPK          0x00004000  /* x is the INTEGER PRIMARY KEY */
 #define WHERE_COLUMN_EQ    0x00010000  /* x=EXPR or x IN (...) or x IS NULL */
 #define WHERE_COLUMN_RANGE 0x00020000  /* x<EXPR and/or x>EXPR */
 #define WHERE_COLUMN_IN    0x00040000  /* x IN (...) */
@@ -710,6 +711,15 @@ WhereTerm *whereScanNext(WhereScan *pScan){
     iColumn = pScan->aEquiv[pScan->iEquiv-1];
     while( (pWC = pScan->pWC)!=0 ){
       for(pTerm=pWC->a+pScan->k; pScan->k<pWC->nTerm; pScan->k++, pTerm++){
+        if( pTerm->iParent>=0 ){
+          WhereTerm *pParent = &pWC->a[pTerm->iParent];
+          int j;
+          for(j=pScan->iEquiv-4; j>=0; j-=2 ){
+            if( pParent->leftCursor==pScan->aEquiv[j]
+             && pParent->u.leftColumn==pScan->aEquiv[j+1] ) break;
+          }
+          if( j>=0 ) continue;
+        }
         if( pTerm->leftCursor==iCur && pTerm->u.leftColumn==iColumn ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aEquiv)
@@ -5091,7 +5101,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** added based no the template.
 */
 static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
-  WhereLoop **ppPrev, *p;
+  WhereLoop **ppPrev, *p, *pNext = 0, *pToFree = 0;
   sqlite3 *db = pWInfo->pParse->db;
 
   /* Search for an existing WhereLoop to overwrite, or which takes
@@ -5117,7 +5127,7 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
     ){
       /* Overwrite an existing WhereLoop with a better one */
       sqlite3DbFree(db, p->aTerm);
-      *ppPrev = p->pNextLoop;
+      pNext = p->pNextLoop;
       break;
     }
   }
@@ -5127,18 +5137,19 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
   ** WhereLoop and insert it.
   */
   if( p==0 ){
-    p = sqlite3DbMallocRaw(db, sizeof(WhereLoop));
+    p = pToFree = sqlite3DbMallocRaw(db, sizeof(WhereLoop));
     if( p==0 ) return SQLITE_NOMEM;
   }
   *p = *pTemplate;
-  p->pNextLoop = pWInfo->pLoops;
-  pWInfo->pLoops = p;
-  if( pTemplate->nTerm<=0 ) return SQLITE_OK;
+  p->pNextLoop = pNext;
+  *ppPrev = p;
+  p->aTerm = 0;
   if( p->pIndex && p->pIndex->tnum==0 ) p->pIndex = 0;
+  if( pTemplate->nTerm<=0 ) return SQLITE_OK;
   p->aTerm = sqlite3DbMallocRaw(db, pTemplate->nTerm*sizeof(p->aTerm[0]));
   if( p->aTerm==0 ){
     p->nTerm = 0;
-    sqlite3DbFree(db, p);
+    sqlite3DbFree(db, pToFree);
     return SQLITE_NOMEM;
   }
   memcpy(p->aTerm, pTemplate->aTerm, pTemplate->nTerm*sizeof(p->aTerm[0]));
@@ -5154,6 +5165,7 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
 */
 static void whereLoopAddBtreeIndex(
   WhereLoopBuilder *pBuilder,     /* The WhereLoop factory */
+  Bitmask maskSelf,               /* Bitmask for table being scanned */
   struct SrcList_item *pSrc,      /* FROM clause term being analyzed */
   Index *pProbe,                  /* An index on pSrc */
   int nInMul                      /* Number of iterations due to IN */
@@ -5161,18 +5173,22 @@ static void whereLoopAddBtreeIndex(
   sqlite3 *db;                    /* Database connection malloc context */
   WhereLoop *pNew;                /* Template WhereLoop under construction */
   WhereTerm *pTerm;               /* A WhereTerm under consideration */
-  int eqTermMask;                 /* Valid equality operators */
+  int opMask;                     /* Valid operators for constraints */
   WhereScan scan;                 /* Iterator for WHERE terms */
-  WhereLoop savedLoop;
+  WhereLoop savedLoop;            /* Saved original content of pNew[] */
 
   db = pBuilder->db;
   pNew = pBuilder->pNew;
   if( db->mallocFailed ) return;
 
-  if( pProbe->tnum<=0 || (pSrc->jointype & JT_LEFT)!=0 ){
-    eqTermMask = WO_EQ|WO_IN;
+  assert( pNew->nEq<pProbe->nColumn );
+  assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
+  if( pNew->wsFlags & WHERE_BTM_LIMIT ){
+    opMask = WO_LT|WO_LE;
+  }else if( pProbe->tnum<=0 || (pSrc->jointype & JT_LEFT)!=0 ){
+    opMask = WO_EQ|WO_IN|WO_GT|WO_GE|WO_LT|WO_LE;
   }else{
-    eqTermMask = WO_EQ|WO_IN|WO_ISNULL;
+    opMask = WO_EQ|WO_IN|WO_ISNULL|WO_GT|WO_GE|WO_LT|WO_LE;
   }
 
 
@@ -5182,24 +5198,42 @@ static void whereLoopAddBtreeIndex(
 
     iCol = pProbe->aiColumn[pNew->nEq];
     pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
-                          eqTermMask, iCol>=0 ? pProbe : 0);
+                          opMask, iCol>=0 ? pProbe : 0);
     savedLoop = *pNew;
-    pNew->nEq++;
-    pNew->nTerm++;
+    pNew->rSetup = (double)0;
     for(; pTerm!=0; pTerm = whereScanNext(&scan)){
-      pNew->aTerm[pNew->nEq-1] = pTerm;
-      pNew->nOut = (double)(pProbe->aiRowEst[pNew->nEq] * nInMul);
-      pNew->rSetup = (double)0;
-      pNew->rRun = pNew->nOut;
-      pNew->prereq = savedLoop.prereq | pTerm->prereqRight;
-      if( pProbe->tnum<=0 ){
-        pNew->wsFlags = savedLoop.wsFlags | WHERE_ROWID_EQ;
-      }else{
-        pNew->wsFlags = savedLoop.wsFlags | WHERE_COLUMN_EQ;
+      int nIn = 1;
+      pNew->nEq = savedLoop.nEq;
+      pNew->nTerm = savedLoop.nTerm;
+      pNew->aTerm[pNew->nTerm++] = pTerm;
+      pNew->prereq = (savedLoop.prereq | pTerm->prereqRight) & ~maskSelf;
+      if( pTerm->eOperator & WO_IN ){
+        Expr *pExpr = pTerm->pExpr;
+        pNew->wsFlags |= WHERE_COLUMN_IN;
+        if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+          /* "x IN (SELECT ...)":  Assume the SELECT returns 25 rows */
+          nIn = 25;
+        }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
+          /* "x IN (value, value, ...)" */
+          nIn = pExpr->x.pList->nExpr;
+        }
+        pNew->nEq++;
+        pNew->nOut = (double)pProbe->aiRowEst[pNew->nEq] * nInMul * nIn;
+      }else if( pTerm->eOperator & (WO_EQ|WO_ISNULL) ){
+        pNew->wsFlags |= WHERE_COLUMN_EQ;
+        pNew->nEq++;
+        pNew->nOut = (double)pProbe->aiRowEst[pNew->nEq] * nInMul;
+      }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
+        pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
+        pNew->nOut = savedLoop.nOut/3;
+      }else if( pTerm->eOperator & (WO_LT|WO_LE) ){
+        pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_TOP_LIMIT;
+        pNew->nOut = savedLoop.nOut/3;
       }
+      pNew->rRun = pNew->nOut + estLog(pProbe->aiRowEst[0])*nIn;
       whereLoopInsert(pBuilder->pWInfo, pNew);
-      if( pNew->nEq<pProbe->nColumn ){
-        whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul);
+      if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 && pNew->nEq<pProbe->nColumn ){
+        whereLoopAddBtreeIndex(pBuilder, maskSelf, pSrc, pProbe, nInMul*nIn);
       }
     }
     *pNew = savedLoop;
@@ -5222,10 +5256,12 @@ static void whereLoopAddBtree(
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
   sqlite3 *db;                /* The database connection */
   WhereLoop *pNew;            /* Template WhereLoop object */
+  Bitmask maskSelf;           /* Mask for iTab */
 
   pNew = pBuilder->pNew;
   db = pBuilder->db;
   pSrc = pBuilder->pTabList->a + iTab;
+  maskSelf = getMask(pBuilder->pWC->pMaskSet, iTab);
 
   if( pSrc->pIndex ){
     /* An INDEXED BY clause specifies a particular index to use */
@@ -5253,6 +5289,19 @@ static void whereLoopAddBtree(
     pProbe = &sPk;
   }
 
+  /* Insert a full table scan */
+  pNew->iTab = iTab;
+  pNew->nEq = 0;
+  pNew->nTerm = 0;
+  pNew->rSetup = (double)0;
+  pNew->prereq = 0;
+  pNew->pIndex = 0;
+  pNew->wsFlags = 0;
+  pNew->iOb = pNew->nOb = 0;
+  pNew->rRun = (double)pSrc->pTab->nRowEst;
+  pNew->nOut = (double)pSrc->pTab->nRowEst;
+  whereLoopInsert(pBuilder->pWInfo, pNew);
+
   /* Loop over all indices
   */
   for(; pProbe; pProbe=pProbe->pNext){
@@ -5261,27 +5310,32 @@ static void whereLoopAddBtree(
     pNew->iTab = iTab;
     pNew->nEq = 0;
     pNew->nTerm = 0;
+    if( pProbe->tnum<=0 ){
+      /* Integer primary key index */
+      pNew->wsFlags = WHERE_IPK;
+    }else{
+      Bitmask m = pSrc->colUsed;
+      int j;
+      for(j=pProbe->nColumn-1; j>=0; j--){
+        int x = pProbe->aiColumn[j];
+        if( x<BMS-1 ){
+          m &= ~(((Bitmask)1)<<x);
+        }
+      }
+      pNew->wsFlags = m==0 ? WHERE_IDX_ONLY : 0;
+    }
     paTerm = sqlite3DbRealloc(db, pNew->aTerm,
                               (pProbe->nColumn+1)*sizeof(pNew->aTerm[0]));
     if( paTerm==0 ) break;
     pNew->aTerm = paTerm;
     pNew->pIndex = pProbe;
 
-    whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 1);
+    whereLoopAddBtreeIndex(pBuilder, maskSelf, pSrc, pProbe, 1);
 
     /* If there was an INDEXED BY clause, then only that one index is
     ** considered. */
     if( pSrc->pIndex ) break;
   }
-
-#if 0  
-  /* Insert a full table scan */
-  pNew->iTab = iTab;
-  pNew->rSetup = (double)0;
-  pNew->rRun = (double)1000000;
-  pNew->nOut = (double)1000000;
-  whereLoopInsert(pBuilder->pWInfo, pNew);
-#endif
 }
 
 /*
@@ -5578,16 +5632,16 @@ WhereInfo *sqlite3WhereBegin(
       struct SrcList_item *pItem = pTabList->a + p->iTab;
        Table *pTab = pItem->pTab;
       sqlite3DebugPrintf("%02d.%0*llx", p->iTab, nb, p->prereq);
-      sqlite3DebugPrintf(" %5s",
+      sqlite3DebugPrintf(" %6s",
                          pItem->zAlias ? pItem->zAlias : pTab->zName);
       if( p->pIndex ){
-        sqlite3DebugPrintf(".%-5s %2d", p->pIndex->zName, p->nEq);
+        sqlite3DebugPrintf(".%-8s %2d", p->pIndex->zName, p->nEq);
       }else{
-        sqlite3DebugPrintf("%9s","");
+        sqlite3DebugPrintf("%12s","");
       }
       sqlite3DebugPrintf(" fg %08x OB %d,%d N %2d",
                          p->wsFlags, p->iOb, p->nOb, p->nTerm);
-      sqlite3DebugPrintf(" cost %.2g+%.2g,%.2g\n",
+      sqlite3DebugPrintf(" cost %.4g,%.4g,%.4g\n",
                          p->prereq, p->rSetup, p->rRun, p->nOut);
     }
   }
