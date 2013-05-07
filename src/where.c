@@ -5163,6 +5163,7 @@ static void whereLoopAddBtreeIndex(
   WhereTerm *pTerm;               /* A WhereTerm under consideration */
   int eqTermMask;                 /* Valid equality operators */
   WhereScan scan;                 /* Iterator for WHERE terms */
+  WhereLoop savedLoop;
 
   db = pBuilder->db;
   pNew = pBuilder->pNew;
@@ -5182,13 +5183,26 @@ static void whereLoopAddBtreeIndex(
     iCol = pProbe->aiColumn[pNew->nEq];
     pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
                           eqTermMask, iCol>=0 ? pProbe : 0);
+    savedLoop = *pNew;
     pNew->nEq++;
+    pNew->nTerm++;
     for(; pTerm!=0; pTerm = whereScanNext(&scan)){
       pNew->aTerm[pNew->nEq-1] = pTerm;
-      
+      pNew->nOut = (double)(pProbe->aiRowEst[pNew->nEq] * nInMul);
+      pNew->rSetup = (double)0;
+      pNew->rRun = pNew->nOut;
+      pNew->prereq = savedLoop.prereq | pTerm->prereqRight;
+      if( pProbe->tnum<=0 ){
+        pNew->wsFlags = savedLoop.wsFlags | WHERE_ROWID_EQ;
+      }else{
+        pNew->wsFlags = savedLoop.wsFlags | WHERE_COLUMN_EQ;
+      }
+      whereLoopInsert(pBuilder->pWInfo, pNew);
+      if( pNew->nEq<pProbe->nColumn ){
+        whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul);
+      }
     }
-    pNew->nEq--;
-
+    *pNew = savedLoop;
   }
 }
 
@@ -5202,7 +5216,6 @@ static void whereLoopAddBtree(
   Bitmask mExtra              /* Extra prerequesites for using this table */
 ){
   Index *pProbe;              /* An index we are evaluating */
-  int eqTermMask;             /* Current mask of valid equality operators */
   Index sPk;                  /* A fake index object for the primary key */
   tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
   int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
@@ -5243,13 +5256,15 @@ static void whereLoopAddBtree(
   /* Loop over all indices
   */
   for(; pProbe; pProbe=pProbe->pNext){
+    WhereTerm **paTerm;
     pNew->prereq = mExtra;
     pNew->iTab = iTab;
     pNew->nEq = 0;
     pNew->nTerm = 0;
-    pNew->aTerm = sqlite3DbRealloc(db, pNew->aTerm,
-                                   (pProbe->nColumn+1)*sizeof(pNew->aTerm[0]));
-    if( pNew->aTerm==0 ) break;
+    paTerm = sqlite3DbRealloc(db, pNew->aTerm,
+                              (pProbe->nColumn+1)*sizeof(pNew->aTerm[0]));
+    if( paTerm==0 ) break;
+    pNew->aTerm = paTerm;
     pNew->pIndex = pProbe;
 
     whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 1);
@@ -5551,7 +5566,7 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(("*** Optimizer Start ***\n"));
-  /*whereLoopAddAll(&sWLB);*/
+  whereLoopAddAll(&sWLB);
 
   /* Display all of the WhereLoop objects if wheretrace is enabled */
 #if defined(SQLITE_DEBUG) \
@@ -5563,16 +5578,16 @@ WhereInfo *sqlite3WhereBegin(
       struct SrcList_item *pItem = pTabList->a + p->iTab;
        Table *pTab = pItem->pTab;
       sqlite3DebugPrintf("%02d.%0*llx", p->iTab, nb, p->prereq);
-      sqlite3DebugPrintf("     %s",
+      sqlite3DebugPrintf(" %5s",
                          pItem->zAlias ? pItem->zAlias : pTab->zName);
       if( p->pIndex ){
-        sqlite3DebugPrintf(" index %s nEq %d", p->pIndex->zName, p->nEq);
+        sqlite3DebugPrintf(".%-5s %2d", p->pIndex->zName, p->nEq);
       }else{
-        sqlite3DebugPrintf("\n");
+        sqlite3DebugPrintf("%9s","");
       }
-      sqlite3DebugPrintf("     wsFlags %08x OB %d,%d nTerm %d\n",
+      sqlite3DebugPrintf(" fg %08x OB %d,%d N %2d",
                          p->wsFlags, p->iOb, p->nOb, p->nTerm);
-      sqlite3DebugPrintf("     cost %.2e + %.2e nOut %.2e\n",
+      sqlite3DebugPrintf(" cost %.2g+%.2g,%.2g\n",
                          p->prereq, p->rSetup, p->rRun, p->nOut);
     }
   }
