@@ -5442,8 +5442,11 @@ static int whereLoopAddVirtual(
   pIdxInfo = allocateIndexInfo(pParse,pWC,pSrc,pBuilder->pOrderBy);
   if( pIdxInfo==0 ) return SQLITE_NOMEM;
   paTerm = sqlite3DbRealloc(db, pNew->aTerm,
-                            pIdxInfo->nConstraint*sizeof(pNew->aTerm[0]));
-  if( paTerm==0 ) return SQLITE_NOMEM;
+                            (pIdxInfo->nConstraint+1)*sizeof(pNew->aTerm[0]));
+  if( paTerm==0 ){
+    sqlite3DbFree(db, pIdxInfo);
+    return SQLITE_NOMEM;
+  }
   pNew->aTerm = paTerm;
   pNew->prereq = 0;
   pNew->iTab = iTab;
@@ -5504,7 +5507,7 @@ static int whereLoopAddVirtual(
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
     pNew->prereq = 0;
     for(i=0; i<pIdxInfo->nConstraint; i++) pNew->aTerm[i] = 0;
-    mxTerm = 0;
+    mxTerm = -1;
     for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
       if( (iTerm = pUsage[i].argvIndex - 1)>=0 ){
         j = pIdxCons->iTermOffset;
@@ -5659,7 +5662,7 @@ static int wherePathSolver(WhereInfo *pWInfo){
           if( nTo<mxChoice ){
             jj = nTo++;
           }else{
-            for(jj=nTo-1; aTo[jj].rCost>=mxCost; jj--){ assert(jj>0); }
+            for(jj=nTo-1; aTo[jj].rCost<mxCost; jj--){ assert(jj>0); }
           }
           pTo = &aTo[jj];
         }else{
@@ -5701,7 +5704,7 @@ static int wherePathSolver(WhereInfo *pWInfo){
   }
 
   /* TEMPORARY */
-//  if( nFrom==0 ){ sqlite3DbFree(db, pSpace); return SQLITE_ERROR; }
+  if( nFrom==0 ){ sqlite3DbFree(db, pSpace); return SQLITE_ERROR; }
   assert( nFrom>0 );
   
   /* Find the lowest cost path and load it into pWInfo->a[].pWLoop */

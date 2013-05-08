@@ -1,5 +1,5 @@
-C NGQP\sworking\swith\svirtualt\stables,\sthough\smany\slegacy\stests\sfail\sand\sthere\nare\syet\ssome\smemory\sleaks.
-D 2013-05-08T14:14:26.339
+C Fix\smemory\sleaks\sin\sthe\sNGQP\slogic\sfor\svirtual\stables.
+D 2013-05-08T20:05:58.332
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -263,7 +263,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 409691bea5b1442e7cfdeca004c3f38208585ca4
+F src/where.c e2e0ff816591684ff74bef65fae747cc57cee335
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ceff8955020cd1314bf1ab0af7d075fe2c0863e5
-R 82aea8626061f3b7c0b8cf00cdb63138
+P bd9327a9684b99978734ccd561eea1ad864ab13b
+R 08bf850cd4f323af143e8919e5b89b44
 U drh
-Z 1ad6961249f560a4ead02c9a1a345bbe
+Z 89b960e01fe84155abc15edf55ac2ba0
