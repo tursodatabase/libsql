@@ -710,15 +710,6 @@ WhereTerm *whereScanNext(WhereScan *pScan){
     iColumn = pScan->aEquiv[pScan->iEquiv-1];
     while( (pWC = pScan->pWC)!=0 ){
       for(pTerm=pWC->a+pScan->k; pScan->k<pWC->nTerm; pScan->k++, pTerm++){
-        if( pTerm->iParent>=0 ){
-          WhereTerm *pParent = &pWC->a[pTerm->iParent];
-          int j;
-          for(j=pScan->iEquiv-4; j>=0; j-=2 ){
-            if( pParent->leftCursor==pScan->aEquiv[j]
-             && pParent->u.leftColumn==pScan->aEquiv[j+1] ) break;
-          }
-          if( j>=0 ) continue;
-        }
         if( pTerm->leftCursor==iCur && pTerm->u.leftColumn==iColumn ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aEquiv)
@@ -753,6 +744,13 @@ WhereTerm *whereScanNext(WhereScan *pScan){
               if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
                 continue;
               }
+            }
+            if( (pTerm->eOperator & WO_EQ)!=0
+             && (pX = pTerm->pExpr->pRight)->op==TK_COLUMN
+             && pX->iTable==pScan->aEquiv[0]
+             && pX->iColumn==pScan->aEquiv[1]
+            ){
+              continue;
             }
             pScan->pCurrent = pTerm;
             pScan->k++;
@@ -5058,13 +5056,14 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
   int nb = 2*((pTabList->nSrc+15)/16);
   struct SrcList_item *pItem = pTabList->a + p->iTab;
   Table *pTab = pItem->pTab;
-  sqlite3DebugPrintf("%02d.%0*llx", p->iTab, nb, p->prereq);
-  sqlite3DebugPrintf(" %6s",
+  sqlite3DebugPrintf("%2d.%0*llx.%0*llx",
+                     p->iTab, nb, p->maskSelf, nb, p->prereq);
+  sqlite3DebugPrintf(" %8s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
   if( p->pIndex ){
-    sqlite3DebugPrintf(".%-8s %2d", p->pIndex->zName, p->nEq);
+    sqlite3DebugPrintf(".%-12s %2d", p->pIndex->zName, p->nEq);
   }else{
-    sqlite3DebugPrintf("%12s","");
+    sqlite3DebugPrintf("%16s","");
   }
   sqlite3DebugPrintf(" fg %08x OB %d,%d N %2d",
                      p->wsFlags, p->iOb, p->nOb, p->nTerm);
@@ -5282,7 +5281,7 @@ static void whereLoopAddBtree(
   pNew = pBuilder->pNew;
   db = pBuilder->db;
   pSrc = pBuilder->pTabList->a + iTab;
-  pNew->maskSelf = getMask(pBuilder->pWC->pMaskSet, iTab);
+  pNew->maskSelf = getMask(pBuilder->pWC->pMaskSet, pSrc->iCursor);
 
   if( pSrc->pIndex ){
     /* An INDEXED BY clause specifies a particular index to use */
@@ -5460,7 +5459,7 @@ static int wherePathSolver(WhereInfo *pWInfo){
           if( nTo<mxChoice ){
             jj = nTo++;
           }else{
-            for(jj=nTo-1; aTo[jj].rCost>=mxCost; jj++){ assert(jj>0); }
+            for(jj=nTo-1; aTo[jj].rCost>=mxCost; jj--){ assert(jj>0); }
           }
           pTo = &aTo[jj];
         }else{
