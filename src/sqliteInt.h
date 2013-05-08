@@ -2021,6 +2021,7 @@ struct WhereLevel {
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
   double rOptCost;      /* "Optimal" cost for this level */
+  struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
 
   /* The following field is really not part of the current level.  But
   ** we need a place to cache virtual table index information for each

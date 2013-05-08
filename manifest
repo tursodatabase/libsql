@@ -1,5 +1,5 @@
-C Continued\sprogress\son\sgenerating\sgood\sWhereLoop\sobjects\sfor\sthe\snew\squery\nplanner.
-D 2013-05-07T23:06:23.630
+C Add\sthe\sNGQP\ssolver.
+D 2013-05-08T03:05:41.388
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
 F src/sqlite.h.in 5a5a22a9b192d81a9e5dee00274e3a0484c4afb1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h 0d76a0aa7c64536c6f55d11a8f9f40df0636af6a
+F src/sqliteInt.h aee09cf5ee7d5e899246affdd8c3cf58f086ade5
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -263,7 +263,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c e957c2c6fd7b421ea6dd1ff11d254c80d0b11638
+F src/where.c cac7c10d422ece684740285366285ef06529796f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e8881a8b2f25f38bc8ff77619f96f38fe530d13b
-R 90f142cd2d5094cb6ddc049cebfe5b6d
+P 15cc8a16482777d8e138c4d0863faf8d54fef33a
+R 6dc017dbdcd8ab4e7013a1e96308cbfe
 U drh
-Z d9519f5b83b11415ad77247122aa0d25
+Z 6f2b95a5959d577b5b6c3e6985beb9a5
