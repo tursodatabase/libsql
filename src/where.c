@@ -44,6 +44,8 @@ typedef struct WherePath WherePath;
 typedef struct WhereTerm WhereTerm;
 typedef struct WhereLoopBuilder WhereLoopBuilder;
 typedef struct WhereScan WhereScan;
+typedef struct WhereVtabPlan WhereVtabPlan;
+
 
 /*
 ** Each instance of this object represents a way of evaluating one
@@ -54,15 +56,24 @@ typedef struct WhereScan WhereScan;
 struct WhereLoop {
   Bitmask prereq;       /* Bitmask of other loops that must run first */
   Bitmask maskSelf;     /* Bitmask identifying table iTab */
-  int iTab;             /* Index of the table coded by this loop */
+  u16 iTab;             /* Index of the table coded by this loop */
+  u16 nTerm;            /* Number of entries in aTerm[] */
   u16 iOb, nOb;         /* ORDER BY terms satisfied by this strategy */
   double rSetup;        /* One-time setup cost (ex: create transient index) */
   double rRun;          /* Cost of running each loop */
   double nOut;          /* Estimated number of output rows */
   u32 wsFlags;          /* WHERE_* flags describing the plan */
-  u16 nEq;              /* Number of equality constraints */
-  u16 nTerm;            /* Number of entries in aTerm[] */
-  Index *pIndex;        /* Index used */
+  union {
+    struct {               /* Information for internal btree tables */
+      int nEq;               /* Number of equality constraints */
+      Index *pIndex;         /* Index used, or NULL */
+    } btree;
+    struct {               /* Information for virtualt tables */
+      int idxNum;            /* Index number */
+      int needFree;          /* True if sqlite3_free(idxStr) is needed */
+      char *idxStr;          /* Index identifier string */
+    } vtab;
+  } u;
   WhereTerm **aTerm;    /* WhereTerms used */
   WhereLoop *pNextLoop; /* Next WhereLoop object in the WhereClause */
 };
@@ -314,7 +325,7 @@ struct WhereLoopBuilder {
 */
 #define WHERE_ROWID_EQ     0x00001000  /* rowid=EXPR or rowid IN (...) */
 #define WHERE_ROWID_RANGE  0x00002000  /* rowid<EXPR and/or rowid>EXPR */
-#define WHERE_IPK          0x00004000  /* x is the INTEGER PRIMARY KEY */
+#define WHERE_IPK          0x00008000  /* x is the INTEGER PRIMARY KEY */
 #define WHERE_COLUMN_EQ    0x00010000  /* x=EXPR or x IN (...) or x IS NULL */
 #define WHERE_COLUMN_RANGE 0x00020000  /* x<EXPR and/or x>EXPR */
 #define WHERE_COLUMN_IN    0x00040000  /* x IN (...) */
@@ -333,6 +344,7 @@ struct WhereLoopBuilder {
 #define WHERE_OB_UNIQUE    0x00004000  /* Values in ORDER BY columns are 
                                        ** different for every output row */
 #define WHERE_VIRTUALTABLE 0x08000000  /* Use virtual-table processing */
+#define WHERE_FREEIDXSTR   0x04000000  /* neeed to free WhereLoop.u.idxStr */
 #define WHERE_MULTI_OR     0x10000000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x20000000  /* Uses an ephemeral index */
 #define WHERE_DISTINCT     0x40000000  /* Correct order for DISTINCT */
@@ -2218,11 +2230,12 @@ static void constructAutomaticIndex(
 ** responsibility of the caller to eventually release the structure
 ** by passing the pointer returned by this function to sqlite3_free().
 */
-static sqlite3_index_info *allocateIndexInfo(WhereBestIdx *p){
-  Parse *pParse = p->pParse; 
-  WhereClause *pWC = p->pWC;
-  struct SrcList_item *pSrc = p->pSrc;
-  ExprList *pOrderBy = p->pOrderBy;
+static sqlite3_index_info *allocateIndexInfo(
+  Parse *pParse,
+  WhereClause *pWC,
+  struct SrcList_item *pSrc,
+  ExprList *pOrderBy
+){
   int i, j;
   int nTerm;
   struct sqlite3_index_constraint *pIdxCons;
@@ -2411,7 +2424,7 @@ static void bestVirtualIndex(WhereBestIdx *p){
   */
   pIdxInfo = *p->ppIdxInfo;
   if( pIdxInfo==0 ){
-    *p->ppIdxInfo = pIdxInfo = allocateIndexInfo(p);
+    *p->ppIdxInfo = pIdxInfo = allocateIndexInfo(pParse,pWC,pSrc,p->pOrderBy);
   }
   if( pIdxInfo==0 ){
     return;
@@ -5060,10 +5073,22 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
                      p->iTab, nb, p->maskSelf, nb, p->prereq);
   sqlite3DebugPrintf(" %8s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
-  if( p->pIndex ){
-    sqlite3DebugPrintf(".%-12s %2d", p->pIndex->zName, p->nEq);
+  if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
+    if( p->u.btree.pIndex ){
+      sqlite3DebugPrintf(".%-12s %2d",
+                         p->u.btree.pIndex->zName, p->u.btree.nEq);
+    }else{
+      sqlite3DebugPrintf("%16s","");
+    }
   }else{
-    sqlite3DebugPrintf("%16s","");
+    char *z;
+    if( p->u.vtab.idxStr ){
+      z = sqlite3_mprintf("(%d,\"%s\")", p->u.vtab.idxNum,p->u.vtab.idxStr);
+    }else{
+      z = sqlite3_mprintf("(%d)", p->u.vtab.idxNum);
+    }
+    sqlite3DebugPrintf(" %-15s", z);
+    sqlite3_free(z);
   }
   sqlite3DebugPrintf(" fg %08x OB %d,%d N %2d",
                      p->wsFlags, p->iOb, p->nOb, p->nTerm);
@@ -5073,10 +5098,24 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
 #endif
 
 /*
+** Deallocate internal memory used by a WhereLoop object
+*/
+static void whereLoopClear(sqlite3 *db, WhereLoop *p){
+  sqlite3DbFree(db, p->aTerm);
+  p->aTerm = 0;
+  p->nTerm = 0;
+  if( (p->wsFlags & WHERE_VIRTUALTABLE)!=0 ){
+    if( p->u.vtab.needFree ) sqlite3_free(p->u.vtab.idxStr);
+    p->u.vtab.needFree = 0;
+    p->u.vtab.idxStr = 0;
+  }
+}
+
+/*
 ** Delete a WhereLoop object
 */
 static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
-  sqlite3DbFree(db, p->aTerm);
+  whereLoopClear(db, p);
   sqlite3DbFree(db, p);
 }
 
@@ -5149,10 +5188,8 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
      && p->rRun>=pTemplate->rRun
     ){
       /* Overwrite an existing WhereLoop with a better one */
-      sqlite3DbFree(db, p->aTerm);
-      p->aTerm = 0;
-      p->nTerm = 0;
       pNext = p->pNextLoop;
+      whereLoopClear(db, p);
       break;
     }
   }
@@ -5176,21 +5213,25 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
   p->pNextLoop = pNext;
   *ppPrev = p;
   p->aTerm = paTerm;
-  if( p->pIndex && p->pIndex->tnum==0 ) p->pIndex = 0;
   if( pTemplate->nTerm ){
     memcpy(p->aTerm, pTemplate->aTerm, pTemplate->nTerm*sizeof(p->aTerm[0]));
+  }
+  if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
+    if( p->u.btree.pIndex && p->u.btree.pIndex->tnum==0 ) p->u.btree.pIndex = 0;
+  }else{
+    pTemplate->u.vtab.needFree = 0;
   }
   return SQLITE_OK;
 }
 
 /*
-** We have so far matched pBuilder->pNew->nEq terms of the index pIndex.
+** We have so far matched pBuilder->pNew->u.btree.nEq terms of the index pIndex.
 ** Try to match one more.
 **
 ** If pProbe->tnum==0, that means pIndex is a fake index used for the
 ** INTEGER PRIMARY KEY.
 */
-static void whereLoopAddBtreeIndex(
+static int whereLoopAddBtreeIndex(
   WhereLoopBuilder *pBuilder,     /* The WhereLoop factory */
   struct SrcList_item *pSrc,      /* FROM clause term being analyzed */
   Index *pProbe,                  /* An index on pSrc */
@@ -5203,12 +5244,14 @@ static void whereLoopAddBtreeIndex(
   WhereScan scan;                 /* Iterator for WHERE terms */
   WhereLoop savedLoop;            /* Saved original content of pNew[] */
   int iCol;                       /* Index of the column in the table */
+  int rc = SQLITE_OK;             /* Return code */
 
   db = pBuilder->db;
   pNew = pBuilder->pNew;
-  if( db->mallocFailed ) return;
+  if( db->mallocFailed ) return SQLITE_NOMEM;
 
-  assert( pNew->nEq<pProbe->nColumn );
+  assert( (pNew->wsFlags & WHERE_VIRTUALTABLE)==0 );
+  assert( pNew->u.btree.nEq<pProbe->nColumn );
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
   if( pNew->wsFlags & WHERE_BTM_LIMIT ){
     opMask = WO_LT|WO_LE;
@@ -5218,14 +5261,14 @@ static void whereLoopAddBtreeIndex(
     opMask = WO_EQ|WO_IN|WO_ISNULL|WO_GT|WO_GE|WO_LT|WO_LE;
   }
 
-  iCol = pProbe->aiColumn[pNew->nEq];
+  iCol = pProbe->aiColumn[pNew->u.btree.nEq];
   pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
                         opMask, iCol>=0 ? pProbe : 0);
   savedLoop = *pNew;
   pNew->rSetup = (double)0;
-  for(; pTerm!=0; pTerm = whereScanNext(&scan)){
+  for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 1;
-    pNew->nEq = savedLoop.nEq;
+    pNew->u.btree.nEq = savedLoop.u.btree.nEq;
     pNew->nTerm = savedLoop.nTerm;
     pNew->aTerm[pNew->nTerm++] = pTerm;
     pNew->prereq = (savedLoop.prereq | pTerm->prereqRight) & ~pNew->maskSelf;
@@ -5239,12 +5282,12 @@ static void whereLoopAddBtreeIndex(
         /* "x IN (value, value, ...)" */
         nIn = pExpr->x.pList->nExpr;
       }
-      pNew->nEq++;
-      pNew->nOut = (double)pProbe->aiRowEst[pNew->nEq] * nInMul * nIn;
+      pNew->u.btree.nEq++;
+      pNew->nOut = (double)pProbe->aiRowEst[pNew->u.btree.nEq] * nInMul * nIn;
     }else if( pTerm->eOperator & (WO_EQ|WO_ISNULL) ){
       pNew->wsFlags |= WHERE_COLUMN_EQ;
-      pNew->nEq++;
-      pNew->nOut = (double)pProbe->aiRowEst[pNew->nEq] * nInMul;
+      pNew->u.btree.nEq++;
+      pNew->nOut = (double)pProbe->aiRowEst[pNew->u.btree.nEq] * nInMul;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
       pNew->nOut = savedLoop.nOut/3;
@@ -5253,19 +5296,22 @@ static void whereLoopAddBtreeIndex(
       pNew->nOut = savedLoop.nOut/3;
     }
     pNew->rRun = pNew->nOut + estLog(pProbe->aiRowEst[0])*nIn;
-    whereLoopInsert(pBuilder->pWInfo, pNew);
-    if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 && pNew->nEq<pProbe->nColumn ){
+    rc = whereLoopInsert(pBuilder->pWInfo, pNew);
+    if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
+     && pNew->u.btree.nEq<pProbe->nColumn
+    ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul*nIn);
     }
   }
   *pNew = savedLoop;
+  return rc;
 }
 
 /*
 ** Add all WhereLoop objects for the iTab-th table of the join.  That
 ** table is guaranteed to be a b-tree table, not a virtual table.
 */
-static void whereLoopAddBtree(
+static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
   int iTab,                   /* The table to process */
   Bitmask mExtra              /* Extra prerequesites for using this table */
@@ -5277,6 +5323,7 @@ static void whereLoopAddBtree(
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
   sqlite3 *db;                /* The database connection */
   WhereLoop *pNew;            /* Template WhereLoop object */
+  int rc = SQLITE_OK;         /* Return code */
 
   pNew = pBuilder->pNew;
   db = pBuilder->db;
@@ -5311,24 +5358,24 @@ static void whereLoopAddBtree(
 
   /* Insert a full table scan */
   pNew->iTab = iTab;
-  pNew->nEq = 0;
+  pNew->u.btree.nEq = 0;
   pNew->nTerm = 0;
   pNew->rSetup = (double)0;
   pNew->prereq = 0;
-  pNew->pIndex = 0;
+  pNew->u.btree.pIndex = 0;
   pNew->wsFlags = 0;
   pNew->iOb = pNew->nOb = 0;
   pNew->rRun = (double)pSrc->pTab->nRowEst;
   pNew->nOut = (double)pSrc->pTab->nRowEst;
-  whereLoopInsert(pBuilder->pWInfo, pNew);
+  rc = whereLoopInsert(pBuilder->pWInfo, pNew);
 
   /* Loop over all indices
   */
-  for(; pProbe; pProbe=pProbe->pNext){
+  for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext){
     WhereTerm **paTerm;
     pNew->prereq = mExtra;
     pNew->iTab = iTab;
-    pNew->nEq = 0;
+    pNew->u.btree.nEq = 0;
     pNew->nTerm = 0;
     if( pProbe->tnum<=0 ){
       /* Integer primary key index */
@@ -5345,34 +5392,185 @@ static void whereLoopAddBtree(
       pNew->wsFlags = m==0 ? WHERE_IDX_ONLY : 0;
     }
     paTerm = sqlite3DbRealloc(db, pNew->aTerm,
-                              (pProbe->nColumn+1)*sizeof(pNew->aTerm[0]));
-    if( paTerm==0 ) break;
+                              (pProbe->nColumn+2)*sizeof(pNew->aTerm[0]));
+    if( paTerm==0 ){ rc = SQLITE_NOMEM; break; }
     pNew->aTerm = paTerm;
-    pNew->pIndex = pProbe;
+    pNew->u.btree.pIndex = pProbe;
 
-    whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 1);
+    rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 1);
 
     /* If there was an INDEXED BY clause, then only that one index is
     ** considered. */
     if( pSrc->pIndex ) break;
   }
+  return rc;
 }
 
 /*
 ** Add all WhereLoop objects for the iTab-th table of the join.  That
 ** table is guaranteed to be a virtual table.
 */
-static void whereLoopAddVirtual(
+static int whereLoopAddVirtual(
   WhereLoopBuilder *pBuilder,  /* WHERE clause information */
   int iTab,                    /* The table to process */
   Bitmask mExtra               /* Extra prerequesites for using this table */
 ){
+  Parse *pParse;               /* The parsing context */
+  WhereClause *pWC;            /* The WHERE clause */
+  struct SrcList_item *pSrc;   /* The FROM clause term to search */
+  Table *pTab;
+  sqlite3 *db;
+  sqlite3_index_info *pIdxInfo;
+  struct sqlite3_index_constraint *pIdxCons;
+  struct sqlite3_index_constraint_usage *pUsage;
+  WhereTerm *pTerm;
+  int i, j;
+  int iTerm, mxTerm;
+  int seenIn = 0;              /* True if an IN operator is seen */
+  int seenVar = 0;             /* True if a non-constant constraint is seen */
+  int iPhase;                  /* 0: const w/o IN, 1: const, 2: no IN,  2: IN */
+  WhereLoop *pNew;
+  WhereTerm **paTerm;
+  int rc = SQLITE_OK;
+
+  pParse = pBuilder->pParse;
+  db = pParse->db;
+  pWC = pBuilder->pWC;
+  pSrc = &pBuilder->pTabList->a[iTab];
+  pTab = pSrc->pTab;
+  pNew = pBuilder->pNew;
+  pIdxInfo = allocateIndexInfo(pParse,pWC,pSrc,pBuilder->pOrderBy);
+  if( pIdxInfo==0 ) return SQLITE_NOMEM;
+  paTerm = sqlite3DbRealloc(db, pNew->aTerm,
+                            pIdxInfo->nConstraint*sizeof(pNew->aTerm[0]));
+  if( paTerm==0 ) return SQLITE_NOMEM;
+  pNew->aTerm = paTerm;
+  pNew->prereq = 0;
+  pNew->iTab = iTab;
+  pNew->maskSelf = getMask(pBuilder->pWC->pMaskSet, pSrc->iCursor);
+  pNew->iOb = 0;
+  pNew->nOb = 0;
+  pNew->rSetup = 0;
+  pNew->wsFlags = WHERE_VIRTUALTABLE;
+  pNew->nTerm = 0;
+  pNew->u.vtab.needFree = 0;
+  pUsage = pIdxInfo->aConstraintUsage;
+
+  for(iPhase=0; iPhase<=2; iPhase++){
+    if( !seenIn && (iPhase&1)!=0 ){
+      iPhase++;
+      if( iPhase>3 ) break;
+    }
+    if( !seenVar && iPhase>1 ) break;
+    pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
+    for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
+      j = pIdxCons->iTermOffset;
+      pTerm = &pWC->a[j];
+      switch( iPhase ){
+        case 0:    /* Constants without IN operator */
+          pIdxCons->usable = 0;
+          if( (pTerm->eOperator & WO_IN)!=0 ){
+            seenIn = 1;
+          }else if( pTerm->prereqRight!=0 ){
+            seenVar = 1;
+          }else{
+            pIdxCons->usable = 1;
+          }
+          break;
+        case 1:    /* Constants with IN operators */
+          assert( seenIn );
+          pIdxCons->usable = (pTerm->prereqRight==0);
+          break;
+        case 2:    /* Variables without IN */
+          assert( seenVar );
+          pIdxCons->usable = (pTerm->eOperator & WO_IN)==0;
+          break;
+        default:   /* Variables with IN */
+          assert( seenVar && seenIn );
+          pIdxCons->usable = 1;
+          break;
+      }
+    }
+    memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
+    if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
+    pIdxInfo->idxStr = 0;
+    pIdxInfo->idxNum = 0;
+    pIdxInfo->needToFreeIdxStr = 0;
+    pIdxInfo->orderByConsumed = 0;
+    /* ((double)2) In case of SQLITE_OMIT_FLOATING_POINT... */
+    pIdxInfo->estimatedCost = SQLITE_BIG_DBL / ((double)2);
+    rc = vtabBestIndex(pParse, pTab, pIdxInfo);
+    if( rc ) goto whereLoopAddVtab_exit;
+    pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
+    pNew->prereq = 0;
+    for(i=0; i<pIdxInfo->nConstraint; i++) pNew->aTerm[i] = 0;
+    mxTerm = 0;
+    for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
+      if( (iTerm = pUsage[i].argvIndex - 1)>=0 ){
+        j = pIdxCons->iTermOffset;
+        if( iTerm>=pIdxInfo->nConstraint
+         || j<0
+         || j>=pWC->nTerm
+         || pNew->aTerm[iTerm]!=0
+        ){
+          rc = SQLITE_ERROR;
+          sqlite3ErrorMsg(pParse, "%s.xBestIndex() malfunction", pTab->zName);
+          goto whereLoopAddVtab_exit;
+        }
+        pTerm = &pWC->a[j];
+        pNew->prereq |= pTerm->prereqRight;
+        pNew->aTerm[iTerm] = pTerm;
+        if( iTerm>mxTerm ) mxTerm = iTerm;
+        if( (pTerm->eOperator & WO_IN)!=0 ){
+          if( pUsage[i].omit==0 ){
+            /* Do not attempt to use an IN constraint if the virtual table
+            ** says that the equivalent EQ constraint cannot be safely omitted.
+            ** If we do attempt to use such a constraint, some rows might be
+            ** repeated in the output. */
+            break;
+          }
+          /* A virtual table that is constrained by an IN clause may not
+          ** consume the ORDER BY clause because (1) the order of IN terms
+          ** is not necessarily related to the order of output terms and
+          ** (2) Multiple outputs from a single IN value will not merge
+          ** together.  */
+          pIdxInfo->orderByConsumed = 0;
+        }
+      }
+    }
+    if( i>=pIdxInfo->nConstraint ){
+      pNew->nTerm = mxTerm+1;
+      pNew->u.vtab.idxNum = pIdxInfo->idxNum;
+      pNew->u.vtab.needFree = pIdxInfo->needToFreeIdxStr;
+      pIdxInfo->needToFreeIdxStr = 0;
+      pNew->u.vtab.idxStr = pIdxInfo->idxStr;
+      pNew->iOb = 0;
+      if( pIdxInfo->orderByConsumed ){
+        pNew->nOb = (u16)(pIdxInfo->nOrderBy&0xffff);
+      }else{
+        pNew->nOb = 0;
+      }
+      pNew->rSetup = (double)0;
+      pNew->rRun = pIdxInfo->estimatedCost;
+      pNew->nOut = (double)25;
+      whereLoopInsert(pBuilder->pWInfo, pNew);
+      if( pNew->u.vtab.needFree ){
+        sqlite3_free(pNew->u.vtab.idxStr);
+        pNew->u.vtab.needFree = 0;
+      }
+    }
+  }  
+
+whereLoopAddVtab_exit:
+  if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
+  sqlite3DbFree(db, pIdxInfo);
+  return rc;
 }
 
 /*
 ** Add all WhereLoop objects for all tables 
 */
-static void whereLoopAddAll(WhereLoopBuilder *pBuilder){
+static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   Bitmask mExtra = 0;
   Bitmask mPrior = 0;
   int iTab;
@@ -5381,24 +5579,26 @@ static void whereLoopAddAll(WhereLoopBuilder *pBuilder){
   WhereClause *pWC = pBuilder->pWC;
   sqlite3 *db = pBuilder->db;
   int nTabList = pBuilder->pWInfo->nLevel;
+  int rc = SQLITE_OK;
 
   /* Loop over the tables in the join, from left to right */
   pBuilder->pNew = sqlite3DbMallocZero(db, sizeof(WhereLoop));
-  if( pBuilder->pNew==0 ) return;
+  if( pBuilder->pNew==0 ) return SQLITE_NOMEM;
   for(iTab=0, pItem=pTabList->a; iTab<nTabList; iTab++, pItem++){
     if( IsVirtual(pItem->pTab) ){
-      whereLoopAddVirtual(pBuilder, iTab, mExtra);
+      rc = whereLoopAddVirtual(pBuilder, iTab, mExtra);
     }else{
-      whereLoopAddBtree(pBuilder, iTab, mExtra);
+      rc = whereLoopAddBtree(pBuilder, iTab, mExtra);
     }
     mPrior |= getMask(pWC->pMaskSet, pItem->iCursor);
     if( (pItem->jointype & (JT_LEFT|JT_CROSS))!=0 ){
       mExtra = mPrior;
     }
-    if( db->mallocFailed ) break;
+    if( rc || db->mallocFailed ) break;
   }
   whereLoopDelete(db, pBuilder->pNew);
   pBuilder->pNew = 0;
+  return rc;
 }
 
 /*
@@ -5501,7 +5701,7 @@ static int wherePathSolver(WhereInfo *pWInfo){
   }
 
   /* TEMPORARY */
-  if( nFrom==0 ){ sqlite3DbFree(db, pSpace); return SQLITE_ERROR; }
+//  if( nFrom==0 ){ sqlite3DbFree(db, pSpace); return SQLITE_ERROR; }
   assert( nFrom>0 );
   
   /* Find the lowest cost path and load it into pWInfo->a[].pWLoop */
@@ -5629,6 +5829,7 @@ WhereInfo *sqlite3WhereBegin(
   int andFlags;              /* AND-ed combination of all pWC->a[].wtFlags */
   int ii;                    /* Loop counter */
   sqlite3 *db;               /* Database connection */
+  int rc;                    /* Return code */
 
 
   /* Variable initialization */
@@ -5758,8 +5959,8 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(("*** Optimizer Start ***\n"));
-  whereLoopAddAll(&sWLB);
-  if( db->mallocFailed ) goto whereBeginError;
+  rc = whereLoopAddAll(&sWLB);
+  if( rc ) goto whereBeginError;
 
   /* Display all of the WhereLoop objects if wheretrace is enabled */
 #if defined(SQLITE_DEBUG) \
