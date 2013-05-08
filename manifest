@@ -1,5 +1,5 @@
-C Modify\sthe\sfts3tokenize\stable\simplementation\sso\sthat\sit\sdoes\snot\suse\sthe\sSQL\sfunction\sfts3_tokenizer.\sThe\suser\smay\shave\sinstalled\san\sauthorizer\scallback\sthat\sprohibits\sthis.
-D 2013-05-07T12:16:48.845
+C Fix\sthe\swholenumber\svirtual\stable\sso\sthat\sit\sreturns\shigher\scosts\sfor\nunconstrained\susage.\s\sCherrypick\sfrom\s[ceff8955020cd13].
+D 2013-05-08T14:20:28.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -90,7 +90,7 @@ F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/spellfix.c f9d24a2b2617cee143b7841b453e4e1fd8f189cc
-F ext/misc/wholenumber.c ce362368b9381ea48cbd951ade8df867eeeab014
+F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -1061,7 +1061,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e5b3cd747bb0b484e38b8611a81925e2cc144435
-R 0fdf3312f3c095b75e4d2deab47476b0
-U dan
-Z 58e39fd3c70070287886f650d61f780d
+P 0ba67b64de258883e4c43db09e131bb67083855e
+Q +ceff8955020cd1314bf1ab0af7d075fe2c0863e5
+R 3c92370100000406d8695d9d00d3c30f
+U drh
+Z 3250570cd81603159ecf8b6de54c9572
