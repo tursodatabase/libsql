@@ -75,14 +75,13 @@ struct Fts3tokCursor {
 ** Query FTS for the tokenizer implementation named zName.
 */
 static int fts3tokQueryTokenizer(
-  sqlite3 *db,
   Fts3Hash *pHash,
   const char *zName,
   const sqlite3_tokenizer_module **pp,
   char **pzErr
 ){
   sqlite3_tokenizer_module *p;
-  int nName = strlen(zName);
+  int nName = (int)strlen(zName);
 
   p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
   if( !p ){
@@ -184,7 +183,7 @@ static int fts3tokConnectMethod(
     }else{
       zModule = azDequote[0];
     }
-    rc = fts3tokQueryTokenizer(db, (Fts3Hash *)pHash, zModule, &pMod, pzErr);
+    rc = fts3tokQueryTokenizer((Fts3Hash*)pHash, zModule, &pMod, pzErr);
   }
 
   assert( (rc==SQLITE_OK)==(pMod!=0) );

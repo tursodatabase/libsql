@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sORDER\sBY\scollating\ssequences\sare\scompatible\swith\sthe\ncomparison\scollations\sbefore\susing\sthe\smerge\salgorithm\sfor\scompound\s\nSELECT\sstatements.\s\sFix\sfor\sticket\s[6709574d2a8d8].
-D 2013-05-08T16:57:48.917
+C Fix\sa\scouple\sof\sharmless\scompiler\swarnings\sin\sthe\sfts3_tokenize\svirtual\ntable.
+D 2013-05-08T17:06:28.377
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -67,7 +67,7 @@ F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
 F ext/fts3/fts3_snippet.c 5fcfcafff46a2a3a63b8e59fcb51987d01c74695
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c f9a1a1702db1bfad3e2d0064746eeb808f125489
-F ext/fts3/fts3_tokenize_vtab.c 03a428b6221dc0b3f4527b6004266c5db71a2026
+F ext/fts3/fts3_tokenize_vtab.c 011170fe9eba5ff062f1a31d3188e00267716706
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7227b61512a534645c73883c2e37b4e647592e5d fc3630cdef6e2cdbfb4e7b373d1a094753e55016
-R dcccb23e4f316b16da66bbbbad7a9346
+P ce853a75068073d6acc8bec0819505a22c4c7e69
+R 693e66fc26b30225620a1dd87e0b79b3
 U drh
-Z 6134f15a41242cbabed6e0256cc06784
+Z a746215c07dfe5ad61be18a3c8d6b29d
