@@ -1,5 +1,5 @@
-C Add\sthe\sNGQP\ssolver.
-D 2013-05-08T03:05:41.388
+C Bug\sfixes\sin\sthe\ssolver.
+D 2013-05-08T03:22:07.536
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -263,7 +263,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c cac7c10d422ece684740285366285ef06529796f
+F src/where.c 22da73b779e8892a59fcd03835ddf7c3e63a305c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 15cc8a16482777d8e138c4d0863faf8d54fef33a
-R 6dc017dbdcd8ab4e7013a1e96308cbfe
+P 5d37587c50d8932b6357bfd03152a851510a4317
+R 0e4e284cdf8cf22ac3d57735e7fe3f80
 U drh
-Z 6f2b95a5959d577b5b6c3e6985beb9a5
+Z bad1f86f1f7d261e6176b4a4726658c0

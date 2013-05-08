@@ -5443,6 +5443,7 @@ static int wherePathSolver(WhereInfo *pWInfo){
     pFrom->aLoop = pX;
   }
 
+  aFrom[0].nRow = (double)1;
   nFrom = 1;
   for(iLoop=0; iLoop<nLoop; iLoop++){
     nTo = 0;
@@ -5462,6 +5463,8 @@ static int wherePathSolver(WhereInfo *pWInfo){
             for(jj=nTo-1; aTo[jj].rCost>=mxCost; jj++){ assert(jj>0); }
           }
           pTo = &aTo[jj];
+        }else{
+          if( pTo->rCost<=rCost ) continue;
         }
         pTo->maskLoop = pFrom->maskLoop | pWLoop->maskSelf;
         pTo->nRow = pFrom->nRow * pWLoop->nOut;
@@ -5476,6 +5479,19 @@ static int wherePathSolver(WhereInfo *pWInfo){
         }
       }
     }
+
+#if 0
+    if( sqlite3WhereTrace ){
+      sqlite3DebugPrintf("---- round %d ---- nTo=%d\n", iLoop, nTo);
+      for(ii=0; ii<nTo; ii++){
+        sqlite3DebugPrintf("%03d:  cost=%g  nrow=%g\n",
+           ii, aTo[ii].rCost, aTo[ii].nRow);
+        for(jj=0; jj<=iLoop; jj++){
+          whereLoopPrint(aTo[ii].aLoop[jj], pWInfo->pTabList);
+        }
+      }
+    }
+#endif
 
     /* Swap the roles of aFrom and aTo in preparation for the next
     ** cycle. */
