@@ -3591,9 +3591,6 @@ int sqlite3Fts3Init(sqlite3 *db){
   rc = sqlite3Fts3InitAux(db);
   if( rc!=SQLITE_OK ) return rc;
 
-  rc = sqlite3Fts3InitTok(db);
-  if( rc!=SQLITE_OK ) return rc;
-
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
 
@@ -3647,8 +3644,12 @@ int sqlite3Fts3Init(sqlite3 *db){
           db, "fts4", &fts3Module, (void *)pHash, 0
       );
     }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3Fts3InitTok(db, (void *)pHash);
+    }
     return rc;
   }
+
 
   /* An error has occurred. Delete the hash table and return the error code. */
   assert( rc!=SQLITE_OK );

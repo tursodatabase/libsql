@@ -106,15 +106,7 @@ do_catchsql_test 2.0 {
   CREATE VIRTUAL TABLE tX USING fts3tokenize(nosuchtokenizer);
 } {1 {unknown tokenizer: nosuchtokenizer}}
 
-proc fts3_tokenizer {args} { return 1 }
-db function fts3_tokenizer -argcount 1 fts3_tokenizer
 do_catchsql_test 2.1 {
-  CREATE VIRTUAL TABLE tX USING fts3tokenize(simple);
-} {1 {vtable constructor failed: tX}}
-
-db close
-sqlite3 db test.db
-do_catchsql_test 2.2 {
   CREATE VIRTUAL TABLE t4 USING fts3tokenize;
   SELECT * FROM t4;
 } {1 {SQL logic error or missing database}}
