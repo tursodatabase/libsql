@@ -2157,6 +2157,7 @@ static int winRead(
 
   assert( id!=0 );
   assert( amt>0 );
+  assert( offset>=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE(("READ file=%p, buffer=%p, amount=%d, offset=%lld, lock=%d\n",
            pFile->h, pBuf, amt, offset, pFile->locktype));
