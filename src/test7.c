@@ -376,7 +376,7 @@ static int tcl_client_colname(
   return TCL_OK;
 }
 
-extern const char *sqlite3TestErrorName(int rc);
+extern const char *sqlite3ErrName(int);
 
 /*
 ** Usage: client_result  ID
@@ -405,7 +405,7 @@ static int tcl_client_result(
     return TCL_ERROR;
   }
   client_wait(&threadset[i]);
-  zName = sqlite3TestErrorName(threadset[i].rc);
+  zName = sqlite3ErrName(threadset[i].rc);
   Tcl_AppendResult(interp, zName, 0);
   return TCL_OK;
 }
