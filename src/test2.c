@@ -19,7 +19,7 @@
 #include <string.h>
 #include <ctype.h>
 
-extern const char *sqlite3TestErrorName(int rc);
+extern const char *sqlite3ErrName(int);
 
 /*
 ** Page size and reserved size used for testing.
@@ -59,7 +59,7 @@ static int pager_open(
       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB,
       pager_test_reiniter);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3PagerSetCachesize(pPager, nPage);
@@ -91,7 +91,7 @@ static int pager_close(
   pPager = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3PagerClose(pPager);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -118,7 +118,7 @@ static int pager_rollback(
   pPager = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3PagerRollback(pPager);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -145,12 +145,12 @@ static int pager_commit(
   pPager = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3PagerCommitPhaseOne(pPager, 0, 0);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   rc = sqlite3PagerCommitPhaseTwo(pPager);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -177,7 +177,7 @@ static int pager_stmt_begin(
   pPager = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3PagerOpenSavepoint(pPager, 1);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -205,7 +205,7 @@ static int pager_stmt_rollback(
   rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_ROLLBACK, 0);
   sqlite3PagerSavepoint(pPager, SAVEPOINT_RELEASE, 0);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -232,7 +232,7 @@ static int pager_stmt_commit(
   pPager = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_RELEASE, 0);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -325,7 +325,7 @@ static int page_get(
     rc = sqlite3PagerGet(pPager, pgno, &pPage);
   }
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%p",pPage);
@@ -479,7 +479,7 @@ static int page_write(
   pPage = (DbPage *)sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3PagerWrite(pPage);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   pData = sqlite3PagerGetData(pPage);
@@ -528,7 +528,7 @@ static int fake_big_file(
       (SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB), 0
   );
   if( rc ){
-    Tcl_AppendResult(interp, "open failed: ", sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, "open failed: ", sqlite3ErrName(rc), 0);
     sqlite3_free(zFile);
     return TCL_ERROR;
   }
@@ -538,7 +538,7 @@ static int fake_big_file(
   sqlite3OsCloseFree(fd);
   sqlite3_free(zFile);
   if( rc ){
-    Tcl_AppendResult(interp, "write failed: ", sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, "write failed: ", sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;

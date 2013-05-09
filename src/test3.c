@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern const char *sqlite3TestErrorName(int rc);
+extern const char *sqlite3ErrName(int);
 
 /*
 ** A bogus sqlite3 connection structure for use in the btree
@@ -65,7 +65,7 @@ static int btree_open(
      SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_MAIN_DB);
   sqlite3_free(zFilename);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3BtreeSetCacheSize(pBt, nCache);
@@ -95,7 +95,7 @@ static int btree_close(
   pBt = sqlite3TestTextToPtr(argv[1]);
   rc = sqlite3BtreeClose(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   nRefSqlite3--;
@@ -132,7 +132,7 @@ static int btree_begin_transaction(
   rc = sqlite3BtreeBeginTrans(pBt, 1);
   sqlite3BtreeLeave(pBt);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -226,7 +226,7 @@ static int btree_cursor(
   sqlite3BtreeLeave(pBt);
   if( rc ){
     ckfree((char *)pCur);
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf), zBuf,"%p", pCur);
@@ -261,7 +261,7 @@ static int btree_close_cursor(
   sqlite3BtreeLeave(pBt);
   ckfree((char *)pCur);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   return SQLITE_OK;
@@ -295,7 +295,7 @@ static int btree_next(
   rc = sqlite3BtreeNext(pCur, &res);
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);
@@ -330,7 +330,7 @@ static int btree_first(
   rc = sqlite3BtreeFirst(pCur, &res);
   sqlite3BtreeLeave(pCur->pBtree);
   if( rc ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), 0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;
   }
   sqlite3_snprintf(sizeof(zBuf),zBuf,"%d",res);

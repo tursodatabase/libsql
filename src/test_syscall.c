@@ -78,8 +78,8 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX
 
-/* From test1.c */
-extern const char *sqlite3TestErrorName(int);
+/* From main.c */
+extern const char *sqlite3ErrName(int);
 
 #include <sys/mman.h>
 #include <sys/types.h>
@@ -498,7 +498,7 @@ static int test_syscall_reset(
     }
   }
   if( rc!=SQLITE_OK ){
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_ERROR;
   }
 

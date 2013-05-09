@@ -8,8 +8,8 @@
 #include <tcl.h>
 
 static int test_session_error(Tcl_Interp *interp, int rc){
-  extern const char *sqlite3TestErrorName(int);
-  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+  extern const char *sqlite3ErrName(int);
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
   return TCL_ERROR;
 }
 

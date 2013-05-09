@@ -234,14 +234,14 @@ static int faultsimInstall(int install){
 #ifdef SQLITE_TEST
 
 /*
-** This function is implemented in test1.c. Returns a pointer to a static
+** This function is implemented in main.c. Returns a pointer to a static
 ** buffer containing the symbolic SQLite error code that corresponds to
 ** the least-significant 8-bits of the integer passed as an argument.
 ** For example:
 **
-**   sqlite3TestErrorName(1) -> "SQLITE_ERROR"
+**   sqlite3ErrName(1) -> "SQLITE_ERROR"
 */
-const char *sqlite3TestErrorName(int);
+extern const char *sqlite3ErrName(int);
 
 /*
 ** Transform pointers to text and back again
@@ -1072,7 +1072,7 @@ static int test_db_config_lookaside(
   sqlite3 *db;
   int bufid;
   static char azBuf[2][10000];
-  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
   if( objc!=5 ){
     Tcl_WrongNumArgs(interp, 1, objv, "BUFID SIZE COUNT");
     return TCL_ERROR;
@@ -1126,7 +1126,7 @@ static int test_config_heap(
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, zBuf, nByte, nMinAlloc);
   }
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 
@@ -1143,7 +1143,7 @@ static int test_config_error(
   Tcl_Obj *CONST objv[]
 ){
   sqlite3 *db;
-  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
 
   if( objc!=2 && objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "[DB]");
@@ -1192,7 +1192,7 @@ static int test_config_uri(
   }
 
   rc = sqlite3_config(SQLITE_CONFIG_URI, bOpenUri);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
 
   return TCL_OK;
 }
@@ -1221,7 +1221,7 @@ static int test_config_cis(
   }
 
   rc = sqlite3_config(SQLITE_CONFIG_COVERING_INDEX_SCAN, bUseCis);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
 
   return TCL_OK;
 }
@@ -1335,7 +1335,7 @@ static int test_db_status(
   int i, op, resetFlag;
   const char *zOpName;
   sqlite3 *db;
-  int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
+  extern int getDbPointer(Tcl_Interp*, const char*, sqlite3**);
   static const struct {
     const char *zName;
     int op;
@@ -1401,7 +1401,7 @@ static int test_install_malloc_faultsim(
     return TCL_ERROR;
   }
   rc = faultsimInstall(isInstall);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 
@@ -1419,7 +1419,7 @@ static int test_install_memsys3(
   const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
   rc = sqlite3_config(SQLITE_CONFIG_MALLOC, sqlite3MemGetMemsys3());
 #endif
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 
