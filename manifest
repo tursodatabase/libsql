@@ -1,5 +1,5 @@
-C Refine\sand\sreform\sall\sWindows\sOSTRACE\smacro\susage.\s\sReplace\sall\susage\sof\ssqlite3TestErrorName()\swith\ssqlite3ErrName()\sand\sadd\smissing\sreturn\scodes.
-D 2013-05-09T00:40:13.506
+C Do\snot\smove\sWHERE\sclause\sterms\sinside\sOR\sexpressions\sthat\sare\scontained\nwithin\san\sON\sclause\sof\sa\sLEFT\sJOIN.\s\sFix\sfor\sticket\s[f2369304e47167e3e].
+D 2013-05-09T14:20:11.944
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -264,7 +264,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 12d4200eb6ae991cad02367c391db076ac1af1b0
+F src/where.c 5c4cbc1e5205d8d534c483fa4495c81513b45dea
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1007,7 +1007,7 @@ F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5c566388f0cc318b0032ce860f4ac5548e3c265a
 F test/where8.test d9f889e62dccddb9d790b0c84dfc7861e03a162c
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 0157862ccf0cfdf1a4622cdf697e5e2f09a8de44
+F test/where9.test 1b4387c6eacc9a32b28b4d837c27f857c785d0d8
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1fa8c457394c94864f7584e4c893ec09e685fba4 400fc4c37ff34e84f5a129a083a567bda840278e
-R a3f98c872243f05bc78c5a52c22d5a59
-U mistachkin
-Z 68d84fd2c9e0a14b0e1248a70789d361
+P 610425f19008b8b5d4bf027c8b14d97ec3115a54
+R 4023dbf2ca58f8c405419172cf8781f4
+U drh
+Z cd99743e7f7615602ad15535e32e4fa6
