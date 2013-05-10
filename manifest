@@ -1,5 +1,5 @@
-C Factor\sout\scommon\soperations\sinto\swhereLoopAddAll().\s\sAdd\sstubs\sfor\nmissing\sfeatures.
-D 2013-05-10T03:30:49.076
+C Update\sthe\sNGQP\sso\sthat\sit\scan\sproduce\splans\sthat\sinclude\sautomatic\sindices.
+D 2013-05-10T15:16:30.669
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -264,7 +264,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 31160bacc36e1fa5818caf091d5559d55eae7a5d
+F src/where.c f96b2602fd2da89873ed5a210608c58bf80d7c0e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5ed31c8279a4f465b982df5dc20cefc286928b93
-R 6a6b39040b040f90ce4281cc062a3caa
+P 0278e420614e02fb2d8474ed99b0904275882dfe
+R 69dec67361636bd352a6f82f3ef9f1cb
 U drh
-Z ca90367b6425b581381608ce8a76b4fa
+Z ef95f556fc74affef6b6df28ead69ff3

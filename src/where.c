@@ -289,6 +289,7 @@ struct WhereLoopBuilder {
   SrcList *pTabList;        /* FROM clause */
   ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
+  int mxTerm;               /* Maximum number of aTerm[] entries on pNew */
 };
 
 /*
@@ -5241,6 +5242,7 @@ static int whereLoopAddBtreeIndex(
   WhereLoop savedLoop;            /* Saved original content of pNew[] */
   int iCol;                       /* Index of the column in the table */
   int rc = SQLITE_OK;             /* Return code */
+  double rLogSize;                /* Logarithm of table size */
 
   db = pBuilder->db;
   pNew = pBuilder->pNew;
@@ -5262,10 +5264,12 @@ static int whereLoopAddBtreeIndex(
                         opMask, iCol>=0 ? pProbe : 0);
   savedLoop = *pNew;
   pNew->rSetup = (double)0;
+  rLogSize = estLog(pProbe->aiRowEst[0]);
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 1;
     pNew->u.btree.nEq = savedLoop.u.btree.nEq;
     pNew->nTerm = savedLoop.nTerm;
+    if( pNew->nTerm>=pBuilder->mxTerm ) break; /* Repeated column in index */
     pNew->aTerm[pNew->nTerm++] = pTerm;
     pNew->prereq = (savedLoop.prereq | pTerm->prereqRight) & ~pNew->maskSelf;
     if( pTerm->eOperator & WO_IN ){
@@ -5291,7 +5295,16 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_TOP_LIMIT;
       pNew->nOut = savedLoop.nOut/3;
     }
-    pNew->rRun = pNew->nOut + estLog(pProbe->aiRowEst[0])*nIn;
+    pNew->rRun = rLogSize*nIn;  /* Cost for nIn binary searches */
+    if( pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK) ){
+      pNew->rRun += pNew->nOut;  /* Unit step cost to reach each row */
+    }else{
+      /* Each row involves a step of the index, then a binary search of
+      ** the main table */
+      pNew->rRun += pNew->nOut*(1 + rLogSize);
+    }
+    /* TBD: Adjust nOut and rRun for STAT3 range values */
+    /* TBD: Adjust nOut for additional constraints */
     rc = whereLoopInsert(pBuilder->pWInfo, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
      && pNew->u.btree.nEq<pProbe->nColumn
@@ -5318,6 +5331,8 @@ static int whereLoopAddBtree(
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
   WhereLoop *pNew;            /* Template WhereLoop object */
   int rc = SQLITE_OK;         /* Return code */
+  double rSize;               /* number of rows in the table */
+  double rLogSize;            /* Logarithm of the number of rows in the table */
 
   pNew = pBuilder->pNew;
   pSrc = pBuilder->pTabList->a + pNew->iTab;
@@ -5347,6 +5362,33 @@ static int whereLoopAddBtree(
     }
     pProbe = &sPk;
   }
+  rSize = (double)pSrc->pTab->nRowEst;
+  rLogSize = estLog(rSize);
+
+  /* Automatic indexes */
+  if( (pBuilder->pParse->db->flags & SQLITE_AutoIndex)!=0 
+   && !pSrc->viaCoroutine
+   && !pSrc->notIndexed
+   && !pSrc->isCorrelated
+  ){
+    /* Generate auto-index WhereLoops */
+    WhereClause *pWC = pBuilder->pWC;
+    WhereTerm *pTerm;
+    WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
+    for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
+      if( termCanDriveIndex(pTerm, pSrc, 0) ){
+        pNew->u.btree.nEq = 1;
+        pNew->nTerm = 1;
+        pNew->aTerm[0] = pTerm;
+        pNew->rSetup = 2*rLogSize*pSrc->pTab->nRowEst;
+        pNew->nOut = (double)10;
+        pNew->rRun = rLogSize + pNew->nOut;
+        pNew->wsFlags = WHERE_TEMP_INDEX;
+        pNew->prereq = mExtra | pTerm->prereqRight;
+        rc = whereLoopInsert(pBuilder->pWInfo, pNew);
+      }
+    }
+  }
 
   /* Insert a full table scan */
   pNew->u.btree.nEq = 0;
@@ -5355,11 +5397,10 @@ static int whereLoopAddBtree(
   pNew->prereq = mExtra;
   pNew->u.btree.pIndex = 0;
   pNew->wsFlags = 0;
-  pNew->rRun = (double)pSrc->pTab->nRowEst;
-  pNew->nOut = (double)pSrc->pTab->nRowEst;
+  pNew->nOut = rSize;
+  pNew->rRun = rSize + rLogSize;
+  /* TBD: Reduce nOut using constraints */
   rc = whereLoopInsert(pBuilder->pWInfo, pNew);
-
-  /* TBD: Insert automatic index opportunities */
 
   /* Loop over all indices
   */
@@ -5478,6 +5519,7 @@ static int whereLoopAddVirtual(
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
     pNew->prereq = 0;
+    assert( pIdxInfo->nConstraint<=pBuilder->mxTerm );
     for(i=0; i<pIdxInfo->nConstraint; i++) pNew->aTerm[i] = 0;
     mxTerm = -1;
     for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
@@ -5555,7 +5597,13 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   /* Loop over the tables in the join, from left to right */
   pBuilder->pNew = pNew = sqlite3DbMallocZero(db, sizeof(WhereLoop));
   if( pNew==0 ) return SQLITE_NOMEM;
-  pNew->aTerm = sqlite3DbMallocZero(db, (pWC->nTerm+1)*sizeof(pNew->aTerm[0]));
+  pBuilder->mxTerm = pWC->nTerm+1;
+  while( pWC->pOuter ){
+    pWC = pWC->pOuter;
+    pBuilder->mxTerm += pWC->nTerm;
+  }
+  pWC = pBuilder->pWC;
+  pNew->aTerm = sqlite3DbMallocZero(db,pBuilder->mxTerm*sizeof(pNew->aTerm[0]));
   if( pNew->aTerm==0 ){
     rc = SQLITE_NOMEM;
     goto whereLoopAddAll_end;
@@ -6330,6 +6378,17 @@ WhereInfo *sqlite3WhereBegin(
     pWInfo->okOnePass = 1;
     pWInfo->a[0].plan.wsFlags &= ~WHERE_IDX_ONLY;
   }
+
+#if 0
+  /* Scaffolding:  Check the new query plan against the old.  Report any
+  ** discrepencies */
+  for(ii=0; ii<nTabList; ii++){
+    if( pWInfo->a[ii].iFrom!=pWInfo->a[ii].pWLoop->iTab ){
+      sqlite3DebugPrintf("(QP-Mismatch)");
+      break;
+    }
+  }
+#endif
 
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
