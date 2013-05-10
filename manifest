@@ -1,5 +1,5 @@
-C Fix\smemory\sleaks\sin\sthe\sNGQP\slogic\sfor\svirtual\stables.
-D 2013-05-08T20:05:58.332
+C Free\sup\sbits\sof\swsFlags\sfor\sreuse.\s\sInstall\sthe\sORDER\sBY\soptimization\ninfrastructure\sfor\sthe\sNGQP.
+D 2013-05-10T02:00:35.314
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -194,7 +194,7 @@ F src/shell.c 5d527e5d08f05ec2c43ff194ea44bf62b974f4c9
 F src/sqlite.h.in 5a5a22a9b192d81a9e5dee00274e3a0484c4afb1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h aee09cf5ee7d5e899246affdd8c3cf58f086ade5
+F src/sqliteInt.h b4411cfc1c7803cdf393975d5420b4da0d8dd1c4
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -263,7 +263,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h a4d3da523d55a226a0b28e9058ef88d0a8051887
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c e2e0ff816591684ff74bef65fae747cc57cee335
+F src/where.c 2be67c1a1a018b1de91f08e48baa02db13652e40
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1060,7 +1060,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bd9327a9684b99978734ccd561eea1ad864ab13b
-R 08bf850cd4f323af143e8919e5b89b44
+P 3c2e83a4a2c5e85202162feeb37ef7a3911c05a3
+R fe9c54bd236af22a2f9e27cec8708db5
 U drh
-Z 89b960e01fe84155abc15edf55ac2ba0
+Z c9a2e102e5146d5a293863d252ad4424
