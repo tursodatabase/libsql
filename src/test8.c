@@ -1300,7 +1300,7 @@ static sqlite3_module echoModuleV2 = {
 ** Decode a pointer to an sqlite3 object.
 */
 extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
-extern const char *sqlite3TestErrorName(int rc);
+extern const char *sqlite3ErrName(int);
 
 static void moduleDestroy(void *p){
   sqlite3_free(p);
@@ -1340,7 +1340,7 @@ static int register_echo_module(
     );
   }
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
   return TCL_OK;
 }
 

@@ -4855,6 +4855,10 @@ static Bitmask codeOneLoopStart(
     ** the "interesting" terms of z - terms that did not originate in the
     ** ON or USING clause of a LEFT JOIN, and terms that are usable as 
     ** indices.
+    **
+    ** This optimization also only applies if the (x1 OR x2 OR ...) term
+    ** is not contained in the ON clause of a LEFT JOIN.
+    ** See ticket http://www.sqlite.org/src/info/f2369304e4
     */
     if( pWC->nTerm>1 ){
       int iTerm;
@@ -4876,7 +4880,7 @@ static Bitmask codeOneLoopStart(
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
         WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
         Expr *pOrExpr = pOrTerm->pExpr;
-        if( pAndExpr ){
+        if( pAndExpr && !ExprHasProperty(pOrExpr, EP_FromJoin) ){
           pAndExpr->pLeft = pOrExpr;
           pOrExpr = pAndExpr;
         }

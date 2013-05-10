@@ -20,7 +20,7 @@
 #include <sched.h>
 #include <ctype.h>
 
-extern const char *sqlite3TestErrorName(int rc);
+extern const char *sqlite3ErrName(int);
 
 /*
 ** Each thread is controlled by an instance of the following
@@ -374,7 +374,7 @@ static int tcl_thread_result(
     return TCL_ERROR;
   }
   thread_wait(&threadset[i]);
-  zName = sqlite3TestErrorName(threadset[i].rc);
+  zName = sqlite3ErrName(threadset[i].rc);
   Tcl_AppendResult(interp, zName, 0);
   return TCL_OK;
 }

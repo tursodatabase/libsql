@@ -936,6 +936,16 @@ proc check_temp_store {} {
   return "unknown"
 }
 
+# Application_ID
+#
+do_test pragma-8.3.1 {
+  execsql {
+    PRAGMA application_id;
+  }
+} {0}
+do_test pragma-8.3.2 {
+  execsql {PRAGMA Application_ID(12345); PRAGMA application_id;}
+} {12345}
 
 # Test temp_store and temp_store_directory pragmas
 #

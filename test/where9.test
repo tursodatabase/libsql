@@ -893,4 +893,25 @@ do_test where9-8.3 {
   }
 } {2 3 4 5 {} {} 5 55 3 4 5 6 2 4 5 55}
 
+# Fix for ticket [f2369304e47167e3e644e2f1fe9736063391d7b7]
+# Incorrect results when OR is used in the ON clause of a LEFT JOIN 
+#
+do_test where9-9.1 {
+  db eval {
+    CREATE TABLE t91(x); INSERT INTO t91 VALUES(1);
+    CREATE TABLE t92(y INTEGER PRIMARY KEY,a,b);
+    INSERT INTO t92 VALUES(1,2,3);
+    SELECT 1 FROM t91 LEFT JOIN t92 ON a=2 OR b=3;
+    SELECT 2 FROM t91 LEFT JOIN t92 ON a=2 AND b=3;
+    SELECT 3 FROM t91 LEFT JOIN t92 ON (a=2 OR b=3) AND y IS NULL;
+    SELECT 4 FROM t91 LEFT JOIN t92 ON (a=2 AND b=3) AND y IS NULL;
+    CREATE TEMP TABLE x9 AS SELECT * FROM t91 LEFT JOIN t92 ON a=2 OR b=3;
+    SELECT 5 FROM x9 WHERE y IS NULL;
+    SELECT 6 FROM t91 LEFT JOIN t92 ON a=2 OR b=3 WHERE y IS NULL;
+    SELECT 7 FROM t91 LEFT JOIN t92 ON a=2 AND b=3 WHERE y IS NULL;
+    SELECT 8 FROM t91 LEFT JOIN t92 ON a=22 OR b=33 WHERE y IS NULL;
+    SELECT 9 FROM t91 LEFT JOIN t92 ON a=22 AND b=33 WHERE y IS NULL;
+  }
+} {1 2 3 4 8 9}
+
 finish_test

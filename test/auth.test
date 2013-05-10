@@ -2368,6 +2368,29 @@ ifcapable trigger {
   } {1}
 }
 
+# Ticket [0eb70d77cb05bb22720]:  Invalid pointer passsed to the authorizer
+# callback when updating a ROWID.
+#
+do_test auth-6.1 {
+  execsql {
+    CREATE TABLE t6(a,b,c,d,e,f,g,h);
+    INSERT INTO t6 VALUES(1,2,3,4,5,6,7,8);
+  }
+} {}
+set ::authargs [list]
+proc auth {args} {
+  eval lappend ::authargs $args
+  return SQLITE_OK
+}
+do_test auth-6.2 {
+  execsql {UPDATE t6 SET rowID=rowID+100}
+  set ::authargs
+} [list SQLITE_READ   t6 ROWID main {} \
+        SQLITE_UPDATE t6 ROWID main {} \
+]
+do_test auth-6.3 {
+  execsql {SELECT rowid, * FROM t6}
+} {101 1 2 3 4 5 6 7 8}
 
 rename proc {}
 rename proc_real proc

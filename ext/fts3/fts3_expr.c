@@ -875,6 +875,7 @@ static int fts3ExprBalance(Fts3Expr **pp, int nMaxDepth){
               p = apLeaf[i];
               p->pParent = 0;
             }else{
+              assert( pFree!=0 );
               pFree->pRight = p;
               pFree->pLeft = apLeaf[i];
               pFree->pLeft->pParent = pFree;

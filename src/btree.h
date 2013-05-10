@@ -140,6 +140,7 @@ int sqlite3BtreeNewDb(Btree *p);
 #define BTREE_TEXT_ENCODING       5
 #define BTREE_USER_VERSION        6
 #define BTREE_INCR_VACUUM         7
+#define BTREE_APPLICATION_ID      8
 
 /*
 ** Values that may be OR'd together to form the second argument of an

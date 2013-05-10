@@ -126,7 +126,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
-#ifndef SQLITE_OMIT_WAL
+#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
 #include <sys/mman.h>
 #endif
 
@@ -3152,6 +3152,8 @@ static int unixRead(
   unixFile *pFile = (unixFile *)id;
   int got;
   assert( id );
+  assert( offset>=0 );
+  assert( amt>0 );
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */

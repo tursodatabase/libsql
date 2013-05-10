@@ -208,6 +208,7 @@ void sqlite3Update(
     }
     if( j>=pTab->nCol ){
       if( sqlite3IsRowid(pChanges->a[i].zName) ){
+        j = -1;
         chngRowid = 1;
         pRowidExpr = pChanges->a[i].pExpr;
       }else{
@@ -220,7 +221,8 @@ void sqlite3Update(
     {
       int rc;
       rc = sqlite3AuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
-                           pTab->aCol[j].zName, db->aDb[iDb].zName);
+                            j<0 ? "ROWID" : pTab->aCol[j].zName,
+                            db->aDb[iDb].zName);
       if( rc==SQLITE_DENY ){
         goto update_cleanup;
       }else if( rc==SQLITE_IGNORE ){
