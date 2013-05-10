@@ -289,6 +289,7 @@ struct WhereLoopBuilder {
   SrcList *pTabList;        /* FROM clause */
   ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
+  WhereLoop *pBest;         /* If non-NULL, store single best loop here */
   int mxTerm;               /* Maximum number of aTerm[] entries on pNew */
 };
 
@@ -5162,10 +5163,27 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** fewer dependencies than the template.  Otherwise a new WhereLoop is
 ** added based no the template.
 */
-static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
+static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereLoop **ppPrev, *p, *pNext = 0, *pToFree = 0;
   WhereTerm **paTerm = 0;
-  sqlite3 *db = pWInfo->pParse->db;
+  sqlite3 *db = pBuilder->db;
+  WhereInfo *pWInfo = pBuilder->pWInfo;
+
+  if( (p = pBuilder->pBest)!=0 ){
+    if( p->maskSelf!=0 ){
+      if( p->rRun+p->rSetup < pTemplate->rRun+pTemplate->rSetup ){
+        return SQLITE_OK;
+      }
+      if( p->rRun+p->rSetup == pTemplate->rRun+pTemplate->rSetup
+       && p->prereq <= pTemplate->prereq ){
+        return SQLITE_OK;
+      }
+    }
+    *p = *pTemplate;
+    p->aTerm = 0;
+    p->u.vtab.needFree = 0;
+    return SQLITE_OK;
+  }
 
   /* Search for an existing WhereLoop to overwrite, or which takes
   ** priority over pTemplate.
@@ -5210,11 +5228,13 @@ static int whereLoopInsert(WhereInfo *pWInfo, WhereLoop *pTemplate){
   p->pNextLoop = pNext;
   *ppPrev = p;
   p->aTerm = paTerm;
-  if( pTemplate->nTerm ){
-    memcpy(p->aTerm, pTemplate->aTerm, pTemplate->nTerm*sizeof(p->aTerm[0]));
+  if( p->nTerm ){
+    memcpy(p->aTerm, pTemplate->aTerm, p->nTerm*sizeof(p->aTerm[0]));
   }
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-    if( p->u.btree.pIndex && p->u.btree.pIndex->tnum==0 ) p->u.btree.pIndex = 0;
+    if( p->u.btree.pIndex && p->u.btree.pIndex->tnum==0 ){
+      p->u.btree.pIndex = 0;
+    }
   }else{
     pTemplate->u.vtab.needFree = 0;
   }
@@ -5305,7 +5325,7 @@ static int whereLoopAddBtreeIndex(
     }
     /* TBD: Adjust nOut and rRun for STAT3 range values */
     /* TBD: Adjust nOut for additional constraints */
-    rc = whereLoopInsert(pBuilder->pWInfo, pNew);
+    rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
      && pNew->u.btree.nEq<pProbe->nColumn
     ){
@@ -5366,7 +5386,8 @@ static int whereLoopAddBtree(
   rLogSize = estLog(rSize);
 
   /* Automatic indexes */
-  if( (pBuilder->pParse->db->flags & SQLITE_AutoIndex)!=0 
+  if( !pBuilder->pBest
+   && (pBuilder->pParse->db->flags & SQLITE_AutoIndex)!=0 
    && !pSrc->viaCoroutine
    && !pSrc->notIndexed
    && !pSrc->isCorrelated
@@ -5385,7 +5406,7 @@ static int whereLoopAddBtree(
         pNew->rRun = rLogSize + pNew->nOut;
         pNew->wsFlags = WHERE_TEMP_INDEX;
         pNew->prereq = mExtra | pTerm->prereqRight;
-        rc = whereLoopInsert(pBuilder->pWInfo, pNew);
+        rc = whereLoopInsert(pBuilder, pNew);
       }
     }
   }
@@ -5400,7 +5421,7 @@ static int whereLoopAddBtree(
   pNew->nOut = rSize;
   pNew->rRun = rSize + rLogSize;
   /* TBD: Reduce nOut using constraints */
-  rc = whereLoopInsert(pBuilder->pWInfo, pNew);
+  rc = whereLoopInsert(pBuilder, pNew);
 
   /* Loop over all indices
   */
@@ -5565,7 +5586,7 @@ static int whereLoopAddVirtual(
       pNew->rSetup = (double)0;
       pNew->rRun = pIdxInfo->estimatedCost;
       pNew->nOut = (double)25;
-      whereLoopInsert(pBuilder->pWInfo, pNew);
+      whereLoopInsert(pBuilder, pNew);
       if( pNew->u.vtab.needFree ){
         sqlite3_free(pNew->u.vtab.idxStr);
         pNew->u.vtab.needFree = 0;
@@ -5576,6 +5597,84 @@ static int whereLoopAddVirtual(
 whereLoopAddVtab_exit:
   if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
   sqlite3DbFree(db, pIdxInfo);
+  return rc;
+}
+
+/*
+** Add WhereLoop entries to handle OR terms.  This works for either
+** btrees or virtual tables.
+*/
+static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
+  WhereClause *pWC;
+  WhereLoop *pNew;
+  WhereTerm *pTerm, *pWCEnd;
+  int rc = SQLITE_OK;
+  int iCur;
+  WhereClause tempWC;
+  WhereLoopBuilder sSubBuild;
+  WhereLoop sBest;
+  struct SrcList_item *pItem;
+  
+
+  pWC = pBuilder->pWC;
+  if( pWC->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
+  pWCEnd = pWC->a + pWC->nTerm;
+  pNew = pBuilder->pNew;
+  pItem = pBuilder->pTabList->a + pNew->iTab;
+  iCur = pItem->iCursor;
+  sSubBuild = *pBuilder;
+  sSubBuild.pOrderBy = 0;
+  sSubBuild.pBest = &sBest;
+  tempWC.pParse = pWC->pParse;
+  tempWC.pMaskSet = pWC->pMaskSet;
+  tempWC.pOuter = pWC;
+  tempWC.op = TK_AND;
+  tempWC.wctrlFlags = 0;
+  tempWC.nTerm = 1;
+
+  for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
+    if( (pTerm->eOperator & WO_OR)!=0
+     && (pTerm->u.pOrInfo->indexable & pNew->maskSelf)!=0 
+    ){
+      WhereClause * const pOrWC = &pTerm->u.pOrInfo->wc;
+      WhereTerm * const pOrWCEnd = &pOrWC->a[pOrWC->nTerm];
+      WhereTerm *pOrTerm;
+      double rTotal = 0;
+      double nRow = 0;
+      Bitmask prereq = mExtra;
+
+
+      for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
+        if( (pOrTerm->eOperator& WO_AND)!=0 ){
+          sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
+        }else if( pOrTerm->leftCursor==iCur ){
+          tempWC.a = pOrTerm;
+          sSubBuild.pWC = &tempWC;
+        }else{
+          continue;
+        }
+        sBest.maskSelf = 0;
+        if( IsVirtual(pItem->pTab) ){
+          rc = whereLoopAddVirtual(&sSubBuild, mExtra);
+        }else{
+          rc = whereLoopAddBtree(&sSubBuild, mExtra);
+        }
+        if( sBest.maskSelf==0 ) break;
+        assert( sBest.rSetup==(double)0 );
+        rTotal += sBest.rRun;
+        nRow += sBest.nOut;
+        prereq |= sBest.prereq;
+      }
+      pNew->nTerm = 1;
+      pNew->aTerm[0] = pTerm;
+      pNew->wsFlags = WHERE_MULTI_OR;
+      pNew->rSetup = (double)0;
+      pNew->rRun = rTotal;
+      pNew->nOut = nRow;
+      pNew->prereq = prereq;
+      rc = whereLoopInsert(pBuilder, pNew);
+    }
+  }
   return rc;
 }
 
@@ -5619,11 +5718,9 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     }else{
       rc = whereLoopAddBtree(pBuilder, mExtra);
     }
-#if 0
     if( rc==SQLITE_OK ){
       rc = whereLoopAddOr(pBuilder, mExtra);
     }
-#endif
     mPrior |= pNew->maskSelf;
     if( rc || db->mallocFailed ) break;
   }
