@@ -5309,7 +5309,6 @@ static int whereLoopAddBtreeIndex(
 */
 static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
-  int iTab,                   /* The table to process */
   Bitmask mExtra              /* Extra prerequesites for using this table */
 ){
   Index *pProbe;              /* An index we are evaluating */
@@ -5317,14 +5316,11 @@ static int whereLoopAddBtree(
   tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
   int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
-  sqlite3 *db;                /* The database connection */
   WhereLoop *pNew;            /* Template WhereLoop object */
   int rc = SQLITE_OK;         /* Return code */
 
   pNew = pBuilder->pNew;
-  db = pBuilder->db;
-  pSrc = pBuilder->pTabList->a + iTab;
-  pNew->maskSelf = getMask(pBuilder->pWC->pMaskSet, pSrc->iCursor);
+  pSrc = pBuilder->pTabList->a + pNew->iTab;
 
   if( pSrc->pIndex ){
     /* An INDEXED BY clause specifies a particular index to use */
@@ -5353,23 +5349,21 @@ static int whereLoopAddBtree(
   }
 
   /* Insert a full table scan */
-  pNew->iTab = iTab;
   pNew->u.btree.nEq = 0;
   pNew->nTerm = 0;
   pNew->rSetup = (double)0;
-  pNew->prereq = 0;
+  pNew->prereq = mExtra;
   pNew->u.btree.pIndex = 0;
   pNew->wsFlags = 0;
   pNew->rRun = (double)pSrc->pTab->nRowEst;
   pNew->nOut = (double)pSrc->pTab->nRowEst;
   rc = whereLoopInsert(pBuilder->pWInfo, pNew);
 
+  /* TBD: Insert automatic index opportunities */
+
   /* Loop over all indices
   */
   for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext){
-    WhereTerm **paTerm;
-    pNew->prereq = mExtra;
-    pNew->iTab = iTab;
     pNew->u.btree.nEq = 0;
     pNew->nTerm = 0;
     if( pProbe->tnum<=0 ){
@@ -5386,10 +5380,6 @@ static int whereLoopAddBtree(
       }
       pNew->wsFlags = m==0 ? WHERE_IDX_ONLY : 0;
     }
-    paTerm = sqlite3DbRealloc(db, pNew->aTerm,
-                              (pProbe->nColumn+2)*sizeof(pNew->aTerm[0]));
-    if( paTerm==0 ){ rc = SQLITE_NOMEM; break; }
-    pNew->aTerm = paTerm;
     pNew->u.btree.pIndex = pProbe;
 
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 1);
@@ -5407,7 +5397,6 @@ static int whereLoopAddBtree(
 */
 static int whereLoopAddVirtual(
   WhereLoopBuilder *pBuilder,  /* WHERE clause information */
-  int iTab,                    /* The table to process */
   Bitmask mExtra               /* Extra prerequesites for using this table */
 ){
   Parse *pParse;               /* The parsing context */
@@ -5425,27 +5414,17 @@ static int whereLoopAddVirtual(
   int seenVar = 0;             /* True if a non-constant constraint is seen */
   int iPhase;                  /* 0: const w/o IN, 1: const, 2: no IN,  2: IN */
   WhereLoop *pNew;
-  WhereTerm **paTerm;
   int rc = SQLITE_OK;
 
   pParse = pBuilder->pParse;
   db = pParse->db;
   pWC = pBuilder->pWC;
-  pSrc = &pBuilder->pTabList->a[iTab];
-  pTab = pSrc->pTab;
   pNew = pBuilder->pNew;
-  pIdxInfo = allocateIndexInfo(pParse,pWC,pSrc,pBuilder->pOrderBy);
+  pSrc = &pBuilder->pTabList->a[pNew->iTab];
+  pTab = pSrc->pTab;
+  pIdxInfo = allocateIndexInfo(pParse, pWC, pSrc, pBuilder->pOrderBy);
   if( pIdxInfo==0 ) return SQLITE_NOMEM;
-  paTerm = sqlite3DbRealloc(db, pNew->aTerm,
-                            (pIdxInfo->nConstraint+1)*sizeof(pNew->aTerm[0]));
-  if( paTerm==0 ){
-    sqlite3DbFree(db, pIdxInfo);
-    return SQLITE_NOMEM;
-  }
-  pNew->aTerm = paTerm;
   pNew->prereq = 0;
-  pNew->iTab = iTab;
-  pNew->maskSelf = getMask(pBuilder->pWC->pMaskSet, pSrc->iCursor);
   pNew->rSetup = 0;
   pNew->wsFlags = WHERE_VIRTUALTABLE;
   pNew->nTerm = 0;
@@ -5571,22 +5550,36 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   sqlite3 *db = pBuilder->db;
   int nTabList = pBuilder->pWInfo->nLevel;
   int rc = SQLITE_OK;
+  WhereLoop *pNew;
 
   /* Loop over the tables in the join, from left to right */
-  pBuilder->pNew = sqlite3DbMallocZero(db, sizeof(WhereLoop));
-  if( pBuilder->pNew==0 ) return SQLITE_NOMEM;
+  pBuilder->pNew = pNew = sqlite3DbMallocZero(db, sizeof(WhereLoop));
+  if( pNew==0 ) return SQLITE_NOMEM;
+  pNew->aTerm = sqlite3DbMallocZero(db, (pWC->nTerm+1)*sizeof(pNew->aTerm[0]));
+  if( pNew->aTerm==0 ){
+    rc = SQLITE_NOMEM;
+    goto whereLoopAddAll_end;
+  }
   for(iTab=0, pItem=pTabList->a; iTab<nTabList; iTab++, pItem++){
-    if( IsVirtual(pItem->pTab) ){
-      rc = whereLoopAddVirtual(pBuilder, iTab, mExtra);
-    }else{
-      rc = whereLoopAddBtree(pBuilder, iTab, mExtra);
-    }
-    mPrior |= getMask(pWC->pMaskSet, pItem->iCursor);
+    pNew->iTab = iTab;
+    pNew->maskSelf = getMask(pWC->pMaskSet, pItem->iCursor);
     if( (pItem->jointype & (JT_LEFT|JT_CROSS))!=0 ){
       mExtra = mPrior;
     }
+    if( IsVirtual(pItem->pTab) ){
+      rc = whereLoopAddVirtual(pBuilder, mExtra);
+    }else{
+      rc = whereLoopAddBtree(pBuilder, mExtra);
+    }
+#if 0
+    if( rc==SQLITE_OK ){
+      rc = whereLoopAddOr(pBuilder, mExtra);
+    }
+#endif
+    mPrior |= pNew->maskSelf;
     if( rc || db->mallocFailed ) break;
   }
+whereLoopAddAll_end:
   whereLoopDelete(db, pBuilder->pNew);
   pBuilder->pNew = 0;
   return rc;
