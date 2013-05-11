@@ -1,5 +1,5 @@
-C Now\sgenerating\sOR-clause\splans.
-D 2013-05-10T20:26:22.071
+C Minor\sfixes\sto\sthe\sOR-clause\sprocessing\sin\sthe\sNGQP.
+D 2013-05-11T00:06:23.252
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -264,7 +264,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 374f50ced988b23addabd3c351f1c18d8652d394
+F src/where.c 049e7011b90717768eed37cdbe912d85f66a395b
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1062,7 +1062,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 586b55d8d7722de1c0530b3b832bae0511e6d05c
-R a9f14f7930497f93900a124a55885f20
+P e17003fcfec0c0b524b1b9ff8e15e7ee83efa571
+R eb646fd2ea7876f6a2dea69031e80ca3
 U drh
-Z 9615c6567bc86000a51d8e76292d6ef0
+Z cf78dc58c7e86082569e8dd0f46801e5

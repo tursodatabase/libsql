@@ -5337,8 +5337,9 @@ static int whereLoopAddBtreeIndex(
 }
 
 /*
-** Add all WhereLoop objects for the iTab-th table of the join.  That
-** table is guaranteed to be a b-tree table, not a virtual table.
+** Add all WhereLoop objects a single table of the join were the table
+** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
+** a b-tree table, not a virtual table.
 */
 static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
@@ -5356,6 +5357,7 @@ static int whereLoopAddBtree(
 
   pNew = pBuilder->pNew;
   pSrc = pBuilder->pTabList->a + pNew->iTab;
+  assert( !IsVirtual(pSrc->pTab) );
 
   if( pSrc->pIndex ){
     /* An INDEXED BY clause specifies a particular index to use */
@@ -5454,8 +5456,8 @@ static int whereLoopAddBtree(
 }
 
 /*
-** Add all WhereLoop objects for the iTab-th table of the join.  That
-** table is guaranteed to be a virtual table.
+** Add all WhereLoop objects for a table of the join identified by
+** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
 */
 static int whereLoopAddVirtual(
   WhereLoopBuilder *pBuilder,  /* WHERE clause information */
@@ -5484,6 +5486,7 @@ static int whereLoopAddVirtual(
   pNew = pBuilder->pNew;
   pSrc = &pBuilder->pTabList->a[pNew->iTab];
   pTab = pSrc->pTab;
+  assert( IsVirtual(pTab) );
   pIdxInfo = allocateIndexInfo(pParse, pWC, pSrc, pBuilder->pOrderBy);
   if( pIdxInfo==0 ) return SQLITE_NOMEM;
   pNew->prereq = 0;
@@ -5493,7 +5496,7 @@ static int whereLoopAddVirtual(
   pNew->u.vtab.needFree = 0;
   pUsage = pIdxInfo->aConstraintUsage;
 
-  for(iPhase=0; iPhase<=2; iPhase++){
+  for(iPhase=0; iPhase<=3; iPhase++){
     if( !seenIn && (iPhase&1)!=0 ){
       iPhase++;
       if( iPhase>3 ) break;
@@ -5540,11 +5543,11 @@ static int whereLoopAddVirtual(
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
     pNew->prereq = 0;
-    assert( pIdxInfo->nConstraint<=pBuilder->mxTerm );
-    for(i=0; i<pIdxInfo->nConstraint; i++) pNew->aTerm[i] = 0;
     mxTerm = -1;
+    for(i=0; i<pBuilder->mxTerm; i++) pNew->aTerm[i] = 0;
     for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
       if( (iTerm = pUsage[i].argvIndex - 1)>=0 ){
+        if( iTerm>=pBuilder->mxTerm ) break;
         j = pIdxCons->iTermOffset;
         if( iTerm>=pIdxInfo->nConstraint
          || j<0
