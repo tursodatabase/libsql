@@ -836,7 +836,7 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   ** SQL statements below, as the v-table implementation may be storing
   ** some prepared statements internally.
   */
-  sqlite3VtabRollback(db);
+  sqlite3RollbackAll(db, SQLITE_ABORT);
 
   /* Legacy behavior (sqlite3_close() behavior) is to return
   ** SQLITE_BUSY if the connection can not be closed immediately.
@@ -1002,6 +1002,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   int inTrans = 0;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3BeginBenignMalloc();
+  sqlite3BtreeEnterAll(db);
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
     if( p ){
@@ -1019,6 +1020,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetAllSchemasOfConnection(db);
   }
+  sqlite3BtreeLeaveAll(db);
 
   /* Any deferred constraint violations have now been resolved. */
   db->nDeferredCons = 0;

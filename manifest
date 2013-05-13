@@ -1,5 +1,5 @@
-C Add\sassert()s\sto\sthe\simplementation\sof\sxRead()\sin\sthe\sbuilt-in\sVFSes\sto\s\nverify\sthat\sthe\soffset\sparameter\sis\salways\snon-negative.
-D 2013-05-09T18:12:40.898
+C Candidate\sfixes\sfor\sproblems\srevealed\sby\snotify2.test.\sNotify2.test\sis\sstill\sfailing\sat\sthis\spoint.
+D 2013-05-13T18:23:15.893
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,7 +159,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c 7531758e3167006f55cd65678d9c72a3c1a6759a
+F src/main.c 2ef7316bae009d8b1cf218a52f25abda50712aab
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -737,6 +737,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
+F test/sharedA.test 2dad757bb388779d6bda8c05ec52e39e9981a135
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test 4a2f57952719972c6f862134463f8712e953c038
@@ -1062,7 +1063,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1128575d0ab24f7023a0f6e6ce4828b9a09a7c6c
-R 1cad29e868ca8cf8d5b7d354acd90934
-U drh
-Z 3b3f34da85296e9879a826be138cb510
+P cf5c3642247fdd34d87f0368594cd7b8f081636a
+R 9334ad7d318214aee7b701f9959b5d6e
+T *branch * shared-cache-fixes
+T *sym-shared-cache-fixes *
+T -sym-trunk *
+U dan
+Z 816ab4789f48f56b3bf310736184e47d
