@@ -16,9 +16,45 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 db close
-set ::testprefix x
+set ::testprefix sharedA
 
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+
+#-------------------------------------------------------------------------
+#
+do_test 0.1 {
+  sqlite3 db1 test.db
+  sqlite3 db2 test.db
+
+  db1 eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(randomblob(100));
+    INSERT INTO t1 SELECT randomblob(100) FROM t1;
+    INSERT INTO t1 SELECT randomblob(100) FROM t1;
+    INSERT INTO t1 SELECT randomblob(100) FROM t1;
+    INSERT INTO t1 SELECT randomblob(100) FROM t1;
+    INSERT INTO t1 SELECT randomblob(100) FROM t1;
+    INSERT INTO t1 SELECT randomblob(100) FROM t1;
+    CREATE INDEX i1 ON t1(x);
+  }
+
+  db1 eval {
+    BEGIN;
+    DROP INDEX i1;
+  }
+
+  db2 close
+
+  db1 eval {
+    INSERT INTO t1 SELECT randomblob(100) FROM t1;
+    ROLLBACK;
+    PRAGMA integrity_check;
+  }
+} {ok}
+
+db1 close
+forcedelete test.db
+
 
 #-------------------------------------------------------------------------
 #
