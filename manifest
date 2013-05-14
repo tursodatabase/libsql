@@ -1,5 +1,5 @@
-C Avoid\sdeleting\sa\sb-tree\s"has-content"\svector\sbelonging\sto\sanother\sshared-cache\sconnection\sfrom\swithin\ssqlite3_close().
-D 2013-05-14T20:36:31.591
+C Merge\stogether\sthe\sfork\sin\sthis\sbranch.
+D 2013-05-14T23:13:41.194
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -137,7 +137,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b266767351ae2d847716c56fcb2a1fea7c761c03
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c e42631ac1fe6d0d3a0a5e36330b203f69052be21
+F src/btree.c fcfbe61a311e54224b23527bbf7586ce320e7b40
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
@@ -646,7 +646,7 @@ F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
 F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
-F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
+F test/misuse.test 9e580d30f94968ebb57878de3503608dc9f0f226
 F test/mmap1.test 8696aa1b0bd88961c2f16af2a3f7a69d701cea50
 F test/mmap2.test a5ba639f90b5fc487400a49e158e14e465943e98
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
@@ -1063,7 +1063,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ea0428f9b6e63066e7444a2ba2f8c12a2e3ab7e4
-R f68931e6fbc759d31073a5961092df76
-U dan
-Z c980c1bd80d8d5755c03b6b85fccf1ca
+P 93462df78247f5634b9f53752cf80056bbfe9aac a6f851d0fe01d8c8d44a2fe0b716ff7a5194c63b
+R fd9716795d11f0f9b0e245778ae3dfdf
+U drh
+Z 207682ad3d629f4d5a07b6ee61017db7
