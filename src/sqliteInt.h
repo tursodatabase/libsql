@@ -2045,7 +2045,7 @@ struct WhereLevel {
 #define WHERE_FORCE_TABLE      0x0020 /* Do not use an index-only search */
 #define WHERE_ONETABLE_ONLY    0x0040 /* Only code the 1st table in pTabList */
 #define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
-#define WHREE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
+#define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
