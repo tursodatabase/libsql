@@ -1,9 +1,9 @@
-C Fixes\sto\sallow\stestfixture\sto\sbe\scompiled\swith\sSQLITE_OMIT_VIRTUAL_TABLE\sdefined.
-D 2013-05-15T18:34:17.617
+C Apply\scompilation\sfix\sfrom\s[a58af81483]\sto\sthe\sother\smakefiles\sas\swell.
+D 2013-05-15T20:35:13.618
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
+F Makefile.in 101fc5d712bfa348313987e5728ead013dc82fba
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 8f4ee0dab220a5276d5da61149dfd6cd5d1dd5b8
+F Makefile.msc 5dc042f51187414d5886ac6d8308630d484690c4
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -1064,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 867b3e3b29a357f68e48f0898bf323c5dd0575a4
-R ef8f76bf9ec6d291e5abf1f22c383790
-U dan
-Z 312bf0a08b7de8fff43ce46237080a73
+P 00231fb0127960d700de3549e34e82f8ec1b5819
+R 04fee50c5604612c3f01940384e4b851
+U mistachkin
+Z 5365a8b6e125dec6044a55dc87f2dc60
