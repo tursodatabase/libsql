@@ -1,5 +1,5 @@
-C The\ssqlite3ExprCollSeq()\sfunction\scan\sno\slonger\sbe\scalled\swhile\sparse\nthe\sschema,\sso\sremove\sthe\scode\spath\sinside\sof\ssqlite3ExprCollSeq()\sthat\ndealt\swith\sthat\scase.
-D 2013-05-15T17:47:12.088
+C Fixes\sto\sallow\stestfixture\sto\sbe\scompiled\swith\sSQLITE_OMIT_VIRTUAL_TABLE\sdefined.
+D 2013-05-15T18:34:17.617
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -83,14 +83,14 @@ F ext/fts3/unicode/mkunicode.tcl 7a9bc018e2962abb79563c5a39fe581fcbf2f675
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
-F ext/misc/amatch.c 3369b2b544066e620d986f0085d039c77d1ef17f
-F ext/misc/closure.c fec0c8537c69843e0b7631d500a14c0527962cd6
-F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f
+F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
+F ext/misc/closure.c 7e9197d0c94068f5c2b5333e05315b54b667046e
+F ext/misc/fuzzer.c 51bd96960b6b077d41d6f3cedefbcb57f29efaa2
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/spellfix.c f9d24a2b2617cee143b7841b453e4e1fd8f189cc
+F ext/misc/spellfix.c 6d7ce6105a4b7729f6c44ccdf1ab7e80d9707c02
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
@@ -338,7 +338,7 @@ F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 2eb93611139a7dfaed3be80067c7dc5ceb5fb287
-F test/closure01.test 6194a899cdbba561d0439c0d6cc7bcdf4fc413e7
+F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
@@ -975,7 +975,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 82f463886e18d7f8395a4b6167c91815efe54839
-F test/wal.test e6dcf26e3e5cce2adb2f2f57eda53bc2c54c580c
+F test/wal.test 3a6ebdf0287b38b5537c07c517b30dda9aaac317
 F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1064,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5cc1cc55d28a73d390d51fdf6f2c026f1cab1d75
-R e7ec9db939b43c1fb3d0a5a8ccbae374
-U drh
-Z 1e4ce829f36f461fad5816fc545c080f
+P 867b3e3b29a357f68e48f0898bf323c5dd0575a4
+R ef8f76bf9ec6d291e5abf1f22c383790
+U dan
+Z 312bf0a08b7de8fff43ce46237080a73

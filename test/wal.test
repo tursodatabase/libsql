@@ -1512,11 +1512,10 @@ do_test wal-23.3 {
   faultsim_restore_and_reopen
   execsql { SELECT * FROM t1 }
 } {1 2 3 4}
-set nPage [expr 2+$AUTOVACUUM]
 do_test wal-23.4 { 
   set ::log 
 } [list SQLITE_NOTICE_RECOVER_WAL \
-    "recovered $nPage frames from WAL file $walfile"]
+    "recovered 2 frames from WAL file $walfile"]
 
 
 ifcapable autovacuum {
