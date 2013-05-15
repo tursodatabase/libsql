@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2013-05-15T15:42:14.167
+C Do\snot\srun\ssharedA.test\sif\sthe\ssystem\sis\snot\sthreadsafe.
+D 2013-05-15T15:53:52.221
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -738,7 +738,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
-F test/sharedA.test 113664fa64ab0538c7dc77f4b6fc1ff904561cec
+F test/sharedA.test 8eddeda2407bdcd335ec8b8ba731aefc0e3e8232
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test 4a2f57952719972c6f862134463f8712e953c038
@@ -1064,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6071b7cce067c807e040283fc4b7449dc6eca498 6dae62c4e505a9a1a22c2771ef3e1921407c4748
-R 28b38b6c18b562db57488c615db697dc
+P 47dd65a890955f333d431e275f3f4d95d34a5ba5
+R 7b8246f3bd54a0ac6d93356e2396ef91
 U dan
-Z 6489a58ca2c2a2f6dd59b9b4bee3a760
+Z d923d1c201be4d3e0bbb63e5d84a5ca9

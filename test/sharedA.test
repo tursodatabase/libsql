@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+if {[run_thread_tests]==0} { finish_test ; return }
 db close
 set ::testprefix sharedA
 
