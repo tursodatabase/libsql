@@ -836,7 +836,7 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   ** SQL statements below, as the v-table implementation may be storing
   ** some prepared statements internally.
   */
-  sqlite3RollbackAll(db, SQLITE_ABORT);
+  sqlite3VtabRollback(db);
 
   /* Legacy behavior (sqlite3_close() behavior) is to return
   ** SQLITE_BUSY if the connection can not be closed immediately.
@@ -847,6 +847,12 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_BUSY;
   }
+
+  /* If a transaction is open, roll it back. This also ensures that if
+  ** any database schemas have been modified by the current transaction
+  ** they are reset. And that the required b-tree mutex is held to make
+  ** the the pager rollback and schema reset an atomic operation. */
+  sqlite3RollbackAll(db, SQLITE_OK);
 
 #ifdef SQLITE_ENABLE_SQLLOG
   if( sqlite3GlobalConfig.xSqllog ){

@@ -1,5 +1,5 @@
-C Merge\stogether\sthe\sfork\sin\sthis\sbranch.
-D 2013-05-14T23:13:41.194
+C When\sclosing\sa\sconnection,\savoid\stripping\sactive\scursors\sbelonging\sto\sa\sdifferent\sshared-cache\sclient.\sAlso,\sif\ssqlite3_close()\sis\scalled\swhile\sthere\sare\sstill\sactive\sstatements\sbelonging\sto\sthe\sconnection,\sreturn\sSQLITE_BUSY\sand\sdo\snot\sroll\sback\sany\sactive\stransaction.
+D 2013-05-15T10:21:50.290
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,7 +159,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c 2ef7316bae009d8b1cf218a52f25abda50712aab
+F src/main.c ccbac976228cd21209ede2bdc82bbf22b0ddf197
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -646,7 +646,7 @@ F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
 F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
-F test/misuse.test 9e580d30f94968ebb57878de3503608dc9f0f226
+F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/mmap1.test 8696aa1b0bd88961c2f16af2a3f7a69d701cea50
 F test/mmap2.test a5ba639f90b5fc487400a49e158e14e465943e98
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
@@ -1063,7 +1063,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 93462df78247f5634b9f53752cf80056bbfe9aac a6f851d0fe01d8c8d44a2fe0b716ff7a5194c63b
-R fd9716795d11f0f9b0e245778ae3dfdf
-U drh
-Z 207682ad3d629f4d5a07b6ee61017db7
+P 164e3d4da20cc16d2a04d602b5a8229e0db99d9d
+R 243e9c6eef6644304141719b7b365651
+U dan
+Z 161ee496080958759a84c8cf6005b67f

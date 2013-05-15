@@ -170,7 +170,7 @@ do_test misuse-4.3 {
     }
   } msg]
   lappend v $msg $r
-} {1 {callback requested query abort} SQLITE_BUSY}
+} {0 {} SQLITE_BUSY}
 do_test misuse-4.4 {
   # Flush the TCL statement cache here, otherwise the sqlite3_close() will
   # fail because there are still un-finalized() VDBEs.
