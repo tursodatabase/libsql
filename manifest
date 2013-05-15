@@ -1,5 +1,5 @@
-C Add\sassert()s\sto\sthe\simplementation\sof\sxRead()\sin\sthe\sbuilt-in\sVFSes\sto\s\nverify\sthat\sthe\soffset\sparameter\sis\salways\snon-negative.
-D 2013-05-09T18:12:40.898
+C Add\sthe\srot13.c\sloadable\sextension.
+D 2013-05-15T13:05:03.677
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -89,6 +89,7 @@ F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
+F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c f9d24a2b2617cee143b7841b453e4e1fd8f189cc
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1062,7 +1063,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1128575d0ab24f7023a0f6e6ce4828b9a09a7c6c
-R 1cad29e868ca8cf8d5b7d354acd90934
+P cf5c3642247fdd34d87f0368594cd7b8f081636a
+R 44b4748622864d8325bfa1188d6d5de6
 U drh
-Z 3b3f34da85296e9879a826be138cb510
+Z 1bcbc481bbe6dde5c937a1d1c9d5e280
