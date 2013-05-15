@@ -1,5 +1,5 @@
-C Add\smain.c\sto\sthe\slist\sof\sfiles\scompiled\swith\sSQLITE_TEST\sdefined\swhen\sbuilding\stestfixture.
-D 2013-05-15T16:16:25.168
+C Extra\stest\sfor\scommit\s[6dae62c4e5].
+D 2013-05-15T16:24:46.069
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -342,7 +342,7 @@ F test/closure01.test 6194a899cdbba561d0439c0d6cc7bcdf4fc413e7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
-F test/collate3.test a6cf2127340e8f5b9ceb2a95d97811210cfc4627
+F test/collate3.test 79558a286362cb9ed603c6fa543f1cda7f563f0f
 F test/collate4.test 031f7265c13308b724ba3c49f41cc04612bd92b1
 F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
@@ -1063,7 +1063,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6dae62c4e505a9a1a22c2771ef3e1921407c4748
-R 487fc7dc27dc4b82b7020b1b301782dd
+P a58af81483a5facb09d2a80385fc8815b259a10d
+R a1ee9dbf5bdc0c85e6d04c16bdc50678
 U dan
-Z e9d416a6022ae3cc41d820704187cebf
+Z c734661d059ffa1379084a528d255758

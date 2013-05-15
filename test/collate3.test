@@ -141,7 +141,15 @@ do_test collate3-1.7.5 {
   catchsql { PRAGMA integrity_check }
 } {0 ok}
 
+proc needed {nm} { db collate caseless caseless }
 do_test collate3-1.7.6 {
+  db close
+  sqlite3 db test.db
+  db collation_needed needed
+  catchsql { PRAGMA integrity_check }
+} {0 ok}
+
+do_test collate3-1.8 {
   execsql { DROP TABLE t1 }
 } {}
 
