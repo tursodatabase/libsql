@@ -2659,10 +2659,8 @@ Index *sqlite3CreateIndex(
   for(i=0; i<pList->nExpr; i++){
     Expr *pExpr = pList->a[i].pExpr;
     if( pExpr ){
-      CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr);
-      if( pColl ){
-        nExtra += (1 + sqlite3Strlen30(pColl->zName));
-      }
+      assert( pExpr->op==TK_COLLATE );
+      nExtra += (1 + sqlite3Strlen30(pExpr->u.zToken));
     }
   }
 
@@ -2723,7 +2721,6 @@ Index *sqlite3CreateIndex(
     const char *zColName = pListItem->zName;
     Column *pTabCol;
     int requestedSortOrder;
-    CollSeq *pColl;                /* Collating sequence */
     char *zColl;                   /* Collation sequence name */
 
     for(j=0, pTabCol=pTab->aCol; j<pTab->nCol; j++, pTabCol++){
@@ -2736,11 +2733,10 @@ Index *sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
-    if( pListItem->pExpr
-     && (pColl = sqlite3ExprCollSeq(pParse, pListItem->pExpr))!=0
-    ){
+    if( pListItem->pExpr ){
       int nColl;
-      zColl = pColl->zName;
+      assert( pListItem->pExpr->op==TK_COLLATE );
+      zColl = pListItem->pExpr->u.zToken;
       nColl = sqlite3Strlen30(zColl) + 1;
       assert( nExtra>=nColl );
       memcpy(zExtra, zColl, nColl);
@@ -2749,9 +2745,7 @@ Index *sqlite3CreateIndex(
       nExtra -= nColl;
     }else{
       zColl = pTab->aCol[j].zColl;
-      if( !zColl ){
-        zColl = "BINARY";
-      }
+      if( !zColl ) zColl = "BINARY";
     }
     if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
       goto exit_create_index;

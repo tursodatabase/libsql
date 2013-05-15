@@ -1,5 +1,5 @@
-C Add\sthe\srot13.c\sloadable\sextension.
-D 2013-05-15T13:05:03.677
+C When\sloading\sa\sdatabase\sschema\sthat\scontains\san\sindex\sdefinition\sthat\sincludes\sa\sCOLLATE\sclause\sfor\swhich\sthe\scollation\ssequence\sis\sunavailable,\sdo\snot\sassume\sthat\sthat\sindex\suses\sBINARY\sinstead.\sFix\sfor\s[0fc59f908b].
+D 2013-05-15T15:16:50.069
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -141,7 +141,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 480a6d255cc4f066029daf23dd54acf152cd0e13
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
+F src/build.c 92ef9483189389828966153c5950f2e5a49c1182
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
@@ -342,7 +342,7 @@ F test/closure01.test 6194a899cdbba561d0439c0d6cc7bcdf4fc413e7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
-F test/collate3.test d28d2cfab2c3a3d4628ae4b2b7afc9965daa3b4c
+F test/collate3.test a6cf2127340e8f5b9ceb2a95d97811210cfc4627
 F test/collate4.test 031f7265c13308b724ba3c49f41cc04612bd92b1
 F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
@@ -1063,7 +1063,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cf5c3642247fdd34d87f0368594cd7b8f081636a
-R 44b4748622864d8325bfa1188d6d5de6
-U drh
-Z 1bcbc481bbe6dde5c937a1d1c9d5e280
+P 8f9bd8e7a88eb11fb17d29954fa4b8c2840a5019
+R c30a5ff0c8f241909590b400195b0165
+U dan
+Z 12265815702aee04d3178d81300c6ea1
