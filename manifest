@@ -1,5 +1,5 @@
-C Do\snot\srun\ssharedA.test\sif\sthe\ssystem\sis\snot\sthreadsafe.
-D 2013-05-15T15:53:52.221
+C Fix\sthe\ssharedA.test\smodule\sso\sthat\sit\sdoes\snot\sattempt\sto\srun\sTCL\scallbacks\non\sa\sdifferent\sthread\sfrom\swhere\sthe\sinterpreter\swas\soriginally\screated.
+D 2013-05-15T16:08:33.601
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -738,7 +738,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
-F test/sharedA.test 8eddeda2407bdcd335ec8b8ba731aefc0e3e8232
+F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test 4a2f57952719972c6f862134463f8712e953c038
@@ -1064,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 47dd65a890955f333d431e275f3f4d95d34a5ba5
-R 7b8246f3bd54a0ac6d93356e2396ef91
-U dan
-Z d923d1c201be4d3e0bbb63e5d84a5ca9
+P d484eaf8d6dfaf2c1065b93b2a52a6db91c09fa4
+R 2b3d38cfaeff54ce7cad59c19d675f6e
+U drh
+Z adae8d677b3886690161b439bdcd47db
