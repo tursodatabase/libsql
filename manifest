@@ -1,5 +1,5 @@
-C When\sclosing\sa\sconnection,\savoid\stripping\sactive\scursors\sbelonging\sto\sa\sdifferent\sshared-cache\sclient.\sAlso,\sif\ssqlite3_close()\sis\scalled\swhile\sthere\sare\sstill\sactive\sstatements\sbelonging\sto\sthe\sconnection,\sreturn\sSQLITE_BUSY\sand\sdo\snot\sroll\sback\sany\sactive\stransaction.
-D 2013-05-15T10:21:50.290
+C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
+D 2013-05-15T15:42:14.167
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -89,6 +89,7 @@ F ext/misc/fuzzer.c fb64a15af978ae73fa9075b9b1dfbe82b8defc6f
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
+F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c f9d24a2b2617cee143b7841b453e4e1fd8f189cc
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -140,7 +141,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c fcfbe61a311e54224b23527bbf7586ce320e7b40
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c 083da8466fd7e481cb8bd5264398f537507f6176
+F src/build.c 92ef9483189389828966153c5950f2e5a49c1182
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
@@ -341,7 +342,7 @@ F test/closure01.test 6194a899cdbba561d0439c0d6cc7bcdf4fc413e7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
-F test/collate3.test d28d2cfab2c3a3d4628ae4b2b7afc9965daa3b4c
+F test/collate3.test a6cf2127340e8f5b9ceb2a95d97811210cfc4627
 F test/collate4.test 031f7265c13308b724ba3c49f41cc04612bd92b1
 F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
@@ -1063,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 164e3d4da20cc16d2a04d602b5a8229e0db99d9d
-R 243e9c6eef6644304141719b7b365651
+P 6071b7cce067c807e040283fc4b7449dc6eca498 6dae62c4e505a9a1a22c2771ef3e1921407c4748
+R 28b38b6c18b562db57488c615db697dc
 U dan
-Z 161ee496080958759a84c8cf6005b67f
+Z 6489a58ca2c2a2f6dd59b9b4bee3a760
