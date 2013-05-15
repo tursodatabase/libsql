@@ -848,6 +848,12 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
     return SQLITE_BUSY;
   }
 
+  /* If a transaction is open, roll it back. This also ensures that if
+  ** any database schemas have been modified by the current transaction
+  ** they are reset. And that the required b-tree mutex is held to make
+  ** the the pager rollback and schema reset an atomic operation. */
+  sqlite3RollbackAll(db, SQLITE_OK);
+
 #ifdef SQLITE_ENABLE_SQLLOG
   if( sqlite3GlobalConfig.xSqllog ){
     /* Closing the handle. Fourth parameter is passed the value 2. */
@@ -1002,6 +1008,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   int inTrans = 0;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3BeginBenignMalloc();
+  sqlite3BtreeEnterAll(db);
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
     if( p ){
@@ -1019,6 +1026,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetAllSchemasOfConnection(db);
   }
+  sqlite3BtreeLeaveAll(db);
 
   /* Any deferred constraint violations have now been resolved. */
   db->nDeferredCons = 0;

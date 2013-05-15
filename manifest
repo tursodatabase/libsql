@@ -1,5 +1,5 @@
-C Extra\stest\sfor\scommit\s[6dae62c4e5].
-D 2013-05-15T16:24:46.069
+C Merge\sthe\sshared-cache-fixes\sbranch\sinto\strunk.
+D 2013-05-15T17:08:46.108
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,7 +138,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b266767351ae2d847716c56fcb2a1fea7c761c03
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 480a6d255cc4f066029daf23dd54acf152cd0e13
+F src/btree.c fcfbe61a311e54224b23527bbf7586ce320e7b40
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 92ef9483189389828966153c5950f2e5a49c1182
@@ -160,7 +160,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c 7531758e3167006f55cd65678d9c72a3c1a6759a
+F src/main.c ccbac976228cd21209ede2bdc82bbf22b0ddf197
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -738,6 +738,7 @@ F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
 F test/shared8.test b27befbefbe7f4517f1d6b7ff8f64a41ec74165d
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
+F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test ffa0a3c4ac192145b310f1254f8afca4d553eabf
 F test/shell1.test 4a2f57952719972c6f862134463f8712e953c038
@@ -1063,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a58af81483a5facb09d2a80385fc8815b259a10d
-R a1ee9dbf5bdc0c85e6d04c16bdc50678
-U dan
-Z c734661d059ffa1379084a528d255758
+P b10b9e758b171b0f514592bba70c3ecd17c8c47f 65ff754e3521aa8ee9135d235166cac2a8f57ebd
+R 26e2acdf1151011acbca5696e65a3adb
+U drh
+Z e5ba39f32795e7a7bb7657dbeb366ef9
