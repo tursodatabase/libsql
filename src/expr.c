@@ -116,12 +116,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     }
     assert( op!=TK_REGISTER || p->op2!=TK_COLLATE );
     if( op==TK_COLLATE ){
-      if( db->init.busy ){
-        /* Do not report errors when parsing while the schema */
-        pColl = sqlite3FindCollSeq(db, ENC(db), p->u.zToken, 0);
-      }else{
-        pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
-      }
+      pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
     if( p->pTab!=0

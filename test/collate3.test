@@ -55,6 +55,104 @@ execsql {
   DROP TABLE collate3t1;
 }
 
+proc caseless {a b} { string compare -nocase $a $b }
+do_test collate3-1.4 {
+  db collate caseless caseless
+  execsql { 
+    CREATE TABLE t1(a COLLATE caseless); 
+    INSERT INTO t1 VALUES('Abc2');
+    INSERT INTO t1 VALUES('abc1');
+    INSERT INTO t1 VALUES('aBc3');
+  }
+  execsql { SELECT * FROM t1 ORDER BY a }
+} {abc1 Abc2 aBc3}
+
+do_test collate3-1.5 {
+  db close
+  sqlite3 db test.db
+  catchsql { SELECT * FROM t1 ORDER BY a }
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.6.1 {
+  db collate caseless caseless
+  execsql { CREATE INDEX i1 ON t1(a) }
+  execsql { SELECT * FROM t1 ORDER BY a }
+} {abc1 Abc2 aBc3}
+
+do_test collate3-1.6.2 {
+  db close
+  sqlite3 db test.db
+  catchsql { SELECT * FROM t1 ORDER BY a }
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.6.3 {
+  db close
+  sqlite3 db test.db
+  catchsql { PRAGMA integrity_check }
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.6.4 {
+  db close
+  sqlite3 db test.db
+  catchsql { REINDEX }
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.7.1 {
+  db collate caseless caseless
+  execsql {
+    DROP TABLE t1;
+    CREATE TABLE t1(a);
+    CREATE INDEX i1 ON t1(a COLLATE caseless);
+    INSERT INTO t1 VALUES('Abc2');
+    INSERT INTO t1 VALUES('abc1');
+    INSERT INTO t1 VALUES('aBc3');
+    SELECT * FROM t1 ORDER BY a COLLATE caseless;
+  }
+} {abc1 Abc2 aBc3}
+
+do_test collate3-1.7.2 {
+  db close
+  sqlite3 db test.db
+  catchsql { SELECT * FROM t1 ORDER BY a COLLATE caseless}
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.7.4 {
+  db close
+  sqlite3 db test.db
+  catchsql { REINDEX }
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.7.3 {
+  db close
+  sqlite3 db test.db
+  catchsql { PRAGMA integrity_check }
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.7.4 {
+  db close
+  sqlite3 db test.db
+  catchsql { REINDEX }
+} {1 {no such collation sequence: caseless}}
+
+do_test collate3-1.7.5 {
+  db close
+  sqlite3 db test.db
+  db collate caseless caseless
+  catchsql { PRAGMA integrity_check }
+} {0 ok}
+
+proc needed {nm} { db collate caseless caseless }
+do_test collate3-1.7.6 {
+  db close
+  sqlite3 db test.db
+  db collation_needed needed
+  catchsql { PRAGMA integrity_check }
+} {0 ok}
+
+do_test collate3-1.8 {
+  execsql { DROP TABLE t1 }
+} {}
+
 #
 # Create a table with a default collation sequence, then close
 # and re-open the database without re-registering the collation
