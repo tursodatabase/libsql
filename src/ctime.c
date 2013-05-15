@@ -48,14 +48,14 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_COVERAGE_TEST
   "COVERAGE_TEST",
 #endif
-#ifdef SQLITE_CURDIR
-  "CURDIR",
-#endif
 #ifdef SQLITE_DEBUG
   "DEBUG",
 #endif
 #ifdef SQLITE_DEFAULT_LOCKING_MODE
   "DEFAULT_LOCKING_MODE=" CTIMEOPT_VAL(SQLITE_DEFAULT_LOCKING_MODE),
+#endif
+#if defined(SQLITE_DEFAULT_MMAP_SIZE) && !defined(SQLITE_DEFAULT_MMAP_SIZE_xc)
+  "DEFAULT_MMAP_SIZE=" CTIMEOPT_VAL(SQLITE_DEFAULT_MMAP_SIZE),
 #endif
 #ifdef SQLITE_DISABLE_DIRSYNC
   "DISABLE_DIRSYNC",
@@ -147,6 +147,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_LOCK_TRACE
   "LOCK_TRACE",
 #endif
+#if defined(SQLITE_MAX_MMAP_SIZE) && !defined(SQLITE_MAX_MMAP_SIZE_xc)
+  "MAX_MMAP_SIZE=" CTIMEOPT_VAL(SQLITE_MAX_MMAP_SIZE),
+#endif
 #ifdef SQLITE_MAX_SCHEMA_RETRY
   "MAX_SCHEMA_RETRY=" CTIMEOPT_VAL(SQLITE_MAX_SCHEMA_RETRY),
 #endif
@@ -204,11 +207,6 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_OMIT_CHECK
   "OMIT_CHECK",
 #endif
-/* // redundant
-** #ifdef SQLITE_OMIT_COMPILEOPTION_DIAGS
-**   "OMIT_COMPILEOPTION_DIAGS",
-** #endif
-*/
 #ifdef SQLITE_OMIT_COMPLETE
   "OMIT_COMPLETE",
 #endif
@@ -262,9 +260,6 @@ static const char * const azCompileOpt[] = {
 #endif
 #ifdef SQLITE_OMIT_MEMORYDB
   "OMIT_MEMORYDB",
-#endif
-#ifdef SQLITE_OMIT_MERGE_SORT
-  "OMIT_MERGE_SORT",
 #endif
 #ifdef SQLITE_OMIT_OR_OPTIMIZATION
   "OMIT_OR_OPTIMIZATION",
@@ -353,13 +348,13 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_TCL
   "TCL",
 #endif
-#ifdef SQLITE_TEMP_STORE
+#if defined(SQLITE_TEMP_STORE) && !defined(SQLITE_TEMP_STORE_xc)
   "TEMP_STORE=" CTIMEOPT_VAL(SQLITE_TEMP_STORE),
 #endif
 #ifdef SQLITE_TEST
   "TEST",
 #endif
-#ifdef SQLITE_THREADSAFE
+#if defined(SQLITE_THREADSAFE)
   "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
 #endif
 #ifdef SQLITE_USE_ALLOCA
@@ -385,8 +380,11 @@ int sqlite3_compileoption_used(const char *zOptName){
   /* Since ArraySize(azCompileOpt) is normally in single digits, a
   ** linear search is adequate.  No need for a binary search. */
   for(i=0; i<ArraySize(azCompileOpt); i++){
-    if(   (sqlite3StrNICmp(zOptName, azCompileOpt[i], n)==0)
-       && ( (azCompileOpt[i][n]==0) || (azCompileOpt[i][n]=='=') ) ) return 1;
+    if( sqlite3StrNICmp(zOptName, azCompileOpt[i], n)==0
+     && sqlite3CtypeMap[(unsigned char)azCompileOpt[i][n]]==0
+    ){
+      return 1;
+    }
   }
   return 0;
 }

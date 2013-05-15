@@ -24,6 +24,8 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 speed_trial_init speed1
 
+sqlite3_memdebug_vfs_oom_test 0
+
 # Set a uniform random seed
 expr srand(0)
 
@@ -77,7 +79,6 @@ do_test speed1p-1.0 {
     SELECT name FROM sqlite_master ORDER BY 1;
   }
 } {i2a i2b t1 t2}
-
 
 # 50000 INSERTs on an unindexed table
 #

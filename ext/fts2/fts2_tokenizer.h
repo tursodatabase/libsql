@@ -70,7 +70,7 @@ struct sqlite3_tokenizer_module {
   ** This method should return either SQLITE_OK (0), or an SQLite error 
   ** code. If SQLITE_OK is returned, then *ppTokenizer should be set
   ** to point at the newly created tokenizer structure. The generic
-  ** sqlite3_tokenizer.pModule variable should not be initialised by
+  ** sqlite3_tokenizer.pModule variable should not be initialized by
   ** this callback. The caller will do so.
   */
   int (*xCreate)(

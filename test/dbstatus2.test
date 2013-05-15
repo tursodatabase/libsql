@@ -40,6 +40,7 @@ proc db_write {db {reset 0}} {
 do_test 1.1 {
   db close
   sqlite3 db test.db
+  execsql { PRAGMA mmap_size = 0 }
   expr {[file size test.db] / 1024}
 } 6
 

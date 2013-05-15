@@ -55,6 +55,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          callback.o complete.o ctime.o date.o delete.o expr.o fault.o fkey.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o \
+         fts3_tokenize_vtab.o \
 	 fts3_unicode.o fts3_unicode2.o \
          fts3_write.o func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
@@ -197,6 +198,7 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer.h \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
   $(TOP)/ext/fts3/fts3_tokenizer1.c \
+  $(TOP)/ext/fts3/fts3_tokenize_vtab.c \
   $(TOP)/ext/fts3/fts3_unicode.c \
   $(TOP)/ext/fts3/fts3_unicode2.c \
   $(TOP)/ext/fts3/fts3_write.c
@@ -242,7 +244,6 @@ TESTSRC = \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_fs.c \
   $(TOP)/src/test_func.c \
-  $(TOP)/src/test_fuzzer.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_init.c \
   $(TOP)/src/test_intarray.c \
@@ -254,7 +255,6 @@ TESTSRC = \
   $(TOP)/src/test_osinst.c \
   $(TOP)/src/test_pcache.c \
   $(TOP)/src/test_quota.c \
-  $(TOP)/src/test_regexp.c \
   $(TOP)/src/test_rtree.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
@@ -265,8 +265,20 @@ TESTSRC = \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
-  $(TOP)/src/test_wholenumber.c \
   $(TOP)/src/test_wsd.c
+
+# Extensions to be statically loaded.
+#
+TESTSRC += \
+  $(TOP)/ext/misc/amatch.c \
+  $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/fuzzer.c \
+  $(TOP)/ext/misc/ieee754.c \
+  $(TOP)/ext/misc/nextchar.c \
+  $(TOP)/ext/misc/regexp.c \
+  $(TOP)/ext/misc/spellfix.c \
+  $(TOP)/ext/misc/wholenumber.c
+
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
@@ -365,6 +377,10 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
+mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
+	$(TCCX) -o $@ -I. $(TOP)/mptest/mptest.c sqlite3.c \
+		$(TLIBS) $(THREADLIB)
+
 sqlite3.o:	sqlite3.c
 	$(TCCX) -c sqlite3.c
 
@@ -385,6 +401,7 @@ target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl
 	tclsh $(TOP)/tool/mksqlite3c.tcl
+	cp tsrc/shell.c tsrc/sqlite3ext.h .
 	echo '#ifndef USE_SYSTEM_SQLITE' >tclsqlite3.c
 	cat sqlite3.c >>tclsqlite3.c
 	echo '#endif /* USE_SYSTEM_SQLITE */' >>tclsqlite3.c
@@ -511,6 +528,9 @@ fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
 fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
 
+fts3_tokenize_vtab.o:	$(TOP)/ext/fts3/fts3_tokenize_vtab.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenize_vtab.c
+
 fts3_unicode.o:	$(TOP)/ext/fts3/fts3_unicode.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_unicode.c
 
@@ -621,5 +641,8 @@ clean:
 	rm -f testfixture testfixture.exe
 	rm -f threadtest3 threadtest3.exe
 	rm -f sqlite3.c fts?amal.c tclsqlite3.c
+	rm -f sqlite3rc.h
+	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
+	rm -f mptester mptester.exe

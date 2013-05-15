@@ -65,7 +65,7 @@ for {set ii 0} {$ii < 10} {incr ii} {
         # puts "$n $msg ac=[sqlite3_get_autocommit db]"
       
         # If the transaction is still active (it may not be if the malloc()
-        # failure occured in the OS layer), write to the database. Make sure
+        # failure occurred in the OS layer), write to the database. Make sure
         # page 4 is among those written.
         #
         if {![sqlite3_get_autocommit db]} {

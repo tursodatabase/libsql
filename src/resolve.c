@@ -388,7 +388,10 @@ static int lookupName(
     ** Note that the expression in the result set should have already been
     ** resolved by the time the WHERE clause is resolved.
     */
-    if( cnt==0 && (pEList = pNC->pEList)!=0 && zTab==0 ){
+    if( (pEList = pNC->pEList)!=0
+     && zTab==0
+     && ((pNC->ncFlags & NC_AsMaybe)==0 || cnt==0)
+    ){
       for(j=0; j<pEList->nExpr; j++){
         char *zAs = pEList->a[j].zName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
@@ -479,7 +482,9 @@ static int lookupName(
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
-    sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
+    if( pExpr->op!=TK_AS ){
+      sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
+    }
     /* Increment the nRef value on all name contexts from TopNC up to
     ** the point where the name matched. */
     for(;;){
@@ -1154,11 +1159,10 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** re-evaluated for each reference to it.
     */
     sNC.pEList = p->pEList;
-    if( sqlite3ResolveExprNames(&sNC, p->pWhere) ||
-       sqlite3ResolveExprNames(&sNC, p->pHaving)
-    ){
-      return WRC_Abort;
-    }
+    if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
+    sNC.ncFlags |= NC_AsMaybe;
+    if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
+    sNC.ncFlags &= ~NC_AsMaybe;
 
     /* The ORDER BY and GROUP BY clauses may not refer to terms in
     ** outer queries 
@@ -1279,6 +1283,7 @@ int sqlite3ResolveExprNames(
 #endif
   savedHasAgg = pNC->ncFlags & NC_HasAgg;
   pNC->ncFlags &= ~NC_HasAgg;
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
   w.pParse = pNC->pParse;
@@ -1319,6 +1324,7 @@ void sqlite3ResolveSelectNames(
   Walker w;
 
   assert( p!=0 );
+  memset(&w, 0, sizeof(w));
   w.xExprCallback = resolveExprStep;
   w.xSelectCallback = resolveSelectStep;
   w.pParse = pParse;

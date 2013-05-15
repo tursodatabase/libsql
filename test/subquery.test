@@ -421,7 +421,7 @@ do_test subquery-3.5.7 {
 # and expose bugs to do with re-using statements that have been 
 # passed to sqlite3_reset().
 #
-# One problem was that VDBE memory cells were not being initialised
+# One problem was that VDBE memory cells were not being initialized
 # to NULL on the second and subsequent executions.
 #
 do_test subquery-4.1.1 {

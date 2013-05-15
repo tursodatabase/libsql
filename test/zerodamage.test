@@ -59,7 +59,7 @@ do_test zerodamage-2.0 {
   }
   tv filter xDelete
   tv script xDeleteCallback
-  register_wholenumber_module db
+  load_static_extension db wholenumber
   db eval {
     PRAGMA page_size=1024;
     PRAGMA journal_mode=DELETE;

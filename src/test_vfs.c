@@ -125,8 +125,9 @@ struct Testvfs {
 #define TESTVFS_ACCESS_MASK       0x00004000
 #define TESTVFS_FULLPATHNAME_MASK 0x00008000
 #define TESTVFS_READ_MASK         0x00010000
+#define TESTVFS_UNLOCK_MASK       0x00020000
 
-#define TESTVFS_ALL_MASK          0x0001FFFF
+#define TESTVFS_ALL_MASK          0x0003FFFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -467,8 +468,12 @@ static int tvfsLock(sqlite3_file *pFile, int eLock){
 ** Unlock an tvfs-file.
 */
 static int tvfsUnlock(sqlite3_file *pFile, int eLock){
-  TestvfsFd *p = tvfsGetFd(pFile);
-  return sqlite3OsUnlock(p->pReal, eLock);
+  TestvfsFd *pFd = tvfsGetFd(pFile);
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->mask&TESTVFS_WRITE_MASK && tvfsInjectIoerr(p) ){
+    return SQLITE_IOERR_UNLOCK;
+  }
+  return sqlite3OsUnlock(pFd->pReal, eLock);
 }
 
 /*
@@ -1101,6 +1106,7 @@ static int testvfs_obj_cmd(
         { "xClose",        TESTVFS_CLOSE_MASK },
         { "xAccess",       TESTVFS_ACCESS_MASK },
         { "xFullPathname", TESTVFS_FULLPATHNAME_MASK },
+        { "xUnlock",       TESTVFS_UNLOCK_MASK },
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;

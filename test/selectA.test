@@ -281,13 +281,13 @@ do_test selectA-2.34 {
 do_test selectA-2.35 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-2.36 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE DESC,a,c
+    ORDER BY y COLLATE NOCASE DESC,x,z
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
 do_test selectA-2.37 {
@@ -311,7 +311,7 @@ do_test selectA-2.39 {
 do_test selectA-2.40 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-2.41 {
@@ -602,7 +602,7 @@ do_test selectA-2.85 {
 do_test selectA-2.86 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-2.87 {
@@ -632,7 +632,7 @@ do_test selectA-2.90 {
 do_test selectA-2.91 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-2.92 {
@@ -893,13 +893,13 @@ do_test selectA-3.34 {
 do_test selectA-3.35 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-3.36 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE DESC,a,c
+    ORDER BY y COLLATE NOCASE DESC,x,z
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
 do_test selectA-3.37 {
@@ -923,7 +923,7 @@ do_test selectA-3.39 {
 do_test selectA-3.40 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-3.41 {
@@ -1214,7 +1214,7 @@ do_test selectA-3.85 {
 do_test selectA-3.86 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-3.87 {
@@ -1244,7 +1244,7 @@ do_test selectA-3.90 {
 do_test selectA-3.91 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-3.92 {

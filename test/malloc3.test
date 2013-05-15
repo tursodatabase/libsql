@@ -595,8 +595,8 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
 
         if {$rc != 0 && $nac && !$ac} {
           # Before [db eval] the auto-commit flag was clear. Now it
-          # is set. Since an error occured we assume this was not a
-          # commit - therefore a rollback occured. Check that the
+          # is set. Since an error occurred we assume this was not a
+          # commit - therefore a rollback occurred. Check that the
           # rollback-hook was invoked.
           do_test malloc3-rollback_hook_count.$iterid {
             set ::rollback_hook_count

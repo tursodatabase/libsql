@@ -2665,7 +2665,7 @@ static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   RtreeNode *pRoot;               /* Root node of rtree structure */
 
 
-  /* Obtain a reference to the root node to initialise Rtree.iDepth */
+  /* Obtain a reference to the root node to initialize Rtree.iDepth */
   rc = nodeAcquire(pRtree, 1, 0, &pRoot);
 
   /* Obtain a reference to the leaf node that contains the entry 

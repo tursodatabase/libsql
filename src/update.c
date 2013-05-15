@@ -208,6 +208,7 @@ void sqlite3Update(
     }
     if( j>=pTab->nCol ){
       if( sqlite3IsRowid(pChanges->a[i].zName) ){
+        j = -1;
         chngRowid = 1;
         pRowidExpr = pChanges->a[i].pExpr;
       }else{
@@ -220,7 +221,8 @@ void sqlite3Update(
     {
       int rc;
       rc = sqlite3AuthCheck(pParse, SQLITE_UPDATE, pTab->zName,
-                           pTab->aCol[j].zName, db->aDb[iDb].zName);
+                            j<0 ? "ROWID" : pTab->aCol[j].zName,
+                            db->aDb[iDb].zName);
       if( rc==SQLITE_DENY ){
         goto update_cleanup;
       }else if( rc==SQLITE_IGNORE ){
@@ -458,7 +460,7 @@ void sqlite3Update(
 
     /* The row-trigger may have deleted the row being updated. In this
     ** case, jump to the next row. No updates or AFTER triggers are 
-    ** required. This behaviour - what happens when the row being updated
+    ** required. This behavior - what happens when the row being updated
     ** is deleted or renamed by a BEFORE trigger - is left undefined in the
     ** documentation.
     */

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This is the header file for the generic hash-table implemenation
+** This is the header file for the generic hash-table implementation
 ** used in SQLite.  We've modified it slightly to serve as a standalone
 ** hash table implementation for the full-text indexing module.
 **

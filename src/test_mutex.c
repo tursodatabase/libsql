@@ -19,8 +19,8 @@
 #include <assert.h>
 #include <string.h>
 
-/* defined in test1.c */
-const char *sqlite3TestErrorName(int);
+/* defined in main.c */
+extern const char *sqlite3ErrName(int);
 
 /* A countable mutex */
 struct sqlite3_mutex {
@@ -148,7 +148,7 @@ static int test_shutdown(
   }
 
   rc = sqlite3_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 
@@ -169,7 +169,7 @@ static int test_initialize(
   }
 
   rc = sqlite3_initialize();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 
@@ -230,7 +230,7 @@ static int test_install_mutex_counters(
     g.isInstalled = isInstall;
   }
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 
@@ -354,7 +354,7 @@ static int test_config(
   }
 
   rc = sqlite3_config(i);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;
 }
 

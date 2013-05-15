@@ -313,7 +313,7 @@ int sqlite3_blob_open(
     }
     sqlite3_bind_int64(pBlob->pStmt, 1, iRow);
     rc = blobSeekToRow(pBlob, iRow, &zErr);
-  } while( (++nAttempt)<5 && rc==SQLITE_SCHEMA );
+  } while( (++nAttempt)<SQLITE_MAX_SCHEMA_RETRY && rc==SQLITE_SCHEMA );
 
 blob_open_out:
   if( rc==SQLITE_OK && db->mallocFailed==0 ){

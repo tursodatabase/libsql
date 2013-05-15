@@ -17,7 +17,7 @@ source $testdir/tester.tcl
 ifcapable !vtab { finish_test ; return }
 set ::testprefix fuzzerfault
 
-register_fuzzer_module db
+load_static_extension db fuzzer
 
 do_test 1-pre1 {
   execsql {
@@ -30,7 +30,7 @@ do_test 1-pre1 {
 } {}
 do_faultsim_test 1 -prep {
   faultsim_restore_and_reopen
-  register_fuzzer_module db
+  load_static_extension db fuzzer
 } -body {
   execsql { 
     CREATE VIRTUAL TABLE x1 USING fuzzer(x1_rules);
@@ -43,7 +43,7 @@ do_faultsim_test 1 -prep {
 
 do_test 2-pre1 {
   faultsim_delete_and_reopen
-  register_fuzzer_module db
+  load_static_extension db fuzzer
   execsql {
     CREATE TABLE x2_rules(ruleset, cFrom, cTo, cost);
     INSERT INTO x2_rules VALUES(0, 'a', 'x', 1);
@@ -56,7 +56,7 @@ do_test 2-pre1 {
 
 do_faultsim_test 2 -prep {
   faultsim_restore_and_reopen
-  register_fuzzer_module db
+  load_static_extension db fuzzer
 } -body {
   execsql { 
     SELECT count(*) FROM x2 WHERE word MATCH 'abc';
@@ -78,7 +78,7 @@ do_test 3-pre1 {
 
 do_faultsim_test 3 -prep {
   faultsim_restore_and_reopen
-  register_fuzzer_module db
+  load_static_extension db fuzzer
 } -body {
   execsql { 
     CREATE VIRTUAL TABLE x1 USING fuzzer(x1_rules);

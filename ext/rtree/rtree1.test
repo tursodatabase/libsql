@@ -17,6 +17,7 @@ if {![info exists testdir]} {
 }
 source [file join [file dirname [info script]] rtree_util.tcl]
 source $testdir/tester.tcl
+set testprefix rtree1
 
 # Test plan:
 #

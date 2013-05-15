@@ -138,6 +138,14 @@ test_suite "veryquick" -prefix "" -description {
   test_set $allquicktests -exclude *malloc* *ioerr* *fault*
 ]
 
+test_suite "mmap" -prefix "mm-" -description {
+  Similar to veryquick. Except with memory mapping disabled.
+} -presql {
+  pragma mmap_size = 268435456;
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* -include malloc.test
+]
+
 test_suite "valgrind" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
@@ -178,6 +186,7 @@ test_suite "fts3" -prefix "" -description {
   fts3ak.test fts3al.test fts3am.test fts3an.test fts3ao.test
   fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
   fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
+  fts3expr3.test
   fts3near.test fts3query.test fts3shared.test fts3snippet.test 
   fts3sort.test
   fts3fault.test fts3malloc.test fts3matchinfo.test

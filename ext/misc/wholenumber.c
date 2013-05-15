@@ -22,7 +22,8 @@
 **
 **     1 2 3 4 5 6 7 8 9
 */
-#include "sqlite3.h"
+#include "sqlite3ext.h"
+SQLITE_EXTENSION_INIT1
 #include <assert.h>
 #include <string.h>
 
@@ -217,7 +218,13 @@ static int wholenumberBestIndex(
   ){
     pIdxInfo->orderByConsumed = 1;
   }
-  pIdxInfo->estimatedCost = (double)1;
+  if( (idxNum & 12)==0 ){
+    pIdxInfo->estimatedCost = (double)100000000;
+  }else if( (idxNum & 3)==0 ){
+    pIdxInfo->estimatedCost = (double)5;
+  }else{
+    pIdxInfo->estimatedCost = (double)1;
+  }
   return SQLITE_OK;
 }
 
@@ -250,62 +257,18 @@ static sqlite3_module wholenumberModule = {
 
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-
-/*
-** Register the wholenumber virtual table
-*/
-int wholenumber_register(sqlite3 *db){
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_wholenumber_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
   int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "wholenumber", &wholenumberModule, 0);
 #endif
   return rc;
 }
-
-#ifdef SQLITE_TEST
-#include <tcl.h>
-/*
-** Decode a pointer to an sqlite3 object.
-*/
-extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
-
-/*
-** Register the echo virtual table module.
-*/
-static int register_wholenumber_module(
-  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
-  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
-  int objc,              /* Number of arguments */
-  Tcl_Obj *CONST objv[]  /* Command arguments */
-){
-  sqlite3 *db;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "DB");
-    return TCL_ERROR;
-  }
-  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-  wholenumber_register(db);
-  return TCL_OK;
-}
-
-
-/*
-** Register commands with the TCL interpreter.
-*/
-int Sqlitetestwholenumber_Init(Tcl_Interp *interp){
-  static struct {
-     char *zName;
-     Tcl_ObjCmdProc *xProc;
-     void *clientData;
-  } aObjCmd[] = {
-     { "register_wholenumber_module",   register_wholenumber_module, 0 },
-  };
-  int i;
-  for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
-    Tcl_CreateObjCommand(interp, aObjCmd[i].zName, 
-        aObjCmd[i].xProc, aObjCmd[i].clientData, 0);
-  }
-  return TCL_OK;
-}
-
-#endif /* SQLITE_TEST */

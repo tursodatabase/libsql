@@ -123,7 +123,7 @@ if {[info command sqlite_orig]==""} {
       set res
     } else {
       # This command is not opening a new database connection. Pass the 
-      # arguments through to the C implemenation as the are.
+      # arguments through to the C implementation as the are.
       #
       uplevel 1 sqlite_orig $args
     }
@@ -462,6 +462,7 @@ if {0==[info exists ::SLAVE]} {
   set TC(count)     0
   set TC(fail_list) [list]
   set TC(omit_list) [list]
+  set TC(warn_list) [list]
 
   proc set_test_counter {counter args} {
     if {[llength $args]} {
@@ -495,6 +496,18 @@ proc fail_test {name} {
     finalize_testing
   }
 }
+
+# Remember a warning message to be displayed at the conclusion of all testing
+#
+proc warning {msg {append 1}} {
+  puts "Warning: $msg"
+  set warnList [set_test_counter warn_list]
+  if {$append} {
+    lappend warnList $msg
+  }
+  set_test_counter warn_list $warnList
+}
+
 
 # Increment the number of tests run
 #
@@ -784,6 +797,9 @@ proc finalize_testing {} {
   if {$nErr>0} {
     puts "Failures on these tests: [set_test_counter fail_list]"
   }
+  foreach warning [set_test_counter warn_list] {
+    puts "Warning: $warning"
+  }
   run_thread_tests 1
   if {[llength $omitList]>0} {
     puts "Omitted test cases:"
@@ -1037,7 +1053,7 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
 # boolean, indicating whether or not the process actually crashed or
 # reported some other error. The second element in the returned list is the
 # error message. This is "child process exited abnormally" if the crash
-# occured.
+# occurred.
 #
 #   crashsql -delay CRASHDELAY -file CRASHFILE ?-blocksize BLOCKSIZE? $sql
 #
@@ -1317,7 +1333,7 @@ proc do_ioerr_test {testname args} {
       }
     }
 
-    # If an IO error occured, then the checksum of the database should
+    # If an IO error occurred, then the checksum of the database should
     # be the same as before the script that caused the IO error was run.
     #
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {

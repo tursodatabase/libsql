@@ -70,17 +70,26 @@ static int fts3auxConnectMethod(
 
   UNUSED_PARAMETER(pUnused);
 
-  /* The user should specify a single argument - the name of an fts3 table. */
-  if( argc!=4 ){
-    *pzErr = sqlite3_mprintf(
-        "wrong number of arguments to fts4aux constructor"
-    );
-    return SQLITE_ERROR;
-  }
+  /* The user should invoke this in one of two forms:
+  **
+  **     CREATE VIRTUAL TABLE xxx USING fts4aux(fts4-table);
+  **     CREATE VIRTUAL TABLE xxx USING fts4aux(fts4-table-db, fts4-table);
+  */
+  if( argc!=4 && argc!=5 ) goto bad_args;
 
   zDb = argv[1]; 
   nDb = (int)strlen(zDb);
-  zFts3 = argv[3];
+  if( argc==5 ){
+    if( nDb==4 && 0==sqlite3_strnicmp("temp", zDb, 4) ){
+      zDb = argv[3]; 
+      nDb = (int)strlen(zDb);
+      zFts3 = argv[4];
+    }else{
+      goto bad_args;
+    }
+  }else{
+    zFts3 = argv[3];
+  }
   nFts3 = (int)strlen(zFts3);
 
   rc = sqlite3_declare_vtab(db, FTS3_TERMS_SCHEMA);
@@ -103,6 +112,10 @@ static int fts3auxConnectMethod(
 
   *ppVtab = (sqlite3_vtab *)p;
   return SQLITE_OK;
+
+ bad_args:
+  *pzErr = sqlite3_mprintf("invalid arguments to fts4aux constructor");
+  return SQLITE_ERROR;
 }
 
 /*

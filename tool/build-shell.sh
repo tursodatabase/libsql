@@ -15,12 +15,8 @@ gcc -o sqlite3 -g -Os -I. \
    -DSQLITE_ENABLE_STAT3 \
    -DSQLITE_ENABLE_FTS4 \
    -DSQLITE_ENABLE_RTREE \
-   -DSQLITE_ENABLE_REGEXP \
-   -DSQLITE_ENABLE_SPELLFIX -DSQLITE_CORE=1 \
    -DHAVE_READLINE \
    -DHAVE_USLEEP=1 \
    ../sqlite/src/shell.c \
-   ../sqlite/src/test_regexp.c \
-   ../sqlite/src/test_spellfix.c \
    ../sqlite/src/test_vfstrace.c \
    sqlite3.c -ldl -lreadline -lncurses

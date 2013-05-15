@@ -3260,6 +3260,69 @@ int sqlite3IndexedByLookup(Parse *pParse, struct SrcList_item *pFrom){
   }
   return SQLITE_OK;
 }
+/*
+** Detect compound SELECT statements that use an ORDER BY clause with 
+** an alternative collating sequence.
+**
+**    SELECT ... FROM t1 EXCEPT SELECT ... FROM t2 ORDER BY .. COLLATE ...
+**
+** These are rewritten as a subquery:
+**
+**    SELECT * FROM (SELECT ... FROM t1 EXCEPT SELECT ... FROM t2)
+**     ORDER BY ... COLLATE ...
+**
+** This transformation is necessary because the multiSelectOrderBy() routine
+** above that generates the code for a compound SELECT with an ORDER BY clause
+** uses a merge algorithm that requires the same collating sequence on the
+** result columns as on the ORDER BY clause.  See ticket
+** http://www.sqlite.org/src/info/6709574d2a
+**
+** This transformation is only needed for EXCEPT, INTERSECT, and UNION.
+** The UNION ALL operator works fine with multiSelectOrderBy() even when
+** there are COLLATE terms in the ORDER BY.
+*/
+static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
+  int i;
+  Select *pNew;
+  Select *pX;
+  sqlite3 *db;
+  struct ExprList_item *a;
+  SrcList *pNewSrc;
+  Parse *pParse;
+  Token dummy;
+
+  if( p->pPrior==0 ) return WRC_Continue;
+  if( p->pOrderBy==0 ) return WRC_Continue;
+  for(pX=p; pX && (pX->op==TK_ALL || pX->op==TK_SELECT); pX=pX->pPrior){}
+  if( pX==0 ) return WRC_Continue;
+  a = p->pOrderBy->a;
+  for(i=p->pOrderBy->nExpr-1; i>=0; i--){
+    if( a[i].pExpr->flags & EP_Collate ) break;
+  }
+  if( i<0 ) return WRC_Continue;
+
+  /* If we reach this point, that means the transformation is required. */
+
+  pParse = pWalker->pParse;
+  db = pParse->db;
+  pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
+  if( pNew==0 ) return WRC_Abort;
+  memset(&dummy, 0, sizeof(dummy));
+  pNewSrc = sqlite3SrcListAppendFromTerm(pParse,0,0,0,&dummy,pNew,0,0);
+  if( pNewSrc==0 ) return WRC_Abort;
+  *pNew = *p;
+  p->pSrc = pNewSrc;
+  p->pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db, TK_ALL, 0));
+  p->op = TK_SELECT;
+  p->pWhere = 0;
+  pNew->pGroupBy = 0;
+  pNew->pHaving = 0;
+  pNew->pOrderBy = 0;
+  p->pPrior = 0;
+  pNew->pLimit = 0;
+  pNew->pOffset = 0;
+  return WRC_Continue;
+}
 
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
@@ -3576,9 +3639,12 @@ static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 */
 static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   Walker w;
-  w.xSelectCallback = selectExpander;
+  memset(&w, 0, sizeof(w));
+  w.xSelectCallback = convertCompoundSelectToSubquery;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
+  sqlite3WalkSelect(&w, pSelect);
+  w.xSelectCallback = selectExpander;
   sqlite3WalkSelect(&w, pSelect);
 }
 
@@ -3634,9 +3700,11 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
 static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
 #ifndef SQLITE_OMIT_SUBQUERY
   Walker w;
+  memset(&w, 0, sizeof(w));
   w.xSelectCallback = selectAddSubqueryTypeInfo;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
+  w.bSelectDepthFirst = 1;
   sqlite3WalkSelect(&w, pSelect);
 #endif
 }
@@ -4047,7 +4115,7 @@ int sqlite3Select(
       pItem->addrFillSub = topAddr+1;
       VdbeNoopComment((v, "materialize %s", pItem->pTab->zName));
       if( pItem->isCorrelated==0 ){
-        /* If the subquery is no correlated and if we are not inside of
+        /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */
         onceAddr = sqlite3CodeOnce(pParse);
@@ -4570,7 +4638,7 @@ int sqlite3Select(
         ** value of x, the only row required).
         **
         ** A special flag must be passed to sqlite3WhereBegin() to slightly
-        ** modify behaviour as follows:
+        ** modify behavior as follows:
         **
         **   + If the query is a "SELECT min(x)", then the loop coded by
         **     where.c should not iterate over any values with a NULL value

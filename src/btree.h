@@ -63,6 +63,7 @@ int sqlite3BtreeOpen(
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);
+int sqlite3BtreeSetMmapLimit(Btree*,sqlite3_int64);
 int sqlite3BtreeSetSafetyLevel(Btree*,int,int,int);
 int sqlite3BtreeSyncDisabled(Btree*);
 int sqlite3BtreeSetPageSize(Btree *p, int nPagesize, int nReserve, int eFix);
@@ -139,6 +140,7 @@ int sqlite3BtreeNewDb(Btree *p);
 #define BTREE_TEXT_ENCODING       5
 #define BTREE_USER_VERSION        6
 #define BTREE_INCR_VACUUM         7
+#define BTREE_APPLICATION_ID      8
 
 /*
 ** Values that may be OR'd together to form the second argument of an
