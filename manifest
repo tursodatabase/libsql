@@ -1,5 +1,5 @@
-C Merge\sthe\sshared-cache-fixes\sbranch\sinto\strunk.
-D 2013-05-15T17:08:46.108
+C The\ssqlite3ExprCollSeq()\sfunction\scan\sno\slonger\sbe\scalled\swhile\sparse\nthe\sschema,\sso\sremove\sthe\scode\spath\sinside\sof\ssqlite3ExprCollSeq()\sthat\ndealt\swith\sthat\scase.
+D 2013-05-15T17:47:12.088
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
-F src/expr.c 437c03d5bb4fe3a53ecab3ad0286d6c5260da7ed
+F src/expr.c e40d198a719aba1d2514f6e1541f9154f976ceb6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
 F src/func.c d3fdcff9274bc161152e67ed3f626841c247f4b9
@@ -1064,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b10b9e758b171b0f514592bba70c3ecd17c8c47f 65ff754e3521aa8ee9135d235166cac2a8f57ebd
-R 26e2acdf1151011acbca5696e65a3adb
+P 5cc1cc55d28a73d390d51fdf6f2c026f1cab1d75
+R e7ec9db939b43c1fb3d0a5a8ccbae374
 U drh
-Z e5ba39f32795e7a7bb7657dbeb366ef9
+Z 1e4ce829f36f461fad5816fc545c080f
