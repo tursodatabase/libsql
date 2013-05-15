@@ -1,5 +1,5 @@
-C When\sloading\sa\sdatabase\sschema\sthat\scontains\san\sindex\sdefinition\sthat\sincludes\sa\sCOLLATE\sclause\sfor\swhich\sthe\scollation\ssequence\sis\sunavailable,\sdo\snot\sassume\sthat\sthat\sindex\suses\sBINARY\sinstead.\sFix\sfor\s[0fc59f908b].
-D 2013-05-15T15:16:50.069
+C Add\smain.c\sto\sthe\slist\sof\sfiles\scompiled\swith\sSQLITE_TEST\sdefined\swhen\sbuilding\stestfixture.
+D 2013-05-15T16:16:25.168
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ce81671efd6223d19d4c8c6b88ac2c4134427111
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 3f820e18c43504b25da40ff4b4cdb66dc4c4907e
-F main.mk 1b25be82452366abc27cc9ab2acf3244a773d5a1
+F main.mk a8ebdf910e2cc10db1f9f54ec316f637458e8001
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -1063,7 +1063,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8f9bd8e7a88eb11fb17d29954fa4b8c2840a5019
-R c30a5ff0c8f241909590b400195b0165
+P 6dae62c4e505a9a1a22c2771ef3e1921407c4748
+R 487fc7dc27dc4b82b7020b1b301782dd
 U dan
-Z 12265815702aee04d3178d81300c6ea1
+Z e9d416a6022ae3cc41d820704187cebf
