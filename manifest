@@ -1,7 +1,7 @@
-C Several\sreleasetest.tcl\srelated\sfixes\sto\stest\scases.\sNo\scode\schanges.
-D 2013-05-16T14:28:47.757
+C Fix\sa\stypo\sin\sMakefile.in\spreventing\scompilation\swith\sthe\s--disable-amalgamation\soption.
+D 2013-05-16T18:33:06.283
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 101fc5d712bfa348313987e5728ead013dc82fba
+F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 5dc042f51187414d5886ac6d8308630d484690c4
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6d45a79fb18dcd305cc41c525060e42f2402bd77
-R 82c7f4cd71022608e12e343ceb6622ec
+P e97d744ba1138e6c4c1fc657c32f4391ea7479f1
+R 50deb538a17752afed2038603eb4d28f
 U dan
-Z ed7c1f28e4d03463452da6c1e6bfe3f8
+Z 127b9278bfe282e5fc9b0b2506ef38b4
