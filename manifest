@@ -1,5 +1,5 @@
-C Treat\sidentifiers\sin\sthe\sHAVING\sclause\sthe\ssame\sas\sin\sthe\sWHERE\sclause.\nOnly\sconsider\sAS\snames\sfrom\sthe\sresult\sset\sto\smatch\sif\sthere\sare\sno\sother\nmatches.\s\sContinuation\sof\sthe\sfix\sfor\s[2500cdb9be05].\s\sThis\scheck-in\nfixes\sa\sbug\sfound\sby\s[http://www.sqlite.org/sqllogictest/\s|\sSqlLogicTest]\nduring\srelease\stesting\sfor\sversion\s3.7.17.
-D 2013-05-16T01:02:45.632
+C In\ssqlite3_close_v2(),\sdo\snot\sattempt\sto\sroll\sback\sa\stransaction\sif\sthere\sexist\sactive\sstatement\sobjects.\sAny\sopen\stransaction\swill\sbe\srolled\sback\swhen\sthe\slast\sof\sthese\sstatement\sobjects\sis\sfinalized.
+D 2013-05-16T11:57:28.062
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 101fc5d712bfa348313987e5728ead013dc82fba
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,7 +160,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c ccbac976228cd21209ede2bdc82bbf22b0ddf197
+F src/main.c c6419ef57392b1aa0cf6ed9c80dfc06b153fe299
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -201,7 +201,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
-F src/test1.c ab9dd4fc486a2542f57a2ca17d74fc7f28dfd05a
+F src/test1.c 045d45a4f7eeb5d963f8fc150339f1bad279011a
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -338,6 +338,7 @@ F test/capi3d.test 17b57ca28be3e37e14c2ba8f787d292d84b724a1
 F test/capi3e.test f7408dda65c92b9056199fdc180f893015f83dde
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 2eb93611139a7dfaed3be80067c7dc5ceb5fb287
+F test/close.test e37610d60e9c9b9979a981f3f50071d7dff28616
 F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
@@ -1064,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7e76889d675e4c646158f7f9188d25f155c18876
-R 734d69ab143a2741580e8434cd6321b1
-U drh
-Z 6441f17ff50e2e08c247bf534d4dc934
+P 9ffff3d05226bbd01a0745dd0a511776358253c0
+R 1a17d95315a3a4d605dc90092cbaec4e
+U dan
+Z 6e4c531756ef5b922f59a9b9e491858b
