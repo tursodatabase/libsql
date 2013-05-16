@@ -580,6 +580,7 @@ do_test io-6.1 {
   execsql {
     PRAGMA mmap_size = 0;
     PRAGMA page_size = 1024;
+    PRAGMA cache_size = 2000;
     CREATE TABLE t1(x);
     CREATE TABLE t2(x);
     CREATE TABLE t3(x);
@@ -615,6 +616,7 @@ foreach {tn sql} {
   db_restore
   sqlite3 db test.db -vfs devsym
   execsql {
+    PRAGMA cache_size = 2000;
     PRAGMA mmap_size = 0;
     SELECT x FROM t3 ORDER BY rowid;
     SELECT x FROM t3 ORDER BY x;

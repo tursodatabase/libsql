@@ -1,5 +1,5 @@
-C Fix\scompilation\swith\sSQLITE_OMIT_WAL\son\sWin32.
-D 2013-05-16T12:41:49.183
+C Several\sreleasetest.tcl\srelated\sfixes\sto\stest\scases.\sNo\scode\schanges.
+D 2013-05-16T14:28:47.757
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 101fc5d712bfa348313987e5728ead013dc82fba
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -327,7 +327,7 @@ F test/boundary3.tcl 8901d6a503d0bf64251dd81cc74e5ad3add4b119
 F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
-F test/btreefault.test 06899a377f31a8c1a3048ec69831522d4e5c6045
+F test/btreefault.test f52c593513bda80a506c848325c73c840590884d
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/capi2.test e8b18cc61090b6e5e388f54d6b125d711d1b265a
@@ -572,7 +572,7 @@ F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
 F test/intpkey.test 7af30f6ae852d8d1c2b70e4bf1551946742e92d8
-F test/io.test 0147ed5fdbce3286d6128f5f7e3b76ee8352d652
+F test/io.test 2b5b585964bd59008cc74b03011bebac67191f6b
 F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
 F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -649,7 +649,7 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/mmap1.test 8696aa1b0bd88961c2f16af2a3f7a69d701cea50
+F test/mmap1.test 25db81f0143dc94ac2e39dec1d1cfacc61cbb58d
 F test/mmap2.test a5ba639f90b5fc487400a49e158e14e465943e98
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d11e76072a17fe833b87595d9d79f2c4b0b09cb3
-R 3da03a8d3e4a56c326130da7065a196f
-U mistachkin
-Z 80f7b643846aae133072aa5f02717db7
+P 6d45a79fb18dcd305cc41c525060e42f2402bd77
+R 82c7f4cd71022608e12e343ceb6622ec
+U dan
+Z ed7c1f28e4d03463452da6c1e6bfe3f8

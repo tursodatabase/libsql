@@ -18,6 +18,14 @@ source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 set testprefix btreefault
 
+# This test will not work with an in-memory journal, as the database will
+# become corrupt if an error is injected into a transaction after it starts
+# writing data out to the db file.
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 do_test 1-pre1 {
   execsql {
     PRAGMA auto_vacuum = incremental;
