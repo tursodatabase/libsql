@@ -1,5 +1,5 @@
-C Apply\scompilation\sfix\sfrom\s[a58af81483]\sto\sthe\sother\smakefiles\sas\swell.
-D 2013-05-15T20:35:13.618
+C Treat\sidentifiers\sin\sthe\sHAVING\sclause\sthe\ssame\sas\sin\sthe\sWHERE\sclause.\nOnly\sconsider\sAS\snames\sfrom\sthe\sresult\sset\sto\smatch\sif\sthere\sare\sno\sother\nmatches.\s\sContinuation\sof\sthe\sfix\sfor\s[2500cdb9be05].\s\sThis\scheck-in\nfixes\sa\sbug\sfound\sby\s[http://www.sqlite.org/sqllogictest/\s|\sSqlLogicTest]\nduring\srelease\stesting\sfor\sversion\s3.7.17.
+D 2013-05-16T01:02:45.632
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 101fc5d712bfa348313987e5728ead013dc82fba
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/pragma.c 8779308bc1ea1901c4bc94dfe9a83d436f73f52c
 F src/prepare.c 743e484233c51109666d402f470523553b41797c
 F src/printf.c 4a9f882f1c1787a8b494a2987765acf9d97ac21f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 83cc2d942ee216bc56956c6e6fadb691c1727fa1
+F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c a4641882279becc200f2680f55f3e89d4e7c7f78
 F src/shell.c 2109d54f67c815a100abd7dc6a6e25eddb3b97eb
@@ -1064,7 +1064,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 00231fb0127960d700de3549e34e82f8ec1b5819
-R 04fee50c5604612c3f01940384e4b851
-U mistachkin
-Z 5365a8b6e125dec6044a55dc87f2dc60
+P 7e76889d675e4c646158f7f9188d25f155c18876
+R 734d69ab143a2741580e8434cd6321b1
+U drh
+Z 6441f17ff50e2e08c247bf534d4dc934
