@@ -613,6 +613,11 @@ foreach {tn sql} {
       COMMIT;
   }
 } {
+
+  # These tests don't work with memsubsys1, as it causes the effective page
+  # cache size to become too small to hold the entire db in memory.
+  if {[permutation] == "memsubsys1"} continue
+
   db_restore
   sqlite3 db test.db -vfs devsym
   execsql {

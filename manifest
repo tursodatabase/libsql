@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sMakefile.in\spreventing\scompilation\swith\sthe\s--disable-amalgamation\soption.
-D 2013-05-16T18:33:06.283
+C Fix\sminor\stest\sscript\sissues\scausing\sreleasetest.tcl\sto\sfail.
+D 2013-05-16T19:15:07.754
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -572,7 +572,7 @@ F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
 F test/intpkey.test 7af30f6ae852d8d1c2b70e4bf1551946742e92d8
-F test/io.test 2b5b585964bd59008cc74b03011bebac67191f6b
+F test/io.test ecf44cc81664ad54d8253e2d88fc705b6554abe3
 F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
 F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -679,7 +679,7 @@ F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/permutations.test 3d0bab9c49c1ec08b868059e30a3e1956f2162e2
+F test/permutations.test d997a947ab8aabb15f763d50a030b3c11e8ef1b6
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1008,7 +1008,7 @@ F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5c566388f0cc318b0032ce860f4ac5548e3c265a
-F test/where8.test d9f889e62dccddb9d790b0c84dfc7861e03a162c
+F test/where8.test d6a283eb7348a8967d44e2a753f117ab0d21d4f3
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test 1b4387c6eacc9a32b28b4d837c27f857c785d0d8
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e97d744ba1138e6c4c1fc657c32f4391ea7479f1
-R 50deb538a17752afed2038603eb4d28f
+P 8ffbefe7d72d25984440c0e7c92a5e9c472ed55e
+R f07a18b2e3f935e06c563a062973d3d2
 U dan
-Z 127b9278bfe282e5fc9b0b2506ef38b4
+Z d6b0c0831a8f288a82efe390e3410800
