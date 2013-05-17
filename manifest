@@ -1,5 +1,5 @@
-C Use\ssum()\sinstead\sof\stotal()\sin\smptest/multiwrite01.test\stoo.
-D 2013-05-17T12:52:58.754
+C In\stest\sfile\stest_syscall.c,\sinclude\ssqliteInt.h\sbefore\sany\stcl\sor\ssystem\sinclude\sfiles.\sThis\sensures\sthat\sthe\smagical\sdefines\sin\ssqliteInt.h\sreally\sdo\senable\slarge\sfile\ssupport\s(and\sset\sthings\sup\sso\sthat\ssizeof(off_t)==8).
+D 2013-05-17T16:41:15.022
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -240,7 +240,7 @@ F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_sqllog.c c1c1bbedbcaf82b93d83e4f9dd990e62476a680e
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
-F src/test_syscall.c 437abc86e3b37facc8531b7d14d42fddb50f3677
+F src/test_syscall.c 16dbe79fb320fadb5acd7a0a59f49e52ab2d2091
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c 8e6087a8b3dcc260282074b0efba14b76311120c
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8ba0fc98115f05ebed7ea945e156379c39e92de2
-R 92b248c7aa9ecdef59f7e0a2b216383e
-U drh
-Z 28349bb454b1f1c8a472ddc5bb648da2
+P d0c2288c723e276957318be433e25746811b0ff7
+R 361f5eb4a85bf797e990bc5f74745426
+U dan
+Z 9b90b51d191c4178efa1fb2a9e404354
