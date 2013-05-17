@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sSQLITE_TRACE_SIZE_LIMIT\sthat\swas\sintroduced\sby\s\ncheck-in\s[1a1cf5aa86734c8].\s\sThat\scheck-in\swas\sto\sremove\sharmless\ncompiler\swarnings.\s\sSo\sonce\sagain,\swe\shave\sintroduced\sa\sreal\sbug\ninto\sSQLite\sby\sattempting\sto\seliminate\sa\sharmless\scompiler\swarning.
-D 2013-05-17T17:15:34.420
+C Remove\sa\sstray\stab\scharacter\sfrom\sthe\stransitive_closure\sextension\ssource\scode.
+D 2013-05-17T20:16:41.146
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -84,7 +84,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c eb9ae1d79046bd7871aa97ee6da51eb770134b5a
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
-F ext/misc/closure.c 7e9197d0c94068f5c2b5333e05315b54b667046e
+F ext/misc/closure.c 40788c54c59190a1f52f6492a260d8894a246fe9
 F ext/misc/fuzzer.c 51bd96960b6b077d41d6f3cedefbcb57f29efaa2
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0f355bb17f256c6322e63a95835a67949aa48fb3
-R d60d784e4862c04e8dc1c33d4450912a
+P cec2bcb45aa3f0438e19381ac863f0f876a1d1ad
+R c103e20e6479251bb5b95c9b2e375810
 U drh
-Z 3582ea3ee12dc6786887a2ab59d0e3b1
+Z 0f8fb614b2a18673a3453f3a9a151a98

@@ -295,7 +295,7 @@ closure_avl *closureAvlNext(closure_avl *p){
   }
   return p;
 }
-	
+
 /* Insert a new node pNew.  Return NULL on success.  If the key is not
 ** unique, then do not perform the insert but instead leave pNew unchanged
 ** and return a pointer to an existing node with the same key.
