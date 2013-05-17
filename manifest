@@ -1,5 +1,5 @@
-C In\stest\sfile\stest_syscall.c,\sinclude\ssqliteInt.h\sbefore\sany\stcl\sor\ssystem\sinclude\sfiles.\sThis\sensures\sthat\sthe\smagical\sdefines\sin\ssqliteInt.h\sreally\sdo\senable\slarge\sfile\ssupport\s(and\sset\sthings\sup\sso\sthat\ssizeof(off_t)==8).
-D 2013-05-17T16:41:15.022
+C Fix\sa\sbug\sin\sSQLITE_TRACE_SIZE_LIMIT\sthat\swas\sintroduced\sby\s\ncheck-in\s[1a1cf5aa86734c8].\s\sThat\scheck-in\swas\sto\sremove\sharmless\ncompiler\swarnings.\s\sSo\sonce\sagain,\swe\shave\sintroduced\sa\sreal\sbug\ninto\sSQLite\sby\sattempting\sto\seliminate\sa\sharmless\scompiler\swarning.
+D 2013-05-17T17:15:34.420
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -260,7 +260,7 @@ F src/vdbeaux.c ecb43014bcd3019e5aa2b5561e5c3a447f007a08
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 4fad64071ae120c25f39dcac572d716b9cadeb7f
-F src/vdbetrace.c 3ad1b4e92b60c082a02ac563da4a2735cc7d297c
+F src/vdbetrace.c 18cc59cb475e6115129bfde224367d13a35a7d13
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d0c2288c723e276957318be433e25746811b0ff7
-R 361f5eb4a85bf797e990bc5f74745426
-U dan
-Z 9b90b51d191c4178efa1fb2a9e404354
+P 0f355bb17f256c6322e63a95835a67949aa48fb3
+R d60d784e4862c04e8dc1c33d4450912a
+U drh
+Z 3582ea3ee12dc6786887a2ab59d0e3b1
