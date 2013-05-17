@@ -1,5 +1,5 @@
-C In\sos_unix.c\sand\sos_win.c,\sinitialize\sthe\sdefault\smmap-limit\sof\sa\snew\sfile\sdescriptor\sto\sthe\scurrent\sglobal\sdefault\smmap-limit,\snot\sthe\scurrent\sglobal\smaximum\sallowable\smmap-limit.
-D 2013-05-17T12:10:52.534
+C Add\sextra\s"PRAGMA\smmap_size\s=\sN"\sstatements\sto\smmap1.test\sand\smmap2.test.
+D 2013-05-17T12:25:00.361
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -649,8 +649,8 @@ F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
-F test/mmap1.test 25db81f0143dc94ac2e39dec1d1cfacc61cbb58d
-F test/mmap2.test a5ba639f90b5fc487400a49e158e14e465943e98
+F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
+F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d8ded9d8a1052885ce223c70efa55c0dd8b9920e
-R b11aaacff51f3c4bebdd3fe6c7747a75
+P 1def4ea3a02afc19648f4cd928b247f8fa55da80
+R 9186e4afcba82c9a5a63395e1a950605
 U dan
-Z 48b7044046d7573f4e8053f5d87e72a0
+Z d47dd7db6d728eaf41bc3f1e00c15358
