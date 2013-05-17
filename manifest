@@ -1,5 +1,5 @@
-C Use\ssum()\sinstead\sof\stotal()\sin\sthe\smptest/crash01.test\sscript.
-D 2013-05-17T12:51:49.121
+C Use\ssum()\sinstead\sof\stotal()\sin\smptest/multiwrite01.test\stoo.
+D 2013-05-17T12:52:58.754
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -126,7 +126,7 @@ F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
 F mptest/crash01.test cce8e306d8596d5a2e497e27112dae1f6e5e3538
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
 F mptest/mptest.c 499a74af4be293b7c1c7c3d40f332b67227dd739
-F mptest/multiwrite01.test 81fbc17657964889b60750bd7bbb1deffe8f4d42
+F mptest/multiwrite01.test 499ad0310da8dff8e8f98d2e272fc2a8aa741b2e
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cec0a06c17435d5a35e76b52d6901ecda98f9916
-R 0683db5c97262b679e7f59efc60cea46
+P 8ba0fc98115f05ebed7ea945e156379c39e92de2
+R 92b248c7aa9ecdef59f7e0a2b216383e
 U drh
-Z 0cfc1f2df6bbe64105cae7d115f91a7e
+Z 28349bb454b1f1c8a472ddc5bb648da2
