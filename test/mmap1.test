@@ -55,6 +55,9 @@ foreach {t mmap_size nRead c2init} {
 } {
 
   do_multiclient_test tn {
+    sql1 {PRAGMA cache_size=2000}
+    sql2 {PRAGMA cache_size=2000}
+
     sql1 {PRAGMA page_size=1024}
     sql1 $mmap_size
     sql2 $c2init
@@ -129,24 +132,26 @@ do_execsql_test 2.2 {
   SELECT count(*) FROM t1;
 } {1 32}
 
-do_test 2.3 {
-  sqlite3 db2 test.db
-  db2 func rblob rblob
-  db2 eval { 
-    DELETE FROM t1 WHERE (rowid%4);
+if {[permutation] != "inmemory_journal"} {
+  do_test 2.3 {
+    sqlite3 db2 test.db
+    db2 func rblob rblob
+    db2 eval { 
+      DELETE FROM t1 WHERE (rowid%4);
+        PRAGMA wal_checkpoint;
+    }
+    db2 eval { 
+      INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    16
+      SELECT count(*) FROM t1;
+    }
+  } {16}
+
+  do_execsql_test 2.4 {
     PRAGMA wal_checkpoint;
-  }
-  db2 eval { 
-    INSERT INTO t1 SELECT rblob(500), rblob(500) FROM t1; --    16
-    SELECT count(*) FROM t1;
-  }
-} {16}
+  } {0 24 24}
+  db2 close
+}
 
-do_execsql_test 2.4 {
-  PRAGMA wal_checkpoint;
-} {0 24 24}
-
-db2 close
 reset_db
 db func rblob rblob
 do_execsql_test 3.1 {

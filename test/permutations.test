@@ -246,10 +246,14 @@ lappend ::testsuitelist xxx
 
 # Run some tests using pre-allocated page and scratch blocks.
 #
+# mmap1.test is excluded because a good number of its tests depend on 
+# the page-cache being larger than the database. But this permutation
+# causes the effective limit on the page-cache to be just 24 pages.
+#
 test_suite "memsubsys1" -description {
   Tests using pre-allocated page and scratch blocks
 } -files [
-  test_set $::allquicktests -exclude ioerr5.test malloc5.test
+  test_set $::allquicktests -exclude ioerr5.test malloc5.test mmap1.test
 ] -initialize {
   catch {db close}
   sqlite3_shutdown
