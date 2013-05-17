@@ -1,5 +1,5 @@
-C Add\sextra\s"PRAGMA\smmap_size\s=\sN"\sstatements\sto\smmap1.test\sand\smmap2.test.
-D 2013-05-17T12:25:00.361
+C Use\ssum()\sinstead\sof\stotal()\sin\sthe\smptest/crash01.test\sscript.
+D 2013-05-17T12:51:49.121
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,7 +123,7 @@ F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
-F mptest/crash01.test a5f31998ed48de8267d6620e8af107ec148e5f12
+F mptest/crash01.test cce8e306d8596d5a2e497e27112dae1f6e5e3538
 F mptest/crash02.subtest f4ef05adcd15d60e5d2bd654204f2c008b519df8
 F mptest/mptest.c 499a74af4be293b7c1c7c3d40f332b67227dd739
 F mptest/multiwrite01.test 81fbc17657964889b60750bd7bbb1deffe8f4d42
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1def4ea3a02afc19648f4cd928b247f8fa55da80
-R 9186e4afcba82c9a5a63395e1a950605
-U dan
-Z d47dd7db6d728eaf41bc3f1e00c15358
+P cec0a06c17435d5a35e76b52d6901ecda98f9916
+R 0683db5c97262b679e7f59efc60cea46
+U drh
+Z 0cfc1f2df6bbe64105cae7d115f91a7e
