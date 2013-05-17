@@ -1,5 +1,5 @@
-C Fix\sminor\stest\sscript\sissues\scausing\sreleasetest.tcl\sto\sfail.
-D 2013-05-16T19:15:07.754
+C In\sos_unix.c\sand\sos_win.c,\sinitialize\sthe\sdefault\smmap-limit\sof\sa\snew\sfile\sdescriptor\sto\sthe\scurrent\sglobal\sdefault\smmap-limit,\snot\sthe\scurrent\sglobal\smaximum\sallowable\smmap-limit.
+D 2013-05-17T12:10:52.534
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,8 +177,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 5e0b0ca7594f6707a3ed155528a3ba3318c95e15
-F src/os_win.c 2076d4d1f0f2f06c622b6617b4959910a5dc5b4e
+F src/os_unix.c 75ce49309b8352c7173ce1ef6fc9e8d1f6daab10
+F src/os_win.c 32b8adca3e989565713ff74098b3cb2cb25d6e59
 F src/pager.c 49e23f9898113ddfe90942bdf1c1ef57955d0921
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 9708365594eea519cdc8504dee425c0a41c79502
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8ffbefe7d72d25984440c0e7c92a5e9c472ed55e
-R f07a18b2e3f935e06c563a062973d3d2
+P d8ded9d8a1052885ce223c70efa55c0dd8b9920e
+R b11aaacff51f3c4bebdd3fe6c7747a75
 U dan
-Z d6b0c0831a8f288a82efe390e3410800
+Z 48b7044046d7573f4e8053f5d87e72a0

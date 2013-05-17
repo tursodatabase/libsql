@@ -4246,7 +4246,7 @@ static int winOpen(
   pFile->pMapRegion = 0;
   pFile->mmapSize = 0;
   pFile->mmapSizeActual = 0;
-  pFile->mmapSizeMax = sqlite3GlobalConfig.mxMmap;
+  pFile->mmapSizeMax = sqlite3GlobalConfig.szMmap;
 #endif
 
   OpenCounter(+1);
