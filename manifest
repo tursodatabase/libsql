@@ -1,5 +1,5 @@
-C Remove\sa\sstray\stab\scharacter\sfrom\sthe\stransitive_closure\sextension\ssource\scode.
-D 2013-05-17T20:16:41.146
+C Version\s3.7.17
+D 2013-05-20T00:56:22.515
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1065,7 +1065,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cec2bcb45aa3f0438e19381ac863f0f876a1d1ad
+P 7a9aa21c3506a10ab9465540e81071b39bca447d
 R c103e20e6479251bb5b95c9b2e375810
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.7.17 *
 U drh
-Z 0f8fb614b2a18673a3453f3a9a151a98
+Z 416a23d38a1b2c089b32c7a6efcbc3bc
