@@ -2937,8 +2937,6 @@ static int winDeviceCharacteristics(sqlite3_file *id){
          ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
 }
 
-#ifndef SQLITE_OMIT_WAL
-
 /* 
 ** Windows will only let you create file view mappings
 ** on allocation size granularity boundaries.
@@ -2946,6 +2944,8 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 ** to get the granularity size.
 */
 SYSTEM_INFO winSysInfo;
+
+#ifndef SQLITE_OMIT_WAL
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
@@ -4246,7 +4246,7 @@ static int winOpen(
   pFile->pMapRegion = 0;
   pFile->mmapSize = 0;
   pFile->mmapSizeActual = 0;
-  pFile->mmapSizeMax = sqlite3GlobalConfig.mxMmap;
+  pFile->mmapSizeMax = sqlite3GlobalConfig.szMmap;
 #endif
 
   OpenCounter(+1);

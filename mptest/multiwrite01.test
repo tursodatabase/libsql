@@ -22,7 +22,7 @@
   --match 1500.0
   --sleep 2
   UPDATE t1 SET b='x'||a||'y';
-  SELECT total(length(b)) FROM t1;
+  SELECT sum(length(b)) FROM t1;
   --match 247
   SELECT a FROM t1 WHERE b='x17y';
   --match 17
@@ -54,7 +54,7 @@
   --match 1500.0
   --sleep 2
   UPDATE t2 SET b='x'||a||'y';
-  SELECT total(length(b)) FROM t2;
+  SELECT sum(length(b)) FROM t2;
   --match 247
   SELECT a FROM t2 WHERE b='x17y';
   --match 17
@@ -85,7 +85,7 @@
   --match 1500.0
   --sleep 2
   UPDATE t3 SET b='x'||a||'y';
-  SELECT total(length(b)) FROM t3;
+  SELECT sum(length(b)) FROM t3;
   --match 247
   SELECT a FROM t3 WHERE b='x17y';
   --match 17
@@ -116,7 +116,7 @@
   --match 1500.0
   --sleep 2
   UPDATE t4 SET b='x'||a||'y';
-  SELECT total(length(b)) FROM t4;
+  SELECT sum(length(b)) FROM t4;
   --match 247
   SELECT a FROM t4 WHERE b='x17y';
   --match 17
@@ -147,7 +147,7 @@
   --match 1500.0
   --sleep 2
   UPDATE t5 SET b='x'||a||'y';
-  SELECT total(length(b)) FROM t5;
+  SELECT sum(length(b)) FROM t5;
   --match 247
   SELECT a FROM t5 WHERE b='x17y';
   --match 17
@@ -159,15 +159,15 @@
 --end
 
 --wait all
-SELECT count(*), total(length(b)) FROM t1;
+SELECT count(*), sum(length(b)) FROM t1;
 --match 64 247
-SELECT count(*), total(length(b)) FROM t2;
+SELECT count(*), sum(length(b)) FROM t2;
 --match 64 247
-SELECT count(*), total(length(b)) FROM t3;
+SELECT count(*), sum(length(b)) FROM t3;
 --match 64 247
-SELECT count(*), total(length(b)) FROM t4;
+SELECT count(*), sum(length(b)) FROM t4;
 --match 64 247
-SELECT count(*), total(length(b)) FROM t5;
+SELECT count(*), sum(length(b)) FROM t5;
 --match 64 247
 
 --task 1

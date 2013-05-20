@@ -164,6 +164,8 @@ SQLITE_EXTENSION_INIT1
 #include <stdio.h>
 #include <ctype.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** Forward declaration of objects used by this implementation
 */
@@ -1458,6 +1460,8 @@ static sqlite3_module amatchModule = {
   0                       /* xRollbackTo */
 };
 
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
 /*
 ** Register the amatch virtual table
 */
@@ -1472,6 +1476,8 @@ int sqlite3_amatch_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;  /* Not used */
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "approximate_match", &amatchModule, 0);
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
   return rc;
 }

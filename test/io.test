@@ -580,6 +580,7 @@ do_test io-6.1 {
   execsql {
     PRAGMA mmap_size = 0;
     PRAGMA page_size = 1024;
+    PRAGMA cache_size = 2000;
     CREATE TABLE t1(x);
     CREATE TABLE t2(x);
     CREATE TABLE t3(x);
@@ -612,9 +613,15 @@ foreach {tn sql} {
       COMMIT;
   }
 } {
+
+  # These tests don't work with memsubsys1, as it causes the effective page
+  # cache size to become too small to hold the entire db in memory.
+  if {[permutation] == "memsubsys1"} continue
+
   db_restore
   sqlite3 db test.db -vfs devsym
   execsql {
+    PRAGMA cache_size = 2000;
     PRAGMA mmap_size = 0;
     SELECT x FROM t3 ORDER BY rowid;
     SELECT x FROM t3 ORDER BY x;

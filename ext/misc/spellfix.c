@@ -29,6 +29,8 @@ SQLITE_EXTENSION_INIT1
 # include <ctype.h>
 #endif
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** Character classes for ASCII characters:
 **
@@ -2821,6 +2823,8 @@ static int spellfix1Register(sqlite3 *db){
   return rc;
 }
 
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
 /*
 ** Extension load function.
 */
@@ -2833,5 +2837,8 @@ int sqlite3_spellfix_init(
   const sqlite3_api_routines *pApi
 ){
   SQLITE_EXTENSION_INIT2(pApi);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   return spellfix1Register(db);
+#endif
+  return SQLITE_OK;
 }

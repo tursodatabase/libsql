@@ -148,6 +148,8 @@ SQLITE_EXTENSION_INIT1
 #include <stdio.h>
 #include <ctype.h>
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** Forward declaration of objects used by this implementation
 */
@@ -293,7 +295,7 @@ closure_avl *closureAvlNext(closure_avl *p){
   }
   return p;
 }
-	
+
 /* Insert a new node pNew.  Return NULL on success.  If the key is not
 ** unique, then do not perform the insert but instead leave pNew unchanged
 ** and return a pointer to an existing node with the same key.
@@ -923,6 +925,8 @@ static sqlite3_module closureModule = {
   0                       /* xRollbackTo */
 };
 
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
 /*
 ** Register the closure virtual table
 */
@@ -937,6 +941,8 @@ int sqlite3_closure_init(
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
   (void)pzErrMsg;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "transitive_closure", &closureModule, 0);
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
   return rc;
 }
