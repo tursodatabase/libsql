@@ -45,6 +45,7 @@ foreach syscall {mmap mremap} {
 
   for {set i 1} {$i < 20} {incr i} {
     reset_db
+    execsql { PRAGMA mmap_size = 8000000 }
 
     test_syscall fault $i 1
     test_syscall errno $syscall ENOMEM

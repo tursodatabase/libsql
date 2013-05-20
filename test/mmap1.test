@@ -153,6 +153,7 @@ if {[permutation] != "inmemory_journal"} {
 }
 
 reset_db
+execsql { PRAGMA mmap_size = 67108864; }
 db func rblob rblob
 do_execsql_test 3.1 {
   PRAGMA auto_vacuum = 1;
@@ -181,6 +182,7 @@ do_test 3.2 {
 # to rows using the incrblob API.
 #
 reset_db
+execsql { PRAGMA mmap_size = 67108864; }
 set aaa [string repeat a 400]
 set bbb [string repeat b 400]
 set ccc [string repeat c 400]
@@ -230,6 +232,7 @@ do_execsql_test 4.5 { COMMIT }
 # new table or index.
 #
 reset_db
+execsql { PRAGMA mmap_size = 67108864; }
 do_execsql_test 5.1 {
   PRAGMA auto_vacuum = 2;
   PRAGMA page_size = 1024;

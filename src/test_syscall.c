@@ -69,13 +69,13 @@
 **     the xNextSystemCall() VFS method.
 */
 
+#include "sqliteInt.h"
 #include "sqlite3.h"
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-#include "sqliteInt.h"
 #if SQLITE_OS_UNIX
 
 /* From main.c */
