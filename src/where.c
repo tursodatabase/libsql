@@ -56,7 +56,8 @@ typedef struct WhereVtabPlan WhereVtabPlan;
 struct WhereLoop {
   Bitmask prereq;       /* Bitmask of other loops that must run first */
   Bitmask maskSelf;     /* Bitmask identifying table iTab */
-  u16 iTab;             /* Index of the table coded by this loop */
+  u8 iTab;              /* Position in FROM clause of table coded by this loop */
+  u8 iSortIdx;          /* Sorting index number.  0==None */
   u16 nTerm;            /* Number of entries in aTerm[] */
   u32 wsFlags;          /* WHERE_* flags describing the plan */
   double rSetup;        /* One-time setup cost (ex: create transient index) */
@@ -1987,6 +1988,7 @@ static int termCanDriveIndex(
   if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
   if( (pTerm->eOperator & WO_EQ)==0 ) return 0;
   if( (pTerm->prereqRight & notReady)!=0 ) return 0;
+  if( pTerm->u.leftColumn<0 ) return 0;
   aff = pSrc->pTab->aCol[pTerm->u.leftColumn].affinity;
   if( !sqlite3IndexAffinityOk(pTerm->pExpr, aff) ) return 0;
   return 1;
@@ -5168,6 +5170,21 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** and no insert will occur if an existing WhereLoop is faster and has
 ** fewer dependencies than the template.  Otherwise a new WhereLoop is
 ** added based no the template.
+**
+** If pBuilder->pBest is not NULL then we only care about the very
+** best template and that template should be stored in pBuilder->pBest.
+** If pBuilder->pBest is NULL then a list of the best templates are stored
+** in pBuilder->pWInfo->pLoops.
+**
+** When accumulating multiple loops (when pBuilder->pBest is NULL) we
+** still might overwrite similar loops with the new template if the
+** template is better.  Loops may be overwritten if the following 
+** conditions are met:
+**
+**    (1)  They have the same iTab.
+**    (2)  They have the same iSortIdx.
+**    (3)  The template has same or fewer dependencies than the current loop
+**    (4)  The template has the same or lower cost than the current loop
 */
 static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereLoop **ppPrev, *p, *pNext = 0, *pToFree = 0;
@@ -5175,6 +5192,11 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   sqlite3 *db = pBuilder->db;
   WhereInfo *pWInfo = pBuilder->pWInfo;
 
+  /* If pBuilder->pBest is defined, then only keep track of the single
+  ** best WhereLoop.  pBuilder->pBest->maskSelf==0 indicates that no
+  ** prior WhereLoops have been evaluated and that the current pTemplate
+  ** is therefore the first and hence the best and should be retained.
+  */
   if( (p = pBuilder->pBest)!=0 ){
     if( p->maskSelf!=0 ){
       if( p->rRun+p->rSetup < pTemplate->rRun+pTemplate->rSetup ){
@@ -5195,7 +5217,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   ** priority over pTemplate.
   */
   for(ppPrev=&pWInfo->pLoops, p=*ppPrev; p; ppPrev=&p->pNextLoop, p=*ppPrev){
-    if( p->iTab!=pTemplate->iTab ) continue;
+    if( p->iTab!=pTemplate->iTab || p->iSortIdx!=pTemplate->iSortIdx ) continue;
     if( (p->prereq & pTemplate->prereq)==p->prereq
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
@@ -5238,7 +5260,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     memcpy(p->aTerm, pTemplate->aTerm, p->nTerm*sizeof(p->aTerm[0]));
   }
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-    if( p->u.btree.pIndex && p->u.btree.pIndex->tnum==0 ){
+    if( p->u.btree.pIndex && p->u.btree.pIndex && p->u.btree.pIndex->tnum==0 ){
       p->u.btree.pIndex = 0;
     }
   }else{
@@ -5343,6 +5365,36 @@ static int whereLoopAddBtreeIndex(
 }
 
 /*
+** Return True if it is possible that pIndex might be useful in
+** implementing the ORDER BY clause in pBuilder.
+**
+** Return False if pBuilder does not contain an ORDER BY clause or
+** if there is no way for pIndex to be useful in implementing that
+** ORDER BY clause.
+*/
+static int indexMightHelpWithOrderBy(
+  WhereLoopBuilder *pBuilder,
+  Index *pIndex,
+  int iCursor
+){
+  ExprList *pOB;
+  int iCol;
+  int ii;
+
+  if( (pOB = pBuilder->pOrderBy)==0 ) return 0;
+  iCol = pIndex->aiColumn[0];
+  for(ii=0; ii<pOB->nExpr; ii++){
+    Expr *pExpr = pOB->a[ii].pExpr;
+    if( pExpr->op!=TK_COLUMN ) return 0;
+    if( pExpr->iTable==iCursor ){
+      if( pExpr->iColumn==iCol ) return 1;
+      return 0;
+    }
+  }
+  return 0;
+}
+
+/*
 ** Add all WhereLoop objects a single table of the join were the table
 ** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
@@ -5358,9 +5410,11 @@ static int whereLoopAddBtree(
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
   WhereLoop *pNew;            /* Template WhereLoop object */
   int rc = SQLITE_OK;         /* Return code */
+  int iSortIdx = 0;           /* Index number */
+  int b;                      /* A boolean value */
   double rSize;               /* number of rows in the table */
   double rLogSize;            /* Logarithm of the number of rows in the table */
-
+  
   pNew = pBuilder->pNew;
   pSrc = pBuilder->pTabList->a + pNew->iTab;
   assert( !IsVirtual(pSrc->pTab) );
@@ -5419,26 +5473,25 @@ static int whereLoopAddBtree(
     }
   }
 
-  /* Insert a full table scan */
-  pNew->u.btree.nEq = 0;
-  pNew->nTerm = 0;
-  pNew->rSetup = (double)0;
-  pNew->prereq = mExtra;
-  pNew->u.btree.pIndex = 0;
-  pNew->wsFlags = 0;
-  pNew->nOut = rSize;
-  pNew->rRun = rSize + rLogSize;
-  /* TBD: Reduce nOut using constraints */
-  rc = whereLoopInsert(pBuilder, pNew);
-
   /* Loop over all indices
   */
-  for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext){
+  for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
     pNew->u.btree.nEq = 0;
     pNew->nTerm = 0;
+    pNew->iSortIdx = 0;
+    pNew->rSetup = (double)0;
+    pNew->prereq = mExtra;
+    pNew->u.btree.pIndex = pProbe;
+    b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
     if( pProbe->tnum<=0 ){
       /* Integer primary key index */
       pNew->wsFlags = WHERE_IPK;
+
+      /* Full table scan */
+      pNew->nOut = rSize;
+      pNew->rRun = (rSize + rLogSize)*(3+b); /* 4x penalty for a full-scan */
+      rc = whereLoopInsert(pBuilder, pNew);
+      if( rc ) break;
     }else{
       Bitmask m = pSrc->colUsed;
       int j;
@@ -5448,10 +5501,17 @@ static int whereLoopAddBtree(
           m &= ~(((Bitmask)1)<<x);
         }
       }
-      pNew->wsFlags = m==0 ? WHERE_IDX_ONLY : 0;
-    }
-    pNew->u.btree.pIndex = pProbe;
+      pNew->wsFlags = (m==0) ? WHERE_IDX_ONLY : 0;
 
+      /* Full scan via index */
+      if( m==0 || b ){
+        pNew->iSortIdx = b ? iSortIdx : 0;
+        pNew->nOut = rSize;
+        pNew->rRun = (m==0) ? (rSize + rLogSize)*(1+b) : (rSize*rLogSize);
+        rc = whereLoopInsert(pBuilder, pNew);
+        if( rc ) break;
+      }
+    }
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 1);
 
     /* If there was an INDEXED BY clause, then only that one index is
@@ -5681,6 +5741,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       pNew->rRun = rTotal;
       pNew->nOut = nRow;
       pNew->prereq = prereq;
+      memset(&pNew->u, 0, sizeof(pNew->u));
       rc = whereLoopInsert(pBuilder, pNew);
     }
   }

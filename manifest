@@ -1,5 +1,5 @@
-C Merge\sin\sall\strunk\schanges\sup\sthrough\sthe\s3.7.17\srelease.
-D 2013-05-20T15:14:42.009
+C Work\stoward\simproving\sthe\sNGQP's\sability\sto\soptimize\sout\sORDER\sBY\sclauses.
+D 2013-05-21T15:52:07.219
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F src/shell.c 2109d54f67c815a100abd7dc6a6e25eddb3b97eb
 F src/sqlite.h.in 5a5a22a9b192d81a9e5dee00274e3a0484c4afb1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h b9b6a2e97254fb50b6977ec55ad0f4e4ce0510d2
+F src/sqliteInt.h 3b89d4517d984363a96f6f7b348440e01f13ced3
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -265,7 +265,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 51d935c6593748ed004006ee0f2147a860d56e90
+F src/where.c a01d93b37fbce377326849fe810dbcd2334d40c6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9fe20292558bb9422de91e35648cb834cbf3b306 118a3b35693b134d56ebd780123b7fd6f1497668
-R b3fec2668cd66935dfd81d00e243b60d
+P 14ab6675e5eab3761256a06dad23d2b11220788a
+R fc1fe5e0f9d1ee7dd6bc32ff7b604dd6
 U drh
-Z e02385c0316003dbdd17c2ecf0ba1968
+Z 0d777b81f154f68ed82e3cd424f83c9e
