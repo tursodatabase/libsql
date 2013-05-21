@@ -1,5 +1,5 @@
-C Work\stoward\simproving\sthe\sNGQP's\sability\sto\soptimize\sout\sORDER\sBY\sclauses.
-D 2013-05-21T15:52:07.219
+C Enhanced\s"wheretrace"\soutput\sin\sthe\sNGQP\ssolver\sroutine.
+D 2013-05-21T19:23:10.944
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -265,7 +265,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c a01d93b37fbce377326849fe810dbcd2334d40c6
+F src/where.c 759c34becf7a414b4bebddd30ad65109eb4510fc
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -324,7 +324,7 @@ F test/boundary1.test 66d7f4706ccdb42d58eafdb081de07b0eb42d77b
 F test/boundary2.tcl e34ef4e930cf1083150d4d2c603e146bd3b76bcb
 F test/boundary2.test 9ae758d7dab7e882c8b6cc4a6a10278385bff8fa
 F test/boundary3.tcl 8901d6a503d0bf64251dd81cc74e5ad3add4b119
-F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
+F test/boundary3.test 04c269017471f1562da2dd6310359f16073a2a65
 F test/boundary4.tcl 0bb4b1a94f4fc5ae59b79b9a2b7a140c405e2983
 F test/boundary4.test 89e02fa66397b8a325d5eb102b5806f961f8ec4b
 F test/btreefault.test f52c593513bda80a506c848325c73c840590884d
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 14ab6675e5eab3761256a06dad23d2b11220788a
-R fc1fe5e0f9d1ee7dd6bc32ff7b604dd6
+P 67367f1e1f0c3eb6be65eea9873910aa62b49884
+R 26b15d08d00e63218ca6971b3d46c9f6
 U drh
-Z 0d777b81f154f68ed82e3cd424f83c9e
+Z 6ae4459022aa081e691ba708466a0da1

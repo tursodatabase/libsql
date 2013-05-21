@@ -28,6 +28,7 @@
 #if defined(SQLITE_DEBUG) \
     && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
 # define WHERETRACE(X)  if(sqlite3WhereTrace) sqlite3DebugPrintf X
+# define WHERETRACE_ENABLED 1
 #else
 # define WHERETRACE(X)
 #endif
@@ -56,6 +57,9 @@ typedef struct WhereVtabPlan WhereVtabPlan;
 struct WhereLoop {
   Bitmask prereq;       /* Bitmask of other loops that must run first */
   Bitmask maskSelf;     /* Bitmask identifying table iTab */
+#ifdef SQLITE_DEBUG
+  char cId;             /* Symbolic ID of this loop for debugging use */
+#endif
   u8 iTab;              /* Position in FROM clause of table coded by this loop */
   u8 iSortIdx;          /* Sorting index number.  0==None */
   u16 nTerm;            /* Number of entries in aTerm[] */
@@ -1835,7 +1839,7 @@ static double estLog(double N){
 ** SQLITE_TEST or SQLITE_DEBUG are defined, then these routines
 ** are no-ops.
 */
-#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(SQLITE_DEBUG)
+#if !defined(SQLITE_OMIT_VIRTUALTABLE) && defined(WHERETRACE_ENABLED)
 static void TRACE_IDX_INPUTS(sqlite3_index_info *p){
   int i;
   if( !sqlite3WhereTrace ) return;
@@ -5066,8 +5070,7 @@ static int nQPlan = 0;              /* Next free slow in _query_plan[] */
 
 #endif /* SQLITE_TEST */
 
-#if defined(SQLITE_DEBUG) \
-    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
+#ifdef WHERETRACE_ENABLED
 /*
 ** Print a WhereLoop object for debugging purposes
 */
@@ -5075,7 +5078,7 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
   int nb = 2*((pTabList->nSrc+15)/16);
   struct SrcList_item *pItem = pTabList->a + p->iTab;
   Table *pTab = pItem->pTab;
-  sqlite3DebugPrintf("%2d.%0*llx.%0*llx",
+  sqlite3DebugPrintf("%c %2d.%0*llx.%0*llx", p->cId,
                      p->iTab, nb, p->maskSelf, nb, p->prereq);
   sqlite3DebugPrintf(" %8s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
@@ -5102,7 +5105,7 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
     sqlite3_free(z);
   }
   sqlite3DebugPrintf(" fg %08x N %2d", p->wsFlags, p->nTerm);
-  sqlite3DebugPrintf(" cost %.4g,%.4g,%.4g\n",
+  sqlite3DebugPrintf(" cost %.2g,%.2g,%.2g\n",
                      p->prereq, p->rSetup, p->rRun, p->nOut);
 }
 #endif
@@ -5877,7 +5880,8 @@ static int wherePathSatisfiesOrderBy(
     assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
     isUnique = 1;
     if( pLoop->wsFlags & WHERE_IPK ){
-      if( (pLoop->wsFlags & WHERE_COLUMN_EQ)!=0 ) isUnique = 0;
+      if( (pLoop->wsFlags & WHERE_COLUMN_IN)!=0 ) isUnique = 0;
+      if( pLoop->u.btree.nEq!=1 ) isUnique = 0;
       pIndex = 0;
       nColumn = 1;
     }else if( pLoop->u.btree.pIndex==0 ){
@@ -5935,6 +5939,18 @@ static int wherePathSatisfiesOrderBy(
   }
   return -1;
 }
+
+#ifdef WHERETRACE_ENABLED
+/* For debugging use only: */
+static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
+  static char zName[65];
+  int i;
+  for(i=0; i<nLoop; i++){ zName[i] = pPath->aLoop[i]->cId; }
+  if( pLast ) zName[i++] = pLast->cId;
+  zName[i] = 0;
+  return zName;
+}
+#endif
 
 
 /*
@@ -6044,15 +6060,59 @@ static int wherePathSolver(WhereInfo *pWInfo){
           }
         }
         if( jj>=nTo ){
-          if( nTo>=mxChoice && rCost>=mxCost ) continue;
+          if( nTo>=mxChoice && rCost>=mxCost ){
+#ifdef WHERETRACE_ENABLE
+            if( sqlite3WhereTrace>=3 ){
+              sqlite3DebugPrintf("Skip   %s cost=%-7.2g order=%c\n",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost,
+                  isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+            }
+#endif
+            continue;
+          }
+          /* Add a new Path to the aTo[] set */
           if( nTo<mxChoice ){
+            /* Increase the size of the aTo set by one */
             jj = nTo++;
           }else{
+            /* New path replaces the prior worst to keep count below mxChoice */
             for(jj=nTo-1; aTo[jj].rCost<mxCost; jj--){ assert(jj>0); }
           }
           pTo = &aTo[jj];
+#ifdef WHERETRACE_ENABLED
+          if( sqlite3WhereTrace>=3 ){
+            sqlite3DebugPrintf("New    %s cost=%-7.2g order=%c\n",
+                wherePathName(pFrom, iLoop, pWLoop), rCost,
+                isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+          }
+#endif
         }else{
-          if( pTo->rCost<=rCost ) continue;
+          if( pTo->rCost<=rCost ){
+#ifdef WHERETRACE_ENABLED
+            if( sqlite3WhereTrace>=3 ){
+              sqlite3DebugPrintf(
+                  "Skip   %s cost=%-7.2g order=%c",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost,
+                  isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+              sqlite3DebugPrintf("   vs %s cost=%-7.2g order=%c\n",
+                  wherePathName(pTo, iLoop+1, 0), pTo->rCost,
+                  pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
+            }
+#endif
+            continue;
+          }
+          /* A new and better score for a previously created equivalent path */
+#ifdef WHERETRACE_ENABLED
+          if( sqlite3WhereTrace>=3 ){
+            sqlite3DebugPrintf(
+                "Update %s cost=%-7.2g order=%c",
+                wherePathName(pFrom, iLoop, pWLoop), rCost,
+                isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+            sqlite3DebugPrintf("  was %s cost=%-7.2g order=%c\n",
+                wherePathName(pTo, iLoop+1, 0), pTo->rCost,
+                pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
+          }
+#endif
         }
         /* pWLoop is a winner.  Add it to the set of best so far */
         pTo->maskLoop = pFrom->maskLoop | pWLoop->maskSelf;
@@ -6072,15 +6132,13 @@ static int wherePathSolver(WhereInfo *pWInfo){
       }
     }
 
-#if 0
-    if( sqlite3WhereTrace ){
-      sqlite3DebugPrintf("---- round %d ---- nTo=%d\n", iLoop, nTo);
-      for(ii=0; ii<nTo; ii++){
-        sqlite3DebugPrintf("%03d:  cost=%g  nrow=%g\n",
-           ii, aTo[ii].rCost, aTo[ii].nRow);
-        for(jj=0; jj<=iLoop; jj++){
-          whereLoopPrint(aTo[ii].aLoop[jj], pWInfo->pTabList);
-        }
+#ifdef WHERETRACE_ENABLED
+    if( sqlite3WhereTrace>=2 ){
+      sqlite3DebugPrintf("---- round %d ----\n", iLoop);
+      for(ii=0, pTo=aTo; ii<nTo; ii++, pTo++){
+        sqlite3DebugPrintf("%2d: %s cost=%-7.2g nrow=%-7.2g order=%c\n",
+           ii, wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
+           pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
       }
     }
 #endif
@@ -6361,11 +6419,14 @@ WhereInfo *sqlite3WhereBegin(
   if( rc ) goto whereBeginError;
 
   /* Display all of the WhereLoop objects if wheretrace is enabled */
-#if defined(SQLITE_DEBUG) \
-    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
+#ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     WhereLoop *p;
+    int i = 0;
+    static char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
+                                     "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
     for(p=pWInfo->pLoops; p; p=p->pNextLoop){
+      p->cId = zLabel[(i++)%sizeof(zLabel)];
       whereLoopPrint(p, pTabList);
     }
   }
@@ -6373,8 +6434,7 @@ WhereInfo *sqlite3WhereBegin(
 
   wherePathSolver(pWInfo);
   if( db->mallocFailed ) goto whereBeginError;
-#if defined(SQLITE_DEBUG) \
-    && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
+#ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     int ii;
     sqlite3DebugPrintf("------------ Solution -------------");
@@ -6668,7 +6728,7 @@ WhereInfo *sqlite3WhereBegin(
     pWInfo->a[0].plan.wsFlags &= ~WHERE_IDX_ONLY;
   }
 
-#if 0
+#if 1
   /* Scaffolding:  Check the new query plan against the old.  Report any
   ** discrepencies */
   for(ii=0; ii<nTabList; ii++){
