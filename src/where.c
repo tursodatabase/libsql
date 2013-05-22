@@ -5104,7 +5104,7 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
     sqlite3DebugPrintf(" %-15s", z);
     sqlite3_free(z);
   }
-  sqlite3DebugPrintf(" fg %08x N %2d", p->wsFlags, p->nTerm);
+  sqlite3DebugPrintf(" fg %08x N %d", p->wsFlags, p->nTerm);
   sqlite3DebugPrintf(" cost %.2g,%.2g,%.2g\n",
                      p->prereq, p->rSetup, p->rRun, p->nOut);
 }
@@ -5293,6 +5293,7 @@ static int whereLoopAddBtreeIndex(
   WhereLoop savedLoop;            /* Saved original content of pNew[] */
   int iCol;                       /* Index of the column in the table */
   int rc = SQLITE_OK;             /* Return code */
+  tRowcnt iRowEst;                /* Estimated index selectivity */
   double rLogSize;                /* Logarithm of table size */
 
   db = pBuilder->db;
@@ -5300,7 +5301,7 @@ static int whereLoopAddBtreeIndex(
   if( db->mallocFailed ) return SQLITE_NOMEM;
 
   assert( (pNew->wsFlags & WHERE_VIRTUALTABLE)==0 );
-  assert( pNew->u.btree.nEq<pProbe->nColumn );
+  assert( pNew->u.btree.nEq<=pProbe->nColumn );
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
   if( pNew->wsFlags & WHERE_BTM_LIMIT ){
     opMask = WO_LT|WO_LE;
@@ -5310,9 +5311,15 @@ static int whereLoopAddBtreeIndex(
     opMask = WO_EQ|WO_IN|WO_ISNULL|WO_GT|WO_GE|WO_LT|WO_LE;
   }
 
-  iCol = pProbe->aiColumn[pNew->u.btree.nEq];
+  if( pNew->u.btree.nEq < pProbe->nColumn ){
+    iCol = pProbe->aiColumn[pNew->u.btree.nEq];
+    iRowEst = pProbe->aiRowEst[pNew->u.btree.nEq+1];
+  }else{
+    iCol = -1;
+    iRowEst = 1;
+  }
   pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
-                        opMask, iCol>=0 ? pProbe : 0);
+                        opMask, pProbe);
   savedLoop = *pNew;
   pNew->rSetup = (double)0;
   rLogSize = estLog(pProbe->aiRowEst[0]);
@@ -5334,11 +5341,11 @@ static int whereLoopAddBtreeIndex(
         nIn = pExpr->x.pList->nExpr;
       }
       pNew->u.btree.nEq++;
-      pNew->nOut = (double)pProbe->aiRowEst[pNew->u.btree.nEq] * nInMul * nIn;
+      pNew->nOut = (double)iRowEst * nInMul * nIn;
     }else if( pTerm->eOperator & (WO_EQ|WO_ISNULL) ){
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       pNew->u.btree.nEq++;
-      pNew->nOut = (double)pProbe->aiRowEst[pNew->u.btree.nEq] * nInMul;
+      pNew->nOut = (double)iRowEst * nInMul;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
       pNew->nOut = savedLoop.nOut/3;
@@ -5358,7 +5365,8 @@ static int whereLoopAddBtreeIndex(
     /* TBD: Adjust nOut for additional constraints */
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
-     && pNew->u.btree.nEq<pProbe->nColumn
+     && pNew->u.btree.nEq<=pProbe->nColumn
+     && pProbe->zName!=0
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul*nIn);
     }

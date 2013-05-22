@@ -1,5 +1,5 @@
-C Improvements\sto\sORDER\sBY\shandling\sin\sthe\sNGQP.\s\sFix\san\s"exit"\smistakenly\nleft\sin\sa\stest\sscript\sduring\sthe\sprevious\scheck-in.
-D 2013-05-22T02:06:59.780
+C Allow\sthe\srowid\sat\sthe\send\sof\san\sindex\sto\sbe\sused\sin\sa\sconstraint\son\sthat\sindex.
+D 2013-05-22T17:01:17.424
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -265,7 +265,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c b695db3fe80456a57461c43f1fa1596a38fb4652
+F src/where.c 3ca12d203c0cca5bc36f0cd408a97ed5a9357047
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 04dfb85a2a7025d4b5056b73fa8477691323919f
-R b7bf12d6215811537a2285f41fc9e19a
+P 12c709b4369c7d94d7fb743d0d0da7a9350a3d16
+R 7322735243734361422a3e6e35778930
 U drh
-Z 6465b78fdb5633463ec5d8b46a4226e0
+Z fd0ab2669226a74d38406e095d929629
