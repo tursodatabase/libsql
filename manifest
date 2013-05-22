@@ -1,5 +1,5 @@
-C Allow\sthe\srowid\sat\sthe\send\sof\san\sindex\sto\sbe\sused\sin\sa\sconstraint\son\sthat\sindex.
-D 2013-05-22T17:01:17.424
+C Use\sthe\sNGQP\splan\sfor\sEXPLAIN\sQUERY\sPLAN\soutput.\s\sThis\schange\scauses\s207\nerrors\sin\sveryquick.test,\smany\sof\swhich\sare\sbenign.
+D 2013-05-22T20:49:02.170
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -265,7 +265,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 3ca12d203c0cca5bc36f0cd408a97ed5a9357047
+F src/where.c 627bf1af3ab30e1efcc7ac362b15e7e945e9250d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -779,7 +779,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 3b08771e6d601612fe62d13787db0e50aac4cf7b
+F test/tester.tcl 693700993b7e0a5b7b2171b291a54cdbad1d86ff
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1065,7 +1065,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 12c709b4369c7d94d7fb743d0d0da7a9350a3d16
-R 7322735243734361422a3e6e35778930
+P 9bf0524df7ca2e7fcd92b2878a8457264b3c7f6e
+R 97f27b7ea9f3efcce127b9443ade87ed
 U drh
-Z fd0ab2669226a74d38406e095d929629
+Z 96c17883fc9fb8d90fa5ada1b6415a79

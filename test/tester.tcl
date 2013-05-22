@@ -793,9 +793,28 @@ proc finalize_testing {} {
   set nTest [incr_ntest]
   set nErr [set_test_counter errors]
 
-  puts "$nErr errors out of $nTest tests"
-  if {$nErr>0} {
-    puts "Failures on these tests: [set_test_counter fail_list]"
+  set nKnown 0
+  if {[file readable known-problems.txt]} {
+    set fd [open known-problems.txt]
+    set content [read $fd]
+    close $fd
+    foreach x $content {set known_error($x) 1}
+    foreach x [set_test_counter fail_list] {
+      if {[info exists known_error($x)]} {incr nKnown}
+    }
+  }
+  if {$nKnown>0} {
+    puts "[expr {$nErr-$nKnown}] new errors and $nKnown known errors\
+         out of $nTest tests"
+  } else {
+    puts "$nErr errors out of $nTest tests"
+  }
+  if {$nErr>$nKnown} {
+    puts -nonewline "Failures on these tests:"
+    foreach x [set_test_counter fail_list] {
+      if {![info exists known_error($x)]} {puts -nonewline " $x"}
+    }
+    puts ""
   }
   foreach warning [set_test_counter warn_list] {
     puts "Warning: $warning"

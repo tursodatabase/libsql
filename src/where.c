@@ -4168,16 +4168,16 @@ static void explainAppendTerm(
 ** It is the responsibility of the caller to free the buffer when it is
 ** no longer required.
 */
-static char *explainIndexRange(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
-  WherePlan *pPlan = &pLevel->plan;
-  Index *pIndex = pPlan->u.pIdx;
-  int nEq = pPlan->nEq;
+static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
+  Index *pIndex = pLoop->u.btree.pIndex;
+  int nEq = pLoop->u.btree.nEq;
   int i, j;
   Column *aCol = pTab->aCol;
   int *aiColumn = pIndex->aiColumn;
   StrAccum txt;
 
-  if( nEq==0 && (pPlan->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ){
+  if( pIndex==0 ) return 0;
+  if( nEq==0 && (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ){
     return 0;
   }
   sqlite3StrAccumInit(&txt, 0, 0, SQLITE_MAX_LENGTH);
@@ -4188,11 +4188,11 @@ static char *explainIndexRange(sqlite3 *db, WhereLevel *pLevel, Table *pTab){
   }
 
   j = i;
-  if( pPlan->wsFlags&WHERE_BTM_LIMIT ){
+  if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
     char *z = (j==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i++, z, ">");
   }
-  if( pPlan->wsFlags&WHERE_TOP_LIMIT ){
+  if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
     char *z = (j==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i, z, "<");
   }
@@ -4215,7 +4215,6 @@ static void explainOneScan(
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
   if( pParse->explain==2 ){
-    u32 flags = pLevel->plan.wsFlags;
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
     Vdbe *v = pParse->pVdbe;      /* VM being constructed */
     sqlite3 *db = pParse->db;     /* Database handle */
@@ -4223,12 +4222,16 @@ static void explainOneScan(
     sqlite3_int64 nRow;           /* Expected number of rows visited by scan */
     int iId = pParse->iSelectId;  /* Select id (left-most output column) */
     int isSearch;                 /* True for a SEARCH. False for SCAN. */
+    WhereLoop *pLoop;             /* The controlling WhereLoop object */
+    u32 flags;                    /* Flags that describe this loop */
 
+    pLoop = pLevel->pWLoop;
+    flags = pLoop->wsFlags;
     if( (flags&WHERE_MULTI_OR) || (wctrlFlags&WHERE_ONETABLE_ONLY) ) return;
 
-    isSearch = (pLevel->plan.nEq>0)
-             || (flags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0
-             || (wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX));
+    isSearch = (flags&(WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0
+            || ((flags&WHERE_VIRTUALTABLE)==0 && (pLoop->u.btree.nEq>0))
+            || (wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX));
 
     zMsg = sqlite3MPrintf(db, "%s", isSearch?"SEARCH":"SCAN");
     if( pItem->pSelect ){
@@ -4240,20 +4243,22 @@ static void explainOneScan(
     if( pItem->zAlias ){
       zMsg = sqlite3MAppendf(db, zMsg, "%s AS %s", zMsg, pItem->zAlias);
     }
-    if( (flags & WHERE_INDEXED)!=0 ){
-      char *zWhere = explainIndexRange(db, pLevel, pItem->pTab);
+    if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0
+     && pLoop->u.btree.pIndex!=0
+    ){
+      char *zWhere = explainIndexRange(db, pLoop, pItem->pTab);
       zMsg = sqlite3MAppendf(db, zMsg, "%s USING %s%sINDEX%s%s%s", zMsg, 
           ((flags & WHERE_TEMP_INDEX)?"AUTOMATIC ":""),
           ((flags & WHERE_IDX_ONLY)?"COVERING ":""),
           ((flags & WHERE_TEMP_INDEX)?"":" "),
-          ((flags & WHERE_TEMP_INDEX)?"": pLevel->plan.u.pIdx->zName),
+          ((flags & WHERE_TEMP_INDEX)?"": pLoop->u.btree.pIndex->zName),
           zWhere
       );
       sqlite3DbFree(db, zWhere);
-    }else if( flags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
+    }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_INDEXED)!=0 ){
       zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
 
-      if( flags&WHERE_ROWID_EQ ){
+      if( flags&WHERE_COLUMN_EQ ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid=?)", zMsg);
       }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>? AND rowid<?)", zMsg);
@@ -4265,16 +4270,15 @@ static void explainOneScan(
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     else if( (flags & WHERE_VIRTUALTABLE)!=0 ){
-      sqlite3_index_info *pVtabIdx = pLevel->plan.u.pVtabIdx;
       zMsg = sqlite3MAppendf(db, zMsg, "%s VIRTUAL TABLE INDEX %d:%s", zMsg,
-                  pVtabIdx->idxNum, pVtabIdx->idxStr);
+                  pLoop->u.vtab.idxNum, pLoop->u.vtab.idxStr);
     }
 #endif
     if( wctrlFlags&(WHERE_ORDERBY_MIN|WHERE_ORDERBY_MAX) ){
       testcase( wctrlFlags & WHERE_ORDERBY_MIN );
       nRow = 1;
     }else{
-      nRow = (sqlite3_int64)pLevel->plan.nRow;
+      nRow = (sqlite3_int64)pLoop->nOut;
     }
     zMsg = sqlite3MAppendf(db, zMsg, "%s (~%lld rows)", zMsg, nRow);
     sqlite3VdbeAddOp4(v, OP_Explain, iId, iLevel, iFrom, zMsg, P4_DYNAMIC);
@@ -5263,7 +5267,8 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     memcpy(p->aTerm, pTemplate->aTerm, p->nTerm*sizeof(p->aTerm[0]));
   }
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-    if( p->u.btree.pIndex && p->u.btree.pIndex && p->u.btree.pIndex->tnum==0 ){
+    Index *pIndex = p->u.btree.pIndex;
+    if( pIndex && pIndex->tnum==0 ){
       p->u.btree.pIndex = 0;
     }
   }else{
@@ -5310,6 +5315,7 @@ static int whereLoopAddBtreeIndex(
   }else{
     opMask = WO_EQ|WO_IN|WO_ISNULL|WO_GT|WO_GE|WO_LT|WO_LE;
   }
+  if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
   if( pNew->u.btree.nEq < pProbe->nColumn ){
     iCol = pProbe->aiColumn[pNew->u.btree.nEq];
@@ -5472,6 +5478,7 @@ static int whereLoopAddBtree(
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
         pNew->u.btree.nEq = 1;
+        pNew->u.btree.pIndex = 0;
         pNew->nTerm = 1;
         pNew->aTerm[0] = pTerm;
         pNew->rSetup = 2*rLogSize*pSrc->pTab->nRowEst;
@@ -5515,7 +5522,7 @@ static int whereLoopAddBtree(
       pNew->wsFlags = (m==0) ? WHERE_IDX_ONLY : 0;
 
       /* Full scan via index */
-      if( m==0 || b ){
+      if( (m==0 || b) && pProbe->bUnordered==0 ){
         pNew->iSortIdx = b ? iSortIdx : 0;
         pNew->nOut = rSize;
         pNew->rRun = (m==0) ? (rSize + rLogSize)*(1+b) : (rSize*rLogSize);
@@ -5892,10 +5899,9 @@ static int wherePathSatisfiesOrderBy(
       if( pLoop->u.btree.nEq!=1 ) isUnique = 0;
       pIndex = 0;
       nColumn = 1;
-    }else if( pLoop->u.btree.pIndex==0 ){
+    }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
       return 0;
     }else{
-      pIndex = pLoop->u.btree.pIndex;
       nColumn = pIndex->nColumn;
       if( pIndex->onError==OE_None ){
         isUnique = 0;
