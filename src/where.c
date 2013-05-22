@@ -5961,7 +5961,7 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** Return SQLITE_OK on success or SQLITE_NOMEM of a memory allocation
 ** error occurs.
 */
-static int wherePathSolver(WhereInfo *pWInfo){
+static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
   const int mxChoice = 10;  /* Maximum number of simultaneous paths tracked */
   int nLoop;                /* Number of terms in the join */
   sqlite3 *db;              /* The database connection */
@@ -5976,7 +5976,6 @@ static int wherePathSolver(WhereInfo *pWInfo){
   WherePath *pFrom;         /* An element of aFrom[] that we are working on */
   WherePath *pTo;           /* An element of aTo[] that we are working on */
   WhereLoop *pWLoop;        /* One of the WhereLoop objects */
-  WhereLoop *pNext;         /* Next loop */
   WhereLoop **pX;           /* Used to divy up the pSpace memory */
   char *pSpace;             /* Temporary memory used by this routine */
 
@@ -6003,10 +6002,11 @@ static int wherePathSolver(WhereInfo *pWInfo){
   /* Precompute the cost of sorting the final result set, if the caller
   ** to sqlite3WhereBegin() was concerned about sorting */
   rSortCost = (double)0;
-  if( pWInfo->pOrderBy==0 ){
+  if( pWInfo->pOrderBy==0 || nRowEst<0.0 ){
     aFrom[0].isOrderedValid = 1;
   }else{
     /* Compute an estimate on the cost to sort the entire result set */
+#if 0
     rSortCost = (double)1;
     for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pNext){
       pNext = pWLoop->pNextLoop;
@@ -6018,6 +6018,14 @@ static int wherePathSolver(WhereInfo *pWInfo){
       rSortCost *= rCost;
     }
     rSortCost *= estLog(rSortCost);
+#else
+    rSortCost = nRowEst*estLog(nRowEst);
+#endif
+#ifdef WHERETRACE_ENABLED
+    if( sqlite3WhereTrace>=2 ){
+      sqlite3DebugPrintf("--solver sort cost=%-7.2g\n", rSortCost);
+    }
+#endif
   }
 
   /* Compute successively longer WherePaths using the previous generation
@@ -6134,10 +6142,10 @@ static int wherePathSolver(WhereInfo *pWInfo){
 
 #ifdef WHERETRACE_ENABLED
     if( sqlite3WhereTrace>=2 ){
-      sqlite3DebugPrintf("---- round %d ----\n", iLoop);
+      sqlite3DebugPrintf("---- after round %d ----\n", iLoop);
       for(ii=0, pTo=aTo; ii<nTo; ii++, pTo++){
-        sqlite3DebugPrintf("%2d: %s cost=%-7.2g nrow=%-7.2g order=%c\n",
-           ii, wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
+        sqlite3DebugPrintf(" %s cost=%-7.2g nrow=%-7.2g order=%c\n",
+           wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
            pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
       }
     }
@@ -6167,6 +6175,7 @@ static int wherePathSolver(WhereInfo *pWInfo){
   if( pFrom->isOrdered ){
     pWInfo->nOBSat = pWInfo->pOrderBy->nExpr;
   }
+  pWInfo->nRowOut = pFrom->nRow;
 
   /* Free temporary memory and return success */
   sqlite3DbFree(db, pSpace);
@@ -6432,8 +6441,12 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
 
-  wherePathSolver(pWInfo);
+  wherePathSolver(pWInfo, -1);
   if( db->mallocFailed ) goto whereBeginError;
+  if( pWInfo->pOrderBy ){
+     wherePathSolver(pWInfo, pWInfo->nRowOut);
+     if( db->mallocFailed ) goto whereBeginError;
+  }
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     int ii;
