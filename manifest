@@ -1,5 +1,5 @@
-C Have\sthe\s"make\sfulltest"\scommand\srun\sthe\s"mmap"\spermutation\stest.
-D 2013-05-23T10:15:46.215
+C Add\sOGC\sGeoPackage\sfiles\sto\sthe\smagic.txt\sdatabase.
+D 2013-05-23T20:52:16.211
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -113,7 +113,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F magic.txt 3f820e18c43504b25da40ff4b4cdb66dc4c4907e
+F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
 F main.mk a8ebdf910e2cc10db1f9f54ec316f637458e8001
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
@@ -1066,7 +1066,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 40cfde8b4a59a09e52e62f9f029f8d3b32eb15fa
-R 5b0b79093b4b7cf1c06b909710b57c2e
-U dan
-Z 58efdf0c0497e75e223f31c9f398e2ac
+P 82ad373f85aa0a87d24c6dbb2ea7dca8c5aff56a
+R b8114ddabfd98673e6d6ce93a982165c
+U drh
+Z 6c60065be51b126d35afa515cb8ed58f
