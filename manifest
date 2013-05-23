@@ -1,5 +1,5 @@
-C Version\s3.7.17
-D 2013-05-20T00:56:22.515
+C Cause\sthe\smmap_size\sPRAGMA\sto\simmediately\schange\sthe\smmap\sspace\sif\sthe\ndatabase\sconnection\sis\salready\sactive.\s\sIn\sparticular,\sreducing\smmap_size\nwill\simmediately\sfree\sup\sprocess\saddress\sspace.
+D 2013-05-23T01:40:53.974
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,8 +177,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 75ce49309b8352c7173ce1ef6fc9e8d1f6daab10
-F src/os_win.c 32b8adca3e989565713ff74098b3cb2cb25d6e59
+F src/os_unix.c 42c9b8b7c61c9fa3561258f523be5749e52ed0e0
+F src/os_win.c 5f018dbd4cec25c5b47e11432b946a7d2ccee60b
 F src/pager.c 49e23f9898113ddfe90942bdf1c1ef57955d0921
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 9708365594eea519cdc8504dee425c0a41c79502
@@ -651,6 +651,7 @@ F test/misc7.test dd82ec9250b89178b96cd28b2aca70639d21e5b3
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
+F test/mmap3.test 01728252af6f9bcf708169d7b794b7597c69ac44
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -1065,10 +1066,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7a9aa21c3506a10ab9465540e81071b39bca447d
-R c103e20e6479251bb5b95c9b2e375810
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.7.17 *
+P 118a3b35693b134d56ebd780123b7fd6f1497668
+R 743f49e6500daee258364b50095b5869
 U drh
-Z 416a23d38a1b2c089b32c7a6efcbc3bc
+Z 8b8fce9c808b567d366ba2a76c063d60

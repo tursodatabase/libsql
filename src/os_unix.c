@@ -3775,15 +3775,19 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;
+      int rc = SQLITE_OK;
       if( newLimit>sqlite3GlobalConfig.mxMmap ){
         newLimit = sqlite3GlobalConfig.mxMmap;
       }
       *(i64*)pArg = pFile->mmapSizeMax;
-      if( newLimit>=0 ){
+      if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
         pFile->mmapSizeMax = newLimit;
-        if( newLimit<pFile->mmapSize ) pFile->mmapSize = newLimit;
+        if( pFile->mmapSize>0 ){
+          unixUnmapfile(pFile);
+          rc = unixMapfile(pFile, -1);
+        }
       }
-      return SQLITE_OK;
+      return rc;
     }
 #ifdef SQLITE_DEBUG
     /* The pager calls this method to signal that it has done
