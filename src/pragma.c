@@ -774,11 +774,15 @@ void sqlite3Pragma(
       }
     }
     sz = -1;
-    if( sqlite3_file_control(db,zDb,SQLITE_FCNTL_MMAP_SIZE,&sz)==SQLITE_OK ){
+    rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_MMAP_SIZE, &sz);
 #if SQLITE_MAX_MMAP_SIZE==0
-      sz = 0;
+    sz = 0;
 #endif
+    if( rc==SQLITE_OK ){
       returnSingleInt(pParse, "mmap_size", sz);
+    }else if( rc!=SQLITE_NOTFOUND ){
+      pParse->nErr++;
+      pParse->rc = rc;
     }
   }else
 
