@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\scalls\sto\sFCNTL_SIZE_HINT.\sReturn\san\serror\sto\sthe\suser\sif\sthe\sfile-control\sinvoked\sby\s"PRAGMA\smmap_size"\sreturns\sa\svalue\sother\sthan\sSQLITE_OK\sor\sSQLITE_NOTFOUND.
-D 2013-05-23T10:13:18.105
+C Have\sthe\s"make\sfulltest"\scommand\srun\sthe\s"mmap"\spermutation\stest.
+D 2013-05-23T10:15:46.215
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -270,7 +270,7 @@ F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
-F test/all.test 52fc8dee494092031a556911d404ca30a749a30b
+F test/all.test 705b516d4df89be56b0f52577df0966e93d2ce72
 F test/alter.test 57d96ec9b320bd07af77567034488dcb6642c748
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
@@ -1066,7 +1066,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 761177927cb51e4f5e66061ca39cf37edbe8346b
-R f79c1bfda6a2029cdca9b19f9c8cc1f9
+P 40cfde8b4a59a09e52e62f9f029f8d3b32eb15fa
+R 5b0b79093b4b7cf1c06b909710b57c2e
 U dan
-Z 2a86c7dc006c06bc92b2aaaf78345975
+Z 58efdf0c0497e75e223f31c9f398e2ac
