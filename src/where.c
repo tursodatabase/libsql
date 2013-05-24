@@ -76,6 +76,7 @@ struct WhereLoop {
       int idxNum;            /* Index number */
       u8 needFree;           /* True if sqlite3_free(idxStr) is needed */
       u8 isOrdered;          /* True if satisfies ORDER BY */
+      u16 omitMask;          /* Terms that may be omitted */
       char *idxStr;          /* Index identifier string */
     } vtab;
   } u;
@@ -5101,9 +5102,10 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
   }else{
     char *z;
     if( p->u.vtab.idxStr ){
-      z = sqlite3_mprintf("(%d,\"%s\")", p->u.vtab.idxNum,p->u.vtab.idxStr);
+      z = sqlite3_mprintf("(%d,\"%s\",%x)",
+                p->u.vtab.idxNum, p->u.vtab.idxStr, p->u.vtab.omitMask);
     }else{
-      z = sqlite3_mprintf("(%d)", p->u.vtab.idxNum);
+      z = sqlite3_mprintf("(%d,%x)", p->u.vtab.idxNum, p->u.vtab.omitMask);
     }
     sqlite3DebugPrintf(" %-15s", z);
     sqlite3_free(z);
@@ -5629,6 +5631,7 @@ static int whereLoopAddVirtual(
     pNew->prereq = 0;
     mxTerm = -1;
     for(i=0; i<pBuilder->mxTerm; i++) pNew->aTerm[i] = 0;
+    pNew->u.vtab.omitMask = 0;
     for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
       if( (iTerm = pUsage[i].argvIndex - 1)>=0 ){
         if( iTerm>=pBuilder->mxTerm ) break;
@@ -5646,6 +5649,7 @@ static int whereLoopAddVirtual(
         pNew->prereq |= pTerm->prereqRight;
         pNew->aTerm[iTerm] = pTerm;
         if( iTerm>mxTerm ) mxTerm = iTerm;
+        if( iTerm<16 && pUsage[i].omit ) pNew->u.vtab.omitMask |= 1<<i;
         if( (pTerm->eOperator & WO_IN)!=0 ){
           if( pUsage[i].omit==0 ){
             /* Do not attempt to use an IN constraint if the virtual table
