@@ -1564,11 +1564,11 @@ static sqlite3_int64 integerValue(const char *zArg){
   }else if( zArg[0]=='+' ){
     zArg++;
   }
-  while( isdigit(zArg[0]) ){
+  while( IsDigit(zArg[0]) ){
     v = v*10 + zArg[0] - '0';
     zArg++;
   }
-  for(i=0; i<sizeof(aMult)/sizeof(aMult[0]); i++){
+  for(i=0; i<ArraySize(aMult); i++){
     if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
       v *= aMult[i].iMult;
       break;
