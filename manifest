@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sshell.
-D 2013-05-24T11:57:50.209
+C Set\s_XOPEN_SOURCE\sto\s600\sso\sthat\sfchmod()\swill\s(hopefully)\swork\son\sFreeBSD.
+D 2013-05-24T12:47:26.703
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -196,7 +196,7 @@ F src/shell.c 9a18124ff209ca308d786c99a466e8e270193ff3
 F src/sqlite.h.in 5a5a22a9b192d81a9e5dee00274e3a0484c4afb1
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h 4cc782c9a89b3ddd663e7f68af3fa9e5af596f8b
+F src/sqliteInt.h ba610d80822135ffbc92ac90710939e548c6a850
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1066,7 +1066,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dab6a32847ce17f12e3a2b09a3567945b2154f67
-R 659d4081538710ab3b6917b836242fc7
+P 9e2c17c5358b156b588542dbba38da7fedf5302b
+R 447bfb9d68d03e84058ef9e235e367ce
 U drh
-Z b1f0db700bf1651929699f229849ec18
+Z 0a3675dfa27f37f077377df6c72c7598
