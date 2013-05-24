@@ -19,10 +19,11 @@
 # compatibility only.
 #
 0    string  =SQLite\ format\ 3
->68  belong  =0x0f055111  Fossil repository -
 >68  belong  =0x0f055112  Fossil checkout - 
 >68  belong  =0x0f055113  Fossil global configuration - 
+>68  belong  =0x0f055111  Fossil repository -
 >68  belong  =0x42654462  Bentley Systems BeSQLite Database -
 >68  belong  =0x42654c6e  Bentley Systems Localization File -
 >60  belong  =0x5f4d544e  Monotone source repository -
+>68  belong  =0x47504b47  OGC GeoPackage file -
 >0   string  =SQLite      SQLite3 database
