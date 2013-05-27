@@ -2051,6 +2051,7 @@ struct WhereInfo {
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
+  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
   u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */

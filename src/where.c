@@ -5839,8 +5839,9 @@ static int wherePathSatisfiesOrderBy(
   WhereLoop *pLast,     /* Add this WhereLoop to the end of pPath->aLoop[] */
   Bitmask *pRevMask     /* Mask of WhereLoops to run in reverse order */
 ){
-  u8 revSet;
-  u8 rev;
+  u8 revSet;            /* True if rev is known */
+  u8 rev;               /* Composite sort order */
+  u8 revIdx;            /* Index sort order */
   u8 isUnique;
   u8 requireUnique = 0;
   u16 nColumn;
@@ -5890,7 +5891,7 @@ static int wherePathSatisfiesOrderBy(
   ** column reference */
   nOrderBy = pOrderBy->nExpr;
   for(i=0; i<nOrderBy; i++){
-    pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[nUsed].pExpr);
+    pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
     if( pOBExpr->op!=TK_COLUMN ) return 0;
   }
     
@@ -5902,7 +5903,7 @@ static int wherePathSatisfiesOrderBy(
       if( (pLoop->wsFlags & WHERE_COLUMN_IN)!=0 ) isUnique = 0;
       if( pLoop->u.btree.nEq!=1 ) isUnique = 0;
       pIndex = 0;
-      nColumn = 1;
+      nColumn = 0;
     }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
       return 0;
     }else{
@@ -5921,31 +5922,31 @@ static int wherePathSatisfiesOrderBy(
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
     j = 0;
     revSet = rev = 0;
-    for(j=0; j<nColumn && nUsed<nOrderBy; j++, nUsed++){
+    for(j=0; j<=nColumn && nUsed<nOrderBy; j++, nUsed++){
       pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[nUsed].pExpr);
       assert( pOBExpr->op==TK_COLUMN );
       if( pOBExpr->iTable!=iCur ) break;
-      if( pIndex==0 ){
-        if( pOBExpr->iColumn<0 && j==0 ){
-          isUnique = 1;
-          rev = pOrderBy->a[nUsed].sortOrder;
-        }else if( isUnique ){
-          continue;
-        }else{
-          return 0;
-        }
-      }
       if( isUnique ) continue;
-      iColumn = pIndex->aiColumn[j];
-      if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
-      if( pOBExpr->iColumn!=iColumn ) return 0;
-      pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[nUsed].pExpr);
-      if( !pColl ) pColl = db->pDfltColl;
-      if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) return 0;
-      if( revSet ){
-        if( pIndex->aSortOrder[j]!=rev ) return 0;
+      if( j<nColumn ){
+        /* Normal index columns */
+        iColumn = pIndex->aiColumn[j];
+        revIdx = pIndex->aSortOrder[j];
+        if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
       }else{
-        rev = pIndex->aSortOrder[j];
+        /* The ROWID column at the end */
+        iColumn = -1;
+        revIdx = 0;
+      }
+      if( pOBExpr->iColumn!=iColumn ) return 0;
+      if( iColumn>=0 ){
+        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[nUsed].pExpr);
+        if( !pColl ) pColl = db->pDfltColl;
+        if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) return 0;
+      }
+      if( revSet ){
+        if( (rev ^ revIdx)!=pOrderBy->a[nUsed].sortOrder ) return 0;
+      }else{
+        rev = revIdx ^ pOrderBy->a[nUsed].sortOrder;
         revSet = 1;
       }
     }
@@ -6000,6 +6001,9 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
   db = pWInfo->pParse->db;
   nLoop = pWInfo->nLevel;
   assert( nLoop<=pWInfo->pTabList->nSrc );
+#ifdef WHERETRACE_ENABLED
+  if( sqlite3WhereTrace>=2 ) sqlite3DebugPrintf("---- begin solver\n");
+#endif
 
   /* Allocate and initialize space for aTo and aFrom */
   ii = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
@@ -6020,28 +6024,14 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
   /* Precompute the cost of sorting the final result set, if the caller
   ** to sqlite3WhereBegin() was concerned about sorting */
   rSortCost = (double)0;
-  if( pWInfo->pOrderBy==0 || nRowEst<0.0 ){
+  if( pWInfo->pOrderBy==0 || nRowEst<=0.0 ){
     aFrom[0].isOrderedValid = 1;
   }else{
     /* Compute an estimate on the cost to sort the entire result set */
-#if 0
-    rSortCost = (double)1;
-    for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pNext){
-      pNext = pWLoop->pNextLoop;
-      rCost = pWLoop->nOut;
-      while( pNext && pNext->iTab==pWLoop->iTab ){
-        if( pNext->nOut<rCost ) rCost = pNext->nOut;
-        pNext = pNext->pNextLoop;
-      }
-      rSortCost *= rCost;
-    }
-    rSortCost *= estLog(rSortCost);
-#else
     rSortCost = nRowEst*estLog(nRowEst);
-#endif
 #ifdef WHERETRACE_ENABLED
     if( sqlite3WhereTrace>=2 ){
-      sqlite3DebugPrintf("--solver sort cost=%-7.2g\n", rSortCost);
+      sqlite3DebugPrintf("---- sort cost=%-7.2g\n", rSortCost);
     }
 #endif
   }
@@ -6162,9 +6152,14 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
     if( sqlite3WhereTrace>=2 ){
       sqlite3DebugPrintf("---- after round %d ----\n", iLoop);
       for(ii=0, pTo=aTo; ii<nTo; ii++, pTo++){
-        sqlite3DebugPrintf(" %s cost=%-7.2g nrow=%-7.2g order=%c\n",
+        sqlite3DebugPrintf(" %s cost=%-7.2g nrow=%-7.2g order=%c",
            wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
            pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
+        if( pTo->isOrderedValid && pTo->isOrdered ){
+          sqlite3DebugPrintf(" rev=0x%llx\n", pTo->revLoop);
+        }else{
+          sqlite3DebugPrintf("\n");
+        }
       }
     }
 #endif
@@ -6192,6 +6187,7 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
   }
   if( pFrom->isOrdered ){
     pWInfo->nOBSat = pWInfo->pOrderBy->nExpr;
+    pWInfo->revMask = pFrom->revLoop;
   }
   pWInfo->nRowOut = pFrom->nRow;
 
@@ -6468,9 +6464,9 @@ WhereInfo *sqlite3WhereBegin(
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     int ii;
-    sqlite3DebugPrintf("------------ Solution -------------");
+    sqlite3DebugPrintf("---- Solution");
     if( pWInfo->nOBSat ){
-      sqlite3DebugPrintf(" ORDER BY omitted\n");
+      sqlite3DebugPrintf(" ORDER BY omitted rev=0x%llx\n", pWInfo->revMask);
     }else{
       sqlite3DebugPrintf("\n");
     }
