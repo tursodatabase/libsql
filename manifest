@@ -1,5 +1,5 @@
-C Set\s_XOPEN_SOURCE\sto\s600\sso\sthat\sfchmod()\swill\s(hopefully)\swork\son\sFreeBSD.
-D 2013-05-24T12:47:26.703
+C When\swriting\sto\san\sFTS\stable,\stake\san\sexclusive\sshared-cache\slock\son\sthe\s%_segdir\stable\sbefore\swriting.\sOtherwise,\san\sxCommit()\scall\smay\sreport\san\sSQLITE_LOCKED\serror.
+D 2013-05-27T10:11:53.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -55,7 +55,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 4bc160e6ff9ab5456b600f389f8941485ea5082f
+F ext/fts3/fts3.c 931b3c83abdd1ab3bb389b2130431c2a9ff73b91
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 0b167bed9e63151635620a4f639bc62ac6012cba
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -73,7 +73,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c a863f05f758af36777dffc2facc898bc73fec896
-F ext/fts3/fts3_write.c d92c6cbe07363791cfe8b62b4dee67e6f8afc9e2
+F ext/fts3/fts3_write.c 6a1fc0e922e76b68e594bf7bc33bac72af9dc47b
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -513,7 +513,7 @@ F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
 F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
-F test/fts3shared.test 8bb266521d7c5495c0ae522bb4d376ad5387d4a2
+F test/fts3shared.test c2f60e152e8554549eb25f0a7593ea01389c5037
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
 F test/fts3sort.test 95be0b19d7e41c44b29014f13ea8bddd495fd659
 F test/fts3tok1.test 4d9e7401679dc71f6b2f76416309b923210bfdbe
@@ -924,7 +924,7 @@ F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
-F test/trace2.test c1dc104a8d11a347c870cfea6235e3fc6f6cb06d
+F test/trace2.test e7a988fdd982cdec62f1f1f34b0360e6476d01a0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
@@ -1066,7 +1066,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9e2c17c5358b156b588542dbba38da7fedf5302b
-R 447bfb9d68d03e84058ef9e235e367ce
-U drh
-Z 0a3675dfa27f37f077377df6c72c7598
+P 61a10452399db28cd5ea4ba9d416b87a34c2eddb
+R 5b2b7d523083ab3d77d86c0cce4d267d
+U dan
+Z 5b590f475035536f2f371b845c79a1e4
