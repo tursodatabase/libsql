@@ -1,5 +1,5 @@
-C Remove\sthe\sobsolete\sand\sunused\ssqlite3.inTrans\sfield.
-D 2013-05-28T17:25:48.228
+C Finish\sremoving\sthe\ssqlite3.inTrans\sfield.\s\sIn\sthe\sprevious\scheck-in,\sit\swas\nmerely\scommented\sout\sbecause\sI\sfailed\sto\sselect\sFile->Save\son\smy\stext\seditor.
+D 2013-05-28T17:30:52.422
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c cc952f324f648966a5252c0d7f14848c027921d9
+F src/main.c f33742ab539602cf18becc6a85ecef164706c86a
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -1090,7 +1090,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a0d5cc9315dc6e9ef7dee4c3dfabf4e562d64376
-R c49ad2144df2af701b43a13836fb7ffd
+P c3381cd4957013d46075996c3b865177c888d2a8
+R b4b6c4d83a50772ea0d179f36ddb400e
 U drh
-Z a2a3fdfb6c263f907a8472ce368de001
+Z a65b38b6ed5056fa8821564d4893ee8d

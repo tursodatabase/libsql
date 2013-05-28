@@ -1024,7 +1024,6 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
         inTrans = 1;
       }
       sqlite3BtreeRollback(p, tripCode);
-//      db->aDb[i].inTrans = 0;
     }
   }
   sqlite3VtabRollback(db);
