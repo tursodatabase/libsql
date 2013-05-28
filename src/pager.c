@@ -5180,7 +5180,7 @@ static void pagerUnlockIfUnused(Pager *pPager){
 ** page is initialized to all zeros. 
 **
 ** If noContent is true, it means that we do not care about the contents
-** of the page. This occurs in two seperate scenarios:
+** of the page. This occurs in two scenarios:
 **
 **   a) When reading a free-list leaf page from the database, and
 **

@@ -109,7 +109,7 @@ void sqlite3SelectDelete(sqlite3 *db, Select *p){
 }
 
 /*
-** Given 1 to 3 identifiers preceeding the JOIN keyword, determine the
+** Given 1 to 3 identifiers preceding the JOIN keyword, determine the
 ** type of join.  Return an integer constant that expresses that type
 ** in terms of the following bit values:
 **
@@ -1523,7 +1523,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
 
   /* 
   ** "LIMIT -1" always shows all rows.  There is some
-  ** contraversy about what the correct behavior should be.
+  ** controversy about what the correct behavior should be.
   ** The current implementation interprets "LIMIT 0" to mean
   ** no rows.
   */
@@ -4046,7 +4046,7 @@ int sqlite3Select(
     }
 
     /* Increment Parse.nHeight by the height of the largest expression
-    ** tree refered to by this, the parent select. The child select
+    ** tree referred to by this, the parent select. The child select
     ** may contain expression trees of at most
     ** (SQLITE_MAX_EXPR_DEPTH-Parse.nHeight) height. This is a bit
     ** more conservative than necessary, but much easier than enforcing

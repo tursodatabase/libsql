@@ -1313,7 +1313,7 @@ void sqlite3Pragma(
 #endif
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
-  /* Pragma "quick_check" is an experimental reduced version of 
+  /* Pragma "quick_check" is reduced version of 
   ** integrity_check designed to detect most database corruption
   ** without most of the overhead of a full integrity-check.
   */
