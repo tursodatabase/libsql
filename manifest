@@ -1,5 +1,5 @@
-C When\swriting\sto\san\sFTS\stable,\stake\san\sexclusive\sshared-cache\slock\son\sthe\s%_segdir\stable\sbefore\swriting.\sOtherwise,\san\sxCommit()\scall\smay\sreport\san\sSQLITE_LOCKED\serror.
-D 2013-05-27T10:11:53.308
+C Merge\sautoconf-package\sbranch\swith\strunk.
+D 2013-05-28T10:52:22.037
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -12,6 +12,29 @@ F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
+F autoconf/INSTALL 83e4a25da9fd053c7b3665eaaaf7919707915903
+F autoconf/Makefile.am 8fc2972d92769cf20ab8e4a73ea901b84d69bf44
+F autoconf/README 14458f1046c118efa721aadec5f227e876d3cd38
+F autoconf/README.first 47dd53221023b18c836ab00dba6e00bd86132453
+F autoconf/config.guess 94cc57e2a3fdb9c235b362ace86d77e89d188cad x
+F autoconf/config.sub 1efb390a8fb4bfafd74783a15a8fb5311c84300e x
+F autoconf/configure.ac ba3e99ba1a8171d0682b68443517088fc5d6f13a
+F autoconf/depcomp 0b26f101e3bc9fd1ff0be1da9fb4a82371142f92 x
+F autoconf/install-sh 06ee6336e63bb845c8439d777c32eb2eccc4fbf1 x
+F autoconf/ltmain.sh 7a658a24028f02331c1d2446562758083c5eadd1
+F autoconf/missing d7c9981a81af13370d4ed152b24c0a82b7028585 x
+F autoconf/tea/Makefile.in 5c3b0bdfb66c20d55ebff59d1718864461570ca9
+F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
+F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
+F autoconf/tea/configure.in e0466b881b53f31f5a4a69e7a91ad130902fb359
+F autoconf/tea/doc/sqlite3.n e268faa1691c33663d3a7faf9fa30673d14bd879
+F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
+F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
+F autoconf/tea/tclconfig/install-sh b087e5c4b92820c60bffb74acc1d9c2d40d80b8f
+F autoconf/tea/tclconfig/tcl.m4 a68179d7cc45524fa59db428a36610e20bdba808
+F autoconf/tea/win/makefile.vc f89d0184d0eee5f7e356ea407964dcd139939928
+F autoconf/tea/win/nmakehlp.c 2070e086f39866b353a482d3a14dedaf26196506
+F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
@@ -114,7 +137,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
-F main.mk a8ebdf910e2cc10db1f9f54ec316f637458e8001
+F main.mk 2a3cd58acfd1ecc656027afdd60ed1eefb07380f
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -1033,6 +1056,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 680980c7935bfa1edec20c804c9e5ba4b1dd96f5
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
+F tool/mkautoconfamal.sh 9ef9ad69bc3021a6fd2dac53a2e8cf5b97e0df05
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1066,7 +1090,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 61a10452399db28cd5ea4ba9d416b87a34c2eddb
-R 5b2b7d523083ab3d77d86c0cce4d267d
+P 3cd2da42e9403b1e6243ad53f3f2bbf89c0fb9b0 3fdc8b56493350fc4854fb1eaefe29ac87784f91
+R 5f01d70f556992e077a0b0dc7f686941
 U dan
-Z 5b590f475035536f2f371b845c79a1e4
+Z 9cf41dafa5dbcb69eb0f753e10b8143c

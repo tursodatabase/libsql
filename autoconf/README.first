@@ -1,0 +1,57 @@
+
+This file describes how to use the files in this directory to create a new
+version of the "autoconf-amalgamation" package.
+
+1. The following files should have executable permission:
+
+  chmod 755 install-sh 
+  chmod 755 missing 
+  chmod 755 depcomp
+  chmod 755 config.sub
+  chmod 755 config.guess
+
+2. Copy new versions of the following SQLite files into this directory:
+
+  sqlite3.c
+  sqlite3.h
+  sqlite3ext.h
+  sqlite3.1
+  sqlite3.pc.in
+  shell.c
+
+3. Update the SQLite version number in the AC_INIT macro in file 
+   configure.ac:
+
+     AC_INIT(sqlite, 3.6.3, http://www.sqlite.org)
+
+4. Run the following commands to push the version number change through
+   to the generated files.
+
+  aclocal
+  autoconf
+  automake
+
+5. Create the tclsqlite3.c file in the tea/generic directory. As follows:
+
+  mkdir -p tea/generic
+  echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c 
+  echo "# include <sqlite3.h>"        >> tea/generic/tclsqlite3.c
+  echo "#else"                        >> tea/generic/tclsqlite3.c
+  echo "#include \"../../sqlite3.c\"" >> tea/generic/tclsqlite3.c
+  echo "#endif"                       >> tea/generic/tclsqlite3.c
+  cat  ../src/tclsqlite.c             >> tea/generic/tclsqlite3.c
+
+6. Update the SQLite version in the AC_INIT macro in file tea/configure.in:
+
+  AC_INIT([sqlite], [3.6.3])
+
+7. From the 'tea' directory, run the following commands:
+
+  autoconf
+  rm -rf autom4te.cache
+
+8. Run "./configure && make dist". This builds a distribution package
+   named something like "sqlite-3.6.3.tar.gz". Rename to 
+   "sqlite-amalgamation-3.6.3.tar.gz" and use.
+
+

@@ -620,6 +620,11 @@ extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
 
+# Build the amalgamation-autoconf package.
+#
+dist: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
+
 
 # Standard install and cleanup targets
 #
