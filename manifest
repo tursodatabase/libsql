@@ -1,9 +1,9 @@
-C Finish\sremoving\sthe\ssqlite3.inTrans\sfield.\s\sIn\sthe\sprevious\scheck-in,\sit\swas\nmerely\scommented\sout\sbecause\sI\sfailed\sto\sselect\sFile->Save\son\smy\stext\seditor.
-D 2013-05-28T17:30:52.422
+C Add\sthe\spercentile()\sSQL\sfunction\sas\sa\sloadable\s\nextension\sin\sthe\sext/misc\sdirectory.
+D 2013-05-28T20:25:54.766
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in f6b58b7bdf6535f0f0620c486dd59aa4662c0b4f
+F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 5dc042f51187414d5886ac6d8308630d484690c4
+F Makefile.msc 7d226394826f060f232c0a02a468e8651819b7c2
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -111,6 +111,7 @@ F ext/misc/closure.c 40788c54c59190a1f52f6492a260d8894a246fe9
 F ext/misc/fuzzer.c 51bd96960b6b077d41d6f3cedefbcb57f29efaa2
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
+F ext/misc/percentile.c 4fb5e46c4312b0be74e8e497ac18f805f0e3e6c5
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 6d7ce6105a4b7729f6c44ccdf1ab7e80d9707c02
@@ -137,7 +138,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
-F main.mk 2a3cd58acfd1ecc656027afdd60ed1eefb07380f
+F main.mk e536751ac719806209c51f5dc63022a5dd40c631
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -224,7 +225,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
-F src/test1.c 43c87e52cb504e8c9928b1e9bad21a6117c695e9
+F src/test1.c 6d2a340eea1d866bf7059894491652a69a7ee802
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -703,6 +704,7 @@ F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
+F test/percentile.test 4614301e38398df7fdd5f28f4ed8f272b328251b
 F test/permutations.test d997a947ab8aabb15f763d50a030b3c11e8ef1b6
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
@@ -1090,7 +1092,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c3381cd4957013d46075996c3b865177c888d2a8
-R b4b6c4d83a50772ea0d179f36ddb400e
+P 2f97e38a6611cb17c24d74332d3ac3777dc0dd3e
+R 339888db3396051923023dfe123ab06e
 U drh
-Z a65b38b6ed5056fa8821564d4893ee8d
+Z 1117fca47d6619d98ed20043a3bd4774
