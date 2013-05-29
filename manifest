@@ -1,5 +1,5 @@
-C Add\sthe\spercentile()\sSQL\sfunction\sas\sa\sloadable\s\nextension\sin\sthe\sext/misc\sdirectory.
-D 2013-05-28T20:25:54.766
+C Add\stests\sfor\srunning\sFTS\s'merge'\sand\s'optimize'\scommands\sin\sshared\scache\smode.
+D 2013-05-29T14:22:19.357
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -549,6 +549,7 @@ F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
+F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4unicode.test 25ccad45896f8e50f6a694cff738a35f798cdb40
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test b0fc34fdc36897769651975a2b0a606312753643
@@ -1092,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2f97e38a6611cb17c24d74332d3ac3777dc0dd3e
-R 339888db3396051923023dfe123ab06e
-U drh
-Z 1117fca47d6619d98ed20043a3bd4774
+P a64d760d9290b1be78cdda7ae66d4f02c3b3fa53
+R 397c6acb8d54cefb71664fb2c7388de6
+U dan
+Z 3291738ca16dd9e62c0c52ca9c9e0ddb
