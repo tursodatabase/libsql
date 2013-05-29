@@ -6590,7 +6590,27 @@ void sqlite3PagerSetCodec(
 void *sqlite3PagerGetCodec(Pager *pPager){
   return pPager->pCodec;
 }
-#endif
+
+/*
+** This function is called by the wal module when writing page content
+** into the log file.
+**
+** This function returns a pointer to a buffer containing the encrypted
+** page content. If a malloc fails, this function may return NULL.
+*/
+void *sqlite3PagerCodec(PgHdr *pPg){
+  void *aData = 0;
+  CODEC2(pPg->pPager, pPg->pData, pPg->pgno, 6, return 0, aData);
+  return aData;
+}
+
+/*
+** Return the current pager state
+*/
+int sqlite3PagerState(Pager *pPager){
+  return pPager->eState;
+}
+#endif /* SQLITE_HAS_CODEC */
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
@@ -7144,20 +7164,5 @@ int sqlite3PagerWalFramesize(Pager *pPager){
   return sqlite3WalFramesize(pPager->pWal);
 }
 #endif
-
-#ifdef SQLITE_HAS_CODEC
-/*
-** This function is called by the wal module when writing page content
-** into the log file.
-**
-** This function returns a pointer to a buffer containing the encrypted
-** page content. If a malloc fails, this function may return NULL.
-*/
-void *sqlite3PagerCodec(PgHdr *pPg){
-  void *aData = 0;
-  CODEC2(pPg->pPager, pPg->pData, pPg->pgno, 6, return 0, aData);
-  return aData;
-}
-#endif /* SQLITE_HAS_CODEC */
 
 #endif /* SQLITE_OMIT_DISKIO */
