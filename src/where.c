@@ -4588,6 +4588,7 @@ static int wherePathSatisfiesOrderBy(
     j = 0;
     revSet = rev = 0;
     for(j=0; j<=nColumn && nUsed<nOrderBy; j++, nUsed++){
+      int skipable;
       pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[nUsed].pExpr);
       assert( pOBExpr->op==TK_COLUMN );
       if( pOBExpr->iTable!=iCur ) break;
@@ -4602,20 +4603,25 @@ static int wherePathSatisfiesOrderBy(
         iColumn = -1;
         revIdx = 0;
       }
+      skipable = j<pLoop->u.btree.nEq && pLoop->aTerm[j]->eOperator!=WO_IN;
       if( pOBExpr->iColumn!=iColumn ){
-        if( j<pLoop->u.btree.nEq ){ nUsed--; continue; }
+        if( skipable ){ nUsed--; continue; }
         return 0;
       }
       if( iColumn>=0 ){
         pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[nUsed].pExpr);
         if( !pColl ) pColl = db->pDfltColl;
-        if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) return 0;
+        if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ){
+          return 0;
+        }
       }
-      if( revSet ){
-        if( (rev ^ revIdx)!=pOrderBy->a[nUsed].sortOrder ) return 0;
-      }else{
-        rev = revIdx ^ pOrderBy->a[nUsed].sortOrder;
-        revSet = 1;
+      if( !skipable ){
+        if( revSet ){
+          if( (rev ^ revIdx)!=pOrderBy->a[nUsed].sortOrder ) return 0;
+        }else{
+          rev = revIdx ^ pOrderBy->a[nUsed].sortOrder;
+          revSet = 1;
+        }
       }
     }
     if( rev ) revMask |= ((Bitmask)1)<<i;
