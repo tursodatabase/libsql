@@ -1,5 +1,5 @@
-C Merge\srecent\strunk\schanges\sinto\sthe\sNGQP\sbranch.
-D 2013-05-30T11:48:36.654
+C Cut\sover\sthe\sNGQP\squery\splanner.\s\sRemove\slots\sof\slegacy\scode.\s\s\nThis\scheck-in\scompiles\sbut\sdoes\snot\swork.\s\sThe\stest\ssuite\sgets\sincorrect\nanswers\sand\scrashes.
+D 2013-05-30T17:43:19.293
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/shell.c 9a18124ff209ca308d786c99a466e8e270193ff3
 F src/sqlite.h.in 5b390ca5d94e09e56e7fee6a51ddde4721b89f8e
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h 55f43f10f165c8c17334e33a11b2d58a557b4a2c
+F src/sqliteInt.h c386fb7c61c03a0a65d78e326016449767be5b93
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 3f4f25df651e8cea5b02d94aeee28838e9c5e2c3
+F src/where.c 296baae1cbfd99527d8c87f9773a6c98116f6b8a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 211f7a5374fe20a02535edc8b799a8a7136ff6b3 d5b084e9d8cfe9c0c339aca076d472bb50aa764c
-R 6c4c190a12a33f58ef606f4f8676d338
+P aebe1f2603ee04d792af73aaf59625bda99d5cd1
+R cdb9a6b0104d69931bfa04869e682c85
 U drh
-Z e692c34c627e293c83ac7dc20bf238bc
+Z 36d07876c5b50e19bee990a15e1431a7

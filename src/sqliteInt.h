@@ -1989,7 +1989,6 @@ struct WherePlan {
 ** after FROM clause ordering.
 */
 struct WhereLevel {
-  WherePlan plan;       /* query plan for this element of the FROM clause */
   int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
   int iTabCur;          /* The VDBE cursor used to access the table */
   int iIdxCur;          /* The VDBE cursor used to access pIdx */
@@ -1997,7 +1996,7 @@ struct WhereLevel {
   int addrNxt;          /* Jump here to start the next IN combination */
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
-  u8 iFrom;             /* Which entry in the FROM clause */
+  u8 iFrom;       /* FIXME: Which entry in the FROM clause */
   u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to ends the loop */
   union {               /* Information that depends on plan.wsFlags */
@@ -2011,16 +2010,7 @@ struct WhereLevel {
     } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
-  double rOptCost;      /* "Optimal" cost for this level */
   struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
-
-  /* The following field is really not part of the current level.  But
-  ** we need a place to cache virtual table index information for each
-  ** virtual table in the FROM clause and the WhereLevel structure is
-  ** a convenient place since there is one WhereLevel for each FROM clause
-  ** element.
-  */
-  sqlite3_index_info *pIdxInfo;  /* Index info for n-th source table */
 };
 
 /*
