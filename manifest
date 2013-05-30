@@ -1,5 +1,5 @@
-C The\sexpected\sresult\sin\sa\stest\scase\scan\sbe\sof\sthe\sform\s"*glob*"\sor\s"~*glob*"\sto\s\nmatch\sor\snot\smatch\sthe\sGLOB\spattern.\s\sThis\sis\suseful\sfor\smatching\nEXPLAIN\sQUERY\sPLAN\soutput\sthat\scontains\sregular\sexpression\ssyntax\scharacters\nlike\s"?",\s"(",\sand\s")".
-D 2013-05-30T19:28:34.431
+C Futher\ssimplifications\sto\sthe\sNGQP.\s\sFix\ssome\stest\scases\sto\suse\nEXPLAIN\sQUERY\sPLAN\srather\sthan\sthe\s(now\sobsolete)\ssqlite_query_plan\nglobal\svariable.
+D 2013-05-30T19:29:19.963
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
-F src/test1.c 6d2a340eea1d866bf7059894491652a69a7ee802
+F src/test1.c 5f9837aee1a0708ab2dbf67ce0b9c18e658cd36b
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 296baae1cbfd99527d8c87f9773a6c98116f6b8a
+F src/where.c 3e9b7b3323f78ec3056c5e3aa3443661bc590054
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1028,7 +1028,7 @@ F test/walro.test a31deb621033442a76c3a61e44929250d06f81b1
 F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test 15ac8611c9439a2c5f4a6ac10cfe4c1ec9854c24
+F test/where.test 054a6b6f7933c5a5f50d0bcd650b5eccb450cc81
 F test/where2.test 399b3178289925a0aa976b3d60ef139740540ecd
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 001539df4b74dc1cbceb010a91407003ab4d8735
-R ae73b581603fe5cb9a5fdce5dbec1c53
+P a3b4e261bd7e278f150872cce7b020af5ad8d2ed
+R b028bf2657ab598aee5d4698a0488fdc
 U drh
-Z 68529a7f58c35b9a5dca06d2c9973260
+Z 3432943259d0f5aa9c669ba0e80caf85

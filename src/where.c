@@ -326,33 +326,22 @@ struct WhereLoopBuilder {
 ** WhereLevel.wsFlags.  These flags determine which search
 ** strategies are appropriate.
 */
-#define WHERE_ROWID_EQ     0x00000001  /* rowid=EXPR or rowid IN (...) */
-#define WHERE_ROWID_RANGE  0x00000002  /* rowid<EXPR and/or rowid>EXPR */
-#define WHERE_NULL_OK      0x00000004  /* Ok to use WO_ISNULL */
-#define WHERE_IPK          0x00000008  /* x is the INTEGER PRIMARY KEY */
-#define WHERE_COLUMN_EQ    0x00000010  /* x=EXPR or x IN (...) or x IS NULL */
-#define WHERE_COLUMN_RANGE 0x00000020  /* x<EXPR and/or x>EXPR */
-#define WHERE_COLUMN_IN    0x00000040  /* x IN (...) */
-#define WHERE_COLUMN_NULL  0x00000080  /* x IS NULL */
-#define WHERE_INDEXED      0x000000f0  /* Anything that uses an index */
-#define WHERE_NOT_FULLSCAN 0x000200f3  /* Does not do a full table scan */
-#define WHERE_IN_ABLE      0x000100f1  /* Able to support an IN operator */
-#define WHERE_TOP_LIMIT    0x00000100  /* x<EXPR or x<=EXPR constraint */
-#define WHERE_BTM_LIMIT    0x00000200  /* x>EXPR or x>=EXPR constraint */
-#define WHERE_BOTH_LIMIT   0x00000300  /* Both x>EXPR and x<EXPR */
-#define WHERE_IDX_ONLY     0x00000400  /* Use index only - omit table */
-#define WHERE_ORDERED      0x00000800  /* Output will appear in correct order */
-#define WHERE_REVERSE      0x00001000  /* Scan in reverse order */
-#define WHERE_UNIQUE       0x00002000  /* Selects no more than one row */
-#define WHERE_ALL_UNIQUE   0x00004000  /* This and all prior have one row */
-#define WHERE_OB_UNIQUE    0x00008000  /* Values in ORDER BY columns are 
-                                       ** different for every output row */
-#define WHERE_VIRTUALTABLE 0x00010000  /* Use virtual-table processing */
-#define WHERE_MULTI_OR     0x00020000  /* OR using multiple indices */
-#define WHERE_TEMP_INDEX   0x00040000  /* Uses an ephemeral index */
-#define WHERE_DISTINCT     0x00080000  /* Correct order for DISTINCT */
-#define WHERE_COVER_SCAN   0x00100000  /* Full scan of a covering index */
-#define WHERE_SINGLE_ROW   0x00200000  /* No more than one row guaranteed */
+#define WHERE_COLUMN_EQ    0x00000001  /* x=EXPR or x IN (...) or x IS NULL */
+#define WHERE_COLUMN_RANGE 0x00000002  /* x<EXPR and/or x>EXPR */
+#define WHERE_COLUMN_IN    0x00000004  /* x IN (...) */
+#define WHERE_COLUMN_NULL  0x00000008  /* x IS NULL */
+#define WHERE_TOP_LIMIT    0x00000010  /* x<EXPR or x<=EXPR constraint */
+#define WHERE_BTM_LIMIT    0x00000020  /* x>EXPR or x>=EXPR constraint */
+#define WHERE_BOTH_LIMIT   0x00000030  /* Both x>EXPR and x<EXPR */
+#define WHERE_IDX_ONLY     0x00000040  /* Use index only - omit table */
+#define WHERE_IPK          0x00000100  /* x is the INTEGER PRIMARY KEY */
+#define WHERE_INDEXED      0x00000200  /* WhereLoop.u.btree.pIndex is valid */
+#define WHERE_VIRTUALTABLE 0x00000400  /* WhereLoop.u.vtab is valid */
+#define WHERE_IN_ABLE      0x00000800  /* Able to support an IN operator */
+#define WHERE_UNIQUE       0x00001000  /* Selects no more than one row */
+#define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
+#define WHERE_TEMP_INDEX   0x00004000  /* Uses an ephemeral index */
+#define WHERE_COVER_SCAN   0x00008000  /* Full scan of a covering index */
 
 /*
 ** This module contains many separate subroutines that work together to
@@ -2671,7 +2660,8 @@ static int codeEqualityTerm(
     }
     iTab = pX->iTable;
     sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
-    assert( pLoop->wsFlags & WHERE_IN_ABLE );
+    assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
+    pLoop->wsFlags |= WHERE_IN_ABLE;
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(v);
     }
@@ -3193,7 +3183,8 @@ static Bitmask codeOneLoopStart(
       sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, iRowidReg);
       sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
     }
-  }else if( pLoop->wsFlags & (WHERE_COLUMN_RANGE|WHERE_COLUMN_EQ|WHERE_IDX_ONLY) ){
+  }else if( pLoop->wsFlags & (WHERE_COLUMN_RANGE | WHERE_COLUMN_NULL |
+                              WHERE_COLUMN_EQ | WHERE_IDX_ONLY) ){
     /* Case 4: A scan using an index.
     **
     **         The WHERE clause may contain zero or more equality 
@@ -3746,18 +3737,6 @@ static Bitmask codeOneLoopStart(
   return newNotReady;
 }
 
-#if defined(SQLITE_TEST)
-/*
-** The following variable holds a text description of query plan generated
-** by the most recent call to sqlite3WhereBegin().  Each call to WhereBegin
-** overwrites the previous.  This information is used for testing and
-** analysis only.
-*/
-char sqlite3_query_plan[BMS*2*40];  /* Text of the join */
-static int nQPlan = 0;              /* Next free slow in _query_plan[] */
-
-#endif /* SQLITE_TEST */
-
 #ifdef WHERETRACE_ENABLED
 /*
 ** Print a WhereLoop object for debugging purposes
@@ -3793,7 +3772,7 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
     sqlite3DebugPrintf(" %-15s", z);
     sqlite3_free(z);
   }
-  sqlite3DebugPrintf(" fg %08x N %d", p->wsFlags, p->nTerm);
+  sqlite3DebugPrintf(" fg %05x N %d", p->wsFlags, p->nTerm);
   sqlite3DebugPrintf(" cost %.2g,%.2g,%.2g\n",
                      p->prereq, p->rSetup, p->rRun, p->nOut);
 }
@@ -3810,6 +3789,10 @@ static void whereLoopClear(sqlite3 *db, WhereLoop *p){
     if( p->u.vtab.needFree ) sqlite3_free(p->u.vtab.idxStr);
     p->u.vtab.needFree = 0;
     p->u.vtab.idxStr = 0;
+  }else if( (p->wsFlags & WHERE_TEMP_INDEX)!=0 && p->u.btree.pIndex!=0 ){
+    sqlite3DbFree(db, p->u.btree.pIndex->zColAff);
+    sqlite3DbFree(db, p->u.btree.pIndex);
+    p->u.btree.pIndex = 0;
   }
 }
 
@@ -3826,16 +3809,6 @@ static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
 */
 static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   if( ALWAYS(pWInfo) ){
-    int i;
-    for(i=0; i<pWInfo->nLevel; i++){
-      if( pWInfo->a[i].pWLoop->wsFlags & WHERE_TEMP_INDEX ){
-        Index *pIdx = pWInfo->a[i].pWLoop->u.btree.pIndex;
-        if( pIdx ){
-          sqlite3DbFree(db, pIdx->zColAff);
-          sqlite3DbFree(db, pIdx);
-        }
-      }
-    }
     whereClauseClear(pWInfo->pWC);
     while( pWInfo->pLoops ){
       WhereLoop *p = pWInfo->pLoops;
@@ -4026,8 +3999,12 @@ static int whereLoopAddBtreeIndex(
       }
       pNew->u.btree.nEq++;
       pNew->nOut = (double)iRowEst * nInMul * nIn;
-    }else if( pTerm->eOperator & (WO_EQ|WO_ISNULL) ){
+    }else if( pTerm->eOperator & (WO_EQ) ){
       pNew->wsFlags |= WHERE_COLUMN_EQ;
+      pNew->u.btree.nEq++;
+      pNew->nOut = (double)iRowEst * nInMul;
+    }else if( pTerm->eOperator & (WO_ISNULL) ){
+      pNew->wsFlags |= WHERE_COLUMN_NULL;
       pNew->u.btree.nEq++;
       pNew->nOut = (double)iRowEst * nInMul;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
@@ -4197,7 +4174,7 @@ static int whereLoopAddBtree(
           m &= ~(((Bitmask)1)<<x);
         }
       }
-      pNew->wsFlags = (m==0) ? WHERE_IDX_ONLY : 0;
+      pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
 
       /* Full scan via index */
       if( (m==0 || b) && pProbe->bUnordered==0 ){
@@ -5246,62 +5223,7 @@ WhereInfo *sqlite3WhereBegin(
     pWInfo->iContinue = pLevel->addrCont;
   }
 
-#if defined(SQLITE_TEST) && 0  /* For testing and debugging use only */
-  /* Record in the query plan information about the current table
-  ** and the index used to access it (if any).  If the table itself
-  ** is not used, its name is just '{}'.  If no index is used
-  ** the index is listed as "{}".  If the primary key is used the
-  ** index name is '*'.
-  */
-  for(ii=0; ii<nTabList; ii++){
-    char *z;
-    int n;
-    int w;
-    struct SrcList_item *pTabItem;
-
-    pLevel = &pWInfo->a[ii];
-    w = pLevel->plan.wsFlags;
-    pTabItem = &pTabList->a[pLevel->iFrom];
-    z = pTabItem->zAlias;
-    if( z==0 ) z = pTabItem->pTab->zName;
-    n = sqlite3Strlen30(z);
-    if( n+nQPlan < sizeof(sqlite3_query_plan)-10 ){
-      if( (w & WHERE_IDX_ONLY)!=0 && (w & WHERE_COVER_SCAN)==0 ){
-        memcpy(&sqlite3_query_plan[nQPlan], "{}", 2);
-        nQPlan += 2;
-      }else{
-        memcpy(&sqlite3_query_plan[nQPlan], z, n);
-        nQPlan += n;
-      }
-      sqlite3_query_plan[nQPlan++] = ' ';
-    }
-    testcase( w & WHERE_ROWID_EQ );
-    testcase( w & WHERE_ROWID_RANGE );
-    if( w & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
-      memcpy(&sqlite3_query_plan[nQPlan], "* ", 2);
-      nQPlan += 2;
-    }else if( (w & WHERE_INDEXED)!=0 && (w & WHERE_COVER_SCAN)==0 ){
-      n = sqlite3Strlen30(pLevel->plan.u.pIdx->zName);
-      if( n+nQPlan < sizeof(sqlite3_query_plan)-2 ){
-        memcpy(&sqlite3_query_plan[nQPlan], pLevel->plan.u.pIdx->zName, n);
-        nQPlan += n;
-        sqlite3_query_plan[nQPlan++] = ' ';
-      }
-    }else{
-      memcpy(&sqlite3_query_plan[nQPlan], "{} ", 3);
-      nQPlan += 3;
-    }
-  }
-  while( nQPlan>0 && sqlite3_query_plan[nQPlan-1]==' ' ){
-    sqlite3_query_plan[--nQPlan] = 0;
-  }
-  sqlite3_query_plan[nQPlan] = 0;
-  nQPlan = 0;
-#endif /* SQLITE_TEST // Testing and debugging use only */
-
-  /* Record the continuation address in the WhereInfo structure.  Then
-  ** clean up and return.
-  */
+  /* Done. */
   return pWInfo;
 
   /* Jump here if malloc fails */
