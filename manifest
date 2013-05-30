@@ -1,5 +1,5 @@
-C Cut\sover\sthe\sNGQP\squery\splanner.\s\sRemove\slots\sof\slegacy\scode.\s\s\nThis\scheck-in\scompiles\sbut\sdoes\snot\swork.\s\sThe\stest\ssuite\sgets\sincorrect\nanswers\sand\scrashes.
-D 2013-05-30T17:43:19.293
+C The\sexpected\sresult\sin\sa\stest\scase\scan\sbe\sof\sthe\sform\s"*glob*"\sor\s"~*glob*"\sto\s\nmatch\sor\snot\smatch\sthe\sGLOB\spattern.\s\sThis\sis\suseful\sfor\smatching\nEXPLAIN\sQUERY\sPLAN\soutput\sthat\scontains\sregular\sexpression\ssyntax\scharacters\nlike\s"?",\s"(",\sand\s")".
+D 2013-05-30T19:28:34.431
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -806,7 +806,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 693700993b7e0a5b7b2171b291a54cdbad1d86ff
+F test/tester.tcl 63b24679c75a952c51f924de2802b2b57cddd22d
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P aebe1f2603ee04d792af73aaf59625bda99d5cd1
-R cdb9a6b0104d69931bfa04869e682c85
+P 001539df4b74dc1cbceb010a91407003ab4d8735
+R ae73b581603fe5cb9a5fdce5dbec1c53
 U drh
-Z 36d07876c5b50e19bee990a15e1431a7
+Z 68529a7f58c35b9a5dca06d2c9973260
