@@ -701,7 +701,7 @@ static int binCollFunc(
 /*
 ** Another built-in collating sequence: NOCASE. 
 **
-** This collating sequence is intended to be used for "case independant
+** This collating sequence is intended to be used for "case independent
 ** comparison". SQLite's knowledge of upper and lower case equivalents
 ** extends only to the 26 characters used in the English language.
 **
@@ -1024,7 +1024,6 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
         inTrans = 1;
       }
       sqlite3BtreeRollback(p, tripCode);
-      db->aDb[i].inTrans = 0;
     }
   }
   sqlite3VtabRollback(db);
@@ -2791,8 +2790,6 @@ int sqlite3_global_recover(void){
 ** mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
 ** by default.  Autocommit is disabled by a BEGIN statement and reenabled
 ** by the next COMMIT or ROLLBACK.
-**
-******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
 int sqlite3_get_autocommit(sqlite3 *db){
   return db->autoCommit;

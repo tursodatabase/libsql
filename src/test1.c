@@ -2469,7 +2469,7 @@ static int sqlite_static_bind_nbyte = 0;
 /*
 ** Usage:  sqlite3_bind  VM  IDX  VALUE  FLAGS
 **
-** Sets the value of the IDX-th occurance of "?" in the original SQL
+** Sets the value of the IDX-th occurrence of "?" in the original SQL
 ** string.  VALUE is the new value.  If FLAGS=="null" then VALUE is
 ** ignored and the value is set to NULL.  If FLAGS=="static" then
 ** the value is set to the value of a static variable named
@@ -5563,7 +5563,7 @@ static int test_wal_checkpoint(
 **
 ** Otherwise, this command returns a list of three integers. The first integer
 ** is 1 if SQLITE_BUSY was returned, or 0 otherwise. The following two integers
-** are the values returned via the output paramaters by wal_checkpoint_v2() -
+** are the values returned via the output parameters by wal_checkpoint_v2() -
 ** the number of frames in the log and the number of frames in the log
 ** that have been checkpointed.
 */
@@ -6012,6 +6012,7 @@ static int tclLoadStaticExtensionCmd(
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6024,6 +6025,7 @@ static int tclLoadStaticExtensionCmd(
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
+    { "percentile",            sqlite3_percentile_init           },
     { "regexp",                sqlite3_regexp_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "wholenumber",           sqlite3_wholenumber_init          },

@@ -22,7 +22,7 @@
 **   * Implementations of the SQL scalar upper() and lower() functions
 **     for case mapping.
 **
-**   * Integration of ICU and SQLite collation seqences.
+**   * Integration of ICU and SQLite collation sequences.
 **
 **   * An implementation of the LIKE operator that uses ICU to 
 **     provide case-independent matching.

@@ -213,7 +213,7 @@ id(A) ::= INDEXED(X).    {A = X;}
   .
 %wildcard ANY.
 
-// Define operator precedence early so that this is the first occurance
+// Define operator precedence early so that this is the first occurrence
 // of the operator tokens in the grammer.  Keeping the operators together
 // causes them to be assigned integer values that are close together,
 // which keeps parser tables smaller.

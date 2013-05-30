@@ -25,7 +25,7 @@
 ** The sqlite_stat2 table is not created or used unless the SQLite version
 ** is between 3.6.18 and 3.7.8, inclusive, and unless SQLite is compiled
 ** with SQLITE_ENABLE_STAT2.  The sqlite_stat2 table is deprecated.
-** The sqlite_stat2 table is superceded by sqlite_stat3, which is only
+** The sqlite_stat2 table is superseded by sqlite_stat3, which is only
 ** created and used by SQLite versions 3.7.9 and later and with
 ** SQLITE_ENABLE_STAT3 defined.  The fucntionality of sqlite_stat3
 ** is a superset of sqlite_stat2.  

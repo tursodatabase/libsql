@@ -1002,7 +1002,7 @@ void sqlite3CodeRowTriggerDirect(
 /*
 ** This is called to code the required FOR EACH ROW triggers for an operation
 ** on table pTab. The operation to code triggers for (INSERT, UPDATE or DELETE)
-** is given by the op paramater. The tr_tm parameter determines whether the
+** is given by the op parameter. The tr_tm parameter determines whether the
 ** BEFORE or AFTER triggers are coded. If the operation is an UPDATE, then
 ** parameter pChanges is passed the list of columns being modified.
 **

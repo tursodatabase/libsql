@@ -2914,8 +2914,8 @@ case OP_AutoCommit: {
 ** other process can start another write transaction while this transaction is
 ** underway.  Starting a write transaction also creates a rollback journal. A
 ** write transaction must be started before any changes can be made to the
-** database.  If P2 is 2 or greater then an EXCLUSIVE lock is also obtained
-** on the file.
+** database.  If P2 is greater than or equal to 2 then an EXCLUSIVE lock is
+** also obtained on the file.
 **
 ** If a write-transaction is started and the Vdbe.usesStmtJournal flag is
 ** true (this flag is set if the Vdbe may modify more than one row and may
