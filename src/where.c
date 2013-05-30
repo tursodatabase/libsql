@@ -3183,8 +3183,7 @@ static Bitmask codeOneLoopStart(
       sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, iRowidReg);
       sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
     }
-  }else if( pLoop->wsFlags & (WHERE_COLUMN_RANGE | WHERE_COLUMN_NULL |
-                              WHERE_COLUMN_EQ | WHERE_IDX_ONLY) ){
+  }else if( pLoop->wsFlags & WHERE_INDEXED ){
     /* Case 4: A scan using an index.
     **
     **         The WHERE clause may contain zero or more equality 
@@ -3425,7 +3424,8 @@ static Bitmask codeOneLoopStart(
       pLevel->op = OP_Next;
     }
     pLevel->p1 = iIdxCur;
-    if( pLoop->wsFlags & WHERE_COVER_SCAN ){
+    if( (pLoop->wsFlags & (WHERE_COLUMN_EQ | WHERE_COLUMN_RANGE | 
+                          WHERE_COLUMN_NULL | WHERE_COLUMN_IN))==0 ){
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
     }else{
       assert( pLevel->p5==0 );
@@ -3875,6 +3875,18 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   */
   for(ppPrev=&pWInfo->pLoops, p=*ppPrev; p; ppPrev=&p->pNextLoop, p=*ppPrev){
     if( p->iTab!=pTemplate->iTab || p->iSortIdx!=pTemplate->iSortIdx ) continue;
+    if( p->nTerm<pTemplate->nTerm
+     && (p->wsFlags & WHERE_INDEXED)!=0
+     && (pTemplate->wsFlags & WHERE_INDEXED)!=0
+     && p->u.btree.pIndex==pTemplate->u.btree.pIndex
+     && p->prereq==pTemplate->prereq
+    ){
+      /* Overwrite an existing WhereLoop with an similar one that uses
+      ** more terms of the index */
+      pNext = p->pNextLoop;
+      whereLoopClear(db, p);
+      break;
+    }
     if( (p->prereq & pTemplate->prereq)==p->prereq
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
@@ -4590,7 +4602,10 @@ static int wherePathSatisfiesOrderBy(
         iColumn = -1;
         revIdx = 0;
       }
-      if( pOBExpr->iColumn!=iColumn ) return 0;
+      if( pOBExpr->iColumn!=iColumn ){
+        if( j<pLoop->u.btree.nEq ){ nUsed--; continue; }
+        return 0;
+      }
       if( iColumn>=0 ){
         pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[nUsed].pExpr);
         if( !pColl ) pColl = db->pDfltColl;
