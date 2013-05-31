@@ -4864,9 +4864,11 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
     nFrom = nTo;
   }
 
-  /* TEMPORARY */
-  if( nFrom==0 ){ sqlite3DbFree(db, pSpace); return SQLITE_ERROR; }
-  assert( nFrom>0 );
+  if( nFrom==0 ){
+    sqlite3ErrorMsg(pWInfo->pParse, "no query solution");
+    sqlite3DbFree(db, pSpace);
+    return SQLITE_ERROR;
+  }
   
   /* Find the lowest cost path.  pFrom will be left pointing to that path */
   pFrom = aFrom;
@@ -5151,6 +5153,9 @@ WhereInfo *sqlite3WhereBegin(
      wherePathSolver(pWInfo, pWInfo->nRowOut);
      if( db->mallocFailed ) goto whereBeginError;
   }
+  if( pParse->nErr || db->mallocFailed ){
+    goto whereBeginError;
+  }
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     int ii;
@@ -5166,9 +5171,6 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
   WHERETRACE(("*** Optimizer Finished ***\n"));
-  if( pParse->nErr || db->mallocFailed ){
-    goto whereBeginError;
-  }
 
 #if 0  /* FIXME: Add this back in? */
   /* If the caller is an UPDATE or DELETE statement that is requesting
