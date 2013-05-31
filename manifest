@@ -1,5 +1,5 @@
-C Enhance\sthe\sshell\sto\sprovide\smore\sflexibility\swhen\sentering\snumeric\sarguments\non\sdot-commands.\s\sIn\sparticular,\sallow\shex\sarguments\sto\s.wheretrace.
-D 2013-05-31T14:31:11.784
+C Allow\stracing\sof\swhereLoopInsert()\swhen\sthe\s0x8\sbit\sis\sset\son\s".wheretrace".\nRemove\sthe\suse\sof\ssqlite_query_plan\sfrom\swhere2.test.\s\sFix\sa\sbug\sin\sthe\ncode\sgenerator\sfor\sOR\sclause\soptimizations.
+D 2013-05-31T15:18:46.709
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 8e9922815b07290982cfc826497d128115ce358c
+F src/where.c e120e28cb55cea658589ec2eca5764dcfa0396c2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1029,7 +1029,7 @@ F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test 054a6b6f7933c5a5f50d0bcd650b5eccb450cc81
-F test/where2.test 399b3178289925a0aa976b3d60ef139740540ecd
+F test/where2.test f902f62d60f20b0257dd700f0c4a2945527fca8e
 F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d8efa5f8b60bc4c8df8bfad077f87f76f7ee9bf6
-R cab66f9edd3249c76db6815f19ee5773
+P b9578c371ee569dca6a0964019959a93407c8ef9
+R 10e84b9c96bf0dc4179bf10aeea4849d
 U drh
-Z 93073f371b16237bef628d122f206ede
+Z 1f5041366a1e7c65f32184b30b5b84bc

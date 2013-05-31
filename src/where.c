@@ -3758,6 +3758,7 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     if( p->u.btree.pIndex ){
       const char *zName = p->u.btree.pIndex->zName;
+      if( zName==0 ) zName = "ipk";
       if( strncmp(zName, "sqlite_autoindex_", 17)==0 ){
         int i = sqlite3Strlen30(zName) - 1;
         while( zName[i]!='_' ) i--;
@@ -3865,16 +3866,22 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   if( (p = pBuilder->pBest)!=0 ){
     if( p->maskSelf!=0 ){
       if( p->rRun+p->rSetup < pTemplate->rRun+pTemplate->rSetup ){
-        return SQLITE_OK;
+        goto whereLoopInsert_noop;
       }
       if( p->rRun+p->rSetup == pTemplate->rRun+pTemplate->rSetup
        && p->prereq <= pTemplate->prereq ){
-        return SQLITE_OK;
+        goto whereLoopInsert_noop;
       }
     }
     *p = *pTemplate;
     p->aTerm = 0;
     p->u.vtab.needFree = 0;
+#if WHERETRACE_ENABLED
+    if( sqlite3WhereTrace & 0x8 ){
+      sqlite3DebugPrintf("ins-best: ");
+      whereLoopPrint(pTemplate, pBuilder->pTabList);
+    }
+#endif
     return SQLITE_OK;
   }
 
@@ -3901,7 +3908,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     ){
       /* Already holding an equal or better WhereLoop.
       ** Return without changing or adding anything */
-      return SQLITE_OK;
+      goto whereLoopInsert_noop;
     }
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rSetup>=pTemplate->rSetup
@@ -3918,6 +3925,16 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   ** with pTemplate[] if p[] exists, or if p==NULL then allocate a new
   ** WhereLoop and insert it.
   */
+#if WHERETRACE_ENABLED
+  if( sqlite3WhereTrace & 0x8 ){
+    if( p!=0 ){
+      sqlite3DebugPrintf("ins-del:  ");
+      whereLoopPrint(p, pBuilder->pTabList);
+    }
+    sqlite3DebugPrintf("ins-new:  ");
+    whereLoopPrint(pTemplate, pBuilder->pTabList);
+  }
+#endif
   if( p==0 ){
     p = pToFree = sqlite3DbMallocRaw(db, sizeof(WhereLoop));
     if( p==0 ) return SQLITE_NOMEM;
@@ -3945,6 +3962,16 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     pTemplate->u.vtab.needFree = 0;
   }
   return SQLITE_OK;
+
+  /* Jump here if the insert is a no-op */
+whereLoopInsert_noop:
+#if WHERETRACE_ENABLED
+  if( sqlite3WhereTrace & 0x8 ){
+    sqlite3DebugPrintf("ins-noop: ");
+    whereLoopPrint(pTemplate, pBuilder->pTabList);
+  }
+#endif
+  return SQLITE_OK;  
 }
 
 /*
@@ -4156,7 +4183,7 @@ static int whereLoopAddBtree(
         pNew->u.btree.pIndex = 0;
         pNew->nTerm = 1;
         pNew->aTerm[0] = pTerm;
-        pNew->rSetup = 2*rLogSize*pSrc->pTab->nRowEst;
+        pNew->rSetup = 20*rLogSize*pSrc->pTab->nRowEst;
         pNew->nOut = (double)10;
         pNew->rRun = rLogSize + pNew->nOut;
         pNew->wsFlags = WHERE_TEMP_INDEX;
@@ -4773,8 +4800,8 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
         }
         if( jj>=nTo ){
           if( nTo>=mxChoice && rCost>=mxCost ){
-#ifdef WHERETRACE_ENABLE
-            if( sqlite3WhereTrace>=3 ){
+#ifdef WHERETRACE_ENABLED
+            if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf("Skip   %s cost=%-7.2g order=%c\n",
                   wherePathName(pFrom, iLoop, pWLoop), rCost,
                   isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
@@ -4792,7 +4819,7 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
           }
           pTo = &aTo[jj];
 #ifdef WHERETRACE_ENABLED
-          if( sqlite3WhereTrace>=3 ){
+          if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf("New    %s cost=%-7.2g order=%c\n",
                 wherePathName(pFrom, iLoop, pWLoop), rCost,
                 isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
@@ -4801,7 +4828,7 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
         }else{
           if( pTo->rCost<=rCost ){
 #ifdef WHERETRACE_ENABLED
-            if( sqlite3WhereTrace>=3 ){
+            if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
                   "Skip   %s cost=%-7.2g order=%c",
                   wherePathName(pFrom, iLoop, pWLoop), rCost,
@@ -4815,7 +4842,7 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
           }
           /* A new and better score for a previously created equivalent path */
 #ifdef WHERETRACE_ENABLED
-          if( sqlite3WhereTrace>=3 ){
+          if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf(
                 "Update %s cost=%-7.2g order=%c",
                 wherePathName(pFrom, iLoop, pWLoop), rCost,
@@ -5239,9 +5266,8 @@ WhereInfo *sqlite3WhereBegin(
     if( pLoop->u.btree.pIndex!=0 ){
       Index *pIx = pLoop->u.btree.pIndex;
       KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
-      /* FIXME:  Might need to be the iIdxCur parameter.  As an optimization
-      ** use pTabItem->iCursor if WHERE_IDX_ONLY */
-      int iIndexCur = pLevel->iIdxCur = pParse->nTab++;
+      /* FIXME:  As an optimization use pTabItem->iCursor if WHERE_IDX_ONLY */
+      int iIndexCur = pLevel->iIdxCur = iIdxCur ? iIdxCur : pParse->nTab++;
       assert( pIx->pSchema==pTab->pSchema );
       assert( iIndexCur>=0 );
       sqlite3VdbeAddOp4(v, OP_OpenRead, iIndexCur, pIx->tnum, iDb,

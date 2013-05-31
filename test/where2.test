@@ -73,7 +73,18 @@ proc queryplan {sql} {
   set data [execsql $sql]
   if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
-  return [concat $data $::sqlite_query_plan]
+  set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
+  # puts eqp=$eqp
+  foreach {a b c x} $eqp {
+    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\W} \
+        $x all as tab idx]} {
+      lappend data $tab $idx
+    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\W} $x all as tab]} {
+      lappend data $tab *
+    }
+  }
+  return $data   
+  # return [concat $data $::sqlite_query_plan]
 }
 
 
