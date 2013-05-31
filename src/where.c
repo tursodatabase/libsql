@@ -39,7 +39,6 @@ typedef struct WhereClause WhereClause;
 typedef struct WhereMaskSet WhereMaskSet;
 typedef struct WhereOrInfo WhereOrInfo;
 typedef struct WhereAndInfo WhereAndInfo;
-typedef struct WhereCost WhereCost;
 typedef struct WhereLoop WhereLoop;
 typedef struct WherePath WherePath;
 typedef struct WhereTerm WhereTerm;
@@ -276,16 +275,6 @@ struct WhereMaskSet {
 };
 
 /*
-** A WhereCost object records a lookup strategy and the estimated
-** cost of pursuing that strategy.
-*/
-struct WhereCost {
-  WherePlan plan;    /* The lookup strategy */
-  double rCost;      /* Overall cost of pursuing this search strategy */
-  Bitmask used;      /* Bitmask of cursors used by this plan */
-};
-
-/*
 ** This object is a factory for WhereLoop objects for a particular query.
 */
 struct WhereLoopBuilder {
@@ -342,28 +331,6 @@ struct WhereLoopBuilder {
 #define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x00004000  /* Uses an ephemeral index */
 #define WHERE_COVER_SCAN   0x00008000  /* Full scan of a covering index */
-
-/*
-** This module contains many separate subroutines that work together to
-** find the best indices to use for accessing a particular table in a query.
-** An instance of the following structure holds context information about the
-** index search so that it can be more easily passed between the various
-** routines.
-*/
-typedef struct WhereBestIdx WhereBestIdx;
-struct WhereBestIdx {
-  Parse *pParse;                  /* Parser context */
-  WhereClause *pWC;               /* The WHERE clause */
-  struct SrcList_item *pSrc;      /* The FROM clause term to search */
-  Bitmask notReady;               /* Mask of cursors not available */
-  Bitmask notValid;               /* Cursors not available for any purpose */
-  ExprList *pOrderBy;             /* The ORDER BY clause */
-  ExprList *pDistinct;            /* The select-list if query is DISTINCT */
-  sqlite3_index_info **ppIdxInfo; /* Index information passed to xBestIndex */
-  int i, n;                       /* Which loop is being coded; # of loops */
-  WhereLevel *aLevel;             /* Info about outer loops */
-  WhereCost cost;                 /* Lowest cost query plan */
-};
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -5024,7 +4991,6 @@ WhereInfo *sqlite3WhereBegin(
   WhereInfo *pWInfo;         /* Will become the return value of this function */
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
   Bitmask notReady;          /* Cursors that are not yet positioned */
-  WhereBestIdx sWBI;         /* Best index search context */
   WhereLoopBuilder sWLB;     /* The WhereLoop builder */
   WhereMaskSet *pMaskSet;    /* The expression mask set */
   WhereLevel *pLevel;        /* A single level in pWInfo->a[] */
@@ -5034,8 +5000,6 @@ WhereInfo *sqlite3WhereBegin(
 
 
   /* Variable initialization */
-  memset(&sWBI, 0, sizeof(sWBI));
-  sWBI.pParse = pParse;
   memset(&sWLB, 0, sizeof(sWLB));
   sWLB.pParse = pParse;
   sWLB.db = pParse->db;
@@ -5083,11 +5047,10 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pOrderBy = pOrderBy;
   pWInfo->pDistinct = pDistinct;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
-  pWInfo->pWC = sWBI.pWC = (WhereClause *)&((u8 *)pWInfo)[nByteWInfo];
+  pWInfo->pWC = (WhereClause *)&((u8 *)pWInfo)[nByteWInfo];
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
-  pMaskSet = (WhereMaskSet*)&sWBI.pWC[1];
-  sWBI.aLevel = pWInfo->a;
+  pMaskSet = (WhereMaskSet*)&pWInfo->pWC[1];
   sWLB.pWInfo = pWInfo;
   sWLB.pWC = pWInfo->pWC;
 
@@ -5099,9 +5062,9 @@ WhereInfo *sqlite3WhereBegin(
   ** subexpression is separated by an AND operator.
   */
   initMaskSet(pMaskSet);
-  whereClauseInit(sWBI.pWC, pParse, pMaskSet, wctrlFlags);
+  whereClauseInit(pWInfo->pWC, pParse, pMaskSet, wctrlFlags);
   sqlite3ExprCodeConstants(pParse, pWhere);
-  whereSplit(sWBI.pWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
+  whereSplit(pWInfo->pWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
     
   /* Special case: a WHERE clause that is constant.  Evaluate the
   ** expression and either jump over all of the code or fall thru.
@@ -5146,7 +5109,7 @@ WhereInfo *sqlite3WhereBegin(
   ** want to analyze these virtual terms, so start analyzing at the end
   ** and work forward so that the added virtual terms are never processed.
   */
-  exprAnalyzeAll(pTabList, sWBI.pWC);
+  exprAnalyzeAll(pTabList, pWInfo->pWC);
   if( db->mallocFailed ){
     goto whereBeginError;
   }
@@ -5155,7 +5118,7 @@ WhereInfo *sqlite3WhereBegin(
   ** If it is, then set pDistinct to NULL and WhereInfo.eDistinct to
   ** WHERE_DISTINCT_UNIQUE to tell the caller to ignore the DISTINCT.
   */
-  if( pDistinct && isDistinctRedundant(pParse, pTabList, sWBI.pWC, pDistinct) ){
+  if( pDistinct && isDistinctRedundant(pParse,pTabList,pWInfo->pWC,pDistinct) ){
     pDistinct = 0;
     pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
   }
@@ -5260,7 +5223,7 @@ WhereInfo *sqlite3WhereBegin(
     }
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
     if( (pLoop->wsFlags & WHERE_TEMP_INDEX)!=0 ){
-      constructAutomaticIndex(pParse, sWBI.pWC, pTabItem, notReady, pLevel);
+      constructAutomaticIndex(pParse, pWInfo->pWC, pTabItem, notReady, pLevel);
     }else
 #endif
     if( pLoop->u.btree.pIndex!=0 ){
@@ -5275,7 +5238,7 @@ WhereInfo *sqlite3WhereBegin(
       VdbeComment((v, "%s", pIx->zName));
     }
     sqlite3CodeVerifySchema(pParse, iDb);
-    notReady &= ~getMask(sWBI.pWC->pMaskSet, pTabItem->iCursor);
+    notReady &= ~getMask(pWInfo->pWC->pMaskSet, pTabItem->iCursor);
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
   if( db->mallocFailed ) goto whereBeginError;

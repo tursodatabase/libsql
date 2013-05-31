@@ -720,7 +720,6 @@ typedef struct UnpackedRecord UnpackedRecord;
 typedef struct VTable VTable;
 typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
-typedef struct WherePlan WherePlan;
 typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 
@@ -1948,32 +1947,6 @@ struct SrcList {
 #define JT_OUTER     0x0020    /* The "OUTER" keyword is present */
 #define JT_ERROR     0x0040    /* unknown or unsupported join type */
 
-
-/*
-** A WherePlan object holds information that describes a lookup
-** strategy.
-**
-** This object is intended to be opaque outside of the where.c module.
-** It is included here only so that that compiler will know how big it
-** is.  None of the fields in this object should be used outside of
-** the where.c module.
-**
-** Within the union, pIdx is only used when wsFlags&WHERE_INDEXED is true.
-** pTerm is only used when wsFlags&WHERE_MULTI_OR is true.  And pVtabIdx
-** is only used when wsFlags&WHERE_VIRTUALTABLE is true.  It is never the
-** case that more than one of these conditions is true.
-*/
-struct WherePlan {
-  u32 wsFlags;                   /* WHERE_* flags that describe the strategy */
-  u16 nEq;                       /* Number of == constraints */
-  u16 nOBSat;                    /* Number of ORDER BY terms satisfied */
-  double nRow;                   /* Estimated number of rows (for EQP) */
-  union {
-    Index *pIdx;                   /* Index when WHERE_INDEXED is true */
-    struct WhereTerm *pTerm;       /* WHERE clause term for OR-search */
-    sqlite3_index_info *pVtabIdx;  /* Virtual table index to use */
-  } u;
-};
 
 /*
 ** For each nested loop in a WHERE clause implementation, the WhereInfo
