@@ -5311,7 +5311,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
       }
-      if( pLevel->iIdxCur>=0 ){
+      if( pLoop->wsFlags & WHERE_INDEXED ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
       if( pLevel->op==OP_Return ){
