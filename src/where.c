@@ -4510,6 +4510,7 @@ static int wherePathSatisfiesOrderBy(
   WhereInfo *pWInfo,    /* The WHERE clause */
   WherePath *pPath,     /* The WherePath to check */
   int nLoop,            /* Number of entries in pPath->aLoop[] */
+  int isLastLoop,       /* True for the very last loop */
   WhereLoop *pLast,     /* Add this WhereLoop to the end of pPath->aLoop[] */
   Bitmask *pRevMask     /* Mask of WhereLoops to run in reverse order */
 ){
@@ -4569,10 +4570,12 @@ static int wherePathSatisfiesOrderBy(
   /* Sorting is always required if any term of the ORDER BY is not a 
   ** column reference */
   nOrderBy = pOrderBy->nExpr;
+#if 0
   for(i=0; i<nOrderBy; i++){
     pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
     if( pOBExpr->op!=TK_COLUMN ) return 0;
   }
+#endif
     
   for(i=0; i<=nLoop && nUsed<nOrderBy; i++){
     pLoop = i<nLoop ? pPath->aLoop[i] : pLast;
@@ -4604,7 +4607,7 @@ static int wherePathSatisfiesOrderBy(
     for(j=0; j<=nColumn && nUsed<nOrderBy; j++, nUsed++){
       int skipable;
       pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[nUsed].pExpr);
-      assert( pOBExpr->op==TK_COLUMN );
+      if( pOBExpr->op!=TK_COLUMN ) return 0;
       if( pOBExpr->iTable!=iCur ) break;
       if( isOneRow ){ j--; continue; }
       if( j<nColumn ){
@@ -4637,11 +4640,15 @@ static int wherePathSatisfiesOrderBy(
           revSet = 1;
         }
       }
-      if( j>=nColumn-1 && isUniqueIdx ){ j--; isOneRow = 1; }
+      if( j>=nColumn-1 && isUniqueIdx ){
+        if( isLastLoop && i==nLoop ) break;
+        j--;
+        isOneRow = 1;
+      }
     }
     if( rev ) revMask |= ((Bitmask)1)<<i;
   }
-  if( nUsed==nOrderBy ){
+  if( isLastLoop || nUsed==nOrderBy ){
     *pRevMask = revMask;
     return 1;
   }
@@ -4743,7 +4750,7 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
         rCost = pWLoop->rSetup + pWLoop->rRun*pFrom->nRow + pFrom->rCost;
         maskNew = pFrom->maskLoop | pWLoop->maskSelf;
         if( !isOrderedValid ){
-          switch( wherePathSatisfiesOrderBy(pWInfo, pFrom, iLoop,
+          switch( wherePathSatisfiesOrderBy(pWInfo, pFrom, iLoop, iLoop==nLoop-1,
                                             pWLoop, &revMask) ){
             case 1:  /* Yes.  pFrom+pWLoop does satisfy the ORDER BY clause */
               isOrdered = 1;
