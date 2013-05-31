@@ -3024,7 +3024,7 @@ static Bitmask codeOneLoopStart(
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
     addrNotFound = pLevel->addrBrk;
     for(j=0; j<nConstraint; j++){
-      int iTarget = iReg+j+1;
+      int iTarget = iReg+j+2;
       pTerm = pLoop->aTerm[j];
       if( pTerm->eOperator & WO_IN ){
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
