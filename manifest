@@ -1,5 +1,5 @@
-C Updates\sto\sthe\sCodec\sinterface\sto\ssupport\scodecs\son\sattached\sdatabases\sand\nto\sallow\srekeying\sin\sthe\smiddle\sof\sa\stransaction.\s\sThese\schanges\sare\sonly\s\napplicable\sif\sSQLite\sis\scompiled\swith\sSQLITE_HAS_CODEC.
-D 2013-05-29T17:48:28.829
+C Improved\shandling\sof\serrors\swhen\sdoing\srun-time\sloading\sof\san\sSQLite\nshared-library\sinto\sTCL.
+D 2013-05-31T15:36:07.208
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/sqliteInt.h 46fb17f604ce941551fe64c342dbeb4dbed3edaa
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
+F src/tclsqlite.c b90c5175b080a7d511fb06da0ada0c3d65d20b3b
 F src/test1.c 6d2a340eea1d866bf7059894491652a69a7ee802
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 09e5a7ad85dc592fce868a2d0f8719c6915ccb47
-R 20090ed5100bc7738631061b2f74235f
+P d5b084e9d8cfe9c0c339aca076d472bb50aa764c
+R 2882afbdbc546836259a7beab1bfa1d4
 U drh
-Z caf68d1d5a539a495dd90cbaf5a54682
+Z ab4690d9d62a96dd945919f7fe2c1c88
