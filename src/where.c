@@ -5162,6 +5162,10 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 #endif
+  WHERETRACE(("*** Optimizer Finished ***\n"));
+  if( pParse->nErr || db->mallocFailed ){
+    goto whereBeginError;
+  }
 
 #if 0  /* FIXME: Add this back in? */
   /* If the caller is an UPDATE or DELETE statement that is requesting
