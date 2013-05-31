@@ -1925,6 +1925,7 @@ static void constructAutomaticIndex(
   /* Create the automatic index */
   pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
   assert( pLevel->iIdxCur>=0 );
+  pLevel->iIdxCur = pParse->nTab++;
   sqlite3VdbeAddOp4(v, OP_OpenAutoindex, pLevel->iIdxCur, nColumn+1, 0,
                     (char*)pKeyinfo, P4_KEYINFO_HANDOFF);
   VdbeComment((v, "for %s", pTable->zName));
