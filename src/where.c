@@ -1850,6 +1850,7 @@ static void constructAutomaticIndex(
   WhereLoop *pLoop;           /* The Loop object */
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
   Bitmask extraCols;          /* Bitmap of additional columns */
+  const int mxConstraint = 10; /* Maximum number of constraints */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -1864,20 +1865,25 @@ static void constructAutomaticIndex(
   pWCEnd = &pWC->a[pWC->nTerm];
   pLoop = pLevel->pWLoop;
   idxCols = 0;
-  for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
+  pLoop->aTerm = sqlite3DbRealloc(pParse->db, pLoop->aTerm,
+                                  mxConstraint*sizeof(pLoop->aTerm[0]));
+  if( pLoop->aTerm==0 ) return;
+  for(pTerm=pWC->a; pTerm<pWCEnd && pLoop->nTerm<mxConstraint; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? ((Bitmask)1)<<(BMS-1) : ((Bitmask)1)<<iCol;
       testcase( iCol==BMS );
       testcase( iCol==BMS-1 );
       if( (idxCols & cMask)==0 ){
-        nColumn++;
+        pLoop->aTerm[nColumn++] = pTerm;
         idxCols |= cMask;
       }
     }
   }
   assert( nColumn>0 );
-  pLoop->u.btree.nEq = nColumn;
+  pLoop->u.btree.nEq = pLoop->nTerm = nColumn;
+  pLoop->wsFlags = WHERE_COLUMN_EQ | WHERE_IDX_ONLY | WHERE_INDEXED
+                     | WHERE_TEMP_INDEX;
 
   /* Count the number of additional columns needed to create a
   ** covering index.  A "covering index" is an index that contains all
