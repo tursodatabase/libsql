@@ -1,5 +1,5 @@
-C Remove\sthe\sdefinitions\sof\sobjects\sthat\sare\sno\slonger\sused:\s\sWhereCost,\s\nWherePlan,\sand\sWhereBestIdx.
-D 2013-05-31T15:50:39.999
+C Fix\sproblems\sin\sthe\svirtual\stable\slogic\sfor\sNGQP.
+D 2013-05-31T17:55:27.487
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 586b6c3628b75619542468575706ab3192aad236
+F src/where.c 103ccfa82fa177f755d35f0d48932713857516a1
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 707f0323264c35be14847a6adc49a0dc5eaf4ad2
-R 427cbfc4828d3a50415e243b6cfd8031
+P 816f8add7e60de2ef8df4fdac090c244f8dbda39
+R 876fcc7116fcba2a9fe2cf6848606247
 U drh
-Z 69d89052012f1e53f4573be3e4c8c80b
+Z 5ce875f360b3d8cc74f8b2b339e3e8e8

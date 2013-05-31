@@ -3034,7 +3034,7 @@ static Bitmask codeOneLoopStart(
       }
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pLoop->u.vtab.idxNum, iReg);
-    sqlite3VdbeAddOp2(v, OP_Integer, j-1, iReg+1);
+    sqlite3VdbeAddOp2(v, OP_Integer, nConstraint, iReg+1);
     sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrNotFound, iReg,
                       pLoop->u.vtab.idxStr,
                       pLoop->u.vtab.needFree ? P4_MPRINTF : P4_STATIC);
@@ -5226,7 +5226,7 @@ WhereInfo *sqlite3WhereBegin(
       constructAutomaticIndex(pParse, pWInfo->pWC, pTabItem, notReady, pLevel);
     }else
 #endif
-    if( pLoop->u.btree.pIndex!=0 ){
+    if( pLoop->wsFlags & WHERE_INDEXED ){
       Index *pIx = pLoop->u.btree.pIndex;
       KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
       /* FIXME:  As an optimization use pTabItem->iCursor if WHERE_IDX_ONLY */
