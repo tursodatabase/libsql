@@ -3832,7 +3832,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** is better and has fewer dependencies.  Or the template will be ignored
 ** and no insert will occur if an existing WhereLoop is faster and has
 ** fewer dependencies than the template.  Otherwise a new WhereLoop is
-** added based no the template.
+** added based on the template.
 **
 ** If pBuilder->pBest is not NULL then we only care about the very
 ** best template and that template should be stored in pBuilder->pBest.
@@ -3848,6 +3848,8 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 **    (2)  They have the same iSortIdx.
 **    (3)  The template has same or fewer dependencies than the current loop
 **    (4)  The template has the same or lower cost than the current loop
+**    (5)  The template uses more terms of the same index but has no additional
+**         dependencies          
 */
 static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereLoop **ppPrev, *p, *pNext = 0, *pToFree = 0;
@@ -4100,7 +4102,7 @@ static int whereLoopAddBtree(
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
   WhereLoop *pNew;            /* Template WhereLoop object */
   int rc = SQLITE_OK;         /* Return code */
-  int iSortIdx = 0;           /* Index number */
+  int iSortIdx = 1;           /* Index number */
   int b;                      /* A boolean value */
   double rSize;               /* number of rows in the table */
   double rLogSize;            /* Logarithm of the number of rows in the table */
@@ -4179,6 +4181,7 @@ static int whereLoopAddBtree(
       pNew->wsFlags = WHERE_IPK;
 
       /* Full table scan */
+      pNew->iSortIdx = b ? iSortIdx : 0;
       pNew->nOut = rSize;
       pNew->rRun = (rSize + rLogSize)*(3+b); /* 4x penalty for a full-scan */
       rc = whereLoopInsert(pBuilder, pNew);
@@ -4513,8 +4516,9 @@ static int wherePathSatisfiesOrderBy(
   u8 revSet;            /* True if rev is known */
   u8 rev;               /* Composite sort order */
   u8 revIdx;            /* Index sort order */
-  u8 isUnique;
-  u8 requireUnique = 0;
+  u8 isOneRow;          /* Current WhereLoop is a one-row loop */
+  u8 requireOneRow = 0; /* All subsequent loops must be one-row */
+  u8 isUniqueIdx;       /* Current WhereLoop uses a unique index */
   u16 nColumn;
   u16 nOrderBy;
   int i, j;
@@ -4547,6 +4551,10 @@ static int wherePathSatisfiesOrderBy(
   **      of the index.
   **
   **  (4) Index columns past nEq must match ORDER BY terms one-for-one.
+  **
+  **  (5) If all columns of a UNIQUE index have been matched against ORDER BY
+  **      terms, then any subsequent entries in the ORDER BY clause against the
+  **      same table can be skipped.
   */
 
   assert( pOrderBy!=0 );
@@ -4569,10 +4577,10 @@ static int wherePathSatisfiesOrderBy(
   for(i=0; i<=nLoop && nUsed<nOrderBy; i++){
     pLoop = i<nLoop ? pPath->aLoop[i] : pLast;
     assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
-    isUnique = 1;
+    isOneRow = isUniqueIdx = 1;
     if( pLoop->wsFlags & WHERE_IPK ){
-      if( (pLoop->wsFlags & WHERE_COLUMN_IN)!=0 ) isUnique = 0;
-      if( pLoop->u.btree.nEq!=1 ) isUnique = 0;
+      if( (pLoop->wsFlags & WHERE_COLUMN_IN)!=0 ) isOneRow = 0;
+      if( pLoop->u.btree.nEq!=1 ) isOneRow = 0;
       pIndex = 0;
       nColumn = 0;
     }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
@@ -4580,16 +4588,16 @@ static int wherePathSatisfiesOrderBy(
     }else{
       nColumn = pIndex->nColumn;
       if( pIndex->onError==OE_None ){
-        isUnique = 0;
+        isOneRow = isUniqueIdx = 0;
       }else if( (pLoop->wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_RANGE
                                    |WHERE_COLUMN_NULL))!=0 ){
-        isUnique = 0;
+        isOneRow = 0;
       }else if( pLoop->u.btree.nEq < pIndex->nColumn ){
-        isUnique = 0;
+        isOneRow = 0;
       }
     }
-    if( !isUnique && requireUnique ) return 0;
-    requireUnique = !isUnique;
+    if( !isOneRow && requireOneRow ) return 0;
+    requireOneRow = !isOneRow;
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
     j = 0;
     revSet = rev = 0;
@@ -4598,7 +4606,7 @@ static int wherePathSatisfiesOrderBy(
       pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[nUsed].pExpr);
       assert( pOBExpr->op==TK_COLUMN );
       if( pOBExpr->iTable!=iCur ) break;
-      if( isUnique ) continue;
+      if( isOneRow ){ j--; continue; }
       if( j<nColumn ){
         /* Normal index columns */
         iColumn = pIndex->aiColumn[j];
@@ -4629,6 +4637,7 @@ static int wherePathSatisfiesOrderBy(
           revSet = 1;
         }
       }
+      if( j>=nColumn-1 && isUniqueIdx ){ j--; isOneRow = 1; }
     }
     if( rev ) revMask |= ((Bitmask)1)<<i;
   }
