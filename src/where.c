@@ -3996,6 +3996,7 @@ static int whereLoopAddBtreeIndex(
   rLogSize = estLog(pProbe->aiRowEst[0]);
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 1;
+    if( pTerm->prereqRight & pNew->maskSelf ) continue;
     pNew->wsFlags = savedLoop.wsFlags;
     pNew->u.btree.nEq = savedLoop.u.btree.nEq;
     pNew->nTerm = savedLoop.nTerm;
@@ -4146,6 +4147,7 @@ static int whereLoopAddBtree(
     WhereTerm *pTerm;
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
+      if( pTerm->prereqRight & pNew->maskSelf ) continue;
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
         pNew->u.btree.nEq = 1;
         pNew->u.btree.pIndex = 0;
