@@ -1,5 +1,5 @@
-C The\sNGQP\smight\snot\sfind\sa\ssolution\sif\sINDEXED\sBY\sconstraints\son\sthe\squery\nare\sset\swrong.\s\sIf\sthat\sis\sthe\scase,\sprint\sa\s"no\squery\ssolution"\serror\nand\sabort\sbefore\strying\sto\suse\sthe\snon-existant\ssolution.
-D 2013-05-31T20:43:57.656
+C Add\stest\scases\sto\sverify\sthat\sticket\s[bc1aea7b725f2761]\shas\sbeen\sfixed\sin\nthe\sNGQP.
+D 2013-06-03T14:15:34.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1041,7 +1041,7 @@ F test/where9.test 1b4387c6eacc9a32b28b4d837c27f857c785d0d8
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test 13ff5ec0dba407c0e0c075980c75b3275a6774e5
-F test/whereD.test 3f3ee93825c94804f1fc91eef2de0d365981759a
+F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test 7bd34945797efef15819368479bacc34215e4e1d
 F test/whereF.test a0e296643cabe5278379bc1a0aa158cf3c54a1c9
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 723f901a63313b64a9f10516711fb6136526b79b
-R f0026590576c82bf02c9ed7b1fd9cc97
+P 42511a7e12a70cf3436d25e4d069e5d309dfd678
+R 9315575e95aec71de6da1203a12a0f54
 U drh
-Z 4e2d6d22eda85e326fefafc64c333d74
+Z bf9c6fc8107d350958f4a9bdd4f10f03
