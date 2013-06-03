@@ -4101,7 +4101,7 @@ static int indexMightHelpWithOrderBy(
   if( (pOB = pBuilder->pOrderBy)==0 ) return 0;
   iCol = pIndex->aiColumn[0];
   for(ii=0; ii<pOB->nExpr; ii++){
-    Expr *pExpr = pOB->a[ii].pExpr;
+    Expr *pExpr = sqlite3ExprSkipCollate(pOB->a[ii].pExpr);
     if( pExpr->op!=TK_COLUMN ) return 0;
     if( pExpr->iTable==iCursor ){
       if( pExpr->iColumn==iCol ) return 1;

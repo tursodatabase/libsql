@@ -1,5 +1,5 @@
-C Do\snot\suse\san\sindex\sfullscan\sfor\san\sUPDATE\sor\sDELETE\sor\sif\sdisabled\sby\nsqlite3_test_control()\sor\ssqlite3_config().
-D 2013-06-03T19:17:40.684
+C Pull\sin\srecent\strunk\schanges.\s\sFix\sthe\sORDER\sBY\soptimizer\sso\sthat\sit\sis\sbetter\nable\sto\sdeal\swith\sCOLLATE\sclauses.\s\sClean\sup\sambiguities\sin\sthe\sdescidx1.test\nscript.
+D 2013-06-03T20:46:35.011
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/sqliteInt.h 3ddccdf8ef912119da26945f2d8dff98f59e1d58
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 2ecec9937e69bc17560ad886da35195daa7261b8
+F src/tclsqlite.c b8835978e853a89bf58de88acc943a5ca94d752e
 F src/test1.c 5f9837aee1a0708ab2dbf67ce0b9c18e658cd36b
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 6226d9912f494a92b51b06c58b5c0eed9b7eb84e
+F src/where.c 0082ef59948fc8c28b35226f44e1718cb1b0300a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -414,7 +414,7 @@ F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test a065b05d2ebf60fd16639c579a4adfb7c381c701
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
-F test/descidx1.test 533dcbda614b0463b0ea029527fd27e5a9ab2d66
+F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
@@ -428,7 +428,7 @@ F test/e_expr.test 5489424d3d9a452ac3701cdf4b680ae31a157894
 F test/e_fkey.test 79a985d95340c6072a884359426ce95cf33e656a
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test d5331cc95e101af2508159fc98b6801631659ffe
-F test/e_reindex.test dfedfc32c5a282b0596c6537cbcd4217fbb1a216
+F test/e_reindex.test 5e6dff3a060b5234d496f6e84c3e59a94b4dce4d
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test d5af998a402740d8f0488158d22075df2b6f88fa
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dcbbcb2e6c85780276cb3a392549f70e21e94408
-R 5e83ed1a81fa16225d238fe289659759
+P fabb21854e662b1d8e5631e79f828d5322ceb595 4d74fccf02134a998a84097b021ba9d501e34ff0
+R b746dc544342dfc07463de0423275bdc
 U drh
-Z 8c74536a41fa8c42d526bd323c460f6c
+Z 5182eac11ae0820ee1af6bccc6719c26

@@ -3050,7 +3050,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 */
 #ifndef USE_TCL_STUBS
 # undef  Tcl_InitStubs
-# define Tcl_InitStubs(a,b,c)
+# define Tcl_InitStubs(a,b,c) TCL_VERSION
 #endif
 
 /*
@@ -3074,19 +3074,18 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** The EXTERN macros are required by TCL in order to work on windows.
 */
 EXTERN int Sqlite3_Init(Tcl_Interp *interp){
-  Tcl_InitStubs(interp, "8.4", 0);
-  Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
-  Tcl_PkgProvide(interp, "sqlite3", PACKAGE_VERSION);
-
+  int rc = Tcl_InitStubs(interp, "8.4", 0)==0 ? TCL_ERROR : TCL_OK;
+  if( rc==TCL_OK ){
+    Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
 #ifndef SQLITE_3_SUFFIX_ONLY
-  /* The "sqlite" alias is undocumented.  It is here only to support
-  ** legacy scripts.  All new scripts should use only the "sqlite3"
-  ** command.
-  */
-  Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
+    /* The "sqlite" alias is undocumented.  It is here only to support
+    ** legacy scripts.  All new scripts should use only the "sqlite3"
+    ** command. */
+    Tcl_CreateObjCommand(interp, "sqlite", (Tcl_ObjCmdProc*)DbMain, 0, 0);
 #endif
-
-  return TCL_OK;
+    rc = Tcl_PkgProvide(interp, "sqlite3", PACKAGE_VERSION);
+  }
+  return rc;
 }
 EXTERN int Tclsqlite3_Init(Tcl_Interp *interp){ return Sqlite3_Init(interp); }
 EXTERN int Sqlite3_Unload(Tcl_Interp *interp, int flags){ return TCL_OK; }
