@@ -3050,7 +3050,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 */
 #ifndef USE_TCL_STUBS
 # undef  Tcl_InitStubs
-# define Tcl_InitStubs(a,b,c) TCL_OK
+# define Tcl_InitStubs(a,b,c) TCL_VERSION
 #endif
 
 /*
@@ -3074,7 +3074,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 ** The EXTERN macros are required by TCL in order to work on windows.
 */
 EXTERN int Sqlite3_Init(Tcl_Interp *interp){
-  int rc = Tcl_InitStubs(interp, "8.4", 0);
+  int rc = Tcl_InitStubs(interp, "8.4", 0)==0 ? TCL_ERROR : TCL_OK;
   if( rc==TCL_OK ){
     Tcl_CreateObjCommand(interp, "sqlite3", (Tcl_ObjCmdProc*)DbMain, 0, 0);
 #ifndef SQLITE_3_SUFFIX_ONLY
