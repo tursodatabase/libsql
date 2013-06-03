@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\stransitive_closure\svirtual\stable\sthat\sNGQP\sexposes.\nUpdate\sbetween.test\smodule\sto\savoid\susing\ssqlite_query_plan.
-D 2013-06-03T18:50:15.467
+C Resolve\sambiguities\sin\stest\scases\sin\scollate2.test.
+D 2013-06-03T19:01:26.660
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -366,7 +366,7 @@ F test/close.test e37610d60e9c9b9979a981f3f50071d7dff28616
 F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
-F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
+F test/collate2.test 285cef1b58ce2b3cf074a386f763ce753c81c97f
 F test/collate3.test 79558a286362cb9ed603c6fa543f1cda7f563f0f
 F test/collate4.test 031f7265c13308b724ba3c49f41cc04612bd92b1
 F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 15328987cc876d7a4e34561b6b0e08937aefe4be
-R 0bfbc2c20668c92dcdb991d487aaa95a
+P aa66b864204b4b8717d845499132b987eb8ef924
+R 62f1f59de9bf7b607ff3cad8a2a9dba4
 U drh
-Z d205bcca63c72f2d174184c36108bd89
+Z 7508c3c33af72ab568a1feb83056a8cb
