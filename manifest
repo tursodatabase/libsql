@@ -1,5 +1,5 @@
-C Set\sthe\sWHERE_UNIQUE\sflag\son\sloops\sthat\scan\sonly\srun\sonce.
-D 2013-06-03T15:07:23.693
+C Virtual\stables\snow\salways\sreport\s25\srows\sinstead\sof\s0\srows\sin\sthe\s\nEXPLAIN\sQUERY\sPLAN\soutput.\s\sAdjust\stests\saccordingly.
+D 2013-06-03T15:24:11.404
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -511,7 +511,7 @@ F test/fts3an.test a49ccadc07a2f7d646ec1b81bc09da2d85a85b18
 F test/fts3ao.test e7b80272efcced57d1d087a9da5c690dd7c21fd9
 F test/fts3atoken.test fb398ab50aa232489e2a17f9b29d7ad3a3885f36
 F test/fts3auto.test 74315a7377403a57ba82a652a33704197fe1e4be
-F test/fts3aux1.test 03cec2dea379931c219dd4406817485caa69d1d8
+F test/fts3aux1.test 52cc50162e5e0c27fc08d12c8fe41b8df20af555
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
@@ -535,7 +535,7 @@ F test/fts3matchinfo.test ecb08f586d027eb03941bcfcded6cb9d8ccb3a66
 F test/fts3near.test 12895557870b0f9af7cc0be81a0171abb2d12f12
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test 477ca96e67f60745b7ac931cfa6e9b080c562da5
-F test/fts3query.test ef79d31fdb355d094baec1c1b24b60439a1fb8a2
+F test/fts3query.test 00b519001b42ea0bb65314103a395604880dd7cf
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test c2f60e152e8554549eb25f0a7593ea01389c5037
 F test/fts3snippet.test 8e956051221a34c7daeb504f023cb54d5fa5a8b2
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9b97af94ae7b1624ef1f5adee58010593fbb8b1c
-R c10d3b1c9e2b7a04d0ad05024b58cd34
+P 510f4d8ecf6eb284f14b91951e7236505bd71203
+R b46e673a11585c0adf84b26ffd5c9ca9
 U drh
-Z 86153958e4f1f3df668821cb8ff6a748
+Z 24bffcc0033c051bdc90970a04c0eaf7
