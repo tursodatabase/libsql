@@ -828,6 +828,7 @@ static int closureBestIndex(
   int idx = 1;
   const struct sqlite3_index_constraint *pConstraint;
   closure_vtab *pVtab = (closure_vtab*)pTab;
+  double rCost = 10000000.0;
 
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
@@ -839,6 +840,7 @@ static int closureBestIndex(
       iPlan |= 1;
       pIdxInfo->aConstraintUsage[i].argvIndex = 1;
       pIdxInfo->aConstraintUsage[i].omit = 1;
+      rCost /= 100.0;
     }
     if( (iPlan & 0x0000f0)==0
      && pConstraint->iColumn==CLOSURE_COL_DEPTH
@@ -849,6 +851,7 @@ static int closureBestIndex(
       iPlan |= idx<<4;
       pIdxInfo->aConstraintUsage[i].argvIndex = ++idx;
       if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ) iPlan |= 0x000002;
+      rCost /= 5.0;
     }
     if( (iPlan & 0x000f00)==0
      && pConstraint->iColumn==CLOSURE_COL_TABLENAME
@@ -857,6 +860,7 @@ static int closureBestIndex(
       iPlan |= idx<<8;
       pIdxInfo->aConstraintUsage[i].argvIndex = ++idx;
       pIdxInfo->aConstraintUsage[i].omit = 1;
+      rCost /= 5.0;
     }
     if( (iPlan & 0x00f000)==0
      && pConstraint->iColumn==CLOSURE_COL_IDCOLUMN
@@ -891,7 +895,7 @@ static int closureBestIndex(
   ){
     pIdxInfo->orderByConsumed = 1;
   }
-  pIdxInfo->estimatedCost = (double)10000;
+  pIdxInfo->estimatedCost = rCost;
    
   return SQLITE_OK;
 }

@@ -1,5 +1,5 @@
-C Fix\sEXPLAIN\sQUERY\sPLAN\srow\scounts\sfor\sthe\srtree\svirtual\stable\stests.
-D 2013-06-03T18:14:31.081
+C Fix\sa\sbug\sin\sthe\stransitive_closure\svirtual\stable\sthat\sNGQP\sexposes.\nUpdate\sbetween.test\smodule\sto\savoid\susing\ssqlite_query_plan.
+D 2013-06-03T18:50:15.467
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -107,7 +107,7 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 7538f98eab2854cf17fa5f7797bffa6c76e3863b
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
-F ext/misc/closure.c 40788c54c59190a1f52f6492a260d8894a246fe9
+F ext/misc/closure.c b88aa95fbe32edc74e16ed5bb6646d249a2bf6ad
 F ext/misc/fuzzer.c 51bd96960b6b077d41d6f3cedefbcb57f29efaa2
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
@@ -335,7 +335,7 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 5c8689cc6d2fb44b7c0968ae4f85eb26d50022fa
-F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
+F test/between.test bec144cd75698402bbda8ad8e23bd8588e426145
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 7c79f1ef0c6c2c2bc1e7bd895596fab32bfb4796
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ff134e6ee95d41b0e59e03bba7e94bc15b04ff8c
-R e905d61d613190200a15251273731837
+P 15328987cc876d7a4e34561b6b0e08937aefe4be
+R 0bfbc2c20668c92dcdb991d487aaa95a
 U drh
-Z 152c7a47705b2201e9c25505c9ef2b93
+Z d205bcca63c72f2d174184c36108bd89
