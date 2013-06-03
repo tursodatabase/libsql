@@ -1,5 +1,5 @@
-C Pull\sin\srecent\strunk\schanges.\s\sFix\sthe\sORDER\sBY\soptimizer\sso\sthat\sit\sis\sbetter\nable\sto\sdeal\swith\sCOLLATE\sclauses.\s\sClean\sup\sambiguities\sin\sthe\sdescidx1.test\nscript.
-D 2013-06-03T20:46:35.011
+C Adjust\sthe\sxBestIndex\smethods\son\sboth\sthe\sfuzzer\sand\stransitive_closure\nvirtual\stables\sso\sthat\san\sunused\sMATCH\soperator\sgets\sa\sreally\slarge\scost.\nRemove\sambiguities\sfrom\sthe\sfuzzer\stest\scases.
+D 2013-06-03T21:25:28.624
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -107,8 +107,8 @@ F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c 7538f98eab2854cf17fa5f7797bffa6c76e3863b
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
-F ext/misc/closure.c b88aa95fbe32edc74e16ed5bb6646d249a2bf6ad
-F ext/misc/fuzzer.c 51bd96960b6b077d41d6f3cedefbcb57f29efaa2
+F ext/misc/closure.c 997c20ddf35f85ab399f4a02a557a9baa822ec32
+F ext/misc/fuzzer.c 79ac20b68794dfe03626f3a31681e6c240583052
 F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
 F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
 F ext/misc/percentile.c 4fb5e46c4312b0be74e8e497ac18f805f0e3e6c5
@@ -561,7 +561,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
-F test/fuzzer1.test 41bd5aa6ae0cf18d06342a4476e3cad98604ae48
+F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/hook.test 45cb22b940c3cc0af616ba7430f666e245711a48
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fabb21854e662b1d8e5631e79f828d5322ceb595 4d74fccf02134a998a84097b021ba9d501e34ff0
-R b746dc544342dfc07463de0423275bdc
+P 6bc71dfcf0ef757c5c2b426dd8fddc1e5ae0f598
+R 9f95af129af308d556c3b0bed3929212
 U drh
-Z 5182eac11ae0820ee1af6bccc6719c26
+Z 30d36dfc5ff4e44e38a2e90ed964881e

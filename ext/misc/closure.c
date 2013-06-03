@@ -826,12 +826,17 @@ static int closureBestIndex(
   int iPlan = 0;
   int i;
   int idx = 1;
+  int seenMatch = 0;
   const struct sqlite3_index_constraint *pConstraint;
   closure_vtab *pVtab = (closure_vtab*)pTab;
   double rCost = 10000000.0;
 
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
+    if( pConstraint->iColumn==CLOSURE_COL_ROOT
+     && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      seenMatch = 1;
+    }
     if( pConstraint->usable==0 ) continue;
     if( (iPlan & 1)==0 
      && pConstraint->iColumn==CLOSURE_COL_ROOT
@@ -895,6 +900,7 @@ static int closureBestIndex(
   ){
     pIdxInfo->orderByConsumed = 1;
   }
+  if( seenMatch && (iPlan&1)==0 ) rCost *= 1e30;
   pIdxInfo->estimatedCost = rCost;
    
   return SQLITE_OK;
