@@ -1,5 +1,5 @@
-C Enhance\sthe\sshell\sto\sprovide\smore\sflexibility\swhen\sentering\snumeric\sarguments\non\sdot-commands.\s\sIn\sparticular,\sallow\shexadecimal\sarguments\sto\s.wheretrace\nand\s.testctrl\scommands.\s\sCherrypick\sfrom\s[b9578c371ee5].
-D 2013-06-03T12:47:43.357
+C Fix\sa\stypo\sin\sa\scollating\sfunction\sinside\sthe\se_reindex.test\sscript.
+D 2013-06-03T20:39:15.752
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -428,7 +428,7 @@ F test/e_expr.test 5489424d3d9a452ac3701cdf4b680ae31a157894
 F test/e_fkey.test 79a985d95340c6072a884359426ce95cf33e656a
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test d5331cc95e101af2508159fc98b6801631659ffe
-F test/e_reindex.test dfedfc32c5a282b0596c6537cbcd4217fbb1a216
+F test/e_reindex.test 5e6dff3a060b5234d496f6e84c3e59a94b4dce4d
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test d5af998a402740d8f0488158d22075df2b6f88fa
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
@@ -1093,8 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7cc0c4ee11ad250fa848e7da4713d70fc0fa3715
-Q +b9578c371ee569dca6a0964019959a93407c8ef9
-R c008097aeb0fb5fb21f8c2495cc9a0d5
+P 3bd5ad095b23102dd3379cb62997cbf23cc67b7a
+R 0bab77d0f95310ae1c21cfea10915144
 U drh
-Z 3060a4de0d44f47720b8e142580eccbb
+Z 1023ee14390bd42e471d5323a67fa234
