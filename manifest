@@ -1,5 +1,5 @@
-C Further\simprovements\sto\serror\shandling\sof\sthe\srun-time\sloading\sof\sSQLite\ninto\sTCL.
-D 2013-06-03T12:34:46.177
+C Enhance\sthe\sshell\sto\sprovide\smore\sflexibility\swhen\sentering\snumeric\sarguments\non\sdot-commands.\s\sIn\sparticular,\sallow\shexadecimal\sarguments\sto\s.wheretrace\nand\s.testctrl\scommands.\s\sCherrypick\sfrom\s[b9578c371ee5].
+D 2013-06-03T12:47:43.357
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 22ee971346a736ddefdc4497d07c92f2e9978afc
-F src/shell.c 9a18124ff209ca308d786c99a466e8e270193ff3
+F src/shell.c ab6eea968c8745be3aa74e45fedb37d057b4cd0d
 F src/sqlite.h.in 5b390ca5d94e09e56e7fee6a51ddde4721b89f8e
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
@@ -1093,7 +1093,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b3f23d186425d2362b756708cbaf422ba3c751f9
-R 3d8fd48ca795de4c58516ba1337670b0
+P 7cc0c4ee11ad250fa848e7da4713d70fc0fa3715
+Q +b9578c371ee569dca6a0964019959a93407c8ef9
+R c008097aeb0fb5fb21f8c2495cc9a0d5
 U drh
-Z 53e0acf52f5e2ddf8d35e0395d7b33fa
+Z 3060a4de0d44f47720b8e142580eccbb
