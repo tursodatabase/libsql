@@ -4326,7 +4326,7 @@ static int whereLoopAddVirtual(
         pNew->prereq |= pTerm->prereqRight;
         pNew->aTerm[iTerm] = pTerm;
         if( iTerm>mxTerm ) mxTerm = iTerm;
-        if( iTerm<16 && pUsage[i].omit ) pNew->u.vtab.omitMask |= 1<<i;
+        if( iTerm<16 && pUsage[i].omit ) pNew->u.vtab.omitMask |= 1<<iTerm;
         if( (pTerm->eOperator & WO_IN)!=0 ){
           if( pUsage[i].omit==0 ){
             /* Do not attempt to use an IN constraint if the virtual table
