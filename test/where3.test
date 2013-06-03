@@ -103,12 +103,22 @@ ifcapable explain {
 }
 
 # This procedure executes the SQL.  Then it appends 
-# the ::sqlite_query_plan variable.
+# the names of the table and index used
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
   set data [execsql $sql]
-  return [concat $data $::sqlite_query_plan]
+  set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
+  # puts eqp=$eqp
+  foreach {a b c x} $eqp {
+    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\W} \
+        $x all as tab idx]} {
+      lappend data $tab $idx
+    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\W} $x all as tab]} {
+      lappend data $tab *
+    }
+  }
+  return $data   
 }
 
 
@@ -144,37 +154,37 @@ do_test where3-2.1 {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND bpk=ax
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.1 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON cx=dpk
      WHERE cpk=bx AND bpk=ax
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.2 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON cx=dpk
      WHERE bx=cpk AND bpk=ax
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.3 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON cx=dpk
      WHERE bx=cpk AND ax=bpk
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.4 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE bx=cpk AND ax=bpk
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.5 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND ax=bpk
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.2 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx

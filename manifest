@@ -1,5 +1,5 @@
-C Adjust\sthe\sxBestIndex\smethods\son\sboth\sthe\sfuzzer\sand\stransitive_closure\nvirtual\stables\sso\sthat\san\sunused\sMATCH\soperator\sgets\sa\sreally\slarge\scost.\nRemove\sambiguities\sfrom\sthe\sfuzzer\stest\scases.
-D 2013-06-03T21:25:28.624
+C Remove\smore\svestiges\sof\ssqlite_query_plan\sfrom\sthe\stest\scases.
+D 2013-06-03T22:08:20.442
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -335,7 +335,7 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 5c8689cc6d2fb44b7c0968ae4f85eb26d50022fa
-F test/between.test bec144cd75698402bbda8ad8e23bd8588e426145
+F test/between.test e6896728a636e3e610bcb2f87c9305120c809bc5
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 7c79f1ef0c6c2c2bc1e7bd895596fab32bfb4796
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
@@ -596,7 +596,7 @@ F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
 F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
-F test/intpkey.test 7af30f6ae852d8d1c2b70e4bf1551946742e92d8
+F test/intpkey.test a9674fc6195e0952e4e6105a9981ce1e48e7f215
 F test/io.test ecf44cc81664ad54d8253e2d88fc705b6554abe3
 F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
 F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
@@ -619,7 +619,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test 0e5412f4dac4a849f613e1ef8b529d56a6e31d08
+F test/like.test 52e650adfa208325f928b847571d77b647af07c3
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test cc0ab63385239b63c72452b0e93700bf5e8f0b99
 F test/loadext.test 92e6dfefd1229c3ef4aaabd87419efd8fa57a7a5
@@ -792,7 +792,7 @@ F test/spellfix.test bea537caf587df30d430c2c6a8fe9f64b8712834
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test be8d477306006ec696bc86757cfb34bec79447ce
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
-F test/subquery.test 869562de9e8c5d8147e0451a2ce5b58cf55ce389
+F test/subquery.test 3b97763ada8b3a4092d2c80db3ebc0e7870e7eaf
 F test/subquery2.test 91e1e364072aeff431d1f9689b15147e421d88c7
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
@@ -1029,8 +1029,8 @@ F test/walshared.test 6dda2293880c300baf5d791c307f653094585761
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test 054a6b6f7933c5a5f50d0bcd650b5eccb450cc81
-F test/where2.test f902f62d60f20b0257dd700f0c4a2945527fca8e
-F test/where3.test 667e75642102c97a00bf9b23d3cb267db321d006
+F test/where2.test 116fb0d6e98a423d12eb9a65906218ce09936674
+F test/where3.test ae3054e1216ecc0afbcb83674310ebc5de25ba09
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6bc71dfcf0ef757c5c2b426dd8fddc1e5ae0f598
-R 9f95af129af308d556c3b0bed3929212
+P e2c1af78b65a8ace976fa6c035db212e1ffc79b8
+R 85129ff0b9a881f15c06fc2c70cadd93
 U drh
-Z 30d36dfc5ff4e44e38a2e90ed964881e
+Z 30b7be3ba3d79e592e3b359a6ec5ea92

@@ -66,7 +66,7 @@ proc cksort {sql} {
 
 # This procedure executes the SQL.  Then it appends to the result the
 # "sort" or "nosort" keyword (as in the cksort procedure above) then
-# it appends the ::sqlite_query_plan variable.
+# it appends the name of the table and index used.
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
@@ -84,7 +84,6 @@ proc queryplan {sql} {
     }
   }
   return $data   
-  # return [concat $data $::sqlite_query_plan]
 }
 
 

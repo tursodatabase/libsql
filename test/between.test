@@ -48,7 +48,7 @@ do_test between-1.0 {
 
 # This procedure executes the SQL.  Then it appends to the result the
 # "sort" or "nosort" keyword depending on whether or not any sorting
-# is done.  Then it appends the ::sqlite_query_plan variable.
+# is done.  Then it appends the names of the table and index used.
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
