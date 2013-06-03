@@ -4224,7 +4224,12 @@ static int whereLoopAddBtree(
       pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
 
       /* Full scan via index */
-      if( (m==0 || b) && pProbe->bUnordered==0 ){
+      if( (m==0 || b)
+       && pProbe->bUnordered==0
+       && (pBuilder->pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
+       && sqlite3GlobalConfig.bUseCis
+       && OptimizationEnabled(pBuilder->pParse->db, SQLITE_CoverIdxScan)
+      ){
         pNew->iSortIdx = b ? iSortIdx : 0;
         pNew->nOut = rSize;
         pNew->rRun = (m==0) ? (rSize + rLogSize)*(1+b) : (rSize*rLogSize);
