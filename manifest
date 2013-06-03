@@ -1,5 +1,5 @@
-C Fix\sto\sthe\slogic\sthat\sdisables\sconstraints\son\svirtual\stables.
-D 2013-06-03T16:03:16.168
+C Honor\sthe\sorderByConsumed\sboolean\sreturned\sfrom\svirtual\stable\squery\splanner.
+D 2013-06-03T16:56:37.438
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c b8a41bcd6a61e560d9c45e4a066d3858a06657d8
+F src/where.c 82c6fd16a6344108eac33642414958dc8db20d32
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 029840124022387a8f6d2e1a685a003688d0ef3a
-R 74a79b344cf1d282ed20a762beed972e
+P 62d382406b28c1347e13114f42215939ddfd7a9d
+R 6374db7e82d972462ef1160c4988e05a
 U drh
-Z 4d150a08a0845f1055b728ec84c21984
+Z 8802671c91d46932119ceee1b71a0d50

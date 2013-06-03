@@ -4350,7 +4350,8 @@ static int whereLoopAddVirtual(
       pNew->u.vtab.needFree = pIdxInfo->needToFreeIdxStr;
       pIdxInfo->needToFreeIdxStr = 0;
       pNew->u.vtab.idxStr = pIdxInfo->idxStr;
-      pNew->u.vtab.isOrdered = (u8)(pIdxInfo->nOrderBy!=0);
+      pNew->u.vtab.isOrdered = (u8)((pIdxInfo->nOrderBy!=0)
+                                     && pIdxInfo->orderByConsumed);
       pNew->rSetup = (double)0;
       pNew->rRun = pIdxInfo->estimatedCost;
       pNew->nOut = (double)25;
