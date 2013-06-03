@@ -1,5 +1,5 @@
-C Update\sthe\sNGQP\sto\smake\suse\sof\sSTAT3\sinformation\sif\sit\sis\savailable.
-D 2013-06-03T17:35:22.501
+C Fix\sEXPLAIN\sQUERY\sPLAN\srow\scounts\sfor\sthe\srtree\svirtual\stable\stests.
+D 2013-06-03T18:14:31.081
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -124,7 +124,7 @@ F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
 F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
-F ext/rtree/rtree6.test 3ff9113b4a872fa935309e3511cd9b7cdb4d2472
+F ext/rtree/rtree6.test 349ee0ab3f67deaf11ffaa874cc5af7148c56276
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test 9772e16da71e17e02bdebf0a5188590f289ab37d
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P aaf7f5896d3523531e1a9a1b90c4ad326f0c8fc7
-R 821d5edba86d3e2ff0b1efea7de5e5d1
+P ff134e6ee95d41b0e59e03bba7e94bc15b04ff8c
+R e905d61d613190200a15251273731837
 U drh
-Z 967f742fe27d5833ce434e13ad275aee
+Z 152c7a47705b2201e9c25505c9ef2b93
