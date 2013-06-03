@@ -4017,6 +4017,12 @@ static int whereLoopAddBtreeIndex(
       pNew->nOut = (double)iRowEst * nInMul * nIn;
     }else if( pTerm->eOperator & (WO_EQ) ){
       pNew->wsFlags |= WHERE_COLUMN_EQ;
+      if( iCol<0 
+       || (pProbe->onError==OE_Abort && nInMul==1
+           && pNew->u.btree.nEq==pProbe->nColumn-1)
+      ){
+        pNew->wsFlags |= WHERE_UNIQUE;
+      }
       pNew->u.btree.nEq++;
       pNew->nOut = (double)iRowEst * nInMul;
     }else if( pTerm->eOperator & (WO_ISNULL) ){
