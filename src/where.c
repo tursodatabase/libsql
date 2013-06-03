@@ -4767,6 +4767,8 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
             default: /* Cannot tell yet.  Try again on the next iteration */
               break;
           }
+        }else{
+          revMask = pFrom->revLoop;
         }
         /* Check to see if pWLoop should be added to the mxChoice best so far */
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
