@@ -3965,6 +3965,7 @@ static int whereLoopAddBtreeIndex(
   int rc = SQLITE_OK;             /* Return code */
   tRowcnt iRowEst;                /* Estimated index selectivity */
   double rLogSize;                /* Logarithm of table size */
+  WhereTerm *pTop, *pBtm;         /* Top and bottom range constraints */
 
   db = pBuilder->db;
   pNew = pBuilder->pNew;
@@ -4031,12 +4032,35 @@ static int whereLoopAddBtreeIndex(
       pNew->nOut = (double)iRowEst * nInMul;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
-      pNew->nOut = savedLoop.nOut/3;
+      pBtm = pTerm;
+      pTop = 0;
     }else if( pTerm->eOperator & (WO_LT|WO_LE) ){
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_TOP_LIMIT;
-      pNew->nOut = savedLoop.nOut/3;
+      pTop = pTerm;
+      pBtm = (pNew->wsFlags & WHERE_BTM_LIMIT)!=0 ?
+                     pNew->aTerm[pNew->nTerm-2] : 0;
     }
     pNew->rRun = rLogSize*nIn;  /* Cost for nIn binary searches */
+    if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
+      /* Adjust nOut and rRun for STAT3 range values */
+      double rDiv;
+      whereRangeScanEst(pBuilder->pParse, pProbe, pNew->u.btree.nEq,
+                        pBtm, pTop, &rDiv);
+      pNew->nOut = savedLoop.nOut/rDiv;
+    }
+#ifdef SQLITE_ENABLE_STAT3
+    if( pNew->u.btree.nEq==1 && pProbe->nSample ){
+      if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
+        rc = whereEqualScanEst(pBuilder->pParse, pProbe, pTerm->pExpr->pRight,
+                               &pNew->nOut);
+      }else if( (pTerm->eOperator & WO_IN)
+             &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
+        rc = whereInScanEst(pBuilder->pParse, pProbe, pTerm->pExpr->x.pList,
+                             &pNew->nOut);
+
+      }
+    }
+#endif
     if( pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK) ){
       pNew->rRun += pNew->nOut;  /* Unit step cost to reach each row */
     }else{
@@ -4044,7 +4068,6 @@ static int whereLoopAddBtreeIndex(
       ** the main table */
       pNew->rRun += pNew->nOut*(1 + rLogSize);
     }
-    /* TBD: Adjust nOut and rRun for STAT3 range values */
     /* TBD: Adjust nOut for additional constraints */
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
