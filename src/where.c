@@ -3593,7 +3593,7 @@ static Bitmask codeOneLoopStart(
            && (ii==0 || pSubLoop->u.btree.pIndex==pCov)
           ){
             assert( pSubWInfo->a[0].iIdxCur==iCovCur );
-            pCov = pLoop->u.btree.pIndex;
+            pCov = pSubLoop->u.btree.pIndex;
           }else{
             pCov = 0;
           }

@@ -1,5 +1,5 @@
-C Test\scase\supdates.
-D 2013-06-04T15:31:16.980
+C Get\sthe\sindex-only\soptimization\sworking\sfor\sOR\squeries.
+D 2013-06-04T18:03:22.637
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 07d741484ae3f3758ec7e9a607bebc9ca3d04830
+F src/where.c e46c09e1fb10d9b9822441cbc0e92712d68b193c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 63fd025ad98c33826342824c51436ac92e2bb579
-R 67e11291890a37d4a1f5e5249ecb5cb8
+P 0360fec7c093870269211447e9642b5ee34ff778
+R 0af0bd237ed8aa13c84924b3ff155245
 U drh
-Z 7007403ff7385bdec3d57bd5a78d418a
+Z c037722d2012f6d1382fb3f047d6db42
