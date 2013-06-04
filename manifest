@@ -1,5 +1,5 @@
-C Better\sdetermination\sof\swhen\san\sindex\sis\sUNIQUE.
-D 2013-06-04T13:37:26.983
+C Test\scase\supdates.
+D 2013-06-04T15:31:16.980
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -690,7 +690,7 @@ F test/notnull.test 2afad748d18fd66d01f66463de73b3e2501fb226
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test f33968647da5c546528fe4d2bf86c6a6a2e5a7ae
+F test/orderby1.test 3c5ff32c23364fb3d567ad53b945837736e701ce
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8d9f29f847f38612447c79a5fb366a9143ef6205
-R 816acabe38521333f8c2b91e9413c2fb
+P 63fd025ad98c33826342824c51436ac92e2bb579
+R 67e11291890a37d4a1f5e5249ecb5cb8
 U drh
-Z 7aae80e9f7f08a338e021a4d83d77e82
+Z 7007403ff7385bdec3d57bd5a78d418a
