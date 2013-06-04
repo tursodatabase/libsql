@@ -319,6 +319,7 @@ struct WhereLoopBuilder {
 #define WHERE_COLUMN_RANGE 0x00000002  /* x<EXPR and/or x>EXPR */
 #define WHERE_COLUMN_IN    0x00000004  /* x IN (...) */
 #define WHERE_COLUMN_NULL  0x00000008  /* x IS NULL */
+#define WHERE_CONSTRAINT   0x0000000f  /* Any of the WHERE_COLUMN_xxx values */
 #define WHERE_TOP_LIMIT    0x00000010  /* x<EXPR or x<=EXPR constraint */
 #define WHERE_BTM_LIMIT    0x00000020  /* x>EXPR or x>=EXPR constraint */
 #define WHERE_BOTH_LIMIT   0x00000030  /* Both x>EXPR and x<EXPR */
@@ -2905,7 +2906,7 @@ static void explainOneScan(
           zWhere
       );
       sqlite3DbFree(db, zWhere);
-    }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_INDEXED)!=0 ){
+    }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
       zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
 
       if( flags&WHERE_COLUMN_EQ ){

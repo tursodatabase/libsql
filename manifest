@@ -1,5 +1,5 @@
-C Refactor\sthe\sORDER\sBY\soptimizer\sin\sthe\sNGQP\sso\sthat\sit\sis\seasier\sto\smaintain\nand\sso\sthat\sit\scan\ssupport\soptimizing\sout\sGROUP\sBY\sand\sDISTINCT\sclauses.
-D 2013-06-04T12:42:29.293
+C Fix\sa\sdisplay\sissue\swith\sEXPLAIN\sQUERY\sPLAN.
+D 2013-06-04T12:58:02.050
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c cca3284b915ee9c51dd9188e3a74e648ddf3db47
+F src/where.c 89e9e0180fb061529c2335483e698461020008b3
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P eb27086e8a8a4d5fcb2ea358256a555e34339423
-R 3dd8dcdfd7f56eca682f5b0b9f200abc
+P e605c468e3a1163167831c4a6220825c0b5d083b
+R 0c3dd4aecffc3c33e948e0ad3535455c
 U drh
-Z 6cf52a3b39b332b4094772bd0e2b3942
+Z fde826e1fa4a5f4defa852132d2e9311
