@@ -1,5 +1,5 @@
-C Fix\sa\sdisplay\sissue\swith\sEXPLAIN\sQUERY\sPLAN.
-D 2013-06-04T12:58:02.050
+C Increase\sthe\sestimated\sfull-scan\scost\sfor\san\sFTS3\stable.
+D 2013-06-04T13:07:44.387
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 931b3c83abdd1ab3bb389b2130431c2a9ff73b91
+F ext/fts3/fts3.c 760fecd100598dc22f9733d472b7cf2e9375c620
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 0b167bed9e63151635620a4f639bc62ac6012cba
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e605c468e3a1163167831c4a6220825c0b5d083b
-R 0c3dd4aecffc3c33e948e0ad3535455c
+P ff2fa407558360f2499b6df0392ab3cdb4788dec
+R 5715088460a26a1980fd1c02022e33fe
 U drh
-Z fde826e1fa4a5f4defa852132d2e9311
+Z e8fb494e500ca7853631ddff96a44d93
