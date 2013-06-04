@@ -1544,6 +1544,7 @@ struct Index {
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
+  unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
 #ifdef SQLITE_ENABLE_STAT3
   int nSample;             /* Number of elements in aSample[] */
   tRowcnt avgEq;           /* Average nEq value for key values not in aSample */
@@ -1888,6 +1889,11 @@ typedef u64 Bitmask;
 ** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
 */
 #define BMS  ((int)(sizeof(Bitmask)*8))
+
+/*
+** A bit in a Bitmask
+*/
+#define MASKBIT(n)   (((Bitmask)1)<<(n))
 
 /*
 ** The following structure describes the FROM clause of a SELECT statement.

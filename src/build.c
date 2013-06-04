@@ -2695,6 +2695,7 @@ Index *sqlite3CreateIndex(
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nExpr;
   pIndex->onError = (u8)onError;
+  pIndex->uniqNotNull = onError==OE_Abort;
   pIndex->autoIndex = (u8)(pName==0);
   pIndex->pSchema = db->aDb[iDb].pSchema;
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
@@ -2753,6 +2754,7 @@ Index *sqlite3CreateIndex(
     pIndex->azColl[i] = zColl;
     requestedSortOrder = pListItem->sortOrder & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
+    if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
   sqlite3DefaultRowEst(pIndex);
 

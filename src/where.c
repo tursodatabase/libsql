@@ -327,7 +327,7 @@ struct WhereLoopBuilder {
 #define WHERE_INDEXED      0x00000200  /* WhereLoop.u.btree.pIndex is valid */
 #define WHERE_VIRTUALTABLE 0x00000400  /* WhereLoop.u.vtab is valid */
 #define WHERE_IN_ABLE      0x00000800  /* Able to support an IN operator */
-#define WHERE_UNIQUE       0x00001000  /* Selects no more than one row */
+#define WHERE_ONEROW       0x00001000  /* Selects no more than one row */
 #define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x00004000  /* Uses an ephemeral index */
 #define WHERE_COVER_SCAN   0x00008000  /* Full scan of a covering index */
@@ -482,7 +482,7 @@ static Bitmask getMask(WhereMaskSet *pMaskSet, int iCursor){
   assert( pMaskSet->n<=(int)sizeof(Bitmask)*8 );
   for(i=0; i<pMaskSet->n; i++){
     if( pMaskSet->ix[i]==iCursor ){
-      return ((Bitmask)1)<<i;
+      return MASKBIT(i);
     }
   }
   return 0;
@@ -1838,7 +1838,7 @@ static void constructAutomaticIndex(
   for(pTerm=pWC->a; pTerm<pWCEnd && pLoop->nTerm<mxConstraint; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
-      Bitmask cMask = iCol>=BMS ? ((Bitmask)1)<<(BMS-1) : ((Bitmask)1)<<iCol;
+      Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
       testcase( iCol==BMS );
       testcase( iCol==BMS-1 );
       if( (idxCols & cMask)==0 ){
@@ -1860,14 +1860,14 @@ static void constructAutomaticIndex(
   ** original table changes and the index and table cannot both be used
   ** if they go out of sync.
   */
-  extraCols = pSrc->colUsed & (~idxCols | (((Bitmask)1)<<(BMS-1)));
+  extraCols = pSrc->colUsed & (~idxCols | MASKBIT(BMS-1));
   mxBitCol = (pTable->nCol >= BMS-1) ? BMS-1 : pTable->nCol;
   testcase( pTable->nCol==BMS-1 );
   testcase( pTable->nCol==BMS-2 );
   for(i=0; i<mxBitCol; i++){
-    if( extraCols & (((Bitmask)1)<<i) ) nColumn++;
+    if( extraCols & MASKBIT(i) ) nColumn++;
   }
-  if( pSrc->colUsed & (((Bitmask)1)<<(BMS-1)) ){
+  if( pSrc->colUsed & MASKBIT(BMS-1) ){
     nColumn += pTable->nCol - BMS + 1;
   }
   pLoop->wsFlags |= WHERE_COLUMN_EQ | WHERE_IDX_ONLY;
@@ -1891,7 +1891,7 @@ static void constructAutomaticIndex(
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
-      Bitmask cMask = iCol>=BMS ? ((Bitmask)1)<<(BMS-1) : ((Bitmask)1)<<iCol;
+      Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
       if( (idxCols & cMask)==0 ){
         Expr *pX = pTerm->pExpr;
         idxCols |= cMask;
@@ -1907,13 +1907,13 @@ static void constructAutomaticIndex(
   /* Add additional columns needed to make the automatic index into
   ** a covering index */
   for(i=0; i<mxBitCol; i++){
-    if( extraCols & (((Bitmask)1)<<i) ){
+    if( extraCols & MASKBIT(i) ){
       pIdx->aiColumn[n] = i;
       pIdx->azColl[n] = "BINARY";
       n++;
     }
   }
-  if( pSrc->colUsed & (((Bitmask)1)<<(BMS-1)) ){
+  if( pSrc->colUsed & MASKBIT(BMS-1) ){
     for(i=BMS-1; i<pTable->nCol; i++){
       pIdx->aiColumn[n] = i;
       pIdx->azColl[n] = "BINARY";
@@ -3390,7 +3390,7 @@ static Bitmask codeOneLoopStart(
     /* Record the instruction used to terminate the loop. Disable 
     ** WHERE clause terms made redundant by the index range scan.
     */
-    if( pLoop->wsFlags & WHERE_UNIQUE ){
+    if( pLoop->wsFlags & WHERE_ONEROW ){
       pLevel->op = OP_Noop;
     }else if( bRev ){
       pLevel->op = OP_Prev;
@@ -4004,6 +4004,7 @@ static int whereLoopAddBtreeIndex(
     if( pNew->nTerm>=pBuilder->mxTerm ) break; /* Repeated column in index */
     pNew->aTerm[pNew->nTerm++] = pTerm;
     pNew->prereq = (savedLoop.prereq | pTerm->prereqRight) & ~pNew->maskSelf;
+    pNew->rRun = rLogSize;
     if( pTerm->eOperator & WO_IN ){
       Expr *pExpr = pTerm->pExpr;
       pNew->wsFlags |= WHERE_COLUMN_IN;
@@ -4014,22 +4015,27 @@ static int whereLoopAddBtreeIndex(
         /* "x IN (value, value, ...)" */
         nIn = pExpr->x.pList->nExpr;
       }
+      pNew->rRun *= nIn;
       pNew->u.btree.nEq++;
       pNew->nOut = (double)iRowEst * nInMul * nIn;
     }else if( pTerm->eOperator & (WO_EQ) ){
+      assert( (pNew->wsFlags & (WHERE_COLUMN_NULL|WHERE_COLUMN_IN))!=0
+                  || nInMul==1 );
       pNew->wsFlags |= WHERE_COLUMN_EQ;
-      if( iCol<0 
+      if( iCol<0  
        || (pProbe->onError==OE_Abort && nInMul==1
            && pNew->u.btree.nEq==pProbe->nColumn-1)
       ){
-        pNew->wsFlags |= WHERE_UNIQUE;
+        testcase( pNew->wsFlags & WHERE_COLUMN_IN );
+        pNew->wsFlags |= WHERE_ONEROW;
       }
       pNew->u.btree.nEq++;
       pNew->nOut = (double)iRowEst * nInMul;
     }else if( pTerm->eOperator & (WO_ISNULL) ){
       pNew->wsFlags |= WHERE_COLUMN_NULL;
       pNew->u.btree.nEq++;
-      pNew->nOut = (double)iRowEst * nInMul;
+      nIn = 2;  /* Assume IS NULL matches two rows */
+      pNew->nOut = (double)iRowEst * nInMul * nIn;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
       pBtm = pTerm;
@@ -4040,7 +4046,6 @@ static int whereLoopAddBtreeIndex(
       pBtm = (pNew->wsFlags & WHERE_BTM_LIMIT)!=0 ?
                      pNew->aTerm[pNew->nTerm-2] : 0;
     }
-    pNew->rRun = rLogSize*nIn;  /* Cost for nIn binary searches */
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
       /* Adjust nOut and rRun for STAT3 range values */
       double rDiv;
@@ -4218,7 +4223,7 @@ static int whereLoopAddBtree(
       for(j=pProbe->nColumn-1; j>=0; j--){
         int x = pProbe->aiColumn[j];
         if( x<BMS-1 ){
-          m &= ~(((Bitmask)1)<<x);
+          m &= ~MASKBIT(x);
         }
       }
       pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
@@ -4529,7 +4534,7 @@ whereLoopAddAll_end:
 }
 
 /*
-** Examine a WherePath (with the addition of the extra WhereLoop of the 4th
+** Examine a WherePath (with the addition of the extra WhereLoop of the 5th
 ** parameters) to see if it outputs rows in the requested ORDER BY
 ** (or GROUP BY) without requiring a separate source operation.  Return:
 ** 
@@ -4542,52 +4547,50 @@ static int wherePathSatisfiesOrderBy(
   WhereInfo *pWInfo,    /* The WHERE clause */
   WherePath *pPath,     /* The WherePath to check */
   int nLoop,            /* Number of entries in pPath->aLoop[] */
-  int isLastLoop,       /* True for the very last loop */
+  int isLastLoop,       /* True if pLast is the inner-most loop */
   WhereLoop *pLast,     /* Add this WhereLoop to the end of pPath->aLoop[] */
   Bitmask *pRevMask     /* Mask of WhereLoops to run in reverse order */
 ){
   u8 revSet;            /* True if rev is known */
   u8 rev;               /* Composite sort order */
   u8 revIdx;            /* Index sort order */
-  u8 isOneRow;          /* Current WhereLoop is a one-row loop */
-  u8 requireOneRow = 0; /* All subsequent loops must be one-row */
-  u8 isUniqueIdx;       /* Current WhereLoop uses a unique index */
-  u16 nColumn;
-  u16 nOrderBy;
-  int i, j;
-  int nUsed = 0;
-  int iCur;
-  int iColumn;
-  WhereLoop *pLoop;
-  ExprList *pOrderBy = pWInfo->pOrderBy;
-  Expr *pOBExpr;
-  CollSeq *pColl;
-  Index *pIndex;
-  sqlite3 *db = pWInfo->pParse->db;
-  Bitmask revMask = 0;
+  u8 isWellOrdered;     /* All WhereLoops are well-ordered so far */
+  u16 nColumn;          /* Number of columns in pIndex */
+  u16 nOrderBy;         /* Number terms in the ORDER BY clause */
+  int iLoop;            /* Index of WhereLoop in pPath being processed */
+  int i, j;             /* Loop counters */
+  int iCur;             /* Cursor number for current WhereLoop */
+  int iColumn;          /* A column number within table iCur */
+  WhereLoop *pLoop;     /* Current WhereLoop being processed. */
+  ExprList *pOrderBy = pWInfo->pOrderBy;  /* the ORDER BY clause */
+  WhereTerm *pTerm;     /* A single term of the WHERE clause */
+  Expr *pOBExpr;        /* An expression from the ORDER BY clause */
+  CollSeq *pColl;       /* COLLATE function from an ORDER BY clause term */
+  Index *pIndex;        /* The index associated with pLoop */
+  sqlite3 *db = pWInfo->pParse->db;  /* Database connection */
+  Bitmask obSat = 0;    /* Mask of ORDER BY terms satisfied so far */
+  Bitmask obDone;       /* Mask of all ORDER BY terms */
+  Bitmask orderedMask;  /* Mask of all well-ordered loops */
+  WhereMaskSet *pMaskSet; /* WhereMaskSet object for this where clause */
+  
 
   /*
-  ** We say the WhereLoop is "one-row" if all of the following are true:
+  ** We say the WhereLoop is "one-row" if it generates no more than one
+  ** row of output.  A WhereLoop is one-row if all of the following are true:
   **  (a) All index columns match with WHERE_COLUMN_EQ.
   **  (b) The index is unique
+  ** Any WhereLoop with an WHERE_COLUMN_EQ constraint on the rowid is one-row.
+  ** Every one-row WhereLoop will have the WHERE_ONEROW bit set in wsFlags.
   **
-  ** General rules:  (not an algorithm!)
-  **
-  **  (1) If the current WhereLoop is one-row, then match over any and all
-  **      ORDER BY terms for the current WhereLoop and proceed to the next
-  **      WhereLoop.
-  **
-  **  (2) If the current WhereLoop is not one-row, then all subsequent
-  **      WhereLoops must be one-row.
-  **
-  **  (3) Optionally match any ORDER BY terms against the first nEq columns
-  **      of the index.
-  **
-  **  (4) Index columns past nEq must match ORDER BY terms one-for-one.
-  **
-  **  (5) If all columns of a UNIQUE index have been matched against ORDER BY
-  **      terms, then any subsequent entries in the ORDER BY clause against the
-  **      same table can be skipped.
+  ** We say the WhereLoop is "well-ordered" if
+  **  (i)  it satisfies at least one term of the ORDER BY clause, and
+  **  (ii) every row output is distinct over the terms that match the
+  **       ORDER BY clause.
+  ** Every one-row WhereLoop is automatically well-ordered, even if it
+  ** does not match any terms of the ORDER BY clause.
+  ** For condition (ii), be mindful that a UNIQUE column can have multiple
+  ** rows that are NULL and so it not necessarily distinct.  The column
+  ** must be UNIQUE and NOT NULL. in order to be well-ordered.
   */
 
   assert( pOrderBy!=0 );
@@ -4595,95 +4598,152 @@ static int wherePathSatisfiesOrderBy(
   /* Sortability of virtual tables is determined by the xBestIndex method
   ** of the virtual table itself */
   if( pLast->wsFlags & WHERE_VIRTUALTABLE ){
-    assert( nLoop==0 );
+    testcase( nLoop>0 );  /* True when outer loops are one-row and match 
+                          ** no ORDER BY terms */
     return pLast->u.vtab.isOrdered;
   }
+  if( nLoop && OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return 0;
 
-  /* Sorting is always required if any term of the ORDER BY is not a 
-  ** column reference */
   nOrderBy = pOrderBy->nExpr;
-#if 0
-  for(i=0; i<nOrderBy; i++){
-    pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
-    if( pOBExpr->op!=TK_COLUMN ) return 0;
-  }
-#endif
-    
-  for(i=0; i<=nLoop && nUsed<nOrderBy; i++){
-    pLoop = i<nLoop ? pPath->aLoop[i] : pLast;
+  if( nOrderBy>60 ) return 0;
+  isWellOrdered = 1;
+  obDone = MASKBIT(nOrderBy)-1;
+  orderedMask = 0;
+  pMaskSet = pWInfo->pWC->pMaskSet;
+  for(iLoop=0; isWellOrdered && obSat<obDone && iLoop<=nLoop; iLoop++){
+    pLoop = iLoop<nLoop ? pPath->aLoop[iLoop] : pLast;
     assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
-    isOneRow = isUniqueIdx = 1;
-    if( pLoop->wsFlags & WHERE_IPK ){
-      if( (pLoop->wsFlags & WHERE_COLUMN_IN)!=0 ) isOneRow = 0;
-      if( pLoop->u.btree.nEq!=1 ) isOneRow = 0;
-      pIndex = 0;
-      nColumn = 0;
-    }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
-      return 0;
-    }else{
-      nColumn = pIndex->nColumn;
-      if( pIndex->onError==OE_None ){
-        isOneRow = isUniqueIdx = 0;
-      }else if( (pLoop->wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_RANGE
-                                   |WHERE_COLUMN_NULL))!=0 ){
-        isOneRow = 0;
-      }else if( pLoop->u.btree.nEq < pIndex->nColumn ){
-        isOneRow = 0;
-      }
-    }
-    if( !isOneRow && requireOneRow ) return 0;
-    requireOneRow = !isOneRow;
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
-    j = 0;
-    revSet = rev = 0;
-    for(j=0; j<=nColumn && nUsed<nOrderBy; j++, nUsed++){
-      int skipable;
-      pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[nUsed].pExpr);
-      if( pOBExpr->op!=TK_COLUMN ) return 0;
-      if( pOBExpr->iTable!=iCur ) break;
-      if( isOneRow ){ j--; continue; }
-      if( j<nColumn ){
-        /* Normal index columns */
-        iColumn = pIndex->aiColumn[j];
-        revIdx = pIndex->aSortOrder[j];
-        if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
-      }else{
-        /* The ROWID column at the end */
-        iColumn = -1;
-        revIdx = 0;
-      }
-      skipable = j<pLoop->u.btree.nEq && pLoop->aTerm[j]->eOperator!=WO_IN;
-      if( pOBExpr->iColumn!=iColumn ){
-        if( skipable ){ nUsed--; continue; }
+    if( (pLoop->wsFlags & WHERE_ONEROW)==0 ){
+      if( pLoop->wsFlags & WHERE_IPK ){
+        pIndex = 0;
+        nColumn = 0;
+      }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
         return 0;
+      }else{
+        nColumn = pIndex->nColumn;
       }
-      if( iColumn>=0 ){
-        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[nUsed].pExpr);
-        if( !pColl ) pColl = db->pDfltColl;
-        if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ){
-          return 0;
+
+      /* For every term of the index that is constrained by == or IS NULL
+      ** mark off corresponding ORDER BY terms wherever they occur
+      ** in the ORDER BY clause.
+      */
+      for(i=0; i<pLoop->u.btree.nEq; i++){
+        pTerm = pLoop->aTerm[i];
+        if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))==0 ) continue;
+        iColumn = pTerm->u.leftColumn;
+        for(j=0; j<nOrderBy; j++){
+          if( MASKBIT(j) & obSat ) continue;
+          pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[j].pExpr);
+          if( pOBExpr->op!=TK_COLUMN ) continue;
+          if( pOBExpr->iTable!=iCur ) continue;
+          if( pOBExpr->iColumn!=iColumn ) continue;
+          if( iColumn>=0 ){
+            pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[j].pExpr);
+            if( !pColl ) pColl = db->pDfltColl;
+            if( sqlite3StrICmp(pColl->zName, pIndex->azColl[i])!=0 ) continue;
+          }
+          obSat |= MASKBIT(j);
         }
+        if( obSat==obDone ) return 1;
       }
-      if( !skipable ){
-        if( revSet ){
-          if( (rev ^ revIdx)!=pOrderBy->a[nUsed].sortOrder ) return 0;
+
+      /* Loop through all columns of the index and deal with the ones
+      ** that are not constrained by == or IN.
+      */
+      rev = revSet = 0;
+      for(j=0; j<=nColumn; j++){
+        u8 bOnce;   /* True to run the ORDER BY search loop */
+
+        if( j<pLoop->u.btree.nEq
+         && (pLoop->aTerm[j]->eOperator & (WO_EQ|WO_ISNULL))!=0
+        ){
+          continue;  /* Skip == and IS NULL terms already processed */
+        }
+
+        /* Get the column number in the table and sort order for the
+        ** j-th column of the index for this WhereLoop
+        */
+        if( j<nColumn ){
+          /* Normal index columns */
+          iColumn = pIndex->aiColumn[j];
+          revIdx = pIndex->aSortOrder[j];
+          if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
         }else{
-          rev = revIdx ^ pOrderBy->a[nUsed].sortOrder;
-          revSet = 1;
+          /* The ROWID column at the end */
+          iColumn = -1;
+          revIdx = 0;
         }
-      }
-      if( j>=nColumn-1 && isUniqueIdx ){
-        if( isLastLoop && i==nLoop ) break;
-        j--;
-        isOneRow = 1;
+
+        /* An unconstrained column that might be NULL means that this
+        ** WhereLoop is not well-ordered 
+        */
+        if( iColumn>=0
+         && j>=pLoop->u.btree.nEq
+         && pIndex->pTable->aCol[iColumn].notNull==0
+        ){
+          isWellOrdered = 0;
+        }
+
+        /* Find the ORDER BY term that corresponds to the j-th column
+        ** of the index and and mark that ORDER BY term off 
+        */
+        bOnce = 1;
+        for(i=0; bOnce && i<nOrderBy; i++){
+          if( MASKBIT(i) & obSat ) continue;
+          pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
+          if( pOBExpr->op!=TK_COLUMN ) continue;
+          if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ) bOnce = 0;
+          if( pOBExpr->iTable!=iCur ) continue;
+          if( pOBExpr->iColumn!=iColumn ) continue;
+          if( iColumn>=0 ){
+            pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
+            if( !pColl ) pColl = db->pDfltColl;
+            if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
+          }
+          bOnce = 1;
+          break;
+        }
+        if( bOnce && i<nOrderBy ){
+          if( iColumn<0 ) isWellOrdered = 1;
+          obSat |= MASKBIT(i);
+          if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
+            /* If we have an ORDER BY clause, we must match the next available
+            ** column of the ORDER BY */
+            if( revSet ){
+              if( (rev ^ revIdx)!=pOrderBy->a[i].sortOrder ) return 0;
+            }else{
+              rev = revIdx ^ pOrderBy->a[i].sortOrder;
+              if( rev ) *pRevMask |= MASKBIT(iLoop);
+              revSet = 1;
+            }
+          }
+        }else{
+          /* No match found */
+          if( j<nColumn || pIndex==0 || pIndex->onError!=OE_Abort ){
+            isWellOrdered = 0;
+          }
+          break;
+        }
+      } /* end Loop over all index columns */
+    } /* end-if not one-row */
+
+    /* Mark off any other ORDER BY terms that reference pLoop */
+    if( isWellOrdered ){
+      orderedMask |= pLoop->maskSelf;
+      for(i=0; i<nOrderBy; i++){
+        Expr *p;
+        if( MASKBIT(i) & obSat ) continue;
+        p = pOrderBy->a[i].pExpr;
+        if( (exprTableUsage(pMaskSet, p)&~orderedMask)==0 ){
+          obSat |= MASKBIT(i);
+        }
       }
     }
-    if( rev ) revMask |= ((Bitmask)1)<<i;
   }
-  if( isLastLoop || nUsed==nOrderBy ){
-    *pRevMask = revMask;
-    return 1;
-  }
+  if( obSat==obDone ) return 1;
+  if( !isWellOrdered ) return 0;
+  if( isLastLoop ) return 1;
   return -1;
 }
 
@@ -5216,7 +5276,7 @@ WhereInfo *sqlite3WhereBegin(
   ** the statement to update a single row.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
-  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 && (andFlags & WHERE_UNIQUE)!=0 ){
+  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 && (andFlags & WHERE_ONEROW)!=0 ){
     pWInfo->okOnePass = 1;
     pWInfo->a[0].plan.wsFlags &= ~WHERE_IDX_ONLY;
   }
