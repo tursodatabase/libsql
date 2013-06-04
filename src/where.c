@@ -4555,7 +4555,9 @@ static int wherePathSatisfiesOrderBy(
   u8 revSet;            /* True if rev is known */
   u8 rev;               /* Composite sort order */
   u8 revIdx;            /* Index sort order */
-  u8 isWellOrdered;     /* All WhereLoops are well-ordered so far */
+  u8 isOrderDistinct;   /* All prior WhereLoops are order-distinct */
+  u8 distinctColumns;   /* True if the loop has UNIQUE NOT NULL columns */
+  u8 isMatch;           /* iColumn matches a term of the ORDER BY clause */
   u16 nColumn;          /* Number of columns in pIndex */
   u16 nOrderBy;         /* Number terms in the ORDER BY clause */
   int iLoop;            /* Index of WhereLoop in pPath being processed */
@@ -4571,8 +4573,8 @@ static int wherePathSatisfiesOrderBy(
   sqlite3 *db = pWInfo->pParse->db;  /* Database connection */
   Bitmask obSat = 0;    /* Mask of ORDER BY terms satisfied so far */
   Bitmask obDone;       /* Mask of all ORDER BY terms */
-  Bitmask orderedMask;  /* Mask of all well-ordered loops */
-  WhereMaskSet *pMaskSet; /* WhereMaskSet object for this where clause */
+  Bitmask orderDistinctMask;  /* Mask of all well-ordered loops */
+  WhereMaskSet *pMaskSet;     /* WhereMaskSet object for this where clause */
   
 
   /*
@@ -4583,15 +4585,18 @@ static int wherePathSatisfiesOrderBy(
   ** Any WhereLoop with an WHERE_COLUMN_EQ constraint on the rowid is one-row.
   ** Every one-row WhereLoop will have the WHERE_ONEROW bit set in wsFlags.
   **
-  ** We say the WhereLoop is "well-ordered" if
-  **  (i)  it satisfies at least one term of the ORDER BY clause, and
-  **  (ii) every row output is distinct over the terms that match the
-  **       ORDER BY clause.
-  ** Every one-row WhereLoop is automatically well-ordered, even if it
-  ** does not match any terms of the ORDER BY clause.
-  ** For condition (ii), be mindful that a UNIQUE column can have multiple
-  ** rows that are NULL and so it not necessarily distinct.  The column
-  ** must be UNIQUE and NOT NULL. in order to be well-ordered.
+  ** We say the WhereLoop is "order-distinct" if the set of columns from
+  ** that WhereLoop that are in the ORDER BY clause are different for every
+  ** row of the WhereLoop.  Every one-row WhereLoop is automatically
+  ** order-distinct.   A WhereLoop that has no columns in the ORDER BY clause
+  ** is not order-distinct. To be order-distinct is not quite the same as being
+  ** UNIQUE since a UNIQUE column or index can have multiple rows that 
+  ** are NULL and NULL values are equivalent for the purpose of order-distinct.
+  ** To be order-distinct, the columns must be UNIQUE and NOT NULL.
+  **
+  ** The rowid for a table is always UNIQUE and NOT NULL so whenever the
+  ** rowid appears in the ORDER BY clause, the corresponding WhereLoop is
+  ** automatically order-distinct.
   */
 
   assert( pOrderBy!=0 );
@@ -4606,12 +4611,12 @@ static int wherePathSatisfiesOrderBy(
   if( nLoop && OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return 0;
 
   nOrderBy = pOrderBy->nExpr;
-  if( nOrderBy>60 ) return 0;
-  isWellOrdered = 1;
+  if( nOrderBy>BMS-1 ) return 0;  /* Cannot optimize overly large ORDER BYs */
+  isOrderDistinct = 1;
   obDone = MASKBIT(nOrderBy)-1;
-  orderedMask = 0;
+  orderDistinctMask = 0;
   pMaskSet = pWInfo->pWC->pMaskSet;
-  for(iLoop=0; isWellOrdered && obSat<obDone && iLoop<=nLoop; iLoop++){
+  for(iLoop=0; isOrderDistinct && obSat<obDone && iLoop<=nLoop; iLoop++){
     pLoop = iLoop<nLoop ? pPath->aLoop[iLoop] : pLast;
     assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
@@ -4623,9 +4628,10 @@ static int wherePathSatisfiesOrderBy(
         return 0;
       }else{
         nColumn = pIndex->nColumn;
+        isOrderDistinct = pIndex->onError!=OE_None;
       }
 
-      /* For every term of the index that is constrained by == or IS NULL
+      /* For every term of the index that is constrained by == or IS NULL,
       ** mark off corresponding ORDER BY terms wherever they occur
       ** in the ORDER BY clause.
       */
@@ -4653,17 +4659,20 @@ static int wherePathSatisfiesOrderBy(
       ** that are not constrained by == or IN.
       */
       rev = revSet = 0;
+      distinctColumns = 0;
       for(j=0; j<=nColumn; j++){
         u8 bOnce;   /* True to run the ORDER BY search loop */
 
+        /* Skip over == and IS NULL terms */
         if( j<pLoop->u.btree.nEq
-         && (pLoop->aTerm[j]->eOperator & (WO_EQ|WO_ISNULL))!=0
+         && ((i = pLoop->aTerm[j]->eOperator) & (WO_EQ|WO_ISNULL))!=0
         ){
-          continue;  /* Skip == and IS NULL terms already processed */
+          if( i & WO_ISNULL ) isOrderDistinct = 0;
+          continue;  
         }
 
-        /* Get the column number in the table and sort order for the
-        ** j-th column of the index for this WhereLoop
+        /* Get the column number in the table (iColumn) and sort order
+        ** (revIdx) for the j-th column of the index.
         */
         if( j<nColumn ){
           /* Normal index columns */
@@ -4679,22 +4688,24 @@ static int wherePathSatisfiesOrderBy(
         /* An unconstrained column that might be NULL means that this
         ** WhereLoop is not well-ordered 
         */
-        if( iColumn>=0
+        if( isOrderDistinct
+         && iColumn>=0
          && j>=pLoop->u.btree.nEq
          && pIndex->pTable->aCol[iColumn].notNull==0
         ){
-          isWellOrdered = 0;
+          isOrderDistinct = 0;
         }
 
         /* Find the ORDER BY term that corresponds to the j-th column
         ** of the index and and mark that ORDER BY term off 
         */
         bOnce = 1;
+        isMatch = 0;
         for(i=0; bOnce && i<nOrderBy; i++){
           if( MASKBIT(i) & obSat ) continue;
           pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
-          if( pOBExpr->op!=TK_COLUMN ) continue;
           if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ) bOnce = 0;
+          if( pOBExpr->op!=TK_COLUMN ) continue;
           if( pOBExpr->iTable!=iCur ) continue;
           if( pOBExpr->iColumn!=iColumn ) continue;
           if( iColumn>=0 ){
@@ -4702,15 +4713,15 @@ static int wherePathSatisfiesOrderBy(
             if( !pColl ) pColl = db->pDfltColl;
             if( sqlite3StrICmp(pColl->zName, pIndex->azColl[j])!=0 ) continue;
           }
-          bOnce = 1;
+          isMatch = 1;
           break;
         }
-        if( bOnce && i<nOrderBy ){
-          if( iColumn<0 ) isWellOrdered = 1;
+        if( isMatch ){
+          if( iColumn<0 ) distinctColumns = 1;
           obSat |= MASKBIT(i);
           if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
-            /* If we have an ORDER BY clause, we must match the next available
-            ** column of the ORDER BY */
+            /* Make sure the sort order is compatible in an ORDER BY clause.
+            ** Sort order is irrelevant for a GROUP BY clause. */
             if( revSet ){
               if( (rev ^ revIdx)!=pOrderBy->a[i].sortOrder ) return 0;
             }else{
@@ -4721,29 +4732,28 @@ static int wherePathSatisfiesOrderBy(
           }
         }else{
           /* No match found */
-          if( j<nColumn || pIndex==0 || pIndex->onError==OE_None ){
-            isWellOrdered = 0;
-          }
+          if( j==0 || j<nColumn ) isOrderDistinct = 0;
           break;
         }
       } /* end Loop over all index columns */
+      if( distinctColumns ) isOrderDistinct = 1;
     } /* end-if not one-row */
 
     /* Mark off any other ORDER BY terms that reference pLoop */
-    if( isWellOrdered ){
-      orderedMask |= pLoop->maskSelf;
+    if( isOrderDistinct ){
+      orderDistinctMask |= pLoop->maskSelf;
       for(i=0; i<nOrderBy; i++){
         Expr *p;
         if( MASKBIT(i) & obSat ) continue;
         p = pOrderBy->a[i].pExpr;
-        if( (exprTableUsage(pMaskSet, p)&~orderedMask)==0 ){
+        if( (exprTableUsage(pMaskSet, p)&~orderDistinctMask)==0 ){
           obSat |= MASKBIT(i);
         }
       }
     }
   }
   if( obSat==obDone ) return 1;
-  if( !isWellOrdered ) return 0;
+  if( !isOrderDistinct ) return 0;
   if( isLastLoop ) return 1;
   return -1;
 }

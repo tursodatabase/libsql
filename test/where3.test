@@ -190,37 +190,37 @@ do_test where3-2.2 {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND apk=bx
   }
-} {tB {} tA * tC * tD *}
+} {tB * tA * tC * tD *}
 do_test where3-2.3 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND apk=bx
   }
-} {tB {} tA * tC * tD *}
+} {tB * tA * tC * tD *}
 do_test where3-2.4 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE apk=cx AND bpk=ax
   }
-} {tC {} tA * tB * tD *}
+} {tC * tA * tB * tD *}
 do_test where3-2.5 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=ax AND bpk=cx
   }
-} {tA {} tC * tB * tD *}
+} {tA * tC * tB * tD *}
 do_test where3-2.6 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE bpk=cx AND apk=bx
   }
-} {tC {} tB * tA * tD *}
+} {tC * tB * tA * tD *}
 do_test where3-2.7 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND apk=cx
   }
-} {tB {} tC * tA * tD *}
+} {tB * tC * tA * tD *}
 
 # Ticket [13f033c865f878953]
 # If the outer loop must be a full table scan, do not let ANALYZE trick

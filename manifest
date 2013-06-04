@@ -1,5 +1,5 @@
-C Restore\sthe\sPRAGMA\sreverse_unordered_selects\sbehavior.
-D 2013-06-04T18:27:41.462
+C Update\ssome\svariable\snames\sand\scomments\sin\sthe\sORDER\sBY\soptimizer.\s\sFix\sa\nbug\sin\sthe\sORDER\sBY\soptimizer\sdealing\swith\sIS\sNULL\sconstraints.\s\sUpdates\nto\stest\scases.
+D 2013-06-04T23:40:53.563
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c cc1e1a7255b6722a419d6a5016d89f227e7a9ce7
+F src/where.c 0b8fd61de3c71df0ba084d13177c384bb50e4d22
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1030,7 +1030,7 @@ F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test 054a6b6f7933c5a5f50d0bcd650b5eccb450cc81
 F test/where2.test 116fb0d6e98a423d12eb9a65906218ce09936674
-F test/where3.test ae3054e1216ecc0afbcb83674310ebc5de25ba09
+F test/where3.test 311c04e16f72816616d05d96dd354db7bce545eb
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 774d5ff857cfad3471401ed518ed0959eb912e6c
-R a1a3ee93fd22dda060fc640b96157ac6
+P f49cd6c4e752e39801f9d5de0bc370d26f43837c
+R e9f7dc193466abcd06681335597fcecc
 U drh
-Z ec57b78c26a34e23e063493e6b075b85
+Z dc06d4669e35a15ef353fefc6b023d96
