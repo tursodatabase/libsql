@@ -4024,7 +4024,7 @@ static int whereLoopAddBtreeIndex(
                   || nInMul==1 );
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       if( iCol<0  
-       || (pProbe->onError==OE_Abort && nInMul==1
+       || (pProbe->onError!=OE_None && nInMul==1
            && pNew->u.btree.nEq==pProbe->nColumn-1)
       ){
         testcase( pNew->wsFlags & WHERE_COLUMN_IN );
@@ -4721,7 +4721,7 @@ static int wherePathSatisfiesOrderBy(
           }
         }else{
           /* No match found */
-          if( j<nColumn || pIndex==0 || pIndex->onError!=OE_Abort ){
+          if( j<nColumn || pIndex==0 || pIndex->onError==OE_None ){
             isWellOrdered = 0;
           }
           break;
