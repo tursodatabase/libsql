@@ -5250,6 +5250,8 @@ WhereInfo *sqlite3WhereBegin(
   if( pWInfo->pOrderBy ){
      wherePathSolver(pWInfo, pWInfo->nRowOut);
      if( db->mallocFailed ) goto whereBeginError;
+  }else if( db->flags & SQLITE_ReverseOrder ){
+     pWInfo->revMask = (Bitmask)(-1);
   }
   if( pParse->nErr || db->mallocFailed ){
     goto whereBeginError;
