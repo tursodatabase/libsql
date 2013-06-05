@@ -752,7 +752,8 @@ WhereTerm *whereScanInit(
 ){
   int j;
 
-  memset(pScan, 0, sizeof(*pScan));
+  /* memset(pScan, 0, sizeof(*pScan)); */
+  pScan->pCurrent = 0;
   pScan->pOrigWC = pWC;
   pScan->pWC = pWC;
   if( pIdx && iColumn>=0 ){
@@ -761,8 +762,12 @@ WhereTerm *whereScanInit(
       if( NEVER(j>=pIdx->nColumn) ) return 0;
     }
     pScan->zCollName = pIdx->azColl[j];
+  }else{
+    pScan->idxaff = 0;
+    pScan->zCollName = 0;
   }
   pScan->opMask = opMask;
+  pScan->k = 0;
   pScan->aEquiv[0] = iCur;
   pScan->aEquiv[1] = iColumn;
   pScan->nEquiv = 2;
@@ -4782,7 +4787,7 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** error occurs.
 */
 static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
-  const int mxChoice = 10;  /* Maximum number of simultaneous paths tracked */
+  int mxChoice = 10;        /* Maximum number of simultaneous paths tracked */
   int nLoop;                /* Number of terms in the join */
   sqlite3 *db;              /* The database connection */
   int iLoop;                /* Loop counter over the terms of the join */
@@ -4801,6 +4806,7 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
 
   db = pWInfo->pParse->db;
   nLoop = pWInfo->nLevel;
+  mxChoice = (nLoop==1) ? 1 : (nLoop==2 ? 5 : 10);
   assert( nLoop<=pWInfo->pTabList->nSrc );
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace>=2 ) sqlite3DebugPrintf("---- begin solver\n");
@@ -4814,7 +4820,7 @@ static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
   aFrom = aTo+mxChoice;
   memset(aFrom, 0, sizeof(aFrom[0]));
   pX = (WhereLoop**)(aFrom+mxChoice);
-  for(ii=0, pFrom=aTo; ii<mxChoice*2; ii++, pFrom++, pX += nLoop){
+  for(ii=mxChoice*2, pFrom=aTo; ii>0; ii--, pFrom++, pX += nLoop){
     pFrom->aLoop = pX;
   }
 
