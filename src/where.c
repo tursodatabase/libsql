@@ -3859,25 +3859,27 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   */
   for(ppPrev=&pWInfo->pLoops, p=*ppPrev; p; ppPrev=&p->pNextLoop, p=*ppPrev){
     if( p->iTab!=pTemplate->iTab || p->iSortIdx!=pTemplate->iSortIdx ) continue;
-    if( p->nTerm<pTemplate->nTerm
-     && (p->wsFlags & WHERE_INDEXED)!=0
-     && (pTemplate->wsFlags & WHERE_INDEXED)!=0
-     && p->u.btree.pIndex==pTemplate->u.btree.pIndex
-     && p->prereq==pTemplate->prereq
-    ){
-      /* Overwrite an existing WhereLoop with an similar one that uses
-      ** more terms of the index */
-      pNext = p->pNextLoop;
-      whereLoopClear(db, p);
-      break;
-    }
     if( (p->prereq & pTemplate->prereq)==p->prereq
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
     ){
-      /* Already holding an equal or better WhereLoop.
-      ** Return without changing or adding anything */
-      goto whereLoopInsert_noop;
+      /* p is equal or better than pTemplate */
+      if( p->nTerm<pTemplate->nTerm
+       && (p->wsFlags & WHERE_INDEXED)!=0
+       && (pTemplate->wsFlags & WHERE_INDEXED)!=0
+       && p->u.btree.pIndex==pTemplate->u.btree.pIndex
+       && p->prereq==pTemplate->prereq
+      ){
+        /* Overwrite an existing WhereLoop with an similar one that uses
+        ** more terms of the index */
+        pNext = p->pNextLoop;
+        whereLoopClear(db, p);
+        break;
+      }else{
+        /* pTemplate is not helpful.
+        ** Return without changing or adding anything */
+        goto whereLoopInsert_noop;
+      }
     }
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rSetup>=pTemplate->rSetup
