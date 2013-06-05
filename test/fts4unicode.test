@@ -384,5 +384,23 @@ foreach T $tokenizers {
   do_isspace_test 6.$T.19 $T   {8287 12288}
 }
 
+#-------------------------------------------------------------------------
+# Test that the private use ranges are treated as alphanumeric.
+#
+breakpoint
+foreach {tn1 c} {
+  1 \ue000 2 \ue001 3 \uf000 4 \uf8fe 5 \uf8ff
+} {
+  foreach {tn2 config res} {
+    1 ""             "0 hello*world hello*world"
+    2 "separators=*" "0 hello hello 1 world world"
+  } {
+    set config [string map [list * $c] $config]
+    set input  [string map [list * $c] "hello*world"]
+    set output [string map [list * $c] $res]
+    do_unicode_token_test3 7.$tn1.$tn2 {*}$config $input $output
+  }
+}
+
 
 finish_test
