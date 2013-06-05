@@ -39,6 +39,7 @@ typedef struct WhereClause WhereClause;
 typedef struct WhereMaskSet WhereMaskSet;
 typedef struct WhereOrInfo WhereOrInfo;
 typedef struct WhereAndInfo WhereAndInfo;
+typedef struct WhereLevel WhereLevel;
 typedef struct WhereLoop WhereLoop;
 typedef struct WherePath WherePath;
 typedef struct WhereTerm WhereTerm;
@@ -46,6 +47,73 @@ typedef struct WhereLoopBuilder WhereLoopBuilder;
 typedef struct WhereScan WhereScan;
 typedef struct WhereVtabPlan WhereVtabPlan;
 
+
+/*
+** For each nested loop in a WHERE clause implementation, the WhereInfo
+** structure contains a single instance of this structure.  This structure
+** is intended to be private to the where.c module and should not be
+** access or modified by other modules.
+**
+** The pIdxInfo field is used to help pick the best index on a
+** virtual table.  The pIdxInfo pointer contains indexing
+** information for the i-th table in the FROM clause before reordering.
+** All the pIdxInfo pointers are freed by whereInfoFree() in where.c.
+** All other information in the i-th WhereLevel object for the i-th table
+** after FROM clause ordering.
+*/
+struct WhereLevel {
+  int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
+  int iTabCur;          /* The VDBE cursor used to access the table */
+  int iIdxCur;          /* The VDBE cursor used to access pIdx */
+  int addrBrk;          /* Jump here to break out of the loop */
+  int addrNxt;          /* Jump here to start the next IN combination */
+  int addrCont;         /* Jump here to continue with the next loop cycle */
+  int addrFirst;        /* First instruction of interior of the loop */
+  u8 iFrom;       /* FIXME: Which entry in the FROM clause */
+  u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
+  int p1, p2;           /* Operands of the opcode used to ends the loop */
+  union {               /* Information that depends on plan.wsFlags */
+    struct {
+      int nIn;              /* Number of entries in aInLoop[] */
+      struct InLoop {
+        int iCur;              /* The VDBE cursor used by this IN operator */
+        int addrInTop;         /* Top of the IN loop */
+        u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
+      } *aInLoop;           /* Information about each nested IN operator */
+    } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
+    Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
+  } u;
+  struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
+};
+
+/*
+** The WHERE clause processing routine has two halves.  The
+** first part does the start of the WHERE loop and the second
+** half does the tail of the WHERE loop.  An instance of
+** this structure is returned by the first half and passed
+** into the second half to give some continuity.
+*/
+struct WhereInfo {
+  Parse *pParse;            /* Parsing and code generating context */
+  SrcList *pTabList;        /* List of tables in the join */
+  ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
+  ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
+  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
+  u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
+  u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
+  u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
+  u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
+  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
+  int iTop;                 /* The very beginning of the WHERE loop */
+  int iContinue;            /* Jump here to continue with next record */
+  int iBreak;               /* Jump here to break out of the loop */
+  int nLevel;               /* Number of nested loop */
+  struct WhereClause *pWC;  /* Decomposition of the WHERE clause */
+  struct WhereLoop *pLoops; /* List of all WhereLoop objects */
+  double savedNQueryLoop;   /* pParse->nQueryLoop outside the WHERE loop */
+  double nRowOut;           /* Estimated number of output rows */
+  WhereLevel a[1];          /* Information about each nest loop in WHERE */
+};
 
 /*
 ** Each instance of this object represents a way of evaluating one
@@ -332,6 +400,54 @@ struct WhereLoopBuilder {
 #define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x00004000  /* Uses an ephemeral index */
 #define WHERE_COVER_SCAN   0x00008000  /* Full scan of a covering index */
+
+/*
+** Return the estimated number of output rows from a WHERE clause
+*/
+double sqlite3WhereOutputRowCount(WhereInfo *pWInfo){
+  return pWInfo->nRowOut;
+}
+
+/*
+** Return one of the WHERE_DISTINCT_xxxxx values to indicate how this
+** WHERE clause returns outputs for DISTINCT processing.
+*/
+int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
+  return pWInfo->eDistinct;
+}
+
+/*
+** Return TRUE if the WHERE clause returns rows in ORDER BY order.
+** Return FALSE if the output needs to be sorted.
+*/
+int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
+  return pWInfo->nOBSat>0;
+}
+
+/*
+** Return the VDBE address or label to jump to in order to continue
+** immediately with the next row of a WHERE clause.
+*/
+int sqlite3WhereContinueLabel(WhereInfo *pWInfo){
+  return pWInfo->iContinue;
+}
+
+/*
+** Return the VDBE address or label to jump to in order to break
+** out of a WHERE loop.
+*/
+int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
+  return pWInfo->iBreak;
+}
+
+/*
+** Return TRUE if an UPDATE or DELETE statement can operate directly on
+** the rowids returned by a WHERE clause.  Return FALSE if doing an
+** UPDATE or DELETE might change subsequent WHERE clause results.
+*/
+int sqlite3WhereOkOnePass(WhereInfo *pWInfo){
+  return pWInfo->okOnePass;
+}
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -4179,6 +4295,7 @@ static int whereLoopAddBtree(
 
   /* Automatic indexes */
   if( !pBuilder->pBest
+   && pBuilder->pTabList->nSrc>1
    && (pBuilder->pParse->db->flags & SQLITE_AutoIndex)!=0 
    && !pSrc->viaCoroutine
    && !pSrc->notIndexed

@@ -721,7 +721,6 @@ typedef struct VTable VTable;
 typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
-typedef struct WhereLevel WhereLevel;
 
 /*
 ** Defer sourcing vdbe.h and btree.h until after the "u8" and 
@@ -1955,44 +1954,6 @@ struct SrcList {
 
 
 /*
-** For each nested loop in a WHERE clause implementation, the WhereInfo
-** structure contains a single instance of this structure.  This structure
-** is intended to be private to the where.c module and should not be
-** access or modified by other modules.
-**
-** The pIdxInfo field is used to help pick the best index on a
-** virtual table.  The pIdxInfo pointer contains indexing
-** information for the i-th table in the FROM clause before reordering.
-** All the pIdxInfo pointers are freed by whereInfoFree() in where.c.
-** All other information in the i-th WhereLevel object for the i-th table
-** after FROM clause ordering.
-*/
-struct WhereLevel {
-  int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
-  int iTabCur;          /* The VDBE cursor used to access the table */
-  int iIdxCur;          /* The VDBE cursor used to access pIdx */
-  int addrBrk;          /* Jump here to break out of the loop */
-  int addrNxt;          /* Jump here to start the next IN combination */
-  int addrCont;         /* Jump here to continue with the next loop cycle */
-  int addrFirst;        /* First instruction of interior of the loop */
-  u8 iFrom;       /* FIXME: Which entry in the FROM clause */
-  u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
-  int p1, p2;           /* Operands of the opcode used to ends the loop */
-  union {               /* Information that depends on plan.wsFlags */
-    struct {
-      int nIn;              /* Number of entries in aInLoop[] */
-      struct InLoop {
-        int iCur;              /* The VDBE cursor used by this IN operator */
-        int addrInTop;         /* Top of the IN loop */
-        u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
-      } *aInLoop;           /* Information about each nested IN operator */
-    } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
-    Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
-  } u;
-  struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
-};
-
-/*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()
 ** and the WhereInfo.wctrlFlags member.
 */
@@ -2006,35 +1967,6 @@ struct WhereLevel {
 #define WHERE_ONETABLE_ONLY    0x0040 /* Only code the 1st table in pTabList */
 #define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
 #define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
-
-/*
-** The WHERE clause processing routine has two halves.  The
-** first part does the start of the WHERE loop and the second
-** half does the tail of the WHERE loop.  An instance of
-** this structure is returned by the first half and passed
-** into the second half to give some continuity.
-*/
-struct WhereInfo {
-  Parse *pParse;            /* Parsing and code generating context */
-  SrcList *pTabList;        /* List of tables in the join */
-  ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
-  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
-  u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
-  u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
-  u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
-  u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
-  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
-  int iTop;                 /* The very beginning of the WHERE loop */
-  int iContinue;            /* Jump here to continue with next record */
-  int iBreak;               /* Jump here to break out of the loop */
-  int nLevel;               /* Number of nested loop */
-  struct WhereClause *pWC;  /* Decomposition of the WHERE clause */
-  struct WhereLoop *pLoops; /* List of all WhereLoop objects */
-  double savedNQueryLoop;   /* pParse->nQueryLoop outside the WHERE loop */
-  double nRowOut;           /* Estimated number of output rows */
-  WhereLevel a[1];          /* Information about each nest loop in WHERE */
-};
 
 /* Allowed values for WhereInfo.eDistinct and DistinctCtx.eTnctType */
 #define WHERE_DISTINCT_NOOP      0  /* DISTINCT keyword not used */
@@ -2864,6 +2796,12 @@ void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
+double sqlite3WhereOutputRowCount(WhereInfo*);
+int sqlite3WhereIsDistinct(WhereInfo*);
+int sqlite3WhereIsOrdered(WhereInfo*);
+int sqlite3WhereContinueLabel(WhereInfo*);
+int sqlite3WhereBreakLabel(WhereInfo*);
+int sqlite3WhereOkOnePass(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
