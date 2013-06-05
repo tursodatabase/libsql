@@ -4430,17 +4430,6 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   if( pWC->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
-  pItem = pBuilder->pTabList->a + pNew->iTab;
-  iCur = pItem->iCursor;
-  sSubBuild = *pBuilder;
-  sSubBuild.pOrderBy = 0;
-  sSubBuild.pBest = &sBest;
-  tempWC.pParse = pWC->pParse;
-  tempWC.pMaskSet = pWC->pMaskSet;
-  tempWC.pOuter = pWC;
-  tempWC.op = TK_AND;
-  tempWC.wctrlFlags = 0;
-  tempWC.nTerm = 1;
 
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
     if( (pTerm->eOperator & WO_OR)!=0
@@ -4452,12 +4441,23 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       double rTotal = 0;
       double nRow = 0;
       Bitmask prereq = mExtra;
-
+    
+      pItem = pBuilder->pTabList->a + pNew->iTab;
+      iCur = pItem->iCursor;
+      sSubBuild = *pBuilder;
+      sSubBuild.pOrderBy = 0;
+      sSubBuild.pBest = &sBest;
 
       for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
-        if( (pOrTerm->eOperator& WO_AND)!=0 ){
+        if( (pOrTerm->eOperator & WO_AND)!=0 ){
           sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
         }else if( pOrTerm->leftCursor==iCur ){
+          tempWC.pParse = pWC->pParse;
+          tempWC.pMaskSet = pWC->pMaskSet;
+          tempWC.pOuter = pWC;
+          tempWC.op = TK_AND;
+          tempWC.wctrlFlags = 0;
+          tempWC.nTerm = 1;
           tempWC.a = pOrTerm;
           sSubBuild.pWC = &tempWC;
         }else{
@@ -4787,7 +4787,7 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** error occurs.
 */
 static int wherePathSolver(WhereInfo *pWInfo, double nRowEst){
-  int mxChoice = 10;        /* Maximum number of simultaneous paths tracked */
+  int mxChoice;             /* Maximum number of simultaneous paths tracked */
   int nLoop;                /* Number of terms in the join */
   sqlite3 *db;              /* The database connection */
   int iLoop;                /* Loop counter over the terms of the join */
