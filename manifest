@@ -1,5 +1,5 @@
-C Update\ssome\svariable\snames\sand\scomments\sin\sthe\sORDER\sBY\soptimizer.\s\sFix\sa\nbug\sin\sthe\sORDER\sBY\soptimizer\sdealing\swith\sIS\sNULL\sconstraints.\s\sUpdates\nto\stest\scases.
-D 2013-06-04T23:40:53.563
+C Add\sa\stest\scase\scontributed\son\sthe\smailing\slist\nthat\sworks\sin\sNGQP\sbut\sfails\sin\slegacy.
+D 2013-06-05T12:18:15.188
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -378,6 +378,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 0b3922d2304a14a47e3ccd61bbd6824327af659b
+F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 4aabd06cff3fe759e3e658bcc17b71789710665e
 F test/corrupt2.test 9c0ab4becd50e9050bc1ebb8675456a4e5587bf0
 F test/corrupt3.test 889d7cdb811800303aa722d7813fe8a4299cf726
@@ -1093,7 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f49cd6c4e752e39801f9d5de0bc370d26f43837c
-R e9f7dc193466abcd06681335597fcecc
+P cf96eb5945a9bab71104cb1581ee13ab30022566
+R 373c05c6780cec478b9924edf49e0658
 U drh
-Z dc06d4669e35a15ef353fefc6b023d96
+Z c785a25f44da51b36475ec1e8ccfb14e
