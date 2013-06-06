@@ -314,9 +314,6 @@ struct WhereMaskSet {
 */
 struct WhereLoopBuilder {
   WhereInfo *pWInfo;        /* Information about this WHERE */
-//  sqlite3 *db;              /* Database connection */
-//  Parse *pParse;            /* Parsing context */
-//  SrcList *pTabList;        /* FROM clause */
   WhereClause *pWC;         /* WHERE clause terms */
   ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
