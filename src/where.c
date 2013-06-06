@@ -45,8 +45,6 @@ typedef struct WherePath WherePath;
 typedef struct WhereTerm WhereTerm;
 typedef struct WhereLoopBuilder WhereLoopBuilder;
 typedef struct WhereScan WhereScan;
-typedef struct WhereVtabPlan WhereVtabPlan;
-
 
 /*
 ** For each nested loop in a WHERE clause implementation, the WhereInfo
@@ -84,35 +82,6 @@ struct WhereLevel {
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
   struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
-};
-
-/*
-** The WHERE clause processing routine has two halves.  The
-** first part does the start of the WHERE loop and the second
-** half does the tail of the WHERE loop.  An instance of
-** this structure is returned by the first half and passed
-** into the second half to give some continuity.
-*/
-struct WhereInfo {
-  Parse *pParse;            /* Parsing and code generating context */
-  SrcList *pTabList;        /* List of tables in the join */
-  ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
-  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
-  u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
-  u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
-  u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
-  u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
-  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
-  int iTop;                 /* The very beginning of the WHERE loop */
-  int iContinue;            /* Jump here to continue with next record */
-  int iBreak;               /* Jump here to break out of the loop */
-  int nLevel;               /* Number of nested loop */
-  struct WhereClause *pWC;  /* Decomposition of the WHERE clause */
-  struct WhereLoop *pLoops; /* List of all WhereLoop objects */
-  double savedNQueryLoop;   /* pParse->nQueryLoop outside the WHERE loop */
-  double nRowOut;           /* Estimated number of output rows */
-  WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
 
 /*
@@ -279,11 +248,9 @@ struct WhereScan {
 ** subclauses points to the WhereClause object for the whole clause.
 */
 struct WhereClause {
-  Parse *pParse;           /* The parser context */
-  WhereMaskSet *pMaskSet;  /* Mapping of table cursor numbers to bitmasks */
+  WhereInfo *pWInfo;       /* WHERE clause processing context */
   WhereClause *pOuter;     /* Outer conjunction */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
-  u16 wctrlFlags;          /* Might include WHERE_AND_ONLY */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
@@ -347,14 +314,44 @@ struct WhereMaskSet {
 */
 struct WhereLoopBuilder {
   WhereInfo *pWInfo;        /* Information about this WHERE */
-  sqlite3 *db;              /* Database connection */
-  Parse *pParse;            /* Parsing context */
+//  sqlite3 *db;              /* Database connection */
+//  Parse *pParse;            /* Parsing context */
+//  SrcList *pTabList;        /* FROM clause */
   WhereClause *pWC;         /* WHERE clause terms */
-  SrcList *pTabList;        /* FROM clause */
   ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
   WhereLoop *pBest;         /* If non-NULL, store single best loop here */
   int mxTerm;               /* Maximum number of aTerm[] entries on pNew */
+};
+
+/*
+** The WHERE clause processing routine has two halves.  The
+** first part does the start of the WHERE loop and the second
+** half does the tail of the WHERE loop.  An instance of
+** this structure is returned by the first half and passed
+** into the second half to give some continuity.
+*/
+struct WhereInfo {
+  Parse *pParse;            /* Parsing and code generating context */
+  SrcList *pTabList;        /* List of tables in the join */
+  ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
+  ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
+  Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
+  u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
+  u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
+  u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
+  u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
+  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
+  int iTop;                 /* The very beginning of the WHERE loop */
+  int iContinue;            /* Jump here to continue with next record */
+  int iBreak;               /* Jump here to break out of the loop */
+  int nLevel;               /* Number of nested loop */
+  WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
+  WhereClause sWC;          /* Decomposition of the WHERE clause */
+  WhereLoop *pLoops;        /* List of all WhereLoop objects */
+  double savedNQueryLoop;   /* pParse->nQueryLoop outside the WHERE loop */
+  double nRowOut;           /* Estimated number of output rows */
+  WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
 
 /*
@@ -454,17 +451,13 @@ int sqlite3WhereOkOnePass(WhereInfo *pWInfo){
 */
 static void whereClauseInit(
   WhereClause *pWC,        /* The WhereClause to be initialized */
-  Parse *pParse,           /* The parsing context */
-  WhereMaskSet *pMaskSet,  /* Mapping from table cursor numbers to bitmasks */
-  u16 wctrlFlags           /* Might include WHERE_AND_ONLY */
+  WhereInfo *pWInfo        /* The WHERE processing context */
 ){
-  pWC->pParse = pParse;
-  pWC->pMaskSet = pMaskSet;
+  pWC->pWInfo = pWInfo;
   pWC->pOuter = 0;
   pWC->nTerm = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
-  pWC->wctrlFlags = wctrlFlags;
 }
 
 /* Forward reference */
@@ -493,7 +486,7 @@ static void whereAndInfoDelete(sqlite3 *db, WhereAndInfo *p){
 static void whereClauseClear(WhereClause *pWC){
   int i;
   WhereTerm *a;
-  sqlite3 *db = pWC->pParse->db;
+  sqlite3 *db = pWC->pWInfo->pParse->db;
   for(i=pWC->nTerm-1, a=pWC->a; i>=0; i--, a++){
     if( a->wtFlags & TERM_DYNAMIC ){
       sqlite3ExprDelete(db, a->pExpr);
@@ -534,7 +527,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   testcase( wtFlags & TERM_VIRTUAL );  /* EV: R-00211-15100 */
   if( pWC->nTerm>=pWC->nSlot ){
     WhereTerm *pOld = pWC->a;
-    sqlite3 *db = pWC->pParse->db;
+    sqlite3 *db = pWC->pWInfo->pParse->db;
     pWC->a = sqlite3DbMallocRaw(db, sizeof(pWC->a[0])*pWC->nSlot*2 );
     if( pWC->a==0 ){
       if( wtFlags & TERM_DYNAMIC ){
@@ -811,14 +804,15 @@ WhereTerm *whereScanNext(WhereScan *pScan){
             /* Verify the affinity and collating sequence match */
             if( pScan->zCollName && (pTerm->eOperator & WO_ISNULL)==0 ){
               CollSeq *pColl;
+              Parse *pParse = pWC->pWInfo->pParse;
               pX = pTerm->pExpr;
               if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
                 continue;
               }
               assert(pX->pLeft);
-              pColl = sqlite3BinaryCompareCollSeq(pWC->pParse,
+              pColl = sqlite3BinaryCompareCollSeq(pParse,
                                                   pX->pLeft, pX->pRight);
-              if( pColl==0 ) pColl = pWC->pParse->db->pDfltColl;
+              if( pColl==0 ) pColl = pParse->db->pDfltColl;
               if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
                 continue;
               }
@@ -1177,11 +1171,11 @@ static void exprAnalyzeOrTerm(
   WhereClause *pWC,         /* the complete WHERE clause */
   int idxTerm               /* Index of the OR-term to be analyzed */
 ){
-  Parse *pParse = pWC->pParse;            /* Parser context */
+  WhereInfo *pWInfo = pWC->pWInfo;        /* WHERE clause processing context */
+  Parse *pParse = pWInfo->pParse;         /* Parser context */
   sqlite3 *db = pParse->db;               /* Database connection */
   WhereTerm *pTerm = &pWC->a[idxTerm];    /* The term to be analyzed */
   Expr *pExpr = pTerm->pExpr;             /* The expression of the term */
-  WhereMaskSet *pMaskSet = pWC->pMaskSet; /* Table use masks */
   int i;                                  /* Loop counters */
   WhereClause *pOrWc;       /* Breakup of pTerm into subterms */
   WhereTerm *pOrTerm;       /* A Sub-term within the pOrWc */
@@ -1200,7 +1194,7 @@ static void exprAnalyzeOrTerm(
   if( pOrInfo==0 ) return;
   pTerm->wtFlags |= TERM_ORINFO;
   pOrWc = &pOrInfo->wc;
-  whereClauseInit(pOrWc, pWC->pParse, pMaskSet, pWC->wctrlFlags);
+  whereClauseInit(pOrWc, pWInfo);
   whereSplit(pOrWc, pExpr, TK_OR);
   exprAnalyzeAll(pSrc, pOrWc);
   if( db->mallocFailed ) return;
@@ -1226,7 +1220,7 @@ static void exprAnalyzeOrTerm(
         pOrTerm->wtFlags |= TERM_ANDINFO;
         pOrTerm->eOperator = WO_AND;
         pAndWC = &pAndInfo->wc;
-        whereClauseInit(pAndWC, pWC->pParse, pMaskSet, pWC->wctrlFlags);
+        whereClauseInit(pAndWC, pWC->pWInfo);
         whereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
         exprAnalyzeAll(pSrc, pAndWC);
         pAndWC->pOuter = pWC;
@@ -1235,7 +1229,7 @@ static void exprAnalyzeOrTerm(
           for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
             assert( pAndTerm->pExpr );
             if( allowedOp(pAndTerm->pExpr->op) ){
-              b |= getMask(pMaskSet, pAndTerm->leftCursor);
+              b |= getMask(&pWInfo->sMaskSet, pAndTerm->leftCursor);
             }
           }
         }
@@ -1246,10 +1240,10 @@ static void exprAnalyzeOrTerm(
       ** corresponding TERM_VIRTUAL term */
     }else{
       Bitmask b;
-      b = getMask(pMaskSet, pOrTerm->leftCursor);
+      b = getMask(&pWInfo->sMaskSet, pOrTerm->leftCursor);
       if( pOrTerm->wtFlags & TERM_VIRTUAL ){
         WhereTerm *pOther = &pOrWc->a[pOrTerm->iParent];
-        b |= getMask(pMaskSet, pOther->leftCursor);
+        b |= getMask(&pWInfo->sMaskSet, pOther->leftCursor);
       }
       indexable &= b;
       if( (pOrTerm->eOperator & WO_EQ)==0 ){
@@ -1311,7 +1305,7 @@ static void exprAnalyzeOrTerm(
           assert( j==1 );
           continue;
         }
-        if( (chngToIN & getMask(pMaskSet, pOrTerm->leftCursor))==0 ){
+        if( (chngToIN & getMask(&pWInfo->sMaskSet, pOrTerm->leftCursor))==0 ){
           /* This term must be of the form t1.a==t2.b where t2 is in the
           ** chngToIN set but t1 is not.  This term will be either preceeded
           ** or follwed by an inverted copy (t2.b==t1.a).  Skip this term 
@@ -1330,7 +1324,7 @@ static void exprAnalyzeOrTerm(
         ** on the second iteration */
         assert( j==1 );
         assert( IsPowerOfTwo(chngToIN) );
-        assert( chngToIN==getMask(pMaskSet, iCursor) );
+        assert( chngToIN==getMask(&pWInfo->sMaskSet, iCursor) );
         break;
       }
       testcase( j==1 );
@@ -1379,7 +1373,7 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->leftCursor==iCursor );
         assert( pOrTerm->u.leftColumn==iColumn );
         pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight, 0);
-        pList = sqlite3ExprListAppend(pWC->pParse, pList, pDup);
+        pList = sqlite3ExprListAppend(pWInfo->pParse, pList, pDup);
         pLeft = pOrTerm->pExpr->pLeft;
       }
       assert( pLeft!=0 );
@@ -1428,6 +1422,7 @@ static void exprAnalyze(
   WhereClause *pWC,         /* the WHERE clause */
   int idxTerm               /* Index of the term to be analyzed */
 ){
+  WhereInfo *pWInfo = pWC->pWInfo; /* WHERE clause processing context */
   WhereTerm *pTerm;                /* The term to be analyzed */
   WhereMaskSet *pMaskSet;          /* Set of table index masks */
   Expr *pExpr;                     /* The expression to be analyzed */
@@ -1438,14 +1433,14 @@ static void exprAnalyze(
   int isComplete = 0;              /* RHS of LIKE/GLOB ends with wildcard */
   int noCase = 0;                  /* LIKE/GLOB distinguishes case */
   int op;                          /* Top-level operator.  pExpr->op */
-  Parse *pParse = pWC->pParse;     /* Parsing context */
+  Parse *pParse = pWInfo->pParse;  /* Parsing context */
   sqlite3 *db = pParse->db;        /* Database connection */
 
   if( db->mallocFailed ){
     return;
   }
   pTerm = &pWC->a[idxTerm];
-  pMaskSet = pWC->pMaskSet;
+  pMaskSet = &pWInfo->sMaskSet;
   pExpr = pTerm->pExpr;
   assert( pExpr->op!=TK_AS && pExpr->op!=TK_COLLATE );
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
@@ -3068,7 +3063,6 @@ static void explainOneScan(
 static Bitmask codeOneLoopStart(
   WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
   int iLevel,          /* Which level of pWInfo->a[] should be coded */
-  u16 wctrlFlags,      /* One of the WHERE_* flags defined in sqliteInt.h */
   Bitmask notReady     /* Which tables are currently available */
 ){
   int j, k;            /* Loop counters */
@@ -3091,14 +3085,14 @@ static Bitmask codeOneLoopStart(
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
-  pWC = pWInfo->pWC;
+  pWC = &pWInfo->sWC;
   pLevel = &pWInfo->a[iLevel];
   pLoop = pLevel->pWLoop;
   pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
   iCur = pTabItem->iCursor;
   bRev = (pWInfo->revMask>>iLevel)&1;
   omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
-           && (wctrlFlags & WHERE_FORCE_TABLE)==0;
+           && (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)==0;
   VdbeNoopComment((v, "Begin Join Loop %d", iLevel));
 
   /* Create labels for the "break" and "continue" instructions
@@ -3355,7 +3349,7 @@ static Bitmask codeOneLoopStart(
     ** the first one after the nEq equality constraints in the index,
     ** this requires some special handling.
     */
-    if( (wctrlFlags&WHERE_ORDERBY_MIN)!=0
+    if( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0
      && (pWInfo->nOBSat>0)
      && (pIdx->nColumn>nEq)
     ){
@@ -3624,7 +3618,7 @@ static Bitmask codeOneLoopStart(
     ** fall through to the next instruction, just as an OP_Next does if
     ** called on an uninitialized cursor.
     */
-    if( (wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
+    if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
       regRowset = ++pParse->nMem;
       regRowid = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
@@ -3679,7 +3673,7 @@ static Bitmask codeOneLoopStart(
           explainOneScan(
               pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
-          if( (wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
+          if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             int r;
             r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
@@ -3751,7 +3745,7 @@ static Bitmask codeOneLoopStart(
     pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
     pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
   }
-  newNotReady = notReady & ~getMask(pWC->pMaskSet, iCur);
+  newNotReady = notReady & ~getMask(&pWInfo->sMaskSet, iCur);
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
@@ -3906,7 +3900,7 @@ static void whereLoopDelete(sqlite3 *db, WhereLoop *p){
 */
 static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   if( ALWAYS(pWInfo) ){
-    whereClauseClear(pWInfo->pWC);
+    whereClauseClear(&pWInfo->sWC);
     while( pWInfo->pLoops ){
       WhereLoop *p = pWInfo->pLoops;
       pWInfo->pLoops = p->pNextLoop;
@@ -3945,8 +3939,8 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereLoop **ppPrev, *p, *pNext = 0, *pToFree = 0;
   WhereTerm **paTerm = 0;
-  sqlite3 *db = pBuilder->db;
   WhereInfo *pWInfo = pBuilder->pWInfo;
+  sqlite3 *db = pWInfo->pParse->db;
 
   /* If pBuilder->pBest is defined, then only keep track of the single
   ** best WhereLoop.  pBuilder->pBest->maskSelf==0 indicates that no
@@ -3969,7 +3963,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 #if WHERETRACE_ENABLED
     if( sqlite3WhereTrace & 0x8 ){
       sqlite3DebugPrintf("ins-best: ");
-      whereLoopPrint(pTemplate, pBuilder->pTabList);
+      whereLoopPrint(pTemplate, pWInfo->pTabList);
     }
 #endif
     return SQLITE_OK;
@@ -4021,10 +4015,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   if( sqlite3WhereTrace & 0x8 ){
     if( p!=0 ){
       sqlite3DebugPrintf("ins-del:  ");
-      whereLoopPrint(p, pBuilder->pTabList);
+      whereLoopPrint(p, pWInfo->pTabList);
     }
     sqlite3DebugPrintf("ins-new:  ");
-    whereLoopPrint(pTemplate, pBuilder->pTabList);
+    whereLoopPrint(pTemplate, pWInfo->pTabList);
   }
 #endif
   if( p==0 ){
@@ -4060,7 +4054,7 @@ whereLoopInsert_noop:
 #if WHERETRACE_ENABLED
   if( sqlite3WhereTrace & 0x8 ){
     sqlite3DebugPrintf("ins-noop: ");
-    whereLoopPrint(pTemplate, pBuilder->pTabList);
+    whereLoopPrint(pTemplate, pWInfo->pTabList);
   }
 #endif
   return SQLITE_OK;  
@@ -4079,7 +4073,9 @@ static int whereLoopAddBtreeIndex(
   Index *pProbe,                  /* An index on pSrc */
   int nInMul                      /* Number of iterations due to IN */
 ){
-  sqlite3 *db;                    /* Database connection malloc context */
+  WhereInfo *pWInfo = pBuilder->pWInfo;  /* WHERE analyse context */
+  Parse *pParse = pWInfo->pParse;        /* Parsing context */
+  sqlite3 *db = pParse->db;       /* Database connection malloc context */
   WhereLoop *pNew;                /* Template WhereLoop under construction */
   WhereTerm *pTerm;               /* A WhereTerm under consideration */
   int opMask;                     /* Valid operators for constraints */
@@ -4091,7 +4087,6 @@ static int whereLoopAddBtreeIndex(
   double rLogSize;                /* Logarithm of table size */
   WhereTerm *pTop, *pBtm;         /* Top and bottom range constraints */
 
-  db = pBuilder->db;
   pNew = pBuilder->pNew;
   if( db->mallocFailed ) return SQLITE_NOMEM;
 
@@ -4173,18 +4168,18 @@ static int whereLoopAddBtreeIndex(
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
       /* Adjust nOut and rRun for STAT3 range values */
       double rDiv;
-      whereRangeScanEst(pBuilder->pParse, pProbe, pNew->u.btree.nEq,
+      whereRangeScanEst(pParse, pProbe, pNew->u.btree.nEq,
                         pBtm, pTop, &rDiv);
       pNew->nOut = savedLoop.nOut/rDiv;
     }
 #ifdef SQLITE_ENABLE_STAT3
     if( pNew->u.btree.nEq==1 && pProbe->nSample ){
       if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
-        rc = whereEqualScanEst(pBuilder->pParse, pProbe, pTerm->pExpr->pRight,
+        rc = whereEqualScanEst(pParse, pProbe, pTerm->pExpr->pRight,
                                &pNew->nOut);
       }else if( (pTerm->eOperator & WO_IN)
              &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
-        rc = whereInScanEst(pBuilder->pParse, pProbe, pTerm->pExpr->x.pList,
+        rc = whereInScanEst(pParse, pProbe, pTerm->pExpr->x.pList,
                              &pNew->nOut);
 
       }
@@ -4227,7 +4222,7 @@ static int indexMightHelpWithOrderBy(
   int iCol;
   int ii;
 
-  if( (pOB = pBuilder->pOrderBy)==0 ) return 0;
+  if( (pOB = pBuilder->pWInfo->pOrderBy)==0 ) return 0;
   iCol = pIndex->aiColumn[0];
   for(ii=0; ii<pOB->nExpr; ii++){
     Expr *pExpr = sqlite3ExprSkipCollate(pOB->a[ii].pExpr);
@@ -4249,10 +4244,12 @@ static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
   Bitmask mExtra              /* Extra prerequesites for using this table */
 ){
+  WhereInfo *pWInfo;          /* WHERE analysis context */
   Index *pProbe;              /* An index we are evaluating */
   Index sPk;                  /* A fake index object for the primary key */
   tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
   int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
+  SrcList *pTabList;          /* The FROM clause */
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
   WhereLoop *pNew;            /* Template WhereLoop object */
   int rc = SQLITE_OK;         /* Return code */
@@ -4262,7 +4259,9 @@ static int whereLoopAddBtree(
   double rLogSize;            /* Logarithm of the number of rows in the table */
   
   pNew = pBuilder->pNew;
-  pSrc = pBuilder->pTabList->a + pNew->iTab;
+  pWInfo = pBuilder->pWInfo;
+  pTabList = pWInfo->pTabList;
+  pSrc = pTabList->a + pNew->iTab;
   assert( !IsVirtual(pSrc->pTab) );
 
   if( pSrc->pIndex ){
@@ -4295,8 +4294,8 @@ static int whereLoopAddBtree(
 
   /* Automatic indexes */
   if( !pBuilder->pBest
-   && pBuilder->pTabList->nSrc>1
-   && (pBuilder->pParse->db->flags & SQLITE_AutoIndex)!=0 
+   && pTabList->nSrc>1
+   && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0 
    && !pSrc->viaCoroutine
    && !pSrc->notIndexed
    && !pSrc->isCorrelated
@@ -4356,9 +4355,9 @@ static int whereLoopAddBtree(
       /* Full scan via index */
       if( (m==0 || b)
        && pProbe->bUnordered==0
-       && (pBuilder->pWC->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
+       && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
        && sqlite3GlobalConfig.bUseCis
-       && OptimizationEnabled(pBuilder->pParse->db, SQLITE_CoverIdxScan)
+       && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
         pNew->nOut = rSize;
@@ -4384,6 +4383,7 @@ static int whereLoopAddVirtual(
   WhereLoopBuilder *pBuilder,  /* WHERE clause information */
   Bitmask mExtra               /* Extra prerequesites for using this table */
 ){
+  WhereInfo *pWInfo;           /* WHERE analysis context */
   Parse *pParse;               /* The parsing context */
   WhereClause *pWC;            /* The WHERE clause */
   struct SrcList_item *pSrc;   /* The FROM clause term to search */
@@ -4401,11 +4401,12 @@ static int whereLoopAddVirtual(
   WhereLoop *pNew;
   int rc = SQLITE_OK;
 
-  pParse = pBuilder->pParse;
+  pWInfo = pBuilder->pWInfo;
+  pParse = pWInfo->pParse;
   db = pParse->db;
   pWC = pBuilder->pWC;
   pNew = pBuilder->pNew;
-  pSrc = &pBuilder->pTabList->a[pNew->iTab];
+  pSrc = &pWInfo->pTabList->a[pNew->iTab];
   pTab = pSrc->pTab;
   assert( IsVirtual(pTab) );
   pIdxInfo = allocateIndexInfo(pParse, pWC, pSrc, pBuilder->pOrderBy);
@@ -4532,6 +4533,7 @@ whereLoopAddVtab_exit:
 ** btrees or virtual tables.
 */
 static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
+  WhereInfo *pWInfo = pBuilder->pWInfo;
   WhereClause *pWC;
   WhereLoop *pNew;
   WhereTerm *pTerm, *pWCEnd;
@@ -4542,9 +4544,8 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   WhereLoop sBest;
   struct SrcList_item *pItem;
   
-
   pWC = pBuilder->pWC;
-  if( pWC->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
+  if( pWInfo->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
 
@@ -4559,7 +4560,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       double nRow = 0;
       Bitmask prereq = mExtra;
     
-      pItem = pBuilder->pTabList->a + pNew->iTab;
+      pItem = pWInfo->pTabList->a + pNew->iTab;
       iCur = pItem->iCursor;
       sSubBuild = *pBuilder;
       sSubBuild.pOrderBy = 0;
@@ -4569,11 +4570,9 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         if( (pOrTerm->eOperator & WO_AND)!=0 ){
           sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
         }else if( pOrTerm->leftCursor==iCur ){
-          tempWC.pParse = pWC->pParse;
-          tempWC.pMaskSet = pWC->pMaskSet;
+          tempWC.pWInfo = pWC->pWInfo;
           tempWC.pOuter = pWC;
           tempWC.op = TK_AND;
-          tempWC.wctrlFlags = 0;
           tempWC.nTerm = 1;
           tempWC.a = pOrTerm;
           sSubBuild.pWC = &tempWC;
@@ -4610,14 +4609,15 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
 ** Add all WhereLoop objects for all tables 
 */
 static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
+  WhereInfo *pWInfo = pBuilder->pWInfo;
   Bitmask mExtra = 0;
   Bitmask mPrior = 0;
   int iTab;
-  SrcList *pTabList = pBuilder->pTabList;
+  SrcList *pTabList = pWInfo->pTabList;
   struct SrcList_item *pItem;
   WhereClause *pWC = pBuilder->pWC;
-  sqlite3 *db = pBuilder->db;
-  int nTabList = pBuilder->pWInfo->nLevel;
+  sqlite3 *db = pWInfo->pParse->db;
+  int nTabList = pWInfo->nLevel;
   int rc = SQLITE_OK;
   WhereLoop *pNew;
 
@@ -4637,7 +4637,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   }
   for(iTab=0, pItem=pTabList->a; iTab<nTabList; iTab++, pItem++){
     pNew->iTab = iTab;
-    pNew->maskSelf = getMask(pWC->pMaskSet, pItem->iCursor);
+    pNew->maskSelf = getMask(&pWInfo->sMaskSet, pItem->iCursor);
     if( (pItem->jointype & (JT_LEFT|JT_CROSS))!=0 ){
       mExtra = mPrior;
     }
@@ -4698,7 +4698,6 @@ static int wherePathSatisfiesOrderBy(
   Bitmask obSat = 0;    /* Mask of ORDER BY terms satisfied so far */
   Bitmask obDone;       /* Mask of all ORDER BY terms */
   Bitmask orderDistinctMask;  /* Mask of all well-ordered loops */
-  WhereMaskSet *pMaskSet;     /* WhereMaskSet object for this where clause */
   
 
   /*
@@ -4739,7 +4738,6 @@ static int wherePathSatisfiesOrderBy(
   isOrderDistinct = 1;
   obDone = MASKBIT(nOrderBy)-1;
   orderDistinctMask = 0;
-  pMaskSet = pWInfo->pWC->pMaskSet;
   for(iLoop=0; isOrderDistinct && obSat<obDone && iLoop<=nLoop; iLoop++){
     pLoop = iLoop<nLoop ? pPath->aLoop[iLoop] : pLast;
     assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
@@ -4870,7 +4868,7 @@ static int wherePathSatisfiesOrderBy(
         Expr *p;
         if( MASKBIT(i) & obSat ) continue;
         p = pOrderBy->a[i].pExpr;
-        if( (exprTableUsage(pMaskSet, p)&~orderDistinctMask)==0 ){
+        if( (exprTableUsage(&pWInfo->sMaskSet, p)&~orderDistinctMask)==0 ){
           obSat |= MASKBIT(i);
         }
       }
@@ -5239,9 +5237,6 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Variable initialization */
   memset(&sWLB, 0, sizeof(sWLB));
-  sWLB.pParse = pParse;
-  sWLB.db = pParse->db;
-  sWLB.pTabList = pTabList;
   sWLB.pOrderBy = pOrderBy;
 
   /* The number of tables in the FROM clause is limited by the number of
@@ -5269,11 +5264,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   db = pParse->db;
   nByteWInfo = ROUND8(sizeof(WhereInfo)+(nTabList-1)*sizeof(WhereLevel));
-  pWInfo = sqlite3DbMallocZero(db, 
-      nByteWInfo + 
-      sizeof(WhereClause) +
-      sizeof(WhereMaskSet)
-  );
+  pWInfo = sqlite3DbMallocZero(db, nByteWInfo);
   if( db->mallocFailed ){
     sqlite3DbFree(db, pWInfo);
     pWInfo = 0;
@@ -5285,12 +5276,11 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pOrderBy = pOrderBy;
   pWInfo->pDistinct = pDistinct;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
-  pWInfo->pWC = (WhereClause *)&((u8 *)pWInfo)[nByteWInfo];
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
-  pMaskSet = (WhereMaskSet*)&pWInfo->pWC[1];
+  pMaskSet = &pWInfo->sMaskSet;
   sWLB.pWInfo = pWInfo;
-  sWLB.pWC = pWInfo->pWC;
+  sWLB.pWC = &pWInfo->sWC;
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
   ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
@@ -5300,9 +5290,9 @@ WhereInfo *sqlite3WhereBegin(
   ** subexpression is separated by an AND operator.
   */
   initMaskSet(pMaskSet);
-  whereClauseInit(pWInfo->pWC, pParse, pMaskSet, wctrlFlags);
+  whereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3ExprCodeConstants(pParse, pWhere);
-  whereSplit(pWInfo->pWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
+  whereSplit(&pWInfo->sWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
     
   /* Special case: a WHERE clause that is constant.  Evaluate the
   ** expression and either jump over all of the code or fall thru.
@@ -5347,7 +5337,7 @@ WhereInfo *sqlite3WhereBegin(
   ** want to analyze these virtual terms, so start analyzing at the end
   ** and work forward so that the added virtual terms are never processed.
   */
-  exprAnalyzeAll(pTabList, pWInfo->pWC);
+  exprAnalyzeAll(pTabList, &pWInfo->sWC);
   if( db->mallocFailed ){
     goto whereBeginError;
   }
@@ -5356,7 +5346,7 @@ WhereInfo *sqlite3WhereBegin(
   ** If it is, then set pDistinct to NULL and WhereInfo.eDistinct to
   ** WHERE_DISTINCT_UNIQUE to tell the caller to ignore the DISTINCT.
   */
-  if( pDistinct && isDistinctRedundant(pParse,pTabList,pWInfo->pWC,pDistinct) ){
+  if( pDistinct && isDistinctRedundant(pParse,pTabList,&pWInfo->sWC,pDistinct) ){
     pDistinct = 0;
     pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
   }
@@ -5467,7 +5457,7 @@ WhereInfo *sqlite3WhereBegin(
     }
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
     if( (pLoop->wsFlags & WHERE_TEMP_INDEX)!=0 ){
-      constructAutomaticIndex(pParse, pWInfo->pWC, pTabItem, notReady, pLevel);
+      constructAutomaticIndex(pParse, &pWInfo->sWC, pTabItem, notReady, pLevel);
     }else
 #endif
     if( pLoop->wsFlags & WHERE_INDEXED ){
@@ -5482,7 +5472,7 @@ WhereInfo *sqlite3WhereBegin(
       VdbeComment((v, "%s", pIx->zName));
     }
     sqlite3CodeVerifySchema(pParse, iDb);
-    notReady &= ~getMask(pWInfo->pWC->pMaskSet, pTabItem->iCursor);
+    notReady &= ~getMask(&pWInfo->sMaskSet, pTabItem->iCursor);
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
   if( db->mallocFailed ) goto whereBeginError;
@@ -5495,7 +5485,7 @@ WhereInfo *sqlite3WhereBegin(
   for(ii=0; ii<nTabList; ii++){
     pLevel = &pWInfo->a[ii];
     explainOneScan(pParse, pTabList, pLevel, ii, pLevel->iFrom, wctrlFlags);
-    notReady = codeOneLoopStart(pWInfo, ii, wctrlFlags, notReady);
+    notReady = codeOneLoopStart(pWInfo, ii, notReady);
     pWInfo->iContinue = pLevel->addrCont;
   }
 
