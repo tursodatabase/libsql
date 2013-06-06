@@ -3883,17 +3883,18 @@ static void whereLoopInit(WhereLoop *p){
 ** Clear the WhereLoop.u union.  Leave WhereLoop.pLTerm intact.
 */
 static void whereLoopClearUnion(sqlite3 *db, WhereLoop *p){
-  if( (p->wsFlags & WHERE_VIRTUALTABLE)!=0 ){
-    if( p->u.vtab.needFree ) sqlite3_free(p->u.vtab.idxStr);
-    p->u.vtab.needFree = 0;
-    p->u.vtab.idxStr = 0;
-  }else if( (p->wsFlags & WHERE_TEMP_INDEX)!=0 && p->u.btree.pIndex!=0 ){
-    sqlite3DbFree(db, p->u.btree.pIndex->zColAff);
-    sqlite3DbFree(db, p->u.btree.pIndex);
-    p->u.btree.pIndex = 0;
+  if( p->wsFlags & (WHERE_VIRTUALTABLE|WHERE_TEMP_INDEX) ){
+    if( (p->wsFlags & WHERE_VIRTUALTABLE)!=0 && p->u.vtab.needFree ){
+      sqlite3_free(p->u.vtab.idxStr);
+      p->u.vtab.needFree = 0;
+      p->u.vtab.idxStr = 0;
+    }else if( (p->wsFlags & WHERE_TEMP_INDEX)!=0 && p->u.btree.pIndex!=0 ){
+      sqlite3DbFree(db, p->u.btree.pIndex->zColAff);
+      sqlite3DbFree(db, p->u.btree.pIndex);
+      p->u.btree.pIndex = 0;
+    }
   }
 }
-
 
 /*
 ** Deallocate internal memory used by a WhereLoop object
@@ -3941,9 +3942,7 @@ static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
   pTo->u = pFrom->u;
   if( pFrom->wsFlags & WHERE_VIRTUALTABLE ){
     pFrom->u.vtab.needFree = 0;
-  }else if( (pFrom->wsFlags & WHERE_TEMP_INDEX)!=0 && pFrom->u.btree.pIndex!=0 ){
-    sqlite3DbFree(db, pFrom->u.btree.pIndex->zColAff);
-    sqlite3DbFree(db, pFrom->u.btree.pIndex);
+  }else if( (pFrom->wsFlags & WHERE_TEMP_INDEX)!=0 ){
     pFrom->u.btree.pIndex = 0;
   }
   return SQLITE_OK;
@@ -4048,7 +4047,6 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */
         pNext = p->pNextLoop;
-        whereLoopClear(db, p);
         break;
       }else{
         /* pTemplate is not helpful.
@@ -4062,7 +4060,6 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     ){
       /* Overwrite an existing WhereLoop with a better one */
       pNext = p->pNextLoop;
-      whereLoopClear(db, p);
       break;
     }
   }
@@ -4613,7 +4610,6 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   if( pWInfo->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
-  whereLoopInit(&sBest);
 
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
     if( (pTerm->eOperator & WO_OR)!=0
@@ -4626,6 +4622,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       WhereCost nRow = 0;
       Bitmask prereq = mExtra;
     
+      whereLoopInit(&sBest);
       pItem = pWInfo->pTabList->a + pNew->iTab;
       iCur = pItem->iCursor;
       sSubBuild = *pBuilder;
@@ -4669,9 +4666,9 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       pNew->prereq = prereq;
       memset(&pNew->u, 0, sizeof(pNew->u));
       rc = whereLoopInsert(pBuilder, pNew);
+      whereLoopClear(pWInfo->pParse->db, &sBest);
     }
   }
-  whereLoopClear(pWInfo->pParse->db, &sBest);
   return rc;
 }
 
