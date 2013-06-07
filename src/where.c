@@ -1831,13 +1831,11 @@ static int isDistinctRedundant(
 ** logN is a little off.
 */
 static WhereCost estLog(WhereCost N){
-  WhereCost logN = 1;
-  WhereCost x = 10;
-  while( N>x ){
-    logN += 1;
-    x *= 10;
-  }
-  return logN;
+  u32 a;
+  assert( sizeof(WhereCost)==4 );  /* 32-bit float input */
+  if( N<=0.0 ) return 0.0;
+  memcpy(&a, &N, 4);
+  return ((a >>= 23)-127)*0.3;
 }
 
 /*
@@ -5398,6 +5396,7 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(("*** Optimizer Start ***\n"));
+  /* TBD: if( nTablist==1 ) whereCommonCase(&sWLB); */
   rc = whereLoopAddAll(&sWLB);
   if( rc ) goto whereBeginError;
 
