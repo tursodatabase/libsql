@@ -99,9 +99,6 @@ struct WhereLoop {
 #endif
   u8 iTab;              /* Position in FROM clause of table for this loop */
   u8 iSortIdx;          /* Sorting index number.  0==None */
-  u16 nLTerm;           /* Number of entries in aLTerm[] */
-  u16 nLSlot;           /* Number of slots allocated for aLTerm[] */
-  u32 wsFlags;          /* WHERE_* flags describing the plan */
   WhereCost rSetup;     /* One-time setup cost (ex: create transient index) */
   WhereCost rRun;       /* Cost of running each loop */
   WhereCost nOut;       /* Estimated number of output rows */
@@ -118,6 +115,11 @@ struct WhereLoop {
       char *idxStr;          /* Index identifier string */
     } vtab;
   } u;
+  u32 wsFlags;          /* WHERE_* flags describing the plan */
+  u16 nLTerm;           /* Number of entries in aLTerm[] */
+  /**** whereLoopXfer() copies fields above ***********************/
+# define WHERE_LOOP_XFER_SZ offsetof(WhereLoop,nLSlot)
+  u16 nLSlot;           /* Number of slots allocated for aLTerm[] */
   WhereTerm **aLTerm;   /* WhereTerms used */
   WhereLoop *pNextLoop; /* Next WhereLoop object in the WhereClause */
   WhereTerm *aLTermSpace[4];  /* Initial aLTerm[] space */
@@ -3927,19 +3929,8 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
 static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
   if( whereLoopResize(db, pTo, pFrom->nLTerm) ) return SQLITE_NOMEM;
   whereLoopClearUnion(db, pTo);
-  pTo->prereq = pFrom->prereq;
-  pTo->maskSelf = pFrom->maskSelf;
-  pTo->iTab = pFrom->iTab;
-  pTo->iSortIdx = pFrom->iSortIdx;
-  pTo->nLTerm = pFrom->nLTerm;
-  pTo->rSetup = pFrom->rSetup;
-  pTo->rRun = pFrom->rRun;
-  pTo->nOut = pFrom->nOut;
-  if( pTo->nLTerm ){
-    memcpy(pTo->aLTerm, pFrom->aLTerm, pTo->nLTerm*sizeof(pTo->aLTerm[0]));
-  }
-  pTo->wsFlags = pFrom->wsFlags;
-  pTo->u = pFrom->u;
+  memcpy(pTo, pFrom, WHERE_LOOP_XFER_SZ);
+  memcpy(pTo->aLTerm, pFrom->aLTerm, pTo->nLTerm*sizeof(pTo->aLTerm[0]));
   if( pFrom->wsFlags & WHERE_VIRTUALTABLE ){
     pFrom->u.vtab.needFree = 0;
   }else if( (pFrom->wsFlags & WHERE_TEMP_INDEX)!=0 ){
@@ -4685,13 +4676,11 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   sqlite3 *db = pWInfo->pParse->db;
   int nTabList = pWInfo->nLevel;
   int rc = SQLITE_OK;
-  WhereLoop *pNew;
+  WhereLoop *pNew, sNew;
 
   /* Loop over the tables in the join, from left to right */
-  pBuilder->pNew = pNew = sqlite3DbMallocZero(db, sizeof(WhereLoop));
-  if( pNew==0 ) return SQLITE_NOMEM;
-  pNew->aLTerm = pNew->aLTermSpace;
-  pNew->nLSlot = ArraySize(pNew->aLTermSpace);
+  pBuilder->pNew = pNew = &sNew;
+  whereLoopInit(pNew);
   for(iTab=0, pItem=pTabList->a; iTab<nTabList; iTab++, pItem++){
     pNew->iTab = iTab;
     pNew->maskSelf = getMask(&pWInfo->sMaskSet, pItem->iCursor);
@@ -4709,7 +4698,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     mPrior |= pNew->maskSelf;
     if( rc || db->mallocFailed ) break;
   }
-  whereLoopDelete(db, pBuilder->pNew);
+  whereLoopClear(db, pNew);
   pBuilder->pNew = 0;
   return rc;
 }

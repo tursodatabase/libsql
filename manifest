@@ -1,5 +1,5 @@
-C Performance\simprovements.
-D 2013-06-06T23:44:25.383
+C Further\sprepare-time\sperformance\simprovements.
+D 2013-06-07T00:29:23.782
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c fb4bee9bfeb4c1c2019a2ed36cb49d1f72e8dda7
+F src/where.c bbd8aad0e54692a107d0f68111a289149814b10c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1094,7 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d4141ecbea3abbe83525910684fbd89eb74eeb34
-R cd5ddc1e68b8c783ab773654e8fe4f69
+P 9f8e84ab9874a8af826763b1669adb57abd493ea
+R 8930578735fbc55c72ec3d27796f6bd0
 U drh
-Z c534f818416a6634a12552ce3fcffbb2
+Z c23263f2bef48916be7bbfa11913b59d
