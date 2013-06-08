@@ -1,5 +1,5 @@
-C Improve\smanual\scleaning\sstep\sperformed\sby\sthe\smulti-platform\sbuild\stool\sfor\sMSVC.
-D 2013-06-07T22:12:20.577
+C Candidate\sfix\sfor\sa\smemory\sleak\sthat\soccurs\sif\sa\sCREATE\sTABLE\sstatement\ncontains\stwo\sor\smore\sCOLLATE\sclauses\son\sthe\ssame\scolumn\sdefinition.
+D 2013-06-08T19:58:27.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 7fba377c29573adfc6091832e27ee1fcbefb51d0
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c 92ef9483189389828966153c5950f2e5a49c1182
+F src/build.c 1ecf68522356a90471b07178e186277090d0b027
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
@@ -1093,7 +1093,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6cfd9af5250029c0d275be027b4208c48954a8a1
-R dcf91a597f51d84c0ab2afccdf474a00
-U mistachkin
-Z e27e17fb6daefee7fbcbf46384d56358
+P d5bc1fe1c461bdb3d889ab2e50feb944881822a4
+R 7e8f7769982f409b915035bea30221de
+T *branch * memleak
+T *sym-memleak *
+T -sym-trunk *
+U drh
+Z 33f096f01bc764624aabd9216a446650
