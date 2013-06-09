@@ -1,5 +1,5 @@
-C Candidate\sfix\sfor\sa\smemory\sleak\sthat\soccurs\sif\sa\sCREATE\sTABLE\sstatement\ncontains\stwo\sor\smore\sCOLLATE\sclauses\son\sthe\ssame\scolumn\sdefinition.
-D 2013-06-08T19:58:27.523
+C Add\stest\scases\sto\sdemonstrate\sthe\smemory\sleak\son\sthe\sCOLLATE\sclause.
+D 2013-06-09T20:16:26.380
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -365,7 +365,7 @@ F test/check.test 2eb93611139a7dfaed3be80067c7dc5ceb5fb287
 F test/close.test e37610d60e9c9b9979a981f3f50071d7dff28616
 F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
-F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
+F test/collate1.test b709989e6e6ff6e1d2bd64231c2c1d8146846c9e
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
 F test/collate3.test 79558a286362cb9ed603c6fa543f1cda7f563f0f
 F test/collate4.test 031f7265c13308b724ba3c49f41cc04612bd92b1
@@ -1093,10 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d5bc1fe1c461bdb3d889ab2e50feb944881822a4
-R 7e8f7769982f409b915035bea30221de
-T *branch * memleak
-T *sym-memleak *
-T -sym-trunk *
+P 60fc77bc537b099bdd48916746109d0332f839af
+R 866dc59c759cbc65061f28ee32001d2c
 U drh
-Z 33f096f01bc764624aabd9216a446650
+Z a5328cd2740f305b4d17636362fdc07d
