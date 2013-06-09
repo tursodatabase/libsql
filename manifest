@@ -1,5 +1,5 @@
-C Improve\smanual\scleaning\sstep\sperformed\sby\sthe\smulti-platform\sbuild\stool\sfor\sMSVC.
-D 2013-06-07T22:12:20.577
+C Fix\sthe\smemory\sleak\sin\sCREATE\sTABLE\sthat\soccurs\sif\sthere\sare\stwo\sor\smore\nCOLLATE\sclauses\son\sthe\ssame\scolumn.
+D 2013-06-09T20:22:41.259
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 7fba377c29573adfc6091832e27ee1fcbefb51d0
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c 92ef9483189389828966153c5950f2e5a49c1182
+F src/build.c 1ecf68522356a90471b07178e186277090d0b027
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
@@ -365,7 +365,7 @@ F test/check.test 2eb93611139a7dfaed3be80067c7dc5ceb5fb287
 F test/close.test e37610d60e9c9b9979a981f3f50071d7dff28616
 F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
-F test/collate1.test fd02c4d8afc71879c4bb952586389961a21fb0ce
+F test/collate1.test b709989e6e6ff6e1d2bd64231c2c1d8146846c9e
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
 F test/collate3.test 79558a286362cb9ed603c6fa543f1cda7f563f0f
 F test/collate4.test 031f7265c13308b724ba3c49f41cc04612bd92b1
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6cfd9af5250029c0d275be027b4208c48954a8a1
-R dcf91a597f51d84c0ab2afccdf474a00
-U mistachkin
-Z e27e17fb6daefee7fbcbf46384d56358
+P d5bc1fe1c461bdb3d889ab2e50feb944881822a4 0a60212c9c8404ee079985a58094ed2b2b554d48
+R 866dc59c759cbc65061f28ee32001d2c
+U drh
+Z 8263ab0aca3a813bb75c33a7d2fdca4d
