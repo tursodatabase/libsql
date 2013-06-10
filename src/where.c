@@ -4282,6 +4282,21 @@ static int indexMightHelpWithOrderBy(
 }
 
 /*
+** Return a bitmask where 1s indicate that the corresponding column of
+** the table is used by an index.  Only the first 63 columns are considered.
+*/
+static Bitmask columnsUsedByIndex(Index *pIdx){
+  Bitmask m = 0;
+  int j;
+  for(j=pIdx->nColumn-1; j>=0; j--){
+    int x = pIdx->aiColumn[j];
+    if( x<BMS-1 ) m |= MASKBIT(x);
+  }
+  return m;
+}
+
+
+/*
 ** Add all WhereLoop objects a single table of the join were the table
 ** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
@@ -4388,14 +4403,7 @@ static int whereLoopAddBtree(
       rc = whereLoopInsert(pBuilder, pNew);
       if( rc ) break;
     }else{
-      Bitmask m = pSrc->colUsed;
-      int j;
-      for(j=pProbe->nColumn-1; j>=0; j--){
-        int x = pProbe->aiColumn[j];
-        if( x<BMS-1 ){
-          m &= ~MASKBIT(x);
-        }
-      }
+      Bitmask m = pSrc->colUsed & ~columnsUsedByIndex(pProbe);
       pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
 
       /* Full scan via index */
@@ -5169,6 +5177,83 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
 }
 
 /*
+** Most queries use only a single table (they are not joins) and have
+** simple == constraints against indexed fields.  This routine attempts
+** to plan those simple cases using much less ceremony than the
+** general-purpose query planner, and thereby yield faster sqlite3_prepare()
+** times for the common case.
+**
+** Return non-zero on success, if this query can be handled by this
+** no-frills query planner.  Return zero if this query needs the 
+** general-purpose query planner.
+*/
+static int whereSimpleFastCase(WhereLoopBuilder *pBuilder){
+  WhereInfo *pWInfo;
+  struct SrcList_item *pItem;
+  WhereClause *pWC;
+  WhereTerm *pTerm;
+  WhereLoop *pLoop;
+  int iCur;
+  int j;
+  int nOrderBy;
+  Table *pTab;
+  Index *pIdx;
+  
+  pWInfo = pBuilder->pWInfo;
+  assert( pWInfo->pTabList->nSrc>=1 );
+  pItem = pWInfo->pTabList->a;
+  pTab = pItem->pTab;
+  if( IsVirtual(pTab) ) return 0;
+  if( pItem->zIndex ) return 0;
+  iCur = pItem->iCursor;
+  pWC = &pWInfo->sWC;
+  pLoop = pBuilder->pNew;
+  pWInfo->a[0].pWLoop = pLoop;
+  pLoop->wsFlags = 0;
+  pLoop->maskSelf = getMask(&pWInfo->sMaskSet, iCur);
+  pWInfo->a[0].iTabCur = iCur;
+#ifdef SQLITE_DEBUG
+  pLoop->cId = '0';
+#endif
+  nOrderBy = pWInfo->pOrderBy ? pWInfo->pOrderBy->nExpr : 0;
+  pTerm = findTerm(pWC, iCur, -1, 1, WO_EQ, 0);
+  if( pTerm ){
+    pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_IPK|WHERE_ONEROW;
+    pLoop->aLTerm[0] = pTerm;
+    pLoop->nLTerm = 1;
+    pLoop->u.btree.nEq = 1;
+    pLoop->rRun = (WhereCost)10;
+    pLoop->nOut = (WhereCost)1;
+    pWInfo->nRowOut = 1;
+    pWInfo->nOBSat = nOrderBy;
+  }else{
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      if( pIdx->onError==OE_None ) continue;
+      for(j=0; j<pIdx->nColumn; j++){
+        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 1, WO_EQ, pIdx);
+        if( pTerm==0 ) break;
+        whereLoopResize(pWInfo->pParse->db, pLoop, j);
+        pLoop->aLTerm[j] = pTerm;
+      }
+      if( j!=pIdx->nColumn ) continue;
+      pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
+      if( (pItem->colUsed & ~columnsUsedByIndex(pIdx))==0 ){
+        pLoop->wsFlags |= WHERE_IDX_ONLY;
+      }
+      pLoop->nLTerm = j;
+      pLoop->u.btree.nEq = j;
+      pLoop->u.btree.pIndex = pIdx;
+      pLoop->rRun = (WhereCost)15;
+      pLoop->nOut = (WhereCost)1;
+      pWInfo->nRowOut = 1;
+      pWInfo->nOBSat = nOrderBy;
+      break;
+    }
+  }
+  return pLoop->wsFlags!=0;
+}
+
+/*
 ** Generate the beginning of the loop used for WHERE clause processing.
 ** The return value is a pointer to an opaque structure that contains
 ** information needed to terminate the loop.  Later, the calling routine
@@ -5307,7 +5392,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   db = pParse->db;
   nByteWInfo = ROUND8(sizeof(WhereInfo)+(nTabList-1)*sizeof(WhereLevel));
-  pWInfo = sqlite3DbMallocZero(db, nByteWInfo);
+  pWInfo = sqlite3DbMallocZero(db, nByteWInfo + sizeof(WhereLoop));
   if( db->mallocFailed ){
     sqlite3DbFree(db, pWInfo);
     pWInfo = 0;
@@ -5324,6 +5409,8 @@ WhereInfo *sqlite3WhereBegin(
   pMaskSet = &pWInfo->sMaskSet;
   sWLB.pWInfo = pWInfo;
   sWLB.pWC = &pWInfo->sWC;
+  sWLB.pNew = (WhereLoop*)&pWInfo->a[nTabList];
+  whereLoopInit(sWLB.pNew);
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
   ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
@@ -5396,30 +5483,32 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(("*** Optimizer Start ***\n"));
-  /* TBD: if( nTablist==1 ) whereCommonCase(&sWLB); */
-  rc = whereLoopAddAll(&sWLB);
-  if( rc ) goto whereBeginError;
-
-  /* Display all of the WhereLoop objects if wheretrace is enabled */
+  if( nTabList!=1 || whereSimpleFastCase(&sWLB)==0 ){
+    rc = whereLoopAddAll(&sWLB);
+    if( rc ) goto whereBeginError;
+  
+    /* Display all of the WhereLoop objects if wheretrace is enabled */
 #ifdef WHERETRACE_ENABLED
-  if( sqlite3WhereTrace ){
-    WhereLoop *p;
-    int i = 0;
-    static char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
-                                     "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
-    for(p=pWInfo->pLoops; p; p=p->pNextLoop){
-      p->cId = zLabel[(i++)%sizeof(zLabel)];
-      whereLoopPrint(p, pTabList);
+    if( sqlite3WhereTrace ){
+      WhereLoop *p;
+      int i = 0;
+      static char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
+                                       "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
+      for(p=pWInfo->pLoops; p; p=p->pNextLoop){
+        p->cId = zLabel[(i++)%sizeof(zLabel)];
+        whereLoopPrint(p, pTabList);
+      }
+    }
+#endif
+  
+    wherePathSolver(pWInfo, -1);
+    if( db->mallocFailed ) goto whereBeginError;
+    if( pWInfo->pOrderBy ){
+       wherePathSolver(pWInfo, pWInfo->nRowOut);
+       if( db->mallocFailed ) goto whereBeginError;
     }
   }
-#endif
-
-  wherePathSolver(pWInfo, -1);
-  if( db->mallocFailed ) goto whereBeginError;
-  if( pWInfo->pOrderBy ){
-     wherePathSolver(pWInfo, pWInfo->nRowOut);
-     if( db->mallocFailed ) goto whereBeginError;
-  }else if( db->flags & SQLITE_ReverseOrder ){
+  if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
      pWInfo->revMask = (Bitmask)(-1);
   }
   if( pParse->nErr || db->mallocFailed ){
