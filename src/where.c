@@ -4282,6 +4282,21 @@ static int indexMightHelpWithOrderBy(
 }
 
 /*
+** Return a bitmask where 1s indicate that the corresponding column of
+** the table is used by an index.  Only the first 63 columns are considered.
+*/
+static Bitmask columnsUsedByIndex(Index *pIdx){
+  Bitmask m = 0;
+  int j;
+  for(j=pIdx->nColumn-1; j>=0; j--){
+    int x = pIdx->aiColumn[j];
+    if( x<BMS-1 ) m |= MASKBIT(x);
+  }
+  return m;
+}
+
+
+/*
 ** Add all WhereLoop objects a single table of the join were the table
 ** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
@@ -4388,14 +4403,7 @@ static int whereLoopAddBtree(
       rc = whereLoopInsert(pBuilder, pNew);
       if( rc ) break;
     }else{
-      Bitmask m = pSrc->colUsed;
-      int j;
-      for(j=pProbe->nColumn-1; j>=0; j--){
-        int x = pProbe->aiColumn[j];
-        if( x<BMS-1 ){
-          m &= ~MASKBIT(x);
-        }
-      }
+      Bitmask m = pSrc->colUsed & ~columnsUsedByIndex(pProbe);
       pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
 
       /* Full scan via index */
@@ -5186,7 +5194,7 @@ static int whereSimpleFastCase(WhereLoopBuilder *pBuilder){
   WhereTerm *pTerm;
   WhereLoop *pLoop;
   int iCur;
-  int i, j;
+  int j;
   int nOrderBy;
   Table *pTab;
   Index *pIdx;
@@ -5202,6 +5210,11 @@ static int whereSimpleFastCase(WhereLoopBuilder *pBuilder){
   pLoop = pBuilder->pNew;
   pWInfo->a[0].pWLoop = pLoop;
   pLoop->wsFlags = 0;
+  pLoop->maskSelf = getMask(&pWInfo->sMaskSet, iCur);
+  pWInfo->a[0].iTabCur = iCur;
+#ifdef SQLITE_DEBUG
+  pLoop->cId = '0';
+#endif
   nOrderBy = pWInfo->pOrderBy ? pWInfo->pOrderBy->nExpr : 0;
   pTerm = findTerm(pWC, iCur, -1, 1, WO_EQ, 0);
   if( pTerm ){
@@ -5223,7 +5236,10 @@ static int whereSimpleFastCase(WhereLoopBuilder *pBuilder){
         pLoop->aLTerm[j] = pTerm;
       }
       if( j!=pIdx->nColumn ) continue;
-      pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW;
+      pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
+      if( (pItem->colUsed & ~columnsUsedByIndex(pIdx))==0 ){
+        pLoop->wsFlags |= WHERE_IDX_ONLY;
+      }
       pLoop->nLTerm = j;
       pLoop->u.btree.nEq = j;
       pLoop->u.btree.pIndex = pIdx;
