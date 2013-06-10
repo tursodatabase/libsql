@@ -231,7 +231,6 @@ struct WhereTerm {
 ** terms in the WHERE clause that are useful to the query planner.
 */
 struct WhereScan {
-  WhereTerm *pCurrent;       /* Most recent match */
   WhereClause *pOrigWC;      /* Original, innermost WhereClause */
   WhereClause *pWC;          /* WhereClause currently being scanned */
   char *zCollName;           /* Required collating sequence, if not NULL */
@@ -779,12 +778,13 @@ WhereTerm *whereScanNext(WhereScan *pScan){
   Expr *pX;            /* An expression being tested */
   WhereClause *pWC;    /* Shorthand for pScan->pWC */
   WhereTerm *pTerm;    /* The term being tested */
+  int k = pScan->k;    /* Where to start scanning */
 
   while( pScan->iEquiv<=pScan->nEquiv ){
     iCur = pScan->aEquiv[pScan->iEquiv-2];
     iColumn = pScan->aEquiv[pScan->iEquiv-1];
     while( (pWC = pScan->pWC)!=0 ){
-      for(pTerm=pWC->a+pScan->k; pScan->k<pWC->nTerm; pScan->k++, pTerm++){
+      for(pTerm=pWC->a+k; k<pWC->nTerm; k++, pTerm++){
         if( pTerm->leftCursor==iCur && pTerm->u.leftColumn==iColumn ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aEquiv)
@@ -828,20 +828,18 @@ WhereTerm *whereScanNext(WhereScan *pScan){
             ){
               continue;
             }
-            pScan->pCurrent = pTerm;
-            pScan->k++;
+            pScan->k = k+1;
             return pTerm;
           }
         }
       }
       pWC = pScan->pWC = pScan->pWC->pOuter;
-      pScan->k = 0;
+      k = 0;
     }
     pScan->pWC = pScan->pOrigWC;
-    pScan->k = 0;
+    k = 0;
     pScan->iEquiv += 2;
   }
-  pScan->pCurrent = 0;
   return 0;
 }
 
@@ -867,7 +865,6 @@ WhereTerm *whereScanInit(
   int j;
 
   /* memset(pScan, 0, sizeof(*pScan)); */
-  pScan->pCurrent = 0;
   pScan->pOrigWC = pWC;
   pScan->pWC = pWC;
   if( pIdx && iColumn>=0 ){
