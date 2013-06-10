@@ -362,9 +362,9 @@ ifcapable explain {
     SELECT t2.a FROM t1, t2
     WHERE t1.a=80 AND ((t1.c=t2.c AND t1.d=t2.d) OR t1.f=t2.f)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)} 
+    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?)} 
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)}
   }
   do_execsql_test where9-3.2 {
     EXPLAIN QUERY PLAN
@@ -372,9 +372,9 @@ ifcapable explain {
     FROM t1 LEFT JOIN t2 ON (t1.c+1=t2.c AND t1.d=t2.d) OR (t1.f||'x')=t2.f
     WHERE t1.a=80
   } {
-    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)} 
+    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?)} 
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)}
   }
 } 
 
@@ -453,8 +453,8 @@ ifcapable explain {
   do_execsql_test where9-5.1 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?) (~3 rows)} 
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?) (~3 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?)} 
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?)}
   }
 
   # In contrast, b=1000 is preferred over any OR-clause.
@@ -462,7 +462,7 @@ ifcapable explain {
   do_execsql_test where9-5.2 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b=1000 AND (c=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~5 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}
   }
 
   # Likewise, inequalities in an AND are preferred over inequalities in
@@ -471,7 +471,7 @@ ifcapable explain {
   do_execsql_test where9-5.3 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?) (~125000 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?)}
   }
 }
 

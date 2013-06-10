@@ -101,4 +101,3 @@ do_test 3.3 {
 do_test 3.4 { file size test.db2 } 0
 
 finish_test
-

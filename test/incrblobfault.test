@@ -67,4 +67,3 @@ do_faultsim_test 3 -prep {
 }
 
 finish_test
-

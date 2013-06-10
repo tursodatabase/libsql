@@ -60,7 +60,7 @@ proc utf8 {str} {
 db close
 
 # here's the list of file names we're testing
-set names {t 1 t. 1. t.d 1.d t-1 1-1 t.db ä.db ë.db ö.db ü.db ÿ.db}
+set names {t 1 t. 1. t.d 1.d t-1 1-1 t.db Ã¤.db Ã«.db Ã¶.db Ã¼.db Ã¿.db}
 
 set i 0
 foreach name $names {

@@ -4058,13 +4058,13 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
         goto whereLoopInsert_noop;
       }
     }
-    whereLoopXfer(db, p, pTemplate);
 #if WHERETRACE_ENABLED
     if( sqlite3WhereTrace & 0x8 ){
-      sqlite3DebugPrintf("ins-best: ");
+      sqlite3DebugPrintf(p->maskSelf==0 ? "ins-init: " : "ins-best: ");
       whereLoopPrint(pTemplate, pWInfo->pTabList);
     }
 #endif
+    whereLoopXfer(db, p, pTemplate);
     return SQLITE_OK;
   }
 
@@ -4138,7 +4138,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 whereLoopInsert_noop:
 #if WHERETRACE_ENABLED
   if( sqlite3WhereTrace & 0x8 ){
-    sqlite3DebugPrintf("ins-noop: ");
+    sqlite3DebugPrintf(pBuilder->pBest ? "ins-skip: " : "ins-noop: ");
     whereLoopPrint(pTemplate, pWInfo->pTabList);
   }
 #endif
@@ -4283,9 +4283,8 @@ static int whereLoopAddBtreeIndex(
     }else{
       /* Each row involves a step of the index, then a binary search of
       ** the main table */
-      pNew->rRun = rLogSize>90 ? 
-                        whereCostAdd(pNew->rRun, pNew->nOut+rLogSize-90) :
-                        pNew->rRun;
+      WhereCost rStepAndSearch = rLogSize>80 ? rLogSize-80 : 1;
+      pNew->rRun =  whereCostAdd(pNew->rRun, rStepAndSearch);
     }
     /* TBD: Adjust nOut for additional constraints */
     rc = whereLoopInsert(pBuilder, pNew);
@@ -5255,6 +5254,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   Index *pIdx;
   
   pWInfo = pBuilder->pWInfo;
+  if( pWInfo->wctrlFlags & WHERE_FORCE_TABLE ) return 0;
   assert( pWInfo->pTabList->nSrc>=1 );
   pItem = pWInfo->pTabList->a;
   pTab = pItem->pTab;
