@@ -5192,7 +5192,6 @@ static int whereSimpleFastCase(WhereLoopBuilder *pBuilder){
   WhereLoop *pLoop;
   int iCur;
   int j;
-  int nOrderBy;
   Table *pTab;
   Index *pIdx;
   
@@ -5205,29 +5204,19 @@ static int whereSimpleFastCase(WhereLoopBuilder *pBuilder){
   iCur = pItem->iCursor;
   pWC = &pWInfo->sWC;
   pLoop = pBuilder->pNew;
-  pWInfo->a[0].pWLoop = pLoop;
   pLoop->wsFlags = 0;
-  pLoop->maskSelf = getMask(&pWInfo->sMaskSet, iCur);
-  pWInfo->a[0].iTabCur = iCur;
-#ifdef SQLITE_DEBUG
-  pLoop->cId = '0';
-#endif
-  nOrderBy = pWInfo->pOrderBy ? pWInfo->pOrderBy->nExpr : 0;
-  pTerm = findTerm(pWC, iCur, -1, 1, WO_EQ, 0);
+  pTerm = findTerm(pWC, iCur, -1, 0, WO_EQ, 0);
   if( pTerm ){
     pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_IPK|WHERE_ONEROW;
     pLoop->aLTerm[0] = pTerm;
     pLoop->nLTerm = 1;
     pLoop->u.btree.nEq = 1;
     pLoop->rRun = (WhereCost)10;
-    pLoop->nOut = (WhereCost)1;
-    pWInfo->nRowOut = 1;
-    pWInfo->nOBSat = nOrderBy;
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       if( pIdx->onError==OE_None ) continue;
       for(j=0; j<pIdx->nColumn; j++){
-        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 1, WO_EQ, pIdx);
+        pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
         whereLoopResize(pWInfo->pParse->db, pLoop, j);
         pLoop->aLTerm[j] = pTerm;
@@ -5241,13 +5230,22 @@ static int whereSimpleFastCase(WhereLoopBuilder *pBuilder){
       pLoop->u.btree.nEq = j;
       pLoop->u.btree.pIndex = pIdx;
       pLoop->rRun = (WhereCost)15;
-      pLoop->nOut = (WhereCost)1;
-      pWInfo->nRowOut = 1;
-      pWInfo->nOBSat = nOrderBy;
       break;
     }
   }
-  return pLoop->wsFlags!=0;
+  if( pLoop->wsFlags ){
+    pLoop->nOut = (WhereCost)1;
+    pWInfo->a[0].pWLoop = pLoop;
+    pLoop->maskSelf = getMask(&pWInfo->sMaskSet, iCur);
+    pWInfo->a[0].iTabCur = iCur;
+    pWInfo->nRowOut = 1;
+    pWInfo->nOBSat =  pWInfo->pOrderBy ? pWInfo->pOrderBy->nExpr : 0;
+#ifdef SQLITE_DEBUG
+    pLoop->cId = '0';
+#endif
+    return 1;
+  }
+  return 0;
 }
 
 /*
