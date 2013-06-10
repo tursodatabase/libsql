@@ -45,7 +45,13 @@ typedef struct WherePath WherePath;
 typedef struct WhereTerm WhereTerm;
 typedef struct WhereLoopBuilder WhereLoopBuilder;
 typedef struct WhereScan WhereScan;
-typedef unsigned short int WhereCost;  /* 10 times log2() of run-time */
+
+/*
+** Cost X is tracked as 10*log2(X) stored in a 16-bit integer.  The
+** maximum cost is 64*(2**63) which becomes 6900.  So all costs can be
+** be stored in a 16-bit unsigned integer without risk of overflow.
+*/
+typedef unsigned short int WhereCost;
 
 /*
 ** For each nested loop in a WHERE clause implementation, the WhereInfo
@@ -401,11 +407,25 @@ struct WhereInfo {
 #define WHERE_TEMP_INDEX   0x00004000  /* Uses an ephemeral index */
 #define WHERE_COVER_SCAN   0x00008000  /* Full scan of a covering index */
 
+
+/* Convert a WhereCost value (10 times log2(X)) into its integer value X.
+*/
+static u64 whereCostToInt(WhereCost x){
+  u64 n;
+  if( x<=10 ) return 1;
+  n = x%10;
+  x /= 10;
+  if( n>=5 ) n -= 2;
+  else if( n>=1 ) n -= 1;
+  if( x>=3 ) return (n+8)<<(x-3);
+  return (n+8)>>(3-x);
+}
+
 /*
 ** Return the estimated number of output rows from a WHERE clause
 */
-double sqlite3WhereOutputRowCount(WhereInfo *pWInfo){
-  return (double)pWInfo->nRowOut;
+u64 sqlite3WhereOutputRowCount(WhereInfo *pWInfo){
+  return whereCostToInt(pWInfo->nRowOut);
 }
 
 /*
@@ -4716,6 +4736,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   sqlite3 *db = pWInfo->pParse->db;
   int nTabList = pWInfo->nLevel;
   int rc = SQLITE_OK;
+  u8 priorJoinType = 0;
   WhereLoop *pNew;
 
   /* Loop over the tables in the join, from left to right */
@@ -4724,9 +4745,10 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
   for(iTab=0, pItem=pTabList->a; iTab<nTabList; iTab++, pItem++){
     pNew->iTab = iTab;
     pNew->maskSelf = getMask(&pWInfo->sMaskSet, pItem->iCursor);
-    if( (pItem->jointype & (JT_LEFT|JT_CROSS))!=0 ){
+    if( ((pItem->jointype|priorJoinType) & (JT_LEFT|JT_CROSS))!=0 ){
       mExtra = mPrior;
     }
+    priorJoinType = pItem->jointype;
     if( IsVirtual(pItem->pTab) ){
       rc = whereLoopAddVirtual(pBuilder, mExtra);
     }else{

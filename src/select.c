@@ -1539,7 +1539,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
       if( n==0 ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
       }else{
-        if( p->nSelectRow > (double)n ) p->nSelectRow = (double)n;
+        if( p->nSelectRow > n ) p->nSelectRow = n;
       }
     }else{
       sqlite3ExprCode(pParse, p->pLimit, iLimit);
@@ -1733,9 +1733,9 @@ static int multiSelect(
       p->nSelectRow += pPrior->nSelectRow;
       if( pPrior->pLimit
        && sqlite3ExprIsInteger(pPrior->pLimit, &nLimit)
-       && p->nSelectRow > (double)nLimit 
+       && p->nSelectRow > nLimit 
       ){
-        p->nSelectRow = (double)nLimit;
+        p->nSelectRow = nLimit;
       }
       if( addr ){
         sqlite3VdbeJumpHere(v, addr);
@@ -4239,7 +4239,7 @@ int sqlite3Select(
   /* Set the limiter.
   */
   iEnd = sqlite3VdbeMakeLabel(v);
-  p->nSelectRow = (double)LARGEST_INT64;
+  p->nSelectRow = LARGEST_INT64;
   computeLimitRegisters(pParse, p, iEnd);
   if( p->iLimit==0 && addrSortIndex>=0 ){
     sqlite3VdbeGetOp(v, addrSortIndex)->opcode = OP_SorterOpen;
@@ -4320,9 +4320,9 @@ int sqlite3Select(
       for(k=pGroupBy->nExpr, pItem=pGroupBy->a; k>0; k--, pItem++){
         pItem->iAlias = 0;
       }
-      if( p->nSelectRow>(double)100 ) p->nSelectRow = (double)100;
+      if( p->nSelectRow>100 ) p->nSelectRow = 100;
     }else{
-      p->nSelectRow = (double)1;
+      p->nSelectRow = 1;
     }
 
  

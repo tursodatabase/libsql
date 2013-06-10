@@ -1,5 +1,5 @@
-C First\sattempt\sto\sstore\scosts\sand\srow\scounts\sas\sa\slogarithm.
-D 2013-06-10T19:12:39.512
+C Fix\ssome\sminor\sissues\swith\slogarithmic\scost\sin\sNGQP.
+D 2013-06-10T20:46:50.026
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,12 +215,12 @@ F src/printf.c bff529ed47657098c55c9910b9c69b1b3b1a1353
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 5e8fe15b1c5b2cc592880d3f039c6a6da55bf253
+F src/select.c ddcf0c795f690968de66ab21051e764ca1c13f09
 F src/shell.c ab6eea968c8745be3aa74e45fedb37d057b4cd0d
 F src/sqlite.h.in 5b390ca5d94e09e56e7fee6a51ddde4721b89f8e
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h 7b85b09d746cde295c7a0f60711421a28f5c4905
+F src/sqliteInt.h 4284f3a915d6ee86656aa0d47649855e8df8081e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c ae52899cfb8710b5f63c01ac64030b20f284dd5e
+F src/where.c 402d3f74aa8f72bd0d77df6d414cd0ad538411e8
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1094,10 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0f8a38ee54208d6a477aa2482cd277b4808450f0
-R 17f9a2533926060b9b736553f681baac
-T *branch * nextgen-query-plan-logcost
-T *sym-nextgen-query-plan-logcost *
-T -sym-nextgen-query-plan-exp *
+P 9e8109673c3a87e379f5a5a97a8b0d5a1afe853d
+R 6b6adbb839b36bd753eb8d10af218a35
 U drh
-Z a107d2813c152067f49ec61599513e6e
+Z 0c1be235257af3633fe6569a03c10208
