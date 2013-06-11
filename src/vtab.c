@@ -27,6 +27,47 @@ struct VtabCtx {
 };
 
 /*
+** A place-holder virtual table method that always fails.
+*/
+static int errorMethod(void){ return SQLITE_ERROR; }
+
+/*
+** A dummy virtual table implementation in which every method fails.
+*/
+static const sqlite3_module errorModule = {
+  /* iVersion      */ 2,
+  /* xCreate       */ (int(*)(sqlite3*,void*,int,const char*const*,
+                              sqlite3_vtab**,char**))errorMethod,
+  /* xConnect      */ (int(*)(sqlite3*,void*,int,const char*const*,
+                              sqlite3_vtab**,char**))errorMethod,
+  /* xBestIndex    */ (int(*)(sqlite3_vtab*, sqlite3_index_info*))errorMethod,
+  /* xDisconnect   */ (int(*)(sqlite3_vtab*))errorMethod,
+  /* xDestroy      */ (int(*)(sqlite3_vtab*))errorMethod,
+  /* xOpen         */ (int(*)(sqlite3_vtab*,sqlite3_vtab_cursor**))errorMethod,
+  /* xClose        */ (int(*)(sqlite3_vtab_cursor*))errorMethod,
+  /* xFilter       */ (int(*)(sqlite3_vtab_cursor*,int,const char*,int,
+                              sqlite3_value**))errorMethod,
+  /* xNext         */ (int(*)(sqlite3_vtab_cursor*))errorMethod,
+  /* xEof          */ (int(*)(sqlite3_vtab_cursor*))errorMethod,
+  /* xColumn       */ (int(*)(sqlite3_vtab_cursor*,sqlite3_context*,int))
+                                                                   errorMethod,
+  /* xRowid        */ (int(*)(sqlite3_vtab_cursor*,sqlite3_int64*))errorMethod,
+  /* xUpdate       */ (int(*)(sqlite3_vtab*,int,sqlite3_value**,
+                              sqlite3_int64*))errorMethod,
+  /* xBegin        */ (int(*)(sqlite3_vtab*))errorMethod,
+  /* xSync         */ (int(*)(sqlite3_vtab*))errorMethod,
+  /* xCommit       */ (int(*)(sqlite3_vtab*))errorMethod,
+  /* xRollback     */ (int(*)(sqlite3_vtab*))errorMethod,
+  /* xFindFunction */ (int(*)(sqlite3_vtab*,int,const char*,
+                             void(**)(sqlite3_context*,int,sqlite3_value**),
+                             void**))errorMethod,
+  /* xRename       */ (int(*)(sqlite3_vtab*,const char*))errorMethod,
+  /* xSavepoint    */ (int(*)(sqlite3_vtab*,int))errorMethod,
+  /* xRelease      */ (int(*)(sqlite3_vtab*,int))errorMethod,
+  /* xRollbackTo   */ (int(*)(sqlite3_vtab*,int))errorMethod
+};
+
+/*
 ** The actual function that does the work of creating a new module.
 ** This function implements the sqlite3_create_module() and
 ** sqlite3_create_module_v2() interfaces.
@@ -40,13 +81,17 @@ static int createModule(
 ){
   int rc = SQLITE_OK;
   int nName;
+  Module *pMod;
 
   sqlite3_mutex_enter(db->mutex);
   nName = sqlite3Strlen30(zName);
-  if( sqlite3HashFind(&db->aModule, zName, nName) ){
-    rc = SQLITE_MISUSE_BKPT;
+  if( (pMod = sqlite3HashFind(&db->aModule, zName, nName))!=0 ){
+    if( pModule!=0 ){
+      rc = SQLITE_MISUSE_BKPT;
+    }else{
+      pMod->pModule = &errorModule;
+    }
   }else{
-    Module *pMod;
     pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
     if( pMod ){
       Module *pDel;
