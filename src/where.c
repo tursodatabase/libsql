@@ -4308,7 +4308,7 @@ static int whereLoopAddBtreeIndex(
     }else{
       /* Each row involves a step of the index, then a binary search of
       ** the main table */
-      WhereCost rStepAndSearch = rLogSize>80 ? rLogSize-80 : 1;
+      WhereCost rStepAndSearch = whereCostAdd(10, rLogSize>17 ? rLogSize-17 : 1);
       pNew->rRun =  whereCostAdd(pNew->rRun, rStepAndSearch);
     }
     /* TBD: Adjust nOut for additional constraints */

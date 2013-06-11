@@ -47,16 +47,16 @@ do_execsql_test 1.1 {
   CREATE UNIQUE INDEX t2zx ON t2(z,x);
 
   EXPLAIN QUERY PLAN SELECT x FROM t1, t2 WHERE a=z AND c=x;
-} {/.*SCAN TABLE t1 .*SEARCH TABLE t2 .*/}
+} {/.*SCAN TABLE t1.*SEARCH TABLE t2.*/}
 do_execsql_test 1.2 {
   EXPLAIN QUERY PLAN SELECT x FROM t2, t1 WHERE a=z AND c=x;
-} {/.*SCAN TABLE t1 .*SEARCH TABLE t2 .*/}
+} {/.*SCAN TABLE t1.*SEARCH TABLE t2.*/}
 do_execsql_test 1.3 {
   ANALYZE;
   EXPLAIN QUERY PLAN SELECT x FROM t1, t2 WHERE a=z AND c=x;
-} {/.*SCAN TABLE t1 .*SEARCH TABLE t2 .*/}
+} {/.*SCAN TABLE t1.*SEARCH TABLE t2.*/}
 do_execsql_test 1.4 {
   EXPLAIN QUERY PLAN SELECT x FROM t2, t1 WHERE a=z AND c=x;
-} {/.*SCAN TABLE t1 .*SEARCH TABLE t2 .*/}
+} {/.*SCAN TABLE t1.*SEARCH TABLE t2.*/}
 
 finish_test

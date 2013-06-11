@@ -3884,11 +3884,10 @@ static void explainSimpleCount(
   Index *pIdx                     /* Index used to optimize scan, or NULL */
 ){
   if( pParse->explain==2 ){
-    char *zEqp = sqlite3MPrintf(pParse->db, "SCAN TABLE %s %s%s(~%d rows)",
+    char *zEqp = sqlite3MPrintf(pParse->db, "SCAN TABLE %s%s%s",
         pTab->zName, 
-        pIdx ? "USING COVERING INDEX " : "",
-        pIdx ? pIdx->zName : "",
-        pTab->nRowEst
+        pIdx ? " USING COVERING INDEX " : "",
+        pIdx ? pIdx->zName : ""
     );
     sqlite3VdbeAddOp4(
         pParse->pVdbe, OP_Explain, pParse->iSelectId, 0, 0, zEqp, P4_DYNAMIC
