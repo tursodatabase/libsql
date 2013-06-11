@@ -623,4 +623,3 @@ do_execsql_test 10.7 {
 }
 
 finish_test
-

@@ -38,7 +38,7 @@ do_test analyze4-1.0 {
 
   # Should choose the t1a index since it is more specific than t1b.
   db eval {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=5 AND b IS NULL}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
 
 # Verify that the t1b index shows that it does not narrow down the
 # search any at all.

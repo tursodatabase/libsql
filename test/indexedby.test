@@ -42,15 +42,15 @@ proc EQP {sql} {
 #
 do_execsql_test indexedby-1.2 {
   EXPLAIN QUERY PLAN select * from t1 WHERE a = 10; 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-1.3 {
   EXPLAIN QUERY PLAN select * from t1 ; 
-} {0 0 0 {SCAN TABLE t1 (~1000000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-1.4 {
   EXPLAIN QUERY PLAN select * from t1, t2 WHERE c = 10; 
 } {
-  0 0 1 {SEARCH TABLE t2 USING INDEX i3 (c=?) (~10 rows)} 
-  0 1 0 {SCAN TABLE t1 (~1000000 rows)}
+  0 0 1 {SEARCH TABLE t2 USING INDEX i3 (c=?)} 
+  0 1 0 {SCAN TABLE t1}
 }
 
 # Parser tests. Test that an INDEXED BY or NOT INDEX clause can be 
@@ -85,15 +85,15 @@ do_test indexedby-2.7 {
 #
 do_execsql_test indexedby-3.1 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 NOT INDEXED WHERE a = 'one' AND b = 'two'
-} {0 0 0 {SCAN TABLE t1 (~10000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-3.2 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t1 INDEXED BY i1 WHERE a = 'one' AND b = 'two'
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-3.3 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' AND b = 'two'
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_test indexedby-3.4 {
   catchsql { SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' }
 } {1 {cannot use index: i2}}
@@ -110,11 +110,11 @@ do_test indexedby-3.7 {
 do_execsql_test indexedby-3.8 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 ORDER BY e 
-} {0 0 0 {SCAN TABLE t3 USING INDEX sqlite_autoindex_t3_1 (~1000000 rows)}}
+} {0 0 0 {SCAN TABLE t3 USING INDEX sqlite_autoindex_t3_1}}
 do_execsql_test indexedby-3.9 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE e = 10 
-} {0 0 0 {SEARCH TABLE t3 USING INDEX sqlite_autoindex_t3_1 (e=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t3 USING INDEX sqlite_autoindex_t3_1 (e=?)}}
 do_test indexedby-3.10 {
   catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE f = 10 }
 } {1 {cannot use index: sqlite_autoindex_t3_1}}
@@ -127,14 +127,14 @@ do_test indexedby-3.11 {
 do_execsql_test indexedby-4.1 {
   EXPLAIN QUERY PLAN SELECT * FROM t1, t2 WHERE a = c 
 } {
-  0 0 0 {SCAN TABLE t1 (~1000000 rows)} 
-  0 1 1 {SEARCH TABLE t2 USING INDEX i3 (c=?) (~10 rows)}
+  0 0 0 {SCAN TABLE t1} 
+  0 1 1 {SEARCH TABLE t2 USING INDEX i3 (c=?)}
 }
 do_execsql_test indexedby-4.2 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 INDEXED BY i1, t2 WHERE a = c 
 } {
-  0 0 1 {SCAN TABLE t2 (~1000000 rows)} 
-  0 1 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~10 rows)}
+  0 0 1 {SCAN TABLE t2} 
+  0 1 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}
 }
 do_test indexedby-4.3 {
   catchsql {
@@ -154,10 +154,10 @@ do_test indexedby-4.4 {
 do_execsql_test indexedby-5.1 {
   CREATE VIEW v2 AS SELECT * FROM t1 INDEXED BY i1 WHERE a > 5;
   EXPLAIN QUERY PLAN SELECT * FROM v2 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~250000 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?)}}
 do_execsql_test indexedby-5.2 {
   EXPLAIN QUERY PLAN SELECT * FROM v2 WHERE b = 10 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~25000 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?)}}
 do_test indexedby-5.3 {
   execsql { DROP INDEX i1 }
   catchsql { SELECT * FROM v2 }
@@ -178,28 +178,28 @@ do_test indexedby-5.5 {
 # 
 do_execsql_test indexedby-6.1 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b = 10 ORDER BY rowid 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_execsql_test indexedby-6.2 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 NOT INDEXED WHERE b = 10 ORDER BY rowid 
-} {0 0 0 {SCAN TABLE t1 USING INTEGER PRIMARY KEY (~100000 rows)}}
+} {0 0 0 {SCAN TABLE t1 USING INTEGER PRIMARY KEY}}
 
 # Test that "INDEXED BY" can be used in a DELETE statement.
 # 
 do_execsql_test indexedby-7.1 {
   EXPLAIN QUERY PLAN DELETE FROM t1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.2 {
   EXPLAIN QUERY PLAN DELETE FROM t1 NOT INDEXED WHERE a = 5 
-} {0 0 0 {SCAN TABLE t1 (~100000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-7.3 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.4 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i1 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.5 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i2 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_test indexedby-7.6 {
   catchsql { DELETE FROM t1 INDEXED BY i2 WHERE a = 5}
 } {1 {cannot use index: i2}}
@@ -208,21 +208,21 @@ do_test indexedby-7.6 {
 # 
 do_execsql_test indexedby-8.1 {
   EXPLAIN QUERY PLAN UPDATE t1 SET rowid=rowid+1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-8.2 {
   EXPLAIN QUERY PLAN UPDATE t1 NOT INDEXED SET rowid=rowid+1 WHERE a = 5 
-} {0 0 0 {SCAN TABLE t1 (~100000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-8.3 {
   EXPLAIN QUERY PLAN UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-8.4 {
   EXPLAIN QUERY PLAN 
   UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-8.5 {
   EXPLAIN QUERY PLAN 
   UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_test indexedby-8.6 {
   catchsql { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5}
 } {1 {cannot use index: i2}}

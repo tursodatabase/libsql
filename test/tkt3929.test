@@ -50,4 +50,3 @@ do_test tkt3930-1.2 {
 
 integrity_check tkt3930-1.3
 finish_test
-

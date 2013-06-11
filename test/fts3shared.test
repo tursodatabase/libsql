@@ -174,4 +174,3 @@ dbW close
 dbR close
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test
-
