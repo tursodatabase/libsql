@@ -345,9 +345,11 @@ struct WhereInfo {
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
   ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
+  WhereLoop *pLoops;        /* List of all WhereLoop objects */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
-  u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
+  WhereCost nRowOut;        /* Estimated number of output rows */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
+  u8 bOBSat;                /* ORDER BY satisfied by indices */
   u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
   u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
@@ -355,11 +357,9 @@ struct WhereInfo {
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
   int nLevel;               /* Number of nested loop */
+  int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
-  WhereLoop *pLoops;        /* List of all WhereLoop objects */
-  int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
-  WhereCost nRowOut;        /* Estimated number of output rows */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
 
@@ -441,7 +441,7 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 ** Return FALSE if the output needs to be sorted.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
-  return pWInfo->nOBSat>0;
+  return pWInfo->bOBSat!=0;
 }
 
 /*
@@ -1776,15 +1776,16 @@ static int findIndexCol(
 
 /*
 ** Return true if the DISTINCT expression-list passed as the third argument
-** is redundant. A DISTINCT list is redundant if the database contains a
-** UNIQUE index that guarantees that the result of the query will be distinct
-** anyway.
+** is redundant.
+**
+** A DISTINCT list is redundant if the database contains some set of
+** columns that are unique and non-null.
 */
 static int isDistinctRedundant(
-  Parse *pParse,
-  SrcList *pTabList,
-  WhereClause *pWC,
-  ExprList *pDistinct
+  Parse *pParse,            /* Parsing context */
+  SrcList *pTabList,        /* The FROM clause */
+  WhereClause *pWC,         /* The WHERE clause */
+  ExprList *pDistinct       /* The result set that needs to be DISTINCT */
 ){
   Table *pTab;
   Index *pIdx;
@@ -3418,7 +3419,7 @@ static Bitmask codeOneLoopStart(
     ** this requires some special handling.
     */
     if( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0
-     && (pWInfo->nOBSat>0)
+     && (pWInfo->bOBSat!=0)
      && (pIdx->nColumn>nEq)
     ){
       /* assert( pOrderBy->nExpr==1 ); */
@@ -4493,7 +4494,9 @@ static int whereLoopAddBtree(
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
         pNew->nOut = rSize;
-        pNew->rRun = whereCostAdd(rSize,rLogSize) + ((m==0 && b) ? 10 : 0);
+        pNew->rRun = whereCostAdd(rSize,rLogSize);
+        if( m!=0 ) pNew->rRun += rLogSize;
+        if( b ) pNew->rRun--;
         rc = whereLoopInsert(pBuilder, pNew);
         if( rc ) break;
       }
@@ -4804,11 +4807,13 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 */
 static int wherePathSatisfiesOrderBy(
   WhereInfo *pWInfo,    /* The WHERE clause */
+  ExprList *pOrderBy,   /* ORDER BY or GROUP BY or DISTINCT clause to check */
   WherePath *pPath,     /* The WherePath to check */
-  int nLoop,            /* Number of entries in pPath->aLoop[] */
-  int isLastLoop,       /* True if pLast is the inner-most loop */
+  u16 wctrlFlags,       /* Might contain WHERE_GROUPBY or WHERE_DISTINCTBY */
+  u16 nLoop,            /* Number of entries in pPath->aLoop[] */
+  u8 isLastLoop,        /* True if pLast is the inner-most loop */
   WhereLoop *pLast,     /* Add this WhereLoop to the end of pPath->aLoop[] */
-  Bitmask *pRevMask     /* Mask of WhereLoops to run in reverse order */
+  Bitmask *pRevMask     /* OUT: Mask of WhereLoops to run in reverse order */
 ){
   u8 revSet;            /* True if rev is known */
   u8 rev;               /* Composite sort order */
@@ -4823,7 +4828,6 @@ static int wherePathSatisfiesOrderBy(
   int iCur;             /* Cursor number for current WhereLoop */
   int iColumn;          /* A column number within table iCur */
   WhereLoop *pLoop;     /* Current WhereLoop being processed. */
-  ExprList *pOrderBy = pWInfo->pOrderBy;  /* the ORDER BY clause */
   WhereTerm *pTerm;     /* A single term of the WHERE clause */
   Expr *pOBExpr;        /* An expression from the ORDER BY clause */
   CollSeq *pColl;       /* COLLATE function from an ORDER BY clause term */
@@ -4960,7 +4964,7 @@ static int wherePathSatisfiesOrderBy(
         for(i=0; bOnce && i<nOrderBy; i++){
           if( MASKBIT(i) & obSat ) continue;
           pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
-          if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ) bOnce = 0;
+          if( (wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY))==0 ) bOnce = 0;
           if( pOBExpr->op!=TK_COLUMN ) continue;
           if( pOBExpr->iTable!=iCur ) continue;
           if( pOBExpr->iColumn!=iColumn ) continue;
@@ -5111,8 +5115,9 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         rCost = whereCostAdd(rCost, pFrom->rCost);
         maskNew = pFrom->maskLoop | pWLoop->maskSelf;
         if( !isOrderedValid ){
-          switch( wherePathSatisfiesOrderBy(pWInfo, pFrom, iLoop, iLoop==nLoop-1,
-                                            pWLoop, &revMask) ){
+          switch( wherePathSatisfiesOrderBy(pWInfo,
+                       pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
+                       iLoop, iLoop==nLoop-1, pWLoop, &revMask) ){
             case 1:  /* Yes.  pFrom+pWLoop does satisfy the ORDER BY clause */
               isOrdered = 1;
               isOrderedValid = 1;
@@ -5249,9 +5254,22 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
     pLevel->iFrom = pWLoop->iTab; /* FIXME: Omit the iFrom field */
     pLevel->iTabCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
   }
+  if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY)==0 
+   && pWInfo->pDistinct
+   && nRowEst
+  ){
+    Bitmask notUsed;
+    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pDistinct, pFrom,
+                 WHERE_DISTINCTBY, nLoop-1, 1, pFrom->aLoop[nLoop-1], &notUsed);
+    if( rc==1 ) pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
+  }
   if( pFrom->isOrdered ){
-    pWInfo->nOBSat = pWInfo->pOrderBy->nExpr;
-    pWInfo->revMask = pFrom->revLoop;
+    if( pWInfo->wctrlFlags & WHERE_DISTINCTBY ){
+      pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
+    }else{
+      pWInfo->bOBSat = 1;
+      pWInfo->revMask = pFrom->revLoop;
+    }
   }
   pWInfo->nRowOut = pFrom->nRow;
 
@@ -5327,7 +5345,8 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->maskSelf = getMask(&pWInfo->sMaskSet, iCur);
     pWInfo->a[0].iTabCur = iCur;
     pWInfo->nRowOut = 1;
-    pWInfo->nOBSat =  pWInfo->pOrderBy ? pWInfo->pOrderBy->nExpr : 0;
+    if( pWInfo->pOrderBy ) pWInfo->bOBSat =  1;
+    if( pWInfo->pDistinct ) pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
 #ifdef SQLITE_DEBUG
     pLoop->cId = '0';
 #endif
@@ -5414,15 +5433,6 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 ** pOrderBy is a pointer to the ORDER BY clause of a SELECT statement,
 ** if there is one.  If there is no ORDER BY clause or if this routine
 ** is called from an UPDATE or DELETE statement, then pOrderBy is NULL.
-**
-** If an index can be used so that the natural output order of the table
-** scan is correct for the ORDER BY clause, then that index is used and
-** the returned WhereInfo.nOBSat field is set to pOrderBy->nExpr.  This
-** is an optimization that prevents an unnecessary sort of the result set
-** if an index appropriate for the ORDER BY clause already exists.
-**
-** If the where clause loops cannot be arranged to provide the correct
-** output order, then WhereInfo.nOBSat is 0.
 */
 WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
@@ -5558,13 +5568,32 @@ WhereInfo *sqlite3WhereBegin(
     goto whereBeginError;
   }
 
+  /* If the ORDER BY (or GROUP BY) clause contains references to general
+  ** expressions, then we won't be able to satisfy it using indices, so
+  ** go ahead and disable it now.
+  */
+  if( pOrderBy ){
+    for(ii=0; ii<pOrderBy->nExpr; ii++){
+      Expr *pExpr = sqlite3ExprSkipCollate(pOrderBy->a[ii].pExpr);
+      if( pExpr->op!=TK_COLUMN ){
+        pWInfo->pOrderBy = pOrderBy = 0;
+        break;
+      }
+    }
+  }
+
   /* Check if the DISTINCT qualifier, if there is one, is redundant. 
   ** If it is, then set pDistinct to NULL and WhereInfo.eDistinct to
   ** WHERE_DISTINCT_UNIQUE to tell the caller to ignore the DISTINCT.
   */
-  if( pDistinct && isDistinctRedundant(pParse,pTabList,&pWInfo->sWC,pDistinct) ){
-    pDistinct = 0;
-    pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+  if( pDistinct ){
+    if( isDistinctRedundant(pParse,pTabList,&pWInfo->sWC,pDistinct) ){
+      pDistinct = 0;
+      pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    }else if( pOrderBy==0 ){
+      pWInfo->wctrlFlags |= WHERE_DISTINCTBY;
+      pWInfo->pOrderBy = pDistinct;
+    }
   }
 
   /* Construct the WhereLoop objects */
@@ -5587,7 +5616,7 @@ WhereInfo *sqlite3WhereBegin(
     }
 #endif
   
-    wherePathSolver(pWInfo, -1);
+    wherePathSolver(pWInfo, 0);
     if( db->mallocFailed ) goto whereBeginError;
     if( pWInfo->pOrderBy ){
        wherePathSolver(pWInfo, pWInfo->nRowOut);
@@ -5603,12 +5632,25 @@ WhereInfo *sqlite3WhereBegin(
 #ifdef WHERETRACE_ENABLED
   if( sqlite3WhereTrace ){
     int ii;
-    sqlite3DebugPrintf("---- Solution");
-    if( pWInfo->nOBSat ){
-      sqlite3DebugPrintf(" ORDER BY omitted rev=0x%llx\n", pWInfo->revMask);
-    }else{
-      sqlite3DebugPrintf("\n");
+    sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
+    if( pWInfo->bOBSat ){
+      sqlite3DebugPrintf(" ORDERBY=0x%llx", pWInfo->revMask);
     }
+    switch( pWInfo->eDistinct ){
+      case WHERE_DISTINCT_UNIQUE: {
+        sqlite3DebugPrintf("  DISTINCT=unique");
+        break;
+      }
+      case WHERE_DISTINCT_ORDERED: {
+        sqlite3DebugPrintf("  DISTINCT=ordered");
+        break;
+      }
+      case WHERE_DISTINCT_UNORDERED: {
+        sqlite3DebugPrintf("  DISTINCT=unordered");
+        break;
+      }
+    }
+    sqlite3DebugPrintf("\n");
     for(ii=0; ii<nTabList; ii++){
       whereLoopPrint(pWInfo->a[ii].pWLoop, pTabList);
     }

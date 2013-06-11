@@ -1967,8 +1967,10 @@ struct SrcList {
 #define WHERE_ONETABLE_ONLY    0x0040 /* Only code the 1st table in pTabList */
 #define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
 #define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
+#define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
 
-/* Allowed values for WhereInfo.eDistinct and DistinctCtx.eTnctType */
+/* Allowed return values from sqlite3WhereIsDistinct()
+*/
 #define WHERE_DISTINCT_NOOP      0  /* DISTINCT keyword not used */
 #define WHERE_DISTINCT_UNIQUE    1  /* No duplicates */
 #define WHERE_DISTINCT_ORDERED   2  /* All duplicates are adjacent */
@@ -2226,7 +2228,7 @@ struct Parse {
   /* Information used while coding trigger programs. */
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
-  u32 grep nQueryLoop; /* Est number of iterations of a query (10*log2(N)) */
+  u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
