@@ -1,5 +1,5 @@
-C Fix\stest\scases\sfor\sthe\snew\sEXPLAIN\sQUERY\sPLAN\sformat.\s\sAdd\sthe\nwherecosttest\stool.\s\sOther\sfixes\sto\slogarithm\scost.
-D 2013-06-10T23:30:09.637
+C Handle\svirtual\stables\scorrectly\swhen\susing\slogarithmic\scosts.\s\sFixes\nto\stest\scases.
+D 2013-06-11T01:50:08.263
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 672b76db7422b7bbc94fe1be42183c6356e56e96
+F src/where.c 72f9aa6c35dadf0d432c2d80fd117d8887f70473
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -303,7 +303,7 @@ F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test f8ab7d15858b4093b06caf5e57e2a5ff7104bdae
 F test/analyze3.test 69863b446539f8849a996c2aa0b50461c9cecea4
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
-F test/analyze5.test 713354664c5ff1853ab2cbcb740f0cf5cb7c802e
+F test/analyze5.test 3e57f192307be931f9ab2f6ff456f9063358ac77
 F test/analyze6.test cdbf9887d40ab41301f570fe85c6e1525dd3b1c9
 F test/analyze7.test 7de3ab66e1981303e783102a012d62cb876bf1d5
 F test/analyze8.test ea4972c76820ac8d6a0754e6f5b851292f0f5a61
@@ -335,7 +335,7 @@ F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 5c8689cc6d2fb44b7c0968ae4f85eb26d50022fa
-F test/between.test e6896728a636e3e610bcb2f87c9305120c809bc5
+F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
 F test/bigfile2.test 7c79f1ef0c6c2c2bc1e7bd895596fab32bfb4796
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
@@ -440,7 +440,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
-F test/eqp.test ac506be979f611719a2a2de8476fe608fc9d66a4
+F test/eqp.test 68dd66c8fa05551d056ebd7fc8ae3b2e1cb5836e
 F test/errmsg.test 050717f1c6a5685de9c79f5f9f6b83d7c592f73a
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
@@ -1095,7 +1095,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c 4d0393bdbe7230adb712e925863744dd2b7ffc5b
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 69cf877283d362915edddf1822fbf7a9f86278b3
-R 6bac639abb86e2ec49ce16ea155e2dc3
+P aa580e368e3c398b8377b80342dfdd906324c248
+R dc216beb84f13406fad3ccd046a844fe
 U drh
-Z f81162c822de40652566c68321ce2c25
+Z a1ab90c9180f43596814678177a2e938

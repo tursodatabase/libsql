@@ -554,7 +554,7 @@ det 7.1 "SELECT count(*) FROM t1" {
 }
 
 det 7.2 "SELECT count(*) FROM t2" {
-  0 0 0 {SCAN TABLE t2 USING COVERING INDEX i1(~1000000 rows)}
+  0 0 0 {SCAN TABLE t2 USING COVERING INDEX i1}
 }
 
 do_execsql_test 7.3 {
@@ -576,7 +576,7 @@ det 7.4 "SELECT count(*) FROM t1" {
 }
 
 det 7.5 "SELECT count(*) FROM t2" {
-  0 0 0 {SCAN TABLE t2 USING COVERING INDEX i1(~3 rows)}
+  0 0 0 {SCAN TABLE t2 USING COVERING INDEX i1}
 }
 
 

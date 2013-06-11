@@ -1882,6 +1882,23 @@ static WhereCost whereCostFromInt(tRowcnt x){
   return a[x&7] + y - 10;
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
+** Convert a double (as received from xBestIndex of a virtual table)
+** into a WhereCost
+*/
+static WhereCost whereCostFromDouble(double x){
+  u64 a;
+  WhereCost e;
+  assert( sizeof(x)==8 && sizeof(a)==8 );
+  if( x<=1 ) return 0;
+  if( x<=2000000000 ) return whereCostFromInt((tRowcnt)x);
+  memcpy(&a, &x, 8);
+  e = (a>>52) - 1022;
+  return e*10;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
 /*
 ** Prepare a crude estimate of the logarithm of the input value.
 ** The results need not be exact.  This is only used for estimating
@@ -4088,6 +4105,14 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
         ** more terms of the index */
         pNext = p->pNextLoop;
         break;
+      }else if( p->nOut>pTemplate->nOut
+       && p->rSetup==pTemplate->rSetup
+       && p->rRun==pTemplate->rRun
+      ){
+        /* Overwrite an existing WhereLoop with the same cost but more
+        ** outputs */
+        pNext = p->pNextLoop;
+        break;
       }else{
         /* pTemplate is not helpful.
         ** Return without changing or adding anything */
@@ -4263,7 +4288,7 @@ static int whereLoopAddBtreeIndex(
       WhereCost rDiv;
       whereRangeScanEst(pParse, pProbe, pNew->u.btree.nEq,
                         pBtm, pTop, &rDiv);
-      pNew->nOut = saved_nOut - rDiv;
+      pNew->nOut = saved_nOut>rDiv+10 ? saved_nOut - rDiv : 10;
     }
 #ifdef SQLITE_ENABLE_STAT3
     if( pNew->u.btree.nEq==1 && pProbe->nSample ){
@@ -4482,6 +4507,7 @@ static int whereLoopAddBtree(
   return rc;
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Add all WhereLoop objects for a table of the join identified by
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
@@ -4569,8 +4595,7 @@ static int whereLoopAddVirtual(
     pIdxInfo->idxNum = 0;
     pIdxInfo->needToFreeIdxStr = 0;
     pIdxInfo->orderByConsumed = 0;
-    /* ((WhereCost)2) In case of SQLITE_OMIT_FLOATING_POINT... */
-    pIdxInfo->estimatedCost = SQLITE_BIG_DBL / ((WhereCost)2);
+    pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
     rc = vtabBestIndex(pParse, pTab, pIdxInfo);
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
@@ -4624,7 +4649,7 @@ static int whereLoopAddVirtual(
       pNew->u.vtab.isOrdered = (u8)((pIdxInfo->nOrderBy!=0)
                                      && pIdxInfo->orderByConsumed);
       pNew->rSetup = 0;
-      pNew->rRun = whereCostFromInt((tRowcnt)pIdxInfo->estimatedCost);
+      pNew->rRun = whereCostFromDouble(pIdxInfo->estimatedCost);
       pNew->nOut = 46;  assert( 46 == whereCostFromInt(25) );
       whereLoopInsert(pBuilder, pNew);
       if( pNew->u.vtab.needFree ){
@@ -4639,6 +4664,7 @@ whereLoopAddVtab_exit:
   sqlite3DbFree(db, pIdxInfo);
   return rc;
 }
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
 ** Add WhereLoop entries to handle OR terms.  This works for either
@@ -4695,9 +4721,12 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         sBest.maskSelf = 0;
         sBest.rSetup = 0;
         sBest.rRun = 0;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
           rc = whereLoopAddVirtual(&sSubBuild, mExtra);
-        }else{
+        }else
+#endif
+        {
           rc = whereLoopAddBtree(&sSubBuild, mExtra);
         }
         if( sBest.maskSelf==0 ) break;
