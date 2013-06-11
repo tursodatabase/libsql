@@ -358,7 +358,7 @@ struct WhereInfo {
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
-  WhereCost savedNQueryLoop; /* pParse->nQueryLoop outside the WHERE loop */
+  int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
   WhereCost nRowOut;        /* Estimated number of output rows */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */
 };
@@ -3099,7 +3099,7 @@ static void explainOneScan(
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
       zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
 
-      if( flags&WHERE_COLUMN_EQ ){
+      if( flags&(WHERE_COLUMN_EQ|WHERE_COLUMN_IN) ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid=?)", zMsg);
       }else if( (flags&WHERE_BOTH_LIMIT)==WHERE_BOTH_LIMIT ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>? AND rowid<?)", zMsg);
@@ -4432,7 +4432,7 @@ static int whereLoopAddBtree(
 
   /* Automatic indexes */
   if( !pBuilder->pBest
-   && pTabList->nSrc>1
+//   && pTabList->nSrc>1
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0 
    && !pSrc->viaCoroutine
    && !pSrc->notIndexed
@@ -5074,7 +5074,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   }
 
   /* Seed the search with a single WherePath containing zero WhereLoops */
-  aFrom[0].nRow = 0;
+  aFrom[0].nRow = pWInfo->pParse->nQueryLoop;
   nFrom = 1;
 
   /* Precompute the cost of sorting the final result set, if the caller
@@ -5615,6 +5615,7 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
   WHERETRACE(("*** Optimizer Finished ***\n"));
+  pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 
 #if 0  /* FIXME: Add this back in? */
   /* If the caller is an UPDATE or DELETE statement that is requesting
