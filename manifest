@@ -1,5 +1,5 @@
-C Improved\sprocessing\sof\sDISTINCT.
-D 2013-06-11T18:59:38.240
+C Continue\srefining\sthe\sNGQP
+D 2013-06-12T03:48:41.127
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 2afa8f1a71dd088b137a7772f5c5dfee70c8fbe8
+F src/where.c 3f38f769ef1365d7c8ff5b0ae9341b32f49bf46e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1095,7 +1095,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c 4d0393bdbe7230adb712e925863744dd2b7ffc5b
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f1cac24f06b9c71cfa472fdcf2da4cd8689a7cc3
-R f41c25fe4af487f857bb0cfd93c46d44
+P ba897100fed291d2025f68d09334f9985312298b
+R 5ed376a4396f55c99b307b2ce75a8d86
 U drh
-Z 15fc6bc86393280f1819e7074b4ff66c
+Z 47a7a33cc642ca844caf03a37d1ebaba

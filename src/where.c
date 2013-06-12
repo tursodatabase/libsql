@@ -74,7 +74,7 @@ struct WhereLevel {
   int addrNxt;          /* Jump here to start the next IN combination */
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
-  u8 iFrom;       /* FIXME: Which entry in the FROM clause */
+  u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to ends the loop */
   union {               /* Information that depends on plan.wsFlags */
@@ -4248,7 +4248,7 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_IN;
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         /* "x IN (SELECT ...)":  Assume the SELECT returns 25 rows */
-        nIn = 46;  /* whereCostFromInt(25) */
+        nIn = 46;  assert( 46==whereCostFromInt(25) );
       }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
         /* "x IN (value, value, ...)" */
         nIn = whereCostFromInt(pExpr->x.pList->nExpr);
@@ -4272,7 +4272,7 @@ static int whereLoopAddBtreeIndex(
     }else if( pTerm->eOperator & (WO_ISNULL) ){
       pNew->wsFlags |= WHERE_COLUMN_NULL;
       pNew->u.btree.nEq++;
-      nIn = 10;  /* Assume IS NULL matches two rows */
+      nIn = 10;  assert( 10==whereCostFromInt(2) );
       pNew->nOut = nRowEst + nInMul + nIn;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
@@ -4303,15 +4303,13 @@ static int whereLoopAddBtreeIndex(
       pNew->nOut = whereCostFromInt(nOut);
     }
 #endif
-    if( pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK) ){
-      /* Step cost for each output row */
-      pNew->rRun = whereCostAdd(pNew->rRun, pNew->nOut);
-    }else{
+    if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
       /* Each row involves a step of the index, then a binary search of
       ** the main table */
-      WhereCost rStepAndSearch = whereCostAdd(10, rLogSize>17 ? rLogSize-17 : 1);
-      pNew->rRun =  whereCostAdd(pNew->rRun, rStepAndSearch);
+      pNew->rRun =  whereCostAdd(pNew->rRun, rLogSize>27 ? rLogSize-17 : 10);
     }
+    /* Step cost for each output row */
+    pNew->rRun = whereCostAdd(pNew->rRun, pNew->nOut);
     /* TBD: Adjust nOut for additional constraints */
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
@@ -5251,7 +5249,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   for(iLoop=0; iLoop<nLoop; iLoop++){
     WhereLevel *pLevel = pWInfo->a + iLoop;
     pLevel->pWLoop = pWLoop = pFrom->aLoop[iLoop];
-    pLevel->iFrom = pWLoop->iTab; /* FIXME: Omit the iFrom field */
+    pLevel->iFrom = pWLoop->iTab;
     pLevel->iTabCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
   }
   if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY)==0 
@@ -5572,11 +5570,13 @@ WhereInfo *sqlite3WhereBegin(
   ** expressions, then we won't be able to satisfy it using indices, so
   ** go ahead and disable it now.
   */
-  if( pOrderBy ){
+  if( pOrderBy && pDistinct ){
     for(ii=0; ii<pOrderBy->nExpr; ii++){
       Expr *pExpr = sqlite3ExprSkipCollate(pOrderBy->a[ii].pExpr);
       if( pExpr->op!=TK_COLUMN ){
         pWInfo->pOrderBy = pOrderBy = 0;
+        break;
+      }else if( pExpr->iColumn<0 ){
         break;
       }
     }
