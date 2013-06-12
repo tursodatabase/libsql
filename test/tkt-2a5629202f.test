@@ -47,7 +47,7 @@ do_execsql_test 1.3 {
 } {null/four null/three a/one b/two}
 
 do_execsql_test 1.4 {
-  DROP INDEX t8;
+  DROP INDEX i1;
   CREATE UNIQUE INDEX i1 ON t8(b, c);
   SELECT coalesce(b, 'null') || '/' || c FROM t8 x ORDER BY x.b, x.c
 } {null/four null/three a/one b/two}

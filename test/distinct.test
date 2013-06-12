@@ -165,7 +165,7 @@ foreach {tn sql temptables res} {
   3   "a, b, c FROM t1"                                    {hash}  {a b c A B C}
   4   "a, b, c FROM t1 ORDER BY a, b, c"                   {btree} {A B C a b c}
   5   "b FROM t1 WHERE a = 'a'"                            {}      {b}
-  6   "b FROM t1"                                          {hash}  {b B}
+  6   "b FROM t1 ORDER BY +b COLLATE binary"          {btree hash} {B b}
   7   "a FROM t1"                                          {}      {A a}
   8   "b COLLATE nocase FROM t1"                           {}      {b}
   9   "b COLLATE nocase FROM t1 ORDER BY b COLLATE nocase" {}      {b}

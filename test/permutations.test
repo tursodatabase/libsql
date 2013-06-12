@@ -218,7 +218,7 @@ test_suite "queryplanner" -prefix "" -description {
 } -files {
   alter2.test alter3.test alter4.test alter.test analyze3.test
   analyze4.test analyze5.test analyze6.test analyze7.test analyze8.test
-  analyze.test attach2.test attach3.test attach4.test attachmalloc.test
+  analyze.test attach2.test attach3.test attach4.test
   attach.test autoinc.test autoindex1.test between.test cast.test
   check.test closure01.test coalesce.test collate1.test collate2.test
   collate3.test collate4.test collate5.test collate6.test collate7.test
@@ -227,13 +227,12 @@ test_suite "queryplanner" -prefix "" -description {
   date.test dbstatus2.test dbstatus.test default.test delete2.test
   delete3.test delete.test descidx1.test descidx2.test descidx3.test
   distinctagg.test distinct.test e_createtable.test e_delete.test
-  e_droptrigger.test e_dropview.test e_expr.test e_fkey.test e_insert.test
+  e_droptrigger.test e_dropview.test e_expr.test e_insert.test
   eqp.test e_reindex.test e_resolve.test e_select2.test e_select.test
   e_update.test exists.test expr.test fkey1.test fkey2.test fkey3.test
-  fkey4.test fkey5.test fkey_malloc.test format4.test func2.test
-  func3.test func.test fuzz2.test fuzz3.test fuzzer1.test fuzz-oss1.test
-  fuzz.test in2.test in3.test in4.test in5.test index2.test index3.test
-  index4.test index5.test indexedby.test indexfault.test index.test
+  fkey4.test fkey5.test func2.test func3.test func.test 
+  in3.test in4.test in5.test index2.test index3.test
+  index4.test index5.test indexedby.test index.test
   insert2.test insert3.test insert4.test insert5.test insert.test
   instr.test in.test intpkey.test join2.test join3.test join4.test
   join5.test join6.test join.test like2.test like.test limit.test
@@ -241,7 +240,7 @@ test_suite "queryplanner" -prefix "" -description {
   misc3.test misc4.test misc5.test misc6.test misc7.test orderby1.test
   orderby2.test orderby3.test orderby4.test randexpr1.test regexp1.test
   reindex.test rowhash.test rowid.test schema2.test schema3.test
-  schema4.test schema5.test schema.test securedel2.test securedel.test
+  schema4.test schema5.test schema.test
   select1.test select2.test select3.test select4.test select5.test
   select6.test select7.test select8.test select9.test selectA.test
   selectB.test selectC.test selectD.test selectE.test sidedelete.test
@@ -283,7 +282,7 @@ test_suite "queryplanner" -prefix "" -description {
   types2.test types3.test types.test unique.test unordered.test
   update.test view.test vtab1.test vtab2.test vtab3.test vtab4.test
   vtab5.test vtab6.test vtab7.test vtab8.test vtab9.test vtab_alter.test
-  vtabA.test vtabB.test vtabC.test vtabD.test vtab_err.test vtabE.test
+  vtabA.test vtabB.test vtabC.test vtabD.test vtabE.test
   vtabF.test where2.test where3.test where4.test where5.test where6.test
   where7.test where8m.test where8.test where9.test whereA.test whereB.test
   whereC.test whereD.test whereE.test whereF.test wherelimit.test

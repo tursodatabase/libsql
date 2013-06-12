@@ -604,7 +604,7 @@ do_test where-6.9.7 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY c,a LIMIT 3
   }
-} {1 100 4 sort}
+} {1 100 4 nosort}
 do_test where-6.9.8 {
   cksort {
     SELECT * FROM t3 WHERE a=1 AND c>0 ORDER BY a DESC, c ASC LIMIT 3

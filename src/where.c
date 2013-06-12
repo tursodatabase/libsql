@@ -1908,7 +1908,8 @@ static WhereCost whereCostFromDouble(double x){
 ** logN is a little off.
 */
 static WhereCost estLog(WhereCost N){
-  return whereCostFromInt(N) - 33;
+  WhereCost x = whereCostFromInt(N);
+  return x>33 ? x - 33 : 0;
 }
 
 /*
@@ -4431,7 +4432,8 @@ static int whereLoopAddBtree(
 
   /* Automatic indexes */
   if( !pBuilder->pBest
-   && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0 
+   && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
+   && pSrc->pIndex==0
    && !pSrc->viaCoroutine
    && !pSrc->notIndexed
    && !pSrc->isCorrelated
@@ -5524,6 +5526,13 @@ WhereInfo *sqlite3WhereBegin(
   if( pWhere && (nTabList==0 || sqlite3ExprIsConstantNotJoin(pWhere)) ){
     sqlite3ExprIfFalse(pParse, pWhere, pWInfo->iBreak, SQLITE_JUMPIFNULL);
     pWhere = 0;
+  }
+
+  /* Special case: No FROM clause
+  */
+  if( nTabList==0 ){
+    if( pOrderBy ) pWInfo->bOBSat = 1;
+    if( pDistinct ) pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
   }
 
   /* Assign a bit from the bitmask to every term in the FROM clause.

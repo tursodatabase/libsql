@@ -114,8 +114,7 @@ do_test 1.4c {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn
   }
-} {/ORDER BY/}  ;# separate sorting pass due to mixed DESC/ASC
-
+} {~/ORDER BY/}  ;# ORDER BY suppressed due to uniqueness constraints
 
 do_test 1.5a {
   db eval {
@@ -132,7 +131,7 @@ do_test 1.5c {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn DESC
   }
-} {/ORDER BY/}  ;# separate sorting pass due to mixed DESC/ASC
+} {~/ORDER BY/}  ;# ORDER BY suppressed due to uniqueness constraints
 
 do_test 1.6a {
   db eval {
@@ -399,8 +398,7 @@ do_test 3.4c {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
-} {/ORDER BY/}  ;# separate sorting pass due to mismatched DESC/ASC
-
+} {~/ORDER BY/}  ;# ORDER BY suppressed by uniqueness constraints
 
 do_test 3.5a {
   db eval {
@@ -417,7 +415,7 @@ do_test 3.5c {
     EXPLAIN QUERY PLAN
     SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn DESC
   }
-} {/ORDER BY/}  ;# separate sorting pass due to mismatched ASC/DESC
+} {~/ORDER BY/}  ;# ORDER BY suppressed by uniqueness constraints
 
 
 do_test 3.6a {
