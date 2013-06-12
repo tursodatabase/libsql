@@ -420,7 +420,7 @@ do_test where9-4.5 {
        AND (c=31031 OR d IS NULL)
      ORDER BY +a
   }
-} {1 {cannot use index: t1b}}
+} {1 {no query solution}}
 do_test where9-4.6 {
   count_steps {
     SELECT a FROM t1 NOT INDEXED
@@ -436,7 +436,7 @@ do_test where9-4.7 {
        AND (c=31031 OR d IS NULL)
      ORDER BY +a
   }
-} {1 {cannot use index: t1c}}
+} {1 {no query solution}}
 do_test where9-4.8 {
   catchsql {
     SELECT a FROM t1 INDEXED BY t1d
@@ -444,7 +444,7 @@ do_test where9-4.8 {
        AND (c=31031 OR d IS NULL)
      ORDER BY +a
   }
-} {1 {cannot use index: t1d}}
+} {1 {no query solution}}
 
 ifcapable explain {
   # The (c=31031 OR d IS NULL) clause is preferred over b>1000 because
@@ -598,7 +598,7 @@ do_test where9-6.3.5 {
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {scan 98 sort 0}   ;# DELETEs rows 90 91 92 97
+} {scan 0 sort 0}   ;# DELETEs rows 90 91 92 97
 do_test where9-6.3.6 {
   db eval {
     SELECT count(*) FROM t1 UNION ALL
@@ -615,7 +615,7 @@ do_test where9-6.3.7 {
         OR (b NOT NULL AND +c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {scan 98 sort 0}   ;# Add 100 to rowids 90 91 92 97
+} {scan 0 sort 0}   ;# Add 100 to rowids 90 91 92 97
 do_test where9-6.3.8 {
   db eval {
     SELECT count(*) FROM t1 UNION ALL
@@ -705,7 +705,7 @@ do_test where9-6.6.1 {
         OR (b NOT NULL AND +c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {scan 98 sort 0}   ;# DELETEs rows 90 91 92 97
+} {scan 0 sort 0}   ;# DELETEs rows 90 91 92 97
 do_test where9-6.6.2 {
   db eval {
     SELECT count(*) FROM t1 UNION ALL
@@ -722,7 +722,7 @@ do_test where9-6.6.3 {
         OR (b NOT NULL AND +c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {scan 98 sort 0}   ;# Add 100 to rowids 90 91 92 97
+} {scan 0 sort 0}   ;# Add 100 to rowids 90 91 92 97
 do_test where9-6.6.4 {
   db eval {
     SELECT count(*) FROM t1 UNION ALL
@@ -768,19 +768,35 @@ do_test where9-6.7.4 {
 do_test where9-6.8.1 {
   catchsql {
     DELETE FROM t1 INDEXED BY t1b
-     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+     WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {1 {cannot use index: t1b}}
+} {1 {no query solution}}
 do_test where9-6.8.2 {
+  catchsql {
+    UPDATE t1 INDEXED BY t1b SET a=a+100
+     WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {1 {no query solution}}
+do_test where9-6.8.3 {
   catchsql {
     UPDATE t1 INDEXED BY t1b SET a=a+100
      WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {1 {cannot use index: t1b}}
+} {0 {}}
+do_test where9-6.8.4 {
+  catchsql {
+    DELETE FROM t1 INDEXED BY t1b
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {0 {}}
 
 ############################################################################
 # Test cases where terms inside an OR series are combined with AND terms

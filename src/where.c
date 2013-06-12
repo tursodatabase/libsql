@@ -604,7 +604,7 @@ static void whereSplit(WhereClause *pWC, Expr *pExpr, int op){
 /*
 ** Initialize an expression mask set (a WhereMaskSet object)
 */
-#define initMaskSet(P)  memset(P, 0, sizeof(*P))
+#define initMaskSet(P)  (P)->n=0
 
 /*
 ** Return the bitmask for the given cursor number.  Return 0 if
@@ -4361,7 +4361,7 @@ static int indexMightHelpWithOrderBy(
 ** Return a bitmask where 1s indicate that the corresponding column of
 ** the table is used by an index.  Only the first 63 columns are considered.
 */
-static Bitmask columnsUsedByIndex(Index *pIdx){
+static Bitmask columnsInIndex(Index *pIdx){
   Bitmask m = 0;
   int j;
   for(j=pIdx->nColumn-1; j>=0; j--){
@@ -4431,7 +4431,6 @@ static int whereLoopAddBtree(
 
   /* Automatic indexes */
   if( !pBuilder->pBest
-//   && pTabList->nSrc>1
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0 
    && !pSrc->viaCoroutine
    && !pSrc->notIndexed
@@ -4476,11 +4475,11 @@ static int whereLoopAddBtree(
       /* Full table scan */
       pNew->iSortIdx = b ? iSortIdx : 0;
       pNew->nOut = rSize;
-      pNew->rRun = whereCostAdd(rSize,rLogSize) + 16 + b*4;
+      pNew->rRun = whereCostAdd(rSize,rLogSize) + 16 - b;
       rc = whereLoopInsert(pBuilder, pNew);
       if( rc ) break;
     }else{
-      Bitmask m = pSrc->colUsed & ~columnsUsedByIndex(pProbe);
+      Bitmask m = pSrc->colUsed & ~columnsInIndex(pProbe);
       pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
 
       /* Full scan via index */
@@ -4493,8 +4492,7 @@ static int whereLoopAddBtree(
         pNew->iSortIdx = b ? iSortIdx : 0;
         pNew->nOut = rSize;
         pNew->rRun = whereCostAdd(rSize,rLogSize);
-        if( m!=0 ) pNew->rRun += rLogSize;
-        if( b ) pNew->rRun--;
+        pNew->rRun += ((m!=0) ? rLogSize : 10) - b;
         rc = whereLoopInsert(pBuilder, pNew);
         if( rc ) break;
       }
@@ -4737,15 +4735,17 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         prereq |= sBest.prereq;
       }
       assert( pNew->nLSlot>=1 );
-      pNew->nLTerm = 1;
-      pNew->aLTerm[0] = pTerm;
-      pNew->wsFlags = WHERE_MULTI_OR;
-      pNew->rSetup = 0;
-      pNew->rRun = rTotal;
-      pNew->nOut = nRow;
-      pNew->prereq = prereq;
-      memset(&pNew->u, 0, sizeof(pNew->u));
-      rc = whereLoopInsert(pBuilder, pNew);
+      if( sBest.maskSelf ){
+        pNew->nLTerm = 1;
+        pNew->aLTerm[0] = pTerm;
+        pNew->wsFlags = WHERE_MULTI_OR;
+        pNew->rSetup = 0;
+        pNew->rRun = rTotal;
+        pNew->nOut = nRow;
+        pNew->prereq = prereq;
+        memset(&pNew->u, 0, sizeof(pNew->u));
+        rc = whereLoopInsert(pBuilder, pNew);
+      }
       whereLoopClear(pWInfo->pParse->db, &sBest);
     }
   }
@@ -5327,7 +5327,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       }
       if( j!=pIdx->nColumn ) continue;
       pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
-      if( (pItem->colUsed & ~columnsUsedByIndex(pIdx))==0 ){
+      if( (pItem->colUsed & ~columnsInIndex(pIdx))==0 ){
         pLoop->wsFlags |= WHERE_IDX_ONLY;
       }
       pLoop->nLTerm = j;
