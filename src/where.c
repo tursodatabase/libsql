@@ -27,10 +27,10 @@
 #endif
 #if defined(SQLITE_DEBUG) \
     && (defined(SQLITE_TEST) || defined(SQLITE_ENABLE_WHERETRACE))
-# define WHERETRACE(X)  if(sqlite3WhereTrace) sqlite3DebugPrintf X
+# define WHERETRACE(K,X)  if(sqlite3WhereTrace&(K)) sqlite3DebugPrintf X
 # define WHERETRACE_ENABLED 1
 #else
-# define WHERETRACE(X)
+# define WHERETRACE(K,X)
 #endif
 
 /* Forward reference
@@ -48,23 +48,32 @@ typedef struct WhereScan WhereScan;
 
 /*
 ** Cost X is tracked as 10*log2(X) stored in a 16-bit integer.  The
-** maximum cost is 64*(2**63) which becomes 6900.  So all costs can be
-** be stored in a 16-bit unsigned integer without risk of overflow.
+** maximum cost for ordinary tables is 64*(2**63) which becomes 6900.
+** (Virtual tables can return a larger cost, but let's assume they do not.)
+** So all costs can be stored in a 16-bit unsigned integer without risk
+** of overflow.
+**
+** Costs are estimates, so don't go to the computational trouble to compute
+** 10*log2(X) exactly.  Instead, a close estimate is used.  Any value of
+** X<=1 is stored as 0.  X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
+**
 */
 typedef unsigned short int WhereCost;
 
 /*
-** For each nested loop in a WHERE clause implementation, the WhereInfo
-** structure contains a single instance of this structure.  This structure
-** is intended to be private to the where.c module and should not be
-** access or modified by other modules.
+** This object contains information needed to implement a single nestd
+** loop in WHERE clause.
 **
-** The pIdxInfo field is used to help pick the best index on a
-** virtual table.  The pIdxInfo pointer contains indexing
-** information for the i-th table in the FROM clause before reordering.
-** All the pIdxInfo pointers are freed by whereInfoFree() in where.c.
-** All other information in the i-th WhereLevel object for the i-th table
-** after FROM clause ordering.
+** Contrast this object with WhereLoop.  This object describes the
+** implementation of the loop.  WhereLoop describes the algorithm.
+** This object contains a pointer to the WhereLoop algorithm as one of
+** its elements.
+**
+** The WhereInfo object contains a single instance of this object for
+** each term in the FROM clause (which is to say, for each of the
+** nested loops as implemented).  The order of WhereLevel objects determines
+** the loop nested order, with WhereInfo.a[0] being the outer loop and
+** WhereInfo.a[WhereInfo.nLevel-1] being the inner loop.
 */
 struct WhereLevel {
   int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
@@ -92,10 +101,18 @@ struct WhereLevel {
 };
 
 /*
-** Each instance of this object represents a way of evaluating one
-** term of a join.  The WhereClause object holds a table of these
-** objects using (maskSelf,prereq,) as the primary key.  Note that the
-** same join term might have multiple associated WhereLoop objects.
+** Each instance of this object represents an algorithm for evaluating one
+** term of a join.  Every term of the FROM clause will have at least
+** one corresponding WhereLoop object (unless INDEXED BY constraints
+** prevent a query solution - which is an error) and many terms of the
+** FROM clause will have multiple WhereLoop objects, each describing a
+** potential way of implementing that FROM-clause term, together with
+** dependencies and cost estimates for using the chosen algorithm.
+**
+** Query planning consists of building up a collection of these WhereLoop
+** objects, then computing a particular sequence of WhereLoop objects, with
+** one WhereLoop object per FROM clause term, that satisfy all dependencies
+** and that minimize the overall cost.
 */
 struct WhereLoop {
   Bitmask prereq;       /* Bitmask of other loops that must run first */
@@ -136,7 +153,21 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 
 /*
 ** Each instance of this object holds a sequence of WhereLoop objects
-** that implement some or all of the entire query plan.  
+** that implement some or all of a query plan.
+**
+** Think of each WhereLoop objects as a node in a graph, which arcs
+** showing dependences and costs for travelling between nodes.  (That is
+** not a completely accurate description because WhereLoop costs are a
+** vector, not a scalar, and because dependences are many-to-one, not
+** one-to-one as are graph nodes.  But it is a useful visualization aid.)
+** Then a WherePath object is a path through the graph that visits some
+** or all of the WhereLoop objects once.
+**
+** The "solver" works by creating the N best WherePath objects of length
+** 1.  Then using those as a basis to compute the N best WherePath objects
+** of length 2.  And so forth until the length of WherePaths equals the
+** number of nodes in the FROM clause.  The best (lowest cost) WherePath
+** at the end is the choosen query plan.
 */
 struct WherePath {
   Bitmask maskLoop;     /* Bitmask of all WhereLoop objects in this path */
@@ -323,7 +354,8 @@ struct WhereMaskSet {
 };
 
 /*
-** This object is a factory for WhereLoop objects for a particular query.
+** This object is a convenience wrapper holding all information needed
+** to construct WhereLoop objects for a particular query.
 */
 struct WhereLoopBuilder {
   WhereInfo *pWInfo;        /* Information about this WHERE */
@@ -339,6 +371,9 @@ struct WhereLoopBuilder {
 ** half does the tail of the WHERE loop.  An instance of
 ** this structure is returned by the first half and passed
 ** into the second half to give some continuity.
+**
+** An instance of this object holds the complete state of the query
+** planner.
 */
 struct WhereInfo {
   Parse *pParse;            /* Parsing and code generating context */
@@ -364,9 +399,10 @@ struct WhereInfo {
 };
 
 /*
-** Bitmasks for the operators that indices are able to exploit.  An
+** Bitmasks for the operators on WhereTerm objects.  These are all
+** operators that are of interest to the query planner.  An
 ** OR-ed combination of these values can be used when searching for
-** terms in the where clause.
+** particular WhereTerms within a WhereClause.
 */
 #define WO_IN     0x001
 #define WO_EQ     0x002
@@ -385,9 +421,9 @@ struct WhereInfo {
 #define WO_SINGLE 0x0ff       /* Mask of all non-compound WO_* values */
 
 /*
-** Value for wsFlags returned by bestIndex() and stored in
-** WhereLevel.wsFlags.  These flags determine which search
-** strategies are appropriate.
+** These are definitions of bits in the WhereLoop.wsFlags field.
+** The particular combination of bits in each WhereLoop help to
+** determine the algorithm that WhereLoop represents.
 */
 #define WHERE_COLUMN_EQ    0x00000001  /* x=EXPR or x IN (...) or x IS NULL */
 #define WHERE_COLUMN_RANGE 0x00000002  /* x<EXPR and/or x>EXPR */
@@ -409,6 +445,7 @@ struct WhereInfo {
 
 
 /* Convert a WhereCost value (10 times log2(X)) into its integer value X.
+** A rough approximation is used.  The value returned is not exact.
 */
 static u64 whereCostToInt(WhereCost x){
   u64 n;
@@ -602,7 +639,7 @@ static void whereSplit(WhereClause *pWC, Expr *pExpr, int op){
 }
 
 /*
-** Initialize an expression mask set (a WhereMaskSet object)
+** Initialize a WhereMaskSet object
 */
 #define initMaskSet(P)  (P)->n=0
 
@@ -635,18 +672,9 @@ static void createMask(WhereMaskSet *pMaskSet, int iCursor){
 }
 
 /*
-** This routine walks (recursively) an expression tree and generates
+** These routine walk (recursively) an expression tree and generates
 ** a bitmask indicating which tables are used in that expression
 ** tree.
-**
-** In order for this routine to work, the calling function must have
-** previously invoked sqlite3ResolveExprNames() on the expression.  See
-** the header comment on that routine for additional information.
-** The sqlite3ResolveExprNames() routines looks for column names and
-** sets their opcodes to TK_COLUMN and their Expr.iTable fields to
-** the VDBE cursor number of the table.  This routine just has to
-** translate the cursor numbers into bitmask values and OR all
-** the bitmasks together.
 */
 static Bitmask exprListTableUsage(WhereMaskSet*, ExprList*);
 static Bitmask exprSelectTableUsage(WhereMaskSet*, Select*);
@@ -700,7 +728,7 @@ static Bitmask exprSelectTableUsage(WhereMaskSet *pMaskSet, Select *pS){
 /*
 ** Return TRUE if the given operator is one of the operators that is
 ** allowed for an indexable WHERE clause term.  The allowed operators are
-** "=", "<", ">", "<=", ">=", and "IN".
+** "=", "<", ">", "<=", ">=", "IN", and "IS NULL"
 **
 ** IMPLEMENTATION-OF: R-59926-26393 To be usable by an index a term must be
 ** of one of the following forms: column = expression column > expression
@@ -727,10 +755,9 @@ static int allowedOp(int op){
 ** are converted into "Y op X".
 **
 ** If left/right precedence rules come into play when determining the
-** collating
-** side of the comparison, it remains associated with the same side after
-** the commutation. So "Y collate NOCASE op X" becomes 
-** "X op Y". This is because any collation sequence on
+** collating sequence, then COLLATE operators are adjusted to ensure
+** that the collating sequence does not change.  For example:
+** "Y collate NOCASE op X" becomes "X op Y" because any collation sequence on
 ** the left hand side of a comparison overrides any collation sequence 
 ** attached to the right. For the same reason the EP_Collate flag
 ** is not commuted.
@@ -871,6 +898,11 @@ WhereTerm *whereScanNext(WhereScan *pScan){
 ** for terms of the form "X <op> <expr>" where X is column iColumn of table
 ** iCur.  The <op> must be one of the operators described by opMask.
 **
+** If the search is for X and the WHERE clause contains terms of the
+** form X=Y then this routine might also return terms of the form
+** "Y <op> <expr>".  The number of levels of transitivity is limited,
+** but is enough to handle most commonly occurring SQL statements.
+**
 ** If X is not the INTEGER PRIMARY KEY then X must be compatible with
 ** index pIdx.
 */
@@ -959,8 +991,6 @@ static void exprAnalyze(SrcList*, WhereClause*, int);
 
 /*
 ** Call exprAnalyze on all terms in a WHERE clause.  
-**
-**
 */
 static void exprAnalyzeAll(
   SrcList *pTabList,       /* the FROM clause */
@@ -1739,11 +1769,8 @@ static void exprAnalyze(
 }
 
 /*
-** This function searches the expression list passed as the second argument
-** for an expression of type TK_COLUMN that refers to the same column and
-** uses the same collation sequence as the iCol'th column of index pIdx.
-** Argument iBase is the cursor number used for the table that pIdx refers
-** to.
+** This function searches pList for a entry that matches the iCol-th column
+** of index pIdx.
 **
 ** If such an expression is found, its index in pList->a[] is returned. If
 ** no expression is found, -1 is returned.
@@ -1778,7 +1805,7 @@ static int findIndexCol(
 ** Return true if the DISTINCT expression-list passed as the third argument
 ** is redundant.
 **
-** A DISTINCT list is redundant if the database contains some set of
+** A DISTINCT list is redundant if the database contains some subset of
 ** columns that are unique and non-null.
 */
 static int isDistinctRedundant(
@@ -1842,7 +1869,10 @@ static int isDistinctRedundant(
 }
 
 /* 
-** The sum of two WhereCosts
+** The (an approximate) sum of two WhereCosts.  This computation is
+** not a simple "+" operator because WhereCost is stored as a logarithmic
+** value.
+** 
 */
 static WhereCost whereCostAdd(WhereCost a, WhereCost b){
   static const unsigned char x[] = {
@@ -1868,7 +1898,8 @@ static WhereCost whereCostAdd(WhereCost a, WhereCost b){
 }
 
 /*
-** Convert an integer into a WhereCost
+** Convert an integer into a WhereCost.  In other words, compute a
+** good approximatation for 10*log2(x).
 */
 static WhereCost whereCostFromInt(tRowcnt x){
   static WhereCost a[] = { 0, 2, 3, 5, 6, 7, 8, 9 };
@@ -1886,7 +1917,8 @@ static WhereCost whereCostFromInt(tRowcnt x){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Convert a double (as received from xBestIndex of a virtual table)
-** into a WhereCost
+** into a WhereCost.  In other words, compute an approximation for
+** 10*log2(x).
 */
 static WhereCost whereCostFromDouble(double x){
   u64 a;
@@ -1901,11 +1933,7 @@ static WhereCost whereCostFromDouble(double x){
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
-** Prepare a crude estimate of the logarithm of the input value.
-** The results need not be exact.  This is only used for estimating
-** the total cost of performing operations with O(logN) or O(NlogN)
-** complexity.  Because N is just a guess, it is no great tragedy if
-** logN is a little off.
+** Estimate the logarithm of the input value to base 2.
 */
 static WhereCost estLog(WhereCost N){
   WhereCost x = whereCostFromInt(N);
@@ -2158,8 +2186,6 @@ static sqlite3_index_info *allocateIndexInfo(
   int nOrderBy;
   sqlite3_index_info *pIdxInfo;
 
-  /*WHERETRACE(("Recomputing index info for %s...\n", pSrc->pTab->zName));*/
-
   /* Count the number of possible WHERE clause constraints referring
   ** to this virtual table */
   for(i=nTerm=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
@@ -2250,8 +2276,8 @@ static sqlite3_index_info *allocateIndexInfo(
 /*
 ** The table object reference passed as the second argument to this function
 ** must represent a virtual table. This function invokes the xBestIndex()
-** method of the virtual table with the sqlite3_index_info pointer passed
-** as the argument.
+** method of the virtual table with the sqlite3_index_info object that
+** comes in as the 3rd argument to this function.
 **
 ** If an error occurs, pParse is populated with an error message and a
 ** non-zero value is returned. Otherwise, 0 is returned and the output
@@ -2266,7 +2292,6 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
   int i;
   int rc;
 
-  /*WHERETRACE(("xBestIndex for %s\n", pTab->zName));*/
   TRACE_IDX_INPUTS(p);
   rc = pVtab->pModule->xBestIndex(pVtab, p);
   TRACE_IDX_OUTPUTS(p);
@@ -2578,8 +2603,8 @@ static int whereRangeScanEst(
         iBase -= whereCostFromInt(iUpper - iLower);
       }
       *pRangeDiv = iBase;
-      /*WHERETRACE(("range scan regions: %u..%u  div=%g\n",
-                  (u32)iLower, (u32)iUpper, *pRangeDiv));*/
+      WHERETRACE(0x100, ("range scan regions: %u..%u  div=%d\n",
+                         (u32)iLower, (u32)iUpper, *pRangeDiv));
       return SQLITE_OK;
     }
   }
@@ -2640,7 +2665,7 @@ static int whereEqualScanEst(
   if( pRhs==0 ) return SQLITE_NOTFOUND;
   rc = whereKeyStats(pParse, p, pRhs, 0, a);
   if( rc==SQLITE_OK ){
-    /*WHERETRACE(("equality scan regions: %d\n", (int)a[1]));*/
+    WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
     *pnRow = a[1];
   }
 whereEqualScanEst_cancel:
@@ -2686,7 +2711,7 @@ static int whereInScanEst(
   if( rc==SQLITE_OK ){
     if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
     *pnRow = nRowEst;
-    /*WHERETRACE(("IN row estimate: est=%g\n", nRowEst));*/
+    WHERETRACE(0x100,("IN row estimate: est=%g\n", nRowEst));
   }
   return rc;
 }
@@ -5060,9 +5085,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   nLoop = pWInfo->nLevel;
   mxChoice = (nLoop==1) ? 1 : (nLoop==2 ? 5 : 10);
   assert( nLoop<=pWInfo->pTabList->nSrc );
-#ifdef WHERETRACE_ENABLED
-  if( sqlite3WhereTrace>=2 ) sqlite3DebugPrintf("---- begin solver\n");
-#endif
+  WHERETRACE(0x002, ("---- begin solver\n"));
 
   /* Allocate and initialize space for aTo and aFrom */
   ii = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
@@ -5088,11 +5111,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   }else{
     /* Compute an estimate on the cost to sort the entire result set */
     rSortCost = nRowEst + estLog(nRowEst);
-#ifdef WHERETRACE_ENABLED
-    if( sqlite3WhereTrace>=2 ){
-      sqlite3DebugPrintf("---- sort cost=%-3d\n", rSortCost);
-    }
-#endif
+    WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
   }
 
   /* Compute successively longer WherePaths using the previous generation
@@ -5605,7 +5624,7 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Construct the WhereLoop objects */
-  WHERETRACE(("*** Optimizer Start ***\n"));
+  WHERETRACE(0xffff,("*** Optimizer Start ***\n"));
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
@@ -5664,21 +5683,20 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 #endif
-  WHERETRACE(("*** Optimizer Finished ***\n"));
+  WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));
   pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 
-#if 0  /* FIXME: Add this back in? */
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
   ** The one-pass algorithm only works if the WHERE clause constraints
   ** the statement to update a single row.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );
-  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 && (andFlags & WHERE_ONEROW)!=0 ){
+  if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
+   && (pWInfo->a[0].pWLoop->wsFlags & WHERE_ONEROW)!=0 ){
     pWInfo->okOnePass = 1;
-    pWInfo->a[0].plan.wsFlags &= ~WHERE_IDX_ONLY;
+    pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
   }
-#endif
 
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
