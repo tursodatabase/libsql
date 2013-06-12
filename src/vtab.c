@@ -89,6 +89,20 @@ static int createModule(
     if( pModule!=0 ){
       rc = SQLITE_MISUSE_BKPT;
     }else{
+      int iDb;
+      HashElem *j;
+      VTable *pVTab;
+      for(iDb=0; iDb<db->nDb; iDb++){
+        Schema *pSchema = db->aDb[iDb].pSchema;
+        for(j=sqliteHashFirst(&pSchema->tblHash); j; j=sqliteHashNext(j)){
+          Table *pTab = (Table*)sqliteHashData(j);
+          if( !IsVirtual(pTab) ) continue;
+          pVTab = pTab->pVTable;
+          if( pVTab->pMod!=pMod ) continue;
+          pVTab->pVtab->pModule = &errorModule;
+        }
+      }
+      if( pMod->xDestroy ) pMod->xDestroy(pMod->pAux);
       pMod->pModule = &errorModule;
     }
   }else{

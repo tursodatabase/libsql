@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sdisable\sfuture\scalls\sto\svirtual\stable\smethods\sby\ninvoking\ssqlite3_create_module()\swith\sa\sNULL\ssqlite3_module\spointer.
-D 2013-06-11T22:41:12.524
+C Another\sattempt\sat\sdisabling\svirtual\stables.\s\sThis\sone\sleaks\smemory.
+D 2013-06-12T02:53:39.933
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -285,7 +285,7 @@ F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c 18cc59cb475e6115129bfde224367d13a35a7d13
-F src/vtab.c b3369dad06b7f9209f4149d72a39d65eef973874
+F src/vtab.c 7f7bf6e1815a655147f96d589e6e2bc2e1c5066d
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
@@ -1093,10 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 24fc9d4438a5615dd20af5419456166df83a72ea
-R ab6302ec8f1453be540887649c9a30d4
-T *branch * disable-vtab
-T *sym-disable-vtab *
-T -sym-trunk *
+P 6b77d61adbc52a9d28ad522aa101c2c193942d18
+R 524671b2110c91977daec3a3bb4e211f
 U drh
-Z d8a8093e91bfc59f02ee5e0368eec812
+Z 258a1822bfbdfa95500fab6f167bf2fe
