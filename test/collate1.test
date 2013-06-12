@@ -305,4 +305,33 @@ do_test collate1-4.5 {
   }
 } {}
 
+# A problem reported on the mailing list:  A CREATE TABLE statement
+# is allowed to have two or more COLLATE clauses on the same column.
+# That probably ought to be an error, but we allow it for backwards
+# compatibility.  Just make sure it works and doesn't leak memory.
+#
+do_test collate1-5.1 {
+  execsql {
+    CREATE TABLE c5(
+      id INTEGER PRIMARY KEY,
+      a TEXT COLLATE binary COLLATE nocase COLLATE rtrim,
+      b TEXT COLLATE nocase COLLATE binary,
+      c TEXT COLLATE rtrim COLLATE binary COLLATE rtrim COLLATE nocase
+    );
+    INSERT INTO c5 VALUES(1, 'abc','abc','abc');
+    INSERT INTO c5 VALUES(2, 'abc   ','ABC','ABC');
+    SELECT id FROM c5 WHERE a='abc' ORDER BY id;
+  }
+} {1 2}
+do_test collate1-5.2 {
+  execsql {
+    SELECT id FROM c5 WHERE b='abc' ORDER BY id;
+  }
+} {1}
+do_test collate1-5.3 {
+  execsql {
+    SELECT id FROM c5 WHERE c='abc' ORDER BY id;
+  }
+} {1 2}
+
 finish_test

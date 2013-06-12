@@ -1276,6 +1276,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
 
   if( sqlite3LocateCollSeq(pParse, zColl) ){
     Index *pIdx;
+    sqlite3DbFree(db, p->aCol[i].zColl);
     p->aCol[i].zColl = zColl;
   
     /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",

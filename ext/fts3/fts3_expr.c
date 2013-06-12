@@ -1000,17 +1000,16 @@ int sqlite3Fts3ExprParse(
   Fts3Expr **ppExpr,                  /* OUT: Parsed query structure */
   char **pzErr                        /* OUT: Error message (sqlite3_malloc) */
 ){
-  static const int MAX_EXPR_DEPTH = 12;
   int rc = fts3ExprParseUnbalanced(
       pTokenizer, iLangid, azCol, bFts4, nCol, iDefaultCol, z, n, ppExpr
   );
   
   /* Rebalance the expression. And check that its depth does not exceed
-  ** MAX_EXPR_DEPTH.  */
+  ** SQLITE_FTS3_MAX_EXPR_DEPTH.  */
   if( rc==SQLITE_OK && *ppExpr ){
-    rc = fts3ExprBalance(ppExpr, MAX_EXPR_DEPTH);
+    rc = fts3ExprBalance(ppExpr, SQLITE_FTS3_MAX_EXPR_DEPTH);
     if( rc==SQLITE_OK ){
-      rc = fts3ExprCheckDepth(*ppExpr, MAX_EXPR_DEPTH);
+      rc = fts3ExprCheckDepth(*ppExpr, SQLITE_FTS3_MAX_EXPR_DEPTH);
     }
   }
 
@@ -1019,7 +1018,8 @@ int sqlite3Fts3ExprParse(
     *ppExpr = 0;
     if( rc==SQLITE_TOOBIG ){
       *pzErr = sqlite3_mprintf(
-          "FTS expression tree is too large (maximum depth %d)", MAX_EXPR_DEPTH
+          "FTS expression tree is too large (maximum depth %d)", 
+          SQLITE_FTS3_MAX_EXPR_DEPTH
       );
       rc = SQLITE_ERROR;
     }else if( rc==SQLITE_ERROR ){

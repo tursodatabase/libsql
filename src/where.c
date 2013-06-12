@@ -77,7 +77,7 @@ struct WhereLevel {
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to ends the loop */
-  union {               /* Information that depends on plan.wsFlags */
+  union {               /* Information that depends on pWLoop->wsFlags */
     struct {
       int nIn;              /* Number of entries in aInLoop[] */
       struct InLoop {
@@ -85,7 +85,7 @@ struct WhereLevel {
         int addrInTop;         /* Top of the IN loop */
         u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
       } *aInLoop;           /* Information about each nested IN operator */
-    } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
+    } in;                 /* Used when pWLoop->wsFlags&WHERE_IN_ABLE */
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
   struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
@@ -2814,8 +2814,6 @@ static int codeEqualityTerm(
       && pLoop->u.btree.pIndex->aSortOrder[iEq]
     ){
       testcase( iEq==0 );
-      testcase( iEq==pLevel->plan.u.pIdx->nColumn-1 );
-      testcase( iEq>0 && iEq+1<pLevel->plan.u.pIdx->nColumn );
       testcase( bRev );
       bRev = !bRev;
     }
@@ -3555,8 +3553,8 @@ static Bitmask codeOneLoopStart(
     ** If it is, jump to the next iteration of the loop.
     */
     r1 = sqlite3GetTempReg(pParse);
-    testcase( pLevel->plan.wsFlags & WHERE_BTM_LIMIT );
-    testcase( pLevel->plan.wsFlags & WHERE_TOP_LIMIT );
+    testcase( pLoop->wsFlags & WHERE_BTM_LIMIT );
+    testcase( pLoop->wsFlags & WHERE_TOP_LIMIT );
     if( (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0 ){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
       sqlite3VdbeAddOp2(v, OP_IsNull, r1, addrCont);
