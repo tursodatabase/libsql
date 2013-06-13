@@ -445,7 +445,6 @@ struct WhereInfo {
 #define WHERE_ONEROW       0x00001000  /* Selects no more than one row */
 #define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
 #define WHERE_TEMP_INDEX   0x00004000  /* Uses an ephemeral index */
-#define WHERE_COVER_SCAN   0x00008000  /* Full scan of a covering index */
 
 
 /* Convert a WhereCost value (10 times log2(X)) into its integer value X.
@@ -3614,8 +3613,7 @@ static Bitmask codeOneLoopStart(
       pLevel->op = OP_Next;
     }
     pLevel->p1 = iIdxCur;
-    if( (pLoop->wsFlags & (WHERE_COLUMN_EQ | WHERE_COLUMN_RANGE | 
-                          WHERE_COLUMN_NULL | WHERE_COLUMN_IN))==0 ){
+    if( (pLoop->wsFlags & WHERE_CONSTRAINT)==0 ){
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
     }else{
       assert( pLevel->p5==0 );
@@ -4375,6 +4373,7 @@ static int indexMightHelpWithOrderBy(
   int iCol;
   int ii;
 
+  if( pIndex->bUnordered ) return 0;
   if( (pOB = pBuilder->pWInfo->pOrderBy)==0 ) return 0;
   iCol = pIndex->aiColumn[0];
   for(ii=0; ii<pOB->nExpr; ii++){
@@ -4503,6 +4502,8 @@ static int whereLoopAddBtree(
     pNew->prereq = mExtra;
     pNew->u.btree.pIndex = pProbe;
     b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
+    /* The ONEPASS_DESIRED flags never occurs together with ORDER BY */
+    assert( (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || b==0 );
     if( pProbe->tnum<=0 ){
       /* Integer primary key index */
       pNew->wsFlags = WHERE_IPK;
@@ -4523,11 +4524,13 @@ static int whereLoopAddBtree(
       pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
 
       /* Full scan via index */
-      if( (m==0 || b)
-       && pProbe->bUnordered==0
-       && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
-       && sqlite3GlobalConfig.bUseCis
-       && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)
+      if( b
+       || ( m==0
+         && pProbe->bUnordered==0
+         && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
+         && sqlite3GlobalConfig.bUseCis
+         && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)
+          )
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
         pNew->nOut = rSize;
