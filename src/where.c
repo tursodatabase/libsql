@@ -4370,18 +4370,17 @@ static int indexMightHelpWithOrderBy(
   int iCursor
 ){
   ExprList *pOB;
-  int iCol;
-  int ii;
+  int ii, jj;
 
   if( pIndex->bUnordered ) return 0;
   if( (pOB = pBuilder->pWInfo->pOrderBy)==0 ) return 0;
-  iCol = pIndex->aiColumn[0];
   for(ii=0; ii<pOB->nExpr; ii++){
     Expr *pExpr = sqlite3ExprSkipCollate(pOB->a[ii].pExpr);
     if( pExpr->op!=TK_COLUMN ) return 0;
     if( pExpr->iTable==iCursor ){
-      if( pExpr->iColumn==iCol ) return 1;
-      return 0;
+      for(jj=0; jj<pIndex->nColumn; jj++){
+        if( pExpr->iColumn==pIndex->aiColumn[jj] ) return 1;
+      }
     }
   }
   return 0;
