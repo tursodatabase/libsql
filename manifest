@@ -1,5 +1,5 @@
-C Activate\sthe\sone-pass\soptimization.\s\sUpdate\scomments,\sespecially\sthe\ndescriptions\sof\sthe\svarious\sobjects.
-D 2013-06-12T20:18:16.225
+C Fix\san\soff-by-one\serror\sin\sthe\sWhereCost\sto\sinteger\sconversion.
+D 2013-06-13T14:51:53.839
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 4209851115ec883e004f0e0ec496215c9df10e33
+F src/where.c c6944d98be4dfd0f080c2e205909ca6c25c21224
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1093,9 +1093,9 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/wherecosttest.c 4d0393bdbe7230adb712e925863744dd2b7ffc5b
+F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 25c0f7292a20c0db6ef176966d9987f29c7d73e5
-R abdb63c5ef041b9c2f729e7a4c7abdae
+P e120c558a5bafc0f0d2cc12ee5c9d36e20cc642d
+R 70bdc5e3664356410e482d1133202557
 U drh
-Z 9e2bd249132b4bdcba34d19dbfd465f2
+Z 22748fc276d8e873b764764d1effa482

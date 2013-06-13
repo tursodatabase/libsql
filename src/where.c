@@ -449,7 +449,7 @@ struct WhereInfo {
 */
 static u64 whereCostToInt(WhereCost x){
   u64 n;
-  if( x<=10 ) return 1;
+  if( x<10 ) return 1;
   n = x%10;
   x /= 10;
   if( n>=5 ) n -= 2;

@@ -73,7 +73,7 @@ WhereCost whereCostFromInteger(int x){
 }
 static unsigned long int whereCostToInt(WhereCost x){
   unsigned long int n;
-  if( x<=10 ) return 1;
+  if( x<10 ) return 1;
   n = x%10;
   x /= 10;
   if( n>=5 ) n -= 2;
