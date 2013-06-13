@@ -4345,8 +4345,7 @@ static int whereLoopAddBtreeIndex(
     /* TBD: Adjust nOut for additional constraints */
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
-     && pNew->u.btree.nEq<=pProbe->nColumn
-     && pProbe->zName!=0
+     && pNew->u.btree.nEq<(pProbe->nColumn + (pProbe->zName!=0))
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
