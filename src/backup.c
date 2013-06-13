@@ -15,12 +15,6 @@
 #include "sqliteInt.h"
 #include "btreeInt.h"
 
-/* Macro to find the minimum of two numeric values.
-*/
-#ifndef MIN
-# define MIN(x,y) ((x)<(y)?(x):(y))
-#endif
-
 /*
 ** Structure allocated for each backup operation.
 */

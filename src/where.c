@@ -57,6 +57,10 @@ typedef struct WhereScan WhereScan;
 ** 10*log2(X) exactly.  Instead, a close estimate is used.  Any value of
 ** X<=1 is stored as 0.  X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
 **
+** The tool/wherecosttest.c source file implements a command-line program
+** that will convert between WhereCost to integers and do addition and
+** multiplication on WhereCost values.  That command-line program is a
+** useful utility to have around when working with this module.
 */
 typedef unsigned short int WhereCost;
 
@@ -1901,7 +1905,7 @@ static WhereCost whereCostAdd(WhereCost a, WhereCost b){
 ** Convert an integer into a WhereCost.  In other words, compute a
 ** good approximatation for 10*log2(x).
 */
-static WhereCost whereCostFromInt(tRowcnt x){
+static WhereCost whereCost(tRowcnt x){
   static WhereCost a[] = { 0, 2, 3, 5, 6, 7, 8, 9 };
   WhereCost y = 40;
   if( x<8 ){
@@ -1925,7 +1929,7 @@ static WhereCost whereCostFromDouble(double x){
   WhereCost e;
   assert( sizeof(x)==8 && sizeof(a)==8 );
   if( x<=1 ) return 0;
-  if( x<=2000000000 ) return whereCostFromInt((tRowcnt)x);
+  if( x<=2000000000 ) return whereCost((tRowcnt)x);
   memcpy(&a, &x, 8);
   e = (a>>52) - 1022;
   return e*10;
@@ -1936,7 +1940,7 @@ static WhereCost whereCostFromDouble(double x){
 ** Estimate the logarithm of the input value to base 2.
 */
 static WhereCost estLog(WhereCost N){
-  WhereCost x = whereCostFromInt(N);
+  WhereCost x = whereCost(N);
   return x>33 ? x - 33 : 0;
 }
 
@@ -2598,9 +2602,9 @@ static int whereRangeScanEst(
       sqlite3ValueFree(pRangeVal);
     }
     if( rc==SQLITE_OK ){
-      WhereCost iBase = whereCostFromInt(p->aiRowEst[0]);
+      WhereCost iBase = whereCost(p->aiRowEst[0]);
       if( iUpper>iLower ){
-        iBase -= whereCostFromInt(iUpper - iLower);
+        iBase -= whereCost(iUpper - iLower);
       }
       *pRangeDiv = iBase;
       WHERETRACE(0x100, ("range scan regions: %u..%u  div=%d\n",
@@ -2615,11 +2619,13 @@ static int whereRangeScanEst(
 #endif
   assert( pLower || pUpper );
   *pRangeDiv = 0;
+  /* TUNING:  Each inequality constraint reduces the search space 4-fold.
+  ** A BETWEEN operator, therefore, reduces the search space 16-fold */
   if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ){
-    *pRangeDiv += 20;  assert( 20==whereCostFromInt(4) );
+    *pRangeDiv += 20;  assert( 20==whereCost(4) );
   }
   if( pUpper ){
-    *pRangeDiv += 20;  assert( 20==whereCostFromInt(4) );
+    *pRangeDiv += 20;  assert( 20==whereCost(4) );
   }
   return rc;
 }
@@ -4244,7 +4250,7 @@ static int whereLoopAddBtreeIndex(
 
   if( pNew->u.btree.nEq < pProbe->nColumn ){
     iCol = pProbe->aiColumn[pNew->u.btree.nEq];
-    nRowEst = whereCostFromInt(pProbe->aiRowEst[pNew->u.btree.nEq+1]);
+    nRowEst = whereCost(pProbe->aiRowEst[pNew->u.btree.nEq+1]);
   }else{
     iCol = -1;
     nRowEst = 0;
@@ -4257,7 +4263,7 @@ static int whereLoopAddBtreeIndex(
   saved_prereq = pNew->prereq;
   saved_nOut = pNew->nOut;
   pNew->rSetup = 0;
-  rLogSize = estLog(whereCostFromInt(pProbe->aiRowEst[0]));
+  rLogSize = estLog(whereCost(pProbe->aiRowEst[0]));
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
@@ -4267,16 +4273,16 @@ static int whereLoopAddBtreeIndex(
     if( whereLoopResize(db, pNew, pNew->nLTerm+1) ) break; /* OOM */
     pNew->aLTerm[pNew->nLTerm++] = pTerm;
     pNew->prereq = (saved_prereq | pTerm->prereqRight) & ~pNew->maskSelf;
-    pNew->rRun = rLogSize;
+    pNew->rRun = rLogSize; /* Baseline cost is log2(N).  Adjustments below */
     if( pTerm->eOperator & WO_IN ){
       Expr *pExpr = pTerm->pExpr;
       pNew->wsFlags |= WHERE_COLUMN_IN;
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
-        /* "x IN (SELECT ...)":  Assume the SELECT returns 25 rows */
-        nIn = 46;  assert( 46==whereCostFromInt(25) );
+        /* "x IN (SELECT ...)":  TUNING: the SELECT returns 25 rows */
+        nIn = 46;  assert( 46==whereCost(25) );
       }else if( ALWAYS(pExpr->x.pList && pExpr->x.pList->nExpr) ){
         /* "x IN (value, value, ...)" */
-        nIn = whereCostFromInt(pExpr->x.pList->nExpr);
+        nIn = whereCost(pExpr->x.pList->nExpr);
       }
       pNew->rRun += nIn;
       pNew->u.btree.nEq++;
@@ -4297,7 +4303,8 @@ static int whereLoopAddBtreeIndex(
     }else if( pTerm->eOperator & (WO_ISNULL) ){
       pNew->wsFlags |= WHERE_COLUMN_NULL;
       pNew->u.btree.nEq++;
-      nIn = 10;  assert( 10==whereCostFromInt(2) );
+      /* TUNING: IS NULL selects 2 rows */
+      nIn = 10;  assert( 10==whereCost(2) );
       pNew->nOut = nRowEst + nInMul + nIn;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
@@ -4325,7 +4332,7 @@ static int whereLoopAddBtreeIndex(
              &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
         rc = whereInScanEst(pParse, pProbe, pTerm->pExpr->x.pList, &nOut);
       }
-      pNew->nOut = whereCostFromInt(nOut);
+      pNew->nOut = whereCost(nOut);
     }
 #endif
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
@@ -4451,7 +4458,7 @@ static int whereLoopAddBtree(
     }
     pProbe = &sPk;
   }
-  rSize = whereCostFromInt(pSrc->pTab->nRowEst);
+  rSize = whereCost(pSrc->pTab->nRowEst);
   rLogSize = estLog(rSize);
 
   /* Automatic indexes */
@@ -4473,9 +4480,12 @@ static int whereLoopAddBtree(
         pNew->u.btree.pIndex = 0;
         pNew->nLTerm = 1;
         pNew->aLTerm[0] = pTerm;
-        assert( 43==whereCostFromInt(20) );
-        pNew->rSetup = 43 + rLogSize + rSize;
-        pNew->nOut = 33;  assert( 33==whereCostFromInt(10) );
+        /* TUNING: One-time cost for computing the automatic index is
+        ** approximately 6*N*log2(N) where N is the number of rows in
+        ** the table being indexed. */
+        pNew->rSetup = rLogSize + rSize + 26;  assert( 26==whereCost(6) );
+        /* TUNING: Each index lookup yields 10 rows in the table */
+        pNew->nOut = 33;  assert( 33==whereCost(10) );
         pNew->rRun = whereCostAdd(rLogSize,pNew->nOut);
         pNew->wsFlags = WHERE_TEMP_INDEX;
         pNew->prereq = mExtra | pTerm->prereqRight;
@@ -4501,7 +4511,12 @@ static int whereLoopAddBtree(
       /* Full table scan */
       pNew->iSortIdx = b ? iSortIdx : 0;
       pNew->nOut = rSize;
-      pNew->rRun = whereCostAdd(rSize,rLogSize) + 16 - b;
+      /* TUNING: Cost of full table scan is 3*(N + log2(N)).
+      **  +  The extra 3 factor is to encourage the use of indexed lookups
+      **     over full scans.  A smaller constant 2 is used for covering
+      **     index scans so that a covering index scan will be favored over
+      **     a table scan. */
+      pNew->rRun = whereCostAdd(rSize,rLogSize) + 16;
       rc = whereLoopInsert(pBuilder, pNew);
       if( rc ) break;
     }else{
@@ -4517,8 +4532,22 @@ static int whereLoopAddBtree(
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
         pNew->nOut = rSize;
-        pNew->rRun = whereCostAdd(rSize,rLogSize);
-        pNew->rRun += ((m!=0) ? rLogSize : 10) - b;
+        if( m==0 ){
+          /* TUNING: Cost of a covering index scan is 2*(N + log2(N)).
+          **  +  The extra 2 factor is to encourage the use of indexed lookups
+          **     over index scans.  A table scan uses a factor of 3 so that
+          **     index scans are favored over table scans.
+          **  +  If this covering index might also help satisfy the ORDER BY
+          **     clause, then the cost is fudged down slightly so that this
+          **     index is favored above other indices that have no hope of
+          **     helping with the ORDER BY. */
+          pNew->rRun = 10 + whereCostAdd(rSize,rLogSize) - b;
+        }else{
+          assert( b!=0 ); 
+          /* TUNING: Cost of scanning a non-covering index is (N+1)*log2(N)
+          ** which we will simplify to just N*log2(N) */
+          pNew->rRun = rSize + rLogSize;
+        }
         rc = whereLoopInsert(pBuilder, pNew);
         if( rc ) break;
       }
@@ -4675,7 +4704,8 @@ static int whereLoopAddVirtual(
                                      && pIdxInfo->orderByConsumed);
       pNew->rSetup = 0;
       pNew->rRun = whereCostFromDouble(pIdxInfo->estimatedCost);
-      pNew->nOut = 46;  assert( 46 == whereCostFromInt(25) );
+      /* TUNING: Every virtual table query returns 25 rows */
+      pNew->nOut = 46;  assert( 46==whereCost(25) );
       whereLoopInsert(pBuilder, pNew);
       if( pNew->u.vtab.needFree ){
         sqlite3_free(pNew->u.vtab.idxStr);
@@ -5066,6 +5096,7 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   int mxChoice;             /* Maximum number of simultaneous paths tracked */
   int nLoop;                /* Number of terms in the join */
+  Parse *pParse;            /* Parsing context */
   sqlite3 *db;              /* The database connection */
   int iLoop;                /* Loop counter over the terms of the join */
   int ii, jj;               /* Loop counters */
@@ -5081,8 +5112,12 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   WhereLoop **pX;           /* Used to divy up the pSpace memory */
   char *pSpace;             /* Temporary memory used by this routine */
 
-  db = pWInfo->pParse->db;
+  pParse = pWInfo->pParse;
+  db = pParse->db;
   nLoop = pWInfo->nLevel;
+  /* TUNING: For simple queries, only the best path is tracked.
+  ** For 2-way joins, the 5 best paths are followed.
+  ** For joins of 3 or more tables, track the 10 best paths */
   mxChoice = (nLoop==1) ? 1 : (nLoop==2 ? 5 : 10);
   assert( nLoop<=pWInfo->pTabList->nSrc );
   WHERETRACE(0x002, ("---- begin solver\n"));
@@ -5099,8 +5134,12 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
     pFrom->aLoop = pX;
   }
 
-  /* Seed the search with a single WherePath containing zero WhereLoops */
-  aFrom[0].nRow = pWInfo->pParse->nQueryLoop;
+  /* Seed the search with a single WherePath containing zero WhereLoops.
+  **
+  ** TUNING: Do not let the number of iterations go above 25.  If the cost
+  ** of computing an automatic index is not paid back within the first 25
+  ** rows, then do not use the automatic index. */
+  aFrom[0].nRow = MIN(pParse->nQueryLoop, 46);  assert( 46==whereCost(25) );
   nFrom = 1;
 
   /* Precompute the cost of sorting the final result set, if the caller
@@ -5109,7 +5148,8 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   if( pWInfo->pOrderBy==0 || nRowEst==0 ){
     aFrom[0].isOrderedValid = 1;
   }else{
-    /* Compute an estimate on the cost to sort the entire result set */
+    /* TUNING: Estimated cost of sorting is N*log2(N) where N is the
+    ** number of output rows. */
     rSortCost = nRowEst + estLog(nRowEst);
     WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
   }
@@ -5254,7 +5294,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   }
 
   if( nFrom==0 ){
-    sqlite3ErrorMsg(pWInfo->pParse, "no query solution");
+    sqlite3ErrorMsg(pParse, "no query solution");
     sqlite3DbFree(db, pSpace);
     return SQLITE_ERROR;
   }
@@ -5335,7 +5375,8 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->aLTerm[0] = pTerm;
     pLoop->nLTerm = 1;
     pLoop->u.btree.nEq = 1;
-    pLoop->rRun = 33;  /* 33 == whereCostFromInt(10) */
+    /* TUNING: Cost of a rowid lookup is 10 */
+    pLoop->rRun = 33;  /* 33==whereCost(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       if( pIdx->onError==OE_None ) continue;
@@ -5353,7 +5394,8 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       pLoop->nLTerm = j;
       pLoop->u.btree.nEq = j;
       pLoop->u.btree.pIndex = pIdx;
-      pLoop->rRun = 39;  /* 39 == whereCostFromInt(15) */
+      /* TUNING: Cost of a unique index lookup is 15 */
+      pLoop->rRun = 39;  /* 39==whereCost(15) */
       break;
     }
   }

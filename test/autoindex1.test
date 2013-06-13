@@ -78,6 +78,9 @@ do_test autoindex1-202 {
 do_test autoindex1-210 {
   db eval {
     PRAGMA automatic_index=ON;
+    ANALYZE;
+    UPDATE sqlite_stat1 SET stat='10000' WHERE tbl='t1';
+    ANALYZE sqlite_master;
     SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
   }
 } {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
@@ -143,6 +146,9 @@ do_test autoindex1-401 {
 do_execsql_test autoindex1-500 {
   CREATE TABLE t501(a INTEGER PRIMARY KEY, b);
   CREATE TABLE t502(x INTEGER PRIMARY KEY, y);
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t501',null,'1000000');
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t502',null,'1000');
+  ANALYZE sqlite_master;
   EXPLAIN QUERY PLAN
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);

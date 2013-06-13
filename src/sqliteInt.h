@@ -396,6 +396,12 @@
 #endif
 
 /*
+** Macros to compute minimum and maximum of two numbers.
+*/
+#define MIN(A,B) ((A)<(B)?(A):(B))
+#define MAX(A,B) ((A)>(B)?(A):(B))
+
+/*
 ** Check to see if this machine uses EBCDIC.  (Yes, believe it or
 ** not, there are still machines out there that use EBCDIC.)
 */
