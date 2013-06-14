@@ -4891,7 +4891,7 @@ static int wherePathSatisfiesOrderBy(
   Bitmask obSat = 0;    /* Mask of ORDER BY terms satisfied so far */
   Bitmask obDone;       /* Mask of all ORDER BY terms */
   Bitmask orderDistinctMask;  /* Mask of all well-ordered loops */
-  
+  Bitmask ready;              /* Mask of inner loops */
 
   /*
   ** We say the WhereLoop is "one-row" if it generates no more than one
@@ -4931,10 +4931,39 @@ static int wherePathSatisfiesOrderBy(
   isOrderDistinct = 1;
   obDone = MASKBIT(nOrderBy)-1;
   orderDistinctMask = 0;
+  ready = 0;
   for(iLoop=0; isOrderDistinct && obSat<obDone && iLoop<=nLoop; iLoop++){
+    if( iLoop>0 ) ready |= pLoop->maskSelf;
     pLoop = iLoop<nLoop ? pPath->aLoop[iLoop] : pLast;
     assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
+
+    /* Mark off any ORDER BY term X that is a column in the table of
+    ** the current loop for which there is term in the WHERE
+    ** clause of the form X IS NULL or X=? that reference only outer
+    ** loops.
+    */
+    for(i=0; i<nOrderBy; i++){
+      if( MASKBIT(i) & obSat ) continue;
+      pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
+      if( pOBExpr->op!=TK_COLUMN ) continue;
+      if( pOBExpr->iTable!=iCur ) continue;
+      pTerm = findTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
+                       ~ready, WO_EQ|WO_ISNULL, 0);
+      if( pTerm==0 ) continue;
+      if( pOBExpr->iColumn>=0 ){
+        const char *z1, *z2;
+        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
+        if( !pColl ) pColl = db->pDfltColl;
+        z1 = pColl->zName;
+        pColl = sqlite3ExprCollSeq(pWInfo->pParse, pTerm->pExpr);
+        if( !pColl ) pColl = db->pDfltColl;
+        z2 = pColl->zName;
+        if( sqlite3StrICmp(z1, z2)!=0 ) continue;
+      }
+      obSat |= MASKBIT(i);
+    }
+
     if( (pLoop->wsFlags & WHERE_ONEROW)==0 ){
       if( pLoop->wsFlags & WHERE_IPK ){
         pIndex = 0;
@@ -5066,7 +5095,7 @@ static int wherePathSatisfiesOrderBy(
         }
       }
     }
-  }
+  } /* End the loop over all WhereLoops from outer-most down to inner-most */
   if( obSat==obDone ) return 1;
   if( !isOrderDistinct ) return 0;
   if( isLastLoop ) return 1;
