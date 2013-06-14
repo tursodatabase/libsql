@@ -65,7 +65,7 @@ typedef struct WhereScan WhereScan;
 typedef unsigned short int WhereCost;
 
 /*
-** This object contains information needed to implement a single nestd
+** This object contains information needed to implement a single nested
 ** loop in WHERE clause.
 **
 ** Contrast this object with WhereLoop.  This object describes the
@@ -5944,12 +5944,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
     }
 
-    /* If this scan uses an index, make code substitutions to read data
-    ** from the index in preference to the table. Sometimes, this means
-    ** the table need never be read from. This is a performance boost,
-    ** as the vdbe level waits until the table is read before actually
-    ** seeking the table cursor to the record corresponding to the current
-    ** position in the index.
+    /* If this scan uses an index, make VDBE code substitutions to read data
+    ** from the index instead of from the table where possible.  In some cases
+    ** this optimization prevents the table from ever being read, which can
+    ** yield a significant performance boost.
     ** 
     ** Calls to the code generator in between sqlite3WhereBegin and
     ** sqlite3WhereEnd will have created code that references the table
