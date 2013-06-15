@@ -1538,8 +1538,8 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
       VdbeComment((v, "LIMIT counter"));
       if( n==0 ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
-      }else{
-        if( p->nSelectRow > n ) p->nSelectRow = n;
+      }else if( n>=0 && p->nSelectRow>(u64)n ){
+        p->nSelectRow = n;
       }
     }else{
       sqlite3ExprCode(pParse, p->pLimit, iLimit);
@@ -1733,7 +1733,7 @@ static int multiSelect(
       p->nSelectRow += pPrior->nSelectRow;
       if( pPrior->pLimit
        && sqlite3ExprIsInteger(pPrior->pLimit, &nLimit)
-       && p->nSelectRow > nLimit 
+       && nLimit>0 && p->nSelectRow > (u64)nLimit 
       ){
         p->nSelectRow = nLimit;
       }

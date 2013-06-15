@@ -1,5 +1,5 @@
-C Comment\stweaks\sin\swhere.c.\s\sNo\schanges\sto\scode.
-D 2013-06-14T13:27:01.630
+C Fix\scompiler\swarnings.
+D 2013-06-15T15:11:45.875
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/printf.c bff529ed47657098c55c9910b9c69b1b3b1a1353
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 588ae13fc3d10dc812a0832fd143374583beb847
+F src/select.c 94a755b3d3788cf171c98064f2fa0ce6350fd6ca
 F src/shell.c ab6eea968c8745be3aa74e45fedb37d057b4cd0d
 F src/sqlite.h.in 5b390ca5d94e09e56e7fee6a51ddde4721b89f8e
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c cd2ee239c40ef7ffc952e176bfb98ff13a638b20
+F src/where.c df0d274ff134fab313f576f232e586756339e7a1
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b920bb70bb009b7c54e7667544c9810c5ee25e19
-R 382f7260a0330db641dd26f80cde0534
+P cecc5fdd5d8fbad7d9e8c275b9ba9ade3dbee8ef
+R ef11f7373ad17a9fe10dde15795cd3f5
 U drh
-Z 568b215d3c8e178d6fdb12bf215bc7ae
+Z 56f2db275e8c6ae6e91e7c2a5db315eb

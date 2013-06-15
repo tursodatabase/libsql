@@ -2927,8 +2927,6 @@ static int codeEqualityTerm(
 static int codeAllEqualityTerms(
   Parse *pParse,        /* Parsing context */
   WhereLevel *pLevel,   /* Which nested loop of the FROM we are coding */
-  WhereClause *pWC,     /* The WHERE clause */
-  Bitmask notReady,     /* Which parts of FROM have not yet been coded */
   int bRev,             /* Reverse the order of IN operators */
   int nExtraReg,        /* Number of extra registers to allocate */
   char **pzAff          /* OUT: Set to point to affinity string */
@@ -3475,9 +3473,7 @@ static Bitmask codeOneLoopStart(
     ** and store the values of those terms in an array of registers
     ** starting at regBase.
     */
-    regBase = codeAllEqualityTerms(
-        pParse, pLevel, pWC, notReady, bRev, nExtraReg, &zStartAff
-    );
+    regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
     zEndAff = sqlite3DbStrDup(pParse->db, zStartAff);
     addrNxt = pLevel->addrNxt;
 
@@ -4568,8 +4564,7 @@ static int whereLoopAddBtree(
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
 */
 static int whereLoopAddVirtual(
-  WhereLoopBuilder *pBuilder,  /* WHERE clause information */
-  Bitmask mExtra               /* Extra prerequesites for using this table */
+  WhereLoopBuilder *pBuilder   /* WHERE clause information */
 ){
   WhereInfo *pWInfo;           /* WHERE analysis context */
   Parse *pParse;               /* The parsing context */
@@ -4779,7 +4774,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         sBest.rRun = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
-          rc = whereLoopAddVirtual(&sSubBuild, mExtra);
+          rc = whereLoopAddVirtual(&sSubBuild);
         }else
 #endif
         {
@@ -4836,7 +4831,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     }
     priorJoinType = pItem->jointype;
     if( IsVirtual(pItem->pTab) ){
-      rc = whereLoopAddVirtual(pBuilder, mExtra);
+      rc = whereLoopAddVirtual(pBuilder);
     }else{
       rc = whereLoopAddBtree(pBuilder, mExtra);
     }
