@@ -2114,6 +2114,8 @@ static void constructAutomaticIndex(
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
+      testcase( iCol==BMS-1 );
+      testcase( iCol==BMS );
       if( (idxCols & cMask)==0 ){
         Expr *pX = pTerm->pExpr;
         idxCols |= cMask;
@@ -3046,7 +3048,6 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   int *aiColumn = pIndex->aiColumn;
   StrAccum txt;
 
-  if( pIndex==0 ) return 0;
   if( nEq==0 && (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ){
     return 0;
   }
@@ -3113,7 +3114,7 @@ static void explainOneScan(
       zMsg = sqlite3MAppendf(db, zMsg, "%s AS %s", zMsg, pItem->zAlias);
     }
     if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0
-     && pLoop->u.btree.pIndex!=0
+     && ALWAYS(pLoop->u.btree.pIndex!=0)
     ){
       char *zWhere = explainIndexRange(db, pLoop, pItem->pTab);
       zMsg = sqlite3MAppendf(db, zMsg, "%s USING %s%sINDEX%s%s%s", zMsg, 
@@ -3133,7 +3134,7 @@ static void explainOneScan(
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>? AND rowid<?)", zMsg);
       }else if( flags&WHERE_BTM_LIMIT ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid>?)", zMsg);
-      }else if( flags&WHERE_TOP_LIMIT ){
+      }else if( ALWAYS(flags&WHERE_TOP_LIMIT) ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s (rowid<?)", zMsg);
       }
     }
@@ -3487,10 +3488,10 @@ static Bitmask codeOneLoopStart(
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
     }
 
-    testcase( pRangeStart && pRangeStart->eOperator & WO_LE );
-    testcase( pRangeStart && pRangeStart->eOperator & WO_GE );
-    testcase( pRangeEnd && pRangeEnd->eOperator & WO_LE );
-    testcase( pRangeEnd && pRangeEnd->eOperator & WO_GE );
+    testcase( pRangeStart && (pRangeStart->eOperator & WO_LE)!=0 );
+    testcase( pRangeStart && (pRangeStart->eOperator & WO_GE)!=0 );
+    testcase( pRangeEnd && (pRangeEnd->eOperator & WO_LE)!=0 );
+    testcase( pRangeEnd && (pRangeEnd->eOperator & WO_GE)!=0 );
     startEq = !pRangeStart || pRangeStart->eOperator & (WO_LE|WO_GE);
     endEq =   !pRangeEnd || pRangeEnd->eOperator & (WO_LE|WO_GE);
     start_constraints = pRangeStart || nEq>0;
@@ -3889,6 +3890,8 @@ static Bitmask codeOneLoopStart(
     pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady, WO_EQ|WO_IN, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
+    testcase( pAlt->eOperator & WO_EQ );
+    testcase( pAlt->eOperator & WO_IN );
     VdbeNoopComment((v, "begin transitive constraint"));
     sEq = *pAlt->pExpr;
     sEq.pLeft = pE->pLeft;
@@ -4095,6 +4098,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       WhereCost rCost = whereCostAdd(p->rRun,p->rSetup);
       WhereCost rTemplate = whereCostAdd(pTemplate->rRun,pTemplate->rSetup);
       if( rCost < rTemplate ){
+        testcase( rCost==rTemplate-1 );
         goto whereLoopInsert_noop;
       }
       if( rCost == rTemplate && p->prereq <= pTemplate->prereq ){
@@ -4120,6 +4124,8 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
     ){
+      testcase( p->rSetup==pTemplate->rSetup );
+      testcase( p->rRun==pTemplate->rRun );
       /* p is equal or better than pTemplate */
       if( p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
@@ -4145,14 +4151,26 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
         goto whereLoopInsert_noop;
       }
     }
+    testcase( (p->prereq & pTemplate->prereq)==p->prereq 
+              && p->rSetup==pTemplate->rSetup+1 );
+    testcase( (p->prereq & pTemplate->prereq)==p->prereq
+              && p->rSetup<=pTemplate->rSetup
+              && p->rRun==pTemplate->rRun+1 );
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rSetup>=pTemplate->rSetup
      && p->rRun>=pTemplate->rRun
     ){
       /* Overwrite an existing WhereLoop with a better one */
+      testcase( p->rSetup==pTemplate->rSetup );
+      testcase( p->rRun==pTemplate->rRun );
       pNext = p->pNextLoop;
       break;
     }
+    testcase( (p->prereq & pTemplate->prereq)==pTemplate->prereq
+              && p->rSetup==pTemplate->rSetup-1 );
+    testcase( (p->prereq & pTemplate->prereq)==pTemplate->prereq
+              && p->rSetup>=pTemplate->rSetup-1
+              && p->rRun==pTemplate->rRun-1 );
   }
 
   /* If we reach this point it means that either p[] should be overwritten
@@ -4231,7 +4249,6 @@ static int whereLoopAddBtreeIndex(
   if( db->mallocFailed ) return SQLITE_NOMEM;
 
   assert( (pNew->wsFlags & WHERE_VIRTUALTABLE)==0 );
-  assert( pNew->u.btree.nEq<=pProbe->nColumn );
   assert( (pNew->wsFlags & WHERE_TOP_LIMIT)==0 );
   if( pNew->wsFlags & WHERE_BTM_LIMIT ){
     opMask = WO_LT|WO_LE;
@@ -4242,6 +4259,7 @@ static int whereLoopAddBtreeIndex(
   }
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
+  assert( pNew->u.btree.nEq<=pProbe->nColumn );
   if( pNew->u.btree.nEq < pProbe->nColumn ){
     iCol = pProbe->aiColumn[pNew->u.btree.nEq];
     nRowEst = whereCost(pProbe->aiRowEst[pNew->u.btree.nEq+1]);
@@ -4301,10 +4319,15 @@ static int whereLoopAddBtreeIndex(
       nIn = 10;  assert( 10==whereCost(2) );
       pNew->nOut = nRowEst + nInMul + nIn;
     }else if( pTerm->eOperator & (WO_GT|WO_GE) ){
+      testcase( pTerm->eOperator & WO_GT );
+      testcase( pTerm->eOperator & WO_GE );
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
       pBtm = pTerm;
       pTop = 0;
-    }else if( pTerm->eOperator & (WO_LT|WO_LE) ){
+    }else{
+      assert( pTerm->eOperator & (WO_LT|WO_LE) );
+      testcase( pTerm->eOperator & WO_LT );
+      testcase( pTerm->eOperator & WO_LE );
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_TOP_LIMIT;
       pTop = pTerm;
       pBtm = (pNew->wsFlags & WHERE_BTM_LIMIT)!=0 ?
@@ -4393,6 +4416,8 @@ static Bitmask columnsInIndex(Index *pIdx){
   int j;
   for(j=pIdx->nColumn-1; j>=0; j--){
     int x = pIdx->aiColumn[j];
+    testcase( x==BMS-1 );
+    testcase( x==BMS-2 );
     if( x<BMS-1 ) m |= MASKBIT(x);
   }
   return m;
@@ -4604,7 +4629,10 @@ static int whereLoopAddVirtual(
   pNew->u.vtab.needFree = 0;
   pUsage = pIdxInfo->aConstraintUsage;
   nConstraint = pIdxInfo->nConstraint;
-  if( whereLoopResize(db, pNew, nConstraint) ) return SQLITE_NOMEM;
+  if( whereLoopResize(db, pNew, nConstraint) ){
+    sqlite3DbFree(db, pIdxInfo);
+    return SQLITE_NOMEM;
+  }
 
   for(iPhase=0; iPhase<=3; iPhase++){
     if( !seenIn && (iPhase&1)!=0 ){
@@ -4621,9 +4649,10 @@ static int whereLoopAddVirtual(
           pIdxCons->usable = 0;
           if( (pTerm->eOperator & WO_IN)!=0 ){
             seenIn = 1;
-          }else if( pTerm->prereqRight!=0 ){
+          }
+          if( pTerm->prereqRight!=0 ){
             seenVar = 1;
-          }else{
+          }else if( (pTerm->eOperator & WO_IN)==0 ){
             pIdxCons->usable = 1;
           }
           break;
@@ -4668,11 +4697,16 @@ static int whereLoopAddVirtual(
           sqlite3ErrorMsg(pParse, "%s.xBestIndex() malfunction", pTab->zName);
           goto whereLoopAddVtab_exit;
         }
+        testcase( iTerm==nConstraint-1 );
+        testcase( j==0 );
+        testcase( j==pWC->nTerm-1 );
         pTerm = &pWC->a[j];
         pNew->prereq |= pTerm->prereqRight;
         assert( iTerm<pNew->nLSlot );
         pNew->aLTerm[iTerm] = pTerm;
         if( iTerm>mxTerm ) mxTerm = iTerm;
+        testcase( iTerm==15 );
+        testcase( iTerm==16 );
         if( iTerm<16 && pUsage[i].omit ) pNew->u.vtab.omitMask |= 1<<iTerm;
         if( (pTerm->eOperator & WO_IN)!=0 ){
           if( pUsage[i].omit==0 ){
@@ -4923,6 +4957,7 @@ static int wherePathSatisfiesOrderBy(
   if( nLoop && OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return 0;
 
   nOrderBy = pOrderBy->nExpr;
+  testcase( nOrderBy==BMS-1 );
   if( nOrderBy>BMS-1 ) return 0;  /* Cannot optimize overly large ORDER BYs */
   isOrderDistinct = 1;
   obDone = MASKBIT(nOrderBy)-1;
@@ -4947,9 +4982,7 @@ static int wherePathSatisfiesOrderBy(
       pTerm = findTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
                        ~ready, WO_EQ|WO_ISNULL, 0);
       if( pTerm==0 ) continue;
-      testcase( pTerm->eOperator & WO_EQ );
-      testcase( pTerm->eOperator & WO_ISNULL );
-      if( pOBExpr->iColumn>=0 ){
+      if( (pTerm->eOperator&WO_EQ)!=0 && pOBExpr->iColumn>=0 ){
         const char *z1, *z2;
         pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
         if( !pColl ) pColl = db->pDfltColl;
@@ -4985,7 +5018,10 @@ static int wherePathSatisfiesOrderBy(
         if( j<pLoop->u.btree.nEq
          && ((i = pLoop->aLTerm[j]->eOperator) & (WO_EQ|WO_ISNULL))!=0
         ){
-          if( i & WO_ISNULL ) isOrderDistinct = 0;
+          if( i & WO_ISNULL ){
+            testcase( isOrderDistinct );
+            isOrderDistinct = 0;
+          }
           continue;  
         }
 
@@ -4999,6 +5035,7 @@ static int wherePathSatisfiesOrderBy(
           if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
         }else{
           /* The ROWID column at the end */
+          assert( j==nColumn );
           iColumn = -1;
           revIdx = 0;
         }
@@ -5037,7 +5074,10 @@ static int wherePathSatisfiesOrderBy(
           break;
         }
         if( isMatch ){
-          if( iColumn<0 ) distinctColumns = 1;
+          if( iColumn<0 ){
+            testcase( distinctColumns==0 );
+            distinctColumns = 1;
+          }
           obSat |= MASKBIT(i);
           if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
             /* Make sure the sort order is compatible in an ORDER BY clause.
@@ -5052,7 +5092,10 @@ static int wherePathSatisfiesOrderBy(
           }
         }else{
           /* No match found */
-          if( j==0 || j<nColumn ) isOrderDistinct = 0;
+          if( j==0 || j<nColumn ){
+            testcase( isOrderDistinct!=0 );
+            isOrderDistinct = 0;
+          }
           break;
         }
       } /* end Loop over all index columns */
@@ -5199,6 +5242,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         /* Check to see if pWLoop should be added to the mxChoice best so far */
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
           if( pTo->maskLoop==maskNew && pTo->isOrderedValid==isOrderedValid ){
+            testcase( jj==nTo-1 );
             break;
           }
         }
@@ -5242,8 +5286,10 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
                   pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
             }
 #endif
+            testcase( pTo->rCost==rCost );
             continue;
           }
+          testcase( pTo->rCost==rCost+1 );
           /* A new and better score for a previously created equivalent path */
 #ifdef WHERETRACE_ENABLED
           if( sqlite3WhereTrace&0x4 ){
@@ -5779,8 +5825,8 @@ WhereInfo *sqlite3WhereBegin(
          && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 ){
       int op = pWInfo->okOnePass ? OP_OpenWrite : OP_OpenRead;
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
-      testcase( pTab->nCol==BMS-1 );
-      testcase( pTab->nCol==BMS );
+      testcase( !pWInfo->okOnePass && pTab->nCol==BMS-1 );
+      testcase( !pWInfo->okOnePass && pTab->nCol==BMS );
       if( !pWInfo->okOnePass && pTab->nCol<BMS ){
         Bitmask b = pTabItem->colUsed;
         int n = 0;
