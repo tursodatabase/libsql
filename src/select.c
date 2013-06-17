@@ -4401,7 +4401,8 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0, 0, 0);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0, 
+                                 WHERE_GROUPBY, 0);
       if( pWInfo==0 ) goto select_end;
       if( sqlite3WhereIsOrdered(pWInfo) ){
         /* The optimizer is able to deliver rows in group by order so

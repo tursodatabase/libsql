@@ -1,5 +1,5 @@
-C Use\sautomatic\sindices\son\ssubqueries\sof\sthe\sFROM\sclause\swhen\sappropriate.
-D 2013-06-17T14:18:21.734
+C Simplifications\sto\sthe\sNGQP.\s\sAdd\sthe\squeryplantest\smakefile\starget.\s\sAdd\ntestcase()\smacros\sin\sthe\sNGQP.
+D 2013-06-17T18:20:48.993
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,7 +138,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
-F main.mk e536751ac719806209c51f5dc63022a5dd40c631
+F main.mk c4335dbdb004d37e00e23d6ff226e55df0db5b21
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -215,7 +215,7 @@ F src/printf.c bff529ed47657098c55c9910b9c69b1b3b1a1353
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 94a755b3d3788cf171c98064f2fa0ce6350fd6ca
+F src/select.c d5a1b9bc3fb451e68ce907df253c6ac17e7310f7
 F src/shell.c ab6eea968c8745be3aa74e45fedb37d057b4cd0d
 F src/sqlite.h.in 5b390ca5d94e09e56e7fee6a51ddde4721b89f8e
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 74ecd744a5a9d18cc8e66f4c234bdac11c472eee
+F src/where.c 74627cb9415ad421004de574cfafe6ed0359554b
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3e8ac46918c68723bd199dbec8b0901457d524a9
-R cb395ca086e8d43cd185b18cda8198f7
+P e8f124284ee0d0e373dc4431668630f1e17015c1
+R 5f6127cf4cee34c1f05fd60f463f5e2a
 U drh
-Z 602d1da2f8b38f776a1f4f76f4cb8197
+Z 08d0c98ccbb424b49a424bc18bdd25d5

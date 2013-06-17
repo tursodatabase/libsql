@@ -4321,6 +4321,8 @@ static int whereLoopAddBtreeIndex(
     if( pNew->u.btree.nEq==1 && pProbe->nSample ){
       tRowcnt nOut = 0;
       if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
+        testcase( pTerm->eOperator & WO_EQ );
+        testcase( pTerm->eOperator & WO_ISNULL );
         rc = whereEqualScanEst(pParse, pProbe, pTerm->pExpr->pRight, &nOut);
       }else if( (pTerm->eOperator & WO_IN)
              &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
@@ -4861,7 +4863,6 @@ static int wherePathSatisfiesOrderBy(
   WherePath *pPath,     /* The WherePath to check */
   u16 wctrlFlags,       /* Might contain WHERE_GROUPBY or WHERE_DISTINCTBY */
   u16 nLoop,            /* Number of entries in pPath->aLoop[] */
-  u8 isLastLoop,        /* True if pLast is the inner-most loop */
   WhereLoop *pLast,     /* Add this WhereLoop to the end of pPath->aLoop[] */
   Bitmask *pRevMask     /* OUT: Mask of WhereLoops to run in reverse order */
 ){
@@ -4946,6 +4947,8 @@ static int wherePathSatisfiesOrderBy(
       pTerm = findTerm(&pWInfo->sWC, iCur, pOBExpr->iColumn,
                        ~ready, WO_EQ|WO_ISNULL, 0);
       if( pTerm==0 ) continue;
+      testcase( pTerm->eOperator & WO_EQ );
+      testcase( pTerm->eOperator & WO_ISNULL );
       if( pOBExpr->iColumn>=0 ){
         const char *z1, *z2;
         pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[i].pExpr);
@@ -4968,30 +4971,6 @@ static int wherePathSatisfiesOrderBy(
       }else{
         nColumn = pIndex->nColumn;
         isOrderDistinct = pIndex->onError!=OE_None;
-      }
-
-      /* For every term of the index that is constrained by == or IS NULL,
-      ** mark off corresponding ORDER BY terms wherever they occur
-      ** in the ORDER BY clause.
-      */
-      for(i=0; i<pLoop->u.btree.nEq; i++){
-        pTerm = pLoop->aLTerm[i];
-        if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))==0 ) continue;
-        iColumn = pTerm->u.leftColumn;
-        for(j=0; j<nOrderBy; j++){
-          if( MASKBIT(j) & obSat ) continue;
-          pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[j].pExpr);
-          if( pOBExpr->op!=TK_COLUMN ) continue;
-          if( pOBExpr->iTable!=iCur ) continue;
-          if( pOBExpr->iColumn!=iColumn ) continue;
-          if( iColumn>=0 ){
-            pColl = sqlite3ExprCollSeq(pWInfo->pParse, pOrderBy->a[j].pExpr);
-            if( !pColl ) pColl = db->pDfltColl;
-            if( sqlite3StrICmp(pColl->zName, pIndex->azColl[i])!=0 ) continue;
-          }
-          obSat |= MASKBIT(j);
-        }
-        if( obSat==obDone ) return 1;
       }
 
       /* Loop through all columns of the index and deal with the ones
@@ -5043,6 +5022,8 @@ static int wherePathSatisfiesOrderBy(
         for(i=0; bOnce && i<nOrderBy; i++){
           if( MASKBIT(i) & obSat ) continue;
           pOBExpr = sqlite3ExprSkipCollate(pOrderBy->a[i].pExpr);
+          testcase( wctrlFlags & WHERE_GROUPBY );
+          testcase( wctrlFlags & WHERE_DISTINCTBY );
           if( (wctrlFlags & (WHERE_GROUPBY|WHERE_DISTINCTBY))==0 ) bOnce = 0;
           if( pOBExpr->op!=TK_COLUMN ) continue;
           if( pOBExpr->iTable!=iCur ) continue;
@@ -5093,7 +5074,6 @@ static int wherePathSatisfiesOrderBy(
   } /* End the loop over all WhereLoops from outer-most down to inner-most */
   if( obSat==obDone ) return 1;
   if( !isOrderDistinct ) return 0;
-  if( isLastLoop ) return 1;
   return -1;
 }
 
@@ -5200,7 +5180,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         if( !isOrderedValid ){
           switch( wherePathSatisfiesOrderBy(pWInfo,
                        pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
-                       iLoop, iLoop==nLoop-1, pWLoop, &revMask) ){
+                       iLoop, pWLoop, &revMask) ){
             case 1:  /* Yes.  pFrom+pWLoop does satisfy the ORDER BY clause */
               isOrdered = 1;
               isOrderedValid = 1;
@@ -5326,9 +5306,12 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   
   /* Find the lowest cost path.  pFrom will be left pointing to that path */
   pFrom = aFrom;
+  assert( nFrom==1 );
+#if 0 /* The following is needed if nFrom is ever more than 1 */
   for(ii=1; ii<nFrom; ii++){
     if( pFrom->rCost>aFrom[ii].rCost ) pFrom = &aFrom[ii];
   }
+#endif
   assert( pWInfo->nLevel==nLoop );
   /* Load the lowest cost path into pWInfo */
   for(iLoop=0; iLoop<nLoop; iLoop++){
@@ -5343,7 +5326,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   ){
     Bitmask notUsed;
     int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pDistinct, pFrom,
-                 WHERE_DISTINCTBY, nLoop-1, 1, pFrom->aLoop[nLoop-1], &notUsed);
+                 WHERE_DISTINCTBY, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed);
     if( rc==1 ) pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
   }
   if( pFrom->isOrdered ){
