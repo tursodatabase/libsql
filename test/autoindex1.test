@@ -251,7 +251,7 @@ do_execsql_test autoindex1-600 {
   1 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 2} 
   2 0 0 {SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)} 
   0 0 0 {SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index} 
-  0 1 1 {SCAN SUBQUERY 1 AS y}
+  0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?)}
 }
 
 

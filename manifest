@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings.
-D 2013-06-15T15:11:45.875
+C Use\sautomatic\sindices\son\ssubqueries\sof\sthe\sFROM\sclause\swhen\sappropriate.
+D 2013-06-17T14:18:21.734
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c df0d274ff134fab313f576f232e586756339e7a1
+F src/where.c 74ecd744a5a9d18cc8e66f4c234bdac11c472eee
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -322,7 +322,7 @@ F test/auth.test 4a4c3b034fff7750513520defa910f376c96ab49
 F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
-F test/autoindex1.test 6a22a566b2dcbc968a62f8282af81574055d1bbf
+F test/autoindex1.test 314f12f87667861ac965c41587f9df82c42fff65
 F test/autovacuum.test 9f22a7733f39c56ef6a5665d10145ac25d8cb574
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cecc5fdd5d8fbad7d9e8c275b9ba9ade3dbee8ef
-R ef11f7373ad17a9fe10dde15795cd3f5
+P 3e8ac46918c68723bd199dbec8b0901457d524a9
+R cb395ca086e8d43cd185b18cda8198f7
 U drh
-Z 56f2db275e8c6ae6e91e7c2a5db315eb
+Z 602d1da2f8b38f776a1f4f76f4cb8197
