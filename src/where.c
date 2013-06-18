@@ -2041,7 +2041,6 @@ static void constructAutomaticIndex(
   WhereLoop *pLoop;           /* The Loop object */
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
   Bitmask extraCols;          /* Bitmap of additional columns */
-  const int mxConstraint = 10; /* Maximum number of constraints */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -2056,7 +2055,7 @@ static void constructAutomaticIndex(
   pWCEnd = &pWC->a[pWC->nTerm];
   pLoop = pLevel->pWLoop;
   idxCols = 0;
-  for(pTerm=pWC->a; pTerm<pWCEnd && pLoop->nLTerm<mxConstraint; pTerm++){
+  for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? MASKBIT(BMS-1) : MASKBIT(iCol);
@@ -3305,6 +3304,7 @@ static Bitmask codeOneLoopStart(
     pStart = pEnd = 0;
     if( pLoop->wsFlags & WHERE_BTM_LIMIT ) pStart = pLoop->aLTerm[j++];
     if( pLoop->wsFlags & WHERE_TOP_LIMIT ) pEnd = pLoop->aLTerm[j++];
+    assert( pStart!=0 || pEnd!=0 );
     if( bRev ){
       pTerm = pStart;
       pStart = pEnd;
@@ -3359,11 +3359,7 @@ static Bitmask codeOneLoopStart(
     pLevel->op = bRev ? OP_Prev : OP_Next;
     pLevel->p1 = iCur;
     pLevel->p2 = start;
-    if( pStart==0 && pEnd==0 ){
-      pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
-    }else{
-      assert( pLevel->p5==0 );
-    }
+    assert( pLevel->p5==0 );
     if( testOp!=OP_Noop ){
       iRowidReg = iReleaseReg = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, iRowidReg);
@@ -3798,8 +3794,8 @@ static Bitmask codeOneLoopStart(
           ** be available.
           */
           pSubLoop = pSubWInfo->a[0].pWLoop;
+          assert( (pSubLoop->wsFlags & WHERE_TEMP_INDEX)==0 );
           if( (pSubLoop->wsFlags & WHERE_INDEXED)!=0
-           && (pSubLoop->wsFlags & WHERE_TEMP_INDEX)==0
            && (ii==0 || pSubLoop->u.btree.pIndex==pCov)
           ){
             assert( pSubWInfo->a[0].iIdxCur==iCovCur );
@@ -5099,7 +5095,10 @@ static int wherePathSatisfiesOrderBy(
           break;
         }
       } /* end Loop over all index columns */
-      if( distinctColumns ) isOrderDistinct = 1;
+      if( distinctColumns ){
+        testcase( isOrderDistinct==0 );
+        isOrderDistinct = 1;
+      }
     } /* end-if not one-row */
 
     /* Mark off any other ORDER BY terms that reference pLoop */
@@ -5749,7 +5748,7 @@ WhereInfo *sqlite3WhereBegin(
   if( pWInfo->pOrderBy==0 && (db->flags & SQLITE_ReverseOrder)!=0 ){
      pWInfo->revMask = (Bitmask)(-1);
   }
-  if( pParse->nErr || db->mallocFailed ){
+  if( pParse->nErr || NEVER(db->mallocFailed) ){
     goto whereBeginError;
   }
 #ifdef WHERETRACE_ENABLED
