@@ -1,5 +1,5 @@
-C Remove\ssome\sredundant\sand\sunreachable\scode.
-D 2013-06-18T01:52:41.578
+C Adjustments\sto\stestcase()\smacros\sfor\simproved\stestability.
+D 2013-06-18T20:06:23.048
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
-F src/expr.c 9cc9e4c85197b567e5f97f3296700faf7747810f
+F src/expr.c 3286e703adde34865d3a2cb62f9f4f31e3d2f2ed
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
 F src/func.c 5c50c1ea31fd864b0fe921fe1a8d4c55acd609ef
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 86cc9705ef7de9ef712619485d3bff3910d58b12
+F src/where.c 85b7b80a350951444c8e3e45bf2f7e6cc6d34683
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b61402af690ac08b68974f3c807096b0cffd9bc0
-R ddde8ef3fd559d48220a86d476077d7b
+P 4c6d58d75d51e1ce829aec214617c3a89e784a2d
+R f77d52adfdd29eb20a93333ac0fbc3fa
 U drh
-Z a276f283a2c7c1a652996ed6754c6f02
+Z e0df54c8e9d824f28c0e34a1e5fe6134

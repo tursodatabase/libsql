@@ -4097,7 +4097,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
         testcase( rCost==rTemplate-1 );
         goto whereLoopInsert_noop;
       }
-      if( rCost == rTemplate && p->prereq <= pTemplate->prereq ){
+      if( rCost==rTemplate && (p->prereq & pTemplate->prereq)==p->prereq ){
         goto whereLoopInsert_noop;
       }
     }
@@ -4120,9 +4120,9 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
     ){
-      testcase( p->rSetup==pTemplate->rSetup );
+      /* This branch taken when p is equal or better than pTemplate in 
+      ** all of (1) dependences (2) setup-cost, and (3) run-cost. */
       testcase( p->rRun==pTemplate->rRun );
-      /* p is equal or better than pTemplate */
       if( p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
        && (pTemplate->wsFlags & WHERE_INDEXED)!=0
@@ -4147,8 +4147,6 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
         goto whereLoopInsert_noop;
       }
     }
-    testcase( (p->prereq & pTemplate->prereq)==p->prereq 
-              && p->rSetup==pTemplate->rSetup+1 );
     testcase( (p->prereq & pTemplate->prereq)==p->prereq
               && p->rSetup<=pTemplate->rSetup
               && p->rRun==pTemplate->rRun+1 );
@@ -4156,16 +4154,16 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
      && p->rSetup>=pTemplate->rSetup
      && p->rRun>=pTemplate->rRun
     ){
-      /* Overwrite an existing WhereLoop with a better one */
+      /* Overwrite an existing WhereLoop with a better one: one that is
+      ** better at one of (1) dependences, (2) setup-cost, or (3) run-cost
+      ** and is no worse in any of those categories. */
       testcase( p->rSetup==pTemplate->rSetup );
       testcase( p->rRun==pTemplate->rRun );
       pNext = p->pNextLoop;
       break;
     }
     testcase( (p->prereq & pTemplate->prereq)==pTemplate->prereq
-              && p->rSetup==pTemplate->rSetup-1 );
-    testcase( (p->prereq & pTemplate->prereq)==pTemplate->prereq
-              && p->rSetup>=pTemplate->rSetup-1
+              && p->rSetup>=pTemplate->rSetup
               && p->rRun==pTemplate->rRun-1 );
   }
 
@@ -4303,7 +4301,7 @@ static int whereLoopAddBtreeIndex(
        || (pProbe->onError!=OE_None && nInMul==0
            && pNew->u.btree.nEq==pProbe->nColumn-1)
       ){
-        testcase( pNew->wsFlags & WHERE_COLUMN_IN );
+        assert( (pNew->wsFlags & WHERE_COLUMN_IN)==0 || iCol<0 );
         pNew->wsFlags |= WHERE_ONEROW;
       }
       pNew->u.btree.nEq++;
