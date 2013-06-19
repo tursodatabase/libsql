@@ -4237,7 +4237,7 @@ static int whereLoopAddBtreeIndex(
   int rc = SQLITE_OK;             /* Return code */
   WhereCost nRowEst;              /* Estimated index selectivity */
   WhereCost rLogSize;             /* Logarithm of table size */
-  WhereTerm *pTop, *pBtm;         /* Top and bottom range constraints */
+  WhereTerm *pTop = 0, *pBtm = 0; /* Top and bottom range constraints */
 
   pNew = pBuilder->pNew;
   if( db->mallocFailed ) return SQLITE_NOMEM;
@@ -4257,6 +4257,7 @@ static int whereLoopAddBtreeIndex(
   if( pNew->u.btree.nEq < pProbe->nColumn ){
     iCol = pProbe->aiColumn[pNew->u.btree.nEq];
     nRowEst = whereCost(pProbe->aiRowEst[pNew->u.btree.nEq+1]);
+    if( nRowEst==0 && pProbe->onError==OE_None ) nRowEst = 1;
   }else{
     iCol = -1;
     nRowEst = 0;
@@ -4786,7 +4787,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       sSubBuild.pOrderBy = 0;
       sSubBuild.pBest = &sBest;
 
-      for(pOrTerm=pOrWC->a; rc==SQLITE_OK && pOrTerm<pOrWCEnd; pOrTerm++){
+      for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
         if( (pOrTerm->eOperator & WO_AND)!=0 ){
           sSubBuild.pWC = &pOrTerm->u.pAndInfo->wc;
         }else if( pOrTerm->leftCursor==iCur ){
@@ -4810,6 +4811,8 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         {
           rc = whereLoopAddBtree(&sSubBuild, mExtra);
         }
+        /* sBest.maskSelf is always zero if an error occurs */
+        assert( rc==SQLITE_OK || sBest.maskSelf==0 );
         if( sBest.maskSelf==0 ) break;
         assert( sBest.rSetup==0 );
         rTotal = whereCostAdd(rTotal, sBest.rRun);
@@ -5135,6 +5138,10 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 ** attempts to find the lowest cost path that visits each WhereLoop
 ** once.  This path is then loaded into the pWInfo->a[].pWLoop fields.
 **
+** Assume that the total number of output rows that will need to be sorted
+** will be nRowEst (in the 10*log2 representation).  Or, ignore sorting
+** costs if nRowEst==0.
+**
 ** Return SQLITE_OK on success or SQLITE_NOMEM of a memory allocation
 ** error occurs.
 */
@@ -5146,7 +5153,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   int iLoop;                /* Loop counter over the terms of the join */
   int ii, jj;               /* Loop counters */
   WhereCost rCost;             /* Cost of a path */
-  WhereCost mxCost;            /* Maximum cost of a set of paths */
+  WhereCost mxCost = 0;        /* Maximum cost of a set of paths */
   WhereCost rSortCost;         /* Cost to do a sort */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
@@ -5739,7 +5746,7 @@ WhereInfo *sqlite3WhereBegin(
     wherePathSolver(pWInfo, 0);
     if( db->mallocFailed ) goto whereBeginError;
     if( pWInfo->pOrderBy ){
-       wherePathSolver(pWInfo, pWInfo->nRowOut);
+       wherePathSolver(pWInfo, pWInfo->nRowOut+1);
        if( db->mallocFailed ) goto whereBeginError;
     }
   }
