@@ -883,7 +883,7 @@ WhereTerm *whereScanNext(WhereScan *pScan){
           }
         }
       }
-      pWC = pScan->pWC = pScan->pWC->pOuter;
+      pScan->pWC = pScan->pWC->pOuter;
       k = 0;
     }
     pScan->pWC = pScan->pOrigWC;
@@ -3433,7 +3433,6 @@ static Bitmask codeOneLoopStart(
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
-    k = (nEq==pIdx->nColumn ? -1 : pIdx->aiColumn[nEq]);
 
     /* If this loop satisfies a sort order (pOrderBy) request that 
     ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -3687,7 +3686,7 @@ static Bitmask codeOneLoopStart(
       pOrTab = sqlite3StackAllocRaw(pParse->db,
                             sizeof(*pOrTab)+ nNotReady*sizeof(pOrTab->a[0]));
       if( pOrTab==0 ) return notReady;
-      pOrTab->nAlloc = (i16)(nNotReady + 1);
+      pOrTab->nAlloc = (u8)(nNotReady + 1);
       pOrTab->nSrc = pOrTab->nAlloc;
       memcpy(pOrTab->a, pTabItem, sizeof(*pTabItem));
       origSrc = pWInfo->pTabList->a;
@@ -4346,7 +4345,7 @@ static int whereLoopAddBtreeIndex(
              &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
         rc = whereInScanEst(pParse, pProbe, pTerm->pExpr->x.pList, &nOut);
       }
-      pNew->nOut = whereCost(nOut);
+      if( rc==SQLITE_OK ) pNew->nOut = whereCost(nOut);
     }
 #endif
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){

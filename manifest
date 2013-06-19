@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\suninitialized\svariable\swarning.
-D 2013-06-19T13:32:46.775
+C Additional\scompiler\swarning\sfixes.
+D 2013-06-19T13:59:49.313
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 7fba377c29573adfc6091832e27ee1fcbefb51d0
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c eadda12ec0cae14dcdc13e97fd9a3fd2f02e9e8f
+F src/build.c 42239cfd95533e4aacf4d58b4724c8f858de5ced
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 0d12d709b410bc19e6a38dd48565d01aa2157a48
+F src/where.c 88884f3a0355ece00fa0d1a3566c4ed6fb5a8bed
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8f27f35f288434b9e7bc503c608f1e2b590ade4d
-R 5141bf3c3afc19733578e654fa12a0bb
+P 9d3ef3bd2c6281784a537a22a87279f420649935
+R 576d65f25fc5d448aeaee421b4a0d4ef
 U drh
-Z f8bc370f664ab6cce8282fa162fbfbcd
+Z 2fbaa2eda000406e9f5d447a3a6c804c
