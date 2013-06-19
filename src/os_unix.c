@@ -48,8 +48,7 @@
 
 /* Use posix_fallocate() if it is available
 */
-#if !defined(HAVE_POSIX_FALLOCATE) \
-      && (_XOPEN_SOURCE >= 600 || _POSIX_C_SOURCE >= 200112L)
+#if !defined(HAVE_POSIX_FALLOCATE) && defined(__linux__)
 # define HAVE_POSIX_FALLOCATE 1
 #endif
 
