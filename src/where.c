@@ -4909,7 +4909,7 @@ static int wherePathSatisfiesOrderBy(
   int i, j;             /* Loop counters */
   int iCur;             /* Cursor number for current WhereLoop */
   int iColumn;          /* A column number within table iCur */
-  WhereLoop *pLoop;     /* Current WhereLoop being processed. */
+  WhereLoop *pLoop = 0; /* Current WhereLoop being processed. */
   WhereTerm *pTerm;     /* A single term of the WHERE clause */
   Expr *pOBExpr;        /* An expression from the ORDER BY clause */
   CollSeq *pColl;       /* COLLATE function from an ORDER BY clause term */
