@@ -630,8 +630,8 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
 ** the WhereClause.a[] array.  The slot[] array grows as needed to contain
 ** all terms of the WHERE clause.
 */
-static void whereSplit(WhereClause *pWC, Expr *pExpr, int op){
-  pWC->op = (u8)op;
+static void whereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
+  pWC->op = op;
   if( pExpr==0 ) return;
   if( pExpr->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);
@@ -4516,6 +4516,7 @@ static int whereLoopAddBtree(
     pNew->iSortIdx = 0;
     pNew->rSetup = 0;
     pNew->prereq = mExtra;
+    pNew->nOut = rSize;
     pNew->u.btree.pIndex = pProbe;
     b = indexMightHelpWithOrderBy(pBuilder, pProbe, pSrc->iCursor);
     /* The ONEPASS_DESIRED flags never occurs together with ORDER BY */
@@ -4526,7 +4527,6 @@ static int whereLoopAddBtree(
 
       /* Full table scan */
       pNew->iSortIdx = b ? iSortIdx : 0;
-      pNew->nOut = rSize;
       /* TUNING: Cost of full table scan is 3*(N + log2(N)).
       **  +  The extra 3 factor is to encourage the use of indexed lookups
       **     over full scans.  A smaller constant 2 is used for covering
@@ -4549,7 +4549,6 @@ static int whereLoopAddBtree(
           )
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
-        pNew->nOut = rSize;
         if( m==0 ){
           /* TUNING: Cost of a covering index scan is 2*(N + log2(N)).
           **  +  The extra 2 factor is to encourage the use of indexed lookups
@@ -4824,7 +4823,8 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         pNew->aLTerm[0] = pTerm;
         pNew->wsFlags = WHERE_MULTI_OR;
         pNew->rSetup = 0;
-        pNew->rRun = rTotal;
+        /* TUNING: Multiple by 3.5 for the secondary table lookup */
+        pNew->rRun = rTotal + 18; assert( 18==whereCost(7)-whereCost(2) );
         pNew->nOut = nRow;
         pNew->prereq = prereq;
         memset(&pNew->u, 0, sizeof(pNew->u));
