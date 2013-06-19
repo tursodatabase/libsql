@@ -209,6 +209,7 @@ struct Fts3Table {
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
+  int nLanguageidBits;            /* languageid_bits=N option, or 0 */
   u8 bAutoincrmerge;              /* True if automerge=1 */
   u32 nLeafAdd;                   /* Number of leaf blocks added this trans */
 
@@ -421,8 +422,9 @@ struct Fts3Expr {
 #define FTSQUERY_OR     4
 #define FTSQUERY_PHRASE 5
 
-
 /* fts3_write.c */
+i64 sqlite3Fts3DocidToRowid(Fts3Table *p, i64 iDocid, int iLangid);
+i64 sqlite3Fts3RowidToDocid(Fts3Table *p, i64 iRowid);
 int sqlite3Fts3UpdateMethod(sqlite3_vtab*,int,sqlite3_value**,sqlite3_int64*);
 int sqlite3Fts3PendingTermsFlush(Fts3Table *);
 void sqlite3Fts3PendingTermsClear(Fts3Table *);

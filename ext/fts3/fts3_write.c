@@ -487,6 +487,24 @@ static void fts3SqlExec(
   *pRC = rc;
 }
 
+static void fts3SqlExecI64(
+  int *pRC,                /* Result code */
+  Fts3Table *p,            /* The FTS3 table */
+  int eStmt,               /* Index of statement to evaluate */
+  i64 iVal
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+  if( *pRC ) return;
+  rc = fts3SqlStmt(p, eStmt, &pStmt, 0); 
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pStmt, 1, iVal);
+    sqlite3_step(pStmt);
+    rc = sqlite3_reset(pStmt);
+  }
+  *pRC = rc;
+}
+
 
 /*
 ** This function ensures that the caller has obtained an exclusive 
@@ -927,20 +945,23 @@ static int fts3InsertTerms(
 static int fts3InsertData(
   Fts3Table *p,                   /* Full-text table */
   sqlite3_value **apVal,          /* Array of values to insert */
-  sqlite3_int64 *piDocid          /* OUT: Docid for row just inserted */
+  sqlite3_int64 *piRowid,         /* OUT: Rowid for row just inserted */
+  i64 iRowid                      /* Explicit rowid, if piRowid==NULL */
 ){
   int rc;                         /* Return code */
   sqlite3_stmt *pContentInsert;   /* INSERT INTO %_content VALUES(...) */
 
   if( p->zContentTbl ){
-    sqlite3_value *pRowid = apVal[p->nColumn+3];
+    sqlite3_value *pRowid;
+    assert( p->nLanguageidBits==0 && piRowid );
+    pRowid = apVal[p->nColumn+3];
     if( sqlite3_value_type(pRowid)==SQLITE_NULL ){
       pRowid = apVal[1];
     }
     if( sqlite3_value_type(pRowid)!=SQLITE_INTEGER ){
       return SQLITE_CONSTRAINT;
     }
-    *piDocid = sqlite3_value_int64(pRowid);
+    *piRowid = sqlite3_value_int64(pRowid);
     return SQLITE_OK;
   }
 
@@ -953,11 +974,16 @@ static int fts3InsertData(
   ** defined columns in the FTS3 table, plus one for the docid field.
   */
   rc = fts3SqlStmt(p, SQL_CONTENT_INSERT, &pContentInsert, &apVal[1]);
-  if( rc==SQLITE_OK && p->zLanguageid ){
-    rc = sqlite3_bind_int(
-        pContentInsert, p->nColumn+2, 
-        sqlite3_value_int(apVal[p->nColumn+4])
-    );
+  if( rc==SQLITE_OK ){
+    if( piRowid==0 ){
+      sqlite3_bind_int64(pContentInsert, 1, iRowid);
+    }
+    if( p->zLanguageid ){
+      rc = sqlite3_bind_int(
+          pContentInsert, p->nColumn+2, 
+          sqlite3_value_int(apVal[p->nColumn+4])
+      );
+    }
   }
   if( rc!=SQLITE_OK ) return rc;
 
@@ -971,7 +997,12 @@ static int fts3InsertData(
   ** In FTS3, this is an error. It is an error to specify non-NULL values
   ** for both docid and some other rowid alias.
   */
-  if( SQLITE_NULL!=sqlite3_value_type(apVal[3+p->nColumn]) ){
+  assert( p->nLanguageidBits==0 || piRowid==0
+      || sqlite3_value_type(apVal[1])!=SQLITE_NULL 
+  );
+  if( piRowid && p->nLanguageidBits==0 
+   && SQLITE_NULL!=sqlite3_value_type(apVal[3+p->nColumn]) 
+  ){
     if( SQLITE_NULL==sqlite3_value_type(apVal[0])
      && SQLITE_NULL!=sqlite3_value_type(apVal[1])
     ){
@@ -982,13 +1013,15 @@ static int fts3InsertData(
     if( rc!=SQLITE_OK ) return rc;
   }
 
-  /* Execute the statement to insert the record. Set *piDocid to the 
+  /* Execute the statement to insert the record. Set *pRowid to the 
   ** new docid value. 
   */
   sqlite3_step(pContentInsert);
   rc = sqlite3_reset(pContentInsert);
 
-  *piDocid = sqlite3_last_insert_rowid(p->db);
+  if( piRowid ){
+    *piRowid = sqlite3_last_insert_rowid(p->db);
+  }
   return rc;
 }
 
@@ -1036,7 +1069,7 @@ static int langidFromSelect(Fts3Table *p, sqlite3_stmt *pSelect){
 static void fts3DeleteTerms( 
   int *pRC,               /* Result code */
   Fts3Table *p,           /* The FTS table to delete from */
-  sqlite3_value *pRowid,  /* The docid to be deleted */
+  i64 iRowid,             /* The rowid to be deleted */
   u32 *aSz,               /* Sizes of deleted document written here */
   int *pbFound            /* OUT: Set to true if row really does exist */
 ){
@@ -1045,8 +1078,9 @@ static void fts3DeleteTerms(
 
   assert( *pbFound==0 );
   if( *pRC ) return;
-  rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pSelect, &pRowid);
+  rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pSelect, 0);
   if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pSelect, 1, iRowid);
     if( SQLITE_ROW==sqlite3_step(pSelect) ){
       int i;
       int iLangid = langidFromSelect(p, pSelect);
@@ -2346,7 +2380,7 @@ static void fts3SegWriterFree(SegmentWriter *pWriter){
 ** document pRowid, or false otherwise, and SQLITE_OK is returned. If an
 ** error occurs, an SQLite error code is returned.
 */
-static int fts3IsEmpty(Fts3Table *p, sqlite3_value *pRowid, int *pisEmpty){
+static int fts3IsEmpty(Fts3Table *p, i64 iRowid, int *pisEmpty){
   sqlite3_stmt *pStmt;
   int rc;
   if( p->zContentTbl ){
@@ -2354,8 +2388,9 @@ static int fts3IsEmpty(Fts3Table *p, sqlite3_value *pRowid, int *pisEmpty){
     *pisEmpty = 0;
     rc = SQLITE_OK;
   }else{
-    rc = fts3SqlStmt(p, SQL_IS_EMPTY, &pStmt, &pRowid);
+    rc = fts3SqlStmt(p, SQL_IS_EMPTY, &pStmt, 0);
     if( rc==SQLITE_OK ){
+      sqlite3_bind_int64(pStmt, 1, iRowid);
       if( SQLITE_ROW==sqlite3_step(pStmt) ){
         *pisEmpty = sqlite3_column_int(pStmt, 0);
       }
@@ -5197,17 +5232,17 @@ int sqlite3Fts3DeferToken(
 */
 static int fts3DeleteByRowid(
   Fts3Table *p, 
-  sqlite3_value *pRowid, 
+  i64 iRowid,
   int *pnChng,                    /* IN/OUT: Decrement if row is deleted */
   u32 *aSzDel
 ){
   int rc = SQLITE_OK;             /* Return code */
   int bFound = 0;                 /* True if *pRowid really is in the table */
 
-  fts3DeleteTerms(&rc, p, pRowid, aSzDel, &bFound);
+  fts3DeleteTerms(&rc, p, iRowid, aSzDel, &bFound);
   if( bFound && rc==SQLITE_OK ){
     int isEmpty = 0;              /* Deleting *pRowid leaves the table empty */
-    rc = fts3IsEmpty(p, pRowid, &isEmpty);
+    rc = fts3IsEmpty(p, iRowid, &isEmpty);
     if( rc==SQLITE_OK ){
       if( isEmpty ){
         /* Deleting this row means the whole table is empty. In this case
@@ -5219,16 +5254,33 @@ static int fts3DeleteByRowid(
       }else{
         *pnChng = *pnChng - 1;
         if( p->zContentTbl==0 ){
-          fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, &pRowid);
+          fts3SqlExecI64(&rc, p, SQL_DELETE_CONTENT, iRowid);
         }
         if( p->bHasDocsize ){
-          fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, &pRowid);
+          fts3SqlExecI64(&rc, p, SQL_DELETE_DOCSIZE, iRowid);
         }
       }
     }
   }
 
   return rc;
+}
+
+/*
+** Convert a docid (iDocid) and a language id (iLangid) to a rowid,
+** according to the configured languageid_bits= value belonging to
+** FTS table *p.
+*/
+i64 sqlite3Fts3DocidToRowid(Fts3Table *p, i64 iDocid, int iLangid){
+  i64 iRowid = iDocid;
+  if( p->nLanguageidBits ){
+    iRowid = (iRowid << p->nLanguageidBits) + iLangid;
+  }
+  return iRowid;
+}
+
+i64 sqlite3Fts3RowidToDocid(Fts3Table *p, i64 iRowid){
+  return (iRowid >> p->nLanguageidBits);
 }
 
 /*
@@ -5242,7 +5294,6 @@ static int fts3DeleteByRowid(
 **       <langid> HIDDEN
 **     );
 **
-** 
 */
 int sqlite3Fts3UpdateMethod(
   sqlite3_vtab *pVtab,            /* FTS3 vtab object */
@@ -5257,6 +5308,7 @@ int sqlite3Fts3UpdateMethod(
   u32 *aSzDel = 0;                /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
   int bInsertDone = 0;
+  int iLangid = 0;
 
   assert( p->pSegments==0 );
   assert( 
@@ -5276,9 +5328,28 @@ int sqlite3Fts3UpdateMethod(
     goto update_out;
   }
 
-  if( nArg>1 && sqlite3_value_int(apVal[2 + p->nColumn + 2])<0 ){
-    rc = SQLITE_CONSTRAINT;
-    goto update_out;
+  /* If this is an INSERT or UPDATE, check that the new value for the
+  ** languageid is within range. A languageid can never be a negative 
+  ** value. If the languageid_bits option was specified when this table 
+  ** was created, it must also be less than (2 ^ nLanguageidBits).  
+  **
+  ** Also check that if a non-zero languageid_bits value was configured,
+  ** the specified rowid value must be NULL.
+  */
+  if( nArg>1 ){
+    iLangid = sqlite3_value_int(apVal[2 + p->nColumn + 2]);
+    if( iLangid<0 || (p->nLanguageidBits && iLangid>=(1<<p->nLanguageidBits)) ){
+      rc = SQLITE_CONSTRAINT;
+      goto update_out;
+    }
+
+    if( p->nLanguageidBits 
+     && sqlite3_value_type(apVal[0])==SQLITE_NULL
+     && sqlite3_value_type(apVal[1])!=SQLITE_NULL
+    ){
+      rc = SQLITE_CONSTRAINT;
+      goto update_out;
+    }
   }
 
   /* Allocate space to hold the change in document sizes */
@@ -5304,37 +5375,67 @@ int sqlite3Fts3UpdateMethod(
   */
   if( nArg>1 && p->zContentTbl==0 ){
     /* Find the value object that holds the new rowid value. */
-    sqlite3_value *pNewRowid = apVal[3+p->nColumn];
-    if( sqlite3_value_type(pNewRowid)==SQLITE_NULL ){
-      pNewRowid = apVal[1];
+    sqlite3_value *pNewDocid = apVal[3+p->nColumn];
+    if( sqlite3_value_type(pNewDocid)==SQLITE_NULL ){
+      if( p->nLanguageidBits ){
+        rc = SQLITE_CONSTRAINT;
+        goto update_out;
+      }
+      pNewDocid = apVal[1];
     }
 
-    if( sqlite3_value_type(pNewRowid)!=SQLITE_NULL && ( 
-        sqlite3_value_type(apVal[0])==SQLITE_NULL
-     || sqlite3_value_int64(apVal[0])!=sqlite3_value_int64(pNewRowid)
-    )){
-      /* The new rowid is not NULL (in this case the rowid will be
-      ** automatically assigned and there is no chance of a conflict), and 
-      ** the statement is either an INSERT or an UPDATE that modifies the
-      ** rowid column. So if the conflict mode is REPLACE, then delete any
-      ** existing row with rowid=pNewRowid. 
-      **
-      ** Or, if the conflict mode is not REPLACE, insert the new record into 
-      ** the %_content table. If we hit the duplicate rowid constraint (or any
-      ** other error) while doing so, return immediately.
-      **
-      ** This branch may also run if pNewRowid contains a value that cannot
-      ** be losslessly converted to an integer. In this case, the eventual 
-      ** call to fts3InsertData() (either just below or further on in this
-      ** function) will return SQLITE_MISMATCH. If fts3DeleteByRowid is 
-      ** invoked, it will delete zero rows (since no row will have
-      ** docid=$pNewRowid if $pNewRowid is not an integer value).
-      */
-      if( sqlite3_vtab_on_conflict(p->db)==SQLITE_REPLACE ){
-        rc = fts3DeleteByRowid(p, pNewRowid, &nChng, aSzDel);
-      }else{
-        rc = fts3InsertData(p, apVal, pRowid);
-        bInsertDone = 1;
+    if( sqlite3_value_type(pNewDocid)!=SQLITE_NULL ){
+      int e = sqlite3_value_numeric_type(pNewDocid);
+      i64 iRowid = sqlite3_value_int64(pNewDocid);
+
+      /* Check that the value specified by the user may be losslessly
+      ** converted to an integer. If not, return a "data mismatch" error.  */
+      if( (e!=SQLITE_INTEGER)
+       && (e!=SQLITE_FLOAT || (double)iRowid!=sqlite3_value_double(pNewDocid))
+      ){
+        rc = SQLITE_MISMATCH;
+        goto update_out;
+      }
+
+      if( p->nLanguageidBits ){
+        /* Check for an out-of-range docid value. */
+        if( iRowid>=((i64)1 << (63 - p->nLanguageidBits)) 
+         || iRowid<-1*((i64)1 << (63 - p->nLanguageidBits)) 
+        ){
+          rc = SQLITE_CONSTRAINT;
+          goto update_out;
+        }
+
+        iRowid = sqlite3Fts3DocidToRowid(p, iRowid, iLangid);
+      }
+
+      if( sqlite3_value_type(apVal[0])==SQLITE_NULL
+       || sqlite3_value_int64(apVal[0])!=iRowid
+      ){
+        /* The new rowid is not NULL (in this case the rowid will be
+        ** automatically assigned and there is no chance of a conflict), and 
+        ** the statement is either an INSERT or an UPDATE that modifies the
+        ** rowid column. So if the conflict mode is REPLACE, then delete any
+        ** existing row with rowid=pNewRowid. 
+        **
+        ** Or, if the conflict mode is not REPLACE, insert the new record into 
+        ** the %_content table. If we hit the duplicate rowid constraint (or 
+        ** any other error) while doing so, return immediately.
+        **
+        ** This branch may also run if pNewRowid contains a value that cannot
+        ** be losslessly converted to an integer. In this case, the eventual 
+        ** call to fts3InsertData() (either just below or further on in this
+        ** function) will return SQLITE_MISMATCH. If fts3DeleteByRowid is 
+        ** invoked, it will delete zero rows (since no row will have
+        ** docid=$pNewRowid if $pNewRowid is not an integer value).
+        */
+        if( sqlite3_vtab_on_conflict(p->db)==SQLITE_REPLACE ){
+          rc = fts3DeleteByRowid(p, iRowid, &nChng, aSzDel);
+        }else{
+          rc = fts3InsertData(p, apVal, 0, iRowid);
+          bInsertDone = 1;
+          *pRowid = iRowid;
+        }
       }
     }
   }
@@ -5345,15 +5446,14 @@ int sqlite3Fts3UpdateMethod(
   /* If this is a DELETE or UPDATE operation, remove the old record. */
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
     assert( sqlite3_value_type(apVal[0])==SQLITE_INTEGER );
-    rc = fts3DeleteByRowid(p, apVal[0], &nChng, aSzDel);
+    rc = fts3DeleteByRowid(p, sqlite3_value_int64(apVal[0]), &nChng, aSzDel);
     isRemove = 1;
   }
   
   /* If this is an INSERT or UPDATE operation, insert the new record. */
   if( nArg>1 && rc==SQLITE_OK ){
-    int iLangid = sqlite3_value_int(apVal[2 + p->nColumn + 2]);
     if( bInsertDone==0 ){
-      rc = fts3InsertData(p, apVal, pRowid);
+      rc = fts3InsertData(p, apVal, pRowid, 0);
       if( rc==SQLITE_CONSTRAINT && p->zContentTbl==0 ){
         rc = FTS_CORRUPT_VTAB;
       }

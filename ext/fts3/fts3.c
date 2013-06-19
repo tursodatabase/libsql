@@ -1081,6 +1081,7 @@ static int fts3InitVtab(
   char *zUncompress = 0;          /* uncompress=? parameter (or NULL) */
   char *zContent = 0;             /* content=? parameter (or NULL) */
   char *zLanguageid = 0;          /* languageid=? parameter (or NULL) */
+  char *zLanguageidBits = 0;      /* languageid_bits=? parameter (or NULL) */
 
   assert( strlen(argv[0])==4 );
   assert( (sqlite3_strnicmp(argv[0], "fts4", 4)==0 && isFts4)
@@ -1125,13 +1126,14 @@ static int fts3InitVtab(
         const char *zOpt;
         int nOpt;
       } aFts4Opt[] = {
-        { "matchinfo",   9 },     /* 0 -> MATCHINFO */
-        { "prefix",      6 },     /* 1 -> PREFIX */
-        { "compress",    8 },     /* 2 -> COMPRESS */
-        { "uncompress", 10 },     /* 3 -> UNCOMPRESS */
-        { "order",       5 },     /* 4 -> ORDER */
-        { "content",     7 },     /* 5 -> CONTENT */
-        { "languageid", 10 }      /* 6 -> LANGUAGEID */
+        { "matchinfo",        9 },     /* 0 -> MATCHINFO */
+        { "prefix",           6 },     /* 1 -> PREFIX */
+        { "compress",         8 },     /* 2 -> COMPRESS */
+        { "uncompress",      10 },     /* 3 -> UNCOMPRESS */
+        { "order",            5 },     /* 4 -> ORDER */
+        { "content",          7 },     /* 5 -> CONTENT */
+        { "languageid",      10 },     /* 6 -> LANGUAGEID */
+        { "languageid_bits", 15 }      /* 7 -> LANGUAGEID_BITS */
       };
 
       int iOpt;
@@ -1195,6 +1197,13 @@ static int fts3InitVtab(
               assert( iOpt==6 );
               sqlite3_free(zLanguageid);
               zLanguageid = zVal;
+              zVal = 0;
+              break;
+
+            case 7:              /* LANGUAGEID_BITS */
+              assert( iOpt==7 );
+              sqlite3_free(zLanguageidBits);
+              zLanguageidBits = zVal;
               zVal = 0;
               break;
           }
@@ -1292,6 +1301,15 @@ static int fts3InitVtab(
   p->zLanguageid = zLanguageid;
   zContent = 0;
   zLanguageid = 0;
+  if( zLanguageidBits && p->zLanguageid && p->zContentTbl==0 ){
+    p->nLanguageidBits = atoi(zLanguageidBits);
+    if( p->nLanguageidBits>32 || p->nLanguageidBits<0 ){
+      rc = SQLITE_ERROR;
+      *pzErr = sqlite3_mprintf("languageid_bits parameter out of range");
+      goto fts3_init_out;
+    }
+  }
+
   TESTONLY( p->inTransaction = -1 );
   TESTONLY( p->mxSavepoint = -1 );
 
@@ -1365,6 +1383,7 @@ fts3_init_out:
   sqlite3_free(zUncompress);
   sqlite3_free(zContent);
   sqlite3_free(zLanguageid);
+  sqlite3_free(zLanguageidBits);
   sqlite3_free((void *)aCol);
   if( rc!=SQLITE_OK ){
     if( p ){
@@ -3062,10 +3081,10 @@ static int fts3ColumnMethod(
   assert( iCol>=0 && iCol<=p->nColumn+2 );
 
   if( iCol==p->nColumn+1 ){
-    /* This call is a request for the "docid" column. Since "docid" is an 
-    ** alias for "rowid", use the xRowid() method to obtain the value.
-    */
-    sqlite3_result_int64(pCtx, pCsr->iPrevId);
+    /* This call is a request for the "docid" column. The value currently
+    ** stored in pCsr->iPrevId is a rowid. Transform this to a docid and
+    ** return it.  */
+    sqlite3_result_int64(pCtx, sqlite3Fts3RowidToDocid(p, pCsr->iPrevId));
   }else if( iCol==p->nColumn ){
     /* The extra column whose name is the same as the table.
     ** Return a blob which is a pointer to the cursor.  */

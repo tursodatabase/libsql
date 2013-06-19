@@ -1,0 +1,134 @@
+# 2012 March 01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the languageid=xxx FTS4 option.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix fts4langid2
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+
+#-------------------------------------------------------------------------
+# Test out-of-range values for the languageid_bits= parameter.
+#
+do_catchsql_test 1.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid=lid, languageid_bits=33);
+} {1 {languageid_bits parameter out of range}}
+
+do_catchsql_test 1.2 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid=lid, languageid_bits=-1);
+} {1 {languageid_bits parameter out of range}}
+
+do_catchsql_test 1.3 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid=lid, languageid_bits=0);
+  CREATE VIRTUAL TABLE t2 USING fts4(languageid=lid, languageid_bits=32);
+} {0 {}}
+
+do_execsql_test 1.4 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+}
+
+#-------------------------------------------------------------------------
+# Test out-of-range values in the languageid column.
+#
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid=lid, languageid_bits=8);
+  CREATE VIRTUAL TABLE t2 USING fts4(languageid=lid, languageid_bits=7);
+}
+
+do_catchsql_test 2.2 {
+  INSERT INTO t1(docid, lid, content) VALUES(1, 256, 'abc def');
+} {1 {constraint failed}}
+
+do_catchsql_test 2.3 {
+  INSERT INTO t2(docid, lid, content) VALUES(1, 128, 'abc def');
+} {1 {constraint failed}}
+
+do_catchsql_test 2.3 {
+  INSERT INTO t1(docid, lid, content) VALUES(1, -1, 'abc def');
+} {1 {constraint failed}}
+
+do_execsql_test 2.4 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+}
+
+#-------------------------------------------------------------------------
+# Test that if languageid_bits is set to a non-zero value it is
+# not possible to specify a non-NULL rowid, even if it is the same
+# as the docid.
+#
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid=lid, languageid_bits=4);
+  CREATE VIRTUAL TABLE t2 USING fts4(languageid=lid, languageid_bits=0);
+}
+  
+do_catchsql_test 3.2.1 {
+  INSERT INTO t1(rowid, lid, content) VALUES(1, 0, 'abc def');
+} {1 {constraint failed}}
+
+do_catchsql_test 3.2.2 {
+  INSERT INTO t2(rowid, lid, content) VALUES(1, 0, 'abc def');
+} {0 {}}
+
+do_catchsql_test 3.3 {
+  INSERT INTO t1(rowid, docid, lid, content) VALUES(2, 2, 0, 'abc def');
+} {1 {constraint failed}}
+
+do_catchsql_test 3.4 {
+  INSERT INTO t1(lid, content) VALUES(0, 'one two def');
+} {1 {constraint failed}}
+
+do_execsql_test 3.4 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 4.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid=lid, languageid_bits=5);
+}
+
+do_execsql_test 4.2 {
+  INSERT INTO t1 (docid, lid, content) VALUES(1, 0, '1 2 3');
+  INSERT INTO t1 (docid, lid, content) VALUES(1, 1, '1 2 3 4');
+}
+
+do_execsql_test 4.3 {
+  SELECT docid, lid FROM t1;
+} {1 0 1 1}
+
+do_execsql_test 4.4 {
+  SELECT docid, lid, content FROM t1 WHERE t1 MATCH '2';
+} {1 0 {1 2 3}}
+
+do_execsql_test 4.5 {
+  SELECT docid, lid, content FROM t1 WHERE t1 MATCH '2' AND lid=1;
+} {1 1 {1 2 3 4}}
+
+breakpoint
+do_execsql_test 4.6 {
+  UPDATE t1 SET content = 'x y z' || lid;
+  SELECT docid, lid FROM t1;
+} {1 0 1 1}
+
+
+finish_test
+
