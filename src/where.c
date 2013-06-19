@@ -4115,14 +4115,30 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   ** priority over pTemplate.
   */
   for(ppPrev=&pWInfo->pLoops, p=*ppPrev; p; ppPrev=&p->pNextLoop, p=*ppPrev){
-    if( p->iTab!=pTemplate->iTab || p->iSortIdx!=pTemplate->iSortIdx ) continue;
+    if( p->iTab!=pTemplate->iTab || p->iSortIdx!=pTemplate->iSortIdx ){
+      /* If either the iTab or iSortIdx values for two WhereLoop are different
+      ** then those WhereLoops need to be considered separately.  Neither is
+      ** a candidate to replace the other. */
+      continue;
+    }
+    /* In the current implementation, the rSetup value is either zero
+    ** or the cost of building an automatic index (NlogN) and the NlogN
+    ** is the same for compatible WhereLoops. */
+    assert( p->rSetup==0 || pTemplate->rSetup==0 
+                 || p->rSetup==pTemplate->rSetup );
+
+    /* whereLoopAddBtree() always generates and inserts the automatic index
+    ** case first.  Hence compatible candidate WhereLoops never have a larger
+    ** rSetup. Call this SETUP-INVARIANT */
+    assert( p->rSetup>=pTemplate->rSetup );
+
     if( (p->prereq & pTemplate->prereq)==p->prereq
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
     ){
       /* This branch taken when p is equal or better than pTemplate in 
       ** all of (1) dependences (2) setup-cost, and (3) run-cost. */
-      testcase( p->rRun==pTemplate->rRun );
+      assert( p->rSetup==pTemplate->rSetup );
       if( p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
        && (pTemplate->wsFlags & WHERE_INDEXED)!=0
@@ -4133,38 +4149,22 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
         ** more terms of the index */
         pNext = p->pNextLoop;
         break;
-      }else if( p->nOut>pTemplate->nOut
-       && p->rSetup==pTemplate->rSetup
-       && p->rRun==pTemplate->rRun
-      ){
-        /* Overwrite an existing WhereLoop with the same cost but more
-        ** outputs */
-        pNext = p->pNextLoop;
-        break;
       }else{
         /* pTemplate is not helpful.
         ** Return without changing or adding anything */
         goto whereLoopInsert_noop;
       }
     }
-    testcase( (p->prereq & pTemplate->prereq)==p->prereq
-              && p->rSetup<=pTemplate->rSetup
-              && p->rRun==pTemplate->rRun+1 );
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
-     && p->rSetup>=pTemplate->rSetup
      && p->rRun>=pTemplate->rRun
+     && ALWAYS(p->rSetup>=pTemplate->rSetup) /* See SETUP-INVARIANT above */
     ){
       /* Overwrite an existing WhereLoop with a better one: one that is
       ** better at one of (1) dependences, (2) setup-cost, or (3) run-cost
       ** and is no worse in any of those categories. */
-      testcase( p->rSetup==pTemplate->rSetup );
-      testcase( p->rRun==pTemplate->rRun );
       pNext = p->pNextLoop;
       break;
     }
-    testcase( (p->prereq & pTemplate->prereq)==pTemplate->prereq
-              && p->rSetup>=pTemplate->rSetup
-              && p->rRun==pTemplate->rRun-1 );
   }
 
   /* If we reach this point it means that either p[] should be overwritten
