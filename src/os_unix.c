@@ -48,7 +48,7 @@
 
 /* Use posix_fallocate() if it is available
 */
-#if defined(__linux__) || defined(__APPLE__)
+#if !defined(HAVE_POSIX_FALLOCATE) && defined(__linux__)
 # define HAVE_POSIX_FALLOCATE 1
 #endif
 
