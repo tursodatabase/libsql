@@ -46,12 +46,6 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
 
-/* Use posix_fallocate() if it is available
-*/
-#if !defined(HAVE_POSIX_FALLOCATE) && defined(__linux__)
-# define HAVE_POSIX_FALLOCATE 1
-#endif
-
 /*
 ** There are various methods for file locking used for concurrency
 ** control:
