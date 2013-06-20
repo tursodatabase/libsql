@@ -1,5 +1,5 @@
-C Add\sa\sprototype\sfor\san\sextension\sthat\ssits\sin\sbetween\sthe\sSQLite\snative\scode\nvirtual\stable\sinterface\sand\sa\sCLR\sIDisposable\sobject.
-D 2013-06-13T00:32:29.814
+C Integration\sadjustments\sfor\sthe\svtshim\smodule.
+D 2013-06-20T00:20:39.235
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F ext/misc/percentile.c 4fb5e46c4312b0be74e8e497ac18f805f0e3e6c5
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 6d7ce6105a4b7729f6c44ccdf1ab7e80d9707c02
-F ext/misc/vtshim.c 43a4f04d932f558a1d99c9ec275463e66dd14dfc
+F ext/misc/vtshim.c 5cf883f9c728bdd10aa30c8d1c1be63d0b62fba7
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
@@ -1096,10 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c 4d0393bdbe7230adb712e925863744dd2b7ffc5b
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e120c558a5bafc0f0d2cc12ee5c9d36e20cc642d
-R cebd45a542cce51f8d9efaf858e2a635
-T *branch * disposable-vtable
-T *sym-disposable-vtable *
-T -sym-nextgen-query-plan-exp *
-U drh
-Z 5aa82f98e9ac53c787753e9130a0c71d
+P 10bba8d0821159a45c6a0d6c3cef897cb4d4e9a6
+R 24de2c5f1d52b8803f44f37f1161bbcd
+U mistachkin
+Z adcba7194ddb7aa8bcd6f83d9da3034b

@@ -11,7 +11,7 @@
 *************************************************************************
 **
 ** A shim that sits between the SQLite virtual table interface and
-** managed memory of .NET
+** runtimes with garbage collector based memory management.
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -32,9 +32,9 @@ typedef struct vtshim_cursor vtshim_cursor;
 struct vtshim_aux {
   void *pChildAux;              /* pAux for child virtual tables */
   void (*xChildDestroy)(void*); /* Destructor for pChildAux */
-  const sqlite3_module *pMod;   /* Methods for child virtual tables */
+  sqlite3_module *pMod;         /* Methods for child virtual tables */
   sqlite3 *db;                  /* The database to which we are attached */
-  const char *zName;            /* Name of the module */
+  char *zName;                  /* Name of the module */
   int bDisposed;                /* True if disposed */
   vtshim_vtab *pAllVtab;        /* List of all vtshim_vtab objects */
   sqlite3_module sSelf;         /* Methods used by this shim */
@@ -324,7 +324,22 @@ static void vtshimAuxDestructor(void *pXAux){
   if( !pAux->bDisposed && pAux->xChildDestroy ){
     pAux->xChildDestroy(pAux->pChildAux);
   }
+  sqlite3_free(pAux->zName);
+  sqlite3_free(pAux->pMod);
   sqlite3_free(pAux);
+}
+
+static int vtshimCopyModule(
+  const sqlite3_module *pMod,   /* Source module to be copied */
+  sqlite3_module **ppMod        /* Destination for copied module */
+){
+  sqlite3_module *p;
+  if( !pMod || !ppMod ) return SQLITE_ERROR;
+  p = sqlite3_malloc( sizeof(*p) );
+  if( p==0 ) return SQLITE_NOMEM;
+  memcpy(p, pMod, sizeof(*p));
+  *ppMod = p;
+  return SQLITE_OK;
 }
 
 #ifdef _WIN32
@@ -338,20 +353,26 @@ void *sqlite3_create_disposable_module(
   void(*xDestroy)(void*)     /* Module destructor function */
 ){
   vtshim_aux *pAux;
+  sqlite3_module *pMod;
   int rc;
   pAux = sqlite3_malloc( sizeof(*pAux) );
   if( pAux==0 ){
     if( xDestroy ) xDestroy(pClientData);
     return 0;
   }
+  rc = vtshimCopyModule(p, &pMod);
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(pAux);
+    return 0;
+  }
   pAux->pChildAux = pClientData;
   pAux->xChildDestroy = xDestroy;
-  pAux->pMod = p;
+  pAux->pMod = pMod;
   pAux->db = db;
-  pAux->zName = zName;
+  pAux->zName = sqlite3_mprintf("%s", zName);
   pAux->bDisposed = 0;
   pAux->pAllVtab = 0;
-  pAux->sSelf.iVersion = p->iVersion<=1 ? p->iVersion : 1;
+  pAux->sSelf.iVersion = p->iVersion<=2 ? p->iVersion : 2;
   pAux->sSelf.xCreate = p->xCreate ? vtshimCreate : 0;
   pAux->sSelf.xConnect = p->xConnect ? vtshimConnect : 0;
   pAux->sSelf.xBestIndex = p->xBestIndex ? vtshimBestIndex : 0;
@@ -371,7 +392,7 @@ void *sqlite3_create_disposable_module(
   pAux->sSelf.xRollback = p->xRollback ? vtshimRollback : 0;
   pAux->sSelf.xFindFunction = p->xFindFunction ? vtshimFindFunction : 0;
   pAux->sSelf.xRename = p->xRename ? vtshimRename : 0;
-  if( p->iVersion>=1 ){
+  if( p->iVersion>=2 ){
     pAux->sSelf.xSavepoint = p->xSavepoint ? vtshimSavepoint : 0;
     pAux->sSelf.xRelease = p->xRelease ? vtshimRelease : 0;
     pAux->sSelf.xRollbackTo = p->xRollbackTo ? vtshimRollbackTo : 0;
