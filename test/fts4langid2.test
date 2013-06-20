@@ -123,7 +123,6 @@ do_execsql_test 4.5 {
   SELECT docid, lid, content FROM t1 WHERE t1 MATCH '2' AND lid=1;
 } {1 1 {1 2 3 4}}
 
-breakpoint
 do_execsql_test 4.6 {
   UPDATE t1 SET content = 'x y z' || lid;
   SELECT docid, lid FROM t1;

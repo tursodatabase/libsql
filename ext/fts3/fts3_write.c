@@ -1003,12 +1003,6 @@ static int fts3InsertData(
   if( piRowid && p->nLanguageidBits==0 
    && SQLITE_NULL!=sqlite3_value_type(apVal[3+p->nColumn]) 
   ){
-    if( SQLITE_NULL==sqlite3_value_type(apVal[0])
-     && SQLITE_NULL!=sqlite3_value_type(apVal[1])
-    ){
-      /* A rowid/docid conflict. */
-      return SQLITE_ERROR;
-    }
     rc = sqlite3_bind_value(pContentInsert, 1, apVal[3+p->nColumn]);
     if( rc!=SQLITE_OK ) return rc;
   }
@@ -5382,6 +5376,11 @@ int sqlite3Fts3UpdateMethod(
         goto update_out;
       }
       pNewDocid = apVal[1];
+    }else if( sqlite3_value_type(apVal[0])==SQLITE_NULL 
+           && sqlite3_value_type(apVal[1])!=SQLITE_NULL 
+    ){
+      rc = SQLITE_ERROR;
+      goto update_out;
     }
 
     if( sqlite3_value_type(pNewDocid)!=SQLITE_NULL ){

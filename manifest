@@ -1,5 +1,5 @@
-C Add\sthe\slanguageid_bits=\soption\sto\sfts.\sStill\ssome\sproblems\sto\swork\sout.
-D 2013-06-19T20:13:28.631
+C Fix\sfts\shandling\sof\sthe\scase\swhere\sboth\sa\srowid\sand\sdocid\sare\sspecified\sas\spart\sof\san\sinsert\sstatement.
+D 2013-06-20T11:01:33.052
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c b057e0f72a3d684b812732db0d4a5d9614936db3
+F ext/fts3/fts3_write.c dda9bec5dac9ecccbbd7b75a6b84bbef4729390c
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -546,7 +546,7 @@ F test/fts4aa.test 95f448fb02c4a976968b08d1b4ce134e720946ae
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 6efc53b4fd03cab167e6998d2b0b7d4b7d419ee6
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
-F test/fts4langid2.test 50736df3c3adbb2a05d8685802453a16db6c458f
+F test/fts4langid2.test b0154b01099bf8703e3190634f025ca172aa4343
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
@@ -1094,10 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2b2ade92788be623af6f57e37d98994be2cec142
-R 1066cd04ca715945e7e0705efe840790
-T *branch * fts-languageid-bits
-T *sym-fts-languageid-bits *
-T -sym-trunk *
+P d36d7e68334c0685d1941dd0323b1a9c5c7368bf
+R dfef4213ce89e455482c58d3a554bae1
 U dan
-Z 9fcd5c1627466406b038b9233ae97f20
+Z 1d3d6ba1eef9e97fd3552fcd93577010
