@@ -255,14 +255,28 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set shortName SQLite.WinRT
   set displayName "SQLite for Windows Runtime"
   set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.0
+  set minVsVersion 11.0
   set extraSdkPath ""
   set extraFileListAttributes [appendArgs \
       "\r\n    " {AppliesTo="WindowsAppContainer"} \
       "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
+} elseif {[string equal -nocase $packageFlavor WinRT81]} then {
+  set shortName SQLite.WinRT81
+  set displayName "SQLite for Windows Runtime (Windows 8.1)"
+  set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.1
+  set minVsVersion 12.0
+  set extraSdkPath ""
+  set extraFileListAttributes [appendArgs \
+      "\r\n    " {AppliesTo="WindowsAppContainer"} \
+      "\r\n    " {DependsOn="Microsoft.VCLibs, version=12.0"}]
 } elseif {[string equal -nocase $packageFlavor WP80]} then {
   set shortName SQLite.WP80
   set displayName "SQLite for Windows Phone"
   set targetPlatformIdentifier "Windows Phone"
+  set targetPlatformVersion v8.0
+  set minVsVersion 11.0
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes ""
 } else {
