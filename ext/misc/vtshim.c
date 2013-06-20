@@ -61,14 +61,15 @@ struct vtshim_cursor {
 /* Methods for the vtshim module */
 static int vtshimCreate(
   sqlite3 *db,
-  void *pPAux,
-  int argc, const char *const*argv,
+  void *ppAux,
+  int argc,
+  const char *const*argv,
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  vtshim_aux *pAux = (vtshim_aux*)pPAux;
+  vtshim_aux *pAux = (vtshim_aux*)ppAux;
   vtshim_vtab *pNew;
-  int rc; 
+  int rc;
 
   assert( db==pAux->db );
   pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -81,6 +82,7 @@ static int vtshimCreate(
     sqlite3_free(pNew);
     *ppVtab = 0;
   }
+  pNew->pAux = pAux;
   pNew->ppPrev = &pAux->pAllVtab;
   pNew->pNext = pAux->pAllVtab;
   if( pAux->pAllVtab ) pAux->pAllVtab->ppPrev = &pNew->pNext;
@@ -90,14 +92,15 @@ static int vtshimCreate(
 
 static int vtshimConnect(
   sqlite3 *db,
-  void *pPAux,
-  int argc, const char *const*argv,
+  void *ppAux,
+  int argc,
+  const char *const*argv,
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  vtshim_aux *pAux = (vtshim_aux*)pPAux;
+  vtshim_aux *pAux = (vtshim_aux*)ppAux;
   vtshim_vtab *pNew;
-  int rc; 
+  int rc;
 
   assert( db==pAux->db );
   pNew = sqlite3_malloc( sizeof(*pNew) );
@@ -110,6 +113,7 @@ static int vtshimConnect(
     sqlite3_free(pNew);
     *ppVtab = 0;
   }
+  pNew->pAux = pAux;
   pNew->ppPrev = &pAux->pAllVtab;
   pNew->pNext = pAux->pAllVtab;
   if( pAux->pAllVtab ) pAux->pAllVtab->ppPrev = &pNew->pNext;
@@ -194,8 +198,10 @@ static int vtshimClose(sqlite3_vtab_cursor *pX){
 
 static int vtshimFilter(
   sqlite3_vtab_cursor *pX,
-  int idxNum, const char *idxStr,
-  int argc, sqlite3_value **argv
+  int idxNum,
+  const char *idxStr,
+  int argc,
+  sqlite3_value **argv
 ){
   vtshim_cursor *pCur = (vtshim_cursor*)pX;
   vtshim_vtab *pVtab = (vtshim_vtab*)pCur->base.pVtab;
@@ -432,8 +438,8 @@ void sqlite3_dispose_module(void *pX){
 __declspec(dllexport)
 #endif
 int sqlite3_vtshim_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   SQLITE_EXTENSION_INIT2(pApi);
