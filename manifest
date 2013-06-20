@@ -1,5 +1,5 @@
-C Only\sdefault\sHAVE_POSIX_FALLOCATE\son\sfor\slinux,\sand\sthen\sonly\sif\sit\sis\snot\npreviously\sdefined.
-D 2013-06-19T14:49:14.627
+C Disable\sposix_fallocate()\sfor\sall\ssystems,\sall\sthe\stime,\sunless\sthe\nHAVE_POSIX_FALLOCATE\scompile-time\smacro\sis\ssupplied.
+D 2013-06-20T14:07:37.671
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -201,7 +201,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c a4c49f855cfd0783d7027a5e20dab6bb10fe4e4b
+F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
 F src/os_win.c 5f018dbd4cec25c5b47e11432b946a7d2ccee60b
 F src/pager.c 79df56da9dd49aceaa4cac207484a9a82cba40ae
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b9b30d4f9845d212e2d3206abbf2795099e5d71d
-R 051331ae49dcb9481117487fe2ddd3f7
+P 2b2ade92788be623af6f57e37d98994be2cec142
+R 4c8df645fee7190a620dee659859568b
 U drh
-Z f091211d6e3ac84847a4aa6c11062c5e
+Z 4cfe85260540c90b4ee0898bd7491d71
