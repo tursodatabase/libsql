@@ -1303,7 +1303,7 @@ static int fts3InitVtab(
   zLanguageid = 0;
   if( zLanguageidBits && p->zLanguageid && p->zContentTbl==0 ){
     p->nLanguageidBits = atoi(zLanguageidBits);
-    if( p->nLanguageidBits>32 || p->nLanguageidBits<0 ){
+    if( p->nLanguageidBits>30 || p->nLanguageidBits<0 ){
       rc = SQLITE_ERROR;
       *pzErr = sqlite3_mprintf("languageid_bits parameter out of range");
       goto fts3_init_out;

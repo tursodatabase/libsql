@@ -5331,11 +5331,14 @@ int sqlite3Fts3UpdateMethod(
   ** the specified rowid value must be NULL.
   */
   if( nArg>1 ){
-    iLangid = sqlite3_value_int(apVal[2 + p->nColumn + 2]);
-    if( iLangid<0 || (p->nLanguageidBits && iLangid>=(1<<p->nLanguageidBits)) ){
+    i64 iLangid64 = sqlite3_value_int64(apVal[2 + p->nColumn + 2]);
+    if( iLangid64<0 
+     || (p->nLanguageidBits && iLangid64>=((i64)1<<p->nLanguageidBits)) 
+    ){
       rc = SQLITE_CONSTRAINT;
       goto update_out;
     }
+    iLangid = (int)iLangid64;
 
     if( p->nLanguageidBits 
      && sqlite3_value_type(apVal[0])==SQLITE_NULL
