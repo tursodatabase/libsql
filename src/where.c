@@ -2409,9 +2409,10 @@ static int whereKeyStats(
         assert( pColl->enc==SQLITE_UTF8 );
       }else{
         pColl = sqlite3GetCollSeq(pParse, SQLITE_UTF8, 0, *pIdx->azColl);
-        if( pColl==0 ){
-          return SQLITE_ERROR;
-        }
+        /* If the collating sequence was unavailable, we should have failed
+        ** long ago and never reached this point.  But we'll check just to
+        ** be doubly sure. */
+        if( NEVER(pColl==0) ) return SQLITE_ERROR;
         z = (const u8 *)sqlite3ValueText(pVal, pColl->enc);
         if( !z ){
           return SQLITE_NOMEM;

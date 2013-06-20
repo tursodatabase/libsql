@@ -1,5 +1,5 @@
-C Pull\sin\sthe\sposix_fallocate()\schange\sfrom\strunk.
-D 2013-06-20T14:17:39.289
+C Add\sa\sNEVER()\smacro\sand\san\sexplanation\scomment\saround\san\sunreachable\sbranch\nin\sthe\sSTAT3\slogic.
+D 2013-06-20T17:32:28.451
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c ac9f8c4ee8ece1e8a4c93802792dbb0d629a7fa0
+F src/where.c 8d6c07d9641bf107e03a2b613550d90b8c7f4a82
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bf5764067ab848e19e5971cbdf892c633495e325 b674462243138fcee192ef05d434665e30c681c4
-R 91cfb3838b57db0708acca963a7bb8c5
+P d94db3fd921890ab1d6414ab629410ae50779686
+R 4877ecf4e1d53d3b49ba9f1fadfb6d66
 U drh
-Z 767fbda1b22b9d1069574da955ceb02c
+Z c939c499a0659dd37def1fcbcc79c922
