@@ -5264,17 +5264,51 @@ static int fts3DeleteByRowid(
 ** Convert a docid (iDocid) and a language id (iLangid) to a rowid,
 ** according to the configured languageid_bits= value belonging to
 ** FTS table *p.
+**
+** The conversion is as follows:
+**
+**   * The sign bit of iDocid becomes the sign bit of the rowid.
+**
+**   * iLangid is converted to an unsigned integer and stored in
+**     the next most significant Fts3Table.nLanguageidBits bits
+**     of the returned rowid.
+**
+**   * The least signficant (63-nLanguageidBits) of iDocid are
+**     copied to the (63-nLanguageidBits) least signifcant bits of
+**     the returned rowid.
 */
 i64 sqlite3Fts3DocidToRowid(Fts3Table *p, i64 iDocid, int iLangid){
-  i64 iRowid = iDocid;
+  u64 iRet = iDocid;
+
   if( p->nLanguageidBits ){
-    iRowid = (iRowid << p->nLanguageidBits) + iLangid;
+    int iShift = (63 - p->nLanguageidBits);
+    u64 mask = ((((u64)1 << p->nLanguageidBits) - 1) << iShift);
+
+    iRet &= ~mask;
+    iRet |= (u64)iLangid << iShift;
   }
-  return iRowid;
+
+  assert( sqlite3Fts3RowidToDocid(p, (i64)iRet)==iDocid );
+  return (i64)iRet;
 }
 
+/*
+** Convert a rowid (iRowid) to a docid according to the languageid_bits=
+** value belonging to FTS table *p.
+*/
 i64 sqlite3Fts3RowidToDocid(Fts3Table *p, i64 iRowid){
-  return (iRowid >> p->nLanguageidBits);
+  u64 iRet = iRowid;
+  if( p->nLanguageidBits ){
+    static const u64 signbit = ((u64)1 << 63);
+    u64 mask = ((((u64)1 << p->nLanguageidBits)-1) << (63-p->nLanguageidBits));
+
+    if( iRet & signbit ){
+      iRet |= mask;
+    }else{
+      iRet &= ~mask;
+    }
+  }
+  return (i64)iRet;
 }
 
 /*

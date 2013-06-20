@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\sfts\swith\sa\snon-zero\slanguageid_bits\ssetting.\sFix\squerying\sby\sdocid\swith\sthe\ssame.
-D 2013-06-20T16:22:32.207
+C Fix\ssome\sissues\srelated\sto\sORDER\sBY\sand\sfts\stables\swith\sa\snon-zero\slanguageid_bits\ssetting.
+D 2013-06-20T18:32:34.406
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 6b8ca2c8e5ebcf8735b3adf023d2ac15bd21b5e1
+F ext/fts3/fts3.c e88a755aefca0fb98cad59791ea8d02cbeff80f8
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 9bef3710aa94fc27b117eca41088aa29ed99d4f1
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 2ec89b83498449ded7b4b0eff18530793083c3ad
+F ext/fts3/fts3_write.c af8d9e57097b105659ea621a6504c696d6b3b0ff
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -546,7 +546,7 @@ F test/fts4aa.test 95f448fb02c4a976968b08d1b4ce134e720946ae
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 6efc53b4fd03cab167e6998d2b0b7d4b7d419ee6
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
-F test/fts4langid2.test b47f67ab68165f4b0df864fa5b01dbaadf27d3aa
+F test/fts4langid2.test a8f910bd50c78bfaa34cfb116aca78a6f872e047
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
@@ -1094,7 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8dc261b765e580b100a3a9616ac540eedad345d5
-R 96376b97c43805db6a89e9bae52eb324
+P b1df00f3f1eecffbe6c56cdcbb922922314604a0
+R f595a064db43d7934ae58fdccae6729e
 U dan
-Z a4533c64fd67c7a7ea0a81d6fa76cdd1
+Z fb6c5f5ef3c68a8dc49cef28913a67d5

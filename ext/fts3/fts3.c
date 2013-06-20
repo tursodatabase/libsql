@@ -1493,9 +1493,13 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   /* Regardless of the strategy selected, FTS can deliver rows in rowid (or
   ** docid) order. Both ascending and descending are possible. 
   */
+  assert( pInfo->orderByConsumed==0 );
   if( pInfo->nOrderBy==1 ){
     struct sqlite3_index_orderby *pOrder = &pInfo->aOrderBy[0];
-    if( pOrder->iColumn<0 || pOrder->iColumn==p->nColumn+1 ){
+    if( pOrder->iColumn<0 || (
+          (pOrder->iColumn==p->nColumn+1)
+       && (pInfo->idxNum>=FTS3_FULLTEXT_SEARCH || p->nLanguageidBits==0)
+    )){
       if( pOrder->desc ){
         pInfo->idxStr = "DESC";
       }else{

@@ -22,7 +22,6 @@ ifcapable !fts3 {
   return
 }
 
-
 #-------------------------------------------------------------------------
 # Test out-of-range values for the languageid_bits= parameter.
 #
@@ -249,20 +248,20 @@ do_execsql_test 6.3.4 {
 } {4 {1 1 1 1 1}}
 
 do_execsql_test 6.4 {
-  CREATE VIRTUAL TABLE t2 USING fts4(languageid_bits=1, languageid=lid);
-  INSERT INTO t1(docid,lid,content) VALUES(-1, 0, 'A B C D');
-  INSERT INTO t1(docid,lid,content) VALUES(-2, 0, 'D C B A');
-  INSERT INTO t1(docid,lid,content) VALUES(-3, 0, 'C B D A');
-  INSERT INTO t1(docid,lid,content) VALUES(-4, 0, 'A D B C');
+  CREATE VIRTUAL TABLE t2 USING fts4(languageid_bits=8, languageid=lid);
+  INSERT INTO t2(docid,lid,content) VALUES(-1, 0, 'A B C D');
+  INSERT INTO t2(docid,lid,content) VALUES(-2, 0, 'D C B A');
+  INSERT INTO t2(docid,lid,content) VALUES(-3, 0, 'C B D A');
+  INSERT INTO t2(docid,lid,content) VALUES(-4, 0, 'A D B C');
 
-  INSERT INTO t1(docid,lid,content) VALUES(-1, 1, 'A A A A');
-  INSERT INTO t1(docid,lid,content) VALUES(-2, 1, 'B B B B');
-  INSERT INTO t1(docid,lid,content) VALUES(-3, 1, 'C C C C');
-  INSERT INTO t1(docid,lid,content) VALUES(-4, 1, 'D D D D');
+  INSERT INTO t2(docid,lid,content) VALUES(-1, 1, 'A A A A');
+  INSERT INTO t2(docid,lid,content) VALUES(-2, 1, 'B B B B');
+  INSERT INTO t2(docid,lid,content) VALUES(-3, 1, 'C C C C');
+  INSERT INTO t2(docid,lid,content) VALUES(-4, 1, 'D D D D');
 }
 
 do_execsql_test 6.4.1 {
-  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'B';
+  SELECT docid, mit(matchinfo(t2)) FROM t2 WHERE t2 MATCH 'B';
 } {
   -4 {1 1 1 4 4}
   -3 {1 1 1 4 4}
@@ -270,7 +269,7 @@ do_execsql_test 6.4.1 {
   -1 {1 1 1 4 4}
 }
 do_execsql_test 6.4.2 {
-  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'B' AND lid=1;
+  SELECT docid, mit(matchinfo(t2)) FROM t2 WHERE t2 MATCH 'B' AND lid=1;
 } {-2 {1 1 4 4 1}}
 
 do_execsql_test 6.5 {
@@ -281,7 +280,6 @@ do_execsql_test 6.5 {
 #-------------------------------------------------------------------------
 # Tests for querying by docid.
 #
-
 do_execsql_test 7.1 {
   CREATE VIRTUAL TABLE t1 USING fts4(languageid_bits=8, languageid=lid);
   INSERT INTO t1(docid,lid,content) VALUES(10, 10, 'abc def');
@@ -291,9 +289,39 @@ do_execsql_test 7.2 {
   SELECT docid,lid,content FROM t1 WHERE docid=10;
 } {10 10 {abc def}}
 
+do_execsql_test 7.3 {
+  SELECT docid,lid,content FROM t1 WHERE docid<11;
+} {10 10 {abc def}}
 
+do_execsql_test 7.4 {
+  DROP TABLE t1;
+}
 
+#-------------------------------------------------------------------------
+# Tests for sorting by docid.
+#
+do_execsql_test 8.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid_bits=6, languageid=lid);
+  INSERT INTO t1 (docid,lid,content) VALUES(1, 0, 'abc def');
+  INSERT INTO t1 (docid,lid,content) VALUES(3, 0, 'abc ghi');
+  INSERT INTO t1 (docid,lid,content) VALUES(2, 0, 'def ghi');
 
+  INSERT INTO t1 (docid,lid,content) VALUES(1, 5, 'A B');
+  INSERT INTO t1 (docid,lid,content) VALUES(3, 5, 'A C');
+  INSERT INTO t1 (docid,lid,content) VALUES(2, 5, 'B C');
+}
+
+do_execsql_test 8.2 {
+  SELECT docid FROM t1 ORDER BY docid;
+} {1 1 2 2 3 3}
+
+do_execsql_test 8.2 {
+  SELECT docid FROM t1 WHERE t1 MATCH 'ghi' ORDER BY docid;
+} {2 3}
+
+do_execsql_test 8.2 {
+  SELECT docid FROM t1 WHERE t1 MATCH 'ghi' ORDER BY docid DESC;
+} {3 2}
 
 finish_test
 
