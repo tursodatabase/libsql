@@ -1445,12 +1445,12 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   pInfo->estimatedCost = 500000;
   for(i=0; i<pInfo->nConstraint; i++){
     struct sqlite3_index_constraint *pCons = &pInfo->aConstraint[i];
+    int iCol = pCons->iColumn;
     if( pCons->usable==0 ) continue;
 
     /* A direct lookup on the rowid or docid column. Assign a cost of 1.0. */
-    if( iCons<0 
-     && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ 
-     && (pCons->iColumn<0 || pCons->iColumn==p->nColumn+1 )
+    if( iCons<0 && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ 
+     && (iCol<0 || (iCol==p->nColumn+1 && p->nLanguageidBits==0))
     ){
       pInfo->idxNum = FTS3_DOCID_SEARCH;
       pInfo->estimatedCost = 1.0;

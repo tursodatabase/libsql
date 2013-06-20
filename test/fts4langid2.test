@@ -197,5 +197,103 @@ for {set bits 1} {$bits <= 30} {incr bits} {
   do_execsql_test 5.$bits.5 { DROP TABLE t1 }
 }
 
+#-------------------------------------------------------------------------
+# Tests for auxilliary functions with langaugeid_bits tables.
+#
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+db func mit mit
+
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid_bits=4, languageid=lid);
+  INSERT INTO t1(docid,lid,content) VALUES(1, 1, 'one two three four');
+  INSERT INTO t1(docid,lid,content) VALUES(2, 1, 'two three four five');
+  INSERT INTO t1(docid,lid,content) VALUES(3, 1, 'three four five six');
+  INSERT INTO t1(docid,lid,content) VALUES(4, 1, 'four five six seven');
+
+  INSERT INTO t1(docid,lid,content) VALUES(1, 2, 'four three two one');
+  INSERT INTO t1(docid,lid,content) VALUES(2, 2, 'five four three two');
+  INSERT INTO t1(docid,lid,content) VALUES(3, 2, 'six five four three');
+  INSERT INTO t1(docid,lid,content) VALUES(4, 2, 'A B C D');
+}
+
+do_execsql_test 6.2.1 {
+  SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH 'one' AND lid=1;
+} {1 {<b>one</b> two three four}}
+do_execsql_test 6.2.2 {
+  SELECT docid, snippet(t1) FROM t1 WHERE t1 MATCH 'one' AND lid=2;
+} {1 {four three two <b>one</b>}}
+
+do_execsql_test 6.2.1 {
+  SELECT docid, offsets(t1) FROM t1 WHERE t1 MATCH 'two' AND lid=1;
+} {1 {0 0 4 3} 2 {0 0 0 3}}
+do_execsql_test 6.2.2 {
+  SELECT docid, offsets(t1) FROM t1 WHERE t1 MATCH 'two' AND lid=2;
+} {1 {0 0 11 3} 2 {0 0 16 3}}
+
+do_execsql_test 6.3.1 {
+  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'two' AND lid=1;
+} {1 {1 1 1 2 2} 2 {1 1 1 2 2}}
+do_execsql_test 6.3.2 {
+  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'two' AND lid=2;
+} {1 {1 1 1 2 2} 2 {1 1 1 2 2}}
+do_execsql_test 6.3.3 {
+  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'B' AND lid=1;
+} {}
+do_execsql_test 6.3.4 {
+  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'B' AND lid=2;
+} {4 {1 1 1 1 1}}
+
+do_execsql_test 6.4 {
+  CREATE VIRTUAL TABLE t2 USING fts4(languageid_bits=1, languageid=lid);
+  INSERT INTO t1(docid,lid,content) VALUES(-1, 0, 'A B C D');
+  INSERT INTO t1(docid,lid,content) VALUES(-2, 0, 'D C B A');
+  INSERT INTO t1(docid,lid,content) VALUES(-3, 0, 'C B D A');
+  INSERT INTO t1(docid,lid,content) VALUES(-4, 0, 'A D B C');
+
+  INSERT INTO t1(docid,lid,content) VALUES(-1, 1, 'A A A A');
+  INSERT INTO t1(docid,lid,content) VALUES(-2, 1, 'B B B B');
+  INSERT INTO t1(docid,lid,content) VALUES(-3, 1, 'C C C C');
+  INSERT INTO t1(docid,lid,content) VALUES(-4, 1, 'D D D D');
+}
+
+do_execsql_test 6.4.1 {
+  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'B';
+} {
+  -4 {1 1 1 4 4}
+  -3 {1 1 1 4 4}
+  -2 {1 1 1 4 4}
+  -1 {1 1 1 4 4}
+}
+do_execsql_test 6.4.2 {
+  SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH 'B' AND lid=1;
+} {-2 {1 1 4 4 1}}
+
+do_execsql_test 6.5 {
+  DROP TABLE t1;
+  DROP TABLE t2;
+}
+
+#-------------------------------------------------------------------------
+# Tests for querying by docid.
+#
+
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(languageid_bits=8, languageid=lid);
+  INSERT INTO t1(docid,lid,content) VALUES(10, 10, 'abc def');
+}
+
+do_execsql_test 7.2 {
+  SELECT docid,lid,content FROM t1 WHERE docid=10;
+} {10 10 {abc def}}
+
+
+
+
+
 finish_test
 
