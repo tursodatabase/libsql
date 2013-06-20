@@ -314,14 +314,19 @@ do_execsql_test 8.1 {
 do_execsql_test 8.2 {
   SELECT docid FROM t1 ORDER BY docid;
 } {1 1 2 2 3 3}
-
-do_execsql_test 8.2 {
+do_execsql_test 8.3 {
   SELECT docid FROM t1 WHERE t1 MATCH 'ghi' ORDER BY docid;
 } {2 3}
-
-do_execsql_test 8.2 {
+do_execsql_test 8.4 {
   SELECT docid FROM t1 WHERE t1 MATCH 'ghi' ORDER BY docid DESC;
 } {3 2}
+
+# Test that the docid and languageid fields may be updated.
+#
+do_execsql_test 8.5 { UPDATE t1 SET docid=docid+3, lid=0 WHERE lid=5; }
+do_execsql_test 8.6 { SELECT docid FROM t1 ORDER BY docid; } {1 2 3 4 5 6}
+do_execsql_test 8.7 { SELECT docid FROM t1 WHERE t1 MATCH 'A' } {4 6}
+do_execsql_test 8.8 { SELECT docid FROM t1 WHERE t1 MATCH 'A' AND lid=5 } {}
 
 finish_test
 
