@@ -1,5 +1,5 @@
-C Modify\sthe\squery\splanner\sinterface\sso\sthat\sit\salways\spasses\sin\sthe\sresult\sset.\nThis\sis\sthe\sfirst\sstep\stoward\sadding\san\soptimization\sthat\swill\somit\stables\nfrom\sa\sjoin\sthat\sdo\snot\scontribute\sto\sthe\sresult.
-D 2013-06-21T00:35:37.456
+C Attempt\sto\sdisable\sinner\sloops\sof\sa\sjoin\sthat\sdo\snot\sgenerate\soutput.\nThis\sdoes\snot\swork,\ssince\sthe\sinner\sloops\smight\srun\szero\stimes\sand\sthus\ninhibit\sall\soutput.\s\sNeeds\sto\sbe\senhanced\sto\swork\sonly\sfor\sLEFT\sJOINs\nor\swhen\swe\sknow\sthat\sthe\sinner\sloop\swill\salways\srun\sat\sleast\sonce.
+D 2013-06-21T02:05:06.206
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,14 +289,14 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c c950b131584a40121092d735804472f567beefbc
+F src/where.c fc5293b54a70474c2b46e9df26c9e2803b152e68
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
 F test/alter.test 57d96ec9b320bd07af77567034488dcb6642c748
-F test/alter2.test 40531b1f89d4fe43f9007b1bfc304e291ed000ae
+F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test b2debc14d8cbe4c1d12ccd6a41eef88a8c1f15d5
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
@@ -1096,10 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 604c3c5de6fd8f8a569aa9ed981055a5b0123ba1
-R 54a7c9b08c105a408dfe2c4fd7fd4419
-T *branch * omit-join-table-opt
-T *sym-omit-join-table-opt *
-T -sym-nextgen-query-plan-exp *
+P 2c2577e69ccb47f1af674a755e71221e2ca0b322
+R b2263c66dd8a59884ee45351c335261a
 U drh
-Z d2a3072c8b463b513f8068b32a4cb830
+Z 6fd83e64fe937f64082b799e88969f81

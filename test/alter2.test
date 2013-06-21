@@ -120,7 +120,6 @@ do_test alter2-1.5 {
   }
 } {}
 do_test alter2-1.6 {
-breakpoint
   execsql {
     SELECT c FROM abc ORDER BY c;
   }
