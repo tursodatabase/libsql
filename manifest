@@ -1,5 +1,5 @@
-C The\svtshim\sxCreate\sand\sxConnect\sfunctions\sneed\sto\sstore\sthe\spAux\spointer\sinto\sthe\snewly\screated\svtable\sobject.\s\sStyle\sfixes.
-D 2013-06-20T01:27:51.651
+C Enhance\serror\smessage\shandling\sfor\sthe\svtshim\smodule.
+D 2013-06-21T19:39:51.240
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F ext/misc/percentile.c 4fb5e46c4312b0be74e8e497ac18f805f0e3e6c5
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 6d7ce6105a4b7729f6c44ccdf1ab7e80d9707c02
-F ext/misc/vtshim.c fe8f6f7d8b83a631b95b3cfb9a04dc985812d9da
+F ext/misc/vtshim.c 5fb6be7fe37659a8cbd1e16982d74cceacbc4543
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 757abea591d4ff67c0ff4e8f9776aeda86b18c14
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c 4d0393bdbe7230adb712e925863744dd2b7ffc5b
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bf2e28ddb292ef0b9a1262ec249aed3243dcfb20
-R 704132a94aa348b6d1fcd7a610d55eca
+P 43913c7bd5409791916dfa268258d22f34731273
+R 2bd29e8c3bcc06d35e440ba04e551d53
 U mistachkin
-Z e214b512264b6021b2a0d7dd8f81d237
+Z 9488ac35d83e50762d870999333aa524

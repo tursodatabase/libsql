@@ -58,6 +58,13 @@ struct vtshim_cursor {
   vtshim_cursor *pNext;        /* Next on list of all cursors */
 };
 
+/* Macro used to copy the child vtable error message to outer vtable */
+#define VTSHIM_COPY_ERRMSG()                                             \
+  do {                                                                   \
+    sqlite3_free(pVtab->base.zErrMsg);                                   \
+    pVtab->base.zErrMsg = sqlite3_mprintf("%s", pVtab->pChild->zErrMsg); \
+  } while (0)
+
 /* Methods for the vtshim module */
 static int vtshimCreate(
   sqlite3 *db,
@@ -72,6 +79,13 @@ static int vtshimCreate(
   int rc;
 
   assert( db==pAux->db );
+  if( pAux->bDisposed ){
+    if( pzErr ){
+      *pzErr = sqlite3_mprintf("virtual table was disposed: \"%s\"",
+                               pAux->zName);
+    }
+    return SQLITE_ERROR;
+  }
   pNew = sqlite3_malloc( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) return SQLITE_NOMEM;
@@ -103,6 +117,13 @@ static int vtshimConnect(
   int rc;
 
   assert( db==pAux->db );
+  if( pAux->bDisposed ){
+    if( pzErr ){
+      *pzErr = sqlite3_mprintf("virtual table was disposed: \"%s\"",
+                               pAux->zName);
+    }
+    return SQLITE_ERROR;
+  }
   pNew = sqlite3_malloc( sizeof(*pNew) );
   *ppVtab = (sqlite3_vtab*)pNew;
   if( pNew==0 ) return SQLITE_NOMEM;
@@ -127,10 +148,14 @@ static int vtshimBestIndex(
 ){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xBestIndex(pVtab->pChild, pIdxInfo);
+  rc = pAux->pMod->xBestIndex(pVtab->pChild, pIdxInfo);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
-
 
 static int vtshimDisconnect(sqlite3_vtab *pBase){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
@@ -164,13 +189,14 @@ static int vtshimOpen(sqlite3_vtab *pBase, sqlite3_vtab_cursor **ppCursor){
   vtshim_cursor *pCur;
   int rc;
   *ppCursor = 0;
-  if( pAux->bDisposed )  return SQLITE_ERROR;
+  if( pAux->bDisposed ) return SQLITE_ERROR;
   pCur = sqlite3_malloc( sizeof(*pCur) );
   if( pCur==0 ) return SQLITE_NOMEM;
   memset(pCur, 0, sizeof(*pCur));
   rc = pAux->pMod->xOpen(pVtab->pChild, &pCur->pChild);
   if( rc ){
     sqlite3_free(pCur);
+    VTSHIM_COPY_ERRMSG();
     return rc;
   }
   pCur->pChild->pVtab = pVtab->pChild;
@@ -189,6 +215,9 @@ static int vtshimClose(sqlite3_vtab_cursor *pX){
   int rc = SQLITE_OK;
   if( !pAux->bDisposed ){
     rc = pAux->pMod->xClose(pCur->pChild);
+    if( rc!=SQLITE_OK ){
+      VTSHIM_COPY_ERRMSG();
+    }
   }
   if( pCur->pNext ) pCur->pNext->ppPrev = pCur->ppPrev;
   *pCur->ppPrev = pCur->pNext;
@@ -206,40 +235,63 @@ static int vtshimFilter(
   vtshim_cursor *pCur = (vtshim_cursor*)pX;
   vtshim_vtab *pVtab = (vtshim_vtab*)pCur->base.pVtab;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xFilter(pCur->pChild, idxNum, idxStr, argc, argv);
+  rc = pAux->pMod->xFilter(pCur->pChild, idxNum, idxStr, argc, argv);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimNext(sqlite3_vtab_cursor *pX){
   vtshim_cursor *pCur = (vtshim_cursor*)pX;
   vtshim_vtab *pVtab = (vtshim_vtab*)pCur->base.pVtab;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xNext(pCur->pChild);
+  rc = pAux->pMod->xNext(pCur->pChild);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimEof(sqlite3_vtab_cursor *pX){
   vtshim_cursor *pCur = (vtshim_cursor*)pX;
   vtshim_vtab *pVtab = (vtshim_vtab*)pCur->base.pVtab;
   vtshim_aux *pAux = pVtab->pAux;
-  if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xEof(pCur->pChild);
+  int rc;
+  if( pAux->bDisposed ) return 1;
+  rc = pAux->pMod->xEof(pCur->pChild);
+  VTSHIM_COPY_ERRMSG();
+  return rc;
 }
 
 static int vtshimColumn(sqlite3_vtab_cursor *pX, sqlite3_context *ctx, int i){
   vtshim_cursor *pCur = (vtshim_cursor*)pX;
   vtshim_vtab *pVtab = (vtshim_vtab*)pCur->base.pVtab;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xColumn(pCur->pChild, ctx, i);
+  rc = pAux->pMod->xColumn(pCur->pChild, ctx, i);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimRowid(sqlite3_vtab_cursor *pX, sqlite3_int64 *pRowid){
   vtshim_cursor *pCur = (vtshim_cursor*)pX;
   vtshim_vtab *pVtab = (vtshim_vtab*)pCur->base.pVtab;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xRowid(pCur->pChild, pRowid);
+  rc = pAux->pMod->xRowid(pCur->pChild, pRowid);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimUpdate(
@@ -250,36 +302,61 @@ static int vtshimUpdate(
 ){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xUpdate(pVtab->pChild, argc, argv, pRowid);
+  rc = pAux->pMod->xUpdate(pVtab->pChild, argc, argv, pRowid);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimBegin(sqlite3_vtab *pBase){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xBegin(pVtab->pChild);
+  rc = pAux->pMod->xBegin(pVtab->pChild);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimSync(sqlite3_vtab *pBase){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xSync(pVtab->pChild);
+  rc = pAux->pMod->xSync(pVtab->pChild);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimCommit(sqlite3_vtab *pBase){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xCommit(pVtab->pChild);
+  rc = pAux->pMod->xCommit(pVtab->pChild);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimRollback(sqlite3_vtab *pBase){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xRollback(pVtab->pChild);
+  rc = pAux->pMod->xRollback(pVtab->pChild);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimFindFunction(
@@ -291,36 +368,59 @@ static int vtshimFindFunction(
 ){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
-  if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xFindFunction(pVtab->pChild, nArg, zName, pxFunc, ppArg);
+  int rc;
+  if( pAux->bDisposed ) return 0;
+  rc = pAux->pMod->xFindFunction(pVtab->pChild, nArg, zName, pxFunc, ppArg);
+  VTSHIM_COPY_ERRMSG();
+  return rc;
 }
 
 static int vtshimRename(sqlite3_vtab *pBase, const char *zNewName){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xRename(pVtab->pChild, zNewName);
+  rc = pAux->pMod->xRename(pVtab->pChild, zNewName);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimSavepoint(sqlite3_vtab *pBase, int n){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xSavepoint(pVtab->pChild, n);
+  rc = pAux->pMod->xSavepoint(pVtab->pChild, n);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimRelease(sqlite3_vtab *pBase, int n){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xRelease(pVtab->pChild, n);
+  rc = pAux->pMod->xRelease(pVtab->pChild, n);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 static int vtshimRollbackTo(sqlite3_vtab *pBase, int n){
   vtshim_vtab *pVtab = (vtshim_vtab*)pBase;
   vtshim_aux *pAux = pVtab->pAux;
+  int rc;
   if( pAux->bDisposed ) return SQLITE_ERROR;
-  return pAux->pMod->xRollbackTo(pVtab->pChild, n);
+  rc = pAux->pMod->xRollbackTo(pVtab->pChild, n);
+  if( rc!=SQLITE_OK ){
+    VTSHIM_COPY_ERRMSG();
+  }
+  return rc;
 }
 
 /* The destructor function for a disposible module */
