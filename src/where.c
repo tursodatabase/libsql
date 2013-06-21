@@ -383,7 +383,7 @@ struct WhereInfo {
   Parse *pParse;            /* Parsing and code generating context */
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
+  ExprList *pResultSet;     /* Result set. DISTINCT operates on these */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   WhereCost nRowOut;        /* Estimated number of output rows */
@@ -3928,9 +3928,9 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
   int nb = 1+(pTabList->nSrc+7)/8;
   struct SrcList_item *pItem = pTabList->a + p->iTab;
   Table *pTab = pItem->pTab;
-  sqlite3DebugPrintf("%c %2d.%0*llx.%0*llx", p->cId,
+  sqlite3DebugPrintf("%c%2d.%0*llx.%0*llx", p->cId,
                      p->iTab, nb, p->maskSelf, nb, p->prereq);
-  sqlite3DebugPrintf(" %8s",
+  sqlite3DebugPrintf(" %12s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     if( p->u.btree.pIndex ){
@@ -3941,9 +3941,9 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
         while( zName[i]!='_' ) i--;
         zName += i;
       }
-      sqlite3DebugPrintf(".%-12s %2d", zName, p->u.btree.nEq);
+      sqlite3DebugPrintf(".%-16s %2d", zName, p->u.btree.nEq);
     }else{
-      sqlite3DebugPrintf("%16s","");
+      sqlite3DebugPrintf("%20s","");
     }
   }else{
     char *z;
@@ -3953,10 +3953,10 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
     }else{
       z = sqlite3_mprintf("(%d,%x)", p->u.vtab.idxNum, p->u.vtab.omitMask);
     }
-    sqlite3DebugPrintf(" %-15s", z);
+    sqlite3DebugPrintf(" %-19s", z);
     sqlite3_free(z);
   }
-  sqlite3DebugPrintf(" fg %05x N %d", p->wsFlags, p->nLTerm);
+  sqlite3DebugPrintf(" f %04x N %d", p->wsFlags, p->nLTerm);
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
 }
 #endif
@@ -5370,12 +5370,12 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
     pLevel->iFrom = pWLoop->iTab;
     pLevel->iTabCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
   }
-  if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY)==0 
-   && pWInfo->pDistinct
+  if( (pWInfo->wctrlFlags & (WHERE_DISTINCTBY|WHERE_WANT_DISTINCT))
+                ==WHERE_WANT_DISTINCT
    && nRowEst
   ){
     Bitmask notUsed;
-    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pDistinct, pFrom,
+    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pResultSet, pFrom,
                  WHERE_DISTINCTBY, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed);
     if( rc==1 ) pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
   }
@@ -5464,7 +5464,9 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pWInfo->a[0].iTabCur = iCur;
     pWInfo->nRowOut = 1;
     if( pWInfo->pOrderBy ) pWInfo->bOBSat =  1;
-    if( pWInfo->pDistinct ) pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
+      pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    }
 #ifdef SQLITE_DEBUG
     pLoop->cId = '0';
 #endif
@@ -5554,10 +5556,10 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 */
 WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
-  SrcList *pTabList,    /* A list of all tables to be scanned */
+  SrcList *pTabList,    /* FROM clause: A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   ExprList *pOrderBy,   /* An ORDER BY clause, or NULL */
-  ExprList *pDistinct,  /* The select-list for DISTINCT queries - or NULL */
+  ExprList *pResultSet, /* Result set of the query */
   u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
   int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
 ){
@@ -5613,7 +5615,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->pOrderBy = pOrderBy;
-  pWInfo->pDistinct = pDistinct;
+  pWInfo->pResultSet = pResultSet;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
@@ -5628,7 +5630,9 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
   ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
-  if( OptimizationDisabled(db, SQLITE_DistinctOpt) ) pDistinct = 0;
+  if( OptimizationDisabled(db, SQLITE_DistinctOpt) ){
+    wctrlFlags &= ~WHERE_WANT_DISTINCT;
+  }
 
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.
@@ -5650,7 +5654,9 @@ WhereInfo *sqlite3WhereBegin(
   */
   if( nTabList==0 ){
     if( pOrderBy ) pWInfo->bOBSat = 1;
-    if( pDistinct ) pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    if( wctrlFlags & WHERE_WANT_DISTINCT ){
+      pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    }
   }
 
   /* Assign a bit from the bitmask to every term in the FROM clause.
@@ -5697,7 +5703,7 @@ WhereInfo *sqlite3WhereBegin(
   ** expressions, then we won't be able to satisfy it using indices, so
   ** go ahead and disable it now.
   */
-  if( pOrderBy && pDistinct ){
+  if( pOrderBy && (wctrlFlags & WHERE_WANT_DISTINCT)!=0 ){
     for(ii=0; ii<pOrderBy->nExpr; ii++){
       Expr *pExpr = sqlite3ExprSkipCollate(pOrderBy->a[ii].pExpr);
       if( pExpr->op!=TK_COLUMN ){
@@ -5709,17 +5715,15 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 
-  /* Check if the DISTINCT qualifier, if there is one, is redundant. 
-  ** If it is, then set pDistinct to NULL and WhereInfo.eDistinct to
-  ** WHERE_DISTINCT_UNIQUE to tell the caller to ignore the DISTINCT.
-  */
-  if( pDistinct ){
-    if( isDistinctRedundant(pParse,pTabList,&pWInfo->sWC,pDistinct) ){
-      pDistinct = 0;
+  if( wctrlFlags & WHERE_WANT_DISTINCT ){
+    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
+      /* The DISTINCT marking is pointless.  Ignore it. */
+      wctrlFlags &= ~WHERE_WANT_DISTINCT;
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }else if( pOrderBy==0 ){
+      /* Try to ORDER BY the result set to make distinct processing easier */
       pWInfo->wctrlFlags |= WHERE_DISTINCTBY;
-      pWInfo->pOrderBy = pDistinct;
+      pWInfo->pOrderBy = pResultSet;
     }
   }
 

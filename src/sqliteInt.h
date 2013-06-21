@@ -1974,6 +1974,7 @@ struct SrcList {
 #define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
 #define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
 #define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
+#define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
