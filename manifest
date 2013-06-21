@@ -1,5 +1,5 @@
-C Merge\sthe\sfts4-notindexed\sbranch\swith\sthe\strunk.
-D 2013-06-21T18:29:49.697
+C Remove\san\sunused\sfunction\sdeclaration\sfrom\sthe\sFTS3\ssource\scode.
+D 2013-06-21T18:36:44.416
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -80,7 +80,7 @@ F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 3cb4afd0accf903fbe66e2cc48d6f44e5ccb8a76
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 2659cdfc8cde3f981ea99b2f60383e6239f9f4d5
+F ext/fts3/fts3Int.h a50cd231e906da818f00f0a81845bbf7bbeba002
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
 F ext/fts3/fts3_expr.c f8eb1046063ba342c7114eba175cabb31c4a64e7
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -1094,7 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b674462243138fcee192ef05d434665e30c681c4 b53c0c41f97c7ddaeea61f0e6035d1c4747db3f7
-R 78eae7e4eba9ee605ccaf88bbcc953f5
-U dan
-Z d8def49936980c4606b68402ae38fa82
+P 361084e1eb281e985568d19fe217263be92be31d
+R 0d6c636b8cfd628682ea33e027cb07be
+U drh
+Z 55b5720fc386809651d148c0a8415781

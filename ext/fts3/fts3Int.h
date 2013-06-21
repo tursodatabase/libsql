@@ -434,7 +434,6 @@ int sqlite3Fts3SegReaderPending(
   Fts3Table*,int,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, int, sqlite3_stmt **);
-int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*, int*);
 
 int sqlite3Fts3SelectDoctotal(Fts3Table *, sqlite3_stmt **);
