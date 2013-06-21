@@ -1081,6 +1081,8 @@ static int fts3InitVtab(
   char *zUncompress = 0;          /* uncompress=? parameter (or NULL) */
   char *zContent = 0;             /* content=? parameter (or NULL) */
   char *zLanguageid = 0;          /* languageid=? parameter (or NULL) */
+  char **azNotindexed = 0;        /* The set of notindexed= columns */
+  int nNotindexed = 0;            /* Size of azNotindexed[] array */
 
   assert( strlen(argv[0])==4 );
   assert( (sqlite3_strnicmp(argv[0], "fts4", 4)==0 && isFts4)
@@ -1090,9 +1092,19 @@ static int fts3InitVtab(
   nDb = (int)strlen(argv[1]) + 1;
   nName = (int)strlen(argv[2]) + 1;
 
-  aCol = (const char **)sqlite3_malloc(sizeof(const char *) * (argc-2) );
-  if( !aCol ) return SQLITE_NOMEM;
-  memset((void *)aCol, 0, sizeof(const char *) * (argc-2));
+  nByte = sizeof(const char *) * (argc-2);
+  aCol = (const char **)sqlite3_malloc(nByte);
+  if( aCol ){
+    memset(aCol, 0, nByte);
+    azNotindexed = (char **)sqlite3_malloc(nByte);
+  }
+  if( azNotindexed ){
+    memset(azNotindexed, 0, nByte);
+  }
+  if( !aCol || !azNotindexed ){
+    rc = SQLITE_NOMEM;
+    goto fts3_init_out;
+  }
 
   /* Loop through all of the arguments passed by the user to the FTS3/4
   ** module (i.e. all the column names and special arguments). This loop
@@ -1131,7 +1143,8 @@ static int fts3InitVtab(
         { "uncompress", 10 },     /* 3 -> UNCOMPRESS */
         { "order",       5 },     /* 4 -> ORDER */
         { "content",     7 },     /* 5 -> CONTENT */
-        { "languageid", 10 }      /* 6 -> LANGUAGEID */
+        { "languageid", 10 },     /* 6 -> LANGUAGEID */
+        { "notindexed", 10 }      /* 7 -> NOTINDEXED */
       };
 
       int iOpt;
@@ -1195,6 +1208,11 @@ static int fts3InitVtab(
               assert( iOpt==6 );
               sqlite3_free(zLanguageid);
               zLanguageid = zVal;
+              zVal = 0;
+              break;
+
+            case 7:              /* NOTINDEXED */
+              azNotindexed[nNotindexed++] = zVal;
               zVal = 0;
               break;
           }
@@ -1268,6 +1286,7 @@ static int fts3InitVtab(
   nByte = sizeof(Fts3Table) +                  /* Fts3Table */
           nCol * sizeof(char *) +              /* azColumn */
           nIndex * sizeof(struct Fts3Index) +  /* aIndex */
+          nCol * sizeof(u8) +                  /* abNotindexed */
           nName +                              /* zName */
           nDb +                                /* zDb */
           nString;                             /* Space for azColumn strings */
@@ -1301,9 +1320,10 @@ static int fts3InitVtab(
   for(i=0; i<nIndex; i++){
     fts3HashInit(&p->aIndex[i].hPending, FTS3_HASH_STRING, 1);
   }
+  p->abNotindexed = (u8 *)&p->aIndex[nIndex];
 
   /* Fill in the zName and zDb fields of the vtab structure. */
-  zCsr = (char *)&p->aIndex[nIndex];
+  zCsr = (char *)&p->abNotindexed[nCol];
   p->zName = zCsr;
   memcpy(zCsr, argv[2], nName);
   zCsr += nName;
@@ -1324,7 +1344,26 @@ static int fts3InitVtab(
     assert( zCsr <= &((char *)p)[nByte] );
   }
 
-  if( (zCompress==0)!=(zUncompress==0) ){
+  /* Fill in the abNotindexed array */
+  for(iCol=0; iCol<nCol; iCol++){
+    int n = strlen(p->azColumn[iCol]);
+    for(i=0; i<nNotindexed; i++){
+      char *zNot = azNotindexed[i];
+      if( zNot && 0==sqlite3_strnicmp(p->azColumn[iCol], zNot, n) ){
+        p->abNotindexed[iCol] = 1;
+        sqlite3_free(zNot);
+        azNotindexed[i] = 0;
+      }
+    }
+  }
+  for(i=0; i<nNotindexed; i++){
+    if( azNotindexed[i] ){
+      *pzErr = sqlite3_mprintf("no such column: %s", azNotindexed[i]);
+      rc = SQLITE_ERROR;
+    }
+  }
+
+  if( rc==SQLITE_OK && (zCompress==0)!=(zUncompress==0) ){
     char const *zMiss = (zCompress==0 ? "compress" : "uncompress");
     rc = SQLITE_ERROR;
     *pzErr = sqlite3_mprintf("missing %s parameter in fts4 constructor", zMiss);
@@ -1365,7 +1404,9 @@ fts3_init_out:
   sqlite3_free(zUncompress);
   sqlite3_free(zContent);
   sqlite3_free(zLanguageid);
+  for(i=0; i<nNotindexed; i++) sqlite3_free(azNotindexed[i]);
   sqlite3_free((void *)aCol);
+  sqlite3_free((void *)azNotindexed);
   if( rc!=SQLITE_OK ){
     if( p ){
       fts3DisconnectMethod((sqlite3_vtab *)p);

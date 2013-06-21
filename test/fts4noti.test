@@ -1,0 +1,111 @@
+# 2013 June 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the notindexed=xxx FTS4 option.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix fts4noti
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+
+#-------------------------------------------------------------------------
+# Test that typos in "notindexed=" column names are detected.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE cc(a, b, c);
+}
+foreach {tn arg res} {
+  1 "(b, c, notindexed=a)"                  {1 {no such column: a}}
+  2 "(a, b, notindexed=a)"                                   {0 {}}
+  3 "(a, b, notindexed=a, notindexed=a)"                     {0 {}}
+  4 "(notindexed=a, a, b)"                                   {0 {}}
+  5 "(notindexed=a, notindexed=b, notindexed=c, a, b, c, d)" {0 {}}
+  6 "(notindexed=a, notindexed=B, notindexed=c, a, b, c, d)" {0 {}}
+  7 "(notindexed=a, notindexed=b, notindexed=c, a, B, c, d)" {0 {}}
+  8 "(notindexed=d, content=cc)" {1 {no such column: d}}
+  9 "(notindexed=a, content=cc)" {0 {}}
+} {
+  do_catchsql_test 1.$tn "CREATE VIRTUAL TABLE t1 USING fts4 $arg" $res
+  if {[lindex $res 0]==0} { execsql "DROP TABLE t1" }
+}
+
+do_execsql_test 1.x { SELECT name FROM sqlite_master } {cc}
+
+
+#-------------------------------------------------------------------------
+# Test that notindexed columns are not indexed.
+#
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t1 USING fts4(a, b, c, notindexed=b);
+  INSERT INTO t1 VALUES('one two', 'three four', 'five six');
+  INSERT INTO t1 VALUES('three four', 'five six', 'one two');
+}
+do_execsql_test 2.2 { SELECT docid FROM t1 WHERE t1 MATCH 'one' } {1 2}
+do_execsql_test 2.3 { SELECT docid FROM t1 WHERE t1 MATCH 'three' } {2}
+do_execsql_test 2.4 { SELECT docid FROM t1 WHERE t1 MATCH 'five' } {1}
+
+do_execsql_test 2.5 { INSERT INTO t1(t1) VALUES('optimize') }
+
+do_execsql_test 2.6 { SELECT docid FROM t1 WHERE t1 MATCH 'one' } {1 2}
+do_execsql_test 2.7 { SELECT docid FROM t1 WHERE t1 MATCH 'three' } {2}
+do_execsql_test 2.8 { SELECT docid FROM t1 WHERE t1 MATCH 'five' } {1}
+
+do_execsql_test 2.9 { INSERT INTO t1(t1) VALUES('rebuild') }
+
+do_execsql_test 2.10 { SELECT docid FROM t1 WHERE t1 MATCH 'one' } {1 2}
+do_execsql_test 2.11 { SELECT docid FROM t1 WHERE t1 MATCH 'three' } {2}
+do_execsql_test 2.12 { SELECT docid FROM t1 WHERE t1 MATCH 'five' } {1}
+
+do_execsql_test 2.13 { 
+  SELECT * FROM t1 WHERE docid=1
+} {{one two} {three four} {five six}}
+do_execsql_test 2.14 { 
+  SELECT * FROM t1 WHERE docid=2
+} {{three four} {five six} {one two}}
+
+do_execsql_test 2.x { DROP TABLE t1 }
+
+#-------------------------------------------------------------------------
+# Test that notindexed columns are not scanned for deferred tokens.
+#
+
+do_execsql_test 3.1 {
+  CREATE VIRTUAL TABLE t2 USING fts4(x, y, notindexed=x);
+}
+do_test 3.2 {
+  set v [string repeat " 1" 50000]
+  set v1 "x $v"
+  set v2 "y $v"
+  execsql { 
+    INSERT INTO t2 VALUES(1, 'x y z');
+    INSERT INTO t2 VALUES(2, $v1);
+    INSERT INTO t2 VALUES(3, $v2);
+    INSERT INTO t2 VALUES(4, $v2);
+    INSERT INTO t2 VALUES(5, $v2);
+    INSERT INTO t2 VALUES(6, $v2);
+  }
+} {}
+
+do_execsql_test 3.3 { SELECT x FROM t2 WHERE t2 MATCH '2' } {}
+do_execsql_test 3.4 { SELECT x FROM t2 WHERE t2 MATCH '1' } {2 3 4 5 6}
+do_execsql_test 3.5 { SELECT x FROM t2 WHERE t2 MATCH 'x' } {1 2}
+do_execsql_test 3.6 { SELECT x FROM t2 WHERE t2 MATCH 'x 1' } {2}
+  
+
+
+finish_test
