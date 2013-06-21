@@ -5794,16 +5794,16 @@ WhereInfo *sqlite3WhereBegin(
     if( pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, pOrderBy);
     while( pWInfo->nLevel>=2 ){
       pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
-      if( ((wctrlFlags & WHERE_WANT_DISTINCT)!=0
-           || (pLoop->wsFlags & WHERE_ONEROW)!=0)
-       && (tabUsed & pLoop->maskSelf)==0
+      if( (pWInfo->pTabList->a[pLoop->iTab].jointype & JT_LEFT)==0 ) break;
+      if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
+       && (pLoop->wsFlags & WHERE_ONEROW)==0
       ){
-        WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
-        pWInfo->nLevel--;
-        nTabList--;
-      }else{
         break;
       }
+      if( (tabUsed & pLoop->maskSelf)!=0 ) break;
+      WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+      pWInfo->nLevel--;
+      nTabList--;
     }
   }
   WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));

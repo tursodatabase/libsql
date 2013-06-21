@@ -1,5 +1,5 @@
-C Attempt\sto\sdisable\sinner\sloops\sof\sa\sjoin\sthat\sdo\snot\sgenerate\soutput.\nThis\sdoes\snot\swork,\ssince\sthe\sinner\sloops\smight\srun\szero\stimes\sand\sthus\ninhibit\sall\soutput.\s\sNeeds\sto\sbe\senhanced\sto\swork\sonly\sfor\sLEFT\sJOINs\nor\swhen\swe\sknow\sthat\sthe\sinner\sloop\swill\salways\srun\sat\sleast\sonce.
-D 2013-06-21T02:05:06.206
+C Only\seliminate\sinner\sloops\sof\sa\sJOIN\sif\sthey\sare\sthe\sRHS\sof\sa\sLEFT\sJOIN\nand\sif\sthey\sgive\sno\smore\sthan\sa\ssingle\sresult.\s\sThis\sappears\sto\sgive\scorrect\nanswers\sin\sall\scases.
+D 2013-06-21T02:15:48.306
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c fc5293b54a70474c2b46e9df26c9e2803b152e68
+F src/where.c 0ca9544cca6e40550b970574a32055463650df12
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2c2577e69ccb47f1af674a755e71221e2ca0b322
-R b2263c66dd8a59884ee45351c335261a
+P ca839723a21bb13d3e0666a672c15c6f3a267c2f
+R 6b62f4d6f88cb9d978862e981acfa473
 U drh
-Z 6fd83e64fe937f64082b799e88969f81
+Z b99e6e4ea8d5a45c0b5323f96846f0b0
