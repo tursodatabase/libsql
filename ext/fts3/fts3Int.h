@@ -206,6 +206,7 @@ struct Fts3Table {
   const char *zName;              /* virtual table name */
   int nColumn;                    /* number of named columns in virtual table */
   char **azColumn;                /* column names.  malloced */
+  u8 *abNotindexed;               /* True for 'notindexed' columns */
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */

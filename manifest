@@ -1,5 +1,5 @@
-C Disable\sposix_fallocate()\sfor\sall\ssystems,\sall\sthe\stime,\sunless\sthe\nHAVE_POSIX_FALLOCATE\scompile-time\smacro\sis\ssupplied.
-D 2013-06-20T14:07:37.671
+C Merge\sthe\sfts4-notindexed\sbranch\swith\sthe\strunk.
+D 2013-06-21T18:29:49.697
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,9 +78,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 931b3c83abdd1ab3bb389b2130431c2a9ff73b91
+F ext/fts3/fts3.c 3cb4afd0accf903fbe66e2cc48d6f44e5ccb8a76
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h cb4df04cf886d9920a71df9e8faaa5aae2fa48c6
+F ext/fts3/fts3Int.h 2659cdfc8cde3f981ea99b2f60383e6239f9f4d5
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
 F ext/fts3/fts3_expr.c f8eb1046063ba342c7114eba175cabb31c4a64e7
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 6a1fc0e922e76b68e594bf7bc33bac72af9dc47b
+F ext/fts3/fts3_write.c cd264daa4f92b8eb6d61245333d0e3b147e8fd80
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -530,7 +530,7 @@ F test/fts3expr3.test 1bfb762b53a794f990f3dffaae8bbea5736422f7
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
-F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
+F test/fts3malloc.test 1e3df7598534e77a7072aad610d46554cface3e9
 F test/fts3matchinfo.test ecb08f586d027eb03941bcfcded6cb9d8ccb3a66
 F test/fts3near.test 12895557870b0f9af7cc0be81a0171abb2d12f12
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
@@ -550,6 +550,7 @@ F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
+F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test c8ac44217bf6c17812b03eaafa6c06995ad304c2
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test b0fc34fdc36897769651975a2b0a606312753643
@@ -706,7 +707,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4614301e38398df7fdd5f28f4ed8f272b328251b
-F test/permutations.test d997a947ab8aabb15f763d50a030b3c11e8ef1b6
+F test/permutations.test 7161be2569550924a8a437272acabfe9e6f48b86
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1093,7 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2b2ade92788be623af6f57e37d98994be2cec142
-R 4c8df645fee7190a620dee659859568b
-U drh
-Z 4cfe85260540c90b4ee0898bd7491d71
+P b674462243138fcee192ef05d434665e30c681c4 b53c0c41f97c7ddaeea61f0e6035d1c4747db3f7
+R 78eae7e4eba9ee605ccaf88bbcc953f5
+U dan
+Z d8def49936980c4606b68402ae38fa82

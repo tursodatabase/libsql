@@ -194,7 +194,7 @@ test_suite "fts3" -prefix "" -description {
   fts4aa.test fts4content.test
   fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
   fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
-  fts4check.test fts4unicode.test
+  fts4check.test fts4unicode.test fts4noti.test
 }
 
 test_suite "nofaultsim" -prefix "" -description {
