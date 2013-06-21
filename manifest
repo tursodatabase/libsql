@@ -1,5 +1,5 @@
-C Use\sthe\starget\splatorm\sversion\sin\sthe\sVS\sprops\sfile\sas\swell.
-D 2013-06-20T19:07:58.086
+C Update\scomments\sand\spackage\sflavor\serror\smessage.
+D 2013-06-21T07:54:39.197
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1067,7 +1067,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl a61fe62a2895ca6458c463fccf1211ca1c000fcf
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl b28d7e1dbce2e69ff2cf2043ff363b08939f3178
+F tool/mkvsix.tcl f3312df26fd9938a27fa0a845ec96bea84b0c16b
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c5954c58c043fed24471fa184048e4ea0b5ba1d6
-R 7752ef9980936689becf7e3beb7b8742
+P ce5a8cc1cf663546ebdce08bef7d957ed4d341c6
+R 94b717d64d889391ffc6225632038588
 U mistachkin
-Z 3aee8dea98fb53abe6ab78ab5ec0f41a
+Z 99783f3b22c024a372aa90c126538916
