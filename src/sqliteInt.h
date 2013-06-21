@@ -114,7 +114,7 @@
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
-** level of threadsafety.  2 means the libary is multithreaded - multiple
+** level of threadsafety.  2 means the library is multithreaded - multiple
 ** threads can use SQLite as long as no two threads try to use the same
 ** database connection at the same time.
 **
@@ -193,20 +193,12 @@
 
 /*
 ** We need to define _XOPEN_SOURCE as follows in order to enable
-** recursive mutexes on most Unix systems.  But Mac OS X is different.
-** The _XOPEN_SOURCE define causes problems for Mac OS X we are told,
-** so it is omitted there.  See ticket #2673.
-**
-** Later we learn that _XOPEN_SOURCE is poorly or incorrectly
-** implemented on some systems.  So we avoid defining it at all
-** if it is already defined or if it is unneeded because we are
-** not doing a threadsafe build.  Ticket #2681.
-**
-** See also ticket #2741.
+** recursive mutexes on most Unix systems and fchmod() on OpenBSD.
+** But _XOPEN_SOURCE define causes problems for Mac OS X, so omit
+** it.
 */
-#if !defined(_XOPEN_SOURCE) && !defined(__DARWIN__) \
- && !defined(__APPLE__) && SQLITE_THREADSAFE
-#  define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
+#if !defined(_XOPEN_SOURCE) && !defined(__DARWIN__) && !defined(__APPLE__)
+#  define _XOPEN_SOURCE 600
 #endif
 
 /*
@@ -758,7 +750,6 @@ typedef struct WhereLevel WhereLevel;
 struct Db {
   char *zName;         /* Name of this database */
   Btree *pBt;          /* The B*Tree structure for this database file */
-  u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at syncing data to disk */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
 };

@@ -1215,7 +1215,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   }else if( gap+2<=top ){
     /* Search the freelist looking for a free slot big enough to satisfy 
     ** the request. The allocation is made from the first free slot in 
-    ** the list that is large enough to accomadate it.
+    ** the list that is large enough to accommodate it.
     */
     int pc, addr;
     for(addr=hdr+1; (pc = get2byte(&data[addr]))>0; addr=pc){
@@ -2517,6 +2517,29 @@ page1_init_failed:
   return rc;
 }
 
+#ifndef NDEBUG
+/*
+** Return the number of cursors open on pBt. This is for use
+** in assert() expressions, so it is only compiled if NDEBUG is not
+** defined.
+**
+** Only write cursors are counted if wrOnly is true.  If wrOnly is
+** false then all cursors are counted.
+**
+** For the purposes of this routine, a cursor is any cursor that
+** is capable of reading or writing to the databse.  Cursors that
+** have been tripped into the CURSOR_FAULT state are not counted.
+*/
+static int countValidCursors(BtShared *pBt, int wrOnly){
+  BtCursor *pCur;
+  int r = 0;
+  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
+    if( (wrOnly==0 || pCur->wrFlag) && pCur->eState!=CURSOR_FAULT ) r++; 
+  }
+  return r;
+}
+#endif
+
 /*
 ** If there are no outstanding cursors and we are not in the middle
 ** of a transaction but there is a read lock on the database, then
@@ -2527,7 +2550,7 @@ page1_init_failed:
 */
 static void unlockBtreeIfUnused(BtShared *pBt){
   assert( sqlite3_mutex_held(pBt->mutex) );
-  assert( pBt->pCursor==0 || pBt->inTransaction>TRANS_NONE );
+  assert( countValidCursors(pBt,0)==0 || pBt->inTransaction>TRANS_NONE );
   if( pBt->inTransaction==TRANS_NONE && pBt->pPage1!=0 ){
     assert( pBt->pPage1->aData );
     assert( sqlite3PagerRefcount(pBt->pPager)==1 );
@@ -3135,7 +3158,7 @@ int sqlite3BtreeIncrVacuum(Btree *p){
 
 /*
 ** This routine is called prior to sqlite3PagerCommit when a transaction
-** is commited for an auto-vacuum database.
+** is committed for an auto-vacuum database.
 **
 ** If SQLITE_OK is returned, then *pnTrunc is set to the number of pages
 ** the database file should be truncated to during the commit process. 
@@ -3255,7 +3278,6 @@ static void btreeEndTransaction(Btree *p){
 #ifndef SQLITE_OMIT_AUTOVACUUM
   pBt->bDoTruncate = 0;
 #endif
-  btreeClearHasContent(pBt);
   if( p->inTrans>TRANS_NONE && p->db->activeVdbeCnt>1 ){
     /* If there are other active statements that belong to this database
     ** handle, downgrade to a read-only transaction. The other statements
@@ -3330,6 +3352,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p, int bCleanup){
       return rc;
     }
     pBt->inTransaction = TRANS_READ;
+    btreeClearHasContent(pBt);
   }
 
   btreeEndTransaction(p);
@@ -3350,27 +3373,6 @@ int sqlite3BtreeCommit(Btree *p){
   sqlite3BtreeLeave(p);
   return rc;
 }
-
-#ifndef NDEBUG
-/*
-** Return the number of write-cursors open on this handle. This is for use
-** in assert() expressions, so it is only compiled if NDEBUG is not
-** defined.
-**
-** For the purposes of this routine, a write-cursor is any cursor that
-** is capable of writing to the databse.  That means the cursor was
-** originally opened for writing and the cursor has not be disabled
-** by having its state changed to CURSOR_FAULT.
-*/
-static int countWriteCursors(BtShared *pBt){
-  BtCursor *pCur;
-  int r = 0;
-  for(pCur=pBt->pCursor; pCur; pCur=pCur->pNext){
-    if( pCur->wrFlag && pCur->eState!=CURSOR_FAULT ) r++; 
-  }
-  return r;
-}
-#endif
 
 /*
 ** This routine sets the state to CURSOR_FAULT and the error
@@ -3451,8 +3453,9 @@ int sqlite3BtreeRollback(Btree *p, int tripCode){
       pBt->nPage = nPage;
       releasePage(pPage1);
     }
-    assert( countWriteCursors(pBt)==0 );
+    assert( countValidCursors(pBt, 1)==0 );
     pBt->inTransaction = TRANS_READ;
+    btreeClearHasContent(pBt);
   }
 
   btreeEndTransaction(p);

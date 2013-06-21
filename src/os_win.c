@@ -2816,6 +2816,9 @@ static void winModeBit(winFile *pFile, unsigned char mask, int *pArg){
 
 /* Forward declaration */
 static int getTempname(int nBuf, char *zBuf);
+#if SQLITE_MAX_MMAP_SIZE>0
+static int winMapfile(winFile*, sqlite3_int64);
+#endif
 
 /*
 ** Control and query of the open file handle.
@@ -2899,13 +2902,20 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 #if SQLITE_MAX_MMAP_SIZE>0
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;
+      int rc = SQLITE_OK;
       if( newLimit>sqlite3GlobalConfig.mxMmap ){
         newLimit = sqlite3GlobalConfig.mxMmap;
       }
       *(i64*)pArg = pFile->mmapSizeMax;
-      if( newLimit>=0 ) pFile->mmapSizeMax = newLimit;
-      OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
-      return SQLITE_OK;
+      if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
+        pFile->mmapSizeMax = newLimit;
+        if( pFile->mmapSize>0 ){
+          (void)winUnmapfile(pFile);
+          rc = winMapfile(pFile, -1);
+        }
+      }
+      OSTRACE(("FCNTL file=%p, rc=%d\n", pFile->h, rc));
+      return rc;
     }
 #endif
   }
@@ -2937,8 +2947,6 @@ static int winDeviceCharacteristics(sqlite3_file *id){
          ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
 }
 
-#ifndef SQLITE_OMIT_WAL
-
 /* 
 ** Windows will only let you create file view mappings
 ** on allocation size granularity boundaries.
@@ -2946,6 +2954,8 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 ** to get the granularity size.
 */
 SYSTEM_INFO winSysInfo;
+
+#ifndef SQLITE_OMIT_WAL
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
@@ -4246,7 +4256,7 @@ static int winOpen(
   pFile->pMapRegion = 0;
   pFile->mmapSize = 0;
   pFile->mmapSizeActual = 0;
-  pFile->mmapSizeMax = sqlite3GlobalConfig.mxMmap;
+  pFile->mmapSizeMax = sqlite3GlobalConfig.szMmap;
 #endif
 
   OpenCounter(+1);

@@ -1166,6 +1166,8 @@ int sqlite3_fuzzer_init(
 ){
   int rc = SQLITE_OK;
   SQLITE_EXTENSION_INIT2(pApi);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_create_module(db, "fuzzer", &fuzzerModule, 0);
+#endif
   return rc;
 }

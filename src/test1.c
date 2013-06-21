@@ -682,6 +682,30 @@ static int sqlite_test_close(
 }
 
 /*
+** Usage:  sqlite3_close_v2 DB
+**
+** Closes the database opened by sqlite3_open.
+*/
+static int sqlite_test_close_v2(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite3 *db;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+       " FILENAME\"", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  rc = sqlite3_close_v2(db);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+
+/*
 ** Implementation of the x_coalesce() function.
 ** Return the first argument non-NULL argument.
 */
@@ -2445,7 +2469,7 @@ static int sqlite_static_bind_nbyte = 0;
 /*
 ** Usage:  sqlite3_bind  VM  IDX  VALUE  FLAGS
 **
-** Sets the value of the IDX-th occurance of "?" in the original SQL
+** Sets the value of the IDX-th occurrence of "?" in the original SQL
 ** string.  VALUE is the new value.  If FLAGS=="null" then VALUE is
 ** ignored and the value is set to NULL.  If FLAGS=="static" then
 ** the value is set to the value of a static variable named
@@ -5539,7 +5563,7 @@ static int test_wal_checkpoint(
 **
 ** Otherwise, this command returns a list of three integers. The first integer
 ** is 1 if SQLITE_BUSY was returned, or 0 otherwise. The following two integers
-** are the values returned via the output paramaters by wal_checkpoint_v2() -
+** are the values returned via the output parameters by wal_checkpoint_v2() -
 ** the number of frames in the log and the number of frames in the log
 ** that have been checkpointed.
 */
@@ -5988,6 +6012,7 @@ static int tclLoadStaticExtensionCmd(
   extern int sqlite3_fuzzer_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_ieee_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_nextchar_init(sqlite3*,char**,const sqlite3_api_routines*);
+  extern int sqlite3_percentile_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_regexp_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_spellfix_init(sqlite3*,char**,const sqlite3_api_routines*);
   extern int sqlite3_wholenumber_init(sqlite3*,char**,const sqlite3_api_routines*);
@@ -6000,6 +6025,7 @@ static int tclLoadStaticExtensionCmd(
     { "fuzzer",                sqlite3_fuzzer_init               },
     { "ieee754",               sqlite3_ieee_init                 },
     { "nextchar",              sqlite3_nextchar_init             },
+    { "percentile",            sqlite3_percentile_init           },
     { "regexp",                sqlite3_regexp_init               },
     { "spellfix",              sqlite3_spellfix_init             },
     { "wholenumber",           sqlite3_wholenumber_init          },
@@ -6077,6 +6103,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_get_table_printf",      (Tcl_CmdProc*)test_get_table_printf },
 #endif
      { "sqlite3_close",                 (Tcl_CmdProc*)sqlite_test_close     },
+     { "sqlite3_close_v2",              (Tcl_CmdProc*)sqlite_test_close_v2  },
      { "sqlite3_create_function",       (Tcl_CmdProc*)test_create_function  },
      { "sqlite3_create_aggregate",      (Tcl_CmdProc*)test_create_aggregate },
      { "sqlite_register_test_function", (Tcl_CmdProc*)test_register_func    },

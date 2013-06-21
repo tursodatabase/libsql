@@ -1523,21 +1523,14 @@ static void resolve_backslashes(char *z){
 }
 
 /*
-** Interpret zArg as a boolean value.  Return either 0 or 1.
+** Return the value of a hexadecimal digit.  Return -1 if the input
+** is not a hex digit.
 */
-static int booleanValue(char *zArg){
-  int i;
-  for(i=0; zArg[i]>='0' && zArg[i]<='9'; i++){}
-  if( i>0 && zArg[i]==0 ) return atoi(zArg);
-  if( sqlite3_stricmp(zArg, "on")==0 || sqlite3_stricmp(zArg,"yes")==0 ){
-    return 1;
-  }
-  if( sqlite3_stricmp(zArg, "off")==0 || sqlite3_stricmp(zArg,"no")==0 ){
-    return 0;
-  }
-  fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n",
-          zArg);
-  return 0;
+static int hexDigitValue(char c){
+  if( c>='0' && c<='9' ) return c - '0';
+  if( c>='a' && c<='f' ) return c - 'a' + 10;
+  if( c>='A' && c<='F' ) return c - 'A' + 10;
+  return -1;
 }
 
 /*
@@ -1564,17 +1557,49 @@ static sqlite3_int64 integerValue(const char *zArg){
   }else if( zArg[0]=='+' ){
     zArg++;
   }
-  while( isdigit(zArg[0]) ){
-    v = v*10 + zArg[0] - '0';
-    zArg++;
+  if( zArg[0]=='0' && zArg[1]=='x' ){
+    int x;
+    zArg += 2;
+    while( (x = hexDigitValue(zArg[0]))>=0 ){
+      v = (v<<4) + x;
+      zArg++;
+    }
+  }else{
+    while( IsDigit(zArg[0]) ){
+      v = v*10 + zArg[0] - '0';
+      zArg++;
+    }
   }
-  for(i=0; i<sizeof(aMult)/sizeof(aMult[0]); i++){
+  for(i=0; i<ArraySize(aMult); i++){
     if( sqlite3_stricmp(aMult[i].zSuffix, zArg)==0 ){
       v *= aMult[i].iMult;
       break;
     }
   }
   return isNeg? -v : v;
+}
+
+/*
+** Interpret zArg as either an integer or a boolean value.  Return 1 or 0
+** for TRUE and FALSE.  Return the integer value if appropriate.
+*/
+static int booleanValue(char *zArg){
+  int i;
+  if( zArg[0]=='0' && zArg[1]=='x' ){
+    for(i=2; hexDigitValue(zArg[i])>=0; i++){}
+  }else{
+    for(i=0; zArg[i]>='0' && zArg[i]<='9'; i++){}
+  }
+  if( i>0 && zArg[i]==0 ) return (int)(integerValue(zArg) & 0xffffffff);
+  if( sqlite3_stricmp(zArg, "on")==0 || sqlite3_stricmp(zArg,"yes")==0 ){
+    return 1;
+  }
+  if( sqlite3_stricmp(zArg, "off")==0 || sqlite3_stricmp(zArg,"no")==0 ){
+    return 0;
+  }
+  fprintf(stderr, "ERROR: Not a boolean value: \"%s\". Assuming \"no\".\n",
+          zArg);
+  return 0;
 }
 
 /*
@@ -1808,7 +1833,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
-    if( nArg>1 && (rc = atoi(azArg[1]))!=0 ) exit(rc);
+    if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 ) exit(rc);
     rc = 2;
   }else
 
@@ -2305,6 +2330,25 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
   }else
 
+  /* Undocumented commands for internal testing.  Subject to change
+  ** without notice. */
+  if( c=='s' && n>=10 && strncmp(azArg[0], "selftest-", 9)==0 ){
+    if( strncmp(azArg[0]+9, "boolean", n-9)==0 ){
+      int i, v;
+      for(i=1; i<nArg; i++){
+        v = booleanValue(azArg[i]);
+        fprintf(p->out, "%s: %d 0x%x\n", azArg[i], v, v);
+      }
+    }
+    if( strncmp(azArg[0]+9, "integer", n-9)==0 ){
+      int i; sqlite3_int64 v;
+      for(i=1; i<nArg; i++){
+        v = integerValue(azArg[i]);
+        fprintf(p->out, "%s: %lld 0x%llx\n", azArg[i], v, v);
+      }
+    }
+  }else
+
   if( c=='s' && strncmp(azArg[0], "separator", n)==0 && nArg==2 ){
     sqlite3_snprintf(sizeof(p->separator), p->separator,
                      "%.*s", (int)sizeof(p->separator)-1, azArg[1]);
@@ -2458,7 +2502,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         }
       }
     }
-    if( testctrl<0 ) testctrl = atoi(azArg[1]);
+    if( testctrl<0 ) testctrl = (int)integerValue(azArg[1]);
     if( (testctrl<SQLITE_TESTCTRL_FIRST) || (testctrl>SQLITE_TESTCTRL_LAST) ){
       fprintf(stderr,"Error: invalid testctrl option: %s\n", azArg[1]);
     }else{
@@ -2505,7 +2549,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         case SQLITE_TESTCTRL_ASSERT:              
         case SQLITE_TESTCTRL_ALWAYS:              
           if( nArg==3 ){
-            int opt = atoi(azArg[2]);        
+            int opt = booleanValue(azArg[2]);        
             rc = sqlite3_test_control(testctrl, opt);
             fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           } else {
@@ -2542,7 +2586,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
   if( c=='t' && n>4 && strncmp(azArg[0], "timeout", n)==0 && nArg==2 ){
     open_db(p);
-    sqlite3_busy_timeout(p->db, atoi(azArg[1]));
+    sqlite3_busy_timeout(p->db, (int)integerValue(azArg[1]));
   }else
     
   if( HAS_TIMER && c=='t' && n>=5 && strncmp(azArg[0], "timer", n)==0
@@ -2592,7 +2636,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     int j;
     assert( nArg<=ArraySize(azArg) );
     for(j=1; j<nArg && j<ArraySize(p->colWidth); j++){
-      p->colWidth[j-1] = atoi(azArg[j]);
+      p->colWidth[j-1] = (int)integerValue(azArg[j]);
     }
   }else
 

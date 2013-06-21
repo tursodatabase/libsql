@@ -774,11 +774,15 @@ void sqlite3Pragma(
       }
     }
     sz = -1;
-    if( sqlite3_file_control(db,zDb,SQLITE_FCNTL_MMAP_SIZE,&sz)==SQLITE_OK ){
+    rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_MMAP_SIZE, &sz);
 #if SQLITE_MAX_MMAP_SIZE==0
-      sz = 0;
+    sz = 0;
 #endif
+    if( rc==SQLITE_OK ){
       returnSingleInt(pParse, "mmap_size", sz);
+    }else if( rc!=SQLITE_NOTFOUND ){
+      pParse->nErr++;
+      pParse->rc = rc;
     }
   }else
 
@@ -1309,7 +1313,7 @@ void sqlite3Pragma(
 #endif
 
 #ifndef SQLITE_OMIT_INTEGRITY_CHECK
-  /* Pragma "quick_check" is an experimental reduced version of 
+  /* Pragma "quick_check" is reduced version of 
   ** integrity_check designed to detect most database corruption
   ** without most of the overhead of a full integrity-check.
   */
@@ -1767,10 +1771,10 @@ void sqlite3Pragma(
 
 #ifdef SQLITE_HAS_CODEC
   if( sqlite3StrICmp(zLeft, "key")==0 && zRight ){
-    sqlite3_key(db, zRight, sqlite3Strlen30(zRight));
+    sqlite3_key_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
   }else
   if( sqlite3StrICmp(zLeft, "rekey")==0 && zRight ){
-    sqlite3_rekey(db, zRight, sqlite3Strlen30(zRight));
+    sqlite3_rekey_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
   }else
   if( zRight && (sqlite3StrICmp(zLeft, "hexkey")==0 ||
                  sqlite3StrICmp(zLeft, "hexrekey")==0) ){
@@ -1782,9 +1786,9 @@ void sqlite3Pragma(
       zKey[i/2] = (h2 & 0x0f) | ((h1 & 0xf)<<4);
     }
     if( (zLeft[3] & 0xf)==0xb ){
-      sqlite3_key(db, zKey, i/2);
+      sqlite3_key_v2(db, zDb, zKey, i/2);
     }else{
-      sqlite3_rekey(db, zKey, i/2);
+      sqlite3_rekey_v2(db, zDb, zKey, i/2);
     }
   }else
 #endif

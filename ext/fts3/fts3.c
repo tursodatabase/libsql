@@ -2984,11 +2984,7 @@ static int fts3FilterMethod(
       return rc;
     }
 
-    rc = sqlite3Fts3ReadLock(p);
-    if( rc!=SQLITE_OK ) return rc;
-
     rc = fts3EvalStart(pCsr);
-
     sqlite3Fts3SegmentsClose(p);
     if( rc!=SQLITE_OK ) return rc;
     pCsr->pNextId = pCsr->aDoclist;

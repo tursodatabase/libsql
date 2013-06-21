@@ -489,37 +489,30 @@ static void fts3SqlExec(
 
 
 /*
-** This function ensures that the caller has obtained a shared-cache
-** table-lock on the %_content table. This is required before reading
-** data from the fts3 table. If this lock is not acquired first, then
-** the caller may end up holding read-locks on the %_segments and %_segdir
-** tables, but no read-lock on the %_content table. If this happens 
-** a second connection will be able to write to the fts3 table, but
-** attempting to commit those writes might return SQLITE_LOCKED or
-** SQLITE_LOCKED_SHAREDCACHE (because the commit attempts to obtain 
-** write-locks on the %_segments and %_segdir ** tables). 
+** This function ensures that the caller has obtained an exclusive 
+** shared-cache table-lock on the %_segdir table. This is required before 
+** writing data to the fts3 table. If this lock is not acquired first, then
+** the caller may end up attempting to take this lock as part of committing
+** a transaction, causing SQLite to return SQLITE_LOCKED or 
+** LOCKED_SHAREDCACHEto a COMMIT command.
 **
-** We try to avoid this because if FTS3 returns any error when committing
-** a transaction, the whole transaction will be rolled back. And this is
-** not what users expect when they get SQLITE_LOCKED_SHAREDCACHE. It can
-** still happen if the user reads data directly from the %_segments or
-** %_segdir tables instead of going through FTS3 though.
-**
-** This reasoning does not apply to a content=xxx table.
+** It is best to avoid this because if FTS3 returns any error when 
+** committing a transaction, the whole transaction will be rolled back. 
+** And this is not what users expect when they get SQLITE_LOCKED_SHAREDCACHE. 
+** It can still happen if the user locks the underlying tables directly 
+** instead of accessing them via FTS.
 */
-int sqlite3Fts3ReadLock(Fts3Table *p){
-  int rc;                         /* Return code */
-  sqlite3_stmt *pStmt;            /* Statement used to obtain lock */
-
-  if( p->zContentTbl==0 ){
-    rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pStmt, 0);
+static int fts3Writelock(Fts3Table *p){
+  int rc = SQLITE_OK;
+  
+  if( p->nPendingData==0 ){
+    sqlite3_stmt *pStmt;
+    rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_LEVEL, &pStmt, 0);
     if( rc==SQLITE_OK ){
       sqlite3_bind_null(pStmt, 1);
       sqlite3_step(pStmt);
       rc = sqlite3_reset(pStmt);
     }
-  }else{
-    rc = SQLITE_OK;
   }
 
   return rc;
@@ -5296,6 +5289,9 @@ int sqlite3Fts3UpdateMethod(
   }
   aSzIns = &aSzDel[p->nColumn+1];
   memset(aSzDel, 0, sizeof(aSzDel[0])*(p->nColumn+1)*2);
+
+  rc = fts3Writelock(p);
+  if( rc!=SQLITE_OK ) goto update_out;
 
   /* If this is an INSERT operation, or an UPDATE that modifies the rowid
   ** value, then this operation requires constraint handling.

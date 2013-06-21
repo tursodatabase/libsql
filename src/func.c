@@ -231,7 +231,7 @@ static void instrFunc(
 **
 ** If p1 is negative, then we begin abs(p1) from the end of x[].
 **
-** If p2 is negative, return the p2 characters preceeding p1.
+** If p2 is negative, return the p2 characters preceding p1.
 */
 static void substrFunc(
   sqlite3_context *context,
@@ -890,10 +890,6 @@ static const char hexdigits[] = {
 };
 
 /*
-** EXPERIMENTAL - This is not an official function.  The interface may
-** change.  This function may disappear.  Do not write code that depends
-** on this function.
-**
 ** Implementation of the QUOTE() function.  This function takes a single
 ** argument.  If the argument is numeric, the return value is the same as
 ** the argument.  If the argument is NULL, the return value is the string
@@ -1210,7 +1206,7 @@ static void zeroblobFunc(
 /*
 ** The replace() function.  Three arguments are all strings: call
 ** them A, B, and C. The result is also a string which is derived
-** from A by replacing every occurance of B with C.  The match
+** from A by replacing every occurrence of B with C.  The match
 ** must be exact.  Collating sequences are not used.
 */
 static void replaceFunc(

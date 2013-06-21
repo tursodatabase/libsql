@@ -116,12 +116,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     }
     assert( op!=TK_REGISTER || p->op2!=TK_COLLATE );
     if( op==TK_COLLATE ){
-      if( db->init.busy ){
-        /* Do not report errors when parsing while the schema */
-        pColl = sqlite3FindCollSeq(db, ENC(db), p->u.zToken, 0);
-      }else{
-        pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
-      }
+      pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
     if( p->pTab!=0
@@ -1651,7 +1646,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 **
 ** If rMayHaveNull is zero, that means that the subquery is being used
 ** for membership testing only.  There is no need to initialize any
-** registers to indicate the presense or absence of NULLs on the RHS.
+** registers to indicate the presence or absence of NULLs on the RHS.
 **
 ** For a SELECT or EXISTS operator, return the register that holds the
 ** result.  For IN operators or if an error occurs, the return value is 0.

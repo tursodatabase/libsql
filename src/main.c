@@ -701,7 +701,7 @@ static int binCollFunc(
 /*
 ** Another built-in collating sequence: NOCASE. 
 **
-** This collating sequence is intended to be used for "case independant
+** This collating sequence is intended to be used for "case independent
 ** comparison". SQLite's knowledge of upper and lower case equivalents
 ** extends only to the 26 characters used in the English language.
 **
@@ -902,6 +902,12 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   ** go ahead and free all resources.
   */
 
+  /* If a transaction is open, roll it back. This also ensures that if
+  ** any database schemas have been modified by an uncommitted transaction
+  ** they are reset. And that the required b-tree mutex is held to make
+  ** the pager rollback and schema reset an atomic operation. */
+  sqlite3RollbackAll(db, SQLITE_OK);
+
   /* Free any outstanding Savepoint structures. */
   sqlite3CloseSavepoints(db);
 
@@ -1002,6 +1008,15 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
   int inTrans = 0;
   assert( sqlite3_mutex_held(db->mutex) );
   sqlite3BeginBenignMalloc();
+
+  /* Obtain all b-tree mutexes before making any calls to BtreeRollback(). 
+  ** This is important in case the transaction being rolled back has
+  ** modified the database schema. If the b-tree mutexes are not taken
+  ** here, then another shared-cache connection might sneak in between
+  ** the database rollback and schema reset, which can cause false
+  ** corruption reports in some cases.  */
+  sqlite3BtreeEnterAll(db);
+
   for(i=0; i<db->nDb; i++){
     Btree *p = db->aDb[i].pBt;
     if( p ){
@@ -1009,7 +1024,6 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
         inTrans = 1;
       }
       sqlite3BtreeRollback(p, tripCode);
-      db->aDb[i].inTrans = 0;
     }
   }
   sqlite3VtabRollback(db);
@@ -1019,6 +1033,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
     sqlite3ExpirePreparedStatements(db);
     sqlite3ResetAllSchemasOfConnection(db);
   }
+  sqlite3BtreeLeaveAll(db);
 
   /* Any deferred constraint violations have now been resolved. */
   db->nDeferredCons = 0;
@@ -2775,8 +2790,6 @@ int sqlite3_global_recover(void){
 ** mode.  Return TRUE if it is and FALSE if not.  Autocommit mode is on
 ** by default.  Autocommit is disabled by a BEGIN statement and reenabled
 ** by the next COMMIT or ROLLBACK.
-**
-******* THIS IS AN EXPERIMENTAL API AND IS SUBJECT TO CHANGE ******
 */
 int sqlite3_get_autocommit(sqlite3 *db){
   return db->autoCommit;

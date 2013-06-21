@@ -1159,8 +1159,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** re-evaluated for each reference to it.
     */
     sNC.pEList = p->pEList;
-    if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     sNC.ncFlags |= NC_AsMaybe;
+    if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
     sNC.ncFlags &= ~NC_AsMaybe;
 
