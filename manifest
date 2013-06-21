@@ -1,5 +1,5 @@
-C Add\sthe\s"notindexed"\soption\sto\sfts4.
-D 2013-06-21T17:30:47.476
+C Add\sa\sfew\smore\stests\sfor\sthe\sfts4\snotindexed\soption.
+D 2013-06-21T18:18:23.327
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -530,7 +530,7 @@ F test/fts3expr3.test 1bfb762b53a794f990f3dffaae8bbea5736422f7
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
-F test/fts3malloc.test b86ea33db9e8c58c0c2f8027a9fcadaf6a1568be
+F test/fts3malloc.test 1e3df7598534e77a7072aad610d46554cface3e9
 F test/fts3matchinfo.test ecb08f586d027eb03941bcfcded6cb9d8ccb3a66
 F test/fts3near.test 12895557870b0f9af7cc0be81a0171abb2d12f12
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
@@ -550,7 +550,7 @@ F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
-F test/fts4noti.test 7710af8ad41b23571d62c0cee2a062c30ecb8012
+F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test c8ac44217bf6c17812b03eaafa6c06995ad304c2
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test b0fc34fdc36897769651975a2b0a606312753643
@@ -1094,10 +1094,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b674462243138fcee192ef05d434665e30c681c4
-R 977878ca999ebdf95aeef1dd83187bfc
-T *branch * fts4-notindexed
-T *sym-fts4-notindexed *
-T -sym-trunk *
+P 8ff2b8f5948ccddce70102e6d68d464c66e4f7ca
+R 78eae7e4eba9ee605ccaf88bbcc953f5
 U dan
-Z 6bb2b422fa6b5870298aeb31440d85b9
+Z 1a5ea5678be579c71cc2f3fe2b3716ce
