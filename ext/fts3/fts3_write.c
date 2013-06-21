@@ -900,12 +900,15 @@ static int fts3InsertTerms(
 ){
   int i;                          /* Iterator variable */
   for(i=2; i<p->nColumn+2; i++){
-    const char *zText = (const char *)sqlite3_value_text(apVal[i]);
-    int rc = fts3PendingTermsAdd(p, iLangid, zText, i-2, &aSz[i-2]);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    int iCol = i-2;
+    if( p->abNotindexed[iCol]==0 ){
+      const char *zText = (const char *)sqlite3_value_text(apVal[i]);
+      int rc = fts3PendingTermsAdd(p, iLangid, zText, iCol, &aSz[iCol]);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
     }
-    aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
   }
   return SQLITE_OK;
 }
@@ -1052,9 +1055,12 @@ static void fts3DeleteTerms(
       int iLangid = langidFromSelect(p, pSelect);
       rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pSelect, 0));
       for(i=1; rc==SQLITE_OK && i<=p->nColumn; i++){
-        const char *zText = (const char *)sqlite3_column_text(pSelect, i);
-        rc = fts3PendingTermsAdd(p, iLangid, zText, -1, &aSz[i-1]);
-        aSz[p->nColumn] += sqlite3_column_bytes(pSelect, i);
+        int iCol = i-1;
+        if( p->abNotindexed[iCol]==0 ){
+          const char *zText = (const char *)sqlite3_column_text(pSelect, i);
+          rc = fts3PendingTermsAdd(p, iLangid, zText, -1, &aSz[iCol]);
+          aSz[p->nColumn] += sqlite3_column_bytes(pSelect, i);
+        }
       }
       if( rc!=SQLITE_OK ){
         sqlite3_reset(pSelect);
@@ -3296,9 +3302,11 @@ static int fts3DoRebuild(Fts3Table *p){
       rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pStmt, 0));
       memset(aSz, 0, sizeof(aSz[0]) * (p->nColumn+1));
       for(iCol=0; rc==SQLITE_OK && iCol<p->nColumn; iCol++){
-        const char *z = (const char *) sqlite3_column_text(pStmt, iCol+1);
-        rc = fts3PendingTermsAdd(p, iLangid, z, iCol, &aSz[iCol]);
-        aSz[p->nColumn] += sqlite3_column_bytes(pStmt, iCol+1);
+        if( p->abNotindexed[iCol]==0 ){
+          const char *z = (const char *) sqlite3_column_text(pStmt, iCol+1);
+          rc = fts3PendingTermsAdd(p, iLangid, z, iCol, &aSz[iCol]);
+          aSz[p->nColumn] += sqlite3_column_bytes(pStmt, iCol+1);
+        }
       }
       if( p->bHasDocsize ){
         fts3InsertDocsize(&rc, p, aSz);
@@ -5101,35 +5109,37 @@ int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
     iDocid = sqlite3_column_int64(pCsr->pStmt, 0);
   
     for(i=0; i<p->nColumn && rc==SQLITE_OK; i++){
-      const char *zText = (const char *)sqlite3_column_text(pCsr->pStmt, i+1);
-      sqlite3_tokenizer_cursor *pTC = 0;
-  
-      rc = sqlite3Fts3OpenTokenizer(pT, pCsr->iLangid, zText, -1, &pTC);
-      while( rc==SQLITE_OK ){
-        char const *zToken;       /* Buffer containing token */
-        int nToken = 0;           /* Number of bytes in token */
-        int iDum1 = 0, iDum2 = 0; /* Dummy variables */
-        int iPos = 0;             /* Position of token in zText */
-  
-        rc = pModule->xNext(pTC, &zToken, &nToken, &iDum1, &iDum2, &iPos);
-        for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
-          Fts3PhraseToken *pPT = pDef->pToken;
-          if( (pDef->iCol>=p->nColumn || pDef->iCol==i)
-           && (pPT->bFirst==0 || iPos==0)
-           && (pPT->n==nToken || (pPT->isPrefix && pPT->n<nToken))
-           && (0==memcmp(zToken, pPT->z, pPT->n))
-          ){
-            fts3PendingListAppend(&pDef->pList, iDocid, i, iPos, &rc);
+      if( p->abNotindexed[i]==0 ){
+        const char *zText = (const char *)sqlite3_column_text(pCsr->pStmt, i+1);
+        sqlite3_tokenizer_cursor *pTC = 0;
+
+        rc = sqlite3Fts3OpenTokenizer(pT, pCsr->iLangid, zText, -1, &pTC);
+        while( rc==SQLITE_OK ){
+          char const *zToken;       /* Buffer containing token */
+          int nToken = 0;           /* Number of bytes in token */
+          int iDum1 = 0, iDum2 = 0; /* Dummy variables */
+          int iPos = 0;             /* Position of token in zText */
+
+          rc = pModule->xNext(pTC, &zToken, &nToken, &iDum1, &iDum2, &iPos);
+          for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
+            Fts3PhraseToken *pPT = pDef->pToken;
+            if( (pDef->iCol>=p->nColumn || pDef->iCol==i)
+                && (pPT->bFirst==0 || iPos==0)
+                && (pPT->n==nToken || (pPT->isPrefix && pPT->n<nToken))
+                && (0==memcmp(zToken, pPT->z, pPT->n))
+              ){
+              fts3PendingListAppend(&pDef->pList, iDocid, i, iPos, &rc);
+            }
           }
         }
+        if( pTC ) pModule->xClose(pTC);
+        if( rc==SQLITE_DONE ) rc = SQLITE_OK;
       }
-      if( pTC ) pModule->xClose(pTC);
-      if( rc==SQLITE_DONE ) rc = SQLITE_OK;
-    }
-  
-    for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
-      if( pDef->pList ){
-        rc = fts3PendingListAppendVarint(&pDef->pList, 0);
+
+      for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
+        if( pDef->pList ){
+          rc = fts3PendingListAppendVarint(&pDef->pList, 0);
+        }
       }
     }
   }

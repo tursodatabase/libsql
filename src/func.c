@@ -19,9 +19,6 @@
 #include "sqliteInt.h"
 #include <stdlib.h>
 #include <assert.h>
-#ifndef SQLITE_OMIT_FLOATING_POINT
-# include <math.h>
-#endif
 #include "vdbeInt.h"
 
 /*
@@ -969,19 +966,9 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 
 /*
-** EXPERIMENTAL - This is not an official function.  The interface may
-** change.  This function may disappear.  Do not write code that depends
-** on this function.
-**
-** Implementation of the tointeger() function.  This function takes a
-** single argument.  If the argument is an integer or is a double that
-** can be losslessly converted to an integer, the return value is the
-** same as the argument.  If the argument is a double that cannot be
-** losslessly represented as an integer, the return value is NULL.
-** If the argument is NULL, the return value is NULL.  Otherwise, an
-** attempt is made to convert the argument to an integer.  If the
-** conversion is successful, the integer value is returned; otherwise,
-** NULL is returned.
+** tointeger(X):  If X is any value (integer, double, or string) that can
+** be losslessly converted into an integer, then make the conversion and
+** return the result.  Otherwise, return NULL.
 */
 static void tointegerFunc(
   sqlite3_context *context,
@@ -991,20 +978,14 @@ static void tointegerFunc(
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_FLOAT:
-#ifndef SQLITE_OMIT_FLOATING_POINT
-    {
+    case SQLITE_FLOAT: {
       double rVal = sqlite3_value_double(argv[0]);
-      double rIntVal = 0.0;
-      if( !sqlite3IsNaN(rVal) && modf(rVal, &rIntVal)==0.0 &&
-          rIntVal>=SMALLEST_INT64 && rIntVal<=LARGEST_INT64 ){
-        sqlite3_result_int64(context, (i64)rIntVal);
-        return;
+      i64 iVal = (i64)rVal;
+      if( !sqlite3IsNaN(rVal) && rVal==(double)iVal ){
+        sqlite3_result_int64(context, iVal);
       }
-      sqlite3_result_null(context);
       break;
     }
-#endif
     case SQLITE_INTEGER: {
       sqlite3_result_int64(context, sqlite3_value_int64(argv[0]));
       break;
@@ -1018,37 +999,22 @@ static void tointegerFunc(
           i64 iVal;
           if( !sqlite3Atoi64(zStr, &iVal, nStr, SQLITE_UTF8) ){
             sqlite3_result_int64(context, iVal);
-            return;
           }
         }
       }
-      sqlite3_result_null(context);
       break;
     }
     default: {
       assert( sqlite3_value_type(argv[0])==SQLITE_NULL );
-      sqlite3_result_null(context);
       break;
     }
   }
 }
 
 /*
-** EXPERIMENTAL - This is not an official function.  The interface may
-** change.  This function may disappear.  Do not write code that depends
-** on this function.
-**
-** Implementation of the toreal() function.  This function takes a
-** single argument.  If the argument is a double or is an integer that
-** can be losslessly converted to a double, the return value is the
-** same as the argument.  If the argument is an integer that cannot be
-** losslessly represented as a double, the return value is NULL.
-** If the argument is NULL, the return value is NULL.  Otherwise, an
-** attempt is made to convert the argument to a double.  If the
-** conversion is successful, the double value is returned; otherwise,
-** NULL is returned.
+** toreal(X):  If X can be losslessly converted into a real number, then
+** do so and return that real number.  Otherwise return NULL.
 */
-#ifndef SQLITE_OMIT_FLOATING_POINT
 static void torealFunc(
   sqlite3_context *context,
   int argc,
@@ -1066,9 +1032,7 @@ static void torealFunc(
       double rVal = (double)iVal;
       if( iVal==rVal ){
         sqlite3_result_double(context, rVal);
-        return;
       }
-      sqlite3_result_null(context);
       break;
     }
     case SQLITE_BLOB:
@@ -1084,17 +1048,14 @@ static void torealFunc(
           }
         }
       }
-      sqlite3_result_null(context);
       break;
     }
     default: {
       assert( sqlite3_value_type(argv[0])==SQLITE_NULL );
-      sqlite3_result_null(context);
       break;
     }
   }
 }
-#endif
 
 /*
 ** The unicode() function.  Return the integer unicode code-point value
@@ -1805,9 +1766,7 @@ void sqlite3RegisterGlobalFunctions(void){
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(tointeger,          1, 0, 0, tointegerFunc    ),
-#ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(toreal,             1, 0, 0, torealFunc       ),
-#endif
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
     FUNCTION(changes,            0, 0, 0, changes          ),
     FUNCTION(total_changes,      0, 0, 0, total_changes    ),
