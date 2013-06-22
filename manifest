@@ -1,5 +1,5 @@
-C Only\seliminate\sinner\sloops\sof\sa\sJOIN\sif\sthey\sare\sthe\sRHS\sof\sa\sLEFT\sJOIN\nand\sif\sthey\sgive\sno\smore\sthan\sa\ssingle\sresult.\s\sThis\sappears\sto\sgive\scorrect\nanswers\sin\sall\scases.
-D 2013-06-21T02:15:48.306
+C Add\sthe\sability\sto\sdisable\sthe\somit-join-table\soptimization\sfor\stesting\npurposes.
+D 2013-06-22T15:44:26.893
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/shell.c ab6eea968c8745be3aa74e45fedb37d057b4cd0d
 F src/sqlite.h.in 5b390ca5d94e09e56e7fee6a51ddde4721b89f8e
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h cabeb0401566d80503a0bc6e2d12e7fe2577bf6d
+F src/sqliteInt.h e6f069b07fdef1ab54034940b7a6e7be2b4efd57
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -289,7 +289,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 0ca9544cca6e40550b970574a32055463650df12
+F src/where.c 9bcfcb4ec6a14dd0111bf287bee02be88d5709f9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ca839723a21bb13d3e0666a672c15c6f3a267c2f
-R 6b62f4d6f88cb9d978862e981acfa473
+P d7a25cc79794817504ca1a4262008a68b2a4dece
+R ca6216e1e7f1e0a7cea14bc87e274a42
 U drh
-Z b99e6e4ea8d5a45c0b5323f96846f0b0
+Z 6a72a8bdf1b2e20868f42b8b65540410

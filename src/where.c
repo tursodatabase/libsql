@@ -5789,7 +5789,10 @@ WhereInfo *sqlite3WhereBegin(
   }
 #endif
   /* Attempt to omit tables from the join that do not effect the result */
-  if( pResultSet!=0 && pWInfo->nLevel>=2 ){
+  if( pWInfo->nLevel>=2
+   && pResultSet!=0
+   && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
+  ){
     Bitmask tabUsed = exprListTableUsage(pMaskSet, pResultSet);
     if( pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, pOrderBy);
     while( pWInfo->nLevel>=2 ){
