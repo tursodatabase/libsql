@@ -6302,8 +6302,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3WalTrace;
 #endif
 #ifdef SQLITE_TEST
-  extern char sqlite3_query_plan[];
-  static char *query_plan = sqlite3_query_plan;
 #ifdef SQLITE_ENABLE_FTS3
   extern int sqlite3_fts3_enable_parentheses;
 #endif
@@ -6357,8 +6355,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_os_type, TCL_LINK_INT);
 #endif
 #ifdef SQLITE_TEST
-  Tcl_LinkVar(interp, "sqlite_query_plan",
-      (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
+  {
+    static const char *query_plan = "*** OBSOLETE VARIABLE ***";
+    Tcl_LinkVar(interp, "sqlite_query_plan",
+       (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
+  }
 #endif
 #ifdef SQLITE_DEBUG
   Tcl_LinkVar(interp, "sqlite_where_trace",

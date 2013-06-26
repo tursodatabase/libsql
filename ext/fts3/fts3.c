@@ -1464,7 +1464,7 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   ** strategy is possible.
   */
   pInfo->idxNum = FTS3_FULLSCAN_SEARCH;
-  pInfo->estimatedCost = 500000;
+  pInfo->estimatedCost = 5000000;
   for(i=0; i<pInfo->nConstraint; i++){
     struct sqlite3_index_constraint *pCons = &pInfo->aConstraint[i];
     if( pCons->usable==0 ) continue;

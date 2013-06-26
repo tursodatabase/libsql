@@ -241,8 +241,11 @@ do_test subquery-2.5.3.1 {
 } {10.0}
 do_test subquery-2.5.3.2 {
   # Verify that the t4i index was not used in the previous query
-  set ::sqlite_query_plan
-} {t4 {}}
+  execsql {
+    EXPLAIN QUERY PLAN
+    SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
+  }
+} {/SCAN TABLE t4 /}
 do_test subquery-2.5.4 {
   execsql {
     DROP TABLE t3;

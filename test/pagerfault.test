@@ -1546,4 +1546,3 @@ sqlite3_shutdown
 sqlite3_config_uri 0
 
 finish_test
-

@@ -85,13 +85,6 @@ WINBASEAPI BOOL WINAPI UnmapViewOfFile(LPCVOID);
 #endif /* SQLITE_WIN32_FILEMAPPING_API && !defined(SQLITE_OMIT_WAL) */
 
 /*
-** Macro to find the minimum of two numeric values.
-*/
-#ifndef MIN
-# define MIN(x,y) ((x)<(y)?(x):(y))
-#endif
-
-/*
 ** Some Microsoft compilers lack this definition.
 */
 #ifndef INVALID_FILE_ATTRIBUTES

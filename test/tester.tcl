@@ -551,12 +551,25 @@ proc do_test {name cmd expected} {
       fail_test $name
     } else {
       if {[regexp {^~?/.*/$} $expected]} {
+        # "expected" is of the form "/PATTERN/" then the result if correct if
+        # regular expression PATTERN matches the result.  "~/PATTERN/" means
+        # the regular expression must not match.
         if {[string index $expected 0]=="~"} {
           set re [string map {# {[-0-9.]+}} [string range $expected 2 end-1]]
           set ok [expr {![regexp $re $result]}]
         } else {
           set re [string map {# {[-0-9.]+}} [string range $expected 1 end-1]]
           set ok [regexp $re $result]
+        }
+      } elseif {[regexp {^~?\*.*\*$} $expected]} {
+        # "expected" is of the form "*GLOB*" then the result if correct if
+        # glob pattern GLOB matches the result.  "~/GLOB/" means
+        # the glob must not match.
+        if {[string index $expected 0]=="~"} {
+          set e [string range $expected 1 end]
+          set ok [expr {![string match $e $result]}]
+        } else {
+          set ok [string match $expected $result]
         }
       } else {
         set ok [expr {[string compare $result $expected]==0}]
@@ -793,9 +806,28 @@ proc finalize_testing {} {
   set nTest [incr_ntest]
   set nErr [set_test_counter errors]
 
-  puts "$nErr errors out of $nTest tests"
-  if {$nErr>0} {
-    puts "Failures on these tests: [set_test_counter fail_list]"
+  set nKnown 0
+  if {[file readable known-problems.txt]} {
+    set fd [open known-problems.txt]
+    set content [read $fd]
+    close $fd
+    foreach x $content {set known_error($x) 1}
+    foreach x [set_test_counter fail_list] {
+      if {[info exists known_error($x)]} {incr nKnown}
+    }
+  }
+  if {$nKnown>0} {
+    puts "[expr {$nErr-$nKnown}] new errors and $nKnown known errors\
+         out of $nTest tests"
+  } else {
+    puts "$nErr errors out of $nTest tests"
+  }
+  if {$nErr>$nKnown} {
+    puts -nonewline "Failures on these tests:"
+    foreach x [set_test_counter fail_list] {
+      if {![info exists known_error($x)]} {puts -nonewline " $x"}
+    }
+    puts ""
   }
   foreach warning [set_test_counter warn_list] {
     puts "Warning: $warning"

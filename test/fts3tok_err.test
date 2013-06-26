@@ -45,5 +45,3 @@ do_faultsim_test fts3tok_err-2 -faults oom* -prep {
 
 
 finish_test
-
-

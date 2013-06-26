@@ -126,4 +126,3 @@ for {set i 2} {$i<10000 && [set_test_counter errors]==$nInitialErr} {incr i} {
 }
 
 finish_test
-

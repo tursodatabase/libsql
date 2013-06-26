@@ -105,10 +105,10 @@ db func rec rec
 #
 do_execsql_test 2.1.1.1 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term='braid'
-} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} }
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 1:} }
 do_execsql_test 2.1.1.2 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term='braid'
-} {0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)}}
+} {0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0:}}
 
 # Now show that using "term='braid'" means the virtual table returns
 # only 1 row to SQLite, but "+term='braid'" means all 19 are returned.
@@ -154,24 +154,24 @@ do_execsql_test 2.1.5 { SELECT * FROM terms WHERE term=NULL } {}
 
 do_execsql_test 2.2.1.1 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term>'brain'
-} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 2: (~0 rows)} }
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 2:} }
 do_execsql_test 2.2.1.2 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term>'brain'
-} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} }
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0:} }
 
 do_execsql_test 2.2.1.3 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term<'brain'
-} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 4: (~0 rows)} }
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 4:} }
 do_execsql_test 2.2.1.4 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term<'brain'
-} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} }
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0:} }
 
 do_execsql_test 2.2.1.5 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE term BETWEEN 'brags' AND 'brain'
-} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 6: (~0 rows)} }
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 6:} }
 do_execsql_test 2.2.1.6 {
   EXPLAIN QUERY PLAN SELECT * FROM terms WHERE +term BETWEEN 'brags' AND 'brain'
-} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} }
+} { 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0:} }
 
 do_test 2.2.2.1 {
   set cnt 0
@@ -335,7 +335,7 @@ foreach {tn sort orderby} {
   9    1    "ORDER BY occurrences DESC"
 } {
 
-  set res [list 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)}]
+  set res [list 0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0:}]
   if {$sort} { lappend res 0 0 0 {USE TEMP B-TREE FOR ORDER BY} }
 
   set sql "SELECT * FROM terms $orderby"
@@ -410,32 +410,32 @@ proc do_plansql_test {tn sql r} {
 do_plansql_test 4.2 {
   SELECT y FROM x2, terms WHERE y = term AND col = '*'
 } {
-  0 0 0 {SCAN TABLE x2 (~1000000 rows)} 
-  0 1 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} 
+  0 0 0 {SCAN TABLE x2} 
+  0 1 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 1:} 
   a b c d e f g h i j k l
 }
 
 do_plansql_test 4.3 {
   SELECT y FROM terms, x2 WHERE y = term AND col = '*'
 } {
-  0 0 1 {SCAN TABLE x2 (~1000000 rows)} 
-  0 1 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 1: (~0 rows)} 
+  0 0 1 {SCAN TABLE x2} 
+  0 1 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 1:} 
   a b c d e f g h i j k l
 }
 
 do_plansql_test 4.4 {
   SELECT y FROM x3, terms WHERE y = term AND col = '*'
 } {
-  0 0 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
-  0 1 0 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?) (~10 rows)}
+  0 0 1 {SCAN TABLE terms VIRTUAL TABLE INDEX 0:} 
+  0 1 0 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?)}
   a b c d e f g h i j k l
 }
 
 do_plansql_test 4.5 {
   SELECT y FROM terms, x3 WHERE y = term AND occurrences>1 AND col = '*'
 } {
-  0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0: (~0 rows)} 
-  0 1 1 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?) (~10 rows)}
+  0 0 0 {SCAN TABLE terms VIRTUAL TABLE INDEX 0:} 
+  0 1 1 {SEARCH TABLE x3 USING COVERING INDEX i1 (y=?)}
   a k l
 }
 
@@ -519,4 +519,3 @@ do_test 8.2 {
 } {1 {SQL logic error or missing database}}
 
 finish_test
-

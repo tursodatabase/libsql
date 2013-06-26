@@ -220,4 +220,3 @@ do_execsql_test 5.2 {
 } {0 6}
 
 finish_test
-
