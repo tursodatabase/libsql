@@ -556,12 +556,13 @@ int sqlite3VdbeExec(
   int checkProgress;         /* True if progress callbacks are enabled */
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
+  int iCompare = 0;          /* Result of last OP_Compare operation */
+  unsigned nVmStep = 0;      /* Number of virtual machine steps */
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
   Mem *pIn1 = 0;             /* 1st input operand */
   Mem *pIn2 = 0;             /* 2nd input operand */
   Mem *pIn3 = 0;             /* 3rd input operand */
   Mem *pOut = 0;             /* Output operand */
-  int iCompare = 0;          /* Result of last OP_Compare operation */
   int *aPermute = 0;         /* Permutation of columns for OP_Compare */
   i64 lastRowid = db->lastRowid;  /* Saved value of the last insert ROWID */
 #ifdef VDBE_PROFILE
@@ -606,6 +607,7 @@ int sqlite3VdbeExec(
     origPc = pc;
     start = sqlite3Hwtime();
 #endif
+    nVmStep++;
     pOp = &aOp[pc];
 
     /* Only allow tracing if SQLITE_DEBUG is defined.
@@ -6200,6 +6202,7 @@ vdbe_error_halt:
   ** top. */
 vdbe_return:
   db->lastRowid = lastRowid;
+  p->aCounter[SQLITE_STMTSTATUS_VM_STEP-1] += (int)nVmStep;
   sqlite3VdbeLeave(p);
   return rc;
 
