@@ -397,9 +397,9 @@ do_test shell1-3.11.1 {
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
-do_test shell1-3.11.2 {
-  catchcmd "test.db" ".import FOO BAR"
-} {1 {Error: no such table: BAR}}
+#do_test shell1-3.11.2 {
+#  catchcmd "test.db" ".import FOO BAR"
+#} {1 {Error: no such table: BAR}}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"

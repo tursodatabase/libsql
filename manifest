@@ -1,5 +1,5 @@
-C Add\sthe\s"vtshim"\sextension,\simplementing\sa\swrapper\saround\sthe\svirtual\ntable\sinterface\sto\smake\sit\sDisposable\sfor\sthe\sCLR.\s\sNo\schanges\sto\sthe\ncore.
-D 2013-06-26T18:04:19.083
+C Update\sthe\s".import"\scommand\sof\sthe\scommand-line\sshell\sso\sthat\sit\scan\naccept\sfield\svalues\sthat\sspan\smultiple\slines\sand\sso\sthat\sit\sissues\nerror\smessages\sif\sthe\sinput\stext\sdoes\snot\sstrictly\sconform\sto\sRFC4180.
+D 2013-06-26T22:46:00.198
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
-F src/shell.c a02544af6697c5782d29ec3204616f35ed9e8458
+F src/shell.c 92cbe95eadc1c423422d36beac3609a9422889d1
 F src/sqlite.h.in 5f86553f4c1d8b4a9069285ed19e7981451ea77a
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
@@ -773,11 +773,11 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 927a4b6da11978c82b857dbdb20a932aad732123
-F test/shell1.test 4a2f57952719972c6f862134463f8712e953c038
+F test/shell1.test 338f51e6ff543720c609178bda81c2606df8df8d
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test fa2188bbb13fe2d183fd04a5f7b512650c35ef5d
+F test/shell5.test 0fed7823d57e80f79da2c5f350e50aa86011f24f
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ebac5afa471526dffc8026e66753263476137a3b b4a0d5327addd90bef758e6a1403ac69f61b3886
-R a3237e173c634535eb67beba24018ada
+P 6c3839ef311a53076650c6479c932e545a26b96f
+R 20f28da1c568459e4d7e332d42754a7d
 U drh
-Z 356f790fa566cdf1861055fde4a499e2
+Z a56fe80d4e15f5a77335d76e21c16046
