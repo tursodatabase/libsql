@@ -920,6 +920,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     pItem->zSpan = sqlite3DbStrDup(db, pOldItem->zSpan);
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->done = 0;
+    pItem->bSpanIsTab = pOldItem->bSpanIsTab;
     pItem->iOrderByCol = pOldItem->iOrderByCol;
     pItem->iAlias = pOldItem->iAlias;
   }
@@ -1596,15 +1597,15 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     /* Could not found an existing table or index to use as the RHS b-tree.
     ** We will have to generate an ephemeral table to do the job.
     */
-    double savedNQueryLoop = pParse->nQueryLoop;
+    u32 savedNQueryLoop = pParse->nQueryLoop;
     int rMayHaveNull = 0;
     eType = IN_INDEX_EPH;
     if( prNotFound ){
       *prNotFound = rMayHaveNull = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
     }else{
-      testcase( pParse->nQueryLoop>(double)1 );
-      pParse->nQueryLoop = (double)1;
+      testcase( pParse->nQueryLoop>0 );
+      pParse->nQueryLoop = 0;
       if( pX->pLeft->iColumn<0 && !ExprHasAnyProperty(pX, EP_xIsSelect) ){
         eType = IN_INDEX_ROWID;
       }
@@ -1646,7 +1647,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 **
 ** If rMayHaveNull is zero, that means that the subquery is being used
 ** for membership testing only.  There is no need to initialize any
-** registers to indicate the presense or absence of NULLs on the RHS.
+** registers to indicate the presence or absence of NULLs on the RHS.
 **
 ** For a SELECT or EXISTS operator, return the register that holds the
 ** result.  For IN operators or if an error occurs, the return value is 0.

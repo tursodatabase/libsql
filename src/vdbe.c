@@ -566,12 +566,13 @@ int sqlite3VdbeExec(
   int checkProgress;         /* True if progress callbacks are enabled */
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
+  int iCompare = 0;          /* Result of last OP_Compare operation */
+  unsigned nVmStep = 0;      /* Number of virtual machine steps */
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
   Mem *pIn1 = 0;             /* 1st input operand */
   Mem *pIn2 = 0;             /* 2nd input operand */
   Mem *pIn3 = 0;             /* 3rd input operand */
   Mem *pOut = 0;             /* Output operand */
-  int iCompare = 0;          /* Result of last OP_Compare operation */
   int *aPermute = 0;         /* Permutation of columns for OP_Compare */
   i64 lastRowid = db->lastRowid;  /* Saved value of the last insert ROWID */
 #ifdef VDBE_PROFILE
@@ -616,6 +617,7 @@ int sqlite3VdbeExec(
     origPc = pc;
     start = sqlite3Hwtime();
 #endif
+    nVmStep++;
     pOp = &aOp[pc];
 
     /* Only allow tracing if SQLITE_DEBUG is defined.
@@ -2924,8 +2926,8 @@ case OP_AutoCommit: {
 ** other process can start another write transaction while this transaction is
 ** underway.  Starting a write transaction also creates a rollback journal. A
 ** write transaction must be started before any changes can be made to the
-** database.  If P2 is 2 or greater then an EXCLUSIVE lock is also obtained
-** on the file.
+** database.  If P2 is greater than or equal to 2 then an EXCLUSIVE lock is
+** also obtained on the file.
 **
 ** If a write-transaction is started and the Vdbe.usesStmtJournal flag is
 ** true (this flag is set if the Vdbe may modify more than one row and may
@@ -6252,6 +6254,7 @@ vdbe_error_halt:
   ** top. */
 vdbe_return:
   db->lastRowid = lastRowid;
+  p->aCounter[SQLITE_STMTSTATUS_VM_STEP-1] += (int)nVmStep;
   sqlite3VdbeLeave(p);
   return rc;
 

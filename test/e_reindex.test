@@ -98,7 +98,7 @@ proc sort_by_length {lhs rhs} {
 array set V {one 1 two 2 three 3 four 4 five 5 six 6 seven 7 eight 8}
 proc sort_by_value {lhs rhs} {
   global V
-  set res [expr {$V($lhs) - $V(rhs)}]
+  set res [expr {$V($lhs) - $V($rhs)}]
   if {$res!=0} {return $res}
   return [string compare $lhs $rhs]
 }

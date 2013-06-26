@@ -114,7 +114,7 @@
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
-** level of threadsafety.  2 means the libary is multithreaded - multiple
+** level of threadsafety.  2 means the library is multithreaded - multiple
 ** threads can use SQLite as long as no two threads try to use the same
 ** database connection at the same time.
 **
@@ -193,20 +193,12 @@
 
 /*
 ** We need to define _XOPEN_SOURCE as follows in order to enable
-** recursive mutexes on most Unix systems.  But Mac OS X is different.
-** The _XOPEN_SOURCE define causes problems for Mac OS X we are told,
-** so it is omitted there.  See ticket #2673.
-**
-** Later we learn that _XOPEN_SOURCE is poorly or incorrectly
-** implemented on some systems.  So we avoid defining it at all
-** if it is already defined or if it is unneeded because we are
-** not doing a threadsafe build.  Ticket #2681.
-**
-** See also ticket #2741.
+** recursive mutexes on most Unix systems and fchmod() on OpenBSD.
+** But _XOPEN_SOURCE define causes problems for Mac OS X, so omit
+** it.
 */
-#if !defined(_XOPEN_SOURCE) && !defined(__DARWIN__) \
- && !defined(__APPLE__) && SQLITE_THREADSAFE
-#  define _XOPEN_SOURCE 500  /* Needed to enable pthread recursive mutexes */
+#if !defined(_XOPEN_SOURCE) && !defined(__DARWIN__) && !defined(__APPLE__)
+#  define _XOPEN_SOURCE 600
 #endif
 
 /*
@@ -402,6 +394,12 @@
 #ifndef offsetof
 #define offsetof(STRUCTURE,FIELD) ((int)((char*)&((STRUCTURE*)0)->FIELD))
 #endif
+
+/*
+** Macros to compute minimum and maximum of two numbers.
+*/
+#define MIN(A,B) ((A)<(B)?(A):(B))
+#define MAX(A,B) ((A)>(B)?(A):(B))
 
 /*
 ** Check to see if this machine uses EBCDIC.  (Yes, believe it or
@@ -729,9 +727,7 @@ typedef struct UnpackedRecord UnpackedRecord;
 typedef struct VTable VTable;
 typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
-typedef struct WherePlan WherePlan;
 typedef struct WhereInfo WhereInfo;
-typedef struct WhereLevel WhereLevel;
 
 /*
 ** Defer sourcing vdbe.h and btree.h until after the "u8" and 
@@ -757,7 +753,6 @@ typedef struct WhereLevel WhereLevel;
 struct Db {
   char *zName;         /* Name of this database */
   Btree *pBt;          /* The B*Tree structure for this database file */
-  u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at syncing data to disk */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
 };
@@ -1037,6 +1032,7 @@ struct sqlite3 {
 #define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */
 #define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
+#define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -1562,6 +1558,7 @@ struct Index {
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
+  unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
 #ifdef SQLITE_ENABLE_STAT3
   int nSample;             /* Number of elements in aSample[] */
   tRowcnt avgEq;           /* Average nEq value for key values not in aSample */
@@ -1908,6 +1905,11 @@ typedef u64 Bitmask;
 #define BMS  ((int)(sizeof(Bitmask)*8))
 
 /*
+** A bit in a Bitmask
+*/
+#define MASKBIT(n)   (((Bitmask)1)<<(n))
+
+/*
 ** The following structure describes the FROM clause of a SELECT statement.
 ** Each table or subquery in the FROM clause is a separate element of
 ** the SrcList.a[] array.
@@ -1927,8 +1929,8 @@ typedef u64 Bitmask;
 ** contains more than 63 columns and the 64-th or later column is used.
 */
 struct SrcList {
-  i16 nSrc;        /* Number of tables or subqueries in the FROM clause */
-  i16 nAlloc;      /* Number of entries allocated in a[] below */
+  u8 nSrc;        /* Number of tables or subqueries in the FROM clause */
+  u8 nAlloc;      /* Number of entries allocated in a[] below */
   struct SrcList_item {
     Schema *pSchema;  /* Schema to which this item is fixed */
     char *zDatabase;  /* Name of database holding this table */
@@ -1967,79 +1969,6 @@ struct SrcList {
 
 
 /*
-** A WherePlan object holds information that describes a lookup
-** strategy.
-**
-** This object is intended to be opaque outside of the where.c module.
-** It is included here only so that that compiler will know how big it
-** is.  None of the fields in this object should be used outside of
-** the where.c module.
-**
-** Within the union, pIdx is only used when wsFlags&WHERE_INDEXED is true.
-** pTerm is only used when wsFlags&WHERE_MULTI_OR is true.  And pVtabIdx
-** is only used when wsFlags&WHERE_VIRTUALTABLE is true.  It is never the
-** case that more than one of these conditions is true.
-*/
-struct WherePlan {
-  u32 wsFlags;                   /* WHERE_* flags that describe the strategy */
-  u16 nEq;                       /* Number of == constraints */
-  u16 nOBSat;                    /* Number of ORDER BY terms satisfied */
-  double nRow;                   /* Estimated number of rows (for EQP) */
-  union {
-    Index *pIdx;                   /* Index when WHERE_INDEXED is true */
-    struct WhereTerm *pTerm;       /* WHERE clause term for OR-search */
-    sqlite3_index_info *pVtabIdx;  /* Virtual table index to use */
-  } u;
-};
-
-/*
-** For each nested loop in a WHERE clause implementation, the WhereInfo
-** structure contains a single instance of this structure.  This structure
-** is intended to be private to the where.c module and should not be
-** access or modified by other modules.
-**
-** The pIdxInfo field is used to help pick the best index on a
-** virtual table.  The pIdxInfo pointer contains indexing
-** information for the i-th table in the FROM clause before reordering.
-** All the pIdxInfo pointers are freed by whereInfoFree() in where.c.
-** All other information in the i-th WhereLevel object for the i-th table
-** after FROM clause ordering.
-*/
-struct WhereLevel {
-  WherePlan plan;       /* query plan for this element of the FROM clause */
-  int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
-  int iTabCur;          /* The VDBE cursor used to access the table */
-  int iIdxCur;          /* The VDBE cursor used to access pIdx */
-  int addrBrk;          /* Jump here to break out of the loop */
-  int addrNxt;          /* Jump here to start the next IN combination */
-  int addrCont;         /* Jump here to continue with the next loop cycle */
-  int addrFirst;        /* First instruction of interior of the loop */
-  u8 iFrom;             /* Which entry in the FROM clause */
-  u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
-  int p1, p2;           /* Operands of the opcode used to ends the loop */
-  union {               /* Information that depends on plan.wsFlags */
-    struct {
-      int nIn;              /* Number of entries in aInLoop[] */
-      struct InLoop {
-        int iCur;              /* The VDBE cursor used by this IN operator */
-        int addrInTop;         /* Top of the IN loop */
-        u8 eEndLoopOp;         /* IN Loop terminator. OP_Next or OP_Prev */
-      } *aInLoop;           /* Information about each nested IN operator */
-    } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
-    Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
-  } u;
-  double rOptCost;      /* "Optimal" cost for this level */
-
-  /* The following field is really not part of the current level.  But
-  ** we need a place to cache virtual table index information for each
-  ** virtual table in the FROM clause and the WhereLevel structure is
-  ** a convenient place since there is one WhereLevel for each FROM clause
-  ** element.
-  */
-  sqlite3_index_info *pIdxInfo;  /* Index info for n-th source table */
-};
-
-/*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()
 ** and the WhereInfo.wctrlFlags member.
 */
@@ -2052,33 +1981,12 @@ struct WhereLevel {
 #define WHERE_FORCE_TABLE      0x0020 /* Do not use an index-only search */
 #define WHERE_ONETABLE_ONLY    0x0040 /* Only code the 1st table in pTabList */
 #define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
+#define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
+#define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
+#define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
 
-/*
-** The WHERE clause processing routine has two halves.  The
-** first part does the start of the WHERE loop and the second
-** half does the tail of the WHERE loop.  An instance of
-** this structure is returned by the first half and passed
-** into the second half to give some continuity.
+/* Allowed return values from sqlite3WhereIsDistinct()
 */
-struct WhereInfo {
-  Parse *pParse;            /* Parsing and code generating context */
-  SrcList *pTabList;        /* List of tables in the join */
-  u16 nOBSat;               /* Number of ORDER BY terms satisfied by indices */
-  u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
-  u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
-  u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
-  u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
-  int iTop;                 /* The very beginning of the WHERE loop */
-  int iContinue;            /* Jump here to continue with next record */
-  int iBreak;               /* Jump here to break out of the loop */
-  int nLevel;               /* Number of nested loop */
-  struct WhereClause *pWC;  /* Decomposition of the WHERE clause */
-  double savedNQueryLoop;   /* pParse->nQueryLoop outside the WHERE loop */
-  double nRowOut;           /* Estimated number of output rows */
-  WhereLevel a[1];          /* Information about each nest loop in WHERE */
-};
-
-/* Allowed values for WhereInfo.eDistinct and DistinctCtx.eTnctType */
 #define WHERE_DISTINCT_NOOP      0  /* DISTINCT keyword not used */
 #define WHERE_DISTINCT_UNIQUE    1  /* No duplicates */
 #define WHERE_DISTINCT_ORDERED   2  /* All duplicates are adjacent */
@@ -2152,7 +2060,7 @@ struct Select {
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
   int addrOpenEphm[3];   /* OP_OpenEphem opcodes related to this select */
-  double nSelectRow;     /* Estimated number of result rows */
+  u64 nSelectRow;        /* Estimated number of result rows */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
   ExprList *pGroupBy;    /* The GROUP BY clause */
@@ -2336,7 +2244,7 @@ struct Parse {
   /* Information used while coding trigger programs. */
   Parse *pToplevel;    /* Parse structure for main program (or NULL) */
   Table *pTriggerTab;  /* Table triggers are being coded for */
-  double nQueryLoop;   /* Estimated number of iterations of a query */
+  u32 nQueryLoop;      /* Est number of iterations of a query (10*log2(N)) */
   u32 oldmask;         /* Mask of old.* columns referenced */
   u32 newmask;         /* Mask of new.* columns referenced */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
@@ -2910,6 +2818,12 @@ void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*,SrcList*,Expr*,ExprList*,ExprList*,u16,int);
 void sqlite3WhereEnd(WhereInfo*);
+u64 sqlite3WhereOutputRowCount(WhereInfo*);
+int sqlite3WhereIsDistinct(WhereInfo*);
+int sqlite3WhereIsOrdered(WhereInfo*);
+int sqlite3WhereContinueLabel(WhereInfo*);
+int sqlite3WhereBreakLabel(WhereInfo*);
+int sqlite3WhereOkOnePass(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, u8);
 void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);

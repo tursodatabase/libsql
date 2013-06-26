@@ -66,4 +66,3 @@ sqlite3async_control halt never
 sqlite3async_shutdown
 set sqlite3async_trace 0
 finish_test
-

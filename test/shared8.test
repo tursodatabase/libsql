@@ -110,4 +110,3 @@ do_test 1.8 {
 foreach db {db1 db2 db3 db4} { catch { $db close } }
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test
-

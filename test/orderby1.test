@@ -48,7 +48,7 @@ do_test 1.0 {
 } {}
 do_test 1.1a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 
@@ -66,7 +66,7 @@ do_test 1.1b {
 #
 do_test 1.2a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 
@@ -75,7 +75,7 @@ do_test 1.2a {
 do_test 1.2b {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn
   }
 } {/ORDER BY/}   ;# separate sorting pass due to "+" on ORDER BY terms
 
@@ -85,13 +85,13 @@ do_test 1.3a {
   optimization_control db order-by-idx-join 0
   db cache flush
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 do_test 1.3b {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
 } {/ORDER BY/}   ;# separate sorting pass due to disabled optimization
 optimization_control db all 1
@@ -101,55 +101,57 @@ db cache flush
 #
 do_test 1.4a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn
   }
 } {three-a three-c two-a two-b one-a one-c}
 do_test 1.4b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title DESC, +tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title DESC, +tn
   }
 } {three-a three-c two-a two-b one-a one-c}  ;# verify same order after sorting
 do_test 1.4c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn
   }
-} {~/ORDER BY/}  ;# optimized out
-
+} {~/ORDER BY/}  ;# ORDER BY suppressed due to uniqueness constraints
 
 do_test 1.5a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn DESC
   }
 } {one-c one-a two-b two-a three-c three-a}
 do_test 1.5b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn DESC
   }
 } {one-c one-a two-b two-a three-c three-a}  ;# verify same order after sorting
 do_test 1.5c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn DESC
   }
-} {~/ORDER BY/}  ;# optimized out
+} {~/ORDER BY/}  ;# ORDER BY suppressed due to uniqueness constraints
 
 do_test 1.6a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn DESC
+    SELECT name FROM album CROSS JOIN track USING (aid)
+     ORDER BY title DESC, tn DESC
   }
 } {three-c three-a two-b two-a one-c one-a}
 do_test 1.6b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title DESC, +tn DESC
+    SELECT name FROM album CROSS JOIN track USING (aid)
+     ORDER BY +title DESC, +tn DESC
   }
 } {three-c three-a two-b two-a one-c one-a}  ;# verify same order after sorting
 do_test 1.6c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn DESC
+    SELECT name FROM album CROSS JOIN track USING (aid)
+     ORDER BY title DESC, tn DESC
   }
-} {~/ORDER BY/}  ;# ORDER BY optimized-out
+} {~/ORDER BY/}  ;# ORDER BY 
 
 
 # Reconstruct the test data to use indices rather than integer primary keys.
@@ -183,7 +185,7 @@ do_test 2.0 {
 } {}
 do_test 2.1a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 
@@ -192,28 +194,28 @@ do_test 2.1a {
 do_test 2.1b {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
-} {~/ORDER BY/}  ;# ORDER BY optimized out
+} {/ORDER BY/}  ;# ORDER BY required because of missing aid term in ORDER BY
 
 do_test 2.1c {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, aid, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, aid, tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 do_test 2.1d {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, aid, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, aid, tn
   }
-} {~/ORDER BY/}  ;# ORDER BY optimized out
+} {/ORDER BY/}  ;# ORDER BY required in this case
 
 # The same query with ORDER BY clause optimization disabled via + operators
 # should give exactly the same answer.
 #
 do_test 2.2a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 
@@ -222,7 +224,7 @@ do_test 2.2a {
 do_test 2.2b {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn
   }
 } {/ORDER BY/}   ;# separate sorting pass due to "+" on ORDER BY terms
 
@@ -232,13 +234,13 @@ do_test 2.3a {
   optimization_control db order-by-idx-join 0
   db cache flush
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 do_test 2.3b {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
 } {/ORDER BY/}   ;# separate sorting pass due to disabled optimization
 optimization_control db all 1
@@ -248,55 +250,55 @@ db cache flush
 #
 do_test 2.4a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn
   }
 } {three-a three-c two-a two-b one-a one-c}
 do_test 2.4b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title DESC, +tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title DESC, +tn
   }
 } {three-a three-c two-a two-b one-a one-c}  ;# verify same order after sorting
 do_test 2.4c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn
   }
-} {~/ORDER BY/}  ;# optimized out
+} {/ORDER BY/}  ;# separate sorting pass due to mixed DESC/ASC
 
 
 do_test 2.5a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn DESC
   }
 } {one-c one-a two-b two-a three-c three-a}
 do_test 2.5b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn DESC
   }
 } {one-c one-a two-b two-a three-c three-a}  ;# verify same order after sorting
 do_test 2.5c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn DESC
   }
-} {~/ORDER BY/}  ;# optimized out
+} {/ORDER BY/}  ;# separate sorting pass due to mixed ASC/DESC
 
 do_test 2.6a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn DESC
   }
 } {three-c three-a two-b two-a one-c one-a}
 do_test 2.6b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title DESC, +tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title DESC, +tn DESC
   }
 } {three-c three-a two-b two-a one-c one-a}  ;# verify same order after sorting
 do_test 2.6c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn DESC
   }
-} {~/ORDER BY/}  ;# ORDER BY optimized out
+} {/ORDER BY/}  ;# ORDER BY required
 
 
 # Generate another test dataset, but this time using mixed ASC/DESC indices.
@@ -348,7 +350,7 @@ do_test 3.1b {
 #
 do_test 3.2a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn DESC
   }
 } {one-c one-a two-b two-a three-c three-a}
 
@@ -357,7 +359,7 @@ do_test 3.2a {
 do_test 3.2b {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn DESC
   }
 } {/ORDER BY/}   ;# separate sorting pass due to "+" on ORDER BY terms
 
@@ -367,13 +369,13 @@ do_test 3.3a {
   optimization_control db order-by-idx-join 0
   db cache flush
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn DESC
   }
 } {one-c one-a two-b two-a three-c three-a}
 do_test 3.3b {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn DESC
   }
 } {/ORDER BY/}   ;# separate sorting pass due to disabled optimization
 optimization_control db all 1
@@ -383,38 +385,37 @@ db cache flush
 #
 do_test 3.4a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
 } {one-a one-c two-a two-b three-a three-c}
 do_test 3.4b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title, +tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title, +tn
   }
 } {one-a one-c two-a two-b three-a three-c}  ;# verify same order after sorting
 do_test 3.4c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title, tn
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title, tn
   }
-} {~/ORDER BY/}  ;# optimized out
-
+} {~/ORDER BY/}  ;# ORDER BY suppressed by uniqueness constraints
 
 do_test 3.5a {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn DESC
   }
 } {three-c three-a two-b two-a one-c one-a}
 do_test 3.5b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title DESC, +tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY +title DESC, +tn DESC
   }
 } {three-c three-a two-b two-a one-c one-a}  ;# verify same order after sorting
 do_test 3.5c {
   db eval {
     EXPLAIN QUERY PLAN
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn DESC
+    SELECT name FROM album JOIN track USING (aid) ORDER BY title DESC, tn DESC
   }
-} {~/ORDER BY/}  ;# optimzed out
+} {~/ORDER BY/}  ;# ORDER BY suppressed by uniqueness constraints
 
 
 do_test 3.6a {
@@ -424,7 +425,8 @@ do_test 3.6a {
 } {three-a three-c two-a two-b one-a one-c}
 do_test 3.6b {
   db eval {
-    SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY +title DESC, +tn
+    SELECT name FROM album CROSS JOIN track USING (aid)
+     ORDER BY +title DESC, +tn
   }
 } {three-a three-c two-a two-b one-a one-c}  ;# verify same order after sorting
 do_test 3.6c {
@@ -433,6 +435,23 @@ do_test 3.6c {
     SELECT name FROM album CROSS JOIN track USING (aid) ORDER BY title DESC, tn
   }
 } {~/ORDER BY/}  ;# inverted ASC/DESC is optimized out
+
+# Ticket 5ed1772895bf3deeab78c5e3519b1da9165c541b (2013-06-04)
+# Incorrect ORDER BY on an indexed JOIN
+#
+do_test 4.0 {
+  db eval {
+    CREATE TABLE t41(a INT UNIQUE NOT NULL, b INT NOT NULL);
+    CREATE INDEX t41ba ON t41(b,a);
+    CREATE TABLE t42(x INT NOT NULL REFERENCES t41(a), y INT NOT NULL);
+    CREATE UNIQUE INDEX t42xy ON t42(x,y);
+    INSERT INTO t41 VALUES(1,1),(3,1);
+    INSERT INTO t42 VALUES(1,13),(1,15),(3,14),(3,16);
+    
+    SELECT b, y FROM t41 CROSS JOIN t42 ON x=a ORDER BY b, y;
+  }
+} {1 13 1 14 1 15 1 16}
+
 
 
 finish_test

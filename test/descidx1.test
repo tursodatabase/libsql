@@ -197,12 +197,12 @@ ifcapable bloblit {
   } {1.0 2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
   do_test descidx1-4.3 {
     execsql {
-      SELECT d FROM t2 WHERE a>=2;
+      SELECT d FROM t2 WHERE a>=2 ORDER BY a;
     }
   } {2.2 2.0 2.1 2.3 3.0 4.0 5.0 6.0}
   do_test descidx1-4.4 {
     execsql {
-      SELECT d FROM t2 WHERE a>2;
+      SELECT d FROM t2 WHERE a>2 ORDER BY a;
     }
   } {3.0 4.0 5.0 6.0}
   do_test descidx1-4.5 {

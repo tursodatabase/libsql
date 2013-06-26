@@ -248,4 +248,3 @@ do_test filefmt-4.4 {
 db2 close
 
 finish_test
-

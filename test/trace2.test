@@ -128,6 +128,7 @@ ifcapable fts3 {
     INSERT INTO x1 VALUES('North northwest wind between 8 and 14 mph');
   } {
     "INSERT INTO x1 VALUES('North northwest wind between 8 and 14 mph');" 
+    "-- DELETE FROM 'main'.'x1_segdir' WHERE level = ?"
     "-- INSERT INTO 'main'.'x1_content' VALUES(?,(?))" 
     "-- REPLACE INTO 'main'.'x1_docsize' VALUES(?,?)" 
     "-- SELECT value FROM 'main'.'x1_stat' WHERE id=?" 

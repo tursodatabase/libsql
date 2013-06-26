@@ -833,13 +833,6 @@ int sqlite3_column_type(sqlite3_stmt *pStmt, int i){
   return iType;
 }
 
-/* The following function is experimental and subject to change or
-** removal */
-/*int sqlite3_column_numeric_type(sqlite3_stmt *pStmt, int i){
-**  return sqlite3_value_numeric_type( columnMem(pStmt,i) );
-**}
-*/
-
 /*
 ** Convert the N-th element of pStmt->pColName[] into a string using
 ** xFunc() then return that string.  If N is out of range, return 0.

@@ -1077,9 +1077,16 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int iDistTerm = -1;
   int iRulesetTerm = -1;
   int i;
+  int seenMatch = 0;
   const struct sqlite3_index_constraint *pConstraint;
+  double rCost = 1e12;
+
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
+    if( pConstraint->iColumn==0
+     && pConstraint->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
+      seenMatch = 1;
+    }
     if( pConstraint->usable==0 ) continue;
     if( (iPlan & 1)==0 
      && pConstraint->iColumn==0
@@ -1088,6 +1095,7 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       iPlan |= 1;
       pIdxInfo->aConstraintUsage[i].argvIndex = 1;
       pIdxInfo->aConstraintUsage[i].omit = 1;
+      rCost /= 1e6;
     }
     if( (iPlan & 2)==0
      && pConstraint->iColumn==1
@@ -1096,6 +1104,7 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     ){
       iPlan |= 2;
       iDistTerm = i;
+      rCost /= 10.0;
     }
     if( (iPlan & 4)==0
      && pConstraint->iColumn==2
@@ -1104,6 +1113,7 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       iPlan |= 4;
       pIdxInfo->aConstraintUsage[i].omit = 1;
       iRulesetTerm = i;
+      rCost /= 10.0;
     }
   }
   if( iPlan & 2 ){
@@ -1122,7 +1132,8 @@ static int fuzzerBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   ){
     pIdxInfo->orderByConsumed = 1;
   }
-  pIdxInfo->estimatedCost = (double)10000;
+  if( seenMatch && (iPlan&1)==0 ) rCost = 1e99;
+  pIdxInfo->estimatedCost = rCost;
    
   return SQLITE_OK;
 }

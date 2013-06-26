@@ -1276,6 +1276,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
 
   if( sqlite3LocateCollSeq(pParse, zColl) ){
     Index *pIdx;
+    sqlite3DbFree(db, p->aCol[i].zColl);
     p->aCol[i].zColl = zColl;
   
     /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
@@ -2695,6 +2696,7 @@ Index *sqlite3CreateIndex(
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nExpr;
   pIndex->onError = (u8)onError;
+  pIndex->uniqNotNull = onError==OE_Abort;
   pIndex->autoIndex = (u8)(pName==0);
   pIndex->pSchema = db->aDb[iDb].pSchema;
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
@@ -2753,6 +2755,7 @@ Index *sqlite3CreateIndex(
     pIndex->azColl[i] = zColl;
     requestedSortOrder = pListItem->sortOrder & sortOrderMask;
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
+    if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
   sqlite3DefaultRowEst(pIndex);
 
@@ -3184,7 +3187,7 @@ SrcList *sqlite3SrcListEnlarge(
     }
     pSrc = pNew;
     nGot = (sqlite3DbMallocSize(db, pNew) - sizeof(*pSrc))/sizeof(pSrc->a[0])+1;
-    pSrc->nAlloc = (u16)nGot;
+    pSrc->nAlloc = (u8)nGot;
   }
 
   /* Move existing slots that come after the newly inserted slots
@@ -3192,7 +3195,7 @@ SrcList *sqlite3SrcListEnlarge(
   for(i=pSrc->nSrc-1; i>=iStart; i--){
     pSrc->a[i+nExtra] = pSrc->a[i];
   }
-  pSrc->nSrc += (i16)nExtra;
+  pSrc->nSrc += (i8)nExtra;
 
   /* Zero the newly allocated slots */
   memset(&pSrc->a[iStart], 0, sizeof(pSrc->a[0])*nExtra);

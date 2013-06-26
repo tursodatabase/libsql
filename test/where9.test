@@ -362,9 +362,9 @@ ifcapable explain {
     SELECT t2.a FROM t1, t2
     WHERE t1.a=80 AND ((t1.c=t2.c AND t1.d=t2.d) OR t1.f=t2.f)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)} 
+    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?)} 
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)}
   }
   do_execsql_test where9-3.2 {
     EXPLAIN QUERY PLAN
@@ -372,9 +372,9 @@ ifcapable explain {
     FROM t1 LEFT JOIN t2 ON (t1.c+1=t2.c AND t1.d=t2.d) OR (t1.f||'x')=t2.f
     WHERE t1.a=80
   } {
-    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?) (~2 rows)} 
-    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?) (~10 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INTEGER PRIMARY KEY (rowid=?)} 
+    0 1 1 {SEARCH TABLE t2 USING INDEX t2d (d=?)} 
+    0 1 1 {SEARCH TABLE t2 USING COVERING INDEX t2f (f=?)}
   }
 } 
 
@@ -420,7 +420,7 @@ do_test where9-4.5 {
        AND (c=31031 OR d IS NULL)
      ORDER BY +a
   }
-} {1 {cannot use index: t1b}}
+} {1 {no query solution}}
 do_test where9-4.6 {
   count_steps {
     SELECT a FROM t1 NOT INDEXED
@@ -436,7 +436,7 @@ do_test where9-4.7 {
        AND (c=31031 OR d IS NULL)
      ORDER BY +a
   }
-} {1 {cannot use index: t1c}}
+} {1 {no query solution}}
 do_test where9-4.8 {
   catchsql {
     SELECT a FROM t1 INDEXED BY t1d
@@ -444,7 +444,7 @@ do_test where9-4.8 {
        AND (c=31031 OR d IS NULL)
      ORDER BY +a
   }
-} {1 {cannot use index: t1d}}
+} {1 {no query solution}}
 
 ifcapable explain {
   # The (c=31031 OR d IS NULL) clause is preferred over b>1000 because
@@ -453,8 +453,8 @@ ifcapable explain {
   do_execsql_test where9-5.1 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?) (~3 rows)} 
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?) (~3 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c=?)} 
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1d (d=?)}
   }
 
   # In contrast, b=1000 is preferred over any OR-clause.
@@ -462,7 +462,7 @@ ifcapable explain {
   do_execsql_test where9-5.2 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b=1000 AND (c=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~5 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}
   }
 
   # Likewise, inequalities in an AND are preferred over inequalities in
@@ -471,7 +471,7 @@ ifcapable explain {
   do_execsql_test where9-5.3 {
     EXPLAIN QUERY PLAN SELECT a FROM t1 WHERE b>1000 AND (c>=31031 OR d IS NULL)
   } {
-    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?) (~125000 rows)}
+    0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>?)}
   }
 }
 
@@ -768,20 +768,57 @@ do_test where9-6.7.4 {
 do_test where9-6.8.1 {
   catchsql {
     DELETE FROM t1 INDEXED BY t1b
-     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+     WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {1 {cannot use index: t1b}}
+} {1 {no query solution}}
 do_test where9-6.8.2 {
   catchsql {
     UPDATE t1 INDEXED BY t1b SET a=a+100
-     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+     WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
-} {1 {cannot use index: t1b}}
-
+} {1 {no query solution}}
+ifcapable stat3 {
+  # When STAT3 is enabled, the "b NOT NULL" terms get translated
+  # into b>NULL, which can be satified by the index t1b.  It is a very
+  # expensive way to do the query, but it works, and so a solution is possible.
+  do_test where9-6.8.3-stat3 {
+    catchsql {
+      UPDATE t1 INDEXED BY t1b SET a=a+100
+       WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+          OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+          OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+    }
+  } {0 {}}
+  do_test where9-6.8.4-stat3 {
+    catchsql {
+      DELETE FROM t1 INDEXED BY t1b
+       WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+          OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+          OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+    }
+  } {0 {}}
+} else {
+  do_test where9-6.8.3 {
+    catchsql {
+      UPDATE t1 INDEXED BY t1b SET a=a+100
+       WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+          OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+          OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+    }
+  } {1 {no query solution}}
+  do_test where9-6.8.4 {
+    catchsql {
+      DELETE FROM t1 INDEXED BY t1b
+       WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+          OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+          OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+    }
+  } {1 {no query solution}}
+}
 ############################################################################
 # Test cases where terms inside an OR series are combined with AND terms
 # external to the OR clause.  In other words, cases where

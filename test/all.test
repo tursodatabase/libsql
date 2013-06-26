@@ -39,6 +39,7 @@ run_test_suite pcache50
 run_test_suite pcache90 
 run_test_suite pcache100
 run_test_suite prepare
+run_test_suite mmap
 
 if {$::tcl_platform(platform)=="unix"} {
   ifcapable !default_autovacuum {
@@ -47,5 +48,3 @@ if {$::tcl_platform(platform)=="unix"} {
 }
 
 finish_test
-
-

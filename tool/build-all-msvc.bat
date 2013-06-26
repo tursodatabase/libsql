@@ -374,7 +374,7 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       need to remove the build output for the files we are
           REM       specifically wanting to build for each platform.
           REM
-          %__ECHO% DEL /Q sqlite3.dll sqlite3.lib sqlite3.pdb
+          %__ECHO% DEL /Q *.lo sqlite3.dll sqlite3.lib sqlite3.pdb
         )
 
         REM

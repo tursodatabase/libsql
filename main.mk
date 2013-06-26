@@ -279,6 +279,7 @@ TESTSRC += \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/ieee754.c \
   $(TOP)/ext/misc/nextchar.c \
+  $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
   $(TOP)/ext/misc/spellfix.c \
   $(TOP)/ext/misc/wholenumber.c
@@ -602,6 +603,9 @@ soaktest:	testfixture$(EXE) sqlite3$(EXE)
 fulltestonly:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/full.test
 
+queryplantest:	testfixture$(EXE) sqlite3$(EXE)
+	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner
+
 test:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 
@@ -630,6 +634,11 @@ extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 #
 checksymbols: sqlite3.o
 	nm -g --defined-only sqlite3.o | grep -v " sqlite3_" ; test $$? -ne 0
+
+# Build the amalgamation-autoconf package.
+#
+dist: sqlite3.c
+	TOP=$(TOP) sh $(TOP)/tool/mkautoconfamal.sh
 
 
 # Standard install and cleanup targets

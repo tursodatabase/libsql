@@ -427,4 +427,3 @@ do_execsql_test 8.3 {
 }
 
 finish_test
-
