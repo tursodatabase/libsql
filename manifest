@@ -1,5 +1,5 @@
-C Add\sa\sNEVER()\smacro\sand\san\sexplanation\scomment\saround\san\sunreachable\sbranch\nin\sthe\sSTAT3\slogic.
-D 2013-06-20T17:32:28.451
+C Fix\san\suninitialized\svariable\sdetected\sby\svalgrind.\s\sUnclear\swhether\sor\snot\nthis\sshould\sapply\sto\strunk.
+D 2013-06-26T00:34:13.504
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c aeabdabeeeaa0584127f291baa9617153d334778
-F src/expr.c 3286e703adde34865d3a2cb62f9f4f31e3d2f2ed
+F src/expr.c 2b47ae9da6c9f34eff6736962ea2e102c6c4a755
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e16942bd5c8a868ac53287886464a5ed0e72b179
 F src/func.c 5c50c1ea31fd864b0fe921fe1a8d4c55acd609ef
@@ -1096,7 +1096,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d94db3fd921890ab1d6414ab629410ae50779686
-R 4877ecf4e1d53d3b49ba9f1fadfb6d66
+P 604c3c5de6fd8f8a569aa9ed981055a5b0123ba1
+R 2ed2dcc6fe1201d795c5181c6afd8a91
 U drh
-Z c939c499a0659dd37def1fcbcc79c922
+Z 9f76be0e05737d7f0f0ba2111ccc0b78

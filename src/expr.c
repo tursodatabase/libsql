@@ -920,6 +920,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     pItem->zSpan = sqlite3DbStrDup(db, pOldItem->zSpan);
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->done = 0;
+    pItem->bSpanIsTab = pOldItem->bSpanIsTab;
     pItem->iOrderByCol = pOldItem->iOrderByCol;
     pItem->iAlias = pOldItem->iAlias;
   }
