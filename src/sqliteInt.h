@@ -1024,6 +1024,7 @@ struct sqlite3 {
 #define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */
 #define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
+#define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -1974,6 +1975,7 @@ struct SrcList {
 #define WHERE_AND_ONLY         0x0080 /* Don't use indices for OR terms */
 #define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
 #define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
+#define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */

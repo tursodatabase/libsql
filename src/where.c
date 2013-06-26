@@ -383,7 +383,7 @@ struct WhereInfo {
   Parse *pParse;            /* Parsing and code generating context */
   SrcList *pTabList;        /* List of tables in the join */
   ExprList *pOrderBy;       /* The ORDER BY clause or NULL */
-  ExprList *pDistinct;      /* DISTINCT ON values, or NULL */
+  ExprList *pResultSet;     /* Result set. DISTINCT operates on these */
   WhereLoop *pLoops;        /* List of all WhereLoop objects */
   Bitmask revMask;          /* Mask of ORDER BY terms that need reversing */
   WhereCost nRowOut;        /* Estimated number of output rows */
@@ -392,10 +392,10 @@ struct WhereInfo {
   u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
   u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
+  u8 nLevel;                /* Number of nested loop */
   int iTop;                 /* The very beginning of the WHERE loop */
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
-  int nLevel;               /* Number of nested loop */
   int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
@@ -3928,9 +3928,9 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
   int nb = 1+(pTabList->nSrc+7)/8;
   struct SrcList_item *pItem = pTabList->a + p->iTab;
   Table *pTab = pItem->pTab;
-  sqlite3DebugPrintf("%c %2d.%0*llx.%0*llx", p->cId,
+  sqlite3DebugPrintf("%c%2d.%0*llx.%0*llx", p->cId,
                      p->iTab, nb, p->maskSelf, nb, p->prereq);
-  sqlite3DebugPrintf(" %8s",
+  sqlite3DebugPrintf(" %12s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     if( p->u.btree.pIndex ){
@@ -3941,9 +3941,9 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
         while( zName[i]!='_' ) i--;
         zName += i;
       }
-      sqlite3DebugPrintf(".%-12s %2d", zName, p->u.btree.nEq);
+      sqlite3DebugPrintf(".%-16s %2d", zName, p->u.btree.nEq);
     }else{
-      sqlite3DebugPrintf("%16s","");
+      sqlite3DebugPrintf("%20s","");
     }
   }else{
     char *z;
@@ -3953,10 +3953,10 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
     }else{
       z = sqlite3_mprintf("(%d,%x)", p->u.vtab.idxNum, p->u.vtab.omitMask);
     }
-    sqlite3DebugPrintf(" %-15s", z);
+    sqlite3DebugPrintf(" %-19s", z);
     sqlite3_free(z);
   }
-  sqlite3DebugPrintf(" fg %05x N %d", p->wsFlags, p->nLTerm);
+  sqlite3DebugPrintf(" f %04x N %d", p->wsFlags, p->nLTerm);
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
 }
 #endif
@@ -5370,12 +5370,13 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
     pLevel->iFrom = pWLoop->iTab;
     pLevel->iTabCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
   }
-  if( (pWInfo->wctrlFlags & WHERE_DISTINCTBY)==0 
-   && pWInfo->pDistinct
+  if( (pWInfo->wctrlFlags & WHERE_WANT_DISTINCT)!=0
+   && (pWInfo->wctrlFlags & WHERE_DISTINCTBY)==0
+   && pWInfo->eDistinct==WHERE_DISTINCT_NOOP
    && nRowEst
   ){
     Bitmask notUsed;
-    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pDistinct, pFrom,
+    int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pResultSet, pFrom,
                  WHERE_DISTINCTBY, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed);
     if( rc==1 ) pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
   }
@@ -5464,7 +5465,9 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pWInfo->a[0].iTabCur = iCur;
     pWInfo->nRowOut = 1;
     if( pWInfo->pOrderBy ) pWInfo->bOBSat =  1;
-    if( pWInfo->pDistinct ) pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
+      pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    }
 #ifdef SQLITE_DEBUG
     pLoop->cId = '0';
 #endif
@@ -5554,10 +5557,10 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 */
 WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
-  SrcList *pTabList,    /* A list of all tables to be scanned */
+  SrcList *pTabList,    /* FROM clause: A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   ExprList *pOrderBy,   /* An ORDER BY clause, or NULL */
-  ExprList *pDistinct,  /* The select-list for DISTINCT queries - or NULL */
+  ExprList *pResultSet, /* Result set of the query */
   u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
   int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
 ){
@@ -5569,14 +5572,22 @@ WhereInfo *sqlite3WhereBegin(
   WhereLoopBuilder sWLB;     /* The WhereLoop builder */
   WhereMaskSet *pMaskSet;    /* The expression mask set */
   WhereLevel *pLevel;        /* A single level in pWInfo->a[] */
+  WhereLoop *pLoop;          /* Pointer to a single WhereLoop object */
   int ii;                    /* Loop counter */
   sqlite3 *db;               /* Database connection */
   int rc;                    /* Return code */
 
 
   /* Variable initialization */
+  db = pParse->db;
   memset(&sWLB, 0, sizeof(sWLB));
   sWLB.pOrderBy = pOrderBy;
+
+  /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
+  ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
+  if( OptimizationDisabled(db, SQLITE_DistinctOpt) ){
+    wctrlFlags &= ~WHERE_WANT_DISTINCT;
+  }
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
@@ -5601,7 +5612,6 @@ WhereInfo *sqlite3WhereBegin(
   ** field (type Bitmask) it must be aligned on an 8-byte boundary on
   ** some architectures. Hence the ROUND8() below.
   */
-  db = pParse->db;
   nByteWInfo = ROUND8(sizeof(WhereInfo)+(nTabList-1)*sizeof(WhereLevel));
   pWInfo = sqlite3DbMallocZero(db, nByteWInfo + sizeof(WhereLoop));
   if( db->mallocFailed ){
@@ -5613,7 +5623,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->pOrderBy = pOrderBy;
-  pWInfo->pDistinct = pDistinct;
+  pWInfo->pResultSet = pResultSet;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
@@ -5625,10 +5635,6 @@ WhereInfo *sqlite3WhereBegin(
 #ifdef SQLITE_DEBUG
   sWLB.pNew->cId = '*';
 #endif
-
-  /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
-  ** sqlite3_test_ctrl(SQLITE_TESTCTRL_OPTIMIZATIONS,...) */
-  if( OptimizationDisabled(db, SQLITE_DistinctOpt) ) pDistinct = 0;
 
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.
@@ -5650,7 +5656,9 @@ WhereInfo *sqlite3WhereBegin(
   */
   if( nTabList==0 ){
     if( pOrderBy ) pWInfo->bOBSat = 1;
-    if( pDistinct ) pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    if( wctrlFlags & WHERE_WANT_DISTINCT ){
+      pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
+    }
   }
 
   /* Assign a bit from the bitmask to every term in the FROM clause.
@@ -5697,7 +5705,7 @@ WhereInfo *sqlite3WhereBegin(
   ** expressions, then we won't be able to satisfy it using indices, so
   ** go ahead and disable it now.
   */
-  if( pOrderBy && pDistinct ){
+  if( pOrderBy && (wctrlFlags & WHERE_WANT_DISTINCT)!=0 ){
     for(ii=0; ii<pOrderBy->nExpr; ii++){
       Expr *pExpr = sqlite3ExprSkipCollate(pOrderBy->a[ii].pExpr);
       if( pExpr->op!=TK_COLUMN ){
@@ -5709,17 +5717,14 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
 
-  /* Check if the DISTINCT qualifier, if there is one, is redundant. 
-  ** If it is, then set pDistinct to NULL and WhereInfo.eDistinct to
-  ** WHERE_DISTINCT_UNIQUE to tell the caller to ignore the DISTINCT.
-  */
-  if( pDistinct ){
-    if( isDistinctRedundant(pParse,pTabList,&pWInfo->sWC,pDistinct) ){
-      pDistinct = 0;
+  if( wctrlFlags & WHERE_WANT_DISTINCT ){
+    if( isDistinctRedundant(pParse, pTabList, &pWInfo->sWC, pResultSet) ){
+      /* The DISTINCT marking is pointless.  Ignore it. */
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }else if( pOrderBy==0 ){
+      /* Try to ORDER BY the result set to make distinct processing easier */
       pWInfo->wctrlFlags |= WHERE_DISTINCTBY;
-      pWInfo->pOrderBy = pDistinct;
+      pWInfo->pOrderBy = pResultSet;
     }
   }
 
@@ -5733,11 +5738,11 @@ WhereInfo *sqlite3WhereBegin(
 #ifdef WHERETRACE_ENABLED
     if( sqlite3WhereTrace ){
       WhereLoop *p;
-      int i = 0;
+      int i;
       static char zLabel[] = "0123456789abcdefghijklmnopqrstuvwyxz"
                                        "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
-      for(p=pWInfo->pLoops; p; p=p->pNextLoop){
-        p->cId = zLabel[(i++)%sizeof(zLabel)];
+      for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
+        p->cId = zLabel[i%sizeof(zLabel)];
         whereLoopPrint(p, pTabList);
       }
     }
@@ -5778,11 +5783,32 @@ WhereInfo *sqlite3WhereBegin(
       }
     }
     sqlite3DebugPrintf("\n");
-    for(ii=0; ii<nTabList; ii++){
+    for(ii=0; ii<pWInfo->nLevel; ii++){
       whereLoopPrint(pWInfo->a[ii].pWLoop, pTabList);
     }
   }
 #endif
+  /* Attempt to omit tables from the join that do not effect the result */
+  if( pWInfo->nLevel>=2
+   && pResultSet!=0
+   && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
+  ){
+    Bitmask tabUsed = exprListTableUsage(pMaskSet, pResultSet);
+    if( pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, pOrderBy);
+    while( pWInfo->nLevel>=2 ){
+      pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
+      if( (pWInfo->pTabList->a[pLoop->iTab].jointype & JT_LEFT)==0 ) break;
+      if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
+       && (pLoop->wsFlags & WHERE_ONEROW)==0
+      ){
+        break;
+      }
+      if( (tabUsed & pLoop->maskSelf)!=0 ) break;
+      WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
+      pWInfo->nLevel--;
+      nTabList--;
+    }
+  }
   WHERETRACE(0xffff,("*** Optimizer Finished ***\n"));
   pWInfo->pParse->nQueryLoop += pWInfo->nRowOut;
 
@@ -5951,7 +5977,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Close all of the cursors that were opened by sqlite3WhereBegin.
   */
-  assert( pWInfo->nLevel==1 || pWInfo->nLevel==pTabList->nSrc );
+  assert( pWInfo->nLevel<=pTabList->nSrc );
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
     Index *pIdx = 0;
     struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];

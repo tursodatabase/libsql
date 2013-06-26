@@ -4261,15 +4261,16 @@ int sqlite3Select(
 
   if( !isAgg && pGroupBy==0 ){
     /* No aggregate functions and no GROUP BY clause */
-    ExprList *pDist = (sDistinct.isTnct ? p->pEList : 0);
+    u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
 
     /* Begin the database scan. */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pOrderBy, pDist, 0,0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pOrderBy, p->pEList,
+                               wctrlFlags, 0);
     if( pWInfo==0 ) goto select_end;
     if( sqlite3WhereOutputRowCount(pWInfo) < p->nSelectRow ){
       p->nSelectRow = sqlite3WhereOutputRowCount(pWInfo);
     }
-    if( sqlite3WhereIsDistinct(pWInfo) ){
+    if( sDistinct.isTnct && sqlite3WhereIsDistinct(pWInfo) ){
       sDistinct.eTnctType = sqlite3WhereIsDistinct(pWInfo);
     }
     if( pOrderBy && sqlite3WhereIsOrdered(pWInfo) ) pOrderBy = 0;
