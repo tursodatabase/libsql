@@ -1,5 +1,5 @@
-C Add\sextended\serror\scode\sSQLITE_BUSY_SNAPSHOT\s-\sreturned\sin\sWAL\smode\swhen\sa\sread-transaction\scannot\sbe\supgraded\sto\sa\swrite-transaction\sbecause\sit\sis\sreading\sfrom\sa\ssnapshot\sother\sthan\sthe\smost\srecently\scommitted.
-D 2013-06-27T11:46:27.416
+C The\sundocumented\sand\sunsupported\s".selftest"\scommand\sin\sthe\scommand-line\nshell\sutility\sis\snow\sonly\savailable\sif\scompiled\swith\sSQLITE_DEBUG.\s\sAlso\nfix\sa\swindows\scompiler\swarning\sin\sthat\scommand.
+D 2013-06-27T13:01:21.431
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
-F src/shell.c 92cbe95eadc1c423422d36beac3609a9422889d1
+F src/shell.c fab2f606a82871c9f0862b79db7305e230a1bb97
 F src/sqlite.h.in 9e8d57aa4d2fdc181dc25e9aa295f5ecec7e184a
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 93f632152e464a89322a0130adaf9f342411bf7d
-R d0186b84b9d50e701c6abd78c4c5b68c
-U dan
-Z cd0c18144512c4d9ba009e500eaa5fc3
+P 361c22969aa75340ed696e00e3dc5d17d5493bee
+R 52837f7d4da2db768acfe7016d71fba7
+U drh
+Z f3345aa28aafc2e60fbdaabb70077fb7

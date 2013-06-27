@@ -2437,6 +2437,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
   }else
 
+#ifdef SQLITE_DEBUG
   /* Undocumented commands for internal testing.  Subject to change
   ** without notice. */
   if( c=='s' && n>=10 && strncmp(azArg[0], "selftest-", 9)==0 ){
@@ -2450,11 +2451,14 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( strncmp(azArg[0]+9, "integer", n-9)==0 ){
       int i; sqlite3_int64 v;
       for(i=1; i<nArg; i++){
+        char zBuf[200];
         v = integerValue(azArg[i]);
-        fprintf(p->out, "%s: %lld 0x%llx\n", azArg[i], v, v);
+        sqlite3_snprintf(sizeof(zBuf), zBuf, "%s: %lld 0x%llx\n", azArg[i], v, v);
+        fprintf(p->out, "%s", zBuf);
       }
     }
   }else
+#endif
 
   if( c=='s' && strncmp(azArg[0], "separator", n)==0 && nArg==2 ){
     sqlite3_snprintf(sizeof(p->separator), p->separator,
