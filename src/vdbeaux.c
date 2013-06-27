@@ -1972,7 +1972,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 }
 
 /* 
-** This routine checks that the sqlite3.activeVdbeCnt count variable
+** This routine checks that the sqlite3.nVdbeActive count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are
 ** currently active. An assertion fails if the two counts do not match.
 ** This is an internal self-check only - it is not an essential processing
@@ -1985,19 +1985,19 @@ static void checkActiveVdbeCnt(sqlite3 *db){
   Vdbe *p;
   int cnt = 0;
   int nWrite = 0;
-  int nNoIO = 0;
+  int nRead = 0;
   p = db->pVdbe;
   while( p ){
     if( p->magic==VDBE_MAGIC_RUN && p->pc>=0 ){
       cnt++;
       if( p->readOnly==0 ) nWrite++;
-      if( p->noIO ) nNoIO++;
+      if( p->noIO==0 ) nRead++;
     }
     p = p->pNext;
   }
-  assert( cnt==db->activeVdbeCnt );
-  assert( nWrite==db->writeVdbeCnt );
-  assert( nNoIO==db->noIOVdbeCnt );
+  assert( cnt==db->nVdbeActive );
+  assert( nWrite==db->nVdbeWrite );
+  assert( nRead==db->nVdbeRead );
 }
 #else
 #define checkActiveVdbeCnt(x)
@@ -2187,7 +2187,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     */
     if( !sqlite3VtabInSync(db) 
      && db->autoCommit 
-     && db->writeVdbeCnt==(p->readOnly==0) 
+     && db->nVdbeWrite==(p->readOnly==0) 
     ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
         rc = sqlite3VdbeCheckFk(p, 1);
@@ -2268,11 +2268,12 @@ int sqlite3VdbeHalt(Vdbe *p){
 
   /* We have successfully halted and closed the VM.  Record this fact. */
   if( p->pc>=0 ){
-    db->activeVdbeCnt--;
-    if( !p->readOnly ) db->writeVdbeCnt--;
-    if( p->noIO ) db->noIOVdbeCnt--;
-    assert( db->activeVdbeCnt>=db->writeVdbeCnt );
-    assert( db->activeVdbeCnt>=db->noIOVdbeCnt );
+    db->nVdbeActive--;
+    if( !p->readOnly ) db->nVdbeWrite--;
+    if( p->noIO==0 ) db->nVdbeRead--;
+    assert( db->nVdbeActive>=db->nVdbeRead );
+    assert( db->nVdbeRead>=db->nVdbeWrite );
+    assert( db->nVdbeWrite>=0 );
   }
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
@@ -2288,7 +2289,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     sqlite3ConnectionUnlocked(db);
   }
 
-  assert( db->activeVdbeCnt>0 || db->autoCommit==0 || db->nStatement==0 );
+  assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );
   return (p->rc==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
 }
 

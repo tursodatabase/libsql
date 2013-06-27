@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\se_expr.test.
-D 2013-06-27T19:12:53.361
+C Refactor\snames\sof\sfields\sin\sthe\ssqlite3\sobject:\s\s"activeVdbeCnt"\sbecomes\n"nVdbeActive".\s\sRelated\sfields\sbecomes\s"nVdbeRead",\s"nVdbeWrite",\sand\n"nVdbeExec".
+D 2013-06-27T23:54:02.351
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 7fba377c29573adfc6091832e27ee1fcbefb51d0
+F src/btree.c c29ca37122c34cd2114ac692c71b32c595a563ba
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 42239cfd95533e4aacf4d58b4724c8f858de5ced
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c b2d6a805e996b6ad8505300a8b3e6542170ceced
+F src/main.c fd167de59452bfcca2cba41ac6d484ddcbb7a105
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -221,7 +221,7 @@ F src/shell.c c0f38cee126d1ea82275195933359e91d90196a0
 F src/sqlite.h.in 9e8d57aa4d2fdc181dc25e9aa295f5ecec7e184a
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h e8d5ed8a3a1d6be304c3ac7c72b5bd5f4b62a1b0
+F src/sqliteInt.h d73fc173b91e00af4ed9f3b2a78342bde20432c1
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -271,21 +271,21 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c 8e6087a8b3dcc260282074b0efba14b76311120c
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/tokenize.c 1e86210d3976717a19238ea7b047fac481fe8c12
+F src/tokenize.c e0e8fd3cb90a88451f6b6425726c84747b6b20d7
 F src/trigger.c 5c0ea9b8755e7c5e1a700f3e27ac4f8d92dd221e
 F src/update.c 8e76c3d03e4b7b21cb250bd2df0c05e12993e577
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
-F src/vacuum.c ddf21cc9577c4cb459d08bee9863a78ec000c5bb
-F src/vdbe.c f678101139d174e92eec1cb21201646ee3ee3383
+F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
+F src/vdbe.c 462058f28bd83764d7161fdc38a1ab4a36ecf436
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h 9735fdf28b8d250e001e5b406f7011a40888c739
-F src/vdbeapi.c be5e9ebd51621571225c54516eb09d97569ff2ff
-F src/vdbeaux.c 727ad6060db0e0d3c06581281d8637ed24ba5647
+F src/vdbeapi.c 649df0c9ea0e7564b1f28770992f40b68b780c3e
+F src/vdbeaux.c 70d850ccb339024987b9e6fc348a5792df37c9b4
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
-F src/vdbetrace.c 18cc59cb475e6115129bfde224367d13a35a7d13
+F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1937fd8eec2c1da95a782d9dc63926d846b06bdc
-R 488964b243c4e4f72719096b3665006a
-U dan
-Z ece17f7bfce31c74b99e0d0e20019131
+P fd4ece18c9be7019e60da3cb0a200c5b1903fed4
+R 17f76bda97975e919a128454b72c14b9
+U drh
+Z 5a9942fd8b4b104ca1abff550cfcbf5d

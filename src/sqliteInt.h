@@ -897,10 +897,10 @@ struct sqlite3 {
     u8 busy;                    /* TRUE if currently initializing */
     u8 orphanTrigger;           /* Last statement is orphaned TEMP trigger */
   } init;
-  int activeVdbeCnt;            /* Number of VDBEs currently executing */
-  int noIOVdbeCnt;              /* Nr of active VDBEs with no FROM clause */
-  int writeVdbeCnt;             /* Number of active VDBEs that are writing */
-  int vdbeExecCnt;              /* Number of nested calls to VdbeExec() */
+  int nVdbeActive;            /* Number of VDBEs currently executing */
+  int nVdbeRead;              /* Number of active VDBEs that read or write */
+  int nVdbeWrite;             /* Number of active VDBEs that read and write */
+  int nVdbeExec;              /* Number of nested calls to VdbeExec() */
   int nExtension;               /* Number of loaded extensions */
   void **aExtension;            /* Array of shared library handles */
   void (*xTrace)(void*,const char*);        /* Trace function */

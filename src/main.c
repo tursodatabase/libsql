@@ -1395,7 +1395,7 @@ int sqlite3CreateFunc(
   */
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, (u8)enc, 0);
   if( p && p->iPrefEnc==enc && p->nArg==nArg ){
-    if( db->activeVdbeCnt ){
+    if( db->nVdbeActive ){
       sqlite3Error(db, SQLITE_BUSY, 
         "unable to delete/modify user-function due to active statements");
       assert( !db->mallocFailed );
@@ -1976,7 +1976,7 @@ static int createCollation(
   */
   pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, 0);
   if( pColl && pColl->xCmp ){
-    if( db->activeVdbeCnt ){
+    if( db->nVdbeActive ){
       sqlite3Error(db, SQLITE_BUSY, 
         "unable to delete/modify collation sequence due to active statements");
       return SQLITE_BUSY;

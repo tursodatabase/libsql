@@ -382,11 +382,11 @@ static int sqlite3Step(Vdbe *p){
     ** reset the interrupt flag.  This prevents a call to sqlite3_interrupt
     ** from interrupting a statement that has not yet started.
     */
-    if( db->activeVdbeCnt==0 ){
+    if( db->nVdbeActive==0 ){
       db->u1.isInterrupted = 0;
     }
 
-    assert( db->writeVdbeCnt>0 || db->autoCommit==0 || db->nDeferredCons==0 );
+    assert( db->nVdbeWrite>0 || db->autoCommit==0 || db->nDeferredCons==0 );
 
 #ifndef SQLITE_OMIT_TRACE
     if( db->xProfile && !db->init.busy ){
@@ -394,9 +394,9 @@ static int sqlite3Step(Vdbe *p){
     }
 #endif
 
-    db->activeVdbeCnt++;
-    if( p->readOnly==0 ) db->writeVdbeCnt++;
-    if( p->noIO ) db->noIOVdbeCnt++;
+    db->nVdbeActive++;
+    if( p->readOnly==0 ) db->nVdbeWrite++;
+    if( p->noIO==0 ) db->nVdbeRead++;
     p->pc = 0;
   }
 #ifndef SQLITE_OMIT_EXPLAIN
@@ -405,9 +405,9 @@ static int sqlite3Step(Vdbe *p){
   }else
 #endif /* SQLITE_OMIT_EXPLAIN */
   {
-    db->vdbeExecCnt++;
+    db->nVdbeExec++;
     rc = sqlite3VdbeExec(p);
-    db->vdbeExecCnt--;
+    db->nVdbeExec--;
   }
 
 #ifndef SQLITE_OMIT_TRACE

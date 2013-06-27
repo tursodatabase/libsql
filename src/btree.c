@@ -3278,7 +3278,7 @@ static void btreeEndTransaction(Btree *p){
 #ifndef SQLITE_OMIT_AUTOVACUUM
   pBt->bDoTruncate = 0;
 #endif
-  if( p->inTrans>TRANS_NONE && p->db->activeVdbeCnt>1 ){
+  if( p->inTrans>TRANS_NONE && p->db->nVdbeActive>1 ){
     /* If there are other active statements that belong to this database
     ** handle, downgrade to a read-only transaction. The other statements
     ** may still be reading from the database.  */

@@ -2688,7 +2688,7 @@ case OP_Savepoint: {
   assert( checkSavepointCount(db) );
 
   if( p1==SAVEPOINT_BEGIN ){
-    if( db->writeVdbeCnt>0 ){
+    if( db->nVdbeWrite>0 ){
       /* A new savepoint cannot be created if there are active write 
       ** statements (i.e. open read/write incremental blob handles).
       */
@@ -2745,7 +2745,7 @@ case OP_Savepoint: {
     if( !pSavepoint ){
       sqlite3SetString(&p->zErrMsg, db, "no such savepoint: %s", zName);
       rc = SQLITE_ERROR;
-    }else if( db->writeVdbeCnt>0 && p1==SAVEPOINT_RELEASE ){
+    }else if( db->nVdbeWrite>0 && p1==SAVEPOINT_RELEASE ){
       /* It is not possible to release (commit) a savepoint if there are 
       ** active write statements.
       */
@@ -2846,10 +2846,10 @@ case OP_AutoCommit: {
   turnOnAC = desiredAutoCommit && !db->autoCommit;
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
-  assert( db->activeVdbeCnt>0 );  /* At least this one VM is active */
+  assert( db->nVdbeActive>0 );  /* At least this one VM is active */
 
 #if 0
-  if( turnOnAC && iRollback && db->activeVdbeCnt>1 ){
+  if( turnOnAC && iRollback && db->nVdbeActive>1 ){
     /* If this instruction implements a ROLLBACK and other VMs are
     ** still running, and a transaction is active, return an error indicating
     ** that the other VMs must complete first. 
@@ -2859,7 +2859,7 @@ case OP_AutoCommit: {
     rc = SQLITE_BUSY;
   }else
 #endif
-  if( turnOnAC && !iRollback && db->writeVdbeCnt>0 ){
+  if( turnOnAC && !iRollback && db->nVdbeWrite>0 ){
     /* If this instruction implements a COMMIT and other VMs are writing
     ** return an error indicating that the other VMs must complete first. 
     */
@@ -2953,7 +2953,7 @@ case OP_Transaction: {
     }
 
     if( pOp->p2 && p->usesStmtJournal 
-     && (db->autoCommit==0 || db->activeVdbeCnt>1) 
+     && (db->autoCommit==0 || db->nVdbeActive>1) 
     ){
       assert( sqlite3BtreeIsInTrans(pBt) );
       if( p->iStatement==0 ){
@@ -4749,7 +4749,7 @@ case OP_Destroy: {     /* out2-prerelease */
     }
   }
 #else
-  iCnt = db->activeVdbeCnt;
+  iCnt = db->nVdbeActive;
 #endif
   pOut->flags = MEM_Null;
   if( iCnt>1 ){
@@ -5572,7 +5572,7 @@ case OP_JournalMode: {    /* out2-prerelease */
   if( (eNew!=eOld)
    && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
   ){
-    if( !db->autoCommit || db->activeVdbeCnt>1 ){
+    if( !db->autoCommit || db->nVdbeActive>1 ){
       rc = SQLITE_ERROR;
       sqlite3SetString(&p->zErrMsg, db, 
           "cannot change %s wal mode from within a transaction",
