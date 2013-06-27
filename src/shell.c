@@ -1492,6 +1492,7 @@ static void open_db(struct callback_data *p){
 **    \t    -> tab
 **    \n    -> newline
 **    \r    -> carriage return
+**    \"    -> "
 **    \NNN  -> ascii character NNN in octal
 **    \\    -> backslash
 */
@@ -1507,6 +1508,8 @@ static void resolve_backslashes(char *z){
         c = '\t';
       }else if( c=='r' ){
         c = '\r';
+      }else if( c=='\\' ){
+        c = '\\';
       }else if( c>='0' && c<='7' ){
         c -= '0';
         if( z[i+1]>='0' && z[i+1]<='7' ){
@@ -1772,7 +1775,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( zLine[i]=='\'' || zLine[i]=='"' ){
       int delim = zLine[i++];
       azArg[nArg++] = &zLine[i];
-      while( zLine[i] && zLine[i]!=delim ){ i++; }
+      while( zLine[i] && zLine[i]!=delim ){ 
+        if( zLine[i]=='\\' && delim=='"' && zLine[i+1]!=0 ) i++;
+        i++; 
+      }
       if( zLine[i]==delim ){
         zLine[i++] = 0;
       }
