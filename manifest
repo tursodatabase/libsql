@@ -1,5 +1,5 @@
-C Update\sthe\s".import"\scommand\sof\sthe\scommand-line\sshell\sso\sthat\sit\scan\naccept\sfield\svalues\sthat\sspan\smultiple\slines\sand\sso\sthat\sit\sissues\nerror\smessages\sif\sthe\sinput\stext\sdoes\snot\sstrictly\sconform\sto\sRFC4180.
-D 2013-06-26T22:46:00.198
+C Add\sextended\serror\scode\sSQLITE_BUSY_SNAPSHOT\s-\sreturned\sin\sWAL\smode\swhen\sa\sread-transaction\scannot\sbe\supgraded\sto\sa\swrite-transaction\sbecause\sit\sis\sreading\sfrom\sa\ssnapshot\sother\sthan\sthe\smost\srecently\scommitted.
+D 2013-06-27T11:46:27.416
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c f33742ab539602cf18becc6a85ecef164706c86a
+F src/main.c b2d6a805e996b6ad8505300a8b3e6542170ceced
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -218,7 +218,7 @@ F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
 F src/shell.c 92cbe95eadc1c423422d36beac3609a9422889d1
-F src/sqlite.h.in 5f86553f4c1d8b4a9069285ed19e7981451ea77a
+F src/sqlite.h.in 9e8d57aa4d2fdc181dc25e9aa295f5ecec7e184a
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
 F src/sqliteInt.h e6f069b07fdef1ab54034940b7a6e7be2b4efd57
@@ -287,7 +287,7 @@ F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c 18cc59cb475e6115129bfde224367d13a35a7d13
 F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
-F src/wal.c 436bfceb141b9423c45119e68e444358ee0ed35d
+F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
 F src/where.c 9bcfcb4ec6a14dd0111bf287bee02be88d5709f9
@@ -1012,7 +1012,7 @@ F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 8f888b50f66b78821e61ed0e233ded5de378224b
-F test/wal6.test 2e3bc767d9c2ce35c47106148d43fcbd072a93b3
+F test/wal6.test b7dc01a1e8938b86e3a8f4e510634daf8bd50a44
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test 75c42e1bc4545c277fed212f8fc9b7723cd02216
 F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6c3839ef311a53076650c6479c932e545a26b96f
-R 20f28da1c568459e4d7e332d42754a7d
-U drh
-Z a56fe80d4e15f5a77335d76e21c16046
+P 93f632152e464a89322a0130adaf9f342411bf7d
+R d0186b84b9d50e701c6abd78c4c5b68c
+U dan
+Z cd0c18144512c4d9ba009e500eaa5fc3

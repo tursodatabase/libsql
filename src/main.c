@@ -1063,6 +1063,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_ABORT_ROLLBACK:     zName = "SQLITE_ABORT_ROLLBACK";    break;
       case SQLITE_BUSY:               zName = "SQLITE_BUSY";              break;
       case SQLITE_BUSY_RECOVERY:      zName = "SQLITE_BUSY_RECOVERY";     break;
+      case SQLITE_BUSY_SNAPSHOT:      zName = "SQLITE_BUSY_SNAPSHOT";     break;
       case SQLITE_LOCKED:             zName = "SQLITE_LOCKED";            break;
       case SQLITE_LOCKED_SHAREDCACHE: zName = "SQLITE_LOCKED_SHAREDCACHE";break;
       case SQLITE_NOMEM:              zName = "SQLITE_NOMEM";             break;
