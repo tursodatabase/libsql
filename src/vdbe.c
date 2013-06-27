@@ -579,6 +579,7 @@ int sqlite3VdbeExec(
     goto no_mem;
   }
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  assert( p->noIO==0 || p->readOnly!=0 );
   p->rc = SQLITE_OK;
   assert( p->explain==0 );
   p->pResultSet = 0;
@@ -2934,6 +2935,8 @@ case OP_AutoCommit: {
 case OP_Transaction: {
   Btree *pBt;
 
+  assert( p->noIO==0 );
+  assert( p->readOnly==0 || pOp->p2==0 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
@@ -2990,6 +2993,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   int iDb;
   int iCookie;
 
+  assert( p->noIO==0 );
   iDb = pOp->p1;
   iCookie = pOp->p3;
   assert( pOp->p3<SQLITE_N_BTREE_META );
@@ -3017,6 +3021,7 @@ case OP_SetCookie: {       /* in3 */
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  assert( p->readOnly==0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
@@ -3067,6 +3072,7 @@ case OP_VerifyCookie: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
+  assert( p->noIO==0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
@@ -3162,6 +3168,8 @@ case OP_OpenWrite: {
 
   assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 );
+  assert( p->noIO==0 );
+  assert( pOp->opcode==OP_OpenRead || p->readOnly==0 );
 
   if( p->expired ){
     rc = SQLITE_ABORT;
@@ -4732,6 +4740,7 @@ case OP_Destroy: {     /* out2-prerelease */
   Vdbe *pVdbe;
   int iDb;
 
+  assert( p->readOnly==0 );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   iCnt = 0;
   for(pVdbe=db->pVdbe; pVdbe; pVdbe = pVdbe->pNext){
@@ -4787,6 +4796,7 @@ case OP_Clear: {
   int nChange;
  
   nChange = 0;
+  assert( p->readOnly==0 );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)
@@ -4833,6 +4843,7 @@ case OP_CreateTable: {          /* out2-prerelease */
   pgno = 0;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  assert( p->readOnly==0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
@@ -4980,7 +4991,8 @@ case OP_IntegrityCk: {
   int nErr;       /* Number of errors reported */
   char *z;        /* Text of the error report */
   Mem *pnErr;     /* Register keeping track of errors remaining */
-  
+
+  assert( p->noIO==0 );
   nRoot = pOp->p2;
   assert( nRoot>0 );
   aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
@@ -5486,6 +5498,7 @@ case OP_Checkpoint: {
   int aRes[3];                    /* Results */
   Mem *pMem;                      /* Write results here */
 
+  assert( p->readOnly==0 );
   aRes[0] = 0;
   aRes[1] = aRes[2] = -1;
   assert( pOp->p2==SQLITE_CHECKPOINT_PASSIVE
@@ -5535,6 +5548,7 @@ case OP_JournalMode: {    /* out2-prerelease */
        || eNew==PAGER_JOURNALMODE_QUERY
   );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( p->readOnly==0 );
 
   pBt = db->aDb[pOp->p1].pBt;
   pPager = sqlite3BtreePager(pBt);
@@ -5617,6 +5631,7 @@ case OP_JournalMode: {    /* out2-prerelease */
 ** a transaction.
 */
 case OP_Vacuum: {
+  assert( p->readOnly==0 );
   rc = sqlite3RunVacuum(&p->zErrMsg, db);
   break;
 }
@@ -5634,6 +5649,7 @@ case OP_IncrVacuum: {        /* jump */
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  assert( p->readOnly==0 );
   pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3BtreeIncrVacuum(pBt);
   if( rc==SQLITE_DONE ){
@@ -5752,6 +5768,7 @@ case OP_VOpen: {
   sqlite3_vtab *pVtab;
   sqlite3_module *pModule;
 
+  assert( p->noIO==0 );
   pCur = 0;
   pVtabCursor = 0;
   pVtab = pOp->p4.pVtab->pVtab;
@@ -5968,6 +5985,7 @@ case OP_VRename: {
   pName = &aMem[pOp->p1];
   assert( pVtab->pModule->xRename );
   assert( memIsValid(pName) );
+  assert( p->readOnly==0 );
   REGISTER_TRACE(pOp->p1, pName);
   assert( pName->flags & MEM_Str );
   testcase( pName->enc==SQLITE_UTF8 );
@@ -6019,6 +6037,7 @@ case OP_VUpdate: {
   assert( pOp->p2==1        || pOp->p5==OE_Fail   || pOp->p5==OE_Rollback 
        || pOp->p5==OE_Abort || pOp->p5==OE_Ignore || pOp->p5==OE_Replace
   );
+  assert( p->readOnly==0 );
   pVtab = pOp->p4.pVtab->pVtab;
   pModule = (sqlite3_module *)pVtab->pModule;
   nArg = pOp->p2;

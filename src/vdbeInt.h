@@ -337,7 +337,8 @@ struct Vdbe {
   bft expired:1;          /* True if the VM needs to be recompiled */
   bft runOnlyOnce:1;      /* Automatically expire on reset */
   bft usesStmtJournal:1;  /* True if uses a statement journal */
-  bft readOnly:1;         /* True for read-only statements */
+  bft readOnly:1;         /* True for statements that do not write */
+  bft noIO:1;             /* True for SELECTs with no FROM clause */
   bft isPrepareV2:1;      /* True if prepared with prepare_v2() */
   bft doingRerun:1;       /* True if rerunning after an auto-reprepare */
   int nChange;            /* Number of db changes made since last reset */

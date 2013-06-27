@@ -403,14 +403,24 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   Op *pOp;
   int *aLabel = p->aLabel;
   p->readOnly = 1;
+  p->noIO = 1;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
     pOp->opflags = sqlite3OpcodeProperty[opcode];
     if( opcode==OP_Function || opcode==OP_AggStep ){
       if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
-    }else if( (opcode==OP_Transaction && pOp->p2!=0) || opcode==OP_Vacuum ){
+    }else if( opcode==OP_Transaction ){
+      if( pOp->p2!=0 ) p->readOnly = 0;
+      p->noIO = 0;
+    }else if( opcode==OP_Vacuum
+           || opcode==OP_JournalMode
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+           || opcode==OP_Checkpoint
+#endif
+    ){
       p->readOnly = 0;
+      p->noIO = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( opcode==OP_VUpdate ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
@@ -436,7 +446,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   }
   sqlite3DbFree(p->db, p->aLabel);
   p->aLabel = 0;
-
   *pMaxFuncArgs = nMaxArgs;
 }
 
@@ -1976,16 +1985,19 @@ static void checkActiveVdbeCnt(sqlite3 *db){
   Vdbe *p;
   int cnt = 0;
   int nWrite = 0;
+  int nNoIO = 0;
   p = db->pVdbe;
   while( p ){
     if( p->magic==VDBE_MAGIC_RUN && p->pc>=0 ){
       cnt++;
       if( p->readOnly==0 ) nWrite++;
+      if( p->noIO ) nNoIO++;
     }
     p = p->pNext;
   }
   assert( cnt==db->activeVdbeCnt );
   assert( nWrite==db->writeVdbeCnt );
+  assert( nNoIO==db->noIOVdbeCnt );
 }
 #else
 #define checkActiveVdbeCnt(x)
@@ -2257,10 +2269,10 @@ int sqlite3VdbeHalt(Vdbe *p){
   /* We have successfully halted and closed the VM.  Record this fact. */
   if( p->pc>=0 ){
     db->activeVdbeCnt--;
-    if( !p->readOnly ){
-      db->writeVdbeCnt--;
-    }
+    if( !p->readOnly ) db->writeVdbeCnt--;
+    if( p->noIO ) db->noIOVdbeCnt--;
     assert( db->activeVdbeCnt>=db->writeVdbeCnt );
+    assert( db->activeVdbeCnt>=db->noIOVdbeCnt );
   }
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);

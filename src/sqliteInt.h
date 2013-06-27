@@ -898,6 +898,7 @@ struct sqlite3 {
     u8 orphanTrigger;           /* Last statement is orphaned TEMP trigger */
   } init;
   int activeVdbeCnt;            /* Number of VDBEs currently executing */
+  int noIOVdbeCnt;              /* Nr of active VDBEs with no FROM clause */
   int writeVdbeCnt;             /* Number of active VDBEs that are writing */
   int vdbeExecCnt;              /* Number of nested calls to VdbeExec() */
   int nExtension;               /* Number of loaded extensions */
