@@ -215,7 +215,7 @@ SELECT COUNT(*) FROM t2;}]
 } {0 1}
 
 # try importing a large number of rows
-set rows 99999
+set rows 9999
 do_test shell5-1.7.1 {
   set in [open shell5.csv w]
   puts $in a
@@ -227,5 +227,19 @@ do_test shell5-1.7.1 {
 .import shell5.csv t3
 SELECT COUNT(*) FROM t3;}]
 } [list 0 $rows]
+
+# Inport from a pipe.  (Unix only, as it requires "awk")
+if {$tcl_platform(platform)=="unix"} {
+  do_test shell5-1.8 {
+    file delete -force test.db
+    catchcmd test.db {.mode csv
+.import "|awk 'END{print \"x,y\";for(i=1;i<=5;i++){print i \",this is \" i}}'" t1
+SELECT * FROM t1;}
+  } {0 {1,"this is 1"
+2,"this is 2"
+3,"this is 3"
+4,"this is 4"
+5,"this is 5"}}
+}
 
 finish_test

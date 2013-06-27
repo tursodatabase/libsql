@@ -1,5 +1,5 @@
-C Improved\shandling\sof\sbackslash\sescapes\son\sdouble-quoted\sarguments\sto\ndot-commands\sin\sthe\scommand-line\sshell.
-D 2013-06-27T13:26:55.828
+C If\sthe\sfilename\sargument\sto\sthe\s".import"\scommand\sin\sthe\scommand-line\sshell\nbegins\swith\s'|'\sthen\streat\sit\sas\san\sinput\spipe\srather\sthan\sa\sfile.
+D 2013-06-27T14:07:53.488
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
-F src/shell.c 3b8fff51ad65fb932b0b29a2a33c1991a4c56a9b
+F src/shell.c c0f38cee126d1ea82275195933359e91d90196a0
 F src/sqlite.h.in 9e8d57aa4d2fdc181dc25e9aa295f5ecec7e184a
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
@@ -777,7 +777,7 @@ F test/shell1.test 928547277d385038c696428e9d791cbbad098974
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test 0fed7823d57e80f79da2c5f350e50aa86011f24f
+F test/shell5.test 946e620a41b64f90d45dcf91c36e8d408d435cfd
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e88fd5b22198edfc6f91390194bdde07ca06ba35
-R e0ea5c577e99c4c9e7b89055ec3f7b29
+P 656a1fe5dd670e6ce7173ed3ce3392c0151641a0
+R 97949a48417894542203b78a8164f7cc
 U drh
-Z e3dc96e0e57dde00a2c7ad221cef5689
+Z 363202d577b3d015f15870ab9c3327f8
