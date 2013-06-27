@@ -1,5 +1,5 @@
-C Make\ssure\sthat\ssqlite3_stmt_readonly\sreports\sfalse\sfor\nPRAGMA\sjournal_mode\sand\sPRAGMA\swal_checkpoint.\s\sTicket\s[a589ec069e3].\nAlso\skeep\strack\sof\swhether\sa\sprepared\sstatement\sdoes\sno\sreading\sor\nwriting.
-D 2013-06-27T17:40:30.228
+C Fix\san\serror\sin\se_expr.test.
+D 2013-06-27T19:12:53.361
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -426,7 +426,7 @@ F test/e_createtable.test ddf3b2e4506e0813f46b69ccf55757c5570cc181
 F test/e_delete.test 89aa84d3d1bd284a0689ede04bce10226a5aeaa5
 F test/e_droptrigger.test afd5c4d27dec607f5997a66bf7e2498a082cb235
 F test/e_dropview.test 583411e470458c5d76148542cfb5a5fa84c8f93e
-F test/e_expr.test 5489424d3d9a452ac3701cdf4b680ae31a157894
+F test/e_expr.test 2a599f40f37ee9e853c4396c28ff13c2c50f6628
 F test/e_fkey.test 17cfb40002d165299681f39aac0cb5890c359935
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test d5331cc95e101af2508159fc98b6801631659ffe
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 22bced36f0f121f29d94f1f9eab45c8731517a53
-R 182a3fd649ef7d4b97150fcbb047e7a6
-U drh
-Z aa0f35d707430a5d3fece648b987ad5a
+P 1937fd8eec2c1da95a782d9dc63926d846b06bdc
+R 488964b243c4e4f72719096b3665006a
+U dan
+Z ece17f7bfce31c74b99e0d0e20019131

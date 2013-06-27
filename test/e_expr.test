@@ -1294,7 +1294,7 @@ proc rev {str} {
   set ret
 }
 proc reverse {lhs rhs} {
-  string compare [rev $lhs] [ref $rhs]
+  string compare [rev $lhs] [rev $rhs]
 }
 db collate reverse reverse
 do_execsql_test e_expr-23.1.1 {
@@ -1317,7 +1317,7 @@ do_execsql_test e_expr-23.1.4 {
 } {B}
 do_execsql_test e_expr-23.1.5 {
   SELECT CASE b WHEN a THEN 'A' ELSE 'B' END FROM t1
-} {A}
+} {B}
 do_execsql_test e_expr-23.1.6 {
   SELECT CASE 55 WHEN '55' THEN 'A' ELSE 'B' END
 } {B}
