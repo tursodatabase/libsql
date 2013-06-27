@@ -1,5 +1,5 @@
-C If\sthe\sfilename\sargument\sto\sthe\s".import"\scommand\sin\sthe\scommand-line\sshell\nbegins\swith\s'|'\sthen\streat\sit\sas\san\sinput\spipe\srather\sthan\sa\sfile.
-D 2013-06-27T14:07:53.488
+C Add\sa\stest\sto\sensure\sthat\sif\sBEGIN\sIMMEDIATE\sfails\swith\sSQLITE_BUSY,\sit\sdoes\snot\sleave\sthe\suser\swith\san\sopen\sread\stransaction\s(unless\sone\swas\salready\sopen).
+D 2013-06-27T14:24:15.136
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1012,7 +1012,7 @@ F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 8f888b50f66b78821e61ed0e233ded5de378224b
-F test/wal6.test b7dc01a1e8938b86e3a8f4e510634daf8bd50a44
+F test/wal6.test 1fbaf1f98415be10339b0ec85c9cba34fd2d4396
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test 75c42e1bc4545c277fed212f8fc9b7723cd02216
 F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 656a1fe5dd670e6ce7173ed3ce3392c0151641a0
-R 97949a48417894542203b78a8164f7cc
-U drh
-Z 363202d577b3d015f15870ab9c3327f8
+P 4c02b344f5c6f6fb1c61b79d51063a1e0e2d75c0
+R f7e72c4156e7c539662844a39b9e3b02
+U dan
+Z d4c7b57dd14fca50abddc9b4b3e495d3

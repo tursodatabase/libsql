@@ -143,5 +143,57 @@ do_test 2.x {
   db2 close
 } {}
 
+#-------------------------------------------------------------------------
+# Check that if BEGIN IMMEDIATE fails, it does not leave the user with
+# an open read-transaction (unless one was already open before the BEGIN 
+# IMMEDIATE). Even if there are other active VMs.
+#
+
+proc test4 {prefix} {
+  do_test $prefix.1 {
+    catchsql { BEGIN IMMEDIATE }
+  } {1 {database is locked}}
+
+  do_test $prefix.2 {
+    execsql { COMMIT } db2
+  } {}
+
+  do_test $prefix.3 {
+    execsql { BEGIN IMMEDIATE }
+  } {}
+  do_test $prefix.4 {
+    execsql { COMMIT }
+  } {}
+}
+
+reset_db
+sqlite3 db2 test.db
+do_execsql_test 3.1 { 
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE ab(a PRIMARY KEY, b);
+} {wal}
+
+do_test 3.2.1 { 
+  execsql { 
+    BEGIN;
+      INSERT INTO ab VALUES(1, 2);
+  } db2
+} {}
+test4 3.2.2
+
+db func test4 test4
+do_test 3.3.1 {
+  execsql { 
+    BEGIN;
+      INSERT INTO ab VALUES(3, 4);
+  } db2
+} {}
+
+db eval {SELECT test4('3.3.2')}
+
+do_test 3.x {
+  db2 close
+} {}
+
 finish_test
 
