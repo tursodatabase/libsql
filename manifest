@@ -1,5 +1,5 @@
-C Add\sa\sbit\sto\sthe\sSQLITE_TESTCTRL_OPTIMIZATIONS\soption\sfor\ssqlite3_file_control()\nthat\swill\sdisable\sthe\suse\sof\sSQLITE_STAT3\sinformation\sin\sthe\squery\splanner.
-D 2013-06-28T17:29:25.884
+C Allow\sread\stransactions\sto\sbe\sfreely\sopened\sand\sclosed\sby\sSQL\sstatements\srun\sfrom\swithin\sthe\simplementation\sof\suser-functions\sif\sthe\suser-function\sis\scalled\sby\sa\sSELECT\sstatement\sthat\sdoes\snot\saccess\sany\sdatabase\stables\s(e.g.\s"SELECT\suser_function();").
+D 2013-06-28T19:41:43.617
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 4fc3690a4a8f802e167f40261cbff8271f820599
+F src/btree.c 3f7bbfd72efb1cbf6a49515c376a031767ec930a
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c 42239cfd95533e4aacf4d58b4724c8f858de5ced
@@ -277,11 +277,11 @@ F src/update.c 8e76c3d03e4b7b21cb250bd2df0c05e12993e577
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
-F src/vdbe.c 9816247ea2066c427c199d5525d0bfa6916abb68
+F src/vdbe.c 2e3fc618ff964cd559844fdbf186fdc582b66b1e
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h aa185c6df4f2b5ec9896cdb5f96789af1ef69f76
 F src/vdbeapi.c e3ad4cddb713a387527f982e79d9e001a0dbffa5
-F src/vdbeaux.c 00674a9bbfbc235340dc5c8c305dfeecc5ef614f
+F src/vdbeaux.c 4a0fe1f41e30dd2bc6d96a1cdc9ec9e85ca34f42
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -1012,7 +1012,7 @@ F test/wal2.test d4b470f13c87f6d8268b004380afa04c3c67cb90
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 8f888b50f66b78821e61ed0e233ded5de378224b
-F test/wal6.test 1fbaf1f98415be10339b0ec85c9cba34fd2d4396
+F test/wal6.test 527581f5527bf9c24394991e2be83000aace5f9e
 F test/wal7.test 2ae8f427d240099cc4b2dfef63cff44e2a68a1bd
 F test/wal8.test 75c42e1bc4545c277fed212f8fc9b7723cd02216
 F test/wal9.test 378e76a9ad09cd9bee06c172ad3547b0129a6750
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5480d124b74c9adaacc4fa9cb81560865b44f3e1
-R 9b28c416de86cf06f7b37b5cc06de7b2
-U drh
-Z 5f9b06357839f0d8b2689ef296a5487f
+P 60c19b86797fb8a37f175545929883ebeff7f307
+R 02f6793a0a52da2c43e4543693db9443
+U dan
+Z b5c7fa88cc274e57375060b2c2c8b229

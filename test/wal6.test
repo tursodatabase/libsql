@@ -115,7 +115,6 @@ do_execsql_test 2.5 {
   INSERT INTO t1 VALUES('x', 'x') 
 } {1 one 2 two}
 
-if 0 {
 proc test3 {prefix} {
   do_test $prefix.1 {
     execsql { SELECT count(*) FROM t1 } 
@@ -137,7 +136,6 @@ test3 2.6.2
 db func test3 test3
 do_execsql_test 2.6.3 { DELETE FROM t1 }
 db eval {SELECT test3('2.6.4')}
-}
 
 do_test 2.x {
   db2 close

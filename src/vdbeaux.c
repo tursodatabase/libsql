@@ -413,6 +413,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     }else if( opcode==OP_Transaction ){
       if( pOp->p2!=0 ) p->readOnly = 0;
       p->bIsReader = 1;
+    }else if( opcode==OP_AutoCommit || opcode==OP_Savepoint ){
+      p->bIsReader = 1;
     }else if( opcode==OP_Vacuum
            || opcode==OP_JournalMode
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -447,6 +449,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   sqlite3DbFree(p->db, p->aLabel);
   p->aLabel = 0;
   *pMaxFuncArgs = nMaxArgs;
+  assert( p->bIsReader!=0 || p->btreeMask==0 );
 }
 
 /*
@@ -2133,8 +2136,9 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
   checkActiveVdbeCnt(db);
 
-  /* No commit or rollback needed if the program never started */
-  if( p->pc>=0 ){
+  /* No commit or rollback needed if the program never started or if the
+  ** SQL statement does not read or write a database file.  */
+  if( p->pc>=0 && p->bIsReader ){
     int mrc;   /* Primary error code from p->rc */
     int eStatementOp = 0;
     int isSpecialError;            /* Set to true if a 'special' error */

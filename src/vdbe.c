@@ -2686,6 +2686,7 @@ case OP_Savepoint: {
   assert( p1==SAVEPOINT_BEGIN||p1==SAVEPOINT_RELEASE||p1==SAVEPOINT_ROLLBACK );
   assert( db->pSavepoint || db->isTransactionSavepoint==0 );
   assert( checkSavepointCount(db) );
+  assert( p->bIsReader );
 
   if( p1==SAVEPOINT_BEGIN ){
     if( db->nVdbeWrite>0 ){
@@ -2847,6 +2848,7 @@ case OP_AutoCommit: {
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
   assert( db->nVdbeActive>0 );  /* At least this one VM is active */
+  assert( p->bIsReader );
 
 #if 0
   if( turnOnAC && iRollback && db->nVdbeActive>1 ){
@@ -2953,7 +2955,7 @@ case OP_Transaction: {
     }
 
     if( pOp->p2 && p->usesStmtJournal 
-     && (db->autoCommit==0 || db->nVdbeActive>1) 
+     && (db->autoCommit==0 || db->nVdbeRead>1) 
     ){
       assert( sqlite3BtreeIsInTrans(pBt) );
       if( p->iStatement==0 ){
@@ -4744,12 +4746,14 @@ case OP_Destroy: {     /* out2-prerelease */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   iCnt = 0;
   for(pVdbe=db->pVdbe; pVdbe; pVdbe = pVdbe->pNext){
-    if( pVdbe->magic==VDBE_MAGIC_RUN && pVdbe->inVtabMethod<2 && pVdbe->pc>=0 ){
+    if( pVdbe->magic==VDBE_MAGIC_RUN && pVdbe->bIsReader 
+     && pVdbe->inVtabMethod<2 && pVdbe->pc>=0 
+    ){
       iCnt++;
     }
   }
 #else
-  iCnt = db->nVdbeActive;
+  iCnt = db->nVdbeRead;
 #endif
   pOut->flags = MEM_Null;
   if( iCnt>1 ){
@@ -5572,7 +5576,7 @@ case OP_JournalMode: {    /* out2-prerelease */
   if( (eNew!=eOld)
    && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
   ){
-    if( !db->autoCommit || db->nVdbeActive>1 ){
+    if( !db->autoCommit || db->nVdbeRead>1 ){
       rc = SQLITE_ERROR;
       sqlite3SetString(&p->zErrMsg, db, 
           "cannot change %s wal mode from within a transaction",
