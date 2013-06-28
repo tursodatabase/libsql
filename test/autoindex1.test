@@ -23,6 +23,13 @@ ifcapable {!autoindex} {
   return
 }
 
+# Setup for logging 
+sqlite3_shutdown
+test_sqlite3_log [list lappend ::log]
+set ::log [list]
+sqlite3 db test.db
+
+
 # With automatic index turned off, we do a full scan of the T2 table
 do_test autoindex1-100 {
   db eval {
@@ -60,6 +67,15 @@ do_test autoindex1-111 {
 do_test autoindex1-112 {
   db status autoindex
 } {7}
+do_test autoindex1-113 {
+  set ::log
+} {SQLITE_WARNING_AUTOINDEX {automatic index on t2(c)}}
+
+db close
+sqlite3_shutdown
+test_sqlite3_log
+sqlite3_initialize
+sqlite3 db test.db
 
 # The same test as above, but this time the T2 query is a subquery rather
 # than a join.
