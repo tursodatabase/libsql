@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\sthe\sOmitNoopJoin\soptimization\sand\sadd\stest\scases\sthat\nare\sspecifically\sfor\sthat\soptimization.
-D 2013-06-28T13:43:33.738
+C Add\sa\sbit\sto\sthe\sSQLITE_TESTCTRL_OPTIMIZATIONS\soption\sfor\ssqlite3_file_control()\nthat\swill\sdisable\sthe\suse\sof\sSQLITE_STAT3\sinformation\sin\sthe\squery\splanner.
+D 2013-06-28T17:29:25.884
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,12 +221,12 @@ F src/shell.c c0f38cee126d1ea82275195933359e91d90196a0
 F src/sqlite.h.in 9e8d57aa4d2fdc181dc25e9aa295f5ecec7e184a
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h d936f797812c28b81b26ed18345baf8db28a21a5
-F src/sqliteInt.h 15f1a7e51486eee145597f6543f3875974ed5a97
+F src/sqliteInt.h e461e0f9109ca49ad6aba52198fbe7d237c4a75b
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c b8835978e853a89bf58de88acc943a5ca94d752e
-F src/test1.c 340156a7e65537ab0c22e14bccdf243b898f7e54
+F src/test1.c 870fc648a48cb6d6808393174f7ebe82b8c840fa
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -290,7 +290,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 69c39db2381017959e89a492a71535caefc662ca
+F src/where.c e110b9efa3a8d21e3bb1a681a5051f0a1d723954
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 59f98c5c241e5a61cd5b6d0e69b55a6b44c5cafc
-R 368bf30a2a407b15b250050c0cce7dc4
+P 5480d124b74c9adaacc4fa9cb81560865b44f3e1
+R 9b28c416de86cf06f7b37b5cc06de7b2
 U drh
-Z 98db0c7caabc51789d3df033fefb950b
+Z 5f9b06357839f0d8b2689ef296a5487f

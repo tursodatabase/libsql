@@ -1738,6 +1738,7 @@ static void exprAnalyze(
   if( pExpr->op==TK_NOTNULL
    && pExpr->pLeft->op==TK_COLUMN
    && pExpr->pLeft->iColumn>=0
+   && OptimizationEnabled(db, SQLITE_Stat3)
   ){
     Expr *pNewExpr;
     Expr *pLeft = pExpr->pLeft;
@@ -2571,7 +2572,7 @@ static int whereRangeScanEst(
 
 #ifdef SQLITE_ENABLE_STAT3
 
-  if( nEq==0 && p->nSample ){
+  if( nEq==0 && p->nSample && OptimizationEnabled(pParse->db, SQLITE_Stat3) ){
     sqlite3_value *pRangeVal;
     tRowcnt iLower = 0;
     tRowcnt iUpper = p->aiRowEst[0];
@@ -4336,7 +4337,8 @@ static int whereLoopAddBtreeIndex(
       pNew->nOut = saved_nOut>rDiv+10 ? saved_nOut - rDiv : 10;
     }
 #ifdef SQLITE_ENABLE_STAT3
-    if( pNew->u.btree.nEq==1 && pProbe->nSample ){
+    if( pNew->u.btree.nEq==1 && pProbe->nSample
+     &&  OptimizationEnabled(db, SQLITE_Stat3) ){
       tRowcnt nOut = 0;
       if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
         testcase( pTerm->eOperator & WO_EQ );
