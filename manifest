@@ -1,5 +1,5 @@
-C Refactor\sthe\sVdbe.noIO\sfield\sas\sVdbe.bIsReader.\sThe\smeaning\sis\sinverted.
-D 2013-06-28T01:24:57.868
+C Fix\san\sissue\swith\sthe\sOmitNoopJoin\soptimization\sand\sadd\stest\scases\sthat\nare\sspecifically\sfor\sthat\soptimization.
+D 2013-06-28T13:43:33.738
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -226,7 +226,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c b8835978e853a89bf58de88acc943a5ca94d752e
-F src/test1.c 06bd01f7795bbef4aaf59d3b9fe5b3131a6ef642
+F src/test1.c 340156a7e65537ab0c22e14bccdf243b898f7e54
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -290,7 +290,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 9bcfcb4ec6a14dd0111bf287bee02be88d5709f9
+F src/where.c 69c39db2381017959e89a492a71535caefc662ca
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1034,7 +1034,7 @@ F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test da54153a4c1571ea1b95659e5bec8119edf786aa
 F test/where2.test dcf0ffafe0de55051c1373835a5a57aee6b50094
-F test/where3.test 157071521ceabc06bfd4d37106e4270a8956364d
+F test/where3.test a0682ba3dc8c8f46ffcc95a3d9f58c4327fc129f
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 14f796963474350e7aee8d3757acd3315fe78e4f
-R fe26d24ee74e8945b518975ca34639ae
+P 59f98c5c241e5a61cd5b6d0e69b55a6b44c5cafc
+R 368bf30a2a407b15b250050c0cce7dc4
 U drh
-Z 103752d0a887c9636df5a0b29ea996df
+Z 98db0c7caabc51789d3df033fefb950b

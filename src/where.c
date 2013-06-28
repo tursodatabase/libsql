@@ -5796,6 +5796,7 @@ WhereInfo *sqlite3WhereBegin(
     Bitmask tabUsed = exprListTableUsage(pMaskSet, pResultSet);
     if( pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, pOrderBy);
     while( pWInfo->nLevel>=2 ){
+      WhereTerm *pTerm, *pEnd;
       pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
       if( (pWInfo->pTabList->a[pLoop->iTab].jointype & JT_LEFT)==0 ) break;
       if( (wctrlFlags & WHERE_WANT_DISTINCT)==0
@@ -5804,6 +5805,15 @@ WhereInfo *sqlite3WhereBegin(
         break;
       }
       if( (tabUsed & pLoop->maskSelf)!=0 ) break;
+      pEnd = sWLB.pWC->a + sWLB.pWC->nTerm;
+      for(pTerm=sWLB.pWC->a; pTerm<pEnd; pTerm++){
+        if( (pTerm->prereqAll & pLoop->maskSelf)!=0
+         && !ExprHasProperty(pTerm->pExpr, EP_FromJoin)
+        ){
+          break;
+        }
+      }
+      if( pTerm<pEnd ) break;
       WHERETRACE(0xffff, ("-> drop loop %c not used\n", pLoop->cId));
       pWInfo->nLevel--;
       nTabList--;

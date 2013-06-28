@@ -5959,15 +5959,19 @@ static int optimization_control(
     const char *zOptName;
     int mask;
   } aOpt[] = {
-    { "all",              SQLITE_AllOpts        },
-    { "query-flattener",  SQLITE_QueryFlattener },
-    { "column-cache",     SQLITE_ColumnCache    },
-    { "groupby-order",    SQLITE_GroupByOrder   },
-    { "factor-constants", SQLITE_FactorOutConst },
-    { "real-as-int",      SQLITE_IdxRealAsInt   },
-    { "distinct-opt",     SQLITE_DistinctOpt    },
-    { "cover-idx-scan",   SQLITE_CoverIdxScan   },
-    { "order-by-idx-join",SQLITE_OrderByIdxJoin },
+    { "all",                 SQLITE_AllOpts        },
+    { "none",                0                     },
+    { "query-flattener",     SQLITE_QueryFlattener },
+    { "column-cache",        SQLITE_ColumnCache    },
+    { "groupby-order",       SQLITE_GroupByOrder   },
+    { "factor-constants",    SQLITE_FactorOutConst },
+    { "real-as-int",         SQLITE_IdxRealAsInt   },
+    { "distinct-opt",        SQLITE_DistinctOpt    },
+    { "cover-idx-scan",      SQLITE_CoverIdxScan   },
+    { "order-by-idx-join",   SQLITE_OrderByIdxJoin },
+    { "transitive",          SQLITE_Transitive     },
+    { "subquery-coroutine",  SQLITE_SubqCoroutine  },
+    { "omit-noop-join",      SQLITE_OmitNoopJoin   },
   };
 
   if( objc!=4 ){
@@ -5988,7 +5992,7 @@ static int optimization_control(
     Tcl_AppendResult(interp, "unknown optimization - should be one of:",
                      (char*)0);
     for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){
-      Tcl_AppendResult(interp, " ", aOpt[i].zOptName);
+      Tcl_AppendResult(interp, " ", aOpt[i].zOptName, (char*)0);
     }
     return TCL_ERROR;
   }
