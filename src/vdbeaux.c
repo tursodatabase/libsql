@@ -403,7 +403,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   Op *pOp;
   int *aLabel = p->aLabel;
   p->readOnly = 1;
-  p->noIO = 1;
+  p->bIsReader = 0;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
@@ -412,7 +412,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
     }else if( opcode==OP_Transaction ){
       if( pOp->p2!=0 ) p->readOnly = 0;
-      p->noIO = 0;
+      p->bIsReader = 1;
     }else if( opcode==OP_Vacuum
            || opcode==OP_JournalMode
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -420,7 +420,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 #endif
     ){
       p->readOnly = 0;
-      p->noIO = 0;
+      p->bIsReader = 1;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( opcode==OP_VUpdate ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
@@ -1991,7 +1991,7 @@ static void checkActiveVdbeCnt(sqlite3 *db){
     if( p->magic==VDBE_MAGIC_RUN && p->pc>=0 ){
       cnt++;
       if( p->readOnly==0 ) nWrite++;
-      if( p->noIO==0 ) nRead++;
+      if( p->bIsReader ) nRead++;
     }
     p = p->pNext;
   }
@@ -2270,7 +2270,7 @@ int sqlite3VdbeHalt(Vdbe *p){
   if( p->pc>=0 ){
     db->nVdbeActive--;
     if( !p->readOnly ) db->nVdbeWrite--;
-    if( p->noIO==0 ) db->nVdbeRead--;
+    if( p->bIsReader ) db->nVdbeRead--;
     assert( db->nVdbeActive>=db->nVdbeRead );
     assert( db->nVdbeRead>=db->nVdbeWrite );
     assert( db->nVdbeWrite>=0 );

@@ -579,7 +579,7 @@ int sqlite3VdbeExec(
     goto no_mem;
   }
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
-  assert( p->noIO==0 || p->readOnly!=0 );
+  assert( p->bIsReader || p->readOnly!=0 );
   p->rc = SQLITE_OK;
   assert( p->explain==0 );
   p->pResultSet = 0;
@@ -2935,7 +2935,7 @@ case OP_AutoCommit: {
 case OP_Transaction: {
   Btree *pBt;
 
-  assert( p->noIO==0 );
+  assert( p->bIsReader );
   assert( p->readOnly==0 || pOp->p2==0 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
@@ -2993,7 +2993,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   int iDb;
   int iCookie;
 
-  assert( p->noIO==0 );
+  assert( p->bIsReader );
   iDb = pOp->p1;
   iCookie = pOp->p3;
   assert( pOp->p3<SQLITE_N_BTREE_META );
@@ -3072,7 +3072,7 @@ case OP_VerifyCookie: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
-  assert( p->noIO==0 );
+  assert( p->bIsReader );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
@@ -3168,7 +3168,7 @@ case OP_OpenWrite: {
 
   assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 );
-  assert( p->noIO==0 );
+  assert( p->bIsReader );
   assert( pOp->opcode==OP_OpenRead || p->readOnly==0 );
 
   if( p->expired ){
@@ -4992,7 +4992,7 @@ case OP_IntegrityCk: {
   char *z;        /* Text of the error report */
   Mem *pnErr;     /* Register keeping track of errors remaining */
 
-  assert( p->noIO==0 );
+  assert( p->bIsReader );
   nRoot = pOp->p2;
   assert( nRoot>0 );
   aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
@@ -5768,7 +5768,7 @@ case OP_VOpen: {
   sqlite3_vtab *pVtab;
   sqlite3_module *pModule;
 
-  assert( p->noIO==0 );
+  assert( p->bIsReader );
   pCur = 0;
   pVtabCursor = 0;
   pVtab = pOp->p4.pVtab->pVtab;

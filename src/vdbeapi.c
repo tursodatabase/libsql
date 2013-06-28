@@ -396,7 +396,7 @@ static int sqlite3Step(Vdbe *p){
 
     db->nVdbeActive++;
     if( p->readOnly==0 ) db->nVdbeWrite++;
-    if( p->noIO==0 ) db->nVdbeRead++;
+    if( p->bIsReader ) db->nVdbeRead++;
     p->pc = 0;
   }
 #ifndef SQLITE_OMIT_EXPLAIN
