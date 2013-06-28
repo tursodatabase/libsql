@@ -1,5 +1,5 @@
-C Allow\sread\stransactions\sto\sbe\sfreely\sopened\sand\sclosed\sby\sSQL\sstatements\srun\sfrom\swithin\sthe\simplementation\sof\suser-functions\sif\sthe\suser-function\sis\scalled\sby\sa\sSELECT\sstatement\sthat\sdoes\snot\saccess\sany\sdatabase\stables\s(e.g.\s"SELECT\suser_function();").
-D 2013-06-28T19:41:43.617
+C Add\sthe\sSQLITE_DEFAULT_AUTOMATIC_INDEX\scompile-time\soption,\swhich\sif\sset\sto\nzero\sturns\sautomatic\sindices\soff\sby\sdefault.\s\sIncrease\sthe\sestimated\scost\nof\san\sautomatic\sindex.\s\sAdditional\sminor\srefactoring\sof\sthe\sautomatic\nindex\scode.
+D 2013-06-28T21:12:20.682
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c fd167de59452bfcca2cba41ac6d484ddcbb7a105
+F src/main.c 648aea1fdd88d9f04367b325129a33609d933f5d
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -290,7 +290,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c e110b9efa3a8d21e3bb1a681a5051f0a1d723954
+F src/where.c b0cdc92ae0aeaed2aca53bcd5bcde0a83743d153
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -323,7 +323,7 @@ F test/auth.test 4a4c3b034fff7750513520defa910f376c96ab49
 F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
-F test/autoindex1.test 314f12f87667861ac965c41587f9df82c42fff65
+F test/autoindex1.test e19269b74a6f55975a4f2453778f6ef524fd88c9
 F test/autovacuum.test 9f22a7733f39c56ef6a5665d10145ac25d8cb574
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1098,7 +1098,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 60c19b86797fb8a37f175545929883ebeff7f307
-R 02f6793a0a52da2c43e4543693db9443
-U dan
-Z b5c7fa88cc274e57375060b2c2c8b229
+P f308c4851726b4b75636f714466f2314f56e3ec0
+R 4380a773ef3ea80daacb5f7d2d9f9d84
+U drh
+Z 670c2d71707208c8f107ef52a342b6f3

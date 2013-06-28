@@ -2451,7 +2451,10 @@ static int openDatabase(
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
-  db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex | SQLITE_EnableTrigger
+  db->flags |= SQLITE_ShortColNames | SQLITE_EnableTrigger
+#if !defined(SQLITE_DEAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
+                 | SQLITE_AutoIndex
+#endif
 #if SQLITE_DEFAULT_FILE_FORMAT<4
                  | SQLITE_LegacyFileFmt
 #endif

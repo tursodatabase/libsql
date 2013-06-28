@@ -444,7 +444,7 @@ struct WhereInfo {
 #define WHERE_IN_ABLE      0x00000800  /* Able to support an IN operator */
 #define WHERE_ONEROW       0x00001000  /* Selects no more than one row */
 #define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
-#define WHERE_TEMP_INDEX   0x00004000  /* Uses an ephemeral index */
+#define WHERE_AUTO_INDEX   0x00004000  /* Uses an ephemeral index */
 
 
 /* Convert a WhereCost value (10 times log2(X)) into its integer value X.
@@ -2072,7 +2072,7 @@ static void constructAutomaticIndex(
   assert( nColumn>0 );
   pLoop->u.btree.nEq = pLoop->nLTerm = nColumn;
   pLoop->wsFlags = WHERE_COLUMN_EQ | WHERE_IDX_ONLY | WHERE_INDEXED
-                     | WHERE_TEMP_INDEX;
+                     | WHERE_AUTO_INDEX;
 
   /* Count the number of additional columns needed to create a
   ** covering index.  A "covering index" is an index that contains all
@@ -3118,13 +3118,12 @@ static void explainOneScan(
      && ALWAYS(pLoop->u.btree.pIndex!=0)
     ){
       char *zWhere = explainIndexRange(db, pLoop, pItem->pTab);
-      zMsg = sqlite3MAppendf(db, zMsg, "%s USING %s%sINDEX%s%s%s", zMsg, 
-          ((flags & WHERE_TEMP_INDEX)?"AUTOMATIC ":""),
-          ((flags & WHERE_IDX_ONLY)?"COVERING ":""),
-          ((flags & WHERE_TEMP_INDEX)?"":" "),
-          ((flags & WHERE_TEMP_INDEX)?"": pLoop->u.btree.pIndex->zName),
-          zWhere
-      );
+      zMsg = sqlite3MAppendf(db, zMsg,
+               ((flags & WHERE_AUTO_INDEX) ? 
+                   "%s USING AUTOMATIC %sINDEX%.0s%s" :
+                   "%s USING %sINDEX %s%s"), 
+               zMsg, ((flags & WHERE_IDX_ONLY) ? "COVERING " : ""),
+               pLoop->u.btree.pIndex->zName, zWhere);
       sqlite3DbFree(db, zWhere);
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
       zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
@@ -3795,7 +3794,7 @@ static Bitmask codeOneLoopStart(
           ** be available.
           */
           pSubLoop = pSubWInfo->a[0].pWLoop;
-          assert( (pSubLoop->wsFlags & WHERE_TEMP_INDEX)==0 );
+          assert( (pSubLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
           if( (pSubLoop->wsFlags & WHERE_INDEXED)!=0
            && (ii==0 || pSubLoop->u.btree.pIndex==pCov)
           ){
@@ -3977,12 +3976,12 @@ static void whereLoopInit(WhereLoop *p){
 ** Clear the WhereLoop.u union.  Leave WhereLoop.pLTerm intact.
 */
 static void whereLoopClearUnion(sqlite3 *db, WhereLoop *p){
-  if( p->wsFlags & (WHERE_VIRTUALTABLE|WHERE_TEMP_INDEX) ){
+  if( p->wsFlags & (WHERE_VIRTUALTABLE|WHERE_AUTO_INDEX) ){
     if( (p->wsFlags & WHERE_VIRTUALTABLE)!=0 && p->u.vtab.needFree ){
       sqlite3_free(p->u.vtab.idxStr);
       p->u.vtab.needFree = 0;
       p->u.vtab.idxStr = 0;
-    }else if( (p->wsFlags & WHERE_TEMP_INDEX)!=0 && p->u.btree.pIndex!=0 ){
+    }else if( (p->wsFlags & WHERE_AUTO_INDEX)!=0 && p->u.btree.pIndex!=0 ){
       sqlite3DbFree(db, p->u.btree.pIndex->zColAff);
       sqlite3DbFree(db, p->u.btree.pIndex);
       p->u.btree.pIndex = 0;
@@ -4025,7 +4024,7 @@ static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
   memcpy(pTo->aLTerm, pFrom->aLTerm, pTo->nLTerm*sizeof(pTo->aLTerm[0]));
   if( pFrom->wsFlags & WHERE_VIRTUALTABLE ){
     pFrom->u.vtab.needFree = 0;
-  }else if( (pFrom->wsFlags & WHERE_TEMP_INDEX)!=0 ){
+  }else if( (pFrom->wsFlags & WHERE_AUTO_INDEX)!=0 ){
     pFrom->u.btree.pIndex = 0;
   }
   return SQLITE_OK;
@@ -4498,13 +4497,16 @@ static int whereLoopAddBtree(
         pNew->nLTerm = 1;
         pNew->aLTerm[0] = pTerm;
         /* TUNING: One-time cost for computing the automatic index is
-        ** approximately 6*N*log2(N) where N is the number of rows in
+        ** approximately 7*N*log2(N) where N is the number of rows in
         ** the table being indexed. */
-        pNew->rSetup = rLogSize + rSize + 26;  assert( 26==whereCost(6) );
-        /* TUNING: Each index lookup yields 10 rows in the table */
-        pNew->nOut = 33;  assert( 33==whereCost(10) );
+        pNew->rSetup = rLogSize + rSize + 28;  assert( 28==whereCost(7) );
+        /* TUNING: Each index lookup yields 20 rows in the table.  This
+        ** is more than the usual guess of 10 rows, since we have no way
+        ** of knowning how selective the index will ultimately be.  It would
+        ** not be unreasonable to make this value much larger. */
+        pNew->nOut = 43;  assert( 43==whereCost(20) );
         pNew->rRun = whereCostAdd(rLogSize,pNew->nOut);
-        pNew->wsFlags = WHERE_TEMP_INDEX;
+        pNew->wsFlags = WHERE_AUTO_INDEX;
         pNew->prereq = mExtra | pTerm->prereqRight;
         rc = whereLoopInsert(pBuilder, pNew);
       }
@@ -5881,7 +5883,7 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
-    if( (pLoop->wsFlags & WHERE_TEMP_INDEX)!=0 ){
+    if( (pLoop->wsFlags & WHERE_AUTO_INDEX)!=0 ){
       constructAutomaticIndex(pParse, &pWInfo->sWC, pTabItem, notReady, pLevel);
     }else
 #endif
@@ -6004,7 +6006,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
       }
-      if( (ws & WHERE_INDEXED)!=0 && (ws & (WHERE_IPK|WHERE_TEMP_INDEX))==0 ){
+      if( (ws & WHERE_INDEXED)!=0 && (ws & (WHERE_IPK|WHERE_AUTO_INDEX))==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
       }
     }
