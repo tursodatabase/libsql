@@ -67,7 +67,7 @@
 #undef popen
 #define popen(a,b) _popen((a),(b))
 #undef pclose
-#define pclose(x) _pclose(x)
+#define pclose _pclose
 #else
 /* Make sure isatty() has a prototype.
 */
