@@ -1738,11 +1738,11 @@ static char *csv_read_one_field(CSVReader *p){
       }
       csv_append_char(p, c);
       pc = c;
-    }      
+    }
   }else{
-    csv_append_char(p, c);
-    while( (c = fgetc(p->in))!=EOF && c!=cSep && c!='\n' ){
+    while( c!=EOF && c!=cSep && c!='\n' ){
       csv_append_char(p, c);
+      c = fgetc(p->in);
     }
     if( c=='\n' ){
       p->nLine++;
