@@ -3887,6 +3887,7 @@ static Bitmask codeOneLoopStart(
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( pTerm->eOperator!=(WO_EQUIV|WO_EQ) ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
+    if( pLevel->iLeftJoin ) continue;
     pE = pTerm->pExpr;
     assert( !ExprHasProperty(pE, EP_FromJoin) );
     assert( (pTerm->prereqRight & newNotReady)!=0 );
