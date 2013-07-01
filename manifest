@@ -1,5 +1,5 @@
-C Add\sa\smissing\stest\sthat\sprevented\sdouble\sLEFT\sJOINs\swith\stransitive\nconstraints\sfrom\sworking\scorrectly.\s\sFix\sfor\sticket\s[868145d012].
-D 2013-07-01T17:27:19.953
+C Add\sa\squery\splanner\stest\scase\ssubmitted\sby\sElan\sFeingold\sand\s\nbased\son\sthe\sPlex\sproject.
+D 2013-07-01T20:02:31.578
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1050,6 +1050,7 @@ F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 136a7301512d72a08a272806c8767066311b7bc1
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
+F test/wild001.test a8d0422ca37c1bdcde90d2441bcca2998bcdfa11
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
@@ -1099,7 +1100,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0d68d4d018e73dcbbc08786071aac6228fca1a8c
-R e2cf3085b0661bbba83fb076c8deb507
+P 72919ec34f0d663d551c1070285ad93b932bcb74
+R 2a44be13bdbca483d547ee35f23965a3
 U drh
-Z 7f1cae3d935cfbd38a2ed50893b4a0df
+Z 3798d249a4146e945514044bb01c3030
