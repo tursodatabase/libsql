@@ -429,7 +429,7 @@ struct WhereInfo {
 ** The particular combination of bits in each WhereLoop help to
 ** determine the algorithm that WhereLoop represents.
 */
-#define WHERE_COLUMN_EQ    0x00000001  /* x=EXPR or x IN (...) or x IS NULL */
+#define WHERE_COLUMN_EQ    0x00000001  /* x=EXPR */
 #define WHERE_COLUMN_RANGE 0x00000002  /* x<EXPR and/or x>EXPR */
 #define WHERE_COLUMN_IN    0x00000004  /* x IN (...) */
 #define WHERE_COLUMN_NULL  0x00000008  /* x IS NULL */
