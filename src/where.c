@@ -4428,7 +4428,7 @@ static Bitmask columnsInIndex(Index *pIdx){
 
 
 /*
-** Add all WhereLoop objects a single table of the join were the table
+** Add all WhereLoop objects for a single table of the join were the table
 ** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
 */
@@ -4892,12 +4892,19 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 /*
 ** Examine a WherePath (with the addition of the extra WhereLoop of the 5th
 ** parameters) to see if it outputs rows in the requested ORDER BY
-** (or GROUP BY) without requiring a separate source operation.  Return:
+** (or GROUP BY) without requiring a separate sort operation.  Return:
 ** 
 **    0:  ORDER BY is not satisfied.  Sorting required
 **    1:  ORDER BY is satisfied.      Omit sorting
 **   -1:  Unknown at this time
 **
+** Note that processing for WHERE_GROUPBY and WHERE_DISTINCTBY is not as
+** strict.  With GROUP BY and DISTINCT the only requirement is that
+** equivalent rows appear immediately adjacent to one another.  GROUP BY
+** and DISTINT do not require rows to appear in any particular order as long
+** as equivelent rows are grouped together.  Thus for GROUP BY and DISTINCT
+** the pOrderBy terms can be matched in any order.  With ORDER BY, the 
+** pOrderBy terms must be matched in strict left-to-right order.
 */
 static int wherePathSatisfiesOrderBy(
   WhereInfo *pWInfo,    /* The WHERE clause */
@@ -5562,7 +5569,8 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 **
 ** ORDER BY CLAUSE PROCESSING
 **
-** pOrderBy is a pointer to the ORDER BY clause of a SELECT statement,
+** pOrderBy is a pointer to the ORDER BY clause (or the GROUP BY clause
+** if the WHERE_GROUPBY flag is set in wctrlFlags) of a SELECT statement
 ** if there is one.  If there is no ORDER BY clause or if this routine
 ** is called from an UPDATE or DELETE statement, then pOrderBy is NULL.
 */
