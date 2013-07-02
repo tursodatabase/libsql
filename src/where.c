@@ -159,7 +159,7 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 ** Each instance of this object holds a sequence of WhereLoop objects
 ** that implement some or all of a query plan.
 **
-** Think of each WhereLoop objects as a node in a graph, which arcs
+** Think of each WhereLoop object as a node in a graph with arcs
 ** showing dependences and costs for travelling between nodes.  (That is
 ** not a completely accurate description because WhereLoop costs are a
 ** vector, not a scalar, and because dependences are many-to-one, not
@@ -4429,7 +4429,7 @@ static Bitmask columnsInIndex(Index *pIdx){
 
 
 /*
-** Add all WhereLoop objects for a single table of the join were the table
+** Add all WhereLoop objects for a single table of the join where the table
 ** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
 */
@@ -5153,7 +5153,7 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 
 
 /*
-** Given the list of WhereLoop objects on pWInfo->pLoops, this routine
+** Given the list of WhereLoop objects at pWInfo->pLoops, this routine
 ** attempts to find the lowest cost path that visits each WhereLoop
 ** once.  This path is then loaded into the pWInfo->a[].pWLoop fields.
 **
