@@ -12,7 +12,7 @@
 **
 ** This file contains code to implement the next_char(A,T,F,W) SQL function.
 **
-** The next_char(A,T,F,H) function finds all valid "next" characters for
+** The next_char(A,T,F,W) function finds all valid "next" characters for
 ** string A given the vocabulary in T.F.  The T.F field should be indexed.
 ** If the W value exists and is a non-empty string, then it is an SQL
 ** expression that limits the entries in T.F that will be considered.

@@ -1,5 +1,5 @@
-C Add\sa\squery\splanner\stest\scase\ssubmitted\sby\sElan\sFeingold\sand\s\nbased\son\sthe\sPlex\sproject.
-D 2013-07-01T20:02:31.578
+C Fix\sharmless\stypos\sin\scomments\sof\stwo\sextensions.
+D 2013-07-02T00:06:31.345
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -109,8 +109,8 @@ F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
 F ext/misc/closure.c 997c20ddf35f85ab399f4a02a557a9baa822ec32
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
-F ext/misc/ieee754.c 2565ce373d842977efe0922dc50b8a41b3289556
-F ext/misc/nextchar.c 1131e2b36116ffc6fe6b2e3464bfdace27978b1e
+F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
+F ext/misc/nextchar.c 51c0abfa91009f736eb55d00452770df0ea09c3b
 F ext/misc/percentile.c 4fb5e46c4312b0be74e8e497ac18f805f0e3e6c5
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
@@ -1100,7 +1100,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 72919ec34f0d663d551c1070285ad93b932bcb74
-R 2a44be13bdbca483d547ee35f23965a3
+P 3d49c593dc12d72323ca525372a15e58c591940b
+R 4eaba8c09aff13d774e48dbaa8d3b5df
 U drh
-Z 3798d249a4146e945514044bb01c3030
+Z 34d5604cd4dfbc299c0348ba76a1b0cf
