@@ -2749,7 +2749,7 @@ static int sessionApplyOneOp(
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_DATA, p, pIter, xConflict, pCtx, pbRetry
       );
-    }else if( rc==SQLITE_CONSTRAINT ){
+    }else if( (rc&0xff)==SQLITE_CONSTRAINT ){
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_CONFLICT, p, pIter, xConflict, pCtx, 0
       );
@@ -2788,7 +2788,7 @@ static int sessionApplyOneOp(
           SQLITE_CHANGESET_DATA, p, pIter, xConflict, pCtx, pbRetry
       );
 
-    }else if( rc==SQLITE_CONSTRAINT ){
+    }else if( (rc&0xff)==SQLITE_CONSTRAINT ){
       /* This is always a CONSTRAINT conflict. */
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_CONFLICT, p, pIter, xConflict, pCtx, 0
@@ -2802,7 +2802,7 @@ static int sessionApplyOneOp(
 
     sqlite3_step(p->pInsert);
     rc = sqlite3_reset(p->pInsert);
-    if( rc==SQLITE_CONSTRAINT ){
+    if( (rc&0xff)==SQLITE_CONSTRAINT ){
       rc = sessionConflictHandler(
           SQLITE_CHANGESET_CONFLICT, p, pIter, xConflict, pCtx, pbReplace
       );

@@ -1,5 +1,5 @@
-C Bring\sthe\ssessions\sbranch\sup-to-date\swith\sall\sthe\slatest\strunk\schanges.
-D 2013-06-26T13:31:50.503
+C Fixes\sfor\sthe\ssessions\smodule\sso\sthat\sit\sworks\swith\ssqlite3_extended_error_codes()\sset.
+D 2013-07-02T20:23:40.233
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aff38bc64c582dd147f18739532198372587b0f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,7 +144,7 @@ F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
-F ext/session/sqlite3session.c 7d7ca693bd581243835ee47b41b491bd909a26f4
+F ext/session/sqlite3session.c c0867804cc86b219c3905c0cd313408d11f7a409
 F ext/session/sqlite3session.h f374c9c4c96e08f67ac418871c29d423245c7673
 F ext/session/test_session.c 23eddaf713708ae063d278ec6297652e3672dc38
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -721,7 +721,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test 4614301e38398df7fdd5f28f4ed8f272b328251b
-F test/permutations.test 17f03ab6fc174c910c6eb86761d5ba60b93ad3b5
+F test/permutations.test 742b8005bb3c782797a20beccdbe213ef52531fb
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -773,7 +773,7 @@ F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
 F test/selectE.test fc02a1eb04c8eb537091482644b7d778ae8759b7
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
-F test/session.test c1a17c11ef7d01c24fe2b9f7871190d949a8e718
+F test/session.test 082dea459efc76e2a527b8ee9ff74d76e63ea7b6
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test ebf77f023f4bdaa8f74f65822b559e86ce5c6257
@@ -1110,7 +1110,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fc88f7311ba888015634b89b5909890208f543f5 bd4267f17bbf5d01fb3f12a5a06e94fcbcbd785c
-R fbcf046d813fd5b4194215d3a88e6121
-U drh
-Z 65f93ab590b102a4bb6eff5ef529fe8b
+P 086a127236ee99d67513490fb7b5549e8b752c44
+R 2763382f3d6cfe76b83308c186ebd5fb
+U dan
+Z 3d139fb0da074f52216dcf16de48044b

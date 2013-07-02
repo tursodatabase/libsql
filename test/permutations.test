@@ -878,6 +878,14 @@ test_suite "session" -description {
   All session module related tests. 
 } -files [glob -nocomplain $::testdir/../ext/session/*.test]
 
+test_suite "session_eec" -description {
+  All session module related tests with sqlite3_extended_result_codes() set. 
+} -files [
+  glob -nocomplain $::testdir/../ext/session/*.test
+] -dbconfig {
+  sqlite3_extended_result_codes $::dbhandle 1
+}
+
 test_suite "no_optimization" -description {
   Run test scripts with optimizations disabled using the
   sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS) interface.

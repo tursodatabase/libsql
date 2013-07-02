@@ -12,6 +12,9 @@ set testdir [file dirname $argv0]
 source $testdir/permutations.test
 
 ifcapable session {
+  # First run tests with sqlite3_extended_error_codes() set, then
+  # again with it clear.
+  run_test_suite session_eec
   run_test_suite session
 }
 
