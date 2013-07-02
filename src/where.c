@@ -5863,7 +5863,6 @@ WhereInfo *sqlite3WhereBegin(
     Table *pTab;     /* Table to open */
     int iDb;         /* Index of database containing table/index */
     struct SrcList_item *pTabItem;
-    WhereLoop *pLoop;
 
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
