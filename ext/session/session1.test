@@ -264,12 +264,12 @@ do_conflict_test 3.2.3 -tables t2 -sql {
   DELETE FROM t2 WHERE a = 3;
   DELETE FROM t2 WHERE a = 4;
 } -conflicts {
-  {DELETE t2 CONSTRAINT {i 1 t one}}
   {DELETE t2 NOTFOUND {i 3 t three}}
   {DELETE t2 DATA {i 4 t four} {i 4 t five}}
+  {FOREIGN_KEY 1}
 }
 do_execsql_test 3.2.4 "SELECT * FROM t2" {}
-do_db2_test     3.2.5 "SELECT * FROM t2" {1 one 4 five}
+do_db2_test     3.2.5 "SELECT * FROM t2" {4 five}
 
 # Test UPDATE changesets.
 #

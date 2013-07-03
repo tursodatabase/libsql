@@ -1,0 +1,134 @@
+# 2013 July 04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file tests that the sessions module handles foreign key constraint
+# violations when applying changesets as required.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+set testprefix session9
+
+
+#--------------------------------------------------------------------
+#
+
+proc populate_db {} {
+  drop_all_tables
+  execsql {
+    PRAGMA foreign_keys = 1;
+    CREATE TABLE p1(a PRIMARY KEY, b);
+    CREATE TABLE c1(a PRIMARY KEY, b REFERENCES p1);
+    CREATE TABLE c2(a PRIMARY KEY, 
+        b REFERENCES p1 DEFERRABLE INITIALLY DEFERRED
+    );
+
+    INSERT INTO p1 VALUES(1, 'one');
+    INSERT INTO p1 VALUES(2, 'two');
+    INSERT INTO p1 VALUES(3, 'three');
+    INSERT INTO p1 VALUES(4, 'four');
+  }
+}
+
+proc capture_changeset {sql} {
+  sqlite3session S db main
+
+  foreach t [db eval {SELECT name FROM sqlite_master WHERE type='table'}] {
+    S attach $t
+  }
+  execsql $sql
+  set ret [S changeset]
+  S delete
+
+  return $ret
+}
+
+do_test 1.1 {
+  populate_db
+  set cc [capture_changeset {
+    INSERT INTO c1 VALUES('ii', 2);
+    INSERT INTO c2 VALUES('iii', 3);
+  }]
+  set {} {}
+} {}
+
+proc xConflict {args} {
+  lappend ::xConflict {*}$args
+  return $::conflictret
+}
+
+foreach {tn delrow trans conflictargs conflictret} {
+  1   2 0 {FOREIGN_KEY 1} OMIT
+  2   3 0 {FOREIGN_KEY 1} OMIT
+  3   2 1 {FOREIGN_KEY 1} OMIT
+  4   3 1 {FOREIGN_KEY 1} OMIT
+  5   2 0 {FOREIGN_KEY 1} ABORT
+  6   3 0 {FOREIGN_KEY 1} ABORT
+  7   2 1 {FOREIGN_KEY 1} ABORT
+  8   3 1 {FOREIGN_KEY 1} ABORT
+} {
+
+  set A(OMIT)  {0 {}}
+  set A(ABORT) {1 SQLITE_CONSTRAINT}
+  do_test 1.2.$tn.1 {
+    populate_db
+    execsql { DELETE FROM p1 WHERE a=($delrow+0) }
+    if {$trans} { execsql BEGIN }
+
+    set ::xConflict [list]
+    list [catch {sqlite3changeset_apply db $::cc xConflict} msg] $msg
+  } $A($conflictret)
+
+  do_test 1.2.$tn.2 { set ::xConflict } $conflictargs
+
+  set A(OMIT)  {1 1}
+  set A(ABORT) {0 0}
+  do_test 1.2.$tn.3 {
+    execsql { SELECT count(*) FROM c1 UNION ALL SELECT count(*) FROM c2 }
+  } $A($conflictret)
+
+  do_test 1.2.$tn.4 { expr ![sqlite3_get_autocommit db] } $trans
+  do_test 1.2.$tn.5 {
+    if { $trans } { execsql COMMIT }
+  } {}
+}
+
+#--------------------------------------------------------------------
+# Test that closing a transaction clears the defer_foreign_keys flag.
+#
+foreach {tn open noclose close} {
+  1 BEGIN {} COMMIT
+  2 BEGIN {} ROLLBACK
+
+  3 {SAVEPOINT one} {}                {RELEASE one}
+  4 {SAVEPOINT one} {ROLLBACK TO one} {RELEASE one}
+} {
+  execsql $open
+  do_execsql_test 2.$tn.1 { PRAGMA defer_foreign_keys } {0}
+
+  do_execsql_test 2.$tn.2 {
+    PRAGMA defer_foreign_keys = 1;
+    PRAGMA defer_foreign_keys;
+  } {1}
+
+  execsql $noclose
+  do_execsql_test 2.$tn.3 { PRAGMA defer_foreign_keys } {1}
+
+  execsql $close
+  do_execsql_test 2.$tn.4 { PRAGMA defer_foreign_keys } {0}
+}
+
+finish_test
+

@@ -489,6 +489,21 @@ int sqlite3changeset_conflict(
   sqlite3_value **ppValue         /* OUT: Value from conflicting row */
 );
 
+/*
+** CAPI3REF: Determine The Number Of Foreign Key Constraint Violations
+**
+** This function may only be called with an iterator passed to an
+** SQLITE_CHANGESET_FOREIGN_KEY conflict handler callback. In this case
+** it sets the output variable to the total number of known foreign key
+** violations in the destination database and returns SQLITE_OK.
+**
+** In all other cases this function returns SQLITE_MISUSE.
+*/
+int sqlite3changeset_fk_conflicts(
+  sqlite3_changeset_iter *pIter,  /* Changeset iterator */
+  int *pnOut                      /* OUT: Number of FK violations */
+);
+
 
 /*
 ** CAPI3REF: Finalize A Changeset Iterator
@@ -809,20 +824,35 @@ int sqlite3changeset_apply(
 ** 
 **   The conflicting row in this case is the database row with the matching
 **   primary key.
+**
+** <dt>SQLITE_CHANGESET_FOREIGN_KEY<dd>
+**   If foreign key handling is enabled, and applying a changeset leaves the
+**   database in a state containing foreign key violations, the conflict 
+**   handler is invoked with CHANGESET_FOREIGN_KEY as the second argument
+**   exactly once before the changeset is committed. If the conflict handler
+**   returns CHANGESET_OMIT, the changes, including those that caused the
+**   foreign key constraint violation, are committed. Or, if it returns
+**   CHANGESET_ABORT, the changeset is rolled back.
+**
+**   No current or conflicting row information is provided. The only function
+**   it is possible to call on the supplied sqlite3_changeset_iter handle
+**   is sqlite3changeset_fk_conflicts().
 ** 
 ** <dt>SQLITE_CHANGESET_CONSTRAINT<dd>
 **   If any other constraint violation occurs while applying a change (i.e. 
-**   a FOREIGN KEY, UNIQUE, CHECK or NOT NULL constraint), the conflict 
-**   handler is invoked with CHANGESET_CONSTRAINT as the second argument.
+**   a UNIQUE, CHECK or NOT NULL constraint), the conflict handler is 
+**   invoked with CHANGESET_CONSTRAINT as the second argument.
 ** 
 **   There is no conflicting row in this case. The results of invoking the
 **   sqlite3changeset_conflict() API are undefined.
+**
 ** </dl>
 */
-#define SQLITE_CHANGESET_DATA       1
-#define SQLITE_CHANGESET_NOTFOUND   2
-#define SQLITE_CHANGESET_CONFLICT   3
-#define SQLITE_CHANGESET_CONSTRAINT 4
+#define SQLITE_CHANGESET_DATA        1
+#define SQLITE_CHANGESET_NOTFOUND    2
+#define SQLITE_CHANGESET_CONFLICT    3
+#define SQLITE_CHANGESET_CONSTRAINT  4
+#define SQLITE_CHANGESET_FOREIGN_KEY 5
 
 /* 
 ** CAPI3REF: Constants Returned By The Conflict Handler

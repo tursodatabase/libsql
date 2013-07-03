@@ -250,109 +250,119 @@ static int test_conflict_handler(
 
   sqlite3changeset_op(pIter, &zTab, &nCol, &op, 0);
 
-  /* Append the operation type. */
-  Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(
-      op==SQLITE_INSERT ? "INSERT" :
-      op==SQLITE_UPDATE ? "UPDATE" : 
-      "DELETE", -1
-  ));
-
-  /* Append the table name. */
-  Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zTab, -1));
-
-  /* Append the conflict type. */
-  switch( eConf ){
-    case SQLITE_CHANGESET_DATA:
-      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("DATA",-1));
-      break;
-    case SQLITE_CHANGESET_NOTFOUND:
-      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("NOTFOUND",-1));
-      break;
-    case SQLITE_CHANGESET_CONFLICT:
-      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("CONFLICT",-1));
-      break;
-    case SQLITE_CHANGESET_CONSTRAINT:
-      Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("CONSTRAINT",-1));
-      break;
-  }
-
-  /* If this is not an INSERT, append the old row */
-  if( op!=SQLITE_INSERT ){
-    int i;
-    Tcl_Obj *pOld = Tcl_NewObj();
-    for(i=0; i<nCol; i++){
-      sqlite3_value *pVal;
-      sqlite3changeset_old(pIter, i, &pVal);
-      test_append_value(pOld, pVal);
-    }
-    Tcl_ListObjAppendElement(0, pEval, pOld);
-  }
-
-  /* If this is not a DELETE, append the new row */
-  if( op!=SQLITE_DELETE ){
-    int i;
-    Tcl_Obj *pNew = Tcl_NewObj();
-    for(i=0; i<nCol; i++){
-      sqlite3_value *pVal;
-      sqlite3changeset_new(pIter, i, &pVal);
-      test_append_value(pNew, pVal);
-    }
-    Tcl_ListObjAppendElement(0, pEval, pNew);
-  }
-
-  /* If this is a CHANGESET_DATA or CHANGESET_CONFLICT conflict, append
-  ** the conflicting row.  */
-  if( eConf==SQLITE_CHANGESET_DATA || eConf==SQLITE_CHANGESET_CONFLICT ){
-    int i;
-    Tcl_Obj *pConflict = Tcl_NewObj();
-    for(i=0; i<nCol; i++){
-      int rc;
-      sqlite3_value *pVal;
-      rc = sqlite3changeset_conflict(pIter, i, &pVal);
-      assert( rc==SQLITE_OK );
-      test_append_value(pConflict, pVal);
-    }
-    Tcl_ListObjAppendElement(0, pEval, pConflict);
-  }
-
-  /***********************************************************************
-  ** This block is purely for testing some error conditions.
-  */
-  if( eConf==SQLITE_CHANGESET_CONSTRAINT || eConf==SQLITE_CHANGESET_NOTFOUND ){
-    sqlite3_value *pVal;
-    int rc = sqlite3changeset_conflict(pIter, 0, &pVal);
-    assert( rc==SQLITE_MISUSE );
+  if( eConf==SQLITE_CHANGESET_FOREIGN_KEY ){
+    int nFk;
+    sqlite3changeset_fk_conflicts(pIter, &nFk);
+    Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj("FOREIGN_KEY", -1));
+    Tcl_ListObjAppendElement(0, pEval, Tcl_NewIntObj(nFk));
   }else{
-    sqlite3_value *pVal;
-    int rc = sqlite3changeset_conflict(pIter, -1, &pVal);
-    assert( rc==SQLITE_RANGE );
-    rc = sqlite3changeset_conflict(pIter, nCol, &pVal);
-    assert( rc==SQLITE_RANGE );
+
+    /* Append the operation type. */
+    Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(
+        op==SQLITE_INSERT ? "INSERT" :
+        op==SQLITE_UPDATE ? "UPDATE" : 
+        "DELETE", -1
+    ));
+  
+    /* Append the table name. */
+    Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zTab, -1));
+  
+    /* Append the conflict type. */
+    switch( eConf ){
+      case SQLITE_CHANGESET_DATA:
+        Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("DATA",-1));
+        break;
+      case SQLITE_CHANGESET_NOTFOUND:
+        Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("NOTFOUND",-1));
+        break;
+      case SQLITE_CHANGESET_CONFLICT:
+        Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("CONFLICT",-1));
+        break;
+      case SQLITE_CHANGESET_CONSTRAINT:
+        Tcl_ListObjAppendElement(interp, pEval,Tcl_NewStringObj("CONSTRAINT",-1));
+        break;
+    }
+  
+    /* If this is not an INSERT, append the old row */
+    if( op!=SQLITE_INSERT ){
+      int i;
+      Tcl_Obj *pOld = Tcl_NewObj();
+      for(i=0; i<nCol; i++){
+        sqlite3_value *pVal;
+        sqlite3changeset_old(pIter, i, &pVal);
+        test_append_value(pOld, pVal);
+      }
+      Tcl_ListObjAppendElement(0, pEval, pOld);
+    }
+
+    /* If this is not a DELETE, append the new row */
+    if( op!=SQLITE_DELETE ){
+      int i;
+      Tcl_Obj *pNew = Tcl_NewObj();
+      for(i=0; i<nCol; i++){
+        sqlite3_value *pVal;
+        sqlite3changeset_new(pIter, i, &pVal);
+        test_append_value(pNew, pVal);
+      }
+      Tcl_ListObjAppendElement(0, pEval, pNew);
+    }
+
+    /* If this is a CHANGESET_DATA or CHANGESET_CONFLICT conflict, append
+     ** the conflicting row.  */
+    if( eConf==SQLITE_CHANGESET_DATA || eConf==SQLITE_CHANGESET_CONFLICT ){
+      int i;
+      Tcl_Obj *pConflict = Tcl_NewObj();
+      for(i=0; i<nCol; i++){
+        int rc;
+        sqlite3_value *pVal;
+        rc = sqlite3changeset_conflict(pIter, i, &pVal);
+        assert( rc==SQLITE_OK );
+        test_append_value(pConflict, pVal);
+      }
+      Tcl_ListObjAppendElement(0, pEval, pConflict);
+    }
+
+    /***********************************************************************
+     ** This block is purely for testing some error conditions.
+     */
+    if( eConf==SQLITE_CHANGESET_CONSTRAINT 
+     || eConf==SQLITE_CHANGESET_NOTFOUND 
+    ){
+      sqlite3_value *pVal;
+      int rc = sqlite3changeset_conflict(pIter, 0, &pVal);
+      assert( rc==SQLITE_MISUSE );
+    }else{
+      sqlite3_value *pVal;
+      int rc = sqlite3changeset_conflict(pIter, -1, &pVal);
+      assert( rc==SQLITE_RANGE );
+      rc = sqlite3changeset_conflict(pIter, nCol, &pVal);
+      assert( rc==SQLITE_RANGE );
+    }
+    if( op==SQLITE_DELETE ){
+      sqlite3_value *pVal;
+      int rc = sqlite3changeset_new(pIter, 0, &pVal);
+      assert( rc==SQLITE_MISUSE );
+    }else{
+      sqlite3_value *pVal;
+      int rc = sqlite3changeset_new(pIter, -1, &pVal);
+      assert( rc==SQLITE_RANGE );
+      rc = sqlite3changeset_new(pIter, nCol, &pVal);
+      assert( rc==SQLITE_RANGE );
+    }
+    if( op==SQLITE_INSERT ){
+      sqlite3_value *pVal;
+      int rc = sqlite3changeset_old(pIter, 0, &pVal);
+      assert( rc==SQLITE_MISUSE );
+    }else{
+      sqlite3_value *pVal;
+      int rc = sqlite3changeset_old(pIter, -1, &pVal);
+      assert( rc==SQLITE_RANGE );
+      rc = sqlite3changeset_old(pIter, nCol, &pVal);
+      assert( rc==SQLITE_RANGE );
+    }
+    /* End of testing block
+    ***********************************************************************/
   }
-  if( op==SQLITE_DELETE ){
-    sqlite3_value *pVal;
-    int rc = sqlite3changeset_new(pIter, 0, &pVal);
-    assert( rc==SQLITE_MISUSE );
-  }else{
-    sqlite3_value *pVal;
-    int rc = sqlite3changeset_new(pIter, -1, &pVal);
-    assert( rc==SQLITE_RANGE );
-    rc = sqlite3changeset_new(pIter, nCol, &pVal);
-    assert( rc==SQLITE_RANGE );
-  }
-  if( op==SQLITE_INSERT ){
-    sqlite3_value *pVal;
-    int rc = sqlite3changeset_old(pIter, 0, &pVal);
-    assert( rc==SQLITE_MISUSE );
-  }else{
-    sqlite3_value *pVal;
-    int rc = sqlite3changeset_old(pIter, -1, &pVal);
-    assert( rc==SQLITE_RANGE );
-    rc = sqlite3changeset_old(pIter, nCol, &pVal);
-    assert( rc==SQLITE_RANGE );
-  }
-  /* End of testing block
-  ***********************************************************************/
 
   if( TCL_OK!=Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL) ){
     Tcl_BackgroundError(interp);

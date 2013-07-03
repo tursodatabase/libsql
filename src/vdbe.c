@@ -878,7 +878,7 @@ case OP_Halt: {
     p->rc = rc = SQLITE_BUSY;
   }else{
     assert( rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT );
-    assert( rc==SQLITE_OK || db->nDeferredCons>0 );
+    assert( rc==SQLITE_OK || db->nDeferredCons>0 || db->nDeferredImmCons>0 );
     rc = p->rc ? SQLITE_ERROR : SQLITE_DONE;
   }
   goto vdbe_return;
@@ -2737,6 +2737,7 @@ case OP_Savepoint: {
         pNew->pNext = db->pSavepoint;
         db->pSavepoint = pNew;
         pNew->nDeferredCons = db->nDeferredCons;
+        pNew->nDeferredImmCons = db->nDeferredImmCons;
       }
     }
   }else{
@@ -2824,6 +2825,7 @@ case OP_Savepoint: {
         }
       }else{
         db->nDeferredCons = pSavepoint->nDeferredCons;
+        db->nDeferredImmCons = pSavepoint->nDeferredImmCons;
       }
 
       if( !isTransaction ){
@@ -2978,6 +2980,7 @@ case OP_Transaction: {
       ** counter. If the statement transaction needs to be rolled back,
       ** the value of this counter needs to be restored too.  */
       p->nStmtDefCons = db->nDeferredCons;
+      p->nStmtDefImmCons = db->nDeferredImmCons;
     }
   }
   break;
@@ -5319,7 +5322,9 @@ case OP_Param: {           /* out2-prerelease */
 ** statement counter is incremented (immediate foreign key constraints).
 */
 case OP_FkCounter: {
-  if( pOp->p1 ){
+  if( db->flags & SQLITE_DeferForeignKeys ){
+    db->nDeferredImmCons += pOp->p2;
+  }else if( pOp->p1 ){
     db->nDeferredCons += pOp->p2;
   }else{
     p->nFkConstraint += pOp->p2;
@@ -5340,9 +5345,9 @@ case OP_FkCounter: {
 */
 case OP_FkIfZero: {         /* jump */
   if( pOp->p1 ){
-    if( db->nDeferredCons==0 ) pc = pOp->p2-1;
+    if( db->nDeferredCons==0 && db->nDeferredImmCons==0 ) pc = pOp->p2-1;
   }else{
-    if( p->nFkConstraint==0 ) pc = pOp->p2-1;
+    if( p->nFkConstraint==0 && db->nDeferredImmCons==0 ) pc = pOp->p2-1;
   }
   break;
 }

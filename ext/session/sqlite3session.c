@@ -1,6 +1,5 @@
 
 #if defined(SQLITE_ENABLE_SESSION) && defined(SQLITE_ENABLE_PREUPDATE_HOOK)
-
 #include "sqlite3session.h"
 #include <assert.h>
 #include <string.h>
@@ -2111,6 +2110,26 @@ int sqlite3changeset_conflict(
 }
 
 /*
+** This function may only be called with an iterator passed to an
+** SQLITE_CHANGESET_FOREIGN_KEY conflict handler callback. In this case
+** it sets the output variable to the total number of known foreign key
+** violations in the destination database and returns SQLITE_OK.
+**
+** In all other cases this function returns SQLITE_MISUSE.
+*/
+int sqlite3changeset_fk_conflicts(
+  sqlite3_changeset_iter *pIter,  /* Changeset iterator */
+  int *pnOut                      /* OUT: Number of FK violations */
+){
+  if( pIter->pConflict || pIter->apValue ){
+    return SQLITE_MISUSE;
+  }
+  *pnOut = pIter->nCol;
+  return SQLITE_OK;
+}
+
+
+/*
 ** Finalize an iterator allocated with sqlite3changeset_start().
 **
 ** This function may not be called on iterators passed to a conflict handler
@@ -2845,6 +2864,9 @@ int sqlite3changeset_apply(
 
   sqlite3_mutex_enter(sqlite3_db_mutex(db));
   rc = sqlite3_exec(db, "SAVEPOINT changeset_apply", 0, 0, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_exec(db, "PRAGMA defer_foreign_keys = 1", 0, 0, 0);
+  }
   while( rc==SQLITE_OK && SQLITE_ROW==sqlite3changeset_next(pIter) ){
     int nCol;
     int op;
@@ -2947,6 +2969,23 @@ int sqlite3changeset_apply(
   }else{
     sqlite3changeset_finalize(pIter);
   }
+
+  if( rc==SQLITE_OK ){
+    int nFk = sqlite3_foreign_key_check(db);
+    if( nFk>0 ){
+      int res = SQLITE_CHANGESET_ABORT;
+      if( xConflict ){
+        sqlite3_changeset_iter sIter;
+        memset(&sIter, 0, sizeof(sIter));
+        sIter.nCol = nFk;
+        res = xConflict(pCtx, SQLITE_CHANGESET_FOREIGN_KEY, &sIter);
+      }
+      if( res!=SQLITE_CHANGESET_OMIT ){
+        rc = SQLITE_CONSTRAINT;
+      }
+    }
+  }
+  sqlite3_exec(db, "PRAGMA defer_foreign_keys = 0", 0, 0, 0);
 
   if( rc==SQLITE_OK ){
     rc = sqlite3_exec(db, "RELEASE changeset_apply", 0, 0, 0);

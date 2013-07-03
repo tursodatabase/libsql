@@ -1169,6 +1169,21 @@ void sqlite3Pragma(
       }
     }
   }else
+
+  if( sqlite3StrICmp(zLeft, "defer_foreign_keys")==0 ){
+    if( zRight ){
+      if( sqlite3GetBoolean(zRight, 0) ){
+        db->flags |= SQLITE_DeferForeignKeys;
+      }else{
+        db->flags &= ~SQLITE_DeferForeignKeys;
+        db->nDeferredImmCons = 0;
+      }
+      sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
+    }else{
+      int bVal = !!(db->flags & SQLITE_DeferForeignKeys);
+      returnSingleInt(pParse, "defer_foreign_keys", bVal);
+    }
+  }
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY

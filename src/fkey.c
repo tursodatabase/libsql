@@ -422,7 +422,11 @@ static void fkLookupParent(
     }
   }
 
-  if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
+  if( !pFKey->isDeferred 
+   && !pParse->pToplevel 
+   && !pParse->isMultiWrite 
+   && !(pParse->db->flags & SQLITE_DeferForeignKeys)
+  ){
     /* Special case: If this is an INSERT statement that will insert exactly
     ** one row into the table, raise a constraint immediately instead of
     ** incrementing a counter. This is necessary as the VM code is being

@@ -386,7 +386,9 @@ static int sqlite3Step(Vdbe *p){
       db->u1.isInterrupted = 0;
     }
 
-    assert( db->writeVdbeCnt>0 || db->autoCommit==0 || db->nDeferredCons==0 );
+    assert( db->writeVdbeCnt>0 || db->autoCommit==0 
+        || (db->nDeferredCons==0 && db->nDeferredImmCons==0)
+    );
 
 #ifndef SQLITE_OMIT_TRACE
     if( db->xProfile && !db->init.busy ){
@@ -1496,3 +1498,5 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   return sqlite3ApiExit(db, rc);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
+
+int sqlite3_foreign_key_check(sqlite3 *db){ return db->nDeferredImmCons; }
