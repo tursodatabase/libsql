@@ -3335,8 +3335,11 @@ int sqlite3Fts1Init(sqlite3 *db){
 }
 
 #if !SQLITE_CORE
-int sqlite3_extension_init(sqlite3 *db, char **pzErrMsg,
-                           const sqlite3_api_routines *pApi){
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_fts1_init(sqlite3 *db, char **pzErrMsg,
+                      const sqlite3_api_routines *pApi){
   SQLITE_EXTENSION_INIT2(pApi)
   return sqlite3Fts1Init(db);
 }
