@@ -1,5 +1,5 @@
-C Experimental\schange\sto\sthe\shandling\sof\sforeign\skey\sconstraint\sviolations\swhen\sapplying\sa\schangeset:\sall\sforeign\skeys,\simmediate\sand\sdeferred,\sare\sdeferred\suntil\sthe\send\sof\sthe\stransaction\s(or\ssub-transaction)\sopened\sby\sthe\ssqlite3changeset_apply().\sA\ssingle\scall\sto\sthe\sconflict-handler\s(if\sany)\sis\smade\sif\sany\sFK\sconstraint\sviolations\sare\sstill\spresent\sin\sthe\sdatabase\sat\sthis\spoint.\sThe\sconflict-handler\smay\schoose\sto\srollback\sthe\schangeset,\sor\sto\sapply\sit,\sconstraint\sviolations\sand\sall.
-D 2013-07-03T19:53:05.693
+C Fix\sa\sbug\spreventing\ssome\sFK\sconstraint\schecking\sfrom\sbeing\sdeferred\suntil\sthe\send\sof\schangeset\sapplication.
+D 2013-07-04T15:22:53.953
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aff38bc64c582dd147f18739532198372587b0f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
-F ext/session/session9.test 3378ceace4e291dda8512b83d256be51aac5344e
+F ext/session/session9.test 43acfdc57647c2ce4b36dbd0769112520ea6af14
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
 F ext/session/sqlite3session.c 80903fe2c24c8a9e7ccacebca1855a31ebebbbc3
@@ -186,7 +186,7 @@ F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 39a770e9729b1acd2de347f8f614584841d0083e
 F src/expr.c 2b47ae9da6c9f34eff6736962ea2e102c6c4a755
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c ddd160ce0b81f092165f72d84c356d49c903a3ad
+F src/fkey.c 87619fc3a9b6ab6877388bbcc05cdb136503786e
 F src/func.c 5c50c1ea31fd864b0fe921fe1a8d4c55acd609ef
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -1111,7 +1111,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c2972b6aed23f6c76a289534de9ea4732a48f40e
-R 1e1bb18e922bc4e9bb6b2e837b9cd1c8
+P 1d44e5d3c2b1dc958442f9114a960b256e002ed3
+R 28f75ac347bd281672cb0a8d27d3f6b3
 U dan
-Z 8c44f70721e5b391cc002040c9d1eb51
+Z 01296a7a6fdc241a613ea24758428ad2
