@@ -24,6 +24,7 @@ ifcapable {!autoindex} {
 }
 
 # Setup for logging 
+db close
 sqlite3_shutdown
 test_sqlite3_log [list lappend ::log]
 set ::log [list]

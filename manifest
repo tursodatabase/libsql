@@ -1,5 +1,5 @@
-C Replace\san\serroneous\sSQLITE_OMIT_VIRTUAL_TABLE\sin\svdbeaux.c\swith\sSQLITE_OMIT_WAL.\sAlso\sfix\ssome\stest\sscript\sproblems.
-D 2013-07-05T16:54:30.106
+C Fix\stwo\stest\sscript\sproblems\srevealed\sby\spermutations.test.
+D 2013-07-05T19:16:58.185
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -323,7 +323,7 @@ F test/auth.test 4a4c3b034fff7750513520defa910f376c96ab49
 F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
-F test/autoindex1.test d0c86aad05475188f42ddfded2219e1c3fe38028
+F test/autoindex1.test d4dfe14001dfcb74cfbd7107f45a79fc1ab6183e
 F test/autovacuum.test 9f22a7733f39c56ef6a5665d10145ac25d8cb574
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1034,7 +1034,7 @@ F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test da54153a4c1571ea1b95659e5bec8119edf786aa
-F test/where2.test dcf0ffafe0de55051c1373835a5a57aee6b50094
+F test/where2.test d712de0ea9a2c3de7b34b0b1e75172556fef5b24
 F test/where3.test a0682ba3dc8c8f46ffcc95a3d9f58c4327fc129f
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1100,7 +1100,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5c906e914b63eb00e62c6c2a535e234a75d95030
-R f03424abed1eef5982c75d5d81872817
+P ff8c3f7840a0a8d87453b94b9884ee26d5d92da5
+R 56be08aa68ca7836af91c2136feb349d
 U dan
-Z 9e7ca03e9a72fec8b6e38662e7cb8747
+Z 08268413632a362597d53f1432d728b7
