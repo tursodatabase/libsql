@@ -1,5 +1,5 @@
-C Add\smissing\s"static"\squalifier\sto\sfunctions\sin\swhere.c.
-D 2013-07-05T11:10:54.720
+C Replace\san\serroneous\sSQLITE_OMIT_VIRTUAL_TABLE\sin\svdbeaux.c\swith\sSQLITE_OMIT_WAL.\sAlso\sfix\ssome\stest\sscript\sproblems.
+D 2013-07-05T16:54:30.106
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 2e3fc618ff964cd559844fdbf186fdc582b66b1e
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h aa185c6df4f2b5ec9896cdb5f96789af1ef69f76
 F src/vdbeapi.c e3ad4cddb713a387527f982e79d9e001a0dbffa5
-F src/vdbeaux.c 4a0fe1f41e30dd2bc6d96a1cdc9ec9e85ca34f42
+F src/vdbeaux.c 9683f262c7fd0af8cb03f0053651135005cdda8a
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -679,7 +679,7 @@ F test/misc7.test 50c02c35ef7924c246eb3d8d71dfbf90ba352f8f
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
-F test/mmap3.test 01728252af6f9bcf708169d7b794b7597c69ac44
+F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -709,7 +709,7 @@ F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
-F test/percentile.test 4614301e38398df7fdd5f28f4ed8f272b328251b
+F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 461ef4ea10db02cd421dfe5f988eac3e99b5cd9a
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
@@ -1050,7 +1050,7 @@ F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 136a7301512d72a08a272806c8767066311b7bc1
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/wild001.test a8d0422ca37c1bdcde90d2441bcca2998bcdfa11
+F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
@@ -1100,7 +1100,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9676280a9387b8bfba82cfc0087318863d05d4f3
-R 31b1b2c50cf05706bef7f66bbddc89ce
+P 5c906e914b63eb00e62c6c2a535e234a75d95030
+R f03424abed1eef5982c75d5d81872817
 U dan
-Z 585181147ecd24ec63d416538bc4d146
+Z 9e7ca03e9a72fec8b6e38662e7cb8747

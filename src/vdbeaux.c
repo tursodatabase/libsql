@@ -417,7 +417,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       p->bIsReader = 1;
     }else if( opcode==OP_Vacuum
            || opcode==OP_JournalMode
-#ifndef SQLITE_OMIT_VIRTUALTABLE
+#ifndef SQLITE_OMIT_WAL
            || opcode==OP_Checkpoint
 #endif
     ){

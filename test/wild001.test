@@ -42,6 +42,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !stat3 {
+  finish_test
+  return
+}
+
 do_execsql_test wild001.01 {
   CREATE TABLE "items" ("id" INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, "secid" integer, "parent_id" integer, "metadata_type" integer, "guid" varchar(255), "media_item_count" integer, "title" varchar(255), "title_sort" varchar(255) COLLATE NOCASE, "original_title" varchar(255), "studio" varchar(255), "rating" float, "rating_count" integer, "tagline" varchar(255), "summary" text, "trivia" text, "quotes" text, "content_rating" varchar(255), "content_rating_age" integer, "index" integer, "absolute_index" integer, "duration" integer, "user_thumb_url" varchar(255), "user_art_url" varchar(255), "user_banner_url" varchar(255), "user_music_url" varchar(255), "user_fields" varchar(255), "tags_genre" varchar(255), "tags_collection" varchar(255), "tags_director" varchar(255), "tags_writer" varchar(255), "tags_star" varchar(255), "originally_available_at" datetime, "available_at" datetime, "expires_at" datetime, "refreshed_at" datetime, "year" integer, "added_at" datetime, "created_at" datetime, "updated_at" datetime, "deleted_at" datetime, "tags_country" varchar(255), "extra_data" varchar(255), "hash" varchar(255));
   CREATE INDEX "i_secid" ON "items" ("secid" );
