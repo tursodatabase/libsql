@@ -822,7 +822,7 @@ static u16 operatorMask(int op){
 ** established when the pScan object was initialized by whereScanInit().
 ** Return NULL if there are no more matching WhereTerms.
 */
-WhereTerm *whereScanNext(WhereScan *pScan){
+static WhereTerm *whereScanNext(WhereScan *pScan){
   int iCur;            /* The cursor on the LHS of the term */
   int iColumn;         /* The column on the LHS of the term.  -1 for IPK */
   Expr *pX;            /* An expression being tested */
@@ -909,7 +909,7 @@ WhereTerm *whereScanNext(WhereScan *pScan){
 ** If X is not the INTEGER PRIMARY KEY then X must be compatible with
 ** index pIdx.
 */
-WhereTerm *whereScanInit(
+static WhereTerm *whereScanInit(
   WhereScan *pScan,       /* The WhereScan object being initialized */
   WhereClause *pWC,       /* The WHERE clause to be scanned */
   int iCur,               /* Cursor to scan for */
