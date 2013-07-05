@@ -1,5 +1,5 @@
-C Remove\sa\ssurplus\slocal\svariable
-D 2013-07-02T15:25:22.563
+C Make\sa\scouple\sof\simplicit\scasts\sexplicit\sto\sfix\scompiler\swarnings.
+D 2013-07-05T10:46:08.884
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 6dbb5c424144465782d5bf0d23be89907c972454
+F ext/fts3/fts3.c 1370ea15ace920af9ca9d92455b6e9e63fe05ba1
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h a50cd231e906da818f00f0a81845bbf7bbeba002
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -111,7 +111,7 @@ F ext/misc/closure.c 997c20ddf35f85ab399f4a02a557a9baa822ec32
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
 F ext/misc/nextchar.c 51c0abfa91009f736eb55d00452770df0ea09c3b
-F ext/misc/percentile.c 4fb5e46c4312b0be74e8e497ac18f805f0e3e6c5
+F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 6d7ce6105a4b7729f6c44ccdf1ab7e80d9707c02
@@ -1100,7 +1100,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4a9d51e792d7c4297bd18af7b7c757c93a3a1cd1
-R 6312a5462b187e6ff3b517c3c6f84b95
-U drh
-Z 0e197215251360415313783d73ae1e44
+P 91bc840eea2099273bd2c5d41a8410d628986643
+R deccf2168e1e48506e14ad0676da0974
+U dan
+Z b57579196039a4f95c7ed3b693371a8b
