@@ -1,5 +1,5 @@
-C Fix\stwo\stest\sscript\sproblems\srevealed\sby\spermutations.test.
-D 2013-07-05T19:16:58.185
+C Drop\sany\sexisting\smapping\sof\sthe\sdatabase\sfile\swhen\sexiting\sthe\spager\s"error\sstate",\sas\sit\smay\sat\sthis\spoint\sbe\stoo\slarge\sfor\sthe\sdatabase\sfile.\sDo\snot\sinvoke\sfile-control\sMMAP_LIMIT\sif\sthe\sdatabase\sfile\shandle\sdoes\snot\ssupport\sxFetch\sand\sxUnfetch\s(on\sthe\sgrounds\sthat\sxUnfetch(0)\scalls\sto\sinvalidate\sthe\smapping\scannot\sbe\smade).
+D 2013-07-06T17:57:39.341
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,7 +204,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
 F src/os_win.c 074cb2b9bca6a1c2bd72acf04666cdc554bfaa9b
-F src/pager.c 79df56da9dd49aceaa4cac207484a9a82cba40ae
+F src/pager.c 5d2f7475260a8588f9c441bb309d2b7eaa7ded3b
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 9acfcc83ddbf0cf82f0ed9582ccf0ad6c366ff37
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -268,7 +268,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 16dbe79fb320fadb5acd7a0a59f49e52ab2d2091
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
-F src/test_vfs.c 8e6087a8b3dcc260282074b0efba14b76311120c
+F src/test_vfs.c 12d9931f65acde64961523b6f420ba7cd057fbd7
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c e0e8fd3cb90a88451f6b6425726c84747b6b20d7
@@ -680,6 +680,7 @@ F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
+F test/mmapfault.test 97507ee06172df99057dbf1c40294eabd82cbb13
 F test/multiplex.test e08cc7177bd6d85990ee1d71100bb6c684c02256
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
@@ -1100,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ff8c3f7840a0a8d87453b94b9884ee26d5d92da5
-R 56be08aa68ca7836af91c2136feb349d
+P 60cf7e44871ca8d2136ddad02188f0b9f9c380c1
+R a3d4118f345e93dec612dcda9d6a1643
 U dan
-Z 08268413632a362597d53f1432d728b7
+Z 5f805b6fdaecab7821c75d7c85386fd6
