@@ -1,5 +1,5 @@
-C Drop\sany\sexisting\smapping\sof\sthe\sdatabase\sfile\swhen\sexiting\sthe\spager\s"error\sstate",\sas\sit\smay\sat\sthis\spoint\sbe\stoo\slarge\sfor\sthe\sdatabase\sfile.\sDo\snot\sinvoke\sfile-control\sMMAP_LIMIT\sif\sthe\sdatabase\sfile\shandle\sdoes\snot\ssupport\sxFetch\sand\sxUnfetch\s(on\sthe\sgrounds\sthat\sxUnfetch(0)\scalls\sto\sinvalidate\sthe\smapping\scannot\sbe\smade).
-D 2013-07-06T17:57:39.341
+C Fixes\sfor\stest\scases\srunning\sin\sthe\s"mmap"\spermutation.
+D 2013-07-06T18:07:57.900
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -663,7 +663,7 @@ F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test db5260330676de007be8530d6ecc7c9ab2b06ad3
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
-F test/memsubsys1.test a8f9e37567453a5d1d9d37ec102d4d88ab6be33f
+F test/memsubsys1.test f97cfd0b30e85c2f1ed16d642e7ac58006be84b2
 F test/memsubsys2.test 3a1c1a9de48e5726faa85108b02459fae8cb9ee9
 F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
@@ -708,7 +708,7 @@ F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
 F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
-F test/pcache.test 065aa286e722ab24f2e51792c1f093bf60656b16
+F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 461ef4ea10db02cd421dfe5f988eac3e99b5cd9a
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 60cf7e44871ca8d2136ddad02188f0b9f9c380c1
-R a3d4118f345e93dec612dcda9d6a1643
+P 0ae7e75b215b0d75920769da9146c54ce2ad3ce0
+R ca6d3b61d7033e8bd8885f323788dfc0
 U dan
-Z 5f805b6fdaecab7821c75d7c85386fd6
+Z 8857197c0df65b9e0d74b83df35e71c7
