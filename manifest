@@ -1,5 +1,5 @@
-C Fixes\sfor\stest\scases\srunning\sin\sthe\s"mmap"\spermutation.
-D 2013-07-06T18:07:57.900
+C Add\san\soptional\s5th\sparameter\sto\sthe\snext_char()\sfunction\sthat\sis\sthe\ncollating\ssequence\sto\suse\sfor\scomparison.
+D 2013-07-08T01:27:43.173
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
 F ext/misc/closure.c 997c20ddf35f85ab399f4a02a557a9baa822ec32
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/nextchar.c 51c0abfa91009f736eb55d00452770df0ea09c3b
+F ext/misc/nextchar.c 80ba262d23238efcfcb3d72d71aa4513098e26a6
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
@@ -793,7 +793,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/spellfix.test bea537caf587df30d430c2c6a8fe9f64b8712834
+F test/spellfix.test 38246facf7d9d7eeb8a57d7497cf7ce73ce5785d
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test be8d477306006ec696bc86757cfb34bec79447ce
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0ae7e75b215b0d75920769da9146c54ce2ad3ce0
-R ca6d3b61d7033e8bd8885f323788dfc0
-U dan
-Z 8857197c0df65b9e0d74b83df35e71c7
+P cdb97d41abf4a3b8e22fa8ca9f3aab4a3f968d27
+R cddb399d89cded656ee0c42122eb620d
+U drh
+Z 856ce6a2b43d394812cb00c43d8e6345

@@ -105,6 +105,22 @@ do_test 1.14 {
   catchsql {SELECT next_char('','xyzzy','a')}
 } {1 {no such table: xyzzy}}
 
+do_execsql_test 1.20 {
+  CREATE TABLE vocab2(w TEXT);
+  CREATE INDEX vocab2w ON vocab2(w COLLATE nocase);
+  INSERT INTO vocab2 VALUES('abc'), ('ABD'), ('aBe'), ('AbF');
+  SELECT next_char('ab', 'vocab2', 'w', null, 'nocase');
+} {cDeF}
+do_execsql_test 1.21 {
+  SELECT next_char('ab','vocab2','w',null,null);
+} {c}
+do_execsql_test 1.22 {
+  SELECT next_char('AB','vocab2','w',null,'NOCASE');
+} {cDeF}
+do_execsql_test 1.23 {
+  SELECT next_char('ab','vocab2','w',null,'binary');
+} {c}
+
 do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE t2 USING spellfix1;
   INSERT INTO t2 (word, soundslike) VALUES('school', 'skuul');
