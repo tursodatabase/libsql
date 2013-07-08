@@ -3335,10 +3335,11 @@ static Bitmask codeOneLoopStart(
       assert( TK_LT==TK_GT+2 );      /*  ... of the TK_xx values... */
       assert( TK_GE==TK_GT+3 );      /*  ... is correcct. */
 
+      assert( (pStart->wtFlags & TERM_VNULL)==0 );
       testcase( pStart->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
       pX = pStart->pExpr;
       assert( pX!=0 );
-      assert( pStart->leftCursor==iCur );
+      testcase( pStart->leftCursor!=iCur ); /* transitive constraints */
       r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
       sqlite3VdbeAddOp3(v, aMoveOp[pX->op-TK_GT], iCur, addrBrk, r1);
       VdbeComment((v, "pk"));
@@ -3352,7 +3353,8 @@ static Bitmask codeOneLoopStart(
       Expr *pX;
       pX = pEnd->pExpr;
       assert( pX!=0 );
-      assert( pEnd->leftCursor==iCur );
+      assert( (pEnd->wtFlags & TERM_VNULL)==0 );
+      testcase( pEnd->leftCursor!=iCur ); /* Transitive constraints */
       testcase( pEnd->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
       memEndValue = ++pParse->nMem;
       sqlite3ExprCode(pParse, pX->pRight, memEndValue);
@@ -4282,6 +4284,11 @@ static int whereLoopAddBtreeIndex(
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
+#ifdef SQLITE_ENABLE_STAT3
+    if( (pTerm->wtFlags & TERM_VNULL)!=0 && pSrc->pTab->aCol[iCol].notNull ){
+      continue; /* skip IS NOT NULL constraints on a NOT NULL column */
+    }
+#endif
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->nLTerm = saved_nLTerm;

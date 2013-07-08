@@ -1,5 +1,5 @@
-C Add\san\soptional\s5th\sparameter\sto\sthe\snext_char()\sfunction\sthat\sis\sthe\ncollating\ssequence\sto\suse\sfor\scomparison.
-D 2013-07-08T01:27:43.173
+C Fix\san\sadverse\sinteraction\sbetween\sthe\sIS\sNOT\sNULL\soptimization\s(available\nonly\swith\sSQLITE_ENABLE_STAT3)\sand\sthe\stransitive\sconstraint\sprocessing.\nFix\sfor\sticket\s[d805526eae253]
+D 2013-07-08T21:12:57.346
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 7867ef5b45785847ae68a93a68d05861344f07f0
+F src/where.c cd7ef913bbdcbc34b20d02daf13f16c1eaa4a474
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -960,7 +960,7 @@ F test/trace2.test e7a988fdd982cdec62f1f1f34b0360e6476d01a0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
-F test/transitive1.test d04aa9023e425d6f2d4aa61dd81ee9e102f89062
+F test/transitive1.test 0ee69546d6fa20e577a4a706d7daa01c7eba9239
 F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
 F test/trigger2.test 834187beafd1db383af0c659cfa49b0576832816
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cdb97d41abf4a3b8e22fa8ca9f3aab4a3f968d27
-R cddb399d89cded656ee0c42122eb620d
+P 9415db6ef255d27ca8473c17e65749a197c30455
+R a093ccd9e68cbc04e5f435cf1a230f1a
 U drh
-Z 856ce6a2b43d394812cb00c43d8e6345
+Z 54f267cd767cbb6a7ba6c4b63d0480c1
