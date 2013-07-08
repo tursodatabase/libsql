@@ -1,5 +1,5 @@
-C Fix\san\sadverse\sinteraction\sbetween\sthe\sIS\sNOT\sNULL\soptimization\s(available\nonly\swith\sSQLITE_ENABLE_STAT3)\sand\sthe\stransitive\sconstraint\sprocessing.\nFix\sfor\sticket\s[d805526eae253]
-D 2013-07-08T21:12:57.346
+C Make\ssure\san\sadequate\snumber\sof\sdigits\sare\sshown\sfor\sbinary-to-text\srendering\nof\svery\ssmall\sfloating\spoint\svalues.
+D 2013-07-08T22:33:20.920
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -212,7 +212,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c d23d07716de96c7c0c2503ec5051a4384c3fb938
 F src/pragma.c 67a611bd4be0754f27ee13eb87932c3b14415862
 F src/prepare.c 2306be166bbeddf454e18bf8b21dba8388d05328
-F src/printf.c bff529ed47657098c55c9910b9c69b1b3b1a1353
+F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9415db6ef255d27ca8473c17e65749a197c30455
-R a093ccd9e68cbc04e5f435cf1a230f1a
+P 3b30b75b342bb6b424ad2bf7cd841b2c88bdad44
+R ea4e11e9386e3b12bddaca82f334b343
 U drh
-Z 54f267cd767cbb6a7ba6c4b63d0480c1
+Z 1be7a2730b9032ca8328d531c5d3710e
