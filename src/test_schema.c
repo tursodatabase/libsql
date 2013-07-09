@@ -344,7 +344,10 @@ int Sqlitetestschema_Init(Tcl_Interp *interp){
 /*
 ** Extension load function.
 */
-int sqlite3_extension_init(
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_schema_init(
   sqlite3 *db, 
   char **pzErrMsg, 
   const sqlite3_api_routines *pApi

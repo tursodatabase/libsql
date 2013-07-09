@@ -32,7 +32,7 @@
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
 # include "sqlite3ext.h" 
-extern const sqlite3_api_routines *sqlite3_api;
+SQLITE_EXTENSION_INIT3
 #endif
 
 #include "sqlite3.h"
