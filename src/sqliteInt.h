@@ -898,9 +898,10 @@ struct sqlite3 {
     u8 busy;                    /* TRUE if currently initializing */
     u8 orphanTrigger;           /* Last statement is orphaned TEMP trigger */
   } init;
-  int activeVdbeCnt;            /* Number of VDBEs currently executing */
-  int writeVdbeCnt;             /* Number of active VDBEs that are writing */
-  int vdbeExecCnt;              /* Number of nested calls to VdbeExec() */
+  int nVdbeActive;              /* Number of VDBEs currently running */
+  int nVdbeRead;                /* Number of active VDBEs that read or write */
+  int nVdbeWrite;               /* Number of active VDBEs that read and write */
+  int nVdbeExec;                /* Number of nested calls to VdbeExec() */
   int nExtension;               /* Number of loaded extensions */
   void **aExtension;            /* Array of shared library handles */
   void (*xTrace)(void*,const char*);        /* Trace function */
@@ -1035,6 +1036,7 @@ struct sqlite3 {
 #define SQLITE_SubqCoroutine  0x0100   /* Evaluate subqueries as coroutines */
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
 #define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
+#define SQLITE_Stat3          0x0800   /* Use the SQLITE_STAT3 table */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*

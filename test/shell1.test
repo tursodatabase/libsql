@@ -397,9 +397,9 @@ do_test shell1-3.11.1 {
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
-do_test shell1-3.11.2 {
-  catchcmd "test.db" ".import FOO BAR"
-} {1 {Error: no such table: BAR}}
+#do_test shell1-3.11.2 {
+#  catchcmd "test.db" ".import FOO BAR"
+#} {1 {Error: no such table: BAR}}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
@@ -709,6 +709,15 @@ do_test shell1-3-28.1 {
 do_test shell1-3-29.1 {
   catchcmd "test.db" ".print this is a test"
 } {0 {this is a test}}
+
+# dot-command argument quoting
+do_test shell1-3-30.1 {
+  catchcmd {test.db} {.print "this\"is'a\055test" 'this\"is\\a\055test'}
+} {0 {this"is'a-test this\"is\\a\055test}}
+do_test shell1-3-31.1 {
+  catchcmd {test.db} {.print "this\nis\ta\\test" 'this\nis\ta\\test'}
+} [list 0 "this\nis\ta\\test this\\nis\\ta\\\\test"]
+
 
 # Test the output of the ".dump" command
 #

@@ -1065,6 +1065,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_ABORT_ROLLBACK:     zName = "SQLITE_ABORT_ROLLBACK";    break;
       case SQLITE_BUSY:               zName = "SQLITE_BUSY";              break;
       case SQLITE_BUSY_RECOVERY:      zName = "SQLITE_BUSY_RECOVERY";     break;
+      case SQLITE_BUSY_SNAPSHOT:      zName = "SQLITE_BUSY_SNAPSHOT";     break;
       case SQLITE_LOCKED:             zName = "SQLITE_LOCKED";            break;
       case SQLITE_LOCKED_SHAREDCACHE: zName = "SQLITE_LOCKED_SHAREDCACHE";break;
       case SQLITE_NOMEM:              zName = "SQLITE_NOMEM";             break;
@@ -1138,6 +1139,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_NOTICE_RECOVER_ROLLBACK:
                                 zName = "SQLITE_NOTICE_RECOVER_ROLLBACK"; break;
       case SQLITE_WARNING:            zName = "SQLITE_WARNING";           break;
+      case SQLITE_WARNING_AUTOINDEX:  zName = "SQLITE_WARNING_AUTOINDEX"; break;
       case SQLITE_DONE:               zName = "SQLITE_DONE";              break;
     }
   }
@@ -1396,7 +1398,7 @@ int sqlite3CreateFunc(
   */
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, (u8)enc, 0);
   if( p && p->iPrefEnc==enc && p->nArg==nArg ){
-    if( db->activeVdbeCnt ){
+    if( db->nVdbeActive ){
       sqlite3Error(db, SQLITE_BUSY, 
         "unable to delete/modify user-function due to active statements");
       assert( !db->mallocFailed );
@@ -1998,7 +2000,7 @@ static int createCollation(
   */
   pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, 0);
   if( pColl && pColl->xCmp ){
-    if( db->activeVdbeCnt ){
+    if( db->nVdbeActive ){
       sqlite3Error(db, SQLITE_BUSY, 
         "unable to delete/modify collation sequence due to active statements");
       return SQLITE_BUSY;
@@ -2473,7 +2475,10 @@ static int openDatabase(
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
-  db->flags |= SQLITE_ShortColNames | SQLITE_AutoIndex | SQLITE_EnableTrigger
+  db->flags |= SQLITE_ShortColNames | SQLITE_EnableTrigger
+#if !defined(SQLITE_DEAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
+                 | SQLITE_AutoIndex
+#endif
 #if SQLITE_DEFAULT_FILE_FORMAT<4
                  | SQLITE_LegacyFileFmt
 #endif

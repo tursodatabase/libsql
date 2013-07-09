@@ -11,7 +11,7 @@ CMD="$CC -c fts2amal.c"
 echo $CMD
 $CMD
 echo 'EXPORTS' >fts2.def
-echo 'sqlite3_extension_init' >>fts2.def
+echo 'sqlite3_fts2_init' >>fts2.def
 i386-mingw32msvc-dllwrap \
      --def fts2.def -v --export-all \
      --driver-name i386-mingw32msvc-gcc \

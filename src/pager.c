@@ -1812,6 +1812,7 @@ static void pager_unlock(Pager *pPager){
     pPager->changeCountDone = pPager->tempFile;
     pPager->eState = PAGER_OPEN;
     pPager->errCode = SQLITE_OK;
+    if( USEFETCH(pPager) ) sqlite3OsUnfetch(pPager->fd, 0, 0);
   }
 
   pPager->journalOff = 0;
@@ -3378,10 +3379,10 @@ void sqlite3PagerSetCachesize(Pager *pPager, int mxPage){
 static void pagerFixMaplimit(Pager *pPager){
 #if SQLITE_MAX_MMAP_SIZE>0
   sqlite3_file *fd = pPager->fd;
-  if( isOpen(fd) ){
+  if( isOpen(fd) && fd->pMethods->iVersion>=3 ){
     sqlite3_int64 sz;
-    pPager->bUseFetch = (fd->pMethods->iVersion>=3) && pPager->szMmap>0;
     sz = pPager->szMmap;
+    pPager->bUseFetch = (sz>0);
     sqlite3OsFileControlHint(pPager->fd, SQLITE_FCNTL_MMAP_SIZE, &sz);
   }
 #endif

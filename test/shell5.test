@@ -45,9 +45,9 @@ do_test shell5-1.1.1 {
 do_test shell5-1.1.2 {
   catchcmd "test.db" ".import FOO"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
-do_test shell5-1.1.2 {
-  catchcmd "test.db" ".import FOO BAR"
-} {1 {Error: no such table: BAR}}
+#do_test shell5-1.1.2 {
+#  catchcmd "test.db" ".import FOO BAR"
+#} {1 {Error: no such table: BAR}}
 do_test shell5-1.1.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
@@ -101,7 +101,7 @@ do_test shell5-1.4.3 {
   puts $in "1"
   close $in
   set res [catchcmd "test.db" {.import shell5.csv t1}]
-} {1 {Error: shell5.csv line 1: expected 2 columns of data but found 1}}
+} {1 {shell5.csv:1: expected 2 columns but found 1 - filling the rest with NULL}}
 
 # import file with 1 row, 3 columns (expecting 2 cols)
 do_test shell5-1.4.4 {
@@ -109,14 +109,15 @@ do_test shell5-1.4.4 {
   puts $in "1|2|3"
   close $in
   set res [catchcmd "test.db" {.import shell5.csv t1}]
-} {1 {Error: shell5.csv line 1: expected 2 columns of data but found 3}}
+} {1 {shell5.csv:1: expected 2 columns but found 3 - extras ignored}}
 
 # import file with 1 row, 2 columns
 do_test shell5-1.4.5 {
   set in [open shell5.csv w]
   puts $in "1|2"
   close $in
-  set res [catchcmd "test.db" {.import shell5.csv t1
+  set res [catchcmd "test.db" {DELETE FROM t1;
+.import shell5.csv t1
 SELECT COUNT(*) FROM t1;}]
 } {0 1}
 
@@ -197,15 +198,15 @@ SELECT length(b) FROM t1 WHERE a='8';}]
 # This is limited by SQLITE_MAX_VARIABLE_NUMBER, which defaults to 999.
 set cols 999
 do_test shell5-1.6.1 {
-  set sql {CREATE TABLE t2(}
   set data {}
   for {set i 1} {$i<$cols} {incr i} {
-    append sql "c$i,"
+    append data "c$i|"
+  }
+  append data "c$cols\n";
+  for {set i 1} {$i<$cols} {incr i} {
     append data "$i|"
   }
-  append sql "c$cols);"
   append data "$cols"
-  catchcmd "test.db" $sql
   set in [open shell5.csv w]
   puts $in $data
   close $in
@@ -214,16 +215,31 @@ SELECT COUNT(*) FROM t2;}]
 } {0 1}
 
 # try importing a large number of rows
-set rows 999999
+set rows 9999
 do_test shell5-1.7.1 {
   set in [open shell5.csv w]
+  puts $in a
   for {set i 1} {$i<=$rows} {incr i} {
     puts $in $i
   }
   close $in
-  set res [catchcmd "test.db" {CREATE TABLE t3(a);
+  set res [catchcmd "test.db" {.mode csv
 .import shell5.csv t3
 SELECT COUNT(*) FROM t3;}]
 } [list 0 $rows]
+
+# Inport from a pipe.  (Unix only, as it requires "awk")
+if {$tcl_platform(platform)=="unix"} {
+  do_test shell5-1.8 {
+    file delete -force test.db
+    catchcmd test.db {.mode csv
+.import "|awk 'END{print \"x,y\";for(i=1;i<=5;i++){print i \",this is \" i}}'" t1
+SELECT * FROM t1;}
+  } {0 {1,"this is 1"
+2,"this is 2"
+3,"this is 3"
+4,"this is 4"
+5,"this is 5"}}
+}
 
 finish_test

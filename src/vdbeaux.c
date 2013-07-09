@@ -404,14 +404,26 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   Op *pOp;
   int *aLabel = p->aLabel;
   p->readOnly = 1;
+  p->bIsReader = 0;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
     pOp->opflags = sqlite3OpcodeProperty[opcode];
     if( opcode==OP_Function || opcode==OP_AggStep ){
       if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
-    }else if( (opcode==OP_Transaction && pOp->p2!=0) || opcode==OP_Vacuum ){
+    }else if( opcode==OP_Transaction ){
+      if( pOp->p2!=0 ) p->readOnly = 0;
+      p->bIsReader = 1;
+    }else if( opcode==OP_AutoCommit || opcode==OP_Savepoint ){
+      p->bIsReader = 1;
+    }else if( opcode==OP_Vacuum
+           || opcode==OP_JournalMode
+#ifndef SQLITE_OMIT_WAL
+           || opcode==OP_Checkpoint
+#endif
+    ){
       p->readOnly = 0;
+      p->bIsReader = 1;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( opcode==OP_VUpdate ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
@@ -437,8 +449,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   }
   sqlite3DbFree(p->db, p->aLabel);
   p->aLabel = 0;
-
   *pMaxFuncArgs = nMaxArgs;
+  assert( p->bIsReader!=0 || p->btreeMask==0 );
 }
 
 /*
@@ -1964,7 +1976,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 }
 
 /* 
-** This routine checks that the sqlite3.activeVdbeCnt count variable
+** This routine checks that the sqlite3.nVdbeActive count variable
 ** matches the number of vdbe's in the list sqlite3.pVdbe that are
 ** currently active. An assertion fails if the two counts do not match.
 ** This is an internal self-check only - it is not an essential processing
@@ -1977,16 +1989,19 @@ static void checkActiveVdbeCnt(sqlite3 *db){
   Vdbe *p;
   int cnt = 0;
   int nWrite = 0;
+  int nRead = 0;
   p = db->pVdbe;
   while( p ){
     if( p->magic==VDBE_MAGIC_RUN && p->pc>=0 ){
       cnt++;
       if( p->readOnly==0 ) nWrite++;
+      if( p->bIsReader ) nRead++;
     }
     p = p->pNext;
   }
-  assert( cnt==db->activeVdbeCnt );
-  assert( nWrite==db->writeVdbeCnt );
+  assert( cnt==db->nVdbeActive );
+  assert( nWrite==db->nVdbeWrite );
+  assert( nRead==db->nVdbeRead );
 }
 #else
 #define checkActiveVdbeCnt(x)
@@ -2125,8 +2140,9 @@ int sqlite3VdbeHalt(Vdbe *p){
   }
   checkActiveVdbeCnt(db);
 
-  /* No commit or rollback needed if the program never started */
-  if( p->pc>=0 ){
+  /* No commit or rollback needed if the program never started or if the
+  ** SQL statement does not read or write a database file.  */
+  if( p->pc>=0 && p->bIsReader ){
     int mrc;   /* Primary error code from p->rc */
     int eStatementOp = 0;
     int isSpecialError;            /* Set to true if a 'special' error */
@@ -2179,7 +2195,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     */
     if( !sqlite3VtabInSync(db) 
      && db->autoCommit 
-     && db->writeVdbeCnt==(p->readOnly==0) 
+     && db->nVdbeWrite==(p->readOnly==0) 
     ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
         rc = sqlite3VdbeCheckFk(p, 1);
@@ -2262,11 +2278,12 @@ int sqlite3VdbeHalt(Vdbe *p){
 
   /* We have successfully halted and closed the VM.  Record this fact. */
   if( p->pc>=0 ){
-    db->activeVdbeCnt--;
-    if( !p->readOnly ){
-      db->writeVdbeCnt--;
-    }
-    assert( db->activeVdbeCnt>=db->writeVdbeCnt );
+    db->nVdbeActive--;
+    if( !p->readOnly ) db->nVdbeWrite--;
+    if( p->bIsReader ) db->nVdbeRead--;
+    assert( db->nVdbeActive>=db->nVdbeRead );
+    assert( db->nVdbeRead>=db->nVdbeWrite );
+    assert( db->nVdbeWrite>=0 );
   }
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
@@ -2282,7 +2299,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     sqlite3ConnectionUnlocked(db);
   }
 
-  assert( db->activeVdbeCnt>0 || db->autoCommit==0 || db->nStatement==0 );
+  assert( db->nVdbeActive>0 || db->autoCommit==0 || db->nStatement==0 );
   return (p->rc==SQLITE_BUSY ? SQLITE_BUSY : SQLITE_OK);
 }
 

@@ -10,12 +10,22 @@
 **
 ******************************************************************************
 **
-** This file contains code to implement the next_char(A,T,F,W) SQL function.
+** This file contains code to implement the next_char(A,T,F,W,C) SQL function.
 **
-** The next_char(A,T,F,H) function finds all valid "next" characters for
-** string A given the vocabulary in T.F.  The T.F field should be indexed.
-** If the W value exists and is a non-empty string, then it is an SQL
-** expression that limits the entries in T.F that will be considered.
+** The next_char(A,T,F,W,C) function finds all valid "next" characters for
+** string A given the vocabulary in T.F.  If the W value exists and is a
+** non-empty string, then it is an SQL expression that limits the entries
+** in T.F that will be considered.  If C exists and is a non-empty string,
+** then it is the name of the collating sequence to use for comparison.  If
+** 
+** Only the first three arguments are required.  If the C parameter is 
+** omitted or is NULL or is an empty string, then the default collating 
+** sequence of T.F is used for comparision.  If the W parameter is omitted
+** or is NULL or is an empty string, then no filtering of the output is
+** done.
+**
+** The T.F column should be indexed using collation C or else this routine
+** will be quite slow.
 **
 ** For example, suppose an application has a dictionary like this:
 **
@@ -184,6 +194,9 @@ static void nextCharFunc(
   const unsigned char *zTable = sqlite3_value_text(argv[1]);
   const unsigned char *zField = sqlite3_value_text(argv[2]);
   const unsigned char *zWhere;
+  const unsigned char *zCollName;
+  char *zWhereClause = 0;
+  char *zColl = 0;
   char *zSql;
   int rc;
 
@@ -192,25 +205,41 @@ static void nextCharFunc(
   c.zPrefix = sqlite3_value_text(argv[0]);
   c.nPrefix = sqlite3_value_bytes(argv[0]);
   if( zTable==0 || zField==0 || c.zPrefix==0 ) return;
-  if( argc<4
-   || (zWhere = sqlite3_value_text(argv[3]))==0
-   || zWhere[0]==0
+  if( argc>=4
+   && (zWhere = sqlite3_value_text(argv[3]))!=0
+   && zWhere[0]!=0
   ){
-    zSql = sqlite3_mprintf(
-        "SELECT \"%w\" FROM \"%w\""
-        " WHERE \"%w\">=(?1 || ?2)"
-        "   AND \"%w\"<=(?1 || char(1114111))" /* 1114111 == 0x10ffff */
-        " ORDER BY 1 ASC LIMIT 1",
-        zField, zTable, zField, zField);
+    zWhereClause = sqlite3_mprintf("AND (%s)", zWhere);
+    if( zWhereClause==0 ){
+      sqlite3_result_error_nomem(context);
+      return;
+    }
   }else{
-    zSql = sqlite3_mprintf(
-        "SELECT \"%w\" FROM \"%w\""
-        " WHERE \"%w\">=(?1 || ?2)"
-        "   AND \"%w\"<=(?1 || char(1114111))" /* 1114111 == 0x10ffff */
-        "   AND (%s)"
-        " ORDER BY 1 ASC LIMIT 1",
-        zField, zTable, zField, zField, zWhere);
+    zWhereClause = "";
   }
+  if( argc>=5
+   && (zCollName = sqlite3_value_text(argv[4]))!=0
+   && zCollName[0]!=0 
+  ){
+    zColl = sqlite3_mprintf("collate \"%w\"", zCollName);
+    if( zColl==0 ){
+      sqlite3_result_error_nomem(context);
+      if( zWhereClause[0] ) sqlite3_free(zWhereClause);
+      return;
+    }
+  }else{
+    zColl = "";
+  }
+  zSql = sqlite3_mprintf(
+    "SELECT \"%w\" FROM \"%w\""
+    " WHERE \"%w\">=(?1 || ?2) %s"
+    "   AND \"%w\"<=(?1 || char(1114111)) %s" /* 1114111 == 0x10ffff */
+    "   %s"
+    " ORDER BY 1 %s ASC LIMIT 1",
+    zField, zTable, zField, zColl, zField, zColl, zWhereClause, zColl
+  );
+  if( zWhereClause[0] ) sqlite3_free(zWhereClause);
+  if( zColl[0] ) sqlite3_free(zColl);
   if( zSql==0 ){
     sqlite3_result_error_nomem(context);
     return;
@@ -259,6 +288,10 @@ int sqlite3_nextchar_init(
                                nextCharFunc, 0, 0);
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "next_char", 4, SQLITE_UTF8, 0,
+                                 nextCharFunc, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "next_char", 5, SQLITE_UTF8, 0,
                                  nextCharFunc, 0, 0);
   }
   return rc;

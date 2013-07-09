@@ -190,7 +190,7 @@ static void percentFinal(sqlite3_context *pCtx){
   if( p->nUsed ){
     qsort(p->a, p->nUsed, sizeof(double), doubleCmp);
     ix = (p->rPct-1.0)*(p->nUsed-1)*0.01;
-    i1 = ix;
+    i1 = (unsigned)ix;
     i2 = ix==(double)i1 || i1==p->nUsed-1 ? i1 : i1+1;
     v1 = p->a[i1];
     v2 = p->a[i2];

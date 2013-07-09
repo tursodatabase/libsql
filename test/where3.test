@@ -436,5 +436,48 @@ foreach predicate {
   } {1 w-one x-one y-one z-one 9 w-nine x-nine y-nine z-nine}
 }
 
+do_execsql_test where3-7-setup {
+  CREATE TABLE t71(x1 INTEGER PRIMARY KEY, y1);
+  CREATE TABLE t72(x2 INTEGER PRIMARY KEY, y2);
+  CREATE TABLE t73(x3, y3);
+  CREATE TABLE t74(x4, y4);
+  INSERT INTO t71 VALUES(123,234);
+  INSERT INTO t72 VALUES(234,345);
+  INSERT INTO t73 VALUES(123,234);
+  INSERT INTO t74 VALUES(234,345);
+  INSERT INTO t74 VALUES(234,678);
+} {}
+foreach disabled_opt {none omit-noop-join all} {
+  optimization_control db all 1
+  optimization_control db $disabled_opt 0
+  do_execsql_test where3-7.$disabled_opt.1 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.2 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 WHERE y2 IS NULL;
+  } {}
+  do_execsql_test where3-7.$disabled_opt.3 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 WHERE y2 IS NOT NULL;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.4 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 AND y2 IS NULL;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.5 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 AND y2 IS NOT NULL;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.6 {
+    SELECT x3 FROM t73 LEFT JOIN t72 ON x2=y3;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.7 {
+    SELECT DISTINCT x3 FROM t73 LEFT JOIN t72 ON x2=y3;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.8 {
+    SELECT x3 FROM t73 LEFT JOIN t74 ON x4=y3;
+  } {123 123}
+  do_execsql_test where3-7.$disabled_opt.9 {
+    SELECT DISTINCT x3 FROM t73 LEFT JOIN t74 ON x4=y3;
+  } {123}
+}
+
 
 finish_test
