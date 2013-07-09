@@ -1,5 +1,5 @@
-C Make\ssure\san\sadequate\snumber\sof\sdigits\sare\sshown\sfor\sbinary-to-text\srendering\nof\svery\ssmall\sfloating\spoint\svalues.
-D 2013-07-08T22:33:20.920
+C Make\ssure\sthe\sschema\sis\sverified\sprior\sto\sprocessing\sa\s"WHERE\s0"\son\sthe\nfirst\sterm\sof\sa\scompound\sSELECT\sstatement.\nFix\sfor\sticket\s[490a4b723562429]
+D 2013-07-09T03:04:32.105
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c cd7ef913bbdcbc34b20d02daf13f16c1eaa4a474
+F src/where.c f5201334501cd23a39315cab479c0dcce0990701
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -756,7 +756,7 @@ F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test e76bd10a56988f15726c097a5d5a7966fe82d3b2
 F test/select7.test dad6f00f0d49728a879d6eb6451d4752db0b0abe
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
-F test/select9.test c0ca3cd87a8ebb04de2cb1402c77df55d911a0ea
+F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
 F test/selectA.test 99cf21df033b93033ea4f34aba14a500f48f04fe
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3b30b75b342bb6b424ad2bf7cd841b2c88bdad44
-R ea4e11e9386e3b12bddaca82f334b343
+P 776e65f98ce80a8ed56cb73ef56c751702698612
+R c14d414bf004dd7486754e7b16e6f56e
 U drh
-Z 1be7a2730b9032ca8328d531c5d3710e
+Z 2dde5d536a099c1046b87b383db4b663

@@ -5670,6 +5670,7 @@ WhereInfo *sqlite3WhereBegin(
   whereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3ExprCodeConstants(pParse, pWhere);
   whereSplit(&pWInfo->sWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
+  sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
     
   /* Special case: a WHERE clause that is constant.  Evaluate the
   ** expression and either jump over all of the code or fall thru.
@@ -5864,7 +5865,6 @@ WhereInfo *sqlite3WhereBegin(
   /* Open all tables in the pTabList and any indices selected for
   ** searching those tables.
   */
-  sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
   notReady = ~(Bitmask)0;
   for(ii=0, pLevel=pWInfo->a; ii<nTabList; ii++, pLevel++){
     Table *pTab;     /* Table to open */

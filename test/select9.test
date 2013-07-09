@@ -450,5 +450,23 @@ do_test select9-5.3 {
   }
 } {/SCAN TABLE/}   ;# Full table scan if the "+x" prevents index usage.
 
+# 2013-07-09:  Ticket [490a4b7235624298]: 
+# "WHERE 0" on the first element of a UNION causes an assertion fault
+#
+do_execsql_test select9-6.1 {
+  CREATE TABLE t61(a);
+  CREATE TABLE t62(b);
+  INSERT INTO t61 VALUES(111);
+  INSERT INTO t62 VALUES(222);
+  SELECT a FROM t61 WHERE 0 UNION SELECT b FROM t62;
+} {222}
+do_execsql_test select9-6.2 {
+  SELECT a FROM t61 WHERE 0 UNION ALL SELECT b FROM t62;
+} {222}
+do_execsql_test select9-6.3 {
+  SELECT a FROM t61 UNION SELECT b FROM t62 WHERE 0;
+} {111}
+
+
 
 finish_test
