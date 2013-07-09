@@ -1,5 +1,5 @@
-C Modify\sseveral\sextensions\sto\suse\sthe\snew\sexported\sfunction\snaming.\s\nFix\ssome\sshared\slibrary\scompilation\sissues.
-D 2013-07-09T12:36:30.399
+C Adjust\sthe\scosts\sin\sthe\sxBestIndex\sfunction\sof\sthe\sspellfix1\svirtual\stable\nto\sforce\sthe\suse\sof\sthe\sMATCH\sterm\sif\sit\sis\savailable.
+D 2013-07-09T15:56:44.605
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F ext/misc/nextchar.c 80ba262d23238efcfcb3d72d71aa4513098e26a6
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/spellfix.c 6d7ce6105a4b7729f6c44ccdf1ab7e80d9707c02
+F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
 F ext/misc/vtshim.c 5fb6be7fe37659a8cbd1e16982d74cceacbc4543
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 52a49cbc1621094b2fe2b021209b768d29e0426b f2ab8747825ab5131ffab174aa0ffe5e474f6811
-R f4d92c08ade3445d4abd0e6606f44c69
+P 1e39f85077f1f2b96c3a656c5b6334bafb005908
+R 2ea622f28aaf7cdeeb856cb215ef9fb3
 U drh
-Z 1ae873026565d0007b698ed53e93eb8a
+Z 80087d9cff19d8b6d80e8c14572ef089
