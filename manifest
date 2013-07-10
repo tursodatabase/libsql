@@ -1,9 +1,9 @@
-C More\schanges\sto\ssupport\sMSVC\s18.
-D 2013-07-10T19:39:02.664
+C Use\sthe\sVisualStudioVersion\svariable\sinstead\sof\s_MSC_VER.
+D 2013-07-10T19:53:49.176
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 751c3d495c159a15e46a35e523e02f5ae1dffeeb
+F Makefile.msc 2c391a8c3e3e941df2670499225e56a2665b6743
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 05c7bd63b96f31cfdef5c766ed91307ac121f5aa
@@ -1093,7 +1093,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9d1b96182af08a73de9dd0327965b96a6d48ac11
-R dce12cbb8dc011a7157a4fc9c756a0b9
+P 29c458e2c21f7c8db727fe8dbd4d154918b53a4e
+R 1fc16d780ab429b1ac8777f58708e855
 U mistachkin
-Z b25307feb6067015ecfaf839e3826c1b
+Z c5cda1e51e4d22d5432eaa97bb145bf4
