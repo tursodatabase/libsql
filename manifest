@@ -1,5 +1,5 @@
-C Adjust\sthe\scosts\sin\sthe\sxBestIndex\sfunction\sof\sthe\sspellfix1\svirtual\stable\nto\sforce\sthe\suse\sof\sthe\sMATCH\sterm\sif\sit\sis\savailable.
-D 2013-07-09T15:56:44.605
+C Run\sprogress\scallback\schecks\sless\sfrequently\sin\sthe\smain\sVDBE\sevaluation\nloop.\s\sThis\smakes\sup\sfor\sthe\sextra\sCPU\scycles\sused\sto\sincrement\sthe\scycle\ncounter\sfor\sSQLITE_STMTSTATUS_VM_STEP.
+D 2013-07-10T03:05:14.910
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,7 +277,7 @@ F src/update.c 8e76c3d03e4b7b21cb250bd2df0c05e12993e577
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
-F src/vdbe.c 2e3fc618ff964cd559844fdbf186fdc582b66b1e
+F src/vdbe.c b4d29f875ff2c8506783c6831b2d539cdeb39b91
 F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
 F src/vdbeInt.h aa185c6df4f2b5ec9896cdb5f96789af1ef69f76
 F src/vdbeapi.c e3ad4cddb713a387527f982e79d9e001a0dbffa5
@@ -715,7 +715,7 @@ F test/permutations.test 461ef4ea10db02cd421dfe5f988eac3e99b5cd9a
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
+F test/progress.test 552dc1edc37333a8d3098b8c26a2b7f06f5799d7
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1e39f85077f1f2b96c3a656c5b6334bafb005908
-R 2ea622f28aaf7cdeeb856cb215ef9fb3
+P f003bea9fe1b79e2b4d18fbef86c1d8f0f60e4b6
+R 04afd42ac3962714b1d32f16a2fdd2ad
 U drh
-Z 80087d9cff19d8b6d80e8c14572ef089
+Z 82045c2120955e8475cc20915ea24bea
