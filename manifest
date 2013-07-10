@@ -1,5 +1,5 @@
-C Run\sprogress\scallback\schecks\sless\sfrequently\sin\sthe\smain\sVDBE\sevaluation\nloop.\s\sThis\smakes\sup\sfor\sthe\sextra\sCPU\scycles\sused\sto\sincrement\sthe\scycle\ncounter\sfor\sSQLITE_STMTSTATUS_VM_STEP.
-D 2013-07-10T03:05:14.910
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sprogress\scallback\slogic.
+D 2013-07-10T18:14:29.988
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
-F src/main.c a1f4bb79e15c3f0a2e4efb2f52781ccbfb3010d4
+F src/main.c 97b8ebbab272ab0d97966c791956dad1921357ba
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -221,7 +221,7 @@ F src/shell.c c8cd06e6b66250a3ea0149c4edec30de14f57b6f
 F src/sqlite.h.in 0a87152a6dde55381afb8f1cf37f337b2f32fd06
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h e461e0f9109ca49ad6aba52198fbe7d237c4a75b
+F src/sqliteInt.h df1a921448e765227de3ed8933fcc1e22bebec82
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1101,7 +1101,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f003bea9fe1b79e2b4d18fbef86c1d8f0f60e4b6
-R 04afd42ac3962714b1d32f16a2fdd2ad
+P 3e8b02011db2f393d4850115a471709b0a88594f
+R e1fccaff7bc35266cc5b7f175242cdcd
 U drh
-Z 82045c2120955e8475cc20915ea24bea
+Z 1564bfae3de8c8d60d1d15cc4d698c7c
