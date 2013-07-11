@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\s"query_only"\spragma.
-D 2013-07-11T15:22:31.810
+C Change\sthe\sdescription\sof\show\ssqlite3_progress_handler()\sworks\sso\sthat\s\nthe\sN\sparameter\sis\s"approximate".\s\sThis\saligns\swith\sthe\scurrent\simplementation.\nThis\sis\sa\sdocumentation\schange\sonly.\s\sNo\schanges\sto\scode.
+D 2013-07-11T19:04:23.647
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
 F src/shell.c c8cd06e6b66250a3ea0149c4edec30de14f57b6f
-F src/sqlite.h.in 80d11140d401f366f7249f3c4fe031c49a5a06f8
+F src/sqlite.h.in c8b27ba43bb35a26b6067b8f24f06c24af2d1b64
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 6d3115f774aa3e87737f9447c9c0cea992c5bdbf
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 527121ac3cdc96ac33ad975c227a6685a2f7e999 ece960c496717a3a6c25526ef77dd76b08d607bc
-R 9c4545357c659a752e6cc07bddb23b90
+P 6557c407983b067449deb76bc4c5248de64e07dc
+R 045649ed68015430e04b85aae90e1909
 U drh
-Z 7d5f7fd6ecb9e38390dc44516a410268
+Z c98b2f615dfc222d1805fcdb692cca6b
