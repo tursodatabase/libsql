@@ -5338,7 +5338,7 @@ case OP_Param: {           /* out2-prerelease */
 ** statement counter is incremented (immediate foreign key constraints).
 */
 case OP_FkCounter: {
-  if( db->flags & SQLITE_DeferForeignKeys ){
+  if( db->flags & SQLITE_DeferFKs ){
     db->nDeferredImmCons += pOp->p2;
   }else if( pOp->p1 ){
     db->nDeferredCons += pOp->p2;

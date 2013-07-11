@@ -422,7 +422,7 @@ static void fkLookupParent(
     }
   }
 
-  if( !pFKey->isDeferred && !(pParse->db->flags & SQLITE_DeferForeignKeys)
+  if( !pFKey->isDeferred && !(pParse->db->flags & SQLITE_DeferFKs)
    && !pParse->pToplevel 
    && !pParse->isMultiWrite 
   ){
@@ -816,7 +816,7 @@ void sqlite3FkCheck(
     SrcList *pSrc;
     int *aiCol = 0;
 
-    if( !pFKey->isDeferred && !(db->flags & SQLITE_DeferForeignKeys) 
+    if( !pFKey->isDeferred && !(db->flags & SQLITE_DeferFKs) 
      && !pParse->pToplevel && !pParse->isMultiWrite 
     ){
       assert( regOld==0 && regNew!=0 );

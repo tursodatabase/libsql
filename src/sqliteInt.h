@@ -1018,7 +1018,7 @@ struct sqlite3 {
 #define SQLITE_PreferBuiltin  0x00100000  /* Preference to built-in funcs */
 #define SQLITE_LoadExtension  0x00200000  /* Enable load_extension */
 #define SQLITE_EnableTrigger  0x00400000  /* True to enable triggers */
-#define SQLITE_DeferForeignKeys 0x00800000
+#define SQLITE_DeferFKs       0x00800000  /* Defer all FK constraints */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
