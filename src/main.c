@@ -1037,6 +1037,8 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 
   /* Any deferred constraint violations have now been resolved. */
   db->nDeferredCons = 0;
+  db->nDeferredImmCons = 0;
+  db->flags &= ~SQLITE_DeferFKs;
 
   /* If one has been configured, invoke the rollback-hook callback */
   if( db->xRollbackCallback && (inTrans || !db->autoCommit) ){

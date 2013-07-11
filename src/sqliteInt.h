@@ -954,6 +954,7 @@ struct sqlite3 {
   int nSavepoint;               /* Number of non-transaction savepoints */
   int nStatement;               /* Number of nested statement-transactions  */
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
+  i64 nDeferredImmCons;         /* Net deferred immediate constraints */
   int *pnBytesFreed;            /* If not NULL, increment this in DbFree() */
 
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
@@ -1009,6 +1010,7 @@ struct sqlite3 {
 #define SQLITE_PreferBuiltin  0x00100000  /* Preference to built-in funcs */
 #define SQLITE_LoadExtension  0x00200000  /* Enable load_extension */
 #define SQLITE_EnableTrigger  0x00400000  /* True to enable triggers */
+#define SQLITE_DeferFKs       0x00800000  /* Defer all FK constraints */
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -1155,6 +1157,7 @@ struct FuncDestructor {
 struct Savepoint {
   char *zName;                        /* Savepoint name (nul-terminated) */
   i64 nDeferredCons;                  /* Number of deferred fk violations */
+  i64 nDeferredImmCons;               /* Number of deferred imm fk. */
   Savepoint *pNext;                   /* Parent savepoint (if any) */
 };
 

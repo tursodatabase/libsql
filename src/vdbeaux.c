@@ -2065,6 +2065,7 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
     ** the statement transaction was opened.  */
     if( eOp==SAVEPOINT_ROLLBACK ){
       db->nDeferredCons = p->nStmtDefCons;
+      db->nDeferredImmCons = p->nStmtDefImmCons;
     }
   }
   return rc;
@@ -2083,7 +2084,9 @@ int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
   sqlite3 *db = p->db;
-  if( (deferred && db->nDeferredCons>0) || (!deferred && p->nFkConstraint>0) ){
+  if( (deferred && (db->nDeferredCons+db->nDeferredImmCons)>0) 
+   || (!deferred && p->nFkConstraint>0) 
+  ){
     p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
     p->errorAction = OE_Abort;
     sqlite3SetString(&p->zErrMsg, db, "foreign key constraint failed");
@@ -2216,6 +2219,8 @@ int sqlite3VdbeHalt(Vdbe *p){
           sqlite3RollbackAll(db, SQLITE_OK);
         }else{
           db->nDeferredCons = 0;
+          db->nDeferredImmCons = 0;
+          db->flags &= ~SQLITE_DeferFKs;
           sqlite3CommitInternalChanges(db);
         }
       }else{

@@ -422,7 +422,10 @@ static void fkLookupParent(
     }
   }
 
-  if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
+  if( !pFKey->isDeferred && !(pParse->db->flags & SQLITE_DeferFKs)
+   && !pParse->pToplevel 
+   && !pParse->isMultiWrite 
+  ){
     /* Special case: If this is an INSERT statement that will insert exactly
     ** one row into the table, raise a constraint immediately instead of
     ** incrementing a counter. This is necessary as the VM code is being
@@ -813,7 +816,9 @@ void sqlite3FkCheck(
     SrcList *pSrc;
     int *aiCol = 0;
 
-    if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
+    if( !pFKey->isDeferred && !(db->flags & SQLITE_DeferFKs) 
+     && !pParse->pToplevel && !pParse->isMultiWrite 
+    ){
       assert( regOld==0 && regNew!=0 );
       /* Inserting a single row into a parent table cannot cause an immediate
       ** foreign key violation. So do nothing in this case.  */
