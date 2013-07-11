@@ -166,7 +166,7 @@ do_test progress-1.7 {
   set ::res [list]
   db eval {SELECT a, b, c FROM abc} {
     lappend ::res $a $b $c
-    db progress 10 "expr 1"
+    db progress 5 "expr 1"
     catch {db eval {SELECT a, b, c FROM abc} { }} msg
     lappend ::res $msg
   }

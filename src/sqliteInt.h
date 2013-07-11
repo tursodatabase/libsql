@@ -944,7 +944,7 @@ struct sqlite3 {
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   int (*xProgress)(void *);     /* The progress callback */
   void *pProgressArg;           /* Argument to the progress callback */
-  int nProgressOps;             /* Number of opcodes for progress callback */
+  unsigned nProgressOps;        /* Number of opcodes for progress callback */
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   int nVTrans;                  /* Allocated size of aVTrans */
@@ -1019,6 +1019,8 @@ struct sqlite3 {
 #define SQLITE_LoadExtension  0x00200000  /* Enable load_extension */
 #define SQLITE_EnableTrigger  0x00400000  /* True to enable triggers */
 #define SQLITE_DeferFKs       0x00800000  /* Defer all FK constraints */
+#define SQLITE_QueryOnly      0x01000000  /* Disable database changes */
+
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the

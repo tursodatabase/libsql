@@ -1300,7 +1300,7 @@ void sqlite3_progress_handler(
   sqlite3_mutex_enter(db->mutex);
   if( nOps>0 ){
     db->xProgress = xProgress;
-    db->nProgressOps = nOps;
+    db->nProgressOps = (unsigned)nOps;
     db->pProgressArg = pArg;
   }else{
     db->xProgress = 0;

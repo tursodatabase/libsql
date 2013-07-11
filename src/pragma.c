@@ -177,6 +177,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "fullfsync",                SQLITE_FullFSync     },
     { "checkpoint_fullfsync",     SQLITE_CkptFullFSync },
     { "reverse_unordered_selects", SQLITE_ReverseOrder  },
+    { "query_only",               SQLITE_QueryOnly     },
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
     { "automatic_index",          SQLITE_AutoIndex     },
 #endif

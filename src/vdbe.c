@@ -562,12 +562,11 @@ int sqlite3VdbeExec(
   sqlite3 *db = p->db;       /* The database */
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
   u8 encoding = ENC(db);     /* The database encoding */
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  int checkProgress;         /* True if progress callbacks are enabled */
-  int nProgressOps = 0;      /* Opcodes executed since progress callback. */
-#endif
   int iCompare = 0;          /* Result of last OP_Compare operation */
   unsigned nVmStep = 0;      /* Number of virtual machine steps */
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  unsigned nProgressOps = 0; /* nVmStep at last progress callback. */
+#endif
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
   Mem *pIn1 = 0;             /* 1st input operand */
   Mem *pIn2 = 0;             /* 2nd input operand */
@@ -596,9 +595,6 @@ int sqlite3VdbeExec(
   db->busyHandler.nBusy = 0;
   CHECK_FOR_INTERRUPT;
   sqlite3VdbeIOTraceSql(p);
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  checkProgress = db->xProgress!=0;
-#endif
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
   if( p->pc==0  && (p->db->flags & SQLITE_VdbeListing)!=0 ){
@@ -643,27 +639,6 @@ int sqlite3VdbeExec(
       if( sqlite3_interrupt_count==0 ){
         sqlite3_interrupt(db);
       }
-    }
-#endif
-
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-    /* Call the progress callback if it is configured and the required number
-    ** of VDBE ops have been executed (either since this invocation of
-    ** sqlite3VdbeExec() or since last time the progress callback was called).
-    ** If the progress callback returns non-zero, exit the virtual machine with
-    ** a return code SQLITE_ABORT.
-    */
-    if( checkProgress ){
-      if( db->nProgressOps==nProgressOps ){
-        int prc;
-        prc = db->xProgress(db->pProgressArg);
-        if( prc!=0 ){
-          rc = SQLITE_INTERRUPT;
-          goto vdbe_error_halt;
-        }
-        nProgressOps = 0;
-      }
-      nProgressOps++;
     }
 #endif
 
@@ -759,8 +734,38 @@ int sqlite3VdbeExec(
 ** the program.
 */
 case OP_Goto: {             /* jump */
-  CHECK_FOR_INTERRUPT;
   pc = pOp->p2 - 1;
+
+  /* Opcodes that are used as the bottom of a loop (OP_Next, OP_Prev,
+  ** OP_VNext, OP_RowSetNext, or OP_SorterNext) all jump here upon
+  ** completion.  Check to see if sqlite3_interrupt() has been called
+  ** or if the progress callback needs to be invoked. 
+  **
+  ** This code uses unstructured "goto" statements and does not look clean.
+  ** But that is not due to sloppy coding habits. The code is written this
+  ** way for performance, to avoid having to run the interrupt and progress
+  ** checks on every opcode.  This helps sqlite3_step() to run about 1.5%
+  ** faster according to "valgrind --tool=cachegrind" */
+check_for_interrupt:
+  CHECK_FOR_INTERRUPT;
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  /* Call the progress callback if it is configured and the required number
+  ** of VDBE ops have been executed (either since this invocation of
+  ** sqlite3VdbeExec() or since last time the progress callback was called).
+  ** If the progress callback returns non-zero, exit the virtual machine with
+  ** a return code SQLITE_ABORT.
+  */
+  if( db->xProgress!=0 && (nVmStep - nProgressOps)>=db->nProgressOps ){
+    int prc;
+    prc = db->xProgress(db->pProgressArg);
+    if( prc!=0 ){
+      rc = SQLITE_INTERRUPT;
+      goto vdbe_error_halt;
+    }
+    nProgressOps = nVmStep;
+  }
+#endif
+  
   break;
 }
 
@@ -2953,6 +2958,10 @@ case OP_Transaction: {
   assert( p->readOnly==0 || pOp->p2==0 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
+    rc = SQLITE_READONLY;
+    goto abort_due_to_error;
+  }
   pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
@@ -4557,7 +4566,6 @@ case OP_Next: {        /* jump */
   VdbeCursor *pC;
   int res;
 
-  CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5<=ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
@@ -4586,7 +4594,7 @@ case OP_Next: {        /* jump */
 #endif
   }
   pC->rowidIsValid = 0;
-  break;
+  goto check_for_interrupt;
 }
 
 /* Opcode: IdxInsert P1 P2 P3 * P5
@@ -5112,7 +5120,7 @@ case OP_RowSetAdd: {       /* in1, in2 */
 */
 case OP_RowSetRead: {       /* jump, in1, out3 */
   i64 val;
-  CHECK_FOR_INTERRUPT;
+
   pIn1 = &aMem[pOp->p1];
   if( (pIn1->flags & MEM_RowSet)==0 
    || sqlite3RowSetNext(pIn1->u.pRowSet, &val)==0
@@ -5124,7 +5132,7 @@ case OP_RowSetRead: {       /* jump, in1, out3 */
     /* A value was pulled from the index */
     sqlite3VdbeMemSetInt64(&aMem[pOp->p3], val);
   }
-  break;
+  goto check_for_interrupt;
 }
 
 /* Opcode: RowSetTest P1 P2 P3 P4
@@ -6027,7 +6035,7 @@ case OP_VNext: {   /* jump */
     /* If there is data, jump to P2 */
     pc = pOp->p2 - 1;
   }
-  break;
+  goto check_for_interrupt;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
