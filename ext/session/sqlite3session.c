@@ -2971,8 +2971,9 @@ int sqlite3changeset_apply(
   }
 
   if( rc==SQLITE_OK ){
-    int nFk = sqlite3_foreign_key_check(db);
-    if( nFk>0 ){
+    int nFk, notUsed;
+    sqlite3_db_status(db, SQLITE_DBSTATUS_DEFERRED_FKS, &nFk, &notUsed, 0);
+    if( nFk!=0 ){
       int res = SQLITE_CHANGESET_ABORT;
       if( xConflict ){
         sqlite3_changeset_iter sIter;

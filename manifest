@@ -1,5 +1,5 @@
-C Rename\sthe\sSQLITE_DeferForeignKeys\smacro\sto\sshorter\sSQLITE_DeferFKs.\s\sMove\nthe\s"defer_foreign_keys"\spragma\sinto\sthe\sflagPragma()\sroutine.
-D 2013-07-11T12:19:12.495
+C Remove\sthe\sundocumented\ssqlite3_foreign_key_check()\sAPI\sand\sreplace\sit\swith\nsqlite3_db_status(db,\sSQLITE_DBSTATUS_DEFERRED_FKS,\s...).\s\sAdd\stest\scases\nfor\sthe\snew\sfunctionality.
+D 2013-07-11T13:49:59.348
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aff38bc64c582dd147f18739532198372587b0f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -146,7 +146,7 @@ F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session9.test 43acfdc57647c2ce4b36dbd0769112520ea6af14
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
-F ext/session/sqlite3session.c 80903fe2c24c8a9e7ccacebca1855a31ebebbbc3
+F ext/session/sqlite3session.c e0345e8425a36fb8ac107175ebae46b4af8873e4
 F ext/session/sqlite3session.h c7db3d8515eba7f41eeb8698a25e58d24cd384bf
 F ext/session/test_session.c 12053e9190653164fa624427cf90d1f46ca7f179
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
@@ -231,12 +231,12 @@ F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
 F src/shell.c c8cd06e6b66250a3ea0149c4edec30de14f57b6f
-F src/sqlite.h.in fb8adf7852fb92e410de422b5569923327bf8a2c
+F src/sqlite.h.in 17c84f6a2296a33a16141f4cff4b176278f3d1cc
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 62b11aa829ab51446a52dfea93f14b8e1e5d5862
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
-F src/status.c bedc37ec1a6bb9399944024d63f4c769971955a9
+F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e0eaf3a78eca2ef650abb67b6571cc86abcb5f87
 F src/test1.c 870fc648a48cb6d6808393174f7ebe82b8c840fa
@@ -263,7 +263,7 @@ F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
 F src/test_intarray.h b999bb18d090b8d9d9c49d36ec37ef8f341fe169
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 2855429b8232107b3296409be2a8eb68345290c2
+F src/test_malloc.c a105801222c0514f8befa2a1712a95505cce099a
 F src/test_multiplex.c 5d691eeb6cb6aa7888da28eba5e62a9a857d3c0f
 F src/test_multiplex.h 9b63b95f07acedee425fdfe49a47197c9bf5f9d8
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
@@ -293,7 +293,7 @@ F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
 F src/vdbe.c 26f19a439806efdd9fb93b1874a4a7029a885142
 F src/vdbe.h 1223e2548e0970cf96f573ff6b99f804a36ad683
 F src/vdbeInt.h 11feb11eb49d8b312741011d30d91c9c50b59de0
-F src/vdbeapi.c bb28ee14bae43579b33d88e0d916a1657255a866
+F src/vdbeapi.c bca51b6ea254af3a1bbfd2a58522f6d6db214334
 F src/vdbeaux.c 35846cedd64e90b83f498786775c69c2c6b6c8b1
 F src/vdbeblob.c 1268e0bcb8e21fa32520b0fc376e1bcdfaa0c642
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
@@ -465,11 +465,12 @@ F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
-F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
+F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
 F test/fkey2.test 06e0b4cc9e1b3271ae2ae6feeb19755468432111
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 0bf64f2d19ad80433ca0b24edbf604a18b353d5f
+F test/fkey6.test 2d76497c54db0e5bfbecee0acf00bb8a706b37db
 F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
@@ -1115,7 +1116,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P af3ca4c6e557e6bc92584586b5a97d9be41b0b82
-R 5801e485f633968bff3b48e71da6671c
+P 3a2ab74c85a40e0e7ef2d6aef6ec23837cb788e6
+R 4b05e08ec28ee8fbe45f517a6910194e
 U drh
-Z 2dfee648a27ba78793a28310983bc733
+Z 8f1a9fcd771ae153ffef09cc214c7392

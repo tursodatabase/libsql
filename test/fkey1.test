@@ -117,5 +117,8 @@ do_test fkey1-3.4 {
   {0 0 t5 d {} {SET DEFAULT} CASCADE NONE} \
   {0 1 t5 e {} {SET DEFAULT} CASCADE NONE} \
 ]
+do_test fkey1-3.5 {
+  sqlite3_db_status db DBSTATUS_DEFERRED_FKS 0
+} {0 0 0}
 
 finish_test

@@ -243,6 +243,16 @@ int sqlite3_db_status(
       break;
     }
 
+    /* Set *pCurrent to non-zero if there are unresolved deferred foreign
+    ** key constraints.  Set *pCurrent to zero if all foreign key constraints
+    ** have been satisfied.  The *pHighwater is always set to zero.
+    */
+    case SQLITE_DBSTATUS_DEFERRED_FKS: {
+      *pHighwater = 0;
+      *pCurrent = db->nDeferredImmCons>0 || db->nDeferredCons>0;
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
     }
