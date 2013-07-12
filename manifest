@@ -1,5 +1,5 @@
-C Change\sthe\sdescription\sof\show\ssqlite3_progress_handler()\sworks\sso\sthat\s\nthe\sN\sparameter\sis\s"approximate".\s\sThis\saligns\swith\sthe\scurrent\simplementation.\nThis\sis\sa\sdocumentation\schange\sonly.\s\sNo\schanges\sto\scode.
-D 2013-07-11T19:04:23.647
+C Make\ssure\sthe\sshell\sdoes\snot\stry\sto\sput\sa\szero\sterminator\son\sthe\send\sof\san\nunallocated\szero-length\sstring\swhen\srunning\s".import"\son\san\sempty\sfile.
+D 2013-07-12T21:09:24.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
-F src/shell.c c8cd06e6b66250a3ea0149c4edec30de14f57b6f
+F src/shell.c 4c02ec99e42aeb624bb221b253273da6c910b814
 F src/sqlite.h.in c8b27ba43bb35a26b6067b8f24f06c24af2d1b64
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6557c407983b067449deb76bc4c5248de64e07dc
-R 045649ed68015430e04b85aae90e1909
+P 7d829bdea3adcda50fbe930acb4e1ce73fd874e6
+R 3ed94849e5c017401e30c707fda6984e
 U drh
-Z c98b2f615dfc222d1805fcdb692cca6b
+Z e4e9f4e449a4a8d9a8571763475fda13

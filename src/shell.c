@@ -1721,7 +1721,6 @@ static char *csv_read_one_field(CSVReader *p){
        || (c==EOF && pc==cQuote)
       ){
         do{ p->n--; }while( p->z[p->n]!=cQuote );
-        p->z[p->n] = 0;
         p->cTerm = c;
         break;
       }
@@ -1732,7 +1731,6 @@ static char *csv_read_one_field(CSVReader *p){
       if( c==EOF ){
         fprintf(stderr, "%s:%d: unterminated %c-quoted field\n",
                 p->zFile, startLine, cQuote);
-        p->z[p->n] = 0;
         p->cTerm = EOF;
         break;
       }
@@ -1748,9 +1746,9 @@ static char *csv_read_one_field(CSVReader *p){
       p->nLine++;
       if( p->n>1 && p->z[p->n-1]=='\r' ) p->n--;
     }
-    p->z[p->n] = 0;
     p->cTerm = c;
   }
+  if( p->z ) p->z[p->n] = 0;
   return p->z;
 }
 
