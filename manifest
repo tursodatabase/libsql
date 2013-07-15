@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sshell\sdoes\snot\stry\sto\sput\sa\szero\sterminator\son\sthe\send\sof\san\nunallocated\szero-length\sstring\swhen\srunning\s".import"\son\san\sempty\sfile.
-D 2013-07-12T21:09:24.523
+C Add\sthe\ssqlite3_cancel_auto_extension(X)\sinterface\swhich\swill\sundo\sa\sprior\ncall\sto\ssqlite3_auto_extension(X).
+D 2013-07-15T17:02:28.816
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -184,7 +184,7 @@ F src/insert.c f7cb141e8ce257cb6b15c497f09e4e23d6055599
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
-F src/loadext.c c48f7f3f170e502fe0cc20748e03c6e0b5a016c2
+F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
 F src/main.c e5810b2d7a0bd19f3d75ce60e3ed918cafc0a3f3
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -218,7 +218,7 @@ F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
 F src/shell.c 4c02ec99e42aeb624bb221b253273da6c910b814
-F src/sqlite.h.in c8b27ba43bb35a26b6067b8f24f06c24af2d1b64
+F src/sqlite.h.in 30c88ce7862096b0aecf4c2c886bc0934eeaa515
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 6d3115f774aa3e87737f9447c9c0cea992c5bdbf
@@ -236,7 +236,7 @@ F src/test7.c 126b886b53f0358b92aba9b81d3fcbfbe9a93cd6
 F src/test8.c 7ee77ea522ae34aa691dfe407139dec80d4fc039
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
-F src/test_autoext.c 5c95b5d435eaa09d6c0e7d90371c5ca8cd567701
+F src/test_autoext.c 32cff3d01cdd3202486e623c3f8103ed04cb57fa
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c 95bb33e9dcaa340a296c0bf0e0ba3d1a1c8004c0
@@ -627,7 +627,7 @@ F test/like.test 935fb4f608e3ea126891496a6e99b9468372bf5c
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test cc0ab63385239b63c72452b0e93700bf5e8f0b99
 F test/loadext.test 92e6dfefd1229c3ef4aaabd87419efd8fa57a7a5
-F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
+F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
 F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7d829bdea3adcda50fbe930acb4e1ce73fd874e6
-R 3ed94849e5c017401e30c707fda6984e
+P 92adaee5bd31c152dbc1592f4aeb5d8da957a1ea
+R 3e75a7374bba2c69c55563b837ab8202
 U drh
-Z e4e9f4e449a4a8d9a8571763475fda13
+Z a6c699be62fa8981abc8311358615b45
