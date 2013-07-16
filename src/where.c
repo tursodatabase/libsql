@@ -45,6 +45,8 @@ typedef struct WherePath WherePath;
 typedef struct WhereTerm WhereTerm;
 typedef struct WhereLoopBuilder WhereLoopBuilder;
 typedef struct WhereScan WhereScan;
+typedef struct WhereOrCost WhereOrCost;
+typedef struct WhereOrSet WhereOrSet;
 
 /*
 ** Cost X is tracked as 10*log2(X) stored in a 16-bit integer.  The
@@ -151,6 +153,27 @@ struct WhereLoop {
   WhereLoop *pNextLoop; /* Next WhereLoop object in the WhereClause */
   WhereTerm *aLTermSpace[4];  /* Initial aLTerm[] space */
 };
+
+/* This object holds the prerequisites and the cost of running a
+** subquery on one operand of an OR operator in the WHERE clause.
+** See WhereOrSet for additional information 
+*/
+struct WhereOrCost {
+  Bitmask prereq;     /* Prerequisites */
+  WhereCost rRun;     /* Cost of running this subquery */
+  WhereCost nOut;     /* Number of outputs for this subquery */
+};
+
+/* The WhereOrSet object holds a set of possible WhereOrCosts that
+** correspond to the subquery(s) of OR-clause processing.  At most
+** favorable N_OR_COST elements are retained.
+*/
+#define N_OR_COST 3
+struct WhereOrSet {
+  u16 n;                      /* Number of valid a[] entries */
+  WhereOrCost a[N_OR_COST];   /* Set of best costs */
+};
+
 
 /* Forward declaration of methods */
 static int whereLoopResize(sqlite3*, WhereLoop*, int);
@@ -366,7 +389,7 @@ struct WhereLoopBuilder {
   WhereClause *pWC;         /* WHERE clause terms */
   ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
-  WhereLoop *pBest;         /* If non-NULL, store single best loop here */
+  WhereOrSet *pOrSet;       /* Record best loops here, if not NULL */
 };
 
 /*
@@ -507,6 +530,54 @@ int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
 */
 int sqlite3WhereOkOnePass(WhereInfo *pWInfo){
   return pWInfo->okOnePass;
+}
+
+/*
+** Move the content of pSrc into pDest
+*/
+static void whereOrMove(WhereOrSet *pDest, WhereOrSet *pSrc){
+  pDest->n = pSrc->n;
+  memcpy(pDest->a, pSrc->a, pDest->n*sizeof(pDest->a[0]));
+}
+
+/*
+** Try to insert a new prerequisite/cost entry into the WhereOrSet pSet.
+**
+** The new entry might overwrite an existing entry, or it might be
+** appended, or it might be discarded.  Do whatever is the right thing
+** so that pSet keeps the N_OR_COST best entries seen so far.
+*/
+static int whereOrInsert(
+  WhereOrSet *pSet,      /* The WhereOrSet to be updated */
+  Bitmask prereq,        /* Prerequisites of the new entry */
+  WhereCost rRun,        /* Run-cost of the new entry */
+  WhereCost nOut         /* Number of outputs for the new entry */
+){
+  u16 i;
+  WhereOrCost *p;
+  for(i=pSet->n, p=pSet->a; i>0; i--, p++){
+    if( rRun<=p->rRun && (prereq & p->prereq)==prereq ){
+      goto whereOrInsert_done;
+    }
+    if( p->rRun<=rRun && (p->prereq & prereq)==p->prereq ){
+      return 0;
+    }
+  }
+  if( pSet->n<N_OR_COST ){
+    p = &pSet->a[pSet->n++];
+    p->nOut = nOut;
+  }else{
+    p = pSet->a;
+    for(i=1; i<pSet->n; i++){
+      if( p->rRun>pSet->a[i].rRun ) p = pSet->a + i;
+    }
+    if( p->rRun<=rRun ) return 0;
+  }
+whereOrInsert_done:
+  p->prereq = prereq;
+  p->rRun = rRun;
+  if( p->nOut>nOut ) p->nOut = nOut;
+  return 1;
 }
 
 /*
@@ -3743,8 +3814,9 @@ static Bitmask codeOneLoopStart(
       int iTerm;
       for(iTerm=0; iTerm<pWC->nTerm; iTerm++){
         Expr *pExpr = pWC->a[iTerm].pExpr;
+        if( &pWC->a[iTerm] == pTerm ) continue;
         if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
-        if( pWC->a[iTerm].wtFlags & (TERM_VIRTUAL|TERM_ORINFO) ) continue;
+        if( pWC->a[iTerm].wtFlags & (TERM_ORINFO) ) continue;
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
         pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
         pAndExpr = sqlite3ExprAnd(pParse->db, pAndExpr, pExpr);
@@ -4072,12 +4144,12 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 ** fewer dependencies than the template.  Otherwise a new WhereLoop is
 ** added based on the template.
 **
-** If pBuilder->pBest is not NULL then we only care about the very
-** best template and that template should be stored in pBuilder->pBest.
-** If pBuilder->pBest is NULL then a list of the best templates are stored
-** in pBuilder->pWInfo->pLoops.
+** If pBuilder->pOrSet is not NULL then we only care about only the
+** prerequisites and rRun and nOut costs of the N best loops.  That
+** information is gathered in the pBuilder->pOrSet object.  This special
+** processing mode is used only for OR clause processing.
 **
-** When accumulating multiple loops (when pBuilder->pBest is NULL) we
+** When accumulating multiple loops (when pBuilder->pOrSet is NULL) we
 ** still might overwrite similar loops with the new template if the
 ** template is better.  Loops may be overwritten if the following 
 ** conditions are met:
@@ -4094,30 +4166,22 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereInfo *pWInfo = pBuilder->pWInfo;
   sqlite3 *db = pWInfo->pParse->db;
 
-  /* If pBuilder->pBest is defined, then only keep track of the single
-  ** best WhereLoop.  pBuilder->pBest->maskSelf==0 indicates that no
-  ** prior WhereLoops have been evaluated and that the current pTemplate
-  ** is therefore the first and hence the best and should be retained.
+  /* If pBuilder->pOrSet is defined, then only keep track of the costs
+  ** and prereqs.
   */
-  if( (p = pBuilder->pBest)!=0 ){
-    if( p->maskSelf!=0 ){
-      WhereCost rCost = whereCostAdd(p->rRun,p->rSetup);
-      WhereCost rTemplate = whereCostAdd(pTemplate->rRun,pTemplate->rSetup);
-      if( rCost < rTemplate ){
-        testcase( rCost==rTemplate-1 );
-        goto whereLoopInsert_noop;
-      }
-      if( rCost==rTemplate && (p->prereq & pTemplate->prereq)==p->prereq ){
-        goto whereLoopInsert_noop;
-      }
-    }
+  if( pBuilder->pOrSet!=0 ){
+#if WHERETRACE_ENABLED
+    u16 n = pBuilder->pOrSet->n;
+    int x =
+#endif
+    whereOrInsert(pBuilder->pOrSet, pTemplate->prereq, pTemplate->rRun,
+                                    pTemplate->nOut);
 #if WHERETRACE_ENABLED
     if( sqlite3WhereTrace & 0x8 ){
-      sqlite3DebugPrintf(p->maskSelf==0 ? "ins-init: " : "ins-best: ");
+      sqlite3DebugPrintf(x?"   or-%d:  ":"   or-X:  ", n);
       whereLoopPrint(pTemplate, pWInfo->pTabList);
     }
 #endif
-    whereLoopXfer(db, p, pTemplate);
     return SQLITE_OK;
   }
 
@@ -4211,7 +4275,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 whereLoopInsert_noop:
 #if WHERETRACE_ENABLED
   if( sqlite3WhereTrace & 0x8 ){
-    sqlite3DebugPrintf(pBuilder->pBest ? "ins-skip: " : "ins-noop: ");
+    sqlite3DebugPrintf("ins-noop: ");
     whereLoopPrint(pTemplate, pWInfo->pTabList);
   }
 #endif
@@ -4493,7 +4557,7 @@ static int whereLoopAddBtree(
   rLogSize = estLog(rSize);
 
   /* Automatic indexes */
-  if( !pBuilder->pBest
+  if( !pBuilder->pOrSet
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
    && pSrc->pIndex==0
    && !pSrc->viaCoroutine
@@ -4779,7 +4843,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   int iCur;
   WhereClause tempWC;
   WhereLoopBuilder sSubBuild;
-  WhereLoop sBest;
+  WhereOrSet sSum, sCur, sPrev;
   struct SrcList_item *pItem;
   
   pWC = pBuilder->pWC;
@@ -4794,16 +4858,14 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       WhereClause * const pOrWC = &pTerm->u.pOrInfo->wc;
       WhereTerm * const pOrWCEnd = &pOrWC->a[pOrWC->nTerm];
       WhereTerm *pOrTerm;
-      WhereCost rTotal = 0;
-      WhereCost nRow = 0;
-      Bitmask prereq = mExtra;
+      int once = 1;
+      int i, j;
     
-      whereLoopInit(&sBest);
       pItem = pWInfo->pTabList->a + pNew->iTab;
       iCur = pItem->iCursor;
       sSubBuild = *pBuilder;
       sSubBuild.pOrderBy = 0;
-      sSubBuild.pBest = &sBest;
+      sSubBuild.pOrSet = &sCur;
 
       for(pOrTerm=pOrWC->a; pOrTerm<pOrWCEnd; pOrTerm++){
         if( (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -4818,39 +4880,48 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         }else{
           continue;
         }
-        sBest.maskSelf = 0;
-        sBest.rSetup = 0;
-        sBest.rRun = 0;
+        sCur.n = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
           rc = whereLoopAddVirtual(&sSubBuild);
+          for(i=0; i<sCur.n; i++) sCur.a[i].prereq |= mExtra;
         }else
 #endif
         {
           rc = whereLoopAddBtree(&sSubBuild, mExtra);
         }
-        /* sBest.maskSelf is always zero if an error occurs */
-        assert( rc==SQLITE_OK || sBest.maskSelf==0 );
-        if( sBest.maskSelf==0 ) break;
-        assert( sBest.rSetup==0 );
-        rTotal = whereCostAdd(rTotal, sBest.rRun);
-        nRow = whereCostAdd(nRow, sBest.nOut);
-        prereq |= sBest.prereq;
+        assert( rc==SQLITE_OK || sCur.n==0 );
+        if( sCur.n==0 ){
+          sSum.n = 0;
+          break;
+        }else if( once ){
+          whereOrMove(&sSum, &sCur);
+          once = 0;
+        }else{
+          whereOrMove(&sPrev, &sSum);
+          sSum.n = 0;
+          for(i=0; i<sPrev.n; i++){
+            for(j=0; j<sCur.n; j++){
+              whereOrInsert(&sSum, sPrev.a[i].prereq | sCur.a[j].prereq,
+                            whereCostAdd(sPrev.a[i].rRun, sCur.a[j].rRun),
+                            whereCostAdd(sPrev.a[i].nOut, sCur.a[j].nOut));
+            }
+          }
+        }
       }
-      assert( pNew->nLSlot>=1 );
-      if( sBest.maskSelf ){
-        pNew->nLTerm = 1;
-        pNew->aLTerm[0] = pTerm;
-        pNew->wsFlags = WHERE_MULTI_OR;
-        pNew->rSetup = 0;
+      pNew->nLTerm = 1;
+      pNew->aLTerm[0] = pTerm;
+      pNew->wsFlags = WHERE_MULTI_OR;
+      pNew->rSetup = 0;
+      pNew->iSortIdx = 0;
+      memset(&pNew->u, 0, sizeof(pNew->u));
+      for(i=0; rc==SQLITE_OK && i<sSum.n; i++){
         /* TUNING: Multiple by 3.5 for the secondary table lookup */
-        pNew->rRun = rTotal + 18; assert( 18==whereCost(7)-whereCost(2) );
-        pNew->nOut = nRow;
-        pNew->prereq = prereq;
-        memset(&pNew->u, 0, sizeof(pNew->u));
+        pNew->rRun = sSum.a[i].rRun + 18;
+        pNew->nOut = sSum.a[i].nOut;
+        pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
       }
-      whereLoopClear(pWInfo->pParse->db, &sBest);
     }
   }
   return rc;
