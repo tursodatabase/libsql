@@ -1,5 +1,5 @@
-C Enhance\sthe\squery\splanner\sso\sthat\sit\slooks\sat\smultiple\ssolutions\sto\sOR\nexpressions\sin\sthe\sWHERE\sclause.
-D 2013-07-16T21:31:23.453
+C Make\ssure\sthe\ssqlite3_prepare16\sand\ssqlite3_prepare16_v2\sinterfaces\sdo\snot\nread\spast\sa\szero-terminator\sif\sthe\snBytes\sparameter\sis\stoo\slarge.
+D 2013-07-16T23:26:43.492
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c d23d07716de96c7c0c2503ec5051a4384c3fb938
 F src/pragma.c 2790c5175bc3f95d2a0cf39283d144b9b012fec7
-F src/prepare.c 2306be166bbeddf454e18bf8b21dba8388d05328
+F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cdce87eb889a43dafcc560d5f97ab517d0266860
-R 5cd2d361c09a0f2b15feaa159f9c349e
+P 5e19d054105fb16ff52d265d48cc87a418603f6f
+R 357dccfdee09362b5c6e0e960cd1b67a
 U drh
-Z cef10e6dbd00a6e9bd88cff94c534444
+Z 735e886cc8d8592981995974ead1c45b
