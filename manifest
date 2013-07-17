@@ -1,5 +1,5 @@
-C Make\ssure\sthe\ssqlite3_prepare16\sand\ssqlite3_prepare16_v2\sinterfaces\sdo\snot\nread\spast\sa\szero-terminator\sif\sthe\snBytes\sparameter\sis\stoo\slarge.
-D 2013-07-16T23:26:43.492
+C Clear\sthe\serror\sstring\spointer\sin\ssqlite3_vtab\sobject\safter\sthe\serror\sstring\nis\stransferred\sto\sSQLite.\s\sTicket\s[78588b938a11].
+D 2013-07-17T11:54:47.775
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
-F src/vtab.c b05e5f1f4902461ba9f5fc49bb7eb7c3a0741a83
+F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5e19d054105fb16ff52d265d48cc87a418603f6f
-R 357dccfdee09362b5c6e0e960cd1b67a
+P 20dba3a7fb3e7078b95af3beca948467a3af6a89
+R 013ec1a077b1a785910a41f7774e0baf
 U drh
-Z 735e886cc8d8592981995974ead1c45b
+Z 3af7c13fd1f5fd33dd19de7f52cc0abd
