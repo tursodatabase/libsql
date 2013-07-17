@@ -496,7 +496,7 @@ static const char *closureValueOfKey(const char *zKey, const char *zStr){
 /*
 ** xConnect/xCreate method for the closure module. Arguments are:
 **
-**   argv[0]    -> module name  ("approximate_match")
+**   argv[0]    -> module name  ("transitive_closure")
 **   argv[1]    -> database name
 **   argv[2]    -> table name
 **   argv[3...] -> arguments
@@ -907,7 +907,7 @@ static int closureBestIndex(
 }
 
 /*
-** A virtual table module that implements the "approximate_match".
+** A virtual table module that implements the "transitive_closure".
 */
 static sqlite3_module closureModule = {
   0,                      /* iVersion */
