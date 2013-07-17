@@ -246,8 +246,19 @@ mem function int integerify
 # [quote {hello world's}] == {'hello world''s'}
 #
 proc quote {txt} {
-  regsub -all ' $txt '' q
-  return '$q'
+  return [string map {' ''} $txt]
+}
+
+# Output a title line
+#
+proc titleline {title} {
+  if {$title==""} {
+    puts [string repeat * 79]
+  } else {
+    set len [string length $title]
+    set stars [string repeat * [expr 79-$len-5]]
+    puts "*** $title $stars"
+  }
 }
 
 # Generate a single line of output in the statistics section of the
@@ -255,7 +266,7 @@ proc quote {txt} {
 #
 proc statline {title value {extra {}}} {
   set len [string length $title]
-  set dots [string range {......................................} $len end]
+  set dots [string repeat . [expr 50-$len]]
   set len [string length $value]
   set sp2 [string range {          } $len end]
   if {$extra ne ""} {
@@ -319,9 +330,7 @@ proc subreport {title where} {
   # Output the sub-report title, nicely decorated with * characters.
   #
   puts ""
-  set len [string length $title]
-  set stars [string repeat * [expr 65-$len]]
-  puts "*** $title $stars"
+  titleline $title
   puts ""
 
   # Calculate statistics and store the results in TCL variables, as follows:
@@ -490,9 +499,6 @@ set user_percent [percent $user_payload $file_bytes]
 # Output the summary statistics calculated above.
 #
 puts "/** Disk-Space Utilization Report For $root_filename"
-catch {
-  puts "*** As of [clock format [clock seconds] -format {%Y-%b-%d %H:%M:%S}]"
-}
 puts ""
 statline {Page size in bytes} $pageSize
 statline {Pages in the whole file (measured)} $file_pgcnt
@@ -517,16 +523,27 @@ statline {Bytes of user payload stored} $user_payload $user_percent
 # Output table rankings
 #
 puts ""
-puts "*** Page counts for all tables with their indices ********************"
+titleline "Page counts for all tables with their indices"
 puts ""
 mem eval {SELECT tblname, count(*) AS cnt, 
               int(sum(int_pages+leaf_pages+ovfl_pages)) AS size
           FROM space_used GROUP BY tblname ORDER BY size+0 DESC, tblname} {} {
   statline [string toupper $tblname] $size [percent $size $file_pgcnt]
 }
+puts ""
+titleline "Page counts for all tables and indices separately"
+puts ""
+mem eval {
+  SELECT
+       upper(name) AS nm,
+       int(int_pages+leaf_pages+ovfl_pages) AS size
+    FROM space_used
+   ORDER BY size+0 DESC, name} {} {
+  statline $nm $size [percent $size $file_pgcnt]
+}
 if {$isCompressed} {
   puts ""
-  puts "*** Bytes of disk space used after compression ***********************"
+  titleline "Bytes of disk space used after compression"
   puts ""
   set csum 0
   mem eval {SELECT tblname,
@@ -554,13 +571,22 @@ if {$nindex>0} {
 }
 foreach tbl [mem eval {SELECT name FROM space_used WHERE NOT is_index
                        ORDER BY name}] {
-  regsub ' $tbl '' qn
+  set qn [quote $tbl]
   set name [string toupper $tbl]
-  set n [mem eval "SELECT count(*) FROM space_used WHERE tblname='$qn'"]
+  set n [mem eval {SELECT count(*) FROM space_used WHERE tblname=$tbl}]
   if {$n>1} {
+    set idxlist [mem eval "SELECT name FROM space_used
+                            WHERE tblname='$qn' AND is_index
+                            ORDER BY 1"]
     subreport "Table $name and all its indices" "tblname='$qn'"
     subreport "Table $name w/o any indices" "name='$qn'"
-    subreport "Indices of table $name" "tblname='$qn' AND is_index"
+    if {[llength $idxlist]>1} {
+      subreport "Indices of table $name" "tblname='$qn' AND is_index"
+    }
+    foreach idx $idxlist {
+      set qidx [quote $idx]
+      subreport "Index [string toupper $idx] of table $name" "name='$qidx'"
+    }
   } else {
     subreport "Table $name" "name='$qn'"
   }
@@ -568,9 +594,9 @@ foreach tbl [mem eval {SELECT name FROM space_used WHERE NOT is_index
 
 # Output instructions on what the numbers above mean.
 #
+puts ""
+titleline Definitions
 puts {
-*** Definitions ******************************************************
-
 Page size in bytes
 
     The number of bytes in a single page of the database file.  
@@ -722,7 +748,7 @@ Unused bytes on all pages
 # Output a dump of the in-memory database. This can be used for more
 # complex offline analysis.
 #
-puts "**********************************************************************"
+titleline {}
 puts "The entire text of this report can be sourced into any SQL database"
 puts "engine for further analysis.  All of the text above is an SQL comment."
 puts "The data used to generate this report follows:"

@@ -1,5 +1,5 @@
-C Clear\sthe\serror\sstring\spointer\sin\ssqlite3_vtab\sobject\safter\sthe\serror\sstring\nis\stransferred\sto\sSQLite.\s\sTicket\s[78588b938a11].
-D 2013-07-17T11:54:47.775
+C Enhance\sthe\ssqlite3_analyzer\stool\sto\sgive\sreports\son\sthe\ssizes\sof\sindividual\nindices.
+D 2013-07-17T18:12:15.911
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1087,7 +1087,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl 76f583a246a0b027f423252339e711f13198932e
+F tool/spaceanal.tcl f87fc8e459e3e42255b52987fe0dda3f8a8c513d
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 20dba3a7fb3e7078b95af3beca948467a3af6a89
-R 013ec1a077b1a785910a41f7774e0baf
+P 64bf8148b84e0ebb45c12b629f49bc9b316aceba
+R ec17da139f6652e6c6b8090663c2b7b7
 U drh
-Z 3af7c13fd1f5fd33dd19de7f52cc0abd
+Z f519c532f4fd545ddca3699fd0c0b9a9
