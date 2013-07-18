@@ -5728,7 +5728,8 @@ WhereInfo *sqlite3WhereBegin(
   pMaskSet = &pWInfo->sMaskSet;
   sWLB.pWInfo = pWInfo;
   sWLB.pWC = &pWInfo->sWC;
-  sWLB.pNew = (WhereLoop*)&pWInfo->a[nTabList];
+  sWLB.pNew = (WhereLoop*)(((char*)pWInfo)+nByteWInfo);
+  assert( EIGHT_BYTE_ALIGNMENT(sWLB.pNew) );
   whereLoopInit(sWLB.pNew);
 #ifdef SQLITE_DEBUG
   sWLB.pNew->cId = '*';
