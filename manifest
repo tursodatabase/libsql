@@ -1,5 +1,5 @@
-C Fix\scopy/paste\serrors\sin\scomments\sin\sthe\stransitive_closure\svirtual\stable.\nNo\schanges\sto\scode.
-D 2013-07-17T21:08:49.318
+C Documentation\schanges\sto\swarn\sthat\ssqlite3_set_auxdata()\smight\scall\sthe\ndestructor\seven\sbefore\sit\sreturns.\s\sAlso\sfix\sthe\sregexp\sextension\sto\sdeal\nwith\sthat\scase.\s\sTicket\s[406d3b2ef91c].
+D 2013-07-18T14:16:48.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -112,7 +112,7 @@ F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
 F ext/misc/nextchar.c 80ba262d23238efcfcb3d72d71aa4513098e26a6
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
-F ext/misc/regexp.c c25c65fe775f5d9801fb8573e36ebe73f2c0c2e0
+F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
 F ext/misc/vtshim.c 5fb6be7fe37659a8cbd1e16982d74cceacbc4543
@@ -218,7 +218,7 @@ F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
 F src/shell.c 4c02ec99e42aeb624bb221b253273da6c910b814
-F src/sqlite.h.in 30c88ce7862096b0aecf4c2c886bc0934eeaa515
+F src/sqlite.h.in ab59321198fe4e002890c8154642338e7da75e82
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 6d3115f774aa3e87737f9447c9c0cea992c5bdbf
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3b4096cc8a3b4517cdf49dcfe1f33279a5eb8efb
-R 72a343c5196cc394b974aafe1ea79d9a
+P b1b0de29fdf7de83722bb85b748f058b9901e77a
+R 1373096ae79cc1001233efb4a308bce9
 U drh
-Z 567058614f26922b80a2886ec42c5224
+Z 4c86c705c11f63416d538424aa7f228b

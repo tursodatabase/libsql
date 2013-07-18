@@ -713,6 +713,7 @@ static void re_sql_func(
   const char *zPattern;     /* The regular expression */
   const unsigned char *zStr;/* String being searched */
   const char *zErr;         /* Compile error message */
+  int setAux = 0;           /* True to invoke sqlite3_set_auxdata() */
 
   pRe = sqlite3_get_auxdata(context, 0);
   if( pRe==0 ){
@@ -728,11 +729,14 @@ static void re_sql_func(
       sqlite3_result_error_nomem(context);
       return;
     }
-    sqlite3_set_auxdata(context, 0, pRe, (void(*)(void*))re_free);
+    setAux = 1;
   }
   zStr = (const unsigned char*)sqlite3_value_text(argv[1]);
   if( zStr!=0 ){
     sqlite3_result_int(context, re_match(pRe, zStr, -1));
+  }
+  if( setAux ){
+    sqlite3_set_auxdata(context, 0, pRe, (void(*)(void*))re_free);
   }
 }
 
