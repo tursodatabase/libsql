@@ -1,5 +1,5 @@
-C Improved\sdocumentation\sfor\ssqlite3_set_auxdata().\nTicket\s[406d3b2ef91c].
-D 2013-07-18T18:45:53.278
+C Remove\sunused\s"codec"\scode\sfrom\sthe\scommand-line\sshell.
+D 2013-07-18T20:28:29.811
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
-F src/shell.c 4c02ec99e42aeb624bb221b253273da6c910b814
+F src/shell.c 7da98ff9cbb19d7ef213a295178039bcb457804a
 F src/sqlite.h.in ba19609c0dab076a169b0cd2e7d4a479c5b3f664
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 153deac8faca3bcc95f6f37e500b659b39b3e872
-R ec74b1ee673935f130bb86648a1098ae
+P 62465ecba7431e1d71e17a61f1af7dc65fe4fe97
+R ff789e1ed27e10ae116b350d443e40e4
 U drh
-Z 00f72fcc18f51e2cc40bcf22d8fab123
+Z 147237eb091c75d2b25ac79bc55dd938

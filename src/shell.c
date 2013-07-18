@@ -1797,7 +1797,6 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0 ){
     const char *zDestFile = 0;
     const char *zDb = 0;
-    const char *zKey = 0;
     sqlite3 *pDest;
     sqlite3_backup *pBackup;
     int j;
@@ -1805,9 +1804,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       const char *z = azArg[j];
       if( z[0]=='-' ){
         while( z[0]=='-' ) z++;
-        if( strcmp(z,"key")==0 && j<nArg-1 ){
-          zKey = azArg[++j];
-        }else
+        /* No options to process at this time */
         {
           fprintf(stderr, "unknown option: %s\n", azArg[j]);
           return 1;
@@ -1833,11 +1830,6 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       sqlite3_close(pDest);
       return 1;
     }
-#ifdef SQLITE_HAS_CODEC
-    sqlite3_key(pDest, zKey, (int)strlen(zKey));
-#else
-    (void)zKey;
-#endif
     open_db(p);
     pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
     if( pBackup==0 ){
@@ -2667,7 +2659,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         /* sqlite3_test_control(int, uint) */
         case SQLITE_TESTCTRL_PENDING_BYTE:        
           if( nArg==3 ){
-            unsigned int opt = (unsigned int)integerValue(azArg[2]);        
+            unsigned int opt = (unsigned int)integerValue(azArg[2]);
             rc = sqlite3_test_control(testctrl, opt);
             fprintf(p->out, "%d (0x%08x)\n", rc, rc);
           } else {
