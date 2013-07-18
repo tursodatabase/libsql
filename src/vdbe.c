@@ -1420,19 +1420,14 @@ case OP_Function: {
     REGISTER_TRACE(pOp->p2+i, pArg);
   }
 
-  assert( pOp->p4type==P4_FUNCDEF || pOp->p4type==P4_VDBEFUNC );
-  if( pOp->p4type==P4_FUNCDEF ){
-    ctx.pFunc = pOp->p4.pFunc;
-    ctx.pVdbeFunc = 0;
-  }else{
-    ctx.pVdbeFunc = (VdbeFunc*)pOp->p4.pVdbeFunc;
-    ctx.pFunc = ctx.pVdbeFunc->pFunc;
-  }
-
+  assert( pOp->p4type==P4_FUNCDEF );
+  ctx.pFunc = pOp->p4.pFunc;
   ctx.s.flags = MEM_Null;
   ctx.s.db = db;
   ctx.s.xDel = 0;
   ctx.s.zMalloc = 0;
+  ctx.iOp = pc;
+  ctx.pVdbe = p;
 
   /* The output cell may already have a buffer allocated. Move
   ** the pointer to ctx.s so in case the user-function can use
@@ -1455,11 +1450,7 @@ case OP_Function: {
   /* If any auxiliary data functions have been called by this user function,
   ** immediately call the destructor for any non-static values.
   */
-  if( ctx.pVdbeFunc ){
-    sqlite3VdbeDeleteAuxData(ctx.pVdbeFunc, pOp->p1);
-    pOp->p4.pVdbeFunc = ctx.pVdbeFunc;
-    pOp->p4type = P4_VDBEFUNC;
-  }
+  sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
 
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
