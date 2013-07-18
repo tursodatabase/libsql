@@ -1,5 +1,5 @@
-C Fix\sa\s8-byte\salignment\sproblem\sin\sthe\squery\splanner\sthat\smight\scause\nproblems\son\ssparc\swhen\scompiled\swith\s-m32.
-D 2013-07-18T14:50:56.888
+C Ensure\sthat\sall\sauxiliary\sdata\sregistered\sby\scalls\sto\ssqlite3_set_auxdata()\sis\sdestroyed\swhen\sthe\sVM\sis\shalted.\sPartial\sfix\sfor\s[406d3b2ef9].
+D 2013-07-18T17:12:08.417
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,11 +277,11 @@ F src/update.c 8e76c3d03e4b7b21cb250bd2df0c05e12993e577
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
-F src/vdbe.c 420ebf1d551a76406cbbe0adc52d22d45aac039a
-F src/vdbe.h b52887278cb173e66188da84dfab216bea61119d
-F src/vdbeInt.h 5e666c971c555c7977714b0e34cb8d4b20282557
-F src/vdbeapi.c c88222946d657984bdaf394604cb58ed1d641460
-F src/vdbeaux.c 1633408f6dea06129441c5e2f22b2a5ce30fe97e
+F src/vdbe.c 7fab3ee5adbcf841fad9db65308ac5dc36c4e0be
+F src/vdbe.h f380af2a7fab32ba8a8b05bf042497636afec66d
+F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
+F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
+F src/vdbeaux.c c01594ecf5a78ef41a721f3465152bb91883a942
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -556,7 +556,7 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test c8ac44217bf6c17812b03eaafa6c06995ad304c2
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test b0fc34fdc36897769651975a2b0a606312753643
+F test/func.test 9161beda516d6006d31e6ea6119579286512f751
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7acc8cd32d593a473c9e9adaf323220a7a46480a
-R 17b8abd2c5b717cffa3f1d157b1c3142
-U drh
-Z 8aedb025f873aeef3a714ef3251c3e91
+P 5dcffa671f592ae9355628afa439ae9a2d26f0cd
+R 5f8d56aac1f51039dd4e137aed108558
+U dan
+Z e317751ba4c386bb8e1c47226cf1f704
