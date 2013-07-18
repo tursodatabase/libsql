@@ -1450,7 +1450,7 @@ case OP_Function: {
   /* If any auxiliary data functions have been called by this user function,
   ** immediately call the destructor for any non-static values.
   */
-  sqlite3VdbeDeleteAuxData(ppc, pc, pOp->p1);
+  sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
 
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the

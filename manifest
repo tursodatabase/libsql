@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\sauxiliary\sdata\sregistered\sby\scalls\sto\ssqlite3_set_auxdata()\sis\sdestroyed\swhen\sthe\sVM\sis\shalted.\sPartial\sfix\sfor\s[406d3b2ef9].
-D 2013-07-18T17:12:08.417
+C Fix\sa\stypo\sin\sthe\sprevious\scommit.
+D 2013-07-18T18:28:04.101
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,7 +277,7 @@ F src/update.c 8e76c3d03e4b7b21cb250bd2df0c05e12993e577
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
-F src/vdbe.c 7fab3ee5adbcf841fad9db65308ac5dc36c4e0be
+F src/vdbe.c 816e686198c7d83a71545dfb4b34ec65f8071d23
 F src/vdbe.h f380af2a7fab32ba8a8b05bf042497636afec66d
 F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5dcffa671f592ae9355628afa439ae9a2d26f0cd
-R 5f8d56aac1f51039dd4e137aed108558
+P 71effa59c98d167e6e4b269e59ad5f468e664ac1
+R 4421f283285a2b7794dd87eb2ccfa514
 U dan
-Z e317751ba4c386bb8e1c47226cf1f704
+Z cf95d409b1004e756caafc3b743bfac7
