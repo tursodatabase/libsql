@@ -1,5 +1,5 @@
-C Remove\sunused\s"codec"\scode\sfrom\sthe\scommand-line\sshell.
-D 2013-07-18T20:28:29.811
+C Fixes\sto\stest\snumbering.
+D 2013-07-19T23:58:41.035
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -556,7 +556,7 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test c8ac44217bf6c17812b03eaafa6c06995ad304c2
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test 9161beda516d6006d31e6ea6119579286512f751
+F test/func.test cd25cf605c5a345d038dc7b84232204c6a901c84
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 62465ecba7431e1d71e17a61f1af7dc65fe4fe97
-R ff789e1ed27e10ae116b350d443e40e4
-U drh
-Z 147237eb091c75d2b25ac79bc55dd938
+P 37abfe0c1e5da63342389c527a9f7cbe0f8392d9
+R bf93564123619a1486a6f7766b8ee80b
+U mistachkin
+Z 75656b834fe7d7733acaf3f05e33a605
