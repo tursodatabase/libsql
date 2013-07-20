@@ -1,9 +1,9 @@
-C Fixes\sto\stest\snumbering.
-D 2013-07-19T23:58:41.035
+C Add\s'queryplantest'\starget\sto\sthe\sMSVC\smakefile.
+D 2013-07-20T00:34:31.920
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 7d226394826f060f232c0a02a468e8651819b7c2
+F Makefile.msc 1edbab21c991eea719e5abb8067868b63268a371
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f135b651727f978b7191bd6fa12c7fc1e13e13ac
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 37abfe0c1e5da63342389c527a9f7cbe0f8392d9
-R bf93564123619a1486a6f7766b8ee80b
+P f755b4b21c885f3e897c2a79fc7ac1220210e653
+R c94bb34849c12b79ab21d48a7e4bfef4
 U mistachkin
-Z 75656b834fe7d7733acaf3f05e33a605
+Z e904e41c59c0106f85082fb614ea3828
