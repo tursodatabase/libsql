@@ -47,9 +47,9 @@ static int findNextHostParameter(const char *zSql, int *pnToken){
 
 /*
 ** This function returns a pointer to a nul-terminated string in memory
-** obtained from sqlite3DbMalloc(). If sqlite3.vdbeExecCnt is 1, then the
+** obtained from sqlite3DbMalloc(). If sqlite3.nVdbeExec is 1, then the
 ** string contains a copy of zRawSql but with host parameters expanded to 
-** their current bindings. Or, if sqlite3.vdbeExecCnt is greater than 1, 
+** their current bindings. Or, if sqlite3.nVdbeExec is greater than 1, 
 ** then the returned string holds a copy of zRawSql with "-- " prepended
 ** to each line of text.
 **
@@ -87,7 +87,7 @@ char *sqlite3VdbeExpandSql(
   sqlite3StrAccumInit(&out, zBase, sizeof(zBase), 
                       db->aLimit[SQLITE_LIMIT_LENGTH]);
   out.db = db;
-  if( db->vdbeExecCnt>1 ){
+  if( db->nVdbeExec>1 ){
     while( *zRawSql ){
       const char *zStart = zRawSql;
       while( *(zRawSql++)!='\n' && *zRawSql );

@@ -305,4 +305,3 @@ do_write_test fts3_malloc-5.3 ft_content {
 
 
 finish_test
-

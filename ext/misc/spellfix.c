@@ -2148,10 +2148,10 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       pIdxInfo->aConstraintUsage[iDistTerm].argvIndex = idx++;
       pIdxInfo->aConstraintUsage[iDistTerm].omit = 1;
     }
-    pIdxInfo->estimatedCost = (double)10000;
+    pIdxInfo->estimatedCost = 1e5;
   }else{
     pIdxInfo->idxNum = 0;
-    pIdxInfo->estimatedCost = (double)10000000;
+    pIdxInfo->estimatedCost = 1e50;
   }
   return SQLITE_OK;
 }

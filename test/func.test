@@ -14,6 +14,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix func
 
 # Create a table to work with.
 #
@@ -681,6 +682,32 @@ do_test func-13.7 {
   }
   lappend res [sqlite3_finalize $STMT]
 } {{0 0} {1 0} SQLITE_OK}
+
+# Test that auxiliary data is discarded when a statement is reset.
+do_execsql_test 13.8.1 {
+  SELECT test_auxdata('constant') FROM t4;
+} {0 1}
+do_execsql_test 13.8.2 {
+  SELECT test_auxdata('constant') FROM t4;
+} {0 1}
+db cache flush
+do_execsql_test 13.8.3 {
+  SELECT test_auxdata('constant') FROM t4;
+} {0 1}
+set V "one"
+do_execsql_test 13.8.4 {
+  SELECT test_auxdata($V), $V FROM t4;
+} {0 one 1 one}
+set V "two"
+do_execsql_test 13.8.5 {
+  SELECT test_auxdata($V), $V FROM t4;
+} {0 two 1 two}
+db cache flush
+set V "three"
+do_execsql_test 13.8.6 {
+  SELECT test_auxdata($V), $V FROM t4;
+} {0 three 1 three}
+
 
 # Make sure that a function with a very long name is rejected
 do_test func-14.1 {

@@ -46,7 +46,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix x
+set testprefix whereF
 
 do_execsql_test 1.0 {
   PRAGMA automatic_index = 0;
@@ -63,7 +63,7 @@ foreach {tn sql} {
 } {
   do_test 1.$tn {
     db eval "EXPLAIN QUERY PLAN $sql"
-   } {/.*SCAN TABLE t2 .*SEARCH TABLE t1 .*/}
+   } {/.*SCAN TABLE t2\y.*SEARCH TABLE t1\y.*/}
 }
 
 do_execsql_test 2.0 {
@@ -84,7 +84,7 @@ foreach {tn sql} {
 } {
   do_test 2.$tn {
     db eval "EXPLAIN QUERY PLAN $sql"
-   } {/.*SCAN TABLE t2 .*SEARCH TABLE t1 .*/}
+   } {/.*SCAN TABLE t2\y.*SEARCH TABLE t1\y.*/}
 }
 
 do_execsql_test 3.0 {
@@ -109,7 +109,7 @@ foreach {tn sql} {
 } {
   do_test 3.$tn {
     db eval "EXPLAIN QUERY PLAN $sql"
-   } {/.*SCAN TABLE t2 .*SEARCH TABLE t1 .*/}
+   } {/.*SCAN TABLE t2\y.*SEARCH TABLE t1\y.*/}
 }
 
 finish_test

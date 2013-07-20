@@ -593,6 +593,9 @@ soaktest:	testfixture$(EXE) sqlite3$(EXE)
 fulltestonly:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/full.test
 
+queryplantest:	testfixture$(EXE) sqlite3$(EXE)
+	./testfixture$(EXE) $(TOP)/test/permutations.test queryplanner
+
 test:	testfixture$(EXE) sqlite3$(EXE)
 	./testfixture$(EXE) $(TOP)/test/veryquick.test
 

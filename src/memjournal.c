@@ -31,12 +31,6 @@ typedef struct FileChunk FileChunk;
 */
 #define JOURNAL_CHUNKSIZE ((int)(1024-sizeof(FileChunk*)))
 
-/* Macro to find the minimum of two numeric values.
-*/
-#ifndef MIN
-# define MIN(x,y) ((x)<(y)?(x):(y))
-#endif
-
 /*
 ** The rollback journal is composed of a linked list of these structures.
 */

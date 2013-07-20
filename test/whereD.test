@@ -186,4 +186,37 @@ do_test 4.3 {
   }
 } {1 2 3 3 6 9 4 5 6 {} {} {}}
 
+# Ticket [bc1aea7b725f276177]
+# Incorrect result on LEFT JOIN with OR constraints and an ORDER BY clause.
+#
+do_execsql_test 4.4 {
+  CREATE TABLE t44(a INTEGER, b INTEGER);
+  INSERT INTO t44 VALUES(1,2);
+  INSERT INTO t44 VALUES(3,4);
+  SELECT *
+    FROM t44 AS x
+       LEFT JOIN (SELECT a AS c, b AS d FROM t44) AS y ON a=c
+   WHERE d=4 OR d IS NULL;
+} {3 4 3 4}
+do_execsql_test 4.5 {
+  SELECT *
+    FROM t44 AS x
+       LEFT JOIN (SELECT a AS c, b AS d FROM t44) AS y ON a=c
+   WHERE d=4 OR d IS NULL
+   ORDER BY a;
+} {3 4 3 4}
+do_execsql_test 4.6 {
+  CREATE TABLE t46(c INTEGER, d INTEGER);
+  INSERT INTO t46 SELECT a, b FROM t44;
+  SELECT * FROM t44 LEFT JOIN t46 ON a=c
+   WHERE d=4 OR d IS NULL;
+} {3 4 3 4}
+do_execsql_test 4.7 {
+  SELECT * FROM t44 LEFT JOIN t46 ON a=c
+   WHERE d=4 OR d IS NULL
+   ORDER BY a;
+} {3 4 3 4}
+
+
+
 finish_test

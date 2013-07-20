@@ -552,16 +552,16 @@ int sqlite3VdbeExec(
   sqlite3 *db = p->db;       /* The database */
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if positive */
   u8 encoding = ENC(db);     /* The database encoding */
+  int iCompare = 0;          /* Result of last OP_Compare operation */
+  unsigned nVmStep = 0;      /* Number of virtual machine steps */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  int checkProgress;         /* True if progress callbacks are enabled */
-  int nProgressOps = 0;      /* Opcodes executed since progress callback. */
+  unsigned nProgressOps = 0; /* nVmStep at last progress callback. */
 #endif
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
   Mem *pIn1 = 0;             /* 1st input operand */
   Mem *pIn2 = 0;             /* 2nd input operand */
   Mem *pIn3 = 0;             /* 3rd input operand */
   Mem *pOut = 0;             /* Output operand */
-  int iCompare = 0;          /* Result of last OP_Compare operation */
   int *aPermute = 0;         /* Permutation of columns for OP_Compare */
   i64 lastRowid = db->lastRowid;  /* Saved value of the last insert ROWID */
 #ifdef VDBE_PROFILE
@@ -578,15 +578,13 @@ int sqlite3VdbeExec(
     goto no_mem;
   }
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  assert( p->bIsReader || p->readOnly!=0 );
   p->rc = SQLITE_OK;
   assert( p->explain==0 );
   p->pResultSet = 0;
   db->busyHandler.nBusy = 0;
   CHECK_FOR_INTERRUPT;
   sqlite3VdbeIOTraceSql(p);
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  checkProgress = db->xProgress!=0;
-#endif
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
   if( p->pc==0  && (p->db->flags & SQLITE_VdbeListing)!=0 ){
@@ -606,6 +604,7 @@ int sqlite3VdbeExec(
     origPc = pc;
     start = sqlite3Hwtime();
 #endif
+    nVmStep++;
     pOp = &aOp[pc];
 
     /* Only allow tracing if SQLITE_DEBUG is defined.
@@ -630,27 +629,6 @@ int sqlite3VdbeExec(
       if( sqlite3_interrupt_count==0 ){
         sqlite3_interrupt(db);
       }
-    }
-#endif
-
-#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-    /* Call the progress callback if it is configured and the required number
-    ** of VDBE ops have been executed (either since this invocation of
-    ** sqlite3VdbeExec() or since last time the progress callback was called).
-    ** If the progress callback returns non-zero, exit the virtual machine with
-    ** a return code SQLITE_ABORT.
-    */
-    if( checkProgress ){
-      if( db->nProgressOps==nProgressOps ){
-        int prc;
-        prc = db->xProgress(db->pProgressArg);
-        if( prc!=0 ){
-          rc = SQLITE_INTERRUPT;
-          goto vdbe_error_halt;
-        }
-        nProgressOps = 0;
-      }
-      nProgressOps++;
     }
 #endif
 
@@ -746,8 +724,38 @@ int sqlite3VdbeExec(
 ** the program.
 */
 case OP_Goto: {             /* jump */
-  CHECK_FOR_INTERRUPT;
   pc = pOp->p2 - 1;
+
+  /* Opcodes that are used as the bottom of a loop (OP_Next, OP_Prev,
+  ** OP_VNext, OP_RowSetNext, or OP_SorterNext) all jump here upon
+  ** completion.  Check to see if sqlite3_interrupt() has been called
+  ** or if the progress callback needs to be invoked. 
+  **
+  ** This code uses unstructured "goto" statements and does not look clean.
+  ** But that is not due to sloppy coding habits. The code is written this
+  ** way for performance, to avoid having to run the interrupt and progress
+  ** checks on every opcode.  This helps sqlite3_step() to run about 1.5%
+  ** faster according to "valgrind --tool=cachegrind" */
+check_for_interrupt:
+  CHECK_FOR_INTERRUPT;
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  /* Call the progress callback if it is configured and the required number
+  ** of VDBE ops have been executed (either since this invocation of
+  ** sqlite3VdbeExec() or since last time the progress callback was called).
+  ** If the progress callback returns non-zero, exit the virtual machine with
+  ** a return code SQLITE_ABORT.
+  */
+  if( db->xProgress!=0 && (nVmStep - nProgressOps)>=db->nProgressOps ){
+    int prc;
+    prc = db->xProgress(db->pProgressArg);
+    if( prc!=0 ){
+      rc = SQLITE_INTERRUPT;
+      goto vdbe_error_halt;
+    }
+    nProgressOps = nVmStep;
+  }
+#endif
+  
   break;
 }
 
@@ -866,7 +874,7 @@ case OP_Halt: {
     p->rc = rc = SQLITE_BUSY;
   }else{
     assert( rc==SQLITE_OK || (p->rc&0xff)==SQLITE_CONSTRAINT );
-    assert( rc==SQLITE_OK || db->nDeferredCons>0 );
+    assert( rc==SQLITE_OK || db->nDeferredCons>0 || db->nDeferredImmCons>0 );
     rc = p->rc ? SQLITE_ERROR : SQLITE_DONE;
   }
   goto vdbe_return;
@@ -1412,19 +1420,14 @@ case OP_Function: {
     REGISTER_TRACE(pOp->p2+i, pArg);
   }
 
-  assert( pOp->p4type==P4_FUNCDEF || pOp->p4type==P4_VDBEFUNC );
-  if( pOp->p4type==P4_FUNCDEF ){
-    ctx.pFunc = pOp->p4.pFunc;
-    ctx.pVdbeFunc = 0;
-  }else{
-    ctx.pVdbeFunc = (VdbeFunc*)pOp->p4.pVdbeFunc;
-    ctx.pFunc = ctx.pVdbeFunc->pFunc;
-  }
-
+  assert( pOp->p4type==P4_FUNCDEF );
+  ctx.pFunc = pOp->p4.pFunc;
   ctx.s.flags = MEM_Null;
   ctx.s.db = db;
   ctx.s.xDel = 0;
   ctx.s.zMalloc = 0;
+  ctx.iOp = pc;
+  ctx.pVdbe = p;
 
   /* The output cell may already have a buffer allocated. Move
   ** the pointer to ctx.s so in case the user-function can use
@@ -1447,11 +1450,7 @@ case OP_Function: {
   /* If any auxiliary data functions have been called by this user function,
   ** immediately call the destructor for any non-static values.
   */
-  if( ctx.pVdbeFunc ){
-    sqlite3VdbeDeleteAuxData(ctx.pVdbeFunc, pOp->p1);
-    pOp->p4.pVdbeFunc = ctx.pVdbeFunc;
-    pOp->p4type = P4_VDBEFUNC;
-  }
+  sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
 
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
@@ -2683,9 +2682,10 @@ case OP_Savepoint: {
   assert( p1==SAVEPOINT_BEGIN||p1==SAVEPOINT_RELEASE||p1==SAVEPOINT_ROLLBACK );
   assert( db->pSavepoint || db->isTransactionSavepoint==0 );
   assert( checkSavepointCount(db) );
+  assert( p->bIsReader );
 
   if( p1==SAVEPOINT_BEGIN ){
-    if( db->writeVdbeCnt>0 ){
+    if( db->nVdbeWrite>0 ){
       /* A new savepoint cannot be created if there are active write 
       ** statements (i.e. open read/write incremental blob handles).
       */
@@ -2725,6 +2725,7 @@ case OP_Savepoint: {
         pNew->pNext = db->pSavepoint;
         db->pSavepoint = pNew;
         pNew->nDeferredCons = db->nDeferredCons;
+        pNew->nDeferredImmCons = db->nDeferredImmCons;
       }
     }
   }else{
@@ -2742,7 +2743,7 @@ case OP_Savepoint: {
     if( !pSavepoint ){
       sqlite3SetString(&p->zErrMsg, db, "no such savepoint: %s", zName);
       rc = SQLITE_ERROR;
-    }else if( db->writeVdbeCnt>0 && p1==SAVEPOINT_RELEASE ){
+    }else if( db->nVdbeWrite>0 && p1==SAVEPOINT_RELEASE ){
       /* It is not possible to release (commit) a savepoint if there are 
       ** active write statements.
       */
@@ -2812,6 +2813,7 @@ case OP_Savepoint: {
         }
       }else{
         db->nDeferredCons = pSavepoint->nDeferredCons;
+        db->nDeferredImmCons = pSavepoint->nDeferredImmCons;
       }
 
       if( !isTransaction ){
@@ -2843,10 +2845,11 @@ case OP_AutoCommit: {
   turnOnAC = desiredAutoCommit && !db->autoCommit;
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
   assert( desiredAutoCommit==1 || iRollback==0 );
-  assert( db->activeVdbeCnt>0 );  /* At least this one VM is active */
+  assert( db->nVdbeActive>0 );  /* At least this one VM is active */
+  assert( p->bIsReader );
 
 #if 0
-  if( turnOnAC && iRollback && db->activeVdbeCnt>1 ){
+  if( turnOnAC && iRollback && db->nVdbeActive>1 ){
     /* If this instruction implements a ROLLBACK and other VMs are
     ** still running, and a transaction is active, return an error indicating
     ** that the other VMs must complete first. 
@@ -2856,7 +2859,7 @@ case OP_AutoCommit: {
     rc = SQLITE_BUSY;
   }else
 #endif
-  if( turnOnAC && !iRollback && db->writeVdbeCnt>0 ){
+  if( turnOnAC && !iRollback && db->nVdbeWrite>0 ){
     /* If this instruction implements a COMMIT and other VMs are writing
     ** return an error indicating that the other VMs must complete first. 
     */
@@ -2932,8 +2935,14 @@ case OP_AutoCommit: {
 case OP_Transaction: {
   Btree *pBt;
 
+  assert( p->bIsReader );
+  assert( p->readOnly==0 || pOp->p2==0 );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  if( pOp->p2 && (db->flags & SQLITE_QueryOnly)!=0 ){
+    rc = SQLITE_READONLY;
+    goto abort_due_to_error;
+  }
   pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
@@ -2948,7 +2957,7 @@ case OP_Transaction: {
     }
 
     if( pOp->p2 && p->usesStmtJournal 
-     && (db->autoCommit==0 || db->activeVdbeCnt>1) 
+     && (db->autoCommit==0 || db->nVdbeRead>1) 
     ){
       assert( sqlite3BtreeIsInTrans(pBt) );
       if( p->iStatement==0 ){
@@ -2966,6 +2975,7 @@ case OP_Transaction: {
       ** counter. If the statement transaction needs to be rolled back,
       ** the value of this counter needs to be restored too.  */
       p->nStmtDefCons = db->nDeferredCons;
+      p->nStmtDefImmCons = db->nDeferredImmCons;
     }
   }
   break;
@@ -2988,6 +2998,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   int iDb;
   int iCookie;
 
+  assert( p->bIsReader );
   iDb = pOp->p1;
   iCookie = pOp->p3;
   assert( pOp->p3<SQLITE_N_BTREE_META );
@@ -3015,6 +3026,7 @@ case OP_SetCookie: {       /* in3 */
   assert( pOp->p2<SQLITE_N_BTREE_META );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  assert( p->readOnly==0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
@@ -3065,6 +3077,7 @@ case OP_VerifyCookie: {
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
   assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
+  assert( p->bIsReader );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
@@ -3160,6 +3173,8 @@ case OP_OpenWrite: {
 
   assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 );
+  assert( p->bIsReader );
+  assert( pOp->opcode==OP_OpenRead || p->readOnly==0 );
 
   if( p->expired ){
     rc = SQLITE_ABORT;
@@ -4490,7 +4505,6 @@ case OP_Next: {        /* jump */
   VdbeCursor *pC;
   int res;
 
-  CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5<=ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
@@ -4519,7 +4533,7 @@ case OP_Next: {        /* jump */
 #endif
   }
   pC->rowidIsValid = 0;
-  break;
+  goto check_for_interrupt;
 }
 
 /* Opcode: IdxInsert P1 P2 P3 * P5
@@ -4730,15 +4744,18 @@ case OP_Destroy: {     /* out2-prerelease */
   Vdbe *pVdbe;
   int iDb;
 
+  assert( p->readOnly==0 );
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   iCnt = 0;
   for(pVdbe=db->pVdbe; pVdbe; pVdbe = pVdbe->pNext){
-    if( pVdbe->magic==VDBE_MAGIC_RUN && pVdbe->inVtabMethod<2 && pVdbe->pc>=0 ){
+    if( pVdbe->magic==VDBE_MAGIC_RUN && pVdbe->bIsReader 
+     && pVdbe->inVtabMethod<2 && pVdbe->pc>=0 
+    ){
       iCnt++;
     }
   }
 #else
-  iCnt = db->activeVdbeCnt;
+  iCnt = db->nVdbeRead;
 #endif
   pOut->flags = MEM_Null;
   if( iCnt>1 ){
@@ -4785,6 +4802,7 @@ case OP_Clear: {
   int nChange;
  
   nChange = 0;
+  assert( p->readOnly==0 );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)
@@ -4831,6 +4849,7 @@ case OP_CreateTable: {          /* out2-prerelease */
   pgno = 0;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  assert( p->readOnly==0 );
   pDb = &db->aDb[pOp->p1];
   assert( pDb->pBt!=0 );
   if( pOp->opcode==OP_CreateTable ){
@@ -4978,7 +4997,8 @@ case OP_IntegrityCk: {
   int nErr;       /* Number of errors reported */
   char *z;        /* Text of the error report */
   Mem *pnErr;     /* Register keeping track of errors remaining */
-  
+
+  assert( p->bIsReader );
   nRoot = pOp->p2;
   assert( nRoot>0 );
   aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
@@ -5039,7 +5059,7 @@ case OP_RowSetAdd: {       /* in1, in2 */
 */
 case OP_RowSetRead: {       /* jump, in1, out3 */
   i64 val;
-  CHECK_FOR_INTERRUPT;
+
   pIn1 = &aMem[pOp->p1];
   if( (pIn1->flags & MEM_RowSet)==0 
    || sqlite3RowSetNext(pIn1->u.pRowSet, &val)==0
@@ -5051,7 +5071,7 @@ case OP_RowSetRead: {       /* jump, in1, out3 */
     /* A value was pulled from the index */
     sqlite3VdbeMemSetInt64(&aMem[pOp->p3], val);
   }
-  break;
+  goto check_for_interrupt;
 }
 
 /* Opcode: RowSetTest P1 P2 P3 P4
@@ -5265,7 +5285,9 @@ case OP_Param: {           /* out2-prerelease */
 ** statement counter is incremented (immediate foreign key constraints).
 */
 case OP_FkCounter: {
-  if( pOp->p1 ){
+  if( db->flags & SQLITE_DeferFKs ){
+    db->nDeferredImmCons += pOp->p2;
+  }else if( pOp->p1 ){
     db->nDeferredCons += pOp->p2;
   }else{
     p->nFkConstraint += pOp->p2;
@@ -5286,9 +5308,9 @@ case OP_FkCounter: {
 */
 case OP_FkIfZero: {         /* jump */
   if( pOp->p1 ){
-    if( db->nDeferredCons==0 ) pc = pOp->p2-1;
+    if( db->nDeferredCons==0 && db->nDeferredImmCons==0 ) pc = pOp->p2-1;
   }else{
-    if( p->nFkConstraint==0 ) pc = pOp->p2-1;
+    if( p->nFkConstraint==0 && db->nDeferredImmCons==0 ) pc = pOp->p2-1;
   }
   break;
 }
@@ -5484,6 +5506,7 @@ case OP_Checkpoint: {
   int aRes[3];                    /* Results */
   Mem *pMem;                      /* Write results here */
 
+  assert( p->readOnly==0 );
   aRes[0] = 0;
   aRes[1] = aRes[2] = -1;
   assert( pOp->p2==SQLITE_CHECKPOINT_PASSIVE
@@ -5533,6 +5556,7 @@ case OP_JournalMode: {    /* out2-prerelease */
        || eNew==PAGER_JOURNALMODE_QUERY
   );
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( p->readOnly==0 );
 
   pBt = db->aDb[pOp->p1].pBt;
   pPager = sqlite3BtreePager(pBt);
@@ -5556,7 +5580,7 @@ case OP_JournalMode: {    /* out2-prerelease */
   if( (eNew!=eOld)
    && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
   ){
-    if( !db->autoCommit || db->activeVdbeCnt>1 ){
+    if( !db->autoCommit || db->nVdbeRead>1 ){
       rc = SQLITE_ERROR;
       sqlite3SetString(&p->zErrMsg, db, 
           "cannot change %s wal mode from within a transaction",
@@ -5615,6 +5639,7 @@ case OP_JournalMode: {    /* out2-prerelease */
 ** a transaction.
 */
 case OP_Vacuum: {
+  assert( p->readOnly==0 );
   rc = sqlite3RunVacuum(&p->zErrMsg, db);
   break;
 }
@@ -5632,6 +5657,7 @@ case OP_IncrVacuum: {        /* jump */
 
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
+  assert( p->readOnly==0 );
   pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3BtreeIncrVacuum(pBt);
   if( rc==SQLITE_DONE ){
@@ -5750,6 +5776,7 @@ case OP_VOpen: {
   sqlite3_vtab *pVtab;
   sqlite3_module *pModule;
 
+  assert( p->bIsReader );
   pCur = 0;
   pVtabCursor = 0;
   pVtab = pOp->p4.pVtab->pVtab;
@@ -5947,7 +5974,7 @@ case OP_VNext: {   /* jump */
     /* If there is data, jump to P2 */
     pc = pOp->p2 - 1;
   }
-  break;
+  goto check_for_interrupt;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
@@ -5966,6 +5993,7 @@ case OP_VRename: {
   pName = &aMem[pOp->p1];
   assert( pVtab->pModule->xRename );
   assert( memIsValid(pName) );
+  assert( p->readOnly==0 );
   REGISTER_TRACE(pOp->p1, pName);
   assert( pName->flags & MEM_Str );
   testcase( pName->enc==SQLITE_UTF8 );
@@ -6017,6 +6045,7 @@ case OP_VUpdate: {
   assert( pOp->p2==1        || pOp->p5==OE_Fail   || pOp->p5==OE_Rollback 
        || pOp->p5==OE_Abort || pOp->p5==OE_Ignore || pOp->p5==OE_Replace
   );
+  assert( p->readOnly==0 );
   pVtab = pOp->p4.pVtab->pVtab;
   pModule = (sqlite3_module *)pVtab->pModule;
   nArg = pOp->p2;
@@ -6200,6 +6229,7 @@ vdbe_error_halt:
   ** top. */
 vdbe_return:
   db->lastRowid = lastRowid;
+  p->aCounter[SQLITE_STMTSTATUS_VM_STEP-1] += (int)nVmStep;
   sqlite3VdbeLeave(p);
   return rc;
 

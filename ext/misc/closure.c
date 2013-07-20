@@ -496,7 +496,7 @@ static const char *closureValueOfKey(const char *zKey, const char *zStr){
 /*
 ** xConnect/xCreate method for the closure module. Arguments are:
 **
-**   argv[0]    -> module name  ("approximate_match")
+**   argv[0]    -> module name  ("transitive_closure")
 **   argv[1]    -> database name
 **   argv[2]    -> table name
 **   argv[3...] -> arguments
@@ -826,11 +826,17 @@ static int closureBestIndex(
   int iPlan = 0;
   int i;
   int idx = 1;
+  int seenMatch = 0;
   const struct sqlite3_index_constraint *pConstraint;
   closure_vtab *pVtab = (closure_vtab*)pTab;
+  double rCost = 10000000.0;
 
   pConstraint = pIdxInfo->aConstraint;
   for(i=0; i<pIdxInfo->nConstraint; i++, pConstraint++){
+    if( pConstraint->iColumn==CLOSURE_COL_ROOT
+     && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ ){
+      seenMatch = 1;
+    }
     if( pConstraint->usable==0 ) continue;
     if( (iPlan & 1)==0 
      && pConstraint->iColumn==CLOSURE_COL_ROOT
@@ -839,6 +845,7 @@ static int closureBestIndex(
       iPlan |= 1;
       pIdxInfo->aConstraintUsage[i].argvIndex = 1;
       pIdxInfo->aConstraintUsage[i].omit = 1;
+      rCost /= 100.0;
     }
     if( (iPlan & 0x0000f0)==0
      && pConstraint->iColumn==CLOSURE_COL_DEPTH
@@ -849,6 +856,7 @@ static int closureBestIndex(
       iPlan |= idx<<4;
       pIdxInfo->aConstraintUsage[i].argvIndex = ++idx;
       if( pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ) iPlan |= 0x000002;
+      rCost /= 5.0;
     }
     if( (iPlan & 0x000f00)==0
      && pConstraint->iColumn==CLOSURE_COL_TABLENAME
@@ -857,6 +865,7 @@ static int closureBestIndex(
       iPlan |= idx<<8;
       pIdxInfo->aConstraintUsage[i].argvIndex = ++idx;
       pIdxInfo->aConstraintUsage[i].omit = 1;
+      rCost /= 5.0;
     }
     if( (iPlan & 0x00f000)==0
      && pConstraint->iColumn==CLOSURE_COL_IDCOLUMN
@@ -891,13 +900,14 @@ static int closureBestIndex(
   ){
     pIdxInfo->orderByConsumed = 1;
   }
-  pIdxInfo->estimatedCost = (double)10000;
+  if( seenMatch && (iPlan&1)==0 ) rCost *= 1e30;
+  pIdxInfo->estimatedCost = rCost;
    
   return SQLITE_OK;
 }
 
 /*
-** A virtual table module that implements the "approximate_match".
+** A virtual table module that implements the "transitive_closure".
 */
 static sqlite3_module closureModule = {
   0,                      /* iVersion */

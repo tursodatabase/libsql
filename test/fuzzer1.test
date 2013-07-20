@@ -1728,36 +1728,41 @@ do_execsql_test 8.1 {
 do_execsql_test 8.2.1 {
   SELECT cFrom, cTo, word 
     FROM x3_rules CROSS JOIN x3 
-    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2
+    ORDER BY +cTo;
 } {a x x a y y a z z}
 
 do_execsql_test 8.2.2 {
   SELECT cFrom, cTo, word 
     FROM x3 CROSS JOIN x3_rules
-    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2
+    ORDER BY +cTo DESC
 } {a z z a y y a x x}
 
 do_execsql_test 8.2.3 {
   SELECT cFrom, cTo, word 
     FROM x3_rules, x3 
-    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2
+    ORDER BY +cTo DESC;
 } {a z z a y y a x x}
 
 do_execsql_test 8.2.4 {
   SELECT cFrom, cTo, word 
     FROM x3, x3_rules
-    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2
+    ORDER BY +cTo DESC;
 } {a z z a y y a x x}
 
 do_execsql_test 8.2.5 {
   CREATE INDEX i1 ON x3_rules(cost);
   SELECT cFrom, cTo, word 
     FROM x3_rules, x3 
-    WHERE word MATCH 'a' AND cost=distance AND ruleset=2;
+    WHERE word MATCH 'a' AND cost=distance AND ruleset=2
+    ORDER BY +cTo DESC;
 } {a z z a y y a x x}
 
 do_execsql_test 8.2.5 {
-  SELECT word FROM x3_rules, x3 WHERE word MATCH x3_rules.cFrom AND ruleset=2;
+  SELECT word FROM x3_rules, x3 WHERE word MATCH x3_rules.cFrom AND ruleset=2
 } {a z y x a z y x a z y x}
 
 do_execsql_test 8.2.6 {

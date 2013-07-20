@@ -1239,6 +1239,9 @@ soaktest:	testfixture.exe sqlite3.exe
 fulltestonly:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\full.test
 
+queryplantest:	testfixture.exe sqlite3.exe
+	.\testfixture.exe $(TOP)\test\permutations.test queryplanner
+
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 

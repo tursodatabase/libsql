@@ -1538,8 +1538,8 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
       VdbeComment((v, "LIMIT counter"));
       if( n==0 ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
-      }else{
-        if( p->nSelectRow > (double)n ) p->nSelectRow = (double)n;
+      }else if( n>=0 && p->nSelectRow>(u64)n ){
+        p->nSelectRow = n;
       }
     }else{
       sqlite3ExprCode(pParse, p->pLimit, iLimit);
@@ -1733,9 +1733,9 @@ static int multiSelect(
       p->nSelectRow += pPrior->nSelectRow;
       if( pPrior->pLimit
        && sqlite3ExprIsInteger(pPrior->pLimit, &nLimit)
-       && p->nSelectRow > (double)nLimit 
+       && nLimit>0 && p->nSelectRow > (u64)nLimit 
       ){
-        p->nSelectRow = (double)nLimit;
+        p->nSelectRow = nLimit;
       }
       if( addr ){
         sqlite3VdbeJumpHere(v, addr);
@@ -3884,11 +3884,10 @@ static void explainSimpleCount(
   Index *pIdx                     /* Index used to optimize scan, or NULL */
 ){
   if( pParse->explain==2 ){
-    char *zEqp = sqlite3MPrintf(pParse->db, "SCAN TABLE %s %s%s(~%d rows)",
+    char *zEqp = sqlite3MPrintf(pParse->db, "SCAN TABLE %s%s%s",
         pTab->zName, 
-        pIdx ? "USING COVERING INDEX " : "",
-        pIdx ? pIdx->zName : "",
-        pTab->nRowEst
+        pIdx ? " USING COVERING INDEX " : "",
+        pIdx ? pIdx->zName : ""
     );
     sqlite3VdbeAddOp4(
         pParse->pVdbe, OP_Explain, pParse->iSelectId, 0, 0, zEqp, P4_DYNAMIC
@@ -4239,7 +4238,7 @@ int sqlite3Select(
   /* Set the limiter.
   */
   iEnd = sqlite3VdbeMakeLabel(v);
-  p->nSelectRow = (double)LARGEST_INT64;
+  p->nSelectRow = LARGEST_INT64;
   computeLimitRegisters(pParse, p, iEnd);
   if( p->iLimit==0 && addrSortIndex>=0 ){
     sqlite3VdbeGetOp(v, addrSortIndex)->opcode = OP_SorterOpen;
@@ -4262,14 +4261,19 @@ int sqlite3Select(
 
   if( !isAgg && pGroupBy==0 ){
     /* No aggregate functions and no GROUP BY clause */
-    ExprList *pDist = (sDistinct.isTnct ? p->pEList : 0);
+    u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
 
     /* Begin the database scan. */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pOrderBy, pDist, 0,0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pOrderBy, p->pEList,
+                               wctrlFlags, 0);
     if( pWInfo==0 ) goto select_end;
-    if( pWInfo->nRowOut < p->nSelectRow ) p->nSelectRow = pWInfo->nRowOut;
-    if( pWInfo->eDistinct ) sDistinct.eTnctType = pWInfo->eDistinct;
-    if( pOrderBy && pWInfo->nOBSat==pOrderBy->nExpr ) pOrderBy = 0;
+    if( sqlite3WhereOutputRowCount(pWInfo) < p->nSelectRow ){
+      p->nSelectRow = sqlite3WhereOutputRowCount(pWInfo);
+    }
+    if( sDistinct.isTnct && sqlite3WhereIsDistinct(pWInfo) ){
+      sDistinct.eTnctType = sqlite3WhereIsDistinct(pWInfo);
+    }
+    if( pOrderBy && sqlite3WhereIsOrdered(pWInfo) ) pOrderBy = 0;
 
     /* If sorting index that was created by a prior OP_OpenEphemeral 
     ** instruction ended up not being needed, then change the OP_OpenEphemeral
@@ -4282,7 +4286,8 @@ int sqlite3Select(
 
     /* Use the standard inner loop. */
     selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, &sDistinct, pDest,
-                    pWInfo->iContinue, pWInfo->iBreak);
+                    sqlite3WhereContinueLabel(pWInfo),
+                    sqlite3WhereBreakLabel(pWInfo));
 
     /* End the database scan loop.
     */
@@ -4315,9 +4320,9 @@ int sqlite3Select(
       for(k=pGroupBy->nExpr, pItem=pGroupBy->a; k>0; k--, pItem++){
         pItem->iAlias = 0;
       }
-      if( p->nSelectRow>(double)100 ) p->nSelectRow = (double)100;
+      if( p->nSelectRow>100 ) p->nSelectRow = 100;
     }else{
-      p->nSelectRow = (double)1;
+      p->nSelectRow = 1;
     }
 
  
@@ -4397,9 +4402,10 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0, 0, 0);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0, 
+                                 WHERE_GROUPBY, 0);
       if( pWInfo==0 ) goto select_end;
-      if( pWInfo->nOBSat==pGroupBy->nExpr ){
+      if( sqlite3WhereIsOrdered(pWInfo) ){
         /* The optimizer is able to deliver rows in group by order so
         ** we do not have to sort.  The OP_OpenEphemeral table will be
         ** cancelled later because we still need to use the pKeyInfo
@@ -4680,8 +4686,8 @@ int sqlite3Select(
         }
         updateAccumulator(pParse, &sAggInfo);
         assert( pMinMax==0 || pMinMax->nExpr==1 );
-        if( pWInfo->nOBSat>0 ){
-          sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
+        if( sqlite3WhereIsOrdered(pWInfo) ){
+          sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3WhereBreakLabel(pWInfo));
           VdbeComment((v, "%s() by index",
                 (flag==WHERE_ORDERBY_MIN?"min":"max")));
         }

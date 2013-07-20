@@ -852,8 +852,14 @@ static void fulltext_vtab_destroy(fulltext_vtab *v){
 ** argv[3] - tokenizer name (optional, a sensible default is provided)
 ** argv[4..] - passed to tokenizer (optional based on tokenizer)
 **/
-static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
-                           sqlite3_vtab **ppVTab){
+static int fulltextConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc,
+  const char * const *argv,
+  sqlite3_vtab **ppVTab,
+  char **pzErr
+){
   int rc;
   fulltext_vtab *v;
   sqlite3_tokenizer_module *m = NULL;
@@ -898,8 +904,14 @@ static int fulltextConnect(sqlite3 *db, void *pAux, int argc, char **argv,
   return SQLITE_OK;
 }
 
-static int fulltextCreate(sqlite3 *db, void *pAux, int argc, char **argv,
-                          sqlite3_vtab **ppVTab){
+static int fulltextCreate(
+  sqlite3 *db,
+  void *pAux,
+  int argc,
+  const char * const *argv,
+  sqlite3_vtab **ppVTab,
+  char **pzErr
+){
   int rc;
   assert( argc>=3 );
 
@@ -934,7 +946,7 @@ static int fulltextCreate(sqlite3 *db, void *pAux, int argc, char **argv,
     "create index %_index on %_term(term, first)");
   if( rc!=SQLITE_OK ) return rc;
 
-  return fulltextConnect(db, pAux, argc, argv, ppVTab);
+  return fulltextConnect(db, pAux, argc, argv, ppVTab, pzErr);
 }
 
 /* Decide how to handle an SQL query.
@@ -1488,8 +1500,11 @@ int fulltext_init(sqlite3 *db){
 }
 
 #if !SQLITE_CORE
-int sqlite3_extension_init(sqlite3 *db, char **pzErrMsg,
-                           const sqlite3_api_routines *pApi){
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_fulltext_init(sqlite3 *db, char **pzErrMsg,
+                          const sqlite3_api_routines *pApi){
  SQLITE_EXTENSION_INIT2(pApi)
  return fulltext_init(db);
 }

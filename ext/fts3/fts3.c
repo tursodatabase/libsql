@@ -1095,7 +1095,7 @@ static int fts3InitVtab(
   nByte = sizeof(const char *) * (argc-2);
   aCol = (const char **)sqlite3_malloc(nByte);
   if( aCol ){
-    memset(aCol, 0, nByte);
+    memset((void*)aCol, 0, nByte);
     azNotindexed = (char **)sqlite3_malloc(nByte);
   }
   if( azNotindexed ){
@@ -1346,7 +1346,7 @@ static int fts3InitVtab(
 
   /* Fill in the abNotindexed array */
   for(iCol=0; iCol<nCol; iCol++){
-    int n = strlen(p->azColumn[iCol]);
+    int n = (int)strlen(p->azColumn[iCol]);
     for(i=0; i<nNotindexed; i++){
       char *zNot = azNotindexed[i];
       if( zNot && 0==sqlite3_strnicmp(p->azColumn[iCol], zNot, n) ){
@@ -1464,7 +1464,7 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   ** strategy is possible.
   */
   pInfo->idxNum = FTS3_FULLSCAN_SEARCH;
-  pInfo->estimatedCost = 500000;
+  pInfo->estimatedCost = 5000000;
   for(i=0; i<pInfo->nConstraint; i++){
     struct sqlite3_index_constraint *pCons = &pInfo->aConstraint[i];
     if( pCons->usable==0 ) continue;
@@ -5376,7 +5376,10 @@ int sqlite3Fts3Corrupt(){
 /*
 ** Initialize API pointer table, if required.
 */
-int sqlite3_extension_init(
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_fts3_init(
   sqlite3 *db, 
   char **pzErrMsg,
   const sqlite3_api_routines *pApi

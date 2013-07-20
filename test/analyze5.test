@@ -156,13 +156,14 @@ foreach {testid where index rows} {
 
 } {
   # Verify that the expected index is used with the expected row count
-  do_test analyze5-1.${testid}a {
-    set x [lindex [eqp "SELECT * FROM t1 WHERE $where"] 3]
-    set idx {}
-    regexp {INDEX (t1.) } $x all idx
-    regexp {~([0-9]+) rows} $x all nrow
-    list $idx $nrow
-  } [list $index $rows]
+  # No longer valid due to an EXPLAIN QUERY PLAN output format change
+  # do_test analyze5-1.${testid}a {
+  #   set x [lindex [eqp "SELECT * FROM t1 WHERE $where"] 3]
+  #   set idx {}
+  #   regexp {INDEX (t1.) } $x all idx
+  #   regexp {~([0-9]+) rows} $x all nrow
+  #   list $idx $nrow
+  # } [list $index $rows]
 
   # Verify that the same result is achieved regardless of whether or not
   # the index is used
@@ -202,15 +203,14 @@ foreach {testid where index rows} {
 
 } {
   # Verify that the expected index is used with the expected row count
-if {$testid==50299} {breakpoint; set sqlite_where_trace 1}
-  do_test analyze5-1.${testid}a {
-    set x [lindex [eqp "SELECT * FROM t1 WHERE $where"] 3]
-    set idx {}
-    regexp {INDEX (t1.) } $x all idx
-    regexp {~([0-9]+) rows} $x all nrow
-    list $idx $nrow
-  } [list $index $rows]
-if {$testid==50299} exit
+  # No longer valid due to an EXPLAIN QUERY PLAN format change
+  # do_test analyze5-1.${testid}a {
+  #   set x [lindex [eqp "SELECT * FROM t1 WHERE $where"] 3]
+  #   set idx {}
+  #   regexp {INDEX (t1.) } $x all idx
+  #   regexp {~([0-9]+) rows} $x all nrow
+  #   list $idx $nrow
+  # } [list $index $rows]
 
   # Verify that the same result is achieved regardless of whether or not
   # the index is used

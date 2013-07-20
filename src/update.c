@@ -318,7 +318,7 @@ void sqlite3Update(
       pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED, 0
   );
   if( pWInfo==0 ) goto update_cleanup;
-  okOnePass = pWInfo->okOnePass;
+  okOnePass = sqlite3WhereOkOnePass(pWInfo);
 
   /* Remember the rowid of every item to be updated.
   */

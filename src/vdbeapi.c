@@ -382,11 +382,13 @@ static int sqlite3Step(Vdbe *p){
     ** reset the interrupt flag.  This prevents a call to sqlite3_interrupt
     ** from interrupting a statement that has not yet started.
     */
-    if( db->activeVdbeCnt==0 ){
+    if( db->nVdbeActive==0 ){
       db->u1.isInterrupted = 0;
     }
 
-    assert( db->writeVdbeCnt>0 || db->autoCommit==0 || db->nDeferredCons==0 );
+    assert( db->nVdbeWrite>0 || db->autoCommit==0 
+        || (db->nDeferredCons==0 && db->nDeferredImmCons==0)
+    );
 
 #ifndef SQLITE_OMIT_TRACE
     if( db->xProfile && !db->init.busy ){
@@ -394,8 +396,9 @@ static int sqlite3Step(Vdbe *p){
     }
 #endif
 
-    db->activeVdbeCnt++;
-    if( p->readOnly==0 ) db->writeVdbeCnt++;
+    db->nVdbeActive++;
+    if( p->readOnly==0 ) db->nVdbeWrite++;
+    if( p->bIsReader ) db->nVdbeRead++;
     p->pc = 0;
   }
 #ifndef SQLITE_OMIT_EXPLAIN
@@ -404,9 +407,9 @@ static int sqlite3Step(Vdbe *p){
   }else
 #endif /* SQLITE_OMIT_EXPLAIN */
   {
-    db->vdbeExecCnt++;
+    db->nVdbeExec++;
     rc = sqlite3VdbeExec(p);
-    db->vdbeExecCnt--;
+    db->nVdbeExec--;
   }
 
 #ifndef SQLITE_OMIT_TRACE
@@ -581,14 +584,14 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 ** the user-function defined by pCtx.
 */
 void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
-  VdbeFunc *pVdbeFunc;
+  AuxData *pAuxData;
 
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
-  pVdbeFunc = pCtx->pVdbeFunc;
-  if( !pVdbeFunc || iArg>=pVdbeFunc->nAux || iArg<0 ){
-    return 0;
+  for(pAuxData=pCtx->pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
+    if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
   }
-  return pVdbeFunc->apAux[iArg].pAux;
+
+  return (pAuxData ? pAuxData->pAux : 0);
 }
 
 /*
@@ -602,29 +605,26 @@ void sqlite3_set_auxdata(
   void *pAux, 
   void (*xDelete)(void*)
 ){
-  struct AuxData *pAuxData;
-  VdbeFunc *pVdbeFunc;
-  if( iArg<0 ) goto failed;
+  AuxData *pAuxData;
+  Vdbe *pVdbe = pCtx->pVdbe;
 
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
-  pVdbeFunc = pCtx->pVdbeFunc;
-  if( !pVdbeFunc || pVdbeFunc->nAux<=iArg ){
-    int nAux = (pVdbeFunc ? pVdbeFunc->nAux : 0);
-    int nMalloc = sizeof(VdbeFunc) + sizeof(struct AuxData)*iArg;
-    pVdbeFunc = sqlite3DbRealloc(pCtx->s.db, pVdbeFunc, nMalloc);
-    if( !pVdbeFunc ){
-      goto failed;
-    }
-    pCtx->pVdbeFunc = pVdbeFunc;
-    memset(&pVdbeFunc->apAux[nAux], 0, sizeof(struct AuxData)*(iArg+1-nAux));
-    pVdbeFunc->nAux = iArg+1;
-    pVdbeFunc->pFunc = pCtx->pFunc;
-  }
+  if( iArg<0 ) goto failed;
 
-  pAuxData = &pVdbeFunc->apAux[iArg];
-  if( pAuxData->pAux && pAuxData->xDelete ){
+  for(pAuxData=pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
+    if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
+  }
+  if( pAuxData==0 ){
+    pAuxData = sqlite3DbMallocZero(pVdbe->db, sizeof(AuxData));
+    if( !pAuxData ) goto failed;
+    pAuxData->iOp = pCtx->iOp;
+    pAuxData->iArg = iArg;
+    pAuxData->pNext = pVdbe->pAuxData;
+    pVdbe->pAuxData = pAuxData;
+  }else if( pAuxData->xDelete ){
     pAuxData->xDelete(pAuxData->pAux);
   }
+
   pAuxData->pAux = pAux;
   pAuxData->xDelete = xDelete;
   return;

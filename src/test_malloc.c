@@ -1349,7 +1349,8 @@ static int test_db_status(
     { "LOOKASIDE_MISS_FULL", SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL },
     { "CACHE_HIT",           SQLITE_DBSTATUS_CACHE_HIT           },
     { "CACHE_MISS",          SQLITE_DBSTATUS_CACHE_MISS          },
-    { "CACHE_WRITE",         SQLITE_DBSTATUS_CACHE_WRITE         }
+    { "CACHE_WRITE",         SQLITE_DBSTATUS_CACHE_WRITE         },
+    { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        }
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){
