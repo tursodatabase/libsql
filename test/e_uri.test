@@ -133,8 +133,6 @@ if {$tcl_platform(platform) == "unix"} {
   foreach {tn uri error} "
     1  {file://localhost[test_pwd /]test.db}   {not an error}
     2  {file://[test_pwd /]test.db}            {not an error}
-    3  {file://x[test_pwd /]test.db}           {invalid uri authority: x}
-    4  {file://invalid[test_pwd /]test.db}     {invalid uri authority: invalid}
   " {
     do_test 2.$tn {
       set DB [sqlite3_open_v2 $uri $flags ""]

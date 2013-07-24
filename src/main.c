@@ -2177,19 +2177,29 @@ int sqlite3ParseUri(
     zFile = sqlite3_malloc(nByte);
     if( !zFile ) return SQLITE_NOMEM;
 
-    /* Discard the scheme and authority segments of the URI. */
-    if( zUri[5]=='/' && zUri[6]=='/' ){
+    /* Mappings:
+    ** URI                            FILENAME
+    ** ---------------------------    ----------------------
+    ** file:abc/xyz                   abc/xyz
+    ** file:/abc/xyz                  /abc/xyz
+    ** file://abc/xyz                 //abc/xyz
+    ** file:///abc/xyz                /abc/xyz
+    ** file:////abc/xyz               //abc/xyz
+    ** file://///abc/xyz              //abc/xyz
+    ** file://localhost/xyz           /xyz
+    ** file:///c:/abc/xyz             /c:/abc/xyz    (winOpen() removes leading /)
+    */
+    iIn = 5;
+    if( strncmp(zUri+5, "///", 3)==0 ){
       iIn = 7;
-      while( zUri[iIn] && zUri[iIn]!='/' ) iIn++;
-
-      if( iIn!=7 && (iIn!=16 || memcmp("localhost", &zUri[7], 9)) ){
-        *pzErrMsg = sqlite3_mprintf("invalid uri authority: %.*s", 
-            iIn-7, &zUri[7]);
-        rc = SQLITE_ERROR;
-        goto parse_uri_out;
-      }
-    }else{
-      iIn = 5;
+      /* The following condition causes URIs with five leading / characters
+      ** like file://///host/path to be converted into UNCs like //host/path.
+      ** The correct URI for that UNC has only two or four leading / characters
+      ** file://host/path or file:////host/path.  But 5 leading slashes is a 
+      ** common error, we are told, so we handle it as a special case. */
+      if( strncmp(zUri+7, "///", 3)==0 ){ iIn++; }
+    }else if( strncmp(zUri+5, "//localhost/", 12)==0 ){
+      iIn = 16;
     }
 
     /* Copy the filename and any query parameters into the zFile buffer. 

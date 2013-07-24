@@ -281,9 +281,6 @@ foreach {tn uri res} {
   1     "file://localhost/PWD/test.db"   {not an error}
   2     "file:///PWD/test.db"            {not an error}
   3     "file:/PWD/test.db"              {not an error}
-  4     "file://l%6Fcalhost/PWD/test.db" {invalid uri authority: l%6Fcalhost}
-  5     "file://lbcalhost/PWD/test.db"   {invalid uri authority: lbcalhost}
-  6     "file://x/PWD/test.db"           {invalid uri authority: x}
 } {
 
   if {$tcl_platform(platform)=="windows"} {

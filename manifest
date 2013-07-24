@@ -1,5 +1,5 @@
-C Add\s'queryplantest'\starget\sto\sthe\sMSVC\smakefile.
-D 2013-07-20T00:34:31.920
+C Another\sattempt\sat\sgeneralizing\sthe\sURI\sparsing\sso\sthat\sit\sworks\swith\sa\nwider\svariety\sof\sfile\sURIs\sand\syet\sremains\sbackwards\scompatible.
+D 2013-07-24T14:54:35.099
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c e5810b2d7a0bd19f3d75ce60e3ed918cafc0a3f3
+F src/main.c a7efdff1516d77dcee9877dcf75fb5fa4ceaf3ea
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -435,7 +435,7 @@ F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test d5af998a402740d8f0488158d22075df2b6f88fa
 F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
 F test/e_update.test 161d5dc6a3ed9dd08f5264d13e20735d7a89f00c
-F test/e_uri.test 8f2f56b29456a3f846276fa4e0993d4ef8a15b79
+F test/e_uri.test cf5cf9a6f1e0f690ee6a2ee7a12d077ddccbeb0c
 F test/e_vacuum.test 331da289ae186656cf5f2eb27f577a89c0c221af
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
@@ -984,7 +984,7 @@ F test/unique.test cadb172bbd5a2e83cd644d186ccd602085e54edc
 F test/unixexcl.test a9870e46cc6f8390a494513d4f2bf55b5a8b3e46
 F test/unordered.test ef85ac8f2f3c93ed2b9e811b684de73175fc464c
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/uri.test 63e03df051620a18f794b4f4adcdefb3c23b6751
+F test/uri.test 4a6fee19bfe8a65a6d273032aa4fc842535b46b7
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test af432e6e3bfc0ea20a80cb86a03c7d9876d38324
@@ -1103,7 +1103,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f755b4b21c885f3e897c2a79fc7ac1220210e653
-R c94bb34849c12b79ab21d48a7e4bfef4
-U mistachkin
-Z e904e41c59c0106f85082fb614ea3828
+P ad0551e039ccaa9e7a28682b756b56ac2b8fef0d
+R a3b3b6e5ecdb948d76f9eeff9500d7ff
+T *branch * uri-enhancement
+T *sym-uri-enhancement *
+T -sym-trunk *
+U drh
+Z a241308738f93f6f0a72323634a4306d
