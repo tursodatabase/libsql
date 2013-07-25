@@ -2556,7 +2556,8 @@ SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
 ** ^The parameter P is passed through as the only parameter to the 
 ** callback function X.  ^The parameter N is the approximate number of 
 ** [virtual machine instructions] that are evaluated between successive
-** invocations of the callback X.
+** invocations of the callback X.  ^If N is less than one then the progress
+** handler is disabled.
 **
 ** ^Only a single progress handler may be defined at one time per
 ** [database connection]; setting a new progress handler cancels the
