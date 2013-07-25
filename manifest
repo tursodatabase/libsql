@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\smain.c:\sSQLITE_DEAULT_AUTOMATIC_INDEX\s->\sSQLITE_DEFAULT_AUTOMATIC_INDEX
-D 2013-07-25T16:41:39.550
+C In\sthe\scommand-line\sshell,\swork\saround\sthe\sfact\sthat\spopen()\sand\spclose()\nare\snot\sdefined\sin\sstdio.h.\sin\sC89\sand\slater.
+D 2013-07-25T17:07:03.896
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
-F src/shell.c 7da98ff9cbb19d7ef213a295178039bcb457804a
+F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
 F src/sqlite.h.in d6a7523d6795317aac574fccc67d9df25253771c
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4698a82ef855a8e56163622283fb25317d7efdc4
-R 6ed52877d6372e3a1e06cdc8791460bf
-U dan
-Z 26271be395085fd778fe9c8e8c0dcba3
+P cc78e21c7794948a187e694773735058fc7460d7
+R 2224b684736c7849886faa41d9e31dd9
+U drh
+Z a0a43d445d787e155974499407392c91

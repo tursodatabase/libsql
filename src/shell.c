@@ -65,7 +65,7 @@
 #define isatty(h) _isatty(h)
 #define access(f,m) _access((f),(m))
 #undef popen
-#define popen(a,b) _popen((a),(b))
+#define popen _popen
 #undef pclose
 #define pclose _pclose
 #else
@@ -73,6 +73,11 @@
 */
 extern int isatty(int);
 #endif
+
+/* popen and pclose are not C89 functions and so are sometimes omitted from
+** the <stdio.h> header */
+FILE *popen(const char*,const char*);
+int pclose(FILE*);
 
 #if defined(_WIN32_WCE)
 /* Windows CE (arm-wince-mingw32ce-gcc) does not provide isatty()
