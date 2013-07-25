@@ -1,5 +1,5 @@
-C Enhance\sthe\sprogress\shandler\sso\sthat\sit\skeeps\strack\sof\sthe\snumber\sof\sVDBE\ncycles\sacross\ssqlite3_step()\scalls\sand\sissues\scallbacks\swhen\sthe\scumulative\ninstruction\scount\sreaches\sthreshold.
-D 2013-07-25T16:27:51.835
+C Fix\sa\stypo\sin\smain.c:\sSQLITE_DEAULT_AUTOMATIC_INDEX\s->\sSQLITE_DEFAULT_AUTOMATIC_INDEX
+D 2013-07-25T16:41:39.550
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c e5810b2d7a0bd19f3d75ce60e3ed918cafc0a3f3
+F src/main.c 9286e1f5660ff32bd53a9a64ab09ed9af2542b5d
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ad0551e039ccaa9e7a28682b756b56ac2b8fef0d
-R d2338440342f7943c0617ebcafb61de4
-U drh
-Z 47bbc05204d6969b9fef882b748d56a7
+P 4698a82ef855a8e56163622283fb25317d7efdc4
+R 6ed52877d6372e3a1e06cdc8791460bf
+U dan
+Z 26271be395085fd778fe9c8e8c0dcba3
