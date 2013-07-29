@@ -1,5 +1,5 @@
-C In\smain.mk,\salways\srecompile\svdbe.o\sand\sparse.o\sfirst,\ssince\schanges\sto\seither\nparse.y\sor\svdbe.c\swill\scause\sall\sfiles\sto\sbe\srecompiled\sand\sif\sthere\sare\nsyntax\serrors\sin\svdbe.c\sor\sparse.y\swe\swant\sto\shit\sthem\searly\sin\sthe\scompile\nprocess.
-D 2013-07-29T13:51:54.129
+C Comment\sand\spreprocessor\smacro\scleanup.
+D 2013-07-29T15:54:06.213
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
 F src/sqlite.h.in d6a7523d6795317aac574fccc67d9df25253771c
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 6d3115f774aa3e87737f9447c9c0cea992c5bdbf
+F src/sqliteInt.h 89b52c053ebafa76f03bab4f0c8ee1e390eb7489
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -268,7 +268,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 16dbe79fb320fadb5acd7a0a59f49e52ab2d2091
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
-F src/test_vfs.c 12d9931f65acde64961523b6f420ba7cd057fbd7
+F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c e0e8fd3cb90a88451f6b6425726c84747b6b20d7
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8bcbb33fd0a970e16a920e1d35571836dbb9ba50
-R ac65f68c338ba95f0df6e2b9636e977b
+P a94a66d10f160ee79fffa8527655c2cc4a0c7103
+R 40bf3454255194f171fc87e9079822c4
 U drh
-Z 6ff5447967bf3da3ba994ae07683c81d
+Z 077c159fd8ed6b7ef4b9adb97eba8746

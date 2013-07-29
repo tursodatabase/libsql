@@ -161,9 +161,6 @@
 ** will cause HeapValidate to be called.  If heap validation should fail, an
 ** assertion will be triggered.
 **
-** (Historical note:  There used to be several other options, but we've
-** pared it down to just these three.)
-**
 ** If none of the above are defined, then set SQLITE_SYSTEM_MALLOC as
 ** the default.
 */
@@ -202,19 +199,12 @@
 #endif
 
 /*
-** The TCL headers are only needed when compiling the TCL bindings.
-*/
-#if defined(SQLITE_TCL) || defined(TCLSH)
-# include <tcl.h>
-#endif
-
-/*
 ** NDEBUG and SQLITE_DEBUG are opposites.  It should always be true that
 ** defined(NDEBUG)==!defined(SQLITE_DEBUG).  If this is not currently true,
 ** make it true by defining or undefining NDEBUG.
 **
-** Setting NDEBUG makes the code smaller and run faster by disabling the
-** number assert() statements in the code.  So we want the default action
+** Setting NDEBUG makes the code smaller and faster by disabling the
+** assert() statements in the code.  So we want the default action
 ** to be for NDEBUG to be set and NDEBUG to be undefined only if SQLITE_DEBUG
 ** is set.  Thus NDEBUG becomes an opt-in rather than an opt-out
 ** feature.
@@ -284,7 +274,7 @@
 ** In other words, ALWAYS and NEVER are added for defensive code.
 **
 ** When doing coverage testing ALWAYS and NEVER are hard-coded to
-** be true and false so that the unreachable code then specify will
+** be true and false so that the unreachable code they specify will
 ** not be counted as untested code.
 */
 #if defined(SQLITE_COVERAGE_TEST)
@@ -308,16 +298,12 @@
 /*
 ** The macro unlikely() is a hint that surrounds a boolean
 ** expression that is usually false.  Macro likely() surrounds
-** a boolean expression that is usually true.  GCC is able to
-** use these hints to generate better code, sometimes.
+** a boolean expression that is usually true.  These hints could,
+** in theory, be used by the compiler to generate better code, but
+** currently they are just comments for human readers.
 */
-#if defined(__GNUC__) && 0
-# define likely(X)    __builtin_expect((X),1)
-# define unlikely(X)  __builtin_expect((X),0)
-#else
-# define likely(X)    !!(X)
-# define unlikely(X)  !!(X)
-#endif
+#define likely(X)    (X)
+#define unlikely(X)  (X)
 
 #include "sqlite3.h"
 #include "hash.h"
