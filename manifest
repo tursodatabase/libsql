@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\swork\saround\sthe\sfact\sthat\spopen()\sand\spclose()\nare\snot\sdefined\sin\sstdio.h.\sin\sC89\sand\slater.
-D 2013-07-25T17:07:03.896
+C In\smain.mk,\salways\srecompile\svdbe.o\sand\sparse.o\sfirst,\ssince\schanges\sto\seither\nparse.y\sor\svdbe.c\swill\scause\sall\sfiles\sto\sbe\srecompiled\sand\sif\sthere\sare\nsyntax\serrors\sin\svdbe.c\sor\sparse.y\swe\swant\sto\shit\sthem\searly\sin\sthe\scompile\nprocess.
+D 2013-07-29T13:51:54.129
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
-F main.mk c4335dbdb004d37e00e23d6ff226e55df0db5b21
+F main.mk a10f1925ae3bb545a045d1f1867506f49bee972f
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cc78e21c7794948a187e694773735058fc7460d7
-R 2224b684736c7849886faa41d9e31dd9
+P 8bcbb33fd0a970e16a920e1d35571836dbb9ba50
+R ac65f68c338ba95f0df6e2b9636e977b
 U drh
-Z a0a43d445d787e155974499407392c91
+Z 6ff5447967bf3da3ba994ae07683c81d

@@ -50,7 +50,8 @@ TCCX += -I$(TOP)/ext/async
 
 # Object files for the SQLite library.
 #
-LIBOBJ+= alter.o analyze.o attach.o auth.o \
+LIBOBJ+= vdbe.o parse.o \
+         alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o ctime.o date.o delete.o expr.o fault.o fkey.o \
          fts3.o fts3_aux.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
@@ -63,11 +64,11 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          memjournal.o \
          mutex.o mutex_noop.o mutex_unix.o mutex_w32.o \
          notify.o opcodes.o os.o os_unix.o os_win.o \
-         pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
+         pager.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
-         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
+         vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
 
