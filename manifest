@@ -1,9 +1,9 @@
-C Comment\sand\spreprocessor\smacro\scleanup.
-D 2013-07-29T15:54:06.213
+C For\sthe\sMSVC\smakefile,\srecompile\svdbe.lo\sand\sparse.lo\sfirst.
+D 2013-07-29T19:03:20.408
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 1edbab21c991eea719e5abb8067868b63268a371
+F Makefile.msc e9f41f89111627baaabd95cab4988b8d1c3e47c9
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION f135b651727f978b7191bd6fa12c7fc1e13e13ac
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a94a66d10f160ee79fffa8527655c2cc4a0c7103
-R 40bf3454255194f171fc87e9079822c4
-U drh
-Z 077c159fd8ed6b7ef4b9adb97eba8746
+P c0809b5e32c2ca0600098447a573e718eaeb319f
+R acca2317d80cadebf01ca0291e013836
+U mistachkin
+Z 6eb4dac3f80be1a20108b92a7b5da831
