@@ -3250,6 +3250,7 @@ static Bitmask codeOneLoopStart(
   WhereClause *pWC;    /* Decomposition of the entire WHERE clause */
   WhereTerm *pTerm;               /* A WHERE clause term */
   Parse *pParse;                  /* Parsing context */
+  sqlite3 *db;                    /* Database connection */
   Vdbe *v;                        /* The prepared stmt under constructions */
   struct SrcList_item *pTabItem;  /* FROM clause term being coded */
   int addrBrk;                    /* Jump here to break out of the loop */
@@ -3261,6 +3262,7 @@ static Bitmask codeOneLoopStart(
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
   pWC = &pWInfo->sWC;
+  db = pParse->db;
   pLevel = &pWInfo->a[iLevel];
   pLoop = pLevel->pWLoop;
   pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
@@ -3551,7 +3553,7 @@ static Bitmask codeOneLoopStart(
     ** starting at regBase.
     */
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
-    zEndAff = sqlite3DbStrDup(pParse->db, zStartAff);
+    zEndAff = sqlite3DbStrDup(db, zStartAff);
     addrNxt = pLevel->addrNxt;
 
     /* If we are doing a reverse order scan on an ascending index, or
@@ -3636,8 +3638,8 @@ static Bitmask codeOneLoopStart(
       nConstraint++;
       testcase( pRangeEnd->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
     }
-    sqlite3DbFree(pParse->db, zStartAff);
-    sqlite3DbFree(pParse->db, zEndAff);
+    sqlite3DbFree(db, zStartAff);
+    sqlite3DbFree(db, zEndAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
@@ -3764,7 +3766,7 @@ static Bitmask codeOneLoopStart(
       int nNotReady;                 /* The number of notReady tables */
       struct SrcList_item *origSrc;     /* Original list of tables */
       nNotReady = pWInfo->nLevel - iLevel - 1;
-      pOrTab = sqlite3StackAllocRaw(pParse->db,
+      pOrTab = sqlite3StackAllocRaw(db,
                             sizeof(*pOrTab)+ nNotReady*sizeof(pOrTab->a[0]));
       if( pOrTab==0 ) return notReady;
       pOrTab->nAlloc = (u8)(nNotReady + 1);
@@ -3818,8 +3820,8 @@ static Bitmask codeOneLoopStart(
         if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
         if( pWC->a[iTerm].wtFlags & (TERM_ORINFO) ) continue;
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
-        pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
-        pAndExpr = sqlite3ExprAnd(pParse->db, pAndExpr, pExpr);
+        pExpr = sqlite3ExprDup(db, pExpr, 0);
+        pAndExpr = sqlite3ExprAnd(db, pAndExpr, pExpr);
       }
       if( pAndExpr ){
         pAndExpr = sqlite3PExpr(pParse, TK_AND, 0, pAndExpr, 0);
@@ -3839,7 +3841,7 @@ static Bitmask codeOneLoopStart(
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
                         WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY, iCovCur);
-        assert( pSubWInfo || pParse->nErr || pParse->db->mallocFailed );
+        assert( pSubWInfo || pParse->nErr || db->mallocFailed );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
           explainOneScan(
@@ -3894,13 +3896,13 @@ static Bitmask codeOneLoopStart(
     if( pCov ) pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
       pAndExpr->pLeft = 0;
-      sqlite3ExprDelete(pParse->db, pAndExpr);
+      sqlite3ExprDelete(db, pAndExpr);
     }
     sqlite3VdbeChangeP1(v, iRetInit, sqlite3VdbeCurrentAddr(v));
     sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);
 
-    if( pWInfo->nLevel>1 ) sqlite3StackFree(pParse->db, pOrTab);
+    if( pWInfo->nLevel>1 ) sqlite3StackFree(db, pOrTab);
     if( !untestedTerms ) disableTerm(pLevel, pTerm);
   }else
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
@@ -3955,9 +3957,8 @@ static Bitmask codeOneLoopStart(
   ** the implied "t1.a=123" constraint.
   */
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
-    Expr *pE;
+    Expr *pE, *pEAlt;
     WhereTerm *pAlt;
-    Expr sEq;
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( pTerm->eOperator!=(WO_EQUIV|WO_EQ) ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
@@ -3971,9 +3972,13 @@ static Bitmask codeOneLoopStart(
     testcase( pAlt->eOperator & WO_EQ );
     testcase( pAlt->eOperator & WO_IN );
     VdbeNoopComment((v, "begin transitive constraint"));
-    sEq = *pAlt->pExpr;
-    sEq.pLeft = pE->pLeft;
-    sqlite3ExprIfFalse(pParse, &sEq, addrCont, SQLITE_JUMPIFNULL);
+    pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
+    if( pEAlt ){
+      *pEAlt = *pAlt->pExpr;
+      pEAlt->pLeft = pE->pLeft;
+      sqlite3ExprIfFalse(pParse, pEAlt, addrCont, SQLITE_JUMPIFNULL);
+      sqlite3StackFree(db, pEAlt);
+    }
   }
 
   /* For a LEFT OUTER JOIN, generate code that will record the fact that

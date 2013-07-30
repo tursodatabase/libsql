@@ -1,5 +1,5 @@
-C For\sthe\sMSVC\smakefile,\srecompile\svdbe.lo\sand\sparse.lo\sfirst.
-D 2013-07-29T19:03:20.408
+C Reduce\sthe\ssize\sof\sthe\sstack\srequired\sby\sthe\scodeOneLoopStart()\sfunction\sin\nwhere.c.
+D 2013-07-30T15:10:32.747
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 1a26c37b7b54d198e2ec9aa127d22c3dcfe89de8
+F src/where.c a55e27475c3d4c72c8bf1aaf9ece70e47e8731cf
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c0809b5e32c2ca0600098447a573e718eaeb319f
-R acca2317d80cadebf01ca0291e013836
-U mistachkin
-Z 6eb4dac3f80be1a20108b92a7b5da831
+P 9e819f0f12b6f2a8e0e7a90251b3115ff1595f25
+R 8a77f3488eeca7f033bc07ab4b9db562
+U drh
+Z 51b3ad13ced3eb326ea64314852a899d
