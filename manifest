@@ -1,5 +1,5 @@
-C Use\sa\snew\serror\scode\sto\srepresent\sa\sfailure\sto\sget\sthe\sconfigured\stemporary\sdirectory\son\sWindows.
-D 2013-07-31T22:27:16.062
+C Slight\smodifications\sto\spath\sname\stranslation\shandling\sfor\sCygwin.
+D 2013-07-31T22:39:26.505
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
-F src/os_win.c aead0182637b77f6b86e2326ee6bce9b1add0637
+F src/os_win.c 3a74943b286746533963579337b1de4383cf963b
 F src/pager.c 5d2f7475260a8588f9c441bb309d2b7eaa7ded3b
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 9acfcc83ddbf0cf82f0ed9582ccf0ad6c366ff37
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bb06e1579022c24546ac5117a99846b3c37ef59b
-R cd86f9af8b68f6621597cefa17e93ed5
+P c93d891b03c626b9ed01ed5ef2f246b2d4a40a64
+R 1da5a28da1b68405b6ad12dd77b7c1d9
 U mistachkin
-Z c86d88dac629a8d9fc1cbd59a4805ab2
+Z 86b10e2366b2108534452cce8a04325b

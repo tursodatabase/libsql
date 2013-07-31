@@ -17,6 +17,7 @@
 
 #ifdef __CYGWIN__
 # include <sys/cygwin.h>
+# include <errno.h>
 #endif
 
 /*
@@ -4530,13 +4531,20 @@ static int winFullPathname(
     **       one by prepending the data directory and a slash.
     */
     char zOut[SQLITE_WIN32_MAX_PATH+1];
-    memset(zOut, 0, SQLITE_WIN32_MAX_PATH+1);
-    cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, zRelative, zOut,
-                     SQLITE_WIN32_MAX_PATH+1);
+    if( cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, zRelative, zOut,
+                         SQLITE_WIN32_MAX_PATH+1)<0 ){
+      winLogError(SQLITE_CANTOPEN_FULLPATH, (DWORD)errno, "cygwin_conv_path",
+                  zRelative);
+      return SQLITE_CANTOPEN_FULLPATH;
+    }
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
                      sqlite3_data_directory, zOut);
   }else{
-    cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull);
+    if( cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull)<0 ){
+      winLogError(SQLITE_CANTOPEN_FULLPATH, (DWORD)errno, "cygwin_conv_path",
+                  zRelative);
+      return SQLITE_CANTOPEN_FULLPATH;
+    }
   }
   return SQLITE_OK;
 #endif
