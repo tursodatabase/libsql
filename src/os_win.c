@@ -3696,10 +3696,10 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
       return SQLITE_OK;
     }
     assert( (nMap % winSysInfo.dwPageSize)==0 );
-#if SQLITE_OS_WINRT
-    pNew = osMapViewOfFileFromApp(pFd->hMap, flags, 0, nMap);
-#else
     assert( sizeof(SIZE_T)==sizeof(sqlite3_int64) || nMap<=0xffffffff );
+#if SQLITE_OS_WINRT
+    pNew = osMapViewOfFileFromApp(pFd->hMap, flags, 0, (SIZE_T)nMap);
+#else
     pNew = osMapViewOfFile(pFd->hMap, flags, 0, 0, (SIZE_T)nMap);
 #endif
     if( pNew==NULL ){
@@ -3896,8 +3896,6 @@ static int getTempname(int nBuf, char *zBuf){
   */
   SimulateIOError( return SQLITE_IOERR );
 
-  memset(zTempPath, 0, SQLITE_WIN32_MAX_PATH+2);
-
   if( sqlite3_temp_directory ){
     sqlite3_snprintf(SQLITE_WIN32_MAX_PATH-30, zTempPath, "%s",
                      sqlite3_temp_directory);
@@ -3936,8 +3934,24 @@ static int getTempname(int nBuf, char *zBuf){
       return SQLITE_IOERR_NOMEM;
     }
   }
-#endif
-#endif
+#else
+  else{
+    /*
+    ** Compiled without ANSI support and the current operating system
+    ** is not Windows NT; therefore, just zero the temporary buffer.
+    */
+    memset(zTempPath, 0, SQLITE_WIN32_MAX_PATH+2);
+  }
+#endif /* SQLITE_WIN32_HAS_ANSI */
+#else
+  else{
+    /*
+    ** Compiled for WinRT and the sqlite3_temp_directory is not set;
+    ** therefore, just zero the temporary buffer.
+    */
+    memset(zTempPath, 0, SQLITE_WIN32_MAX_PATH+2);
+  }
+#endif /* !SQLITE_OS_WINRT */
 
   /* Check that the output buffer is large enough for the temporary file 
   ** name. If it is not, return SQLITE_ERROR.
@@ -4089,7 +4103,6 @@ static int winOpen(
   */
   if( !zUtf8Name ){
     assert(isDelete && !isOpenJournal);
-    memset(zTmpname, 0, SQLITE_WIN32_MAX_PATH+2);
     rc = getTempname(SQLITE_WIN32_MAX_PATH+2, zTmpname);
     if( rc!=SQLITE_OK ){
       OSTRACE(("OPEN name=%s, rc=%s", zUtf8Name, sqlite3ErrName(rc)));
