@@ -3866,6 +3866,26 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
 }
 
 /*
+** Return true if we can prove the pE2 will always be true if pE1 is
+** true.  Return false if we cannot complete the proof or if pE2 might
+** be false.  Examples:
+**
+**     pE1: x==5      pE2: x>0              Result: true
+**     pE1: x>0       pE2: x==5             Result: false
+**     pE1: x!=123    pE2: x IS NOT NULL    Result: true
+**
+** When comparing TK_COLUMN nodes between pE1 and pE2, if pE2 has
+** Expr.iTable<0 then assume a table number given by iTab.
+**
+** When in doubt, return false.  Returning true might give a performance
+** improvement.  Returning false might cause a performance reduction, but
+** it will always give the correct answer and is hence always safe.
+*/
+int sqlite3ExprImpliesExpr(Expr *pE1, Expr *pE2, int iTab){
+  return 0;  /* FIXME: this needs to be worked out */
+}
+
+/*
 ** An instance of the following structure is used by the tree walker
 ** to count references to table columns in the arguments of an 
 ** aggregate function, in order to implement the

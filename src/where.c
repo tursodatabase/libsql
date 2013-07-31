@@ -4503,6 +4503,17 @@ static Bitmask columnsInIndex(Index *pIdx){
   return m;
 }
 
+/* Check to see if a partial index with pPartIndexWhere can be used
+** in the current query.  Return true if it can be and false if not.
+*/
+static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
+  int i;
+  WhereTerm *pTerm;
+  for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    if( sqlite3ExprImpliesExpr(pTerm->pExpr, pWhere, iTab) ) return 1;
+  }
+  return 0;
+}
 
 /*
 ** Add all WhereLoop objects for a single table of the join where the table
@@ -4526,11 +4537,13 @@ static int whereLoopAddBtree(
   int b;                      /* A boolean value */
   WhereCost rSize;            /* number of rows in the table */
   WhereCost rLogSize;         /* Logarithm of the number of rows in the table */
+  WhereClause *pWC;           /* The parsed WHERE clause */
   
   pNew = pBuilder->pNew;
   pWInfo = pBuilder->pWInfo;
   pTabList = pWInfo->pTabList;
   pSrc = pTabList->a + pNew->iTab;
+  pWC = pBuilder->pWC;
   assert( !IsVirtual(pSrc->pTab) );
 
   if( pSrc->pIndex ){
@@ -4570,7 +4583,6 @@ static int whereLoopAddBtree(
    && !pSrc->isCorrelated
   ){
     /* Generate auto-index WhereLoops */
-    WhereClause *pWC = pBuilder->pWC;
     WhereTerm *pTerm;
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
@@ -4600,6 +4612,10 @@ static int whereLoopAddBtree(
   /* Loop over all indices
   */
   for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
+    if( pProbe->pPartIdxWhere!=0
+     && !whereUsablePartialIndex(pNew->iTab, pWC, pProbe->pPartIdxWhere) ){
+      continue;  /* Partial index inappropriate for this query */
+    }
     pNew->u.btree.nEq = 0;
     pNew->nLTerm = 0;
     pNew->iSortIdx = 0;
