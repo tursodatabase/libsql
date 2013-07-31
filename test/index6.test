@@ -1,0 +1,33 @@
+# 2013-07-31
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test cases for partial indices
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+load_static_extension db wholenumber;
+do_test index6-1.1 {
+  execsql {
+    CREATE TABLE t1(a,b);
+    CREATE INDEX t1a ON t1(a) WHERE a IS NOT NULL;
+    CREATE INDEX t1b ON t1(b) WHERE b>10;
+    CREATE VIRTUAL TABLE nums USING wholenumber;
+    INSERT INTO t1(a,b)
+       SELECT CASE WHEN value%3!=0 THEN value END, value
+         FROM nums WHERE value<=20;
+    SELECT count(a), count(b) FROM t1;
+  }
+} {14 20}
+
+finish_test
