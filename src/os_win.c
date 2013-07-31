@@ -3905,7 +3905,10 @@ static int getTempname(int nBuf, char *zBuf){
   else if( isNT() ){
     char *zMulti;
     WCHAR zWidePath[MAX_PATH];
-    osGetTempPathW(MAX_PATH-30, zWidePath);
+    if( osGetTempPathW(MAX_PATH-30, zWidePath)==0 ){
+      OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
+      return SQLITE_IOERR_GETTEMPPATH;
+    }
     zMulti = unicodeToUtf8(zWidePath);
     if( zMulti ){
       sqlite3_snprintf(SQLITE_WIN32_MAX_PATH-30, zTempPath, "%s", zMulti);
@@ -3919,7 +3922,10 @@ static int getTempname(int nBuf, char *zBuf){
   else{
     char *zUtf8;
     char zMbcsPath[SQLITE_WIN32_MAX_PATH];
-    osGetTempPathA(SQLITE_WIN32_MAX_PATH-30, zMbcsPath);
+    if( osGetTempPathA(SQLITE_WIN32_MAX_PATH-30, zMbcsPath)==0 ){
+      OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
+      return SQLITE_IOERR_GETTEMPPATH;
+    }
     zUtf8 = sqlite3_win32_mbcs_to_utf8(zMbcsPath);
     if( zUtf8 ){
       sqlite3_snprintf(SQLITE_WIN32_MAX_PATH-30, zTempPath, "%s", zUtf8);

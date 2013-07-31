@@ -1,5 +1,5 @@
-C The\sMAX_PATH\sconstant\sin\swindows\sis\smeasured\sin\scharacters,\sso\smultiple\sby\s3\nto\sget\sthe\snumber\sof\sbytes\sassuming\sworst-case\sUTF8\spathnames.
-D 2013-07-31T19:55:25.865
+C Use\sa\snew\serror\scode\sto\srepresent\sa\sfailure\sto\sget\sthe\sconfigured\stemporary\sdirectory\son\sWindows.
+D 2013-07-31T22:27:16.062
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 9286e1f5660ff32bd53a9a64ab09ed9af2542b5d
+F src/main.c b2592b4119f9b34d20861d1a73a44f07d061508c
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
-F src/os_win.c d0e9774f6dd3975cda31594049ab8216c2d6978b
+F src/os_win.c aead0182637b77f6b86e2326ee6bce9b1add0637
 F src/pager.c 5d2f7475260a8588f9c441bb309d2b7eaa7ded3b
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
 F src/parse.y 9acfcc83ddbf0cf82f0ed9582ccf0ad6c366ff37
@@ -218,7 +218,7 @@ F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
 F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
-F src/sqlite.h.in d6a7523d6795317aac574fccc67d9df25253771c
+F src/sqlite.h.in bf3ee0bd13583cc6d09f9649bf26a183b0cc10a6
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 89b52c053ebafa76f03bab4f0c8ee1e390eb7489
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P eb6d4278b8516e0571269049d1eaa55066f51b1a
-R d0484fd8b656e8cf7cd4ab3eed43ed22
-U drh
-Z 0de91cecc0135d1602cf04652b34abe4
+P bb06e1579022c24546ac5117a99846b3c37ef59b
+R cd86f9af8b68f6621597cefa17e93ed5
+U mistachkin
+Z c86d88dac629a8d9fc1cbd59a4805ab2
