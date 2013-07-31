@@ -523,6 +523,39 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
 }
 
 /*
+** Report an error that an expression is not valid for a partial index WHERE
+** clause.
+*/
+static void notValidPartIdxWhere(
+  Parse *pParse,       /* Leave error message here */
+  NameContext *pNC,    /* The name context */
+  const char *zMsg     /* Type of error */
+){
+  if( (pNC->ncFlags & NC_PartIdx)!=0 ){
+    sqlite3ErrorMsg(pParse, "%s prohibited in partial index WHERE clauses",
+                    zMsg);
+  }
+}
+
+#ifndef SQLITE_OMIT_CHECK
+/*
+** Report an error that an expression is not valid for a CHECK constraint.
+*/
+static void notValidCheckConstraint(
+  Parse *pParse,       /* Leave error message here */
+  NameContext *pNC,    /* The name context */
+  const char *zMsg     /* Type of error */
+){
+  if( (pNC->ncFlags & NC_IsCheck)!=0 ){
+    sqlite3ErrorMsg(pParse,"%s prohibited in CHECK constraints", zMsg);
+  }
+}
+#else
+# define notValidCheckConstraint(P,N,M)
+#endif
+
+
+/*
 ** This routine is callback for sqlite3WalkExpr().
 **
 ** Resolve symbolic names into TK_COLUMN operators for the current
@@ -621,6 +654,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 
       testcase( pExpr->op==TK_CONST_FUNC );
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+      notValidPartIdxWhere(pParse, pNC, "functions");
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
@@ -686,11 +720,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_IN );
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         int nRef = pNC->nRef;
-#ifndef SQLITE_OMIT_CHECK
-        if( (pNC->ncFlags & NC_IsCheck)!=0 ){
-          sqlite3ErrorMsg(pParse,"subqueries prohibited in CHECK constraints");
-        }
-#endif
+        notValidCheckConstraint(pParse, pNC, "subqueries");
+        notValidPartIdxWhere(pParse, pNC, "subqueries");
         sqlite3WalkSelect(pWalker, pExpr->x.pSelect);
         assert( pNC->nRef>=nRef );
         if( nRef!=pNC->nRef ){
@@ -699,14 +730,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       }
       break;
     }
-#ifndef SQLITE_OMIT_CHECK
     case TK_VARIABLE: {
-      if( (pNC->ncFlags & NC_IsCheck)!=0 ){
-        sqlite3ErrorMsg(pParse,"parameters prohibited in CHECK constraints");
-      }
+      notValidCheckConstraint(pParse, pNC, "parameters");
+      notValidPartIdxWhere(pParse, pNC, "parameters");
       break;
     }
-#endif
   }
   return (pParse->nErr || pParse->db->mallocFailed) ? WRC_Abort : WRC_Continue;
 }
@@ -1330,4 +1358,46 @@ void sqlite3ResolveSelectNames(
   w.pParse = pParse;
   w.u.pNC = pOuterNC;
   sqlite3WalkSelect(&w, p);
+}
+
+/*
+** Resolve names in expressions that can only reference a single table:
+**
+**    *   CHECK constraints
+**    *   WHERE clauses on partial indices
+**
+** The Expr.iTable value for Expr.op==TK_COLUMN nodes of the expression
+** is set to -1 and the Expr.iColumn value is set to the column number.
+**
+** Any errors cause an error message to be set in pParse.
+*/
+void sqlite3ResolveSelfReference(
+  Parse *pParse,      /* Parsing context */
+  Table *pTab,        /* The table being referenced */
+  int type,           /* NC_IsCheck or NC_PartIdx */
+  Expr *pExpr,        /* Expression to resolve.  May be NULL. */
+  ExprList *pList     /* Expression list to resolve.  May be NUL. */
+){
+  SrcList sSrc;                   /* Fake SrcList for pParse->pNewTable */
+  NameContext sNC;                /* Name context for pParse->pNewTable */
+  int i;                          /* Loop counter */
+
+  assert( type==NC_IsCheck || type==NC_PartIdx );
+  memset(&sNC, 0, sizeof(sNC));
+  memset(&sSrc, 0, sizeof(sSrc));
+  sSrc.nSrc = 1;
+  sSrc.a[0].zName = pTab->zName;
+  sSrc.a[0].pTab = pTab;
+  sSrc.a[0].iCursor = -1;
+  sNC.pParse = pParse;
+  sNC.pSrcList = &sSrc;
+  sNC.ncFlags = type;
+  if( sqlite3ResolveExprNames(&sNC, pExpr) ) return;
+  if( pList ){
+    for(i=0; i<pList->nExpr; i++){
+      if( sqlite3ResolveExprNames(&sNC, pList->a[i].pExpr) ){
+        return;
+      }
+    }
+  }
 }

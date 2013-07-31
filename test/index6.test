@@ -30,4 +30,31 @@ do_test index6-1.1 {
   }
 } {14 20}
 
+do_test index6-1.2 {
+  catchsql {
+    CREATE INDEX bad1 ON t1(a,b) WHERE c IS NOT NULL;
+  }
+} {1 {no such column: c}}
+do_test index6-1.3 {
+  catchsql {
+    CREATE INDEX bad1 ON t1(a,b) WHERE EXISTS(SELECT * FROM t1);
+  }
+} {1 {subqueries prohibited in partial index WHERE clauses}}
+do_test index6-1.4 {
+  catchsql {
+    CREATE INDEX bad1 ON t1(a,b) WHERE a!=?1;
+  }
+} {1 {parameters prohibited in partial index WHERE clauses}}
+do_test index6-1.5 {
+  catchsql {
+    CREATE INDEX bad1 ON t1(a,b) WHERE a!=random();
+  }
+} {1 {functions prohibited in partial index WHERE clauses}}
+do_test index6-1.6 {
+  catchsql {
+    CREATE INDEX bad1 ON t1(a,b) WHERE a NOT LIKE 'abc%';
+  }
+} {1 {functions prohibited in partial index WHERE clauses}}
+
+
 finish_test

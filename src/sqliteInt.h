@@ -2019,6 +2019,7 @@ struct NameContext {
 #define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
 #define NC_AsMaybe   0x10    /* Resolve to AS terms of the result set only
                              ** if no other resolution is available */
+#define NC_PartIdx   0x20    /* True if resolving a partial index WHERE */
 
 /*
 ** An instance of the following structure contains all information
@@ -3063,6 +3064,7 @@ void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
+void sqlite3ResolveSelfReference(Parse*,Table*,int,Expr*,ExprList*);
 int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
