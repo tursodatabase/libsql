@@ -1,5 +1,5 @@
-C Add\stest\scase\sfor\sthe\sproblem\sfixed\sby\s[127a5b776d].
-D 2013-08-01T17:43:35.105
+C Make\ssure\ssigned\sinteger\soverflow\sdoes\snot\scause\sa\ssegfault\swhile\sattempting\nto\sread\sa\scorrupt\sdatabase\swhere\sthe\sheader\ssize\svarint\son\sa\srecord\sis\slarger\nthan\sthe\smaximum\s32-bit\ssigned\sinteger.
+D 2013-08-01T19:17:39.891
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c d6048a720c197db2f0e7d618e918bd2e2eff0322
 F src/vdbe.h f380af2a7fab32ba8a8b05bf042497636afec66d
 F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
-F src/vdbeaux.c c01594ecf5a78ef41a721f3465152bb91883a942
+F src/vdbeaux.c ca0c9d4b5104a3b4e4cf3c557d661938f15e68ac
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -395,6 +395,7 @@ F test/corruptC.test 62a767fe64acb1975f58cc6171192839c783edbb
 F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
 F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
 F test/corruptF.test 1c7b6f77cf3f237fb7fbb5b61d6c921fd4c7b993
+F test/corruptG.test 01d94538a0666808dae1b4010f24c25becee13af
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1103,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 127a5b776d16e1e23c5b3d454f6aaea67f1ded3a
-R 55095a68bf1e6bed6cc6b3606b16b8da
-U dan
-Z 4a8fdbd96b68de3d602c8482b890b1d9
+P 65816718b59b286c11d939235a23c7325f25594b
+R 40beea5b8511a37f010f0f7e67aa8773
+U drh
+Z a89405d573d1d6b7d75b24ed5c21bc2d

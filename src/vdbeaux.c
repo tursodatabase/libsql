@@ -2990,7 +2990,7 @@ int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1, /* Left key */
   UnpackedRecord *pPKey2        /* Right key */
 ){
-  int d1;            /* Offset into aKey[] of next data element */
+  u32 d1;            /* Offset into aKey[] of next data element */
   u32 idx1;          /* Offset into aKey[] of next header element */
   u32 szHdr1;        /* Number of bytes in header */
   int i = 0;
@@ -3024,7 +3024,7 @@ int sqlite3VdbeRecordCompare(
 
     /* Read the serial types for the next element in each key. */
     idx1 += getVarint32( aKey1+idx1, serial_type1 );
-    if( d1>=nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
+    if( d1>=(u32)nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
 
     /* Extract the values to be compared.
     */
