@@ -591,11 +591,14 @@ void sqlite3GenerateRowIndexDelete(
   int i;
   Index *pIdx;
   int r1;
+  int iPartIdxLabel;
+  Vdbe *v = pParse->pVdbe;
 
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aRegIdx!=0 && aRegIdx[i-1]==0 ) continue;
-    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0, 0);
-    sqlite3VdbeAddOp3(pParse->pVdbe, OP_IdxDelete, iCur+i, r1,pIdx->nColumn+1);
+    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0, 0, &iPartIdxLabel);
+    sqlite3VdbeAddOp3(v, OP_IdxDelete, iCur+i, r1, pIdx->nColumn+1);
+    sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   }
 }
 
@@ -609,13 +612,21 @@ void sqlite3GenerateRowIndexDelete(
 ** registers that holds the elements of the index key.  The
 ** block of registers has already been deallocated by the time
 ** this routine returns.
+**
+** If *piPartIdxLabel is not NULL, fill it in with a label and jump
+** to that label if pIdx is a partial index that should be skipped.
+** A partial index should be skipped if its WHERE clause evaluates
+** to false or null.  If pIdx is not a partial index, *piPartIdxLabel
+** will be set to zero which is an empty label that is ignored by
+** sqlite3VdbeResolveLabel().
 */
 int sqlite3GenerateIndexKey(
-  Parse *pParse,     /* Parsing context */
-  Index *pIdx,       /* The index for which to generate a key */
-  int iCur,          /* Cursor number for the pIdx->pTable table */
-  int regOut,        /* Write the new index key to this register */
-  int doMakeRec      /* Run the OP_MakeRecord instruction if true */
+  Parse *pParse,       /* Parsing context */
+  Index *pIdx,         /* The index for which to generate a key */
+  int iCur,            /* Cursor number for the pIdx->pTable table */
+  int regOut,          /* Write the new index key to this register */
+  int doMakeRec,       /* Run the OP_MakeRecord instruction if true */
+  int *piPartIdxLabel  /* OUT: Jump to this label to skip partial index */
 ){
   Vdbe *v = pParse->pVdbe;
   int j;
@@ -623,6 +634,16 @@ int sqlite3GenerateIndexKey(
   int regBase;
   int nCol;
 
+  if( piPartIdxLabel ){
+    if( pIdx->pPartIdxWhere ){
+      *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
+      pParse->iPartIdxTab = iCur;
+      sqlite3ExprIfFalse(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
+                         SQLITE_JUMPIFNULL);
+    }else{
+      *piPartIdxLabel = 0;
+    }
+  }
   nCol = pIdx->nColumn;
   regBase = sqlite3GetTempRange(pParse, nCol+1);
   sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regBase+nCol);

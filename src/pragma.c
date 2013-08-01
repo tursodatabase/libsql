@@ -1432,7 +1432,7 @@ void sqlite3Pragma(
         loopTop = sqlite3VdbeAddOp2(v, OP_Rewind, 1, 0);
         sqlite3VdbeAddOp2(v, OP_AddImm, 2, 1);   /* increment entry count */
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-          int jmp2;
+          int jmp2, jmp3;
           int r1;
           static const VdbeOpList idxErr[] = {
             { OP_AddImm,      1, -1,  0},
@@ -1447,7 +1447,7 @@ void sqlite3Pragma(
             { OP_IfPos,       1,  0,  0},    /* 9 */
             { OP_Halt,        0,  0,  0},
           };
-          r1 = sqlite3GenerateIndexKey(pParse, pIdx, 1, 3, 0);
+          r1 = sqlite3GenerateIndexKey(pParse, pIdx, 1, 3, 0, &jmp3);
           jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, j+2, 0, r1, pIdx->nColumn+1);
           addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);
           sqlite3VdbeChangeP4(v, addr+1, "rowid ", P4_STATIC);
@@ -1455,6 +1455,7 @@ void sqlite3Pragma(
           sqlite3VdbeChangeP4(v, addr+4, pIdx->zName, P4_TRANSIENT);
           sqlite3VdbeJumpHere(v, addr+9);
           sqlite3VdbeJumpHere(v, jmp2);
+          sqlite3VdbeResolveLabel(v, jmp3);
         }
         sqlite3VdbeAddOp2(v, OP_Next, 1, loopTop+1);
         sqlite3VdbeJumpHere(v, loopTop);

@@ -1379,8 +1379,18 @@ void sqlite3GenerateConstraintChecks(
   for(iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
     int regIdx;
     int regR;
+    int addrSkipRow = 0;
 
     if( aRegIdx[iCur]==0 ) continue;  /* Skip unused indices */
+
+    if( pIdx->pPartIdxWhere ){
+      sqlite3VdbeAddOp2(v, OP_Null, 0, aRegIdx[iCur]);
+      addrSkipRow = sqlite3VdbeMakeLabel(v);
+      pParse->ckBase = regData;
+      sqlite3ExprIfFalse(pParse, pIdx->pPartIdxWhere, addrSkipRow,
+                         SQLITE_JUMPIFNULL);
+      pParse->ckBase = 0;
+    }
 
     /* Create a key for accessing the index entry */
     regIdx = sqlite3GetTempRange(pParse, pIdx->nColumn+1);
@@ -1470,6 +1480,7 @@ void sqlite3GenerateConstraintChecks(
       }
     }
     sqlite3VdbeJumpHere(v, j3);
+    sqlite3VdbeResolveLabel(v, addrSkipRow);
     sqlite3ReleaseTempReg(pParse, regR);
   }
   
@@ -1499,7 +1510,6 @@ void sqlite3CompleteInsertion(
 ){
   int i;
   Vdbe *v;
-  int nIdx;
   Index *pIdx;
   u8 pik_flags;
   int regData;
@@ -1508,9 +1518,11 @@ void sqlite3CompleteInsertion(
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
-  for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){}
-  for(i=nIdx-1; i>=0; i--){
+  for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( aRegIdx[i]==0 ) continue;
+    if( pIdx->pPartIdxWhere ){
+      sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
+    }
     sqlite3VdbeAddOp2(v, OP_IdxInsert, baseCur+i+1, aRegIdx[i]);
     if( useSeekResult ){
       sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
@@ -1612,6 +1624,7 @@ static int xferCompatibleCollation(const char *z1, const char *z2){
 **    *   The same DESC and ASC markings occurs on all columns
 **    *   The same onError processing (OE_Abort, OE_Ignore, etc)
 **    *   The same collating sequence on each column
+**    *   The index has the exact same WHERE clause
 */
 static int xferCompatibleIndex(Index *pDest, Index *pSrc){
   int i;
@@ -1633,6 +1646,9 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
     if( !xferCompatibleCollation(pSrc->azColl[i],pDest->azColl[i]) ){
       return 0;   /* Different collating sequences */
     }
+  }
+  if( sqlite3ExprCompare(pSrc->pPartIdxWhere, pDest->pPartIdxWhere) ){
+    return 0;     /* Different WHERE clauses */
   }
 
   /* If no test above fails then the indices must be compatible */

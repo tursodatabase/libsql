@@ -250,8 +250,8 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
 void sqlite3VdbeResolveLabel(Vdbe *p, int x){
   int j = -1-x;
   assert( p->magic==VDBE_MAGIC_INIT );
-  assert( j>=0 && j<p->nLabel );
-  if( p->aLabel ){
+  assert( j<p->nLabel );
+  if( j>=0 && p->aLabel ){
     p->aLabel[j] = p->nOp;
   }
 }
