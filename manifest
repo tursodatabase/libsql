@@ -1,5 +1,5 @@
-C Test\scases\sand\sbug\sfixes\sfor\sthe\spartial\sindex\slogic.
-D 2013-08-01T03:36:59.964
+C Fix\sthe\sANALYZE\scommand\sto\swork\swith\spartial\sindices.
+D 2013-08-01T04:39:17.756
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
-F src/analyze.c 27e541b9b5b48b41eb899b22a49ff42384899151
+F src/analyze.c a33fcb0b3a399d966951feb9f32115106b3ecc2e
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -589,7 +589,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
-F test/index6.test 7030e7b77a0809eea33b2a1865379bb8010fba72
+F test/index6.test 9db2067dc06bfa4f664193d860297d50775d31e7
 F test/indexedby.test 0e959308707c808515c3a51363f7a9835027108c
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1104,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fb9044d15ad4fd6ae4a38858c0c0e6fe9d4faa25
-R 4044286eb4e933efbb5ac1ee2d79d687
+P 6b73ae7c123801787c8994113cbeb87ee96ba653
+R 8f1421e98f999d36a1d28b17b8226989
 U drh
-Z 8fdacf32e3d306969cff97932cabfb4b
+Z 2b1246919b9a91b92ae0d1de51d4ce2b

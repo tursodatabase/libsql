@@ -441,6 +441,7 @@ static void analyzeOneTable(
   int endOfLoop;               /* The end of the loop */
   int jZeroRows = -1;          /* Jump from here if number of rows is zero */
   int iDb;                     /* Index of database containing pTab */
+  u8 needTableCnt = 1;         /* True to count the table */
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
   int regStat1 = iMem++;       /* The stat column of sqlite_stat1 */
@@ -500,6 +501,7 @@ static void analyzeOneTable(
     int *aChngAddr;              /* Array of jump instruction addresses */
 
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
+    if( pIdx->pPartIdxWhere==0 ) needTableCnt = 0;
     VdbeNoopComment((v, "Begin analysis of %s", pIdx->zName));
     nCol = pIdx->nColumn;
     aChngAddr = sqlite3DbMallocRaw(db, sizeof(int)*nCol);
@@ -659,9 +661,7 @@ static void analyzeOneTable(
     ** is never possible.
     */
     sqlite3VdbeAddOp2(v, OP_SCopy, iMem, regStat1);
-    if( jZeroRows<0 ){
-      jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, iMem);
-    }
+    jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, iMem);
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp4(v, OP_String8, 0, regTemp, 0, " ", 0);
       sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regStat1, regStat1);
@@ -671,32 +671,31 @@ static void analyzeOneTable(
       sqlite3VdbeAddOp1(v, OP_ToInt, regTemp);
       sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regStat1, regStat1);
     }
+    if( pIdx->pPartIdxWhere!=0 ) sqlite3VdbeJumpHere(v, jZeroRows);
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regRec, "aaa", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regRec, regNewRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
+    if( pIdx->pPartIdxWhere==0 ) sqlite3VdbeJumpHere(v, jZeroRows);
   }
 
-  /* If the table has no indices, create a single sqlite_stat1 entry
-  ** containing NULL as the index name and the row count as the content.
+  /* Create a single sqlite_stat1 entry containing NULL as the index
+  ** name and the row count as the content.
   */
-  if( pTab->pIndex==0 ){
+  if( pOnlyIdx==0 && needTableCnt ){
     sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur, pTab->tnum, iDb);
     VdbeComment((v, "%s", pTab->zName));
     sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regStat1);
     sqlite3VdbeAddOp1(v, OP_Close, iIdxCur);
     jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, regStat1);
-  }else{
+    sqlite3VdbeAddOp2(v, OP_Null, 0, regIdxname);
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regRec, "aaa", 0);
+    sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
+    sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regRec, regNewRowid);
+    sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeJumpHere(v, jZeroRows);
-    jZeroRows = sqlite3VdbeAddOp0(v, OP_Goto);
   }
-  sqlite3VdbeAddOp2(v, OP_Null, 0, regIdxname);
-  sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regRec, "aaa", 0);
-  sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);
-  sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regRec, regNewRowid);
-  sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
   if( pParse->nMem<regRec ) pParse->nMem = regRec;
-  sqlite3VdbeJumpHere(v, jZeroRows);
 }
 
 
@@ -879,8 +878,10 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
       v = v*10 + c - '0';
       z++;
     }
-    if( i==0 ) pTable->nRowEst = v;
-    if( pIndex==0 ) break;
+    if( i==0 && (pIndex==0 || pIndex->pPartIdxWhere==0) ){
+      if( v>0 ) pTable->nRowEst = v;
+      if( pIndex==0 ) break;
+    }
     pIndex->aiRowEst[i] = v;
     if( *z==' ' ) z++;
     if( strcmp(z, "unordered")==0 ){

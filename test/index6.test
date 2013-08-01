@@ -19,12 +19,12 @@ source $testdir/tester.tcl
 load_static_extension db wholenumber;
 do_test index6-1.1 {
   execsql {
-    CREATE TABLE t1(a,b);
+    CREATE TABLE t1(a,b,c);
     CREATE INDEX t1a ON t1(a) WHERE a IS NOT NULL;
     CREATE INDEX t1b ON t1(b) WHERE b>10;
     CREATE VIRTUAL TABLE nums USING wholenumber;
-    INSERT INTO t1(a,b)
-       SELECT CASE WHEN value%3!=0 THEN value END, value
+    INSERT INTO t1(a,b,c)
+       SELECT CASE WHEN value%3!=0 THEN value END, value, value
          FROM nums WHERE value<=20;
     SELECT count(a), count(b) FROM t1;
   }
@@ -32,9 +32,9 @@ do_test index6-1.1 {
 
 do_test index6-1.2 {
   catchsql {
-    CREATE INDEX bad1 ON t1(a,b) WHERE c IS NOT NULL;
+    CREATE INDEX bad1 ON t1(a,b) WHERE x IS NOT NULL;
   }
-} {1 {no such column: c}}
+} {1 {no such column: x}}
 do_test index6-1.3 {
   catchsql {
     CREATE INDEX bad1 ON t1(a,b) WHERE EXISTS(SELECT * FROM t1);
@@ -62,7 +62,7 @@ do_test index6-1.10 {
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
     PRAGMA integrity_check;
   }
-} {t1a {14 1} t1b {10 1} ok}
+} {{} 20 t1a {14 1} t1b {10 1} ok}
 
 do_test index6-1.11 {
   execsql {
@@ -71,7 +71,7 @@ do_test index6-1.11 {
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
     PRAGMA integrity_check;
   }
-} {t1a {20 1} t1b {10 1} ok}
+} {{} 20 t1a {20 1} t1b {10 1} ok}
 
 do_test index6-1.11 {
   execsql {
@@ -81,7 +81,7 @@ do_test index6-1.11 {
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
     PRAGMA integrity_check;
   }
-} {t1a {6 1} t1b {20 1} ok}
+} {{} 20 t1a {6 1} t1b {20 1} ok}
 
 do_test index6-1.12 {
   execsql {
@@ -91,7 +91,7 @@ do_test index6-1.12 {
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
     PRAGMA integrity_check;
   }
-} {t1a {13 1} t1b {10 1} ok}
+} {{} 20 t1a {13 1} t1b {10 1} ok}
 
 do_test index6-1.13 {
   execsql {
@@ -100,7 +100,7 @@ do_test index6-1.13 {
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
     PRAGMA integrity_check;
   }
-} {t1a {10 1} t1b {8 1} ok}
+} {{} 15 t1a {10 1} t1b {8 1} ok}
 
 do_test index6-1.14 {
   execsql {
@@ -109,6 +109,15 @@ do_test index6-1.14 {
     SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
     PRAGMA integrity_check;
   }
-} {t1a {10 1} t1b {8 1} ok}
+} {{} 15 t1a {10 1} t1b {8 1} ok}
+
+do_test index6-1.15 {
+  execsql {
+    CREATE INDEX t1c ON t1(c);
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+    PRAGMA integrity_check;
+  }
+} {t1a {10 1} t1b {8 1} t1c {15 1} ok}
 
 finish_test
