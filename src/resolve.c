@@ -825,7 +825,7 @@ static int resolveOrderByTermToExprList(
   ** result-set entry.
   */
   for(i=0; i<pEList->nExpr; i++){
-    if( sqlite3ExprCompare(pEList->a[i].pExpr, pE)<2 ){
+    if( sqlite3ExprCompare(pEList->a[i].pExpr, pE, -1)<2 ){
       return i+1;
     }
   }
@@ -1053,7 +1053,7 @@ static int resolveOrderGroupBy(
       return 1;
     }
     for(j=0; j<pSelect->pEList->nExpr; j++){
-      if( sqlite3ExprCompare(pE, pSelect->pEList->a[j].pExpr)==0 ){
+      if( sqlite3ExprCompare(pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
         pItem->iOrderByCol = j+1;
       }
     }
