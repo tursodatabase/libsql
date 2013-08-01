@@ -4420,7 +4420,7 @@ static int whereLoopAddBtreeIndex(
       pNew->nOut = saved_nOut>rDiv+10 ? saved_nOut - rDiv : 10;
     }
 #ifdef SQLITE_ENABLE_STAT3
-    if( pNew->u.btree.nEq==1 && pProbe->nSample
+    if( pNew->u.btree.nEq==1 && pProbe->nSample && saved_nEq==0
      &&  OptimizationEnabled(db, SQLITE_Stat3) ){
       tRowcnt nOut = 0;
       if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
