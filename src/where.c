@@ -4420,7 +4420,7 @@ static int whereLoopAddBtreeIndex(
       pNew->nOut = saved_nOut>rDiv+10 ? saved_nOut - rDiv : 10;
     }
 #ifdef SQLITE_ENABLE_STAT3
-    if( pNew->u.btree.nEq==1 && pProbe->nSample && saved_nEq==0
+    if( pNew->u.btree.nEq==1 && pProbe->nSample
      &&  OptimizationEnabled(db, SQLITE_Stat3) ){
       tRowcnt nOut = 0;
       if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
@@ -4431,7 +4431,8 @@ static int whereLoopAddBtreeIndex(
              &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
         rc = whereInScanEst(pParse, pProbe, pTerm->pExpr->x.pList, &nOut);
       }
-      if( rc==SQLITE_OK ) pNew->nOut = whereCost(nOut);
+      assert( nOut==0 || rc==SQLITE_OK );
+      if( nOut ) pNew->nOut = whereCost(nOut);
     }
 #endif
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){

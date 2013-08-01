@@ -1,5 +1,5 @@
-C Avoid\susing\sleft-most\scolumn\sSTAT3\ssamples\sif\sthe\sleft-most\scolumn\shas\san\nequality\sconstrain\sand\sthere\sare\sinequality\sconstraints\son\sthe\ssecond\scolumn.
-D 2013-08-01T16:52:50.320
+C An\simproved\smethod\sfor\savoiding\sthe\suse\sof\sthe\sSTAT3\ssamples\sto\scompute\nthe\sestimated\snumber\sof\soutputs\swhen\sthe\sleft-most\sindex\sis\sequality\nconstrained.\s\sThis\scheck-in\sundoes\sthe\sprevious\sfix\sand\sapplies\sa\snew\sone.
+D 2013-08-01T17:21:26.855
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c fe1d056ffa4638fcdc22b4da1315b0ad98c3e872
+F src/where.c 38264830c393b0838c18b1f3dfc6c01471d1f70a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 136fc2931b156f91cdd76a7a009298cdf09d826a
-R 548b934e9d909f49470ebc18af6d5c19
+P 31b4e63b3c30fcad22340d84d6076a306f26b49e
+R 492afb1fab0455fbbeddb05926432910
 U drh
-Z e690d571856325e865e41cb4d68cbd8b
+Z f007f69644258ace0d976c8e46bfead9
