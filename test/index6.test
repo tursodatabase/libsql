@@ -212,4 +212,9 @@ do_execsql_test index6-3.4 {
 } {162}
 integrity_check index6-3.5
 
+do_execsql_test index6-4.0 {
+  VACUUM;
+  PRAGMA integrity_check;
+} {ok}
+
 finish_test

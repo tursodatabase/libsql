@@ -1,5 +1,5 @@
-C More\stest\scases\sand\scorresponding\sbug\sfixes.
-D 2013-08-01T15:09:57.772
+C Fix\sbug\sin\sthe\slogic\sthat\sdetermines\sthe\send\sof\sa\sCREATE\sINDEX\sstatement.\nAdded\sa\sVACUUM\stest\scase\sthat\sexposed\sthe\sbug.
+D 2013-08-01T16:02:40.113
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 3f7bbfd72efb1cbf6a49515c376a031767ec930a
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c 4be8975927a7871223311060cf13f5eec28ba3be
+F src/build.c 7fe3c81e502f899e280446cd053a38dbe15d12a0
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
@@ -589,7 +589,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
-F test/index6.test 203633042a116d98932f3c750c5d2bb60de7bd56
+F test/index6.test 3967161678dd5268e6ad1e263cc82e2b8050d055
 F test/indexedby.test 0e959308707c808515c3a51363f7a9835027108c
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1104,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8e07aa2ad5579aeb82174ce5bd432ddb9c058bc1
-R b61a938ce818e9ac097fb2a064b3215f
+P 0c8cfdfae215c95cf167f404a1d346690b28e972
+R 7829f40a29ab8d32821ed080da801961
 U drh
-Z 381062f7cdfdb23ad88f9994e93f96ef
+Z d181891086829543aa75dfb2ba9cf461
