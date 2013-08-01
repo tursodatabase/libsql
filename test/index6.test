@@ -56,5 +56,59 @@ do_test index6-1.6 {
   }
 } {1 {functions prohibited in partial index WHERE clauses}}
 
+do_test index6-1.10 {
+  execsql {
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+    PRAGMA integrity_check;
+  }
+} {t1a {14 1} t1b {10 1} ok}
+
+do_test index6-1.11 {
+  execsql {
+    UPDATE t1 SET a=b;
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+    PRAGMA integrity_check;
+  }
+} {t1a {20 1} t1b {10 1} ok}
+
+do_test index6-1.11 {
+  execsql {
+    UPDATE t1 SET a=NULL WHERE b%3!=0;
+    UPDATE t1 SET b=b+100;
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+    PRAGMA integrity_check;
+  }
+} {t1a {6 1} t1b {20 1} ok}
+
+do_test index6-1.12 {
+  execsql {
+    UPDATE t1 SET a=CASE WHEN b%3!=0 THEN b END;
+    UPDATE t1 SET b=b-100;
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+    PRAGMA integrity_check;
+  }
+} {t1a {13 1} t1b {10 1} ok}
+
+do_test index6-1.13 {
+  execsql {
+    DELETE FROM t1 WHERE b BETWEEN 8 AND 12;
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+    PRAGMA integrity_check;
+  }
+} {t1a {10 1} t1b {8 1} ok}
+
+do_test index6-1.14 {
+  execsql {
+    REINDEX;
+    ANALYZE;
+    SELECT idx, stat FROM sqlite_stat1 ORDER BY idx;
+    PRAGMA integrity_check;
+  }
+} {t1a {10 1} t1b {8 1} ok}
 
 finish_test

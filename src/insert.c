@@ -1411,6 +1411,7 @@ void sqlite3GenerateConstraintChecks(
     onError = pIdx->onError;
     if( onError==OE_None ){ 
       sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
+      sqlite3VdbeResolveLabel(v, addrSkipRow);
       continue;  /* pIdx is not a UNIQUE index */
     }
     if( overrideError!=OE_Default ){

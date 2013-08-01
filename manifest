@@ -1,5 +1,5 @@
-C Add\sthe\slogic\sto\skeep\spartial\sindices\sup\sto\sdate\sthrough\sDML\sstatements\sand\nwhen\snew\spartial\sindices\sare\screated.\s\sThis\snew\slogic\sis\suntested\sexcept\sto\nverify\sthat\sit\sdoes\snot\sinterfere\swith\sfull\sindices.
-D 2013-08-01T01:14:43.210
+C Test\scases\sand\sbug\sfixes\sfor\sthe\spartial\sindex\slogic.
+D 2013-08-01T03:36:59.964
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 3f7bbfd72efb1cbf6a49515c376a031767ec930a
 F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
-F src/build.c 9422ab5fe5f3ea21575b50c182ebf2081253bed0
+F src/build.c 4be8975927a7871223311060cf13f5eec28ba3be
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
@@ -180,7 +180,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 1e2eb1d4150c57f41dda8719f1b5ccb28abdacc2
+F src/insert.c b09e0aa7513aeda56b595126fb66f0580237f0ff
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -206,11 +206,11 @@ F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
 F src/os_win.c 074cb2b9bca6a1c2bd72acf04666cdc554bfaa9b
 F src/pager.c 5d2f7475260a8588f9c441bb309d2b7eaa7ded3b
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
-F src/parse.y a950b48d4363f44dd98fef8a89fbd48970ebd9ce
+F src/parse.y 599bc6338f3a6a7e1d656669a5667b9d77aea86b
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c d23d07716de96c7c0c2503ec5051a4384c3fb938
-F src/pragma.c f8936b23ce3eeddff4ab868c726d1546a6674418
+F src/pragma.c aca37128da044cc4e41e1cea49a5e3cf6159df43
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -221,7 +221,7 @@ F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
 F src/sqlite.h.in d6a7523d6795317aac574fccc67d9df25253771c
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h b69d7bac8a7fea89f11558f0659324f0551b0868
+F src/sqliteInt.h b39d566354613e781d49ffe8d3ee58baa4f7b4f5
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -589,7 +589,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
-F test/index6.test 11171203a09b543d6181af59c298d2429ba762e2
+F test/index6.test 7030e7b77a0809eea33b2a1865379bb8010fba72
 F test/indexedby.test 0e959308707c808515c3a51363f7a9835027108c
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1104,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8ca3eac111e06a1854f878a74bffe8f20eb47f1b
-R 9dc930e0b891070c4f237bde08c1f247
+P fb9044d15ad4fd6ae4a38858c0c0e6fe9d4faa25
+R 4044286eb4e933efbb5ac1ee2d79d687
 U drh
-Z dd655b435ca4957c549da40144eccbfa
+Z 8fdacf32e3d306969cff97932cabfb4b
