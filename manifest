@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sbuffer\soverread\sin\ssqlite3VdbeRecordCompare()\swhen\sa\nserial_type\sspecifies\sa\sfield\sthat\sstarts\sin\sbounds\sbut\sis\smuch\stoo\slarge\nfor\sthe\sallocated\sbuffer.\s\sMostly\sharmless.\s\sThe\soverread\sis\sunlikely\sto\ngo\smore\sthan\sone\sor\stwo\sbytes\spast\sthe\send\sof\sthe\sbuffer.
-D 2013-08-01T20:26:04.768
+C Fix\san\sincorrect\sexpected\sresult\sin\sa\stest\scase\sin\scorruptG.test.
+D 2013-08-01T22:26:56.329
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -395,7 +395,7 @@ F test/corruptC.test 62a767fe64acb1975f58cc6171192839c783edbb
 F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
 F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
 F test/corruptF.test 1c7b6f77cf3f237fb7fbb5b61d6c921fd4c7b993
-F test/corruptG.test 3804cb1b1b66ca82dc809dc80e3957dc7e0111e8
+F test/corruptG.test d18ee5169e10a76bccb7b115e551bc31087a525e
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1104,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c3baca99f4580652afb2c3f73036ab83796a1557
-R fcb797895b127e11a00659cd0bcac3ee
+P e436b2f4e5c5e6b2f70e65332c0c7d618e2ef20a
+R b6c71bf72fc88457d8239caf7a219b2b
 U drh
-Z f701ece092c0412f4414d12aeebc6620
+Z d61b007331cedb7cbca3d1493ff2bd3f
