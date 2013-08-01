@@ -1400,7 +1400,7 @@ void sqlite3Pragma(
       }
 
       /* Make sure sufficient number of registers have been allocated */
-      pParse->nMem = MAX( pParse->nMem, cnt+4 );
+      pParse->nMem = MAX( pParse->nMem, cnt+7 );
 
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
@@ -1425,6 +1425,7 @@ void sqlite3Pragma(
         addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);  /* Stop if out of errors */
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
+        sqlite3ExprCacheClear(pParse);
         sqlite3OpenTableAndIndices(pParse, pTab, 1, OP_OpenRead);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           sqlite3VdbeAddOp2(v, OP_Integer, 0, 7+j); /* index entries counter */

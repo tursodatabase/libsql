@@ -3801,6 +3801,9 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 ** If any subelement of pB has Expr.iTable==(-1) then it is allowed
 ** to compare equal to an equivalent element in pA with Expr.iTable==iTab.
 **
+** The pA side might be using TK_REGISTER.  If that is the case and pB is
+** not using TK_REGISTER but is otherwise equivalent, then still return 0.
+**
 ** Sometimes this routine will return 2 even if the two expressions
 ** really are equivalent.  If we cannot prove that the expressions are
 ** identical, we return 2 just to be safe.  So if this routine
@@ -3821,7 +3824,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     return 2;
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( pA->op!=pB->op ){
+  if( pA->op!=pB->op && (pA->op!=TK_REGISTER || pA->op2!=pB->op) ){
     if( pA->op==TK_COLLATE && sqlite3ExprCompare(pA->pLeft, pB, iTab)<2 ){
       return 1;
     }
@@ -3834,7 +3837,9 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
   if( sqlite3ExprCompare(pA->pRight, pB->pRight, iTab) ) return 2;
   if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
   if( pA->iColumn!=pB->iColumn ) return 2;
-  if( pA->iTable!=pB->iTable && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
+  if( pA->iTable!=pB->iTable 
+   && pA->op!=TK_REGISTER
+   && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
   if( ExprHasProperty(pA, EP_IntValue) ){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
       return 2;

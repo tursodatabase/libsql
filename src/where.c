@@ -5556,7 +5556,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==whereCost(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      if( pIdx->onError==OE_None ) continue;
+      if( pIdx->onError==OE_None || pIdx->pPartIdxWhere!=0 ) continue;
       for(j=0; j<pIdx->nColumn; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
