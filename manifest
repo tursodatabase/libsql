@@ -1,5 +1,5 @@
-C An\simproved\smethod\sfor\savoiding\sthe\suse\sof\sthe\sSTAT3\ssamples\sto\scompute\nthe\sestimated\snumber\sof\soutputs\swhen\sthe\sleft-most\sindex\sis\sequality\nconstrained.\s\sThis\scheck-in\sundoes\sthe\sprevious\sfix\sand\sapplies\sa\snew\sone.
-D 2013-08-01T17:21:26.855
+C Add\stest\scase\sfor\sthe\sproblem\sfixed\sby\s[127a5b776d].
+D 2013-08-01T17:43:35.105
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -302,7 +302,7 @@ F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test b2debc14d8cbe4c1d12ccd6a41eef88a8c1f15d5
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test f8ab7d15858b4093b06caf5e57e2a5ff7104bdae
-F test/analyze3.test 69863b446539f8849a996c2aa0b50461c9cecea4
+F test/analyze3.test 53cfd07625d110e70b92b57a6ff656ea844dfbee
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 3e57f192307be931f9ab2f6ff456f9063358ac77
 F test/analyze6.test cdbf9887d40ab41301f570fe85c6e1525dd3b1c9
@@ -1103,7 +1103,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 31b4e63b3c30fcad22340d84d6076a306f26b49e
-R 492afb1fab0455fbbeddb05926432910
-U drh
-Z f007f69644258ace0d976c8e46bfead9
+P 127a5b776d16e1e23c5b3d454f6aaea67f1ded3a
+R 55095a68bf1e6bed6cc6b3606b16b8da
+U dan
+Z 4a8fdbd96b68de3d602c8482b890b1d9
