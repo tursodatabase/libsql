@@ -27,7 +27,7 @@ do_not_use_codec
 do_execsql_test 1.1 {
   PRAGMA page_size=512;
   CREATE TABLE t1(a,b,c);
-  INSERT INTO t1(rowid,a,b,c) VALUES(2,'abc','xyz','123');
+  INSERT INTO t1(rowid,a,b,c) VALUES(52,'abc','xyz','123');
   CREATE INDEX t1abc ON t1(a,b,c);
 }
 
@@ -52,5 +52,19 @@ do_test 1.4 {
     SELECT c FROM t1 ORDER BY a;
   }
 } {1 {database disk image is malformed}}
+
+# Corrupt the same file in a slightly different way.  Make the record header
+# sane, but corrupt one of the serial_type value to indicate a huge payload
+# such that the payload begins in allocated space but overflows the buffer.
+#
+db close
+hexio_write test.db [expr {3*512-15}] 0611ffff7f01
+sqlite3 db test.db
+
+do_test 2.1 {
+  catchsql {
+    SELECT rowid FROM t1 WHERE a='bc' and b='xyz123456789';
+  }
+} {0 {}}
 
 finish_test

@@ -3024,7 +3024,7 @@ int sqlite3VdbeRecordCompare(
 
     /* Read the serial types for the next element in each key. */
     idx1 += getVarint32( aKey1+idx1, serial_type1 );
-    if( d1>=(u32)nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
+    if( d1+sqlite3VdbeSerialTypeLen(serial_type1)>(u32)nKey1 ) break;
 
     /* Extract the values to be compared.
     */
