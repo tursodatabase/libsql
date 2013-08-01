@@ -1128,7 +1128,7 @@ static int isLikeOrGlob(
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;
     int iCol = pRight->iColumn;
-    pVal = sqlite3VdbeGetValue(pReprepare, iCol, SQLITE_AFF_NONE);
+    pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_NONE);
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
       z = (char *)sqlite3_value_text(pVal);
     }
@@ -2592,7 +2592,7 @@ static int valueFromExpr(
   ){
     int iVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
-    *pp = sqlite3VdbeGetValue(pParse->pReprepare, iVar, aff);
+    *pp = sqlite3VdbeGetBoundValue(pParse->pReprepare, iVar, aff);
     return SQLITE_OK;
   }
   return sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, aff, pp);

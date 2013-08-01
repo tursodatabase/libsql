@@ -1,5 +1,5 @@
-C Fix\sthe\sANALYZE\scommand\sto\swork\swith\spartial\sindices.
-D 2013-08-01T04:39:17.756
+C Refactor\sinternal\sfunction\sname\ssqlite3VdbeGetValue()\sto\nsqlite3VdbeGetBoundValue().
+D 2013-08-01T12:21:58.409
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,10 +278,10 @@ F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
 F src/vdbe.c d6048a720c197db2f0e7d618e918bd2e2eff0322
-F src/vdbe.h f380af2a7fab32ba8a8b05bf042497636afec66d
+F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
 F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
-F src/vdbeaux.c 75206d58c2e1ea7ed2758106d591ff7a082ea909
+F src/vdbeaux.c 492376bd1b37a8350f300380d149282c062c6077
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 14d48fe735a7d5f4d610d8b9396a9e7752539199
+F src/where.c bad23a54820dd7f4c0ec5048d3cdaed28d7e4a52
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1104,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6b73ae7c123801787c8994113cbeb87ee96ba653
-R 8f1421e98f999d36a1d28b17b8226989
+P 60353124f4e965393ecd864019bdbca1999fb69e
+R bb451065c1214431469ba3f19aa1b916
 U drh
-Z 2b1246919b9a91b92ae0d1de51d4ce2b
+Z b1d702840c58e4dca1711593d0bbaf8a
