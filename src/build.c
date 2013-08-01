@@ -2550,7 +2550,12 @@ Index *sqlite3CreateIndex(
     pTab = sqlite3LocateTableItem(pParse, 0, &pTblName->a[0]);
     assert( db->mallocFailed==0 || pTab==0 );
     if( pTab==0 ) goto exit_create_index;
-    assert( db->aDb[iDb].pSchema==pTab->pSchema );
+    if( iDb==1 && db->aDb[iDb].pSchema!=pTab->pSchema ){
+      sqlite3ErrorMsg(pParse, 
+           "cannot create a TEMP index on non-TEMP table \"%s\"",
+           pTab->zName);
+      goto exit_create_index;
+    }
   }else{
     assert( pName==0 );
     assert( pStart==0 );
