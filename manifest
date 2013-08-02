@@ -1,5 +1,5 @@
-C Add\sNEVER()\sand\sALWAYS()\smacros\son\ssome\sunreachable\syet\sprudent\sbranches.
-D 2013-08-02T20:11:19.665
+C Updates\sto\srequirements\smarks.\s\sNo\scode\schanges.
+D 2013-08-02T23:40:45.340
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -271,7 +271,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/tokenize.c e0e8fd3cb90a88451f6b6425726c84747b6b20d7
+F src/tokenize.c 70061085a51f2f4fc15ece94f32c03bcb78e63b2
 F src/trigger.c 5c0ea9b8755e7c5e1a700f3e27ac4f8d92dd221e
 F src/update.c 7f3fe64d8f3b44c44a1eac293f0f85f87c355b7a
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 30a9f5e4acd74e727b69a7f53a76863f9316b43b
+F src/where.c 67245bb73fd9cc04ee7796a0f358d4910c45cfe9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -423,26 +423,26 @@ F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 44028aaf161a5e80a2f229622b3a174d3b352810
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test ddf3b2e4506e0813f46b69ccf55757c5570cc181
-F test/e_delete.test 89aa84d3d1bd284a0689ede04bce10226a5aeaa5
-F test/e_droptrigger.test afd5c4d27dec607f5997a66bf7e2498a082cb235
-F test/e_dropview.test 583411e470458c5d76148542cfb5a5fa84c8f93e
-F test/e_expr.test 2a599f40f37ee9e853c4396c28ff13c2c50f6628
+F test/e_createtable.test ee9b70a38369ae44360febb411976aa3c8cf2689
+F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
+F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
+F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
+F test/e_expr.test d5cdda0e4ffb17760858ed4c7c4ece07efc40f71
 F test/e_fkey.test 17cfb40002d165299681f39aac0cb5890c359935
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
-F test/e_insert.test d5331cc95e101af2508159fc98b6801631659ffe
-F test/e_reindex.test 5e6dff3a060b5234d496f6e84c3e59a94b4dce4d
+F test/e_insert.test ea84688f3b27a6a3728e4ae7a7d9ad342579d7a4
+F test/e_reindex.test e175794fc41f8e8aef34772e87a7d7b7a9251dd3
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
-F test/e_select.test d5af998a402740d8f0488158d22075df2b6f88fa
-F test/e_select2.test 5c3d3da19c7b3e90ae444579db2b70098599ab92
-F test/e_update.test 161d5dc6a3ed9dd08f5264d13e20735d7a89f00c
-F test/e_uri.test 8f2f56b29456a3f846276fa4e0993d4ef8a15b79
-F test/e_vacuum.test 331da289ae186656cf5f2eb27f577a89c0c221af
+F test/e_select.test f2358d074bd82240bc79a8348f284a2a8909dc1f
+F test/e_select2.test 22c660a7becf0712c95e1ca1b2d9e716a1261460
+F test/e_update.test bea00499e43ee1da77b03cdb0b20c7c864c1ec5a
+F test/e_uri.test a2c92d80093a7efdcfbb11093651cbea87097b6b
+F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
-F test/eqp.test 8ef4d89dc44d8988b3ea6e60902905d739508db0
+F test/eqp.test d9e7ad4e7bd36d976f1b631f76e6e6ea090c41a0
 F test/errmsg.test 050717f1c6a5685de9c79f5f9f6b83d7c592f73a
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 478113f18b1d28606b107b5a0bed04cb90a82cf2
-R 0448265d2d2404edbe8ef2a70f660350
+P c5c0a8ab6c222185d5f9d4321e64d9f93cd36b7d
+R 20b1dec2302f0bdaf9f8a82570231a5d
 U drh
-Z 563793828301249458f36eed7f3789e7
+Z 33c56d2532f56c7cb339c035fb818e1a

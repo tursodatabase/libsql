@@ -352,8 +352,8 @@ foreach {tn indexes} {
   # EVIDENCE-OF: R-46256-57243 There is no difference between the "INNER
   # JOIN", "JOIN" and "," join operators.
   #
-  # EVIDENCE-OF: R-07544-24155 The "CROSS JOIN" join operator produces the
-  # same data as the "INNER JOIN", "JOIN" and "," operators
+  # EVIDENCE-OF: R-25071-21202 The "CROSS JOIN" join operator produces the
+  # same result as the "INNER JOIN", "JOIN" and "," operators
   #
   test_join $tn.1.1  "t1, t2"                {t1 t2}
   test_join $tn.1.2  "t1 INNER JOIN t2"      {t1 t2}
