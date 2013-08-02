@@ -1125,10 +1125,10 @@ nexprlist(A) ::= expr(Y).
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
 cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
-        ON nm(Y) LP idxlist(Z) RP(E). {
+        ON nm(Y) LP idxlist(Z) RP where_opt(W). {
   sqlite3CreateIndex(pParse, &X, &D, 
                      sqlite3SrcListAppend(pParse->db,0,&Y,0), Z, U,
-                      &S, &E, SQLITE_SO_ASC, NE);
+                      &S, W, SQLITE_SO_ASC, NE);
 }
 
 %type uniqueflag {int}

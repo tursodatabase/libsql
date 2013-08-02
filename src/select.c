@@ -4177,7 +4177,7 @@ int sqlite3Select(
   ** Use the SQLITE_GroupByOrder flag with SQLITE_TESTCTRL_OPTIMIZER
   ** to disable this optimization for testing purposes.
   */
-  if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy)==0
+  if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy, -1)==0
          && OptimizationEnabled(db, SQLITE_GroupByOrder) ){
     pOrderBy = 0;
   }
@@ -4198,7 +4198,7 @@ int sqlite3Select(
   ** BY and DISTINCT, and an index or separate temp-table for the other.
   */
   if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct 
-   && sqlite3ExprListCompare(pOrderBy, p->pEList)==0
+   && sqlite3ExprListCompare(pOrderBy, p->pEList, -1)==0
   ){
     p->selFlags &= ~SF_Distinct;
     p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);

@@ -251,8 +251,8 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
 void sqlite3VdbeResolveLabel(Vdbe *p, int x){
   int j = -1-x;
   assert( p->magic==VDBE_MAGIC_INIT );
-  assert( j>=0 && j<p->nLabel );
-  if( p->aLabel ){
+  assert( j<p->nLabel );
+  if( j>=0 && p->aLabel ){
     p->aLabel[j] = p->nOp;
   }
 }
@@ -576,8 +576,7 @@ void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
 ** the address of the next instruction to be coded.
 */
 void sqlite3VdbeJumpHere(Vdbe *p, int addr){
-  assert( addr>=0 || p->db->mallocFailed );
-  if( addr>=0 ) sqlite3VdbeChangeP2(p, addr, p->nOp);
+  if( ALWAYS(addr>=0) ) sqlite3VdbeChangeP2(p, addr, p->nOp);
 }
 
 
@@ -611,13 +610,6 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       }
       case P4_MPRINTF: {
         if( db->pnBytesFreed==0 ) sqlite3_free(p4);
-        break;
-      }
-      case P4_VDBEFUNC: {
-        VdbeFunc *pVdbeFunc = (VdbeFunc *)p4;
-        freeEphemeralFunction(db, pVdbeFunc->pFunc);
-        if( db->pnBytesFreed==0 ) sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
-        sqlite3DbFree(db, pVdbeFunc);
         break;
       }
       case P4_FUNCDEF: {
@@ -1649,6 +1641,10 @@ static void closeAllCursors(Vdbe *p){
     p->pDelFrame = pDel->pParent;
     sqlite3VdbeFrameDelete(pDel);
   }
+
+  /* Delete any auxdata allocations made by the VM */
+  sqlite3VdbeDeleteAuxData(p, -1, 0);
+  assert( p->pAuxData==0 );
 }
 
 /*
@@ -2447,20 +2443,35 @@ int sqlite3VdbeFinalize(Vdbe *p){
 }
 
 /*
-** Call the destructor for each auxdata entry in pVdbeFunc for which
-** the corresponding bit in mask is clear.  Auxdata entries beyond 31
-** are always destroyed.  To destroy all auxdata entries, call this
-** routine with mask==0.
+** If parameter iOp is less than zero, then invoke the destructor for
+** all auxiliary data pointers currently cached by the VM passed as
+** the first argument.
+**
+** Or, if iOp is greater than or equal to zero, then the destructor is
+** only invoked for those auxiliary data pointers created by the user 
+** function invoked by the OP_Function opcode at instruction iOp of 
+** VM pVdbe, and only then if:
+**
+**    * the associated function parameter is the 32nd or later (counting
+**      from left to right), or
+**
+**    * the corresponding bit in argument mask is clear (where the first
+**      function parameter corrsponds to bit 0 etc.).
 */
-void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
-  int i;
-  for(i=0; i<pVdbeFunc->nAux; i++){
-    struct AuxData *pAux = &pVdbeFunc->apAux[i];
-    if( (i>31 || !(mask&(((u32)1)<<i))) && pAux->pAux ){
+void sqlite3VdbeDeleteAuxData(Vdbe *pVdbe, int iOp, int mask){
+  AuxData **pp = &pVdbe->pAuxData;
+  while( *pp ){
+    AuxData *pAux = *pp;
+    if( (iOp<0)
+     || (pAux->iOp==iOp && (pAux->iArg>31 || !(mask & ((u32)1<<pAux->iArg))))
+    ){
       if( pAux->xDelete ){
         pAux->xDelete(pAux->pAux);
       }
-      pAux->pAux = 0;
+      *pp = pAux->pNext;
+      sqlite3DbFree(pVdbe->db, pAux);
+    }else{
+      pp= &pAux->pNext;
     }
   }
 }
@@ -2980,7 +2991,7 @@ int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1, /* Left key */
   UnpackedRecord *pPKey2        /* Right key */
 ){
-  int d1;            /* Offset into aKey[] of next data element */
+  u32 d1;            /* Offset into aKey[] of next data element */
   u32 idx1;          /* Offset into aKey[] of next header element */
   u32 szHdr1;        /* Number of bytes in header */
   int i = 0;
@@ -3014,7 +3025,7 @@ int sqlite3VdbeRecordCompare(
 
     /* Read the serial types for the next element in each key. */
     idx1 += getVarint32( aKey1+idx1, serial_type1 );
-    if( d1>=nKey1 && sqlite3VdbeSerialTypeLen(serial_type1)>0 ) break;
+    if( d1+sqlite3VdbeSerialTypeLen(serial_type1)>(u32)nKey1 ) break;
 
     /* Extract the values to be compared.
     */
@@ -3243,7 +3254,7 @@ sqlite3 *sqlite3VdbeDb(Vdbe *v){
 **
 ** The returned value must be freed by the caller using sqlite3ValueFree().
 */
-sqlite3_value *sqlite3VdbeGetValue(Vdbe *v, int iVar, u8 aff){
+sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe *v, int iVar, u8 aff){
   assert( iVar>0 );
   if( v ){
     Mem *pMem = &v->aVar[iVar-1];

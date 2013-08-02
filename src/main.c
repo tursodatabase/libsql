@@ -1100,6 +1100,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_IOERR_SEEK:         zName = "SQLITE_IOERR_SEEK";        break;
       case SQLITE_IOERR_DELETE_NOENT: zName = "SQLITE_IOERR_DELETE_NOENT";break;
       case SQLITE_IOERR_MMAP:         zName = "SQLITE_IOERR_MMAP";        break;
+      case SQLITE_IOERR_GETTEMPPATH:  zName = "SQLITE_IOERR_GETTEMPPATH"; break;
       case SQLITE_CORRUPT:            zName = "SQLITE_CORRUPT";           break;
       case SQLITE_CORRUPT_VTAB:       zName = "SQLITE_CORRUPT_VTAB";      break;
       case SQLITE_NOTFOUND:           zName = "SQLITE_NOTFOUND";          break;
@@ -2476,7 +2477,7 @@ static int openDatabase(
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
   db->flags |= SQLITE_ShortColNames | SQLITE_EnableTrigger
-#if !defined(SQLITE_DEAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
+#if !defined(SQLITE_DEFAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
                  | SQLITE_AutoIndex
 #endif
 #if SQLITE_DEFAULT_FILE_FORMAT<4

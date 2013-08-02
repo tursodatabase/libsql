@@ -2362,15 +2362,20 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       /* Otherwise, fall thru into the TK_COLUMN case */
     }
     case TK_COLUMN: {
-      if( pExpr->iTable<0 ){
-        /* This only happens when coding check constraints */
-        assert( pParse->ckBase>0 );
-        inReg = pExpr->iColumn + pParse->ckBase;
-      }else{
-        inReg = sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
-                                 pExpr->iColumn, pExpr->iTable, target,
-                                 pExpr->op2);
+      int iTab = pExpr->iTable;
+      if( iTab<0 ){
+        if( pParse->ckBase>0 ){
+          /* Generating CHECK constraints or inserting into partial index */
+          inReg = pExpr->iColumn + pParse->ckBase;
+          break;
+        }else{
+          /* Deleting from a partial index */
+          iTab = pParse->iPartIdxTab;
+        }
       }
+      inReg = sqlite3ExprCodeGetColumn(pParse, pExpr->pTab,
+                               pExpr->iColumn, iTab, target,
+                               pExpr->op2);
       break;
     }
     case TK_INTEGER: {
@@ -3793,6 +3798,12 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 ** by a COLLATE operator at the top level.  Return 2 if there are differences
 ** other than the top-level COLLATE operator.
 **
+** If any subelement of pB has Expr.iTable==(-1) then it is allowed
+** to compare equal to an equivalent element in pA with Expr.iTable==iTab.
+**
+** The pA side might be using TK_REGISTER.  If that is the case and pB is
+** not using TK_REGISTER but is otherwise equivalent, then still return 0.
+**
 ** Sometimes this routine will return 2 even if the two expressions
 ** really are equivalent.  If we cannot prove that the expressions are
 ** identical, we return 2 just to be safe.  So if this routine
@@ -3803,7 +3814,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 ** just might result in some slightly slower code.  But returning
 ** an incorrect 0 or 1 could lead to a malfunction.
 */
-int sqlite3ExprCompare(Expr *pA, Expr *pB){
+int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
   if( pA==0||pB==0 ){
     return pB==pA ? 0 : 2;
   }
@@ -3813,19 +3824,22 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
     return 2;
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( pA->op!=pB->op ){
-    if( pA->op==TK_COLLATE && sqlite3ExprCompare(pA->pLeft, pB)<2 ){
+  if( pA->op!=pB->op && (pA->op!=TK_REGISTER || pA->op2!=pB->op) ){
+    if( pA->op==TK_COLLATE && sqlite3ExprCompare(pA->pLeft, pB, iTab)<2 ){
       return 1;
     }
-    if( pB->op==TK_COLLATE && sqlite3ExprCompare(pA, pB->pLeft)<2 ){
+    if( pB->op==TK_COLLATE && sqlite3ExprCompare(pA, pB->pLeft, iTab)<2 ){
       return 1;
     }
     return 2;
   }
-  if( sqlite3ExprCompare(pA->pLeft, pB->pLeft) ) return 2;
-  if( sqlite3ExprCompare(pA->pRight, pB->pRight) ) return 2;
-  if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList) ) return 2;
-  if( pA->iTable!=pB->iTable || pA->iColumn!=pB->iColumn ) return 2;
+  if( sqlite3ExprCompare(pA->pLeft, pB->pLeft, iTab) ) return 2;
+  if( sqlite3ExprCompare(pA->pRight, pB->pRight, iTab) ) return 2;
+  if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
+  if( pA->iColumn!=pB->iColumn ) return 2;
+  if( pA->iTable!=pB->iTable 
+   && pA->op!=TK_REGISTER
+   && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
   if( ExprHasProperty(pA, EP_IntValue) ){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
       return 2;
@@ -3843,6 +3857,9 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
 ** Compare two ExprList objects.  Return 0 if they are identical and 
 ** non-zero if they differ in any way.
 **
+** If any subelement of pB has Expr.iTable==(-1) then it is allowed
+** to compare equal to an equivalent element in pA with Expr.iTable==iTab.
+**
 ** This routine might return non-zero for equivalent ExprLists.  The
 ** only consequence will be disabled optimizations.  But this routine
 ** must never return 0 if the two ExprList objects are different, or
@@ -3851,7 +3868,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
 ** Two NULL pointers are considered to be the same.  But a NULL pointer
 ** always differs from a non-NULL pointer.
 */
-int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
+int sqlite3ExprListCompare(ExprList *pA, ExprList *pB, int iTab){
   int i;
   if( pA==0 && pB==0 ) return 0;
   if( pA==0 || pB==0 ) return 1;
@@ -3860,7 +3877,46 @@ int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
     Expr *pExprA = pA->a[i].pExpr;
     Expr *pExprB = pB->a[i].pExpr;
     if( pA->a[i].sortOrder!=pB->a[i].sortOrder ) return 1;
-    if( sqlite3ExprCompare(pExprA, pExprB) ) return 1;
+    if( sqlite3ExprCompare(pExprA, pExprB, iTab) ) return 1;
+  }
+  return 0;
+}
+
+/*
+** Return true if we can prove the pE2 will always be true if pE1 is
+** true.  Return false if we cannot complete the proof or if pE2 might
+** be false.  Examples:
+**
+**     pE1: x==5       pE2: x==5             Result: true
+**     pE1: x>0        pE2: x==5             Result: false
+**     pE1: x=21       pE2: x=21 OR y=43     Result: true
+**     pE1: x!=123     pE2: x IS NOT NULL    Result: true
+**     pE1: x!=?1      pE2: x IS NOT NULL    Result: true
+**     pE1: x IS NULL  pE2: x IS NOT NULL    Result: false
+**     pE1: x IS ?2    pE2: x IS NOT NULL    Reuslt: false
+**
+** When comparing TK_COLUMN nodes between pE1 and pE2, if pE2 has
+** Expr.iTable<0 then assume a table number given by iTab.
+**
+** When in doubt, return false.  Returning true might give a performance
+** improvement.  Returning false might cause a performance reduction, but
+** it will always give the correct answer and is hence always safe.
+*/
+int sqlite3ExprImpliesExpr(Expr *pE1, Expr *pE2, int iTab){
+  if( sqlite3ExprCompare(pE1, pE2, iTab)==0 ){
+    return 1;
+  }
+  if( pE2->op==TK_OR
+   && (sqlite3ExprImpliesExpr(pE1, pE2->pLeft, iTab)
+             || sqlite3ExprImpliesExpr(pE1, pE2->pRight, iTab) )
+  ){
+    return 1;
+  }
+  if( pE2->op==TK_NOTNULL
+   && sqlite3ExprCompare(pE1->pLeft, pE2->pLeft, iTab)==0
+   && (pE1->op!=TK_ISNULL && pE1->op!=TK_IS)
+  ){
+    return 1;
   }
   return 0;
 }
@@ -4045,7 +4101,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         */
         struct AggInfo_func *pItem = pAggInfo->aFunc;
         for(i=0; i<pAggInfo->nFunc; i++, pItem++){
-          if( sqlite3ExprCompare(pItem->pExpr, pExpr)==0 ){
+          if( sqlite3ExprCompare(pItem->pExpr, pExpr, -1)==0 ){
             break;
           }
         }

@@ -669,6 +669,35 @@ int sqlite3_auto_extension(void (*xInit)(void)){
 }
 
 /*
+** Cancel a prior call to sqlite3_auto_extension.  Remove xInit from the
+** set of routines that is invoked for each new database connection, if it
+** is currently on the list.  If xInit is not on the list, then this
+** routine is a no-op.
+**
+** Return 1 if xInit was found on the list and removed.  Return 0 if xInit
+** was not on the list.
+*/
+int sqlite3_cancel_auto_extension(void (*xInit)(void)){
+#if SQLITE_THREADSAFE
+  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
+  int i;
+  int n = 0;
+  wsdAutoextInit;
+  sqlite3_mutex_enter(mutex);
+  for(i=wsdAutoext.nExt-1; i>=0; i--){
+    if( wsdAutoext.aExt[i]==xInit ){
+      wsdAutoext.nExt--;
+      wsdAutoext.aExt[i] = wsdAutoext.aExt[wsdAutoext.nExt];
+      n++;
+      break;
+    }
+  }
+  sqlite3_mutex_leave(mutex);
+  return n;
+}
+
+/*
 ** Reset the automatic extension loading mechanism.
 */
 void sqlite3_reset_auto_extension(void){
