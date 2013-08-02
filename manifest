@@ -1,5 +1,5 @@
-C Fix\sthe\sCREATE\sINDEX\sstatement\sso\sthat\strying\sto\screate\sa\sTEMP\sindex\son\na\snon-TEMP\stable\sthrows\san\serror\srather\sthan\ssegfaulting.
-D 2013-08-01T22:27:26.044
+C Fix\stypos\sin\sdocumentation\sfor\sSQLITE_DBSTATUS_DEFERRED_FKS\s.\s\s\nNo\schanges\sto\scode.
+D 2013-08-02T13:31:31.821
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/resolve.c 89f9003e8316ee3a172795459efc2a0274e1d5a8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 91b62654caf8dfe292fb8882715e575d34ad3874
 F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
-F src/sqlite.h.in bf3ee0bd13583cc6d09f9649bf26a183b0cc10a6
+F src/sqlite.h.in 442c109e0c3447c34b1794971ecdb673ce08a843
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 89b52c053ebafa76f03bab4f0c8ee1e390eb7489
@@ -1104,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6913831ad2892fdc8331ee53426d935386eacb9e
-R c4336b3c1d9855c02f7d72f3a4291b06
+P e3c8935f8736d00dc83644fa21d86ca7fec6d2fc
+R 0f6aefa6399d232f137b72b60707de79
 U drh
-Z 038dfb0c43b0a82e8c8dc532f3798b80
+Z f14c6a4259ab5d638ccb7f2022024235

@@ -6264,9 +6264,9 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 ** </dd>
 **
 ** [[SQLITE_DBSTATUS_DEFERRED_FKS]] ^(<dt>SQLITE_DBSTATUS_DEFERRED_FKS</dt>
-** <dd>This parameter returns the zero for the current value if and only if
-** there all foreign key constraints (deferred or immediate) have been
-** resolved.  The highwater mark is always 0.
+** <dd>This parameter returns zero for the current value if and only if
+** all foreign key constraints (deferred or immediate) have been
+** resolved.)^  ^The highwater mark is always 0.
 ** </dd>
 ** </dl>
 */
