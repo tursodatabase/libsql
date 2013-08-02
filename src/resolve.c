@@ -240,11 +240,20 @@ static int lookupName(
   ** resulting in an appropriate error message toward the end of this routine
   */
   if( zDb ){
-    for(i=0; i<db->nDb; i++){
-      assert( db->aDb[i].zName );
-      if( sqlite3StrICmp(db->aDb[i].zName,zDb)==0 ){
-        pSchema = db->aDb[i].pSchema;
-        break;
+    testcase( pNC->ncFlags & NC_PartIdx );
+    testcase( pNC->ncFlags & NC_IsCheck );
+    if( (pNC->ncFlags & (NC_PartIdx|NC_IsCheck))!=0 ){
+      /* Silently ignore database qualifiers inside CHECK constraints and partial
+      ** indices.  Do not raise errors because that might break legacy and
+      ** because it does not hurt anything to just ignore the database name. */
+      zDb = 0;
+    }else{
+      for(i=0; i<db->nDb; i++){
+        assert( db->aDb[i].zName );
+        if( sqlite3StrICmp(db->aDb[i].zName,zDb)==0 ){
+          pSchema = db->aDb[i].pSchema;
+          break;
+        }
       }
     }
   }

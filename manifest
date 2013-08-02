@@ -1,5 +1,5 @@
-C Fix\sbug\sin\sthe\slogic\sthat\sdetermines\sthe\send\sof\sa\sCREATE\sINDEX\sstatement.\nAdded\sa\sVACUUM\stest\scase\sthat\sexposed\sthe\sbug.
-D 2013-08-01T16:02:40.113
+C Silently\signore\sdatabase\sname\squalifiers\sin\sCHECK\sconstraints\sand\sin\npartial\sindex\sWHERE\sclauses.
+D 2013-08-02T14:18:18.252
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/pragma.c 590c75750d93ec5a1f903e4bb0dc6d2a0845bf8b
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 8b3c7a439cc6ba242e45566284adb72fa770b7c8
+F src/resolve.c 17e670996729ac41aadf6a31f57b4e6f29b3d819
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 20369c82dc38eb4a77b458c8f6e353ef550580c9
 F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
@@ -362,7 +362,7 @@ F test/capi3c.test 93d24621c9ff84da9da060f30431e0453db1cdb0
 F test/capi3d.test 6d0fc0a86d73f42dd19a7d8b7761ab9bc02277d0
 F test/capi3e.test ad90088b18b0367125ff2d4b5400153fd2f99aab
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
-F test/check.test 2eb93611139a7dfaed3be80067c7dc5ceb5fb287
+F test/check.test 1e9be446eb0bbd47a5f65955802e9632425096ab
 F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
 F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
@@ -589,7 +589,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
-F test/index6.test 3967161678dd5268e6ad1e263cc82e2b8050d055
+F test/index6.test 0005b3093012c6d0f20cc54d9057210221216143
 F test/indexedby.test 0e959308707c808515c3a51363f7a9835027108c
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1104,7 +1104,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0c8cfdfae215c95cf167f404a1d346690b28e972
-R 7829f40a29ab8d32821ed080da801961
+P 2e3df0bc900c01286d3ce32c2bbf9e5293973f9b
+R b5d4ae8fe01e42e4e171b69c990dde10
 U drh
-Z d181891086829543aa75dfb2ba9cf461
+Z 4a98808a1193d1ac659ec78aea29a043
