@@ -451,5 +451,11 @@ do_test 7.8 {
   catchsql { INSERT INTO t6 VALUES(12) } db2
 } {1 {constraint failed}}
 
+# 2013-08-02:  Silently ignore database name qualifiers in CHECK constraints.
+#
+do_execsql_test 8.1 {
+  CREATE TABLE t810(a, CHECK( main.t810.a>0 ));
+  CREATE TABLE t811(b, CHECK( xyzzy.t811.b BETWEEN 5 AND 10 ));
+} {}
 
 finish_test

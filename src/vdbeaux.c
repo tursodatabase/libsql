@@ -250,8 +250,8 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
 void sqlite3VdbeResolveLabel(Vdbe *p, int x){
   int j = -1-x;
   assert( p->magic==VDBE_MAGIC_INIT );
-  assert( j>=0 && j<p->nLabel );
-  if( p->aLabel ){
+  assert( j<p->nLabel );
+  if( j>=0 && p->aLabel ){
     p->aLabel[j] = p->nOp;
   }
 }
@@ -3253,7 +3253,7 @@ sqlite3 *sqlite3VdbeDb(Vdbe *v){
 **
 ** The returned value must be freed by the caller using sqlite3ValueFree().
 */
-sqlite3_value *sqlite3VdbeGetValue(Vdbe *v, int iVar, u8 aff){
+sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe *v, int iVar, u8 aff){
   assert( iVar>0 );
   if( v ){
     Mem *pMem = &v->aVar[iVar-1];

@@ -1128,7 +1128,7 @@ static int isLikeOrGlob(
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;
     int iCol = pRight->iColumn;
-    pVal = sqlite3VdbeGetValue(pReprepare, iCol, SQLITE_AFF_NONE);
+    pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_NONE);
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
       z = (char *)sqlite3_value_text(pVal);
     }
@@ -2235,7 +2235,7 @@ static void constructAutomaticIndex(
   /* Fill the automatic index with content */
   addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur);
   regRecord = sqlite3GetTempReg(pParse);
-  sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 1);
+  sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 1, 0);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
@@ -2592,7 +2592,7 @@ static int valueFromExpr(
   ){
     int iVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
-    *pp = sqlite3VdbeGetValue(pParse->pReprepare, iVar, aff);
+    *pp = sqlite3VdbeGetBoundValue(pParse->pReprepare, iVar, aff);
     return SQLITE_OK;
   }
   return sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, aff, pp);
@@ -4504,6 +4504,17 @@ static Bitmask columnsInIndex(Index *pIdx){
   return m;
 }
 
+/* Check to see if a partial index with pPartIndexWhere can be used
+** in the current query.  Return true if it can be and false if not.
+*/
+static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
+  int i;
+  WhereTerm *pTerm;
+  for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    if( sqlite3ExprImpliesExpr(pTerm->pExpr, pWhere, iTab) ) return 1;
+  }
+  return 0;
+}
 
 /*
 ** Add all WhereLoop objects for a single table of the join where the table
@@ -4527,11 +4538,13 @@ static int whereLoopAddBtree(
   int b;                      /* A boolean value */
   WhereCost rSize;            /* number of rows in the table */
   WhereCost rLogSize;         /* Logarithm of the number of rows in the table */
+  WhereClause *pWC;           /* The parsed WHERE clause */
   
   pNew = pBuilder->pNew;
   pWInfo = pBuilder->pWInfo;
   pTabList = pWInfo->pTabList;
   pSrc = pTabList->a + pNew->iTab;
+  pWC = pBuilder->pWC;
   assert( !IsVirtual(pSrc->pTab) );
 
   if( pSrc->pIndex ){
@@ -4571,7 +4584,6 @@ static int whereLoopAddBtree(
    && !pSrc->isCorrelated
   ){
     /* Generate auto-index WhereLoops */
-    WhereClause *pWC = pBuilder->pWC;
     WhereTerm *pTerm;
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
@@ -4601,6 +4613,10 @@ static int whereLoopAddBtree(
   /* Loop over all indices
   */
   for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
+    if( pProbe->pPartIdxWhere!=0
+     && !whereUsablePartialIndex(pNew->iTab, pWC, pProbe->pPartIdxWhere) ){
+      continue;  /* Partial index inappropriate for this query */
+    }
     pNew->u.btree.nEq = 0;
     pNew->nLTerm = 0;
     pNew->iSortIdx = 0;
@@ -5541,7 +5557,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==whereCost(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      if( pIdx->onError==OE_None ) continue;
+      if( pIdx->onError==OE_None || pIdx->pPartIdxWhere!=0 ) continue;
       for(j=0; j<pIdx->nColumn; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
