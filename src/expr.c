@@ -3839,7 +3839,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
   if( pA->iColumn!=pB->iColumn ) return 2;
   if( pA->iTable!=pB->iTable 
    && pA->op!=TK_REGISTER
-   && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
+   && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
   if( ExprHasProperty(pA, EP_IntValue) ){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
       return 2;

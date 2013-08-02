@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\spartial\sindices.
-D 2013-08-02T16:41:02.828
+C Add\sNEVER()\sand\sALWAYS()\smacros\son\ssome\sunreachable\syet\sprudent\sbranches.
+D 2013-08-02T20:11:19.665
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 2317c814866d9aa71fea16b3faf4fdd4d6a49b94
-F src/expr.c b873f60585cb851963fd8059f8d26c578e8448f6
+F src/expr.c 2068a7c17e45f8bee6e44205b059aa30acbc71c5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 914a6bbd987d857c41ac9d244efa6641f36faadb
 F src/func.c 5c50c1ea31fd864b0fe921fe1a8d4c55acd609ef
@@ -281,7 +281,7 @@ F src/vdbe.c d6048a720c197db2f0e7d618e918bd2e2eff0322
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
 F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
-F src/vdbeaux.c b04447e8588f9115013a7207f403832521fbeb80
+F src/vdbeaux.c 4389b3692969b4415fcfd00de36818a02f84df28
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f3efbfcd515ad6ac833f4b26391dcc44603a96e8 2e8c845eb5011a2743dace333aa38383588f2080
-R 926aabae00116b2c33a18140f6c4ab7f
+P 478113f18b1d28606b107b5a0bed04cb90a82cf2
+R 0448265d2d2404edbe8ef2a70f660350
 U drh
-Z 821dd68c76d813e125e26bbbc791b042
+Z 563793828301249458f36eed7f3789e7
