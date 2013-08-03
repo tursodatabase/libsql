@@ -1,0 +1,55 @@
+# 2013 August 3
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix analyze9
+
+proc s {blob} {
+  set ret ""
+  binary scan $blob c* bytes
+  foreach b $bytes {
+    set t [binary format c $b]
+    if {[string is print $t]} {
+      append ret $t
+    } else {
+      append ret .
+    }
+  }
+  return $ret
+}
+db function s s
+
+do_test 1.0 {
+  execsql { CREATE TABLE t1(a TEXT, b TEXT); }
+  for {set i 0} {$i < 5} {incr i} {
+    execsql {INSERT INTO t1 VALUES ('('||($i%10)||')', '('||($i%7)||')')}
+  }
+  execsql { CREATE INDEX i1 ON t1(a, b) }
+} {}
+
+do_execsql_test 1.1 {
+  ANALYZE;
+} {}
+
+do_execsql_test 1.2 {
+  SELECT tbl,idx,nEq,nLt,nDLt,s(sample) FROM sqlite_stat4;
+} {
+  t1 i1 {1 1} {1 1} {1 1} ...(1)(1) 
+  t1 i1 {1 1} {2 2} {2 2} ...(2)(2) 
+  t1 i1 {1 1} {3 3} {3 3} ...(3)(3)
+  t1 i1 {1 1} {4 4} {4 4} ...(4)(4)
+}
+
+
+finish_test
+

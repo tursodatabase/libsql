@@ -61,7 +61,7 @@ proc lookaside {db} {
   }
 }
 
-ifcapable stat3 {
+ifcapable stat4 {
   set STAT3 1
 } else {
   set STAT3 0
@@ -214,7 +214,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
     # much greater than just that reported by DBSTATUS_SCHEMA_USED in this
     # case.
     #
-    # Some of the memory used for sqlite_stat3 is unaccounted for by
+    # Some of the memory used for sqlite_stat4 is unaccounted for by
     # dbstatus.
     #
     # Finally, on osx the estimate of memory used by the schema may be

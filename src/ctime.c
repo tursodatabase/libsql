@@ -117,8 +117,8 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_RTREE
   "ENABLE_RTREE",
 #endif
-#ifdef SQLITE_ENABLE_STAT3
-  "ENABLE_STAT3",
+#ifdef SQLITE_ENABLE_STAT4
+  "ENABLE_STAT4",
 #endif
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   "ENABLE_UNLOCK_NOTIFY",

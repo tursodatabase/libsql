@@ -4816,6 +4816,7 @@ case OP_Clear: {
  
   nChange = 0;
   assert( p->readOnly==0 );
+  assert( pOp->p1!=1 );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)

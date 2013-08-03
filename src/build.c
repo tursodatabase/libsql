@@ -2024,7 +2024,7 @@ static void sqlite3ClearStatTables(
 ){
   int i;
   const char *zDbName = pParse->db->aDb[iDb].zName;
-  for(i=1; i<=3; i++){
+  for(i=1; i<=4; i++){
     char zTab[24];
     sqlite3_snprintf(sizeof(zTab),zTab,"sqlite_stat%d",i);
     if( sqlite3FindTable(pParse->db, zTab, zDbName) ){
