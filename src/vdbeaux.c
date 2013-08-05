@@ -729,20 +729,13 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4.p = 0;
     pOp->p4type = P4_NOTUSED;
   }else if( n==P4_KEYINFO ){
-    KeyInfo *pKeyInfo;
-    int nField, nByte;
+    KeyInfo *pOrig, *pNew;
 
-    nField = ((KeyInfo*)zP4)->nField;
-    nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
-    pKeyInfo = sqlite3DbMallocRaw(0, nByte);
-    pOp->p4.pKeyInfo = pKeyInfo;
-    if( pKeyInfo ){
-      u8 *aSortOrder;
-      memcpy((char*)pKeyInfo, zP4, nByte - nField);
-      aSortOrder = pKeyInfo->aSortOrder;
-      assert( aSortOrder!=0 );
-      pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
-      memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
+    pOrig = (KeyInfo*)zP4;
+    pOp->p4.pKeyInfo = pNew = sqlite3KeyInfoAlloc(db, pOrig->nField);
+    if( pNew ){
+      memcpy(pNew->aColl, pOrig->aColl, pOrig->nField*sizeof(pNew->aColl[0]));
+      memcpy(pNew->aSortOrder, pOrig->aSortOrder, pOrig->nField);
       pOp->p4type = P4_KEYINFO;
     }else{
       p->db->mallocFailed = 1;
@@ -2993,7 +2986,6 @@ int sqlite3VdbeRecordCompare(
   u32 idx1;          /* Offset into aKey[] of next header element */
   u32 szHdr1;        /* Number of bytes in header */
   int i = 0;
-  int nField;
   int rc = 0;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   KeyInfo *pKeyInfo;
@@ -3016,7 +3008,7 @@ int sqlite3VdbeRecordCompare(
   
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
-  nField = pKeyInfo->nField;
+  assert( pKeyInfo->nField+1>=pPKey2->nField );
   assert( pKeyInfo->aSortOrder!=0 );
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
@@ -3042,13 +3034,12 @@ int sqlite3VdbeRecordCompare(
 
     /* Do the comparison
     */
-    rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i],
-                           i<nField ? pKeyInfo->aColl[i] : 0);
+    rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i], pKeyInfo->aColl[i]);
     if( rc!=0 ){
       assert( mem1.zMalloc==0 );  /* See comment below */
 
       /* Invert the result if we are using DESC sort order. */
-      if( i<nField && pKeyInfo->aSortOrder[i] ){
+      if( pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
     
