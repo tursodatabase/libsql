@@ -37,9 +37,20 @@ do_test 1.0 {
   execsql { CREATE INDEX i1 ON t1(a, b) }
 } {}
 
+
 do_execsql_test 1.1 {
   ANALYZE;
 } {}
+
+do_execsql_test 1.3 {
+  SELECT tbl,idx,nEq,nLt,nDLt,test_decode(sample) FROM sqlite_stat4;
+} {
+  t1 i1 {1 1} {0 0} {0 0} {(0) (0)}
+  t1 i1 {1 1} {1 1} {1 1} {(1) (1)}
+  t1 i1 {1 1} {2 2} {2 2} {(2) (2)}
+  t1 i1 {1 1} {3 3} {3 3} {(3) (3)}
+  t1 i1 {1 1} {4 4} {4 4} {(4) (4)}
+}
 
 do_execsql_test 1.2 {
   SELECT tbl,idx,nEq,nLt,nDLt,s(sample) FROM sqlite_stat4;
@@ -50,6 +61,56 @@ do_execsql_test 1.2 {
   t1 i1 {1 1} {3 3} {3 3} ...(3)(3)
   t1 i1 {1 1} {4 4} {4 4} ...(4)(4)
 }
+
+
+#-------------------------------------------------------------------------
+# This is really just to test SQL user function "test_decode".
+#
+reset_db
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES('some text', 14, NULL);
+  INSERT INTO t1 VALUES(22.0, NULL, x'656667');
+  CREATE INDEX i1 ON t1(a, b, c);
+  ANALYZE;
+  SELECT test_decode(sample) FROM sqlite_stat4;
+} {
+  {22.0 NULL x'656667'} 
+  {{some text} 14 NULL}
+}
+
+#-------------------------------------------------------------------------
+# 
+reset_db
+do_execsql_test 3.1 {
+  CREATE TABLE t2(a, b);
+  CREATE INDEX i2 ON t2(a, b);
+  BEGIN;
+}
+
+do_test 3.2 {
+  for {set i 0} {$i < 1000} {incr i} {
+    set a [expr $i / 10]
+    set b [expr int(rand() * 15.0)]
+    execsql { INSERT INTO t2 VALUES($a, $b) }
+  }
+  execsql COMMIT
+} {}
+
+db func lindex lindex
+
+# Each value of "a" occurs exactly 10 times in the table.
+#
+do_execsql_test 3.3.1 {
+  SELECT count(*) FROM t2 GROUP BY a;
+} [lrange [string repeat "10 " 100] 0 99]
+
+# The first element in the "nEq" list of all samples should therefore be 10.
+#
+do_execsql_test 3.3.2 {
+  ANALYZE;
+  SELECT lindex(nEq, 0) FROM sqlite_stat4;
+} [lrange [string repeat "10 " 100] 0 23]
 
 
 finish_test

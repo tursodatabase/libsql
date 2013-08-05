@@ -391,7 +391,8 @@ static void stat4Push(
   for(i=0; i<p->nCol; i++){
     pSample->anEq[i] = sqlite3_value_int64(aEq[i]);
     pSample->anLt[i] = sqlite3_value_int64(aLt[i]);
-    pSample->anDLt[i] = sqlite3_value_int64(aDLt[i]);
+    pSample->anDLt[i] = sqlite3_value_int64(aDLt[i])-1;
+    assert( sqlite3_value_int64(aDLt[i])>0 );
   } 
 
   /* Find the new minimum */
@@ -564,11 +565,13 @@ static void analyzeOneTable(
   }
 #endif
 
-  /* Establish a read-lock on the table at the shared-cache level. */
+  /* Establish a read-lock on the table at the shared-cache level. 
+  ** Also open a read-only cursor on the table.  */
   sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
-
-  iIdxCur = pParse->nTab++;
+  iTabCur = pParse->nTab++;
+  sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
   sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
+
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int nCol;                     /* Number of columns indexed by pIdx */
     KeyInfo *pKey;                /* KeyInfo structure for pIdx */
@@ -577,12 +580,12 @@ static void analyzeOneTable(
 
     int regRowid;                 /* Register for rowid of current row */
     int regPrev;                  /* First in array of previous values */
-    int regDLt;                   /* First in array of nDlt registers */
+    int regDLte;                  /* First in array of nDlt registers */
     int regLt;                    /* First in array of nLt registers */
     int regEq;                    /* First in array of nEq registers */
     int regCnt;                   /* Number of index entries */
-
-    int addrGoto;
+    int regEof;                   /* True once cursors are all at EOF */
+    int endOfScan;                /* Label to jump to once scan is finished */
 
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
     if( pIdx->pPartIdxWhere==0 ) needTableCnt = 0;
@@ -592,21 +595,99 @@ static void analyzeOneTable(
     if( aChngAddr==0 ) continue;
     pKey = sqlite3IndexKeyinfo(pParse, pIdx);
 
-    /* Open a cursor to the index to be analyzed. */
-    assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
-    sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIdx->tnum, iDb,
-        (char *)pKey, P4_KEYINFO_HANDOFF);
-    VdbeComment((v, "%s", pIdx->zName));
-
     /* Populate the register containing the index name. */
     sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, pIdx->zName, 0);
 
-#ifdef SQLITE_ENABLE_STAT4
-    if( once ){
-      once = 0;
-      sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
+    /*
+    ** The following pseudo-code demonstrates the way the VM scans an index 
+    ** to call stat4_push() and collect the values for the sqlite_stat1 
+    ** entry. The code below is for an index with 2 columns. The actual
+    ** VM code generated may be for any number of columns.
+    **
+    ** One cursor is opened for each column in the index (nCol). All cursors 
+    ** scan concurrently the index from start to end. All variables used in
+    ** the pseudo-code are initialized to zero.
+    **
+    **   Rewind csr(0)
+    **   Rewind csr(1)
+    ** 
+    **  next_0:
+    **   regPrev(0) = csr(0)[0]
+    **   regDLte(0) += 1
+    **   regLt(0) += regEq(0)
+    **   regEq(0) = 0
+    **   do {
+    **     regEq(0) += 1
+    **     Next csr(0)
+    **   }while ( csr(0)[0] == regPrev(0) )
+    ** 
+    **  next_1:
+    **   regPrev(1) = csr(1)[1]
+    **   regDLte(1) += 1
+    **   regLt(1) += regEq(1)
+    **   regEq(1) = 0
+    **   regRowid = csr(1)[rowid]        // innermost cursor only
+    **   do {
+    **     regEq(1) += 1
+    **     regCnt += 1                   // innermost cursor only
+    **     Next csr(1)
+    **   }while ( csr(1)[0..1] == regPrev(0..1) )
+    ** 
+    **   stat4_push(regRowid, regEq, regLt, regDLte);
+    ** 
+    **   if( eof( csr(1) ) ) goto endOfScan
+    **   if( csr(1)[0] != regPrev(0) ) goto next_0
+    **   goto next_1
+    **
+    **  endOfScan:
+    **   // done!
+    **
+    ** The last two lines above modify the contents of the regDLte array
+    ** so that each element contains the number of distinct key prefixes
+    ** of the corresponding length. As required to calculate the contents
+    ** of the sqlite_stat1 entry.
+    **
+    ** Currently, the last memory cell allocated (that with the largest 
+    ** integer identifier) is regStat4. Immediately following regStat4
+    ** we allocate the following:
+    **
+    **     regRowid -    1 register
+    **     regEq -    nCol registers
+    **     regLt -    nCol registers
+    **     regDLte -  nCol registers
+    **     regCnt -      1 register
+    **     regPrev -  nCol registers
+    **     regEof -      1 register
+    **
+    ** The regRowid, regEq, regLt and regDLte registers must be positioned in 
+    ** that order immediately following regStat4 so that they can be passed
+    ** to the stat4_push() function.
+    **
+    ** All of the above are initialized to contain integer value 0.
+    */
+    regRowid = regStat4+1;        /* Rowid argument */
+    regEq = regRowid+1;           /* First in array of nEq value registers */
+    regLt = regEq+nCol;           /* First in array of nLt value registers */
+    regDLte = regLt+nCol;         /* First in array of nDLt value registers */
+    regCnt = regDLte+nCol;        /* Row counter */
+    regPrev = regCnt+1;           /* First in array of prev. value registers */
+    regEof = regPrev+nCol;        /* True once last row read from index */
+    if( regEof+1>pParse->nMem ){
+      pParse->nMem = regPrev+nCol;
     }
 
+    /* Open a read-only cursor for each column of the index. */
+    assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
+    iIdxCur = pParse->nTab++;
+    pParse->nTab += (nCol-1);
+    for(i=0; i<nCol; i++){
+      int iMode = (i==0 ? P4_KEYINFO_HANDOFF : P4_KEYINFO);
+      sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur+i, pIdx->tnum, iDb);
+      sqlite3VdbeChangeP4(v, -1, (char*)pKey, iMode); 
+      VdbeComment((v, "%s", pIdx->zName));
+    }
+
+#ifdef SQLITE_ENABLE_STAT4
     /* Invoke the stat4_init() function. The arguments are:
     ** 
     **     * the number of rows in the index,
@@ -621,181 +702,98 @@ static void analyzeOneTable(
     sqlite3VdbeChangeP5(v, 3);
 #endif /* SQLITE_ENABLE_STAT4 */
 
-    /* The block of (1 + 4*nCol) memory cells initialized here is used 
-    ** as follows:
-    **
-    ** TODO: Update this comment:
-    **
-    **    iMem:                
-    **        Loop counter. The number of rows visited so far, including
-    **        the current row (i.e. this register is set to 1 for the
-    **        first iteration of the loop).
-    **
-    **    iMem+1 .. iMem+nCol:
-    **        Number of distinct index entries seen so far, considering
-    **        the left-most N columns only, where N is between 1 and nCol,
-    **        inclusive.
-    **
-    **    iMem+nCol+1 .. Mem+2*nCol:  
-    **        Previous value of indexed columns, from left to right.
-    **
-    ** Cells iMem through iMem+nCol are initialized to 0. The others are 
-    ** initialized to contain an SQL NULL.
-    */
-    regRowid = regStat4+1;        /* Rowid argument */
-    regEq = regRowid+1;           /* First in array of nEq value registers */
-    regLt = regEq+nCol;           /* First in array of nLt value registers */
-    regDLt = regLt+nCol;          /* First in array of nDLt value registers */
-    regCnt = regDLt+nCol;         /* Row counter */
-    regPrev = regCnt+1;           /* First in array of prev. value registers */
-
-    if( regPrev+1>pParse->nMem ){
-      pParse->nMem = regPrev+1;
-    }
-    for(i=0; i<2+nCol*4; i++){
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowid+i);
+    /* Initialize all the memory registers allocated above to 0. */
+    for(i=regRowid; i<=regEof; i++){
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, i);
     }
 
-    /*
-    ** Loop through all entries in the b-tree index. Pseudo-code for the
-    ** body of the loop is as follows:
-    **
-    **    foreach i IN index {
-    **      regCnt += 1
-    **
-    **      if( regEq(0)==0 ) goto ne_0;
-    **
-    **      if i(0) != regPrev(0) {
-    **          stat4_push(regRowid, regEq, regLt, regDLt);
-    **          goto ne_0;
-    **      }
-    **      regEq(0) += 1
-    **
-    **      if i(1) != regPrev(1){
-    **          stat4_push(regRowid, regEq, regLt, regDLt);
-    **          goto ne_1;
-    **      }
-    **      regEq(1) += 1
-    **    
-    **      goto all_eq;
-    **    
-    **      ne_0:
-    **        regPrev(0) = i(0)
-    **        if( regEq(0) != 0 ) regDLt(0) += 1
-    **        regLt(0) += regEq(0)
-    **        regEq(0) = 1
-    **    
-    **      ne_1:
-    **        regPrev(1) = $i(1)
-    **        if( regEq(1) != 0 ) regDLt(1) += 1
-    **        regLt(1) += regEq(1)
-    **        regEq(1) = 1
-    **
-    **      all_eq:
-    **        regRowid = i(rowid)
-    **    }
-    **
-    **    stat4_push(regRowid, regEq, regLt, regDLt);
-    **    
-    **    if( regEq(0) != 0 ) regDLt(0) += 1
-    **    if( regEq(1) != 0 ) regDLt(1) += 1
-    **
-    ** The last two lines above modify the contents of the regDLt array
-    ** so that each element contains the number of distinct key prefixes
-    ** of the corresponding length. As required to calculate the contents
-    ** of the sqlite_stat1 entry.
-    **
-    ** Note: if regEq(0)==0, stat4_push() is a no-op.
-    */
-    endOfLoop = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur, endOfLoop);
-    topOfLoop = sqlite3VdbeCurrentAddr(v);
-    sqlite3VdbeAddOp2(v, OP_AddImm, regCnt, 1);  /* Increment row counter */
-
-    /* This jump is taken for the first iteration of the loop only.
-    **
-    **     if( regEq(0)==0 ) goto ne_0;
-    */
-    addrIfNot = sqlite3VdbeAddOp1(v, OP_IfNot, regEq);
-
-    /* Code these bits:
-    **
-    **      if i(N) != regPrev(N) {
-    **          stat4_push(regRowid, regEq, regLt, regDLt);
-    **          goto ne_N;
-    **      }
-    **      regEq(N) += 1
-    */
+    /* Rewind all cursors open on the index. If the table is entry, this
+    ** will cause control to jump to address endOfScan immediately.  */
+    endOfScan = sqlite3VdbeMakeLabel(v);
     for(i=0; i<nCol; i++){
-      char *pColl;                /* Pointer to CollSeq cast to (char*) */
-      assert( pIdx->azColl && pIdx->azColl[i]!=0 );
-      pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
-
-      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
-      sqlite3VdbeAddOp4(v, OP_Eq, regCol, 0, regPrev+i, pColl, P4_COLLSEQ);
-      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
-
-      sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regTemp2);
-      sqlite3VdbeChangeP4(v, -1, (char*)&stat4PushFuncdef, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, 2 + 3*nCol);
-
-      aChngAddr[i] = sqlite3VdbeAddOp0(v, OP_Goto);
-      VdbeComment((v, "jump if column %d changed", i));
-
-      sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-3);
-      sqlite3VdbeAddOp2(v, OP_AddImm, regEq+i, 1);
-      VdbeComment((v, "incr repeat count"));
+      sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur+i, endOfScan);
     }
 
-    /* Code the "continue" */
-    addrGoto = sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
-
-    /* And now these:
-    **
-    **      ne_N:
-    **        regPrev(N) = i(N)
-    **        if( regEq(N) != N ) regDLt(N) += 1
-    **        regLt(N) += regEq(N)
-    **        regEq(N) = 1
-    */
     for(i=0; i<nCol; i++){
-      sqlite3VdbeJumpHere(v, aChngAddr[i]);  /* Set jump dest for the OP_Ne */
-      if( i==0 ){
-        sqlite3VdbeJumpHere(v, addrIfNot);   /* Jump dest for OP_IfNot */
-      }
-      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regPrev+i);
-      sqlite3VdbeAddOp2(v, OP_IfNot, regEq+i, sqlite3VdbeCurrentAddr(v)+2);
-      sqlite3VdbeAddOp2(v, OP_AddImm, regDLt+i, 1);
+      char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
+      int iCsr = iIdxCur+i;
+      int iDo;
+      int iNe;                    /* Jump here to exit do{...}while loop */
+      int j;
+      int bInner = (i==(nCol-1)); /* True for innermost cursor */
+
+      /* Implementation of the following pseudo-code:
+      **
+      **   regPrev(i) = csr(i)[i]
+      **   regDLte(i) += 1
+      **   regLt(i) += regEq(i)
+      **   regEq(i) = 0
+      **   regRowid = csr(i)[rowid]        // innermost cursor only
+      */
+      aChngAddr[i] = sqlite3VdbeAddOp3(v, OP_Column, iCsr, i, regPrev+i);
+      VdbeComment((v, "regPrev(%d) = csr(%d)(%d)", i, i, i));
+      sqlite3VdbeAddOp2(v, OP_AddImm, regDLte+i, 1);
+      VdbeComment((v, "regDLte(%d) += 1", i));
       sqlite3VdbeAddOp3(v, OP_Add, regEq+i, regLt+i, regLt+i);
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, regEq+i);
+      VdbeComment((v, "regLt(%d) += regEq(%d)", i, i));
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, regEq+i);
+      VdbeComment((v, "regEq(%d) = 0", i));
+      if( bInner ) sqlite3VdbeAddOp2(v, OP_IdxRowid, iCsr, regRowid);
+
+      /* This bit:
+      **
+      **   do {
+      **     regEq(i) += 1
+      **     regCnt += 1                   // innermost cursor only
+      **     Next csr(i)
+      **     if( Eof csr(i) ){
+      **       regEof = 1                  // innermost cursor only
+      **       break
+      **     }
+      **   }while ( csr(i)[0..i] == regPrev(0..i) )
+      */
+      iDo = sqlite3VdbeAddOp2(v, OP_AddImm, regEq+i, 1);
+      VdbeComment((v, "regEq(%d) += 1", i));
+      if( bInner ){
+        sqlite3VdbeAddOp2(v, OP_AddImm, regCnt, 1);
+        VdbeComment((v, "regCnt += 1"));
+      }
+      sqlite3VdbeAddOp2(v, OP_Next, iCsr, sqlite3VdbeCurrentAddr(v)+2+bInner);
+      if( bInner ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regEof);
+      iNe = sqlite3VdbeMakeLabel(v);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, iNe);
+      for(j=0; j<=i; j++){
+        sqlite3VdbeAddOp3(v, OP_Column, iCsr, j, regCol);
+        sqlite3VdbeAddOp4(v, OP_Ne, regCol, iNe, regPrev+j, pColl, P4_COLLSEQ);
+        sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+        VdbeComment((v, "if( regPrev(%d) != csr(%d)(%d) )", j, i, j));
+      }
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, iDo);
+      sqlite3VdbeResolveLabel(v, iNe);
     }
-    sqlite3DbFree(db, aChngAddr);
 
-    /*
-    **      all_eq:
-    **        regRowid = i(rowid)
-    */
-    sqlite3VdbeJumpHere(v, addrGoto);
-    sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, regRowid);
-
-    /* The end of the loop that iterates through all index entries. Always 
-    ** jump here after updating the iMem+1...iMem+1+nCol counters. */
-    sqlite3VdbeResolveLabel(v, endOfLoop);
-    sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, topOfLoop);
-    sqlite3VdbeAddOp1(v, OP_Close, iIdxCur);
-
-    /* Final invocation of stat4_push() */
+    /* Invoke stat4_push() */
     sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regTemp2);
     sqlite3VdbeChangeP4(v, -1, (char*)&stat4PushFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2 + 3*nCol);
 
-    /* Finally:
-    **
-    **    if( regEq(0) != 0 ) regDLt(0) += 1
-    */
+    sqlite3VdbeAddOp2(v, OP_If, regEof, endOfScan);
+    for(i=0; i<nCol-1; i++){
+      char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
+      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur+nCol-1, i, regCol);
+      sqlite3VdbeAddOp3(v, OP_Ne, regCol, aChngAddr[i], regPrev+i);
+      sqlite3VdbeChangeP4(v, -1, pColl, P4_COLLSEQ);
+      sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+    }
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, aChngAddr[nCol-1]);
+    sqlite3DbFree(db, aChngAddr);
+
+    sqlite3VdbeResolveLabel(v, endOfScan);
+
+    /* Close all the cursors */
     for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp2(v, OP_IfNot, regEq+i, sqlite3VdbeCurrentAddr(v)+2);
-      sqlite3VdbeAddOp2(v, OP_AddImm, regDLt+i, 1);
+      sqlite3VdbeAddOp1(v, OP_Close, iIdxCur+i);
+      VdbeComment((v, "close index cursor %d", i));
     }
 
 #ifdef SQLITE_ENABLE_STAT4
@@ -858,9 +856,9 @@ static void analyzeOneTable(
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp4(v, OP_String8, 0, regTemp, 0, " ", 0);
       sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regStat1, regStat1);
-      sqlite3VdbeAddOp3(v, OP_Add, regCnt, regDLt+i, regTemp);
+      sqlite3VdbeAddOp3(v, OP_Add, regCnt, regDLte+i, regTemp);
       sqlite3VdbeAddOp2(v, OP_AddImm, regTemp, -1);
-      sqlite3VdbeAddOp3(v, OP_Divide, regDLt+i, regTemp, regTemp);
+      sqlite3VdbeAddOp3(v, OP_Divide, regDLte+i, regTemp, regTemp);
       sqlite3VdbeAddOp1(v, OP_ToInt, regTemp);
       sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regStat1, regStat1);
     }
@@ -876,10 +874,8 @@ static void analyzeOneTable(
   ** name and the row count as the content.
   */
   if( pOnlyIdx==0 && needTableCnt ){
-    sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur, pTab->tnum, iDb);
     VdbeComment((v, "%s", pTab->zName));
-    sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regStat1);
-    sqlite3VdbeAddOp1(v, OP_Close, iIdxCur);
+    sqlite3VdbeAddOp2(v, OP_Count, iTabCur, regStat1);
     jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, regStat1);
     sqlite3VdbeAddOp2(v, OP_Null, 0, regIdxname);
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regRec, "aaa", 0);
@@ -888,6 +884,10 @@ static void analyzeOneTable(
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
+
+  sqlite3VdbeAddOp1(v, OP_Close, iTabCur);
+
+  /* TODO: Not sure about this... */
   if( pParse->nMem<regRec ) pParse->nMem = regRec;
 }
 
