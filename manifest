@@ -1,5 +1,5 @@
-C For\sthe\svtshim\smodule,\salways\szero\sout\sthe\sxChildDestroy\sfunction\spointer\safter\scalling\sit.
-D 2013-08-05T21:54:17.483
+C Performance\soptimization:\sAvoid\scalling\sconvertCompoundSelecctToSubquery()\non\squeries\sthat\sdo\snot\suse\sthe\sUNION,\sEXCEPT,\sor\sINTERSECT\soperators.
+D 2013-08-05T22:05:02.528
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
 F src/os_win.c 1d84f2079d9b91f91a4b5dbfa5e08f1b1a0ed0ff
 F src/pager.c 5d2f7475260a8588f9c441bb309d2b7eaa7ded3b
 F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
-F src/parse.y 599bc6338f3a6a7e1d656669a5667b9d77aea86b
+F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c d23d07716de96c7c0c2503ec5051a4384c3fb938
@@ -216,12 +216,12 @@ F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 17e670996729ac41aadf6a31f57b4e6f29b3d819
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 97273e41f57993e817bf0e816f9b19c4c07fc15b
+F src/select.c 8b148eb851f384412aea57091659d14b369918ca
 F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
 F src/sqlite.h.in 442c109e0c3447c34b1794971ecdb673ce08a843
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h abae976c5cfc00333bd612fc1d31d64056ea1e63
+F src/sqliteInt.h def0e436c0d4ca5084305ca6ae898020fbafaae4
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7301bedd94c8610568349953b18ff3575203e1b2
-R 1ef3cdfcb1aa69d8497541e7dc588a14
-U mistachkin
-Z 3969855045273c6e2ecf0a52e071caf5
+P 240f7252c66ad3ff5ae0ef06455c1ff9bd78bbb4
+R 2fa5b161c92663b5ccc93db65bbe97fe
+U drh
+Z 4bd26a74b5ae2ab01f7864a9d28488af

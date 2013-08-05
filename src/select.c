@@ -3639,10 +3639,12 @@ static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   Walker w;
   memset(&w, 0, sizeof(w));
-  w.xSelectCallback = convertCompoundSelectToSubquery;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
-  sqlite3WalkSelect(&w, pSelect);
+  if( pParse->hasCompound ){
+    w.xSelectCallback = convertCompoundSelectToSubquery;
+    sqlite3WalkSelect(&w, pSelect);
+  }
   w.xSelectCallback = selectExpander;
   sqlite3WalkSelect(&w, pSelect);
 }
