@@ -1,5 +1,5 @@
-C Begin\sadding\sexperimental\ssqlite_stat4\stable.\sThis\scommit\sis\sbuggy.
-D 2013-08-03T20:24:58.082
+C Fix\sa\scouple\sof\sproblems\sin\scode\srelated\sto\ssqlite_stat4.
+D 2013-08-05T05:34:30.270
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
-F src/analyze.c 7c272ae217eb34439ba2ea560b506eec667bd1e0
+F src/analyze.c b9fb000c4dcac4f7f3dbd1a8832ffdacf17a4d35
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -308,7 +308,7 @@ F test/analyze5.test e3eece09761c935ec0b85dc4ed70dbf6cac1ed77
 F test/analyze6.test 3c01e084309706a1033f850330ea24f6f7846297
 F test/analyze7.test c0af22c5e0140e2e4ac556a21c2b6fff58229c98
 F test/analyze8.test 092425439c12f62f9d5c3127e2b4f6e7b3e170cc
-F test/analyze9.test 238e3d1fa17e53d80da1d84a151c0465ef8ba666
+F test/analyze9.test 2ffe8f627b8f0309a72c2ff390effa430b1ef2d8
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -810,7 +810,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test a653783d985108c4912cc64d341ffbbb55ad2806
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/table.test a59d985ca366e39b17b175f387f9d5db5a18d4e2
+F test/table.test 03135ef2fd49b2a21894be22afdb3c7de32cecd3
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
@@ -1106,10 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 213020769f310aec1591d97756b53891d0b64005
-R b9be00b2213e6b6e3de39cb20a1e763e
-T *branch * sqlite_stat4
-T *sym-sqlite_stat4 *
-T -sym-trunk *
+P 2beea303a1d609cd2ff252412c50b966b9e5e8f1
+R d4282412612019a7b27b2fb043ed04d3
 U dan
-Z 57387cc568421f9309aeb8be1def5190
+Z 13683b9d54d5fd3b76b2568a74c36c12

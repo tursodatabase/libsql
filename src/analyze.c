@@ -371,9 +371,16 @@ static void stat4Push(
 
   /* Fill in the new Stat4Sample object. */
   if( p->nSample==p->mxSample ){
+    struct Stat4Sample *pMin = &p->a[iMin];
+    tRowcnt *anEq = pMin->anEq;
+    tRowcnt *anDLt = pMin->anDLt;
+    tRowcnt *anLt = pMin->anLt;
     assert( p->nSample - iMin - 1 >= 0 );
-    memmove(&p->a[iMin], &p->a[iMin+1], sizeof(p->a[0])*(p->nSample-iMin-1));
+    memmove(pMin, &pMin[1], sizeof(p->a[0])*(p->nSample-iMin-1));
     pSample = &p->a[p->nSample-1];
+    pSample->anEq = anEq;
+    pSample->anDLt = anDLt;
+    pSample->anLt = anLt;
   }else{
     pSample = &p->a[p->nSample++];
   }
@@ -1090,7 +1097,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 
   if( pIndex ){
     int bUnordered = 0;
-    decodeIntArray((char*)z, pIndex->nColumn, pIndex->aiRowEst, &bUnordered);
+    decodeIntArray((char*)z, pIndex->nColumn+1, pIndex->aiRowEst, &bUnordered);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowEst = pIndex->aiRowEst[0];
     pIndex->bUnordered = bUnordered;
   }else{
