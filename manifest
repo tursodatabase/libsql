@@ -1,5 +1,5 @@
-C Updates\sto\srequirements\smarks.\s\sNo\scode\schanges.
-D 2013-08-02T23:40:45.340
+C Add\sa\smissing\s'#include\s"tcl.h"'\sto\stest_rtree.c.
+D 2013-08-05T12:31:41.375
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -259,7 +259,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 30c64f0ef84734f2231a686df41ed882b0c59bc0
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_rtree.c 1d764c352b5348bb2869ff5f54aff8eadcb96041
+F src/test_rtree.c f3d1d12538dccb75fd916e3fa58f250edbdd3b47
 F src/test_schema.c cd12a2223c3a394f4d07bb93bdf6d344c5c121b6
 F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
 F src/test_sqllog.c c1c1bbedbcaf82b93d83e4f9dd990e62476a680e
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c5c0a8ab6c222185d5f9d4321e64d9f93cd36b7d
-R 20b1dec2302f0bdaf9f8a82570231a5d
+P 213020769f310aec1591d97756b53891d0b64005
+R 0448e5af5431e1ece697200cba67ff6c
 U drh
-Z 33c56d2532f56c7cb339c035fb818e1a
+Z ddf1308995835ea195d91d2476e0f474
