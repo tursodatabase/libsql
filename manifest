@@ -1,5 +1,5 @@
-C Use\sN\sseparate\scursors\swhen\sscanning\san\sindex\swith\sN\scolumns\sto\scollect\ssqlite_stat4\sdata.\sThis\sfixes\sa\sproblem\swith\scollecting\sincorrect\snEq\svalues\sfrom\smulti-column\sindexes.
-D 2013-08-05T18:00:56.397
+C Modify\sthe\svdbe\scode\sgenerated\sby\sANALYZE\sto\suse\sfewer\smemory\scells\sand\scursor\sslots.
+D 2013-08-05T19:04:07.083
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
-F src/analyze.c a0979f7fdc8cd724f8e646ba9ef6ca1e56fa7491
+F src/analyze.c 726a63b19f7f1478b321b84fc03ae9d754624841
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P badd24d987240db5528b37d1c177431617079f9b
-R 2711e68fa0a11591cfe5a22173f05afc
+P 3a71afe67418ce00097cd9714c395fe9ff16f23b
+R a3a130eab7cfa15d823c14448800974a
 U dan
-Z ccb7ab66bd998be3fb0311148b3ca62c
+Z c7783dc63850c26ec6b79b95587c6286

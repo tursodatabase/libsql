@@ -505,15 +505,15 @@ static void analyzeOneTable(
   Table *pTab,     /* Table whose indices are to be analyzed */
   Index *pOnlyIdx, /* If not NULL, only analyze this one index */
   int iStatCur,    /* Index of VdbeCursor that writes the sqlite_stat1 table */
-  int iMem         /* Available memory locations begin here */
+  int iMem,        /* Available memory locations begin here */
+  int iTab         /* Next available cursor */
 ){
   sqlite3 *db = pParse->db;    /* Database handle */
   Index *pIdx;                 /* An index to being analyzed */
   int iIdxCur;                 /* Cursor open on index being analyzed */
+  int iTabCur;                 /* Table cursor */
   Vdbe *v;                     /* The virtual machine being built up */
   int i;                       /* Loop counter */
-  int topOfLoop;               /* The top of the loop */
-  int endOfLoop;               /* The end of the loop */
   int jZeroRows = -1;          /* Jump from here if number of rows is zero */
   int iDb;                     /* Index of database containing pTab */
   u8 needTableCnt = 1;         /* True to count the table */
@@ -525,23 +525,20 @@ static void analyzeOneTable(
   int regNumLt = iMem++;       /* Number of keys less than regSample */
   int regNumDLt = iMem++;      /* Number of distinct keys less than regSample */
   int regSample = iMem++;      /* The next sample value */
-  int regRowid = regSample;    /* Rowid of a sample */
-  int regAccum = iMem++;       /* Register to hold Stat4Accum object */
   int regLoop = iMem++;        /* Loop counter */
-  int regCount = iMem++;       /* Number of rows in the table or index */
-  int regTemp1 = iMem++;       /* Intermediate register */
-  int regTemp2 = iMem++;       /* Intermediate register */
-  int once = 1;                /* One-time initialization */
   int shortJump = 0;           /* Instruction address */
-  int iTabCur = pParse->nTab++; /* Table cursor */
 #endif
   int regCol = iMem++;         /* Content of a column in analyzed table */
   int regRec = iMem++;         /* Register holding completed record */
   int regTemp = iMem++;        /* Temporary use register */
   int regNewRowid = iMem++;    /* Rowid for the inserted record */
+  int regEof = iMem++;         /* True once cursors are all at EOF */
+  int regCnt = iMem++;         /* Row counter */
 
   int regStat4 = iMem++;       /* Register to hold Stat4Accum object */
+  int regRowid = iMem++;       /* Rowid argument passed to stat4_push() */
 
+  pParse->nMem = MAX(pParse->nMem, regRowid);
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) ){
     return;
@@ -568,23 +565,20 @@ static void analyzeOneTable(
   /* Establish a read-lock on the table at the shared-cache level. 
   ** Also open a read-only cursor on the table.  */
   sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
-  iTabCur = pParse->nTab++;
+  iTabCur = iTab++;
+  pParse->nTab = MAX(pParse->nTab, iTab);
   sqlite3OpenTable(pParse, iTabCur, iDb, pTab, OP_OpenRead);
   sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
 
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int nCol;                     /* Number of columns indexed by pIdx */
     KeyInfo *pKey;                /* KeyInfo structure for pIdx */
-    int addrIfNot = 0;            /* address of OP_IfNot */
     int *aChngAddr;               /* Array of jump instruction addresses */
 
-    int regRowid;                 /* Register for rowid of current row */
     int regPrev;                  /* First in array of previous values */
     int regDLte;                  /* First in array of nDlt registers */
     int regLt;                    /* First in array of nLt registers */
     int regEq;                    /* First in array of nEq registers */
-    int regCnt;                   /* Number of index entries */
-    int regEof;                   /* True once cursors are all at EOF */
     int endOfScan;                /* Label to jump to once scan is finished */
 
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
@@ -651,13 +645,10 @@ static void analyzeOneTable(
     ** integer identifier) is regStat4. Immediately following regStat4
     ** we allocate the following:
     **
-    **     regRowid -    1 register
     **     regEq -    nCol registers
     **     regLt -    nCol registers
     **     regDLte -  nCol registers
-    **     regCnt -      1 register
     **     regPrev -  nCol registers
-    **     regEof -      1 register
     **
     ** The regRowid, regEq, regLt and regDLte registers must be positioned in 
     ** that order immediately following regStat4 so that they can be passed
@@ -665,21 +656,16 @@ static void analyzeOneTable(
     **
     ** All of the above are initialized to contain integer value 0.
     */
-    regRowid = regStat4+1;        /* Rowid argument */
     regEq = regRowid+1;           /* First in array of nEq value registers */
     regLt = regEq+nCol;           /* First in array of nLt value registers */
     regDLte = regLt+nCol;         /* First in array of nDLt value registers */
-    regCnt = regDLte+nCol;        /* Row counter */
-    regPrev = regCnt+1;           /* First in array of prev. value registers */
-    regEof = regPrev+nCol;        /* True once last row read from index */
-    if( regEof+1>pParse->nMem ){
-      pParse->nMem = regPrev+nCol;
-    }
+    regPrev = regDLte+nCol;       /* First in array of prev. value registers */
+    pParse->nMem = MAX(pParse->nMem, regPrev+nCol);
 
     /* Open a read-only cursor for each column of the index. */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
-    iIdxCur = pParse->nTab++;
-    pParse->nTab += (nCol-1);
+    iIdxCur = iTab;
+    pParse->nTab = MAX(pParse->nTab, iTab+nCol);
     for(i=0; i<nCol; i++){
       int iMode = (i==0 ? P4_KEYINFO_HANDOFF : P4_KEYINFO);
       sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur+i, pIdx->tnum, iDb);
@@ -703,9 +689,11 @@ static void analyzeOneTable(
 #endif /* SQLITE_ENABLE_STAT4 */
 
     /* Initialize all the memory registers allocated above to 0. */
-    for(i=regRowid; i<=regEof; i++){
+    for(i=regEq; i<regDLte+nCol; i++){
       sqlite3VdbeAddOp2(v, OP_Integer, 0, i);
     }
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regCnt);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regEof);
 
     /* Rewind all cursors open on the index. If the table is entry, this
     ** will cause control to jump to address endOfScan immediately.  */
@@ -773,7 +761,7 @@ static void analyzeOneTable(
     }
 
     /* Invoke stat4_push() */
-    sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regTemp2);
+    sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regTemp);
     sqlite3VdbeChangeP4(v, -1, (char*)&stat4PushFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2 + 3*nCol);
 
@@ -790,23 +778,17 @@ static void analyzeOneTable(
 
     sqlite3VdbeResolveLabel(v, endOfScan);
 
-    /* Close all the cursors */
-    for(i=0; i<nCol; i++){
-      sqlite3VdbeAddOp1(v, OP_Close, iIdxCur+i);
-      VdbeComment((v, "close index cursor %d", i));
-    }
-
 #ifdef SQLITE_ENABLE_STAT4
     /* Add rows to the sqlite_stat4 table */
     regLoop = regStat4+1;
     sqlite3VdbeAddOp2(v, OP_Integer, -1, regLoop);
     shortJump = sqlite3VdbeAddOp2(v, OP_AddImm, regLoop, 1);
-    sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4, regTemp1);
+    sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4, regTemp);
     sqlite3VdbeChangeP4(v, -1, (char*)&stat4GetFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2);
-    sqlite3VdbeAddOp1(v, OP_IsNull, regTemp1);
+    sqlite3VdbeAddOp1(v, OP_IsNull, regTemp);
 
-    sqlite3VdbeAddOp3(v, OP_NotExists, iTabCur, shortJump, regTemp1);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iTabCur, shortJump, regTemp);
     for(i=0; i<nCol; i++){
       int iCol = pIdx->aiColumn[i];
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regPrev+i);
@@ -884,11 +866,6 @@ static void analyzeOneTable(
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
     sqlite3VdbeJumpHere(v, jZeroRows);
   }
-
-  sqlite3VdbeAddOp1(v, OP_Close, iTabCur);
-
-  /* TODO: Not sure about this... */
-  if( pParse->nMem<regRec ) pParse->nMem = regRec;
 }
 
 
@@ -912,16 +889,18 @@ static void analyzeDatabase(Parse *pParse, int iDb){
   HashElem *k;
   int iStatCur;
   int iMem;
+  int iTab;
 
   sqlite3BeginWriteOperation(pParse, 0, iDb);
   iStatCur = pParse->nTab;
   pParse->nTab += 3;
   openStatTable(pParse, iDb, iStatCur, 0, 0);
   iMem = pParse->nMem+1;
+  iTab = pParse->nTab;
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   for(k=sqliteHashFirst(&pSchema->tblHash); k; k=sqliteHashNext(k)){
     Table *pTab = (Table*)sqliteHashData(k);
-    analyzeOneTable(pParse, pTab, 0, iStatCur, iMem);
+    analyzeOneTable(pParse, pTab, 0, iStatCur, iMem, iTab);
   }
   loadAnalysis(pParse, iDb);
 }
@@ -946,7 +925,7 @@ static void analyzeTable(Parse *pParse, Table *pTab, Index *pOnlyIdx){
   }else{
     openStatTable(pParse, iDb, iStatCur, pTab->zName, "tbl");
   }
-  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur, pParse->nMem+1);
+  analyzeOneTable(pParse, pTab, pOnlyIdx, iStatCur,pParse->nMem+1,pParse->nTab);
   loadAnalysis(pParse, iDb);
 }
 
