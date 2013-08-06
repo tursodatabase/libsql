@@ -49,7 +49,7 @@ proc do_update_tests {args} {
   uplevel do_select_tests $args
 }
 
-# EVIDENCE-OF: R-62337-45828 -- syntax diagram update-stmt
+# -- syntax diagram update-stmt
 #
 do_update_tests e_update-0 {
   1    "UPDATE t1 SET a=10" {}
@@ -493,7 +493,7 @@ do_update_tests e_update-2.5 -error {
 # of the UPDATE statement is extended with optional ORDER BY and LIMIT
 # clauses
 #
-# EVIDENCE-OF: R-45169-39597 -- syntax diagram update-stmt-limited
+# -- syntax diagram update-stmt-limited
 #
 do_update_tests e_update-3.0 {
   1   "UPDATE t1 SET a=b LIMIT 5"                                    {}

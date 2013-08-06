@@ -1692,10 +1692,9 @@ int sqlite3CodeSubselect(
   switch( pExpr->op ){
     case TK_IN: {
       char affinity;              /* Affinity of the LHS of the IN */
-      KeyInfo keyInfo;            /* Keyinfo for the generated table */
-      static u8 sortOrder = 0;    /* Fake aSortOrder for keyInfo */
       int addr;                   /* Address of OP_OpenEphemeral instruction */
       Expr *pLeft = pExpr->pLeft; /* the LHS of the IN operator */
+      KeyInfo *pKeyInfo = 0;      /* Key information */
 
       if( rMayHaveNull ){
         sqlite3VdbeAddOp2(v, OP_Null, 0, rMayHaveNull);
@@ -1719,9 +1718,7 @@ int sqlite3CodeSubselect(
       pExpr->iTable = pParse->nTab++;
       addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pExpr->iTable, !isRowid);
       if( rMayHaveNull==0 ) sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
-      memset(&keyInfo, 0, sizeof(keyInfo));
-      keyInfo.nField = 1;
-      keyInfo.aSortOrder = &sortOrder;
+      pKeyInfo = isRowid ? 0 : sqlite3KeyInfoAlloc(pParse->db, 1);
 
       if( ExprHasProperty(pExpr, EP_xIsSelect) ){
         /* Case 1:     expr IN (SELECT ...)
@@ -1738,11 +1735,12 @@ int sqlite3CodeSubselect(
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
         pExpr->x.pSelect->iLimit = 0;
         if( sqlite3Select(pParse, pExpr->x.pSelect, &dest) ){
+          sqlite3DbFree(pParse->db, pKeyInfo);
           return 0;
         }
         pEList = pExpr->x.pSelect->pEList;
-        if( ALWAYS(pEList!=0 && pEList->nExpr>0) ){ 
-          keyInfo.aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
+        if( pKeyInfo && ALWAYS(pEList!=0 && pEList->nExpr>0) ){ 
+          pKeyInfo->aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
               pEList->a[0].pExpr);
         }
       }else if( ALWAYS(pExpr->x.pList!=0) ){
@@ -1761,8 +1759,9 @@ int sqlite3CodeSubselect(
         if( !affinity ){
           affinity = SQLITE_AFF_NONE;
         }
-        keyInfo.aColl[0] = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
-        keyInfo.aSortOrder = &sortOrder;
+        if( pKeyInfo ){
+          pKeyInfo->aColl[0] = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+        }
 
         /* Loop through each expression in <exprlist>. */
         r1 = sqlite3GetTempReg(pParse);
@@ -1801,8 +1800,8 @@ int sqlite3CodeSubselect(
         sqlite3ReleaseTempReg(pParse, r1);
         sqlite3ReleaseTempReg(pParse, r2);
       }
-      if( !isRowid ){
-        sqlite3VdbeChangeP4(v, addr, (void *)&keyInfo, P4_KEYINFO);
+      if( pKeyInfo ){
+        sqlite3VdbeChangeP4(v, addr, (void *)pKeyInfo, P4_KEYINFO_HANDOFF);
       }
       break;
     }

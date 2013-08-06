@@ -26,7 +26,7 @@ do_execsql_test e_reindex-0.0 {
   CREATE INDEX i2 ON t1(b, a);
 } {}
 
-# EVIDENCE-OF: R-51477-38549 -- syntax diagram reindex-stmt
+#  -- syntax diagram reindex-stmt
 #
 do_reindex_tests e_reindex-0.1 {
   1   "REINDEX"           {}

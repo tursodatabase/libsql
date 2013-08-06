@@ -65,7 +65,7 @@ proc fragment_count {name} {
 }
 
 
-# EVIDENCE-OF: R-45173-45977 -- syntax diagram vacuum-stmt
+# -- syntax diagram vacuum-stmt
 #
 do_execsql_test e_vacuum-0.1 { VACUUM } {}
 

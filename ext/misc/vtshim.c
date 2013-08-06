@@ -429,6 +429,7 @@ static void vtshimAuxDestructor(void *pXAux){
   assert( pAux->pAllVtab==0 );
   if( !pAux->bDisposed && pAux->xChildDestroy ){
     pAux->xChildDestroy(pAux->pChildAux);
+    pAux->xChildDestroy = 0;
   }
   sqlite3_free(pAux->zName);
   sqlite3_free(pAux->pMod);
@@ -527,7 +528,10 @@ void sqlite3_dispose_module(void *pX){
       pAux->pMod->xDisconnect(pVtab->pChild);
     }
     pAux->bDisposed = 1;
-    if( pAux->xChildDestroy ) pAux->xChildDestroy(pAux->pChildAux);
+    if( pAux->xChildDestroy ){
+      pAux->xChildDestroy(pAux->pChildAux);
+      pAux->xChildDestroy = 0;
+    }
   }
 }
 
