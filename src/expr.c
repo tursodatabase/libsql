@@ -1739,10 +1739,11 @@ int sqlite3CodeSubselect(
           return 0;
         }
         pEList = pExpr->x.pSelect->pEList;
-        if( pKeyInfo && ALWAYS(pEList!=0 && pEList->nExpr>0) ){ 
-          pKeyInfo->aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
-              pEList->a[0].pExpr);
-        }
+        assert( pKeyInfo!=0 ); /* OOM will exit after sqlite3Select() */
+        assert( pEList!=0 );
+        assert( pEList->nExpr>0 );
+        pKeyInfo->aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
+                                                         pEList->a[0].pExpr);
       }else if( ALWAYS(pExpr->x.pList!=0) ){
         /* Case 2:     expr IN (exprlist)
         **
