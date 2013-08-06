@@ -3101,6 +3101,10 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 void sqlite3BackupRestart(sqlite3_backup *);
 void sqlite3BackupUpdate(sqlite3_backup *, Pgno, const u8 *);
 
+int sqlite3Stat4ProbeSetValue(Parse*, UnpackedRecord*, Expr*, u8, int, int*);
+void sqlite3Stat4ProbeFree(UnpackedRecord*);
+int sqlite3Stat4ProbeNew(Parse*, Index*, UnpackedRecord**);
+
 /*
 ** The interface to the LEMON-generated parser
 */

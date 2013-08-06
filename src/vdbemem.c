@@ -1005,6 +1005,11 @@ sqlite3_value *sqlite3ValueNew(sqlite3 *db){
   return p;
 }
 
+static sqlite3_value *valueNew(sqlite3 *db, sqlite3_value *pOld){
+  if( pOld ) return pOld;
+  return sqlite3ValueNew(db);
+}
+
 /*
 ** Create a new sqlite3_value object, containing the value of pExpr.
 **
@@ -1056,7 +1061,7 @@ int sqlite3ValueFromExpr(
   }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
-    pVal = sqlite3ValueNew(db);
+    pVal = valueNew(db, *ppVal);
     if( pVal==0 ) goto no_mem;
     if( ExprHasProperty(pExpr, EP_IntValue) ){
       sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue*negInt);
@@ -1090,7 +1095,7 @@ int sqlite3ValueFromExpr(
       sqlite3ValueApplyAffinity(pVal, affinity, enc);
     }
   }else if( op==TK_NULL ){
-    pVal = sqlite3ValueNew(db);
+    pVal = valueNew(db, *ppVal);
     if( pVal==0 ) goto no_mem;
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
@@ -1098,7 +1103,7 @@ int sqlite3ValueFromExpr(
     int nVal;
     assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
     assert( pExpr->u.zToken[1]=='\'' );
-    pVal = sqlite3ValueNew(db);
+    pVal = valueNew(db, *ppVal);
     if( !pVal ) goto no_mem;
     zVal = &pExpr->u.zToken[2];
     nVal = sqlite3Strlen30(zVal)-1;
@@ -1117,10 +1122,103 @@ int sqlite3ValueFromExpr(
 no_mem:
   db->mallocFailed = 1;
   sqlite3DbFree(db, zVal);
-  sqlite3ValueFree(pVal);
+  if( *ppVal==0 ) sqlite3ValueFree(pVal);
   *ppVal = 0;
   return SQLITE_NOMEM;
 }
+
+#ifdef SQLITE_ENABLE_STAT4
+int sqlite3Stat4ProbeSetValue(
+  Parse *pParse,                  /* Parse context */
+  UnpackedRecord *pRec,           /* Set field in this probe */
+  Expr *pExpr,                    /* The expression to extract a value from */
+  u8 affinity,                    /* Affinity to use */
+  int iVal,                       /* Array element to populate */
+  int *pbOk                       /* OUT: True if value was extracted */
+){
+  int rc = SQLITE_OK;
+  sqlite3_value *pVal = &pRec->aMem[iVal];
+
+#if 0
+  if( iVal>0 ){ *pbOk = 0; return SQLITE_OK; }
+#endif
+
+  if( !pExpr ){
+    sqlite3VdbeMemSetNull((Mem*)pVal);
+    *pbOk = 1;
+  }else if( pExpr->op==TK_VARIABLE
+        || (pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
+  ){
+    Vdbe *v;
+    int iVar = pExpr->iColumn;
+    sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
+    if( v = pParse->pReprepare ){
+      rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iVal-1]);
+      if( rc==SQLITE_OK ){
+        sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
+      }
+      pVal->db = pParse->db;
+      *pbOk = 1;
+      sqlite3VdbeMemStoreType((Mem*)pVal);
+    }else{
+      *pbOk = 0;
+    }
+  }else{
+    sqlite3 *db = pRec->aMem[0].db;
+    rc = sqlite3ValueFromExpr(db, pExpr, ENC(db), affinity, &pVal);
+    *pbOk = (pVal!=0);
+  }
+  assert( pVal==0 || pVal->db==pParse->db );
+  return rc;
+}
+
+void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
+  if( pRec ){
+    int i;
+    Mem *aMem = pRec->aMem;
+    sqlite3 *db = aMem[0].db;
+    for(i=0; i<pRec->pKeyInfo->nField; i++){
+      sqlite3DbFree(db, aMem[i].zMalloc);
+    }
+    sqlite3DbFree(db, pRec->pKeyInfo);
+    sqlite3DbFree(db, pRec);
+  }
+}
+
+int sqlite3Stat4ProbeNew(
+  Parse *pParse,                  /* Parse context */
+  Index *pIdx,                    /* Allocate record for this index */
+  UnpackedRecord **ppRec          /* OUT: Allocated record */
+){
+  sqlite3 *db = pParse->db;       /* Database handle */
+  UnpackedRecord *pRec;           /* Return value */
+  int nByte;                      /* Bytes of space to allocate */
+  int i;                          /* Counter variable */
+
+  assert( *ppRec==0 );
+  if( pIdx->nSample==0 ) return SQLITE_OK;
+
+  nByte = sizeof(Mem) * pIdx->nColumn + sizeof(UnpackedRecord);
+  *ppRec = pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);
+  if( !pRec ) return SQLITE_NOMEM;
+  pRec->pKeyInfo = sqlite3IndexKeyinfo(pParse, pIdx);
+  if( !pRec->pKeyInfo ){
+    sqlite3DbFree(db, pRec);
+    *ppRec = 0;
+    return SQLITE_NOMEM;
+  }
+  pRec->pKeyInfo->enc = ENC(pParse->db);
+  pRec->flags = UNPACKED_PREFIX_MATCH;
+  pRec->aMem = (Mem *)&pRec[1];
+  for(i=0; i<pIdx->nColumn; i++){
+    pRec->aMem[i].flags = MEM_Null;
+    pRec->aMem[i].type = SQLITE_NULL;
+    pRec->aMem[i].db = db;
+  }
+
+  return SQLITE_OK;
+}
+#endif /* ifdef SQLITE_ENABLE_STAT4 */
 
 /*
 ** Change the string value of an sqlite3_value object
