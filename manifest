@@ -1,5 +1,5 @@
-C Add\sa\stestcase()\smacro\sto\sverify\sOOM\scoverage.
-D 2013-08-06T17:24:23.114
+C Update\sthe\sconfigure\sscript\sto\suse\sthe\slatest\sversion\snumber\s(3.8.0).
+D 2013-08-06T18:21:21.097
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 8bb8bd13d3c918c4c1c73480930e81f955ac298a x
+F configure 27e9279a219b652bd1c53439353a5e5be70214b2 x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9103c27ceb3f4023ea3a41b679a10717d3f80210
-R 66ae81cd15b8b8eab1989c80a506936c
+P d43dcbc488120aeb7104ab9e6a27f62bb348bf6a
+R 3b3e55282f1c280f4b646ca0138070fb
 U drh
-Z 5187416864919678052fb71ae4c5e22d
+Z 4115d1bc46bf087fcf132b66c03b606d
