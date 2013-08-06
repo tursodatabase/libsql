@@ -1,5 +1,5 @@
-C Update\sthe\sconfigure\sscript\sto\suse\sthe\slatest\sversion\snumber\s(3.8.0).
-D 2013-08-06T18:21:21.097
+C Adjust\s#ifdefs\sin\stest_autoext.c\sso\sthat\sit\scompiles\swith\s\nSQLITE_OMIT_LOAD_EXTENSION.\s\sFix\scompiler\swarnings\sin\stwo\sother\ntest\smodules.\s\sNo\schanges\sto\sthe\score.
+D 2013-08-06T18:35:31.726
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -236,13 +236,13 @@ F src/test7.c 126b886b53f0358b92aba9b81d3fcbfbe9a93cd6
 F src/test8.c 7ee77ea522ae34aa691dfe407139dec80d4fc039
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
-F src/test_autoext.c 32cff3d01cdd3202486e623c3f8103ed04cb57fa
+F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c 95bb33e9dcaa340a296c0bf0e0ba3d1a1c8004c0
-F src/test_demovfs.c 20a4975127993f4959890016ae9ce5535a880094
+F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
-F src/test_fs.c 8f786bfd0ad48030cf2a06fb1f050e9c60a150d7
+F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
 F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d43dcbc488120aeb7104ab9e6a27f62bb348bf6a
-R 3b3e55282f1c280f4b646ca0138070fb
+P 52e8ec5e24730efa6d89cbaf1e03bc1d5c59cc05
+R a1467a2c305e4e64db55068e564d786d
 U drh
-Z 4115d1bc46bf087fcf132b66c03b606d
+Z 082cd0bd0486defd1efdbdfa0db86156

@@ -208,13 +208,13 @@ int Sqlitetest_autoext_Init(Tcl_Interp *interp){
           autoExtCubeObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_auto_extension_broken",
           autoExtBrokenObjCmd, 0, 0);
-#endif
   Tcl_CreateObjCommand(interp, "sqlite3_cancel_auto_extension_sqr",
           cancelAutoExtSqrObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_cancel_auto_extension_cube",
           cancelAutoExtCubeObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_cancel_auto_extension_broken",
           cancelAutoExtBrokenObjCmd, 0, 0);
+#endif
   Tcl_CreateObjCommand(interp, "sqlite3_reset_auto_extension",
           resetAutoExtObjCmd, 0, 0);
   return TCL_OK;
