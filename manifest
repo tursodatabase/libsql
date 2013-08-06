@@ -1,5 +1,5 @@
-C Performance\soptimization:\sAvoid\scalling\sconvertCompoundSelecctToSubquery()\non\squeries\sthat\sdo\snot\suse\sthe\sUNION,\sEXCEPT,\sor\sINTERSECT\soperators.
-D 2013-08-05T22:05:02.528
+C More\sthan\sdouble\sthe\sspeed\sof\sthe\sresolveP2Values()\sroutine\sin\svdbeaux.c\sby\nmoving\sfrom\san\sextended\sif-else\son\severy\sopcode\sto\sa\sswitch.\s\sOpcodes\sare\nreordered\sin\smkopcodesh.awk\sto\sput\sthe\sswitched\sopcodes\sclose\stogether,\nfor\sadditional\sperformance\sand\sto\sreduce\scode\sfootprint.
+D 2013-08-06T07:45:08.160
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,7 +144,7 @@ F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
 F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
-F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
+F mkopcodeh.awk e7334b45c023b5ee2efc6e8f479560c2026fa34a
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -281,7 +281,7 @@ F src/vdbe.c 4914ae1d00045a5310aea9e0f7c9a8edd3d9f856
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
 F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
-F src/vdbeaux.c d5cdd5bd5c063cc912df20b0bcadf78b6b351cb2
+F src/vdbeaux.c a6ea36a9dc714e1128a0173249a0532ddcab0489
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 240f7252c66ad3ff5ae0ef06455c1ff9bd78bbb4
-R 2fa5b161c92663b5ccc93db65bbe97fe
+P c589b2fed7beabc2337d701094c22635914d9c23
+R 63c66722ef11a129368dbe6ccc84108b
 U drh
-Z 4bd26a74b5ae2ab01f7864a9d28488af
+Z db760ef775aca796d7a23f90b9b7ee9e
