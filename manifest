@@ -1,5 +1,5 @@
-C Adjust\s#ifdefs\sin\stest_autoext.c\sso\sthat\sit\scompiles\swith\s\nSQLITE_OMIT_LOAD_EXTENSION.\s\sFix\scompiler\swarnings\sin\stwo\sother\ntest\smodules.\s\sNo\schanges\sto\sthe\score.
-D 2013-08-06T18:35:31.726
+C Fix\sa\stest\scase\srelated\sto\spartial\sindices\sso\sthat\sit\sworks\seven\sif\nSTAT3\sis\sdisabled.
+D 2013-08-06T19:18:17.913
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -590,7 +590,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
-F test/index6.test 0005b3093012c6d0f20cc54d9057210221216143
+F test/index6.test f53a788b813eb6937346867bae9e587c434dd9a1
 F test/indexedby.test 0e959308707c808515c3a51363f7a9835027108c
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 52e8ec5e24730efa6d89cbaf1e03bc1d5c59cc05
-R a1467a2c305e4e64db55068e564d786d
+P 89930ea3c3b3bd078f641b2c5203d851083bbf1a
+R 22d053337a8290c9ac6b0d4c1264f844
 U drh
-Z 082cd0bd0486defd1efdbdfa0db86156
+Z 21ef7545513488fc6735d995a8f856cc
