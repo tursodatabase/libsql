@@ -14,6 +14,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix analyze9
 
+ifcapable !stat4 {
+  finish_test
+  return
+}
+
 proc s {blob} {
   set ret ""
   binary scan $blob c* bytes

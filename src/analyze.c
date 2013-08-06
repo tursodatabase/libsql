@@ -761,9 +761,11 @@ static void analyzeOneTable(
     }
 
     /* Invoke stat4_push() */
+#ifdef SQLITE_ENABLE_STAT4
     sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regTemp);
     sqlite3VdbeChangeP4(v, -1, (char*)&stat4PushFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2 + 3*nCol);
+#endif
 
     sqlite3VdbeAddOp2(v, OP_If, regEof, endOfScan);
     for(i=0; i<nCol-1; i++){

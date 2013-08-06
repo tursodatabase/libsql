@@ -2565,7 +2565,6 @@ static int whereRangeScanEst(
 #else
   UNUSED_PARAMETER(pParse);
   UNUSED_PARAMETER(pBuilder);
-  UNUSED_PARAMETER(nEq);
 #endif
   assert( pLower || pUpper );
   *pRangeDiv = 0;
@@ -4576,15 +4575,19 @@ static int whereLoopAddBtree(
       }
     }
 
+#ifdef SQLITE_ENABLE_STAT4
     assert( pBuilder->pRec==0 );
     rc = sqlite3Stat4ProbeNew(pWInfo->pParse, pProbe, &pBuilder->pRec);
     if( rc==SQLITE_OK ){
+#endif
       rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
+#ifdef SQLITE_ENABLE_STAT4
       sqlite3Stat4ProbeFree(pBuilder->pRec);
       pBuilder->nRecValid = 0;
       pBuilder->pRec = 0;
     }
     assert( pBuilder->pRec==0 );
+#endif
 
     /* If there was an INDEXED BY clause, then only that one index is
     ** considered. */
