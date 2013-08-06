@@ -1990,6 +1990,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     int nCol;                   /* Number of columns in the table */
     int nByte;                  /* Number of bytes in an SQL string */
     int i, j;                   /* Loop counters */
+    int needCommit;             /* True to COMMIT or ROLLBACK at end */
     int nSep;                   /* Number of bytes in p->separator[] */
     char *zSql;                 /* An SQL statement */
     CSVReader sCsv;             /* Reader context */
@@ -2091,6 +2092,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       xCloser(sCsv.in);
       return 1;
     }
+    needCommit = sqlite3_get_autocommit(db);
+    if( needCommit ) sqlite3_exec(db, "BEGIN", 0, 0, 0);
     do{
       int startLine = sCsv.nLine;
       for(i=0; i<nCol; i++){
@@ -2127,7 +2130,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     xCloser(sCsv.in);
     sqlite3_free(sCsv.z);
     sqlite3_finalize(pStmt);
-    sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
+    if( needCommit ) sqlite3_exec(db, "COMMIT", 0, 0, 0);
   }else
 
   if( c=='i' && strncmp(azArg[0], "indices", n)==0 && nArg<3 ){
