@@ -1,5 +1,5 @@
-C Fix\stypos\sand\sadd\sclarification\sto\scomments\sin\swhere.c.\s\sNo\scode\schanges.
-D 2013-08-07T01:18:38.449
+C Add\sa\sguard\s#ifndef\sto\stest_intarray.h\sto\sprevent\sharm\sif\sit\sis\s#included\nmore\sthan\sonce.\s\sAdd\sa\scomment\son\sthe\sclosing\s#endif\sof\sthe\sguards\son\nsqlite3.h\sand\stest_multiplex.h.
+D 2013-08-07T14:18:45.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/resolve.c 17e670996729ac41aadf6a31f57b4e6f29b3d819
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
 F src/shell.c 927e17b37b63b24461e372d982138fb22c4df321
-F src/sqlite.h.in 442c109e0c3447c34b1794971ecdb673ce08a843
+F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h def0e436c0d4ca5084305ca6ae898020fbafaae4
@@ -247,12 +247,12 @@ F src/test_func.c 3a8dd37c08ab43b76d38eea2836e34a3897bf170
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
 F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
-F src/test_intarray.h b999bb18d090b8d9d9c49d36ec37ef8f341fe169
+F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c a105801222c0514f8befa2a1712a95505cce099a
 F src/test_multiplex.c 5d691eeb6cb6aa7888da28eba5e62a9a857d3c0f
-F src/test_multiplex.h 9b63b95f07acedee425fdfe49a47197c9bf5f9d8
+F src/test_multiplex.h 110a8c4d356e0aa464ca8730375608a9a0b61ae1
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
 F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 153c645025637bbff14dfce793e4b92210ded7e8
-R bd41820faa238dc5341c3c2a4f14484a
+P f8d8790ede0fcaf6c5b60ac22919c1d97c74e838
+R 2f7b5cf183df4b523d2c445c6f8fcaa5
 U drh
-Z dce4447dee7fcad2bdba25f503c8b865
+Z cdc793001b4bb9536e6929a443adf8d1
