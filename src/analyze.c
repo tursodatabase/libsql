@@ -218,14 +218,13 @@ typedef struct Stat4Accum Stat4Accum;
 struct Stat4Accum {
   tRowcnt nRow;             /* Number of rows in the entire table */
   tRowcnt nPSample;         /* How often to do a periodic sample */
-  int iMin;                 /* Index of entry with minimum nSumEq and hash */
+  int iMin;                 /* Index of entry with minimum nEq and hash */
   int mxSample;             /* Maximum number of samples to accumulate */
   int nSample;              /* Current number of samples */
   int nCol;                 /* Number of columns in the index */
   u32 iPrn;                 /* Pseudo-random number used for sampling */
   struct Stat4Sample {
     i64 iRowid;                /* Rowid in main table of the key */
-    tRowcnt nSumEq;            /* Sum of anEq[] values */
     tRowcnt *anEq;             /* sqlite_stat4.nEq */
     tRowcnt *anLt;             /* sqlite_stat4.nLt */
     tRowcnt *anDLt;            /* sqlite_stat4.nDLt */
@@ -349,23 +348,38 @@ static void stat4Push(
   assert( p->nCol>0 );
   assert( argc==(2 + 3*p->nCol) );
 
-  /* Set nSumEq to the sum of all nEq parameters. */
-  for(i=0; i<p->nCol; i++){
-    nSumEq += sqlite3_value_int64(aEq[i]);
-  }
-  if( nSumEq==0 ) return;
-
-  /* Figure out if this sample will be used. Set isPSample to true if this
-  ** is a periodic sample, or false if it is being captured because of a
-  ** large nSumEq value. If the sample will not be used, return early.  */
+  /* Figure out if this sample will be used. There are two reasons a
+  ** sample may be used:
+  **
+  **   1. It may be a periodic sample. In this case set isPSample to true
+  **      as well. Or,
+  **
+  **   2. Less than p->mxSample samples have been collected so far, or
+  **
+  **   3. It is more desirable than some other non-periodic sample that has
+  **      already been collected. Samples are compared based on the values
+  **      in the anEq array, starting from last (right-most index column)
+  **      to first (left-most index column). If all elements of the anEq
+  **      array are equal, samples are compared by hash value.
+  */
   h = p->iPrn = p->iPrn*1103515245 + 12345;
   if( (nLt/p->nPSample)!=((nEq+nLt)/p->nPSample) ){
     doInsert = isPSample = 1;
-  }else if( (p->nSample<p->mxSample)
-         || (nSumEq>p->a[iMin].nSumEq)
-         || (nSumEq==p->a[iMin].nSumEq && h>p->a[iMin].iHash) 
-  ){
+  }else if( p->nSample<p->mxSample ){
     doInsert = 1;
+  }else{
+    tRowcnt *aMinEq = p->a[iMin].anEq;
+    for(i=p->nCol-1; i>=0; i--){
+      i64 nEq = sqlite3_value_int64(aEq[i]);
+      if( nEq<aMinEq[i] ) break;
+      if( nEq>aMinEq[i] ){
+        doInsert = 1;
+        break;
+      }
+    }
+    if( i<0 && h>p->a[iMin].iHash ){
+      doInsert = 1;
+    }
   }
   if( !doInsert ) return;
 
@@ -387,7 +401,6 @@ static void stat4Push(
   pSample->iRowid = rowid;
   pSample->iHash = h;
   pSample->isPSample = isPSample;
-  pSample->nSumEq = nSumEq;
   for(i=0; i<p->nCol; i++){
     pSample->anEq[i] = sqlite3_value_int64(aEq[i]);
     pSample->anLt[i] = sqlite3_value_int64(aLt[i]);
@@ -397,18 +410,21 @@ static void stat4Push(
 
   /* Find the new minimum */
   if( p->nSample==p->mxSample ){
-    u32 iHash = 0;                /* Hash corresponding to iMin/nSumEq entry */
-    i64 nMinEq = LARGEST_INT64;   /* Smallest nSumEq seen so far */
-    assert( iMin = -1 );
-
+    iMin = -1;
     for(i=0; i<p->mxSample; i++){
       if( p->a[i].isPSample ) continue;
-      if( (p->a[i].nSumEq<nMinEq)
-       || (p->a[i].nSumEq==nMinEq && p->a[i].iHash<iHash)
-      ){
+      if( iMin<0 ){
         iMin = i;
-        nMinEq = p->a[i].nSumEq;
-        iHash = p->a[i].iHash;
+      }else{
+        int j;
+        for(j=p->nCol-1; j>=0; j++){
+          i64 iCmp = (p->a[iMin].anEq[j] - p->a[i].anEq[j]);
+          if( iCmp<0 ){ iMin = i; }
+          if( iCmp ) break;
+        }
+        if( j==0 && p->a[iMin].iHash<p->a[i].iHash ){
+          iMin = i;
+        }
       }
     }
     assert( iMin>=0 );
