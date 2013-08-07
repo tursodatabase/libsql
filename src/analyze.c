@@ -348,7 +348,7 @@ static void stat4Push(
   assert( p->nCol>0 );
   assert( argc==(2 + 3*p->nCol) );
 
-  /* Figure out if this sample will be used. There are two reasons a
+  /* Figure out if this sample will be used. There are three reasons a
   ** sample may be used:
   **
   **   1. It may be a periodic sample. In this case set isPSample to true
@@ -361,6 +361,9 @@ static void stat4Push(
   **      in the anEq array, starting from last (right-most index column)
   **      to first (left-most index column). If all elements of the anEq
   **      array are equal, samples are compared by hash value.
+  **
+  **      For both the contents of the anEq[] array and the hash value,
+  **      larger values are considered more desirable.
   */
   h = p->iPrn = p->iPrn*1103515245 + 12345;
   if( (nLt/p->nPSample)!=((nEq+nLt)/p->nPSample) ){
