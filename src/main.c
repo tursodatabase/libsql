@@ -2178,20 +2178,20 @@ int sqlite3ParseUri(
     zFile = sqlite3_malloc(nByte);
     if( !zFile ) return SQLITE_NOMEM;
 
+    iIn = 5;
+#ifndef SQLITE_ALLOW_URI_AUTHORITY
     /* Discard the scheme and authority segments of the URI. */
     if( zUri[5]=='/' && zUri[6]=='/' ){
       iIn = 7;
       while( zUri[iIn] && zUri[iIn]!='/' ) iIn++;
-
       if( iIn!=7 && (iIn!=16 || memcmp("localhost", &zUri[7], 9)) ){
         *pzErrMsg = sqlite3_mprintf("invalid uri authority: %.*s", 
             iIn-7, &zUri[7]);
         rc = SQLITE_ERROR;
         goto parse_uri_out;
       }
-    }else{
-      iIn = 5;
     }
+#endif
 
     /* Copy the filename and any query parameters into the zFile buffer. 
     ** Decode %HH escape codes along the way. 
