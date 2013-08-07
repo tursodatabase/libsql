@@ -3805,25 +3805,20 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   int i;
   int nCol = pIdx->nColumn;
-  int nBytes = sizeof(KeyInfo) + (nCol-1)*sizeof(CollSeq*) + nCol;
-  sqlite3 *db = pParse->db;
-  KeyInfo *pKey = (KeyInfo *)sqlite3DbMallocZero(db, nBytes);
+  KeyInfo *pKey;
 
+  pKey = sqlite3KeyInfoAlloc(pParse->db, nCol);
   if( pKey ){
-    pKey->db = pParse->db;
-    pKey->aSortOrder = (u8 *)&(pKey->aColl[nCol]);
-    assert( &pKey->aSortOrder[nCol]==&(((u8 *)pKey)[nBytes]) );
     for(i=0; i<nCol; i++){
       char *zColl = pIdx->azColl[i];
       assert( zColl );
       pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
       pKey->aSortOrder[i] = pIdx->aSortOrder[i];
     }
-    pKey->nField = (u16)nCol;
   }
 
   if( pParse->nErr ){
-    sqlite3DbFree(db, pKey);
+    sqlite3DbFree(pParse->db, pKey);
     pKey = 0;
   }
   return pKey;

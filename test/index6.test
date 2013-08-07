@@ -144,12 +144,21 @@ do_test index6-2.2 {
     SELECT * FROM t2 WHERE a=5;
   }
 } {/.* TABLE t2 USING INDEX t2a1 .*/}
-do_test index6-2.3 {
-  execsql {
-    EXPLAIN QUERY PLAN
-    SELECT * FROM t2 WHERE a IS NOT NULL;
-  }
-} {/.* TABLE t2 USING INDEX t2a1 .*/}
+ifcapable stat4 {
+  do_test index6-2.3stat4 {
+    execsql {
+      EXPLAIN QUERY PLAN
+      SELECT * FROM t2 WHERE a IS NOT NULL;
+    }
+  } {/.* TABLE t2 USING INDEX t2a1 .*/}
+} else {
+  do_test index6-2.3stat4 {
+    execsql {
+      EXPLAIN QUERY PLAN
+      SELECT * FROM t2 WHERE a IS NOT NULL AND a>0;
+    }
+  } {/.* TABLE t2 USING INDEX t2a1 .*/}
+}
 do_test index6-2.4 {
   execsql {
     EXPLAIN QUERY PLAN

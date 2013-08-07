@@ -417,6 +417,7 @@ select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
   if( Z ){
     Z->op = (u8)Y;
     Z->pPrior = X;
+    if( Y!=TK_ALL ) pParse->hasCompound = 1;
   }else{
     sqlite3SelectDelete(pParse->db, X);
   }

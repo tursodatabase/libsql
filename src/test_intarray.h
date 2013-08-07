@@ -75,6 +75,8 @@
 ** action to free the intarray objects.
 */
 #include "sqlite3.h"
+#ifndef _INTARRAY_H_
+#define _INTARRAY_H_
 
 /*
 ** Make sure we can call this stuff from C++.
@@ -123,3 +125,4 @@ int sqlite3_intarray_bind(
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
 #endif
+#endif /* _INTARRAY_H_ */

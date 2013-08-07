@@ -7228,4 +7228,4 @@ int sqlite3_vtab_on_conflict(sqlite3 *);
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
 #endif
-#endif
+#endif /* _SQLITE3_H_ */

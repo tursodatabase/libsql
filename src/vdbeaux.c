@@ -407,40 +407,60 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
-    pOp->opflags = sqlite3OpcodeProperty[opcode];
-    if( opcode==OP_Function || opcode==OP_AggStep ){
-      if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
-    }else if( opcode==OP_Transaction ){
-      if( pOp->p2!=0 ) p->readOnly = 0;
-      p->bIsReader = 1;
-    }else if( opcode==OP_AutoCommit || opcode==OP_Savepoint ){
-      p->bIsReader = 1;
-    }else if( opcode==OP_Vacuum
-           || opcode==OP_JournalMode
+    /* NOTE: Be sure to update mkopcodeh.awk when adding or removing
+    ** cases from this switch! */
+    switch( opcode ){
+      case OP_Function:
+      case OP_AggStep: {
+        if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
+        break;
+      }
+      case OP_Transaction: {
+        if( pOp->p2!=0 ) p->readOnly = 0;
+        /* fall thru */
+      }
+      case OP_AutoCommit:
+      case OP_Savepoint: {
+        p->bIsReader = 1;
+        break;
+      }
 #ifndef SQLITE_OMIT_WAL
-           || opcode==OP_Checkpoint
+      case OP_Checkpoint:
 #endif
-    ){
-      p->readOnly = 0;
-      p->bIsReader = 1;
+      case OP_Vacuum:
+      case OP_JournalMode: {
+        p->readOnly = 0;
+        p->bIsReader = 1;
+        break;
+      }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    }else if( opcode==OP_VUpdate ){
-      if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
-    }else if( opcode==OP_VFilter ){
-      int n;
-      assert( p->nOp - i >= 3 );
-      assert( pOp[-1].opcode==OP_Integer );
-      n = pOp[-1].p1;
-      if( n>nMaxArgs ) nMaxArgs = n;
+      case OP_VUpdate: {
+        if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
+        break;
+      }
+      case OP_VFilter: {
+        int n;
+        assert( p->nOp - i >= 3 );
+        assert( pOp[-1].opcode==OP_Integer );
+        n = pOp[-1].p1;
+        if( n>nMaxArgs ) nMaxArgs = n;
+        break;
+      }
 #endif
-    }else if( opcode==OP_Next || opcode==OP_SorterNext ){
-      pOp->p4.xAdvance = sqlite3BtreeNext;
-      pOp->p4type = P4_ADVANCE;
-    }else if( opcode==OP_Prev ){
-      pOp->p4.xAdvance = sqlite3BtreePrevious;
-      pOp->p4type = P4_ADVANCE;
+      case OP_Next:
+      case OP_SorterNext: {
+        pOp->p4.xAdvance = sqlite3BtreeNext;
+        pOp->p4type = P4_ADVANCE;
+        break;
+      }
+      case OP_Prev: {
+        pOp->p4.xAdvance = sqlite3BtreePrevious;
+        pOp->p4type = P4_ADVANCE;
+        break;
+      }
     }
 
+    pOp->opflags = sqlite3OpcodeProperty[opcode];
     if( (pOp->opflags & OPFLG_JUMP)!=0 && pOp->p2<0 ){
       assert( -1-pOp->p2<p->nLabel );
       pOp->p2 = aLabel[-1-pOp->p2];
@@ -729,20 +749,13 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4.p = 0;
     pOp->p4type = P4_NOTUSED;
   }else if( n==P4_KEYINFO ){
-    KeyInfo *pKeyInfo;
-    int nField, nByte;
+    KeyInfo *pOrig, *pNew;
 
-    nField = ((KeyInfo*)zP4)->nField;
-    nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
-    pKeyInfo = sqlite3DbMallocRaw(0, nByte);
-    pOp->p4.pKeyInfo = pKeyInfo;
-    if( pKeyInfo ){
-      u8 *aSortOrder;
-      memcpy((char*)pKeyInfo, zP4, nByte - nField);
-      aSortOrder = pKeyInfo->aSortOrder;
-      assert( aSortOrder!=0 );
-      pKeyInfo->aSortOrder = (unsigned char*)&pKeyInfo->aColl[nField];
-      memcpy(pKeyInfo->aSortOrder, aSortOrder, nField);
+    pOrig = (KeyInfo*)zP4;
+    pOp->p4.pKeyInfo = pNew = sqlite3KeyInfoAlloc(db, pOrig->nField);
+    if( pNew ){
+      memcpy(pNew->aColl, pOrig->aColl, pOrig->nField*sizeof(pNew->aColl[0]));
+      memcpy(pNew->aSortOrder, pOrig->aSortOrder, pOrig->nField);
       pOp->p4type = P4_KEYINFO;
     }else{
       p->db->mallocFailed = 1;
@@ -2993,7 +3006,6 @@ int sqlite3VdbeRecordCompare(
   u32 idx1;          /* Offset into aKey[] of next header element */
   u32 szHdr1;        /* Number of bytes in header */
   int i = 0;
-  int nField;
   int rc = 0;
   const unsigned char *aKey1 = (const unsigned char *)pKey1;
   KeyInfo *pKeyInfo;
@@ -3016,14 +3028,25 @@ int sqlite3VdbeRecordCompare(
   
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
-  nField = pKeyInfo->nField;
+  assert( pKeyInfo->nField+1>=pPKey2->nField );
   assert( pKeyInfo->aSortOrder!=0 );
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
 
     /* Read the serial types for the next element in each key. */
     idx1 += getVarint32( aKey1+idx1, serial_type1 );
-    if( d1+sqlite3VdbeSerialTypeLen(serial_type1)>(u32)nKey1 ) break;
+
+    /* Verify that there is enough key space remaining to avoid
+    ** a buffer overread.  The "d1+serial_type1+2" subexpression will
+    ** always be greater than or equal to the amount of required key space.
+    ** Use that approximation to avoid the more expensive call to
+    ** sqlite3VdbeSerialTypeLen() in the common case.
+    */
+    if( d1+serial_type1+2>(u32)nKey1
+     && d1+sqlite3VdbeSerialTypeLen(serial_type1)>(u32)nKey1 
+    ){
+      break;
+    }
 
     /* Extract the values to be compared.
     */
@@ -3031,13 +3054,12 @@ int sqlite3VdbeRecordCompare(
 
     /* Do the comparison
     */
-    rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i],
-                           i<nField ? pKeyInfo->aColl[i] : 0);
+    rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i], pKeyInfo->aColl[i]);
     if( rc!=0 ){
       assert( mem1.zMalloc==0 );  /* See comment below */
 
       /* Invert the result if we are using DESC sort order. */
-      if( i<nField && pKeyInfo->aSortOrder[i] ){
+      if( pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
     
