@@ -161,9 +161,6 @@
 ** will cause HeapValidate to be called.  If heap validation should fail, an
 ** assertion will be triggered.
 **
-** (Historical note:  There used to be several other options, but we've
-** pared it down to just these three.)
-**
 ** If none of the above are defined, then set SQLITE_SYSTEM_MALLOC as
 ** the default.
 */
@@ -202,19 +199,12 @@
 #endif
 
 /*
-** The TCL headers are only needed when compiling the TCL bindings.
-*/
-#if defined(SQLITE_TCL) || defined(TCLSH)
-# include <tcl.h>
-#endif
-
-/*
 ** NDEBUG and SQLITE_DEBUG are opposites.  It should always be true that
 ** defined(NDEBUG)==!defined(SQLITE_DEBUG).  If this is not currently true,
 ** make it true by defining or undefining NDEBUG.
 **
-** Setting NDEBUG makes the code smaller and run faster by disabling the
-** number assert() statements in the code.  So we want the default action
+** Setting NDEBUG makes the code smaller and faster by disabling the
+** assert() statements in the code.  So we want the default action
 ** to be for NDEBUG to be set and NDEBUG to be undefined only if SQLITE_DEBUG
 ** is set.  Thus NDEBUG becomes an opt-in rather than an opt-out
 ** feature.
@@ -284,7 +274,7 @@
 ** In other words, ALWAYS and NEVER are added for defensive code.
 **
 ** When doing coverage testing ALWAYS and NEVER are hard-coded to
-** be true and false so that the unreachable code then specify will
+** be true and false so that the unreachable code they specify will
 ** not be counted as untested code.
 */
 #if defined(SQLITE_COVERAGE_TEST)
@@ -308,16 +298,12 @@
 /*
 ** The macro unlikely() is a hint that surrounds a boolean
 ** expression that is usually false.  Macro likely() surrounds
-** a boolean expression that is usually true.  GCC is able to
-** use these hints to generate better code, sometimes.
+** a boolean expression that is usually true.  These hints could,
+** in theory, be used by the compiler to generate better code, but
+** currently they are just comments for human readers.
 */
-#if defined(__GNUC__) && 0
-# define likely(X)    __builtin_expect((X),1)
-# define unlikely(X)  __builtin_expect((X),0)
-#else
-# define likely(X)    !!(X)
-# define unlikely(X)  !!(X)
-#endif
+#define likely(X)    (X)
+#define unlikely(X)  (X)
 
 #include "sqlite3.h"
 #include "hash.h"
@@ -1478,12 +1464,16 @@ struct FKey {
 ** An instance of the following structure is passed as the first
 ** argument to sqlite3VdbeKeyCompare and is used to control the 
 ** comparison of the two index keys.
+**
+** Note that aSortOrder[] and aColl[] have nField+1 slots.  There
+** are nField slots for the columns of an index then one extra slot
+** for the rowid at the end.
 */
 struct KeyInfo {
   sqlite3 *db;        /* The database connection */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
-  u16 nField;         /* Number of entries in aColl[] */
-  u8 *aSortOrder;     /* Sort order for each column.  May be NULL */
+  u16 nField;         /* Maximum index for aColl[] and aSortOrder[] */
+  u8 *aSortOrder;     /* Sort order for each column. */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
 
@@ -1552,6 +1542,7 @@ struct Index {
   Schema *pSchema;         /* Schema containing this index */
   u8 *aSortOrder;          /* for each column: True==DESC, False==ASC */
   char **azColl;           /* Array of collation sequence names for index */
+  Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   int tnum;                /* DB Page containing root of this index */
   u16 nColumn;             /* Number of columns in table used by this index */
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
@@ -2032,6 +2023,7 @@ struct NameContext {
 #define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
 #define NC_AsMaybe   0x10    /* Resolve to AS terms of the result set only
                              ** if no other resolution is available */
+#define NC_PartIdx   0x20    /* True if resolving a partial index WHERE */
 
 /*
 ** An instance of the following structure contains all information
@@ -2086,6 +2078,7 @@ struct Select {
 #define SF_Values          0x0080  /* Synthesized from VALUES clause */
 #define SF_Materialize     0x0100  /* Force materialization of views */
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
+#define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 
 
 /*
@@ -2207,6 +2200,7 @@ struct Parse {
   u8 iColCache;        /* Next entry in aColCache[] to replace */
   u8 isMultiWrite;     /* True if statement may modify/insert multiple rows */
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
+  u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
   int aTempReg[8];     /* Holding area for temporary registers */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -2216,6 +2210,7 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nOnce;           /* Number of OP_Once instructions so far */
   int ckBase;          /* Base register of data during check constraints */
+  int iPartIdxTab;     /* Table corresponding to a partial index */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
   int iCacheCnt;       /* Counter used to generate aColCache[].lru values */
   struct yColCache {
@@ -2797,7 +2792,7 @@ void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(sqlite3*, IdList*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
 Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
-                        Token*, int, int);
+                          Expr*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);
 int sqlite3Select(Parse*, Select*, SelectDest*);
 Select *sqlite3SelectNew(Parse*,ExprList*,SrcList*,Expr*,ExprList*,
@@ -2845,8 +2840,9 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3*,int,const char*);
 void sqlite3Vacuum(Parse*);
 int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(sqlite3*, Token*);
-int sqlite3ExprCompare(Expr*, Expr*);
-int sqlite3ExprListCompare(ExprList*, ExprList*);
+int sqlite3ExprCompare(Expr*, Expr*, int);
+int sqlite3ExprListCompare(ExprList*, ExprList*, int);
+int sqlite3ExprImpliesExpr(Expr*, Expr*, int);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 int sqlite3FunctionUsesThisSrc(Expr*, SrcList*);
@@ -2873,7 +2869,7 @@ int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
 int sqlite3IsRowid(const char*);
 void sqlite3GenerateRowDelete(Parse*, Table*, int, int, int, Trigger *, int);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
-int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int);
+int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
                                      int*,int,int,int,int,int*);
 void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
@@ -3076,6 +3072,7 @@ void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 int sqlite3MatchSpanName(const char*, const char*, const char*, const char*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
+void sqlite3ResolveSelfReference(Parse*,Table*,int,Expr*,ExprList*);
 int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
@@ -3095,6 +3092,7 @@ void sqlite3MinimumFileFormat(Parse*, int, int);
 void sqlite3SchemaClear(void *);
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
+KeyInfo *sqlite3KeyInfoAlloc(sqlite3*,int);
 KeyInfo *sqlite3IndexKeyinfo(Parse *, Index *);
 int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *, 
   void (*)(sqlite3_context*,int,sqlite3_value **),

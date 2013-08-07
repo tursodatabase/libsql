@@ -555,7 +555,7 @@ int sqlite3VdbeExec(
   int iCompare = 0;          /* Result of last OP_Compare operation */
   unsigned nVmStep = 0;      /* Number of virtual machine steps */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  unsigned nProgressOps = 0; /* nVmStep at last progress callback. */
+  unsigned nProgressLimit = 0;/* Invoke xProgress() when nVmStep reaches this */
 #endif
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
   Mem *pIn1 = 0;             /* 1st input operand */
@@ -585,6 +585,17 @@ int sqlite3VdbeExec(
   db->busyHandler.nBusy = 0;
   CHECK_FOR_INTERRUPT;
   sqlite3VdbeIOTraceSql(p);
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  if( db->xProgress ){
+    assert( 0 < db->nProgressOps );
+    nProgressLimit = (unsigned)p->aCounter[SQLITE_STMTSTATUS_VM_STEP-1];
+    if( nProgressLimit==0 ){
+      nProgressLimit = db->nProgressOps;
+    }else{
+      nProgressLimit %= (unsigned)db->nProgressOps;
+    }
+  }
+#endif
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
   if( p->pc==0  && (p->db->flags & SQLITE_VdbeListing)!=0 ){
@@ -745,14 +756,16 @@ check_for_interrupt:
   ** If the progress callback returns non-zero, exit the virtual machine with
   ** a return code SQLITE_ABORT.
   */
-  if( db->xProgress!=0 && (nVmStep - nProgressOps)>=db->nProgressOps ){
+  if( db->xProgress!=0 && nVmStep>=nProgressLimit ){
     int prc;
     prc = db->xProgress(db->pProgressArg);
     if( prc!=0 ){
       rc = SQLITE_INTERRUPT;
       goto vdbe_error_halt;
     }
-    nProgressOps = nVmStep;
+    if( db->xProgress!=0 ){
+      nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
+    }
   }
 #endif
   

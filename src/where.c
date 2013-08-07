@@ -33,7 +33,7 @@
 # define WHERETRACE(K,X)
 #endif
 
-/* Forward reference
+/* Forward references
 */
 typedef struct WhereClause WhereClause;
 typedef struct WhereMaskSet WhereMaskSet;
@@ -55,14 +55,15 @@ typedef struct WhereOrSet WhereOrSet;
 ** So all costs can be stored in a 16-bit unsigned integer without risk
 ** of overflow.
 **
-** Costs are estimates, so don't go to the computational trouble to compute
-** 10*log2(X) exactly.  Instead, a close estimate is used.  Any value of
-** X<=1 is stored as 0.  X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
+** Costs are estimates, so no effort is made to compute 10*log2(X) exactly.
+** Instead, a close estimate is used.  Any value of X<=1 is stored as 0.
+** X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
 **
 ** The tool/wherecosttest.c source file implements a command-line program
-** that will convert between WhereCost to integers and do addition and
-** multiplication on WhereCost values.  That command-line program is a
-** useful utility to have around when working with this module.
+** that will convert WhereCosts to integers, convert integers to WhereCosts
+** and do addition and multiplication on WhereCost values.  The wherecosttest
+** command-line program is a useful utility to have around when working with
+** this module.
 */
 typedef unsigned short int WhereCost;
 
@@ -165,8 +166,8 @@ struct WhereOrCost {
 };
 
 /* The WhereOrSet object holds a set of possible WhereOrCosts that
-** correspond to the subquery(s) of OR-clause processing.  At most
-** favorable N_OR_COST elements are retained.
+** correspond to the subquery(s) of OR-clause processing.  Only the
+** best N_OR_COST elements are retained.
 */
 #define N_OR_COST 3
 struct WhereOrSet {
@@ -232,9 +233,9 @@ struct WherePath {
 **
 **         (t1.X <op> <expr>) OR (t1.Y <op> <expr>) OR ....
 **
-** In this second case, wtFlag as the TERM_ORINFO set and eOperator==WO_OR
+** In this second case, wtFlag has the TERM_ORINFO bit set and eOperator==WO_OR
 ** and the WhereTerm.u.pOrInfo field points to auxiliary information that
-** is collected about the
+** is collected about the OR clause.
 **
 ** If a term in the WHERE clause does not match either of the two previous
 ** categories, then eOperator==0.  The WhereTerm.pExpr field is still set
@@ -658,7 +659,7 @@ static void whereClauseClear(WhereClause *pWC){
 static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   WhereTerm *pTerm;
   int idx;
-  testcase( wtFlags & TERM_VIRTUAL );  /* EV: R-00211-15100 */
+  testcase( wtFlags & TERM_VIRTUAL );
   if( pWC->nTerm>=pWC->nSlot ){
     WhereTerm *pOld = pWC->a;
     sqlite3 *db = pWC->pWInfo->pParse->db;
@@ -746,7 +747,7 @@ static void createMask(WhereMaskSet *pMaskSet, int iCursor){
 }
 
 /*
-** These routine walk (recursively) an expression tree and generates
+** These routines walk (recursively) an expression tree and generate
 ** a bitmask indicating which tables are used in that expression
 ** tree.
 */
@@ -803,13 +804,6 @@ static Bitmask exprSelectTableUsage(WhereMaskSet *pMaskSet, Select *pS){
 ** Return TRUE if the given operator is one of the operators that is
 ** allowed for an indexable WHERE clause term.  The allowed operators are
 ** "=", "<", ">", "<=", ">=", "IN", and "IS NULL"
-**
-** IMPLEMENTATION-OF: R-59926-26393 To be usable by an index a term must be
-** of one of the following forms: column = expression column > expression
-** column >= expression column < expression column <= expression
-** expression = column expression > column expression >= column
-** expression < column expression <= column column IN
-** (expression-list) column IN (subquery) column IS NULL
 */
 static int allowedOp(int op){
   assert( TK_GT>TK_EQ && TK_GT<TK_GE );
@@ -1128,7 +1122,7 @@ static int isLikeOrGlob(
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;
     int iCol = pRight->iColumn;
-    pVal = sqlite3VdbeGetValue(pReprepare, iCol, SQLITE_AFF_NONE);
+    pVal = sqlite3VdbeGetBoundValue(pReprepare, iCol, SQLITE_AFF_NONE);
     if( pVal && sqlite3_value_type(pVal)==SQLITE_TEXT ){
       z = (char *)sqlite3_value_text(pVal);
     }
@@ -1270,10 +1264,10 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 ** From another point of view, "indexable" means that the subterm could
 ** potentially be used with an index if an appropriate index exists.
 ** This analysis does not consider whether or not the index exists; that
-** is something the bestIndex() routine will determine.  This analysis
-** only looks at whether subterms appropriate for indexing exist.
+** is decided elsewhere.  This analysis only looks at whether subterms
+** appropriate for indexing exist.
 **
-** All examples A through E above all satisfy case 2.  But if a term
+** All examples A through E above satisfy case 2.  But if a term
 ** also statisfies case 1 (such as B) we know that the optimizer will
 ** always prefer case 1, so in that case we pretend that case 2 is not
 ** satisfied.
@@ -1483,8 +1477,6 @@ static void exprAnalyzeOrTerm(
     /* At this point, okToChngToIN is true if original pTerm satisfies
     ** case 1.  In that case, construct a new virtual term that is 
     ** pTerm converted into an IN operator.
-    **
-    ** EV: R-00211-15100
     */
     if( okToChngToIN ){
       Expr *pDup;            /* A transient duplicate expression */
@@ -1726,9 +1718,7 @@ static void exprAnalyze(
         ** inequality.  To avoid this, make sure to also run the full
         ** LIKE on all candidate expressions by clearing the isComplete flag
         */
-        if( c=='A'-1 ) isComplete = 0;   /* EV: R-64339-08207 */
-
-
+        if( c=='A'-1 ) isComplete = 0;
         c = sqlite3UpperToLower[c];
       }
       *pC = c + 1;
@@ -1944,7 +1934,7 @@ static int isDistinctRedundant(
 }
 
 /* 
-** The (an approximate) sum of two WhereCosts.  This computation is
+** Find (an approximate) sum of two WhereCosts.  This computation is
 ** not a simple "+" operator because WhereCost is stored as a logarithmic
 ** value.
 ** 
@@ -2235,7 +2225,7 @@ static void constructAutomaticIndex(
   /* Fill the automatic index with content */
   addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur);
   regRecord = sqlite3GetTempReg(pParse);
-  sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 1);
+  sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 1, 0);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
@@ -2592,7 +2582,7 @@ static int valueFromExpr(
   ){
     int iVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
-    *pp = sqlite3VdbeGetValue(pParse->pReprepare, iVar, aff);
+    *pp = sqlite3VdbeGetBoundValue(pParse->pReprepare, iVar, aff);
     return SQLITE_OK;
   }
   return sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, aff, pp);
@@ -2817,9 +2807,6 @@ static int whereInScanEst(
 ** The t2.z='ok' is disabled in the in (2) because it originates
 ** in the ON clause.  The term is disabled in (3) because it is not part
 ** of a LEFT OUTER JOIN.  In (1), the term is not disabled.
-**
-** IMPLEMENTATION-OF: R-24597-58655 No tests are done for terms that are
-** completely satisfied by indices.
 **
 ** Disabling a term causes that term to not be tested in the inner loop
 ** of the join.  Disabling is an optimization.  When terms are satisfied
@@ -3050,7 +3037,7 @@ static int codeAllEqualityTerms(
     /* The following true for indices with redundant columns. 
     ** Ex: CREATE INDEX i1 ON t1(a,b,a); SELECT * FROM t1 WHERE a=0 AND b=0; */
     testcase( (pTerm->wtFlags & TERM_CODED)!=0 );
-    testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
+    testcase( pTerm->wtFlags & TERM_VIRTUAL );
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, regBase+j);
     if( r1!=regBase+j ){
       if( nReg==1 ){
@@ -3250,6 +3237,7 @@ static Bitmask codeOneLoopStart(
   WhereClause *pWC;    /* Decomposition of the entire WHERE clause */
   WhereTerm *pTerm;               /* A WHERE clause term */
   Parse *pParse;                  /* Parsing context */
+  sqlite3 *db;                    /* Database connection */
   Vdbe *v;                        /* The prepared stmt under constructions */
   struct SrcList_item *pTabItem;  /* FROM clause term being coded */
   int addrBrk;                    /* Jump here to break out of the loop */
@@ -3261,6 +3249,7 @@ static Bitmask codeOneLoopStart(
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
   pWC = &pWInfo->sWC;
+  db = pParse->db;
   pLevel = &pWInfo->a[iLevel];
   pLoop = pLevel->pWLoop;
   pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
@@ -3359,7 +3348,7 @@ static Bitmask codeOneLoopStart(
     assert( pTerm!=0 );
     assert( pTerm->pExpr!=0 );
     assert( omitTable==0 );
-    testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
+    testcase( pTerm->wtFlags & TERM_VIRTUAL );
     iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, bRev, iReleaseReg);
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
@@ -3407,7 +3396,7 @@ static Bitmask codeOneLoopStart(
       assert( TK_GE==TK_GT+3 );      /*  ... is correcct. */
 
       assert( (pStart->wtFlags & TERM_VNULL)==0 );
-      testcase( pStart->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
+      testcase( pStart->wtFlags & TERM_VIRTUAL );
       pX = pStart->pExpr;
       assert( pX!=0 );
       testcase( pStart->leftCursor!=iCur ); /* transitive constraints */
@@ -3426,7 +3415,7 @@ static Bitmask codeOneLoopStart(
       assert( pX!=0 );
       assert( (pEnd->wtFlags & TERM_VNULL)==0 );
       testcase( pEnd->leftCursor!=iCur ); /* Transitive constraints */
-      testcase( pEnd->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
+      testcase( pEnd->wtFlags & TERM_VIRTUAL );
       memEndValue = ++pParse->nMem;
       sqlite3ExprCode(pParse, pX->pRight, memEndValue);
       if( pX->op==TK_LT || pX->op==TK_GT ){
@@ -3551,7 +3540,7 @@ static Bitmask codeOneLoopStart(
     ** starting at regBase.
     */
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
-    zEndAff = sqlite3DbStrDup(pParse->db, zStartAff);
+    zEndAff = sqlite3DbStrDup(db, zStartAff);
     addrNxt = pLevel->addrNxt;
 
     /* If we are doing a reverse order scan on an ascending index, or
@@ -3592,7 +3581,7 @@ static Bitmask codeOneLoopStart(
         }
       }  
       nConstraint++;
-      testcase( pRangeStart->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
+      testcase( pRangeStart->wtFlags & TERM_VIRTUAL );
     }else if( isMinQuery ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
       nConstraint++;
@@ -3634,10 +3623,10 @@ static Bitmask codeOneLoopStart(
       }  
       codeApplyAffinity(pParse, regBase, nEq+1, zEndAff);
       nConstraint++;
-      testcase( pRangeEnd->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
+      testcase( pRangeEnd->wtFlags & TERM_VIRTUAL );
     }
-    sqlite3DbFree(pParse->db, zStartAff);
-    sqlite3DbFree(pParse->db, zEndAff);
+    sqlite3DbFree(db, zStartAff);
+    sqlite3DbFree(db, zEndAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
@@ -3764,7 +3753,7 @@ static Bitmask codeOneLoopStart(
       int nNotReady;                 /* The number of notReady tables */
       struct SrcList_item *origSrc;     /* Original list of tables */
       nNotReady = pWInfo->nLevel - iLevel - 1;
-      pOrTab = sqlite3StackAllocRaw(pParse->db,
+      pOrTab = sqlite3StackAllocRaw(db,
                             sizeof(*pOrTab)+ nNotReady*sizeof(pOrTab->a[0]));
       if( pOrTab==0 ) return notReady;
       pOrTab->nAlloc = (u8)(nNotReady + 1);
@@ -3818,8 +3807,8 @@ static Bitmask codeOneLoopStart(
         if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
         if( pWC->a[iTerm].wtFlags & (TERM_ORINFO) ) continue;
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
-        pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
-        pAndExpr = sqlite3ExprAnd(pParse->db, pAndExpr, pExpr);
+        pExpr = sqlite3ExprDup(db, pExpr, 0);
+        pAndExpr = sqlite3ExprAnd(db, pAndExpr, pExpr);
       }
       if( pAndExpr ){
         pAndExpr = sqlite3PExpr(pParse, TK_AND, 0, pAndExpr, 0);
@@ -3839,7 +3828,7 @@ static Bitmask codeOneLoopStart(
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
                         WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
                         WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY, iCovCur);
-        assert( pSubWInfo || pParse->nErr || pParse->db->mallocFailed );
+        assert( pSubWInfo || pParse->nErr || db->mallocFailed );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
           explainOneScan(
@@ -3894,13 +3883,13 @@ static Bitmask codeOneLoopStart(
     if( pCov ) pLevel->iIdxCur = iCovCur;
     if( pAndExpr ){
       pAndExpr->pLeft = 0;
-      sqlite3ExprDelete(pParse->db, pAndExpr);
+      sqlite3ExprDelete(db, pAndExpr);
     }
     sqlite3VdbeChangeP1(v, iRetInit, sqlite3VdbeCurrentAddr(v));
     sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);
 
-    if( pWInfo->nLevel>1 ) sqlite3StackFree(pParse->db, pOrTab);
+    if( pWInfo->nLevel>1 ) sqlite3StackFree(db, pOrTab);
     if( !untestedTerms ) disableTerm(pLevel, pTerm);
   }else
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
@@ -3921,14 +3910,10 @@ static Bitmask codeOneLoopStart(
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
-  **
-  ** IMPLEMENTATION-OF: R-49525-50935 Terms that cannot be satisfied through
-  ** the use of indices become tests that are evaluated against each row of
-  ** the relevant input tables.
   */
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
     Expr *pE;
-    testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* IMP: R-30575-11662 */
+    testcase( pTerm->wtFlags & TERM_VIRTUAL );
     testcase( pTerm->wtFlags & TERM_CODED );
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( (pTerm->prereqAll & newNotReady)!=0 ){
@@ -3955,9 +3940,8 @@ static Bitmask codeOneLoopStart(
   ** the implied "t1.a=123" constraint.
   */
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
-    Expr *pE;
+    Expr *pE, *pEAlt;
     WhereTerm *pAlt;
-    Expr sEq;
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( pTerm->eOperator!=(WO_EQUIV|WO_EQ) ) continue;
     if( pTerm->leftCursor!=iCur ) continue;
@@ -3971,9 +3955,13 @@ static Bitmask codeOneLoopStart(
     testcase( pAlt->eOperator & WO_EQ );
     testcase( pAlt->eOperator & WO_IN );
     VdbeNoopComment((v, "begin transitive constraint"));
-    sEq = *pAlt->pExpr;
-    sEq.pLeft = pE->pLeft;
-    sqlite3ExprIfFalse(pParse, &sEq, addrCont, SQLITE_JUMPIFNULL);
+    pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
+    if( pEAlt ){
+      *pEAlt = *pAlt->pExpr;
+      pEAlt->pLeft = pE->pLeft;
+      sqlite3ExprIfFalse(pParse, pEAlt, addrCont, SQLITE_JUMPIFNULL);
+      sqlite3StackFree(db, pEAlt);
+    }
   }
 
   /* For a LEFT OUTER JOIN, generate code that will record the fact that
@@ -3985,7 +3973,7 @@ static Bitmask codeOneLoopStart(
     VdbeComment((v, "record LEFT JOIN hit"));
     sqlite3ExprCacheClear(pParse);
     for(pTerm=pWC->a, j=0; j<pWC->nTerm; j++, pTerm++){
-      testcase( pTerm->wtFlags & TERM_VIRTUAL );  /* IMP: R-30575-11662 */
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
       if( (pTerm->prereqAll & newNotReady)!=0 ){
@@ -4426,7 +4414,8 @@ static int whereLoopAddBtreeIndex(
              &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
         rc = whereInScanEst(pParse, pProbe, pTerm->pExpr->x.pList, &nOut);
       }
-      if( rc==SQLITE_OK ) pNew->nOut = whereCost(nOut);
+      assert( nOut==0 || rc==SQLITE_OK );
+      if( nOut ) pNew->nOut = whereCost(nOut);
     }
 #endif
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
@@ -4498,6 +4487,17 @@ static Bitmask columnsInIndex(Index *pIdx){
   return m;
 }
 
+/* Check to see if a partial index with pPartIndexWhere can be used
+** in the current query.  Return true if it can be and false if not.
+*/
+static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
+  int i;
+  WhereTerm *pTerm;
+  for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    if( sqlite3ExprImpliesExpr(pTerm->pExpr, pWhere, iTab) ) return 1;
+  }
+  return 0;
+}
 
 /*
 ** Add all WhereLoop objects for a single table of the join where the table
@@ -4521,11 +4521,13 @@ static int whereLoopAddBtree(
   int b;                      /* A boolean value */
   WhereCost rSize;            /* number of rows in the table */
   WhereCost rLogSize;         /* Logarithm of the number of rows in the table */
+  WhereClause *pWC;           /* The parsed WHERE clause */
   
   pNew = pBuilder->pNew;
   pWInfo = pBuilder->pWInfo;
   pTabList = pWInfo->pTabList;
   pSrc = pTabList->a + pNew->iTab;
+  pWC = pBuilder->pWC;
   assert( !IsVirtual(pSrc->pTab) );
 
   if( pSrc->pIndex ){
@@ -4565,7 +4567,6 @@ static int whereLoopAddBtree(
    && !pSrc->isCorrelated
   ){
     /* Generate auto-index WhereLoops */
-    WhereClause *pWC = pBuilder->pWC;
     WhereTerm *pTerm;
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
@@ -4595,6 +4596,10 @@ static int whereLoopAddBtree(
   /* Loop over all indices
   */
   for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
+    if( pProbe->pPartIdxWhere!=0
+     && !whereUsablePartialIndex(pNew->iTab, pWC, pProbe->pPartIdxWhere) ){
+      continue;  /* Partial index inappropriate for this query */
+    }
     pNew->u.btree.nEq = 0;
     pNew->nLTerm = 0;
     pNew->iSortIdx = 0;
@@ -5535,7 +5540,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==whereCost(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      if( pIdx->onError==OE_None ) continue;
+      if( pIdx->onError==OE_None || pIdx->pPartIdxWhere!=0 ) continue;
       for(j=0; j<pIdx->nColumn; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
@@ -5741,7 +5746,7 @@ WhereInfo *sqlite3WhereBegin(
   initMaskSet(pMaskSet);
   whereClauseInit(&pWInfo->sWC, pWInfo);
   sqlite3ExprCodeConstants(pParse, pWhere);
-  whereSplit(&pWInfo->sWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
+  whereSplit(&pWInfo->sWC, pWhere, TK_AND);
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
     
   /* Special case: a WHERE clause that is constant.  Evaluate the

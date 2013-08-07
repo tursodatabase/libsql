@@ -83,7 +83,7 @@ proc do_join_test {tn select res} {
 # The following tests check that all paths on the syntax diagrams on
 # the lang_select.html page may be taken.
 #
-# EVIDENCE-OF: R-11353-33501 -- syntax diagram join-constraint
+# -- syntax diagram join-constraint
 #
 do_join_test e_select-0.1.1 {
   SELECT count(*) FROM t1 %JOIN% t2 ON (t1.a=t2.a)
@@ -101,7 +101,7 @@ do_catchsql_test e_select-0.1.5 {
   SELECT count(*) FROM t1, t2 USING (a) ON (t1.a=t2.a)
 } {1 {near "ON": syntax error}}
 
-# EVIDENCE-OF: R-40919-40941 -- syntax diagram select-core
+# -- syntax diagram select-core
 #
 #   0: SELECT ...
 #   1: SELECT DISTINCT ...
@@ -226,7 +226,7 @@ do_select_tests e_select-0.2 {
 }
 
 
-# EVIDENCE-OF: R-41378-26734 -- syntax diagram result-column
+# -- syntax diagram result-column
 #
 do_select_tests e_select-0.3 {
   1  "SELECT * FROM t1" {a one b two c three}
@@ -236,9 +236,9 @@ do_select_tests e_select-0.3 {
   5  "SELECT 'x'||a||'x' AS alias FROM t1" {xax xbx xcx}
 }
 
-# EVIDENCE-OF: R-43129-35648 -- syntax diagram join-source
+# -- syntax diagram join-source
 #
-# EVIDENCE-OF: R-36683-37460 -- syntax diagram join-op
+# -- syntax diagram join-op
 #
 do_select_tests e_select-0.4 {
   1  "SELECT t1.rowid FROM t1" {1 2 3}
@@ -263,7 +263,7 @@ do_select_tests e_select-0.4 {
   16 "SELECT t1.rowid FROM t1 CROSS JOIN t3" {1 1 2 2 3 3}
 }
 
-# EVIDENCE-OF: R-28308-37813 -- syntax diagram compound-operator
+# -- syntax diagram compound-operator
 #
 do_select_tests e_select-0.5 {
   1  "SELECT rowid FROM t1 UNION ALL SELECT rowid+2 FROM t4" {1 2 3 3 4}
@@ -272,7 +272,7 @@ do_select_tests e_select-0.5 {
   4  "SELECT rowid FROM t1 EXCEPT    SELECT rowid+2 FROM t4" {1 2}
 }
 
-# EVIDENCE-OF: R-06480-34950 -- syntax diagram ordering-term
+# -- syntax diagram ordering-term
 #
 do_select_tests e_select-0.6 {
   1  "SELECT b||a FROM t1 ORDER BY b||a"                  {onea threec twob}
@@ -281,7 +281,7 @@ do_select_tests e_select-0.6 {
   4  "SELECT b||a FROM t1 ORDER BY (b||a) DESC"           {twob threec onea}
 }
 
-# EVIDENCE-OF: R-23926-36668 -- syntax diagram select-stmt
+# -- syntax diagram select-stmt
 #
 do_select_tests e_select-0.7 {
   1  "SELECT * FROM t1" {a one b two c three}
@@ -395,8 +395,8 @@ do_select_tests e_select-1.3 {
 # EVIDENCE-OF: R-46256-57243 There is no difference between the "INNER
 # JOIN", "JOIN" and "," join operators.
 #
-# EVIDENCE-OF: R-07544-24155 The "CROSS JOIN" join operator produces the
-# same data as the "INNER JOIN", "JOIN" and "," operators
+# EVIDENCE-OF: R-25071-21202 The "CROSS JOIN" join operator produces the
+# same result as the "INNER JOIN", "JOIN" and "," operators
 #
 #    All tests are run 4 times, with the only difference in each run being
 #    which of the 4 equivalent cartesian product join operators are used.
@@ -1226,7 +1226,7 @@ do_select_tests e_select-5.1 {
 # EVIDENCE-OF: R-08861-34280 If the simple SELECT is a SELECT ALL, then
 # the entire set of result rows are returned by the SELECT.
 #
-# EVIDENCE-OF: R-47911-02086 If neither ALL or DISTINCT are present,
+# EVIDENCE-OF: R-01256-01950 If neither ALL or DISTINCT are present,
 # then the behavior is as if ALL were specified.
 #
 # EVIDENCE-OF: R-14442-41305 If the simple SELECT is a SELECT DISTINCT,

@@ -195,6 +195,7 @@ static int fsColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
     const char *zFile = (const char *)sqlite3_column_text(pCur->pStmt, 1);
     struct stat sbuf;
     int fd;
+    int n;
 
     fd = open(zFile, O_RDONLY);
     if( fd<0 ) return SQLITE_IOERR;
@@ -214,8 +215,9 @@ static int fsColumn(sqlite3_vtab_cursor *cur, sqlite3_context *ctx, int i){
       pCur->nAlloc = nNew;
     }
 
-    read(fd, pCur->zBuf, sbuf.st_size);
+    n = (int)read(fd, pCur->zBuf, sbuf.st_size);
     close(fd);
+    if( n!=sbuf.st_size ) return SQLITE_ERROR;
     pCur->nBuf = sbuf.st_size;
     pCur->zBuf[pCur->nBuf] = '\0';
 

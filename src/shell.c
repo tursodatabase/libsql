@@ -53,7 +53,6 @@
 # include <readline/history.h>
 #endif
 #if !defined(HAVE_EDITLINE) && (!defined(HAVE_READLINE) || HAVE_READLINE!=1)
-# define readline(p) local_getline(p,stdin,0)
 # define add_history(X)
 # define read_history(X)
 # define write_history(X)
@@ -65,7 +64,7 @@
 #define isatty(h) _isatty(h)
 #define access(f,m) _access((f),(m))
 #undef popen
-#define popen(a,b) _popen((a),(b))
+#define popen _popen
 #undef pclose
 #define pclose _pclose
 #else
@@ -73,6 +72,11 @@
 */
 extern int isatty(int);
 #endif
+
+/* popen and pclose are not C89 functions and so are sometimes omitted from
+** the <stdio.h> header */
+FILE *popen(const char*,const char*);
+int pclose(FILE*);
 
 #if defined(_WIN32_WCE)
 /* Windows CE (arm-wince-mingw32ce-gcc) does not provide isatty()
@@ -332,23 +336,13 @@ static void shellstaticFunc(
 ** to the text.  NULL is returned at end of file, or if malloc()
 ** fails.
 **
-** The interface is like "readline" but no command-line editing
-** is done.
+** If zLine is not NULL then it is a malloced buffer returned from
+** a previous call to this routine that may be reused.
 */
-static char *local_getline(char *zPrompt, FILE *in, int csvFlag){
-  char *zLine;
-  int nLine;
-  int n;
-  int inQuote = 0;
+static char *local_getline(char *zLine, FILE *in){
+  int nLine = zLine==0 ? 0 : 100;
+  int n = 0;
 
-  if( zPrompt && *zPrompt ){
-    printf("%s",zPrompt);
-    fflush(stdout);
-  }
-  nLine = 100;
-  zLine = malloc( nLine );
-  if( zLine==0 ) return 0;
-  n = 0;
   while( 1 ){
     if( n+100>nLine ){
       nLine = nLine*2 + 100;
@@ -363,42 +357,48 @@ static char *local_getline(char *zPrompt, FILE *in, int csvFlag){
       zLine[n] = 0;
       break;
     }
-    while( zLine[n] ){
-      if( zLine[n]=='"' ) inQuote = !inQuote;
-      n++;
-    }
-    if( n>0 && zLine[n-1]=='\n' && (!inQuote || !csvFlag) ){
+    while( zLine[n] ) n++;
+    if( n>0 && zLine[n-1]=='\n' ){
       n--;
       if( n>0 && zLine[n-1]=='\r' ) n--;
       zLine[n] = 0;
       break;
     }
   }
-  zLine = realloc( zLine, n+1 );
   return zLine;
 }
 
 /*
 ** Retrieve a single line of input text.
 **
-** zPrior is a string of prior text retrieved.  If not the empty
-** string, then issue a continuation prompt.
+** If in==0 then read from standard input and prompt before each line.
+** If isContinuation is true, then a continuation prompt is appropriate.
+** If isContinuation is zero, then the main prompt should be used.
+**
+** If zPrior is not NULL then it is a buffer from a prior call to this
+** routine that can be reused.
+**
+** The result is stored in space obtained from malloc() and must either
+** be freed by the caller or else passed back into this routine via the
+** zPrior argument for reuse.
 */
-static char *one_input_line(const char *zPrior, FILE *in){
+static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
   char *zPrompt;
   char *zResult;
   if( in!=0 ){
-    return local_getline(0, in, 0);
-  }
-  if( zPrior && zPrior[0] ){
-    zPrompt = continuePrompt;
+    zResult = local_getline(zPrior, in);
   }else{
-    zPrompt = mainPrompt;
-  }
-  zResult = readline(zPrompt);
+    zPrompt = isContinuation ? continuePrompt : mainPrompt;
 #if defined(HAVE_READLINE) && HAVE_READLINE==1
-  if( zResult && *zResult ) add_history(zResult);
+    free(zPrior);
+    zResult = readline(zPrompt);
+    if( zResult && *zResult ) add_history(zResult);
+#else
+    printf("%s", zPrompt);
+    fflush(stdout);
+    zResult = local_getline(zPrior, stdin);
 #endif
+  }
   return zResult;
 }
 
@@ -1990,6 +1990,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     int nCol;                   /* Number of columns in the table */
     int nByte;                  /* Number of bytes in an SQL string */
     int i, j;                   /* Loop counters */
+    int needCommit;             /* True to COMMIT or ROLLBACK at end */
     int nSep;                   /* Number of bytes in p->separator[] */
     char *zSql;                 /* An SQL statement */
     CSVReader sCsv;             /* Reader context */
@@ -2091,6 +2092,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       xCloser(sCsv.in);
       return 1;
     }
+    needCommit = sqlite3_get_autocommit(db);
+    if( needCommit ) sqlite3_exec(db, "BEGIN", 0, 0, 0);
     do{
       int startLine = sCsv.nLine;
       for(i=0; i<nCol; i++){
@@ -2127,7 +2130,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     xCloser(sCsv.in);
     sqlite3_free(sCsv.z);
     sqlite3_finalize(pStmt);
-    sqlite3_exec(p->db, "COMMIT", 0, 0, 0);
+    if( needCommit ) sqlite3_exec(db, "COMMIT", 0, 0, 0);
   }else
 
   if( c=='i' && strncmp(azArg[0], "indices", n)==0 && nArg<3 ){
@@ -2776,7 +2779,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 ** Return TRUE if a semicolon occurs anywhere in the first N characters
 ** of string z[].
 */
-static int _contains_semicolon(const char *z, int N){
+static int line_contains_semicolon(const char *z, int N){
   int i;
   for(i=0; i<N; i++){  if( z[i]==';' ) return 1; }
   return 0;
@@ -2811,7 +2814,7 @@ static int _all_whitespace(const char *z){
 ** than a semi-colon.  The SQL Server style "go" command is understood
 ** as is the Oracle "/".
 */
-static int _is_command_terminator(const char *zLine){
+static int line_is_command_terminator(const char *zLine){
   while( IsSpace(zLine[0]) ){ zLine++; };
   if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ){
     return 1;  /* Oracle */
@@ -2827,7 +2830,7 @@ static int _is_command_terminator(const char *zLine){
 ** Return true if zSql is a complete SQL statement.  Return false if it
 ** ends in the middle of a string literal or C-style comment.
 */
-static int _is_complete(char *zSql, int nSql){
+static int line_is_complete(char *zSql, int nSql){
   int rc;
   if( zSql==0 ) return 1;
   zSql[nSql] = ';';
@@ -2847,20 +2850,21 @@ static int _is_complete(char *zSql, int nSql){
 ** Return the number of errors.
 */
 static int process_input(struct callback_data *p, FILE *in){
-  char *zLine = 0;
-  char *zSql = 0;
-  int nSql = 0;
-  int nSqlPrior = 0;
-  char *zErrMsg;
-  int rc;
-  int errCnt = 0;
-  int lineno = 0;
-  int startline = 0;
+  char *zLine = 0;          /* A single input line */
+  char *zSql = 0;           /* Accumulated SQL text */
+  int nLine;                /* Length of current line */
+  int nSql = 0;             /* Bytes of zSql[] used */
+  int nAlloc = 0;           /* Allocated zSql[] space */
+  int nSqlPrior = 0;        /* Bytes of zSql[] used by prior line */
+  char *zErrMsg;            /* Error message returned */
+  int rc;                   /* Error code */
+  int errCnt = 0;           /* Number of errors seen */
+  int lineno = 0;           /* Current line number */
+  int startline = 0;        /* Line number for start of current input */
 
   while( errCnt==0 || !bail_on_error || (in==0 && stdin_is_interactive) ){
     fflush(p->out);
-    free(zLine);
-    zLine = one_input_line(zSql, in);
+    zLine = one_input_line(in, zLine, nSql>0);
     if( zLine==0 ){
       /* End of input */
       if( stdin_is_interactive ) printf("\n");
@@ -2871,7 +2875,7 @@ static int process_input(struct callback_data *p, FILE *in){
       seenInterrupt = 0;
     }
     lineno++;
-    if( (zSql==0 || zSql[0]==0) && _all_whitespace(zLine) ) continue;
+    if( nSql==0 && _all_whitespace(zLine) ) continue;
     if( zLine && zLine[0]=='.' && nSql==0 ){
       if( p->echoOn ) printf("%s\n", zLine);
       rc = do_meta_command(zLine, p);
@@ -2882,35 +2886,31 @@ static int process_input(struct callback_data *p, FILE *in){
       }
       continue;
     }
-    if( _is_command_terminator(zLine) && _is_complete(zSql, nSql) ){
+    if( line_is_command_terminator(zLine) && line_is_complete(zSql, nSql) ){
       memcpy(zLine,";",2);
     }
-    nSqlPrior = nSql;
-    if( zSql==0 ){
-      int i;
-      for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
-      if( zLine[i]!=0 ){
-        nSql = strlen30(zLine);
-        zSql = malloc( nSql+3 );
-        if( zSql==0 ){
-          fprintf(stderr, "Error: out of memory\n");
-          exit(1);
-        }
-        memcpy(zSql, zLine, nSql+1);
-        startline = lineno;
-      }
-    }else{
-      int len = strlen30(zLine);
-      zSql = realloc( zSql, nSql + len + 4 );
+    nLine = strlen30(zLine);
+    if( nSql+nLine+2>=nAlloc ){
+      nAlloc = nSql+nLine+100;
+      zSql = realloc(zSql, nAlloc);
       if( zSql==0 ){
-        fprintf(stderr,"Error: out of memory\n");
+        fprintf(stderr, "Error: out of memory\n");
         exit(1);
       }
-      zSql[nSql++] = '\n';
-      memcpy(&zSql[nSql], zLine, len+1);
-      nSql += len;
     }
-    if( zSql && _contains_semicolon(&zSql[nSqlPrior], nSql-nSqlPrior)
+    nSqlPrior = nSql;
+    if( nSql==0 ){
+      int i;
+      for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
+      memcpy(zSql, zLine+i, nLine+1-i);
+      startline = lineno;
+      nSql = nLine-i;
+    }else{
+      zSql[nSql++] = '\n';
+      memcpy(zSql+nSql, zLine, nLine+1);
+      nSql += nLine;
+    }
+    if( nSql && line_contains_semicolon(&zSql[nSqlPrior], nSql-nSqlPrior)
                 && sqlite3_complete(zSql) ){
       p->cnt = 0;
       open_db(p);
@@ -2934,16 +2934,12 @@ static int process_input(struct callback_data *p, FILE *in){
         }
         errCnt++;
       }
-      free(zSql);
-      zSql = 0;
       nSql = 0;
-    }else if( zSql && _all_whitespace(zSql) ){
-      free(zSql);
-      zSql = 0;
+    }else if( nSql && _all_whitespace(zSql) ){
       nSql = 0;
     }
   }
-  if( zSql ){
+  if( nSql ){
     if( !_all_whitespace(zSql) ){
       fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
     }

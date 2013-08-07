@@ -803,6 +803,25 @@ static void selectInnerLoop(
 }
 
 /*
+** Allocate a KeyInfo object sufficient for an index of N columns.
+**
+** Actually, always allocate one extra column for the rowid at the end
+** of the index.  So the KeyInfo returned will have space sufficient for
+** N+1 columns.
+*/
+KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N){
+  KeyInfo *p = sqlite3DbMallocZero(db, 
+                   sizeof(KeyInfo) + (N+1)*(sizeof(CollSeq*)+1));
+  if( p ){
+    p->aSortOrder = (u8*)&p->aColl[N+1];
+    p->nField = (u16)N;
+    p->enc = ENC(db);
+    p->db = db;
+  }
+  return p;
+}
+
+/*
 ** Given an expression list, generate a KeyInfo structure that records
 ** the collating sequence for each expression in that expression list.
 **
@@ -818,25 +837,19 @@ static void selectInnerLoop(
 ** P4_KEYINFO_HANDOFF is the usual way of dealing with this.
 */
 static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
-  sqlite3 *db = pParse->db;
   int nExpr;
   KeyInfo *pInfo;
   struct ExprList_item *pItem;
+  sqlite3 *db = pParse->db;
   int i;
 
   nExpr = pList->nExpr;
-  pInfo = sqlite3DbMallocZero(db, sizeof(*pInfo) + nExpr*(sizeof(CollSeq*)+1) );
+  pInfo = sqlite3KeyInfoAlloc(db, nExpr);
   if( pInfo ){
-    pInfo->aSortOrder = (u8*)&pInfo->aColl[nExpr];
-    pInfo->nField = (u16)nExpr;
-    pInfo->enc = ENC(db);
-    pInfo->db = db;
     for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
       CollSeq *pColl;
       pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
-      if( !pColl ){
-        pColl = db->pDfltColl;
-      }
+      if( !pColl ) pColl = db->pDfltColl;
       pInfo->aColl[i] = pColl;
       pInfo->aSortOrder[i] = pItem->sortOrder;
     }
@@ -1942,23 +1955,17 @@ static int multiSelect(
 
     assert( p->pRightmost==p );
     nCol = p->pEList->nExpr;
-    pKeyInfo = sqlite3DbMallocZero(db,
-                       sizeof(*pKeyInfo)+nCol*(sizeof(CollSeq*) + 1));
+    pKeyInfo = sqlite3KeyInfoAlloc(db, nCol);
     if( !pKeyInfo ){
       rc = SQLITE_NOMEM;
       goto multi_select_end;
     }
-
-    pKeyInfo->enc = ENC(db);
-    pKeyInfo->nField = (u16)nCol;
-
     for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
       *apColl = multiSelectCollSeq(pParse, p, i);
       if( 0==*apColl ){
         *apColl = db->pDfltColl;
       }
     }
-    pKeyInfo->aSortOrder = (u8*)apColl;
 
     for(pLoop=p; pLoop; pLoop=pLoop->pPrior){
       for(i=0; i<2; i++){
@@ -2327,12 +2334,8 @@ static int multiSelectOrderBy(
       assert( pItem->iOrderByCol>0  && pItem->iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->iOrderByCol - 1;
     }
-    pKeyMerge =
-      sqlite3DbMallocRaw(db, sizeof(*pKeyMerge)+nOrderBy*(sizeof(CollSeq*)+1));
+    pKeyMerge = sqlite3KeyInfoAlloc(db, nOrderBy);
     if( pKeyMerge ){
-      pKeyMerge->aSortOrder = (u8*)&pKeyMerge->aColl[nOrderBy];
-      pKeyMerge->nField = (u16)nOrderBy;
-      pKeyMerge->enc = ENC(db);
       for(i=0; i<nOrderBy; i++){
         CollSeq *pColl;
         Expr *pTerm = pOrderBy->a[i].pExpr;
@@ -2369,12 +2372,8 @@ static int multiSelectOrderBy(
     regPrev = pParse->nMem+1;
     pParse->nMem += nExpr+1;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regPrev);
-    pKeyDup = sqlite3DbMallocZero(db,
-                  sizeof(*pKeyDup) + nExpr*(sizeof(CollSeq*)+1) );
+    pKeyDup = sqlite3KeyInfoAlloc(db, nExpr);
     if( pKeyDup ){
-      pKeyDup->aSortOrder = (u8*)&pKeyDup->aColl[nExpr];
-      pKeyDup->nField = (u16)nExpr;
-      pKeyDup->enc = ENC(db);
       for(i=0; i<nExpr; i++){
         pKeyDup->aColl[i] = multiSelectCollSeq(pParse, p, i);
         pKeyDup->aSortOrder[i] = 0;
@@ -3640,10 +3639,12 @@ static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
 static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
   Walker w;
   memset(&w, 0, sizeof(w));
-  w.xSelectCallback = convertCompoundSelectToSubquery;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
-  sqlite3WalkSelect(&w, pSelect);
+  if( pParse->hasCompound ){
+    w.xSelectCallback = convertCompoundSelectToSubquery;
+    sqlite3WalkSelect(&w, pSelect);
+  }
   w.xSelectCallback = selectExpander;
   sqlite3WalkSelect(&w, pSelect);
 }
@@ -4177,7 +4178,7 @@ int sqlite3Select(
   ** Use the SQLITE_GroupByOrder flag with SQLITE_TESTCTRL_OPTIMIZER
   ** to disable this optimization for testing purposes.
   */
-  if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy)==0
+  if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy, -1)==0
          && OptimizationEnabled(db, SQLITE_GroupByOrder) ){
     pOrderBy = 0;
   }
@@ -4198,7 +4199,7 @@ int sqlite3Select(
   ** BY and DISTINCT, and an index or separate temp-table for the other.
   */
   if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct 
-   && sqlite3ExprListCompare(pOrderBy, p->pEList)==0
+   && sqlite3ExprListCompare(pOrderBy, p->pEList, -1)==0
   ){
     p->selFlags &= ~SF_Distinct;
     p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);

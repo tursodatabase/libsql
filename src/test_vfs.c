@@ -28,6 +28,7 @@
 
 #include "sqlite3.h"
 #include "sqliteInt.h"
+#include <tcl.h>
 
 typedef struct Testvfs Testvfs;
 typedef struct TestvfsShm TestvfsShm;
