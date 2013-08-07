@@ -327,7 +327,6 @@ static void stat4Push(
 ){
   Stat4Accum *p = (Stat4Accum*)sqlite3_value_blob(argv[0]);
   i64 rowid = sqlite3_value_int64(argv[1]);
-  i64 nSumEq = 0;                 /* Sum of all nEq parameters */
   struct Stat4Sample *pSample;
   u32 h;
   int iMin = p->iMin;
@@ -1176,14 +1175,15 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     pIdx->nSample = nSample;
     nByte = sizeof(IndexSample) * nSample;
     nByte += sizeof(tRowcnt) * pIdx->nColumn * 3 * nSample;
+    nByte += pIdx->nColumn * sizeof(tRowcnt);    /* Space for Index.aAvgEq[] */
 
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
-    pIdx->avgEq = pIdx->aiRowEst[1];
     if( pIdx->aSample==0 ){
       sqlite3_finalize(pStmt);
       return SQLITE_NOMEM;
     }
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
+    pIdx->aAvgEq = pSpace; pSpace += pIdx->nColumn;
     for(i=0; i<pIdx->nSample; i++){
       pIdx->aSample[i].anEq = pSpace; pSpace += pIdx->nColumn;
       pIdx->aSample[i].anLt = pSpace; pSpace += pIdx->nColumn;
@@ -1229,11 +1229,17 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     decodeIntArray((char*)sqlite3_column_text(pStmt,3), nCol, pSample->anDLt,0);
 
     if( idx==pIdx->nSample-1 ){
-      if( pSample->anDLt[0]>0 ){
-        for(i=0, sumEq=0; i<=idx-1; i++) sumEq += pIdx->aSample[i].anEq[0];
-        pIdx->avgEq = (pSample->anLt[0] - sumEq)/pSample->anDLt[0];
+      int iCol;
+      for(iCol=0; iCol<pIdx->nColumn; iCol++){
+        tRowcnt avgEq = 0;
+        tRowcnt nDLt = pSample->anDLt[iCol];
+        if( nDLt>idx ){
+          for(i=0, sumEq=0; i<idx; i++) sumEq += pIdx->aSample[i].anEq[iCol];
+          avgEq = (pSample->anLt[iCol] - sumEq)/(nDLt - idx);
+        }
+        if( avgEq==0 ) avgEq = 1;
+        pIdx->aAvgEq[iCol] = avgEq;
       }
-      if( pIdx->avgEq<=0 ) pIdx->avgEq = 1;
     }
 
     pSample->n = sqlite3_column_bytes(pStmt, 4);

@@ -2418,7 +2418,9 @@ static int whereKeyStats(
   IndexSample *aSample = pIdx->aSample;
   int i;
   int isEq = 0;
+  int iCol = pRec->nField-1;
 
+  assert( pRec->nField>0 && iCol<pIdx->nColumn );
   for(i=0; i<pIdx->nSample; i++){
     int res = sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec);
     if( res>=0 ){
@@ -2433,18 +2435,18 @@ static int whereKeyStats(
   */
   if( isEq ){
     assert( i<pIdx->nSample );
-    aStat[0] = aSample[i].anLt[0];
-    aStat[1] = aSample[i].anEq[0];
+    aStat[0] = aSample[i].anLt[iCol];
+    aStat[1] = aSample[i].anEq[iCol];
   }else{
     tRowcnt iLower, iUpper, iGap;
     if( i==0 ){
       iLower = 0;
-      iUpper = aSample[0].anLt[0];
+      iUpper = aSample[0].anLt[iCol];
     }else{
-      iUpper = i>=pIdx->nSample ? pIdx->aiRowEst[0] : aSample[i].anLt[0];
-      iLower = aSample[i-1].anEq[0] + aSample[i-1].anLt[0];
+      iUpper = i>=pIdx->nSample ? pIdx->aiRowEst[0] : aSample[i].anLt[iCol];
+      iLower = aSample[i-1].anEq[iCol] + aSample[i-1].anLt[iCol];
     }
-    aStat[1] = pIdx->avgEq;
+    aStat[1] = pIdx->aAvgEq[iCol];
     if( iLower>=iUpper ){
       iGap = 0;
     }else{
@@ -2628,7 +2630,7 @@ static int whereEqualScanEst(
     return SQLITE_OK;
   }
 
-  aff = p->pTable->aCol[p->aiColumn[0]].affinity;
+  aff = p->pTable->aCol[p->aiColumn[nEq-1]].affinity;
   rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq-1, &bOk);
   pBuilder->pRec = pRec;
   if( rc!=SQLITE_OK ) return rc;
@@ -2643,7 +2645,7 @@ static int whereEqualScanEst(
       *pnRow = pBuilder->nMaxRowcnt;
     }
   }
-
+  
   return rc;
 }
 #endif /* defined(SQLITE_ENABLE_STAT4) */

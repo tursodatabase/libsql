@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2013-08-07T18:42:27.752
+C Replace\svariable\sIndex.avgEq\s(average\snumber\sof\srows\sin\skeys\sfor\swhich\sthere\sis\sno\ssample\sin\ssqlite_stat4)\swith\svector\sIndex.aAvgEq.
+D 2013-08-07T19:46:15.623
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c fcc42c3a9f4c3a048b20e138e3530b7f3d8470f6
+F src/analyze.c 0f54320fb58eedf3690dd9609e6176fff3f8c157
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -221,7 +221,7 @@ F src/shell.c 128eb16ccec68509a4a2f1948f2483819bf63425
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h dfb02189a27dac993ee6635017dd3d6926508f5a
+F src/sqliteInt.h 0ff47977058e1babf0c4265f1791c379d172b02f
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 0051a3640491a67ce2d4abcbffc687a818bb49f7
+F src/where.c c973297fc29c5dae03a07d6deb479af432d24005
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 812ed0c58fc5f729a2d4f16775fad6724cc367a6 0ad83ceb79767738bd06a28840cf84da0464ab4f
-R d674ab11a2de1d9766d2ac27cc923b51
+P 08f74c45ecf711a2373af578d44470add9082377
+R 4d9cb44bdbdf4b1edd0f4ec9caccbe56
 U dan
-Z 85dc674af92c540fb0c7cdb1bc5adf5a
+Z a128130e52d0e5080bab7e97885213b4

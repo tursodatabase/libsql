@@ -1551,7 +1551,7 @@ struct Index {
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
 #ifdef SQLITE_ENABLE_STAT4
   int nSample;             /* Number of elements in aSample[] */
-  tRowcnt avgEq;           /* Average nEq value for key values not in aSample */
+  tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */
 #endif
 };
