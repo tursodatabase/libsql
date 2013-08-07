@@ -1285,7 +1285,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   
   if( strcmp(zTable, "sqlite_sequence")==0 ){
     zPrepStmt = "DELETE FROM sqlite_sequence;\n";
-  }else if( strcmp(zTable, "sqlite_stat1")==0 ){
+  }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 ){
     fprintf(p->out, "ANALYZE sqlite_master;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
