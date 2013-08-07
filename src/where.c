@@ -2525,8 +2525,7 @@ static int whereRangeScanEst(
       int bOk;                    /* True if value is extracted from pExpr */
       Expr *pExpr = pLower->pExpr->pRight;
       assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
-      rc = sqlite3Stat4ProbeSetValue(pParse, pRec, pExpr, aff, nEq, &bOk);
-      pRec->nField = nEq+1;
+      rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
       if( rc==SQLITE_OK && bOk
        && whereKeyStats(pParse, p, pRec, 0, a)==SQLITE_OK
       ){
@@ -2538,8 +2537,7 @@ static int whereRangeScanEst(
       int bOk;                    /* True if value is extracted from pExpr */
       Expr *pExpr = pUpper->pExpr->pRight;
       assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
-      rc = sqlite3Stat4ProbeSetValue(pParse, pRec, pExpr, aff, nEq, &bOk);
-      pRec->nField = nEq+1;
+      rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
       if( rc==SQLITE_OK && bOk
        && whereKeyStats(pParse, p, pRec, 1, a)==SQLITE_OK
       ){
@@ -2547,6 +2545,7 @@ static int whereRangeScanEst(
         if( (pUpper->eOperator & WO_LE)!=0 ) iUpper += a[1];
       }
     }
+    pBuilder->pRec = pRec;
     if( rc==SQLITE_OK ){
       WhereCost iBase = whereCost(p->aiRowEst[0]);
       if( iUpper>iLower ){
@@ -2629,12 +2628,11 @@ static int whereEqualScanEst(
   }
 
   aff = p->pTable->aCol[p->aiColumn[0]].affinity;
-  rc = sqlite3Stat4ProbeSetValue(pParse, pRec, pExpr, aff, nEq-1, &bOk);
+  rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq-1, &bOk);
+  pBuilder->pRec = pRec;
   if( rc!=SQLITE_OK ) return rc;
   if( bOk==0 ) return SQLITE_NOTFOUND;
-
   pBuilder->nRecValid = nEq;
-  pRec->nField = nEq;
 
   rc = whereKeyStats(pParse, p, pRec, 0, a);
   if( rc==SQLITE_OK ){
@@ -4575,18 +4573,11 @@ static int whereLoopAddBtree(
       }
     }
 
+    rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
 #ifdef SQLITE_ENABLE_STAT4
-    assert( pBuilder->pRec==0 );
-    rc = sqlite3Stat4ProbeNew(pWInfo->pParse, pProbe, &pBuilder->pRec);
-    if( rc==SQLITE_OK ){
-#endif
-      rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
-#ifdef SQLITE_ENABLE_STAT4
-      sqlite3Stat4ProbeFree(pBuilder->pRec);
-      pBuilder->nRecValid = 0;
-      pBuilder->pRec = 0;
-    }
-    assert( pBuilder->pRec==0 );
+    sqlite3Stat4ProbeFree(pBuilder->pRec);
+    pBuilder->nRecValid = 0;
+    pBuilder->pRec = 0;
 #endif
 
     /* If there was an INDEXED BY clause, then only that one index is

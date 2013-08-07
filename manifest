@@ -1,5 +1,5 @@
-C Fixes\sfor\sbuilds\swithout\sSQLITE_ENABLE_STAT4.
-D 2013-08-06T20:15:06.692
+C When\sestimating\sthe\snumber\sof\srows\sscanned\susing\sdata\sfrom\sthe\ssqlite_stat4\stable,\savoid\sallocating\sUnpackedRecord\sand\sKeyInfo\sstructures\suntil\sthey\sare\sdefinitely\srequired.
+D 2013-08-07T15:52:41.738
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/shell.c 52f975eae87c8338c4dfbf4c2842d2a0971f01fd
 F src/sqlite.h.in 442c109e0c3447c34b1794971ecdb673ce08a843
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 31057687e0ebc9e56a025bcebb252bbd84e5db13
+F src/sqliteInt.h f56ec862ae37cf1b6e699ab5a2b53d40c8ec5068
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -283,14 +283,14 @@ F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
 F src/vdbeaux.c 4389b3692969b4415fcfd00de36818a02f84df28
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c 83f9b6e68a421cfcdde125a66b5ebe8220c12de2
+F src/vdbemem.c f0512045147702adec3ca6388663e243c17d2ea4
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 142525786b7855a0997e113f3932833bf5c1f63c
+F src/where.c 4e188dc4a1f668d761750eb27e603616179806d0
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2973f5ca736c4a6f13c653d54b6a29d7cae8d0ed
-R 3fc350a341f72f5a912cf9e1ccf56bc1
+P 84999e27cc0d14b89d9fe024e29d287c69285369
+R b05f226dd58169f35c18db270697f169
 U dan
-Z 97c03093fe0c6a197e3d6120177c182a
+Z 7ab1efe6195a9307bc618357bb65cf2b
