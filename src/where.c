@@ -2407,7 +2407,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
 **
 ** Return SQLITE_OK on success.
 */
-static int whereKeyStats(
+static void whereKeyStats(
   Parse *pParse,              /* Database connection */
   Index *pIdx,                /* Index to consider domain of */
   UnpackedRecord *pRec,       /* Vector of values to consider */
@@ -2480,7 +2480,6 @@ static int whereKeyStats(
     }
     aStat[0] = iLower + iGap;
   }
-  return SQLITE_OK;
 }
 #endif /* SQLITE_ENABLE_STAT4 */
 
@@ -2543,41 +2542,76 @@ static int whereRangeScanEst(
    && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
   ){
     UnpackedRecord *pRec = pBuilder->pRec;
-    tRowcnt iLower = 0;
-    tRowcnt iUpper = p->aiRowEst[0];
     tRowcnt a[2];
     u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
+
+    /* Variable iLower will be set to the estimate of the number of rows in 
+    ** the index that are less than the lower bound of the range query. The
+    ** lower bound being the concatenation of $P and $L, where $P is the
+    ** key-prefix formed by the nEq values matched against the nEq left-most
+    ** columns of the index, and $L is the value in pLower.
+    **
+    ** Or, if pLower is NULL or $L cannot be extracted from it (because it
+    ** is not a simple variable or literal value), the lower bound of the
+    ** range is $P. Due to a quirk in the way whereKeyStats() works, even
+    ** if $L is available, whereKeyStats() is called for both ($P) and 
+    ** ($P:$L) and the larger of the two returned values used.
+    **
+    ** Similarly, iUpper is to be set to the estimate of the number of rows
+    ** less than the upper bound of the range query. Where the upper bound
+    ** is either ($P) or ($P:$U). Again, even if $U is available, both values
+    ** of iUpper are requested of whereKeyStats() and the smaller used.
+    */
+    tRowcnt iLower;
+    tRowcnt iUpper;
+
+    /* Determine iLower and iUpper using ($P) only. */
+    if( nEq==0 ){
+      iLower = 0;
+      iUpper = p->aiRowEst[0];
+    }else{
+      /* Note: this call could be optimized away - since the same values must 
+      ** have been requested when testing key $P in whereEqualScanEst().  */
+      whereKeyStats(pParse, p, pRec, 0, a);
+      iLower = a[0];
+      iUpper = a[0] + a[1];
+    }
+
+    /* If possible, improve on the iLower estimate using ($P:$L). */
     if( pLower ){
       int bOk;                    /* True if value is extracted from pExpr */
       Expr *pExpr = pLower->pExpr->pRight;
       assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
       rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
-      if( rc==SQLITE_OK && bOk
-       && whereKeyStats(pParse, p, pRec, 0, a)==SQLITE_OK
-      ){
-        iLower = a[0];
-        if( (pLower->eOperator & WO_GT)!=0 ) iLower += a[1];
+      if( rc==SQLITE_OK && bOk ){
+        tRowcnt iNew;
+        whereKeyStats(pParse, p, pRec, 0, a);
+        iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
+        if( iNew>iLower ) iLower = iNew;
       }
     }
-    if( rc==SQLITE_OK && pUpper ){
+
+    /* If possible, improve on the iUpper estimate using ($P:$U). */
+    if( pUpper ){
       int bOk;                    /* True if value is extracted from pExpr */
       Expr *pExpr = pUpper->pExpr->pRight;
       assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
       rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
-      if( rc==SQLITE_OK && bOk
-       && whereKeyStats(pParse, p, pRec, 1, a)==SQLITE_OK
-      ){
-        iUpper = a[0];
-        if( (pUpper->eOperator & WO_LE)!=0 ) iUpper += a[1];
+      if( rc==SQLITE_OK && bOk ){
+        tRowcnt iNew;
+        whereKeyStats(pParse, p, pRec, 1, a);
+        iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
+        if( iNew<iUpper ) iUpper = iNew;
       }
     }
+
     pBuilder->pRec = pRec;
     if( rc==SQLITE_OK ){
       WhereCost nNew;
       if( iUpper>iLower ){
         nNew = whereCost(iUpper - iLower);
       }else{
-        nNew = whereCost(2);      /* Small number */
+        nNew = 10;        assert( 10==whereCost(2) );
       }
       if( nNew<nOut ){
         nOut = nNew;
@@ -2662,11 +2696,9 @@ static int whereEqualScanEst(
   if( bOk==0 ) return SQLITE_NOTFOUND;
   pBuilder->nRecValid = nEq;
 
-  rc = whereKeyStats(pParse, p, pRec, 0, a);
-  if( rc==SQLITE_OK ){
-    WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
-    *pnRow = a[1];
-  }
+  whereKeyStats(pParse, p, pRec, 0, a);
+  WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
+  *pnRow = a[1];
   
   return rc;
 }
