@@ -1085,7 +1085,9 @@ int valueFromExpr(
     }
   }else if( op==TK_UMINUS ) {
     /* This branch happens for multiple negative signs.  Ex: -(-5) */
-    if( SQLITE_OK==sqlite3ValueFromExpr(db,pExpr->pLeft,enc,affinity,&pVal) ){
+    if( SQLITE_OK==sqlite3ValueFromExpr(db,pExpr->pLeft,enc,affinity,&pVal) 
+     && pVal!=0
+    ){
       sqlite3VdbeMemNumerify(pVal);
       if( pVal->u.i==SMALLEST_INT64 ){
         pVal->flags &= MEM_Int;

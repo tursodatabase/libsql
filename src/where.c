@@ -4242,11 +4242,14 @@ static int whereLoopAddBtreeIndex(
     int nIn = 0;
 #ifdef SQLITE_ENABLE_STAT4
     int nRecValid = pBuilder->nRecValid;
+    assert( pNew->nOut==saved_nOut );
     if( (pTerm->wtFlags & TERM_VNULL)!=0 && pSrc->pTab->aCol[iCol].notNull ){
       continue; /* skip IS NOT NULL constraints on a NOT NULL column */
     }
 #endif
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
+
+    assert( pNew->nOut==saved_nOut );
 
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
@@ -4340,9 +4343,9 @@ static int whereLoopAddBtreeIndex(
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
+    pNew->nOut = saved_nOut;
 #ifdef SQLITE_ENABLE_STAT4
     pBuilder->nRecValid = nRecValid;
-    pNew->nOut = saved_nOut;
 #endif
   }
   pNew->prereq = saved_prereq;
