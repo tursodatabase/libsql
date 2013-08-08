@@ -394,7 +394,6 @@ struct WhereLoopBuilder {
 #ifdef SQLITE_ENABLE_STAT4
   UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
   int nRecValid;            /* Number of valid fields currently in pRec */
-  tRowcnt nMaxRowcnt;       /* If !=0, the maximum estimated row count */
 #endif
 };
 
@@ -2478,38 +2477,40 @@ static int whereKeyStats(
 ** If either of the upper or lower bound is not present, then NULL is passed in
 ** place of the corresponding WhereTerm.
 **
-** The nEq parameter is passed the index of the index column subject to the
-** range constraint. Or, equivalently, the number of equality constraints
-** optimized by the proposed index scan. For example, assuming index p is
-** on t1(a, b), and the SQL query is:
+** The value in (pBuilder->pNew->u.btree.nEq) is the index of the index
+** column subject to the range constraint. Or, equivalently, the number of
+** equality constraints optimized by the proposed index scan. For example,
+** assuming index p is on t1(a, b), and the SQL query is:
 **
 **   ... FROM t1 WHERE a = ? AND b > ? AND b < ? ...
 **
-** then nEq should be passed the value 1 (as the range restricted column,
-** b, is the second left-most column of the index). Or, if the query is:
+** then nEq is set to 1 (as the range restricted column, b, is the second 
+** left-most column of the index). Or, if the query is:
 **
 **   ... FROM t1 WHERE a > ? AND a < ? ...
 **
-** then nEq should be passed 0.
+** then nEq is set to 0.
 **
-** The returned value is an integer divisor to reduce the estimated
-** search space.  A return value of 1 means that range constraints are
-** no help at all.  A return value of 2 means range constraints are
-** expected to reduce the search space by half.  And so forth...
-**
-** In the absence of sqlite_stat3 ANALYZE data, each range inequality
-** reduces the search space by a factor of 4.  Hence a single constraint (x>?)
-** results in a return of 4 and a range constraint (x>? AND x<?) results
-** in a return of 16.
+** When this function is called, *pnOut is set to the whereCost() of the
+** number of rows that the index scan is expected to visit without 
+** considering the range constraints. If nEq is 0, this is the number of 
+** rows in the index. Assuming no error occurs, *pnOut is adjusted (reduced)
+** to account for the range contraints pLower and pUpper.
+** 
+** In the absence of sqlite_stat4 ANALYZE data, or if such data cannot be
+** used, each range inequality reduces the search space by a factor of 4. 
+** Hence a pair of constraints (x>? AND x<?) reduces the expected number of
+** rows visited by a factor of 16.
 */
 static int whereRangeScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   WhereLoopBuilder *pBuilder,
   WhereTerm *pLower,   /* Lower bound on the range. ex: "x>123" Might be NULL */
   WhereTerm *pUpper,   /* Upper bound on the range. ex: "x<455" Might be NULL */
-  WhereCost *pRangeDiv /* OUT: Reduce search space by this divisor */
+  WhereCost *pnOut     /* IN/OUT: Number of rows visited */
 ){
   int rc = SQLITE_OK;
+  int nOut = (int)*pnOut;
 
 #ifdef SQLITE_ENABLE_STAT4
   Index *p = pBuilder->pNew->u.btree.pIndex;
@@ -2550,17 +2551,18 @@ static int whereRangeScanEst(
     }
     pBuilder->pRec = pRec;
     if( rc==SQLITE_OK ){
-      WhereCost iBase = whereCost(p->aiRowEst[0]);
+      WhereCost nNew;
       if( iUpper>iLower ){
-        iBase -= whereCost(iUpper - iLower);
-      }
-      if( pBuilder->nMaxRowcnt && iBase<pBuilder->nMaxRowcnt ){
-        *pRangeDiv = pBuilder->nMaxRowcnt;
+        nNew = whereCost(iUpper - iLower);
       }else{
-        *pRangeDiv = iBase;
+        nNew = whereCost(2);      /* Small number */
       }
-      WHERETRACE(0x100, ("range scan regions: %u..%u  div=%d\n",
-                         (u32)iLower, (u32)iUpper, *pRangeDiv));
+      if( nNew<nOut ){
+        nOut = nNew;
+      }
+      *pnOut = (WhereCost)nOut;
+      WHERETRACE(0x100, ("range scan regions: %u..%u  est=%d\n",
+                         (u32)iLower, (u32)iUpper, nOut));
       return SQLITE_OK;
     }
   }
@@ -2569,15 +2571,16 @@ static int whereRangeScanEst(
   UNUSED_PARAMETER(pBuilder);
 #endif
   assert( pLower || pUpper );
-  *pRangeDiv = 0;
   /* TUNING:  Each inequality constraint reduces the search space 4-fold.
   ** A BETWEEN operator, therefore, reduces the search space 16-fold */
   if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ){
-    *pRangeDiv += 20;  assert( 20==whereCost(4) );
+    nOut -= 20;        assert( 20==whereCost(4) );
   }
   if( pUpper ){
-    *pRangeDiv += 20;  assert( 20==whereCost(4) );
+    nOut -= 20;        assert( 20==whereCost(4) );
   }
+  if( nOut<10 ) nOut = 10;
+  *pnOut = (WhereCost)nOut;
   return rc;
 }
 
@@ -2641,9 +2644,6 @@ static int whereEqualScanEst(
   if( rc==SQLITE_OK ){
     WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
     *pnRow = a[1];
-    if( pBuilder->nMaxRowcnt && *pnRow>pBuilder->nMaxRowcnt ){
-      *pnRow = pBuilder->nMaxRowcnt;
-    }
   }
   
   return rc;
@@ -2690,11 +2690,7 @@ static int whereInScanEst(
 
   if( rc==SQLITE_OK ){
     if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
-    if( pBuilder->nMaxRowcnt && nRowEst>pBuilder->nMaxRowcnt ){
-      *pnRow = pBuilder->nMaxRowcnt;
-    }else{
-      *pnRow = nRowEst;
-    }
+    *pnRow = nRowEst;
     WHERETRACE(0x100,("IN row estimate: est=%g\n", nRowEst));
   }
   assert( pBuilder->nRecValid==nRecValid );
@@ -4246,7 +4242,6 @@ static int whereLoopAddBtreeIndex(
     int nIn = 0;
 #ifdef SQLITE_ENABLE_STAT4
     int nRecValid = pBuilder->nRecValid;
-    int nMaxRowcnt = pBuilder->nMaxRowcnt;
     if( (pTerm->wtFlags & TERM_VNULL)!=0 && pSrc->pTab->aCol[iCol].notNull ){
       continue; /* skip IS NOT NULL constraints on a NOT NULL column */
     }
@@ -4309,9 +4304,8 @@ static int whereLoopAddBtreeIndex(
     }
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
       /* Adjust nOut and rRun for STAT3 range values */
-      WhereCost rDiv;
-      whereRangeScanEst(pParse, pBuilder, pBtm, pTop, &rDiv);
-      pNew->nOut = saved_nOut>rDiv+10 ? saved_nOut - rDiv : 10;
+      assert( pNew->nOut==saved_nOut );
+      whereRangeScanEst(pParse, pBuilder, pBtm, pTop, &pNew->nOut);
     }
 #ifdef SQLITE_ENABLE_STAT4
     if( nInMul==0 && pProbe->nSample && OptimizationEnabled(db, SQLITE_Stat3) ){
@@ -4321,14 +4315,15 @@ static int whereLoopAddBtreeIndex(
         testcase( pTerm->eOperator & WO_EQ );
         testcase( pTerm->eOperator & WO_ISNULL );
         rc = whereEqualScanEst(pParse, pBuilder, pExpr->pRight, &nOut);
-        assert( nOut==0||pBuilder->nMaxRowcnt==0||nOut<=pBuilder->nMaxRowcnt);
-        if( nOut ) pBuilder->nMaxRowcnt = nOut;
       }else if( (pTerm->eOperator & WO_IN)
              &&  !ExprHasProperty(pExpr, EP_xIsSelect)  ){
         rc = whereInScanEst(pParse, pBuilder, pExpr->x.pList, &nOut);
       }
       assert( nOut==0 || rc==SQLITE_OK );
-      if( nOut ) pNew->nOut = whereCost(nOut);
+      if( nOut ){
+        nOut = whereCost(nOut);
+        pNew->nOut = MIN(nOut, saved_nOut);
+      }
     }
 #endif
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
@@ -4347,7 +4342,7 @@ static int whereLoopAddBtreeIndex(
     }
 #ifdef SQLITE_ENABLE_STAT4
     pBuilder->nRecValid = nRecValid;
-    pBuilder->nMaxRowcnt = nMaxRowcnt;
+    pNew->nOut = saved_nOut;
 #endif
   }
   pNew->prereq = saved_prereq;
