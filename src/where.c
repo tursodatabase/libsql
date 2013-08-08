@@ -2415,25 +2415,47 @@ static int whereKeyStats(
   tRowcnt *aStat              /* OUT: stats written here */
 ){
   IndexSample *aSample = pIdx->aSample;
-  int i;
-  int isEq = 0;
-  int iCol = pRec->nField-1;
+  int iCol = pRec->nField-1;  /* Index of required stats in anEq[] etc. */
+  int iMin = 0;               /* Smallest sample not yet tested */
+  int i = pIdx->nSample;      /* Smallest sample larger than or equal to pRec */
+  int iTest;                  /* Next sample to test */
+  int res;                    /* Result of comparison operation */
 
+  assert( pIdx->nSample>0 );
   assert( pRec->nField>0 && iCol<pIdx->nColumn );
-  for(i=0; i<pIdx->nSample; i++){
-    int res = sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec);
-    if( res>=0 ){
-      isEq = (res==0);
-      break;
+  do{
+    iTest = (iMin+i)/2;
+    res = sqlite3VdbeRecordCompare(aSample[iTest].n, aSample[iTest].p, pRec);
+    if( res<0 ){
+      iMin = iTest+1;
+    }else{
+      i = iTest;
     }
+  }while( res && iMin<i );
+
+#ifdef SQLITE_DEBUG
+  /* The following assert statements check that the binary search code
+  ** above found the right answer. This block serves no purpose other
+  ** than to invoke the asserts.  */
+  if( res==0 ){
+    /* If (res==0) is true, then sample $i must be equal to pRec */
+    assert( i<pIdx->nSample );
+    assert( 0==sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec) );
+  }else{
+    /* Otherwise, pRec must be smaller than sample $i and larger than
+    ** sample ($i-1).  */
+    assert( i==pIdx->nSample 
+         || sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec)>0 );
+    assert( i==0
+         || sqlite3VdbeRecordCompare(aSample[i-1].n, aSample[i-1].p, pRec)<0 );
   }
+#endif /* ifdef SQLITE_DEBUG */
 
   /* At this point, aSample[i] is the first sample that is greater than
   ** or equal to pVal.  Or if i==pIdx->nSample, then all samples are less
-  ** than pVal.  If aSample[i]==pVal, then isEq==1.
+  ** than pVal.  If aSample[i]==pVal, then res==0.
   */
-  if( isEq ){
-    assert( i<pIdx->nSample );
+  if( res==0 ){
     aStat[0] = aSample[i].anLt[iCol];
     aStat[1] = aSample[i].anEq[iCol];
   }else{
