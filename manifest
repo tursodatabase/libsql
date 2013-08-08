@@ -1,5 +1,5 @@
-C If\sthe\sSQLITE_ALLOW_URI_AUTHORITY\scompile-time\soption\sis\sset,\sthen\sallow\nnon-localhost\sauthorities\son\sURI\sfilenames\sand\spass\sthem\sthrough\sas\sa\sUNC\nto\sthe\sunderlying\sVFS.
-D 2013-08-07T23:15:52.266
+C If\sthe\sSQLITE_EXTRA_INIT\sfunction\sis\sdefined,\smake\ssure\sit\sis\scalled\sonly\nonce\sby\sthe\seffective\ssqlite3_initialize()\scall.
+D 2013-08-08T14:38:45.404
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 482135b0bf855d621ef10c5bb56c63df23b2ddec
+F src/main.c f6eb795f17eb88205b55e5116fb37e6593707d82
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0ad83ceb79767738bd06a28840cf84da0464ab4f
-R a230045986289598d392f4ac16d8f85f
+P 3adb6c1bfda897859dc9cf9ae7f1e6719855ee68
+R f58cae922c11c825e7cdfcd2f4c52823
 U drh
-Z 3dff46ea9ed1198b77cd17bced6ea4de
+Z 6adac74ecb750c6ba6eb610c8156f9d8

@@ -117,6 +117,9 @@ char *sqlite3_data_directory = 0;
 int sqlite3_initialize(void){
   MUTEX_LOGIC( sqlite3_mutex *pMaster; )       /* The main static mutex */
   int rc;                                      /* Result code */
+#ifdef SQLITE_EXTRA_INIT
+  int bRunExtraInit = 0;                       /* Extra initialization needed */
+#endif
 
 #ifdef SQLITE_OMIT_WSD
   rc = sqlite3_wsd_init(4096, 24);
@@ -214,6 +217,9 @@ int sqlite3_initialize(void){
       sqlite3PCacheBufferSetup( sqlite3GlobalConfig.pPage, 
           sqlite3GlobalConfig.szPage, sqlite3GlobalConfig.nPage);
       sqlite3GlobalConfig.isInit = 1;
+#ifdef SQLITE_EXTRA_INIT
+      bRunExtraInit = 1;
+#endif
     }
     sqlite3GlobalConfig.inProgress = 0;
   }
@@ -254,7 +260,7 @@ int sqlite3_initialize(void){
   ** compile-time option.
   */
 #ifdef SQLITE_EXTRA_INIT
-  if( rc==SQLITE_OK && sqlite3GlobalConfig.isInit ){
+  if( bRunExtraInit ){
     int SQLITE_EXTRA_INIT(const char*);
     rc = SQLITE_EXTRA_INIT(0);
   }
