@@ -107,12 +107,12 @@
 ** of the INTEGER PRIMARY KEY.  The sample column is a blob which is the
 ** binary encoding of a key from the index, with the trailing rowid
 ** omitted.  The nEq column is a list of integers.  The first integer
-** is the approximate number of entires in the index whose left-most 
-** column exactly matches the left-most column the sample.  The second
-** integer in nEq is the approximate number of entires in the index where
+** is the approximate number of entries in the index whose left-most 
+** column exactly matches the left-most column of the sample.  The second
+** integer in nEq is the approximate number of entries in the index where
 ** the first two columns match the first two columns of the sample.
-** And so forth.  nLt is another list of integer that show the approximate
-** number of entires that are strictly less than the sample.  The first
+** And so forth.  nLt is another list of integers that show the approximate
+** number of entries that are strictly less than the sample.  The first
 ** integer in nLt contains the number of entries in the index where the
 ** left-most column is less than the left-most column of the sample.
 ** The K-th integer in the nLt entry is the number of index entries 
@@ -122,7 +122,7 @@
 ** sample.
 **
 ** There can be an arbitrary number of sqlite_stat4 entries per index.
-** The ANALYZE command will typically generate sqlite_stat3 tables
+** The ANALYZE command will typically generate sqlite_stat4 tables
 ** that contain between 10 and 40 samples which are distributed across
 ** the key space, though not uniformly, and which include samples with
 ** large nEq values.
