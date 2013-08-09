@@ -20,6 +20,7 @@
 **    CREATE TABLE sqlite_stat1(tbl, idx, stat);
 **    CREATE TABLE sqlite_stat2(tbl, idx, sampleno, sample);
 **    CREATE TABLE sqlite_stat3(tbl, idx, nEq, nLt, nDLt, sample);
+**    CREATE TABLE sqlite_stat4(tbl, idx, nEq, nLt, nDLt, sample);
 **
 ** Additional tables might be added in future releases of SQLite.
 ** The sqlite_stat2 table is not created or used unless the SQLite version
@@ -27,8 +28,13 @@
 ** with SQLITE_ENABLE_STAT2.  The sqlite_stat2 table is deprecated.
 ** The sqlite_stat2 table is superseded by sqlite_stat3, which is only
 ** created and used by SQLite versions 3.7.9 and later and with
-** SQLITE_ENABLE_STAT3 defined.  The fucntionality of sqlite_stat3
-** is a superset of sqlite_stat2.  
+** SQLITE_ENABLE_STAT3 defined.  The functionality of sqlite_stat3
+** is a superset of sqlite_stat2.  The sqlite_stat4 is an enhanced
+** version of sqlite_stat3 and is only available when compiled with
+** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.0 and later.
+**
+** For most applications, sqlite_stat1 provides all the statisics required
+** for the query planner to make good choices.
 **
 ** Format of sqlite_stat1:
 **
@@ -36,7 +42,8 @@
 ** name in the idx column.  The tbl column is the name of the table to
 ** which the index belongs.  In each such row, the stat column will be
 ** a string consisting of a list of integers.  The first integer in this
-** list is the number of rows in the index and in the table.  The second
+** list is the number of rows in the index.  (This is the same as the
+** number of rows in the table, except for partial indices.)  The second
 ** integer is the average number of rows in the index that have the same
 ** value in the first column of the index.  The third integer is the average
 ** number of rows in the index that have the same value for the first two
@@ -83,35 +90,52 @@
 **
 ** Format for sqlite_stat3:
 **
-** The sqlite_stat3 is an enhancement to sqlite_stat2.  A new name is
-** used to avoid compatibility problems.  
+** The sqlite_stat3 format is a subset of sqlite_stat4.  Hence, the
+** sqlite_stat4 format will be described first.  Further information
+** about sqlite_stat3 follows the sqlite_stat4 description.
 **
-** The format of the sqlite_stat3 table is similar to the format of
-** the sqlite_stat2 table.  There are multiple entries for each index.
+** Format for sqlite_stat4:
+**
+** As with sqlite_stat2, the sqlite_stat4 table contains histogram data
+** to aid the query planner in choosing good indices based on the values
+** that indexed columns are compared against in the WHERE clauses of
+** queries.
+**
+** The sqlite_stat4 table contains multiple entries for each index.
 ** The idx column names the index and the tbl column is the table of the
 ** index.  If the idx and tbl columns are the same, then the sample is
-** of the INTEGER PRIMARY KEY.  The sample column is a value taken from
-** the left-most column of the index.  The nEq column is the approximate
-** number of entires in the index whose left-most column exactly matches
-** the sample.  nLt is the approximate number of entires whose left-most
-** column is less than the sample.  The nDLt column is the approximate
-** number of distinct left-most entries in the index that are less than
-** the sample.
+** of the INTEGER PRIMARY KEY.  The sample column is a blob which is the
+** binary encoding of a key from the index, with the trailing rowid
+** omitted.  The nEq column is a list of integers.  The first integer
+** is the approximate number of entires in the index whose left-most 
+** column exactly matches the left-most column the sample.  The second
+** integer in nEq is the approximate number of entires in the index where
+** the first two columns match the first two columns of the sample.
+** And so forth.  nLt is another list of integer that show the approximate
+** number of entires that are strictly less than the sample.  The first
+** integer in nLt contains the number of entries in the index where the
+** left-most column is less than the left-most column of the sample.
+** The K-th integer in the nLt entry is the number of index entries 
+** where the first K columns are less than the first K columns of the
+** sample.  The nDLt column is like nLt except that it contains the 
+** number of distinct entries in the index that are less than the
+** sample.
 **
-** Future versions of SQLite might change to store a string containing
-** multiple integers values in the nDLt column of sqlite_stat3.  The first
-** integer will be the number of prior index entires that are distinct in
-** the left-most column.  The second integer will be the number of prior index
-** entries that are distinct in the first two columns.  The third integer
-** will be the number of prior index entries that are distinct in the first
-** three columns.  And so forth.  With that extension, the nDLt field is
-** similar in function to the sqlite_stat1.stat field.
-**
-** There can be an arbitrary number of sqlite_stat3 entries per index.
+** There can be an arbitrary number of sqlite_stat4 entries per index.
 ** The ANALYZE command will typically generate sqlite_stat3 tables
 ** that contain between 10 and 40 samples which are distributed across
 ** the key space, though not uniformly, and which include samples with
-** largest possible nEq values.
+** large nEq values.
+**
+** Format for sqlite_stat3 redux:
+**
+** The sqlite_stat3 table is like sqlite_stat4 except that it only
+** looks at the left-most column of the index.  The sqlite_stat3.sample
+** column contains the actual value of the left-most column instead
+** of a blob encoding of the complete index key as is found in
+** sqlite_stat4.sample.  The nEq, nLt, and nDLt entries of sqlite_stat3
+** all contain just a single integer which is the same as the first
+** integer in the equivalent columns in sqlite_stat4.
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
