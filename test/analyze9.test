@@ -34,12 +34,14 @@ proc s {blob} {
 }
 db function s s
 
-do_test 1.0 {
-  execsql { CREATE TABLE t1(a TEXT, b TEXT); }
-  for {set i 0} {$i < 5} {incr i} {
-    execsql {INSERT INTO t1 VALUES ('('||($i%10)||')', '('||($i%7)||')')}
-  }
-  execsql { CREATE INDEX i1 ON t1(a, b) }
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a TEXT, b TEXT); 
+  INSERT INTO t1 VALUES('(0)', '(0)');
+  INSERT INTO t1 VALUES('(1)', '(1)');
+  INSERT INTO t1 VALUES('(2)', '(2)');
+  INSERT INTO t1 VALUES('(3)', '(3)');
+  INSERT INTO t1 VALUES('(4)', '(4)');
+  CREATE INDEX i1 ON t1(a, b);
 } {}
 
 
@@ -50,21 +52,21 @@ do_execsql_test 1.1 {
 do_execsql_test 1.3 {
   SELECT tbl,idx,nEq,nLt,nDLt,test_decode(sample) FROM sqlite_stat4;
 } {
-  t1 i1 {1 1} {0 0} {0 0} {(0) (0)}
-  t1 i1 {1 1} {1 1} {1 1} {(1) (1)}
-  t1 i1 {1 1} {2 2} {2 2} {(2) (2)}
-  t1 i1 {1 1} {3 3} {3 3} {(3) (3)}
-  t1 i1 {1 1} {4 4} {4 4} {(4) (4)}
+  t1 i1 {1 1 1} {0 0 0} {0 0 0} {(0) (0) 1}
+  t1 i1 {1 1 1} {1 1 1} {1 1 1} {(1) (1) 2}
+  t1 i1 {1 1 1} {2 2 2} {2 2 2} {(2) (2) 3}
+  t1 i1 {1 1 1} {3 3 3} {3 3 3} {(3) (3) 4}
+  t1 i1 {1 1 1} {4 4 4} {4 4 4} {(4) (4) 5}
 }
 
 do_execsql_test 1.2 {
   SELECT tbl,idx,nEq,nLt,nDLt,s(sample) FROM sqlite_stat4;
 } {
-  t1 i1 {1 1} {0 0} {0 0} ...(0)(0) 
-  t1 i1 {1 1} {1 1} {1 1} ...(1)(1) 
-  t1 i1 {1 1} {2 2} {2 2} ...(2)(2) 
-  t1 i1 {1 1} {3 3} {3 3} ...(3)(3)
-  t1 i1 {1 1} {4 4} {4 4} ...(4)(4)
+  t1 i1 {1 1 1} {0 0 0} {0 0 0} ....(0)(0)
+  t1 i1 {1 1 1} {1 1 1} {1 1 1} ....(1)(1).
+  t1 i1 {1 1 1} {2 2 2} {2 2 2} ....(2)(2).
+  t1 i1 {1 1 1} {3 3 3} {3 3 3} ....(3)(3).
+  t1 i1 {1 1 1} {4 4 4} {4 4 4} ....(4)(4).
 }
 
 
@@ -80,8 +82,8 @@ do_execsql_test 2.1 {
   ANALYZE;
   SELECT test_decode(sample) FROM sqlite_stat4;
 } {
-  {22.0 NULL x'656667'} 
-  {{some text} 14 NULL}
+  {22.0 NULL x'656667' 2} 
+  {{some text} 14 NULL 1}
 }
 
 #-------------------------------------------------------------------------
@@ -117,6 +119,30 @@ do_execsql_test 3.3.2 {
   SELECT lindex(nEq, 0) FROM sqlite_stat4;
 } [lrange [string repeat "10 " 100] 0 23]
 
+#-------------------------------------------------------------------------
+# 
+do_execsql_test 3.4 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+  INSERT INTO t1 VALUES(1, 1, 'one-a');
+  INSERT INTO t1 VALUES(11, 1, 'one-b');
+  INSERT INTO t1 VALUES(21, 1, 'one-c');
+  INSERT INTO t1 VALUES(31, 1, 'one-d');
+  INSERT INTO t1 VALUES(41, 1, 'one-e');
+  INSERT INTO t1 VALUES(51, 1, 'one-f');
+  INSERT INTO t1 VALUES(61, 1, 'one-g');
+  INSERT INTO t1 VALUES(71, 1, 'one-h');
+  INSERT INTO t1 VALUES(81, 1, 'one-i');
+  INSERT INTO t1 VALUES(91, 1, 'one-j');
+  INSERT INTO t1 SELECT a+1,2,'two' || substr(c,4) FROM t1;
+  INSERT INTO t1 SELECT a+2,3,'three'||substr(c,4) FROM t1 WHERE c GLOB 'one-*';
+  INSERT INTO t1 SELECT a+3,4,'four'||substr(c,4) FROM t1 WHERE c GLOB 'one-*';
+  INSERT INTO t1 SELECT a+4,5,'five'||substr(c,4) FROM t1 WHERE c GLOB 'one-*';
+  INSERT INTO t1 SELECT a+5,6,'six'||substr(c,4) FROM t1 WHERE c GLOB 'one-*';	
+  CREATE INDEX t1b ON t1(b);
+  ANALYZE;
+  SELECT c FROM t1 WHERE b=3 AND a BETWEEN 30 AND 60;
+} {three-d three-e three-f}
 
 finish_test
 

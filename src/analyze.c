@@ -237,6 +237,16 @@ static void openStatTable(
 ** Three SQL functions - stat4_init(), stat4_push(), and stat4_pop() -
 ** share an instance of the following structure to hold their state
 ** information.
+**
+** bHaveP, bHaveNonP:
+**   The stat4_push() user-defined-function may be invoked multiple
+**   times with index keys that are identical except for the rowid 
+**   field. An argument is passed to stat4_push() to indicate if this
+**   is the case or not.
+**
+**   bHaveP is set to true if a periodic sample corresponding to the
+**   current index key has already been added. bHaveNonP is true if a
+**   non-periodic sample has been added.
 */
 typedef struct Stat4Accum Stat4Accum;
 struct Stat4Accum {
@@ -245,8 +255,10 @@ struct Stat4Accum {
   int iMin;                 /* Index of entry with minimum nEq and hash */
   int mxSample;             /* Maximum number of samples to accumulate */
   int nSample;              /* Current number of samples */
-  int nCol;                 /* Number of columns in the index */
+  int nCol;                 /* Number of columns in the index including rowid */
   u32 iPrn;                 /* Pseudo-random number used for sampling */
+  int bHaveP;
+  int bHaveNonP;
   struct Stat4Sample {
     i64 iRowid;                /* Rowid in main table of the key */
     tRowcnt *anEq;             /* sqlite_stat4.nEq */
@@ -285,7 +297,7 @@ static void stat4Init(
   nRow = (tRowcnt)sqlite3_value_int64(argv[0]);
   nCol = sqlite3_value_int(argv[1]);
   mxSample = sqlite3_value_int(argv[2]);
-  assert( nCol>0 );
+  assert( nCol>1 );               /* >1 because it includes the rowid column */
 
   /* Allocate the space required for the Stat4Accum object */
   n = sizeof(*p) + (sizeof(p->a[0]) + 3*sizeof(tRowcnt)*nCol)*mxSample;
@@ -351,51 +363,65 @@ static void stat4Push(
 ){
   Stat4Accum *p = (Stat4Accum*)sqlite3_value_blob(argv[0]);
   i64 rowid = sqlite3_value_int64(argv[1]);
+  int bNewKey = sqlite3_value_int(argv[2]);
   struct Stat4Sample *pSample;
-  u32 h;
+  u32 h;                          /* Hash value for this key */
   int iMin = p->iMin;
   int i;
   u8 isPSample = 0;
   u8 doInsert = 0;
 
-  sqlite3_value **aEq = &argv[2];
-  sqlite3_value **aLt = &argv[2+p->nCol];
-  sqlite3_value **aDLt = &argv[2+p->nCol+p->nCol];
+  sqlite3_value **aEq = &argv[3];
+  sqlite3_value **aLt = &argv[3+p->nCol];
+  sqlite3_value **aDLt = &argv[3+p->nCol+p->nCol];
 
-  i64 nEq = sqlite3_value_int64(aEq[p->nCol-1]);
   i64 nLt = sqlite3_value_int64(aLt[p->nCol-1]);
 
   UNUSED_PARAMETER(context);
   UNUSED_PARAMETER(argc);
-
   assert( p->nCol>0 );
-  assert( argc==(2 + 3*p->nCol) );
+  assert( argc==(3 + 3*p->nCol) );
+  assert( p->bHaveNonP==0 || p->bHaveP==0 );
 
-  /* Figure out if this sample will be used. There are three reasons a
-  ** sample may be used:
-  **
-  **   1. It may be a periodic sample. In this case set isPSample to true
-  **      as well. Or,
-  **
-  **   2. Less than p->mxSample samples have been collected so far, or
-  **
-  **   3. It is more desirable than some other non-periodic sample that has
-  **      already been collected. Samples are compared based on the values
-  **      in the anEq array, starting from last (right-most index column)
-  **      to first (left-most index column). If all elements of the anEq
-  **      array are equal, samples are compared by hash value.
-  **
-  **      For both the contents of the anEq[] array and the hash value,
-  **      larger values are considered more desirable.
-  */
+  if( bNewKey ){
+    p->bHaveP = 0;
+    p->bHaveNonP = 0;
+  }
   h = p->iPrn = p->iPrn*1103515245 + 12345;
-  if( (nLt/p->nPSample)!=((nEq+nLt)/p->nPSample) ){
+
+  /* Check if this should be a periodic sample. If this is a periodic
+  ** sample and there is already a non-periodic sample for this key,
+  ** replace it.  */
+  if( (nLt/p->nPSample) != (nLt+1)/p->nPSample ){
     doInsert = isPSample = 1;
+    if( p->bHaveNonP ){
+      p->nSample--;
+      p->bHaveNonP = 0;
+      p->bHaveP = 1;
+      assert( p->nSample<p->mxSample );
+      assert( p->a[p->nSample].isPSample==0 );
+    }
+
+  /* Or, if this is not a periodic sample, and there is already at least one
+  ** periodic sample, return early. */
+  }else if( p->bHaveP ){
+    /* no-op */
+
+  /* If there is already a non-periodic sample for the key, but this one
+  ** has a higher hash score, replace the existing sample.  */
+  }else if( p->bHaveNonP ){
+    if( p->a[p->nSample-1].iHash<h ){
+      p->nSample--;
+      doInsert = 1;
+    }
+
+  /* Finally, check if this should be added as a non-periodic sample. */
   }else if( p->nSample<p->mxSample ){
     doInsert = 1;
+    p->bHaveNonP = 1;
   }else{
     tRowcnt *aMinEq = p->a[iMin].anEq;
-    for(i=p->nCol-1; i>=0; i--){
+    for(i=p->nCol-2; i>=0; i--){
       i64 nEq = sqlite3_value_int64(aEq[i]);
       if( nEq<aMinEq[i] ) break;
       if( nEq>aMinEq[i] ){
@@ -406,8 +432,9 @@ static void stat4Push(
     if( i<0 && h>p->a[iMin].iHash ){
       doInsert = 1;
     }
+    p->bHaveNonP = doInsert;
   }
-  if( !doInsert ) return;
+  if( doInsert==0 ) return;
 
   /* Fill in the new Stat4Sample object. */
   if( p->nSample==p->mxSample ){
@@ -579,8 +606,9 @@ static void analyzeOneTable(
 
   int regStat4 = iMem++;       /* Register to hold Stat4Accum object */
   int regRowid = iMem++;       /* Rowid argument passed to stat4_push() */
+  int regKeychng = iMem++;     /* True if key has changed */
 
-  pParse->nMem = MAX(pParse->nMem, regRowid);
+  pParse->nMem = MAX(pParse->nMem, regKeychng);
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) ){
     return;
@@ -627,7 +655,7 @@ static void analyzeOneTable(
     if( pIdx->pPartIdxWhere==0 ) needTableCnt = 0;
     VdbeNoopComment((v, "Begin analysis of %s", pIdx->zName));
     nCol = pIdx->nColumn;
-    aChngAddr = sqlite3DbMallocRaw(db, sizeof(int)*nCol);
+    aChngAddr = sqlite3DbMallocRaw(db, sizeof(int)*(nCol+1));
     if( aChngAddr==0 ) continue;
     pKey = sqlite3IndexKeyinfo(pParse, pIdx);
 
@@ -640,12 +668,14 @@ static void analyzeOneTable(
     ** entry. The code below is for an index with 2 columns. The actual
     ** VM code generated may be for any number of columns.
     **
-    ** One cursor is opened for each column in the index (nCol). All cursors 
-    ** scan concurrently the index from start to end. All variables used in
-    ** the pseudo-code are initialized to zero.
+    ** One cursor is opened for each column in the index and one for the
+    ** rowid column (nCol+1 in total). All cursors scan concurrently the 
+    ** index from start to end. All variables used in the pseudo-code are 
+    ** initialized to zero.
     **
     **   Rewind csr(0)
     **   Rewind csr(1)
+    **   Rewind csr(2)
     ** 
     **  next_0:
     **   regPrev(0) = csr(0)[0]
@@ -662,18 +692,26 @@ static void analyzeOneTable(
     **   regDLte(1) += 1
     **   regLt(1) += regEq(1)
     **   regEq(1) = 0
-    **   regRowid = csr(1)[rowid]        // innermost cursor only
     **   do {
     **     regEq(1) += 1
-    **     regCnt += 1                   // innermost cursor only
     **     Next csr(1)
     **   }while ( csr(1)[0..1] == regPrev(0..1) )
     ** 
-    **   stat4_push(regRowid, regEq, regLt, regDLte);
+    **   regKeychng = 1
+    **  next_row:
+    **   regRowid = csr(2)[rowid]
+    **   regEq(2) = 1
+    **   regLt(2) = regCnt
+    **   regCnt += 1
+    **   regDLte(2) = regCnt
+    **   stat4_push(regRowid, regKeychng, regEq, regLt, regDLte);
+    **   regKeychng = 0
+    **   Next csr(2)
+    **   if( eof( csr(2) ) ) goto endOfScan
     ** 
-    **   if( eof( csr(1) ) ) goto endOfScan
-    **   if( csr(1)[0] != regPrev(0) ) goto next_0
-    **   goto next_1
+    **   if( csr(2)[0] != regPrev(0) ) goto next_0
+    **   if( csr(2)[1] != regPrev(1) ) goto next_1
+    **   goto next_row
     **
     **  endOfScan:
     **   // done!
@@ -683,32 +721,31 @@ static void analyzeOneTable(
     ** of the corresponding length. As required to calculate the contents
     ** of the sqlite_stat1 entry.
     **
-    ** Currently, the last memory cell allocated (that with the largest 
-    ** integer identifier) is regStat4. Immediately following regStat4
+    ** At this point, the last memory cell allocated (that with the largest 
+    ** integer identifier) is regKeychng. Immediately following regKeychng
     ** we allocate the following:
     **
     **     regEq -    nCol registers
-    **     regLt -    nCol registers
-    **     regDLte -  nCol registers
-    **     regPrev -  nCol registers
+    **     regLt -    nCol+1 registers
+    **     regDLte -  nCol+1 registers
+    **     regPrev -  nCol+1 registers
     **
-    ** The regRowid, regEq, regLt and regDLte registers must be positioned in 
-    ** that order immediately following regStat4 so that they can be passed
-    ** to the stat4_push() function.
+    ** can be passed to the stat4_push() function.
     **
     ** All of the above are initialized to contain integer value 0.
     */
-    regEq = regRowid+1;           /* First in array of nEq value registers */
-    regLt = regEq+nCol;           /* First in array of nLt value registers */
-    regDLte = regLt+nCol;         /* First in array of nDLt value registers */
-    regPrev = regDLte+nCol;       /* First in array of prev. value registers */
+    regEq = regKeychng+1;         /* First in array of nEq value registers */
+    regLt = regEq+nCol+1;         /* First in array of nLt value registers */
+    regDLte = regLt+nCol+1;       /* First in array of nDLt value registers */
+    regPrev = regDLte+nCol+1;     /* First in array of prev. value registers */
     pParse->nMem = MAX(pParse->nMem, regPrev+nCol);
 
-    /* Open a read-only cursor for each column of the index. */
+    /* Open a read-only cursor for each column of the index. And one for
+    ** the rowid column. A total of (nCol+1) cursors.  */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
     iIdxCur = iTab;
-    pParse->nTab = MAX(pParse->nTab, iTab+nCol);
-    for(i=0; i<nCol; i++){
+    pParse->nTab = MAX(pParse->nTab, iTab+nCol+1);
+    for(i=0; i<(nCol+1); i++){
       int iMode = (i==0 ? P4_KEYINFO_HANDOFF : P4_KEYINFO);
       sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur+i, pIdx->tnum, iDb);
       sqlite3VdbeChangeP4(v, -1, (char*)pKey, iMode); 
@@ -719,11 +756,11 @@ static void analyzeOneTable(
     /* Invoke the stat4_init() function. The arguments are:
     ** 
     **     * the number of rows in the index,
-    **     * the number of columns in the index,
+    **     * the number of columns in the index including the rowid,
     **     * the recommended number of samples for the stat4 table.
     */
     sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regStat4+1);
-    sqlite3VdbeAddOp2(v, OP_Integer, nCol, regStat4+2);
+    sqlite3VdbeAddOp2(v, OP_Integer, nCol+1, regStat4+2);
     sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_STAT4_SAMPLES, regStat4+3);
     sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4+1, regStat4);
     sqlite3VdbeChangeP4(v, -1, (char*)&stat4InitFuncdef, P4_FUNCDEF);
@@ -740,7 +777,7 @@ static void analyzeOneTable(
     /* Rewind all cursors open on the index. If the table is entry, this
     ** will cause control to jump to address endOfScan immediately.  */
     endOfScan = sqlite3VdbeMakeLabel(v);
-    for(i=0; i<nCol; i++){
+    for(i=0; i<(nCol+1); i++){
       sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur+i, endOfScan);
     }
 
@@ -750,7 +787,6 @@ static void analyzeOneTable(
       int iDo;
       int iNe;                    /* Jump here to exit do{...}while loop */
       int j;
-      int bInner = (i==(nCol-1)); /* True for innermost cursor */
 
       /* Implementation of the following pseudo-code:
       **
@@ -768,28 +804,20 @@ static void analyzeOneTable(
       VdbeComment((v, "regLt(%d) += regEq(%d)", i, i));
       sqlite3VdbeAddOp2(v, OP_Integer, 0, regEq+i);
       VdbeComment((v, "regEq(%d) = 0", i));
-      if( bInner ) sqlite3VdbeAddOp2(v, OP_IdxRowid, iCsr, regRowid);
 
       /* This bit:
       **
       **   do {
       **     regEq(i) += 1
-      **     regCnt += 1                   // innermost cursor only
       **     Next csr(i)
       **     if( Eof csr(i) ){
-      **       regEof = 1                  // innermost cursor only
       **       break
       **     }
       **   }while ( csr(i)[0..i] == regPrev(0..i) )
       */
       iDo = sqlite3VdbeAddOp2(v, OP_AddImm, regEq+i, 1);
       VdbeComment((v, "regEq(%d) += 1", i));
-      if( bInner ){
-        sqlite3VdbeAddOp2(v, OP_AddImm, regCnt, 1);
-        VdbeComment((v, "regCnt += 1"));
-      }
-      sqlite3VdbeAddOp2(v, OP_Next, iCsr, sqlite3VdbeCurrentAddr(v)+2+bInner);
-      if( bInner ) sqlite3VdbeAddOp2(v, OP_Integer, 1, regEof);
+      sqlite3VdbeAddOp2(v, OP_Next, iCsr, sqlite3VdbeCurrentAddr(v)+2);
       iNe = sqlite3VdbeMakeLabel(v);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, iNe);
       for(j=0; j<=i; j++){
@@ -802,22 +830,45 @@ static void analyzeOneTable(
       sqlite3VdbeResolveLabel(v, iNe);
     }
 
-    /* Invoke stat4_push() */
+    /* This stuff:
+    ** 
+    **   regKeychng = 1
+    **  next_row:
+    **   regRowid = csr(2)[rowid]
+    **   regEq(2) = 1
+    **   regLt(2) = regCnt
+    **   regCnt += 1
+    **   regDLte(2) = regCnt
+    **   stat4_push(regRowid, regKeychng, regEq, regLt, regDLte);
+    **   regKeychng = 0
+    **   Next csr(2)
+    **   if( eof( csr(2) ) ) goto endOfScan
+    */
 #ifdef SQLITE_ENABLE_STAT4
+    sqlite3VdbeAddOp2(v, OP_Integer, 1, regKeychng);
+    aChngAddr[nCol] =
+    sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur+nCol, regRowid);
+    sqlite3VdbeAddOp2(v, OP_Integer, 1, regEq+nCol);
+    sqlite3VdbeAddOp2(v, OP_Copy, regCnt, regLt+nCol);
+    sqlite3VdbeAddOp2(v, OP_AddImm, regCnt, 1);
+    sqlite3VdbeAddOp2(v, OP_Copy, regCnt, regDLte+nCol);
     sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regTemp);
     sqlite3VdbeChangeP4(v, -1, (char*)&stat4PushFuncdef, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, 2 + 3*nCol);
+    sqlite3VdbeChangeP5(v, 3 + 3*(nCol+1));
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regKeychng);
+    sqlite3VdbeAddOp2(v, OP_Next, iIdxCur+nCol, sqlite3VdbeCurrentAddr(v)+2);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfScan);
 #endif
 
     sqlite3VdbeAddOp2(v, OP_If, regEof, endOfScan);
-    for(i=0; i<nCol-1; i++){
+    for(i=0; i<nCol; i++){
       char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
-      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur+nCol-1, i, regCol);
+      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur+nCol, i, regCol);
       sqlite3VdbeAddOp3(v, OP_Ne, regCol, aChngAddr[i], regPrev+i);
       sqlite3VdbeChangeP4(v, -1, pColl, P4_COLLSEQ);
       sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
     }
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, aChngAddr[nCol-1]);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, aChngAddr[nCol]);
     sqlite3DbFree(db, aChngAddr);
 
     sqlite3VdbeResolveLabel(v, endOfScan);
@@ -827,17 +878,17 @@ static void analyzeOneTable(
     regLoop = regStat4+1;
     sqlite3VdbeAddOp2(v, OP_Integer, -1, regLoop);
     shortJump = sqlite3VdbeAddOp2(v, OP_AddImm, regLoop, 1);
-    sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4, regTemp);
+    sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4, regEq+nCol);
     sqlite3VdbeChangeP4(v, -1, (char*)&stat4GetFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2);
-    sqlite3VdbeAddOp1(v, OP_IsNull, regTemp);
+    sqlite3VdbeAddOp1(v, OP_IsNull, regEq+nCol);
 
-    sqlite3VdbeAddOp3(v, OP_NotExists, iTabCur, shortJump, regTemp);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iTabCur, shortJump, regEq+nCol);
     for(i=0; i<nCol; i++){
       int iCol = pIdx->aiColumn[i];
-      sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regPrev+i);
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regEq+i);
     }
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regPrev, nCol, regSample);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regEq, nCol+1, regSample);
     sqlite3VdbeChangeP4(v, -1, pIdx->zColAff, 0);
 
     sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regNumEq);

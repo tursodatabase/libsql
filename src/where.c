@@ -2422,7 +2422,7 @@ static void whereKeyStats(
   int res;                    /* Result of comparison operation */
 
   assert( pIdx->nSample>0 );
-  assert( pRec->nField>0 && iCol<pIdx->nColumn );
+  assert( pRec->nField>0 && iCol<=pIdx->nColumn );
   do{
     iTest = (iMin+i)/2;
     res = sqlite3VdbeRecordCompare(aSample[iTest].n, aSample[iTest].p, pRec);
@@ -2684,6 +2684,8 @@ static int whereEqualScanEst(
     return SQLITE_NOTFOUND;
   }
 
+  /* This is an optimization only. The call to sqlite3Stat4ProbeSetValue()
+  ** below would return the same value.  */
   if( nEq>p->nColumn ){
     *pnRow = 1;
     return SQLITE_OK;
