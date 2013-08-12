@@ -23,7 +23,9 @@ ifcapable !stat4&&!stat3 {
   return
 }
 
-proc populate_stat3 {} {
+# Populate the stat3 table according to the current contents of the db
+#
+proc populate_stat3 {{bDropTable 1}} {
   # Open a second connection on database "test.db" and run ANALYZE. If this
   # is an ENABLE_STAT3 build, this is all that is required to create and
   # populate the sqlite_stat3 table. 
@@ -42,11 +44,11 @@ proc populate_stat3 {} {
       CREATE TABLE sqlite_stat3(tbl,idx,neq,nlt,ndlt,sample);
       INSERT INTO sqlite_stat3 
       SELECT DISTINCT tbl, idx, 
-      lindex(neq,0), lindex(nlt,0), lindex(ndlt,0), test_extract(sample, 0)
+        lindex(neq,0), lindex(nlt,0), lindex(ndlt,0), test_extract(sample, 0)
       FROM sqlite_stat4;
-      DROP TABLE sqlite_stat4;
-      PRAGMA writable_schema = off;
     } db2
+    if {$bDropTable} { execsql {DROP TABLE sqlite_stat4} db2 }
+    execsql { PRAGMA writable_schema = off }
   }
 
   # Modify the database schema cookie to ensure that the other connection
@@ -59,7 +61,30 @@ proc populate_stat3 {} {
   db2 close
 }
 
+# Populate the stat4 table according to the current contents of the db.
+# Leave deceptive data in the stat3 table. This data should be ignored
+# in favour of that from the stat4 table.
+#
+proc populate_both {} {
+  populate_stat3 0
 
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA writable_schema = on;
+    UPDATE sqlite_stat3 SET idx = 
+      CASE idx WHEN 't1b' THEN 't1c' ELSE 't1b'
+    END;
+    PRAGMA writable_schema = off;
+    CREATE TABLE obscure_tbl_nm(x);
+    DROP TABLE obscure_tbl_nm;
+  } db2
+
+  db2 close
+}
+
+
+# Populate the stat4 table according to the current contents of the db
+#
 proc populate_stat4 {} {
   execsql { ANALYZE }
 #  ifcapable stat3 {
@@ -77,7 +102,11 @@ proc populate_stat4 {} {
 #  }
 }
 
-foreach {tn analyze_cmd} {1 populate_stat4 2 populate_stat3} {
+foreach {tn analyze_cmd} {
+  1 populate_stat4 
+  2 populate_stat3
+  3 populate_both
+} {
   reset_db
   do_test 1.$tn.1 {
     execsql { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c) }
@@ -110,7 +139,6 @@ foreach {tn analyze_cmd} {1 populate_stat4 2 populate_stat3} {
   do_execsql_test 1.$tn.3.2 { 
     SELECT count(*) FROM t1 WHERE c BETWEEN 0 AND 50
   } {90}
-
   do_execsql_test 1.$tn.3.3 { 
     SELECT count(*) FROM t1 WHERE b BETWEEN 75 AND 125
   } {90}

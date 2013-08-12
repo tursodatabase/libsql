@@ -1,5 +1,5 @@
-C Handle\sa\sNULL\sinput\sto\sdecodeIntArray()\sthat\scan\sresult\sfrom\sa\sprior\sOOM.
-D 2013-08-12T17:00:08.943
+C If\sthere\sis\sdata\sin\sboth\sthe\ssqlite_stat4\sand\ssqlite_stat3\stables\sfor\sa\ssingle\sindex,\signore\sthe\ssqlite_stat3\srecords.
+D 2013-08-12T17:31:32.368
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c cfbf5b631aa15d122941eb2370589b2700a41c45
+F src/analyze.c c020f2ff9991412d85d8c5c736097de82c38ea51
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -309,7 +309,7 @@ F test/analyze6.test 3c01e084309706a1033f850330ea24f6f7846297
 F test/analyze7.test c0af22c5e0140e2e4ac556a21c2b6fff58229c98
 F test/analyze8.test 8d1f76ff1e47c4093bb7be3971ba08fa56dc470d
 F test/analyze9.test 1b419d03407f2a6f4f1485620d54cb3e1bab3a71
-F test/analyzeA.test 949c3344280e0ca6de0b49805e4f291cdc1daa43
+F test/analyzeA.test 3a24600dd50e4a8815a952e1470ecb610046b069
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6d45078e621526fc2bac0eaefbb0f9602b9a8ec5
-R a5e2ac56df6a571538e82bfa8985f662
-U drh
-Z ac0a7d3fec5c7e4a46461a76c725cc26
+P fa1588adab6759fd3d1be02524aa19a0d1c6adaa
+R f7aa978164035b98da3c8ba701a7b74c
+U dan
+Z fe069e15f895d55c37e51ff5b63e6804

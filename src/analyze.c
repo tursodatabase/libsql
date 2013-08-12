@@ -1315,8 +1315,10 @@ static int loadStatTbl(
     if( zIndex==0 ) continue;
     nSample = sqlite3_column_int(pStmt, 1);
     pIdx = sqlite3FindIndex(db, zIndex, zDb);
-    if( pIdx==0 ) continue;
-    assert( pIdx->nSample==0 );
+    assert( pIdx==0 || bStat3 || pIdx->nSample==0 );
+    /* Index.nSample is non-zero at this point if data has already been
+    ** loaded from the stat4 table. In this case ignore stat3 data.  */
+    if( pIdx==0 || pIdx->nSample ) continue;
     if( bStat3==0 ){
       nIdxCol = pIdx->nColumn+1;
       nAvgCol = pIdx->nColumn;
@@ -1368,6 +1370,9 @@ static int loadStatTbl(
       idx = 0;
     }
     assert( idx<pIdx->nSample );
+    /* This next condition is true if data has already been loaded from 
+    ** the sqlite_stat4 table. In this case ignore stat3 data.  */
+    if( bStat3 && pIdx->aSample[idx].anEq[0] ) continue;
     pSample = &pIdx->aSample[idx];
 
     if( bStat3==0 ){
