@@ -1249,7 +1249,7 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     assert( pIdx->nSample==0 );
     pIdx->nSample = nSample;
     nByte = sizeof(IndexSample) * nSample;
-    nByte += sizeof(tRowcnt) * pIdx->nColumn * 3 * nSample;
+    nByte += sizeof(tRowcnt) * (pIdx->nColumn+1) * 3 * nSample;
     nByte += pIdx->nColumn * sizeof(tRowcnt);    /* Space for Index.aAvgEq[] */
 
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
@@ -1260,9 +1260,9 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
     pIdx->aAvgEq = pSpace; pSpace += pIdx->nColumn;
     for(i=0; i<pIdx->nSample; i++){
-      pIdx->aSample[i].anEq = pSpace; pSpace += pIdx->nColumn;
-      pIdx->aSample[i].anLt = pSpace; pSpace += pIdx->nColumn;
-      pIdx->aSample[i].anDLt = pSpace; pSpace += pIdx->nColumn;
+      pIdx->aSample[i].anEq = pSpace; pSpace += pIdx->nColumn+1;
+      pIdx->aSample[i].anLt = pSpace; pSpace += pIdx->nColumn+1;
+      pIdx->aSample[i].anDLt = pSpace; pSpace += pIdx->nColumn+1;
     }
     assert( ((u8*)pSpace)-nByte==(u8*)(pIdx->aSample) );
   }
@@ -1298,7 +1298,7 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     assert( idx<pIdx->nSample );
     pSample = &pIdx->aSample[idx];
 
-    nCol = pIdx->nColumn;
+    nCol = pIdx->nColumn+1;
     decodeIntArray((char*)sqlite3_column_text(pStmt,1), nCol, pSample->anEq, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,2), nCol, pSample->anLt, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,3), nCol, pSample->anDLt,0);
@@ -1324,7 +1324,6 @@ static int loadStat4(sqlite3 *db, const char *zDb){
       return SQLITE_NOMEM;
     }
     memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
-
   }
   return sqlite3_finalize(pStmt);
 }

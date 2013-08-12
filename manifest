@@ -1,5 +1,5 @@
-C Add\sthe\srowid\sfield\sto\sthe\send\sof\ssample\srecords\sstored\sin\sthe\ssqlite_stat4\stable.
-D 2013-08-10T19:08:30.794
+C Fix\sminor\sproblems\scaused\sby\sadding\sthe\srowid\sto\sthe\srecords\sin\sstat4.
+D 2013-08-12T09:29:04.530
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c 178c33a77551d4a0d72831c71c9b93908f7c6a20
+F src/analyze.c 49729c117665fc927280c0bcd10bffa838ff29d1
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c adf476146fcd78af6ebc7dea50853bcbb14ba2b6
+F src/where.c c1090a2769c6e47b88aa79cd34f2e763af5282f8
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5bcccb93df98f5dfee0ea4d797b07fe0257258a9
-R 96e0779963a0fd7aab46f6c8c7627c84
+P 3a5e8ab7ddbe1d943b35ef329fe4e5a1bfdb0d9d
+R 61c9bc8ff2fa4dfd3e5854cb245baf85
 U dan
-Z ee31c385e2b881dc7d9f322f79a33eaa
+Z 74fdc1c4224404aea1a5d8ea05036c15

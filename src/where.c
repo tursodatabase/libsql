@@ -2467,7 +2467,7 @@ static void whereKeyStats(
       iUpper = i>=pIdx->nSample ? pIdx->aiRowEst[0] : aSample[i].anLt[iCol];
       iLower = aSample[i-1].anEq[iCol] + aSample[i-1].anLt[iCol];
     }
-    aStat[1] = pIdx->aAvgEq[iCol];
+    aStat[1] = (pIdx->nColumn>iCol ? pIdx->aAvgEq[iCol] : 1);
     if( iLower>=iUpper ){
       iGap = 0;
     }else{
