@@ -61,7 +61,7 @@ proc lookaside {db} {
   }
 }
 
-ifcapable stat4 {
+ifcapable stat4||stat3 {
   set STAT3 1
 } else {
   set STAT3 0

@@ -16,7 +16,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !stat4 {
+ifcapable !stat4&&!stat3 {
   finish_test
   return
 }
@@ -54,18 +54,30 @@ do_test tkt-cbd05-1.1 {
   }
 } {10}
 do_test tkt-cbd05-1.2 {
-  db eval {
-    ANALYZE;
+  db eval { ANALYZE; }
+  ifcapable stat4 {
+    db eval {
+      PRAGMA writable_schema = 1;
+      CREATE VIEW vvv AS 
+      SELECT tbl,idx,neq,nlt,ndlt,test_extract(sample,0) AS sample
+      FROM sqlite_stat4;
+      PRAGMA writable_schema = 0;
+    }
+  } else {
+    db eval {
+      CREATE VIEW vvv AS 
+      SELECT tbl,idx,neq,nlt,ndlt,sample FROM sqlite_stat3;
+    }
   }
 } {}
 do_test tkt-cbd05-1.3 {
   execsql { 
     SELECT tbl,idx,group_concat(s(sample),' ') 
-    FROM sqlite_stat4 
+    FROM vvv 
     WHERE idx = 't1_x' 
     GROUP BY tbl,idx
   }
-} {t1 t1_x {... ...A. ...B. ...C. ...D. ...E. ...F. ...G. ...H. ...I.}}
+} {t1 t1_x { A B C D E F G H I}}
 
 do_test tkt-cbd05-2.1 {
   db eval {
@@ -93,10 +105,10 @@ do_test tkt-cbd05-2.2 {
 do_test tkt-cbd05-2.3 {
   execsql { 
     SELECT tbl,idx,group_concat(s(sample),' ') 
-    FROM sqlite_stat4 
+    FROM vvv 
     WHERE idx = 't1_x' 
     GROUP BY tbl,idx
   }
-} {t1 t1_x {... ...A. ...B. ...C. ...D. ...E. ...F. ...G. ...H. ...I.}}
+} {t1 t1_x { A B C D E F G H I}}
 
 finish_test

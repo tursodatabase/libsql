@@ -144,7 +144,7 @@ do_test index6-2.2 {
     SELECT * FROM t2 WHERE a=5;
   }
 } {/.* TABLE t2 USING INDEX t2a1 .*/}
-ifcapable stat4 {
+ifcapable stat4||stat3 {
   do_test index6-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN

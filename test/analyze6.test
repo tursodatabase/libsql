@@ -17,7 +17,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !stat4 {
+ifcapable !stat4&&!stat3 {
   finish_test
   return
 }

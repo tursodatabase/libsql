@@ -61,12 +61,41 @@ proc populate_stat3 {{bDropTable 1}} {
   db2 close
 }
 
+# Populate the stat4 table according to the current contents of the db
+#
+proc populate_stat4 {{bDropTable 1}} {
+  sqlite3 db2 test.db
+  execsql { ANALYZE }
+
+  ifcapable stat3 {
+    execsql {
+      PRAGMA writable_schema = on;
+      CREATE TABLE sqlite_stat4(tbl,idx,neq,nlt,ndlt,sample);
+      INSERT INTO sqlite_stat4 
+      SELECT tbl, idx, neq, nlt, ndlt, sqlite_record(sample) 
+      FROM sqlite_stat3;
+    } db2
+    if {$bDropTable} { execsql {DROP TABLE sqlite_stat3} db2 }
+    execsql { PRAGMA writable_schema = off }
+  }
+ 
+  # Modify the database schema cookie to ensure that the other connection
+  # reloads the schema.
+  #
+  execsql {
+    CREATE TABLE obscure_tbl_nm(x);
+    DROP TABLE obscure_tbl_nm;
+  } db2
+  db2 close
+}
+
 # Populate the stat4 table according to the current contents of the db.
 # Leave deceptive data in the stat3 table. This data should be ignored
 # in favour of that from the stat4 table.
 #
 proc populate_both {} {
-  populate_stat3 0
+  ifcapable stat4 { populate_stat3 0 }
+  ifcapable stat3 { populate_stat4 0 }
 
   sqlite3 db2 test.db
   execsql {
@@ -78,28 +107,7 @@ proc populate_both {} {
     CREATE TABLE obscure_tbl_nm(x);
     DROP TABLE obscure_tbl_nm;
   } db2
-
   db2 close
-}
-
-
-# Populate the stat4 table according to the current contents of the db
-#
-proc populate_stat4 {} {
-  execsql { ANALYZE }
-#  ifcapable stat3 {
-#    execsql {
-#      PRAGMA writable_schema = on;
-#      CREATE TABLE sqlite_stat4(tbl,idx,neq,nlt,ndlt,sample);
-#      INSERT INTO sqlite_stat4 SELECT 
-#          tbl, idx, nlt, neq, ndlt,
-#          test_extract(sample, 1)
-#      FROM sqlite_stat4;
-#      DROP TABLE sqlite_stat4;
-#      PRAGMA writable_schema = off;
-#      ANALYZE sqlite_master;
-#    }
-#  }
 }
 
 foreach {tn analyze_cmd} {
@@ -154,7 +162,6 @@ foreach {tn analyze_cmd} {
     SELECT * FROM t1 WHERE b BETWEEN 75 AND 125 AND c BETWEEN 75 AND 125
   } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
 }
-
 
 finish_test
 

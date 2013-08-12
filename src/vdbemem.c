@@ -1046,7 +1046,7 @@ int valueFromExpr(
   ** The ifdef here is to enable us to achieve 100% branch test coverage even
   ** when SQLITE_ENABLE_STAT4 is omitted.
   */
-#ifdef SQLITE_ENABLE_STAT4
+#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
   if( op==TK_REGISTER ) op = pExpr->op2;
 #else
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
@@ -1152,7 +1152,61 @@ int sqlite3ValueFromExpr(
   return valueFromExpr(db, pExpr, enc, affinity, ppVal, valueNew, (void*)db);
 }
 
-#ifdef SQLITE_ENABLE_STAT4
+#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+/*
+** The implementation of the sqlite_record() function. This function accepts
+** a single argument of any type. The return value is a formatted database 
+** record (a blob) containing the argument value.
+**
+** This is used to convert the value stored in the 'sample' column of the
+** sqlite_stat3 table to the record format SQLite uses internally.
+*/
+static void recordFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const int file_format = 1;
+  int iSerial;                    /* Serial type */
+  int nSerial;                    /* Bytes of space for iSerial as varint */
+  int nVal;                       /* Bytes of space required for argv[0] */
+  int nRet;
+  sqlite3 *db;
+  u8 *aRet;
+
+  iSerial = sqlite3VdbeSerialType(argv[0], file_format);
+  nSerial = sqlite3VarintLen(iSerial);
+  nVal = sqlite3VdbeSerialTypeLen(iSerial);
+  db = sqlite3_context_db_handle(context);
+
+  nRet = 1 + nSerial + nVal;
+  aRet = sqlite3DbMallocRaw(db, nRet);
+  if( aRet==0 ){
+    sqlite3_result_error_nomem(context);
+  }else{
+    aRet[0] = nSerial+1;
+    sqlite3PutVarint(&aRet[1], iSerial);
+    sqlite3VdbeSerialPut(&aRet[1+nSerial], nVal, argv[0], file_format);
+    sqlite3_result_blob(context, aRet, nRet, SQLITE_TRANSIENT);
+    sqlite3DbFree(db, aRet);
+  }
+}
+
+/*
+** Register built-in functions used to help read ANALYZE data.
+*/
+void sqlite3AnalyzeFunctions(void){
+  static SQLITE_WSD FuncDef aAnalyzeTableFuncs[] = {
+    FUNCTION(sqlite_record,   1, 0, 0, recordFunc),
+  };
+  int i;
+  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
+  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aAnalyzeTableFuncs);
+  for(i=0; i<ArraySize(aAnalyzeTableFuncs); i++){
+    sqlite3FuncDefInsert(pHash, &aFunc[i]);
+  }
+}
+
 /*
 ** A pointer to an instance of this object is passed as the context 
 ** pointer to valueNewStat4() (see below.

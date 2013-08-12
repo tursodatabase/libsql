@@ -1549,8 +1549,9 @@ struct Index {
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
-#ifdef SQLITE_ENABLE_STAT4
+#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
   int nSample;             /* Number of elements in aSample[] */
+  int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
   tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */
 #endif
