@@ -9,6 +9,9 @@
 #
 #***********************************************************************
 #
+# This file contains automated tests used to verify that the sqlite_stat4
+# functionality is working.
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

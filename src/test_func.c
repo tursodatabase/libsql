@@ -462,6 +462,54 @@ static void real2hex(
 }
 
 /*
+** tclcmd: test_extract(record, field)
+**
+** This function implements an SQL user-function that accepts a blob
+** containing a formatted database record as the first argument. The
+** second argument is the index of the field within that record to
+** extract and return.
+*/
+static void test_extract(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  sqlite3 *db = sqlite3_context_db_handle(context);
+  u8 *pRec;
+  u8 *pEndHdr;                    /* Points to one byte past record header */
+  u8 *pHdr;                       /* Current point in record header */
+  u8 *pBody;                      /* Current point in record data */
+  u64 nHdr;                       /* Bytes in record header */
+  int iIdx;                       /* Required field */
+  int iCurrent = 0;               /* Current field */
+
+  assert( argc==2 );
+  pRec = (u8*)sqlite3_value_blob(argv[0]);
+  iIdx = sqlite3_value_int(argv[1]);
+
+  pHdr = pRec + sqlite3GetVarint(pRec, &nHdr);
+  pBody = pEndHdr = &pRec[nHdr];
+
+  for(iCurrent=0; pHdr<pEndHdr && iCurrent<=iIdx; iCurrent++){
+    u64 iSerialType;
+    Mem mem;
+
+    memset(&mem, 0, sizeof(mem));
+    mem.db = db;
+    mem.enc = SQLITE_UTF8;
+    pHdr += sqlite3GetVarint(pHdr, &iSerialType);
+    pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
+    sqlite3VdbeMemStoreType(&mem);
+
+    if( iCurrent==iIdx ){
+      sqlite3_result_value(context, &mem);
+    }
+
+    sqlite3DbFree(db, mem.zMalloc);
+  }
+}
+
+/*
 ** tclcmd: test_decode(record)
 **
 ** This function implements an SQL user-function that accepts a blob
@@ -579,6 +627,7 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_counter",          1, SQLITE_UTF8, counterFunc},
     { "real2hex",              1, SQLITE_UTF8, real2hex},
     { "test_decode",           1, SQLITE_UTF8, test_decode},
+    { "test_extract",          2, SQLITE_UTF8, test_extract},
   };
   int i;
 

@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\scalculating\sthe\saverage\snumber\sof\sentries\sfor\skeys\snot\spresent\sin\sthe\ssqlite_stat4\stable.
-D 2013-08-12T11:21:10.969
+C Re-enable\sreading\sfrom\sthe\ssqlite_stat3\stable\s(as\swell\sas\ssqlite_stat4).
+D 2013-08-12T16:34:32.514
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c fd1bcb9bc4ca29cd36f60c620cc501c933048c28
+F src/analyze.c e5ce42f04f58003fa45908791a5ad06bdd2c2ff1
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -175,7 +175,7 @@ F src/delete.c 2317c814866d9aa71fea16b3faf4fdd4d6a49b94
 F src/expr.c 0bbb44462a19169189b2709fbbd800950521b5ae
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 914a6bbd987d857c41ac9d244efa6641f36faadb
-F src/func.c 5c50c1ea31fd864b0fe921fe1a8d4c55acd609ef
+F src/func.c 78c371ddfb0bb2d4c4356e8d7336b582d4ca96a9
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -221,7 +221,7 @@ F src/shell.c 128eb16ccec68509a4a2f1948f2483819bf63425
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 0ff47977058e1babf0c4265f1791c379d172b02f
+F src/sqliteInt.h 646063fc1564842fd8e54eee00f8b8b429e2eb1f
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -243,7 +243,7 @@ F src/test_config.c 636ecd15a6ba18bf97a590b5a21f47573c8c2b65
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
-F src/test_func.c fcd238feb694332d5962ee08578ef30ff4ac6559
+F src/test_func.c 338a6e5ade3560ad36280881bbcf45f28d06cb68
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
 F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
@@ -308,7 +308,8 @@ F test/analyze5.test 96ac783a56142bbbedb58a7c1eebd1808b49cfae
 F test/analyze6.test 3c01e084309706a1033f850330ea24f6f7846297
 F test/analyze7.test c0af22c5e0140e2e4ac556a21c2b6fff58229c98
 F test/analyze8.test 8d1f76ff1e47c4093bb7be3971ba08fa56dc470d
-F test/analyze9.test 3e1bd0209354bb987832fba580c754cf77dc6ba3
+F test/analyze9.test 1b419d03407f2a6f4f1485620d54cb3e1bab3a71
+F test/analyzeA.test 949c3344280e0ca6de0b49805e4f291cdc1daa43
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -1106,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 088d1ff94890ada50d43e6a366a58167ec5a8e96
-R 4b6821682980828caa2dcfc6f067a6e7
+P ec3ffb174844406a6186c3dcc41b76d0331b502c
+R e94619aadc884e84bf22674359c1bbe0
 U dan
-Z 150d3ee65bd4be58d3670346ad74798d
+Z c424468455b7fdc35c2aa42e6130568e

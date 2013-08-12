@@ -168,8 +168,10 @@ static void openStatTable(
     const char *zCols;
   } aTable[] = {
     { "sqlite_stat1", "tbl,idx,stat" },
-#ifdef SQLITE_ENABLE_STAT4
+#if defined(SQLITE_ENABLE_STAT4)
     { "sqlite_stat4", "tbl,idx,neq,nlt,ndlt,sample" },
+#elif defined(SQLITE_ENABLE_STAT3)
+    { "sqlite_stat3", "tbl,idx,neq,nlt,ndlt,sample" },
 #endif
   };
 
@@ -1206,11 +1208,81 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
 }
 
 #ifdef SQLITE_ENABLE_STAT4
+
 /*
-** Load content from the sqlite_stat4 table into the Index.aSample[]
-** arrays of all indices.
+** The implementation of the sqlite_record() function. This function accepts
+** a single argument of any type. The return value is a formatted database 
+** record (a blob) containing the argument value.
+**
+** This is used to convert the value stored in the 'sample' column of the
+** sqlite_stat3 table to the record format SQLite uses internally.
 */
-static int loadStat4(sqlite3 *db, const char *zDb){
+static void recordFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const int file_format = 1;
+  int iSerial;                    /* Serial type */
+  int nSerial;                    /* Bytes of space for iSerial as varint */
+  int nVal;                       /* Bytes of space required for argv[0] */
+  int nRet;
+  sqlite3 *db;
+  u8 *aRet;
+
+  iSerial = sqlite3VdbeSerialType(argv[0], file_format);
+  nSerial = sqlite3VarintLen(iSerial);
+  nVal = sqlite3VdbeSerialTypeLen(iSerial);
+  db = sqlite3_context_db_handle(context);
+
+  nRet = 1 + nSerial + nVal;
+  aRet = sqlite3DbMallocRaw(db, nRet);
+  if( aRet==0 ){
+    sqlite3_result_error_nomem(context);
+  }else{
+    aRet[0] = nSerial+1;
+    sqlite3PutVarint(&aRet[1], iSerial);
+    sqlite3VdbeSerialPut(&aRet[1+nSerial], nVal, argv[0], file_format);
+    sqlite3_result_blob(context, aRet, nRet, SQLITE_TRANSIENT);
+    sqlite3DbFree(db, aRet);
+  }
+}
+
+/*
+** Register built-in functions used to help read ANALYZE data.
+*/
+void sqlite3AnalyzeFunctions(void){
+  static SQLITE_WSD FuncDef aAnalyzeTableFuncs[] = {
+    FUNCTION(sqlite_record,   1, 0, 0, recordFunc),
+  };
+  int i;
+  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
+  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aAnalyzeTableFuncs);
+  for(i=0; i<ArraySize(aAnalyzeTableFuncs); i++){
+    sqlite3FuncDefInsert(pHash, &aFunc[i]);
+  }
+}
+
+/*
+** Load the content from either the sqlite_stat4 or sqlite_stat3 table 
+** into the relevant Index.aSample[] arrays.
+**
+** Arguments zSql1 and zSql2 must point to SQL statements that return
+** data equivalent to the following (statements are different for stat3,
+** see the caller of this function for details):
+**
+**    zSql1: SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx
+**    zSql2: SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4
+**
+** where %Q is replaced with the database name before the SQL is executed.
+*/
+static int loadStatTbl(
+  sqlite3 *db,                  /* Database handle */
+  int bStat3,                   /* Assume single column records only */
+  const char *zSql1,            /* SQL statement 1 (see above) */
+  const char *zSql2,            /* SQL statement 2 (see above) */
+  const char *zDb               /* Database name (e.g. "main") */
+){
   int rc;                       /* Result codes from subroutines */
   sqlite3_stmt *pStmt = 0;      /* An SQL statement being run */
   char *zSql;                   /* Text of the SQL statement */
@@ -1219,13 +1291,7 @@ static int loadStat4(sqlite3 *db, const char *zDb){
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
 
   assert( db->lookaside.bEnabled==0 );
-  if( !sqlite3FindTable(db, "sqlite_stat4", zDb) ){
-    return SQLITE_OK;
-  }
-
-  zSql = sqlite3MPrintf(db, 
-      "SELECT idx,count(*) FROM %Q.sqlite_stat4"
-      " GROUP BY idx", zDb);
+  zSql = sqlite3MPrintf(db, zSql1, zDb);
   if( !zSql ){
     return SQLITE_NOMEM;
   }
@@ -1234,6 +1300,9 @@ static int loadStat4(sqlite3 *db, const char *zDb){
   if( rc ) return rc;
 
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
+    int nIdxCol = 1;              /* Number of columns in stat4 records */
+    int nAvgCol = 1;              /* Number of entries in Index.aAvgEq */
+
     char *zIndex;   /* Index name */
     Index *pIdx;    /* Pointer to the index object */
     int nSample;    /* Number of samples */
@@ -1247,10 +1316,14 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     pIdx = sqlite3FindIndex(db, zIndex, zDb);
     if( pIdx==0 ) continue;
     assert( pIdx->nSample==0 );
+    if( bStat3==0 ){
+      nIdxCol = pIdx->nColumn+1;
+      nAvgCol = pIdx->nColumn;
+    }
     pIdx->nSample = nSample;
     nByte = sizeof(IndexSample) * nSample;
-    nByte += sizeof(tRowcnt) * (pIdx->nColumn+1) * 3 * nSample;
-    nByte += pIdx->nColumn * sizeof(tRowcnt);    /* Space for Index.aAvgEq[] */
+    nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
+    nByte += nAvgCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
 
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
     if( pIdx->aSample==0 ){
@@ -1258,19 +1331,18 @@ static int loadStat4(sqlite3 *db, const char *zDb){
       return SQLITE_NOMEM;
     }
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
-    pIdx->aAvgEq = pSpace; pSpace += pIdx->nColumn;
+    pIdx->aAvgEq = pSpace; pSpace += nAvgCol;
     for(i=0; i<pIdx->nSample; i++){
-      pIdx->aSample[i].anEq = pSpace; pSpace += pIdx->nColumn+1;
-      pIdx->aSample[i].anLt = pSpace; pSpace += pIdx->nColumn+1;
-      pIdx->aSample[i].anDLt = pSpace; pSpace += pIdx->nColumn+1;
+      pIdx->aSample[i].anEq = pSpace; pSpace += nIdxCol;
+      pIdx->aSample[i].anLt = pSpace; pSpace += nIdxCol;
+      pIdx->aSample[i].anDLt = pSpace; pSpace += nIdxCol;
     }
     assert( ((u8*)pSpace)-nByte==(u8*)(pIdx->aSample) );
   }
   rc = sqlite3_finalize(pStmt);
   if( rc ) return rc;
 
-  zSql = sqlite3MPrintf(db, 
-      "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4", zDb);
+  zSql = sqlite3MPrintf(db, zSql2, zDb);
   if( !zSql ){
     return SQLITE_NOMEM;
   }
@@ -1279,10 +1351,10 @@ static int loadStat4(sqlite3 *db, const char *zDb){
   if( rc ) return rc;
 
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
-    char *zIndex;   /* Index name */
-    Index *pIdx;    /* Pointer to the index object */
-    int i;          /* Loop counter */
-    int nCol;       /* Number of columns in index */
+    char *zIndex;                 /* Index name */
+    Index *pIdx;                  /* Pointer to the index object */
+    int i;                        /* Loop counter */
+    int nCol = 1;                 /* Number of columns in index */
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
@@ -1297,7 +1369,9 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     assert( idx<pIdx->nSample );
     pSample = &pIdx->aSample[idx];
 
-    nCol = pIdx->nColumn+1;
+    if( bStat3==0 ){
+      nCol = pIdx->nColumn+1;
+    }
     decodeIntArray((char*)sqlite3_column_text(pStmt,1), nCol, pSample->anEq, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,2), nCol, pSample->anLt, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,3), nCol, pSample->anDLt,0);
@@ -1327,6 +1401,7 @@ static int loadStat4(sqlite3 *db, const char *zDb){
         }
         if( avgEq==0 ) avgEq = 1;
         pIdx->aAvgEq[iCol] = avgEq;
+        if( bStat3 ) break;
       }
     }
 
@@ -1339,6 +1414,33 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
   }
   return sqlite3_finalize(pStmt);
+}
+
+/*
+** Load content from the sqlite_stat4 and sqlite_stat3 tables into 
+** the Index.aSample[] arrays of all indices.
+*/
+static int loadStat4(sqlite3 *db, const char *zDb){
+  int rc = SQLITE_OK;             /* Result codes from subroutines */
+
+  assert( db->lookaside.bEnabled==0 );
+  if( sqlite3FindTable(db, "sqlite_stat4", zDb) ){
+    rc = loadStatTbl(db, 0,
+      "SELECT idx,count(*) FROM %Q.sqlite_stat4 GROUP BY idx", 
+      "SELECT idx,neq,nlt,ndlt,sample FROM %Q.sqlite_stat4",
+      zDb
+    );
+  }
+
+  if( rc==SQLITE_OK && sqlite3FindTable(db, "sqlite_stat3", zDb) ){
+    rc = loadStatTbl(db, 1,
+      "SELECT idx,count(*) FROM %Q.sqlite_stat3 GROUP BY idx", 
+      "SELECT idx,neq,nlt,ndlt,sqlite_record(sample) FROM %Q.sqlite_stat3",
+      zDb
+    );
+  }
+
+  return rc;
 }
 #endif /* SQLITE_ENABLE_STAT4 */
 
