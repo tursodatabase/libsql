@@ -1282,7 +1282,6 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     char *zIndex;   /* Index name */
     Index *pIdx;    /* Pointer to the index object */
     int i;          /* Loop counter */
-    tRowcnt sumEq;  /* Sum of the nEq values */
     int nCol;       /* Number of columns in index */
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
@@ -1304,13 +1303,27 @@ static int loadStat4(sqlite3 *db, const char *zDb){
     decodeIntArray((char*)sqlite3_column_text(pStmt,3), nCol, pSample->anDLt,0);
 
     if( idx==pIdx->nSample-1 ){
+      IndexSample *aSample = pIdx->aSample;
       int iCol;
       for(iCol=0; iCol<pIdx->nColumn; iCol++){
+        tRowcnt sumEq = 0;        /* Sum of the nEq values */
+        int nSum = 0;             /* Number of terms contributing to sumEq */
         tRowcnt avgEq = 0;
         tRowcnt nDLt = pSample->anDLt[iCol];
-        if( nDLt>idx ){
-          for(i=0, sumEq=0; i<idx; i++) sumEq += pIdx->aSample[i].anEq[iCol];
-          avgEq = (pSample->anLt[iCol] - sumEq)/(nDLt - idx);
+
+        /* Set nSum to the number of distinct (iCol+1) field prefixes that
+        ** occur in the stat4 table for this index before pSample. Set
+        ** sumEq to the sum of the nEq values for column iCol for the same
+        ** set (adding the value only once where there exist dupicate 
+        ** prefixes).  */
+        for(i=0; i<(pIdx->nSample-1); i++){
+          if( aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] ){
+            sumEq += aSample[i].anEq[iCol];
+            nSum++;
+          }
+        }
+        if( nDLt>nSum ){
+          avgEq = (pSample->anLt[iCol] - sumEq)/(nDLt - nSum);
         }
         if( avgEq==0 ) avgEq = 1;
         pIdx->aAvgEq[iCol] = avgEq;
