@@ -1,5 +1,5 @@
-C Re-enable\sreading\sfrom\sthe\ssqlite_stat3\stable\s(as\swell\sas\ssqlite_stat4).
-D 2013-08-12T16:34:32.514
+C Handle\sa\sNULL\sinput\sto\sdecodeIntArray()\sthat\scan\sresult\sfrom\sa\sprior\sOOM.
+D 2013-08-12T17:00:08.943
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c e5ce42f04f58003fa45908791a5ad06bdd2c2ff1
+F src/analyze.c cfbf5b631aa15d122941eb2370589b2700a41c45
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ec3ffb174844406a6186c3dcc41b76d0331b502c
-R e94619aadc884e84bf22674359c1bbe0
-U dan
-Z c424468455b7fdc35c2aa42e6130568e
+P 6d45078e621526fc2bac0eaefbb0f9602b9a8ec5
+R a5e2ac56df6a571538e82bfa8985f662
+U drh
+Z ac0a7d3fec5c7e4a46461a76c725cc26

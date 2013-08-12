@@ -1122,7 +1122,8 @@ static void decodeIntArray(
   tRowcnt v;
 
   assert( pbUnordered==0 || *pbUnordered==0 );
-
+  
+  if( z==0 ) z = "";
   for(i=0; *z && i<nOut; i++){
     v = 0;
     while( (c=z[0])>='0' && c<='9' ){
