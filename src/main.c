@@ -448,8 +448,8 @@ int sqlite3_config(int op, ...){
         memset(&sqlite3GlobalConfig.m, 0, sizeof(sqlite3GlobalConfig.m));
       }else{
         /* The heap pointer is not NULL, then install one of the
-        ** mem5.c/mem3.c methods. If neither ENABLE_MEMSYS3 nor
-        ** ENABLE_MEMSYS5 is defined, return an error.
+        ** mem5.c/mem3.c methods.  The enclosing #if guarantees at
+        ** least one of these methods is currently enabled.
         */
 #ifdef SQLITE_ENABLE_MEMSYS3
         sqlite3GlobalConfig.m = *sqlite3MemGetMemsys3();
@@ -468,7 +468,7 @@ int sqlite3_config(int op, ...){
       break;
     }
     
-    /* Record a pointer to the logger funcction and its first argument.
+    /* Record a pointer to the logger function and its first argument.
     ** The default is NULL.  Logging is disabled if the function pointer is
     ** NULL.
     */
