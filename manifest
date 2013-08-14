@@ -1,5 +1,5 @@
-C Fix\san\soutdated\scomment\sand\sa\scomment\stypo.\s\sNo\schanges\sto\scode.
-D 2013-08-13T22:33:41.968
+C Fix\sa\sfew\smore\sminor\scomment\stypos.\s\sNo\schanges\sto\scode.
+D 2013-08-14T00:20:23.461
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -191,7 +191,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
 F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
-F src/mem5.c c2c63b7067570b00bf33d751c39af24182316f7f
+F src/mem5.c 0025308a93838022bd5696cf9627ff4e40b19918
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
 F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e2b597cafe7c8a8313b051d6a302fed54f235727
-R 725a28de0f0d05555ad0060ad37d65c5
+P ac336959490083ffeaaf25aaec97ecb59a2f4536
+R b65660836257e0b7350de3a479496a6b
 U mistachkin
-Z 538f6198c3d2d5189ca428ea230684f3
+Z 2adbd114c976ac90cd58966c1c244f68
