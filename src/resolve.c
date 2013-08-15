@@ -1009,7 +1009,7 @@ int sqlite3ResolveOrderGroupBy(
 ** If the order-by term is an integer I between 1 and N (where N is the
 ** number of columns in the result set of the SELECT) then the expression
 ** in the resolution is a copy of the I-th result-set expression.  If
-** the order-by term is an identify that corresponds to the AS-name of
+** the order-by term is an identifier that corresponds to the AS-name of
 ** a result-set expression, then the term resolves to a copy of the
 ** result-set expression.  Otherwise, the expression is resolved in
 ** the usual way - using sqlite3ResolveExprNames().
@@ -1187,7 +1187,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       return WRC_Abort;
     }
   
-    /* Add the expression list to the name-context before parsing the
+    /* Add the output column list to the name-context before parsing the
     ** other expressions in the SELECT statement. This is so that
     ** expressions in the WHERE clause (etc.) can refer to expressions by
     ** aliases in the result set.

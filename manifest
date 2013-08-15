@@ -1,5 +1,5 @@
-C Fix\sa\sfew\smore\sminor\scomment\stypos.\s\sNo\schanges\sto\scode.
-D 2013-08-14T00:20:23.461
+C Clarification\sand\stypo\sfixes\sin\scomments\srelated\sto\sname\sresolution.\nNo\schanges\sto\scode.
+D 2013-08-15T14:27:42.072
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,14 +214,14 @@ F src/pragma.c 590c75750d93ec5a1f903e4bb0dc6d2a0845bf8b
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 17e670996729ac41aadf6a31f57b4e6f29b3d819
+F src/resolve.c 94a08f37c04352bbdd4a91b335e1a4feb256a3c7
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
 F src/shell.c 927e17b37b63b24461e372d982138fb22c4df321
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h def0e436c0d4ca5084305ca6ae898020fbafaae4
+F src/sqliteInt.h ac5de15640d7a5d6ea46724fe3e0ffd39af0ed12
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ac336959490083ffeaaf25aaec97ecb59a2f4536
-R b65660836257e0b7350de3a479496a6b
-U mistachkin
-Z 2adbd114c976ac90cd58966c1c244f68
+P 9e999081a59b161a0a1f968fbc01a1db9ea43b93
+R 24134e38ea075ceae9b6222f6f5f7529
+U drh
+Z 9cfa8ebfbef3728e717dd86578dea4f4
