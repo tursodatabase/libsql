@@ -411,22 +411,28 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   assert( IsStat4 || nEqZero==0 );
 
   if( pNew->isPSample==0 ){
+    Stat4Sample *pUpgrade = 0;
     assert( pNew->anEq[pNew->iCol]>0 );
 
     /* This sample is being added because the prefix that ends in column 
     ** iCol occurs many times in the table. However, if we have already
     ** added a sample that shares this prefix, there is no need to add
-    ** this one. Instead, upgrade the priority of the existing sample. */
+    ** this one. Instead, upgrade the priority of the highest priority
+    ** existing sample that shares this prefix.  */
     for(i=p->nSample-1; i>=0; i--){
       Stat4Sample *pOld = &p->a[i];
       if( pOld->anEq[pNew->iCol]==0 ){
-        if( pOld->isPSample==0 ){
-          assert( sampleIsBetter(pNew, pOld) );
-          assert( pOld->iCol>pNew->iCol );
-          pOld->iCol = pNew->iCol;
+        if( pOld->isPSample ) return;
+        assert( sampleIsBetter(pNew, pOld) );
+        if( pUpgrade==0 || sampleIsBetter(pOld, pUpgrade) ){
+          pUpgrade = pOld;
         }
-        goto find_new_min;
       }
+    }
+    if( pUpgrade ){
+      pUpgrade->iCol = pNew->iCol;
+      pUpgrade->anEq[pUpgrade->iCol] = pNew->anEq[pUpgrade->iCol];
+      goto find_new_min;
     }
   }
 

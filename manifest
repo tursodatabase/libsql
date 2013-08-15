@@ -1,5 +1,5 @@
-C Change\sthe\sway\sANALYZE\sworks\sto\suse\sa\ssingle\scursor\swhen\sscanning\sindices.
-D 2013-08-14T19:54:12.120
+C Add\stests\sfor\ssqlite_stat4\ssample\sselection.\sAnd\sa\sfix\sfor\sthe\ssame.
+D 2013-08-15T14:39:09.873
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c 37b78257fcf73790fd443b2c62b7ce62b78c3c98
+F src/analyze.c f7494349f8c26cbffff3fab198834d7583f52c4f
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 1b419d03407f2a6f4f1485620d54cb3e1bab3a71
+F test/analyze9.test f75d1f2edd7707c8bbf5703be998e53212312abe
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cca8bf4372ab7a0258aa5c9397818415c6cf0abf
-R 798b6e107d9cfc4282515cb67b7b0a49
+P bdce612b35193abf72de1a563ea7962375b3574e
+R cae3925a5ea9d2d41d5f5a62ca3fba06
 U dan
-Z 0758340c46c18a215a897e2672d1ddd5
+Z 071feb0454ff17e1bc198cd08a86a76d

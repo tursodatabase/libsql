@@ -147,5 +147,114 @@ do_execsql_test 3.4 {
   SELECT c FROM t1 WHERE b=3 AND a BETWEEN 30 AND 60;
 } {three-d three-e three-f}
 
+#-------------------------------------------------------------------------
+# These tests verify that the sample selection for stat4 appears to be 
+# working as designed.
+#
+
+reset_db
+db func lindex lindex
+db func lrange lrange
+
+do_execsql_test 4.0 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX i1 ON t1(c, b, a);
+}
+
+
+proc insert_filler_rows_n {iStart args} {
+  set A(-ncopy) 1
+  set A(-nval) 1
+
+  foreach {k v} $args {
+    if {[info exists A($k)]==0} { error "no such option: $k" }
+    set A($k) $v
+  }
+  if {[llength $args] % 2} {
+    error "option requires an argument: [lindex $args end]"
+  }
+
+  for {set i 0} {$i < $A(-nval)} {incr i} {
+    set iVal [expr $iStart+$i]
+    for {set j 0} {$j < $A(-ncopy)} {incr j} {
+      execsql { INSERT INTO t1 VALUES($iVal, $iVal, $iVal) }
+    }
+  }
+}
+
+do_test 4.1 {
+  execsql { BEGIN }
+  insert_filler_rows_n  0  -ncopy 10 -nval 19
+  insert_filler_rows_n 20  -ncopy  1 -nval 100
+
+  execsql {
+    INSERT INTO t1(c, b, a) VALUES(200, 1, 'a');
+    INSERT INTO t1(c, b, a) VALUES(200, 1, 'b');
+    INSERT INTO t1(c, b, a) VALUES(200, 1, 'c');
+
+    INSERT INTO t1(c, b, a) VALUES(200, 2, 'e');
+    INSERT INTO t1(c, b, a) VALUES(200, 2, 'f');
+
+    INSERT INTO t1(c, b, a) VALUES(201, 3, 'g');
+    INSERT INTO t1(c, b, a) VALUES(201, 4, 'h');
+
+    ANALYZE;
+    SELECT count(*) FROM sqlite_stat4;
+    SELECT count(*) FROM t1;
+  }
+} {24 297}
+
+do_execsql_test 4.2 {
+  SELECT 
+    neq,
+    lrange(nlt, 0, 2),
+    lrange(ndlt, 0, 2),
+    lrange(test_decode(sample), 0, 2)
+    FROM sqlite_stat4
+  ORDER BY rowid LIMIT 16;
+} {
+  {10 10 10 1} {0 0 0} {0 0 0} {0 0 0}
+  {10 10 10 1} {10 10 10} {1 1 1} {1 1 1}
+  {10 10 10 1} {20 20 20} {2 2 2} {2 2 2}
+  {10 10 10 1} {30 30 30} {3 3 3} {3 3 3}
+  {10 10 10 1} {40 40 40} {4 4 4} {4 4 4}
+  {10 10 10 1} {50 50 50} {5 5 5} {5 5 5}
+  {10 10 10 1} {60 60 60} {6 6 6} {6 6 6}
+  {10 10 10 1} {70 70 70} {7 7 7} {7 7 7}
+  {10 10 10 1} {80 80 80} {8 8 8} {8 8 8}
+  {10 10 10 1} {90 90 90} {9 9 9} {9 9 9}
+  {10 10 10 1} {100 100 100} {10 10 10} {10 10 10}
+  {10 10 10 1} {110 110 110} {11 11 11} {11 11 11}
+  {10 10 10 1} {120 120 120} {12 12 12} {12 12 12}
+  {10 10 10 1} {130 130 130} {13 13 13} {13 13 13}
+  {10 10 10 1} {140 140 140} {14 14 14} {14 14 14}
+  {10 10 10 1} {150 150 150} {15 15 15} {15 15 15}
+}
+
+do_execsql_test 4.3 {
+  SELECT 
+    neq,
+    lrange(nlt, 0, 2),
+    lrange(ndlt, 0, 2),
+    lrange(test_decode(sample), 0, 1)
+    FROM sqlite_stat4
+  ORDER BY rowid DESC LIMIT 2;
+} {
+  {2 1 1 1} {295 296 296} {120 122 125} {201 4} 
+  {5 3 1 1} {290 290 292} {119 119 121} {200 1}
+}
+
+do_execsql_test 4.4 { SELECT count(DISTINCT c) FROM t1 WHERE c<201 } 120
+do_execsql_test 4.5 { SELECT count(DISTINCT c) FROM t1 WHERE c<200 } 119
+
+# Check that the perioidic samples are present.
+do_execsql_test 4.6 {
+  SELECT count(*) FROM sqlite_stat4
+  WHERE lindex(test_decode(sample), 3) IN 
+    ('34', '68', '102', '136', '170', '204', '238', '272')
+} {8}
+
+
 finish_test
 
