@@ -1268,6 +1268,44 @@ void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
 }
 
 #if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+
+/*
+** Populate the pIdx->aAvgEq[] array based on the samples currently
+** stored in pIdx->aSample[]. 
+*/
+static void initAvgEq(Index *pIdx){
+  if( pIdx ){
+    IndexSample *aSample = pIdx->aSample;
+    IndexSample *pFinal = &aSample[pIdx->nSample-1];
+    int iCol;
+    for(iCol=0; iCol<pIdx->nColumn; iCol++){
+      int i;                    /* Used to iterate through samples */
+      tRowcnt sumEq = 0;        /* Sum of the nEq values */
+      int nSum = 0;             /* Number of terms contributing to sumEq */
+      tRowcnt avgEq = 0;
+      tRowcnt nDLt = pFinal->anDLt[iCol];
+
+      /* Set nSum to the number of distinct (iCol+1) field prefixes that
+      ** occur in the stat4 table for this index before pFinal. Set
+      ** sumEq to the sum of the nEq values for column iCol for the same
+      ** set (adding the value only once where there exist dupicate 
+      ** prefixes).  */
+      for(i=0; i<(pIdx->nSample-1); i++){
+        if( aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] ){
+          sumEq += aSample[i].anEq[iCol];
+          nSum++;
+        }
+      }
+      if( nDLt>nSum ){
+        avgEq = (pFinal->anLt[iCol] - sumEq)/(nDLt - nSum);
+      }
+      if( avgEq==0 ) avgEq = 1;
+      pIdx->aAvgEq[iCol] = avgEq;
+      if( pIdx->nSampleCol==1 ) break;
+    }
+  }
+}
+
 /*
 ** Load the content from either the sqlite_stat4 or sqlite_stat3 table 
 ** into the relevant Index.aSample[] arrays.
@@ -1292,7 +1330,6 @@ static int loadStatTbl(
   sqlite3_stmt *pStmt = 0;      /* An SQL statement being run */
   char *zSql;                   /* Text of the SQL statement */
   Index *pPrevIdx = 0;          /* Previous index in the loop */
-  int idx = 0;                  /* slot in pIdx->aSample[] for next sample */
   IndexSample *pSample;         /* A slot in pIdx->aSample[] */
 
   assert( db->lookaside.bEnabled==0 );
@@ -1328,7 +1365,6 @@ static int loadStatTbl(
       nAvgCol = pIdx->nColumn;
     }
     pIdx->nSampleCol = nIdxCol;
-    pIdx->nSample = nSample;
     nByte = sizeof(IndexSample) * nSample;
     nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
     nByte += nAvgCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
@@ -1340,7 +1376,7 @@ static int loadStatTbl(
     }
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
     pIdx->aAvgEq = pSpace; pSpace += nAvgCol;
-    for(i=0; i<pIdx->nSample; i++){
+    for(i=0; i<nSample; i++){
       pIdx->aSample[i].anEq = pSpace; pSpace += nIdxCol;
       pIdx->aSample[i].anLt = pSpace; pSpace += nIdxCol;
       pIdx->aSample[i].anDLt = pSpace; pSpace += nIdxCol;
@@ -1361,60 +1397,24 @@ static int loadStatTbl(
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     char *zIndex;                 /* Index name */
     Index *pIdx;                  /* Pointer to the index object */
-    int i;                        /* Loop counter */
     int nCol = 1;                 /* Number of columns in index */
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
     pIdx = sqlite3FindIndex(db, zIndex, zDb);
     if( pIdx==0 ) continue;
-    if( pIdx==pPrevIdx ){
-      idx++;
-    }else{
-      pPrevIdx = pIdx;
-      idx = 0;
-    }
-    assert( idx<pIdx->nSample );
     /* This next condition is true if data has already been loaded from 
     ** the sqlite_stat4 table. In this case ignore stat3 data.  */
-    if( bStat3 && pIdx->aSample[idx].anEq[0] ) continue;
-    pSample = &pIdx->aSample[idx];
-
-    if( bStat3==0 ){
-      nCol = pIdx->nColumn+1;
+    nCol = pIdx->nSampleCol;
+    if( bStat3 && nCol>1 ) continue;
+    if( pIdx!=pPrevIdx ){
+      initAvgEq(pPrevIdx);
+      pPrevIdx = pIdx;
     }
+    pSample = &pIdx->aSample[pIdx->nSample++];
     decodeIntArray((char*)sqlite3_column_text(pStmt,1), nCol, pSample->anEq, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,2), nCol, pSample->anLt, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,3), nCol, pSample->anDLt,0);
-
-    if( idx==pIdx->nSample-1 ){
-      IndexSample *aSample = pIdx->aSample;
-      int iCol;
-      for(iCol=0; iCol<pIdx->nColumn; iCol++){
-        tRowcnt sumEq = 0;        /* Sum of the nEq values */
-        int nSum = 0;             /* Number of terms contributing to sumEq */
-        tRowcnt avgEq = 0;
-        tRowcnt nDLt = pSample->anDLt[iCol];
-
-        /* Set nSum to the number of distinct (iCol+1) field prefixes that
-        ** occur in the stat4 table for this index before pSample. Set
-        ** sumEq to the sum of the nEq values for column iCol for the same
-        ** set (adding the value only once where there exist dupicate 
-        ** prefixes).  */
-        for(i=0; i<(pIdx->nSample-1); i++){
-          if( aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] ){
-            sumEq += aSample[i].anEq[iCol];
-            nSum++;
-          }
-        }
-        if( nDLt>nSum ){
-          avgEq = (pSample->anLt[iCol] - sumEq)/(nDLt - nSum);
-        }
-        if( avgEq==0 ) avgEq = 1;
-        pIdx->aAvgEq[iCol] = avgEq;
-        if( bStat3 ) break;
-      }
-    }
 
     pSample->n = sqlite3_column_bytes(pStmt, 4);
     pSample->p = sqlite3DbMallocZero(db, pSample->n);
@@ -1424,6 +1424,7 @@ static int loadStatTbl(
     }
     memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
   }
+  initAvgEq(pPrevIdx);
   return sqlite3_finalize(pStmt);
 }
 

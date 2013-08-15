@@ -1,5 +1,5 @@
-C Fix\sa\scrash\sthat\scan\soccur\sfollowing\san\sOOM\sfault.
-D 2013-08-15T18:43:21.395
+C Fix\sa\scrash\sthat\scan\soccur\sif\sthe\ssqlite_stat3\sor\ssqlite_stat4\stable\sis\scorrupt.
+D 2013-08-15T19:56:32.997
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c e60d6329f77e84bac0a300d5227c28a05f5ff5de
+F src/analyze.c 9533c7e948398bf9628178d6bf9a7845d7e29046
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 83e74db42a49bb185e05f3a44a5d65323aba8a40
+F test/analyze9.test b73f9514af962a139d2c61d7741b0ba090789ea2
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 71070c9fce86103f174220e07771df99b2e01405
-R fd0e4baaf9a9ffd0fe23644f24c090cf
+P 9f80b2687012ab7c4d6d654fe19f40878bd78bd8
+R abb1a9d20998265ab3bcabc4adb13b2c
 U dan
-Z 1c4d6e6edcc7281c470c7559e77faff9
+Z 4cffc531446b09bd876c8b206583a719
