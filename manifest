@@ -1,5 +1,5 @@
-C Fix\sa\sfew\smore\sminor\scomment\stypos.\s\sNo\schanges\sto\scode.
-D 2013-08-14T00:20:23.461
+C Make\sit\seasy\sto\sattach\sa\sdebugger\sthe\stest\sfixture\sprocess\sprior\sto\sany\stests\sbeing\srun.
+D 2013-08-15T08:06:15.562
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/sqliteInt.h def0e436c0d4ca5084305ca6ae898020fbafaae4
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c b8835978e853a89bf58de88acc943a5ca94d752e
+F src/tclsqlite.c 659dad8ef30b54831306a244b43e37af4725a444
 F src/test1.c 870fc648a48cb6d6808393174f7ebe82b8c840fa
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -1105,7 +1105,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ac336959490083ffeaaf25aaec97ecb59a2f4536
-R b65660836257e0b7350de3a479496a6b
+P 9e999081a59b161a0a1f968fbc01a1db9ea43b93
+R c32412a10fe0450296a67115895879b1
+T *branch * dbgTestFixture
+T *sym-dbgTestFixture *
+T -sym-trunk *
 U mistachkin
-Z 2adbd114c976ac90cd58966c1c244f68
+Z 7b47b87c7211179488e7ecca78b01825
