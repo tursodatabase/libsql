@@ -208,15 +208,12 @@ do_test tkt2822-5.4 {
 
 # In "ORDER BY +b" the term is now an expression rather than
 # a label.  It therefore matches by rule (3) instead of rule (2).
-#
-# 2013-04-13:  This is busted.  Changed to conform to PostgreSQL and
-# MySQL and Oracle behavior.
 # 
 do_test tkt2822-5.5 {
   execsql {
     SELECT a AS b FROM t3 ORDER BY +b;
   }
-} {1 9}
+} {9 1}
 
 # Tests for rule 2 in compound queries
 #

@@ -13,10 +13,18 @@
 # figures out what identifiers in the SQL statement refer to) that
 # were fixed by ticket [2500cdb9be]
 #
+# See also tickets [1c69be2daf] and [f617ea3125] from 2013-08-14.
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# "ORDER BY y" binds to the output result-set column named "y"
+# if available.  If no output column is named "y", then try to
+# bind against an input column named "y".
+#
+# This is classical SQL92 behavior.
+#
 do_test resolver01-1.1 {
   catchsql {
     CREATE TABLE t1(x, y); INSERT INTO t1 VALUES(11,22);
@@ -26,14 +34,119 @@ do_test resolver01-1.1 {
 } {0 1}
 do_test resolver01-1.2 {
   catchsql {
+    SELECT 1 AS yy FROM t1, t2 ORDER BY y;
+  }
+} {1 {ambiguous column name: y}}
+do_test resolver01-1.3 {
+  catchsql {
+    CREATE TABLE t3(x,y); INSERT INTO t3 VALUES(11,44),(33,22);
+    SELECT x AS y FROM t3 ORDER BY y;
+  }
+} {0 {11 33}}
+do_test resolver01-1.4 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY y;
+  }
+} {0 {33 11}}
+
+# SQLite allows the WHERE clause to reference output columns if there is
+# no other way to resolve the name.
+#
+do_test resolver01-1.5 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY yy;
+  }
+} {0 {11 33}}
+do_test resolver01-1.6 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY 1;
+  }
+} {0 {11 33}}
+
+# The "ORDER BY y COLLATE nocase" form works the same as "ORDER BY y".
+# The "y" binds more tightly to output columns than to input columns.
+#
+# This is for compatibility with SQL92 and with historical SQLite behavior.
+# Note that PostgreSQL considers "y COLLATE nocase" to be an expression
+# and thus PostgreSQL treats this case as if it where the 3.x case below.
+#
+do_test resolver01-2.1 {
+  catchsql {
     SELECT 2 AS y FROM t1, t2 ORDER BY y COLLATE nocase;
   }
 } {0 2}
-do_test resolver01-1.3 {
+do_test resolver01-2.2 {
+  catchsql {
+    SELECT 2 AS yy FROM t1, t2 ORDER BY y COLLATE nocase;
+  }
+} {1 {ambiguous column name: y}}
+do_test resolver01-2.3 {
+  catchsql {
+    SELECT x AS y FROM t3 ORDER BY y COLLATE nocase;
+  }
+} {0 {11 33}}
+do_test resolver01-2.4 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY y COLLATE nocase;
+  }
+} {0 {33 11}}
+do_test resolver01-2.5 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY yy COLLATE nocase;
+  }
+} {0 {11 33}}
+do_test resolver01-2.6 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY 1 COLLATE nocase;
+  }
+} {0 {11 33}}
+
+# But if the form is "ORDER BY expr" then bind more tightly to the
+# the input column names and only use the output column names if no
+# input column name matches.
+#
+# This is SQL99 behavior, as implemented by PostgreSQL and MS-SQL.
+# Note that Oracle works differently.
+#
+do_test resolver01-3.1 {
   catchsql {
     SELECT 3 AS y FROM t1, t2 ORDER BY +y;
   }
-} {0 3}
+} {1 {ambiguous column name: y}}
+do_test resolver01-3.2 {
+  catchsql {
+    SELECT 2 AS yy FROM t1, t2 ORDER BY +y;
+  }
+} {1 {ambiguous column name: y}}
+do_test resolver01-3.3 {
+  catchsql {
+    SELECT x AS y FROM t3 ORDER BY +y;
+  }
+} {0 {33 11}}
+do_test resolver01-3.4 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY +y;
+  }
+} {0 {33 11}}
+do_test resolver01-3.5 {
+  catchsql {
+    SELECT x AS yy FROM t3 ORDER BY +yy
+  }
+} {0 {11 33}}
 
+# This is the test case given in ticket [f617ea3125e9] (with table name
+# changed from "t1" to "t4".  The behavior of (1) and (3) match with
+# PostgreSQL, but we intentionally break with PostgreSQL to provide
+# SQL92 behavior for case (2).
+#
+do_execsql_test resolver01-4.1 {
+  CREATE TABLE t4(m CHAR(2));
+  INSERT INTO t4 VALUES('az');
+  INSERT INTO t4 VALUES('by');
+  INSERT INTO t4 VALUES('cx');
+  SELECT '1', substr(m,2) AS m FROM t4 ORDER BY m;
+  SELECT '2', substr(m,2) AS m FROM t4 ORDER BY m COLLATE binary;
+  SELECT '3', substr(m,2) AS m FROM t4 ORDER BY lower(m);
+} {1 x 1 y 1 z 2 x 2 y 2 z 3 z 3 y 3 x}
 
 finish_test

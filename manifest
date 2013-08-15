@@ -1,5 +1,5 @@
-C Make\sit\seasy\sto\sattach\sa\sdebugger\sthe\stest\sfixture\sprocess\sprior\sto\sany\stests\sbeing\srun.
-D 2013-08-15T20:05:03.202
+C Bare\sidentifiers\sin\sORDER\sBY\sclauses\sbind\smore\stightly\sto\soutput\scolumn\sname,\nbut\sidentifiers\sin\sexpressions\sbind\smore\stightly\sto\sinput\scolumn\snames.\nThis\sis\sa\scompromise\sbetween\sSQL92\sand\sSQL99\sbehavior\sand\sis\swhat\nPostgreSQL\sand\sMS-SQL\sdo.\s\sTicket\s[f617ea3125e9c].
+D 2013-08-15T20:24:27.463
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,14 +214,14 @@ F src/pragma.c 590c75750d93ec5a1f903e4bb0dc6d2a0845bf8b
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 94a08f37c04352bbdd4a91b335e1a4feb256a3c7
+F src/resolve.c 2a760f369ddbcd951f176556c8ec05be04cdd0da
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
 F src/shell.c 927e17b37b63b24461e372d982138fb22c4df321
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h ac5de15640d7a5d6ea46724fe3e0ffd39af0ed12
+F src/sqliteInt.h b2a4e9a85e4bb49c1537fe7fc6532cd7ebe82aa0
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -733,7 +733,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
 F test/releasetest.tcl 06d289d8255794073a58d2850742f627924545ce
-F test/resolver01.test d1b487fc567bdb70b5dd09ccaaa877ddc61a233e
+F test/resolver01.test a98ed8a2e9f78600155d783389ad4e6537010285
 F test/rollback.test a1b4784b864331eae8b2a98c189efa2a8b11ff07
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test f777404492adb0e00868fd706a3721328fd3af48
@@ -906,7 +906,7 @@ F test/tkt2686.test 6ee01c9b9e9c48f6d3a1fdd553b1cc4258f903d6
 F test/tkt2767.test 569000d842678f9cf2db7e0d1b27cbc9011381b0
 F test/tkt2817.test f31839e01f4243cff7399ef654d3af3558cb8d8d
 F test/tkt2820.test 39940276b3436d125deb7d8ebeee053e4cf13213
-F test/tkt2822.test c3589494fba643e039bcf0bfde7554ff6028406d
+F test/tkt2822.test f391776423a7c0d0949edfce375708bfb0f3141e
 F test/tkt2832.test a9b0b74a02dca166a04d9e37739c414b10929caa
 F test/tkt2854.test e432965db29e27e16f539b2ba7f502eb2ccc49af
 F test/tkt2920.test a8737380e4ae6424e00c0273dc12775704efbebf
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f30abdf9d814d6c75bf1c803054737c737ad636f c23acba11bfefc019b5945cfb345f9afcf4b6242
-R fb4db235176e52d42891fba292ddbfa5
-U mistachkin
-Z 4d072d8f2cb243e6b9c13cb11a27b554
+P 53cd9ebfaf401c7932bf591e134a527c9962b88e
+R b873391074dfe27843eed5ca71b0596f
+U drh
+Z 52475f320db5f901cc1dc06cbb7fef10

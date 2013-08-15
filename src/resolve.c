@@ -55,7 +55,7 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
 ** column reference is so that the column reference will be recognized as
 ** usable by indices within the WHERE clause processing logic. 
 **
-** Hack:  The TK_AS operator is inhibited if zType[0]=='G'.  This means
+** The TK_AS operator is inhibited if zType[0]=='G'.  This means
 ** that in a GROUP BY clause, the expression is evaluated twice.  Hence:
 **
 **     SELECT random()%5 AS x, count(*) FROM tab GROUP BY x
@@ -65,8 +65,9 @@ static void incrAggFunctionDepth(Expr *pExpr, int N){
 **     SELECT random()%5 AS x, count(*) FROM tab GROUP BY random()%5
 **
 ** The result of random()%5 in the GROUP BY clause is probably different
-** from the result in the result-set.  We might fix this someday.  Or
-** then again, we might not...
+** from the result in the result-set.  On the other hand Standard SQL does
+** not allow the GROUP BY clause to contain references to result-set columns.
+** So this should never come up in well-formed queries.
 **
 ** If the reference is followed by a COLLATE operator, then make sure
 ** the COLLATE operator is preserved.  For example:
@@ -396,10 +397,16 @@ static int lookupName(
     ** forms the result set entry ("a+b" in the example) and return immediately.
     ** Note that the expression in the result set should have already been
     ** resolved by the time the WHERE clause is resolved.
+    **
+    ** The ability to use an output result-set column in the WHERE, GROUP BY,
+    ** or HAVING clauses, or as part of a larger expression in the ORDRE BY
+    ** clause is not standard SQL.  This is a (goofy) SQLite extension, that
+    ** is supported for backwards compatibility only.  TO DO: Issue a warning
+    ** on sqlite3_log() whenever the capability is used.
     */
     if( (pEList = pNC->pEList)!=0
      && zTab==0
-     && ((pNC->ncFlags & NC_AsMaybe)==0 || cnt==0)
+     && cnt==0
     ){
       for(j=0; j<pEList->nExpr; j++){
         char *zAs = pEList->a[j].zName;
@@ -961,7 +968,7 @@ static int resolveCompoundOrderBy(
 /*
 ** Check every term in the ORDER BY or GROUP BY clause pOrderBy of
 ** the SELECT statement pSelect.  If any term is reference to a
-** result set expression (as determined by the ExprList.a.iCol field)
+** result set expression (as determined by the ExprList.a.iOrderByCol field)
 ** then convert that term into a copy of the corresponding result set
 ** column.
 **
@@ -1035,7 +1042,8 @@ static int resolveOrderGroupBy(
   pParse = pNC->pParse;
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     Expr *pE = pItem->pExpr;
-    iCol = resolveAsName(pParse, pSelect->pEList, pE);
+    Expr *pE2 = sqlite3ExprSkipCollate(pE);
+    iCol = resolveAsName(pParse, pSelect->pEList, pE2);
     if( iCol>0 ){
       /* If an AS-name match is found, mark this ORDER BY column as being
       ** a copy of the iCol-th result-set column.  The subsequent call to
@@ -1044,7 +1052,7 @@ static int resolveOrderGroupBy(
       pItem->iOrderByCol = (u16)iCol;
       continue;
     }
-    if( sqlite3ExprIsInteger(sqlite3ExprSkipCollate(pE), &iCol) ){
+    if( sqlite3ExprIsInteger(pE2, &iCol) ){
       /* The ORDER BY term is an integer constant.  Again, set the column
       ** number so that sqlite3ResolveOrderGroupBy() will convert the
       ** order-by term to a copy of the result-set expression */
@@ -1196,10 +1204,8 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** re-evaluated for each reference to it.
     */
     sNC.pEList = p->pEList;
-    sNC.ncFlags |= NC_AsMaybe;
     if( sqlite3ResolveExprNames(&sNC, p->pHaving) ) return WRC_Abort;
     if( sqlite3ResolveExprNames(&sNC, p->pWhere) ) return WRC_Abort;
-    sNC.ncFlags &= ~NC_AsMaybe;
 
     /* The ORDER BY and GROUP BY clauses may not refer to terms in
     ** outer queries 
