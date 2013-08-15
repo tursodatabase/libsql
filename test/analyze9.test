@@ -256,6 +256,30 @@ do_execsql_test 4.6 {
     ('34', '68', '102', '136', '170', '204', '238', '272')
 } {8}
 
+reset_db
+do_test 4.7 {
+  execsql { 
+    BEGIN;
+    CREATE TABLE t1(o,t INTEGER PRIMARY KEY);
+    CREATE INDEX i1 ON t1(o);
+  }
+  for {set i 0} {$i<10000} {incr i [expr (($i<1000)?1:10)]} {
+    execsql { INSERT INTO t1 VALUES('x', $i) }
+  }
+  execsql {
+    COMMIT;
+    ANALYZE;
+    SELECT count(*) FROM sqlite_stat4;
+  }
+} {8}
+do_execsql_test 4.8 {
+  SELECT test_decode(sample) FROM sqlite_stat4;
+} {
+  {x 211} {x 423} {x 635} {x 847} 
+  {x 1590} {x 3710} {x 5830} {x 7950}
+}
+
+
 #-------------------------------------------------------------------------
 # The following would cause a crash at one point.
 #

@@ -1006,29 +1006,85 @@ sqlite3_value *sqlite3ValueNew(sqlite3 *db){
 }
 
 /*
-** Argument pCtx is actually a pointer to a database handle. Allocate and
-** return an sqlite3_value object associated with this database handle.
-**
-** This function used as the xAlloc callback for valueFromExpr() when
-** it is called by sqlite3ValueFromExpr().
+** Context object passed by sqlite3Stat4ProbeSetValue() through to 
+** valueNew(). See comments above valueNew() for details.
 */
-static sqlite3_value *valueNew(void *pCtx){
-  return sqlite3ValueNew((sqlite3*)pCtx);
+struct ValueNewStat4Ctx {
+  Parse *pParse;
+  Index *pIdx;
+  UnpackedRecord **ppRec;
+  int iVal;
+};
+
+/*
+** Allocate and return a pointer to a new sqlite3_value object. If
+** the second argument to this function is NULL, the object is allocated
+** by calling sqlite3ValueNew().
+**
+** Otherwise, if the second argument is non-zero, then this function is 
+** being called indirectly by sqlite3Stat4ProbeSetValue(). If it has not
+** already been allocated, allocate the UnpackedRecord structure that 
+** that function will return to its caller here. Then return a pointer 
+** an sqlite3_value within the UnpackedRecord.a[] array.
+*/
+static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
+#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+  if( p ){
+    UnpackedRecord *pRec = p->ppRec[0];
+
+    if( pRec==0 ){
+      Index *pIdx = p->pIdx;      /* Index being probed */
+      int nByte;                  /* Bytes of space to allocate */
+      int i;                      /* Counter variable */
+      int nCol = pIdx->nColumn+1; /* Number of index columns including rowid */
+  
+      nByte = sizeof(Mem) * nCol + sizeof(UnpackedRecord);
+      pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);
+      if( pRec ){
+        pRec->pKeyInfo = sqlite3IndexKeyinfo(p->pParse, pIdx);
+        if( pRec->pKeyInfo ){
+          assert( pRec->pKeyInfo->nField+1==nCol );
+          pRec->pKeyInfo->enc = ENC(db);
+          pRec->flags = UNPACKED_PREFIX_MATCH;
+          pRec->aMem = (Mem *)&pRec[1];
+          for(i=0; i<nCol; i++){
+            pRec->aMem[i].flags = MEM_Null;
+            pRec->aMem[i].type = SQLITE_NULL;
+            pRec->aMem[i].db = db;
+          }
+        }else{
+          sqlite3DbFree(db, pRec);
+          pRec = 0;
+        }
+      }
+      if( pRec==0 ) return 0;
+      p->ppRec[0] = pRec;
+    }
+  
+    pRec->nField = p->iVal+1;
+    return &pRec->aMem[p->iVal];
+  }
+#endif
+  return sqlite3ValueNew(db);
 }
 
 /*
-** This function is the same as sqlite3ValueFromExpr(), except that instead
-** of allocating any required sqlite3_value object by calling 
-** sqlite3ValueNew(), it does so by calling the supplied xAlloc hook. 
+** Extract a value from the supplied expression in the manner described
+** above sqlite3ValueFromExpr(). Allocate the sqlite3_value object
+** using valueNew().
+**
+** If pCtx is NULL and an error occurs after the sqlite3_value object
+** has been allocated, it is freed before returning. Or, if pCtx is not
+** NULL, it is assumed that the caller will free any allocated object
+** in all cases.
 */
 int valueFromExpr(
-  sqlite3 *db,                         /* The database connection */
-  Expr *pExpr,                         /* The expression to evaluate */
-  u8 enc,                              /* Encoding to use */
-  u8 affinity,                         /* Affinity to use */
-  sqlite3_value **ppVal,               /* Write the new value here */
-  sqlite3_value *(*xAlloc)(void*),     /* Used to allocate new sqlite3_value */
-  void *pAlloc                         /* Argument passed to xAlloc */
+  sqlite3 *db,                    /* The database connection */
+  Expr *pExpr,                    /* The expression to evaluate */
+  u8 enc,                         /* Encoding to use */
+  u8 affinity,                    /* Affinity to use */
+  sqlite3_value **ppVal,          /* Write the new value here */
+  struct ValueNewStat4Ctx *pCtx   /* Second argument for valueNew() */
 ){
   int op;
   char *zVal = 0;
@@ -1064,7 +1120,7 @@ int valueFromExpr(
   }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
-    pVal = xAlloc(pAlloc);
+    pVal = valueNew(db, pCtx);
     if( pVal==0 ) goto no_mem;
     if( ExprHasProperty(pExpr, EP_IntValue) ){
       sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue*negInt);
@@ -1100,7 +1156,7 @@ int valueFromExpr(
       sqlite3ValueApplyAffinity(pVal, affinity, enc);
     }
   }else if( op==TK_NULL ){
-    pVal = xAlloc(pAlloc);
+    pVal = valueNew(db, pCtx);
     if( pVal==0 ) goto no_mem;
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
@@ -1108,7 +1164,7 @@ int valueFromExpr(
     int nVal;
     assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
     assert( pExpr->u.zToken[1]=='\'' );
-    pVal = xAlloc(pAlloc);
+    pVal = valueNew(db, pCtx);
     if( !pVal ) goto no_mem;
     zVal = &pExpr->u.zToken[2];
     nVal = sqlite3Strlen30(zVal)-1;
@@ -1127,8 +1183,8 @@ int valueFromExpr(
 no_mem:
   db->mallocFailed = 1;
   sqlite3DbFree(db, zVal);
-  if( *ppVal==0 ) sqlite3ValueFree(pVal);
-  *ppVal = 0;
+  assert( *ppVal==0 );
+  if( pCtx==0 ) sqlite3ValueFree(pVal);
   return SQLITE_NOMEM;
 }
 
@@ -1149,7 +1205,7 @@ int sqlite3ValueFromExpr(
   u8 affinity,              /* Affinity to use */
   sqlite3_value **ppVal     /* Write the new value here */
 ){
-  return valueFromExpr(db, pExpr, enc, affinity, ppVal, valueNew, (void*)db);
+  return valueFromExpr(db, pExpr, enc, affinity, ppVal, 0);
 }
 
 #if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
@@ -1208,64 +1264,6 @@ void sqlite3AnalyzeFunctions(void){
 }
 
 /*
-** A pointer to an instance of this object is passed as the context 
-** pointer to valueNewStat4() (see below.
-*/
-struct ValueNewStat4Ctx {
-  Parse *pParse;
-  Index *pIdx;
-  UnpackedRecord **ppRec;
-  int iVal;
-};
-
-/*
-** This function is used as the xAlloc function with valueFromExpr() when
-** it is called by sqlite3Stat4ProbeSetValue(). The argument points to
-** an object of type ValueNewStat4Ctx (see above).
-**
-** If it has not already been allocated, this function allocates an 
-** UnpackedRecord structure and space for up to N values, where N is the
-** number of columns in the index being probed.
-*/
-static sqlite3_value *valueNewStat4(void *pCtx){
-  struct ValueNewStat4Ctx *p = (struct ValueNewStat4Ctx*)pCtx;
-  UnpackedRecord *pRec = p->ppRec[0];
-
-  if( pRec==0 ){
-    sqlite3 *db = p->pParse->db;  /* Database handle */
-    Index *pIdx = p->pIdx;        /* Index being probed */
-    int nByte;                    /* Bytes of space to allocate */
-    int i;                        /* Counter variable */
-    int nCol = pIdx->nColumn+1;   /* Number of index columns including rowid */
-
-    nByte = sizeof(Mem) * nCol + sizeof(UnpackedRecord);
-    pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);
-    if( pRec ){
-      pRec->pKeyInfo = sqlite3IndexKeyinfo(p->pParse, pIdx);
-      if( pRec->pKeyInfo ){
-        assert( pRec->pKeyInfo->nField+1==nCol );
-        pRec->pKeyInfo->enc = ENC(db);
-        pRec->flags = UNPACKED_PREFIX_MATCH;
-        pRec->aMem = (Mem *)&pRec[1];
-        for(i=0; i<nCol; i++){
-          pRec->aMem[i].flags = MEM_Null;
-          pRec->aMem[i].type = SQLITE_NULL;
-          pRec->aMem[i].db = db;
-        }
-      }else{
-        sqlite3DbFree(db, pRec);
-        pRec = 0;
-      }
-    }
-    if( pRec==0 ) return 0;
-    p->ppRec[0] = pRec;
-  }
-
-  pRec->nField = p->iVal+1;
-  return &pRec->aMem[p->iVal];
-}
-
-/*
 ** This function is used to allocate and populate UnpackedRecord 
 ** structures intended to be compared against sample index keys stored 
 ** in the sqlite_stat4 table.
@@ -1313,12 +1311,8 @@ int sqlite3Stat4ProbeSetValue(
   alloc.ppRec = ppRec;
   alloc.iVal = iVal;
 
-#if 0
-  if( iVal>0 ){ *pbOk = 0; return SQLITE_OK; }
-#endif
-
   if( !pExpr ){
-    pVal = valueNewStat4((void*)&alloc);
+    pVal = valueNew(pParse->db, &alloc);
     if( pVal ){
       sqlite3VdbeMemSetNull((Mem*)pVal);
       *pbOk = 1;
@@ -1330,7 +1324,7 @@ int sqlite3Stat4ProbeSetValue(
     int iVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
     if( (v = pParse->pReprepare) ){
-      pVal = valueNewStat4((void*)&alloc);
+      pVal = valueNew(pParse->db, &alloc);
       if( pVal ){
         rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iVal-1]);
         if( rc==SQLITE_OK ){
@@ -1345,9 +1339,7 @@ int sqlite3Stat4ProbeSetValue(
     }
   }else{
     sqlite3 *db = pParse->db;
-    rc = valueFromExpr(
-        db, pExpr, ENC(db), affinity, &pVal, valueNewStat4, (void*)&alloc
-    );
+    rc = valueFromExpr(db, pExpr, ENC(db), affinity, &pVal, &alloc);
     *pbOk = (pVal!=0);
   }
 
