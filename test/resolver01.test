@@ -149,4 +149,60 @@ do_execsql_test resolver01-4.1 {
   SELECT '3', substr(m,2) AS m FROM t4 ORDER BY lower(m);
 } {1 x 1 y 1 z 2 x 2 y 2 z 3 z 3 y 3 x}
 
+##########################################################################
+# Test cases for ticket [1c69be2dafc28]:  Make sure the GROUP BY binds
+# more tightly to the input tables in all cases.
+#
+# This first case case has been wrong in SQLite for time out of mind.
+# For SQLite version 3.7.17 the answer was two rows, which is wrong.
+#
+do_execsql_test resolver01-5.1 {
+  CREATE TABLE t5(m CHAR(2));
+  INSERT INTO t5 VALUES('ax');
+  INSERT INTO t5 VALUES('bx');
+  INSERT INTO t5 VALUES('cy');
+  SELECT count(*), substr(m,2,1) AS m FROM t5 GROUP BY m ORDER BY 1, 2;
+} {1 x 1 x 1 y}
+
+# This case is unambiguous and has always been correct.
+#
+do_execsql_test resolver01-5.2 {
+  SELECT count(*), substr(m,2,1) AS mx FROM t5 GROUP BY m ORDER BY 1, 2;
+} {1 x 1 x 1 y}
+
+# This case is not allowed in standard SQL, but SQLite allows and does
+# the sensible thing.
+#
+do_execsql_test resolver01-5.3 {
+  SELECT count(*), substr(m,2,1) AS mx FROM t5 GROUP BY mx ORDER BY 1, 2;
+} {1 y 2 x}
+do_execsql_test resolver01-5.4 {
+  SELECT count(*), substr(m,2,1) AS mx FROM t5
+   GROUP BY substr(m,2,1) ORDER BY 1, 2;
+} {1 y 2 x}
+
+# These test case weere provided in the 2013-08-14 email from Rob Golsteijn
+# that originally reported the problem of ticket [1c69be2dafc28].
+#
+do_execsql_test resolver01-6.1 {
+  CREATE TABLE t61(name);
+  SELECT min(name) FROM t61 GROUP BY lower(name);
+} {}
+do_execsql_test resolver01-6.2 {
+  SELECT min(name) AS name FROM t61 GROUP BY lower(name); 
+} {}
+do_execsql_test resolver01-6.3 {
+  CREATE TABLE t63(name);
+  INSERT INTO t63 VALUES (NULL);
+  INSERT INTO t63 VALUES ('abc');
+  SELECT count(),
+       NULLIF(name,'abc') AS name
+    FROM t63
+   GROUP BY lower(name);
+} {1 {} 1 {}}
+
+
+
+
+
 finish_test

@@ -1,5 +1,5 @@
-C Bare\sidentifiers\sin\sORDER\sBY\sclauses\sbind\smore\stightly\sto\soutput\scolumn\sname,\nbut\sidentifiers\sin\sexpressions\sbind\smore\stightly\sto\sinput\scolumn\snames.\nThis\sis\sa\scompromise\sbetween\sSQL92\sand\sSQL99\sbehavior\sand\sis\swhat\nPostgreSQL\sand\sMS-SQL\sdo.\s\sTicket\s[f617ea3125e9c].
-D 2013-08-15T20:24:27.463
+C Make\ssure\sthat\sGROUP\sBY\sterms\sselect\sinput\scolumn\snames\sin\spreference\sto\noutput\scolumn\snames,\sin\scompliance\swith\sthe\sSQL\sstandard.\nTicket\s[1c69be2dafc28].
+D 2013-08-15T22:40:21.803
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/pragma.c 590c75750d93ec5a1f903e4bb0dc6d2a0845bf8b
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 2a760f369ddbcd951f176556c8ec05be04cdd0da
+F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
 F src/shell.c 927e17b37b63b24461e372d982138fb22c4df321
@@ -733,7 +733,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
 F test/releasetest.tcl 06d289d8255794073a58d2850742f627924545ce
-F test/resolver01.test a98ed8a2e9f78600155d783389ad4e6537010285
+F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test a1b4784b864331eae8b2a98c189efa2a8b11ff07
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test f777404492adb0e00868fd706a3721328fd3af48
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 53cd9ebfaf401c7932bf591e134a527c9962b88e
-R b873391074dfe27843eed5ca71b0596f
+P c78b357c00a35ed48ce2ffbc041de8d22570d1e2
+R 0cad26d57aaadc86e4d0689961c53035
 U drh
-Z 52475f320db5f901cc1dc06cbb7fef10
+Z 9ac8068bb659c66e2e7c0f0532626e1f

@@ -1043,14 +1043,16 @@ static int resolveOrderGroupBy(
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     Expr *pE = pItem->pExpr;
     Expr *pE2 = sqlite3ExprSkipCollate(pE);
-    iCol = resolveAsName(pParse, pSelect->pEList, pE2);
-    if( iCol>0 ){
-      /* If an AS-name match is found, mark this ORDER BY column as being
-      ** a copy of the iCol-th result-set column.  The subsequent call to
-      ** sqlite3ResolveOrderGroupBy() will convert the expression to a
-      ** copy of the iCol-th result-set expression. */
-      pItem->iOrderByCol = (u16)iCol;
-      continue;
+    if( zType[0]!='G' ){
+      iCol = resolveAsName(pParse, pSelect->pEList, pE2);
+      if( iCol>0 ){
+        /* If an AS-name match is found, mark this ORDER BY column as being
+        ** a copy of the iCol-th result-set column.  The subsequent call to
+        ** sqlite3ResolveOrderGroupBy() will convert the expression to a
+        ** copy of the iCol-th result-set expression. */
+        pItem->iOrderByCol = (u16)iCol;
+        continue;
+      }
     }
     if( sqlite3ExprIsInteger(pE2, &iCol) ){
       /* The ORDER BY term is an integer constant.  Again, set the column
