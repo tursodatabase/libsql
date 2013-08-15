@@ -784,7 +784,7 @@ static void analyzeOneTable(
   int regStat1 = iMem++;       /* Value for the stat column of sqlite_stat1 */
   int regPrev = iMem;          /* MUST BE LAST (see below) */
 
-  pParse->nMem = MAX(pParse->nMem, regChng);
+  pParse->nMem = MAX(pParse->nMem, iMem);
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) ){
     return;

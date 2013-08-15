@@ -1,5 +1,5 @@
-C Add\stests\sfor\ssqlite_stat4\ssample\sselection.\sAnd\sa\sfix\sfor\sthe\ssame.
-D 2013-08-15T14:39:09.873
+C Make\ssure\sthe\sANALYZE\scommand\sallocates\senough\sVDBE\sregisters.
+D 2013-08-15T16:15:00.074
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c f7494349f8c26cbffff3fab198834d7583f52c4f
+F src/analyze.c e60d6329f77e84bac0a300d5227c28a05f5ff5de
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bdce612b35193abf72de1a563ea7962375b3574e
-R cae3925a5ea9d2d41d5f5a62ca3fba06
-U dan
-Z 071feb0454ff17e1bc198cd08a86a76d
+P 1fb4d9d6f2675515feb8e3d971bbd54716372549
+R 9628ea795791e781c0796fcdc3f77669
+U drh
+Z 31fc7cf422d15cf81f1695579e8c285d
