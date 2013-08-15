@@ -651,7 +651,7 @@ int sqlite3VdbeExec(
     assert( pOp->opflags==sqlite3OpcodeProperty[pOp->opcode] );
     if( pOp->opflags & OPFLG_OUT2_PRERELEASE ){
       assert( pOp->p2>0 );
-      assert( pOp->p2<=p->nMem );
+      assert( pOp->p2<=(p->nMem-p->nCursor) );
       pOut = &aMem[pOp->p2];
       memAboutToChange(p, pOut);
       VdbeMemRelease(pOut);
@@ -662,30 +662,30 @@ int sqlite3VdbeExec(
 #ifdef SQLITE_DEBUG
     if( (pOp->opflags & OPFLG_IN1)!=0 ){
       assert( pOp->p1>0 );
-      assert( pOp->p1<=p->nMem );
+      assert( pOp->p1<=(p->nMem-p->nCursor) );
       assert( memIsValid(&aMem[pOp->p1]) );
       REGISTER_TRACE(pOp->p1, &aMem[pOp->p1]);
     }
     if( (pOp->opflags & OPFLG_IN2)!=0 ){
       assert( pOp->p2>0 );
-      assert( pOp->p2<=p->nMem );
+      assert( pOp->p2<=(p->nMem-p->nCursor) );
       assert( memIsValid(&aMem[pOp->p2]) );
       REGISTER_TRACE(pOp->p2, &aMem[pOp->p2]);
     }
     if( (pOp->opflags & OPFLG_IN3)!=0 ){
       assert( pOp->p3>0 );
-      assert( pOp->p3<=p->nMem );
+      assert( pOp->p3<=(p->nMem-p->nCursor) );
       assert( memIsValid(&aMem[pOp->p3]) );
       REGISTER_TRACE(pOp->p3, &aMem[pOp->p3]);
     }
     if( (pOp->opflags & OPFLG_OUT2)!=0 ){
       assert( pOp->p2>0 );
-      assert( pOp->p2<=p->nMem );
+      assert( pOp->p2<=(p->nMem-p->nCursor) );
       memAboutToChange(p, &aMem[pOp->p2]);
     }
     if( (pOp->opflags & OPFLG_OUT3)!=0 ){
       assert( pOp->p3>0 );
-      assert( pOp->p3<=p->nMem );
+      assert( pOp->p3<=(p->nMem-p->nCursor) );
       memAboutToChange(p, &aMem[pOp->p3]);
     }
 #endif
@@ -778,7 +778,7 @@ check_for_interrupt:
 ** and then jump to address P2.
 */
 case OP_Gosub: {            /* jump */
-  assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  assert( pOp->p1>0 && pOp->p1<=(p->nMem-p->nCursor) );
   pIn1 = &aMem[pOp->p1];
   assert( (pIn1->flags & MEM_Dyn)==0 );
   memAboutToChange(p, pIn1);
@@ -990,7 +990,7 @@ case OP_Null: {           /* out2-prerelease */
   int cnt;
   u16 nullFlag;
   cnt = pOp->p3-pOp->p2;
-  assert( pOp->p3<=p->nMem );
+  assert( pOp->p3<=(p->nMem-p->nCursor) );
   pOut->flags = nullFlag = pOp->p1 ? (MEM_Null|MEM_Cleared) : MEM_Null;
   while( cnt>0 ){
     pOut++;
@@ -1059,8 +1059,8 @@ case OP_Move: {
   pIn1 = &aMem[p1];
   pOut = &aMem[p2];
   while( n-- ){
-    assert( pOut<=&aMem[p->nMem] );
-    assert( pIn1<=&aMem[p->nMem] );
+    assert( pOut<=&aMem[(p->nMem-p->nCursor)] );
+    assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
     zMalloc = pOut->zMalloc;
@@ -1144,7 +1144,7 @@ case OP_ResultRow: {
   int i;
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 );
-  assert( pOp->p1+pOp->p2<=p->nMem+1 );
+  assert( pOp->p1+pOp->p2<=(p->nMem-p->nCursor)+1 );
 
   /* If this statement has violated immediate foreign key constraints, do
   ** not return the number of rows modified. And do not RELEASE the statement
@@ -1418,11 +1418,11 @@ case OP_Function: {
   n = pOp->p5;
   apVal = p->apArg;
   assert( apVal || n==0 );
-  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pOut = &aMem[pOp->p3];
   memAboutToChange(p, pOut);
 
-  assert( n==0 || (pOp->p2>0 && pOp->p2+n<=p->nMem+1) );
+  assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
   pArg = &aMem[pOp->p2];
   for(i=0; i<n; i++, pArg++){
@@ -1954,11 +1954,11 @@ case OP_Compare: {
   if( aPermute ){
     int k, mx = 0;
     for(k=0; k<n; k++) if( aPermute[k]>mx ) mx = aPermute[k];
-    assert( p1>0 && p1+mx<=p->nMem+1 );
-    assert( p2>0 && p2+mx<=p->nMem+1 );
+    assert( p1>0 && p1+mx<=(p->nMem-p->nCursor)+1 );
+    assert( p2>0 && p2+mx<=(p->nMem-p->nCursor)+1 );
   }else{
-    assert( p1>0 && p1+n<=p->nMem+1 );
-    assert( p2>0 && p2+n<=p->nMem+1 );
+    assert( p1>0 && p1+n<=(p->nMem-p->nCursor)+1 );
+    assert( p2>0 && p2+n<=(p->nMem-p->nCursor)+1 );
   }
 #endif /* SQLITE_DEBUG */
   for(i=0; i<n; i++){
@@ -2209,7 +2209,7 @@ case OP_Column: {
   pC = 0;
   memset(&sMem, 0, sizeof(sMem));
   assert( p1<p->nCursor );
-  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
   zRec = 0;
@@ -2507,7 +2507,7 @@ case OP_Affinity: {
   assert( zAffinity[pOp->p2]==0 );
   pIn1 = &aMem[pOp->p1];
   while( (cAff = *(zAffinity++))!=0 ){
-    assert( pIn1 <= &p->aMem[p->nMem] );
+    assert( pIn1 <= &p->aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     ExpandBlob(pIn1);
     applyAffinity(pIn1, cAff, encoding);
@@ -2568,7 +2568,7 @@ case OP_MakeRecord: {
   nZero = 0;         /* Number of zero bytes at the end of the record */
   nField = pOp->p1;
   zAffinity = pOp->p4.z;
-  assert( nField>0 && pOp->p2>0 && pOp->p2+nField<=p->nMem+1 );
+  assert( nField>0 && pOp->p2>0 && pOp->p2+nField<=(p->nMem-p->nCursor)+1 );
   pData0 = &aMem[nField];
   nField = pOp->p2;
   pLast = &pData0[nField-1];
@@ -2634,7 +2634,7 @@ case OP_MakeRecord: {
   }
   assert( i==nByte );
 
-  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pOut->n = (int)nByte;
   pOut->flags = MEM_Blob | MEM_Dyn;
   pOut->xDel = 0;
@@ -3214,7 +3214,7 @@ case OP_OpenWrite: {
   }
   if( pOp->p5 & OPFLAG_P2ISREG ){
     assert( p2>0 );
-    assert( p2<=p->nMem );
+    assert( p2<=(p->nMem-p->nCursor) );
     pIn2 = &aMem[p2];
     assert( memIsValid(pIn2) );
     assert( (pIn2->flags & MEM_Int)!=0 );
@@ -3751,7 +3751,7 @@ case OP_IsUnique: {        /* jump, in3 */
   aMx = &aMem[pOp->p4.i];
   /* Assert that the values of parameters P1 and P4 are in range. */
   assert( pOp->p4type==P4_INT32 );
-  assert( pOp->p4.i>0 && pOp->p4.i<=p->nMem );
+  assert( pOp->p4.i>0 && pOp->p4.i<=(p->nMem-p->nCursor) );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
 
   /* Find the index cursor. */
@@ -3954,7 +3954,7 @@ case OP_NewRowid: {           /* out2-prerelease */
           pMem = &pFrame->aMem[pOp->p3];
         }else{
           /* Assert that P3 is a valid memory cell. */
-          assert( pOp->p3<=p->nMem );
+          assert( pOp->p3<=(p->nMem-p->nCursor) );
           pMem = &aMem[pOp->p3];
           memAboutToChange(p, pMem);
         }
@@ -4608,7 +4608,7 @@ case OP_IdxDelete: {
   UnpackedRecord r;
 
   assert( pOp->p3>0 );
-  assert( pOp->p2>0 && pOp->p2+pOp->p3<=p->nMem+1 );
+  assert( pOp->p2>0 && pOp->p2+pOp->p3<=(p->nMem-p->nCursor)+1 );
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
@@ -5017,7 +5017,7 @@ case OP_IntegrityCk: {
   assert( nRoot>0 );
   aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
-  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pnErr = &aMem[pOp->p3];
   assert( (pnErr->flags & MEM_Int)!=0 );
   assert( (pnErr->flags & (MEM_Str|MEM_Blob))==0 );
@@ -5441,7 +5441,7 @@ case OP_AggStep: {
     sqlite3VdbeMemStoreType(pRec);
   }
   ctx.pFunc = pOp->p4.pFunc;
-  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   ctx.pMem = pMem = &aMem[pOp->p3];
   pMem->n++;
   ctx.s.flags = MEM_Null;
@@ -5488,7 +5488,7 @@ case OP_AggStep: {
 */
 case OP_AggFinal: {
   Mem *pMem;
-  assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  assert( pOp->p1>0 && pOp->p1<=(p->nMem-p->nCursor) );
   pMem = &aMem[pOp->p1];
   assert( (pMem->flags & ~(MEM_Null|MEM_Agg))==0 );
   rc = sqlite3VdbeMemFinalize(pMem, pOp->p4.pFunc);
@@ -5905,7 +5905,7 @@ case OP_VColumn: {
 
   VdbeCursor *pCur = p->apCsr[pOp->p1];
   assert( pCur->pVtabCursor );
-  assert( pOp->p3>0 && pOp->p3<=p->nMem );
+  assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
   if( pCur->nullRow ){

@@ -147,6 +147,7 @@ do_execsql_test 3.4 {
   SELECT c FROM t1 WHERE b=3 AND a BETWEEN 30 AND 60;
 } {three-d three-e three-f}
 
+
 #-------------------------------------------------------------------------
 # These tests verify that the sample selection for stat4 appears to be 
 # working as designed.
@@ -255,6 +256,15 @@ do_execsql_test 4.6 {
     ('34', '68', '102', '136', '170', '204', '238', '272')
 } {8}
 
+#-------------------------------------------------------------------------
+# The following would cause a crash at one point.
+#
+reset_db
+do_execsql_test 5.1 {
+  PRAGMA encoding = 'utf-16';
+  CREATE TABLE t0(v);
+  ANALYZE;
+}
 
 finish_test
 
