@@ -1424,8 +1424,9 @@ static int loadStatTbl(
     }
     memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
   }
-  initAvgEq(pPrevIdx);
-  return sqlite3_finalize(pStmt);
+  rc = sqlite3_finalize(pStmt);
+  if( rc==SQLITE_OK ) initAvgEq(pPrevIdx);
+  return rc;
 }
 
 /*
