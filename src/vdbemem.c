@@ -1091,6 +1091,7 @@ int valueFromExpr(
   sqlite3_value *pVal = 0;
   int negInt = 1;
   const char *zNeg = "";
+  int rc = SQLITE_OK;
 
   if( !pExpr ){
     *ppVal = 0;
@@ -1137,7 +1138,7 @@ int valueFromExpr(
     }
     if( pVal->flags & (MEM_Int|MEM_Real) ) pVal->flags &= ~MEM_Str;
     if( enc!=SQLITE_UTF8 ){
-      sqlite3VdbeChangeEncoding(pVal, enc);
+      rc = sqlite3VdbeChangeEncoding(pVal, enc);
     }
   }else if( op==TK_UMINUS ) {
     /* This branch happens for multiple negative signs.  Ex: -(-5) */
@@ -1178,7 +1179,7 @@ int valueFromExpr(
     sqlite3VdbeMemStoreType(pVal);
   }
   *ppVal = pVal;
-  return SQLITE_OK;
+  return rc;
 
 no_mem:
   db->mallocFailed = 1;

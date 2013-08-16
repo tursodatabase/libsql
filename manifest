@@ -1,5 +1,5 @@
-C Add\sextra\stests.\sNo\scode\schanges.
-D 2013-08-16T14:23:02.198
+C Fix\svalueFromExpr()\sso\sthat\sit\sreturns\sSQLITE_NOMEM\sfollowing\san\sOOM\swhen\nchanging\stext\sencodings.\s\sAlso\sfix\ssome\sasserts\sto\saccommodate\sOOM\serrors.
+D 2013-08-16T14:49:00.182
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,14 +283,14 @@ F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
 F src/vdbeaux.c a6ea36a9dc714e1128a0173249a0532ddcab0489
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c c08dd81009fd6708dbb961d8ec7f82549765d680
+F src/vdbemem.c 374c2c80202db87032800653361a63681176e6aa
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c d97b5cb215c2e3e5b172b84000d2f3ee67ca0e86
+F src/where.c 9be69c42a02376c46d44907b38edd70f8a2cea7a
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9f85b6a52a0b9b1524daa6f24d85257e7f591e95
-R 236823b823655ed29e083b8eac1f75f3
-U dan
-Z b297cf1029f061cc4748c85c1d9ef2e3
+P 949127d53e0a907ed6f73c6828637d94b265468c
+R 48e5653eb5a198286249664d90ff2dc2
+U drh
+Z c981aacf279c866f9ae15fcea49df2b7
