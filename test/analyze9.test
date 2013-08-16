@@ -378,11 +378,49 @@ do_execsql_test 8.1 {
   INSERT INTO t1 VALUES('4');
   ANALYZE;
 }
-
-breakpoint
 do_execsql_test 8.2 {
   SELECT * FROM t1 WHERE x = 3;
 } {3}
+
+#-------------------------------------------------------------------------
+# Check that the bug fixed by [91733bc485] really is fixed.
+#
+reset_db
+do_execsql_test 9.1 {
+  CREATE TABLE t1(a, b, c, d, e);
+  CREATE INDEX i1 ON t1(a, b, c, d);
+  CREATE INDEX i2 ON t1(e);
+}
+do_test 9.2 {
+  execsql BEGIN;
+  for {set i 0} {$i < 100} {incr i} {
+    execsql "INSERT INTO t1 VALUES('x', 'y', 'z', $i, [expr $i/2])"
+  }
+  for {set i 0} {$i < 20} {incr i} {
+    execsql "INSERT INTO t1 VALUES('x', 'y', 'z', 101, $i)"
+  }
+  for {set i 102} {$i < 200} {incr i} {
+    execsql "INSERT INTO t1 VALUES('x', 'y', 'z', $i, [expr $i/2])"
+  }
+  execsql COMMIT
+  execsql ANALYZE
+} {}
+
+do_eqp_test 9.3.1 {
+  SELECT * FROM t1 WHERE a='x' AND b='y' AND c='z' AND d=101 AND e=5;
+} {/t1 USING INDEX i2/}
+do_eqp_test 9.3.2 {
+  SELECT * FROM t1 WHERE a='x' AND b='y' AND c='z' AND d=99 AND e=5;
+} {/t1 USING INDEX i1/}
+
+set value_d [expr 101]
+do_eqp_test 9.4.1 {
+  SELECT * FROM t1 WHERE a='x' AND b='y' AND c='z' AND d=$value_d AND e=5
+} {/t1 USING INDEX i2/}
+set value_d [expr 99]
+do_eqp_test 9.4.2 {
+  SELECT * FROM t1 WHERE a='x' AND b='y' AND c='z' AND d=$value_d AND e=5
+} {/t1 USING INDEX i1/}
 
 finish_test
 

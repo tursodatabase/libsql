@@ -1,5 +1,5 @@
-C In\ssqlite3Stat4ProbeSetValue()\schange\sa\slocal\svariable\sname\siVar\sto\siBindVar\nto\savoid\sconfusion\swith\siVal,\sand\sfix\sa\splace\swhere\sthe\sname\swas\sactually\nconfused.
-D 2013-08-16T17:18:02.373
+C Add\sa\stest\sfor\sthe\sproblem\sfixed\sby\s[91733bc485].
+D 2013-08-16T17:46:49.564
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 8a7880f29586581ee124fb787b722227ead47ee8
+F test/analyze9.test 3095a9ebfea4a2b1f9db60375320ae7f219595ba
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b7fe4f362bdf7b233a7b09eb9ce16d296165f82a
-R cab7e60081f3cc3c7528ec9934a95702
-U drh
-Z 9a6aa61e3c8ed44f20601f67504227f9
+P 91733bc4856034c10bc2ba0acdae1970b05d62b9
+R ae06ac9f2ea4ec06a2d42ca5809eb2a5
+U dan
+Z 9e49d814bd14c401a388c6f763be5e56
