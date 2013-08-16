@@ -291,7 +291,7 @@ do_execsql_test 5.1 {
 }
 
 #-------------------------------------------------------------------------
-# This was also crashing.
+# This was also crashing (corrupt sqlite_stat4 table).
 #
 reset_db
 do_execsql_test 6.1 {
@@ -316,6 +316,32 @@ do_execsql_test 6.1 {
 do_execsql_test 6.2 {
   SELECT * FROM t1 WHERE a = 'abc';
 }
+
+#-------------------------------------------------------------------------
+# The following tests experiment with adding corrupted records to the
+# 'sample' column of the sqlite_stat4 table.
+#
+reset_db
+sqlite3_db_config_lookaside db 0 0 0
+
+do_execsql_test 7.1 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a, b);
+  INSERT INTO t1 VALUES(1, 1);
+  INSERT INTO t1 VALUES(2, 2);
+  INSERT INTO t1 VALUES(3, 3);
+  INSERT INTO t1 VALUES(4, 4);
+  INSERT INTO t1 VALUES(5, 5);
+  ANALYZE;
+  UPDATE sqlite_stat4 SET sample = X'' WHERE rowid = 1;
+  ANALYZE sqlite_master;
+}
+
+do_execsql_test 7.2 {
+  UPDATE sqlite_stat4 SET sample = X'FFFF';
+  ANALYZE sqlite_master;
+  SELECT * FROM t1 WHERE a = 1;
+} {1 1}
 
 finish_test
 

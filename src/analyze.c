@@ -1411,18 +1411,25 @@ static int loadStatTbl(
       initAvgEq(pPrevIdx);
       pPrevIdx = pIdx;
     }
-    pSample = &pIdx->aSample[pIdx->nSample++];
+    pSample = &pIdx->aSample[pIdx->nSample];
     decodeIntArray((char*)sqlite3_column_text(pStmt,1), nCol, pSample->anEq, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,2), nCol, pSample->anLt, 0);
     decodeIntArray((char*)sqlite3_column_text(pStmt,3), nCol, pSample->anDLt,0);
 
+    /* Take a copy of the sample. Add two 0x00 bytes the end of the buffer.
+    ** This is in case the sample record is corrupted. In that case, the
+    ** sqlite3VdbeRecordCompare() may read up to two varints past the
+    ** end of the allocated buffer before it realizes it is dealing with
+    ** a corrupt record. Adding the two 0x00 bytes prevents this from causing
+    ** a buffer overread.  */
     pSample->n = sqlite3_column_bytes(pStmt, 4);
-    pSample->p = sqlite3DbMallocZero(db, pSample->n);
+    pSample->p = sqlite3DbMallocZero(db, pSample->n + 2);
     if( pSample->p==0 ){
       sqlite3_finalize(pStmt);
       return SQLITE_NOMEM;
     }
     memcpy(pSample->p, sqlite3_column_blob(pStmt, 4), pSample->n);
+    pIdx->nSample++;
   }
   rc = sqlite3_finalize(pStmt);
   if( rc==SQLITE_OK ) initAvgEq(pPrevIdx);
