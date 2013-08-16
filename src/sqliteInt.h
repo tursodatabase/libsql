@@ -2002,7 +2002,7 @@ struct SrcList {
 struct NameContext {
   Parse *pParse;       /* The parser */
   SrcList *pSrcList;   /* One or more tables used to resolve names */
-  ExprList *pEList;    /* Optional list of named expressions */
+  ExprList *pEList;    /* Optional list of result-set columns */
   AggInfo *pAggInfo;   /* Information about aggregates at this level */
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
@@ -2017,9 +2017,7 @@ struct NameContext {
 #define NC_HasAgg    0x02    /* One or more aggregate functions seen */
 #define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
-#define NC_AsMaybe   0x10    /* Resolve to AS terms of the result set only
-                             ** if no other resolution is available */
-#define NC_PartIdx   0x20    /* True if resolving a partial index WHERE */
+#define NC_PartIdx   0x10    /* True if resolving a partial index WHERE */
 
 /*
 ** An instance of the following structure contains all information
