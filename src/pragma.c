@@ -176,6 +176,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "legacy_file_format",       SQLITE_LegacyFileFmt },
     { "fullfsync",                SQLITE_FullFSync     },
     { "checkpoint_fullfsync",     SQLITE_CkptFullFSync },
+    { "cache_spill",              SQLITE_CacheSpill    },
     { "reverse_unordered_selects", SQLITE_ReverseOrder  },
     { "query_only",               SQLITE_QueryOnly     },
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
@@ -1811,9 +1812,14 @@ void sqlite3Pragma(
   */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
   if( db->autoCommit ){
-    sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level,
-               (db->flags&SQLITE_FullFSync)!=0,
-               (db->flags&SQLITE_CkptFullFSync)!=0);
+    assert( (pDb->safety_level & PAGER_SYNCHRONOUS_MASK)==pDb->safety_level );
+    assert( SQLITE_FullFSync==PAGER_FULLFSYNC );
+    assert( SQLITE_CkptFullFSync==PAGER_CKPT_FULLFSYNC );
+    assert( SQLITE_CacheSpill==PAGER_CACHESPILL );
+    assert( (PAGER_FULLFSYNC | PAGER_CKPT_FULLFSYNC | PAGER_CACHESPILL)
+             ==  PAGER_FLAGS_MASK );
+    sqlite3BtreeSetPagerFlags(pDb->pBt,
+                     pDb->safety_level | (db->flags & PAGER_FLAGS_MASK) );
   }
 #endif
 pragma_out:

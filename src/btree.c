@@ -2165,17 +2165,14 @@ int sqlite3BtreeSetMmapLimit(Btree *p, sqlite3_int64 szMmap){
 ** probability of damage to near zero but with a write performance reduction.
 */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-int sqlite3BtreeSetSafetyLevel(
+int sqlite3BtreeSetPagerFlags(
   Btree *p,              /* The btree to set the safety level on */
-  int level,             /* PRAGMA synchronous.  1=OFF, 2=NORMAL, 3=FULL */
-  int fullSync,          /* PRAGMA fullfsync. */
-  int ckptFullSync       /* PRAGMA checkpoint_fullfync */
+  unsigned pgFlags       /* Various PAGER_* flags */
 ){
   BtShared *pBt = p->pBt;
   assert( sqlite3_mutex_held(p->db->mutex) );
-  assert( level>=1 && level<=3 );
   sqlite3BtreeEnter(p);
-  sqlite3PagerSetSafetyLevel(pBt->pPager, level, fullSync, ckptFullSync);
+  sqlite3PagerSetFlags(pBt->pPager, pgFlags);
   sqlite3BtreeLeave(p);
   return SQLITE_OK;
 }
