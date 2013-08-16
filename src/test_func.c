@@ -496,7 +496,7 @@ static void test_extract(
 
     memset(&mem, 0, sizeof(mem));
     mem.db = db;
-    mem.enc = SQLITE_UTF8;
+    mem.enc = ENC(db);
     pHdr += sqlite3GetVarint(pHdr, &iSerialType);
     pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
     sqlite3VdbeMemStoreType(&mem);
@@ -545,7 +545,7 @@ static void test_decode(
 
     memset(&mem, 0, sizeof(mem));
     mem.db = db;
-    mem.enc = SQLITE_UTF8;
+    mem.enc = ENC(db);
     pHdr += sqlite3GetVarint(pHdr, &iSerialType);
     pBody += sqlite3VdbeSerialGet(pBody, (u32)iSerialType, &mem);
 
