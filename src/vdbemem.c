@@ -1322,12 +1322,12 @@ int sqlite3Stat4ProbeSetValue(
         || (pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
   ){
     Vdbe *v;
-    int iVar = pExpr->iColumn;
-    sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
-    if( (v = pParse->pReprepare) ){
+    int iBindVar = pExpr->iColumn;
+    sqlite3VdbeSetVarmask(pParse->pVdbe, iBindVar);
+    if( (v = pParse->pReprepare)!=0 ){
       pVal = valueNew(pParse->db, &alloc);
       if( pVal ){
-        rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iVal-1]);
+        rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iBindVar-1]);
         if( rc==SQLITE_OK ){
           sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
         }

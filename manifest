@@ -1,5 +1,5 @@
-C Merge\sthe\sfork\sthat\sresulted\sfrom\sa\scheck-in\srace.
-D 2013-08-16T14:51:32.595
+C In\ssqlite3Stat4ProbeSetValue()\schange\sa\slocal\svariable\sname\siVar\sto\siBindVar\nto\savoid\sconfusion\swith\siVal,\sand\sfix\sa\splace\swhere\sthe\sname\swas\sactually\nconfused.
+D 2013-08-16T17:18:02.373
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
 F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
 F src/vdbeaux.c a6ea36a9dc714e1128a0173249a0532ddcab0489
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c 374c2c80202db87032800653361a63681176e6aa
+F src/vdbemem.c 466784a5626d9cf45ed28a187ef809471b8a5675
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dc1ccd09c443cebc4731dbe1a0dea84a9ccf6a9b fe99494d99df95f699ffab07b1e212800b5ff00d
-R d4423f6bfe7897e7f162dd09be03fa9b
+P b7fe4f362bdf7b233a7b09eb9ce16d296165f82a
+R cab7e60081f3cc3c7528ec9934a95702
 U drh
-Z 09d98cea9440e05f9750de825f016c53
+Z 9a6aa61e3c8ed44f20601f67504227f9
