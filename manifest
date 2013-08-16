@@ -1,5 +1,5 @@
-C Avoid\sbuffer\soverreads\sand\sfalse\sOOM\serror\sreports\sthat\scould\sbe\scaused\sby\scorrupted\ssample\srecords\sin\sthe\ssqlite_stat4\stable.
-D 2013-08-16T14:09:43.262
+C Add\sextra\stests.\sNo\scode\schanges.
+D 2013-08-16T14:23:02.198
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test baeb1ac3f2a6ee8bc740721f3e85b84f5ec35002
+F test/analyze9.test 0e25a960081391909659844ac87fdc26542630e4
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0118797823c9093e68113578f3f3aae65de41453
-R be7b1ba9d391582f66fe114108e327e7
+P 9f85b6a52a0b9b1524daa6f24d85257e7f591e95
+R 236823b823655ed29e083b8eac1f75f3
 U dan
-Z daee3e03dcffd75664c2937dc08ce654
+Z b297cf1029f061cc4748c85c1d9ef2e3

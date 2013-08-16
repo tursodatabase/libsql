@@ -343,5 +343,27 @@ do_execsql_test 7.2 {
   SELECT * FROM t1 WHERE a = 1;
 } {1 1}
 
+do_execsql_test 7.3 {
+  ANALYZE;
+  UPDATE sqlite_stat4 SET neq = '0 0 0';
+  ANALYZE sqlite_master;
+  SELECT * FROM t1 WHERE a = 1;
+} {1 1}
+
+do_execsql_test 7.4 {
+  ANALYZE;
+  UPDATE sqlite_stat4 SET ndlt = '0 0 0';
+  ANALYZE sqlite_master;
+  SELECT * FROM t1 WHERE a = 3;
+} {3 3}
+
+do_execsql_test 7.5 {
+  ANALYZE;
+  UPDATE sqlite_stat4 SET nlt = '0 0 0';
+  ANALYZE sqlite_master;
+  SELECT * FROM t1 WHERE a = 5;
+} {5 5}
+
+
 finish_test
 
