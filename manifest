@@ -1,5 +1,5 @@
-C Add\sa\stest\sfor\sthe\sproblem\sfixed\sby\s[91733bc485].
-D 2013-08-16T17:46:49.564
+C Adjustments\sto\s#ifdefs\sin\sanalyze.c\sto\sall\sa\sclean\scompile\swith\sno\nextra\scode\swith\sboth\sENABLE_STAT3\sand\sENABLE_STAT4\sand\swith\sneither.
+D 2013-08-17T18:57:15.775
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c 30dd8962a6b95ed62793dc1e488ddec440c8a589
+F src/analyze.c 10a4f1cda87aec6c56760c66e5feaaf1cdc9a641
 F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 91733bc4856034c10bc2ba0acdae1970b05d62b9
-R ae06ac9f2ea4ec06a2d42ca5809eb2a5
-U dan
-Z 9e49d814bd14c401a388c6f763be5e56
+P 5c591104813a7e55e59f4f557cbb3e500fa817c2
+R fed6486268a39dfc52589cfac215691e
+U drh
+Z ee5235686bd18f87bb4458ce74357891
