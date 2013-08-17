@@ -158,6 +158,34 @@ static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
   sqlite3VdbeAddOp2(v, OP_ResultRow, mem, 1);
 }
 
+
+/*
+** Set the safety_level and pager flags for pager iDb.  Or if iDb<0
+** set these values for all pagers.
+*/
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
+static void setAllPagerFlags(sqlite3 *db){
+  if( db->autoCommit ){
+    Db *pDb = db->aDb;
+    int n = db->nDb;
+    assert( SQLITE_FullFSync==PAGER_FULLFSYNC );
+    assert( SQLITE_CkptFullFSync==PAGER_CKPT_FULLFSYNC );
+    assert( SQLITE_CacheSpill==PAGER_CACHESPILL );
+    assert( (PAGER_FULLFSYNC | PAGER_CKPT_FULLFSYNC | PAGER_CACHESPILL)
+             ==  PAGER_FLAGS_MASK );
+    assert( (pDb->safety_level & PAGER_SYNCHRONOUS_MASK)==pDb->safety_level );
+    while( (n--) > 0 ){
+      if( pDb->pBt ){
+        sqlite3BtreeSetPagerFlags(pDb->pBt,
+                 pDb->safety_level | (db->flags & PAGER_FLAGS_MASK) );
+      }
+      pDb++;
+    }
+  }
+}
+#endif
+
+
 #ifndef SQLITE_OMIT_FLAG_PRAGMAS
 /*
 ** Check to see if zRight and zLeft refer to a pragma that queries
@@ -967,6 +995,7 @@ void sqlite3Pragma(
             "Safety level may not be changed inside a transaction");
       }else{
         pDb->safety_level = getSafetyLevel(zRight,0,1)+1;
+        setAllPagerFlags(db);
       }
     }
   }else
@@ -974,8 +1003,7 @@ void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_FLAG_PRAGMAS
   if( flagPragma(pParse, zLeft, zRight) ){
-    /* The flagPragma() subroutine also generates any necessary code
-    ** there is nothing more to do here */
+    setAllPagerFlags(db);
   }else
 #endif /* SQLITE_OMIT_FLAG_PRAGMAS */
 
@@ -1806,22 +1834,6 @@ void sqlite3Pragma(
  
   {/* Empty ELSE clause */}
 
-  /*
-  ** Reset the safety level, in case the fullfsync flag or synchronous
-  ** setting changed.
-  */
-#ifndef SQLITE_OMIT_PAGER_PRAGMAS
-  if( db->autoCommit ){
-    assert( (pDb->safety_level & PAGER_SYNCHRONOUS_MASK)==pDb->safety_level );
-    assert( SQLITE_FullFSync==PAGER_FULLFSYNC );
-    assert( SQLITE_CkptFullFSync==PAGER_CKPT_FULLFSYNC );
-    assert( SQLITE_CacheSpill==PAGER_CACHESPILL );
-    assert( (PAGER_FULLFSYNC | PAGER_CKPT_FULLFSYNC | PAGER_CACHESPILL)
-             ==  PAGER_FLAGS_MASK );
-    sqlite3BtreeSetPagerFlags(pDb->pBt,
-                     pDb->safety_level | (db->flags & PAGER_FLAGS_MASK) );
-  }
-#endif
 pragma_out:
   sqlite3DbFree(db, zLeft);
   sqlite3DbFree(db, zRight);

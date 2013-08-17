@@ -121,6 +121,7 @@ ifcapable attach {
 #
 db close
 delete_file test.db test.db-journal
+delete_file test2.db test2.db-journal
 sqlite3 db test.db
 do_execsql_test pragma2-4.1 {
   PRAGMA cache_spill;
@@ -147,6 +148,10 @@ do_execsql_test pragma2-4.3 {
   INSERT INTO t1 SELECT a+32, randomblob(400), a+32, randomblob(400) FROM t1;
   INSERT INTO t1 SELECT a+64, randomblob(400), a+64, randomblob(400) FROM t1;
   COMMIT;
+  ATTACH 'test2.db' AS aux1;
+  CREATE TABLE aux1.t2(a INTEGER PRIMARY KEY, b, c, d);
+  INSERT INTO t2 SELECT * FROM t1;
+  DETACH aux1;
   PRAGMA cache_spill=ON;
 } {}
 do_test pragma2-4.4 {
@@ -165,5 +170,25 @@ do_test pragma2-4.5 {
     PRAGMA lock_status;
   }
 } {main reserved temp unknown}   ;# No cache spill, so no exclusive lock
+
+# Verify that newly attached databases inherit the cache_spill=OFF
+# setting.
+#
+do_execsql_test pragma2-4.6 {
+  COMMIT;
+  ATTACH 'test2.db' AS aux1;
+  PRAGMA aux1.cache_size=50;
+  BEGIN;
+  UPDATE t2 SET c=c+1;
+  PRAGMA lock_status;
+} {main unlocked temp unknown aux1 reserved}
+do_execsql_test pragma2-4.7 {
+  COMMIT;
+  PRAGMA cache_spill=ON; -- Applies to all databases
+  BEGIN;
+  UPDATE t2 SET c=c-1;
+  PRAGMA lock_status;
+} {main unlocked temp unknown aux1 exclusive}
+   
 
 finish_test
