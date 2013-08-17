@@ -1,5 +1,5 @@
-C Add\sthe\scache_spill\spragma.
-D 2013-08-16T20:42:20.550
+C Test\scases\sfor\sthe\scache_spill\spragma.
+D 2013-08-17T00:25:07.417
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -716,7 +716,7 @@ F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 461ef4ea10db02cd421dfe5f988eac3e99b5cd9a
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
-F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
+F test/pragma2.test 5bc62f356ad2ea64ec2b931fd4189485c9518d58
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 552dc1edc37333a8d3098b8c26a2b7f06f5799d7
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1105,10 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f2d175f975cd0be63425424ec322a98fb650019e
-R 51784bade3c91fc13297b6a9e11bfbe0
-T *branch * cache_spill
-T *sym-cache_spill *
-T -sym-trunk *
+P cdb181c04fa99c6c29f23eb68ccb5475e7f6bf9c
+R 4fb024de498b67ffd161eb735de52cba
 U drh
-Z 6759e9990b6aac3480039cd24c99d255
+Z e0fbe7fca060e30f944a0c3b1b2c8e44
