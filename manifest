@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sGROUP\sBY\sterms\sselect\sinput\scolumn\snames\sin\spreference\sto\noutput\scolumn\snames,\sin\scompliance\swith\sthe\sSQL\sstandard.\nTicket\s[1c69be2dafc28].
-D 2013-08-15T22:40:21.803
+C Add\sthe\scache_spill\spragma.\s\sChange\sthe\sfullfsync\sand\scheckpoint_fullfsync\npragmas\sto\sapply\sto\sall\sattached\sdatabases.
+D 2013-08-17T16:37:04.194
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,13 +158,13 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c a33fcb0b3a399d966951feb9f32115106b3ecc2e
-F src/attach.c 1816f5a9eea8d2010fc2b22b44f0f63eb3a62704
+F src/attach.c 5df737912f668fd160ec1d560755f85fdccbe5b7
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 3f7bbfd72efb1cbf6a49515c376a031767ec930a
-F src/btree.h 6fa8a3ff2483d0bb64a9f0105a8cedeac9e00cca
+F src/btree.c 9b985e4f334a1b3df5733e2ac2de1de9bdd41be7
+F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c cee4724668ebc09bb482c1be30f96e0ae2474f9b
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 4e4cd5c2ee09db496c0dde79b507bba6b8bcbdcb
+F src/main.c dc02c7c118d58049e0cccc6c9c47c0a4d3e2bcda
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -204,13 +204,13 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
 F src/os_win.c 1d84f2079d9b91f91a4b5dbfa5e08f1b1a0ed0ff
-F src/pager.c 5d2f7475260a8588f9c441bb309d2b7eaa7ded3b
-F src/pager.h 5cb78b8e1adfd5451e600be7719f5a99d87ac3b1
+F src/pager.c 7c999137cb940133f7fc7609ccfa66f17eec4ab4
+F src/pager.h 66e42d6942a445d4c25651733ab2079dbebc7ca9
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c d23d07716de96c7c0c2503ec5051a4384c3fb938
-F src/pragma.c 590c75750d93ec5a1f903e4bb0dc6d2a0845bf8b
+F src/pragma.c 1d96ba749253b49bc229c6294f9c2e5ef3dca85c
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -221,7 +221,7 @@ F src/shell.c 927e17b37b63b24461e372d982138fb22c4df321
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h b2a4e9a85e4bb49c1537fe7fc6532cd7ebe82aa0
+F src/sqliteInt.h eae58298bc7c9a491ad2fc6c600f534b74be8a11
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -716,7 +716,7 @@ F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 461ef4ea10db02cd421dfe5f988eac3e99b5cd9a
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
-F test/pragma2.test 3a55f82b954242c642f8342b17dffc8b47472947
+F test/pragma2.test 76e4a54cd4677966e4e75f8a7fe86ccbc250de2a
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 552dc1edc37333a8d3098b8c26a2b7f06f5799d7
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c78b357c00a35ed48ce2ffbc041de8d22570d1e2
-R 0cad26d57aaadc86e4d0689961c53035
+P f2d175f975cd0be63425424ec322a98fb650019e d07c4331a28d44deca1ece8a34118f5b121b3ee2
+R 54aea7d44f4215ed05dbd991004edc4d
 U drh
-Z 9ac8068bb659c66e2e7c0f0532626e1f
+Z c8787901468f9008ef7d70e55d347b83
