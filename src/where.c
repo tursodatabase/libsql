@@ -4482,6 +4482,7 @@ static Bitmask columnsInIndex(Index *pIdx){
   int j;
   for(j=pIdx->nColumn-1; j>=0; j--){
     int x = pIdx->aiColumn[j];
+    assert( x>=0 );
     testcase( x==BMS-1 );
     testcase( x==BMS-2 );
     if( x<BMS-1 ) m |= MASKBIT(x);

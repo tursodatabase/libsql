@@ -1,5 +1,5 @@
-C Fix\stest\sscript\spragma2.test\sso\sthat\sit\sworks\swith\sENABLE_MEMORY_MANAGEMENT.
-D 2013-08-19T18:37:18.023
+C Initialize\sa\svariable\sin\sfts3_write.c\son\sthe\sgrounds\sthat\sthe\sargument\srequired\sto\sshow\sthat\sit\sdoes\snot\srequire\sinitialization\swith\sis\scomplicated.\sAdd\san\sassert()\sto\swhere.c\sto\ssilence\sa\sclang\sscan-build\swarning.
+D 2013-08-19T19:29:50.054
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 24a8e41cb9c768cadc54793ebea9a391c3234c3c
+F ext/fts3/fts3_write.c edf39aea5d45080195f6b38aa5efee3804716dd0
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c be91b3d1100371d7fa833243dde4b5f899db1b4f
+F src/where.c 03a50ecb2f4f02b5492d669a84875947b56b8906
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1c63e9515b5f5cb9169928b108d002dcd18ad4fd
-R 06c493aae68ef34ba60e479e4dd5c45b
+P 6acf728100ff339e4451bcefd3a20fd5c3cfd662
+R 04d95b1d185bb312b5df2b1601ef3c41
 U dan
-Z 50a963f89c7b22f22aa58ed3692e5f1a
+Z 961c1b76543606f34c9568d704cceb59

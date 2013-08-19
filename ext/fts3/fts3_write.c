@@ -2848,7 +2848,7 @@ int sqlite3Fts3SegReaderStep(
       fts3SegReaderSort(apSegment, nMerge, nMerge, xCmp);
       while( apSegment[0]->pOffsetList ){
         int j;                    /* Number of segments that share a docid */
-        char *pList;
+        char *pList = 0;
         int nList = 0;
         int nByte;
         sqlite3_int64 iDocid = apSegment[0]->iDocid;
