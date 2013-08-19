@@ -6242,6 +6242,7 @@ vdbe_error_halt:
   ** top. */
 vdbe_return:
   db->lastRowid = lastRowid;
+  testcase( nVmStep>0 );
   p->aCounter[SQLITE_STMTSTATUS_VM_STEP-1] += (int)nVmStep;
   sqlite3VdbeLeave(p);
   return rc;

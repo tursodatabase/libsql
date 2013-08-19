@@ -2902,6 +2902,7 @@ static int process_input(struct callback_data *p, FILE *in){
     if( nSql==0 ){
       int i;
       for(i=0; zLine[i] && IsSpace(zLine[i]); i++){}
+      assert( nAlloc>0 && zSql!=0 );
       memcpy(zSql, zLine+i, nLine+1-i);
       startline = lineno;
       nSql = nLine-i;

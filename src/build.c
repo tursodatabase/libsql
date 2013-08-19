@@ -2866,7 +2866,7 @@ Index *sqlite3CreateIndex(
     ** the zStmt variable
     */
     if( pStart ){
-      int n = (pParse->sLastToken.z - pName->z) + pParse->sLastToken.n;
+      int n = (int)(pParse->sLastToken.z - pName->z) + pParse->sLastToken.n;
       if( pName->z[n-1]==';' ) n--;
       /* A named index with an explicit CREATE INDEX statement */
       zStmt = sqlite3MPrintf(db, "CREATE%s INDEX %.*s",
