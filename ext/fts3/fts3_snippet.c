@@ -504,6 +504,7 @@ static int fts3StringAppend(
     pStr->z = zNew;
     pStr->nAlloc = nAlloc;
   }
+  assert( pStr->z!=0 && (pStr->nAlloc >= pStr->n+nAppend+1) );
 
   /* Append the data to the string buffer. */
   memcpy(&pStr->z[pStr->n], zAppend, nAppend);

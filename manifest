@@ -1,5 +1,5 @@
-C Remove\sunused\svariables\sfrom\sthe\scommand-line\sshell\ssources.
-D 2013-08-19T14:23:31.349
+C Add\ssome\sextra\sassert()\sstatements\sto\ssilence\sa\sfew\sclang\swarnings.
+D 2013-08-19T18:17:03.610
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -87,7 +87,7 @@ F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
 F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
-F ext/fts3/fts3_snippet.c 5fcfcafff46a2a3a63b8e59fcb51987d01c74695
+F ext/fts3/fts3_snippet.c e8ee8c101dd9cfbc9568d134e869d2bd2f7f6d4d
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c f9a1a1702db1bfad3e2d0064746eeb808f125489
 F ext/fts3/fts3_tokenize_vtab.c 011170fe9eba5ff062f1a31d3188e00267716706
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c cd264daa4f92b8eb6d61245333d0e3b147e8fd80
+F ext/fts3/fts3_write.c 24a8e41cb9c768cadc54793ebea9a391c3234c3c
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -172,7 +172,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 2317c814866d9aa71fea16b3faf4fdd4d6a49b94
-F src/expr.c 0bbb44462a19169189b2709fbbd800950521b5ae
+F src/expr.c 42d8235af422661ab80be097bebca485b33e2e14
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 914a6bbd987d857c41ac9d244efa6641f36faadb
 F src/func.c 5c50c1ea31fd864b0fe921fe1a8d4c55acd609ef
@@ -209,7 +209,7 @@ F src/pager.h 66e42d6942a445d4c25651733ab2079dbebc7ca9
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
-F src/pcache1.c d23d07716de96c7c0c2503ec5051a4384c3fb938
+F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
 F src/pragma.c 1d96ba749253b49bc229c6294f9c2e5ef3dca85c
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
@@ -535,7 +535,7 @@ F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
-F test/fts3matchinfo.test 3f297e14e3f0d5be8595246f5fcd426625cc5881
+F test/fts3matchinfo.test ff423e73faab8fc6d7adeefedf74dd8e2b0b14e0
 F test/fts3near.test 12895557870b0f9af7cc0be81a0171abb2d12f12
 F test/fts3prefix.test b36d4f00b128a51e7b386cc013a874246d9d7dc1
 F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f15591f80212dd6d4ed8e0f14be691cd578d4cdf
-R 9c030b59ca6c7b004962232334825609
-U drh
-Z e653d3f7b54e043afda16dc501f1f202
+P 753a402e90f3c9f675155ea96ee048dbe7a68700
+R 77bd0388559c41534c1c609bdbf880a7
+U dan
+Z 75015047bd5c60c371893919a96d2743

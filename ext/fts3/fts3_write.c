@@ -1461,7 +1461,7 @@ static int fts3SegReaderNextDocid(
       /* The following line of code (and the "p++" below the while() loop) is
       ** normally all that is required to move pointer p to the desired 
       ** position. The exception is if this node is being loaded from disk
-      ** incrementally and pointer "p" now points to the first byte passed
+      ** incrementally and pointer "p" now points to the first byte past
       ** the populated part of pReader->aNode[].
       */
       while( *p | c ) c = *p++ & 0x80;
@@ -2849,7 +2849,7 @@ int sqlite3Fts3SegReaderStep(
       while( apSegment[0]->pOffsetList ){
         int j;                    /* Number of segments that share a docid */
         char *pList;
-        int nList;
+        int nList = 0;
         int nByte;
         sqlite3_int64 iDocid = apSegment[0]->iDocid;
         fts3SegReaderNextDocid(p, apSegment[0], &pList, &nList);

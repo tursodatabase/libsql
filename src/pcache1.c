@@ -765,6 +765,7 @@ static sqlite3_pcache_page *pcache1Fetch(
   if( pCache->nPage>=pCache->nHash && pcache1ResizeHash(pCache) ){
     goto fetch_out;
   }
+  assert( pCache->nHash>0 && pCache->apHash );
 
   /* Step 4. Try to recycle a page. */
   if( pCache->bPurgeable && pGroup->pLruTail && (
