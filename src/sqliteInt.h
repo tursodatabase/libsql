@@ -980,32 +980,33 @@ struct sqlite3 {
 */
 #define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
 #define SQLITE_InternChanges  0x00000002  /* Uncommitted Hash table changes */
-#define SQLITE_FullColNames   0x00000004  /* Show full column names on SELECT */
-#define SQLITE_ShortColNames  0x00000008  /* Show short columns names */
-#define SQLITE_CountRows      0x00000010  /* Count rows changed by INSERT, */
+#define SQLITE_FullFSync      0x00000004  /* Use full fsync on the backend */
+#define SQLITE_CkptFullFSync  0x00000008  /* Use full fsync for checkpoint */
+#define SQLITE_CacheSpill     0x00000010  /* OK to spill pager cache */
+#define SQLITE_FullColNames   0x00000020  /* Show full column names on SELECT */
+#define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
+#define SQLITE_CountRows      0x00000080  /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
-#define SQLITE_NullCallback   0x00000020  /* Invoke the callback once if the */
+#define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
                                           /*   result set is empty */
-#define SQLITE_SqlTrace       0x00000040  /* Debug print SQL as it executes */
-#define SQLITE_VdbeListing    0x00000080  /* Debug listings of VDBE programs */
-#define SQLITE_WriteSchema    0x00000100  /* OK to update SQLITE_MASTER */
-#define SQLITE_VdbeAddopTrace 0x00000200  /* Trace sqlite3VdbeAddOp() calls */
-#define SQLITE_IgnoreChecks   0x00000400  /* Do not enforce check constraints */
-#define SQLITE_ReadUncommitted 0x0000800  /* For shared-cache mode */
-#define SQLITE_LegacyFileFmt  0x00001000  /* Create new databases in format 1 */
-#define SQLITE_FullFSync      0x00002000  /* Use full fsync on the backend */
-#define SQLITE_CkptFullFSync  0x00004000  /* Use full fsync for checkpoint */
-#define SQLITE_RecoveryMode   0x00008000  /* Ignore schema errors */
-#define SQLITE_ReverseOrder   0x00010000  /* Reverse unordered SELECTs */
-#define SQLITE_RecTriggers    0x00020000  /* Enable recursive triggers */
-#define SQLITE_ForeignKeys    0x00040000  /* Enforce foreign key constraints  */
-#define SQLITE_AutoIndex      0x00080000  /* Enable automatic indexes */
-#define SQLITE_PreferBuiltin  0x00100000  /* Preference to built-in funcs */
-#define SQLITE_LoadExtension  0x00200000  /* Enable load_extension */
-#define SQLITE_EnableTrigger  0x00400000  /* True to enable triggers */
-#define SQLITE_DeferFKs       0x00800000  /* Defer all FK constraints */
-#define SQLITE_QueryOnly      0x01000000  /* Disable database changes */
+#define SQLITE_SqlTrace       0x00000200  /* Debug print SQL as it executes */
+#define SQLITE_VdbeListing    0x00000400  /* Debug listings of VDBE programs */
+#define SQLITE_WriteSchema    0x00000800  /* OK to update SQLITE_MASTER */
+#define SQLITE_VdbeAddopTrace 0x00001000  /* Trace sqlite3VdbeAddOp() calls */
+#define SQLITE_IgnoreChecks   0x00002000  /* Do not enforce check constraints */
+#define SQLITE_ReadUncommitted 0x0004000  /* For shared-cache mode */
+#define SQLITE_LegacyFileFmt  0x00008000  /* Create new databases in format 1 */
+#define SQLITE_RecoveryMode   0x00010000  /* Ignore schema errors */
+#define SQLITE_ReverseOrder   0x00020000  /* Reverse unordered SELECTs */
+#define SQLITE_RecTriggers    0x00040000  /* Enable recursive triggers */
+#define SQLITE_ForeignKeys    0x00080000  /* Enforce foreign key constraints  */
+#define SQLITE_AutoIndex      0x00100000  /* Enable automatic indexes */
+#define SQLITE_PreferBuiltin  0x00200000  /* Preference to built-in funcs */
+#define SQLITE_LoadExtension  0x00400000  /* Enable load_extension */
+#define SQLITE_EnableTrigger  0x00800000  /* True to enable triggers */
+#define SQLITE_DeferFKs       0x01000000  /* Defer all FK constraints */
+#define SQLITE_QueryOnly      0x02000000  /* Disable database changes */
 
 
 /*
@@ -2014,7 +2015,7 @@ struct SrcList {
 struct NameContext {
   Parse *pParse;       /* The parser */
   SrcList *pSrcList;   /* One or more tables used to resolve names */
-  ExprList *pEList;    /* Optional list of named expressions */
+  ExprList *pEList;    /* Optional list of result-set columns */
   AggInfo *pAggInfo;   /* Information about aggregates at this level */
   NameContext *pNext;  /* Next outer name context.  NULL for outermost */
   int nRef;            /* Number of names resolved by this context */
@@ -2029,9 +2030,7 @@ struct NameContext {
 #define NC_HasAgg    0x02    /* One or more aggregate functions seen */
 #define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
-#define NC_AsMaybe   0x10    /* Resolve to AS terms of the result set only
-                             ** if no other resolution is available */
-#define NC_PartIdx   0x20    /* True if resolving a partial index WHERE */
+#define NC_PartIdx   0x10    /* True if resolving a partial index WHERE */
 
 /*
 ** An instance of the following structure contains all information

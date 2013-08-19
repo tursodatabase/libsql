@@ -33,7 +33,7 @@
 # define WHERETRACE(K,X)
 #endif
 
-/* Forward reference
+/* Forward references
 */
 typedef struct WhereClause WhereClause;
 typedef struct WhereMaskSet WhereMaskSet;
@@ -55,14 +55,15 @@ typedef struct WhereOrSet WhereOrSet;
 ** So all costs can be stored in a 16-bit unsigned integer without risk
 ** of overflow.
 **
-** Costs are estimates, so don't go to the computational trouble to compute
-** 10*log2(X) exactly.  Instead, a close estimate is used.  Any value of
-** X<=1 is stored as 0.  X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
+** Costs are estimates, so no effort is made to compute 10*log2(X) exactly.
+** Instead, a close estimate is used.  Any value of X<=1 is stored as 0.
+** X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
 **
 ** The tool/wherecosttest.c source file implements a command-line program
-** that will convert between WhereCost to integers and do addition and
-** multiplication on WhereCost values.  That command-line program is a
-** useful utility to have around when working with this module.
+** that will convert WhereCosts to integers, convert integers to WhereCosts
+** and do addition and multiplication on WhereCost values.  The wherecosttest
+** command-line program is a useful utility to have around when working with
+** this module.
 */
 typedef unsigned short int WhereCost;
 
@@ -165,8 +166,8 @@ struct WhereOrCost {
 };
 
 /* The WhereOrSet object holds a set of possible WhereOrCosts that
-** correspond to the subquery(s) of OR-clause processing.  At most
-** favorable N_OR_COST elements are retained.
+** correspond to the subquery(s) of OR-clause processing.  Only the
+** best N_OR_COST elements are retained.
 */
 #define N_OR_COST 3
 struct WhereOrSet {
@@ -232,9 +233,9 @@ struct WherePath {
 **
 **         (t1.X <op> <expr>) OR (t1.Y <op> <expr>) OR ....
 **
-** In this second case, wtFlag as the TERM_ORINFO set and eOperator==WO_OR
+** In this second case, wtFlag has the TERM_ORINFO bit set and eOperator==WO_OR
 ** and the WhereTerm.u.pOrInfo field points to auxiliary information that
-** is collected about the
+** is collected about the OR clause.
 **
 ** If a term in the WHERE clause does not match either of the two previous
 ** categories, then eOperator==0.  The WhereTerm.pExpr field is still set
@@ -746,7 +747,7 @@ static void createMask(WhereMaskSet *pMaskSet, int iCursor){
 }
 
 /*
-** These routine walk (recursively) an expression tree and generates
+** These routines walk (recursively) an expression tree and generate
 ** a bitmask indicating which tables are used in that expression
 ** tree.
 */
@@ -1263,10 +1264,10 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 ** From another point of view, "indexable" means that the subterm could
 ** potentially be used with an index if an appropriate index exists.
 ** This analysis does not consider whether or not the index exists; that
-** is something the bestIndex() routine will determine.  This analysis
-** only looks at whether subterms appropriate for indexing exist.
+** is decided elsewhere.  This analysis only looks at whether subterms
+** appropriate for indexing exist.
 **
-** All examples A through E above all satisfy case 2.  But if a term
+** All examples A through E above satisfy case 2.  But if a term
 ** also statisfies case 1 (such as B) we know that the optimizer will
 ** always prefer case 1, so in that case we pretend that case 2 is not
 ** satisfied.
@@ -1933,7 +1934,7 @@ static int isDistinctRedundant(
 }
 
 /* 
-** The (an approximate) sum of two WhereCosts.  This computation is
+** Find (an approximate) sum of two WhereCosts.  This computation is
 ** not a simple "+" operator because WhereCost is stored as a logarithmic
 ** value.
 ** 
@@ -4854,6 +4855,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   if( pWInfo->wctrlFlags & WHERE_AND_ONLY ) return SQLITE_OK;
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
+  memset(&sSum, 0, sizeof(sSum));
 
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
     if( (pTerm->eOperator & WO_OR)!=0

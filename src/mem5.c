@@ -130,13 +130,13 @@ static SQLITE_WSD struct Mem5Global {
 } mem5;
 
 /*
-** Access the static variable through a macro for SQLITE_OMIT_WSD
+** Access the static variable through a macro for SQLITE_OMIT_WSD.
 */
 #define mem5 GLOBAL(struct Mem5Global, mem5)
 
 /*
 ** Assuming mem5.zPool is divided up into an array of Mem5Link
-** structures, return a pointer to the idx-th such lik.
+** structures, return a pointer to the idx-th such link.
 */
 #define MEM5LINK(idx) ((Mem5Link *)(&mem5.zPool[(idx)*mem5.szAtom]))
 
@@ -232,7 +232,7 @@ static int memsys5UnlinkFirst(int iLogsize){
 ** Return a block of memory of at least nBytes in size.
 ** Return NULL if unable.  Return NULL if nBytes==0.
 **
-** The caller guarantees that nByte positive.
+** The caller guarantees that nByte is positive.
 **
 ** The caller has obtained a mutex prior to invoking this
 ** routine so there is never any chance that two or more
@@ -354,7 +354,7 @@ static void memsys5FreeUnsafe(void *pOld){
 }
 
 /*
-** Allocate nBytes of memory
+** Allocate nBytes of memory.
 */
 static void *memsys5Malloc(int nBytes){
   sqlite3_int64 *p = 0;

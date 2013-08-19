@@ -7323,4 +7323,4 @@ SQLITE_EXPERIMENTAL int sqlite3_preupdate_new(sqlite3 *, int, sqlite3_value **);
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
 #endif
-#endif
+#endif /* _SQLITE3_H_ */

@@ -454,6 +454,13 @@ struct PagerSavepoint {
 };
 
 /*
+** Bits of the Pager.doNotSpill flag.  See further description below.
+*/
+#define SPILLFLAG_OFF         0x01      /* Never spill cache.  Set via pragma */
+#define SPILLFLAG_ROLLBACK    0x02      /* Current rolling back, so do not spill */
+#define SPILLFLAG_NOSYNC      0x04      /* Spill is ok, but do not sync */
+
+/*
 ** A open page cache is an instance of struct Pager. A description of
 ** some of the more important member variables follows:
 **
@@ -519,19 +526,21 @@ struct PagerSavepoint {
 **   journal file from being successfully finalized, the setMaster flag
 **   is cleared anyway (and the pager will move to ERROR state).
 **
-** doNotSpill, doNotSyncSpill
+** doNotSpill
 **
-**   These two boolean variables control the behavior of cache-spills
-**   (calls made by the pcache module to the pagerStress() routine to
-**   write cached data to the file-system in order to free up memory).
+**   This variables control the behavior of cache-spills  (calls made by
+**   the pcache module to the pagerStress() routine to write cached data
+**   to the file-system in order to free up memory).
 **
-**   When doNotSpill is non-zero, writing to the database from pagerStress()
-**   is disabled altogether. This is done in a very obscure case that
+**   When bits SPILLFLAG_OFF or SPILLFLAG_ROLLBACK of doNotSpill are set,
+**   writing to the database from pagerStress() is disabled altogether.
+**   The SPILLFLAG_ROLLBACK case is done in a very obscure case that
 **   comes up during savepoint rollback that requires the pcache module
 **   to allocate a new page to prevent the journal file from being written
-**   while it is being traversed by code in pager_playback().
+**   while it is being traversed by code in pager_playback().  The SPILLFLAG_OFF
+**   case is a user preference.
 ** 
-**   If doNotSyncSpill is non-zero, writing to the database from pagerStress()
+**   If the SPILLFLAG_NOSYNC bit is set, writing to the database from pagerStress()
 **   is permitted, but syncing the journal file is not. This flag is set
 **   by sqlite3PagerWrite() when the file-system sector-size is larger than
 **   the database page-size in order to prevent a journal sync from happening 
@@ -635,7 +644,6 @@ struct Pager {
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
   u8 doNotSpill;              /* Do not spill the cache when non-zero */
-  u8 doNotSyncSpill;          /* Do not do a spill that requires jrnl sync */
   u8 subjInMemory;            /* True to use in-memory sub-journals */
   Pgno dbSize;                /* Number of pages in the database */
   Pgno dbOrigSize;            /* dbSize before the current transaction */
@@ -2295,11 +2303,11 @@ static int pager_playback_one_page(
     ** requiring a journal-sync before it is written.
     */
     assert( isSavepnt );
-    assert( pPager->doNotSpill==0 );
-    pPager->doNotSpill++;
+    assert( (pPager->doNotSpill & SPILLFLAG_ROLLBACK)==0 );
+    pPager->doNotSpill |= SPILLFLAG_ROLLBACK;
     rc = sqlite3PagerAcquire(pPager, pgno, &pPg, 1);
-    assert( pPager->doNotSpill==1 );
-    pPager->doNotSpill--;
+    assert( (pPager->doNotSpill & SPILLFLAG_ROLLBACK)!=0 );
+    pPager->doNotSpill &= ~SPILLFLAG_ROLLBACK;
     if( rc!=SQLITE_OK ) return rc;
     pPg->flags &= ~PGHDR_NEED_READ;
     sqlite3PcacheMakeDirty(pPg);
@@ -3404,9 +3412,12 @@ void sqlite3PagerShrink(Pager *pPager){
 }
 
 /*
-** Adjust the robustness of the database to damage due to OS crashes
-** or power failures by changing the number of syncs()s when writing
-** the rollback journal.  There are three levels:
+** Adjust settings of the pager to those specified in the pgFlags parameter.
+**
+** The "level" in pgFlags & PAGER_SYNCHRONOUS_MASK sets the robustness
+** of the database to damage due to OS crashes or power failures by
+** changing the number of syncs()s when writing the journals.
+** There are three levels:
 **
 **    OFF       sqlite3OsSync() is never called.  This is the default
 **              for temporary and transient files.
@@ -3447,22 +3458,21 @@ void sqlite3PagerShrink(Pager *pPager){
 ** and FULL=3.
 */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-void sqlite3PagerSetSafetyLevel(
+void sqlite3PagerSetFlags(
   Pager *pPager,        /* The pager to set safety level for */
-  int level,            /* PRAGMA synchronous.  1=OFF, 2=NORMAL, 3=FULL */  
-  int bFullFsync,       /* PRAGMA fullfsync */
-  int bCkptFullFsync    /* PRAGMA checkpoint_fullfsync */
+  unsigned pgFlags      /* Various flags */
 ){
+  unsigned level = pgFlags & PAGER_SYNCHRONOUS_MASK;
   assert( level>=1 && level<=3 );
   pPager->noSync =  (level==1 || pPager->tempFile) ?1:0;
   pPager->fullSync = (level==3 && !pPager->tempFile) ?1:0;
   if( pPager->noSync ){
     pPager->syncFlags = 0;
     pPager->ckptSyncFlags = 0;
-  }else if( bFullFsync ){
+  }else if( pgFlags & PAGER_FULLFSYNC ){
     pPager->syncFlags = SQLITE_SYNC_FULL;
     pPager->ckptSyncFlags = SQLITE_SYNC_FULL;
-  }else if( bCkptFullFsync ){
+  }else if( pgFlags & PAGER_CKPT_FULLFSYNC ){
     pPager->syncFlags = SQLITE_SYNC_NORMAL;
     pPager->ckptSyncFlags = SQLITE_SYNC_FULL;
   }else{
@@ -3472,6 +3482,11 @@ void sqlite3PagerSetSafetyLevel(
   pPager->walSyncFlags = pPager->syncFlags;
   if( pPager->fullSync ){
     pPager->walSyncFlags |= WAL_SYNC_TRANSACTIONS;
+  }
+  if( pgFlags & PAGER_CACHESPILL ){
+    pPager->doNotSpill &= ~SPILLFLAG_OFF;
+  }else{
+    pPager->doNotSpill |= SPILLFLAG_OFF;
   }
 }
 #endif
@@ -4373,13 +4388,14 @@ static int pagerStress(void *p, PgHdr *pPg){
   assert( pPg->pPager==pPager );
   assert( pPg->flags&PGHDR_DIRTY );
 
-  /* The doNotSyncSpill flag is set during times when doing a sync of
+  /* The doNotSpill NOSYNC bit is set during times when doing a sync of
   ** journal (and adding a new header) is not allowed.  This occurs
   ** during calls to sqlite3PagerWrite() while trying to journal multiple
   ** pages belonging to the same sector.
   **
-  ** The doNotSpill flag inhibits all cache spilling regardless of whether
-  ** or not a sync is required.  This is set during a rollback.
+  ** The doNotSpill ROLLBACK and OFF bits inhibits all cache spilling
+  ** regardless of whether or not a sync is required.  This is set during
+  ** a rollback or by user request, respectively.
   **
   ** Spilling is also prohibited when in an error state since that could
   ** lead to database corruption.   In the current implementaton it 
@@ -4389,8 +4405,13 @@ static int pagerStress(void *p, PgHdr *pPg){
   ** test for the error state as a safeguard against future changes.
   */
   if( NEVER(pPager->errCode) ) return SQLITE_OK;
-  if( pPager->doNotSpill ) return SQLITE_OK;
-  if( pPager->doNotSyncSpill && (pPg->flags & PGHDR_NEED_SYNC)!=0 ){
+  testcase( pPager->doNotSpill & SPILLFLAG_ROLLBACK );
+  testcase( pPager->doNotSpill & SPILLFLAG_OFF );
+  testcase( pPager->doNotSpill & SPILLFLAG_NOSYNC );
+  if( pPager->doNotSpill
+   && ((pPager->doNotSpill & (SPILLFLAG_ROLLBACK|SPILLFLAG_OFF))!=0
+      || (pPg->flags & PGHDR_NEED_SYNC)!=0)
+  ){
     return SQLITE_OK;
   }
 
@@ -5744,13 +5765,13 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     int ii;                   /* Loop counter */
     int needSync = 0;         /* True if any page has PGHDR_NEED_SYNC */
 
-    /* Set the doNotSyncSpill flag to 1. This is because we cannot allow
+    /* Set the doNotSpill NOSYNC bit to 1. This is because we cannot allow
     ** a journal header to be written between the pages journaled by
     ** this function.
     */
     assert( !MEMDB );
-    assert( pPager->doNotSyncSpill==0 );
-    pPager->doNotSyncSpill++;
+    assert( (pPager->doNotSpill & SPILLFLAG_NOSYNC)==0 );
+    pPager->doNotSpill |= SPILLFLAG_NOSYNC;
 
     /* This trick assumes that both the page-size and sector-size are
     ** an integer power of 2. It sets variable pg1 to the identifier
@@ -5809,8 +5830,8 @@ int sqlite3PagerWrite(DbPage *pDbPage){
       }
     }
 
-    assert( pPager->doNotSyncSpill==1 );
-    pPager->doNotSyncSpill--;
+    assert( (pPager->doNotSpill & SPILLFLAG_NOSYNC)!=0 );
+    pPager->doNotSpill &= ~SPILLFLAG_NOSYNC;
   }else{
     rc = pager_write(pDbPage);
   }
