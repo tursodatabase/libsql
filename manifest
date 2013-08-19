@@ -1,5 +1,5 @@
-C Initialize\sa\svariable\sin\sfts3_write.c\son\sthe\sgrounds\sthat\sthe\sargument\srequired\sto\sshow\sthat\sit\sdoes\snot\srequire\sinitialization\swith\sis\scomplicated.\sAdd\san\sassert()\sto\swhere.c\sto\ssilence\sa\sclang\sscan-build\swarning.
-D 2013-08-19T19:29:50.054
+C Performance\simprovement\sin\ssqlite3BtreeNext()\sand\ssqlite3BtreePrevious()\nfor\sthe\scommon\scase\sof\sa\svalid\scursor.
+D 2013-08-19T20:04:10.623
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 9b985e4f334a1b3df5733e2ac2de1de9bdd41be7
+F src/btree.c 78287b3012fe65fd5e38927d40c01e01a783e016
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
 F src/build.c f99a715ff9290996b579d5e1ec8e94239dc9ae5e
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6acf728100ff339e4451bcefd3a20fd5c3cfd662
-R 04d95b1d185bb312b5df2b1601ef3c41
-U dan
-Z 961c1b76543606f34c9568d704cceb59
+P d6c4d48a002a6d7057fccc30064ce0b049678f0c
+R 5570190c517979d35e3b41a2553566a9
+U drh
+Z 8413b4240dd170b2f74e62b701d0cb1c
