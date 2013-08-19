@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sreference\soff\sthe\send\sof\san\sarray\sin\sthe\squery\splanner.
-D 2013-08-19T14:19:00.852
+C Remove\sunused\svariables\sfrom\sthe\scommand-line\sshell\ssources.
+D 2013-08-19T14:23:31.349
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
-F src/shell.c 909f6c4a52c8e0265ce0048e2b3cbadda1bd6051
+F src/shell.c 1c317a4c96d61d8d9fdad9fd1811d9b10b8c7f57
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a0d9ca4f07f1dc3a189864f8ed9cdb0b1d791b1a
-R 7814fe8b877f36736599d6b4fcf64783
+P f15591f80212dd6d4ed8e0f14be691cd578d4cdf
+R 9c030b59ca6c7b004962232334825609
 U drh
-Z 7fdb52a55035dac9e0e9155bec61e50b
+Z e653d3f7b54e043afda16dc501f1f202
