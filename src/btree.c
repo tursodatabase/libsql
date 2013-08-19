@@ -724,6 +724,9 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
     sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
     assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_INVALID );
+    if( pCur->skipNext && pCur->eState==CURSOR_VALID ){
+      pCur->eState = CURSOR_SKIPNEXT;
+    }
   }
   return rc;
 }
@@ -749,7 +752,7 @@ int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
     *pHasMoved = 1;
     return rc;
   }
-  if( pCur->eState!=CURSOR_VALID || pCur->skipNext!=0 ){
+  if( pCur->eState!=CURSOR_VALID || NEVER(pCur->skipNext!=0) ){
     *pHasMoved = 1;
   }else{
     *pHasMoved = 0;
@@ -4797,6 +4800,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pRes!=0 );
+  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   if( pCur->eState!=CURSOR_VALID ){
     rc = restoreCursorPosition(pCur);
     if( rc!=SQLITE_OK ){
@@ -4806,14 +4810,16 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
       *pRes = 1;
       return SQLITE_OK;
     }
-  }
-  if( pCur->skipNext ){
-    if( pCur->skipNext>0 ){
+    if( pCur->skipNext ){
+      assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
+      pCur->eState = CURSOR_VALID;
+      if( pCur->skipNext>0 ){
+        pCur->skipNext = 0;
+        *pRes = 0;
+        return SQLITE_OK;
+      }
       pCur->skipNext = 0;
-      *pRes = 0;
-      return SQLITE_OK;
     }
-    pCur->skipNext = 0;
   }
 
   pPage = pCur->apPage[pCur->iPage];
@@ -4874,6 +4880,8 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   MemPage *pPage;
 
   assert( cursorHoldsMutex(pCur) );
+  assert( pRes!=0 );
+  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   pCur->atLast = 0;
   if( pCur->eState!=CURSOR_VALID ){
     if( ALWAYS(pCur->eState>=CURSOR_REQUIRESEEK) ){
@@ -4884,14 +4892,16 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
       *pRes = 1;
       return SQLITE_OK;
     }
-  }
-  if( pCur->skipNext ){
-    if( pCur->skipNext<0 ){
+    if( pCur->skipNext ){
+      assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
+      pCur->eState = CURSOR_VALID;
+      if( pCur->skipNext<0 ){
+        pCur->skipNext = 0;
+        *pRes = 0;
+        return SQLITE_OK;
+      }
       pCur->skipNext = 0;
-      *pRes = 0;
-      return SQLITE_OK;
     }
-    pCur->skipNext = 0;
   }
 
   pPage = pCur->apPage[pCur->iPage];

@@ -1,5 +1,5 @@
-C Add\stointeger()\sand\storeal()\sSQL\sfunctions.
-D 2013-08-19T21:15:34.654
+C Additional\sperformance\simprovements\sin\ssqlite3BtreeNext()\sand\nsqlite3BtreePrevious().
+D 2013-08-19T22:22:41.690
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,9 +163,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 78287b3012fe65fd5e38927d40c01e01a783e016
+F src/btree.c d8cb52cddfe575d91b90d056d91607259f78706b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
-F src/btreeInt.h eecc84f02375b2bb7a44abbcbbe3747dde73edb2
+F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
 F src/build.c f99a715ff9290996b579d5e1ec8e94239dc9ae5e
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dc65ad8c4c67b21e3b042b8df6580d02b634a90b dd4b77c82af07bdcc92ed743f050e70887e5956e
-R e3fb50f27097137963de60af3dbc18b8
-U mistachkin
-Z 2bb7e5e3c9622cb177c0d8f0e5a92db1
+P af49707211ff7c7c4d30f4f457631ea8a9fa39eb
+R d86e9a19461f588d02ed145ef81cfebb
+U drh
+Z 1181ebcd03ded8a6c716b64a93881e5c

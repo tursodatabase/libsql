@@ -520,13 +520,18 @@ struct BtCursor {
 /*
 ** Potential values for BtCursor.eState.
 **
-** CURSOR_VALID:
-**   Cursor points to a valid entry. getPayload() etc. may be called.
-**
 ** CURSOR_INVALID:
 **   Cursor does not point to a valid entry. This can happen (for example) 
 **   because the table is empty or because BtreeCursorFirst() has not been
 **   called.
+**
+** CURSOR_VALID:
+**   Cursor points to a valid entry. getPayload() etc. may be called.
+**
+** CURSOR_SKIPNEXT:
+**   Cursor is valid except that the Cursor.skipNext field is non-zero
+**   indicating that the next sqlite3BtreeNext() or sqlite3BtreePrevious()
+**   operation should be a no-op.
 **
 ** CURSOR_REQUIRESEEK:
 **   The table that this cursor was opened on still exists, but has been 
@@ -544,8 +549,9 @@ struct BtCursor {
 */
 #define CURSOR_INVALID           0
 #define CURSOR_VALID             1
-#define CURSOR_REQUIRESEEK       2
-#define CURSOR_FAULT             3
+#define CURSOR_SKIPNEXT          2
+#define CURSOR_REQUIRESEEK       3
+#define CURSOR_FAULT             4
 
 /* 
 ** The database page the PENDING_BYTE occupies. This page is never used.
