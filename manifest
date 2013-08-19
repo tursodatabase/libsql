@@ -1,5 +1,5 @@
-C Add\ssome\sextra\sassert()\sstatements\sto\ssilence\sa\sfew\sclang\swarnings.
-D 2013-08-19T18:17:03.610
+C Fix\stest\sscript\spragma2.test\sso\sthat\sit\sworks\swith\sENABLE_MEMORY_MANAGEMENT.
+D 2013-08-19T18:37:18.023
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -716,7 +716,7 @@ F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 461ef4ea10db02cd421dfe5f988eac3e99b5cd9a
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
-F test/pragma2.test 76e4a54cd4677966e4e75f8a7fe86ccbc250de2a
+F test/pragma2.test 224f0381f9411a78ae685cac24c13656a62021b7
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test 552dc1edc37333a8d3098b8c26a2b7f06f5799d7
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 753a402e90f3c9f675155ea96ee048dbe7a68700
-R 77bd0388559c41534c1c609bdbf880a7
+P 1c63e9515b5f5cb9169928b108d002dcd18ad4fd
+R 06c493aae68ef34ba60e479e4dd5c45b
 U dan
-Z 75015047bd5c60c371893919a96d2743
+Z 50a963f89c7b22f22aa58ed3692e5f1a

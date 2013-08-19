@@ -154,6 +154,7 @@ do_execsql_test pragma2-4.3 {
   DETACH aux1;
   PRAGMA cache_spill=ON;
 } {}
+sqlite3_release_memory
 do_test pragma2-4.4 {
   db eval {
     BEGIN;
@@ -184,6 +185,9 @@ do_execsql_test pragma2-4.6 {
 } {main unlocked temp unknown aux1 reserved}
 do_execsql_test pragma2-4.7 {
   COMMIT;
+}
+sqlite3_release_memory
+do_execsql_test pragma2-4.8 {
   PRAGMA cache_spill=ON; -- Applies to all databases
   BEGIN;
   UPDATE t2 SET c=c-1;
