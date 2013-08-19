@@ -1449,7 +1449,7 @@ case OP_Function: {
   sqlite3VdbeMemMove(&ctx.s, pOut);
   MemSetTypeFlag(&ctx.s, MEM_Null);
 
-  ctx.isError = 0;
+  ctx.fErrorOrAux = 0;
   if( ctx.pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
     assert( pOp>aOp );
     assert( pOp[-1].p4type==P4_COLLSEQ );
@@ -1459,11 +1459,6 @@ case OP_Function: {
   db->lastRowid = lastRowid;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   lastRowid = db->lastRowid;
-
-  /* If any auxiliary data functions have been called by this user function,
-  ** immediately call the destructor for any non-static values.
-  */
-  sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
 
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
@@ -1476,9 +1471,12 @@ case OP_Function: {
   }
 
   /* If the function returned an error, throw an exception */
-  if( ctx.isError ){
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
-    rc = ctx.isError;
+  if( ctx.fErrorOrAux ){
+    if( ctx.isError ){
+      sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
+      rc = ctx.isError;
+    }
+    sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
   }
 
   /* Copy the result of the function into register P3 */

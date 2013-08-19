@@ -1,5 +1,5 @@
-C Additional\sperformance\simprovements\sin\ssqlite3BtreeNext()\sand\nsqlite3BtreePrevious().
-D 2013-08-19T22:22:41.690
+C Performance\simprovement\sto\sSQL\sfunction\scalls\sin\sthe\sVDBE.
+D 2013-08-19T23:18:12.597
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,10 +277,10 @@ F src/update.c 7f3fe64d8f3b44c44a1eac293f0f85f87c355b7a
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
-F src/vdbe.c 0fbe7a904a1187dc6c8a2dbe2f594f0ce8d01401
+F src/vdbe.c 54d28e7fbea2215998f8e12fcb0ddb15fadc5b14
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
-F src/vdbeInt.h e9b7c6b165a31a4715c5aa97223d20d265515231
-F src/vdbeapi.c 4d13580bd058b39623e8fcfc233b7df4b8191e8b
+F src/vdbeInt.h 6931139cefc2f01f8612b771a31d96d06b1a6860
+F src/vdbeapi.c a183f0daa22374427bd4cf3f18a6261aac141f5a
 F src/vdbeaux.c a6ea36a9dc714e1128a0173249a0532ddcab0489
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P af49707211ff7c7c4d30f4f457631ea8a9fa39eb
-R d86e9a19461f588d02ed145ef81cfebb
+P 6f99b54aedeb91e46d52f65504d02a9cc61c0062
+R a4ebd23f8bd1f91badaa0be999a387b9
 U drh
-Z 1181ebcd03ded8a6c716b64a93881e5c
+Z 07c571cc9e32147d1ee20914dbc33fe8

@@ -266,10 +266,11 @@ struct sqlite3_context {
   Mem s;                /* The return value is stored here */
   Mem *pMem;            /* Memory cell used to store aggregate context */
   CollSeq *pColl;       /* Collating sequence */
-  int isError;          /* Error code returned by the function. */
-  int skipFlag;         /* Skip skip accumulator loading if true */
-  int iOp;              /* Instruction number of OP_Function */
   Vdbe *pVdbe;          /* The VM that owns this context */
+  int iOp;              /* Instruction number of OP_Function */
+  int isError;          /* Error code returned by the function. */
+  u8 skipFlag;          /* Skip skip accumulator loading if true */
+  u8 fErrorOrAux;       /* isError!=0 or pVdbe->pAuxData modified */
 };
 
 /*
