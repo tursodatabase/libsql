@@ -1,5 +1,5 @@
-C Fixes\sfor\sharmless\scompiler\swarnings.
-D 2013-08-19T11:15:48.054
+C Fix\sa\spotential\sreference\soff\sthe\send\sof\san\sarray\sin\sthe\squery\splanner.
+D 2013-08-19T14:19:00.852
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 67a823e7816464bc1de998841e87a2a3e4c20a94
+F src/where.c be91b3d1100371d7fa833243dde4b5f899db1b4f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 65a85a156f3c827890e9f1fd22484a2f875c3b6f
-R d8f5ca6c104ad88cbb780c1e3e66f865
+P a0d9ca4f07f1dc3a189864f8ed9cdb0b1d791b1a
+R 7814fe8b877f36736599d6b4fcf64783
 U drh
-Z a9ff7ee6c83dbd598cfc582a60fae5a4
+Z 7fdb52a55035dac9e0e9155bec61e50b
