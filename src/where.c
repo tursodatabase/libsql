@@ -3029,7 +3029,7 @@ static int codeAllEqualityTerms(
 
   /* Evaluate the equality constraints
   */
-  assert( pIdx->nColumn>=nEq );
+  assert( zAff==0 || strlen(zAff)>=nEq );
   for(j=0; j<nEq; j++){
     int r1;
     pTerm = pLoop->aLTerm[j];
@@ -3121,7 +3121,8 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   txt.db = db;
   sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
-    explainAppendTerm(&txt, i, aCol[aiColumn[i]].zName, "=");
+    char *z = (i==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[i]].zName;
+    explainAppendTerm(&txt, i, z, "=");
   }
 
   j = i;

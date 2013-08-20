@@ -1,5 +1,5 @@
-C Ignore\sIS\sNOT\sNULL\sand\sNOT\sNULL\sconstraints\son\sNOT\sNULL\scolumns.
-D 2013-08-20T17:00:55.048
+C Fix\san\sinvalid\sassert()\sin\swhere.c.\sAlso\sa\scrash\sthat\scan\soccur\sin\sthe\sEXPLAIN\sQUERY\sPLAN\scode\sunder\sobscure\scircumstances.
+D 2013-08-20T17:14:57.137
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 1a020a02c9062af8de011427461d1fb515dbba97
+F src/where.c 0ced8882cadbf1817904331a5d942b30ebe0e789
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -591,7 +591,7 @@ F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
 F test/index6.test f53a788b813eb6937346867bae9e587c434dd9a1
-F test/indexedby.test 0e959308707c808515c3a51363f7a9835027108c
+F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test 489aa12a027c83d291f5034a83c8c32e6be1dca2
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0cede9f898bcd13dab51b25cb0e72213d988d3d2
-R 725f0aaaf1dfad075e5c9084063c2a98
-U drh
-Z e9e50abe87d60d38c6172ae130ead1c3
+P e476408e3c5ba5f3ba5e98ff264167c163d72e3f
+R 44efbb8237f8929e6aff522c9e736888
+U dan
+Z 8bb1f7038ca62fa90bbb1e1bf6c35d10
