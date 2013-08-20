@@ -211,12 +211,14 @@ void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = SQLITE_ERROR;
+  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = SQLITE_ERROR;
+  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
@@ -280,6 +282,7 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode;
+  pCtx->fErrorOrAux = 1;
   if( pCtx->s.flags & MEM_Null ){
     sqlite3VdbeMemSetStr(&pCtx->s, sqlite3ErrStr(errCode), -1, 
                          SQLITE_UTF8, SQLITE_STATIC);
@@ -290,6 +293,7 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = SQLITE_TOOBIG;
+  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, "string or blob too big", -1, 
                        SQLITE_UTF8, SQLITE_STATIC);
 }
@@ -299,6 +303,7 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetNull(&pCtx->s);
   pCtx->isError = SQLITE_NOMEM;
+  pCtx->fErrorOrAux = 1;
   pCtx->s.db->mallocFailed = 1;
 }
 
@@ -621,6 +626,10 @@ void sqlite3_set_auxdata(
     pAuxData->iArg = iArg;
     pAuxData->pNext = pVdbe->pAuxData;
     pVdbe->pAuxData = pAuxData;
+    if( pCtx->fErrorOrAux==0 ){
+      pCtx->isError = 0;
+      pCtx->fErrorOrAux = 1;
+    }
   }else if( pAuxData->xDelete ){
     pAuxData->xDelete(pAuxData->pAux);
   }
@@ -1289,7 +1298,7 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
-  int v = pVdbe->aCounter[op-1];
-  if( resetFlag ) pVdbe->aCounter[op-1] = 0;
-  return v;
+  u32 v = pVdbe->aCounter[op];
+  if( resetFlag ) pVdbe->aCounter[op] = 0;
+  return (int)v;
 }

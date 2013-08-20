@@ -588,7 +588,7 @@ int sqlite3VdbeExec(
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( db->xProgress ){
     assert( 0 < db->nProgressOps );
-    nProgressLimit = (unsigned)p->aCounter[SQLITE_STMTSTATUS_VM_STEP-1];
+    nProgressLimit = (unsigned)p->aCounter[SQLITE_STMTSTATUS_VM_STEP];
     if( nProgressLimit==0 ){
       nProgressLimit = db->nProgressOps;
     }else{
@@ -1449,7 +1449,7 @@ case OP_Function: {
   sqlite3VdbeMemMove(&ctx.s, pOut);
   MemSetTypeFlag(&ctx.s, MEM_Null);
 
-  ctx.isError = 0;
+  ctx.fErrorOrAux = 0;
   if( ctx.pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
     assert( pOp>aOp );
     assert( pOp[-1].p4type==P4_COLLSEQ );
@@ -1459,11 +1459,6 @@ case OP_Function: {
   db->lastRowid = lastRowid;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   lastRowid = db->lastRowid;
-
-  /* If any auxiliary data functions have been called by this user function,
-  ** immediately call the destructor for any non-static values.
-  */
-  sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
 
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
@@ -1476,9 +1471,12 @@ case OP_Function: {
   }
 
   /* If the function returned an error, throw an exception */
-  if( ctx.isError ){
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
-    rc = ctx.isError;
+  if( ctx.fErrorOrAux ){
+    if( ctx.isError ){
+      sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
+      rc = ctx.isError;
+    }
+    sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
   }
 
   /* Copy the result of the function into register P3 */
@@ -1850,12 +1848,12 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       ** then the result is always NULL.
       ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
       */
-      if( pOp->p5 & SQLITE_STOREP2 ){
+      if( pOp->p5 & SQLITE_JUMPIFNULL ){
+        pc = pOp->p2-1;
+      }else if( pOp->p5 & SQLITE_STOREP2 ){
         pOut = &aMem[pOp->p2];
         MemSetTypeFlag(pOut, MEM_Null);
         REGISTER_TRACE(pOp->p2, pOut);
-      }else if( pOp->p5 & SQLITE_JUMPIFNULL ){
-        pc = pOp->p2-1;
       }
       break;
     }
@@ -4440,7 +4438,7 @@ case OP_Sort: {        /* jump */
   sqlite3_sort_count++;
   sqlite3_search_count--;
 #endif
-  p->aCounter[SQLITE_STMTSTATUS_SORT-1]++;
+  p->aCounter[SQLITE_STMTSTATUS_SORT]++;
   /* Fall through into OP_Rewind */
 }
 /* Opcode: Rewind P1 P2 * * *
@@ -4519,7 +4517,7 @@ case OP_Next: {        /* jump */
   int res;
 
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
-  assert( pOp->p5<=ArraySize(p->aCounter) );
+  assert( pOp->p5<ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
   if( pC==0 ){
     break;  /* See ticket #2273 */
@@ -4529,7 +4527,7 @@ case OP_Next: {        /* jump */
     assert( pOp->opcode==OP_SorterNext );
     rc = sqlite3VdbeSorterNext(db, pC, &res);
   }else{
-    res = 1;
+    /* res = 1; // Always initialized by the xAdvance() call */
     assert( pC->deferredMoveto==0 );
     assert( pC->pCursor );
     assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
@@ -4540,7 +4538,7 @@ case OP_Next: {        /* jump */
   pC->cacheStatus = CACHE_STALE;
   if( res==0 ){
     pc = pOp->p2 - 1;
-    if( pOp->p5 ) p->aCounter[pOp->p5-1]++;
+    p->aCounter[pOp->p5]++;
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
@@ -6243,7 +6241,7 @@ vdbe_error_halt:
 vdbe_return:
   db->lastRowid = lastRowid;
   testcase( nVmStep>0 );
-  p->aCounter[SQLITE_STMTSTATUS_VM_STEP-1] += (int)nVmStep;
+  p->aCounter[SQLITE_STMTSTATUS_VM_STEP] += (int)nVmStep;
   sqlite3VdbeLeave(p);
   return rc;
 
