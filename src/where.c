@@ -4337,7 +4337,9 @@ static int whereLoopAddBtreeIndex(
     int nIn = 0;
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
 #ifdef SQLITE_ENABLE_STAT3
-    if( (pTerm->wtFlags & TERM_VNULL)!=0 && pSrc->pTab->aCol[iCol].notNull ){
+    if( (pTerm->wtFlags & TERM_VNULL)!=0
+     && (iCol<0 || pSrc->pTab->aCol[iCol].notNull)
+    ){
       continue; /* skip IS NOT NULL constraints on a NOT NULL column */
     }
 #endif
@@ -4480,6 +4482,7 @@ static Bitmask columnsInIndex(Index *pIdx){
   int j;
   for(j=pIdx->nColumn-1; j>=0; j--){
     int x = pIdx->aiColumn[j];
+    assert( x>=0 );
     testcase( x==BMS-1 );
     testcase( x==BMS-2 );
     if( x<BMS-1 ) m |= MASKBIT(x);

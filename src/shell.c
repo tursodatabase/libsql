@@ -3188,7 +3188,6 @@ int main(int argc, char **argv){
       stdin_is_interactive = 0;
     }else if( strcmp(z,"-heap")==0 ){
 #if defined(SQLITE_ENABLE_MEMSYS3) || defined(SQLITE_ENABLE_MEMSYS5)
-      int j, c;
       const char *zSize;
       sqlite3_int64 szHeap;
 

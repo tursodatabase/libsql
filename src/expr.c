@@ -1279,6 +1279,7 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
     case TK_UMINUS: {
       int v;
       if( sqlite3ExprIsInteger(p->pLeft, &v) ){
+        assert( v!=-2147483648 );
         *pValue = -v;
         rc = 1;
       }

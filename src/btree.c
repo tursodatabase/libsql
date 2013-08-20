@@ -724,6 +724,9 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
     sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
     assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_INVALID );
+    if( pCur->skipNext && pCur->eState==CURSOR_VALID ){
+      pCur->eState = CURSOR_SKIPNEXT;
+    }
   }
   return rc;
 }
@@ -749,7 +752,7 @@ int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
     *pHasMoved = 1;
     return rc;
   }
-  if( pCur->eState!=CURSOR_VALID || pCur->skipNext!=0 ){
+  if( pCur->eState!=CURSOR_VALID || NEVER(pCur->skipNext!=0) ){
     *pHasMoved = 1;
   }else{
     *pHasMoved = 0;
@@ -4796,21 +4799,29 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   MemPage *pPage;
 
   assert( cursorHoldsMutex(pCur) );
-  rc = restoreCursorPosition(pCur);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
   assert( pRes!=0 );
-  if( CURSOR_INVALID==pCur->eState ){
-    *pRes = 1;
-    return SQLITE_OK;
+  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
+  if( pCur->eState!=CURSOR_VALID ){
+    rc = restoreCursorPosition(pCur);
+    if( rc!=SQLITE_OK ){
+      *pRes = 0;
+      return rc;
+    }
+    if( CURSOR_INVALID==pCur->eState ){
+      *pRes = 1;
+      return SQLITE_OK;
+    }
+    if( pCur->skipNext ){
+      assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
+      pCur->eState = CURSOR_VALID;
+      if( pCur->skipNext>0 ){
+        pCur->skipNext = 0;
+        *pRes = 0;
+        return SQLITE_OK;
+      }
+      pCur->skipNext = 0;
+    }
   }
-  if( pCur->skipNext>0 ){
-    pCur->skipNext = 0;
-    *pRes = 0;
-    return SQLITE_OK;
-  }
-  pCur->skipNext = 0;
 
   pPage = pCur->apPage[pCur->iPage];
   idx = ++pCur->aiIdx[pCur->iPage];
@@ -4828,7 +4839,10 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   if( idx>=pPage->nCell ){
     if( !pPage->leaf ){
       rc = moveToChild(pCur, get4byte(&pPage->aData[pPage->hdrOffset+8]));
-      if( rc ) return rc;
+      if( rc ){
+        *pRes = 0;
+        return rc;
+      }
       rc = moveToLeftmost(pCur);
       *pRes = 0;
       return rc;
@@ -4870,21 +4884,32 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   MemPage *pPage;
 
   assert( cursorHoldsMutex(pCur) );
-  rc = restoreCursorPosition(pCur);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
+  assert( pRes!=0 );
+  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   pCur->atLast = 0;
-  if( CURSOR_INVALID==pCur->eState ){
-    *pRes = 1;
-    return SQLITE_OK;
+  if( pCur->eState!=CURSOR_VALID ){
+    if( ALWAYS(pCur->eState>=CURSOR_REQUIRESEEK) ){
+      rc = btreeRestoreCursorPosition(pCur);
+      if( rc!=SQLITE_OK ){
+        *pRes = 0;
+        return rc;
+      }
+    }
+    if( CURSOR_INVALID==pCur->eState ){
+      *pRes = 1;
+      return SQLITE_OK;
+    }
+    if( pCur->skipNext ){
+      assert( pCur->eState==CURSOR_VALID || pCur->eState==CURSOR_SKIPNEXT );
+      pCur->eState = CURSOR_VALID;
+      if( pCur->skipNext<0 ){
+        pCur->skipNext = 0;
+        *pRes = 0;
+        return SQLITE_OK;
+      }
+      pCur->skipNext = 0;
+    }
   }
-  if( pCur->skipNext<0 ){
-    pCur->skipNext = 0;
-    *pRes = 0;
-    return SQLITE_OK;
-  }
-  pCur->skipNext = 0;
 
   pPage = pCur->apPage[pCur->iPage];
   assert( pPage->isInit );
@@ -4892,6 +4917,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
     int idx = pCur->aiIdx[pCur->iPage];
     rc = moveToChild(pCur, get4byte(findCell(pPage, idx)));
     if( rc ){
+      *pRes = 0;
       return rc;
     }
     rc = moveToRightmost(pCur);
