@@ -346,7 +346,7 @@ struct Vdbe {
   yDbMask btreeMask;      /* Bitmask of db->aDb[] entries referenced */
   yDbMask lockMask;       /* Subset of btreeMask that requires a lock */
   int iStatement;         /* Statement number (or 0 if has not opened stmt) */
-  int aCounter[4];        /* Counters used by sqlite3_stmt_status() */
+  u32 aCounter[5];        /* Counters used by sqlite3_stmt_status() */
 #ifndef SQLITE_OMIT_TRACE
   i64 startTime;          /* Time when query started - used for profiling */
 #endif

@@ -1,5 +1,5 @@
-C Performance\simprovement\sto\sSQL\sfunction\scalls\sin\sthe\sVDBE.
-D 2013-08-19T23:18:12.597
+C Performance\soptimizations\sin\sthe\sVDBE\sand\sespecially\sto\sthe\sOP_Next\sand\nrelated\sopcodes.
+D 2013-08-20T00:42:11.120
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c d8cb52cddfe575d91b90d056d91607259f78706b
+F src/btree.c adea13e65d6c7b969bcd74cea6ae79b2d3c393fa
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
 F src/build.c f99a715ff9290996b579d5e1ec8e94239dc9ae5e
@@ -277,10 +277,10 @@ F src/update.c 7f3fe64d8f3b44c44a1eac293f0f85f87c355b7a
 F src/utf.c 8d819e2e5104a430fc2005f018db14347c95a38f
 F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
-F src/vdbe.c 54d28e7fbea2215998f8e12fcb0ddb15fadc5b14
+F src/vdbe.c 938feb53407dee2234849aad0f103ae9b941595e
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
-F src/vdbeInt.h 6931139cefc2f01f8612b771a31d96d06b1a6860
-F src/vdbeapi.c a183f0daa22374427bd4cf3f18a6261aac141f5a
+F src/vdbeInt.h cbe71b8b36d8b3bba5709cc3f436c7e3b47b7b08
+F src/vdbeapi.c 96b24b946cf21894f63d9393e821baa2f0a80979
 F src/vdbeaux.c a6ea36a9dc714e1128a0173249a0532ddcab0489
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6f99b54aedeb91e46d52f65504d02a9cc61c0062
-R a4ebd23f8bd1f91badaa0be999a387b9
+P d2efea1682a7e708000c1f5d36370aaf1199b3be
+R 08cd0ad5f78761d7e8cb97606228a179
 U drh
-Z 07c571cc9e32147d1ee20914dbc33fe8
+Z 1caed0652391fde507351b876419455b

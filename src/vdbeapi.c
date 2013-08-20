@@ -1298,7 +1298,7 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
-  int v = pVdbe->aCounter[op-1];
-  if( resetFlag ) pVdbe->aCounter[op-1] = 0;
-  return v;
+  u32 v = pVdbe->aCounter[op];
+  if( resetFlag ) pVdbe->aCounter[op] = 0;
+  return (int)v;
 }

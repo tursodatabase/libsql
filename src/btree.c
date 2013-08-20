@@ -4804,6 +4804,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   if( pCur->eState!=CURSOR_VALID ){
     rc = restoreCursorPosition(pCur);
     if( rc!=SQLITE_OK ){
+      *pRes = 0;
       return rc;
     }
     if( CURSOR_INVALID==pCur->eState ){
@@ -4838,7 +4839,10 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   if( idx>=pPage->nCell ){
     if( !pPage->leaf ){
       rc = moveToChild(pCur, get4byte(&pPage->aData[pPage->hdrOffset+8]));
-      if( rc ) return rc;
+      if( rc ){
+        *pRes = 0;
+        return rc;
+      }
       rc = moveToLeftmost(pCur);
       *pRes = 0;
       return rc;
@@ -4886,7 +4890,10 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   if( pCur->eState!=CURSOR_VALID ){
     if( ALWAYS(pCur->eState>=CURSOR_REQUIRESEEK) ){
       rc = btreeRestoreCursorPosition(pCur);
-      if( rc!=SQLITE_OK ) return rc;
+      if( rc!=SQLITE_OK ){
+        *pRes = 0;
+        return rc;
+      }
     }
     if( CURSOR_INVALID==pCur->eState ){
       *pRes = 1;
@@ -4910,6 +4917,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
     int idx = pCur->aiIdx[pCur->iPage];
     rc = moveToChild(pCur, get4byte(findCell(pPage, idx)));
     if( rc ){
+      *pRes = 0;
       return rc;
     }
     rc = moveToRightmost(pCur);
