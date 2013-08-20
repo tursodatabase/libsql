@@ -981,7 +981,7 @@ static void tointegerFunc(
     case SQLITE_FLOAT: {
       double rVal = sqlite3_value_double(argv[0]);
       i64 iVal = (i64)rVal;
-      if( !sqlite3IsNaN(rVal) && rVal==(double)iVal ){
+      if( rVal==(double)iVal ){
         sqlite3_result_int64(context, iVal);
       }
       break;
@@ -995,9 +995,9 @@ static void tointegerFunc(
       const unsigned char *zStr = sqlite3_value_text(argv[0]);
       if( zStr ){
         int nStr = sqlite3_value_bytes(argv[0]);
-        if( nStr ){
+        if( nStr && !sqlite3Isspace(zStr[0]) ){
           i64 iVal;
-          if( !sqlite3Atoi64(zStr, &iVal, nStr, SQLITE_UTF8) ){
+          if( !sqlite3Atoi64((const char*)zStr, &iVal, nStr, SQLITE_UTF8) ){
             sqlite3_result_int64(context, iVal);
           }
         }
@@ -1028,11 +1028,7 @@ static void torealFunc(
       break;
     }
     case SQLITE_INTEGER: {
-      i64 iVal = sqlite3_value_int64(argv[0]);
-      double rVal = (double)iVal;
-      if( iVal==rVal ){
-        sqlite3_result_double(context, rVal);
-      }
+      sqlite3_result_double(context, (double)sqlite3_value_int64(argv[0]));
       break;
     }
     case SQLITE_BLOB:
@@ -1040,9 +1036,9 @@ static void torealFunc(
       const unsigned char *zStr = sqlite3_value_text(argv[0]);
       if( zStr ){
         int nStr = sqlite3_value_bytes(argv[0]);
-        if( nStr ){
+        if( nStr && !sqlite3Isspace(zStr[0]) && !sqlite3Isspace(zStr[nStr-1]) ){
           double rVal;
-          if( sqlite3AtoF(zStr, &rVal, nStr, SQLITE_UTF8) ){
+          if( sqlite3AtoF((const char*)zStr, &rVal, nStr, SQLITE_UTF8) ){
             sqlite3_result_double(context, rVal);
             return;
           }
