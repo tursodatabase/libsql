@@ -1,5 +1,5 @@
-C Fix\san\sinvalid\sassert()\sin\swhere.c.\sAlso\sa\scrash\sthat\scan\soccur\sin\sthe\sEXPLAIN\sQUERY\sPLAN\scode\sunder\sobscure\scircumstances.
-D 2013-08-20T17:14:57.137
+C Fix\sa\scouple\sof\stest\sscripts\sto\swork\swith\sDEFAULT_AUTOVACUUM\sand\sOMIT_VIRTUALTABLE.
+D 2013-08-20T20:25:03.439
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -395,7 +395,7 @@ F test/corruptC.test 62a767fe64acb1975f58cc6171192839c783edbb
 F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
 F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
 F test/corruptF.test 1c7b6f77cf3f237fb7fbb5b61d6c921fd4c7b993
-F test/corruptG.test d18ee5169e10a76bccb7b115e551bc31087a525e
+F test/corruptG.test c67fd860e9e3943bc90b856a3049c9a28827167e
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -590,7 +590,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
-F test/index6.test f53a788b813eb6937346867bae9e587c434dd9a1
+F test/index6.test 6a754747f444fecb7f4ae50ce4ac7a0d269e090d
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e476408e3c5ba5f3ba5e98ff264167c163d72e3f
-R 44efbb8237f8929e6aff522c9e736888
+P ef192abb82c2fc31135f875d7a19908d67c076b0
+R 5eae9c476ef81ea15253fd3e0765cf6d
 U dan
-Z 8bb1f7038ca62fa90bbb1e1bf6c35d10
+Z 01c02121db5c33fa68761add98f54092

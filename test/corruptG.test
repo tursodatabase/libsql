@@ -31,9 +31,11 @@ do_execsql_test 1.1 {
   CREATE INDEX t1abc ON t1(a,b,c);
 }
 
+set idxroot [db one {SELECT rootpage FROM sqlite_master WHERE name = 't1abc'}]
+
 # Corrupt the file
 db close
-hexio_write test.db [expr {3*512 - 15}] 888080807f
+hexio_write test.db [expr {$idxroot*512 - 15}] 888080807f
 sqlite3 db test.db
 
 # Try to use the file.
@@ -58,7 +60,7 @@ do_test 1.4 {
 # such that the payload begins in allocated space but overflows the buffer.
 #
 db close
-hexio_write test.db [expr {3*512-15}] 0513ff7f01
+hexio_write test.db [expr {$idxroot*512-15}] 0513ff7f01
 sqlite3 db test.db
 
 do_test 2.1 {
