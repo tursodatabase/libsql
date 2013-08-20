@@ -4336,13 +4336,11 @@ static int whereLoopAddBtreeIndex(
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
-#ifdef SQLITE_ENABLE_STAT3
-    if( (pTerm->wtFlags & TERM_VNULL)!=0
+    if( (pTerm->eOperator==WO_ISNULL || (pTerm->wtFlags&TERM_VNULL)!=0)
      && (iCol<0 || pSrc->pTab->aCol[iCol].notNull)
     ){
-      continue; /* skip IS NOT NULL constraints on a NOT NULL column */
+      continue; /* ignore IS [NOT] NULL constraints on NOT NULL columns */
     }
-#endif
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->nLTerm = saved_nLTerm;

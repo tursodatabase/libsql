@@ -1,5 +1,5 @@
-C Test\sscript\schanges\sto\ssupport\stesting\ssqlite3_interrupt().
-D 2013-08-20T16:08:39.938
+C Ignore\sIS\sNOT\sNULL\sand\sNOT\sNULL\sconstraints\son\sNOT\sNULL\scolumns.
+D 2013-08-20T17:00:55.048
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 2e8b489db47e20ae36cd247932dc671c9ded0624
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 03a50ecb2f4f02b5492d669a84875947b56b8906
+F src/where.c 1a020a02c9062af8de011427461d1fb515dbba97
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1040,7 +1040,7 @@ F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
 F test/where.test da54153a4c1571ea1b95659e5bec8119edf786aa
 F test/where2.test b1830f762f837153a4c9743adaab90a5761f73e7
-F test/where3.test a0682ba3dc8c8f46ffcc95a3d9f58c4327fc129f
+F test/where3.test d28c51f257e60be30f74308fa385ceeddfb54a6e
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
@@ -1048,7 +1048,7 @@ F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
 F test/where8.test 6f95896633cf2d307b5263145b942b7d33e837c6
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test 9a7fda4a4512abc26a855e8b2b6572b200f6019b
-F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
+F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
 F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 7f72fc4f47445a2c01910b268335873de9f75059
-R d7254aa102bedab4ec8ef3b2a2896635
-U dan
-Z e9a2c8620ce0b09ce68b2f2f4880d098
+P 0cede9f898bcd13dab51b25cb0e72213d988d3d2
+R 725f0aaaf1dfad075e5c9084063c2a98
+U drh
+Z e9e50abe87d60d38c6172ae130ead1c3

@@ -68,6 +68,12 @@ do_test whereA-1.7 {
     SELECT * FROM t1;
   }
 } {3 4.53 {} 2 hello world 1 2 3}
+do_execsql_test whereA-1.8 {
+  SELECT * FROM t1 WHERE b=2 AND a IS NULL;
+} {}
+do_execsql_test whereA-1.9 {
+  SELECT * FROM t1 WHERE b=2 AND a IS NOT NULL;
+} {1 2 3}
 
 do_test whereA-2.1 {
   db eval {
