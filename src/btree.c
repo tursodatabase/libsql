@@ -940,7 +940,8 @@ static void btreeParseCellPtr(
   assert( n==4-4*pPage->leaf );
   if( pPage->intKey ){
     if( pPage->hasData ){
-      n += getVarint32(&pCell[n], nPayload);
+      assert( n==0 );
+      n = getVarint32(pCell, nPayload);
     }else{
       nPayload = 0;
     }

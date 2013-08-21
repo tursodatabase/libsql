@@ -1,5 +1,5 @@
-C Fix\san\sFTS4\sproblem\sintroduced\sby\s[361084e1eb].
-D 2013-08-21T15:45:27.749
+C Performance\senhancement\sin\sbtreeParseCellPtr().
+D 2013-08-21T15:52:22.167
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c adea13e65d6c7b969bcd74cea6ae79b2d3c393fa
+F src/btree.c d49f16006152a2f2737b6a904287797724dbd760
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
 F src/build.c f99a715ff9290996b579d5e1ec8e94239dc9ae5e
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 781592f32c8e1dcd59954c17211cf61349d1c0b1
-R 954710c672abb501b54f9208dbeb6f94
-U dan
-Z 36f3acb088bc10968624ff14f224d8d6
+P 5f35c8cb8f8b67121c70f98c02c4aa7c25327690
+R e14622f8e8b62bb772b89104f8221b5c
+U drh
+Z b5924f726ed7a29e078b915e4c18ae4c
