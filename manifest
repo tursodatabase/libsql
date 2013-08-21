@@ -1,5 +1,5 @@
-C Minor\sperformance\stweaks\sto\sthe\spager.
-D 2013-08-21T22:54:55.506
+C Simplify\sthe\sbtreeGetPage()\sroutine\sso\sthat\sit\suses\sa\ssingle\sflag\sparameter\nin\splace\sof\stwo\sboolean\sparameters.
+D 2013-08-21T23:42:32.077
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -160,10 +160,10 @@ F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c a33fcb0b3a399d966951feb9f32115106b3ecc2e
 F src/attach.c 5df737912f668fd160ec1d560755f85fdccbe5b7
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
+F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 7e7b3eba8d902217fb2dbad0ac8217e952dba8ca
+F src/btree.c b7cbb0bcc61cbf1e0ed3cfcc79ee12ffcf4f469e
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
 F src/build.c f99a715ff9290996b579d5e1ec8e94239dc9ae5e
@@ -204,8 +204,8 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
 F src/os_win.c 1d84f2079d9b91f91a4b5dbfa5e08f1b1a0ed0ff
-F src/pager.c 7e9130d5fad290aa6d6cf016852bde9ce0a06ea5
-F src/pager.h 66e42d6942a445d4c25651733ab2079dbebc7ca9
+F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
+F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4144dffb57b5ed791d7a6d2f26fab5e7dc77fbd1
-R b15f43d0f820a86b48ec589e9a604865
+P 9ae1f9ce7ea6beaeddc3711080b3796e05acc4f8
+R 14b54904acb5b4b4c7c51baf723290ac
 U drh
-Z cdb48d46f0e84ecc9bf7ab245ef06a01
+Z 0a305d97c258e659e4da204fe193224d
