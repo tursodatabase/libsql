@@ -1022,13 +1022,17 @@ static char *print_pager_state(Pager *p){
 **     PagerSavepoint.pInSavepoint.
 */
 static int subjRequiresPage(PgHdr *pPg){
-  Pgno pgno = pPg->pgno;
   Pager *pPager = pPg->pPager;
+  PagerSavepoint *p;
+  Pgno pgno;
   int i;
-  for(i=0; i<pPager->nSavepoint; i++){
-    PagerSavepoint *p = &pPager->aSavepoint[i];
-    if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
-      return 1;
+  if( pPager->nSavepoint ){
+    pgno = pPg->pgno;
+    for(i=0; i<pPager->nSavepoint; i++){
+      p = &pPager->aSavepoint[i];
+      if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
+        return 1;
+      }
     }
   }
   return 0;
@@ -2873,12 +2877,6 @@ static int readDbPage(PgHdr *pPg, u32 iFrame){
 
   assert( pPager->eState>=PAGER_READER && !MEMDB );
   assert( isOpen(pPager->fd) );
-
-  if( NEVER(!isOpen(pPager->fd)) ){
-    assert( pPager->tempFile );
-    memset(pPg->pData, 0, pPager->pageSize);
-    return SQLITE_OK;
-  }
 
 #ifndef SQLITE_OMIT_WAL
   if( iFrame ){

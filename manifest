@@ -1,5 +1,5 @@
-C Refactor\sthe\ssqlite3_randomness()\simplementation\sfor\simproved\sperformance.
-D 2013-08-21T22:09:25.294
+C Minor\sperformance\stweaks\sto\sthe\spager.
+D 2013-08-21T22:54:55.506
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,7 +204,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
 F src/os_win.c 1d84f2079d9b91f91a4b5dbfa5e08f1b1a0ed0ff
-F src/pager.c 7c999137cb940133f7fc7609ccfa66f17eec4ab4
+F src/pager.c 7e9130d5fad290aa6d6cf016852bde9ce0a06ea5
 F src/pager.h 66e42d6942a445d4c25651733ab2079dbebc7ca9
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 700dbbea8647e0fdaee6d0aba3d3dd8ebfbac04a
-R bace2fbe40d117379ef5fcee60c09ed4
+P 4144dffb57b5ed791d7a6d2f26fab5e7dc77fbd1
+R b15f43d0f820a86b48ec589e9a604865
 U drh
-Z a22b19ec66f802a5577e622202a99c6b
+Z cdb48d46f0e84ecc9bf7ab245ef06a01
