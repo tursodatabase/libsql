@@ -1,5 +1,5 @@
-C Minor\sfixes\sfor\stest\scases.\sNo\scode\schanges.
-D 2013-08-21T20:04:54.847
+C Simplification\sto\sthe\sStrAccum\sobject\sand\sthe\ssqlite3StrAccumAppend()\nmethod\sthat\salso\sresults\sin\sslightly\sbetter\sperformance.
+D 2013-08-21T21:12:10.959
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 43b348822db3e4cef48b2ae5a445fbeb6c73a165
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c d49f16006152a2f2737b6a904287797724dbd760
+F src/btree.c 7e7b3eba8d902217fb2dbad0ac8217e952dba8ca
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
 F src/build.c f99a715ff9290996b579d5e1ec8e94239dc9ae5e
@@ -175,7 +175,7 @@ F src/delete.c 2317c814866d9aa71fea16b3faf4fdd4d6a49b94
 F src/expr.c 6bab61c757c4c4c94a92e98d507025d5d18afd3c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 914a6bbd987d857c41ac9d244efa6641f36faadb
-F src/func.c 5c50c1ea31fd864b0fe921fe1a8d4c55acd609ef
+F src/func.c d7be77897c91d5b9887beb372f1e6deb515c92af
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -212,7 +212,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
 F src/pragma.c 1d96ba749253b49bc229c6294f9c2e5ef3dca85c
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
-F src/printf.c 41c49dac366a3a411190001a8ab495fa8887974e
+F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
@@ -221,7 +221,7 @@ F src/shell.c 1c317a4c96d61d8d9fdad9fd1811d9b10b8c7f57
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h e4ae9edb97983a8d7d751559391962cf7668948c
+F src/sqliteInt.h 124e4b19cd5533116909ccf203bdcdd04a28f99a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f9859fe93bcecb4be7c1034291018523124c4a5c
-R ddee5479b507575b9f0433a0c601d21b
-U dan
-Z 54b08646e994fdf84c4fc6867487aa5d
+P ef2a6a37366f91889dc2f1ba9cb6d1257d9b05db
+R b5f522403c7336cdf922a181f76ebfed
+U drh
+Z 3ab1c9a1ca4e97a25908645404ada3f7

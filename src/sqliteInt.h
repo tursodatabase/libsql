@@ -2425,10 +2425,11 @@ struct StrAccum {
   int  nChar;          /* Length of the string so far */
   int  nAlloc;         /* Amount of space allocated in zText */
   int  mxAlloc;        /* Maximum allowed string length */
-  u8   mallocFailed;   /* Becomes true if any memory allocation fails */
   u8   useMalloc;      /* 0: none,  1: sqlite3DbMalloc,  2: sqlite3_malloc */
-  u8   tooBig;         /* Becomes true if string size exceeds limits */
+  u8   accError;       /* STRACCUM_NOMEM or STRACCUM_TOOBIG */
 };
+#define STRACCUM_NOMEM   1
+#define STRACCUM_TOOBIG  2
 
 /*
 ** A pointer to this structure is used to communicate information
