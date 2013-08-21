@@ -722,6 +722,3 @@ do_execsql_test 6.7 {
 } {b B}
 
 finish_test
-
-
-finish_test

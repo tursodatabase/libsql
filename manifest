@@ -1,5 +1,5 @@
-C Update\ssqlite3MemCompare()\sto\stry\scommon\scases\sfirst,\sfor\sa\smodest\sspeed\nimprovement.
-D 2013-08-21T19:13:53.653
+C Fix\stypo\sin\stest.
+D 2013-08-21T19:59:14.262
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -367,7 +367,7 @@ F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
 F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test b709989e6e6ff6e1d2bd64231c2c1d8146846c9e
-F test/collate2.test 96c4cded721b7df7fead3669bd5e5e56a1c1e72d
+F test/collate2.test 9aaa410a00734e48bcb27f3872617d6f69b2a621
 F test/collate3.test 79558a286362cb9ed603c6fa543f1cda7f563f0f
 F test/collate4.test 031f7265c13308b724ba3c49f41cc04612bd92b1
 F test/collate5.test 65d928034d30d2d263a80f6359f7549ee1598ec6
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 854ba3049005adf033e07e6740a36e63f2a56758
-R 5d5628959a5d40f606befcd69113ea6a
-U drh
-Z dcf5e645387c1a81c20687bc599ea742
+P b25bac79191975149d88fe34618c74354de62c5e
+R 4256e507dbd56983b9201102947b35fd
+U mistachkin
+Z 855e1f4db08112408b490484d606f43b
