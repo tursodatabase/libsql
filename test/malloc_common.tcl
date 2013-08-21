@@ -93,8 +93,6 @@ set FAULTSIM(cantopen-persistent) [list      \
   -injectuninstall cantopen_injectuninstall  \
 ]
 
-set ::default_faults_arg [array names FAULTSIM]
-
 set FAULTSIM(interrupt) [list                 \
   -injectinstall   interrupt_injectinstall    \
   -injectstart     interrupt_injectstart      \
@@ -123,7 +121,9 @@ set FAULTSIM(interrupt) [list                 \
 proc do_faultsim_test {name args} {
   global FAULTSIM
   
-  set DEFAULT(-faults)        $::default_faults_arg
+  foreach n [array names FAULTSIM] {
+    if {$n != "interrupt"} {lappend DEFAULT(-faults) $n}
+  }
   set DEFAULT(-prep)          ""
   set DEFAULT(-body)          ""
   set DEFAULT(-test)          ""

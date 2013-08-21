@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\stest\sscripts\sto\swork\swith\sDEFAULT_AUTOVACUUM\sand\sOMIT_VIRTUALTABLE.
-D 2013-08-20T20:25:03.439
+C Fix\sa\sminor\sproblem\sin\sprogress.test.\sNo\scode\schanges.
+D 2013-08-21T07:25:03.850
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -661,7 +661,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl 05b53b004b4ee09f3bb1d34166a8b8ce0ad2dd09
+F test/malloc_common.tcl 58e54229c4132ef882a11fab6419ec4cd3073589
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test db5260330676de007be8530d6ecc7c9ab2b06ad3
@@ -718,7 +718,7 @@ F test/permutations.test 461ef4ea10db02cd421dfe5f988eac3e99b5cd9a
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 224f0381f9411a78ae685cac24c13656a62021b7
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
-F test/progress.test 552dc1edc37333a8d3098b8c26a2b7f06f5799d7
+F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ef192abb82c2fc31135f875d7a19908d67c076b0
-R 5eae9c476ef81ea15253fd3e0765cf6d
+P 356c6c59311eaf7d5633476f635e94a12b8b3924
+R 3810158b358b1ad8cbaf587b4d9b2a39
 U dan
-Z 01c02121db5c33fa68761add98f54092
+Z f1931decb20295530674ca6fa0949acd
