@@ -1,5 +1,5 @@
-C Candidate\sfix\sfor\s[d666d600a6].
-D 2013-08-21T12:04:32.485
+C Fix\san\sFTS4\sproblem\sintroduced\sby\s[361084e1eb].
+D 2013-08-21T15:45:27.749
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c edf39aea5d45080195f6b38aa5efee3804716dd0
+F ext/fts3/fts3_write.c ce45c3ea578464f26b0293ea8e54a39694f18b64
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a95ae93b32a9ad2ae017124ed0881802c3c741c0
-R 35cc26635e6bc873eb202f0021417291
+P 781592f32c8e1dcd59954c17211cf61349d1c0b1
+R 954710c672abb501b54f9208dbeb6f94
 U dan
-Z 642302ea64d9f9943d5c6662ae753a34
+Z 36f3acb088bc10968624ff14f224d8d6
