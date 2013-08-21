@@ -1,5 +1,5 @@
-C If\sa\svirtual\stable\sxSync()\sreturns\san\serror\smessage,\scopy\sit\sinto\sa\sbuffer\sallocated\sby\ssqlite3DbMalloc()\sbefore\stransfering\sit\sto\sVdbe.zErrMsg.
-D 2013-08-21T17:35:48.189
+C Update\ssqlite3MemCompare()\sto\stry\scommon\scases\sfirst,\sfor\sa\smodest\sspeed\nimprovement.
+D 2013-08-21T19:13:53.653
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbeInt.h cbe71b8b36d8b3bba5709cc3f436c7e3b47b7b08
 F src/vdbeapi.c 96b24b946cf21894f63d9393e821baa2f0a80979
 F src/vdbeaux.c c7fe2695e256dbf254113c4fe90d3ec9aabe3bbe
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c 833005f1cbbf447289f1973dba2a0c2228c7b8ab
+F src/vdbemem.c 61d5ddb8e4d4e14f625062bf5bcc7ce08bb20af3
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a17190a2296e8cd5e59524ff5914fc5ea3560697
-R 960d322e69aedcdd76cb08d63bcf1bec
-U dan
-Z adc03a3c46cd4ac4ea0aa84c35a35580
+P 854ba3049005adf033e07e6740a36e63f2a56758
+R 5d5628959a5d40f606befcd69113ea6a
+U drh
+Z dcf5e645387c1a81c20687bc599ea742
