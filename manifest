@@ -1,5 +1,5 @@
-C Simplify\sthe\sbtreeGetPage()\sroutine\sso\sthat\sit\suses\sa\ssingle\sflag\sparameter\nin\splace\sof\stwo\sboolean\sparameters.
-D 2013-08-21T23:42:32.077
+C Defer\sthe\screation\sof\sautomatic\sindices\suntil\sthe\sindex\sis\sactually\sused.
+D 2013-08-22T02:56:28.029
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 0ced8882cadbf1817904331a5d942b30ebe0e789
+F src/where.c 8596edcfbffc6d26a9a4f8e4a41d09f058dd7037
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9ae1f9ce7ea6beaeddc3711080b3796e05acc4f8
-R 14b54904acb5b4b4c7c51baf723290ac
+P 617e23ec283d3147fc3fd29c474ccedf4915cdc7
+R c8cf06f49dffbef3bb0170f8252069c7
 U drh
-Z 0a305d97c258e659e4da204fe193224d
+Z c5e5b20d4589a0c600c887ab3fa62d4e

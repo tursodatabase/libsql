@@ -90,6 +90,7 @@ struct WhereLevel {
   int addrNxt;          /* Jump here to start the next IN combination */
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
+  int addrBody;         /* Beginning of the body of this loop */
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to ends the loop */
@@ -5984,11 +5985,6 @@ WhereInfo *sqlite3WhereBegin(
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }
-#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
-    if( (pLoop->wsFlags & WHERE_AUTO_INDEX)!=0 ){
-      constructAutomaticIndex(pParse, &pWInfo->sWC, pTabItem, notReady, pLevel);
-    }else
-#endif
     if( pLoop->wsFlags & WHERE_INDEXED ){
       Index *pIx = pLoop->u.btree.pIndex;
       KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
@@ -6013,7 +6009,15 @@ WhereInfo *sqlite3WhereBegin(
   notReady = ~(Bitmask)0;
   for(ii=0; ii<nTabList; ii++){
     pLevel = &pWInfo->a[ii];
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
+    if( (pLevel->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 ){
+      constructAutomaticIndex(pParse, &pWInfo->sWC,
+                &pTabList->a[pLevel->iFrom], notReady, pLevel);
+      if( db->mallocFailed ) goto whereBeginError;
+    }
+#endif
     explainOneScan(pParse, pTabList, pLevel, ii, pLevel->iFrom, wctrlFlags);
+    pLevel->addrBody = sqlite3VdbeCurrentAddr(v);
     notReady = codeOneLoopStart(pWInfo, ii, notReady);
     pWInfo->iContinue = pLevel->addrCont;
   }
@@ -6133,9 +6137,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       int k, j, last;
       VdbeOp *pOp;
 
-      pOp = sqlite3VdbeGetOp(v, pWInfo->iTop);
       last = sqlite3VdbeCurrentAddr(v);
-      for(k=pWInfo->iTop; k<last; k++, pOp++){
+      k = pLevel->addrBody;
+      pOp = sqlite3VdbeGetOp(v, k);
+      for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
           for(j=0; j<pIdx->nColumn; j++){
