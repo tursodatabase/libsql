@@ -1522,9 +1522,9 @@ static void groupConcatFinalize(sqlite3_context *context){
   StrAccum *pAccum;
   pAccum = sqlite3_aggregate_context(context, 0);
   if( pAccum ){
-    if( pAccum->tooBig ){
+    if( pAccum->accError==STRACCUM_TOOBIG ){
       sqlite3_result_error_toobig(context);
-    }else if( pAccum->mallocFailed ){
+    }else if( pAccum->accError==STRACCUM_NOMEM ){
       sqlite3_result_error_nomem(context);
     }else{    
       sqlite3_result_text(context, sqlite3StrAccumFinish(pAccum), -1, 

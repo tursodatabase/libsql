@@ -507,19 +507,6 @@ static int checkSavepointCount(sqlite3 *db){
 }
 #endif
 
-/*
-** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored
-** in memory obtained from sqlite3_malloc) into a Vdbe.zErrMsg (text stored
-** in memory obtained from sqlite3DbMalloc).
-*/
-static void importVtabErrMsg(Vdbe *p, sqlite3_vtab *pVtab){
-  sqlite3 *db = p->db;
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
-  sqlite3_free(pVtab->zErrMsg);
-  pVtab->zErrMsg = 0;
-}
-
 
 /*
 ** Execute as much of a VDBE program as we can then return.
@@ -4402,7 +4389,7 @@ case OP_Rowid: {                 /* out2-prerelease */
     pModule = pVtab->pModule;
     assert( pModule->xRowid );
     rc = pModule->xRowid(pC->pVtabCursor, &v);
-    importVtabErrMsg(p, pVtab);
+    sqlite3VtabImportErrmsg(p, pVtab);
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
   }else{
     assert( pC->pCursor!=0 );
@@ -5795,7 +5782,7 @@ case OP_VBegin: {
   VTable *pVTab;
   pVTab = pOp->p4.pVtab;
   rc = sqlite3VtabBegin(db, pVTab);
-  if( pVTab ) importVtabErrMsg(p, pVTab->pVtab);
+  if( pVTab ) sqlite3VtabImportErrmsg(p, pVTab->pVtab);
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
@@ -5846,7 +5833,7 @@ case OP_VOpen: {
   pModule = (sqlite3_module *)pVtab->pModule;
   assert(pVtab && pModule);
   rc = pModule->xOpen(pVtab, &pVtabCursor);
-  importVtabErrMsg(p, pVtab);
+  sqlite3VtabImportErrmsg(p, pVtab);
   if( SQLITE_OK==rc ){
     /* Initialize sqlite3_vtab_cursor base class */
     pVtabCursor->pVtab = pVtab;
@@ -5924,7 +5911,7 @@ case OP_VFilter: {   /* jump */
     p->inVtabMethod = 1;
     rc = pModule->xFilter(pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
     p->inVtabMethod = 0;
-    importVtabErrMsg(p, pVtab);
+    sqlite3VtabImportErrmsg(p, pVtab);
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pVtabCursor);
     }
@@ -5975,7 +5962,7 @@ case OP_VColumn: {
   MemSetTypeFlag(&sContext.s, MEM_Null);
 
   rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
-  importVtabErrMsg(p, pVtab);
+  sqlite3VtabImportErrmsg(p, pVtab);
   if( sContext.isError ){
     rc = sContext.isError;
   }
@@ -6028,7 +6015,7 @@ case OP_VNext: {   /* jump */
   p->inVtabMethod = 1;
   rc = pModule->xNext(pCur->pVtabCursor);
   p->inVtabMethod = 0;
-  importVtabErrMsg(p, pVtab);
+  sqlite3VtabImportErrmsg(p, pVtab);
   if( rc==SQLITE_OK ){
     res = pModule->xEof(pCur->pVtabCursor);
   }
@@ -6065,7 +6052,7 @@ case OP_VRename: {
   rc = sqlite3VdbeChangeEncoding(pName, SQLITE_UTF8);
   if( rc==SQLITE_OK ){
     rc = pVtab->pModule->xRename(pVtab, pName->z);
-    importVtabErrMsg(p, pVtab);
+    sqlite3VtabImportErrmsg(p, pVtab);
     p->expired = 0;
   }
   break;
@@ -6127,7 +6114,7 @@ case OP_VUpdate: {
     db->vtabOnConflict = pOp->p5;
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
     db->vtabOnConflict = vtabOnConflict;
-    importVtabErrMsg(p, pVtab);
+    sqlite3VtabImportErrmsg(p, pVtab);
     if( rc==SQLITE_OK && pOp->p1 ){
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );
       db->lastRowid = lastRowid = rowid;

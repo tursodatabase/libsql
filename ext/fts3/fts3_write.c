@@ -5135,11 +5135,11 @@ int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
         if( pTC ) pModule->xClose(pTC);
         if( rc==SQLITE_DONE ) rc = SQLITE_OK;
       }
+    }
 
-      for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
-        if( pDef->pList ){
-          rc = fts3PendingListAppendVarint(&pDef->pList, 0);
-        }
+    for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
+      if( pDef->pList ){
+        rc = fts3PendingListAppendVarint(&pDef->pList, 0);
       }
     }
   }

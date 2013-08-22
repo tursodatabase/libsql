@@ -1766,7 +1766,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   ** required, as an xSync() callback may add an attached database
   ** to the transaction.
   */
-  rc = sqlite3VtabSync(db, &p->zErrMsg);
+  rc = sqlite3VtabSync(db, p);
 
   /* This loop determines (a) if the commit hook should be invoked and
   ** (b) how many database files have open write transactions, not 
@@ -3306,6 +3306,21 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
     v->expmask |= ((u32)1 << (iVar-1));
   }
 }
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+/*
+** Transfer error message text from an sqlite3_vtab.zErrMsg (text stored
+** in memory obtained from sqlite3_malloc) into a Vdbe.zErrMsg (text stored
+** in memory obtained from sqlite3DbMalloc).
+*/
+void sqlite3VtabImportErrmsg(Vdbe *p, sqlite3_vtab *pVtab){
+  sqlite3 *db = p->db;
+  sqlite3DbFree(db, p->zErrMsg);
+  p->zErrMsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
+  sqlite3_free(pVtab->zErrMsg);
+  pVtab->zErrMsg = 0;
+}
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
 

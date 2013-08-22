@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !vtab {
+  finish_test
+  return
+}
+
 load_static_extension db wholenumber;
 do_test index6-1.1 {
   # Able to parse and manage partial indices

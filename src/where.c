@@ -90,6 +90,7 @@ struct WhereLevel {
   int addrNxt;          /* Jump here to start the next IN combination */
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
+  int addrBody;         /* Beginning of the body of this loop */
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
   int p1, p2;           /* Operands of the opcode used to ends the loop */
@@ -3029,7 +3030,7 @@ static int codeAllEqualityTerms(
 
   /* Evaluate the equality constraints
   */
-  assert( pIdx->nColumn>=nEq );
+  assert( zAff==0 || strlen(zAff)>=nEq );
   for(j=0; j<nEq; j++){
     int r1;
     pTerm = pLoop->aLTerm[j];
@@ -3121,7 +3122,8 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   txt.db = db;
   sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
-    explainAppendTerm(&txt, i, aCol[aiColumn[i]].zName, "=");
+    char *z = (i==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[i]].zName;
+    explainAppendTerm(&txt, i, z, "=");
   }
 
   j = i;
@@ -4336,13 +4338,11 @@ static int whereLoopAddBtreeIndex(
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
-#ifdef SQLITE_ENABLE_STAT3
-    if( (pTerm->wtFlags & TERM_VNULL)!=0
+    if( (pTerm->eOperator==WO_ISNULL || (pTerm->wtFlags&TERM_VNULL)!=0)
      && (iCol<0 || pSrc->pTab->aCol[iCol].notNull)
     ){
-      continue; /* skip IS NOT NULL constraints on a NOT NULL column */
+      continue; /* ignore IS [NOT] NULL constraints on NOT NULL columns */
     }
-#endif
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->nLTerm = saved_nLTerm;
@@ -5985,11 +5985,6 @@ WhereInfo *sqlite3WhereBegin(
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }
-#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
-    if( (pLoop->wsFlags & WHERE_AUTO_INDEX)!=0 ){
-      constructAutomaticIndex(pParse, &pWInfo->sWC, pTabItem, notReady, pLevel);
-    }else
-#endif
     if( pLoop->wsFlags & WHERE_INDEXED ){
       Index *pIx = pLoop->u.btree.pIndex;
       KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
@@ -6014,7 +6009,15 @@ WhereInfo *sqlite3WhereBegin(
   notReady = ~(Bitmask)0;
   for(ii=0; ii<nTabList; ii++){
     pLevel = &pWInfo->a[ii];
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
+    if( (pLevel->pWLoop->wsFlags & WHERE_AUTO_INDEX)!=0 ){
+      constructAutomaticIndex(pParse, &pWInfo->sWC,
+                &pTabList->a[pLevel->iFrom], notReady, pLevel);
+      if( db->mallocFailed ) goto whereBeginError;
+    }
+#endif
     explainOneScan(pParse, pTabList, pLevel, ii, pLevel->iFrom, wctrlFlags);
+    pLevel->addrBody = sqlite3VdbeCurrentAddr(v);
     notReady = codeOneLoopStart(pWInfo, ii, notReady);
     pWInfo->iContinue = pLevel->addrCont;
   }
@@ -6134,9 +6137,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       int k, j, last;
       VdbeOp *pOp;
 
-      pOp = sqlite3VdbeGetOp(v, pWInfo->iTop);
       last = sqlite3VdbeCurrentAddr(v);
-      for(k=pWInfo->iTop; k<last; k++, pOp++){
+      k = pLevel->addrBody;
+      pOp = sqlite3VdbeGetOp(v, k);
+      for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
           for(j=0; j<pIdx->nColumn; j++){

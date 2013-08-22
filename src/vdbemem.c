@@ -799,34 +799,29 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   ** if both values are integers.
   */
   if( combined_flags&(MEM_Int|MEM_Real) ){
-    if( !(f1&(MEM_Int|MEM_Real)) ){
-      return 1;
-    }
-    if( !(f2&(MEM_Int|MEM_Real)) ){
-      return -1;
-    }
-    if( (f1 & f2 & MEM_Int)==0 ){
-      double r1, r2;
-      if( (f1&MEM_Real)==0 ){
-        r1 = (double)pMem1->u.i;
-      }else{
-        r1 = pMem1->r;
-      }
-      if( (f2&MEM_Real)==0 ){
-        r2 = (double)pMem2->u.i;
-      }else{
-        r2 = pMem2->r;
-      }
-      if( r1<r2 ) return -1;
-      if( r1>r2 ) return 1;
-      return 0;
-    }else{
-      assert( f1&MEM_Int );
-      assert( f2&MEM_Int );
+    double r1, r2;
+    if( (f1 & f2 & MEM_Int)!=0 ){
       if( pMem1->u.i < pMem2->u.i ) return -1;
       if( pMem1->u.i > pMem2->u.i ) return 1;
       return 0;
     }
+    if( (f1&MEM_Real)!=0 ){
+      r1 = pMem1->r;
+    }else if( (f1&MEM_Int)!=0 ){
+      r1 = (double)pMem1->u.i;
+    }else{
+      return 1;
+    }
+    if( (f2&MEM_Real)!=0 ){
+      r2 = pMem2->r;
+    }else if( (f2&MEM_Int)!=0 ){
+      r2 = (double)pMem2->u.i;
+    }else{
+      return -1;
+    }
+    if( r1<r2 ) return -1;
+    if( r1>r2 ) return 1;
+    return 0;
   }
 
   /* If one value is a string and the other is a blob, the string is less.

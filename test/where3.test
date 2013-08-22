@@ -246,6 +246,12 @@ do_execsql_test where3-3.1 {
   0 0 1 {SCAN TABLE t302} 
   0 1 0 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)}
 }
+do_execsql_test where3-3.2 {
+  SELECT * FROM t301 WHERE c=3 AND a IS NULL;
+} {}
+do_execsql_test where3-3.3 {
+  SELECT * FROM t301 WHERE c=3 AND a IS NOT NULL;
+} {1 2 3}
 
 if 0 {  # Query planner no longer does this
 # Verify that when there are multiple tables in a join which must be
