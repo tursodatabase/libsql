@@ -4561,6 +4561,7 @@ static int whereLoopAddBtree(
   rSize = whereCost(pSrc->pTab->nRowEst);
   rLogSize = estLog(rSize);
 
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
   /* Automatic indexes */
   if( !pBuilder->pOrSet
    && (pWInfo->pParse->db->flags & SQLITE_AutoIndex)!=0
@@ -4595,6 +4596,7 @@ static int whereLoopAddBtree(
       }
     }
   }
+#endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 
   /* Loop over all indices
   */
