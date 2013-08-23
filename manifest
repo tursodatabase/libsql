@@ -1,5 +1,5 @@
-C Defer\sthe\screation\sof\sautomatic\sindices\suntil\sthe\sindex\sis\sactually\sused.
-D 2013-08-22T02:56:28.029
+C Modify\sscript\smkautoconfamal.sh\sto\suse\sthe\sdownload.html\snaming\sconvention\sfor\sthe\star.gz\sit\screates.
+D 2013-08-23T12:04:52.472
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1070,7 +1070,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 680980c7935bfa1edec20c804c9e5ba4b1dd96f5
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/mkautoconfamal.sh 9ef9ad69bc3021a6fd2dac53a2e8cf5b97e0df05
+F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 617e23ec283d3147fc3fd29c474ccedf4915cdc7
-R c8cf06f49dffbef3bb0170f8252069c7
-U drh
-Z c5e5b20d4589a0c600c887ab3fa62d4e
+P 0775501acf152dcbf4dd039f4511f3d8c4330d85
+R e95e6e128eddba46b6b516dee3fbd030
+U dan
+Z 71e5fab2050f36808034c145f357ce22

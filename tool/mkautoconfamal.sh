@@ -23,6 +23,16 @@ set -u
 TMPSPACE=./mkpkg_tmp_dir
 VERSION=`cat $TOP/VERSION`
 
+# Set global variable $ARTIFACT to the "3xxyyzz" string incorporated 
+# into artifact filenames. And $VERSION2 to the "3.x.y[.z]" form.
+xx=`echo $VERSION|sed 's/3\.\([0-9]*\)\..*/\1/'`
+yy=`echo $VERSION|sed 's/3\.[^.]*\.\([0-9]*\).*/\1/'`
+zz=0
+set +e
+  zz=`echo $VERSION|sed 's/3\.[^.]*\.[^.]*\.\([0-9]*\).*/\1/'|grep -v '\.'`
+set -e
+ARTIFACT=`printf "3%.2d%.2d%.2d" $xx $yy $zz`
+
 rm -rf $TMPSPACE
 cp -R $TOP/autoconf $TMPSPACE
 
@@ -66,5 +76,8 @@ rm -rf autom4te.cache
 
 cd ../
 ./configure && make dist
-mv sqlite-$VERSION.tar.gz ../sqlite-amalgamation-$VERSION.tar.gz
+tar -xzf sqlite-$VERSION.tar.gz
+mv sqlite-$VERSION sqlite-autoconf-$ARTIFACT
+tar -czf sqlite-autoconf-$ARTIFACT.tar.gz sqlite-autoconf-$ARTIFACT
+mv sqlite-autoconf-$ARTIFACT.tar.gz ..
 
