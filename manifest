@@ -1,5 +1,5 @@
-C Modify\sscript\smkautoconfamal.sh\sto\suse\sthe\sdownload.html\snaming\sconvention\sfor\sthe\star.gz\sit\screates.
-D 2013-08-23T12:04:52.472
+C Fix\sa\srequirements\scomment\sin\sa\stest\scase.\s\sNo\schanges\sto\sthe\stestcase\nitself\snor\sto\sany\scode.
+D 2013-08-23T16:47:40.403
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -430,7 +430,7 @@ F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
 F test/e_expr.test d5cdda0e4ffb17760858ed4c7c4ece07efc40f71
 F test/e_fkey.test 17cfb40002d165299681f39aac0cb5890c359935
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
-F test/e_insert.test ea84688f3b27a6a3728e4ae7a7d9ad342579d7a4
+F test/e_insert.test 291e056e1a442a5e5166a989a8a03a46e38225ca
 F test/e_reindex.test e175794fc41f8e8aef34772e87a7d7b7a9251dd3
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test f2358d074bd82240bc79a8348f284a2a8909dc1f
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0775501acf152dcbf4dd039f4511f3d8c4330d85
-R e95e6e128eddba46b6b516dee3fbd030
-U dan
-Z 71e5fab2050f36808034c145f357ce22
+P 375b4e3db0e0c9e83034d1c33d7c57aca48e87b6
+R 63354ed06838fc047a69a4fb2515af7d
+U drh
+Z 918c3a008ddcf66955748a419dc94791
