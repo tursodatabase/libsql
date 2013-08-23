@@ -71,6 +71,7 @@ int sqlite3session_create(
 */
 void sqlite3session_delete(sqlite3_session *pSession);
 
+
 /*
 ** CAPI3REF: Enable Or Disable A Session Object
 **
@@ -150,6 +151,24 @@ int sqlite3session_indirect(sqlite3_session *pSession, int bIndirect);
 int sqlite3session_attach(
   sqlite3_session *pSession,      /* Session object */
   const char *zTab                /* Table name */
+);
+
+/*
+** CAPI3REF: Set a table filter on a Session Object.
+**
+** The second argument (xFilter) is the "filter callback". For changes to rows 
+** in tables that are not attached to the Session oject, the filter is called
+** to determine whether changes to the table's rows should be tracked or not. 
+** If xFilter returns 0, changes is not tracked. Note that once a table is 
+** attached, xFilter will not be called again.
+*/
+void sqlite3session_table_filter(
+  sqlite3_session *pSession,      /* Session object */
+  int(*xFilter)(
+    void *pCtx,                   /* Copy of third arg to _filter_table() */
+    const char *zTab              /* Table name */
+  ),
+  void *pCtx                      /* First argument passed to xFilter */
 );
 
 /*

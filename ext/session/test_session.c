@@ -7,10 +7,41 @@
 #include <string.h>
 #include <tcl.h>
 
+typedef struct TestSession TestSession;
+struct TestSession {
+  sqlite3_session *pSession;
+  Tcl_Interp *interp;
+  Tcl_Obj *pFilterScript;
+};
+
 static int test_session_error(Tcl_Interp *interp, int rc){
   extern const char *sqlite3ErrName(int);
   Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
   return TCL_ERROR;
+}
+
+static int test_table_filter(void *pCtx, const char *zTbl){
+  TestSession *p = (TestSession*)pCtx;
+  Tcl_Obj *pEval;
+  int rc;
+  int bRes = 0;
+
+  pEval = Tcl_DuplicateObj(p->pFilterScript);
+  Tcl_IncrRefCount(pEval);
+  rc = Tcl_ListObjAppendElement(p->interp, pEval, Tcl_NewStringObj(zTbl, -1));
+  if( rc==TCL_OK ){
+    rc = Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
+  }
+  if( rc==TCL_OK ){
+    rc = Tcl_GetBooleanFromObj(p->interp, Tcl_GetObjResult(p->interp), &bRes);
+  }
+  if( rc!=TCL_OK ){
+    /* printf("error: %s\n", Tcl_GetStringResult(p->interp)); */
+    Tcl_BackgroundError(p->interp);
+  }
+  Tcl_DecrRefCount(pEval);
+
+  return bRes;
 }
 
 /*
@@ -19,6 +50,7 @@ static int test_session_error(Tcl_Interp *interp, int rc){
 **          $session delete
 **          $session enable BOOL
 **          $session indirect INTEGER
+**          $session table_filter SCRIPT
 */
 static int test_session_cmd(
   void *clientData,
@@ -26,19 +58,21 @@ static int test_session_cmd(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  sqlite3_session *pSession = (sqlite3_session *)clientData;
+  TestSession *p = (TestSession*)clientData;
+  sqlite3_session *pSession = p->pSession;
   struct SessionSubcmd {
     const char *zSub;
     int nArg;
     const char *zMsg;
     int iSub;
   } aSub[] = {
-    { "attach",    1, "TABLE", }, /* 0 */
-    { "changeset", 0, "",      }, /* 1 */
-    { "delete",    0, "",      }, /* 2 */
-    { "enable",    1, "BOOL",  }, /* 3 */
-    { "indirect",  1, "BOOL",  }, /* 4 */
-    { "isempty",   0, "",      }, /* 5 */
+    { "attach",       1, "TABLE",  }, /* 0 */
+    { "changeset",    0, "",       }, /* 1 */
+    { "delete",       0, "",       }, /* 2 */
+    { "enable",       1, "BOOL",   }, /* 3 */
+    { "indirect",     1, "BOOL",   }, /* 4 */
+    { "isempty",      0, "",       }, /* 5 */
+    { "table_filter", 1, "SCRIPT", }, /* 6 */
     { 0 }
   };
   int iSub;
@@ -65,8 +99,8 @@ static int test_session_cmd(
       if( rc!=SQLITE_OK ){
         return test_session_error(interp, rc);
       }
-    }
       break;
+    }
 
     case 1: {      /* changeset */
       int nChange;
@@ -107,14 +141,25 @@ static int test_session_cmd(
       Tcl_SetObjResult(interp, Tcl_NewBooleanObj(val));
       break;
     }
+            
+    case 6: {      /* table_filter */
+      if( p->pFilterScript ) Tcl_DecrRefCount(p->pFilterScript);
+      p->interp = interp;
+      p->pFilterScript = Tcl_DuplicateObj(objv[2]);
+      Tcl_IncrRefCount(p->pFilterScript);
+      sqlite3session_table_filter(pSession, test_table_filter, clientData);
+      break;
+    }
   }
 
   return TCL_OK;
 }
 
 static void test_session_del(void *clientData){
-  sqlite3_session *pSession = (sqlite3_session *)clientData;
-  sqlite3session_delete(pSession);
+  TestSession *p = (TestSession*)clientData;
+  if( p->pFilterScript ) Tcl_DecrRefCount(p->pFilterScript);
+  sqlite3session_delete(p->pSession);
+  ckfree(p);
 }
 
 /*
@@ -129,7 +174,7 @@ static int test_sqlite3session(
   sqlite3 *db;
   Tcl_CmdInfo info;
   int rc;                         /* sqlite3session_create() return code */
-  sqlite3_session *pSession;      /* New session object */
+  TestSession *p;                 /* New wrapper object */
 
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "CMD DB-HANDLE DB-NAME");
@@ -142,13 +187,16 @@ static int test_sqlite3session(
   }
   db = *(sqlite3 **)info.objClientData;
 
-  rc = sqlite3session_create(db, Tcl_GetString(objv[3]), &pSession);
+  p = (TestSession*)ckalloc(sizeof(TestSession));
+  memset(p, 0, sizeof(TestSession));
+  rc = sqlite3session_create(db, Tcl_GetString(objv[3]), &p->pSession);
   if( rc!=SQLITE_OK ){
+    ckfree(p);
     return test_session_error(interp, rc);
   }
 
   Tcl_CreateObjCommand(
-      interp, Tcl_GetString(objv[1]), test_session_cmd, (ClientData)pSession,
+      interp, Tcl_GetString(objv[1]), test_session_cmd, (ClientData)p,
       test_session_del
   );
   Tcl_SetObjResult(interp, objv[1]);

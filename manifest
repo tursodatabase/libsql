@@ -1,5 +1,5 @@
-C Merge\sin\sminor\sbug\sfixes\sand\sperformance\stweaks\sfrom\strunk\sleading\sup\sto\nthe\sversion\s3.8.0\srelease.
-D 2013-08-22T15:07:08.266
+C Add\sthe\ssqlite3session_table_filter\sAPI\sto\sthe\ssessions\sextension.
+D 2013-08-23T17:43:32.715
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aff38bc64c582dd147f18739532198372587b0f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,11 +144,12 @@ F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session9.test 43acfdc57647c2ce4b36dbd0769112520ea6af14
+F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
-F ext/session/sqlite3session.c e0345e8425a36fb8ac107175ebae46b4af8873e4
-F ext/session/sqlite3session.h c7db3d8515eba7f41eeb8698a25e58d24cd384bf
-F ext/session/test_session.c 12053e9190653164fa624427cf90d1f46ca7f179
+F ext/session/sqlite3session.c 63eea3741e8ac1574d4c183fd92a6a50b1415357
+F ext/session/sqlite3session.h 6c35057241567ed6319f750ee504a81c459225e1
+F ext/session/test_session.c d38968307c05229cc8cd603722cf305d6f768832
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
@@ -1119,7 +1120,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3e4033285deb417bd72c008917729dbf3bf4e90d 0775501acf152dcbf4dd039f4511f3d8c4330d85
-R f6e422c39c44105817eb40d9d54618de
-U drh
-Z f9597afebde4efa08f5ab31e24bede7f
+P 831492dca8bcfb1a1f83a8bb15de9cc94f29f07e
+R cbce615b433685cc6c1cb9210155f0f8
+U dan
+Z 2d1cb3afe326cb66267c2981ea353dde

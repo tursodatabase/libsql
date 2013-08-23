@@ -23,6 +23,8 @@ struct sqlite3_session {
   int bIndirect;                  /* True if all changes are indirect */
   int bAutoAttach;                /* True to auto-attach tables */
   int rc;                         /* Non-zero if an error has occurred */
+  void *pFilterCtx;               /* First argument to pass to xTableFilter */
+  int (*xTableFilter)(void *pCtx, const char *zTab);
   sqlite3_session *pNext;         /* Next session object on same db. */
   SessionTable *pTable;           /* List of attached tables */
 };
@@ -1066,6 +1068,16 @@ static void xPreUpdate(
       if( !pTab ){
         /* This branch is taken if table zName has not yet been attached to
         ** this session and the auto-attach flag is set.  */
+
+        /* If there is a table-filter configured, invoke it. If it returns 0,
+        ** this change will not be recorded. Break out of the loop early in
+        ** this case.  */
+        if( pSession->xTableFilter 
+         && pSession->xTableFilter(pSession->pFilterCtx, zName)==0
+        ){
+          break;
+        }
+
         pSession->rc = sqlite3session_attach(pSession,zName);
         if( pSession->rc ) break;
         pTab = pSession->pTable;
@@ -1168,6 +1180,19 @@ void sqlite3session_delete(sqlite3_session *pSession){
 
   /* Free the session object itself. */
   sqlite3_free(pSession);
+}
+
+/*
+** Set a table filter on a Session Object.
+*/
+void sqlite3session_table_filter(
+  sqlite3_session *pSession, 
+  int(*xFilter)(void*, const char*),
+  void *pCtx                      /* First argument passed to xFilter */
+){
+  pSession->bAutoAttach = 1;
+  pSession->pFilterCtx = pCtx;
+  pSession->xTableFilter = xFilter;
 }
 
 /*
