@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3session_table_filter\sAPI\sto\sthe\ssessions\sextension.
-D 2013-08-23T17:43:32.715
+C Merge\srecent\strunk\schanges.
+D 2013-08-23T17:54:46.168
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in aff38bc64c582dd147f18739532198372587b0f0
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f8db986c03eb0bfb221523fc9bbb9d0b70de3168
 F src/analyze.c a33fcb0b3a399d966951feb9f32115106b3ecc2e
-F src/attach.c 5df737912f668fd160ec1d560755f85fdccbe5b7
+F src/attach.c fea00cab11c854646a27641a263f5876569a51f9
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
@@ -224,7 +224,7 @@ F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 1d96ba749253b49bc229c6294f9c2e5ef3dca85c
+F src/pragma.c dc9ceab9b361e3fbd461ebaa7fb8003233e20725
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -304,7 +304,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 8596edcfbffc6d26a9a4f8e4a41d09f058dd7037
+F src/where.c 6e718c39d6b2964f15f6c96ce5938b4652e3538e
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -444,7 +444,7 @@ F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
 F test/e_expr.test d5cdda0e4ffb17760858ed4c7c4ece07efc40f71
 F test/e_fkey.test 17cfb40002d165299681f39aac0cb5890c359935
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
-F test/e_insert.test ea84688f3b27a6a3728e4ae7a7d9ad342579d7a4
+F test/e_insert.test 291e056e1a442a5e5166a989a8a03a46e38225ca
 F test/e_reindex.test e175794fc41f8e8aef34772e87a7d7b7a9251dd3
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test f2358d074bd82240bc79a8348f284a2a8909dc1f
@@ -1085,7 +1085,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 680980c7935bfa1edec20c804c9e5ba4b1dd96f5
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/mkautoconfamal.sh 9ef9ad69bc3021a6fd2dac53a2e8cf5b97e0df05
+F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1120,7 +1120,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 831492dca8bcfb1a1f83a8bb15de9cc94f29f07e
-R cbce615b433685cc6c1cb9210155f0f8
+P b7e4dd889d37c8f57c2d3c7900e802f644aac3ea ed310201628cf79c0f57674ae7478ee6738b1c6e
+R 4028fc1f369293594c0fe8d5f10d386c
 U dan
-Z 2d1cb3afe326cb66267c2981ea353dde
+Z 6b7f4d8151d5a58f275c430cbe09ca16

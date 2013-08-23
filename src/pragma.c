@@ -183,6 +183,8 @@ static void setAllPagerFlags(sqlite3 *db){
     }
   }
 }
+#else
+# define setAllPagerFlags(X)  /* no-op */
 #endif
 
 
