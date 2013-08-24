@@ -4810,6 +4810,7 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
   UNUSED_PARAMETER(iOff);
 
+#if SQLITE_MAX_MMAP_SIZE>0
   /* If p==0 (unmap the entire file) then there must be no outstanding 
   ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),
   ** then there must be at least one outstanding.  */
@@ -4825,6 +4826,7 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   }
 
   assert( pFd->nFetchOut>=0 );
+#endif
   return SQLITE_OK;
 }
 
@@ -5156,7 +5158,9 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (u8)ctrlFlags;
+#if SQLITE_MAX_MMAP_SIZE>0
   pNew->mmapSizeMax = sqlite3GlobalConfig.szMmap;
+#endif
   if( sqlite3_uri_boolean(((ctrlFlags & UNIXFILE_URI) ? zFilename : 0),
                            "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pNew->ctrlFlags |= UNIXFILE_PSOW;
