@@ -1,5 +1,5 @@
-C Fix\sa\scouple\scompilation\sissues\son\sUnix.
-D 2013-08-24T01:12:03.598
+C Several\smodifications\sto\sthe\suse\sof\sthe\sMAX_PATH\smacro\son\sWindows\sto\simprove\sconsistency.
+D 2013-08-24T23:55:01.356
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 44a2b26acd3f3f3a0b5d8495af945cec70a9e9df
-F src/os_win.c 1d84f2079d9b91f91a4b5dbfa5e08f1b1a0ed0ff
+F src/os_win.c 339cdb887654f805a3e7225dd67f210cd5c831d3
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 032c31593d6f569842830cac6222362be68b2084
-R e9c8a1891e536319ba2e72bdf41d1b7c
+P 25b029d8f32440a94ef8af45153423f6702d7431
+R 43a5201efd5c79e69d4099d70d2d8790
 U mistachkin
-Z cf772d6485c0eea6b9958d111508c114
+Z 68ffb990c84dd84cc8ba4e540d45c8d3

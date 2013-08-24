@@ -51,6 +51,24 @@
 #endif
 
 /*
+** Maximum pathname length (in bytes) for Win32.  The MAX_PATH macro is in
+** characters, so we allocate 3 bytes per character assuming worst-case of
+** 3-bytes-per-character for UTF8.
+*/
+#ifndef SQLITE_WIN32_MAX_PATH
+#  define SQLITE_WIN32_MAX_PATH   (MAX_PATH*3)
+#endif
+
+/*
+** Maximum error message length (in bytes) for WinRT.  The MAX_PATH macro is
+** in characters, so we allocate 3 bytes per character assuming worst-case of
+** 3-bytes-per-character for UTF8.
+*/
+#ifndef SQLITE_WIN32_MAX_ERRMSG
+#  define SQLITE_WIN32_MAX_ERRMSG (MAX_PATH*3)
+#endif
+
+/*
 ** Do we need to manually define the Win32 file mapping APIs for use with WAL
 ** mode (e.g. these APIs are available in the Windows CE SDK; however, they
 ** are not present in the header file)?
@@ -1463,14 +1481,14 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
 
   if( isNT() ){
 #if SQLITE_OS_WINRT
-    WCHAR zTempWide[MAX_PATH+1]; /* NOTE: Somewhat arbitrary. */
+    WCHAR zTempWide[SQLITE_WIN32_MAX_ERRMSG+1]; /* NOTE: Somewhat arbitrary. */
     dwLen = osFormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
                              FORMAT_MESSAGE_IGNORE_INSERTS,
                              NULL,
                              lastErrno,
                              0,
                              zTempWide,
-                             MAX_PATH,
+                             SQLITE_WIN32_MAX_ERRMSG,
                              0);
 #else
     LPWSTR zTempWide = NULL;
@@ -3869,15 +3887,6 @@ static void *convertUtf8Filename(const char *zFilename){
 }
 
 /*
-** Maximum pathname length (in bytes) for windows.  The MAX_PATH macro is
-** in characters, so we allocate 3 bytes per character assuming worst-case
-** 3-bytes-per-character UTF8.
-*/
-#ifndef SQLITE_WIN32_MAX_PATH
-#  define SQLITE_WIN32_MAX_PATH   (MAX_PATH*3)
-#endif
-
-/*
 ** Create a temporary file name in zBuf.  zBuf must be big enough to
 ** hold at pVfs->mxPathname characters.
 */
@@ -3903,8 +3912,8 @@ static int getTempname(int nBuf, char *zBuf){
 #if !SQLITE_OS_WINRT
   else if( isNT() ){
     char *zMulti;
-    WCHAR zWidePath[MAX_PATH];
-    if( osGetTempPathW(MAX_PATH-30, zWidePath)==0 ){
+    WCHAR zWidePath[SQLITE_WIN32_MAX_PATH];
+    if( osGetTempPathW(SQLITE_WIN32_MAX_PATH-30, zWidePath)==0 ){
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
       return SQLITE_IOERR_GETTEMPPATH;
     }
