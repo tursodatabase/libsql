@@ -218,11 +218,13 @@ struct unixFile {
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
+#if SQLITE_MAX_MMAP_SIZE>0
   int nFetchOut;                      /* Number of outstanding xFetch refs */
   sqlite3_int64 mmapSize;             /* Usable size of mapping at pMapRegion */
   sqlite3_int64 mmapSizeActual;       /* Actual size of mapping at pMapRegion */
   sqlite3_int64 mmapSizeMax;          /* Configured FCNTL_MMAP_SIZE value */
   void *pMapRegion;                   /* Memory mapped region */
+#endif
 #ifdef __QNXNTO__
   int sectorSize;                     /* Device sector size */
   int deviceCharacteristics;          /* Precomputed device characteristics */
@@ -1871,8 +1873,10 @@ static int unixUnlock(sqlite3_file *id, int eFileLock){
   return posixUnlock(id, eFileLock, 0);
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
 static int unixMapfile(unixFile *pFd, i64 nByte);
 static void unixUnmapfile(unixFile *pFd);
+#endif
 
 /*
 ** This function performs the parts of the "close file" operation 
@@ -1886,7 +1890,9 @@ static void unixUnmapfile(unixFile *pFd);
 */
 static int closeUnixFile(sqlite3_file *id){
   unixFile *pFile = (unixFile*)id;
+#if SQLITE_MAX_MMAP_SIZE>0
   unixUnmapfile(pFile);
+#endif
   if( pFile->h>=0 ){
     robust_close(pFile, pFile->h, __LINE__);
     pFile->h = -1;
@@ -3590,6 +3596,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     }
 #endif
 
+#if SQLITE_MAX_MMAP_SIZE>0
     /* If the file was just truncated to a size smaller than the currently
     ** mapped region, reduce the effective mapping size as well. SQLite will
     ** use read() and write() to access data beyond this point from now on.  
@@ -3597,6 +3604,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     if( nByte<pFile->mmapSize ){
       pFile->mmapSize = nByte;
     }
+#endif
 
     return SQLITE_OK;
   }
@@ -3686,6 +3694,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     }
   }
 
+#if SQLITE_MAX_MMAP_SIZE>0
   if( pFile->mmapSizeMax>0 && nByte>pFile->mmapSize ){
     int rc;
     if( pFile->szChunk<=0 ){
@@ -3698,6 +3707,7 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     rc = unixMapfile(pFile, nByte);
     return rc;
   }
+#endif
 
   return SQLITE_OK;
 }
@@ -3766,6 +3776,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
+#if SQLITE_MAX_MMAP_SIZE>0
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;
       int rc = SQLITE_OK;
@@ -3782,6 +3793,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return rc;
     }
+#endif
 #ifdef SQLITE_DEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and
@@ -4592,22 +4604,20 @@ static int unixShmUnmap(
 # define unixShmUnmap   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
+#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** If it is currently memory mapped, unmap file pFd.
 */
 static void unixUnmapfile(unixFile *pFd){
   assert( pFd->nFetchOut==0 );
-#if SQLITE_MAX_MMAP_SIZE>0
   if( pFd->pMapRegion ){
     osMunmap(pFd->pMapRegion, pFd->mmapSizeActual);
     pFd->pMapRegion = 0;
     pFd->mmapSize = 0;
     pFd->mmapSizeActual = 0;
   }
-#endif
 }
 
-#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Return the system page size.
 */
@@ -4620,9 +4630,7 @@ static int unixGetPagesize(void){
   return (int)sysconf(_SC_PAGESIZE);
 #endif
 }
-#endif /* SQLITE_MAX_MMAP_SIZE>0 */
 
-#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Attempt to set the size of the memory mapping maintained by file 
 ** descriptor pFd to nNew bytes. Any existing mapping is discarded.
@@ -4707,7 +4715,6 @@ static void unixRemapfile(
   pFd->pMapRegion = (void *)pNew;
   pFd->mmapSize = pFd->mmapSizeActual = nNew;
 }
-#endif
 
 /*
 ** Memory map or remap the file opened by file-descriptor pFd (if the file
@@ -4726,7 +4733,6 @@ static void unixRemapfile(
 ** code otherwise.
 */
 static int unixMapfile(unixFile *pFd, i64 nByte){
-#if SQLITE_MAX_MMAP_SIZE>0
   i64 nMap = nByte;
   int rc;
 
@@ -4752,10 +4758,10 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
       unixUnmapfile(pFd);
     }
   }
-#endif
 
   return SQLITE_OK;
 }
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
 
 /*
 ** If possible, return a pointer to a mapping of file fd starting at offset
