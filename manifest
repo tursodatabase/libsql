@@ -1,5 +1,5 @@
-C Version\s3.8.0
-D 2013-08-26T04:50:08.905
+C Fix\sfor\sbuilds\swith\sboth\sSQLITE_OMIT_WAL\sand\sSQLITE_MAX_MMAP_SIZE=0\sdefined.
+D 2013-08-26T14:30:25.813
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 9eafa5458cf2ff684ddccff82c9bb113c7cad847
+F src/os_unix.c 6005be1c24797520cd5671463e1c735d197e6e83
 F src/os_win.c 1d84f2079d9b91f91a4b5dbfa5e08f1b1a0ed0ff
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
@@ -1105,10 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ed310201628cf79c0f57674ae7478ee6738b1c6e
-R 5a6ead2576f296902c1b2ccbdf985254
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.0 *
-U drh
-Z 16184cb835825e1de42c653d441df656
+P f64cd21e2e23ed7cff48f7dafa5e76adde9321c2
+R 2c7ed4c326daab71e6477ad6fcbe3595
+U dan
+Z 1fc299d2108dcbca170e4fd8db67c42b
