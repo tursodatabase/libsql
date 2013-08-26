@@ -42,6 +42,10 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# TODO: Reenable this test.
+  finish_test
+  return
+
 ifcapable !stat3 {
   finish_test
   return

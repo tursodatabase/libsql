@@ -781,11 +781,11 @@ do_test where9-6.8.2 {
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
 } {1 {no query solution}}
-ifcapable stat3 {
+ifcapable stat4||stat3 {
   # When STAT3 is enabled, the "b NOT NULL" terms get translated
   # into b>NULL, which can be satified by the index t1b.  It is a very
   # expensive way to do the query, but it works, and so a solution is possible.
-  do_test where9-6.8.3-stat3 {
+  do_test where9-6.8.3-stat4 {
     catchsql {
       UPDATE t1 INDEXED BY t1b SET a=a+100
        WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
@@ -793,7 +793,7 @@ ifcapable stat3 {
           OR (b NOT NULL AND c NOT NULL AND d IS NULL)
     }
   } {0 {}}
-  do_test where9-6.8.4-stat3 {
+  do_test where9-6.8.4-stat4 {
     catchsql {
       DELETE FROM t1 INDEXED BY t1b
        WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
@@ -850,6 +850,11 @@ do_test where9-7.0 {
     CREATE TABLE t6(a, b, c, e, d, f, g, x, y);
     INSERT INTO t6 SELECT * FROM t5;
     ANALYZE t5;
+  }
+  ifcapable stat3 {
+    sqlite3 db2 test.db
+    db2 eval { DROP TABLE IF EXISTS sqlite_stat3 }
+    db2 close
   }
 } {}
 do_test where9-7.1.1 {
