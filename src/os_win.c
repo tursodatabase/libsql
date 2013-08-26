@@ -51,21 +51,27 @@
 #endif
 
 /*
+** Maximum pathname length (in chars) for Win32.  This should normally be
+** MAX_PATH.
+*/
+#ifndef SQLITE_WIN32_MAX_PATH_CHARS
+#  define SQLITE_WIN32_MAX_PATH_CHARS   (MAX_PATH)
+#endif
+
+/*
 ** Maximum pathname length (in bytes) for Win32.  The MAX_PATH macro is in
 ** characters, so we allocate 3 bytes per character assuming worst-case of
 ** 3-bytes-per-character for UTF8.
 */
-#ifndef SQLITE_WIN32_MAX_PATH
-#  define SQLITE_WIN32_MAX_PATH   (MAX_PATH*3)
+#ifndef SQLITE_WIN32_MAX_PATH_BYTES
+#  define SQLITE_WIN32_MAX_PATH_BYTES   (SQLITE_WIN32_MAX_PATH_CHARS*3)
 #endif
 
 /*
-** Maximum error message length (in bytes) for WinRT.  The MAX_PATH macro is
-** in characters, so we allocate 3 bytes per character assuming worst-case of
-** 3-bytes-per-character for UTF8.
+** Maximum error message length (in chars) for WinRT.
 */
-#ifndef SQLITE_WIN32_MAX_ERRMSG
-#  define SQLITE_WIN32_MAX_ERRMSG (MAX_PATH*3)
+#ifndef SQLITE_WIN32_MAX_ERRMSG_CHARS
+#  define SQLITE_WIN32_MAX_ERRMSG_CHARS (1024)
 #endif
 
 /*
@@ -1481,14 +1487,14 @@ static int getLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
 
   if( isNT() ){
 #if SQLITE_OS_WINRT
-    WCHAR zTempWide[SQLITE_WIN32_MAX_ERRMSG+1]; /* NOTE: Somewhat arbitrary. */
+    WCHAR zTempWide[SQLITE_WIN32_MAX_ERRMSG_CHARS+1];
     dwLen = osFormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
                              FORMAT_MESSAGE_IGNORE_INSERTS,
                              NULL,
                              lastErrno,
                              0,
                              zTempWide,
-                             SQLITE_WIN32_MAX_ERRMSG,
+                             SQLITE_WIN32_MAX_ERRMSG_CHARS,
                              0);
 #else
     LPWSTR zTempWide = NULL;
@@ -3897,7 +3903,7 @@ static int getTempname(int nBuf, char *zBuf){
     "0123456789";
   size_t i, j;
   int nTempPath;
-  char zTempPath[SQLITE_WIN32_MAX_PATH+2];
+  char zTempPath[SQLITE_WIN32_MAX_PATH_BYTES+2];
 
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
@@ -3906,20 +3912,20 @@ static int getTempname(int nBuf, char *zBuf){
   SimulateIOError( return SQLITE_IOERR );
 
   if( sqlite3_temp_directory ){
-    sqlite3_snprintf(SQLITE_WIN32_MAX_PATH-30, zTempPath, "%s",
+    sqlite3_snprintf(SQLITE_WIN32_MAX_PATH_BYTES-30, zTempPath, "%s",
                      sqlite3_temp_directory);
   }
 #if !SQLITE_OS_WINRT
   else if( isNT() ){
     char *zMulti;
-    WCHAR zWidePath[SQLITE_WIN32_MAX_PATH];
-    if( osGetTempPathW(SQLITE_WIN32_MAX_PATH-30, zWidePath)==0 ){
+    WCHAR zWidePath[SQLITE_WIN32_MAX_PATH_CHARS];
+    if( osGetTempPathW(SQLITE_WIN32_MAX_PATH_CHARS-30, zWidePath)==0 ){
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
       return SQLITE_IOERR_GETTEMPPATH;
     }
     zMulti = unicodeToUtf8(zWidePath);
     if( zMulti ){
-      sqlite3_snprintf(SQLITE_WIN32_MAX_PATH-30, zTempPath, "%s", zMulti);
+      sqlite3_snprintf(SQLITE_WIN32_MAX_PATH_BYTES-30, zTempPath, "%s", zMulti);
       sqlite3_free(zMulti);
     }else{
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
@@ -3929,14 +3935,14 @@ static int getTempname(int nBuf, char *zBuf){
 #ifdef SQLITE_WIN32_HAS_ANSI
   else{
     char *zUtf8;
-    char zMbcsPath[SQLITE_WIN32_MAX_PATH];
-    if( osGetTempPathA(SQLITE_WIN32_MAX_PATH-30, zMbcsPath)==0 ){
+    char zMbcsPath[SQLITE_WIN32_MAX_PATH_BYTES];
+    if( osGetTempPathA(SQLITE_WIN32_MAX_PATH_BYTES-30, zMbcsPath)==0 ){
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
       return SQLITE_IOERR_GETTEMPPATH;
     }
     zUtf8 = sqlite3_win32_mbcs_to_utf8(zMbcsPath);
     if( zUtf8 ){
-      sqlite3_snprintf(SQLITE_WIN32_MAX_PATH-30, zTempPath, "%s", zUtf8);
+      sqlite3_snprintf(SQLITE_WIN32_MAX_PATH_BYTES-30, zTempPath, "%s", zUtf8);
       sqlite3_free(zUtf8);
     }else{
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
@@ -3949,7 +3955,7 @@ static int getTempname(int nBuf, char *zBuf){
     ** Compiled without ANSI support and the current operating system
     ** is not Windows NT; therefore, just zero the temporary buffer.
     */
-    memset(zTempPath, 0, SQLITE_WIN32_MAX_PATH+2);
+    memset(zTempPath, 0, SQLITE_WIN32_MAX_PATH_BYTES+2);
   }
 #endif /* SQLITE_WIN32_HAS_ANSI */
 #else
@@ -3958,7 +3964,7 @@ static int getTempname(int nBuf, char *zBuf){
     ** Compiled for WinRT and the sqlite3_temp_directory is not set;
     ** therefore, just zero the temporary buffer.
     */
-    memset(zTempPath, 0, SQLITE_WIN32_MAX_PATH+2);
+    memset(zTempPath, 0, SQLITE_WIN32_MAX_PATH_BYTES+2);
   }
 #endif /* !SQLITE_OS_WINRT */
 
@@ -4046,7 +4052,7 @@ static int winOpen(
   /* If argument zPath is a NULL pointer, this function is required to open
   ** a temporary file. Use this buffer to store the file name in.
   */
-  char zTmpname[SQLITE_WIN32_MAX_PATH+2];     /* Buffer used to create temp filename */
+  char zTmpname[SQLITE_WIN32_MAX_PATH_BYTES+2]; /* Buffer for temp filename */
 
   int rc = SQLITE_OK;            /* Function Return Code */
 #if !defined(NDEBUG) || SQLITE_OS_WINCE
@@ -4112,7 +4118,7 @@ static int winOpen(
   */
   if( !zUtf8Name ){
     assert(isDelete && !isOpenJournal);
-    rc = getTempname(SQLITE_WIN32_MAX_PATH+2, zTmpname);
+    rc = getTempname(SQLITE_WIN32_MAX_PATH_BYTES+2, zTmpname);
     if( rc!=SQLITE_OK ){
       OSTRACE(("OPEN name=%s, rc=%s", zUtf8Name, sqlite3ErrName(rc)));
       return rc;
@@ -4543,7 +4549,7 @@ static int winFullPathname(
 #if defined(__CYGWIN__)
   SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
-  assert( pVfs->mxPathname>=SQLITE_WIN32_MAX_PATH );
+  assert( pVfs->mxPathname>=SQLITE_WIN32_MAX_PATH_BYTES );
   assert( nFull>=pVfs->mxPathname );
   if ( sqlite3_data_directory && !winIsVerbatimPathname(zRelative) ){
     /*
@@ -4552,9 +4558,9 @@ static int winFullPathname(
     **       for converting the relative path name to an absolute
     **       one by prepending the data directory and a slash.
     */
-    char zOut[SQLITE_WIN32_MAX_PATH+1];
+    char zOut[SQLITE_WIN32_MAX_PATH_BYTES+1];
     if( cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, zRelative, zOut,
-                         SQLITE_WIN32_MAX_PATH+1)<0 ){
+                         SQLITE_WIN32_MAX_PATH_BYTES+1)<0 ){
       winLogError(SQLITE_CANTOPEN_FULLPATH, (DWORD)errno, "cygwin_conv_path",
                   zRelative);
       return SQLITE_CANTOPEN_FULLPATH;
@@ -4908,7 +4914,7 @@ int sqlite3_os_init(void){
   static sqlite3_vfs winVfs = {
     3,                   /* iVersion */
     sizeof(winFile),     /* szOsFile */
-    SQLITE_WIN32_MAX_PATH, /* mxPathname */
+    SQLITE_WIN32_MAX_PATH_BYTES, /* mxPathname */
     0,                   /* pNext */
     "win32",             /* zName */
     0,                   /* pAppData */
