@@ -30,7 +30,7 @@
 ** available in Windows platforms based on the NT kernel.
 */
 #if !SQLITE_OS_WINNT && !defined(SQLITE_OMIT_WAL)
-# error "WAL mode requires support from the Windows NT kernel, compile\
+#  error "WAL mode requires support from the Windows NT kernel, compile\
  with SQLITE_OMIT_WAL."
 #endif
 
@@ -59,12 +59,29 @@
 #endif
 
 /*
+** Maximum pathname length (in chars) for WinNT.  This should normally be
+** 32767.
+*/
+#ifndef SQLITE_WINNT_MAX_PATH_CHARS
+#  define SQLITE_WINNT_MAX_PATH_CHARS   (32767)
+#endif
+
+/*
 ** Maximum pathname length (in bytes) for Win32.  The MAX_PATH macro is in
 ** characters, so we allocate 3 bytes per character assuming worst-case of
-** 3-bytes-per-character for UTF8.
+** 4-bytes-per-character for UTF8.
 */
 #ifndef SQLITE_WIN32_MAX_PATH_BYTES
-#  define SQLITE_WIN32_MAX_PATH_BYTES   (SQLITE_WIN32_MAX_PATH_CHARS*3)
+#  define SQLITE_WIN32_MAX_PATH_BYTES   (SQLITE_WIN32_MAX_PATH_CHARS*4)
+#endif
+
+/*
+** Maximum pathname length (in bytes) for WinNT.  This should normally be
+** 32767 * sizeof(WCHAR).
+*/
+#ifndef SQLITE_WINNT_MAX_PATH_BYTES
+#  define SQLITE_WINNT_MAX_PATH_BYTES   \
+                            (sizeof(WCHAR) * SQLITE_WINNT_MAX_PATH_CHARS)
 #endif
 
 /*

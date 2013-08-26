@@ -1,5 +1,5 @@
-C Change\sMAX_PATH\srelated\sdefines\sto\suse\scharacter\slengths\swhere\sWCHARs\sare\sused.
-D 2013-08-26T20:45:50.504
+C Preparation\sfor\sfurther\sWindows\spath\sname\shandling\schanges.
+D 2013-08-26T23:18:57.140
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c c27a14a05061e4e690bd3949dc0246bda35e399d
-F src/os_win.c c05cd62a7af20004414a425c0f798cf5db36ba9f
+F src/os_win.c 52bbfe7f96fdb61fa71ba6f96eac43bcdc5c29a8
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9d6860098f96efc7ea60e2d6116fb7d0e2685a55
-R 299a595b50bdbcb5444938600e71cf89
+P 0a497083e915520c0807cb6611264b1a35ff62b7
+R 281d5c8316076afa3106297ea64f6c5c
 U mistachkin
-Z 552a2531f97ec783e6ad2f14086120a6
+Z adbcf8e3a91ca172565c0b57ab07dba0
