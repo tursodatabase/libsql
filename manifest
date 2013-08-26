@@ -1,5 +1,5 @@
-C Adjust\s#ifdefs\sto\sget\sSQLITE_OMIT_AUTOMATIC_INDEX\sand\sSQLITE_OMIT_PAGER_PRAGMAS\nto\sbuild.
-D 2013-08-23T17:33:46.203
+C Version\s3.8.0
+D 2013-08-26T04:50:08.905
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1105,7 +1105,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 3ad1f998e5db044849b528c31c4a7e1f3d527320
+P ed310201628cf79c0f57674ae7478ee6738b1c6e
 R 5a6ead2576f296902c1b2ccbdf985254
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.0 *
 U drh
-Z 27173a06b09c0a2f08350ebdebfa00ec
+Z 16184cb835825e1de42c653d441df656
