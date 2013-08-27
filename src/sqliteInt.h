@@ -3056,7 +3056,6 @@ extern int sqlite3PendingByte;
 void sqlite3RootPageMoved(sqlite3*, int, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
 void sqlite3AlterFunctions(void);
-void sqlite3AnalyzeFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);
@@ -3107,8 +3106,11 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 void sqlite3BackupRestart(sqlite3_backup *);
 void sqlite3BackupUpdate(sqlite3_backup *, Pgno, const u8 *);
 
+#if defined(SQLITE_ENABLE_STAT3) || defined(SQLITE_ENABLE_STAT4)
+void sqlite3AnalyzeFunctions(void);
 int sqlite3Stat4ProbeSetValue(Parse*,Index*,UnpackedRecord**,Expr*,u8,int,int*);
 void sqlite3Stat4ProbeFree(UnpackedRecord*);
+#endif
 
 /*
 ** The interface to the LEMON-generated parser

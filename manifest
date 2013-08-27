@@ -1,5 +1,5 @@
-C Update\ssqlite3.pc.in\sto\suse\s@PACKAGE_VERSION@\sinstead\sof\s@RELEASE@.
-D 2013-08-27T15:41:09.212
+C Reduce\sthe\samount\sof\scode\srun\sand\smemory\sused\sfor\sANALYZE\sin\sthe\scommon\scase\nwhere\sneither\sSTAT3\sand\sSTAT4\sare\senabled.
+D 2013-08-27T20:16:48.420
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c ce2a3385ac05f61e07d384b1c7e8c52e6ef1a3a6
+F src/analyze.c f1dbc79cbe97f960b20dfc3d24143dff988db41d
 F src/attach.c fea00cab11c854646a27641a263f5876569a51f9
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -221,7 +221,7 @@ F src/shell.c 00a23311466829d9b77f0be4f7cedee9328279db
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h f3636620ad376f65bdbbf5e183f0e4309cb7526e
+F src/sqliteInt.h 97b1005b812048469c80ec9394a77e0ad83ea9c0
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 959bb5acdc3b4e2b481e3c38f20867131bfc9dbc
-R 2e3b4a437bff68926c962c9ab6977363
-U dan
-Z 665cf10c770598d3c963d389b4e25d18
+P 2460dfd8825d251e622e866e8dc1c0bf7fe7ec9f
+R d4ca9812963b4361724d44342b635223
+U drh
+Z 6faf42c735288a2cfa68556541b907cb
