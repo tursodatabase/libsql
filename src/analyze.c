@@ -285,9 +285,9 @@ struct Stat4Accum {
 };
 
 /*
-** Implementation of the stat_init(C,N,S) SQL function. The three parameters
-** are the number of rows in the table or index (C), the number of columns
-** in the index (N) and the number of samples to accumulate (S).
+** Implementation of the stat_init(C,N) SQL function. The two parameters
+** are the number of rows in the table or index (C) and the number of columns
+** in the index (N).
 **
 ** This routine allocates the Stat4Accum object in heap memory. The return 
 ** value is a pointer to the the Stat4Accum object encoded as a blob (i.e. 
@@ -309,7 +309,7 @@ static void statInit(
   /* Decode the three function arguments */
   UNUSED_PARAMETER(argc);
   nRow = (tRowcnt)sqlite3_value_int64(argv[0]);
-  mxSample = sqlite3_value_int(argv[2]);
+  mxSample = SQLITE_STAT4_SAMPLES;
   nCol = sqlite3_value_int(argv[1]);
   assert( nCol>1 );               /* >1 because it includes the rowid column */
 
@@ -356,7 +356,7 @@ static void statInit(
   sqlite3_result_blob(context, p, sizeof(p), sqlite3_free);
 }
 static const FuncDef statInitFuncdef = {
-  3,               /* nArg */
+  2,               /* nArg */
   SQLITE_UTF8,     /* iPrefEnc */
   0,               /* flags */
   0,               /* pUserData */
@@ -911,10 +911,9 @@ static void analyzeOneTable(
     */
     sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regStat4+1);
     sqlite3VdbeAddOp2(v, OP_Integer, nCol+1, regStat4+2);
-    sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_STAT4_SAMPLES, regStat4+3);
     sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4+1, regStat4);
     sqlite3VdbeChangeP4(v, -1, (char*)&statInitFuncdef, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, 3);
+    sqlite3VdbeChangeP5(v, 2);
 
     /* Implementation of the following:
     **
