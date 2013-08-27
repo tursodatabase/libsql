@@ -1,5 +1,5 @@
-C Reduce\sthe\samount\sof\scode\srun\sand\smemory\sused\sfor\sANALYZE\sin\sthe\scommon\scase\nwhere\sneither\sSTAT3\sand\sSTAT4\sare\senabled.
-D 2013-08-27T20:16:48.420
+C Adjust\sANALYZE\sfor\simproved\stest\scoverage.\s\sUse\sthe\sSQLITE_ENABLE_STAT3_OR_STAT4\nmacro\s(created\sin\ssqliteInt.h)\sto\sconditionally\sinclude\scode,\sinstead\sof\s\na\sboolean\sspecifying\sboth\smacros\sseparately.
+D 2013-08-27T23:15:44.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c f1dbc79cbe97f960b20dfc3d24143dff988db41d
+F src/analyze.c fa1a9eeeebdeceddf0b0ed141656dea6d4458699
 F src/attach.c fea00cab11c854646a27641a263f5876569a51f9
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -221,7 +221,7 @@ F src/shell.c 00a23311466829d9b77f0be4f7cedee9328279db
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 97b1005b812048469c80ec9394a77e0ad83ea9c0
+F src/sqliteInt.h 600086a5082e2291b0aeeefcfbb546f2bbda67b2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -283,14 +283,14 @@ F src/vdbeInt.h cbe71b8b36d8b3bba5709cc3f436c7e3b47b7b08
 F src/vdbeapi.c 96b24b946cf21894f63d9393e821baa2f0a80979
 F src/vdbeaux.c c7fe2695e256dbf254113c4fe90d3ec9aabe3bbe
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c 1bec36bf054521df810b2f9cc5078cba929ff10d
+F src/vdbemem.c 4511e1d2304a7d7916d14be20080036331740fcf
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 18cd15160c089dd7854febeaf5a9c065fce6a95a
+F src/where.c 289bfa239207945e27d4689a22e838aea4afcc49
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2460dfd8825d251e622e866e8dc1c0bf7fe7ec9f
-R d4ca9812963b4361724d44342b635223
+P 9d1424c91a21ed740aca53e437b8f7c1f0823c03
+R 89270b1d529ed825a8ce16c2a3d7caa2
 U drh
-Z 6faf42c735288a2cfa68556541b907cb
+Z 2d085e9043e9441bdd89e3f37cf9f342

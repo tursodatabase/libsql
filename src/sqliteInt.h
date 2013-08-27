@@ -569,6 +569,20 @@ extern const int sqlite3one;
 #endif
 
 /*
+** Only one of SQLITE_ENABLE_STAT3 or SQLITE_ENABLE_STAT4 can be defined.
+** Priority is given to SQLITE_ENABLE_STAT4.  If either are defined, also
+** define SQLITE_ENABLE_STAT3_OR_STAT4
+*/
+#ifdef SQLITE_ENABLE_STAT4
+# undef SQLITE_ENABLE_STAT3
+# define SQLITE_ENABLE_STAT3_OR_STAT4 1
+#elif SQLITE_ENABLE_STAT3
+# define SQLITE_ENABLE_STAT3_OR_STAT4 1
+#elif SQLITE_ENABLE_STAT3_OR_STAT4
+# undef SQLITE_ENABLE_STAT3_OR_STAT4
+#endif
+
+/*
 ** An instance of the following structure is used to store the busy-handler
 ** callback for a given sqlite handle. 
 **
@@ -1550,7 +1564,7 @@ struct Index {
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
   tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
@@ -3106,7 +3120,7 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 void sqlite3BackupRestart(sqlite3_backup *);
 void sqlite3BackupUpdate(sqlite3_backup *, Pgno, const u8 *);
 
-#if defined(SQLITE_ENABLE_STAT3) || defined(SQLITE_ENABLE_STAT4)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 void sqlite3AnalyzeFunctions(void);
 int sqlite3Stat4ProbeSetValue(Parse*,Index*,UnpackedRecord**,Expr*,u8,int,int*);
 void sqlite3Stat4ProbeFree(UnpackedRecord*);

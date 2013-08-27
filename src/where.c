@@ -286,7 +286,7 @@ struct WhereTerm {
 #define TERM_ORINFO     0x10   /* Need to free the WhereTerm.u.pOrInfo object */
 #define TERM_ANDINFO    0x20   /* Need to free the WhereTerm.u.pAndInfo obj */
 #define TERM_OR_OK      0x40   /* Used during OR-clause processing */
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 #  define TERM_VNULL    0x80   /* Manufactured x>NULL or x<=NULL term */
 #else
 #  define TERM_VNULL    0x00   /* Disabled if not using stat3 */
@@ -392,7 +392,7 @@ struct WhereLoopBuilder {
   ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
   WhereOrSet *pOrSet;       /* Record best loops here, if not NULL */
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
   int nRecValid;            /* Number of valid fields currently in pRec */
 #endif
@@ -1790,7 +1790,7 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   /* When sqlite_stat3 histogram data is available an operator of the
   ** form "x IS NOT NULL" can sometimes be evaluated more efficiently
   ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
@@ -1830,7 +1830,7 @@ static void exprAnalyze(
       pNewTerm->prereqAll = pTerm->prereqAll;
     }
   }
-#endif /* SQLITE_ENABLE_STAT */
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
   /* Prevent ON clause terms of a LEFT JOIN from being used to drive
   ** an index for tables to the left of the join.
@@ -2398,7 +2398,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
 
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Estimate the location of a particular key among all keys in an
 ** index.  Store the results in aStat as follows:
@@ -2485,7 +2485,7 @@ static void whereKeyStats(
     aStat[0] = iLower + iGap;
   }
 }
-#endif /* SQLITE_ENABLE_STAT4 */
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
 /*
 ** This function is used to estimate the number of rows that will be visited
@@ -2537,7 +2537,7 @@ static int whereRangeScanEst(
   int rc = SQLITE_OK;
   int nOut = (int)*pnOut;
 
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   Index *p = pBuilder->pNew->u.btree.pIndex;
   int nEq = pBuilder->pNew->u.btree.nEq;
 
@@ -2645,7 +2645,7 @@ static int whereRangeScanEst(
   return rc;
 }
 
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Estimate the number of rows that will be returned based on
 ** an equality constraint x=VALUE and where that VALUE occurs in
@@ -2709,9 +2709,9 @@ static int whereEqualScanEst(
   
   return rc;
 }
-#endif /* defined(SQLITE_ENABLE_STAT4) */
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Estimate the number of rows that will be returned based on
 ** an IN constraint where the right-hand side of the IN operator
@@ -2757,7 +2757,7 @@ static int whereInScanEst(
   assert( pBuilder->nRecValid==nRecValid );
   return rc;
 }
-#endif /* defined(SQLITE_ENABLE_STAT4) */
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
 /*
 ** Disable a term in the WHERE clause.  Except, do not disable the term
@@ -4302,7 +4302,7 @@ static int whereLoopAddBtreeIndex(
   rLogSize = estLog(whereCost(pProbe->aiRowEst[0]));
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     int nRecValid = pBuilder->nRecValid;
     assert( pNew->nOut==saved_nOut );
     if( (pTerm->wtFlags & TERM_VNULL)!=0 && pSrc->pTab->aCol[iCol].notNull ){
@@ -4372,7 +4372,7 @@ static int whereLoopAddBtreeIndex(
       assert( pNew->nOut==saved_nOut );
       whereRangeScanEst(pParse, pBuilder, pBtm, pTop, &pNew->nOut);
     }
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     if( nInMul==0 
      && pProbe->nSample 
      && pNew->u.btree.nEq<=pProbe->nSampleCol
@@ -4410,7 +4410,7 @@ static int whereLoopAddBtreeIndex(
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
     pNew->nOut = saved_nOut;
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     pBuilder->nRecValid = nRecValid;
 #endif
   }
@@ -4644,7 +4644,7 @@ static int whereLoopAddBtree(
     }
 
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     sqlite3Stat4ProbeFree(pBuilder->pRec);
     pBuilder->nRecValid = 0;
     pBuilder->pRec = 0;

@@ -1023,7 +1023,7 @@ struct ValueNewStat4Ctx {
 ** an sqlite3_value within the UnpackedRecord.a[] array.
 */
 static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( p ){
     UnpackedRecord *pRec = p->ppRec[0];
 
@@ -1098,7 +1098,7 @@ int valueFromExpr(
   ** The ifdef here is to enable us to achieve 100% branch test coverage even
   ** when SQLITE_ENABLE_STAT4 is omitted.
   */
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( op==TK_REGISTER ) op = pExpr->op2;
 #else
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
@@ -1180,7 +1180,11 @@ no_mem:
   db->mallocFailed = 1;
   sqlite3DbFree(db, zVal);
   assert( *ppVal==0 );
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( pCtx==0 ) sqlite3ValueFree(pVal);
+#else
+  assert( pCtx==0 ); sqlite3ValueFree(pVal);
+#endif
   return SQLITE_NOMEM;
 }
 
@@ -1204,7 +1208,7 @@ int sqlite3ValueFromExpr(
   return valueFromExpr(db, pExpr, enc, affinity, ppVal, 0);
 }
 
-#if defined(SQLITE_ENABLE_STAT4) || defined(SQLITE_ENABLE_STAT3)
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** The implementation of the sqlite_record() function. This function accepts
 ** a single argument of any type. The return value is a formatted database 
