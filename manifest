@@ -1,5 +1,5 @@
-C Support\sdatabase\sfile\snames\slonger\sthan\s260\scharacters\susing\sthe\snew\s'win32-longpath'\sVFS\svariant.
-D 2013-08-28T05:49:39.789
+C In\sthe\swin32longpath\stest,\smove\sthe\sjournal\smode\schange\sdown\swhere\sit\swas\sintended\sto\sbe.
+D 2013-08-28T07:42:43.637
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1057,7 +1057,7 @@ F test/whereF.test 136a7301512d72a08a272806c8767066311b7bc1
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
-F test/win32longpath.test 3018b1199270cb91194fc8cd8413912b6950577e
+F test/win32longpath.test f888106783fc26515f393c8848c94cd6166addbb
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat c55f64ca200308fb5fa5c1ee751ea95a13977b5a x
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c3b82c5bf97cfb35544c5b1fbcdf7b9c4827d1cf
-R e20bd90758596867c642a3a14073401d
+P 37e85e444cde18f061049437980b965d4485f43c
+R 56dde498dcecb04c21e3755845c4691c
 U mistachkin
-Z e8ceaa194e29622b0b6b8c77bb0db1ea
+Z 6c6b47fa5ba3b59f97ecaf4251b21c76
