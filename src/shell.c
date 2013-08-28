@@ -71,12 +71,12 @@
 /* Make sure isatty() has a prototype.
 */
 extern int isatty(int);
-#endif
 
 /* popen and pclose are not C89 functions and so are sometimes omitted from
 ** the <stdio.h> header */
-FILE *popen(const char*,const char*);
-int pclose(FILE*);
+extern FILE *popen(const char*,const char*);
+extern int pclose(FILE*);
+#endif
 
 #if defined(_WIN32_WCE)
 /* Windows CE (arm-wince-mingw32ce-gcc) does not provide isatty()
@@ -554,7 +554,7 @@ static void output_c_string(FILE *out, const char *z){
     }else if( c=='\r' ){
       fputc('\\', out);
       fputc('r', out);
-    }else if( !isprint(c) ){
+    }else if( !isprint(c&0xff) ){
       fprintf(out, "\\%03o", c&0xff);
     }else{
       fputc(c, out);

@@ -1,5 +1,5 @@
-C Preparation\sfor\sfurther\sWindows\spath\sname\shandling\schanges.
-D 2013-08-26T23:18:57.140
+C Fix\sseveral\sharmless\scompiler\swarnings.\s\sFix\sa\scouple\scompiler\sissues\swith\sthe\sshell.
+D 2013-08-28T01:54:12.702
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4262c227bc91cecc61ae37ed3a40f08069cfa267
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 2317c814866d9aa71fea16b3faf4fdd4d6a49b94
-F src/expr.c 6bab61c757c4c4c94a92e98d507025d5d18afd3c
+F src/expr.c 4d89bd03a04fcdb5ff71d86b4e0cc7d3230797b8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 914a6bbd987d857c41ac9d244efa6641f36faadb
 F src/func.c d7be77897c91d5b9887beb372f1e6deb515c92af
@@ -189,7 +189,7 @@ F src/main.c dc02c7c118d58049e0cccc6c9c47c0a4d3e2bcda
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
-F src/mem2.c e307323e86b5da1853d7111b68fd6b84ad6f09cf
+F src/mem2.c e243acb034f91e75e4c06aed5d3d960025c62d1f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 0025308a93838022bd5696cf9627ff4e40b19918
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
@@ -197,7 +197,7 @@ F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c 32a9b3841e2d757355f0012b860b1bc5e01eafa0
+F src/mutex_w32.c db4e14c30da72ffc8ead548469bc786c7a13145a
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
@@ -217,7 +217,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
-F src/shell.c 1c317a4c96d61d8d9fdad9fd1811d9b10b8c7f57
+F src/shell.c 250e4770afe136954088f0edcbc8ba76bcdb0e2e
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -250,7 +250,7 @@ F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
 F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c a105801222c0514f8befa2a1712a95505cce099a
+F src/test_malloc.c eba4e1c5847cc98e7edc98f62265cd2abafba7a6
 F src/test_multiplex.c 5d691eeb6cb6aa7888da28eba5e62a9a857d3c0f
 F src/test_multiplex.h 110a8c4d356e0aa464ca8730375608a9a0b61ae1
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 6e718c39d6b2964f15f6c96ce5938b4652e3538e
+F src/where.c ee148dd577aaef8a4b5923f6046e3074a1ddf130
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0a497083e915520c0807cb6611264b1a35ff62b7
-R 281d5c8316076afa3106297ea64f6c5c
+P ec99224b0c9cf1ccd64b3dc93252556d888e93a3
+R 83bbd06201b37fcfd4ba93e170854819
 U mistachkin
-Z adbcf8e3a91ca172565c0b57ab07dba0
+Z 7a5beb9b27a8339428285f5cf59d377b

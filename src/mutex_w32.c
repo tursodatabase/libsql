@@ -107,7 +107,7 @@ static int winMutex_isInit = 0;
 ** processing, the "interlocked" magic is probably not
 ** strictly necessary.
 */
-static long winMutex_lock = 0;
+static LONG winMutex_lock = 0;
 
 void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
 
