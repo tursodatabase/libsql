@@ -1,5 +1,5 @@
-C Label\sa\scertain\sbranch\sas\sNEVER()\sonly\sfor\snon-STAT3/4\sbuilds.
-D 2013-08-28T11:43:49.105
+C Add\sa\stest\scase\sfor\sempty\squoted\sfield\sin\sCSV\simport\sin\sthe\sshell.
+D 2013-08-28T11:57:52.201
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -784,7 +784,7 @@ F test/shell1.test 928547277d385038c696428e9d791cbbad098974
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test 946e620a41b64f90d45dcf91c36e8d408d435cfd
+F test/shell5.test 174a2a3df73ae5caf2cf74d5232fd869a841ecec
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 67a9a392edd62ef5a5a1ad3010b20a39b285793d
-R b7a40741ef64fba945b7b5951e4f4f5c
+P b5ccf6e995ac2fe010f49d46d40b487ddbd28e5a
+R df6774582c305a98ada1f84d02d89329
 U drh
-Z 13881c9df2b2879174eba7e7aa354c7f
+Z e58789328f00ee55080b8aec43c720b4
