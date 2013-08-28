@@ -1,5 +1,5 @@
-C Make\snames\sof\sprivate\sfunctions\sin\sthe\sWin32\sVFS\sconsistent.\s\sFix\scomment\stypo\sin\sWin32\smutex\simplementation.
-D 2013-08-28T02:37:29.527
+C Support\sdatabase\sfile\snames\slonger\sthan\s260\scharacters\susing\sthe\snew\s'win32-longpath'\sVFS\svariant.
+D 2013-08-28T05:49:39.789
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c c27a14a05061e4e690bd3949dc0246bda35e399d
-F src/os_win.c 0b9ab09dd3ccf8933f888c542a9b11b0bfa62659
+F src/os_win.c 26d752736dff0c7e4e384ab65b353cce1e7e19c5
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -226,7 +226,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 659dad8ef30b54831306a244b43e37af4725a444
-F src/test1.c 870fc648a48cb6d6808393174f7ebe82b8c840fa
+F src/test1.c 031d00dbf1b48378e6d47af1a0f728c767320b96
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -1057,6 +1057,7 @@ F test/whereF.test 136a7301512d72a08a272806c8767066311b7bc1
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
+F test/win32longpath.test 3018b1199270cb91194fc8cd8413912b6950577e
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat c55f64ca200308fb5fa5c1ee751ea95a13977b5a x
@@ -1105,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P fc98092f4bd42d64059024f09547904c1d70a517
-R 1438e04cfc27e16b0dae733cf906e3e9
+P c3b82c5bf97cfb35544c5b1fbcdf7b9c4827d1cf
+R e20bd90758596867c642a3a14073401d
 U mistachkin
-Z 1716564dd5627ab9e624a1f87aa67863
+Z e8ceaa194e29622b0b6b8c77bb0db1ea
