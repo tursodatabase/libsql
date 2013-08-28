@@ -69,7 +69,7 @@ struct sqlite3_mutex {
     }
     return osType==2;
   }
-#endif /* SQLITE_OS_WINCE */
+#endif /* SQLITE_OS_WINCE || SQLITE_OS_WINRT */
 #endif
 
 #ifdef SQLITE_DEBUG

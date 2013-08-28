@@ -1,5 +1,5 @@
-C Remove\shard-coding\sof\sthe\sdirectory\sseparator\sin\sthe\sWin32\sVFS.\s\sFixes\sto\sOSTRACE\smacros.
-D 2013-08-28T02:26:48.559
+C Make\snames\sof\sprivate\sfunctions\sin\sthe\sWin32\sVFS\sconsistent.\s\sFix\scomment\stypo\sin\sWin32\smutex\simplementation.
+D 2013-08-28T02:37:29.527
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -197,13 +197,13 @@ F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c db4e14c30da72ffc8ead548469bc786c7a13145a
+F src/mutex_w32.c 6108c88e1cb38d8fbb3534b170793815cbedbf97
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c c27a14a05061e4e690bd3949dc0246bda35e399d
-F src/os_win.c 7f8cabe0ae13bf6303543197c349bd13a1aaaa0f
+F src/os_win.c 0b9ab09dd3ccf8933f888c542a9b11b0bfa62659
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -1105,7 +1105,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8917e9f9a0802cbfb6f33e2ab1c2f98e4df5babd
-R 596c11dfb76cd23db3586c983e12df43
+P fc98092f4bd42d64059024f09547904c1d70a517
+R 1438e04cfc27e16b0dae733cf906e3e9
 U mistachkin
-Z 1567302589a948f8e7270192d6781870
+Z 1716564dd5627ab9e624a1f87aa67863
