@@ -1,5 +1,5 @@
-C Adjust\sANALYZE\sfor\simproved\stest\scoverage.\s\sUse\sthe\sSQLITE_ENABLE_STAT3_OR_STAT4\nmacro\s(created\sin\ssqliteInt.h)\sto\sconditionally\sinclude\scode,\sinstead\sof\s\na\sboolean\sspecifying\sboth\smacros\sseparately.
-D 2013-08-27T23:15:44.027
+C Label\sa\scertain\sbranch\sas\sNEVER()\sonly\sfor\snon-STAT3/4\sbuilds.
+D 2013-08-28T11:43:49.105
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c fa1a9eeeebdeceddf0b0ed141656dea6d4458699
+F src/analyze.c 7f869a251f3d58d3b95883eeae425d4ee17a66bd
 F src/attach.c fea00cab11c854646a27641a263f5876569a51f9
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9d1424c91a21ed740aca53e437b8f7c1f0823c03
-R 89270b1d529ed825a8ce16c2a3d7caa2
+P 67a9a392edd62ef5a5a1ad3010b20a39b285793d
+R b7a40741ef64fba945b7b5951e4f4f5c
 U drh
-Z 2d085e9043e9441bdd89e3f37cf9f342
+Z 13881c9df2b2879174eba7e7aa354c7f

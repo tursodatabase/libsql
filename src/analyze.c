@@ -1231,7 +1231,11 @@ static void decodeIntArray(
 
   assert( pbUnordered==0 || *pbUnordered==0 );
 
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+  if( z==0 ) z = "";
+#else
   if( NEVER(z==0) ) z = "";
+#endif
   for(i=0; *z && i<nOut; i++){
     v = 0;
     while( (c=z[0])>='0' && c<='9' ){
