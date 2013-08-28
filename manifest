@@ -1,5 +1,5 @@
-C Add\sthe\swin32-longpath\sVFS\sallowing\swindows\sfilenames\sup\sto\s32K\scharacters\sin\nlength.\s\sRemove\sunused\scode\swhen\s-DSQLITE_MAX_MMAP_SIZE=0.\s\sFix\ssome\ncompiler\swarnings\son\swindows.
-D 2013-08-28T18:18:12.076
+C Re-enable\stest\sfile\swild001.test.
+D 2013-08-28T19:01:07.361
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1057,7 +1057,7 @@ F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 136a7301512d72a08a272806c8767066311b7bc1
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
-F test/wild001.test 384db4b30fbe82eaaefe8921f8a702c09e26db27
+F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test f888106783fc26515f393c8848c94cd6166addbb
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
@@ -1108,7 +1108,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P caab361ebee5f5c3fdafd9b1abe3d1ab7c5b4db9 ecd52ccf650ce2a4ab93c7c482289c1bc4768eeb
-R 11a68a0ec35d591bf742b2cdf1cfbf81
-U drh
-Z 9c29f776d777867b35099fa354ac7430
+P 12d0a8859de0a9d823997cfeccc77bd572cb6d13
+R fdbadc0d00e9a87112ecfe73cb5842df
+U dan
+Z 0f1dd9ce1608f2cfacffe15f693d1885
