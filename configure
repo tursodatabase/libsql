@@ -874,7 +874,6 @@ TEMP_STORE
 BUILD_EXEEXT
 SQLITE_OS_UNIX
 SQLITE_OS_WIN
-SQLITE_OS_OS2
 TARGET_EXEEXT
 TCL_VERSION
 TCL_BIN_DIR
@@ -12257,7 +12256,7 @@ USE_AMALGAMATION=1
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
 #
-for ac_prog in tclsh8.5 tclsh
+for ac_prog in tclsh8.6 tclsh8.5 tclsh
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -12713,21 +12712,12 @@ else
   TARGET_EXEEXT=$config_TARGET_EXEEXT
 fi
 if test "$TARGET_EXEEXT" = ".exe"; then
-  if test $OS2_SHELL ; then
-    SQLITE_OS_UNIX=0
-    SQLITE_OS_WIN=0
-    SQLITE_OS_OS2=1
-    CFLAGS="$CFLAGS -DSQLITE_OS_OS2=1"
-  else
-    SQLITE_OS_UNIX=0
-    SQLITE_OS_WIN=1
-    SQLITE_OS_OS2=0
-    CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
-  fi
+  SQLITE_OS_UNIX=0
+  SQLITE_OS_WIN=1
+  CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
 else
   SQLITE_OS_UNIX=1
   SQLITE_OS_WIN=0
-  SQLITE_OS_OS2=0
   CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
 fi
 

@@ -1,5 +1,5 @@
-C Fix\sa\scouple\scomments.
-D 2013-08-28T17:59:38.115
+C Update\slist\sof\ssupported\sTcl\sshells\sto\sinclude\s8.6.\s\sRemove\sstray\sOS2\sreferences.
+D 2013-08-28T18:06:26.411
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -38,8 +38,8 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 27e9279a219b652bd1c53439353a5e5be70214b2 x
-F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
+F configure af1a47c2c0d019462888cc6e55b387c2ca9b14f8 x
+F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
 F doc/pager-invariants.txt 27fed9a70ddad2088750c4a2b493b63853da2710
@@ -1106,7 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5cead293bbbcddd7d0976db41133e40704efcc99
-R 27548a8da20b2d6d66d852b1f7e7eb3a
+P 945cb89ecb92a6c2075b3e58ce1ba3d419b1b6ca
+R 8c92bd5c8e47ded17fee33a36ad92fa0
 U mistachkin
-Z 711ba7d958e91e7fbe6d2b1f344832a5
+Z e27f33536507066f2096aabdddbccd7c
