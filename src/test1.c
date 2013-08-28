@@ -5934,6 +5934,145 @@ static int win32_file_lock(
   CloseHandle(ev);
   return TCL_OK;
 }
+
+/*
+**      exists_win32_path PATH
+**
+** Returns non-zero if the specified path exists, whose fully qualified name
+** may exceed 260 characters if it is prefixed with "\\?\".
+*/
+static int win32_exists_path(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATH");
+    return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+      GetFileAttributesW( Tcl_GetUnicode(objv[1]))!=INVALID_FILE_ATTRIBUTES ));
+  return TCL_OK;
+}
+
+/*
+**      find_win32_file PATTERN
+**
+** Returns a list of entries in a directory that match the specified pattern,
+** whose fully qualified name may exceed 248 characters if it is prefixed with
+** "\\?\".
+*/
+static int win32_find_file(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  HANDLE hFindFile = INVALID_HANDLE_VALUE;
+  WIN32_FIND_DATAW findData;
+  Tcl_Obj *listObj;
+  DWORD lastErrno;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATTERN");
+    return TCL_ERROR;
+  }
+  hFindFile = FindFirstFileW(Tcl_GetUnicode(objv[1]), &findData);
+  if( hFindFile==INVALID_HANDLE_VALUE ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  listObj = Tcl_NewObj();
+  Tcl_IncrRefCount(listObj);
+  do {
+    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewUnicodeObj(
+        findData.cFileName, -1));
+    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(
+        findData.dwFileAttributes));
+  } while( FindNextFileW(hFindFile, &findData) );
+  lastErrno = GetLastError();
+  if( lastErrno!=NO_ERROR && lastErrno!=ERROR_NO_MORE_FILES ){
+    FindClose(hFindFile);
+    Tcl_DecrRefCount(listObj);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  FindClose(hFindFile);
+  Tcl_SetObjResult(interp, listObj);
+  return TCL_OK;
+}
+
+/*
+**      delete_win32_file FILENAME
+**
+** Deletes the specified file, whose fully qualified name may exceed 260
+** characters if it is prefixed with "\\?\".
+*/
+static int win32_delete_file(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
+    return TCL_ERROR;
+  }
+  if( !DeleteFileW(Tcl_GetUnicode(objv[1])) ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
+**      make_win32_dir DIRECTORY
+**
+** Creates the specified directory, whose fully qualified name may exceed 248
+** characters if it is prefixed with "\\?\".
+*/
+static int win32_mkdir(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DIRECTORY");
+    return TCL_ERROR;
+  }
+  if( !CreateDirectoryW(Tcl_GetUnicode(objv[1]), NULL) ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
+**      remove_win32_dir DIRECTORY
+**
+** Removes the specified directory, whose fully qualified name may exceed 248
+** characters if it is prefixed with "\\?\".
+*/
+static int win32_rmdir(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DIRECTORY");
+    return TCL_ERROR;
+  }
+  if( !RemoveDirectoryW(Tcl_GetUnicode(objv[1])) ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
 #endif
 
 
@@ -6193,6 +6332,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "optimization_control",          optimization_control,0},
 #if SQLITE_OS_WIN
      { "lock_win32_file",               win32_file_lock,    0 },
+     { "exists_win32_path",             win32_exists_path,  0 },
+     { "find_win32_file",               win32_find_file,    0 },
+     { "delete_win32_file",             win32_delete_file,  0 },
+     { "make_win32_dir",                win32_mkdir,        0 },
+     { "remove_win32_dir",              win32_rmdir,        0 },
 #endif
      { "tcl_objproc",                   runAsObjProc,       0 },
 

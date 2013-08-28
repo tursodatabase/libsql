@@ -3000,7 +3000,7 @@ static int codeAllEqualityTerms(
 
   /* Evaluate the equality constraints
   */
-  assert( zAff==0 || strlen(zAff)>=nEq );
+  assert( zAff==0 || (int)strlen(zAff)>=nEq );
   for(j=0; j<nEq; j++){
     int r1;
     pTerm = pLoop->aLTerm[j];

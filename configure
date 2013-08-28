@@ -874,7 +874,6 @@ TEMP_STORE
 BUILD_EXEEXT
 SQLITE_OS_UNIX
 SQLITE_OS_WIN
-SQLITE_OS_OS2
 TARGET_EXEEXT
 TCL_VERSION
 TCL_BIN_DIR
@@ -3733,13 +3732,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:3736: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:3735: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3739: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:3738: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:3742: output\"" >&5)
+  (eval echo "\"\$as_me:3741: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -4961,7 +4960,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4964 "configure"' > conftest.$ac_ext
+  echo '#line 4963 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -6830,11 +6829,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6833: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6832: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6837: \$? = $ac_status" >&5
+   echo "$as_me:6836: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7169,11 +7168,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7172: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7171: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7176: \$? = $ac_status" >&5
+   echo "$as_me:7175: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7274,11 +7273,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7277: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7276: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7281: \$? = $ac_status" >&5
+   echo "$as_me:7280: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -7329,11 +7328,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7332: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7331: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7336: \$? = $ac_status" >&5
+   echo "$as_me:7335: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -10142,7 +10141,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10145 "configure"
+#line 10144 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10238,7 +10237,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10241 "configure"
+#line 10240 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12257,7 +12256,7 @@ USE_AMALGAMATION=1
 # if not, then we fall back to plain tclsh.
 # TODO: try other versions before falling back?
 #
-for ac_prog in tclsh8.5 tclsh
+for ac_prog in tclsh8.6 tclsh8.5 tclsh
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -12713,24 +12712,14 @@ else
   TARGET_EXEEXT=$config_TARGET_EXEEXT
 fi
 if test "$TARGET_EXEEXT" = ".exe"; then
-  if test $OS2_SHELL ; then
-    SQLITE_OS_UNIX=0
-    SQLITE_OS_WIN=0
-    SQLITE_OS_OS2=1
-    CFLAGS="$CFLAGS -DSQLITE_OS_OS2=1"
-  else
-    SQLITE_OS_UNIX=0
-    SQLITE_OS_WIN=1
-    SQLITE_OS_OS2=0
-    CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
-  fi
+  SQLITE_OS_UNIX=0
+  SQLITE_OS_WIN=1
+  CFLAGS="$CFLAGS -DSQLITE_OS_WIN=1"
 else
   SQLITE_OS_UNIX=1
   SQLITE_OS_WIN=0
-  SQLITE_OS_OS2=0
   CFLAGS="$CFLAGS -DSQLITE_OS_UNIX=1"
 fi
-
 
 
 
