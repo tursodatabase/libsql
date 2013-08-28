@@ -1209,8 +1209,10 @@ static int isMatchOfColumn(
 ** a join, then transfer the appropriate markings over to derived.
 */
 static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
-  pDerived->flags |= pBase->flags & EP_FromJoin;
-  pDerived->iRightJoinTable = pBase->iRightJoinTable;
+  if( pDerived ){
+    pDerived->flags |= pBase->flags & EP_FromJoin;
+    pDerived->iRightJoinTable = pBase->iRightJoinTable;
+  }
 }
 
 #if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
@@ -1667,6 +1669,7 @@ static void exprAnalyze(
       pNewExpr = sqlite3PExpr(pParse, ops[i], 
                              sqlite3ExprDup(db, pExpr->pLeft, 0),
                              sqlite3ExprDup(db, pList->a[i].pExpr, 0), 0);
+      transferJoinMarkings(pNewExpr, pExpr);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       testcase( idxNew==0 );
       exprAnalyze(pSrc, pWC, idxNew);
@@ -1734,6 +1737,7 @@ static void exprAnalyze(
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE, 
            sqlite3ExprAddCollateToken(pParse,pNewExpr1,&sCollSeqName),
            pStr1, 0);
+    transferJoinMarkings(pNewExpr1, pExpr);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
@@ -1741,6 +1745,7 @@ static void exprAnalyze(
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
            sqlite3ExprAddCollateToken(pParse,pNewExpr2,&sCollSeqName),
            pStr2, 0);
+    transferJoinMarkings(pNewExpr2, pExpr);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);
