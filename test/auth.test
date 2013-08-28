@@ -2325,10 +2325,14 @@ ifcapable compound&&subquery {
       }
     }
   }
-  ifcapable stat3 {
-    set stat3 "sqlite_stat3 "
+  ifcapable stat4 {
+    set stat4 "sqlite_stat4 "
   } else {
-    set stat3 ""
+    ifcapable stat3 {
+      set stat4 "sqlite_stat3 "
+    } else {
+      set stat4 ""
+    }
   }
   do_test auth-5.2 {
     execsql {
@@ -2337,7 +2341,7 @@ ifcapable compound&&subquery {
       WHERE type='table'
       ORDER BY name
     }
-  } "sqlite_stat1 ${stat3}t1 t2 t3 t4"
+  } "sqlite_stat1 ${stat4}t1 t2 t3 t4"
 }
 
 # Ticket #3944

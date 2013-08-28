@@ -1022,13 +1022,17 @@ static char *print_pager_state(Pager *p){
 **     PagerSavepoint.pInSavepoint.
 */
 static int subjRequiresPage(PgHdr *pPg){
-  Pgno pgno = pPg->pgno;
   Pager *pPager = pPg->pPager;
+  PagerSavepoint *p;
+  Pgno pgno;
   int i;
-  for(i=0; i<pPager->nSavepoint; i++){
-    PagerSavepoint *p = &pPager->aSavepoint[i];
-    if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
-      return 1;
+  if( pPager->nSavepoint ){
+    pgno = pPg->pgno;
+    for(i=0; i<pPager->nSavepoint; i++){
+      p = &pPager->aSavepoint[i];
+      if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
+        return 1;
+      }
     }
   }
   return 0;
@@ -2873,12 +2877,6 @@ static int readDbPage(PgHdr *pPg, u32 iFrame){
 
   assert( pPager->eState>=PAGER_READER && !MEMDB );
   assert( isOpen(pPager->fd) );
-
-  if( NEVER(!isOpen(pPager->fd)) ){
-    assert( pPager->tempFile );
-    memset(pPg->pData, 0, pPager->pageSize);
-    return SQLITE_OK;
-  }
 
 #ifndef SQLITE_OMIT_WAL
   if( iFrame ){
@@ -5233,19 +5231,19 @@ int sqlite3PagerAcquire(
   Pager *pPager,      /* The pager open on the database file */
   Pgno pgno,          /* Page number to fetch */
   DbPage **ppPage,    /* Write a pointer to the page here */
-  int flags           /* PAGER_ACQUIRE_XXX flags */
+  int flags           /* PAGER_GET_XXX flags */
 ){
   int rc = SQLITE_OK;
   PgHdr *pPg = 0;
   u32 iFrame = 0;                 /* Frame to read from WAL file */
-  const int noContent = (flags & PAGER_ACQUIRE_NOCONTENT);
+  const int noContent = (flags & PAGER_GET_NOCONTENT);
 
   /* It is acceptable to use a read-only (mmap) page for any page except
   ** page 1 if there is no write-transaction open or the ACQUIRE_READONLY
   ** flag was specified by the caller. And so long as the db is not a 
   ** temporary or in-memory database.  */
   const int bMmapOk = (pgno!=1 && USEFETCH(pPager)
-   && (pPager->eState==PAGER_READER || (flags & PAGER_ACQUIRE_READONLY))
+   && (pPager->eState==PAGER_READER || (flags & PAGER_GET_READONLY))
 #ifdef SQLITE_HAS_CODEC
    && pPager->xCodec==0
 #endif

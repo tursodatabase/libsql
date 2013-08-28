@@ -114,8 +114,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       p = p->pLeft;
       continue;
     }
-    assert( op!=TK_REGISTER || p->op2!=TK_COLLATE );
-    if( op==TK_COLLATE ){
+    if( op==TK_COLLATE || (op==TK_REGISTER && p->op2==TK_COLLATE) ){
       pColl = sqlite3GetCollSeq(pParse, ENC(db), 0, p->u.zToken);
       break;
     }
@@ -1279,7 +1278,7 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
     case TK_UMINUS: {
       int v;
       if( sqlite3ExprIsInteger(p->pLeft, &v) ){
-        assert( v!=-2147483648 );
+        assert( v!=(-2147483647-1) );
         *pValue = -v;
         rc = 1;
       }
@@ -3505,6 +3504,7 @@ static void exprCodeBetween(
   compRight.pLeft = &exprX;
   compRight.pRight = pExpr->x.pList->a[1].pExpr;
   exprX.iTable = sqlite3ExprCodeTemp(pParse, &exprX, &regFree1);
+  exprX.op2 = exprX.op;
   exprX.op = TK_REGISTER;
   if( jumpIfTrue ){
     sqlite3ExprIfTrue(pParse, &exprAnd, dest, jumpIfNull);

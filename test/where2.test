@@ -701,6 +701,7 @@ do_test where2-11.4 {
 
 # Verify that the OR clause is used in an outer loop even when
 # the OR clause scores slightly better on an inner loop.
+if {[permutation] != "no_optimization"} {
 do_execsql_test where2-12.1 {
   CREATE TABLE t12(x INTEGER PRIMARY KEY, y);
   CREATE INDEX t12y ON t12(y);
@@ -709,6 +710,7 @@ do_execsql_test where2-12.1 {
       FROM t12 AS a JOIN t12 AS b ON a.y=b.x
      WHERE (b.x=$abc OR b.y=$abc);
 } {/.*SEARCH TABLE t12 AS b .*SEARCH TABLE t12 AS b .*/}
+}
 
 
 finish_test

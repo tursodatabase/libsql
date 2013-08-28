@@ -205,6 +205,7 @@ do_test malloc5-4.1 {
     execsql "INSERT INTO abc VALUES($i, $i, '[string repeat X 100]');"
   }
   execsql {COMMIT;}
+  db cache flush
   sqlite3_release_memory
   sqlite3_memory_highwater 1
   execsql {SELECT * FROM abc}
@@ -213,6 +214,7 @@ do_test malloc5-4.1 {
   expr $nMaxBytes > 1000000
 } {1}
 do_test malloc5-4.2 {
+  db cache flush
   sqlite3_release_memory
   sqlite3_soft_heap_limit 100000
   sqlite3_memory_highwater 1

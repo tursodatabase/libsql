@@ -781,11 +781,11 @@ do_test where9-6.8.2 {
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
 } {1 {no query solution}}
-ifcapable stat3 {
+ifcapable stat4||stat3 {
   # When STAT3 is enabled, the "b NOT NULL" terms get translated
   # into b>NULL, which can be satified by the index t1b.  It is a very
   # expensive way to do the query, but it works, and so a solution is possible.
-  do_test where9-6.8.3-stat3 {
+  do_test where9-6.8.3-stat4 {
     catchsql {
       UPDATE t1 INDEXED BY t1b SET a=a+100
        WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
@@ -793,7 +793,7 @@ ifcapable stat3 {
           OR (b NOT NULL AND c NOT NULL AND d IS NULL)
     }
   } {0 {}}
-  do_test where9-6.8.4-stat3 {
+  do_test where9-6.8.4-stat4 {
     catchsql {
       DELETE FROM t1 INDEXED BY t1b
        WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
@@ -850,6 +850,11 @@ do_test where9-7.0 {
     CREATE TABLE t6(a, b, c, e, d, f, g, x, y);
     INSERT INTO t6 SELECT * FROM t5;
     ANALYZE t5;
+  }
+  ifcapable stat3 {
+    sqlite3 db2 test.db
+    db2 eval { DROP TABLE IF EXISTS sqlite_stat3 }
+    db2 close
   }
 } {}
 do_test where9-7.1.1 {
@@ -950,5 +955,29 @@ do_test where9-9.1 {
     SELECT 9 FROM t91 LEFT JOIN t92 ON a=22 AND b=33 WHERE y IS NULL;
   }
 } {1 2 3 4 8 9}
+
+# Fix for ticket [bc878246eafe0f52c519e29049b2fe4a99491b27]
+# Incorrect result when OR is used in a join to the right of a LEFT JOIN
+#
+do_test where9-10.1 {
+  db eval {
+    CREATE TABLE t101 (id INTEGER PRIMARY KEY);
+    INSERT INTO t101 VALUES (1);
+    SELECT * FROM t101 AS t0
+         LEFT JOIN t101 AS t1 ON t1.id BETWEEN 10 AND 20
+         JOIN t101 AS t2 ON (t2.id = t0.id OR (t2.id<>555 AND t2.id=t1.id));
+  }
+} {1 {} 1}
+do_test where9-10.2 {
+  db eval {
+    CREATE TABLE t102 (id TEXT UNIQUE NOT NULL);
+    INSERT INTO t102 VALUES ('1');
+    SELECT * FROM t102 AS t0
+         LEFT JOIN t102 AS t1 ON t1.id GLOB 'abc%'
+         JOIN t102 AS t2 ON (t2.id = t0.id OR (t2.id<>555 AND t2.id=t1.id));
+  }
+} {1 {} 1}
+
+
 
 finish_test
