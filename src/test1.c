@@ -5939,7 +5939,7 @@ static int win32_file_lock(
 **      exists_win32_path PATH
 **
 ** Returns non-zero if the specified path exists, whose fully qualified name
-** may exceed 248 characters if it is prefixed with "\\?\".
+** may exceed 260 characters if it is prefixed with "\\?\".
 */
 static int win32_exists_path(
   void *clientData,
@@ -6005,7 +6005,7 @@ static int win32_find_file(
 /*
 **      delete_win32_file FILENAME
 **
-** Deletes the specified file, whose fully qualified name may exceed 248
+** Deletes the specified file, whose fully qualified name may exceed 260
 ** characters if it is prefixed with "\\?\".
 */
 static int win32_delete_file(
