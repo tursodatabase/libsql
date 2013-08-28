@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sempty\squoted\sfield\sin\sCSV\simport\sin\sthe\sshell.
-D 2013-08-28T11:57:52.201
+C Fix\san\soff-by-one\serror\sthat\scauses\sa\squoted\sempty\sstring\sat\sthe\send\sof\na\sCRNL-terminated\sline\sof\sCSV\sinput\sto\sbe\smisread\sby\sthe\sshell.
+D 2013-08-28T13:33:40.242
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
-F src/shell.c 00a23311466829d9b77f0be4f7cedee9328279db
+F src/shell.c f726500a48dbc64d42e82b439ca7690a1e1a46cf
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -784,7 +784,7 @@ F test/shell1.test 928547277d385038c696428e9d791cbbad098974
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test 174a2a3df73ae5caf2cf74d5232fd869a841ecec
+F test/shell5.test bfa21ecc173adcbc15db2c075baa468778f67f88
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -1107,7 +1107,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b5ccf6e995ac2fe010f49d46d40b487ddbd28e5a
-R df6774582c305a98ada1f84d02d89329
+P 3df56e849164811117f9ac8ee2aee1eee188bb96
+R eb7817bc730740034eb3fac54ffa268e
 U drh
-Z e58789328f00ee55080b8aec43c720b4
+Z 72d0cf2bcd39280bc82cec788bca9ff5

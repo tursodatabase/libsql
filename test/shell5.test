@@ -249,7 +249,7 @@ do_test shell5-1.9 {
   puts $out {2,"x",22}
   puts $out {3,"""",33}
   puts $out {4,"hello",44}
-  puts $out {5,55,""}
+  puts $out "5,55,\"\"\r"
   puts $out {6,66,"x"}
   puts $out {7,77,""""}
   puts $out {8,88,"hello"}

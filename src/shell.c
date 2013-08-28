@@ -1717,7 +1717,7 @@ static char *csv_read_one_field(CSVReader *p){
       }
       if( (c==cSep && pc==cQuote)
        || (c=='\n' && pc==cQuote)
-       || (c=='\n' && pc=='\r' && p->n>2 && p->z[p->n-2]==cQuote)
+       || (c=='\n' && pc=='\r' && p->n>=2 && p->z[p->n-2]==cQuote)
        || (c==EOF && pc==cQuote)
       ){
         do{ p->n--; }while( p->z[p->n]!=cQuote );
