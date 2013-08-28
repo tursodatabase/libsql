@@ -92,6 +92,25 @@
 #endif
 
 /*
+** Returns non-zero if the character should be treated as a directory
+** separator.
+*/
+#ifndef winIsDirSep
+#  define winIsDirSep(a)                (((a) == '/') || ((a) == '\\'))
+#endif
+
+/*
+** Returns the string that should be used as the directory separator.
+*/
+#ifndef winGetDirDep
+#  ifdef __CYGWIN__
+#    define winGetDirDep()              "/"
+#  else
+#    define winGetDirDep()              "\\"
+#  endif
+#endif
+
+/*
 ** Do we need to manually define the Win32 file mapping APIs for use with WAL
 ** mode (e.g. these APIs are available in the Windows CE SDK; however, they
 ** are not present in the header file)?
@@ -2456,6 +2475,7 @@ static int winSync(sqlite3_file *id, int flags){
   ** no-op
   */
 #ifdef SQLITE_NO_SYNC
+  OSTRACE(("SYNC-NOP file=%p, rc=SQLITE_OK\n", pFile->h));
   return SQLITE_OK;
 #else
   rc = osFlushFileBuffers(pFile->h);
@@ -2749,10 +2769,10 @@ static int winLock(sqlite3_file *id, int locktype){
   if( res ){
     rc = SQLITE_OK;
   }else{
-    OSTRACE(("LOCK-FAIL file=%p, wanted=%d, got=%d\n",
-             pFile->h, locktype, newLocktype));
     pFile->lastErrno = lastErrno;
     rc = SQLITE_BUSY;
+    OSTRACE(("LOCK-FAIL file=%p, wanted=%d, got=%d\n",
+             pFile->h, locktype, newLocktype));
   }
   pFile->locktype = (u8)newLocktype;
   OSTRACE(("LOCK file=%p, lock=%d, rc=%s\n",
@@ -3995,12 +4015,12 @@ static int getTempname(int nBuf, char *zBuf){
     return SQLITE_ERROR;
   }
 
-  for(i=nTempPath; i>0 && zTempPath[i-1]=='\\'; i--){}
+  for(i=nTempPath; i>0 && winIsDirSep(zTempPath[i-1]); i--){}
   zTempPath[i] = 0;
 
   sqlite3_snprintf(nBuf-18, zBuf, (nTempPath > 0) ?
-                       "%s\\"SQLITE_TEMP_FILE_PREFIX : SQLITE_TEMP_FILE_PREFIX,
-                   zTempPath);
+                       "%s%s" SQLITE_TEMP_FILE_PREFIX : SQLITE_TEMP_FILE_PREFIX,
+                   zTempPath, winGetDirDep());
   j = sqlite3Strlen30(zBuf);
   sqlite3_randomness(15, &zBuf[j]);
   for(i=0; i<15; i++, j++){
@@ -4124,7 +4144,7 @@ static int winOpen(
   pFile->h = INVALID_HANDLE_VALUE;
 
 #if SQLITE_OS_WINRT
-  if( !sqlite3_temp_directory ){
+  if( !zUtf8Name && !sqlite3_temp_directory ){
     sqlite3_log(SQLITE_ERROR,
         "sqlite3_temp_directory variable should be set for WinRT");
   }
@@ -4134,7 +4154,7 @@ static int winOpen(
   ** temporary file name to use 
   */
   if( !zUtf8Name ){
-    assert(isDelete && !isOpenJournal);
+    assert( isDelete && !isOpenJournal );
     rc = getTempname(SQLITE_WIN32_MAX_PATH_BYTES+2, zTmpname);
     if( rc!=SQLITE_OK ){
       OSTRACE(("OPEN name=%s, rc=%s", zUtf8Name, sqlite3ErrName(rc)));
@@ -4148,7 +4168,7 @@ static int winOpen(
   ** sqlite3_uri_parameter().
   */
   assert( (eType!=SQLITE_OPEN_MAIN_DB) || (flags & SQLITE_OPEN_URI) ||
-        zUtf8Name[strlen(zUtf8Name)+1]==0 );
+       zUtf8Name[sqlite3Strlen30(zUtf8Name)+1]==0 );
 
   /* Convert the filename to the system encoding. */
   zConverted = convertUtf8Filename(zUtf8Name);
@@ -4349,6 +4369,7 @@ static int winDelete(
 
   zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
+    OSTRACE(("DELETE name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
     return SQLITE_IOERR_NOMEM;
   }
   if( isNT() ){
@@ -4530,7 +4551,7 @@ static BOOL winIsVerbatimPathname(
   ** the final two cases; therefore, we return the safer return value of TRUE
   ** so that callers of this function will simply use it verbatim.
   */
-  if ( zPathname[0]=='/' || zPathname[0]=='\\' ){
+  if ( winIsDirSep(zPathname[0]) ){
     return TRUE;
   }
 
@@ -4582,8 +4603,8 @@ static int winFullPathname(
                   zRelative);
       return SQLITE_CANTOPEN_FULLPATH;
     }
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
-                     sqlite3_data_directory, zOut);
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
+                     sqlite3_data_directory, winGetDirDep(), zOut);
   }else{
     if( cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull)<0 ){
       winLogError(SQLITE_CANTOPEN_FULLPATH, (DWORD)errno, "cygwin_conv_path",
@@ -4605,8 +4626,8 @@ static int winFullPathname(
     **       for converting the relative path name to an absolute
     **       one by prepending the data directory and a backslash.
     */
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
-                     sqlite3_data_directory, zRelative);
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
+                     sqlite3_data_directory, winGetDirDep(), zRelative);
   }else{
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zRelative);
   }
@@ -4638,8 +4659,8 @@ static int winFullPathname(
     **       for converting the relative path name to an absolute
     **       one by prepending the data directory and a backslash.
     */
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s\\%s",
-                     sqlite3_data_directory, zRelative);
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
+                     sqlite3_data_directory, winGetDirDep(), zRelative);
     return SQLITE_OK;
   }
   zConverted = convertUtf8Filename(zRelative);
