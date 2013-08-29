@@ -1,5 +1,5 @@
-C Cherrypick\sof\s[c1152bdcbb]\sand\sfix\sfor\s[9f2eb3abac]:\nHave\sthe\swhereShortCut()\splanner\signore\sindexes\swith\smore\sthan\sfour\scolumns.
-D 2013-08-29T13:15:09.214
+C In\sthe\squery\soptimizer,\swhen\sconverting\sBETWEEN\sand\sLIKE/GLOB\sexpressions\ninto\ssimpler\sforms\sfor\sprocessing,\sbe\ssure\sto\stransfer\sthe\sLEFT\sJOIN\smarkings.\nFix\sfor\sticket\s[bc878246eafe0f52c].\s\sCherrypick\sof\s[caab361ebe].
+D 2013-08-29T13:21:52.036
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 53ac2441269b3adca28e2b8a8339f2dcaa50a9a2
+F src/where.c a9ec7caba7697f152bd34853b98500dd54c4b240
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1048,7 +1048,7 @@ F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
 F test/where8.test 6f95896633cf2d307b5263145b942b7d33e837c6
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 9a7fda4a4512abc26a855e8b2b6572b200f6019b
+F test/where9.test 167a89495715db4d6a7d1e6a1aadf934ddc06516
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
@@ -1106,11 +1106,8 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P f64cd21e2e23ed7cff48f7dafa5e76adde9321c2
-Q +c1152bdcbb5ac185f743015fff63769effa81b4b
-R f37afa23588c87c948f6db62509a5540
-T *branch * branch-3.8.0
-T *sym-branch-3.8.0 *
-T -sym-trunk *
+P c3f75941e5dbd927142efb68e7c31904bafbfd70
+Q +caab361ebee5f5c3fdafd9b1abe3d1ab7c5b4db9
+R 34b40805306963e21bc653f4aa3fad1f
 U drh
-Z f756b9e9da7f4f16b2922ea29f813ff5
+Z b9428187eb16b771f70f47a3d05ac52d

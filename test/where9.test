@@ -951,4 +951,28 @@ do_test where9-9.1 {
   }
 } {1 2 3 4 8 9}
 
+# Fix for ticket [bc878246eafe0f52c519e29049b2fe4a99491b27]
+# Incorrect result when OR is used in a join to the right of a LEFT JOIN
+#
+do_test where9-10.1 {
+  db eval {
+    CREATE TABLE t101 (id INTEGER PRIMARY KEY);
+    INSERT INTO t101 VALUES (1);
+    SELECT * FROM t101 AS t0
+         LEFT JOIN t101 AS t1 ON t1.id BETWEEN 10 AND 20
+         JOIN t101 AS t2 ON (t2.id = t0.id OR (t2.id<>555 AND t2.id=t1.id));
+  }
+} {1 {} 1}
+do_test where9-10.2 {
+  db eval {
+    CREATE TABLE t102 (id TEXT UNIQUE NOT NULL);
+    INSERT INTO t102 VALUES ('1');
+    SELECT * FROM t102 AS t0
+         LEFT JOIN t102 AS t1 ON t1.id GLOB 'abc%'
+         JOIN t102 AS t2 ON (t2.id = t0.id OR (t2.id<>555 AND t2.id=t1.id));
+  }
+} {1 {} 1}
+
+
+
 finish_test
