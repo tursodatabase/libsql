@@ -1,5 +1,5 @@
-C Update\ssqlite3.pc.in\sto\suse\s@PACKAGE_VERSION@\sinstead\sof\s@RELEASE@.\nCherrypick\sof\s[2460dfd8825d25].
-D 2013-08-29T13:47:05.280
+C Version\s3.8.0.1
+D 2013-08-29T17:35:01.986
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1106,8 +1106,9 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 125b04de7b979e5fd3c791a6701030808c53401a
-Q +2460dfd8825d251e622e866e8dc1c0bf7fe7ec9f
+P c5857808c0707baa30994dd6aa3b9c93a74c0073
 R f09fdab74837e6353df38f5d2273681e
+T +sym-release *
+T +sym-version-3.8.0.1 *
 U drh
-Z 0cb8474c2f1056b95329a47c20a74a67
+Z 3c028394a3a00a433c82a9881b010566
