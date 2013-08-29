@@ -1,5 +1,5 @@
-C In\sthe\squery\soptimizer,\swhen\sconverting\sBETWEEN\sand\sLIKE/GLOB\sexpressions\ninto\ssimpler\sforms\sfor\sprocessing,\sbe\ssure\sto\stransfer\sthe\sLEFT\sJOIN\smarkings.\nFix\sfor\sticket\s[bc878246eafe0f52c].\s\sCherrypick\sof\s[caab361ebe].
-D 2013-08-29T13:21:52.036
+C Fix\san\soff-by-one\serror\sthat\scauses\sa\squoted\sempty\sstring\sat\sthe\send\sof\na\sCRNL-terminated\sline\sof\sCSV\sinput\sto\sbe\smisread\sby\sthe\sshell.\nCherrypick\sof\s[b5617e4fdadc4c].
+D 2013-08-29T13:23:59.620
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
-F src/shell.c 1c317a4c96d61d8d9fdad9fd1811d9b10b8c7f57
+F src/shell.c 0fb2ce9876596e99ed64caffaec6c4bf224cb22d
 F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1106,8 +1106,8 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c3f75941e5dbd927142efb68e7c31904bafbfd70
-Q +caab361ebee5f5c3fdafd9b1abe3d1ab7c5b4db9
-R 34b40805306963e21bc653f4aa3fad1f
+P cb667449d0ff64cba4c951325d38186366779610
+Q +b5617e4fdadc4cded93c985008e90982dd48bc3b
+R a37564c9ee29de32d54b1e26a10d6187
 U drh
-Z b9428187eb16b771f70f47a3d05ac52d
+Z d99bdee47e0ad945111dc119717b733e
