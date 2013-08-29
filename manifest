@@ -1,5 +1,5 @@
-C Prevent\sthe\simplementation\sof\sthe\storeal()\sSQL\sfunction\sfrom\sbeing\s'optimized'\sby\sMSVC.
-D 2013-08-29T01:17:24.949
+C Disable\sseveral\storeal()\stests\sthat\srequire\shigh\sfloating\spoint\sprecision\swhen\sit\sis\sunavailable.
+D 2013-08-29T02:27:39.369
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -562,7 +562,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test cd25cf605c5a345d038dc7b84232204c6a901c84
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
-F test/func4.test 91a0ff89a98304d23dc795c4dbb65865a484633b
+F test/func4.test 4eaa19eed2fd37a39b4bb274c4bf84b142a9a40a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 375dfe288fd0c4eb3c343a3cb23a7e3851903805
-R 7c55303025c97a6a9c8303db7e5df83c
+P 047bd1c24553b00ccf12d7745bb4c46820b91f5e
+R 23d92ec42ac516cd6bc59a2369e868fb
 U mistachkin
-Z 349da4d5082e6d065b9211864249410e
+Z 305c9d921855a6e7bed35ab5c2575022

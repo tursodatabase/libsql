@@ -8,9 +8,12 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file implements regression tests for SQLite library. The
-# focus of this file is testing the tointeger() and toreal()
-# functions.
+# This file implements regression tests for SQLite library. The focus of
+# this file is testing the tointeger() and toreal() functions.
+#
+# Several of the toreal() tests are disabled on platforms where floating
+# point precision is not high enough to represent their constant integer
+# expression arguments as double precision floating point values.
 #
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -184,6 +187,9 @@ do_execsql_test func4-1.55 {
 } {{}}
 
 ifcapable floatingpoint {
+  set highPrecision [expr \
+      {[memdbsql {SELECT toreal(-9223372036854775808 + 1);}] eq {{}}}]
+
   do_execsql_test func4-2.1 {
     SELECT toreal(NULL);
   } {{}}
@@ -256,18 +262,22 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.24 {
     SELECT toreal(-9223372036854775808);
   } {-9.223372036854776e+18}
-  do_execsql_test func4-2.25 {
-    SELECT toreal(-9223372036854775808 + 1);
-  } {{}}
+  if {$highPrecision} {
+    do_execsql_test func4-2.25 {
+      SELECT toreal(-9223372036854775808 + 1);
+    } {{}}
+  }
   do_execsql_test func4-2.26 {
     SELECT toreal(-9223372036854775807 - 1);
   } {-9.223372036854776e+18}
-  do_execsql_test func4-2.27 {
-    SELECT toreal(-9223372036854775807);
-  } {{}}
-  do_execsql_test func4-2.28 {
-    SELECT toreal(-9223372036854775807 + 1);
-  } {{}}
+  if {$highPrecision} {
+    do_execsql_test func4-2.27 {
+      SELECT toreal(-9223372036854775807);
+    } {{}}
+    do_execsql_test func4-2.28 {
+      SELECT toreal(-9223372036854775807 + 1);
+    } {{}}
+  }
   do_execsql_test func4-2.29 {
     SELECT toreal(-2147483648 - 1);
   } {-2147483649.0}
@@ -286,12 +296,14 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.34 {
     SELECT toreal(2147483647 + 1);
   } {2147483648.0}
-  do_execsql_test func4-2.35 {
-    SELECT toreal(9223372036854775807 - 1);
-  } {{}}
-  do_execsql_test func4-2.36 {
-    SELECT toreal(9223372036854775807);
-  } {{}}
+  if {$highPrecision} {
+    do_execsql_test func4-2.35 {
+      SELECT toreal(9223372036854775807 - 1);
+    } {{}}
+    do_execsql_test func4-2.36 {
+      SELECT toreal(9223372036854775807);
+    } {{}}
+  }
   do_execsql_test func4-2.37 {
     SELECT toreal(9223372036854775807 + 1);
   } {9.223372036854776e+18}
@@ -319,9 +331,11 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.45 {
     SELECT toreal(9007199254740992);
   } {9007199254740992.0}
-  do_execsql_test func4-2.46 {
-    SELECT toreal(9007199254740992 + 1);
-  } {{}}
+  if {$highPrecision} {
+    do_execsql_test func4-2.46 {
+      SELECT toreal(9007199254740992 + 1);
+    } {{}}
+  }
   do_execsql_test func4-2.47 {
     SELECT toreal(9007199254740992 + 2);
   } {9007199254740994.0}
@@ -549,9 +563,11 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.7 {
     SELECT tointeger(toreal(-9223372036854775808));
   } {-9223372036854775808}
-  do_execsql_test func4-5.8 {
-    SELECT tointeger(toreal(-9223372036854775808 + 1));
-  } {{}}
+  if {$highPrecision} {
+    do_execsql_test func4-5.8 {
+      SELECT tointeger(toreal(-9223372036854775808 + 1));
+    } {{}}
+  }
   do_execsql_test func4-5.9 {
     SELECT tointeger(toreal(-2147483648 - 1));
   } {-2147483649}
@@ -594,9 +610,11 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.22 {
     SELECT tointeger(toreal(9007199254740992));
   } {9007199254740992}
-  do_execsql_test func4-5.23 {
-    SELECT tointeger(toreal(9007199254740992 + 1));
-  } {{}}
+  if {$highPrecision} {
+    do_execsql_test func4-5.23 {
+      SELECT tointeger(toreal(9007199254740992 + 1));
+    } {{}}
+  }
   do_execsql_test func4-5.24 {
     SELECT tointeger(toreal(9007199254740992 + 2));
   } {9007199254740994}
