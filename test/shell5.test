@@ -242,4 +242,30 @@ SELECT * FROM t1;}
 5,"this is 5"}}
 }
 
+# Import columns containing quoted strings
+do_test shell5-1.9 {
+  set out [open shell5.csv w]
+  puts $out {1,"",11}
+  puts $out {2,"x",22}
+  puts $out {3,"""",33}
+  puts $out {4,"hello",44}
+  puts $out "5,55,\"\"\r"
+  puts $out {6,66,"x"}
+  puts $out {7,77,""""}
+  puts $out {8,88,"hello"}
+  puts $out {"",9,99}
+  puts $out {"x",10,110}
+  puts $out {"""",11,121}
+  puts $out {"hello",12,132}
+  close $out
+  file delete -force test.db
+  catchcmd test.db {.mode csv
+    CREATE TABLE t1(a,b,c);
+.import shell5.csv t1
+  }
+  sqlite3 db test.db
+  db eval {SELECT *, '|' FROM t1 ORDER BY rowid}
+} {1 {} 11 | 2 x 22 | 3 {"} 33 | 4 hello 44 | 5 55 {} | 6 66 x | 7 77 {"} | 8 88 hello | {} 9 99 | x 10 110 | {"} 11 121 | hello 12 132 |}
+db close
+
 finish_test

@@ -10,14 +10,14 @@
 #***********************************************************************
 #
 # This file implements tests for SQLite library.  The focus of the tests
-# in this file is the use of the sqlite_stat3 histogram data on tables
+# in this file is the use of the sqlite_stat4 histogram data on tables
 # with many repeated values and only a few distinct values.
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !stat3 {
+ifcapable !stat4&&!stat3 {
   finish_test
   return
 }
@@ -27,6 +27,17 @@ set testprefix analyze5
 proc eqp {sql {db db}} {
   uplevel execsql [list "EXPLAIN QUERY PLAN $sql"] $db
 }
+
+proc alpha {blob} {
+  set ret ""
+  foreach c [split $blob {}] {
+    if {[string is alpha $c]} {append ret $c}
+  }
+  return $ret
+}
+db func alpha alpha
+
+db func lindex lindex
 
 unset -nocomplain i t u v w x y z
 do_test analyze5-1.0 {
@@ -55,17 +66,40 @@ do_test analyze5-1.0 {
     CREATE INDEX t1y ON t1(y);  -- integers 0 and very few 1s
     CREATE INDEX t1z ON t1(z);  -- integers 0, 1, 2, and 3
     ANALYZE;
-    SELECT sample FROM sqlite_stat3 WHERE idx='t1u' ORDER BY nlt;
+  }
+  ifcapable stat4 {
+    db eval {
+      SELECT DISTINCT lindex(test_decode(sample),0) 
+        FROM sqlite_stat4 WHERE idx='t1u' ORDER BY nlt;
+    }
+  } else {
+    db eval {
+      SELECT sample FROM sqlite_stat3 WHERE idx='t1u' ORDER BY nlt;
+    }
   }
 } {alpha bravo charlie delta}
 
 do_test analyze5-1.1 {
-  db eval {SELECT DISTINCT lower(sample) FROM sqlite_stat3 WHERE idx='t1v'
-             ORDER BY 1}
+  ifcapable stat4 {
+    db eval {
+      SELECT DISTINCT lower(lindex(test_decode(sample), 0)) 
+        FROM sqlite_stat4 WHERE idx='t1v' ORDER BY 1
+    }
+  } else {
+    db eval {
+      SELECT lower(sample) FROM sqlite_stat3 WHERE idx='t1v' ORDER BY 1
+    }
+  }
 } {alpha bravo charlie delta}
-do_test analyze5-1.2 {
-  db eval {SELECT idx, count(*) FROM sqlite_stat3 GROUP BY 1 ORDER BY 1}
-} {t1t 4 t1u 4 t1v 4 t1w 4 t1x 4 t1y 2 t1z 4}
+ifcapable stat4 {
+  do_test analyze5-1.2 {
+    db eval {SELECT idx, count(*) FROM sqlite_stat4 GROUP BY 1 ORDER BY 1}
+  } {t1t 8 t1u 8 t1v 8 t1w 8 t1x 8 t1y 9 t1z 8}
+} else {
+  do_test analyze5-1.2 {
+    db eval {SELECT idx, count(*) FROM sqlite_stat3 GROUP BY 1 ORDER BY 1}
+  } {t1t 4 t1u 4 t1v 4 t1w 4 t1x 4 t1y 2 t1z 4}
+}
 
 # Verify that range queries generate the correct row count estimates
 #

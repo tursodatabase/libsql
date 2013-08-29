@@ -687,7 +687,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** can handle (i.e. not CURRENT_TIME etc.)
   */
   if( pDflt ){
-    sqlite3_value *pVal;
+    sqlite3_value *pVal = 0;
     if( sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal) ){
       db->mallocFailed = 1;
       return;

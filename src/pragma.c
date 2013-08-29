@@ -661,7 +661,7 @@ void sqlite3Pragma(
     Pager *pPager = sqlite3BtreePager(pDb->pBt);
     i64 iLimit = -2;
     if( zRight ){
-      sqlite3Atoi64(zRight, &iLimit, 1000000, SQLITE_UTF8);
+      sqlite3Atoi64(zRight, &iLimit, sqlite3Strlen30(zRight), SQLITE_UTF8);
       if( iLimit<-1 ) iLimit = -1;
     }
     iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
@@ -795,10 +795,11 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"mmap_size")==0 ){
     sqlite3_int64 sz;
+#if SQLITE_MAX_MMAP_SIZE>0
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( zRight ){
       int ii;
-      sqlite3Atoi64(zRight, &sz, 1000, SQLITE_UTF8);
+      sqlite3Atoi64(zRight, &sz, sqlite3Strlen30(zRight), SQLITE_UTF8);
       if( sz<0 ) sz = sqlite3GlobalConfig.szMmap;
       if( pId2->n==0 ) db->szMmap = sz;
       for(ii=db->nDb-1; ii>=0; ii--){
@@ -809,8 +810,9 @@ void sqlite3Pragma(
     }
     sz = -1;
     rc = sqlite3_file_control(db, zDb, SQLITE_FCNTL_MMAP_SIZE, &sz);
-#if SQLITE_MAX_MMAP_SIZE==0
+#else
     sz = 0;
+    rc = SQLITE_OK;
 #endif
     if( rc==SQLITE_OK ){
       returnSingleInt(pParse, "mmap_size", sz);

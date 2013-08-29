@@ -143,6 +143,11 @@ do_test alter4-2.6 {
     alter table t1 add column d DEFAULT CURRENT_TIME;
   }
 } {1 {Cannot add a column with non-constant default}}
+do_test alter4-2.7 {
+  catchsql {
+    alter table t1 add column d default (-+1);
+  }
+} {1 {Cannot add a column with non-constant default}}
 do_test alter4-2.99 {
   execsql {
     DROP TABLE t1;

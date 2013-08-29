@@ -94,6 +94,14 @@ WIN32HEAP = 0
 DEBUG = 0
 !ENDIF
 
+# Enable use of available compiler optimizations?  Normally, this should be
+# non-zero.  Setting this to zero, thus disabling all compiler optimizations,
+# can be useful for testing.
+#
+!IFNDEF OPTIMIZATIONS
+OPTIMIZATIONS = 2
+!ENDIF
+
 # Check for the predefined command macro CC.  This should point to the compiler
 # binary for the target platform.  If it is not defined, simply define it to
 # the legacy default value 'cl.exe'.
@@ -345,11 +353,15 @@ TCLSH_CMD = tclsh85
 
 # Compiler options needed for programs that use the readline() library.
 #
+!IFNDEF READLINE_FLAGS
 READLINE_FLAGS = -DHAVE_READLINE=0
+!ENDIF
 
 # The library that programs using readline() must link against.
 #
+!IFNDEF LIBREADLINE
 LIBREADLINE =
+!ENDIF
 
 # Should the database engine be compiled threadsafe
 #
@@ -401,17 +413,30 @@ RCC = $(RCC) $(OPT_FEATURE_FLAGS)
 TCC = $(TCC) $(OPTS)
 RCC = $(RCC) $(OPTS)
 
-# If symbols are enabled, enable PDBs.
-# If debugging is enabled, disable all optimizations and enable PDBs.
+# If compiling for debugging, add some defines.
 !IF $(DEBUG)>0
-TCC = $(TCC) -Od -D_DEBUG
-BCC = $(BCC) -Od -D_DEBUG
+TCC = $(TCC) -D_DEBUG
+BCC = $(BCC) -D_DEBUG
 RCC = $(RCC) -D_DEBUG
-!ELSE
-TCC = $(TCC) -O2
-BCC = $(BCC) -O2
 !ENDIF
 
+# If optimizations are enabled or disabled (either implicitly or
+# explicitly), add the necessary flags.
+!IF $(DEBUG)>0 || $(OPTIMIZATIONS)==0
+TCC = $(TCC) -Od
+BCC = $(BCC) -Od
+!ELSEIF $(OPTIMIZATIONS)>=3
+TCC = $(TCC) -Ox
+BCC = $(BCC) -Ox
+!ELSEIF $(OPTIMIZATIONS)==2
+TCC = $(TCC) -O2
+BCC = $(BCC) -O2
+!ELSEIF $(OPTIMIZATIONS)==1
+TCC = $(TCC) -O1
+BCC = $(BCC) -O1
+!ENDIF
+
+# If symbols are enabled (or compiling for debugging), enable PDBs.
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
 TCC = $(TCC) -Zi
 BCC = $(BCC) -Zi
@@ -469,7 +494,9 @@ LTLIBS = $(LTLIBS) $(LIBICU)
 !ENDIF
 
 # nawk compatible awk.
+!IFNDEF NAWK
 NAWK = gawk.exe
+!ENDIF
 
 # You should not have to change anything below this line
 ###############################################################################

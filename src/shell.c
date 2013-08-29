@@ -71,12 +71,12 @@
 /* Make sure isatty() has a prototype.
 */
 extern int isatty(int);
-#endif
 
 /* popen and pclose are not C89 functions and so are sometimes omitted from
 ** the <stdio.h> header */
-FILE *popen(const char*,const char*);
-int pclose(FILE*);
+extern FILE *popen(const char*,const char*);
+extern int pclose(FILE*);
+#endif
 
 #if defined(_WIN32_WCE)
 /* Windows CE (arm-wince-mingw32ce-gcc) does not provide isatty()
@@ -554,7 +554,7 @@ static void output_c_string(FILE *out, const char *z){
     }else if( c=='\r' ){
       fputc('\\', out);
       fputc('r', out);
-    }else if( !isprint(c) ){
+    }else if( !isprint(c&0xff) ){
       fprintf(out, "\\%03o", c&0xff);
     }else{
       fputc(c, out);
@@ -1280,7 +1280,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   
   if( strcmp(zTable, "sqlite_sequence")==0 ){
     zPrepStmt = "DELETE FROM sqlite_sequence;\n";
-  }else if( strcmp(zTable, "sqlite_stat1")==0 ){
+  }else if( sqlite3_strglob("sqlite_stat?", zTable)==0 ){
     fprintf(p->out, "ANALYZE sqlite_master;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
     return 0;
@@ -1717,7 +1717,7 @@ static char *csv_read_one_field(CSVReader *p){
       }
       if( (c==cSep && pc==cQuote)
        || (c=='\n' && pc==cQuote)
-       || (c=='\n' && pc=='\r' && p->n>2 && p->z[p->n-2]==cQuote)
+       || (c=='\n' && pc=='\r' && p->n>=2 && p->z[p->n-2]==cQuote)
        || (c==EOF && pc==cQuote)
       ){
         do{ p->n--; }while( p->z[p->n]!=cQuote );

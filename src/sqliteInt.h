@@ -569,6 +569,20 @@ extern const int sqlite3one;
 #endif
 
 /*
+** Only one of SQLITE_ENABLE_STAT3 or SQLITE_ENABLE_STAT4 can be defined.
+** Priority is given to SQLITE_ENABLE_STAT4.  If either are defined, also
+** define SQLITE_ENABLE_STAT3_OR_STAT4
+*/
+#ifdef SQLITE_ENABLE_STAT4
+# undef SQLITE_ENABLE_STAT3
+# define SQLITE_ENABLE_STAT3_OR_STAT4 1
+#elif SQLITE_ENABLE_STAT3
+# define SQLITE_ENABLE_STAT3_OR_STAT4 1
+#elif SQLITE_ENABLE_STAT3_OR_STAT4
+# undef SQLITE_ENABLE_STAT3_OR_STAT4
+#endif
+
+/*
 ** An instance of the following structure is used to store the busy-handler
 ** callback for a given sqlite handle. 
 **
@@ -1558,9 +1572,10 @@ struct Index {
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
-#ifdef SQLITE_ENABLE_STAT3
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
-  tRowcnt avgEq;           /* Average nEq value for key values not in aSample */
+  int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
+  tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */
 #endif
 };
@@ -1571,16 +1586,11 @@ struct Index {
 ** analyze.c source file for additional information.
 */
 struct IndexSample {
-  union {
-    char *z;        /* Value if eType is SQLITE_TEXT or SQLITE_BLOB */
-    double r;       /* Value if eType is SQLITE_FLOAT */
-    i64 i;          /* Value if eType is SQLITE_INTEGER */
-  } u;
-  u8 eType;         /* SQLITE_NULL, SQLITE_INTEGER ... etc. */
-  int nByte;        /* Size in byte of text or blob. */
-  tRowcnt nEq;      /* Est. number of rows where the key equals this sample */
-  tRowcnt nLt;      /* Est. number of rows where key is less than this sample */
-  tRowcnt nDLt;     /* Est. number of distinct keys less than this sample */
+  void *p;          /* Pointer to sampled record */
+  int n;            /* Size of record in bytes */
+  tRowcnt *anEq;    /* Est. number of rows where the key equals this sample */
+  tRowcnt *anLt;    /* Est. number of rows where key is less than this sample */
+  tRowcnt *anDLt;   /* Est. number of distinct keys less than this sample */
 };
 
 /*
@@ -3056,9 +3066,6 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
 char *sqlite3Utf16to8(sqlite3 *, const void*, int, u8);
-#ifdef SQLITE_ENABLE_STAT3
-char *sqlite3Utf8to16(sqlite3 *, u8, char *, int, int *);
-#endif
 int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
@@ -3124,6 +3131,12 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *, SrcList *, int, int);
 
 void sqlite3BackupRestart(sqlite3_backup *);
 void sqlite3BackupUpdate(sqlite3_backup *, Pgno, const u8 *);
+
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+void sqlite3AnalyzeFunctions(void);
+int sqlite3Stat4ProbeSetValue(Parse*,Index*,UnpackedRecord**,Expr*,u8,int,int*);
+void sqlite3Stat4ProbeFree(UnpackedRecord*);
+#endif
 
 /*
 ** The interface to the LEMON-generated parser

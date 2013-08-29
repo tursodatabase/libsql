@@ -1715,4 +1715,7 @@ void sqlite3RegisterGlobalFunctions(void){
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions();
 #endif
+#if defined(SQLITE_ENABLE_STAT3) || defined(SQLITE_ENABLE_STAT4)
+  sqlite3AnalyzeFunctions();
+#endif
 }

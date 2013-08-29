@@ -749,7 +749,7 @@ static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
     int isNew;
 
     int aKey[MALLOC_LOG_KEYINTS];
-    int nKey = sizeof(int)*MALLOC_LOG_KEYINTS;
+    unsigned int nKey = sizeof(int)*MALLOC_LOG_KEYINTS;
 
     memset(aKey, 0, nKey);
     if( (sizeof(void*)*nFrame)<nKey ){

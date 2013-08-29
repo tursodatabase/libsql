@@ -286,7 +286,7 @@ struct WhereTerm {
 #define TERM_ORINFO     0x10   /* Need to free the WhereTerm.u.pOrInfo object */
 #define TERM_ANDINFO    0x20   /* Need to free the WhereTerm.u.pAndInfo obj */
 #define TERM_OR_OK      0x40   /* Used during OR-clause processing */
-#ifdef SQLITE_ENABLE_STAT3
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 #  define TERM_VNULL    0x80   /* Manufactured x>NULL or x<=NULL term */
 #else
 #  define TERM_VNULL    0x00   /* Disabled if not using stat3 */
@@ -392,6 +392,10 @@ struct WhereLoopBuilder {
   ExprList *pOrderBy;       /* ORDER BY clause */
   WhereLoop *pNew;          /* Template WhereLoop */
   WhereOrSet *pOrSet;       /* Record best loops here, if not NULL */
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+  UnpackedRecord *pRec;     /* Probe for stat4 (if required) */
+  int nRecValid;            /* Number of valid fields currently in pRec */
+#endif
 };
 
 /*
@@ -1205,8 +1209,10 @@ static int isMatchOfColumn(
 ** a join, then transfer the appropriate markings over to derived.
 */
 static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
-  pDerived->flags |= pBase->flags & EP_FromJoin;
-  pDerived->iRightJoinTable = pBase->iRightJoinTable;
+  if( pDerived ){
+    pDerived->flags |= pBase->flags & EP_FromJoin;
+    pDerived->iRightJoinTable = pBase->iRightJoinTable;
+  }
 }
 
 #if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
@@ -1663,6 +1669,7 @@ static void exprAnalyze(
       pNewExpr = sqlite3PExpr(pParse, ops[i], 
                              sqlite3ExprDup(db, pExpr->pLeft, 0),
                              sqlite3ExprDup(db, pList->a[i].pExpr, 0), 0);
+      transferJoinMarkings(pNewExpr, pExpr);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       testcase( idxNew==0 );
       exprAnalyze(pSrc, pWC, idxNew);
@@ -1730,6 +1737,7 @@ static void exprAnalyze(
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE, 
            sqlite3ExprAddCollateToken(pParse,pNewExpr1,&sCollSeqName),
            pStr1, 0);
+    transferJoinMarkings(pNewExpr1, pExpr);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
@@ -1737,6 +1745,7 @@ static void exprAnalyze(
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
            sqlite3ExprAddCollateToken(pParse,pNewExpr2,&sCollSeqName),
            pStr2, 0);
+    transferJoinMarkings(pNewExpr2, pExpr);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);
@@ -1786,7 +1795,7 @@ static void exprAnalyze(
   }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
-#ifdef SQLITE_ENABLE_STAT3
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   /* When sqlite_stat3 histogram data is available an operator of the
   ** form "x IS NOT NULL" can sometimes be evaluated more efficiently
   ** as "x>NULL" if x is not an INTEGER PRIMARY KEY.  So construct a
@@ -1826,7 +1835,7 @@ static void exprAnalyze(
       pNewTerm->prereqAll = pTerm->prereqAll;
     }
   }
-#endif /* SQLITE_ENABLE_STAT */
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
   /* Prevent ON clause terms of a LEFT JOIN from being used to drive
   ** an index for tables to the left of the join.
@@ -2394,7 +2403,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
 #endif /* !defined(SQLITE_OMIT_VIRTUALTABLE) */
 
 
-#ifdef SQLITE_ENABLE_STAT3
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Estimate the location of a particular key among all keys in an
 ** index.  Store the results in aStat as follows:
@@ -2404,141 +2413,70 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
 **
 ** Return SQLITE_OK on success.
 */
-static int whereKeyStats(
+static void whereKeyStats(
   Parse *pParse,              /* Database connection */
   Index *pIdx,                /* Index to consider domain of */
-  sqlite3_value *pVal,        /* Value to consider */
+  UnpackedRecord *pRec,       /* Vector of values to consider */
   int roundUp,                /* Round up if true.  Round down if false */
   tRowcnt *aStat              /* OUT: stats written here */
 ){
-  tRowcnt n;
-  IndexSample *aSample;
-  int i, eType;
-  int isEq = 0;
-  i64 v;
-  double r, rS;
+  IndexSample *aSample = pIdx->aSample;
+  int iCol = pRec->nField-1;  /* Index of required stats in anEq[] etc. */
+  int iMin = 0;               /* Smallest sample not yet tested */
+  int i = pIdx->nSample;      /* Smallest sample larger than or equal to pRec */
+  int iTest;                  /* Next sample to test */
+  int res;                    /* Result of comparison operation */
 
-  assert( roundUp==0 || roundUp==1 );
   assert( pIdx->nSample>0 );
-  if( pVal==0 ) return SQLITE_ERROR;
-  n = pIdx->aiRowEst[0];
-  aSample = pIdx->aSample;
-  eType = sqlite3_value_type(pVal);
+  assert( pRec->nField>0 && iCol<pIdx->nSampleCol );
+  do{
+    iTest = (iMin+i)/2;
+    res = sqlite3VdbeRecordCompare(aSample[iTest].n, aSample[iTest].p, pRec);
+    if( res<0 ){
+      iMin = iTest+1;
+    }else{
+      i = iTest;
+    }
+  }while( res && iMin<i );
 
-  if( eType==SQLITE_INTEGER ){
-    v = sqlite3_value_int64(pVal);
-    r = (i64)v;
-    for(i=0; i<pIdx->nSample; i++){
-      if( aSample[i].eType==SQLITE_NULL ) continue;
-      if( aSample[i].eType>=SQLITE_TEXT ) break;
-      if( aSample[i].eType==SQLITE_INTEGER ){
-        if( aSample[i].u.i>=v ){
-          isEq = aSample[i].u.i==v;
-          break;
-        }
-      }else{
-        assert( aSample[i].eType==SQLITE_FLOAT );
-        if( aSample[i].u.r>=r ){
-          isEq = aSample[i].u.r==r;
-          break;
-        }
-      }
-    }
-  }else if( eType==SQLITE_FLOAT ){
-    r = sqlite3_value_double(pVal);
-    for(i=0; i<pIdx->nSample; i++){
-      if( aSample[i].eType==SQLITE_NULL ) continue;
-      if( aSample[i].eType>=SQLITE_TEXT ) break;
-      if( aSample[i].eType==SQLITE_FLOAT ){
-        rS = aSample[i].u.r;
-      }else{
-        rS = aSample[i].u.i;
-      }
-      if( rS>=r ){
-        isEq = rS==r;
-        break;
-      }
-    }
-  }else if( eType==SQLITE_NULL ){
-    i = 0;
-    if( aSample[0].eType==SQLITE_NULL ) isEq = 1;
+#ifdef SQLITE_DEBUG
+  /* The following assert statements check that the binary search code
+  ** above found the right answer. This block serves no purpose other
+  ** than to invoke the asserts.  */
+  if( res==0 ){
+    /* If (res==0) is true, then sample $i must be equal to pRec */
+    assert( i<pIdx->nSample );
+    assert( 0==sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec)
+         || pParse->db->mallocFailed );
   }else{
-    assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
-    for(i=0; i<pIdx->nSample; i++){
-      if( aSample[i].eType==SQLITE_TEXT || aSample[i].eType==SQLITE_BLOB ){
-        break;
-      }
-    }
-    if( i<pIdx->nSample ){      
-      sqlite3 *db = pParse->db;
-      CollSeq *pColl;
-      const u8 *z;
-      if( eType==SQLITE_BLOB ){
-        z = (const u8 *)sqlite3_value_blob(pVal);
-        pColl = db->pDfltColl;
-        assert( pColl->enc==SQLITE_UTF8 );
-      }else{
-        pColl = sqlite3GetCollSeq(pParse, SQLITE_UTF8, 0, *pIdx->azColl);
-        /* If the collating sequence was unavailable, we should have failed
-        ** long ago and never reached this point.  But we'll check just to
-        ** be doubly sure. */
-        if( NEVER(pColl==0) ) return SQLITE_ERROR;
-        z = (const u8 *)sqlite3ValueText(pVal, pColl->enc);
-        if( !z ){
-          return SQLITE_NOMEM;
-        }
-        assert( z && pColl && pColl->xCmp );
-      }
-      n = sqlite3ValueBytes(pVal, pColl->enc);
-  
-      for(; i<pIdx->nSample; i++){
-        int c;
-        int eSampletype = aSample[i].eType;
-        if( eSampletype<eType ) continue;
-        if( eSampletype!=eType ) break;
-#ifndef SQLITE_OMIT_UTF16
-        if( pColl->enc!=SQLITE_UTF8 ){
-          int nSample;
-          char *zSample = sqlite3Utf8to16(
-              db, pColl->enc, aSample[i].u.z, aSample[i].nByte, &nSample
-          );
-          if( !zSample ){
-            assert( db->mallocFailed );
-            return SQLITE_NOMEM;
-          }
-          c = pColl->xCmp(pColl->pUser, nSample, zSample, n, z);
-          sqlite3DbFree(db, zSample);
-        }else
-#endif
-        {
-          c = pColl->xCmp(pColl->pUser, aSample[i].nByte, aSample[i].u.z, n, z);
-        }
-        if( c>=0 ){
-          if( c==0 ) isEq = 1;
-          break;
-        }
-      }
-    }
+    /* Otherwise, pRec must be smaller than sample $i and larger than
+    ** sample ($i-1).  */
+    assert( i==pIdx->nSample 
+         || sqlite3VdbeRecordCompare(aSample[i].n, aSample[i].p, pRec)>0
+         || pParse->db->mallocFailed );
+    assert( i==0
+         || sqlite3VdbeRecordCompare(aSample[i-1].n, aSample[i-1].p, pRec)<0
+         || pParse->db->mallocFailed );
   }
+#endif /* ifdef SQLITE_DEBUG */
 
   /* At this point, aSample[i] is the first sample that is greater than
   ** or equal to pVal.  Or if i==pIdx->nSample, then all samples are less
-  ** than pVal.  If aSample[i]==pVal, then isEq==1.
+  ** than pVal.  If aSample[i]==pVal, then res==0.
   */
-  if( isEq ){
-    assert( i<pIdx->nSample );
-    aStat[0] = aSample[i].nLt;
-    aStat[1] = aSample[i].nEq;
+  if( res==0 ){
+    aStat[0] = aSample[i].anLt[iCol];
+    aStat[1] = aSample[i].anEq[iCol];
   }else{
     tRowcnt iLower, iUpper, iGap;
     if( i==0 ){
       iLower = 0;
-      iUpper = aSample[0].nLt;
+      iUpper = aSample[0].anLt[iCol];
     }else{
-      iUpper = i>=pIdx->nSample ? n : aSample[i].nLt;
-      iLower = aSample[i-1].nEq + aSample[i-1].nLt;
+      iUpper = i>=pIdx->nSample ? pIdx->aiRowEst[0] : aSample[i].anLt[iCol];
+      iLower = aSample[i-1].anEq[iCol] + aSample[i-1].anLt[iCol];
     }
-    aStat[1] = pIdx->avgEq;
+    aStat[1] = (pIdx->nColumn>iCol ? pIdx->aAvgEq[iCol] : 1);
     if( iLower>=iUpper ){
       iGap = 0;
     }else{
@@ -2551,44 +2489,8 @@ static int whereKeyStats(
     }
     aStat[0] = iLower + iGap;
   }
-  return SQLITE_OK;
 }
-#endif /* SQLITE_ENABLE_STAT3 */
-
-/*
-** If expression pExpr represents a literal value, set *pp to point to
-** an sqlite3_value structure containing the same value, with affinity
-** aff applied to it, before returning. It is the responsibility of the 
-** caller to eventually release this structure by passing it to 
-** sqlite3ValueFree().
-**
-** If the current parse is a recompile (sqlite3Reprepare()) and pExpr
-** is an SQL variable that currently has a non-NULL value bound to it,
-** create an sqlite3_value structure containing this value, again with
-** affinity aff applied to it, instead.
-**
-** If neither of the above apply, set *pp to NULL.
-**
-** If an error occurs, return an error code. Otherwise, SQLITE_OK.
-*/
-#ifdef SQLITE_ENABLE_STAT3
-static int valueFromExpr(
-  Parse *pParse, 
-  Expr *pExpr, 
-  u8 aff, 
-  sqlite3_value **pp
-){
-  if( pExpr->op==TK_VARIABLE
-   || (pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
-  ){
-    int iVar = pExpr->iColumn;
-    sqlite3VdbeSetVarmask(pParse->pVdbe, iVar);
-    *pp = sqlite3VdbeGetBoundValue(pParse->pReprepare, iVar, aff);
-    return SQLITE_OK;
-  }
-  return sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, aff, pp);
-}
-#endif
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
 /*
 ** This function is used to estimate the number of rows that will be visited
@@ -2605,103 +2507,150 @@ static int valueFromExpr(
 ** If either of the upper or lower bound is not present, then NULL is passed in
 ** place of the corresponding WhereTerm.
 **
-** The nEq parameter is passed the index of the index column subject to the
-** range constraint. Or, equivalently, the number of equality constraints
-** optimized by the proposed index scan. For example, assuming index p is
-** on t1(a, b), and the SQL query is:
+** The value in (pBuilder->pNew->u.btree.nEq) is the index of the index
+** column subject to the range constraint. Or, equivalently, the number of
+** equality constraints optimized by the proposed index scan. For example,
+** assuming index p is on t1(a, b), and the SQL query is:
 **
 **   ... FROM t1 WHERE a = ? AND b > ? AND b < ? ...
 **
-** then nEq should be passed the value 1 (as the range restricted column,
-** b, is the second left-most column of the index). Or, if the query is:
+** then nEq is set to 1 (as the range restricted column, b, is the second 
+** left-most column of the index). Or, if the query is:
 **
 **   ... FROM t1 WHERE a > ? AND a < ? ...
 **
-** then nEq should be passed 0.
+** then nEq is set to 0.
 **
-** The returned value is an integer divisor to reduce the estimated
-** search space.  A return value of 1 means that range constraints are
-** no help at all.  A return value of 2 means range constraints are
-** expected to reduce the search space by half.  And so forth...
-**
-** In the absence of sqlite_stat3 ANALYZE data, each range inequality
-** reduces the search space by a factor of 4.  Hence a single constraint (x>?)
-** results in a return of 4 and a range constraint (x>? AND x<?) results
-** in a return of 16.
+** When this function is called, *pnOut is set to the whereCost() of the
+** number of rows that the index scan is expected to visit without 
+** considering the range constraints. If nEq is 0, this is the number of 
+** rows in the index. Assuming no error occurs, *pnOut is adjusted (reduced)
+** to account for the range contraints pLower and pUpper.
+** 
+** In the absence of sqlite_stat4 ANALYZE data, or if such data cannot be
+** used, each range inequality reduces the search space by a factor of 4. 
+** Hence a pair of constraints (x>? AND x<?) reduces the expected number of
+** rows visited by a factor of 16.
 */
 static int whereRangeScanEst(
   Parse *pParse,       /* Parsing & code generating context */
-  Index *p,            /* The index containing the range-compared column; "x" */
-  int nEq,             /* index into p->aCol[] of the range-compared column */
+  WhereLoopBuilder *pBuilder,
   WhereTerm *pLower,   /* Lower bound on the range. ex: "x>123" Might be NULL */
   WhereTerm *pUpper,   /* Upper bound on the range. ex: "x<455" Might be NULL */
-  WhereCost *pRangeDiv /* OUT: Reduce search space by this divisor */
+  WhereCost *pnOut     /* IN/OUT: Number of rows visited */
 ){
   int rc = SQLITE_OK;
+  int nOut = (int)*pnOut;
 
-#ifdef SQLITE_ENABLE_STAT3
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+  Index *p = pBuilder->pNew->u.btree.pIndex;
+  int nEq = pBuilder->pNew->u.btree.nEq;
 
-  if( nEq==0 && p->nSample && OptimizationEnabled(pParse->db, SQLITE_Stat3) ){
-    sqlite3_value *pRangeVal;
-    tRowcnt iLower = 0;
-    tRowcnt iUpper = p->aiRowEst[0];
+  if( nEq==pBuilder->nRecValid
+   && nEq<p->nSampleCol
+   && p->nSample 
+   && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
+  ){
+    UnpackedRecord *pRec = pBuilder->pRec;
     tRowcnt a[2];
     u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
 
+    /* Variable iLower will be set to the estimate of the number of rows in 
+    ** the index that are less than the lower bound of the range query. The
+    ** lower bound being the concatenation of $P and $L, where $P is the
+    ** key-prefix formed by the nEq values matched against the nEq left-most
+    ** columns of the index, and $L is the value in pLower.
+    **
+    ** Or, if pLower is NULL or $L cannot be extracted from it (because it
+    ** is not a simple variable or literal value), the lower bound of the
+    ** range is $P. Due to a quirk in the way whereKeyStats() works, even
+    ** if $L is available, whereKeyStats() is called for both ($P) and 
+    ** ($P:$L) and the larger of the two returned values used.
+    **
+    ** Similarly, iUpper is to be set to the estimate of the number of rows
+    ** less than the upper bound of the range query. Where the upper bound
+    ** is either ($P) or ($P:$U). Again, even if $U is available, both values
+    ** of iUpper are requested of whereKeyStats() and the smaller used.
+    */
+    tRowcnt iLower;
+    tRowcnt iUpper;
+
+    /* Determine iLower and iUpper using ($P) only. */
+    if( nEq==0 ){
+      iLower = 0;
+      iUpper = p->aiRowEst[0];
+    }else{
+      /* Note: this call could be optimized away - since the same values must 
+      ** have been requested when testing key $P in whereEqualScanEst().  */
+      whereKeyStats(pParse, p, pRec, 0, a);
+      iLower = a[0];
+      iUpper = a[0] + a[1];
+    }
+
+    /* If possible, improve on the iLower estimate using ($P:$L). */
     if( pLower ){
+      int bOk;                    /* True if value is extracted from pExpr */
       Expr *pExpr = pLower->pExpr->pRight;
-      rc = valueFromExpr(pParse, pExpr, aff, &pRangeVal);
       assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
-      if( rc==SQLITE_OK
-       && whereKeyStats(pParse, p, pRangeVal, 0, a)==SQLITE_OK
-      ){
-        iLower = a[0];
-        if( (pLower->eOperator & WO_GT)!=0 ) iLower += a[1];
+      rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
+      if( rc==SQLITE_OK && bOk ){
+        tRowcnt iNew;
+        whereKeyStats(pParse, p, pRec, 0, a);
+        iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
+        if( iNew>iLower ) iLower = iNew;
       }
-      sqlite3ValueFree(pRangeVal);
     }
-    if( rc==SQLITE_OK && pUpper ){
+
+    /* If possible, improve on the iUpper estimate using ($P:$U). */
+    if( pUpper ){
+      int bOk;                    /* True if value is extracted from pExpr */
       Expr *pExpr = pUpper->pExpr->pRight;
-      rc = valueFromExpr(pParse, pExpr, aff, &pRangeVal);
       assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
-      if( rc==SQLITE_OK
-       && whereKeyStats(pParse, p, pRangeVal, 1, a)==SQLITE_OK
-      ){
-        iUpper = a[0];
-        if( (pUpper->eOperator & WO_LE)!=0 ) iUpper += a[1];
+      rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
+      if( rc==SQLITE_OK && bOk ){
+        tRowcnt iNew;
+        whereKeyStats(pParse, p, pRec, 1, a);
+        iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
+        if( iNew<iUpper ) iUpper = iNew;
       }
-      sqlite3ValueFree(pRangeVal);
     }
+
+    pBuilder->pRec = pRec;
     if( rc==SQLITE_OK ){
-      WhereCost iBase = whereCost(p->aiRowEst[0]);
+      WhereCost nNew;
       if( iUpper>iLower ){
-        iBase -= whereCost(iUpper - iLower);
+        nNew = whereCost(iUpper - iLower);
+      }else{
+        nNew = 10;        assert( 10==whereCost(2) );
       }
-      *pRangeDiv = iBase;
-      WHERETRACE(0x100, ("range scan regions: %u..%u  div=%d\n",
-                         (u32)iLower, (u32)iUpper, *pRangeDiv));
+      if( nNew<nOut ){
+        nOut = nNew;
+      }
+      *pnOut = (WhereCost)nOut;
+      WHERETRACE(0x100, ("range scan regions: %u..%u  est=%d\n",
+                         (u32)iLower, (u32)iUpper, nOut));
       return SQLITE_OK;
     }
   }
 #else
   UNUSED_PARAMETER(pParse);
-  UNUSED_PARAMETER(p);
-  UNUSED_PARAMETER(nEq);
+  UNUSED_PARAMETER(pBuilder);
 #endif
   assert( pLower || pUpper );
-  *pRangeDiv = 0;
   /* TUNING:  Each inequality constraint reduces the search space 4-fold.
   ** A BETWEEN operator, therefore, reduces the search space 16-fold */
   if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ){
-    *pRangeDiv += 20;  assert( 20==whereCost(4) );
+    nOut -= 20;        assert( 20==whereCost(4) );
   }
   if( pUpper ){
-    *pRangeDiv += 20;  assert( 20==whereCost(4) );
+    nOut -= 20;        assert( 20==whereCost(4) );
   }
+  if( nOut<10 ) nOut = 10;
+  *pnOut = (WhereCost)nOut;
   return rc;
 }
 
-#ifdef SQLITE_ENABLE_STAT3
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Estimate the number of rows that will be returned based on
 ** an equality constraint x=VALUE and where that VALUE occurs in
@@ -2721,37 +2670,53 @@ static int whereRangeScanEst(
 */
 static int whereEqualScanEst(
   Parse *pParse,       /* Parsing & code generating context */
-  Index *p,            /* The index whose left-most column is pTerm */
+  WhereLoopBuilder *pBuilder,
   Expr *pExpr,         /* Expression for VALUE in the x=VALUE constraint */
   tRowcnt *pnRow       /* Write the revised row estimate here */
 ){
-  sqlite3_value *pRhs = 0;  /* VALUE on right-hand side of pTerm */
+  Index *p = pBuilder->pNew->u.btree.pIndex;
+  int nEq = pBuilder->pNew->u.btree.nEq;
+  UnpackedRecord *pRec = pBuilder->pRec;
   u8 aff;                   /* Column affinity */
   int rc;                   /* Subfunction return code */
   tRowcnt a[2];             /* Statistics */
+  int bOk;
 
+  assert( nEq>=1 );
+  assert( nEq<=(p->nColumn+1) );
   assert( p->aSample!=0 );
   assert( p->nSample>0 );
-  aff = p->pTable->aCol[p->aiColumn[0]].affinity;
-  if( pExpr ){
-    rc = valueFromExpr(pParse, pExpr, aff, &pRhs);
-    if( rc ) goto whereEqualScanEst_cancel;
-  }else{
-    pRhs = sqlite3ValueNew(pParse->db);
+  assert( pBuilder->nRecValid<nEq );
+
+  /* If values are not available for all fields of the index to the left
+  ** of this one, no estimate can be made. Return SQLITE_NOTFOUND. */
+  if( pBuilder->nRecValid<(nEq-1) ){
+    return SQLITE_NOTFOUND;
   }
-  if( pRhs==0 ) return SQLITE_NOTFOUND;
-  rc = whereKeyStats(pParse, p, pRhs, 0, a);
-  if( rc==SQLITE_OK ){
-    WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
-    *pnRow = a[1];
+
+  /* This is an optimization only. The call to sqlite3Stat4ProbeSetValue()
+  ** below would return the same value.  */
+  if( nEq>p->nColumn ){
+    *pnRow = 1;
+    return SQLITE_OK;
   }
-whereEqualScanEst_cancel:
-  sqlite3ValueFree(pRhs);
+
+  aff = p->pTable->aCol[p->aiColumn[nEq-1]].affinity;
+  rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq-1, &bOk);
+  pBuilder->pRec = pRec;
+  if( rc!=SQLITE_OK ) return rc;
+  if( bOk==0 ) return SQLITE_NOTFOUND;
+  pBuilder->nRecValid = nEq;
+
+  whereKeyStats(pParse, p, pRec, 0, a);
+  WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
+  *pnRow = a[1];
+  
   return rc;
 }
-#endif /* defined(SQLITE_ENABLE_STAT3) */
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
-#ifdef SQLITE_ENABLE_STAT3
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Estimate the number of rows that will be returned based on
 ** an IN constraint where the right-hand side of the IN operator
@@ -2770,10 +2735,12 @@ whereEqualScanEst_cancel:
 */
 static int whereInScanEst(
   Parse *pParse,       /* Parsing & code generating context */
-  Index *p,            /* The index whose left-most column is pTerm */
+  WhereLoopBuilder *pBuilder,
   ExprList *pList,     /* The value list on the RHS of "x IN (v1,v2,v3,...)" */
   tRowcnt *pnRow       /* Write the revised row estimate here */
 ){
+  Index *p = pBuilder->pNew->u.btree.pIndex;
+  int nRecValid = pBuilder->nRecValid;
   int rc = SQLITE_OK;     /* Subfunction return code */
   tRowcnt nEst;           /* Number of rows for a single term */
   tRowcnt nRowEst = 0;    /* New estimate of the number of rows */
@@ -2782,17 +2749,20 @@ static int whereInScanEst(
   assert( p->aSample!=0 );
   for(i=0; rc==SQLITE_OK && i<pList->nExpr; i++){
     nEst = p->aiRowEst[0];
-    rc = whereEqualScanEst(pParse, p, pList->a[i].pExpr, &nEst);
+    rc = whereEqualScanEst(pParse, pBuilder, pList->a[i].pExpr, &nEst);
     nRowEst += nEst;
+    pBuilder->nRecValid = nRecValid;
   }
+
   if( rc==SQLITE_OK ){
     if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
     *pnRow = nRowEst;
     WHERETRACE(0x100,("IN row estimate: est=%g\n", nRowEst));
   }
+  assert( pBuilder->nRecValid==nRecValid );
   return rc;
 }
-#endif /* defined(SQLITE_ENABLE_STAT3) */
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
 /*
 ** Disable a term in the WHERE clause.  Except, do not disable the term
@@ -3030,7 +3000,7 @@ static int codeAllEqualityTerms(
 
   /* Evaluate the equality constraints
   */
-  assert( zAff==0 || strlen(zAff)>=nEq );
+  assert( zAff==0 || (int)strlen(zAff)>=nEq );
   for(j=0; j<nEq; j++){
     int r1;
     pTerm = pLoop->aLTerm[j];
@@ -4337,12 +4307,18 @@ static int whereLoopAddBtreeIndex(
   rLogSize = estLog(whereCost(pProbe->aiRowEst[0]));
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
-    if( pTerm->prereqRight & pNew->maskSelf ) continue;
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    int nRecValid = pBuilder->nRecValid;
+#endif
     if( (pTerm->eOperator==WO_ISNULL || (pTerm->wtFlags&TERM_VNULL)!=0)
      && (iCol<0 || pSrc->pTab->aCol[iCol].notNull)
     ){
       continue; /* ignore IS [NOT] NULL constraints on NOT NULL columns */
     }
+    if( pTerm->prereqRight & pNew->maskSelf ) continue;
+
+    assert( pNew->nOut==saved_nOut );
+
     pNew->wsFlags = saved_wsFlags;
     pNew->u.btree.nEq = saved_nEq;
     pNew->nLTerm = saved_nLTerm;
@@ -4399,25 +4375,30 @@ static int whereLoopAddBtreeIndex(
     }
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
       /* Adjust nOut and rRun for STAT3 range values */
-      WhereCost rDiv;
-      whereRangeScanEst(pParse, pProbe, pNew->u.btree.nEq,
-                        pBtm, pTop, &rDiv);
-      pNew->nOut = saved_nOut>rDiv+10 ? saved_nOut - rDiv : 10;
+      assert( pNew->nOut==saved_nOut );
+      whereRangeScanEst(pParse, pBuilder, pBtm, pTop, &pNew->nOut);
     }
-#ifdef SQLITE_ENABLE_STAT3
-    if( pNew->u.btree.nEq==1 && pProbe->nSample
-     &&  OptimizationEnabled(db, SQLITE_Stat3) ){
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    if( nInMul==0 
+     && pProbe->nSample 
+     && pNew->u.btree.nEq<=pProbe->nSampleCol
+     && OptimizationEnabled(db, SQLITE_Stat3) 
+    ){
+      Expr *pExpr = pTerm->pExpr;
       tRowcnt nOut = 0;
       if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
         testcase( pTerm->eOperator & WO_EQ );
         testcase( pTerm->eOperator & WO_ISNULL );
-        rc = whereEqualScanEst(pParse, pProbe, pTerm->pExpr->pRight, &nOut);
+        rc = whereEqualScanEst(pParse, pBuilder, pExpr->pRight, &nOut);
       }else if( (pTerm->eOperator & WO_IN)
-             &&  !ExprHasProperty(pTerm->pExpr, EP_xIsSelect)  ){
-        rc = whereInScanEst(pParse, pProbe, pTerm->pExpr->x.pList, &nOut);
+             &&  !ExprHasProperty(pExpr, EP_xIsSelect)  ){
+        rc = whereInScanEst(pParse, pBuilder, pExpr->x.pList, &nOut);
       }
       assert( nOut==0 || rc==SQLITE_OK );
-      if( nOut ) pNew->nOut = whereCost(nOut);
+      if( nOut ){
+        nOut = whereCost(nOut);
+        pNew->nOut = MIN(nOut, saved_nOut);
+      }
     }
 #endif
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
@@ -4434,6 +4415,10 @@ static int whereLoopAddBtreeIndex(
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
+    pNew->nOut = saved_nOut;
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    pBuilder->nRecValid = nRecValid;
+#endif
   }
   pNew->prereq = saved_prereq;
   pNew->u.btree.nEq = saved_nEq;
@@ -4663,7 +4648,13 @@ static int whereLoopAddBtree(
         if( rc ) break;
       }
     }
+
     rc = whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, 0);
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    sqlite3Stat4ProbeFree(pBuilder->pRec);
+    pBuilder->nRecValid = 0;
+    pBuilder->pRec = 0;
+#endif
 
     /* If there was an INDEXED BY clause, then only that one index is
     ** considered. */
@@ -5546,11 +5537,15 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==whereCost(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      if( pIdx->onError==OE_None || pIdx->pPartIdxWhere!=0 ) continue;
+      assert( pLoop->aLTermSpace==pLoop->aLTerm );
+      assert( ArraySize(pLoop->aLTermSpace)==4 );
+      if( pIdx->onError==OE_None 
+       || pIdx->pPartIdxWhere!=0 
+       || pIdx->nColumn>ArraySize(pLoop->aLTermSpace) 
+      ) continue;
       for(j=0; j<pIdx->nColumn; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
-        whereLoopResize(pWInfo->pParse->db, pLoop, j);
         pLoop->aLTerm[j] = pTerm;
       }
       if( j!=pIdx->nColumn ) continue;
