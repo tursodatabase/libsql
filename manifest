@@ -1,5 +1,5 @@
-C Enable\sfiner\scontrol\sof\soptimizations\swhen\scompiling\swith\sthe\sMSVC\smakefile.\s\sAlso,\sseveral\smodularity\senhancements\sto\sthe\sMSVC\smakefile.
-D 2013-08-29T01:03:38.501
+C Small\senhancements\sto\sunit\stesting\sinfrastructure.
+D 2013-08-29T01:09:14.083
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -817,7 +817,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
-F test/tester.tcl 63b24679c75a952c51f924de2802b2b57cddd22d
+F test/tester.tcl 5e97d1fe08f45fa3cc2320cee437e315c75ce995
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1059,7 +1059,7 @@ F test/whereF.test 136a7301512d72a08a272806c8767066311b7bc1
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
-F test/win32longpath.test f888106783fc26515f393c8848c94cd6166addbb
+F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat c55f64ca200308fb5fa5c1ee751ea95a13977b5a x
@@ -1108,7 +1108,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 4f182ddc36944fa54f1a34c1f0527db0ebb39c96
-R d44711613e434eea3b5489989b8c56f0
+P 6c709338bc77fbed24a2597eabd88dd8c29b38d7
+R c45150e3b7004e4a0ed3f6fa3be34cd1
 U mistachkin
-Z 6c7751f0648dc6c9f1495284f8906a9f
+Z 89e12299b0f96674ea40270259273327
