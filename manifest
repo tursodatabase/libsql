@@ -1,5 +1,5 @@
-C Version\s3.8.0
-D 2013-08-26T04:50:08.905
+C Cherrypick\sof\s[c1152bdcbb]\sand\sfix\sfor\s[9f2eb3abac]:\nHave\sthe\swhereShortCut()\splanner\signore\sindexes\swith\smore\sthan\sfour\scolumns.
+D 2013-08-29T13:15:09.214
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 6e718c39d6b2964f15f6c96ce5938b4652e3538e
+F src/where.c 53ac2441269b3adca28e2b8a8339f2dcaa50a9a2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -857,6 +857,7 @@ F test/tkt-868145d012.test a5f941107ece6a64410ca4755c6329b7eb57a356
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test fa9c71192f7e2ea2d51bf078bc34e8da6088bf71
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
+F test/tkt-9f2eb3abac.test 85bc63e749f050e6a61c8f9207f1eee65c9d3395
 F test/tkt-a7b7803e.test 159ef554234fa1f9fb318c751b284bd1cf858da4
 F test/tkt-b1d3a2e531.test 610ef582413171b379652663111b1f996d9f8f78
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
@@ -1105,10 +1106,11 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P ed310201628cf79c0f57674ae7478ee6738b1c6e
-R 5a6ead2576f296902c1b2ccbdf985254
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.0 *
+P f64cd21e2e23ed7cff48f7dafa5e76adde9321c2
+Q +c1152bdcbb5ac185f743015fff63769effa81b4b
+R f37afa23588c87c948f6db62509a5540
+T *branch * branch-3.8.0
+T *sym-branch-3.8.0 *
+T -sym-trunk *
 U drh
-Z 16184cb835825e1de42c653d441df656
+Z f756b9e9da7f4f16b2922ea29f813ff5

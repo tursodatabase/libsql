@@ -5546,11 +5546,15 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==whereCost(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      if( pIdx->onError==OE_None || pIdx->pPartIdxWhere!=0 ) continue;
+      assert( pLoop->aLTermSpace==pLoop->aLTerm );
+      assert( ArraySize(pLoop->aLTermSpace)==4 );
+      if( pIdx->onError==OE_None 
+       || pIdx->pPartIdxWhere!=0 
+       || pIdx->nColumn>ArraySize(pLoop->aLTermSpace) 
+      ) continue;
       for(j=0; j<pIdx->nColumn; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
-        whereLoopResize(pWInfo->pParse->db, pLoop, j);
         pLoop->aLTerm[j] = pTerm;
       }
       if( j!=pIdx->nColumn ) continue;
