@@ -1,12 +1,12 @@
-C Fix\san\soff-by-one\serror\sthat\scauses\sa\squoted\sempty\sstring\sat\sthe\send\sof\na\sCRNL-terminated\sline\sof\sCSV\sinput\sto\sbe\smisread\sby\sthe\sshell.\nCherrypick\sof\s[b5617e4fdadc4c].
-D 2013-08-29T13:23:59.620
+C Increase\sthe\sversion\snumber\sto\s3.8.0.1.
+D 2013-08-29T13:27:41.954
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc e9f41f89111627baaabd95cab4988b8d1c3e47c9
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION f135b651727f978b7191bd6fa12c7fc1e13e13ac
+F VERSION 087a4ef56b220aeb0fbef8ae45871be9668cd970
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 27e9279a219b652bd1c53439353a5e5be70214b2 x
+F configure 9af276330ddd63041537a88323705690d02df76e x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1106,8 +1106,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cb667449d0ff64cba4c951325d38186366779610
-Q +b5617e4fdadc4cded93c985008e90982dd48bc3b
-R a37564c9ee29de32d54b1e26a10d6187
+P 43aa7d23538ef5e29e554b7da4d2e402e2111af0
+R 93bea23d6a99371106fadbed60dc700c
 U drh
-Z d99bdee47e0ad945111dc119717b733e
+Z c79ea0ca19cf2d087d2bde187a8878ad
