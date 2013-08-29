@@ -552,6 +552,31 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 /*
+** If fd is a file descriptor that would be dangerous to use for an
+** ordinary file, the close it, reopen it as /dev/null to get it out
+** of the way, then return true.
+**
+** If fd is safe, return 0.
+**
+** It is dangerous to have a database file open of file descriptors 1 or
+** 2 because those normally mean standard output and standard error.  Other
+** components of the system might write directly to those file descriptors
+** and overwrite parts of the database file.  Something like this happened
+** on 2013-08-29 to the canonical Fossil repository when some error caused
+** the database file to be opened on file descriptor 2 and later an assert()
+** fired and wrote error message text into file descriptor 2, corrupting
+** the repository.
+*/
+static int isReservedFd(int fd, const char *z, int f, int m){
+  if( fd<0 || fd>2 ) return 0;
+  sqlite3_log(SQLITE_WARNING,
+              "attempt to open \"%s\" as file descriptor %d", z, fd);
+  osClose(fd);
+  (void)osOpen("/dev/null",f,m);
+  return 1;
+}
+
+/*
 ** Invoke open().  Do so multiple times, until it either succeeds or
 ** fails for some reason other than EINTR.
 **
@@ -577,7 +602,7 @@ static int robust_open(const char *z, int f, mode_t m){
 #else
     fd = osOpen(z,f,m2);
 #endif
-  }while( fd<0 && errno==EINTR );
+  }while( (fd<0 && errno==EINTR) || isReservedFd(fd,z,f,m2) );
   if( fd>=0 ){
     if( m!=0 ){
       struct stat statbuf;
@@ -3099,6 +3124,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
 #endif
   TIMER_START;
   assert( cnt==(cnt&0x1ffff) );
+  assert( id->h>2 );
   cnt &= 0x1ffff;
   do{
 #if defined(USE_PREAD)
@@ -3213,6 +3239,7 @@ static int seekAndWriteFd(
   int rc = 0;                     /* Value returned by system call */
 
   assert( nBuf==(nBuf&0x1ffff) );
+  assert( fd>2 );
   nBuf &= 0x1ffff;
   TIMER_START;
 
