@@ -4309,11 +4309,12 @@ static int whereLoopAddBtreeIndex(
     int nIn = 0;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     int nRecValid = pBuilder->nRecValid;
-    assert( pNew->nOut==saved_nOut );
-    if( (pTerm->wtFlags & TERM_VNULL)!=0 && pSrc->pTab->aCol[iCol].notNull ){
-      continue; /* skip IS NOT NULL constraints on a NOT NULL column */
-    }
 #endif
+    if( (pTerm->eOperator==WO_ISNULL || (pTerm->wtFlags&TERM_VNULL)!=0)
+     && (iCol<0 || pSrc->pTab->aCol[iCol].notNull)
+    ){
+      continue; /* ignore IS [NOT] NULL constraints on NOT NULL columns */
+    }
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
 
     assert( pNew->nOut==saved_nOut );
