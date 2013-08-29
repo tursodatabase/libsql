@@ -1,9 +1,9 @@
-C Re-enable\stest\sfile\swild001.test.
-D 2013-08-28T19:01:07.361
+C Enable\sfiner\scontrol\sof\soptimizations\swhen\scompiling\swith\sthe\sMSVC\smakefile.\s\sAlso,\sseveral\smodularity\senhancements\sto\sthe\sMSVC\smakefile.
+D 2013-08-29T01:03:38.501
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc e9f41f89111627baaabd95cab4988b8d1c3e47c9
+F Makefile.msc a97163524522cd829cb91bcf900d07608e025502
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a8d1f6839521130dc73c5408cdd24bcfd791df34
@@ -1108,7 +1108,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 12d0a8859de0a9d823997cfeccc77bd572cb6d13
-R fdbadc0d00e9a87112ecfe73cb5842df
-U dan
-Z 0f1dd9ce1608f2cfacffe15f693d1885
+P 4f182ddc36944fa54f1a34c1f0527db0ebb39c96
+R d44711613e434eea3b5489989b8c56f0
+U mistachkin
+Z 6c7751f0648dc6c9f1495284f8906a9f
