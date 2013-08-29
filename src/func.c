@@ -1015,6 +1015,9 @@ static void tointegerFunc(
 ** toreal(X):  If X can be losslessly converted into a real number, then
 ** do so and return that real number.  Otherwise return NULL.
 */
+#if defined(_MSC_VER)
+#pragma optimize("", off)
+#endif
 static void torealFunc(
   sqlite3_context *context,
   int argc,
@@ -1056,6 +1059,9 @@ static void torealFunc(
     }
   }
 }
+#if defined(_MSC_VER)
+#pragma optimize("", on)
+#endif
 
 /*
 ** The unicode() function.  Return the integer unicode code-point value
