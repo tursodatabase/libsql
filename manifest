@@ -1,5 +1,5 @@
-C Restore\sfix\s[f15591f802],\swhich\swas\saccidentally\sclobbered\sby\sthe\sstat4\smerge.
-D 2013-08-29T14:56:14.988
+C Never\sleave\san\sopen\sfile\sdescriptor\spointing\sinto\sthe\smiddle\sof\sthe\ndatabase\sfile\sif\sthe\sfile\sdescriptor\snumber\sis\s2\sor\sless.
+D 2013-08-29T21:26:26.071
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c c27a14a05061e4e690bd3949dc0246bda35e399d
+F src/os_unix.c 94c7edbd75b0fb4fe477ccb3ba73a9bddaff9592
 F src/os_win.c 26d752736dff0c7e4e384ab65b353cce1e7e19c5
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
@@ -1109,7 +1109,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c1152bdcbb5ac185f743015fff63769effa81b4b
-R ef3cf6caed80e05bf3e44c08e4ed05a0
-U dan
-Z a6b4620a23effa55e7cb7c1762a8f7ee
+P d4b6ad3333cc3bad500c2ebf7a6ea552b6762b69
+R 97c4ef1fd2ecd2ffa8c4e00f7258a86d
+T *branch * overwrite-avoidance
+T *sym-overwrite-avoidance *
+T -sym-trunk *
+U drh
+Z c59ed8dd8c6786bd9c8e9cf6a1823506

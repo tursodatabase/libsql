@@ -588,6 +588,7 @@ static int robust_open(const char *z, int f, mode_t m){
         osFchmod(fd, m);
       }
     }
+    if( fd<=2 ) lseek(fd, 0, SEEK_END);
 #if defined(FD_CLOEXEC) && (!defined(O_CLOEXEC) || O_CLOEXEC==0)
     osFcntl(fd, F_SETFD, osFcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif
@@ -3133,6 +3134,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
       pBuf = (void*)(got + (char*)pBuf);
     }
   }while( got>0 );
+  if( id->h<=2 ) lseek(id->h, 0, SEEK_END);
   TIMER_END;
   OSTRACE(("READ    %-3d %5d %7lld %llu\n",
             id->h, got+prior, offset-prior, TIMER_ELAPSED));
@@ -3232,6 +3234,7 @@ static int seekAndWriteFd(
     rc = osWrite(fd, pBuf, nBuf);
   }while( rc<0 && errno==EINTR );
 #endif
+  if( fd<=2 ) lseek(fd, 0, SEEK_END);
 
   TIMER_END;
   OSTRACE(("WRITE   %-3d %5d %7lld %llu\n", fd, rc, iOff, TIMER_ELAPSED));
