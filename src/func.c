@@ -1030,7 +1030,7 @@ static void torealFunc(
     case SQLITE_INTEGER: {
       i64 iVal = sqlite3_value_int64(argv[0]);
       double rVal = (double)iVal;
-      if( iVal==rVal ){
+      if( iVal==(i64)rVal ){
         sqlite3_result_double(context, rVal);
       }
       break;
