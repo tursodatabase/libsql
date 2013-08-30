@@ -4169,9 +4169,11 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     if( (p->prereq & pTemplate->prereq)==p->prereq
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
+     && p->nOut<=pTemplate->nOut
     ){
       /* This branch taken when p is equal or better than pTemplate in 
-      ** all of (1) dependences (2) setup-cost, and (3) run-cost. */
+      ** all of (1) dependences (2) setup-cost, (3) run-cost, and
+      ** (4) number of output rows. */
       assert( p->rSetup==pTemplate->rSetup );
       if( p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
@@ -4191,11 +4193,13 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     }
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rRun>=pTemplate->rRun
+     && p->nOut>=pTemplate->nOut
      && ALWAYS(p->rSetup>=pTemplate->rSetup) /* See SETUP-INVARIANT above */
     ){
       /* Overwrite an existing WhereLoop with a better one: one that is
-      ** better at one of (1) dependences, (2) setup-cost, or (3) run-cost
-      ** and is no worse in any of those categories. */
+      ** better at one of (1) dependences, (2) setup-cost, (3) run-cost
+      ** or (4) number of output rows, and is no worse in any of those
+      ** categories. */
       pNext = p->pNextLoop;
       break;
     }

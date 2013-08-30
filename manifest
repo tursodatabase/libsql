@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_MINIMUM_FILE_DESCRIPTOR\scompile-time\soption,\sfor\scontrol\sover\nexactly\swhich\slow-numbered\sfile\sdescriptors\sSQLite\swill\suse.
-D 2013-08-30T14:24:12.062
+C If\sthe\scost\sof\stwo\swhereLoop\sobjects\sis\sthe\ssame\sin\severy\sway\sexcept\sthat\none\shas\sfewer\sexpected\soutput\srows\sthan\sthe\sother,\sthen\schoose\sthe\sone\swith\nfewer\soutput\srows.
+D 2013-08-30T17:35:44.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c cad6497f79307c2c94aaf72e64866bb33cf99d59
+F src/where.c 97fc542b38b3816c9b52cc2b2f0463e1de764d94
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1056,7 +1056,7 @@ F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
 F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
-F test/whereF.test 136a7301512d72a08a272806c8767066311b7bc1
+F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 6bf7ae6ff6b18712544ddeafb6848b3b27ff22d2
-R f869b9c4782ea4938d88f3fd8f2e185a
+P ba5190534330a25722eeb7ea9c42da7a6d146014
+R 1b70f1acf0bcfec841a600fcdc82af8f
 U drh
-Z 55a1a5eb28d49163aa7c79ea9937ef28
+Z 482da10fef5b3db6e155cce4ef946cbe
