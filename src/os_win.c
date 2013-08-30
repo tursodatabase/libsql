@@ -161,7 +161,7 @@ WINBASEAPI BOOL WINAPI UnmapViewOfFile(LPCVOID);
 #endif
 
 #ifndef SQLITE_OMIT_WAL
-/* Forward references */
+/* Forward references to structures used for WAL */
 typedef struct winShm winShm;           /* A connection to shared-memory */
 typedef struct winShmNode winShmNode;   /* A region of shared-memory */
 #endif
@@ -2132,7 +2132,8 @@ static int winSeekFile(winFile *pFile, sqlite3_int64 iOffset){
 }
 
 #if SQLITE_MAX_MMAP_SIZE>0
-/* Forward references to VFS methods */
+/* Forward references to VFS helper methods used for memory mapped files */
+static int winMapfile(winFile*, sqlite3_int64);
 static int winUnmapfile(winFile*);
 #endif
 
@@ -2870,11 +2871,10 @@ static void winModeBit(winFile *pFile, unsigned char mask, int *pArg){
   }
 }
 
-/* Forward declaration */
+/* Forward references to VFS helper methods used for temporary files */
 static int winGetTempname(sqlite3_vfs *, char **);
-#if SQLITE_MAX_MMAP_SIZE>0
-static int winMapfile(winFile*, sqlite3_int64);
-#endif
+static int winIsDir(const void *);
+static BOOL winIsDriveLetterAndColon(const char *);
 
 /*
 ** Control and query of the open file handle.
@@ -3910,12 +3910,31 @@ static const sqlite3_io_methods winIoMethod = {
 */
 
 /*
+** Convert a filename from whatever the underlying operating system
+** supports for filenames into UTF-8.  Space to hold the result is
+** obtained from malloc and must be freed by the calling function.
+*/
+static char *winConvertToUtf8Filename(const void *zFilename){
+  char *zConverted = 0;
+  if( osIsNT() ){
+    zConverted = winUnicodeToUtf8(zFilename);
+  }
+#ifdef SQLITE_WIN32_HAS_ANSI
+  else{
+    zConverted = sqlite3_win32_mbcs_to_utf8(zFilename);
+  }
+#endif
+  /* caller will handle out of memory */
+  return zConverted;
+}
+
+/*
 ** Convert a UTF-8 filename into whatever form the underlying
 ** operating system wants filenames in.  Space to hold the result
 ** is obtained from malloc and must be freed by the calling
 ** function.
 */
-static void *winConvertUtf8Filename(const char *zFilename){
+static void *winConvertFromUtf8Filename(const char *zFilename){
   void *zConverted = 0;
   if( osIsNT() ){
     zConverted = winUtf8ToUnicode(zFilename);
@@ -3980,7 +3999,90 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
                      winEndsInDirSep(sqlite3_temp_directory) ? "" :
                      winGetDirDep());
   }
-#if !SQLITE_OS_WINRT
+#if defined(__CYGWIN__)
+  else{
+    static const char *azDirs[] = {
+       0, /* getenv("SQLITE_TMPDIR") */
+       0, /* getenv("TMPDIR") */
+       0, /* getenv("TMP") */
+       0, /* getenv("TEMP") */
+       0, /* getenv("USERPROFILE") */
+       "/var/tmp",
+       "/usr/tmp",
+       "/tmp",
+       0        /* List terminator */
+    };
+    unsigned int i;
+    const char *zDir = 0;
+
+    if( !azDirs[0] ) azDirs[0] = getenv("SQLITE_TMPDIR");
+    if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
+    if( !azDirs[2] ) azDirs[2] = getenv("TMP");
+    if( !azDirs[3] ) azDirs[3] = getenv("TEMP");
+    if( !azDirs[4] ) azDirs[4] = getenv("USERPROFILE");
+    for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
+      void *zConverted;
+      if( zDir==0 ) continue;
+      /* If the path starts with a drive letter followed by the colon
+      ** character, assume it is already a native Win32 path; otherwise,
+      ** it must be converted to a native Win32 path prior via the Cygwin
+      ** API prior to using it.
+      */
+      if( winIsDriveLetterAndColon(zDir) ){
+        zConverted = winConvertFromUtf8Filename(zDir);
+        if( !zConverted ){
+          OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
+          return SQLITE_IOERR_NOMEM;
+        }
+        if( winIsDir(zConverted) ){
+          sqlite3_snprintf(nBuf-30, zBuf, "%s", zDir);
+          sqlite3_free(zConverted);
+          break;
+        }
+        sqlite3_free(zConverted);
+      }else{
+        zConverted = sqlite3MallocZero( nBuf+1 );
+        if( !zConverted ){
+          OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
+          return SQLITE_IOERR_NOMEM;
+        }
+        if( cygwin_conv_path(
+                osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A, zDir,
+                zConverted, nBuf+1)<0 ){
+          sqlite3_free(zConverted);
+          winLogError(SQLITE_IOERR_CONVPATH, (DWORD)errno,
+                      "cygwin_conv_path", zDir);
+          OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_CONVPATH\n"));
+          return SQLITE_IOERR_CONVPATH;
+        }
+        if( winIsDir(zConverted) ){
+          /* At this point, we know the candidate directory exists and should
+          ** be used.  However, we may need to convert the string containing
+          ** its name into UTF-8 (i.e. if it is UTF-16 right now).
+          */
+          if( osIsNT() ){
+            char *zUtf8 = winUnicodeToUtf8(zConverted);
+            if( !zUtf8 ){
+              sqlite3_free(zConverted);
+              OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
+              return SQLITE_IOERR_NOMEM;
+            }
+            sqlite3_snprintf(nBuf-30, zBuf, "%s", zUtf8);
+            sqlite3_free(zUtf8);
+            sqlite3_free(zConverted);
+            break;
+          }else{
+            sqlite3_snprintf(nBuf-30, zBuf, "%s", zConverted);
+            sqlite3_free(zConverted);
+            break;
+          }
+        }
+        sqlite3_free(zConverted);
+      }
+      break;
+    }
+  }
+#elif !SQLITE_OS_WINRT && !defined(__CYGWIN__)
   else if( osIsNT() ){
     char *zMulti;
     LPWSTR zWidePath = sqlite3MallocZero( nBuf*sizeof(WCHAR) );
@@ -3992,6 +4094,8 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     if( osGetTempPathW(nBuf, zWidePath)==0 ){
       sqlite3_free(zWidePath);
       sqlite3_free(zBuf);
+      winLogError(SQLITE_IOERR_GETTEMPPATH, osGetLastError(),
+                  "winGetTempname", 0);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
       return SQLITE_IOERR_GETTEMPPATH;
     }
@@ -4018,6 +4122,8 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     }
     if( osGetTempPathA(nBuf, zMbcsPath)==0 ){
       sqlite3_free(zBuf);
+      winLogError(SQLITE_IOERR_GETTEMPPATH, osGetLastError(),
+                  "winGetTempname", 0);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
       return SQLITE_IOERR_GETTEMPPATH;
     }
@@ -4198,7 +4304,7 @@ static int winOpen(
        zUtf8Name[sqlite3Strlen30(zUtf8Name)+1]==0 );
 
   /* Convert the filename to the system encoding. */
-  zConverted = winConvertUtf8Filename(zUtf8Name);
+  zConverted = winConvertFromUtf8Filename(zUtf8Name);
   if( zConverted==0 ){
     sqlite3_free(zTmpname);
     OSTRACE(("OPEN name=%s, rc=SQLITE_IOERR_NOMEM", zUtf8Name));
@@ -4399,7 +4505,7 @@ static int winDelete(
   SimulateIOError(return SQLITE_IOERR_DELETE);
   OSTRACE(("DELETE name=%s, syncDir=%d\n", zFilename, syncDir));
 
-  zConverted = winConvertUtf8Filename(zFilename);
+  zConverted = winConvertFromUtf8Filename(zFilename);
   if( zConverted==0 ){
     OSTRACE(("DELETE name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
     return SQLITE_IOERR_NOMEM;
@@ -4508,7 +4614,7 @@ static int winAccess(
   OSTRACE(("ACCESS name=%s, flags=%x, pResOut=%p\n",
            zFilename, flags, pResOut));
 
-  zConverted = winConvertUtf8Filename(zFilename);
+  zConverted = winConvertFromUtf8Filename(zFilename);
   if( zConverted==0 ){
     OSTRACE(("ACCESS name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
     return SQLITE_IOERR_NOMEM;
@@ -4566,6 +4672,15 @@ static int winAccess(
   return SQLITE_OK;
 }
 
+/*
+** Returns non-zero if the specified path name starts with a drive letter
+** followed by a colon character.
+*/
+static BOOL winIsDriveLetterAndColon(
+  const char *zPathname
+){
+  return ( sqlite3Isalpha(zPathname[0]) && zPathname[1]==':' );
+}
 
 /*
 ** Returns non-zero if the specified path name should be used verbatim.  If
@@ -4593,7 +4708,7 @@ static BOOL winIsVerbatimPathname(
   ** attempt to treat it as a relative path name (i.e. they should simply use
   ** it verbatim).
   */
-  if ( sqlite3Isalpha(zPathname[0]) && zPathname[1]==':' ){
+  if ( winIsDriveLetterAndColon(zPathname) ){
     return TRUE;
   }
 
@@ -4634,19 +4749,19 @@ static int winFullPathname(
     }
     if( cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, zRelative, zOut,
                          pVfs->mxPathname+1)<0 ){
-      winLogError(SQLITE_CANTOPEN_FULLPATH, (DWORD)errno, "cygwin_conv_path",
+      winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno, "winFullPathname",
                   zRelative);
       sqlite3_free(zOut);
-      return SQLITE_CANTOPEN_FULLPATH;
+      return SQLITE_CANTOPEN_CONVPATH;
     }
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
                      sqlite3_data_directory, winGetDirDep(), zOut);
     sqlite3_free(zOut);
   }else{
     if( cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull)<0 ){
-      winLogError(SQLITE_CANTOPEN_FULLPATH, (DWORD)errno, "cygwin_conv_path",
+      winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno, "winFullPathname",
                   zRelative);
-      return SQLITE_CANTOPEN_FULLPATH;
+      return SQLITE_CANTOPEN_CONVPATH;
     }
   }
   return SQLITE_OK;
@@ -4700,7 +4815,7 @@ static int winFullPathname(
                      sqlite3_data_directory, winGetDirDep(), zRelative);
     return SQLITE_OK;
   }
-  zConverted = winConvertUtf8Filename(zRelative);
+  zConverted = winConvertFromUtf8Filename(zRelative);
   if( zConverted==0 ){
     return SQLITE_IOERR_NOMEM;
   }
@@ -4781,7 +4896,7 @@ static int winFullPathname(
 */
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   HANDLE h;
-  void *zConverted = winConvertUtf8Filename(zFilename);
+  void *zConverted = winConvertFromUtf8Filename(zFilename);
   UNUSED_PARAMETER(pVfs);
   if( zConverted==0 ){
     return 0;

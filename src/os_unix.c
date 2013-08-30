@@ -5340,6 +5340,7 @@ static const char *unixTempFileDir(void){
   static const char *azDirs[] = {
      0,
      0,
+     0,
      "/var/tmp",
      "/usr/tmp",
      "/tmp",
@@ -5350,7 +5351,8 @@ static const char *unixTempFileDir(void){
   const char *zDir = 0;
 
   azDirs[0] = sqlite3_temp_directory;
-  if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
+  if( !azDirs[1] ) azDirs[1] = getenv("SQLITE_TMPDIR");
+  if( !azDirs[2] ) azDirs[2] = getenv("TMPDIR");
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
     if( zDir==0 ) continue;
     if( osStat(zDir, &buf) ) continue;

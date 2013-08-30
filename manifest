@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sin\sanalyze.c.
-D 2013-08-30T20:19:52.698
+C Add\ssupport\sfor\sCygwin\swhen\shandling\stemporary\sfile\snames.\s\sImprove\serror\scodes\sand\sdiagnostic\smessages\sfor\stemporary\sfile\sname\shandling\son\sWindows.\s\sRename\swinConvertUtf8Filename\sto\swinConvertFromUtf8Filename.\s\sImprove\splacement\sand\scomments\sfor\sforward\sfunction\sdeclarations.
+D 2013-08-30T21:52:38.235
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,7 +185,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c dc02c7c118d58049e0cccc6c9c47c0a4d3e2bcda
+F src/main.c c4c781b06faa2ce4040c32a75fd931a07ba7054e
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
@@ -202,8 +202,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 7d5f3c51db561804e3ff3d47970a58bc6ea4d662
-F src/os_win.c 26d752736dff0c7e4e384ab65b353cce1e7e19c5
+F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
+F src/os_win.c 8e87c2718975bc3cd8d86bf3ff2cc3bbafbc7eaf
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -218,7 +218,7 @@ F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
 F src/shell.c dbe064d404bb497acd8a44c066cd6b8460a71236
-F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
+F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 600086a5082e2291b0aeeefcfbb546f2bbda67b2
@@ -1109,7 +1109,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dbc31750440226702fbf88f1bf6140ef403c9be1
-R 5df52e9a380e1241cf1df8d1d5fbe7ea
-U dan
-Z 33fcbfc1bf7d299e3e7e4e929460c0cd
+P 5bbd2ccb3d2d6286fd667dac2ab658d6b89640a6
+R 72dd46cadd0f990a967d544f6edf59de
+T *branch * cygwinTempPath
+T *sym-cygwinTempPath *
+T -sym-trunk *
+U mistachkin
+Z 23133362076223f26c27390373169480
