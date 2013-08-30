@@ -345,7 +345,7 @@ static void statInit(
 
     p->iGet = -1;
     p->mxSample = mxSample;
-    p->nPSample = sqlite3_value_int64(argv[1])/(mxSample/3+1) + 1;
+    p->nPSample = (tRowcnt)(sqlite3_value_int64(argv[1])/(mxSample/3+1) + 1);
     p->current.anLt = &p->current.anEq[nColUp];
     sqlite3_randomness(sizeof(p->iPrn), &p->iPrn);
   
@@ -424,7 +424,7 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   Stat4Sample *pSample;
   int i;
   i64 iSeq;
-  i64 iPos;
+  int iPos;
 
   assert( IsStat4 || nEqZero==0 );
 
@@ -1333,7 +1333,7 @@ static void initAvgEq(Index *pIdx){
     for(iCol=0; iCol<pIdx->nColumn; iCol++){
       int i;                    /* Used to iterate through samples */
       tRowcnt sumEq = 0;        /* Sum of the nEq values */
-      int nSum = 0;             /* Number of terms contributing to sumEq */
+      tRowcnt nSum = 0;         /* Number of terms contributing to sumEq */
       tRowcnt avgEq = 0;
       tRowcnt nDLt = pFinal->anDLt[iCol];
 
