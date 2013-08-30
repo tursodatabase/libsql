@@ -552,6 +552,15 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 /*
+** Do not accept any file descriptor less than this value, in order to avoid
+** opening database file using file descriptors that are commonly used for 
+** standard input, output, and error.
+*/
+#ifndef SQLITE_MINIMUM_FILE_DESCRIPTOR
+# define SQLITE_MINIMUM_FILE_DESCRIPTOR 3
+#endif
+
+/*
 ** Invoke open().  Do so multiple times, until it either succeeds or
 ** fails for some reason other than EINTR.
 **
@@ -581,7 +590,7 @@ static int robust_open(const char *z, int f, mode_t m){
       if( errno==EINTR ) continue;
       break;
     }
-    if( fd>2 ) break;
+    if( fd>=SQLITE_MINIMUM_FILE_DESCRIPTOR ) break;
     osClose(fd);
     sqlite3_log(SQLITE_WARNING, 
                 "attempt to open \"%s\" as file descriptor %d", z, fd);
