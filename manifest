@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\srobust_open()\slogic\sin\sthe\sunix\sVFS\sso\sthat\sif\san\sattempt\nis\smade\sto\sopen\sa\srepository\son\sfile\sdescriptors\s0,\s1,\sor\s2,\sand\sblocking\nthat\sfile\sdescriptor\sby\sopening\sit\son\s/dev/null\sfails,\sthen\sthe\sopen\swill\nfail.
-D 2013-08-30T06:20:23.091
+C Add\sa\stest\sfor\sfts4\sunicode61\soption\sremove_diacritics=0.
+D 2013-08-30T13:29:51.754
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -557,7 +557,7 @@ F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
-F test/fts4unicode.test c8ac44217bf6c17812b03eaafa6c06995ad304c2
+F test/fts4unicode.test 5fa8e0a7899d906d114345c605250ebfa9d8ed28
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test cd25cf605c5a345d038dc7b84232204c6a901c84
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 30d38cc44904d93508b87e373b2f45d5f93e556b
-R f7758c6eac86fc614b8a8bb0a78752f4
-U drh
-Z 3dd4af0a8c411dcbaa133c8880e5be77
+P d9c018f8155ab48df8e0e02519bba50588fe49fc
+R ea091c59207c769dfe7c01daedbc5f93
+U dan
+Z c2684be8ef49bf7c2f428934c35768a0
