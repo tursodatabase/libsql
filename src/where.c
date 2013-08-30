@@ -185,9 +185,9 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 ** that implement some or all of a query plan.
 **
 ** Think of each WhereLoop object as a node in a graph with arcs
-** showing dependences and costs for travelling between nodes.  (That is
+** showing dependencies and costs for travelling between nodes.  (That is
 ** not a completely accurate description because WhereLoop costs are a
-** vector, not a scalar, and because dependences are many-to-one, not
+** vector, not a scalar, and because dependencies are many-to-one, not
 ** one-to-one as are graph nodes.  But it is a useful visualization aid.)
 ** Then a WherePath object is a path through the graph that visits some
 ** or all of the WhereLoop objects once.
@@ -4172,7 +4172,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
      && p->nOut<=pTemplate->nOut
     ){
       /* This branch taken when p is equal or better than pTemplate in 
-      ** all of (1) dependences (2) setup-cost, (3) run-cost, and
+      ** all of (1) dependencies (2) setup-cost, (3) run-cost, and
       ** (4) number of output rows. */
       assert( p->rSetup==pTemplate->rSetup );
       if( p->nLTerm<pTemplate->nLTerm
@@ -4197,7 +4197,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
      && ALWAYS(p->rSetup>=pTemplate->rSetup) /* See SETUP-INVARIANT above */
     ){
       /* Overwrite an existing WhereLoop with a better one: one that is
-      ** better at one of (1) dependences, (2) setup-cost, (3) run-cost
+      ** better at one of (1) dependencies, (2) setup-cost, (3) run-cost
       ** or (4) number of output rows, and is no worse in any of those
       ** categories. */
       pNext = p->pNextLoop;
