@@ -552,31 +552,6 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 /*
-** If fd is a file descriptor that would be dangerous to use for an
-** ordinary file, the close it, reopen it as /dev/null to get it out
-** of the way, then return true.
-**
-** If fd is safe, return 0.
-**
-** It is dangerous to have a database file open of file descriptors 1 or
-** 2 because those normally mean standard output and standard error.  Other
-** components of the system might write directly to those file descriptors
-** and overwrite parts of the database file.  Something like this happened
-** on 2013-08-29 to the canonical Fossil repository when some error caused
-** the database file to be opened on file descriptor 2 and later an assert()
-** fired and wrote error message text into file descriptor 2, corrupting
-** the repository.
-*/
-static int isReservedFd(int fd, const char *z, int f, int m){
-  if( fd<0 || fd>2 ) return 0;
-  sqlite3_log(SQLITE_WARNING,
-              "attempt to open \"%s\" as file descriptor %d", z, fd);
-  osClose(fd);
-  (void)osOpen("/dev/null",f,m);
-  return 1;
-}
-
-/*
 ** Invoke open().  Do so multiple times, until it either succeeds or
 ** fails for some reason other than EINTR.
 **
@@ -596,13 +571,23 @@ static int isReservedFd(int fd, const char *z, int f, int m){
 static int robust_open(const char *z, int f, mode_t m){
   int fd;
   mode_t m2 = m ? m : SQLITE_DEFAULT_FILE_PERMISSIONS;
-  do{
+  while(1){
 #if defined(O_CLOEXEC)
     fd = osOpen(z,f|O_CLOEXEC,m2);
 #else
     fd = osOpen(z,f,m2);
 #endif
-  }while( (fd<0 && errno==EINTR) || isReservedFd(fd,z,f,m2) );
+    if( fd<0 ){
+      if( errno==EINTR ) continue;
+      break;
+    }
+    if( fd>2 ) break;
+    osClose(fd);
+    sqlite3_log(SQLITE_WARNING, 
+                "attempt to open \"%s\" as file descriptor %d", z, fd);
+    fd = -1;
+    if( osOpen("/dev/null", f, m)<0 ) break;
+  }
   if( fd>=0 ){
     if( m!=0 ){
       struct stat statbuf;
