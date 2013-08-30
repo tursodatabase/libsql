@@ -33,7 +33,7 @@
 ** version of sqlite_stat3 and is only available when compiled with
 ** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.0 and later.  It is
 ** not possible to enable both STAT3 and STAT4 at the same time.  If they
-** are both enabled, then STAT4 is precedence.
+** are both enabled, then STAT4 takes precedence.
 **
 ** For most applications, sqlite_stat1 provides all the statisics required
 ** for the query planner to make good choices.
