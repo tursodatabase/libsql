@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sCygwin\swhen\shandling\stemporary\sfile\snames.\s\sImprove\serror\scodes\sand\sdiagnostic\smessages\sfor\stemporary\sfile\sname\shandling\son\sWindows.\s\sRename\swinConvertUtf8Filename\sto\swinConvertFromUtf8Filename.\s\sImprove\splacement\sand\scomments\sfor\sforward\sfunction\sdeclarations.
-D 2013-08-30T21:52:38.235
+C Improve\sthe\sconsistency\sof\sthe\sdiagnostic\smessages\son\sWindows.
+D 2013-08-31T02:48:56.122
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
-F src/os_win.c 8e87c2718975bc3cd8d86bf3ff2cc3bbafbc7eaf
+F src/os_win.c 27ab5a2236e0649bcaa246b5ce80b7289ab31688
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -1109,10 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5bbd2ccb3d2d6286fd667dac2ab658d6b89640a6
-R 72dd46cadd0f990a967d544f6edf59de
-T *branch * cygwinTempPath
-T *sym-cygwinTempPath *
-T -sym-trunk *
+P a411df725153119acb3bcf44fb71deecaa307887
+R bb11e3b1e087c83913695ae6bba44408
 U mistachkin
-Z 23133362076223f26c27390373169480
+Z b8d9459ebc748b157e98d4dbf0b6c355

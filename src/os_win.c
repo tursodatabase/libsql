@@ -1761,10 +1761,9 @@ static int winceCreateLock(const char *zFilename, winFile *pFile){
   pFile->hMutex = osCreateMutexW(NULL, FALSE, zName);
   if (!pFile->hMutex){
     pFile->lastErrno = osGetLastError();
-    winLogError(SQLITE_IOERR, pFile->lastErrno,
-                "winceCreateLock1", zFilename);
     sqlite3_free(zName);
-    return SQLITE_IOERR;
+    return winLogError(SQLITE_IOERR, pFile->lastErrno,
+                       "winceCreateLock1", zFilename);
   }
 
   /* Acquire the mutex before continuing */
@@ -2100,7 +2099,7 @@ static int winSeekFile(winFile *pFile, sqlite3_int64 iOffset){
       && ((lastErrno = osGetLastError())!=NO_ERROR)) ){
     pFile->lastErrno = lastErrno;
     winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
-             "winSeekFile", pFile->zPath);
+                "winSeekFile", pFile->zPath);
     OSTRACE(("SEEK file=%p, rc=SQLITE_IOERR_SEEK\n", pFile->h));
     return 1;
   }
@@ -2121,7 +2120,7 @@ static int winSeekFile(winFile *pFile, sqlite3_int64 iOffset){
   if(!bRet){
     pFile->lastErrno = osGetLastError();
     winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
-             "winSeekFile", pFile->zPath);
+                "winSeekFile", pFile->zPath);
     OSTRACE(("SEEK file=%p, rc=SQLITE_IOERR_SEEK\n", pFile->h));
     return 1;
   }
@@ -2254,7 +2253,7 @@ static int winRead(
     pFile->lastErrno = lastErrno;
     OSTRACE(("READ file=%p, rc=SQLITE_IOERR_READ\n", pFile->h));
     return winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
-             "winRead", pFile->zPath);
+                       "winRead", pFile->zPath);
   }
   winLogIoerr(nRetry);
   if( nRead<(DWORD)amt ){
@@ -2360,11 +2359,12 @@ static int winWrite(
     if(   ( pFile->lastErrno==ERROR_HANDLE_DISK_FULL )
        || ( pFile->lastErrno==ERROR_DISK_FULL )){
       OSTRACE(("WRITE file=%p, rc=SQLITE_FULL\n", pFile->h));
-      return SQLITE_FULL;
+      return winLogError(SQLITE_FULL, pFile->lastErrno,
+                         "winWrite1", pFile->zPath);
     }
     OSTRACE(("WRITE file=%p, rc=SQLITE_IOERR_WRITE\n", pFile->h));
     return winLogError(SQLITE_IOERR_WRITE, pFile->lastErrno,
-             "winWrite", pFile->zPath);
+                       "winWrite2", pFile->zPath);
   }else{
     winLogIoerr(nRetry);
   }
@@ -2488,7 +2488,7 @@ static int winSync(sqlite3_file *id, int flags){
     pFile->lastErrno = osGetLastError();
     OSTRACE(("SYNC file=%p, rc=SQLITE_IOERR_FSYNC\n", pFile->h));
     return winLogError(SQLITE_IOERR_FSYNC, pFile->lastErrno,
-             "winSync", pFile->zPath);
+                       "winSync", pFile->zPath);
   }
 #endif
 }
@@ -2529,7 +2529,7 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
        && ((lastErrno = osGetLastError())!=NO_ERROR) ){
       pFile->lastErrno = lastErrno;
       rc = winLogError(SQLITE_IOERR_FSTAT, pFile->lastErrno,
-             "winFileSize", pFile->zPath);
+                       "winFileSize", pFile->zPath);
     }
   }
 #endif
@@ -2624,7 +2624,7 @@ static int winUnlockReadLock(winFile *pFile){
   if( res==0 && ((lastErrno = osGetLastError())!=ERROR_NOT_LOCKED) ){
     pFile->lastErrno = lastErrno;
     winLogError(SQLITE_IOERR_UNLOCK, pFile->lastErrno,
-             "winUnlockReadLock", pFile->zPath);
+                "winUnlockReadLock", pFile->zPath);
   }
   OSTRACE(("READ-UNLOCK file=%p, rc=%s\n", pFile->h, sqlite3ErrName(res)));
   return res;
@@ -2837,7 +2837,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
       /* This should never happen.  We should always be able to
       ** reacquire the read lock */
       rc = winLogError(SQLITE_IOERR_UNLOCK, osGetLastError(),
-               "winUnlock", pFile->zPath);
+                       "winUnlock", pFile->zPath);
     }
   }
   if( type>=RESERVED_LOCK ){
@@ -2952,7 +2952,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       if( rc==SQLITE_OK ){
         *(char**)pArg = zTFile;
       }
-      OSTRACE(("FCNTL file=%p, rc=%d\n", pFile->h, rc));
+      OSTRACE(("FCNTL file=%p, rc=%s\n", pFile->h, sqlite3ErrName(rc)));
       return rc;
     }
 #if SQLITE_MAX_MMAP_SIZE>0
@@ -2970,7 +2970,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
           rc = winMapfile(pFile, -1);
         }
       }
-      OSTRACE(("FCNTL file=%p, rc=%d\n", pFile->h, rc));
+      OSTRACE(("FCNTL file=%p, rc=%s\n", pFile->h, sqlite3ErrName(rc)));
       return rc;
     }
 #endif
@@ -3286,7 +3286,7 @@ static int winOpenSharedMemory(winFile *pDbFd){
       rc = winTruncate((sqlite3_file *)&pShmNode->hFile, 0);
       if( rc!=SQLITE_OK ){
         rc = winLogError(SQLITE_IOERR_SHMOPEN, osGetLastError(),
-                 "winOpenShm", pDbFd->zPath);
+                         "winOpenShm", pDbFd->zPath);
       }
     }
     if( rc==SQLITE_OK ){
@@ -3546,7 +3546,7 @@ static int winShmMap(
     rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
     if( rc!=SQLITE_OK ){
       rc = winLogError(SQLITE_IOERR_SHMSIZE, osGetLastError(),
-               "winShmMap1", pDbFd->zPath);
+                       "winShmMap1", pDbFd->zPath);
       goto shmpage_out;
     }
 
@@ -3561,7 +3561,7 @@ static int winShmMap(
       rc = winTruncate((sqlite3_file *)&pShmNode->hFile, nByte);
       if( rc!=SQLITE_OK ){
         rc = winLogError(SQLITE_IOERR_SHMSIZE, osGetLastError(),
-                 "winShmMap2", pDbFd->zPath);
+                         "winShmMap2", pDbFd->zPath);
         goto shmpage_out;
       }
     }
@@ -3615,7 +3615,7 @@ static int winShmMap(
       if( !pMap ){
         pShmNode->lastErrno = osGetLastError();
         rc = winLogError(SQLITE_IOERR_SHMMAP, pShmNode->lastErrno,
-                 "winShmMap3", pDbFd->zPath);
+                         "winShmMap3", pDbFd->zPath);
         if( hMap ) osCloseHandle(hMap);
         goto shmpage_out;
       }
@@ -3663,7 +3663,7 @@ static int winUnmapfile(winFile *pFile){
                "rc=SQLITE_IOERR_MMAP\n", osGetCurrentProcessId(), pFile,
                pFile->pMapRegion));
       return winLogError(SQLITE_IOERR_MMAP, pFile->lastErrno,
-                         "winUnmap1", pFile->zPath);
+                         "winUnmapfile1", pFile->zPath);
     }
     pFile->pMapRegion = 0;
     pFile->mmapSize = 0;
@@ -3675,7 +3675,7 @@ static int winUnmapfile(winFile *pFile){
       OSTRACE(("UNMAP-FILE pid=%lu, pFile=%p, hMap=%p, rc=SQLITE_IOERR_MMAP\n",
                osGetCurrentProcessId(), pFile, pFile->hMap));
       return winLogError(SQLITE_IOERR_MMAP, pFile->lastErrno,
-                         "winUnmap2", pFile->zPath);
+                         "winUnmapfile2", pFile->zPath);
     }
     pFile->hMap = NULL;
   }
@@ -3750,10 +3750,10 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
     if( pFd->hMap==NULL ){
       pFd->lastErrno = osGetLastError();
       rc = winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
-                       "winMapfile", pFd->zPath);
+                       "winMapfile1", pFd->zPath);
       /* Log the error, but continue normal operation using xRead/xWrite */
-      OSTRACE(("MAP-FILE-CREATE pid=%lu, pFile=%p, rc=SQLITE_IOERR_MMAP\n",
-               osGetCurrentProcessId(), pFd));
+      OSTRACE(("MAP-FILE-CREATE pid=%lu, pFile=%p, rc=%s\n",
+               osGetCurrentProcessId(), pFd, sqlite3ErrName(rc)));
       return SQLITE_OK;
     }
     assert( (nMap % winSysInfo.dwPageSize)==0 );
@@ -3767,10 +3767,11 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
       osCloseHandle(pFd->hMap);
       pFd->hMap = NULL;
       pFd->lastErrno = osGetLastError();
-      winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
-                  "winMapfile", pFd->zPath);
-      OSTRACE(("MAP-FILE-MAP pid=%lu, pFile=%p, rc=SQLITE_IOERR_MMAP\n",
-               osGetCurrentProcessId(), pFd));
+      rc = winLogError(SQLITE_IOERR_MMAP, pFd->lastErrno,
+                       "winMapfile2", pFd->zPath);
+      /* Log the error, but continue normal operation using xRead/xWrite */
+      OSTRACE(("MAP-FILE-MAP pid=%lu, pFile=%p, rc=%s\n",
+               osGetCurrentProcessId(), pFd, sqlite3ErrName(rc)));
       return SQLITE_OK;
     }
     pFd->pMapRegion = pNew;
@@ -4050,10 +4051,9 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
                 osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A, zDir,
                 zConverted, nBuf+1)<0 ){
           sqlite3_free(zConverted);
-          winLogError(SQLITE_IOERR_CONVPATH, (DWORD)errno,
-                      "cygwin_conv_path", zDir);
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_CONVPATH\n"));
-          return SQLITE_IOERR_CONVPATH;
+          return winLogError(SQLITE_IOERR_CONVPATH, (DWORD)errno,
+                             "winGetTempname1", zDir);
         }
         if( winIsDir(zConverted) ){
           /* At this point, we know the candidate directory exists and should
@@ -4094,10 +4094,9 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     if( osGetTempPathW(nBuf, zWidePath)==0 ){
       sqlite3_free(zWidePath);
       sqlite3_free(zBuf);
-      winLogError(SQLITE_IOERR_GETTEMPPATH, osGetLastError(),
-                  "winGetTempname", 0);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
-      return SQLITE_IOERR_GETTEMPPATH;
+      return winLogError(SQLITE_IOERR_GETTEMPPATH, osGetLastError(),
+                         "winGetTempname1", 0);
     }
     zMulti = winUnicodeToUtf8(zWidePath);
     if( zMulti ){
@@ -4122,10 +4121,9 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     }
     if( osGetTempPathA(nBuf, zMbcsPath)==0 ){
       sqlite3_free(zBuf);
-      winLogError(SQLITE_IOERR_GETTEMPPATH, osGetLastError(),
-                  "winGetTempname", 0);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
-      return SQLITE_IOERR_GETTEMPPATH;
+      return winLogError(SQLITE_IOERR_GETTEMPPATH, osGetLastError(),
+                         "winGetTempname2", 0);
     }
     zUtf8 = sqlite3_win32_mbcs_to_utf8(zMbcsPath);
     if( zUtf8 ){
@@ -4148,7 +4146,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
   if( (nLen + sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX) + 18) >= nBuf ){
     sqlite3_free(zBuf);
     OSTRACE(("TEMP-FILENAME rc=SQLITE_ERROR\n"));
-    return SQLITE_ERROR;
+    return winLogError(SQLITE_ERROR, 0, "winGetTempname3", 0);
   }
 
   sqlite3_snprintf(nBuf-18-nLen, zBuf+nLen, SQLITE_TEMP_FILE_PREFIX);
@@ -4585,8 +4583,7 @@ static int winDelete(
   }
 #endif
   if( rc && rc!=SQLITE_IOERR_DELETE_NOENT ){
-    rc = winLogError(SQLITE_IOERR_DELETE, lastErrno,
-             "winDelete", zFilename);
+    rc = winLogError(SQLITE_IOERR_DELETE, lastErrno, "winDelete", zFilename);
   }else{
     winLogIoerr(cnt);
   }
@@ -4640,9 +4637,9 @@ static int winAccess(
     }else{
       winLogIoerr(cnt);
       if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
-        winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess", zFilename);
         sqlite3_free(zConverted);
-        return SQLITE_IOERR_ACCESS;
+        return winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess",
+                           zFilename);
       }else{
         attr = INVALID_FILE_ATTRIBUTES;
       }
@@ -4744,24 +4741,21 @@ static int winFullPathname(
     */
     char *zOut = sqlite3MallocZero( pVfs->mxPathname+1 );
     if( !zOut ){
-      winLogError(SQLITE_IOERR_NOMEM, 0, "winFullPathname", zRelative);
       return SQLITE_IOERR_NOMEM;
     }
     if( cygwin_conv_path(CCP_POSIX_TO_WIN_A|CCP_RELATIVE, zRelative, zOut,
                          pVfs->mxPathname+1)<0 ){
-      winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno, "winFullPathname",
-                  zRelative);
       sqlite3_free(zOut);
-      return SQLITE_CANTOPEN_CONVPATH;
+      return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
+                         "winFullPathname1", zRelative);
     }
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
                      sqlite3_data_directory, winGetDirDep(), zOut);
     sqlite3_free(zOut);
   }else{
     if( cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull)<0 ){
-      winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno, "winFullPathname",
-                  zRelative);
-      return SQLITE_CANTOPEN_CONVPATH;
+      return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
+                         "winFullPathname2", zRelative);
     }
   }
   return SQLITE_OK;
@@ -4794,7 +4788,7 @@ static int winFullPathname(
   /* If this path name begins with "/X:", where "X" is any alphabetic
   ** character, discard the initial "/" from the pathname.
   */
-  if( zRelative[0]=='/' && sqlite3Isalpha(zRelative[1]) && zRelative[2]==':' ){
+  if( zRelative[0]=='/' && winIsDriveLetterAndColon(zRelative+1) ){
     zRelative++;
   }
 
@@ -4823,10 +4817,9 @@ static int winFullPathname(
     LPWSTR zTemp;
     nByte = osGetFullPathNameW((LPCWSTR)zConverted, 0, 0, 0);
     if( nByte==0 ){
-      winLogError(SQLITE_ERROR, osGetLastError(),
-                  "GetFullPathNameW1", zConverted);
       sqlite3_free(zConverted);
-      return SQLITE_CANTOPEN_FULLPATH;
+      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
+                         "winFullPathname1", zRelative);
     }
     nByte += 3;
     zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
@@ -4836,11 +4829,10 @@ static int winFullPathname(
     }
     nByte = osGetFullPathNameW((LPCWSTR)zConverted, nByte, zTemp, 0);
     if( nByte==0 ){
-      winLogError(SQLITE_ERROR, osGetLastError(),
-                  "GetFullPathNameW2", zConverted);
       sqlite3_free(zConverted);
       sqlite3_free(zTemp);
-      return SQLITE_CANTOPEN_FULLPATH;
+      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
+                         "winFullPathname2", zRelative);
     }
     sqlite3_free(zConverted);
     zOut = winUnicodeToUtf8(zTemp);
@@ -4851,10 +4843,9 @@ static int winFullPathname(
     char *zTemp;
     nByte = osGetFullPathNameA((char*)zConverted, 0, 0, 0);
     if( nByte==0 ){
-      winLogError(SQLITE_ERROR, osGetLastError(),
-                  "GetFullPathNameA1", zConverted);
       sqlite3_free(zConverted);
-      return SQLITE_CANTOPEN_FULLPATH;
+      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
+                         "winFullPathname3", zRelative);
     }
     nByte += 3;
     zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
@@ -4864,11 +4855,10 @@ static int winFullPathname(
     }
     nByte = osGetFullPathNameA((char*)zConverted, nByte, zTemp, 0);
     if( nByte==0 ){
-      winLogError(SQLITE_ERROR, osGetLastError(),
-                  "GetFullPathNameA2", zConverted);
       sqlite3_free(zConverted);
       sqlite3_free(zTemp);
-      return SQLITE_CANTOPEN_FULLPATH;
+      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
+                         "winFullPathname4", zRelative);
     }
     sqlite3_free(zConverted);
     zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
