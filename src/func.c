@@ -990,7 +990,18 @@ static void tointegerFunc(
       sqlite3_result_int64(context, sqlite3_value_int64(argv[0]));
       break;
     }
-    case SQLITE_BLOB:
+    case SQLITE_BLOB: {
+      const unsigned char *zBlob = sqlite3_value_blob(argv[0]);
+      if( zBlob ){
+        int nBlob = sqlite3_value_bytes(argv[0]);
+        if( nBlob==sizeof(i64) ){
+          i64 iVal;
+          memcpy(&iVal, zBlob, sizeof(i64));
+          sqlite3_result_int64(context, iVal);
+        }
+      }
+      break;
+    }
     case SQLITE_TEXT: {
       const unsigned char *zStr = sqlite3_value_text(argv[0]);
       if( zStr ){
@@ -1038,7 +1049,18 @@ static void torealFunc(
       }
       break;
     }
-    case SQLITE_BLOB:
+    case SQLITE_BLOB: {
+      const unsigned char *zBlob = sqlite3_value_blob(argv[0]);
+      if( zBlob ){
+        int nBlob = sqlite3_value_bytes(argv[0]);
+        if( nBlob==sizeof(double) ){
+          double rVal;
+          memcpy(&rVal, zBlob, sizeof(double));
+          sqlite3_result_double(context, rVal);
+        }
+      }
+      break;
+    }
     case SQLITE_TEXT: {
       const unsigned char *zStr = sqlite3_value_text(argv[0]);
       if( zStr ){

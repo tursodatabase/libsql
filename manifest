@@ -1,5 +1,5 @@
-C Disable\sseveral\storeal()\stests\sthat\srequire\shigh\sfloating\spoint\sprecision\swhen\sit\sis\sunavailable.
-D 2013-08-29T02:27:39.369
+C Handle\sBLOBs\sspecially,\streating\sthem\sas\sbinary,\sin\sthe\stointeger()\sand\storeal()\sSQL\sfunctions.
+D 2013-08-31T21:41:09.620
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/delete.c 2317c814866d9aa71fea16b3faf4fdd4d6a49b94
 F src/expr.c 4d89bd03a04fcdb5ff71d86b4e0cc7d3230797b8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 914a6bbd987d857c41ac9d244efa6641f36faadb
-F src/func.c 5c85fed36b47a484e8b85c6528348f83ec5f8855
+F src/func.c ed294cd9437881cb7e2fbece2ea3389fc80c9fc7
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 047bd1c24553b00ccf12d7745bb4c46820b91f5e
-R 23d92ec42ac516cd6bc59a2369e868fb
+P b724219b008d9851de18bd4158375100d781c5a3
+R eb3d216eeef911fedebe51f6e14ce498
 U mistachkin
-Z 305c9d921855a6e7bed35ab5c2575022
+Z 1633034cbe064c087ca5481033ebadfd
