@@ -1,5 +1,5 @@
-C Reenable\sa\stest\saccidentally\sdisabled\swhen\sthe\sstat4\sbranch\swas\smerged.
-D 2013-08-31T14:56:30.692
+C Fix\sa\sproblem\scausing\sSQLite\snot\sto\suse\sstat4\sor\sstat3\sdata\sto\sanalyze\sconstraints\sof\sthe\sform\s"column\s=\sexpr\sCOLLATE\scollation"\s(those\swith\san\sexplicit\sCOLLATE\son\sthe\snon-column\sside\sof\sthe\scomparison\soperator).
+D 2013-08-31T17:21:26.324
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbeInt.h cbe71b8b36d8b3bba5709cc3f436c7e3b47b7b08
 F src/vdbeapi.c 96b24b946cf21894f63d9393e821baa2f0a80979
 F src/vdbeaux.c c7fe2695e256dbf254113c4fe90d3ec9aabe3bbe
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c 4511e1d2304a7d7916d14be20080036331740fcf
+F src/vdbemem.c 75ad7fd8f068a8baaba1cf3a84714ef7d3b7a2b8
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 3095a9ebfea4a2b1f9db60375320ae7f219595ba
+F test/analyze9.test 2bc3fb7b0ba7954e2513e69af8608ce5da201418
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 5bbd2ccb3d2d6286fd667dac2ab658d6b89640a6
-R 1451e706c75b3cfea10ed5a938fdd0ce
+P d9fadc8fa6ef02d516678d57896d93e0a5f52cfe
+R 549c9915be9450c721bff69cc42a239a
 U dan
-Z 244a50a69073c5e2d4dc31f3118b8090
+Z dce49f1165decc3594690bec1fb4ef74

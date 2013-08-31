@@ -422,5 +422,140 @@ do_eqp_test 9.4.2 {
   SELECT * FROM t1 WHERE a='x' AND b='y' AND c='z' AND d=$value_d AND e=5
 } {/t1 USING INDEX i1/}
 
+#-------------------------------------------------------------------------
+# Check that the planner takes stat4 data into account when considering
+# "IS NULL" and "IS NOT NULL" constraints.
+#
+do_execsql_test 10.1.1 {
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t3(a, b);
+  CREATE INDEX t3a ON t3(a);
+  CREATE INDEX t3b ON t3(b);
+}
+do_test 10.1.2 {
+  for {set i 1} {$i < 100} {incr i} {
+    if {$i>90} { set a $i } else { set a NULL }
+    set b [expr $i % 5]
+    execsql "INSERT INTO t3 VALUES($a, $b)"
+  }
+  execsql ANALYZE
+} {}
+do_eqp_test 10.1.3 {
+  SELECT * FROM t3 WHERE a IS NULL AND b = 2
+} {/t3 USING INDEX t3b/}
+do_eqp_test 10.1.4 {
+  SELECT * FROM t3 WHERE a IS NOT NULL AND b = 2
+} {/t3 USING INDEX t3a/}
+
+do_execsql_test 10.2.1 {
+  DROP TABLE IF EXISTS t3;
+  CREATE TABLE t3(x, a, b);
+  CREATE INDEX t3a ON t3(x, a);
+  CREATE INDEX t3b ON t3(x, b);
+}
+do_test 10.2.2 {
+  for {set i 1} {$i < 100} {incr i} {
+    if {$i>90} { set a $i } else { set a NULL }
+    set b [expr $i % 5]
+    execsql "INSERT INTO t3 VALUES('xyz', $a, $b)"
+  }
+  execsql ANALYZE
+} {}
+do_eqp_test 10.2.3 {
+  SELECT * FROM t3 WHERE x = 'xyz' AND a IS NULL AND b = 2
+} {/t3 USING INDEX t3b/}
+do_eqp_test 10.2.4 {
+  SELECT * FROM t3 WHERE x = 'xyz' AND a IS NOT NULL AND b = 2
+} {/t3 USING INDEX t3a/}
+
+#-------------------------------------------------------------------------
+# Check that stat4 data is used correctly with non-default collation
+# sequences.
+#
+foreach {tn schema} {
+  1 {
+    CREATE TABLE t4(a COLLATE nocase, b);
+    CREATE INDEX t4a ON t4(a);
+    CREATE INDEX t4b ON t4(b);
+  }
+  2 {
+    CREATE TABLE t4(a, b);
+    CREATE INDEX t4a ON t4(a COLLATE nocase);
+    CREATE INDEX t4b ON t4(b);
+  }
+} {
+  drop_all_tables
+  do_test 11.$tn.1 { execsql $schema } {}
+
+  do_test 11.$tn.2 {
+    for {set i 0} {$i < 100} {incr i} {
+      if { ($i % 10)==0 } { set a ABC } else { set a DEF }
+      set b [expr $i % 5]
+        execsql { INSERT INTO t4 VALUES($a, $b) }
+    }
+    execsql ANALYZE
+  } {}
+
+  do_eqp_test 11.$tn.3 {
+    SELECT * FROM t4 WHERE a = 'def' AND b = 3;
+  } {/t4 USING INDEX t4b/}
+
+  if {$tn==1} {
+    set sql "SELECT * FROM t4 WHERE a = 'abc' AND b = 3;"
+    do_eqp_test 11.$tn.4 $sql {/t4 USING INDEX t4a/}
+  } else {
+
+    set sql "SELECT * FROM t4 WHERE a = 'abc' COLLATE nocase AND b = 3;"
+    do_eqp_test 11.$tn.5 $sql {/t4 USING INDEX t4a/}
+
+    set sql "SELECT * FROM t4 WHERE a COLLATE nocase = 'abc' AND b = 3;"
+    do_eqp_test 11.$tn.6 $sql {/t4 USING INDEX t4a/}
+  }
+}
+
+foreach {tn schema} {
+  1 {
+    CREATE TABLE t4(x, a COLLATE nocase, b);
+    CREATE INDEX t4a ON t4(x, a);
+    CREATE INDEX t4b ON t4(x, b);
+  }
+  2 {
+    CREATE TABLE t4(x, a, b);
+    CREATE INDEX t4a ON t4(x, a COLLATE nocase);
+    CREATE INDEX t4b ON t4(x, b);
+  }
+} {
+  drop_all_tables
+  do_test 12.$tn.1 { execsql $schema } {}
+
+  do_test 12.$tn.2 {
+    for {set i 0} {$i < 100} {incr i} {
+      if { ($i % 10)==0 } { set a ABC } else { set a DEF }
+      set b [expr $i % 5]
+        execsql { INSERT INTO t4 VALUES(X'abcdef', $a, $b) }
+    }
+    execsql ANALYZE
+  } {}
+
+  do_eqp_test 12.$tn.3 {
+    SELECT * FROM t4 WHERE x=X'abcdef' AND a = 'def' AND b = 3;
+  } {/t4 USING INDEX t4b/}
+
+  if {$tn==1} {
+    set sql "SELECT * FROM t4 WHERE x=X'abcdef' AND a = 'abc' AND b = 3;"
+    do_eqp_test 12.$tn.4 $sql {/t4 USING INDEX t4a/}
+  } else {
+    set sql {
+      SELECT * FROM t4 WHERE x=X'abcdef' AND a = 'abc' COLLATE nocase AND b = 3
+    }
+    do_eqp_test 12.$tn.5 $sql {/t4 USING INDEX t4a/}
+    set sql {
+      SELECT * FROM t4 WHERE x=X'abcdef' AND a COLLATE nocase = 'abc' AND b = 3
+    }
+    do_eqp_test 12.$tn.6 $sql {/t4 USING INDEX t4a/}
+  }
+}
+
 finish_test
+
 
