@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\sin\sanalyze.c.
-D 2013-08-30T20:19:52.698
+C Reenable\sa\stest\saccidentally\sdisabled\swhen\sthe\sstat4\sbranch\swas\smerged.
+D 2013-08-31T14:56:30.692
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,7 +296,7 @@ F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
-F test/alter.test 7e771c3c3f401198557dbbcf4a2c21950ba934f3
+F test/alter.test 775a1dded3f8247983c9a3e767b011d9a5114442
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test 8e93bf7a7e6919b14b0c9a6c1e4908bcf21b0165
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P dbc31750440226702fbf88f1bf6140ef403c9be1
-R 5df52e9a380e1241cf1df8d1d5fbe7ea
+P 5bbd2ccb3d2d6286fd667dac2ab658d6b89640a6
+R 1451e706c75b3cfea10ed5a938fdd0ce
 U dan
-Z 33fcbfc1bf7d299e3e7e4e929460c0cd
+Z 244a50a69073c5e2d4dc31f3118b8090
