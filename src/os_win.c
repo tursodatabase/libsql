@@ -38,7 +38,7 @@
 ** Are most of the Win32 ANSI APIs available (i.e. with certain exceptions
 ** based on the sub-platform)?
 */
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(SQLITE_WIN32_NO_ANSI)
 #  define SQLITE_WIN32_HAS_ANSI
 #endif
 
@@ -46,8 +46,17 @@
 ** Are most of the Win32 Unicode APIs available (i.e. with certain exceptions
 ** based on the sub-platform)?
 */
-#if SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT
+#if (SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT) && \
+    !defined(SQLITE_WIN32_NO_WIDE)
 #  define SQLITE_WIN32_HAS_WIDE
+#endif
+
+/*
+** Make sure at least one set of Win32 APIs is available.
+*/
+#if !defined(SQLITE_WIN32_HAS_ANSI) && !defined(SQLITE_WIN32_HAS_WIDE)
+#  error "At least one of SQLITE_WIN32_HAS_ANSI and SQLITE_WIN32_HAS_WIDE\
+ must be defined."
 #endif
 
 /*
@@ -1116,7 +1125,7 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
 */
-#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
+#if SQLITE_OS_WINCE || SQLITE_OS_WINRT || !defined(SQLITE_WIN32_HAS_ANSI)
 # define osIsNT()  (1)
 #elif !defined(SQLITE_WIN32_HAS_WIDE)
 # define osIsNT()  (0)
