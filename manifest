@@ -1,5 +1,5 @@
-C Improve\sthe\sconsistency\sof\sthe\sdiagnostic\smessages\son\sWindows.
-D 2013-08-31T02:48:56.122
+C Fix\sharmless\sMSVC\scompiler\swarning\swith\sMEMDEBUG\sdefined.
+D 2013-08-31T05:13:22.387
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/main.c c4c781b06faa2ce4040c32a75fd931a07ba7054e
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
-F src/mem2.c e243acb034f91e75e4c06aed5d3d960025c62d1f
+F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 0025308a93838022bd5696cf9627ff4e40b19918
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a411df725153119acb3bcf44fb71deecaa307887
-R bb11e3b1e087c83913695ae6bba44408
+P c6f174a0cb27fe79740fffc7ce51081ec52a5dbd
+R bb417a9280c6c7257f662f98515af4c7
 U mistachkin
-Z b8d9459ebc748b157e98d4dbf0b6c355
+Z ce71d33f787d820719edc5d9e21c8ccd
