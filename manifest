@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sSQLite\snot\sto\suse\sstat4\sor\sstat3\sdata\sto\sanalyze\sconstraints\sof\sthe\sform\s"column\s=\sexpr\sCOLLATE\scollation"\s(those\swith\san\sexplicit\sCOLLATE\son\sthe\snon-column\sside\sof\sthe\scomparison\soperator).
-D 2013-08-31T17:21:26.324
+C Cleanup\sof\sthe\swindows\sVFS,\sincluding\sadded\ssupport\sfor\sCygwin,\sfixes\nfor\scompiler\swarnings\sunder\sunusual\sconfigurations,\sand\simproved\sdiagnostic\nerror\smessages.
+D 2013-08-31T18:36:14.237
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -185,11 +185,11 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c dc02c7c118d58049e0cccc6c9c47c0a4d3e2bcda
+F src/main.c c4c781b06faa2ce4040c32a75fd931a07ba7054e
 F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
-F src/mem2.c e243acb034f91e75e4c06aed5d3d960025c62d1f
+F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 0025308a93838022bd5696cf9627ff4e40b19918
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
@@ -202,8 +202,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 7d5f3c51db561804e3ff3d47970a58bc6ea4d662
-F src/os_win.c 26d752736dff0c7e4e384ab65b353cce1e7e19c5
+F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
+F src/os_win.c bb592dfb850e4ee3e4caecce461dca74dc40936d
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -218,7 +218,7 @@ F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
 F src/shell.c dbe064d404bb497acd8a44c066cd6b8460a71236
-F src/sqlite.h.in bd1451ba1ab681022a53bccc3c39580ba094a3ff
+F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 600086a5082e2291b0aeeefcfbb546f2bbda67b2
@@ -1079,7 +1079,7 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl a61fe62a2895ca6458c463fccf1211ca1c000fcf
+F tool/mksqlite3c.tcl d344cc3144a0271cd853c5e3df36e9f31d78d619
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d9fadc8fa6ef02d516678d57896d93e0a5f52cfe
-R 549c9915be9450c721bff69cc42a239a
-U dan
-Z dce49f1165decc3594690bec1fb4ef74
+P 1e86d81d46c9da6aaee0c6938ee40933f35e3d0d aa48284637b954d63bcf77e19b25e75c7ad1a6d3
+R 86ece7a1f31f0a8c4eaf6a2aa2ba8fd5
+U drh
+Z 6d21523c19e589363df183a571e778f3
