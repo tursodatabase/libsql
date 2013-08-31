@@ -137,10 +137,10 @@ proc section_comment {text} {
 
 # Read the source file named $filename and write it into the
 # sqlite3.c output file.  If any #include statements are seen,
-# process them approprately.
+# process them appropriately.
 #
 proc copy_file {filename} {
-  global seen_hdr available_hdr out addstatic linemacros
+  global available_hdr out addstatic linemacros
   set ln 0
   set tail [file tail $filename]
   section_comment "Begin file $tail"
@@ -166,11 +166,12 @@ proc copy_file {filename} {
           section_comment "Continuing where we left off in $tail"
           if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
         }
-      } elseif {![info exists seen_hdr($hdr)]} {
-        set seen_hdr($hdr) 1
-        puts $out $line
       } else {
-        puts $out "/* $line */"
+        set suffix [string toupper [string map [list / _ . _] $hdr]]
+        puts $out "#ifndef SQLITE_HEADER_$suffix"
+        puts $out "#define SQLITE_HEADER_$suffix"
+        puts $out $line
+        puts $out "#endif"
       }
     } elseif {[regexp {^#ifdef __cplusplus} $line]} {
       puts $out "#if 0"

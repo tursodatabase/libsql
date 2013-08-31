@@ -1,5 +1,5 @@
-C Fix\sharmless\sMSVC\scompiler\swarning\swith\sMEMDEBUG\sdefined.
-D 2013-08-31T05:13:22.387
+C Avoid\scommenting\sout\s#include\sstatements\swhen\sbuilding\sthe\samalgamation\ssource\scode\sfile.
+D 2013-08-31T05:46:42.494
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1079,7 +1079,7 @@ F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl a61fe62a2895ca6458c463fccf1211ca1c000fcf
+F tool/mksqlite3c.tcl d8d51141424a0227aecfd7bd07a92304a946b8b2
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c6f174a0cb27fe79740fffc7ce51081ec52a5dbd
-R bb417a9280c6c7257f662f98515af4c7
+P b48cfd2dfca70091a52deeeee16619237e1c270b
+R b57559fe8be860201c533ce843be8c05
 U mistachkin
-Z ce71d33f787d820719edc5d9e21c8ccd
+Z 5c7a5afeef353865f26e419014385170
