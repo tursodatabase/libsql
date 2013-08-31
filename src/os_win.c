@@ -17,7 +17,7 @@
 
 #ifdef __CYGWIN__
 # include <sys/cygwin.h>
-# include <errno.h>
+# include <errno.h> /* amalgamator: keep */
 #endif
 
 /*
@@ -4020,6 +4020,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
        "/var/tmp",
        "/usr/tmp",
        "/tmp",
+       ".",
        0        /* List terminator */
     };
     unsigned int i;

@@ -140,7 +140,7 @@ proc section_comment {text} {
 # process them appropriately.
 #
 proc copy_file {filename} {
-  global available_hdr out addstatic linemacros
+  global seen_hdr available_hdr out addstatic linemacros
   set ln 0
   set tail [file tail $filename]
   section_comment "Begin file $tail"
@@ -166,12 +166,17 @@ proc copy_file {filename} {
           section_comment "Continuing where we left off in $tail"
           if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
         }
-      } else {
-        set suffix [string toupper [string map [list / _ . _] $hdr]]
-        puts $out "#ifndef SQLITE_HEADER_$suffix"
-        puts $out "#define SQLITE_HEADER_$suffix"
+      } elseif {![info exists seen_hdr($hdr)]} {
+        set seen_hdr($hdr) 1
         puts $out $line
-        puts $out "#endif"
+      } elseif {[regexp {/\*\s+amalgamator:\s+keep\s+\*/} $line]} {
+        # This include file must be kept because there was a "keep"
+        # directive inside of a line comment.
+        puts $out $line
+      } else {
+        # Comment out the entire line, replacing any nested comment
+        # begin/end markers with the harmless substring "**".
+        puts $out "/* [string map [list /* ** */ **] $line] */"
       }
     } elseif {[regexp {^#ifdef __cplusplus} $line]} {
       puts $out "#if 0"
