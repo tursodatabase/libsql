@@ -1311,6 +1311,9 @@ int sqlite3Stat4ProbeSetValue(
   alloc.ppRec = ppRec;
   alloc.iVal = iVal;
 
+  /* Skip over any TK_COLLATE nodes */
+  pExpr = sqlite3ExprSkipCollate(pExpr);
+
   if( !pExpr ){
     pVal = valueNew(pParse->db, &alloc);
     if( pVal ){

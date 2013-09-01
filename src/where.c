@@ -185,9 +185,9 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 ** that implement some or all of a query plan.
 **
 ** Think of each WhereLoop object as a node in a graph with arcs
-** showing dependences and costs for travelling between nodes.  (That is
+** showing dependencies and costs for travelling between nodes.  (That is
 ** not a completely accurate description because WhereLoop costs are a
-** vector, not a scalar, and because dependences are many-to-one, not
+** vector, not a scalar, and because dependencies are many-to-one, not
 ** one-to-one as are graph nodes.  But it is a useful visualization aid.)
 ** Then a WherePath object is a path through the graph that visits some
 ** or all of the WhereLoop objects once.
@@ -4169,9 +4169,11 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     if( (p->prereq & pTemplate->prereq)==p->prereq
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
+     && p->nOut<=pTemplate->nOut
     ){
       /* This branch taken when p is equal or better than pTemplate in 
-      ** all of (1) dependences (2) setup-cost, and (3) run-cost. */
+      ** all of (1) dependencies (2) setup-cost, (3) run-cost, and
+      ** (4) number of output rows. */
       assert( p->rSetup==pTemplate->rSetup );
       if( p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
@@ -4191,11 +4193,13 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     }
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rRun>=pTemplate->rRun
+     && p->nOut>=pTemplate->nOut
      && ALWAYS(p->rSetup>=pTemplate->rSetup) /* See SETUP-INVARIANT above */
     ){
       /* Overwrite an existing WhereLoop with a better one: one that is
-      ** better at one of (1) dependences, (2) setup-cost, or (3) run-cost
-      ** and is no worse in any of those categories. */
+      ** better at one of (1) dependencies, (2) setup-cost, (3) run-cost
+      ** or (4) number of output rows, and is no worse in any of those
+      ** categories. */
       pNext = p->pNextLoop;
       break;
     }
@@ -4309,11 +4313,12 @@ static int whereLoopAddBtreeIndex(
     int nIn = 0;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     int nRecValid = pBuilder->nRecValid;
-    assert( pNew->nOut==saved_nOut );
-    if( (pTerm->wtFlags & TERM_VNULL)!=0 && pSrc->pTab->aCol[iCol].notNull ){
-      continue; /* skip IS NOT NULL constraints on a NOT NULL column */
-    }
 #endif
+    if( (pTerm->eOperator==WO_ISNULL || (pTerm->wtFlags&TERM_VNULL)!=0)
+     && (iCol<0 || pSrc->pTab->aCol[iCol].notNull)
+    ){
+      continue; /* ignore IS [NOT] NULL constraints on NOT NULL columns */
+    }
     if( pTerm->prereqRight & pNew->maskSelf ) continue;
 
     assert( pNew->nOut==saved_nOut );
@@ -5536,11 +5541,15 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->rRun = 33;  /* 33==whereCost(10) */
   }else{
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-      if( pIdx->onError==OE_None || pIdx->pPartIdxWhere!=0 ) continue;
+      assert( pLoop->aLTermSpace==pLoop->aLTerm );
+      assert( ArraySize(pLoop->aLTermSpace)==4 );
+      if( pIdx->onError==OE_None 
+       || pIdx->pPartIdxWhere!=0 
+       || pIdx->nColumn>ArraySize(pLoop->aLTermSpace) 
+      ) continue;
       for(j=0; j<pIdx->nColumn; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
-        whereLoopResize(pWInfo->pParse->db, pLoop, j);
         pLoop->aLTerm[j] = pTerm;
       }
       if( j!=pIdx->nColumn ) continue;

@@ -552,6 +552,15 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 }
 
 /*
+** Do not accept any file descriptor less than this value, in order to avoid
+** opening database file using file descriptors that are commonly used for 
+** standard input, output, and error.
+*/
+#ifndef SQLITE_MINIMUM_FILE_DESCRIPTOR
+# define SQLITE_MINIMUM_FILE_DESCRIPTOR 3
+#endif
+
+/*
 ** Invoke open().  Do so multiple times, until it either succeeds or
 ** fails for some reason other than EINTR.
 **
@@ -571,13 +580,23 @@ static const char *unixNextSystemCall(sqlite3_vfs *p, const char *zName){
 static int robust_open(const char *z, int f, mode_t m){
   int fd;
   mode_t m2 = m ? m : SQLITE_DEFAULT_FILE_PERMISSIONS;
-  do{
+  while(1){
 #if defined(O_CLOEXEC)
     fd = osOpen(z,f|O_CLOEXEC,m2);
 #else
     fd = osOpen(z,f,m2);
 #endif
-  }while( fd<0 && errno==EINTR );
+    if( fd<0 ){
+      if( errno==EINTR ) continue;
+      break;
+    }
+    if( fd>=SQLITE_MINIMUM_FILE_DESCRIPTOR ) break;
+    osClose(fd);
+    sqlite3_log(SQLITE_WARNING, 
+                "attempt to open \"%s\" as file descriptor %d", z, fd);
+    fd = -1;
+    if( osOpen("/dev/null", f, m)<0 ) break;
+  }
   if( fd>=0 ){
     if( m!=0 ){
       struct stat statbuf;
@@ -3099,6 +3118,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
 #endif
   TIMER_START;
   assert( cnt==(cnt&0x1ffff) );
+  assert( id->h>2 );
   cnt &= 0x1ffff;
   do{
 #if defined(USE_PREAD)
@@ -3213,6 +3233,7 @@ static int seekAndWriteFd(
   int rc = 0;                     /* Value returned by system call */
 
   assert( nBuf==(nBuf&0x1ffff) );
+  assert( fd>2 );
   nBuf &= 0x1ffff;
   TIMER_START;
 
@@ -5319,6 +5340,7 @@ static const char *unixTempFileDir(void){
   static const char *azDirs[] = {
      0,
      0,
+     0,
      "/var/tmp",
      "/usr/tmp",
      "/tmp",
@@ -5329,7 +5351,8 @@ static const char *unixTempFileDir(void){
   const char *zDir = 0;
 
   azDirs[0] = sqlite3_temp_directory;
-  if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
+  if( !azDirs[1] ) azDirs[1] = getenv("SQLITE_TMPDIR");
+  if( !azDirs[2] ) azDirs[2] = getenv("TMPDIR");
   for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
     if( zDir==0 ) continue;
     if( osStat(zDir, &buf) ) continue;
