@@ -4180,11 +4180,11 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       ** all of (1) dependencies (2) setup-cost, (3) run-cost, and
       ** (4) number of output rows. */
       assert( p->rSetup==pTemplate->rSetup );
-      if( p->nLTerm<pTemplate->nLTerm
+      if( p->prereq==pTemplate->prereq
+       && p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
        && (pTemplate->wsFlags & WHERE_INDEXED)!=0
        && p->u.btree.pIndex==pTemplate->u.btree.pIndex
-       && p->prereq==pTemplate->prereq
       ){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */
