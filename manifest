@@ -1,5 +1,5 @@
-C Simplify\sbranch\scoverage\stesting\sby\sinterchanging\sthe\sorder\sof\stwo\stests\nin\sthe\swhereLoopInsert()\sfunction.
-D 2013-09-02T20:22:18.651
+C Add\sthe\sexperimental\sSQLITE_DEFAULT_INDEX_SHAPE=1\scompile-time\soption\sthat\nmakes\sa\smuch\smore\spessimistic\sguess\sat\sthe\seffectiveness\sof\sunanalyzed\nindices.
+D 2013-09-02T23:40:47.395
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c b9b57df546df2636294bfb21a986f5707b417df2
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
-F src/build.c f63e8929c7f89c0074fbc74929bc946ea117b2f8
+F src/build.c ec867822b389c3a4b7c4e33ad67448447b051f0c
 F src/callback.c d7e46f40c3cf53c43550b7da7a1d0479910b62cc
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -1109,7 +1109,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 0a702c4b4c35fdbcb62e3ab88b9e57d7ea0052a8
-R 5255609fa5f702769f786eafe83d1965
+P f7079b5365dd6cd8324a4fb23605e81476122ed6
+R c46c3491c07bd978d38973714a975590
+T *branch * index-shape-1
+T *sym-index-shape-1 *
+T -sym-trunk *
 U drh
-Z 3ad66b5373e173075a1fd9a0798ca8c7
+Z 86c8463cb0873ec75b5b5ad032212670

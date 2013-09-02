@@ -2956,6 +2956,8 @@ void sqlite3DefaultRowEst(Index *pIdx){
   tRowcnt *a = pIdx->aiRowEst;
   int i;
   tRowcnt n;
+
+#if !defined(SQLITE_DEFAULT_INDEX_SHAPE) || SQLITE_DEFAULT_INDEX_SHAPE==0
   assert( a!=0 );
   a[0] = pIdx->pTable->nRowEst;
   if( a[0]<10 ) a[0] = 10;
@@ -2967,6 +2969,23 @@ void sqlite3DefaultRowEst(Index *pIdx){
   if( pIdx->onError!=OE_None ){
     a[pIdx->nColumn] = 1;
   }
+#else /* if SQLITE_DEFAULT_INDEX_SHAPE==1 */
+  tRowcnt x = 1, nMax = pIdx->pTable->nRowEst;
+  int iLog;
+  int isUnique = pIdx->onError!=OE_None;
+  assert( a!=0 );
+  a[0] = nMax;
+  n = isUnique ? 1 : 10;
+  for(iLog=1; n<nMax; iLog++, n<<=1){}
+  i = pIdx->nColumn;
+  x <<= iLog/i;
+  //if( x>10 ) x = 10;
+  a[i] = n = isUnique ? 1 : 10;
+  while( i>1 ){
+    n *= x;
+    a[--i] = n;
+  }
+#endif
 }
 
 /*
