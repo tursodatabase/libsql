@@ -611,6 +611,99 @@ do_eqp_test 13.2.2 {
   SELECT * FROM t1 WHERE a='ott' AND b<'10' AND c=1
 } {/SEARCH TABLE t1 USING INDEX i1/}
 
-finish_test
+#-------------------------------------------------------------------------
+# By default, 16 non-periodic samples are collected for the stat4 table.
+# The following tests attempt to verify that the most common keys are
+# being collected.
+#
+proc check_stat4 {tn} {
+  db eval ANALYZE
+  db eval {SELECT a, b, c, d FROM t1} {
+    incr k($a)
+    incr k([list $a $b])
+    incr k([list $a $b $c])
+    if { [info exists k([list $a $b $c $d])]==0 } { incr nRow }
+    incr k([list $a $b $c $d])
+  }
 
+  set L [list]
+  foreach key [array names k] {
+    lappend L [list $k($key) $key]
+  }
+
+  set nSample $nRow
+  if {$nSample>16} {set nSample 16}
+
+  set nThreshold [lindex [lsort -decr -integer -index 0 $L] [expr $nSample-1] 0]
+  foreach key [array names k] {
+    if {$k($key)>$nThreshold} {
+      set expect($key) 1
+    }
+    if {$k($key)==$nThreshold} {
+      set possible($key) 1
+    }
+  }
+
+
+  set nPossible [expr $nSample - [llength [array names expect]]]
+
+  #puts "EXPECT: [array names expect]"
+  #puts "POSSIBLE($nPossible/[array size possible]): [array names possible]"
+  #puts "HAVE: [db eval {SELECT test_decode(sample) FROM sqlite_stat4 WHERE idx='i1'}]"
+
+  db eval {SELECT test_decode(sample) AS s FROM sqlite_stat4 WHERE idx='i1'} {
+    set seen 0
+    for {set i 0} {$i<4} {incr i} {
+      unset -nocomplain expect([lrange $s 0 $i])
+      if {[info exists possible([lrange $s 0 $i])]} {
+        set seen 1
+        unset -nocomplain possible([lrange $s 0 $i])
+      }
+    }
+    if {$seen} {incr nPossible -1}
+  }
+  if {$nPossible<0} {set nPossible 0}
+
+  set res [list [llength [array names expect]] $nPossible]
+  uplevel [list do_test $tn [list set {} $res] {0 0}]
+}
+
+drop_all_tables
+do_test 14.1.1 {
+  execsql {
+    CREATE TABLE t1(a,b,c,d);
+    CREATE INDEX i1 ON t1(a,b,c,d);
+  }
+  for {set i 0} {$i < 160} {incr i} {
+    execsql { INSERT INTO t1 VALUES($i,$i,$i,$i) }
+    if {($i % 10)==0} { execsql { INSERT INTO t1 VALUES($i,$i,$i,$i) } }
+  }
+} {}
+check_stat4 14.1.2
+
+do_test 14.2.1 {
+  execsql { DELETE FROM t1 }
+  for {set i 0} {$i < 1600} {incr i} {
+    execsql { INSERT INTO t1 VALUES($i/10,$i/17,$i/27,$i/37) }
+  }
+} {}
+check_stat4 14.2.2
+
+do_test 14.3.1 {
+  for {set i 0} {$i < 10} {incr i} {
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+    execsql { INSERT INTO t1 VALUES($i*50,$i*50,$i*50,$i*50) }
+  }
+} {}
+check_stat4 14.3.2
+
+finish_test
 
