@@ -468,14 +468,25 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     p->nSample = p->mxSample-1;
   }
 
-  /* Figure out where in the a[] array the new sample should be inserted. */
+  /* The "rows less-than" for the rowid column must be greater than that
+  ** for the last sample in the p->a[] array. Otherwise, the samples would
+  ** be out of order. */
+#ifdef SQLITE_ENABLE_STAT4
+  assert( p->nSample==0 
+       || pNew->anLt[p->nCol-1] > p->a[p->nSample-1].anLt[p->nCol-1] );
+#endif
+
+  /* Insert the new sample */
+  pSample = &p->a[p->nSample];
+  sampleCopy(p, pSample, pNew);
+  p->nSample++;
+
+#if 0
   iSeq = pNew->anLt[p->nCol-1];
   for(iPos=p->nSample; iPos>0; iPos--){
     if( iSeq>p->a[iPos-1].anLt[p->nCol-1] ) break;
   }
 
-  /* Insert the new sample */
-  pSample = &p->a[iPos];
   if( iPos!=p->nSample ){
     Stat4Sample *pEnd = &p->a[p->nSample];
     tRowcnt *anEq = pEnd->anEq;
@@ -486,8 +497,8 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     pSample->anDLt = anDLt;
     pSample->anLt = anLt;
   }
-  p->nSample++;
-  sampleCopy(p, pSample, pNew);
+#endif
+
 
   /* Zero the first nEqZero entries in the anEq[] array. */
   memset(pSample->anEq, 0, sizeof(tRowcnt)*nEqZero);
@@ -584,8 +595,7 @@ static void statPush(
   assert( iChng<p->nCol );
 
   if( p->nRow==0 ){
-    /* anEq[0] is only zero for the very first call to this function.  Do
-    ** appropriate initialization */
+    /* This is the first call to this function. Do initialization. */
     for(i=0; i<p->nCol; i++) p->current.anEq[i] = 1;
   }else{
     /* Second and subsequent calls get processed here */

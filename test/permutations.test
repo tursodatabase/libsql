@@ -311,6 +311,14 @@ test_suite "coverage-pager" -description {
   walfault.test  walbak.test  journal2.test    tkt-9d68c883.test
 } 
 
+test_suite "coverage-analyze" -description {
+  Coverage tests for file analyze.c.
+} -files {
+  analyze3.test analyze4.test analyze5.test analyze6.test
+  analyze7.test analyze8.test analyze9.test analyzeA.test
+  analyze.test mallocA.test
+} 
+
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
