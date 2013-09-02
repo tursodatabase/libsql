@@ -2553,7 +2553,12 @@ static int whereRangeScanEst(
   ){
     UnpackedRecord *pRec = pBuilder->pRec;
     tRowcnt a[2];
-    u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
+    u8 aff;
+    if( nEq==p->nColumn ){
+      aff = SQLITE_AFF_INTEGER;
+    }else{
+      aff = p->pTable->aCol[p->aiColumn[nEq]].affinity;
+    }
 
     /* Variable iLower will be set to the estimate of the number of rows in 
     ** the index that are less than the lower bound of the range query. The

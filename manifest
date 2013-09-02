@@ -1,5 +1,5 @@
-C Cleanup\sof\sthe\swindows\sVFS,\sincluding\sadded\ssupport\sfor\sCygwin,\sfixes\nfor\scompiler\swarnings\sunder\sunusual\sconfigurations,\sand\simproved\sdiagnostic\nerror\smessages.
-D 2013-08-31T18:36:14.237
+C Fix\sa\sproblem\swith\susing\sstat4\sdata\sto\sestimate\sthe\snumber\sof\srows\sscanned\sby\sa\srange\sconstraint\son\sthe\ssecond\sor\ssubsequent\scolumn\sof\sany\sindex\swhere\san\saffinity\stransformation\smust\sbe\sapplied\sto\sthe\sconstraint\sargument.
+D 2013-09-02T07:16:40.805
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 83f6106e0edfa23d1258c617cd58e3125277a363
+F src/where.c a37169b46fc03e381701852e43f85a51710986dd
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 2bc3fb7b0ba7954e2513e69af8608ce5da201418
+F test/analyze9.test c4717447731bf9bb5751e0785d6337883094db3c
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 1e86d81d46c9da6aaee0c6938ee40933f35e3d0d aa48284637b954d63bcf77e19b25e75c7ad1a6d3
-R 86ece7a1f31f0a8c4eaf6a2aa2ba8fd5
-U drh
-Z 6d21523c19e589363df183a571e778f3
+P c94933f13208f3f7d6d1b117ce6d2821100655a4
+R 15f429912bd32e56367e01c1c9d0d2ba
+U dan
+Z fd6aacb9a694e6de7810fd7923f14ee2
