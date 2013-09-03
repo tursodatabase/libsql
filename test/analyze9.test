@@ -244,7 +244,7 @@ do_execsql_test 4.3 {
     FROM sqlite_stat4
   ORDER BY rowid DESC LIMIT 2;
 } {
-  {2 1 1 1} {295 296 296} {120 122 125} {201 4} 
+  {2 1 1 1} {295 295 295} {120 121 124} {201 3} 
   {5 3 1 1} {290 290 292} {119 119 121} {200 1}
 }
 
@@ -914,6 +914,39 @@ ifcapable auth {
     }
     catchsql ANALYZE
   } {1 {not authorized}}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+proc r {args} { expr rand() }
+db func r r
+db func lrange lrange
+do_test 20.1 {
+  execsql {
+    CREATE TABLE t1(a,b,c,d);
+    CREATE INDEX i1 ON t1(a,b,c,d);
+  }
+  for {set i 0} {$i < 16} {incr i} {
+    execsql {
+      INSERT INTO t1 VALUES($i, r(), r(), r());
+      INSERT INTO t1 VALUES($i, $i,  r(), r());
+      INSERT INTO t1 VALUES($i, $i,  $i,  r());
+      INSERT INTO t1 VALUES($i, $i,  $i,  $i);
+      INSERT INTO t1 VALUES($i, $i,  $i,  $i);
+      INSERT INTO t1 VALUES($i, $i,  $i,  r());
+      INSERT INTO t1 VALUES($i, $i,  r(), r());
+      INSERT INTO t1 VALUES($i, r(), r(), r());
+    }
+  }
+} {}
+do_execsql_test 20.2 { ANALYZE }
+for {set i 0} {$i<16} {incr i} {
+    set val "$i $i $i $i"
+    do_execsql_test 20.3.$i {
+      SELECT count(*) FROM sqlite_stat4 
+      WHERE lrange(test_decode(sample), 0, 3)=$val
+    } {1}
 }
 
 finish_test
