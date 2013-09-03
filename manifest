@@ -1,5 +1,5 @@
-C Make\ssure\sthe\somit-noop-left-join\soptimization\sis\snot\sapplied\sif\scolumns\nof\sthe\sLEFT\sJOIN\sare\sused\sin\sthe\sORDER\sBY\sclause.\s\s\nTicket\s[be84e357c035].\s\sIncrease\sversion\snumber\sto\s3.8.0.2.
-D 2013-09-03T14:33:46.162
+C Version\s3.8.0.2
+D 2013-09-03T17:11:13.470
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1106,8 +1106,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 352362bc01660edfbda08179d60f09e2038a2f49
-Q +0303d6bc7112e6f810ae1bd75cafc5ffc51f5212
+P cce541864d2216c875992fe22bcb009747f72128
 R 6d234f3f24f580ee38bfe11d7feea18c
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.0.2 *
 U drh
-Z 3fe6645abfd1e08015334c6295d2a9b8
+Z 25497eb59e96f82b9ae854b9bc7b7f22
