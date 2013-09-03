@@ -1,12 +1,12 @@
-C Version\s3.8.0.1
-D 2013-08-29T17:35:01.986
+C Make\ssure\sthe\somit-noop-left-join\soptimization\sis\snot\sapplied\sif\scolumns\nof\sthe\sLEFT\sJOIN\sare\sused\sin\sthe\sORDER\sBY\sclause.\s\s\nTicket\s[be84e357c035].\s\sIncrease\sversion\snumber\sto\s3.8.0.2.
+D 2013-09-03T14:33:46.162
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc e9f41f89111627baaabd95cab4988b8d1c3e47c9
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 087a4ef56b220aeb0fbef8ae45871be9668cd970
+F VERSION 8a3318c35d2fac7dcd542c90622f5ff9d7cfa096
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 9af276330ddd63041537a88323705690d02df76e x
+F configure 02db96d0755ede42eb3f985c29cc953d300f6995 x
 F configure.ac 81c43d151d0b0e406be056394cc9ff4cb3fd0444
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c a9ec7caba7697f152bd34853b98500dd54c4b240
+F src/where.c 51f55344b17165902969642928763ee5af9c9b63
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1039,7 +1039,7 @@ F test/walro.test 6cc247a0cc9b36aeea2057dd28a922a1cdfbd630
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test da54153a4c1571ea1b95659e5bec8119edf786aa
+F test/where.test 8d66dfbfd4d12816f74f854dbf67dee492c06267
 F test/where2.test 76d5346f7edb2a6a0442dcf3e9d088ac6903e0b5
 F test/where3.test d28c51f257e60be30f74308fa385ceeddfb54a6e
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -1106,9 +1106,8 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P c5857808c0707baa30994dd6aa3b9c93a74c0073
-R f09fdab74837e6353df38f5d2273681e
-T +sym-release *
-T +sym-version-3.8.0.1 *
+P 352362bc01660edfbda08179d60f09e2038a2f49
+Q +0303d6bc7112e6f810ae1bd75cafc5ffc51f5212
+R 6d234f3f24f580ee38bfe11d7feea18c
 U drh
-Z 3c028394a3a00a433c82a9881b010566
+Z 3fe6645abfd1e08015334c6295d2a9b8

@@ -1304,4 +1304,33 @@ do_test where-17.5 {
   }
 } {42 1 43 1}
 
+# Ticket [be84e357c035d068135f20bcfe82761bbf95006b]  2013-09-03
+# Segfault during query involving LEFT JOIN column in the ORDER BY clause.
+#
+do_execsql_test where-18.1 {
+  CREATE TABLE t181(a);
+  CREATE TABLE t182(b,c);
+  INSERT INTO t181 VALUES(1);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c IS NULL;
+} {1}
+do_execsql_test where-18.2 {
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
+} {1}
+do_execsql_test where-18.3 {
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c;
+} {1}
+do_execsql_test where-18.4 {
+  INSERT INTO t181 VALUES(1),(1),(1),(1);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +c;
+} {1}
+do_execsql_test where-18.5 {
+  INSERT INTO t181 VALUES(2);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY c IS NULL, +a;
+} {1 2}
+do_execsql_test where-18.6 {
+  INSERT INTO t181 VALUES(2);
+  SELECT DISTINCT a FROM t181 LEFT JOIN t182 ON a=b ORDER BY +a, +c IS NULL;
+} {1 2}
+
+
 finish_test

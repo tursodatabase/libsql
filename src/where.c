@@ -5914,7 +5914,7 @@ WhereInfo *sqlite3WhereBegin(
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
     Bitmask tabUsed = exprListTableUsage(pMaskSet, pResultSet);
-    if( pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, pOrderBy);
+    if( sWLB.pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, sWLB.pOrderBy);
     while( pWInfo->nLevel>=2 ){
       WhereTerm *pTerm, *pEnd;
       pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;
