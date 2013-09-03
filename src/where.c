@@ -2421,12 +2421,15 @@ static void whereKeyStats(
   tRowcnt *aStat              /* OUT: stats written here */
 ){
   IndexSample *aSample = pIdx->aSample;
-  int iCol = pRec->nField-1;  /* Index of required stats in anEq[] etc. */
+  int iCol;                   /* Index of required stats in anEq[] etc. */
   int iMin = 0;               /* Smallest sample not yet tested */
   int i = pIdx->nSample;      /* Smallest sample larger than or equal to pRec */
   int iTest;                  /* Next sample to test */
   int res;                    /* Result of comparison operation */
 
+  assert( pRec!=0 || pParse->db->mallocFailed );
+  if( pRec==0 ) return;
+  iCol = pRec->nField - 1;
   assert( pIdx->nSample>0 );
   assert( pRec->nField>0 && iCol<pIdx->nSampleCol );
   do{
