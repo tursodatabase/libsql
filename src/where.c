@@ -185,9 +185,9 @@ static int whereLoopResize(sqlite3*, WhereLoop*, int);
 ** that implement some or all of a query plan.
 **
 ** Think of each WhereLoop object as a node in a graph with arcs
-** showing dependences and costs for travelling between nodes.  (That is
+** showing dependencies and costs for travelling between nodes.  (That is
 ** not a completely accurate description because WhereLoop costs are a
-** vector, not a scalar, and because dependences are many-to-one, not
+** vector, not a scalar, and because dependencies are many-to-one, not
 ** one-to-one as are graph nodes.  But it is a useful visualization aid.)
 ** Then a WherePath object is a path through the graph that visits some
 ** or all of the WhereLoop objects once.
@@ -2553,7 +2553,12 @@ static int whereRangeScanEst(
   ){
     UnpackedRecord *pRec = pBuilder->pRec;
     tRowcnt a[2];
-    u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
+    u8 aff;
+    if( nEq==p->nColumn ){
+      aff = SQLITE_AFF_INTEGER;
+    }else{
+      aff = p->pTable->aCol[p->aiColumn[nEq]].affinity;
+    }
 
     /* Variable iLower will be set to the estimate of the number of rows in 
     ** the index that are less than the lower bound of the range query. The
@@ -4169,15 +4174,17 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     if( (p->prereq & pTemplate->prereq)==p->prereq
      && p->rSetup<=pTemplate->rSetup
      && p->rRun<=pTemplate->rRun
+     && p->nOut<=pTemplate->nOut
     ){
       /* This branch taken when p is equal or better than pTemplate in 
-      ** all of (1) dependences (2) setup-cost, and (3) run-cost. */
+      ** all of (1) dependencies (2) setup-cost, (3) run-cost, and
+      ** (4) number of output rows. */
       assert( p->rSetup==pTemplate->rSetup );
-      if( p->nLTerm<pTemplate->nLTerm
+      if( p->prereq==pTemplate->prereq
+       && p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
        && (pTemplate->wsFlags & WHERE_INDEXED)!=0
        && p->u.btree.pIndex==pTemplate->u.btree.pIndex
-       && p->prereq==pTemplate->prereq
       ){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */
@@ -4191,11 +4198,13 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     }
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rRun>=pTemplate->rRun
+     && p->nOut>=pTemplate->nOut
      && ALWAYS(p->rSetup>=pTemplate->rSetup) /* See SETUP-INVARIANT above */
     ){
       /* Overwrite an existing WhereLoop with a better one: one that is
-      ** better at one of (1) dependences, (2) setup-cost, or (3) run-cost
-      ** and is no worse in any of those categories. */
+      ** better at one of (1) dependencies, (2) setup-cost, (3) run-cost
+      ** or (4) number of output rows, and is no worse in any of those
+      ** categories. */
       pNext = p->pNextLoop;
       break;
     }
@@ -5900,7 +5909,7 @@ WhereInfo *sqlite3WhereBegin(
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
     Bitmask tabUsed = exprListTableUsage(pMaskSet, pResultSet);
-    if( pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, pOrderBy);
+    if( sWLB.pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, sWLB.pOrderBy);
     while( pWInfo->nLevel>=2 ){
       WhereTerm *pTerm, *pEnd;
       pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;

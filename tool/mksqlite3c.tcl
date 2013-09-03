@@ -139,7 +139,7 @@ proc section_comment {text} {
 
 # Read the source file named $filename and write it into the
 # sqlite3.c output file.  If any #include statements are seen,
-# process them approprately.
+# process them appropriately.
 #
 proc copy_file {filename} {
   global seen_hdr available_hdr out addstatic linemacros
@@ -171,8 +171,14 @@ proc copy_file {filename} {
       } elseif {![info exists seen_hdr($hdr)]} {
         set seen_hdr($hdr) 1
         puts $out $line
+      } elseif {[regexp {/\*\s+amalgamator:\s+keep\s+\*/} $line]} {
+        # This include file must be kept because there was a "keep"
+        # directive inside of a line comment.
+        puts $out $line
       } else {
-        puts $out "/* $line */"
+        # Comment out the entire line, replacing any nested comment
+        # begin/end markers with the harmless substring "**".
+        puts $out "/* [string map [list /* ** */ **] $line] */"
       }
     } elseif {[regexp {^#ifdef __cplusplus} $line]} {
       puts $out "#if 0"

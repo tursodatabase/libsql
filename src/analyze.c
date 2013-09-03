@@ -33,7 +33,7 @@
 ** version of sqlite_stat3 and is only available when compiled with
 ** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.0 and later.  It is
 ** not possible to enable both STAT3 and STAT4 at the same time.  If they
-** are both enabled, then STAT4 is precedence.
+** are both enabled, then STAT4 takes precedence.
 **
 ** For most applications, sqlite_stat1 provides all the statisics required
 ** for the query planner to make good choices.
@@ -345,7 +345,7 @@ static void statInit(
 
     p->iGet = -1;
     p->mxSample = mxSample;
-    p->nPSample = sqlite3_value_int64(argv[1])/(mxSample/3+1) + 1;
+    p->nPSample = (tRowcnt)(sqlite3_value_int64(argv[1])/(mxSample/3+1) + 1);
     p->current.anLt = &p->current.anEq[nColUp];
     sqlite3_randomness(sizeof(p->iPrn), &p->iPrn);
   
@@ -424,7 +424,7 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   Stat4Sample *pSample;
   int i;
   i64 iSeq;
-  i64 iPos;
+  int iPos;
 
   assert( IsStat4 || nEqZero==0 );
 
@@ -468,14 +468,25 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     p->nSample = p->mxSample-1;
   }
 
-  /* Figure out where in the a[] array the new sample should be inserted. */
+  /* The "rows less-than" for the rowid column must be greater than that
+  ** for the last sample in the p->a[] array. Otherwise, the samples would
+  ** be out of order. */
+#ifdef SQLITE_ENABLE_STAT4
+  assert( p->nSample==0 
+       || pNew->anLt[p->nCol-1] > p->a[p->nSample-1].anLt[p->nCol-1] );
+#endif
+
+  /* Insert the new sample */
+  pSample = &p->a[p->nSample];
+  sampleCopy(p, pSample, pNew);
+  p->nSample++;
+
+#if 0
   iSeq = pNew->anLt[p->nCol-1];
   for(iPos=p->nSample; iPos>0; iPos--){
     if( iSeq>p->a[iPos-1].anLt[p->nCol-1] ) break;
   }
 
-  /* Insert the new sample */
-  pSample = &p->a[iPos];
   if( iPos!=p->nSample ){
     Stat4Sample *pEnd = &p->a[p->nSample];
     tRowcnt *anEq = pEnd->anEq;
@@ -486,8 +497,8 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     pSample->anDLt = anDLt;
     pSample->anLt = anLt;
   }
-  p->nSample++;
-  sampleCopy(p, pSample, pNew);
+#endif
+
 
   /* Zero the first nEqZero entries in the anEq[] array. */
   memset(pSample->anEq, 0, sizeof(tRowcnt)*nEqZero);
@@ -584,8 +595,7 @@ static void statPush(
   assert( iChng<p->nCol );
 
   if( p->nRow==0 ){
-    /* anEq[0] is only zero for the very first call to this function.  Do
-    ** appropriate initialization */
+    /* This is the first call to this function. Do initialization. */
     for(i=0; i<p->nCol; i++) p->current.anEq[i] = 1;
   }else{
     /* Second and subsequent calls get processed here */
@@ -1333,7 +1343,7 @@ static void initAvgEq(Index *pIdx){
     for(iCol=0; iCol<pIdx->nColumn; iCol++){
       int i;                    /* Used to iterate through samples */
       tRowcnt sumEq = 0;        /* Sum of the nEq values */
-      int nSum = 0;             /* Number of terms contributing to sumEq */
+      tRowcnt nSum = 0;         /* Number of terms contributing to sumEq */
       tRowcnt avgEq = 0;
       tRowcnt nDLt = pFinal->anDLt[iCol];
 
