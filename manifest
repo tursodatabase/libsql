@@ -1,5 +1,5 @@
-C Fix\sout-of-order\svariable\sdeclaration.\s\sFix\sharmless\scompiler\swarning.
-D 2013-09-04T04:04:08.155
+C The\ssqlite3Stat4ProbeSetValue()\sroutine\sshould\salways\sreturn\sresults\susing\nthe\sdatabase\sencoding.
+D 2013-09-04T15:15:10.328
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbeInt.h cbe71b8b36d8b3bba5709cc3f436c7e3b47b7b08
 F src/vdbeapi.c 96b24b946cf21894f63d9393e821baa2f0a80979
 F src/vdbeaux.c c7fe2695e256dbf254113c4fe90d3ec9aabe3bbe
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c 75ad7fd8f068a8baaba1cf3a84714ef7d3b7a2b8
+F src/vdbemem.c 817ce21ab4ca57f902619bb8fef3f8a51bbd0ed8
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a48948a170056dfb87541dd5eb2773094dec6f8a
-R 8eb1f582f1bc97c17449e31bd6792386
-U mistachkin
-Z 0184d76aee144da494741e51191a6949
+P 8df95bb0b3f72222cf262174247a467c234f9939
+R b944ffe32b90c0165476ae59b14b7022
+U drh
+Z 60caa6bea3811d3575717487293d6e9c
