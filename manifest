@@ -1,5 +1,5 @@
-C Add\stests\sto\simprove\scoverage\swhen\sSQLITE_ENABLE_STAT3\sis\sdefined.
-D 2013-09-04T16:38:42.308
+C Rearrange\sthe\sorder\sof\sconditions\sin\san\s"if"\sstatement\sto\sfacilitate\stesting.
+D 2013-09-04T18:14:53.187
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 95a351c94ecc9d6b4fa7f0e251ab480335b83ab8
+F src/where.c 613993bd44f43a5d78f1e0068f3d7197f3133990
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1110,7 +1110,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d8fdc7821808e2bfa048144ee3015b745232dc30
-R 1b8932f1781f5719312a95a87cdda18d
-U dan
-Z 67321bf0786d50805840f21a47eb7fad
+P f929e9b41f2f69b086be3dd48fe557adbba7ae5c
+R cc5fb62c722092188f8662d393b9b48e
+U drh
+Z 3d3da6aaad5a89de084de232785827d1

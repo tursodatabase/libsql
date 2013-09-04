@@ -2549,9 +2549,9 @@ static int whereRangeScanEst(
   Index *p = pBuilder->pNew->u.btree.pIndex;
   int nEq = pBuilder->pNew->u.btree.nEq;
 
-  if( nEq==pBuilder->nRecValid
+  if( p->nSample>0
+   && nEq==pBuilder->nRecValid
    && nEq<p->nSampleCol
-   && p->nSample 
    && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
   ){
     UnpackedRecord *pRec = pBuilder->pRec;
