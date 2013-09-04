@@ -722,7 +722,11 @@ do_test shell1-3-31.1 {
 # Test the output of the ".dump" command
 #
 do_test shell1-4.1 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
   db eval {
+    PRAGMA encoding=UTF16;
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
   }
@@ -752,6 +756,14 @@ INSERT INTO t1 VALUES(X'807f');}}
 # Test the output of ".mode tcl"
 #
 do_test shell1-4.3 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    PRAGMA encoding=UTF8;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
+  }
   catchcmd test.db ".mode tcl\nselect * from t1;"
 } {0 {""
 ""

@@ -1,5 +1,5 @@
-C The\ssqlite3Stat4ProbeSetValue()\sroutine\sshould\salways\sreturn\sresults\susing\nthe\sdatabase\sencoding.
-D 2013-09-04T15:15:10.328
+C Fix\sa\sbug\sin\sthe\scommand-line\sshell\sfor\s".mode\sinsert"\son\sUTF16\sdatabases\nwith\sBLOB\svalues.
+D 2013-09-04T16:08:50.014
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8b148eb851f384412aea57091659d14b369918ca
-F src/shell.c dbe064d404bb497acd8a44c066cd6b8460a71236
+F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -780,7 +780,7 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 927a4b6da11978c82b857dbdb20a932aad732123
-F test/shell1.test 928547277d385038c696428e9d791cbbad098974
+F test/shell1.test 474ed53bb461c4ba9b6468d3a74e86eb8ee0d9d0
 F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
 F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 8df95bb0b3f72222cf262174247a467c234f9939
-R b944ffe32b90c0165476ae59b14b7022
+P eb21663271369c3862bc8fd800f76d568c8579fe
+R ded2cb0c19eb56b367f2fc24300a6779
 U drh
-Z 60caa6bea3811d3575717487293d6e9c
+Z 14271c216b0039f50adca506335fce27
