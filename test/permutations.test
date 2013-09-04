@@ -316,7 +316,7 @@ test_suite "coverage-analyze" -description {
 } -files {
   analyze3.test analyze4.test analyze5.test analyze6.test
   analyze7.test analyze8.test analyze9.test analyzeA.test
-  analyze.test mallocA.test
+  analyze.test analyzeB.test mallocA.test
 } 
 
 

@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\scommand-line\sshell\sfor\s".mode\sinsert"\son\sUTF16\sdatabases\nwith\sBLOB\svalues.
-D 2013-09-04T16:08:50.014
+C Add\stests\sto\simprove\scoverage\swhen\sSQLITE_ENABLE_STAT3\sis\sdefined.
+D 2013-09-04T16:38:42.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -310,6 +310,7 @@ F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
 F test/analyze9.test 4a48461d71a7b4a958570c580495a97e842e2700
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
+F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
 F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
@@ -651,7 +652,7 @@ F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
 F test/malloc9.test 2307c6ee3703b0a21391f3ea92388b4b73f9105e
-F test/mallocA.test 71e4b57e640c017cf2833e51fe6e8e43e8575b73
+F test/mallocA.test 1ba0367fb5434e7bc2fa4afcb30b14174d91b160
 F test/mallocAll.test 98f1be74bc9f49a858bc4f361fc58e26486798be
 F test/mallocB.test bc475ab850cda896142ab935bbfbc74c24e51ed6
 F test/mallocC.test 3dffe16532f109293ce1ccecd0c31dca55ef08c4
@@ -716,7 +717,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 47f8c1d3d72ea46863426dcedb1e368f4b6ed70b
+F test/permutations.test 9cd3bba6f1e8658442d0dcfcef6c2e5efd131bdc
 F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
 F test/pragma2.test 224f0381f9411a78ae685cac24c13656a62021b7
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1109,7 +1110,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P eb21663271369c3862bc8fd800f76d568c8579fe
-R ded2cb0c19eb56b367f2fc24300a6779
-U drh
-Z 14271c216b0039f50adca506335fce27
+P d8fdc7821808e2bfa048144ee3015b745232dc30
+R 1b8932f1781f5719312a95a87cdda18d
+U dan
+Z 67321bf0786d50805840f21a47eb7fad
