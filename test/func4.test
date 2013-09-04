@@ -20,6 +20,9 @@ source $testdir/tester.tcl
 set saved_tcl_precision $tcl_precision
 set tcl_precision 0
 
+set highPrecision(1) [expr \
+    {[memdbsql {SELECT tointeger(9223372036854775807 + 1);}] eq {{}}}]
+
 do_execsql_test func4-1.1 {
   SELECT tointeger(NULL);
 } {{}}
@@ -128,9 +131,11 @@ do_execsql_test func4-1.35 {
 do_execsql_test func4-1.36 {
   SELECT tointeger(9223372036854775807);
 } {9223372036854775807}
-do_execsql_test func4-1.37 {
-  SELECT tointeger(9223372036854775807 + 1);
-} {{}}
+if {$highPrecision(1)} {
+  do_execsql_test func4-1.37 {
+    SELECT tointeger(9223372036854775807 + 1);
+  } {{}}
+}
 do_execsql_test func4-1.38 {
   SELECT tointeger(1.79769313486232e308 - 1);
 } {{}}
@@ -164,18 +169,20 @@ do_execsql_test func4-1.47 {
 do_execsql_test func4-1.48 {
   SELECT tointeger(9223372036854775807);
 } {9223372036854775807}
-do_execsql_test func4-1.49 {
-  SELECT tointeger(9223372036854775807 + 1);
-} {{}}
-do_execsql_test func4-1.50 {
-  SELECT tointeger(9223372036854775808 - 1);
-} {{}}
-do_execsql_test func4-1.51 {
-  SELECT tointeger(9223372036854775808);
-} {{}}
-do_execsql_test func4-1.52 {
-  SELECT tointeger(9223372036854775808 + 1);
-} {{}}
+if {$highPrecision(1)} {
+  do_execsql_test func4-1.49 {
+    SELECT tointeger(9223372036854775807 + 1);
+  } {{}}
+  do_execsql_test func4-1.50 {
+    SELECT tointeger(9223372036854775808 - 1);
+  } {{}}
+  do_execsql_test func4-1.51 {
+    SELECT tointeger(9223372036854775808);
+  } {{}}
+  do_execsql_test func4-1.52 {
+    SELECT tointeger(9223372036854775808 + 1);
+  } {{}}
+}
 do_execsql_test func4-1.53 {
   SELECT tointeger(18446744073709551616 - 1);
 } {{}}
@@ -187,7 +194,7 @@ do_execsql_test func4-1.55 {
 } {{}}
 
 ifcapable floatingpoint {
-  set highPrecision [expr \
+  set highPrecision(2) [expr \
       {[memdbsql {SELECT toreal(-9223372036854775808 + 1);}] eq {{}}}]
 
   do_execsql_test func4-2.1 {
@@ -262,7 +269,7 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.24 {
     SELECT toreal(-9223372036854775808);
   } {-9.223372036854776e+18}
-  if {$highPrecision} {
+  if {$highPrecision(2)} {
     do_execsql_test func4-2.25 {
       SELECT toreal(-9223372036854775808 + 1);
     } {{}}
@@ -270,7 +277,7 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.26 {
     SELECT toreal(-9223372036854775807 - 1);
   } {-9.223372036854776e+18}
-  if {$highPrecision} {
+  if {$highPrecision(2)} {
     do_execsql_test func4-2.27 {
       SELECT toreal(-9223372036854775807);
     } {{}}
@@ -296,13 +303,15 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.34 {
     SELECT toreal(2147483647 + 1);
   } {2147483648.0}
-  if {$highPrecision} {
+  if {$highPrecision(2)} {
     do_execsql_test func4-2.35 {
       SELECT toreal(9223372036854775807 - 1);
     } {{}}
-    do_execsql_test func4-2.36 {
-      SELECT toreal(9223372036854775807);
-    } {{}}
+    if {$highPrecision(1)} {
+      do_execsql_test func4-2.36 {
+        SELECT toreal(9223372036854775807);
+      } {{}}
+    }
   }
   do_execsql_test func4-2.37 {
     SELECT toreal(9223372036854775807 + 1);
@@ -331,7 +340,7 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.45 {
     SELECT toreal(9007199254740992);
   } {9007199254740992.0}
-  if {$highPrecision} {
+  if {$highPrecision(2)} {
     do_execsql_test func4-2.46 {
       SELECT toreal(9007199254740992 + 1);
     } {{}}
@@ -342,12 +351,14 @@ ifcapable floatingpoint {
   do_execsql_test func4-2.48 {
     SELECT toreal(tointeger(9223372036854775808) - 1);
   } {{}}
-  do_execsql_test func4-2.49 {
-    SELECT toreal(tointeger(9223372036854775808));
-  } {{}}
-  do_execsql_test func4-2.50 {
-    SELECT toreal(tointeger(9223372036854775808) + 1);
-  } {{}}
+  if {$highPrecision(1)} {
+    do_execsql_test func4-2.49 {
+      SELECT toreal(tointeger(9223372036854775808));
+    } {{}}
+    do_execsql_test func4-2.50 {
+      SELECT toreal(tointeger(9223372036854775808) + 1);
+    } {{}}
+  }
   do_execsql_test func4-2.51 {
     SELECT toreal(tointeger(18446744073709551616) - 1);
   } {{}}
@@ -450,11 +461,13 @@ ifcapable check {
       INSERT INTO t1 (x) VALUES ('-9223372036854775809');
     }
   } {1 {constraint failed}}
-  do_test func4-3.19 {
-    catchsql {
-      INSERT INTO t1 (x) VALUES (9223372036854775808);
-    }
-  } {1 {constraint failed}}
+  if {$highPrecision(1)} {
+    do_test func4-3.19 {
+      catchsql {
+        INSERT INTO t1 (x) VALUES (9223372036854775808);
+      }
+    } {1 {constraint failed}}
+  }
   do_execsql_test func4-3.20 {
     SELECT x FROM t1 ORDER BY x;
   } {1234 1234 1234}
@@ -563,7 +576,7 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.7 {
     SELECT tointeger(toreal(-9223372036854775808));
   } {-9223372036854775808}
-  if {$highPrecision} {
+  if {$highPrecision(2)} {
     do_execsql_test func4-5.8 {
       SELECT tointeger(toreal(-9223372036854775808 + 1));
     } {{}}
@@ -589,12 +602,14 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.15 {
     SELECT tointeger(toreal(9223372036854775807 - 1));
   } {{}}
-  do_execsql_test func4-5.16 {
-    SELECT tointeger(toreal(9223372036854775807));
-  } {{}}
-  do_execsql_test func4-5.17 {
-    SELECT tointeger(toreal(9223372036854775807 + 1));
-  } {{}}
+  if {$highPrecision(1)} {
+    do_execsql_test func4-5.16 {
+      SELECT tointeger(toreal(9223372036854775807));
+    } {{}}
+    do_execsql_test func4-5.17 {
+      SELECT tointeger(toreal(9223372036854775807 + 1));
+    } {{}}
+  }
   do_execsql_test func4-5.18 {
     SELECT tointeger(toreal(4503599627370496 - 1));
   } {4503599627370495}
@@ -610,7 +625,7 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.22 {
     SELECT tointeger(toreal(9007199254740992));
   } {9007199254740992}
-  if {$highPrecision} {
+  if {$highPrecision(2)} {
     do_execsql_test func4-5.23 {
       SELECT tointeger(toreal(9007199254740992 + 1));
     } {{}}
@@ -618,15 +633,17 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.24 {
     SELECT tointeger(toreal(9007199254740992 + 2));
   } {9007199254740994}
-  do_execsql_test func4-5.25 {
-    SELECT tointeger(toreal(9223372036854775808 - 1));
-  } {{}}
-  do_execsql_test func4-5.26 {
-    SELECT tointeger(toreal(9223372036854775808));
-  } {{}}
-  do_execsql_test func4-5.27 {
-    SELECT tointeger(toreal(9223372036854775808 + 1));
-  } {{}}
+  if {$highPrecision(1)} {
+    do_execsql_test func4-5.25 {
+      SELECT tointeger(toreal(9223372036854775808 - 1));
+    } {{}}
+    do_execsql_test func4-5.26 {
+      SELECT tointeger(toreal(9223372036854775808));
+    } {{}}
+    do_execsql_test func4-5.27 {
+      SELECT tointeger(toreal(9223372036854775808 + 1));
+    } {{}}
+  }
   do_execsql_test func4-5.28 {
     SELECT tointeger(toreal(18446744073709551616 - 1));
   } {{}}
@@ -636,6 +653,129 @@ ifcapable floatingpoint {
   do_execsql_test func4-5.30 {
     SELECT tointeger(toreal(18446744073709551616 + 1));
   } {{}}
+}
+
+for {set i 0} {$i < 10} {incr i} {
+  if {$i == 8} continue
+  do_execsql_test func4-6.1.$i.1 [subst {
+    SELECT tointeger(x'[string repeat 01 $i]');
+  }] {{}}
+  ifcapable floatingpoint {
+    do_execsql_test func4-6.1.$i.2 [subst {
+      SELECT toreal(x'[string repeat 01 $i]');
+    }] {{}}
+  }
+}
+
+proc swapHexBytes { value } {
+  if {[string length $value] % 2 != 0} {
+    error "value \"$value\" must have an even number of characters"
+  }
+  if {![string is xdigit -strict $value]} then {
+    error "value \"$value\" must contain only hexadecimal digits"
+  }
+  join [lreverse [regexp -all -inline {.{2}} $value]] ""
+}
+
+proc swapIntegerHexBytes { value } {
+  if {![info exists ::tcl_platform(byteOrder)] || \
+      $::tcl_platform(byteOrder) eq "littleEndian"} {
+    return $value
+  }
+  return [swapHexBytes $value]
+}
+
+proc swapDoubleHexBytes { value } {
+  if {![info exists ::tcl_platform(byteOrder)] || \
+      $::tcl_platform(byteOrder) ne "littleEndian"} {
+    return $value
+  }
+  return [swapHexBytes $value]
+}
+
+do_execsql_test func4-6.2.1 [subst {
+  SELECT tointeger(x'[swapIntegerHexBytes 0102030405060708]');
+}] {578437695752307201}
+do_execsql_test func4-6.2.2 [subst {
+  SELECT tointeger(x'[swapIntegerHexBytes 0807060504030201]');
+}] {72623859790382856}
+
+ifcapable floatingpoint {
+  do_execsql_test func4-6.3.1 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes ffefffffffffffff]');
+  }] {-1.7976931348623157e+308}
+  do_execsql_test func4-6.3.2 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 8010000000000000]');
+  }] {-2.2250738585072014e-308}
+  do_execsql_test func4-6.3.3 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes c000000000000000]');
+  }] {-2.0}
+  do_execsql_test func4-6.3.4 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes bff0000000000000]');
+  }] {-1.0}
+  do_execsql_test func4-6.3.5 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 8000000000000000]');
+  }] {-0.0}
+  do_execsql_test func4-6.3.6 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 0000000000000000]');
+  }] {0.0}
+  do_execsql_test func4-6.3.7 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 3ff0000000000000]');
+  }] {1.0}
+  do_execsql_test func4-6.3.8 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 4000000000000000]');
+  }] {2.0}
+  do_execsql_test func4-6.3.9 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 0010000000000000]');
+  }] {2.2250738585072014e-308}
+  do_execsql_test func4-6.3.10 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 7fefffffffffffff]');
+  }] {1.7976931348623157e+308}
+  do_execsql_test func4-6.3.11 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 8000000000000001]');
+  }] {-5e-324}
+  do_execsql_test func4-6.3.12 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 800fffffffffffff]');
+  }] {-2.225073858507201e-308}
+  do_execsql_test func4-6.3.13 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 0000000000000001]');
+  }] {5e-324}
+  do_execsql_test func4-6.3.14 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 000fffffffffffff]');
+  }] {2.225073858507201e-308}
+  do_execsql_test func4-6.3.15 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes fff0000000000000]');
+  }] {-Inf}
+  do_execsql_test func4-6.3.16 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 7ff0000000000000]');
+  }] {Inf}
+  do_execsql_test func4-6.3.17 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes fff8000000000000]');
+  }] {{}}
+  do_execsql_test func4-6.3.18 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes fff0000000000001]');
+  }] {{}}
+  do_execsql_test func4-6.3.19 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes fff7ffffffffffff]');
+  }] {{}}
+  do_execsql_test func4-6.3.20 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 7ff0000000000001]');
+  }] {{}}
+  do_execsql_test func4-6.3.21 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 7ff7ffffffffffff]');
+  }] {{}}
+  do_execsql_test func4-6.3.22 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes fff8000000000001]');
+  }] {{}}
+  do_execsql_test func4-6.3.23 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes ffffffffffffffff]');
+  }] {{}}
+  do_execsql_test func4-6.3.24 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 7ff8000000000000]');
+  }] {{}}
+  do_execsql_test func4-6.3.25 [subst {
+    SELECT toreal(x'[swapDoubleHexBytes 7fffffffffffffff]');
+  }] {{}}
 }
 
 set tcl_precision $saved_tcl_precision
