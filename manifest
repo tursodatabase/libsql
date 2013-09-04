@@ -1,5 +1,5 @@
-C Conditionally\sexclude\scode\sfrom\sanalyze.c\sthat\sis\snot\sused\sby\sSTAT3.
-D 2013-09-04T02:07:38.666
+C Fix\sout-of-order\svariable\sdeclaration.\s\sFix\sharmless\scompiler\swarning.
+D 2013-09-04T04:04:08.155
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c a492484869888fe5faf6f154e83cd1a8cb02d7ea
+F src/analyze.c 3f1c87b00c52e49caa0a190528503fda8f26fc3a
 F src/attach.c fea00cab11c854646a27641a263f5876569a51f9
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -290,7 +290,7 @@ F src/vtab.c 165ce0e797c2cd23badb104c9f2ae9042d6d942c
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 1fe091c69412b9eddae05e160260781394b41631
+F src/where.c 95a351c94ecc9d6b4fa7f0e251ab480335b83ab8
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1109,7 +1109,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 91d2cfbc95c34c0040deb69106bb9f895abb94c0
-R de4c0b4db329755c881b794576ecab1d
-U drh
-Z 4998967182f8bfcd840ee000c0017287
+P a48948a170056dfb87541dd5eb2773094dec6f8a
+R 8eb1f582f1bc97c17449e31bd6792386
+U mistachkin
+Z 0184d76aee144da494741e51191a6949

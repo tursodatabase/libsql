@@ -524,7 +524,9 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   /* Zero the first nEqZero entries in the anEq[] array. */
   memset(pSample->anEq, 0, sizeof(tRowcnt)*nEqZero);
 
+#ifdef SQLITE_ENABLE_STAT4
  find_new_min:
+#endif
   if( p->nSample>=p->mxSample ){
     int iMin = -1;
     for(i=0; i<p->mxSample; i++){
