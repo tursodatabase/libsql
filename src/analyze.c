@@ -371,8 +371,7 @@ static void statInit(
 }
 static const FuncDef statInitFuncdef = {
   1+IsStat34,      /* nArg */
-  SQLITE_UTF8,     /* iPrefEnc */
-  0,               /* flags */
+  SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
   statInit,        /* xFunc */
@@ -668,8 +667,7 @@ static void statPush(
 }
 static const FuncDef statPushFuncdef = {
   2+IsStat34,      /* nArg */
-  SQLITE_UTF8,     /* iPrefEnc */
-  0,               /* flags */
+  SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
   statPush,        /* xFunc */
@@ -804,8 +802,7 @@ static void statGet(
 }
 static const FuncDef statGetFuncdef = {
   1+IsStat34,      /* nArg */
-  SQLITE_UTF8,     /* iPrefEnc */
-  0,               /* flags */
+  SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
   statGet,         /* xFunc */

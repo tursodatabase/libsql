@@ -1437,7 +1437,7 @@ case OP_Function: {
   MemSetTypeFlag(&ctx.s, MEM_Null);
 
   ctx.fErrorOrAux = 0;
-  if( ctx.pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
+  if( ctx.pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
     assert( pOp>aOp );
     assert( pOp[-1].p4type==P4_COLLSEQ );
     assert( pOp[-1].opcode==OP_CollSeq );
@@ -5437,7 +5437,7 @@ case OP_AggStep: {
   ctx.isError = 0;
   ctx.pColl = 0;
   ctx.skipFlag = 0;
-  if( ctx.pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
+  if( ctx.pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
     assert( pOp>p->aOp );
     assert( pOp[-1].p4type==P4_COLLSEQ );
     assert( pOp[-1].opcode==OP_CollSeq );

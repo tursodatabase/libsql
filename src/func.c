@@ -1554,7 +1554,7 @@ static void setLikeOptFlag(sqlite3 *db, const char *zName, u8 flagVal){
   pDef = sqlite3FindFunction(db, zName, sqlite3Strlen30(zName),
                              2, SQLITE_UTF8, 0);
   if( ALWAYS(pDef) ){
-    pDef->flags = flagVal;
+    pDef->funcFlags |= flagVal;
   }
 }
 
@@ -1598,7 +1598,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, 
                              sqlite3Strlen30(pExpr->u.zToken),
                              2, SQLITE_UTF8, 0);
-  if( NEVER(pDef==0) || (pDef->flags & SQLITE_FUNC_LIKE)==0 ){
+  if( NEVER(pDef==0) || (pDef->funcFlags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }
 
@@ -1610,7 +1610,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   assert( (char*)&likeInfoAlt == (char*)&likeInfoAlt.matchAll );
   assert( &((char*)&likeInfoAlt)[1] == (char*)&likeInfoAlt.matchOne );
   assert( &((char*)&likeInfoAlt)[2] == (char*)&likeInfoAlt.matchSet );
-  *pIsNocase = (pDef->flags & SQLITE_FUNC_CASE)==0;
+  *pIsNocase = (pDef->funcFlags & SQLITE_FUNC_CASE)==0;
   return 1;
 }
 
@@ -1689,7 +1689,7 @@ void sqlite3RegisterGlobalFunctions(void){
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
     AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
  /* AGGREGATE(count,             0, 0, 0, countStep,       countFinalize  ), */
-    {0,SQLITE_UTF8,SQLITE_FUNC_COUNT,0,0,0,countStep,countFinalize,"count",0,0},
+    {0,SQLITE_UTF8|SQLITE_FUNC_COUNT,0,0,0,countStep,countFinalize,"count",0,0},
     AGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
     AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize),
     AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize),

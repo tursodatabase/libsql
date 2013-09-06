@@ -1065,8 +1065,7 @@ struct sqlite3 {
 */
 struct FuncDef {
   i16 nArg;            /* Number of arguments.  -1 means unlimited */
-  u8 iPrefEnc;         /* Preferred text encoding (SQLITE_UTF8, 16LE, 16BE) */
-  u8 flags;            /* Some combination of SQLITE_FUNC_* */
+  u16 funcFlags;       /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
@@ -1102,14 +1101,16 @@ struct FuncDestructor {
 ** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  There
 ** are assert() statements in the code to verify this.
 */
-#define SQLITE_FUNC_LIKE     0x01 /* Candidate for the LIKE optimization */
-#define SQLITE_FUNC_CASE     0x02 /* Case-sensitive LIKE-type function */
-#define SQLITE_FUNC_EPHEM    0x04 /* Ephemeral.  Delete with VDBE */
-#define SQLITE_FUNC_NEEDCOLL 0x08 /* sqlite3GetFuncCollSeq() might be called */
-#define SQLITE_FUNC_COUNT    0x10 /* Built-in count(*) aggregate */
-#define SQLITE_FUNC_COALESCE 0x20 /* Built-in coalesce() or ifnull() function */
-#define SQLITE_FUNC_LENGTH   0x40 /* Built-in length() function */
-#define SQLITE_FUNC_TYPEOF   0x80 /* Built-in typeof() function */
+#define SQLITE_FUNC_ENCMASK  0x003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
+#define SQLITE_FUNC_LIKE     0x004 /* Candidate for the LIKE optimization */
+#define SQLITE_FUNC_CASE     0x008 /* Case-sensitive LIKE-type function */
+#define SQLITE_FUNC_EPHEM    0x010 /* Ephemeral.  Delete with VDBE */
+#define SQLITE_FUNC_NEEDCOLL 0x020 /* sqlite3GetFuncCollSeq() might be called */
+#define SQLITE_FUNC_LENGTH   0x040 /* Built-in length() function */
+#define SQLITE_FUNC_TYPEOF   0x080 /* Built-in typeof() function */
+#define SQLITE_FUNC_COUNT    0x100 /* Built-in count(*) aggregate */
+#define SQLITE_FUNC_COALESCE 0x200 /* Built-in coalesce() or ifnull() */
+#define SQLITE_FUNC_UNLIKELY 0x400 /* Built-in unlikely() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1137,18 +1138,18 @@ struct FuncDestructor {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, (bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
-  {nArg, SQLITE_UTF8, (bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
+  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, bNC*SQLITE_FUNC_NEEDCOLL, \
+  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    pArg, 0, xFunc, 0, 0, #zName, 0, 0}
 #define LIKEFUNC(zName, nArg, arg, flags) \
-  {nArg, SQLITE_UTF8, flags, (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
+  {nArg, SQLITE_UTF8|flags, (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
-  {nArg, SQLITE_UTF8, nc*SQLITE_FUNC_NEEDCOLL, \
+  {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
 
 /*

@@ -1013,7 +1013,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   memcpy(pNew->zName, pDef->zName, sqlite3Strlen30(pDef->zName)+1);
   pNew->xFunc = xFunc;
   pNew->pUserData = pArg;
-  pNew->flags |= SQLITE_FUNC_EPHEM;
+  pNew->funcFlags |= SQLITE_FUNC_EPHEM;
   return pNew;
 }
 
