@@ -488,7 +488,7 @@ void sqlite3Update(
 
     /* Do FK constraint checks. */
     if( hasFK ){
-      sqlite3FkCheck(pParse, pTab, regOldRowid, 0);
+      sqlite3FkCheck(pParse, pTab, regOldRowid, 0, aXRef, chngRowid);
     }
 
     /* Delete the index entries associated with the current record.  */
@@ -502,7 +502,7 @@ void sqlite3Update(
     sqlite3VdbeJumpHere(v, j1);
 
     if( hasFK ){
-      sqlite3FkCheck(pParse, pTab, 0, regNewRowid);
+      sqlite3FkCheck(pParse, pTab, 0, regNewRowid, aXRef, chngRowid);
     }
   
     /* Insert the new index entries and the new record. */
@@ -512,7 +512,7 @@ void sqlite3Update(
     ** handle rows (possibly in other tables) that refer via a foreign key
     ** to the row just updated. */ 
     if( hasFK ){
-      sqlite3FkActions(pParse, pTab, pChanges, regOldRowid);
+      sqlite3FkActions(pParse, pTab, pChanges, regOldRowid, aXRef, chngRowid);
     }
   }
 

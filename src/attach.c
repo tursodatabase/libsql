@@ -379,8 +379,7 @@ attach_end:
 void sqlite3Detach(Parse *pParse, Expr *pDbname){
   static const FuncDef detach_func = {
     1,                /* nArg */
-    SQLITE_UTF8,      /* iPrefEnc */
-    0,                /* flags */
+    SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
     detachFunc,       /* xFunc */
@@ -401,8 +400,7 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
 void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
   static const FuncDef attach_func = {
     3,                /* nArg */
-    SQLITE_UTF8,      /* iPrefEnc */
-    0,                /* flags */
+    SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
     attachFunc,       /* xFunc */

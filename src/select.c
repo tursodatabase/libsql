@@ -3228,7 +3228,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
   if( IsVirtual(pTab) ) return 0;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
   if( NEVER(pAggInfo->nFunc==0) ) return 0;
-  if( (pAggInfo->aFunc[0].pFunc->flags&SQLITE_FUNC_COUNT)==0 ) return 0;
+  if( (pAggInfo->aFunc[0].pFunc->funcFlags&SQLITE_FUNC_COUNT)==0 ) return 0;
   if( pExpr->flags&EP_Distinct ) return 0;
 
   return pTab;
@@ -3825,7 +3825,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
       assert( nArg==1 );
       codeDistinct(pParse, pF->iDistinct, addrNext, 1, regAgg);
     }
-    if( pF->pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
+    if( pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
       CollSeq *pColl = 0;
       struct ExprList_item *pItem;
       int j;

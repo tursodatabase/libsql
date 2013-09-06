@@ -1304,6 +1304,8 @@ int sqlite3Stat4ProbeSetValue(
 ){
   int rc = SQLITE_OK;
   sqlite3_value *pVal = 0;
+  sqlite3 *db = pParse->db;
+
 
   struct ValueNewStat4Ctx alloc;
   alloc.pParse = pParse;
@@ -1315,7 +1317,7 @@ int sqlite3Stat4ProbeSetValue(
   pExpr = sqlite3ExprSkipCollate(pExpr);
 
   if( !pExpr ){
-    pVal = valueNew(pParse->db, &alloc);
+    pVal = valueNew(db, &alloc);
     if( pVal ){
       sqlite3VdbeMemSetNull((Mem*)pVal);
       *pbOk = 1;
@@ -1327,11 +1329,11 @@ int sqlite3Stat4ProbeSetValue(
     int iBindVar = pExpr->iColumn;
     sqlite3VdbeSetVarmask(pParse->pVdbe, iBindVar);
     if( (v = pParse->pReprepare)!=0 ){
-      pVal = valueNew(pParse->db, &alloc);
+      pVal = valueNew(db, &alloc);
       if( pVal ){
         rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iBindVar-1]);
         if( rc==SQLITE_OK ){
-          sqlite3ValueApplyAffinity(pVal, affinity, SQLITE_UTF8);
+          sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
         }
         pVal->db = pParse->db;
         *pbOk = 1;
@@ -1341,12 +1343,11 @@ int sqlite3Stat4ProbeSetValue(
       *pbOk = 0;
     }
   }else{
-    sqlite3 *db = pParse->db;
     rc = valueFromExpr(db, pExpr, ENC(db), affinity, &pVal, &alloc);
     *pbOk = (pVal!=0);
   }
 
-  assert( pVal==0 || pVal->db==pParse->db );
+  assert( pVal==0 || pVal->db==db );
   return rc;
 }
 

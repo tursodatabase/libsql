@@ -270,9 +270,9 @@ static int matchQuality(
   }
 
   /* Bonus points if the text encoding matches */
-  if( enc==p->iPrefEnc ){
+  if( enc==(p->funcFlags & SQLITE_FUNC_ENCMASK) ){
     match += 2;  /* Exact encoding match */
-  }else if( (enc & p->iPrefEnc & 2)!=0 ){
+  }else if( (enc & p->funcFlags & 2)!=0 ){
     match += 1;  /* Both are UTF16, but with different byte orders */
   }
 
@@ -406,7 +406,7 @@ FuncDef *sqlite3FindFunction(
       (pBest = sqlite3DbMallocZero(db, sizeof(*pBest)+nName+1))!=0 ){
     pBest->zName = (char *)&pBest[1];
     pBest->nArg = (u16)nArg;
-    pBest->iPrefEnc = enc;
+    pBest->funcFlags = enc;
     memcpy(pBest->zName, zName, nName);
     pBest->zName[nName] = 0;
     sqlite3FuncDefInsert(&db->aFunc, pBest);

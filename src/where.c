@@ -2421,12 +2421,15 @@ static void whereKeyStats(
   tRowcnt *aStat              /* OUT: stats written here */
 ){
   IndexSample *aSample = pIdx->aSample;
-  int iCol = pRec->nField-1;  /* Index of required stats in anEq[] etc. */
+  int iCol;                   /* Index of required stats in anEq[] etc. */
   int iMin = 0;               /* Smallest sample not yet tested */
   int i = pIdx->nSample;      /* Smallest sample larger than or equal to pRec */
   int iTest;                  /* Next sample to test */
   int res;                    /* Result of comparison operation */
 
+  assert( pRec!=0 || pParse->db->mallocFailed );
+  if( pRec==0 ) return;
+  iCol = pRec->nField - 1;
   assert( pIdx->nSample>0 );
   assert( pRec->nField>0 && iCol<pIdx->nSampleCol );
   do{
@@ -2546,14 +2549,14 @@ static int whereRangeScanEst(
   Index *p = pBuilder->pNew->u.btree.pIndex;
   int nEq = pBuilder->pNew->u.btree.nEq;
 
-  if( nEq==pBuilder->nRecValid
+  if( p->nSample>0
+   && nEq==pBuilder->nRecValid
    && nEq<p->nSampleCol
-   && p->nSample 
    && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
   ){
     UnpackedRecord *pRec = pBuilder->pRec;
     tRowcnt a[2];
-    u8 aff = p->pTable->aCol[p->aiColumn[0]].affinity;
+    u8 aff;
 
     /* Variable iLower will be set to the estimate of the number of rows in 
     ** the index that are less than the lower bound of the range query. The
@@ -2575,6 +2578,11 @@ static int whereRangeScanEst(
     tRowcnt iLower;
     tRowcnt iUpper;
 
+    if( nEq==p->nColumn ){
+      aff = SQLITE_AFF_INTEGER;
+    }else{
+      aff = p->pTable->aCol[p->aiColumn[nEq]].affinity;
+    }
     /* Determine iLower and iUpper using ($P) only. */
     if( nEq==0 ){
       iLower = 0;
@@ -4060,8 +4068,11 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
 ** Transfer content from the second pLoop into the first.
 */
 static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
-  if( whereLoopResize(db, pTo, pFrom->nLTerm) ) return SQLITE_NOMEM;
   whereLoopClearUnion(db, pTo);
+  if( whereLoopResize(db, pTo, pFrom->nLTerm) ){
+    memset(&pTo->u, 0, sizeof(pTo->u));
+    return SQLITE_NOMEM;
+  }
   memcpy(pTo, pFrom, WHERE_LOOP_XFER_SZ);
   memcpy(pTo->aLTerm, pFrom->aLTerm, pTo->nLTerm*sizeof(pTo->aLTerm[0]));
   if( pFrom->wsFlags & WHERE_VIRTUALTABLE ){
@@ -4175,11 +4186,11 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       ** all of (1) dependencies (2) setup-cost, (3) run-cost, and
       ** (4) number of output rows. */
       assert( p->rSetup==pTemplate->rSetup );
-      if( p->nLTerm<pTemplate->nLTerm
+      if( p->prereq==pTemplate->prereq
+       && p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & WHERE_INDEXED)!=0
        && (pTemplate->wsFlags & WHERE_INDEXED)!=0
        && p->u.btree.pIndex==pTemplate->u.btree.pIndex
-       && p->prereq==pTemplate->prereq
       ){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */
@@ -5904,7 +5915,7 @@ WhereInfo *sqlite3WhereBegin(
    && OptimizationEnabled(db, SQLITE_OmitNoopJoin)
   ){
     Bitmask tabUsed = exprListTableUsage(pMaskSet, pResultSet);
-    if( pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, pOrderBy);
+    if( sWLB.pOrderBy ) tabUsed |= exprListTableUsage(pMaskSet, sWLB.pOrderBy);
     while( pWInfo->nLevel>=2 ){
       WhereTerm *pTerm, *pEnd;
       pLoop = pWInfo->a[pWInfo->nLevel-1].pWLoop;

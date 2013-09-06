@@ -371,8 +371,7 @@ static void statInit(
 }
 static const FuncDef statInitFuncdef = {
   1+IsStat34,      /* nArg */
-  SQLITE_UTF8,     /* iPrefEnc */
-  0,               /* flags */
+  SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
   statInit,        /* xFunc */
@@ -383,24 +382,63 @@ static const FuncDef statInitFuncdef = {
   0                /* pDestructor */
 };
 
+#ifdef SQLITE_ENABLE_STAT4
+/*
+** pNew and pOld are both candidate non-periodic samples selected for 
+** the same column (pNew->iCol==pOld->iCol). Ignoring this column and 
+** considering only any trailing columns and the sample hash value, this
+** function returns true if sample pNew is to be preferred over pOld.
+** In other words, if we assume that the cardinalities of the selected
+** column for pNew and pOld are equal, is pNew to be preferred over pOld.
+**
+** This function assumes that for each argument sample, the contents of
+** the anEq[] array from pSample->anEq[pSample->iCol+1] onwards are valid. 
+*/
+static int sampleIsBetterPost(
+  Stat4Accum *pAccum, 
+  Stat4Sample *pNew, 
+  Stat4Sample *pOld
+){
+  int nCol = pAccum->nCol;
+  int i;
+  assert( pNew->iCol==pOld->iCol );
+  for(i=pNew->iCol+1; i<nCol; i++){
+    if( pNew->anEq[i]>pOld->anEq[i] ) return 1;
+    if( pNew->anEq[i]<pOld->anEq[i] ) return 0;
+  }
+  if( pNew->iHash>pOld->iHash ) return 1;
+  return 0;
+}
+#endif
+
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /*
 ** Return true if pNew is to be preferred over pOld.
+**
+** This function assumes that for each argument sample, the contents of
+** the anEq[] array from pSample->anEq[pSample->iCol] onwards are valid. 
 */
-static int sampleIsBetter(Stat4Sample *pNew, Stat4Sample *pOld){
+static int sampleIsBetter(
+  Stat4Accum *pAccum, 
+  Stat4Sample *pNew, 
+  Stat4Sample *pOld
+){
   tRowcnt nEqNew = pNew->anEq[pNew->iCol];
   tRowcnt nEqOld = pOld->anEq[pOld->iCol];
 
   assert( pOld->isPSample==0 && pNew->isPSample==0 );
   assert( IsStat4 || (pNew->iCol==0 && pOld->iCol==0) );
 
-  if( (nEqNew>nEqOld)
-   || (nEqNew==nEqOld && pNew->iCol<pOld->iCol)
-   || (nEqNew==nEqOld && pNew->iCol==pOld->iCol && pNew->iHash>pOld->iHash)
-  ){
-    return 1;
+  if( (nEqNew>nEqOld) ) return 1;
+#ifdef SQLITE_ENABLE_STAT4
+  if( nEqNew==nEqOld ){
+    if( pNew->iCol<pOld->iCol ) return 1;
+    return (pNew->iCol==pOld->iCol && sampleIsBetterPost(pAccum, pNew, pOld));
   }
   return 0;
+#else
+  return (nEqNew==nEqOld && pNew->iHash>pOld->iHash);
+#endif
 }
 
 /*
@@ -423,11 +461,10 @@ void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
 static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
   Stat4Sample *pSample;
   int i;
-  i64 iSeq;
-  int iPos;
 
   assert( IsStat4 || nEqZero==0 );
 
+#ifdef SQLITE_ENABLE_STAT4
   if( pNew->isPSample==0 ){
     Stat4Sample *pUpgrade = 0;
     assert( pNew->anEq[pNew->iCol]>0 );
@@ -441,8 +478,9 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
       Stat4Sample *pOld = &p->a[i];
       if( pOld->anEq[pNew->iCol]==0 ){
         if( pOld->isPSample ) return;
-        assert( sampleIsBetter(pNew, pOld) );
-        if( pUpgrade==0 || sampleIsBetter(pOld, pUpgrade) ){
+        assert( pOld->iCol>pNew->iCol );
+        assert( sampleIsBetter(p, pNew, pOld) );
+        if( pUpgrade==0 || sampleIsBetter(p, pOld, pUpgrade) ){
           pUpgrade = pOld;
         }
       }
@@ -453,6 +491,7 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
       goto find_new_min;
     }
   }
+#endif
 
   /* If necessary, remove sample iMin to make room for the new sample. */
   if( p->nSample>=p->mxSample ){
@@ -468,36 +507,30 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     p->nSample = p->mxSample-1;
   }
 
-  /* Figure out where in the a[] array the new sample should be inserted. */
-  iSeq = pNew->anLt[p->nCol-1];
-  for(iPos=p->nSample; iPos>0; iPos--){
-    if( iSeq>p->a[iPos-1].anLt[p->nCol-1] ) break;
-  }
+  /* The "rows less-than" for the rowid column must be greater than that
+  ** for the last sample in the p->a[] array. Otherwise, the samples would
+  ** be out of order. */
+#ifdef SQLITE_ENABLE_STAT4
+  assert( p->nSample==0 
+       || pNew->anLt[p->nCol-1] > p->a[p->nSample-1].anLt[p->nCol-1] );
+#endif
 
   /* Insert the new sample */
-  pSample = &p->a[iPos];
-  if( iPos!=p->nSample ){
-    Stat4Sample *pEnd = &p->a[p->nSample];
-    tRowcnt *anEq = pEnd->anEq;
-    tRowcnt *anLt = pEnd->anLt;
-    tRowcnt *anDLt = pEnd->anDLt;
-    memmove(&p->a[iPos], &p->a[iPos+1], (p->nSample-iPos)*sizeof(p->a[0]));
-    pSample->anEq = anEq;
-    pSample->anDLt = anDLt;
-    pSample->anLt = anLt;
-  }
-  p->nSample++;
+  pSample = &p->a[p->nSample];
   sampleCopy(p, pSample, pNew);
+  p->nSample++;
 
   /* Zero the first nEqZero entries in the anEq[] array. */
   memset(pSample->anEq, 0, sizeof(tRowcnt)*nEqZero);
 
+#ifdef SQLITE_ENABLE_STAT4
  find_new_min:
+#endif
   if( p->nSample>=p->mxSample ){
     int iMin = -1;
     for(i=0; i<p->mxSample; i++){
       if( p->a[i].isPSample ) continue;
-      if( iMin<0 || sampleIsBetter(&p->a[iMin], &p->a[i]) ){
+      if( iMin<0 || sampleIsBetter(p, &p->a[iMin], &p->a[i]) ){
         iMin = i;
       }
     }
@@ -521,9 +554,8 @@ static void samplePushPrevious(Stat4Accum *p, int iChng){
   ** into IndexSample.a[] at this point.  */
   for(i=(p->nCol-2); i>=iChng; i--){
     Stat4Sample *pBest = &p->aBest[i];
-    if( p->nSample<p->mxSample
-     || sampleIsBetter(pBest, &p->a[p->iMin])
-    ){
+    pBest->anEq[i] = p->current.anEq[i];
+    if( p->nSample<p->mxSample || sampleIsBetter(p, pBest, &p->a[p->iMin]) ){
       sampleInsert(p, pBest, i);
     }
   }
@@ -550,7 +582,9 @@ static void samplePushPrevious(Stat4Accum *p, int iChng){
     }else 
 
     /* Or if it is a non-periodic sample. Add it in this case too. */
-    if( p->nSample<p->mxSample || sampleIsBetter(&p->current, &p->a[p->iMin]) ){
+    if( p->nSample<p->mxSample 
+     || sampleIsBetter(p, &p->current, &p->a[p->iMin]) 
+    ){
       sampleInsert(p, &p->current, 0);
     }
   }
@@ -584,8 +618,7 @@ static void statPush(
   assert( iChng<p->nCol );
 
   if( p->nRow==0 ){
-    /* anEq[0] is only zero for the very first call to this function.  Do
-    ** appropriate initialization */
+    /* This is the first call to this function. Do initialization. */
     for(i=0; i<p->nCol; i++) p->current.anEq[i] = 1;
   }else{
     /* Second and subsequent calls get processed here */
@@ -625,7 +658,7 @@ static void statPush(
     /* Update the aBest[] array. */
     for(i=0; i<(p->nCol-1); i++){
       p->current.iCol = i;
-      if( i>=iChng || sampleIsBetter(&p->current, &p->aBest[i]) ){
+      if( i>=iChng || sampleIsBetterPost(p, &p->current, &p->aBest[i]) ){
         sampleCopy(p, &p->aBest[i], &p->current);
       }
     }
@@ -634,8 +667,7 @@ static void statPush(
 }
 static const FuncDef statPushFuncdef = {
   2+IsStat34,      /* nArg */
-  SQLITE_UTF8,     /* iPrefEnc */
-  0,               /* flags */
+  SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
   statPush,        /* xFunc */
@@ -770,8 +802,7 @@ static void statGet(
 }
 static const FuncDef statGetFuncdef = {
   1+IsStat34,      /* nArg */
-  SQLITE_UTF8,     /* iPrefEnc */
-  0,               /* flags */
+  SQLITE_UTF8,     /* funcFlags */
   0,               /* pUserData */
   0,               /* pNext */
   statGet,         /* xFunc */

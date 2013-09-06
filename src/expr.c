@@ -2634,7 +2634,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       ** IFNULL() functions.  This avoids unnecessary evalation of
       ** arguments past the first non-NULL argument.
       */
-      if( pDef->flags & SQLITE_FUNC_COALESCE ){
+      if( pDef->funcFlags & SQLITE_FUNC_COALESCE ){
         int endCoalesce = sqlite3VdbeMakeLabel(v);
         assert( nFarg>=2 );
         sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
@@ -2658,7 +2658,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         ** or OPFLAG_TYPEOFARG respectively, to avoid unnecessary data
         ** loading.
         */
-        if( (pDef->flags & (SQLITE_FUNC_LENGTH|SQLITE_FUNC_TYPEOF))!=0 ){
+        if( (pDef->funcFlags & (SQLITE_FUNC_LENGTH|SQLITE_FUNC_TYPEOF))!=0 ){
           u8 exprOp;
           assert( nFarg==1 );
           assert( pFarg->a[0].pExpr!=0 );
@@ -2666,8 +2666,9 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           if( exprOp==TK_COLUMN || exprOp==TK_AGG_COLUMN ){
             assert( SQLITE_FUNC_LENGTH==OPFLAG_LENGTHARG );
             assert( SQLITE_FUNC_TYPEOF==OPFLAG_TYPEOFARG );
-            testcase( pDef->flags==SQLITE_FUNC_LENGTH );
-            pFarg->a[0].pExpr->op2 = pDef->flags;
+            testcase( (pDef->funcFlags&~SQLITE_FUNC_ENCMASK)
+                       ==SQLITE_FUNC_LENGTH );
+            pFarg->a[0].pExpr->op2 = pDef->funcFlags&~SQLITE_FUNC_ENCMASK;
           }
         }
 
@@ -2700,11 +2701,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
           constMask |= (1<<i);
         }
-        if( (pDef->flags & SQLITE_FUNC_NEEDCOLL)!=0 && !pColl ){
+        if( (pDef->funcFlags & SQLITE_FUNC_NEEDCOLL)!=0 && !pColl ){
           pColl = sqlite3ExprCollSeq(pParse, pFarg->a[i].pExpr);
         }
       }
-      if( pDef->flags & SQLITE_FUNC_NEEDCOLL ){
+      if( pDef->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
       }
