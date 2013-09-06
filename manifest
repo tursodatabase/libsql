@@ -1,5 +1,5 @@
-C Initial\simplementation\sof\sthe\sunlikely()\sSQL\sfunction\sused\sas\sa\shint\sto\nthe\squery\splanner.
-D 2013-09-06T15:23:29.191
+C Enhance\sthe\splan\ssolver\sto\stake\sinto\saccount\sthe\snumber\sof\soutput\srows\swhen\ncomputing\sthe\sset\sof\spaths\sto\sretain\sfor\sthe\snext\scycle.
+D 2013-09-06T17:45:42.446
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/pragma.c 3aa3d8c8623b7b71c5b1bfb72dcc31fb0c25665f
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c 748618c3df7f37f2cd33c8834770b1e34f9b1185
+F src/resolve.c 8a2b6b9a6487e6e5a23b8de571131ccce62a1ce0
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9239586282bd146ec5843a2cde7d54cd7816cf78
 F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c c9f8ae51797bebfbfa49b9e5bede6fc142b44262
+F src/where.c ce16c689b9a199ffffd63745405214912e941e6f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1111,10 +1111,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 97b10e66e98e84755aa577f8da017bf1aea2056c
-R fcd7cd29a90a12a870cace66939b8877
-T *branch * unlikely-func
-T *sym-unlikely-func *
-T -sym-trunk *
+P 036fc37a034093a4c6fc190633bd41c2b7230d77
+R 3890bf7553bc1077426fb2f0e0259279
 U drh
-Z 2a30cee668099b5c8e0e2b447ac67feb
+Z 80a7432df4b498524e527dd8f32c240f

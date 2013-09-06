@@ -705,7 +705,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
               pNC->nErr++;
             }
           }else{
-            pExpr->iTable = 100;
+            pExpr->iTable = 75;
           }             
         }
       }

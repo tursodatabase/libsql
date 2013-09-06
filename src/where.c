@@ -5306,9 +5306,12 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   sqlite3 *db;              /* The database connection */
   int iLoop;                /* Loop counter over the terms of the join */
   int ii, jj;               /* Loop counters */
-  WhereCost rCost;             /* Cost of a path */
-  WhereCost mxCost = 0;        /* Maximum cost of a set of paths */
-  WhereCost rSortCost;         /* Cost to do a sort */
+  int mxI = 0;              /* Index of next entry to replace */
+  WhereCost rCost;          /* Cost of a path */
+  WhereCost nOut;           /* Number of outputs */
+  WhereCost mxCost = 0;     /* Maximum cost of a set of paths */
+  WhereCost mxOut = 0;      /* Maximum nOut value on the set of paths */
+  WhereCost rSortCost;      /* Cost to do a sort */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
   WherePath *aTo;           /* The nTo best paths at the current level */
@@ -5377,6 +5380,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         ** Compute its cost */
         rCost = whereCostAdd(pWLoop->rSetup,pWLoop->rRun + pFrom->nRow);
         rCost = whereCostAdd(rCost, pFrom->rCost);
+        nOut = pFrom->nRow + pWLoop->nOut;
         maskNew = pFrom->maskLoop | pWLoop->maskSelf;
         if( !isOrderedValid ){
           switch( wherePathSatisfiesOrderBy(pWInfo,
@@ -5399,17 +5403,23 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         }
         /* Check to see if pWLoop should be added to the mxChoice best so far */
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
-          if( pTo->maskLoop==maskNew && pTo->isOrderedValid==isOrderedValid ){
+          if( pTo->maskLoop==maskNew
+           && pTo->isOrderedValid==isOrderedValid
+           && ((pTo->rCost<=rCost && pTo->nRow<=nOut) ||
+                (pTo->rCost>=rCost && pTo->nRow>=nOut))
+          ){
             testcase( jj==nTo-1 );
             break;
           }
         }
         if( jj>=nTo ){
-          if( nTo>=mxChoice && rCost>=mxCost ){
+          if( nTo>=mxChoice 
+           && (rCost>mxCost || (rCost==mxCost && nOut>=mxOut))
+          ){
 #ifdef WHERETRACE_ENABLED
             if( sqlite3WhereTrace&0x4 ){
-              sqlite3DebugPrintf("Skip   %s cost=%3d order=%c\n",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost,
+              sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d order=%c\n",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                   isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
             }
 #endif
@@ -5421,26 +5431,26 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
             jj = nTo++;
           }else{
             /* New path replaces the prior worst to keep count below mxChoice */
-            for(jj=nTo-1; aTo[jj].rCost<mxCost; jj--){ assert(jj>0); }
+            jj = mxI;
           }
           pTo = &aTo[jj];
 #ifdef WHERETRACE_ENABLED
           if( sqlite3WhereTrace&0x4 ){
-            sqlite3DebugPrintf("New    %s cost=%-3d order=%c\n",
-                wherePathName(pFrom, iLoop, pWLoop), rCost,
+            sqlite3DebugPrintf("New    %s cost=%-3d,%3d order=%c\n",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                 isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
           }
 #endif
         }else{
-          if( pTo->rCost<=rCost ){
+          if( pTo->rCost<=rCost && pTo->nRow<=nOut ){
 #ifdef WHERETRACE_ENABLED
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
-                  "Skip   %s cost=%-3d order=%c",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost,
+                  "Skip   %s cost=%-3d,%3d order=%c",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                   isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
-              sqlite3DebugPrintf("   vs %s cost=%-3d order=%c\n",
-                  wherePathName(pTo, iLoop+1, 0), pTo->rCost,
+              sqlite3DebugPrintf("   vs %s cost=%-3d,%d order=%c\n",
+                  wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
                   pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
             }
 #endif
@@ -5452,11 +5462,11 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
 #ifdef WHERETRACE_ENABLED
           if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf(
-                "Update %s cost=%-3d order=%c",
-                wherePathName(pFrom, iLoop, pWLoop), rCost,
+                "Update %s cost=%-3d,%3d order=%c",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                 isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
-            sqlite3DebugPrintf("  was %s cost=%-3d order=%c\n",
-                wherePathName(pTo, iLoop+1, 0), pTo->rCost,
+            sqlite3DebugPrintf("  was %s cost=%-3d,%3d order=%c\n",
+                wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
                 pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
           }
 #endif
@@ -5464,16 +5474,22 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         /* pWLoop is a winner.  Add it to the set of best so far */
         pTo->maskLoop = pFrom->maskLoop | pWLoop->maskSelf;
         pTo->revLoop = revMask;
-        pTo->nRow = pFrom->nRow + pWLoop->nOut;
+        pTo->nRow = nOut;
         pTo->rCost = rCost;
         pTo->isOrderedValid = isOrderedValid;
         pTo->isOrdered = isOrdered;
         memcpy(pTo->aLoop, pFrom->aLoop, sizeof(WhereLoop*)*iLoop);
         pTo->aLoop[iLoop] = pWLoop;
         if( nTo>=mxChoice ){
+          mxI = 0;
           mxCost = aTo[0].rCost;
+          mxOut = aTo[0].nRow;
           for(jj=1, pTo=&aTo[1]; jj<mxChoice; jj++, pTo++){
-            if( pTo->rCost>mxCost ) mxCost = pTo->rCost;
+            if( pTo->rCost>mxCost || (pTo->rCost==mxCost && pTo->nRow>mxOut) ){
+              mxCost = pTo->rCost;
+              mxOut = pTo->nRow;
+              mxI = jj;
+            }
           }
         }
       }
@@ -5510,12 +5526,9 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   
   /* Find the lowest cost path.  pFrom will be left pointing to that path */
   pFrom = aFrom;
-  assert( nFrom==1 );
-#if 0 /* The following is needed if nFrom is ever more than 1 */
   for(ii=1; ii<nFrom; ii++){
     if( pFrom->rCost>aFrom[ii].rCost ) pFrom = &aFrom[ii];
   }
-#endif
   assert( pWInfo->nLevel==nLoop );
   /* Load the lowest cost path into pWInfo */
   for(iLoop=0; iLoop<nLoop; iLoop++){
