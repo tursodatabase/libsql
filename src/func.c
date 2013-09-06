@@ -966,8 +966,8 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 }
 
 /*
-** tointeger(X):  If X is any value (integer, double, or string) that can
-** be losslessly converted into an integer, then make the conversion and
+** tointeger(X):  If X is any value (integer, double, blob, or string) that
+** can be losslessly converted into an integer, then make the conversion and
 ** return the result.  Otherwise, return NULL.
 */
 static void tointegerFunc(
@@ -996,7 +996,16 @@ static void tointegerFunc(
         int nBlob = sqlite3_value_bytes(argv[0]);
         if( nBlob==sizeof(i64) ){
           i64 iVal;
-          memcpy(&iVal, zBlob, sizeof(i64));
+          if( SQLITE_BIGENDIAN ){
+            int i;
+            unsigned char *zBlobRev = contextMalloc(context, nBlob);
+            if( !zBlobRev ) break;
+            for(i=0; i<nBlob; i++) zBlobRev[i] = zBlob[nBlob-1-i];
+            memcpy(&iVal, zBlobRev, sizeof(i64));
+            sqlite3_free(zBlobRev);
+          }else{
+            memcpy(&iVal, zBlob, sizeof(i64));
+          }
           sqlite3_result_int64(context, iVal);
         }
       }
@@ -1023,8 +1032,9 @@ static void tointegerFunc(
 }
 
 /*
-** toreal(X):  If X can be losslessly converted into a real number, then
-** do so and return that real number.  Otherwise return NULL.
+** toreal(X): If X is any value (integer, double, blob, or string) that can
+** be losslessly converted into a real number, then do so and return that
+** real number.  Otherwise return NULL.
 */
 #if defined(_MSC_VER)
 #pragma optimize("", off)
@@ -1055,7 +1065,16 @@ static void torealFunc(
         int nBlob = sqlite3_value_bytes(argv[0]);
         if( nBlob==sizeof(double) ){
           double rVal;
-          memcpy(&rVal, zBlob, sizeof(double));
+          if( SQLITE_LITTLEENDIAN ){
+            int i;
+            unsigned char *zBlobRev = contextMalloc(context, nBlob);
+            if( !zBlobRev ) break;
+            for(i=0; i<nBlob; i++) zBlobRev[i] = zBlob[nBlob-1-i];
+            memcpy(&rVal, zBlobRev, sizeof(double));
+            sqlite3_free(zBlobRev);
+          }else{
+            memcpy(&rVal, zBlob, sizeof(double));
+          }
           sqlite3_result_double(context, rVal);
         }
       }

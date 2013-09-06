@@ -667,115 +667,89 @@ for {set i 0} {$i < 10} {incr i} {
   }
 }
 
-proc swapHexBytes { value } {
-  if {[string length $value] % 2 != 0} {
-    error "value \"$value\" must have an even number of characters"
-  }
-  if {![string is xdigit -strict $value]} then {
-    error "value \"$value\" must contain only hexadecimal digits"
-  }
-  join [lreverse [regexp -all -inline {.{2}} $value]] ""
-}
-
-proc swapIntegerHexBytes { value } {
-  if {![info exists ::tcl_platform(byteOrder)] || \
-      $::tcl_platform(byteOrder) eq "littleEndian"} {
-    return $value
-  }
-  return [swapHexBytes $value]
-}
-
-proc swapDoubleHexBytes { value } {
-  if {![info exists ::tcl_platform(byteOrder)] || \
-      $::tcl_platform(byteOrder) ne "littleEndian"} {
-    return $value
-  }
-  return [swapHexBytes $value]
-}
-
-do_execsql_test func4-6.2.1 [subst {
-  SELECT tointeger(x'[swapIntegerHexBytes 0102030405060708]');
-}] {578437695752307201}
-do_execsql_test func4-6.2.2 [subst {
-  SELECT tointeger(x'[swapIntegerHexBytes 0807060504030201]');
-}] {72623859790382856}
+do_execsql_test func4-6.2.1 {
+  SELECT tointeger(x'0102030405060708');
+} {578437695752307201}
+do_execsql_test func4-6.2.2 {
+  SELECT tointeger(x'0807060504030201');
+} {72623859790382856}
 
 ifcapable floatingpoint {
-  do_execsql_test func4-6.3.1 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes ffefffffffffffff]');
-  }] {-1.7976931348623157e+308}
-  do_execsql_test func4-6.3.2 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 8010000000000000]');
-  }] {-2.2250738585072014e-308}
-  do_execsql_test func4-6.3.3 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes c000000000000000]');
-  }] {-2.0}
-  do_execsql_test func4-6.3.4 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes bff0000000000000]');
-  }] {-1.0}
-  do_execsql_test func4-6.3.5 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 8000000000000000]');
-  }] {-0.0}
-  do_execsql_test func4-6.3.6 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 0000000000000000]');
-  }] {0.0}
-  do_execsql_test func4-6.3.7 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 3ff0000000000000]');
-  }] {1.0}
-  do_execsql_test func4-6.3.8 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 4000000000000000]');
-  }] {2.0}
-  do_execsql_test func4-6.3.9 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 0010000000000000]');
-  }] {2.2250738585072014e-308}
-  do_execsql_test func4-6.3.10 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 7fefffffffffffff]');
-  }] {1.7976931348623157e+308}
-  do_execsql_test func4-6.3.11 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 8000000000000001]');
-  }] {-5e-324}
-  do_execsql_test func4-6.3.12 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 800fffffffffffff]');
-  }] {-2.225073858507201e-308}
-  do_execsql_test func4-6.3.13 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 0000000000000001]');
-  }] {5e-324}
-  do_execsql_test func4-6.3.14 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 000fffffffffffff]');
-  }] {2.225073858507201e-308}
-  do_execsql_test func4-6.3.15 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes fff0000000000000]');
-  }] {-Inf}
-  do_execsql_test func4-6.3.16 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 7ff0000000000000]');
-  }] {Inf}
-  do_execsql_test func4-6.3.17 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes fff8000000000000]');
-  }] {{}}
-  do_execsql_test func4-6.3.18 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes fff0000000000001]');
-  }] {{}}
-  do_execsql_test func4-6.3.19 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes fff7ffffffffffff]');
-  }] {{}}
-  do_execsql_test func4-6.3.20 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 7ff0000000000001]');
-  }] {{}}
-  do_execsql_test func4-6.3.21 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 7ff7ffffffffffff]');
-  }] {{}}
-  do_execsql_test func4-6.3.22 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes fff8000000000001]');
-  }] {{}}
-  do_execsql_test func4-6.3.23 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes ffffffffffffffff]');
-  }] {{}}
-  do_execsql_test func4-6.3.24 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 7ff8000000000000]');
-  }] {{}}
-  do_execsql_test func4-6.3.25 [subst {
-    SELECT toreal(x'[swapDoubleHexBytes 7fffffffffffffff]');
-  }] {{}}
+  do_execsql_test func4-6.3.1 {
+    SELECT toreal(x'ffefffffffffffff');
+  } {-1.7976931348623157e+308}
+  do_execsql_test func4-6.3.2 {
+    SELECT toreal(x'8010000000000000');
+  } {-2.2250738585072014e-308}
+  do_execsql_test func4-6.3.3 {
+    SELECT toreal(x'c000000000000000');
+  } {-2.0}
+  do_execsql_test func4-6.3.4 {
+    SELECT toreal(x'bff0000000000000');
+  } {-1.0}
+  do_execsql_test func4-6.3.5 {
+    SELECT toreal(x'8000000000000000');
+  } {-0.0}
+  do_execsql_test func4-6.3.6 {
+    SELECT toreal(x'0000000000000000');
+  } {0.0}
+  do_execsql_test func4-6.3.7 {
+    SELECT toreal(x'3ff0000000000000');
+  } {1.0}
+  do_execsql_test func4-6.3.8 {
+    SELECT toreal(x'4000000000000000');
+  } {2.0}
+  do_execsql_test func4-6.3.9 {
+    SELECT toreal(x'0010000000000000');
+  } {2.2250738585072014e-308}
+  do_execsql_test func4-6.3.10 {
+    SELECT toreal(x'7fefffffffffffff');
+  } {1.7976931348623157e+308}
+  do_execsql_test func4-6.3.11 {
+    SELECT toreal(x'8000000000000001');
+  } {-5e-324}
+  do_execsql_test func4-6.3.12 {
+    SELECT toreal(x'800fffffffffffff');
+  } {-2.225073858507201e-308}
+  do_execsql_test func4-6.3.13 {
+    SELECT toreal(x'0000000000000001');
+  } {5e-324}
+  do_execsql_test func4-6.3.14 {
+    SELECT toreal(x'000fffffffffffff');
+  } {2.225073858507201e-308}
+  do_execsql_test func4-6.3.15 {
+    SELECT toreal(x'fff0000000000000');
+  } {-Inf}
+  do_execsql_test func4-6.3.16 {
+    SELECT toreal(x'7ff0000000000000');
+  } {Inf}
+  do_execsql_test func4-6.3.17 {
+    SELECT toreal(x'fff8000000000000');
+  } {{}}
+  do_execsql_test func4-6.3.18 {
+    SELECT toreal(x'fff0000000000001');
+  } {{}}
+  do_execsql_test func4-6.3.19 {
+    SELECT toreal(x'fff7ffffffffffff');
+  } {{}}
+  do_execsql_test func4-6.3.20 {
+    SELECT toreal(x'7ff0000000000001');
+  } {{}}
+  do_execsql_test func4-6.3.21 {
+    SELECT toreal(x'7ff7ffffffffffff');
+  } {{}}
+  do_execsql_test func4-6.3.22 {
+    SELECT toreal(x'fff8000000000001');
+  } {{}}
+  do_execsql_test func4-6.3.23 {
+    SELECT toreal(x'ffffffffffffffff');
+  } {{}}
+  do_execsql_test func4-6.3.24 {
+    SELECT toreal(x'7ff8000000000000');
+  } {{}}
+  do_execsql_test func4-6.3.25 {
+    SELECT toreal(x'7fffffffffffffff');
+  } {{}}
 }
 
 set tcl_precision $saved_tcl_precision

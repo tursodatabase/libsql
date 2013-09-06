@@ -1,5 +1,5 @@
-C Additional\stest\scases\sfor\sthe\stointeger()\sand\storeal()\sSQL\sfunctions\swhen\sconverting\sfrom\sa\sBLOB.
-D 2013-09-04T00:58:00.238
+C When\sconverting\sfrom\sa\sBLOB\svalue\sin\sthe\stointeger()\sand\storeal()\sSQL\sfunctions,\smake\ssure\sthat\sendianness\sof\sthe\smachine\sdoes\snot\smatter.
+D 2013-09-06T20:30:53.365
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/delete.c 2317c814866d9aa71fea16b3faf4fdd4d6a49b94
 F src/expr.c 4d89bd03a04fcdb5ff71d86b4e0cc7d3230797b8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 914a6bbd987d857c41ac9d244efa6641f36faadb
-F src/func.c ed294cd9437881cb7e2fbece2ea3389fc80c9fc7
+F src/func.c 1f24db7b0f19e28170ffa5d5887b842e4d9a48d9
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -562,7 +562,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test cd25cf605c5a345d038dc7b84232204c6a901c84
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
-F test/func4.test 488c8deabf6a282e47aa5fcde782c6657e7625bc
+F test/func4.test 142490571f2e7ee6c3c5a65f24cad3f8342c02a2
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -1110,7 +1110,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 2982725e12715fba425a46ae024f317f031b6a54
-R c95b9007057313a186c90146fdfe015a
+P e1814452faa698946ef77f06a42665277ee59cc1
+R 134c8f8ed3149356b5cf5475063a56e8
 U mistachkin
-Z e95b03ef226de372c05086e066827ed5
+Z b7db7274557533e42de3d2876d1a3f58
