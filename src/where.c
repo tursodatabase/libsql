@@ -4068,8 +4068,11 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
 ** Transfer content from the second pLoop into the first.
 */
 static int whereLoopXfer(sqlite3 *db, WhereLoop *pTo, WhereLoop *pFrom){
-  if( whereLoopResize(db, pTo, pFrom->nLTerm) ) return SQLITE_NOMEM;
   whereLoopClearUnion(db, pTo);
+  if( whereLoopResize(db, pTo, pFrom->nLTerm) ){
+    memset(&pTo->u, 0, sizeof(pTo->u));
+    return SQLITE_NOMEM;
+  }
   memcpy(pTo, pFrom, WHERE_LOOP_XFER_SZ);
   memcpy(pTo->aLTerm, pFrom->aLTerm, pTo->nLTerm*sizeof(pTo->aLTerm[0]));
   if( pFrom->wsFlags & WHERE_VIRTUALTABLE ){
