@@ -805,6 +805,7 @@ do_test 16.1 {
     ANALYZE;
   }
   set nByte2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
+puts "$nByte $nByte2"
 
   expr {$nByte2 > $nByte+950 && $nByte2 < $nByte+1050}
 } {1}
@@ -950,4 +951,3 @@ for {set i 0} {$i<16} {incr i} {
 }
 
 finish_test
-

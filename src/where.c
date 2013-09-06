@@ -52,12 +52,13 @@ typedef struct WhereOrSet WhereOrSet;
 ** Cost X is tracked as 10*log2(X) stored in a 16-bit integer.  The
 ** maximum cost for ordinary tables is 64*(2**63) which becomes 6900.
 ** (Virtual tables can return a larger cost, but let's assume they do not.)
-** So all costs can be stored in a 16-bit unsigned integer without risk
+** So all costs can be stored in a 16-bit integer without risk
 ** of overflow.
 **
 ** Costs are estimates, so no effort is made to compute 10*log2(X) exactly.
-** Instead, a close estimate is used.  Any value of X<=1 is stored as 0.
-** X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
+** Instead, a close estimate is used.  Any value of X=1 is stored as 0.
+** X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.  Negative values are allowed.
+** A WhereCost of -10 means 0.5.  WhereCost of -20 means 0.25.  And so forth.
 **
 ** The tool/wherecosttest.c source file implements a command-line program
 ** that will convert WhereCosts to integers, convert integers to WhereCosts
@@ -65,7 +66,7 @@ typedef struct WhereOrSet WhereOrSet;
 ** command-line program is a useful utility to have around when working with
 ** this module.
 */
-typedef unsigned short int WhereCost;
+typedef short int WhereCost;
 
 /*
 ** This object contains information needed to implement a single nested
@@ -268,6 +269,7 @@ struct WhereTerm {
     WhereOrInfo *pOrInfo;   /* Extra information if (eOperator & WO_OR)!=0 */
     WhereAndInfo *pAndInfo; /* Extra information if (eOperator& WO_AND)!=0 */
   } u;
+  WhereCost truthProb;    /* Probability of truth for this expression */
   u16 eOperator;          /* A WO_xx value describing <op> */
   u8 wtFlags;             /* TERM_xxx bit flags.  See below */
   u8 nChild;              /* Number of children that must disable us */
@@ -642,6 +644,9 @@ static void whereClauseClear(WhereClause *pWC){
   }
 }
 
+/* Forward declaration */
+static WhereCost whereCost(tRowcnt x);
+
 /*
 ** Add a single new WhereTerm entry to the WhereClause object pWC.
 ** The new WhereTerm object is constructed from Expr p and with wtFlags.
@@ -683,6 +688,11 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
+  if( p && ExprHasAnyProperty(p, EP_Hint) ){
+    pTerm->truthProb = whereCost(p->iTable) - 99;
+  }else{
+    pTerm->truthProb = -1;
+  }
   pTerm->pExpr = sqlite3ExprSkipCollate(p);
   pTerm->wtFlags = wtFlags;
   pTerm->pWC = pWC;
@@ -4258,6 +4268,32 @@ whereLoopInsert_noop:
 }
 
 /*
+** Adjust the WhereLoop.nOut value downward to account for terms of the
+** WHERE clause that reference the loop but which are not used by an
+** index.
+**
+** In the current implementation, the first extra WHERE clause term reduces
+** the number of output rows by a factor of 10 and each additional term
+** reduces the number of output rows by sqrt(2).
+*/
+static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop, int iCur){
+  WhereTerm *pTerm;
+  Bitmask notAllowed = ~(pLoop->prereq|pLoop->maskSelf);
+  int x = 0;
+  int i;
+  for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
+    if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) continue;
+    if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
+    if( (pTerm->prereqAll & notAllowed)!=0 ) continue;
+    x += pTerm->truthProb;
+  }
+  for(i=pLoop->nLTerm-1; i>=0; i--){
+    x -= pLoop->aLTerm[i]->truthProb;
+  }
+  if( x<0 ) pLoop->nOut += x;
+}
+
+/*
 ** We have so far matched pBuilder->pNew->u.btree.nEq terms of the index pIndex.
 ** Try to match one more.
 **
@@ -4423,7 +4459,7 @@ static int whereLoopAddBtreeIndex(
     }
     /* Step cost for each output row */
     pNew->rRun = whereCostAdd(pNew->rRun, pNew->nOut);
-    /* TBD: Adjust nOut for additional constraints */
+    whereLoopOutputAdjust(pBuilder->pWC, pNew, pSrc->iCursor);
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
      && pNew->u.btree.nEq<(pProbe->nColumn + (pProbe->zName!=0))
@@ -4627,7 +4663,9 @@ static int whereLoopAddBtree(
       **     index scans so that a covering index scan will be favored over
       **     a table scan. */
       pNew->rRun = whereCostAdd(rSize,rLogSize) + 16;
+      whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
       rc = whereLoopInsert(pBuilder, pNew);
+      pNew->nOut = rSize;
       if( rc ) break;
     }else{
       Bitmask m = pSrc->colUsed & ~columnsInIndex(pProbe);
@@ -4659,7 +4697,9 @@ static int whereLoopAddBtree(
           ** which we will simplify to just N*log2(N) */
           pNew->rRun = rSize + rLogSize;
         }
+        whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
         rc = whereLoopInsert(pBuilder, pNew);
+        pNew->nOut = rSize;
         if( rc ) break;
       }
     }

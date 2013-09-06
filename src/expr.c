@@ -89,8 +89,16 @@ Expr *sqlite3ExprAddCollateString(Parse *pParse, Expr *pExpr, const char *zC){
 ** an expression.
 */
 Expr *sqlite3ExprSkipCollate(Expr *pExpr){
-  while( pExpr && (pExpr->op==TK_COLLATE || pExpr->op==TK_AS) ){
-    pExpr = pExpr->pLeft;
+  while( pExpr ){
+    if( pExpr->op==TK_COLLATE || pExpr->op==TK_AS ){
+      pExpr = pExpr->pLeft;
+    }else if( ExprHasAnyProperty(pExpr, EP_Hint) ){
+      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+      assert( pExpr->x.pList->nExpr>0 );
+      pExpr = pExpr->x.pList->a[0].pExpr;
+    }else{
+      break;
+    }
   }
   return pExpr;
 }
@@ -2649,6 +2657,14 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         break;
       }
 
+      /* The UNLIKELY() function is a no-op.  The result is the value
+      ** of the first argument.
+      */
+      if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
+        assert( nFarg>=1 );
+        sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
+        break;
+      }
 
       if( pFarg ){
         r1 = sqlite3GetTempRange(pParse, nFarg);

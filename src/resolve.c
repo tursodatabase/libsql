@@ -570,6 +570,18 @@ static void notValidCheckConstraint(
 # define notValidCheckConstraint(P,N,M)
 #endif
 
+/*
+** Expression p should encode a floating point value between 1.0 and 0.0.
+** Return 1024 times this value.  Or return -1 if p is not a floating point
+** value between 1.0 and 0.0.
+*/
+static int exprProbability(Expr *p){
+  double r = -1.0;
+  if( p->op!=TK_FLOAT ) return -1;
+  sqlite3AtoF(p->u.zToken, &r, sqlite3Strlen30(p->u.zToken), SQLITE_UTF8);
+  if( r<0.0 || r>1.0 ) return -1;
+  return (int)(r*1000.0);
+}
 
 /*
 ** This routine is callback for sqlite3WalkExpr().
@@ -683,6 +695,19 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }else{
         is_agg = pDef->xFunc==0;
+        if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
+          ExprSetProperty(pExpr, EP_Hint);
+          if( n==2 ){
+            pExpr->iTable = exprProbability(pList->a[1].pExpr);
+            if( pExpr->iTable<0 ){
+              sqlite3ErrorMsg(pParse, "second parameter to unlikely() must be "
+                                      "between 0.0 and 1.0");
+              pNC->nErr++;
+            }
+          }else{
+            pExpr->iTable = 100;
+          }             
+        }
       }
 #ifndef SQLITE_OMIT_AUTHORIZATION
       if( pDef ){

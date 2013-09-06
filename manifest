@@ -1,5 +1,5 @@
-C Combine\sthe\sFuncDef.iPrefEnc\sand\sFuncDef.flags\sfields\sinto\sa\ssingle\nnew\sFuncDef.funcFlags\sfield.
-D 2013-09-06T13:10:12.385
+C Initial\simplementation\sof\sthe\sunlikely()\sSQL\sfunction\sused\sas\sa\shint\sto\nthe\squery\splanner.
+D 2013-09-06T15:23:29.191
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,10 +172,10 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
 F src/delete.c 2dc64ca360b7d7da481183ea920a813a0c203c97
-F src/expr.c 33ae44812d25799000dbcfd54bb2142b30cdd049
+F src/expr.c d0ed048b3b3c97fddbcccb8df43cc39b89e682c2
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c be866cd8c4fa6cae98ba33109578fd1a3311ee5b
-F src/func.c 7650d35651bb0ca903d24f4e5e944bfdaac9f152
+F src/func.c a297b1f3cf48dd483f5453b7155bc5e8f4ca1fc2
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -214,14 +214,14 @@ F src/pragma.c 3aa3d8c8623b7b71c5b1bfb72dcc31fb0c25665f
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c 9d53899cc6e1f4ec0b4632d07e97d57827bf63b9
+F src/resolve.c 748618c3df7f37f2cd33c8834770b1e34f9b1185
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9239586282bd146ec5843a2cde7d54cd7816cf78
 F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 32e959dba9899360ce4ae3cd6cc77b4a8df277e8
+F src/sqliteInt.h fd9005fab1cd063f5c4e76a2120efc080b43750a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 06c249a5137575ecf4d527e5a1dadb1087e4375c
+F src/where.c c9f8ae51797bebfbfa49b9e5bede6fc142b44262
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 4a48461d71a7b4a958570c580495a97e842e2700
+F test/analyze9.test e688c7289d3d33b7185e2c2afcac6a9f095563a3
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
@@ -1111,7 +1111,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a99a53b81e29c9514b85318bea028d1667e5f760
-R 8c10a6011eb52c6098e833ca515e6c77
+P 97b10e66e98e84755aa577f8da017bf1aea2056c
+R fcd7cd29a90a12a870cace66939b8877
+T *branch * unlikely-func
+T *sym-unlikely-func *
+T -sym-trunk *
 U drh
-Z c7e49c79214a66374f550dcdb7a70012
+Z 2a30cee668099b5c8e0e2b447ac67feb

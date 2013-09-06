@@ -1752,7 +1752,8 @@ struct Expr {
 #endif
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number
-                         ** TK_TRIGGER: 1 -> new, 0 -> old */
+                         ** TK_TRIGGER: 1 -> new, 0 -> old
+                         ** EP_Hint:  1000 times likelihood */
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
                          ** TK_VARIABLE: variable number (always >= 1). */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
@@ -1780,7 +1781,7 @@ struct Expr {
 #define EP_FixedDest  0x0200  /* Result needed in a specific register */
 #define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
 #define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Hint       0x1000  /* Not used */
+#define EP_Hint       0x1000  /* The UNLIKELY() SQL function */
 #define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
 #define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
