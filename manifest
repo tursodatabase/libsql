@@ -1,9 +1,9 @@
-C When\sconverting\sfrom\sa\sBLOB\svalue\sin\sthe\stointeger()\sand\storeal()\sSQL\sfunctions,\smake\ssure\sthat\sendianness\sof\sthe\smachine\sdoes\snot\smatter.
-D 2013-09-06T20:30:53.365
+C Add\sthe\sability\sto\sgenerate\sassembly\slisting\sfiles\susing\sthe\sMSVC\smakefile.
+D 2013-09-06T21:41:11.484
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a97163524522cd829cb91bcf900d07608e025502
+F Makefile.msc bf73c5d1f39a132901cc0a9aea88e724cd0340ad
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a8d1f6839521130dc73c5408cdd24bcfd791df34
@@ -1110,7 +1110,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P e1814452faa698946ef77f06a42665277ee59cc1
-R 134c8f8ed3149356b5cf5475063a56e8
+P 94c4cdc50d2753c859e494d53cebd09edd2e5663
+R 6b551c6dae3914b271288c70374acb57
 U mistachkin
-Z b7db7274557533e42de3d2876d1a3f58
+Z c5c612cbd00cecdaa9ef5d871289b004
