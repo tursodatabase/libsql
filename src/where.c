@@ -688,7 +688,9 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
-  if( p && ExprHasAnyProperty(p, EP_Hint) ){
+  if( wtFlags & TERM_VIRTUAL ){
+    pTerm->truthProb = 0;
+  }else if( p && ExprHasAnyProperty(p, EP_Hint) ){
     pTerm->truthProb = whereCost(p->iTable) - 99;
   }else{
     pTerm->truthProb = -1;
@@ -4198,9 +4200,9 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       assert( p->rSetup==pTemplate->rSetup );
       if( p->prereq==pTemplate->prereq
        && p->nLTerm<pTemplate->nLTerm
-       && (p->wsFlags & WHERE_INDEXED)!=0
-       && (pTemplate->wsFlags & WHERE_INDEXED)!=0
-       && p->u.btree.pIndex==pTemplate->u.btree.pIndex
+       && (p->wsFlags & pTemplate->wsFlags & WHERE_INDEXED)!=0
+       && (p->u.btree.pIndex==pTemplate->u.btree.pIndex
+           || p->u.btree.pIndex->nColumn>=pTemplate->u.btree.pIndex->nColumn)
       ){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */
@@ -4215,12 +4217,12 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rRun>=pTemplate->rRun
      && p->nOut>=pTemplate->nOut
-     && ALWAYS(p->rSetup>=pTemplate->rSetup) /* See SETUP-INVARIANT above */
     ){
       /* Overwrite an existing WhereLoop with a better one: one that is
       ** better at one of (1) dependencies, (2) setup-cost, (3) run-cost
       ** or (4) number of output rows, and is no worse in any of those
       ** categories. */
+      assert( p->rSetup>=pTemplate->rSetup ); /* SETUP-INVARIANT above */
       pNext = p->pNextLoop;
       break;
     }
@@ -4281,6 +4283,10 @@ static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop, int iCur){
   Bitmask notAllowed = ~(pLoop->prereq|pLoop->maskSelf);
   int x = 0;
   int i;
+
+  if( !OptimizationEnabled(pWC->pWInfo->pParse->db, SQLITE_AdjustOutEst) ){
+    return;
+  }
   for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
     if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) continue;
     if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
