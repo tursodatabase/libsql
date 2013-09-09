@@ -1,5 +1,5 @@
-C Combine\sthe\sFuncDef.iPrefEnc\sand\sFuncDef.flags\sfields\sinto\sa\ssingle\nnew\sFuncDef.funcFlags\sfield.
-D 2013-09-06T13:10:12.385
+C Make\ssure\sthat\sthe\stransitive\sconstraint\soptimization\sdoes\snot\scause\nWHERE\sclause\sterms\sto\sbe\sdisabled\sprematurely.\s\sWe\sare\sunable\sto\sfind\sa\stest\ncase\sthat\sfails\sbecause\sof\sthis,\sbut\sit\sseems\sprudent\sto\smake\sthis\npreventative\schange\snevertheless.
+D 2013-09-09T19:37:46.167
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 06c249a5137575ecf4d527e5a1dadb1087e4375c
+F src/where.c b5d59b899b85aa03800905ecdc0a17565d51a6ab
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1111,7 +1111,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a99a53b81e29c9514b85318bea028d1667e5f760
-R 8c10a6011eb52c6098e833ca515e6c77
+P 97b10e66e98e84755aa577f8da017bf1aea2056c
+R 73b0244a1b138f6550e626804843b7d8
 U drh
-Z c7e49c79214a66374f550dcdb7a70012
+Z 85372a45ca54a00c15dc226dffaae301

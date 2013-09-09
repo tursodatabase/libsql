@@ -106,6 +106,7 @@ struct WhereLevel {
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
   struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
+  Bitmask notReady;          /* FROM entries not usable at this level */
 };
 
 /*
@@ -2799,6 +2800,7 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   if( pTerm
       && (pTerm->wtFlags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
+      && (pLevel->notReady & pTerm->prereqAll)==0
   ){
     pTerm->wtFlags |= TERM_CODED;
     if( pTerm->iParent>=0 ){
@@ -3224,7 +3226,6 @@ static Bitmask codeOneLoopStart(
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
-  Bitmask newNotReady;      /* Return value */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -3234,6 +3235,7 @@ static Bitmask codeOneLoopStart(
   pLoop = pLevel->pWLoop;
   pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
   iCur = pTabItem->iCursor;
+  pLevel->notReady = notReady & ~getMask(&pWInfo->sMaskSet, iCur);
   bRev = (pWInfo->revMask>>iLevel)&1;
   omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
            && (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)==0;
@@ -3886,7 +3888,6 @@ static Bitmask codeOneLoopStart(
     pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
     pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
   }
-  newNotReady = notReady & ~getMask(&pWInfo->sMaskSet, iCur);
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
@@ -3896,7 +3897,7 @@ static Bitmask codeOneLoopStart(
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     testcase( pTerm->wtFlags & TERM_CODED );
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( (pTerm->prereqAll & newNotReady)!=0 ){
+    if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
       testcase( pWInfo->untestedTerms==0
                && (pWInfo->wctrlFlags & WHERE_ONETABLE_ONLY)!=0 );
       pWInfo->untestedTerms = 1;
@@ -3928,7 +3929,7 @@ static Bitmask codeOneLoopStart(
     if( pLevel->iLeftJoin ) continue;
     pE = pTerm->pExpr;
     assert( !ExprHasProperty(pE, EP_FromJoin) );
-    assert( (pTerm->prereqRight & newNotReady)!=0 );
+    assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
     pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady, WO_EQ|WO_IN, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
@@ -3956,7 +3957,7 @@ static Bitmask codeOneLoopStart(
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-      if( (pTerm->prereqAll & newNotReady)!=0 ){
+      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
         assert( pWInfo->untestedTerms );
         continue;
       }
@@ -3967,7 +3968,7 @@ static Bitmask codeOneLoopStart(
   }
   sqlite3ReleaseTempReg(pParse, iReleaseReg);
 
-  return newNotReady;
+  return pLevel->notReady;
 }
 
 #ifdef WHERETRACE_ENABLED
