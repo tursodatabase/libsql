@@ -244,8 +244,8 @@ do_execsql_test 4.3 {
     FROM sqlite_stat4
   ORDER BY rowid DESC LIMIT 2;
 } {
-  {2 1 1 1} {295 295 295} {120 121 124} {201 3} 
-  {5 3 1 1} {290 290 292} {119 119 121} {200 1}
+  {2 1 1 1} {295 296 296} {120 122 125} {201 4} 
+  {5 3 1 1} {290 290 290} {119 119 119} {200 1}
 }
 
 do_execsql_test 4.4 { SELECT count(DISTINCT c) FROM t1 WHERE c<201 } 120
@@ -806,7 +806,7 @@ do_test 16.1 {
   }
   set nByte2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
 
-  expr {$nByte2 > $nByte+950 && $nByte2 < $nByte+1050}
+  expr {$nByte2 > $nByte+900 && $nByte2 < $nByte+1050}
 } {1}
 
 #-------------------------------------------------------------------------
@@ -950,4 +950,3 @@ for {set i 0} {$i<16} {incr i} {
 }
 
 finish_test
-
