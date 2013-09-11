@@ -705,7 +705,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
               pNC->nErr++;
             }
           }else{
-            pExpr->iTable = 75;  /* TUNING:  Default 2nd arg to unlikely() is 0.075 */
+            pExpr->iTable = 62;  /* TUNING:  Default 2nd arg to unlikely() is 0.0625 */
           }             
         }
       }

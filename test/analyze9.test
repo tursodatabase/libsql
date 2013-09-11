@@ -805,7 +805,6 @@ do_test 16.1 {
     ANALYZE;
   }
   set nByte2 [lindex [sqlite3_db_status db SCHEMA_USED 0] 1]
-puts "$nByte $nByte2"
 
   expr {$nByte2 > $nByte+900 && $nByte2 < $nByte+1050}
 } {1}
@@ -846,7 +845,7 @@ do_eqp_test 17.3 {
 } {/USING INDEX i1/}
 
 do_execsql_test 17.4 {
-  CREATE INDEX i2 ON t1(c);
+  CREATE INDEX i2 ON t1(c, d);
   ANALYZE main.i2;
 }
 do_eqp_test 17.5 {

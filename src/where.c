@@ -2557,6 +2557,7 @@ static int whereRangeScanEst(
 ){
   int rc = SQLITE_OK;
   int nOut = (int)*pnOut;
+  WhereCost nNew;
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   Index *p = pBuilder->pNew->u.btree.pIndex;
@@ -2619,6 +2620,7 @@ static int whereRangeScanEst(
         whereKeyStats(pParse, p, pRec, 0, a);
         iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
         if( iNew>iLower ) iLower = iNew;
+        nOut--;
       }
     }
 
@@ -2633,12 +2635,12 @@ static int whereRangeScanEst(
         whereKeyStats(pParse, p, pRec, 1, a);
         iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
         if( iNew<iUpper ) iUpper = iNew;
+        nOut--;
       }
     }
 
     pBuilder->pRec = pRec;
     if( rc==SQLITE_OK ){
-      WhereCost nNew;
       if( iUpper>iLower ){
         nNew = whereCost(iUpper - iLower);
       }else{
@@ -2660,13 +2662,17 @@ static int whereRangeScanEst(
   assert( pLower || pUpper );
   /* TUNING:  Each inequality constraint reduces the search space 4-fold.
   ** A BETWEEN operator, therefore, reduces the search space 16-fold */
+  nNew = nOut;
   if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ){
-    nOut -= 20;        assert( 20==whereCost(4) );
+    nNew -= 20;        assert( 20==whereCost(4) );
+    nOut--;
   }
   if( pUpper ){
-    nOut -= 20;        assert( 20==whereCost(4) );
+    nNew -= 20;        assert( 20==whereCost(4) );
+    nOut--;
   }
-  if( nOut<10 ) nOut = 10;
+  if( nNew<10 ) nNew = 10;
+  if( nNew<nOut ) nOut = nNew;
   *pnOut = (WhereCost)nOut;
   return rc;
 }
@@ -4203,7 +4209,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
        && p->nLTerm<pTemplate->nLTerm
        && (p->wsFlags & pTemplate->wsFlags & WHERE_INDEXED)!=0
        && (p->u.btree.pIndex==pTemplate->u.btree.pIndex
-           || p->u.btree.pIndex->nColumn>=pTemplate->u.btree.pIndex->nColumn)
+          || pTemplate->rRun+p->nLTerm<=p->rRun+pTemplate->nLTerm)
       ){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */

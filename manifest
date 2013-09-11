@@ -1,5 +1,5 @@
-C Merge\strunk\sfixes\sinto\sthe\sunlikely-func\sbranch.
-D 2013-09-10T01:53:18.529
+C Tweaks\sto\sthe\sindex\sselection\slogic.
+D 2013-09-11T03:53:22.579
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/pragma.c 3aa3d8c8623b7b71c5b1bfb72dcc31fb0c25665f
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c 594725ba98cbe0e7de9da75c9915dc589d92bcd4
+F src/resolve.c 140c25a1aa91c460dee74a1b9e6aa5af5c98cbea
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9239586282bd146ec5843a2cde7d54cd7816cf78
 F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 05cf31505dd514d1e27075ae5ef23a23a3462231
+F src/where.c 6b9e2bc47dd1225d690a9c770f157693519b7391
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -308,7 +308,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test 19151da2c4e918905d2081b74ac5c4d47fc850ab
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test a2c83301160d4d367d4cedfa503fc0b20556c723
+F test/analyze9.test 1b9b7e9a096d1536f03d9ad7b72f638ef5669347
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
@@ -1111,7 +1111,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P b65dc53415f42d8402d0ec7f4bedf59d7b39b486 48ed8b565b84c8fa7898c2f9817c01f7e9c9182e
-R 57c422fa5d2c71518d0f8dca5acd5405
+P a51d751553b14aa26912c516f60727551deb8e60
+R de20fadcbd5549c633507180f3bc907b
 U drh
-Z b21635cdf1a77e86e14dc5bd6f2adf83
+Z c7a8a684bdbfede4a4651eea6f5c0b26
