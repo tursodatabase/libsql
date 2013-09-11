@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\stwo-argument\sunlikely()\sfunction\sto\slikelihood().\nAdd\stest\scases.
-D 2013-09-11T11:38:58.186
+C Additional\sunlikely()\stest\scases.\s\sLogic\stweaks\sto\ssupport\stest\scoverage.
+D 2013-09-11T14:34:58.423
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/pragma.c 3aa3d8c8623b7b71c5b1bfb72dcc31fb0c25665f
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c fde5b5c5be70edb1994e5fbef86f0e08fd267333
+F src/resolve.c 0e5b31ef428a76782c6ea8244d820f94f55c8110
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9239586282bd146ec5843a2cde7d54cd7816cf78
 F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 4fa43583d0a84b48f93b1e88f11adf2065be4e73
-F src/where.c 6b9e2bc47dd1225d690a9c770f157693519b7391
+F src/where.c 74beca71522c95dde151a379cef6badb168a49de
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1059,7 +1059,7 @@ F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
 F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
-F test/whereG.test fa2da659bd2c88314774dc5ff7c297c027eb92ba
+F test/whereG.test 5e6954236069469b939d3e0ccaf09dc38dc8320b
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
@@ -1112,7 +1112,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 52d52688644f635a50a60ff17b160f3affa8fa6c
-R 31254cf1d66f852ba95ac31e1e5bad22
+P 29a359b8d7f90e6fa2b28ce2a112284fd3870494
+R 93dee01cdf95f7285a0f10ba394514d9
 U drh
-Z 703ec90474ce0af750c28f3450c33fc9
+Z 1aa243de8c46c2869ae531db3feb1a86

@@ -691,7 +691,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   pTerm = &pWC->a[idx = pWC->nTerm++];
   if( wtFlags & TERM_VIRTUAL ){
     pTerm->truthProb = 0;
-  }else if( p && ExprHasAnyProperty(p, EP_Hint) ){
+  }else if( ALWAYS(p) && ExprHasAnyProperty(p, EP_Hint) ){
     pTerm->truthProb = whereCost(p->iTable) - 99;
   }else{
     pTerm->truthProb = -1;
