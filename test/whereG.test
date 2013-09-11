@@ -147,4 +147,24 @@ do_test whereG-2.3 {
   }
 } {1 {second argument to likelihood() must be a constant between 0.0 and 1.0}}
 
+# Commuting a term of the WHERE clause should not change the query plan
+#
+do_execsql_test whereG-3.0 {
+  CREATE TABLE a(a1 PRIMARY KEY, a2);
+  CREATE TABLE b(b1 PRIMARY KEY, b2);
+} {}
+do_eqp_test whereG-3.1 {
+  SELECT * FROM a, b WHERE b1=a1 AND a2=5;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+do_eqp_test whereG-3.2 {
+  SELECT * FROM a, b WHERE a1=b1 AND a2=5;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+do_eqp_test whereG-3.3 {
+  SELECT * FROM a, b WHERE a2=5 AND b1=a1;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+do_eqp_test whereG-3.4 {
+  SELECT * FROM a, b WHERE a2=5 AND a1=b1;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+
+
 finish_test

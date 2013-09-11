@@ -689,9 +689,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
-  if( wtFlags & TERM_VIRTUAL ){
-    pTerm->truthProb = 0;
-  }else if( ALWAYS(p) && ExprHasAnyProperty(p, EP_Hint) ){
+  if( p && ExprHasAnyProperty(p, EP_Hint) ){
     pTerm->truthProb = whereCost(p->iTable) - 99;
   }else{
     pTerm->truthProb = -1;
@@ -4286,24 +4284,24 @@ whereLoopInsert_noop:
 ** reduces the number of output rows by sqrt(2).
 */
 static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop, int iCur){
-  WhereTerm *pTerm;
+  WhereTerm *pTerm, *pX;
   Bitmask notAllowed = ~(pLoop->prereq|pLoop->maskSelf);
-  int x = 0;
-  int i;
+  int i, j;
 
   if( !OptimizationEnabled(pWC->pWInfo->pParse->db, SQLITE_AdjustOutEst) ){
     return;
   }
   for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
-    if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) continue;
+    if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) break;
     if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
     if( (pTerm->prereqAll & notAllowed)!=0 ) continue;
-    x += pTerm->truthProb;
+    for(j=pLoop->nLTerm-1; j>=0; j--){
+      pX = pLoop->aLTerm[j];
+      if( pX==pTerm ) break;
+      if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
+    }
+    if( j<0 ) pLoop->nOut += pTerm->truthProb;
   }
-  for(i=pLoop->nLTerm-1; i>=0; i--){
-    x -= pLoop->aLTerm[i]->truthProb;
-  }
-  if( x<0 ) pLoop->nOut += x;
 }
 
 /*
@@ -5426,9 +5424,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
           }
         }
         if( jj>=nTo ){
-          if( nTo>=mxChoice 
-           && (rCost>mxCost || (rCost==mxCost && nOut>=mxOut))
-          ){
+          if( nTo>=mxChoice && rCost>=mxCost ){
 #ifdef WHERETRACE_ENABLED
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d order=%c\n",
