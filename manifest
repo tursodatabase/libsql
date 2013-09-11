@@ -1,5 +1,5 @@
-C Deterministically\sinitialize\sthe\sPRNG\sused\sas\sa\stie-breaker\sin\sthe\sANALYZE\ncommand,\sso\sthat\sthe\sanalysis\sis\salways\sthe\ssame\sgiven\sthe\ssame\sdatabase.\nThis\ssimplifies\stesting.
-D 2013-09-10T01:41:25.676
+C Add\stest\scases\sto\scover\sTPC-H\sQ8.
+D 2013-09-11T14:57:11.714
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -964,6 +964,7 @@ F test/tkt3992.test f3e7d548ac26f763b47bc0f750da3d03c81071da
 F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
+F test/tpch01.test 8f4ac52f62f3e9f6bce0889105aecdf0275e331b
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
 F test/trace2.test e7a988fdd982cdec62f1f1f34b0360e6476d01a0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
@@ -1111,7 +1112,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P d6e361d7fb8013d616af91ef2c10038c97d1be5f
-R f0dc49c77588220f9d25d9d712edfe4a
+P 48ed8b565b84c8fa7898c2f9817c01f7e9c9182e
+R b9522deba37561644e51654b6b510026
 U drh
-Z e68c71d629e67be96bb05aa541d1ef71
+Z 8b5488a345e69fd6a7996d8b2149a33e
