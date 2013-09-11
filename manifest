@@ -1,5 +1,5 @@
-C Tweaks\sto\sthe\sindex\sselection\slogic.
-D 2013-09-11T03:53:22.579
+C Change\sthe\sname\sof\sthe\stwo-argument\sunlikely()\sfunction\sto\slikelihood().\nAdd\stest\scases.
+D 2013-09-11T11:38:58.186
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/delete.c 2dc64ca360b7d7da481183ea920a813a0c203c97
 F src/expr.c d0ed048b3b3c97fddbcccb8df43cc39b89e682c2
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c be866cd8c4fa6cae98ba33109578fd1a3311ee5b
-F src/func.c a297b1f3cf48dd483f5453b7155bc5e8f4ca1fc2
+F src/func.c 0aca17c8bc750fad4856e6098ed5e2597b641a75
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -214,7 +214,7 @@ F src/pragma.c 3aa3d8c8623b7b71c5b1bfb72dcc31fb0c25665f
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c 140c25a1aa91c460dee74a1b9e6aa5af5c98cbea
+F src/resolve.c fde5b5c5be70edb1994e5fbef86f0e08fd267333
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 9239586282bd146ec5843a2cde7d54cd7816cf78
 F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
@@ -1059,6 +1059,7 @@ F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
 F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
+F test/whereG.test fa2da659bd2c88314774dc5ff7c297c027eb92ba
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
@@ -1111,7 +1112,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P a51d751553b14aa26912c516f60727551deb8e60
-R de20fadcbd5549c633507180f3bc907b
+P 52d52688644f635a50a60ff17b160f3affa8fa6c
+R 31254cf1d66f852ba95ac31e1e5bad22
 U drh
-Z c7a8a684bdbfede4a4651eea6f5c0b26
+Z 703ec90474ce0af750c28f3450c33fc9
