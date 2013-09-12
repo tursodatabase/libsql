@@ -2463,7 +2463,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   if( memcmp(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr))!=0 ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
-    rc = SQLITE_BUSY;
+    rc = SQLITE_BUSY_SNAPSHOT;
   }
 
   return rc;

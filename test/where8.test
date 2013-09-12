@@ -212,8 +212,9 @@ do_test where8-3.4 {
 do_test where8-3.5 {
   execsql_status {
     SELECT a, d FROM t1, t2 WHERE (a = 2 OR a = 3) AND (d = a OR e = 'sixteen')
+     ORDER BY +a, +d;
   }
-} {2 2 2 4 3 3 3 4 0 0}
+} {2 2 2 4 3 3 3 4 0 1}
 
 do_test where8-3.6 {
   # The first part of the WHERE clause in this query, (a=2 OR a=3) is
@@ -233,7 +234,7 @@ do_test where8-3.7 {
     WHERE a = 2 AND (d = a OR e = 'sixteen')
     ORDER BY t1.rowid
   }
-} {2 2 2 4 0 0}
+} {/2 2 2 4 0 [01]/}
 do_test where8-3.8 {
   execsql_status {
     SELECT a, d 
@@ -268,7 +269,7 @@ do_test where8-3.12 {
   execsql_status {
     SELECT a, d FROM t1, t2 WHERE (a=d OR b=e) AND +a<5 ORDER BY a
   }
-} {1 1 2 2 3 3 4 2 4 4 0 0}
+} {1 1 2 2 3 3 4 2 4 4 9 0}
 do_test where8-3.13 {
   execsql_status {
     SELECT a, d FROM t1, t2 WHERE (a=d OR b=e) AND +a<5

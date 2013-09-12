@@ -125,8 +125,11 @@ do_test intpkey-1.12.1 {
   }
 } {4 one two}
 do_test intpkey-1.12.2 {
-  set sqlite_query_plan
-} {t1 *}
+  execsql {
+    EXPLAIN QUERY PLAN
+    SELECT * FROM t1 WHERE a==4;
+  }
+} {/SEARCH TABLE t1 /}
 
 # Try to insert a non-integer value into the primary key field.  This
 # should result in a data type mismatch.

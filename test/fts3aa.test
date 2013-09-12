@@ -224,4 +224,3 @@ do_catchsql_test fts3aa-7.5 {
 
 
 finish_test
-

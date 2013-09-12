@@ -211,12 +211,14 @@ void sqlite3_result_double(sqlite3_context *pCtx, double rVal){
 void sqlite3_result_error(sqlite3_context *pCtx, const char *z, int n){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = SQLITE_ERROR;
+  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF8, SQLITE_TRANSIENT);
 }
 #ifndef SQLITE_OMIT_UTF16
 void sqlite3_result_error16(sqlite3_context *pCtx, const void *z, int n){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = SQLITE_ERROR;
+  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, z, n, SQLITE_UTF16NATIVE, SQLITE_TRANSIENT);
 }
 #endif
@@ -280,6 +282,7 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode;
+  pCtx->fErrorOrAux = 1;
   if( pCtx->s.flags & MEM_Null ){
     sqlite3VdbeMemSetStr(&pCtx->s, sqlite3ErrStr(errCode), -1, 
                          SQLITE_UTF8, SQLITE_STATIC);
@@ -290,6 +293,7 @@ void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
 void sqlite3_result_error_toobig(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   pCtx->isError = SQLITE_TOOBIG;
+  pCtx->fErrorOrAux = 1;
   sqlite3VdbeMemSetStr(&pCtx->s, "string or blob too big", -1, 
                        SQLITE_UTF8, SQLITE_STATIC);
 }
@@ -299,6 +303,7 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
   sqlite3VdbeMemSetNull(&pCtx->s);
   pCtx->isError = SQLITE_NOMEM;
+  pCtx->fErrorOrAux = 1;
   pCtx->s.db->mallocFailed = 1;
 }
 
@@ -382,11 +387,13 @@ static int sqlite3Step(Vdbe *p){
     ** reset the interrupt flag.  This prevents a call to sqlite3_interrupt
     ** from interrupting a statement that has not yet started.
     */
-    if( db->activeVdbeCnt==0 ){
+    if( db->nVdbeActive==0 ){
       db->u1.isInterrupted = 0;
     }
 
-    assert( db->writeVdbeCnt>0 || db->autoCommit==0 || db->nDeferredCons==0 );
+    assert( db->nVdbeWrite>0 || db->autoCommit==0 
+        || (db->nDeferredCons==0 && db->nDeferredImmCons==0)
+    );
 
 #ifndef SQLITE_OMIT_TRACE
     if( db->xProfile && !db->init.busy ){
@@ -394,8 +401,9 @@ static int sqlite3Step(Vdbe *p){
     }
 #endif
 
-    db->activeVdbeCnt++;
-    if( p->readOnly==0 ) db->writeVdbeCnt++;
+    db->nVdbeActive++;
+    if( p->readOnly==0 ) db->nVdbeWrite++;
+    if( p->bIsReader ) db->nVdbeRead++;
     p->pc = 0;
   }
 #ifndef SQLITE_OMIT_EXPLAIN
@@ -404,9 +412,9 @@ static int sqlite3Step(Vdbe *p){
   }else
 #endif /* SQLITE_OMIT_EXPLAIN */
   {
-    db->vdbeExecCnt++;
+    db->nVdbeExec++;
     rc = sqlite3VdbeExec(p);
-    db->vdbeExecCnt--;
+    db->nVdbeExec--;
   }
 
 #ifndef SQLITE_OMIT_TRACE
@@ -581,14 +589,14 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
 ** the user-function defined by pCtx.
 */
 void *sqlite3_get_auxdata(sqlite3_context *pCtx, int iArg){
-  VdbeFunc *pVdbeFunc;
+  AuxData *pAuxData;
 
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
-  pVdbeFunc = pCtx->pVdbeFunc;
-  if( !pVdbeFunc || iArg>=pVdbeFunc->nAux || iArg<0 ){
-    return 0;
+  for(pAuxData=pCtx->pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
+    if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
   }
-  return pVdbeFunc->apAux[iArg].pAux;
+
+  return (pAuxData ? pAuxData->pAux : 0);
 }
 
 /*
@@ -602,29 +610,30 @@ void sqlite3_set_auxdata(
   void *pAux, 
   void (*xDelete)(void*)
 ){
-  struct AuxData *pAuxData;
-  VdbeFunc *pVdbeFunc;
-  if( iArg<0 ) goto failed;
+  AuxData *pAuxData;
+  Vdbe *pVdbe = pCtx->pVdbe;
 
   assert( sqlite3_mutex_held(pCtx->s.db->mutex) );
-  pVdbeFunc = pCtx->pVdbeFunc;
-  if( !pVdbeFunc || pVdbeFunc->nAux<=iArg ){
-    int nAux = (pVdbeFunc ? pVdbeFunc->nAux : 0);
-    int nMalloc = sizeof(VdbeFunc) + sizeof(struct AuxData)*iArg;
-    pVdbeFunc = sqlite3DbRealloc(pCtx->s.db, pVdbeFunc, nMalloc);
-    if( !pVdbeFunc ){
-      goto failed;
-    }
-    pCtx->pVdbeFunc = pVdbeFunc;
-    memset(&pVdbeFunc->apAux[nAux], 0, sizeof(struct AuxData)*(iArg+1-nAux));
-    pVdbeFunc->nAux = iArg+1;
-    pVdbeFunc->pFunc = pCtx->pFunc;
-  }
+  if( iArg<0 ) goto failed;
 
-  pAuxData = &pVdbeFunc->apAux[iArg];
-  if( pAuxData->pAux && pAuxData->xDelete ){
+  for(pAuxData=pVdbe->pAuxData; pAuxData; pAuxData=pAuxData->pNext){
+    if( pAuxData->iOp==pCtx->iOp && pAuxData->iArg==iArg ) break;
+  }
+  if( pAuxData==0 ){
+    pAuxData = sqlite3DbMallocZero(pVdbe->db, sizeof(AuxData));
+    if( !pAuxData ) goto failed;
+    pAuxData->iOp = pCtx->iOp;
+    pAuxData->iArg = iArg;
+    pAuxData->pNext = pVdbe->pAuxData;
+    pVdbe->pAuxData = pAuxData;
+    if( pCtx->fErrorOrAux==0 ){
+      pCtx->isError = 0;
+      pCtx->fErrorOrAux = 1;
+    }
+  }else if( pAuxData->xDelete ){
     pAuxData->xDelete(pAuxData->pAux);
   }
+
   pAuxData->pAux = pAux;
   pAuxData->xDelete = xDelete;
   return;
@@ -1289,7 +1298,7 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   Vdbe *pVdbe = (Vdbe*)pStmt;
-  int v = pVdbe->aCounter[op-1];
-  if( resetFlag ) pVdbe->aCounter[op-1] = 0;
-  return v;
+  u32 v = pVdbe->aCounter[op];
+  if( resetFlag ) pVdbe->aCounter[op] = 0;
+  return (int)v;
 }

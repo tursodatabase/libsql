@@ -66,14 +66,24 @@ proc cksort {sql} {
 
 # This procedure executes the SQL.  Then it appends to the result the
 # "sort" or "nosort" keyword (as in the cksort procedure above) then
-# it appends the ::sqlite_query_plan variable.
+# it appends the name of the table and index used.
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
   set data [execsql $sql]
   if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
-  return [concat $data $::sqlite_query_plan]
+  set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
+  # puts eqp=$eqp
+  foreach {a b c x} $eqp {
+    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all as tab idx]} {
+      lappend data $tab $idx
+    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+      lappend data $tab *
+    }
+  }
+  return $data   
 }
 
 
@@ -273,12 +283,12 @@ do_test where2-6.3 {
   queryplan {
     SELECT * FROM t1 WHERE w=99 OR w=100 OR 6=+w ORDER BY +w
   }
-} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 {}}
+} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 *}
 do_test where2-6.4 {
   queryplan {
     SELECT * FROM t1 WHERE w=99 OR +w=100 OR 6=w ORDER BY +w
   }
-} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 {}}
+} {6 2 49 51 99 6 10000 10006 100 6 10201 10207 sort t1 *}
 
 set ::idx {}
 ifcapable subquery {set ::idx i1zyx}
@@ -297,6 +307,8 @@ do_test where2-6.6 {
   }
 } [list 1 0 4 4 2 1 9 10 sort a i1w b $::idx]
 
+if {[permutation] != "no_optimization"} {
+
 # Ticket #2249.  Make sure the OR optimization is not attempted if
 # comparisons between columns of different affinities are needed.
 #
@@ -314,7 +326,7 @@ do_test where2-6.7 {
     --
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=b;
   }
-} {123 0123 nosort t2249b {} t2249a {}}
+} {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.9 {
   queryplan {
     -- The + operator removes affinity from the rhs.  No conversions
@@ -322,13 +334,13 @@ do_test where2-6.9 {
     --
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b;
   }
-} {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+} {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.9.2 {
   # The same thing but with the expression flipped around.
   queryplan {
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE +b=a
   }
-} {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+} {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.10 {
   queryplan {
     -- Use + on both sides of the comparison to disable indices
@@ -336,32 +348,32 @@ do_test where2-6.10 {
     --
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE +a=+b;
   }
-} {nosort t2249b {} t2249a {}}
+} {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11 {
   # This will not attempt the OR optimization because of the a=b
   # comparison.
   queryplan {
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=b OR a='hello';
   }
-} {123 0123 nosort t2249b {} t2249a {}}
+} {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11.2 {
   # Permutations of the expression terms.
   queryplan {
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE b=a OR a='hello';
   }
-} {123 0123 nosort t2249b {} t2249a {}}
+} {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11.3 {
   # Permutations of the expression terms.
   queryplan {
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE 'hello'=a OR b=a;
   }
-} {123 0123 nosort t2249b {} t2249a {}}
+} {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11.4 {
   # Permutations of the expression terms.
   queryplan {
     SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR b=a;
   }
-} {123 0123 nosort t2249b {} t2249a {}}
+} {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 ifcapable explain&&subquery {
   # These tests are not run if subquery support is not included in the
   # build. This is because these tests test the "a = 1 OR a = 2" to
@@ -375,7 +387,7 @@ ifcapable explain&&subquery {
     queryplan {
       SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b OR a='hello';
     }
-  } {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+  } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
   do_test where2-6.12.2 {
     # In this case, the +b disables the affinity conflict and allows
     # the OR optimization to be used again.  The result is now an empty
@@ -383,7 +395,7 @@ ifcapable explain&&subquery {
     queryplan {
       SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR +b=a;
     }
-  } {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+  } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
   do_test where2-6.12.3 {
     # In this case, the +b disables the affinity conflict and allows
     # the OR optimization to be used again.  The result is now an empty
@@ -391,14 +403,14 @@ ifcapable explain&&subquery {
     queryplan {
       SELECT * FROM t2249b CROSS JOIN t2249a WHERE +b=a OR a='hello';
     }
-  } {nosort t2249b {} {} sqlite_autoindex_t2249a_1}
+  } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
   do_test where2-6.13 {
     # The addition of +a on the second term disabled the OR optimization.
     # But we should still get the same empty-set result as in where2-6.9.
     queryplan {
       SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b OR +a='hello';
     }
-  } {nosort t2249b {} t2249a {}}
+  } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 }
 
 # Variations on the order of terms in a WHERE clause in order
@@ -407,7 +419,7 @@ do_test where2-6.20 {
   queryplan {
     SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a
   }
-} {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
+} {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
 ifcapable explain&&subquery {
   # These tests are not run if subquery support is not included in the
   # build. This is because these tests test the "a = 1 OR a = 2" to
@@ -418,17 +430,17 @@ ifcapable explain&&subquery {
     queryplan {
       SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a OR y.a='hello'
     }
-  } {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
+  } {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
   do_test where2-6.22 {
     queryplan {
       SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE y.a=x.a OR y.a='hello'
     }
-  } {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
+  } {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
   do_test where2-6.23 {
     queryplan {
       SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE y.a='hello' OR x.a=y.a
     }
-  } {0123 0123 nosort x {} {} sqlite_autoindex_t2249a_1}
+  } {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
 }
 
 # Unique queries (queries that are guaranteed to return only a single
@@ -463,6 +475,8 @@ do_test where2-7.4 {
     select * from t8, t9 where a=1 and y=3 order by b, x
   }
 } {1 2 3 2 3 nosort}
+
+} ;# if {[permutation] != "no_optimization"}
 
 # Ticket #1807.  Using IN constrains on multiple columns of
 # a multi-column index.
@@ -684,6 +698,19 @@ do_test where2-11.4 {
     SELECT d FROM t11 WHERE c=7 OR (a=1 AND b=2) ORDER BY d;
   }
 } {4 8 10}
+
+# Verify that the OR clause is used in an outer loop even when
+# the OR clause scores slightly better on an inner loop.
+if {[permutation] != "no_optimization"} {
+do_execsql_test where2-12.1 {
+  CREATE TABLE t12(x INTEGER PRIMARY KEY, y);
+  CREATE INDEX t12y ON t12(y);
+  EXPLAIN QUERY PLAN
+    SELECT a.x, b.x
+      FROM t12 AS a JOIN t12 AS b ON a.y=b.x
+     WHERE (b.x=$abc OR b.y=$abc);
+} {/.*SEARCH TABLE t12 AS b .*SEARCH TABLE t12 AS b .*/}
+}
 
 
 finish_test

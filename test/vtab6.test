@@ -561,12 +561,12 @@ do_test vtab6-11.4.1 {
   catchsql {
     SELECT a, b, c FROM ab NATURAL JOIN bc;
   }
-} {1 {table bc: xBestIndex returned an invalid plan}}
+} {1 {table ab: xBestIndex returned an invalid plan}}
 do_test vtab6-11.4.2 {
   catchsql {
     SELECT a, b, c FROM bc NATURAL JOIN ab;
   }
-} {1 {table ab: xBestIndex returned an invalid plan}}
+} {1 {table bc: xBestIndex returned an invalid plan}}
 
 unset ::echo_module_ignore_usable
 

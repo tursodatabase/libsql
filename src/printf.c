@@ -359,7 +359,7 @@ void sqlite3VXPrintf(
           nOut = precision + 10;
           zOut = zExtra = sqlite3Malloc( nOut );
           if( zOut==0 ){
-            pAccum->mallocFailed = 1;
+            pAccum->accError = STRACCUM_NOMEM;
             return;
           }
         }
@@ -468,10 +468,10 @@ void sqlite3VXPrintf(
         }else{
           e2 = exp;
         }
-        if( e2+precision+width > etBUFSIZE - 15 ){
-          bufpt = zExtra = sqlite3Malloc( e2+precision+width+15 );
+        if( MAX(e2,0)+precision+width > etBUFSIZE - 15 ){
+          bufpt = zExtra = sqlite3Malloc( MAX(e2,0)+precision+width+15 );
           if( bufpt==0 ){
-            pAccum->mallocFailed = 1;
+            pAccum->accError = STRACCUM_NOMEM;
             return;
           }
         }
@@ -606,7 +606,7 @@ void sqlite3VXPrintf(
         if( n>etBUFSIZE ){
           bufpt = zExtra = sqlite3Malloc( n );
           if( bufpt==0 ){
-            pAccum->mallocFailed = 1;
+            pAccum->accError = STRACCUM_NOMEM;
             return;
           }
         }else{
@@ -684,22 +684,20 @@ void sqlite3VXPrintf(
 */
 void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   assert( z!=0 || N==0 );
-  if( p->tooBig | p->mallocFailed ){
-    testcase(p->tooBig);
-    testcase(p->mallocFailed);
+  if( p->accError ){
+    testcase(p->accError==STRACCUM_TOOBIG);
+    testcase(p->accError==STRACCUM_NOMEM);
     return;
   }
   assert( p->zText!=0 || p->nChar==0 );
-  if( N<0 ){
+  if( N<=0 ){
+    if( N==0 || z[0]==0 ) return;
     N = sqlite3Strlen30(z);
-  }
-  if( N==0 || NEVER(z==0) ){
-    return;
   }
   if( p->nChar+N >= p->nAlloc ){
     char *zNew;
     if( !p->useMalloc ){
-      p->tooBig = 1;
+      p->accError = STRACCUM_TOOBIG;
       N = p->nAlloc - p->nChar - 1;
       if( N<=0 ){
         return;
@@ -710,7 +708,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
       szNew += N + 1;
       if( szNew > p->mxAlloc ){
         sqlite3StrAccumReset(p);
-        p->tooBig = 1;
+        p->accError = STRACCUM_TOOBIG;
         return;
       }else{
         p->nAlloc = (int)szNew;
@@ -724,7 +722,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
         p->zText = zNew;
       }else{
-        p->mallocFailed = 1;
+        p->accError = STRACCUM_NOMEM;
         sqlite3StrAccumReset(p);
         return;
       }
@@ -752,7 +750,7 @@ char *sqlite3StrAccumFinish(StrAccum *p){
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
       }else{
-        p->mallocFailed = 1;
+        p->accError = STRACCUM_NOMEM;
       }
     }
   }
@@ -783,8 +781,7 @@ void sqlite3StrAccumInit(StrAccum *p, char *zBase, int n, int mx){
   p->nAlloc = n;
   p->mxAlloc = mx;
   p->useMalloc = 1;
-  p->tooBig = 0;
-  p->mallocFailed = 0;
+  p->accError = 0;
 }
 
 /*
@@ -801,7 +798,7 @@ char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list ap){
   acc.db = db;
   sqlite3VXPrintf(&acc, 1, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
-  if( acc.mallocFailed ){
+  if( acc.accError==STRACCUM_NOMEM ){
     db->mallocFailed = 1;
   }
   return z;

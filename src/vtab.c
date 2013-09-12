@@ -810,10 +810,9 @@ static void callFinaliser(sqlite3 *db, int offset){
 ** array. Return the error code for the first error that occurs, or
 ** SQLITE_OK if all xSync operations are successful.
 **
-** Set *pzErrmsg to point to a buffer that should be released using 
-** sqlite3DbFree() containing an error message, if one is available.
+** If an error message is available, leave it in p->zErrMsg.
 */
-int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
+int sqlite3VtabSync(sqlite3 *db, Vdbe *p){
   int i;
   int rc = SQLITE_OK;
   VTable **aVTrans = db->aVTrans;
@@ -824,9 +823,7 @@ int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
     sqlite3_vtab *pVtab = aVTrans[i]->pVtab;
     if( pVtab && (x = pVtab->pModule->xSync)!=0 ){
       rc = x(pVtab);
-      sqlite3DbFree(db, *pzErrmsg);
-      *pzErrmsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
-      sqlite3_free(pVtab->zErrMsg);
+      sqlite3VtabImportErrmsg(p, pVtab);
     }
   }
   db->aVTrans = aVTrans;
@@ -1016,7 +1013,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   memcpy(pNew->zName, pDef->zName, sqlite3Strlen30(pDef->zName)+1);
   pNew->xFunc = xFunc;
   pNew->pUserData = pArg;
-  pNew->flags |= SQLITE_FUNC_EPHEM;
+  pNew->funcFlags |= SQLITE_FUNC_EPHEM;
   return pNew;
 }
 

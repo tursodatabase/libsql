@@ -359,7 +359,7 @@ foreach {tn uri error} "
 # EVIDENCE-OF: R-49793-28525 Setting the cache parameter to "private" is
 # equivalent to setting the SQLITE_OPEN_PRIVATECACHE bit.
 #
-# EVIDENCE-OF: R-19510-48080 If sqlite3_open_v2() is used and the
+# EVIDENCE-OF: R-31773-41793 If sqlite3_open_v2() is used and the
 # "cache" parameter is present in a URI filename, its value overrides
 # any behavior requested by setting SQLITE_OPEN_PRIVATECACHE or
 # SQLITE_OPEN_SHAREDCACHE flag.

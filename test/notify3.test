@@ -150,4 +150,3 @@ catch { db2 close }
 
 sqlite3_enable_shared_cache $esc
 finish_test
-

@@ -23,6 +23,14 @@ ifcapable {!autoindex} {
   return
 }
 
+# Setup for logging 
+db close
+sqlite3_shutdown
+test_sqlite3_log [list lappend ::log]
+set ::log [list]
+sqlite3 db test.db
+
+
 # With automatic index turned off, we do a full scan of the T2 table
 do_test autoindex1-100 {
   db eval {
@@ -60,6 +68,15 @@ do_test autoindex1-111 {
 do_test autoindex1-112 {
   db status autoindex
 } {7}
+do_test autoindex1-113 {
+  set ::log
+} {SQLITE_WARNING_AUTOINDEX {automatic index on t2(c)}}
+
+db close
+sqlite3_shutdown
+test_sqlite3_log
+sqlite3_initialize
+sqlite3 db test.db
 
 # The same test as above, but this time the T2 query is a subquery rather
 # than a join.
@@ -78,6 +95,9 @@ do_test autoindex1-202 {
 do_test autoindex1-210 {
   db eval {
     PRAGMA automatic_index=ON;
+    ANALYZE;
+    UPDATE sqlite_stat1 SET stat='10000' WHERE tbl='t1';
+    ANALYZE sqlite_master;
     SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
   }
 } {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
@@ -91,9 +111,15 @@ do_test autoindex1-212 {
 
 # Modify the second table of the join while the join is in progress
 #
+do_execsql_test autoindex1-299 {
+  UPDATE sqlite_stat1 SET stat='10000' WHERE tbl='t2';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN
+  SELECT b, d FROM t1 CROSS JOIN t2 ON (c=a);
+} {/AUTOMATIC COVERING INDEX/}
 do_test autoindex1-300 {
   set r {}
-  db eval {SELECT b, d FROM t1 JOIN t2 ON (c=a)} {
+  db eval {SELECT b, d FROM t1 CROSS JOIN t2 ON (c=a)} {
     lappend r $b $d
     db eval {UPDATE t2 SET d=d+1}
   }
@@ -143,22 +169,25 @@ do_test autoindex1-401 {
 do_execsql_test autoindex1-500 {
   CREATE TABLE t501(a INTEGER PRIMARY KEY, b);
   CREATE TABLE t502(x INTEGER PRIMARY KEY, y);
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t501',null,'1000000');
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t502',null,'1000');
+  ANALYZE sqlite_master;
   EXPLAIN QUERY PLAN
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
 } {
-  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~25 rows)} 
+  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {EXECUTE LIST SUBQUERY 1} 
-  1 0 0 {SCAN TABLE t502 (~100000 rows)}
+  1 0 0 {SCAN TABLE t502}
 }
 do_execsql_test autoindex1-501 {
   EXPLAIN QUERY PLAN
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
-  0 0 0 {SCAN TABLE t501 (~500000 rows)} 
+  0 0 0 {SCAN TABLE t501} 
   0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
-  1 0 0 {SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?) (~7 rows)}
+  1 0 0 {SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?)}
 }
 do_execsql_test autoindex1-502 {
   EXPLAIN QUERY PLAN
@@ -166,9 +195,9 @@ do_execsql_test autoindex1-502 {
    WHERE t501.a=123
      AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
-  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
-  1 0 0 {SCAN TABLE t502 (~100000 rows)}
+  1 0 0 {SCAN TABLE t502}
 }
 
 
@@ -240,12 +269,12 @@ do_execsql_test autoindex1-600 {
    WHERE y.sheep_no IS NULL
    ORDER BY x.registering_flock;
 } {
-  1 0 0 {SCAN TABLE sheep AS s (~1000000 rows)} 
-  1 1 1 {SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?) (~2 rows)} 
+  1 0 0 {SCAN TABLE sheep AS s} 
+  1 1 1 {SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?)} 
   1 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 2} 
-  2 0 0 {SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?) (~1 rows)} 
-  0 0 0 {SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index (~1000000 rows)} 
-  0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?) (~8 rows)}
+  2 0 0 {SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)} 
+  0 0 0 {SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index} 
+  0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?)}
 }
 
 
@@ -253,7 +282,7 @@ do_execsql_test autoindex1-700 {
   CREATE TABLE t5(a, b, c);
   EXPLAIN QUERY PLAN SELECT a FROM t5 WHERE b=10 ORDER BY c;
 } {
-  0 0 0 {SCAN TABLE t5 (~100000 rows)} 
+  0 0 0 {SCAN TABLE t5} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 

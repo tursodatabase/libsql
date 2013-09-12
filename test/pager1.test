@@ -2815,4 +2815,3 @@ do_test 43.3 {
 } {0 1 0}
 
 finish_test
-

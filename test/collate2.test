@@ -17,6 +17,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+set ::testprefix collate2
+
 #
 # Tests are organised as follows:
 #
@@ -636,13 +638,15 @@ do_test collate2-4.2 {
 do_test collate2-4.3 {
   execsql {
     SELECT collate2t1.a FROM collate2t1, collate2t3 
-      WHERE collate2t1.b = collate2t3.b||'';
+      WHERE collate2t1.b = collate2t3.b||''
+      ORDER BY +collate2t1.a DESC;
   }
 } {aa aA Aa AA}
 do_test collate2-4.4 {
   execsql {
     SELECT collate2t1.a FROM collate2t1, collate2t3 
-      WHERE collate2t3.b||'' = collate2t1.b;
+      WHERE collate2t3.b||'' = collate2t1.b
+      ORDER BY +collate2t1.a DESC;
   }
 } {aa aA Aa AA}
 
@@ -690,5 +694,31 @@ do_test collate2-5.5 {
     SELECT collate2t1.b, collate2t2.b FROM collate2t2 LEFT OUTER JOIN collate2t1 USING (b);
   }
 } {aa aa}
+
+do_execsql_test 6.1 {
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES('b');
+  INSERT INTO t1 VALUES('B');
+}
+do_execsql_test 6.2 {
+  SELECT * FROM t1 WHERE x COLLATE nocase BETWEEN 'a' AND 'c';
+} {b B}
+do_execsql_test 6.3 {
+  SELECT * FROM t1 WHERE x BETWEEN 'a' COLLATE nocase AND 'c' COLLATE nocase;
+} {b B}
+do_execsql_test 6.4 {
+  SELECT * FROM t1 
+  WHERE x COLLATE nocase BETWEEN 'a' COLLATE nocase AND 'c' COLLATE nocase;
+} {b B}
+do_execsql_test 6.5 {
+  SELECT * FROM t1 WHERE +x COLLATE nocase BETWEEN 'a' AND 'c';
+} {b B}
+do_execsql_test 6.6 {
+  SELECT * FROM t1 WHERE +x BETWEEN 'a' COLLATE nocase AND 'c' COLLATE nocase;
+} {b B}
+do_execsql_test 6.7 {
+  SELECT * FROM t1 
+  WHERE +x COLLATE nocase BETWEEN 'a' COLLATE nocase AND 'c' COLLATE nocase;
+} {b B}
 
 finish_test

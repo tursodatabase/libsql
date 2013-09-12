@@ -158,6 +158,9 @@ static void attachFunc(
     sqlite3PagerLockingMode(pPager, db->dfltLockMode);
     sqlite3BtreeSecureDelete(aNew->pBt,
                              sqlite3BtreeSecureDelete(db->aDb[0].pBt,-1) );
+#ifndef SQLITE_OMIT_PAGER_PRAGMAS
+    sqlite3BtreeSetPagerFlags(aNew->pBt, 3 | (db->flags & PAGER_FLAGS_MASK));
+#endif
   }
   aNew->safety_level = 3;
   aNew->zName = sqlite3DbStrDup(db, zName);
@@ -376,8 +379,7 @@ attach_end:
 void sqlite3Detach(Parse *pParse, Expr *pDbname){
   static const FuncDef detach_func = {
     1,                /* nArg */
-    SQLITE_UTF8,      /* iPrefEnc */
-    0,                /* flags */
+    SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
     detachFunc,       /* xFunc */
@@ -398,8 +400,7 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
 void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
   static const FuncDef attach_func = {
     3,                /* nArg */
-    SQLITE_UTF8,      /* iPrefEnc */
-    0,                /* flags */
+    SQLITE_UTF8,      /* funcFlags */
     0,                /* pUserData */
     0,                /* pNext */
     attachFunc,       /* xFunc */

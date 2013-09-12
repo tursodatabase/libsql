@@ -32,7 +32,7 @@
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
 # include "sqlite3ext.h" 
-extern const sqlite3_api_routines *sqlite3_api;
+SQLITE_EXTENSION_INIT3
 #endif
 
 #include "sqlite3.h"
@@ -206,6 +206,7 @@ struct Fts3Table {
   const char *zName;              /* virtual table name */
   int nColumn;                    /* number of named columns in virtual table */
   char **azColumn;                /* column names.  malloced */
+  u8 *abNotindexed;               /* True for 'notindexed' columns */
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
@@ -433,7 +434,6 @@ int sqlite3Fts3SegReaderPending(
   Fts3Table*,int,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, int, sqlite3_stmt **);
-int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*, int*);
 
 int sqlite3Fts3SelectDoctotal(Fts3Table *, sqlite3_stmt **);

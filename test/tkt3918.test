@@ -57,4 +57,3 @@ do_test tkt3918.5 {
 } {}
 
 finish_test
-

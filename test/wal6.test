@@ -14,6 +14,7 @@
 #
 
 set testdir [file dirname $argv0]
+set testprefix wal6
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/wal_common.tcl
@@ -29,18 +30,18 @@ forcedelete test.db
 set all_journal_modes {delete persist truncate memory off}
 foreach jmode $all_journal_modes {
 
-	do_test wal6-1.0.$jmode {
+  do_test wal6-1.0.$jmode {
     sqlite3 db test.db
     execsql "PRAGMA journal_mode = $jmode;"
-	} $jmode
+  } $jmode
 
-	do_test wal6-1.1.$jmode {
-	  execsql {
-	    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
-	    INSERT INTO t1 VALUES(1,2);
-	    SELECT * FROM t1;
-	  }
-	} {1 2}
+  do_test wal6-1.1.$jmode {
+    execsql {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+      INSERT INTO t1 VALUES(1,2);
+      SELECT * FROM t1;
+    }
+  } {1 2}
 
 # Under Windows, you'll get an error trying to delete
 # a file this is already opened.  Close the first connection
@@ -51,31 +52,146 @@ if {$tcl_platform(platform)=="windows"} {
   }
 }
 
-	do_test wal6-1.2.$jmode {
-	  sqlite3 db2 test.db
-	  execsql {
-		PRAGMA journal_mode=WAL;
-		INSERT INTO t1 VALUES(3,4);
-		SELECT * FROM t1 ORDER BY a;
-	  } db2
-	} {wal 1 2 3 4}
+  do_test wal6-1.2.$jmode {
+    sqlite3 db2 test.db
+    execsql {
+    PRAGMA journal_mode=WAL;
+    INSERT INTO t1 VALUES(3,4);
+    SELECT * FROM t1 ORDER BY a;
+    } db2
+  } {wal 1 2 3 4}
 
 if {$tcl_platform(platform)=="windows"} {
   if {$jmode=="persist" || $jmode=="truncate"} {
-	  sqlite3 db test.db
+    sqlite3 db test.db
   }
 }
 
-	do_test wal6-1.3.$jmode {
-	  execsql {
-		  SELECT * FROM t1 ORDER BY a;
-	  }
-	} {1 2 3 4}
+  do_test wal6-1.3.$jmode {
+    execsql {
+      SELECT * FROM t1 ORDER BY a;
+    }
+  } {1 2 3 4}
 
-	db close
-	db2 close
+  db close
+  db2 close
   forcedelete test.db
 
 }
 
+#-------------------------------------------------------------------------
+# Test that SQLITE_BUSY_SNAPSHOT is returned as expected.
+#
+reset_db
+sqlite3 db2 test.db
+
+do_execsql_test 2.1 {
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE t1(a PRIMARY KEY, b TEXT);
+  INSERT INTO t1 VALUES(1, 'one');
+  INSERT INTO t1 VALUES(2, 'two');
+  BEGIN;
+    SELECT * FROM t1;
+} {wal 1 one 2 two}
+
+do_test 2.2 {
+  execsql {
+    SELECT * FROM t1;
+    INSERT INTO t1 VALUES(3, 'three');
+  } db2
+} {1 one 2 two}
+
+do_catchsql_test 2.3 { 
+  INSERT INTO t1 VALUES('x', 'x') 
+} {1 {database is locked}}
+
+do_test 2.4 { 
+  list [sqlite3_errcode db] [sqlite3_extended_errcode db]
+} {SQLITE_BUSY SQLITE_BUSY_SNAPSHOT}
+
+do_execsql_test 2.5 {
+  SELECT * FROM t1;
+  COMMIT;
+  INSERT INTO t1 VALUES('x', 'x') 
+} {1 one 2 two}
+
+proc test3 {prefix} {
+  do_test $prefix.1 {
+    execsql { SELECT count(*) FROM t1 } 
+  } {0}
+  do_test $prefix.2 {
+    execsql { INSERT INTO t1 VALUES('x', 'x') } db2
+  } {}
+  do_test $prefix.3 {
+    execsql { INSERT INTO t1 VALUES('y', 'y') }
+  } {}
+  do_test $prefix.4 {
+    execsql { SELECT count(*) FROM t1 } 
+  } {2}
+}
+
+do_execsql_test 2.6.1 { DELETE FROM t1 }
+test3 2.6.2
+
+db func test3 test3
+do_execsql_test 2.6.3 { DELETE FROM t1 }
+db eval {SELECT test3('2.6.4')}
+
+do_test 2.x {
+  db2 close
+} {}
+
+#-------------------------------------------------------------------------
+# Check that if BEGIN IMMEDIATE fails, it does not leave the user with
+# an open read-transaction (unless one was already open before the BEGIN 
+# IMMEDIATE). Even if there are other active VMs.
+#
+
+proc test4 {prefix} {
+  do_test $prefix.1 {
+    catchsql { BEGIN IMMEDIATE }
+  } {1 {database is locked}}
+
+  do_test $prefix.2 {
+    execsql { COMMIT } db2
+  } {}
+
+  do_test $prefix.3 {
+    execsql { BEGIN IMMEDIATE }
+  } {}
+  do_test $prefix.4 {
+    execsql { COMMIT }
+  } {}
+}
+
+reset_db
+sqlite3 db2 test.db
+do_execsql_test 3.1 { 
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE ab(a PRIMARY KEY, b);
+} {wal}
+
+do_test 3.2.1 { 
+  execsql { 
+    BEGIN;
+      INSERT INTO ab VALUES(1, 2);
+  } db2
+} {}
+test4 3.2.2
+
+db func test4 test4
+do_test 3.3.1 {
+  execsql { 
+    BEGIN;
+      INSERT INTO ab VALUES(3, 4);
+  } db2
+} {}
+
+db eval {SELECT test4('3.3.2')}
+
+do_test 3.x {
+  db2 close
+} {}
+
 finish_test
+

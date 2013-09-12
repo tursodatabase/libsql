@@ -506,4 +506,3 @@ do_execsql_test exclusive-6.5 {
 } {exclusive}
 
 finish_test
-

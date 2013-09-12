@@ -2218,6 +2218,7 @@ static int test_stmt_status(
     { "SQLITE_STMTSTATUS_FULLSCAN_STEP",   SQLITE_STMTSTATUS_FULLSCAN_STEP   },
     { "SQLITE_STMTSTATUS_SORT",            SQLITE_STMTSTATUS_SORT            },
     { "SQLITE_STMTSTATUS_AUTOINDEX",       SQLITE_STMTSTATUS_AUTOINDEX       },
+    { "SQLITE_STMTSTATUS_VM_STEP",         SQLITE_STMTSTATUS_VM_STEP         },
   };
   if( objc!=4 ){
     Tcl_WrongNumArgs(interp, 1, objv, "STMT PARAMETER RESETFLAG");
@@ -5933,6 +5934,145 @@ static int win32_file_lock(
   CloseHandle(ev);
   return TCL_OK;
 }
+
+/*
+**      exists_win32_path PATH
+**
+** Returns non-zero if the specified path exists, whose fully qualified name
+** may exceed 260 characters if it is prefixed with "\\?\".
+*/
+static int win32_exists_path(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATH");
+    return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+      GetFileAttributesW( Tcl_GetUnicode(objv[1]))!=INVALID_FILE_ATTRIBUTES ));
+  return TCL_OK;
+}
+
+/*
+**      find_win32_file PATTERN
+**
+** Returns a list of entries in a directory that match the specified pattern,
+** whose fully qualified name may exceed 248 characters if it is prefixed with
+** "\\?\".
+*/
+static int win32_find_file(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  HANDLE hFindFile = INVALID_HANDLE_VALUE;
+  WIN32_FIND_DATAW findData;
+  Tcl_Obj *listObj;
+  DWORD lastErrno;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PATTERN");
+    return TCL_ERROR;
+  }
+  hFindFile = FindFirstFileW(Tcl_GetUnicode(objv[1]), &findData);
+  if( hFindFile==INVALID_HANDLE_VALUE ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  listObj = Tcl_NewObj();
+  Tcl_IncrRefCount(listObj);
+  do {
+    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewUnicodeObj(
+        findData.cFileName, -1));
+    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(
+        findData.dwFileAttributes));
+  } while( FindNextFileW(hFindFile, &findData) );
+  lastErrno = GetLastError();
+  if( lastErrno!=NO_ERROR && lastErrno!=ERROR_NO_MORE_FILES ){
+    FindClose(hFindFile);
+    Tcl_DecrRefCount(listObj);
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  FindClose(hFindFile);
+  Tcl_SetObjResult(interp, listObj);
+  return TCL_OK;
+}
+
+/*
+**      delete_win32_file FILENAME
+**
+** Deletes the specified file, whose fully qualified name may exceed 260
+** characters if it is prefixed with "\\?\".
+*/
+static int win32_delete_file(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
+    return TCL_ERROR;
+  }
+  if( !DeleteFileW(Tcl_GetUnicode(objv[1])) ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
+**      make_win32_dir DIRECTORY
+**
+** Creates the specified directory, whose fully qualified name may exceed 248
+** characters if it is prefixed with "\\?\".
+*/
+static int win32_mkdir(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DIRECTORY");
+    return TCL_ERROR;
+  }
+  if( !CreateDirectoryW(Tcl_GetUnicode(objv[1]), NULL) ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
+/*
+**      remove_win32_dir DIRECTORY
+**
+** Removes the specified directory, whose fully qualified name may exceed 248
+** characters if it is prefixed with "\\?\".
+*/
+static int win32_rmdir(
+  void *clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DIRECTORY");
+    return TCL_ERROR;
+  }
+  if( !RemoveDirectoryW(Tcl_GetUnicode(objv[1])) ){
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj(GetLastError()));
+    return TCL_ERROR;
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
 #endif
 
 
@@ -5958,15 +6098,20 @@ static int optimization_control(
     const char *zOptName;
     int mask;
   } aOpt[] = {
-    { "all",              SQLITE_AllOpts        },
-    { "query-flattener",  SQLITE_QueryFlattener },
-    { "column-cache",     SQLITE_ColumnCache    },
-    { "groupby-order",    SQLITE_GroupByOrder   },
-    { "factor-constants", SQLITE_FactorOutConst },
-    { "real-as-int",      SQLITE_IdxRealAsInt   },
-    { "distinct-opt",     SQLITE_DistinctOpt    },
-    { "cover-idx-scan",   SQLITE_CoverIdxScan   },
-    { "order-by-idx-join",SQLITE_OrderByIdxJoin },
+    { "all",                 SQLITE_AllOpts        },
+    { "none",                0                     },
+    { "query-flattener",     SQLITE_QueryFlattener },
+    { "column-cache",        SQLITE_ColumnCache    },
+    { "groupby-order",       SQLITE_GroupByOrder   },
+    { "factor-constants",    SQLITE_FactorOutConst },
+    { "real-as-int",         SQLITE_IdxRealAsInt   },
+    { "distinct-opt",        SQLITE_DistinctOpt    },
+    { "cover-idx-scan",      SQLITE_CoverIdxScan   },
+    { "order-by-idx-join",   SQLITE_OrderByIdxJoin },
+    { "transitive",          SQLITE_Transitive     },
+    { "subquery-coroutine",  SQLITE_SubqCoroutine  },
+    { "omit-noop-join",      SQLITE_OmitNoopJoin   },
+    { "stat3",               SQLITE_Stat3          },
   };
 
   if( objc!=4 ){
@@ -5987,7 +6132,7 @@ static int optimization_control(
     Tcl_AppendResult(interp, "unknown optimization - should be one of:",
                      (char*)0);
     for(i=0; i<sizeof(aOpt)/sizeof(aOpt[0]); i++){
-      Tcl_AppendResult(interp, " ", aOpt[i].zOptName);
+      Tcl_AppendResult(interp, " ", aOpt[i].zOptName, (char*)0);
     }
     return TCL_ERROR;
   }
@@ -6187,6 +6332,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "optimization_control",          optimization_control,0},
 #if SQLITE_OS_WIN
      { "lock_win32_file",               win32_file_lock,    0 },
+     { "exists_win32_path",             win32_exists_path,  0 },
+     { "find_win32_file",               win32_find_file,    0 },
+     { "delete_win32_file",             win32_delete_file,  0 },
+     { "make_win32_dir",                win32_mkdir,        0 },
+     { "remove_win32_dir",              win32_rmdir,        0 },
 #endif
      { "tcl_objproc",                   runAsObjProc,       0 },
 
@@ -6302,8 +6452,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3WalTrace;
 #endif
 #ifdef SQLITE_TEST
-  extern char sqlite3_query_plan[];
-  static char *query_plan = sqlite3_query_plan;
 #ifdef SQLITE_ENABLE_FTS3
   extern int sqlite3_fts3_enable_parentheses;
 #endif
@@ -6357,8 +6505,11 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_os_type, TCL_LINK_INT);
 #endif
 #ifdef SQLITE_TEST
-  Tcl_LinkVar(interp, "sqlite_query_plan",
-      (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
+  {
+    static const char *query_plan = "*** OBSOLETE VARIABLE ***";
+    Tcl_LinkVar(interp, "sqlite_query_plan",
+       (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
+  }
 #endif
 #ifdef SQLITE_DEBUG
   Tcl_LinkVar(interp, "sqlite_where_trace",

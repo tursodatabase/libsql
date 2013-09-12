@@ -14,6 +14,7 @@
 */
 
 #include <sqlite3.h>
+#include <tcl.h>
 
 /* Solely for the UNUSED_PARAMETER() macro. */
 #include "sqliteInt.h"

@@ -28,24 +28,11 @@ static SQLITE_WSD struct sqlite3PrngType {
 } sqlite3Prng;
 
 /*
-** Get a single 8-bit random value from the RC4 PRNG.  The Mutex
-** must be held while executing this routine.
-**
-** Why not just use a library random generator like lrand48() for this?
-** Because the OP_NewRowid opcode in the VDBE depends on having a very
-** good source of random numbers.  The lrand48() library function may
-** well be good enough.  But maybe not.  Or maybe lrand48() has some
-** subtle problems on some systems that could cause problems.  It is hard
-** to know.  To minimize the risk of problems due to bad lrand48()
-** implementations, SQLite uses this random number generator based
-** on RC4, which we know works very well.
-**
-** (Later):  Actually, OP_NewRowid does not depend on a good source of
-** randomness any more.  But we will leave this code in all the same.
+** Return N random bytes.
 */
-static u8 randomByte(void){
+void sqlite3_randomness(int N, void *pBuf){
   unsigned char t;
-
+  unsigned char *zBuf = pBuf;
 
   /* The "wsdPrng" macro will resolve to the pseudo-random number generator
   ** state vector.  If writable static data is unsupported on the target,
@@ -60,6 +47,10 @@ static u8 randomByte(void){
 # define wsdPrng sqlite3Prng
 #endif
 
+#if SQLITE_THREADSAFE
+  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PRNG);
+  sqlite3_mutex_enter(mutex);
+#endif
 
   /* Initialize the state of the random number generator once,
   ** the first time this routine is called.  The seed value does
@@ -88,28 +79,14 @@ static u8 randomByte(void){
     wsdPrng.isInit = 1;
   }
 
-  /* Generate and return single random byte
-  */
-  wsdPrng.i++;
-  t = wsdPrng.s[wsdPrng.i];
-  wsdPrng.j += t;
-  wsdPrng.s[wsdPrng.i] = wsdPrng.s[wsdPrng.j];
-  wsdPrng.s[wsdPrng.j] = t;
-  t += wsdPrng.s[wsdPrng.i];
-  return wsdPrng.s[t];
-}
-
-/*
-** Return N random bytes.
-*/
-void sqlite3_randomness(int N, void *pBuf){
-  unsigned char *zBuf = pBuf;
-#if SQLITE_THREADSAFE
-  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_PRNG);
-#endif
-  sqlite3_mutex_enter(mutex);
   while( N-- ){
-    *(zBuf++) = randomByte();
+    wsdPrng.i++;
+    t = wsdPrng.s[wsdPrng.i];
+    wsdPrng.j += t;
+    wsdPrng.s[wsdPrng.i] = wsdPrng.s[wsdPrng.j];
+    wsdPrng.s[wsdPrng.j] = t;
+    t += wsdPrng.s[wsdPrng.i];
+    *(zBuf++) = wsdPrng.s[t];
   }
   sqlite3_mutex_leave(mutex);
 }

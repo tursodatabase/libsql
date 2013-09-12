@@ -592,7 +592,7 @@ static int sqlite3Prepare(
   sqlite3VtabUnlockList(db);
 
   pParse->db = db;
-  pParse->nQueryLoop = (double)1;
+  pParse->nQueryLoop = 0;  /* Logarithmic, so 0 really means 1 */
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){
     char *zSqlCopy;
     int mxLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
@@ -614,7 +614,7 @@ static int sqlite3Prepare(
   }else{
     sqlite3RunParser(pParse, zSql, &zErrMsg);
   }
-  assert( 1==(int)pParse->nQueryLoop );
+  assert( 0==pParse->nQueryLoop );
 
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
@@ -809,6 +809,12 @@ static int sqlite3Prepare16(
   *ppStmt = 0;
   if( !sqlite3SafetyCheckOk(db) ){
     return SQLITE_MISUSE_BKPT;
+  }
+  if( nBytes>=0 ){
+    int sz;
+    const char *z = (const char*)zSql;
+    for(sz=0; sz<nBytes && (z[sz]!=0 || z[sz+1]!=0); sz += 2){}
+    nBytes = sz;
   }
   sqlite3_mutex_enter(db->mutex);
   zSql8 = sqlite3Utf16to8(db, zSql, nBytes, SQLITE_UTF16NATIVE);

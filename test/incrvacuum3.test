@@ -151,4 +151,3 @@ foreach {T jrnl_mode} {
 }
 
 finish_test
-

@@ -422,7 +422,10 @@ static void fkLookupParent(
     }
   }
 
-  if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
+  if( !pFKey->isDeferred && !(pParse->db->flags & SQLITE_DeferFKs)
+   && !pParse->pToplevel 
+   && !pParse->isMultiWrite 
+  ){
     /* Special case: If this is an INSERT statement that will insert exactly
     ** one row into the table, raise a constraint immediately instead of
     ** incrementing a counter. This is necessary as the VM code is being
@@ -679,6 +682,70 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
   }
 }
 
+
+/*
+** The second argument points to an FKey object representing a foreign key
+** for which pTab is the child table. An UPDATE statement against pTab
+** is currently being processed. For each column of the table that is 
+** actually updated, the corresponding element in the aChange[] array
+** is zero or greater (if a column is unmodified the corresponding element
+** is set to -1). If the rowid column is modified by the UPDATE statement
+** the bChngRowid argument is non-zero.
+**
+** This function returns true if any of the columns that are part of the
+** child key for FK constraint *p are modified.
+*/
+static int fkChildIsModified(
+  Table *pTab,                    /* Table being updated */
+  FKey *p,                        /* Foreign key for which pTab is the child */
+  int *aChange,                   /* Array indicating modified columns */
+  int bChngRowid                  /* True if rowid is modified by this update */
+){
+  int i;
+  for(i=0; i<p->nCol; i++){
+    int iChildKey = p->aCol[i].iFrom;
+    if( aChange[iChildKey]>=0 ) return 1;
+    if( iChildKey==pTab->iPKey && bChngRowid ) return 1;
+  }
+  return 0;
+}
+
+/*
+** The second argument points to an FKey object representing a foreign key
+** for which pTab is the parent table. An UPDATE statement against pTab
+** is currently being processed. For each column of the table that is 
+** actually updated, the corresponding element in the aChange[] array
+** is zero or greater (if a column is unmodified the corresponding element
+** is set to -1). If the rowid column is modified by the UPDATE statement
+** the bChngRowid argument is non-zero.
+**
+** This function returns true if any of the columns that are part of the
+** parent key for FK constraint *p are modified.
+*/
+static int fkParentIsModified(
+  Table *pTab, 
+  FKey *p, 
+  int *aChange, 
+  int bChngRowid
+){
+  int i;
+  for(i=0; i<p->nCol; i++){
+    char *zKey = p->aCol[i].zCol;
+    int iKey;
+    for(iKey=0; iKey<pTab->nCol; iKey++){
+      if( aChange[iKey]>=0 || (iKey==pTab->iPKey && bChngRowid) ){
+        Column *pCol = &pTab->aCol[iKey];
+        if( zKey ){
+          if( 0==sqlite3StrICmp(pCol->zName, zKey) ) return 1;
+        }else if( pCol->colFlags & COLFLAG_PRIMKEY ){
+          return 1;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
 /*
 ** This function is called when inserting, deleting or updating a row of
 ** table pTab to generate VDBE code to perform foreign key constraint 
@@ -703,7 +770,9 @@ void sqlite3FkCheck(
   Parse *pParse,                  /* Parse context */
   Table *pTab,                    /* Row is being deleted from this table */ 
   int regOld,                     /* Previous row data is stored here */
-  int regNew                      /* New row data is stored here */
+  int regNew,                     /* New row data is stored here */
+  int *aChange,                   /* Array indicating UPDATEd columns (or 0) */
+  int bChngRowid                  /* True if rowid is UPDATEd */
 ){
   sqlite3 *db = pParse->db;       /* Database handle */
   FKey *pFKey;                    /* Used to iterate through FKs */
@@ -730,6 +799,13 @@ void sqlite3FkCheck(
     int iCol;
     int i;
     int isIgnore = 0;
+
+    if( aChange 
+     && sqlite3_stricmp(pTab->zName, pFKey->zTo)!=0
+     && fkChildIsModified(pTab, pFKey, aChange, bChngRowid)==0 
+    ){
+      continue;
+    }
 
     /* Find the parent table of this foreign key. Also find a unique index 
     ** on the parent key columns in the parent table. If either of these 
@@ -813,7 +889,13 @@ void sqlite3FkCheck(
     SrcList *pSrc;
     int *aiCol = 0;
 
-    if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
+    if( aChange && fkParentIsModified(pTab, pFKey, aChange, bChngRowid)==0 ){
+      continue;
+    }
+
+    if( !pFKey->isDeferred && !(db->flags & SQLITE_DeferFKs) 
+     && !pParse->pToplevel && !pParse->isMultiWrite 
+    ){
       assert( regOld==0 && regNew!=0 );
       /* Inserting a single row into a parent table cannot cause an immediate
       ** foreign key violation. So do nothing in this case.  */
@@ -884,6 +966,7 @@ u32 sqlite3FkOldmask(
   return mask;
 }
 
+
 /*
 ** This function is called before generating code to update or delete a 
 ** row contained in table pTab. If the operation is a DELETE, then
@@ -913,32 +996,16 @@ int sqlite3FkRequired(
     }else{
       /* This is an UPDATE. Foreign key processing is only required if the
       ** operation modifies one or more child or parent key columns. */
-      int i;
       FKey *p;
 
       /* Check if any child key columns are being modified. */
       for(p=pTab->pFKey; p; p=p->pNextFrom){
-        for(i=0; i<p->nCol; i++){
-          int iChildKey = p->aCol[i].iFrom;
-          if( aChange[iChildKey]>=0 ) return 1;
-          if( iChildKey==pTab->iPKey && chngRowid ) return 1;
-        }
+        if( fkChildIsModified(pTab, p, aChange, chngRowid) ) return 1;
       }
 
       /* Check if any parent key columns are being modified. */
       for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
-        for(i=0; i<p->nCol; i++){
-          char *zKey = p->aCol[i].zCol;
-          int iKey;
-          for(iKey=0; iKey<pTab->nCol; iKey++){
-            Column *pCol = &pTab->aCol[iKey];
-            if( (zKey ? !sqlite3StrICmp(pCol->zName, zKey)
-                      : (pCol->colFlags & COLFLAG_PRIMKEY)!=0) ){
-              if( aChange[iKey]>=0 ) return 1;
-              if( iKey==pTab->iPKey && chngRowid ) return 1;
-            }
-          }
-        }
+        if( fkParentIsModified(pTab, p, aChange, chngRowid) ) return 1;
       }
     }
   }
@@ -1164,7 +1231,9 @@ void sqlite3FkActions(
   Parse *pParse,                  /* Parse context */
   Table *pTab,                    /* Table being updated or deleted from */
   ExprList *pChanges,             /* Change-list for UPDATE, NULL for DELETE */
-  int regOld                      /* Address of array containing old row */
+  int regOld,                     /* Address of array containing old row */
+  int *aChange,                   /* Array indicating UPDATEd columns (or 0) */
+  int bChngRowid                  /* True if rowid is UPDATEd */
 ){
   /* If foreign-key support is enabled, iterate through all FKs that 
   ** refer to table pTab. If there is an action associated with the FK 
@@ -1173,9 +1242,11 @@ void sqlite3FkActions(
   if( pParse->db->flags&SQLITE_ForeignKeys ){
     FKey *pFKey;                  /* Iterator variable */
     for(pFKey = sqlite3FkReferences(pTab); pFKey; pFKey=pFKey->pNextTo){
-      Trigger *pAction = fkActionTrigger(pParse, pTab, pFKey, pChanges);
-      if( pAction ){
-        sqlite3CodeRowTriggerDirect(pParse, pAction, pTab, regOld, OE_Abort, 0);
+      if( aChange==0 || fkParentIsModified(pTab, pFKey, aChange, bChngRowid) ){
+        Trigger *pAct = fkActionTrigger(pParse, pTab, pFKey, pChanges);
+        if( pAct ){
+          sqlite3CodeRowTriggerDirect(pParse, pAct, pTab, regOld, OE_Abort, 0);
+        }
       }
     }
   }

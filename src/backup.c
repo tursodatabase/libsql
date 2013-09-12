@@ -15,12 +15,6 @@
 #include "sqliteInt.h"
 #include "btreeInt.h"
 
-/* Macro to find the minimum of two numeric values.
-*/
-#ifndef MIN
-# define MIN(x,y) ((x)<(y)?(x):(y))
-#endif
-
 /*
 ** Structure allocated for each backup operation.
 */
@@ -398,7 +392,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       if( iSrcPg!=PENDING_BYTE_PAGE(p->pSrc->pBt) ){
         DbPage *pSrcPg;                             /* Source page object */
         rc = sqlite3PagerAcquire(pSrcPager, iSrcPg, &pSrcPg,
-                                 PAGER_ACQUIRE_READONLY);
+                                 PAGER_GET_READONLY);
         if( rc==SQLITE_OK ){
           rc = backupOnePage(p, iSrcPg, sqlite3PagerGetData(pSrcPg), 0);
           sqlite3PagerUnref(pSrcPg);

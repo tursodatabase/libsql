@@ -18,11 +18,11 @@
 **
 ** In the first form, the value X should be a floating-point number.
 ** The function will return a string of the form 'ieee754(Y,Z)' where
-** Y and Z are integers such that X==Y*pow(w.0,Z).
+** Y and Z are integers such that X==Y*pow(2,Z).
 **
 ** In the second form, Y and Z are integers which are the mantissa and
 ** base-2 exponent of a new floating point number.  The function returns
-** a floating-point value equal to Y*pow(2.0,Z).
+** a floating-point value equal to Y*pow(2,Z).
 **
 ** Examples:
 **

@@ -96,4 +96,4 @@ extern int sqlite3_multiplex_shutdown(void);
 }  /* End of the 'extern "C"' block */
 #endif
 
-#endif
+#endif /* _TEST_MULTIPLEX_H */

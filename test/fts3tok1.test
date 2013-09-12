@@ -113,5 +113,3 @@ do_catchsql_test 2.1 {
 
 
 finish_test
-
-

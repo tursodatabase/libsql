@@ -397,9 +397,9 @@ do_test shell1-3.11.1 {
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
-do_test shell1-3.11.2 {
-  catchcmd "test.db" ".import FOO BAR"
-} {1 {Error: no such table: BAR}}
+#do_test shell1-3.11.2 {
+#  catchcmd "test.db" ".import FOO BAR"
+#} {1 {Error: no such table: BAR}}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
@@ -710,10 +710,23 @@ do_test shell1-3-29.1 {
   catchcmd "test.db" ".print this is a test"
 } {0 {this is a test}}
 
+# dot-command argument quoting
+do_test shell1-3-30.1 {
+  catchcmd {test.db} {.print "this\"is'a\055test" 'this\"is\\a\055test'}
+} {0 {this"is'a-test this\"is\\a\055test}}
+do_test shell1-3-31.1 {
+  catchcmd {test.db} {.print "this\nis\ta\\test" 'this\nis\ta\\test'}
+} [list 0 "this\nis\ta\\test this\\nis\\ta\\\\test"]
+
+
 # Test the output of the ".dump" command
 #
 do_test shell1-4.1 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
   db eval {
+    PRAGMA encoding=UTF16;
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
   }
@@ -743,6 +756,14 @@ INSERT INTO t1 VALUES(X'807f');}}
 # Test the output of ".mode tcl"
 #
 do_test shell1-4.3 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    PRAGMA encoding=UTF8;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
+  }
   catchcmd test.db ".mode tcl\nselect * from t1;"
 } {0 {""
 ""

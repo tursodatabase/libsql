@@ -426,5 +426,11 @@ do_execsql_test 8.3 {
   {0 3 2 0 3 2 1 4 3} {1 3 2 1 3 2 1 4 3} {2 3 2 2 3 2 2 4 3}
 }
 
-finish_test
+do_execsql_test 9.1 {
+  CREATE VIRTUAL TABLE ft2 USING fts4;
+  INSERT INTO ft2 VALUES('a b c d e');
+  INSERT INTO ft2 VALUES('f a b c d');
+  SELECT snippet(ft2, '[', ']', '', -1, 1) FROM ft2 WHERE ft2 MATCH 'c';
+} {{[c]} {[c]}}
 
+finish_test

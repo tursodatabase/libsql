@@ -28,6 +28,7 @@
 
 #include "sqlite3.h"
 #include "sqliteInt.h"
+#include <tcl.h>
 
 typedef struct Testvfs Testvfs;
 typedef struct TestvfsShm TestvfsShm;
@@ -190,8 +191,11 @@ static int tvfsShmMap(sqlite3_file*,int,int,int, void volatile **);
 static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmUnmap(sqlite3_file*, int);
 
+static int tvfsFetch(sqlite3_file*, sqlite3_int64, int, void**);
+static int tvfsUnfetch(sqlite3_file*, sqlite3_int64, void*);
+
 static sqlite3_io_methods tvfs_io_methods = {
-  2,                              /* iVersion */
+  3,                              /* iVersion */
   tvfsClose,                      /* xClose */
   tvfsRead,                       /* xRead */
   tvfsWrite,                      /* xWrite */
@@ -207,7 +211,9 @@ static sqlite3_io_methods tvfs_io_methods = {
   tvfsShmMap,                     /* xShmMap */
   tvfsShmLock,                    /* xShmLock */
   tvfsShmBarrier,                 /* xShmBarrier */
-  tvfsShmUnmap                    /* xShmUnmap */
+  tvfsShmUnmap,                   /* xShmUnmap */
+  tvfsFetch,
+  tvfsUnfetch
 };
 
 static int tvfsResultCode(Testvfs *p, int *pRc){
@@ -618,7 +624,10 @@ static int tvfsOpen(
 
     pMethods = (sqlite3_io_methods *)ckalloc(nByte);
     memcpy(pMethods, &tvfs_io_methods, nByte);
-    pMethods->iVersion = pVfs->iVersion;
+    pMethods->iVersion = pFd->pReal->pMethods->iVersion;
+    if( pMethods->iVersion>pVfs->iVersion ){
+      pMethods->iVersion = pVfs->iVersion;
+    }
     if( pVfs->iVersion>1 && ((Testvfs *)pVfs->pAppData)->isNoshm ){
       pMethods->xShmUnmap = 0;
       pMethods->xShmLock = 0;
@@ -993,6 +1002,21 @@ static int tvfsShmUnmap(
   return rc;
 }
 
+static int tvfsFetch(
+    sqlite3_file *pFile, 
+    sqlite3_int64 iOfst, 
+    int iAmt, 
+    void **pp
+){
+  TestvfsFd *pFd = tvfsGetFd(pFile);
+  return sqlite3OsFetch(pFd->pReal, iOfst, iAmt, pp);
+}
+
+static int tvfsUnfetch(sqlite3_file *pFile, sqlite3_int64 iOfst, void *p){
+  TestvfsFd *pFd = tvfsGetFd(pFile);
+  return sqlite3OsUnfetch(pFd->pReal, iOfst, p);
+}
+
 static int testvfs_obj_cmd(
   ClientData cd,
   Tcl_Interp *interp,
@@ -1343,7 +1367,7 @@ static int testvfs_cmd(
   Tcl_Obj *CONST objv[]
 ){
   static sqlite3_vfs tvfs_vfs = {
-    2,                            /* iVersion */
+    3,                            /* iVersion */
     0,                            /* szOsFile */
     0,                            /* mxPathname */
     0,                            /* pNext */
@@ -1369,6 +1393,9 @@ static int testvfs_cmd(
     tvfsCurrentTime,              /* xCurrentTime */
     0,                            /* xGetLastError */
     0,                            /* xCurrentTimeInt64 */
+    0,                            /* xSetSystemCall */
+    0,                            /* xGetSystemCall */
+    0,                            /* xNextSystemCall */
   };
 
   Testvfs *p;                     /* New object */
@@ -1382,7 +1409,7 @@ static int testvfs_cmd(
   int isDefault = 0;              /* True if -default is passed */
   int szOsFile = 0;               /* Value passed to -szosfile */
   int mxPathname = -1;            /* Value passed to -mxpathname */
-  int iVersion = 2;               /* Value passed to -iversion */
+  int iVersion = 3;               /* Value passed to -iversion */
 
   if( objc<2 || 0!=(objc%2) ) goto bad_args;
   for(i=2; i<objc; i += 2){

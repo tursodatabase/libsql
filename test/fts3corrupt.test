@@ -166,4 +166,3 @@ do_test 5.3.1 { sqlite3_extended_errcode db } SQLITE_CORRUPT_VTAB
 
 
 finish_test
-

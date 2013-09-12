@@ -41,6 +41,18 @@
 #endif
 #include <ctype.h>
 
+/* Used to get the current process ID */
+#if !defined(_WIN32)
+# include <unistd.h>
+# define GETPID getpid
+#elif !defined(_WIN32_WCE)
+# ifndef SQLITE_AMALGAMATION
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+# endif
+# define GETPID (int)GetCurrentProcessId
+#endif
+
 /*
  * Windows needs to know which symbols to export.  Unix does not.
  * BUILD_sqlite should be undefined for Unix.
@@ -3746,7 +3758,16 @@ static void init_all(Tcl_Interp *interp){
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
-  
+
+#if !defined(_WIN32_WCE)
+  if( getenv("BREAK") ){
+    fprintf(stderr,
+        "attach debugger to process %d and press any key to continue.\n",
+        GETPID());
+    fgetc(stdin);
+  }
+#endif
+
   /* Call sqlite3_shutdown() once before doing anything else. This is to
   ** test that sqlite3_shutdown() can be safely called by a process before
   ** sqlite3_initialize() is. */

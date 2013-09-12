@@ -23303,7 +23303,7 @@ do_test where7-2.1001.2 {
 #
 # The test case that follows is code from an actual
 # application with identifiers change and unused columns
-# remove.
+# removed.
 #
 do_execsql_test where7-3.1 {
   CREATE TABLE t301 (
@@ -23332,16 +23332,16 @@ do_execsql_test where7-3.1 {
   
   EXPLAIN QUERY PLAN
   SELECT t302.c1 
-    FROM t302 JOIN t301 ON t302.c8 = t301.c8
+    FROM t302 JOIN t301 ON t302.c8 = +t301.c8
     WHERE t302.c2 = 19571
       AND t302.c3 > 1287603136
       AND (t301.c4 = 1407449685622784
            OR t301.c8 = 1407424651264000)
    ORDER BY t302.c5 LIMIT 200;
 } {
-  0 0 1 {SEARCH TABLE t301 USING COVERING INDEX t301_c4 (c4=?) (~10 rows)} 
-  0 0 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
-  0 1 0 {SEARCH TABLE t302 USING INDEX t302_c8_c3 (c8=? AND c3>?) (~2 rows)} 
+  0 0 1 {SEARCH TABLE t301 USING COVERING INDEX t301_c4 (c4=?)} 
+  0 0 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)} 
+  0 1 0 {SEARCH TABLE t302 USING INDEX t302_c8_c3 (c8=? AND c3>?)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 

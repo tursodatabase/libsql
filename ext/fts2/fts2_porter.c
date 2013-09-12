@@ -30,6 +30,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "sqlite3.h"
+#include "sqlite3ext.h"
+SQLITE_EXTENSION_INIT3
 #include "fts2_tokenizer.h"
 
 /*

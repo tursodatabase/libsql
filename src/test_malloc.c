@@ -749,7 +749,7 @@ static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
     int isNew;
 
     int aKey[MALLOC_LOG_KEYINTS];
-    int nKey = sizeof(int)*MALLOC_LOG_KEYINTS;
+    unsigned int nKey = sizeof(int)*MALLOC_LOG_KEYINTS;
 
     memset(aKey, 0, nKey);
     if( (sizeof(void*)*nFrame)<nKey ){
@@ -1349,7 +1349,8 @@ static int test_db_status(
     { "LOOKASIDE_MISS_FULL", SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL },
     { "CACHE_HIT",           SQLITE_DBSTATUS_CACHE_HIT           },
     { "CACHE_MISS",          SQLITE_DBSTATUS_CACHE_MISS          },
-    { "CACHE_WRITE",         SQLITE_DBSTATUS_CACHE_WRITE         }
+    { "CACHE_WRITE",         SQLITE_DBSTATUS_CACHE_WRITE         },
+    { "DEFERRED_FKS",        SQLITE_DBSTATUS_DEFERRED_FKS        }
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){
