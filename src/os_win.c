@@ -109,6 +109,14 @@
 #endif
 
 /*
+** This macro is used when a local variable is set to a value that is
+** [sometimes] not used by the code (e.g. via conditional compilation).
+*/
+#ifndef UNUSED_VARIABLE_VALUE
+#  define UNUSED_VARIABLE_VALUE(x) (void)(x)
+#endif
+
+/*
 ** Returns the string that should be used as the directory separator.
 */
 #ifndef winGetDirDep
@@ -358,7 +366,8 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 */
 #ifdef SQLITE_TEST
 int sqlite3_os_type = 0;
-#else
+#elif !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
+      defined(SQLITE_WIN32_HAS_ANSI) && defined(SQLITE_WIN32_HAS_WIDE)
 static int sqlite3_os_type = 0;
 #endif
 
@@ -3185,7 +3194,6 @@ static int winDelete(sqlite3_vfs *,const char*,int);
 static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   winShmNode **pp;
   winShmNode *p;
-  BOOL bRc;
   assert( winShmMutexHeld() );
   OSTRACE(("SHM-PURGE pid=%lu, deleteFlag=%d\n",
            osGetCurrentProcessId(), deleteFlag));
@@ -3195,12 +3203,14 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
       int i;
       if( p->mutex ) sqlite3_mutex_free(p->mutex);
       for(i=0; i<p->nRegion; i++){
-        bRc = osUnmapViewOfFile(p->aRegion[i].pMap);
+        BOOL bRc = osUnmapViewOfFile(p->aRegion[i].pMap);
         OSTRACE(("SHM-PURGE-UNMAP pid=%lu, region=%d, rc=%s\n",
                  osGetCurrentProcessId(), i, bRc ? "ok" : "failed"));
+        UNUSED_VARIABLE_VALUE(bRc);
         bRc = osCloseHandle(p->aRegion[i].hMap);
         OSTRACE(("SHM-PURGE-CLOSE pid=%lu, region=%d, rc=%s\n",
                  osGetCurrentProcessId(), i, bRc ? "ok" : "failed"));
+        UNUSED_VARIABLE_VALUE(bRc);
       }
       if( p->hFile.h!=NULL && p->hFile.h!=INVALID_HANDLE_VALUE ){
         SimulateIOErrorBenign(1);
