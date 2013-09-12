@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2013-09-12T00:54:59.015
+C Remove\stwo\sobsolete\sfields\sfrom\sthe\ssqlite3\sobject.
+D 2013-09-12T01:33:53.069
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 32e959dba9899360ce4ae3cd6cc77b4a8df277e8
+F src/sqliteInt.h 600a1da8ca71c919a1a270146b052a66a128533a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1112,7 +1112,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P eb5cef8351d12c0f8550dac96ee7a6e495975b5a
-R bf7885bb1c586c43940718dd93c9bac5
-U mistachkin
-Z ad1bbbbf78cb709221466a1e4ff47ba4
+P 2b510614dc6d878bd49eb428f167014f7f2e2568
+R c3304550dc7e156a767f11782ed297f6
+U drh
+Z 81bb05c3046a00cec99b12eff1620df6
