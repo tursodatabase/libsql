@@ -3919,6 +3919,7 @@ static const sqlite3_io_methods winIoMethod = {
 ** sqlite3_vfs object.
 */
 
+#if 0
 /*
 ** Convert a filename from whatever the underlying operating system
 ** supports for filenames into UTF-8.  Space to hold the result is
@@ -3937,6 +3938,7 @@ static char *winConvertToUtf8Filename(const void *zFilename){
   /* caller will handle out of memory */
   return zConverted;
 }
+#endif
 
 /*
 ** Convert a UTF-8 filename into whatever form the underlying
