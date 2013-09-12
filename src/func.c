@@ -544,9 +544,9 @@ struct compareInfo {
 */
 #if defined(SQLITE_EBCDIC)
 # define sqlite3Utf8Read(A)    (*((*A)++))
-# define GlogUpperToLower(A)   A = sqlite3UpperToLower[A]
+# define GlobUpperToLower(A)   A = sqlite3UpperToLower[A]
 #else
-# define GlogUpperToLower(A)   if( !((A)&~0x7f) ){ A = sqlite3UpperToLower[A]; }
+# define GlobUpperToLower(A)   if( !((A)&~0x7f) ){ A = sqlite3UpperToLower[A]; }
 #endif
 
 static const struct compareInfo globInfo = { '*', '?', '[', 0 };
@@ -625,11 +625,11 @@ static int patternCompare(
       }
       while( (c2 = sqlite3Utf8Read(&zString))!=0 ){
         if( noCase ){
-          GlogUpperToLower(c2);
-          GlogUpperToLower(c);
+          GlobUpperToLower(c2);
+          GlobUpperToLower(c);
           while( c2 != 0 && c2 != c ){
             c2 = sqlite3Utf8Read(&zString);
-            GlogUpperToLower(c2);
+            GlobUpperToLower(c2);
           }
         }else{
           while( c2 != 0 && c2 != c ){
@@ -681,8 +681,8 @@ static int patternCompare(
     }else{
       c2 = sqlite3Utf8Read(&zString);
       if( noCase ){
-        GlogUpperToLower(c);
-        GlogUpperToLower(c2);
+        GlobUpperToLower(c);
+        GlobUpperToLower(c2);
       }
       if( c!=c2 ){
         return 0;

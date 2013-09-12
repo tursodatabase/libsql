@@ -1,5 +1,5 @@
-C For\serror\slog\smessages\sgenerated\sby\sthe\sWin32\snative\sallocator,\smake\ssure\sthe\scorrect\sformat\sspecifier\sis\sused\sfor\sthe\svalue\sreturned\sby\sGetLastError().
-D 2013-09-12T02:09:05.258
+C Fix\stypo\sin\sa\smacro\sname:\s\s"GlogUpperToLower"\sshould\sbe\s"GlobUpperToLower"
+D 2013-09-12T23:12:08.689
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/delete.c 2dc64ca360b7d7da481183ea920a813a0c203c97
 F src/expr.c 33ae44812d25799000dbcfd54bb2142b30cdd049
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c be866cd8c4fa6cae98ba33109578fd1a3311ee5b
-F src/func.c 7650d35651bb0ca903d24f4e5e944bfdaac9f152
+F src/func.c be8482e92e70560e127b55a989663c0689c657cd
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -1112,7 +1112,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 59708674f66e06c9c31c1a24f2f1c51f0bf4fa3e
-R 1ed3fe4d70c0b22924a418f004301c6c
-U mistachkin
-Z 0449c470c02ad9774090312d2090be91
+P 75a8a8c1b39725d36db627536d0c69401f8e0815
+R 8ff1adbf60866468163443bbb47b7ee6
+U drh
+Z 1420c92f404975e34e33750c19177145
