@@ -129,7 +129,7 @@ static void resolveAlias(
   if( !ExprHasProperty(pExpr, EP_IntValue) && pExpr->u.zToken!=0 ){
     assert( (pExpr->flags & (EP_Reduced|EP_TokenOnly))==0 );
     pExpr->u.zToken = sqlite3DbStrDup(db, pExpr->u.zToken);
-    pExpr->flags2 |= EP2_MallocedToken;
+    pExpr->flags |= EP_MemToken;
   }
   sqlite3DbFree(db, pDup);
 }
@@ -229,7 +229,7 @@ static int lookupName(
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
-  assert( !ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_Reduced) );
+  assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
 
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
@@ -591,7 +591,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
   pParse = pNC->pParse;
   assert( pParse==pWalker->pParse );
 
-  if( ExprHasAnyProperty(pExpr, EP_Resolved) ) return WRC_Prune;
+  if( ExprHasProperty(pExpr, EP_Resolved) ) return WRC_Prune;
   ExprSetProperty(pExpr, EP_Resolved);
 #ifndef NDEBUG
   if( pNC->pSrcList && pNC->pSrcList->nAlloc>0 ){

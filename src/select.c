@@ -264,7 +264,7 @@ static void addWhereTerm(
   pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2, 0);
   if( pEq && isOuterJoin ){
     ExprSetProperty(pEq, EP_FromJoin);
-    assert( !ExprHasAnyProperty(pEq, EP_TokenOnly|EP_Reduced) );
+    assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
     ExprSetIrreducible(pEq);
     pEq->iRightJoinTable = (i16)pE2->iTable;
   }
@@ -300,7 +300,7 @@ static void addWhereTerm(
 static void setJoinExpr(Expr *p, int iTable){
   while( p ){
     ExprSetProperty(p, EP_FromJoin);
-    assert( !ExprHasAnyProperty(p, EP_TokenOnly|EP_Reduced) );
+    assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetIrreducible(p);
     p->iRightJoinTable = (i16)iTable;
     setJoinExpr(p->pLeft, iTable);

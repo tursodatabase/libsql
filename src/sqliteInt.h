@@ -1722,7 +1722,7 @@ typedef int ynVar;
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
-  u16 flags;             /* Various flags.  EP_* See below */
+  u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
     int iValue;            /* Non-negative integer value if EP_IntValue */
@@ -1736,8 +1736,8 @@ struct Expr {
   Expr *pLeft;           /* Left subnode */
   Expr *pRight;          /* Right subnode */
   union {
-    ExprList *pList;     /* Function arguments or in "<expr> IN (<expr-list)" */
-    Select *pSelect;     /* Used for sub-selects and "<expr> IN (<select>)" */
+    ExprList *pList;     /* op = IN, EXISTS, SELECT, CASE, FUNCTION, BETWEEN */
+    Select *pSelect;     /* EP_xIsSelect and op = IN, EXISTS, SELECT */
   } x;
 
   /* If the EP_Reduced flag is set in the Expr.flags mask, then no
@@ -1755,7 +1755,6 @@ struct Expr {
                          ** TK_VARIABLE: variable number (always >= 1). */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
-  u8 flags2;             /* Second set of flags.  EP2_... */
   u8 op2;                /* TK_REGISTER: original value of Expr.op
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth */
@@ -1766,28 +1765,24 @@ struct Expr {
 /*
 ** The following are the meanings of bits in the Expr.flags field.
 */
-#define EP_FromJoin   0x0001  /* Originated in ON or USING clause of a join */
-#define EP_Agg        0x0002  /* Contains one or more aggregate functions */
-#define EP_Resolved   0x0004  /* IDs have been resolved to COLUMNs */
-#define EP_Error      0x0008  /* Expression contains one or more errors */
-#define EP_Distinct   0x0010  /* Aggregate function with DISTINCT keyword */
-#define EP_VarSelect  0x0020  /* pSelect is correlated, not constant */
-#define EP_DblQuoted  0x0040  /* token.z was originally in "..." */
-#define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
-#define EP_Collate    0x0100  /* Tree contains a TK_COLLATE opeartor */
-#define EP_FixedDest  0x0200  /* Result needed in a specific register */
-#define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
-#define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Hint       0x1000  /* Not used */
-#define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
-#define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
-#define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
-
-/*
-** The following are the meanings of bits in the Expr.flags2 field.
-*/
-#define EP2_MallocedToken  0x0001  /* Need to sqlite3DbFree() Expr.zToken */
-#define EP2_Irreducible    0x0002  /* Cannot EXPRDUP_REDUCE this Expr */
+#define EP_FromJoin  0x000001 /* Originated in ON or USING clause of a join */
+#define EP_Agg       0x000002 /* Contains one or more aggregate functions */
+#define EP_Resolved  0x000004 /* IDs have been resolved to COLUMNs */
+#define EP_Error     0x000008 /* Expression contains one or more errors */
+#define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
+#define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
+#define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
+#define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
+#define EP_Collate   0x000100 /* Tree contains a TK_COLLATE opeartor */
+#define EP_FixedDest 0x000200 /* Result needed in a specific register */
+#define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
+#define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
+#define EP_Hint      0x001000 /* Not used */
+#define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
+#define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
+#define EP_Static    0x008000 /* Held in memory not obtained from malloc() */
+#define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
+#define EP_Irreduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 
 /*
 ** The pseudo-routine sqlite3ExprSetIrreducible sets the EP2_Irreducible
@@ -1796,7 +1791,7 @@ struct Expr {
 ** so as not to burden production code.
 */
 #ifdef SQLITE_DEBUG
-# define ExprSetIrreducible(X)  (X)->flags2 |= EP2_Irreducible
+# define ExprSetIrreducible(X)  (X)->flags |= EP_Irreduce
 #else
 # define ExprSetIrreducible(X)
 #endif
@@ -1805,8 +1800,8 @@ struct Expr {
 ** These macros can be used to test, set, or clear bits in the 
 ** Expr.flags field.
 */
-#define ExprHasProperty(E,P)     (((E)->flags&(P))==(P))
-#define ExprHasAnyProperty(E,P)  (((E)->flags&(P))!=0)
+#define ExprHasProperty(E,P)     (((E)->flags&(P))!=0)
+#define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
 
