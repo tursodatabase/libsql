@@ -1168,7 +1168,7 @@ static void *winMemMalloc(int nBytes){
   assert( nBytes>=0 );
   p = osHeapAlloc(hHeap, SQLITE_WIN32_HEAP_FLAGS, (SIZE_T)nBytes);
   if( !p ){
-    sqlite3_log(SQLITE_NOMEM, "failed to HeapAlloc %u bytes (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapAlloc %u bytes (%lu), heap=%p",
                 nBytes, osGetLastError(), (void*)hHeap);
   }
   return p;
@@ -1189,7 +1189,7 @@ static void winMemFree(void *pPrior){
 #endif
   if( !pPrior ) return; /* Passing NULL to HeapFree is undefined. */
   if( !osHeapFree(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior) ){
-    sqlite3_log(SQLITE_NOMEM, "failed to HeapFree block %p (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapFree block %p (%lu), heap=%p",
                 pPrior, osGetLastError(), (void*)hHeap);
   }
 }
@@ -1215,7 +1215,7 @@ static void *winMemRealloc(void *pPrior, int nBytes){
     p = osHeapReAlloc(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior, (SIZE_T)nBytes);
   }
   if( !p ){
-    sqlite3_log(SQLITE_NOMEM, "failed to %s %u bytes (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to %s %u bytes (%lu), heap=%p",
                 pPrior ? "HeapReAlloc" : "HeapAlloc", nBytes, osGetLastError(),
                 (void*)hHeap);
   }
@@ -1239,7 +1239,7 @@ static int winMemSize(void *p){
   if( !p ) return 0;
   n = osHeapSize(hHeap, SQLITE_WIN32_HEAP_FLAGS, p);
   if( n==(SIZE_T)-1 ){
-    sqlite3_log(SQLITE_NOMEM, "failed to HeapSize block %p (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapSize block %p (%lu), heap=%p",
                 p, osGetLastError(), (void*)hHeap);
     return 0;
   }
@@ -1269,7 +1269,7 @@ static int winMemInit(void *pAppData){
                                       SQLITE_WIN32_HEAP_MAX_SIZE);
     if( !pWinMemData->hHeap ){
       sqlite3_log(SQLITE_NOMEM,
-          "failed to HeapCreate (%d), flags=%u, initSize=%u, maxSize=%u",
+          "failed to HeapCreate (%lu), flags=%u, initSize=%u, maxSize=%u",
           osGetLastError(), SQLITE_WIN32_HEAP_FLAGS,
           SQLITE_WIN32_HEAP_INIT_SIZE, SQLITE_WIN32_HEAP_MAX_SIZE);
       return SQLITE_NOMEM;
@@ -1281,7 +1281,7 @@ static int winMemInit(void *pAppData){
   pWinMemData->hHeap = osGetProcessHeap();
   if( !pWinMemData->hHeap ){
     sqlite3_log(SQLITE_NOMEM,
-        "failed to GetProcessHeap (%d)", osGetLastError());
+        "failed to GetProcessHeap (%lu)", osGetLastError());
     return SQLITE_NOMEM;
   }
   pWinMemData->bOwned = FALSE;
@@ -1309,7 +1309,7 @@ static void winMemShutdown(void *pAppData){
 #endif
     if( pWinMemData->bOwned ){
       if( !osHeapDestroy(pWinMemData->hHeap) ){
-        sqlite3_log(SQLITE_NOMEM, "failed to HeapDestroy (%d), heap=%p",
+        sqlite3_log(SQLITE_NOMEM, "failed to HeapDestroy (%lu), heap=%p",
                     osGetLastError(), (void*)pWinMemData->hHeap);
       }
       pWinMemData->bOwned = FALSE;

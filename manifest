@@ -1,5 +1,5 @@
-C Fix\sa\scouple\smore\sharmless\scompiler\swarnings.
-D 2013-09-12T01:47:57.395
+C For\serror\slog\smessages\sgenerated\sby\sthe\sWin32\snative\sallocator,\smake\ssure\sthe\scorrect\sformat\sspecifier\sis\sused\sfor\sthe\svalue\sreturned\sby\sGetLastError().
+D 2013-09-12T02:09:05.258
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
-F src/os_win.c d18f670eeca4ab3da61230628d9042dfa282bd89
+F src/os_win.c 0e73f891dd806b82a76d4e19179c532f02236b86
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
@@ -1112,7 +1112,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 117fa5fbc9bed1a7b982c8ddc21b7e228905ccb4
-R 381ae7788d46844675761732daa8c2f7
+P 59708674f66e06c9c31c1a24f2f1c51f0bf4fa3e
+R 1ed3fe4d70c0b22924a418f004301c6c
 U mistachkin
-Z 423fbd0e140db731445f28d728ebdbaa
+Z 0449c470c02ad9774090312d2090be91
