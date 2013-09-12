@@ -1784,20 +1784,8 @@ struct Expr {
 #define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
 #define EP_Static    0x008000 /* Held in memory not obtained from malloc() */
 #define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
-#define EP_Irreduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
+#define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 #define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
-
-/*
-** The pseudo-routine sqlite3ExprSetIrreducible sets the EP2_Irreducible
-** flag on an expression structure.  This flag is used for VV&A only.  The
-** routine is implemented as a macro that only works when in debugging mode,
-** so as not to burden production code.
-*/
-#ifdef SQLITE_DEBUG
-# define ExprSetIrreducible(X)  (X)->flags |= EP_Irreduce
-#else
-# define ExprSetIrreducible(X)
-#endif
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1807,6 +1795,16 @@ struct Expr {
 #define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
+
+/* The ExprSetVVAProperty() macro is used for Verification, Validation,
+** and Accreditation only.  It works like ExprSetProperty() during VVA
+** processes but is a no-op for delivery.
+*/
+#ifdef SQLITE_DEBUG
+# define ExprSetVVAProperty(E,P)  (E)->flags|=(P)
+#else
+# define ExprSetVVAProperty(E,P)
+#endif
 
 /*
 ** Macros to determine the number of bytes required by a normal Expr 

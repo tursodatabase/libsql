@@ -745,7 +745,7 @@ static int dupedExprStructSize(Expr *p, int flags){
     assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
     assert( !ExprHasProperty(p, EP_FromJoin) ); 
     assert( !ExprHasProperty(p, EP_MemToken) );
-    assert( !ExprHasProperty(p, EP_Irreduce) );
+    assert( !ExprHasProperty(p, EP_NoReduce) );
     if( p->pLeft || p->pRight || p->x.pList ){
       nSize = EXPR_REDUCEDSIZE | EP_Reduced;
     }else{
@@ -1851,7 +1851,7 @@ int sqlite3CodeSubselect(
         return 0;
       }
       rReg = dest.iSDParm;
-      ExprSetIrreducible(pExpr);
+      ExprSetVVAProperty(pExpr, EP_NoReduce);
       break;
     }
   }
@@ -4102,7 +4102,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             ** Convert the pExpr to be a TK_AGG_COLUMN referring to that
             ** pAggInfo->aCol[] entry.
             */
-            ExprSetIrreducible(pExpr);
+            ExprSetVVAProperty(pExpr, EP_NoReduce);
             pExpr->pAggInfo = pAggInfo;
             pExpr->op = TK_AGG_COLUMN;
             pExpr->iAgg = (i16)k;
@@ -4149,7 +4149,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         /* Make pExpr point to the appropriate pAggInfo->aFunc[] entry
         */
         assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
-        ExprSetIrreducible(pExpr);
+        ExprSetVVAProperty(pExpr, EP_NoReduce);
         pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
         return WRC_Prune;
