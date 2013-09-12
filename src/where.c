@@ -689,7 +689,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
-  if( p && ExprHasAnyProperty(p, EP_Hint) ){
+  if( p && ExprHasProperty(p, EP_Unlikely) ){
     pTerm->truthProb = whereCost(p->iTable) - 99;
   }else{
     pTerm->truthProb = -1;

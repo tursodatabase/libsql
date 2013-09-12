@@ -43,7 +43,7 @@ int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
   testcase( ExprHasProperty(pExpr, EP_Reduced) );
   rc = pWalker->xExprCallback(pWalker, pExpr);
   if( rc==WRC_Continue
-              && !ExprHasAnyProperty(pExpr,EP_TokenOnly) ){
+              && !ExprHasProperty(pExpr,EP_TokenOnly) ){
     if( sqlite3WalkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
     if( sqlite3WalkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){

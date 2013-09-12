@@ -1081,12 +1081,13 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
 
 /* CASE expressions */
 expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
-  A.pExpr = sqlite3PExpr(pParse, TK_CASE, X, Z, 0);
+  A.pExpr = sqlite3PExpr(pParse, TK_CASE, X, 0, 0);
   if( A.pExpr ){
-    A.pExpr->x.pList = Y;
+    A.pExpr->x.pList = Z ? sqlite3ExprListAppend(pParse,Y,Z) : Y;
     sqlite3ExprSetHeight(pParse, A.pExpr);
   }else{
     sqlite3ExprListDelete(pParse->db, Y);
+    sqlite3ExprDelete(pParse->db, Z);
   }
   A.zStart = C.z;
   A.zEnd = &E.z[E.n];

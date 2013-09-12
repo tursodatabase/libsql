@@ -109,6 +109,14 @@
 #endif
 
 /*
+** This macro is used when a local variable is set to a value that is
+** [sometimes] not used by the code (e.g. via conditional compilation).
+*/
+#ifndef UNUSED_VARIABLE_VALUE
+#  define UNUSED_VARIABLE_VALUE(x) (void)(x)
+#endif
+
+/*
 ** Returns the string that should be used as the directory separator.
 */
 #ifndef winGetDirDep
@@ -358,7 +366,8 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 */
 #ifdef SQLITE_TEST
 int sqlite3_os_type = 0;
-#else
+#elif !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
+      defined(SQLITE_WIN32_HAS_ANSI) && defined(SQLITE_WIN32_HAS_WIDE)
 static int sqlite3_os_type = 0;
 #endif
 
@@ -1159,7 +1168,7 @@ static void *winMemMalloc(int nBytes){
   assert( nBytes>=0 );
   p = osHeapAlloc(hHeap, SQLITE_WIN32_HEAP_FLAGS, (SIZE_T)nBytes);
   if( !p ){
-    sqlite3_log(SQLITE_NOMEM, "failed to HeapAlloc %u bytes (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapAlloc %u bytes (%lu), heap=%p",
                 nBytes, osGetLastError(), (void*)hHeap);
   }
   return p;
@@ -1180,7 +1189,7 @@ static void winMemFree(void *pPrior){
 #endif
   if( !pPrior ) return; /* Passing NULL to HeapFree is undefined. */
   if( !osHeapFree(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior) ){
-    sqlite3_log(SQLITE_NOMEM, "failed to HeapFree block %p (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapFree block %p (%lu), heap=%p",
                 pPrior, osGetLastError(), (void*)hHeap);
   }
 }
@@ -1206,7 +1215,7 @@ static void *winMemRealloc(void *pPrior, int nBytes){
     p = osHeapReAlloc(hHeap, SQLITE_WIN32_HEAP_FLAGS, pPrior, (SIZE_T)nBytes);
   }
   if( !p ){
-    sqlite3_log(SQLITE_NOMEM, "failed to %s %u bytes (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to %s %u bytes (%lu), heap=%p",
                 pPrior ? "HeapReAlloc" : "HeapAlloc", nBytes, osGetLastError(),
                 (void*)hHeap);
   }
@@ -1230,7 +1239,7 @@ static int winMemSize(void *p){
   if( !p ) return 0;
   n = osHeapSize(hHeap, SQLITE_WIN32_HEAP_FLAGS, p);
   if( n==(SIZE_T)-1 ){
-    sqlite3_log(SQLITE_NOMEM, "failed to HeapSize block %p (%d), heap=%p",
+    sqlite3_log(SQLITE_NOMEM, "failed to HeapSize block %p (%lu), heap=%p",
                 p, osGetLastError(), (void*)hHeap);
     return 0;
   }
@@ -1260,7 +1269,7 @@ static int winMemInit(void *pAppData){
                                       SQLITE_WIN32_HEAP_MAX_SIZE);
     if( !pWinMemData->hHeap ){
       sqlite3_log(SQLITE_NOMEM,
-          "failed to HeapCreate (%d), flags=%u, initSize=%u, maxSize=%u",
+          "failed to HeapCreate (%lu), flags=%u, initSize=%u, maxSize=%u",
           osGetLastError(), SQLITE_WIN32_HEAP_FLAGS,
           SQLITE_WIN32_HEAP_INIT_SIZE, SQLITE_WIN32_HEAP_MAX_SIZE);
       return SQLITE_NOMEM;
@@ -1272,7 +1281,7 @@ static int winMemInit(void *pAppData){
   pWinMemData->hHeap = osGetProcessHeap();
   if( !pWinMemData->hHeap ){
     sqlite3_log(SQLITE_NOMEM,
-        "failed to GetProcessHeap (%d)", osGetLastError());
+        "failed to GetProcessHeap (%lu)", osGetLastError());
     return SQLITE_NOMEM;
   }
   pWinMemData->bOwned = FALSE;
@@ -1300,7 +1309,7 @@ static void winMemShutdown(void *pAppData){
 #endif
     if( pWinMemData->bOwned ){
       if( !osHeapDestroy(pWinMemData->hHeap) ){
-        sqlite3_log(SQLITE_NOMEM, "failed to HeapDestroy (%d), heap=%p",
+        sqlite3_log(SQLITE_NOMEM, "failed to HeapDestroy (%lu), heap=%p",
                     osGetLastError(), (void*)pWinMemData->hHeap);
       }
       pWinMemData->bOwned = FALSE;
@@ -3185,7 +3194,6 @@ static int winDelete(sqlite3_vfs *,const char*,int);
 static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   winShmNode **pp;
   winShmNode *p;
-  BOOL bRc;
   assert( winShmMutexHeld() );
   OSTRACE(("SHM-PURGE pid=%lu, deleteFlag=%d\n",
            osGetCurrentProcessId(), deleteFlag));
@@ -3195,12 +3203,14 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
       int i;
       if( p->mutex ) sqlite3_mutex_free(p->mutex);
       for(i=0; i<p->nRegion; i++){
-        bRc = osUnmapViewOfFile(p->aRegion[i].pMap);
+        BOOL bRc = osUnmapViewOfFile(p->aRegion[i].pMap);
         OSTRACE(("SHM-PURGE-UNMAP pid=%lu, region=%d, rc=%s\n",
                  osGetCurrentProcessId(), i, bRc ? "ok" : "failed"));
+        UNUSED_VARIABLE_VALUE(bRc);
         bRc = osCloseHandle(p->aRegion[i].hMap);
         OSTRACE(("SHM-PURGE-CLOSE pid=%lu, region=%d, rc=%s\n",
                  osGetCurrentProcessId(), i, bRc ? "ok" : "failed"));
+        UNUSED_VARIABLE_VALUE(bRc);
       }
       if( p->hFile.h!=NULL && p->hFile.h!=INVALID_HANDLE_VALUE ){
         SimulateIOErrorBenign(1);
@@ -3919,6 +3929,7 @@ static const sqlite3_io_methods winIoMethod = {
 ** sqlite3_vfs object.
 */
 
+#if 0
 /*
 ** Convert a filename from whatever the underlying operating system
 ** supports for filenames into UTF-8.  Space to hold the result is
@@ -3937,6 +3948,7 @@ static char *winConvertToUtf8Filename(const void *zFilename){
   /* caller will handle out of memory */
   return zConverted;
 }
+#endif
 
 /*
 ** Convert a UTF-8 filename into whatever form the underlying
