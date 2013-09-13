@@ -1,5 +1,5 @@
-C Remove\sone\sunreachable\sbranch\sand\sadd\sasserts()\sto\sdupedExprStructSize().\nNew\sasserts\sverify\sthat\sremoved\sbranch\sis\sunused\sand\sthat\sconstants\sthat\sare\nORed\stogether\sin\sthe\soutput\sdo\snot\soverlap.
-D 2013-09-13T18:15:15.913
+C Tweak\sthe\snew\sPRAGMA\sname\sparser\sto\sachieve\sfull\sbranch\stest\scoverage.
+D 2013-09-13T19:00:06.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -210,7 +210,7 @@ F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 49612a5c35fe0139a4b2e5fb0b7ee74d8a3a42b9
+F src/pragma.c 249742bd762770e5e6e5b67cfcb2fa33339b1049
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -1081,7 +1081,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl a254fd5648cb4b2f986ab336fb988f7f230e36fd
+F tool/mkpragmatab.tcl bf0979c5b55c54377b51ce27f7563473f30cf58d
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl d344cc3144a0271cd853c5e3df36e9f31d78d619
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P bc446449a19171c0fa0681973b06bc80d3c0517f
-R 2a7e8895716b04ac9288946bb94fe77e
+P 86ad358b5a7567857f2f998fbb8266b7de9ec87e
+R 2ecd64f96f0a8ab26198c346df0dbd22
 U drh
-Z e8d5908c10ef1b110b03b09629cf2011
+Z e3c428ae532d24cd33e04415d0b72bf7

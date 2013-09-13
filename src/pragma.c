@@ -69,7 +69,7 @@
 #define PragTyp_PARSER_TRACE                  38
 static const struct sPragmaNames {
   const char const *zName;  /* Name of pragma */
-  int ePragTyp;             /* PragTyp_XXX value */
+  u8 ePragTyp;              /* PragTyp_XXX value */
   u32 iArg;                 /* Extra argument */
 } aPragmaNames[] = {
 #if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
@@ -236,6 +236,7 @@ static const struct sPragmaNames {
   { "writable_schema",         PragTyp_FLAG,                  
                                SQLITE_WriteSchema|SQLITE_RecoveryMode },
 };
+/* Number of pragmas: 54 on by default, 65 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -1956,7 +1957,8 @@ void sqlite3Pragma(
   ** then 0 is returned.  Setting the busy_timeout to 0 or negative
   ** disables the timeout.
   */
-  case PragTyp_BUSY_TIMEOUT: {
+  /*case PragTyp_BUSY_TIMEOUT*/ default: {
+    assert( aPragmaNames[mid].ePragTyp==PragTyp_BUSY_TIMEOUT );
     if( zRight ){
       sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
     }

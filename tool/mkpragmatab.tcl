@@ -310,7 +310,7 @@ foreach name $allnames {
 #
 puts "static const struct sPragmaNames \173"
 puts "  const char const *zName;  /* Name of pragma */"
-puts "  int ePragTyp;             /* PragTyp_XXX value */"
+puts "  u8 ePragTyp;              /* PragTyp_XXX value */"
 puts "  u32 iArg;                 /* Extra argument */"
 puts "\175 aPragmaNames\[\] = \173"
 
