@@ -55,18 +55,19 @@
 #define PragTyp_PAGE_SIZE                     24
 #define PragTyp_SECURE_DELETE                 25
 #define PragTyp_SHRINK_MEMORY                 26
-#define PragTyp_SYNCHRONOUS                   27
-#define PragTyp_TABLE_INFO                    28
-#define PragTyp_TEMP_STORE                    29
-#define PragTyp_TEMP_STORE_DIRECTORY          30
-#define PragTyp_WAL_AUTOCHECKPOINT            31
-#define PragTyp_WAL_CHECKPOINT                32
-#define PragTyp_ACTIVATE_EXTENSIONS           33
-#define PragTyp_HEXKEY                        34
-#define PragTyp_KEY                           35
-#define PragTyp_REKEY                         36
-#define PragTyp_LOCK_STATUS                   37
-#define PragTyp_PARSER_TRACE                  38
+#define PragTyp_SOFT_HEAP_LIMIT               27
+#define PragTyp_SYNCHRONOUS                   28
+#define PragTyp_TABLE_INFO                    29
+#define PragTyp_TEMP_STORE                    30
+#define PragTyp_TEMP_STORE_DIRECTORY          31
+#define PragTyp_WAL_AUTOCHECKPOINT            32
+#define PragTyp_WAL_CHECKPOINT                33
+#define PragTyp_ACTIVATE_EXTENSIONS           34
+#define PragTyp_HEXKEY                        35
+#define PragTyp_KEY                           36
+#define PragTyp_REKEY                         37
+#define PragTyp_LOCK_STATUS                   38
+#define PragTyp_PARSER_TRACE                  39
 static const struct sPragmaNames {
   const char const *zName;  /* Name of pragma */
   u8 ePragTyp;              /* PragTyp_XXX value */
@@ -202,6 +203,7 @@ static const struct sPragmaNames {
   { "short_column_names",      PragTyp_FLAG,                  
                                SQLITE_ShortColNames },
   { "shrink_memory",           PragTyp_SHRINK_MEMORY,          0 },
+  { "soft_heap_limit",         PragTyp_SOFT_HEAP_LIMIT,        0 },
 #if defined(SQLITE_DEBUG)
   { "sql_trace",               PragTyp_FLAG,                  
                                SQLITE_SqlTrace },
@@ -236,7 +238,7 @@ static const struct sPragmaNames {
   { "writable_schema",         PragTyp_FLAG,                  
                                SQLITE_WriteSchema|SQLITE_RecoveryMode },
 };
-/* Number of pragmas: 54 on by default, 65 total. */
+/* Number of pragmas: 55 on by default, 66 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -1963,6 +1965,22 @@ void sqlite3Pragma(
       sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
     }
     returnSingleInt(pParse, "timeout",  db->busyTimeout);
+    break;
+  }
+
+  /*
+  **   PRAGMA soft_heap_limit
+  **   PRAGMA soft_heap_limit = N
+  **
+  ** Call sqlite3_soft_heap_limit64(N).  Return the result.  If N is omitted,
+  ** use -1.
+  */
+  case PragTyp_SOFT_HEAP_LIMIT: {
+    sqlite3_int64 N;
+    if( zRight && sqlite3Atoi64(zRight, &N, 1000000, SQLITE_UTF8)==SQLITE_OK ){
+      sqlite3_soft_heap_limit64(N);
+    }
+    returnSingleInt(pParse, "soft_heap_limit",  sqlite3_soft_heap_limit64(-1));
     break;
   }
 

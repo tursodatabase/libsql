@@ -239,6 +239,8 @@ set pragma_def {
 
   NAME: activate_extensions
   IF:   defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
+
+  NAME: soft_heap_limit
 }
 set name {}
 set type {}
