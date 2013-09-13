@@ -69,7 +69,7 @@
 #define PragTyp_LOCK_STATUS                   38
 #define PragTyp_PARSER_TRACE                  39
 static const struct sPragmaNames {
-  const char const *zName;  /* Name of pragma */
+  const char *const zName;  /* Name of pragma */
   u8 ePragTyp;              /* PragTyp_XXX value */
   u32 iArg;                 /* Extra argument */
 } aPragmaNames[] = {
