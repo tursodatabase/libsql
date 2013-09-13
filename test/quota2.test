@@ -25,7 +25,7 @@ db close
 sqlite3_quota_initialize "" 1
 
 foreach dir {quota2a/x1 quota2a/x2 quota2a quota2b quota2c} {
-  file delete -force $dir
+  forcedelete $dir
 }
 foreach dir {quota2a quota2a/x1 quota2a/x2 quota2b quota2c} {
   file mkdir $dir

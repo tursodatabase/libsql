@@ -1,5 +1,5 @@
-C VSIX\stooling\schanges\sto\ssupport\sVisual\sStudio\s2013.
-D 2013-09-13T22:38:54.996
+C Fix\stest\sissues\sfor\sWindows\sportability.
+D 2013-09-13T23:26:47.163
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -341,7 +341,7 @@ F test/badutf2.test f5bc7f2d280670ecd79b9cf4f0f1760c607fe51f
 F test/bc_common.tcl 5c8689cc6d2fb44b7c0968ae4f85eb26d50022fa
 F test/between.test 34d375fb5ce1ae283ffe82b6b233e9f38e84fc6c
 F test/bigfile.test aa74f4e5db51c8e54a1d9de9fa65d01d1eb20b59
-F test/bigfile2.test 7c79f1ef0c6c2c2bc1e7bd895596fab32bfb4796
+F test/bigfile2.test 1b489a3a39ae90c7f027b79110d6b4e1dbc71bfc
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 3c7b320969000c441a70952b0b15938fbb66237c
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
@@ -727,8 +727,8 @@ F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
 F test/quick.test 1681febc928d686362d50057c642f77a02c62e57
 F test/quota-glob.test 32901e9eed6705d68ca3faee2a06b73b57cb3c26
-F test/quota.test b5b3eec55a059e0fe493c66c6e27bd2c07676cfd
-F test/quota2.test 6d2bd57e8a4da28817f46db9da18551211cd325f
+F test/quota.test 2379902c25e291eac5c12b4cf96946a3447e3744
+F test/quota2.test 7dc12e08b11cbc4c16c9ba2aa2e040ea8d8ab4b8
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test eda062a97e60f9c38ae8d806b03b0ddf23d796df
@@ -782,11 +782,11 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 927a4b6da11978c82b857dbdb20a932aad732123
-F test/shell1.test 474ed53bb461c4ba9b6468d3a74e86eb8ee0d9d0
-F test/shell2.test 037d6ad16e873354195d30bb2dc4b5321788154a
-F test/shell3.test 9196c42772d575685e722c92b4b39053c6ebba59
+F test/shell1.test e7c0b9ebda25d5e78f0a3ea0dc4e31bb6d8098c0
+F test/shell2.test e1d3790f064e50b2f973502f45750012667486df
+F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test bfa21ecc173adcbc15db2c075baa468778f67f88
+F test/shell5.test 46c8c18d62732415c4fe084816c13d559831705e
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b74e6be818fa7d19f1af6d86ad1d2ecba334b01b fca799f03ad04b7d36381108ff10e9c7d03656ac
-R 9e6e7e0f9571c29585f149538dcfb35c
+P d56fac40313e7d2e77dac3e2bc47cbbb3d10c656
+R 3a17f5315f3f3ee549a4453c4476ea44
 U mistachkin
-Z f3e6e538e403fc9d8d7765b42116a05f
+Z 59cbb48ffb793f030b678219ae28e7f9
