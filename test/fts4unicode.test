@@ -438,4 +438,110 @@ do_execsql_test 8.2.3 {
   SELECT rowid FROM t4 WHERE t4 MATCH 'a';
 } {2 4}
 
+#-------------------------------------------------------------------------
+#
+foreach {tn sql} {
+  1 {
+    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 [tokenchars= .]);
+    CREATE VIRTUAL TABLE t6 USING fts4(
+        tokenize=unicode61 [tokenchars=="] "tokenchars=[]");
+    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 [separators=x\xC4]);
+  }
+  2 {
+    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 "tokenchars= .");
+    CREATE VIRTUAL TABLE t6 USING fts4(tokenize=unicode61 "tokenchars=[=""]");
+    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 "separators=x\xC4");
+  }
+  3 {
+    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 'tokenchars= .');
+    CREATE VIRTUAL TABLE t6 USING fts4(tokenize=unicode61 'tokenchars=="[]');
+    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 'separators=x\xC4');
+  }
+  4 {
+    CREATE VIRTUAL TABLE t5 USING fts4(tokenize=unicode61 `tokenchars= .`);
+    CREATE VIRTUAL TABLE t6 USING fts4(tokenize=unicode61 `tokenchars=[="]`);
+    CREATE VIRTUAL TABLE t7 USING fts4(tokenize=unicode61 `separators=x\xC4`);
+  }
+} {
+  do_execsql_test 9.$tn.0 { 
+    DROP TABLE IF EXISTS t5;
+    DROP TABLE IF EXISTS t5aux;
+    DROP TABLE IF EXISTS t6;
+    DROP TABLE IF EXISTS t6aux;
+    DROP TABLE IF EXISTS t7;
+    DROP TABLE IF EXISTS t7aux;
+  }
+  do_execsql_test 9.$tn.1 $sql
+
+  do_execsql_test 9.$tn.2 {
+    CREATE VIRTUAL TABLE t5aux USING fts4aux(t5);
+    INSERT INTO t5 VALUES('one two three/four.five.six');
+    SELECT * FROM t5aux;
+  } {
+    four.five.six   * 1 1 four.five.six   0 1 1 
+    {one two three} * 1 1 {one two three} 0 1 1
+  }
+
+  do_execsql_test 9.$tn.3 {
+    CREATE VIRTUAL TABLE t6aux USING fts4aux(t6);
+    INSERT INTO t6 VALUES('alpha=beta"gamma/delta[epsilon]zeta');
+    SELECT * FROM t6aux;
+  } {
+    {alpha=beta"gamma}   * 1 1 {alpha=beta"gamma} 0 1 1 
+    {delta[epsilon]zeta} * 1 1 {delta[epsilon]zeta} 0 1 1
+  }
+
+  do_execsql_test 9.$tn.4 {
+    CREATE VIRTUAL TABLE t7aux USING fts4aux(t7);
+    INSERT INTO t7 VALUES('alephxbeth\xC4gimel');
+    SELECT * FROM t7aux;
+  } {
+    aleph * 1 1 aleph 0 1 1 
+    beth  * 1 1 beth  0 1 1 
+    gimel * 1 1 gimel 0 1 1
+  }
+}
+
+# Check that multiple options are handled correctly.
+#
+do_execsql_test 10.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE VIRTUAL TABLE t1 USING fts4(tokenize=unicode61
+    "tokenchars=xyz" "tokenchars=.=" "separators=.=" "separators=xy"
+    "separators=a" "separators=a" "tokenchars=a" "tokenchars=a"
+  );
+
+  INSERT INTO t1 VALUES('oneatwoxthreeyfour');
+  INSERT INTO t1 VALUES('a.single=word');
+  CREATE VIRTUAL TABLE t1aux USING fts4aux(t1);
+  SELECT * FROM t1aux;
+} {
+  .single=word * 1 1 .single=word 0 1 1 
+  four         * 1 1 four         0 1 1 
+  one          * 1 1 one          0 1 1 
+  three        * 1 1 three        0 1 1 
+  two          * 1 1 two          0 1 1
+}
+
+# Test that case folding happens after tokenization, not before.
+#
+do_execsql_test 10.2 {
+  DROP TABLE IF EXISTS t2;
+  CREATE VIRTUAL TABLE t2 USING fts4(tokenize=unicode61 "separators=aB");
+  INSERT INTO t2 VALUES('oneatwoBthree');
+  INSERT INTO t2 VALUES('onebtwoAthree');
+  CREATE VIRTUAL TABLE t2aux USING fts4aux(t2);
+  SELECT * FROM t2aux;
+} {
+  one           * 1 1 one           0 1 1 
+  onebtwoathree * 1 1 onebtwoathree 0 1 1 
+  three         * 1 1 three         0 1 1 
+  two           * 1 1 two           0 1 1
+}
+
+
 finish_test
+
+
+
+
