@@ -1,5 +1,5 @@
-C Add\stests\sfor\sthe\sfts4\sunicode61\stokenchars\sand\sseparators\soptions.
-D 2013-09-13T12:10:09.872
+C Change\sthe\sPRAGMA\sparser\sto\suse\sa\sbinary\ssearch\sfor\sthe\spragma\sname.\nAlso:\s\sMinor\sperformance\senhancement\sto\ssqlite3DbFree()\sand\sto\sthe\ntoken\sdequoter.
+D 2013-09-13T16:36:46.969
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -186,7 +186,7 @@ F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
 F src/main.c 35931467ec026b05babb279cb8a573e62f6fe1a3
-F src/malloc.c fe085aa851b666b7c375c1ff957643dc20a04bf6
+F src/malloc.c 543a8eb5508eaf4cadf55a9b503379eba2088128
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
@@ -210,7 +210,7 @@ F src/parse.y 27c6b4138497d6f8360ba7847da6ed48033f957f
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 3aa3d8c8623b7b71c5b1bfb72dcc31fb0c25665f
+F src/pragma.c 49612a5c35fe0139a4b2e5fb0b7ee74d8a3a42b9
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -275,7 +275,7 @@ F src/tokenize.c 70061085a51f2f4fc15ece94f32c03bcb78e63b2
 F src/trigger.c 5c0ea9b8755e7c5e1a700f3e27ac4f8d92dd221e
 F src/update.c f5182157f5d0d0a97bc5f5e3c9bdba0dfbe08f08
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
-F src/util.c f566b5138099a2df8533b190d0dcc74b7dfbe0c9
+F src/util.c 7f3e35432d6888d1e770c488c35bd98970c44eec
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
 F src/vdbe.c a393a94c0d77b86c7c4ad2cfb43ec4ba278d9596
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
@@ -1080,6 +1080,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
+F tool/mkpragmatab.tcl b45b0770c9be2b693911d19adc6056c6d9c9276b
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl d344cc3144a0271cd853c5e3df36e9f31d78d619
@@ -1112,7 +1113,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 73634ca463f46027bfa8ea23f18abaa530460e24
-R 4220c723ebfba5175f5b35a4f736cee8
-U dan
-Z ceac464bf6cfcc5f50757139a5d63046
+P 9ce6f40dfb54b35cecba3cc9c1ec0d111f6e9f11
+R eb0f561b34214cdc0ff256f03a4cb3be
+U drh
+Z 21cd5712344a4e80033620b1f645dca4
