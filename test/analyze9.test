@@ -845,7 +845,7 @@ do_eqp_test 17.3 {
 } {/USING INDEX i1/}
 
 do_execsql_test 17.4 {
-  CREATE INDEX i2 ON t1(c);
+  CREATE INDEX i2 ON t1(c, d);
   ANALYZE main.i2;
 }
 do_eqp_test 17.5 {
