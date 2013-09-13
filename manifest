@@ -1,5 +1,5 @@
-C Fix\stest\sissues\sfor\sWindows\sportability.
-D 2013-09-13T23:26:47.163
+C Fix\sWindows\sSDK\scompiler\swarning.
+D 2013-09-13T23:27:39.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
-F src/os_win.c 0e73f891dd806b82a76d4e19179c532f02236b86
+F src/os_win.c b8f54f42d9c232c48cb694b7dbe94e601c816b5c
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d56fac40313e7d2e77dac3e2bc47cbbb3d10c656
-R 3a17f5315f3f3ee549a4453c4476ea44
+P 650b32825a85baff11b8e568649fd797066c8ab1
+R 86c4f81df3e0f8f912478820f6baf7a0
 U mistachkin
-Z 59cbb48ffb793f030b678219ae28e7f9
+Z 2b97a046c7bb8da4da56f5c1f9954d1c
