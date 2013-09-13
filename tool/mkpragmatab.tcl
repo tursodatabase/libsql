@@ -333,3 +333,15 @@ foreach name $allnames {
 }
 if {$current_if!=""} {puts "#endif"}
 puts "\175;"
+
+# count the number of pragmas, for information purposes
+#
+set allcnt 0
+set dfltcnt 0
+foreach name $allnames {
+  incr allcnt
+  set if [lindex $allbyname($name) 2]
+  if {[regexp {^defined} $if] || [regexp {[^!]defined} $if]} continue
+  incr dfltcnt
+}
+puts "/* Number of pragmas: $dfltcnt on by default, $allcnt total. */"

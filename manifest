@@ -1,5 +1,5 @@
-C Change\sthe\sPRAGMA\sparser\sto\suse\sa\sbinary\ssearch\sfor\sthe\spragma\sname.\nAlso:\s\sMinor\sperformance\senhancement\sto\ssqlite3DbFree()\sand\sto\sthe\ntoken\sdequoter.
-D 2013-09-13T16:36:46.969
+C Enhance\sthe\spragma\slookup\stable\sgenerator\sscript\sto\soutput\sa\scomment\sthat\ngives\sthe\snumber\sof\spragmas.
+D 2013-09-13T16:56:17.293
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1080,7 +1080,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl b45b0770c9be2b693911d19adc6056c6d9c9276b
+F tool/mkpragmatab.tcl a254fd5648cb4b2f986ab336fb988f7f230e36fd
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl d344cc3144a0271cd853c5e3df36e9f31d78d619
@@ -1113,7 +1113,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P 9ce6f40dfb54b35cecba3cc9c1ec0d111f6e9f11
-R eb0f561b34214cdc0ff256f03a4cb3be
+P 870c030b4e1854e6e0d39907fadbd82774c16f56
+R 8afb65d113bbf2b92c215847e16c4a85
 U drh
-Z 21cd5712344a4e80033620b1f645dca4
+Z 4c8308b89b9a52a9fa36455ebe75f0fa
