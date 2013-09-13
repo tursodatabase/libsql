@@ -65,12 +65,12 @@
 # argument is optional and if present must contain the name of the directory
 # containing the root of the source tree for SQLite.  The third argument is
 # optional and if present must contain the flavor the VSIX package to build.
-# Currently, the only supported package flavors are "WinRT" and "WP80".  The
-# fourth argument is optional and if present must be a string containing a list
-# of platforms to include in the VSIX package.  The format of the platform list
-# string is "platform1,platform2,platform3".  Typically, when on Windows, this
-# script is executed using commands similar to the following from a normal
-# Windows command prompt:
+# Currently, the only supported package flavors are "WinRT", "WinRT81", and
+# "WP80".  The fourth argument is optional and if present must be a string
+# containing a list of platforms to include in the VSIX package.  The format
+# of the platform list string is "platform1,platform2,platform3".  Typically,
+# when on Windows, this script is executed using commands similar to the
+# following from a normal Windows command prompt:
 #
 #                         CD /D C:\dev\sqlite\core
 #                         tclsh85 tool\mkvsix.tcl C:\Temp
@@ -255,18 +255,32 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set shortName SQLite.WinRT
   set displayName "SQLite for Windows Runtime"
   set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.0
+  set minVsVersion 11.0
   set extraSdkPath ""
   set extraFileListAttributes [appendArgs \
       "\r\n    " {AppliesTo="WindowsAppContainer"} \
       "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
+} elseif {[string equal -nocase $packageFlavor WinRT81]} then {
+  set shortName SQLite.WinRT81
+  set displayName "SQLite for Windows Runtime (Windows 8.1)"
+  set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.1
+  set minVsVersion 12.0
+  set extraSdkPath ""
+  set extraFileListAttributes [appendArgs \
+      "\r\n    " {AppliesTo="WindowsAppContainer"} \
+      "\r\n    " {DependsOn="Microsoft.VCLibs, version=12.0"}]
 } elseif {[string equal -nocase $packageFlavor WP80]} then {
   set shortName SQLite.WP80
   set displayName "SQLite for Windows Phone"
   set targetPlatformIdentifier "Windows Phone"
+  set targetPlatformVersion v8.0
+  set minVsVersion 11.0
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes ""
 } else {
-  fail "unsupported package flavor, must be \"WinRT\" or \"WP80\""
+  fail "unsupported package flavor, must be \"WinRT\", \"WinRT81\", or \"WP80\""
 }
 
 if {$argc >= 4} then {

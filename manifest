@@ -1,9 +1,9 @@
-C Version\s3.8.0.2
-D 2013-09-03T17:11:13.470
+C VSIX\stooling\schanges\sto\ssupport\sVisual\sStudio\s2013.
+D 2013-09-13T19:08:35.280
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc e9f41f89111627baaabd95cab4988b8d1c3e47c9
+F Makefile.msc bdeca733e258db62d1f8c38fd29fcb5f8ed030c3
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 8a3318c35d2fac7dcd542c90622f5ff9d7cfa096
@@ -1060,7 +1060,7 @@ F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
-F tool/build-all-msvc.bat c55f64ca200308fb5fa5c1ee751ea95a13977b5a x
+F tool/build-all-msvc.bat 38623a30fd58288fda5cc7f7df2682aaab75c9d5 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1079,7 +1079,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl a61fe62a2895ca6458c463fccf1211ca1c000fcf
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl 0be7f7a591f1e83f9199cb82911b66668ca484c9
+F tool/mkvsix.tcl f3312df26fd9938a27fa0a845ec96bea84b0c16b
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1105,11 +1105,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
-F tool/win/sqlite.vsix 97894c2790eda7b5bce3cc79cb2a8ec2fde9b3ac
-P cce541864d2216c875992fe22bcb009747f72128
-R 6d234f3f24f580ee38bfe11d7feea18c
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.0.2 *
-U drh
-Z 25497eb59e96f82b9ae854b9bc7b7f22
+F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
+P 7dd4968f235d6e1ca9547cda9cf3bd570e1609ef 0328e873f2f98ac0aed93ec07ba7e14228cc10e0
+R 5812bb72dabad65bb7ca6fda3f546db6
+U mistachkin
+Z afccdc0c34e5766fab54652a091084a4
