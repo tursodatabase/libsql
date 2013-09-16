@@ -1,5 +1,5 @@
-C Minor\sconsistency\sfixes\sto\sthe\sWin32\sRC\sfile.
-D 2013-09-16T19:27:36.964
+C Readability\simprovements\sto\sthe\sWin32\sRC\sfile.
+D 2013-09-16T20:46:34.595
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c fc60e8e539cb9a895cac197de95048759b0f3ab0
 F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
-F src/sqlite3.rc 9bc020ab42953c9b534a36625f2aea95d305f8f0
+F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 18c7f80e7e23098942436f7286e9c93adc6908be
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P daf6ba413cb3cb6065774ba07495eab4a28b49b0
-R bf8bf2a00e798ca367a5d08e40be962c
+P 619c5211b91aef98794e2e0a6f03832619fc83c0
+R 47d9951cd9612e10d648f9000a88ebbd
 U mistachkin
-Z a832b9bdbbfaa169c6e70acd3e4ce465
+Z 8ac9e680ba708744fd7ab8d11bcab543

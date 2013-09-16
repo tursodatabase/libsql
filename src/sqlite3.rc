@@ -17,11 +17,11 @@
 #include "winresrc.h"
 #else
 #include "windows.h"
-#endif
+#endif /* !defined(_WIN32_WCE) */
 
-#ifndef VS_FF_NONE
+#if !defined(VS_FF_NONE)
 #  define VS_FF_NONE            0x00000000L
-#endif
+#endif /* !defined(VS_FF_NONE) */
 
 #include "sqlite3.h"
 #include "sqlite3rc.h"
@@ -30,10 +30,10 @@
  * English (U.S.) resources
  */
 
-#ifdef _WIN32
+#if defined(_WIN32)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif /* _WIN32 */
+#endif /* defined(_WIN32) */
 
 /*
  * Version
@@ -47,9 +47,9 @@ VS_VERSION_INFO VERSIONINFO
   FILEFLAGS VS_FF_DEBUG
 #else
   FILEFLAGS VS_FF_NONE
-#endif
+#endif /* defined(_DEBUG) */
   FILEOS VOS__WINDOWS32
-  FILETYPE VFT_APP
+  FILETYPE VFT_DLL
   FILESUBTYPE VFT2_UNKNOWN
 BEGIN
   BLOCK "StringFileInfo"
@@ -68,6 +68,6 @@ BEGIN
   END
   BLOCK "VarFileInfo"
   BEGIN
-    VALUE "Translation", 0x409, 1200
+    VALUE "Translation", 0x409, 0x4b0
   END
 END
