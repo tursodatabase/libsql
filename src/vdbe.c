@@ -567,6 +567,7 @@ int sqlite3VdbeExec(
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
   assert( p->bIsReader || p->readOnly!=0 );
   p->rc = SQLITE_OK;
+  p->iCurrentTime = 0;
   assert( p->explain==0 );
   p->pResultSet = 0;
   db->busyHandler.nBusy = 0;

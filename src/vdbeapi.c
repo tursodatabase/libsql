@@ -510,6 +510,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   return rc;
 }
 
+
 /*
 ** Extract the user data from a sqlite3_context structure and return a
 ** pointer to it.
@@ -532,6 +533,19 @@ void *sqlite3_user_data(sqlite3_context *p){
 sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
   assert( p && p->pFunc );
   return p->s.db;
+}
+
+/*
+** Return the current time for a statement
+*/
+sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context *p){
+  Vdbe *v = p->pVdbe;
+  int rc;
+  if( v->iCurrentTime==0 ){
+    rc = sqlite3OsCurrentTimeInt64(p->s.db->pVfs, &v->iCurrentTime);
+    if( rc ) v->iCurrentTime = 0;
+  }
+  return v->iCurrentTime;
 }
 
 /*

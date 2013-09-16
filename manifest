@@ -1,5 +1,5 @@
-C Fix\sWindows\sSDK\scompiler\swarning.
-D 2013-09-13T23:27:39.040
+C The\sdate\sand\stime\sfunctions\suse\sthe\sexact\ssame\snotion\sof\s"now"\sfor\severy\ninvocation\swithin\sthe\ssame\scall\sto\ssqlite3_step().
+D 2013-09-16T12:57:19.083
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/build.c f63e8929c7f89c0074fbc74929bc946ea117b2f8
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
-F src/date.c 067a81c9942c497aafd2c260e13add8a7d0c7dd4
+F src/date.c 65196e95e69f36993659bd7781abe7c2f1994739
 F src/delete.c 2dc64ca360b7d7da481183ea920a813a0c203c97
 F src/expr.c 1017f482217e093ecdaca91e8666681e83733252
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -221,7 +221,7 @@ F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc fea433eb0a59f4c9393c8e6d76a6e2596b1fe0c0
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 896034293a7e52e2d4a6edff61a797f36d43c0a9
+F src/sqliteInt.h 18c7f80e7e23098942436f7286e9c93adc6908be
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -277,10 +277,10 @@ F src/update.c f5182157f5d0d0a97bc5f5e3c9bdba0dfbe08f08
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 7f3e35432d6888d1e770c488c35bd98970c44eec
 F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
-F src/vdbe.c a393a94c0d77b86c7c4ad2cfb43ec4ba278d9596
+F src/vdbe.c 56e648f5ba9a91810caf216857adfed9039cd174
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
-F src/vdbeInt.h cbe71b8b36d8b3bba5709cc3f436c7e3b47b7b08
-F src/vdbeapi.c 96b24b946cf21894f63d9393e821baa2f0a80979
+F src/vdbeInt.h ff57f67aee1ba26a3a47e786533dab155ab6dad6
+F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c 88beca92f2ed0bbe2c6f87946d0e999a6807ea1b
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 817ce21ab4ca57f902619bb8fef3f8a51bbd0ed8
@@ -413,7 +413,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
-F test/date.test f3228180c87bbe5d39c9397bf001c0095c3821b9
+F test/date.test 502ddcbaaac9ce103bcd76d8e9d9bc8aa04e61b0
 F test/dbstatus.test aee30c3f337e6c217ff06df59fb8fe6e6448dce2
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 650b32825a85baff11b8e568649fd797066c8ab1
-R 86c4f81df3e0f8f912478820f6baf7a0
-U mistachkin
-Z 2b97a046c7bb8da4da56f5c1f9954d1c
+P d5fc3f1dabc7227230dcabdd808357f63432357b
+R ead99db3a62653402af31bb55f28a609
+U drh
+Z 697f82a0e98989fae400e82ea730851a
