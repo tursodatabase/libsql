@@ -1,5 +1,5 @@
-C Readability\simprovements\sto\sthe\sWin32\sRC\sfile.
-D 2013-09-16T20:46:34.595
+C Clear\sthe\scurrent\stime\svalue\son\sprepared\sstatements\swhen\sthe\sprepared\sstatement\nis\sreset.
+D 2013-09-17T23:36:33.750
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 56e648f5ba9a91810caf216857adfed9039cd174
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
 F src/vdbeInt.h ff57f67aee1ba26a3a47e786533dab155ab6dad6
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 88beca92f2ed0bbe2c6f87946d0e999a6807ea1b
+F src/vdbeaux.c 55f4858fe6abd84bd7311acbf30a75a28903ec25
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 817ce21ab4ca57f902619bb8fef3f8a51bbd0ed8
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 619c5211b91aef98794e2e0a6f03832619fc83c0
-R 47d9951cd9612e10d648f9000a88ebbd
-U mistachkin
-Z 8ac9e680ba708744fd7ab8d11bcab543
+P e64590625774228b5602a66cfb087cf74e2b438b
+R 3e0fb0624f3c4343d466e2fb2e172195
+U drh
+Z 63cad000c8bfce48b583ef7cab5e683e
