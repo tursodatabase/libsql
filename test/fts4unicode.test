@@ -539,6 +539,17 @@ do_execsql_test 10.2 {
   two           * 1 1 two           0 1 1
 }
 
+# Test that the tokenchars and separators options work with the 
+# fts3tokenize table.
+#
+do_execsql_test 11.1 {
+  CREATE VIRTUAL TABLE ft1 USING fts3tokenize(
+    "unicode61", "tokenchars=@.", "separators=1234567890"
+  );
+  SELECT token FROM ft1 WHERE input = 'berlin@street123sydney.road';
+} {
+  berlin@street sydney.road
+}
 
 finish_test
 
