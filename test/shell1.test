@@ -536,7 +536,7 @@ do_test shell1-3.19.1 {
   catchcmd "test.db" ".read"
 } {1 {Error: unknown command or invalid arguments:  "read". Enter ".help" for help}}
 do_test shell1-3.19.2 {
-  file delete -force FOO
+  forcedelete FOO
   catchcmd "test.db" ".read FOO"
 } {1 {Error: cannot open "FOO"}}
 do_test shell1-3.19.3 {

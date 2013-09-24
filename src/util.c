@@ -193,7 +193,8 @@ int sqlite3Dequote(char *z){
     case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
     default:    return -1;
   }
-  for(i=1, j=0; ALWAYS(z[i]); i++){
+  for(i=1, j=0;; i++){
+    assert( z[i] );
     if( z[i]==quote ){
       if( z[i+1]==quote ){
         z[j++] = quote;

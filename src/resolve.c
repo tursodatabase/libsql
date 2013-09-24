@@ -107,6 +107,7 @@ static void resolveAlias(
     incrAggFunctionDepth(pDup, nSubquery);
     pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
     if( pDup==0 ) return;
+    ExprSetProperty(pDup, EP_Skip);
     if( pEList->a[iCol].iAlias==0 ){
       pEList->a[iCol].iAlias = (u16)(++pParse->nAlias);
     }
@@ -129,7 +130,7 @@ static void resolveAlias(
   if( !ExprHasProperty(pExpr, EP_IntValue) && pExpr->u.zToken!=0 ){
     assert( (pExpr->flags & (EP_Reduced|EP_TokenOnly))==0 );
     pExpr->u.zToken = sqlite3DbStrDup(db, pExpr->u.zToken);
-    pExpr->flags2 |= EP2_MallocedToken;
+    pExpr->flags |= EP_MemToken;
   }
   sqlite3DbFree(db, pDup);
 }
@@ -229,12 +230,12 @@ static int lookupName(
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
-  assert( !ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_Reduced) );
+  assert( !ExprHasProperty(pExpr, EP_TokenOnly|EP_Reduced) );
 
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
   pExpr->pTab = 0;
-  ExprSetIrreducible(pExpr);
+  ExprSetVVAProperty(pExpr, EP_NoReduce);
 
   /* Translate the schema name in zDb into a pointer to the corresponding
   ** schema.  If not found, pSchema will remain NULL and nothing will match
@@ -570,6 +571,19 @@ static void notValidCheckConstraint(
 # define notValidCheckConstraint(P,N,M)
 #endif
 
+/*
+** Expression p should encode a floating point value between 1.0 and 0.0.
+** Return 1024 times this value.  Or return -1 if p is not a floating point
+** value between 1.0 and 0.0.
+*/
+static int exprProbability(Expr *p){
+  double r = -1.0;
+  if( p->op!=TK_FLOAT ) return -1;
+  sqlite3AtoF(p->u.zToken, &r, sqlite3Strlen30(p->u.zToken), SQLITE_UTF8);
+  assert( r>=0.0 );
+  if( r>1.0 ) return -1;
+  return (int)(r*1000.0);
+}
 
 /*
 ** This routine is callback for sqlite3WalkExpr().
@@ -591,7 +605,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
   pParse = pNC->pParse;
   assert( pParse==pWalker->pParse );
 
-  if( ExprHasAnyProperty(pExpr, EP_Resolved) ) return WRC_Prune;
+  if( ExprHasProperty(pExpr, EP_Resolved) ) return WRC_Prune;
   ExprSetProperty(pExpr, EP_Resolved);
 #ifndef NDEBUG
   if( pNC->pSrcList && pNC->pSrcList->nAlloc>0 ){
@@ -683,6 +697,19 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         }
       }else{
         is_agg = pDef->xFunc==0;
+        if( pDef->funcFlags & SQLITE_FUNC_UNLIKELY ){
+          ExprSetProperty(pExpr, EP_Unlikely|EP_Skip);
+          if( n==2 ){
+            pExpr->iTable = exprProbability(pList->a[1].pExpr);
+            if( pExpr->iTable<0 ){
+              sqlite3ErrorMsg(pParse, "second argument to likelihood() must be a "
+                                      "constant between 0.0 and 1.0");
+              pNC->nErr++;
+            }
+          }else{
+            pExpr->iTable = 62;  /* TUNING:  Default 2nd arg to unlikely() is 0.0625 */
+          }             
+        }
       }
 #ifndef SQLITE_OMIT_AUTHORIZATION
       if( pDef ){

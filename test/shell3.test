@@ -40,7 +40,7 @@ sqlite3 db test.db
 
 # Run SQL statement from command line
 do_test shell3-1.1 {
-  file delete -force foo.db
+  forcedelete foo.db
   set rc [ catchcmd "foo.db \"CREATE TABLE t1(a);\"" ]
   set fexist [file exist foo.db]
   list $rc $fexist
@@ -70,7 +70,7 @@ do_test shell3-1.7 {
 
 # Run SQL file from command line
 do_test shell3-2.1 {
-  file delete -force foo.db
+  forcedelete foo.db
   set rc [ catchcmd "foo.db" "CREATE TABLE t1(a);" ]
   set fexist [file exist foo.db]
   list $rc $fexist

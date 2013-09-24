@@ -347,7 +347,7 @@ static void statInit(
     p->mxSample = mxSample;
     p->nPSample = (tRowcnt)(sqlite3_value_int64(argv[1])/(mxSample/3+1) + 1);
     p->current.anLt = &p->current.anEq[nColUp];
-    sqlite3_randomness(sizeof(p->iPrn), &p->iPrn);
+    p->iPrn = nCol*0x689e962d ^ sqlite3_value_int(argv[1])*0xd0944565;
   
     /* Set up the Stat4Accum.a[] and aBest[] arrays */
     p->a = (struct Stat4Sample*)&p->current.anLt[nColUp];

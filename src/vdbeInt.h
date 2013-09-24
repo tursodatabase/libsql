@@ -350,6 +350,7 @@ struct Vdbe {
 #ifndef SQLITE_OMIT_TRACE
   i64 startTime;          /* Time when query started - used for profiling */
 #endif
+  i64 iCurrentTime;       /* Value of julianday('now') for this statement */
   i64 nFkConstraint;      /* Number of imm. FK constraints this VM */
   i64 nStmtDefCons;       /* Number of def. constraints when stmt started */
   i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */

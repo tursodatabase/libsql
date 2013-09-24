@@ -52,12 +52,13 @@ typedef struct WhereOrSet WhereOrSet;
 ** Cost X is tracked as 10*log2(X) stored in a 16-bit integer.  The
 ** maximum cost for ordinary tables is 64*(2**63) which becomes 6900.
 ** (Virtual tables can return a larger cost, but let's assume they do not.)
-** So all costs can be stored in a 16-bit unsigned integer without risk
+** So all costs can be stored in a 16-bit integer without risk
 ** of overflow.
 **
 ** Costs are estimates, so no effort is made to compute 10*log2(X) exactly.
-** Instead, a close estimate is used.  Any value of X<=1 is stored as 0.
-** X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.
+** Instead, a close estimate is used.  Any value of X=1 is stored as 0.
+** X=2 is 10.  X=3 is 16.  X=1000 is 99. etc.  Negative values are allowed.
+** A WhereCost of -10 means 0.5.  WhereCost of -20 means 0.25.  And so forth.
 **
 ** The tool/wherecosttest.c source file implements a command-line program
 ** that will convert WhereCosts to integers, convert integers to WhereCosts
@@ -65,7 +66,7 @@ typedef struct WhereOrSet WhereOrSet;
 ** command-line program is a useful utility to have around when working with
 ** this module.
 */
-typedef unsigned short int WhereCost;
+typedef short int WhereCost;
 
 /*
 ** This object contains information needed to implement a single nested
@@ -106,6 +107,7 @@ struct WhereLevel {
     Index *pCovidx;       /* Possible covering index for WHERE_MULTI_OR */
   } u;
   struct WhereLoop *pWLoop;  /* The selected WhereLoop object */
+  Bitmask notReady;          /* FROM entries not usable at this level */
 };
 
 /*
@@ -268,6 +270,7 @@ struct WhereTerm {
     WhereOrInfo *pOrInfo;   /* Extra information if (eOperator & WO_OR)!=0 */
     WhereAndInfo *pAndInfo; /* Extra information if (eOperator& WO_AND)!=0 */
   } u;
+  WhereCost truthProb;    /* Probability of truth for this expression */
   u16 eOperator;          /* A WO_xx value describing <op> */
   u8 wtFlags;             /* TERM_xxx bit flags.  See below */
   u8 nChild;              /* Number of children that must disable us */
@@ -642,6 +645,9 @@ static void whereClauseClear(WhereClause *pWC){
   }
 }
 
+/* Forward declaration */
+static WhereCost whereCost(tRowcnt x);
+
 /*
 ** Add a single new WhereTerm entry to the WhereClause object pWC.
 ** The new WhereTerm object is constructed from Expr p and with wtFlags.
@@ -683,6 +689,11 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
     pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
   pTerm = &pWC->a[idx = pWC->nTerm++];
+  if( p && ExprHasProperty(p, EP_Unlikely) ){
+    pTerm->truthProb = whereCost(p->iTable) - 99;
+  }else{
+    pTerm->truthProb = -1;
+  }
   pTerm->pExpr = sqlite3ExprSkipCollate(p);
   pTerm->wtFlags = wtFlags;
   pTerm->pWC = pWC;
@@ -2544,6 +2555,7 @@ static int whereRangeScanEst(
 ){
   int rc = SQLITE_OK;
   int nOut = (int)*pnOut;
+  WhereCost nNew;
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   Index *p = pBuilder->pNew->u.btree.pIndex;
@@ -2606,6 +2618,7 @@ static int whereRangeScanEst(
         whereKeyStats(pParse, p, pRec, 0, a);
         iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
         if( iNew>iLower ) iLower = iNew;
+        nOut--;
       }
     }
 
@@ -2620,12 +2633,12 @@ static int whereRangeScanEst(
         whereKeyStats(pParse, p, pRec, 1, a);
         iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
         if( iNew<iUpper ) iUpper = iNew;
+        nOut--;
       }
     }
 
     pBuilder->pRec = pRec;
     if( rc==SQLITE_OK ){
-      WhereCost nNew;
       if( iUpper>iLower ){
         nNew = whereCost(iUpper - iLower);
       }else{
@@ -2647,13 +2660,17 @@ static int whereRangeScanEst(
   assert( pLower || pUpper );
   /* TUNING:  Each inequality constraint reduces the search space 4-fold.
   ** A BETWEEN operator, therefore, reduces the search space 16-fold */
+  nNew = nOut;
   if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ){
-    nOut -= 20;        assert( 20==whereCost(4) );
+    nNew -= 20;        assert( 20==whereCost(4) );
+    nOut--;
   }
   if( pUpper ){
-    nOut -= 20;        assert( 20==whereCost(4) );
+    nNew -= 20;        assert( 20==whereCost(4) );
+    nOut--;
   }
-  if( nOut<10 ) nOut = 10;
+  if( nNew<10 ) nNew = 10;
+  if( nNew<nOut ) nOut = nNew;
   *pnOut = (WhereCost)nOut;
   return rc;
 }
@@ -2799,6 +2816,7 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
   if( pTerm
       && (pTerm->wtFlags & TERM_CODED)==0
       && (pLevel->iLeftJoin==0 || ExprHasProperty(pTerm->pExpr, EP_FromJoin))
+      && (pLevel->notReady & pTerm->prereqAll)==0
   ){
     pTerm->wtFlags |= TERM_CODED;
     if( pTerm->iParent>=0 ){
@@ -3224,7 +3242,6 @@ static Bitmask codeOneLoopStart(
   int addrCont;                   /* Jump here to continue with next cycle */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
-  Bitmask newNotReady;      /* Return value */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -3234,6 +3251,7 @@ static Bitmask codeOneLoopStart(
   pLoop = pLevel->pWLoop;
   pTabItem = &pWInfo->pTabList->a[pLevel->iFrom];
   iCur = pTabItem->iCursor;
+  pLevel->notReady = notReady & ~getMask(&pWInfo->sMaskSet, iCur);
   bRev = (pWInfo->revMask>>iLevel)&1;
   omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
            && (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)==0;
@@ -3886,7 +3904,6 @@ static Bitmask codeOneLoopStart(
     pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
     pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
   }
-  newNotReady = notReady & ~getMask(&pWInfo->sMaskSet, iCur);
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
@@ -3896,7 +3913,7 @@ static Bitmask codeOneLoopStart(
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     testcase( pTerm->wtFlags & TERM_CODED );
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( (pTerm->prereqAll & newNotReady)!=0 ){
+    if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
       testcase( pWInfo->untestedTerms==0
                && (pWInfo->wctrlFlags & WHERE_ONETABLE_ONLY)!=0 );
       pWInfo->untestedTerms = 1;
@@ -3928,7 +3945,7 @@ static Bitmask codeOneLoopStart(
     if( pLevel->iLeftJoin ) continue;
     pE = pTerm->pExpr;
     assert( !ExprHasProperty(pE, EP_FromJoin) );
-    assert( (pTerm->prereqRight & newNotReady)!=0 );
+    assert( (pTerm->prereqRight & pLevel->notReady)!=0 );
     pAlt = findTerm(pWC, iCur, pTerm->u.leftColumn, notReady, WO_EQ|WO_IN, 0);
     if( pAlt==0 ) continue;
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
@@ -3956,7 +3973,7 @@ static Bitmask codeOneLoopStart(
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-      if( (pTerm->prereqAll & newNotReady)!=0 ){
+      if( (pTerm->prereqAll & pLevel->notReady)!=0 ){
         assert( pWInfo->untestedTerms );
         continue;
       }
@@ -3967,7 +3984,7 @@ static Bitmask codeOneLoopStart(
   }
   sqlite3ReleaseTempReg(pParse, iReleaseReg);
 
-  return newNotReady;
+  return pLevel->notReady;
 }
 
 #ifdef WHERETRACE_ENABLED
@@ -4188,9 +4205,9 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       assert( p->rSetup==pTemplate->rSetup );
       if( p->prereq==pTemplate->prereq
        && p->nLTerm<pTemplate->nLTerm
-       && (p->wsFlags & WHERE_INDEXED)!=0
-       && (pTemplate->wsFlags & WHERE_INDEXED)!=0
-       && p->u.btree.pIndex==pTemplate->u.btree.pIndex
+       && (p->wsFlags & pTemplate->wsFlags & WHERE_INDEXED)!=0
+       && (p->u.btree.pIndex==pTemplate->u.btree.pIndex
+          || pTemplate->rRun+p->nLTerm<=p->rRun+pTemplate->nLTerm)
       ){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */
@@ -4205,12 +4222,12 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
      && p->rRun>=pTemplate->rRun
      && p->nOut>=pTemplate->nOut
-     && ALWAYS(p->rSetup>=pTemplate->rSetup) /* See SETUP-INVARIANT above */
     ){
       /* Overwrite an existing WhereLoop with a better one: one that is
       ** better at one of (1) dependencies, (2) setup-cost, (3) run-cost
       ** or (4) number of output rows, and is no worse in any of those
       ** categories. */
+      assert( p->rSetup>=pTemplate->rSetup ); /* SETUP-INVARIANT above */
       pNext = p->pNextLoop;
       break;
     }
@@ -4255,6 +4272,36 @@ whereLoopInsert_noop:
   }
 #endif
   return SQLITE_OK;  
+}
+
+/*
+** Adjust the WhereLoop.nOut value downward to account for terms of the
+** WHERE clause that reference the loop but which are not used by an
+** index.
+**
+** In the current implementation, the first extra WHERE clause term reduces
+** the number of output rows by a factor of 10 and each additional term
+** reduces the number of output rows by sqrt(2).
+*/
+static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop, int iCur){
+  WhereTerm *pTerm, *pX;
+  Bitmask notAllowed = ~(pLoop->prereq|pLoop->maskSelf);
+  int i, j;
+
+  if( !OptimizationEnabled(pWC->pWInfo->pParse->db, SQLITE_AdjustOutEst) ){
+    return;
+  }
+  for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
+    if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) break;
+    if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
+    if( (pTerm->prereqAll & notAllowed)!=0 ) continue;
+    for(j=pLoop->nLTerm-1; j>=0; j--){
+      pX = pLoop->aLTerm[j];
+      if( pX==pTerm ) break;
+      if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
+    }
+    if( j<0 ) pLoop->nOut += pTerm->truthProb;
+  }
 }
 
 /*
@@ -4423,7 +4470,7 @@ static int whereLoopAddBtreeIndex(
     }
     /* Step cost for each output row */
     pNew->rRun = whereCostAdd(pNew->rRun, pNew->nOut);
-    /* TBD: Adjust nOut for additional constraints */
+    whereLoopOutputAdjust(pBuilder->pWC, pNew, pSrc->iCursor);
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
      && pNew->u.btree.nEq<(pProbe->nColumn + (pProbe->zName!=0))
@@ -4627,7 +4674,9 @@ static int whereLoopAddBtree(
       **     index scans so that a covering index scan will be favored over
       **     a table scan. */
       pNew->rRun = whereCostAdd(rSize,rLogSize) + 16;
+      whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
       rc = whereLoopInsert(pBuilder, pNew);
+      pNew->nOut = rSize;
       if( rc ) break;
     }else{
       Bitmask m = pSrc->colUsed & ~columnsInIndex(pProbe);
@@ -4659,7 +4708,9 @@ static int whereLoopAddBtree(
           ** which we will simplify to just N*log2(N) */
           pNew->rRun = rSize + rLogSize;
         }
+        whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
         rc = whereLoopInsert(pBuilder, pNew);
+        pNew->nOut = rSize;
         if( rc ) break;
       }
     }
@@ -5266,9 +5317,12 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   sqlite3 *db;              /* The database connection */
   int iLoop;                /* Loop counter over the terms of the join */
   int ii, jj;               /* Loop counters */
-  WhereCost rCost;             /* Cost of a path */
-  WhereCost mxCost = 0;        /* Maximum cost of a set of paths */
-  WhereCost rSortCost;         /* Cost to do a sort */
+  int mxI = 0;              /* Index of next entry to replace */
+  WhereCost rCost;          /* Cost of a path */
+  WhereCost nOut;           /* Number of outputs */
+  WhereCost mxCost = 0;     /* Maximum cost of a set of paths */
+  WhereCost mxOut = 0;      /* Maximum nOut value on the set of paths */
+  WhereCost rSortCost;      /* Cost to do a sort */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
   WherePath *aTo;           /* The nTo best paths at the current level */
@@ -5337,6 +5391,7 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         ** Compute its cost */
         rCost = whereCostAdd(pWLoop->rSetup,pWLoop->rRun + pFrom->nRow);
         rCost = whereCostAdd(rCost, pFrom->rCost);
+        nOut = pFrom->nRow + pWLoop->nOut;
         maskNew = pFrom->maskLoop | pWLoop->maskSelf;
         if( !isOrderedValid ){
           switch( wherePathSatisfiesOrderBy(pWInfo,
@@ -5359,7 +5414,11 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         }
         /* Check to see if pWLoop should be added to the mxChoice best so far */
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
-          if( pTo->maskLoop==maskNew && pTo->isOrderedValid==isOrderedValid ){
+          if( pTo->maskLoop==maskNew
+           && pTo->isOrderedValid==isOrderedValid
+           && ((pTo->rCost<=rCost && pTo->nRow<=nOut) ||
+                (pTo->rCost>=rCost && pTo->nRow>=nOut))
+          ){
             testcase( jj==nTo-1 );
             break;
           }
@@ -5368,8 +5427,8 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
           if( nTo>=mxChoice && rCost>=mxCost ){
 #ifdef WHERETRACE_ENABLED
             if( sqlite3WhereTrace&0x4 ){
-              sqlite3DebugPrintf("Skip   %s cost=%3d order=%c\n",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost,
+              sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d order=%c\n",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                   isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
             }
 #endif
@@ -5381,26 +5440,26 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
             jj = nTo++;
           }else{
             /* New path replaces the prior worst to keep count below mxChoice */
-            for(jj=nTo-1; aTo[jj].rCost<mxCost; jj--){ assert(jj>0); }
+            jj = mxI;
           }
           pTo = &aTo[jj];
 #ifdef WHERETRACE_ENABLED
           if( sqlite3WhereTrace&0x4 ){
-            sqlite3DebugPrintf("New    %s cost=%-3d order=%c\n",
-                wherePathName(pFrom, iLoop, pWLoop), rCost,
+            sqlite3DebugPrintf("New    %s cost=%-3d,%3d order=%c\n",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                 isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
           }
 #endif
         }else{
-          if( pTo->rCost<=rCost ){
+          if( pTo->rCost<=rCost && pTo->nRow<=nOut ){
 #ifdef WHERETRACE_ENABLED
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
-                  "Skip   %s cost=%-3d order=%c",
-                  wherePathName(pFrom, iLoop, pWLoop), rCost,
+                  "Skip   %s cost=%-3d,%3d order=%c",
+                  wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                   isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
-              sqlite3DebugPrintf("   vs %s cost=%-3d order=%c\n",
-                  wherePathName(pTo, iLoop+1, 0), pTo->rCost,
+              sqlite3DebugPrintf("   vs %s cost=%-3d,%d order=%c\n",
+                  wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
                   pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
             }
 #endif
@@ -5412,11 +5471,11 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
 #ifdef WHERETRACE_ENABLED
           if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf(
-                "Update %s cost=%-3d order=%c",
-                wherePathName(pFrom, iLoop, pWLoop), rCost,
+                "Update %s cost=%-3d,%3d order=%c",
+                wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
                 isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
-            sqlite3DebugPrintf("  was %s cost=%-3d order=%c\n",
-                wherePathName(pTo, iLoop+1, 0), pTo->rCost,
+            sqlite3DebugPrintf("  was %s cost=%-3d,%3d order=%c\n",
+                wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
                 pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
           }
 #endif
@@ -5424,16 +5483,22 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
         /* pWLoop is a winner.  Add it to the set of best so far */
         pTo->maskLoop = pFrom->maskLoop | pWLoop->maskSelf;
         pTo->revLoop = revMask;
-        pTo->nRow = pFrom->nRow + pWLoop->nOut;
+        pTo->nRow = nOut;
         pTo->rCost = rCost;
         pTo->isOrderedValid = isOrderedValid;
         pTo->isOrdered = isOrdered;
         memcpy(pTo->aLoop, pFrom->aLoop, sizeof(WhereLoop*)*iLoop);
         pTo->aLoop[iLoop] = pWLoop;
         if( nTo>=mxChoice ){
+          mxI = 0;
           mxCost = aTo[0].rCost;
+          mxOut = aTo[0].nRow;
           for(jj=1, pTo=&aTo[1]; jj<mxChoice; jj++, pTo++){
-            if( pTo->rCost>mxCost ) mxCost = pTo->rCost;
+            if( pTo->rCost>mxCost || (pTo->rCost==mxCost && pTo->nRow>mxOut) ){
+              mxCost = pTo->rCost;
+              mxOut = pTo->nRow;
+              mxI = jj;
+            }
           }
         }
       }
@@ -5470,12 +5535,9 @@ static int wherePathSolver(WhereInfo *pWInfo, WhereCost nRowEst){
   
   /* Find the lowest cost path.  pFrom will be left pointing to that path */
   pFrom = aFrom;
-  assert( nFrom==1 );
-#if 0 /* The following is needed if nFrom is ever more than 1 */
   for(ii=1; ii<nFrom; ii++){
     if( pFrom->rCost>aFrom[ii].rCost ) pFrom = &aFrom[ii];
   }
-#endif
   assert( pWInfo->nLevel==nLoop );
   /* Load the lowest cost path into pWInfo */
   for(iLoop=0; iLoop<nLoop; iLoop++){

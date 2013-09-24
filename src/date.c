@@ -294,8 +294,8 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 ** Return the number of errors.
 */
 static int setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  if( sqlite3OsCurrentTimeInt64(db->pVfs, &p->iJD)==SQLITE_OK ){
+  p->iJD = sqlite3StmtCurrentTime(context);
+  if( p->iJD>0 ){
     p->validJD = 1;
     return 0;
   }else{
@@ -1078,8 +1078,8 @@ static void currentTimeFunc(
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
 
-  db = sqlite3_context_db_handle(context);
-  if( sqlite3OsCurrentTimeInt64(db->pVfs, &iT) ) return;
+  iT = sqlite3StmtCurrentTime(context);
+  if( iT<=0 ) return;
   t = iT/1000 - 10000*(sqlite3_int64)21086676;
 #ifdef HAVE_GMTIME_R
   pTm = gmtime_r(&t, &sNow);
