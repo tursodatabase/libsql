@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\ssqlite3BtreeBeginTrans()\sthat\smay\sfail\sin\sshared-cache\smode.
-D 2013-09-26T11:04:33.317
+C Obtain\sthe\srequired\sshared-cache\swrite-lock\swhen\sexecuting\s"DELETE\sFROM\stbl"\sstatements.\sFix\sfor\s[1e1321ee98].
+D 2013-09-26T15:21:16.149
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 65196e95e69f36993659bd7781abe7c2f1994739
-F src/delete.c 2dc64ca360b7d7da481183ea920a813a0c203c97
+F src/delete.c 45788c5e48734f2af4acd75a876466e5b9838e34
 F src/expr.c 1017f482217e093ecdaca91e8666681e83733252
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c be866cd8c4fa6cae98ba33109578fd1a3311ee5b
@@ -781,7 +781,7 @@ F test/shared8.test 00a07bf5e1337ecf72e94542bdefdc330d7a2538
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
-F test/sharedlock.test 927a4b6da11978c82b857dbdb20a932aad732123
+F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
 F test/shell1.test e7c0b9ebda25d5e78f0a3ea0dc4e31bb6d8098c0
 F test/shell2.test e1d3790f064e50b2f973502f45750012667486df
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ed24051462c09220ebfb82a347b4a2b5c820ef63
-R 1c9468cd3e4eb9e8ee246e011c3ab7f4
+P 1e1321ee985370c2b7e5bd64286bb4d7704b5a30
+R a0865cc0b0415ad5c165b04432fdea63
 U dan
-Z 68621d07be6c81e683d28bd021e6b41c
+Z 44cdc40bea63a1811eda504072199b21

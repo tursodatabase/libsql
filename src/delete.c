@@ -350,6 +350,7 @@ void sqlite3DeleteFrom(
    && 0==sqlite3FkRequired(pParse, pTab, 0, 0)
   ){
     assert( !isView );
+    sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
     sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt,
                       pTab->zName, P4_STATIC);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
