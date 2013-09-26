@@ -2668,7 +2668,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   if( p->inTrans==TRANS_WRITE || (p->inTrans==TRANS_READ && !wrflag) ){
     goto trans_begun;
   }
-  assert( IfNotOmitAV(pBt->bDoTruncate)==0 );
+  assert( pBt->inTransaction==TRANS_WRITE || IfNotOmitAV(pBt->bDoTruncate)==0 );
 
   /* Write transactions are not possible on a read-only database */
   if( (pBt->btsFlags & BTS_READ_ONLY)!=0 && wrflag ){

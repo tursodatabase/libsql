@@ -1,5 +1,5 @@
-C Test\sthat\sthe\sunicode61\stokenchars=\sand\sseparators=\soptions\swork\swith\sthe\sfts3tokenize\svirtual\stable.
-D 2013-09-18T11:16:32.742
+C Fix\sa\sfaulty\sassert()\sin\ssqlite3BtreeBeginTrans()\sthat\smay\sfail\sin\sshared-cache\smode.
+D 2013-09-26T11:04:33.317
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c b9b57df546df2636294bfb21a986f5707b417df2
+F src/btree.c 5ccbbaed7a32ba774306f610da4ab4f3e5348294
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
 F src/build.c f63e8929c7f89c0074fbc74929bc946ea117b2f8
@@ -773,7 +773,7 @@ F test/selectE.test fc02a1eb04c8eb537091482644b7d778ae8759b7
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
-F test/shared3.test ebf77f023f4bdaa8f74f65822b559e86ce5c6257
+F test/shared3.test fcd65cb11d189eff5f5c85cc4fad246fb0933108
 F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
 F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cebd6fc551d26aea0f28cd7d25338fe0b72aae88
-R 912d3a86c8cb4e429312147af7faaf76
+P ed24051462c09220ebfb82a347b4a2b5c820ef63
+R 1c9468cd3e4eb9e8ee246e011c3ab7f4
 U dan
-Z 5b7e8c5d08bc668689f4627e9e0e9c87
+Z 68621d07be6c81e683d28bd021e6b41c

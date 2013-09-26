@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix shared3
 db close
 
 ifcapable !shared_cache {
@@ -103,5 +104,39 @@ db1 close
 db2 close
 db3 close
 
+#-------------------------------------------------------------------------
+# At one point this was causing a faulty assert to fail.
+#
+forcedelete test.db
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_execsql_test 3.1 {
+  PRAGMA auto_vacuum = 2;
+  CREATE TABLE t1(x, y);
+  INSERT INTO t1 VALUES(randomblob(500), randomblob(500));
+  INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1;
+  INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1;
+  INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1;
+  INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1;
+  INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1;
+  INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1;
+  INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1;
+}
+do_test 3.2 {
+  execsql { SELECT count(*) FROM sqlite_master } db2
+} {1}
+do_execsql_test 3.3 {
+  BEGIN;
+    DELETE FROM t1 WHERE 1;
+    PRAGMA incremental_vacuum;
+} {}
+do_test 3.4 {
+  execsql { SELECT count(*) FROM sqlite_master } db2
+} {1}
+do_test 3.5 {
+  execsql { COMMIT }
+} {}
+
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test
+
