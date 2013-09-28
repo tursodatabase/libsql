@@ -1,5 +1,5 @@
-C Obtain\sthe\srequired\sshared-cache\swrite-lock\swhen\sexecuting\s"DELETE\sFROM\stbl"\sstatements.\sFix\sfor\s[1e1321ee98].
-D 2013-09-26T15:21:16.149
+C Updates\sto\sthe\ssqlite3_analyzer\sutility:\s\sChange\sthe\snames\sof\ssome\slabels,\nespecially\schange\s"Fragmentation"\sto\s"Non-sequential\spages".\s\sRevise\sthe\ncomputation\sof\snon-sequential\spages\sso\sthat\sit\signores\sitercalated\snon-leaf\npages\s(overflow\sand\sindex\spages).
+D 2013-09-28T12:40:55.568
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1098,7 +1098,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl f87fc8e459e3e42255b52987fe0dda3f8a8c513d
+F tool/spaceanal.tcl d8c11da184b1a13d0456d786e70b3867e141b74a
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1e1321ee985370c2b7e5bd64286bb4d7704b5a30
-R a0865cc0b0415ad5c165b04432fdea63
-U dan
-Z 44cdc40bea63a1811eda504072199b21
+P 1f8f4fdf3ff2b8de27e167a44a19b0f479f5ee1a
+R c3d18dfbcf3bb3edd932a7a2596858df
+U drh
+Z c9cd9d7c9e74e96fef1c3e1fc50d6050
