@@ -1,5 +1,5 @@
-C In\sthe\snextchar.c\sextension,\sallow\sthe\ssecond\sargument\sto\sthe\snext_char()\nfunction\sto\sbe\sa\ssubquery.
-D 2013-09-28T13:28:40.044
+C Add\snew\stest\sfile\sfts3defer3.test.
+D 2013-09-28T16:43:49.441
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -530,6 +530,7 @@ F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test bf640d79722b720fa1c81834c48cdaa45d531b1a
 F test/fts3defer.test 0be4440b73a2e651fc1e472066686d6ada4b9963
 F test/fts3defer2.test a3b6cbeabaf28c9398652a4d101ea224d9358479
+F test/fts3defer3.test dd53fc13223c6d8264a98244e9b19abd35ed71cd
 F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
@@ -1114,7 +1115,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3e5c7771fa91d8ae1e495432329b87af87b1ebc6
-R bb54656333ff4fe5a15ca34798091088
-U drh
-Z 1c4ddf4d2e197076ecab06baedb0ed89
+P 59b9fa223681a7329533b350be7bf5a0a3609255
+R 7336f72aab2182861a3d9c1776c0dd0f
+U dan
+Z 1b6fafd93a8bee6addb58d8182d7841c
