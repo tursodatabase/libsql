@@ -1,5 +1,5 @@
-C Updates\sto\sthe\ssqlite3_analyzer\sutility:\s\sChange\sthe\snames\sof\ssome\slabels,\nespecially\schange\s"Fragmentation"\sto\s"Non-sequential\spages".\s\sRevise\sthe\ncomputation\sof\snon-sequential\spages\sso\sthat\sit\signores\sitercalated\snon-leaf\npages\s(overflow\sand\sindex\spages).
-D 2013-09-28T12:40:55.568
+C In\sthe\snextchar.c\sextension,\sallow\sthe\ssecond\sargument\sto\sthe\snext_char()\nfunction\sto\sbe\sa\ssubquery.
+D 2013-09-28T13:28:40.044
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
 F ext/misc/closure.c 636024302cde41b2bf0c542f81c40c624cfb7012
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/nextchar.c 80ba262d23238efcfcb3d72d71aa4513098e26a6
+F ext/misc/nextchar.c 85293434f161d2752ca4d716b2faffee0047e295
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
@@ -801,7 +801,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/spellfix.test 38246facf7d9d7eeb8a57d7497cf7ce73ce5785d
+F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test be8d477306006ec696bc86757cfb34bec79447ce
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1114,7 +1114,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1f8f4fdf3ff2b8de27e167a44a19b0f479f5ee1a
-R c3d18dfbcf3bb3edd932a7a2596858df
+P 3e5c7771fa91d8ae1e495432329b87af87b1ebc6
+R bb54656333ff4fe5a15ca34798091088
 U drh
-Z c9cd9d7c9e74e96fef1c3e1fc50d6050
+Z 1c4ddf4d2e197076ecab06baedb0ed89
