@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\sfts3defer3.test.
-D 2013-09-28T16:43:49.441
+C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
+D 2013-09-29T04:56:43.411
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
 F ext/misc/closure.c 636024302cde41b2bf0c542f81c40c624cfb7012
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
-F ext/misc/nextchar.c 85293434f161d2752ca4d716b2faffee0047e295
+F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
@@ -1115,7 +1115,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 59b9fa223681a7329533b350be7bf5a0a3609255
-R 7336f72aab2182861a3d9c1776c0dd0f
-U dan
-Z 1b6fafd93a8bee6addb58d8182d7841c
+P a6cd14effef0a4e5520eea871523e6e7a7d30aef
+R 923b26015823bc3db656197e1ffd675f
+U mistachkin
+Z c90a0fd031634fcd7d5e3ee1883fd10f
