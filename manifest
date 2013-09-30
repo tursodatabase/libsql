@@ -1,5 +1,5 @@
-C Fix\smemory\sleaks\sin\sthe\samatch\sextension.\s\sAdd\sa\sfew\ssimple\stest\scases.
-D 2013-09-30T17:37:15.455
+C Fix\sa\sperformance\sproblem\sin\sthe\sFTS4\sauxiliary\sfunctions\striggered\sby\san\sOR\sclause\sin\sthe\sfull-text\squery.
+D 2013-09-30T18:14:45.059
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 0d6311cd433ea30c9e941b93bfeac2f9e6937980
+F ext/fts3/fts3.c e1240ab6f5999174309a41ffac63b94ed1233098
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h c7a451661c2d9b2440b2008c3f63ce06f13181d6
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -548,7 +548,7 @@ F test/fts3prefix2.test e1f0a822ca661dced7f12ce392e14eaf65609dce
 F test/fts3query.test 4fefd43ff24993bc2c9b2778f2bec0cc7629e7ed
 F test/fts3rnd.test 1320d8826a845e38a96e769562bf83d7a92a15d0
 F test/fts3shared.test 57e26a801f21027b7530da77db54286a6fe4997e
-F test/fts3snippet.test 24d6ff1920a70fd970c401a8525834b4ad12cece
+F test/fts3snippet.test d524af6bcef4714e059ef559113dbdc924cd33d1
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test b10d0a12a0ab5f905cea1200b745de233f37443f
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
@@ -1117,7 +1117,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 94c914e3fa632f88a0d0c14537f81aa46759e2be
-R 365ba09c87d852154921d1b9e7f8c208
-U drh
-Z 32444bec405923a830b81223af98656e
+P 604134732e309a738e21bcb4240b9ff285d2bfe4
+R 6a5e216c5c51e185221e1c2d8a375388
+U dan
+Z 83a6f701584057aa6ad5500f631da9c2

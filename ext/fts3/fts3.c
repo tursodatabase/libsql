@@ -5268,15 +5268,23 @@ int sqlite3Fts3EvalPhrasePoslist(
   pIter = pPhrase->doclist.pList;
   if( iDocid!=pCsr->iPrevId || pExpr->bEof ){
     int bDescDoclist = pTab->bDescIdx;      /* For DOCID_CMP macro */
+    int iMul;                     /* +1 if csr dir matches index dir, else -1 */
     int bOr = 0;
     u8 bEof = 0;
-    Fts3Expr *p;
+    u8 bTreeEof = 0;
+    Fts3Expr *p;                  /* Used to iterate from pExpr to root */
+    Fts3Expr *pNear;              /* Most senior NEAR ancestor (or pExpr) */
 
     /* Check if this phrase descends from an OR expression node. If not, 
     ** return NULL. Otherwise, the entry that corresponds to docid 
-    ** pCsr->iPrevId may lie earlier in the doclist buffer. */
+    ** pCsr->iPrevId may lie earlier in the doclist buffer. Or, if the
+    ** tree that the node is part of has been marked as EOF, but the node
+    ** itself is not EOF, then it may point to an earlier entry. */
+    pNear = pExpr;
     for(p=pExpr->pParent; p; p=p->pParent){
       if( p->eType==FTSQUERY_OR ) bOr = 1;
+      if( p->eType==FTSQUERY_NEAR ) pNear = p;
+      if( p->bEof ) bTreeEof = 1;
     }
     if( bOr==0 ) return SQLITE_OK;
 
@@ -5295,29 +5303,59 @@ int sqlite3Fts3EvalPhrasePoslist(
       assert( rc!=SQLITE_OK || pPhrase->bIncr==0 );
       if( rc!=SQLITE_OK ) return rc;
     }
-
-    if( pExpr->bEof ){
-      pIter = 0;
-      iDocid = 0;
+    
+    iMul = ((pCsr->bDesc==bDescDoclist) ? 1 : -1);
+    while( bTreeEof==1 
+        && pNear->bEof==0
+        && (DOCID_CMP(pNear->iDocid, pCsr->iPrevId) * iMul)<0
+    ){
+      int rc = SQLITE_OK;
+      fts3EvalNextRow(pCsr, pExpr, &rc);
+      if( rc!=SQLITE_OK ) return rc;
+      iDocid = pExpr->iDocid;
+      pIter = pPhrase->doclist.pList;
     }
+
     bEof = (pPhrase->doclist.nAll==0);
     assert( bDescDoclist==0 || bDescDoclist==1 );
     assert( pCsr->bDesc==0 || pCsr->bDesc==1 );
 
-    if( pCsr->bDesc==bDescDoclist ){
-      int dummy;
-      while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)>0 ) && bEof==0 ){
-        sqlite3Fts3DoclistPrev(
-            bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
-            &pIter, &iDocid, &dummy, &bEof
-        );
-      }
-    }else{
-      while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
-        sqlite3Fts3DoclistNext(
-            bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
-            &pIter, &iDocid, &bEof
-        );
+    if( bEof==0 ){
+      if( pCsr->bDesc==bDescDoclist ){
+        int dummy;
+        if( pNear->bEof ){
+          /* This expression is already at EOF. So position it to point to the
+          ** last entry in the doclist at pPhrase->doclist.aAll[]. Variable
+          ** iDocid is already set for this entry, so all that is required is
+          ** to set pIter to point to the first byte of the last position-list
+          ** in the doclist. 
+          **
+          ** It would also be correct to set pIter and iDocid to zero. In
+          ** this case, the first call to sqltie3Fts4DoclistPrev() below
+          ** would also move the iterator to point to the last entry in the 
+          ** doclist. However, this is expensive, as to do so it has to 
+          ** iterate through the entire doclist from start to finish (since
+          ** it does not know the docid for the last entry).  */
+          pIter = &pPhrase->doclist.aAll[pPhrase->doclist.nAll-1];
+          fts3ReversePoslist(pPhrase->doclist.aAll, &pIter);
+        }
+        while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)>0 ) && bEof==0 ){
+          sqlite3Fts3DoclistPrev(
+              bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
+              &pIter, &iDocid, &dummy, &bEof
+          );
+        }
+      }else{
+        if( pNear->bEof ){
+          pIter = 0;
+          iDocid = 0;
+        }
+        while( (pIter==0 || DOCID_CMP(iDocid, pCsr->iPrevId)<0 ) && bEof==0 ){
+          sqlite3Fts3DoclistNext(
+              bDescDoclist, pPhrase->doclist.aAll, pPhrase->doclist.nAll, 
+              &pIter, &iDocid, &bEof
+          );
+        }
       }
     }
 
