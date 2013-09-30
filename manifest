@@ -1,5 +1,5 @@
-C Update\sand\smodernize\san\sobsolete\scomment\sassociated\swith\sVACUUM.\s\sNo\nchanges\sto\scode.
-D 2013-09-30T11:01:28.709
+C Fix\smemory\sleaks\sin\sthe\samatch\sextension.\s\sAdd\sa\sfew\ssimple\stest\scases.
+D 2013-09-30T17:37:15.455
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -106,7 +106,7 @@ F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
-F ext/misc/amatch.c eae8454cd9dcb287b2a3ec2e65a865a4ac5f0d06
+F ext/misc/amatch.c 678056a4bfcd83c4e82dea81d37543cd1d6dbee1
 F ext/misc/closure.c 636024302cde41b2bf0c542f81c40c624cfb7012
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
@@ -301,6 +301,7 @@ F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test 8e93bf7a7e6919b14b0c9a6c1e4908bcf21b0165
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
+F test/amatch1.test f459bd4e41ec54828b24f4b28319a839ab95d05a
 F test/analyze.test 1772936d66471c65221e437b6d1999c3a03166c4
 F test/analyze3.test 412f690dfe95b337475e3e78a84a85d25f6f125d
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
@@ -551,7 +552,7 @@ F test/fts3snippet.test 24d6ff1920a70fd970c401a8525834b4ad12cece
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test b10d0a12a0ab5f905cea1200b745de233f37443f
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
-F test/fts4aa.test 95f448fb02c4a976968b08d1b4ce134e720946ae
+F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
@@ -573,6 +574,7 @@ F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
+F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
 F test/hook.test 45cb22b940c3cc0af616ba7430f666e245711a48
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 5941096407d8c133b9eff15bd3e666624b6cbde3
@@ -1115,7 +1117,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0b7bd46825b09c9e46290baee3e239344ca5bf0e
-R 8fdd810817894b7b67859afecaa16e29
+P 94c914e3fa632f88a0d0c14537f81aa46759e2be
+R 365ba09c87d852154921d1b9e7f8c208
 U drh
-Z 2a5599152c5ec584cede2eec05e0bcb2
+Z 32444bec405923a830b81223af98656e

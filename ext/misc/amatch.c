@@ -786,6 +786,7 @@ static void amatchFree(amatch_vtab *p){
     sqlite3_free(p->zVocabTab);
     sqlite3_free(p->zVocabWord);
     sqlite3_free(p->zVocabLang);
+    sqlite3_free(p->zSelf);
     memset(p, 0, sizeof(*p));
     sqlite3_free(p);
   }
@@ -948,6 +949,9 @@ static void amatchClearCursor(amatch_cursor *pCur){
   pCur->pAllWords = 0;
   sqlite3_free(pCur->zInput);
   pCur->zInput = 0;
+  sqlite3_free(pCur->zBuf);
+  pCur->zBuf = 0;
+  pCur->nBuf = 0;
   pCur->pCost = 0;
   pCur->pWord = 0;
   pCur->pCurrent = 0;
@@ -1103,7 +1107,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
     char *zSql;
     if( p->zVocabLang && p->zVocabLang[0] ){
       zSql = sqlite3_mprintf(
-          "SELECT \"%s\" FROM \"%s\"",
+          "SELECT \"%w\" FROM \"%w\"",
           " WHERE \"%w\">=?1 AND \"%w\"=?2"
           " ORDER BY 1",
           p->zVocabWord, p->zVocabTab,
@@ -1111,7 +1115,7 @@ static int amatchNext(sqlite3_vtab_cursor *cur){
       );
     }else{
       zSql = sqlite3_mprintf(
-          "SELECT \"%s\" FROM \"%s\""
+          "SELECT \"%w\" FROM \"%w\""
           " WHERE \"%w\">=?1"
           " ORDER BY 1",
           p->zVocabWord, p->zVocabTab,
