@@ -1,5 +1,5 @@
-C Add\ssome\stiming\stests\sto\sthe\samatch\stest\sscript.
-D 2013-09-30T19:05:03.027
+C Fix\sa\sminor\stypo\sin\sa\scomment\sin\swhere.c.
+D 2013-09-30T19:33:06.353
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c d2f58a441ba8709a99df6654b26a50b7ca7dada4
+F src/where.c d8c2c5ff3af348870cb56d4a577a51625640563d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1117,7 +1117,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fa0f2f0e3e79ae653118b901e1cca7725dfaf249
-R 489dd3466b9ca609202023a146a0691b
+P ad71c72be56786d8dcf6917efd10a8d3c2d50419
+R a67643904024b683ada1ed9a54bf2099
 U drh
-Z 29f4358c6829c89e7cd2273005d92246
+Z 942b4d2248ee91caaa7e8559649a6daa
