@@ -1,5 +1,5 @@
-C Fix\sa\sperformance\sproblem\sin\sthe\sFTS4\sauxiliary\sfunctions\striggered\sby\san\sOR\sclause\sin\sthe\sfull-text\squery.
-D 2013-09-30T18:14:45.059
+C Add\ssome\stiming\stests\sto\sthe\samatch\stest\sscript.
+D 2013-09-30T19:05:03.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -301,7 +301,7 @@ F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test 8e93bf7a7e6919b14b0c9a6c1e4908bcf21b0165
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
-F test/amatch1.test f459bd4e41ec54828b24f4b28319a839ab95d05a
+F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 1772936d66471c65221e437b6d1999c3a03166c4
 F test/analyze3.test 412f690dfe95b337475e3e78a84a85d25f6f125d
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
@@ -1117,7 +1117,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 604134732e309a738e21bcb4240b9ff285d2bfe4
-R 6a5e216c5c51e185221e1c2d8a375388
-U dan
-Z 83a6f701584057aa6ad5500f631da9c2
+P fa0f2f0e3e79ae653118b901e1cca7725dfaf249
+R 489dd3466b9ca609202023a146a0691b
+U drh
+Z 29f4358c6829c89e7cd2273005d92246
