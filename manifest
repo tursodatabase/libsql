@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment.\s\sNo\schanges\sto\scode.
-D 2013-09-29T04:56:43.411
+C Update\sand\smodernize\san\sobsolete\scomment\sassociated\swith\sVACUUM.\s\sNo\nchanges\sto\scode.
+D 2013-09-30T11:01:28.709
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F src/trigger.c 5c0ea9b8755e7c5e1a700f3e27ac4f8d92dd221e
 F src/update.c f5182157f5d0d0a97bc5f5e3c9bdba0dfbe08f08
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 7f3e35432d6888d1e770c488c35bd98970c44eec
-F src/vacuum.c d9c5759f4c5a438bb43c2086f72c5d2edabc36c8
+F src/vacuum.c f313bc97123a4dd4bfd3f50a00c4d44c08a5b1b7
 F src/vdbe.c 56e648f5ba9a91810caf216857adfed9039cd174
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
 F src/vdbeInt.h ff57f67aee1ba26a3a47e786533dab155ab6dad6
@@ -1115,7 +1115,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a6cd14effef0a4e5520eea871523e6e7a7d30aef
-R 923b26015823bc3db656197e1ffd675f
-U mistachkin
-Z c90a0fd031634fcd7d5e3ee1883fd10f
+P 0b7bd46825b09c9e46290baee3e239344ca5bf0e
+R 8fdd810817894b7b67859afecaa16e29
+U drh
+Z 2a5599152c5ec584cede2eec05e0bcb2
