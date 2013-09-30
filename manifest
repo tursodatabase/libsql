@@ -1,5 +1,5 @@
-C Add\snew\stest\sfile\sfts3defer3.test.
-D 2013-09-28T16:43:49.441
+C Have\sfts4\sfull-text\squeries\sconsider\s"docid<?"\sand\ssimilar\sconstraints.
+D 2013-09-30T11:42:19.862
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,9 +78,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 0d6311cd433ea30c9e941b93bfeac2f9e6937980
+F ext/fts3/fts3.c 2dd0f461e03208dd05f04ab53729e361d7ce6043
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h c7a451661c2d9b2440b2008c3f63ce06f13181d6
+F ext/fts3/fts3Int.h 0634f768e7f6d5767972014e1ca83055ad2e09e3
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
 F ext/fts3/fts3_expr.c f8eb1046063ba342c7114eba175cabb31c4a64e7
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -554,6 +554,7 @@ F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
 F test/fts4aa.test 95f448fb02c4a976968b08d1b4ce134e720946ae
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
+F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
@@ -1115,7 +1116,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 59b9fa223681a7329533b350be7bf5a0a3609255
-R 7336f72aab2182861a3d9c1776c0dd0f
+P a6cd14effef0a4e5520eea871523e6e7a7d30aef
+R a6e5f48a9eab88e3a1e9daa8e6ce881a
+T *branch * fts4-docid-range-constraints
+T *sym-fts4-docid-range-constraints *
+T -sym-trunk *
 U dan
-Z 1b6fafd93a8bee6addb58d8182d7841c
+Z b22440ffe0dcdaa2ddd5b3fe1803c406

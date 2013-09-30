@@ -1457,7 +1457,11 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   Fts3Table *p = (Fts3Table *)pVTab;
   int i;                          /* Iterator variable */
   int iCons = -1;                 /* Index of constraint to use */
+
   int iLangidCons = -1;           /* Index of langid=x constraint, if present */
+  int iDocidGe = -1;              /* Index of docid>=x constraint, if present */
+  int iDocidLe = -1;              /* Index of docid<=x constraint, if present */
+  int iIdx;
 
   /* By default use a full table scan. This is an expensive option,
   ** so search through the constraints to see if a more efficient 
@@ -1466,14 +1470,14 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   pInfo->idxNum = FTS3_FULLSCAN_SEARCH;
   pInfo->estimatedCost = 5000000;
   for(i=0; i<pInfo->nConstraint; i++){
+    int bDocid;                 /* True if this constraint is on docid */
     struct sqlite3_index_constraint *pCons = &pInfo->aConstraint[i];
     if( pCons->usable==0 ) continue;
 
+    bDocid = (pCons->iColumn<0 || pCons->iColumn==p->nColumn+1);
+
     /* A direct lookup on the rowid or docid column. Assign a cost of 1.0. */
-    if( iCons<0 
-     && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ 
-     && (pCons->iColumn<0 || pCons->iColumn==p->nColumn+1 )
-    ){
+    if( iCons<0 && pCons->op==SQLITE_INDEX_CONSTRAINT_EQ && bDocid ){
       pInfo->idxNum = FTS3_DOCID_SEARCH;
       pInfo->estimatedCost = 1.0;
       iCons = i;
@@ -1502,14 +1506,38 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     ){
       iLangidCons = i;
     }
+
+    if( bDocid ){
+      switch( pCons->op ){
+        case SQLITE_INDEX_CONSTRAINT_GE:
+        case SQLITE_INDEX_CONSTRAINT_GT:
+          iDocidGe = i;
+          break;
+
+        case SQLITE_INDEX_CONSTRAINT_LE:
+        case SQLITE_INDEX_CONSTRAINT_LT:
+          iDocidLe = i;
+          break;
+      }
+    }
   }
 
+  iIdx = 1;
   if( iCons>=0 ){
-    pInfo->aConstraintUsage[iCons].argvIndex = 1;
+    pInfo->aConstraintUsage[iCons].argvIndex = iIdx++;
     pInfo->aConstraintUsage[iCons].omit = 1;
   } 
   if( iLangidCons>=0 ){
-    pInfo->aConstraintUsage[iLangidCons].argvIndex = 2;
+    pInfo->idxNum |= FTS3_HAVE_LANGID;
+    pInfo->aConstraintUsage[iLangidCons].argvIndex = iIdx++;
+  } 
+  if( iDocidGe>=0 ){
+    pInfo->idxNum |= FTS3_HAVE_DOCID_GE;
+    pInfo->aConstraintUsage[iDocidGe].argvIndex = iIdx++;
+  } 
+  if( iDocidLe>=0 ){
+    pInfo->idxNum |= FTS3_HAVE_DOCID_LE;
+    pInfo->aConstraintUsage[iDocidLe].argvIndex = iIdx++;
   } 
 
   /* Regardless of the strategy selected, FTS can deliver rows in rowid (or
@@ -2957,6 +2985,33 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
 }
 
 /*
+** The following are copied from sqliteInt.h.
+**
+** Constants for the largest and smallest possible 64-bit signed integers.
+** These macros are designed to work correctly on both 32-bit and 64-bit
+** compilers.
+*/
+#ifndef SQLITE_AMALGAMATION
+# define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
+# define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
+#endif
+
+/*
+** If the numeric type of argument pVal is "integer", then return it
+** converted to a 64-bit signed integer. Otherwise, return a copy of
+** the second parameter, iDefault.
+*/
+static sqlite3_int64 fts3DocidRange(sqlite3_value *pVal, i64 iDefault){
+  if( pVal ){
+    int eType = sqlite3_value_numeric_type(pVal);
+    if( eType==SQLITE_INTEGER ){
+      return sqlite3_value_int64(pVal);
+    }
+  }
+  return iDefault;
+}
+
+/*
 ** This is the xFilter interface for the virtual table.  See
 ** the virtual table xFilter method documentation for additional
 ** information.
@@ -2981,16 +3036,30 @@ static int fts3FilterMethod(
 ){
   int rc;
   char *zSql;                     /* SQL statement used to access %_content */
+  int eSearch;;
   Fts3Table *p = (Fts3Table *)pCursor->pVtab;
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
+
+  sqlite3_value *pCons = 0;       /* The MATCH or rowid constraint, if any */
+  sqlite3_value *pLangid = 0;     /* The "langid = ?" constraint, if any */
+  sqlite3_value *pDocidGe = 0;    /* The "docid >= ?" constraint, if any */
+  sqlite3_value *pDocidLe = 0;    /* The "docid <= ?" constraint, if any */
+  int iIdx;
 
   UNUSED_PARAMETER(idxStr);
   UNUSED_PARAMETER(nVal);
 
-  assert( idxNum>=0 && idxNum<=(FTS3_FULLTEXT_SEARCH+p->nColumn) );
-  assert( nVal==0 || nVal==1 || nVal==2 );
-  assert( (nVal==0)==(idxNum==FTS3_FULLSCAN_SEARCH) );
+  eSearch = (idxNum & 0x0000FFFF);
+  assert( eSearch>=0 && eSearch<=(FTS3_FULLTEXT_SEARCH+p->nColumn) );
   assert( p->pSegments==0 );
+
+  /* Collect arguments into local variables */
+  iIdx = 0;
+  if( eSearch!=FTS3_FULLSCAN_SEARCH ) pCons = apVal[iIdx++];
+  if( idxNum & FTS3_HAVE_LANGID ) pLangid = apVal[iIdx++];
+  if( idxNum & FTS3_HAVE_DOCID_GE ) pDocidGe = apVal[iIdx++];
+  if( idxNum & FTS3_HAVE_DOCID_LE ) pDocidLe = apVal[iIdx++];
+  assert( iIdx==nVal );
 
   /* In case the cursor has been used before, clear it now. */
   sqlite3_finalize(pCsr->pStmt);
@@ -2998,23 +3067,27 @@ static int fts3FilterMethod(
   sqlite3Fts3ExprFree(pCsr->pExpr);
   memset(&pCursor[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
 
+  /* Set the lower and upper bounds on docids to return */
+  pCsr->iMinDocid = fts3DocidRange(pDocidGe, SMALLEST_INT64);
+  pCsr->iMaxDocid = fts3DocidRange(pDocidLe, LARGEST_INT64);
+
   if( idxStr ){
     pCsr->bDesc = (idxStr[0]=='D');
   }else{
     pCsr->bDesc = p->bDescIdx;
   }
-  pCsr->eSearch = (i16)idxNum;
+  pCsr->eSearch = (i16)eSearch;
 
-  if( idxNum!=FTS3_DOCID_SEARCH && idxNum!=FTS3_FULLSCAN_SEARCH ){
-    int iCol = idxNum-FTS3_FULLTEXT_SEARCH;
-    const char *zQuery = (const char *)sqlite3_value_text(apVal[0]);
+  if( eSearch!=FTS3_DOCID_SEARCH && eSearch!=FTS3_FULLSCAN_SEARCH ){
+    int iCol = eSearch-FTS3_FULLTEXT_SEARCH;
+    const char *zQuery = (const char *)sqlite3_value_text(pCons);
 
-    if( zQuery==0 && sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
+    if( zQuery==0 && sqlite3_value_type(pCons)!=SQLITE_NULL ){
       return SQLITE_NOMEM;
     }
 
     pCsr->iLangid = 0;
-    if( nVal==2 ) pCsr->iLangid = sqlite3_value_int(apVal[1]);
+    if( pLangid ) pCsr->iLangid = sqlite3_value_int(pLangid);
 
     assert( p->base.zErrMsg==0 );
     rc = sqlite3Fts3ExprParse(p->pTokenizer, pCsr->iLangid,
@@ -3037,7 +3110,7 @@ static int fts3FilterMethod(
   ** full-text query or docid lookup, the statement retrieves a single
   ** row by docid.
   */
-  if( idxNum==FTS3_FULLSCAN_SEARCH ){
+  if( eSearch==FTS3_FULLSCAN_SEARCH ){
     zSql = sqlite3_mprintf(
         "SELECT %s ORDER BY rowid %s",
         p->zReadExprlist, (pCsr->bDesc ? "DESC" : "ASC")
@@ -3048,10 +3121,10 @@ static int fts3FilterMethod(
     }else{
       rc = SQLITE_NOMEM;
     }
-  }else if( idxNum==FTS3_DOCID_SEARCH ){
+  }else if( eSearch==FTS3_DOCID_SEARCH ){
     rc = fts3CursorSeekStmt(pCsr, &pCsr->pStmt);
     if( rc==SQLITE_OK ){
-      rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+      rc = sqlite3_bind_value(pCsr->pStmt, 1, pCons);
     }
   }
   if( rc!=SQLITE_OK ) return rc;
@@ -4991,6 +5064,16 @@ static int fts3EvalNext(Fts3Cursor *pCsr){
       pCsr->iPrevId = pExpr->iDocid;
     }while( pCsr->isEof==0 && fts3EvalTestDeferredAndNear(pCsr, &rc) );
   }
+
+  /* Check if the cursor is past the end of the docid range specified
+  ** by Fts3Cursor.iMinDocid/iMaxDocid. If so, set the EOF flag.  */
+  if( rc==SQLITE_OK && (
+        (pCsr->bDesc==0 && pCsr->iPrevId>pCsr->iMaxDocid)
+     || (pCsr->bDesc!=0 && pCsr->iPrevId<pCsr->iMinDocid)
+  )){
+    pCsr->isEof = 1;
+  }
+
   return rc;
 }
 
