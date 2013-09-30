@@ -50,7 +50,7 @@
 **
 ** This also means that the table name can be a subquery:
 **
-**   SELECT next_char('cha','(SELECCT word AS w FROM dictionary)','w');
+**   SELECT next_char('cha','(SELECT word AS w FROM dictionary)','w');
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1

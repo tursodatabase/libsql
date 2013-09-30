@@ -72,14 +72,34 @@ static int execExecSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
 }
 
 /*
-** The non-standard VACUUM command is used to clean up the database,
+** The VACUUM command is used to clean up the database,
 ** collapse free space, etc.  It is modelled after the VACUUM command
-** in PostgreSQL.
+** in PostgreSQL.  The VACUUM command works as follows:
 **
-** In version 1.0.x of SQLite, the VACUUM command would call
-** gdbm_reorganize() on all the database tables.  But beginning
-** with 2.0.0, SQLite no longer uses GDBM so this command has
-** become a no-op.
+**   (1)  Create a new transient database file
+**   (2)  Copy all content from the database being vacuumed into
+**        the new transient database file
+**   (3)  Copy content from the transient database back into the
+**        original database.
+**
+** The transient database requires temporary disk space approximately
+** equal to the size of the original database.  The copy operation of
+** step (3) requires additional temporary disk space approximately equal
+** to the size of the original database for the rollback journal.
+** Hence, temporary disk space that is approximately 2x the size of the
+** orginal database is required.  Every page of the database is written
+** approximately 3 times:  Once for step (2) and twice for step (3).
+** Two writes per page are required in step (3) because the original
+** database content must be written into the rollback journal prior to
+** overwriting the database with the vacuumed content.
+**
+** Only 1x temporary space and only 1x writes would be required if
+** the copy of step (3) were replace by deleting the original database
+** and renaming the transient database as the original.  But that will
+** not work if other processes are attached to the original database.
+** And a power loss in between deleting the original and renaming the
+** transient would cause the database file to appear to be deleted
+** following reboot.
 */
 void sqlite3Vacuum(Parse *pParse){
   Vdbe *v = sqlite3GetVdbe(pParse);
