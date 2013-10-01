@@ -63,7 +63,9 @@ static void vacuumFinalize(sqlite3_stmt *pStmt){
 }
 
 /*
-** Execute zSql on database db. The SQL text i
+** Execute zSql on database db. The SQL text is printed to standard
+** output.  If an error occurs, print an error message and exit the
+** process.
 */
 static void execSql(sqlite3 *db, const char *zSql){
   sqlite3_stmt *pStmt;
@@ -81,8 +83,12 @@ static void execSql(sqlite3 *db, const char *zSql){
 }
 
 /*
-** Execute zSql on database db. The statement returns exactly
-** one column. Execute this as SQL on the same database.
+** Execute zSql on database db. The zSql statement returns exactly
+** one column. Execute this return value as SQL on the same database.
+**
+** The zSql statement is printed on standard output prior to being
+** run.  If any errors occur, an error is printed and the process
+** exits.
 */
 static void execExecSql(sqlite3 *db, const char *zSql){
   sqlite3_stmt *pStmt;
