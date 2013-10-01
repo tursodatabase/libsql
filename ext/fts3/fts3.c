@@ -4016,6 +4016,12 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
 }
 
 /*
+** Maximum number of tokens a phrase may have to be considered for the
+** incremental doclists strategy.
+*/
+#define MAX_INCR_PHRASE_TOKENS 4
+
+/*
 ** This function is called for each Fts3Phrase in a full-text query 
 ** expression to initialize the mechanism for returning rows. Once this
 ** function has been called successfully on an Fts3Phrase, it may be
@@ -4028,28 +4034,38 @@ static int fts3EvalDeferredPhrase(Fts3Cursor *pCsr, Fts3Phrase *pPhrase){
 ** SQLITE_OK is returned if no error occurs, otherwise an SQLite error code.
 */
 static int fts3EvalPhraseStart(Fts3Cursor *pCsr, int bOptOk, Fts3Phrase *p){
-  int rc;                         /* Error code */
-  Fts3PhraseToken *pFirst = &p->aToken[0];
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
+  int rc = SQLITE_OK;             /* Error code */
+  int i;
 
-  if( pCsr->bDesc==pTab->bDescIdx 
-   && bOptOk==1 
-   && p->nToken==1 
-   && pFirst->pSegcsr 
-   && pFirst->pSegcsr->bLookup 
-   && pFirst->bFirst==0
-  ){
+  /* Determine if doclists may be loaded from disk incrementally. This is
+  ** possible if the bOptOk argument is true, the FTS doclists will be
+  ** scanned in forward order, and the phrase consists of 
+  ** MAX_INCR_PHRASE_TOKENS or fewer tokens, none of which are are "^first"
+  ** tokens or prefix tokens that cannot use a prefix-index.  */
+  int bIncrOk = (bOptOk 
+   && pCsr->bDesc==pTab->bDescIdx 
+   && p->nToken<=MAX_INCR_PHRASE_TOKENS && p->nToken>0
+  );
+  for(i=0; bIncrOk==1 && i<p->nToken; i++){
+    Fts3PhraseToken *pToken = &p->aToken[i];
+    if( pToken->bFirst || !pToken->pSegcsr || !pToken->pSegcsr->bLookup ){
+      bIncrOk = 0;
+    }
+  }
+
+  if( bIncrOk ){
     /* Use the incremental approach. */
     int iCol = (p->iColumn >= pTab->nColumn ? -1 : p->iColumn);
-    rc = sqlite3Fts3MsrIncrStart(
-        pTab, pFirst->pSegcsr, iCol, pFirst->z, pFirst->n);
-    p->bIncr = 1;
-
+    for(i=0; rc==SQLITE_OK && i<p->nToken; i++){
+      Fts3PhraseToken *pTok = &p->aToken[i];
+      rc = sqlite3Fts3MsrIncrStart(pTab, pTok->pSegcsr, iCol, pTok->z, pTok->n);
+    }
   }else{
     /* Load the full doclist for the phrase into memory. */
     rc = fts3EvalPhraseLoad(pCsr, p);
-    p->bIncr = 0;
   }
+  p->bIncr = bIncrOk;
 
   assert( rc!=SQLITE_OK || p->nToken<1 || p->aToken[0].pSegcsr==0 || p->bIncr );
   return rc;
@@ -4154,6 +4170,133 @@ void sqlite3Fts3DoclistNext(
 }
 
 /*
+** Helper type used by fts3EvalIncrPhraseNext() and incrPhraseTokenNext().
+*/
+typedef struct TokenDoclist TokenDoclist;
+struct TokenDoclist {
+  sqlite3_int64 iDocid;
+  char *pList;
+  int nList;
+};
+
+/*
+** Token pToken is an incrementally loaded token that is part of a 
+** multi-token phrase. Advance it to the next matching document in the
+** database and populate output variable *p with the details of the new
+** entry. Or, if the iterator has reached EOF, set *pbEof to true.
+**
+** If an error occurs, return an SQLite error code. Otherwise, return 
+** SQLITE_OK.
+*/
+static int incrPhraseTokenNext(
+  Fts3Table *pTab,                /* Virtual table handle */
+  Fts3PhraseToken *pToken,        /* Advance the iterator for this token */
+  TokenDoclist *p,                /* OUT: Docid and doclist for new entry */
+  int *pbEof                      /* OUT: True if iterator is at EOF */
+){
+  int rc;
+  assert( pToken->pDeferred==0 );
+  rc = sqlite3Fts3MsrIncrNext(
+      pTab, pToken->pSegcsr, &p->iDocid, &p->pList, &p->nList
+  );
+  if( p->pList==0 ) *pbEof = 1;
+  return rc;
+}
+
+
+/*
+** The phrase iterator passed as the second argument uses the incremental
+** doclist strategy. Advance it to the next matching documnent in the
+** database. If an error occurs, return an SQLite error code. Otherwise, 
+** return SQLITE_OK.
+**
+** If there is no "next" entry and no error occurs, then *pbEof is set to
+** 1 before returning. Otherwise, if no error occurs and the iterator is
+** successfully advanced, *pbEof is set to 0.
+*/
+static int fts3EvalIncrPhraseNext(
+  Fts3Cursor *pCsr,               /* FTS Cursor handle */
+  Fts3Phrase *p,                  /* Phrase object to advance to next docid */
+  u8 *pbEof                       /* OUT: Set to 1 if EOF */
+){
+  int rc = SQLITE_OK;
+  Fts3Doclist *pDL = &p->doclist;
+  Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
+  int bEof = 0;
+
+  assert( p->bIncr==1 );
+  assert( pDL->pNextDocid==0 );
+
+  if( p->nToken==1 ){
+    rc = sqlite3Fts3MsrIncrNext(pTab, p->aToken[0].pSegcsr, 
+        &pDL->iDocid, &pDL->pList, &pDL->nList
+    );
+    if( pDL->pList==0 ) bEof = 1;
+  }else{
+    int bDescDoclist = pCsr->bDesc;
+    struct TokenDoclist a[MAX_INCR_PHRASE_TOKENS];
+
+    assert( p->nToken<=MAX_INCR_PHRASE_TOKENS );
+
+    while( bEof==0 ){
+      sqlite3_int64 iMax;         /* Largest docid for all iterators */
+      int i;                      /* Used to iterate through tokens */
+
+      /* Advance the iterator for each token in the phrase once. */
+      for(i=0; rc==SQLITE_OK && i<p->nToken; i++){
+        rc = incrPhraseTokenNext(pTab, &p->aToken[i], &a[i], &bEof);
+        if( i==0 || DOCID_CMP(iMax, a[i].iDocid)<0 ){
+          iMax = a[i].iDocid;
+        }
+      }
+
+      /* Keep advancing iterators until they all point to the same document */
+      if( bEof==0 && rc==SQLITE_OK ){
+        for(i=0; i<p->nToken; i++){
+          while( DOCID_CMP(a[i].iDocid, iMax)<0 && rc==SQLITE_OK && bEof==0 ){
+            rc = incrPhraseTokenNext(pTab, &p->aToken[i], &a[i], &bEof);
+            if( DOCID_CMP(a[i].iDocid, iMax)>0 ){
+              iMax = a[i].iDocid;
+              i = 0;
+            }
+          }
+        }
+      }
+
+      /* Check if the current entries really are a phrase match */
+      if( bEof==0 ){
+        int nByte = a[p->nToken-1].nList;
+        char *aDoclist = sqlite3_malloc(nByte+1);
+        if( !aDoclist ) return SQLITE_NOMEM;
+        memcpy(aDoclist, a[p->nToken-1].pList, nByte+1);
+
+        int nList;
+        for(i=0; i<(p->nToken-1); i++){
+          char *pLeft = a[i].pList;
+          char *pRight = aDoclist;
+          char *pOut = aDoclist;
+          int nDist = p->nToken-1-i;
+          int res = fts3PoslistPhraseMerge(&pOut, nDist, 0, 1, &pLeft, &pRight);
+          if( res==0 ) break;
+          nList = (pOut - aDoclist);
+        }
+        if( i==(p->nToken-1) ){
+          pDL->iDocid = a[0].iDocid;
+          pDL->pList = aDoclist;
+          pDL->nList = nList;
+          pDL->bFreeList = 1;
+          break;
+        }
+        sqlite3_free(aDoclist);
+      }
+    }
+  }
+
+  *pbEof = bEof;
+  return rc;
+}
+
+/*
 ** Attempt to move the phrase iterator to point to the next matching docid. 
 ** If an error occurs, return an SQLite error code. Otherwise, return 
 ** SQLITE_OK.
@@ -4172,14 +4315,7 @@ static int fts3EvalPhraseNext(
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
 
   if( p->bIncr ){
-    assert( p->nToken==1 );
-    assert( pDL->pNextDocid==0 );
-    rc = sqlite3Fts3MsrIncrNext(pTab, p->aToken[0].pSegcsr, 
-        &pDL->iDocid, &pDL->pList, &pDL->nList
-    );
-    if( rc==SQLITE_OK && !pDL->pList ){
-      *pbEof = 1;
-    }
+    rc = fts3EvalIncrPhraseNext(pCsr, p, pbEof);
   }else if( pCsr->bDesc!=pTab->bDescIdx && pDL->nAll ){
     sqlite3Fts3DoclistPrev(pTab->bDescIdx, pDL->aAll, pDL->nAll, 
         &pDL->pNextDocid, &pDL->iDocid, &pDL->nList, pbEof
@@ -4245,7 +4381,6 @@ static int fts3EvalPhraseNext(
 static void fts3EvalStartReaders(
   Fts3Cursor *pCsr,               /* FTS Cursor handle */
   Fts3Expr *pExpr,                /* Expression to initialize phrases in */
-  int bOptOk,                     /* True to enable incremental loading */
   int *pRc                        /* IN/OUT: Error code */
 ){
   if( pExpr && SQLITE_OK==*pRc ){
@@ -4256,10 +4391,10 @@ static void fts3EvalStartReaders(
         if( pExpr->pPhrase->aToken[i].pDeferred==0 ) break;
       }
       pExpr->bDeferred = (i==nToken);
-      *pRc = fts3EvalPhraseStart(pCsr, bOptOk, pExpr->pPhrase);
+      *pRc = fts3EvalPhraseStart(pCsr, 1, pExpr->pPhrase);
     }else{
-      fts3EvalStartReaders(pCsr, pExpr->pLeft, bOptOk, pRc);
-      fts3EvalStartReaders(pCsr, pExpr->pRight, bOptOk, pRc);
+      fts3EvalStartReaders(pCsr, pExpr->pLeft, pRc);
+      fts3EvalStartReaders(pCsr, pExpr->pRight, pRc);
       pExpr->bDeferred = (pExpr->pLeft->bDeferred && pExpr->pRight->bDeferred);
     }
   }
@@ -4581,7 +4716,7 @@ static int fts3EvalStart(Fts3Cursor *pCsr){
   }
 #endif
 
-  fts3EvalStartReaders(pCsr, pCsr->pExpr, 1, &rc);
+  fts3EvalStartReaders(pCsr, pCsr->pExpr, &rc);
   return rc;
 }
 
@@ -5097,12 +5232,13 @@ static void fts3EvalRestart(
     if( pPhrase ){
       fts3EvalInvalidatePoslist(pPhrase);
       if( pPhrase->bIncr ){
-        assert( pPhrase->nToken==1 );
-        assert( pPhrase->aToken[0].pSegcsr );
-        sqlite3Fts3MsrIncrRestart(pPhrase->aToken[0].pSegcsr);
+        int i;
+        for(i=0; i<pPhrase->nToken; i++){
+          assert( pPhrase->aToken[i].pSegcsr );
+          sqlite3Fts3MsrIncrRestart(pPhrase->aToken[i].pSegcsr);
+        }
         *pRc = fts3EvalPhraseStart(pCsr, 0, pPhrase);
       }
-
       pPhrase->doclist.pNextDocid = 0;
       pPhrase->doclist.iDocid = 0;
     }

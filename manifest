@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\swith\sthis\sbranch.
-D 2013-09-30T18:16:07.269
+C Allow\smulti-token\sphrases\sto\sload\sdoclists\sfrom\sthe\sdatabase\sincrementally.\sThis\sallows\squeries\sthat\sfeature\ssuch\sphrases\sto\sbenefit\sfrom\sthe\s"docid<?"\soptimization.
+D 2013-10-01T20:02:32.683
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 00a56dc5ce0527e8d1428831d460ff32e1ae45b9
+F ext/fts3/fts3.c e781a0147f26b4055c650861060b24792f4f0fb1
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 0634f768e7f6d5767972014e1ca83055ad2e09e3
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -1118,7 +1118,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6622424a3a149edd35ba2ba0881aa41b4536417b fa0f2f0e3e79ae653118b901e1cca7725dfaf249
-R 5cf6afd99182ff167821268a5e701ab6
+P e294a9c7c525d1da698259c2fef089579bfd1c0b
+R a99fa9f8f9b9179941beba7f84a38d11
 U dan
-Z 325d6a36551be1798f7d76b70cf41307
+Z 1790cd325eb740a839ef9b2fc7e8e452
