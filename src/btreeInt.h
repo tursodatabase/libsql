@@ -56,13 +56,13 @@
 **
 **   OFFSET   SIZE    DESCRIPTION
 **      0      16     Header string: "SQLite format 3\000"
-**     16       2     Page size in bytes.  
+**     16       2     Page size in bytes.  (1 means 65536)
 **     18       1     File format write version
 **     19       1     File format read version
 **     20       1     Bytes of unused space at the end of each page
-**     21       1     Max embedded payload fraction
-**     22       1     Min embedded payload fraction
-**     23       1     Min leaf payload fraction
+**     21       1     Max embedded payload fraction (must be 64)
+**     22       1     Min embedded payload fraction (must be 32)
+**     23       1     Min leaf payload fraction (must be 32)
 **     24       4     File change counter
 **     28       4     Reserved for future use
 **     32       4     First freelist page
@@ -76,9 +76,10 @@
 **     56       4     1=UTF-8 2=UTF16le 3=UTF16be
 **     60       4     User version
 **     64       4     Incremental vacuum mode
-**     68       4     unused
-**     72       4     unused
-**     76       4     unused
+**     68       4     Application-ID
+**     72      20     unused
+**     92       4     The version-valid-for number
+**     96       4     SQLITE_VERSION_NUMBER
 **
 ** All of the integer values are big-endian (most significant byte first).
 **

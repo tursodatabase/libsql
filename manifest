@@ -1,5 +1,5 @@
-C Fix\scomments\sin\sthe\sfast_vacuum.c\sdemonstration\sprogram.
-D 2013-10-01T19:36:15.392
+C Bring\ssome\sfile\sformat\scomments\sin\sbtreeInt.h\sup\sto\sdate.
+D 2013-10-01T20:29:30.106
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 5ccbbaed7a32ba774306f610da4ab4f3e5348294
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
-F src/btreeInt.h 51cf220a9b9223354770883e93a859dc377aa27f
+F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c f63e8929c7f89c0074fbc74929bc946ea117b2f8
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -1118,7 +1118,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2b60320d57a4638ebf97a2854527649c671d108e
-R 4a43823b2504f04ed4e291198b91050a
+P e0db7b38e1bc0edb1c3995cb23c46488aa6a0909
+R 2a738c8214c86a0fa4841687a9a6b019
 U drh
-Z 3db92aeadc570f4d1597ec242e901a49
+Z 1d3a10d5db55bb3286dbd9e3921936ff
