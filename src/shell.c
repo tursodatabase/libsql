@@ -974,7 +974,7 @@ static int run_table_dump_query(
   rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
-    p->nErr++;
+    if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
     return rc;
   }
   rc = sqlite3_step(pSelect);
@@ -1001,7 +1001,7 @@ static int run_table_dump_query(
   rc = sqlite3_finalize(pSelect);
   if( rc!=SQLITE_OK ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
-    p->nErr++;
+    if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
   }
   return rc;
 }

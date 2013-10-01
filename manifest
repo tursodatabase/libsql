@@ -1,5 +1,5 @@
-C Fix\sa\sminor\stypo\sin\sa\scomment\sin\swhere.c.
-D 2013-09-30T19:33:06.353
+C Change\sthe\s".dump"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\sCOMMITs\nif\sthere\sare\sdatabase\scorruption\serrors\sbut\sinvokes\sROLLBACK\son\sany\sother\nkind\sof\serror.
+D 2013-10-01T15:30:05.555
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7459801d02997b07e8b8da85ef255392ba1d022b
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c fc60e8e539cb9a895cac197de95048759b0f3ab0
-F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
+F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1117,7 +1117,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ad71c72be56786d8dcf6917efd10a8d3c2d50419
-R a67643904024b683ada1ed9a54bf2099
+P 9c9fa151e9a3bdab0264c08b66cbcc89d61bfca5
+R 9ff7757bda2b86fabee2936e154616af
 U drh
-Z 942b4d2248ee91caaa7e8559649a6daa
+Z 9ff7be50e2937033d9684ee83bcaaf82
