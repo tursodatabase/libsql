@@ -1,5 +1,5 @@
-C Change\sthe\s".dump"\scommand\sin\sthe\scommand-line\sshell\sso\sthat\sit\sCOMMITs\nif\sthere\sare\sdatabase\scorruption\serrors\sbut\sinvokes\sROLLBACK\son\sany\sother\nkind\sof\serror.
-D 2013-10-01T15:30:05.555
+C Add\sthe\s"fast_vacuum.c"\sdemonstration\sprogram\sto\sthe\stool/\ssubdirectgory.
+D 2013-10-01T19:02:56.492
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1075,6 +1075,7 @@ F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
+F tool/fast_vacuum.c 9051e839fd48666e2445dab3272b949a739ae6dd
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
@@ -1117,7 +1118,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9c9fa151e9a3bdab0264c08b66cbcc89d61bfca5
-R 9ff7757bda2b86fabee2936e154616af
+P 473234632ff7617680ab151076153f5c1088e55b
+R 9adaa284cfb79b24d0278e44a5cb5af8
 U drh
-Z 9ff7be50e2937033d9684ee83bcaaf82
+Z 58c24793b78d731684b9ef9e115423c6
