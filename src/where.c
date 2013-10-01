@@ -6007,7 +6007,7 @@ WhereInfo *sqlite3WhereBegin(
 
   /* If the caller is an UPDATE or DELETE statement that is requesting
   ** to use a one-pass algorithm, determine if this is appropriate.
-  ** The one-pass algorithm only works if the WHERE clause constraints
+  ** The one-pass algorithm only works if the WHERE clause constrains
   ** the statement to update a single row.
   */
   assert( (wctrlFlags & WHERE_ONEPASS_DESIRED)==0 || pWInfo->nLevel==1 );

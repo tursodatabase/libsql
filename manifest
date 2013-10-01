@@ -1,5 +1,5 @@
-C Allow\smulti-token\sphrases\sto\sload\sdoclists\sfrom\sthe\sdatabase\sincrementally.\sThis\sallows\squeries\sthat\sfeature\ssuch\sphrases\sto\sbenefit\sfrom\sthe\s"docid<?"\soptimization.
-D 2013-10-01T20:02:32.683
+C Merge\strunk\schanges\swith\sthis\sbranch.
+D 2013-10-01T20:10:26.229
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7459801d02997b07e8b8da85ef255392ba1d022b
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c fc60e8e539cb9a895cac197de95048759b0f3ab0
-F src/shell.c d920a891ca09b8bd262cced7fb0ab9d723f7a747
+F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c d2f58a441ba8709a99df6654b26a50b7ca7dada4
+F src/where.c d8c2c5ff3af348870cb56d4a577a51625640563d
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -301,7 +301,7 @@ F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test 8e93bf7a7e6919b14b0c9a6c1e4908bcf21b0165
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
-F test/amatch1.test f459bd4e41ec54828b24f4b28319a839ab95d05a
+F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 1772936d66471c65221e437b6d1999c3a03166c4
 F test/analyze3.test 412f690dfe95b337475e3e78a84a85d25f6f125d
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
@@ -1076,6 +1076,7 @@ F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/extract.c 054069d81b095fbdc189a6f5d4466e40380505e2
+F tool/fast_vacuum.c 5ba0d6f5963a0a63bdc42840f678bad75b2ebce1
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
@@ -1118,7 +1119,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e294a9c7c525d1da698259c2fef089579bfd1c0b
-R a99fa9f8f9b9179941beba7f84a38d11
+P ea543f081d93ed1bf66c21ce2108ec94e349f4c5 e0db7b38e1bc0edb1c3995cb23c46488aa6a0909
+R d2f3c7ddacead75bcfbaa37694b1ef7b
 U dan
-Z 1790cd325eb740a839ef9b2fc7e8e452
+Z 780ab77ea4503f5f6e1ddf0b75c99905
