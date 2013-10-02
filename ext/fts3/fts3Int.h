@@ -267,6 +267,12 @@ struct Fts3Table {
   int inTransaction;     /* True after xBegin but before xCommit/xRollback */
   int mxSavepoint;       /* Largest valid xSavepoint integer */
 #endif
+
+#ifdef SQLITE_TEST
+  /* True to disable the incremental doclist optimization. This is controled
+  ** by special insert command 'test-no-incr-doclist'.  */
+  int bNoIncrDoclist;
+#endif
 };
 
 /*
