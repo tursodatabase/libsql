@@ -1,5 +1,5 @@
-C Bring\ssome\sfile\sformat\scomments\sin\sbtreeInt.h\sup\sto\sdate.
-D 2013-10-01T20:29:30.106
+C In\sthe\slemon\sparser\sgenerator,\schange\sall\shashes\sto\sunsigned\sto\savoid\npotential\sproblems\swith\ssigned\sinteger\soverflow.
+D 2013-10-02T20:46:30.804
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1080,7 +1080,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 680980c7935bfa1edec20c804c9e5ba4b1dd96f5
+F tool/lemon.c 323e54ac86fb2393f9950219224e304620d2fb12
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
@@ -1118,7 +1118,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e0db7b38e1bc0edb1c3995cb23c46488aa6a0909
-R 2a738c8214c86a0fa4841687a9a6b019
+P 012d54d0d2b40888d08915082592ba75d70891c1
+R 38c31151664dc230209e6e8e0d82d69e
 U drh
-Z 1d3a10d5db55bb3286dbd9e3921936ff
+Z 767364e5a4324e897c21661eb6e99a80
