@@ -13,7 +13,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/fts3_common.tcl
-set ::testprefix fts4docid
+set ::testprefix fts4incr
 
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts3 {
@@ -27,7 +27,7 @@ ifcapable !fts3 {
 source $testdir/genesis.tcl
 
 do_test 1.0 {
-  execsql { CREATE VIRTUAL TABLE t1 USING fts3(words) }
+  execsql { CREATE VIRTUAL TABLE t1 USING fts4(words) }
   fts_kjv_genesis
 } {}
 

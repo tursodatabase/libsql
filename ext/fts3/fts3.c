@@ -4043,6 +4043,7 @@ static int fts3EvalPhraseStart(Fts3Cursor *pCsr, int bOptOk, Fts3Phrase *p){
   ** scanned in forward order, and the phrase consists of 
   ** MAX_INCR_PHRASE_TOKENS or fewer tokens, none of which are are "^first"
   ** tokens or prefix tokens that cannot use a prefix-index.  */
+  int bHaveIncr = 0;
   int bIncrOk = (bOptOk 
    && pCsr->bDesc==pTab->bDescIdx 
    && p->nToken<=MAX_INCR_PHRASE_TOKENS && p->nToken>0
@@ -4053,23 +4054,28 @@ static int fts3EvalPhraseStart(Fts3Cursor *pCsr, int bOptOk, Fts3Phrase *p){
   );
   for(i=0; bIncrOk==1 && i<p->nToken; i++){
     Fts3PhraseToken *pToken = &p->aToken[i];
-    if( pToken->bFirst || !pToken->pSegcsr || !pToken->pSegcsr->bLookup ){
+    if( pToken->bFirst || (pToken->pSegcsr!=0 && !pToken->pSegcsr->bLookup) ){
       bIncrOk = 0;
     }
+    if( pToken->pSegcsr ) bHaveIncr = 1;
   }
 
-  if( bIncrOk ){
+  if( bIncrOk && bHaveIncr ){
     /* Use the incremental approach. */
     int iCol = (p->iColumn >= pTab->nColumn ? -1 : p->iColumn);
     for(i=0; rc==SQLITE_OK && i<p->nToken; i++){
-      Fts3PhraseToken *pTok = &p->aToken[i];
-      rc = sqlite3Fts3MsrIncrStart(pTab, pTok->pSegcsr, iCol, pTok->z, pTok->n);
+      Fts3PhraseToken *pToken = &p->aToken[i];
+      Fts3MultiSegReader *pSegcsr = pToken->pSegcsr;
+      if( pSegcsr ){
+        rc = sqlite3Fts3MsrIncrStart(pTab, pSegcsr, iCol, pToken->z, pToken->n);
+      }
     }
+    p->bIncr = 1;
   }else{
     /* Load the full doclist for the phrase into memory. */
     rc = fts3EvalPhraseLoad(pCsr, p);
+    p->bIncr = 0;
   }
-  p->bIncr = bIncrOk;
 
   assert( rc!=SQLITE_OK || p->nToken<1 || p->aToken[0].pSegcsr==0 || p->bIncr );
   return rc;
@@ -4174,10 +4180,58 @@ void sqlite3Fts3DoclistNext(
 }
 
 /*
+** Advance the iterator pDL to the next entry in pDL->aAll/nAll. Set *pbEof
+** to true if EOF is reached.
+*/
+static void fts3EvalDlPhraseNext(
+  Fts3Table *pTab,
+  Fts3Doclist *pDL,
+  u8 *pbEof
+){
+  char *pIter;                            /* Used to iterate through aAll */
+  char *pEnd = &pDL->aAll[pDL->nAll];     /* 1 byte past end of aAll */
+ 
+  if( pDL->pNextDocid ){
+    pIter = pDL->pNextDocid;
+  }else{
+    pIter = pDL->aAll;
+  }
+
+  if( pIter>=pEnd ){
+    /* We have already reached the end of this doclist. EOF. */
+    *pbEof = 1;
+  }else{
+    sqlite3_int64 iDelta;
+    pIter += sqlite3Fts3GetVarint(pIter, &iDelta);
+    if( pTab->bDescIdx==0 || pDL->pNextDocid==0 ){
+      pDL->iDocid += iDelta;
+    }else{
+      pDL->iDocid -= iDelta;
+    }
+    pDL->pList = pIter;
+    fts3PoslistCopy(0, &pIter);
+    pDL->nList = (int)(pIter - pDL->pList);
+
+    /* pIter now points just past the 0x00 that terminates the position-
+    ** list for document pDL->iDocid. However, if this position-list was
+    ** edited in place by fts3EvalNearTrim(), then pIter may not actually
+    ** point to the start of the next docid value. The following line deals
+    ** with this case by advancing pIter past the zero-padding added by
+    ** fts3EvalNearTrim().  */
+    while( pIter<pEnd && *pIter==0 ) pIter++;
+
+    pDL->pNextDocid = pIter;
+    assert( pIter>=&pDL->aAll[pDL->nAll] || *pIter );
+    *pbEof = 0;
+  }
+}
+
+/*
 ** Helper type used by fts3EvalIncrPhraseNext() and incrPhraseTokenNext().
 */
 typedef struct TokenDoclist TokenDoclist;
 struct TokenDoclist {
+  int bIgnore;
   sqlite3_int64 iDocid;
   char *pList;
   int nList;
@@ -4194,29 +4248,55 @@ struct TokenDoclist {
 */
 static int incrPhraseTokenNext(
   Fts3Table *pTab,                /* Virtual table handle */
-  Fts3PhraseToken *pToken,        /* Advance the iterator for this token */
+  Fts3Phrase *pPhrase,            /* Phrase to advance token of */
+  int iToken,                     /* Specific token to advance */
   TokenDoclist *p,                /* OUT: Docid and doclist for new entry */
-  int *pbEof                      /* OUT: True if iterator is at EOF */
+  u8 *pbEof                       /* OUT: True if iterator is at EOF */
 ){
-  int rc;
-  assert( pToken->pDeferred==0 );
-  rc = sqlite3Fts3MsrIncrNext(
-      pTab, pToken->pSegcsr, &p->iDocid, &p->pList, &p->nList
-  );
-  if( p->pList==0 ) *pbEof = 1;
+  int rc = SQLITE_OK;
+
+  if( pPhrase->iDoclistToken==iToken ){
+    assert( p->bIgnore==0 );
+    assert( pPhrase->aToken[iToken].pSegcsr==0 );
+    fts3EvalDlPhraseNext(pTab, &pPhrase->doclist, pbEof);
+    p->pList = pPhrase->doclist.pList;
+    p->nList = pPhrase->doclist.nList;
+    p->iDocid = pPhrase->doclist.iDocid;
+  }else{
+    Fts3PhraseToken *pToken = &pPhrase->aToken[iToken];
+    assert( pToken->pDeferred==0 );
+    assert( pToken->pSegcsr || pPhrase->iDoclistToken>=0 );
+    if( pToken->pSegcsr ){
+      assert( p->bIgnore==0 );
+      rc = sqlite3Fts3MsrIncrNext(
+          pTab, pToken->pSegcsr, &p->iDocid, &p->pList, &p->nList
+      );
+      if( p->pList==0 ) *pbEof = 1;
+    }else{
+      p->bIgnore = 1;
+    }
+  }
+
   return rc;
 }
 
 
 /*
-** The phrase iterator passed as the second argument uses the incremental
-** doclist strategy. Advance it to the next matching documnent in the
-** database. If an error occurs, return an SQLite error code. Otherwise, 
-** return SQLITE_OK.
+** The phrase iterator passed as the second argument:
+**
+**   * features at least one token that uses an incremental doclist, and 
+**
+**   * does not contain any deferred tokens.
+**
+** Advance it to the next matching documnent in the database and populate
+** the Fts3Doclist.pList and nList fields. 
 **
 ** If there is no "next" entry and no error occurs, then *pbEof is set to
 ** 1 before returning. Otherwise, if no error occurs and the iterator is
 ** successfully advanced, *pbEof is set to 0.
+**
+** If an error occurs, return an SQLite error code. Otherwise, return 
+** SQLITE_OK.
 */
 static int fts3EvalIncrPhraseNext(
   Fts3Cursor *pCsr,               /* FTS Cursor handle */
@@ -4226,12 +4306,13 @@ static int fts3EvalIncrPhraseNext(
   int rc = SQLITE_OK;
   Fts3Doclist *pDL = &p->doclist;
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
-  int bEof = 0;
+  u8 bEof = 0;
 
+  /* This is only called if it is guaranteed that the phrase has at least
+  ** one incremental token. In which case the bIncr flag is set. */
   assert( p->bIncr==1 );
-  assert( pDL->pNextDocid==0 );
 
-  if( p->nToken==1 ){
+  if( p->nToken==1 && p->bIncr ){
     rc = sqlite3Fts3MsrIncrNext(pTab, p->aToken[0].pSegcsr, 
         &pDL->iDocid, &pDL->pList, &pDL->nList
     );
@@ -4240,29 +4321,35 @@ static int fts3EvalIncrPhraseNext(
     int bDescDoclist = pCsr->bDesc;
     struct TokenDoclist a[MAX_INCR_PHRASE_TOKENS];
 
+    memset(a, 0, sizeof(a));
     assert( p->nToken<=MAX_INCR_PHRASE_TOKENS );
+    assert( p->iDoclistToken<MAX_INCR_PHRASE_TOKENS );
 
     while( bEof==0 ){
+      int bMaxSet = 0;
       sqlite3_int64 iMax;         /* Largest docid for all iterators */
       int i;                      /* Used to iterate through tokens */
 
       /* Advance the iterator for each token in the phrase once. */
       for(i=0; rc==SQLITE_OK && i<p->nToken; i++){
-        rc = incrPhraseTokenNext(pTab, &p->aToken[i], &a[i], &bEof);
-        if( i==0 || DOCID_CMP(iMax, a[i].iDocid)<0 ){
+        rc = incrPhraseTokenNext(pTab, p, i, &a[i], &bEof);
+        if( a[i].bIgnore==0 && (bMaxSet==0 || DOCID_CMP(iMax, a[i].iDocid)<0) ){
           iMax = a[i].iDocid;
+          bMaxSet = 1;
         }
       }
+      assert( rc!=SQLITE_OK || a[p->nToken-1].bIgnore==0 );
+      assert( rc!=SQLITE_OK || bMaxSet );
 
       /* Keep advancing iterators until they all point to the same document */
-      if( bEof==0 && rc==SQLITE_OK ){
-        for(i=0; i<p->nToken; i++){
-          while( DOCID_CMP(a[i].iDocid, iMax)<0 && rc==SQLITE_OK && bEof==0 ){
-            rc = incrPhraseTokenNext(pTab, &p->aToken[i], &a[i], &bEof);
-            if( DOCID_CMP(a[i].iDocid, iMax)>0 ){
-              iMax = a[i].iDocid;
-              i = 0;
-            }
+      for(i=0; i<p->nToken; i++){
+        while( rc==SQLITE_OK && bEof==0 
+            && a[i].bIgnore==0 && DOCID_CMP(a[i].iDocid, iMax)<0 
+        ){
+          rc = incrPhraseTokenNext(pTab, p, i, &a[i], &bEof);
+          if( DOCID_CMP(a[i].iDocid, iMax)>0 ){
+            iMax = a[i].iDocid;
+            i = 0;
           }
         }
       }
@@ -4276,16 +4363,18 @@ static int fts3EvalIncrPhraseNext(
         memcpy(aDoclist, a[p->nToken-1].pList, nByte+1);
 
         for(i=0; i<(p->nToken-1); i++){
-          char *pLeft = a[i].pList;
-          char *pRight = aDoclist;
-          char *pOut = aDoclist;
-          int nDist = p->nToken-1-i;
-          int res = fts3PoslistPhraseMerge(&pOut, nDist, 0, 1, &pLeft, &pRight);
-          if( res==0 ) break;
-          nList = (pOut - aDoclist);
+          if( a[i].bIgnore==0 ){
+            char *pL = a[i].pList;
+            char *pR = aDoclist;
+            char *pOut = aDoclist;
+            int nDist = p->nToken-1-i;
+            int res = fts3PoslistPhraseMerge(&pOut, nDist, 0, 1, &pL, &pR);
+            if( res==0 ) break;
+            nList = (pOut - aDoclist);
+          }
         }
         if( i==(p->nToken-1) ){
-          pDL->iDocid = a[0].iDocid;
+          pDL->iDocid = iMax;
           pDL->pList = aDoclist;
           pDL->nList = nList;
           pDL->bFreeList = 1;
@@ -4326,41 +4415,7 @@ static int fts3EvalPhraseNext(
     );
     pDL->pList = pDL->pNextDocid;
   }else{
-    char *pIter;                            /* Used to iterate through aAll */
-    char *pEnd = &pDL->aAll[pDL->nAll];     /* 1 byte past end of aAll */
-    if( pDL->pNextDocid ){
-      pIter = pDL->pNextDocid;
-    }else{
-      pIter = pDL->aAll;
-    }
-
-    if( pIter>=pEnd ){
-      /* We have already reached the end of this doclist. EOF. */
-      *pbEof = 1;
-    }else{
-      sqlite3_int64 iDelta;
-      pIter += sqlite3Fts3GetVarint(pIter, &iDelta);
-      if( pTab->bDescIdx==0 || pDL->pNextDocid==0 ){
-        pDL->iDocid += iDelta;
-      }else{
-        pDL->iDocid -= iDelta;
-      }
-      pDL->pList = pIter;
-      fts3PoslistCopy(0, &pIter);
-      pDL->nList = (int)(pIter - pDL->pList);
-
-      /* pIter now points just past the 0x00 that terminates the position-
-      ** list for document pDL->iDocid. However, if this position-list was
-      ** edited in place by fts3EvalNearTrim(), then pIter may not actually
-      ** point to the start of the next docid value. The following line deals
-      ** with this case by advancing pIter past the zero-padding added by
-      ** fts3EvalNearTrim().  */
-      while( pIter<pEnd && *pIter==0 ) pIter++;
-
-      pDL->pNextDocid = pIter;
-      assert( pIter>=&pDL->aAll[pDL->nAll] || *pIter );
-      *pbEof = 0;
-    }
+    fts3EvalDlPhraseNext(pTab, pDL, pbEof);
   }
 
   return rc;
@@ -4640,7 +4695,7 @@ static int fts3EvalSelectDeferred(
       ** overflowing the 32-bit integer it is stored in. */
       if( ii<12 ) nLoad4 = nLoad4*4;
 
-      if( ii==0 || pTC->pPhrase->nToken>1 ){
+      if( ii==0 || (pTC->pPhrase->nToken>1 && ii!=nToken-1) ){
         /* Either this is the cheapest token in the entire query, or it is
         ** part of a multi-token phrase. Either way, the entire doclist will
         ** (eventually) be loaded into memory. It may as well be now. */
@@ -5238,8 +5293,11 @@ static void fts3EvalRestart(
       if( pPhrase->bIncr ){
         int i;
         for(i=0; i<pPhrase->nToken; i++){
-          assert( pPhrase->aToken[i].pSegcsr );
-          sqlite3Fts3MsrIncrRestart(pPhrase->aToken[i].pSegcsr);
+          Fts3PhraseToken *pToken = &pPhrase->aToken[i];
+          assert( pToken->pDeferred==0 );
+          if( pToken->pSegcsr ){
+            sqlite3Fts3MsrIncrRestart(pToken->pSegcsr);
+          }
         }
         *pRc = fts3EvalPhraseStart(pCsr, 0, pPhrase);
       }
