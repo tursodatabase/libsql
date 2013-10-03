@@ -219,7 +219,6 @@ static int init_wrapper_uninstall(
     return TCL_ERROR;
   }
 
-  memset(&wrapped, 0, sizeof(&wrapped));
   sqlite3_shutdown();
   sqlite3_config(SQLITE_CONFIG_MUTEX, &wrapped.mutex);
   sqlite3_config(SQLITE_CONFIG_MALLOC, &wrapped.mem);

@@ -1,5 +1,5 @@
-C In\sthe\slemon\sparser\sgenerator,\schange\sall\shashes\sto\sunsigned\sto\savoid\npotential\sproblems\swith\ssigned\sinteger\soverflow.
-D 2013-10-02T20:46:30.804
+C Remove\sunnecessary\smemset()\scalls\sfrom\stest\scode.
+D 2013-10-03T11:27:56.219
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/sqliteInt.h 18c7f80e7e23098942436f7286e9c93adc6908be
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 659dad8ef30b54831306a244b43e37af4725a444
+F src/tclsqlite.c 3b5f3716e320480659239abe887164521c575d83
 F src/test1.c 26226cfd2b6dc3f77d2eb27f07ffcf236b4e728b
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -245,7 +245,7 @@ F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
 F src/test_func.c f8235719dff4bf9ffee04c55a190af8782ce9ab5
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
-F src/test_init.c 3cbad7ce525aec925f8fda2192d576d47f0d478a
+F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
 F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
 F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
@@ -1118,7 +1118,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 012d54d0d2b40888d08915082592ba75d70891c1
-R 38c31151664dc230209e6e8e0d82d69e
+P 8d399a03de63c15908d63ed69140ee15c6275b8d
+R ae588916fdc736be6c4dac87b59614c6
 U drh
-Z 767364e5a4324e897c21661eb6e99a80
+Z 0a2b0d9a2a1e75ecb540daf6b8322ce3
