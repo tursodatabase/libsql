@@ -2414,6 +2414,7 @@ typedef struct DbFixer DbFixer;
 struct DbFixer {
   Parse *pParse;      /* The parsing context.  Error messages written here */
   Schema *pSchema;    /* Fix items to this schema */
+  int bVarOnly;       /* Check for variable references only */
   const char *zDb;    /* Make sure all objects are contained in this database */
   const char *zType;  /* Type of the container - used for error messages */
   const Token *pName; /* Name of the container - used for error messages */

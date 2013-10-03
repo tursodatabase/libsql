@@ -1,5 +1,5 @@
-C Remove\sunnecessary\smemset()\scalls\sfrom\stest\scode.
-D 2013-10-03T11:27:56.219
+C Return\san\serror\sif\san\sattempt\sis\smade\sto\screate\sa\strigger\swith\san\sSQL\svariable\sembedded\swithin\sit.\sIf\ssuch\sa\svariable\sreference\sis\sfound\swithin\sa\strigger\sdefinition\sloaded\sfrom\sthe\ssqlite_master\stable,\ssilently\sreplace\sit\swith\sa\sNULL.
+D 2013-10-03T12:29:38.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,7 +158,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
 F src/analyze.c d322972af09e3f8debb45f420dfe3ded142b108b
-F src/attach.c 4a2b6a6d9b5f9fd55a8b59488ff7929fef73a195
+F src/attach.c 64859892b2a922c36c936f22dbce40e3c8044749
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
@@ -221,7 +221,7 @@ F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 18c7f80e7e23098942436f7286e9c93adc6908be
+F src/sqliteInt.h d759d22c3c4c8e88ccd550c7aa174a190ca768f6
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -272,7 +272,7 @@ F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 70061085a51f2f4fc15ece94f32c03bcb78e63b2
-F src/trigger.c 5c0ea9b8755e7c5e1a700f3e27ac4f8d92dd221e
+F src/trigger.c 9e6976b6d67de26bbaabb361f28a90b799d80434
 F src/update.c f5182157f5d0d0a97bc5f5e3c9bdba0dfbe08f08
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 7f3e35432d6888d1e770c488c35bd98970c44eec
@@ -987,6 +987,7 @@ F test/triggerA.test fe5597f47ee21bacb4936dc827994ed94161e332
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test a7b4367392c755bc5fd5fff88011753e6b6afe90
 F test/triggerD.test 8e7f3921a92a5797d472732108109e44575fa650
+F test/triggerE.test 355e9c5cbaed5cd039a60baad1fb2197caeb8e52
 F test/tt3_checkpoint.c 415eccce672d681b297485fc20f44cdf0eac93af
 F test/types.test bf816ce73c7dfcfe26b700c19f97ef4050d194ff
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
@@ -1118,7 +1119,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8d399a03de63c15908d63ed69140ee15c6275b8d
-R ae588916fdc736be6c4dac87b59614c6
-U drh
-Z 0a2b0d9a2a1e75ecb540daf6b8322ce3
+P eec3187bc68ddebdbc2113f77c7f5cd32e9be61f
+R bcf82dacad10da610aa03ba9f5dccbf3
+U dan
+Z 81b7035f34aeb81458a978a9137553b8

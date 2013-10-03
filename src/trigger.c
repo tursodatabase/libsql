@@ -291,8 +291,10 @@ void sqlite3FinishTrigger(
   }
   nameToken.z = pTrig->zName;
   nameToken.n = sqlite3Strlen30(nameToken.z);
-  if( sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken) 
-          && sqlite3FixTriggerStep(&sFix, pTrig->step_list) ){
+  if( sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken) && (
+      sqlite3FixTriggerStep(&sFix, pTrig->step_list) 
+   || sqlite3FixExpr(&sFix, pTrig->pWhen) 
+  )){
     goto triggerfinish_cleanup;
   }
 

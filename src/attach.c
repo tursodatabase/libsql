@@ -430,7 +430,7 @@ int sqlite3FixInit(
 ){
   sqlite3 *db;
 
-  if( NEVER(iDb<0) || iDb==1 ) return 0;
+  if( NEVER(iDb<0) ) return 0;
   db = pParse->db;
   assert( db->nDb>iDb );
   pFix->pParse = pParse;
@@ -438,6 +438,7 @@ int sqlite3FixInit(
   pFix->pSchema = db->aDb[iDb].pSchema;
   pFix->zType = zType;
   pFix->pName = pName;
+  pFix->bVarOnly = (iDb==1);
   return 1;
 }
 
@@ -466,15 +467,17 @@ int sqlite3FixSrcList(
   if( NEVER(pList==0) ) return 0;
   zDb = pFix->zDb;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
-    if( pItem->zDatabase && sqlite3StrICmp(pItem->zDatabase, zDb) ){
-      sqlite3ErrorMsg(pFix->pParse,
-         "%s %T cannot reference objects in database %s",
-         pFix->zType, pFix->pName, pItem->zDatabase);
-      return 1;
+    if( pFix->bVarOnly==0 ){
+      if( pItem->zDatabase && sqlite3StrICmp(pItem->zDatabase, zDb) ){
+        sqlite3ErrorMsg(pFix->pParse,
+            "%s %T cannot reference objects in database %s",
+            pFix->zType, pFix->pName, pItem->zDatabase);
+        return 1;
+      }
+      sqlite3DbFree(pFix->pParse->db, pItem->zDatabase);
+      pItem->zDatabase = 0;
+      pItem->pSchema = pFix->pSchema;
     }
-    sqlite3DbFree(pFix->pParse->db, pItem->zDatabase);
-    pItem->zDatabase = 0;
-    pItem->pSchema = pFix->pSchema;
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_TRIGGER)
     if( sqlite3FixSelect(pFix, pItem->pSelect) ) return 1;
     if( sqlite3FixExpr(pFix, pItem->pOn) ) return 1;
@@ -497,7 +500,19 @@ int sqlite3FixSelect(
     if( sqlite3FixExpr(pFix, pSelect->pWhere) ){
       return 1;
     }
+    if( sqlite3FixExprList(pFix, pSelect->pGroupBy) ){
+      return 1;
+    }
     if( sqlite3FixExpr(pFix, pSelect->pHaving) ){
+      return 1;
+    }
+    if( sqlite3FixExprList(pFix, pSelect->pOrderBy) ){
+      return 1;
+    }
+    if( sqlite3FixExpr(pFix, pSelect->pLimit) ){
+      return 1;
+    }
+    if( sqlite3FixExpr(pFix, pSelect->pOffset) ){
       return 1;
     }
     pSelect = pSelect->pPrior;
@@ -509,6 +524,14 @@ int sqlite3FixExpr(
   Expr *pExpr        /* The expression to be fixed to one database */
 ){
   while( pExpr ){
+    if( pExpr->op==TK_VARIABLE ){
+      if( pFix->pParse->db->init.busy ){
+        pExpr->op = TK_NULL;
+      }else{
+        sqlite3ErrorMsg(pFix->pParse, "%s cannot use variables", pFix->zType);
+        return 1;
+      }
+    }
     if( ExprHasProperty(pExpr, EP_TokenOnly) ) break;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
