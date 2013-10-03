@@ -267,6 +267,12 @@ struct Fts3Table {
   int inTransaction;     /* True after xBegin but before xCommit/xRollback */
   int mxSavepoint;       /* Largest valid xSavepoint integer */
 #endif
+
+#ifdef SQLITE_TEST
+  /* True to disable the incremental doclist optimization. This is controled
+  ** by special insert command 'test-no-incr-doclist'.  */
+  int bNoIncrDoclist;
+#endif
 };
 
 /*
@@ -292,7 +298,8 @@ struct Fts3Cursor {
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
   sqlite3_int64 nDoc;             /* Documents in table */
-
+  i64 iMinDocid;                  /* Minimum docid to return */
+  i64 iMaxDocid;                  /* Maximum docid to return */
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
   u32 *aMatchinfo;                /* Information about most recent match */
   int nMatchinfo;                 /* Number of elements in aMatchinfo[] */
@@ -322,6 +329,15 @@ struct Fts3Cursor {
 #define FTS3_DOCID_SEARCH    1    /* Lookup by rowid on %_content table */
 #define FTS3_FULLTEXT_SEARCH 2    /* Full-text index search */
 
+/*
+** The lower 16-bits of the sqlite3_index_info.idxNum value set by
+** the xBestIndex() method contains the Fts3Cursor.eSearch value described
+** above. The upper 16-bits contain a combination of the following
+** bits, used to describe extra constraints on full-text searches.
+*/
+#define FTS3_HAVE_LANGID    0x00010000      /* languageid=? */
+#define FTS3_HAVE_DOCID_GE  0x00020000      /* docid>=? */
+#define FTS3_HAVE_DOCID_LE  0x00040000      /* docid<=? */
 
 struct Fts3Doclist {
   char *aAll;                    /* Array containing doclist (or NULL) */

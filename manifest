@@ -1,5 +1,5 @@
-C The\ssqlite3FixInit()\sroutine\scannot\sfail.\s\sSo\schange\sthe\sreturn\stype\sfrom\s"int"\nto\s"void".
-D 2013-10-03T15:39:44.505
+C Have\sFTS\stake\sadvantage\sof\s"docid<?"\sconstraints\swhen\sthey\sare\spresent.\sExtend\sthe\sFTS\s"incremental\sdoclist"\soptimization\sso\sthat\sit\sis\sused\sfor\stokens\swithin\smulti-token\sphrases.
+D 2013-10-03T20:41:18.513
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,9 +78,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e1240ab6f5999174309a41ffac63b94ed1233098
+F ext/fts3/fts3.c 6d277a3ff6b20ff815184395407c5a4bd7787f9c
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h c7a451661c2d9b2440b2008c3f63ce06f13181d6
+F ext/fts3/fts3Int.h 8689f7cf85020e7f88d1e761eeac480c3b0ea7ad
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
 F ext/fts3/fts3_expr.c f8eb1046063ba342c7114eba175cabb31c4a64e7
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c ce45c3ea578464f26b0293ea8e54a39694f18b64
+F ext/fts3/fts3_write.c 851e65f413576055f2e86a63d45b7d67c829db56
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -555,6 +555,8 @@ F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
 F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
+F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
+F test/fts4incr.test 2fae04582c2329a038b2b1f985e702478fb94888
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
@@ -1119,7 +1121,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8338232a111be16d6c2ab57176d0a23a001f02ad
-R b1cce97e822326c63df11398c4318c43
-U drh
-Z da47fe5fd9aed60cdbc3a07080f59327
+P 500c5932fe3f5fcd0940522f7839d581c555e0eb 24aa20da222a9cc181473bc41d0f8791be91fa97
+R 699a595349579dae27a85bc7620bf39e
+U dan
+Z 13c7e5229c05389938219ac34fe1504f

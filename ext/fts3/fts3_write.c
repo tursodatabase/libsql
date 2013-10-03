@@ -5050,6 +5050,9 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 9) ){
     p->nMaxPendingData = atoi(&zVal[11]);
     rc = SQLITE_OK;
+  }else if( nVal>21 && 0==sqlite3_strnicmp(zVal, "test-no-incr-doclist=", 21) ){
+    p->bNoIncrDoclist = atoi(&zVal[21]);
+    rc = SQLITE_OK;
 #endif
   }else{
     rc = SQLITE_ERROR;
