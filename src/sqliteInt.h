@@ -2953,7 +2953,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 #endif
 void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
 void sqlite3Detach(Parse*, Expr*);
-int sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
+void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
 int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);

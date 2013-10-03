@@ -417,11 +417,8 @@ void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
 /*
 ** Initialize a DbFixer structure.  This routine must be called prior
 ** to passing the structure to one of the sqliteFixAAAA() routines below.
-**
-** The return value indicates whether or not fixation is required.  TRUE
-** means we do need to fix the database references, FALSE means we do not.
 */
-int sqlite3FixInit(
+void sqlite3FixInit(
   DbFixer *pFix,      /* The fixer to be initialized */
   Parse *pParse,      /* Error messages will be written here */
   int iDb,            /* This is the database that must be used */
@@ -430,7 +427,6 @@ int sqlite3FixInit(
 ){
   sqlite3 *db;
 
-  if( NEVER(iDb<0) ) return 0;
   db = pParse->db;
   assert( db->nDb>iDb );
   pFix->pParse = pParse;
@@ -439,7 +435,6 @@ int sqlite3FixInit(
   pFix->zType = zType;
   pFix->pName = pName;
   pFix->bVarOnly = (iDb==1);
-  return 1;
 }
 
 /*
