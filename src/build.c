@@ -1722,9 +1722,8 @@ void sqlite3CreateView(
   }
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
-  if( sqlite3FixInit(&sFix, pParse, iDb, "view", pName)
-    && sqlite3FixSelect(&sFix, pSelect)
-  ){
+  sqlite3FixInit(&sFix, pParse, iDb, "view", pName);
+  if( sqlite3FixSelect(&sFix, pSelect) ){
     sqlite3SelectDelete(db, pSelect);
     return;
   }
@@ -2524,9 +2523,8 @@ Index *sqlite3CreateIndex(
     }
 #endif
 
-    if( sqlite3FixInit(&sFix, pParse, iDb, "index", pName) &&
-        sqlite3FixSrcList(&sFix, pTblName)
-    ){
+    sqlite3FixInit(&sFix, pParse, iDb, "index", pName);
+    if( sqlite3FixSrcList(&sFix, pTblName) ){
       /* Because the parser constructs pTblName from a single identifier,
       ** sqlite3FixSrcList can never fail. */
       assert(0);
