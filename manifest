@@ -1,5 +1,5 @@
-C The\ssqlite3FixInit()\sroutine\scannot\sfail.\s\sSo\schange\sthe\sreturn\stype\sfrom\s"int"\nto\s"void".
-D 2013-10-03T15:39:44.505
+C Experimental\sbranch\sallowing\sdifferent\spostulated\sscan\srates\sfor\seach\sindex.
+D 2013-10-03T19:21:41.923
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c d322972af09e3f8debb45f420dfe3ded142b108b
+F src/analyze.c 41caf5d01c2aefe442a52dbceff81095260e4c78
 F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -166,7 +166,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 5ccbbaed7a32ba774306f610da4ab4f3e5348294
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 834fa4bb0fa936c39336c52f5aacc659035d973e
+F src/build.c 7926e17a5dc3f698dd8b15511a4902f48c73ac50
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -221,7 +221,7 @@ F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 50f51427e7afd2803c9b8380d34069ae212a0f4c
+F src/sqliteInt.h c32d524facfb39084cc1a830aef0c31aeb93c04e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1119,7 +1119,10 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8338232a111be16d6c2ab57176d0a23a001f02ad
-R b1cce97e822326c63df11398c4318c43
+P 500c5932fe3f5fcd0940522f7839d581c555e0eb
+R c43f0933dc867b5f8554e92f9664b3d0
+T *branch * index-scan-rate
+T *sym-index-scan-rate *
+T -sym-trunk *
 U drh
-Z da47fe5fd9aed60cdbc3a07080f59327
+Z ac91788b1f42a4c56b173a94be0ebf5a

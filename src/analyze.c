@@ -1250,17 +1250,16 @@ struct analysisInfo {
 ** the array aOut[].
 */
 static void decodeIntArray(
-  char *zIntArray, 
-  int nOut, 
-  tRowcnt *aOut, 
-  int *pbUnordered
+  char *zIntArray,       /* String containing int array to decode */
+  int nOut,              /* Number of slots in aOut[] */
+  tRowcnt *aOut,         /* Store integers here */
+  Index *pIndex          /* Handle extra flags for this index, if not NULL */
 ){
   char *z = zIntArray;
   int c;
   int i;
   tRowcnt v;
-
-  assert( pbUnordered==0 || *pbUnordered==0 );
+  int v32;
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( z==0 ) z = "";
@@ -1276,8 +1275,20 @@ static void decodeIntArray(
     aOut[i] = v;
     if( *z==' ' ) z++;
   }
-  if( pbUnordered && strcmp(z, "unordered")==0 ){
-    *pbUnordered = 1;
+  if( pIndex ){
+    while( z[0] ){
+      for(i=1; z[i] && z[i]!=' '; i++){}
+      if( i==9 && memcmp(z, "unordered", 9)==0 ){
+        pIndex->bUnordered = 1;
+      }else if( i>2 && memcmp(z, "r=", 2)==0
+                && sqlite3GetInt32(z+2, &v32) ){
+        if( v32>255 ) v32 = 255;
+        if( v32<0 ) v32 = 0;
+        pIndex->iScanRatio = (u8)v32;
+      }
+      z += i;
+      if( z[0]==' ' ) z++;
+    }
   }
 }
 
@@ -1316,10 +1327,8 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   z = argv[2];
 
   if( pIndex ){
-    int bUnordered = 0;
-    decodeIntArray((char*)z, pIndex->nColumn+1, pIndex->aiRowEst,&bUnordered);
+    decodeIntArray((char*)z, pIndex->nColumn+1, pIndex->aiRowEst, pIndex);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowEst = pIndex->aiRowEst[0];
-    pIndex->bUnordered = bUnordered;
   }else{
     decodeIntArray((char*)z, 1, &pTable->nRowEst, 0);
   }

@@ -1472,7 +1472,7 @@ struct FKey {
 #define OE_SetDflt  8   /* Set the foreign key value to its default */
 #define OE_Cascade  9   /* Cascade the changes */
 
-#define OE_Default  99  /* Do whatever the default action is */
+#define OE_Default  10  /* Do whatever the default action is */
 
 
 /*
@@ -1560,7 +1560,8 @@ struct Index {
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   int tnum;                /* DB Page containing root of this index */
   u16 nColumn;             /* Number of columns in table used by this index */
-  u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
+  u8 iScanRatio;           /* Scan rate relative to the main table */
+  unsigned onError:4;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */

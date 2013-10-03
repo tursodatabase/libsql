@@ -2443,6 +2443,15 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 }
 
 /*
+** Estimate the average width of a table column based on its affinity type.
+*/
+static unsigned estimatedColumnWidth(const Column *p){
+  if( p->affinity>=SQLITE_AFF_NUMERIC ) return 1;
+  if( p->affinity==SQLITE_AFF_TEXT ) return 3;
+  return 2;
+}
+
+/*
 ** Create a new index for an SQL table.  pName1.pName2 is the name of the index 
 ** and pTblList is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -2484,9 +2493,12 @@ Index *sqlite3CreateIndex(
   int iDb;             /* Index of the database that is being written */
   Token *pName = 0;    /* Unqualified name of the index to create */
   struct ExprList_item *pListItem; /* For looping over pList */
-  int nCol;
-  int nExtra = 0;
-  char *zExtra;
+  unsigned wTable = 0;             /* Approximate "width" of the table */
+  unsigned wIndex = 0;             /* Approximate "width" of this index */
+  const Column *pTabCol;           /* A column in the table */
+  int nCol;                        /* Number of columns */
+  int nExtra = 0;                  /* Space allocated for zExtra[] */
+  char *zExtra;                    /* Extra space after the Index object */
 
   assert( pParse->nErr==0 );      /* Never called with prior errors */
   if( db->mallocFailed || IN_DECLARE_VTAB ){
@@ -2713,7 +2725,6 @@ Index *sqlite3CreateIndex(
   */
   for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
     const char *zColName = pListItem->zName;
-    Column *pTabCol;
     int requestedSortOrder;
     char *zColl;                   /* Collation sequence name */
 
@@ -2727,6 +2738,7 @@ Index *sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
+    wIndex += estimatedColumnWidth(pTabCol);
     if( pListItem->pExpr ){
       int nColl;
       assert( pListItem->pExpr->op==TK_COLLATE );
@@ -2750,6 +2762,11 @@ Index *sqlite3CreateIndex(
     if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
   sqlite3DefaultRowEst(pIndex);
+  for(j=pTab->nCol, pTabCol=pTab->aCol; j>0; j--, pTabCol++){
+    wTable += estimatedColumnWidth(pTabCol);
+  }
+  assert( 100*wIndex/wTable <= 255 );
+  pIndex->iScanRatio = (u8)(128*wIndex/wTable);
 
   if( pTab==pParse->pNewTable ){
     /* This routine has been called to create an automatic index as a
