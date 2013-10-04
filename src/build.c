@@ -1071,7 +1071,7 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 char sqlite3AffinityType(const char *zIn, u8 *pszEst){
   u32 h = 0;
   char aff = SQLITE_AFF_NUMERIC;
-  const char *zChar;
+  const char *zChar = 0;
 
   if( zIn==0 ) return aff;
   while( zIn[0] ){
@@ -1087,6 +1087,7 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
     }else if( h==(('b'<<24)+('l'<<16)+('o'<<8)+'b')          /* BLOB */
         && (aff==SQLITE_AFF_NUMERIC || aff==SQLITE_AFF_REAL) ){
       aff = SQLITE_AFF_NONE;
+      if( zIn[0]=='(' ) zChar = zIn;
 #ifndef SQLITE_OMIT_FLOATING_POINT
     }else if( h==(('r'<<24)+('e'<<16)+('a'<<8)+'l')          /* REAL */
         && aff==SQLITE_AFF_NUMERIC ){
@@ -1103,23 +1104,27 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
       break;
     }
   }
+
+  /* If pszEst is not NULL, store an estimate of the field size.  The
+  ** estimate is scaled so that the size of an integer is 1.  */
   if( pszEst ){
-    if( aff>=SQLITE_AFF_NUMERIC ){
-      *pszEst = 1;
-    }else if( zChar ){
-      *pszEst = 1;
-      while( zChar[0] ){
-        int v;
-        if( sqlite3Isdigit(zChar[0]) && sqlite3GetInt32(zChar, &v) ){
-          v = v/4 + 1;
-          if( v>255 ) v = 255;
-          *pszEst = v;
-          break;
+    *pszEst = 1;   /* default size is approx 4 bytes */
+    if( aff<=SQLITE_AFF_NONE ){
+      if( zChar ){
+        while( zChar[0] ){
+          if( sqlite3Isdigit(zChar[0]) ){
+            int v;
+            sqlite3GetInt32(zChar, &v);
+            v = v/4 + 1;
+            if( v>255 ) v = 255;
+            *pszEst = v; /* BLOB(k), VARCHAR(k), CHAR(k) -> r=(k/4+1) */
+            break;
+          }
+          zChar++;
         }
-        zChar++;
+      }else{
+        *pszEst = 5;   /* BLOB, TEXT, CLOB -> r=5  (approx 20 bytes)*/
       }
-    }else{
-      *pszEst = 3;
     }
   }
   return aff;

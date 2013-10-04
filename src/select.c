@@ -4607,6 +4607,7 @@ int sqlite3Select(
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           if( pIdx->bUnordered==0
            && pIdx->iScanRatio<128
+           && pIdx->pPartIdxWhere==0
            && (!pBest || pIdx->iScanRatio<pBest->iScanRatio)
           ){
             pBest = pIdx;

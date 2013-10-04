@@ -1259,7 +1259,6 @@ static void decodeIntArray(
   int c;
   int i;
   tRowcnt v;
-  int v32;
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( z==0 ) z = "";
@@ -1276,23 +1275,19 @@ static void decodeIntArray(
     if( *z==' ' ) z++;
   }
   if( pIndex ){
-    while( z[0] ){
-      for(i=1; z[i] && z[i]!=' '; i++){}
-      if( i==9 && memcmp(z, "unordered", 9)==0 ){
-        pIndex->bUnordered = 1;
-      }else if( i>2 && memcmp(z, "r=", 2)==0
-                && sqlite3GetInt32(z+2, &v32) ){
-        if( v32>=200 ){
-          v32 = 255;
-        }else if( v32<0 ){
-          v32 = 0;
-        }else{
-          v32 = (128*v32)/100;
-        }
-        pIndex->iScanRatio = (u8)v32;
+    if( strcmp(z, "unordered")==0 ){
+      pIndex->bUnordered = 1;
+    }else if( sqlite3_strglob("r=[0-9]*", z)==0 ){
+      int v32 = 0;
+      sqlite3GetInt32(z+2, &v32);
+      if( v32>=200 ){
+        v32 = 255;
+      }else if( v32<=0 ){
+        v32 = 1;
+      }else{
+        v32 = (128*v32)/100;
       }
-      z += i;
-      if( z[0]==' ' ) z++;
+      pIndex->iScanRatio = (u8)v32;
     }
   }
 }
