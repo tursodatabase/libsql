@@ -1,5 +1,5 @@
-C Have\sFTS\stake\sadvantage\sof\s"docid<?"\sconstraints\swhen\sthey\sare\spresent.\sExtend\sthe\sFTS\s"incremental\sdoclist"\soptimization\sso\sthat\sit\sis\sused\sfor\stokens\swithin\smulti-token\sphrases.
-D 2013-10-03T20:41:18.513
+C Make\ssure\sthe\scount(*)\soptimization\sworks\scorrectly\seven\swhen\spartial\nindices\sare\spresent.\s\sTicket\s[a5c8ed66cae].
+D 2013-10-04T00:00:12.987
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7459801d02997b07e8b8da85ef255392ba1d022b
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c fc60e8e539cb9a895cac197de95048759b0f3ab0
+F src/select.c 2d71af95ee534afee69f5649ecf54180a9d8704b
 F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -599,7 +599,7 @@ F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
-F test/index6.test e96324d8c1ade4b30a4c6cee14b1fc2e5a367cda
+F test/index6.test 9996f064672c03e768e256e4bf7cff4b63e8b109
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1121,7 +1121,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 500c5932fe3f5fcd0940522f7839d581c555e0eb 24aa20da222a9cc181473bc41d0f8791be91fa97
-R 699a595349579dae27a85bc7620bf39e
-U dan
-Z 13c7e5229c05389938219ac34fe1504f
+P baf8ce5916ea9baf0ec557263cb9c7ecf716431f
+R 387652c1fc691b80beae3d775958b88c
+U drh
+Z 3d13038d14aebd5babc9e8c97e9abf67
