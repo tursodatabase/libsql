@@ -1,5 +1,5 @@
-C Make\ssure\sthe\scount(*)\soptimization\sworks\scorrectly\seven\swhen\spartial\nindices\sare\spresent.\s\sTicket\s[a5c8ed66cae].
-D 2013-10-04T00:00:12.987
+C If\san\s"INSERT\sINTO\s...\sSELECT"\scan\suse\sthe\sxfer\soptimization,\spass\sthe\sOPFLAG_BULKCSR\shint\sto\sbtree\scursors\sused\sto\supdate\sindices.\sThis\sresults\sin\sa\stighter\skey\spacking.
+D 2013-10-04T18:17:18.371
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c a271771db927873c850da8928d6ee9fc058fb9fe
+F src/insert.c 9a3f578ffe37f18ef695a06764320db5dc1f0011
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1121,7 +1121,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P baf8ce5916ea9baf0ec557263cb9c7ecf716431f
-R 387652c1fc691b80beae3d775958b88c
-U drh
-Z 3d13038d14aebd5babc9e8c97e9abf67
+P 9f2f4c0a50808910ad01c8c4352367f25747be08
+R 1a5e7ad489720bad14bf8a2c7fdcf705
+U dan
+Z 7e4842290c9eaa42ff3b5e8577f2751e
