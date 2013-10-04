@@ -1026,6 +1026,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   ** be called next to set pCol->affinity correctly.
   */
   pCol->affinity = SQLITE_AFF_NONE;
+  pCol->szEst = 1;
   p->nCol++;
 }
 
@@ -1067,15 +1068,18 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 ** If none of the substrings in the above table are found,
 ** SQLITE_AFF_NUMERIC is returned.
 */
-char sqlite3AffinityType(const char *zIn){
+char sqlite3AffinityType(const char *zIn, u8 *pszEst){
   u32 h = 0;
   char aff = SQLITE_AFF_NUMERIC;
+  const char *zChar;
 
-  if( zIn ) while( zIn[0] ){
+  if( zIn==0 ) return aff;
+  while( zIn[0] ){
     h = (h<<8) + sqlite3UpperToLower[(*zIn)&0xff];
     zIn++;
     if( h==(('c'<<24)+('h'<<16)+('a'<<8)+'r') ){             /* CHAR */
-      aff = SQLITE_AFF_TEXT; 
+      aff = SQLITE_AFF_TEXT;
+      zChar = zIn;
     }else if( h==(('c'<<24)+('l'<<16)+('o'<<8)+'b') ){       /* CLOB */
       aff = SQLITE_AFF_TEXT;
     }else if( h==(('t'<<24)+('e'<<16)+('x'<<8)+'t') ){       /* TEXT */
@@ -1099,7 +1103,25 @@ char sqlite3AffinityType(const char *zIn){
       break;
     }
   }
-
+  if( pszEst ){
+    if( aff>=SQLITE_AFF_NUMERIC ){
+      *pszEst = 1;
+    }else if( zChar ){
+      *pszEst = 1;
+      while( zChar[0] ){
+        int v;
+        if( sqlite3Isdigit(zChar[0]) && sqlite3GetInt32(zChar, &v) ){
+          v = v/4 + 1;
+          if( v>255 ) v = 255;
+          *pszEst = v;
+          break;
+        }
+        zChar++;
+      }
+    }else{
+      *pszEst = 3;
+    }
+  }
   return aff;
 }
 
@@ -1121,7 +1143,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   pCol = &p->aCol[p->nCol-1];
   assert( pCol->zType==0 );
   pCol->zType = sqlite3NameFromToken(pParse->db, pType);
-  pCol->affinity = sqlite3AffinityType(pCol->zType);
+  pCol->affinity = sqlite3AffinityType(pCol->zType, &pCol->szEst);
 }
 
 /*
@@ -1469,13 +1491,46 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     zType = azType[pCol->affinity - SQLITE_AFF_TEXT];
     len = sqlite3Strlen30(zType);
     assert( pCol->affinity==SQLITE_AFF_NONE 
-            || pCol->affinity==sqlite3AffinityType(zType) );
+            || pCol->affinity==sqlite3AffinityType(zType, 0) );
     memcpy(&zStmt[k], zType, len);
     k += len;
     assert( k<=n );
   }
   sqlite3_snprintf(n-k, &zStmt[k], "%s", zEnd);
   return zStmt;
+}
+
+/*
+** Estimate the total row width for a table.
+*/
+static unsigned estimatedTableWidth(const Table *pTab){
+  unsigned wTable = 0;
+  const Column *pTabCol;
+  int i;
+  for(i=pTab->nCol, pTabCol=pTab->aCol; i>0; i--, pTabCol++){
+    wTable += pTabCol->szEst;
+  }
+  if( pTab->iPKey<0 ) wTable++;
+  return wTable;
+}
+
+/*
+** Set the iScanRatio for an index based on estimates of the average
+** table row width and average index row width.  Estimates are derived
+** from the declared datatypes of the various columns.
+*/
+static void setIndexScanRatio(Index *pIdx, unsigned wTable){
+  unsigned wIndex = 1;
+  int i;
+  const Column *aCol = pIdx->pTable->aCol;
+  for(i=0; i<pIdx->nColumn; i++){
+    assert( pIdx->aiColumn[i]>=0 && pIdx->aiColumn[i]<pIdx->pTable->nCol );
+    wIndex += aCol[pIdx->aiColumn[i]].szEst;
+  }
+  assert( 100*wIndex/wTable <= 255 );
+  pIdx->iScanRatio = (u8)(128*wIndex/wTable);
+  /* printf("%s: wIndex=%d wTable=%d ratio=%d\n",
+  ** pIdx->zName, wIndex, wTable, (100*pIdx->iScanRatio)/128); */
 }
 
 /*
@@ -1504,9 +1559,11 @@ void sqlite3EndTable(
   Token *pEnd,            /* The final ')' token in the CREATE TABLE */
   Select *pSelect         /* Select from a "CREATE ... AS SELECT" */
 ){
-  Table *p;
-  sqlite3 *db = pParse->db;
-  int iDb;
+  Table *p;                 /* The new table */
+  sqlite3 *db = pParse->db; /* The database connection */
+  int iDb;                  /* Database in which the table lives */
+  Index *pIdx;              /* An implied index of the table */
+  unsigned wTable;          /* Estimated average width of a row in the table */
 
   if( (pEnd==0 && pSelect==0) || db->mallocFailed ){
     return;
@@ -1525,6 +1582,12 @@ void sqlite3EndTable(
     sqlite3ResolveSelfReference(pParse, p, NC_IsCheck, 0, p->pCheck);
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
+
+  /* Compute the iScanRatio of implied indices */
+  wTable = estimatedTableWidth(p);
+  for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
+    setIndexScanRatio(pIdx, wTable);
+  }
 
   /* If the db->init.busy is 1 it means we are reading the SQL off the
   ** "sqlite_master" or "sqlite_temp_master" table on the disk.
@@ -2443,15 +2506,6 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 }
 
 /*
-** Estimate the average width of a table column based on its affinity type.
-*/
-static unsigned estimatedColumnWidth(const Column *p){
-  if( p->affinity>=SQLITE_AFF_NUMERIC ) return 1;
-  if( p->affinity==SQLITE_AFF_TEXT ) return 3;
-  return 2;
-}
-
-/*
 ** Create a new index for an SQL table.  pName1.pName2 is the name of the index 
 ** and pTblList is the name of the table that is to be indexed.  Both will 
 ** be NULL for a primary key or an index that is created to satisfy a
@@ -2493,8 +2547,6 @@ Index *sqlite3CreateIndex(
   int iDb;             /* Index of the database that is being written */
   Token *pName = 0;    /* Unqualified name of the index to create */
   struct ExprList_item *pListItem; /* For looping over pList */
-  unsigned wTable = 0;             /* Approximate "width" of the table */
-  unsigned wIndex = 0;             /* Approximate "width" of this index */
   const Column *pTabCol;           /* A column in the table */
   int nCol;                        /* Number of columns */
   int nExtra = 0;                  /* Space allocated for zExtra[] */
@@ -2738,7 +2790,6 @@ Index *sqlite3CreateIndex(
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;
-    wIndex += estimatedColumnWidth(pTabCol);
     if( pListItem->pExpr ){
       int nColl;
       assert( pListItem->pExpr->op==TK_COLLATE );
@@ -2762,11 +2813,9 @@ Index *sqlite3CreateIndex(
     if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
   sqlite3DefaultRowEst(pIndex);
-  for(j=pTab->nCol, pTabCol=pTab->aCol; j>0; j--, pTabCol++){
-    wTable += estimatedColumnWidth(pTabCol);
+  if( pParse->pNewTable==0 ){
+    setIndexScanRatio(pIndex, estimatedTableWidth(pTab));
   }
-  assert( 100*wIndex/wTable <= 255 );
-  pIndex->iScanRatio = (u8)(128*wIndex/wTable);
 
   if( pTab==pParse->pNewTable ){
     /* This routine has been called to create an automatic index as a

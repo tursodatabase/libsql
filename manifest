@@ -1,5 +1,5 @@
-C Progress\stoward\susing\sthe\siScanRatio\sinformation\son\sindices.\s\sMany\stests\nare\sstill\sfailing.
-D 2013-10-04T02:36:19.375
+C Improved\sestimates\sof\sthe\srelative\sspeed\sof\sindex\sscans\sbased\son\sdeclared\ndatatypes\sof\scolumns\sin\sthe\stable.\s\sAdd\s"r"\scolumn\sto\sPRAGMA\sindex_info,\nshowing\sthe\sestimated\srelative\sscan\srate.
+D 2013-10-04T15:30:21.142
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,13 +166,13 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 5ccbbaed7a32ba774306f610da4ab4f3e5348294
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 7926e17a5dc3f698dd8b15511a4902f48c73ac50
+F src/build.c 7a91b0db709404c8b606a6d8abcaf29b1bf75bbf
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 65196e95e69f36993659bd7781abe7c2f1994739
 F src/delete.c 45788c5e48734f2af4acd75a876466e5b9838e34
-F src/expr.c 1017f482217e093ecdaca91e8666681e83733252
+F src/expr.c e7338ccffdc391c53ba2d51c5eb6a2f5299e040e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c be866cd8c4fa6cae98ba33109578fd1a3311ee5b
 F src/func.c 2c47b65e6e00e3e9374942f28254faf8adafe398
@@ -210,7 +210,7 @@ F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 5a4d8d9c3c7d22ef920487a260ea3d4b59d3b3a6
+F src/pragma.c 3bcdc7a98ad9429218179d2d81fc4aa9e39d8592
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -221,7 +221,7 @@ F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h c32d524facfb39084cc1a830aef0c31aeb93c04e
+F src/sqliteInt.h da0e92df9550e57107aa43eab63b29d040fe9c80
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -722,7 +722,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 72f4f8881d388163ddbbeec0a6ed812e863ea2e6
-F test/pragma.test 5e7de6c32a5d764f09437d2025f07e4917b9e178
+F test/pragma.test de128f0253ee42a1edf6c80f21813babfb19bd3b
 F test/pragma2.test 224f0381f9411a78ae685cac24c13656a62021b7
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
@@ -1119,7 +1119,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d59d97b0a8d70dc31d45db61bbc11ebb5375a224
-R 753a9b9a56a7c0c63483772726286f21
+P 6c352edbba85a15ca356b5e131f4b3b2723d1774
+R bacabbd9616babddd027da683b20e83a
 U drh
-Z b513b854bdc830eeffd07ca885795f7d
+Z 469f9776554648d8f1435b44fd89545f
