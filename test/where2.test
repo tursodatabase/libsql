@@ -314,9 +314,9 @@ if {[permutation] != "no_optimization"} {
 #
 do_test where2-6.7 {
   execsql {
-    CREATE TABLE t2249a(a TEXT UNIQUE);
+    CREATE TABLE t2249a(a TEXT UNIQUE, x CHAR(100));
     CREATE TABLE t2249b(b INTEGER);
-    INSERT INTO t2249a VALUES('0123');
+    INSERT INTO t2249a(a) VALUES('0123');
     INSERT INTO t2249b VALUES(123);
   }
   queryplan {
@@ -324,7 +324,7 @@ do_test where2-6.7 {
     -- will attempt to convert to NUMERIC before the comparison.
     -- They will thus compare equal.
     --
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=b;
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE a=b;
   }
 } {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.9 {
@@ -332,13 +332,13 @@ do_test where2-6.9 {
     -- The + operator removes affinity from the rhs.  No conversions
     -- occur and the comparison is false.  The result is an empty set.
     --
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b;
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE a=+b;
   }
 } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.9.2 {
   # The same thing but with the expression flipped around.
   queryplan {
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE +b=a
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE +b=a
   }
 } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.10 {
@@ -346,32 +346,32 @@ do_test where2-6.10 {
     -- Use + on both sides of the comparison to disable indices
     -- completely.  Make sure we get the same result.
     --
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE +a=+b;
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE +a=+b;
   }
 } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11 {
   # This will not attempt the OR optimization because of the a=b
   # comparison.
   queryplan {
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=b OR a='hello';
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE a=b OR a='hello';
   }
 } {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11.2 {
   # Permutations of the expression terms.
   queryplan {
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE b=a OR a='hello';
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE b=a OR a='hello';
   }
 } {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11.3 {
   # Permutations of the expression terms.
   queryplan {
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE 'hello'=a OR b=a;
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE 'hello'=a OR b=a;
   }
 } {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 do_test where2-6.11.4 {
   # Permutations of the expression terms.
   queryplan {
-    SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR b=a;
+    SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR b=a;
   }
 } {123 0123 nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 ifcapable explain&&subquery {
@@ -385,7 +385,7 @@ ifcapable explain&&subquery {
     # the OR optimization to be used again.  The result is now an empty
     # set, the same as in where2-6.9.
     queryplan {
-      SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b OR a='hello';
+      SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE a=+b OR a='hello';
     }
   } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
   do_test where2-6.12.2 {
@@ -393,7 +393,7 @@ ifcapable explain&&subquery {
     # the OR optimization to be used again.  The result is now an empty
     # set, the same as in where2-6.9.
     queryplan {
-      SELECT * FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR +b=a;
+      SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE a='hello' OR +b=a;
     }
   } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
   do_test where2-6.12.3 {
@@ -401,14 +401,14 @@ ifcapable explain&&subquery {
     # the OR optimization to be used again.  The result is now an empty
     # set, the same as in where2-6.9.
     queryplan {
-      SELECT * FROM t2249b CROSS JOIN t2249a WHERE +b=a OR a='hello';
+      SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE +b=a OR a='hello';
     }
   } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
   do_test where2-6.13 {
     # The addition of +a on the second term disabled the OR optimization.
     # But we should still get the same empty-set result as in where2-6.9.
     queryplan {
-      SELECT * FROM t2249b CROSS JOIN t2249a WHERE a=+b OR +a='hello';
+      SELECT b,a FROM t2249b CROSS JOIN t2249a WHERE a=+b OR +a='hello';
     }
   } {nosort t2249b * t2249a sqlite_autoindex_t2249a_1}
 }
@@ -417,7 +417,7 @@ ifcapable explain&&subquery {
 # to make sure the OR optimizer can recognize them all.
 do_test where2-6.20 {
   queryplan {
-    SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a
+    SELECT x.a, y.a FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a
   }
 } {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
 ifcapable explain&&subquery {
@@ -428,17 +428,20 @@ ifcapable explain&&subquery {
   #
   do_test where2-6.21 {
     queryplan {
-      SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE x.a=y.a OR y.a='hello'
+      SELECT x.a,y.a FROM t2249a x CROSS JOIN t2249a y
+       WHERE x.a=y.a OR y.a='hello'
     }
   } {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
   do_test where2-6.22 {
     queryplan {
-      SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE y.a=x.a OR y.a='hello'
+      SELECT x.a,y.a FROM t2249a x CROSS JOIN t2249a y
+       WHERE y.a=x.a OR y.a='hello'
     }
   } {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
   do_test where2-6.23 {
     queryplan {
-      SELECT * FROM t2249a x CROSS JOIN t2249a y WHERE y.a='hello' OR x.a=y.a
+      SELECT x.a,y.a FROM t2249a x CROSS JOIN t2249a y
+       WHERE y.a='hello' OR x.a=y.a
     }
   } {0123 0123 nosort x sqlite_autoindex_t2249a_1 y sqlite_autoindex_t2249a_1}
 }
@@ -703,7 +706,7 @@ do_test where2-11.4 {
 # the OR clause scores slightly better on an inner loop.
 if {[permutation] != "no_optimization"} {
 do_execsql_test where2-12.1 {
-  CREATE TABLE t12(x INTEGER PRIMARY KEY, y);
+  CREATE TABLE t12(x INTEGER PRIMARY KEY, y INT, z CHAR(100));
   CREATE INDEX t12y ON t12(y);
   EXPLAIN QUERY PLAN
     SELECT a.x, b.x

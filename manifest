@@ -1,5 +1,5 @@
-C Improved\sestimates\sof\sthe\srelative\sspeed\sof\sindex\sscans\sbased\son\sdeclared\ndatatypes\sof\scolumns\sin\sthe\stable.\s\sAdd\s"r"\scolumn\sto\sPRAGMA\sindex_info,\nshowing\sthe\sestimated\srelative\sscan\srate.
-D 2013-10-04T15:30:21.142
+C Fix\stest\scases\sso\sthat\sthey\swork\swhen\sthe\squery\splanner\suses\sindex\ssize\nestimates\sto\sdetermine\swhether\sor\snot\sto\stry\san\scovering\sindex\sscan.
+D 2013-10-04T15:58:59.585
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -446,7 +446,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
-F test/eqp.test d4386348af3088a01fd21fb27badaa553c3ba7bd
+F test/eqp.test 57c6c604c2807fb5531731c5323133453c24afac
 F test/errmsg.test 050717f1c6a5685de9c79f5f9f6b83d7c592f73a
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
@@ -808,7 +808,7 @@ F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test be8d477306006ec696bc86757cfb34bec79447ce
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
-F test/subquery.test 3b97763ada8b3a4092d2c80db3ebc0e7870e7eaf
+F test/subquery.test 666fdecceac258f5fd84bed09a64e49d9f37edd9
 F test/subquery2.test 91e1e364072aeff431d1f9689b15147e421d88c7
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
@@ -854,7 +854,7 @@ F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
 F test/tkt-5ee23731f.test 9db6e1d7209dc0794948b260d6f82b2b1de83a9f
 F test/tkt-6bfb98dfc0.test 24780633627b5cfc0635a5500c2389ebfb563336
 F test/tkt-752e1646fc.test ea78d88d14fe9866bdd991c634483334639e13bf
-F test/tkt-78e04e52ea.test 787b70cfb0488c356266bb8d5ad8a657f9efceb8
+F test/tkt-78e04e52ea.test b0190d3375cf88b97d32188149cc99ccf22f556b
 F test/tkt-7a31705a7e6.test e75a2bba4eec801b92c8040eb22096ac6d35e844
 F test/tkt-7bbfb7d442.test 7b2cd79c7a17ae6750e75ec1a7846712a69c9d18
 F test/tkt-80ba201079.test 105a721e6aad0ae3c5946d7615d1e4d03f6145b8
@@ -1048,8 +1048,8 @@ F test/walro.test 6cc247a0cc9b36aeea2057dd28a922a1cdfbd630
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
-F test/where.test 8d66dfbfd4d12816f74f854dbf67dee492c06267
-F test/where2.test 76d5346f7edb2a6a0442dcf3e9d088ac6903e0b5
+F test/where.test 701a633ed16c661cd597b9d504b485197a0f49d7
+F test/where2.test ed6baa9420a109d8be683dbef5d153d186f3690b
 F test/where3.test d28c51f257e60be30f74308fa385ceeddfb54a6e
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -1119,7 +1119,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6c352edbba85a15ca356b5e131f4b3b2723d1774
-R bacabbd9616babddd027da683b20e83a
+P 07462bb6059f023c22a6c84a4a02afbd84e69255
+R c53ee7ecd2949869b611b9550600e22e
 U drh
-Z 469f9776554648d8f1435b44fd89545f
+Z 3b4f199613fede1bea11e11c52c662ed
