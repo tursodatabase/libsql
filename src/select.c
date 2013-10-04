@@ -4597,13 +4597,7 @@ int sqlite3Select(
         sqlite3CodeVerifySchema(pParse, iDb);
         sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
-        /* Search for the index that has the least amount of columns. If
-        ** there is such an index, and it has less columns than the table
-        ** does, then we can assume that it consumes less space on disk and
-        ** will therefore be cheaper to scan to determine the query result.
-        ** In this case set iRoot to the root page number of the index b-tree
-        ** and pKeyInfo to the KeyInfo structure required to navigate the
-        ** index.
+        /* Search for the index that has the lowest scan cost.
         **
         ** (2011-04-15) Do not do a full scan of an unordered index.
         **
@@ -4611,11 +4605,14 @@ int sqlite3Select(
         ** passed to keep OP_OpenRead happy.
         */
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          if( pIdx->bUnordered==0 && (!pBest || pIdx->nColumn<pBest->nColumn) ){
+          if( pIdx->bUnordered==0
+           && pIdx->iScanRatio<128
+           && (!pBest || pIdx->iScanRatio<pBest->iScanRatio)
+          ){
             pBest = pIdx;
           }
         }
-        if( pBest && pBest->nColumn<pTab->nCol ){
+        if( pBest ){
           iRoot = pBest->tnum;
           pKeyInfo = sqlite3IndexKeyinfo(pParse, pBest);
         }

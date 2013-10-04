@@ -4669,10 +4669,8 @@ static int whereLoopAddBtree(
       /* Full table scan */
       pNew->iSortIdx = b ? iSortIdx : 0;
       /* TUNING: Cost of full table scan is 3*(N + log2(N)).
-      **  +  The extra 3 factor is to encourage the use of indexed lookups
-      **     over full scans.  A smaller constant 2 is used for covering
-      **     index scans so that a covering index scan will be favored over
-      **     a table scan. */
+      **  +  The extra 4 factor is to encourage the use of indexed lookups
+      **     over full scans. */
       pNew->rRun = whereCostAdd(rSize,rLogSize) + 16;
       whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
       rc = whereLoopInsert(pBuilder, pNew);
@@ -4686,6 +4684,7 @@ static int whereLoopAddBtree(
       if( b
        || ( m==0
          && pProbe->bUnordered==0
+         && pProbe->iScanRatio<128
          && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
          && sqlite3GlobalConfig.bUseCis
          && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)
@@ -4693,15 +4692,12 @@ static int whereLoopAddBtree(
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
         if( m==0 ){
-          /* TUNING: Cost of a covering index scan is 2*(N + log2(N)).
-          **  +  The extra 2 factor is to encourage the use of indexed lookups
-          **     over index scans.  A table scan uses a factor of 3 so that
-          **     index scans are favored over table scans.
-          **  +  If this covering index might also help satisfy the ORDER BY
-          **     clause, then the cost is fudged down slightly so that this
-          **     index is favored above other indices that have no hope of
-          **     helping with the ORDER BY. */
-          pNew->rRun = 10 + whereCostAdd(rSize,rLogSize) - b;
+          /* TUNING: Cost of a covering index scan is K*(N + log2(N)).
+          **  +  The extra factor K of between 1.0 and 3.0 is added to
+          **     encourage the use of indexed lookups.  The value of K
+          **     depends on the iScanRatio value for the index.
+          */
+          pNew->rRun = whereCostAdd(rSize,rLogSize) + pProbe->iScanRatio/9 + 1;
         }else{
           assert( b!=0 ); 
           /* TUNING: Cost of scanning a non-covering index is (N+1)*log2(N)

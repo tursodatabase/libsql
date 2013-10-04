@@ -33,11 +33,11 @@ set testprefix eqp
 proc det {args} { uplevel do_eqp_test $args }
 
 do_execsql_test 1.1 {
-  CREATE TABLE t1(a, b);
+  CREATE TABLE t1(a INT, b INT, ex TEXT);
   CREATE INDEX i1 ON t1(a);
   CREATE INDEX i2 ON t1(b);
-  CREATE TABLE t2(a, b);
-  CREATE TABLE t3(a, b);
+  CREATE TABLE t2(a INT, b INT, ex TEXT);
+  CREATE TABLE t3(a INT, b INT, ex TEXT);
 }
 
 do_eqp_test 1.2 {
@@ -122,9 +122,9 @@ do_eqp_test 1.11 {
 #
 drop_all_tables
 do_execsql_test 2.1 {
-  CREATE TABLE t1(x, y);
+  CREATE TABLE t1(x INT, y INT, ex TEXT);
 
-  CREATE TABLE t2(x, y);
+  CREATE TABLE t2(x INT, y INT, ex TEXT);
   CREATE INDEX t2i1 ON t2(x);
 }
 
@@ -374,7 +374,7 @@ drop_all_tables
 # FROM t1 WHERE a=1;
 # 0|0|0|SCAN TABLE t1
 #
-do_execsql_test 5.1.0 { CREATE TABLE t1(a, b) }
+do_execsql_test 5.1.0 { CREATE TABLE t1(a INT, b INT, ex TEXT) }
 det 5.1.1 "SELECT a, b FROM t1 WHERE a=1" {
   0 0 0 {SCAN TABLE t1}
 }
@@ -402,8 +402,8 @@ det 5.3.1 "SELECT a, b FROM t1 WHERE a=1" {
 # 0|0|0|SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)
 # 0|1|1|SCAN TABLE t2
 #
-do_execsql_test 5.4.0 {CREATE TABLE t2(c, d)}
-det 5.4.1 "SELECT t1.*, t2.* FROM t1, t2 WHERE t1.a=1 AND t1.b>2" {
+do_execsql_test 5.4.0 {CREATE TABLE t2(c INT, d INT, ex TEXT)}
+det 5.4.1 "SELECT t1.a, t2.c FROM t1, t2 WHERE t1.a=1 AND t1.b>2" {
   0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)}
   0 1 1 {SCAN TABLE t2}
 }
@@ -413,7 +413,7 @@ det 5.4.1 "SELECT t1.*, t2.* FROM t1, t2 WHERE t1.a=1 AND t1.b>2" {
 # 0|0|1|SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)
 # 0|1|0|SCAN TABLE t2
 #
-det 5.5 "SELECT t1.*, t2.* FROM t2, t1 WHERE t1.a=1 AND t1.b>2" {
+det 5.5 "SELECT t1.a, t2.c FROM t2, t1 WHERE t1.a=1 AND t1.b>2" {
   0 0 1 {SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)}
   0 1 0 {SCAN TABLE t2}
 }
@@ -424,7 +424,7 @@ det 5.5 "SELECT t1.*, t2.* FROM t2, t1 WHERE t1.a=1 AND t1.b>2" {
 # 0|0|0|SEARCH TABLE t1 USING INDEX i3 (b=?)
 #
 do_execsql_test 5.5.0 {CREATE INDEX i3 ON t1(b)}
-det 5.6.1 "SELECT * FROM t1 WHERE a=1 OR b=2" {
+det 5.6.1 "SELECT a, b FROM t1 WHERE a=1 OR b=2" {
   0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i2 (a=?)}
   0 0 0 {SEARCH TABLE t1 USING INDEX i3 (b=?)}
 }
@@ -485,7 +485,7 @@ det 5.10 {
 # 0|0|0|SEARCH TABLE t2 USING INDEX i4 (c=?)
 # 0|1|1|SCAN TABLE t1
 #
-det 5.11 "SELECT * FROM (SELECT * FROM t2 WHERE c=1), t1" {
+det 5.11 "SELECT a, b FROM (SELECT * FROM t2 WHERE c=1), t1" {
   0 0 0 {SEARCH TABLE t2 USING INDEX i4 (c=?)}
   0 1 1 {SCAN TABLE t1 USING COVERING INDEX i2}
 }
@@ -563,8 +563,8 @@ do_peqp_test 6.1 {
 drop_all_tables
 
 do_execsql_test 7.0 {
-  CREATE TABLE t1(a, b);
-  CREATE TABLE t2(a, b);
+  CREATE TABLE t1(a INT, b INT, ex TEXT);
+  CREATE TABLE t2(a INT, b INT, ex TEXT);
   CREATE INDEX i1 ON t2(a);
 }
 

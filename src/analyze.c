@@ -1282,8 +1282,13 @@ static void decodeIntArray(
         pIndex->bUnordered = 1;
       }else if( i>2 && memcmp(z, "r=", 2)==0
                 && sqlite3GetInt32(z+2, &v32) ){
-        if( v32>255 ) v32 = 255;
-        if( v32<0 ) v32 = 0;
+        if( v32>=200 ){
+          v32 = 255;
+        }else if( v32<0 ){
+          v32 = 0;
+        }else{
+          v32 = (128*v32)/100;
+        }
         pIndex->iScanRatio = (u8)v32;
       }
       z += i;
