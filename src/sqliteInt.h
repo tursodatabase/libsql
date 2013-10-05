@@ -471,6 +471,31 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 #endif
 
 /*
+** Estimated quantities used for query planning are stored as 16-bit
+** logarithms.  For quantity X, the value stored is 10*log2(X).  This
+** gives a possible range of values of approximately 1.0e986 to 1e-986.
+** But the allowed values are "grainy".  Not every value is representable.
+** For example, quantities 16 and 17 are both represented by a LogEst
+** of 40.  However, since LogEst quantatites are suppose to be estimates,
+** not exact values, this imprecision is not a problem.
+**
+** "LogEst" is short for "Logarithimic Estimate".
+**
+** Examples:
+**      1 -> 0              20 -> 43          10000 -> 132
+**      2 -> 10             25 -> 46          25000 -> 146
+**      3 -> 16            100 -> 66        1000000 -> 199
+**      4 -> 20           1000 -> 99        1048576 -> 200
+**     10 -> 33           1024 -> 100    4294967296 -> 320
+**
+** The LogEst can be negative to indicate fractional values. 
+** Examples:
+**
+**    0.5 -> -10           0.1 -> -33        0.0625 -> -40
+*/
+typedef INT16_TYPE LogEst;
+
+/*
 ** Macros to determine whether the machine is big or little endian,
 ** evaluated at runtime.
 */
@@ -1362,6 +1387,7 @@ struct Table {
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   i16 nCol;            /* Number of columns in this table */
   u16 nRef;            /* Number of pointers to this Table */
+  LogEst szTabRow;     /* Estimated size of each table row in bytes */
   u8 tabFlags;         /* Mask of TF_* values */
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
 #ifndef SQLITE_OMIT_ALTERTABLE
@@ -1560,9 +1586,10 @@ struct Index {
   char **azColl;           /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   int tnum;                /* DB Page containing root of this index */
+  LogEst szIdxRow;         /* Estimated average row size in bytes */
   u16 nColumn;             /* Number of columns in table used by this index */
   u8 iScanRatio;           /* Scan rate relative to the main table */
-  unsigned onError:4;      /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
+  u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
   unsigned uniqNotNull:1;  /* True if UNIQUE and NOT NULL for all columns */
@@ -2967,6 +2994,12 @@ int sqlite3Atoi(const char*);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
 u32 sqlite3Utf8Read(const u8**);
+LogEst sqlite3LogEst(u64);
+LogEst sqlite3LogEstAdd(LogEst,LogEst);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+LogEst sqlite3LogEstFromDouble(double);
+#endif
+u64 sqlite3LogEstToInt(LogEst);
 
 /*
 ** Routines to read and write variable-length integers.  These used to

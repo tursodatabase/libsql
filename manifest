@@ -1,5 +1,5 @@
-C In\sthe\sindex_list\spragma,\smake\ssure\sthe\s"r"\scolumn\sis\sthe\ssame\son\soutput\nas\sit\swas\son\sinput\sin\sthe\ssqlite_stat1\stable.
-D 2013-10-05T02:56:25.653
+C Begin\san\sexperimental\srefactoring\sto\sestimate\sthe\saverage\snumber\sof\sbytes\nin\stable\sand\sindex\srows\sand\sto\suse\sthat\sinformation\sin\squery\splanner.\nBegin\sby\srenaming\sWhereCost\sto\sLogEst\sand\smaking\sthat\stype\sand\sits\nconversion\sroutines\savailable\soutside\sof\swhere.c.
+D 2013-10-05T18:16:02.764
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h da0e92df9550e57107aa43eab63b29d040fe9c80
+F src/sqliteInt.h 75a6f6b26a91703672d62bd8df3bede2e6747e3b
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -275,7 +275,7 @@ F src/tokenize.c 70061085a51f2f4fc15ece94f32c03bcb78e63b2
 F src/trigger.c ba0a883cd536b7dfdd4df3733001f5372a4299da
 F src/update.c f5182157f5d0d0a97bc5f5e3c9bdba0dfbe08f08
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
-F src/util.c 7f3e35432d6888d1e770c488c35bd98970c44eec
+F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c f313bc97123a4dd4bfd3f50a00c4d44c08a5b1b7
 F src/vdbe.c 56e648f5ba9a91810caf216857adfed9039cd174
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 903e295f949590760aabef7203956f86588859f2
+F src/where.c 7b98d09e0e13179a8aeed38578434936369aa5c2
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1085,6 +1085,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 323e54ac86fb2393f9950219224e304620d2fb12
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
+F tool/logest.c 85b5d91cfb24b7c003614663e8de54b7022ef9bb w tool/wherecosttest.c
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1119,9 +1120,11 @@ F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
-F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c6ac80ed8d5240dd30783d62d9f133e159809dec
-R c9cf5017e54db6d924fbbb210ed0508a
+P de78250ad2a6210dd4f03045248f7192d64427f2
+R 07e1c8eb04a1a514fab359ac6894024a
+T *branch * row-size-est
+T *sym-row-size-est *
+T -sym-index-scan-rate *
 U drh
-Z 19a867121626a8f2aac930a5af209c29
+Z 058604c78e1bcaeef450c73c9deab69d
