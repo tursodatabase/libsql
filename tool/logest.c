@@ -74,8 +74,8 @@ LogEst logEstFromInteger(sqlite3_uint64 x){
   }
   return a[x&7] + y - 10;
 }
-static unsigned long int logEstToInt(LogEst x){
-  unsigned long int n;
+static sqlite3_uint64 logEstToInt(LogEst x){
+  sqlite3_uint64 n;
   if( x<10 ) return 1;
   n = x%10;
   x /= 10;
@@ -88,9 +88,10 @@ static LogEst logEstFromDouble(double x){
   sqlite3_uint64 a;
   LogEst e;
   assert( sizeof(x)==8 && sizeof(a)==8 );
-  if( x<=0 ) return -32768;
-  if( x<1 ) return -logEstFromDouble(1/x);
-  if( x<=2000000000 ) return logEstFromInteger((sqlite3_uint64)x);
+  if( x<=0.0 ) return -32768;
+  if( x<1.0 ) return -logEstFromDouble(1/x);
+  if( x<1024.0 ) return logEstFromInteger((sqlite3_uint64)(1024.0*x)) - 100;
+  if( x<=2000000000.0 ) return logEstFromInteger((sqlite3_uint64)x);
   memcpy(&a, &x, 8);
   e = (a>>52) - 1022;
   return e*10;
@@ -132,7 +133,8 @@ int main(int argc, char **argv){
     if( a[i]<0 ){
       printf("%d (%f)\n", a[i], 1.0/(double)logEstToInt(-a[i]));
     }else{
-      printf("%d (%lu)\n", a[i], logEstToInt(a[i]));
+      sqlite3_uint64 x = logEstToInt(a[i]+100)*100/1024;
+      printf("%d (%lld.%02lld)\n", a[i], x/100, x%100);
     }
   }
   return 0;

@@ -1,5 +1,5 @@
-C Begin\san\sexperimental\srefactoring\sto\sestimate\sthe\saverage\snumber\sof\sbytes\nin\stable\sand\sindex\srows\sand\sto\suse\sthat\sinformation\sin\squery\splanner.\nBegin\sby\srenaming\sWhereCost\sto\sLogEst\sand\smaking\sthat\stype\sand\sits\nconversion\sroutines\savailable\soutside\sof\swhere.c.
-D 2013-10-05T18:16:02.764
+C Improvements\sto\sthe\sLogEst\scommand-line\stool\sused\sto\sconvert\sbetween\nordinary\snumbers\sand\sthe\sLogEst\srepresentation.
+D 2013-10-05T18:32:30.669
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1085,7 +1085,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 323e54ac86fb2393f9950219224e304620d2fb12
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/logest.c 85b5d91cfb24b7c003614663e8de54b7022ef9bb w tool/wherecosttest.c
+F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1121,10 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P de78250ad2a6210dd4f03045248f7192d64427f2
-R 07e1c8eb04a1a514fab359ac6894024a
-T *branch * row-size-est
-T *sym-row-size-est *
-T -sym-index-scan-rate *
+P 66c4a251d61582b47d5cbe50cbca160a9209bd06
+R 816e9739b4c9fe149e1a1ff9e9aba52e
 U drh
-Z 058604c78e1bcaeef450c73c9deab69d
+Z 6ff6e983ab5701c81dead21480c8edfc
