@@ -1,5 +1,5 @@
-C Completely\sremove\sthe\siScanRatio\sfield.\s\sThe\sPRAGMA\sindex_list(TABLE)\scommand\nshows\sthe\sestimated\srow\ssize\sin\sthe\sforth\scolumn.\s\sIt\salso\sgenerates\sa\srow\nfor\sthe\stable\swith\san\sindex\sname\sof\sNULL.\s\sThe\squery\splanner\sstill\sdoes\snot\ntake\srow\ssize\sestimates\sinto\saccount\s-\sthat\sis\sthe\snext\sstep.
-D 2013-10-05T19:18:00.706
+C Fix\san\sissue\sin\sthe\stest8.c\stest\smodule\sthat\sarises\sbecause\sof\sthe\schange\nto\sPRAGMA\sindex_list().\s\sRemove\san\sunused\slocal\svariable.
+D 2013-10-05T20:18:25.293
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 5ccbbaed7a32ba774306f610da4ab4f3e5348294
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 3278345550d2b6cd9348d297f7acd22d900429eb
+F src/build.c ea07ec35354cdcd017b128679391320220030336
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -233,7 +233,7 @@ F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
 F src/test6.c a437f76f9874d2563352a7e6cd0d43217663c220
 F src/test7.c 126b886b53f0358b92aba9b81d3fcbfbe9a93cd6
-F src/test8.c 7ee77ea522ae34aa691dfe407139dec80d4fc039
+F src/test8.c c7aab1d9fbbf54fc33d43b73aa24aa55f9eaf534
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
@@ -1121,7 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5252aeb61988e511dcf8d527fa81e51a5c9385f9
-R 0e3b98862666ae9510c1569ec248e564
+P 8b4aa0c7a2122bbe60432edadf27e490e31ec987
+R bb66c7a839de91a6f090d5902f6dadf5
 U drh
-Z 912eec158a04027b64a47b63c711b530
+Z 8df0e7721569e4e34457d7a5a3db6450

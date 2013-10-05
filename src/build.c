@@ -1563,7 +1563,6 @@ void sqlite3EndTable(
   sqlite3 *db = pParse->db; /* The database connection */
   int iDb;                  /* Database in which the table lives */
   Index *pIdx;              /* An implied index of the table */
-  unsigned wTable;          /* Estimated average width of a row in the table */
 
   if( (pEnd==0 && pSelect==0) || db->mallocFailed ){
     return;
