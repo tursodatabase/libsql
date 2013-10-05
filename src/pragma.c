@@ -1466,7 +1466,7 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
           sqlite3VdbeAddOp2(v, OP_Integer, pIdx->onError!=OE_None, 3);
-          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->iScanRatio*100/128, 4);
+          sqlite3VdbeAddOp2(v, OP_Integer, (pIdx->iScanRatio*100+127)/128, 4);
           sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
           ++i;
           pIdx = pIdx->pNext;
