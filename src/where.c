@@ -4569,7 +4569,7 @@ static int whereLoopAddBtree(
       pNew->iSortIdx = b ? iSortIdx : 0;
       /* TUNING: Cost of full table scan is 3*(N + log2(N)).
       **  +  The extra 3 factor is to encourage the use of indexed lookups
-      **     over full scans. */
+      **     over full scans.  FIXME */
       pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 16;
       whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
       rc = whereLoopInsert(pBuilder, pNew);
@@ -4583,7 +4583,6 @@ static int whereLoopAddBtree(
       if( b
        || ( m==0
          && pProbe->bUnordered==0
-         && pProbe->iScanRatio<128
          && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
          && sqlite3GlobalConfig.bUseCis
          && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)
@@ -4594,9 +4593,9 @@ static int whereLoopAddBtree(
           /* TUNING: Cost of a covering index scan is K*(N + log2(N)).
           **  +  The extra factor K of between 1.1 (iScanRatio between 0
           **     and 9) and 2.8 (iScanRatio between 126 and 127) is added
-          **     to encourage the use of indexed lookups.
+          **     to encourage the use of indexed lookups.  FIXME
           */
-          pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + pProbe->iScanRatio/9 + 1;
+          pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 10;
         }else{
           assert( b!=0 ); 
           /* TUNING: Cost of scanning a non-covering index is (N+1)*log2(N)

@@ -1277,17 +1277,10 @@ static void decodeIntArray(
   if( pIndex ){
     if( strcmp(z, "unordered")==0 ){
       pIndex->bUnordered = 1;
-    }else if( sqlite3_strglob("r=[0-9]*", z)==0 ){
+    }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
       int v32 = 0;
-      sqlite3GetInt32(z+2, &v32);
-      if( v32>=200 ){
-        v32 = 255;
-      }else if( v32<=0 ){
-        v32 = 1;
-      }else{
-        v32 = (128*v32)/100;
-      }
-      pIndex->iScanRatio = (u8)v32;
+      sqlite3GetInt32(z+3, &v32);
+      pIndex->szIdxRow = sqlite3LogEst(v32);
     }
   }
 }

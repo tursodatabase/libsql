@@ -1508,7 +1508,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
 /*
 ** Estimate the total row width for a table.
 */
-static unsigned estimatedTableWidth(const Table *pTab){
+static void estimateTableWidth(Table *pTab){
   unsigned wTable = 0;
   const Column *pTabCol;
   int i;
@@ -1516,15 +1516,13 @@ static unsigned estimatedTableWidth(const Table *pTab){
     wTable += pTabCol->szEst;
   }
   if( pTab->iPKey<0 ) wTable++;
-  return wTable;
+  pTab->szTabRow = sqlite3LogEst(wTable*4);
 }
 
 /*
-** Set the iScanRatio for an index based on estimates of the average
-** table row width and average index row width.  Estimates are derived
-** from the declared datatypes of the various columns.
+** Estimate the average size of a row for an index.
 */
-static void setIndexScanRatio(Index *pIdx, unsigned wTable){
+static void estimateIndexWidth(Index *pIdx){
   unsigned wIndex = 1;
   int i;
   const Column *aCol = pIdx->pTable->aCol;
@@ -1532,10 +1530,7 @@ static void setIndexScanRatio(Index *pIdx, unsigned wTable){
     assert( pIdx->aiColumn[i]>=0 && pIdx->aiColumn[i]<pIdx->pTable->nCol );
     wIndex += aCol[pIdx->aiColumn[i]].szEst;
   }
-  assert( 100*wIndex/wTable <= 255 );
-  pIdx->iScanRatio = (u8)(128*wIndex/wTable);
-  /* printf("%s: wIndex=%d wTable=%d ratio=%d\n",
-  ** pIdx->zName, wIndex, wTable, (100*pIdx->iScanRatio)/128); */
+  pIdx->szIdxRow = sqlite3LogEst(wIndex*4);
 }
 
 /*
@@ -1588,10 +1583,10 @@ void sqlite3EndTable(
   }
 #endif /* !defined(SQLITE_OMIT_CHECK) */
 
-  /* Compute the iScanRatio of implied indices */
-  wTable = estimatedTableWidth(p);
+  /* Estimate the average row size for the table and for all implied indices */
+  estimateTableWidth(p);
   for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
-    setIndexScanRatio(pIdx, wTable);
+    estimateIndexWidth(pIdx);
   }
 
   /* If the db->init.busy is 1 it means we are reading the SQL off the
@@ -2818,9 +2813,7 @@ Index *sqlite3CreateIndex(
     if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
   sqlite3DefaultRowEst(pIndex);
-  if( pParse->pNewTable==0 ){
-    setIndexScanRatio(pIndex, estimatedTableWidth(pTab));
-  }
+  if( pParse->pNewTable==0 ) estimateIndexWidth(pIndex);
 
   if( pTab==pParse->pNewTable ){
     /* This routine has been called to create an automatic index as a
