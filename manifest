@@ -1,5 +1,5 @@
-C If\san\s"INSERT\sINTO\s...\sSELECT"\scan\suse\sthe\sxfer\soptimization,\spass\sthe\sOPFLAG_BULKCSR\shint\sto\sbtree\scursors\sused\sto\supdate\sindices.\sThis\sresults\sin\sa\stighter\skey\spacking.
-D 2013-10-04T18:17:18.371
+C Remove\san\sincorrect\sdebugging\sassert()\sthat\swas\saccidently\sadded\sduring\sthe\nSTAT4\senhancement.
+D 2013-10-06T22:52:51.495
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 5ccbbaed7a32ba774306f610da4ab4f3e5348294
+F src/btree.c d5720cbb21ae56e7e5b07847e05e5b203818acac
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 834fa4bb0fa936c39336c52f5aacc659035d973e
@@ -1121,7 +1121,7 @@ F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/wherecosttest.c f407dc4c79786982a475261866a161cd007947ae
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9f2f4c0a50808910ad01c8c4352367f25747be08
-R 1a5e7ad489720bad14bf8a2c7fdcf705
-U dan
-Z 7e4842290c9eaa42ff3b5e8577f2751e
+P 087af29ee2e1572f8668dd0152a14d7f9796a530
+R 51b296de6c6fe46f937c9d0db2bd86cb
+U drh
+Z e830bdf0fada797e73e5410e79960d79
