@@ -1323,7 +1323,10 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
     decodeIntArray((char*)z, pIndex->nColumn+1, pIndex->aiRowEst, pIndex);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowEst = pIndex->aiRowEst[0];
   }else{
-    decodeIntArray((char*)z, 1, &pTable->nRowEst, 0);
+    Index fakeIdx;
+    fakeIdx.szIdxRow = pTable->szTabRow;
+    decodeIntArray((char*)z, 1, &pTable->nRowEst, &fakeIdx);
+    pTable->szTabRow = fakeIdx.szIdxRow;
   }
 
   return 0;

@@ -1,5 +1,5 @@
-C Fix\san\sissue\sin\sthe\stest8.c\stest\smodule\sthat\sarises\sbecause\sof\sthe\schange\nto\sPRAGMA\sindex_list().\s\sRemove\san\sunused\slocal\svariable.
-D 2013-10-05T20:18:25.293
+C Accept\sthe\ssz=N\sparameter\son\stable-only\slines\sof\ssqlite_stat1.
+D 2013-10-06T22:12:41.122
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c 9f71f38700202b9c28153185b9d06fd4fe489cc9
+F src/analyze.c c27da55795a11d09bea74259782c3e11e9750534
 F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -1121,7 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8b4aa0c7a2122bbe60432edadf27e490e31ec987
-R bb66c7a839de91a6f090d5902f6dadf5
+P 029430c503f243a34439698779db7e591cfbe126
+R 7d04d9dc66c7827e69884f350d18f40f
 U drh
-Z 8df0e7721569e4e34457d7a5a3db6450
+Z eb0f6ed26fc853a592653c23c1c8b118
