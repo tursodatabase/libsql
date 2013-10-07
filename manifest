@@ -1,5 +1,5 @@
-C Accept\sthe\ssz=N\sparameter\son\stable-only\slines\sof\ssqlite_stat1.
-D 2013-10-06T22:12:41.122
+C Merge\sbug\sfixes\sfrom\strunk.
+D 2013-10-07T10:48:06.076
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 5ccbbaed7a32ba774306f610da4ab4f3e5348294
+F src/btree.c d5720cbb21ae56e7e5b07847e05e5b203818acac
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c ea07ec35354cdcd017b128679391320220030336
@@ -210,7 +210,7 @@ F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c c9a867f6f96934e91d3a07d72d1b8d61c9963008
+F src/pragma.c f4ff6e29c316d06bf7dffca0c8cee7c229cae42e
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -1089,7 +1089,7 @@ F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 33fa7a6e824b14f7b04109ed75b19f3e9e228412
+F tool/mkpragmatab.tcl ceaaeebcd882864caefe4176592ca6fa4648fab1
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl d344cc3144a0271cd853c5e3df36e9f31d78d619
@@ -1121,7 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 029430c503f243a34439698779db7e591cfbe126
-R 7d04d9dc66c7827e69884f350d18f40f
+P e9e932aa400f217e383cda9922fbde8a4356f57a 0aca31e1514b3df254c049b4251bcb199831681a
+R 58571132dec54639078eadde66ba0889
 U drh
-Z eb0f6ed26fc853a592653c23c1c8b118
+Z 412c711013eb3a5449cb7f9aec9f3c69

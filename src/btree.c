@@ -2508,7 +2508,6 @@ static int lockBtree(BtShared *pBt){
   assert( pBt->maxLeaf + 23 <= MX_CELL_SIZE(pBt) );
   pBt->pPage1 = pPage1;
   pBt->nPage = nPage;
-assert( pPage1->leaf==0 || pPage1->leaf==1 );
   return SQLITE_OK;
 
 page1_init_failed:

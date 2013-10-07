@@ -254,6 +254,10 @@ set pragma_def {
   NAME: hexkey
   IF:   defined(SQLITE_HAS_CODEC)
 
+  NAME: hexrekey
+  TYPE: HEXKEY
+  IF:   defined(SQLITE_HAS_CODEC)
+
   NAME: activate_extensions
   IF:   defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
 

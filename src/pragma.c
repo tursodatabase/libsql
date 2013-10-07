@@ -208,6 +208,10 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_HEXKEY,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+  { /* zName:     */ "hexrekey",
+    /* ePragTyp:  */ PragTyp_HEXKEY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
 #endif
 #if !defined(SQLITE_OMIT_CHECK)
   { /* zName:     */ "ignore_check_constraints",
@@ -416,7 +420,7 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 };
-/* Number of pragmas: 55 on by default, 66 total. */
+/* Number of pragmas: 55 on by default, 67 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -2181,12 +2185,12 @@ void sqlite3Pragma(
   }
   case PragTyp_HEXKEY: {
     if( zRight ){
-      int i, h1, h2;
+      u8 iByte;
+      int i;
       char zKey[40];
-      for(i=0; (h1 = zRight[i])!=0 && (h2 = zRight[i+1])!=0; i+=2){
-        h1 += 9*(1&(h1>>6));
-        h2 += 9*(1&(h2>>6));
-        zKey[i/2] = (h2 & 0x0f) | ((h1 & 0xf)<<4);
+      for(i=0, iByte=0; i<sizeof(zKey)*2 && sqlite3Isxdigit(zRight[i]); i++){
+        iByte = (iByte<<4) + sqlite3HexToInt(zRight[i]);
+        if( (i&1)!=0 ) zKey[i/2] = iByte;
       }
       if( (zLeft[3] & 0xf)==0xb ){
         sqlite3_key_v2(db, zDb, zKey, i/2);
