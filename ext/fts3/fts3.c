@@ -3036,7 +3036,7 @@ static int fts3FilterMethod(
 ){
   int rc;
   char *zSql;                     /* SQL statement used to access %_content */
-  int eSearch;;
+  int eSearch;
   Fts3Table *p = (Fts3Table *)pCursor->pVtab;
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
 

@@ -4780,7 +4780,7 @@ static int fts3DoAutoincrmerge(
     if( rc ) return rc;
   }
   rc = fts3SqlStmt(p, SQL_REPLACE_STAT, &pStmt, 0);
-  if( rc ) return rc;;
+  if( rc ) return rc;
   sqlite3_bind_int(pStmt, 1, FTS_STAT_AUTOINCRMERGE);
   sqlite3_bind_int(pStmt, 2, p->bAutoincrmerge);
   sqlite3_step(pStmt);
