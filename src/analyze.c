@@ -1252,13 +1252,13 @@ struct analysisInfo {
 static void decodeIntArray(
   char *zIntArray,       /* String containing int array to decode */
   int nOut,              /* Number of slots in aOut[] */
-  tRowcnt *aOut,         /* Store integers here */
+  LogEst *aOut,          /* Convert values to 10*log2() and store here */
   Index *pIndex          /* Handle extra flags for this index, if not NULL */
 ){
   char *z = zIntArray;
   int c;
   int i;
-  tRowcnt v;
+  u64 v;
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( z==0 ) z = "";
@@ -1271,7 +1271,7 @@ static void decodeIntArray(
       v = v*10 + c - '0';
       z++;
     }
-    aOut[i] = v;
+    aOut[i] = sqlite3LogEst(v);
     if( *z==' ' ) z++;
   }
   if( pIndex ){
@@ -1368,10 +1368,10 @@ static void initAvgEq(Index *pIdx){
     int iCol;
     for(iCol=0; iCol<pIdx->nColumn; iCol++){
       int i;                    /* Used to iterate through samples */
-      tRowcnt sumEq = 0;        /* Sum of the nEq values */
-      tRowcnt nSum = 0;         /* Number of terms contributing to sumEq */
-      tRowcnt avgEq = 0;
-      tRowcnt nDLt = pFinal->anDLt[iCol];
+      u64 sumEq = 0;        /* Sum of the nEq values */
+      u64 nSum = 0;         /* Number of terms contributing to sumEq */
+      u64 avgEq = 0;
+      u64 nDLt = sqlite3LogEstToInt(pFinal->anDLt[iCol]);
 
       /* Set nSum to the number of distinct (iCol+1) field prefixes that
       ** occur in the stat4 table for this index before pFinal. Set
@@ -1380,15 +1380,15 @@ static void initAvgEq(Index *pIdx){
       ** prefixes).  */
       for(i=0; i<(pIdx->nSample-1); i++){
         if( aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] ){
-          sumEq += aSample[i].anEq[iCol];
+          sumEq += sqlite3LogEstToInt(aSample[i].anEq[iCol]);
           nSum++;
         }
       }
       if( nDLt>nSum ){
-        avgEq = (pFinal->anLt[iCol] - sumEq)/(nDLt - nSum);
+        avgEq = (sqlite3LogEstToInt(pFinal->anLt[iCol]) - sumEq)/(nDLt - nSum);
       }
-      if( avgEq==0 ) avgEq = 1;
-      pIdx->aAvgEq[iCol] = avgEq;
+      if( avgEq<=0 ) avgEq = 1;
+      pIdx->aAvgEq[iCol] = sqlite3LogEst(avgEq);
       if( pIdx->nSampleCol==1 ) break;
     }
   }
@@ -1438,7 +1438,7 @@ static int loadStatTbl(
     int nSample;    /* Number of samples */
     int nByte;      /* Bytes of space required */
     int i;          /* Bytes of space required */
-    tRowcnt *pSpace;
+    LogEst *pSpace;
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
@@ -1454,15 +1454,15 @@ static int loadStatTbl(
     }
     pIdx->nSampleCol = nIdxCol;
     nByte = sizeof(IndexSample) * nSample;
-    nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
-    nByte += nAvgCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
+    nByte += sizeof(LogEst) * nIdxCol * 3 * nSample;
+    nByte += nAvgCol * sizeof(LogEst);     /* Space for Index.aAvgEq[] */
 
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
     if( pIdx->aSample==0 ){
       sqlite3_finalize(pStmt);
       return SQLITE_NOMEM;
     }
-    pSpace = (tRowcnt*)&pIdx->aSample[nSample];
+    pSpace = (LogEst*)&pIdx->aSample[nSample];
     pIdx->aAvgEq = pSpace; pSpace += nAvgCol;
     for(i=0; i<nSample; i++){
       pIdx->aSample[i].anEq = pSpace; pSpace += nIdxCol;

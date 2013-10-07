@@ -1382,11 +1382,11 @@ struct Table {
 #ifndef SQLITE_OMIT_CHECK
   ExprList *pCheck;    /* All CHECK constraints */
 #endif
-  tRowcnt nRowEst;     /* Estimated rows in table - from sqlite_stat1 table */
   int tnum;            /* Root BTree node for this table (see note above) */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   i16 nCol;            /* Number of columns in this table */
   u16 nRef;            /* Number of pointers to this Table */
+  LogEst nRowEst;      /* Estimated number of rows in the table */
   LogEst szTabRow;     /* Estimated size of each table row in bytes */
   u8 tabFlags;         /* Mask of TF_* values */
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
@@ -1577,7 +1577,7 @@ struct UnpackedRecord {
 struct Index {
   char *zName;             /* Name of this index */
   int *aiColumn;           /* Which columns are used by this index.  1st is 0 */
-  tRowcnt *aiRowEst;       /* From ANALYZE: Est. rows selected by each column */
+  LogEst *aiRowEst;        /* From ANALYZE: Est. rows selected by each column */
   Table *pTable;           /* The SQL table being indexed */
   char *zColAff;           /* String defining the affinity of each column */
   Index *pNext;            /* The next index associated with the same table */
@@ -1595,7 +1595,7 @@ struct Index {
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   int nSample;             /* Number of elements in aSample[] */
   int nSampleCol;          /* Size of IndexSample.anEq[] and so on */
-  tRowcnt *aAvgEq;         /* Average nEq values for keys not in aSample */
+  LogEst *aAvgEq;          /* Average nEq values for keys not in aSample */
   IndexSample *aSample;    /* Samples of the left-most key */
 #endif
 };
@@ -1608,9 +1608,9 @@ struct Index {
 struct IndexSample {
   void *p;          /* Pointer to sampled record */
   int n;            /* Size of record in bytes */
-  tRowcnt *anEq;    /* Est. number of rows where the key equals this sample */
-  tRowcnt *anLt;    /* Est. number of rows where key is less than this sample */
-  tRowcnt *anDLt;   /* Est. number of distinct keys less than this sample */
+  LogEst *anEq;     /* Est. number of rows where the key equals this sample */
+  LogEst *anLt;     /* Est. number of rows where key is less than this sample */
+  LogEst *anDLt;    /* Est. number of distinct keys less than this sample */
 };
 
 /*

@@ -2328,7 +2328,7 @@ static void whereKeyStats(
   Index *pIdx,                /* Index to consider domain of */
   UnpackedRecord *pRec,       /* Vector of values to consider */
   int roundUp,                /* Round up if true.  Round down if false */
-  tRowcnt *aStat              /* OUT: stats written here */
+  LogEst *aStat               /* OUT: stats written here */
 ){
   IndexSample *aSample = pIdx->aSample;
   int iCol;                   /* Index of required stats in anEq[] etc. */
@@ -2381,15 +2381,16 @@ static void whereKeyStats(
     aStat[0] = aSample[i].anLt[iCol];
     aStat[1] = aSample[i].anEq[iCol];
   }else{
-    tRowcnt iLower, iUpper, iGap;
+    LogEst iLower, iUpper, iGap;
     if( i==0 ){
       iLower = 0;
       iUpper = aSample[0].anLt[iCol];
     }else{
       iUpper = i>=pIdx->nSample ? pIdx->aiRowEst[0] : aSample[i].anLt[iCol];
-      iLower = aSample[i-1].anEq[iCol] + aSample[i-1].anLt[iCol];
+      iLower = sqlite3LogEstAdd(aSample[i-1].anEq[iCol],
+                                aSample[i-1].anLt[iCol]);
     }
-    aStat[1] = (pIdx->nColumn>iCol ? pIdx->aAvgEq[iCol] : 1);
+    aStat[1] = (pIdx->nColumn>iCol ? pIdx->aAvgEq[iCol] : 0);
     if( iLower>=iUpper ){
       iGap = 0;
     }else{
@@ -2466,7 +2467,7 @@ static int whereRangeScanEst(
    && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
   ){
     UnpackedRecord *pRec = pBuilder->pRec;
-    tRowcnt a[2];
+    LogEst a[2];
     u8 aff;
 
     /* Variable iLower will be set to the estimate of the number of rows in 
@@ -2486,8 +2487,8 @@ static int whereRangeScanEst(
     ** is either ($P) or ($P:$U). Again, even if $U is available, both values
     ** of iUpper are requested of whereKeyStats() and the smaller used.
     */
-    tRowcnt iLower;
-    tRowcnt iUpper;
+    LogEst iLower;
+    LogEst iUpper;
 
     if( nEq==p->nColumn ){
       aff = SQLITE_AFF_INTEGER;
@@ -2503,7 +2504,7 @@ static int whereRangeScanEst(
       ** have been requested when testing key $P in whereEqualScanEst().  */
       whereKeyStats(pParse, p, pRec, 0, a);
       iLower = a[0];
-      iUpper = a[0] + a[1];
+      iUpper = sqlite3LogEstAdd(a[0],a[1]);
     }
 
     /* If possible, improve on the iLower estimate using ($P:$L). */
@@ -2513,9 +2514,9 @@ static int whereRangeScanEst(
       assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
       rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
       if( rc==SQLITE_OK && bOk ){
-        tRowcnt iNew;
+        LogEst iNew;
         whereKeyStats(pParse, p, pRec, 0, a);
-        iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
+        iNew = sqlite3LogEstAdd(a[0],((pLower->eOperator & WO_GT) ? a[1] : 0));
         if( iNew>iLower ) iLower = iNew;
         nOut--;
       }
@@ -2528,9 +2529,9 @@ static int whereRangeScanEst(
       assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
       rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
       if( rc==SQLITE_OK && bOk ){
-        tRowcnt iNew;
+        LogEst iNew;
         whereKeyStats(pParse, p, pRec, 1, a);
-        iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
+        iNew = sqlite3LogEstAdd(a[0],((pUpper->eOperator & WO_LE) ? a[1] : 0));
         if( iNew<iUpper ) iUpper = iNew;
         nOut--;
       }
@@ -2538,17 +2539,17 @@ static int whereRangeScanEst(
 
     pBuilder->pRec = pRec;
     if( rc==SQLITE_OK ){
-      if( iUpper>iLower ){
-        nNew = sqlite3LogEst(iUpper - iLower);
-      }else{
-        nNew = 10;        assert( 10==sqlite3LogEst(2) );
-      }
+      if( iUpper<=iLower ) iUpper = iLower+1;
+      nNew = sqlite3LogEst(sqlite3LogEstToInt(iUpper)
+                             - sqlite3LogEstToInt(iLower));
       if( nNew<nOut ){
         nOut = nNew;
       }
       *pnOut = (LogEst)nOut;
-      WHERETRACE(0x100, ("range scan regions: %u..%u  est=%d\n",
-                         (u32)iLower, (u32)iUpper, nOut));
+      WHERETRACE(0x100, ("range scan regions: %llu..%llu  est=%d\n",
+                         sqlite3LogEstToInt(iLower),
+                         sqlite3LogEstToInt(iUpper),
+                         nOut));
       return SQLITE_OK;
     }
   }
@@ -2596,14 +2597,14 @@ static int whereEqualScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   WhereLoopBuilder *pBuilder,
   Expr *pExpr,         /* Expression for VALUE in the x=VALUE constraint */
-  tRowcnt *pnRow       /* Write the revised row estimate here */
+  LogEst *pnRow        /* Write the revised row estimate here */
 ){
   Index *p = pBuilder->pNew->u.btree.pIndex;
   int nEq = pBuilder->pNew->u.btree.nEq;
   UnpackedRecord *pRec = pBuilder->pRec;
   u8 aff;                   /* Column affinity */
   int rc;                   /* Subfunction return code */
-  tRowcnt a[2];             /* Statistics */
+  LogEst a[2];              /* Statistics */
   int bOk;
 
   assert( nEq>=1 );
@@ -2633,7 +2634,8 @@ static int whereEqualScanEst(
   pBuilder->nRecValid = nEq;
 
   whereKeyStats(pParse, p, pRec, 0, a);
-  WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
+  WHERETRACE(0x100,("equality scan regions: %d (%llu)\n", a[1],
+                    sqlite3LogEstToInt(a[1])));
   *pnRow = a[1];
   
   return rc;
@@ -2661,27 +2663,28 @@ static int whereInScanEst(
   Parse *pParse,       /* Parsing & code generating context */
   WhereLoopBuilder *pBuilder,
   ExprList *pList,     /* The value list on the RHS of "x IN (v1,v2,v3,...)" */
-  tRowcnt *pnRow       /* Write the revised row estimate here */
+  LogEst *pnRow        /* Write the revised row estimate here */
 ){
   Index *p = pBuilder->pNew->u.btree.pIndex;
   int nRecValid = pBuilder->nRecValid;
   int rc = SQLITE_OK;     /* Subfunction return code */
-  tRowcnt nEst;           /* Number of rows for a single term */
-  tRowcnt nRowEst = 0;    /* New estimate of the number of rows */
+  LogEst nEst;            /* Number of rows for a single term */
+  u64 nRowEst = 0;        /* New estimate of the number of rows */
   int i;                  /* Loop counter */
 
   assert( p->aSample!=0 );
   for(i=0; rc==SQLITE_OK && i<pList->nExpr; i++){
     nEst = p->aiRowEst[0];
     rc = whereEqualScanEst(pParse, pBuilder, pList->a[i].pExpr, &nEst);
-    nRowEst += nEst;
+    nRowEst += sqlite3LogEstToInt(nEst);
     pBuilder->nRecValid = nRecValid;
   }
 
   if( rc==SQLITE_OK ){
-    if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
-    *pnRow = nRowEst;
-    WHERETRACE(0x100,("IN row estimate: est=%g\n", nRowEst));
+    nEst = sqlite3LogEst(nRowEst);
+    if( nEst > p->aiRowEst[0] ) nEst = p->aiRowEst[0];
+    *pnRow = nEst;
+    WHERETRACE(0x100,("IN row estimate: est=%d (%llu)\n", nEst, nRowEst));
   }
   assert( pBuilder->nRecValid==nRecValid );
   return rc;
@@ -4251,8 +4254,8 @@ static int whereLoopAddBtreeIndex(
   assert( pNew->u.btree.nEq<=pProbe->nColumn );
   if( pNew->u.btree.nEq < pProbe->nColumn ){
     iCol = pProbe->aiColumn[pNew->u.btree.nEq];
-    nRowEst = sqlite3LogEst(pProbe->aiRowEst[pNew->u.btree.nEq+1]);
-    if( nRowEst==0 && pProbe->onError==OE_None ) nRowEst = 1;
+    nRowEst = pProbe->aiRowEst[pNew->u.btree.nEq+1];
+    if( nRowEst<10 && pProbe->onError==OE_None ) nRowEst = 10;
   }else{
     iCol = -1;
     nRowEst = 0;
@@ -4265,7 +4268,7 @@ static int whereLoopAddBtreeIndex(
   saved_prereq = pNew->prereq;
   saved_nOut = pNew->nOut;
   pNew->rSetup = 0;
-  rLogSize = estLog(sqlite3LogEst(pProbe->aiRowEst[0]));
+  rLogSize = estLog(pProbe->aiRowEst[0]);
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
@@ -4346,7 +4349,7 @@ static int whereLoopAddBtreeIndex(
      && OptimizationEnabled(db, SQLITE_Stat3) 
     ){
       Expr *pExpr = pTerm->pExpr;
-      tRowcnt nOut = 0;
+      LogEst nOut = pNew->nOut;
       if( (pTerm->eOperator & (WO_EQ|WO_ISNULL))!=0 ){
         testcase( pTerm->eOperator & WO_EQ );
         testcase( pTerm->eOperator & WO_ISNULL );
@@ -4355,11 +4358,8 @@ static int whereLoopAddBtreeIndex(
              &&  !ExprHasProperty(pExpr, EP_xIsSelect)  ){
         rc = whereInScanEst(pParse, pBuilder, pExpr->x.pList, &nOut);
       }
-      assert( nOut==0 || rc==SQLITE_OK );
-      if( nOut ){
-        nOut = sqlite3LogEst(nOut);
-        pNew->nOut = MIN(nOut, saved_nOut);
-      }
+      assert( nOut==pNew->nOut || rc==SQLITE_OK );
+      if( nOut<pNew->nOut ) pNew->nOut = nOut;
     }
 #endif
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
@@ -4460,7 +4460,7 @@ static int whereLoopAddBtree(
   WhereInfo *pWInfo;          /* WHERE analysis context */
   Index *pProbe;              /* An index we are evaluating */
   Index sPk;                  /* A fake index object for the primary key */
-  tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
+  LogEst aiRowEstPk[2];       /* The aiRowEst[] value for the sPk index */
   int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
   SrcList *pTabList;          /* The FROM clause */
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
@@ -4495,7 +4495,7 @@ static int whereLoopAddBtree(
     sPk.onError = OE_Replace;
     sPk.pTable = pSrc->pTab;
     aiRowEstPk[0] = pSrc->pTab->nRowEst;
-    aiRowEstPk[1] = 1;
+    aiRowEstPk[1] = 0;
     pFirst = pSrc->pTab->pIndex;
     if( pSrc->notIndexed==0 ){
       /* The real indices of the table are only considered if the
@@ -4504,7 +4504,7 @@ static int whereLoopAddBtree(
     }
     pProbe = &sPk;
   }
-  rSize = sqlite3LogEst(pSrc->pTab->nRowEst);
+  rSize = pSrc->pTab->nRowEst;
   rLogSize = estLog(rSize);
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX

@@ -1213,7 +1213,6 @@ void sqlite3FileSuffix3(const char *zBaseFilename, char *z){
 ** Find (an approximate) sum of two LogEst values.  This computation is
 ** not a simple "+" operator because LogEst is stored as a logarithmic
 ** value.
-** 
 */
 LogEst sqlite3LogEstAdd(LogEst a, LogEst b){
   static const unsigned char x[] = {

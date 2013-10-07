@@ -879,7 +879,7 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
-  pTable->nRowEst = 1000000;
+  pTable->nRowEst = 200;
   assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;
 
@@ -2722,7 +2722,7 @@ Index *sqlite3CreateIndex(
   nCol = pList->nExpr;
   pIndex = sqlite3DbMallocZero(db, 
       ROUND8(sizeof(Index)) +              /* Index structure  */
-      ROUND8(sizeof(tRowcnt)*(nCol+1)) +   /* Index.aiRowEst   */
+      ROUND8(sizeof(LogEst)*(nCol+1)) +    /* Index.aiRowEst   */
       sizeof(char *)*nCol +                /* Index.azColl     */
       sizeof(int)*nCol +                   /* Index.aiColumn   */
       sizeof(u8)*nCol +                    /* Index.aSortOrder */
@@ -2733,9 +2733,9 @@ Index *sqlite3CreateIndex(
     goto exit_create_index;
   }
   zExtra = (char*)pIndex;
-  pIndex->aiRowEst = (tRowcnt*)&zExtra[ROUND8(sizeof(Index))];
+  pIndex->aiRowEst = (LogEst*)&zExtra[ROUND8(sizeof(Index))];
   pIndex->azColl = (char**)
-     ((char*)pIndex->aiRowEst + ROUND8(sizeof(tRowcnt)*nCol+1));
+     ((char*)pIndex->aiRowEst + ROUND8(sizeof(LogEst)*nCol+1));
   assert( EIGHT_BYTE_ALIGNMENT(pIndex->aiRowEst) );
   assert( EIGHT_BYTE_ALIGNMENT(pIndex->azColl) );
   pIndex->aiColumn = (int *)(&pIndex->azColl[nCol]);
@@ -3014,19 +3014,20 @@ exit_create_index:
 ** are based on typical values found in actual indices.
 */
 void sqlite3DefaultRowEst(Index *pIdx){
-  tRowcnt *a = pIdx->aiRowEst;
+  LogEst *a = pIdx->aiRowEst;
   int i;
-  tRowcnt n;
+  LogEst n;
   assert( a!=0 );
   a[0] = pIdx->pTable->nRowEst;
-  if( a[0]<10 ) a[0] = 10;
-  n = 10;
+  assert( 33==sqlite3LogEst(10) );
+  if( a[0]<34 ){ a[0] = 34; }
+  n = 34;
   for(i=1; i<=pIdx->nColumn; i++){
     a[i] = n;
-    if( n>5 ) n--;
+    if( n>24 ) n -= 2;
   }
   if( pIdx->onError!=OE_None ){
-    a[pIdx->nColumn] = 1;
+    a[pIdx->nColumn] = 0;
   }
 }
 
