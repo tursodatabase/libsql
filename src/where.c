@@ -4368,7 +4368,7 @@ static int whereLoopAddBtreeIndex(
       pNew->rRun =  sqlite3LogEstAdd(pNew->rRun,rLogSize>27 ? rLogSize-17 : 10);
     }
     /* Step cost for each output row */
-    pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut);
+    pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut) + pProbe->szIdxRow;
     whereLoopOutputAdjust(pBuilder->pWC, pNew, pSrc->iCursor);
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
@@ -4471,11 +4471,13 @@ static int whereLoopAddBtree(
   LogEst rSize;               /* number of rows in the table */
   LogEst rLogSize;            /* Logarithm of the number of rows in the table */
   WhereClause *pWC;           /* The parsed WHERE clause */
+  Table *pTab;                /* Table being queried */
   
   pNew = pBuilder->pNew;
   pWInfo = pBuilder->pWInfo;
   pTabList = pWInfo->pTabList;
   pSrc = pTabList->a + pNew->iTab;
+  pTab = pSrc->pTab;
   pWC = pBuilder->pWC;
   assert( !IsVirtual(pSrc->pTab) );
 
@@ -4493,8 +4495,8 @@ static int whereLoopAddBtree(
     sPk.aiColumn = &aiColumnPk;
     sPk.aiRowEst = aiRowEstPk;
     sPk.onError = OE_Replace;
-    sPk.pTable = pSrc->pTab;
-    aiRowEstPk[0] = pSrc->pTab->nRowEst;
+    sPk.pTable = pTab;
+    aiRowEstPk[0] = pTab->nRowEst;
     aiRowEstPk[1] = 1;
     pFirst = pSrc->pTab->pIndex;
     if( pSrc->notIndexed==0 ){
@@ -4504,7 +4506,7 @@ static int whereLoopAddBtree(
     }
     pProbe = &sPk;
   }
-  rSize = sqlite3LogEst(pSrc->pTab->nRowEst);
+  rSize = sqlite3LogEst(pTab->nRowEst);
   rLogSize = estLog(rSize);
 
 #ifndef SQLITE_OMIT_AUTOMATIC_INDEX
@@ -4530,12 +4532,13 @@ static int whereLoopAddBtree(
         ** approximately 7*N*log2(N) where N is the number of rows in
         ** the table being indexed. */
         pNew->rSetup = rLogSize + rSize + 28;  assert( 28==sqlite3LogEst(7) );
+        pNew->rSetup += pTab->szTabRow;
         /* TUNING: Each index lookup yields 20 rows in the table.  This
         ** is more than the usual guess of 10 rows, since we have no way
         ** of knowning how selective the index will ultimately be.  It would
         ** not be unreasonable to make this value much larger. */
         pNew->nOut = 43;  assert( 43==sqlite3LogEst(20) );
-        pNew->rRun = sqlite3LogEstAdd(rLogSize,pNew->nOut);
+        pNew->rRun = sqlite3LogEstAdd(rLogSize,pNew->nOut) + pTab->szTabRow;
         pNew->wsFlags = WHERE_AUTO_INDEX;
         pNew->prereq = mExtra | pTerm->prereqRight;
         rc = whereLoopInsert(pBuilder, pNew);
@@ -4570,7 +4573,7 @@ static int whereLoopAddBtree(
       /* TUNING: Cost of full table scan is 3*(N + log2(N)).
       **  +  The extra 3 factor is to encourage the use of indexed lookups
       **     over full scans.  FIXME */
-      pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 16;
+      pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 16 + pTab->szTabRow;
       whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
@@ -4602,6 +4605,7 @@ static int whereLoopAddBtree(
           ** which we will simplify to just N*log2(N) */
           pNew->rRun = rSize + rLogSize;
         }
+        pNew->rRun += pProbe->szIdxRow;
         whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
         rc = whereLoopInsert(pBuilder, pNew);
         pNew->nOut = rSize;
@@ -4773,7 +4777,7 @@ static int whereLoopAddVirtual(
       pNew->u.vtab.isOrdered = (u8)((pIdxInfo->nOrderBy!=0)
                                      && pIdxInfo->orderByConsumed);
       pNew->rSetup = 0;
-      pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
+      pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost) + 55;
       /* TUNING: Every virtual table query returns 25 rows */
       pNew->nOut = 46;  assert( 46==sqlite3LogEst(25) );
       whereLoopInsert(pBuilder, pNew);
@@ -5264,7 +5268,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   }else{
     /* TUNING: Estimated cost of sorting is N*log2(N) where N is the
     ** number of output rows. */
-    rSortCost = nRowEst + estLog(nRowEst);
+    rSortCost = nRowEst + estLog(nRowEst) + 55;
     WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
   }
 

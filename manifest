@@ -1,5 +1,5 @@
-C Merge\sbug\sfixes\sfrom\strunk.
-D 2013-10-07T10:48:06.076
+C Multiply\sall\scursor\sstep\scost\sestimates\sby\sthe\sestimated\ssize\sof\sthe\srow\sin\nbytes,\sin\sorder\sto\sget\sthe\squery\splanner\sot\smake\suse\sof\sestimated\srow\ssizes.\nThis\scheck-in\suses\smagic\snumbers\sin\sa\sfew\splaces\s(for\sexample,\sestimates\sof\nthe\ssize\sof\soutput\srows)\sand\sneeds\slots\sof\srefinement.\s\sConsider\sthis\sa\nproof-of-concept\sonly.
+D 2013-10-07T17:32:15.338
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 72c6c205e53ae72d2d235705bb2b040d70fff2e2
+F src/where.c ad5e680c0b95014bb9e227990d6b0efe634e7749
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1121,7 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e9e932aa400f217e383cda9922fbde8a4356f57a 0aca31e1514b3df254c049b4251bcb199831681a
-R 58571132dec54639078eadde66ba0889
+P 1d7b2dc0eae70c0c0e523b715acf758bb4cfa9ac
+R b3d2afdb618d61f33659270b34382478
 U drh
-Z 412c711013eb3a5449cb7f9aec9f3c69
+Z 2fed1ec905830e828c488397bcac95d0
