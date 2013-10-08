@@ -1274,7 +1274,12 @@ static void decodeIntArray(
     aOut[i] = v;
     if( *z==' ' ) z++;
   }
-  if( pIndex ){
+#ifndef SQLITE_ENABLE_STAT3_OR_STAT4
+  assert( pIndex!=0 );
+#else
+  if( pIndex )
+#endif
+  {
     if( strcmp(z, "unordered")==0 ){
       pIndex->bUnordered = 1;
     }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
