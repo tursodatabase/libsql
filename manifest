@@ -1,5 +1,5 @@
-C Further\srefinement\sof\sthe\sidea\sof\smultiplying\srun-time\scost\sestimates\sby\nthe\sestimated\srow\ssize.
-D 2013-10-08T18:40:37.532
+C Use\s#ifdefs\sto\somit\sunused\scode\sin\sthe\scolumnType()\sroutine\sdepending\son\ncompile-time\soptions.
+D 2013-10-08T20:01:35.742
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7459801d02997b07e8b8da85ef255392ba1d022b
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 9d111a1adef56151b4bbddbcaea6d117d374e17d
+F src/select.c 15127b54cc11defb2cddef6914e1f384501a61c4
 F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1121,7 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cb34cfe57c2a664fbfae8106e95114400ea222d5
-R 2b7915a92bd0315e781ed0d1390f4f69
+P 18bd6ba96d19de6047baebfa15b1f739577c9ec4
+R 967a79399191741c9ec3babe410d2a81
 U drh
-Z 27bbb4f4b3fe1d2932c4d2e467493b71
+Z f2e723eade28ed7288d4d048e8169b82
