@@ -1,5 +1,5 @@
-C Use\s#ifdefs\sto\somit\sunused\scode\sin\sthe\scolumnType()\sroutine\sdepending\son\ncompile-time\soptions.
-D 2013-10-08T20:01:35.742
+C Rollback\ssome\sof\sthe\sprevious\schanges\sin\sthe\sbranch\ssuch\sthat\sthe\sestimated\nrow\ssizes\sare\snow\sonly\sused\sas\sa\stie-breaker\sfor\sindex\sscans.
+D 2013-10-08T20:42:41.270
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 2a04ab5856f8c964369d181f3580a8d14e4a325c
+F src/where.c 8dd4cb208b9b70beeb9da7dbcd9b8b8b08261ed7
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -761,7 +761,7 @@ F test/schema4.test e6a66e20cc69f0e306667c08be7fda3d11707dc5
 F test/schema5.test 0103e4c0313b3725b5ae5600bdca53006ab53db3
 F test/securedel.test 87a2561151af1f1e349071a89fdd77059f50113c
 F test/securedel2.test 2d54c28e46eb1fd6902089958b20b1b056c6f1c5
-F test/select1.test deba017eed9daa5af33de868676c997e7eebb931
+F test/select1.test fc2a61f226a649393664ad54bc5376631801517c
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 00179be44e531fe04c1c3f15df216439dff2519d
@@ -1059,7 +1059,7 @@ F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
 F test/where8.test 6f95896633cf2d307b5263145b942b7d33e837c6
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 06c5f1e13168239951d2426078334d97fdf2d26f
+F test/where9.test 4f3eab951353a3ae164befc521c777dfa903e46c
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
@@ -1121,7 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 18bd6ba96d19de6047baebfa15b1f739577c9ec4
-R 967a79399191741c9ec3babe410d2a81
+P 3fd5e33217a91402b3499fa0977469b91618a928
+R 2e607623289a6e77a66e8d2d68d4002e
 U drh
-Z f2e723eade28ed7288d4d048e8169b82
+Z 42356aefb8b584494e71f168c94cd126

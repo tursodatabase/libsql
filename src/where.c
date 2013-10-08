@@ -4338,12 +4338,6 @@ static int whereLoopAddBtreeIndex(
       /* Adjust nOut and rRun for STAT3 range values */
       assert( pNew->nOut==saved_nOut );
       whereRangeScanEst(pParse, pBuilder, pBtm, pTop, pNew);
-
-      /* If the range constraint is the only constraint on the index and
-      ** if the range constraint does not reduce the search space,
-      ** then this is really just an index scan which has already
-      ** been analyzed. */
-      if( pNew->nOut>=saved_nOut && pNew->u.btree.nEq==0 ) continue;
     }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     if( nInMul==0 
@@ -4374,7 +4368,7 @@ static int whereLoopAddBtreeIndex(
       pNew->rRun =  sqlite3LogEstAdd(pNew->rRun,rLogSize>27 ? rLogSize-17 : 10);
     }
     /* Step cost for each output row */
-    pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut) + pProbe->szIdxRow;
+    pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut);
     whereLoopOutputAdjust(pBuilder->pWC, pNew, pSrc->iCursor);
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
@@ -4538,13 +4532,12 @@ static int whereLoopAddBtree(
         ** approximately 7*N*log2(N) where N is the number of rows in
         ** the table being indexed. */
         pNew->rSetup = rLogSize + rSize + 28;  assert( 28==sqlite3LogEst(7) );
-        pNew->rSetup += pTab->szTabRow;
         /* TUNING: Each index lookup yields 20 rows in the table.  This
         ** is more than the usual guess of 10 rows, since we have no way
         ** of knowning how selective the index will ultimately be.  It would
         ** not be unreasonable to make this value much larger. */
         pNew->nOut = 43;  assert( 43==sqlite3LogEst(20) );
-        pNew->rRun = sqlite3LogEstAdd(rLogSize,pNew->nOut) + pTab->szTabRow;
+        pNew->rRun = sqlite3LogEstAdd(rLogSize,pNew->nOut);
         pNew->wsFlags = WHERE_AUTO_INDEX;
         pNew->prereq = mExtra | pTerm->prereqRight;
         rc = whereLoopInsert(pBuilder, pNew);
@@ -4579,7 +4572,7 @@ static int whereLoopAddBtree(
       /* TUNING: Cost of full table scan is 3*(N + log2(N)).
       **  +  The extra 3 factor is to encourage the use of indexed lookups
       **     over full scans.  FIXME */
-      pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 16 + pTab->szTabRow;
+      pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 16;
       whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
@@ -4592,6 +4585,7 @@ static int whereLoopAddBtree(
       if( b
        || ( m==0
          && pProbe->bUnordered==0
+         && pProbe->szIdxRow<pTab->szTabRow
          && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
          && sqlite3GlobalConfig.bUseCis
          && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)
@@ -4600,18 +4594,18 @@ static int whereLoopAddBtree(
         pNew->iSortIdx = b ? iSortIdx : 0;
         if( m==0 ){
           /* TUNING: Cost of a covering index scan is K*(N + log2(N)).
-          **  +  The extra factor K of between 1.1 (iScanRatio between 0
-          **     and 9) and 2.8 (iScanRatio between 126 and 127) is added
-          **     to encourage the use of indexed lookups.  FIXME
+          **  +  The extra factor K of between 1.1 and 3.0 that depends
+          **     on the relative sizes of the table and the index.  K
+          **     is smaller for smaller indices, thus favoring them.
           */
-          pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 10;
+          pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 1 +
+                        (15*pProbe->szIdxRow)/pTab->szTabRow;
         }else{
           assert( b!=0 ); 
           /* TUNING: Cost of scanning a non-covering index is (N+1)*log2(N)
           ** which we will simplify to just N*log2(N) */
           pNew->rRun = rSize + rLogSize;
         }
-        pNew->rRun += pProbe->szIdxRow;
         whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
         rc = whereLoopInsert(pBuilder, pNew);
         pNew->nOut = rSize;
@@ -4783,7 +4777,7 @@ static int whereLoopAddVirtual(
       pNew->u.vtab.isOrdered = (u8)((pIdxInfo->nOrderBy!=0)
                                      && pIdxInfo->orderByConsumed);
       pNew->rSetup = 0;
-      pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost) + 55;
+      pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
       /* TUNING: Every virtual table query returns 25 rows */
       pNew->nOut = 46;  assert( 46==sqlite3LogEst(25) );
       whereLoopInsert(pBuilder, pNew);
@@ -5276,7 +5270,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     ** number of output rows. The 48 is the expected size of a row to sort. 
     ** FIXME:  compute a better estimate of the 48 multiplier based on the
     ** result set expressions. */
-    rSortCost = nRowEst + estLog(nRowEst) + 55;
+    rSortCost = nRowEst + estLog(nRowEst);
     WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
   }
 
