@@ -879,7 +879,7 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
-  pTable->nRowEst = 1000000;
+  pTable->nRowEst = 1048576;
   assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;
 

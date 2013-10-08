@@ -2450,15 +2450,15 @@ static int whereRangeScanEst(
   WhereLoopBuilder *pBuilder,
   WhereTerm *pLower,   /* Lower bound on the range. ex: "x>123" Might be NULL */
   WhereTerm *pUpper,   /* Upper bound on the range. ex: "x<455" Might be NULL */
-  LogEst *pnOut        /* IN/OUT: Number of rows visited */
+  WhereLoop *pLoop     /* Modify the .nOut and maybe .rRun fields */
 ){
   int rc = SQLITE_OK;
-  int nOut = (int)*pnOut;
+  int nOut = pLoop->nOut;
+  int nEq = pLoop->u.btree.nEq;
   LogEst nNew;
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  Index *p = pBuilder->pNew->u.btree.pIndex;
-  int nEq = pBuilder->pNew->u.btree.nEq;
+  Index *p = pLoop->u.btree.pIndex;
 
   if( p->nSample>0
    && nEq==pBuilder->nRecValid
@@ -2546,7 +2546,7 @@ static int whereRangeScanEst(
       if( nNew<nOut ){
         nOut = nNew;
       }
-      *pnOut = (LogEst)nOut;
+      pLoop->nOut = (LogEst)nOut;
       WHERETRACE(0x100, ("range scan regions: %u..%u  est=%d\n",
                          (u32)iLower, (u32)iUpper, nOut));
       return SQLITE_OK;
@@ -2570,7 +2570,7 @@ static int whereRangeScanEst(
   }
   if( nNew<10 ) nNew = 10;
   if( nNew<nOut ) nOut = nNew;
-  *pnOut = (LogEst)nOut;
+  pLoop->nOut = (LogEst)nOut;
   return rc;
 }
 
@@ -4337,7 +4337,13 @@ static int whereLoopAddBtreeIndex(
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
       /* Adjust nOut and rRun for STAT3 range values */
       assert( pNew->nOut==saved_nOut );
-      whereRangeScanEst(pParse, pBuilder, pBtm, pTop, &pNew->nOut);
+      whereRangeScanEst(pParse, pBuilder, pBtm, pTop, pNew);
+
+      /* If the range constraint is the only constraint on the index and
+      ** if the range constraint does not reduce the search space,
+      ** then this is really just an index scan which has already
+      ** been analyzed. */
+      if( pNew->nOut>=saved_nOut && pNew->u.btree.nEq==0 ) continue;
     }
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     if( nInMul==0 
@@ -4816,6 +4822,8 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   pWCEnd = pWC->a + pWC->nTerm;
   pNew = pBuilder->pNew;
   memset(&sSum, 0, sizeof(sSum));
+  pItem = pWInfo->pTabList->a + pNew->iTab;
+  iCur = pItem->iCursor;
 
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
     if( (pTerm->eOperator & WO_OR)!=0
@@ -4827,8 +4835,6 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       int once = 1;
       int i, j;
     
-      pItem = pWInfo->pTabList->a + pNew->iTab;
-      iCur = pItem->iCursor;
       sSubBuild = *pBuilder;
       sSubBuild.pOrderBy = 0;
       sSubBuild.pOrSet = &sCur;
@@ -5266,8 +5272,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   if( pWInfo->pOrderBy==0 || nRowEst==0 ){
     aFrom[0].isOrderedValid = 1;
   }else{
-    /* TUNING: Estimated cost of sorting is N*log2(N) where N is the
-    ** number of output rows. */
+    /* TUNING: Estimated cost of sorting is 48*N*log2(N) where N is the
+    ** number of output rows. The 48 is the expected size of a row to sort. 
+    ** FIXME:  compute a better estimate of the 48 multiplier based on the
+    ** result set expressions. */
     rSortCost = nRowEst + estLog(nRowEst) + 55;
     WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
   }

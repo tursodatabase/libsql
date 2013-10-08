@@ -781,27 +781,7 @@ do_test where9-6.8.2 {
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
 } {1 {no query solution}}
-ifcapable stat4||stat3 {
-  # When STAT3 is enabled, the "b NOT NULL" terms get translated
-  # into b>NULL, which can be satified by the index t1b.  It is a very
-  # expensive way to do the query, but it works, and so a solution is possible.
-  do_test where9-6.8.3-stat4 {
-    catchsql {
-      UPDATE t1 INDEXED BY t1b SET a=a+100
-       WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
-          OR (b NOT NULL AND c IS NULL AND d NOT NULL)
-          OR (b NOT NULL AND c NOT NULL AND d IS NULL)
-    }
-  } {0 {}}
-  do_test where9-6.8.4-stat4 {
-    catchsql {
-      DELETE FROM t1 INDEXED BY t1b
-       WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
-          OR (b NOT NULL AND c IS NULL AND d NOT NULL)
-          OR (b NOT NULL AND c NOT NULL AND d IS NULL)
-    }
-  } {0 {}}
-} else {
+if {1} {
   do_test where9-6.8.3 {
     catchsql {
       UPDATE t1 INDEXED BY t1b SET a=a+100

@@ -1424,8 +1424,7 @@ static int selectColumnsFromExprList(
 */
 static void selectAddColumnTypeAndCollation(
   Parse *pParse,        /* Parsing contexts */
-  int nCol,             /* Number of columns */
-  Column *aCol,         /* List of columns */
+  Table *pTab,          /* Add column type information to this table */
   Select *pSelect       /* SELECT used to determine types and collations */
 ){
   sqlite3 *db = pParse->db;
@@ -1435,17 +1434,20 @@ static void selectAddColumnTypeAndCollation(
   int i;
   Expr *p;
   struct ExprList_item *a;
+  u64 szAll = 0;
 
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
-  assert( nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
   if( db->mallocFailed ) return;
   memset(&sNC, 0, sizeof(sNC));
   sNC.pSrcList = pSelect->pSrc;
   a = pSelect->pEList->a;
-  for(i=0, pCol=aCol; i<nCol; i++, pCol++){
+  for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     p = a[i].pExpr;
     pCol->zType = sqlite3DbStrDup(db, columnType(&sNC, p, 0, 0, 0));
+    sqlite3AffinityType(pCol->zType, &pCol->szEst);
+    szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_NONE;
     pColl = sqlite3ExprCollSeq(pParse, p);
@@ -1453,6 +1455,7 @@ static void selectAddColumnTypeAndCollation(
       pCol->zColl = sqlite3DbStrDup(db, pColl->zName);
     }
   }
+  pTab->szTabRow = sqlite3LogEst(szAll*4);
 }
 
 /*
@@ -1480,9 +1483,9 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   assert( db->lookaside.bEnabled==0 );
   pTab->nRef = 1;
   pTab->zName = 0;
-  pTab->nRowEst = 1000000;
+  pTab->nRowEst = 1048576;
   selectColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
-  selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSelect);
+  selectAddColumnTypeAndCollation(pParse, pTab, pSelect);
   pTab->iPKey = -1;
   if( db->mallocFailed ){
     sqlite3DeleteTable(db, pTab);
@@ -3394,11 +3397,11 @@ static int selectExpander(Walker *pWalker, Select *p){
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
       pTab->nRef = 1;
-      pTab->zName = sqlite3MPrintf(db, "sqlite_subquery_%p_", (void*)pTab);
+      pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
       selectColumnsFromExprList(pParse, pSel->pEList, &pTab->nCol, &pTab->aCol);
       pTab->iPKey = -1;
-      pTab->nRowEst = 1000000;
+      pTab->nRowEst = 1048576;
       pTab->tabFlags |= TF_Ephemeral;
 #endif
     }else{
@@ -3682,7 +3685,7 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
         Select *pSel = pFrom->pSelect;
         assert( pSel );
         while( pSel->pPrior ) pSel = pSel->pPrior;
-        selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSel);
+        selectAddColumnTypeAndCollation(pParse, pTab, pSel);
       }
     }
   }
