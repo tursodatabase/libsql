@@ -1,5 +1,5 @@
-C Rollback\ssome\sof\sthe\sprevious\schanges\sin\sthe\sbranch\ssuch\sthat\sthe\sestimated\nrow\ssizes\sare\snow\sonly\sused\sas\sa\stie-breaker\sfor\sindex\sscans.
-D 2013-10-08T20:42:41.270
+C Fix\stest\scases\sfor\sthe\snew\sinformation\sin\sPRAGMA\sindex_list.
+D 2013-10-08T22:25:22.225
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -724,7 +724,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 72f4f8881d388163ddbbeec0a6ed812e863ea2e6
-F test/pragma.test de128f0253ee42a1edf6c80f21813babfb19bd3b
+F test/pragma.test 5c6e8ae9eaa9a505cc1035b51f7f0da9805092c7
 F test/pragma2.test 224f0381f9411a78ae685cac24c13656a62021b7
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
@@ -1121,7 +1121,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3fd5e33217a91402b3499fa0977469b91618a928
-R 2e607623289a6e77a66e8d2d68d4002e
+P 65553ff34b41e54d129ff2fee96be714105503c4
+R d3d1b6ad57e8af21028db8307fcc9c99
 U drh
-Z 42356aefb8b584494e71f168c94cd126
+Z d60d26e04d8b288fede2321c4c580bed
