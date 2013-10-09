@@ -743,12 +743,12 @@ static void statGet(
       return;
     }
 
-    sqlite3_snprintf(24, zRet, "%lld", p->nRow);
+    sqlite3_snprintf(24, zRet, "%llu", (u64)p->nRow);
     z = zRet + sqlite3Strlen30(zRet);
     for(i=0; i<(p->nCol-1); i++){
-      i64 nDistinct = p->current.anDLt[i] + 1;
-      i64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
-      sqlite3_snprintf(24, z, " %lld", iVal);
+      u64 nDistinct = p->current.anDLt[i] + 1;
+      u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
+      sqlite3_snprintf(24, z, " %llu", iVal);
       z += sqlite3Strlen30(z);
       assert( p->current.anEq[i] );
     }
@@ -789,7 +789,7 @@ static void statGet(
         int i;
         char *z = zRet;
         for(i=0; i<p->nCol; i++){
-          sqlite3_snprintf(24, z, "%lld ", aCnt[i]);
+          sqlite3_snprintf(24, z, "%llu ", (u64)aCnt[i]);
           z += sqlite3Strlen30(z);
         }
         assert( z[0]=='\0' && z>zRet );
