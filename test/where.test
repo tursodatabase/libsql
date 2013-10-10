@@ -1125,9 +1125,9 @@ do_test where-13.12 {
 if {[permutation] != "no_optimization"} {
 do_test where-14.1 {
   execsql {
-    CREATE TABLE t8(a INTEGER PRIMARY KEY, b TEXT UNIQUE);
-    INSERT INTO t8 VALUES(1,'one');
-    INSERT INTO t8 VALUES(4,'four');
+    CREATE TABLE t8(a INTEGER PRIMARY KEY, b TEXT UNIQUE, c CHAR(100));
+    INSERT INTO t8(a,b) VALUES(1,'one');
+    INSERT INTO t8(a,b) VALUES(4,'four');
   }
   cksort {
     SELECT x.a || '/' || y.a FROM t8 x, t8 y ORDER BY x.a, y.b

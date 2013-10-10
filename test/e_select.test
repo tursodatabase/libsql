@@ -450,17 +450,17 @@ do_join_test e_select-1.4.1.4 {
 # left-hand and right-hand datasets.
 #
 do_join_test e_select-1.4.2.1 {
-  SELECT * FROM x2 %JOIN% x3
+  SELECT * FROM x2 %JOIN% x3 ORDER BY +c, +f
 } [list -60.06 {} {}      -39.24 {} encompass -1                 \
-        -60.06 {} {}      presenting 51 reformation dignified    \
-        -60.06 {} {}      conducting -87.24 37.56 {}             \
-        -60.06 {} {}      coldest -96 dramatists 82.3            \
         -60.06 {} {}      alerting {} -93.79 {}                  \
+        -60.06 {} {}      coldest -96 dramatists 82.3            \
+        -60.06 {} {}      conducting -87.24 37.56 {}             \
+        -60.06 {} {}      presenting 51 reformation dignified    \
         -58 {} 1.21       -39.24 {} encompass -1                 \
-        -58 {} 1.21       presenting 51 reformation dignified    \
-        -58 {} 1.21       conducting -87.24 37.56 {}             \
-        -58 {} 1.21       coldest -96 dramatists 82.3            \
         -58 {} 1.21       alerting {} -93.79 {}                  \
+        -58 {} 1.21       coldest -96 dramatists 82.3            \
+        -58 {} 1.21       conducting -87.24 37.56 {}             \
+        -58 {} 1.21       presenting 51 reformation dignified    \
 ]
 # TODO: Come back and add a few more like the above.
 

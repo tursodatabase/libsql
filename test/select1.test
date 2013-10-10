@@ -542,7 +542,7 @@ do_test select1-6.9.7 {
   set x [execsql2 {
      SELECT * FROM test1 a, (select 5, 6) LIMIT 1
   }]
-  regsub -all {subquery_[0-9a-fA-F]+_} $x {subquery} x
+  regsub -all {sq_[0-9a-fA-F_]+} $x {subquery} x
   set x
 } {a.f1 11 a.f2 22 sqlite_subquery.5 5 sqlite_subquery.6 6}
 do_test select1-6.9.8 {

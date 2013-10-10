@@ -743,12 +743,12 @@ static void statGet(
       return;
     }
 
-    sqlite3_snprintf(24, zRet, "%lld", p->nRow);
+    sqlite3_snprintf(24, zRet, "%llu", (u64)p->nRow);
     z = zRet + sqlite3Strlen30(zRet);
     for(i=0; i<(p->nCol-1); i++){
-      i64 nDistinct = p->current.anDLt[i] + 1;
-      i64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
-      sqlite3_snprintf(24, z, " %lld", iVal);
+      u64 nDistinct = p->current.anDLt[i] + 1;
+      u64 iVal = (p->nRow + nDistinct - 1) / nDistinct;
+      sqlite3_snprintf(24, z, " %llu", iVal);
       z += sqlite3Strlen30(z);
       assert( p->current.anEq[i] );
     }
@@ -789,7 +789,7 @@ static void statGet(
         int i;
         char *z = zRet;
         for(i=0; i<p->nCol; i++){
-          sqlite3_snprintf(24, z, "%lld ", aCnt[i]);
+          sqlite3_snprintf(24, z, "%llu ", (u64)aCnt[i]);
           z += sqlite3Strlen30(z);
         }
         assert( z[0]=='\0' && z>zRet );
@@ -1250,17 +1250,15 @@ struct analysisInfo {
 ** the array aOut[].
 */
 static void decodeIntArray(
-  char *zIntArray, 
-  int nOut, 
-  tRowcnt *aOut, 
-  int *pbUnordered
+  char *zIntArray,       /* String containing int array to decode */
+  int nOut,              /* Number of slots in aOut[] */
+  tRowcnt *aOut,         /* Store integers here */
+  Index *pIndex          /* Handle extra flags for this index, if not NULL */
 ){
   char *z = zIntArray;
   int c;
   int i;
   tRowcnt v;
-
-  assert( pbUnordered==0 || *pbUnordered==0 );
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( z==0 ) z = "";
@@ -1276,8 +1274,19 @@ static void decodeIntArray(
     aOut[i] = v;
     if( *z==' ' ) z++;
   }
-  if( pbUnordered && strcmp(z, "unordered")==0 ){
-    *pbUnordered = 1;
+#ifndef SQLITE_ENABLE_STAT3_OR_STAT4
+  assert( pIndex!=0 );
+#else
+  if( pIndex )
+#endif
+  {
+    if( strcmp(z, "unordered")==0 ){
+      pIndex->bUnordered = 1;
+    }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
+      int v32 = 0;
+      sqlite3GetInt32(z+3, &v32);
+      pIndex->szIdxRow = sqlite3LogEst(v32);
+    }
   }
 }
 
@@ -1316,12 +1325,13 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   z = argv[2];
 
   if( pIndex ){
-    int bUnordered = 0;
-    decodeIntArray((char*)z, pIndex->nColumn+1, pIndex->aiRowEst,&bUnordered);
+    decodeIntArray((char*)z, pIndex->nColumn+1, pIndex->aiRowEst, pIndex);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowEst = pIndex->aiRowEst[0];
-    pIndex->bUnordered = bUnordered;
   }else{
-    decodeIntArray((char*)z, 1, &pTable->nRowEst, 0);
+    Index fakeIdx;
+    fakeIdx.szIdxRow = pTable->szTabRow;
+    decodeIntArray((char*)z, 1, &pTable->nRowEst, &fakeIdx);
+    pTable->szTabRow = fakeIdx.szIdxRow;
   }
 
   return 0;

@@ -10,39 +10,42 @@
 **
 *************************************************************************
 ** This file contains a simple command-line utility for converting from
-** integers and WhereCost values and back again and for doing simple
-** arithmetic operations (multiple and add) on WhereCost values.
+** integers and LogEst values and back again and for doing simple
+** arithmetic operations (multiple and add) on LogEst values.
 **
 ** Usage:
 **
-**      ./wherecosttest ARGS
+**      ./LogEst ARGS
 **
 ** Arguments:
 **
 **    'x'    Multiple the top two elements of the stack
 **    '+'    Add the top two elements of the stack
-**    NUM    Convert NUM from integer to WhereCost and push onto the stack
-**   ^NUM    Interpret NUM as a WhereCost and push onto stack.
+**    NUM    Convert NUM from integer to LogEst and push onto the stack
+**   ^NUM    Interpret NUM as a LogEst and push onto stack.
 **
 ** Examples:
 **
-** To convert 123 from WhereCost to integer:
+** To convert 123 from LogEst to integer:
 ** 
-**         ./wherecosttest ^123
+**         ./LogEst ^123
 **
-** To convert 123456 from integer to WhereCost:
+** To convert 123456 from integer to LogEst:
 **
-**         ./wherecosttest 123456
+**         ./LogEst 123456
 **
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <assert.h>
+#include <string.h>
+#include "sqlite3.h"
 
-typedef unsigned short int WhereCost;  /* 10 times log2() */
+typedef short int LogEst;  /* 10 times log2() */
 
-WhereCost whereCostMultiply(WhereCost a, WhereCost b){ return a+b; }
-WhereCost whereCostAdd(WhereCost a, WhereCost b){
+LogEst logEstMultiply(LogEst a, LogEst b){ return a+b; }
+LogEst logEstAdd(LogEst a, LogEst b){
   static const unsigned char x[] = {
      10, 10,                         /* 0,1 */
       9, 9,                          /* 2,3 */
@@ -54,14 +57,14 @@ WhereCost whereCostAdd(WhereCost a, WhereCost b){
       3, 3, 3, 3, 3, 3,              /* 19-24 */
       2, 2, 2, 2, 2, 2, 2,           /* 25-31 */
   };
-  if( a<b ){ WhereCost t = a; a = b; b = t; }
+  if( a<b ){ LogEst t = a; a = b; b = t; }
   if( a>b+49 ) return a;
   if( a>b+31 ) return a+1;
   return a+x[a-b];
 }
-WhereCost whereCostFromInteger(int x){
-  static WhereCost a[] = { 0, 2, 3, 5, 6, 7, 8, 9 };
-  WhereCost y = 40;
+LogEst logEstFromInteger(sqlite3_uint64 x){
+  static LogEst a[] = { 0, 2, 3, 5, 6, 7, 8, 9 };
+  LogEst y = 40;
   if( x<8 ){
     if( x<2 ) return 0;
     while( x<8 ){  y -= 10; x <<= 1; }
@@ -71,8 +74,8 @@ WhereCost whereCostFromInteger(int x){
   }
   return a[x&7] + y - 10;
 }
-static unsigned long int whereCostToInt(WhereCost x){
-  unsigned long int n;
+static sqlite3_uint64 logEstToInt(LogEst x){
+  sqlite3_uint64 n;
   if( x<10 ) return 1;
   n = x%10;
   x /= 10;
@@ -81,31 +84,58 @@ static unsigned long int whereCostToInt(WhereCost x){
   if( x>=3 ) return (n+8)<<(x-3);
   return (n+8)>>(3-x);
 }
+static LogEst logEstFromDouble(double x){
+  sqlite3_uint64 a;
+  LogEst e;
+  assert( sizeof(x)==8 && sizeof(a)==8 );
+  if( x<=0.0 ) return -32768;
+  if( x<1.0 ) return -logEstFromDouble(1/x);
+  if( x<1024.0 ) return logEstFromInteger((sqlite3_uint64)(1024.0*x)) - 100;
+  if( x<=2000000000.0 ) return logEstFromInteger((sqlite3_uint64)x);
+  memcpy(&a, &x, 8);
+  e = (a>>52) - 1022;
+  return e*10;
+}
+
+int isFloat(const char *z){
+  while( z[0] ){
+    if( z[0]=='.' || z[0]=='E' || z[0]=='e' ) return 1;
+    z++;
+  }
+  return 0;
+}
 
 int main(int argc, char **argv){
   int i;
   int n = 0;
-  WhereCost a[100];
+  LogEst a[100];
   for(i=1; i<argc; i++){
     const char *z = argv[i];
     if( z[0]=='+' ){
       if( n>=2 ){
-        a[n-2] = whereCostAdd(a[n-2],a[n-1]);
+        a[n-2] = logEstAdd(a[n-2],a[n-1]);
         n--;
       }
     }else if( z[0]=='x' ){
       if( n>=2 ){
-        a[n-2] = whereCostMultiply(a[n-2],a[n-1]);
+        a[n-2] = logEstMultiply(a[n-2],a[n-1]);
         n--;
       }
     }else if( z[0]=='^' ){
       a[n++] = atoi(z+1);
+    }else if( isFloat(z) ){
+      a[n++] = logEstFromDouble(atof(z));
     }else{
-      a[n++] = whereCostFromInteger(atoi(z));
+      a[n++] = logEstFromInteger(atoi(z));
     }
   }
   for(i=n-1; i>=0; i--){
-    printf("%d (%lu)\n", a[i], whereCostToInt(a[i]));
+    if( a[i]<0 ){
+      printf("%d (%f)\n", a[i], 1.0/(double)logEstToInt(-a[i]));
+    }else{
+      sqlite3_uint64 x = logEstToInt(a[i]+100)*100/1024;
+      printf("%d (%lld.%02lld)\n", a[i], x/100, x%100);
+    }
   }
   return 0;
 }
