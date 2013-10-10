@@ -1,5 +1,5 @@
-C Estimate\srow\ssizes\sfor\stables\sand\sindices\sand\suse\sthose\sestimates\sduring\nquery\splanning.\s\sEnhance\sthe\sindex_info\spragma\sto\sshow\sthe\sestimated\srow\nsizes\sand\sto\sshow\sthe\sestimated\srow\ssize\sfor\sthe\smain\stable\sas\swell.\s\sAllow\nan\salternative\srow\ssize\sestimate\sto\sbe\sspecified\sin\sthe\ssqlite_stat1\stable.
-D 2013-10-10T12:38:11.216
+C Add\sext/misc/vfslog.c,\sa\sVFS\sshim\sfor\sunix\sthat\skeeps\sa\slog\sof\smethod\scalls\smade\sby\sSQLite.
+D 2013-10-10T13:04:46.705
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,6 +115,7 @@ F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
+F ext/misc/vfslog.c 64f8ff0605ba36fd3e71c5e3b2ea00c55448cbbe
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -139,7 +140,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
-F main.mk a10f1925ae3bb545a045d1f1867506f49bee972f
+F main.mk 4a086a18f38cd6ffec33be54dc56ade76d3a29a2
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -723,7 +724,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 72f4f8881d388163ddbbeec0a6ed812e863ea2e6
+F test/permutations.test e154f5ed66d4d4913a99a110e870c9407f75b055
 F test/pragma.test 5c6e8ae9eaa9a505cc1035b51f7f0da9805092c7
 F test/pragma2.test 224f0381f9411a78ae685cac24c13656a62021b7
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1121,7 +1122,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 36d64dc36f18c166b2c93c43579fa3bbb5cd545f e97d7d3044aa6c5e21d1faab7d5e709d92faa261
-R 57860f2afd769aeffdd11c615e695d0a
-U drh
-Z 2546d871db6bcc36ea3db39835f90b3e
+P d27b88b8c2705f444f794096c719e6f38a792165
+R 5f38dde3b9e8f121e53417dc6f4fda25
+U dan
+Z f43e38212326572373f5c91a1aac8a3a
