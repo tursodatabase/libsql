@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\svfslog.c\smodule\sto\sshow\sall\schange-counter\schanges\sand\nto\sshow\sthe\shostname\sand\spid\sof\sthe\sprocess\sthat\screates\seach\slog\sfile.
-D 2013-10-10T15:04:52.276
+C Add\sa\srule\sto\sthe\smain.mk\smakefile\sfor\sbuilding\sshowdb.
+D 2013-10-10T17:33:52.465
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -140,7 +140,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
-F main.mk 4a086a18f38cd6ffec33be54dc56ade76d3a29a2
+F main.mk 0c63aec9b9ecf66aaa8c09a02fcd74cf76e89ac8
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 34212aa8c405c4ff3f8045ec0cf2a860af61540f
-R b760173a3ecf9c2e139461e082dfd224
+P af7abebeb1f70466833bc766d294d721eaef746f
+R 72ea412e1f005785e4d9ffe166caaf06
 U drh
-Z 4eb419de266c4e94ef4c36fe5d3bf998
+Z 5e82c322ecc9e035c3abfaf4bdd53129
