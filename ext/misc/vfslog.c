@@ -239,6 +239,7 @@ static VLogLog *vlogLogOpen(const char *zFilename){
   int isJournal = 0;
   sqlite3_mutex *pMutex;
   VLogLog *pLog, *pTemp;
+  sqlite3_int64 tNow = 0;
   if( nName>4 && strcmp(zFilename+nName-4,"-wal")==0 ){
     return 0;  /* Do not log wal files */
   }else
@@ -263,8 +264,9 @@ static VLogLog *vlogLogOpen(const char *zFilename){
     pTemp = 0;
     memset(pLog, 0, sizeof(*pLog)*2);
     pLog->zFilename = (char*)&pLog[2];
+    tNow = vlog_time();
     sqlite3_snprintf(nName+60, pLog->zFilename, "%.*s-debuglog-%lld",
-                     nName, zFilename, vlog_time());
+                     nName, zFilename, tNow);
     pLog->out = fopen(pLog->zFilename, "a");
     if( pLog->out==0 ){
       sqlite3_mutex_leave(pMutex);
@@ -279,7 +281,15 @@ static VLogLog *vlogLogOpen(const char *zFilename){
     allLogs = pLog;
   }
   sqlite3_mutex_leave(pMutex);
-  sqlite3_free(pTemp);
+  if( pTemp ){
+    sqlite3_free(pTemp);
+  }else{
+    char zHost[200];
+    zHost[0] = 0;
+    gethostname(zHost, sizeof(zHost)-1);
+    zHost[sizeof(zHost)-1] = 0;
+    vlogLogPrint(pLog, tNow, 0, "IDENT", getpid(), -1, zHost, 0);
+  }
   if( pLog && isJournal ) pLog++;
   pLog->nRef++;
   return pLog;
@@ -354,6 +364,17 @@ static int vlogRead(
     zSig[0] = 0;
   }
   vlogLogPrint(p->pLog, tStart, tElapse, "READ", iAmt, iOfst, zSig, rc);
+  if( rc==SQLITE_OK
+   && p->pLog
+   && p->pLog->zFilename
+   && iOfst<=24
+   && iOfst+iAmt>=28
+  ){
+    unsigned char *x = ((unsigned char*)zBuf)+(24-iOfst);
+    unsigned iCtr;
+    iCtr = (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
+    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-READ", iCtr, -1, 0, 0);
+  }
   return rc;
 }
 
@@ -376,6 +397,17 @@ static int vlogWrite(
   rc = p->pReal->pMethods->xWrite(p->pReal, z, iAmt, iOfst);
   tElapse = vlog_time() - tStart;
   vlogLogPrint(p->pLog, tStart, tElapse, "WRITE", iAmt, iOfst, zSig, rc);
+  if( rc==SQLITE_OK
+   && p->pLog
+   && p->pLog->zFilename
+   && iOfst<=24
+   && iOfst+iAmt>=28
+  ){
+    unsigned char *x = ((unsigned char*)z)+(24-iOfst);
+    unsigned iCtr;
+    iCtr = (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
+    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-WRITE", iCtr, -1, 0, 0);
+  }
   return rc;
 }
 

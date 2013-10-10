@@ -1,5 +1,5 @@
-C Another\sfix\sto\sthe\shash\ssignature\salgorithm\sin\svfslog.c.
-D 2013-10-10T13:41:04.179
+C Enhancements\sto\sthe\svfslog.c\smodule\sto\sshow\sall\schange-counter\schanges\sand\nto\sshow\sthe\shostname\sand\spid\sof\sthe\sprocess\sthat\screates\seach\slog\sfile.
+D 2013-10-10T15:04:52.276
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
-F ext/misc/vfslog.c efd4f0b2205f8ae19096b8938551bc55ba7967cc
+F ext/misc/vfslog.c e8a9e57c9e9bb2c4f730d04ada96722dffcc85ee
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P eaf4de13a63b2294ae575432a022493308a4313a
-R 7399da52f6ed2debec27f345b5bf4b89
+P 34212aa8c405c4ff3f8045ec0cf2a860af61540f
+R b760173a3ecf9c2e139461e082dfd224
 U drh
-Z 0fe8f99aa362e7a957a710b2ebcec893
+Z 4eb419de266c4e94ef4c36fe5d3bf998
