@@ -307,21 +307,28 @@ static int vlogClose(sqlite3_file *pFile){
 /*
 ** Compute signature for a block of content.
 **
-** The signature is a hex dump of the first 8 bytes of the block
-** followed by a 64bit hash (expressed in hex) of the entire content.
+** For blocks of 16 or fewer bytes, the signature is just a hex dump of
+** the entire block.
+**
+** For blocks of more than 16 bytes, the signature is a hex dump of the
+** first 8 bytes followed by a 64-bit has of the entire block.
 */
 static void vlogSignature(unsigned char *p, int n, char *zCksum){
   unsigned int s0 = 0, s1 = 0;
   unsigned int *pI;
   int i;
-  pI = (unsigned int*)p;
-  for(i=0; i<n-7; i+=8){
-    s0 += pI[0] + s1;
-    s1 += pI[1] + s0;
-    pI += 2;
+  if( n<=16 ){
+    for(i=0; i<n; i++) sqlite3_snprintf(3, zCksum+i*2, "%02x", p[i]);
+  }else{ 
+    pI = (unsigned int*)p;
+    for(i=0; i<n-7; i+=8){
+      s0 += pI[0] + s1;
+      s1 += pI[1] + s0;
+      pI += 2;
+    }
+    for(i=0; i<8; i++) sqlite3_snprintf(3, zCksum+i*2, "%02x", p[i]);
+    sqlite3_snprintf(18, zCksum+i*2, "-%08x08x", s0, s1);
   }
-  for(i=0; i<8 && i<n; i++) sqlite3_snprintf(3, zCksum+i, "%02x", p[i]);
-  if( n>8 ) sqlite3_snprintf(18, zCksum+i, "-%08x08x", s0, s1);
 }
 
 /*
@@ -660,5 +667,3 @@ int sqlite3_register_vfslog(const char *zArg){
   vlog_vfs.base.szOsFile = sizeof(VLogFile) + vlog_vfs.pVfs->szOsFile;
   return sqlite3_vfs_register(&vlog_vfs.base, 1);
 }
-
-
