@@ -42,7 +42,7 @@ static void vlogSignature(unsigned char *p, int n, char *zCksum){
       pI += 2;
     }
     for(i=0; i<8; i++) sprintf(zCksum+i*2, "%02x", p[i]);
-    sprintf(zCksum+i*2, "-%08x08x", s0, s1);
+    sprintf(zCksum+i*2, "-%08x%08x", s0, s1);
   }
 }
 

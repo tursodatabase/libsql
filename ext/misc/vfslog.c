@@ -327,7 +327,7 @@ static void vlogSignature(unsigned char *p, int n, char *zCksum){
       pI += 2;
     }
     for(i=0; i<8; i++) sqlite3_snprintf(3, zCksum+i*2, "%02x", p[i]);
-    sqlite3_snprintf(18, zCksum+i*2, "-%08x08x", s0, s1);
+    sqlite3_snprintf(18, zCksum+i*2, "-%08x%08x", s0, s1);
   }
 }
 
