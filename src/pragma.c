@@ -13,6 +13,417 @@
 */
 #include "sqliteInt.h"
 
+#if !defined(SQLITE_ENABLE_LOCKING_STYLE)
+#  if defined(__APPLE__)
+#    define SQLITE_ENABLE_LOCKING_STYLE 1
+#  else
+#    define SQLITE_ENABLE_LOCKING_STYLE 0
+#  endif
+#endif
+
+/***************************************************************************
+** The next block of code, including the PragTyp_XXXX macro definitions and
+** the aPragmaName[] object is composed of generated code. DO NOT EDIT.
+**
+** To add new pragmas, edit the code in ../tool/mkpragmatab.tcl and rerun
+** that script.  Then copy/paste the output in place of the following:
+*/
+#define PragTyp_HEADER_VALUE                   0
+#define PragTyp_AUTO_VACUUM                    1
+#define PragTyp_FLAG                           2
+#define PragTyp_BUSY_TIMEOUT                   3
+#define PragTyp_CACHE_SIZE                     4
+#define PragTyp_CASE_SENSITIVE_LIKE            5
+#define PragTyp_COLLATION_LIST                 6
+#define PragTyp_COMPILE_OPTIONS                7
+#define PragTyp_DATA_STORE_DIRECTORY           8
+#define PragTyp_DATABASE_LIST                  9
+#define PragTyp_DEFAULT_CACHE_SIZE            10
+#define PragTyp_ENCODING                      11
+#define PragTyp_FOREIGN_KEY_CHECK             12
+#define PragTyp_FOREIGN_KEY_LIST              13
+#define PragTyp_INCREMENTAL_VACUUM            14
+#define PragTyp_INDEX_INFO                    15
+#define PragTyp_INDEX_LIST                    16
+#define PragTyp_INTEGRITY_CHECK               17
+#define PragTyp_JOURNAL_MODE                  18
+#define PragTyp_JOURNAL_SIZE_LIMIT            19
+#define PragTyp_LOCK_PROXY_FILE               20
+#define PragTyp_LOCKING_MODE                  21
+#define PragTyp_PAGE_COUNT                    22
+#define PragTyp_MMAP_SIZE                     23
+#define PragTyp_PAGE_SIZE                     24
+#define PragTyp_SECURE_DELETE                 25
+#define PragTyp_SHRINK_MEMORY                 26
+#define PragTyp_SOFT_HEAP_LIMIT               27
+#define PragTyp_SYNCHRONOUS                   28
+#define PragTyp_TABLE_INFO                    29
+#define PragTyp_TEMP_STORE                    30
+#define PragTyp_TEMP_STORE_DIRECTORY          31
+#define PragTyp_WAL_AUTOCHECKPOINT            32
+#define PragTyp_WAL_CHECKPOINT                33
+#define PragTyp_ACTIVATE_EXTENSIONS           34
+#define PragTyp_HEXKEY                        35
+#define PragTyp_KEY                           36
+#define PragTyp_REKEY                         37
+#define PragTyp_LOCK_STATUS                   38
+#define PragTyp_PARSER_TRACE                  39
+#define PragFlag_NeedSchema           0x01
+static const struct sPragmaNames {
+  const char *const zName;  /* Name of pragma */
+  u8 ePragTyp;              /* PragTyp_XXX value */
+  u8 mPragFlag;             /* Zero or more PragFlag_XXX values */
+  u32 iArg;                 /* Extra argument */
+} aPragmaNames[] = {
+#if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
+  { /* zName:     */ "activate_extensions",
+    /* ePragTyp:  */ PragTyp_ACTIVATE_EXTENSIONS,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
+  { /* zName:     */ "application_id",
+    /* ePragTyp:  */ PragTyp_HEADER_VALUE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_AUTOVACUUM)
+  { /* zName:     */ "auto_vacuum",
+    /* ePragTyp:  */ PragTyp_AUTO_VACUUM,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_AUTOMATIC_INDEX)
+  { /* zName:     */ "automatic_index",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_AutoIndex },
+#endif
+  { /* zName:     */ "busy_timeout",
+    /* ePragTyp:  */ PragTyp_BUSY_TIMEOUT,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
+  { /* zName:     */ "cache_size",
+    /* ePragTyp:  */ PragTyp_CACHE_SIZE,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "cache_spill",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_CacheSpill },
+  { /* zName:     */ "case_sensitive_like",
+    /* ePragTyp:  */ PragTyp_CASE_SENSITIVE_LIKE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "checkpoint_fullfsync",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_CkptFullFSync },
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  { /* zName:     */ "collation_list",
+    /* ePragTyp:  */ PragTyp_COLLATION_LIST,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_COMPILEOPTION_DIAGS)
+  { /* zName:     */ "compile_options",
+    /* ePragTyp:  */ PragTyp_COMPILE_OPTIONS,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "count_changes",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_CountRows },
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
+  { /* zName:     */ "data_store_directory",
+    /* ePragTyp:  */ PragTyp_DATA_STORE_DIRECTORY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  { /* zName:     */ "database_list",
+    /* ePragTyp:  */ PragTyp_DATABASE_LIST,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
+  { /* zName:     */ "default_cache_size",
+    /* ePragTyp:  */ PragTyp_DEFAULT_CACHE_SIZE,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
+  { /* zName:     */ "defer_foreign_keys",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_DeferFKs },
+#endif
+  { /* zName:     */ "empty_result_callbacks",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_NullCallback },
+#if !defined(SQLITE_OMIT_UTF16)
+  { /* zName:     */ "encoding",
+    /* ePragTyp:  */ PragTyp_ENCODING,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
+  { /* zName:     */ "foreign_key_check",
+    /* ePragTyp:  */ PragTyp_FOREIGN_KEY_CHECK,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_FOREIGN_KEY)
+  { /* zName:     */ "foreign_key_list",
+    /* ePragTyp:  */ PragTyp_FOREIGN_KEY_LIST,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
+  { /* zName:     */ "foreign_keys",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_ForeignKeys },
+#endif
+#if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
+  { /* zName:     */ "freelist_count",
+    /* ePragTyp:  */ PragTyp_HEADER_VALUE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "full_column_names",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_FullColNames },
+  { /* zName:     */ "fullfsync",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_FullFSync },
+#if defined(SQLITE_HAS_CODEC)
+  { /* zName:     */ "hexkey",
+    /* ePragTyp:  */ PragTyp_HEXKEY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "hexrekey",
+    /* ePragTyp:  */ PragTyp_HEXKEY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_CHECK)
+  { /* zName:     */ "ignore_check_constraints",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_IgnoreChecks },
+#endif
+#if !defined(SQLITE_OMIT_AUTOVACUUM)
+  { /* zName:     */ "incremental_vacuum",
+    /* ePragTyp:  */ PragTyp_INCREMENTAL_VACUUM,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  { /* zName:     */ "index_info",
+    /* ePragTyp:  */ PragTyp_INDEX_INFO,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "index_list",
+    /* ePragTyp:  */ PragTyp_INDEX_LIST,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
+  { /* zName:     */ "integrity_check",
+    /* ePragTyp:  */ PragTyp_INTEGRITY_CHECK,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
+  { /* zName:     */ "journal_mode",
+    /* ePragTyp:  */ PragTyp_JOURNAL_MODE,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "journal_size_limit",
+    /* ePragTyp:  */ PragTyp_JOURNAL_SIZE_LIMIT,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if defined(SQLITE_HAS_CODEC)
+  { /* zName:     */ "key",
+    /* ePragTyp:  */ PragTyp_KEY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "legacy_file_format",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_LegacyFileFmt },
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_ENABLE_LOCKING_STYLE
+  { /* zName:     */ "lock_proxy_file",
+    /* ePragTyp:  */ PragTyp_LOCK_PROXY_FILE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
+  { /* zName:     */ "lock_status",
+    /* ePragTyp:  */ PragTyp_LOCK_STATUS,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
+  { /* zName:     */ "locking_mode",
+    /* ePragTyp:  */ PragTyp_LOCKING_MODE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "max_page_count",
+    /* ePragTyp:  */ PragTyp_PAGE_COUNT,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "mmap_size",
+    /* ePragTyp:  */ PragTyp_MMAP_SIZE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "page_count",
+    /* ePragTyp:  */ PragTyp_PAGE_COUNT,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "page_size",
+    /* ePragTyp:  */ PragTyp_PAGE_SIZE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if defined(SQLITE_DEBUG)
+  { /* zName:     */ "parser_trace",
+    /* ePragTyp:  */ PragTyp_PARSER_TRACE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "query_only",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_QueryOnly },
+#if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
+  { /* zName:     */ "quick_check",
+    /* ePragTyp:  */ PragTyp_INTEGRITY_CHECK,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "read_uncommitted",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_ReadUncommitted },
+  { /* zName:     */ "recursive_triggers",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_RecTriggers },
+#if defined(SQLITE_HAS_CODEC)
+  { /* zName:     */ "rekey",
+    /* ePragTyp:  */ PragTyp_REKEY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "reverse_unordered_selects",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_ReverseOrder },
+#if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
+  { /* zName:     */ "schema_version",
+    /* ePragTyp:  */ PragTyp_HEADER_VALUE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
+  { /* zName:     */ "secure_delete",
+    /* ePragTyp:  */ PragTyp_SECURE_DELETE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "short_column_names",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_ShortColNames },
+  { /* zName:     */ "shrink_memory",
+    /* ePragTyp:  */ PragTyp_SHRINK_MEMORY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "soft_heap_limit",
+    /* ePragTyp:  */ PragTyp_SOFT_HEAP_LIMIT,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#if defined(SQLITE_DEBUG)
+  { /* zName:     */ "sql_trace",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_SqlTrace },
+#endif
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
+  { /* zName:     */ "synchronous",
+    /* ePragTyp:  */ PragTyp_SYNCHRONOUS,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  { /* zName:     */ "table_info",
+    /* ePragTyp:  */ PragTyp_TABLE_INFO,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
+  { /* zName:     */ "temp_store",
+    /* ePragTyp:  */ PragTyp_TEMP_STORE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "temp_store_directory",
+    /* ePragTyp:  */ PragTyp_TEMP_STORE_DIRECTORY,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
+  { /* zName:     */ "user_version",
+    /* ePragTyp:  */ PragTyp_HEADER_VALUE,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+#endif
+#if defined(SQLITE_DEBUG)
+  { /* zName:     */ "vdbe_addoptrace",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_VdbeAddopTrace },
+  { /* zName:     */ "vdbe_debug",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_SqlTrace|SQLITE_VdbeListing|SQLITE_VdbeTrace },
+  { /* zName:     */ "vdbe_listing",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_VdbeListing },
+  { /* zName:     */ "vdbe_trace",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_VdbeTrace },
+#endif
+#if !defined(SQLITE_OMIT_WAL)
+  { /* zName:     */ "wal_autocheckpoint",
+    /* ePragTyp:  */ PragTyp_WAL_AUTOCHECKPOINT,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
+  { /* zName:     */ "wal_checkpoint",
+    /* ePragTyp:  */ PragTyp_WAL_CHECKPOINT,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "writable_schema",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
+};
+/* Number of pragmas: 55 on by default, 67 total. */
+/* End of the automatically generated pragma table.
+***************************************************************************/
+
 /*
 ** Interpret the given string as a safety level.  Return 0 for OFF,
 ** 1 for ON or NORMAL and 2 for FULL.  Return 1 for an empty or 
@@ -188,97 +599,6 @@ static void setAllPagerFlags(sqlite3 *db){
 #endif
 
 
-#ifndef SQLITE_OMIT_FLAG_PRAGMAS
-/*
-** Check to see if zRight and zLeft refer to a pragma that queries
-** or changes one of the flags in db->flags.  Return 1 if so and 0 if not.
-** Also, implement the pragma.
-*/
-static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
-  static const struct sPragmaType {
-    const char *zName;  /* Name of the pragma */
-    int mask;           /* Mask for the db->flags value */
-  } aPragma[] = {
-    { "full_column_names",        SQLITE_FullColNames  },
-    { "short_column_names",       SQLITE_ShortColNames },
-    { "count_changes",            SQLITE_CountRows     },
-    { "empty_result_callbacks",   SQLITE_NullCallback  },
-    { "legacy_file_format",       SQLITE_LegacyFileFmt },
-    { "fullfsync",                SQLITE_FullFSync     },
-    { "checkpoint_fullfsync",     SQLITE_CkptFullFSync },
-    { "cache_spill",              SQLITE_CacheSpill    },
-    { "reverse_unordered_selects", SQLITE_ReverseOrder  },
-    { "query_only",               SQLITE_QueryOnly     },
-#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
-    { "automatic_index",          SQLITE_AutoIndex     },
-#endif
-#ifdef SQLITE_DEBUG
-    { "sql_trace",                SQLITE_SqlTrace      },
-    { "vdbe_listing",             SQLITE_VdbeListing   },
-    { "vdbe_trace",               SQLITE_VdbeTrace     },
-    { "vdbe_addoptrace",          SQLITE_VdbeAddopTrace},
-    { "vdbe_debug",    SQLITE_SqlTrace | SQLITE_VdbeListing
-                               | SQLITE_VdbeTrace      },
-#endif
-#ifndef SQLITE_OMIT_CHECK
-    { "ignore_check_constraints", SQLITE_IgnoreChecks  },
-#endif
-    /* The following is VERY experimental */
-    { "writable_schema",          SQLITE_WriteSchema|SQLITE_RecoveryMode },
-
-    /* TODO: Maybe it shouldn't be possible to change the ReadUncommitted
-    ** flag if there are any active statements. */
-    { "read_uncommitted",         SQLITE_ReadUncommitted },
-    { "recursive_triggers",       SQLITE_RecTriggers   },
-
-    /* This flag may only be set if both foreign-key and trigger support
-    ** are present in the build.  */
-#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
-    { "foreign_keys",             SQLITE_ForeignKeys   },
-    { "defer_foreign_keys",       SQLITE_DeferFKs      },
-#endif
-  };
-  int i;
-  const struct sPragmaType *p;
-  for(i=0, p=aPragma; i<ArraySize(aPragma); i++, p++){
-    if( sqlite3StrICmp(zLeft, p->zName)==0 ){
-      sqlite3 *db = pParse->db;
-      Vdbe *v;
-      v = sqlite3GetVdbe(pParse);
-      assert( v!=0 );  /* Already allocated by sqlite3Pragma() */
-      if( ALWAYS(v) ){
-        if( zRight==0 ){
-          returnSingleInt(pParse, p->zName, (db->flags & p->mask)!=0 );
-        }else{
-          int mask = p->mask;          /* Mask of bits to set or clear. */
-          if( db->autoCommit==0 ){
-            /* Foreign key support may not be enabled or disabled while not
-            ** in auto-commit mode.  */
-            mask &= ~(SQLITE_ForeignKeys);
-          }
-
-          if( sqlite3GetBoolean(zRight, 0) ){
-            db->flags |= mask;
-          }else{
-            db->flags &= ~mask;
-            if( mask==SQLITE_DeferFKs ) db->nDeferredImmCons = 0;
-          }
-
-          /* Many of the flag-pragmas modify the code generated by the SQL 
-          ** compiler (eg. count_changes). So add an opcode to expire all
-          ** compiled SQL statements after modifying a pragma value.
-          */
-          sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
-        }
-      }
-
-      return 1;
-    }
-  }
-  return 0;
-}
-#endif /* SQLITE_OMIT_FLAG_PRAGMAS */
-
 /*
 ** Return a human-readable name for a constraint resolution action.
 */
@@ -348,8 +668,9 @@ void sqlite3Pragma(
   char *zRight = 0;      /* Nul-terminated UTF-8 string <value>, or NULL */
   const char *zDb = 0;   /* The database name */
   Token *pId;            /* Pointer to <id> token */
-  int iDb;               /* Database index for <database> */
   char *aFcntl[4];       /* Argument to SQLITE_FCNTL_PRAGMA */
+  int iDb;               /* Database index for <database> */
+  int lwr, upr, mid;           /* Binary search bounds */
   int rc;                      /* return value form SQLITE_FCNTL_PRAGMA */
   sqlite3 *db = pParse->db;    /* The database connection */
   Db *pDb;                     /* The specific database being pragmaed */
@@ -405,16 +726,41 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp2(v, OP_ResultRow, mem, 1);
       sqlite3_free(aFcntl[0]);
     }
-  }else if( rc!=SQLITE_NOTFOUND ){
+    goto pragma_out;
+  }
+  if( rc!=SQLITE_NOTFOUND ){
     if( aFcntl[0] ){
       sqlite3ErrorMsg(pParse, "%s", aFcntl[0]);
       sqlite3_free(aFcntl[0]);
     }
     pParse->nErr++;
     pParse->rc = rc;
-  }else
-                            
- 
+    goto pragma_out;
+  }
+
+  /* Locate the pragma in the lookup table */
+  lwr = 0;
+  upr = ArraySize(aPragmaNames)-1;
+  while( lwr<=upr ){
+    mid = (lwr+upr)/2;
+    rc = sqlite3_stricmp(zLeft, aPragmaNames[mid].zName);
+    if( rc==0 ) break;
+    if( rc<0 ){
+      upr = mid - 1;
+    }else{
+      lwr = mid + 1;
+    }
+  }
+  if( lwr>upr ) goto pragma_out;
+
+  /* Make sure the database schema is loaded if the pragma requires that */
+  if( (aPragmaNames[mid].mPragFlag & PragFlag_NeedSchema)!=0 ){
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+  }
+
+  /* Jump to the appropriate pragma handler */
+  switch( aPragmaNames[mid].ePragTyp ){
+  
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
   /*
   **  PRAGMA [database.]default_cache_size
@@ -432,7 +778,7 @@ void sqlite3Pragma(
   ** size.  But continue to take the absolute value of the default cache
   ** size of historical compatibility.
   */
-  if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
+  case PragTyp_DEFAULT_CACHE_SIZE: {
     static const VdbeOpList getCacheSize[] = {
       { OP_Transaction, 0, 0,        0},                         /* 0 */
       { OP_ReadCookie,  0, 1,        BTREE_DEFAULT_CACHE_SIZE},  /* 1 */
@@ -445,7 +791,6 @@ void sqlite3Pragma(
       { OP_ResultRow,   1, 1,        0},
     };
     int addr;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3VdbeUsesBtree(v, iDb);
     if( !zRight ){
       sqlite3VdbeSetNumCols(v, 1);
@@ -464,7 +809,8 @@ void sqlite3Pragma(
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
-  }else
+    break;
+  }
 #endif /* !SQLITE_OMIT_PAGER_PRAGMAS && !SQLITE_OMIT_DEPRECATED */
 
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
@@ -477,7 +823,7 @@ void sqlite3Pragma(
   ** database page size value.  The value can only be set if
   ** the database has not yet been created.
   */
-  if( sqlite3StrICmp(zLeft,"page_size")==0 ){
+  case PragTyp_PAGE_SIZE: {
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
     if( !zRight ){
@@ -492,7 +838,8 @@ void sqlite3Pragma(
         db->mallocFailed = 1;
       }
     }
-  }else
+    break;
+  }
 
   /*
   **  PRAGMA [database.]secure_delete
@@ -502,7 +849,7 @@ void sqlite3Pragma(
   ** secure_delete flag.  The second form changes the secure_delete
   ** flag setting and reports thenew value.
   */
-  if( sqlite3StrICmp(zLeft,"secure_delete")==0 ){
+  case PragTyp_SECURE_DELETE: {
     Btree *pBt = pDb->pBt;
     int b = -1;
     assert( pBt!=0 );
@@ -517,7 +864,8 @@ void sqlite3Pragma(
     }
     b = sqlite3BtreeSecureDelete(pBt, b);
     returnSingleInt(pParse, "secure_delete", b);
-  }else
+    break;
+  }
 
   /*
   **  PRAGMA [database.]max_page_count
@@ -536,11 +884,8 @@ void sqlite3Pragma(
   **
   ** Return the number of pages in the specified database.
   */
-  if( sqlite3StrICmp(zLeft,"page_count")==0
-   || sqlite3StrICmp(zLeft,"max_page_count")==0
-  ){
+  case PragTyp_PAGE_COUNT: {
     int iReg;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3CodeVerifySchema(pParse, iDb);
     iReg = ++pParse->nMem;
     if( sqlite3Tolower(zLeft[0])=='p' ){
@@ -552,13 +897,14 @@ void sqlite3Pragma(
     sqlite3VdbeAddOp2(v, OP_ResultRow, iReg, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLeft, SQLITE_TRANSIENT);
-  }else
+    break;
+  }
 
   /*
   **  PRAGMA [database.]locking_mode
   **  PRAGMA [database.]locking_mode = (normal|exclusive)
   */
-  if( sqlite3StrICmp(zLeft,"locking_mode")==0 ){
+  case PragTyp_LOCKING_MODE: {
     const char *zRet = "normal";
     int eMode = getLockingMode(zRight);
 
@@ -591,7 +937,8 @@ void sqlite3Pragma(
       eMode = sqlite3PagerLockingMode(pPager, eMode);
     }
 
-    assert(eMode==PAGER_LOCKINGMODE_NORMAL||eMode==PAGER_LOCKINGMODE_EXCLUSIVE);
+    assert( eMode==PAGER_LOCKINGMODE_NORMAL
+            || eMode==PAGER_LOCKINGMODE_EXCLUSIVE );
     if( eMode==PAGER_LOCKINGMODE_EXCLUSIVE ){
       zRet = "exclusive";
     }
@@ -599,24 +946,17 @@ void sqlite3Pragma(
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "locking_mode", SQLITE_STATIC);
     sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, zRet, 0);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
-  }else
+    break;
+  }
 
   /*
   **  PRAGMA [database.]journal_mode
   **  PRAGMA [database.]journal_mode =
   **                      (delete|persist|off|truncate|memory|wal|off)
   */
-  if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
+  case PragTyp_JOURNAL_MODE: {
     int eMode;        /* One of the PAGER_JOURNALMODE_XXX symbols */
     int ii;           /* Loop counter */
-
-    /* Force the schema to be loaded on all databases.  This causes all
-    ** database files to be opened and the journal_modes set.  This is
-    ** necessary because subsequent processing must know if the databases
-    ** are in WAL mode. */
-    if( sqlite3ReadSchema(pParse) ){
-      goto pragma_out;
-    }
 
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", SQLITE_STATIC);
@@ -649,7 +989,8 @@ void sqlite3Pragma(
       }
     }
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
-  }else
+    break;
+  }
 
   /*
   **  PRAGMA [database.]journal_size_limit
@@ -657,7 +998,7 @@ void sqlite3Pragma(
   **
   ** Get or set the size limit on rollback journal files.
   */
-  if( sqlite3StrICmp(zLeft,"journal_size_limit")==0 ){
+  case PragTyp_JOURNAL_SIZE_LIMIT: {
     Pager *pPager = sqlite3BtreePager(pDb->pBt);
     i64 iLimit = -2;
     if( zRight ){
@@ -666,7 +1007,8 @@ void sqlite3Pragma(
     }
     iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
     returnSingleInt(pParse, "journal_size_limit", iLimit);
-  }else
+    break;
+  }
 
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
@@ -678,57 +1020,47 @@ void sqlite3Pragma(
   ** The value is one of:  0 NONE 1 FULL 2 INCREMENTAL
   */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-  if( sqlite3StrICmp(zLeft,"auto_vacuum")==0 ){
+  case PragTyp_AUTO_VACUUM: {
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
-    if( sqlite3ReadSchema(pParse) ){
-      goto pragma_out;
-    }
     if( !zRight ){
-      int auto_vacuum;
-      if( ALWAYS(pBt) ){
-         auto_vacuum = sqlite3BtreeGetAutoVacuum(pBt);
-      }else{
-         auto_vacuum = SQLITE_DEFAULT_AUTOVACUUM;
-      }
-      returnSingleInt(pParse, "auto_vacuum", auto_vacuum);
+      returnSingleInt(pParse, "auto_vacuum", sqlite3BtreeGetAutoVacuum(pBt));
     }else{
       int eAuto = getAutoVacuum(zRight);
       assert( eAuto>=0 && eAuto<=2 );
       db->nextAutovac = (u8)eAuto;
-      if( ALWAYS(eAuto>=0) ){
-        /* Call SetAutoVacuum() to set initialize the internal auto and
-        ** incr-vacuum flags. This is required in case this connection
-        ** creates the database file. It is important that it is created
-        ** as an auto-vacuum capable db.
+      /* Call SetAutoVacuum() to set initialize the internal auto and
+      ** incr-vacuum flags. This is required in case this connection
+      ** creates the database file. It is important that it is created
+      ** as an auto-vacuum capable db.
+      */
+      rc = sqlite3BtreeSetAutoVacuum(pBt, eAuto);
+      if( rc==SQLITE_OK && (eAuto==1 || eAuto==2) ){
+        /* When setting the auto_vacuum mode to either "full" or 
+        ** "incremental", write the value of meta[6] in the database
+        ** file. Before writing to meta[6], check that meta[3] indicates
+        ** that this really is an auto-vacuum capable database.
         */
-        rc = sqlite3BtreeSetAutoVacuum(pBt, eAuto);
-        if( rc==SQLITE_OK && (eAuto==1 || eAuto==2) ){
-          /* When setting the auto_vacuum mode to either "full" or 
-          ** "incremental", write the value of meta[6] in the database
-          ** file. Before writing to meta[6], check that meta[3] indicates
-          ** that this really is an auto-vacuum capable database.
-          */
-          static const VdbeOpList setMeta6[] = {
-            { OP_Transaction,    0,         1,                 0},    /* 0 */
-            { OP_ReadCookie,     0,         1,         BTREE_LARGEST_ROOT_PAGE},
-            { OP_If,             1,         0,                 0},    /* 2 */
-            { OP_Halt,           SQLITE_OK, OE_Abort,          0},    /* 3 */
-            { OP_Integer,        0,         1,                 0},    /* 4 */
-            { OP_SetCookie,      0,         BTREE_INCR_VACUUM, 1},    /* 5 */
-          };
-          int iAddr;
-          iAddr = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6);
-          sqlite3VdbeChangeP1(v, iAddr, iDb);
-          sqlite3VdbeChangeP1(v, iAddr+1, iDb);
-          sqlite3VdbeChangeP2(v, iAddr+2, iAddr+4);
-          sqlite3VdbeChangeP1(v, iAddr+4, eAuto-1);
-          sqlite3VdbeChangeP1(v, iAddr+5, iDb);
-          sqlite3VdbeUsesBtree(v, iDb);
-        }
+        static const VdbeOpList setMeta6[] = {
+          { OP_Transaction,    0,         1,                 0},    /* 0 */
+          { OP_ReadCookie,     0,         1,         BTREE_LARGEST_ROOT_PAGE},
+          { OP_If,             1,         0,                 0},    /* 2 */
+          { OP_Halt,           SQLITE_OK, OE_Abort,          0},    /* 3 */
+          { OP_Integer,        0,         1,                 0},    /* 4 */
+          { OP_SetCookie,      0,         BTREE_INCR_VACUUM, 1},    /* 5 */
+        };
+        int iAddr;
+        iAddr = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6);
+        sqlite3VdbeChangeP1(v, iAddr, iDb);
+        sqlite3VdbeChangeP1(v, iAddr+1, iDb);
+        sqlite3VdbeChangeP2(v, iAddr+2, iAddr+4);
+        sqlite3VdbeChangeP1(v, iAddr+4, eAuto-1);
+        sqlite3VdbeChangeP1(v, iAddr+5, iDb);
+        sqlite3VdbeUsesBtree(v, iDb);
       }
     }
-  }else
+    break;
+  }
 #endif
 
   /*
@@ -737,11 +1069,8 @@ void sqlite3Pragma(
   ** Do N steps of incremental vacuuming on a database.
   */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-  if( sqlite3StrICmp(zLeft,"incremental_vacuum")==0 ){
+  case PragTyp_INCREMENTAL_VACUUM: {
     int iLimit, addr;
-    if( sqlite3ReadSchema(pParse) ){
-      goto pragma_out;
-    }
     if( zRight==0 || !sqlite3GetInt32(zRight, &iLimit) || iLimit<=0 ){
       iLimit = 0x7fffffff;
     }
@@ -752,7 +1081,8 @@ void sqlite3Pragma(
     sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
     sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr);
     sqlite3VdbeJumpHere(v, addr);
-  }else
+    break;
+  }
 #endif
 
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
@@ -767,8 +1097,7 @@ void sqlite3Pragma(
   ** number of pages is adjusted so that the cache uses -N kibibytes
   ** of memory.
   */
-  if( sqlite3StrICmp(zLeft,"cache_size")==0 ){
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+  case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
       returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
@@ -777,7 +1106,8 @@ void sqlite3Pragma(
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
-  }else
+    break;
+  }
 
   /*
   **  PRAGMA [database.]mmap_size(N)
@@ -793,7 +1123,7 @@ void sqlite3Pragma(
   ** as little or as much as it wants.  Except, if N is set to 0 then the
   ** upper layers will never invoke the xFetch interfaces to the VFS.
   */
-  if( sqlite3StrICmp(zLeft,"mmap_size")==0 ){
+  case PragTyp_MMAP_SIZE: {
     sqlite3_int64 sz;
 #if SQLITE_MAX_MMAP_SIZE>0
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
@@ -820,7 +1150,8 @@ void sqlite3Pragma(
       pParse->nErr++;
       pParse->rc = rc;
     }
-  }else
+    break;
+  }
 
   /*
   **   PRAGMA temp_store
@@ -833,13 +1164,14 @@ void sqlite3Pragma(
   ** Note that it is possible for the library compile-time options to
   ** override this setting
   */
-  if( sqlite3StrICmp(zLeft, "temp_store")==0 ){
+  case PragTyp_TEMP_STORE: {
     if( !zRight ){
       returnSingleInt(pParse, "temp_store", db->temp_store);
     }else{
       changeTempStorage(pParse, zRight);
     }
-  }else
+    break;
+  }
 
   /*
   **   PRAGMA temp_store_directory
@@ -851,7 +1183,7 @@ void sqlite3Pragma(
   ** If temporary directory is changed, then invalidateTempStorage.
   **
   */
-  if( sqlite3StrICmp(zLeft, "temp_store_directory")==0 ){
+  case PragTyp_TEMP_STORE_DIRECTORY: {
     if( !zRight ){
       if( sqlite3_temp_directory ){
         sqlite3VdbeSetNumCols(v, 1);
@@ -884,7 +1216,8 @@ void sqlite3Pragma(
       }
 #endif /* SQLITE_OMIT_WSD */
     }
-  }else
+    break;
+  }
 
 #if SQLITE_OS_WIN
   /*
@@ -900,7 +1233,7 @@ void sqlite3Pragma(
   ** by this setting, regardless of its value.
   **
   */
-  if( sqlite3StrICmp(zLeft, "data_store_directory")==0 ){
+  case PragTyp_DATA_STORE_DIRECTORY: {
     if( !zRight ){
       if( sqlite3_data_directory ){
         sqlite3VdbeSetNumCols(v, 1);
@@ -927,26 +1260,20 @@ void sqlite3Pragma(
       }
 #endif /* SQLITE_OMIT_WSD */
     }
-  }else
+    break;
+  }
 #endif
 
-#if !defined(SQLITE_ENABLE_LOCKING_STYLE)
-#  if defined(__APPLE__)
-#    define SQLITE_ENABLE_LOCKING_STYLE 1
-#  else
-#    define SQLITE_ENABLE_LOCKING_STYLE 0
-#  endif
-#endif
 #if SQLITE_ENABLE_LOCKING_STYLE
   /*
-   **   PRAGMA [database.]lock_proxy_file
-   **   PRAGMA [database.]lock_proxy_file = ":auto:"|"lock_file_path"
-   **
-   ** Return or set the value of the lock_proxy_file flag.  Changing
-   ** the value sets a specific file to be used for database access locks.
-   **
-   */
-  if( sqlite3StrICmp(zLeft, "lock_proxy_file")==0 ){
+  **   PRAGMA [database.]lock_proxy_file
+  **   PRAGMA [database.]lock_proxy_file = ":auto:"|"lock_file_path"
+  **
+  ** Return or set the value of the lock_proxy_file flag.  Changing
+  ** the value sets a specific file to be used for database access locks.
+  **
+  */
+  case PragTyp_LOCK_PROXY_FILE: {
     if( !zRight ){
       Pager *pPager = sqlite3BtreePager(pDb->pBt);
       char *proxy_file_path = NULL;
@@ -977,7 +1304,8 @@ void sqlite3Pragma(
         goto pragma_out;
       }
     }
-  }else
+    break;
+  }
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */      
     
   /*
@@ -989,8 +1317,7 @@ void sqlite3Pragma(
   ** default value will be restored the next time the database is
   ** opened.
   */
-  if( sqlite3StrICmp(zLeft,"synchronous")==0 ){
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+  case PragTyp_SYNCHRONOUS: {
     if( !zRight ){
       returnSingleInt(pParse, "synchronous", pDb->safety_level-1);
     }else{
@@ -1002,13 +1329,39 @@ void sqlite3Pragma(
         setAllPagerFlags(db);
       }
     }
-  }else
+    break;
+  }
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
 
 #ifndef SQLITE_OMIT_FLAG_PRAGMAS
-  if( flagPragma(pParse, zLeft, zRight) ){
-    setAllPagerFlags(db);
-  }else
+  case PragTyp_FLAG: {
+    if( zRight==0 ){
+      returnSingleInt(pParse, aPragmaNames[mid].zName,
+                     (db->flags & aPragmaNames[mid].iArg)!=0 );
+    }else{
+      int mask = aPragmaNames[mid].iArg;    /* Mask of bits to set or clear. */
+      if( db->autoCommit==0 ){
+        /* Foreign key support may not be enabled or disabled while not
+        ** in auto-commit mode.  */
+        mask &= ~(SQLITE_ForeignKeys);
+      }
+
+      if( sqlite3GetBoolean(zRight, 0) ){
+        db->flags |= mask;
+      }else{
+        db->flags &= ~mask;
+        if( mask==SQLITE_DeferFKs ) db->nDeferredImmCons = 0;
+      }
+
+      /* Many of the flag-pragmas modify the code generated by the SQL 
+      ** compiler (eg. count_changes). So add an opcode to expire all
+      ** compiled SQL statements after modifying a pragma value.
+      */
+      sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
+      setAllPagerFlags(db);
+    }
+    break;
+  }
 #endif /* SQLITE_OMIT_FLAG_PRAGMAS */
 
 #ifndef SQLITE_OMIT_SCHEMA_PRAGMAS
@@ -1024,9 +1377,8 @@ void sqlite3Pragma(
   ** notnull:    True if 'NOT NULL' is part of column declaration
   ** dflt_value: The default value for the column, if any.
   */
-  if( sqlite3StrICmp(zLeft, "table_info")==0 && zRight ){
+  case PragTyp_TABLE_INFO: if( zRight ){
     Table *pTab;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       int i, k;
@@ -1070,12 +1422,12 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);
       }
     }
-  }else
+  }
+  break;
 
-  if( sqlite3StrICmp(zLeft, "index_info")==0 && zRight ){
+  case PragTyp_INDEX_INFO: if( zRight ){
     Index *pIdx;
     Table *pTab;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pIdx = sqlite3FindIndex(db, zRight, zDb);
     if( pIdx ){
       int i;
@@ -1095,39 +1447,43 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
       }
     }
-  }else
+  }
+  break;
 
-  if( sqlite3StrICmp(zLeft, "index_list")==0 && zRight ){
+  case PragTyp_INDEX_LIST: if( zRight ){
     Index *pIdx;
     Table *pTab;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
+    int i;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
-      pIdx = pTab->pIndex;
-      if( pIdx ){
-        int i = 0; 
-        sqlite3VdbeSetNumCols(v, 3);
-        pParse->nMem = 3;
-        sqlite3CodeVerifySchema(pParse, iDb);
-        sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
-        sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "unique", SQLITE_STATIC);
-        while(pIdx){
-          sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
-          sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
-          sqlite3VdbeAddOp2(v, OP_Integer, pIdx->onError!=OE_None, 3);
-          sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
-          ++i;
-          pIdx = pIdx->pNext;
-        }
+      sqlite3VdbeSetNumCols(v, 4);
+      pParse->nMem = 4;
+      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
+      sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
+      sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "unique", SQLITE_STATIC);
+      sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "avgrowsize", SQLITE_STATIC);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, 1);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, 2);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, 3);
+      sqlite3VdbeAddOp2(v, OP_Integer,
+                           (int)sqlite3LogEstToInt(pTab->szTabRow), 4);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
+      for(pIdx=pTab->pIndex, i=1; pIdx; pIdx=pIdx->pNext, i++){
+        sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
+        sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
+        sqlite3VdbeAddOp2(v, OP_Integer, pIdx->onError!=OE_None, 3);
+        sqlite3VdbeAddOp2(v, OP_Integer,
+                             (int)sqlite3LogEstToInt(pIdx->szIdxRow), 4);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       }
     }
-  }else
+  }
+  break;
 
-  if( sqlite3StrICmp(zLeft, "database_list")==0 ){
+  case PragTyp_DATABASE_LIST: {
     int i;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3VdbeSetNumCols(v, 3);
     pParse->nMem = 3;
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
@@ -1142,9 +1498,10 @@ void sqlite3Pragma(
            sqlite3BtreeGetFilename(db->aDb[i].pBt), 0);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
     }
-  }else
+  }
+  break;
 
-  if( sqlite3StrICmp(zLeft, "collation_list")==0 ){
+  case PragTyp_COLLATION_LIST: {
     int i = 0;
     HashElem *p;
     sqlite3VdbeSetNumCols(v, 2);
@@ -1157,14 +1514,14 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pColl->zName, 0);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 2);
     }
-  }else
+  }
+  break;
 #endif /* SQLITE_OMIT_SCHEMA_PRAGMAS */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-  if( sqlite3StrICmp(zLeft, "foreign_key_list")==0 && zRight ){
+  case PragTyp_FOREIGN_KEY_LIST: if( zRight ){
     FKey *pFK;
     Table *pTab;
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
@@ -1204,12 +1561,13 @@ void sqlite3Pragma(
         }
       }
     }
-  }else
+  }
+  break;
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 #ifndef SQLITE_OMIT_TRIGGER
-  if( sqlite3StrICmp(zLeft, "foreign_key_check")==0 ){
+  case PragTyp_FOREIGN_KEY_CHECK: {
     FKey *pFK;             /* A foreign key constraint */
     Table *pTab;           /* Child table contain "REFERENCES" keyword */
     Table *pParent;        /* Parent table that child points to */
@@ -1225,7 +1583,6 @@ void sqlite3Pragma(
     int addrOk;            /* Jump here if the key is OK */
     int *aiCols;           /* child to parent column mapping */
 
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     regResult = pParse->nMem+1;
     pParse->nMem += 4;
     regKey = ++pParse->nMem;
@@ -1319,12 +1676,13 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop+1);
       sqlite3VdbeJumpHere(v, addrTop);
     }
-  }else
+  }
+  break;
 #endif /* !defined(SQLITE_OMIT_TRIGGER) */
 #endif /* !defined(SQLITE_OMIT_FOREIGN_KEY) */
 
 #ifndef NDEBUG
-  if( sqlite3StrICmp(zLeft, "parser_trace")==0 ){
+  case PragTyp_PARSER_TRACE: {
     if( zRight ){
       if( sqlite3GetBoolean(zRight, 0) ){
         sqlite3ParserTrace(stderr, "parser: ");
@@ -1332,17 +1690,19 @@ void sqlite3Pragma(
         sqlite3ParserTrace(0, 0);
       }
     }
-  }else
+  }
+  break;
 #endif
 
   /* Reinstall the LIKE and GLOB functions.  The variant of LIKE
   ** used will be case sensitive or not depending on the RHS.
   */
-  if( sqlite3StrICmp(zLeft, "case_sensitive_like")==0 ){
+  case PragTyp_CASE_SENSITIVE_LIKE: {
     if( zRight ){
       sqlite3RegisterLikeFunctions(db, sqlite3GetBoolean(zRight, 0));
     }
-  }else
+  }
+  break;
 
 #ifndef SQLITE_INTEGRITY_CHECK_ERROR_MAX
 # define SQLITE_INTEGRITY_CHECK_ERROR_MAX 100
@@ -1353,9 +1713,7 @@ void sqlite3Pragma(
   ** integrity_check designed to detect most database corruption
   ** without most of the overhead of a full integrity-check.
   */
-  if( sqlite3StrICmp(zLeft, "integrity_check")==0
-   || sqlite3StrICmp(zLeft, "quick_check")==0 
-  ){
+  case PragTyp_INTEGRITY_CHECK: {
     int i, j, addr, mxErr;
 
     /* Code that appears at the end of the integrity check.  If no error
@@ -1385,7 +1743,6 @@ void sqlite3Pragma(
     if( pId2->z==0 ) iDb = -1;
 
     /* Initialize the VDBE program */
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     pParse->nMem = 6;
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "integrity_check", SQLITE_STATIC);
@@ -1515,7 +1872,8 @@ void sqlite3Pragma(
     sqlite3VdbeChangeP2(v, addr, -mxErr);
     sqlite3VdbeJumpHere(v, addr+1);
     sqlite3VdbeChangeP4(v, addr+2, "ok", P4_STATIC);
-  }else
+  }
+  break;
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 #ifndef SQLITE_OMIT_UTF16
@@ -1541,7 +1899,7 @@ void sqlite3Pragma(
   ** new database files created using this database handle. It is only
   ** useful if invoked immediately after the main database i
   */
-  if( sqlite3StrICmp(zLeft, "encoding")==0 ){
+  case PragTyp_ENCODING: {
     static const struct EncName {
       char *zName;
       u8 enc;
@@ -1588,7 +1946,8 @@ void sqlite3Pragma(
         }
       }
     }
-  }else
+  }
+  break;
 #endif /* SQLITE_OMIT_UTF16 */
 
 #ifndef SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS
@@ -1622,11 +1981,7 @@ void sqlite3Pragma(
   ** The user-version is not used internally by SQLite. It may be used by
   ** applications for any purpose.
   */
-  if( sqlite3StrICmp(zLeft, "schema_version")==0 
-   || sqlite3StrICmp(zLeft, "user_version")==0 
-   || sqlite3StrICmp(zLeft, "freelist_count")==0 
-   || sqlite3StrICmp(zLeft, "application_id")==0 
-  ){
+  case PragTyp_HEADER_VALUE: {
     int iCookie;   /* Cookie index. 1 for schema-cookie, 6 for user-cookie. */
     sqlite3VdbeUsesBtree(v, iDb);
     switch( zLeft[0] ){
@@ -1670,7 +2025,8 @@ void sqlite3Pragma(
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLeft, SQLITE_TRANSIENT);
     }
-  }else
+  }
+  break;
 #endif /* SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS */
 
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
@@ -1680,7 +2036,7 @@ void sqlite3Pragma(
   ** Return the names of all compile-time options used in this build,
   ** one option per row.
   */
-  if( sqlite3StrICmp(zLeft, "compile_options")==0 ){
+  case PragTyp_COMPILE_OPTIONS: {
     int i = 0;
     const char *zOpt;
     sqlite3VdbeSetNumCols(v, 1);
@@ -1690,7 +2046,8 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, zOpt, 0);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
     }
-  }else
+  }
+  break;
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 
 #ifndef SQLITE_OMIT_WAL
@@ -1699,7 +2056,7 @@ void sqlite3Pragma(
   **
   ** Checkpoint the database.
   */
-  if( sqlite3StrICmp(zLeft, "wal_checkpoint")==0 ){
+  case PragTyp_WAL_CHECKPOINT: {
     int iBt = (pId2->z?iDb:SQLITE_MAX_ATTACHED);
     int eMode = SQLITE_CHECKPOINT_PASSIVE;
     if( zRight ){
@@ -1709,7 +2066,6 @@ void sqlite3Pragma(
         eMode = SQLITE_CHECKPOINT_RESTART;
       }
     }
-    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3VdbeSetNumCols(v, 3);
     pParse->nMem = 3;
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "busy", SQLITE_STATIC);
@@ -1718,7 +2074,8 @@ void sqlite3Pragma(
 
     sqlite3VdbeAddOp3(v, OP_Checkpoint, iBt, eMode, 1);
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
-  }else
+  }
+  break;
 
   /*
   **   PRAGMA wal_autocheckpoint
@@ -1728,14 +2085,15 @@ void sqlite3Pragma(
   ** after accumulating N frames in the log. Or query for the current value
   ** of N.
   */
-  if( sqlite3StrICmp(zLeft, "wal_autocheckpoint")==0 ){
+  case PragTyp_WAL_AUTOCHECKPOINT: {
     if( zRight ){
       sqlite3_wal_autocheckpoint(db, sqlite3Atoi(zRight));
     }
     returnSingleInt(pParse, "wal_autocheckpoint", 
        db->xWalCallback==sqlite3WalDefaultHook ? 
            SQLITE_PTR_TO_INT(db->pWalArg) : 0);
-  }else
+  }
+  break;
 #endif
 
   /*
@@ -1744,9 +2102,10 @@ void sqlite3Pragma(
   ** This pragma attempts to free as much memory as possible from the
   ** current database connection.
   */
-  if( sqlite3StrICmp(zLeft, "shrink_memory")==0 ){
+  case PragTyp_SHRINK_MEMORY: {
     sqlite3_db_release_memory(db);
-  }else
+    break;
+  }
 
   /*
   **   PRAGMA busy_timeout
@@ -1757,18 +2116,36 @@ void sqlite3Pragma(
   ** then 0 is returned.  Setting the busy_timeout to 0 or negative
   ** disables the timeout.
   */
-  if( sqlite3StrICmp(zLeft, "busy_timeout")==0 ){
+  /*case PragTyp_BUSY_TIMEOUT*/ default: {
+    assert( aPragmaNames[mid].ePragTyp==PragTyp_BUSY_TIMEOUT );
     if( zRight ){
       sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
     }
     returnSingleInt(pParse, "timeout",  db->busyTimeout);
-  }else
+    break;
+  }
+
+  /*
+  **   PRAGMA soft_heap_limit
+  **   PRAGMA soft_heap_limit = N
+  **
+  ** Call sqlite3_soft_heap_limit64(N).  Return the result.  If N is omitted,
+  ** use -1.
+  */
+  case PragTyp_SOFT_HEAP_LIMIT: {
+    sqlite3_int64 N;
+    if( zRight && sqlite3Atoi64(zRight, &N, 1000000, SQLITE_UTF8)==SQLITE_OK ){
+      sqlite3_soft_heap_limit64(N);
+    }
+    returnSingleInt(pParse, "soft_heap_limit",  sqlite3_soft_heap_limit64(-1));
+    break;
+  }
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Report the current state of file logs for all databases
   */
-  if( sqlite3StrICmp(zLeft, "lock_status")==0 ){
+  case PragTyp_LOCK_STATUS: {
     static const char *const azLockName[] = {
       "unlocked", "shared", "reserved", "pending", "exclusive"
     };
@@ -1793,35 +2170,39 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, zState, P4_STATIC);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 2);
     }
-
-  }else
+    break;
+  }
 #endif
 
 #ifdef SQLITE_HAS_CODEC
-  if( sqlite3StrICmp(zLeft, "key")==0 && zRight ){
-    sqlite3_key_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
-  }else
-  if( sqlite3StrICmp(zLeft, "rekey")==0 && zRight ){
-    sqlite3_rekey_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
-  }else
-  if( zRight && (sqlite3StrICmp(zLeft, "hexkey")==0 ||
-                 sqlite3StrICmp(zLeft, "hexrekey")==0) ){
-    int i, h1, h2;
-    char zKey[40];
-    for(i=0; (h1 = zRight[i])!=0 && (h2 = zRight[i+1])!=0; i+=2){
-      h1 += 9*(1&(h1>>6));
-      h2 += 9*(1&(h2>>6));
-      zKey[i/2] = (h2 & 0x0f) | ((h1 & 0xf)<<4);
+  case PragTyp_KEY: {
+    if( zRight ) sqlite3_key_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
+    break;
+  }
+  case PragTyp_REKEY: {
+    if( zRight ) sqlite3_rekey_v2(db, zDb, zRight, sqlite3Strlen30(zRight));
+    break;
+  }
+  case PragTyp_HEXKEY: {
+    if( zRight ){
+      u8 iByte;
+      int i;
+      char zKey[40];
+      for(i=0, iByte=0; i<sizeof(zKey)*2 && sqlite3Isxdigit(zRight[i]); i++){
+        iByte = (iByte<<4) + sqlite3HexToInt(zRight[i]);
+        if( (i&1)!=0 ) zKey[i/2] = iByte;
+      }
+      if( (zLeft[3] & 0xf)==0xb ){
+        sqlite3_key_v2(db, zDb, zKey, i/2);
+      }else{
+        sqlite3_rekey_v2(db, zDb, zKey, i/2);
+      }
     }
-    if( (zLeft[3] & 0xf)==0xb ){
-      sqlite3_key_v2(db, zDb, zKey, i/2);
-    }else{
-      sqlite3_rekey_v2(db, zDb, zKey, i/2);
-    }
-  }else
+    break;
+  }
 #endif
 #if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
-  if( sqlite3StrICmp(zLeft, "activate_extensions")==0 && zRight ){
+  case PragTyp_ACTIVATE_EXTENSIONS: if( zRight ){
 #ifdef SQLITE_HAS_CODEC
     if( sqlite3StrNICmp(zRight, "see-", 4)==0 ){
       sqlite3_activate_see(&zRight[4]);
@@ -1832,11 +2213,11 @@ void sqlite3Pragma(
       sqlite3_activate_cerod(&zRight[6]);
     }
 #endif
-  }else
+  }
+  break;
 #endif
 
- 
-  {/* Empty ELSE clause */}
+  } /* End of the PRAGMA switch */
 
 pragma_out:
   sqlite3DbFree(db, zLeft);

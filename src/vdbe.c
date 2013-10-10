@@ -577,6 +577,7 @@ int sqlite3VdbeExec(
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
   assert( p->bIsReader || p->readOnly!=0 );
   p->rc = SQLITE_OK;
+  p->iCurrentTime = 0;
   assert( p->explain==0 );
   p->pResultSet = 0;
   db->busyHandler.nBusy = 0;
@@ -1447,7 +1448,7 @@ case OP_Function: {
   MemSetTypeFlag(&ctx.s, MEM_Null);
 
   ctx.fErrorOrAux = 0;
-  if( ctx.pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
+  if( ctx.pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
     assert( pOp>aOp );
     assert( pOp[-1].p4type==P4_COLLSEQ );
     assert( pOp[-1].opcode==OP_CollSeq );
@@ -5489,7 +5490,7 @@ case OP_AggStep: {
   ctx.isError = 0;
   ctx.pColl = 0;
   ctx.skipFlag = 0;
-  if( ctx.pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
+  if( ctx.pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
     assert( pOp>p->aOp );
     assert( pOp[-1].p4type==P4_COLLSEQ );
     assert( pOp[-1].opcode==OP_CollSeq );

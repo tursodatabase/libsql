@@ -264,8 +264,8 @@ static void addWhereTerm(
   pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2, 0);
   if( pEq && isOuterJoin ){
     ExprSetProperty(pEq, EP_FromJoin);
-    assert( !ExprHasAnyProperty(pEq, EP_TokenOnly|EP_Reduced) );
-    ExprSetIrreducible(pEq);
+    assert( !ExprHasProperty(pEq, EP_TokenOnly|EP_Reduced) );
+    ExprSetVVAProperty(pEq, EP_NoReduce);
     pEq->iRightJoinTable = (i16)pE2->iTable;
   }
   *ppWhere = sqlite3ExprAnd(db, *ppWhere, pEq);
@@ -300,8 +300,8 @@ static void addWhereTerm(
 static void setJoinExpr(Expr *p, int iTable){
   while( p ){
     ExprSetProperty(p, EP_FromJoin);
-    assert( !ExprHasAnyProperty(p, EP_TokenOnly|EP_Reduced) );
-    ExprSetIrreducible(p);
+    assert( !ExprHasProperty(p, EP_TokenOnly|EP_Reduced) );
+    ExprSetVVAProperty(p, EP_NoReduce);
     p->iRightJoinTable = (i16)iTable;
     setJoinExpr(p->pLeft, iTable);
     p = p->pRight;
@@ -1061,6 +1061,9 @@ static void generateSortTail(
 ** Return a pointer to a string containing the 'declaration type' of the
 ** expression pExpr. The string may be treated as static by the caller.
 **
+** Also try to estimate the size of the returned value and return that
+** result in *pEstWidth.
+**
 ** The declaration type is the exact datatype definition extracted from the
 ** original CREATE TABLE statement if the expression is a column. The
 ** declaration type for a ROWID field is INTEGER. Exactly when an expression
@@ -1074,21 +1077,36 @@ static void generateSortTail(
 **   SELECT abc FROM (SELECT col AS abc FROM tbl);
 ** 
 ** The declaration type for any expression other than a column is NULL.
+**
+** This routine has either 3 or 6 parameters depending on whether or not
+** the SQLITE_ENABLE_COLUMN_METADATA compile-time option is used.
 */
-static const char *columnType(
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
+# define columnType(A,B,C,D,E,F) columnTypeImpl(A,B,C,D,E,F)
+static const char *columnTypeImpl(
   NameContext *pNC, 
   Expr *pExpr,
-  const char **pzOriginDb,
-  const char **pzOriginTab,
-  const char **pzOriginCol
+  const char **pzOrigDb,
+  const char **pzOrigTab,
+  const char **pzOrigCol,
+  u8 *pEstWidth
 ){
+  char const *zOrigDb = 0;
+  char const *zOrigTab = 0;
+  char const *zOrigCol = 0;
+#else /* if !defined(SQLITE_ENABLE_COLUMN_METADATA) */
+# define columnType(A,B,C,D,E,F) columnTypeImpl(A,B,F)
+static const char *columnTypeImpl(
+  NameContext *pNC, 
+  Expr *pExpr,
+  u8 *pEstWidth
+){
+#endif /* !defined(SQLITE_ENABLE_COLUMN_METADATA) */
   char const *zType = 0;
-  char const *zOriginDb = 0;
-  char const *zOriginTab = 0;
-  char const *zOriginCol = 0;
   int j;
-  if( NEVER(pExpr==0) || pNC->pSrcList==0 ) return 0;
+  u8 estWidth = 1;
 
+  if( NEVER(pExpr==0) || pNC->pSrcList==0 ) return 0;
   switch( pExpr->op ){
     case TK_AGG_COLUMN:
     case TK_COLUMN: {
@@ -1149,25 +1167,35 @@ static const char *columnType(
           sNC.pSrcList = pS->pSrc;
           sNC.pNext = pNC;
           sNC.pParse = pNC->pParse;
-          zType = columnType(&sNC, p, &zOriginDb, &zOriginTab, &zOriginCol); 
+          zType = columnType(&sNC, p,&zOrigDb,&zOrigTab,&zOrigCol, &estWidth); 
         }
       }else if( ALWAYS(pTab->pSchema) ){
         /* A real table */
         assert( !pS );
         if( iCol<0 ) iCol = pTab->iPKey;
         assert( iCol==-1 || (iCol>=0 && iCol<pTab->nCol) );
+#ifdef SQLITE_ENABLE_COLUMN_METADATA
         if( iCol<0 ){
           zType = "INTEGER";
-          zOriginCol = "rowid";
+          zOrigCol = "rowid";
         }else{
           zType = pTab->aCol[iCol].zType;
-          zOriginCol = pTab->aCol[iCol].zName;
+          zOrigCol = pTab->aCol[iCol].zName;
+          estWidth = pTab->aCol[iCol].szEst;
         }
-        zOriginTab = pTab->zName;
+        zOrigTab = pTab->zName;
         if( pNC->pParse ){
           int iDb = sqlite3SchemaToIndex(pNC->pParse->db, pTab->pSchema);
-          zOriginDb = pNC->pParse->db->aDb[iDb].zName;
+          zOrigDb = pNC->pParse->db->aDb[iDb].zName;
         }
+#else
+        if( iCol<0 ){
+          zType = "INTEGER";
+        }else{
+          zType = pTab->aCol[iCol].zType;
+          estWidth = pTab->aCol[iCol].szEst;
+        }
+#endif
       }
       break;
     }
@@ -1184,18 +1212,21 @@ static const char *columnType(
       sNC.pSrcList = pS->pSrc;
       sNC.pNext = pNC;
       sNC.pParse = pNC->pParse;
-      zType = columnType(&sNC, p, &zOriginDb, &zOriginTab, &zOriginCol); 
+      zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol, &estWidth); 
       break;
     }
 #endif
   }
-  
-  if( pzOriginDb ){
-    assert( pzOriginTab && pzOriginCol );
-    *pzOriginDb = zOriginDb;
-    *pzOriginTab = zOriginTab;
-    *pzOriginCol = zOriginCol;
+
+#ifdef SQLITE_ENABLE_COLUMN_METADATA  
+  if( pzOrigDb ){
+    assert( pzOrigTab && pzOrigCol );
+    *pzOrigDb = zOrigDb;
+    *pzOrigTab = zOrigTab;
+    *pzOrigCol = zOrigCol;
   }
+#endif
+  if( pEstWidth ) *pEstWidth = estWidth;
   return zType;
 }
 
@@ -1221,7 +1252,7 @@ static void generateColumnTypes(
     const char *zOrigDb = 0;
     const char *zOrigTab = 0;
     const char *zOrigCol = 0;
-    zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol);
+    zType = columnType(&sNC, p, &zOrigDb, &zOrigTab, &zOrigCol, 0);
 
     /* The vdbe must make its own copy of the column-type and other 
     ** column specific strings, in case the schema is reset before this
@@ -1231,11 +1262,11 @@ static void generateColumnTypes(
     sqlite3VdbeSetColName(v, i, COLNAME_TABLE, zOrigTab, SQLITE_TRANSIENT);
     sqlite3VdbeSetColName(v, i, COLNAME_COLUMN, zOrigCol, SQLITE_TRANSIENT);
 #else
-    zType = columnType(&sNC, p, 0, 0, 0);
+    zType = columnType(&sNC, p, 0, 0, 0, 0);
 #endif
     sqlite3VdbeSetColName(v, i, COLNAME_DECLTYPE, zType, SQLITE_TRANSIENT);
   }
-#endif /* SQLITE_OMIT_DECLTYPE */
+#endif /* !defined(SQLITE_OMIT_DECLTYPE) */
 }
 
 /*
@@ -1424,8 +1455,7 @@ static int selectColumnsFromExprList(
 */
 static void selectAddColumnTypeAndCollation(
   Parse *pParse,        /* Parsing contexts */
-  int nCol,             /* Number of columns */
-  Column *aCol,         /* List of columns */
+  Table *pTab,          /* Add column type information to this table */
   Select *pSelect       /* SELECT used to determine types and collations */
 ){
   sqlite3 *db = pParse->db;
@@ -1435,17 +1465,19 @@ static void selectAddColumnTypeAndCollation(
   int i;
   Expr *p;
   struct ExprList_item *a;
+  u64 szAll = 0;
 
   assert( pSelect!=0 );
   assert( (pSelect->selFlags & SF_Resolved)!=0 );
-  assert( nCol==pSelect->pEList->nExpr || db->mallocFailed );
+  assert( pTab->nCol==pSelect->pEList->nExpr || db->mallocFailed );
   if( db->mallocFailed ) return;
   memset(&sNC, 0, sizeof(sNC));
   sNC.pSrcList = pSelect->pSrc;
   a = pSelect->pEList->a;
-  for(i=0, pCol=aCol; i<nCol; i++, pCol++){
+  for(i=0, pCol=pTab->aCol; i<pTab->nCol; i++, pCol++){
     p = a[i].pExpr;
-    pCol->zType = sqlite3DbStrDup(db, columnType(&sNC, p, 0, 0, 0));
+    pCol->zType = sqlite3DbStrDup(db, columnType(&sNC, p,0,0,0, &pCol->szEst));
+    szAll += pCol->szEst;
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_NONE;
     pColl = sqlite3ExprCollSeq(pParse, p);
@@ -1453,6 +1485,7 @@ static void selectAddColumnTypeAndCollation(
       pCol->zColl = sqlite3DbStrDup(db, pColl->zName);
     }
   }
+  pTab->szTabRow = sqlite3LogEst(szAll*4);
 }
 
 /*
@@ -1480,9 +1513,9 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   assert( db->lookaside.bEnabled==0 );
   pTab->nRef = 1;
   pTab->zName = 0;
-  pTab->nRowEst = 1000000;
+  pTab->nRowEst = 1048576;
   selectColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
-  selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSelect);
+  selectAddColumnTypeAndCollation(pParse, pTab, pSelect);
   pTab->iPKey = -1;
   if( db->mallocFailed ){
     sqlite3DeleteTable(db, pTab);
@@ -3228,7 +3261,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
   if( IsVirtual(pTab) ) return 0;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
   if( NEVER(pAggInfo->nFunc==0) ) return 0;
-  if( (pAggInfo->aFunc[0].pFunc->flags&SQLITE_FUNC_COUNT)==0 ) return 0;
+  if( (pAggInfo->aFunc[0].pFunc->funcFlags&SQLITE_FUNC_COUNT)==0 ) return 0;
   if( pExpr->flags&EP_Distinct ) return 0;
 
   return pTab;
@@ -3394,11 +3427,11 @@ static int selectExpander(Walker *pWalker, Select *p){
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
       pTab->nRef = 1;
-      pTab->zName = sqlite3MPrintf(db, "sqlite_subquery_%p_", (void*)pTab);
+      pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
       selectColumnsFromExprList(pParse, pSel->pEList, &pTab->nCol, &pTab->aCol);
       pTab->iPKey = -1;
-      pTab->nRowEst = 1000000;
+      pTab->nRowEst = 1048576;
       pTab->tabFlags |= TF_Ephemeral;
 #endif
     }else{
@@ -3682,7 +3715,7 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
         Select *pSel = pFrom->pSelect;
         assert( pSel );
         while( pSel->pPrior ) pSel = pSel->pPrior;
-        selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSel);
+        selectAddColumnTypeAndCollation(pParse, pTab, pSel);
       }
     }
   }
@@ -3825,7 +3858,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
       assert( nArg==1 );
       codeDistinct(pParse, pF->iDistinct, addrNext, 1, regAgg);
     }
-    if( pF->pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
+    if( pF->pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
       CollSeq *pColl = 0;
       struct ExprList_item *pItem;
       int j;
@@ -4597,25 +4630,25 @@ int sqlite3Select(
         sqlite3CodeVerifySchema(pParse, iDb);
         sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
-        /* Search for the index that has the least amount of columns. If
-        ** there is such an index, and it has less columns than the table
-        ** does, then we can assume that it consumes less space on disk and
-        ** will therefore be cheaper to scan to determine the query result.
-        ** In this case set iRoot to the root page number of the index b-tree
-        ** and pKeyInfo to the KeyInfo structure required to navigate the
-        ** index.
+        /* Search for the index that has the lowest scan cost.
         **
         ** (2011-04-15) Do not do a full scan of an unordered index.
+        **
+        ** (2013-10-03) Do not count the entires in a partial index.
         **
         ** In practice the KeyInfo structure will not be used. It is only 
         ** passed to keep OP_OpenRead happy.
         */
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-          if( pIdx->bUnordered==0 && (!pBest || pIdx->nColumn<pBest->nColumn) ){
+          if( pIdx->bUnordered==0
+           && pIdx->szIdxRow<pTab->szTabRow
+           && pIdx->pPartIdxWhere==0
+           && (!pBest || pIdx->szIdxRow<pBest->szIdxRow)
+          ){
             pBest = pIdx;
           }
         }
-        if( pBest && pBest->nColumn<pTab->nCol ){
+        if( pBest ){
           iRoot = pBest->tnum;
           pKeyInfo = sqlite3IndexKeyinfo(pParse, pBest);
         }

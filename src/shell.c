@@ -974,7 +974,7 @@ static int run_table_dump_query(
   rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
-    p->nErr++;
+    if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
     return rc;
   }
   rc = sqlite3_step(pSelect);
@@ -1001,7 +1001,7 @@ static int run_table_dump_query(
   rc = sqlite3_finalize(pSelect);
   if( rc!=SQLITE_OK ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
-    p->nErr++;
+    if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
   }
   return rc;
 }
@@ -1194,7 +1194,7 @@ static int shell_exec(
             char **azCols = (char **)pData;      /* Names of result columns */
             char **azVals = &azCols[nCol];       /* Results */
             int *aiTypes = (int *)&azVals[nCol]; /* Result types */
-            int i;
+            int i, x;
             assert(sizeof(int) <= sizeof(char *)); 
             /* save off ptrs to column names */
             for(i=0; i<nCol; i++){
@@ -1203,8 +1203,12 @@ static int shell_exec(
             do{
               /* extract the data and data types */
               for(i=0; i<nCol; i++){
-                azVals[i] = (char *)sqlite3_column_text(pStmt, i);
-                aiTypes[i] = sqlite3_column_type(pStmt, i);
+                aiTypes[i] = x = sqlite3_column_type(pStmt, i);
+                if( x==SQLITE_BLOB && pArg->mode==MODE_Insert ){
+                  azVals[i] = "";
+                }else{
+                  azVals[i] = (char*)sqlite3_column_text(pStmt, i);
+                }
                 if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
                   rc = SQLITE_NOMEM;
                   break; /* from for */

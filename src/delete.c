@@ -357,6 +357,7 @@ void sqlite3DeleteFrom(
    && 0==sqlite3FkRequired(pParse, pTab, 0, 0)
   ){
     assert( !isView );
+    sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
     sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt,
                       pTab->zName, P4_STATIC);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -543,7 +544,7 @@ void sqlite3GenerateRowDelete(
     /* Do FK processing. This call checks that any FK constraints that
     ** refer to this table (i.e. constraints attached to other tables) 
     ** are not violated by deleting this row.  */
-    sqlite3FkCheck(pParse, pTab, iOld, 0);
+    sqlite3FkCheck(pParse, pTab, iOld, 0, 0, 0);
   }
 
   /* Delete the index and table entries. Skip this step if pTab is really
@@ -565,7 +566,7 @@ void sqlite3GenerateRowDelete(
   /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to
   ** handle rows (possibly in other tables) that refer via a foreign key
   ** to the row just deleted. */ 
-  sqlite3FkActions(pParse, pTab, 0, iOld);
+  sqlite3FkActions(pParse, pTab, 0, iOld, 0, 0);
 
   /* Invoke AFTER DELETE trigger programs. */
   sqlite3CodeRowTrigger(pParse, pTrigger, 

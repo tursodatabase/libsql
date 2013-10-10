@@ -292,6 +292,17 @@ test_suite "queryplanner" -prefix "" -description {
   where.test
 }
 
+test_suite "vfslog" -prefix "" -description {
+  "Vfslog" quick test suite. Like "veryquick" except does not omits
+  a few tests that do not work with a version 1 VFS. And the quota* tests,
+  which do not work with a VFS that uses the pVfs argument passed to
+  sqlite3_vfs methods.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* oserror.test \
+  pager1.test syscall.test sysfault.test tkt3457.test quota* superlock* \
+  wal* mmap*
+]
+
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
 # Define the coverage related test suites:
@@ -319,7 +330,7 @@ test_suite "coverage-analyze" -description {
 } -files {
   analyze3.test analyze4.test analyze5.test analyze6.test
   analyze7.test analyze8.test analyze9.test analyzeA.test
-  analyze.test mallocA.test
+  analyze.test analyzeB.test mallocA.test
 } 
 
 
@@ -512,7 +523,7 @@ test_suite "utf16" -description {
 } -files {
     alter.test alter3.test
     analyze.test analyze3.test analyze4.test analyze5.test analyze6.test
-    analyze7.test analyze8.test analyze9.test analyzeA.test
+    analyze7.test analyze8.test analyze9.test analyzeA.test analyzeB.test
     auth.test bind.test blob.test capi2.test capi3.test collate1.test
     collate2.test collate3.test collate4.test collate5.test collate6.test
     conflict.test date.test delete.test expr.test fkey1.test func.test

@@ -484,6 +484,7 @@ void sqlite3_free(void *p){
 */
 void sqlite3DbFree(sqlite3 *db, void *p){
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
+  if( p==0 ) return;
   if( db ){
     if( db->pnBytesFreed ){
       *db->pnBytesFreed += sqlite3DbMallocSize(db, p);

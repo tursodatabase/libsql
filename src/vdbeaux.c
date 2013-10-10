@@ -605,7 +605,7 @@ void sqlite3VdbeJumpHere(Vdbe *p, int addr){
 ** the FuncDef is not ephermal, then do nothing.
 */
 static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef){
-  if( ALWAYS(pDef) && (pDef->flags & SQLITE_FUNC_EPHEM)!=0 ){
+  if( ALWAYS(pDef) && (pDef->funcFlags & SQLITE_FUNC_EPHEM)!=0 ){
     sqlite3DbFree(db, pDef);
   }
 }
@@ -2437,6 +2437,7 @@ int sqlite3VdbeReset(Vdbe *p){
     }
   }
 #endif
+  p->iCurrentTime = 0;
   p->magic = VDBE_MAGIC_INIT;
   return p->rc & db->errMask;
 }

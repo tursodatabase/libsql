@@ -30,14 +30,14 @@ proc eqp {sql {db db}} {
 
 do_test analyze6-1.0 {
   db eval {
-    CREATE TABLE cat(x INT);
+    CREATE TABLE cat(x INT, yz TEXT);
     CREATE UNIQUE INDEX catx ON cat(x);
     /* Give cat 16 unique integers */
-    INSERT INTO cat VALUES(1);
-    INSERT INTO cat VALUES(2);
-    INSERT INTO cat SELECT x+2 FROM cat;
-    INSERT INTO cat SELECT x+4 FROM cat;
-    INSERT INTO cat SELECT x+8 FROM cat;
+    INSERT INTO cat(x) VALUES(1);
+    INSERT INTO cat(x) VALUES(2);
+    INSERT INTO cat(x) SELECT x+2 FROM cat;
+    INSERT INTO cat(x) SELECT x+4 FROM cat;
+    INSERT INTO cat(x) SELECT x+8 FROM cat;
 
     CREATE TABLE ev(y INT);
     CREATE INDEX evy ON ev(y);

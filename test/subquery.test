@@ -245,7 +245,7 @@ do_test subquery-2.5.3.2 {
     EXPLAIN QUERY PLAN
     SELECT * FROM t4 WHERE x IN (SELECT a FROM t3);
   }
-} {/SCAN TABLE t4 /}
+} {~/t4i/}
 do_test subquery-2.5.4 {
   execsql {
     DROP TABLE t3;

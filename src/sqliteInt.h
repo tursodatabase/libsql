@@ -471,6 +471,31 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 #endif
 
 /*
+** Estimated quantities used for query planning are stored as 16-bit
+** logarithms.  For quantity X, the value stored is 10*log2(X).  This
+** gives a possible range of values of approximately 1.0e986 to 1e-986.
+** But the allowed values are "grainy".  Not every value is representable.
+** For example, quantities 16 and 17 are both represented by a LogEst
+** of 40.  However, since LogEst quantatites are suppose to be estimates,
+** not exact values, this imprecision is not a problem.
+**
+** "LogEst" is short for "Logarithimic Estimate".
+**
+** Examples:
+**      1 -> 0              20 -> 43          10000 -> 132
+**      2 -> 10             25 -> 46          25000 -> 146
+**      3 -> 16            100 -> 66        1000000 -> 199
+**      4 -> 20           1000 -> 99        1048576 -> 200
+**     10 -> 33           1024 -> 100    4294967296 -> 320
+**
+** The LogEst can be negative to indicate fractional values. 
+** Examples:
+**
+**    0.5 -> -10           0.1 -> -33        0.0625 -> -40
+*/
+typedef INT16_TYPE LogEst;
+
+/*
 ** Macros to determine whether the machine is big or little endian,
 ** evaluated at runtime.
 */
@@ -929,8 +954,6 @@ struct sqlite3 {
   void(*xCollNeeded16)(void*,sqlite3*,int eTextRep,const void*);
   void *pCollNeededArg;
   sqlite3_value *pErr;          /* Most recent error message */
-  char *zErrMsg;                /* Most recent error message (UTF-8 encoded) */
-  char *zErrMsg16;              /* Most recent error message (UTF-16 encoded) */
   union {
     volatile int isInterrupted; /* True if sqlite3_interrupt has been called */
     double notUsed1;            /* Spacer */
@@ -1040,6 +1063,7 @@ struct sqlite3 {
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
 #define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
 #define SQLITE_Stat3          0x0800   /* Use the SQLITE_STAT3 table */
+#define SQLITE_AdjustOutEst   0x1000   /* Adjust output estimates using WHERE */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -1073,8 +1097,7 @@ struct sqlite3 {
 */
 struct FuncDef {
   i16 nArg;            /* Number of arguments.  -1 means unlimited */
-  u8 iPrefEnc;         /* Preferred text encoding (SQLITE_UTF8, 16LE, 16BE) */
-  u8 flags;            /* Some combination of SQLITE_FUNC_* */
+  u16 funcFlags;       /* Some combination of SQLITE_FUNC_* */
   void *pUserData;     /* User data parameter */
   FuncDef *pNext;      /* Next function with same name */
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
@@ -1110,14 +1133,16 @@ struct FuncDestructor {
 ** values must correspond to OPFLAG_LENGTHARG and OPFLAG_TYPEOFARG.  There
 ** are assert() statements in the code to verify this.
 */
-#define SQLITE_FUNC_LIKE     0x01 /* Candidate for the LIKE optimization */
-#define SQLITE_FUNC_CASE     0x02 /* Case-sensitive LIKE-type function */
-#define SQLITE_FUNC_EPHEM    0x04 /* Ephemeral.  Delete with VDBE */
-#define SQLITE_FUNC_NEEDCOLL 0x08 /* sqlite3GetFuncCollSeq() might be called */
-#define SQLITE_FUNC_COUNT    0x10 /* Built-in count(*) aggregate */
-#define SQLITE_FUNC_COALESCE 0x20 /* Built-in coalesce() or ifnull() function */
-#define SQLITE_FUNC_LENGTH   0x40 /* Built-in length() function */
-#define SQLITE_FUNC_TYPEOF   0x80 /* Built-in typeof() function */
+#define SQLITE_FUNC_ENCMASK  0x003 /* SQLITE_UTF8, SQLITE_UTF16BE or UTF16LE */
+#define SQLITE_FUNC_LIKE     0x004 /* Candidate for the LIKE optimization */
+#define SQLITE_FUNC_CASE     0x008 /* Case-sensitive LIKE-type function */
+#define SQLITE_FUNC_EPHEM    0x010 /* Ephemeral.  Delete with VDBE */
+#define SQLITE_FUNC_NEEDCOLL 0x020 /* sqlite3GetFuncCollSeq() might be called */
+#define SQLITE_FUNC_LENGTH   0x040 /* Built-in length() function */
+#define SQLITE_FUNC_TYPEOF   0x080 /* Built-in typeof() function */
+#define SQLITE_FUNC_COUNT    0x100 /* Built-in count(*) aggregate */
+#define SQLITE_FUNC_COALESCE 0x200 /* Built-in coalesce() or ifnull() */
+#define SQLITE_FUNC_UNLIKELY 0x400 /* Built-in unlikely() function */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1145,18 +1170,18 @@ struct FuncDestructor {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, (bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
-  {nArg, SQLITE_UTF8, (bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
+  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, bNC*SQLITE_FUNC_NEEDCOLL, \
+  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    pArg, 0, xFunc, 0, 0, #zName, 0, 0}
 #define LIKEFUNC(zName, nArg, arg, flags) \
-  {nArg, SQLITE_UTF8, flags, (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
+  {nArg, SQLITE_UTF8|flags, (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
-  {nArg, SQLITE_UTF8, nc*SQLITE_FUNC_NEEDCOLL, \
+  {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
 
 /*
@@ -1205,7 +1230,8 @@ struct Column {
   char *zColl;     /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
-  u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
+  u8 szEst;        /* Estimated size of this column.  INT==1 */
+  u8 colFlags;     /* Boolean properties.  See COLFLAG_ defines below */
 };
 
 /* Allowed values for Column.colFlags:
@@ -1369,6 +1395,7 @@ struct Table {
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   i16 nCol;            /* Number of columns in this table */
   u16 nRef;            /* Number of pointers to this Table */
+  LogEst szTabRow;     /* Estimated size of each table row in bytes */
   u8 tabFlags;         /* Mask of TF_* values */
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
 #ifndef SQLITE_OMIT_ALTERTABLE
@@ -1480,7 +1507,7 @@ struct FKey {
 #define OE_SetDflt  8   /* Set the foreign key value to its default */
 #define OE_Cascade  9   /* Cascade the changes */
 
-#define OE_Default  99  /* Do whatever the default action is */
+#define OE_Default  10  /* Do whatever the default action is */
 
 
 /*
@@ -1567,6 +1594,7 @@ struct Index {
   char **azColl;           /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   int tnum;                /* DB Page containing root of this index */
+  LogEst szIdxRow;         /* Estimated average row size in bytes */
   u16 nColumn;             /* Number of columns in table used by this index */
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
@@ -1731,7 +1759,7 @@ typedef int ynVar;
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
-  u16 flags;             /* Various flags.  EP_* See below */
+  u32 flags;             /* Various flags.  EP_* See below */
   union {
     char *zToken;          /* Token value. Zero terminated and dequoted */
     int iValue;            /* Non-negative integer value if EP_IntValue */
@@ -1745,8 +1773,8 @@ struct Expr {
   Expr *pLeft;           /* Left subnode */
   Expr *pRight;          /* Right subnode */
   union {
-    ExprList *pList;     /* Function arguments or in "<expr> IN (<expr-list)" */
-    Select *pSelect;     /* Used for sub-selects and "<expr> IN (<select>)" */
+    ExprList *pList;     /* op = IN, EXISTS, SELECT, CASE, FUNCTION, BETWEEN */
+    Select *pSelect;     /* EP_xIsSelect and op = IN, EXISTS, SELECT */
   } x;
 
   /* If the EP_Reduced flag is set in the Expr.flags mask, then no
@@ -1759,12 +1787,12 @@ struct Expr {
 #endif
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number
-                         ** TK_TRIGGER: 1 -> new, 0 -> old */
+                         ** TK_TRIGGER: 1 -> new, 0 -> old
+                         ** EP_Unlikely:  1000 times likelihood */
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
                          ** TK_VARIABLE: variable number (always >= 1). */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
-  u8 flags2;             /* Second set of flags.  EP2_... */
   u8 op2;                /* TK_REGISTER: original value of Expr.op
                          ** TK_COLUMN: the value of p5 for OP_Column
                          ** TK_AGG_FUNCTION: nesting depth */
@@ -1775,49 +1803,44 @@ struct Expr {
 /*
 ** The following are the meanings of bits in the Expr.flags field.
 */
-#define EP_FromJoin   0x0001  /* Originated in ON or USING clause of a join */
-#define EP_Agg        0x0002  /* Contains one or more aggregate functions */
-#define EP_Resolved   0x0004  /* IDs have been resolved to COLUMNs */
-#define EP_Error      0x0008  /* Expression contains one or more errors */
-#define EP_Distinct   0x0010  /* Aggregate function with DISTINCT keyword */
-#define EP_VarSelect  0x0020  /* pSelect is correlated, not constant */
-#define EP_DblQuoted  0x0040  /* token.z was originally in "..." */
-#define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
-#define EP_Collate    0x0100  /* Tree contains a TK_COLLATE opeartor */
-#define EP_FixedDest  0x0200  /* Result needed in a specific register */
-#define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
-#define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
-#define EP_Hint       0x1000  /* Not used */
-#define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
-#define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
-#define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
-
-/*
-** The following are the meanings of bits in the Expr.flags2 field.
-*/
-#define EP2_MallocedToken  0x0001  /* Need to sqlite3DbFree() Expr.zToken */
-#define EP2_Irreducible    0x0002  /* Cannot EXPRDUP_REDUCE this Expr */
-
-/*
-** The pseudo-routine sqlite3ExprSetIrreducible sets the EP2_Irreducible
-** flag on an expression structure.  This flag is used for VV&A only.  The
-** routine is implemented as a macro that only works when in debugging mode,
-** so as not to burden production code.
-*/
-#ifdef SQLITE_DEBUG
-# define ExprSetIrreducible(X)  (X)->flags2 |= EP2_Irreducible
-#else
-# define ExprSetIrreducible(X)
-#endif
+#define EP_FromJoin  0x000001 /* Originated in ON or USING clause of a join */
+#define EP_Agg       0x000002 /* Contains one or more aggregate functions */
+#define EP_Resolved  0x000004 /* IDs have been resolved to COLUMNs */
+#define EP_Error     0x000008 /* Expression contains one or more errors */
+#define EP_Distinct  0x000010 /* Aggregate function with DISTINCT keyword */
+#define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
+#define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
+#define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
+#define EP_Collate   0x000100 /* Tree contains a TK_COLLATE opeartor */
+#define EP_FixedDest 0x000200 /* Result needed in a specific register */
+#define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
+#define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
+#define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
+#define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
+#define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
+#define EP_Static    0x008000 /* Held in memory not obtained from malloc() */
+#define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
+#define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
+#define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
 ** Expr.flags field.
 */
-#define ExprHasProperty(E,P)     (((E)->flags&(P))==(P))
-#define ExprHasAnyProperty(E,P)  (((E)->flags&(P))!=0)
+#define ExprHasProperty(E,P)     (((E)->flags&(P))!=0)
+#define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
+
+/* The ExprSetVVAProperty() macro is used for Verification, Validation,
+** and Accreditation only.  It works like ExprSetProperty() during VVA
+** processes but is a no-op for delivery.
+*/
+#ifdef SQLITE_DEBUG
+# define ExprSetVVAProperty(E,P)  (E)->flags|=(P)
+#else
+# define ExprSetVVAProperty(E,P)
+#endif
 
 /*
 ** Macros to determine the number of bytes required by a normal Expr 
@@ -2431,6 +2454,7 @@ typedef struct DbFixer DbFixer;
 struct DbFixer {
   Parse *pParse;      /* The parsing context.  Error messages written here */
   Schema *pSchema;    /* Fix items to this schema */
+  int bVarOnly;       /* Check for variable references only */
   const char *zDb;    /* Make sure all objects are contained in this database */
   const char *zType;  /* Type of the container - used for error messages */
   const Token *pName; /* Name of the container - used for error messages */
@@ -2969,7 +2993,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 #endif
 void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
 void sqlite3Detach(Parse*, Expr*);
-int sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
+void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
 int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);
@@ -2981,6 +3005,12 @@ int sqlite3Atoi(const char*);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
 u32 sqlite3Utf8Read(const u8**);
+LogEst sqlite3LogEst(u64);
+LogEst sqlite3LogEstAdd(LogEst,LogEst);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+LogEst sqlite3LogEstFromDouble(double);
+#endif
+u64 sqlite3LogEstToInt(LogEst);
 
 /*
 ** Routines to read and write variable-length integers.  These used to
@@ -3097,7 +3127,7 @@ void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
-char sqlite3AffinityType(const char*);
+char sqlite3AffinityType(const char*, u8*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);
@@ -3201,6 +3231,7 @@ int sqlite3VtabCallDestroy(sqlite3*, int, const char *);
 int sqlite3VtabBegin(sqlite3 *, VTable *);
 FuncDef *sqlite3VtabOverloadFunction(sqlite3 *,FuncDef*, int nArg, Expr*);
 void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
+sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 int sqlite3Reprepare(Vdbe*);
@@ -3221,18 +3252,18 @@ const char *sqlite3JournalModename(int);
 ** provided (enforcement of FK constraints requires the triggers sub-system).
 */
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
-  void sqlite3FkCheck(Parse*, Table*, int, int);
+  void sqlite3FkCheck(Parse*, Table*, int, int, int*, int);
   void sqlite3FkDropTable(Parse*, SrcList *, Table*);
-  void sqlite3FkActions(Parse*, Table*, ExprList*, int);
+  void sqlite3FkActions(Parse*, Table*, ExprList*, int, int*, int);
   int sqlite3FkRequired(Parse*, Table*, int*, int);
   u32 sqlite3FkOldmask(Parse*, Table*);
   FKey *sqlite3FkReferences(Table *);
 #else
-  #define sqlite3FkActions(a,b,c,d)
+  #define sqlite3FkActions(a,b,c,d,e,f)
   #define sqlite3FkCheck(a,b,c,d)
   #define sqlite3FkDropTable(a,b,c)
-  #define sqlite3FkOldmask(a,b)      0
-  #define sqlite3FkRequired(a,b,c,d) 0
+  #define sqlite3FkOldmask(a,b)          0
+  #define sqlite3FkRequired(a,b,c,d,e,f) 0
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   void sqlite3FkDelete(sqlite3 *, Table*);
