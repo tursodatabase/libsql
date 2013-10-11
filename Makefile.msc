@@ -17,7 +17,7 @@ USE_AMALGAMATION = 1
 # be used for debugging with Visual Studio.
 #
 !IFNDEF SPLIT_AMALGAMATION
-SPLIT_AMALGAMATION = 1
+SPLIT_AMALGAMATION = 0
 !ENDIF
 
 # Set this non-0 to use the International Components for Unicode (ICU).

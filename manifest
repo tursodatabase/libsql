@@ -1,9 +1,9 @@
-C Enhance\sdebugging\ssupport\sfor\sthe\ssplit\samalgamation\sfiles\swhen\scompiling\swith\sMSVC.
-D 2013-10-11T23:01:18.933
+C The\ssplit\samalgamation\soption\sshould\sbe\sdisabled\sby\sdefault.
+D 2013-10-11T23:02:13.717
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc fa3af28a0df2ecab7292feaa672e0550d213806a
+F Makefile.msc a08b5f4ed4f760bae4eae4e723371487c5378983
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a8d1f6839521130dc73c5408cdd24bcfd791df34
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 62959c0ce3a2c486ebd82e6511efad0412b944a0
-R c5b525d775079bac122c214ef10fb100
+P 8ff17c553d8c159fa81c961441e16dbba8da62ba
+R a87e0d5d722c6daa90ba9ca2073832b4
 U mistachkin
-Z a753a3f398abd9b81fb8f5b8241736c7
+Z e20245d1470af628d2df5bb3da30e84f
