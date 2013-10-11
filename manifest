@@ -1,5 +1,5 @@
-C Add\sa\srule\sto\sthe\smain.mk\smakefile\sfor\sbuilding\sshowdb.
-D 2013-10-10T17:33:52.465
+C Fix\scompilation\sissue\sfor\sWinRT.
+D 2013-10-11T05:51:15.854
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,7 +204,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
-F src/os_win.c b8f54f42d9c232c48cb694b7dbe94e601c816b5c
+F src/os_win.c 0fea05bc7b75eccb01d8a8a10aaeaf4147b8e0cd
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P af7abebeb1f70466833bc766d294d721eaef746f
-R 72ea412e1f005785e4d9ffe166caaf06
-U drh
-Z 5e82c322ecc9e035c3abfaf4bdd53129
+P fc5552da0d3c41aea58292d267c247f9ca8ed474
+R 84fe925337bfa03eb6ac40832327358d
+U mistachkin
+Z bbc636d652c3d5a123c35b456ae25f1e
