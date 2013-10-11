@@ -589,6 +589,11 @@ static void samplePushPrevious(Stat4Accum *p, int iChng){
     }
   }
 #endif
+
+#ifndef SQLITE_ENABLE_STAT3_OR_STAT4
+  UNUSED_PARAMETER( p );
+  UNUSED_PARAMETER( iChng );
+#endif
 }
 
 /*
@@ -614,6 +619,8 @@ static void statPush(
   Stat4Accum *p = (Stat4Accum*)sqlite3_value_blob(argv[0]);
   int iChng = sqlite3_value_int(argv[1]);
 
+  UNUSED_PARAMETER( argc );
+  UNUSED_PARAMETER( context );
   assert( p->nCol>1 );        /* Includes rowid field */
   assert( iChng<p->nCol );
 
@@ -799,6 +806,9 @@ static void statGet(
     }
   }
 #endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#ifndef SQLITE_DEBUG
+  UNUSED_PARAMETER( argc );
+#endif
 }
 static const FuncDef statGetFuncdef = {
   1+IsStat34,      /* nArg */
@@ -817,8 +827,10 @@ static void callStatGet(Vdbe *v, int regStat4, int iParam, int regOut){
   assert( regOut!=regStat4 && regOut!=regStat4+1 );
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   sqlite3VdbeAddOp2(v, OP_Integer, iParam, regStat4+1);
-#else
+#elif SQLITE_DEBUG
   assert( iParam==STAT_GET_STAT1 );
+#else
+  UNUSED_PARAMETER( iParam );
 #endif
   sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4, regOut);
   sqlite3VdbeChangeP4(v, -1, (char*)&statGetFuncdef, P4_FUNCDEF);

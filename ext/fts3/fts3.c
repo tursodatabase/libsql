@@ -4327,7 +4327,7 @@ static int fts3EvalIncrPhraseNext(
 
     while( bEof==0 ){
       int bMaxSet = 0;
-      sqlite3_int64 iMax;         /* Largest docid for all iterators */
+      sqlite3_int64 iMax = 0;     /* Largest docid for all iterators */
       int i;                      /* Used to iterate through tokens */
 
       /* Advance the iterator for each token in the phrase once. */

@@ -1,5 +1,5 @@
-C Make\ssure\sthe\ssqlite3.h\sfile\soccurs\sat\sthe\svery\stop\sof\sthe\ssqlite3.c\namalgamation.
-D 2013-10-11T13:27:26.997
+C Fix\svarious\sharmless\scompiler\swarnings.\s\sChange\sthe\s"warnings.sh"\sscript\sto\nwork\swith\sSTAT4\sinstead\sof\sSTAT3.
+D 2013-10-11T15:05:05.066
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 543cbd7322822ea5dbbe6c17fdecf830c51dcb1c
+F ext/fts3/fts3.c 1864684d2fafa3988f144e421340246e064c8f71
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 8689f7cf85020e7f88d1e761eeac480c3b0ea7ad
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -115,7 +115,7 @@ F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
-F ext/misc/vfslog.c e8a9e57c9e9bb2c4f730d04ada96722dffcc85ee
+F ext/misc/vfslog.c 1abb192d8d4bd323adbddec0c024580496b51b7a
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -158,7 +158,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c 4383cd3ceeb1c93de4b142b11761e85294ce2c41
+F src/analyze.c f9e4eec962f2d81d775d8d5c2efb27b84acb0be0
 F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -167,7 +167,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c d5720cbb21ae56e7e5b07847e05e5b203818acac
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 3da02c07b0f198a11ce3766cd34eac311656f1e8
+F src/build.c 8ae900bf021a66ac110f5eb2dcf994d24d1c2061
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -284,14 +284,14 @@ F src/vdbeInt.h ff57f67aee1ba26a3a47e786533dab155ab6dad6
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c 55f4858fe6abd84bd7311acbf30a75a28903ec25
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
-F src/vdbemem.c 817ce21ab4ca57f902619bb8fef3f8a51bbd0ed8
+F src/vdbemem.c 28730af78c730cf230b64d62757a009668e76444
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 8dd4cb208b9b70beeb9da7dbcd9b8b8b08261ed7
+F src/where.c dd2d0d69280d6653d8ef8cf3b6b4b848b9058197
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1121,9 +1121,9 @@ F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
-F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
+F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7a2006ca94c458c7b1eae7b2b6df51da67546462
-R 38f19be9ac5880c5287ba4258503ff24
+P 03593817ab5abdd4bbaa5e47e2e4745eef025af9
+R 69bfe11e608e913aa8e62a6f442097f3
 U drh
-Z d014af66fac4fdf12353ef13980d354d
+Z 351cca8cdf907d3e0b7192caaf766811
