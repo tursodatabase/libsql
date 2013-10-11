@@ -1,5 +1,5 @@
-C Fix\scompilation\sissue\sfor\sWinRT.
-D 2013-10-11T05:51:15.854
+C Make\ssure\sthe\ssqlite3.h\sfile\soccurs\sat\sthe\svery\stop\sof\sthe\ssqlite3.c\namalgamation.
+D 2013-10-11T13:27:26.997
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -222,7 +222,7 @@ F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 5dbfc960fb39dbb55ba16697f453b03cd759b04a
+F src/sqliteInt.h eeebd2522bbd5ac7e3024be64113e8366caa66c8
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1093,7 +1093,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl ceaaeebcd882864caefe4176592ca6fa4648fab1
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
-F tool/mksqlite3c.tcl d344cc3144a0271cd853c5e3df36e9f31d78d619
+F tool/mksqlite3c.tcl d8dc444d403019167260e5578f5c362741f03696
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl f3312df26fd9938a27fa0a845ec96bea84b0c16b
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh fbc018d67fd7395f440c28f33ef0f94420226381
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fc5552da0d3c41aea58292d267c247f9ca8ed474
-R 84fe925337bfa03eb6ac40832327358d
-U mistachkin
-Z bbc636d652c3d5a123c35b456ae25f1e
+P 7a2006ca94c458c7b1eae7b2b6df51da67546462
+R 38f19be9ac5880c5287ba4258503ff24
+U drh
+Z d014af66fac4fdf12353ef13980d354d

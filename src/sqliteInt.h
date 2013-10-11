@@ -12,6 +12,7 @@
 ** Internal interface definitions for SQLite.
 **
 */
+#include "sqlite3.h"
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
@@ -305,7 +306,6 @@
 #define likely(X)    (X)
 #define unlikely(X)  (X)
 
-#include "sqlite3.h"
 #include "hash.h"
 #include "parse.h"
 #include <stdio.h>
