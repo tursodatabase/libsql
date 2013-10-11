@@ -378,10 +378,10 @@ foreach T $tokenizers {
   do_isspace_test 6.$T.18 $T   12288
 
   do_isspace_test 6.$T.19 $T   {32 160 5760 6158}
-  do_isspace_test 6.$T.19 $T   {8192 8193 8194 8195}
-  do_isspace_test 6.$T.19 $T   {8196 8197 8198 8199}
-  do_isspace_test 6.$T.19 $T   {8200 8201 8202 8239}
-  do_isspace_test 6.$T.19 $T   {8287 12288}
+  do_isspace_test 6.$T.20 $T   {8192 8193 8194 8195}
+  do_isspace_test 6.$T.21 $T   {8196 8197 8198 8199}
+  do_isspace_test 6.$T.22 $T   {8200 8201 8202 8239}
+  do_isspace_test 6.$T.23 $T   {8287 12288}
 }
 
 #-------------------------------------------------------------------------
