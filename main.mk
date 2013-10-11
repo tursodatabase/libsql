@@ -656,7 +656,7 @@ clean:
 	rm -f fts3-testfixture fts3-testfixture.exe
 	rm -f testfixture testfixture.exe
 	rm -f threadtest3 threadtest3.exe
-	rm -f sqlite3.c fts?amal.c tclsqlite3.c
+	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c

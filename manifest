@@ -1,9 +1,9 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\slemon.c.
-D 2013-10-11T23:01:02.703
+C Enhance\sdebugging\ssupport\sfor\sthe\ssplit\samalgamation\sfiles\swhen\scompiling\swith\sMSVC.
+D 2013-10-11T23:01:18.933
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 9af063716f726a73b5d5c98c69ea97eca6a9369b
+F Makefile.msc fa3af28a0df2ecab7292feaa672e0550d213806a
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a8d1f6839521130dc73c5408cdd24bcfd791df34
@@ -140,7 +140,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
-F main.mk 0c63aec9b9ecf66aaa8c09a02fcd74cf76e89ac8
+F main.mk 2e01504061f618db804812143a9e9ec45a66ae70
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 977d2b12e5efc70c26129b08c1f6d65c9d6d211e
-R bcbb126665574af7901e0480e4bce971
-U drh
-Z bd333009a6747ce18c3ec43add5f57d2
+P 62959c0ce3a2c486ebd82e6511efad0412b944a0
+R c5b525d775079bac122c214ef10fb100
+U mistachkin
+Z a753a3f398abd9b81fb8f5b8241736c7
