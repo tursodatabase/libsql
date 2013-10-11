@@ -1,7 +1,7 @@
-C Fix\stest\snumbering.
-D 2013-10-11T22:17:39.287
+C Add\s-no-undefined\soption\swhen\slinking\sthe\sshared\slibraries.
+D 2013-10-11T22:19:55.056
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
+F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 9af063716f726a73b5d5c98c69ea97eca6a9369b
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5e0d43ab55de006b20c58cb18b938d1c7b658e51
-R 1b1171afe4edda3c5b3cb5d754aa44ea
+P cef39f6933dcfec4b4a087a05dbb4e7766003fb7
+R 4b63c8e744f6fb27473896450f836426
 U mistachkin
-Z 4ee7f0b668ae06fb4348c4967185c786
+Z 3fce88c09247715d1b76fae81385d1b5
