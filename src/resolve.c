@@ -707,6 +707,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
               pNC->nErr++;
             }
           }else{
+            /* EVIDENCE-OF: R-61304-29449 The unlikely(X) function is equivalent to
+            ** likelihood(X, 0.0625).
+            ** EVIDENCE-OF: R-35738-39582 The unlikely(X) fucntion is short-hand for
+            ** likelihood(X,0.0625). */
             pExpr->iTable = 62;  /* TUNING:  Default 2nd arg to unlikely() is 0.0625 */
           }             
         }

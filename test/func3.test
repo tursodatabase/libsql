@@ -70,4 +70,87 @@ do_test func3-4.1 {
 } {1 SQLITE_MISUSE}
 do_test func3-4.2 { set destroyed } 1
 
+# EVIDENCE-OF: R-41921-05214 The likelihood(X,Y) function returns
+# argument X unchanged.
+#
+do_execsql_test func3-5.1 {
+  SELECT likelihood(9223372036854775807, 0.5);
+} {9223372036854775807}
+do_execsql_test func3-5.2 {
+  SELECT likelihood(-9223372036854775808, 0.5);
+} {-9223372036854775808}
+do_execsql_test func3-5.3 {
+  SELECT likelihood(14.125, 0.5);
+} {14.125}
+do_execsql_test func3-5.4 {
+  SELECT likelihood(NULL, 0.5);
+} {{}}
+do_execsql_test func3-5.5 {
+  SELECT likelihood('test-string', 0.5);
+} {test-string}
+do_execsql_test func3-5.6 {
+  SELECT quote(likelihood(x'010203000405', 0.5));
+} {X'010203000405'}
+
+# EVIDENCE-OF: R-44133-61651 The value Y in likelihood(X,Y) must be a
+# floating point constant between 0.0 and 1.0, inclusive.
+#
+do_execsql_test func3-5.7 {
+  SELECT likelihood(123, 1.0), likelihood(456, 0.0);
+} {123 456}
+do_test func3-5.8 {
+  catchsql {
+    SELECT likelihood(123, 1.000001);
+  }
+} {1 {second argument to likelihood() must be a constant between 0.0 and 1.0}}
+do_test func3-5.9 {
+  catchsql {
+    SELECT likelihood(123, -0.000001);
+  }
+} {1 {second argument to likelihood() must be a constant between 0.0 and 1.0}}
+do_test func3-5.10 {
+  catchsql {
+    SELECT likelihood(123, 0.5+0.3);
+  }
+} {1 {second argument to likelihood() must be a constant between 0.0 and 1.0}}
+
+# EVIDENCE-OF: R-28535-44631 The likelihood(X) function is a no-op that
+# the code generator optimizes away so that it consumes no CPU cycles
+# during run-time (that is, during calls to sqlite3_step()).
+#
+do_test func3-5.20 {
+  db eval {EXPLAIN SELECT likelihood(min(1.0+'2.0',4*11), 0.5)}
+} [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
+
+
+# EVIDENCE-OF: R-11152-23456 The unlikely(X) function returns the
+# argument X unchanged.
+#
+do_execsql_test func3-5.30 {
+  SELECT unlikely(9223372036854775807);
+} {9223372036854775807}
+do_execsql_test func3-5.31 {
+  SELECT unlikely(-9223372036854775808);
+} {-9223372036854775808}
+do_execsql_test func3-5.32 {
+  SELECT unlikely(14.125);
+} {14.125}
+do_execsql_test func3-5.33 {
+  SELECT unlikely(NULL);
+} {{}}
+do_execsql_test func3-5.34 {
+  SELECT unlikely('test-string');
+} {test-string}
+do_execsql_test func3-5.35 {
+  SELECT quote(unlikely(x'010203000405'));
+} {X'010203000405'}
+
+# EVIDENCE-OF: R-22887-63324 The unlikely(X) function is a no-op that
+# the code generator optimizes away so that it consumes no CPU cycles at
+# run-time (that is, during calls to sqlite3_step()).
+#
+do_test func3-5.40 {
+  db eval {EXPLAIN SELECT unlikely(min(1.0+'2.0',4*11))}
+} [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
+
 finish_test

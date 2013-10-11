@@ -11,6 +11,11 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the built-in INSTR() functions.
 #
+# EVIDENCE-OF: R-27549-59611 The instr(X,Y) function finds the first
+# occurrence of string Y within string X and returns the number of prior
+# characters plus 1, or 0 if Y is nowhere found within X.
+#
+
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -199,12 +204,48 @@ do_test instr-1.54 {
 do_test instr-1.55 {
   db eval {SELECT instr(x'78c3a4e282ac79','y');}
 } {4}
-do_test instr-1.56 {
+
+# EVIDENCE-OF: R-46421-32541 Or, if X and Y are both BLOBs, then
+# instr(X,Y) returns one more than the number bytes prior to the first
+# occurrence of Y, or 0 if Y does not occur anywhere within X.
+#
+do_test instr-1.56.1 {
   db eval {SELECT instr(x'78c3a4e282ac79',x'79');}
 } {7}
-do_test instr-1.57 {
+do_test instr-1.56.2 {
+  db eval {SELECT instr(x'78c3a4e282ac79',x'7a');}
+} {0}
+do_test instr-1.56.3 {
+  db eval {SELECT instr(x'78c3a4e282ac79',x'78');}
+} {1}
+do_test instr-1.56.3 {
+  db eval {SELECT instr(x'78c3a4e282ac79',x'a4');}
+} {3}
+
+# EVIDENCE-OF: R-17329-35644 If both arguments X and Y to instr(X,Y) are
+# non-NULL and are not BLOBs then both are interpreted as strings.
+#
+do_test instr-1.57.1 {
   db eval {SELECT instr('xä€y',x'79');}
 } {4}
+do_test instr-1.57.2 {
+  db eval {SELECT instr('xä€y',x'a4');}
+} {0}
+do_test instr-1.57.3 {
+  db eval {SELECT instr(x'78c3a4e282ac79','y');}
+} {4}
 
+# EVIDENCE-OF: R-14708-27487 If either X or Y are NULL in instr(X,Y)
+# then the result is NULL.
+#
+do_execsql_test instr-1.60 {
+  SELECT coalesce(instr(NULL,'abc'), 999);
+} {999}
+do_execsql_test instr-1.61 {
+  SELECT coalesce(instr('abc',NULL), 999);
+} {999}
+do_execsql_test instr-1.62 {
+  SELECT coalesce(instr(NULL,NULL), 999);
+} {999}
 
 finish_test

@@ -1,5 +1,5 @@
-C Fix\svarious\sharmless\scompiler\swarnings.\s\sChange\sthe\s"warnings.sh"\sscript\sto\nwork\swith\sSTAT4\sinstead\sof\sSTAT3.
-D 2013-10-11T15:05:05.066
+C Additional\stest\scases\sand\srequirements\smarks\sfor\sthe\sunlikely(),\nlikelihood()\sand\sinstr()\sfunctions.
+D 2013-10-11T16:35:49.710
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,10 +215,10 @@ F src/pragma.c f4ff6e29c316d06bf7dffca0c8cee7c229cae42e
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c 7459801d02997b07e8b8da85ef255392ba1d022b
+F src/resolve.c 5f15b00644c36a1610b87857abf42db38c07519c
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 15127b54cc11defb2cddef6914e1f384501a61c4
-F src/shell.c 5ee50ca3e35453bbd6ccdf1bdd0f6bbe9738e9fb
+F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
 F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -566,9 +566,9 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test ebd937061e1ce096240d2352feb424587f2187b9
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test cd25cf605c5a345d038dc7b84232204c6a901c84
+F test/func.test c7e80a44eebac8604397eb2ad83d0d5d9d541237
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
-F test/func3.test 001021e5b88bd02a3b365a5c5fd8f6f49d39744a
+F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -609,7 +609,7 @@ F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 87f6798f31d60c4e177622fcc3663367e6ecbd90
 F test/insert5.test 394f96728d1258f406fe5f5aeb0aaf29487c39a6
-F test/instr.test a34e1d46a9eefb098a7167ef0e730a4a3d82fba0
+F test/instr.test 737bbf80685232033f3abedc6ae92f75860b5dd2
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
 F test/intpkey.test a9674fc6195e0952e4e6105a9981ce1e48e7f215
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 03593817ab5abdd4bbaa5e47e2e4745eef025af9
-R 69bfe11e608e913aa8e62a6f442097f3
+P 7df06684ab36bfdad9e9aca6940b7a665c2a0cb5
+R 4f6661cda267d0bd057e23bc72d2b257
 U drh
-Z 351cca8cdf907d3e0b7192caaf766811
+Z 03f2ce5f38a3f7315fba8a787fd51abf
