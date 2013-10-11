@@ -23,6 +23,9 @@ do_test shared7-1.1 {
   sqlite3_enable_shared_cache
 } {1}
 
+# EVIDENCE-OF: R-05098-06501 In shared cache mode, attempting to attach
+# the same database file more than once results in an error.
+#
 do_test shared7-1.2 {
   db close
   sqlite3 db test.db

@@ -1,5 +1,5 @@
-C The\ssplit\samalgamation\soption\sshould\sbe\sdisabled\sby\sdefault.
-D 2013-10-11T23:02:13.717
+C Identify\srequirements\stext\sin\sthe\sSQLITE_CONFIG_\sdocumentation.\s\sFix\sa\stypo\n(a\sduplicated\sword)\sin\spart\sof\sthat\sdocumentation.\s\sAdd\ssome\srequirements\nmarks\sfor\sDETACH\sto\sthe\stest\sscripts.\s\sNo\scode\schanges.
+D 2013-10-11T23:37:57.890
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/resolve.c 5f15b00644c36a1610b87857abf42db38c07519c
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 15127b54cc11defb2cddef6914e1f384501a61c4
 F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
-F src/sqlite.h.in ec40aa958a270416fb04b4f72210357bf163d2c5
+F src/sqlite.h.in 4c6eb96fded1d56a27cec04b6b6803789eb28f54
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h eeebd2522bbd5ac7e3024be64113e8366caa66c8
@@ -320,7 +320,7 @@ F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
 F test/atof1.test 9bf1d25180a2e05fc12ce3940cc8003033642f68
 F test/attach.test 0d112b7713611fdf0340260192749737135fda5f
-F test/attach2.test e54436ed956d3d88bdee61221da59bf3935a0966
+F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
@@ -782,7 +782,7 @@ F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
 F test/shared3.test fcd65cb11d189eff5f5c85cc4fad246fb0933108
 F test/shared4.test 72d90821e8d2fc918a08f16d32880868d8ee8e9d
 F test/shared6.test 866bb4982c45ce216c61ded5e8fde4e7e2f3ffa9
-F test/shared7.test 960760bc8d03e1419e70dea69cf41db62853616e
+F test/shared7.test a81e99f83e6c51b02ac99c96fb3a2a7b5978c956
 F test/shared8.test 00a07bf5e1337ecf72e94542bdefdc330d7a2538
 F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8ff17c553d8c159fa81c961441e16dbba8da62ba
-R a87e0d5d722c6daa90ba9ca2073832b4
-U mistachkin
-Z e20245d1470af628d2df5bb3da30e84f
+P 7c24d22ffa1e12f3d24cad06b5ff7cc34219b2bb
+R d7d2fd1a5883ae409ba0ba13e9010231
+U drh
+Z a2b10bb03f0ef138962d7a6660a6c09c
