@@ -1,5 +1,5 @@
-C Add\s-no-undefined\soption\swhen\slinking\sthe\sshared\slibraries.
-D 2013-10-11T22:19:55.056
+C Fix\sa\sharmless\scompiler\swarning\sin\slemon.c.
+D 2013-10-11T23:01:02.703
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1084,7 +1084,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 323e54ac86fb2393f9950219224e304620d2fb12
+F tool/lemon.c 796930d5fc2036c7636f3f1ee12f9ae03719a2eb
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cef39f6933dcfec4b4a087a05dbb4e7766003fb7
-R 4b63c8e744f6fb27473896450f836426
-U mistachkin
-Z 3fce88c09247715d1b76fae81385d1b5
+P 977d2b12e5efc70c26129b08c1f6d65c9d6d211e
+R bcbb126665574af7901e0480e4bce971
+U drh
+Z bd333009a6747ce18c3ec43add5f57d2

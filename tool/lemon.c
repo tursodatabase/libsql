@@ -3458,7 +3458,7 @@ void print_stack_union(
         break;
       }
       hash++;
-      if( hash>=arraysize ) hash = 0;
+      if( hash>=(unsigned)arraysize ) hash = 0;
     }
     if( types[hash]==0 ){
       sp->dtnum = hash + 1;
