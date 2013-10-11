@@ -13,6 +13,13 @@
 # This file tests the PRAGMA defer_foreign_keys and 
 # SQLITE_DBSTATUS_DEFERRED_FKS
 #
+# EVIDENCE-OF: R-18981-16292 When the defer_foreign_keys PRAGMA is on,
+# enforcement of all foreign key constraints is delayed until the
+# outermost transaction is committed.
+#
+# EVIDENCE-OF: R-28911-57501 The defer_foreign_keys pragma defaults to
+# OFF so that foreign key constraints are only deferred if they are
+# created as "DEFERRABLE INITIALLY DEFERRED".
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,6 +28,10 @@ ifcapable {!foreignkey} {
   finish_test
   return
 }
+
+do_execsql_test fkey6-1.0 {
+  PRAGMA defer_foreign_keys;
+} {0}
 
 do_execsql_test fkey6-1.1 {
   PRAGMA foreign_keys=ON;

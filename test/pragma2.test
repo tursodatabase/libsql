@@ -119,6 +119,11 @@ ifcapable attach {
 
 # Default setting of PRAGMA cache_spill is always ON
 #
+# EVIDENCE-OF: R-51036-62828 PRAGMA cache_spill; PRAGMA
+# cache_spill=boolean;
+#
+# EVIDENCE-OF: R-23955-02765 Cache_spill is enabled by default
+#
 db close
 delete_file test.db test.db-journal
 delete_file test2.db test2.db-journal
@@ -155,6 +160,11 @@ do_execsql_test pragma2-4.3 {
   PRAGMA cache_spill=ON;
 } {}
 sqlite3_release_memory
+#
+# EVIDENCE-OF: R-07634-40532 The cache_spill pragma enables or disables
+# the ability of the pager to spill dirty cache pages to the database
+# file in the middle of a transaction.
+#
 do_test pragma2-4.4 {
   db eval {
     BEGIN;

@@ -1,5 +1,5 @@
-C Additional\stest\scases\sand\srequirements\smarks\sfor\sthe\sunlikely(),\nlikelihood()\sand\sinstr()\sfunctions.
-D 2013-10-11T16:35:49.710
+C Add\srequirements\smarks.\s\sNo\scode\schanges.
+D 2013-10-11T20:14:37.415
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5e41da95d92656a5004b03d3576e8b226858a28e
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/build.c 8ae900bf021a66ac110f5eb2dcf994d24d1c2061
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
-F src/date.c 65196e95e69f36993659bd7781abe7c2f1994739
+F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 45788c5e48734f2af4acd75a876466e5b9838e34
 F src/expr.c e7338ccffdc391c53ba2d51c5eb6a2f5299e040e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -415,7 +415,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
-F test/date.test 502ddcbaaac9ce103bcd76d8e9d9bc8aa04e61b0
+F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test aee30c3f337e6c217ff06df59fb8fe6e6448dce2
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
@@ -462,8 +462,8 @@ F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
 F test/fkey2.test 06e0b4cc9e1b3271ae2ae6feeb19755468432111
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
-F test/fkey5.test 0bf64f2d19ad80433ca0b24edbf604a18b353d5f
-F test/fkey6.test c555f7fc45d842cc84b0d3ff93951ce2b8c25fc8
+F test/fkey5.test 2b8c761ad23bb6a95b9cf8366c9a982a80a439c2
+F test/fkey6.test c1d7cb176648e0e1e9f971f5f9bde4dd5bcd046d
 F test/fkey7.test e31d0e71a41c1d29349a16448d6c420e2c53a8fc
 F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -726,7 +726,7 @@ F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test e154f5ed66d4d4913a99a110e870c9407f75b055
 F test/pragma.test 5c6e8ae9eaa9a505cc1035b51f7f0da9805092c7
-F test/pragma2.test 224f0381f9411a78ae685cac24c13656a62021b7
+F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7df06684ab36bfdad9e9aca6940b7a665c2a0cb5
-R 4f6661cda267d0bd057e23bc72d2b257
+P 5f01cd36ee8678a07b79f9e01855daffb6bb8c43
+R 9bc31ca11c970b0b1f57ebe7aef5f122
 U drh
-Z 03f2ce5f38a3f7315fba8a787fd51abf
+Z e5a31fb8b2987670c6226df61ef5e152
