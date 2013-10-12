@@ -121,5 +121,56 @@ do_test fkey6-1.22 {
   }
 } {}
 
+do_execsql_test fkey6-2.1 {
+  CREATE TABLE p1(a PRIMARY KEY);
+  INSERT INTO p1 VALUES('one'), ('two');
+  CREATE TABLE c1(x REFERENCES p1);
+  INSERT INTO c1 VALUES('two'), ('one');
+}
+
+do_execsql_test fkey6-2.2 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    DELETE FROM p1;
+  ROLLBACK;
+  PRAGMA defer_foreign_keys;
+} {0}
+
+do_execsql_test fkey6-2.3 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    DROP TABLE p1;
+    PRAGMA vdbe_trace = 0;
+  ROLLBACK;
+  PRAGMA defer_foreign_keys;
+} {0}
+
+do_execsql_test fkey6-2.4 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    DELETE FROM p1;
+    DROP TABLE c1;
+  COMMIT;
+  PRAGMA defer_foreign_keys;
+} {0}
+
+do_execsql_test fkey6-2.5 {
+  DROP TABLE p1;
+  CREATE TABLE p1(a PRIMARY KEY);
+  INSERT INTO p1 VALUES('one'), ('two');
+  CREATE TABLE c1(x REFERENCES p1);
+  INSERT INTO c1 VALUES('two'), ('one');
+}
+
+do_execsql_test fkey6-2.6 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    INSERT INTO c1 VALUES('three');
+    DROP TABLE c1;
+  COMMIT;
+  PRAGMA defer_foreign_keys;
+} {0}
+
 
 finish_test
+
