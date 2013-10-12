@@ -1,5 +1,5 @@
-C Identify\srequirements\stext\sin\sthe\sSQLITE_CONFIG_\sdocumentation.\s\sFix\sa\stypo\n(a\sduplicated\sword)\sin\spart\sof\sthat\sdocumentation.\s\sAdd\ssome\srequirements\nmarks\sfor\sDETACH\sto\sthe\stest\sscripts.\s\sNo\scode\schanges.
-D 2013-10-11T23:37:57.890
+C Fix\sUnicode\scharacter\sencoding\sissues\son\sWindows.
+D 2013-10-12T00:56:21.621
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -564,7 +564,7 @@ F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
-F test/fts4unicode.test 20195bca1e3a4301924c2c8b46257d64127f17df
+F test/fts4unicode.test e28ba1a14181e709dcdf47455f207adf14c7cfe0
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test c7e80a44eebac8604397eb2ad83d0d5d9d541237
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7c24d22ffa1e12f3d24cad06b5ff7cc34219b2bb
-R d7d2fd1a5883ae409ba0ba13e9010231
-U drh
-Z a2b10bb03f0ef138962d7a6660a6c09c
+P 1be0a3adaba2914c65c46fbebc4906ae4e70f899
+R ca24bf11e504ff21d9315944c9b4b854
+U mistachkin
+Z ae94ccc0d8018ab65fe4f23e4fae4aa0
