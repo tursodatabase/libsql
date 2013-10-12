@@ -1465,8 +1465,10 @@ void sqlite3Pragma(
       sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "unique", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "avgrowsize", SQLITE_STATIC);
       sqlite3VdbeAddOp2(v, OP_Integer, 0, 1);
-      sqlite3VdbeAddOp2(v, OP_Null, 0, 2);
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, 3);
+      sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0,
+         sqlite3MPrintf(db, "sqlite_pseudoindex_%s", pTab->zName),
+         P4_DYNAMIC);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, 3);
       sqlite3VdbeAddOp2(v, OP_Integer,
                            (int)sqlite3LogEstToInt(pTab->szTabRow), 4);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);

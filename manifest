@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2013-10-12T02:33:22.853
+C Changes\sto\sthe\snew\sinitial\srow\sof\sPRAGMA\sindex_list\sresults.
+D 2013-10-12T09:32:05.784
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c f4ff6e29c316d06bf7dffca0c8cee7c229cae42e
+F src/pragma.c 393efaa787ec5535cf30f6e435b94ec436776745
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -725,7 +725,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test e154f5ed66d4d4913a99a110e870c9407f75b055
-F test/pragma.test 5c6e8ae9eaa9a505cc1035b51f7f0da9805092c7
+F test/pragma.test 75990a4a9f2b492d715c4ec89c8ced72dd20639b
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
@@ -1123,7 +1123,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 035d03e94252f31025b39da49d8401933352fb77
-R 674aebabd5ad2749788043a817e7f011
+P 4b130f88fba216e088f61252bbcdde57ec7ee6a9
+R 9bf7835789baab295617af1cddd33ae8
+T *branch * indexList
+T *sym-indexList *
+T -sym-trunk *
 U mistachkin
-Z fc9cb3270f125330055c4b37111cf872
+Z d185d392a7046e387236f5f2d221e822
