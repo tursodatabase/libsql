@@ -56,18 +56,19 @@
 #define PragTyp_SECURE_DELETE                 25
 #define PragTyp_SHRINK_MEMORY                 26
 #define PragTyp_SOFT_HEAP_LIMIT               27
-#define PragTyp_SYNCHRONOUS                   28
-#define PragTyp_TABLE_INFO                    29
-#define PragTyp_TEMP_STORE                    30
-#define PragTyp_TEMP_STORE_DIRECTORY          31
-#define PragTyp_WAL_AUTOCHECKPOINT            32
-#define PragTyp_WAL_CHECKPOINT                33
-#define PragTyp_ACTIVATE_EXTENSIONS           34
-#define PragTyp_HEXKEY                        35
-#define PragTyp_KEY                           36
-#define PragTyp_REKEY                         37
-#define PragTyp_LOCK_STATUS                   38
-#define PragTyp_PARSER_TRACE                  39
+#define PragTyp_STATS                         28
+#define PragTyp_SYNCHRONOUS                   29
+#define PragTyp_TABLE_INFO                    30
+#define PragTyp_TEMP_STORE                    31
+#define PragTyp_TEMP_STORE_DIRECTORY          32
+#define PragTyp_WAL_AUTOCHECKPOINT            33
+#define PragTyp_WAL_CHECKPOINT                34
+#define PragTyp_ACTIVATE_EXTENSIONS           35
+#define PragTyp_HEXKEY                        36
+#define PragTyp_KEY                           37
+#define PragTyp_REKEY                         38
+#define PragTyp_LOCK_STATUS                   39
+#define PragTyp_PARSER_TRACE                  40
 #define PragFlag_NeedSchema           0x01
 static const struct sPragmaNames {
   const char *const zName;  /* Name of pragma */
@@ -359,6 +360,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_SqlTrace },
 #endif
+#if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+  { /* zName:     */ "stats",
+    /* ePragTyp:  */ PragTyp_STATS,
+    /* ePragFlag: */ PragFlag_NeedSchema,
+    /* iArg:      */ 0 },
+#endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "synchronous",
     /* ePragTyp:  */ PragTyp_SYNCHRONOUS,
@@ -420,7 +427,7 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 };
-/* Number of pragmas: 55 on by default, 67 total. */
+/* Number of pragmas: 56 on by default, 68 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -1425,6 +1432,36 @@ void sqlite3Pragma(
   }
   break;
 
+  case PragTyp_STATS: {
+    Index *pIdx;
+    HashElem *i;
+    v = sqlite3GetVdbe(pParse);
+    sqlite3VdbeSetNumCols(v, 4);
+    pParse->nMem = 4;
+    sqlite3CodeVerifySchema(pParse, iDb);
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "table", SQLITE_STATIC);
+    sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "index", SQLITE_STATIC);
+    sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "width", SQLITE_STATIC);
+    sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "height", SQLITE_STATIC);
+    for(i=sqliteHashFirst(&pDb->pSchema->tblHash); i; i=sqliteHashNext(i)){
+      Table *pTab = sqliteHashData(i);
+      sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, pTab->zName, 0);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, 2);
+      sqlite3VdbeAddOp2(v, OP_Integer,
+                           (int)sqlite3LogEstToInt(pTab->szTabRow), 3);
+      sqlite3VdbeAddOp2(v, OP_Integer, (int)pTab->nRowEst, 4);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
+        sqlite3VdbeAddOp2(v, OP_Integer,
+                             (int)sqlite3LogEstToInt(pIdx->szIdxRow), 3);
+        sqlite3VdbeAddOp2(v, OP_Integer, (int)pIdx->aiRowEst[0], 4);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
+      }
+    }
+  }
+  break;
+
   case PragTyp_INDEX_INFO: if( zRight ){
     Index *pIdx;
     Table *pTab;
@@ -1457,26 +1494,17 @@ void sqlite3Pragma(
     pTab = sqlite3FindTable(db, zRight, zDb);
     if( pTab ){
       v = sqlite3GetVdbe(pParse);
-      sqlite3VdbeSetNumCols(v, 4);
-      pParse->nMem = 4;
+      sqlite3VdbeSetNumCols(v, 3);
+      pParse->nMem = 3;
       sqlite3CodeVerifySchema(pParse, iDb);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seq", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "name", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "unique", SQLITE_STATIC);
-      sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "avgrowsize", SQLITE_STATIC);
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, 1);
-      sqlite3VdbeAddOp2(v, OP_Null, 0, 2);
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, 3);
-      sqlite3VdbeAddOp2(v, OP_Integer,
-                           (int)sqlite3LogEstToInt(pTab->szTabRow), 4);
-      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
-      for(pIdx=pTab->pIndex, i=1; pIdx; pIdx=pIdx->pNext, i++){
+      for(pIdx=pTab->pIndex, i=0; pIdx; pIdx=pIdx->pNext, i++){
         sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
         sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
         sqlite3VdbeAddOp2(v, OP_Integer, pIdx->onError!=OE_None, 3);
-        sqlite3VdbeAddOp2(v, OP_Integer,
-                             (int)sqlite3LogEstToInt(pIdx->szIdxRow), 4);
-        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
       }
     }
   }

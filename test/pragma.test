@@ -574,7 +574,7 @@ ifcapable {foreignkey} {
     execsql {
       pragma index_list(t3);
     }
-  } {/0 {} 1 \d+ 1 sqlite_autoindex_t3_1 1 \d+/}
+  } {0 sqlite_autoindex_t3_1 1}
 }
 ifcapable {!foreignkey} {
   execsql {CREATE TABLE t3(a,b UNIQUE)}
@@ -647,7 +647,7 @@ do_test pragma-7.1.1 {
   execsql {
     pragma index_list(t3);
   }
-} {/0 {} 1 \d+ 1 t3i1 0 \d+ 2 sqlite_autoindex_t3_1 1 \d+/}
+} {0 t3i1 0 1 sqlite_autoindex_t3_1 1}
 do_test pragma-7.1.2 {
   execsql {
     pragma index_list(t3_bogus);
@@ -1661,7 +1661,7 @@ do_test 23.3 {
     CREATE INDEX i3 ON t1(d,b,c);
   }
   db2 eval {PRAGMA index_list(t1)}
-} {/0 {} 1 \d+ 1 i3 0 \d+ 2 i2 0 \d+ 3 i1 0 \d+/}
+} {0 i3 0 1 i2 0 2 i1 0}
 do_test 23.4 {
   db eval {
     ALTER TABLE t1 ADD COLUMN e;
