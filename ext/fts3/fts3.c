@@ -4370,7 +4370,7 @@ static int fts3EvalIncrPhraseNext(
             int nDist = p->nToken-1-i;
             int res = fts3PoslistPhraseMerge(&pOut, nDist, 0, 1, &pL, &pR);
             if( res==0 ) break;
-            nList = (pOut - aDoclist);
+            nList = (int)(pOut - aDoclist);
           }
         }
         if( i==(p->nToken-1) ){
