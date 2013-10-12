@@ -1,5 +1,5 @@
-C Fix\shandling\sof\s"DROP\sTABLE"\scommands\swhen\s"PRAGMA\sdefer_foreign_keys=1"\sis\sset.
-D 2013-10-12T15:12:43.761
+C In\s"PRAGMA\sforeign_key_check",\streat\smissing\sparent\stables\sas\sempty\s(instead\sof\sas\serrors).
+D 2013-10-12T19:06:48.154
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c f4ff6e29c316d06bf7dffca0c8cee7c229cae42e
+F src/pragma.c 24fb88e294ff7cd5bd1859f88503349ce92aa187
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -462,7 +462,7 @@ F test/fkey1.test e1d1fa84cde579185ea01358436839703e415a5b
 F test/fkey2.test 06e0b4cc9e1b3271ae2ae6feeb19755468432111
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
-F test/fkey5.test 2b8c761ad23bb6a95b9cf8366c9a982a80a439c2
+F test/fkey5.test 8a1fde4e7721ae00b05b3178888833726ca2df8d
 F test/fkey6.test 18e8c024d39f68f8d4bb1177c992bcffdc273464
 F test/fkey7.test e31d0e71a41c1d29349a16448d6c420e2c53a8fc
 F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
@@ -1123,7 +1123,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 67e28a11de97e97889f0c0f41c05605721c605c1
-R dc1f4dd0df343cdf7a68b757db650d93
+P 27001356ed8201529b3f31d4313f2010f1b4e1b1
+R d979b0883c0e5512213e1d7af1d7ac15
+T *branch * fkc-missing-parent-tables
+T *sym-fkc-missing-parent-tables *
+T -sym-trunk *
 U dan
-Z abee286031badbf2a2b4e2d1bb40e0a3
+Z 1f7e86e642b676f584ebb1b861caf588
