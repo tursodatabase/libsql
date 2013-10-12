@@ -1900,6 +1900,7 @@ static int xferOptimization(
     pKey = sqlite3IndexKeyinfo(pParse, pDestIdx);
     sqlite3VdbeAddOp4(v, OP_OpenWrite, iDest, pDestIdx->tnum, iDbDest,
                       (char*)pKey, P4_KEYINFO_HANDOFF);
+    sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR);
     VdbeComment((v, "%s", pDestIdx->zName));
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_RowKey, iSrc, regData);

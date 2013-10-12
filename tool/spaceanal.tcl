@@ -199,15 +199,17 @@ foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
   # is.
   #
   set gap_cnt 0
-  set pglist [db eval {
-    SELECT pageno FROM temp.dbstat WHERE name = $name ORDER BY rowid
-  }]
-  set prev [lindex $pglist 0]
-  foreach pgno [lrange $pglist 1 end] {
-    if {$pgno != $prev+1} {incr gap_cnt}
-    set prev $pgno
+  set prev 0
+  db eval {
+    SELECT pageno, pagetype FROM temp.dbstat
+     WHERE name=$name
+     ORDER BY pageno
+  } {
+    if {$prev>0 && $pagetype=="leaf" && $pageno!=$prev+1} {
+      incr gap_cnt
+    }
+    set prev $pageno
   }
-
   mem eval {
     INSERT INTO space_used VALUES(
       $name,
@@ -298,7 +300,7 @@ proc divide {num denom} {
 # Generate a subreport that covers some subset of the database.
 # the $where clause determines which subset to analyze.
 #
-proc subreport {title where} {
+proc subreport {title where showFrag} {
   global pageSize file_pgcnt compressOverhead
 
   # Query the in-memory database for the sum of various statistics 
@@ -384,9 +386,9 @@ proc subreport {title where} {
   if {[info exists avg_fanout]} {
     statline {Average fanout} $avg_fanout
   }
-  if {$total_pages>1} {
-    set fragmentation [percent $gap_cnt [expr {$total_pages-1}] {fragmentation}]
-    statline {Fragmentation} $fragmentation
+  if {$showFrag && $total_pages>1} {
+    set fragmentation [percent $gap_cnt [expr {$total_pages-1}]]
+    statline {Non-sequential pages} $gap_cnt $fragmentation
   }
   statline {Maximum payload per entry} $mx_payload
   statline {Entries that use overflow} $ovfl_cnt $ovfl_cnt_percent
@@ -509,8 +511,8 @@ statline {Pages on the freelist (calculated)} $free_pgcnt $free_percent
 statline {Pages of auto-vacuum overhead} $av_pgcnt $av_percent
 statline {Number of tables in the database} $ntable
 statline {Number of indices} $nindex
-statline {Number of named indices} $nmanindex
-statline {Automatically generated indices} $nautoindex
+statline {Number of defined indices} $nmanindex
+statline {Number of implied indices} $nautoindex
 if {$isCompressed} {
   statline {Size of uncompressed content in bytes} $file_bytes
   set efficiency [percent $true_file_size $file_bytes]
@@ -563,11 +565,11 @@ if {$isCompressed} {
 # Output subreports
 #
 if {$nindex>0} {
-  subreport {All tables and indices} 1
+  subreport {All tables and indices} 1 0
 }
-subreport {All tables} {NOT is_index}
+subreport {All tables} {NOT is_index} 0
 if {$nindex>0} {
-  subreport {All indices} {is_index}
+  subreport {All indices} {is_index} 0
 }
 foreach tbl [mem eval {SELECT name FROM space_used WHERE NOT is_index
                        ORDER BY name}] {
@@ -578,17 +580,17 @@ foreach tbl [mem eval {SELECT name FROM space_used WHERE NOT is_index
     set idxlist [mem eval "SELECT name FROM space_used
                             WHERE tblname='$qn' AND is_index
                             ORDER BY 1"]
-    subreport "Table $name and all its indices" "tblname='$qn'"
-    subreport "Table $name w/o any indices" "name='$qn'"
+    subreport "Table $name and all its indices" "tblname='$qn'" 0
+    subreport "Table $name w/o any indices" "name='$qn'" 1
     if {[llength $idxlist]>1} {
-      subreport "Indices of table $name" "tblname='$qn' AND is_index"
+      subreport "Indices of table $name" "tblname='$qn' AND is_index" 0
     }
     foreach idx $idxlist {
       set qidx [quote $idx]
-      subreport "Index [string toupper $idx] of table $name" "name='$qidx'"
+      subreport "Index [string toupper $idx] of table $name" "name='$qidx'" 1
     }
   } else {
-    subreport "Table $name" "name='$qn'"
+    subreport "Table $name" "name='$qn'" 1
   }
 }
 
@@ -633,11 +635,11 @@ Number of indices
 
     The total number of indices in the database.
 
-Number of named indices
+Number of defined indices
 
     The number of indices created using an explicit CREATE INDEX statement.
 
-Automatically generated indices
+Number of implied indices
 
     The number of indices used to implement PRIMARY KEY or UNIQUE constraints
     on tables.
@@ -686,13 +688,16 @@ Average unused bytes per entry
     category on a per-entry basis.  This is the number of unused bytes on
     all pages divided by the number of entries.
 
-Fragmentation
+Non-sequential pages
 
-    The percentage of pages in the table or index that are not
-    consecutive in the disk file.  Many filesystems are optimized
-    for sequential file access so smaller fragmentation numbers 
-    sometimes result in faster queries, especially for larger
-    database files that do not fit in the disk cache.
+    The number of pages in the table or index that are out of sequence.
+    Many filesystems are optimized for sequential file access so a small
+    number of non-sequential pages might result in faster queries,
+    especially for larger database files that do not fit in the disk cache.
+    Note that after running VACUUM, the root page of each table or index is
+    at the beginning of the database file and all other pages are in a
+    separate part of the database file, resulting in a single non-
+    sequential page.
 
 Maximum payload per entry
 

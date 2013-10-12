@@ -41,7 +41,7 @@ char sqlite3ExprAffinity(Expr *pExpr){
 #ifndef SQLITE_OMIT_CAST
   if( op==TK_CAST ){
     assert( !ExprHasProperty(pExpr, EP_IntValue) );
-    return sqlite3AffinityType(pExpr->u.zToken);
+    return sqlite3AffinityType(pExpr->u.zToken, 0);
   }
 #endif
   if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER) 
@@ -2461,7 +2461,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       int aff, to_op;
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
-      aff = sqlite3AffinityType(pExpr->u.zToken);
+      aff = sqlite3AffinityType(pExpr->u.zToken, 0);
       to_op = aff - SQLITE_AFF_TEXT + OP_ToText;
       assert( to_op==OP_ToText    || aff!=SQLITE_AFF_TEXT    );
       assert( to_op==OP_ToBlob    || aff!=SQLITE_AFF_NONE    );
@@ -3128,7 +3128,7 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
       const char *zAff = "unk";
-      switch( sqlite3AffinityType(pExpr->u.zToken) ){
+      switch( sqlite3AffinityType(pExpr->u.zToken, 0) ){
         case SQLITE_AFF_TEXT:    zAff = "TEXT";     break;
         case SQLITE_AFF_NONE:    zAff = "NONE";     break;
         case SQLITE_AFF_NUMERIC: zAff = "NUMERIC";  break;

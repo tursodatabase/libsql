@@ -289,6 +289,17 @@ test_suite "queryplanner" -prefix "" -description {
   where.test
 }
 
+test_suite "vfslog" -prefix "" -description {
+  "Vfslog" quick test suite. Like "veryquick" except does not omits
+  a few tests that do not work with a version 1 VFS. And the quota* tests,
+  which do not work with a VFS that uses the pVfs argument passed to
+  sqlite3_vfs methods.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* oserror.test \
+  pager1.test syscall.test sysfault.test tkt3457.test quota* superlock* \
+  wal* mmap*
+]
+
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
 # Define the coverage related test suites:

@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix fts3snippet
 
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
@@ -138,7 +139,7 @@ foreach {DO_MALLOC_TEST enc} {
 
   # Set variable $T to the test name prefix for this iteration of the loop.
   #
-  set T "fts3snippet-$enc"
+  set T "fts3snippet-1.$enc"
 
   ##########################################################################
   # Test the offset function.
@@ -457,6 +458,66 @@ foreach {DO_MALLOC_TEST enc} {
   do_select_test $T.10.6 {
     SELECT length(matchinfo(ft)), typeof(matchinfo(ft)) FROM ft WHERE rowid = $r
   } {0 blob}
+}
+
+#-------------------------------------------------------------------------
+# Test an interaction between the snippet() function and OR clauses.
+#
+do_execsql_test 2.1 {
+  CREATE VIRTUAL TABLE t2 USING fts4;
+  INSERT INTO t2 VALUES('one two three four five');
+  INSERT INTO t2 VALUES('two three four five one');
+  INSERT INTO t2 VALUES('three four five one two');
+  INSERT INTO t2 VALUES('four five one two three');
+  INSERT INTO t2 VALUES('five one two three four');
+}
+
+do_execsql_test 2.2 {
+  SELECT snippet(t2, '[', ']') FROM t2 WHERE t2 MATCH 'one OR (four AND six)'
+} {
+  {[one] two three [four] five}
+  {two three [four] five [one]}
+  {three [four] five [one] two}
+  {[four] five [one] two three}
+  {five [one] two three [four]}
+}
+
+do_execsql_test 2.3 {
+  SELECT snippet(t2, '[', ']') FROM t2 
+  WHERE t2 MATCH 'one OR (four AND six)' 
+  ORDER BY docid DESC
+} {
+  {five [one] two three [four]}
+  {[four] five [one] two three}
+  {three [four] five [one] two}
+  {two three [four] five [one]}
+  {[one] two three [four] five}
+}
+
+do_execsql_test 2.4 {
+  INSERT INTO t2 VALUES('six');
+}
+
+do_execsql_test 2.5 {
+  SELECT snippet(t2, '[', ']') FROM t2 WHERE t2 MATCH 'one OR (four AND six)'
+} {
+  {[one] two three [four] five}
+  {two three [four] five [one]}
+  {three [four] five [one] two}
+  {[four] five [one] two three}
+  {five [one] two three [four]}
+}
+
+do_execsql_test 2.6 {
+  SELECT snippet(t2, '[', ']') FROM t2 
+  WHERE t2 MATCH 'one OR (four AND six)' 
+  ORDER BY docid DESC
+} {
+  {five [one] two three [four]}
+  {[four] five [one] two three}
+  {three [four] five [one] two}
+  {two three [four] five [one]}
+  {[one] two three [four] five}
 }
 
 set sqlite_fts3_enable_parentheses 0

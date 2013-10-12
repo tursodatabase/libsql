@@ -974,7 +974,7 @@ static int run_table_dump_query(
   rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
-    p->nErr++;
+    if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
     return rc;
   }
   rc = sqlite3_step(pSelect);
@@ -1001,7 +1001,7 @@ static int run_table_dump_query(
   rc = sqlite3_finalize(pSelect);
   if( rc!=SQLITE_OK ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
-    p->nErr++;
+    if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
   }
   return rc;
 }
@@ -1204,7 +1204,7 @@ static int shell_exec(
               /* extract the data and data types */
               for(i=0; i<nCol; i++){
                 aiTypes[i] = x = sqlite3_column_type(pStmt, i);
-                if( x==SQLITE_BLOB && pArg->mode==MODE_Insert ){
+                if( x==SQLITE_BLOB && pArg && pArg->mode==MODE_Insert ){
                   azVals[i] = "";
                 }else{
                   azVals[i] = (char*)sqlite3_column_text(pStmt, i);

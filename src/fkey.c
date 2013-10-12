@@ -656,7 +656,7 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
       ** when this statement is run.  */
       FKey *p;
       for(p=pTab->pFKey; p; p=p->pNextFrom){
-        if( p->isDeferred ) break;
+        if( p->isDeferred || (db->flags & SQLITE_DeferFKs) ) break;
       }
       if( !p ) return;
       iSkip = sqlite3VdbeMakeLabel(v);
@@ -670,11 +670,18 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     /* If the DELETE has generated immediate foreign key constraint 
     ** violations, halt the VDBE and return an error at this point, before
     ** any modifications to the schema are made. This is because statement
-    ** transactions are not able to rollback schema changes.  */
-    sqlite3VdbeAddOp2(v, OP_FkIfZero, 0, sqlite3VdbeCurrentAddr(v)+2);
-    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
-        OE_Abort, "foreign key constraint failed", P4_STATIC
-    );
+    ** transactions are not able to rollback schema changes.  
+    **
+    ** If the SQLITE_DeferFKs flag is set, then this is not required, as
+    ** the statement transaction will not be rolled back even if FK
+    ** constraints are violated.
+    */
+    if( (db->flags & SQLITE_DeferFKs)==0 ){
+      sqlite3VdbeAddOp2(v, OP_FkIfZero, 0, sqlite3VdbeCurrentAddr(v)+2);
+      sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
+          OE_Abort, "foreign key constraint failed", P4_STATIC
+      );
+    }
 
     if( iSkip ){
       sqlite3VdbeResolveLabel(v, iSkip);

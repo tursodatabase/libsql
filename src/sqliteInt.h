@@ -12,6 +12,7 @@
 ** Internal interface definitions for SQLite.
 **
 */
+#include "sqlite3.h"
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
@@ -305,7 +306,6 @@
 #define likely(X)    (X)
 #define unlikely(X)  (X)
 
-#include "sqlite3.h"
 #include "hash.h"
 #include "parse.h"
 #include <stdio.h>
@@ -469,6 +469,31 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 #else
  typedef u32 tRowcnt;    /* 32-bit is the default */
 #endif
+
+/*
+** Estimated quantities used for query planning are stored as 16-bit
+** logarithms.  For quantity X, the value stored is 10*log2(X).  This
+** gives a possible range of values of approximately 1.0e986 to 1e-986.
+** But the allowed values are "grainy".  Not every value is representable.
+** For example, quantities 16 and 17 are both represented by a LogEst
+** of 40.  However, since LogEst quantatites are suppose to be estimates,
+** not exact values, this imprecision is not a problem.
+**
+** "LogEst" is short for "Logarithimic Estimate".
+**
+** Examples:
+**      1 -> 0              20 -> 43          10000 -> 132
+**      2 -> 10             25 -> 46          25000 -> 146
+**      3 -> 16            100 -> 66        1000000 -> 199
+**      4 -> 20           1000 -> 99        1048576 -> 200
+**     10 -> 33           1024 -> 100    4294967296 -> 320
+**
+** The LogEst can be negative to indicate fractional values. 
+** Examples:
+**
+**    0.5 -> -10           0.1 -> -33        0.0625 -> -40
+*/
+typedef INT16_TYPE LogEst;
 
 /*
 ** Macros to determine whether the machine is big or little endian,
@@ -1197,7 +1222,8 @@ struct Column {
   char *zColl;     /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* An OE_ code for handling a NOT NULL constraint */
   char affinity;   /* One of the SQLITE_AFF_... values */
-  u16 colFlags;    /* Boolean properties.  See COLFLAG_ defines below */
+  u8 szEst;        /* Estimated size of this column.  INT==1 */
+  u8 colFlags;     /* Boolean properties.  See COLFLAG_ defines below */
 };
 
 /* Allowed values for Column.colFlags:
@@ -1361,6 +1387,7 @@ struct Table {
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   i16 nCol;            /* Number of columns in this table */
   u16 nRef;            /* Number of pointers to this Table */
+  LogEst szTabRow;     /* Estimated size of each table row in bytes */
   u8 tabFlags;         /* Mask of TF_* values */
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
 #ifndef SQLITE_OMIT_ALTERTABLE
@@ -1472,7 +1499,7 @@ struct FKey {
 #define OE_SetDflt  8   /* Set the foreign key value to its default */
 #define OE_Cascade  9   /* Cascade the changes */
 
-#define OE_Default  99  /* Do whatever the default action is */
+#define OE_Default  10  /* Do whatever the default action is */
 
 
 /*
@@ -1559,6 +1586,7 @@ struct Index {
   char **azColl;           /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   int tnum;                /* DB Page containing root of this index */
+  LogEst szIdxRow;         /* Estimated average row size in bytes */
   u16 nColumn;             /* Number of columns in table used by this index */
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
@@ -2414,6 +2442,7 @@ typedef struct DbFixer DbFixer;
 struct DbFixer {
   Parse *pParse;      /* The parsing context.  Error messages written here */
   Schema *pSchema;    /* Fix items to this schema */
+  int bVarOnly;       /* Check for variable references only */
   const char *zDb;    /* Make sure all objects are contained in this database */
   const char *zType;  /* Type of the container - used for error messages */
   const Token *pName; /* Name of the container - used for error messages */
@@ -2952,7 +2981,7 @@ void sqlite3DeferForeignKey(Parse*, int);
 #endif
 void sqlite3Attach(Parse*, Expr*, Expr*, Expr*);
 void sqlite3Detach(Parse*, Expr*);
-int sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
+void sqlite3FixInit(DbFixer*, Parse*, int, const char*, const Token*);
 int sqlite3FixSrcList(DbFixer*, SrcList*);
 int sqlite3FixSelect(DbFixer*, Select*);
 int sqlite3FixExpr(DbFixer*, Expr*);
@@ -2964,6 +2993,12 @@ int sqlite3Atoi(const char*);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
 u32 sqlite3Utf8Read(const u8**);
+LogEst sqlite3LogEst(u64);
+LogEst sqlite3LogEstAdd(LogEst,LogEst);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+LogEst sqlite3LogEstFromDouble(double);
+#endif
+u64 sqlite3LogEstToInt(LogEst);
 
 /*
 ** Routines to read and write variable-length integers.  These used to
@@ -3080,7 +3115,7 @@ void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 CollSeq *sqlite3GetCollSeq(Parse*, u8, CollSeq *, const char*);
-char sqlite3AffinityType(const char*);
+char sqlite3AffinityType(const char*, u8*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);

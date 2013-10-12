@@ -279,7 +279,8 @@ TESTSRC += \
   $(TOP)/ext/misc/percentile.c \
   $(TOP)/ext/misc/regexp.c \
   $(TOP)/ext/misc/spellfix.c \
-  $(TOP)/ext/misc/wholenumber.c
+  $(TOP)/ext/misc/wholenumber.c \
+  $(TOP)/ext/misc/vfslog.c
 
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
@@ -618,6 +619,10 @@ $(TEST_EXTENSION): $(TOP)/src/test_loadext.c
 extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 	./testfixture$(EXE) $(TOP)/test/loadext.test
 
+showdb:	$(TOP)/tool/showdb.c sqlite3.c
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showdb \
+		$(TOP)/tool/showdb.c sqlite3.c
+
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the
 # releasetest.tcl script.
@@ -651,9 +656,10 @@ clean:
 	rm -f fts3-testfixture fts3-testfixture.exe
 	rm -f testfixture testfixture.exe
 	rm -f threadtest3 threadtest3.exe
-	rm -f sqlite3.c fts?amal.c tclsqlite3.c
+	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
+	rm -f showdb

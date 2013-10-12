@@ -95,6 +95,9 @@ do_test 1.10 {
 do_execsql_test 1.11 {
   SELECT next_char('re','vocab','w');
 } {a}
+do_execsql_test 1.11sub {
+  SELECT next_char('re','(SELECT w AS x FROM vocab)','x');
+} {a}
 do_execsql_test 1.12 {
   SELECT next_char('r','vocab','w');
 } {ae}

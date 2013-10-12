@@ -109,6 +109,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
   NAME: default_cache_size
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && !defined(SQLITE_OMIT_DEPRECATED)
 
   NAME: page_size
@@ -118,31 +119,37 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: page_count
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: max_page_count
   TYPE: PAGE_COUNT
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: locking_mode
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: journal_mode
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: journal_size_limit
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: cache_size
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: mmap_size
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: auto_vacuum
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_AUTOVACUUM)
 
   NAME: incremental_vacuum
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_AUTOVACUUM)
 
   NAME: temp_store
@@ -158,27 +165,38 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_ENABLE_LOCKING_STYLE
 
   NAME: synchronous
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_PAGER_PRAGMAS)
 
   NAME: table_info
+  FLAG: NeedSchema
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
+  NAME: stats
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: index_info
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: index_list
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: database_list
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: collation_list
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
   NAME: foreign_key_list
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY)
 
   NAME: foreign_key_check
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
   NAME: parser_trace
@@ -187,10 +205,12 @@ set pragma_def {
   NAME: case_sensitive_like
 
   NAME: integrity_check
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: quick_check
   TYPE: INTEGRITY_CHECK
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_INTEGRITY_CHECK)
 
   NAME: encoding
@@ -216,6 +236,7 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_COMPILEOPTION_DIAGS)
 
   NAME: wal_checkpoint
+  FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_WAL)
 
   NAME: wal_autocheckpoint
@@ -237,6 +258,10 @@ set pragma_def {
   NAME: hexkey
   IF:   defined(SQLITE_HAS_CODEC)
 
+  NAME: hexrekey
+  TYPE: HEXKEY
+  IF:   defined(SQLITE_HAS_CODEC)
+
   NAME: activate_extensions
   IF:   defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
 
@@ -245,14 +270,16 @@ set pragma_def {
 set name {}
 set type {}
 set if {}
+set flags {}
 set arg 0
 proc record_one {} {
-  global name type if arg allbyname typebyif
+  global name type if arg allbyname typebyif flags
   if {$name==""} return
-  set allbyname($name) [list $type $arg $if]
+  set allbyname($name) [list $type $arg $if $flags]
   set name {}
   set type {}
   set if {}
+  set flags {}
   set arg 0
 }
 foreach line [split $pragma_def \n] {
@@ -270,6 +297,11 @@ foreach line [split $pragma_def \n] {
     set arg $val
   } elseif {$id=="IF"} {
     set if $val
+  } elseif {$id=="FLAG"} {
+    foreach term [split $val] {
+      lappend flags $term
+      set allflags($term) 1
+    }
   } else {
     error "bad pragma_def line: $line"
   }
@@ -308,30 +340,42 @@ foreach name $allnames {
   incr pnum
 }
 
+# Generate #defines for flags
+#
+set fv 1
+foreach f [lsort [array names allflags]] {
+  puts [format {#define PragFlag_%-20s 0x%02x} $f $fv]
+  set fv [expr {$fv*2}]
+}
+
 # Generate the lookup table
 #
 puts "static const struct sPragmaNames \173"
 puts "  const char *const zName;  /* Name of pragma */"
 puts "  u8 ePragTyp;              /* PragTyp_XXX value */"
+puts "  u8 mPragFlag;             /* Zero or more PragFlag_XXX values */"
 puts "  u32 iArg;                 /* Extra argument */"
 puts "\175 aPragmaNames\[\] = \173"
 
 set current_if {}
 set spacer [format {    %26s } {}]
 foreach name $allnames {
-  foreach {type arg if} $allbyname($name) break
+  foreach {type arg if flag} $allbyname($name) break
   if {$if!=$current_if} {
     if {$current_if!=""} {puts "#endif"}
     set current_if $if
     if {$current_if!=""} {puts "#if $current_if"}
   }
-  set namex [format %-26s \"$name\",]
   set typex [format PragTyp_%-23s $type,]
-  if {[string length $arg]>10} {
-    puts "  \173 $namex $typex\n$spacer$arg \175,"
+  if {$flag==""} {
+    set flagx "0"
   } else {
-    puts "  \173 $namex $typex $arg \175,"
+    set flagx PragFlag_[join $flag {|PragFlag_}]
   }
+  puts "  \173 /* zName:     */ \"$name\","
+  puts "    /* ePragTyp:  */ PragTyp_$type,"
+  puts "    /* ePragFlag: */ $flagx,"
+  puts "    /* iArg:      */ $arg \175,"
 }
 if {$current_if!=""} {puts "#endif"}
 puts "\175;"

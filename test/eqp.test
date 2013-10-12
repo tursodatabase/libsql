@@ -33,11 +33,11 @@ set testprefix eqp
 proc det {args} { uplevel do_eqp_test $args }
 
 do_execsql_test 1.1 {
-  CREATE TABLE t1(a, b);
+  CREATE TABLE t1(a INT, b INT, ex TEXT);
   CREATE INDEX i1 ON t1(a);
   CREATE INDEX i2 ON t1(b);
-  CREATE TABLE t2(a, b);
-  CREATE TABLE t3(a, b);
+  CREATE TABLE t2(a INT, b INT, ex TEXT);
+  CREATE TABLE t3(a INT, b INT, ex TEXT);
 }
 
 do_eqp_test 1.2 {
@@ -122,9 +122,9 @@ do_eqp_test 1.11 {
 #
 drop_all_tables
 do_execsql_test 2.1 {
-  CREATE TABLE t1(x, y);
+  CREATE TABLE t1(x INT, y INT, ex TEXT);
 
-  CREATE TABLE t2(x, y);
+  CREATE TABLE t2(x INT, y INT, ex TEXT);
   CREATE INDEX t2i1 ON t2(x);
 }
 
@@ -374,7 +374,7 @@ drop_all_tables
 # FROM t1 WHERE a=1;
 # 0|0|0|SCAN TABLE t1
 #
-do_execsql_test 5.1.0 { CREATE TABLE t1(a, b) }
+do_execsql_test 5.1.0 { CREATE TABLE t1(a INT, b INT, ex TEXT) }
 det 5.1.1 "SELECT a, b FROM t1 WHERE a=1" {
   0 0 0 {SCAN TABLE t1}
 }
@@ -402,8 +402,8 @@ det 5.3.1 "SELECT a, b FROM t1 WHERE a=1" {
 # 0|0|0|SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)
 # 0|1|1|SCAN TABLE t2
 #
-do_execsql_test 5.4.0 {CREATE TABLE t2(c, d)}
-det 5.4.1 "SELECT t1.*, t2.* FROM t1, t2 WHERE t1.a=1 AND t1.b>2" {
+do_execsql_test 5.4.0 {CREATE TABLE t2(c INT, d INT, ex TEXT)}
+det 5.4.1 "SELECT t1.a, t2.c FROM t1, t2 WHERE t1.a=1 AND t1.b>2" {
   0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)}
   0 1 1 {SCAN TABLE t2}
 }
@@ -413,7 +413,7 @@ det 5.4.1 "SELECT t1.*, t2.* FROM t1, t2 WHERE t1.a=1 AND t1.b>2" {
 # 0|0|1|SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)
 # 0|1|0|SCAN TABLE t2
 #
-det 5.5 "SELECT t1.*, t2.* FROM t2, t1 WHERE t1.a=1 AND t1.b>2" {
+det 5.5 "SELECT t1.a, t2.c FROM t2, t1 WHERE t1.a=1 AND t1.b>2" {
   0 0 1 {SEARCH TABLE t1 USING COVERING INDEX i2 (a=? AND b>?)}
   0 1 0 {SCAN TABLE t2}
 }
@@ -424,7 +424,7 @@ det 5.5 "SELECT t1.*, t2.* FROM t2, t1 WHERE t1.a=1 AND t1.b>2" {
 # 0|0|0|SEARCH TABLE t1 USING INDEX i3 (b=?)
 #
 do_execsql_test 5.5.0 {CREATE INDEX i3 ON t1(b)}
-det 5.6.1 "SELECT * FROM t1 WHERE a=1 OR b=2" {
+det 5.6.1 "SELECT a, b FROM t1 WHERE a=1 OR b=2" {
   0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i2 (a=?)}
   0 0 0 {SEARCH TABLE t1 USING INDEX i3 (b=?)}
 }
@@ -485,7 +485,7 @@ det 5.10 {
 # 0|0|0|SEARCH TABLE t2 USING INDEX i4 (c=?)
 # 0|1|1|SCAN TABLE t1
 #
-det 5.11 "SELECT * FROM (SELECT * FROM t2 WHERE c=1), t1" {
+det 5.11 "SELECT a, b FROM (SELECT * FROM t2 WHERE c=1), t1" {
   0 0 0 {SEARCH TABLE t2 USING INDEX i4 (c=?)}
   0 1 1 {SCAN TABLE t1 USING COVERING INDEX i2}
 }
@@ -496,7 +496,7 @@ det 5.11 "SELECT * FROM (SELECT * FROM t2 WHERE c=1), t1" {
 # 2|0|0|SCAN TABLE t2
 # 0|0|0|COMPOUND SUBQUERIES 1 AND 2 USING TEMP B-TREE (UNION)
 #
-det 5.12 "SELECT a FROM t1 UNION SELECT c FROM t2" {
+det 5.12 "SELECT a,b FROM t1 UNION SELECT c, 99 FROM t2" {
   1 0 0 {SCAN TABLE t1 USING COVERING INDEX i2}
   2 0 0 {SCAN TABLE t2 USING COVERING INDEX i4}
   0 0 0 {COMPOUND SUBQUERIES 1 AND 2 USING TEMP B-TREE (UNION)}
@@ -509,7 +509,7 @@ det 5.12 "SELECT a FROM t1 UNION SELECT c FROM t2" {
 # 0|0|0|COMPOUND SUBQUERIES 1 AND 2 (EXCEPT)
 #
 det 5.13 "SELECT a FROM t1 EXCEPT SELECT d FROM t2 ORDER BY 1" {
-  1 0 0 {SCAN TABLE t1 USING COVERING INDEX i2}
+  1 0 0 {SCAN TABLE t1 USING COVERING INDEX i1}
   2 0 0 {SCAN TABLE t2}
   2 0 0 {USE TEMP B-TREE FOR ORDER BY}
   0 0 0 {COMPOUND SUBQUERIES 1 AND 2 (EXCEPT)}
@@ -548,7 +548,7 @@ proc do_peqp_test {tn sql res} {
 }
 
 do_peqp_test 6.1 {
-  SELECT a FROM t1 EXCEPT SELECT d FROM t2 ORDER BY 1
+  SELECT a, b FROM t1 EXCEPT SELECT d, 99 FROM t2 ORDER BY 1
 } [string trimleft {
 1 0 0 SCAN TABLE t1 USING COVERING INDEX i2
 2 0 0 SCAN TABLE t2
@@ -563,8 +563,8 @@ do_peqp_test 6.1 {
 drop_all_tables
 
 do_execsql_test 7.0 {
-  CREATE TABLE t1(a, b);
-  CREATE TABLE t2(a, b);
+  CREATE TABLE t1(a INT, b INT, ex CHAR(100));
+  CREATE TABLE t2(a INT, b INT, ex CHAR(100));
   CREATE INDEX i1 ON t2(a);
 }
 
@@ -577,12 +577,12 @@ det 7.2 "SELECT count(*) FROM t2" {
 }
 
 do_execsql_test 7.3 {
-  INSERT INTO t1 VALUES(1, 2);
-  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t1(a,b) VALUES(1, 2);
+  INSERT INTO t1(a,b) VALUES(3, 4);
 
-  INSERT INTO t2 VALUES(1, 2);
-  INSERT INTO t2 VALUES(3, 4);
-  INSERT INTO t2 VALUES(5, 6);
+  INSERT INTO t2(a,b) VALUES(1, 2);
+  INSERT INTO t2(a,b) VALUES(3, 4);
+  INSERT INTO t2(a,b) VALUES(5, 6);
  
   ANALYZE;
 }

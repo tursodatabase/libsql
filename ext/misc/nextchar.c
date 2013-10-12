@@ -38,6 +38,19 @@
 ** out) run the following query:
 **
 **   SELECT next_char('cha','dictionary','word');
+**
+** IMPLEMENTATION NOTES:
+**
+** The next_char function is implemented using recursive SQL that makes
+** use of the table name and column name as part of a query.  If either
+** the table name or column name are keywords or contain special characters,
+** then they should be escaped.  For example:
+**
+**   SELECT next_char('cha','[dictionary]','[word]');
+**
+** This also means that the table name can be a subquery:
+**
+**   SELECT next_char('cha','(SELECT word AS w FROM dictionary)','w');
 */
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
@@ -231,9 +244,9 @@ static void nextCharFunc(
     zColl = "";
   }
   zSql = sqlite3_mprintf(
-    "SELECT \"%w\" FROM \"%w\""
-    " WHERE \"%w\">=(?1 || ?2) %s"
-    "   AND \"%w\"<=(?1 || char(1114111)) %s" /* 1114111 == 0x10ffff */
+    "SELECT %s FROM %s"
+    " WHERE %s>=(?1 || ?2) %s"
+    "   AND %s<=(?1 || char(1114111)) %s" /* 1114111 == 0x10ffff */
     "   %s"
     " ORDER BY 1 %s ASC LIMIT 1",
     zField, zTable, zField, zColl, zField, zColl, zWhereClause, zColl

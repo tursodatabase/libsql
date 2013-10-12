@@ -13,6 +13,13 @@
 # This file tests the PRAGMA defer_foreign_keys and 
 # SQLITE_DBSTATUS_DEFERRED_FKS
 #
+# EVIDENCE-OF: R-18981-16292 When the defer_foreign_keys PRAGMA is on,
+# enforcement of all foreign key constraints is delayed until the
+# outermost transaction is committed.
+#
+# EVIDENCE-OF: R-28911-57501 The defer_foreign_keys pragma defaults to
+# OFF so that foreign key constraints are only deferred if they are
+# created as "DEFERRABLE INITIALLY DEFERRED".
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,6 +28,10 @@ ifcapable {!foreignkey} {
   finish_test
   return
 }
+
+do_execsql_test fkey6-1.0 {
+  PRAGMA defer_foreign_keys;
+} {0}
 
 do_execsql_test fkey6-1.1 {
   PRAGMA foreign_keys=ON;
@@ -70,12 +81,23 @@ do_test fkey6-1.8 {
 do_test fkey6-1.9 {
   sqlite3_db_status db DBSTATUS_DEFERRED_FKS 0
 } {0 1 0}
-do_test fkey6-1.10 {
-  execsql {
-    ROLLBACK;
-    PRAGMA defer_foreign_keys=OFF;
-    BEGIN;
-  }
+
+# EVIDENCE-OF: R-21752-26913 The defer_foreign_keys pragma is
+# automatically switched off at each COMMIT or ROLLBACK. Hence, the
+# defer_foreign_keys pragma must be separately enabled for each
+# transaction.
+do_execsql_test fkey6-1.10.1 {
+  PRAGMA defer_foreign_keys;
+  ROLLBACK;
+  PRAGMA defer_foreign_keys;
+  BEGIN;
+  PRAGMA defer_foreign_keys=ON;
+  PRAGMA defer_foreign_keys;
+  COMMIT;
+  PRAGMA defer_foreign_keys;
+  BEGIN;
+} {1 0 1 0}
+do_test fkey6-1.10.2 {
   catchsql {DELETE FROM t1 WHERE x=3}
 } {1 {foreign key constraint failed}}
 db eval {ROLLBACK}
@@ -99,5 +121,56 @@ do_test fkey6-1.22 {
   }
 } {}
 
+do_execsql_test fkey6-2.1 {
+  CREATE TABLE p1(a PRIMARY KEY);
+  INSERT INTO p1 VALUES('one'), ('two');
+  CREATE TABLE c1(x REFERENCES p1);
+  INSERT INTO c1 VALUES('two'), ('one');
+}
+
+do_execsql_test fkey6-2.2 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    DELETE FROM p1;
+  ROLLBACK;
+  PRAGMA defer_foreign_keys;
+} {0}
+
+do_execsql_test fkey6-2.3 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    DROP TABLE p1;
+    PRAGMA vdbe_trace = 0;
+  ROLLBACK;
+  PRAGMA defer_foreign_keys;
+} {0}
+
+do_execsql_test fkey6-2.4 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    DELETE FROM p1;
+    DROP TABLE c1;
+  COMMIT;
+  PRAGMA defer_foreign_keys;
+} {0}
+
+do_execsql_test fkey6-2.5 {
+  DROP TABLE p1;
+  CREATE TABLE p1(a PRIMARY KEY);
+  INSERT INTO p1 VALUES('one'), ('two');
+  CREATE TABLE c1(x REFERENCES p1);
+  INSERT INTO c1 VALUES('two'), ('one');
+}
+
+do_execsql_test fkey6-2.6 {
+  BEGIN;
+    PRAGMA defer_foreign_keys = 1;
+    INSERT INTO c1 VALUES('three');
+    DROP TABLE c1;
+  COMMIT;
+  PRAGMA defer_foreign_keys;
+} {0}
+
 
 finish_test
+
