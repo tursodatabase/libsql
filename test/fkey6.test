@@ -81,12 +81,23 @@ do_test fkey6-1.8 {
 do_test fkey6-1.9 {
   sqlite3_db_status db DBSTATUS_DEFERRED_FKS 0
 } {0 1 0}
-do_test fkey6-1.10 {
-  execsql {
-    ROLLBACK;
-    PRAGMA defer_foreign_keys=OFF;
-    BEGIN;
-  }
+
+# EVIDENCE-OF: R-21752-26913 The defer_foreign_keys pragma is
+# automatically switched off at each COMMIT or ROLLBACK. Hence, the
+# defer_foreign_keys pragma must be separately enabled for each
+# transaction.
+do_execsql_test fkey6-1.10.1 {
+  PRAGMA defer_foreign_keys;
+  ROLLBACK;
+  PRAGMA defer_foreign_keys;
+  BEGIN;
+  PRAGMA defer_foreign_keys=ON;
+  PRAGMA defer_foreign_keys;
+  COMMIT;
+  PRAGMA defer_foreign_keys;
+  BEGIN;
+} {1 0 1 0}
+do_test fkey6-1.10.2 {
   catchsql {DELETE FROM t1 WHERE x=3}
 } {1 {foreign key constraint failed}}
 db eval {ROLLBACK}

@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2013-10-12T02:33:22.853
+C Add\stests\sthat\sdemonstrate\sthat\sPRAGMA\sdefer_foreign_keys\swill\sreset\sto\soff\nat\sthe\sconclusion\sof\sthe\snext\stransaction.
+D 2013-10-12T13:16:15.885
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -463,7 +463,7 @@ F test/fkey2.test 06e0b4cc9e1b3271ae2ae6feeb19755468432111
 F test/fkey3.test 5ec899d12b13bcf1e9ef40eff7fb692fdb91392e
 F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 2b8c761ad23bb6a95b9cf8366c9a982a80a439c2
-F test/fkey6.test c1d7cb176648e0e1e9f971f5f9bde4dd5bcd046d
+F test/fkey6.test aaf64e18e68fd9967e6accec65e2598ccefcb1e4
 F test/fkey7.test e31d0e71a41c1d29349a16448d6c420e2c53a8fc
 F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 035d03e94252f31025b39da49d8401933352fb77
-R 674aebabd5ad2749788043a817e7f011
-U mistachkin
-Z fc9cb3270f125330055c4b37111cf872
+P 4b130f88fba216e088f61252bbcdde57ec7ee6a9
+R 99a9e83f60fa4dd81ccd94c036548c85
+U drh
+Z 4e218592d1ebb0a4d1a6f06c784de251
