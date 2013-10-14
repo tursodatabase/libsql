@@ -31,7 +31,7 @@
 ** SQLITE_ENABLE_STAT3 defined.  The functionality of sqlite_stat3
 ** is a superset of sqlite_stat2.  The sqlite_stat4 is an enhanced
 ** version of sqlite_stat3 and is only available when compiled with
-** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.0 and later.  It is
+** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.1 and later.  It is
 ** not possible to enable both STAT3 and STAT4 at the same time.  If they
 ** are both enabled, then STAT4 takes precedence.
 **
@@ -107,12 +107,12 @@
 ** The idx column names the index and the tbl column is the table of the
 ** index.  If the idx and tbl columns are the same, then the sample is
 ** of the INTEGER PRIMARY KEY.  The sample column is a blob which is the
-** binary encoding of a key from the index, with the trailing rowid
-** omitted.  The nEq column is a list of integers.  The first integer
-** is the approximate number of entries in the index whose left-most 
-** column exactly matches the left-most column of the sample.  The second
-** integer in nEq is the approximate number of entries in the index where
-** the first two columns match the first two columns of the sample.
+** binary encoding of a key from the index.  The nEq column is a
+** list of integers.  The first integer is the approximate number
+** of entries in the index whose left-most column exactly matches
+** the left-most column of the sample.  The second integer in nEq
+** is the approximate number of entries in the index where the
+** first two columns match the first two columns of the sample.
 ** And so forth.  nLt is another list of integers that show the approximate
 ** number of entries that are strictly less than the sample.  The first
 ** integer in nLt contains the number of entries in the index where the

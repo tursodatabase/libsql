@@ -1,5 +1,5 @@
-C Make\ssubroutines\ssampleCopy()\sand\svalueFromExpr()\shave\sfile\sscope.
-D 2013-10-14T13:21:00.014
+C Corrects\sto\scomments\son\sthe\sSTAT4\simplementation.
+D 2013-10-14T14:21:59.159
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -158,7 +158,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c c6259f93c9e9029df8e23e1093e0c650974ca7e5
+F src/analyze.c f1c5ed1fe128c3f106dcd95e97ee9ef94db7a3fa
 F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 98ddfe45713775657e586f5a2499cf3c036f13dd
-R 967432a4e7657b2df96a7af6fdae0344
+P 1660efbe46439734c7dc1674994ceb86a9b41d1a
+R f477aeb6857af43b8fdd44c053eea21e
 U drh
-Z 96efb7a8ef8355039cf707d085dc7cb4
+Z 5a50d5097c4b6be57e9ef1781ac233fc
