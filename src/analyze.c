@@ -444,7 +444,7 @@ static int sampleIsBetter(
 /*
 ** Copy the contents of object (*pFrom) into (*pTo).
 */
-void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
+static void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
   pTo->iRowid = pFrom->iRowid;
   pTo->isPSample = pFrom->isPSample;
   pTo->iCol = pFrom->iCol;

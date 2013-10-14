@@ -1075,7 +1075,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 ** NULL, it is assumed that the caller will free any allocated object
 ** in all cases.
 */
-int valueFromExpr(
+static int valueFromExpr(
   sqlite3 *db,                    /* The database connection */
   Expr *pExpr,                    /* The expression to evaluate */
   u8 enc,                         /* Encoding to use */
