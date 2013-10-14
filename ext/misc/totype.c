@@ -43,12 +43,12 @@ SQLITE_EXTENSION_INIT1
 */
 #if defined(i386) || defined(__i386__) || defined(_M_IX86)\
                              || defined(__x86_64) || defined(__x86_64__)
-# define SQLITE_BIGENDIAN    0
-# define SQLITE_LITTLEENDIAN 1
+# define TOTYPE_BIGENDIAN    0
+# define TOTYPE_LITTLEENDIAN 1
 #else
   const int totype_one = 1;
-# define SQLITE_BIGENDIAN    (*(char *)(&totype_one)==0)
-# define SQLITE_LITTLEENDIAN (*(char *)(&totype_one)==1)
+# define TOTYPE_BIGENDIAN    (*(char *)(&totype_one)==0)
+# define TOTYPE_LITTLEENDIAN (*(char *)(&totype_one)==1)
 #endif
 
 /*
@@ -63,7 +63,7 @@ SQLITE_EXTENSION_INIT1
 ** Return TRUE if character c is a whitespace character
 */
 static int totypeIsspace(unsigned char c){
-  return c==' ' || c=='\t' || c=='\n' || c=='\r';
+  return c==' ' || c=='\t' || c=='\n' || c=='\v' || c=='\f' || c=='\r';
 }
 
 /*
@@ -83,7 +83,7 @@ static int totypeIsdigit(unsigned char c){
 ** in the values of the last digit if the only difference is in the
 ** last digit.  So, for example,
 **
-**      totypeCompare2pow63("9223372036854775800", 1)
+**      totypeCompare2pow63("9223372036854775800")
 **
 ** will return -8.
 */
@@ -104,16 +104,18 @@ static int totypeCompare2pow63(const char *zNum){
 /*
 ** Convert zNum to a 64-bit signed integer.
 **
-** If the zNum value is representable as a 64-bit twos-complement 
+** If the zNum value is representable as a 64-bit twos-complement
 ** integer, then write that value into *pNum and return 0.
 **
 ** If zNum is exactly 9223372036854665808, return 2.  This special
-** case is broken out because while 9223372036854665808 cannot be a 
+** case is broken out because while 9223372036854665808 cannot be a
 ** signed 64-bit integer, its negative -9223372036854665808 can be.
 **
 ** If zNum is too big for a 64-bit integer and is not
 ** 9223372036854665808  or if zNum contains any non-numeric text,
 ** then return 1.
+**
+** The string is not necessarily zero-terminated.
 */
 static int totypeAtoi64(const char *zNum, sqlite3_int64 *pNum, int length){
   sqlite3_uint64 u = 0;
@@ -172,12 +174,12 @@ static int totypeAtoi64(const char *zNum, sqlite3_int64 *pNum, int length){
     }
   }
 }
+
 /*
 ** The string z[] is an text representation of a real number.
 ** Convert this string to a double and write it into *pResult.
 **
-** The string z[] is length bytes in length (bytes, not characters) and
-** uses the encoding enc.  The string is not necessarily zero-terminated.
+** The string is not necessarily zero-terminated.
 **
 ** Return TRUE if the result is a valid real number (or integer) and FALSE
 ** if the string is empty or contains extraneous text.  Valid numbers
@@ -321,7 +323,7 @@ totype_atof_calc:
           result = 1e308*1e308*s;  /* Infinity */
         }
       }else{
-        /* 1.0e+22 is the largest power of 10 than can be 
+        /* 1.0e+22 is the largest power of 10 than can be
         ** represented exactly. */
         while( e%22 ) { scale *= 1.0e+1; e -= 1; }
         while( e>0 ) { scale *= 1.0e+22; e -= 22; }
@@ -374,7 +376,7 @@ static void tointegerFunc(
         int nBlob = sqlite3_value_bytes(argv[0]);
         if( nBlob==sizeof(sqlite3_int64) ){
           sqlite3_int64 iVal;
-          if( SQLITE_BIGENDIAN ){
+          if( TOTYPE_BIGENDIAN ){
             int i;
             unsigned char zBlobRev[sizeof(sqlite3_int64)];
             for(i=0; i<sizeof(sqlite3_int64); i++){
@@ -415,6 +417,7 @@ static void tointegerFunc(
 ** real number.  Otherwise return NULL.
 */
 #if defined(_MSC_VER)
+#pragma warning(disable: 4748)
 #pragma optimize("", off)
 #endif
 static void torealFunc(
@@ -443,7 +446,7 @@ static void torealFunc(
         int nBlob = sqlite3_value_bytes(argv[0]);
         if( nBlob==sizeof(double) ){
           double rVal;
-          if( SQLITE_LITTLEENDIAN ){
+          if( TOTYPE_LITTLEENDIAN ){
             int i;
             unsigned char zBlobRev[sizeof(double)];
             for(i=0; i<sizeof(double); i++){
@@ -480,14 +483,15 @@ static void torealFunc(
 }
 #if defined(_MSC_VER)
 #pragma optimize("", on)
+#pragma warning(default: 4748)
 #endif
 
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
 int sqlite3_totype_init(
-  sqlite3 *db, 
-  char **pzErrMsg, 
+  sqlite3 *db,
+  char **pzErrMsg,
   const sqlite3_api_routines *pApi
 ){
   int rc = SQLITE_OK;

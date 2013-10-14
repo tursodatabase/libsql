@@ -1,5 +1,5 @@
-C Move\sthe\stointeger()\sand\storeal()\sfunctions\sout\sof\score\sand\smake\sthem\sinto\na\srun-time\sloadable\sextension.
-D 2013-10-14T21:14:42.543
+C Fix\sharmless\scompiler\swarning\sin\sthe\stotype\sextension.\s\sInclude\sall\sstandard\swhitespace\scharacters\sin\stotypeIsspace.\s\sMinor\sadjustments\sto\sstyle\sand\scomments.
+D 2013-10-14T22:35:40.075
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -115,7 +115,7 @@ F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
-F ext/misc/totype.c 368c089adfeabfe3de5fd4b8c581df53743cf6c0
+F ext/misc/totype.c 86eeb8efb5c0e1a09d713e4183ff1eda95c8f342
 F ext/misc/vfslog.c 1abb192d8d4bd323adbddec0c024580496b51b7a
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
@@ -1125,7 +1125,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0bf438fc30582a08fddfc3cec49366ee17ae2abe
-R ade7979aa97b3511bc21cfd9a8979ec2
-U drh
-Z 602799c8fb404ec8c5a4601c8b4e8f8d
+P 9f66dd7e3790c04f0ab724419f5381bd21f9ebad
+R f21c7b96aefc2201770b50ac2899ad7e
+U mistachkin
+Z 42e92dc11d48272f024e4ddd08e08231
