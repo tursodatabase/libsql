@@ -1638,8 +1638,8 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp4(v, OP_String8, 0, regResult, 0, pTab->zName,
                         P4_TRANSIENT);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
-        pParent = sqlite3LocateTable(pParse, 0, pFK->zTo, zDb);
-        if( pParent==0 ) break;
+        pParent = sqlite3FindTable(db, pFK->zTo, zDb);
+        if( pParent==0 ) continue;
         pIdx = 0;
         sqlite3TableLock(pParse, iDb, pParent->tnum, 0, pParent->zName);
         x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, 0);
@@ -1656,18 +1656,20 @@ void sqlite3Pragma(
           break;
         }
       }
+      assert( pParse->nErr>0 || pFK==0 );
       if( pFK ) break;
       if( pParse->nTab<i ) pParse->nTab = i;
       addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, 0);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
-        pParent = sqlite3LocateTable(pParse, 0, pFK->zTo, zDb);
-        assert( pParent!=0 );
+        pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         pIdx = 0;
         aiCols = 0;
-        x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, &aiCols);
-        assert( x==0 );
+        if( pParent ){
+          x = sqlite3FkLocateIndex(pParse, pParent, pFK, &pIdx, &aiCols);
+          assert( x==0 );
+        }
         addrOk = sqlite3VdbeMakeLabel(v);
-        if( pIdx==0 ){
+        if( pParent && pIdx==0 ){
           int iKey = pFK->aCol[0].iFrom;
           assert( iKey>=0 && iKey<pTab->nCol );
           if( iKey!=pTab->iPKey ){
@@ -1685,13 +1687,15 @@ void sqlite3Pragma(
         }else{
           for(j=0; j<pFK->nCol; j++){
             sqlite3ExprCodeGetColumnOfTable(v, pTab, 0,
-                            aiCols ? aiCols[j] : pFK->aCol[0].iFrom, regRow+j);
+                            aiCols ? aiCols[j] : pFK->aCol[j].iFrom, regRow+j);
             sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk);
           }
-          sqlite3VdbeAddOp3(v, OP_MakeRecord, regRow, pFK->nCol, regKey);
-          sqlite3VdbeChangeP4(v, -1,
-                   sqlite3IndexAffinityStr(v,pIdx), P4_TRANSIENT);
-          sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
+          if( pParent ){
+            sqlite3VdbeAddOp3(v, OP_MakeRecord, regRow, pFK->nCol, regKey);
+            sqlite3VdbeChangeP4(v, -1,
+                     sqlite3IndexAffinityStr(v,pIdx), P4_TRANSIENT);
+            sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
+          }
         }
         sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
         sqlite3VdbeAddOp4(v, OP_String8, 0, regResult+2, 0, 
