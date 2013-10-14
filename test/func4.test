@@ -19,9 +19,10 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set saved_tcl_precision $tcl_precision
 set tcl_precision 0
+load_static_extension db totype
 
 set highPrecision(1) [expr \
-    {[memdbsql {SELECT tointeger(9223372036854775807 + 1);}] eq {{}}}]
+    {[db eval {SELECT tointeger(9223372036854775807 + 1);}] eq {{}}}]
 
 do_execsql_test func4-1.1 {
   SELECT tointeger(NULL);
@@ -195,7 +196,7 @@ do_execsql_test func4-1.55 {
 
 ifcapable floatingpoint {
   set highPrecision(2) [expr \
-      {[memdbsql {SELECT toreal(-9223372036854775808 + 1);}] eq {{}}}]
+      {[db eval {SELECT toreal(-9223372036854775808 + 1);}] eq {{}}}]
 
   do_execsql_test func4-2.1 {
     SELECT toreal(NULL);
