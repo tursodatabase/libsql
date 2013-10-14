@@ -32,6 +32,13 @@ USE_ICU = 0
 USE_CRT_DLL = 0
 !ENDIF
 
+# Set this non-0 to generate assembly code listings for the source code
+# files.
+#
+!IFNDEF USE_LISTINGS
+USE_LISTINGS = 0
+!ENDIF
+
 # Set this non-0 to attempt setting the native compiler automatically
 # for cross-compiling the command line tools needed during the compilation
 # process.
@@ -188,6 +195,13 @@ NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 #
 BCC = $(NCC) -W3
 
+# Check if assembly code listings should be generated for the source
+# code files to be compiled.
+#
+!IF $(USE_LISTINGS)!=0
+BCC = $(BCC) -FAcs
+!ENDIF
+
 # Check if the native library paths should be used when compiling
 # the command line tools used during the compilation process.  If
 # so, set the necessary macro now.
@@ -202,6 +216,13 @@ NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
 #
 TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
+
+# Check if assembly code listings should be generated for the source
+# code files to be compiled.
+#
+!IF $(USE_LISTINGS)!=0
+TCC = $(TCC) -FAcs
+!ENDIF
 
 # When compiling the library for use in the WinRT environment,
 # the following compile-time options must be used as well to
@@ -1312,7 +1333,7 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
-	del /Q *.da *.bb *.bbg gmon.out
+	del /Q *.cod *.da *.bb *.bbg gmon.out
 	del /Q sqlite3.h opcodes.c opcodes.h
 	del /Q lemon.exe lempar.c parse.*
 	del /Q mkkeywordhash.exe keywordhash.h

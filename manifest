@@ -1,9 +1,9 @@
-C Fix\sfor\sbuilding\swith\sSQLITE_OMIT_FOREIGN_KEY.
-D 2013-10-14T15:41:39.130
+C Add\simplementations\sfor\sthe\stoInteger()\sand\stoReal()\sSQL\sfunctions.
+D 2013-10-14T19:35:33.432
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a08b5f4ed4f760bae4eae4e723371487c5378983
+F Makefile.msc d72be28ba13ec3986ac5791a6549036a84dc5903
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a8d1f6839521130dc73c5408cdd24bcfd791df34
@@ -176,7 +176,7 @@ F src/delete.c 45788c5e48734f2af4acd75a876466e5b9838e34
 F src/expr.c e7338ccffdc391c53ba2d51c5eb6a2f5299e040e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5dc10cbaa355753903cd2a64da040f948997ebf8
-F src/func.c 2c47b65e6e00e3e9374942f28254faf8adafe398
+F src/func.c 5fb4103cc5fd2920696e0a263e6a56a2844ab35d
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -569,6 +569,7 @@ F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test c7e80a44eebac8604397eb2ad83d0d5d9d541237
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
+F test/func4.test 142490571f2e7ee6c3c5a65f24cad3f8342c02a2
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -1123,7 +1124,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 208b259ad73b51e7df163fee3d7ed2bd79767597
-R d404755b57382c433b54a7ffeebb1595
-U dan
-Z 9d63388bf55fa4140187d4341a01752c
+P b8b5f6c8f646989bc62bb59416de9bca003a5896 a88b5be01e68b26267ff6eb05e931ef2e7fc9f99
+R fc9823e555e748e8dd749e50020ff907
+T +closed a88b5be01e68b26267ff6eb05e931ef2e7fc9f99
+U drh
+Z f917a0a33a0846e0a4d8398bd8607f59
