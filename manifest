@@ -1,5 +1,5 @@
-C Update\sthe\sforeign_key_check\spragma\sso\sthat\swhen\sa\sparent\stable\sis\sundefined\nit\sis\streated\sas\san\sempty\stable.
-D 2013-10-14T14:30:02.391
+C Fix\sfor\sbuilding\swith\sSQLITE_OMIT_FOREIGN_KEY.
+D 2013-10-14T15:41:39.130
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -222,7 +222,7 @@ F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
 F src/sqlite.h.in 4c6eb96fded1d56a27cec04b6b6803789eb28f54
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h eeebd2522bbd5ac7e3024be64113e8366caa66c8
+F src/sqliteInt.h 4dd81a25a919509ce94b1f8f120bbef14458d4b9
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1123,8 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e06f74d32d44f281dd21908d401184f35f9455a4 8c13a7fd738e5441af370537649b0bfa97679cda
-R 569f3fd7fb4e81f584789e4d94c2c097
-T +closed 8c13a7fd738e5441af370537649b0bfa97679cda
-U drh
-Z 337ac35bfd11421ae22a03d4fa2d5ecb
+P 208b259ad73b51e7df163fee3d7ed2bd79767597
+R d404755b57382c433b54a7ffeebb1595
+U dan
+Z 9d63388bf55fa4140187d4341a01752c
