@@ -4331,7 +4331,7 @@ static int fts3EvalIncrPhraseNext(
       int i;                      /* Used to iterate through tokens */
 
       /* Advance the iterator for each token in the phrase once. */
-      for(i=0; rc==SQLITE_OK && i<p->nToken; i++){
+      for(i=0; rc==SQLITE_OK && i<p->nToken && bEof==0; i++){
         rc = incrPhraseTokenNext(pTab, p, i, &a[i], &bEof);
         if( a[i].bIgnore==0 && (bMaxSet==0 || DOCID_CMP(iMax, a[i].iDocid)<0) ){
           iMax = a[i].iDocid;

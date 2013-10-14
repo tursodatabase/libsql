@@ -1,5 +1,5 @@
-C Add\simplementations\sfor\sthe\stoInteger()\sand\stoReal()\sSQL\sfunctions.
-D 2013-10-14T19:35:33.432
+C Fix\sa\scrash\sin\sFTS\sincremental\sphrase\sprocessing\sthat\scan\soccur\sif\sthe\ssecond\sor\ssubsequent\stoken\sis\smuch\smore\scommon\sin\sthe\sdataset\sthan\sthe\sfirst.
+D 2013-10-14T20:30:51.215
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c dcb90d12ff4a0ccfceaefb3bae2199b6536e0dfc
+F ext/fts3/fts3.c f25ae5729d40cc4e661c0a552685038f27e72bc9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 8689f7cf85020e7f88d1e761eeac480c3b0ea7ad
 F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
@@ -557,7 +557,7 @@ F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
-F test/fts4incr.test 2fae04582c2329a038b2b1f985e702478fb94888
+F test/fts4incr.test 361960ed3550e781f3f313e17e2182ef9cefc0e9
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
@@ -1124,8 +1124,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b8b5f6c8f646989bc62bb59416de9bca003a5896 a88b5be01e68b26267ff6eb05e931ef2e7fc9f99
-R fc9823e555e748e8dd749e50020ff907
-T +closed a88b5be01e68b26267ff6eb05e931ef2e7fc9f99
-U drh
-Z f917a0a33a0846e0a4d8398bd8607f59
+P a0f7cbc068416cf55b86056f2ce7ee505c6cc3ea
+R 5f9ee33bea159851b0bd3b4df54def2b
+U dan
+Z 1fee4cc09a93b480a53b5d3c883e606f

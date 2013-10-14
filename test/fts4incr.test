@@ -50,4 +50,26 @@ foreach {tn q res} {
   puts "with optimization: $t(0)    without: $t(1)"
 }
 
+do_test 2.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t2 USING fts4(order=DESC);
+  }
+  set num [list one two three four five six seven eight nine ten]
+  execsql BEGIN
+  for {set i 0} {$i < 10000} {incr i} {
+    set x "[lindex $num [expr $i%10]] zero"
+    execsql { INSERT INTO t2(docid, content) VALUES($i, $x) }
+  }
+  execsql COMMIT
+  execsql { INSERT INTO t2(t2) VALUES('optimize') }
+} {}
+
+do_execsql_test 2.2 {
+  SELECT count(*) FROM t2 WHERE t2 MATCH '"never zero"'
+} {0}
+
+do_execsql_test 2.3 {
+  SELECT count(*) FROM t2 WHERE t2 MATCH '"two zero"'
+} {1000}
+
 finish_test
