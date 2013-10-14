@@ -1,5 +1,5 @@
-C Restore\sthe\sindex_list\spragma\sback\sto\sits\sformer\soperation.\s\sCreate\sa\snew\nPRAGMA\sstats\sused\sto\saccess\sthe\stable\sand\sindex\swidths\sand\sheights.
-D 2013-10-12T20:22:00.025
+C Add\sa\snew\sapplication_id\sfor\sGeoPackage\sversion\s1.0.
+D 2013-10-14T10:46:05.794
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e2d28ec95bd17ab4f3b6ee40b7102e9d7a0857b9
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -139,7 +139,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F magic.txt f2b23a6bde8f1c6e86b957e4d94eab0add520b0d
+F magic.txt 814d3de5ec227817ff2ad26cbc73159c968a2a58
 F main.mk 2e01504061f618db804812143a9e9ec45a66ae70
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
@@ -1123,7 +1123,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 27001356ed8201529b3f31d4313f2010f1b4e1b1
-R f3adfc8132b3f36843e2e67728415fbc
+P f0cf8c85dcbcc7778aed2816792c368d777f79cb
+R 4f36494c4571dae8d7d76b44817e2e09
 U drh
-Z d16ae1a1de8f3334074e16125e33c2b1
+Z 654d268a6340b2587df2d3f244d3f538
