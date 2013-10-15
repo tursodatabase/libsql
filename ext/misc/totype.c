@@ -56,8 +56,13 @@ SQLITE_EXTENSION_INIT1
 ** These macros are designed to work correctly on both 32-bit and 64-bit
 ** compilers.
 */
-#define LARGEST_INT64  (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
-#define SMALLEST_INT64 (((sqlite3_int64)-1) - LARGEST_INT64)
+#ifndef LARGEST_INT64
+# define LARGEST_INT64   (0xffffffff|(((sqlite3_int64)0x7fffffff)<<32))
+#endif
+
+#ifndef SMALLEST_INT64
+# define SMALLEST_INT64  (((sqlite3_int64)-1) - LARGEST_INT64)
+#endif
 
 /*
 ** Return TRUE if character c is a whitespace character
