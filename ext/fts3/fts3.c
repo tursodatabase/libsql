@@ -4327,11 +4327,11 @@ static int fts3EvalIncrPhraseNext(
 
     while( bEof==0 ){
       int bMaxSet = 0;
-      sqlite3_int64 iMax;         /* Largest docid for all iterators */
+      sqlite3_int64 iMax = 0;     /* Largest docid for all iterators */
       int i;                      /* Used to iterate through tokens */
 
       /* Advance the iterator for each token in the phrase once. */
-      for(i=0; rc==SQLITE_OK && i<p->nToken; i++){
+      for(i=0; rc==SQLITE_OK && i<p->nToken && bEof==0; i++){
         rc = incrPhraseTokenNext(pTab, p, i, &a[i], &bEof);
         if( a[i].bIgnore==0 && (bMaxSet==0 || DOCID_CMP(iMax, a[i].iDocid)<0) ){
           iMax = a[i].iDocid;
@@ -4370,7 +4370,7 @@ static int fts3EvalIncrPhraseNext(
             int nDist = p->nToken-1-i;
             int res = fts3PoslistPhraseMerge(&pOut, nDist, 0, 1, &pL, &pR);
             if( res==0 ) break;
-            nList = (pOut - aDoclist);
+            nList = (int)(pOut - aDoclist);
           }
         }
         if( i==(p->nToken-1) ){

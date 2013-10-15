@@ -1204,7 +1204,7 @@ static int shell_exec(
               /* extract the data and data types */
               for(i=0; i<nCol; i++){
                 aiTypes[i] = x = sqlite3_column_type(pStmt, i);
-                if( x==SQLITE_BLOB && pArg->mode==MODE_Insert ){
+                if( x==SQLITE_BLOB && pArg && pArg->mode==MODE_Insert ){
                   azVals[i] = "";
                 }else{
                   azVals[i] = (char*)sqlite3_column_text(pStmt, i);

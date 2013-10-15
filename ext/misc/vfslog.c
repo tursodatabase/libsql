@@ -30,6 +30,9 @@
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
+#if SQLITE_OS_UNIX
+# include <unistd.h>
+#endif
 
 /*
 ** Forward declaration of objects used by this utility
@@ -284,11 +287,13 @@ static VLogLog *vlogLogOpen(const char *zFilename){
   if( pTemp ){
     sqlite3_free(pTemp);
   }else{
+#if SQLITE_OS_UNIX
     char zHost[200];
     zHost[0] = 0;
     gethostname(zHost, sizeof(zHost)-1);
     zHost[sizeof(zHost)-1] = 0;
     vlogLogPrint(pLog, tNow, 0, "IDENT", getpid(), -1, zHost, 0);
+#endif
   }
   if( pLog && isJournal ) pLog++;
   pLog->nRef++;

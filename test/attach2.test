@@ -377,6 +377,9 @@ do_test attach2-6.2 {
   }
 } {1 {cannot ATTACH database within transaction}}
 
+# EVIDENCE-OF: R-59740-55581 This statement will fail if SQLite is in
+# the middle of a transaction.
+#
 do_test attach2-6.3 {
   catchsql {
     DETACH aux;

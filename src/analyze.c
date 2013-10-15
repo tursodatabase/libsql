@@ -31,7 +31,7 @@
 ** SQLITE_ENABLE_STAT3 defined.  The functionality of sqlite_stat3
 ** is a superset of sqlite_stat2.  The sqlite_stat4 is an enhanced
 ** version of sqlite_stat3 and is only available when compiled with
-** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.0 and later.  It is
+** SQLITE_ENABLE_STAT4 and in SQLite versions 3.8.1 and later.  It is
 ** not possible to enable both STAT3 and STAT4 at the same time.  If they
 ** are both enabled, then STAT4 takes precedence.
 **
@@ -107,12 +107,12 @@
 ** The idx column names the index and the tbl column is the table of the
 ** index.  If the idx and tbl columns are the same, then the sample is
 ** of the INTEGER PRIMARY KEY.  The sample column is a blob which is the
-** binary encoding of a key from the index, with the trailing rowid
-** omitted.  The nEq column is a list of integers.  The first integer
-** is the approximate number of entries in the index whose left-most 
-** column exactly matches the left-most column of the sample.  The second
-** integer in nEq is the approximate number of entries in the index where
-** the first two columns match the first two columns of the sample.
+** binary encoding of a key from the index.  The nEq column is a
+** list of integers.  The first integer is the approximate number
+** of entries in the index whose left-most column exactly matches
+** the left-most column of the sample.  The second integer in nEq
+** is the approximate number of entries in the index where the
+** first two columns match the first two columns of the sample.
 ** And so forth.  nLt is another list of integers that show the approximate
 ** number of entries that are strictly less than the sample.  The first
 ** integer in nLt contains the number of entries in the index where the
@@ -444,7 +444,7 @@ static int sampleIsBetter(
 /*
 ** Copy the contents of object (*pFrom) into (*pTo).
 */
-void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
+static void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
   pTo->iRowid = pFrom->iRowid;
   pTo->isPSample = pFrom->isPSample;
   pTo->iCol = pFrom->iCol;
@@ -589,6 +589,11 @@ static void samplePushPrevious(Stat4Accum *p, int iChng){
     }
   }
 #endif
+
+#ifndef SQLITE_ENABLE_STAT3_OR_STAT4
+  UNUSED_PARAMETER( p );
+  UNUSED_PARAMETER( iChng );
+#endif
 }
 
 /*
@@ -614,6 +619,8 @@ static void statPush(
   Stat4Accum *p = (Stat4Accum*)sqlite3_value_blob(argv[0]);
   int iChng = sqlite3_value_int(argv[1]);
 
+  UNUSED_PARAMETER( argc );
+  UNUSED_PARAMETER( context );
   assert( p->nCol>1 );        /* Includes rowid field */
   assert( iChng<p->nCol );
 
@@ -799,6 +806,9 @@ static void statGet(
     }
   }
 #endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+#ifndef SQLITE_DEBUG
+  UNUSED_PARAMETER( argc );
+#endif
 }
 static const FuncDef statGetFuncdef = {
   1+IsStat34,      /* nArg */
@@ -817,8 +827,10 @@ static void callStatGet(Vdbe *v, int regStat4, int iParam, int regOut){
   assert( regOut!=regStat4 && regOut!=regStat4+1 );
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   sqlite3VdbeAddOp2(v, OP_Integer, iParam, regStat4+1);
-#else
+#elif SQLITE_DEBUG
   assert( iParam==STAT_GET_STAT1 );
+#else
+  UNUSED_PARAMETER( iParam );
 #endif
   sqlite3VdbeAddOp3(v, OP_Function, 0, regStat4, regOut);
   sqlite3VdbeChangeP4(v, -1, (char*)&statGetFuncdef, P4_FUNCDEF);

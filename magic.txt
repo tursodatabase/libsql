@@ -26,4 +26,5 @@
 >68  belong  =0x42654c6e  Bentley Systems Localization File -
 >60  belong  =0x5f4d544e  Monotone source repository -
 >68  belong  =0x47504b47  OGC GeoPackage file -
+>68  belong  =0x47503130  OGC GeoPackage version 1.0 file -
 >0   string  =SQLite      SQLite3 database

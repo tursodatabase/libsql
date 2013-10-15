@@ -2337,6 +2337,9 @@ static void whereKeyStats(
   int iTest;                  /* Next sample to test */
   int res;                    /* Result of comparison operation */
 
+#ifndef SQLITE_DEBUG
+  UNUSED_PARAMETER( pParse );
+#endif
   assert( pRec!=0 || pParse->db->mallocFailed );
   if( pRec==0 ) return;
   iCol = pRec->nField - 1;
@@ -2454,11 +2457,11 @@ static int whereRangeScanEst(
 ){
   int rc = SQLITE_OK;
   int nOut = pLoop->nOut;
-  int nEq = pLoop->u.btree.nEq;
   LogEst nNew;
 
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   Index *p = pLoop->u.btree.pIndex;
+  int nEq = pLoop->u.btree.nEq;
 
   if( p->nSample>0
    && nEq==pBuilder->nRecValid
@@ -4182,7 +4185,7 @@ whereLoopInsert_noop:
 ** the number of output rows by a factor of 10 and each additional term
 ** reduces the number of output rows by sqrt(2).
 */
-static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop, int iCur){
+static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop){
   WhereTerm *pTerm, *pX;
   Bitmask notAllowed = ~(pLoop->prereq|pLoop->maskSelf);
   int i, j;
@@ -4357,8 +4360,8 @@ static int whereLoopAddBtreeIndex(
       }
       assert( nOut==0 || rc==SQLITE_OK );
       if( nOut ){
-        nOut = sqlite3LogEst(nOut);
-        pNew->nOut = MIN(nOut, saved_nOut);
+        pNew->nOut = sqlite3LogEst(nOut);
+        if( pNew->nOut>saved_nOut ) pNew->nOut = saved_nOut;
       }
     }
 #endif
@@ -4369,7 +4372,7 @@ static int whereLoopAddBtreeIndex(
     }
     /* Step cost for each output row */
     pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut);
-    whereLoopOutputAdjust(pBuilder->pWC, pNew, pSrc->iCursor);
+    whereLoopOutputAdjust(pBuilder->pWC, pNew);
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
      && pNew->u.btree.nEq<(pProbe->nColumn + (pProbe->zName!=0))
@@ -4573,7 +4576,7 @@ static int whereLoopAddBtree(
       **  +  The extra 3 factor is to encourage the use of indexed lookups
       **     over full scans.  FIXME */
       pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 16;
-      whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
+      whereLoopOutputAdjust(pWC, pNew);
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
       if( rc ) break;
@@ -4606,7 +4609,7 @@ static int whereLoopAddBtree(
           ** which we will simplify to just N*log2(N) */
           pNew->rRun = rSize + rLogSize;
         }
-        whereLoopOutputAdjust(pWC, pNew, pSrc->iCursor);
+        whereLoopOutputAdjust(pWC, pNew);
         rc = whereLoopInsert(pBuilder, pNew);
         pNew->nOut = rSize;
         if( rc ) break;

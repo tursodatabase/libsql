@@ -12,9 +12,12 @@
 #
 # This file tests the PRAGMA foreign_key_check command.
 #
+# EVIDENCE-OF: R-05426-18119 PRAGMA foreign_key_check; PRAGMA
+# foreign_key_check(table-name);
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix fkey5
 
 ifcapable {!foreignkey} {
   finish_test
@@ -82,6 +85,20 @@ do_test fkey5-1.4 {
   }
 } {}
 
+# EVIDENCE-OF: R-45728-08709 There are four columns in each result row.
+#
+# EVIDENCE-OF: R-55672-01620 The first column is the name of the table
+# that contains the REFERENCES clause.
+#
+# EVIDENCE-OF: R-25219-25618 The second column is the rowid of the row
+# that contains the invalid REFERENCES clause.
+#
+# EVIDENCE-OF: R-40482-20265 The third column is the name of the table
+# that is referred to.
+#
+# EVIDENCE-OF: R-62839-07969 The fourth column is the index of the
+# specific foreign key constraint that failed.
+#
 do_test fkey5-2.0 {
   db eval {
     INSERT INTO c5 SELECT x FROM c1;
@@ -99,6 +116,9 @@ do_test fkey5-2.2 {
     PRAGMA foreign_key_check(c1);
   }
 } {}
+do_execsql_test fkey5-2.3 {
+  PRAGMA foreign_key_list(c5);
+} {0 0 p1 x {} {NO ACTION} {NO ACTION} NONE}
 
 do_test fkey5-3.0 {
   db eval {
@@ -305,6 +325,39 @@ do_test fkey5-8.7 {
   }
 } {}
 
+
+#-------------------------------------------------------------------------
+# Tests 9.* verify that missing parent tables are handled correctly.
+#
+do_execsql_test 9.1.1 {
+  CREATE TABLE k1(x REFERENCES s1);
+  PRAGMA foreign_key_check(k1);
+} {}
+do_execsql_test 9.1.2 {
+  INSERT INTO k1 VALUES(NULL);
+  PRAGMA foreign_key_check(k1);
+} {}
+do_execsql_test 9.1.3 {
+  INSERT INTO k1 VALUES(1);
+  PRAGMA foreign_key_check(k1);
+} {k1 2 s1 0}
+
+do_execsql_test 9.2.1 {
+  CREATE TABLE k2(x, y, FOREIGN KEY(x, y) REFERENCES s1(a, b));
+  PRAGMA foreign_key_check(k2);
+} {}
+do_execsql_test 9.2 {
+  INSERT INTO k2 VALUES(NULL, 'five');
+  PRAGMA foreign_key_check(k2);
+} {}
+do_execsql_test 9.3 {
+  INSERT INTO k2 VALUES('one', NULL);
+  PRAGMA foreign_key_check(k2);
+} {}
+do_execsql_test 9.4 {
+  INSERT INTO k2 VALUES('six', 'seven');
+  PRAGMA foreign_key_check(k2);
+} {k2 3 s1 0}
 
 
 finish_test

@@ -172,6 +172,10 @@ set pragma_def {
   FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
 
+  NAME: stats
+  FLAG: NeedSchema
+  IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
+
   NAME: index_info
   FLAG: NeedSchema
   IF:   !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)

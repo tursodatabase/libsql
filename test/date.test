@@ -532,6 +532,10 @@ if {0==[sqlite3 -has-codec]} {
 # Verify that multiple calls to date functions with 'now' return the
 # same answer.
 #
+# EVIDENCE-OF: R-34818-13664 The 'now' argument to date and time
+# functions always returns exactly the same value for multiple
+# invocations within the same sqlite3_step() call.
+#
 proc sleeper {} {after 100}
 do_test date-15.1 {
   db func sleeper sleeper

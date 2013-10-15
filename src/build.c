@@ -1113,7 +1113,7 @@ char sqlite3AffinityType(const char *zIn, u8 *pszEst){
       if( zChar ){
         while( zChar[0] ){
           if( sqlite3Isdigit(zChar[0]) ){
-            int v;
+            int v = 0;
             sqlite3GetInt32(zChar, &v);
             v = v/4 + 1;
             if( v>255 ) v = 255;

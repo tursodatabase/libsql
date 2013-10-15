@@ -279,8 +279,18 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set minVsVersion 11.0
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes ""
+} elseif {[string equal -nocase $packageFlavor Win32]} then {
+  set shortName SQLite.Win32
+  set displayName "SQLite for Windows"
+  set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.0
+  set minVsVersion 11.0
+  set extraSdkPath ""
+  set extraFileListAttributes [appendArgs \
+      "\r\n    " {AppliesTo="VisualC"} \
+      "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
 } else {
-  fail "unsupported package flavor, must be \"WinRT\", \"WinRT81\", or \"WP80\""
+  fail "unsupported package flavor, must be one of: WinRT WinRT81 WP80 Win32"
 }
 
 if {$argc >= 4} then {

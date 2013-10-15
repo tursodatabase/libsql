@@ -12,6 +12,7 @@
 ** Internal interface definitions for SQLite.
 **
 */
+#include "sqlite3.h"
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
@@ -305,7 +306,6 @@
 #define likely(X)    (X)
 #define unlikely(X)  (X)
 
-#include "sqlite3.h"
 #include "hash.h"
 #include "parse.h"
 #include <stdio.h>
@@ -3260,10 +3260,10 @@ const char *sqlite3JournalModename(int);
   FKey *sqlite3FkReferences(Table *);
 #else
   #define sqlite3FkActions(a,b,c,d,e,f)
-  #define sqlite3FkCheck(a,b,c,d)
+  #define sqlite3FkCheck(a,b,c,d,e,f)
   #define sqlite3FkDropTable(a,b,c)
-  #define sqlite3FkOldmask(a,b)          0
-  #define sqlite3FkRequired(a,b,c,d,e,f) 0
+  #define sqlite3FkOldmask(a,b)         0
+  #define sqlite3FkRequired(a,b,c,d)    0
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   void sqlite3FkDelete(sqlite3 *, Table*);

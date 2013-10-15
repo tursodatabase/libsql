@@ -1059,7 +1059,9 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
     pRec->nField = p->iVal+1;
     return &pRec->aMem[p->iVal];
   }
-#endif
+#else
+  UNUSED_PARAMETER(p);
+#endif /* defined(SQLITE_ENABLE_STAT3_OR_STAT4) */
   return sqlite3ValueNew(db);
 }
 
@@ -1073,7 +1075,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
 ** NULL, it is assumed that the caller will free any allocated object
 ** in all cases.
 */
-int valueFromExpr(
+static int valueFromExpr(
   sqlite3 *db,                    /* The database connection */
   Expr *pExpr,                    /* The expression to evaluate */
   u8 enc,                         /* Encoding to use */
@@ -1230,6 +1232,7 @@ static void recordFunc(
   sqlite3 *db;
   u8 *aRet;
 
+  UNUSED_PARAMETER( argc );
   iSerial = sqlite3VdbeSerialType(argv[0], file_format);
   nSerial = sqlite3VarintLen(iSerial);
   nVal = sqlite3VdbeSerialTypeLen(iSerial);

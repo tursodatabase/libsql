@@ -13,6 +13,13 @@ TOP = .
 USE_AMALGAMATION = 1
 !ENDIF
 
+# Set this non-0 to split the SQLite amalgamation file into chunks to
+# be used for debugging with Visual Studio.
+#
+!IFNDEF SPLIT_AMALGAMATION
+SPLIT_AMALGAMATION = 0
+!ENDIF
+
 # Set this non-0 to use the International Components for Unicode (ICU).
 #
 !IFNDEF USE_ICU
@@ -23,6 +30,13 @@ USE_ICU = 0
 #
 !IFNDEF USE_CRT_DLL
 USE_CRT_DLL = 0
+!ENDIF
+
+# Set this non-0 to generate assembly code listings for the source code
+# files.
+#
+!IFNDEF USE_LISTINGS
+USE_LISTINGS = 0
 !ENDIF
 
 # Set this non-0 to attempt setting the native compiler automatically
@@ -181,6 +195,13 @@ NSDKLIBPATH = $(NSDKLIBPATH:\\=\)
 #
 BCC = $(NCC) -W3
 
+# Check if assembly code listings should be generated for the source
+# code files to be compiled.
+#
+!IF $(USE_LISTINGS)!=0
+BCC = $(BCC) -FAcs
+!ENDIF
+
 # Check if the native library paths should be used when compiling
 # the command line tools used during the compilation process.  If
 # so, set the necessary macro now.
@@ -195,6 +216,13 @@ NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
 #
 TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
+
+# Check if assembly code listings should be generated for the source
+# code files to be compiled.
+#
+!IF $(USE_LISTINGS)!=0
+TCC = $(TCC) -FAcs
+!ENDIF
 
 # When compiling the library for use in the WinRT environment,
 # the following compile-time options must be used as well to
@@ -763,6 +791,7 @@ TESTEXT = \
   $(TOP)\ext\misc\percentile.c \
   $(TOP)\ext\misc\regexp.c \
   $(TOP)\ext\misc\spellfix.c \
+  $(TOP)\ext\misc\totype.c \
   $(TOP)\ext\misc\wholenumber.c
 
 
@@ -912,10 +941,19 @@ sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
 sqlite3-all.c:	sqlite3.c $(TOP)\tool\split-sqlite3c.tcl
 	$(TCLSH_CMD) $(TOP)\tool\split-sqlite3c.tcl
 
+# Set the source code file to be used by executables and libraries when
+# they need the amalgamation.
+#
+!IF $(SPLIT_AMALGAMATION)!=0
+SQLITE3C = sqlite3-all.c
+!ELSE
+SQLITE3C = sqlite3.c
+!ENDIF
+
 # Rule to build the amalgamation
 #
-sqlite3.lo:	sqlite3.c
-	$(LTCOMPILE) -c sqlite3.c
+sqlite3.lo:	$(SQLITE3C)
+	$(LTCOMPILE) -c $(SQLITE3C)
 
 # Rules to build the LEMON compiler generator
 #
@@ -1278,7 +1316,7 @@ TESTFIXTURE_FLAGS = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
 TESTFIXTURE_FLAGS = $(TESTFIXTURE_FLAGS) -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE
 
 TESTFIXTURE_SRC0 = $(TESTEXT) $(TESTSRC2) libsqlite3.lib
-TESTFIXTURE_SRC1 = $(TESTEXT) $(TESTSRC3) sqlite3.c
+TESTFIXTURE_SRC1 = $(TESTEXT) $(TESTSRC3) $(SQLITE3C)
 !IF $(USE_AMALGAMATION)==0
 TESTFIXTURE_SRC = $(TESTSRC) $(TOP)\src\tclsqlite.c $(TESTFIXTURE_SRC0)
 !ELSE
@@ -1306,8 +1344,8 @@ queryplantest:	testfixture.exe sqlite3.exe
 test:	testfixture.exe sqlite3.exe
 	.\testfixture.exe $(TOP)\test\veryquick.test
 
-sqlite3_analyzer.c: sqlite3.c $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
-	copy sqlite3.c + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
+sqlite3_analyzer.c: $(SQLITE3C) $(TOP)\src\test_stat.c $(TOP)\src\tclsqlite.c $(TOP)\tool\spaceanal.tcl
+	copy $(SQLITE3C) + $(TOP)\src\test_stat.c + $(TOP)\src\tclsqlite.c $@
 	echo static const char *tclsh_main_loop(void){ >> $@
 	echo static const char *zMainloop = >> $@
 	$(NAWK) -f $(TOP)\tool\tostr.awk $(TOP)\tool\spaceanal.tcl >> $@
@@ -1319,7 +1357,7 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
-	del /Q *.da *.bb *.bbg gmon.out
+	del /Q *.cod *.da *.bb *.bbg gmon.out
 	del /Q sqlite3.h opcodes.c opcodes.h
 	del /Q lemon.exe lempar.c parse.*
 	del /Q mkkeywordhash.exe keywordhash.h
@@ -1333,7 +1371,7 @@ clean:
 	del /Q tclsqlite3.exe tclsqlite3.exp
 	del /Q testfixture.exe testfixture.exp test.db
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
-	del /Q sqlite3.c
+	del /Q sqlite3.c sqlite3-*.c
 	del /Q sqlite3rc.h
 	del /Q shell.c sqlite3ext.h
 	del /Q sqlite3_analyzer.exe sqlite3_analyzer.exp sqlite3_analyzer.c
