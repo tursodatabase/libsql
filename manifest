@@ -1,5 +1,5 @@
-C Fix\san\s8-byte\salignment\sproblem\son\sthe\s"crash\stest"\sharness\s(test\scode,\nnot\sin\sthe\score)\sthat\scauses\sproblems\son\sSparc.
-D 2013-10-15T14:29:32.229
+C Changes\sto\stest\scode\sto\smake\ssure\sno\sserver\sthreads\sare\sleft\srunning\safter\sserver1.test\sfinishes.
+D 2013-10-15T15:35:27.035
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -234,7 +234,7 @@ F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
 F src/test6.c 00af0fe1947305222b8ed488a69c76c5a2b632e2
-F src/test7.c 126b886b53f0358b92aba9b81d3fcbfbe9a93cd6
+F src/test7.c 72b732baa5642f795655ba1126ea032af46ecfd2
 F src/test8.c c7aab1d9fbbf54fc33d43b73aa24aa55f9eaf534
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
 F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
@@ -263,7 +263,7 @@ F src/test_quota.c 30c64f0ef84734f2231a686df41ed882b0c59bc0
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c f3d1d12538dccb75fd916e3fa58f250edbdd3b47
 F src/test_schema.c cd12a2223c3a394f4d07bb93bdf6d344c5c121b6
-F src/test_server.c 2f99eb2837dfa06a4aacf24af24c6affdf66a84f
+F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c c1c1bbedbcaf82b93d83e4f9dd990e62476a680e
 F src/test_stat.c d1569c7a4839f13e80187e2c26b2ab4da2d03935
 F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
@@ -1125,7 +1125,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c9c1f8d6701b0a1bc939a7e35e565d4160dbf8d3
-R 3bb2d5b093a82403e2bfb9d1fae23d90
-U drh
-Z 4d64bb39b57c14de71d5cefa2c9bba0a
+P bcbc65030fa7c61f94100142e94ba2a5774f85b0
+R f33feda2582cfad813fcab88c99564f2
+U dan
+Z 117b667e81ae101d694479399cf015f3
