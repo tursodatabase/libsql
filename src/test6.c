@@ -133,9 +133,9 @@ struct CrashFile {
   ** OsFileSize() calls. Although both could be done by traversing the
   ** write-list, in practice this is impractically slow.
   */
-  int iSize;                           /* Size of file in bytes */
-  int nData;                           /* Size of buffer allocated at zData */
   u8 *zData;                           /* Buffer containing file contents */
+  int nData;                           /* Size of buffer allocated at zData */
+  i64 iSize;                           /* Size of file in bytes */
 };
 
 struct CrashGlobal {
