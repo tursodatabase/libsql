@@ -1,5 +1,5 @@
-C Changes\sto\stest\scode\sto\smake\ssure\sno\sserver\sthreads\sare\sleft\srunning\safter\sserver1.test\sfinishes.
-D 2013-10-15T15:35:27.035
+C Add\sthe\s"languageid"\shidden\scolumn\sto\sfts4aux.
+D 2013-10-15T19:06:17.574
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -81,7 +81,7 @@ F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c f25ae5729d40cc4e661c0a552685038f27e72bc9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 8689f7cf85020e7f88d1e761eeac480c3b0ea7ad
-F ext/fts3/fts3_aux.c b02632f6dd0e375ce97870206d914ea6d8df5ccd
+F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
 F ext/fts3/fts3_expr.c f8eb1046063ba342c7114eba175cabb31c4a64e7
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
@@ -523,6 +523,7 @@ F test/fts3ao.test 71b0675e3df5c512a5a03daaa95ee1916de23dda
 F test/fts3atoken.test fca30fd86db9241d571c637751e9a8a2f50f1451
 F test/fts3auto.test b981fea19b132b4e6878f50d7c1f369b28f68eb9
 F test/fts3aux1.test f8f287a4a73f381f8fa15b6a70f36245f903d221
+F test/fts3aux2.test 7ae2b2c13aefdf4169279a27a5f51780ce57f6ba
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3comp1.test a0f5b16a2df44dd0b15751787130af2183167c0c
@@ -1125,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bcbc65030fa7c61f94100142e94ba2a5774f85b0
-R f33feda2582cfad813fcab88c99564f2
+P 1086e00bcaacc88ef2a9dda8a20698b0899ad2f7
+R 278f7d19feecc0e16083c2fb7945cca7
 U dan
-Z 117b667e81ae101d694479399cf015f3
+Z 3437f433e75ea0cb69bfd1b37e4271cf
