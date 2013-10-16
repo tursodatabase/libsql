@@ -1,5 +1,5 @@
-C Fix\smemory\sand\sresource\sleaks\sfor\sWinCE\sand\sCygwin,\sand\sa\scompiler\swarning\non\swindows\swith\sSQLITE_THREADSAFE=0.
-D 2013-10-16T11:31:51.060
+C Clear\sa\svalgrind\serror\sby\szeroing\sthe\sfirst\s4\sbytes\sof\sthe\stemp-space\sallocation\sused\sby\sthe\sb-tree\smodule.
+D 2013-10-16T11:39:07.819
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c d5720cbb21ae56e7e5b07847e05e5b203818acac
+F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 8ae900bf021a66ac110f5eb2dcf994d24d1c2061
@@ -1126,8 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 891df358e51075fb937f34952ce43bf51130b0d0 2470d1bb08b2661bcfde7a605208eb6044836d5c
-R 3f1c2053efd88b1ae5291031b868e02e
-T +closed 2470d1bb08b2661bcfde7a605208eb6044836d5c
-U drh
-Z 18d6dd21b38b2dda035b96ade3db584b
+P 9905cea9d45c90f2241f56dc32a25501476983bc
+R 683bd0f00a6a8704ba66c77ac430cbf6
+U dan
+Z ba433fbc935328061983e8daeb762108
