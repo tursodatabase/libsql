@@ -2052,6 +2052,18 @@ static int removeFromSharingList(BtShared *pBt){
 static void allocateTempSpace(BtShared *pBt){
   if( !pBt->pTmpSpace ){
     pBt->pTmpSpace = sqlite3PageMalloc( pBt->pageSize );
+
+    /* One of the uses of pBt->pTmpSpace is to format cells before
+    ** inserting them into a leaf page (function fillInCell()). If
+    ** a cell is less than 4 bytes in size, it is rounded up to 4 bytes
+    ** by the various routines that manipulate binary cells. Which
+    ** can mean that fillInCell() only initializes the first 2 or 3
+    ** bytes of pTmpSpace, but that the first 4 bytes are copied from
+    ** it into a database page. This is not actually a problem, but it
+    ** does cause a valgrind error when the 1 or 2 bytes of unitialized 
+    ** data is passed to system call write(). So to avoid this error,
+    ** zero the first 4 bytes of temp space here.  */
+    if( pBt->pTmpSpace ) memset(pBt->pTmpSpace, 0, 4);
   }
 }
 

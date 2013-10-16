@@ -40,6 +40,7 @@ int sqlite3_client_finalize(sqlite3_stmt*);
 int sqlite3_client_close(sqlite3*);
 int sqlite3_server_start(void);
 int sqlite3_server_stop(void);
+void sqlite3_server_start2(int *pnDecr);
 
 /*
 ** Each thread is controlled by an instance of the following
@@ -68,6 +69,13 @@ struct Thread {
   int argc;                /* number of columns in result */
   const char *argv[100];   /* result columns */
   const char *colv[100];   /* result column names */
+
+  /* Initialized to 1 by the supervisor thread when the client is 
+  ** created, and then deemed read-only to the supervisor thread. 
+  ** Is set to 0 by the server thread belonging to this client 
+  ** just before it exits.  
+  */
+  int nServer;             /* Number of server threads running */
 };
 
 /*
@@ -175,7 +183,10 @@ static int tcl_client_create(
     return TCL_ERROR;
   }
   pthread_detach(x);
-  sqlite3_server_start();
+  if( threadset[i].nServer==0 ){
+    threadset[i].nServer = 1;
+    sqlite3_server_start2(&threadset[i].nServer);
+  }
   return TCL_OK;
 }
 
@@ -268,6 +279,11 @@ static int tcl_client_halt(
   for(i=0; i<N_THREAD && threadset[i].busy==0; i++){}
   if( i>=N_THREAD ){
     sqlite3_server_stop();
+    while( 1 ){
+      for(i=0; i<N_THREAD && threadset[i].nServer==0; i++);
+      if( i==N_THREAD ) break;
+      sched_yield();
+    }
   }
   return TCL_OK;
 }
