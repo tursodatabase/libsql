@@ -2196,8 +2196,7 @@ static int winClose(sqlite3_file *id){
   OSTRACE(("CLOSE file=%p\n", pFile->h));
 
 #if SQLITE_MAX_MMAP_SIZE>0
-  rc = winUnmapfile(pFile);
-  if( rc!=SQLITE_OK ) return rc;
+  winUnmapfile(pFile);
 #endif
 
   do{
@@ -3003,7 +3002,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       if( newLimit>=0 && newLimit!=pFile->mmapSizeMax && pFile->nFetchOut==0 ){
         pFile->mmapSizeMax = newLimit;
         if( pFile->mmapSize>0 ){
-          (void)winUnmapfile(pFile);
+          winUnmapfile(pFile);
           rc = winMapfile(pFile, -1);
         }
       }
@@ -4073,6 +4072,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       if( winIsDriveLetterAndColon(zDir) ){
         zConverted = winConvertFromUtf8Filename(zDir);
         if( !zConverted ){
+          sqlite3_free(zBuf);
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
           return SQLITE_IOERR_NOMEM;
         }
@@ -4085,6 +4085,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       }else{
         zConverted = sqlite3MallocZero( nBuf+1 );
         if( !zConverted ){
+          sqlite3_free(zBuf);
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
           return SQLITE_IOERR_NOMEM;
         }
@@ -4092,6 +4093,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
                 osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A, zDir,
                 zConverted, nBuf+1)<0 ){
           sqlite3_free(zConverted);
+          sqlite3_free(zBuf);
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_CONVPATH\n"));
           return winLogError(SQLITE_IOERR_CONVPATH, (DWORD)errno,
                              "winGetTempname1", zDir);
@@ -4105,6 +4107,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
             char *zUtf8 = winUnicodeToUtf8(zConverted);
             if( !zUtf8 ){
               sqlite3_free(zConverted);
+              sqlite3_free(zBuf);
               OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
               return SQLITE_IOERR_NOMEM;
             }
@@ -4120,7 +4123,6 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
         }
         sqlite3_free(zConverted);
       }
-      break;
     }
   }
 #elif !SQLITE_OS_WINRT && !defined(__CYGWIN__)
@@ -4490,9 +4492,9 @@ static int winOpen(
 #endif
   {
     sqlite3_free(zConverted);
-    sqlite3_free(zTmpname);
   }
 
+  sqlite3_free(zTmpname);
   pFile->pMethod = &winIoMethod;
   pFile->pVfs = pVfs;
   pFile->h = h;

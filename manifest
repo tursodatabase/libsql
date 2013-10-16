@@ -1,5 +1,5 @@
-C Add\sthe\s"languageid"\shidden\scolumn\sto\sfts4aux.
-D 2013-10-15T19:06:17.574
+C Fix\smemory/resource\sleaks\sfor\sWinCE\sand\sCygwin.
+D 2013-10-16T09:49:10.719
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
-F src/os_win.c 0fea05bc7b75eccb01d8a8a10aaeaf4147b8e0cd
+F src/os_win.c c812a3c37e113423f1579aba876acc240189d5d6
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
@@ -1126,7 +1126,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1086e00bcaacc88ef2a9dda8a20698b0899ad2f7
-R 278f7d19feecc0e16083c2fb7945cca7
-U dan
-Z 3437f433e75ea0cb69bfd1b37e4271cf
+P 891df358e51075fb937f34952ce43bf51130b0d0
+R 220c145b0b7752ec81af9a6d3dc55290
+T *branch * wince-fixes
+T *sym-wince-fixes *
+T -sym-trunk *
+U mistachkin
+Z cf86f3f77bb8f85bf54a57b7b4d91994
