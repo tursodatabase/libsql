@@ -1,5 +1,5 @@
-C Clear\sa\svalgrind\serror\sby\szeroing\sthe\sfirst\s4\sbytes\sof\sthe\stemp-space\sallocation\sused\sby\sthe\sb-tree\smodule.
-D 2013-10-16T11:39:07.819
+C Fix\sa\stypo\sin\sa\srequirements\smark\scomment.\s\sNo\schanges\sto\scode.
+D 2013-10-16T23:58:21.818
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/pragma.c 64d3d1f8b4ed144ba85c061d00d96d6be8aa2fea
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c 5f15b00644c36a1610b87857abf42db38c07519c
+F src/resolve.c 572585a96bf282bb9c3d9e08785ec3cae21dc488
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 15127b54cc11defb2cddef6914e1f384501a61c4
 F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9905cea9d45c90f2241f56dc32a25501476983bc
-R 683bd0f00a6a8704ba66c77ac430cbf6
-U dan
-Z ba433fbc935328061983e8daeb762108
+P 8651aba1865a8f82d21d3345f33fbd239fd9a042
+R 306f92498230c90834f5567c36b98354
+U drh
+Z 76c12e32938c3a81b29bd881a94cbc66
