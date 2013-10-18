@@ -347,6 +347,13 @@ static void vlogSignature(unsigned char *p, int n, char *zCksum){
 }
 
 /*
+** Convert a big-endian 32-bit integer into a native integer
+*/
+static int bigToNative(const unsigned char *x){
+  return (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
+}
+
+/*
 ** Read data from an vlog-file.
 */
 static int vlogRead(
@@ -376,9 +383,16 @@ static int vlogRead(
    && iOfst+iAmt>=28
   ){
     unsigned char *x = ((unsigned char*)zBuf)+(24-iOfst);
-    unsigned iCtr;
-    iCtr = (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
-    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-READ", iCtr, -1, 0, 0);
+    unsigned iCtr, nFree = -1;
+    char *zFree = 0;
+    char zStr[12];
+    iCtr = bigToNative(x);
+    if( iOfst+iAmt>=40 ){
+      zFree = zStr;
+      sqlite3_snprintf(sizeof(zStr), zStr, "%d", bigToNative(x+8));
+      nFree = bigToNative(x+12);
+    }
+    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-READ", iCtr, nFree, zFree, 0);
   }
   return rc;
 }
@@ -409,9 +423,16 @@ static int vlogWrite(
    && iOfst+iAmt>=28
   ){
     unsigned char *x = ((unsigned char*)z)+(24-iOfst);
-    unsigned iCtr;
-    iCtr = (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
-    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-WRITE", iCtr, -1, 0, 0);
+    unsigned iCtr, nFree = -1;
+    char *zFree = 0;
+    char zStr[12];
+    iCtr = bigToNative(x);
+    if( iOfst+iAmt>=40 ){
+      zFree = zStr;
+      sqlite3_snprintf(sizeof(zStr), zStr, "%d", bigToNative(x+8));
+      nFree = bigToNative(x+12);
+    }
+    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-WRITE", iCtr, nFree, zFree, 0);
   }
   return rc;
 }
