@@ -190,7 +190,7 @@ static void vlogLogPrint(
   const char *zArg3,               /* Third argument */
   int iRes                         /* Result */
 ){
-  char z1[40], z2[40], z3[70];
+  char z1[40], z2[40], z3[2000];
   if( pLog==0 ) return;
   if( iArg1>=0 ){
     sqlite3_snprintf(sizeof(z1), z1, "%lld", iArg1);
@@ -203,7 +203,7 @@ static void vlogLogPrint(
     z2[0] = 0;
   }
   if( zArg3 ){
-    sqlite3_snprintf(sizeof(z3), z3, "\"%s\"", zArg3);
+    sqlite3_snprintf(sizeof(z3), z3, "\"%.*w\"", sizeof(z3)-4, zArg3);
   }else{
     z3[0] = 0;
   }
@@ -498,12 +498,11 @@ static int vlogLock(sqlite3_file *pFile, int eLock){
 */
 static int vlogUnlock(sqlite3_file *pFile, int eLock){
   int rc;
-  sqlite3_uint64 tStart, tElapse;
+  sqlite3_uint64 tStart;
   VLogFile *p = (VLogFile *)pFile;
   tStart = vlog_time();
+  vlogLogPrint(p->pLog, tStart, 0, "UNLOCK", eLock, -1, 0, 0);
   rc = p->pReal->pMethods->xUnlock(p->pReal, eLock);
-  tElapse = vlog_time() - tStart;
-  vlogLogPrint(p->pLog, tStart, tElapse, "UNLOCK", eLock, -1, 0, rc);
   return rc;
 }
 
@@ -535,7 +534,9 @@ static int vlogFileControl(sqlite3_file *pFile, int op, void *pArg){
     *(char**)pArg = sqlite3_mprintf("vlog/%z", *(char**)pArg);
   }
   tElapse = vlog_time() - tStart;
-  if( op==SQLITE_FCNTL_PRAGMA ){
+  if( op==SQLITE_FCNTL_TRACE ){
+    vlogLogPrint(p->pLog, tStart, tElapse, "TRACE", op, -1, pArg, rc);
+  }else if( op==SQLITE_FCNTL_PRAGMA ){
     const char **azArg = (const char **)pArg;
     vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, -1, azArg[1], rc);
   }else if( op==SQLITE_FCNTL_SIZE_HINT ){
