@@ -514,7 +514,15 @@ static int vlogFileControl(sqlite3_file *pFile, int op, void *pArg){
     *(char**)pArg = sqlite3_mprintf("vlog/%z", *(char**)pArg);
   }
   tElapse = vlog_time() - tStart;
-  vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, -1, 0, rc);
+  if( op==SQLITE_FCNTL_PRAGMA ){
+    const char **azArg = (const char **)pArg;
+    vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, -1, azArg[1], rc);
+  }else if( op==SQLITE_FCNTL_SIZE_HINT ){
+    sqlite3_int64 sz = *(sqlite3_int64*)pArg;
+    vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, sz, 0, rc);
+  }else{
+    vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, -1, 0, rc);
+  }
   return rc;
 }
 
