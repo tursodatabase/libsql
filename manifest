@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scausing\san\s"malformed\sdatabase\sschema\serror"\serror\sif\sa\stemp\stable\swith\sthe\ssame\sname\sas\san\sexisting\stable\sthat\shas\sat\sleast\sone\stemp\strigger\sattached\sto\sit\sis\screated.
-D 2013-10-19T15:07:49.621
+C Improved\sheader\scomment\swith\sbetter\sinstructions\son\sthe\svfslog.c\nextension.
+D 2013-10-19T16:51:39.506
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
 F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
-F ext/misc/vfslog.c db244ca9e64d5e036499c81806a5aabf23695b77
+F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e801f35a96d861a1e5f223655af4c8a6a7e356bc
-R ac49857d368ae5ae24a9a42091be2bd4
-U dan
-Z 1c112f168e833ab0ddaf48bcba202dcf
+P 56dca4a65c3b14123272fa0cc5c15530c06fda28
+R 1cee309be53ed4b90f763a6791fd81dc
+U drh
+Z 23f623447e2329bbecfcb9fee8496fa4

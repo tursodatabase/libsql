@@ -16,14 +16,37 @@
 
 /*
 ** This module contains code for a wrapper VFS that causes a log of
-** most VFS calls to be written into a file on disk. The log 
-** is stored as comma-separated variables.
+** most VFS calls to be written into a file on disk.
 **
-** All calls on sqlite3_file objects are logged.
-** Additionally, calls to the xAccess(), xOpen(), and xDelete()
-** methods are logged. The other sqlite3_vfs object methods (xDlXXX,
-** xRandomness, xSleep, xCurrentTime, xGetLastError and xCurrentTimeInt64) 
-** are not logged.
+** Each database connection creates a separate log file in the same
+** directory as the original database and named after the original
+** database.  A unique suffix is added to avoid name collisions.  
+** Separate log files are used so that concurrent processes do not
+** try to write log operations to the same file at the same instant, 
+** resulting in overwritten or comingled log text.
+**
+** Each individual log file records operations by a single database
+** connection on both the original database and its associated rollback
+** journal.
+**
+** The log files are in the comma-separated-value (CSV) format.  The
+** log files can be imported into an SQLite database using the ".import"
+** command of the SQLite command-line shell for analysis.
+**
+** One technique for using this module is to append the text of this
+** module to the end of a standard "sqlite3.c" amalgamation file then
+** add the following compile-time options:
+**
+**     -DSQLITE_EXTRA_INIT=sqlite3_register_vfslog
+**     -DSQLITE_USE_FCNTL_TRACE
+**
+** The first compile-time option causes the sqlite3_register_vfslog()
+** function, defined below, to be invoked when SQLite is initialized.
+** That causes this custom VFS to become the default VFS for all
+** subsequent connections.  The SQLITE_USE_FCNTL_TRACE option causes
+** the SQLite core to issue extra sqlite3_file_control() operations
+** with SQLITE_FCNTL_TRACE to give some indication of what is going
+** on in the core.
 */
 
 #include "sqlite3.h"
