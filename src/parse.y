@@ -163,11 +163,15 @@ ifnotexists(A) ::= IF NOT EXISTS. {A = 1;}
 temp(A) ::= TEMP.  {A = 1;}
 %endif  SQLITE_OMIT_TEMPDB
 temp(A) ::= .      {A = 0;}
-create_table_args ::= LP columnlist conslist_opt(X) RP(Y). {
-  sqlite3EndTable(pParse,&X,&Y,0);
+create_table_args ::= LP columnlist conslist_opt(X) RP(E1). {
+  sqlite3EndTable(pParse,&X,&E1,&E1,0,0);
+}
+create_table_args ::= LP columnlist conslist_opt(X) RP(E1)
+                      WITH LP idlist(Z) RP(E2). {
+  sqlite3EndTable(pParse,&X,&E1,&E2,Z,0);
 }
 create_table_args ::= AS select(S). {
-  sqlite3EndTable(pParse,0,0,S);
+  sqlite3EndTable(pParse,0,0,0,0,S);
   sqlite3SelectDelete(pParse->db, S);
 }
 columnlist ::= columnlist COMMA column.
@@ -205,7 +209,7 @@ id(A) ::= INDEXED(X).    {A = X;}
   CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RELEASE REPLACE RESTRICT ROW ROLLBACK
-  SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL
+  SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif SQLITE_OMIT_COMPOUND_SELECT
@@ -573,7 +577,7 @@ indexed_opt(A) ::= NOT INDEXED.      {A.z=0; A.n=1;}
 
 %type using_opt {IdList*}
 %destructor using_opt {sqlite3IdListDelete(pParse->db, $$);}
-using_opt(U) ::= USING LP inscollist(L) RP.  {U = L;}
+using_opt(U) ::= USING LP idlist(L) RP.  {U = L;}
 using_opt(U) ::= .                        {U = 0;}
 
 
@@ -740,14 +744,14 @@ valuelist(A) ::= valuelist(X) COMMA LP exprlist(Y) RP. {
 
 %type inscollist_opt {IdList*}
 %destructor inscollist_opt {sqlite3IdListDelete(pParse->db, $$);}
-%type inscollist {IdList*}
-%destructor inscollist {sqlite3IdListDelete(pParse->db, $$);}
+%type idlist {IdList*}
+%destructor idlist {sqlite3IdListDelete(pParse->db, $$);}
 
 inscollist_opt(A) ::= .                       {A = 0;}
-inscollist_opt(A) ::= LP inscollist(X) RP.    {A = X;}
-inscollist(A) ::= inscollist(X) COMMA nm(Y).
+inscollist_opt(A) ::= LP idlist(X) RP.    {A = X;}
+idlist(A) ::= idlist(X) COMMA nm(Y).
     {A = sqlite3IdListAppend(pParse->db,X,&Y);}
-inscollist(A) ::= nm(Y).
+idlist(A) ::= nm(Y).
     {A = sqlite3IdListAppend(pParse->db,0,&Y);}
 
 /////////////////////////// Expression Processing /////////////////////////////
@@ -1227,7 +1231,7 @@ trigger_time(A) ::= .            { A = TK_BEFORE; }
 %destructor trigger_event {sqlite3IdListDelete(pParse->db, $$.b);}
 trigger_event(A) ::= DELETE|INSERT(OP).       {A.a = @OP; A.b = 0;}
 trigger_event(A) ::= UPDATE(OP).              {A.a = @OP; A.b = 0;}
-trigger_event(A) ::= UPDATE OF inscollist(X). {A.a = TK_UPDATE; A.b = X;}
+trigger_event(A) ::= UPDATE OF idlist(X). {A.a = TK_UPDATE; A.b = X;}
 
 foreach_clause ::= .
 foreach_clause ::= FOR EACH ROW.

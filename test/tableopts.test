@@ -1,0 +1,56 @@
+# 2013-10-19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Test the operation of table-options in the WITH clause of the
+# CREATE TABLE statement.
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test tableopt-1.1 {
+  catchsql {
+    CREATE TABLE t1(a,b) WITH (omit_rowid);
+  }
+} {1 {no PRIMARY KEY for table t1}}
+do_test tableopt-1.2 {
+  catchsql {
+    CREATE TABLE t1(a,b) WITH (unknown1, unknown2);
+  }
+} {1 {unknown table option: unknown2}}
+do_test tableopt-1.3 {
+  catchsql {
+    CREATE TABLE t1(a,b,c,PRIMARY KEY(a,b)) WITH (omit_rowid, unknown3);
+  }
+} {1 {unknown table option: unknown3}}
+do_test tableopt-1.4 {
+  catchsql {
+    CREATE TABLE t1(a,b,c,PRIMARY KEY(a,b)) WITH (unknown4, omit_rowid);
+  }
+} {1 {unknown table option: unknown4}}
+
+do_execsql_test tableopt-2.1 {
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a,b)) WITH (omit_rowid);
+  INSERT INTO t1 VALUES(1,2,3),(2,3,4);
+  SELECT c FROM t1 WHERE a IN (1,2) ORDER BY b;
+} {3 4}
+do_execsql_test tableopt-2.2 {
+  VACUUM;
+  SELECT c FROM t1 WHERE a IN (1,2) ORDER BY b;
+} {3 4}
+do_test tableopt-2.3 {
+  sqlite3 db2 test.db
+  db2 eval {SELECT c FROM t1 WHERE a IN (1,2) ORDER BY b;}
+} {3 4}
+db2 close
+  
+finish_test
