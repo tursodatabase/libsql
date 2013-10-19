@@ -1714,7 +1714,7 @@ void sqlite3EndTable(
 
     /* Reparse everything to update our internal data structures */
     sqlite3VdbeAddParseSchemaOp(v, iDb,
-               sqlite3MPrintf(db, "tbl_name='%q'", p->zName));
+           sqlite3MPrintf(db, "tbl_name='%q' AND type!='trigger'", p->zName));
   }
 
 

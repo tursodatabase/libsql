@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_FCNTL_TRACE\sfile\scontrol\sand\sgenerate\sit\sfor\sOP_Trace\nwhen\scompiled\swith\sSQLITE_USE_FCNTL_TRACE.\s\sUpdate\svfslog.c\sto\smake\nuse\sof\sthe\snew\sfile\scontrol.\s\sAlso\supdate\svfslog.c\sto\slog\sUNLOCK\sevents\nbefore\sthe\sfact,\srather\sthan\safterwards.
-D 2013-10-18T20:03:43.147
+C Fix\sa\sbug\scausing\san\s"malformed\sdatabase\sschema\serror"\serror\sif\sa\stemp\stable\swith\sthe\ssame\sname\sas\san\sexisting\stable\sthat\shas\sat\sleast\sone\stemp\strigger\sattached\sto\sit\sis\screated.
+D 2013-10-19T15:07:49.621
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 8ae900bf021a66ac110f5eb2dcf994d24d1c2061
+F src/build.c 6d9a545d726956fdc0c63d7076291fc9e7207484
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -326,7 +326,7 @@ F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
 F test/attach4.test 53bf502f17647c6d6c5add46dda6bac8b6f4665c
 F test/attachmalloc.test 3a4bfca9545bfe906a8d2e622de10fbac5b711b0
 F test/auth.test 9bea29041871807d9f289ee679d05d3ed103642f
-F test/auth2.test a2a371aa6df15f8b0c8109b33d3d7f0f73e4c9aa
+F test/auth2.test c3b415b76c033bedb81292118fb7c01f5f10cbcd
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test bd30d372d00045252f6c2e41b5f41455e1975acf
 F test/autoindex1.test d4dfe14001dfcb74cfbd7107f45a79fc1ab6183e
@@ -827,7 +827,7 @@ F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
-F test/temptrigger.test 26670ed7a39cf2296a7f0a9e0a1d7bdb7abe936d
+F test/temptrigger.test 0a48d94222d50e6e50d72ac103606c4f8e7cbb81
 F test/tester.tcl 5e97d1fe08f45fa3cc2320cee437e315c75ce995
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 08157524ca816a81f3c341097e23982727eaa125
-R b5e11ff6727594b43ff93bb892fab8c2
-U drh
-Z 7548807539fd3c35be5b6a1dc8066c33
+P e801f35a96d861a1e5f223655af4c8a6a7e356bc
+R ac49857d368ae5ae24a9a42091be2bd4
+U dan
+Z 1c112f168e833ab0ddaf48bcba202dcf
