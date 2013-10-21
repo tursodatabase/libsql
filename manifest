@@ -1,5 +1,5 @@
-C Improved\sheader\scomment\swith\sbetter\sinstructions\son\sthe\svfslog.c\nextension.
-D 2013-10-19T16:51:39.506
+C Drop\sthe\smutex\son\sthe\smultiplexor\sbefore\sentering\sthe\sxRead\sVFS\scall.
+D 2013-10-21T13:15:55.814
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -253,7 +253,7 @@ F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c eba4e1c5847cc98e7edc98f62265cd2abafba7a6
-F src/test_multiplex.c 5d691eeb6cb6aa7888da28eba5e62a9a857d3c0f
+F src/test_multiplex.c 6f63947cca286eeed0adc5f8d63fb17347648d4b
 F src/test_multiplex.h 110a8c4d356e0aa464ca8730375608a9a0b61ae1
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
@@ -1126,7 +1126,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 56dca4a65c3b14123272fa0cc5c15530c06fda28
-R 1cee309be53ed4b90f763a6791fd81dc
+P 4bd592c8f0e011e203443a6e88008a61d6926df5
+R 1b819a89ed2e2eb5d84ea2573089e8d1
+T *branch * multiplex-parallel-read
+T *sym-multiplex-parallel-read *
+T -sym-trunk *
 U drh
-Z 23f623447e2329bbecfcb9fee8496fa4
+Z 4ddaa29dcb59ed6dc8dd87737e60aeca
