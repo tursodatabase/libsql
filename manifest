@@ -1,5 +1,5 @@
-C Improved\sheader\scomment\swith\sbetter\sinstructions\son\sthe\svfslog.c\nextension.
-D 2013-10-19T16:51:39.506
+C Improve\ssupport\sfor\sthe\sSQLITE_OMIT_FLAG_PRAGMAS\scompile-time\soption.
+D 2013-10-21T23:17:23.344
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -212,7 +212,7 @@ F src/parse.y a97566d6da75075589a7c716d1bda14b586cf8da
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 64d3d1f8b4ed144ba85c061d00d96d6be8aa2fea
+F src/pragma.c 6fb3125fff078cd81db0039ac778948df4e8cb6f
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -1093,7 +1093,7 @@ F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c bb52064aa614e1426445e4b2b9b00eeecd23cc79
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 3fc52e00a234750675e8a569d2919ff48558e9eb
+F tool/mkpragmatab.tcl 17d40faae6c4b865633bfc5763821402a1cbefc3
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl d8dc444d403019167260e5578f5c362741f03696
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 56dca4a65c3b14123272fa0cc5c15530c06fda28
-R 1cee309be53ed4b90f763a6791fd81dc
-U drh
-Z 23f623447e2329bbecfcb9fee8496fa4
+P 4bd592c8f0e011e203443a6e88008a61d6926df5
+R 53b76eeb5375ab8ab4a6606d590d0d10
+U mistachkin
+Z 54790c9a063cf1ed56ef1eaa1dcf530f
