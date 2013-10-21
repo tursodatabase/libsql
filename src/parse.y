@@ -163,16 +163,22 @@ ifnotexists(A) ::= IF NOT EXISTS. {A = 1;}
 temp(A) ::= TEMP.  {A = 1;}
 %endif  SQLITE_OMIT_TEMPDB
 temp(A) ::= .      {A = 0;}
-create_table_args ::= LP columnlist conslist_opt(X) RP(E1). {
-  sqlite3EndTable(pParse,&X,&E1,&E1,0,0);
-}
-create_table_args ::= LP columnlist conslist_opt(X) RP(E1)
-                      WITH LP idlist(Z) RP(E2). {
-  sqlite3EndTable(pParse,&X,&E1,&E2,Z,0);
+create_table_args ::= LP columnlist conslist_opt(X) RP(E) table_options(F). {
+  sqlite3EndTable(pParse,&X,&E,F,0);
 }
 create_table_args ::= AS select(S). {
-  sqlite3EndTable(pParse,0,0,0,0,S);
+  sqlite3EndTable(pParse,0,0,0,S);
   sqlite3SelectDelete(pParse->db, S);
+}
+%type table_options {u8}
+table_options(A) ::= .    {A = 0;}
+table_options(A) ::= WITHOUT nm(X). {
+  if( X.n==5 && sqlite3_strnicmp(X.z,"rowid",5)==0 ){
+    A = TF_WithoutRowid;
+  }else{
+    A = 0;
+    sqlite3ErrorMsg(pParse, "unknown table option: %.*s", X.n, X.z);
+  }
 }
 columnlist ::= columnlist COMMA column.
 columnlist ::= column.
@@ -209,7 +215,7 @@ id(A) ::= INDEXED(X).    {A = X;}
   CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RELEASE REPLACE RESTRICT ROW ROLLBACK
-  SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITH
+  SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL WITHOUT
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
 %endif SQLITE_OMIT_COMPOUND_SELECT

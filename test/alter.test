@@ -861,10 +861,10 @@ foreach {tn tbl} $system_table_list {
 }
 
 #------------------------------------------------------------------------
-# Verify that ALTER TABLE works on tables with WITH options.
+# Verify that ALTER TABLE works on tables with the WITHOUT rowid option.
 #
 do_execsql_test alter-16.1 {
-  CREATE TABLE t16a(a TEXT, b REAL, c INT, PRIMARY KEY(a,b)) WITH (omit_rowid);
+  CREATE TABLE t16a(a TEXT, b REAL, c INT, PRIMARY KEY(a,b)) WITHOUT rowid;
   INSERT INTO t16a VALUES('abc',1.25,99);
   ALTER TABLE t16a ADD COLUMN d TEXT DEFAULT 'xyzzy';
   INSERT INTO t16a VALUES('cba',5.5,98,'fizzle');

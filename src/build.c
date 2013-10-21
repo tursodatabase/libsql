@@ -1556,9 +1556,8 @@ static void estimateIndexWidth(Index *pIdx){
 void sqlite3EndTable(
   Parse *pParse,          /* Parse context */
   Token *pCons,           /* The ',' token after the last column defn. */
-  Token *pEnd1,           /* The ')' before options in the CREATE TABLE */
-  Token *pEnd2,           /* The final ')' in the whole CREATE TABLE */
-  IdList *pOpts,          /* List of table options.  May be NULL */
+  Token *pEnd,            /* The ')' before options in the CREATE TABLE */
+  u8 tabOpts,             /* Extra table options. Usually 0. */
   Select *pSelect         /* Select from a "CREATE ... AS SELECT" */
 ){
   Table *p;                 /* The new table */
@@ -1566,26 +1565,19 @@ void sqlite3EndTable(
   int iDb;                  /* Database in which the table lives */
   Index *pIdx;              /* An implied index of the table */
 
-  if( (pEnd1==0 && pSelect==0) || db->mallocFailed ){
-    goto end_table_exception;
+  if( (pEnd==0 && pSelect==0) || db->mallocFailed ){
+    return;
   }
   p = pParse->pNewTable;
-  if( p==0 ) goto end_table_exception;
+  if( p==0 ) return;
 
   assert( !db->init.busy || !pSelect );
 
-  if( pOpts ){
-    int i;
-    for(i=0; i<pOpts->nId; i++){
-      if( sqlite3_stricmp(pOpts->a[i].zName, "omit_rowid")==0 ){
-        p->tabFlags |= TF_WithoutRowid;
-        if( (p->tabFlags & TF_HasPrimaryKey)==0 ){
-          sqlite3ErrorMsg(pParse, "no PRIMARY KEY for table %s", p->zName);
-        }
-        continue;
-      }
-      sqlite3ErrorMsg(pParse, "unknown table option: %s", pOpts->a[i].zName);
+  if( tabOpts & TF_WithoutRowid ){
+    if( (p->tabFlags & TF_HasPrimaryKey)==0 ){
+      sqlite3ErrorMsg(pParse, "no PRIMARY KEY for table %s", p->zName);
     }
+    p->tabFlags |= TF_WithoutRowid;
   }
 
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
@@ -1628,7 +1620,7 @@ void sqlite3EndTable(
     char *zStmt;    /* Text of the CREATE TABLE or CREATE VIEW statement */
 
     v = sqlite3GetVdbe(pParse);
-    if( NEVER(v==0) ) goto end_table_exception;
+    if( NEVER(v==0) ) return;
 
     sqlite3VdbeAddOp1(v, OP_Close, 0);
 
@@ -1673,7 +1665,7 @@ void sqlite3EndTable(
       sqlite3VdbeAddOp1(v, OP_Close, 1);
       if( pParse->nErr==0 ){
         pSelTab = sqlite3ResultSetOfSelect(pParse, pSelect);
-        if( pSelTab==0 ) goto end_table_exception;
+        if( pSelTab==0 ) return;
         assert( p->aCol==0 );
         p->nCol = pSelTab->nCol;
         p->aCol = pSelTab->aCol;
@@ -1687,7 +1679,8 @@ void sqlite3EndTable(
     if( pSelect ){
       zStmt = createTableStmt(db, p);
     }else{
-      n = (int)(pEnd2->z - pParse->sNameToken.z) + 1;
+      n = (int)(pParse->sLastToken.z - pParse->sNameToken.z);
+      if( pParse->sLastToken.z[0]!=';' ) n += pParse->sLastToken.n;
       zStmt = sqlite3MPrintf(db, 
           "CREATE %s %.*s", zType2, n, pParse->sNameToken.z
       );
@@ -1745,7 +1738,7 @@ void sqlite3EndTable(
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       db->mallocFailed = 1;
-      goto end_table_exception;
+      return;
     }
     pParse->pNewTable = 0;
     db->flags |= SQLITE_InternChanges;
@@ -1754,19 +1747,15 @@ void sqlite3EndTable(
     if( !p->pSelect ){
       const char *zName = (const char *)pParse->sNameToken.z;
       int nName;
-      assert( !pSelect && pCons && pEnd1 );
+      assert( !pSelect && pCons && pEnd );
       if( pCons->z==0 ){
-        pCons = pEnd1;
+        pCons = pEnd;
       }
       nName = (int)((const char *)pCons->z - zName);
       p->addColOffset = 13 + sqlite3Utf8CharLen(zName, nName);
     }
 #endif
   }
-
-end_table_exception:
-  sqlite3IdListDelete(db, pOpts);
-  return;
 }
 
 #ifndef SQLITE_OMIT_VIEW
@@ -1839,7 +1828,7 @@ void sqlite3CreateView(
   sEnd.n = 1;
 
   /* Use sqlite3EndTable() to add the view to the SQLITE_MASTER table */
-  sqlite3EndTable(pParse, 0, &sEnd, &sEnd, 0, 0);
+  sqlite3EndTable(pParse, 0, &sEnd, 0, 0);
   return;
 }
 #endif /* SQLITE_OMIT_VIEW */

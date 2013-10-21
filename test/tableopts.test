@@ -19,27 +19,17 @@ source $testdir/tester.tcl
 
 do_test tableopt-1.1 {
   catchsql {
-    CREATE TABLE t1(a,b) WITH (omit_rowid);
+    CREATE TABLE t1(a,b) WITHOUT rowid;
   }
 } {1 {no PRIMARY KEY for table t1}}
 do_test tableopt-1.2 {
   catchsql {
-    CREATE TABLE t1(a,b) WITH (unknown1, unknown2);
+    CREATE TABLE t1(a,b) WITHOUT unknown2;
   }
 } {1 {unknown table option: unknown2}}
-do_test tableopt-1.3 {
-  catchsql {
-    CREATE TABLE t1(a,b,c,PRIMARY KEY(a,b)) WITH (omit_rowid, unknown3);
-  }
-} {1 {unknown table option: unknown3}}
-do_test tableopt-1.4 {
-  catchsql {
-    CREATE TABLE t1(a,b,c,PRIMARY KEY(a,b)) WITH (unknown4, omit_rowid);
-  }
-} {1 {unknown table option: unknown4}}
 
 do_execsql_test tableopt-2.1 {
-  CREATE TABLE t1(a, b, c, PRIMARY KEY(a,b)) WITH (omit_rowid);
+  CREATE TABLE t1(a, b, c, PRIMARY KEY(a,b)) WITHOUT rowid;
   INSERT INTO t1 VALUES(1,2,3),(2,3,4);
   SELECT c FROM t1 WHERE a IN (1,2) ORDER BY b;
 } {3 4}
@@ -52,5 +42,15 @@ do_test tableopt-2.3 {
   db2 eval {SELECT c FROM t1 WHERE a IN (1,2) ORDER BY b;}
 } {3 4}
 db2 close
+
+# Make sure the "without" keyword is still usable as a table or
+# column name.
+#
+do_execsql_test tableopt-3.1 {
+  CREATE TABLE without(x INTEGER PRIMARY KEY, without TEXT);
+  INSERT INTO without VALUES(1, 'xyzzy'), (2, 'fizzle');
+  SELECT * FROM without WHERE without='xyzzy';
+} {1 xyzzy}
+
   
 finish_test
