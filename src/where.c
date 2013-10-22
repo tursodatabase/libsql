@@ -2008,7 +2008,6 @@ static void constructAutomaticIndex(
   int nColumn;                /* Number of columns in the constructed index */
   WhereTerm *pTerm;           /* A single term of the WHERE clause */
   WhereTerm *pWCEnd;          /* End of pWC->a[] */
-  int nByte;                  /* Byte of memory needed for pIdx */
   Index *pIdx;                /* Object describing the transient index */
   Vdbe *v;                    /* Prepared statement under construction */
   int addrInit;               /* Address of the initialization bypass jump */
@@ -2021,6 +2020,7 @@ static void constructAutomaticIndex(
   int mxBitCol;               /* Maximum column in pSrc->colUsed */
   CollSeq *pColl;             /* Collating sequence to on a column */
   WhereLoop *pLoop;           /* The Loop object */
+  char *zNotUsed;             /* Extra space on the end of pIdx */
   Bitmask idxCols;            /* Bitmap of columns used for indexing */
   Bitmask extraCols;          /* Bitmap of additional columns */
   u8 sentWarning = 0;         /* True if a warnning has been issued */
@@ -2083,18 +2083,10 @@ static void constructAutomaticIndex(
   pLoop->wsFlags |= WHERE_COLUMN_EQ | WHERE_IDX_ONLY;
 
   /* Construct the Index object to describe this index */
-  nByte = sizeof(Index);
-  nByte += nColumn*sizeof(int);     /* Index.aiColumn */
-  nByte += nColumn*sizeof(char*);   /* Index.azColl */
-  nByte += nColumn;                 /* Index.aSortOrder */
-  pIdx = sqlite3DbMallocZero(pParse->db, nByte);
+  pIdx = sqlite3AllocateIndexObject(pParse->db, nColumn, 0, &zNotUsed);
   if( pIdx==0 ) return;
   pLoop->u.btree.pIndex = pIdx;
-  pIdx->azColl = (char**)&pIdx[1];
-  pIdx->aiColumn = (int*)&pIdx->azColl[nColumn];
-  pIdx->aSortOrder = (u8*)&pIdx->aiColumn[nColumn];
   pIdx->zName = "auto-index";
-  pIdx->nColumn = nColumn;
   pIdx->pTable = pTable;
   n = 0;
   idxCols = 0;

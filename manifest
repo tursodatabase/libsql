@@ -1,5 +1,5 @@
-C Extra\sbackwards-compatibility\stests\sverify\sthat\sUNIQUE\sand\sPRIMARY\sKEY\s\nindices\sare\screated\sin\sthe\scorrect\sorder.\s\sOther\sbackwards-compatibility\ntests\salready\scover\sthis,\sbut\sit\sdoes\snot\shurt\sto\sdouble\sup.
-D 2013-10-22T10:23:26.180
+C Add\sa\sprocedure\sto\shandle\sthe\smessy\sdetails\sof\sallocating\san\sIndex\sobject\nfrom\sthe\sheap.
+D 2013-10-22T14:28:02.309
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 06b5fbc1f50b274388129f6438cbfdfe43733384
+F src/build.c 1c522019071838e71ab67366105d2e79860aaf4b
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -223,7 +223,7 @@ F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 426774ce055ff560525f53622c95267d49f42edd
+F src/sqliteInt.h bf4e57f30d67a0720fe7bc35926fdd0f0f07972f
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c dd2d0d69280d6653d8ef8cf3b6b4b848b9058197
+F src/where.c a5253015dc9ad53e9b811affa062cac6fef47729
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 824b549f9b42935609b283d51f6c386da89a08a7
-R 9d2be800f6ffbad5da228b87aaad6222
+P 5ca0ea2e9b40a7fa133d2af8a2ecc676de7a8723
+R af47abc49940901bd05e026560bdb4b9
 U drh
-Z f634bb8c33954589aeee61350877589e
+Z 079ab6bb649eb152e2879418f011e61b
