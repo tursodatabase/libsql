@@ -1214,6 +1214,7 @@ void sqlite3AddPrimaryKey(
   Table *pTab = pParse->pNewTable;
   char *zType = 0;
   int iCol = -1, i;
+  int nTerm;
   if( pTab==0 || IN_DECLARE_VTAB ) goto primary_key_exit;
   if( pTab->tabFlags & TF_HasPrimaryKey ){
     sqlite3ErrorMsg(pParse, 
@@ -1224,24 +1225,24 @@ void sqlite3AddPrimaryKey(
   if( pList==0 ){
     iCol = pTab->nCol - 1;
     pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
+    zType = pTab->aCol[iCol].zType;
+    nTerm = 1;
   }else{
-    for(i=0; i<pList->nExpr; i++){
+    nTerm = pList->nExpr;
+    for(i=0; i<nTerm; i++){
       for(iCol=0; iCol<pTab->nCol; iCol++){
         if( sqlite3StrICmp(pList->a[i].zName, pTab->aCol[iCol].zName)==0 ){
+          pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
+          zType = pTab->aCol[iCol].zType;
           break;
         }
       }
-      if( iCol<pTab->nCol ){
-        pTab->aCol[iCol].colFlags |= COLFLAG_PRIMKEY;
-      }
     }
-    if( pList->nExpr>1 ) iCol = -1;
   }
-  if( iCol>=0 && iCol<pTab->nCol ){
-    zType = pTab->aCol[iCol].zType;
-  }
-  if( zType && sqlite3StrICmp(zType, "INTEGER")==0
-        && sortOrder==SQLITE_SO_ASC ){
+  if( nTerm==1
+   && zType && sqlite3StrICmp(zType, "INTEGER")==0
+   && sortOrder==SQLITE_SO_ASC
+  ){
     pTab->iPKey = iCol;
     pTab->keyConf = (u8)onError;
     assert( autoInc==0 || autoInc==1 );
@@ -1679,8 +1680,9 @@ void sqlite3EndTable(
     if( pSelect ){
       zStmt = createTableStmt(db, p);
     }else{
-      n = (int)(pParse->sLastToken.z - pParse->sNameToken.z);
-      if( pParse->sLastToken.z[0]!=';' ) n += pParse->sLastToken.n;
+      Token *pEnd2 = tabOpts ? &pParse->sLastToken : pEnd;
+      n = (int)(pEnd2->z - pParse->sNameToken.z);
+      if( pEnd2->z[0]!=';' ) n += pEnd2->n;
       zStmt = sqlite3MPrintf(db, 
           "CREATE %s %.*s", zType2, n, pParse->sNameToken.z
       );

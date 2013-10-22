@@ -1,5 +1,5 @@
-C Simplification\sof\sthe\ssyntax:\s\sMerely\sappend\s"WITHOUT\srowid"\sto\sthe\send\sof\nthe\stable\sdefinition.
-D 2013-10-21T02:14:45.234
+C Previous\srefactor\sis\snot\sgoing\sto\sbe\shelpful\sbecause\simplied\sindices\smust\sbe\ncreated\sin\sthe\ssame\sorder\sthat\sthey\sappear\sin\sthe\sCREATE\sTABLE\sstatement\nfor\sbackwards\scompatibility.\s\sThis\sis\sa\smuch\ssmaller\schange\sto\sclean\sup\sa\nfew\sloose\sends.
+D 2013-10-22T01:18:17.015
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 34096edeeb606354dc7e4b3e5b5b4aa66552d64a
+F src/build.c 06b5fbc1f50b274388129f6438cbfdfe43733384
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0248ec5e6e3797575388f046d8c27f7445fe2a39
-R e0ffffb04f34ea8648db0bbf67f5a7fc
+P 131cc6e152abe1a2d48e6d8d40d2c2f8dbe723e7
+R 54bdf6646aff1f9967ce8b64fbd84f07
 U drh
-Z 31b116f5cf081a48ed8c95100c024626
+Z 08be2e08ad7edb9bab0058e9dd4f6679
