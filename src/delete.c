@@ -598,7 +598,7 @@ void sqlite3GenerateRowIndexDelete(
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aRegIdx!=0 && aRegIdx[i-1]==0 ) continue;
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0, 0, &iPartIdxLabel);
-    sqlite3VdbeAddOp3(v, OP_IdxDelete, iCur+i, r1, pIdx->nColumn+1);
+    sqlite3VdbeAddOp3(v, OP_IdxDelete, iCur+i, r1, pIdx->nKeyCol+1);
     sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   }
 }
@@ -645,11 +645,11 @@ int sqlite3GenerateIndexKey(
       *piPartIdxLabel = 0;
     }
   }
-  nCol = pIdx->nColumn;
+  nCol = pIdx->nKeyCol;
   regBase = sqlite3GetTempRange(pParse, nCol+1);
   sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regBase+nCol);
   for(j=0; j<nCol; j++){
-    int idx = pIdx->aiColumn[j];
+    i16 idx = pIdx->aiColumn[j];
     if( idx==pTab->iPKey ){
       sqlite3VdbeAddOp2(v, OP_SCopy, regBase+nCol, regBase+j);
     }else{

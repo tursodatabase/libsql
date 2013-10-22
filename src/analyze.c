@@ -916,7 +916,7 @@ static void analyzeOneTable(
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
     if( pIdx->pPartIdxWhere==0 ) needTableCnt = 0;
     VdbeNoopComment((v, "Begin analysis of %s", pIdx->zName));
-    nCol = pIdx->nColumn;
+    nCol = pIdx->nKeyCol;
     aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*(nCol+1));
     if( aGotoChng==0 ) continue;
     pKey = sqlite3IndexKeyinfo(pParse, pIdx);
@@ -1081,7 +1081,7 @@ static void analyzeOneTable(
                                       pIdx->aiColumn[0], regSample);
 #else
       for(i=0; i<nCol; i++){
-        int iCol = pIdx->aiColumn[i];
+        i16 iCol = pIdx->aiColumn[i];
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regCol+i);
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nCol+1, regSample);
@@ -1337,7 +1337,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   z = argv[2];
 
   if( pIndex ){
-    decodeIntArray((char*)z, pIndex->nColumn+1, pIndex->aiRowEst, pIndex);
+    decodeIntArray((char*)z, pIndex->nKeyCol+1, pIndex->aiRowEst, pIndex);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowEst = pIndex->aiRowEst[0];
   }else{
     Index fakeIdx;
@@ -1383,7 +1383,7 @@ static void initAvgEq(Index *pIdx){
     IndexSample *aSample = pIdx->aSample;
     IndexSample *pFinal = &aSample[pIdx->nSample-1];
     int iCol;
-    for(iCol=0; iCol<pIdx->nColumn; iCol++){
+    for(iCol=0; iCol<pIdx->nKeyCol; iCol++){
       int i;                    /* Used to iterate through samples */
       tRowcnt sumEq = 0;        /* Sum of the nEq values */
       tRowcnt nSum = 0;         /* Number of terms contributing to sumEq */
@@ -1466,8 +1466,8 @@ static int loadStatTbl(
     ** loaded from the stat4 table. In this case ignore stat3 data.  */
     if( pIdx==0 || pIdx->nSample ) continue;
     if( bStat3==0 ){
-      nIdxCol = pIdx->nColumn+1;
-      nAvgCol = pIdx->nColumn;
+      nIdxCol = pIdx->nKeyCol+1;
+      nAvgCol = pIdx->nKeyCol;
     }
     pIdx->nSampleCol = nIdxCol;
     nByte = sizeof(IndexSample) * nSample;

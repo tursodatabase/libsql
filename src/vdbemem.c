@@ -1031,7 +1031,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
       Index *pIdx = p->pIdx;      /* Index being probed */
       int nByte;                  /* Bytes of space to allocate */
       int i;                      /* Counter variable */
-      int nCol = pIdx->nColumn+1; /* Number of index columns including rowid */
+      int nCol = pIdx->nKeyCol+1; /* Number of index columns including rowid */
   
       nByte = sizeof(Mem) * nCol + sizeof(UnpackedRecord);
       pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);

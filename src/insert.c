@@ -67,12 +67,12 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     int n;
     Table *pTab = pIdx->pTable;
     sqlite3 *db = sqlite3VdbeDb(v);
-    pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+2);
+    pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nKeyCol+2);
     if( !pIdx->zColAff ){
       db->mallocFailed = 1;
       return 0;
     }
-    for(n=0; n<pIdx->nColumn; n++){
+    for(n=0; n<pIdx->nKeyCol; n++){
       pIdx->zColAff[n] = pTab->aCol[pIdx->aiColumn[n]].affinity;
     }
     pIdx->zColAff[n++] = SQLITE_AFF_INTEGER;
@@ -1393,24 +1393,23 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* Create a key for accessing the index entry */
-    regIdx = sqlite3GetTempRange(pParse, pIdx->nColumn+1);
+    regIdx = sqlite3GetTempRange(pParse, pIdx->nKeyCol+1);
     for(i=0; i<pIdx->nColumn; i++){
-      int idx = pIdx->aiColumn[i];
-      if( idx==pTab->iPKey ){
+      i16 idx = pIdx->aiColumn[i];
+      if( idx<0 || idx==pTab->iPKey ){
         sqlite3VdbeAddOp2(v, OP_SCopy, regRowid, regIdx+i);
       }else{
         sqlite3VdbeAddOp2(v, OP_SCopy, regData+idx, regIdx+i);
       }
     }
-    sqlite3VdbeAddOp2(v, OP_SCopy, regRowid, regIdx+i);
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[iCur]);
     sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), P4_TRANSIENT);
-    sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn+1);
+    sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn);
 
     /* Find out what action to take in case there is an indexing conflict */
     onError = pIdx->onError;
     if( onError==OE_None ){ 
-      sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
+      sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nKeyCol+1);
       sqlite3VdbeResolveLabel(v, addrSkipRow);
       continue;  /* pIdx is not a UNIQUE index */
     }
@@ -1430,7 +1429,7 @@ void sqlite3GenerateConstraintChecks(
     j3 = sqlite3VdbeAddOp4(v, OP_IsUnique, baseCur+iCur+1, 0,
                            regR, SQLITE_INT_TO_PTR(regIdx),
                            P4_INT32);
-    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
+    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nKeyCol+1);
 
     /* Generate code that executes if the new index entry is not unique */
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
@@ -1446,15 +1445,15 @@ void sqlite3GenerateConstraintChecks(
 
         sqlite3StrAccumInit(&errMsg, 0, 0, 200);
         errMsg.db = db;
-        zSep = pIdx->nColumn>1 ? "columns " : "column ";
-        for(j=0; j<pIdx->nColumn; j++){
+        zSep = pIdx->nKeyCol>1 ? "columns " : "column ";
+        for(j=0; j<pIdx->nKeyCol; j++){
           char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
           sqlite3StrAccumAppend(&errMsg, zSep, -1);
           zSep = ", ";
           sqlite3StrAccumAppend(&errMsg, zCol, -1);
         }
         sqlite3StrAccumAppend(&errMsg,
-            pIdx->nColumn>1 ? " are not unique" : " is not unique", -1);
+            pIdx->nKeyCol>1 ? " are not unique" : " is not unique", -1);
         zErr = sqlite3StrAccumFinish(&errMsg);
         sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_UNIQUE,
                               onError, zErr, 0);
@@ -1631,13 +1630,13 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
   int i;
   assert( pDest && pSrc );
   assert( pDest->pTable!=pSrc->pTable );
-  if( pDest->nColumn!=pSrc->nColumn ){
+  if( pDest->nKeyCol!=pSrc->nKeyCol ){
     return 0;   /* Different number of columns */
   }
   if( pDest->onError!=pSrc->onError ){
     return 0;   /* Different conflict resolution strategies */
   }
-  for(i=0; i<pSrc->nColumn; i++){
+  for(i=0; i<pSrc->nKeyCol; i++){
     if( pSrc->aiColumn[i]!=pDest->aiColumn[i] ){
       return 0;   /* Different columns indexed */
     }

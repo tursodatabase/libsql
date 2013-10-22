@@ -225,7 +225,7 @@ int sqlite3FkLocateIndex(
   }
 
   for(pIdx=pParent->pIndex; pIdx; pIdx=pIdx->pNext){
-    if( pIdx->nColumn==nCol && pIdx->onError!=OE_None ){ 
+    if( pIdx->nKeyCol==nCol && pIdx->onError!=OE_None ){ 
       /* pIdx is a UNIQUE index (or a PRIMARY KEY) and has the right number
       ** of columns. If each indexed column corresponds to a foreign key
       ** column of pFKey, then this index is a winner.  */
@@ -248,7 +248,7 @@ int sqlite3FkLocateIndex(
         ** the default collation sequences for each column. */
         int i, j;
         for(i=0; i<nCol; i++){
-          int iCol = pIdx->aiColumn[i];     /* Index of column in parent tbl */
+          i16 iCol = pIdx->aiColumn[i];     /* Index of column in parent tbl */
           char *zDfltColl;                  /* Def. collation for column */
           char *zIdxCol;                    /* Name of indexed column */
 
@@ -509,7 +509,7 @@ static void fkScanChildren(
     Expr *pLeft;                  /* Value from parent table row */
     Expr *pRight;                 /* Column ref to child table */
     Expr *pEq;                    /* Expression (pLeft = pRight) */
-    int iCol;                     /* Index of column in child table */ 
+    i16 iCol;                     /* Index of column in child table */ 
     const char *zCol;             /* Name of column in child table */
 
     pLeft = sqlite3Expr(db, TK_REGISTER, 0);
@@ -966,7 +966,7 @@ u32 sqlite3FkOldmask(
       Index *pIdx = 0;
       sqlite3FkLocateIndex(pParse, pTab, p, &pIdx, 0);
       if( pIdx ){
-        for(i=0; i<pIdx->nColumn; i++) mask |= COLUMN_MASK(pIdx->aiColumn[i]);
+        for(i=0; i<pIdx->nKeyCol; i++) mask |= COLUMN_MASK(pIdx->aiColumn[i]);
       }
     }
   }

@@ -1475,8 +1475,8 @@ void sqlite3Pragma(
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "seqno", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "cid", SQLITE_STATIC);
       sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "name", SQLITE_STATIC);
-      for(i=0; i<pIdx->nColumn; i++){
-        int cnum = pIdx->aiColumn[i];
+      for(i=0; i<pIdx->nKeyCol; i++){
+        i16 cnum = pIdx->aiColumn[i];
         sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
         sqlite3VdbeAddOp2(v, OP_Integer, cnum, 2);
         assert( pTab->nCol>cnum );
@@ -1872,7 +1872,7 @@ void sqlite3Pragma(
           };
           r1 = sqlite3GenerateIndexKey(pParse, pIdx, 1, 3, 0, &jmp3);
           sqlite3VdbeAddOp2(v, OP_AddImm, 7+j, 1);  /* increment entry count */
-          jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, j+2, 0, r1, pIdx->nColumn+1);
+          jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, j+2, 0, r1, pIdx->nKeyCol+1);
           addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);
           sqlite3VdbeChangeP4(v, addr+1, "rowid ", P4_STATIC);
           sqlite3VdbeChangeP4(v, addr+3, " missing from index ", P4_STATIC);

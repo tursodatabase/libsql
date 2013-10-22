@@ -1532,8 +1532,8 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     sqlite3 *db = pParse->db;              /* Database connection */
     Table *pTab;                           /* Table <table>. */
     Expr *pExpr;                           /* Expression <column> */
-    int iCol;                              /* Index of column <column> */
-    int iDb;                               /* Database idx for pTab */
+    i16 iCol;                              /* Index of column <column> */
+    i16 iDb;                               /* Database idx for pTab */
 
     assert( p );                        /* Because of isCandidateForInOpt(p) */
     assert( p->pEList!=0 );             /* Because of isCandidateForInOpt(p) */
@@ -1541,7 +1541,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     assert( p->pSrc!=0 );               /* Because of isCandidateForInOpt(p) */
     pTab = p->pSrc->a[0].pTab;
     pExpr = p->pEList->a[0].pExpr;
-    iCol = pExpr->iColumn;
+    iCol = (i16)pExpr->iColumn;
    
     /* Code an OP_VerifyCookie and OP_TableLock for <table>. */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
@@ -1579,7 +1579,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
       for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
         if( (pIdx->aiColumn[0]==iCol)
          && sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0)==pReq
-         && (!mustBeUnique || (pIdx->nColumn==1 && pIdx->onError!=OE_None))
+         && (!mustBeUnique || (pIdx->nKeyCol==1 && pIdx->onError!=OE_None))
         ){
           int iAddr;
           char *pKey;

@@ -235,7 +235,7 @@ int sqlite3_blob_open(
 #endif
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         int j;
-        for(j=0; j<pIdx->nColumn; j++){
+        for(j=0; j<pIdx->nKeyCol; j++){
           if( pIdx->aiColumn[j]==iCol ){
             zFault = "indexed";
           }

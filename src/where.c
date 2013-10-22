@@ -968,7 +968,7 @@ static WhereTerm *whereScanInit(
   if( pIdx && iColumn>=0 ){
     pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
     for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
-      if( NEVER(j>=pIdx->nColumn) ) return 0;
+      if( NEVER(j>=pIdx->nKeyCol) ) return 0;
     }
     pScan->zCollName = pIdx->azColl[j];
   }else{
@@ -1898,16 +1898,16 @@ static int isDistinctRedundant(
   */
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     if( pIdx->onError==OE_None ) continue;
-    for(i=0; i<pIdx->nColumn; i++){
-      int iCol = pIdx->aiColumn[i];
+    for(i=0; i<pIdx->nKeyCol; i++){
+      i16 iCol = pIdx->aiColumn[i];
       if( 0==findTerm(pWC, iBase, iCol, ~(Bitmask)0, WO_EQ, pIdx) ){
         int iIdxCol = findIndexCol(pParse, pDistinct, iBase, pIdx, i);
-        if( iIdxCol<0 || pTab->aCol[pIdx->aiColumn[i]].notNull==0 ){
+        if( iIdxCol<0 || pTab->aCol[iCol].notNull==0 ){
           break;
         }
       }
     }
-    if( i==pIdx->nColumn ){
+    if( i==pIdx->nKeyCol ){
       /* This index implies that the DISTINCT qualifier is redundant. */
       return 1;
     }
@@ -2005,7 +2005,7 @@ static void constructAutomaticIndex(
   Bitmask notReady,           /* Mask of cursors that are not available */
   WhereLevel *pLevel          /* Write new index here */
 ){
-  int nColumn;                /* Number of columns in the constructed index */
+  int nKeyCol;                /* Number of columns in the constructed index */
   WhereTerm *pTerm;           /* A single term of the WHERE clause */
   WhereTerm *pWCEnd;          /* End of pWC->a[] */
   Index *pIdx;                /* Object describing the transient index */
@@ -2033,7 +2033,7 @@ static void constructAutomaticIndex(
 
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
-  nColumn = 0;
+  nKeyCol = 0;
   pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   pLoop = pLevel->pWLoop;
@@ -2051,14 +2051,14 @@ static void constructAutomaticIndex(
         sentWarning = 1;
       }
       if( (idxCols & cMask)==0 ){
-        if( whereLoopResize(pParse->db, pLoop, nColumn+1) ) return;
-        pLoop->aLTerm[nColumn++] = pTerm;
+        if( whereLoopResize(pParse->db, pLoop, nKeyCol+1) ) return;
+        pLoop->aLTerm[nKeyCol++] = pTerm;
         idxCols |= cMask;
       }
     }
   }
-  assert( nColumn>0 );
-  pLoop->u.btree.nEq = pLoop->nLTerm = nColumn;
+  assert( nKeyCol>0 );
+  pLoop->u.btree.nEq = pLoop->nLTerm = nKeyCol;
   pLoop->wsFlags = WHERE_COLUMN_EQ | WHERE_IDX_ONLY | WHERE_INDEXED
                      | WHERE_AUTO_INDEX;
 
@@ -2075,15 +2075,15 @@ static void constructAutomaticIndex(
   testcase( pTable->nCol==BMS-1 );
   testcase( pTable->nCol==BMS-2 );
   for(i=0; i<mxBitCol; i++){
-    if( extraCols & MASKBIT(i) ) nColumn++;
+    if( extraCols & MASKBIT(i) ) nKeyCol++;
   }
   if( pSrc->colUsed & MASKBIT(BMS-1) ){
-    nColumn += pTable->nCol - BMS + 1;
+    nKeyCol += pTable->nCol - BMS + 1;
   }
   pLoop->wsFlags |= WHERE_COLUMN_EQ | WHERE_IDX_ONLY;
 
   /* Construct the Index object to describe this index */
-  pIdx = sqlite3AllocateIndexObject(pParse->db, nColumn, 0, &zNotUsed);
+  pIdx = sqlite3AllocateIndexObject(pParse->db, nKeyCol+1, 0, &zNotUsed);
   if( pIdx==0 ) return;
   pLoop->u.btree.pIndex = pIdx;
   pIdx->zName = "auto-index";
@@ -2124,13 +2124,13 @@ static void constructAutomaticIndex(
       n++;
     }
   }
-  assert( n==nColumn );
+  assert( n==nKeyCol );
 
   /* Create the automatic index */
   pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
   assert( pLevel->iIdxCur>=0 );
   pLevel->iIdxCur = pParse->nTab++;
-  sqlite3VdbeAddOp4(v, OP_OpenAutoindex, pLevel->iIdxCur, nColumn+1, 0,
+  sqlite3VdbeAddOp4(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1, 0,
                     (char*)pKeyinfo, P4_KEYINFO_HANDOFF);
   VdbeComment((v, "for %s", pTable->zName));
 
@@ -2384,7 +2384,7 @@ static void whereKeyStats(
       iUpper = i>=pIdx->nSample ? pIdx->aiRowEst[0] : aSample[i].anLt[iCol];
       iLower = aSample[i-1].anEq[iCol] + aSample[i-1].anLt[iCol];
     }
-    aStat[1] = (pIdx->nColumn>iCol ? pIdx->aAvgEq[iCol] : 1);
+    aStat[1] = (pIdx->nKeyCol>iCol ? pIdx->aAvgEq[iCol] : 1);
     if( iLower>=iUpper ){
       iGap = 0;
     }else{
@@ -2484,7 +2484,7 @@ static int whereRangeScanEst(
     tRowcnt iLower;
     tRowcnt iUpper;
 
-    if( nEq==p->nColumn ){
+    if( nEq==p->nKeyCol ){
       aff = SQLITE_AFF_INTEGER;
     }else{
       aff = p->pTable->aCol[p->aiColumn[nEq]].affinity;
@@ -2602,7 +2602,7 @@ static int whereEqualScanEst(
   int bOk;
 
   assert( nEq>=1 );
-  assert( nEq<=(p->nColumn+1) );
+  assert( nEq<=(p->nKeyCol+1) );
   assert( p->aSample!=0 );
   assert( p->nSample>0 );
   assert( pBuilder->nRecValid<nEq );
@@ -2615,7 +2615,7 @@ static int whereEqualScanEst(
 
   /* This is an optimization only. The call to sqlite3Stat4ProbeSetValue()
   ** below would return the same value.  */
-  if( nEq>p->nColumn ){
+  if( nEq>p->nKeyCol ){
     *pnRow = 1;
     return SQLITE_OK;
   }
@@ -3002,7 +3002,7 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   int nEq = pLoop->u.btree.nEq;
   int i, j;
   Column *aCol = pTab->aCol;
-  int *aiColumn = pIndex->aiColumn;
+  i16 *aiColumn = pIndex->aiColumn;
   StrAccum txt;
 
   if( nEq==0 && (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==0 ){
@@ -3012,17 +3012,17 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   txt.db = db;
   sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
-    char *z = (i==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[i]].zName;
+    char *z = (i==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[i]].zName;
     explainAppendTerm(&txt, i, z, "=");
   }
 
   j = i;
   if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
-    char *z = (j==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[j]].zName;
+    char *z = (j==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i++, z, ">");
   }
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
-    char *z = (j==pIndex->nColumn ) ? "rowid" : aCol[aiColumn[j]].zName;
+    char *z = (j==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i, z, "<");
   }
   sqlite3StrAccumAppend(&txt, ")", 1);
@@ -3406,7 +3406,7 @@ static Bitmask codeOneLoopStart(
     */
     if( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0
      && (pWInfo->bOBSat!=0)
-     && (pIdx->nColumn>nEq)
+     && (pIdx->nKeyCol>nEq)
     ){
       /* assert( pOrderBy->nExpr==1 ); */
       /* assert( pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq] ); */
@@ -3439,8 +3439,8 @@ static Bitmask codeOneLoopStart(
     ** a forward order scan on a descending index, interchange the 
     ** start and end terms (pRangeStart and pRangeEnd).
     */
-    if( (nEq<pIdx->nColumn && bRev==(pIdx->aSortOrder[nEq]==SQLITE_SO_ASC))
-     || (bRev && pIdx->nColumn==nEq)
+    if( (nEq<pIdx->nKeyCol && bRev==(pIdx->aSortOrder[nEq]==SQLITE_SO_ASC))
+     || (bRev && pIdx->nKeyCol==nEq)
     ){
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
     }
@@ -4243,8 +4243,8 @@ static int whereLoopAddBtreeIndex(
   }
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
-  assert( pNew->u.btree.nEq<=pProbe->nColumn );
-  if( pNew->u.btree.nEq < pProbe->nColumn ){
+  assert( pNew->u.btree.nEq<=pProbe->nKeyCol );
+  if( pNew->u.btree.nEq < pProbe->nKeyCol ){
     iCol = pProbe->aiColumn[pNew->u.btree.nEq];
     nRowEst = sqlite3LogEst(pProbe->aiRowEst[pNew->u.btree.nEq+1]);
     if( nRowEst==0 && pProbe->onError==OE_None ) nRowEst = 1;
@@ -4301,7 +4301,7 @@ static int whereLoopAddBtreeIndex(
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       if( iCol<0  
        || (pProbe->onError!=OE_None && nInMul==0
-           && pNew->u.btree.nEq==pProbe->nColumn-1)
+           && pNew->u.btree.nEq==pProbe->nKeyCol-1)
       ){
         assert( (pNew->wsFlags & WHERE_COLUMN_IN)==0 || iCol<0 );
         pNew->wsFlags |= WHERE_ONEROW;
@@ -4367,7 +4367,7 @@ static int whereLoopAddBtreeIndex(
     whereLoopOutputAdjust(pBuilder->pWC, pNew);
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
-     && pNew->u.btree.nEq<(pProbe->nColumn + (pProbe->zName!=0))
+     && pNew->u.btree.nEq<(pProbe->nKeyCol + (pProbe->zName!=0))
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
@@ -4406,7 +4406,7 @@ static int indexMightHelpWithOrderBy(
     Expr *pExpr = sqlite3ExprSkipCollate(pOB->a[ii].pExpr);
     if( pExpr->op!=TK_COLUMN ) return 0;
     if( pExpr->iTable==iCursor ){
-      for(jj=0; jj<pIndex->nColumn; jj++){
+      for(jj=0; jj<pIndex->nKeyCol; jj++){
         if( pExpr->iColumn==pIndex->aiColumn[jj] ) return 1;
       }
     }
@@ -4421,7 +4421,7 @@ static int indexMightHelpWithOrderBy(
 static Bitmask columnsInIndex(Index *pIdx){
   Bitmask m = 0;
   int j;
-  for(j=pIdx->nColumn-1; j>=0; j--){
+  for(j=pIdx->nKeyCol-1; j>=0; j--){
     int x = pIdx->aiColumn[j];
     assert( x>=0 );
     testcase( x==BMS-1 );
@@ -4456,7 +4456,7 @@ static int whereLoopAddBtree(
   Index *pProbe;              /* An index we are evaluating */
   Index sPk;                  /* A fake index object for the primary key */
   tRowcnt aiRowEstPk[2];      /* The aiRowEst[] value for the sPk index */
-  int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
+  i16 aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
   SrcList *pTabList;          /* The FROM clause */
   struct SrcList_item *pSrc;  /* The FROM clause btree term to add */
   WhereLoop *pNew;            /* Template WhereLoop object */
@@ -4486,7 +4486,7 @@ static int whereLoopAddBtree(
     ** indices to follow */
     Index *pFirst;                  /* First of real indices on the table */
     memset(&sPk, 0, sizeof(Index));
-    sPk.nColumn = 1;
+    sPk.nKeyCol = 1;
     sPk.aiColumn = &aiColumnPk;
     sPk.aiRowEst = aiRowEstPk;
     sPk.onError = OE_Replace;
@@ -4961,7 +4961,7 @@ static int wherePathSatisfiesOrderBy(
   u8 isOrderDistinct;   /* All prior WhereLoops are order-distinct */
   u8 distinctColumns;   /* True if the loop has UNIQUE NOT NULL columns */
   u8 isMatch;           /* iColumn matches a term of the ORDER BY clause */
-  u16 nColumn;          /* Number of columns in pIndex */
+  u16 nKeyCol;          /* Number of columns in pIndex */
   u16 nOrderBy;         /* Number terms in the ORDER BY clause */
   int iLoop;            /* Index of WhereLoop in pPath being processed */
   int i, j;             /* Loop counters */
@@ -5053,11 +5053,11 @@ static int wherePathSatisfiesOrderBy(
     if( (pLoop->wsFlags & WHERE_ONEROW)==0 ){
       if( pLoop->wsFlags & WHERE_IPK ){
         pIndex = 0;
-        nColumn = 0;
+        nKeyCol = 0;
       }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
         return 0;
       }else{
-        nColumn = pIndex->nColumn;
+        nKeyCol = pIndex->nKeyCol;
         isOrderDistinct = pIndex->onError!=OE_None;
       }
 
@@ -5066,7 +5066,7 @@ static int wherePathSatisfiesOrderBy(
       */
       rev = revSet = 0;
       distinctColumns = 0;
-      for(j=0; j<=nColumn; j++){
+      for(j=0; j<=nKeyCol; j++){
         u8 bOnce;   /* True to run the ORDER BY search loop */
 
         /* Skip over == and IS NULL terms */
@@ -5083,14 +5083,14 @@ static int wherePathSatisfiesOrderBy(
         /* Get the column number in the table (iColumn) and sort order
         ** (revIdx) for the j-th column of the index.
         */
-        if( j<nColumn ){
+        if( j<nKeyCol ){
           /* Normal index columns */
           iColumn = pIndex->aiColumn[j];
           revIdx = pIndex->aSortOrder[j];
           if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
         }else{
           /* The ROWID column at the end */
-          assert( j==nColumn );
+          assert( j==nKeyCol );
           iColumn = -1;
           revIdx = 0;
         }
@@ -5147,7 +5147,7 @@ static int wherePathSatisfiesOrderBy(
           }
         }else{
           /* No match found */
-          if( j==0 || j<nColumn ){
+          if( j==0 || j<nKeyCol ){
             testcase( isOrderDistinct!=0 );
             isOrderDistinct = 0;
           }
@@ -5513,14 +5513,14 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       assert( ArraySize(pLoop->aLTermSpace)==4 );
       if( pIdx->onError==OE_None 
        || pIdx->pPartIdxWhere!=0 
-       || pIdx->nColumn>ArraySize(pLoop->aLTermSpace) 
+       || pIdx->nKeyCol>ArraySize(pLoop->aLTermSpace) 
       ) continue;
-      for(j=0; j<pIdx->nColumn; j++){
+      for(j=0; j<pIdx->nKeyCol; j++){
         pTerm = findTerm(pWC, iCur, pIdx->aiColumn[j], 0, WO_EQ, pIdx);
         if( pTerm==0 ) break;
         pLoop->aLTerm[j] = pTerm;
       }
-      if( j!=pIdx->nColumn ) continue;
+      if( j!=pIdx->nKeyCol ) continue;
       pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
       if( (pItem->colUsed & ~columnsInIndex(pIdx))==0 ){
         pLoop->wsFlags |= WHERE_IDX_ONLY;
@@ -6112,14 +6112,14 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
-          for(j=0; j<pIdx->nColumn; j++){
+          for(j=0; j<pIdx->nKeyCol; j++){
             if( pOp->p2==pIdx->aiColumn[j] ){
               pOp->p2 = j;
               pOp->p1 = pLevel->iIdxCur;
               break;
             }
           }
-          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || j<pIdx->nColumn );
+          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || j<pIdx->nKeyCol );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;

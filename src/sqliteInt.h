@@ -1577,7 +1577,7 @@ struct UnpackedRecord {
 */
 struct Index {
   char *zName;             /* Name of this index */
-  int *aiColumn;           /* Which columns are used by this index.  1st is 0 */
+  i16 *aiColumn;           /* Which columns are used by this index.  1st is 0 */
   tRowcnt *aiRowEst;       /* From ANALYZE: Est. rows selected by each column */
   Table *pTable;           /* The SQL table being indexed */
   char *zColAff;           /* String defining the affinity of each column */
@@ -1588,7 +1588,8 @@ struct Index {
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
   int tnum;                /* DB Page containing root of this index */
   LogEst szIdxRow;         /* Estimated average row size in bytes */
-  u16 nColumn;             /* Number of columns in table used by this index */
+  u16 nKeyCol;             /* Number of columns forming the key */
+  u16 nColumn;             /* Number of columns stored in the index */
   u8 onError;              /* OE_Abort, OE_Ignore, OE_Replace, or OE_None */
   unsigned autoIndex:2;    /* 1==UNIQUE, 2==PRIMARY KEY, 0==CREATE INDEX */
   unsigned bUnordered:1;   /* Use this index for == or IN queries only */
@@ -2826,7 +2827,7 @@ void sqlite3SrcListShiftJoinType(SrcList*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(sqlite3*, IdList*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
-Index *sqlite3AllocateIndexObject(sqlite3*,int,int,char**);
+Index *sqlite3AllocateIndexObject(sqlite3*,i16,int,char**);
 Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                           Expr*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);

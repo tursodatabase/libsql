@@ -250,7 +250,7 @@ void sqlite3Update(
       reg = ++pParse->nMem;
     }else{
       reg = 0;
-      for(i=0; i<pIdx->nColumn; i++){
+      for(i=0; i<pIdx->nKeyCol; i++){
         if( aXRef[pIdx->aiColumn[i]]>=0 ){
           reg = ++pParse->nMem;
           break;

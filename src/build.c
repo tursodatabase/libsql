@@ -1314,7 +1314,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
     ** collation type was added. Correct this if it is the case.
     */
     for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
-      assert( pIdx->nColumn==1 );
+      assert( pIdx->nKeyCol==1 );
       if( pIdx->aiColumn[0]==i ){
         pIdx->azColl[0] = p->aCol[i].zColl;
       }
@@ -1524,12 +1524,13 @@ static void estimateTableWidth(Table *pTab){
 ** Estimate the average size of a row for an index.
 */
 static void estimateIndexWidth(Index *pIdx){
-  unsigned wIndex = 1;
+  unsigned wIndex = 0;
   int i;
   const Column *aCol = pIdx->pTable->aCol;
   for(i=0; i<pIdx->nColumn; i++){
-    assert( pIdx->aiColumn[i]>=0 && pIdx->aiColumn[i]<pIdx->pTable->nCol );
-    wIndex += aCol[pIdx->aiColumn[i]].szEst;
+    i16 x = pIdx->aiColumn[i];
+    assert( x<pIdx->pTable->nCol );
+    wIndex += x<0 ? 1 : aCol[pIdx->aiColumn[i]].szEst;
   }
   pIdx->szIdxRow = sqlite3LogEst(wIndex*4);
 }
@@ -2524,7 +2525,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 */
 Index *sqlite3AllocateIndexObject(
   sqlite3 *db,         /* Database connection */
-  int nCol,            /* Number of columns in the index */
+  i16 nCol,            /* Total number of columns in the index */
   int nExtra,          /* Number of bytes of extra space to alloc */
   char **ppExtra       /* Pointer to the "extra" space */
 ){
@@ -2534,16 +2535,17 @@ Index *sqlite3AllocateIndexObject(
   nByte = ROUND8(sizeof(Index)) +              /* Index structure  */
           ROUND8(sizeof(char*)*nCol) +         /* Index.azColl     */
           ROUND8(sizeof(tRowcnt)*(nCol+1) +    /* Index.aiRowEst   */
-                 sizeof(int)*nCol +            /* Index.aiColumn   */
+                 sizeof(i16)*nCol +            /* Index.aiColumn   */
                  sizeof(u8)*nCol);             /* Index.aSortOrder */
   p = sqlite3DbMallocZero(db, nByte + nExtra);
   if( p ){
     char *pExtra = ((char*)p)+ROUND8(sizeof(Index));
     p->azColl = (char**)pExtra;      pExtra += ROUND8(sizeof(char*)*nCol);
     p->aiRowEst = (tRowcnt*)pExtra;  pExtra += sizeof(tRowcnt)*(nCol+1);
-    p->aiColumn = (int*)pExtra;      pExtra += sizeof(int)*nCol;
+    p->aiColumn = (i16*)pExtra;      pExtra += sizeof(i16)*nCol;
     p->aSortOrder = (u8*)pExtra;
     p->nColumn = nCol;
+    p->nKeyCol = nCol - 1;
     *ppExtra = ((char*)p) + nByte;
   }
   return p;
@@ -2763,7 +2765,7 @@ Index *sqlite3CreateIndex(
   ** Allocate the index structure. 
   */
   nName = sqlite3Strlen30(zName);
-  pIndex = sqlite3AllocateIndexObject(db, pList->nExpr,
+  pIndex = sqlite3AllocateIndexObject(db, pList->nExpr + 1,
                                       nName + nExtra + 1, &zExtra);
   if( db->mallocFailed ){
     goto exit_create_index;
@@ -2774,7 +2776,6 @@ Index *sqlite3CreateIndex(
   zExtra += nName + 1;
   memcpy(pIndex->zName, zName, nName+1);
   pIndex->pTable = pTab;
-  pIndex->nColumn = pList->nExpr;
   pIndex->onError = (u8)onError;
   pIndex->uniqNotNull = onError==OE_Abort;
   pIndex->autoIndex = (u8)(pName==0);
@@ -2818,7 +2819,8 @@ Index *sqlite3CreateIndex(
       pParse->checkSchema = 1;
       goto exit_create_index;
     }
-    pIndex->aiColumn[i] = j;
+    assert( pTab->nCol<=0x7fff && j<=0x7fff );
+    pIndex->aiColumn[i] = (i16)j;
     if( pListItem->pExpr ){
       int nColl;
       assert( pListItem->pExpr->op==TK_COLLATE );
@@ -2841,6 +2843,8 @@ Index *sqlite3CreateIndex(
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
     if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
+  pIndex->aiColumn[i] = -1;
+  pIndex->azColl[i] = "BINARY";
   sqlite3DefaultRowEst(pIndex);
   if( pParse->pNewTable==0 ) estimateIndexWidth(pIndex);
 
@@ -2873,8 +2877,8 @@ Index *sqlite3CreateIndex(
       assert( pIdx->autoIndex );
       assert( pIndex->onError!=OE_None );
 
-      if( pIdx->nColumn!=pIndex->nColumn ) continue;
-      for(k=0; k<pIdx->nColumn; k++){
+      if( pIdx->nKeyCol!=pIndex->nKeyCol ) continue;
+      for(k=0; k<pIdx->nKeyCol; k++){
         const char *z1;
         const char *z2;
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
@@ -2882,7 +2886,7 @@ Index *sqlite3CreateIndex(
         z2 = pIndex->azColl[k];
         if( z1!=z2 && sqlite3StrICmp(z1, z2) ) break;
       }
-      if( k==pIdx->nColumn ){
+      if( k==pIdx->nKeyCol ){
         if( pIdx->onError!=pIndex->onError ){
           /* This constraint creates the same index as a previous
           ** constraint specified somewhere in the CREATE TABLE statement.
@@ -3051,12 +3055,12 @@ void sqlite3DefaultRowEst(Index *pIdx){
   a[0] = pIdx->pTable->nRowEst;
   if( a[0]<10 ) a[0] = 10;
   n = 10;
-  for(i=1; i<=pIdx->nColumn; i++){
+  for(i=1; i<=pIdx->nKeyCol; i++){
     a[i] = n;
     if( n>5 ) n--;
   }
   if( pIdx->onError!=OE_None ){
-    a[pIdx->nColumn] = 1;
+    a[pIdx->nKeyCol] = 1;
   }
 }
 
@@ -3764,8 +3768,8 @@ static int collationMatch(const char *zColl, Index *pIndex){
   assert( zColl!=0 );
   for(i=0; i<pIndex->nColumn; i++){
     const char *z = pIndex->azColl[i];
-    assert( z!=0 );
-    if( 0==sqlite3StrICmp(z, zColl) ){
+    assert( z!=0 || pIndex->aiColumn[i]<0 );
+    if( pIndex->aiColumn[i]>=0 && 0==sqlite3StrICmp(z, zColl) ){
       return 1;
     }
   }
@@ -3895,7 +3899,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 */
 KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   int i;
-  int nCol = pIdx->nColumn;
+  int nCol = pIdx->nKeyCol;
   KeyInfo *pKey;
 
   pKey = sqlite3KeyInfoAlloc(pParse->db, nCol);
