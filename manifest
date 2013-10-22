@@ -1,5 +1,5 @@
-C Previous\srefactor\sis\snot\sgoing\sto\sbe\shelpful\sbecause\simplied\sindices\smust\sbe\ncreated\sin\sthe\ssame\sorder\sthat\sthey\sappear\sin\sthe\sCREATE\sTABLE\sstatement\nfor\sbackwards\scompatibility.\s\sThis\sis\sa\smuch\ssmaller\schange\sto\sclean\sup\sa\nfew\sloose\sends.
-D 2013-10-22T01:18:17.015
+C Extra\sbackwards-compatibility\stests\sverify\sthat\sUNIQUE\sand\sPRIMARY\sKEY\s\nindices\sare\screated\sin\sthe\scorrect\sorder.\s\sOther\sbackwards-compatibility\ntests\salready\scover\sthis,\sbut\sit\sdoes\snot\shurt\sto\sdouble\sup.
+D 2013-10-22T10:23:26.180
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -333,7 +333,7 @@ F test/autoindex1.test d4dfe14001dfcb74cfbd7107f45a79fc1ab6183e
 F test/autovacuum.test 9f22a7733f39c56ef6a5665d10145ac25d8cb574
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test ecd841f3a3bfb81518721879cc56a760670e3198
+F test/backcompat.test cf76ac18830b61df960f74229e1a4107258d3ee0
 F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 131cc6e152abe1a2d48e6d8d40d2c2f8dbe723e7
-R 54bdf6646aff1f9967ce8b64fbd84f07
+P 824b549f9b42935609b283d51f6c386da89a08a7
+R 9d2be800f6ffbad5da228b87aaad6222
 U drh
-Z 08be2e08ad7edb9bab0058e9dd4f6679
+Z f634bb8c33954589aeee61350877589e
