@@ -2125,6 +2125,8 @@ static void constructAutomaticIndex(
     }
   }
   assert( n==nKeyCol );
+  pIdx->aiColumn[n] = -1;
+  pIdx->azColl[n] = "BINARY";
 
   /* Create the automatic index */
   pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
@@ -6113,7 +6115,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       pIdx = pLevel->u.pCovidx;
     }
     if( pIdx && !db->mallocFailed ){
-      int k, j, last;
+      int k, last;
       VdbeOp *pOp;
 
       last = sqlite3VdbeCurrentAddr(v);
@@ -6122,14 +6124,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
-          for(j=0; j<pIdx->nColumn; j++){
-            if( pOp->p2==pIdx->aiColumn[j] ){
-              pOp->p2 = j;
-              pOp->p1 = pLevel->iIdxCur;
-              break;
-            }
+          i16 x = sqlite3ColumnOfIndex(pIdx, pOp->p2);
+          if( x>=0 ){
+            pOp->p2 = x;
+            pOp->p1 = pLevel->iIdxCur;
           }
-          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || j<pIdx->nColumn );
+          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || x>=0 );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;

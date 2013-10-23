@@ -634,6 +634,7 @@ int sqlite3GenerateIndexKey(
   Table *pTab = pIdx->pTable;
   int regBase;
   int nCol;
+  Index *pPk;
 
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
@@ -645,13 +646,14 @@ int sqlite3GenerateIndexKey(
       *piPartIdxLabel = 0;
     }
   }
-  nCol = pIdx->nKeyCol;
-  regBase = sqlite3GetTempRange(pParse, nCol+1);
-  sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regBase+nCol);
+  nCol = pIdx->nColumn;
+  regBase = sqlite3GetTempRange(pParse, nCol);
+  pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(j=0; j<nCol; j++){
     i16 idx = pIdx->aiColumn[j];
-    if( idx==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_SCopy, regBase+nCol, regBase+j);
+    if( pPk ) idx = sqlite3ColumnOfIndex(pPk, idx);
+    if( idx<0 || idx==pTab->iPKey ){
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regBase+j);
     }else{
       sqlite3VdbeAddOp3(v, OP_Column, iCur, idx, regBase+j);
       sqlite3ColumnDefault(v, pTab, idx, -1);
@@ -666,9 +668,9 @@ int sqlite3GenerateIndexKey(
     }else{
       zAff = sqlite3IndexAffinityStr(v, pIdx);
     }
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol+1, regOut);
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regOut);
     sqlite3VdbeChangeP4(v, -1, zAff, P4_TRANSIENT);
   }
-  sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
+  sqlite3ReleaseTempRange(pParse, regBase, nCol);
   return regBase;
 }

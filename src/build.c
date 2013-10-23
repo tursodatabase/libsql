@@ -749,6 +749,27 @@ int sqlite3CheckObjectName(Parse *pParse, const char *zName){
 }
 
 /*
+** Return the PRIMARY KEY index of a table
+*/
+Index *sqlite3PrimaryKeyIndex(Table *pTab){
+  Index *p;
+  for(p=pTab->pIndex; p && p->autoIndex!=2; p=p->pNext){}
+  return p;
+}
+
+/*
+** Return the column of index pIdx that corresponds to table
+** column iCol.  Return -1 if not found.
+*/
+i16 sqlite3ColumnOfIndex(Index *pIdx, i16 iCol){
+  int i;
+  for(i=0; i<pIdx->nColumn; i++){
+    if( iCol==pIdx->aiColumn[i] ) return i;
+  }
+  return -1;
+}
+
+/*
 ** Begin constructing a new table representation in memory.  This is
 ** the first of several action routines that get called in response
 ** to a CREATE TABLE statement.  In particular, this routine is called
@@ -1610,8 +1631,9 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pPk = sqlite3CreateIndex(pParse, 0, 0, 0, pList, pTab->keyConf, 0, 0, 0, 0);
     if( pPk==0 ) return;
     pTab->iPKey = -1;
+  }else{
+    pPk = sqlite3PrimaryKeyIndex(pTab);
   }
-  for(pPk=pTab->pIndex; pPk && pPk->autoIndex<2; pPk=pPk->pNext){}
   assert( pPk!=0 );
   nPk = pPk->nKeyCol;
 
@@ -2600,12 +2622,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     tnum = memRootPage;
   }else{
     tnum = pIndex->tnum;
-    sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
   }
   pKey = sqlite3IndexKeyinfo(pParse, pIndex);
-  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
-                    (char *)pKey, P4_KEYINFO_HANDOFF);
-  sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
 
   /* Open the sorter cursor if we are to use one. */
   iSorter = pParse->nTab++;
@@ -2613,7 +2631,16 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 
   /* Open the table. Loop through all rows of the table, inserting index
   ** records into the sorter. */
-  sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
+  if( HasRowid(pTab) ){
+    sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
+  }else{
+    Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
+    assert( pPk->tnum=pTab->tnum );
+    sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pPk->tnum, iDb,
+                     (char*)sqlite3IndexKeyinfo(pParse, pPk),
+                     P4_KEYINFO_HANDOFF);
+  }
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
   regRecord = sqlite3GetTempReg(pParse);
 
@@ -2622,6 +2649,11 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1);
   sqlite3VdbeJumpHere(v, addr1);
+  if( memRootPage<0 ) sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
+  sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
+                    (char *)pKey, P4_KEYINFO_HANDOFF);
+  sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
+
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0);
   if( pIndex->onError!=OE_None ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
@@ -2724,7 +2756,9 @@ Index *sqlite3CreateIndex(
   struct ExprList_item *pListItem; /* For looping over pList */
   const Column *pTabCol;           /* A column in the table */
   int nExtra = 0;                  /* Space allocated for zExtra[] */
+  int nExtraCol;                   /* Number of extra columns needed */
   char *zExtra;                    /* Extra space after the Index object */
+  Index *pPk = 0;      /* PRIMARY KEY index for WITHOUT ROWID tables */
 
   assert( pParse->nErr==0 );      /* Never called with prior errors */
   if( db->mallocFailed || IN_DECLARE_VTAB ){
@@ -2776,6 +2810,7 @@ Index *sqlite3CreateIndex(
            pTab->zName);
       goto exit_create_index;
     }
+    if( !HasRowid(pTab) ) pPk = sqlite3PrimaryKeyIndex(pTab);
   }else{
     assert( pName==0 );
     assert( pStart==0 );
@@ -2893,7 +2928,8 @@ Index *sqlite3CreateIndex(
   ** Allocate the index structure. 
   */
   nName = sqlite3Strlen30(zName);
-  pIndex = sqlite3AllocateIndexObject(db, pList->nExpr + 1,
+  nExtraCol = pPk ? pPk->nKeyCol : 1;
+  pIndex = sqlite3AllocateIndexObject(db, pList->nExpr + nExtraCol,
                                       nName + nExtra + 1, &zExtra);
   if( db->mallocFailed ){
     goto exit_create_index;
@@ -2971,8 +3007,16 @@ Index *sqlite3CreateIndex(
     pIndex->aSortOrder[i] = (u8)requestedSortOrder;
     if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
-  pIndex->aiColumn[i] = -1;
-  pIndex->azColl[i] = "BINARY";
+  if( pPk ){
+    for(j=0; j<pPk->nKeyCol; j++, i++){
+      pIndex->aiColumn[i] = pPk->aiColumn[j];
+      pIndex->azColl[i] = pPk->azColl[j];
+      pIndex->aSortOrder[i] = pPk->aSortOrder[j];
+    }
+  }else{
+    pIndex->aiColumn[i] = -1;
+    pIndex->azColl[i] = "BINARY";
+  }
   sqlite3DefaultRowEst(pIndex);
   if( pParse->pNewTable==0 ) estimateIndexWidth(pIndex);
 

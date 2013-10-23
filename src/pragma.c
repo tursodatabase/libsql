@@ -1391,8 +1391,7 @@ void sqlite3Pragma(
       int i, k;
       int nHidden = 0;
       Column *pCol;
-      Index *pPk;
-      for(pPk=pTab->pIndex; pPk && pPk->autoIndex!=2; pPk=pPk->pNext){}
+      Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       sqlite3VdbeSetNumCols(v, 6);
       pParse->nMem = 6;
       sqlite3CodeVerifySchema(pParse, iDb);
