@@ -1774,6 +1774,9 @@ static int xferOptimization(
   if( pSrc==pDest ){
     return 0;   /* tab1 and tab2 may not be the same table */
   }
+  if( HasRowid(pDest)!=HasRowid(pSrc) ){
+    return 0;   /* source and destination must both be WITHOUT ROWID or not */
+  }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( pSrc->tabFlags & TF_Virtual ){
     return 0;   /* tab2 must not be a virtual table */
@@ -1787,6 +1790,9 @@ static int xferOptimization(
   }
   if( pDest->iPKey!=pSrc->iPKey ){
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
+  }
+  if( HasRowid(pDest)!=HasRowid(pSrc) ){
+    return 0;   /* source and destination must both be WITHOUT ROWID or not */
   }
   for(i=0; i<pDest->nCol; i++){
     if( pDest->aCol[i].affinity!=pSrc->aCol[i].affinity ){
@@ -1844,60 +1850,62 @@ static int xferOptimization(
   iSrc = pParse->nTab++;
   iDest = pParse->nTab++;
   regAutoinc = autoIncBegin(pParse, iDbDest, pDest);
-  sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
-  if( (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
-   || destHasUniqueIdx                              /* (2) */
-   || (onError!=OE_Abort && onError!=OE_Rollback)   /* (3) */
-  ){
-    /* In some circumstances, we are able to run the xfer optimization
-    ** only if the destination table is initially empty.  This code makes
-    ** that determination.  Conditions under which the destination must
-    ** be empty:
-    **
-    ** (1) There is no INTEGER PRIMARY KEY but there are indices.
-    **     (If the destination is not initially empty, the rowid fields
-    **     of index entries might need to change.)
-    **
-    ** (2) The destination has a unique index.  (The xfer optimization 
-    **     is unable to test uniqueness.)
-    **
-    ** (3) onError is something other than OE_Abort and OE_Rollback.
-    */
-    addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iDest, 0);
-    emptyDestTest = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
-    sqlite3VdbeJumpHere(v, addr1);
-  }else{
-    emptyDestTest = 0;
-  }
-  sqlite3OpenTable(pParse, iSrc, iDbSrc, pSrc, OP_OpenRead);
-  emptySrcTest = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0);
   regData = sqlite3GetTempReg(pParse);
   regRowid = sqlite3GetTempReg(pParse);
-  if( pDest->iPKey>=0 ){
-    addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
-    addr2 = sqlite3VdbeAddOp3(v, OP_NotExists, iDest, 0, regRowid);
-    sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_PRIMARYKEY,
-        onError, "PRIMARY KEY must be unique", P4_STATIC);
-    sqlite3VdbeJumpHere(v, addr2);
-    autoIncStep(pParse, regAutoinc, regRowid);
-  }else if( pDest->pIndex==0 ){
-    addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, regRowid);
-  }else{
-    addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
-    assert( (pDest->tabFlags & TF_Autoincrement)==0 );
+  if( HasRowid(pSrc) ){
+    sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
+    if( (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
+     || destHasUniqueIdx                              /* (2) */
+     || (onError!=OE_Abort && onError!=OE_Rollback)   /* (3) */
+    ){
+      /* In some circumstances, we are able to run the xfer optimization
+      ** only if the destination table is initially empty.  This code makes
+      ** that determination.  Conditions under which the destination must
+      ** be empty:
+      **
+      ** (1) There is no INTEGER PRIMARY KEY but there are indices.
+      **     (If the destination is not initially empty, the rowid fields
+      **     of index entries might need to change.)
+      **
+      ** (2) The destination has a unique index.  (The xfer optimization 
+      **     is unable to test uniqueness.)
+      **
+      ** (3) onError is something other than OE_Abort and OE_Rollback.
+      */
+      addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iDest, 0);
+      emptyDestTest = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
+      sqlite3VdbeJumpHere(v, addr1);
+    }else{
+      emptyDestTest = 0;
+    }
+    sqlite3OpenTable(pParse, iSrc, iDbSrc, pSrc, OP_OpenRead);
+    emptySrcTest = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0);
+    if( pDest->iPKey>=0 ){
+      addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
+      addr2 = sqlite3VdbeAddOp3(v, OP_NotExists, iDest, 0, regRowid);
+      sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_PRIMARYKEY,
+          onError, "PRIMARY KEY must be unique", P4_STATIC);
+      sqlite3VdbeJumpHere(v, addr2);
+      autoIncStep(pParse, regAutoinc, regRowid);
+    }else if( pDest->pIndex==0 ){
+      addr1 = sqlite3VdbeAddOp2(v, OP_NewRowid, iDest, regRowid);
+    }else{
+      addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
+      assert( (pDest->tabFlags & TF_Autoincrement)==0 );
+    }
+    sqlite3VdbeAddOp2(v, OP_RowData, iSrc, regData);
+    sqlite3VdbeAddOp3(v, OP_Insert, iDest, regData, regRowid);
+    sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND);
+    sqlite3VdbeChangeP4(v, -1, pDest->zName, 0);
+    sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1);
+    sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
+    sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
   }
-  sqlite3VdbeAddOp2(v, OP_RowData, iSrc, regData);
-  sqlite3VdbeAddOp3(v, OP_Insert, iDest, regData, regRowid);
-  sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE|OPFLAG_LASTROWID|OPFLAG_APPEND);
-  sqlite3VdbeChangeP4(v, -1, pDest->zName, 0);
-  sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1);
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
     for(pSrcIdx=pSrc->pIndex; ALWAYS(pSrcIdx); pSrcIdx=pSrcIdx->pNext){
       if( xferCompatibleIndex(pDestIdx, pSrcIdx) ) break;
     }
     assert( pSrcIdx );
-    sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
-    sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
     pKey = sqlite3IndexKeyinfo(pParse, pSrcIdx);
     sqlite3VdbeAddOp4(v, OP_OpenRead, iSrc, pSrcIdx->tnum, iDbSrc,
                       (char*)pKey, P4_KEYINFO_HANDOFF);
@@ -1912,12 +1920,12 @@ static int xferOptimization(
     sqlite3VdbeAddOp3(v, OP_IdxInsert, iDest, regData, 1);
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1+1);
     sqlite3VdbeJumpHere(v, addr1);
+    sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
+    sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
   }
   sqlite3VdbeJumpHere(v, emptySrcTest);
   sqlite3ReleaseTempReg(pParse, regRowid);
   sqlite3ReleaseTempReg(pParse, regData);
-  sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
-  sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
   if( emptyDestTest ){
     sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_OK, 0);
     sqlite3VdbeJumpHere(v, emptyDestTest);
