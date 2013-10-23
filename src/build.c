@@ -2631,16 +2631,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 
   /* Open the table. Loop through all rows of the table, inserting index
   ** records into the sorter. */
-  if( HasRowid(pTab) ){
-    sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
-  }else{
-    Index *pPk = sqlite3PrimaryKeyIndex(pTab);
-    assert( pPk!=0 );
-    assert( pPk->tnum=pTab->tnum );
-    sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pPk->tnum, iDb,
-                     (char*)sqlite3IndexKeyinfo(pParse, pPk),
-                     P4_KEYINFO_HANDOFF);
-  }
+  sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
   regRecord = sqlite3GetTempReg(pParse);
 

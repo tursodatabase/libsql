@@ -5955,7 +5955,7 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
       testcase( !pWInfo->okOnePass && pTab->nCol==BMS-1 );
       testcase( !pWInfo->okOnePass && pTab->nCol==BMS );
-      if( !pWInfo->okOnePass && pTab->nCol<BMS ){
+      if( !pWInfo->okOnePass && pTab->nCol<BMS && HasRowid(pTab) ){
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}

@@ -15,7 +15,13 @@
 #include "sqliteInt.h"
 
 /*
-** Generate code that will open a table for reading.
+** Generate code that will open table pTab for reading or writing
+** on cursor iCur.
+**
+** Always acquire a table lock.  Always do the open for rowid tables.
+** For WITHOUT ROWID tables, only do read opens, and then open the
+** PRIMARY KEY index, not the main table, since the main table doesn't
+** exist.
 */
 void sqlite3OpenTable(
   Parse *p,       /* Generate code into this VDBE */
@@ -30,8 +36,15 @@ void sqlite3OpenTable(
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
   sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
   if( HasRowid(pTab) ){
-    sqlite3VdbeAddOp3(v, opcode, iCur, pTab->tnum, iDb);
-    sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(pTab->nCol), P4_INT32);
+    sqlite3VdbeAddOp4(v, opcode, iCur, pTab->tnum, iDb,
+                      SQLITE_INT_TO_PTR(pTab->nCol), P4_INT32);
+    VdbeComment((v, "%s", pTab->zName));
+  }else if( opcode==OP_OpenRead ){
+    Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
+    assert( pPk->tnum=pTab->tnum );
+    sqlite3VdbeAddOp4(v, opcode, iCur, pPk->tnum, iDb,
+                      (char*)sqlite3IndexKeyinfo(p, pPk), P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pTab->zName));
   }
 }
