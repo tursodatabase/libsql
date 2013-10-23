@@ -65,9 +65,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 
   assert( iDb>=0 && iDb<db->nDb );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
-  if( argv[1]==0 ){
-    /* NULL root page for a WITHOUT ROWID table */
-  }else if( argv[2] && argv[2][0] ){
+  if( argv[2] && argv[2][0] ){
     /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
     ** But because db->init.busy is set to 1, no VDBE code is generated
     ** or executed.  All the parser does is build the internal data
@@ -79,7 +77,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 
     assert( db->init.busy );
     db->init.iDb = iDb;
-    db->init.newTnum = sqlite3Atoi(argv[1]);
+    db->init.newTnum = argv[1] ? sqlite3Atoi(argv[1]) : 0;
     db->init.orphanTrigger = 0;
     TESTONLY(rcp = ) sqlite3_prepare(db, argv[2], -1, &pStmt, 0);
     rc = db->errCode;
@@ -118,6 +116,11 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       /* Do Nothing */;
     }else if( sqlite3GetInt32(argv[1], &pIndex->tnum)==0 ){
       corruptSchema(pData, argv[0], "invalid rootpage");
+    }
+    if( pIndex->autoIndex==2 
+     && (pIndex->pTable->tabFlags & TF_WithoutRowid)!=0
+    ){
+      pIndex->pTable->tnum = pIndex->tnum;
     }
   }
   return 0;

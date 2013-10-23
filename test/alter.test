@@ -863,6 +863,7 @@ foreach {tn tbl} $system_table_list {
 #------------------------------------------------------------------------
 # Verify that ALTER TABLE works on tables with the WITHOUT rowid option.
 #
+if 0 {
 do_execsql_test alter-16.1 {
   CREATE TABLE t16a(a TEXT, b REAL, c INT, PRIMARY KEY(a,b)) WITHOUT rowid;
   INSERT INTO t16a VALUES('abc',1.25,99);
@@ -874,5 +875,6 @@ do_execsql_test alter-16.2 {
   ALTER TABLE t16a RENAME TO t16a_rn;
   SELECT * FROM t16a_rn ORDER BY a;
 } {abc 1.25 99 xyzzy cba 5.5 98 fizzle}
+}
 
 finish_test

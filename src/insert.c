@@ -29,9 +29,11 @@ void sqlite3OpenTable(
   v = sqlite3GetVdbe(p);
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
   sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
-  sqlite3VdbeAddOp3(v, opcode, iCur, pTab->tnum, iDb);
-  sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(pTab->nCol), P4_INT32);
-  VdbeComment((v, "%s", pTab->zName));
+  if( HasRowid(pTab) ){
+    sqlite3VdbeAddOp3(v, opcode, iCur, pTab->tnum, iDb);
+    sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(pTab->nCol), P4_INT32);
+    VdbeComment((v, "%s", pTab->zName));
+  }
 }
 
 /*
@@ -441,7 +443,7 @@ static int xferOptimization(
 ** the "1st template"):
 **
 **         open write cursor to <table> and its indices
-**         puts VALUES clause expressions onto the stack
+**         put VALUES clause expressions into registers
 **         write the resulting record into <table>
 **         cleanup
 **
@@ -551,6 +553,7 @@ void sqlite3Insert(
   int iDb;              /* Index of database holding TABLE */
   Db *pDb;              /* The database containing table being inserted into */
   int appendFlag = 0;   /* True if the insert is likely to be an append */
+  int withoutRowid;     /* 0 for normal table.  1 for WITHOUT ROWID table */
 
   /* Register allocations */
   int regFromSelect = 0;/* Base register for data coming from SELECT */
@@ -590,6 +593,7 @@ void sqlite3Insert(
   if( sqlite3AuthCheck(pParse, SQLITE_INSERT, pTab->zName, 0, zDb) ){
     goto insert_cleanup;
   }
+  withoutRowid = !HasRowid(pTab);
 
   /* Figure out if we have any triggers and if the table being
   ** inserted into is a view
@@ -770,13 +774,13 @@ void sqlite3Insert(
         if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zName)==0 ){
           pColumn->a[i].idx = j;
           if( j==pTab->iPKey ){
-            keyColumn = i;
+            keyColumn = i;  assert( !withoutRowid );
           }
           break;
         }
       }
       if( j>=pTab->nCol ){
-        if( sqlite3IsRowid(pColumn->a[i].zName) ){
+        if( sqlite3IsRowid(pColumn->a[i].zName) && !withoutRowid ){
           keyColumn = i;
         }else{
           sqlite3ErrorMsg(pParse, "table %S has no column named %s",
@@ -807,7 +811,7 @@ void sqlite3Insert(
   if( !isView ){
     int nIdx;
 
-    baseCur = pParse->nTab;
+    baseCur = pParse->nTab - withoutRowid;
     nIdx = sqlite3OpenTableAndIndices(pParse, pTab, baseCur, OP_OpenWrite);
     aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(nIdx+1));
     if( aRegIdx==0 ){
@@ -872,6 +876,7 @@ void sqlite3Insert(
       sqlite3VdbeAddOp2(v, OP_Integer, -1, regCols);
     }else{
       int j1;
+      assert( !withoutRowid );
       if( useTempTable ){
         sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regCols);
       }else{
@@ -968,7 +973,7 @@ void sqlite3Insert(
         }
         sqlite3VdbeAddOp1(v, OP_MustBeInt, regRowid);
       }
-    }else if( IsVirtual(pTab) ){
+    }else if( IsVirtual(pTab) || withoutRowid ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regRowid);
     }else{
       sqlite3VdbeAddOp3(v, OP_NewRowid, baseCur, regRowid, regAutoinc);
@@ -1065,7 +1070,7 @@ void sqlite3Insert(
 
   if( !IsVirtual(pTab) && !isView ){
     /* Close all tables opened */
-    sqlite3VdbeAddOp1(v, OP_Close, baseCur);
+    if( !withoutRowid ) sqlite3VdbeAddOp1(v, OP_Close, baseCur);
     for(idx=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, idx++){
       sqlite3VdbeAddOp1(v, OP_Close, idx+baseCur);
     }
@@ -1528,6 +1533,7 @@ void sqlite3CompleteInsertion(
       sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
     }
   }
+  if( !HasRowid(pTab) ) return;
   regData = regRowid + 1;
   regRec = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);

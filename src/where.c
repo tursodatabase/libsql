@@ -4421,12 +4421,13 @@ static int indexMightHelpWithOrderBy(
 static Bitmask columnsInIndex(Index *pIdx){
   Bitmask m = 0;
   int j;
-  for(j=pIdx->nKeyCol-1; j>=0; j--){
+  for(j=pIdx->nColumn-1; j>=0; j--){
     int x = pIdx->aiColumn[j];
-    assert( x>=0 );
-    testcase( x==BMS-1 );
-    testcase( x==BMS-2 );
-    if( x<BMS-1 ) m |= MASKBIT(x);
+    if( x>=0 ){
+      testcase( x==BMS-1 );
+      testcase( x==BMS-2 );
+      if( x<BMS-1 ) m |= MASKBIT(x);
+    }
   }
   return m;
 }
@@ -4479,6 +4480,8 @@ static int whereLoopAddBtree(
   if( pSrc->pIndex ){
     /* An INDEXED BY clause specifies a particular index to use */
     pProbe = pSrc->pIndex;
+  }else if( !HasRowid(pTab) ){
+    pProbe = pTab->pIndex;
   }else{
     /* There is no INDEXED BY clause.  Create a fake Index object in local
     ** variable sPk to represent the rowid primary key index.  Make this
@@ -4511,6 +4514,7 @@ static int whereLoopAddBtree(
    && pSrc->pIndex==0
    && !pSrc->viaCoroutine
    && !pSrc->notIndexed
+   && HasRowid(pTab)
    && !pSrc->isCorrelated
   ){
     /* Generate auto-index WhereLoops */
@@ -4573,8 +4577,14 @@ static int whereLoopAddBtree(
       pNew->nOut = rSize;
       if( rc ) break;
     }else{
-      Bitmask m = pSrc->colUsed & ~columnsInIndex(pProbe);
-      pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
+      Bitmask m;
+      if( pProbe->isCovering ){
+        pNew->wsFlags = WHERE_IDX_ONLY | WHERE_INDEXED;
+        m = 0;
+      }else{
+        m = pSrc->colUsed & ~columnsInIndex(pProbe);
+        pNew->wsFlags = (m==0) ? (WHERE_IDX_ONLY|WHERE_INDEXED) : WHERE_INDEXED;
+      }
 
       /* Full scan via index */
       if( b
@@ -5522,7 +5532,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
       }
       if( j!=pIdx->nKeyCol ) continue;
       pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_ONEROW|WHERE_INDEXED;
-      if( (pItem->colUsed & ~columnsInIndex(pIdx))==0 ){
+      if( pIdx->isCovering || (pItem->colUsed & ~columnsInIndex(pIdx))==0 ){
         pLoop->wsFlags |= WHERE_IDX_ONLY;
       }
       pLoop->nLTerm = j;
@@ -6112,14 +6122,14 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
-          for(j=0; j<pIdx->nKeyCol; j++){
+          for(j=0; j<pIdx->nColumn; j++){
             if( pOp->p2==pIdx->aiColumn[j] ){
               pOp->p2 = j;
               pOp->p1 = pLevel->iIdxCur;
               break;
             }
           }
-          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || j<pIdx->nKeyCol );
+          assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0 || j<pIdx->nColumn );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;

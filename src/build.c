@@ -1615,6 +1615,11 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   assert( pPk!=0 );
   nPk = pPk->nKeyCol;
 
+  /* Make sure every column of the PRIMARY KEY is NOT NULL */
+  for(i=0; i<nPk; i++){
+    pTab->aCol[pPk->aiColumn[i]].notNull = 1;
+  }
+
   /* Update the in-memory representation of all UNIQUE indices by converting
   ** the final rowid column into one or more columns of the PRIMARY KEY.
   */
