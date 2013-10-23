@@ -66,7 +66,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   assert( iDb>=0 && iDb<db->nDb );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[1]==0 ){
-    corruptSchema(pData, argv[0], 0);
+    /* NULL root page for a WITHOUT ROWID table */
   }else if( argv[2] && argv[2][0] ){
     /* Call the parser to process a CREATE TABLE, INDEX or VIEW.
     ** But because db->init.busy is set to 1, no VDBE code is generated
