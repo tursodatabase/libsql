@@ -752,10 +752,12 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     KeyInfo *pOrig, *pNew;
 
     pOrig = (KeyInfo*)zP4;
-    pOp->p4.pKeyInfo = pNew = sqlite3KeyInfoAlloc(db, pOrig->nField);
+    pNew = sqlite3KeyInfoAlloc(db, pOrig->nField, pOrig->nXField);
+    pOp->p4.pKeyInfo = pNew;
     if( pNew ){
-      memcpy(pNew->aColl, pOrig->aColl, pOrig->nField*sizeof(pNew->aColl[0]));
-      memcpy(pNew->aSortOrder, pOrig->aSortOrder, pOrig->nField);
+      int n = pOrig->nField+pOrig->nXField;
+      memcpy(pNew->aColl, pOrig->aColl, n*sizeof(pNew->aColl[0]));
+      memcpy(pNew->aSortOrder, pOrig->aSortOrder, n);
       pOp->p4type = P4_KEYINFO;
     }else{
       p->db->mallocFailed = 1;

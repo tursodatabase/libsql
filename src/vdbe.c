@@ -3218,7 +3218,7 @@ case OP_OpenWrite: {
   if( pOp->p4type==P4_KEYINFO ){
     pKeyInfo = pOp->p4.pKeyInfo;
     pKeyInfo->enc = ENC(p->db);
-    nField = pKeyInfo->nField+1;
+    nField = pKeyInfo->nField+pKeyInfo->nXField;
   }else if( pOp->p4type==P4_INT32 ){
     nField = pOp->p4.i;
   }

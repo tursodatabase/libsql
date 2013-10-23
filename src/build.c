@@ -4027,14 +4027,15 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 */
 KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   int i;
-  int nCol = pIdx->nKeyCol;
+  int nCol = pIdx->nColumn;
+  int nKey = pIdx->nKeyCol;
   KeyInfo *pKey;
 
-  pKey = sqlite3KeyInfoAlloc(pParse->db, nCol);
+  pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
   if( pKey ){
     for(i=0; i<nCol; i++){
       char *zColl = pIdx->azColl[i];
-      assert( zColl );
+      if( zColl==0 ) zColl = "BINARY";
       pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
       pKey->aSortOrder[i] = pIdx->aSortOrder[i];
     }

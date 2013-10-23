@@ -69,15 +69,15 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     int n;
     Table *pTab = pIdx->pTable;
     sqlite3 *db = sqlite3VdbeDb(v);
-    pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nKeyCol+2);
+    pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+1);
     if( !pIdx->zColAff ){
       db->mallocFailed = 1;
       return 0;
     }
-    for(n=0; n<pIdx->nKeyCol; n++){
-      pIdx->zColAff[n] = pTab->aCol[pIdx->aiColumn[n]].affinity;
+    for(n=0; n<pIdx->nColumn; n++){
+      i16 x = pIdx->aiColumn[n];
+      pIdx->zColAff[n] = x<0 ? SQLITE_AFF_INTEGER : pTab->aCol[x].affinity;
     }
-    pIdx->zColAff[n++] = SQLITE_AFF_INTEGER;
     pIdx->zColAff[n] = 0;
   }
  

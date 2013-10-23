@@ -803,18 +803,20 @@ static void selectInnerLoop(
 }
 
 /*
-** Allocate a KeyInfo object sufficient for an index of N columns.
+** Allocate a KeyInfo object sufficient for an index of N key columns and
+** X extra columns.
 **
 ** Actually, always allocate one extra column for the rowid at the end
 ** of the index.  So the KeyInfo returned will have space sufficient for
 ** N+1 columns.
 */
-KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N){
+KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   KeyInfo *p = sqlite3DbMallocZero(db, 
-                   sizeof(KeyInfo) + (N+1)*(sizeof(CollSeq*)+1));
+                   sizeof(KeyInfo) + (N+X)*(sizeof(CollSeq*)+1));
   if( p ){
-    p->aSortOrder = (u8*)&p->aColl[N+1];
+    p->aSortOrder = (u8*)&p->aColl[N+X];
     p->nField = (u16)N;
+    p->nXField = (u16)X;
     p->enc = ENC(db);
     p->db = db;
   }
@@ -844,7 +846,7 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
   int i;
 
   nExpr = pList->nExpr;
-  pInfo = sqlite3KeyInfoAlloc(db, nExpr);
+  pInfo = sqlite3KeyInfoAlloc(db, nExpr, 1);
   if( pInfo ){
     for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
       CollSeq *pColl;
@@ -1988,7 +1990,7 @@ static int multiSelect(
 
     assert( p->pRightmost==p );
     nCol = p->pEList->nExpr;
-    pKeyInfo = sqlite3KeyInfoAlloc(db, nCol);
+    pKeyInfo = sqlite3KeyInfoAlloc(db, nCol, 1);
     if( !pKeyInfo ){
       rc = SQLITE_NOMEM;
       goto multi_select_end;
@@ -2367,7 +2369,7 @@ static int multiSelectOrderBy(
       assert( pItem->iOrderByCol>0  && pItem->iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->iOrderByCol - 1;
     }
-    pKeyMerge = sqlite3KeyInfoAlloc(db, nOrderBy);
+    pKeyMerge = sqlite3KeyInfoAlloc(db, nOrderBy, 1);
     if( pKeyMerge ){
       for(i=0; i<nOrderBy; i++){
         CollSeq *pColl;
@@ -2405,7 +2407,7 @@ static int multiSelectOrderBy(
     regPrev = pParse->nMem+1;
     pParse->nMem += nExpr+1;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regPrev);
-    pKeyDup = sqlite3KeyInfoAlloc(db, nExpr);
+    pKeyDup = sqlite3KeyInfoAlloc(db, nExpr, 1);
     if( pKeyDup ){
       for(i=0; i<nExpr; i++){
         pKeyDup->aColl[i] = multiSelectCollSeq(pParse, p, i);
@@ -4654,7 +4656,8 @@ int sqlite3Select(
         }
 
         /* Open a read-only cursor, execute the OP_Count, close the cursor. */
-        sqlite3VdbeAddOp3(v, OP_OpenRead, iCsr, iRoot, iDb);
+        sqlite3VdbeAddOp4(v, OP_OpenRead, iCsr, iRoot, iDb, 
+              SQLITE_INT_TO_PTR(1), P4_INT32);
         if( pKeyInfo ){
           sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO_HANDOFF);
         }
