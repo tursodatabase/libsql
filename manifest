@@ -1,5 +1,5 @@
-C Get\sVACUUM\sand\sthe\sxfer\soptimization\sworking\swith\sWITHOUT\sROWID.
-D 2013-10-23T16:03:07.935
+C Report\san\serror\swhen\strying\sto\sresolve\scolumn\sname\s"rowid"\sin\sa\nWITHOUT\sROWID\stable.
+D 2013-10-23T17:39:41.217
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/pragma.c ab815d27690d24e87c953355a765edb546c47708
 F src/prepare.c f47ba2bba7ac5650881ab6c41f6d33a6de1a8d52
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c 572585a96bf282bb9c3d9e08785ec3cae21dc488
+F src/resolve.c e729889b2c7a680ba4aa7296efa72c09369956d8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c dbcd2271470b5d074252ea75e2e50f3544638b49
 F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
@@ -824,7 +824,7 @@ F test/syscall.test a653783d985108c4912cc64d341ffbbb55ad2806
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
 F test/table.test 30423211108121884588d24d6776c7f38702ad7b
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
-F test/tableopts.test b0aa6ebab4341c1c460031c0c2349fa33f354d10
+F test/tableopts.test 2950f094a984c8aa53493598bf0a07ac7549eb02
 F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b21d831b2aa55507dd9def2acb02cdbffddf10d1
-R 6a806e8a94192c315a83eec413a16607
+P 579815fff1737552d2077255862b8f4fd220927c
+R d63ce5fb7a4f24abe25c071303585c0a
 U drh
-Z 8ef207bba4cb227da6d5c01b961429c0
+Z 3ecb7889d41fd9bb93bb233d04c44ce3
