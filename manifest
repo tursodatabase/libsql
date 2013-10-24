@@ -1,5 +1,5 @@
-C Improve\ssupport\sfor\sthe\sSQLITE_OMIT_FLAG_PRAGMAS\scompile-time\soption.
-D 2013-10-21T23:17:23.344
+C Add\sthe\s".open"\scommand\sto\sthe\scommand-line\sshell.
+D 2013-10-24T15:20:20.917
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 572585a96bf282bb9c3d9e08785ec3cae21dc488
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 15127b54cc11defb2cddef6914e1f384501a61c4
-F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
+F src/shell.c d5eebdc6034014103de2b9d58e1d3f6f7de0fb50
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4bd592c8f0e011e203443a6e88008a61d6926df5
-R 53b76eeb5375ab8ab4a6606d590d0d10
-U mistachkin
-Z 54790c9a063cf1ed56ef1eaa1dcf530f
+P f1d8c3b07e61c5a8b39675d0d62876ca15e207f3
+R 669ddc5b90d3123c7996e141023f003e
+U drh
+Z eb67a516397c437f69feed70887b8d2e
