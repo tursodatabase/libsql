@@ -409,8 +409,8 @@ void sqlite3DeleteFrom(
 #endif
     {
       int count = (pParse->nested==0);    /* True to count changes */
-      sqlite3GenerateRowDelete(pParse, pTab, iCur, iRowid, count,
-                               pTrigger, OE_Default);
+      sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iCur, iRowid, 0,
+                               count, OE_Default);
     }
 
     /* End of the delete loop */
@@ -468,13 +468,17 @@ delete_from_cleanup:
 ** These are the requirements:
 **
 **   1.  A read/write cursor pointing to pTab, the table containing the row
-**       to be deleted, must be opened as cursor number iCur.
+**       to be deleted, must be opened as cursor number iCur (except for
+**       WITHOUT ROWID tables which do not have a main table).
 **
 **   2.  Read/write cursors for all indices of pTab must be open as
 **       cursor number iCur+i for the i-th index.
 **
-**   3.  The record number of the row to be deleted must be stored in
-**       memory cell iRowid.
+**   3.  The primary key for the row to be deleted must be stored in a
+**       sequence of memory cells starting at iPk.  If nPk==0 then the
+**       primary key is a rowid an uses just one memory cell.  If nPk>0
+**       then a WITHOUT ROWID table is being used and there are nPk elements
+**       of the primary key.
 **
 ** This routine generates code to remove both the table record and all 
 ** index entries that point to that record.
@@ -482,11 +486,12 @@ delete_from_cleanup:
 void sqlite3GenerateRowDelete(
   Parse *pParse,     /* Parsing context */
   Table *pTab,       /* Table containing the row to be deleted */
-  int iCur,          /* Cursor number for the table */
-  int iRowid,        /* Memory cell that contains the rowid to delete */
-  int count,         /* If non-zero, increment the row change counter */
   Trigger *pTrigger, /* List of triggers to (potentially) fire */
-  int onconf         /* Default ON CONFLICT policy for triggers */
+  int iCur,          /* Cursor number for the table */
+  int iPk,           /* First memory cell containing the PRIMARY KEY */
+  i16 nPk,           /* Number of PRIMARY KEY memory cells */
+  u8 count,          /* If non-zero, increment the row change counter */
+  u8 onconf          /* Default ON CONFLICT policy for triggers */
 ){
   Vdbe *v = pParse->pVdbe;        /* Vdbe */
   int iOld = 0;                   /* First register in OLD.* array */
@@ -499,7 +504,7 @@ void sqlite3GenerateRowDelete(
   ** (this can happen if a trigger program has already deleted it), do
   ** not attempt to delete it or fire any DELETE triggers.  */
   iLabel = sqlite3VdbeMakeLabel(v);
-  sqlite3VdbeAddOp3(v, OP_NotExists, iCur, iLabel, iRowid);
+  sqlite3VdbeAddOp3(v, OP_NotExists, iCur, iLabel, iPk);
  
   /* If there are any triggers to fire, allocate a range of registers to
   ** use for the old.* references in the triggers.  */
@@ -518,7 +523,7 @@ void sqlite3GenerateRowDelete(
 
     /* Populate the OLD.* pseudo-table register array. These values will be 
     ** used by any BEFORE and AFTER triggers that exist.  */
-    sqlite3VdbeAddOp2(v, OP_Copy, iRowid, iOld);
+    sqlite3VdbeAddOp2(v, OP_Copy, iPk, iOld);
     for(iCol=0; iCol<pTab->nCol; iCol++){
       if( mask==0xffffffff || mask&(1<<iCol) ){
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol, iOld+iCol+1);
@@ -534,7 +539,7 @@ void sqlite3GenerateRowDelete(
     ** the BEFORE triggers coded above have already removed the row
     ** being deleted. Do not attempt to delete the row a second time, and 
     ** do not fire AFTER triggers.  */
-    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, iLabel, iRowid);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, iLabel, iPk);
 
     /* Do FK processing. This call checks that any FK constraints that
     ** refer to this table (i.e. constraints attached to other tables) 

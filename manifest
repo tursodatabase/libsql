@@ -1,5 +1,5 @@
-C Delete\sPRIMARY\sKEY\sindex\sentries\slast.\s\sOnly\sconstruct\sthe\sunique\sprefix\sof\nan\sindex\skey\swhen\sdeleting\sentries\sfrom\san\sindex.
-D 2013-10-24T14:16:10.049
+C Update\sthe\sinterface\sto\sthe\ssqlite3GenerateRowDelete()\sutility\sso\sthat\sit\sis\nable\sto\shandle\sWITHOUT\sROWID\stables.\s\sThe\simplementation\sstill\sneeds\sto\sbe\s\ncompleted.
+D 2013-10-24T19:48:39.042
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 18bd99db316cf8f7ab2e779f9eea2fdc0d281960
+F src/delete.c 3a750695133bf8646124b07cf8a51222110885a6
 F src/expr.c 3180b6332072b263f845592e72e92971af562ab0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 628f81177299660a86e40359b3689b81f517e125
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c c028df48f0564b43831ce8a14d1e14ac07b6729c
+F src/insert.c a188b1abcc80cb835a1a9b76e78190d1516d22bc
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -223,7 +223,7 @@ F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 62dee86c51c7b2dc73b0f2cbdfa332a4b79f9bcf
+F src/sqliteInt.h a0834a450cd990eadcb18b790557abfe6dc52270
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 53bb070c851db02c9d900cb041ab441895ddbfb7
-R 51fe8599e5a3fd933943a52c99bda7fd
+P 0e56ba69f0fcd12a5166c32f6e4eacdcc29fba04
+R 23965d1fb428e8ef205e9927049056c2
 U drh
-Z 341cc48c3c0ebe6f2ca7c21fb7db25ce
+Z 7e96dccb2394803edfe091e61702bf27

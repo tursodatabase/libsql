@@ -1369,7 +1369,7 @@ void sqlite3GenerateConstraintChecks(
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
           sqlite3GenerateRowDelete(
-              pParse, pTab, baseCur, regRowid, 0, pTrigger, OE_Replace
+              pParse, pTab, pTrigger, baseCur, regRowid, 0, 0, OE_Replace
           );
         }else if( pTab->pIndex ){
           sqlite3MultiWrite(pParse);
@@ -1491,7 +1491,7 @@ void sqlite3GenerateConstraintChecks(
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         sqlite3GenerateRowDelete(
-            pParse, pTab, baseCur, regR, 0, pTrigger, OE_Replace
+            pParse, pTab, pTrigger, baseCur, regR, 0, 0, OE_Replace
         );
         seenReplace = 1;
         break;

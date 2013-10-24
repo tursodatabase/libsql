@@ -2914,7 +2914,7 @@ int sqlite3ExprCanBeNull(const Expr*);
 void sqlite3ExprCodeIsNullJump(Vdbe*, const Expr*, int, int);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
 int sqlite3IsRowid(const char*);
-void sqlite3GenerateRowDelete(Parse*, Table*, int, int, int, Trigger *, int);
+void sqlite3GenerateRowDelete(Parse*,Table*,Trigger*,int,int,i16,u8,u8);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
