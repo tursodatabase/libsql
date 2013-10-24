@@ -134,7 +134,7 @@ Expr *sqlite3LimitWhere(
   ExprList *pOrderBy,          /* The ORDER BY clause.  May be null */
   Expr *pLimit,                /* The LIMIT clause.  May be null */
   Expr *pOffset,               /* The OFFSET clause.  May be null */
-  char *zStmtType              /* Either DELETE or UPDATE.  For error messages. */
+  char *zStmtType              /* Either DELETE or UPDATE.  For err msgs. */
 ){
   Expr *pWhereRowid = NULL;    /* WHERE rowid .. */
   Expr *pInClause = NULL;      /* WHERE rowid IN ( select ) */
@@ -209,7 +209,8 @@ limit_where_cleanup_2:
   sqlite3ExprDelete(pParse->db, pOffset);
   return 0;
 }
-#endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) && !defined(SQLITE_OMIT_SUBQUERY) */
+#endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) */
+       /*      && !defined(SQLITE_OMIT_SUBQUERY) */
 
 /*
 ** Generate code for a DELETE FROM statement.
@@ -408,7 +409,8 @@ void sqlite3DeleteFrom(
 #endif
     {
       int count = (pParse->nested==0);    /* True to count changes */
-      sqlite3GenerateRowDelete(pParse, pTab, iCur, iRowid, count, pTrigger, OE_Default);
+      sqlite3GenerateRowDelete(pParse, pTab, iCur, iRowid, count,
+                               pTrigger, OE_Default);
     }
 
     /* End of the delete loop */
@@ -466,10 +468,10 @@ delete_from_cleanup:
 ** These are the requirements:
 **
 **   1.  A read/write cursor pointing to pTab, the table containing the row
-**       to be deleted, must be opened as cursor number $iCur.
+**       to be deleted, must be opened as cursor number iCur.
 **
 **   2.  Read/write cursors for all indices of pTab must be open as
-**       cursor number base+i for the i-th index.
+**       cursor number iCur+i for the i-th index.
 **
 **   3.  The record number of the row to be deleted must be stored in
 **       memory cell iRowid.
@@ -575,13 +577,17 @@ void sqlite3GenerateRowDelete(
 ** These are the requirements:
 **
 **   1.  A read/write cursor pointing to pTab, the table containing the row
-**       to be deleted, must be opened as cursor number "iCur".
+**       to be deleted, must be opened as cursor number "iCur".  For
+**       WITHOUT ROWID tables that do not have a main table, the iCur
+**       cursor is unused.
 **
 **   2.  Read/write cursors for all indices of pTab must be open as
 **       cursor number iCur+i for the i-th index.
 **
 **   3.  The "iCur" cursor must be pointing to the row that is to be
-**       deleted.
+**       deleted.  Or, for WITHOUT ROWID tables, the iCur+i cursor for
+**       the PRIMARY KEY index must be pointing to the row to that is
+**       to be deleted.
 */
 void sqlite3GenerateRowIndexDelete(
   Parse *pParse,     /* Parsing and code generating context */
@@ -589,22 +595,32 @@ void sqlite3GenerateRowIndexDelete(
   int iCur,          /* Cursor number for the table */
   int *aRegIdx       /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
 ){
-  int i;
+  int i, iPk = 0;
   Index *pIdx;
   int r1;
   int iPartIdxLabel;
   Vdbe *v = pParse->pVdbe;
+  Index *pPk;
 
+  pPk = sqlite3PrimaryKeyIndex(pTab);
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aRegIdx!=0 && aRegIdx[i-1]==0 ) continue;
-    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0, 0, &iPartIdxLabel);
-    sqlite3VdbeAddOp3(v, OP_IdxDelete, iCur+i, r1, pIdx->nKeyCol+1);
+    if( pIdx==pPk ){ iPk = iCur+i; continue; }
+    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0, 1, &iPartIdxLabel);
+    sqlite3VdbeAddOp3(v, OP_IdxDelete, iCur+i, r1,
+                      pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
+    sqlite3VdbeResolveLabel(v, iPartIdxLabel);
+  }
+  if( iPk ){
+    r1 = sqlite3GenerateIndexKey(pParse, pPk, iCur, 0, 1, &iPartIdxLabel);
+    sqlite3VdbeAddOp3(v, OP_IdxDelete, iPk, r1,
+                      pPk->uniqNotNull ? pPk->nKeyCol : pPk->nColumn);
     sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   }
 }
 
 /*
-** Generate code that will assemble an index key and put it in register
+** Generate code that will assemble an index key and stores it in register
 ** regOut.  The key with be for index pIdx which is an index on pTab.
 ** iCur is the index of a cursor open on the pTab table and pointing to
 ** the entry that needs indexing.
@@ -625,8 +641,8 @@ int sqlite3GenerateIndexKey(
   Parse *pParse,       /* Parsing context */
   Index *pIdx,         /* The index for which to generate a key */
   int iCur,            /* Cursor number for the pIdx->pTable table */
-  int regOut,          /* Write the new index key to this register */
-  int doMakeRec,       /* Run the OP_MakeRecord instruction if true */
+  int regOut,          /* Put the new key into this register if not 0 */
+  int prefixOnly,      /* Compute only a unique prefix of the key */
   int *piPartIdxLabel  /* OUT: Jump to this label to skip partial index */
 ){
   Vdbe *v = pParse->pVdbe;
@@ -646,7 +662,7 @@ int sqlite3GenerateIndexKey(
       *piPartIdxLabel = 0;
     }
   }
-  nCol = pIdx->nColumn;
+  nCol = (prefixOnly && pIdx->uniqNotNull) ? pIdx->nKeyCol : pIdx->nColumn;
   regBase = sqlite3GetTempRange(pParse, nCol);
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(j=0; j<nCol; j++){
@@ -659,7 +675,7 @@ int sqlite3GenerateIndexKey(
       sqlite3ColumnDefault(v, pTab, idx, -1);
     }
   }
-  if( doMakeRec ){
+  if( regOut ){
     const char *zAff;
     if( pTab->pSelect
      || OptimizationDisabled(pParse->db, SQLITE_IdxRealAsInt)

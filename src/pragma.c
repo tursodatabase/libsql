@@ -1869,7 +1869,7 @@ void sqlite3Pragma(
             { OP_IfPos,       1,  0,  0},    /* 9 */
             { OP_Halt,        0,  0,  0},
           };
-          r1 = sqlite3GenerateIndexKey(pParse, pIdx, 1, 3, 0, &jmp3);
+          r1 = sqlite3GenerateIndexKey(pParse, pIdx, 1, 0, 0, &jmp3);
           sqlite3VdbeAddOp2(v, OP_AddImm, 7+j, 1);  /* increment entry count */
           jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, j+2, 0, r1, pIdx->nKeyCol+1);
           addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);

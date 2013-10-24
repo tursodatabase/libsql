@@ -1,5 +1,5 @@
-C Remove\san\sobsolete\scomment\sfrom\sthe\sVDBE.\s\sNo\scode\schanges.
-D 2013-10-24T11:55:42.224
+C Delete\sPRIMARY\sKEY\sindex\sentries\slast.\s\sOnly\sconstruct\sthe\sunique\sprefix\sof\nan\sindex\skey\swhen\sdeleting\sentries\sfrom\san\sindex.
+D 2013-10-24T14:16:10.049
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,12 +168,12 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 2dccf54c05a0102fce82a3147c39a4b582a7eb60
+F src/build.c f99c6980a258e32e0e0068b04dd8eed6a4af9445
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 5dcd957b7af5b67b4cce125dd2b580248678db8a
+F src/delete.c 18bd99db316cf8f7ab2e779f9eea2fdc0d281960
 F src/expr.c 3180b6332072b263f845592e72e92971af562ab0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 628f81177299660a86e40359b3689b81f517e125
@@ -212,7 +212,7 @@ F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 575a4462366b371076dd14bd93df21f325a10995
+F src/pragma.c d6eee7e1b6343996883e5c7e0f60bfad77be2180
 F src/prepare.c f47ba2bba7ac5650881ab6c41f6d33a6de1a8d52
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c b5f5244d53d965443661a324be270ac133cecd69
+F src/where.c 04217a957c1423dd5f177b21b4ced319bf24b77c
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d8bc8595301789d0e9de24c391808121905ab559
-R 86e2d2460b05b7f34889d08f4aa01946
+P 53bb070c851db02c9d900cb041ab441895ddbfb7
+R 51fe8599e5a3fd933943a52c99bda7fd
 U drh
-Z 2b4e64eb89b8d486fb338d00ee41ab7d
+Z 341cc48c3c0ebe6f2ca7c21fb7db25ce

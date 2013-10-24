@@ -1641,6 +1641,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   for(i=0; i<nPk; i++){
     pTab->aCol[pPk->aiColumn[i]].notNull = 1;
   }
+  pPk->uniqNotNull = 1;
 
   /* Update the in-memory representation of all UNIQUE indices by converting
   ** the final rowid column into one or more columns of the PRIMARY KEY.
@@ -2635,7 +2636,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
   regRecord = sqlite3GetTempReg(pParse);
 
-  sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord, 1, &iPartIdxLabel);
+  sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord, 0, &iPartIdxLabel);
   sqlite3VdbeAddOp2(v, OP_SorterInsert, iSorter, regRecord);
   sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1);
@@ -2932,7 +2933,7 @@ Index *sqlite3CreateIndex(
   memcpy(pIndex->zName, zName, nName+1);
   pIndex->pTable = pTab;
   pIndex->onError = (u8)onError;
-  pIndex->uniqNotNull = onError==OE_Abort;
+  pIndex->uniqNotNull = onError!=OE_None;
   pIndex->autoIndex = (u8)(pName==0);
   pIndex->pSchema = db->aDb[iDb].pSchema;
   if( pPIWhere ){
