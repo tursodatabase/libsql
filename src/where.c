@@ -3551,11 +3551,22 @@ static Bitmask codeOneLoopStart(
     /* Seek the table cursor, if required */
     disableTerm(pLevel, pRangeStart);
     disableTerm(pLevel, pRangeEnd);
-    if( !omitTable ){
+    if( omitTable ){
+      /* pIdx is a covering index.  No need to access the main table. */
+    }else if( HasRowid(pIdx->pTable) ){
       iRowidReg = iReleaseReg = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
       sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
+    }else{
+      Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
+      iRowidReg = sqlite3GetTempRange(pParse, pPk->nKeyCol);
+      for(j=0; j<pPk->nKeyCol; j++){
+        k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[j]);
+        sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, iRowidReg+j);
+      }
+      sqlite3VdbeAddOp4(v, OP_NotFound, iCur, addrCont, iRowidReg, 
+                        SQLITE_INT_TO_PTR(pPk->nKeyCol), P4_INT32);
     }
 
     /* Record the instruction used to terminate the loop. Disable 
