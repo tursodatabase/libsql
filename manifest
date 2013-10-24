@@ -1,5 +1,5 @@
-C Correctly\shandle\squeries\sthat\suse\ssecondary\sindices\sof\sWITHOUT\sROWID\stables.
-D 2013-10-24T00:18:18.383
+C Remove\san\sobsolete\scomment\sfrom\sthe\sVDBE.\s\sNo\scode\schanges.
+D 2013-10-24T11:55:42.224
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/update.c 2bb5a267796e6d0177ef5689487c3688de5c309e
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 9970b726e045a4098b41009ab35d3528cef7c79e
+F src/vdbe.c cca2c5eb4eb85ff10955c766cc75b78b4cbb5b08
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
 F src/vdbeInt.h ff57f67aee1ba26a3a47e786533dab155ab6dad6
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 247f389930aededaa54ecb792748aa8d0ad6d57b
-R 427fde7ddc5af933d786f1c624b16eae
+P d8bc8595301789d0e9de24c391808121905ab559
+R 86e2d2460b05b7f34889d08f4aa01946
 U drh
-Z 0442060427808d2c1b7f1561da464258
+Z 2b4e64eb89b8d486fb338d00ee41ab7d
