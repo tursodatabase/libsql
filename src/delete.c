@@ -352,18 +352,70 @@ void sqlite3DeleteFrom(
   ){
     assert( !isView );
     sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
-    sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt,
-                      pTab->zName, P4_STATIC);
+    if( HasRowid(pTab) ){
+      sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt,
+                        pTab->zName, P4_STATIC);
+    }
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->pSchema==pTab->pSchema );
       sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
     }
   }else
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
-  /* The usual case: There is a WHERE clause so we have to scan through
-  ** the table and pick which records to delete.
-  */
-  {
+  if( !HasRowid(pTab) ){
+    /* There is a WHERE clause on a WITHOUT ROWID table.  
+    */
+    Index *pPk;      /* The PRIMARY KEY index on the table */
+    int iPk;         /* First of nPk memory cells holding PRIMARY KEY value */
+    int iEph;        /* Ephemeral table holding all primary key values */
+    int iKey;        /* Key value inserting into iEph */
+    i16 nPk;         /* Number of components of the PRIMARY KEY */
+
+    pPk = sqlite3PrimaryKeyIndex(pTab);
+    assert( pPk!=0 );
+    nPk = pPk->nKeyCol;
+    iPk = pParse->nMem+1;
+    pParse->nMem += nPk;
+    iKey = ++pParse->nMem;
+    iEph = pParse->nTab++;
+
+    sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iEph, nPk, 0, 
+                      (char*)sqlite3IndexKeyinfo(pParse, pPk),
+                      P4_KEYINFO_HANDOFF);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 0, 0);
+    if( pWInfo==0 ) goto delete_from_cleanup;
+    for(i=0; i<nPk; i++){
+      sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, pPk->aiColumn[i], iPk+i);
+    }
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
+                      sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
+    sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, iKey);
+    sqlite3WhereEnd(pWInfo);
+
+    /* Open cursors for all indices of the table.
+    */
+    sqlite3OpenTableAndIndices(pParse, pTab, iCur, iCur, OP_OpenWrite);
+
+    /* Loop over the primary keys to be deleted. */
+    addr = sqlite3VdbeAddOp1(v, OP_Rewind, iEph);
+    sqlite3VdbeAddOp2(v, OP_RowKey, iEph, iPk);
+
+    /* Delete the row */
+    sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iCur, iPk, 0,
+                             1, OE_Default);
+
+    /* End of the delete loop */
+    sqlite3VdbeAddOp2(v, OP_Next, iEph, addr+1);
+    sqlite3VdbeJumpHere(v, addr);
+
+    /* Close the cursors open on the table and its indexes. */
+    for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+      sqlite3VdbeAddOp2(v, OP_Close, pIdx==pPk ? iCur : iCur + i, pIdx->tnum);
+    }
+  }else{
+    /* There is a WHERE clause on a rowid table.  Run a loop that extracts
+    ** all rowids to be deleted into a RowSet.
+    */
     int iRowSet = ++pParse->nMem;   /* Register for rowset of rows to delete */
     int iRowid = ++pParse->nMem;    /* Used for storing rowid values. */
     int regRowid;                   /* Actual register containing rowids */
@@ -392,7 +444,7 @@ void sqlite3DeleteFrom(
     ** only effect this statement has is to fire the INSTEAD OF 
     ** triggers.  */
     if( !isView ){
-      sqlite3OpenTableAndIndices(pParse, pTab, iCur, OP_OpenWrite);
+      sqlite3OpenTableAndIndices(pParse, pTab, iCur, -1, OP_OpenWrite);
     }
 
     addr = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, end, iRowid);
@@ -475,10 +527,7 @@ delete_from_cleanup:
 **       cursor number iCur+i for the i-th index.
 **
 **   3.  The primary key for the row to be deleted must be stored in a
-**       sequence of memory cells starting at iPk.  If nPk==0 then the
-**       primary key is a rowid an uses just one memory cell.  If nPk>0
-**       then a WITHOUT ROWID table is being used and there are nPk elements
-**       of the primary key.
+**       sequence of memory cells starting at iPk. 
 **
 ** This routine generates code to remove both the table record and all 
 ** index entries that point to that record.
@@ -496,6 +545,7 @@ void sqlite3GenerateRowDelete(
   Vdbe *v = pParse->pVdbe;        /* Vdbe */
   int iOld = 0;                   /* First register in OLD.* array */
   int iLabel;                     /* Label resolved to end of generated code */
+  u8 opSeek;                      /* Seek opcode */
 
   /* Vdbe is guaranteed to have been allocated by this stage. */
   assert( v );
@@ -504,7 +554,8 @@ void sqlite3GenerateRowDelete(
   ** (this can happen if a trigger program has already deleted it), do
   ** not attempt to delete it or fire any DELETE triggers.  */
   iLabel = sqlite3VdbeMakeLabel(v);
-  sqlite3VdbeAddOp3(v, OP_NotExists, iCur, iLabel, iPk);
+  opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
+  sqlite3VdbeAddOp4Int(v, opSeek, iCur, iLabel, iPk, nPk);
  
   /* If there are any triggers to fire, allocate a range of registers to
   ** use for the old.* references in the triggers.  */
@@ -539,7 +590,7 @@ void sqlite3GenerateRowDelete(
     ** the BEFORE triggers coded above have already removed the row
     ** being deleted. Do not attempt to delete the row a second time, and 
     ** do not fire AFTER triggers.  */
-    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, iLabel, iPk);
+    sqlite3VdbeAddOp4Int(v, opSeek, iCur, iLabel, iPk, nPk);
 
     /* Do FK processing. This call checks that any FK constraints that
     ** refer to this table (i.e. constraints attached to other tables) 
@@ -600,26 +651,20 @@ void sqlite3GenerateRowIndexDelete(
   int iCur,          /* Cursor number for the table */
   int *aRegIdx       /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
 ){
-  int i, iPk = 0;
+  int i;
   Index *pIdx;
   int r1;
   int iPartIdxLabel;
   Vdbe *v = pParse->pVdbe;
   Index *pPk;
 
-  pPk = sqlite3PrimaryKeyIndex(pTab);
+  pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(i=1, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     if( aRegIdx!=0 && aRegIdx[i-1]==0 ) continue;
-    if( pIdx==pPk ){ iPk = iCur+i; continue; }
+    if( pIdx==pPk ) continue;
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iCur, 0, 1, &iPartIdxLabel);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iCur+i, r1,
                       pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
-    sqlite3VdbeResolveLabel(v, iPartIdxLabel);
-  }
-  if( iPk ){
-    r1 = sqlite3GenerateIndexKey(pParse, pPk, iCur, 0, 1, &iPartIdxLabel);
-    sqlite3VdbeAddOp3(v, OP_IdxDelete, iPk, r1,
-                      pPk->uniqNotNull ? pPk->nKeyCol : pPk->nColumn);
     sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   }
 }
@@ -677,7 +722,7 @@ int sqlite3GenerateIndexKey(
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, regBase+j);
     }else{
       sqlite3VdbeAddOp3(v, OP_Column, iCur, idx, regBase+j);
-      sqlite3ColumnDefault(v, pTab, idx, -1);
+      sqlite3ColumnDefault(v, pTab, pIdx->aiColumn[j], -1);
     }
   }
   if( regOut ){

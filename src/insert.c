@@ -36,8 +36,7 @@ void sqlite3OpenTable(
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
   sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
   if( HasRowid(pTab) ){
-    sqlite3VdbeAddOp4(v, opcode, iCur, pTab->tnum, iDb,
-                      SQLITE_INT_TO_PTR(pTab->nCol), P4_INT32);
+    sqlite3VdbeAddOp4Int(v, opcode, iCur, pTab->tnum, iDb, pTab->nCol);
     VdbeComment((v, "%s", pTab->zName));
   }else if( opcode==OP_OpenRead ){
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
@@ -825,7 +824,7 @@ void sqlite3Insert(
     int nIdx;
 
     baseCur = pParse->nTab - withoutRowid;
-    nIdx = sqlite3OpenTableAndIndices(pParse, pTab, baseCur, OP_OpenWrite);
+    nIdx = sqlite3OpenTableAndIndices(pParse, pTab, baseCur, -1, OP_OpenWrite);
     aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(nIdx+1));
     if( aRegIdx==0 ){
       goto insert_cleanup;
@@ -1411,7 +1410,7 @@ void sqlite3GenerateConstraintChecks(
     }
 
     /* Create a key for accessing the index entry */
-    regIdx = sqlite3GetTempRange(pParse, pIdx->nKeyCol+1);
+    regIdx = sqlite3GetTempRange(pParse, pIdx->nColumn+1);
     for(i=0; i<pIdx->nColumn; i++){
       i16 idx = pIdx->aiColumn[i];
       if( idx<0 || idx==pTab->iPKey ){
@@ -1444,9 +1443,7 @@ void sqlite3GenerateConstraintChecks(
     /* Check to see if the new index entry will be unique */
     regR = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp2(v, OP_SCopy, regOldRowid, regR);
-    j3 = sqlite3VdbeAddOp4(v, OP_IsUnique, baseCur+iCur+1, 0,
-                           regR, SQLITE_INT_TO_PTR(regIdx),
-                           P4_INT32);
+    j3 = sqlite3VdbeAddOp4Int(v, OP_IsUnique, baseCur+iCur+1, 0, regR, regIdx);
     sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nKeyCol+1);
 
     /* Generate code that executes if the new index entry is not unique */
@@ -1582,6 +1579,7 @@ int sqlite3OpenTableAndIndices(
   Parse *pParse,   /* Parsing context */
   Table *pTab,     /* Table to be opened */
   int baseCur,     /* Cursor number assigned to the table */
+  int pkCur,       /* Cursor number for the primary key */
   int op           /* OP_OpenRead or OP_OpenWrite */
 ){
   int i;
@@ -1596,14 +1594,13 @@ int sqlite3OpenTableAndIndices(
   sqlite3OpenTable(pParse, baseCur, iDb, pTab, op);
   for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
+    int iCur = (pkCur>=0 && pIdx->autoIndex==2) ? pkCur : i+baseCur;
     assert( pIdx->pSchema==pTab->pSchema );
-    sqlite3VdbeAddOp4(v, op, i+baseCur, pIdx->tnum, iDb,
+    sqlite3VdbeAddOp4(v, op, iCur, pIdx->tnum, iDb,
                       (char*)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
   }
-  if( pParse->nTab<baseCur+i ){
-    pParse->nTab = baseCur+i;
-  }
+  if( pParse->nTab<=i+baseCur ) pParse->nTab = i+baseCur;
   return i-1;
 }
 

@@ -3681,6 +3681,7 @@ case OP_Found: {        /* jump, in3 */
       break;
     }
     alreadyExists = (res==0);
+    pC->nullRow = 1-alreadyExists;
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
   }
@@ -3781,15 +3782,14 @@ case OP_IsUnique: {        /* jump, in3 */
 
 /* Opcode: NotExists P1 P2 P3 * *
 **
-** Use the content of register P3 as an integer key.  If a record 
-** with that key does not exist in table of P1, then jump to P2. 
-** If the record does exist, then fall through.  The cursor is left 
-** pointing to the record if it exists.
+** P1 is the index of a cursor open on an SQL table btree (with integer
+** keys).  P3 is an integer rowid.  If P1 does not contain a record with
+** rowid P3 then jump immediately to P2.  If P1 does contain a record
+** with rowid P3 then leave the cursor pointing at that record and fall
+** through to the next instruction.
 **
-** The difference between this operation and NotFound is that this
-** operation assumes the key is an integer and that P1 is a table whereas
-** NotFound assumes key is a blob constructed from MakeRecord and
-** P1 is an index.
+** The OP_NotFound opcode performs the same operation on index btrees
+** (with arbitrary multi-value keys).
 **
 ** See also: Found, NotFound, IsUnique
 */

@@ -3565,8 +3565,8 @@ static Bitmask codeOneLoopStart(
         k = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[j]);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, k, iRowidReg+j);
       }
-      sqlite3VdbeAddOp4(v, OP_NotFound, iCur, addrCont, iRowidReg, 
-                        SQLITE_INT_TO_PTR(pPk->nKeyCol), P4_INT32);
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, iCur, addrCont,
+                           iRowidReg, pPk->nKeyCol);
     }
 
     /* Record the instruction used to terminate the loop. Disable 
@@ -4603,7 +4603,7 @@ static int whereLoopAddBtree(
       if( b
        || ( m==0
          && pProbe->bUnordered==0
-         && pProbe->szIdxRow<pTab->szTabRow
+         && (!HasRowid(pTab) || pProbe->szIdxRow<pTab->szTabRow)
          && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
          && sqlite3GlobalConfig.bUseCis
          && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)

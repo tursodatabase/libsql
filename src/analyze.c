@@ -244,8 +244,7 @@ static void openStatTable(
   /* Open the sqlite_stat[134] tables for writing. */
   for(i=0; aTable[i].zCols; i++){
     assert( i<ArraySize(aTable) );
-    sqlite3VdbeAddOp3(v, OP_OpenWrite, iStatCur+i, aRoot[i], iDb);
-    sqlite3VdbeChangeP4(v, -1, (char *)3, P4_INT32);
+    sqlite3VdbeAddOp4Int(v, OP_OpenWrite, iStatCur+i, aRoot[i], iDb, 3);
     sqlite3VdbeChangeP5(v, aCreateTbl[i]);
   }
 }
