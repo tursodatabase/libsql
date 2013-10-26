@@ -1392,13 +1392,12 @@ void sqlite3GenerateConstraintChecks(
   for(iCur=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, iCur++){
     int regIdx;
     int regR;
-    int addrSkipRow = 0;
+    int addrSkipRow = sqlite3VdbeMakeLabel(v);
 
     if( aRegIdx[iCur]==0 ) continue;  /* Skip unused indices */
 
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, aRegIdx[iCur]);
-      addrSkipRow = sqlite3VdbeMakeLabel(v);
       pParse->ckBase = regData;
       sqlite3ExprIfFalse(pParse, pIdx->pPartIdxWhere, addrSkipRow,
                          SQLITE_JUMPIFNULL);
@@ -1438,8 +1437,10 @@ void sqlite3GenerateConstraintChecks(
     
     /* Check to see if the new index entry will be unique */
     regR = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp2(v, OP_SCopy, regOldRowid, regR);
-    j3 = sqlite3VdbeAddOp4Int(v, OP_IsUnique, baseCur+iCur+1, 0, regR, regIdx);
+    sqlite3VdbeAddOp4Int(v, OP_NoConflict, baseCur+iCur+1, addrSkipRow,
+                         regIdx, pIdx->nKeyCol);
+    sqlite3VdbeAddOp2(v, OP_IdxRowid, baseCur+iCur+1, regR);
+    sqlite3VdbeAddOp3(v, OP_Eq, regR, addrSkipRow, regOldRowid);
     sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nKeyCol+1);
 
     /* Generate code that executes if the new index entry is not unique */
@@ -1490,7 +1491,6 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
-    sqlite3VdbeJumpHere(v, j3);
     sqlite3VdbeResolveLabel(v, addrSkipRow);
     sqlite3ReleaseTempReg(pParse, regR);
   }

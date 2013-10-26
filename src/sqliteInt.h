@@ -1542,7 +1542,6 @@ struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   u16 nField;         /* Number of entries in apMem[] */
   u8 flags;           /* Boolean settings.  UNPACKED_... below */
-  i64 rowid;          /* Used by UNPACKED_PREFIX_SEARCH */
   Mem *aMem;          /* Values */
 };
 
@@ -1551,7 +1550,6 @@ struct UnpackedRecord {
 */
 #define UNPACKED_INCRKEY       0x01  /* Make this key an epsilon larger */
 #define UNPACKED_PREFIX_MATCH  0x02  /* A prefix match is considered OK */
-#define UNPACKED_PREFIX_SEARCH 0x04  /* Ignore final (rowid) field */
 
 /*
 ** Each SQL index is represented in memory by an
