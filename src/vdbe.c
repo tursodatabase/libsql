@@ -3737,7 +3737,7 @@ case OP_Found: {        /* jump, in3 */
 ** The OP_NotFound opcode performs the same operation on index btrees
 ** (with arbitrary multi-value keys).
 **
-** See also: Found, NotFound, IsUnique
+** See also: Found, NotFound, NoConflict
 */
 case OP_NotExists: {        /* jump, in3 */
   VdbeCursor *pC;

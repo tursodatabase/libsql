@@ -1,5 +1,5 @@
-C Replace\sthe\sOP_IsUnique\sopcode\swith\sOP_NoConflict.\s\sThis\scode\ssimplification\nmight\sbe\suseful\sto\smove\sonto\strunk\seven\sif\sthis\sbranch\sis\snever\smerged.
-D 2013-10-26T13:36:51.811
+C Work\son\sthe\sUPDATE\sand\sINSERT\slogic.\s\sThis\sis\san\sincremental\scheck-in\sso\sthat\ncan\sswitch\sover\sto\strunk\sto\swork\son\san\sunrelated\sissue\sthere.
+D 2013-10-26T15:40:48.224
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c e87728415d32d6f572f5578c2107e382d1dd8203
+F src/insert.c 14ae816acbebd927bc070bf684de638f78cfccba
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -279,9 +279,9 @@ F src/update.c e39378bc5ed0c42e80624229703e59b5c7a4d50a
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 115f2c06e4d943d289599a46634514bf94479db4
+F src/vdbe.c 7d23d61c84cb1116e36a70b050f2a4ae1a2aaae3
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
-F src/vdbeInt.h ff57f67aee1ba26a3a47e786533dab155ab6dad6
+F src/vdbeInt.h 42dcff74dbeb2b071e569b53f885fc9c2e4b4cb0
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c 4ccdfd27f97fec98385f53fc8c880f1873137d95
 F src/vdbeblob.c ef973d8d9f8170015343dd8824f795da675caa87
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ae61a34378d3ed2f454ba8768029d6f5fef849e4
-R 4e2e179014c5b2ce47e50b4ad5c73b59
+P e6650e16dd11327afd25961b2feb29ec8778c2ca
+R bb18c22d259a405d56d9b91ea7100e63
 U drh
-Z bf09176aa6b2dce2a1f786b527e72d8e
+Z 6434b0048c9e4cb6010b12b4a2aa5b2d

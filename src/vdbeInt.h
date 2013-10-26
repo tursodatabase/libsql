@@ -82,8 +82,7 @@ struct VdbeCursor {
   i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
 
-  /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists or 
-  ** OP_IsUnique opcode on this cursor. */
+  /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists */
   int seekResult;
 
   /* Cached information about the header for the data record that the
