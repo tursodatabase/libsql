@@ -1,5 +1,5 @@
-C Progress\stoward\sgetting\sUPDATE\sto\swork\sin\sWITHOUT\sROWID\stables.
-D 2013-10-25T19:17:17.511
+C Minor\srefactoring\sof\svariable\snames\sand\sfixes\sto\scomments\sin\sinsert.c.
+D 2013-10-26T00:58:34.188
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 976fc5c9b3ab32995b22f87ba3be52d11c9e50b9
+F src/insert.c 684154a70880e8a8b6f390227440db336ae6172c
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9eafafa31c4a2bbcf48418743e0fcb17c374e9a6
-R bcff8223a4c38fdc4478f7b14868c2a5
+P e557b7d80f1ede63427a31b16757bf5d8dbfb66d
+R 8ecb8965e88397a72e81a0bfa7fd01e8
 U drh
-Z 45e2a3e25d194ae58eddf07aeb33a8d9
+Z ed26d40c375e5bd903fb1bf3e632fe62

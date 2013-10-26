@@ -435,7 +435,7 @@ static int xferOptimization(
 );
 
 /*
-** This routine is call to handle SQL of the following forms:
+** This routine is called to handle SQL of the following forms:
 **
 **    insert into TABLE (IDLIST) values(EXPRLIST)
 **    insert into TABLE (IDLIST) select
@@ -450,7 +450,7 @@ static int xferOptimization(
 ** data for the insert.
 **
 ** The code generated follows one of four templates.  For a simple
-** select with data coming from a VALUES clause, the code executes
+** insert with data coming from a VALUES clause, the code executes
 ** once straight down through.  Pseudo-code follows (we call this
 ** the "1st template"):
 **
@@ -554,7 +554,7 @@ void sqlite3Insert(
   int nColumn;          /* Number of columns in the data */
   int nHidden = 0;      /* Number of hidden columns if TABLE is virtual */
   int baseCur = 0;      /* VDBE Cursor number for pTab */
-  int keyColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
+  int ipkColumn = -1;   /* Column that is the INTEGER PRIMARY KEY */
   int endOfLoop;        /* Label for the end of the insertion loop */
   int useTempTable = 0; /* Store SELECT results in intermediate table */
   int srcTab = 0;       /* Data comes from this temporary cursor if >=0 */
@@ -625,16 +625,13 @@ void sqlite3Insert(
   assert( (pTrigger && tmask) || (pTrigger==0 && tmask==0) );
 
   /* If pTab is really a view, make sure it has been initialized.
-  ** ViewGetColumnNames() is a no-op if pTab is not a view (or virtual 
-  ** module table).
+  ** ViewGetColumnNames() is a no-op if pTab is not a view.
   */
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto insert_cleanup;
   }
 
-  /* Ensure that:
-  *  (a) the table is not read-only, 
-  *  (b) that if it is a view then ON INSERT triggers exist
+  /* Cannot insert into a read-only table.
   */
   if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
     goto insert_cleanup;
@@ -675,8 +672,7 @@ void sqlite3Insert(
   ** co-routine is the common header to the 3rd and 4th templates.
   */
   if( pSelect ){
-    /* Data is coming from a SELECT.  Generate a co-routine to run that
-    ** SELECT. */
+    /* Data is coming from a SELECT.  Generate a co-routine to run the SELECT */
     int rc = sqlite3CodeCoroutine(pParse, pSelect, &dest);
     if( rc ) goto insert_cleanup;
 
@@ -688,7 +684,7 @@ void sqlite3Insert(
 
     /* Set useTempTable to TRUE if the result of the SELECT statement
     ** should be written into a temporary table (template 4).  Set to
-    ** FALSE if each* row of the SELECT can be written directly into
+    ** FALSE if each output row of the SELECT can be written directly into
     ** the destination table (template 3).
     **
     ** A temp table must be used if the table being updated is also one
@@ -771,11 +767,11 @@ void sqlite3Insert(
   ** remember the column indices.
   **
   ** If the table has an INTEGER PRIMARY KEY column and that column
-  ** is named in the IDLIST, then record in the keyColumn variable
-  ** the index into IDLIST of the primary key column.  keyColumn is
+  ** is named in the IDLIST, then record in the ipkColumn variable
+  ** the index into IDLIST of the primary key column.  ipkColumn is
   ** the index of the primary key as it appears in IDLIST, not as
-  ** is appears in the original table.  (The index of the primary
-  ** key in the original table is pTab->iPKey.)
+  ** is appears in the original table.  (The index of the INTEGER
+  ** PRIMARY KEY in the original table is pTab->iPKey.)
   */
   if( pColumn ){
     for(i=0; i<pColumn->nId; i++){
@@ -786,14 +782,14 @@ void sqlite3Insert(
         if( sqlite3StrICmp(pColumn->a[i].zName, pTab->aCol[j].zName)==0 ){
           pColumn->a[i].idx = j;
           if( j==pTab->iPKey ){
-            keyColumn = i;  assert( !withoutRowid );
+            ipkColumn = i;  assert( !withoutRowid );
           }
           break;
         }
       }
       if( j>=pTab->nCol ){
         if( sqlite3IsRowid(pColumn->a[i].zName) && !withoutRowid ){
-          keyColumn = i;
+          ipkColumn = i;
         }else{
           sqlite3ErrorMsg(pParse, "table %S has no column named %s",
               pTabList, 0, pColumn->a[i].zName);
@@ -805,11 +801,11 @@ void sqlite3Insert(
   }
 
   /* If there is no IDLIST term but the table has an integer primary
-  ** key, the set the keyColumn variable to the primary key column index
-  ** in the original table definition.
+  ** key, the set the ipkColumn variable to the integer primary key 
+  ** column index in the original table definition.
   */
   if( pColumn==0 && nColumn>0 ){
-    keyColumn = pTab->iPKey;
+    ipkColumn = pTab->iPKey;
   }
     
   /* Initialize the count of rows to be inserted
@@ -884,16 +880,16 @@ void sqlite3Insert(
     ** we do not know what the unique ID will be (because the insert has
     ** not happened yet) so we substitute a rowid of -1
     */
-    if( keyColumn<0 ){
+    if( ipkColumn<0 ){
       sqlite3VdbeAddOp2(v, OP_Integer, -1, regCols);
     }else{
       int j1;
       assert( !withoutRowid );
       if( useTempTable ){
-        sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regCols);
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, ipkColumn, regCols);
       }else{
         assert( pSelect==0 );  /* Otherwise useTempTable is true */
-        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regCols);
+        sqlite3ExprCode(pParse, pList->a[ipkColumn].pExpr, regCols);
       }
       j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regCols);
       sqlite3VdbeAddOp2(v, OP_Integer, -1, regCols);
@@ -943,24 +939,22 @@ void sqlite3Insert(
     sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol+1);
   }
 
-  /* Push the record number for the new entry onto the stack.  The
-  ** record number is a randomly generate integer created by NewRowid
-  ** except when the table has an INTEGER PRIMARY KEY column, in which
-  ** case the record number is the same as that column. 
+  /* Compute the content of the next row to insert into a range of
+  ** registers beginning at regIns.
   */
   if( !isView ){
     if( IsVirtual(pTab) ){
       /* The row that the VUpdate opcode will delete: none */
       sqlite3VdbeAddOp2(v, OP_Null, 0, regIns);
     }
-    if( keyColumn>=0 ){
+    if( ipkColumn>=0 ){
       if( useTempTable ){
-        sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regRowid);
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, ipkColumn, regRowid);
       }else if( pSelect ){
-        sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+keyColumn, regRowid);
+        sqlite3VdbeAddOp2(v, OP_SCopy, regFromSelect+ipkColumn, regRowid);
       }else{
         VdbeOp *pOp;
-        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regRowid);
+        sqlite3ExprCode(pParse, pList->a[ipkColumn].pExpr, regRowid);
         pOp = sqlite3VdbeGetOp(v, -1);
         if( ALWAYS(pOp) && pOp->opcode==OP_Null && !IsVirtual(pTab) ){
           appendFlag = 1;
@@ -993,7 +987,7 @@ void sqlite3Insert(
     }
     autoIncStep(pParse, regAutoinc, regRowid);
 
-    /* Push onto the stack, data for all columns of the new entry, beginning
+    /* Compute data for all columns of the new entry, beginning
     ** with the first column.
     */
     nHidden = 0;
@@ -1001,8 +995,8 @@ void sqlite3Insert(
       int iRegStore = regRowid+1+i;
       if( i==pTab->iPKey ){
         /* The value of the INTEGER PRIMARY KEY column is always a NULL.
-        ** Whenever this column is read, the record number will be substituted
-        ** in its place.  So will fill this column with a NULL to avoid
+        ** Whenever this column is read, the rowid will be substituted
+        ** in its place.  Hence, fill this column with a NULL to avoid
         ** taking up data space with information that will never be used. */
         sqlite3VdbeAddOp2(v, OP_Null, 0, iRegStore);
         continue;
@@ -1046,7 +1040,7 @@ void sqlite3Insert(
     {
       int isReplace;    /* Set to true if constraints may cause a replace */
       sqlite3GenerateConstraintChecks(pParse, pTab, baseCur, regIns, aRegIdx,
-          keyColumn>=0, 0, onError, endOfLoop, &isReplace
+          ipkColumn>=0, 0, onError, endOfLoop, &isReplace
       );
       sqlite3FkCheck(pParse, pTab, 0, regIns, 0, 0);
       sqlite3CompleteInsertion(
@@ -1135,7 +1129,8 @@ insert_cleanup:
 **
 ** The input is a range of consecutive registers as follows:
 **
-**    1.  The rowid of the row after the update.
+**    1.  The rowid of the row after the update.  (This register
+**        contains a NULL for WITHOUT ROWID tables.)
 **
 **    2.  The data in the first column of the entry after the update.
 **
@@ -1146,13 +1141,14 @@ insert_cleanup:
 ** The regRowid parameter is the index of the register containing (1).
 **
 ** If isUpdate is true and pkChng is non-zero, then pkChng contains
-** the address of a register containing the rowid before the update takes
-** place. isUpdate is true for UPDATEs and false for INSERTs. If isUpdate
-** is false, indicating an INSERT statement, then a non-zero pkChng 
+** the address of a range of registers containing the rowid or PRIMARY KEY
+** value before the update takes place. isUpdate is true for UPDATEs and
+** false for INSERTs. If isUpdate is false then a non-zero pkChng 
 ** indicates that the rowid was explicitly specified as part of the
 ** INSERT statement. If pkChng is false, it means that  the rowid is
 ** computed automatically in an insert or that the rowid value is not 
-** modified by an update.
+** modified by an update. The pkChng parameter is always false for inserts
+** into a WITHOUT ROWID table.
 **
 ** The code generated by this routine should store new index entries into
 ** registers identified by aRegIdx[].  No index entry is created for
