@@ -1,5 +1,5 @@
-C Do\snot\suse\stransitive\sWHERE-clause\sconstraints\son\sLEFT\sJOINs.\nFix\sfor\sticket\s[c620261b5b5dc].
-D 2013-10-28T20:15:56.749
+C Add\sregression\stests\sfor\sticket\s[c620261b5b5].
+D 2013-10-28T20:38:52.030
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -979,7 +979,7 @@ F test/trace2.test e7a988fdd982cdec62f1f1f34b0360e6476d01a0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
-F test/transitive1.test 0ee69546d6fa20e577a4a706d7daa01c7eba9239
+F test/transitive1.test 03f532954f46cdf5608f7766bff0b0c52bf2a7cd
 F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
 F test/trigger2.test 834187beafd1db383af0c659cfa49b0576832816
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 92ccd705411ce3f64720ab5f34c7efc9cb46d5c9
-R ef5741143665f2356ac8fbd9321919ca
+P 9aac4e588cbce55c1098321bcd042d5b04036893
+R 755b6f8582cdf6a61e2dc488ee0ff755
 U drh
-Z da3bdf30486b346ec4f687162cb9e5fe
+Z d41611593bf5e267c6a2f2cb626395da
