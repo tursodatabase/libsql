@@ -3889,6 +3889,25 @@ static Bitmask codeOneLoopStart(
   return pLevel->notReady;
 }
 
+#if defined(WHERETRACE_ENABLED) && defined(SQLITE_ENABLE_TREE_EXPLAIN)
+/*
+** Generate "Explanation" text for a WhereTerm.
+*/
+static void whereExplainTerm(Vdbe *v, WhereTerm *pTerm){
+  char zType[4];
+  memcpy(zType, "...", 4);
+  if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
+  if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
+  if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+  sqlite3ExplainPrintf(v, "%s ", zType);
+  if( (pTerm->wtFlags & (TERM_ORINFO|TERM_ANDINFO))==0 ){
+    sqlite3ExplainPrintf(v, "lhs=%-2d ", pTerm->u.leftColumn);
+  }
+  sqlite3ExplainExpr(v, pTerm->pExpr);
+}
+#endif /* WHERETRACE_ENABLED && SQLITE_ENABLE_TREE_EXPLAIN */
+
+
 #ifdef WHERETRACE_ENABLED
 /*
 ** Print a WhereLoop object for debugging purposes
@@ -3938,11 +3957,8 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     for(i=0; i<p->nLTerm; i++){
       WhereTerm *pTerm = p->aLTerm[i];
       sqlite3ExplainPrintf(v, "  (%d) #%d ", i+1, (int)(pTerm-pWC->a));
-      if( (pTerm->wtFlags & (TERM_ORINFO|TERM_ANDINFO))==0 ){
-        sqlite3ExplainPrintf(v, "lhs=%-2d ", pTerm->u.leftColumn);
-      }
       sqlite3ExplainPush(v);
-      sqlite3ExplainExpr(v, pTerm->pExpr);
+      whereExplainTerm(v, pTerm);
       sqlite3ExplainPop(v);
       sqlite3ExplainNL(v);
     }
@@ -5839,6 +5855,23 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(0xffff,("*** Optimizer Start ***\n"));
+  /* Display all terms of the WHERE clause */
+#if defined(WHERETRACE_ENABLED) && defined(SQLITE_ENABLE_TREE_EXPLAIN)
+  if( sqlite3WhereTrace & 0x100 ){
+    int i;
+    Vdbe *v = pParse->pVdbe;
+    sqlite3ExplainBegin(v);
+    for(i=0; i<sWLB.pWC->nTerm; i++){
+      sqlite3ExplainPrintf(v, "#%d ", i);
+      sqlite3ExplainPush(v);
+      whereExplainTerm(v, &sWLB.pWC->a[i]);
+      sqlite3ExplainPop(v);
+      sqlite3ExplainNL(v);
+    }
+    sqlite3ExplainFinish(v);
+    sqlite3DebugPrintf("%s", sqlite3VdbeExplanation(v));
+  }
+#endif
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
