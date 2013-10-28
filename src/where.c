@@ -3893,7 +3893,8 @@ static Bitmask codeOneLoopStart(
 /*
 ** Print a WhereLoop object for debugging purposes
 */
-static void whereLoopPrint(WhereLoop *p, WhereInfo *pWInfo){
+static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
+  WhereInfo *pWInfo = pWC->pWInfo;
   int nb = 1+(pWInfo->pTabList->nSrc+7)/8;
   struct SrcList_item *pItem = pWInfo->pTabList->a + p->iTab;
   Table *pTab = pItem->pTab;
@@ -3902,9 +3903,8 @@ static void whereLoopPrint(WhereLoop *p, WhereInfo *pWInfo){
   sqlite3DebugPrintf(" %12s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-    if( p->u.btree.pIndex ){
-      const char *zName = p->u.btree.pIndex->zName;
-      if( zName==0 ) zName = "ipk";
+     const char *zName;
+     if( p->u.btree.pIndex && (zName = p->u.btree.pIndex->zName)!=0 ){
       if( strncmp(zName, "sqlite_autoindex_", 17)==0 ){
         int i = sqlite3Strlen30(zName) - 1;
         while( zName[i]!='_' ) i--;
@@ -3936,14 +3936,18 @@ static void whereLoopPrint(WhereLoop *p, WhereInfo *pWInfo){
     Vdbe *v = pWInfo->pParse->pVdbe;
     sqlite3ExplainBegin(v);
     for(i=0; i<p->nLTerm; i++){
-      sqlite3ExplainPrintf(v, "  (%d) ", i+1);
+      WhereTerm *pTerm = p->aLTerm[i];
+      sqlite3ExplainPrintf(v, "  (%d) #%d ", i+1, (int)(pTerm-pWC->a));
+      if( (pTerm->wtFlags & (TERM_ORINFO|TERM_ANDINFO))==0 ){
+        sqlite3ExplainPrintf(v, "lhs=%-2d ", pTerm->u.leftColumn);
+      }
       sqlite3ExplainPush(v);
-      sqlite3ExplainExpr(v, p->aLTerm[i]->pExpr);
+      sqlite3ExplainExpr(v, pTerm->pExpr);
       sqlite3ExplainPop(v);
       sqlite3ExplainNL(v);
     }
-    sqlite3DebugPrintf("%s", sqlite3VdbeExplanation(v));
     sqlite3ExplainFinish(v);
+    sqlite3DebugPrintf("%s", sqlite3VdbeExplanation(v));
   }
 #endif
 }
@@ -4088,7 +4092,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 #if WHERETRACE_ENABLED /* 0x8 */
     if( sqlite3WhereTrace & 0x8 ){
       sqlite3DebugPrintf(x?"   or-%d:  ":"   or-X:  ", n);
-      whereLoopPrint(pTemplate, pWInfo);
+      whereLoopPrint(pTemplate, pBuilder->pWC);
     }
 #endif
     return SQLITE_OK;
@@ -4162,10 +4166,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   if( sqlite3WhereTrace & 0x8 ){
     if( p!=0 ){
       sqlite3DebugPrintf("ins-del:  ");
-      whereLoopPrint(p, pWInfo);
+      whereLoopPrint(p, pBuilder->pWC);
     }
     sqlite3DebugPrintf("ins-new:  ");
-    whereLoopPrint(pTemplate, pWInfo);
+    whereLoopPrint(pTemplate, pBuilder->pWC);
   }
 #endif
   if( p==0 ){
@@ -4189,7 +4193,7 @@ whereLoopInsert_noop:
 #if WHERETRACE_ENABLED /* 0x8 */
   if( sqlite3WhereTrace & 0x8 ){
     sqlite3DebugPrintf("ins-noop: ");
-    whereLoopPrint(pTemplate, pWInfo);
+    whereLoopPrint(pTemplate, pBuilder->pWC);
   }
 #endif
   return SQLITE_OK;  
@@ -5848,7 +5852,7 @@ WhereInfo *sqlite3WhereBegin(
                                        "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
       for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
         p->cId = zLabel[i%sizeof(zLabel)];
-        whereLoopPrint(p, pWInfo);
+        whereLoopPrint(p, sWLB.pWC);
       }
     }
 #endif
@@ -5889,7 +5893,7 @@ WhereInfo *sqlite3WhereBegin(
     }
     sqlite3DebugPrintf("\n");
     for(ii=0; ii<pWInfo->nLevel; ii++){
-      whereLoopPrint(pWInfo->a[ii].pWLoop, pWInfo);
+      whereLoopPrint(pWInfo->a[ii].pWLoop, sWLB.pWC);
     }
   }
 #endif
