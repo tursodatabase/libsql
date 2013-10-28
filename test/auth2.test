@@ -102,6 +102,7 @@ SQLITE_READ sqlite_master name main {}
 SQLITE_READ sqlite_master rootpage main {}
 SQLITE_READ sqlite_master sql main {}
 SQLITE_READ sqlite_master tbl_name main {}
+SQLITE_READ sqlite_master type main {}
 SQLITE_READ sqlite_master ROWID main {}
 }
 do_test auth2-2.2 {
@@ -122,6 +123,7 @@ SQLITE_READ sqlite_master name main {}
 SQLITE_READ sqlite_master rootpage main {}
 SQLITE_READ sqlite_master sql main {}
 SQLITE_READ sqlite_master tbl_name main {}
+SQLITE_READ sqlite_master type main {}
 SQLITE_READ sqlite_master ROWID main {}
 }
 do_test auth2-2.3 {

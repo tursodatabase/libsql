@@ -6190,6 +6190,16 @@ case OP_Trace: {
     db->xTrace(db->pTraceArg, z);
     sqlite3DbFree(db, z);
   }
+#ifdef SQLITE_USE_FCNTL_TRACE
+  zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql);
+  if( zTrace ){
+    int i;
+    for(i=0; i<db->nDb; i++){
+      if( ((1<<i) & p->btreeMask)==0 ) continue;
+      sqlite3_file_control(db, db->aDb[i].zName, SQLITE_FCNTL_TRACE, zTrace);
+    }
+  }
+#endif /* SQLITE_USE_FCNTL_TRACE */
 #ifdef SQLITE_DEBUG
   if( (db->flags & SQLITE_SqlTrace)!=0
    && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0

@@ -907,6 +907,14 @@ struct sqlite3_io_methods {
 ** can be queried by passing in a pointer to a negative number.  This
 ** file-control is used internally to implement [PRAGMA mmap_size].
 **
+** <li>[[SQLITE_FCNTL_TRACE]]
+** The [SQLITE_FCNTL_TRACE] file control provides advisory information
+** to the VFS about what the higher layers of the SQLite stack are doing.
+** This file control is used by some VFS activity tracing [shims].
+** The argument is a zero-terminated string.  Higher layers in the
+** SQLite stack may generate instances of this file control if
+** the [SQLITE_USE_FCNTL_TRACE] compile-time option is enabled.
+**
 ** </ul>
 */
 #define SQLITE_FCNTL_LOCKSTATE               1
@@ -926,6 +934,7 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_BUSYHANDLER            15
 #define SQLITE_FCNTL_TEMPFILENAME           16
 #define SQLITE_FCNTL_MMAP_SIZE              18
+#define SQLITE_FCNTL_TRACE                  19
 
 /*
 ** CAPI3REF: Mutex Handle

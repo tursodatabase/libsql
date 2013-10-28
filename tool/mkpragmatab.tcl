@@ -14,98 +14,120 @@ set pragma_def {
   NAME: full_column_names
   TYPE: FLAG
   ARG:  SQLITE_FullColNames
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: short_column_names
   TYPE: FLAG
   ARG:  SQLITE_ShortColNames
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: count_changes
   TYPE: FLAG
   ARG:  SQLITE_CountRows
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: empty_result_callbacks
   TYPE: FLAG
   ARG:  SQLITE_NullCallback
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: legacy_file_format
   TYPE: FLAG
   ARG:  SQLITE_LegacyFileFmt
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: fullfsync
   TYPE: FLAG
   ARG:  SQLITE_FullFSync
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: checkpoint_fullfsync
   TYPE: FLAG
   ARG:  SQLITE_CkptFullFSync
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: cache_spill
   TYPE: FLAG
   ARG:  SQLITE_CacheSpill
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: reverse_unordered_selects
   TYPE: FLAG
   ARG:  SQLITE_ReverseOrder
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: query_only
   TYPE: FLAG
   ARG:  SQLITE_QueryOnly
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: automatic_index
   TYPE: FLAG
   ARG:  SQLITE_AutoIndex
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_AUTOMATIC_INDEX)
 
   NAME: sql_trace
   TYPE: FLAG
   ARG:  SQLITE_SqlTrace
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   defined(SQLITE_DEBUG)
 
   NAME: vdbe_listing
   TYPE: FLAG
   ARG:  SQLITE_VdbeListing
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   defined(SQLITE_DEBUG)
 
   NAME: vdbe_trace
   TYPE: FLAG
   ARG:  SQLITE_VdbeTrace
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   defined(SQLITE_DEBUG)
 
   NAME: vdbe_addoptrace
   TYPE: FLAG
   ARG:  SQLITE_VdbeAddopTrace
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   defined(SQLITE_DEBUG)
 
   NAME: vdbe_debug
   TYPE: FLAG
   ARG:  SQLITE_SqlTrace|SQLITE_VdbeListing|SQLITE_VdbeTrace
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   defined(SQLITE_DEBUG)
 
   NAME: ignore_check_constraints
   TYPE: FLAG
   ARG:  SQLITE_IgnoreChecks
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_CHECK)
 
   NAME: writable_schema
   TYPE: FLAG
   ARG:  SQLITE_WriteSchema|SQLITE_RecoveryMode
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: read_uncommitted
   TYPE: FLAG
   ARG:  SQLITE_ReadUncommitted
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: recursive_triggers
   TYPE: FLAG
   ARG:  SQLITE_RecTriggers
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 
   NAME: foreign_keys
   TYPE: FLAG
   ARG:  SQLITE_ForeignKeys
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
   NAME: defer_foreign_keys
   TYPE: FLAG
   ARG:  SQLITE_DeferFKs
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 
   NAME: default_cache_size
@@ -267,6 +289,7 @@ set pragma_def {
 
   NAME: soft_heap_limit
 }
+fconfigure stdout -translation lf
 set name {}
 set type {}
 set if {}
@@ -296,7 +319,7 @@ foreach line [split $pragma_def \n] {
   } elseif {$id=="ARG"} {
     set arg $val
   } elseif {$id=="IF"} {
-    set if $val
+    lappend if $val
   } elseif {$id=="FLAG"} {
     foreach term [split $val] {
       lappend flags $term
@@ -362,9 +385,17 @@ set spacer [format {    %26s } {}]
 foreach name $allnames {
   foreach {type arg if flag} $allbyname($name) break
   if {$if!=$current_if} {
-    if {$current_if!=""} {puts "#endif"}
+    if {$current_if!=""} {
+      foreach this_if $current_if {
+        puts "#endif"
+      }
+    }
     set current_if $if
-    if {$current_if!=""} {puts "#if $current_if"}
+    if {$current_if!=""} {
+      foreach this_if $current_if {
+        puts "#if $this_if"
+      }
+    }
   }
   set typex [format PragTyp_%-23s $type,]
   if {$flag==""} {
@@ -377,7 +408,11 @@ foreach name $allnames {
   puts "    /* ePragFlag: */ $flagx,"
   puts "    /* iArg:      */ $arg \175,"
 }
-if {$current_if!=""} {puts "#endif"}
+if {$current_if!=""} {
+  foreach this_if $current_if {
+    puts "#endif"
+  }
+}
 puts "\175;"
 
 # count the number of pragmas, for information purposes

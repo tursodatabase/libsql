@@ -16,14 +16,37 @@
 
 /*
 ** This module contains code for a wrapper VFS that causes a log of
-** most VFS calls to be written into a file on disk. The log 
-** is stored as comma-separated variables.
+** most VFS calls to be written into a file on disk.
 **
-** All calls on sqlite3_file objects are logged.
-** Additionally, calls to the xAccess(), xOpen(), and xDelete()
-** methods are logged. The other sqlite3_vfs object methods (xDlXXX,
-** xRandomness, xSleep, xCurrentTime, xGetLastError and xCurrentTimeInt64) 
-** are not logged.
+** Each database connection creates a separate log file in the same
+** directory as the original database and named after the original
+** database.  A unique suffix is added to avoid name collisions.  
+** Separate log files are used so that concurrent processes do not
+** try to write log operations to the same file at the same instant, 
+** resulting in overwritten or comingled log text.
+**
+** Each individual log file records operations by a single database
+** connection on both the original database and its associated rollback
+** journal.
+**
+** The log files are in the comma-separated-value (CSV) format.  The
+** log files can be imported into an SQLite database using the ".import"
+** command of the SQLite command-line shell for analysis.
+**
+** One technique for using this module is to append the text of this
+** module to the end of a standard "sqlite3.c" amalgamation file then
+** add the following compile-time options:
+**
+**     -DSQLITE_EXTRA_INIT=sqlite3_register_vfslog
+**     -DSQLITE_USE_FCNTL_TRACE
+**
+** The first compile-time option causes the sqlite3_register_vfslog()
+** function, defined below, to be invoked when SQLite is initialized.
+** That causes this custom VFS to become the default VFS for all
+** subsequent connections.  The SQLITE_USE_FCNTL_TRACE option causes
+** the SQLite core to issue extra sqlite3_file_control() operations
+** with SQLITE_FCNTL_TRACE to give some indication of what is going
+** on in the core.
 */
 
 #include "sqlite3.h"
@@ -190,7 +213,7 @@ static void vlogLogPrint(
   const char *zArg3,               /* Third argument */
   int iRes                         /* Result */
 ){
-  char z1[40], z2[40], z3[70];
+  char z1[40], z2[40], z3[2000];
   if( pLog==0 ) return;
   if( iArg1>=0 ){
     sqlite3_snprintf(sizeof(z1), z1, "%lld", iArg1);
@@ -203,7 +226,7 @@ static void vlogLogPrint(
     z2[0] = 0;
   }
   if( zArg3 ){
-    sqlite3_snprintf(sizeof(z3), z3, "\"%s\"", zArg3);
+    sqlite3_snprintf(sizeof(z3), z3, "\"%.*w\"", sizeof(z3)-4, zArg3);
   }else{
     z3[0] = 0;
   }
@@ -347,6 +370,13 @@ static void vlogSignature(unsigned char *p, int n, char *zCksum){
 }
 
 /*
+** Convert a big-endian 32-bit integer into a native integer
+*/
+static int bigToNative(const unsigned char *x){
+  return (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
+}
+
+/*
 ** Read data from an vlog-file.
 */
 static int vlogRead(
@@ -376,9 +406,16 @@ static int vlogRead(
    && iOfst+iAmt>=28
   ){
     unsigned char *x = ((unsigned char*)zBuf)+(24-iOfst);
-    unsigned iCtr;
-    iCtr = (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
-    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-READ", iCtr, -1, 0, 0);
+    unsigned iCtr, nFree = -1;
+    char *zFree = 0;
+    char zStr[12];
+    iCtr = bigToNative(x);
+    if( iOfst+iAmt>=40 ){
+      zFree = zStr;
+      sqlite3_snprintf(sizeof(zStr), zStr, "%d", bigToNative(x+8));
+      nFree = bigToNative(x+12);
+    }
+    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-READ", iCtr, nFree, zFree, 0);
   }
   return rc;
 }
@@ -409,9 +446,16 @@ static int vlogWrite(
    && iOfst+iAmt>=28
   ){
     unsigned char *x = ((unsigned char*)z)+(24-iOfst);
-    unsigned iCtr;
-    iCtr = (x[0]<<24) + (x[1]<<16) + (x[2]<<8) + x[3];
-    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-WRITE", iCtr, -1, 0, 0);
+    unsigned iCtr, nFree = -1;
+    char *zFree = 0;
+    char zStr[12];
+    iCtr = bigToNative(x);
+    if( iOfst+iAmt>=40 ){
+      zFree = zStr;
+      sqlite3_snprintf(sizeof(zStr), zStr, "%d", bigToNative(x+8));
+      nFree = bigToNative(x+12);
+    }
+    vlogLogPrint(p->pLog, tStart, 0, "CHNGCTR-WRITE", iCtr, nFree, zFree, 0);
   }
   return rc;
 }
@@ -477,12 +521,11 @@ static int vlogLock(sqlite3_file *pFile, int eLock){
 */
 static int vlogUnlock(sqlite3_file *pFile, int eLock){
   int rc;
-  sqlite3_uint64 tStart, tElapse;
+  sqlite3_uint64 tStart;
   VLogFile *p = (VLogFile *)pFile;
   tStart = vlog_time();
+  vlogLogPrint(p->pLog, tStart, 0, "UNLOCK", eLock, -1, 0, 0);
   rc = p->pReal->pMethods->xUnlock(p->pReal, eLock);
-  tElapse = vlog_time() - tStart;
-  vlogLogPrint(p->pLog, tStart, tElapse, "UNLOCK", eLock, -1, 0, rc);
   return rc;
 }
 
@@ -514,7 +557,17 @@ static int vlogFileControl(sqlite3_file *pFile, int op, void *pArg){
     *(char**)pArg = sqlite3_mprintf("vlog/%z", *(char**)pArg);
   }
   tElapse = vlog_time() - tStart;
-  vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, -1, 0, rc);
+  if( op==SQLITE_FCNTL_TRACE ){
+    vlogLogPrint(p->pLog, tStart, tElapse, "TRACE", op, -1, pArg, rc);
+  }else if( op==SQLITE_FCNTL_PRAGMA ){
+    const char **azArg = (const char **)pArg;
+    vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, -1, azArg[1], rc);
+  }else if( op==SQLITE_FCNTL_SIZE_HINT ){
+    sqlite3_int64 sz = *(sqlite3_int64*)pArg;
+    vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, sz, 0, rc);
+  }else{
+    vlogLogPrint(p->pLog, tStart, tElapse, "FILECONTROL", op, -1, 0, rc);
+  }
   return rc;
 }
 
