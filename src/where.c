@@ -3903,9 +3903,6 @@ static void whereExplainTerm(Vdbe *v, WhereTerm *pTerm){
   if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
   if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
   sqlite3ExplainPrintf(v, "%s ", zType);
-  if( (pTerm->wtFlags & (TERM_ORINFO|TERM_ANDINFO))==0 ){
-    sqlite3ExplainPrintf(v, "lhs=%-2d ", pTerm->u.leftColumn);
-  }
   sqlite3ExplainExpr(v, pTerm->pExpr);
 }
 #endif /* WHERETRACE_ENABLED && SQLITE_ENABLE_TREE_EXPLAIN */
@@ -3959,7 +3956,7 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3ExplainBegin(v);
     for(i=0; i<p->nLTerm; i++){
       WhereTerm *pTerm = p->aLTerm[i];
-      sqlite3ExplainPrintf(v, "  (%d) #%d ", i+1, (int)(pTerm-pWC->a));
+      sqlite3ExplainPrintf(v, "  (%d) #%-2d ", i+1, (int)(pTerm-pWC->a));
       sqlite3ExplainPush(v);
       whereExplainTerm(v, pTerm);
       sqlite3ExplainPop(v);
@@ -5865,7 +5862,7 @@ WhereInfo *sqlite3WhereBegin(
     Vdbe *v = pParse->pVdbe;
     sqlite3ExplainBegin(v);
     for(i=0; i<sWLB.pWC->nTerm; i++){
-      sqlite3ExplainPrintf(v, "#%d ", i);
+      sqlite3ExplainPrintf(v, "#%-2d ", i);
       sqlite3ExplainPush(v);
       whereExplainTerm(v, &sWLB.pWC->a[i]);
       sqlite3ExplainPop(v);
