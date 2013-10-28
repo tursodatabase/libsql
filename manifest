@@ -1,5 +1,5 @@
-C Work\son\sthe\sUPDATE\sand\sINSERT\slogic.\s\sThis\sis\san\sincremental\scheck-in\sso\sthat\ncan\sswitch\sover\sto\strunk\sto\swork\son\san\sunrelated\sissue\sthere.
-D 2013-10-26T15:40:48.224
+C Merge\srecent\sfixes\sfrom\strunk.
+D 2013-10-28T22:39:53.007
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -212,14 +212,14 @@ F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 5986f119f6350839a28936fce4e2d6a4c703922c
+F src/pragma.c 21f9e61ca8a3ccf699d28d4a5ec04ef33824624a
 F src/prepare.c f47ba2bba7ac5650881ab6c41f6d33a6de1a8d52
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c e729889b2c7a680ba4aa7296efa72c09369956d8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8290456f2a516abaf8cbbed5e61944d3082e497e
-F src/shell.c 6f11f0e9ded63d48e306f2c6858c521e568a47bb
+F src/shell.c d5eebdc6034014103de2b9d58e1d3f6f7de0fb50
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 512ddbf2884f5560a0ad5b076efc142ad7a07c7b
+F src/where.c 3dc37f7984f0a57ceeab1c522fd0f94108e4b859
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -980,7 +980,7 @@ F test/trace2.test e7a988fdd982cdec62f1f1f34b0360e6476d01a0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
-F test/transitive1.test 0ee69546d6fa20e577a4a706d7daa01c7eba9239
+F test/transitive1.test 03f532954f46cdf5608f7766bff0b0c52bf2a7cd
 F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
 F test/trigger2.test 834187beafd1db383af0c659cfa49b0576832816
 F test/trigger3.test aa640bb2bbb03edd5ff69c055117ea088f121945
@@ -1094,7 +1094,7 @@ F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c 189d76644e373c7d0864c628deb8ce7b4f403591
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 3fc52e00a234750675e8a569d2919ff48558e9eb
+F tool/mkpragmatab.tcl 17d40faae6c4b865633bfc5763821402a1cbefc3
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl d8dc444d403019167260e5578f5c362741f03696
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e6650e16dd11327afd25961b2feb29ec8778c2ca
-R bb18c22d259a405d56d9b91ea7100e63
+P 086ec2a177b24ad90d5d705a99d93aa0c1545217 3a9e3ed94bf617f00c48009b1a6d348a8f23a3cf
+R 8a68d5fd17d8dcd9d86fb48741f61369
 U drh
-Z 6434b0048c9e4cb6010b12b4a2aa5b2d
+Z c438434c68bedb89ea1b9008c1cfe6f8

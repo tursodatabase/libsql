@@ -878,7 +878,10 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
     iColumn = pScan->aEquiv[pScan->iEquiv-1];
     while( (pWC = pScan->pWC)!=0 ){
       for(pTerm=pWC->a+k; k<pWC->nTerm; k++, pTerm++){
-        if( pTerm->leftCursor==iCur && pTerm->u.leftColumn==iColumn ){
+        if( pTerm->leftCursor==iCur
+         && pTerm->u.leftColumn==iColumn
+         && (pScan->iEquiv<=2 || !ExprHasProperty(pTerm->pExpr, EP_FromJoin))
+        ){
           if( (pTerm->eOperator & WO_EQUIV)!=0
            && pScan->nEquiv<ArraySize(pScan->aEquiv)
           ){
@@ -2544,7 +2547,7 @@ static int whereRangeScanEst(
         nOut = nNew;
       }
       pLoop->nOut = (LogEst)nOut;
-      WHERETRACE(0x100, ("range scan regions: %u..%u  est=%d\n",
+      WHERETRACE(0x10, ("range scan regions: %u..%u  est=%d\n",
                          (u32)iLower, (u32)iUpper, nOut));
       return SQLITE_OK;
     }
@@ -2630,7 +2633,7 @@ static int whereEqualScanEst(
   pBuilder->nRecValid = nEq;
 
   whereKeyStats(pParse, p, pRec, 0, a);
-  WHERETRACE(0x100,("equality scan regions: %d\n", (int)a[1]));
+  WHERETRACE(0x10,("equality scan regions: %d\n", (int)a[1]));
   *pnRow = a[1];
   
   return rc;
@@ -2678,7 +2681,7 @@ static int whereInScanEst(
   if( rc==SQLITE_OK ){
     if( nRowEst > p->aiRowEst[0] ) nRowEst = p->aiRowEst[0];
     *pnRow = nRowEst;
-    WHERETRACE(0x100,("IN row estimate: est=%g\n", nRowEst));
+    WHERETRACE(0x10,("IN row estimate: est=%g\n", nRowEst));
   }
   assert( pBuilder->nRecValid==nRecValid );
   return rc;
@@ -3894,22 +3897,38 @@ static Bitmask codeOneLoopStart(
   return pLevel->notReady;
 }
 
+#if defined(WHERETRACE_ENABLED) && defined(SQLITE_ENABLE_TREE_EXPLAIN)
+/*
+** Generate "Explanation" text for a WhereTerm.
+*/
+static void whereExplainTerm(Vdbe *v, WhereTerm *pTerm){
+  char zType[4];
+  memcpy(zType, "...", 4);
+  if( pTerm->wtFlags & TERM_VIRTUAL ) zType[0] = 'V';
+  if( pTerm->eOperator & WO_EQUIV  ) zType[1] = 'E';
+  if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) zType[2] = 'L';
+  sqlite3ExplainPrintf(v, "%s ", zType);
+  sqlite3ExplainExpr(v, pTerm->pExpr);
+}
+#endif /* WHERETRACE_ENABLED && SQLITE_ENABLE_TREE_EXPLAIN */
+
+
 #ifdef WHERETRACE_ENABLED
 /*
 ** Print a WhereLoop object for debugging purposes
 */
-static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
-  int nb = 1+(pTabList->nSrc+7)/8;
-  struct SrcList_item *pItem = pTabList->a + p->iTab;
+static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
+  WhereInfo *pWInfo = pWC->pWInfo;
+  int nb = 1+(pWInfo->pTabList->nSrc+7)/8;
+  struct SrcList_item *pItem = pWInfo->pTabList->a + p->iTab;
   Table *pTab = pItem->pTab;
   sqlite3DebugPrintf("%c%2d.%0*llx.%0*llx", p->cId,
                      p->iTab, nb, p->maskSelf, nb, p->prereq);
   sqlite3DebugPrintf(" %12s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-    if( p->u.btree.pIndex ){
-      const char *zName = p->u.btree.pIndex->zName;
-      if( zName==0 ) zName = "ipk";
+     const char *zName;
+     if( p->u.btree.pIndex && (zName = p->u.btree.pIndex->zName)!=0 ){
       if( strncmp(zName, "sqlite_autoindex_", 17)==0 ){
         int i = sqlite3Strlen30(zName) - 1;
         while( zName[i]!='_' ) i--;
@@ -3932,6 +3951,26 @@ static void whereLoopPrint(WhereLoop *p, SrcList *pTabList){
   }
   sqlite3DebugPrintf(" f %04x N %d", p->wsFlags, p->nLTerm);
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
+#ifdef SQLITE_ENABLE_TREE_EXPLAIN
+  /* If the 0x100 bit of wheretracing is set, then show all of the constraint
+  ** expressions in the WhereLoop.aLTerm[] array.
+  */
+  if( p->nLTerm && (sqlite3WhereTrace & 0x100)!=0 ){  /* WHERETRACE 0x100 */
+    int i;
+    Vdbe *v = pWInfo->pParse->pVdbe;
+    sqlite3ExplainBegin(v);
+    for(i=0; i<p->nLTerm; i++){
+      WhereTerm *pTerm = p->aLTerm[i];
+      sqlite3ExplainPrintf(v, "  (%d) #%-2d ", i+1, (int)(pTerm-pWC->a));
+      sqlite3ExplainPush(v);
+      whereExplainTerm(v, pTerm);
+      sqlite3ExplainPop(v);
+      sqlite3ExplainNL(v);
+    }
+    sqlite3ExplainFinish(v);
+    sqlite3DebugPrintf("%s", sqlite3VdbeExplanation(v));
+  }
+#endif
 }
 #endif
 
@@ -4071,10 +4110,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 #endif
     whereOrInsert(pBuilder->pOrSet, pTemplate->prereq, pTemplate->rRun,
                                     pTemplate->nOut);
-#if WHERETRACE_ENABLED
+#if WHERETRACE_ENABLED /* 0x8 */
     if( sqlite3WhereTrace & 0x8 ){
       sqlite3DebugPrintf(x?"   or-%d:  ":"   or-X:  ", n);
-      whereLoopPrint(pTemplate, pWInfo->pTabList);
+      whereLoopPrint(pTemplate, pBuilder->pWC);
     }
 #endif
     return SQLITE_OK;
@@ -4144,14 +4183,14 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   ** with pTemplate[] if p[] exists, or if p==NULL then allocate a new
   ** WhereLoop and insert it.
   */
-#if WHERETRACE_ENABLED
+#if WHERETRACE_ENABLED /* 0x8 */
   if( sqlite3WhereTrace & 0x8 ){
     if( p!=0 ){
       sqlite3DebugPrintf("ins-del:  ");
-      whereLoopPrint(p, pWInfo->pTabList);
+      whereLoopPrint(p, pBuilder->pWC);
     }
     sqlite3DebugPrintf("ins-new:  ");
-    whereLoopPrint(pTemplate, pWInfo->pTabList);
+    whereLoopPrint(pTemplate, pBuilder->pWC);
   }
 #endif
   if( p==0 ){
@@ -4172,10 +4211,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 
   /* Jump here if the insert is a no-op */
 whereLoopInsert_noop:
-#if WHERETRACE_ENABLED
+#if WHERETRACE_ENABLED /* 0x8 */
   if( sqlite3WhereTrace & 0x8 ){
     sqlite3DebugPrintf("ins-noop: ");
-    whereLoopPrint(pTemplate, pWInfo->pTabList);
+    whereLoopPrint(pTemplate, pBuilder->pWC);
   }
 #endif
   return SQLITE_OK;  
@@ -5343,7 +5382,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         }
         if( jj>=nTo ){
           if( nTo>=mxChoice && rCost>=mxCost ){
-#ifdef WHERETRACE_ENABLED
+#ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d order=%c\n",
                   wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
@@ -5361,7 +5400,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             jj = mxI;
           }
           pTo = &aTo[jj];
-#ifdef WHERETRACE_ENABLED
+#ifdef WHERETRACE_ENABLED /* 0x4 */
           if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf("New    %s cost=%-3d,%3d order=%c\n",
                 wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
@@ -5370,7 +5409,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 #endif
         }else{
           if( pTo->rCost<=rCost && pTo->nRow<=nOut ){
-#ifdef WHERETRACE_ENABLED
+#ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
                   "Skip   %s cost=%-3d,%3d order=%c",
@@ -5386,7 +5425,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           }
           testcase( pTo->rCost==rCost+1 );
           /* A new and better score for a previously created equivalent path */
-#ifdef WHERETRACE_ENABLED
+#ifdef WHERETRACE_ENABLED /* 0x4 */
           if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf(
                 "Update %s cost=%-3d,%3d order=%c",
@@ -5422,7 +5461,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       }
     }
 
-#ifdef WHERETRACE_ENABLED
+#ifdef WHERETRACE_ENABLED  /* >=2 */
     if( sqlite3WhereTrace>=2 ){
       sqlite3DebugPrintf("---- after round %d ----\n", iLoop);
       for(ii=0, pTo=aTo; ii<nTo; ii++, pTo++){
@@ -5831,12 +5870,29 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Construct the WhereLoop objects */
   WHERETRACE(0xffff,("*** Optimizer Start ***\n"));
+  /* Display all terms of the WHERE clause */
+#if defined(WHERETRACE_ENABLED) && defined(SQLITE_ENABLE_TREE_EXPLAIN)
+  if( sqlite3WhereTrace & 0x100 ){
+    int i;
+    Vdbe *v = pParse->pVdbe;
+    sqlite3ExplainBegin(v);
+    for(i=0; i<sWLB.pWC->nTerm; i++){
+      sqlite3ExplainPrintf(v, "#%-2d ", i);
+      sqlite3ExplainPush(v);
+      whereExplainTerm(v, &sWLB.pWC->a[i]);
+      sqlite3ExplainPop(v);
+      sqlite3ExplainNL(v);
+    }
+    sqlite3ExplainFinish(v);
+    sqlite3DebugPrintf("%s", sqlite3VdbeExplanation(v));
+  }
+#endif
   if( nTabList!=1 || whereShortCut(&sWLB)==0 ){
     rc = whereLoopAddAll(&sWLB);
     if( rc ) goto whereBeginError;
   
     /* Display all of the WhereLoop objects if wheretrace is enabled */
-#ifdef WHERETRACE_ENABLED
+#ifdef WHERETRACE_ENABLED /* !=0 */
     if( sqlite3WhereTrace ){
       WhereLoop *p;
       int i;
@@ -5844,7 +5900,7 @@ WhereInfo *sqlite3WhereBegin(
                                        "ABCDEFGHIJKLMNOPQRSTUVWYXZ";
       for(p=pWInfo->pLoops, i=0; p; p=p->pNextLoop, i++){
         p->cId = zLabel[i%sizeof(zLabel)];
-        whereLoopPrint(p, pTabList);
+        whereLoopPrint(p, sWLB.pWC);
       }
     }
 #endif
@@ -5862,7 +5918,7 @@ WhereInfo *sqlite3WhereBegin(
   if( pParse->nErr || NEVER(db->mallocFailed) ){
     goto whereBeginError;
   }
-#ifdef WHERETRACE_ENABLED
+#ifdef WHERETRACE_ENABLED /* !=0 */
   if( sqlite3WhereTrace ){
     int ii;
     sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
@@ -5885,7 +5941,7 @@ WhereInfo *sqlite3WhereBegin(
     }
     sqlite3DebugPrintf("\n");
     for(ii=0; ii<pWInfo->nLevel; ii++){
-      whereLoopPrint(pWInfo->a[ii].pWLoop, pTabList);
+      whereLoopPrint(pWInfo->a[ii].pWLoop, sWLB.pWC);
     }
   }
 #endif

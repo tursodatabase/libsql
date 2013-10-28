@@ -94,11 +94,13 @@ static const struct sPragmaNames {
     /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if !defined(SQLITE_OMIT_AUTOMATIC_INDEX)
   { /* zName:     */ "automatic_index",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_AutoIndex },
+#endif
 #endif
   { /* zName:     */ "busy_timeout",
     /* ePragTyp:  */ PragTyp_BUSY_TIMEOUT,
@@ -110,18 +112,22 @@ static const struct sPragmaNames {
     /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "cache_spill",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_CacheSpill },
+#endif
   { /* zName:     */ "case_sensitive_like",
     /* ePragTyp:  */ PragTyp_CASE_SENSITIVE_LIKE,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "checkpoint_fullfsync",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_CkptFullFSync },
+#endif
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
   { /* zName:     */ "collation_list",
     /* ePragTyp:  */ PragTyp_COLLATION_LIST,
@@ -134,10 +140,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "count_changes",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_CountRows },
+#endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_OS_WIN
   { /* zName:     */ "data_store_directory",
     /* ePragTyp:  */ PragTyp_DATA_STORE_DIRECTORY,
@@ -156,16 +164,20 @@ static const struct sPragmaNames {
     /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   { /* zName:     */ "defer_foreign_keys",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_DeferFKs },
 #endif
+#endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "empty_result_callbacks",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_NullCallback },
+#endif
 #if !defined(SQLITE_OMIT_UTF16)
   { /* zName:     */ "encoding",
     /* ePragTyp:  */ PragTyp_ENCODING,
@@ -184,11 +196,13 @@ static const struct sPragmaNames {
     /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   { /* zName:     */ "foreign_keys",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_ForeignKeys },
+#endif
 #endif
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
   { /* zName:     */ "freelist_count",
@@ -196,6 +210,7 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "full_column_names",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
@@ -204,6 +219,7 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_FullFSync },
+#endif
 #if defined(SQLITE_HAS_CODEC)
   { /* zName:     */ "hexkey",
     /* ePragTyp:  */ PragTyp_HEXKEY,
@@ -214,11 +230,13 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if !defined(SQLITE_OMIT_CHECK)
   { /* zName:     */ "ignore_check_constraints",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_IgnoreChecks },
+#endif
 #endif
 #if !defined(SQLITE_OMIT_AUTOVACUUM)
   { /* zName:     */ "incremental_vacuum",
@@ -258,10 +276,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "legacy_file_format",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_LegacyFileFmt },
+#endif
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) && SQLITE_ENABLE_LOCKING_STYLE
   { /* zName:     */ "lock_proxy_file",
     /* ePragTyp:  */ PragTyp_LOCK_PROXY_FILE,
@@ -302,16 +322,19 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "query_only",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_QueryOnly },
+#endif
 #if !defined(SQLITE_OMIT_INTEGRITY_CHECK)
   { /* zName:     */ "quick_check",
     /* ePragTyp:  */ PragTyp_INTEGRITY_CHECK,
     /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "read_uncommitted",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
@@ -320,16 +343,19 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_RecTriggers },
+#endif
 #if defined(SQLITE_HAS_CODEC)
   { /* zName:     */ "rekey",
     /* ePragTyp:  */ PragTyp_REKEY,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "reverse_unordered_selects",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_ReverseOrder },
+#endif
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
   { /* zName:     */ "schema_version",
     /* ePragTyp:  */ PragTyp_HEADER_VALUE,
@@ -342,10 +368,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "short_column_names",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_ShortColNames },
+#endif
   { /* zName:     */ "shrink_memory",
     /* ePragTyp:  */ PragTyp_SHRINK_MEMORY,
     /* ePragFlag: */ 0,
@@ -354,11 +382,13 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_SOFT_HEAP_LIMIT,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if defined(SQLITE_DEBUG)
   { /* zName:     */ "sql_trace",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_SqlTrace },
+#endif
 #endif
 #if !defined(SQLITE_OMIT_SCHEMA_PRAGMAS)
   { /* zName:     */ "stats",
@@ -394,6 +424,7 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
 #if defined(SQLITE_DEBUG)
   { /* zName:     */ "vdbe_addoptrace",
     /* ePragTyp:  */ PragTyp_FLAG,
@@ -412,6 +443,7 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_VdbeTrace },
 #endif
+#endif
 #if !defined(SQLITE_OMIT_WAL)
   { /* zName:     */ "wal_autocheckpoint",
     /* ePragTyp:  */ PragTyp_WAL_AUTOCHECKPOINT,
@@ -422,10 +454,12 @@ static const struct sPragmaNames {
     /* ePragFlag: */ PragFlag_NeedSchema,
     /* iArg:      */ 0 },
 #endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   { /* zName:     */ "writable_schema",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
+#endif
 };
 /* Number of pragmas: 56 on by default, 68 total. */
 /* End of the automatically generated pragma table.
