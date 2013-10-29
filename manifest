@@ -1,5 +1,5 @@
-C Merge\srecent\sfixes\sfrom\strunk.
-D 2013-10-28T22:39:53.007
+C Improved\scomments\son\sthe\sconstraint\schecking\slogic.
+D 2013-10-29T16:14:35.997
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 14ae816acbebd927bc070bf684de638f78cfccba
+F src/insert.c 42e8dc617c4db4683b4b2aac4d40dabf0333bef2
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 086ec2a177b24ad90d5d705a99d93aa0c1545217 3a9e3ed94bf617f00c48009b1a6d348a8f23a3cf
-R 8a68d5fd17d8dcd9d86fb48741f61369
+P 9f8191d1d833acaaf612fdff8cc6bd544c042986
+R 1ffaeb4130b0ebfe6aa0338f8dfd6db1
 U drh
-Z c438434c68bedb89ea1b9008c1cfe6f8
+Z 4dc4c03fad5693ab5ce15641b23c251b
