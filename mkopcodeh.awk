@@ -38,6 +38,33 @@
   tk[$2] = 0+$3    # tk[x] holds the numeric value for TK symbol X
 }
 
+# Find "/* Opcode: " lines in the vdbe.c file.  Each one introduces
+# a new opcode.  Remember which parameters are used.
+/^.. Opcode: / {
+  currentOp = "OP_" $3
+  m = 0
+  for(i=4; i<=NF; i++){
+    x = $i
+    if( x=="P1" ) m += 1
+    if( x=="P2" ) m += 2
+    if( x=="P3" ) m += 4
+    if( x=="P4" ) m += 8
+    if( x=="P5" ) m += 16
+  }
+  paramused[currentOp] = m
+}
+
+# Find "** Synopsis: " lines that follow Opcode:
+/^.. Synopsis: / {
+  if( currentOp ){
+    x = $3
+    for(i=4; i<=NF; i++){
+      x = x " " $i
+    }
+    synopsis[currentOp] = x
+  }
+}
+
 # Scan for "case OP_aaaa:" lines in the vdbe.c file
 /^case OP_/ {
   name = $2
@@ -136,10 +163,22 @@ END {
     if( !used[i] ){
       def[i] = "OP_NotUsed_" i 
     }
-    printf "#define %-25s %15d", def[i], i
+    printf "#define %-16s %3d", def[i], i
+    com = ""
     if( sameas[i] ){
-      printf "   /* same as %-12s*/", sameas[i]
-    } 
+      com = "same as " sameas[i]
+    }
+    x = synopsis[def[i]]
+    if( x ){
+      if( com=="" ){
+        com = "synopsis: " x
+      } else {
+        com = com ", synopsis: " x
+      }
+    }
+    if( com!="" ){
+      printf " /* %-42s */", com
+    }
     printf "\n"
   }
 
@@ -180,4 +219,15 @@ END {
     if( i%8==7 ) printf("\\\n");
   }
   print "}"
+  if( 0 ){
+    print "\n/* Bitmask to indicate which fields (P1..P5) of each opcode are"
+    print "** actually used.\n*/"
+    print "#define OP_PARAM_USED_INITIALIZER {\\"
+    for(i=0; i<=max; i++){
+      if( i%8==0 ) printf("/* %3d */",i)
+      printf " 0x%02x,", paramused[def[i]]
+      if( i%8==7 ) printf("\\\n");
+    }
+    print "}"
+  }
 }

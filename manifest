@@ -1,5 +1,5 @@
-C Formatting\simprovements\sto\sthe\sWHERE-clause\sconstraint\sdisplay\sin\sthe\nwheretrace\sdebugging\slogic.
-D 2013-10-28T22:33:36.558
+C Automatically\sgenerated\scomments\son\smany\sVDBE\sopcodes\swhen\sin\sSQLITE_DEBUG\nmost.\s\sComments\sderive\sfrom\sthe\s"Synopsis:"\sfield\sadded\sto\seach\sopcode\ndefinition\sin\svdbe.c.
+D 2013-10-29T20:40:47.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,8 +145,8 @@ F main.mk c6a433cb334bbb019625c137ab5d5e7568b47cff
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
-F mkopcodec.awk f6fccee29e68493bfd90a2e0466ede5fa94dd2fc
-F mkopcodeh.awk e7334b45c023b5ee2efc6e8f479560c2026fa34a
+F mkopcodec.awk 393b20a2a99557ca695f7e1261c32d087ff7c0b4
+F mkopcodeh.awk 987ee588ff3bb4043bed2185c1ee2bdc39b1e526
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -279,11 +279,11 @@ F src/update.c f5182157f5d0d0a97bc5f5e3c9bdba0dfbe08f08
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c f313bc97123a4dd4bfd3f50a00c4d44c08a5b1b7
-F src/vdbe.c 3d960c844cee53830f33717b4f5d23d7ee56685f
+F src/vdbe.c 3d0bd1f8a3ebec1c253c5050c1008bffcbcb21eb
 F src/vdbe.h 4f554b5627f26710c4c36d919110a3fc611ca5c4
 F src/vdbeInt.h ff57f67aee1ba26a3a47e786533dab155ab6dad6
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 55f4858fe6abd84bd7311acbf30a75a28903ec25
+F src/vdbeaux.c e670a2bd8bf7ba10fad63b9264c5d723c38f02d0
 F src/vdbeblob.c 5dc79627775bd9a9b494dd956e26297946417d69
 F src/vdbemem.c 649933bad3e922465b726eaf85c72a75acba2ab7
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 05a35b09b140fed0898afd36bc641e275545a35f
-R ff7bb3f8071649882bf49e664fcf0a45
+P 3a9e3ed94bf617f00c48009b1a6d348a8f23a3cf
+R cc5dfe91a476c5736a19ee6bb40f8034
 U drh
-Z 9d63edd4f24f764673ec22cc76454487
+Z 873c3bf640fe9fcbf6a7225bea069855

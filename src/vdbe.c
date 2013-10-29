@@ -805,6 +805,7 @@ case OP_Yield: {            /* in1 */
 }
 
 /* Opcode:  HaltIfNull  P1 P2 P3 P4 *
+** Synopsis:  if r[P3] null then halt
 **
 ** Check the value in register P3.  If it is NULL then Halt using
 ** parameter P1, P2, and P4 as if this were a Halt instruction.  If the
@@ -882,6 +883,7 @@ case OP_Halt: {
 }
 
 /* Opcode: Integer P1 P2 * * *
+** Synopsis: r[P2]=P1
 **
 ** The 32-bit integer value P1 is written into register P2.
 */
@@ -891,6 +893,7 @@ case OP_Integer: {         /* out2-prerelease */
 }
 
 /* Opcode: Int64 * P2 * P4 *
+** Synopsis: r[P2]=P4
 **
 ** P4 is a pointer to a 64-bit integer value.
 ** Write that value into register P2.
@@ -903,6 +906,7 @@ case OP_Int64: {           /* out2-prerelease */
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
 /* Opcode: Real * P2 * P4 *
+** Synopsis: r[P2]=P4
 **
 ** P4 is a pointer to a 64-bit floating point value.
 ** Write that value into register P2.
@@ -916,6 +920,7 @@ case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
 #endif
 
 /* Opcode: String8 * P2 * P4 *
+** Synopsis: r[P2]='P4'
 **
 ** P4 points to a nul terminated UTF-8 string. This opcode is transformed 
 ** into an OP_String before it is executed for the first time.
@@ -950,6 +955,7 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
 }
   
 /* Opcode: String P1 P2 * P4 *
+** Synopsis: r[P2]='P4' (len=P1)
 **
 ** The string value P4 of length P1 (bytes) is stored in register P2.
 */
@@ -964,6 +970,7 @@ case OP_String: {          /* out2-prerelease */
 }
 
 /* Opcode: Null P1 P2 P3 * *
+** Synopsis:  r[P2..P3]=NULL
 **
 ** Write a NULL into registers P2.  If P3 greater than P2, then also write
 ** NULL into register P3 and every register in between P2 and P3.  If P3
@@ -992,6 +999,7 @@ case OP_Null: {           /* out2-prerelease */
 
 
 /* Opcode: Blob P1 P2 * P4
+** Synopsis: r[P2]=P4 (len=P1)
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
 ** blob in register P2.
@@ -1005,6 +1013,7 @@ case OP_Blob: {                /* out2-prerelease */
 }
 
 /* Opcode: Variable P1 P2 * P4 *
+** Synopsis: r[P2]=parameter(P1,P4)
 **
 ** Transfer the values of bound parameter P1 into register P2
 **
@@ -1026,6 +1035,7 @@ case OP_Variable: {            /* out2-prerelease */
 }
 
 /* Opcode: Move P1 P2 P3 * *
+** Synopsis:  r[P2]=r[P1] N=P3
 **
 ** Move the values in register P1..P1+P3 over into
 ** registers P2..P2+P3.  Registers P1..P1+P3 are
@@ -1068,6 +1078,7 @@ case OP_Move: {
 }
 
 /* Opcode: Copy P1 P2 P3 * *
+** Synopsis: r[P2]=r[P1] N=P3
 **
 ** Make a copy of registers P1..P1+P3 into registers P2..P2+P3.
 **
@@ -1096,6 +1107,7 @@ case OP_Copy: {
 }
 
 /* Opcode: SCopy P1 P2 * * *
+** Synopsis: r[P2]=r[P1]
 **
 ** Make a shallow copy of register P1 into register P2.
 **
@@ -1120,6 +1132,7 @@ case OP_SCopy: {            /* in1, out2 */
 }
 
 /* Opcode: ResultRow P1 P2 * * *
+** Synopsis:  output=r[P1].. columns=P1
 **
 ** The registers P1 through P1+P2-1 contain a single row of
 ** results. This opcode causes the sqlite3_step() call to terminate
@@ -1191,6 +1204,7 @@ case OP_ResultRow: {
 }
 
 /* Opcode: Concat P1 P2 P3 * *
+** Synopsis: r[P3]=r[P2]+r[P3]
 **
 ** Add the text in register P1 onto the end of the text in
 ** register P2 and store the result in register P3.
@@ -1228,7 +1242,7 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
     memcpy(pOut->z, pIn2->z, pIn2->n);
   }
   memcpy(&pOut->z[pIn2->n], pIn1->z, pIn1->n);
-  pOut->z[nByte] = 0;
+  pOut->z[nByte]=0;
   pOut->z[nByte+1] = 0;
   pOut->flags |= MEM_Term;
   pOut->n = (int)nByte;
@@ -1238,12 +1252,14 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 }
 
 /* Opcode: Add P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P1]+r[P2]
 **
 ** Add the value in register P1 to the value in register P2
 ** and store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: Multiply P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P1]*r[P2]
 **
 **
 ** Multiply the value in register P1 by the value in register P2
@@ -1251,12 +1267,14 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: Subtract P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P2]-r[P1]
 **
 ** Subtract the value in register P1 from the value in register P2
 ** and store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: Divide P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P1]/r[P2]
 **
 ** Divide the value in register P1 by the value in register P2
 ** and store the result in register P3 (P3=P2/P1). If the value in 
@@ -1264,6 +1282,7 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 ** NULL, the result is NULL.
 */
 /* Opcode: Remainder P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P1]%r[P2]
 **
 ** Compute the remainder after integer division of the value in
 ** register P1 by the value in register P2 and store the result in P3. 
@@ -1381,6 +1400,7 @@ case OP_CollSeq: {
 }
 
 /* Opcode: Function P1 P2 P3 P4 P5
+** Synopsis: r[P3]=func(r[P2]..) N=P5
 **
 ** Invoke a user function (P4 is a pointer to a Function structure that
 ** defines the function) with P5 arguments taken from register P2 and
@@ -1488,18 +1508,21 @@ case OP_Function: {
 }
 
 /* Opcode: BitAnd P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P1]&r[P2]
 **
 ** Take the bit-wise AND of the values in register P1 and P2 and
 ** store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: BitOr P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P1]|r[P2]
 **
 ** Take the bit-wise OR of the values in register P1 and P2 and
 ** store the result in register P3.
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: ShiftLeft P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P2]<<r[P1]
 **
 ** Shift the integer value in register P2 to the left by the
 ** number of bits specified by the integer in register P1.
@@ -1507,6 +1530,7 @@ case OP_Function: {
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: ShiftRight P1 P2 P3 * *
+** Synopsis:  r[P3]=r[P2]>>r[P1]
 **
 ** Shift the integer value in register P2 to the right by the
 ** number of bits specified by the integer in register P1.
@@ -1566,6 +1590,7 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
 }
 
 /* Opcode: AddImm  P1 P2 * * *
+** Synopsis:  r[P1]=r[P1]+P2
 ** 
 ** Add the constant P2 to the value in register P1.
 ** The result is always an integer.
@@ -1724,6 +1749,7 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 #endif /* !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_FLOATING_POINT) */
 
 /* Opcode: Lt P1 P2 P3 P4 P5
+** Synopsis: r[P1] < r[P3]
 **
 ** Compare the values in register P1 and P3.  If reg(P3)<reg(P1) then
 ** jump to address P2.  
@@ -1758,6 +1784,7 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 ** bit set.
 */
 /* Opcode: Ne P1 P2 P3 P4 P5
+** Synopsis: r[P1] != r[P3]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the operands in registers P1 and P3 are not equal.  See the Lt opcode for
@@ -1770,6 +1797,7 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 ** the SQLITE_NULLEQ flag were omitted from P5.
 */
 /* Opcode: Eq P1 P2 P3 P4 P5
+** Synopsis: r[P1] == r[P3]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the operands in registers P1 and P3 are equal.
@@ -1782,18 +1810,21 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 ** the SQLITE_NULLEQ flag were omitted from P5.
 */
 /* Opcode: Le P1 P2 P3 P4 P5
+** Synopsis: r[P1] <= r[P3]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is less than or equal to the content of
 ** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Gt P1 P2 P3 P4 P5
+** Synopsis: r[P1] > r[P3]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than the content of
 ** register P1.  See the Lt opcode for additional information.
 */
 /* Opcode: Ge P1 P2 P3 P4 P5
+** Synopsis: r[P1] >= r[P3]
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the content of register P3 is greater than or equal to the content of
@@ -1984,6 +2015,7 @@ case OP_Jump: {             /* jump */
 }
 
 /* Opcode: And P1 P2 P3 * *
+** Synopsis: r[P3]=(r[P1] && r[P2])
 **
 ** Take the logical AND of the values in registers P1 and P2 and
 ** write the result into register P3.
@@ -1993,6 +2025,7 @@ case OP_Jump: {             /* jump */
 ** a NULL output.
 */
 /* Opcode: Or P1 P2 P3 * *
+** Synopsis: r[P3]=(r[P1] || r[P2])
 **
 ** Take the logical OR of the values in register P1 and P2 and
 ** store the answer in register P3.
@@ -2036,6 +2069,7 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
 }
 
 /* Opcode: Not P1 P2 * * *
+** Synopsis: r[P2]= !r[P1]
 **
 ** Interpret the value in register P1 as a boolean value.  Store the
 ** boolean complement in register P2.  If the value in register P1 is 
@@ -2053,6 +2087,7 @@ case OP_Not: {                /* same as TK_NOT, in1, out2 */
 }
 
 /* Opcode: BitNot P1 P2 * * *
+** Synopsis: r[P1]= ~r[P1]
 **
 ** Interpret the content of register P1 as an integer.  Store the
 ** ones-complement of the P1 value into register P2.  If P1 holds
@@ -2141,6 +2176,7 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 }
 
 /* Opcode: Column P1 P2 P3 P4 P5
+** Synopsis:  r[P3]=PX
 **
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
@@ -2477,6 +2513,7 @@ op_column_out:
 }
 
 /* Opcode: Affinity P1 P2 * P4 *
+** Synopsis: affinity(r[P1]) N=P2
 **
 ** Apply affinities to a range of P2 registers starting with P1.
 **
@@ -2503,6 +2540,7 @@ case OP_Affinity: {
 }
 
 /* Opcode: MakeRecord P1 P2 P3 P4 *
+** Synopsis: r[P3]=rec(r[P1]..) N=P2
 **
 ** Convert P2 registers beginning with P1 into the [record format]
 ** use as a data record in a database table or as a key
@@ -2635,6 +2673,7 @@ case OP_MakeRecord: {
 }
 
 /* Opcode: Count P1 P2 * * *
+** Synopsis: r[P2]=count()
 **
 ** Store the number of entries (an integer value) in the table or index 
 ** opened by cursor P1 in register P2
@@ -3111,6 +3150,7 @@ case OP_VerifyCookie: {
 }
 
 /* Opcode: OpenRead P1 P2 P3 P4 P5
+** Synopsis: root=P2 iDb=P3
 **
 ** Open a read-only cursor for the database table whose root page is
 ** P2 in a database file.  The database file is determined by P3. 
@@ -3141,6 +3181,7 @@ case OP_VerifyCookie: {
 ** See also OpenWrite.
 */
 /* Opcode: OpenWrite P1 P2 P3 P4 P5
+** Synopsis: root=P2 iDb=P3
 **
 ** Open a read/write cursor named P1 on the table or index whose root
 ** page is P2.  Or if P5!=0 use the content of register P2 to find the
@@ -3246,6 +3287,7 @@ case OP_OpenWrite: {
 }
 
 /* Opcode: OpenEphemeral P1 P2 * P4 P5
+** Synopsis: nColumn=P2
 **
 ** Open a new cursor P1 to a transient table.
 ** The cursor is always opened read/write even if 
@@ -3257,18 +3299,13 @@ case OP_OpenWrite: {
 ** if P4 is not 0.  If P4 is not NULL, it points to a KeyInfo structure
 ** that defines the format of keys in the index.
 **
-** This opcode was once called OpenTemp.  But that created
-** confusion because the term "temp table", might refer either
-** to a TEMP table at the SQL level, or to a table opened by
-** this opcode.  Then this opcode was call OpenVirtual.  But
-** that created confusion with the whole virtual-table idea.
-**
 ** The P5 parameter can be a mask of the BTREE_* flags defined
 ** in btree.h.  These flags control aspects of the operation of
 ** the btree.  The BTREE_OMIT_JOURNAL and BTREE_SINGLE flags are
 ** added automatically.
 */
 /* Opcode: OpenAutoindex P1 P2 * P4 *
+** Synopsis: nColumn=P2
 **
 ** This opcode works the same as OP_OpenEphemeral.  It has a
 ** different name to distinguish its use.  Tables created using
@@ -3323,6 +3360,7 @@ case OP_OpenEphemeral: {
 }
 
 /* Opcode: SorterOpen P1 P2 * P4 *
+** Synopsis: nColumn=P2
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large
@@ -3341,6 +3379,7 @@ case OP_SorterOpen: {
 }
 
 /* Opcode: OpenPseudo P1 P2 P3 * P5
+** Synopsis: content in r[P2].. N=P3
 **
 ** Open a new cursor that points to a fake table that contains a single
 ** row of data.  The content of that one row in the content of memory
@@ -3383,6 +3422,7 @@ case OP_Close: {
 }
 
 /* Opcode: SeekGe P1 P2 P3 P4 *
+** Synopsis: key=r[P3].. N=P4
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as the key.  If cursor P1 refers 
@@ -3396,6 +3436,7 @@ case OP_Close: {
 ** See also: Found, NotFound, Distinct, SeekLt, SeekGt, SeekLe
 */
 /* Opcode: SeekGt P1 P2 P3 P4 *
+** Synopsis: key=r[P3].. N=P4
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as a key. If cursor P1 refers 
@@ -3409,6 +3450,7 @@ case OP_Close: {
 ** See also: Found, NotFound, Distinct, SeekLt, SeekGe, SeekLe
 */
 /* Opcode: SeekLt P1 P2 P3 P4 * 
+** Synopsis: key=r[P3].. N=P4
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as a key. If cursor P1 refers 
@@ -3422,6 +3464,7 @@ case OP_Close: {
 ** See also: Found, NotFound, Distinct, SeekGt, SeekGe, SeekLe
 */
 /* Opcode: SeekLe P1 P2 P3 P4 *
+** Synopsis: key=r[P3].. N=P4
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as a key. If cursor P1 refers 
@@ -3587,6 +3630,7 @@ case OP_SeekGt: {       /* jump, in3 */
 }
 
 /* Opcode: Seek P1 P2 * * *
+** Synopsis:  intkey=r[P2]
 **
 ** P1 is an open table cursor and P2 is a rowid integer.  Arrange
 ** for P1 to move so that it points to the rowid given by P2.
@@ -3614,6 +3658,7 @@ case OP_Seek: {    /* in2 */
   
 
 /* Opcode: Found P1 P2 P3 P4 *
+** Synopsis: key=r[P3].. N=P4
 **
 ** If P4==0 then register P3 holds a blob constructed by MakeRecord.  If
 ** P4>0 then register P3 is the first of P4 registers that form an unpacked
@@ -3624,6 +3669,7 @@ case OP_Seek: {    /* in2 */
 ** P1 is left pointing at the matching entry.
 */
 /* Opcode: NotFound P1 P2 P3 P4 *
+** Synopsis: key=r[P3] N=P4
 **
 ** If P4==0 then register P3 holds a blob constructed by MakeRecord.  If
 ** P4>0 then register P3 is the first of P4 registers that form an unpacked
@@ -3786,6 +3832,7 @@ case OP_IsUnique: {        /* jump, in3 */
 }
 
 /* Opcode: NotExists P1 P2 P3 * *
+** Synopsis: intkey=r[P3]
 **
 ** Use the content of register P3 as an integer key.  If a record 
 ** with that key does not exist in table of P1, then jump to P2. 
@@ -3839,6 +3886,7 @@ case OP_NotExists: {        /* jump, in3 */
 }
 
 /* Opcode: Sequence P1 P2 * * *
+** Synopsis: r[P2]=rowid
 **
 ** Find the next available sequence number for cursor P1.
 ** Write the sequence number into register P2.
@@ -3854,6 +3902,7 @@ case OP_Sequence: {           /* out2-prerelease */
 
 
 /* Opcode: NewRowid P1 P2 P3 * *
+** Synopsis: r[P2]=rowid
 **
 ** Get a new integer record number (a.k.a "rowid") used as the key to a table.
 ** The record number is not previously used as a key in the database
@@ -4003,6 +4052,7 @@ case OP_NewRowid: {           /* out2-prerelease */
 }
 
 /* Opcode: Insert P1 P2 P3 P4 P5
+** Synopsis: intkey=r[P3] data=r[P2]
 **
 ** Write an entry into the table of cursor P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
@@ -4042,6 +4092,7 @@ case OP_NewRowid: {           /* out2-prerelease */
 ** for indices is OP_IdxInsert.
 */
 /* Opcode: InsertInt P1 P2 P3 P4 P5
+** Synopsis:  intkey=P3 data=r[P2]
 **
 ** This works exactly like OP_Insert except that the key is the
 ** integer value P3, not the value of the integer stored in register P3.
@@ -4192,6 +4243,7 @@ case OP_ResetCount: {
 }
 
 /* Opcode: SorterCompare P1 P2 P3
+** Synopsis:  if key(P1)!=r[P3] goto P2
 **
 ** P1 is a sorter cursor. This instruction compares the record blob in 
 ** register P3 with the entry that the sorter cursor currently points to.
@@ -4213,6 +4265,7 @@ case OP_SorterCompare: {
 };
 
 /* Opcode: SorterData P1 P2 * * *
+** Synopsis: r[P2]=data
 **
 ** Write into register P2 the current sorter data for sorter cursor P1.
 */
@@ -4227,6 +4280,7 @@ case OP_SorterData: {
 }
 
 /* Opcode: RowData P1 P2 * * *
+** Synopsis: r[P2]=data
 **
 ** Write into register P2 the complete row data for cursor P1.
 ** There is no interpretation of the data.  
@@ -4237,6 +4291,7 @@ case OP_SorterData: {
 ** of a real table, not a pseudo-table.
 */
 /* Opcode: RowKey P1 P2 * * *
+** Synopsis: r[P2]=key
 **
 ** Write into register P2 the complete row key for cursor P1.
 ** There is no interpretation of the data.  
@@ -4309,6 +4364,7 @@ case OP_RowData: {
 }
 
 /* Opcode: Rowid P1 P2 * * *
+** Synopsis: r[P2]=rowid
 **
 ** Store in register P2 an integer which is the key of the table entry that
 ** P1 is currently point to.
@@ -4466,7 +4522,7 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
-/* Opcode: Next P1 P2 * P4 P5
+/* Opcode: Next P1 P2 * * P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
@@ -4536,6 +4592,7 @@ case OP_Next: {        /* jump */
 }
 
 /* Opcode: IdxInsert P1 P2 P3 * P5
+** Synopsis: key=r[P2]
 **
 ** Register P2 holds an SQL index key made using the
 ** MakeRecord instructions.  This opcode writes that key
@@ -4582,6 +4639,7 @@ case OP_IdxInsert: {        /* in2 */
 }
 
 /* Opcode: IdxDelete P1 P2 P3 * *
+** Synopsis: key=r[P2]..
 **
 ** The content of P3 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the 
@@ -4618,6 +4676,7 @@ case OP_IdxDelete: {
 }
 
 /* Opcode: IdxRowid P1 P2 * * *
+** Synopsis: r[P2]=rowid
 **
 ** Write into register P2 an integer which is the last entry in the record at
 ** the end of the index key pointed to by cursor P1.  This integer should be
@@ -4653,6 +4712,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
 }
 
 /* Opcode: IdxGE P1 P2 P3 P4 P5
+** Synopsis: key=r[P3] N=P4
 **
 ** The P4 register values beginning with P3 form an unpacked index 
 ** key that omits the ROWID.  Compare this key value against the index 
@@ -4667,6 +4727,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
 ** the result is false whereas it would be true with IdxGT.
 */
 /* Opcode: IdxLT P1 P2 P3 P4 P5
+** Synopsis: key=r[P3] N=P4
 **
 ** The P4 register values beginning with P3 form an unpacked index 
 ** key that omits the ROWID.  Compare this key value against the index 
@@ -4819,6 +4880,7 @@ case OP_Clear: {
 }
 
 /* Opcode: CreateTable P1 P2 * * *
+** Synopsis: r[P2]=root iDb=P1
 **
 ** Allocate a new table in the main database file if P1==0 or in the
 ** auxiliary database file if P1==1 or in an attached database if
@@ -4832,6 +4894,7 @@ case OP_Clear: {
 ** See also: CreateIndex
 */
 /* Opcode: CreateIndex P1 P2 * * *
+** Synopsis: r[P2]=root iDb=P1
 **
 ** Allocate a new index in the main database file if P1==0 or in the
 ** auxiliary database file if P1==1 or in an attached database if
@@ -5033,6 +5096,7 @@ case OP_IntegrityCk: {
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
 /* Opcode: RowSetAdd P1 P2 * * *
+** Synopsis:  rowset(P1)=r[P2]
 **
 ** Insert the integer value held by register P2 into a boolean index
 ** held in register P1.
@@ -5052,6 +5116,7 @@ case OP_RowSetAdd: {       /* in1, in2 */
 }
 
 /* Opcode: RowSetRead P1 P2 P3 * *
+** Synopsis:  r[P3]=rowset(P1)
 **
 ** Extract the smallest value from boolean index P1 and put that value into
 ** register P3.  Or, if boolean index P1 is initially empty, leave P3
@@ -5075,6 +5140,7 @@ case OP_RowSetRead: {       /* jump, in1, out3 */
 }
 
 /* Opcode: RowSetTest P1 P2 P3 P4
+** Synopsis: if r[P3] in rowset(P1) goto P2
 **
 ** Register P3 is assumed to hold a 64-bit integer value. If register P1
 ** contains a RowSet object and that RowSet object contains
@@ -5278,6 +5344,7 @@ case OP_Param: {           /* out2-prerelease */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 /* Opcode: FkCounter P1 P2 * * *
+** Synopsis: fkctr[P1]+=P2
 **
 ** Increment a "constraint counter" by P2 (P2 may be negative or positive).
 ** If P1 is non-zero, the database constraint counter is incremented 
@@ -5296,6 +5363,7 @@ case OP_FkCounter: {
 }
 
 /* Opcode: FkIfZero P1 P2 * * *
+** Synopsis: if fkctr[P1]==0 goto P2
 **
 ** This opcode tests if a foreign key constraint-counter is currently zero.
 ** If so, jump to instruction P2. Otherwise, fall through to the next 
@@ -5318,6 +5386,7 @@ case OP_FkIfZero: {         /* jump */
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
 /* Opcode: MemMax P1 P2 * * *
+** Synopsis: r[P1]=max(r[P1],r[P2])
 **
 ** P1 is a register in the root frame of this VM (the root frame is
 ** different from the current frame if this instruction is being executed
@@ -5348,6 +5417,7 @@ case OP_MemMax: {        /* in2 */
 #endif /* SQLITE_OMIT_AUTOINCREMENT */
 
 /* Opcode: IfPos P1 P2 * * *
+** Synopsis: if r[P1]>0 goto P2
 **
 ** If the value of register P1 is 1 or greater, jump to P2.
 **
@@ -5364,6 +5434,7 @@ case OP_IfPos: {        /* jump, in1 */
 }
 
 /* Opcode: IfNeg P1 P2 * * *
+** Synopsis: if r[P1]<0 goto P2
 **
 ** If the value of register P1 is less than zero, jump to P2. 
 **
@@ -5380,6 +5451,7 @@ case OP_IfNeg: {        /* jump, in1 */
 }
 
 /* Opcode: IfZero P1 P2 P3 * *
+** Synopsis: r[P1]+=P3, if r[P1]==0 goto P2
 **
 ** The register P1 must contain an integer.  Add literal P3 to the
 ** value in register P1.  If the result is exactly 0, jump to P2. 
@@ -5398,6 +5470,7 @@ case OP_IfZero: {        /* jump, in1 */
 }
 
 /* Opcode: AggStep * P2 P3 P4 P5
+** Synopsis: accum=r[P3] step(r[P2]..) N=P5
 **
 ** Execute the step function for an aggregate.  The
 ** function has P5 arguments.   P4 is a pointer to the FuncDef
@@ -5461,6 +5534,7 @@ case OP_AggStep: {
 }
 
 /* Opcode: AggFinal P1 P2 * P4 *
+** Synopsis: accum=r[P1] N=P2
 **
 ** Execute the finalizer function for an aggregate.  P1 is
 ** the memory location that is the accumulator for the aggregate.
@@ -5688,6 +5762,7 @@ case OP_Expire: {
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /* Opcode: TableLock P1 P2 P3 P4 *
+** Synopsis: iDb=P1 root=P2 write=P3
 **
 ** Obtain a lock on a particular table. This instruction is only used when
 ** the shared-cache feature is enabled. 
@@ -5804,6 +5879,7 @@ case OP_VOpen: {
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VFilter P1 P2 P3 P4 *
+** Synopsis: iPlan=r[P3] zPlan='P4'
 **
 ** P1 is a cursor opened using VOpen.  P2 is an address to jump to if
 ** the filtered result set is empty.
@@ -5878,6 +5954,7 @@ case OP_VFilter: {   /* jump */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VColumn P1 P2 P3 * *
+** Synopsis: r[P3]=vcolumn(P2)
 **
 ** Store the value of the P2-th column of
 ** the row of the virtual-table that the 
@@ -6011,6 +6088,7 @@ case OP_VRename: {
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VUpdate P1 P2 P3 P4 *
+** Synopsis: data=r[P3] N=P2
 **
 ** P4 is a pointer to a virtual table object, an sqlite3_vtab structure.
 ** This opcode invokes the corresponding xUpdate method. P2 values
