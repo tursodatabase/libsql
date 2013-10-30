@@ -1,5 +1,5 @@
-C Formatting\simprovements\sto\sthe\sWHERE-clause\sconstraint\sdisplay\sin\sthe\nwheretrace\sdebugging\slogic.
-D 2013-10-28T22:33:36.558
+C Have\sthe\sshell\s".timer\son"\scommand\scause\sthe\sshell\sto\sreport\swall-clock\stime\sfor\seach\squery\s(as\swell\sas\suser\sand\ssystem\sCPU\stime).
+D 2013-10-30T12:30:05.137
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 572585a96bf282bb9c3d9e08785ec3cae21dc488
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 15127b54cc11defb2cddef6914e1f384501a61c4
-F src/shell.c d5eebdc6034014103de2b9d58e1d3f6f7de0fb50
+F src/shell.c 43647b08b6114823fe2e39b1e14934fa39dd22f3
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1126,7 +1126,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 05a35b09b140fed0898afd36bc641e275545a35f
-R ff7bb3f8071649882bf49e664fcf0a45
-U drh
-Z 9d63edd4f24f764673ec22cc76454487
+P 3a9e3ed94bf617f00c48009b1a6d348a8f23a3cf
+R 057f871d4d3691cf245ceb2d9e03344d
+T *branch * shell-wall-clock
+T *sym-shell-wall-clock *
+T -sym-trunk *
+U dan
+Z 19a81cac8d9e008c0c4c0cd627a27a59

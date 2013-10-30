@@ -100,14 +100,37 @@ static int enableTimer = 0;
 #include <sys/resource.h>
 
 /* Saved resource information for the beginning of an operation */
-static struct rusage sBegin;
+static struct TimerData {
+  struct rusage sRusage;
+  sqlite3_int64 iTime;
+} sBegin;
+
+/*
+** Return the current-time according to the xCurrentTimeInt64() method 
+** of the default VFS (in ms). Use the result of xCurrentTime() to 
+** calculate an equivalent value if the VFS is too old for 
+** xCurrentTimeInt64().
+*/
+static sqlite3_int64 vfsCurrentTime64(void){
+  sqlite3_int64 iRet;
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  if( pVfs->iVersion>=2 ){
+    pVfs->xCurrentTimeInt64(pVfs, &iRet);
+  }else{
+    double t;
+    pVfs->xCurrentTime(pVfs, &t);
+    iRet = (sqlite3_int64)(t * 86400000.0);
+  }
+  return iRet;
+}
 
 /*
 ** Begin timing an operation
 */
 static void beginTimer(void){
   if( enableTimer ){
-    getrusage(RUSAGE_SELF, &sBegin);
+    sBegin.iTime = vfsCurrentTime64();
+    getrusage(RUSAGE_SELF, &sBegin.sRusage);
   }
 }
 
@@ -124,9 +147,11 @@ static void endTimer(void){
   if( enableTimer ){
     struct rusage sEnd;
     getrusage(RUSAGE_SELF, &sEnd);
-    printf("CPU Time: user %f sys %f\n",
-       timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
-       timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
+    printf("CPU Time: user %f sys %f wall %f\n",
+       timeDiff(&sBegin.sRusage.ru_utime, &sEnd.ru_utime),
+       timeDiff(&sBegin.sRusage.ru_stime, &sEnd.ru_stime),
+       (double)(vfsCurrentTime64() - sBegin.iTime) / 1000.0
+    );
   }
 }
 
