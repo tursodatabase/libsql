@@ -144,8 +144,10 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p3 = p3;
   pOp->p4.p = 0;
   pOp->p4type = P4_NOTUSED;
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   pOp->zComment = 0;
+#endif
+#ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
   }
@@ -532,8 +534,10 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p4type = P4_NOTUSED;
       pOut->p4.p = 0;
       pOut->p5 = 0;
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       pOut->zComment = 0;
+#endif
+#ifdef SQLITE_DEBUG
       if( p->db->flags & SQLITE_VdbeAddopTrace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
@@ -663,7 +667,7 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
     Op *pOp;
     for(pOp=aOp; pOp<&aOp[nOp]; pOp++){
       freeP4(db, pOp->p4type, pOp->p4.p);
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       sqlite3DbFree(db, pOp->zComment);
 #endif     
     }
@@ -779,7 +783,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   }
 }
 
-#ifndef NDEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
 /*
 ** Change the comment on the most recently coded instruction.  Or
 ** insert a No-op and add the comment to that new instruction.  This
@@ -854,7 +858,7 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   }
 }
 
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_ENABLE_EXPLAIN_COMMENTS)
 /*
 ** Return an integer value for one of the parameters to the opcode pOp
 ** determined by character c.
@@ -1126,7 +1130,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
   static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-4s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
   zP4 = displayP4(pOp, zPtr, sizeof(zPtr));
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   displayComment(pOp, zP4, zCom, sizeof(zCom));
 #else
   zCom[0] = 0
@@ -1372,7 +1376,7 @@ int sqlite3VdbeList(
       pMem->enc = SQLITE_UTF8;
       pMem++;
   
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       if( sqlite3VdbeMemGrow(pMem, 500, 0) ){
         assert( p->db->mallocFailed );
         return SQLITE_ERROR;
