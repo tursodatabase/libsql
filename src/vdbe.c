@@ -3734,7 +3734,13 @@ case OP_Found: {        /* jump, in3 */
       r.nField = (u16)pOp->p4.i;
       r.aMem = pIn3;
 #ifdef SQLITE_DEBUG
-      { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
+      {
+        int i;
+        for(i=0; i<r.nField; i++){
+          assert( memIsValid(&r.aMem[i]) );
+          if( i ) REGISTER_TRACE(pOp->p3+i, &r.aMem[i]);
+        }
+      }
 #endif
       r.flags = UNPACKED_PREFIX_MATCH;
       pIdxKey = &r;

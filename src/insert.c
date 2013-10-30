@@ -1159,6 +1159,40 @@ static int sqlite3PrimaryKeyRegisters(Parse *pParse, Index *pPk, int regFirst){
   return regPk;
 }
 
+/*
+** Locate the "principle btree" for a table.  This is the table itself for
+** ordinary tables, but for WITHOUT ROWID tables, the principle btree is the
+** PRIMARY KEY index.
+**
+** Inputs are pTab and baseCur.  The *ppPk is written with a pointer to the
+** PRIMARY KEY index for WITHOUT ROWID tables or with NULL for ordinary
+** tables.  The *piPkCur is written with the cursor to use, assuming that the
+** table cursor is baseCur and that index cursors are consecutively numbered
+** thereafter.
+*/
+void sqlite3PrincipleBtree(
+  Table *pTab,        /* The main Table object */
+  int baseCur,        /* VDBE cursor for main table. */
+  Index **ppPk,       /* Write PRIMARY KEY index of WITHOUT ROWID tables here */
+  int *piPkCur        /* Either baseCur or the cursor for *ppPk */
+){
+  int pkCur;
+  Index *pPk;
+  if( !HasRowid(pTab) ){
+    pkCur = baseCur+1;
+    pPk = pTab->pIndex;
+    while( ALWAYS(pPk) && pPk->autoIndex!=2 ){
+      pPk=pPk->pNext;
+      pkCur++;
+    }
+  }else{
+    pkCur = baseCur;
+    pPk = 0;
+  }
+  *ppPk = pPk;
+  *piPkCur = pkCur;
+}
+
 
 /*
 ** Generate code to do constraint checks prior to an INSERT or an UPDATE.
@@ -1263,6 +1297,7 @@ void sqlite3GenerateConstraintChecks(
   int regOldPk;        /* Previous rowid or PRIMARY KEY value */
   int regNewPk = 0;    /* New PRIMARY KEY value */
   int pkCur = 0;       /* Cursor used by the PRIMARY KEY */
+  int nPkField;        /* Number of fields in PRIMARY KEY. 1 for ROWID tables */
 
   regOldPk = (pkChng && isUpdate) ? pkChng : regRowid;
   db = pParse->db;
@@ -1271,20 +1306,15 @@ void sqlite3GenerateConstraintChecks(
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   nCol = pTab->nCol;
   regData = regRowid + 1;
-  VdbeModuleComment((v, "BEGIN: GenerateConstraintChecks(%d,%d,%d)",
-                     baseCur, regRowid, pkChng));
 
   /* For WITHOUT ROWID tables, we'll need to know the Index and the cursor
   ** number for the PRIMARY KEY index */
-  if( !HasRowid(pTab) ){
-    assert( pkChng==0 || isUpdate!=0 );
-    pkCur = baseCur+1;
-    pPk = pTab->pIndex;
-    while( ALWAYS(pPk) && pPk->autoIndex!=2 ){
-      pPk=pPk->pNext;
-      pkCur++;
-    }
-  }
+  sqlite3PrincipleBtree(pTab, baseCur, &pPk, &pkCur);
+  nPkField = pPk ? pPk->nKeyCol : 1;
+
+  /* Record that this module has started */
+  VdbeModuleComment((v, "BEGIN: GenCnstCks(%d,%d,%d,%d,%d)",
+                     baseCur, regRowid, pkChng, regOldPk, pkCur));
 
   /* Test all NOT NULL constraints.
   */
@@ -1366,7 +1396,7 @@ void sqlite3GenerateConstraintChecks(
   **
   ** This block only runs for tables that have a rowid.
   */
-  if( pkChng && pkCur==0 ){
+  if( pkChng && pPk==0 ){
     int addrRowidOk = sqlite3VdbeMakeLabel(v);
 
     onError = pTab->keyConf;
@@ -1492,7 +1522,7 @@ void sqlite3GenerateConstraintChecks(
     }
     
     /* Check to see if the new index entry will be unique */
-    regR = sqlite3GetTempReg(pParse);
+    regR = sqlite3GetTempRange(pParse, nPkField);
     sqlite3VdbeAddOp4Int(v, OP_NoConflict, idxCur, addrUniqueOk,
                          regIdx, pIdx->nKeyCol);
 #if 0
@@ -1510,13 +1540,15 @@ void sqlite3GenerateConstraintChecks(
       ** if the PRIMARY KEY has changed.  If the PRIMARY KEY is unchanged,
       ** then the matching entry is just the original row that is being
       ** modified. */
-      int addrPkConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
-      for(i=0; i<pPk->nKeyCol-1; i++){
-        sqlite3VdbeAddOp3(v, OP_Ne,
-                          regOldPk+pPk->aiColumn[i], addrPkConflict, regIdx+i);
+      if( onError!=OE_Replace ){
+        int addrPkConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
+        for(i=0; i<pPk->nKeyCol-1; i++){
+          sqlite3VdbeAddOp3(v, OP_Ne, regOldPk+pPk->aiColumn[i]+1,
+                            addrPkConflict, regIdx+i);
+        }
+        sqlite3VdbeAddOp3(v, OP_Eq, regOldPk+pPk->aiColumn[i]+1,
+                          addrUniqueOk, regIdx+i);
       }
-      sqlite3VdbeAddOp3(v, OP_Eq,
-                        regOldPk+pPk->aiColumn[i], addrUniqueOk, regIdx+i);
     }else{
       /* For a UNIQUE index on a WITHOUT ROWID table, conflict only if the
       ** PRIMARY KEY value of the match is different from the old PRIMARY KEY
@@ -1524,13 +1556,13 @@ void sqlite3GenerateConstraintChecks(
       int addrConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol*2;
       assert( pIdx->nKeyCol + pPk->nKeyCol == pIdx->nColumn );
       for(i=0; i<pPk->nKeyCol-1; i++){
-        sqlite3VdbeAddOp3(v, OP_Column, idxCur, pIdx->nKeyCol+i, regR);
+        sqlite3VdbeAddOp3(v, OP_Column, idxCur, pIdx->nKeyCol+i, regR+i);
         sqlite3VdbeAddOp3(v, OP_Ne,
-                          regOldPk+pPk->aiColumn[i], addrConflict, regR);
+                          regOldPk+pPk->aiColumn[i], addrConflict, regR+i);
       }
-      sqlite3VdbeAddOp3(v, OP_Column, idxCur, pIdx->nKeyCol+i, regR);
+      sqlite3VdbeAddOp3(v, OP_Column, idxCur, pIdx->nKeyCol+i, regR+i);
       sqlite3VdbeAddOp3(v, OP_Eq,
-                        regOldPk+pPk->aiColumn[i], addrUniqueOk, regR);
+                        regOldPk+pPk->aiColumn[i], addrUniqueOk, regR+i);
     }
     sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn);
 
@@ -1575,9 +1607,13 @@ void sqlite3GenerateConstraintChecks(
         if( db->flags&SQLITE_RecTriggers ){
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
-        sqlite3GenerateRowDelete(
-            pParse, pTab, pTrigger, baseCur, regR, 0, 0, OE_Replace
-        );
+        if( pIdx==pPk ){
+          /*sqlite3VdbeAddOp3(v, OP_IdxDelete, pkCur, regIdx, pIdx->nColumn);*/
+          sqlite3VdbeAddOp1(v, OP_Delete, pkCur);
+        }else{
+          sqlite3GenerateRowDelete(pParse, pTab, pTrigger, baseCur, 
+                                   regR, nPkField, 0, OE_Replace);
+        }
         seenReplace = 1;
         break;
       }
@@ -1589,7 +1625,7 @@ void sqlite3GenerateConstraintChecks(
   if( pbMayReplace ){
     *pbMayReplace = seenReplace;
   }
-  VdbeModuleComment((v, "END: GenerateConstraintChecks()"));
+  VdbeModuleComment((v, "END: GenCnstCks()"));
 }
 
 /*
@@ -1679,7 +1715,11 @@ int sqlite3OpenTableAndIndices(
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
-  sqlite3OpenTable(pParse, baseCur, iDb, pTab, op);
+  if( pkCur<0 ){
+    sqlite3OpenTable(pParse, baseCur, iDb, pTab, op);
+  }else{
+    sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
+  }
   for(i=1, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     int iCur = (pkCur>=0 && pIdx->autoIndex==2) ? pkCur : i+baseCur;

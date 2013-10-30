@@ -1526,7 +1526,7 @@ struct KeyInfo {
   sqlite3 *db;        /* The database connection */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
   u16 nField;         /* Number of key columns in the index */
-  u16 nXField;         /* Number of columns beyond the key columns */
+  u16 nXField;        /* Number of columns beyond the key columns */
   u8 *aSortOrder;     /* Sort order for each column. */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
@@ -2922,6 +2922,7 @@ int sqlite3IsRowid(const char*);
 void sqlite3GenerateRowDelete(Parse*,Table*,Trigger*,int,int,i16,u8,u8);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*);
+void sqlite3PrincipleBtree(Table*,int,Index**,int*);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
                                      int*,int,int,int,int,int*);
 void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);

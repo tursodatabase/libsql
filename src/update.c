@@ -102,6 +102,7 @@ void sqlite3Update(
   Index *pPk;            /* The PRIMARY KEY index for WITHOUT ROWID tables */
   int nIdx;              /* Number of indices that need updating */
   int iCur;              /* VDBE Cursor number of pTab */
+  int pkCur;             /* VDBE Cursor for the pPk index */
   sqlite3 *db;           /* The database structure */
   int *aRegIdx = 0;      /* One register assigned to each index to be updated */
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
@@ -185,7 +186,10 @@ void sqlite3Update(
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     pParse->nTab++;
   }
-  pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
+
+  /* For WITHOUT ROWID tables, we'll need to know the Index and the cursor
+  ** number for the PRIMARY KEY index */
+  sqlite3PrincipleBtree(pTab, iCur, &pPk, &pkCur);
 
   /* Initialize the name-context */
   memset(&sNC, 0, sizeof(sNC));
@@ -531,8 +535,12 @@ void sqlite3Update(
     }
 
     /* Delete the index entries associated with the current record.  */
-    j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
-    sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, aRegIdx);
+    if( pPk ){
+      /*j1 = sqlite3VdbeAddOp3(v, OP_NotFound, pkCur, */
+    }else{
+      j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
+      sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, aRegIdx);
+    }
   
     /* If changing the record number, delete the old record.  */
     if( hasFK || chngRowid ){

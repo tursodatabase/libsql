@@ -1,0 +1,66 @@
+# 2013-10-30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing WITHOUT ROWID tables.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create and query a WITHOUT ROWID table.
+#
+do_execsql_test without_rowid1-1.0 {
+  CREATE TABLE t1(a,b,c,d, PRIMARY KEY(c,a)) WITHOUT ROWID;
+  CREATE INDEX t1bd ON t1(b, d);
+  INSERT INTO t1 VALUES('journal','sherman','ammonia','helena');
+  INSERT INTO t1 VALUES('dynamic','juliet','flipper','command');
+  INSERT INTO t1 VALUES('journal','sherman','gamma','patriot');
+  INSERT INTO t1 VALUES('arctic','sleep','ammonia','helena');
+  SELECT *, '|' FROM t1 ORDER BY c, a;
+} {arctic sleep ammonia helena | journal sherman ammonia helena | dynamic juliet flipper command | journal sherman gamma patriot |}
+
+integrity_check without_rowid1-1.0ic
+
+do_execsql_test without_rowid1-1.1 {
+  SELECT *, '|' FROM t1 ORDER BY +c, a;
+} {arctic sleep ammonia helena | journal sherman ammonia helena | dynamic juliet flipper command | journal sherman gamma patriot |}
+
+do_execsql_test without_rowid1-1.2 {
+  SELECT *, '|' FROM t1 ORDER BY c DESC, a DESC;
+} {journal sherman gamma patriot | dynamic juliet flipper command | journal sherman ammonia helena | arctic sleep ammonia helena |}
+
+do_execsql_test without_rowid1-1.11 {
+  SELECT *, '|' FROM t1 ORDER BY b, d;
+} {dynamic juliet flipper command | journal sherman ammonia helena | journal sherman gamma patriot | arctic sleep ammonia helena |}
+
+do_execsql_test without_rowid1-1.12 {
+  SELECT *, '|' FROM t1 ORDER BY +b, d;
+} {dynamic juliet flipper command | journal sherman ammonia helena | journal sherman gamma patriot | arctic sleep ammonia helena |}
+
+if 0 {
+# Trying to insert a duplicate PRIMARY KEY fails.
+#
+do_test without_rowid1-1.21 {
+  catchsql {
+    INSERT INTO t1 VALUES('dynamic','phone','flipper','harvard');
+  }
+} {1 {columns c, a are not unique}}
+
+# REPLACE INTO works, however.
+#
+do_execsql_test without_rowid1-1.22 {
+  REPLACE INTO t1 VALUES('dynamic','phone','flipper','harvard');
+  SELECT *, '|' FROM t1 ORDER BY c, a;
+} {}
+}
+
+finish_test

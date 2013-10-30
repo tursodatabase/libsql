@@ -604,8 +604,11 @@ void sqlite3GenerateRowDelete(
   ** a view (in which case the only effect of the DELETE statement is to
   ** fire the INSTEAD OF triggers).  */ 
   if( pTab->pSelect==0 ){
-    sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, 0);
-    sqlite3VdbeAddOp2(v, OP_Delete, iCur, (count?OPFLAG_NCHANGE:0));
+    Index *pPk;
+    int iMainCur;
+    sqlite3PrincipleBtree(pTab, iCur, &pPk, &iMainCur);
+    sqlite3GenerateRowIndexDelete(pParse, pTab, iMainCur, 0);
+    sqlite3VdbeAddOp2(v, OP_Delete, iMainCur, (count?OPFLAG_NCHANGE:0));
     if( count ){
       sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_TRANSIENT);
     }

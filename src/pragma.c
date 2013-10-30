@@ -1846,8 +1846,10 @@ void sqlite3Pragma(
       for(x=sqliteHashFirst(pTbls); x; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
         Index *pIdx;
-        sqlite3VdbeAddOp2(v, OP_Integer, pTab->tnum, 2+cnt);
-        cnt++;
+        if( HasRowid(pTab) ){
+          sqlite3VdbeAddOp2(v, OP_Integer, pTab->tnum, 2+cnt);
+          cnt++;
+        }
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           sqlite3VdbeAddOp2(v, OP_Integer, pIdx->tnum, 2+cnt);
           cnt++;
@@ -1855,7 +1857,7 @@ void sqlite3Pragma(
       }
 
       /* Make sure sufficient number of registers have been allocated */
-      pParse->nMem = MAX( pParse->nMem, cnt+7 );
+      pParse->nMem = MAX( pParse->nMem, cnt+8 );
 
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
@@ -1873,44 +1875,44 @@ void sqlite3Pragma(
       */
       for(x=sqliteHashFirst(pTbls); x && !isQuick; x=sqliteHashNext(x)){
         Table *pTab = sqliteHashData(x);
-        Index *pIdx;
+        Index *pIdx, *pPk;
         int loopTop;
+        int pkCur;
 
         if( pTab->pIndex==0 ) continue;
+        sqlite3PrincipleBtree(pTab, 1, &pPk, &pkCur);
+        pkCur = (pPk==0) ? -1 : 1;
         addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);  /* Stop if out of errors */
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3ExprCacheClear(pParse);
-        sqlite3OpenTableAndIndices(pParse, pTab, 1, -1, OP_OpenRead);
+        sqlite3OpenTableAndIndices(pParse, pTab, 1, pkCur, OP_OpenRead);
+        sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-          sqlite3VdbeAddOp2(v, OP_Integer, 0, 7+j); /* index entries counter */
+          sqlite3VdbeAddOp2(v, OP_Integer, 0, 8+j); /* index entries counter */
         }
-        pParse->nMem = MAX(pParse->nMem, 7+j);
-        loopTop = sqlite3VdbeAddOp2(v, OP_Rewind, 1, 0) + 1;
+        pParse->nMem = MAX(pParse->nMem, 8+j);
+        sqlite3VdbeAddOp2(v, OP_Rewind, 1, 0);
+        loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
-          int jmp2, jmp3;
+          int jmp2, jmp3, jmp4;
           int r1;
-          static const VdbeOpList idxErr[] = {
-            { OP_AddImm,      1, -1,  0},
-            { OP_String8,     0,  3,  0},    /* 1 */
-            { OP_Rowid,       1,  4,  0},
-            { OP_String8,     0,  5,  0},    /* 3 */
-            { OP_String8,     0,  6,  0},    /* 4 */
-            { OP_Concat,      4,  3,  3},
-            { OP_Concat,      5,  3,  3},
-            { OP_Concat,      6,  3,  3},
-            { OP_ResultRow,   3,  1,  0},
-            { OP_IfPos,       1,  0,  0},    /* 9 */
-            { OP_Halt,        0,  0,  0},
-          };
+          if( pPk==pIdx ) continue;
           r1 = sqlite3GenerateIndexKey(pParse, pIdx, 1, 0, 0, &jmp3);
-          sqlite3VdbeAddOp2(v, OP_AddImm, 7+j, 1);  /* increment entry count */
+          sqlite3VdbeAddOp2(v, OP_AddImm, 8+j, 1);  /* increment entry count */
           jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, j+2, 0, r1, pIdx->nKeyCol+1);
-          addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);
-          sqlite3VdbeChangeP4(v, addr+1, "rowid ", P4_STATIC);
-          sqlite3VdbeChangeP4(v, addr+3, " missing from index ", P4_STATIC);
-          sqlite3VdbeChangeP4(v, addr+4, pIdx->zName, P4_TRANSIENT);
-          sqlite3VdbeJumpHere(v, addr+9);
+          sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
+          sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, "row ", P4_STATIC);
+          sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
+          sqlite3VdbeAddOp4(v, OP_String8, 0, 4, 0, " missing from index ",
+                            P4_STATIC);
+          sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
+          sqlite3VdbeAddOp4(v, OP_String8, 0, 4, 0, pIdx->zName, P4_TRANSIENT);
+          sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
+          sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
+          jmp4 = sqlite3VdbeAddOp1(v, OP_IfPos, 1);
+          sqlite3VdbeAddOp0(v, OP_Halt);
+          sqlite3VdbeJumpHere(v, jmp4);
           sqlite3VdbeJumpHere(v, jmp2);
           sqlite3VdbeResolveLabel(v, jmp3);
         }
@@ -1920,11 +1922,12 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, 
                      "wrong # of entries in index ", P4_STATIC);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
+          if( pPk==pIdx ) continue;
           addr = sqlite3VdbeCurrentAddr(v);
           sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr+2);
           sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
           sqlite3VdbeAddOp2(v, OP_Count, j+2, 3);
-          sqlite3VdbeAddOp3(v, OP_Eq, 7+j, addr+8, 3);
+          sqlite3VdbeAddOp3(v, OP_Eq, 8+j, addr+8, 3);
           sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pIdx->zName, P4_TRANSIENT);
           sqlite3VdbeAddOp3(v, OP_Concat, 3, 2, 7);
