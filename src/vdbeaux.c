@@ -950,12 +950,16 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       int i, j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
       assert( pKeyInfo->aSortOrder!=0 );
-      sqlite3_snprintf(nTemp, zTemp, "keyinfo(%d", pKeyInfo->nField);
+      sqlite3_snprintf(nTemp, zTemp, "k(%d", pKeyInfo->nField);
       i = sqlite3Strlen30(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
         const char *zColl = pColl ? pColl->zName : "nil";
         int n = sqlite3Strlen30(zColl);
+        if( n==6 && memcmp(zColl,"BINARY",6)==0 ){
+          zColl = "B";
+          n = 1;
+        }
         if( i+n>nTemp-6 ){
           memcpy(&zTemp[i],",...",4);
           break;

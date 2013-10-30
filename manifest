@@ -1,5 +1,5 @@
-C Merge\sEXPLAIN\senhancements\sfrom\strunk.
-D 2013-10-30T02:37:50.150
+C In\sthe\sP4\scolumn\sof\sthe\sEXPLAIN\slisting,\sabbreviate\s"keyinfo"\sas\sjust\s"k"\sand\n"BINARY"\sas\sjust\s"B".
+D 2013-10-30T13:46:01.883
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbe.c 3c98b77343f8a1f4624b86795bf29cfd008b0e4a
 F src/vdbe.h 6bdee35c54d57fd52733d4c542781820009311dc
 F src/vdbeInt.h 42dcff74dbeb2b071e569b53f885fc9c2e4b4cb0
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 4b01ac1c84534cd5a240dffba6e8173aeff628c5
+F src/vdbeaux.c 517c110b99979b2e86c59ccbaa9edc34df3582a0
 F src/vdbeblob.c ef973d8d9f8170015343dd8824f795da675caa87
 F src/vdbemem.c 6087553f2c61c06c8e1ab3959a60e174d6240c98
 F src/vdbesort.c 3937e06b2a0e354500e17dc206ef4c35770a5017
@@ -687,7 +687,7 @@ F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 536a3360470633a177e42fbc19660d146b51daef
 F test/misc1.test 889b40722442380a2f6575f30831b32b2372d70e
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
-F test/misc3.test fe55130a43e444ee75e2156ff75dc96e964b5738
+F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
 F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
@@ -1127,7 +1127,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8bb51da1305d5e35c7b75bbb176c21e04ea2a48a e1a89b56f7173166bb9224e2e360fd67ad3399c3
-R 880887149918aa46e6b88c9f75c81815
+P 2fcac056074f0a23884ab5425003a7ca1d35c2a8
+R fc2ecfc95d81ab6a95e55c9cb9ad5def
 U drh
-Z 77a0862498d22b2e5464d4447bba8799
+Z 47249c1e0f7df9709137d158fda9b808
