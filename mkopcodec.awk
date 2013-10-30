@@ -14,7 +14,7 @@ BEGIN {
   printf "#if !defined(SQLITE_OMIT_EXPLAIN)"
   printf    " || defined(VDBE_PROFILE)"
   print     " || defined(SQLITE_DEBUG)"
-  print "#if defined(SQLITE_DEBUG)"
+  print "#if defined(SQLITE_ENABLE_EXPLAIN_COMMENTS) || defined(SQLITE_DEBUG)"
   print "# define OpHelp(X) \"\\0\" X"
   print "#else"
   print "# define OpHelp(X)"

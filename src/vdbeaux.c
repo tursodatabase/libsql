@@ -144,8 +144,10 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p3 = p3;
   pOp->p4.p = 0;
   pOp->p4type = P4_NOTUSED;
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   pOp->zComment = 0;
+#endif
+#ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
   }
@@ -532,8 +534,10 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p4type = P4_NOTUSED;
       pOut->p4.p = 0;
       pOut->p5 = 0;
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       pOut->zComment = 0;
+#endif
+#ifdef SQLITE_DEBUG
       if( p->db->flags & SQLITE_VdbeAddopTrace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
@@ -663,7 +667,7 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
     Op *pOp;
     for(pOp=aOp; pOp<&aOp[nOp]; pOp++){
       freeP4(db, pOp->p4type, pOp->p4.p);
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       sqlite3DbFree(db, pOp->zComment);
 #endif     
     }
@@ -781,7 +785,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   }
 }
 
-#ifndef NDEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
 /*
 ** Change the comment on the most recently coded instruction.  Or
 ** insert a No-op and add the comment to that new instruction.  This
@@ -856,11 +860,28 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   }
 }
 
-#if defined(SQLITE_DEBUG)
+#if defined(SQLITE_ENABLE_EXPLAIN_COMMENTS)
+/*
+** Return an integer value for one of the parameters to the opcode pOp
+** determined by character c.
+*/
+static int translateP(char c, const Op *pOp){
+  if( c=='1' ) return pOp->p1;
+  if( c=='2' ) return pOp->p2;
+  if( c=='3' ) return pOp->p3;
+  if( c=='4' ) return pOp->p4.i;
+  return pOp->p5;
+}
+
 /*
 ** Compute a string for the "comment" field of a VDBE opcode listing
 */
-static int displayComment(Op *pOp, const char *zP4, char *zTemp, int nTemp){
+static int displayComment(
+  const Op *pOp,     /* The opcode to be commented */
+  const char *zP4,   /* Previously obtained value for P4 */
+  char *zTemp,       /* Write result here */
+  int nTemp          /* Space available in zTemp[] */
+){
   const char *zOpName;
   const char *zSynopsis;
   int nOpName;
@@ -869,28 +890,32 @@ static int displayComment(Op *pOp, const char *zP4, char *zTemp, int nTemp){
   nOpName = sqlite3Strlen30(zOpName);
   if( zOpName[nOpName+1] ){
     int seenCom = 0;
+    char c;
     zSynopsis = zOpName += nOpName + 1;
-    for(ii=jj=0; jj<nTemp-1 && zSynopsis[ii]; ii++){
-      if( zSynopsis[ii]=='P' ){
-        int v;
-        const char *zShow = 0;
-        ii++;
-        switch( zSynopsis[ii] ){
-          case '1': v = pOp->p1;  break;
-          case '2': v = pOp->p2;  break;
-          case '3': v = pOp->p3;  break;
-          case '5': v = pOp->p5;  break;
-          case '4': zShow = zP4;  break;
-          case 'X': zShow = pOp->zComment; seenCom = 1; break;
-        }
-        if( zShow ){
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", zShow);
+    for(ii=jj=0; jj<nTemp-1 && (c = zSynopsis[ii])!=0; ii++){
+      if( c=='P' ){
+        c = zSynopsis[++ii];
+        if( c=='4' ){
+          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", zP4);
+        }else if( c=='X' ){
+          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", pOp->zComment);
+          seenCom = 1;
         }else{
-          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%d", v);
+          int v1 = translateP(c, pOp);
+          int v2;
+          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%d", v1);
+          if( strncmp(zSynopsis+ii+1, "@P", 2)==0 ){
+            ii += 3;
+            jj += sqlite3Strlen30(zTemp+jj);
+            v2 = translateP(zSynopsis[ii], pOp);
+            if( v2>1 ) sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+          }else if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
+            ii += 4;
+          }
         }
         jj += sqlite3Strlen30(zTemp+jj);
       }else{
-        zTemp[jj++] = zSynopsis[ii];
+        zTemp[jj++] = c;
       }
     }
     if( !seenCom && jj<nTemp-5 && pOp->zComment ){
@@ -1107,7 +1132,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
   static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-4s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
   zP4 = displayP4(pOp, zPtr, sizeof(zPtr));
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   displayComment(pOp, zP4, zCom, sizeof(zCom));
 #else
   zCom[0] = 0
@@ -1353,7 +1378,7 @@ int sqlite3VdbeList(
       pMem->enc = SQLITE_UTF8;
       pMem++;
   
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       if( sqlite3VdbeMemGrow(pMem, 500, 0) ){
         assert( p->db->mallocFailed );
         return SQLITE_ERROR;

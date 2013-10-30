@@ -61,7 +61,7 @@ struct VdbeOp {
     SubProgram *pProgram;  /* Used when p4type is P4_SUBPROGRAM */
     int (*xAdvance)(BtCursor *, int *);
   } p4;
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   char *zComment;          /* Comment to improve readability */
 #endif
 #ifdef VDBE_PROFILE
@@ -219,7 +219,7 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 #endif
 
 
-#ifndef NDEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   void sqlite3VdbeComment(Vdbe*, const char*, ...);
 # define VdbeComment(X)  sqlite3VdbeComment X
   void sqlite3VdbeNoopComment(Vdbe*, const char*, ...);

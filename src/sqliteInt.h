@@ -218,6 +218,13 @@
 #endif
 
 /*
+** Enable SQLITE_ENABLE_EXPLAIN_COMMENTS if SQLITE_DEBUG is turned on.
+*/
+#if !defined(SQLITE_ENABLE_EXPLAIN_COMMENTS) && defined(SQLITE_DEBUG)
+# define SQLITE_ENABLE_EXPLAIN_COMMENTS 1
+#endif
+
+/*
 ** The testcase() macro is used to aid in coverage testing.  When 
 ** doing coverage testing, the condition inside the argument to
 ** testcase() must be evaluated both true and false in order to
