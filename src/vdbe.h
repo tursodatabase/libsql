@@ -218,15 +218,27 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo *, char *, int, char **);
 void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 #endif
 
-
+/* Use SQLITE_ENABLE_COMMENTS to enable generation of extra comments on
+** each VDBE opcode.
+**
+** Use the SQLITE_ENABLE_MODULE_COMMENTS macro to see some extra no-op
+** comments in VDBE programs that show key decision points in the code
+** generator.
+*/
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   void sqlite3VdbeComment(Vdbe*, const char*, ...);
 # define VdbeComment(X)  sqlite3VdbeComment X
   void sqlite3VdbeNoopComment(Vdbe*, const char*, ...);
 # define VdbeNoopComment(X)  sqlite3VdbeNoopComment X
+# ifdef SQLITE_ENABLE_MODULE_COMMENTS
+#   define VdbeModuleComment(X)  sqlite3VdbeNoopComment X
+# else
+#   define VdbeModuleComment(X)
+# endif
 #else
 # define VdbeComment(X)
 # define VdbeNoopComment(X)
+# define VdbeModuleComment(X)
 #endif
 
 #endif

@@ -1271,6 +1271,8 @@ void sqlite3GenerateConstraintChecks(
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   nCol = pTab->nCol;
   regData = regRowid + 1;
+  VdbeModuleComment((v, "BEGIN: GenerateConstraintChecks(%d,%d,%d)",
+                     baseCur, regRowid, pkChng));
 
   /* For WITHOUT ROWID tables, we'll need to know the Index and the cursor
   ** number for the PRIMARY KEY index */
@@ -1587,6 +1589,7 @@ void sqlite3GenerateConstraintChecks(
   if( pbMayReplace ){
     *pbMayReplace = seenReplace;
   }
+  VdbeModuleComment((v, "END: GenerateConstraintChecks()"));
 }
 
 /*

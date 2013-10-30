@@ -2935,6 +2935,7 @@ Index *sqlite3CreateIndex(
   pIndex->uniqNotNull = onError!=OE_None;
   pIndex->autoIndex = (u8)(pName==0);
   pIndex->pSchema = db->aDb[iDb].pSchema;
+  pIndex->nKeyCol = pList->nExpr;
   if( pPIWhere ){
     sqlite3ResolveSelfReference(pParse, pTab, NC_PartIdx, pPIWhere, 0);
     pIndex->pPartIdxWhere = pPIWhere;

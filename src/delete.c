@@ -549,6 +549,8 @@ void sqlite3GenerateRowDelete(
 
   /* Vdbe is guaranteed to have been allocated by this stage. */
   assert( v );
+  VdbeModuleComment((v, "BEGIN: GenerateRowDelete(%d,%d,%d)",
+                         iCur, iPk, (int)nPk));
 
   /* Seek cursor iCur to the row to delete. If this row no longer exists 
   ** (this can happen if a trigger program has already deleted it), do
@@ -623,6 +625,7 @@ void sqlite3GenerateRowDelete(
   ** trigger programs were invoked. Or if a trigger program throws a 
   ** RAISE(IGNORE) exception.  */
   sqlite3VdbeResolveLabel(v, iLabel);
+  VdbeModuleComment((v, "END: GenerateRowDelete()"));
 }
 
 /*
