@@ -1035,7 +1035,7 @@ case OP_Variable: {            /* out2-prerelease */
 }
 
 /* Opcode: Move P1 P2 P3 * *
-** Synopsis:  r[P2]=r[P1] N=P3
+** Synopsis:  r[P2@P3]=r[P1@P3]
 **
 ** Move the values in register P1..P1+P3 over into
 ** registers P2..P2+P3.  Registers P1..P1+P3 are
@@ -1078,7 +1078,7 @@ case OP_Move: {
 }
 
 /* Opcode: Copy P1 P2 P3 * *
-** Synopsis: r[P2]=r[P1] N=P3
+** Synopsis: r[P2@P3]=r[P1@P3]
 **
 ** Make a copy of registers P1..P1+P3 into registers P2..P2+P3.
 **
@@ -1400,7 +1400,7 @@ case OP_CollSeq: {
 }
 
 /* Opcode: Function P1 P2 P3 P4 P5
-** Synopsis: r[P3]=func(r[P2]..) N=P5
+** Synopsis: r[P3]=func(r[P2@P5])
 **
 ** Invoke a user function (P4 is a pointer to a Function structure that
 ** defines the function) with P5 arguments taken from register P2 and
@@ -2513,7 +2513,7 @@ op_column_out:
 }
 
 /* Opcode: Affinity P1 P2 * P4 *
-** Synopsis: affinity(r[P1]) N=P2
+** Synopsis: affinity(r[P1@P2])
 **
 ** Apply affinities to a range of P2 registers starting with P1.
 **
@@ -2540,7 +2540,7 @@ case OP_Affinity: {
 }
 
 /* Opcode: MakeRecord P1 P2 P3 P4 *
-** Synopsis: r[P3]=rec(r[P1]..) N=P2
+** Synopsis: r[P3]=mkrec(r[P1@P2])
 **
 ** Convert P2 registers beginning with P1 into the [record format]
 ** use as a data record in a database table or as a key
@@ -3379,7 +3379,7 @@ case OP_SorterOpen: {
 }
 
 /* Opcode: OpenPseudo P1 P2 P3 * P5
-** Synopsis: content in r[P2].. N=P3
+** Synopsis: content in r[P2@P3]
 **
 ** Open a new cursor that points to a fake table that contains a single
 ** row of data.  The content of that one row in the content of memory
@@ -3422,7 +3422,7 @@ case OP_Close: {
 }
 
 /* Opcode: SeekGe P1 P2 P3 P4 *
-** Synopsis: key=r[P3].. N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as the key.  If cursor P1 refers 
@@ -3436,7 +3436,7 @@ case OP_Close: {
 ** See also: Found, NotFound, Distinct, SeekLt, SeekGt, SeekLe
 */
 /* Opcode: SeekGt P1 P2 P3 P4 *
-** Synopsis: key=r[P3].. N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as a key. If cursor P1 refers 
@@ -3450,7 +3450,7 @@ case OP_Close: {
 ** See also: Found, NotFound, Distinct, SeekLt, SeekGe, SeekLe
 */
 /* Opcode: SeekLt P1 P2 P3 P4 * 
-** Synopsis: key=r[P3].. N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as a key. If cursor P1 refers 
@@ -3464,7 +3464,7 @@ case OP_Close: {
 ** See also: Found, NotFound, Distinct, SeekGt, SeekGe, SeekLe
 */
 /* Opcode: SeekLe P1 P2 P3 P4 *
-** Synopsis: key=r[P3].. N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
 ** use the value in register P3 as a key. If cursor P1 refers 
@@ -3658,7 +3658,7 @@ case OP_Seek: {    /* in2 */
   
 
 /* Opcode: Found P1 P2 P3 P4 *
-** Synopsis: key=r[P3].. N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** If P4==0 then register P3 holds a blob constructed by MakeRecord.  If
 ** P4>0 then register P3 is the first of P4 registers that form an unpacked
@@ -3669,7 +3669,7 @@ case OP_Seek: {    /* in2 */
 ** P1 is left pointing at the matching entry.
 */
 /* Opcode: NotFound P1 P2 P3 P4 *
-** Synopsis: key=r[P3] N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** If P4==0 then register P3 holds a blob constructed by MakeRecord.  If
 ** P4>0 then register P3 is the first of P4 registers that form an unpacked
@@ -4639,7 +4639,7 @@ case OP_IdxInsert: {        /* in2 */
 }
 
 /* Opcode: IdxDelete P1 P2 P3 * *
-** Synopsis: key=r[P2]..
+** Synopsis: key=r[P2@P3]
 **
 ** The content of P3 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the 
@@ -4712,7 +4712,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
 }
 
 /* Opcode: IdxGE P1 P2 P3 P4 P5
-** Synopsis: key=r[P3] N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
 ** key that omits the ROWID.  Compare this key value against the index 
@@ -4727,7 +4727,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
 ** the result is false whereas it would be true with IdxGT.
 */
 /* Opcode: IdxLT P1 P2 P3 P4 P5
-** Synopsis: key=r[P3] N=P4
+** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
 ** key that omits the ROWID.  Compare this key value against the index 
@@ -5470,7 +5470,7 @@ case OP_IfZero: {        /* jump, in1 */
 }
 
 /* Opcode: AggStep * P2 P3 P4 P5
-** Synopsis: accum=r[P3] step(r[P2]..) N=P5
+** Synopsis: accum=r[P3] step(r[P2@P5])
 **
 ** Execute the step function for an aggregate.  The
 ** function has P5 arguments.   P4 is a pointer to the FuncDef
@@ -6088,7 +6088,7 @@ case OP_VRename: {
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VUpdate P1 P2 P3 P4 *
-** Synopsis: data=r[P3] N=P2
+** Synopsis: data=r[P3@P2]
 **
 ** P4 is a pointer to a virtual table object, an sqlite3_vtab structure.
 ** This opcode invokes the corresponding xUpdate method. P2 values
