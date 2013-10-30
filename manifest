@@ -1,5 +1,5 @@
-C Add\sthe\s"Esri\sSpatially-Enabled\sDatabase"\sfile\sformat\sto\sthe\smagic.txt\sfile.
-D 2013-10-30T03:25:45.892
+C Enhance\sthe\stimer\sin\sthe\sshell\sto\sshow\swall-clock\stime\sin\saddition\nto\suser\sand\skernel\sCPU\stime.
+D 2013-10-30T12:43:36.721
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 572585a96bf282bb9c3d9e08785ec3cae21dc488
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 15127b54cc11defb2cddef6914e1f384501a61c4
-F src/shell.c d5eebdc6034014103de2b9d58e1d3f6f7de0fb50
+F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e1a89b56f7173166bb9224e2e360fd67ad3399c3
-R 3e3608c916b0a3a0df2a5a0ccce943bf
+P 8530a18f40c8f938da880306d6d9f762c2e4c6a7
+R 4b1797e4a9134f44635edbdfd6abc433
 U drh
-Z c375e6da0a6d197b05695de149565d85
+Z a2af30a7bb5714b498e5d1b1480f9dde

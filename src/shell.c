@@ -86,13 +86,29 @@ extern int pclose(FILE*);
 #define isatty(x) 1
 #endif
 
-/* True if the timer is enabled */
-static int enableTimer = 0;
-
 /* ctype macros that work with signed characters */
 #define IsSpace(X)  isspace((unsigned char)X)
 #define IsDigit(X)  isdigit((unsigned char)X)
 #define ToLower(X)  (char)tolower((unsigned char)X)
+
+
+/* True if the timer is enabled */
+static int enableTimer = 0;
+
+/* Return the current wall-clock time */
+static sqlite3_int64 timeOfDay(void){
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t;
+}
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(_WRS_KERNEL) \
  && !defined(__minux)
@@ -100,7 +116,8 @@ static int enableTimer = 0;
 #include <sys/resource.h>
 
 /* Saved resource information for the beginning of an operation */
-static struct rusage sBegin;
+static struct rusage sBegin;  /* CPU time at start */
+static sqlite3_int64 iBegin;  /* Wall-clock time at start */
 
 /*
 ** Begin timing an operation
@@ -108,6 +125,7 @@ static struct rusage sBegin;
 static void beginTimer(void){
   if( enableTimer ){
     getrusage(RUSAGE_SELF, &sBegin);
+    iBegin = timeOfDay();
   }
 }
 
@@ -123,8 +141,10 @@ static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
 static void endTimer(void){
   if( enableTimer ){
     struct rusage sEnd;
+    sqlite3_int64 iEnd = timeOfDay();
     getrusage(RUSAGE_SELF, &sEnd);
-    printf("CPU Time: user %f sys %f\n",
+    printf("Run Time: real %.3f user %f sys %f\n",
+       (iEnd - iBegin)*0.001,
        timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
        timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
   }
@@ -142,6 +162,7 @@ static void endTimer(void){
 static HANDLE hProcess;
 static FILETIME ftKernelBegin;
 static FILETIME ftUserBegin;
+static sqlite3_int64 ftWallBegin;
 typedef BOOL (WINAPI *GETPROCTIMES)(HANDLE, LPFILETIME, LPFILETIME, LPFILETIME, LPFILETIME);
 static GETPROCTIMES getProcessTimesAddr = NULL;
 
@@ -179,6 +200,7 @@ static void beginTimer(void){
   if( enableTimer && getProcessTimesAddr ){
     FILETIME ftCreation, ftExit;
     getProcessTimesAddr(hProcess, &ftCreation, &ftExit, &ftKernelBegin, &ftUserBegin);
+    ftWallBegin = timeOfDay();
   }
 }
 
@@ -195,8 +217,10 @@ static double timeDiff(FILETIME *pStart, FILETIME *pEnd){
 static void endTimer(void){
   if( enableTimer && getProcessTimesAddr){
     FILETIME ftCreation, ftExit, ftKernelEnd, ftUserEnd;
+    sqlite3_int64 ftWallEnd = timeOfDay();
     getProcessTimesAddr(hProcess, &ftCreation, &ftExit, &ftKernelEnd, &ftUserEnd);
-    printf("CPU Time: user %f sys %f\n",
+    printf("Run Time: real %.3f user %f sys %f\n",
+       (ftWallEnd - ftWallBegin)*0.001,
        timeDiff(&ftUserBegin, &ftUserEnd),
        timeDiff(&ftKernelBegin, &ftKernelEnd));
   }
