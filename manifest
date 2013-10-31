@@ -1,5 +1,5 @@
-C Update\scomments\sin\sthe\sMSVC\sbatch\sbuild\stool.
-D 2013-10-31T06:39:15.748
+C Fix\sa\sproblem\sin\sos_unix.c\scausing\scompilation\sfailure\sif\sSQLITE_DEBUG\sand\sSQLITE_MAX_MMAP_SIZE=0\sare\sboth\sdefined.
+D 2013-10-31T18:49:58.493
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,7 +204,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
+F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
 F src/os_win.c b159b5249d9f70607d961bbdd1dbba789c75812c
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 72389c295bb240ec76746e289403b82e04189903
-R 1054ff58e814a30ba005df284390b721
-U mistachkin
-Z 4b58002663daf257cb37f517515be69c
+P 0414bb73ef83332bec3d06471d431690356dbe13
+R 10dc38d378b39c081f52d9ea4434ffc9
+U dan
+Z f097b706b4798a5e46296317a11afe2d
