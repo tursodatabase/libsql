@@ -6191,7 +6191,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
-          i16 x = sqlite3ColumnOfIndex(pIdx, pOp->p2);
+          int x = pOp->p2;
+          Table *pTab = pIdx->pTable;
+          if( !HasRowid(pTab) ){
+            Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+            x = pPk->aiColumn[x];
+          }
+          x = sqlite3ColumnOfIndex(pIdx, x);
           if( x>=0 ){
             pOp->p2 = x;
             pOp->p1 = pLevel->iIdxCur;

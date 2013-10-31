@@ -4312,6 +4312,7 @@ case OP_RowData: {
   }
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever cast to text */
   UPDATE_MAX_BLOBSIZE(pOut);
+  REGISTER_TRACE(pOp->p2, pOut);
   break;
 }
 

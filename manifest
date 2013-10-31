@@ -1,5 +1,5 @@
-C Improved\scomments\sand\svariable\snames\sin\sinfrastructure\sroutines\sof\sUPDATE,\nDELETE,\sand\sINSERT.
-D 2013-10-31T15:37:49.070
+C Fix\sissues\swith\squering\sfrom\san\sauxiliary\sindex\sthat\smust\srefer\sback\sto\sthe\nPRIMARY\sKEY\sindex\sof\sa\sWITHOUT\sROWID\stable.
+D 2013-10-31T17:38:01.124
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 0e10849258efbdab48b8679de19edd661859dc7d
-F src/expr.c 3180b6332072b263f845592e72e92971af562ab0
+F src/expr.c 179b164b6ecee9cb2d33104d61cb7a8e1c0bf7a2
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 628f81177299660a86e40359b3689b81f517e125
 F src/func.c 2c47b65e6e00e3e9374942f28254faf8adafe398
@@ -279,7 +279,7 @@ F src/update.c 3cabfcbd3e40e9c025fe772cf172ce24b6d53c45
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c da933a7c58470db06e5705d001013d52020ef7e2
+F src/vdbe.c ba7829e8a483a34e16ac7b13d4633c490d512459
 F src/vdbe.h c18a2dd91c838601b867a214e43c5f66d5d001ba
 F src/vdbeInt.h 42dcff74dbeb2b071e569b53f885fc9c2e4b4cb0
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 3dc37f7984f0a57ceeab1c522fd0f94108e4b859
+F src/where.c 4e472e13caef209b35a1c5879aad0bd6015cb388
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1128,7 +1128,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P deacbd21b50cc8c63a1572d14a4bbc7af4052d37
-R 868cea4e5c536af4b28fd795ccabbf1e
+P ad90e762e51384ac7c311f08a641419f03f6d3f0
+R ef34eedb5148ee0261de70fa65806b54
 U drh
-Z 77c0455bfaa16e77ab3ac24edbdbd46c
+Z da87d4852016fc159afe99674b5fb9ae

@@ -2222,7 +2222,11 @@ void sqlite3ExprCodeGetColumnOfTable(
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
   }else{
     int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
-    sqlite3VdbeAddOp3(v, op, iTabCur, iCol, regOut);
+    int x = iCol;
+    if( !HasRowid(pTab) ){
+      x = sqlite3ColumnOfIndex(sqlite3PrimaryKeyIndex(pTab), iCol);
+    }
+    sqlite3VdbeAddOp3(v, op, iTabCur, x, regOut);
   }
   if( iCol>=0 ){
     sqlite3ColumnDefault(v, pTab, iCol, regOut);
