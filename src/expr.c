@@ -2214,9 +2214,9 @@ static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
 void sqlite3ExprCodeGetColumnOfTable(
   Vdbe *v,        /* The VDBE under construction */
   Table *pTab,    /* The table containing the value */
-  int iTabCur,    /* The cursor for this table */
+  int iTabCur,    /* The table cursor.  Or the PK cursor for WITHOUT ROWID */
   int iCol,       /* Index of the column to extract */
-  int regOut      /* Extract the valud into this register */
+  int regOut      /* Extract the value into this register */
 ){
   if( iCol<0 || iCol==pTab->iPKey ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);

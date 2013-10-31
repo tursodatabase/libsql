@@ -1203,7 +1203,7 @@ case OP_ResultRow: {
 }
 
 /* Opcode: Concat P1 P2 P3 * *
-** Synopsis: r[P3]=r[P2]+r[P3]
+** Synopsis: r[P3]=r[P2]+r[P1]
 **
 ** Add the text in register P1 onto the end of the text in
 ** register P2 and store the result in register P3.

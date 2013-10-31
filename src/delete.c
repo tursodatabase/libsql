@@ -407,7 +407,7 @@ void sqlite3DeleteFrom(
 
     /* Delete the row */
     sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                             iPk, nPk, 1, OE_Default);
+                             iPk, 0, 1, OE_Default);
 
     /* End of the delete loop */
     sqlite3VdbeAddOp2(v, OP_Next, iEph, addr+1);
@@ -537,7 +537,9 @@ delete_from_cleanup:
 **       cursor number iIdxCur+i for the i-th index.
 **
 **   3.  The primary key for the row to be deleted must be stored in a
-**       sequence of nPk memory cells starting at iPk. 
+**       sequence of nPk memory cells starting at iPk.  If nPk==0 that means
+**       that a search record formed from OP_MakeRecord is contained in the
+**       single memory location iPk.
 */
 void sqlite3GenerateRowDelete(
   Parse *pParse,     /* Parsing context */
@@ -669,6 +671,7 @@ void sqlite3GenerateRowIndexDelete(
   Index *pPk;        /* PRIMARY KEY index, or NULL for rowid tables */
 
   v = pParse->pVdbe;
+  VdbeModuleComment((v, "BEGIN: GenRowIdxDel(%d,%d)", iDataCur, iIdxCur));
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     assert( iIdxCur+i!=iDataCur || pPk==pIdx );
@@ -679,6 +682,7 @@ void sqlite3GenerateRowIndexDelete(
                       pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
     sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   }
+  VdbeModuleComment((v, "END: GenRowIdxDel()"));
 }
 
 /*

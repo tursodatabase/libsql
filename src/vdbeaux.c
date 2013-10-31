@@ -107,6 +107,17 @@ static int growOpArray(Vdbe *p){
   return (pNew ? SQLITE_OK : SQLITE_NOMEM);
 }
 
+#ifdef SQLITE_DEBUG
+/* This routine is just a convenient place to set a breakpoint that will
+** fire after each opcode is inserted and displayed using
+** "PRAGMA vdbe_addoptrace=on".
+*/
+static void test_addop_breakpoint(void){
+  static int n = 0;
+  n++;
+}
+#endif
+
 /*
 ** Add a new instruction to the list of instructions current in the
 ** VDBE.  Return the address of the new instruction.
@@ -150,6 +161,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
+    test_addop_breakpoint();
   }
 #endif
 #ifdef VDBE_PROFILE
@@ -695,6 +707,7 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
     freeP4(db, pOp->p4type, pOp->p4.p);
     memset(pOp, 0, sizeof(pOp[0]));
     pOp->opcode = OP_Noop;
+    if( addr==p->nOp-1 ) p->nOp--;
   }
 }
 
