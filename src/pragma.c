@@ -1877,30 +1877,31 @@ void sqlite3Pragma(
         Table *pTab = sqliteHashData(x);
         Index *pIdx, *pPk;
         int loopTop;
-        int pkCur;
+        int iDataCur, iIdxCur;
 
         if( pTab->pIndex==0 ) continue;
-        sqlite3PrincipleBtree(pTab, 1, &pPk, &pkCur);
-        pkCur = (pPk==0) ? -1 : 1;
+        pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
         addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);  /* Stop if out of errors */
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3ExprCacheClear(pParse);
-        sqlite3OpenTableAndIndices(pParse, pTab, 1, pkCur, OP_OpenRead);
+        sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenRead,
+                                   1, &iDataCur, &iIdxCur);
         sqlite3VdbeAddOp2(v, OP_Integer, 0, 7);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           sqlite3VdbeAddOp2(v, OP_Integer, 0, 8+j); /* index entries counter */
         }
         pParse->nMem = MAX(pParse->nMem, 8+j);
-        sqlite3VdbeAddOp2(v, OP_Rewind, 1, 0);
+        sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0);
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int jmp2, jmp3, jmp4;
           int r1;
           if( pPk==pIdx ) continue;
-          r1 = sqlite3GenerateIndexKey(pParse, pIdx, 1, 0, 0, &jmp3);
+          r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 0, &jmp3);
           sqlite3VdbeAddOp2(v, OP_AddImm, 8+j, 1);  /* increment entry count */
-          jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, j+2, 0, r1, pIdx->nKeyCol+1);
+          jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, 0, r1,
+                                      pIdx->nKeyCol+1);
           sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, "row ", P4_STATIC);
           sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
@@ -1926,7 +1927,7 @@ void sqlite3Pragma(
           addr = sqlite3VdbeCurrentAddr(v);
           sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr+2);
           sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
-          sqlite3VdbeAddOp2(v, OP_Count, j+2, 3);
+          sqlite3VdbeAddOp2(v, OP_Count, iIdxCur+j, 3);
           sqlite3VdbeAddOp3(v, OP_Eq, 8+j, addr+8, 3);
           sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pIdx->zName, P4_TRANSIENT);

@@ -2919,14 +2919,14 @@ int sqlite3ExprCanBeNull(const Expr*);
 void sqlite3ExprCodeIsNullJump(Vdbe*, const Expr*, int, int);
 int sqlite3ExprNeedsNoAffinityChange(const Expr*, char);
 int sqlite3IsRowid(const char*);
-void sqlite3GenerateRowDelete(Parse*,Table*,Trigger*,int,int,i16,u8,u8);
-void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
+void sqlite3GenerateRowDelete(Parse*,Table*,Trigger*,int,int,int,i16,u8,u8);
+void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*);
 void sqlite3PrincipleBtree(Table*,int,Index**,int*);
-void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
+void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,int,
                                      int*,int,int,int,int,int*);
-void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
-int sqlite3OpenTableAndIndices(Parse*, Table*, int, int, int);
+void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
+int sqlite3OpenTableAndIndices(Parse*, Table*, int, int, int*, int*);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 void sqlite3MultiWrite(Parse*);
 void sqlite3MayAbort(Parse*);

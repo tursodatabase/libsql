@@ -1119,7 +1119,7 @@ case OP_Copy: {
 ** during the lifetime of the copy.  Use OP_Copy to make a complete
 ** copy.
 */
-case OP_SCopy: {            /* in1, out2 */
+case OP_SCopy: {            /* out2 */
   pIn1 = &aMem[pOp->p1];
   pOut = &aMem[pOp->p2];
   assert( pOut!=pIn1 );
@@ -1127,7 +1127,6 @@ case OP_SCopy: {            /* in1, out2 */
 #ifdef SQLITE_DEBUG
   if( pOut->pScopyFrom==0 ) pOut->pScopyFrom = pIn1;
 #endif
-  REGISTER_TRACE(pOp->p2, pOut);
   break;
 }
 

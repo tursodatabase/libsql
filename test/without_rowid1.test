@@ -46,7 +46,6 @@ do_execsql_test without_rowid1-1.12 {
   SELECT *, '|' FROM t1 ORDER BY +b, d;
 } {dynamic juliet flipper command | journal sherman ammonia helena | journal sherman gamma patriot | arctic sleep ammonia helena |}
 
-if 0 {
 # Trying to insert a duplicate PRIMARY KEY fails.
 #
 do_test without_rowid1-1.21 {
@@ -61,6 +60,5 @@ do_execsql_test without_rowid1-1.22 {
   REPLACE INTO t1 VALUES('dynamic','phone','flipper','harvard');
   SELECT *, '|' FROM t1 ORDER BY c, a;
 } {}
-}
 
 finish_test

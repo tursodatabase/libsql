@@ -109,7 +109,6 @@ void sqlite3Update(
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
   int chngRowid;         /* True if the record number is being changed */
-  int chngPk;            /* The PRIMARY KEY of a WITHOUT ROWID table changed */
   Expr *pRowidExpr = 0;  /* Expression defining the new record number */
   int openAll = 0;       /* True if all indices need to be opened */
   AuthContext sContext;  /* The authorization context */
@@ -202,7 +201,7 @@ void sqlite3Update(
   ** column to be updated, make sure we have authorization to change
   ** that column.
   */
-  chngPk = chngRowid = 0;
+  chngRowid = 0;
   for(i=0; i<pChanges->nExpr; i++){
     if( sqlite3ResolveExprNames(&sNC, pChanges->a[i].pExpr) ){
       goto update_cleanup;
@@ -212,8 +211,6 @@ void sqlite3Update(
         if( j==pTab->iPKey ){
           chngRowid = 1;
           pRowidExpr = pChanges->a[i].pExpr;
-        }else if( pPk && (pTab->aCol[j].colFlags & COLFLAG_PRIMKEY)!=0 ){
-          chngPk = 1;
         }
         aXRef[j] = i;
         break;
@@ -526,7 +523,7 @@ void sqlite3Update(
     int j1;                       /* Address of jump instruction */
 
     /* Do constraint checks. */
-    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, regNewRowid,
+    sqlite3GenerateConstraintChecks(pParse, pTab, iCur, iCur+1, regNewRowid,
         aRegIdx, (chngRowid?regOldRowid:0), 1, onError, addr, 0);
 
     /* Do FK constraint checks. */
@@ -536,10 +533,10 @@ void sqlite3Update(
 
     /* Delete the index entries associated with the current record.  */
     if( pPk ){
-      /*j1 = sqlite3VdbeAddOp3(v, OP_NotFound, pkCur, */
+      j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, pkCur, 0, regOldRowid, 1);
     }else{
       j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
-      sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, aRegIdx);
+      sqlite3GenerateRowIndexDelete(pParse, pTab, pkCur, iCur+1, aRegIdx);
     }
   
     /* If changing the record number, delete the old record.  */
@@ -553,7 +550,8 @@ void sqlite3Update(
     }
   
     /* Insert the new index entries and the new record. */
-    sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx, 1, 0, 0);
+    sqlite3CompleteInsertion(pParse, pTab, iCur, iCur+1,
+                             regNewRowid, aRegIdx, 1, 0, 0);
 
     /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to
     ** handle rows (possibly in other tables) that refer via a foreign key
