@@ -1,5 +1,5 @@
-C Moving\sUPDATE\stowards\sthe\siDataCur/iIdxCur\srepresentation.\s\sStill\snot\sworking\nfor\sWITHOUT\sROWID,\sthough.
-D 2013-10-31T12:13:37.732
+C Improved\scomments\sand\svariable\snames\sin\sinfrastructure\sroutines\sof\sUPDATE,\nDELETE,\sand\sINSERT.
+D 2013-10-31T15:37:49.070
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c d50cc704030139e19f2e9d5ac7a49db04dfe08a9
+F src/delete.c 0e10849258efbdab48b8679de19edd661859dc7d
 F src/expr.c 3180b6332072b263f845592e72e92971af562ab0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 628f81177299660a86e40359b3689b81f517e125
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c e8f0691953194cf1df85b463fed8b75b0dedf7d9
+F src/insert.c 64eb6bf8eda1bbe003cc38394d721b4810f65182
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -212,7 +212,7 @@ F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 74dec25a3f0d3e5da796345a0ca817cb445e9d2a
+F src/pragma.c ff1a98998d2038bc9c770326986b7c4728de4973
 F src/prepare.c f47ba2bba7ac5650881ab6c41f6d33a6de1a8d52
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -1076,7 +1076,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
-F test/without_rowid1.test fb3ceaa20bda4e0338f594696a49014c3cbeb30c
+F test/without_rowid1.test e4f023e49a57c90f6d25afd4b3e8b0305ad06e44
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 38623a30fd58288fda5cc7f7df2682aaab75c9d5 x
@@ -1128,7 +1128,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1adfca6019847d37dee4a297669f29d5ca184066
-R 925135441c339dd20ca1becb38d6fbf2
+P deacbd21b50cc8c63a1572d14a4bbc7af4052d37
+R 868cea4e5c536af4b28fd795ccabbf1e
 U drh
-Z 72a84fe0a8232f3d99ba9db66435b958
+Z 77c0455bfaa16e77ab3ac24edbdbd46c

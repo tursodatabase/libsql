@@ -59,6 +59,6 @@ do_test without_rowid1-1.21 {
 do_execsql_test without_rowid1-1.22 {
   REPLACE INTO t1 VALUES('dynamic','phone','flipper','harvard');
   SELECT *, '|' FROM t1 ORDER BY c, a;
-} {}
+} {arctic sleep ammonia helena | journal sherman ammonia helena | dynamic phone flipper harvard | journal sherman gamma patriot |}
 
 finish_test

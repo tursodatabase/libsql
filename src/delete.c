@@ -523,24 +523,21 @@ delete_from_cleanup:
 
 /*
 ** This routine generates VDBE code that causes a single row of a
-** single table to be deleted.
+** single table to be deleted.  Both the original table entry and
+** all indices are removed.
 **
-** The VDBE must be in a particular state when this routine is called.
-** These are the requirements:
+** Preconditions:
 **
-**   1.  iDataCur is an open cursor on the btree that is the primary data
-**       repository for the table.  This will be either the table itself,
+**   1.  iDataCur is an open cursor on the btree that is the canonical data
+**       store for the table.  (This will be either the table itself,
 **       in the case of a rowid table, or the PRIMARY KEY index in the case
-**       of a WITHOUT ROWID table.
+**       of a WITHOUT ROWID table.)
 **
 **   2.  Read/write cursors for all indices of pTab must be open as
 **       cursor number iIdxCur+i for the i-th index.
 **
 **   3.  The primary key for the row to be deleted must be stored in a
 **       sequence of nPk memory cells starting at iPk. 
-**
-** This routine generates code to remove both the table record and all 
-** index entries that point to that record.
 */
 void sqlite3GenerateRowDelete(
   Parse *pParse,     /* Parsing context */
@@ -560,7 +557,7 @@ void sqlite3GenerateRowDelete(
 
   /* Vdbe is guaranteed to have been allocated by this stage. */
   assert( v );
-  VdbeModuleComment((v, "BEGIN: GenerateRowDelete(%d,%d,%d,%d)",
+  VdbeModuleComment((v, "BEGIN: GenRowDel(%d,%d,%d,%d)",
                          iDataCur, iIdxCur, iPk, (int)nPk));
 
   /* Seek cursor iCur to the row to delete. If this row no longer exists 
@@ -636,26 +633,26 @@ void sqlite3GenerateRowDelete(
   ** trigger programs were invoked. Or if a trigger program throws a 
   ** RAISE(IGNORE) exception.  */
   sqlite3VdbeResolveLabel(v, iLabel);
-  VdbeModuleComment((v, "END: GenerateRowDelete()"));
+  VdbeModuleComment((v, "END: GenRowDel()"));
 }
 
 /*
 ** This routine generates VDBE code that causes the deletion of all
-** index entries associated with a single row of a single table.
+** index entries associated with a single row of a single table, pTab
 **
-** The VDBE must be in a particular state when this routine is called.
-** These are the requirements:
+** Preconditions:
 **
-**   1.  A read/write cursor "iDataCur" pointing to canonical storage
-**       tree for the table pTab, which will be either the table itself
+**   1.  A read/write cursor "iDataCur" must be open on the canonical storage
+**       btree for the table pTab.  (This will be either the table itself
 **       for rowid tables or to the primary key index for WITHOUT ROWID
-**       tables.
+**       tables.)
 **
 **   2.  Read/write cursors for all indices of pTab must be open as
-**       cursor number iIdxCur+i for the i-th index.
+**       cursor number iIdxCur+i for the i-th index.  (The pTab->pIndex
+**       index is the 0-th index.)
 **
-**   3.  The "iDataCur" cursor must be pointing to the row that is to be
-**       deleted.
+**   3.  The "iDataCur" cursor must be already be positioned on the row
+**       that is to be deleted.
 */
 void sqlite3GenerateRowIndexDelete(
   Parse *pParse,     /* Parsing and code generating context */
@@ -664,15 +661,17 @@ void sqlite3GenerateRowIndexDelete(
   int iIdxCur,       /* First index cursor */
   int *aRegIdx       /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
 ){
-  int i;
-  Index *pIdx;
-  int r1;
-  int iPartIdxLabel;
-  Vdbe *v = pParse->pVdbe;
-  Index *pPk;
+  int i;             /* Index loop counter */
+  int r1;            /* Register holding an index key */
+  int iPartIdxLabel; /* Jump destination for skipping partial index entries */
+  Index *pIdx;       /* Current index */
+  Vdbe *v;           /* The prepared statement under construction */
+  Index *pPk;        /* PRIMARY KEY index, or NULL for rowid tables */
 
+  v = pParse->pVdbe;
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
+    assert( iIdxCur+i!=iDataCur || pPk==pIdx );
     if( aRegIdx!=0 && aRegIdx[i]==0 ) continue;
     if( pIdx==pPk ) continue;
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1, &iPartIdxLabel);

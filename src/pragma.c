@@ -1917,7 +1917,7 @@ void sqlite3Pragma(
           sqlite3VdbeJumpHere(v, jmp2);
           sqlite3VdbeResolveLabel(v, jmp3);
         }
-        sqlite3VdbeAddOp2(v, OP_Next, 1, loopTop);
+        sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop);
         sqlite3VdbeJumpHere(v, loopTop-1);
 #ifndef SQLITE_OMIT_BTREECOUNT
         sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, 
