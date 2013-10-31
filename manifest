@@ -1,5 +1,5 @@
-C Enhance\sthe\stimer\sin\sthe\sshell\sto\sshow\swall-clock\stime\sin\saddition\nto\suser\sand\skernel\sCPU\stime.
-D 2013-10-30T12:43:36.721
+C Fix\sharmless\scompiler\swarnings.
+D 2013-10-31T06:11:10.437
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c 00af0fe1947305222b8ed488a69c76c5a2b632e2
+F src/test6.c 4f958b71334695e65746d357dac77709732b28db
 F src/test7.c 72b732baa5642f795655ba1126ea032af46ecfd2
 F src/test8.c c7aab1d9fbbf54fc33d43b73aa24aa55f9eaf534
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8530a18f40c8f938da880306d6d9f762c2e4c6a7
-R 4b1797e4a9134f44635edbdfd6abc433
-U drh
-Z a2af30a7bb5714b498e5d1b1480f9dde
+P 908e2c2124baece578e7a665f42b6b483b8f1d64
+R 23ef143be49c0a216ae28708adaf378d
+U mistachkin
+Z 3bcc2024c33f836e2f13b6cc80fcc85e

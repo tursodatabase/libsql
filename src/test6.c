@@ -621,7 +621,7 @@ static int cfOpen(
     pWrapper->flags = flags;
   }
   if( rc==SQLITE_OK ){
-    pWrapper->nData = (4096 + pWrapper->iSize);
+    pWrapper->nData = (int)(4096 + pWrapper->iSize);
     pWrapper->zData = crash_malloc(pWrapper->nData);
     if( pWrapper->zData ){
       /* os_unix.c contains an assert() that fails if the caller attempts
@@ -637,7 +637,7 @@ static int cfOpen(
 
       memset(pWrapper->zData, 0, pWrapper->nData);
       for(iOff=0; iOff<pWrapper->iSize; iOff += 512){
-        int nRead = pWrapper->iSize - (int)iOff;
+        int nRead = (int)(pWrapper->iSize - iOff);
         if( nRead>512 ) nRead = 512;
         if( isDb && iOff==PENDING_BYTE ) continue;
         rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], nRead, iOff);
