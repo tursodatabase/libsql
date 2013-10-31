@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-10-31T06:11:10.437
+C Enable\ssome\smore\stests\son\sWindows.
+D 2013-10-31T06:13:57.969
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -241,7 +241,7 @@ F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
-F src/test_config.c 3d148e338b575bd937f7746824f36a9c6682d238
+F src/test_config.c e825cd6a4a8f498be246fc5934fe5fd702b9441f
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -411,7 +411,7 @@ F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 05dd3aa9dbb751a22d5cdaf22a9c49b6667aa219
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
-F test/crash8.test 38767cb504bbe491de6be4a7006b154973a2309f
+F test/crash8.test 61442a9964ab6b124fc5254e4258b45747842e6f
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 908e2c2124baece578e7a665f42b6b483b8f1d64
-R 23ef143be49c0a216ae28708adaf378d
+P 1a0a88657f54874703fc05f828ce29ad115d9f28
+R 3ecce2c5ce21312a1dbb296432d69334
 U mistachkin
-Z 3bcc2024c33f836e2f13b6cc80fcc85e
+Z 202c1504aa0d2b90c6b0d6f25f8395e7

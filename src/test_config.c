@@ -252,12 +252,7 @@ static void set_options(Tcl_Interp *interp){
 #endif
 
   Tcl_SetVar2(interp, "sqlite_options", "conflict", "1", TCL_GLOBAL_ONLY);
-
-#if SQLITE_OS_UNIX
   Tcl_SetVar2(interp, "sqlite_options", "crashtest", "1", TCL_GLOBAL_ONLY);
-#else
-  Tcl_SetVar2(interp, "sqlite_options", "crashtest", "0", TCL_GLOBAL_ONLY);
-#endif
 
 #ifdef SQLITE_OMIT_DATETIME_FUNCS
   Tcl_SetVar2(interp, "sqlite_options", "datetime", "0", TCL_GLOBAL_ONLY);
