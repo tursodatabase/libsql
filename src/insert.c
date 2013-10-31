@@ -1123,41 +1123,6 @@ insert_cleanup:
 #endif
 
 /*
-** Locate the "principle btree" for a table.  This is the table itself for
-** ordinary tables, but for WITHOUT ROWID tables, the principle btree is the
-** PRIMARY KEY index.
-**
-** Inputs are pTab and baseCur.  The *ppPk is written with a pointer to the
-** PRIMARY KEY index for WITHOUT ROWID tables or with NULL for ordinary
-** tables.  The *piPkCur is written with the cursor to use, assuming that the
-** table cursor is baseCur and that index cursors are consecutively numbered
-** thereafter.
-*/
-void sqlite3PrincipleBtree(
-  Table *pTab,        /* The main Table object */
-  int baseCur,        /* VDBE cursor for main table. */
-  Index **ppPk,       /* Write PRIMARY KEY index of WITHOUT ROWID tables here */
-  int *piPkCur        /* Either baseCur or the cursor for *ppPk */
-){
-  int pkCur;
-  Index *pPk;
-  if( !HasRowid(pTab) ){
-    pkCur = baseCur+1;
-    pPk = pTab->pIndex;
-    while( ALWAYS(pPk) && pPk->autoIndex!=2 ){
-      pPk=pPk->pNext;
-      pkCur++;
-    }
-  }else{
-    pkCur = baseCur;
-    pPk = 0;
-  }
-  *ppPk = pPk;
-  *piPkCur = pkCur;
-}
-
-
-/*
 ** Generate code to do constraint checks prior to an INSERT or an UPDATE.
 **
 ** The input is a range of consecutive registers as follows:
