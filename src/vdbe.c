@@ -3358,8 +3358,7 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: SorterOpen P1 P2 * P4 *
-** Synopsis: nColumn=P2
+/* Opcode: SorterOpen P1 * * P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large
@@ -4194,22 +4193,32 @@ case OP_ResetCount: {
   break;
 }
 
-/* Opcode: SorterCompare P1 P2 P3
-** Synopsis:  if key(P1)!=r[P3] goto P2
+/* Opcode: SorterCompare P1 P2 P3 P4
+** Synopsis:  if key(P1)!=rtrim(r[P3],P4) goto P2
 **
-** P1 is a sorter cursor. This instruction compares the record blob in 
-** register P3 with the entry that the sorter cursor currently points to.
-** If, excluding the rowid fields at the end, the two records are a match,
-** fall through to the next instruction. Otherwise, jump to instruction P2.
+** P1 is a sorter cursor. This instruction compares a prefix of the
+** the record blob in register P3 against a prefix of the entry that 
+** the sorter cursor currently points to.  The final P4 fields of both
+** the P3 and sorter record are ignored.
+**
+** If either P3 or the sorter contains a NULL in one of their significant
+** fields (not counting the P4 fields at the end which are ignored) then
+** the comparison is assumed to be equal.
+**
+** Fall through to next instruction if the two records compare equal to
+** each other.  Jump to P2 if they are different.
 */
 case OP_SorterCompare: {
   VdbeCursor *pC;
   int res;
+  int nIgnore;
 
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
+  assert( pOp->p4type==P4_INT32 );
   pIn3 = &aMem[pOp->p3];
-  rc = sqlite3VdbeSorterCompare(pC, pIn3, &res);
+  nIgnore = pOp->p4.i;
+  rc = sqlite3VdbeSorterCompare(pC, pIn3, nIgnore, &res);
   if( res ){
     pc = pOp->p2-1;
   }

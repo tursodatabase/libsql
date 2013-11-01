@@ -1038,7 +1038,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
       if( pRec ){
         pRec->pKeyInfo = sqlite3IndexKeyinfo(p->pParse, pIdx);
         if( pRec->pKeyInfo ){
-          assert( pRec->pKeyInfo->nField+1==nCol );
+          assert( pRec->pKeyInfo->nField+pRec->pKeyInfo->nXField==nCol );
           pRec->pKeyInfo->enc = ENC(db);
           pRec->flags = UNPACKED_PREFIX_MATCH;
           pRec->aMem = (Mem *)&pRec[1];
@@ -1362,7 +1362,7 @@ int sqlite3Stat4ProbeSetValue(
 void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
   if( pRec ){
     int i;
-    int nCol = pRec->pKeyInfo->nField+1;
+    int nCol = pRec->pKeyInfo->nField+pRec->pKeyInfo->nXField;
     Mem *aMem = pRec->aMem;
     sqlite3 *db = aMem[0].db;
     for(i=0; i<nCol; i++){

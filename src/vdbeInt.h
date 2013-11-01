@@ -447,7 +447,7 @@ int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);
 int sqlite3VdbeSorterRewind(sqlite3 *, const VdbeCursor *, int *);
 int sqlite3VdbeSorterWrite(sqlite3 *, const VdbeCursor *, Mem *);
-int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int *);
+int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
   void sqlite3VdbeEnter(Vdbe*);

@@ -2644,11 +2644,13 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0);
-  if( pIndex->onError!=OE_None ){
+  assert( pKey!=0 || db->mallocFailed || pParse->nErr );
+  if( pIndex->onError!=OE_None && pKey!=0 ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
     sqlite3VdbeAddOp2(v, OP_Goto, 0, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);
-    sqlite3VdbeAddOp3(v, OP_SorterCompare, iSorter, j2, regRecord);
+    sqlite3VdbeAddOp4Int(v, OP_SorterCompare, iSorter, j2, regRecord,
+                         pKey->nField - pIndex->nKeyCol);
     sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_UNIQUE,
         OE_Abort, "indexed columns are not unique", P4_STATIC
     );
@@ -4072,7 +4074,11 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
   int nKey = pIdx->nKeyCol;
   KeyInfo *pKey;
 
-  pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
+  if( pIdx->uniqNotNull ){
+    pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
+  }else{
+    pKey = sqlite3KeyInfoAlloc(pParse->db, nCol, 0);
+  }
   if( pKey ){
     for(i=0; i<nCol; i++){
       char *zColl = pIdx->azColl[i];
