@@ -1,5 +1,5 @@
-C Fix\san\sinvalid\scast\soperation\sin\sthe\sWITHOUT\sROWID\sparsing\slogic.
-D 2013-11-01T17:59:53.963
+C Additional\sUPDATE\stest\scases\sfor\sWITHOUT\sROWID.
+D 2013-11-01T18:14:36.700
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1076,7 +1076,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
-F test/without_rowid1.test ad5764bbe2784a91f7106143e7d1bd8ccfb61ffd
+F test/without_rowid1.test c25455a420acf6239d3c4ae5f9107b62e063a204
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
@@ -1128,7 +1128,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P dd5d57b9a1b25fb6c9e20024e519b58630cf1fd0
-R 0cbbddc11fb0e729092561a69d5db935
+P 845153be36d5ca0ca9d930c56418fb080d906740
+R 50d551e231f8c85d439664293cc57a4c
 U drh
-Z 4ca075d22baa51b32a86f07bedd51249
+Z fe12559e2a03f326e17266405046f3df

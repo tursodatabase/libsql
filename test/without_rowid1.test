@@ -71,5 +71,25 @@ do_execsql_test without_rowid1-1.31 {
   UPDATE t1 SET d=3.1415926 WHERE a='journal';
   SELECT *, '|' FROM t1 ORDER BY c, a;
 } {arctic sleep ammonia helena | journal sherman ammonia 3.1415926 | dynamic phone flipper harvard | journal sherman gamma 3.1415926 |}
+do_execsql_test without_rowid1-1.32 {
+  SELECT *, '|' FROM t1 ORDER BY b, d;
+} {dynamic phone flipper harvard | journal sherman ammonia 3.1415926 | journal sherman gamma 3.1415926 | arctic sleep ammonia helena |}
+
+do_execsql_test without_rowid1-1.35 {
+  UPDATE t1 SET a=1250 WHERE b='phone';
+  SELECT *, '|' FROM t1 ORDER BY c, a;
+} {arctic sleep ammonia helena | journal sherman ammonia 3.1415926 | 1250 phone flipper harvard | journal sherman gamma 3.1415926 |}
+integrity_check without_rowid1-1.36
+
+do_execsql_test without_rowid1-1.37 {
+  SELECT *, '|' FROM t1 ORDER BY b, d;
+} {1250 phone flipper harvard | journal sherman ammonia 3.1415926 | journal sherman gamma 3.1415926 | arctic sleep ammonia helena |}
+
+do_execsql_test without_rowid1-1.40 {
+  VACUUM;
+  SELECT *, '|' FROM t1 ORDER BY b, d;
+} {1250 phone flipper harvard | journal sherman ammonia 3.1415926 | journal sherman gamma 3.1415926 | arctic sleep ammonia helena |}
+integrity_check without_rowid1-1.41
+
 
 finish_test
