@@ -61,4 +61,15 @@ do_execsql_test without_rowid1-1.22 {
   SELECT *, '|' FROM t1 ORDER BY c, a;
 } {arctic sleep ammonia helena | journal sherman ammonia helena | dynamic phone flipper harvard | journal sherman gamma patriot |}
 
+do_execsql_test without_rowid1-1.23 {
+  SELECT *, '|' FROM t1 ORDER BY b, d;
+} {dynamic phone flipper harvard | journal sherman ammonia helena | journal sherman gamma patriot | arctic sleep ammonia helena |}
+
+# UPDATE statements.
+#
+do_execsql_test without_rowid1-1.31 {
+  UPDATE t1 SET d=3.1415926 WHERE a='journal';
+  SELECT *, '|' FROM t1 ORDER BY c, a;
+} {arctic sleep ammonia helena | journal sherman ammonia 3.1415926 | dynamic phone flipper harvard | journal sherman gamma 3.1415926 |}
+
 finish_test

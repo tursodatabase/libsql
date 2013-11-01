@@ -2922,8 +2922,8 @@ int sqlite3IsRowid(const char*);
 void sqlite3GenerateRowDelete(Parse*,Table*,Trigger*,int,int,int,i16,u8,u8);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*);
-void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,int,
-                                     int*,int,int,int,int,int*);
+void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
+                                     u8,u8,int,int*);
 void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int, int*, int*);
 void sqlite3BeginWriteOperation(Parse*, int, int);
