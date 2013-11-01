@@ -1524,7 +1524,6 @@ void sqlite3GenerateConstraintChecks(
         ** PRIMARY KEY value of the match is different from the old PRIMARY KEY
         ** value from before the update. */
         int addrConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
-        assert( pIdx->nKeyCol + pPk->nKeyCol == pIdx->nColumn );
         for(i=0; i<pPk->nKeyCol-1; i++){
           sqlite3VdbeAddOp3(v, OP_Ne,
                            regOldData+pPk->aiColumn[i]+1, addrConflict, regR+i);

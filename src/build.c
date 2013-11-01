@@ -1656,8 +1656,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     }
     if( resizeIndexObject(db, pIdx, pIdx->nKeyCol+n) ) return;
     for(i=0, j=pIdx->nKeyCol; i<nPk; i++){
-      if( !hasColumn(pIdx->aiColumn, j, pPk->aiColumn[i]) ){
-        assert( j<pPk->nColumn );
+      if( !hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) ){
         pIdx->aiColumn[j] = pPk->aiColumn[i];
         pIdx->azColl[j] = pPk->azColl[i];
         j++;
@@ -2999,11 +2998,18 @@ Index *sqlite3CreateIndex(
     if( pTab->aCol[j].notNull==0 ) pIndex->uniqNotNull = 0;
   }
   if( pPk ){
-    for(j=0; j<pPk->nKeyCol; j++, i++){
-      pIndex->aiColumn[i] = pPk->aiColumn[j];
-      pIndex->azColl[i] = pPk->azColl[j];
-      pIndex->aSortOrder[i] = pPk->aSortOrder[j];
+    for(j=0; j<pPk->nKeyCol; j++){
+      int x = pPk->aiColumn[j];
+      if( hasColumn(pIndex->aiColumn, pIndex->nKeyCol, x) ){
+        pIndex->nColumn--; 
+      }else{
+        pIndex->aiColumn[i] = x;
+        pIndex->azColl[i] = pPk->azColl[j];
+        pIndex->aSortOrder[i] = pPk->aSortOrder[j];
+        i++;
+      }
     }
+    assert( i==pIndex->nColumn );
   }else{
     pIndex->aiColumn[i] = -1;
     pIndex->azColl[i] = "BINARY";

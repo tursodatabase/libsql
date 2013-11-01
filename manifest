@@ -1,5 +1,5 @@
-C Additional\sUPDATE\stest\scases\sfor\sWITHOUT\sROWID.
-D 2013-11-01T18:14:36.700
+C Fix\ssqlite3_analyzer\sso\sthat\sit\sworks\swith\sWITHOUT\sROWID\stables.\nFix\sindex\sgeneration\sfor\ssecondary\sindices\sthat\sinclude\sfields\sfrom\nthe\sPRIMARY\sKEY.
+D 2013-11-01T20:30:36.718
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 7c3d65786203426e99bae6a95ef0fe67e5f8b18b
+F src/build.c 7a940e5e3ee55b3036be294571770c144751ee82
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 4694b23067650659f822d989426116808c0c8e05
+F src/insert.c 57fe5ae140e09ca6220758c79298ba9ef87ae606
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1113,7 +1113,7 @@ F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl d8c11da184b1a13d0456d786e70b3867e141b74a
+F tool/spaceanal.tcl 00023972100246743cfdc8b7fb9d7497611c5c0c
 F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
@@ -1128,7 +1128,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 845153be36d5ca0ca9d930c56418fb080d906740
-R 50d551e231f8c85d439664293cc57a4c
+P 65384ae0f027d05cf9208faed56575870d63c486
+R b82044a07d71eebf83fb22f28eefd449
 U drh
-Z fe12559e2a03f326e17266405046f3df
+Z 66f9c600d762e843b5b86dd8d9c3ba4d
