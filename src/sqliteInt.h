@@ -2295,7 +2295,7 @@ struct Parse {
 
   int nVar;                 /* Number of '?' variables seen in the SQL so far */
   int nzVar;                /* Number of available slots in azVar[] */
-  u8 addrCrTab;             /* Address of OP_CreateTable opcode */
+  int addrCrTab;            /* Address of OP_CreateTable opcode */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
 #ifndef SQLITE_OMIT_VIRTUALTABLE

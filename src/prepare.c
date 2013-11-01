@@ -116,8 +116,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       /* Do Nothing */;
     }else if( sqlite3GetInt32(argv[1], &pIndex->tnum)==0 ){
       corruptSchema(pData, argv[0], "invalid rootpage");
-    }
-    if( pIndex->autoIndex==2 
+    }else if( pIndex->autoIndex==2 
      && (pIndex->pTable->tabFlags & TF_WithoutRowid)!=0
     ){
       pIndex->pTable->tnum = pIndex->tnum;

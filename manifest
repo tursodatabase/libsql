@@ -1,5 +1,5 @@
-C Fix\sthe\sSynopsis\son\sOP_Concat.\s\sAdded\stest_addop_breakpoint()\sduring\nSQLITE_DEBUG.\s\sEnhanced\ssqlite3VdbeChangeToNoop()\sto\somit\sthe\sinstruction\nif\sit\sis\sthe\smost\srecent\sadded.\s\sContinue\sto\sfix\sproblems\swith\sUPDATE\nand\sWITHOUT\sROWID.
-D 2013-10-31T20:34:06.322
+C A\scouple\sof\sbug\sfixes.
+D 2013-11-01T01:45:46.564
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 9d33b8691f44e05129aeb11217a415824bd0cf56
+F src/build.c 4f3f549d8cf1cc3c3573fd529910c6ba1fadfea4
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -213,7 +213,7 @@ F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
 F src/pragma.c ff1a98998d2038bc9c770326986b7c4728de4973
-F src/prepare.c f47ba2bba7ac5650881ab6c41f6d33a6de1a8d52
+F src/prepare.c ea231a8450eef356490b09481db9fe51a6a59c32
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c e729889b2c7a680ba4aa7296efa72c09369956d8
@@ -223,7 +223,7 @@ F src/shell.c d5eebdc6034014103de2b9d58e1d3f6f7de0fb50
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 41c5b67e6c946ae1e95a4b32f9a077c36774e0bb
+F src/sqliteInt.h 69c16a6a7f45fbe5d0293b753fe8022bef6b1f09
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1128,7 +1128,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cff1f55c52ff57557d9b728a5cd830a367091794
-R e79e8c20b6bbceeb122a0ba8aa95ec94
+P 9b6d9e106aaa3c2efb33d234d26cf08cd3c967b9
+R f3ca5351286775b4f44eb98d83099390
 U drh
-Z 622837c1d15f3d4a0d2025f8d559acca
+Z 17787b80a80a97fab0e34e1d67511743

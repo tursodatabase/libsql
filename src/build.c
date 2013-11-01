@@ -967,7 +967,6 @@ void sqlite3StartTable(
     }else
 #endif
     {
-      assert( sqlite3VdbeCurrentAddr(v) < 100 );
       pParse->addrCrTab = (u16)sqlite3VdbeAddOp2(v, OP_CreateTable, iDb, reg2);
     }
     sqlite3OpenMasterTable(pParse, iDb);
