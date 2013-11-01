@@ -1474,10 +1474,11 @@ void sqlite3GenerateConstraintChecks(
       ** is different from old-rowid */
       sqlite3VdbeAddOp3(v, OP_Eq, regR, addrUniqueOk, regOldData);
     }else{
+      int x;
       /* Extract the PRIMARY KEY from the end of the index entry and
       ** store it in register regR..regR+nPk-1 */
       for(i=0; i<pPk->nKeyCol; i++){
-        int x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
+        x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
         sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
         VdbeComment((v, "%s.%s", pTab->zName,
                      pTab->aCol[pPk->aiColumn[i]].zName));
@@ -1489,11 +1490,12 @@ void sqlite3GenerateConstraintChecks(
         if( isUpdate ){
           int addrPkConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
           for(i=0; i<pPk->nKeyCol-1; i++){
-            sqlite3VdbeAddOp3(v, OP_Ne, regOldData+pPk->aiColumn[i]+1,
-                              addrPkConflict, regIdx+i);
+            x = pPk->aiColumn[i];
+            sqlite3VdbeAddOp3(v, OP_Ne, regOldData+1+x,
+                              addrPkConflict, regIdx+x);
           }
-          sqlite3VdbeAddOp3(v, OP_Eq, regOldData+pPk->aiColumn[i]+1,
-                            addrUniqueOk, regIdx+i);
+          x = pPk->aiColumn[i];
+          sqlite3VdbeAddOp3(v, OP_Eq, regOldData+1+x, addrUniqueOk, regIdx+x);
         }
       }else{
         /* For a UNIQUE index on a WITHOUT ROWID table, conflict only if the

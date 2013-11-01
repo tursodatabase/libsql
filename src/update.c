@@ -536,7 +536,7 @@ void sqlite3Update(
 
     /* Delete the index entries associated with the current record.  */
     if( pPk ){
-      j1 = sqlite3VdbeAddOp3(v, OP_NotFound, iDataCur, 0, regOldRowid);
+      j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, 0);
     }else{
       j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
     }
