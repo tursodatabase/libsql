@@ -341,62 +341,68 @@ ifcapable pragma {
   } {jkl}
 }
 
-for {set i 1} {$i < 10} {incr i} {
-  catch { db close }
-  forcedelete test.db test.db-journal
-  sqlite3 db test.db
-  do_test crash8-5.$i.1 {
-    execsql {
-      CREATE TABLE t1(x PRIMARY KEY);
-      INSERT INTO t1 VALUES(randomblob(900));
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;          /* 64 rows */
-    }
-    crashsql -file test.db -delay [expr ($::i%2) + 1] {
-      PRAGMA cache_size = 10;
-      BEGIN;
-        UPDATE t1 SET x = randomblob(900);
-      ROLLBACK;
-      INSERT INTO t1 VALUES(randomblob(900));
-    }
-    execsql { PRAGMA integrity_check }
-  } {ok}
+#
+# Since the following tests (crash8-5.*) rely upon being able
+# to copy a file while open, they will not work on Windows.
+#
+if {$::tcl_platform(platform)=="unix"} {
+  for {set i 1} {$i < 10} {incr i} {
+    catch { db close }
+    forcedelete test.db test.db-journal
+    sqlite3 db test.db
+    do_test crash8-5.$i.1 {
+      execsql {
+        CREATE TABLE t1(x PRIMARY KEY);
+        INSERT INTO t1 VALUES(randomblob(900));
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;          /* 64 rows */
+      }
+      crashsql -file test.db -delay [expr ($::i%2) + 1] {
+        PRAGMA cache_size = 10;
+        BEGIN;
+          UPDATE t1 SET x = randomblob(900);
+        ROLLBACK;
+        INSERT INTO t1 VALUES(randomblob(900));
+      }
+      execsql { PRAGMA integrity_check }
+    } {ok}
   
-  catch { db close }
-  forcedelete test.db test.db-journal
-  sqlite3 db test.db
-  do_test crash8-5.$i.2 {
-    execsql {
-      PRAGMA cache_size = 10;
-      CREATE TABLE t1(x PRIMARY KEY);
-      INSERT INTO t1 VALUES(randomblob(900));
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;          /* 64 rows */
-      BEGIN;
-        UPDATE t1 SET x = randomblob(900);
-    }
-    forcedelete testX.db testX.db-journal testX.db-wal
-    forcecopy test.db testX.db
-    forcecopy test.db-journal testX.db-journal
-    db close
+    catch { db close }
+    forcedelete test.db test.db-journal
+    sqlite3 db test.db
+    do_test crash8-5.$i.2 {
+      execsql {
+        PRAGMA cache_size = 10;
+        CREATE TABLE t1(x PRIMARY KEY);
+        INSERT INTO t1 VALUES(randomblob(900));
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;
+        INSERT INTO t1 SELECT randomblob(900) FROM t1;          /* 64 rows */
+        BEGIN;
+          UPDATE t1 SET x = randomblob(900);
+      }
+      forcedelete testX.db testX.db-journal testX.db-wal
+      forcecopy test.db testX.db
+      forcecopy test.db-journal testX.db-journal
+      db close
 
-    crashsql -file test.db -delay [expr ($::i%2) + 1] {
-      SELECT * FROM sqlite_master;
-      INSERT INTO t1 VALUES(randomblob(900));
-    }
+      crashsql -file test.db -delay [expr ($::i%2) + 1] {
+        SELECT * FROM sqlite_master;
+        INSERT INTO t1 VALUES(randomblob(900));
+      }
 
-    sqlite3 db2 testX.db
-    execsql { PRAGMA integrity_check } db2
-  } {ok}
+      sqlite3 db2 testX.db
+      execsql { PRAGMA integrity_check } db2
+    } {ok}
+  }
+  catch {db2 close}
 }
-catch {db2 close}
 
 finish_test

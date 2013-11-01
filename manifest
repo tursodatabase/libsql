@@ -1,5 +1,5 @@
-C Change\sthe\sinterface\sto\ssqlite3GenerateConstraintChecks()\sfor\simproved\slucidity\nand\sto\sfix\sissues\sin\sdealing\swith\sUPDATEs\sfor\sWITHOUT\sROWID\stables.\s\sMake\ssure\niDataCur\sand\siIdxCur\sare\sinitialized\swhen\sprocessing\sDELETEs\sof\sa\sVIEW.\nUPDATE\sprocessing\sdistinguishes\sbetween\schanges\sto\sROWID\sand\sPRIMARY\sKEY.
-D 2013-11-01T17:08:56.112
+C Merge\sall\schanges\sfrom\strunk,\sand\sdisable\sa\spair\sof\scorruption\stests\sthat\sare\nno\slonger\svalid\ssince\ssqlite_master.rootpage\scan\snow\sbe\sNULL\sfor\stables.
+D 2013-11-01T17:21:29.771
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -140,7 +140,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F magic.txt 814d3de5ec227817ff2ad26cbc73159c968a2a58
+F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
 F main.mk c6a433cb334bbb019625c137ab5d5e7568b47cff
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
@@ -204,7 +204,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 243fb37f47dc072fc59839ea241ff0a17c8d76e6
+F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
 F src/os_win.c b159b5249d9f70607d961bbdd1dbba789c75812c
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
@@ -219,7 +219,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c e729889b2c7a680ba4aa7296efa72c09369956d8
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 8290456f2a516abaf8cbbed5e61944d3082e497e
-F src/shell.c d5eebdc6034014103de2b9d58e1d3f6f7de0fb50
+F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
 F src/sqlite.h.in 547a44dd4ff4d975e92a645ea2d609e543a83d0f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -233,7 +233,7 @@ F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c 00af0fe1947305222b8ed488a69c76c5a2b632e2
+F src/test6.c 4f958b71334695e65746d357dac77709732b28db
 F src/test7.c 72b732baa5642f795655ba1126ea032af46ecfd2
 F src/test8.c c7aab1d9fbbf54fc33d43b73aa24aa55f9eaf534
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -241,7 +241,7 @@ F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
-F src/test_config.c 3d148e338b575bd937f7746824f36a9c6682d238
+F src/test_config.c e825cd6a4a8f498be246fc5934fe5fd702b9441f
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -387,7 +387,7 @@ F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 0b3922d2304a14a47e3ccd61bbd6824327af659b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 4aabd06cff3fe759e3e658bcc17b71789710665e
-F test/corrupt2.test 9c0ab4becd50e9050bc1ebb8675456a4e5587bf0
+F test/corrupt2.test b8174976fab5bc000e58539ceb3bb9f31b4813f8
 F test/corrupt3.test 889d7cdb811800303aa722d7813fe8a4299cf726
 F test/corrupt4.test b963f9e01e0f92d15c76fb0747876fd4b96dc30a
 F test/corrupt5.test c23da7bfb20917cc7fdbb13ee25c7cc4e9fffeff
@@ -411,7 +411,7 @@ F test/crash4.test fe2821baf37168dc59dd733dcf7dba2a401487bc
 F test/crash5.test 05dd3aa9dbb751a22d5cdaf22a9c49b6667aa219
 F test/crash6.test 4c56f1e40d0291e1110790a99807aa875b1647ba
 F test/crash7.test 1a194c4900a255258cf94b7fcbfd29536db572df
-F test/crash8.test 38767cb504bbe491de6be4a7006b154973a2309f
+F test/crash8.test 61442a9964ab6b124fc5254e4258b45747842e6f
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -1079,7 +1079,7 @@ F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
 F test/without_rowid1.test ad5764bbe2784a91f7106143e7d1bd8ccfb61ffd
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
-F tool/build-all-msvc.bat 38623a30fd58288fda5cc7f7df2682aaab75c9d5 x
+F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1128,7 +1128,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3bed599e74d354bf1513e4fb0e8665376ba44d0b
-R 67b4771869ffd7159304bf29f7d68635
+P c525ac5630d6bcd51842cfc84f2c2c50be9cec1c 090db8c81d8ca216277d11c8c4751c0a37801524
+R 29f428af34633f43240a60101a70dc64
 U drh
-Z f06e68ba1ad92e0ce7abe5fdcd557daa
+Z c404b4cfe0d89cb06bbfd0f6d2a5b5d1
