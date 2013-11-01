@@ -1,5 +1,5 @@
-C Some\sUPDATE\sstatements\snow\sworking\sin\sWITHOUT\sROWID\stables.
-D 2013-11-01T12:42:21.731
+C Improved\sVDBE\scomments\son\sthe\sconstraint\schecker.\s\sFix\sa\smissing\swrite\nlock\sin\sthe\sUPDATE\slogic.
+D 2013-11-01T14:03:20.023
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c c04429bde588ba7f5e90dc14bbe31d25334c1b75
+F src/insert.c da74aded06680ff30a87065df70fda16af3ecda3
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -275,7 +275,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 70061085a51f2f4fc15ece94f32c03bcb78e63b2
 F src/trigger.c 53d6b5d50b3b23d4fcd0a36504feb5cff9aed716
-F src/update.c fe12f3cd782804d8df8aa327900584d664bf902e
+F src/update.c fff9ac57e36e54ac939e22aac077326224759372
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1128,7 +1128,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cdf00248cf8f7e3c2a3f2f5514273fbacc6fc8d9
-R 0a34f0b854a101e697f3642e97bf3e47
+P 5c0eaea6a26b5c3310d96b3c896ac3068a3ebad1
+R 91e4e19c708f99c7ec09052b49466395
 U drh
-Z cabf904a24b1591bbac5208c61b221d3
+Z 7a82973f52b628c87c749d18c8301e86

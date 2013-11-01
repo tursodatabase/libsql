@@ -387,6 +387,7 @@ void sqlite3Update(
     if( !okOnePass && HasRowid(pTab) ){
       sqlite3OpenTable(pParse, iDataCur, iDb, pTab, OP_OpenWrite); 
     }
+    sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
     if( onError==OE_Replace ){
       openAll = 1;
     }else{

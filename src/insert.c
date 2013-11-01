@@ -1435,12 +1435,14 @@ void sqlite3GenerateConstraintChecks(
     regIdx = sqlite3GetTempRange(pParse, pIdx->nColumn);
     for(i=0; i<pIdx->nColumn; i++){
       int iField = pIdx->aiColumn[i];
+      int x;
       if( iField<0 || iField==pTab->iPKey ){
-        iField = regNewData;
+        x = regNewData;
       }else{
-        iField += regNewData + 1;
+        x = iField + regNewData + 1;
       }
-      sqlite3VdbeAddOp2(v, OP_SCopy, iField, regIdx+i);
+      sqlite3VdbeAddOp2(v, OP_SCopy, x, regIdx+i);
+      VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
     sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), P4_TRANSIENT);
