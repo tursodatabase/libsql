@@ -91,10 +91,21 @@ do_execsql_test without_rowid1-1.40 {
 } {1250 phone flipper harvard | journal sherman ammonia 3.1415926 | journal sherman gamma 3.1415926 | arctic sleep ammonia helena |}
 integrity_check without_rowid1-1.41
 
+# Verify that ANALYZE works
+#
 do_execsql_test without_rowid1-1.50 {
   ANALYZE;
   SELECT * FROM sqlite_stat1 ORDER BY idx;
 } {t1 t1 {4 2 1} t1 t1bd {4 2 2}}
-
+ifcapable stat3 {
+  do_execsql_test without_rowid1-1.51 {
+    SELECT DISTINCT tbl, idx FROM sqlite_stat3 ORDER BY idx;
+  } {t1 t1 t1 t1bd}
+}
+ifcapable stat4 {
+  do_execsql_test without_rowid1-1.52 {
+    SELECT DISTINCT tbl, idx FROM sqlite_stat4 ORDER BY idx;
+  } {t1 t1 t1 t1bd}
+}
 
 finish_test

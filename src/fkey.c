@@ -544,7 +544,7 @@ static void fkScanChildren(
   ** is taking place as part of a DELETE operation (operation D.2), omit the
   ** row being deleted from the scan by adding ($rowid != rowid) to the WHERE 
   ** clause, where $rowid is the rowid of the row being deleted.  */
-  if( pTab==pFKey->pFrom && nIncr>0 ){
+  if( pTab==pFKey->pFrom && nIncr>0 && HasRowid(pTab) /*FIXME*/ ){
     Expr *pEq;                    /* Expression (pLeft = pRight) */
     Expr *pLeft;                  /* Value from parent table row */
     Expr *pRight;                 /* Column ref to child table */

@@ -399,8 +399,6 @@ void sqlite3DeleteFrom(
     */
     sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite,
                                iTabCur, &iDataCur, &iIdxCur);
-    assert( iDataCur!=iTabCur );
-    assert( iDataCur>=iIdxCur );
 
     /* Loop over the primary keys to be deleted. */
     addr = sqlite3VdbeAddOp1(v, OP_Rewind, iEph);
