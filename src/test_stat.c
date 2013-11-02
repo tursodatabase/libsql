@@ -397,6 +397,7 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
   sqlite3_free(pCsr->zPath);
   pCsr->zPath = 0;
 
+statNextRestart:
   if( pCsr->aPage[0].pPg==0 ){
     rc = sqlite3_step(pCsr->pStmt);
     if( rc==SQLITE_ROW ){
@@ -448,11 +449,11 @@ static int statNext(sqlite3_vtab_cursor *pCursor){
       p->iCell++;
     }
 
-    while( !p->iRightChildPg || p->iCell>p->nCell ){
+    if( !p->iRightChildPg || p->iCell>p->nCell ){
       statClearPage(p);
       if( pCsr->iPage==0 ) return statNext(pCursor);
       pCsr->iPage--;
-      p = &pCsr->aPage[pCsr->iPage];
+      goto statNextRestart; /* Tail recursion */
     }
     pCsr->iPage++;
     assert( p==&pCsr->aPage[pCsr->iPage-1] );
