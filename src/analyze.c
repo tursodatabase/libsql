@@ -972,6 +972,7 @@ static void analyzeOneTable(
     int addrRewind;               /* Address of "OP_Rewind iIdxCur" */
     int addrGotoChng0;            /* Address of "Goto addr_chng_0" */
     int addrNextRow;              /* Address of "next_row:" */
+    const char *zIdxName;         /* Name of the index */
 
     if( pOnlyIdx && pOnlyIdx!=pIdx ) continue;
     if( pIdx->pPartIdxWhere==0 ) needTableCnt = 0;
@@ -982,7 +983,12 @@ static void analyzeOneTable(
     pKey = sqlite3IndexKeyinfo(pParse, pIdx);
 
     /* Populate the register containing the index name. */
-    sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, pIdx->zName, 0);
+    if( pIdx->autoIndex==2 && !HasRowid(pTab) ){
+      zIdxName = pTab->zName;
+    }else{
+      zIdxName = pIdx->zName;
+    }
+    sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, zIdxName, 0);
 
     /*
     ** Pseudo-code for loop that calls stat_push():
@@ -1486,6 +1492,23 @@ static void initAvgEq(Index *pIdx){
 }
 
 /*
+** Look up an index by name.  Or, if the name of a WITHOUT ROWID table
+** is supplied instead, find the PRIMARY KEY index for that table.
+*/
+static Index *findIndexOrPrimaryKey(
+  sqlite3 *db,
+  const char *zName,
+  const char *zDb
+){
+  Index *pIdx = sqlite3FindIndex(db, zName, zDb);
+  if( pIdx==0 ){
+    Table *pTab = sqlite3FindTable(db, zName, zDb);
+    if( pTab && !HasRowid(pTab) ) pIdx = sqlite3PrimaryKeyIndex(pTab);
+  }
+  return pIdx;
+}
+
+/*
 ** Load the content from either the sqlite_stat4 or sqlite_stat3 table 
 ** into the relevant Index.aSample[] arrays.
 **
@@ -1534,7 +1557,7 @@ static int loadStatTbl(
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
     nSample = sqlite3_column_int(pStmt, 1);
-    pIdx = sqlite3FindIndex(db, zIndex, zDb);
+    pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
     assert( pIdx==0 || bStat3 || pIdx->nSample==0 );
     /* Index.nSample is non-zero at this point if data has already been
     ** loaded from the stat4 table. In this case ignore stat3 data.  */
@@ -1580,7 +1603,7 @@ static int loadStatTbl(
 
     zIndex = (char *)sqlite3_column_text(pStmt, 0);
     if( zIndex==0 ) continue;
-    pIdx = sqlite3FindIndex(db, zIndex, zDb);
+    pIdx = findIndexOrPrimaryKey(db, zIndex, zDb);
     if( pIdx==0 ) continue;
     /* This next condition is true if data has already been loaded from 
     ** the sqlite_stat4 table. In this case ignore stat3 data.  */
