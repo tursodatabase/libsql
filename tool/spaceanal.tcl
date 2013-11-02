@@ -766,7 +766,7 @@ mem eval {SELECT * FROM space_used} x {
   set sep (
   foreach col $x(*) {
     set v $x($col)
-    if {$v=="" || ![string is double $v]} {set v [quote $v]}
+    if {$v=="" || ![string is double $v]} {set v '[quote $v]'}
     puts -nonewline $sep$v
     set sep ,
   }
