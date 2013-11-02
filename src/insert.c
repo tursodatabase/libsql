@@ -1517,7 +1517,7 @@ void sqlite3GenerateConstraintChecks(
                               addrPkConflict, regIdx+x);
           }
           x = pPk->aiColumn[i];
-          sqlite3VdbeAddOp3(v, OP_Eq, regOldData+1+x, addrUniqueOk, regIdx+x);
+          sqlite3VdbeAddOp3(v, OP_Eq, regOldData+1+x, addrUniqueOk, regIdx+i);
         }
       }else{
         /* For a UNIQUE index on a WITHOUT ROWID table, conflict only if the

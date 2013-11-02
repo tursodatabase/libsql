@@ -1,5 +1,5 @@
-C Many\snew\stest\scases\sadded,\sthat\smostly\swork.\s\sCurrently\s18\serrors\sin\s\nwithout_rowid3.test.\s\sAlso\sthere\sis\sa\shack\smarked\sby\sa\s/*FIXME*/\scomment\s\non\sat\sfkey.c:547\sthat\sneeds\sfixing.
-D 2013-11-02T22:09:48.508
+C Improved\sSynopsis\son\sregister\scomparison\soperators.\s\sFix\sa\sbug\son\sthe\nconstraint\scheck\sgenerator.
+D 2013-11-02T22:29:34.665
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 57fe5ae140e09ca6220758c79298ba9ef87ae606
+F src/insert.c 62c2997b6884e2f7ba8daa486f663ae885c4b479
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -279,7 +279,7 @@ F src/update.c 94d63d3e06b09df3618655a841dc95d5b9466dc6
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 9f3dc84302556f7731e53d64b5e6723b1e568b8d
+F src/vdbe.c 3492f312ed979b146296289ecbd8851a7891a830
 F src/vdbe.h c18a2dd91c838601b867a214e43c5f66d5d001ba
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1130,7 +1130,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4ee4d3106308508a58b80e54e0afb4afb42f510b
-R ff4bdc6a5b118bf4488ef2d4ca905162
+P 39e32187b66405e00dbd44685f6cdd269c90f5e5
+R 58e9f12157086c3e22220529477830cd
 U drh
-Z a4403bd962894f91a2a08b106e00735c
+Z 72d46f91118ca7659eef125e3fbe4980
