@@ -1275,11 +1275,14 @@ void sqlite3AddPrimaryKey(
        "INTEGER PRIMARY KEY");
 #endif
   }else{
+    Vdbe *v = pParse->pVdbe;
     Index *p;
+    if( v ) pParse->addrSkipPK = sqlite3VdbeAddOp0(v, OP_Noop);
     p = sqlite3CreateIndex(pParse, 0, 0, 0, pList, onError, 0,
                            0, sortOrder, 0);
     if( p ){
       p->autoIndex = 2;
+      if( v ) sqlite3VdbeJumpHere(v, pParse->addrSkipPK);
     }
     pList = 0;
   }
@@ -1590,13 +1593,27 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 }
 
 /*
-** The table pTab has a WITHOUT ROWID clause at the end.  Go through and
-** make all the changes necessary to make this a WITHOUT ROWID table.
+** This routine runs at the end of parsing a CREATE TABLE statement that
+** has a WITHOUT ROWID clause.  The job of this routine is to convert both
+** internal schema data structures and the generated VDBE code so that they
+** are appropriate for a WITHOUT ROWID table instead of a rowid table.
+** Changes include:
 **
-**     (1)  Convert the OP_CreateTable into an no-op.
-**     (2)  Make sure all table columns are part of the PRIMARY KEY
-**     (3)  Make sure all PRIMARY KEY columns are part of all UNIQUE
-**          indices
+**     (1)  Convert the OP_CreateTable into an OP_CreateIndex.  There is
+**          no rowid btree for a WITHOUT ROWID.  Instead, the canonical
+**          data storage is a covering index btree.
+**     (2)  Bypass the creation of the sqlite_master table entry
+**          for the PRIMARY KEY as the the primary key index is now
+**          identified by the sqlite_master table entry of the table itself.
+**     (3)  Set the Index.tnum of the PRIMARY KEY Index object in the
+**          schema to the rootpage from the main table.
+**     (4)  Set all columns of the PRIMARY KEY schema object to be NOT NULL.
+**     (5)  Add all table columns to the PRIMARY KEY Index object
+**          so that the PRIMARY KEY is a covering index.  The surplus
+**          columns are part of KeyInfo.nXField and are not used for
+**          sorting or lookup or uniqueness checks.
+**     (6)  Replace the rowid tail on all automatically generated UNIQUE
+**          indices with the PRIMARY KEY columns.
 */
 static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   Index *pIdx;
@@ -1604,15 +1621,23 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   int nPk;
   int i, j;
   sqlite3 *db = pParse->db;
+  Vdbe *v = pParse->pVdbe;
 
   /* Convert the OP_CreateTable opcode that would normally create the
-  ** root-page for the table into a OP_Null opcode.  This prevents the
-  ** allocation of the root-page (which would never been used, as all
-  ** content is stored in the primary-key index instead) and it causes
-  ** a NULL value in the sqlite_master.rootpage field of the schema.
+  ** root-page for the table into a OP_CreateIndex opcode.  The index
+  ** created will become the PRIMARY KEY index.
   */
   if( pParse->addrCrTab ){
-    sqlite3VdbeGetOp(pParse->pVdbe, pParse->addrCrTab)->opcode = OP_Null;
+    assert( v );
+    sqlite3VdbeGetOp(v, pParse->addrCrTab)->opcode = OP_CreateIndex;
+  }
+
+  /* Bypass the creation of the PRIMARY KEY btree and the sqlite_master
+  ** table entry.
+  */
+  if( pParse->addrSkipPK ){
+    assert( v );
+    sqlite3VdbeGetOp(v, pParse->addrSkipPK)->opcode = OP_Goto;
   }
 
   /* Locate the PRIMARY KEY index.  Or, if this table was originally
@@ -1640,6 +1665,9 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     pTab->aCol[pPk->aiColumn[i]].notNull = 1;
   }
   pPk->uniqNotNull = 1;
+
+  /* The root page of the PRIMARY KEY is the table root page */
+  pPk->tnum = pTab->tnum;
 
   /* Update the in-memory representation of all UNIQUE indices by converting
   ** the final rowid column into one or more columns of the PRIMARY KEY.
@@ -1723,6 +1751,17 @@ void sqlite3EndTable(
 
   assert( !db->init.busy || !pSelect );
 
+  /* If the db->init.busy is 1 it means we are reading the SQL off the
+  ** "sqlite_master" or "sqlite_temp_master" table on the disk.
+  ** So do not write to the disk again.  Extract the root page number
+  ** for the table from the db->init.newTnum field.  (The page number
+  ** should have been put there by the sqliteOpenCb routine.)
+  */
+  if( db->init.busy ){
+    p->tnum = db->init.newTnum;
+  }
+
+  /* Special processing for WITHOUT ROWID Tables */
   if( tabOpts & TF_WithoutRowid ){
     if( (p->tabFlags & TF_HasPrimaryKey)==0 ){
       sqlite3ErrorMsg(pParse, "no PRIMARY KEY for table %s", p->zName);
@@ -1746,16 +1785,6 @@ void sqlite3EndTable(
   estimateTableWidth(p);
   for(pIdx=p->pIndex; pIdx; pIdx=pIdx->pNext){
     estimateIndexWidth(pIdx);
-  }
-
-  /* If the db->init.busy is 1 it means we are reading the SQL off the
-  ** "sqlite_master" or "sqlite_temp_master" table on the disk.
-  ** So do not write to the disk again.  Extract the root page number
-  ** for the table from the db->init.newTnum field.  (The page number
-  ** should have been put there by the sqliteOpenCb routine.)
-  */
-  if( db->init.busy ){
-    p->tnum = db->init.newTnum;
   }
 
   /* If not initializing, then create a record for the new table

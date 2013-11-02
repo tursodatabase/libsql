@@ -466,11 +466,6 @@ corruption_test -sqlprep {
   } {1 {database disk image is malformed}}
 }
 
-# Since the introduction of WITHOUT ROWID tables, having a table entry in
-# the sqlite_master table with a NULL rootpage is no longer a sign of 
-# corruption.
-#
-if 0 {
 corruption_test -sqlprep {
   CREATE TABLE t1(a, b, c);
   CREATE TABLE t2(a, b, c);
@@ -484,7 +479,6 @@ corruption_test -sqlprep {
     sqlite3_errcode db
   } {SQLITE_CORRUPT}
 }
-} ;# Disabled rootpage==NULL corruption test
 
 corruption_test -sqlprep {
   PRAGMA auto_vacuum = incremental;
