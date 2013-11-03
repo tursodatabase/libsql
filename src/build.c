@@ -2466,8 +2466,8 @@ exit_drop_table:
 ** currently under construction.  pFromCol determines which columns
 ** in the current table point to the foreign key.  If pFromCol==0 then
 ** connect the key to the last column inserted.  pTo is the name of
-** the table referred to.  pToCol is a list of tables in the other
-** pTo table that the foreign key points to.  flags contains all
+** the table referred to (a.k.a the "parent" table).  pToCol is a list
+** of tables in the parent pTo table.  flags contains all
 ** information about the conflict resolution algorithms specified
 ** in the ON DELETE, ON UPDATE and ON INSERT clauses.
 **

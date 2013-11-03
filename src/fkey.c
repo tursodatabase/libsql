@@ -475,12 +475,12 @@ static void fkLookupParent(
 */
 static void fkScanChildren(
   Parse *pParse,                  /* Parse context */
-  SrcList *pSrc,                  /* SrcList containing the table to scan */
-  Table *pTab,
-  Index *pIdx,                    /* Foreign key index */
-  FKey *pFKey,                    /* Foreign key relationship */
+  SrcList *pSrc,                  /* The child table to be scanned */
+  Table *pTab,                    /* The parent table */
+  Index *pIdx,                    /* Index on parent covering the foreign key */
+  FKey *pFKey,                    /* The foreign key linking pSrc to pTab */
   int *aiCol,                     /* Map from pIdx cols to child table cols */
-  int regData,                    /* Referenced table data starts here */
+  int regData,                    /* Parent row data starts here */
   int nIncr                       /* Amount to increment deferred counter by */
 ){
   sqlite3 *db = pParse->db;       /* Database handle */
@@ -491,7 +491,9 @@ static void fkScanChildren(
   int iFkIfZero = 0;              /* Address of OP_FkIfZero */
   Vdbe *v = sqlite3GetVdbe(pParse);
 
-  assert( !pIdx || pIdx->pTable==pTab );
+  assert( pIdx==0 || pIdx->pTable==pTab );
+  assert( pIdx==0 || pIdx->nKeyCol==pFKey->nCol );
+  assert( pIdx!=0 || pFKey->nCol==1 );
 
   if( nIncr<0 ){
     iFkIfZero = sqlite3VdbeAddOp2(v, OP_FkIfZero, pFKey->isDeferred, 0);
@@ -545,7 +547,7 @@ static void fkScanChildren(
   ** row being deleted from the scan by adding ($rowid != rowid) to the WHERE 
   ** clause, where $rowid is the rowid of the row being deleted.  */
   if( pTab==pFKey->pFrom && nIncr>0 && HasRowid(pTab) /*FIXME*/ ){
-    Expr *pEq;                    /* Expression (pLeft = pRight) */
+    Expr *pNe;                    /* Expression (pLeft != pRight) */
     Expr *pLeft;                  /* Value from parent table row */
     Expr *pRight;                 /* Column ref to child table */
     pLeft = sqlite3Expr(db, TK_REGISTER, 0);
@@ -556,8 +558,8 @@ static void fkScanChildren(
       pRight->iTable = pSrc->a[0].iCursor;
       pRight->iColumn = -1;
     }
-    pEq = sqlite3PExpr(pParse, TK_NE, pLeft, pRight, 0);
-    pWhere = sqlite3ExprAnd(db, pWhere, pEq);
+    pNe = sqlite3PExpr(pParse, TK_NE, pLeft, pRight, 0);
+    pWhere = sqlite3ExprAnd(db, pWhere, pNe);
   }
 
   /* Resolve the references in the WHERE clause. */
@@ -587,8 +589,8 @@ static void fkScanChildren(
 }
 
 /*
-** This function returns a pointer to the head of a linked list of FK
-** constraints for which table pTab is the parent table. For example,
+** This function returns a linked list of FKey objects (connected by
+** FKey.pNextTo) holding all children of table pTab.  For example,
 ** given the following schema:
 **
 **   CREATE TABLE t1(a PRIMARY KEY);
@@ -890,7 +892,8 @@ void sqlite3FkCheck(
     sqlite3DbFree(db, aiFree);
   }
 
-  /* Loop through all the foreign key constraints that refer to this table */
+  /* Loop through all the foreign key constraints that refer to this table.
+  ** (the "child" constraints) */
   for(pFKey = sqlite3FkReferences(pTab); pFKey; pFKey=pFKey->pNextTo){
     Index *pIdx = 0;              /* Foreign key index for pFKey */
     SrcList *pSrc;
@@ -915,9 +918,8 @@ void sqlite3FkCheck(
     }
     assert( aiCol || pFKey->nCol==1 );
 
-    /* Create a SrcList structure containing a single table (the table 
-    ** the foreign key that refers to this table is attached to). This
-    ** is required for the sqlite3WhereXXX() interface.  */
+    /* Create a SrcList structure containing the child table.  We need the
+    ** child table as a SrcList for sqlite3WhereBegin() */
     pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
     if( pSrc ){
       struct SrcList_item *pItem = pSrc->a;

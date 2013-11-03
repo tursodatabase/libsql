@@ -1451,26 +1451,35 @@ struct Table {
 **     );
 **
 ** For foreign key "fk1", the from-table is "ex1" and the to-table is "ex2".
+** Equivalent names:
+**
+**     from-table == child-table
+**       to-table == parent-table
 **
 ** Each REFERENCES clause generates an instance of the following structure
 ** which is attached to the from-table.  The to-table need not exist when
 ** the from-table is created.  The existence of the to-table is not checked.
+**
+** The list of all parents for child Table X is held at X.pFKey.
+**
+** A list of all children for a table named Z (which might not even exist)
+** is held in Schema.fkeyHash with a hash key of Z.
 */
 struct FKey {
   Table *pFrom;     /* Table containing the REFERENCES clause (aka: Child) */
-  FKey *pNextFrom;  /* Next foreign key in pFrom */
+  FKey *pNextFrom;  /* Next FKey with the same in pFrom. Next parent of pFrom */
   char *zTo;        /* Name of table that the key points to (aka: Parent) */
-  FKey *pNextTo;    /* Next foreign key on table named zTo */
-  FKey *pPrevTo;    /* Previous foreign key on table named zTo */
+  FKey *pNextTo;    /* Next with the same zTo. Next child of zTo. */
+  FKey *pPrevTo;    /* Previous with the same zTo */
   int nCol;         /* Number of columns in this key */
   /* EV: R-30323-21917 */
-  u8 isDeferred;    /* True if constraint checking is deferred till COMMIT */
-  u8 aAction[2];          /* ON DELETE and ON UPDATE actions, respectively */
-  Trigger *apTrigger[2];  /* Triggers for aAction[] actions */
-  struct sColMap {  /* Mapping of columns in pFrom to columns in zTo */
-    int iFrom;         /* Index of column in pFrom */
-    char *zCol;        /* Name of column in zTo.  If 0 use PRIMARY KEY */
-  } aCol[1];        /* One entry for each of nCol column s */
+  u8 isDeferred;       /* True if constraint checking is deferred till COMMIT */
+  u8 aAction[2];        /* ON DELETE and ON UPDATE actions, respectively */
+  Trigger *apTrigger[2];/* Triggers for aAction[] actions */
+  struct sColMap {      /* Mapping of columns in pFrom to columns in zTo */
+    int iFrom;            /* Index of column in pFrom */
+    char *zCol;           /* Name of column in zTo.  If NULL use PRIMARY KEY */
+  } aCol[1];            /* One entry for each of nCol columns */
 };
 
 /*
