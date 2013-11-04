@@ -268,9 +268,11 @@ struct Stat4Sample {
   tRowcnt *anDLt;                 /* sqlite_stat4.nDLt */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   tRowcnt *anLt;                  /* sqlite_stat4.nLt */
-  i64 iRowid;                     /* Rowid in main table of the key */
+  union {
+    i64 iRowid;                     /* Rowid in main table of the key */
+    u8 *aRowid;                     /* Key for WITHOUT ROWID tables */
+  } u;
   u32 nRowid;                     /* Sizeof aRowid[] */
-  u8 *aRowid;                     /* Key for WITHOUT ROWID tables */
   u8 isPSample;                   /* True if a periodic sample */
   int iCol;                       /* If !isPSample, the reason for inclusion */
   u32 iHash;                      /* Tiebreaker hash */
@@ -295,22 +297,57 @@ struct Stat4Accum {
 */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 static void sampleClear(sqlite3 *db, Stat4Sample *p){
-  sqlite3DbFree(db, p->aRowid);
-  p->aRowid = 0;
-  p->nRowid = 0;
+  assert( db!=0 );
+  if( p->nRowid ){
+    sqlite3DbFree(db, p->u.aRowid);
+    p->nRowid = 0;
+  }
 }
 #endif
 
-/* Make a copy of the Stat4Sample.aRowid field.
+/* Initialize the BLOB value of a ROWID
 */
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-static void sampleDup(sqlite3 *db, Stat4Sample *p){
-  if( p->aRowid ){
-    u8 *aCopy = sqlite3DbMallocRaw(db, p->nRowid);
-    if( aCopy ){
-      memcpy(aCopy, p->aRowid, p->nRowid);
-      p->aRowid = aCopy;
-    }
+static void sampleSetRowid(sqlite3 *db, Stat4Sample *p, int n, const u8 *pData){
+  assert( db!=0 );
+  if( p->nRowid ) sqlite3DbFree(db, p->u.aRowid);
+  p->u.aRowid = sqlite3DbMallocRaw(db, n);
+  if( p->u.aRowid ){
+    p->nRowid = n;
+    memcpy(p->u.aRowid, pData, n);
+  }else{
+    p->nRowid = 0;
+  }
+}
+#endif
+
+/* Initialize the INTEGER value of a ROWID.
+*/
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+static void sampleSetRowidInt64(sqlite3 *db, Stat4Sample *p, i64 iRowid){
+  assert( db!=0 );
+  if( p->nRowid ) sqlite3DbFree(db, p->u.aRowid);
+  p->nRowid = 0;
+  p->u.iRowid = iRowid;
+}
+#endif
+
+
+/*
+** Copy the contents of object (*pFrom) into (*pTo).
+*/
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+static void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
+  pTo->isPSample = pFrom->isPSample;
+  pTo->iCol = pFrom->iCol;
+  pTo->iHash = pFrom->iHash;
+  memcpy(pTo->anEq, pFrom->anEq, sizeof(tRowcnt)*p->nCol);
+  memcpy(pTo->anLt, pFrom->anLt, sizeof(tRowcnt)*p->nCol);
+  memcpy(pTo->anDLt, pFrom->anDLt, sizeof(tRowcnt)*p->nCol);
+  if( pFrom->nRowid ){
+    sampleSetRowid(p->db, pTo, pFrom->nRowid, pFrom->u.aRowid);
+  }else{
+    sampleSetRowidInt64(p->db, pTo, pFrom->u.iRowid);
   }
 }
 #endif
@@ -324,6 +361,7 @@ static void stat4Destructor(void *pOld){
   int i;
   for(i=0; i<p->nCol; i++) sampleClear(p->db, p->aBest+i);
   for(i=0; i<p->mxSample; i++) sampleClear(p->db, p->a+i);
+  sampleClear(p->db, &p->current);
 #endif
   sqlite3DbFree(p->db, p);
 }
@@ -484,23 +522,6 @@ static int sampleIsBetter(
 }
 
 /*
-** Copy the contents of object (*pFrom) into (*pTo).
-*/
-static void sampleCopy(Stat4Accum *p, Stat4Sample *pTo, Stat4Sample *pFrom){
-  pTo->iRowid = pFrom->iRowid;
-  pTo->isPSample = pFrom->isPSample;
-  pTo->iCol = pFrom->iCol;
-  pTo->iHash = pFrom->iHash;
-  sampleClear(p->db, pTo);
-  pTo->nRowid = pFrom->nRowid;
-  pTo->aRowid = pFrom->aRowid;
-  sampleDup(p->db, pTo);
-  memcpy(pTo->anEq, pFrom->anEq, sizeof(tRowcnt)*p->nCol);
-  memcpy(pTo->anLt, pFrom->anLt, sizeof(tRowcnt)*p->nCol);
-  memcpy(pTo->anDLt, pFrom->anDLt, sizeof(tRowcnt)*p->nCol);
-}
-
-/*
 ** Copy the contents of sample *pNew into the p->a[] array. If necessary,
 ** remove the least desirable sample from p->a[] to make room.
 */
@@ -545,6 +566,7 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     tRowcnt *anEq = pMin->anEq;
     tRowcnt *anLt = pMin->anLt;
     tRowcnt *anDLt = pMin->anDLt;
+    sampleClear(p->db, pMin);
     memmove(pMin, &pMin[1], sizeof(p->a[0])*(p->nSample-p->iMin-1));
     pSample = &p->a[p->nSample-1];
     pSample->anEq = anEq;
@@ -694,13 +716,10 @@ static void statPush(
   p->nRow++;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
   if( sqlite3_value_type(argv[2])==SQLITE_INTEGER ){
-    p->current.iRowid = sqlite3_value_int64(argv[2]);
-    p->current.aRowid = 0;
-    p->current.nRowid = 0;
+    sampleSetRowidInt64(p->db, &p->current, sqlite3_value_int64(argv[2]));
   }else{
-    p->current.iRowid = 0;
-    p->current.nRowid = sqlite3_value_bytes(argv[2]);
-    p->current.aRowid = (u8*)sqlite3_value_blob(argv[2]);
+    sampleSetRowid(p->db, &p->current, sqlite3_value_bytes(argv[2]),
+                                       sqlite3_value_blob(argv[2]));
   }
   p->current.iHash = p->iPrn = p->iPrn*1103515245 + 12345;
 #endif
@@ -827,9 +846,10 @@ static void statGet(
     if( p->iGet<p->nSample ){
       Stat4Sample *pS = p->a + p->iGet;
       if( pS->nRowid==0 ){
-        sqlite3_result_int64(context, pS->iRowid);
+        sqlite3_result_int64(context, pS->u.iRowid);
       }else{
-        sqlite3_result_blob(context, pS->aRowid, pS->nRowid, SQLITE_STATIC);
+        sqlite3_result_blob(context, pS->u.aRowid, pS->nRowid,
+                            SQLITE_TRANSIENT);
       }
     }
   }else{

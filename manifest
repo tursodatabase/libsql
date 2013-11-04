@@ -1,5 +1,5 @@
-C Add\sanother\stest\scase\sfile\sfor\sWITHOUT\sROWID\sand\sfix\sthe\sbugs\sthat\sthe\snew\s\ntest\sfile\suncovered.
-D 2013-11-04T18:34:46.599
+C Bug\sfixes\sin\sthe\sINSERT\sconstraint\schecker.\s\sRefactor\sthe\sRowid\shandling\slogic\nfor\sANALYZE\swith\sSTAT3/4.
+D 2013-11-04T21:44:54.263
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,7 +159,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c b583d62c9b74d887864eaa594d629c0b33bea4a5
+F src/analyze.c 0727d84692bdad3bada987950fd714445cca225c
 F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c faa58c9978001f67b3fcb4e0fb588c7852c05483
+F src/insert.c b89a81a5c4cfc5cf83f29751e07b45527af27dc2
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -212,7 +212,7 @@ F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c 8d67f2e7a73b8260cfed328eb024fb16c20e0f16
+F src/pragma.c ac43f31b04afd586f7d4a7535f6c4b07b329a1de
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -1131,7 +1131,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 89098e6d18dacd1554cf4471b5f035db85d1f327
-R 4fbdd86f5ad03355f6f11feb2ddb3d95
+P bc2a06eb8e57573d08e77800a7937eee5af3f035
+R c6a00a38efed0dd468c88c1afd0d6407
 U drh
-Z 1acf97ed6e77633885d90ac086f2b0ff
+Z 16670a36629db5e8da9906d68f8a996e

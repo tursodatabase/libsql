@@ -1463,7 +1463,10 @@ void sqlite3GenerateConstraintChecks(
     ** of a WITHOUT ROWID table and there has been no change the
     ** primary key, then no collision is possible.  The collision detection
     ** logic below can all be skipped. */
-    if( isUpdate && pPk && pkChng==0 ) continue;
+    if( isUpdate && pPk && pkChng==0 ){
+      sqlite3VdbeResolveLabel(v, addrUniqueOk);
+      continue;
+    }
 
     /* Find out what action to take in case there is a uniqueness conflict */
     onError = pIdx->onError;
@@ -1498,38 +1501,40 @@ void sqlite3GenerateConstraintChecks(
     }else{
       int x;
       /* Extract the PRIMARY KEY from the end of the index entry and
-      ** store it in register regR..regR+nPk-1 */
-      for(i=0; i<pPk->nKeyCol; i++){
-        x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
-        sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
-        VdbeComment((v, "%s.%s", pTab->zName,
-                     pTab->aCol[pPk->aiColumn[i]].zName));
+      ** store it in registers regR..regR+nPk-1 */
+      if( isUpdate || onError==OE_Replace ){
+        for(i=0; i<pPk->nKeyCol; i++){
+          x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
+          sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
+          VdbeComment((v, "%s.%s", pTab->zName,
+                       pTab->aCol[pPk->aiColumn[i]].zName));
+        }
       }
-      if( pIdx->autoIndex==2 ){
-        /* For a PRIMARY KEY index on a WITHOUT ROWID table, always conflict
-        ** on an INSERT.  On an UPDATE, only conflict if the PRIMARY KEY
-        ** has changed. */
-        if( isUpdate ){
+      if( isUpdate ){
+        if( pIdx->autoIndex==2 ){
+          /* For a PRIMARY KEY index on a WITHOUT ROWID table, always conflict
+          ** on an INSERT.  On an UPDATE, only conflict if the PRIMARY KEY
+          ** has changed. */
           int addrPkConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
           for(i=0; i<pPk->nKeyCol-1; i++){
             x = pPk->aiColumn[i];
             sqlite3VdbeAddOp3(v, OP_Ne, regOldData+1+x,
-                              addrPkConflict, regIdx+x);
+                              addrPkConflict, regIdx+i);
           }
           x = pPk->aiColumn[i];
           sqlite3VdbeAddOp3(v, OP_Eq, regOldData+1+x, addrUniqueOk, regIdx+i);
+        }else{
+          /* For a UNIQUE index on a WITHOUT ROWID table, conflict only if the
+          ** PRIMARY KEY value of the match is different from the old
+          ** PRIMARY KEY value from before the update. */
+          int addrConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
+          for(i=0; i<pPk->nKeyCol-1; i++){
+            sqlite3VdbeAddOp3(v, OP_Ne, regOldData+pPk->aiColumn[i]+1,
+                              addrConflict, regR+i);
+          }
+          sqlite3VdbeAddOp3(v, OP_Eq, regOldData+pPk->aiColumn[i]+1,
+                            addrUniqueOk, regR+i);
         }
-      }else{
-        /* For a UNIQUE index on a WITHOUT ROWID table, conflict only if the
-        ** PRIMARY KEY value of the match is different from the old PRIMARY KEY
-        ** value from before the update. */
-        int addrConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
-        for(i=0; i<pPk->nKeyCol-1; i++){
-          sqlite3VdbeAddOp3(v, OP_Ne,
-                           regOldData+pPk->aiColumn[i]+1, addrConflict, regR+i);
-        }
-        sqlite3VdbeAddOp3(v, OP_Eq,
-                          regOldData+pPk->aiColumn[i]+1, addrUniqueOk, regR+i);
       }
     }
     sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn);
@@ -1827,8 +1832,8 @@ static int xferOptimization(
   int iDbSrc;                      /* The database of pSrc */
   int iSrc, iDest;                 /* Cursors from source and destination */
   int addr1, addr2;                /* Loop addresses */
-  int emptyDestTest;               /* Address of test for empty pDest */
-  int emptySrcTest;                /* Address of test for empty pSrc */
+  int emptyDestTest = 0;           /* Address of test for empty pDest */
+  int emptySrcTest = 0;            /* Address of test for empty pSrc */
   Vdbe *v;                         /* The VDBE we are building */
   KeyInfo *pKey;                   /* Key information for an index */
   int regAutoinc;                  /* Memory register used by AUTOINC */
@@ -2026,6 +2031,9 @@ static int xferOptimization(
     sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1);
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
+  }else{
+    sqlite3TableLock(pParse, iDbDest, pDest->tnum, 1, pDest->zName);
+    sqlite3TableLock(pParse, iDbSrc, pSrc->tnum, 0, pSrc->zName);
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
     for(pSrcIdx=pSrc->pIndex; ALWAYS(pSrcIdx); pSrcIdx=pSrcIdx->pNext){
