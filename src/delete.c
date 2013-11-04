@@ -393,6 +393,9 @@ void sqlite3DeleteFrom(
     sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
                       sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
     sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, iKey);
+    if( db->flags & SQLITE_CountRows ){
+      sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
+    }
     sqlite3WhereEnd(pWInfo);
 
     /* Open cursors for all indices of the table.

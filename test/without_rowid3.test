@@ -1391,6 +1391,91 @@ foreach {tn zSchema} {
   } {1 {foreign key constraint failed}}
 }
 
+# Additional tests cases using multi-column self-referential
+# FOREIGN KEY constraints.
+#
+drop_all_tables
+do_execsql_test without_rowid3-16.4.1.1 {
+  PRAGMA foreign_keys=ON;
+  CREATE TABLE t1(a,b,c,d,e,f,
+     UNIQUE (a,b),
+     PRIMARY KEY (e,c),
+     FOREIGN KEY (d,f) REFERENCES t1(e,c)
+  ) WITHOUT rowid;
+  INSERT INTO t1 VALUES(1,2,3,5,5,3);
+  INSERT INTO t1 VALUES(2,3,4,6,6,4);
+  INSERT INTO t1 VALUES('x','y',1.5,'fizzle','fizzle',1.5);
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {1 2 3 5 5 3 | 2 3 4 6 6 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+do_execsql_test without_rowid3-16.4.1.2 {
+  UPDATE t1 SET c=99, f=99 WHERE a=1;
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {1 2 99 5 5 99 | 2 3 4 6 6 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+do_execsql_test without_rowid3-16.4.1.3 {
+  UPDATE t1 SET e=876, d=876 WHERE a=2;
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {1 2 99 5 5 99 | 2 3 4 876 876 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+do_test without_rowid3-16.4.1.4 {
+  catchsql {
+    UPDATE t1 SET c=11, e=22 WHERE a=1;
+  }
+} {1 {foreign key constraint failed}}
+
+do_test without_rowid3-16.4.1.5 {
+  catchsql {
+    UPDATE t1 SET d=11, f=22 WHERE a=1;
+  }
+} {1 {foreign key constraint failed}}
+
+do_execsql_test without_rowid3-16.4.1.6 {
+  DELETE FROM t1 WHERE a=1;
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {2 3 4 876 876 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+do_execsql_test without_rowid3-16.4.2.1 {
+  DROP TABLE t1;
+  CREATE TABLE t1(a,b,c,d,e,f,
+     PRIMARY KEY (a,b),
+     UNIQUE (e,c),
+     FOREIGN KEY (d,f) REFERENCES t1(e,c)
+  ) WITHOUT rowid;
+  INSERT INTO t1 VALUES(1,2,3,5,5,3);
+  INSERT INTO t1 VALUES(2,3,4,6,6,4);
+  INSERT INTO t1 VALUES('x','y',1.5,'fizzle','fizzle',1.5);
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {1 2 3 5 5 3 | 2 3 4 6 6 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+do_execsql_test without_rowid3-16.4.2.2 {
+  UPDATE t1 SET c=99, f=99 WHERE a=1;
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {1 2 99 5 5 99 | 2 3 4 6 6 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+do_execsql_test without_rowid3-16.4.2.3 {
+  UPDATE t1 SET e=876, d=876 WHERE a=2;
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {1 2 99 5 5 99 | 2 3 4 876 876 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+do_test without_rowid3-16.4.2.4 {
+  catchsql {
+    UPDATE t1 SET c=11, e=22 WHERE a=1;
+  }
+} {1 {foreign key constraint failed}}
+
+do_test without_rowid3-16.4.2.5 {
+  catchsql {
+    UPDATE t1 SET d=11, f=22 WHERE a=1;
+  }
+} {1 {foreign key constraint failed}}
+
+do_execsql_test without_rowid3-16.4.2.6 {
+  DELETE FROM t1 WHERE a=1;
+  SELECT *, '|' FROM t1 ORDER BY a, b;
+} {2 3 4 876 876 4 | x y 1.5 fizzle fizzle 1.5 |}
+
+
 #-------------------------------------------------------------------------
 # This next block of tests, without_rowid3-17.*, tests that if "PRAGMA count_changes"
 # is turned on statements that violate immediate FK constraints return

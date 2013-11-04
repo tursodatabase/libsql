@@ -1,5 +1,5 @@
-C Correctly\shandle\sself-referential\sforeign\skeys\son\sWITHOUT\sROWID\stables.
-D 2013-11-04T13:56:00.182
+C Correctly\shandle\schanging\scounting\swhen\sinserting\sand\sdeleting\son\nWITHOUT\sROWID\stables.\s\sAdd\smore\sFOREIGN\sKEY\stest\scases.
+D 2013-11-04T15:23:25.268
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 605be39dc72a56768a55ee7245d92774ed7ae343
+F src/delete.c f4e0dc7b804fc0eb1a040e3e6ac7aaf341834e39
 F src/expr.c ecc2b98eb75fe5533cfdfcca6b04cfe5f0c6001f
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 24bbd27a963c8e022a79579964885cc638567c88
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 62c2997b6884e2f7ba8daa486f663ae885c4b479
+F src/insert.c faa58c9978001f67b3fcb4e0fb588c7852c05483
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -279,7 +279,7 @@ F src/update.c 94d63d3e06b09df3618655a841dc95d5b9466dc6
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 3492f312ed979b146296289ecbd8851a7891a830
+F src/vdbe.c 8bab888622f007944e24da09680c3517800a7a91
 F src/vdbe.h c18a2dd91c838601b867a214e43c5f66d5d001ba
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1078,7 +1078,7 @@ F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
 F test/without_rowid1.test de6f9e6ea36a7e4b087e44084abed3c0456f7dfe
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
-F test/without_rowid3.test a755f3eef1e0d20e1bb9c9da00ebfa889d7b0bd7
+F test/without_rowid3.test 8ad27697fbe319d0e858b790c0ec53abf4f8617b
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
@@ -1130,7 +1130,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1315d9109c7105f4a62bb2d43ca6948d41245129
-R 64353718434772b548f438b0d879d511
+P af128862ab6008df9dda1ee90f93f9efd629e259
+R 4ec154138cf082ccfc3c655c3c0bf739
 U drh
-Z 7428ec81c08443a72ec23535cca14f03
+Z 13548943f156687a0863838255585229
