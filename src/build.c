@@ -1709,6 +1709,8 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
     }
     assert( pPk->nColumn==j );
     assert( pTab->nCol==j );
+  }else{
+    pPk->nColumn = pTab->nCol;
   }
 }
 

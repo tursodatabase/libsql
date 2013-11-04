@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sprocessing\sINTEGER\sPRIMARY\sKEY\son\sa\sWITHOUT\sROWID\stable.
-D 2013-11-04T17:00:50.157
+C Add\sanother\stest\scase\sfile\sfor\sWITHOUT\sROWID\sand\sfix\sthe\sbugs\sthat\sthe\snew\s\ntest\sfile\suncovered.
+D 2013-11-04T18:34:46.599
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 0610712b057ea6dedc6486b50337804e28171238
+F src/build.c 10b7e687299ffeafd52d14f8844bf3385a0ca338
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -275,7 +275,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c 53d6b5d50b3b23d4fcd0a36504feb5cff9aed716
-F src/update.c 94d63d3e06b09df3618655a841dc95d5b9466dc6
+F src/update.c a804e71818927510d351e4ed14d29f75416a7a91
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1079,6 +1079,7 @@ F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
 F test/without_rowid1.test de6f9e6ea36a7e4b087e44084abed3c0456f7dfe
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test 8ad27697fbe319d0e858b790c0ec53abf4f8617b
+F test/without_rowid4.test 3c6ee0ab3d49944cb4be1b59361b693266f53083
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
@@ -1130,7 +1131,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d072bcd0a8692d590c13c2bf458454c10c12a3e2
-R c7d9ca7d9f7c49d0a3951ad46262529a
+P 89098e6d18dacd1554cf4471b5f035db85d1f327
+R 4fbdd86f5ad03355f6f11feb2ddb3d95
 U drh
-Z 9724dea81d81466a0359ccb3798ff5e3
+Z 1acf97ed6e77633885d90ac086f2b0ff

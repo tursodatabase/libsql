@@ -95,7 +95,7 @@ void sqlite3Update(
 ){
   int i, j;              /* Loop counters */
   Table *pTab;           /* The table to be updated */
-  int addr = 0;          /* VDBE instruction address of the start of the loop */
+  int addrTop = 0;       /* VDBE instruction address of the start of the loop */
   WhereInfo *pWInfo;     /* Information about the WHERE clause */
   Vdbe *v;               /* The virtual database engine */
   Index *pIdx;           /* For looping over indices */
@@ -419,19 +419,18 @@ void sqlite3Update(
 
   /* Top of the update loop */
   labelBreak = sqlite3VdbeMakeLabel(v);
-  labelContinue = sqlite3VdbeMakeLabel(v);
   if( pPk ){
+    labelContinue = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak);
-    addr = sqlite3VdbeAddOp2(v, OP_RowKey, iEph, regKey);
+    addrTop = sqlite3VdbeAddOp2(v, OP_RowKey, iEph, regKey);
     sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
   }else if( okOnePass ){
-    int a1 = sqlite3VdbeAddOp1(v, OP_NotNull, regOldRowid);
-    addr = sqlite3VdbeAddOp2(v, OP_Goto, 0, labelBreak);
-    sqlite3VdbeJumpHere(v, a1);
+    labelContinue = labelBreak;
+    sqlite3VdbeAddOp2(v, OP_IsNull, regOldRowid, labelBreak);
   }else{
-    addr = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet, labelBreak,
+    labelContinue = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet, labelBreak,
                              regOldRowid);
-    sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addr, regOldRowid);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
   }
 
   /* If the record number will change, set register regNewRowid to
@@ -510,7 +509,7 @@ void sqlite3Update(
     sqlite3VdbeAddOp2(v, OP_Affinity, regNew, pTab->nCol);
     sqlite3TableAffinityStr(v, pTab);
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
-        TRIGGER_BEFORE, pTab, regOldRowid, onError, addr);
+        TRIGGER_BEFORE, pTab, regOldRowid, onError, labelContinue);
 
     /* The row-trigger may have deleted the row being updated. In this
     ** case, jump to the next row. No updates or AFTER triggers are 
@@ -521,7 +520,7 @@ void sqlite3Update(
     if( pPk ){
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
     }else{
-      sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addr, regOldRowid);
+      sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
     }
 
     /* If it did not delete it, the row-trigger may still have modified 
@@ -542,7 +541,7 @@ void sqlite3Update(
     /* Do constraint checks. */
     assert( regOldRowid>0 );
     sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-        regNewRowid, regOldRowid, chngKey, onError, addr, 0);
+        regNewRowid, regOldRowid, chngKey, onError, labelContinue, 0);
 
     /* Do FK constraint checks. */
     if( hasFK ){
@@ -590,16 +589,16 @@ void sqlite3Update(
   }
 
   sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
-      TRIGGER_AFTER, pTab, regOldRowid, onError, addr);
+      TRIGGER_AFTER, pTab, regOldRowid, onError, labelContinue);
 
   /* Repeat the above with the next record to be updated, until
   ** all record selected by the WHERE clause have been updated.
   */
   if( pPk ){
     sqlite3VdbeResolveLabel(v, labelContinue);
-    sqlite3VdbeAddOp2(v, OP_Next, iEph, addr);
+    sqlite3VdbeAddOp2(v, OP_Next, iEph, addrTop);
   }else if( !okOnePass ){
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addr);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, labelContinue);
   }
   sqlite3VdbeResolveLabel(v, labelBreak);
 
