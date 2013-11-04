@@ -28,6 +28,7 @@ set sqlite_fts3_enable_parentheses 1
 proc test_fts3expr {expr} {
   db one {SELECT fts3_exprtest('simple', $expr, 'a', 'b', 'c')}
 }
+
 do_test fts3expr-1.0 {
   test_fts3expr "abcd"
 } {PHRASE 3 0 abcd}
@@ -494,6 +495,18 @@ do_test fts3expr-7.1 {
   }
 } {}
 
+
+do_test fts3expr-8.0 { test_fts3expr "(blah)" } {PHRASE 3 0 blah}
+do_test fts3expr-8.1 { test_fts3expr "(blah.)" } {PHRASE 3 0 blah}
+do_test fts3expr-8.2 { test_fts3expr "(blah,)" } {PHRASE 3 0 blah}
+do_test fts3expr-8.3 { test_fts3expr "(blah!)" } {PHRASE 3 0 blah}
+do_test fts3expr-8.4 { test_fts3expr "(blah-)" } {PHRASE 3 0 blah}
+
+do_test fts3expr-8.5 { test_fts3expr "((blah.))" } {PHRASE 3 0 blah}
+do_test fts3expr-8.6 { test_fts3expr "(((blah,)))" } {PHRASE 3 0 blah}
+do_test fts3expr-8.7 { test_fts3expr "((((blah!))))" } {PHRASE 3 0 blah}
+
+do_test fts3expr-8.8 { test_fts3expr "(,(blah-),)" } {PHRASE 3 0 blah}
 
 set sqlite_fts3_enable_parentheses 0
 finish_test

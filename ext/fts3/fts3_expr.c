@@ -155,6 +155,11 @@ int sqlite3Fts3OpenTokenizer(
   return rc;
 }
 
+/*
+** Function getNextNode(), which is called by fts3ExprParse(), may itself
+** call fts3ExprParse(). So this forward declaration is required.
+*/
+static int fts3ExprParse(ParseContext *, const char *, int, Fts3Expr **, int *);
 
 /*
 ** Extract the next token from buffer z (length n) using the tokenizer
@@ -189,7 +194,31 @@ static int getNextToken(
     int nByte;                               /* total space to allocate */
 
     rc = pModule->xNext(pCursor, &zToken, &nToken, &iStart, &iEnd, &iPosition);
-    if( rc==SQLITE_OK ){
+
+    if( (rc==SQLITE_OK || rc==SQLITE_DONE) && sqlite3_fts3_enable_parentheses ){
+      int i;
+      if( rc==SQLITE_DONE ) iStart = n;
+      for(i=0; i<iStart; i++){
+        if( z[i]=='(' ){
+          pParse->nNest++;
+          rc = fts3ExprParse(pParse, &z[i+1], n-i-1, &pRet, &nConsumed);
+          if( rc==SQLITE_OK && !pRet ){
+            rc = SQLITE_DONE;
+          }
+          nConsumed = (int)(i + 1 + nConsumed);
+          break;
+        }
+
+        if( z[i]==')' ){
+          rc = SQLITE_DONE;
+          pParse->nNest--;
+          nConsumed = i+1;
+          break;
+        }
+      }
+    }
+
+    if( nConsumed==0 && rc==SQLITE_OK ){
       nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase) + nToken;
       pRet = (Fts3Expr *)fts3MallocZero(nByte);
       if( !pRet ){
@@ -370,12 +399,6 @@ no_mem:
 }
 
 /*
-** Function getNextNode(), which is called by fts3ExprParse(), may itself
-** call fts3ExprParse(). So this forward declaration is required.
-*/
-static int fts3ExprParse(ParseContext *, const char *, int, Fts3Expr **, int *);
-
-/*
 ** The output variable *ppExpr is populated with an allocated Fts3Expr 
 ** structure, or set to 0 if the end of the input buffer is reached.
 **
@@ -468,27 +491,6 @@ static int getNextNode(
       /* Turns out that wasn't a keyword after all. This happens if the
       ** user has supplied a token such as "ORacle". Continue.
       */
-    }
-  }
-
-  /* Check for an open bracket. */
-  if( sqlite3_fts3_enable_parentheses ){
-    if( *zInput=='(' ){
-      int nConsumed;
-      pParse->nNest++;
-      rc = fts3ExprParse(pParse, &zInput[1], nInput-1, ppExpr, &nConsumed);
-      if( rc==SQLITE_OK && !*ppExpr ){
-        rc = SQLITE_DONE;
-      }
-      *pnConsumed = (int)((zInput - z) + 1 + nConsumed);
-      return rc;
-    }
-  
-    /* Check for a close bracket. */
-    if( *zInput==')' ){
-      pParse->nNest--;
-      *pnConsumed = (int)((zInput - z) + 1);
-      return SQLITE_DONE;
     }
   }
 

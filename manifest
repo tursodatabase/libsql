@@ -1,5 +1,5 @@
-C A\spair\sof\ssqlite3_analyzer\sbug\sfixes:\s(1)\squote\sstrings\sin\sthe\sSQL\sat\sthe\send\nof\sthe\soutput.\s(2)\sFix\stest_stat.c\sso\sthat\sit\sno\slonger\smisses\ssome\soverflow\npages\son\sinternal\sindex\spages.
-D 2013-11-02T11:34:58.851
+C Fix\sa\sbug\spreventing\sFTS\sfrom\scorrectly\sprocessing\sbracket\stokens\sthat\sare\simmediately\spreceded\sby\scharacters\sthat\sare\sneither\swhitespace\sor\stoken\scharacters.
+D 2013-11-04T08:56:22.163
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c f25ae5729d40cc4e661c0a552685038f27e72bc9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 8689f7cf85020e7f88d1e761eeac480c3b0ea7ad
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
-F ext/fts3/fts3_expr.c f8eb1046063ba342c7114eba175cabb31c4a64e7
+F ext/fts3/fts3_expr.c 5165c365cb5a035f5be8bb296f7aa3211d43e4ac
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -537,7 +537,7 @@ F test/fts3defer2.test a3b6cbeabaf28c9398652a4d101ea224d9358479
 F test/fts3defer3.test dd53fc13223c6d8264a98244e9b19abd35ed71cd
 F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
-F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
+F test/fts3expr.test 06f1a96facc8f3e4b1ad5cc001dc5c8e83e68b9f
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
@@ -1126,7 +1126,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 090db8c81d8ca216277d11c8c4751c0a37801524
-R 3b67c293eec6cc448a29f4c028337c5f
-U drh
-Z 034fbe99525e12c2d1270c2b13585d64
+P 42a11e7464ab1d97d603c7409f10710ad4f1f542
+R 2d5fb8fa6614cd47b99fe6098fa2430f
+U dan
+Z a252af69123903f914c4a37a9c4019f1
