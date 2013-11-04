@@ -526,7 +526,7 @@ static int sampleIsBetter(
 ** remove the least desirable sample from p->a[] to make room.
 */
 static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
-  Stat4Sample *pSample;
+  Stat4Sample *pSample = 0;
   int i;
 
   assert( IsStat4 || nEqZero==0 );
@@ -569,6 +569,7 @@ static void sampleInsert(Stat4Accum *p, Stat4Sample *pNew, int nEqZero){
     sampleClear(p->db, pMin);
     memmove(pMin, &pMin[1], sizeof(p->a[0])*(p->nSample-p->iMin-1));
     pSample = &p->a[p->nSample-1];
+    pSample->nRowid = 0;
     pSample->anEq = anEq;
     pSample->anDLt = anDLt;
     pSample->anLt = anLt;

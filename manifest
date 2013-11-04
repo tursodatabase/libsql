@@ -1,5 +1,5 @@
-C Bug\sfixes\sin\sthe\sINSERT\sconstraint\schecker.\s\sRefactor\sthe\sRowid\shandling\slogic\nfor\sANALYZE\swith\sSTAT3/4.
-D 2013-11-04T21:44:54.263
+C Add\sthe\sindex7.test\sscript\sfor\stesting\spartial\sindices\swith\sWITHOUT\sROWID\ntables.\s\sFix\sbugs\sin\sANALYZE\slocated\sby\sthat\sscript.
+D 2013-11-04T22:04:17.582
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -159,7 +159,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
-F src/analyze.c 0727d84692bdad3bada987950fd714445cca225c
+F src/analyze.c f8092cb68de612be90844d579df076f74a164003
 F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
@@ -285,7 +285,7 @@ F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c cf6d0bc68fd1783747909cd14387bc06ac10a4e2
 F src/vdbeblob.c ff60adf2953e0ffc1d59541b3101c9886b03a3de
-F src/vdbemem.c e62206af9efa102c5bae58269955cae1965ad728
+F src/vdbemem.c c84e2bc3b8ebef3fbc4c2d811cdf9413c7062c3f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
@@ -604,6 +604,7 @@ F test/index3.test 423a25c789fc8cc51aaf2a4370bbdde2d9e9eed7
 F test/index4.test 2983216eb8c86ee62d9ed7cb206b5cc3331c0026
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
 F test/index6.test 9996f064672c03e768e256e4bf7cff4b63e8b109
+F test/index7.test d38186768f58937fcb29c11aa03b19caadb0aeae
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1131,7 +1132,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bc2a06eb8e57573d08e77800a7937eee5af3f035
-R c6a00a38efed0dd468c88c1afd0d6407
+P 1ea43c0f236792a3bc13e1cb330f5ff3402c2851
+R 2790af370c8f6a52d4127dc2f2cbcd12
 U drh
-Z 16670a36629db5e8da9906d68f8a996e
+Z b133b4e74344b0b311a15909e57836eb
