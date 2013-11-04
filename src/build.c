@@ -3129,22 +3129,20 @@ Index *sqlite3CreateIndex(
     }
   }
 
-  /* If the db->init.busy is 0 then create the index on disk.  This
-  ** involves writing the index into the master table and filling in the
-  ** index with the current table contents.
+  /* If this is the initial CREATE INDEX statement (or CREATE TABLE if the
+  ** index is an implied index for a UNIQUE or PRIMARY KEY constraint) then
+  ** emit code to allocate the index rootpage on disk and make an entry for
+  ** the index in the sqlite_master table and populate the index with
+  ** content.  But, do not do this if we are simply reading the sqlite_master
+  ** table to parse the schema, or if this index is the PRIMARY KEY index
+  ** of a WITHOUT ROWID table.
   **
-  ** The db->init.busy is 0 when the user first enters a CREATE INDEX 
-  ** command.  db->init.busy is 1 when a database is opened and 
-  ** CREATE INDEX statements are read out of the master table.  In
-  ** the latter case the index already exists on disk, which is why
-  ** we don't want to recreate it.
-  **
-  ** If pTblName==0 it means this index is generated as a primary key
-  ** or UNIQUE constraint of a CREATE TABLE statement.  Since the table
+  ** If pTblName==0 it means this index is generated as an implied PRIMARY KEY
+  ** or UNIQUE index in a CREATE TABLE statement.  Since the table
   ** has just been created, it contains no data and the index initialization
   ** step can be skipped.
   */
-  else if( pParse->nErr==0 ){
+  else if( pParse->nErr==0 && (HasRowid(pTab) || pTblName!=0) ){
     Vdbe *v;
     char *zStmt;
     int iMem = ++pParse->nMem;

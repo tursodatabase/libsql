@@ -1,5 +1,5 @@
-C Correctly\shandle\schanging\scounting\swhen\sinserting\sand\sdeleting\son\nWITHOUT\sROWID\stables.\s\sAdd\smore\sFOREIGN\sKEY\stest\scases.
-D 2013-11-04T15:23:25.268
+C Fix\sa\sproblem\swith\sprocessing\sINTEGER\sPRIMARY\sKEY\son\sa\sWITHOUT\sROWID\stable.
+D 2013-11-04T17:00:50.157
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 21727e787a763e2a9981297eff7945374eaffc19
+F src/build.c 0610712b057ea6dedc6486b50337804e28171238
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -212,7 +212,7 @@ F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
-F src/pragma.c ff1a98998d2038bc9c770326986b7c4728de4973
+F src/pragma.c 8d67f2e7a73b8260cfed328eb024fb16c20e0f16
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
@@ -1130,7 +1130,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P af128862ab6008df9dda1ee90f93f9efd629e259
-R 4ec154138cf082ccfc3c655c3c0bf739
+P d072bcd0a8692d590c13c2bf458454c10c12a3e2
+R c7d9ca7d9f7c49d0a3951ad46262529a
 U drh
-Z 13548943f156687a0863838255585229
+Z 9724dea81d81466a0359ccb3798ff5e3

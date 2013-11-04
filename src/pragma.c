@@ -1848,10 +1848,12 @@ void sqlite3Pragma(
         Index *pIdx;
         if( HasRowid(pTab) ){
           sqlite3VdbeAddOp2(v, OP_Integer, pTab->tnum, 2+cnt);
+          VdbeComment((v, "%s", pTab->zName));
           cnt++;
         }
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           sqlite3VdbeAddOp2(v, OP_Integer, pIdx->tnum, 2+cnt);
+          VdbeComment((v, "%s", pIdx->zName));
           cnt++;
         }
       }
