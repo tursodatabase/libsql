@@ -445,6 +445,62 @@ static void fkLookupParent(
   sqlite3VdbeAddOp1(v, OP_Close, iCur);
 }
 
+
+/*
+** Return an Expr object that refers to a memory register corresponding
+** to column iCol of table pTab.
+**
+** regBase is the first of an array of register that contains the data
+** for pTab.  regBase itself holds the rowid.  regBase+1 holds the first
+** column.  regBase+2 holds the second column, and so forth.
+*/
+static Expr *exprTableRegister(
+  Parse *pParse,     /* Parsing and code generating context */
+  Table *pTab,       /* The table whose content is at r[regBase]... */
+  int regBase,       /* Contents of table pTab */
+  i16 iCol           /* Which column of pTab is desired */
+){
+  Expr *pExpr;
+  Column *pCol;
+  const char *zColl;
+  sqlite3 *db = pParse->db;
+
+  pExpr = sqlite3Expr(db, TK_REGISTER, 0);
+  if( pExpr ){
+    if( iCol>=0 && iCol!=pTab->iPKey ){
+      pCol = &pTab->aCol[iCol];
+      pExpr->iTable = regBase + iCol + 1;
+      pExpr->affinity = pCol->affinity;
+      zColl = pCol->zColl;
+      if( zColl==0 ) zColl = db->pDfltColl->zName;
+      pExpr = sqlite3ExprAddCollateString(pParse, pExpr, zColl);
+    }else{
+      pExpr->iTable = regBase;
+      pExpr->affinity = SQLITE_AFF_INTEGER;
+    }
+  }
+  return pExpr;
+}
+
+/*
+** Return an Expr object that refers to column iCol of table pTab which
+** has cursor iCur.
+*/
+static Expr *exprTableColumn(
+  sqlite3 *db,      /* The database connection */
+  Table *pTab,      /* The table whose column is desired */
+  int iCursor,      /* The open cursor on the table */
+  i16 iCol          /* The column that is wanted */
+){
+  Expr *pExpr = sqlite3Expr(db, TK_COLUMN, 0);
+  if( pExpr ){
+    pExpr->pTab = pTab;
+    pExpr->iTable = iCursor;
+    pExpr->iColumn = iCol;
+  }
+  return pExpr;
+}
+
 /*
 ** This function is called to generate code executed when a row is deleted
 ** from the parent table of foreign key constraint pFKey and, if pFKey is 
@@ -514,26 +570,8 @@ static void fkScanChildren(
     i16 iCol;                     /* Index of column in child table */ 
     const char *zCol;             /* Name of column in child table */
 
-    pLeft = sqlite3Expr(db, TK_REGISTER, 0);
-    if( pLeft ){
-      /* Set the collation sequence and affinity of the LHS of each TK_EQ
-      ** expression to the parent key column defaults.  */
-      if( pIdx ){
-        Column *pCol;
-        const char *zColl;
-        iCol = pIdx->aiColumn[i];
-        pCol = &pTab->aCol[iCol];
-        if( pTab->iPKey==iCol ) iCol = -1;
-        pLeft->iTable = regData+iCol+1;
-        pLeft->affinity = pCol->affinity;
-        zColl = pCol->zColl;
-        if( zColl==0 ) zColl = db->pDfltColl->zName;
-        pLeft = sqlite3ExprAddCollateString(pParse, pLeft, zColl);
-      }else{
-        pLeft->iTable = regData;
-        pLeft->affinity = SQLITE_AFF_INTEGER;
-      }
-    }
+    iCol = pIdx ? pIdx->aiColumn[i] : -1;
+    pLeft = exprTableRegister(pParse, pTab, regData, iCol);
     iCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
     assert( iCol>=0 );
     zCol = pFKey->pFrom->aCol[iCol].zName;
@@ -542,23 +580,38 @@ static void fkScanChildren(
     pWhere = sqlite3ExprAnd(db, pWhere, pEq);
   }
 
-  /* If the child table is the same as the parent table, and this scan
-  ** is taking place as part of a DELETE operation (operation D.2), omit the
-  ** row being deleted from the scan by adding ($rowid != rowid) to the WHERE 
-  ** clause, where $rowid is the rowid of the row being deleted.  */
-  if( pTab==pFKey->pFrom && nIncr>0 && HasRowid(pTab) /*FIXME*/ ){
+  /* If the child table is the same as the parent table, then add terms
+  ** to the WHERE clause that prevent this entry from being scanned.
+  ** The added WHERE clause terms are like this:
+  **
+  **     $current_rowid!=rowid
+  **     NOT( $current_a==a AND $current_b==b AND ... )
+  **
+  ** The first form is used for rowid tables.  The second form is used
+  ** for WITHOUT ROWID tables.  In the second form, the primary key is
+  ** (a,b,...)
+  */
+  if( pTab==pFKey->pFrom && nIncr>0 ){
     Expr *pNe;                    /* Expression (pLeft != pRight) */
     Expr *pLeft;                  /* Value from parent table row */
     Expr *pRight;                 /* Column ref to child table */
-    pLeft = sqlite3Expr(db, TK_REGISTER, 0);
-    pRight = sqlite3Expr(db, TK_COLUMN, 0);
-    if( pLeft && pRight ){
-      pLeft->iTable = regData;
-      pLeft->affinity = SQLITE_AFF_INTEGER;
-      pRight->iTable = pSrc->a[0].iCursor;
-      pRight->iColumn = -1;
+    if( HasRowid(pTab) ){
+      pLeft = exprTableRegister(pParse, pTab, regData, -1);
+      pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, -1);
+      pNe = sqlite3PExpr(pParse, TK_NE, pLeft, pRight, 0);
+    }else{
+      int i;
+      Expr *pEq, *pAll = 0;
+      Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+      for(i=0; i<pPk->nKeyCol; i++){
+        i16 iCol = pIdx->aiColumn[i];
+        pLeft = exprTableRegister(pParse, pTab, regData, iCol);
+        pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, iCol);
+        pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight, 0);
+        pAll = sqlite3ExprAnd(db, pAll, pEq);
+      }
+      pNe = sqlite3PExpr(pParse, TK_NOT, pAll, 0, 0);
     }
-    pNe = sqlite3PExpr(pParse, TK_NE, pLeft, pRight, 0);
     pWhere = sqlite3ExprAnd(db, pWhere, pNe);
   }
 

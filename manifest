@@ -1,5 +1,5 @@
-C Improved\scomments\son\sforeign\skey\slogic.
-D 2013-11-03T02:27:58.561
+C Correctly\shandle\sself-referential\sforeign\skeys\son\sWITHOUT\sROWID\stables.
+D 2013-11-04T13:56:00.182
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 605be39dc72a56768a55ee7245d92774ed7ae343
 F src/expr.c ecc2b98eb75fe5533cfdfcca6b04cfe5f0c6001f
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c df809cab5485c16ab146cc13246afd41900ece84
+F src/fkey.c 24bbd27a963c8e022a79579964885cc638567c88
 F src/func.c 2c47b65e6e00e3e9374942f28254faf8adafe398
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -1130,7 +1130,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a7a18b65fa34dfdf6117fa21db3e576f96876617
-R c871a047a9d8bb37aa43632b24cb0302
+P 1315d9109c7105f4a62bb2d43ca6948d41245129
+R 64353718434772b548f438b0d879d511
 U drh
-Z 938c2bb15557c0ae50def104b2712b1c
+Z 7428ec81c08443a72ec23535cca14f03
