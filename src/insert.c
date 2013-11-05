@@ -1897,9 +1897,6 @@ static int xferOptimization(
   if( pDest->iPKey!=pSrc->iPKey ){
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
   }
-  if( HasRowid(pDest)!=HasRowid(pSrc) ){
-    return 0;   /* source and destination must both be WITHOUT ROWID or not */
-  }
   for(i=0; i<pDest->nCol; i++){
     if( pDest->aCol[i].affinity!=pSrc->aCol[i].affinity ){
       return 0;    /* Affinity must be the same on all columns */
@@ -1958,32 +1955,31 @@ static int xferOptimization(
   regAutoinc = autoIncBegin(pParse, iDbDest, pDest);
   regData = sqlite3GetTempReg(pParse);
   regRowid = sqlite3GetTempReg(pParse);
+  sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
+  assert( HasRowid(pDest) || destHasUniqueIdx );
+  if( (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
+   || destHasUniqueIdx                              /* (2) */
+   || (onError!=OE_Abort && onError!=OE_Rollback)   /* (3) */
+  ){
+    /* In some circumstances, we are able to run the xfer optimization
+    ** only if the destination table is initially empty.  This code makes
+    ** that determination.  Conditions under which the destination must
+    ** be empty:
+    **
+    ** (1) There is no INTEGER PRIMARY KEY but there are indices.
+    **     (If the destination is not initially empty, the rowid fields
+    **     of index entries might need to change.)
+    **
+    ** (2) The destination has a unique index.  (The xfer optimization 
+    **     is unable to test uniqueness.)
+    **
+    ** (3) onError is something other than OE_Abort and OE_Rollback.
+    */
+    addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iDest, 0);
+    emptyDestTest = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
+    sqlite3VdbeJumpHere(v, addr1);
+  }
   if( HasRowid(pSrc) ){
-    sqlite3OpenTable(pParse, iDest, iDbDest, pDest, OP_OpenWrite);
-    if( (pDest->iPKey<0 && pDest->pIndex!=0)          /* (1) */
-     || destHasUniqueIdx                              /* (2) */
-     || (onError!=OE_Abort && onError!=OE_Rollback)   /* (3) */
-    ){
-      /* In some circumstances, we are able to run the xfer optimization
-      ** only if the destination table is initially empty.  This code makes
-      ** that determination.  Conditions under which the destination must
-      ** be empty:
-      **
-      ** (1) There is no INTEGER PRIMARY KEY but there are indices.
-      **     (If the destination is not initially empty, the rowid fields
-      **     of index entries might need to change.)
-      **
-      ** (2) The destination has a unique index.  (The xfer optimization 
-      **     is unable to test uniqueness.)
-      **
-      ** (3) onError is something other than OE_Abort and OE_Rollback.
-      */
-      addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iDest, 0);
-      emptyDestTest = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
-      sqlite3VdbeJumpHere(v, addr1);
-    }else{
-      emptyDestTest = 0;
-    }
     sqlite3OpenTable(pParse, iSrc, iDbSrc, pSrc, OP_OpenRead);
     emptySrcTest = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0);
     if( pDest->iPKey>=0 ){

@@ -1028,14 +1028,15 @@ proc explain_i {sql {db db}} {
   puts "addr  opcode        p1      p2      p3      p4                p5  #"
   puts "----  ------------  ------  ------  ------  ----------------  --  -"
 
-  set addrTail 0
 
+  set bSeenGoto 0
   $db eval "explain $sql" {} {
     set x($addr) 0
     set op($addr) $opcode
 
-    if {$opcode == "Goto" && $addrTail==0} {
-      set addrTail $p2
+    if {$opcode == "Goto" && ($bSeenGoto==0 || ($p2 > $addr+10))} {
+      set linebreak($p2) 1
+      set bSeenGoto 1
     }
 
     if {$opcode == "Next"} {
@@ -1049,20 +1050,20 @@ proc explain_i {sql {db db}} {
         incr x($i) 2
       }
     }
+
+    if {$opcode == "Halt" && $comment == "End of coroutine"} {
+      set linebreak([expr $addr+1]) 1
+    }
   }
 
   $db eval "explain $sql" {} {
-    if {$addr == $addrTail} {
+    if {[info exists linebreak($addr)]} {
       puts ""
     }
     set I [string repeat " " $x($addr)]
     puts [format {%-4d  %s%-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
       $addr $I $opcode $p1 $p2 $p3 $p4 $p5 $comment
     ]
-
-    if {$opcode == "Halt" && $comment == "End of coroutine"} {
-      puts ""
-    }
   }
   puts "----  ------------  ------  ------  ------  ----------------  --  -"
 }
