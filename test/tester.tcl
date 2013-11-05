@@ -1023,6 +1023,50 @@ proc explain {sql {db db}} {
   }
 }
 
+proc explain_i {sql {db db}} {
+  puts ""
+  puts "addr  opcode        p1      p2      p3      p4                p5  #"
+  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+
+  set addrTail 0
+
+  $db eval "explain $sql" {} {
+    set x($addr) 0
+    set op($addr) $opcode
+
+    if {$opcode == "Goto" && $addrTail==0} {
+      set addrTail $p2
+    }
+
+    if {$opcode == "Next"} {
+      for {set i $p2} {$i<$addr} {incr i} {
+        incr x($i) 2
+      }
+    }
+
+    if {$opcode == "Goto" && $p2<$addr && $op($p2)=="Yield"} {
+      for {set i [expr $p2+1]} {$i<$addr} {incr i} {
+        incr x($i) 2
+      }
+    }
+  }
+
+  $db eval "explain $sql" {} {
+    if {$addr == $addrTail} {
+      puts ""
+    }
+    set I [string repeat " " $x($addr)]
+    puts [format {%-4d  %s%-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+      $addr $I $opcode $p1 $p2 $p3 $p4 $p5 $comment
+    ]
+
+    if {$opcode == "Halt" && $comment == "End of coroutine"} {
+      puts ""
+    }
+  }
+  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+}
+
 # Show the VDBE program for an SQL statement but omit the Trace
 # opcode at the beginning.  This procedure can be used to prove
 # that different SQL statements generate exactly the same VDBE code.

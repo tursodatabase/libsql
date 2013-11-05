@@ -1506,29 +1506,28 @@ void sqlite3GenerateConstraintChecks(
         }
       }
       if( isUpdate ){
-        if( pIdx->autoIndex==2 ){
-          /* For a PRIMARY KEY index on a WITHOUT ROWID table, always conflict
-          ** on an INSERT.  On an UPDATE, only conflict if the PRIMARY KEY
-          ** has changed. */
-          int addrPkConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
-          for(i=0; i<pPk->nKeyCol-1; i++){
-            x = pPk->aiColumn[i];
-            sqlite3VdbeAddOp3(v, OP_Ne, regOldData+1+x,
-                              addrPkConflict, regIdx+i);
-          }
+        /* If currently processing the PRIMARY KEY of a WITHOUT ROWID 
+        ** table, only conflict if the new PRIMARY KEY values are actually
+        ** different from the old.
+        **
+        ** For a UNIQUE index, only conflict if the PRIMARY KEY values
+        ** of the matched index row are different from the original PRIMARY
+        ** KEY values of this row before the update.  */
+        char *p4; 
+        int addrJump = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
+        int op = OP_Ne;
+        int regCmp = (pIdx->autoIndex==2 ? regIdx : regR);
+
+        for(i=0; i<pPk->nKeyCol; i++){
+          char *p4 = (char*)sqlite3LocateCollSeq(pParse, pPk->azColl[i]);
           x = pPk->aiColumn[i];
-          sqlite3VdbeAddOp3(v, OP_Eq, regOldData+1+x, addrUniqueOk, regIdx+i);
-        }else{
-          /* For a UNIQUE index on a WITHOUT ROWID table, conflict only if the
-          ** PRIMARY KEY value of the match is different from the old
-          ** PRIMARY KEY value from before the update. */
-          int addrConflict = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
-          for(i=0; i<pPk->nKeyCol-1; i++){
-            sqlite3VdbeAddOp3(v, OP_Ne, regOldData+pPk->aiColumn[i]+1,
-                              addrConflict, regR+i);
+          if( i==(pPk->nKeyCol-1) ){
+            addrJump = addrUniqueOk;
+            op = OP_Eq;
           }
-          sqlite3VdbeAddOp3(v, OP_Eq, regOldData+pPk->aiColumn[i]+1,
-                            addrUniqueOk, regR+i);
+          sqlite3VdbeAddOp4(v, op, 
+              regOldData+1+x, addrJump, regCmp+i, p4, P4_COLLSEQ
+          );
         }
       }
     }

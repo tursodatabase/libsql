@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix without_rowid1
 
 # Create and query a WITHOUT ROWID table.
 #
@@ -108,4 +109,50 @@ ifcapable stat4 {
   } {t1 t1 t1 t1bd}
 }
 
+#----------
+
+do_execsql_test 2.1.1 {
+  CREATE TABLE t4 (a COLLATE nocase PRIMARY KEY, b) WITHOUT ROWID;
+  INSERT INTO t4 VALUES('abc', 'def');
+  SELECT * FROM t4;
+} {abc def}
+do_execsql_test 2.1.2 {
+  UPDATE t4 SET a = 'ABC';
+  SELECT * FROM t4;
+} {ABC def}
+
+do_execsql_test 2.2.1 {
+  DROP TABLE t4;
+  CREATE TABLE t4 (b, a COLLATE nocase PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t4(a, b) VALUES('abc', 'def');
+  SELECT * FROM t4;
+} {def abc}
+
+do_execsql_test 2.2.2 {
+  UPDATE t4 SET a = 'ABC', b = 'xyz';
+  SELECT * FROM t4;
+} {xyz ABC}
+
+do_execsql_test 2.3.1 {
+  CREATE TABLE t5 (a, b, PRIMARY KEY(b, a)) WITHOUT ROWID;
+  INSERT INTO t5(a, b) VALUES('abc', 'def');
+  UPDATE t5 SET a='abc', b='def';
+} {}
+
+do_execsql_test 2.4.1 {
+  CREATE TABLE t6 (
+    a COLLATE nocase, b, c UNIQUE, PRIMARY KEY(b, a)
+  ) WITHOUT ROWID;
+
+  INSERT INTO t6(a, b, c) VALUES('abc', 'def', 'ghi');
+  UPDATE t6 SET a='ABC', c='ghi';
+} {}
+
+do_execsql_test 2.4.2 {
+  SELECT * FROM t6 ORDER BY b, a;
+  SELECT * FROM t6 ORDER BY c;
+} {ABC def ghi ABC def ghi}
+
+
 finish_test
+

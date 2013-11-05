@@ -1,5 +1,5 @@
-C Standardize\sthe\serror\smessages\sgenerated\sby\sconstraint\sfailures\sto\sa\sformat\nof\s"$TYPE\sconstraint\sfailed:\s$DETAIL".\s\sThis\sinvolves\smany\schanges\sto\sthe\nexpected\soutput\sof\stest\scases.
-D 2013-11-05T13:33:55.491
+C Add\stests\sfor\supdates\sof\swithout-rowid\stables\sthat\suse\snon-BINARY\scollation\ssequences\sfor\sthe\sprimary\skey\scolumns.\sAnd\sa\sminor\sbugfix\sto\sthe\ssame.
+D 2013-11-05T14:19:22.006
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 63660d2ec840c43c212fbfe3805a162e4e6eafc7
+F src/insert.c 37bbaf90c077a8a8a6a5831d66c223b66e8272ae
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -831,7 +831,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 0a48d94222d50e6e50d72ac103606c4f8e7cbb81
-F test/tester.tcl 5e97d1fe08f45fa3cc2320cee437e315c75ce995
+F test/tester.tcl 901258f2825cb712be4093bcd9317082d26a9901
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1078,7 +1078,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
-F test/without_rowid1.test 657fde6092752c0f08a8f4b5f92b8b4b11c754ce
+F test/without_rowid1.test 0b349aa31554afcee213ccabf4d259f4ff13a86a
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
@@ -1133,7 +1133,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 294ed33756b06375e56c41f1088d42ee48adbdc8
-R 130b6461e81d8eeec1daafa19f71d1d2
-U drh
-Z ecfd4293f10f89cf27ac30e16c93be55
+P 54b221929744b1bcdbcc2030fef2e510618afd41
+R 1aec678b4bfe426b5a77dcb059fca6c2
+U dan
+Z 288ff3cb146c8502bea1245ecdd07fe3
