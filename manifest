@@ -1,5 +1,5 @@
-C Add\stests\sfor\supdates\sof\swithout-rowid\stables\sthat\suse\snon-BINARY\scollation\ssequences\sfor\sthe\sprimary\skey\scolumns.\sAnd\sa\sminor\sbugfix\sto\sthe\ssame.
-D 2013-11-05T14:19:22.006
+C Updates\sto\sthe\sbackcompat.test\stest\sscript\sso\sthat\sit\sworks\swith\sreally\sold\s(3.6.*)\sversions.
+D 2013-11-05T15:02:39.443
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -333,7 +333,7 @@ F test/autoindex1.test d4dfe14001dfcb74cfbd7107f45a79fc1ab6183e
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test cf76ac18830b61df960f74229e1a4107258d3ee0
+F test/backcompat.test 5f8ad58b3eaebc78cd2c66c65476a42e6f32b2ad
 F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
@@ -1133,7 +1133,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 54b221929744b1bcdbcc2030fef2e510618afd41
-R 1aec678b4bfe426b5a77dcb059fca6c2
+P 99b1fa4b1664a79eae1dddce2b9a848384cdb1d7
+R 9237f8c5de7d66fb8a3d16e086790bd9
 U dan
-Z 288ff3cb146c8502bea1245ecdd07fe3
+Z e1e8e8d809370991b491bb9af478a65e
