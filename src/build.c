@@ -1658,6 +1658,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   }else{
     pPk = sqlite3PrimaryKeyIndex(pTab);
   }
+  pPk->isCovering = 1;
   assert( pPk!=0 );
   nPk = pPk->nKeyCol;
 

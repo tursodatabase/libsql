@@ -1,5 +1,5 @@
-C Fix\sconflict\shandling\sfor\sthe\scase\swhen\sthe\srowid\suses\sREPLACE\sbut\sother\nunique\sconstraints\suse\sFAIL\sor\sIGNORE.
-D 2013-11-05T19:41:32.450
+C Make\ssure\sthe\squery\splanner\sknows\sthat\sthe\sPRIMARY\sKEY\sindex\sof\sa\nWITHOUT\sROWID\stable\sis\salways\sa\scovering\sindex.
+D 2013-11-05T22:39:17.992
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 507bacb8f45a2964f7beab1453be80e11e11a709
+F src/build.c 3182fb17436876b686737c4e107bec041f3ed7d3
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 52a3d885192c5d31f956c5ee17e29e2d1f3d5c9f
-R 549795ebe9589f04f40d14f040b65091
+P 573cc27427af297185f11aac8dce88ca31f471ca
+R 97fccc973b619db63b96475b8db4c69b
 U drh
-Z c7bda7b48cde94ee0d99c42dc49f8047
+Z 2aaf3467e27c8632750e8e712ef23dd5
