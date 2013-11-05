@@ -1676,12 +1676,13 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int n;
     if( pIdx->autoIndex==2 ) continue;
-    if( pIdx->nKeyCol==pTab->nCol ){
-      pIdx->nColumn = pTab->nCol;
-      continue;
-    }
     for(i=n=0; i<nPk; i++){
       if( !hasColumn(pIdx->aiColumn, pIdx->nKeyCol, pPk->aiColumn[i]) ) n++;
+    }
+    if( n==0 ){
+      /* This index is a superset of the primary key */
+      pIdx->nColumn = pIdx->nKeyCol;
+      continue;
     }
     if( resizeIndexObject(db, pIdx, pIdx->nKeyCol+n) ) return;
     for(i=0, j=pIdx->nKeyCol; i<nPk; i++){

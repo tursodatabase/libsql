@@ -1,5 +1,5 @@
-C Remove\san\s"explain"\scommand\sfrom\stest\sscript\swithout_rowid1.test\sthat\swas\saccidentally\scommitted.
-D 2013-11-05T16:56:11.709
+C Fix\sa\sbug\sin\ssecondary\sindex\sinitialization\swhen\sthe\ssecondary\sindex\sis\na\ssuperset\sof\sthe\sPRIMARY\sKEY\sfor\sa\sWITHOUT\sROWID\stable.
+D 2013-11-05T17:30:04.337
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 6790e7b7023935b03666a0a2ab3c4da78165d661
+F src/build.c 507bacb8f45a2964f7beab1453be80e11e11a709
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -1133,7 +1133,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3877c9f50582b51817dcf3cd75d836891a34e590
-R f264b3126a788e0d527316d13cdfd154
-U dan
-Z 807832cc7751f68770c48b635041b00e
+P 4b41d989e894b9214a9b973228ef8446356f9fbb
+R a05ce9adf9842de08a1d6f032363e2df
+U drh
+Z 7d34ccd67e34b00bfe85d5ff3fefd3e0
