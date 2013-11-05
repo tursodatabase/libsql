@@ -52,7 +52,7 @@ do_test without_rowid1-1.21 {
   catchsql {
     INSERT INTO t1 VALUES('dynamic','phone','flipper','harvard');
   }
-} {1 {columns c, a are not unique}}
+} {1 {PRIMARY KEY must be unique}}
 
 # REPLACE INTO works, however.
 #

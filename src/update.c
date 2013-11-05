@@ -453,7 +453,7 @@ void sqlite3Update(
     for(i=0; i<pTab->nCol; i++){
       if( oldmask==0xffffffff
        || (i<32 && (oldmask & (1<<i)))
-       || (chngPk && (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0)
+       || (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
       ){
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regOld+i);
       }else{

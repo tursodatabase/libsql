@@ -375,7 +375,7 @@ without_rowid3-2-test 65 1   "INSERT INTO leaf VALUES('b', 2)"
 without_rowid3-2-test 66 1   "INSERT INTO leaf VALUES('c', 1)"
 do_test without_rowid3-2-test-67 {
   catchsql          "INSERT INTO node SELECT parent, 3 FROM leaf"
-} {1 {column nodeid is not unique}}
+} {1 {PRIMARY KEY must be unique}}
 without_rowid3-2-test 68 0 "COMMIT"           FKV
 without_rowid3-2-test 69 1   "INSERT INTO node VALUES(1, NULL)"
 without_rowid3-2-test 70 0   "INSERT INTO node VALUES(2, NULL)"

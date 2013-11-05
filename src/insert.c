@@ -1463,7 +1463,7 @@ void sqlite3GenerateConstraintChecks(
     ** of a WITHOUT ROWID table and there has been no change the
     ** primary key, then no collision is possible.  The collision detection
     ** logic below can all be skipped. */
-    if( isUpdate && pPk && pkChng==0 ){
+    if( isUpdate && pPk==pIdx && pkChng==0 ){
       sqlite3VdbeResolveLabel(v, addrUniqueOk);
       continue;
     }
@@ -1546,26 +1546,31 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
-        int j;
-        StrAccum errMsg;
-        const char *zSep;
-        char *zErr;
+        if( pIdx->autoIndex==2 ){
+          sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_PRIMARYKEY,
+                                onError, "PRIMARY KEY must be unique", 0);
+        }else{
+          int j;
+          StrAccum errMsg;
+          const char *zSep;
+          char *zErr;
 
-        sqlite3StrAccumInit(&errMsg, 0, 0, 200);
-        errMsg.db = db;
-        zSep = pIdx->nKeyCol>1 ? "columns " : "column ";
-        for(j=0; j<pIdx->nKeyCol; j++){
-          char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
-          sqlite3StrAccumAppend(&errMsg, zSep, -1);
-          zSep = ", ";
-          sqlite3StrAccumAppend(&errMsg, zCol, -1);
+          sqlite3StrAccumInit(&errMsg, 0, 0, 200);
+          errMsg.db = db;
+          zSep = pIdx->nKeyCol>1 ? "columns " : "column ";
+          for(j=0; j<pIdx->nKeyCol; j++){
+            char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
+            sqlite3StrAccumAppend(&errMsg, zSep, -1);
+            zSep = ", ";
+            sqlite3StrAccumAppend(&errMsg, zCol, -1);
+          }
+          sqlite3StrAccumAppend(&errMsg,
+              pIdx->nKeyCol>1 ? " are not unique" : " is not unique", -1);
+          zErr = sqlite3StrAccumFinish(&errMsg);
+          sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_UNIQUE,
+                               onError, zErr, 0);
+          sqlite3DbFree(errMsg.db, zErr);
         }
-        sqlite3StrAccumAppend(&errMsg,
-            pIdx->nKeyCol>1 ? " are not unique" : " is not unique", -1);
-        zErr = sqlite3StrAccumFinish(&errMsg);
-        sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_UNIQUE,
-                              onError, zErr, 0);
-        sqlite3DbFree(errMsg.db, zErr);
         break;
       }
       case OE_Ignore: {

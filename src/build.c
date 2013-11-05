@@ -1691,8 +1691,8 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
         j++;
       }
     }
-    assert( pIdx->nColumn==j );
-    assert( pIdx->nKeyCol+n==j );
+    assert( pIdx->nColumn>=pIdx->nKeyCol+n );
+    assert( pIdx->nColumn>=j );
   }
 
   /* Add all table columns to the PRIMARY KEY index

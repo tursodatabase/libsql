@@ -1182,7 +1182,7 @@ do_execsql_test 4.3.0 {
   INSERT INTO t2 VALUES(X'ABCDEF',  'three');
 } {}
 
-do_createtable_tests 4.3.1 -error { %s not unique } {
+do_createtable_tests 4.3.1 -error {PRIMARY KEY must be unique} {
   1    "INSERT INTO t1 VALUES(0, 0)"                 {"column x is"}
   2    "INSERT INTO t1 VALUES(45.5, 'abc')"          {"column x is"}
   3    "INSERT INTO t1 VALUES(0.0, 'abc')"           {"column x is"}
@@ -1208,7 +1208,7 @@ do_createtable_tests 4.3.2 {
   9    "INSERT INTO t2 VALUES('brambles', 'abc')"    {}
   10   "INSERT INTO t2 VALUES(X'ABCDEF', 'abc')"     {}
 }
-do_createtable_tests 4.3.3 -error { %s not unique } {
+do_createtable_tests 4.3.3 -error {PRIMARY KEY must be unique} {
   1    "UPDATE t1 SET x=0           WHERE y='two'"    {"column x is"}
   2    "UPDATE t1 SET x='brambles'  WHERE y='three'"  {"column x is"}
   3    "UPDATE t1 SET x=45.5        WHERE y='zero'"   {"column x is"}
@@ -1537,12 +1537,12 @@ do_execsql_test 4.15.0 {
 }
 
 foreach {tn tbl res ac data} {
-  1   t1_ab    {1 {column a is not unique}} 0 {1 one 2 two 3 three}
-  2   t1_ro    {1 {column a is not unique}} 1 {1 one 2 two}
-  3   t1_fa    {1 {column a is not unique}} 0 {1 one 2 two 3 three 4 string}
+  1   t1_ab    {1 {PRIMARY KEY must be unique}} 0 {1 one 2 two 3 three}
+  2   t1_ro    {1 {PRIMARY KEY must be unique}} 1 {1 one 2 two}
+  3   t1_fa    {1 {PRIMARY KEY must be unique}} 0 {1 one 2 two 3 three 4 string}
   4   t1_ig    {0 {}} 0 {1 one 2 two 3 three 4 string 6 string}
   5   t1_re    {0 {}} 0 {1 one 2 two 4 string 3 string 6 string}
-  6   t1_xx    {1 {column a is not unique}} 0 {1 one 2 two 3 three}
+  6   t1_xx    {1 {PRIMARY KEY must be unique}} 0 {1 one 2 two 3 three}
 } {
   catchsql COMMIT
   do_execsql_test  4.15.$tn.1 "BEGIN; INSERT INTO $tbl VALUES(3, 'three')"
@@ -1747,16 +1747,16 @@ do_execsql_test 5.4.3 {
 
 do_catchsql_test 5.4.4.1 { 
   INSERT INTO t6 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {PRIMARY KEY must be unique}}
 do_catchsql_test 5.4.4.2 { 
   INSERT INTO t7 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {PRIMARY KEY must be unique}}
 do_catchsql_test 5.4.4.3 { 
   INSERT INTO t8 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {PRIMARY KEY must be unique}}
 do_catchsql_test 5.4.4.4 { 
   INSERT INTO t9 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {PRIMARY KEY must be unique}}
 
 # EVIDENCE-OF: R-56094-57830 the following three table declarations all
 # cause the column "x" to be an alias for the rowid (an integer primary
