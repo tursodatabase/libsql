@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\ssecondary\sindex\sinitialization\swhen\sthe\ssecondary\sindex\sis\na\ssuperset\sof\sthe\sPRIMARY\sKEY\sfor\sa\sWITHOUT\sROWID\stable.
-D 2013-11-05T17:30:04.337
+C Fix\sconflict\shandling\sfor\sthe\scase\swhen\sthe\srowid\suses\sREPLACE\sbut\sother\nunique\sconstraints\suse\sFAIL\sor\sIGNORE.
+D 2013-11-05T19:41:32.450
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 7559252147d3aad55951ecd5fadf8350729cb901
+F src/insert.c 66c8c99920cac74abba70cb7eecc5114e02ed3ea
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -386,6 +386,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 5d162ecbbde37f165de1992904dcbbed9fc7c012
+F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 4aabd06cff3fe759e3e658bcc17b71789710665e
 F test/corrupt2.test 9c0ab4becd50e9050bc1ebb8675456a4e5587bf0
@@ -1133,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4b41d989e894b9214a9b973228ef8446356f9fbb
-R a05ce9adf9842de08a1d6f032363e2df
+P 52a3d885192c5d31f956c5ee17e29e2d1f3d5c9f
+R 549795ebe9589f04f40d14f040b65091
 U drh
-Z 7d34ccd67e34b00bfe85d5ff3fefd3e0
+Z c7bda7b48cde94ee0d99c42dc49f8047

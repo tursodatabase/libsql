@@ -1229,7 +1229,9 @@ void sqlite3GenerateConstraintChecks(
   int j1;              /* Addresss of jump instruction */
   int seenReplace = 0; /* True if REPLACE is used to resolve INT PK conflict */
   int nPkField;        /* Number of fields in PRIMARY KEY. 1 for ROWID tables */
-  u8 isUpdate;
+  int ipkTop = 0;      /* Top of the rowid change constraint check */
+  int ipkBottom = 0;   /* Bottom of the rowid change constraint check */
+  u8 isUpdate;         /* True if this is an UPDATE operation */
 
   isUpdate = regOldData!=0;
   db = pParse->db;
@@ -1345,6 +1347,20 @@ void sqlite3GenerateConstraintChecks(
       sqlite3VdbeAddOp3(v, OP_Eq, regNewData, addrRowidOk, regOldData);
     }
 
+    /* If the response to a rowid conflict is REPLACE but the response
+    ** to some other UNIQUE constraint is FAIL or IGNORE, then we need
+    ** to defer the running of the rowid conflict checking until after
+    ** the UNIQUE constraints have run.
+    */
+    if( onError==OE_Replace && overrideError!=OE_Replace ){
+      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+        if( pIdx->onError==OE_Ignore || pIdx->onError==OE_Fail ){
+          ipkTop = sqlite3VdbeAddOp0(v, OP_Goto);
+          break;
+        }
+      }
+    }
+
     /* Check to see if the new rowid already exists in the table.  Skip
     ** the following conflict logic if it does not. */
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, addrRowidOk, regNewData);
@@ -1400,12 +1416,16 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Ignore: {
-        assert( seenReplace==0 );
+        /*assert( seenReplace==0 );*/
         sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
         break;
       }
     }
     sqlite3VdbeResolveLabel(v, addrRowidOk);
+    if( ipkTop ){
+      ipkBottom = sqlite3VdbeAddOp0(v, OP_Goto);
+      sqlite3VdbeJumpHere(v, ipkTop);
+    }
   }
 
   /* Test all UNIQUE constraints by creating entries for each UNIQUE
@@ -1475,10 +1495,6 @@ void sqlite3GenerateConstraintChecks(
     }else if( onError==OE_Default ){
       onError = OE_Abort;
     }
-    if( seenReplace ){
-      if( onError==OE_Ignore ) onError = OE_Replace;
-      else if( onError==OE_Fail ) onError = OE_Abort;
-    }
     
     /* Check to see if the new index entry will be unique */
     regR = sqlite3GetTempRange(pParse, nPkField);
@@ -1544,7 +1560,6 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Ignore: {
-        assert( seenReplace==0 );
         sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
         break;
       }
@@ -1563,6 +1578,10 @@ void sqlite3GenerateConstraintChecks(
     }
     sqlite3VdbeResolveLabel(v, addrUniqueOk);
     sqlite3ReleaseTempRange(pParse, regR, nPkField);
+  }
+  if( ipkTop ){
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, ipkTop+1);
+    sqlite3VdbeJumpHere(v, ipkBottom);
   }
   
   if( pbMayReplace ){
