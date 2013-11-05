@@ -278,30 +278,30 @@ do_execsql_test e_update-1.8.0 {
 } {}
 foreach {tn sql error ac data } {
   1  "UPDATE t3 SET b='one' WHERE a=3" 
-     {column b is not unique} 1 {1 one 2 two 3 three 4 four}
+     {UNIQUE constraint failed: t3.b} 1 {1 one 2 two 3 three 4 four}
 
   2  "UPDATE OR REPLACE t3 SET b='one' WHERE a=3" 
      {} 1 {2 two 3 one 4 four}
 
   3  "UPDATE OR FAIL t3 SET b='three'"
-     {column b is not unique} 1 {2 three 3 one 4 four}
+     {UNIQUE constraint failed: t3.b} 1 {2 three 3 one 4 four}
 
   4  "UPDATE OR IGNORE t3 SET b='three' WHERE a=3" 
      {} 1 {2 three 3 one 4 four}
 
   5  "UPDATE OR ABORT t3 SET b='three' WHERE a=3" 
-     {column b is not unique} 1 {2 three 3 one 4 four}
+     {UNIQUE constraint failed: t3.b} 1 {2 three 3 one 4 four}
 
   6  "BEGIN" {} 0 {2 three 3 one 4 four}
 
   7  "UPDATE t3 SET b='three' WHERE a=3" 
-     {column b is not unique} 0 {2 three 3 one 4 four}
+     {UNIQUE constraint failed: t3.b} 0 {2 three 3 one 4 four}
 
   8  "UPDATE OR ABORT t3 SET b='three' WHERE a=3" 
-     {column b is not unique} 0 {2 three 3 one 4 four}
+     {UNIQUE constraint failed: t3.b} 0 {2 three 3 one 4 four}
 
   9  "UPDATE OR FAIL t3 SET b='two'"
-     {column b is not unique} 0 {2 two 3 one 4 four}
+     {UNIQUE constraint failed: t3.b} 0 {2 two 3 one 4 four}
 
   10 "UPDATE OR IGNORE t3 SET b='four' WHERE a=3"
      {} 0 {2 two 3 one 4 four}
@@ -310,7 +310,7 @@ foreach {tn sql error ac data } {
      {} 0 {2 two 3 four}
 
   12 "UPDATE OR ROLLBACK t3 SET b='four'"
-     {column b is not unique} 1 {2 three 3 one 4 four}
+     {UNIQUE constraint failed: t3.b} 1 {2 three 3 one 4 four}
 } {
   do_catchsql_test e_update-1.8.$tn.1 $sql [list [expr {$error!=""}] $error]
   do_execsql_test  e_update-1.8.$tn.2 {SELECT * FROM t3} [list {*}$data]

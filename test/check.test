@@ -41,7 +41,7 @@ do_test check-1.3 {
   catchsql {
     INSERT INTO t1 VALUES(6,7);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 do_test check-1.4 {
   execsql {
     SELECT * FROM t1;
@@ -51,7 +51,7 @@ do_test check-1.5 {
   catchsql {
     INSERT INTO t1 VALUES(4,3);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 do_test check-1.6 {
   execsql {
     SELECT * FROM t1;
@@ -88,7 +88,7 @@ do_test check-1.12 {
   catchsql {
     UPDATE t1 SET x=7 WHERE x==2
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 do_test check-1.13 {
   execsql {
     SELECT * FROM t1;
@@ -98,7 +98,7 @@ do_test check-1.14 {
   catchsql {
     UPDATE t1 SET x=5 WHERE x==2
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 do_test check-1.15 {
   execsql {
     SELECT * FROM t1;
@@ -142,17 +142,17 @@ do_test check-2.4 {
   catchsql {
     INSERT INTO t2 VALUES(1.1, NULL, NULL);
   }
-} {1 {constraint one failed}}
+} {1 {CHECK constraint failed: one}}
 do_test check-2.5 {
   catchsql {
     INSERT INTO t2 VALUES(NULL, 5, NULL);
   }
-} {1 {constraint two failed}}
+} {1 {CHECK constraint failed: two}}
 do_test check-2.6 {
   catchsql {
     INSERT INTO t2 VALUES(NULL, NULL, 3.14159);
   }
-} {1 {constraint three failed}}
+} {1 {CHECK constraint failed: three}}
 
 # Undocumented behavior:  The CONSTRAINT name clause can follow a constraint.
 # Such a clause is ignored.  But the parser must accept it for backwards
@@ -172,7 +172,7 @@ do_test check-2.11 {
   catchsql {
     INSERT INTO t2b VALUES('xyzzy','hi',5);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t2b}}
 do_test check-2.12 {
   execsql {
     CREATE TABLE t2c(
@@ -188,7 +188,7 @@ do_test check-2.13 {
   catchsql {
     INSERT INTO t2c VALUES('xyzzy',7,8);
   }
-} {1 {constraint x_two failed}}
+} {1 {CHECK constraint failed: x_two}}
 do_test check-2.cleanup {
   execsql {
     DROP TABLE IF EXISTS t2b;
@@ -256,7 +256,7 @@ do_test check-3.9 {
   catchsql {
     INSERT INTO t3 VALUES(111,222,333);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t3}}
 
 do_test check-4.1 {
   execsql {
@@ -298,7 +298,7 @@ do_test check-4.6 {
   catchsql {
     UPDATE t4 SET x=0, y=1;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t4}}
 do_test check-4.7 {
   execsql {
     SELECT * FROM t4;
@@ -316,7 +316,7 @@ do_test check-4.9 {
     PRAGMA ignore_check_constraints=OFF;
     UPDATE t4 SET x=0, y=2;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t4}}
 ifcapable vacuum {
   do_test check_4.10 {
     catchsql {
@@ -367,7 +367,7 @@ do_test check-6.5 {
   catchsql {
     UPDATE OR FAIL t1 SET x=7-x, y=y+1;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 do_test check-6.6 {
   execsql {
     SELECT * FROM t1;
@@ -379,7 +379,7 @@ do_test check-6.7 {
     INSERT INTO t1 VALUES(1,30.0);
     INSERT OR ROLLBACK INTO t1 VALUES(8,40.0);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 do_test check-6.8 {
   catchsql {
     COMMIT;
@@ -398,7 +398,7 @@ do_test check-6.12 {
   catchsql {
     REPLACE INTO t1 VALUES(6,7);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 do_test check-6.13 {
   execsql {SELECT * FROM t1}
 } {3 12.0 2 20.0}
@@ -426,7 +426,8 @@ db func myfunc myfunc
 
 do_execsql_test  7.1 { CREATE TABLE t6(a CHECK (myfunc(a))) }
 do_execsql_test  7.2 { INSERT INTO t6 VALUES(9)  }
-do_catchsql_test 7.3 { INSERT INTO t6 VALUES(11) } {1 {constraint failed}}
+do_catchsql_test 7.3 { INSERT INTO t6 VALUES(11) } \
+          {1 {CHECK constraint failed: t6}}
 
 do_test 7.4 {
   sqlite3 db2 test.db
@@ -449,7 +450,7 @@ do_test 7.7 {
 do_test 7.8 {
   db2 func myfunc myfunc
   catchsql { INSERT INTO t6 VALUES(12) } db2
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t6}}
 
 # 2013-08-02:  Silently ignore database name qualifiers in CHECK constraints.
 #

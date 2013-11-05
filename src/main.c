@@ -1135,6 +1135,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_CONSTRAINT_VTAB:    zName = "SQLITE_CONSTRAINT_VTAB";   break;
       case SQLITE_CONSTRAINT_FUNCTION:
                                 zName = "SQLITE_CONSTRAINT_FUNCTION";     break;
+      case SQLITE_CONSTRAINT_ROWID:   zName = "SQLITE_CONSTRAINT_ROWID";  break;
       case SQLITE_MISMATCH:           zName = "SQLITE_MISMATCH";          break;
       case SQLITE_MISUSE:             zName = "SQLITE_MISUSE";            break;
       case SQLITE_NOLFS:              zName = "SQLITE_NOLFS";             break;

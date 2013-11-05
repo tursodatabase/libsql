@@ -157,7 +157,7 @@ do_test triggerC-1.14 {
 } {}
 do_test triggerC-1.15 {
   catchsql { UPDATE OR ROLLBACK t1 SET a=100 }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 
 
 #-------------------------------------------------------------------------

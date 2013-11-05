@@ -76,7 +76,7 @@ do_test intpkey-1.6 {
      INSERT INTO t1 VALUES(5,'second','entry');
   }} msg]
   lappend r $msg
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test intpkey-1.7 {
   execsql {
     SELECT rowid, * FROM t1;

@@ -54,7 +54,7 @@ do_test insert4-1.1 {
   catchsql {
     INSERT INTO t1 SELECT * FROM t2;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 xferopt_test insert4-1.2 0
 do_test insert4-1.3 {
   execsql {
@@ -101,7 +101,7 @@ do_test insert4-2.3.3 {
     INSERT INTO t1 SELECT * FROM t2 LIMIT 1;
     SELECT * FROM t1;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 xferopt_test insert4-2.3.4 0
 
 # Do not run the transfer optimization if there is a DISTINCT
@@ -119,7 +119,7 @@ do_test insert4-2.4.3 {
     DELETE FROM t1;
     INSERT INTO t1 SELECT DISTINCT * FROM t2;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t1}}
 xferopt_test insert4-2.4.4 0
 
 # The following procedure constructs two tables then tries to transfer
@@ -315,7 +315,7 @@ do_test insert4-6.6 {
   catchsql {
     INSERT INTO t6b SELECT * FROM t6a;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t6b}}
 do_test insert4-6.7 {
   execsql {
     DROP TABLE t6b;
@@ -324,7 +324,7 @@ do_test insert4-6.7 {
   catchsql {
     INSERT INTO t6b SELECT * FROM t6a;
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t6b}}
 
 # Ticket [6284df89debdfa61db8073e062908af0c9b6118e]
 # Disable the xfer optimization if the destination table contains
@@ -353,7 +353,7 @@ ifcapable foreignkey {
     catchsql {
       INSERT INTO t7b SELECT * FROM t7c;
     }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test insert4-7.4 {
     execsql {SELECT * FROM t7b}
   } {}
@@ -452,7 +452,7 @@ do_test insert4-8.5 {
   catchsql {
     INSERT INTO t1 SELECT * FROM t2;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test insert4-8.6 {
   execsql {
     SELECT * FROM t1;
@@ -472,7 +472,7 @@ do_test insert4-8.7 {
   catchsql {
     INSERT INTO t1 SELECT * FROM t2;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test insert4-8.8 {
   execsql {
     SELECT * FROM t1;
@@ -494,7 +494,7 @@ do_test insert4-8.9 {
     INSERT INTO t1 VALUES(2,3);
     INSERT INTO t1 SELECT * FROM t2;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test insert4-8.10 {
   catchsql {COMMIT}
 } {1 {cannot commit - no transaction is active}}

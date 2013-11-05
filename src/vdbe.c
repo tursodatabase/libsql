@@ -804,12 +804,13 @@ case OP_Yield: {            /* in1 */
   break;
 }
 
-/* Opcode:  HaltIfNull  P1 P2 P3 P4 *
+/* Opcode:  HaltIfNull  P1 P2 P3 P4 P5
 ** Synopsis:  if r[P3] null then halt
 **
 ** Check the value in register P3.  If it is NULL then Halt using
 ** parameter P1, P2, and P4 as if this were a Halt instruction.  If the
 ** value in register P3 is not NULL, then this routine is a no-op.
+** The P5 parameter should be 1.
 */
 case OP_HaltIfNull: {      /* in3 */
   pIn3 = &aMem[pOp->p3];
@@ -817,7 +818,7 @@ case OP_HaltIfNull: {      /* in3 */
   /* Fall through into OP_Halt */
 }
 
-/* Opcode:  Halt P1 P2 * P4 *
+/* Opcode:  Halt P1 P2 * P4 P5
 **
 ** Exit immediately.  All open cursors, etc are closed
 ** automatically.
@@ -832,11 +833,25 @@ case OP_HaltIfNull: {      /* in3 */
 **
 ** If P4 is not null then it is an error message string.
 **
+** P5 is a value between 0 and 4, inclusive, that modifies the P4 string.
+**
+**    0:  (no change)
+**    1:  NOT NULL contraint failed: P4
+**    2:  UNIQUE constraint failed: P4
+**    3:  CHECK constraint failed: P4
+**    4:  FOREIGN KEY constraint failed: P4
+**
+** If P5 is not zero and P4 is NULL, then everything after the ":" is
+** omitted.
+**
 ** There is an implied "Halt 0 0 0" instruction inserted at the very end of
 ** every program.  So a jump past the last instruction of the program
 ** is the same as executing Halt.
 */
 case OP_Halt: {
+  const char *zType;
+  const char *zLogFmt;
+
   if( pOp->p1==SQLITE_OK && p->pFrame ){
     /* Halt the sub-program. Return control to the parent frame. */
     VdbeFrame *pFrame = p->pFrame;
@@ -857,18 +872,34 @@ case OP_Halt: {
     aMem = p->aMem;
     break;
   }
-
+  if( pOp->p5 ){
+    static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
+                                           "FOREIGN KEY" };
+    assert( pOp->p5>=1 && pOp->p5<=4 );
+    testcase( pOp->p5==1 );
+    testcase( pOp->p5==2 );
+    testcase( pOp->p5==3 );
+    testcase( pOp->p5==4 );
+    zType = azType[pOp->p5-1];
+  }else{
+    zType = 0;
+  }
   p->rc = pOp->p1;
   p->errorAction = (u8)pOp->p2;
   p->pc = pc;
-  if( pOp->p4.z ){
-    assert( p->rc!=SQLITE_OK );
-    sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
-    testcase( sqlite3GlobalConfig.xLog!=0 );
-    sqlite3_log(pOp->p1, "abort at %d in [%s]: %s", pc, p->zSql, pOp->p4.z);
-  }else if( p->rc ){
-    testcase( sqlite3GlobalConfig.xLog!=0 );
-    sqlite3_log(pOp->p1, "constraint failed at %d in [%s]", pc, p->zSql);
+  if( p->rc ){
+    zLogFmt = "abort at %d in [%s]: %s";
+    if( zType && pOp->p4.z ){
+      sqlite3SetString(&p->zErrMsg, db, "%s constraint failed: %s", 
+                       zType, pOp->p4.z);
+    }else if( pOp->p4.z ){
+      sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
+    }else if( zType ){
+      sqlite3SetString(&p->zErrMsg, db, "%s constraint failed", zType);
+    }else{
+      zLogFmt = "abort at %d in [%s]";
+    }
+    sqlite3_log(pOp->p1, zLogFmt, pc, p->zSql, p->zErrMsg);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );

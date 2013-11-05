@@ -240,7 +240,7 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
     if {$i>1} break
   }
 
-  if {$t0} {set t1 {column a is not unique}}
+  if {$t0} {set t1 {UNIQUE constraint failed: t1.a}}
   do_test memdb-5.$i {
     if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
     if {$conf2!=""} {set conf2 "ON CONFLICT $conf2"}

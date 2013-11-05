@@ -1278,12 +1278,11 @@ void sqlite3GenerateConstraintChecks(
         /* Fall through */
       case OE_Rollback:
       case OE_Fail: {
-        char *zMsg;
-        sqlite3VdbeAddOp3(v, OP_HaltIfNull,
-                          SQLITE_CONSTRAINT_NOTNULL, onError, regNewData+1+i);
-        zMsg = sqlite3MPrintf(db, "%s.%s may not be NULL",
-                              pTab->zName, pTab->aCol[i].zName);
-        sqlite3VdbeChangeP4(v, -1, zMsg, P4_DYNAMIC);
+        char *zMsg = sqlite3MPrintf(db, "%s.%s", pTab->zName,
+                                    pTab->aCol[i].zName);
+        sqlite3VdbeAddOp4(v, OP_HaltIfNull, SQLITE_CONSTRAINT_NOTNULL, onError,
+                          regNewData+1+i, zMsg, P4_DYNAMIC);
+        sqlite3VdbeChangeP5(v, P5_ConstraintNotNull);
         break;
       }
       case OE_Ignore: {
@@ -1313,15 +1312,12 @@ void sqlite3GenerateConstraintChecks(
       if( onError==OE_Ignore ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
       }else{
-        char *zConsName = pCheck->a[i].zName;
+        char *zName = pCheck->a[i].zName;
+        if( zName==0 ) zName = pTab->zName;
         if( onError==OE_Replace ) onError = OE_Abort; /* IMP: R-15569-63625 */
-        if( zConsName ){
-          zConsName = sqlite3MPrintf(db, "constraint %s failed", zConsName);
-        }else{
-          zConsName = 0;
-        }
         sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_CHECK,
-                              onError, zConsName, P4_DYNAMIC);
+                              onError, zName, P4_TRANSIENT,
+                              P5_ConstraintCheck);
       }
       sqlite3VdbeResolveLabel(v, allOk);
     }
@@ -1362,8 +1358,7 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
-        sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_PRIMARYKEY,
-           onError, "PRIMARY KEY must be unique", P4_STATIC);
+        sqlite3RowidConstraint(pParse, onError, pTab);
         break;
       }
       case OE_Replace: {
@@ -1546,31 +1541,7 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
-        if( pIdx->autoIndex==2 ){
-          sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_PRIMARYKEY,
-                                onError, "PRIMARY KEY must be unique", 0);
-        }else{
-          int j;
-          StrAccum errMsg;
-          const char *zSep;
-          char *zErr;
-
-          sqlite3StrAccumInit(&errMsg, 0, 0, 200);
-          errMsg.db = db;
-          zSep = pIdx->nKeyCol>1 ? "columns " : "column ";
-          for(j=0; j<pIdx->nKeyCol; j++){
-            char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
-            sqlite3StrAccumAppend(&errMsg, zSep, -1);
-            zSep = ", ";
-            sqlite3StrAccumAppend(&errMsg, zCol, -1);
-          }
-          sqlite3StrAccumAppend(&errMsg,
-              pIdx->nKeyCol>1 ? " are not unique" : " is not unique", -1);
-          zErr = sqlite3StrAccumFinish(&errMsg);
-          sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_UNIQUE,
-                               onError, zErr, 0);
-          sqlite3DbFree(errMsg.db, zErr);
-        }
+        sqlite3UniqueConstraint(pParse, onError, pIdx);
         break;
       }
       case OE_Ignore: {
@@ -2019,8 +1990,7 @@ static int xferOptimization(
     if( pDest->iPKey>=0 ){
       addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
       addr2 = sqlite3VdbeAddOp3(v, OP_NotExists, iDest, 0, regRowid);
-      sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_PRIMARYKEY,
-          onError, "PRIMARY KEY must be unique", P4_STATIC);
+      sqlite3RowidConstraint(pParse, onError, pDest);
       sqlite3VdbeJumpHere(v, addr2);
       autoIncStep(pParse, regAutoinc, regRowid);
     }else if( pDest->pIndex==0 ){

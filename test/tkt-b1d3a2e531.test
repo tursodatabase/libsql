@@ -98,7 +98,7 @@ do_catchsql_test 3.2 {
     DROP TABLE pp1;
     DROP TABLE cc1;
   COMMIT;
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_catchsql_test 3.3 {
     DROP TABLE cc2;
   COMMIT;

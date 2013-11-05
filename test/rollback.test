@@ -54,7 +54,7 @@ ifcapable conflict {
     catchsql {
       INSERT INTO t3 SELECT a FROM t1;
     }
-  } {1 {column a is not unique}}
+  } {1 {UNIQUE constraint failed: t3.a}}
   
   # Try to continue with the SELECT statement
   #

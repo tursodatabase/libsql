@@ -332,7 +332,7 @@ do_test in-10.2 {
   catchsql {
     INSERT INTO t5 VALUES(4);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t5}}
 
 # Ticket #1821
 #

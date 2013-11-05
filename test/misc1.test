@@ -235,7 +235,7 @@ do_test misc1-7.4 {
   catchsql {
     INSERT INTO t5 VALUES(1,2,4);
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t5.a, t5.b}}
 do_test misc1-7.5 {
   catchsql {
     INSERT INTO t5 VALUES(0,2,4);

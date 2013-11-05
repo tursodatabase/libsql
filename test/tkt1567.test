@@ -40,7 +40,7 @@ do_test tkt1567-1.4 {
   catchsql {
     UPDATE t1 SET a = CASE WHEN rowid<90 THEN substr(a,1,10) ELSE '9999' END;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test tkt1567-1.5 {
   execsql {
     COMMIT;
@@ -71,7 +71,7 @@ do_test tkt1567-2.4 {
   catchsql {
     UPDATE t2 SET a = CASE WHEN rowid<90 THEN substr(a,1,10) ELSE '9999' END;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t2.a}}
 do_test tkt1567-2.5 {
   execsql {
     COMMIT;

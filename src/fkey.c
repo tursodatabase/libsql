@@ -432,8 +432,7 @@ static void fkLookupParent(
     ** generated for will not open a statement transaction.  */
     assert( nIncr==1 );
     sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
-        OE_Abort, "foreign key constraint failed", P4_STATIC
-    );
+        OE_Abort, 0, P4_STATIC, P5_ConstraintFK);
   }else{
     if( nIncr>0 && pFKey->isDeferred==0 ){
       sqlite3ParseToplevel(pParse)->mayAbort = 1;
@@ -516,13 +515,13 @@ static Expr *exprTableColumn(
 **   --------------------------------------------------------------------------
 **   DELETE      immediate   Increment the "immediate constraint counter".
 **                           Or, if the ON (UPDATE|DELETE) action is RESTRICT,
-**                           throw a "foreign key constraint failed" exception.
+**                           throw a "FOREIGN KEY constraint failed" exception.
 **
 **   INSERT      immediate   Decrement the "immediate constraint counter".
 **
 **   DELETE      deferred    Increment the "deferred constraint counter".
 **                           Or, if the ON (UPDATE|DELETE) action is RESTRICT,
-**                           throw a "foreign key constraint failed" exception.
+**                           throw a "FOREIGN KEY constraint failed" exception.
 **
 **   INSERT      deferred    Decrement the "deferred constraint counter".
 **
@@ -734,8 +733,7 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
     if( (db->flags & SQLITE_DeferFKs)==0 ){
       sqlite3VdbeAddOp2(v, OP_FkIfZero, 0, sqlite3VdbeCurrentAddr(v)+2);
       sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_FOREIGNKEY,
-          OE_Abort, "foreign key constraint failed", P4_STATIC
-      );
+          OE_Abort, 0, P4_STATIC, P5_ConstraintFK);
     }
 
     if( iSkip ){
@@ -1213,7 +1211,7 @@ static Trigger *fkActionTrigger(
 
       tFrom.z = zFrom;
       tFrom.n = nFrom;
-      pRaise = sqlite3Expr(db, TK_RAISE, "foreign key constraint failed");
+      pRaise = sqlite3Expr(db, TK_RAISE, "FOREIGN KEY constraint failed");
       if( pRaise ){
         pRaise->affinity = OE_Abort;
       }
