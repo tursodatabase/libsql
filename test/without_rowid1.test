@@ -199,9 +199,5 @@ do_execsql_test 3.1.5 {
   SELECT * FROM t3;
 } {i ii iii}
   
-  explain_i {
-  INSERT INTO t3 SELECT * FROM t4;
-  }
-
 finish_test
 
