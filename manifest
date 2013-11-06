@@ -1,5 +1,5 @@
-C Allocate\sextra\sstack\sspace\sfor\sUnpackedRecord\sobjects,\sreducing\sthe\sneed\nto\smalloc\sfor\sthem\sas\soften,\sand\sthereby\sget\sa\sperformance\simprovement.
-D 2013-11-06T14:36:08.208
+C Use\sansi\sescape\scodes\sto\suse\sdifferent\scolored\stext\sfor\sopcode\snames\sin\sthe\soutput\sof\s[explain_i]:\sRed\sfor\sopcodes\sthat\sinsert\sor\sdelete\sb-tree\selements,\sblue\sfor\sopcodes\sthat\smove\scursors\sand\sgreen\sfor\sthe\sResultRow\sopcode.
+D 2013-11-06T14:52:40.725
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -832,7 +832,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 0a48d94222d50e6e50d72ac103606c4f8e7cbb81
-F test/tester.tcl b95c4e385003665c729bed9dbd385c42c80daeef
+F test/tester.tcl 7eac97d18c7836d91c078e1d5fa3f7eb5d9d6b4e
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d70c78814ba565a44628eab61a3a0a5dba56269a
-R ea2c9590eda6a4e346a10f3d83db98c2
-U drh
-Z d18e98af7e1e2419526abd3178c35981
+P a725a75f870d7d9b21946fbcc71a956492986ab0
+R f17a9fec5c58d036c7444fd4ecaebcc0
+U dan
+Z ec46c95f9849c05682c500682b3a9f1b

@@ -1029,6 +1029,29 @@ proc explain_i {sql {db db}} {
   puts "----  ------------  ------  ------  ------  ----------------  --  -"
 
 
+  # Set up colors for the different opcodes. Scheme is as follows:
+  #
+  #   Red:   Opcodes that write to a b-tree.
+  #   Blue:  Opcodes that reposition or seek a cursor. 
+  #   Green: The ResultRow opcode.
+  #
+  set R "\033\[31;1m"        ;# Red fg
+  set G "\033\[32;1m"        ;# Green fg
+  set B "\033\[34;1m"        ;# Red fg
+  set D "\033\[39;0m"        ;# Default fg
+  foreach opcode {
+      Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
+      NoConflict Next Prev
+  } {
+    set color($opcode) $B
+  }
+  foreach opcode {ResultRow} {
+    set color($opcode) $G
+  }
+  foreach opcode {IdxInsert Insert Delete IdxDelete} {
+    set color($opcode) $R
+  }
+
   set bSeenGoto 0
   $db eval "explain $sql" {} {
     set x($addr) 0
@@ -1039,7 +1062,7 @@ proc explain_i {sql {db db}} {
       set bSeenGoto 1
     }
 
-    if {$opcode == "Next"} {
+    if {$opcode == "Next" || $opcode=="Prev"} {
       for {set i $p2} {$i<$addr} {incr i} {
         incr x($i) 2
       }
@@ -1061,8 +1084,12 @@ proc explain_i {sql {db db}} {
       puts ""
     }
     set I [string repeat " " $x($addr)]
-    puts [format {%-4d  %s%-12.12s  %-6d  %-6d  %-6d  % -17s %s  %s} \
-      $addr $I $opcode $p1 $p2 $p3 $p4 $p5 $comment
+
+    set col ""
+    catch { set col $color($opcode) }
+
+    puts [format {%-4d  %s%s%-12.12s%s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+      $addr $I $col $opcode $D $p1 $p2 $p3 $p4 $p5 $comment
     ]
   }
   puts "----  ------------  ------  ------  ------  ----------------  --  -"
