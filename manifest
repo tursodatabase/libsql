@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\stest\scase\sfrom\sconflict2.test.
-D 2013-11-06T11:46:48.462
+C Disable\sthe\sOR\soptimization\sfor\sWITHOUT\sROWID\stables,\ssince\sit\srelies\son\nthe\suse\sof\srowids.
+D 2013-11-06T12:05:57.372
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 4e472e13caef209b35a1c5879aad0bd6015cb388
+F src/where.c 1df23d22ea530d384a3deb77af552a64af39334f
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1065,7 +1065,7 @@ F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
-F test/where8.test 6f95896633cf2d307b5263145b942b7d33e837c6
+F test/where8.test d2b4fd6d7b7c5d44f590182a05033d78a14c00a1
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test 4f3eab951353a3ae164befc521c777dfa903e46c
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e9c1e419b7227d86f2e1882cebf360116cdf1a13
-R ae8b9d64c33019acf327a2f9651912f8
+P 427612efc169c8ebe94a8b586d7abd0fcd43d0d0
+R 05a5a0a384486e31eb5a4b75f73a71ca
 U drh
-Z 29549310dfc628ab3e2b98d6a58438cb
+Z bc0884f74e17c4194dbca32799c70173

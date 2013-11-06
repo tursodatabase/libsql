@@ -12,7 +12,6 @@
 # is testing of where.c. More specifically, the focus is the optimization
 # of WHERE clauses that feature the OR operator.
 #
-# $Id: where8.test,v 1.9 2009/07/31 06:14:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -748,5 +747,14 @@ do_test where8-5.3 {
     )
   }
 } {1 {}}
+
+# The OR optimization and WITHOUT ROWID
+#
+do_execsql_test where8-6.1 {
+  CREATE TABLE t600(a PRIMARY KEY, b) WITHOUT rowid;
+  CREATE INDEX t600b ON t600(b);
+  INSERT INTO t600 VALUES('state','screen'),('exact','dolphin'),('green','mercury');
+  SELECT a, b, '|' FROM t600 WHERE a=='state' OR b='mercury' ORDER BY +a;
+} {green mercury | state screen |}
 
 finish_test
