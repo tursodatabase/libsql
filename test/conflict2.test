@@ -378,11 +378,6 @@ do_test conflict2-7.5 {
 do_test conflict2-7.5.1 {
   db changes
 } {50}
-do_test conflict2-7.6 {
-  execsql {
-    SELECT b FROM t1 WHERE a=1001;
-  }
-} {51}
 do_test conflict2-7.7 {
   execsql {
     SELECT count(*) FROM t1;

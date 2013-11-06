@@ -1,5 +1,5 @@
-C Remove\san\sunused\svariable.
-D 2013-11-06T02:36:04.593
+C Remove\san\sincorrect\stest\scase\sfrom\sconflict2.test.
+D 2013-11-06T11:46:48.462
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -385,7 +385,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
-F test/conflict2.test 5d162ecbbde37f165de1992904dcbbed9fc7c012
+F test/conflict2.test 1892e796cb631d9b5661ab9916de3542520a1725
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 4aabd06cff3fe759e3e658bcc17b71789710665e
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 03e7019e14255dbeb85bb299569c82ef48ac4a98
-R fc179a43a033fdcfba028041d62e2af0
+P e9c1e419b7227d86f2e1882cebf360116cdf1a13
+R ae8b9d64c33019acf327a2f9651912f8
 U drh
-Z fc43c92b933a75809f66f10727d36571
+Z 29549310dfc628ab3e2b98d6a58438cb
