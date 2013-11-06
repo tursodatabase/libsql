@@ -1,5 +1,5 @@
-C Improved\sORDER\sBY\soptimization\sfor\sWITHOUT\sROWID\stables.
-D 2013-11-06T12:56:04.047
+C Minor\soptimization\sto\sthe\sOP_Halt\sopcode.
+D 2013-11-06T14:05:21.964
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/update.c c60e6169d7ae29a269cca03be44fb859f9ef78d9
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 94da71c02856981ce5f8eccc1f01cceeaedb2468
+F src/vdbe.c d4b81416ae8d1716cfe3d2afca4d03cf9e3ebe14
 F src/vdbe.h 6a52f68c46ebfc1bef4cfda58fe5d94289dde216
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6055dad2ba2f9256b1f2d0a9e32ca00f1b81b0cf
-R 5d33ef338e308554e8ff41606713ec29
+P 8f1709ff2d52d5ceca3da6a2a4e06da204d9e65a
+R cb2b9fa77bd40b47e40850dde9f2e50a
 U drh
-Z 4259ceef2368d05bf56ed248162d9e14
+Z d2c588be2586044339711c24e2f8d1d8

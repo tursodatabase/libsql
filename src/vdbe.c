@@ -872,22 +872,22 @@ case OP_Halt: {
     aMem = p->aMem;
     break;
   }
-  if( pOp->p5 ){
-    static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
-                                           "FOREIGN KEY" };
-    assert( pOp->p5>=1 && pOp->p5<=4 );
-    testcase( pOp->p5==1 );
-    testcase( pOp->p5==2 );
-    testcase( pOp->p5==3 );
-    testcase( pOp->p5==4 );
-    zType = azType[pOp->p5-1];
-  }else{
-    zType = 0;
-  }
   p->rc = pOp->p1;
   p->errorAction = (u8)pOp->p2;
   p->pc = pc;
   if( p->rc ){
+    if( pOp->p5 ){
+      static const char * const azType[] = { "NOT NULL", "UNIQUE", "CHECK",
+                                             "FOREIGN KEY" };
+      assert( pOp->p5>=1 && pOp->p5<=4 );
+      testcase( pOp->p5==1 );
+      testcase( pOp->p5==2 );
+      testcase( pOp->p5==3 );
+      testcase( pOp->p5==4 );
+      zType = azType[pOp->p5-1];
+    }else{
+      zType = 0;
+    }
     zLogFmt = "abort at %d in [%s]: %s";
     if( zType && pOp->p4.z ){
       sqlite3SetString(&p->zErrMsg, db, "%s constraint failed: %s", 
