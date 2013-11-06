@@ -1,5 +1,5 @@
-C Minor\soptimization\sto\sthe\sOP_Halt\sopcode.
-D 2013-11-06T14:05:21.964
+C Allocate\sextra\sstack\sspace\sfor\sUnpackedRecord\sobjects,\sreducing\sthe\sneed\nto\smalloc\sfor\sthem\sas\soften,\sand\sthereby\sget\sa\sperformance\simprovement.
+D 2013-11-06T14:36:08.208
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 2f1987981139bd2f6d8c728d64bf09fb387443c3
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 509722ce305471b626d3401c0631a808fd33237b
+F src/btree.c 260dedc13119e6fb7930380bd3d294b98362bf5a
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 3182fb17436876b686737c4e107bec041f3ed7d3
@@ -279,7 +279,7 @@ F src/update.c c60e6169d7ae29a269cca03be44fb859f9ef78d9
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c d4b81416ae8d1716cfe3d2afca4d03cf9e3ebe14
+F src/vdbe.c 1e4e3c25c2070e5d5e00789cafac4a69d8ba8c6e
 F src/vdbe.h 6a52f68c46ebfc1bef4cfda58fe5d94289dde216
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8f1709ff2d52d5ceca3da6a2a4e06da204d9e65a
-R cb2b9fa77bd40b47e40850dde9f2e50a
+P d70c78814ba565a44628eab61a3a0a5dba56269a
+R ea2c9590eda6a4e346a10f3d83db98c2
 U drh
-Z d2c588be2586044339711c24e2f8d1d8
+Z d18e98af7e1e2419526abd3178c35981
