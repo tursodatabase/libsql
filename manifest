@@ -1,5 +1,5 @@
-C Make\ssure\sthe\squery\splanner\sknows\sthat\sthe\sPRIMARY\sKEY\sindex\sof\sa\nWITHOUT\sROWID\stable\sis\salways\sa\scovering\sindex.
-D 2013-11-05T22:39:17.992
+C Remove\san\sunused\svariable.
+D 2013-11-06T02:36:04.593
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 66c8c99920cac74abba70cb7eecc5114e02ed3ea
+F src/insert.c 24d982dc661d112c805a5d9f8491c79877e15be3
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 573cc27427af297185f11aac8dce88ca31f471ca
-R 97fccc973b619db63b96475b8db4c69b
+P 03e7019e14255dbeb85bb299569c82ef48ac4a98
+R fc179a43a033fdcfba028041d62e2af0
 U drh
-Z 2aaf3467e27c8632750e8e712ef23dd5
+Z fc43c92b933a75809f66f10727d36571

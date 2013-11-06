@@ -1529,7 +1529,6 @@ void sqlite3GenerateConstraintChecks(
         ** For a UNIQUE index, only conflict if the PRIMARY KEY values
         ** of the matched index row are different from the original PRIMARY
         ** KEY values of this row before the update.  */
-        char *p4; 
         int addrJump = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
         int op = OP_Ne;
         int regCmp = (pIdx->autoIndex==2 ? regIdx : regR);
