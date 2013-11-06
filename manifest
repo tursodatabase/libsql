@@ -1,5 +1,5 @@
-C Disable\sthe\sOR\soptimization\sfor\sWITHOUT\sROWID\stables,\ssince\sit\srelies\son\nthe\suse\sof\srowids.
-D 2013-11-06T12:05:57.372
+C Improved\sORDER\sBY\soptimization\sfor\sWITHOUT\sROWID\stables.
+D 2013-11-06T12:56:04.047
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 1df23d22ea530d384a3deb77af552a64af39334f
+F src/where.c ce16448190ba44d79749e83ffd8058cd5f104781
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -717,7 +717,7 @@ F test/orderby1.test 9b524aff9147288da43a6d7ddfdcff47fa2303c6
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
-F test/orderby5.test 02eca502a0f97c77ce383b0dfa17e99c6a107b8d
+F test/orderby5.test 0eb82d5890c3f3d0563966560cfdc984ea69e30c
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 427612efc169c8ebe94a8b586d7abd0fcd43d0d0
-R 05a5a0a384486e31eb5a4b75f73a71ca
+P 6055dad2ba2f9256b1f2d0a9e32ca00f1b81b0cf
+R 5d33ef338e308554e8ff41606713ec29
 U drh
-Z bc0884f74e17c4194dbca32799c70173
+Z 4259ceef2368d05bf56ed248162d9e14

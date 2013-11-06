@@ -5024,7 +5024,8 @@ static int wherePathSatisfiesOrderBy(
   u8 isOrderDistinct;   /* All prior WhereLoops are order-distinct */
   u8 distinctColumns;   /* True if the loop has UNIQUE NOT NULL columns */
   u8 isMatch;           /* iColumn matches a term of the ORDER BY clause */
-  u16 nKeyCol;          /* Number of columns in pIndex */
+  u16 nKeyCol;          /* Number of key columns in pIndex */
+  u16 nColumn;          /* Total number of ordered columns in the index */
   u16 nOrderBy;         /* Number terms in the ORDER BY clause */
   int iLoop;            /* Index of WhereLoop in pPath being processed */
   int i, j;             /* Loop counters */
@@ -5117,10 +5118,14 @@ static int wherePathSatisfiesOrderBy(
       if( pLoop->wsFlags & WHERE_IPK ){
         pIndex = 0;
         nKeyCol = 0;
+        nColumn = 1;
       }else if( (pIndex = pLoop->u.btree.pIndex)==0 || pIndex->bUnordered ){
         return 0;
       }else{
         nKeyCol = pIndex->nKeyCol;
+        nColumn = pIndex->nColumn;
+        assert( nColumn==nKeyCol+1 || !HasRowid(pIndex->pTable) );
+        assert( pIndex->aiColumn[nColumn-1]==(-1) || !HasRowid(pIndex->pTable));
         isOrderDistinct = pIndex->onError!=OE_None;
       }
 
@@ -5129,7 +5134,7 @@ static int wherePathSatisfiesOrderBy(
       */
       rev = revSet = 0;
       distinctColumns = 0;
-      for(j=0; j<=nKeyCol; j++){
+      for(j=0; j<nColumn; j++){
         u8 bOnce;   /* True to run the ORDER BY search loop */
 
         /* Skip over == and IS NULL terms */
@@ -5146,20 +5151,17 @@ static int wherePathSatisfiesOrderBy(
         /* Get the column number in the table (iColumn) and sort order
         ** (revIdx) for the j-th column of the index.
         */
-        if( j<nKeyCol ){
-          /* Normal index columns */
+        if( pIndex ){
           iColumn = pIndex->aiColumn[j];
           revIdx = pIndex->aSortOrder[j];
           if( iColumn==pIndex->pTable->iPKey ) iColumn = -1;
         }else{
-          /* The ROWID column at the end */
-          assert( j==nKeyCol );
           iColumn = -1;
           revIdx = 0;
         }
 
         /* An unconstrained column that might be NULL means that this
-        ** WhereLoop is not well-ordered 
+        ** WhereLoop is not well-ordered
         */
         if( isOrderDistinct
          && iColumn>=0
