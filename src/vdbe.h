@@ -117,16 +117,6 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_SUBPROGRAM  (-18) /* P4 is a pointer to a SubProgram structure */
 #define P4_ADVANCE  (-19) /* P4 is a pointer to BtreeNext() or BtreePrev() */
 
-/* When adding a P4 argument using P4_KEYINFO, a copy of the KeyInfo structure
-** is made.  That copy is freed when the Vdbe is finalized.  But if the
-** argument is P4_KEYINFO_HANDOFF, the passed in pointer is used.  It still
-** gets freed when the Vdbe is finalized so it still should be obtained
-** from a single sqliteMalloc().  But no copy is made and the calling
-** function should *not* try to free the KeyInfo.
-*/
-#define P4_KEYINFO_HANDOFF (-16)
-#define P4_KEYINFO_STATIC  (-17)
-
 /* Error message codes for OP_Halt */
 #define P5_ConstraintNotNull 1
 #define P5_ConstraintUnique  2
@@ -186,6 +176,7 @@ void sqlite3VdbeChangeP5(Vdbe*, u8 P5);
 void sqlite3VdbeJumpHere(Vdbe*, int addr);
 void sqlite3VdbeChangeToNoop(Vdbe*, int addr);
 void sqlite3VdbeChangeP4(Vdbe*, int addr, const char *zP4, int N);
+void sqlite3VdbeSetP4KeyInfo(Parse*, Index*);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
 int sqlite3VdbeMakeLabel(Vdbe*);

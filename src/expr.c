@@ -1581,14 +1581,9 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
          && sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0)==pReq
          && (!mustBeUnique || (pIdx->nKeyCol==1 && pIdx->onError!=OE_None))
         ){
-          int iAddr;
-          char *pKey;
-  
-          pKey = (char *)sqlite3IndexKeyinfo(pParse, pIdx);
-          iAddr = sqlite3CodeOnce(pParse);
-  
-          sqlite3VdbeAddOp4(v, OP_OpenRead, iTab, pIdx->tnum, iDb,
-                               pKey,P4_KEYINFO_HANDOFF);
+          int iAddr = sqlite3CodeOnce(pParse);
+          sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
+          sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
           VdbeComment((v, "%s", pIdx->zName));
           assert( IN_INDEX_INDEX_DESC == IN_INDEX_INDEX_ASC+1 );
           eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
@@ -1746,13 +1741,14 @@ int sqlite3CodeSubselect(
         pExpr->x.pSelect->iLimit = 0;
         testcase( pKeyInfo==0 ); /* Caused by OOM in sqlite3KeyInfoAlloc() */
         if( sqlite3Select(pParse, pExpr->x.pSelect, &dest) ){
-          sqlite3DbFree(pParse->db, pKeyInfo);
+          sqlite3KeyInfoUnref(pKeyInfo);
           return 0;
         }
         pEList = pExpr->x.pSelect->pEList;
         assert( pKeyInfo!=0 ); /* OOM will cause exit after sqlite3Select() */
         assert( pEList!=0 );
         assert( pEList->nExpr>0 );
+        assert( sqlite3KeyInfoIsWriteable(pKeyInfo) );
         pKeyInfo->aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
                                                          pEList->a[0].pExpr);
       }else if( ALWAYS(pExpr->x.pList!=0) ){
@@ -1772,6 +1768,7 @@ int sqlite3CodeSubselect(
           affinity = SQLITE_AFF_NONE;
         }
         if( pKeyInfo ){
+          assert( sqlite3KeyInfoIsWriteable(pKeyInfo) );
           pKeyInfo->aColl[0] = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
         }
 
@@ -1813,7 +1810,7 @@ int sqlite3CodeSubselect(
         sqlite3ReleaseTempReg(pParse, r2);
       }
       if( pKeyInfo ){
-        sqlite3VdbeChangeP4(v, addr, (void *)pKeyInfo, P4_KEYINFO_HANDOFF);
+        sqlite3VdbeChangeP4(v, addr, (void *)pKeyInfo, P4_KEYINFO);
       }
       break;
     }

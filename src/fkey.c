@@ -379,10 +379,9 @@ static void fkLookupParent(
       int nCol = pFKey->nCol;
       int regTemp = sqlite3GetTempRange(pParse, nCol);
       int regRec = sqlite3GetTempReg(pParse);
-      KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
   
       sqlite3VdbeAddOp3(v, OP_OpenRead, iCur, pIdx->tnum, iDb);
-      sqlite3VdbeChangeP4(v, -1, (char*)pKey, P4_KEYINFO_HANDOFF);
+      sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
       for(i=0; i<nCol; i++){
         sqlite3VdbeAddOp2(v, OP_Copy, aiCol[i]+1+regData, regTemp+i);
       }

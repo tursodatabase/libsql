@@ -1680,9 +1680,8 @@ void sqlite3Pragma(
           if( pIdx==0 ){
             sqlite3OpenTable(pParse, i, iDb, pParent, OP_OpenRead);
           }else{
-            KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
             sqlite3VdbeAddOp3(v, OP_OpenRead, i, pIdx->tnum, iDb);
-            sqlite3VdbeChangeP4(v, -1, (char*)pKey, P4_KEYINFO_HANDOFF);
+            sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
           }
         }else{
           k = 0;

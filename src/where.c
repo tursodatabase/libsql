@@ -2015,7 +2015,6 @@ static void constructAutomaticIndex(
   Vdbe *v;                    /* Prepared statement under construction */
   int addrInit;               /* Address of the initialization bypass jump */
   Table *pTable;              /* The table being indexed */
-  KeyInfo *pKeyinfo;          /* Key information for the index */   
   int addrTop;                /* Top of the index fill loop */
   int regRecord;              /* Register holding an index record */
   int n;                      /* Column counter */
@@ -2132,11 +2131,10 @@ static void constructAutomaticIndex(
   pIdx->azColl[n] = "BINARY";
 
   /* Create the automatic index */
-  pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
   assert( pLevel->iIdxCur>=0 );
   pLevel->iIdxCur = pParse->nTab++;
-  sqlite3VdbeAddOp4(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1, 0,
-                    (char*)pKeyinfo, P4_KEYINFO_HANDOFF);
+  sqlite3VdbeAddOp2(v, OP_OpenAutoindex, pLevel->iIdxCur, nKeyCol+1);
+  sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
   VdbeComment((v, "for %s", pTable->zName));
 
   /* Fill the automatic index with content */
@@ -3996,6 +3994,7 @@ static void whereLoopClearUnion(sqlite3 *db, WhereLoop *p){
       p->u.vtab.idxStr = 0;
     }else if( (p->wsFlags & WHERE_AUTO_INDEX)!=0 && p->u.btree.pIndex!=0 ){
       sqlite3DbFree(db, p->u.btree.pIndex->zColAff);
+      sqlite3KeyInfoUnref(p->u.btree.pIndex->pKeyInfo);
       sqlite3DbFree(db, p->u.btree.pIndex);
       p->u.btree.pIndex = 0;
     }
@@ -6038,13 +6037,12 @@ WhereInfo *sqlite3WhereBegin(
     }
     if( pLoop->wsFlags & WHERE_INDEXED ){
       Index *pIx = pLoop->u.btree.pIndex;
-      KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
       /* FIXME:  As an optimization use pTabItem->iCursor if WHERE_IDX_ONLY */
       int iIndexCur = pLevel->iIdxCur = iIdxCur ? iIdxCur : pParse->nTab++;
       assert( pIx->pSchema==pTab->pSchema );
       assert( iIndexCur>=0 );
-      sqlite3VdbeAddOp4(v, OP_OpenRead, iIndexCur, pIx->tnum, iDb,
-                        (char*)pKey, P4_KEYINFO_HANDOFF);
+      sqlite3VdbeAddOp3(v, OP_OpenRead, iIndexCur, pIx->tnum, iDb);
+      sqlite3VdbeSetP4KeyInfo(pParse, pIx);
       VdbeComment((v, "%s", pIx->zName));
     }
     sqlite3CodeVerifySchema(pParse, iDb);

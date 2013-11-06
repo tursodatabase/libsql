@@ -382,6 +382,7 @@ static void freeIndex(sqlite3 *db, Index *p){
 #ifndef SQLITE_OMIT_ANALYZE
   sqlite3DeleteIndexSamples(db, p);
 #endif
+  if( db==0 || db->pnBytesFreed==0 ) sqlite3KeyInfoUnref(p->pKeyInfo);
   sqlite3ExprDelete(db, p->pPartIdxWhere);
   sqlite3DbFree(db, p->zColAff);
   if( p->isResized ) sqlite3DbFree(db, p->azColl);
@@ -2655,11 +2656,12 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   }else{
     tnum = pIndex->tnum;
   }
-  pKey = sqlite3IndexKeyinfo(pParse, pIndex);
+  pKey = sqlite3KeyInfoOfIndex(pParse, pIndex);
 
   /* Open the sorter cursor if we are to use one. */
   iSorter = pParse->nTab++;
-  sqlite3VdbeAddOp4(v, OP_SorterOpen, iSorter, 0, 0, (char*)pKey, P4_KEYINFO);
+  sqlite3VdbeAddOp4(v, OP_SorterOpen, iSorter, 0, 0, (char*)
+                    sqlite3KeyInfoRef(pKey), P4_KEYINFO);
 
   /* Open the table. Loop through all rows of the table, inserting index
   ** records into the sorter. */
@@ -2674,7 +2676,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeJumpHere(v, addr1);
   if( memRootPage<0 ) sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
   sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
-                    (char *)pKey, P4_KEYINFO_HANDOFF);
+                    (char *)pKey, P4_KEYINFO);
   sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0);
@@ -4142,38 +4144,42 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 #endif
 
 /*
-** Return a dynamicly allocated KeyInfo structure that can be used
-** with OP_OpenRead or OP_OpenWrite to access database index pIdx.
+** Return a KeyInfo structure that is appropriate for the given Index.
 **
-** If successful, a pointer to the new structure is returned. In this case
-** the caller is responsible for calling sqlite3DbFree(db, ) on the returned 
-** pointer. If an error occurs (out of memory or missing collation 
-** sequence), NULL is returned and the state of pParse updated to reflect
-** the error.
+** The KeyInfo structure for an index is cached in the Index object.
+** So there might be multiple references to the returned pointer.  The
+** caller should not try to modify the KeyInfo object.
+**
+** The caller should invoke sqlite3KeyInfoUnref() on the returned object
+** when it has finished using it.
 */
-KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
+KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   int i;
   int nCol = pIdx->nColumn;
   int nKey = pIdx->nKeyCol;
   KeyInfo *pKey;
 
-  if( pIdx->uniqNotNull ){
-    pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
-  }else{
-    pKey = sqlite3KeyInfoAlloc(pParse->db, nCol, 0);
-  }
-  if( pKey ){
-    for(i=0; i<nCol; i++){
-      char *zColl = pIdx->azColl[i];
-      if( zColl==0 ) zColl = "BINARY";
-      pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
-      pKey->aSortOrder[i] = pIdx->aSortOrder[i];
+  if( pParse->nErr ) return 0;
+  if( pIdx->pKeyInfo==0 ){
+    if( pIdx->uniqNotNull ){
+      pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
+    }else{
+      pKey = sqlite3KeyInfoAlloc(pParse->db, nCol, 0);
+    }
+    if( pKey ){
+      assert( sqlite3KeyInfoIsWriteable(pKey) );
+      for(i=0; i<nCol; i++){
+        char *zColl = pIdx->azColl[i];
+        if( zColl==0 ) zColl = "BINARY";
+        pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
+        pKey->aSortOrder[i] = pIdx->aSortOrder[i];
+      }
+      if( pParse->nErr ){
+        sqlite3KeyInfoUnref(pKey);
+      }else{
+        pIdx->pKeyInfo = pKey;
+      }
     }
   }
-
-  if( pParse->nErr ){
-    sqlite3DbFree(pParse->db, pKey);
-    pKey = 0;
-  }
-  return pKey;
+  return sqlite3KeyInfoRef(pIdx->pKeyInfo);
 }

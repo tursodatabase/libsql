@@ -382,9 +382,8 @@ void sqlite3DeleteFrom(
     iKey = ++pParse->nMem;
     iEph = pParse->nTab++;
 
-    sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iEph, nPk, 0, 
-                      (char*)sqlite3IndexKeyinfo(pParse, pPk),
-                      P4_KEYINFO_HANDOFF);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
+    sqlite3VdbeSetP4KeyInfo(pParse, pPk);
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 0, 0);
     if( pWInfo==0 ) goto delete_from_cleanup;
     for(i=0; i<nPk; i++){

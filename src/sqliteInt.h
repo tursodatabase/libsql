@@ -1532,10 +1532,11 @@ struct FKey {
 ** for the rowid at the end.
 */
 struct KeyInfo {
-  sqlite3 *db;        /* The database connection */
+  u32 nRef;           /* Number of references to this KeyInfo object */
   u8 enc;             /* Text encoding - one of the SQLITE_UTF* values */
   u16 nField;         /* Number of key columns in the index */
   u16 nXField;        /* Number of columns beyond the key columns */
+  sqlite3 *db;        /* The database connection */
   u8 *aSortOrder;     /* Sort order for each column. */
   CollSeq *aColl[1];  /* Collating sequence for each term of the key */
 };
@@ -1604,6 +1605,7 @@ struct Index {
   u8 *aSortOrder;          /* for each column: True==DESC, False==ASC */
   char **azColl;           /* Array of collation sequence names for index */
   Expr *pPartIdxWhere;     /* WHERE clause for partial indices */
+  KeyInfo *pKeyInfo;       /* A KeyInfo object suitable for this index */
   int tnum;                /* DB Page containing root of this index */
   LogEst szIdxRow;         /* Estimated average row size in bytes */
   u16 nKeyCol;             /* Number of columns forming the key */
@@ -3159,7 +3161,12 @@ void sqlite3SchemaClear(void *);
 Schema *sqlite3SchemaGet(sqlite3 *, Btree *);
 int sqlite3SchemaToIndex(sqlite3 *db, Schema *);
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3*,int,int);
-KeyInfo *sqlite3IndexKeyinfo(Parse *, Index *);
+void sqlite3KeyInfoUnref(KeyInfo*);
+KeyInfo *sqlite3KeyInfoRef(KeyInfo*);
+KeyInfo *sqlite3KeyInfoOfIndex(Parse*, Index*);
+#ifdef SQLITE_DEBUG
+int sqlite3KeyInfoIsWriteable(KeyInfo*);
+#endif
 int sqlite3CreateFunc(sqlite3 *, const char *, int, int, void *, 
   void (*)(sqlite3_context*,int,sqlite3_value **),
   void (*)(sqlite3_context*,int,sqlite3_value **), void (*)(sqlite3_context*),

@@ -1036,10 +1036,10 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
       nByte = sizeof(Mem) * nCol + sizeof(UnpackedRecord);
       pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);
       if( pRec ){
-        pRec->pKeyInfo = sqlite3IndexKeyinfo(p->pParse, pIdx);
+        pRec->pKeyInfo = sqlite3KeyInfoOfIndex(p->pParse, pIdx);
         if( pRec->pKeyInfo ){
           assert( pRec->pKeyInfo->nField+pRec->pKeyInfo->nXField==nCol );
-          pRec->pKeyInfo->enc = ENC(db);
+          assert( pRec->pKeyInfo->enc==ENC(db) );
           pRec->flags = UNPACKED_PREFIX_MATCH;
           pRec->aMem = (Mem *)&pRec[1];
           for(i=0; i<nCol; i++){
@@ -1368,7 +1368,7 @@ void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
     for(i=0; i<nCol; i++){
       sqlite3DbFree(db, aMem[i].zMalloc);
     }
-    sqlite3DbFree(db, pRec->pKeyInfo);
+    sqlite3KeyInfoUnref(pRec->pKeyInfo);
     sqlite3DbFree(db, pRec);
   }
 }

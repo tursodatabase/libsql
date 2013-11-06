@@ -637,10 +637,12 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       case P4_REAL:
       case P4_INT64:
       case P4_DYNAMIC:
-      case P4_KEYINFO:
-      case P4_INTARRAY:
-      case P4_KEYINFO_HANDOFF: {
+      case P4_INTARRAY: {
         sqlite3DbFree(db, p4);
+        break;
+      }
+      case P4_KEYINFO: {
+        if( db->pnBytesFreed==0 ) sqlite3KeyInfoUnref((KeyInfo*)p4);
         break;
       }
       case P4_MPRINTF: {
@@ -721,14 +723,6 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
 ** the string is made into memory obtained from sqlite3_malloc().
 ** A value of n==0 means copy bytes of zP4 up to and including the
 ** first null byte.  If n>0 then copy n+1 bytes of zP4.
-**
-** If n==P4_KEYINFO it means that zP4 is a pointer to a KeyInfo structure.
-** A copy is made of the KeyInfo structure into memory obtained from
-** sqlite3_malloc, to be freed when the Vdbe is finalized.
-** n==P4_KEYINFO_HANDOFF indicates that zP4 points to a KeyInfo structure
-** stored in memory that the caller has obtained from sqlite3_malloc. The 
-** caller should not free the allocation, it will be freed when the Vdbe is
-** finalized.
 ** 
 ** Other values of n (P4_STATIC, P4_COLLSEQ etc.) indicate that zP4 points
 ** to a string or structure that is guaranteed to exist for the lifetime of
@@ -743,7 +737,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   db = p->db;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->aOp==0 || db->mallocFailed ){
-    if ( n!=P4_KEYINFO && n!=P4_VTAB ) {
+    if( n!=P4_VTAB ){
       freeP4(db, n, (void*)*(char**)&zP4);
     }
     return;
@@ -766,21 +760,6 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4.p = 0;
     pOp->p4type = P4_NOTUSED;
   }else if( n==P4_KEYINFO ){
-    KeyInfo *pOrig, *pNew;
-
-    pOrig = (KeyInfo*)zP4;
-    pNew = sqlite3KeyInfoAlloc(db, pOrig->nField, pOrig->nXField);
-    pOp->p4.pKeyInfo = pNew;
-    if( pNew ){
-      int n = pOrig->nField+pOrig->nXField;
-      memcpy(pNew->aColl, pOrig->aColl, n*sizeof(pNew->aColl[0]));
-      memcpy(pNew->aSortOrder, pOrig->aSortOrder, n);
-      pOp->p4type = P4_KEYINFO;
-    }else{
-      p->db->mallocFailed = 1;
-      pOp->p4type = P4_NOTUSED;
-    }
-  }else if( n==P4_KEYINFO_HANDOFF ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = P4_KEYINFO;
   }else if( n==P4_VTAB ){
@@ -796,6 +775,18 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4.z = sqlite3DbStrNDup(p->db, zP4, n);
     pOp->p4type = P4_DYNAMIC;
   }
+}
+
+/*
+** Set the P4 on the most recently added opcode to the KeyInfo for the
+** index given.
+*/
+void sqlite3VdbeSetP4KeyInfo(Parse *pParse, Index *pIdx){
+  Vdbe *v = pParse->pVdbe;
+  assert( v!=0 );
+  assert( pIdx!=0 );
+  sqlite3VdbeChangeP4(v, -1, (char*)sqlite3KeyInfoOfIndex(pParse, pIdx),
+                      P4_KEYINFO);
 }
 
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
@@ -958,7 +949,6 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   char *zP4 = zTemp;
   assert( nTemp>=20 );
   switch( pOp->p4type ){
-    case P4_KEYINFO_STATIC:
     case P4_KEYINFO: {
       int i, j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;

@@ -24,7 +24,7 @@
 ** for that table that is actually opened.
 */
 void sqlite3OpenTable(
-  Parse *p,       /* Generate code into this VDBE */
+  Parse *pParse,  /* Generate code into this VDBE */
   int iCur,       /* The cursor number of the table */
   int iDb,        /* The database index in sqlite3.aDb[] */
   Table *pTab,    /* The table to be opened */
@@ -32,9 +32,10 @@ void sqlite3OpenTable(
 ){
   Vdbe *v;
   assert( !IsVirtual(pTab) );
-  v = sqlite3GetVdbe(p);
+  v = sqlite3GetVdbe(pParse);
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
-  sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
+  sqlite3TableLock(pParse, iDb, pTab->tnum, 
+                   (opcode==OP_OpenWrite)?1:0, pTab->zName);
   if( HasRowid(pTab) ){
     sqlite3VdbeAddOp4Int(v, opcode, iCur, pTab->tnum, iDb, pTab->nCol);
     VdbeComment((v, "%s", pTab->zName));
@@ -42,8 +43,8 @@ void sqlite3OpenTable(
     Index *pPk = sqlite3PrimaryKeyIndex(pTab);
     assert( pPk!=0 );
     assert( pPk->tnum=pTab->tnum );
-    sqlite3VdbeAddOp4(v, opcode, iCur, pPk->tnum, iDb,
-                      (char*)sqlite3IndexKeyinfo(p, pPk), P4_KEYINFO_HANDOFF);
+    sqlite3VdbeAddOp3(v, opcode, iCur, pPk->tnum, iDb);
+    sqlite3VdbeSetP4KeyInfo(pParse, pPk);
     VdbeComment((v, "%s", pTab->zName));
   }
 }
@@ -1706,12 +1707,11 @@ int sqlite3OpenTableAndIndices(
   }
   *piIdxCur = iBase;
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-    KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
     int iIdxCur = iBase++;
     assert( pIdx->pSchema==pTab->pSchema );
     if( pIdx->autoIndex==2 && !HasRowid(pTab) ) *piDataCur = iIdxCur;
-    sqlite3VdbeAddOp4(v, op, iIdxCur, pIdx->tnum, iDb,
-                      (char*)pKey, P4_KEYINFO_HANDOFF);
+    sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
+    sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
     VdbeComment((v, "%s", pIdx->zName));
   }
   if( iBase>pParse->nTab ) pParse->nTab = iBase;
@@ -1828,7 +1828,6 @@ static int xferOptimization(
   int emptyDestTest = 0;           /* Address of test for empty pDest */
   int emptySrcTest = 0;            /* Address of test for empty pSrc */
   Vdbe *v;                         /* The VDBE we are building */
-  KeyInfo *pKey;                   /* Key information for an index */
   int regAutoinc;                  /* Memory register used by AUTOINC */
   int destHasUniqueIdx = 0;        /* True if pDest has a UNIQUE index */
   int regData, regRowid;           /* Registers holding data and rowid */
@@ -2028,13 +2027,11 @@ static int xferOptimization(
       if( xferCompatibleIndex(pDestIdx, pSrcIdx) ) break;
     }
     assert( pSrcIdx );
-    pKey = sqlite3IndexKeyinfo(pParse, pSrcIdx);
-    sqlite3VdbeAddOp4(v, OP_OpenRead, iSrc, pSrcIdx->tnum, iDbSrc,
-                      (char*)pKey, P4_KEYINFO_HANDOFF);
+    sqlite3VdbeAddOp3(v, OP_OpenRead, iSrc, pSrcIdx->tnum, iDbSrc);
+    sqlite3VdbeSetP4KeyInfo(pParse, pSrcIdx);
     VdbeComment((v, "%s", pSrcIdx->zName));
-    pKey = sqlite3IndexKeyinfo(pParse, pDestIdx);
-    sqlite3VdbeAddOp4(v, OP_OpenWrite, iDest, pDestIdx->tnum, iDbDest,
-                      (char*)pKey, P4_KEYINFO_HANDOFF);
+    sqlite3VdbeAddOp3(v, OP_OpenWrite, iDest, pDestIdx->tnum, iDbDest);
+    sqlite3VdbeSetP4KeyInfo(pParse, pDestIdx);
     sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR);
     VdbeComment((v, "%s", pDestIdx->zName));
     addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iSrc, 0);

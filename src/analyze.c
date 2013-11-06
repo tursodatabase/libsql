@@ -988,7 +988,6 @@ static void analyzeOneTable(
 
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int nCol;                     /* Number of columns indexed by pIdx */
-    KeyInfo *pKey;                /* KeyInfo structure for pIdx */
     int *aGotoChng;               /* Array of jump instruction addresses */
     int addrRewind;               /* Address of "OP_Rewind iIdxCur" */
     int addrGotoChng0;            /* Address of "Goto addr_chng_0" */
@@ -1001,7 +1000,6 @@ static void analyzeOneTable(
     nCol = pIdx->nKeyCol;
     aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*(nCol+1));
     if( aGotoChng==0 ) continue;
-    pKey = sqlite3IndexKeyinfo(pParse, pIdx);
 
     /* Populate the register containing the index name. */
     if( pIdx->autoIndex==2 && !HasRowid(pTab) ){
@@ -1052,7 +1050,7 @@ static void analyzeOneTable(
     /* Open a read-only cursor on the index being analyzed. */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
     sqlite3VdbeAddOp3(v, OP_OpenRead, iIdxCur, pIdx->tnum, iDb);
-    sqlite3VdbeChangeP4(v, -1, (char*)pKey, P4_KEYINFO_HANDOFF); 
+    sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
     VdbeComment((v, "%s", pIdx->zName));
 
     /* Invoke the stat_init() function. The arguments are:

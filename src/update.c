@@ -360,9 +360,8 @@ void sqlite3Update(
     pParse->nMem += nPk;
     regKey = ++pParse->nMem;
     iEph = pParse->nTab++;
-    sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iEph, nPk, 0, 
-                      (char*)sqlite3IndexKeyinfo(pParse, pPk),
-                      P4_KEYINFO_HANDOFF);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
+    sqlite3VdbeSetP4KeyInfo(pParse, pPk);
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 0, 0);
     if( pWInfo==0 ) goto update_cleanup;
     for(i=0; i<nPk; i++){
@@ -408,9 +407,8 @@ void sqlite3Update(
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
       assert( aRegIdx );
       if( openAll || aRegIdx[i]>0 ){
-        KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
-        sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdxCur+i, pIdx->tnum, iDb,
-                       (char*)pKey, P4_KEYINFO_HANDOFF);
+        sqlite3VdbeAddOp3(v, OP_OpenWrite, iIdxCur+i, pIdx->tnum, iDb);
+        sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
         assert( pParse->nTab>iIdxCur+i );
         VdbeComment((v, "%s", pIdx->zName));
       }
