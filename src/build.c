@@ -3986,8 +3986,7 @@ void sqlite3UniqueConstraint(
   zErr = sqlite3StrAccumFinish(&errMsg);
   sqlite3HaltConstraint(pParse, 
     (pIdx->autoIndex==2)?SQLITE_CONSTRAINT_PRIMARYKEY:SQLITE_CONSTRAINT_UNIQUE,
-    onError, zErr, 0, P5_ConstraintUnique);
-  sqlite3DbFree(errMsg.db, zErr);
+    onError, zErr, P4_DYNAMIC, P5_ConstraintUnique);
 }
 
 

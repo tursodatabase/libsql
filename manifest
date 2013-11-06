@@ -1,5 +1,5 @@
-C Use\sansi\sescape\scodes\sto\suse\sdifferent\scolored\stext\sfor\sopcode\snames\sin\sthe\soutput\sof\s[explain_i]:\sRed\sfor\sopcodes\sthat\sinsert\sor\sdelete\sb-tree\selements,\sblue\sfor\sopcodes\sthat\smove\scursors\sand\sgreen\sfor\sthe\sResultRow\sopcode.
-D 2013-11-06T14:52:40.725
+C Have\sthe\sOP_NoConflict\sopcode\sset\sthe\sVdbeCursor.seekResult\svariable.\sThis\sspeeds\sup\ssubsequent\sOP_Insert\sand\sOP_IdxInsert\sopcodes.
+D 2013-11-06T16:28:59.136
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 260dedc13119e6fb7930380bd3d294b98362bf5a
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 3182fb17436876b686737c4e107bec041f3ed7d3
+F src/build.c 5e4d105d5fc77b0fd824a590ee2a596ee2e4fd40
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -279,7 +279,7 @@ F src/update.c c60e6169d7ae29a269cca03be44fb859f9ef78d9
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 1e4e3c25c2070e5d5e00789cafac4a69d8ba8c6e
+F src/vdbe.c 3493de8d6214aa290d793c7a4062f32bb3d35742
 F src/vdbe.h 6a52f68c46ebfc1bef4cfda58fe5d94289dde216
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1134,7 +1134,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a725a75f870d7d9b21946fbcc71a956492986ab0
-R f17a9fec5c58d036c7444fd4ecaebcc0
+P 4be2b64b3e5237ee1fb156c06cffaf7d96f6c532
+R ea9d1231e710f76de2a8af0edd7f2711
 U dan
-Z ec46c95f9849c05682c500682b3a9f1b
+Z 6e35791c1f1c0afdf7da0482bda0fcf7

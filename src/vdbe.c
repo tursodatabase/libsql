@@ -3801,6 +3801,7 @@ case OP_Found: {        /* jump, in3 */
     if( rc!=SQLITE_OK ){
       break;
     }
+    pC->seekResult = res;
     alreadyExists = (res==0);
     pC->nullRow = 1-alreadyExists;
     pC->deferredMoveto = 0;
