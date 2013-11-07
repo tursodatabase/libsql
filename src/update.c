@@ -128,7 +128,7 @@ void sqlite3Update(
 #endif
   int newmask;           /* Mask of NEW.* columns accessed by BEFORE triggers */
   int iEph = 0;          /* Ephemeral table holding all primary key values */
-  int nKey;              /* Number of elements in regKey */
+  int nKey = 0;          /* Number of elements in regKey for WITHOUT ROWID */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -381,7 +381,6 @@ void sqlite3Update(
       sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, regKey,
                         sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, regKey);
-      nKey = 0;
     }
     sqlite3WhereEnd(pWInfo);
   }

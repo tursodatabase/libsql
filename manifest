@@ -1,5 +1,5 @@
-C Enable\sthe\sWHERE_ONEPASS_DESIRED\soptimization\sfor\sUPDATE\soperations\son\nWITHOUT\sROWID\stables.
-D 2013-11-07T21:25:13.536
+C Fix\sa\scompiler\swarning\sintroduced\sby\sthe\sprevious\scheck-in.
+D 2013-11-07T21:32:16.228
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -275,7 +275,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c 53d6b5d50b3b23d4fcd0a36504feb5cff9aed716
-F src/update.c a1580fb4ad99246d4a286348e80c806385dd102f
+F src/update.c 0e421a0d97297e5e885435ae0b4351b1fd4ec35a
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8aa21e6791d408c8f018bd779e09cb7e7179f884
-R 90320f23fbcc029ca5605efdad336f38
+P 215307985590c2f3f7aa0d5a0b7799155a506045
+R 71f9cd0b217f1ebad72089e906d8786f
 U drh
-Z eb9342f786dc77889731ffb09a64422a
+Z 02285a59f788837fde6c69fc94247fe6
