@@ -18,10 +18,16 @@
 **     --replace            Use REPLACE mode
 **     --select             Use SELECT mode
 **     --update             Use UPDATE mode
+**     --delete             Use DELETE mode
 **     --nocase             Add the NOCASE collating sequence to the words.
 **     --trace              Enable sqlite3_trace() output.
 **     --summary            Show summary information on the collected data.
 **     --stats              Show sqlite3_status() results at the end.
+**     --pagesize NNN       Use a page size of NNN
+**     --cachesize NNN      Use a cache size of NNN
+**     --commit NNN         Commit after every NNN operations
+**     --nosync             Use PRAGMA synchronous=OFF
+**     --journal MMMM       Use PRAGMA journal_mode=MMMM
 **
 ** Modes:
 **
@@ -37,10 +43,19 @@
 **    (1) REPLACE INTO wordcount
 **        VALUES($new,ifnull((SELECT cnt FROM wordcount WHERE word=$new),0)+1);
 **
-** Select mode modes:
-**    (1) SELECT 1 FROM wordcount WHERE word=$newword
+** Select mode means:
+**    (1) SELECT 1 FROM wordcount WHERE word=$new
 **    (2) INSERT INTO wordcount VALUES($new,1) -- if (1) returns nothing
 **    (3) UPDATE wordcount SET cnt=cnt+1 WHERE word=$new  --if (1) return TRUE
+**
+** Delete mode means:
+**    (1) DELETE FROM wordcount WHERE word=$new
+**
+** Note that delete mode is only useful for preexisting databases.  The
+** wordcount table is created using IF NOT EXISTS so this utility can be
+** run multiple times on the same database file.  The --without-rowid,
+** --nocase, and --pagesize parameters are only effective when creating
+** a new database and are harmless no-ops on preexisting databases.
 **
 ******************************************************************************
 **
@@ -93,6 +108,7 @@ static int printResult(void *NotUsed, int nArg, char **azArg, char **azNm){
 #define MODE_REPLACE    1
 #define MODE_SELECT     2
 #define MODE_UPDATE     3
+#define MODE_DELETE     4
 
 int main(int argc, char **argv){
   const char *zFileToRead = 0;  /* Input file.  NULL for stdin */
@@ -103,12 +119,19 @@ int main(int argc, char **argv){
   int doTrace = 0;              /* True for --trace */
   int showStats = 0;            /* True for --stats */
   int showSummary = 0;          /* True for --summary */
+  int cacheSize = 0;            /* Desired cache size.  0 means default */
+  int pageSize = 0;             /* Desired page size.  0 means default */
+  int commitInterval = 0;       /* How often to commit.  0 means never */
+  int noSync = 0;               /* True for --nosync */
+  const char *zJMode = 0;       /* Journal mode */
+  int nOp = 0;                  /* Operation counter */
   int i, j;                     /* Loop counters */
   sqlite3 *db;                  /* The SQLite database connection */
   char *zSql;                   /* Constructed SQL statement */
   sqlite3_stmt *pInsert = 0;    /* The INSERT statement */
   sqlite3_stmt *pUpdate = 0;    /* The UPDATE statement */
   sqlite3_stmt *pSelect = 0;    /* The SELECT statement */
+  sqlite3_stmt *pDelete = 0;    /* The DELETE statement */
   FILE *in;                     /* The open input file */
   int rc;                       /* Return code from an SQLite interface */
   int iCur, iHiwtr;             /* Statistics values, current and "highwater" */
@@ -129,14 +152,29 @@ int main(int argc, char **argv){
         iMode = MODE_INSERT;
       }else if( strcmp(z,"update")==0 ){
         iMode = MODE_UPDATE;
+      }else if( strcmp(z,"delete")==0 ){
+        iMode = MODE_DELETE;
       }else if( strcmp(z,"nocase")==0 ){
         useNocase = 1;
       }else if( strcmp(z,"trace")==0 ){
         doTrace = 1;
+      }else if( strcmp(z,"nosync")==0 ){
+        noSync = 1;
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"summary")==0 ){
         showSummary = 1;
+      }else if( strcmp(z,"cachesize")==0 && i<argc-1 ){
+        i++;
+        cacheSize = atoi(argv[i]);
+      }else if( strcmp(z,"pagesize")==0 && i<argc-1 ){
+        i++;
+        pageSize = atoi(argv[i]);
+      }else if( strcmp(z,"commit")==0 && i<argc-1 ){
+        i++;
+        commitInterval = atoi(argv[i]);
+      }else if( strcmp(z,"journal")==0 && i<argc-1 ){
+        zJMode = argv[++i];
       }else{
         fatal_error("unknown option: %s\n", argv[i]);
       }
@@ -165,13 +203,32 @@ int main(int argc, char **argv){
     in = stdin;
   }
 
-  /* Construct the "wordcount" table into which to put the words */
+  /* Set database connection options */
   if( doTrace ) sqlite3_trace(db, traceCallback, 0);
+  if( pageSize ){
+    zSql = sqlite3_mprintf("PRAGMA page_size=%d", pageSize);
+    sqlite3_exec(db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
+  }
+  if( cacheSize ){
+    zSql = sqlite3_mprintf("PRAGMA cache_size=%d", cacheSize);
+    sqlite3_exec(db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
+  }
+  if( noSync ) sqlite3_exec(db, "PRAGMA synchronous=OFF", 0, 0, 0);
+  if( zJMode ){
+    zSql = sqlite3_mprintf("PRAGMA journal_mode=%s", zJMode);
+    sqlite3_exec(db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
+  }
+
+
+  /* Construct the "wordcount" table into which to put the words */
   if( sqlite3_exec(db, "BEGIN IMMEDIATE", 0, 0, 0) ){
     fatal_error("Could not start a transaction\n");
   }
   zSql = sqlite3_mprintf(
-     "CREATE TABLE wordcount(\n"
+     "CREATE TABLE IF NOT EXISTS wordcount(\n"
      "  word TEXT PRIMARY KEY COLLATE %s,\n"
      "  cnt INTEGER\n"
      ")%s",
@@ -226,6 +283,13 @@ int main(int argc, char **argv){
     if( rc ) fatal_error("Could not prepare the REPLACE statement: %s\n",
                           sqlite3_errmsg(db));
   }
+  if( iMode==MODE_DELETE ){
+    rc = sqlite3_prepare_v2(db,
+          "DELETE FROM wordcount WHERE word=?1",
+          -1, &pDelete, 0);
+    if( rc ) fatal_error("Could not prepare the DELETE statement: %s\n",
+                         sqlite3_errmsg(db));
+  }
 
   /* Process the input file */
   while( fgets(zInput, sizeof(zInput), in) ){
@@ -235,7 +299,13 @@ int main(int argc, char **argv){
 
       /* Found a new word at zInput[i] that is j-i bytes long. 
       ** Process it into the wordcount table.  */
-      if( iMode==MODE_SELECT ){
+      if( iMode==MODE_DELETE ){
+        sqlite3_bind_text(pDelete, 1, zInput+i, j-i, SQLITE_STATIC);
+        if( sqlite3_step(pDelete)!=SQLITE_DONE ){
+          fatal_error("DELETE failed: %s\n", sqlite3_errmsg(db));
+        }
+        sqlite3_reset(pDelete);
+      }else if( iMode==MODE_SELECT ){
         sqlite3_bind_text(pSelect, 1, zInput+i, j-i, SQLITE_STATIC);
         rc = sqlite3_step(pSelect);
         sqlite3_reset(pSelect);
@@ -271,6 +341,12 @@ int main(int argc, char **argv){
         }
       }
       i = j-1;
+
+      /* Increment the operation counter.  Do a COMMIT if it is time. */
+      nOp++;
+      if( commitInterval>0 && (nOp%commitInterval)==0 ){
+        sqlite3_exec(db, "COMMIT; BEGIN IMMEDIATE", 0, 0, 0);
+      }
     }
   }
   sqlite3_exec(db, "COMMIT", 0, 0, 0);
@@ -278,6 +354,7 @@ int main(int argc, char **argv){
   sqlite3_finalize(pInsert);
   sqlite3_finalize(pUpdate);
   sqlite3_finalize(pSelect);
+  sqlite3_finalize(pDelete);
 
   if( showSummary ){
     sqlite3_exec(db, 
