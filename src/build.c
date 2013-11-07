@@ -4154,13 +4154,18 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
 ** when it has finished using it.
 */
 KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
-  int i;
-  int nCol = pIdx->nColumn;
-  int nKey = pIdx->nKeyCol;
-  KeyInfo *pKey;
-
   if( pParse->nErr ) return 0;
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  if( pIdx->pKeyInfo && pIdx->pKeyInfo->db!=pParse->db ){
+    sqlite3KeyInfoUnref(pIdx->pKeyInfo);
+    pIdx->pKeyInfo = 0;
+  }
+#endif
   if( pIdx->pKeyInfo==0 ){
+    int i;
+    int nCol = pIdx->nColumn;
+    int nKey = pIdx->nKeyCol;
+    KeyInfo *pKey;
     if( pIdx->uniqNotNull ){
       pKey = sqlite3KeyInfoAlloc(pParse->db, nKey, nCol-nKey);
     }else{

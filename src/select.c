@@ -828,9 +828,8 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
 void sqlite3KeyInfoUnref(KeyInfo *p){
   if( p ){
     assert( p->nRef>0 );
-    assert( p->db==0 || p->db->pnBytesFreed==0 );
     p->nRef--;
-    if( p->nRef==0 ) sqlite3DbFree(p->db, p);
+    if( p->nRef==0 ) sqlite3_free(p);
   }
 }
 
