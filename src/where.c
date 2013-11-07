@@ -4639,9 +4639,10 @@ static int whereLoopAddBtree(
 
       /* Full scan via index */
       if( b
+       || !HasRowid(pTab)
        || ( m==0
          && pProbe->bUnordered==0
-         && (!HasRowid(pTab) || pProbe->szIdxRow<pTab->szTabRow)
+         && (pProbe->szIdxRow<pTab->szTabRow)
          && (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0
          && sqlite3GlobalConfig.bUseCis
          && OptimizationEnabled(pWInfo->pParse->db, SQLITE_CoverIdxScan)
@@ -4657,7 +4658,6 @@ static int whereLoopAddBtree(
           pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 1 +
                         (15*pProbe->szIdxRow)/pTab->szTabRow;
         }else{
-          assert( b!=0 ); 
           /* TUNING: Cost of scanning a non-covering index is (N+1)*log2(N)
           ** which we will simplify to just N*log2(N) */
           pNew->rRun = rSize + rLogSize;
@@ -5990,7 +5990,9 @@ WhereInfo *sqlite3WhereBegin(
   if( (wctrlFlags & WHERE_ONEPASS_DESIRED)!=0 
    && (pWInfo->a[0].pWLoop->wsFlags & WHERE_ONEROW)!=0 ){
     pWInfo->okOnePass = 1;
-    pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+    if( HasRowid(pTabList->a[0].pTab) ){
+      pWInfo->a[0].pWLoop->wsFlags &= ~WHERE_IDX_ONLY;
+    }
   }
 
   /* Open all tables in the pTabList and any indices selected for

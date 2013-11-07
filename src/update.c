@@ -128,6 +128,7 @@ void sqlite3Update(
 #endif
   int newmask;           /* Mask of NEW.* columns accessed by BEFORE triggers */
   int iEph = 0;          /* Ephemeral table holding all primary key values */
+  int nKey;              /* Number of elements in regKey */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -353,6 +354,7 @@ void sqlite3Update(
   }else{
     int iPk;         /* First of nPk memory cells holding PRIMARY KEY value */
     i16 nPk;         /* Number of components of the PRIMARY KEY */
+    int addrOpen;    /* Address of the OpenEphemeral instruction */
 
     assert( pPk!=0 );
     nPk = pPk->nKeyCol;
@@ -360,19 +362,28 @@ void sqlite3Update(
     pParse->nMem += nPk;
     regKey = ++pParse->nMem;
     iEph = pParse->nTab++;
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
+    sqlite3VdbeAddOp2(v, OP_Null, 0, iPk);
+    addrOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
     sqlite3VdbeSetP4KeyInfo(pParse, pPk);
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 0, 0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 
+                               WHERE_ONEPASS_DESIRED, 0);
     if( pWInfo==0 ) goto update_cleanup;
+    okOnePass = sqlite3WhereOkOnePass(pWInfo);
     for(i=0; i<nPk; i++){
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pPk->aiColumn[i],
                                       iPk+i);
     }
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, regKey,
-                      sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
-    sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, regKey);
+    if( okOnePass ){
+      sqlite3VdbeChangeToNoop(v, addrOpen);
+      nKey = nPk;
+      regKey = iPk;
+    }else{
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, regKey,
+                        sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
+      sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, regKey);
+      nKey = 0;
+    }
     sqlite3WhereEnd(pWInfo);
-    okOnePass = 0;
   }
 
   /* Initialize the count of updated rows
@@ -417,14 +428,17 @@ void sqlite3Update(
 
   /* Top of the update loop */
   labelBreak = sqlite3VdbeMakeLabel(v);
-  if( pPk ){
+  if( okOnePass ){
+    labelContinue = labelBreak;
+    sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
+    if( pPk ){
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
+    }
+  }else if( pPk ){
     labelContinue = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak);
     addrTop = sqlite3VdbeAddOp2(v, OP_RowKey, iEph, regKey);
     sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
-  }else if( okOnePass ){
-    labelContinue = labelBreak;
-    sqlite3VdbeAddOp2(v, OP_IsNull, regOldRowid, labelBreak);
   }else{
     labelContinue = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet, labelBreak,
                              regOldRowid);
@@ -516,7 +530,7 @@ void sqlite3Update(
     ** documentation.
     */
     if( pPk ){
-      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue,regKey,nKey);
     }else{
       sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
     }
@@ -548,7 +562,7 @@ void sqlite3Update(
 
     /* Delete the index entries associated with the current record.  */
     if( pPk ){
-      j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, 0);
+      j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, nKey);
     }else{
       j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
     }
@@ -592,10 +606,12 @@ void sqlite3Update(
   /* Repeat the above with the next record to be updated, until
   ** all record selected by the WHERE clause have been updated.
   */
-  if( pPk ){
+  if( okOnePass ){
+    /* Nothing to do at end-of-loop for a single-pass */
+  }else if( pPk ){
     sqlite3VdbeResolveLabel(v, labelContinue);
     sqlite3VdbeAddOp2(v, OP_Next, iEph, addrTop);
-  }else if( !okOnePass ){
+  }else{
     sqlite3VdbeAddOp2(v, OP_Goto, 0, labelContinue);
   }
   sqlite3VdbeResolveLabel(v, labelBreak);
