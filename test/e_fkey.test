@@ -211,7 +211,7 @@ do_test e_fkey-6.1 {
   catchsql {
       DELETE FROM t1
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-6.2 {
   execsql { PRAGMA foreign_keys }
 } {1}
@@ -265,11 +265,11 @@ do_test e_fkey-7.1 {
 #
 do_test e_fkey-8.1 {
   catchsql { INSERT INTO track VALUES(1, 'track 1', 1) }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-8.2 {
   execsql { INSERT INTO artist VALUES(2, 'artist 1') }
   catchsql { INSERT INTO track VALUES(1, 'track 1', 1) }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-8.2 {
   execsql { INSERT INTO track VALUES(1, 'track 1', 2) }
 } {}
@@ -283,7 +283,7 @@ do_test e_fkey-8.2 {
 #
 do_test e_fkey-9.1 {
   catchsql { DELETE FROM artist WHERE artistid = 2 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-9.2 {
   execsql { 
     DELETE FROM track WHERE trackartist = 2;
@@ -311,14 +311,14 @@ do_test e_fkey-10.2 {
 do_test e_fkey-10.3 {
   # Setting the trackid to a non-NULL value fails, of course.
   catchsql { UPDATE track SET trackartist = 5 WHERE trackid = 1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-10.4 {
   execsql {
     INSERT INTO artist VALUES(5, 'artist 5');
     UPDATE track SET trackartist = 5 WHERE trackid = 1;
   }
   catchsql { DELETE FROM artist WHERE artistid = 5}
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-10.5 {
   execsql { 
     UPDATE track SET trackartist = NULL WHERE trackid = 1;
@@ -344,8 +344,8 @@ proc test_r52486_21352 {tn sql} {
   set res [catchsql $sql]
   set results {
     {0 {}} 
-    {1 {PRIMARY KEY must be unique}} 
-    {1 {foreign key constraint failed}}
+    {1 {UNIQUE constraint failed: artist.artistid}} 
+    {1 {FOREIGN KEY constraint failed}}
   }
   if {[lsearch $results $res]<0} {
     error $res
@@ -409,7 +409,7 @@ do_test e_fkey-12.1 {
 } {}
 do_test e_fkey-12.2 {
   catchsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', NULL) }
-} {1 {track.trackartist may not be NULL}}
+} {1 {NOT NULL constraint failed: track.trackartist}}
 
 #-------------------------------------------------------------------------
 # EVIDENCE-OF: R-16127-35442
@@ -438,7 +438,7 @@ do_test e_fkey-13.1 {
 } {}
 do_test e_fkey-13.2 {
   catchsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', 3) }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-13.3 {
   execsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', NULL) }
 } {}
@@ -446,7 +446,7 @@ do_test e_fkey-13.4 {
   catchsql { 
     UPDATE track SET trackartist = 3 WHERE trackname = 'Mr. Bojangles';
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-13.5 {
   execsql {
     INSERT INTO artist VALUES(3, 'Sammy Davis Jr.');
@@ -464,7 +464,7 @@ do_test e_fkey-14.1 {
   catchsql {
     DELETE FROM artist WHERE artistname = 'Frank Sinatra';
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-14.2 {
   execsql {
     DELETE FROM track WHERE trackname = 'My Way';
@@ -475,7 +475,7 @@ do_test e_fkey-14.3 {
   catchsql {
     UPDATE artist SET artistid=4 WHERE artistname = 'Dean Martin';
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-14.4 {
   execsql {
     DELETE FROM track WHERE trackname IN('That''s Amore', 'Christmas Blues');
@@ -513,7 +513,7 @@ do_test e_fkey-15.1 {
 proc test_efkey_45 {tn isError sql} {
   do_test e_fkey-15.$tn.1 "
     catchsql {$sql}
-  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+  " [lindex {{0 {}} {1 {FOREIGN KEY constraint failed}}} $isError]
 
   do_test e_fkey-15.$tn.2 {
     execsql {
@@ -557,10 +557,10 @@ do_test e_fkey-16.2 {
 } {}
 do_test e_fkey-16.3 {
   catchsql { UPDATE t2 SET b = 'two' WHERE rowid = 1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-16.4 {
   catchsql { DELETE FROM t1 WHERE rowid = 1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 #-------------------------------------------------------------------------
 # Specifically, test that when comparing child and parent key values the
@@ -592,7 +592,7 @@ do_test e_fkey-17.3 {
 } {integer integer text}
 do_test e_fkey-17.4 {
   catchsql { DELETE FROM t1 WHERE rowid = 2 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 ###########################################################################
 ### SECTION 3: Required and Suggested Database Indexes
@@ -896,7 +896,7 @@ do_test e_fkey-23.1 {
 proc test_efkey_60 {tn isError sql} {
   do_test e_fkey-23.$tn "
     catchsql {$sql}
-  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+  " [lindex {{0 {}} {1 {FOREIGN KEY constraint failed}}} $isError]
 }
 
 test_efkey_60 2 1 "INSERT INTO c1 VALUES(239, 231)"
@@ -933,7 +933,7 @@ do_test e_fkey-24.1 {
 proc test_efkey_61 {tn isError sql} {
   do_test e_fkey-24.$tn "
     catchsql {$sql}
-  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+  " [lindex {{0 {}} {1 {FOREIGN KEY constraint failed}}} $isError]
 }
 foreach {tn c} [list 2 c1 3 c2 4 c3] {
   test_efkey_61 $tn.1 1 "INSERT INTO $c VALUES(1, 2)"
@@ -998,7 +998,7 @@ do_test e_fkey-25.5 {
   concat \
     [execsql { SELECT rowid FROM track WHERE trackartist = 5 }]   \
     [catchsql { DELETE FROM artist WHERE artistid = 5 }]
-} {1 1 {foreign key constraint failed}}
+} {1 1 {FOREIGN KEY constraint failed}}
 
 do_test e_fkey-25.6 {
   concat \
@@ -1010,7 +1010,7 @@ do_test e_fkey-25.7 {
   concat \
     [execsql { SELECT rowid FROM track WHERE trackartist = 6 }]   \
     [catchsql { DELETE FROM artist WHERE artistid = 6 }]
-} {2 1 {foreign key constraint failed}}
+} {2 1 {FOREIGN KEY constraint failed}}
 
 #-------------------------------------------------------------------------
 # EVIDENCE-OF: R-47936-10044 Or, more generally:
@@ -1199,7 +1199,7 @@ do_test e_fkey-29.3 {
   catchsql {
     INSERT INTO song VALUES(2, 'Elvis Presley', 'Elvis Is Back!', 'Fever');
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 
 #-------------------------------------------------------------------------
@@ -1240,7 +1240,7 @@ do_test e_fkey-31.1 {
 do_test e_fkey-31.2 {
   # Execute a statement that violates the immediate FK constraint.
   catchsql { INSERT INTO prince VALUES(1, 2) }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 do_test e_fkey-31.3 {
   # This time, use a trigger to fix the constraint violation before the
@@ -1265,7 +1265,7 @@ do_test e_fkey-31.4 {
     DROP TRIGGER kt;
   }
   catchsql { INSERT INTO prince VALUES(3, 4) }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-31.5 {
   execsql {
     COMMIT;
@@ -1296,7 +1296,7 @@ do_test e_fkey-31.5 {
 proc test_efkey_34 {tn isError sql} {
   do_test e_fkey-32.$tn "
     catchsql {$sql}
-  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+  " [lindex {{0 {}} {1 {FOREIGN KEY constraint failed}}} $isError]
 }
 drop_all_tables
 
@@ -1327,7 +1327,7 @@ drop_all_tables
 proc test_efkey_35 {tn isError sql} {
   do_test e_fkey-33.$tn "
     catchsql {$sql}
-  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+  " [lindex {{0 {}} {1 {FOREIGN KEY constraint failed}}} $isError]
 }
 do_test e_fkey-33.1 {
   execsql {
@@ -1417,7 +1417,7 @@ do_test e_fkey-34.1 {
 
 proc test_efkey_29 {tn sql isError} {
   do_test e_fkey-34.$tn "catchsql {$sql}" [
-    lindex {{0 {}} {1 {foreign key constraint failed}}} $isError
+    lindex {{0 {}} {1 {FOREIGN KEY constraint failed}}} $isError
   ]
 }
 test_efkey_29  2 "BEGIN"                                   0
@@ -1491,7 +1491,7 @@ do_test e_fkey-35.2 {
       INSERT INTO track VALUES(1, 'White Christmas', 5);
   }
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-35.3 {
   execsql {
     INSERT INTO artist VALUES(5, 'Bing Crosby');
@@ -1528,7 +1528,7 @@ do_test e_fkey-36.2 {
 } {}
 do_test e_fkey-36.3 {
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-36.4 {
   execsql {
     UPDATE t1 SET a = 5 WHERE a = 4;
@@ -1558,7 +1558,7 @@ do_test e_fkey-37.1 {
 } {}
 do_test e_fkey-37.2 {
   catchsql {RELEASE one}
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-37.3 {
   execsql {
       UPDATE t1 SET a = 7 WHERE a = 6;
@@ -1575,7 +1575,7 @@ do_test e_fkey-37.4 {
 } {}
 do_test e_fkey-37.5 {
   catchsql {RELEASE one}
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-37.6 {
   execsql {ROLLBACK TO one ; RELEASE one}
 } {}
@@ -1606,7 +1606,7 @@ do_test e_fkey-38.2 {
 } {1 1 2 2 3 3 4 4 5 6}
 do_test e_fkey-38.3 {
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-38.4 {
   execsql {
     ROLLBACK TO one;
@@ -1627,11 +1627,11 @@ do_test e_fkey-38.5 {
 } {}
 do_test e_fkey-38.6 {
   catchsql {RELEASE a}
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-38.7 {
   execsql  {ROLLBACK TO c}
   catchsql {RELEASE a}
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-38.8 {
   execsql  {
     ROLLBACK TO b;
@@ -1782,7 +1782,7 @@ do_test e_fkey-41.2 {
 } {j k l m}
 do_test e_fkey-41.3 {
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-41.4 {
   execsql ROLLBACK
 } {}
@@ -1820,10 +1820,10 @@ do_test e_fkey-41.2 {
 } {}
 do_test e_fkey-41.3 {
   catchsql { DELETE FROM parent WHERE p1 = 'a' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-41.4 {
   catchsql { UPDATE parent SET p2 = 'e' WHERE p1 = 'c' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 #-------------------------------------------------------------------------
 # Test that RESTRICT is slightly different from NO ACTION for IMMEDIATE
@@ -1857,7 +1857,7 @@ do_test e_fkey-42.1 {
 } {}
 do_test e_fkey-42.2 {
   catchsql { UPDATE parent SET x = 'key one' WHERE x = 'key1' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-42.3 {
   execsql { 
     UPDATE parent SET x = 'key two' WHERE x = 'key2';
@@ -1885,7 +1885,7 @@ do_test e_fkey-42.4 {
 } {}
 do_test e_fkey-42.5 {
   catchsql { DELETE FROM parent WHERE x = 'key1' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-42.6 {
   execsql { 
     DELETE FROM parent WHERE x = 'key2';
@@ -1908,7 +1908,7 @@ do_test e_fkey-42.7 {
 } {}
 do_test e_fkey-42.8 {
   catchsql { REPLACE INTO parent VALUES('key1') }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-42.9 {
   execsql { 
     REPLACE INTO parent VALUES('key2');
@@ -1944,13 +1944,13 @@ do_test e_fkey-43.1 {
 } {}
 do_test e_fkey-43.2 {
   catchsql { UPDATE parent SET x = 'key one' WHERE x = 'key1' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-43.3 {
   execsql { UPDATE parent SET x = 'key two' WHERE x = 'key2' }
 } {}
 do_test e_fkey-43.4 {
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-43.5 {
   execsql {
     UPDATE child2 SET c = 'key two';
@@ -1978,13 +1978,13 @@ do_test e_fkey-43.6 {
 } {}
 do_test e_fkey-43.7 {
   catchsql { DELETE FROM parent WHERE x = 'key1' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-43.8 {
   execsql { DELETE FROM parent WHERE x = 'key2' }
 } {}
 do_test e_fkey-43.9 {
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-43.10 {
   execsql {
     UPDATE child2 SET c = NULL;
@@ -2240,7 +2240,7 @@ do_test e_fkey-49.3 {
 } {ONE two three}
 do_test e_fkey-49.4 {
   catchsql { UPDATE parent SET a = '' WHERE a = 'oNe' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 
 #-------------------------------------------------------------------------
@@ -2275,7 +2275,7 @@ do_test e_fkey-50.1 {
 } {}
 do_test e_fkey-50.2 {
   catchsql { DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-50.3 {
   execsql {
     INSERT INTO artist VALUES(0, 'Unknown Artist');
@@ -2639,7 +2639,7 @@ do_test e_fkey-58.1 {
   }
   execsql { INSERT INTO c5 VALUES('a', 'b') }
   catchsql { DROP TABLE p }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-58.2 {
   execsql { SELECT * FROM p }
 } {a b}
@@ -2648,7 +2648,7 @@ do_test e_fkey-58.3 {
     BEGIN;
       DROP TABLE p;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-58.4 {
   execsql {
     SELECT * FROM p;
@@ -2682,11 +2682,11 @@ do_test e_fkey-59.2 {
 } {}
 do_test e_fkey-59.3 {
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-59.4 {
   execsql { CREATE TABLE p(a, b, PRIMARY KEY(a, b)) }
   catchsql COMMIT
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-59.5 {
   execsql { INSERT INTO p VALUES('a', 'b') }
   execsql COMMIT
@@ -2849,7 +2849,7 @@ foreach zMatch [list SIMPLE PARTIAL FULL Simple parTIAL FuLL ] {
     # Check that the FK is enforced properly if there are no NULL values 
     # in the child key columns.
     catchsql { INSERT INTO c VALUES('a', 2, 4) }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
 }
 
 #-------------------------------------------------------------------------
@@ -2879,13 +2879,13 @@ do_test e_fkey-62.3 {
 } {}
 do_test e_fkey-62.4 {
   catchsql { INSERT INTO ci VALUES('x', 'y') }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-62.5 {
   catchsql { INSERT INTO cd VALUES('x', 'y') }
 } {0 {}}
 do_test e_fkey-62.6 {
   catchsql { COMMIT }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test e_fkey-62.7 {
   execsql { 
     DELETE FROM cd;

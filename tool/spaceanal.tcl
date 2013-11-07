@@ -571,7 +571,7 @@ subreport {All tables} {NOT is_index} 0
 if {$nindex>0} {
   subreport {All indices} {is_index} 0
 }
-foreach tbl [mem eval {SELECT name FROM space_used WHERE NOT is_index
+foreach tbl [mem eval {SELECT DISTINCT tblname name FROM space_used
                        ORDER BY name}] {
   set qn [quote $tbl]
   set name [string toupper $tbl]

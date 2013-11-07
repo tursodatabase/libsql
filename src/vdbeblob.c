@@ -178,6 +178,10 @@ int sqlite3_blob_open(
       pTab = 0;
       sqlite3ErrorMsg(pParse, "cannot open virtual table: %s", zTable);
     }
+    if( pTab && !HasRowid(pTab) ){
+      pTab = 0;
+      sqlite3ErrorMsg(pParse, "cannot open table without rowid: %s", zTable);
+    }
 #ifndef SQLITE_OMIT_VIEW
     if( pTab && pTab->pSelect ){
       pTab = 0;
@@ -235,7 +239,7 @@ int sqlite3_blob_open(
 #endif
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         int j;
-        for(j=0; j<pIdx->nColumn; j++){
+        for(j=0; j<pIdx->nKeyCol; j++){
           if( pIdx->aiColumn[j]==iCol ){
             zFault = "indexed";
           }

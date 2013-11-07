@@ -31,7 +31,7 @@ do_test tkt-4a03ed-1.1 {
       INSERT INTO t1 VALUES(1, 2);
     COMMIT;
   }
-} {1 {column b is not unique}}
+} {1 {UNIQUE constraint failed: t1.b}}
 do_test tkt-4a03ed-1.2 {
   db eval {
     PRAGMA integrity_check;

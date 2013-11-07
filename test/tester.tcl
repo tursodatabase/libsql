@@ -1023,6 +1023,78 @@ proc explain {sql {db db}} {
   }
 }
 
+proc explain_i {sql {db db}} {
+  puts ""
+  puts "addr  opcode        p1      p2      p3      p4                p5  #"
+  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+
+
+  # Set up colors for the different opcodes. Scheme is as follows:
+  #
+  #   Red:   Opcodes that write to a b-tree.
+  #   Blue:  Opcodes that reposition or seek a cursor. 
+  #   Green: The ResultRow opcode.
+  #
+  set R "\033\[31;1m"        ;# Red fg
+  set G "\033\[32;1m"        ;# Green fg
+  set B "\033\[34;1m"        ;# Red fg
+  set D "\033\[39;0m"        ;# Default fg
+  foreach opcode {
+      Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
+      NoConflict Next Prev
+  } {
+    set color($opcode) $B
+  }
+  foreach opcode {ResultRow} {
+    set color($opcode) $G
+  }
+  foreach opcode {IdxInsert Insert Delete IdxDelete} {
+    set color($opcode) $R
+  }
+
+  set bSeenGoto 0
+  $db eval "explain $sql" {} {
+    set x($addr) 0
+    set op($addr) $opcode
+
+    if {$opcode == "Goto" && ($bSeenGoto==0 || ($p2 > $addr+10))} {
+      set linebreak($p2) 1
+      set bSeenGoto 1
+    }
+
+    if {$opcode == "Next" || $opcode=="Prev"} {
+      for {set i $p2} {$i<$addr} {incr i} {
+        incr x($i) 2
+      }
+    }
+
+    if {$opcode == "Goto" && $p2<$addr && $op($p2)=="Yield"} {
+      for {set i [expr $p2+1]} {$i<$addr} {incr i} {
+        incr x($i) 2
+      }
+    }
+
+    if {$opcode == "Halt" && $comment == "End of coroutine"} {
+      set linebreak([expr $addr+1]) 1
+    }
+  }
+
+  $db eval "explain $sql" {} {
+    if {[info exists linebreak($addr)]} {
+      puts ""
+    }
+    set I [string repeat " " $x($addr)]
+
+    set col ""
+    catch { set col $color($opcode) }
+
+    puts [format {%-4d  %s%s%-12.12s%s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+      $addr $I $col $opcode $D $p1 $p2 $p3 $p4 $p5 $comment
+    ]
+  }
+  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+}
+
 # Show the VDBE program for an SQL statement but omit the Trace
 # opcode at the beginning.  This procedure can be used to prove
 # that different SQL statements generate exactly the same VDBE code.

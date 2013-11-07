@@ -1040,10 +1040,10 @@ do_test vtab1.12-1 {
 # First test outside of a transaction.
 do_test vtab1.12-2 {
   catchsql { INSERT INTO echo_c SELECT * FROM b; }
-} {1 {echo-vtab-error: column a is not unique}}
+} {1 {echo-vtab-error: UNIQUE constraint failed: c.a}}
 do_test vtab1.12-2.1 {
   sqlite3_errmsg db
-} {echo-vtab-error: column a is not unique}
+} {echo-vtab-error: UNIQUE constraint failed: c.a}
 do_test vtab1.12-3 {
   execsql { SELECT * FROM c }
 } {3 G H}
@@ -1052,7 +1052,7 @@ do_test vtab1.12-3 {
 do_test vtab1.12-4 {
   execsql  {BEGIN}
   catchsql { INSERT INTO echo_c SELECT * FROM b; }
-} {1 {echo-vtab-error: column a is not unique}}
+} {1 {echo-vtab-error: UNIQUE constraint failed: c.a}}
 do_test vtab1.12-5 {
   execsql { SELECT * FROM c }
 } {3 G H}

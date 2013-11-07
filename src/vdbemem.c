@@ -1031,15 +1031,15 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
       Index *pIdx = p->pIdx;      /* Index being probed */
       int nByte;                  /* Bytes of space to allocate */
       int i;                      /* Counter variable */
-      int nCol = pIdx->nColumn+1; /* Number of index columns including rowid */
+      int nCol = pIdx->nColumn;   /* Number of index columns including rowid */
   
       nByte = sizeof(Mem) * nCol + sizeof(UnpackedRecord);
       pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);
       if( pRec ){
-        pRec->pKeyInfo = sqlite3IndexKeyinfo(p->pParse, pIdx);
+        pRec->pKeyInfo = sqlite3KeyInfoOfIndex(p->pParse, pIdx);
         if( pRec->pKeyInfo ){
-          assert( pRec->pKeyInfo->nField+1==nCol );
-          pRec->pKeyInfo->enc = ENC(db);
+          assert( pRec->pKeyInfo->nField+pRec->pKeyInfo->nXField==nCol );
+          assert( pRec->pKeyInfo->enc==ENC(db) );
           pRec->flags = UNPACKED_PREFIX_MATCH;
           pRec->aMem = (Mem *)&pRec[1];
           for(i=0; i<nCol; i++){
@@ -1362,13 +1362,13 @@ int sqlite3Stat4ProbeSetValue(
 void sqlite3Stat4ProbeFree(UnpackedRecord *pRec){
   if( pRec ){
     int i;
-    int nCol = pRec->pKeyInfo->nField+1;
+    int nCol = pRec->pKeyInfo->nField+pRec->pKeyInfo->nXField;
     Mem *aMem = pRec->aMem;
     sqlite3 *db = aMem[0].db;
     for(i=0; i<nCol; i++){
       sqlite3DbFree(db, aMem[i].zMalloc);
     }
-    sqlite3DbFree(db, pRec->pKeyInfo);
+    sqlite3KeyInfoUnref(pRec->pKeyInfo);
     sqlite3DbFree(db, pRec);
   }
 }

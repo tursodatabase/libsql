@@ -473,7 +473,7 @@ do_test collate4-3.1 {
     INSERT INTO collate4t1 VALUES('abc');
     INSERT INTO collate4t1 VALUES('ABC');
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.2 {
   execsql {
     SELECT * FROM collate4t1;
@@ -483,13 +483,13 @@ do_test collate4-3.3 {
   catchsql {
     INSERT INTO collate4t1 SELECT upper(a) FROM collate4t1;
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.4 {
   catchsql {
     INSERT INTO collate4t1 VALUES(1);
     UPDATE collate4t1 SET a = 'abc';
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.5 {
   execsql {
     DROP TABLE collate4t1;
@@ -501,7 +501,7 @@ do_test collate4-3.6 {
     INSERT INTO collate4t1 VALUES('abc');
     INSERT INTO collate4t1 VALUES('ABC');
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.7 {
   execsql {
     SELECT * FROM collate4t1;
@@ -511,13 +511,13 @@ do_test collate4-3.8 {
   catchsql {
     INSERT INTO collate4t1 SELECT upper(a) FROM collate4t1;
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.9 {
   catchsql {
     INSERT INTO collate4t1 VALUES(1);
     UPDATE collate4t1 SET a = 'abc';
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.10 {
   execsql {
     DROP TABLE collate4t1;
@@ -530,7 +530,7 @@ do_test collate4-3.11 {
     INSERT INTO collate4t1 VALUES('abc');
     INSERT INTO collate4t1 VALUES('ABC');
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.12 {
   execsql {
     SELECT * FROM collate4t1;
@@ -540,13 +540,13 @@ do_test collate4-3.13 {
   catchsql {
     INSERT INTO collate4t1 SELECT upper(a) FROM collate4t1;
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 do_test collate4-3.14 {
   catchsql {
     INSERT INTO collate4t1 VALUES(1);
     UPDATE collate4t1 SET a = 'abc';
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: collate4t1.a}}
 
 do_test collate4-3.15 {
   execsql {
