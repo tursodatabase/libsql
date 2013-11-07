@@ -1,12 +1,12 @@
-C Add\sthe\s"wordcount.c"\stest\sprogram.
-D 2013-11-07T18:37:31.917
+C Increase\sthe\sversion\snumber\sto\s3.8.2.
+D 2013-11-07T18:40:39.882
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc eaf39e18f37637111c6e39ed35b1da9092c8816f
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION a8d1f6839521130dc73c5408cdd24bcfd791df34
+F VERSION 52f7e22bfcec71a462e34194b4ae1671380fde59
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure d9bb8485d40dd905e09c895692a0699628abace8 x
+F configure f97b17cd80fa428e5df4e70a36ed5b4ed21100c2 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c80e229dd9c1230abefbc707d4bf0b24315c6bb5
-R c8deac31b5ce7060977908f205c33403
+P f02ee5463084cef45ae412c51211b66de7e86baf
+R c1238a589294d1c15421f0bf326b2f50
 U drh
-Z e0ecc34e281066dd75e22b62900090ff
+Z 818626e2278c5a358e5fcb9ad988230a
