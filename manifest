@@ -1,9 +1,9 @@
-C Add\ssupport\sfor\sWITHOUT\sROWID\stables.\s\sThis\schange\salso\sincludes\n(1)\sstandardization\sof\sthe\serror\smessage\sreturned\sfrom\srun-time\sconstraint\nerrors,\s(2)\simproved\sEXPLAIN\scomments,\s(3)\sthe\sSQLITE_ENABLE_EXPLAIN_COMMENTS\noption,\s(4)\sthe\sSQLITE_ENABLE_MODULE_COMMENTS\soption,\sand\s(5)\sa\sbug\sfix\n(see\s[573cc27427])\sin\sthe\shandling\sof\sREPLACE\son\sthe\srowid\swhen\ssecondary\nindices\suse\sFAIL\sor\sIGNORE.
-D 2013-11-07T16:08:10.334
+C Add\sthe\s"wordcount.c"\stest\sprogram.
+D 2013-11-07T18:37:31.917
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 0522b53cdc1fcfc18f3a98e0246add129136c654
+F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc ec5d662ed5a15ff819928c0495017af13910d7b6
+F Makefile.msc eaf39e18f37637111c6e39ed35b1da9092c8816f
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION a8d1f6839521130dc73c5408cdd24bcfd791df34
@@ -141,7 +141,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk c6a433cb334bbb019625c137ab5d5e7568b47cff
+F main.mk fbd5fed974f68cc312e4f73770df0f5221b3b460
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -1083,6 +1083,7 @@ F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
+F test/wordcount.c 77aaf31e8107bc8aa22adea9f7ed9a4525157d8b
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
@@ -1134,8 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 49be646cd981f8ff0434cf90d2748afa30260017 55eea1782aead6a6aaf93f14d85486f8fd2209ad
-R 1e773dfb806625ad59b6a083881b6fca
-T +closed 55eea1782aead6a6aaf93f14d85486f8fd2209ad
+P c80e229dd9c1230abefbc707d4bf0b24315c6bb5
+R c8deac31b5ce7060977908f205c33403
 U drh
-Z 3c1e4b61d489a4d1c755b624a57fdf8f
+Z e0ecc34e281066dd75e22b62900090ff
