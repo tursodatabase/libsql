@@ -117,14 +117,10 @@
 #endif
 
 /*
-** Returns the string that should be used as the directory separator.
+** Returns the character that should be used as the directory separator.
 */
-#ifndef winGetDirDep
-#  ifdef __CYGWIN__
-#    define winGetDirDep()              "/"
-#  else
-#    define winGetDirDep()              "\\"
-#  endif
+#ifndef winGetDirSep
+#  define winGetDirSep()                '\\'
 #endif
 
 /*
@@ -3990,12 +3986,21 @@ static void *winConvertFromUtf8Filename(const char *zFilename){
 
 /*
 ** This function returns non-zero if the specified UTF-8 string buffer
-** ends with a directory separator character.
+** ends with a directory separator character or one was successfully
+** added to it.
 */
-static int winEndsInDirSep(char *zBuf){
+static int winMakeEndInDirSep(int nBuf, char *zBuf){
   if( zBuf ){
     int nLen = sqlite3Strlen30(zBuf);
-    return nLen>0 && winIsDirSep(zBuf[nLen-1]);
+    if( nLen>0 ){
+      if( winIsDirSep(zBuf[nLen-1]) ){
+        return 1;
+      }else if( nLen+1<nBuf ){
+        zBuf[nLen] = winGetDirSep();
+        zBuf[nLen+1] = '\0';
+        return 1;
+      }
+    }
   }
   return 0;
 }
@@ -4023,7 +4028,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
   ** name for the temporary file.  If this fails, we cannot continue.
   */
   nBuf = pVfs->mxPathname;
-  zBuf = sqlite3MallocZero( nBuf+2 );
+  zBuf = sqlite3MallocZero( nBuf+3 );
   if( !zBuf ){
     OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
     return SQLITE_IOERR_NOMEM;
@@ -4035,9 +4040,8 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
   */
   assert( nBuf>30 );
   if( sqlite3_temp_directory ){
-    sqlite3_snprintf(nBuf-30, zBuf, "%s%s", sqlite3_temp_directory,
-                     winEndsInDirSep(sqlite3_temp_directory) ? "" :
-                     winGetDirDep());
+    sqlite3_snprintf(nBuf-30, zBuf, "%s", sqlite3_temp_directory);
+    winMakeEndInDirSep(nBuf-30, zBuf);
   }
 #if defined(__CYGWIN__)
   else{
@@ -4066,8 +4070,8 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       if( zDir==0 ) continue;
       /* If the path starts with a drive letter followed by the colon
       ** character, assume it is already a native Win32 path; otherwise,
-      ** it must be converted to a native Win32 path prior via the Cygwin
-      ** API prior to using it.
+      ** it must be converted to a native Win32 path via the Cygwin API
+      ** prior to using it.
       */
       if( winIsDriveLetterAndColon(zDir) ){
         zConverted = winConvertFromUtf8Filename(zDir);
@@ -4078,6 +4082,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
         }
         if( winIsDir(zConverted) ){
           sqlite3_snprintf(nBuf-30, zBuf, "%s", zDir);
+          winMakeEndInDirSep(nBuf-30, zBuf);
           sqlite3_free(zConverted);
           break;
         }
@@ -4112,11 +4117,13 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
               return SQLITE_IOERR_NOMEM;
             }
             sqlite3_snprintf(nBuf-30, zBuf, "%s", zUtf8);
+            winMakeEndInDirSep(nBuf-30, zBuf);
             sqlite3_free(zUtf8);
             sqlite3_free(zConverted);
             break;
           }else{
             sqlite3_snprintf(nBuf-30, zBuf, "%s", zConverted);
+            winMakeEndInDirSep(nBuf-30, zBuf);
             sqlite3_free(zConverted);
             break;
           }
@@ -4144,6 +4151,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     zMulti = winUnicodeToUtf8(zWidePath);
     if( zMulti ){
       sqlite3_snprintf(nBuf-30, zBuf, "%s", zMulti);
+      winMakeEndInDirSep(nBuf-30, zBuf);
       sqlite3_free(zMulti);
       sqlite3_free(zWidePath);
     }else{
@@ -4171,6 +4179,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
     zUtf8 = sqlite3_win32_mbcs_to_utf8(zMbcsPath);
     if( zUtf8 ){
       sqlite3_snprintf(nBuf-30, zBuf, "%s", zUtf8);
+      winMakeEndInDirSep(nBuf-30, zBuf);
       sqlite3_free(zUtf8);
     }else{
       sqlite3_free(zBuf);
@@ -4792,8 +4801,8 @@ static int winFullPathname(
       return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
                          "winFullPathname1", zRelative);
     }
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
-                     sqlite3_data_directory, winGetDirDep(), zOut);
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%c%s",
+                     sqlite3_data_directory, winGetDirSep(), zOut);
     sqlite3_free(zOut);
   }else{
     if( cygwin_conv_path(CCP_POSIX_TO_WIN_A, zRelative, zFull, nFull)<0 ){
@@ -4815,8 +4824,8 @@ static int winFullPathname(
     **       for converting the relative path name to an absolute
     **       one by prepending the data directory and a backslash.
     */
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
-                     sqlite3_data_directory, winGetDirDep(), zRelative);
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%c%s",
+                     sqlite3_data_directory, winGetDirSep(), zRelative);
   }else{
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zRelative);
   }
@@ -4848,8 +4857,8 @@ static int winFullPathname(
     **       for converting the relative path name to an absolute
     **       one by prepending the data directory and a backslash.
     */
-    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%s%s",
-                     sqlite3_data_directory, winGetDirDep(), zRelative);
+    sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s%c%s",
+                     sqlite3_data_directory, winGetDirSep(), zRelative);
     return SQLITE_OK;
   }
   zConverted = winConvertFromUtf8Filename(zRelative);
