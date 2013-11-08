@@ -6246,7 +6246,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
           int x = pOp->p2;
-          Table *pTab = pIdx->pTable;
+          assert( pIdx->pTable==pTab );
           if( !HasRowid(pTab) ){
             Index *pPk = sqlite3PrimaryKeyIndex(pTab);
             x = pPk->aiColumn[x];

@@ -1,5 +1,5 @@
-C Merge\sthe\sCygwin\sdirectory\sseparator\sfix.\s\sAlso\sfix\sa\sC++-ism\sin\sthe\nmultiplexor\scode\sso\sthat\sit\swill\scompile\son\sMSVC.
-D 2013-11-08T17:03:50.071
+C Fix\sharmless\scompiler\swarnings.
+D 2013-11-08T17:13:23.004
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c ddb92f44595366c4817e576b5f11cad5a915c3ef
 F src/expr.c e7bbe3c6916e141f27a28655d3cf325b817695e4
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 5370840745f01f11fb219922d8e99a48ff92fbeb
+F src/fkey.c 78364daed38e26269c53ddb94c515bceac1063c6
 F src/func.c 2c47b65e6e00e3e9374942f28254faf8adafe398
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -216,7 +216,7 @@ F src/pragma.c 3b7b766382ac679d3c1a7ba368aa008f9a756d59
 F src/prepare.c fa6988589f39af8504a61731614cd4f6ae71554f
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c e729889b2c7a680ba4aa7296efa72c09369956d8
+F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 60af46f5f6bc3803c27af3edd8881ed2d0c3f19f
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 1b5780b645dfba94ea63f2fb845a8bbfeada4162
+F src/where.c 748cabee9c2f26b4d92478dc46a688b8a0030b24
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1135,8 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fd11afa5f5c853dcac2290444b581a3fe1d4332d 9d870d5f0d8f02e5c91396a1f98b5ddb56b40b70
-R deb20dcd1b212d002ce341c4a8b6d225
-T +closed 9d870d5f0d8f02e5c91396a1f98b5ddb56b40b70
+P 830629d31d171155d90ff87ae8e70094d17bb2d3
+R adecbc2b2722d8396e4c1e0a55a342fc
 U drh
-Z 91483894a7585609e534fd671adf83ff
+Z f6606fc6407dbb7e80e344c001d6847c

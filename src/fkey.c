@@ -598,7 +598,6 @@ static void fkScanChildren(
       pRight = exprTableColumn(db, pTab, pSrc->a[0].iCursor, -1);
       pNe = sqlite3PExpr(pParse, TK_NE, pLeft, pRight, 0);
     }else{
-      int i;
       Expr *pEq, *pAll = 0;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
       for(i=0; i<pPk->nKeyCol; i++){

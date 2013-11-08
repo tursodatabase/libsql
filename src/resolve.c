@@ -343,8 +343,7 @@ static int lookupName(
         int iCol;
         pSchema = pTab->pSchema;
         cntTab++;
-        for(iCol=0; iCol<pTab->nCol; iCol++){
-          Column *pCol = &pTab->aCol[iCol];
+        for(iCol=0, pCol=pTab->aCol; iCol<pTab->nCol; iCol++, pCol++){
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
             if( iCol==pTab->iPKey ){
               iCol = -1;
