@@ -1089,6 +1089,7 @@ static const char *winNextSystemCall(sqlite3_vfs *p, const char *zName){
   return 0;
 }
 
+#ifdef SQLITE_WIN32_MALLOC
 /*
 ** If a Win32 native heap has been configured, this function will attempt to
 ** compact it.  Upon success, SQLITE_OK will be returned.  Upon failure, one
@@ -1144,7 +1145,8 @@ int sqlite3_win32_reset_heap(){
   MUTEX_LOGIC( pMem = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM); )
   sqlite3_mutex_enter(pMaster);
   sqlite3_mutex_enter(pMem);
-  if( winMemGetOwned() && sqlite3_memory_used()==0 ){
+  winMemAssertMagic();
+  if( winMemGetHeap()!=NULL && winMemGetOwned() && sqlite3_memory_used()==0 ){
     /*
     ** At this point, there should be no outstanding memory allocations on
     ** the heap.  Also, since both the master and memsys locks are currently
@@ -1152,8 +1154,17 @@ int sqlite3_win32_reset_heap(){
     ** be able to even access the heap.  Attempt to destroy and recreate our
     ** isolated Win32 native heap now.
     */
+    assert( winMemGetHeap()!=NULL );
+    assert( winMemGetOwned() );
+    assert( sqlite3_memory_used()==0 );
     winMemShutdown(winMemGetDataPtr());
+    assert( winMemGetHeap()==NULL );
+    assert( !winMemGetOwned() );
+    assert( sqlite3_memory_used()==0 );
     rc = winMemInit(winMemGetDataPtr());
+    assert( rc!=SQLITE_OK || winMemGetHeap()!=NULL );
+    assert( rc!=SQLITE_OK || winMemGetOwned() );
+    assert( rc!=SQLITE_OK || sqlite3_memory_used()==0 );
   }else{
     /*
     ** The Win32 native heap cannot be modified because it may be in use.
@@ -1164,6 +1175,7 @@ int sqlite3_win32_reset_heap(){
   sqlite3_mutex_leave(pMaster);
   return rc;
 }
+#endif /* SQLITE_WIN32_MALLOC */
 
 /*
 ** This function outputs the specified (ANSI) string to the Win32 debugger
