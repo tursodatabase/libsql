@@ -1,5 +1,5 @@
-C Adjust\sthe\swinMemInit\sreturn\scode\shandling\sused\swhen\sresetting\sthe\sWin32\snative\sheap.
-D 2013-11-08T18:52:45.744
+C Disable\suse\sof\sHeapCompact\son\sWindows\sCE\sas\sit\sis\snot\savailable\son\sall\sversions.
+D 2013-11-08T19:51:12.210
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c c008edfbab554be073a20cb144d4bda5d945eb08
+F src/os_win.c 1426ee90b58e5ea012c25e85489cf32b78019dd5
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 71347d021bea90ad7e4cc0d3e54940ce29b9ea69
-R e2e9c2606c80f7541f8a3aeae9aba626
+P 37853665e75fc92b4d15e6db0b3346722527e799
+R 749df941a874c954c5ef5ef583b3e9df
 U mistachkin
-Z 1cd276010a3d8c6dac6bb87bd0d6d308
+Z 5e51eb4044bf1101312438ecb7a0a945
