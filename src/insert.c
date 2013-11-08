@@ -1408,7 +1408,7 @@ void sqlite3GenerateConstraintChecks(
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
           sqlite3MultiWrite(pParse);
           sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                                   regNewData, 1, 0, OE_Replace);
+                                   regNewData, 1, 0, OE_Replace, 1);
         }else if( pTab->pIndex ){
           sqlite3MultiWrite(pParse);
           sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, 0);
@@ -1498,11 +1498,11 @@ void sqlite3GenerateConstraintChecks(
     }
     
     /* Check to see if the new index entry will be unique */
-    regR = sqlite3GetTempRange(pParse, nPkField);
     sqlite3VdbeAddOp4Int(v, OP_NoConflict, iThisCur, addrUniqueOk,
                          regIdx, pIdx->nKeyCol);
 
     /* Generate code to handle collisions */
+    regR = (pIdx==pPk) ? regIdx : sqlite3GetTempRange(pParse, nPkField);
     if( HasRowid(pTab) ){
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iThisCur, regR);
       /* Conflict only if the rowid of the existing index entry
@@ -1514,7 +1514,7 @@ void sqlite3GenerateConstraintChecks(
       int x;
       /* Extract the PRIMARY KEY from the end of the index entry and
       ** store it in registers regR..regR+nPk-1 */
-      if( isUpdate || onError==OE_Replace ){
+      if( (isUpdate || onError==OE_Replace) && pIdx!=pPk ){
         for(i=0; i<pPk->nKeyCol; i++){
           x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
           sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
@@ -1547,7 +1547,6 @@ void sqlite3GenerateConstraintChecks(
         }
       }
     }
-    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn);
 
     /* Generate code that executes if the new index entry is not unique */
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
@@ -1571,13 +1570,14 @@ void sqlite3GenerateConstraintChecks(
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                                 regR, nPkField, 0, OE_Replace);
+                                 regR, nPkField, 0, OE_Replace, pIdx==pPk);
         seenReplace = 1;
         break;
       }
     }
     sqlite3VdbeResolveLabel(v, addrUniqueOk);
-    sqlite3ReleaseTempRange(pParse, regR, nPkField);
+    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn);
+    if( regR!=regIdx ) sqlite3ReleaseTempRange(pParse, regR, nPkField);
   }
   if( ipkTop ){
     sqlite3VdbeAddOp2(v, OP_Goto, 0, ipkTop+1);

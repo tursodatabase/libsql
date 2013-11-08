@@ -408,7 +408,7 @@ void sqlite3DeleteFrom(
 
     /* Delete the row */
     sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                             iPk, 0, 1, OE_Default);
+                             iPk, 0, 1, OE_Default, 0);
 
     /* End of the delete loop */
     sqlite3VdbeAddOp2(v, OP_Next, iEph, addr+1);
@@ -472,7 +472,7 @@ void sqlite3DeleteFrom(
     {
       int count = (pParse->nested==0);    /* True to count changes */
       sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                               iRowid, 1, count, OE_Default);
+                               iRowid, 1, count, OE_Default, 0);
     }
 
     /* End of the delete loop */
@@ -551,7 +551,8 @@ void sqlite3GenerateRowDelete(
   int iPk,           /* First memory cell containing the PRIMARY KEY */
   i16 nPk,           /* Number of PRIMARY KEY memory cells */
   u8 count,          /* If non-zero, increment the row change counter */
-  u8 onconf          /* Default ON CONFLICT policy for triggers */
+  u8 onconf,         /* Default ON CONFLICT policy for triggers */
+  u8 bNoSeek         /* iDataCur is already pointing to the row to delete */
 ){
   Vdbe *v = pParse->pVdbe;        /* Vdbe */
   int iOld = 0;                   /* First register in OLD.* array */
@@ -568,7 +569,7 @@ void sqlite3GenerateRowDelete(
   ** not attempt to delete it or fire any DELETE triggers.  */
   iLabel = sqlite3VdbeMakeLabel(v);
   opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
-  sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
+  if( !bNoSeek ) sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
  
   /* If there are any triggers to fire, allocate a range of registers to
   ** use for the old.* references in the triggers.  */
@@ -672,18 +673,17 @@ void sqlite3GenerateRowIndexDelete(
   Index *pPk;        /* PRIMARY KEY index, or NULL for rowid tables */
 
   v = pParse->pVdbe;
-  VdbeModuleComment((v, "BEGIN: GenRowIdxDel(%d,%d)", iDataCur, iIdxCur));
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(i=0, pIdx=pTab->pIndex; pIdx; i++, pIdx=pIdx->pNext){
     assert( iIdxCur+i!=iDataCur || pPk==pIdx );
     if( aRegIdx!=0 && aRegIdx[i]==0 ) continue;
     if( pIdx==pPk ) continue;
+    VdbeModuleComment((v, "GenRowIdxDel for %s", pIdx->zName));
     r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1, &iPartIdxLabel);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
                       pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
     sqlite3VdbeResolveLabel(v, iPartIdxLabel);
   }
-  VdbeModuleComment((v, "END: GenRowIdxDel()"));
 }
 
 /*
