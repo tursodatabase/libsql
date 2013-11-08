@@ -1153,8 +1153,7 @@ int sqlite3_win32_reset_heap(){
     ** isolated Win32 native heap now.
     */
     winMemShutdown(winMemGetDataPtr());
-    winMemInit(winMemGetDataPtr());
-    rc = SQLITE_OK;
+    rc = winMemInit(winMemGetDataPtr());
   }else{
     /*
     ** The Win32 native heap cannot be modified because it may be in use.
