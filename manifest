@@ -1,5 +1,5 @@
-C Optimize\sout\sa\sNotExists/NotFound\sopcode\sthat\soccurs\sin\sUPDATE\sprocessing\nafter\sconstraint\schecks\sif\sthere\sis\sno\spossiblity\sthat\sthe\sconstraint\schecking\ncode\smight\shave\smoved\sthe\scursor.
-D 2013-11-08T01:09:15.717
+C Merge\schange\sto\sdrop\sthe\smutex\son\sthe\smultiplexor\sbefore\sentering\sthe\sxRead\nVFS\scall,\sin\sorder\sto\senhance\sparallelizability.
+D 2013-11-08T12:14:50.705
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -253,7 +253,7 @@ F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c eba4e1c5847cc98e7edc98f62265cd2abafba7a6
-F src/test_multiplex.c 5d691eeb6cb6aa7888da28eba5e62a9a857d3c0f
+F src/test_multiplex.c 6f63947cca286eeed0adc5f8d63fb17347648d4b
 F src/test_multiplex.h 110a8c4d356e0aa464ca8730375608a9a0b61ae1
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
@@ -1135,7 +1135,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1d1d13b89056903543c909b094030d205473fa82
-R a93c908485a9c317c37cb2c75e7c2fa6
+P 74e3ee2ee6ea89af2c12dd0bce248467fd0f1310 a00d2ed49c9f53263cd76ad41dad9e35e646ebb5
+R 3835fd3c0df78c22220952d9100c6a09
+T +closed a00d2ed49c9f53263cd76ad41dad9e35e646ebb5
 U drh
-Z 8c016c61c4a5769a5b69311c7541f889
+Z 74a2387ae02d248fbf85568c38a09fbd
