@@ -1116,12 +1116,14 @@ int sqlite3_win32_compact_heap(LPUINT pnLargest){
                   (void*)hHeap);
       rc = SQLITE_NOMEM;
     }else{
-      sqlite3_log(SQLITE_NOMEM, "failed to HeapCompact (%lu), heap=%p",
+      sqlite3_log(SQLITE_ERROR, "failed to HeapCompact (%lu), heap=%p",
                   osGetLastError(), (void*)hHeap);
       rc = SQLITE_ERROR;
     }
   }
 #else
+  sqlite3_log(SQLITE_NOTFOUND, "failed to HeapCompact, heap=%p",
+              (void*)hHeap);
   rc = SQLITE_NOTFOUND;
 #endif
   if( pnLargest ) *pnLargest = nLargest;

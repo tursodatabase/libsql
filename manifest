@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\sWin32\snative\sheap\sintegration.
-D 2013-11-08T18:13:48.125
+C Minor\scorrections\sto\slogging\sfor\ssqlite3_win32_compact_heap().
+D 2013-11-08T18:37:02.020
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c 265cd68f8db8e4e3605d6ded2a9f4bce51fc4684
+F src/os_win.c 2a08242b7ed8feaf17f73bf60dcc18820123f4ba
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
@@ -1135,10 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0077c0772a884b54d81fa3733aac6f0c364ef1a8
-R d280881cdb9e99a4e08b84b50dcc1eb7
-T *branch * win32heap
-T *sym-win32heap *
-T -sym-trunk *
+P c54dc9672b686c8e323eac0c33cd90ea89d36364
+R b7e113cc30ceb6aa7b36b22379ea6882
 U mistachkin
-Z fe0b9d286db6899fdfd50f5fdbd6a551
+Z ce53262c54330d5b05e79f1e9f6c66d0
