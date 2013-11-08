@@ -1,5 +1,5 @@
-C On\sthe\s--summary\soutput\sof\swordcount,\sadd\sthe\sa\sPRAGMA\sintegrity_check\sand\na\s64-bit\schecksum\sof\sthe\sentire\stable.
-D 2013-11-08T00:16:58.039
+C Optimize\sout\sa\sNotExists/NotFound\sopcode\sthat\soccurs\sin\sUPDATE\sprocessing\nafter\sconstraint\schecks\sif\sthere\sis\sno\spossiblity\sthat\sthe\sconstraint\schecking\ncode\smight\shave\smoved\sthe\scursor.
+D 2013-11-08T01:09:15.717
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 325ef76ae5c7a4a9da1beade47e1bd314f22d6d5
+F src/insert.c 11d577c152a3304a078d508e5a65031904ed61e7
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -275,7 +275,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c 53d6b5d50b3b23d4fcd0a36504feb5cff9aed716
-F src/update.c 0e421a0d97297e5e885435ae0b4351b1fd4ec35a
+F src/update.c 79f10ddcb078778193b27a9e050d14741b93148a
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e938112d316ca31460f247cc104ca3ff1d60b4da
-R 07f50decdc1dc09be9505de398f87899
+P 1d1d13b89056903543c909b094030d205473fa82
+R a93c908485a9c317c37cb2c75e7c2fa6
 U drh
-Z 566b6d1f5a2bce6772ade1b0310923b4
+Z 8c016c61c4a5769a5b69311c7541f889

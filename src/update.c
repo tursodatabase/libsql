@@ -547,12 +547,13 @@ void sqlite3Update(
   }
 
   if( !isView ){
-    int j1;                       /* Address of jump instruction */
+    int j1 = 0;           /* Address of jump instruction */
+    int bReplace = 0;     /* True if REPLACE conflict resolution might happen */
 
     /* Do constraint checks. */
     assert( regOldRowid>0 );
     sqlite3GenerateConstraintChecks(pParse, pTab, aRegIdx, iDataCur, iIdxCur,
-        regNewRowid, regOldRowid, chngKey, onError, labelContinue, 0);
+        regNewRowid, regOldRowid, chngKey, onError, labelContinue, &bReplace);
 
     /* Do FK constraint checks. */
     if( hasFK ){
@@ -560,10 +561,12 @@ void sqlite3Update(
     }
 
     /* Delete the index entries associated with the current record.  */
-    if( pPk ){
-      j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, nKey);
-    }else{
-      j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
+    if( bReplace || chngKey ){
+      if( pPk ){
+        j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, nKey);
+      }else{
+        j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
+      }
     }
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx);
   
@@ -571,10 +574,12 @@ void sqlite3Update(
     if( hasFK || chngKey || pPk!=0 ){
       sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, 0);
     }
-    if( sqlite3VdbeCurrentAddr(v)==j1+1 ){
-      sqlite3VdbeChangeToNoop(v, j1);
-    }else{
-      sqlite3VdbeJumpHere(v, j1);
+    if( bReplace || chngKey ){
+      if( sqlite3VdbeCurrentAddr(v)==j1+1 ){
+        sqlite3VdbeChangeToNoop(v, j1);
+      }else{
+        sqlite3VdbeJumpHere(v, j1);
+      }
     }
 
     if( hasFK ){

@@ -1587,7 +1587,7 @@ void sqlite3GenerateConstraintChecks(
   if( pbMayReplace ){
     *pbMayReplace = seenReplace;
   }
-  VdbeModuleComment((v, "END: GenCnstCks()"));
+  VdbeModuleComment((v, "END: GenCnstCks(%d)", seenReplace));
 }
 
 /*
