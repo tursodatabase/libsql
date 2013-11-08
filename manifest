@@ -1,5 +1,5 @@
-C Performance\simprovement:\sAvoid\sunnecessary\sseeks\son\sREPLACE\sINTO\sfor\sa\nWITHOUT\sROWID\stable.
-D 2013-11-08T16:54:56.609
+C Merge\sthe\sCygwin\sdirectory\sseparator\sfix.\s\sAlso\sfix\sa\sC++-ism\sin\sthe\nmultiplexor\scode\sso\sthat\sit\swill\scompile\son\sMSVC.
+D 2013-11-08T17:03:50.071
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c b159b5249d9f70607d961bbdd1dbba789c75812c
+F src/os_win.c cf9fde556e01b5f6f2e664f9abb7a59083e22c6a
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
@@ -253,7 +253,7 @@ F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c eba4e1c5847cc98e7edc98f62265cd2abafba7a6
-F src/test_multiplex.c 6f63947cca286eeed0adc5f8d63fb17347648d4b
+F src/test_multiplex.c 9f304bf04170c91c0318238d512df2da039eb1c8
 F src/test_multiplex.h 110a8c4d356e0aa464ca8730375608a9a0b61ae1
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
 F src/test_onefile.c 0396f220561f3b4eedc450cef26d40c593c69a25
@@ -1135,7 +1135,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6f187a0fb1b09ebc4732c4afbf3c813f82e069f1
-R eedb71726af8e12f0f13d18d7fd22009
+P fd11afa5f5c853dcac2290444b581a3fe1d4332d 9d870d5f0d8f02e5c91396a1f98b5ddb56b40b70
+R deb20dcd1b212d002ce341c4a8b6d225
+T +closed 9d870d5f0d8f02e5c91396a1f98b5ddb56b40b70
 U drh
-Z 047e6bb9b5b607bfaacf5c7e4c685d04
+Z 91483894a7585609e534fd671adf83ff

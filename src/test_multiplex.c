@@ -768,8 +768,9 @@ static int multiplexRead(
   }else{
     while( iAmt > 0 ){
       int i = (int)(iOfst / pGroup->szChunk);
+      sqlite3_file *pSubOpen;
       if( nMutex==0 ){ multiplexEnter(); nMutex++; }
-      sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL, 1);
+      pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL, 1);
       multiplexLeave(); nMutex--;
       if( pSubOpen ){
         int extra = ((int)(iOfst % pGroup->szChunk) + iAmt) - pGroup->szChunk;
