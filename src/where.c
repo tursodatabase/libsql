@@ -409,6 +409,7 @@ struct WhereInfo {
   int iContinue;            /* Jump here to continue with next record */
   int iBreak;               /* Jump here to break out of the loop */
   int savedNQueryLoop;      /* pParse->nQueryLoop outside the WHERE loop */
+  int aiCurOnePass[2];      /* OP_OpenWrite cursors for the ONEPASS opt */
   WhereMaskSet sMaskSet;    /* Map cursor numbers to bitmasks */
   WhereClause sWC;          /* Decomposition of the WHERE clause */
   WhereLevel a[1];          /* Information about each nest loop in WHERE */
@@ -501,8 +502,19 @@ int sqlite3WhereBreakLabel(WhereInfo *pWInfo){
 ** Return TRUE if an UPDATE or DELETE statement can operate directly on
 ** the rowids returned by a WHERE clause.  Return FALSE if doing an
 ** UPDATE or DELETE might change subsequent WHERE clause results.
+**
+** If the ONEPASS optimization is used (if this routine returns true)
+** then also write the indices of open cursors used by ONEPASS
+** into aiCur[0] and aiCur[1].  iaCur[0] gets the cursor of the data
+** table and iaCur[1] gets the cursor used by an auxiliary index.
+** Either value may be -1, indicating that cursor is not used.
+** Any cursors returned will have been opened for writing.
+**
+** aiCur[0] and aiCur[1] both get -1 if the where-clause logic is
+** unable to use the ONEPASS optimization.
 */
-int sqlite3WhereOkOnePass(WhereInfo *pWInfo){
+int sqlite3WhereOkOnePass(WhereInfo *pWInfo, int *aiCur){
+  memcpy(aiCur, pWInfo->aiCurOnePass, sizeof(int)*2);
   return pWInfo->okOnePass;
 }
 
@@ -3152,7 +3164,7 @@ static Bitmask codeOneLoopStart(
   bRev = (pWInfo->revMask>>iLevel)&1;
   omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
            && (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)==0;
-  VdbeNoopComment((v, "Begin Join Loop %d", iLevel));
+  VdbeNoopComment((v, "Begin WHERE-Loop %d: %s", iLevel,pTabItem->pTab->zName));
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -5694,6 +5706,14 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
 ** if the WHERE_GROUPBY flag is set in wctrlFlags) of a SELECT statement
 ** if there is one.  If there is no ORDER BY clause or if this routine
 ** is called from an UPDATE or DELETE statement, then pOrderBy is NULL.
+**
+** The iIdxCur parameter is the cursor number of an index.  If 
+** WHERE_ONETABLE_ONLY is set, iIdxCur is the cursor number of an index
+** to use for OR clause processing.  The WHERE clause should use this
+** specific cursor.  If WHERE_ONEPASS_DESIRED is set, then iIdxCur is
+** the first cursor in an array of cursors for all indices.  iIdxCur should
+** be used to compute the appropriate cursor depending on which index is
+** used.
 */
 WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
@@ -5759,6 +5779,7 @@ WhereInfo *sqlite3WhereBegin(
     pWInfo = 0;
     goto whereBeginError;
   }
+  pWInfo->aiCurOnePass[0] = pWInfo->aiCurOnePass[1] = -1;
   pWInfo->nLevel = nTabList;
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
@@ -6022,8 +6043,13 @@ WhereInfo *sqlite3WhereBegin(
 #endif
     if( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
          && (wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0 ){
-      int op = pWInfo->okOnePass ? OP_OpenWrite : OP_OpenRead;
+      int op = OP_OpenRead;
+      if( pWInfo->okOnePass ){
+        op = OP_OpenWrite;
+        pWInfo->aiCurOnePass[0] = pTabItem->iCursor;
+      };
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
+      assert( pTabItem->iCursor==pLevel->iTabCur );
       testcase( !pWInfo->okOnePass && pTab->nCol==BMS-1 );
       testcase( !pWInfo->okOnePass && pTab->nCol==BMS );
       if( !pWInfo->okOnePass && pTab->nCol<BMS && HasRowid(pTab) ){
@@ -6039,11 +6065,27 @@ WhereInfo *sqlite3WhereBegin(
     }
     if( pLoop->wsFlags & WHERE_INDEXED ){
       Index *pIx = pLoop->u.btree.pIndex;
-      /* FIXME:  As an optimization use pTabItem->iCursor if WHERE_IDX_ONLY */
-      int iIndexCur = pLevel->iIdxCur = iIdxCur ? iIdxCur : pParse->nTab++;
+      int iIndexCur;
+      int op = OP_OpenRead;
+      if( pWInfo->okOnePass && iIdxCur ){
+        Index *pJ = pTabItem->pTab->pIndex;
+        iIndexCur = iIdxCur;
+        assert( wctrlFlags & WHERE_ONEPASS_DESIRED );
+        while( ALWAYS(pJ) && pJ!=pIx ){
+          iIndexCur++;
+          pJ = pJ->pNext;
+        }
+        op = OP_OpenWrite;
+        pWInfo->aiCurOnePass[1] = iIndexCur;
+      }else if( iIdxCur && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
+        iIndexCur = iIdxCur;
+      }else{
+        iIndexCur = pParse->nTab++;
+      }
+      pLevel->iIdxCur = iIndexCur;
       assert( pIx->pSchema==pTab->pSchema );
       assert( iIndexCur>=0 );
-      sqlite3VdbeAddOp3(v, OP_OpenRead, iIndexCur, pIx->tnum, iDb);
+      sqlite3VdbeAddOp3(v, op, iIndexCur, pIx->tnum, iDb);
       sqlite3VdbeSetP4KeyInfo(pParse, pIx);
       VdbeComment((v, "%s", pIx->zName));
     }
@@ -6139,6 +6181,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
       sqlite3VdbeJumpHere(v, addr);
     }
+    VdbeNoopComment((v, "End WHERE-Loop %d: %s", i,
+                     pWInfo->pTabList->a[pLevel->iFrom].pTab->zName));
   }
 
   /* The "break" point is here, just past the end of the outer loop.
@@ -6146,8 +6190,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   */
   sqlite3VdbeResolveLabel(v, pWInfo->iBreak);
 
-  /* Close all of the cursors that were opened by sqlite3WhereBegin.
-  */
   assert( pWInfo->nLevel<=pTabList->nSrc );
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
     Index *pIdx = 0;
@@ -6155,6 +6197,12 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     pLoop = pLevel->pWLoop;
+
+    /* Close all of the cursors that were opened by sqlite3WhereBegin.
+    ** Except, do not close cursors that will be reused by the OR optimization
+    ** (WHERE_OMIT_OPEN_CLOSE).  And do not close the OP_OpenWrite cursors
+    ** created for the ONEPASS optimization.
+    */
     if( (pTab->tabFlags & TF_Ephemeral)==0
      && pTab->pSelect==0
      && (pWInfo->wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0
@@ -6163,7 +6211,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
       }
-      if( (ws & WHERE_INDEXED)!=0 && (ws & (WHERE_IPK|WHERE_AUTO_INDEX))==0 ){
+      if( (ws & WHERE_INDEXED)!=0
+       && (ws & (WHERE_IPK|WHERE_AUTO_INDEX))==0 
+       && pLevel->iIdxCur!=pWInfo->aiCurOnePass[1]
+      ){
         sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
       }
     }

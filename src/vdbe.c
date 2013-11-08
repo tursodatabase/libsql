@@ -2182,6 +2182,7 @@ case OP_IfNot: {            /* jump, in1 */
 }
 
 /* Opcode: IsNull P1 P2 * * *
+** Synopsis:  if r[P1]==NULL goto P2
 **
 ** Jump to P2 if the value in register P1 is NULL.
 */
@@ -2194,6 +2195,7 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
 }
 
 /* Opcode: NotNull P1 P2 * * *
+** Synopsis: if r[P1]!=NULL goto P2
 **
 ** Jump to P2 if the value in register P1 is not NULL.  
 */

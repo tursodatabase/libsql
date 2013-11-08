@@ -129,6 +129,7 @@ void sqlite3Update(
   int newmask;           /* Mask of NEW.* columns accessed by BEFORE triggers */
   int iEph = 0;          /* Ephemeral table holding all primary key values */
   int nKey = 0;          /* Number of elements in regKey for WITHOUT ROWID */
+  int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -336,10 +337,10 @@ void sqlite3Update(
   if( HasRowid(pTab) ){
     sqlite3VdbeAddOp3(v, OP_Null, 0, regRowSet, regOldRowid);
     pWInfo = sqlite3WhereBegin(
-        pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED, 0
+        pParse, pTabList, pWhere, 0, 0, WHERE_ONEPASS_DESIRED, iIdxCur
     );
     if( pWInfo==0 ) goto update_cleanup;
-    okOnePass = sqlite3WhereOkOnePass(pWInfo);
+    okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
   
     /* Remember the rowid of every item to be updated.
     */
@@ -366,9 +367,9 @@ void sqlite3Update(
     addrOpen = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
     sqlite3VdbeSetP4KeyInfo(pParse, pPk);
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 
-                               WHERE_ONEPASS_DESIRED, 0);
+                               WHERE_ONEPASS_DESIRED, iIdxCur);
     if( pWInfo==0 ) goto update_cleanup;
-    okOnePass = sqlite3WhereOkOnePass(pWInfo);
+    okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     for(i=0; i<nPk; i++){
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pPk->aiColumn[i],
                                       iPk+i);
@@ -392,6 +393,7 @@ void sqlite3Update(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
   }
 
+  labelBreak = sqlite3VdbeMakeLabel(v);
   if( !isView ){
     /* 
     ** Open every index that needs updating.  Note that if any
@@ -415,24 +417,28 @@ void sqlite3Update(
       }
     }
     for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
+      int iThisCur = iIdxCur+i;
       assert( aRegIdx );
-      if( openAll || aRegIdx[i]>0 ){
-        sqlite3VdbeAddOp3(v, OP_OpenWrite, iIdxCur+i, pIdx->tnum, iDb);
+      if( (openAll || aRegIdx[i]>0)
+       && iThisCur!=aiCurOnePass[0]
+       && iThisCur!=aiCurOnePass[1]
+      ){
+        sqlite3VdbeAddOp3(v, OP_OpenWrite, iThisCur, pIdx->tnum, iDb);
         sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
-        assert( pParse->nTab>iIdxCur+i );
+        assert( pParse->nTab>iThisCur );
         VdbeComment((v, "%s", pIdx->zName));
+        if( okOnePass && pPk && iThisCur==iDataCur ){
+          sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak,
+                               regKey, nKey);
+        }
       }
     }
   }
 
   /* Top of the update loop */
-  labelBreak = sqlite3VdbeMakeLabel(v);
   if( okOnePass ){
     labelContinue = labelBreak;
     sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
-    if( pPk ){
-      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
-    }
   }else if( pPk ){
     labelContinue = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak);
@@ -624,7 +630,7 @@ void sqlite3Update(
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     assert( aRegIdx );
     if( openAll || aRegIdx[i]>0 ){
-      sqlite3VdbeAddOp2(v, OP_Close, iIdxCur, 0);
+      sqlite3VdbeAddOp2(v, OP_Close, iIdxCur+i, 0);
     }
   }
   if( iDataCur<iIdxCur ) sqlite3VdbeAddOp2(v, OP_Close, iDataCur, 0);
