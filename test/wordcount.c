@@ -93,13 +93,74 @@ static void traceCallback(void *NotUsed, const char *zSql){
 ** each column separated by a single space. */
 static int printResult(void *NotUsed, int nArg, char **azArg, char **azNm){
   int i;
-  const char *zFormat = "%s";
+  printf("--");
   for(i=0; i<nArg; i++){
-    printf(zFormat, azArg[i]);
-    zFormat = " %s";
+    printf(" %s", azArg[i]);
   }
   printf("\n");
   return 0;
+}
+
+
+/*
+** Add one character to a hash
+*/
+static void addCharToHash(unsigned int *a, unsigned char x){
+  if( a[0]<4 ){
+    a[1] = (a[1]<<8) | x;
+    a[0]++;
+  }else{
+    a[2] = (a[2]<<8) | x;
+    a[0]++;
+    if( a[0]==8 ){
+      a[3] += a[1] + a[4];
+      a[4] += a[2] + a[3];
+      a[0] = a[1] = a[2] = 0;
+    }
+  }    
+}
+
+/*
+** Compute the final hash value.
+*/
+static void finalHash(unsigned int *a, char *z){
+  a[3] += a[1] + a[4] + a[0];
+  a[4] += a[2] + a[3];
+  sqlite3_snprintf(17, z, "%08x%08x", a[3], a[4]);
+}
+
+
+/*
+** Implementation of a checksum() aggregate SQL function
+*/
+static void checksumStep(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const unsigned char *zVal;
+  int nVal, i, j;
+  unsigned int *a;
+  a = (unsigned*)sqlite3_aggregate_context(context, sizeof(unsigned int)*5);
+
+  if( a ){
+    for(i=0; i<argc; i++){
+      nVal = sqlite3_value_bytes(argv[i]);
+      zVal = (const unsigned char*)sqlite3_value_text(argv[i]);
+      if( zVal ) for(j=0; j<nVal; j++) addCharToHash(a, zVal[j]);
+      addCharToHash(a, '|');
+    }
+    addCharToHash(a, '\n');
+  }
+}
+static void checksumFinalize(sqlite3_context *context){
+  unsigned int *a;
+  char zResult[24];
+  a = sqlite3_aggregate_context(context, 0);
+  if( a ){
+    finalHash(a, zResult);
+    sqlite3_result_text(context, zResult, -1, SQLITE_TRANSIENT);
+  }
 }
 
 
@@ -357,13 +418,19 @@ int main(int argc, char **argv){
   sqlite3_finalize(pDelete);
 
   if( showSummary ){
+    sqlite3_create_function(db, "checksum", -1, SQLITE_UTF8, 0,
+                            0, checksumStep, checksumFinalize);
     sqlite3_exec(db, 
-      "SELECT '-- count(*):  ', count(*) FROM wordcount;\n"
-      "SELECT '-- sum(cnt):  ', sum(cnt) FROM wordcount;\n"
-      "SELECT '-- avg(cnt):  ', avg(cnt) FROM wordcount;\n"
-      "SELECT '-- sum(cnt=1):', sum(cnt=1) FROM wordcount;\n"
-      "SELECT '-- top 10:    ', group_concat(word, ', ') FROM "
-         "(SELECT word FROM wordcount ORDER BY cnt DESC LIMIT 10);\n",
+      "SELECT 'count(*):  ', count(*) FROM wordcount;\n"
+      "SELECT 'sum(cnt):  ', sum(cnt) FROM wordcount;\n"
+      "SELECT 'max(cnt):  ', max(cnt) FROM wordcount;\n"
+      "SELECT 'avg(cnt):  ', avg(cnt) FROM wordcount;\n"
+      "SELECT 'sum(cnt=1):', sum(cnt=1) FROM wordcount;\n"
+      "SELECT 'top 10:    ', group_concat(word, ', ') FROM "
+         "(SELECT word FROM wordcount ORDER BY cnt DESC LIMIT 10);\n"
+      "SELECT 'checksum:  ', checksum(word, cnt) FROM "
+         "(SELECT word, cnt FROM wordcount ORDER BY word);\n"
+      "PRAGMA integrity_check;\n",
       printResult, 0, 0);
   }
 
