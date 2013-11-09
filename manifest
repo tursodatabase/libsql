@@ -1,5 +1,5 @@
-C Furhter\scleanup\sof\sthe\swinGetTempname\sfunction.
-D 2013-11-09T21:10:47.757
+C Use\sthe\sUNICODE_STRING_MAX_CHARS\sconstant\sfrom\sWinNT.h.
+D 2013-11-09T21:11:36.447
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c 4b18ebe9b876c73c53f2f56c136117b7ca112f9a
+F src/os_win.c 846def34c7ea070afbee1df011133b2d7729ba13
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fbf8c3828327d19bbce0d7f6735e7577abfd54b3
-R c2f422a7847dd0ab6bc168c95eedae98
+P 674de36bcaafc1130b7603e69616c71fc8cd7de7
+R c6b1287cee318b82ec90ee4d47dada13
 U mistachkin
-Z e44382875c5c1404de09b6986ef3f2a4
+Z 26bf88746e2e58b634dc04ec4f346cf2

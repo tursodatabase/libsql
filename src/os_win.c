@@ -69,10 +69,10 @@
 
 /*
 ** Maximum pathname length (in chars) for WinNT.  This should normally be
-** 32767.
+** UNICODE_STRING_MAX_CHARS.
 */
 #ifndef SQLITE_WINNT_MAX_PATH_CHARS
-#  define SQLITE_WINNT_MAX_PATH_CHARS   (32767)
+#  define SQLITE_WINNT_MAX_PATH_CHARS   (UNICODE_STRING_MAX_CHARS)
 #endif
 
 /*
@@ -86,7 +86,7 @@
 
 /*
 ** Maximum pathname length (in bytes) for WinNT.  This should normally be
-** 32767 * sizeof(WCHAR).
+** UNICODE_STRING_MAX_CHARS * sizeof(WCHAR).
 */
 #ifndef SQLITE_WINNT_MAX_PATH_BYTES
 #  define SQLITE_WINNT_MAX_PATH_BYTES   \
