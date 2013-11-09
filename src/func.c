@@ -138,8 +138,8 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       i64 iVal = sqlite3_value_int64(argv[0]);
       if( iVal<0 ){
         if( (iVal<<1)==0 ){
-          /* IMP: R-35460-15084 If X is the integer -9223372036854775807 then
-          ** abs(X) throws an integer overflow error since there is no
+          /* IMP: R-31676-45509 If X is the integer -9223372036854775808
+          ** then abs(X) throws an integer overflow error since there is no
           ** equivalent positive 64-bit two complement value. */
           sqlite3_result_error(context, "integer overflow", -1);
           return;

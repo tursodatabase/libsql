@@ -1103,8 +1103,8 @@ do_catchsql_test e_createtable-3.11.5 {
 # EVIDENCE-OF: R-52382-54248 Each table in SQLite may have at most one
 # PRIMARY KEY.
 # 
-# EVIDENCE-OF: R-18080-47271 If there is more than one PRIMARY KEY
-# clause in a single CREATE TABLE statement, it is an error.
+# EVIDENCE-OF: R-62315-57691 An error is rasied if more than one PRIMARY
+# KEY clause appears in a CREATE TABLE statement.
 #
 #     To test the two above, show that zero primary keys is Ok, one primary
 #     key is Ok, and two or more primary keys is an error.
@@ -1126,6 +1126,17 @@ do_createtable_tests 4.1.2 -error {
   5    "CREATE TABLE t5(a PRIMARY KEY, b, c, PRIMARY KEY(a))"            {}
   6    "CREATE TABLE t5(a INTEGER PRIMARY KEY, b, c, PRIMARY KEY(a))"    {}
 }
+
+# EVIDENCE-OF: R-54755-39291 The PRIMARY KEY is optional for ordinary
+# tables but is required for WITHOUT ROWID tables.
+#
+do_catchsql_test 4.1.3 {
+  CREATE TABLE t6(a, b); --ok
+} {0 {}}
+do_catchsql_test 4.1.4 {
+  CREATE TABLE t7(a, b) WITHOUT ROWID; --Error, no PRIMARY KEY
+} {1 {PRIMARY KEY missing on table t7}}
+
 
 proc table_pk {tbl} { 
   set pk [list]
@@ -1160,8 +1171,8 @@ do_createtable_tests 4.2 -repair {
   2.3    "CREATE TABLE t5(a, b INTEGER PRIMARY KEY, c)"       {b}
 }
 
-# EVIDENCE-OF: R-33986-09410 Each row in a table with a primary key must
-# feature a unique combination of values in its primary key columns.
+# EVIDENCE-OF: R-59124-61339 Each row in a table with a primary key must
+# have a unique combination of values in its primary key columns.
 #
 # EVIDENCE-OF: R-39102-06737 If an INSERT or UPDATE statement attempts
 # to modify the table content so that two or more rows feature identical
@@ -1252,8 +1263,9 @@ do_createtable_tests 4.4 {
   14   "INSERT INTO t2 VALUES(NULL, NULL)"           {}
 }
 
-# EVIDENCE-OF: R-61866-38053 Unless the column is an INTEGER PRIMARY KEY
-# SQLite allows NULL values in a PRIMARY KEY column.
+# EVIDENCE-OF: R-35113-43214 Unless the column is an INTEGER PRIMARY KEY
+# or the table is a WITHOUT ROWID table or the column is declared NOT
+# NULL, SQLite allows NULL values in a PRIMARY KEY column.
 #
 #     If the column is an integer primary key, attempting to insert a NULL
 #     into the column triggers the auto-increment behavior. Attempting
@@ -1275,6 +1287,14 @@ do_catchsql_test 4.5.3 {
   INSERT INTO t3 VALUES(2, 5, 3);
   UPDATE t3 SET u = NULL WHERE s = 2;
 } {1 {datatype mismatch}}
+do_catchsql_test 4.5.4 {
+  CREATE TABLE t4(s, u INT PRIMARY KEY, v) WITHOUT ROWID;
+  INSERT INTO t4 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t4.u}}
+do_catchsql_test 4.5.5 {
+  CREATE TABLE t5(s, u INT PRIMARY KEY NOT NULL, v);
+  INSERT INTO t5 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t5.u}}
 
 # EVIDENCE-OF: R-00227-21080 A UNIQUE constraint is similar to a PRIMARY
 # KEY constraint, except that a single table may have any number of
@@ -1288,14 +1308,12 @@ do_createtable_tests 4.6 {
   4    "CREATE TABLE t4(a, b, c, UNIQUE(a, b, c))"                 {}
 }
 
-# EVIDENCE-OF: R-55240-58877 For each UNIQUE constraint on the table,
-# each row must feature a unique combination of values in the columns
+# EVIDENCE-OF: R-30981-64168 For each UNIQUE constraint on the table,
+# each row must contain a unique combination of values in the columns
 # identified by the UNIQUE constraint.
 #
-# EVIDENCE-OF: R-47733-51480 If an INSERT or UPDATE statement attempts
-# to modify the table content so that two or more rows feature identical
-# values in a set of columns that are subject to a UNIQUE constraint, it
-# is a constraint violation.
+# EVIDENCE-OF: R-59124-61339 Each row in a table with a primary key must
+# have a unique combination of values in its primary key columns.
 #
 do_execsql_test 4.7.0 {
   INSERT INTO t1 VALUES(1, 2);
@@ -1327,9 +1345,9 @@ do_createtable_tests 4.7.1 -error {UNIQUE constraint failed: %s} {
   14   "UPDATE t4 SET a=0, b=0, c=0"                 {{t4.a, t4.b, t4.c}}
 }
 
-# EVIDENCE-OF: R-21289-11559 As with PRIMARY KEY constraints, for the
-# purposes of UNIQUE constraints NULL values are considered distinct
-# from all other values (including other NULLs).
+# EVIDENCE-OF: R-00404-17670 For the purposes of UNIQUE constraints,
+# NULL values are considered distinct from all other values, including
+# other NULLs.
 #
 do_createtable_tests 4.8 {
   1    "INSERT INTO t1 VALUES(NULL, NULL)"           {}
@@ -1344,10 +1362,9 @@ do_createtable_tests 4.8 {
   9    "UPDATE t4 SET c = NULL"                      {}
 }
 
-# EVIDENCE-OF: R-26983-26377 INTEGER PRIMARY KEY columns aside, both
-# UNIQUE and PRIMARY KEY constraints are implemented by creating an
-# index in the database (in the same way as a "CREATE UNIQUE INDEX"
-# statement would).
+# EVIDENCE-OF: R-55820-29984 In most cases, UNIQUE and PRIMARY KEY
+# constraints are implemented by creating a unique index in the
+# database.
 do_createtable_tests 4.9 -repair drop_all_tables -query {
   SELECT count(*) FROM sqlite_master WHERE type='index'
 } {
@@ -1358,7 +1375,7 @@ do_createtable_tests 4.9 -repair drop_all_tables -query {
   5    "CREATE TABLE t1(a PRIMARY KEY, b, c, UNIQUE(c, b))"  2
 }
 
-# EVIDENCE-OF: R-02252-33116 Such an index is used like any other index
+# Obsolete: R-02252-33116 Such an index is used like any other index
 # in the database to optimize queries.
 #
 do_execsql_test 4.10.0 {
@@ -1695,10 +1712,10 @@ proc is_integer_primary_key {tbl col} {
   }]] 0
 }
 
-# EVIDENCE-OF: R-53738-31673 With one exception, if a table has a
-# primary key that consists of a single column, and the declared type of
-# that column is "INTEGER" in any mixture of upper and lower case, then
-# the column becomes an alias for the rowid.
+# EVIDENCE-OF: R-47901-33947 With one exception noted below, if a rowid
+# table has a primary key that consists of a single column and the
+# declared type of that column is "INTEGER" in any mixture of upper and
+# lower case, then the column becomes an alias for the rowid.
 #
 # EVIDENCE-OF: R-45951-08347 if the declaration of a column with
 # declared type "INTEGER" includes an "PRIMARY KEY DESC" clause, it does

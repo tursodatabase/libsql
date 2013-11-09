@@ -1,5 +1,5 @@
-C Throw\san\serror\sif\sAUTOINCREMENT\sappears\sin\sa\sWITHOUT\sROWID\stable.\s\s\nUpdates\sto\sAPI\sdocumentation\sto\sdiscuss\sWITHOUT\sROWID.
-D 2013-11-09T18:15:35.427
+C Updates\sto\srequirements\smarks.\s\sNo\schanges\sto\scode.
+D 2013-11-09T19:47:15.808
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/delete.c ddb92f44595366c4817e576b5f11cad5a915c3ef
 F src/expr.c e7bbe3c6916e141f27a28655d3cf325b817695e4
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 78364daed38e26269c53ddb94c515bceac1063c6
-F src/func.c 2c47b65e6e00e3e9374942f28254faf8adafe398
+F src/func.c 96caa9dfd1febf9a4b720de4c43ccfb392a52b73
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -431,7 +431,7 @@ F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 44028aaf161a5e80a2f229622b3a174d3b352810
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test f1d21fa142391917b1fa84cf985ac6c63dfcbe4d
+F test/e_createtable.test 3b453432cd14a12732ee9467597d2274ca37ce36
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0077c0772a884b54d81fa3733aac6f0c364ef1a8
-R 563b03556821aa7157a2f09d27059ceb
+P b1abb2b078d1cb9ec5fbd7f98221914b93632e9f
+R aea40f11c282f7222fc2eec8280533e7
 U drh
-Z 70e0a7dbdf3eec5dcb68edfd8a49c4f3
+Z 2a612035828de77b6077cfc0ffcba71e
