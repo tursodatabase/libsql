@@ -1,5 +1,5 @@
-C Fix\smemory\stype\smismatch\swhen\scompiled\swith\sMEMDEBUG.
-D 2013-11-09T23:44:02.375
+C Fix\scompilation\serrors\swith\ssome\scompilers\sthat\sdo\snot\sreference\srecent\sWindows\sSDK\sheader\sfiles.
+D 2013-11-09T23:55:18.487
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c 846def34c7ea070afbee1df011133b2d7729ba13
+F src/os_win.c 41bf0e5022ed35f1c29ff4d846b388b02260c5db
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d06d9fdb6e6ac369035c825d9c30970115b3ba71
-R 81e3711b2ed15ff1b9a41f8d7b9097d4
+P 2c32bd6d4d5da2055633e8fb43ee184f729d8b91
+R 234ec895190027fdd0a5251f94783a38
 U mistachkin
-Z 3f2dd6d85d2c08d6bd7b3a7fc26349db
+Z 988cbc38d830179bd7e27cb1b774d3ee

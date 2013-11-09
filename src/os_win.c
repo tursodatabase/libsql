@@ -60,11 +60,26 @@
 #endif
 
 /*
+** This constant should already be defined (in the "WinDef.h" SDK file).
+*/
+#ifndef MAX_PATH
+#  define MAX_PATH                      (260)
+#endif
+
+/*
 ** Maximum pathname length (in chars) for Win32.  This should normally be
 ** MAX_PATH.
 */
+
 #ifndef SQLITE_WIN32_MAX_PATH_CHARS
 #  define SQLITE_WIN32_MAX_PATH_CHARS   (MAX_PATH)
+#endif
+
+/*
+** This constant should already be defined (in the "WinNT.h" SDK file).
+*/
+#ifndef UNICODE_STRING_MAX_CHARS
+#  define UNICODE_STRING_MAX_CHARS      (32767)
 #endif
 
 /*
