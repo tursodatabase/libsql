@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_win32_compact_heap()\sfunction\sfor\scleaning\sup\smemory\s\nallocations\son\sWin32\ssystem.\s\sAlso\scleanup\sthe\swinGetTempname()\sfunction.\nChanges\sto\sthe\sWin32\sVFS\sonly.
-D 2013-11-09T22:08:10.133
+C Fix\smemory\stype\smismatch\swhen\scompiled\swith\sMEMDEBUG.
+D 2013-11-09T23:44:02.375
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 60af46f5f6bc3803c27af3edd8881ed2d0c3f19f
+F src/select.c a040df82c4ac90b27114e1c21a05d77cc6dc6f80
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
 F src/sqlite.h.in ecbd714ecc0ff710a149fc72db6552738148ad0c
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1135,8 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a4c5804efc63ff993e93f8a7b6acb6bb0a19dd3e 9d870d5f0d8f02e5c91396a1f98b5ddb56b40b70 3fefe4dd43539ec7e525ef58f0bfeffd31288ebd
-R 16fbeb3915d22005a1397206e0ff0a1a
-T +closed 3fefe4dd43539ec7e525ef58f0bfeffd31288ebd
-U drh
-Z e2b76c2b5f6c8b4dee846470368559b6
+P d06d9fdb6e6ac369035c825d9c30970115b3ba71
+R 81e3711b2ed15ff1b9a41f8d7b9097d4
+U mistachkin
+Z 3f2dd6d85d2c08d6bd7b3a7fc26349db

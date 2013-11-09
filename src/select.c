@@ -829,7 +829,7 @@ void sqlite3KeyInfoUnref(KeyInfo *p){
   if( p ){
     assert( p->nRef>0 );
     p->nRef--;
-    if( p->nRef==0 ) sqlite3_free(p);
+    if( p->nRef==0 ) sqlite3DbFree(0, p);
   }
 }
 
