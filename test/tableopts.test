@@ -21,7 +21,12 @@ do_test tableopt-1.1 {
   catchsql {
     CREATE TABLE t1(a,b) WITHOUT rowid;
   }
-} {1 {no PRIMARY KEY for table t1}}
+} {1 {PRIMARY KEY missing on table t1}}
+do_test tableopt-1.1b {
+  catchsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY AUTOINCREMENT,b) WITHOUT rowid;
+  }
+} {1 {AUTOINCREMENT not allowed on WITHOUT ROWID tables}}
 do_test tableopt-1.2 {
   catchsql {
     CREATE TABLE t1(a,b) WITHOUT unknown2;

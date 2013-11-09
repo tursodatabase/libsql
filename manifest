@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-11-08T17:13:23.004
+C Throw\san\serror\sif\sAUTOINCREMENT\sappears\sin\sa\sWITHOUT\sROWID\stable.\s\s\nUpdates\sto\sAPI\sdocumentation\sto\sdiscuss\sWITHOUT\sROWID.
+D 2013-11-09T18:15:35.427
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 260dedc13119e6fb7930380bd3d294b98362bf5a
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c d4d5ceedf196a7da36d6dd15f4d073cb68c8f079
+F src/build.c 837587dbeb02327e9df15f803abc661a6eb71ad3
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -220,7 +220,7 @@ F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 60af46f5f6bc3803c27af3edd8881ed2d0c3f19f
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
-F src/sqlite.h.in a8cad179541b8d171fed425a737084702ef462ef
+F src/sqlite.h.in a2580d959495539fe9e9c17804a90b2aca176c88
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 3da1940a2ba05a663e9016d57f1ea1f79ffcb03e
@@ -827,7 +827,7 @@ F test/syscall.test a653783d985108c4912cc64d341ffbbb55ad2806
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
 F test/table.test 580d23530187026d4502fae74a490f0408cf2cc7
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
-F test/tableopts.test 2950f094a984c8aa53493598bf0a07ac7549eb02
+F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 830629d31d171155d90ff87ae8e70094d17bb2d3
-R adecbc2b2722d8396e4c1e0a55a342fc
+P 0077c0772a884b54d81fa3733aac6f0c364ef1a8
+R 563b03556821aa7157a2f09d27059ceb
 U drh
-Z f6606fc6407dbb7e80e344c001d6847c
+Z 70e0a7dbdf3eec5dcb68edfd8a49c4f3

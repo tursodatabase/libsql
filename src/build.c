@@ -1769,8 +1769,13 @@ void sqlite3EndTable(
 
   /* Special processing for WITHOUT ROWID Tables */
   if( tabOpts & TF_WithoutRowid ){
+    if( (p->tabFlags & TF_Autoincrement) ){
+      sqlite3ErrorMsg(pParse,
+          "AUTOINCREMENT not allowed on WITHOUT ROWID tables");
+      return;
+    }
     if( (p->tabFlags & TF_HasPrimaryKey)==0 ){
-      sqlite3ErrorMsg(pParse, "no PRIMARY KEY for table %s", p->zName);
+      sqlite3ErrorMsg(pParse, "PRIMARY KEY missing on table %s", p->zName);
     }else{
       p->tabFlags |= TF_WithoutRowid;
       convertToWithoutRowidTable(pParse, p);
