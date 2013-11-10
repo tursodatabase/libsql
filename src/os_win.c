@@ -70,7 +70,6 @@
 ** Maximum pathname length (in chars) for Win32.  This should normally be
 ** MAX_PATH.
 */
-
 #ifndef SQLITE_WIN32_MAX_PATH_CHARS
 #  define SQLITE_WIN32_MAX_PATH_CHARS   (MAX_PATH)
 #endif
@@ -92,7 +91,7 @@
 
 /*
 ** Maximum pathname length (in bytes) for Win32.  The MAX_PATH macro is in
-** characters, so we allocate 3 bytes per character assuming worst-case of
+** characters, so we allocate 4 bytes per character assuming worst-case of
 ** 4-bytes-per-character for UTF8.
 */
 #ifndef SQLITE_WIN32_MAX_PATH_BYTES

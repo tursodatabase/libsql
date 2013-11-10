@@ -1,5 +1,5 @@
-C Fix\scompilation\serrors\swith\ssome\scompilers\sthat\sdo\snot\sreference\srecent\sWindows\sSDK\sheader\sfiles.
-D 2013-11-09T23:55:18.487
+C Fix\stypo\sin\scomment\sand\sremove\ssuperfluous\sblank\sline.\s\sNo\schanges\sto\scode.
+D 2013-11-10T00:03:11.921
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c 41bf0e5022ed35f1c29ff4d846b388b02260c5db
+F src/os_win.c 2027d0a4df8201024bd23f173a74ff8cb0085fed
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2c32bd6d4d5da2055633e8fb43ee184f729d8b91
-R 234ec895190027fdd0a5251f94783a38
+P a5805976f0e06ece2eeebd825f383a1ee88121fc
+R b79e4c42d41fb8fbd85c50580ea07dcf
 U mistachkin
-Z 988cbc38d830179bd7e27cb1b774d3ee
+Z 4647bb0b47c53e635871c96e7d23ff93
