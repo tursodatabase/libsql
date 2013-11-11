@@ -236,7 +236,7 @@ do_execsql_test 4.2.1 {
     PRAGMA defer_foreign_keys = 1;
     INSERT INTO c1 VALUES('x', 'x');
 }
-do_catchsql_test 4.2.2 { COMMIT } {1 {foreign key constraint failed}}
+do_catchsql_test 4.2.2 { COMMIT } {1 {FOREIGN KEY constraint failed}}
 do_catchsql_test 4.2.3 { ROLLBACK } {0 {}}
 
 do_execsql_test 4.3.1 {
@@ -246,11 +246,9 @@ do_execsql_test 4.3.1 {
 }
 do_catchsql_test 4.3.2 { 
   INSERT INTO c1 VALUES(1, 'x') 
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: c1.a}}
 
 do_catchsql_test 4.3.3 { COMMIT } {0 {}}
 do_catchsql_test 4.3.4 { BEGIN ; COMMIT } {0 {}}
 
 finish_test
-
-

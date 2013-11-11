@@ -1,5 +1,5 @@
-C Merge\sin\sthe\sWITHOUT\sROWID\schanges.\s\sA\sfew\stests\sare\sfailing\snow.\s\sThey\swill\nbe\sfixed\sin\sa\sfollow-on\scheck-in.
-D 2013-11-11T22:55:26.153
+C Fix\stwo\stest\scases\s(due\sto\schanges\sin\sthe\sformatting\sof\sconstraint\serrors)\nso\sthat\sall\stests\snow\spass.
+D 2013-11-11T23:02:10.499
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in bb787d5227c6aa95915ff04e9634a0a469297ea4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -146,7 +146,7 @@ F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
 F ext/session/session5.test 8fdfaf9dba28a2f1c6b89b06168bdab1fef2d478
 F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
-F ext/session/session9.test 43acfdc57647c2ce4b36dbd0769112520ea6af14
+F ext/session/session9.test 776e46785c29c11cda01f5205d0f1e8f8f9a46bf
 F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
@@ -1151,7 +1151,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P aa72ea8a004de7fe744fc13baef19d05aea607d5 f58d57017199421167dae8ebc67db2f19be45082
-R 3b17341d4c625bc46e3586e654b8390b
+P 5addd1234ded59ce60fb633b76ac87d483377edd
+R 7497a574757ea7847d650e9a557949cb
 U drh
-Z 1cdf9fac9d6e4efb5a645c5741312eca
+Z 55c6c2c9062609ee78397175c9785a12
