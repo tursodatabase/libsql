@@ -1978,6 +1978,7 @@ static void TRACE_IDX_OUTPUTS(sqlite3_index_info *p){
   sqlite3DebugPrintf("  idxStr=%s\n", p->idxStr);
   sqlite3DebugPrintf("  orderByConsumed=%d\n", p->orderByConsumed);
   sqlite3DebugPrintf("  estimatedCost=%g\n", p->estimatedCost);
+  sqlite3DebugPrintf("  estimatedRows=%lld\n", p->estimatedRows);
 }
 #else
 #define TRACE_IDX_INPUTS(A)
@@ -4787,6 +4788,7 @@ static int whereLoopAddVirtual(
     pIdxInfo->needToFreeIdxStr = 0;
     pIdxInfo->orderByConsumed = 0;
     pIdxInfo->estimatedCost = SQLITE_BIG_DBL / (double)2;
+    pIdxInfo->estimatedRows = 25;
     rc = vtabBestIndex(pParse, pTab, pIdxInfo);
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
@@ -4846,8 +4848,7 @@ static int whereLoopAddVirtual(
                                      && pIdxInfo->orderByConsumed);
       pNew->rSetup = 0;
       pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
-      /* TUNING: Every virtual table query returns 25 rows */
-      pNew->nOut = 46;  assert( 46==sqlite3LogEst(25) );
+      pNew->nOut = sqlite3LogEst(pIdxInfo->estimatedRows);
       whereLoopInsert(pBuilder, pNew);
       if( pNew->u.vtab.needFree ){
         sqlite3_free(pNew->u.vtab.idxStr);

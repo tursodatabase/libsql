@@ -1,5 +1,5 @@
-C Remove\sunreachable\scode,\sreplacing\sit\sin\smost\scases\swith\sassert()\sor\sNEVER()\nmacros.
-D 2013-11-11T16:55:52.347
+C Add\sa\sway\sfor\svirtual\stables\sto\sreturn\sthe\sexpected\snumber\sof\srows\sfor\sa\sscan\s(not\sjust\sthe\soverall\scost)\sto\sSQLite.\sHave\sthe\srtree\smodule\smake\suse\sof\sthis.
+D 2013-11-11T19:01:33.120
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,19 +120,20 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c db516d7e59a14c92df10b552789509f2b632df3a
+F ext/rtree/rtree.c 1ec67e64ab28acd72d6a39416b24cb6b33a8bd9e
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
 F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
-F ext/rtree/rtree6.test fb94b98c1145b7f44c72635d11492f35349ab27e
+F ext/rtree/rtree6.test fe0bd377a21c68ce2826129d14354c884cb1f354
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test 983e567b49b5dca165940f66b87e161aa30e82b2
+F ext/rtree/rtreeC.test 0c3dcd379e012c76df5e59d53bc99a8b48f1603b
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h c34c1e41d1ab80bb8ad09aae402c9c956871a765
@@ -220,7 +221,7 @@ F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c a040df82c4ac90b27114e1c21a05d77cc6dc6f80
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
-F src/sqlite.h.in ecbd714ecc0ff710a149fc72db6552738148ad0c
+F src/sqlite.h.in f73c5fa1f1ff7c82ad8dff4daee690fe0ef43638
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 3da1940a2ba05a663e9016d57f1ea1f79ffcb03e
@@ -292,7 +293,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 2c2a59315754521667e525e5f33c4238b7c7dcb1
+F src/where.c 85766647d693ed7cfba42dfce07e2cb9c3384bd9
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1135,7 +1136,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 569fedd6bb07bdd3430da8dc65de4a9fdfe204cc
-R 749a13031920b9205045d3321716b16a
-U drh
-Z 7491e1f10541a194c40abc7098f10a18
+P 924d63b283a3d059838114c95d42c6feaf913529
+R d1d8a68221f9b1872aa5651bda60ad81
+U dan
+Z 4d69165a9eae811b48725d315a514f08
