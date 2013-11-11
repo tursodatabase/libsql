@@ -29,7 +29,7 @@ do_test tkt-78e04-1.1 {
   catchsql {
     INSERT INTO ""("") VALUES(1);
   }
-} {1 {column  is not unique}}
+} {1 {UNIQUE constraint failed: .}}
 do_test tkt-78e04-1.2 {
   execsql {
     PRAGMA table_info("");

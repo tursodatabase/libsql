@@ -858,7 +858,7 @@ do_test savepoint-12.2 {
         SAVEPOINT sp2;
           INSERT OR ROLLBACK INTO t4 VALUES(1, 'one');
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: t4.a}}
 do_test savepoint-12.3 {
   sqlite3_get_autocommit db
 } {1}

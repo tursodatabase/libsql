@@ -803,23 +803,56 @@ static void selectInnerLoop(
 }
 
 /*
-** Allocate a KeyInfo object sufficient for an index of N columns.
-**
-** Actually, always allocate one extra column for the rowid at the end
-** of the index.  So the KeyInfo returned will have space sufficient for
-** N+1 columns.
+** Allocate a KeyInfo object sufficient for an index of N key columns and
+** X extra columns.
 */
-KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N){
-  KeyInfo *p = sqlite3DbMallocZero(db, 
-                   sizeof(KeyInfo) + (N+1)*(sizeof(CollSeq*)+1));
+KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
+  KeyInfo *p = sqlite3DbMallocZero(0, 
+                   sizeof(KeyInfo) + (N+X)*(sizeof(CollSeq*)+1));
   if( p ){
-    p->aSortOrder = (u8*)&p->aColl[N+1];
+    p->aSortOrder = (u8*)&p->aColl[N+X];
     p->nField = (u16)N;
+    p->nXField = (u16)X;
     p->enc = ENC(db);
     p->db = db;
+    p->nRef = 1;
+  }else{
+    db->mallocFailed = 1;
   }
   return p;
 }
+
+/*
+** Deallocate a KeyInfo object
+*/
+void sqlite3KeyInfoUnref(KeyInfo *p){
+  if( p ){
+    assert( p->nRef>0 );
+    p->nRef--;
+    if( p->nRef==0 ) sqlite3DbFree(0, p);
+  }
+}
+
+/*
+** Make a new pointer to a KeyInfo object
+*/
+KeyInfo *sqlite3KeyInfoRef(KeyInfo *p){
+  if( p ){
+    assert( p->nRef>0 );
+    p->nRef++;
+  }
+  return p;
+}
+
+#ifdef SQLITE_DEBUG
+/*
+** Return TRUE if a KeyInfo object can be change.  The KeyInfo object
+** can only be changed if this is just a single reference to the object.
+**
+** This routine is used only inside of assert() statements.
+*/
+int sqlite3KeyInfoIsWriteable(KeyInfo *p){ return p->nRef==1; }
+#endif /* SQLITE_DEBUG */
 
 /*
 ** Given an expression list, generate a KeyInfo structure that records
@@ -833,8 +866,7 @@ KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N){
 **
 ** Space to hold the KeyInfo structure is obtain from malloc.  The calling
 ** function is responsible for seeing that this structure is eventually
-** freed.  Add the KeyInfo structure to the P4 field of an opcode using
-** P4_KEYINFO_HANDOFF is the usual way of dealing with this.
+** freed.
 */
 static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
   int nExpr;
@@ -844,8 +876,9 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
   int i;
 
   nExpr = pList->nExpr;
-  pInfo = sqlite3KeyInfoAlloc(db, nExpr);
+  pInfo = sqlite3KeyInfoAlloc(db, nExpr, 1);
   if( pInfo ){
+    assert( sqlite3KeyInfoIsWriteable(pInfo) );
     for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
       CollSeq *pColl;
       pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
@@ -1988,7 +2021,7 @@ static int multiSelect(
 
     assert( p->pRightmost==p );
     nCol = p->pEList->nExpr;
-    pKeyInfo = sqlite3KeyInfoAlloc(db, nCol);
+    pKeyInfo = sqlite3KeyInfoAlloc(db, nCol, 1);
     if( !pKeyInfo ){
       rc = SQLITE_NOMEM;
       goto multi_select_end;
@@ -2010,11 +2043,12 @@ static int multiSelect(
           break;
         }
         sqlite3VdbeChangeP2(v, addr, nCol);
-        sqlite3VdbeChangeP4(v, addr, (char*)pKeyInfo, P4_KEYINFO);
+        sqlite3VdbeChangeP4(v, addr, (char*)sqlite3KeyInfoRef(pKeyInfo),
+                            P4_KEYINFO);
         pLoop->addrOpenEphm[i] = -1;
       }
     }
-    sqlite3DbFree(db, pKeyInfo);
+    sqlite3KeyInfoUnref(pKeyInfo);
   }
 
 multi_select_end:
@@ -2053,7 +2087,6 @@ static int generateOutputSubroutine(
   int regReturn,          /* The return address register */
   int regPrev,            /* Previous result register.  No uniqueness if 0 */
   KeyInfo *pKeyInfo,      /* For comparing with previous entry */
-  int p4type,             /* The p4 type for pKeyInfo */
   int iBreak              /* Jump here if we hit the LIMIT */
 ){
   Vdbe *v = pParse->pVdbe;
@@ -2069,7 +2102,7 @@ static int generateOutputSubroutine(
     int j1, j2;
     j1 = sqlite3VdbeAddOp1(v, OP_IfNot, regPrev);
     j2 = sqlite3VdbeAddOp4(v, OP_Compare, pIn->iSdst, regPrev+1, pIn->nSdst,
-                              (char*)pKeyInfo, p4type);
+                              (char*)sqlite3KeyInfoRef(pKeyInfo), P4_KEYINFO);
     sqlite3VdbeAddOp3(v, OP_Jump, j2+2, iContinue, j2+2);
     sqlite3VdbeJumpHere(v, j1);
     sqlite3VdbeAddOp3(v, OP_Copy, pIn->iSdst, regPrev+1, pIn->nSdst-1);
@@ -2367,7 +2400,7 @@ static int multiSelectOrderBy(
       assert( pItem->iOrderByCol>0  && pItem->iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->iOrderByCol - 1;
     }
-    pKeyMerge = sqlite3KeyInfoAlloc(db, nOrderBy);
+    pKeyMerge = sqlite3KeyInfoAlloc(db, nOrderBy, 1);
     if( pKeyMerge ){
       for(i=0; i<nOrderBy; i++){
         CollSeq *pColl;
@@ -2380,6 +2413,7 @@ static int multiSelectOrderBy(
           pOrderBy->a[i].pExpr =
              sqlite3ExprAddCollateString(pParse, pTerm, pColl->zName);
         }
+        assert( sqlite3KeyInfoIsWriteable(pKeyMerge) );
         pKeyMerge->aColl[i] = pColl;
         pKeyMerge->aSortOrder[i] = pOrderBy->a[i].sortOrder;
       }
@@ -2405,8 +2439,9 @@ static int multiSelectOrderBy(
     regPrev = pParse->nMem+1;
     pParse->nMem += nExpr+1;
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regPrev);
-    pKeyDup = sqlite3KeyInfoAlloc(db, nExpr);
+    pKeyDup = sqlite3KeyInfoAlloc(db, nExpr, 1);
     if( pKeyDup ){
+      assert( sqlite3KeyInfoIsWriteable(pKeyDup) );
       for(i=0; i<nExpr; i++){
         pKeyDup->aColl[i] = multiSelectCollSeq(pParse, p, i);
         pKeyDup->aSortOrder[i] = 0;
@@ -2488,7 +2523,7 @@ static int multiSelectOrderBy(
   VdbeNoopComment((v, "Output routine for A"));
   addrOutA = generateOutputSubroutine(pParse,
                  p, &destA, pDest, regOutA,
-                 regPrev, pKeyDup, P4_KEYINFO_HANDOFF, labelEnd);
+                 regPrev, pKeyDup, labelEnd);
   
   /* Generate a subroutine that outputs the current row of the B
   ** select as the next output row of the compound select.
@@ -2497,8 +2532,9 @@ static int multiSelectOrderBy(
     VdbeNoopComment((v, "Output routine for B"));
     addrOutB = generateOutputSubroutine(pParse,
                  p, &destB, pDest, regOutB,
-                 regPrev, pKeyDup, P4_KEYINFO_STATIC, labelEnd);
+                 regPrev, pKeyDup, labelEnd);
   }
+  sqlite3KeyInfoUnref(pKeyDup);
 
   /* Generate a subroutine to run when the results from select A
   ** are exhausted and only data in select B remains.
@@ -2577,7 +2613,7 @@ static int multiSelectOrderBy(
   sqlite3VdbeResolveLabel(v, labelCmpr);
   sqlite3VdbeAddOp4(v, OP_Permutation, 0, 0, 0, (char*)aPermute, P4_INTARRAY);
   sqlite3VdbeAddOp4(v, OP_Compare, destA.iSdst, destB.iSdst, nOrderBy,
-                         (char*)pKeyMerge, P4_KEYINFO_HANDOFF);
+                         (char*)pKeyMerge, P4_KEYINFO);
   sqlite3VdbeChangeP5(v, OPFLAG_PERMUTE);
   sqlite3VdbeAddOp3(v, OP_Jump, addrAltB, addrAeqB, addrAgtB);
 
@@ -3803,7 +3839,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
       }else{
         KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pE->x.pList);
         sqlite3VdbeAddOp4(v, OP_OpenEphemeral, pFunc->iDistinct, 0, 0,
-                          (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
+                          (char*)pKeyInfo, P4_KEYINFO);
       }
     }
   }
@@ -4258,7 +4294,7 @@ int sqlite3Select(
     p->addrOpenEphm[2] = addrSortIndex =
       sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
                            pOrderBy->iECursor, pOrderBy->nExpr+2, 0,
-                           (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
+                           (char*)pKeyInfo, P4_KEYINFO);
   }else{
     addrSortIndex = -1;
   }
@@ -4286,7 +4322,7 @@ int sqlite3Select(
     sDistinct.addrTnct = sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
                                 sDistinct.tabTnct, 0, 0,
                                 (char*)keyInfoFromExprList(pParse, p->pEList),
-                                P4_KEYINFO_HANDOFF);
+                                P4_KEYINFO);
     sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     sDistinct.eTnctType = WHERE_DISTINCT_UNORDERED;
   }else{
@@ -4410,7 +4446,7 @@ int sqlite3Select(
       pKeyInfo = keyInfoFromExprList(pParse, pGroupBy);
       addrSortingIdx = sqlite3VdbeAddOp4(v, OP_SorterOpen, 
           sAggInfo.sortingIdx, sAggInfo.nSortingColumn, 
-          0, (char*)pKeyInfo, P4_KEYINFO_HANDOFF);
+          0, (char*)pKeyInfo, P4_KEYINFO);
 
       /* Initialize memory locations used by GROUP BY aggregate processing
       */
@@ -4524,7 +4560,7 @@ int sqlite3Select(
         }
       }
       sqlite3VdbeAddOp4(v, OP_Compare, iAMem, iBMem, pGroupBy->nExpr,
-                          (char*)pKeyInfo, P4_KEYINFO);
+                          (char*)sqlite3KeyInfoRef(pKeyInfo), P4_KEYINFO);
       j1 = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp3(v, OP_Jump, j1+1, 0, j1+1);
 
@@ -4650,13 +4686,13 @@ int sqlite3Select(
         }
         if( pBest ){
           iRoot = pBest->tnum;
-          pKeyInfo = sqlite3IndexKeyinfo(pParse, pBest);
+          pKeyInfo = sqlite3KeyInfoOfIndex(pParse, pBest);
         }
 
         /* Open a read-only cursor, execute the OP_Count, close the cursor. */
-        sqlite3VdbeAddOp3(v, OP_OpenRead, iCsr, iRoot, iDb);
+        sqlite3VdbeAddOp4Int(v, OP_OpenRead, iCsr, iRoot, iDb, 1);
         if( pKeyInfo ){
-          sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO_HANDOFF);
+          sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO);
         }
         sqlite3VdbeAddOp2(v, OP_Count, iCsr, sAggInfo.aFunc[0].iMem);
         sqlite3VdbeAddOp1(v, OP_Close, iCsr);

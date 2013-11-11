@@ -96,7 +96,7 @@ do_eqp_test rtree6.2.4 {
   SELECT * FROM t1,t2 WHERE v=10 and x1<10 and x2>10
 } {
   0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2:CaEb} 
-  0 1 1 {SCAN TABLE t2}
+  0 1 1 {SEARCH TABLE t2 USING AUTOMATIC COVERING INDEX (v=?)}
 }
 
 do_eqp_test rtree6.2.5 {

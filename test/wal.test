@@ -322,7 +322,7 @@ do_test wal-5.4 {
       INSERT INTO t3 VALUES('abc');
   }
   catchsql { INSERT INTO t3 VALUES('abc') }
-} {1 {column x is not unique}}
+} {1 {UNIQUE constraint failed: t3.x}}
 do_test wal-5.5 {
   execsql {
     COMMIT;

@@ -67,10 +67,10 @@ sqlite3 db test.db
 do_execsql_test e_reindex-1.3 {
   PRAGMA integrity_check;
 } [list \
-  {rowid 4 missing from index i2} \
-  {rowid 4 missing from index i1} \
-  {rowid 5 missing from index i2} \
-  {rowid 5 missing from index i1} \
+  {row 3 missing from index i2} \
+  {row 3 missing from index i1} \
+  {row 4 missing from index i2} \
+  {row 4 missing from index i1} \
   {wrong # of entries in index i2} \
   {wrong # of entries in index i1}
 ]

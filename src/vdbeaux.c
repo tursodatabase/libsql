@@ -108,6 +108,17 @@ static int growOpArray(Vdbe *p){
   return (pNew ? SQLITE_OK : SQLITE_NOMEM);
 }
 
+#ifdef SQLITE_DEBUG
+/* This routine is just a convenient place to set a breakpoint that will
+** fire after each opcode is inserted and displayed using
+** "PRAGMA vdbe_addoptrace=on".
+*/
+static void test_addop_breakpoint(void){
+  static int n = 0;
+  n++;
+}
+#endif
+
 /*
 ** Add a new instruction to the list of instructions current in the
 ** VDBE.  Return the address of the new instruction.
@@ -145,10 +156,13 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->p3 = p3;
   pOp->p4.p = 0;
   pOp->p4type = P4_NOTUSED;
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   pOp->zComment = 0;
+#endif
+#ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
+    test_addop_breakpoint();
   }
 #endif
 #ifdef VDBE_PROFILE
@@ -524,7 +538,8 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       VdbeOp *pOut = &p->aOp[i+addr];
       pOut->opcode = pIn->opcode;
       pOut->p1 = pIn->p1;
-      if( p2<0 && (sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP)!=0 ){
+      if( p2<0 ){
+        assert( sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP );
         pOut->p2 = addr + ADDR(p2);
       }else{
         pOut->p2 = p2;
@@ -533,8 +548,10 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p4type = P4_NOTUSED;
       pOut->p4.p = 0;
       pOut->p5 = 0;
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       pOut->zComment = 0;
+#endif
+#ifdef SQLITE_DEBUG
       if( p->db->flags & SQLITE_VdbeAddopTrace ){
         sqlite3VdbePrintOp(0, i+addr, &p->aOp[i+addr]);
       }
@@ -622,10 +639,12 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
       case P4_REAL:
       case P4_INT64:
       case P4_DYNAMIC:
-      case P4_KEYINFO:
-      case P4_INTARRAY:
-      case P4_KEYINFO_HANDOFF: {
+      case P4_INTARRAY: {
         sqlite3DbFree(db, p4);
+        break;
+      }
+      case P4_KEYINFO: {
+        if( db->pnBytesFreed==0 ) sqlite3KeyInfoUnref((KeyInfo*)p4);
         break;
       }
       case P4_MPRINTF: {
@@ -664,7 +683,7 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
     Op *pOp;
     for(pOp=aOp; pOp<&aOp[nOp]; pOp++){
       freeP4(db, pOp->p4type, pOp->p4.p);
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       sqlite3DbFree(db, pOp->zComment);
 #endif     
     }
@@ -692,6 +711,7 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
     freeP4(db, pOp->p4type, pOp->p4.p);
     memset(pOp, 0, sizeof(pOp[0]));
     pOp->opcode = OP_Noop;
+    if( addr==p->nOp-1 ) p->nOp--;
   }
 }
 
@@ -705,14 +725,6 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
 ** the string is made into memory obtained from sqlite3_malloc().
 ** A value of n==0 means copy bytes of zP4 up to and including the
 ** first null byte.  If n>0 then copy n+1 bytes of zP4.
-**
-** If n==P4_KEYINFO it means that zP4 is a pointer to a KeyInfo structure.
-** A copy is made of the KeyInfo structure into memory obtained from
-** sqlite3_malloc, to be freed when the Vdbe is finalized.
-** n==P4_KEYINFO_HANDOFF indicates that zP4 points to a KeyInfo structure
-** stored in memory that the caller has obtained from sqlite3_malloc. The 
-** caller should not free the allocation, it will be freed when the Vdbe is
-** finalized.
 ** 
 ** Other values of n (P4_STATIC, P4_COLLSEQ etc.) indicate that zP4 points
 ** to a string or structure that is guaranteed to exist for the lifetime of
@@ -727,7 +739,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   db = p->db;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->aOp==0 || db->mallocFailed ){
-    if ( n!=P4_KEYINFO && n!=P4_VTAB ) {
+    if( n!=P4_VTAB ){
       freeP4(db, n, (void*)*(char**)&zP4);
     }
     return;
@@ -750,19 +762,6 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4.p = 0;
     pOp->p4type = P4_NOTUSED;
   }else if( n==P4_KEYINFO ){
-    KeyInfo *pOrig, *pNew;
-
-    pOrig = (KeyInfo*)zP4;
-    pOp->p4.pKeyInfo = pNew = sqlite3KeyInfoAlloc(db, pOrig->nField);
-    if( pNew ){
-      memcpy(pNew->aColl, pOrig->aColl, pOrig->nField*sizeof(pNew->aColl[0]));
-      memcpy(pNew->aSortOrder, pOrig->aSortOrder, pOrig->nField);
-      pOp->p4type = P4_KEYINFO;
-    }else{
-      p->db->mallocFailed = 1;
-      pOp->p4type = P4_NOTUSED;
-    }
-  }else if( n==P4_KEYINFO_HANDOFF ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = P4_KEYINFO;
   }else if( n==P4_VTAB ){
@@ -780,7 +779,19 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   }
 }
 
-#ifndef NDEBUG
+/*
+** Set the P4 on the most recently added opcode to the KeyInfo for the
+** index given.
+*/
+void sqlite3VdbeSetP4KeyInfo(Parse *pParse, Index *pIdx){
+  Vdbe *v = pParse->pVdbe;
+  assert( v!=0 );
+  assert( pIdx!=0 );
+  sqlite3VdbeChangeP4(v, -1, (char*)sqlite3KeyInfoOfIndex(pParse, pIdx),
+                      P4_KEYINFO);
+}
+
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
 /*
 ** Change the comment on the most recently coded instruction.  Or
 ** insert a No-op and add the comment to that new instruction.  This
@@ -855,6 +866,81 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   }
 }
 
+#if defined(SQLITE_ENABLE_EXPLAIN_COMMENTS)
+/*
+** Return an integer value for one of the parameters to the opcode pOp
+** determined by character c.
+*/
+static int translateP(char c, const Op *pOp){
+  if( c=='1' ) return pOp->p1;
+  if( c=='2' ) return pOp->p2;
+  if( c=='3' ) return pOp->p3;
+  if( c=='4' ) return pOp->p4.i;
+  return pOp->p5;
+}
+
+/*
+** Compute a string for the "comment" field of a VDBE opcode listing
+*/
+static int displayComment(
+  const Op *pOp,     /* The opcode to be commented */
+  const char *zP4,   /* Previously obtained value for P4 */
+  char *zTemp,       /* Write result here */
+  int nTemp          /* Space available in zTemp[] */
+){
+  const char *zOpName;
+  const char *zSynopsis;
+  int nOpName;
+  int ii, jj;
+  zOpName = sqlite3OpcodeName(pOp->opcode);
+  nOpName = sqlite3Strlen30(zOpName);
+  if( zOpName[nOpName+1] ){
+    int seenCom = 0;
+    char c;
+    zSynopsis = zOpName += nOpName + 1;
+    for(ii=jj=0; jj<nTemp-1 && (c = zSynopsis[ii])!=0; ii++){
+      if( c=='P' ){
+        c = zSynopsis[++ii];
+        if( c=='4' ){
+          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", zP4);
+        }else if( c=='X' ){
+          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%s", pOp->zComment);
+          seenCom = 1;
+        }else{
+          int v1 = translateP(c, pOp);
+          int v2;
+          sqlite3_snprintf(nTemp-jj, zTemp+jj, "%d", v1);
+          if( strncmp(zSynopsis+ii+1, "@P", 2)==0 ){
+            ii += 3;
+            jj += sqlite3Strlen30(zTemp+jj);
+            v2 = translateP(zSynopsis[ii], pOp);
+            if( v2>1 ) sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+          }else if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
+            ii += 4;
+          }
+        }
+        jj += sqlite3Strlen30(zTemp+jj);
+      }else{
+        zTemp[jj++] = c;
+      }
+    }
+    if( !seenCom && jj<nTemp-5 && pOp->zComment ){
+      sqlite3_snprintf(nTemp-jj, zTemp+jj, "; %s", pOp->zComment);
+      jj += sqlite3Strlen30(zTemp+jj);
+    }
+    if( jj<nTemp ) zTemp[jj] = 0;
+  }else if( pOp->zComment ){
+    sqlite3_snprintf(nTemp, zTemp, "%s", pOp->zComment);
+    jj = sqlite3Strlen30(zTemp);
+  }else{
+    zTemp[0] = 0;
+    jj = 0;
+  }
+  return jj;
+}
+#endif /* SQLITE_DEBUG */
+
+
 #if !defined(SQLITE_OMIT_EXPLAIN) || !defined(NDEBUG) \
      || defined(VDBE_PROFILE) || defined(SQLITE_DEBUG)
 /*
@@ -865,17 +951,20 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
   char *zP4 = zTemp;
   assert( nTemp>=20 );
   switch( pOp->p4type ){
-    case P4_KEYINFO_STATIC:
     case P4_KEYINFO: {
       int i, j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
       assert( pKeyInfo->aSortOrder!=0 );
-      sqlite3_snprintf(nTemp, zTemp, "keyinfo(%d", pKeyInfo->nField);
+      sqlite3_snprintf(nTemp, zTemp, "k(%d", pKeyInfo->nField);
       i = sqlite3Strlen30(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
         const char *zColl = pColl ? pColl->zName : "nil";
         int n = sqlite3Strlen30(zColl);
+        if( n==6 && memcmp(zColl,"BINARY",6)==0 ){
+          zColl = "B";
+          n = 1;
+        }
         if( i+n>nTemp-6 ){
           memcpy(&zTemp[i],",...",4);
           break;
@@ -1048,16 +1137,18 @@ void sqlite3VdbeLeave(Vdbe *p){
 void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
   char *zP4;
   char zPtr[50];
-  static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-4s %.2X %s\n";
+  char zCom[100];
+  static const char *zFormat1 = "%4d %-13s %4d %4d %4d %-13s %.2X %s\n";
   if( pOut==0 ) pOut = stdout;
   zP4 = displayP4(pOp, zPtr, sizeof(zPtr));
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+  displayComment(pOp, zP4, zCom, sizeof(zCom));
+#else
+  zCom[0] = 0
+#endif
   fprintf(pOut, zFormat1, pc, 
       sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, zP4, pOp->p5,
-#ifdef SQLITE_DEBUG
-      pOp->zComment ? pOp->zComment : ""
-#else
-      ""
-#endif
+      zCom
   );
   fflush(pOut);
 }
@@ -1203,7 +1294,7 @@ int sqlite3VdbeList(
     rc = SQLITE_ERROR;
     sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3ErrStr(p->rc));
   }else{
-    char *z;
+    char *zP4;
     Op *pOp;
     if( i<p->nOp ){
       /* The output line number is small enough that we are still in the
@@ -1226,7 +1317,7 @@ int sqlite3VdbeList(
       pMem++;
   
       pMem->flags = MEM_Static|MEM_Str|MEM_Term;
-      pMem->z = (char*)sqlite3OpcodeName(pOp->opcode);  /* Opcode */
+      pMem->z = (char*)sqlite3OpcodeName(pOp->opcode); /* Opcode */
       assert( pMem->z!=0 );
       pMem->n = sqlite3Strlen30(pMem->z);
       pMem->type = SQLITE_TEXT;
@@ -1273,9 +1364,9 @@ int sqlite3VdbeList(
       return SQLITE_ERROR;
     }
     pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
-    z = displayP4(pOp, pMem->z, 32);
-    if( z!=pMem->z ){
-      sqlite3VdbeMemSetStr(pMem, z, -1, SQLITE_UTF8, 0);
+    zP4 = displayP4(pOp, pMem->z, 32);
+    if( zP4!=pMem->z ){
+      sqlite3VdbeMemSetStr(pMem, zP4, -1, SQLITE_UTF8, 0);
     }else{
       assert( pMem->z!=0 );
       pMem->n = sqlite3Strlen30(pMem->z);
@@ -1296,19 +1387,19 @@ int sqlite3VdbeList(
       pMem->enc = SQLITE_UTF8;
       pMem++;
   
-#ifdef SQLITE_DEBUG
-      if( pOp->zComment ){
-        pMem->flags = MEM_Str|MEM_Term;
-        pMem->z = pOp->zComment;
-        pMem->n = sqlite3Strlen30(pMem->z);
-        pMem->enc = SQLITE_UTF8;
-        pMem->type = SQLITE_TEXT;
-      }else
-#endif
-      {
-        pMem->flags = MEM_Null;                       /* Comment */
-        pMem->type = SQLITE_NULL;
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+      if( sqlite3VdbeMemGrow(pMem, 500, 0) ){
+        assert( p->db->mallocFailed );
+        return SQLITE_ERROR;
       }
+      pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
+      pMem->n = displayComment(pOp, zP4, pMem->z, 500);
+      pMem->type = SQLITE_TEXT;
+      pMem->enc = SQLITE_UTF8;
+#else
+      pMem->flags = MEM_Null;                       /* Comment */
+      pMem->type = SQLITE_NULL;
+#endif
     }
 
     p->nResColumn = 8 - 4*(p->explain-1);
@@ -2099,7 +2190,7 @@ int sqlite3VdbeCheckFk(Vdbe *p, int deferred){
   ){
     p->rc = SQLITE_CONSTRAINT_FOREIGNKEY;
     p->errorAction = OE_Abort;
-    sqlite3SetString(&p->zErrMsg, db, "foreign key constraint failed");
+    sqlite3SetString(&p->zErrMsg, db, "FOREIGN KEY constraint failed");
     return SQLITE_ERROR;
   }
   return SQLITE_OK;
@@ -3031,7 +3122,7 @@ int sqlite3VdbeRecordCompare(
   
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
-  assert( pKeyInfo->nField+1>=pPKey2->nField );
+  assert( pKeyInfo->nField+pKeyInfo->nXField>=pPKey2->nField );
   assert( pKeyInfo->aSortOrder!=0 );
   while( idx1<szHdr1 && i<pPKey2->nField ){
     u32 serial_type1;
@@ -3060,24 +3151,9 @@ int sqlite3VdbeRecordCompare(
     rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i], pKeyInfo->aColl[i]);
     if( rc!=0 ){
       assert( mem1.zMalloc==0 );  /* See comment below */
-
-      /* Invert the result if we are using DESC sort order. */
       if( pKeyInfo->aSortOrder[i] ){
-        rc = -rc;
+        rc = -rc;  /* Invert the result for DESC sort order. */
       }
-    
-      /* If the PREFIX_SEARCH flag is set and all fields except the final
-      ** rowid field were equal, then clear the PREFIX_SEARCH flag and set 
-      ** pPKey2->rowid to the value of the rowid field in (pKey1, nKey1).
-      ** This is used by the OP_IsUnique opcode.
-      */
-      if( (pPKey2->flags & UNPACKED_PREFIX_SEARCH) && i==(pPKey2->nField-1) ){
-        assert( idx1==szHdr1 && rc );
-        assert( mem1.flags & MEM_Int );
-        pPKey2->flags &= ~UNPACKED_PREFIX_SEARCH;
-        pPKey2->rowid = mem1.u.i;
-      }
-    
       return rc;
     }
     i++;

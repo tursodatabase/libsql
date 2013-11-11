@@ -234,7 +234,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   rc = execExecSql(db, pzErrMsg,
       "SELECT 'CREATE TABLE vacuum_db.' || substr(sql,14) "
       "  FROM sqlite_master WHERE type='table' AND name!='sqlite_sequence'"
-      "   AND rootpage>0"
+      "   AND coalesce(rootpage,1)>0"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   rc = execExecSql(db, pzErrMsg,
@@ -255,7 +255,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
       "|| ' SELECT * FROM main.' || quote(name) || ';'"
       "FROM main.sqlite_master "
       "WHERE type = 'table' AND name!='sqlite_sequence' "
-      "  AND rootpage>0"
+      "  AND coalesce(rootpage,1)>0"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 

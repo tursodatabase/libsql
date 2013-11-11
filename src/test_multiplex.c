@@ -755,9 +755,11 @@ static int multiplexRead(
   multiplexConn *p = (multiplexConn*)pConn;
   multiplexGroup *pGroup = p->pGroup;
   int rc = SQLITE_OK;
-  multiplexEnter();
+  int nMutex = 0;
+  multiplexEnter(); nMutex++;
   if( !pGroup->bEnabled ){
     sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL, 0);
+    multiplexLeave(); nMutex--;
     if( pSubOpen==0 ){
       rc = SQLITE_IOERR_READ;
     }else{
@@ -766,7 +768,10 @@ static int multiplexRead(
   }else{
     while( iAmt > 0 ){
       int i = (int)(iOfst / pGroup->szChunk);
-      sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL, 1);
+      sqlite3_file *pSubOpen;
+      if( nMutex==0 ){ multiplexEnter(); nMutex++; }
+      pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL, 1);
+      multiplexLeave(); nMutex--;
       if( pSubOpen ){
         int extra = ((int)(iOfst % pGroup->szChunk) + iAmt) - pGroup->szChunk;
         if( extra<0 ) extra = 0;
@@ -783,7 +788,8 @@ static int multiplexRead(
       }
     }
   }
-  multiplexLeave();
+  assert( nMutex==0 || nMutex==1 );
+  if( nMutex ) multiplexLeave();
   return rc;
 }
 

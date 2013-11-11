@@ -104,38 +104,38 @@ set FkeySimpleSchema {
 
 
 set FkeySimpleTests {
-  1.1  "INSERT INTO t2 VALUES(1, 3)"      {1 {foreign key constraint failed}}
+  1.1  "INSERT INTO t2 VALUES(1, 3)"      {1 {FOREIGN KEY constraint failed}}
   1.2  "INSERT INTO t1 VALUES(1, 2)"      {0 {}}
   1.3  "INSERT INTO t2 VALUES(1, 3)"      {0 {}}
-  1.4  "INSERT INTO t2 VALUES(2, 4)"      {1 {foreign key constraint failed}}
+  1.4  "INSERT INTO t2 VALUES(2, 4)"      {1 {FOREIGN KEY constraint failed}}
   1.5  "INSERT INTO t2 VALUES(NULL, 4)"   {0 {}}
-  1.6  "UPDATE t2 SET c=2 WHERE d=4"      {1 {foreign key constraint failed}}
+  1.6  "UPDATE t2 SET c=2 WHERE d=4"      {1 {FOREIGN KEY constraint failed}}
   1.7  "UPDATE t2 SET c=1 WHERE d=4"      {0 {}}
   1.9  "UPDATE t2 SET c=1 WHERE d=4"      {0 {}}
   1.10 "UPDATE t2 SET c=NULL WHERE d=4"   {0 {}}
-  1.11 "DELETE FROM t1 WHERE a=1"         {1 {foreign key constraint failed}}
-  1.12 "UPDATE t1 SET a = 2"              {1 {foreign key constraint failed}}
+  1.11 "DELETE FROM t1 WHERE a=1"         {1 {FOREIGN KEY constraint failed}}
+  1.12 "UPDATE t1 SET a = 2"              {1 {FOREIGN KEY constraint failed}}
   1.13 "UPDATE t1 SET a = 1"              {0 {}}
 
-  2.1  "INSERT INTO t4 VALUES(1, 3)"      {1 {foreign key constraint failed}}
+  2.1  "INSERT INTO t4 VALUES(1, 3)"      {1 {FOREIGN KEY constraint failed}}
   2.2  "INSERT INTO t3 VALUES(1, 2)"      {0 {}}
   2.3  "INSERT INTO t4 VALUES(1, 3)"      {0 {}}
 
-  4.1  "INSERT INTO t8 VALUES(1, 3)"      {1 {foreign key constraint failed}}
+  4.1  "INSERT INTO t8 VALUES(1, 3)"      {1 {FOREIGN KEY constraint failed}}
   4.2  "INSERT INTO t7 VALUES(2, 1)"      {0 {}}
   4.3  "INSERT INTO t8 VALUES(1, 3)"      {0 {}}
-  4.4  "INSERT INTO t8 VALUES(2, 4)"      {1 {foreign key constraint failed}}
+  4.4  "INSERT INTO t8 VALUES(2, 4)"      {1 {FOREIGN KEY constraint failed}}
   4.5  "INSERT INTO t8 VALUES(NULL, 4)"   {0 {}}
-  4.6  "UPDATE t8 SET c=2 WHERE d=4"      {1 {foreign key constraint failed}}
+  4.6  "UPDATE t8 SET c=2 WHERE d=4"      {1 {FOREIGN KEY constraint failed}}
   4.7  "UPDATE t8 SET c=1 WHERE d=4"      {0 {}}
   4.9  "UPDATE t8 SET c=1 WHERE d=4"      {0 {}}
   4.10 "UPDATE t8 SET c=NULL WHERE d=4"   {0 {}}
-  4.11 "DELETE FROM t7 WHERE b=1"         {1 {foreign key constraint failed}}
-  4.12 "UPDATE t7 SET b = 2"              {1 {foreign key constraint failed}}
+  4.11 "DELETE FROM t7 WHERE b=1"         {1 {FOREIGN KEY constraint failed}}
+  4.12 "UPDATE t7 SET b = 2"              {1 {FOREIGN KEY constraint failed}}
   4.13 "UPDATE t7 SET b = 1"              {0 {}}
-  4.14 "INSERT INTO t8 VALUES('a', 'b')"  {1 {foreign key constraint failed}}
-  4.15 "UPDATE t7 SET b = 5"              {1 {foreign key constraint failed}}
-  4.16 "UPDATE t7 SET rowid = 5"          {1 {foreign key constraint failed}}
+  4.14 "INSERT INTO t8 VALUES('a', 'b')"  {1 {FOREIGN KEY constraint failed}}
+  4.15 "UPDATE t7 SET b = 5"              {1 {FOREIGN KEY constraint failed}}
+  4.16 "UPDATE t7 SET rowid = 5"          {1 {FOREIGN KEY constraint failed}}
   4.17 "UPDATE t7 SET a = 10"             {0 {}}
 
   5.1  "INSERT INTO t9 VALUES(1, 3)"      {1 {no such table: main.nosuchtable}}
@@ -215,7 +215,7 @@ do_test fkey2-1.5.1 {
 } {35.0 text}
 do_test fkey2-1.5.2 {
   catchsql { DELETE FROM i }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 # Same test using a regular primary key with integer affinity.
 drop_all_tables
@@ -231,7 +231,7 @@ do_test fkey2-1.6.1 {
 } {35.0 text 35 integer}
 do_test fkey2-1.6.2 {
   catchsql { DELETE FROM i }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 # Use a collation sequence on the parent key.
 drop_all_tables
@@ -243,7 +243,7 @@ do_test fkey2-1.7.1 {
     INSERT INTO j VALUES('sqlite');
   }
   catchsql { DELETE FROM i }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 # Use the parent key collation even if it is default and the child key
 # has an explicit value.
@@ -255,7 +255,7 @@ do_test fkey2-1.7.2 {
     INSERT INTO i VALUES('SQLite');
   }
   catchsql { INSERT INTO j VALUES('sqlite') }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-1.7.3 {
   execsql {
     INSERT INTO i VALUES('sqlite');
@@ -263,7 +263,7 @@ do_test fkey2-1.7.3 {
     DELETE FROM i WHERE i = 'SQLite';
   }
   catchsql { DELETE FROM i WHERE i = 'sqlite' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 #-------------------------------------------------------------------------
 # This section (test cases fkey2-2.*) contains tests to check that the
@@ -271,7 +271,7 @@ do_test fkey2-1.7.3 {
 #
 proc fkey2-2-test {tn nocommit sql {res {}}} {
   if {$res eq "FKV"} {
-    set expected {1 {foreign key constraint failed}}
+    set expected {1 {FOREIGN KEY constraint failed}}
   } else {
     set expected [list 0 $res]
   }
@@ -279,7 +279,7 @@ proc fkey2-2-test {tn nocommit sql {res {}}} {
   if {$nocommit} {
     do_test fkey2-2.${tn}c {
       catchsql COMMIT
-    } {1 {foreign key constraint failed}}
+    } {1 {FOREIGN KEY constraint failed}}
   }
 }
 
@@ -375,7 +375,7 @@ fkey2-2-test 65 1   "INSERT INTO leaf VALUES('b', 2)"
 fkey2-2-test 66 1   "INSERT INTO leaf VALUES('c', 1)"
 do_test fkey2-2-test-67 {
   catchsql          "INSERT INTO node SELECT parent, 3 FROM leaf"
-} {1 {column nodeid is not unique}}
+} {1 {UNIQUE constraint failed: node.nodeid}}
 fkey2-2-test 68 0 "COMMIT"           FKV
 fkey2-2-test 69 1   "INSERT INTO node VALUES(1, NULL)"
 fkey2-2-test 70 0   "INSERT INTO node VALUES(2, NULL)"
@@ -417,14 +417,14 @@ do_test fkey2-3.1.2 {
 } {}
 do_test fkey2-3.1.3 {
   catchsql { UPDATE ab SET a = 5 }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: ef}}
 do_test fkey2-3.1.4 {
   execsql { SELECT * FROM ab }
 } {1 b}
 do_test fkey2-3.1.4 {
   execsql BEGIN;
   catchsql { UPDATE ab SET a = 5 }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: ef}}
 do_test fkey2-3.1.5 {
   execsql COMMIT;
   execsql { SELECT * FROM ab; SELECT * FROM cd; SELECT * FROM ef }
@@ -433,7 +433,7 @@ do_test fkey2-3.1.5 {
 do_test fkey2-3.2.1 {
   execsql BEGIN;
   catchsql { DELETE FROM ab }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-3.2.2 {
   execsql COMMIT
   execsql { SELECT * FROM ab; SELECT * FROM cd; SELECT * FROM ef }
@@ -555,7 +555,7 @@ do_test fkey2-7.1 {
 } {}
 do_test fkey2-7.2 {
   catchsql { INSERT INTO t2 VALUES(1, 'A'); }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-7.3 {
   execsql { 
     INSERT INTO t1 VALUES(1, 2);
@@ -568,19 +568,19 @@ do_test fkey2-7.4 {
 } {}
 do_test fkey2-7.5 {
   catchsql { UPDATE t2 SET c = 3 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-7.6 {
   catchsql { DELETE FROM t1 WHERE a = 2 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-7.7 {
   execsql { DELETE FROM t1 WHERE a = 1 }
 } {}
 do_test fkey2-7.8 {
   catchsql { UPDATE t1 SET a = 3 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-7.9 {
   catchsql { UPDATE t2 SET rowid = 3 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 #-------------------------------------------------------------------------
 # Test that it is not possible to enable/disable FK support while a
@@ -645,7 +645,7 @@ do_test fkey2-9.1.4 {
 } {2 two}
 do_test fkey2-9.1.5 {
   catchsql { DELETE FROM t1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 do_test fkey2-9.2.1 {
   execsql {
@@ -780,13 +780,13 @@ do_test fkey2-12.1.3 {
 } {}
 do_test fkey2-12.1.4 { 
   catchsql "UPDATE t1 SET b = 'five' WHERE b = 'two'"
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-12.1.5 { 
   execsql "DELETE FROM t1 WHERE b = 'two'"
 } {}
 do_test fkey2-12.1.6 { 
   catchsql "COMMIT"
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-12.1.7 { 
   execsql {
     INSERT INTO t1 VALUES(2, 'two');
@@ -828,7 +828,7 @@ do_test fkey2-12.2.3 {
     INSERT INTO t2 VALUES('b');
   }
   catchsql { DELETE FROM t1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-12.2.4 {
   execsql {
     SELECT * FROM t1;
@@ -866,14 +866,14 @@ do_test fkey2-12.3.2 {
 } {no possibly}
 do_test fkey2-12.3.3 {
   catchsql { INSERT INTO down(c39, c38) VALUES('yes', 'no') }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-12.3.4 {
   execsql { 
     INSERT INTO up(c34, c35) VALUES('yes', 'no');
     INSERT INTO down(c39, c38) VALUES('yes', 'no');
   }
   catchsql { DELETE FROM up WHERE c34 = 'yes' }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-12.3.5 {
   execsql { 
     DELETE FROM up WHERE c34 = 'possibly';
@@ -901,7 +901,7 @@ foreach {tn stmt} {
 } {
   do_test fkey2-13.1.$tn.1 {
     catchsql $stmt
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-13.1.$tn.2 {
     execsql {
       SELECT * FROM pp;
@@ -911,7 +911,7 @@ foreach {tn stmt} {
   do_test fkey2-13.1.$tn.3 {
     execsql BEGIN;
     catchsql $stmt
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-13.1.$tn.4 {
     execsql {
       COMMIT;
@@ -1015,13 +1015,13 @@ ifcapable altertable {
   ]
   do_test fkey2-14.2.2.3 {
     catchsql { INSERT INTO t3 VALUES(1, 2, 3) }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-14.2.2.4 {
     execsql { INSERT INTO t4 VALUES(1, NULL) }
   } {}
   do_test fkey2-14.2.2.5 {
     catchsql { UPDATE t4 SET b = 5 }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-14.2.2.6 {
     catchsql { UPDATE t4 SET b = 1 }
   } {0 {}}
@@ -1096,13 +1096,13 @@ ifcapable altertable {
   ]
   do_test fkey2-14.2tmp.2.3 {
     catchsql { INSERT INTO t3 VALUES(1, 2, 3) }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-14.2tmp.2.4 {
     execsql { INSERT INTO t4 VALUES(1, NULL) }
   } {}
   do_test fkey2-14.2tmp.2.5 {
     catchsql { UPDATE t4 SET b = 5 }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-14.2tmp.2.6 {
     catchsql { UPDATE t4 SET b = 1 }
   } {0 {}}
@@ -1178,13 +1178,13 @@ ifcapable altertable {
   ]
   do_test fkey2-14.2aux.2.3 {
     catchsql { INSERT INTO t3 VALUES(1, 2, 3) }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-14.2aux.2.4 {
     execsql { INSERT INTO t4 VALUES(1, NULL) }
   } {}
   do_test fkey2-14.2aux.2.5 {
     catchsql { UPDATE t4 SET b = 5 }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-14.2aux.2.6 {
     catchsql { UPDATE t4 SET b = 1 }
   } {0 {}}
@@ -1210,7 +1210,7 @@ do_test fkey-2.14.3.2 {
 } {}
 do_test fkey-2.14.3.3 {
   catchsql { DROP TABLE t1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey-2.14.3.4 {
   execsql {
     DELETE FROM t2;
@@ -1229,7 +1229,7 @@ do_test fkey-2.14.3.5 {
 } {}
 do_test fkey-2.14.3.6 {
   catchsql { DROP TABLE t1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey-2.14.3.7 {
   execsql {
     DROP TABLE t2;
@@ -1387,15 +1387,15 @@ foreach {tn zSchema} {
 
   do_test fkey2-16.1.$tn.3 {
     catchsql { UPDATE self SET b = 15 }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
 
   do_test fkey2-16.1.$tn.4 {
     catchsql { UPDATE self SET a = 15 }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
 
   do_test fkey2-16.1.$tn.5 {
     catchsql { UPDATE self SET a = 15, b = 16 }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
 
   do_test fkey2-16.1.$tn.6 {
     catchsql { UPDATE self SET a = 17, b = 17 }
@@ -1406,7 +1406,7 @@ foreach {tn zSchema} {
   } {}
   do_test fkey2-16.1.$tn.8 {
     catchsql { INSERT INTO self VALUES(20, 21) }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
 }
 
 #-------------------------------------------------------------------------
@@ -1463,7 +1463,7 @@ do_test fkey2-17.1.6 {
       INSERT INTO one VALUES(0, 0, 0);
       UPDATE two SET e=e+1, f=f+1;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-17.1.7 {
   execsql { SELECT * FROM one }
 } {1 2 3 2 3 4 3 4 5 0 0 0}
@@ -1619,7 +1619,7 @@ ifcapable auth {
   }
   do_test fkey2-18.8 {
     catchsql { INSERT INTO short VALUES(1, 3, 2) }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-18.9 {
     execsql { INSERT INTO short VALUES(1, 3, NULL) }
   } {}
@@ -1628,7 +1628,7 @@ ifcapable auth {
   } {1 3 2 1 3 {}}
   do_test fkey2-18.11 {
     catchsql { UPDATE short SET f = 2 WHERE f IS NULL }
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
 
   db auth {}
   unset authargs
@@ -1680,7 +1680,7 @@ foreach {tn insert} {
 } {
   do_test fkey2-20.2.$tn.1 {
     catchsql "$insert INTO cc VALUES(1, 2)"
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-20.2.$tn.2 {
     execsql { SELECT * FROM cc }
   } {}
@@ -1691,7 +1691,7 @@ foreach {tn insert} {
         INSERT INTO cc VALUES(1, 2);
     }
     catchsql "$insert INTO cc VALUES(3, 4)"
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-20.2.$tn.4 {
     execsql { COMMIT ; SELECT * FROM cc }
   } {1 2}
@@ -1716,13 +1716,13 @@ foreach {tn update} {
   } {}
   do_test fkey2-20.3.$tn.2 {
     catchsql "$update pp SET a = 1"
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-20.3.$tn.3 {
     execsql { SELECT * FROM pp }
   } {2 two}
   do_test fkey2-20.3.$tn.4 {
     catchsql "$update cc SET d = 1"
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-20.3.$tn.5 {
     execsql { SELECT * FROM cc }
   } {1 2}
@@ -1732,7 +1732,7 @@ foreach {tn update} {
         INSERT INTO pp VALUES(3, 'three');
     }
     catchsql "$update pp SET a = 1 WHERE a = 2"
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-20.3.$tn.7 {
     execsql { COMMIT ; SELECT * FROM pp }
   } {2 two 3 three}
@@ -1742,7 +1742,7 @@ foreach {tn update} {
         INSERT INTO cc VALUES(2, 2);
     }
     catchsql "$update cc SET d = 1 WHERE c = 1"
-  } {1 {foreign key constraint failed}}
+  } {1 {FOREIGN KEY constraint failed}}
   do_test fkey2-20.3.$tn.9 {
     execsql { COMMIT ; SELECT * FROM cc }
   } {1 2 2 2}
@@ -1768,7 +1768,7 @@ do_test fkey2-genfkey.1.1 {
 } {}
 do_test fkey2-genfkey.1.2 {
   catchsql { INSERT INTO t2 VALUES(1, 2) }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-genfkey.1.3 {
   execsql {
     INSERT INTO t1 VALUES(1, 2, 3);
@@ -1780,7 +1780,7 @@ do_test fkey2-genfkey.1.4 {
 } {}
 do_test fkey2-genfkey.1.5 {
   catchsql { UPDATE t2 SET e = 5 WHERE e IS NULL }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-genfkey.1.6 {
   execsql { UPDATE t2 SET e = 1 WHERE e IS NULL }
 } {}
@@ -1789,13 +1789,13 @@ do_test fkey2-genfkey.1.7 {
 } {}
 do_test fkey2-genfkey.1.8 {
   catchsql { UPDATE t1 SET a = 10 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-genfkey.1.9 {
   catchsql { UPDATE t1 SET a = NULL }
 } {1 {datatype mismatch}}
 do_test fkey2-genfkey.1.10 {
   catchsql { DELETE FROM t1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-genfkey.1.11 {
   execsql { UPDATE t2 SET e = NULL }
 } {}
@@ -1815,7 +1815,7 @@ do_test fkey2-genfkey.1.13 {
 } {}
 do_test fkey2-genfkey.1.14 {
   catchsql { INSERT INTO t3 VALUES(3, 1, 4) }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-genfkey.1.15 {
   execsql { 
     INSERT INTO t1 VALUES(1, 1, 4);
@@ -1824,16 +1824,16 @@ do_test fkey2-genfkey.1.15 {
 } {}
 do_test fkey2-genfkey.1.16 {
   catchsql { DELETE FROM t1 }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-genfkey.1.17 {
   catchsql { UPDATE t1 SET b = 10}
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-genfkey.1.18 {
   execsql { UPDATE t1 SET a = 10}
 } {}
 do_test fkey2-genfkey.1.19 {
   catchsql { UPDATE t3 SET h = 'hello' WHERE i = 3}
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 drop_all_tables
 do_test fkey2-genfkey.2.1 {
@@ -1946,7 +1946,7 @@ do_test fkey2-dd08e5.1.2 {
   catchsql {
     DELETE FROM tdd08;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-dd08e5.1.3 {
   execsql {
     SELECT * FROM tdd08;
@@ -1956,17 +1956,17 @@ do_test fkey2-dd08e5.1.4 {
   catchsql {
     INSERT INTO tdd08_b VALUES(400,500,300);
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-dd08e5.1.5 {
   catchsql {
     UPDATE tdd08_b SET x=x+1;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-dd08e5.1.6 {
   catchsql {
     UPDATE tdd08 SET a=a+1;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 #-------------------------------------------------------------------------
 # Verify that ticket ce7c133ea6cc9ccdc1a60d80441f80b6180f5eba
@@ -1987,12 +1987,12 @@ do_test fkey2-ce7c13.1.2 {
   catchsql {
     UPDATE tce71 set b = 201 where a = 100;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-ce7c13.1.3 {
   catchsql {
     UPDATE tce71 set a = 101 where a = 100;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-ce7c13.1.4 {
   execsql {
     CREATE TABLE tce73(a INTEGER PRIMARY KEY, b, UNIQUE(a,b));
@@ -2007,11 +2007,11 @@ do_test fkey2-ce7c13.1.5 {
   catchsql {
     UPDATE tce73 set b = 201 where a = 100;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 do_test fkey2-ce7c13.1.6 {
   catchsql {
     UPDATE tce73 set a = 101 where a = 100;
   }
-} {1 {foreign key constraint failed}}
+} {1 {FOREIGN KEY constraint failed}}
 
 finish_test

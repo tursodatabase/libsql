@@ -220,7 +220,7 @@ do_test index6-3.2 {
   catchsql {
     INSERT INTO t3(a,b) VALUES(150, 'test1');
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: t3.a}}
 do_test index6-3.3 {
   # can insert multiple rows with a==999 because such rows are not
   # part of the unique index.

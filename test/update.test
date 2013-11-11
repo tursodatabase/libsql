@@ -452,7 +452,7 @@ do_test update-10.3 {
     UPDATE t1 SET a=1, e=10 WHERE f=7;
     SELECT * FROM t1;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test update-10.4 {
   catchsql {
     SELECT * FROM t1;
@@ -469,7 +469,7 @@ do_test update-10.6 {
     UPDATE t1 SET b=2, e=12 WHERE f=7;
     SELECT * FROM t1;
   }
-} {1 {column b is not unique}}
+} {1 {UNIQUE constraint failed: t1.b}}
 do_test update-10.7 {
   catchsql {
     SELECT * FROM t1;
@@ -486,7 +486,7 @@ do_test update-10.9 {
     UPDATE t1 SET c=3, d=4, e=14 WHERE f=7;
     SELECT * FROM t1;
   }
-} {1 {columns c, d are not unique}}
+} {1 {UNIQUE constraint failed: t1.c, t1.d}}
 do_test update-10.10 {
   catchsql {
     SELECT * FROM t1;
