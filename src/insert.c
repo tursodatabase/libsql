@@ -1584,9 +1584,7 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeJumpHere(v, ipkBottom);
   }
   
-  if( pbMayReplace ){
-    *pbMayReplace = seenReplace;
-  }
+  *pbMayReplace = seenReplace;
   VdbeModuleComment((v, "END: GenCnstCks(%d)", seenReplace));
 }
 
@@ -1628,7 +1626,8 @@ void sqlite3CompleteInsertion(
     sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i]);
     pik_flags = 0;
     if( useSeekResult ) pik_flags = OPFLAG_USESEEKRESULT;
-    if( pIdx->autoIndex==2 && !HasRowid(pTab) && pParse->nested==0 ){
+    if( pIdx->autoIndex==2 && !HasRowid(pTab) ){
+      assert( pParse->nested==0 );
       pik_flags |= OPFLAG_NCHANGE;
     }
     if( pik_flags )  sqlite3VdbeChangeP5(v, pik_flags);

@@ -888,16 +888,15 @@ case OP_Halt: {
     }else{
       zType = 0;
     }
+    assert( zType!=0 || pOp->p4.z!=0 );
     zLogFmt = "abort at %d in [%s]: %s";
     if( zType && pOp->p4.z ){
       sqlite3SetString(&p->zErrMsg, db, "%s constraint failed: %s", 
                        zType, pOp->p4.z);
     }else if( pOp->p4.z ){
       sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
-    }else if( zType ){
-      sqlite3SetString(&p->zErrMsg, db, "%s constraint failed", zType);
     }else{
-      zLogFmt = "abort at %d in [%s]";
+      sqlite3SetString(&p->zErrMsg, db, "%s constraint failed", zType);
     }
     sqlite3_log(pOp->p1, zLogFmt, pc, p->zSql, p->zErrMsg);
   }
@@ -4613,7 +4612,7 @@ case OP_IdxInsert: {        /* in2 */
   break;
 }
 
-/* Opcode: IdxDelete P1 P2 P3 * P5
+/* Opcode: IdxDelete P1 P2 P3 * *
 ** Synopsis: key=r[P2@P3]
 **
 ** The content of P3 registers starting at register P2 form
@@ -4633,7 +4632,7 @@ case OP_IdxDelete: {
   assert( pC!=0 );
   pCrsr = pC->pCursor;
   assert( pCrsr!=0 );
-  if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
+  assert( pOp->p5==0 );
   r.pKeyInfo = pC->pKeyInfo;
   r.nField = (u16)pOp->p3;
   r.flags = UNPACKED_PREFIX_MATCH;

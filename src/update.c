@@ -420,9 +420,9 @@ void sqlite3Update(
       int iThisCur = iIdxCur+i;
       assert( aRegIdx );
       if( (openAll || aRegIdx[i]>0)
-       && iThisCur!=aiCurOnePass[0]
        && iThisCur!=aiCurOnePass[1]
       ){
+        assert( iThisCur!=aiCurOnePass[0] );
         sqlite3VdbeAddOp3(v, OP_OpenWrite, iThisCur, pIdx->tnum, iDb);
         sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
         assert( pParse->nTab>iThisCur );

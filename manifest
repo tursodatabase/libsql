@@ -1,5 +1,5 @@
-C Fix\sissue\swith\sseveral\smemory\sallocation\stests\sdue\sto\sKeyInfo\sallocations\snow\sbeing\sshared.
-D 2013-11-11T03:37:04.887
+C Remove\sunreachable\scode,\sreplacing\sit\sin\smost\scases\swith\sassert()\sor\sNEVER()\nmacros.
+D 2013-11-11T16:55:52.347
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 260dedc13119e6fb7930380bd3d294b98362bf5a
 F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 837587dbeb02327e9df15f803abc661a6eb71ad3
+F src/build.c 4d740243144d9e5058a46df7d05d1243f449b4d7
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -182,7 +182,7 @@ F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c b3218fa5dceeb563485113eff8e1d4c3c59160b0
+F src/insert.c 63003c569c55793c3278ad7634bdd0c49d755a47
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -275,15 +275,15 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c 53d6b5d50b3b23d4fcd0a36504feb5cff9aed716
-F src/update.c 95a640c56d71ea9d58be66eab863d502701d092b
+F src/update.c 3de7e657b98ac67338d775c114a4068faf732402
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c aeef5c115ccb0433934f88b1a3016097eb6d8ab2
+F src/vdbe.c fda0d2ba5a3a5ab588f0467782e7fd64930ddb22
 F src/vdbe.h 8d5a7351024d80374fc0acdbbe3cfe65c51ba8b6
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c faf5c3c9b1b0d2573d652856dc6e70f8adc86f59
+F src/vdbeaux.c 84d2d421c11c3e534d4948274e4d0a5d5816a695
 F src/vdbeblob.c ff60adf2953e0ffc1d59541b3101c9886b03a3de
 F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -292,7 +292,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 748cabee9c2f26b4d92478dc46a688b8a0030b24
+F src/where.c 2c2a59315754521667e525e5f33c4238b7c7dcb1
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P acc40ff6b47595432ebc1b3ec71ac50384bec323
-R 8599d4c7dd668f68912fe04c74a25e4b
-U mistachkin
-Z c9f89e24ee5e7a1e18183aaf2ca68e49
+P 569fedd6bb07bdd3430da8dc65de4a9fdfe204cc
+R 749a13031920b9205045d3321716b16a
+U drh
+Z 7491e1f10541a194c40abc7098f10a18
