@@ -1,5 +1,5 @@
-C Add\sa\sway\sfor\svirtual\stables\sto\sreturn\sthe\sexpected\snumber\sof\srows\sfor\sa\sscan\s(not\sjust\sthe\soverall\scost)\sto\sSQLite.\sHave\sthe\srtree\smodule\smake\suse\sof\sthis.
-D 2013-11-11T19:01:33.120
+C Fix\stypos\sin\scompile\sand\srun-time\stests\sof\sthe\ssqlite\slibrary\sversion\snumber\sin\s\srtree.c.
+D 2013-11-11T19:56:35.910
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 1ec67e64ab28acd72d6a39416b24cb6b33a8bd9e
+F ext/rtree/rtree.c a4e18b2c150adad20aecbeb3408cd235a0a57441
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1136,7 +1136,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 924d63b283a3d059838114c95d42c6feaf913529
-R d1d8a68221f9b1872aa5651bda60ad81
+P 5a3cfd747a85480d215784817c3821d87ecfa2f7
+R 00f65730572bcf193db652ccbf41d1b0
 U dan
-Z 4d69165a9eae811b48725d315a514f08
+Z 9077fdf4fd98897af8a921df2b0a84da
