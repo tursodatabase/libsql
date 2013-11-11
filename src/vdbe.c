@@ -4661,7 +4661,7 @@ case OP_IdxDelete: {
   if( ALWAYS(pCrsr!=0) ){
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p3;
-    r.flags = 0;
+    r.flags = UNPACKED_PREFIX_MATCH;
     r.aMem = &aMem[pOp->p2];
 #ifdef SQLITE_DEBUG
     { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }

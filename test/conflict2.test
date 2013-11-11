@@ -813,5 +813,38 @@ do_test conflict2-13.2 {
   }
 } {1 3}
 
+# Test for an unreleased bug in the REPLACE conflict resolution
+# discovered on 2013-11-09.  
+#
+do_execsql_test conflict2-14.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    x TEXT PRIMARY KEY NOT NULL, 
+    y TEXT NOT NULL,
+    z INTEGER
+  );
+  INSERT INTO t1 VALUES('alpha','beta',1);
+  CREATE UNIQUE INDEX t1xy ON t1(x,y);
+  REPLACE INTO t1(x,y,z) VALUES('alpha','gamma',1);
+  PRAGMA integrity_check;
+  SELECT x,y FROM t1 INDEXED BY t1xy;
+  SELECT x,y,z FROM t1 NOT INDEXED;
+} {ok alpha gamma alpha gamma 1}
+do_execsql_test conflict2-14.2 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(
+    x TEXT PRIMARY KEY NOT NULL, 
+    y TEXT NOT NULL,
+    z INTEGER
+  ) WITHOUT ROWID;
+  INSERT INTO t1 VALUES('alpha','beta',1);
+  CREATE UNIQUE INDEX t1xy ON t1(x,y);
+  REPLACE INTO t1(x,y,z) VALUES('alpha','gamma',1);
+  PRAGMA integrity_check;
+  SELECT x,y FROM t1 INDEXED BY t1xy;
+  SELECT x,y,z FROM t1 NOT INDEXED;
+} {ok alpha gamma alpha gamma 1}
+
+
 
 finish_test

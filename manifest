@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment\sand\sremove\ssuperfluous\sblank\sline.\s\sNo\schanges\sto\scode.
-D 2013-11-10T00:03:11.921
+C Fix\sa\sproblem\sin\sOP_IdxDelete\sas\sused\sby\sREPLACE\sconflict\sresolution\sthat\ncomes\sup\sdue\sto\srecent\senhancements\sthat\sreduce\sthe\swork\srequired\sfor\nUNIQUE\sNOT\sNULL\sindices.
+D 2013-11-11T00:43:21.301
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/update.c 95a640c56d71ea9d58be66eab863d502701d092b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c f635690f3f2253ac8db7d505a100383a9a555362
+F src/vdbe.c cd3059de95a3a638eee919db8cfe4c318c160026
 F src/vdbe.h 8d5a7351024d80374fc0acdbbe3cfe65c51ba8b6
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -385,7 +385,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
-F test/conflict2.test 1892e796cb631d9b5661ab9916de3542520a1725
+F test/conflict2.test 3ed0b6ec3c2cb8acebbc89677ea0e58c01aaa1ff
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 4aabd06cff3fe759e3e658bcc17b71789710665e
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a5805976f0e06ece2eeebd825f383a1ee88121fc
-R b79e4c42d41fb8fbd85c50580ea07dcf
-U mistachkin
-Z 4647bb0b47c53e635871c96e7d23ff93
+P 023233f16ec2e6f582a7491643036ba5cad9379c
+R 4e1462bf2dbaa7aef77689cfb0587b10
+U drh
+Z 4e3adcf9d2d8f00e72d357ee17f79df9
