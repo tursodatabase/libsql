@@ -5331,6 +5331,7 @@ struct sqlite3_index_info {
   int needToFreeIdxStr;      /* Free idxStr using sqlite3_free() if true */
   int orderByConsumed;       /* True if output is already ordered */
   double estimatedCost;           /* Estimated cost of using this index */
+  /* Fields below are only available in SQLite 3.8.2 and later */
   sqlite3_int64 estimatedRows;    /* Estimated number of rows returned */
 };
 

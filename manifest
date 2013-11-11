@@ -1,5 +1,5 @@
-C Fix\stypos\sin\scompile\sand\srun-time\stests\sof\sthe\ssqlite\slibrary\sversion\snumber\sin\s\srtree.c.
-D 2013-11-11T19:56:35.910
+C Add\sa\scomment\sto\sthe\ssqlite3_index_info\sstructure\sindicating\sthat\sthe\snew\nfield\sis\sonly\savailable\sin\sSQLite\s3.8.2\sor\slater.
+D 2013-11-11T23:26:34.737
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c a040df82c4ac90b27114e1c21a05d77cc6dc6f80
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
-F src/sqlite.h.in f73c5fa1f1ff7c82ad8dff4daee690fe0ef43638
+F src/sqlite.h.in 4dedcab5b32358bf7a596badffe7363be1f1a82d
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 3da1940a2ba05a663e9016d57f1ea1f79ffcb03e
@@ -1136,7 +1136,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5a3cfd747a85480d215784817c3821d87ecfa2f7
-R 00f65730572bcf193db652ccbf41d1b0
-U dan
-Z 9077fdf4fd98897af8a921df2b0a84da
+P f58d57017199421167dae8ebc67db2f19be45082
+R 7b8fbe582240d008a14b3d7d804c87a1
+U drh
+Z fe208147509192d4be319fbb63d11678
