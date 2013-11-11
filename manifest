@@ -1,5 +1,5 @@
-C Fix\sseveral\sharmless\scompiler\swarnings.
-D 2013-11-11T02:46:32.106
+C Convert\sseveral\sALWAYS()\smacros\sin\svdbe.c\sinto\sassert()\sstatements.
+D 2013-11-11T03:24:11.697
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/update.c 95a640c56d71ea9d58be66eab863d502701d092b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c cd3059de95a3a638eee919db8cfe4c318c160026
+F src/vdbe.c aeef5c115ccb0433934f88b1a3016097eb6d8ab2
 F src/vdbe.h 8d5a7351024d80374fc0acdbbe3cfe65c51ba8b6
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P aaed7d1d3ba0aef9f99fb157d3704b9f279aef71
-R 662f5504d9799bf5dac3f43bcdc7df7a
-U mistachkin
-Z 791474e5a293869464d96bcb0c045d7f
+P e6ff492f0d475c395b82e2b3b294155674d4c6d1
+R 475d55de2c4ca401ff801162b73639ef
+U drh
+Z 5df113c36f23c015c44c7ae86b17359f
