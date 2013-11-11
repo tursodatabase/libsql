@@ -4406,7 +4406,7 @@ static int winOpen(
   int *pOutFlags            /* Status return flags */
 ){
   HANDLE h;
-  DWORD lastErrno;
+  DWORD lastErrno = 0;
   DWORD dwDesiredAccess;
   DWORD dwShareMode;
   DWORD dwCreationDisposition;
@@ -4697,7 +4697,7 @@ static int winDelete(
   int cnt = 0;
   int rc;
   DWORD attr;
-  DWORD lastErrno;
+  DWORD lastErrno = 0;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
   UNUSED_PARAMETER(syncDir);
@@ -4805,7 +4805,7 @@ static int winAccess(
 ){
   DWORD attr;
   int rc = 0;
-  DWORD lastErrno;
+  DWORD lastErrno = 0;
   void *zConverted;
   UNUSED_PARAMETER(pVfs);
 

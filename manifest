@@ -1,5 +1,5 @@
-C Modify\sa\sHeapValidate\sassert\sin\sthe\sWin32\snative\sallocator.
-D 2013-11-11T01:42:10.343
+C Fix\sseveral\sharmless\scompiler\swarnings.
+D 2013-11-11T02:46:32.106
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c 77c84ddeb5b2f91247f458aa7da9ef9f87686f40
+F src/os_win.c ef091b347d682cb24fc575ac9a6290341af62e2b
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y 073a8294e1826f1b1656e84806b77e4199f4bb57
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 61d7d4753f36932293c0eb1ca893b17d18355ad3
-R b014d6b5ce6c6524016e96cbc55be809
+P aaed7d1d3ba0aef9f99fb157d3704b9f279aef71
+R 662f5504d9799bf5dac3f43bcdc7df7a
 U mistachkin
-Z cec9e730830a0b61444c297cab7391e3
+Z 791474e5a293869464d96bcb0c045d7f
