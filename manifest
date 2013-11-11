@@ -1,5 +1,5 @@
-C Convert\sseveral\sALWAYS()\smacros\sin\svdbe.c\sinto\sassert()\sstatements.
-D 2013-11-11T03:24:11.697
+C Fix\sissue\swith\sseveral\smemory\sallocation\stests\sdue\sto\sKeyInfo\sallocations\snow\sbeing\sshared.
+D 2013-11-11T03:37:04.887
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -419,7 +419,7 @@ F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
-F test/dbstatus.test aee30c3f337e6c217ff06df59fb8fe6e6448dce2
+F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test a065b05d2ebf60fd16639c579a4adfb7c381c701
@@ -1135,7 +1135,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e6ff492f0d475c395b82e2b3b294155674d4c6d1
-R 475d55de2c4ca401ff801162b73639ef
-U drh
-Z 5df113c36f23c015c44c7ae86b17359f
+P acc40ff6b47595432ebc1b3ec71ac50384bec323
+R 8599d4c7dd668f68912fe04c74a25e4b
+U mistachkin
+Z c9f89e24ee5e7a1e18183aaf2ca68e49
