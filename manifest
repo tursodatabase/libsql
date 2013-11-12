@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2013-11-12T21:10:02.483
+C Adjust\sthe\sSQLITE_MALLOCSIZE\sdefines,\sprimarily\sto\smake\ssure\s_msize\sgets\sused\swith\sMSVC\swhen\sappropriate.
+D 2013-11-12T21:37:04.790
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -191,7 +191,7 @@ F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
 F src/main.c 32bf1e6e164a6fa0ddf1bf2616c6eafbefd6e9b0
 F src/malloc.c 543a8eb5508eaf4cadf55a9b503379eba2088128
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 437c7c4af964895d4650f29881df63535caaa1fa
+F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 0025308a93838022bd5696cf9627ff4e40b19918
@@ -1138,7 +1138,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0d1328e33ca761eddcf8a50e8e83c997861e9047
-R 691489a4da1e379548bfdbb95fa25c81
+P ddacd10105c6df2d3a9d707947e72c62e88212eb
+R a1432779dd22915a7d5838c89a07f3c3
 U mistachkin
-Z 7d610a332d7c23a451ca45725a291be3
+Z f4a84974fe637056c9ba67de537af83a
