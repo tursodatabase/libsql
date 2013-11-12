@@ -1,5 +1,5 @@
-C Make\ssure\sthe\scount(*)\soptimization\sworks\scorrectly\son\sWITHOUT\sROWID\stables.
-D 2013-11-12T14:55:40.075
+C A\sbetter\s(simpler)\sfix\sto\sthe\scount(*)\sproblem\saddressed\sin\sthe\sprevious\ncheck-in.
+D 2013-11-12T15:33:40.954
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 98855336b4499d731363c08ba26dfc1bbf8b731d
+F src/select.c 7317406831ecced390edba972818f3c5f82238c0
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
 F src/sqlite.h.in 4dedcab5b32358bf7a596badffe7363be1f1a82d
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1136,7 +1136,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1b215ee3219750d3beda8f3628c8673efd517061
-R 697ad63209879b2cc9b3d0ee859ef9f2
+P 91174779786be07d63f3c4a5277602ddc5f0ba26
+R a014858d7aea6c178ec71eb38d26a678
 U drh
-Z 7d51e8fe49c496b0ea3c1c3661447e30
+Z 90958247e5f1aff2cac4a81cce729911

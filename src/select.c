@@ -4675,14 +4675,13 @@ int sqlite3Select(
         ** In practice the KeyInfo structure will not be used. It is only 
         ** passed to keep OP_OpenRead happy.
         */
+        if( !HasRowid(pTab) ) pBest = sqlite3PrimaryKeyIndex(pTab);
         for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
           if( pIdx->bUnordered==0
            && pIdx->szIdxRow<pTab->szTabRow
            && pIdx->pPartIdxWhere==0
            && (!pBest || pIdx->szIdxRow<pBest->szIdxRow)
           ){
-            pBest = pIdx;
-          }else if( pIdx->autoIndex==2 && pBest==0 && !HasRowid(pTab) ){
             pBest = pIdx;
           }
         }
