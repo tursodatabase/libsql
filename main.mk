@@ -163,7 +163,8 @@ SRC = \
   $(TOP)/src/wal.c \
   $(TOP)/src/wal.h \
   $(TOP)/src/walker.c \
-  $(TOP)/src/where.c
+  $(TOP)/src/where.c \
+  $(TOP)/src/whereInt.h
 
 # Source code for extensions
 #
@@ -346,7 +347,8 @@ HDR = \
    $(TOP)/src/sqliteInt.h  \
    $(TOP)/src/sqliteLimit.h \
    $(TOP)/src/vdbe.h \
-   $(TOP)/src/vdbeInt.h
+   $(TOP)/src/vdbeInt.h \
+   $(TOP)/src/whereInt.h
 
 # Header files used by extensions
 #

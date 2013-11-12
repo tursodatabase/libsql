@@ -116,6 +116,7 @@ foreach hdr {
    vdbe.h
    vdbeInt.h
    wal.h
+   whereInt.h
 } {
   set available_hdr($hdr) 1
 }
