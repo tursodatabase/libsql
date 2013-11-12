@@ -1,5 +1,5 @@
-C Fix\sfor\s[4065ac8595]:\sDo\snot\sorder\sCROSS\sor\sLEFT\sjoins,\seven\sif\sthe\sright-hand-side\sis\sa\svirtual\stable.
-D 2013-11-12T12:17:16.498
+C Update\stest\scommand\s[explain_i]\sto\shandle\sthe\sopcodes\sused\sby\svirtual\stables\s(VNext,\sVFilter\setc.).
+D 2013-11-12T12:30:09.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -833,7 +833,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 0a48d94222d50e6e50d72ac103606c4f8e7cbb81
-F test/tester.tcl 7eac97d18c7836d91c078e1d5fa3f7eb5d9d6b4e
+F test/tester.tcl 3f675f00d22de3595be25dc2d2cba7ff623ef058
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1136,7 +1136,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b896ae3d2787c370be3ff5d09da7d631a16d3a2a
-R ffe171a8a1918ba685dd4b2b6f762faa
+P e2684ece455f53563ae6da7cbb5505d9a4a3076a
+R 689a8dc8aa01a2c309250dfed05151c5
 U dan
-Z ee7dd90da28d3c8ec4e8ef9356d19c65
+Z f07d22c7597ab468bfc7a55252cdaa8e
