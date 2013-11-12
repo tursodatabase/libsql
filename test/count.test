@@ -1,4 +1,4 @@
-# 2009 February 24
+# 2009-02-24
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing "SELECT count(*)" statements.
 #
-# $Id: count.test,v 1.6 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,8 +23,6 @@ source $testdir/tester.tcl
 #             tables and indexes. Test both when they contain 0 entries,
 #             when all entries are on the root page, and when the b-tree
 #             forms a structure 2 and 3 levels deep.
-#            
-#  count-2.*: Test that 
 #
 #
 
@@ -188,5 +185,10 @@ do_test count-4.3 {
   }
 } {1}
 
+do_execsql_test count-5.1 {
+  CREATE TABLE t5(a TEXT PRIMARY KEY, b VARCHAR(50)) WITHOUT ROWID;
+  INSERT INTO t5 VALUES('bison','jazz');
+  SELECT count(*) FROM t5;
+} {1}
 
 finish_test

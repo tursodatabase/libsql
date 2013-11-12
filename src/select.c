@@ -4670,7 +4670,7 @@ int sqlite3Select(
         **
         ** (2011-04-15) Do not do a full scan of an unordered index.
         **
-        ** (2013-10-03) Do not count the entires in a partial index.
+        ** (2013-10-03) Do not count the entries in a partial index.
         **
         ** In practice the KeyInfo structure will not be used. It is only 
         ** passed to keep OP_OpenRead happy.
@@ -4681,6 +4681,8 @@ int sqlite3Select(
            && pIdx->pPartIdxWhere==0
            && (!pBest || pIdx->szIdxRow<pBest->szIdxRow)
           ){
+            pBest = pIdx;
+          }else if( pIdx->autoIndex==2 && pBest==0 && !HasRowid(pTab) ){
             pBest = pIdx;
           }
         }

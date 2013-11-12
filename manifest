@@ -1,5 +1,5 @@
-C Update\stest\scommand\s[explain_i]\sto\shandle\sthe\sopcodes\sused\sby\svirtual\stables\s(VNext,\sVFilter\setc.).
-D 2013-11-12T12:30:09.040
+C Make\ssure\sthe\scount(*)\soptimization\sworks\scorrectly\son\sWITHOUT\sROWID\stables.
+D 2013-11-12T14:55:40.075
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c a040df82c4ac90b27114e1c21a05d77cc6dc6f80
+F src/select.c 98855336b4499d731363c08ba26dfc1bbf8b731d
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
 F src/sqlite.h.in 4dedcab5b32358bf7a596badffe7363be1f1a82d
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -405,7 +405,7 @@ F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
 F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
 F test/corruptF.test 1c7b6f77cf3f237fb7fbb5b61d6c921fd4c7b993
 F test/corruptG.test c67fd860e9e3943bc90b856a3049c9a28827167e
-F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
+F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -1136,7 +1136,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e2684ece455f53563ae6da7cbb5505d9a4a3076a
-R 689a8dc8aa01a2c309250dfed05151c5
-U dan
-Z f07d22c7597ab468bfc7a55252cdaa8e
+P 1b215ee3219750d3beda8f3628c8673efd517061
+R 697ad63209879b2cc9b3d0ee859ef9f2
+U drh
+Z 7d51e8fe49c496b0ea3c1c3661447e30
