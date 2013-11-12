@@ -4702,7 +4702,8 @@ static int whereLoopAddBtree(
 ** pBuilder->pNew->iTab.  That table is guaranteed to be a virtual table.
 */
 static int whereLoopAddVirtual(
-  WhereLoopBuilder *pBuilder   /* WHERE clause information */
+  WhereLoopBuilder *pBuilder,  /* WHERE clause information */
+  Bitmask mExtra
 ){
   WhereInfo *pWInfo;           /* WHERE analysis context */
   Parse *pParse;               /* The parsing context */
@@ -4792,7 +4793,7 @@ static int whereLoopAddVirtual(
     rc = vtabBestIndex(pParse, pTab, pIdxInfo);
     if( rc ) goto whereLoopAddVtab_exit;
     pIdxCons = *(struct sqlite3_index_constraint**)&pIdxInfo->aConstraint;
-    pNew->prereq = 0;
+    pNew->prereq = mExtra;
     mxTerm = -1;
     assert( pNew->nLSlot>=nConstraint );
     for(i=0; i<nConstraint; i++) pNew->aLTerm[i] = 0;
@@ -4919,8 +4920,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
         sCur.n = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
         if( IsVirtual(pItem->pTab) ){
-          rc = whereLoopAddVirtual(&sSubBuild);
-          for(i=0; i<sCur.n; i++) sCur.a[i].prereq |= mExtra;
+          rc = whereLoopAddVirtual(&sSubBuild, mExtra);
         }else
 #endif
         {
@@ -4990,7 +4990,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
     }
     priorJoinType = pItem->jointype;
     if( IsVirtual(pItem->pTab) ){
-      rc = whereLoopAddVirtual(pBuilder);
+      rc = whereLoopAddVirtual(pBuilder, mExtra);
     }else{
       rc = whereLoopAddBtree(pBuilder, mExtra);
     }

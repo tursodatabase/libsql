@@ -1,5 +1,5 @@
-C Fix\san\serror\smessage\sin\sthe\sspellfix\sextension\sso\sthat\sit\sconforms\sto\sthe\s\nstyle\sof\serror\smessages\sin\sthe\score.
-D 2013-11-12T01:11:56.532
+C Fix\sfor\s[4065ac8595]:\sDo\snot\sorder\sCROSS\sor\sLEFT\sjoins,\seven\sif\sthe\sright-hand-side\sis\sa\svirtual\stable.
+D 2013-11-12T12:17:16.498
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -133,7 +133,7 @@ F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test 983e567b49b5dca165940f66b87e161aa30e82b2
-F ext/rtree/rtreeC.test 0c3dcd379e012c76df5e59d53bc99a8b48f1603b
+F ext/rtree/rtreeC.test 03975565f40a0bee165f613143e4dec716dd5a59
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h c34c1e41d1ab80bb8ad09aae402c9c956871a765
@@ -293,7 +293,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 85766647d693ed7cfba42dfce07e2cb9c3384bd9
+F src/where.c a80cab07e904b65a57849f7f2f6a1bc075fbdbec
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1136,7 +1136,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 239648f8ccf057eb05841ce65b108da53fdbf0a4
-R 2677f6e85637bf6e8c8ea745ac432e8d
-U drh
-Z a8af653a4c5ae1f03aaed37205420a9d
+P b896ae3d2787c370be3ff5d09da7d631a16d3a2a
+R ffe171a8a1918ba685dd4b2b6f762faa
+U dan
+Z ee7dd90da28d3c8ec4e8ef9356d19c65
