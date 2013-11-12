@@ -517,6 +517,51 @@ static int fts3_test_tokenizer_cmd(
   return TCL_OK;
 }
 
+static int fts3_test_varint_cmd(
+  ClientData clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+#ifdef SQLITE_ENABLE_FTS3
+  char aBuf[24];
+  int rc;
+  Tcl_WideInt w, w2;
+  int nByte, nByte2;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "INTEGER");
+    return TCL_ERROR;
+  }
+
+  rc = Tcl_GetWideIntFromObj(interp, objv[1], &w);
+  if( rc!=TCL_OK ) return rc;
+
+  nByte = sqlite3Fts3PutVarint(aBuf, w);
+  nByte2 = sqlite3Fts3GetVarint(aBuf, &w2);
+  if( w!=w2 || nByte!=nByte2 ){
+    char *zErr = sqlite3_mprintf("error testing %lld", w);
+    Tcl_ResetResult(interp);
+    Tcl_AppendResult(interp, zErr, 0);
+    return TCL_ERROR;
+  }
+
+  if( w<=2147483647 && w>=0 ){
+    int i;
+    nByte2 = fts3GetVarint32(aBuf, &i);
+    if( (int)w!=i || nByte!=nByte2 ){
+      char *zErr = sqlite3_mprintf("error testing %lld (32-bit)", w);
+      Tcl_ResetResult(interp);
+      Tcl_AppendResult(interp, zErr, 0);
+      return TCL_ERROR;
+    }
+  }
+
+#endif
+  UNUSED_PARAMETER(clientData);
+  return TCL_OK;
+}
+
 /* 
 ** End of tokenizer code.
 **************************************************************************/ 
@@ -528,6 +573,10 @@ int Sqlitetestfts3_Init(Tcl_Interp *interp){
   );
   Tcl_CreateObjCommand(
       interp, "fts3_test_tokenizer", fts3_test_tokenizer_cmd, 0, 0
+  );
+
+  Tcl_CreateObjCommand(
+      interp, "fts3_test_varint", fts3_test_varint_cmd, 0, 0
   );
   return TCL_OK;
 }

@@ -1,5 +1,5 @@
-C A\sbetter\s(simpler)\sfix\sto\sthe\scount(*)\sproblem\saddressed\sin\sthe\sprevious\ncheck-in.
-D 2013-11-12T15:33:40.954
+C When\spossible,\shave\sFTS\suse\s32-bit\soperations\sto\sread\svarints\sfrom\sthe\sdatabase.
+D 2013-11-12T17:46:44.081
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d12e4455cf7a36e42d3949876c1c3b88ff70867a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,25 +78,25 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c f25ae5729d40cc4e661c0a552685038f27e72bc9
+F ext/fts3/fts3.c 7eb3b2935f0bd5dca23c2215b296606bdd7760f6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 8689f7cf85020e7f88d1e761eeac480c3b0ea7ad
+F ext/fts3/fts3Int.h eb5f8029589f3d8f1dc7fd50c773326a640388b1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
 F ext/fts3/fts3_expr.c 5165c365cb5a035f5be8bb296f7aa3211d43e4ac
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
 F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
-F ext/fts3/fts3_snippet.c e8ee8c101dd9cfbc9568d134e869d2bd2f7f6d4d
+F ext/fts3/fts3_snippet.c 51beb5c1498176fd9caccaf1c75b55cb803a985a
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
-F ext/fts3/fts3_test.c f9a1a1702db1bfad3e2d0064746eeb808f125489
+F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
 F ext/fts3/fts3_tokenize_vtab.c 011170fe9eba5ff062f1a31d3188e00267716706
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 17817f0cb6c8555e1be5e073fbddf676c60f4ea9
+F ext/fts3/fts3_write.c cdebe72171a217b1465032dec103f8d17f7dad4d
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -558,6 +558,7 @@ F test/fts3snippet.test d524af6bcef4714e059ef559113dbdc924cd33d1
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test b10d0a12a0ab5f905cea1200b745de233f37443f
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
+F test/fts3varint.test 23e79002ebebd6fbb1235504f7acb087b0fea741
 F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
@@ -731,7 +732,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test e154f5ed66d4d4913a99a110e870c9407f75b055
+F test/permutations.test af3278cbea3a19e025d5169be8193ff48dc3f862
 F test/pragma.test e882183ecd21d064cec5c7aaea174fbd36293429
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1136,7 +1137,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 91174779786be07d63f3c4a5277602ddc5f0ba26
-R a014858d7aea6c178ec71eb38d26a678
-U drh
-Z 90958247e5f1aff2cac4a81cce729911
+P 0f924c6ef6cf2ac5a61aafa8dd8e3309b3970499
+R 5351cba7d5954e18211d3eb00255913e
+U dan
+Z 8f4bd276a0e96490eb3d64253721bcb5

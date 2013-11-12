@@ -330,21 +330,35 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
   return (int) (q - (unsigned char *)p);
 }
 
+#define GETVARINT_STEP(v, ptr, shift, mask1, mask2, var, ret) \
+  v = (v & mask1) | ( (*ptr++) << shift );                    \
+  if( (v & mask2)==0 ){ var = v; return ret; }
+
 /* 
 ** Read a 64-bit variable-length integer from memory starting at p[0].
 ** Return the number of bytes read, or 0 on error.
 ** The value is stored in *v.
 */
 int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
-  const unsigned char *q = (const unsigned char *) p;
-  sqlite_uint64 x = 0, y = 1;
-  while( (*q&0x80)==0x80 && q-(unsigned char *)p<FTS3_VARINT_MAX ){
-    x += y * (*q++ & 0x7f);
-    y <<= 7;
+  const char *pStart = p;
+  u32 a;
+  u64 b;
+  int ret;
+  int shift;
+
+  GETVARINT_STEP(a, p, 0,  0x00,     0x80, *v, 1);
+  GETVARINT_STEP(a, p, 7,  0x7F,     0x4000, *v, 2);
+  GETVARINT_STEP(a, p, 14, 0x3FFF,   0x200000, *v, 3);
+  GETVARINT_STEP(a, p, 21, 0x1FFFFF, 0x10000000, *v, 4);
+  b = (a & 0x0FFFFFFF );
+
+  for(shift=28; shift<=63; shift+=7){
+    u64 c = *p++;
+    b += (c&0x7F) << shift;
+    if( (c & 0x80)==0 ) break;
   }
-  x += y * (*q++);
-  *v = (sqlite_int64) x;
-  return (int) (q - (unsigned char *)p);
+  *v = b;
+  return p - pStart;
 }
 
 /*
@@ -352,10 +366,21 @@ int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
 ** 32-bit integer before it is returned.
 */
 int sqlite3Fts3GetVarint32(const char *p, int *pi){
- sqlite_int64 i;
- int ret = sqlite3Fts3GetVarint(p, &i);
- *pi = (int) i;
- return ret;
+  u32 a;
+
+#ifndef fts3GetVarint32
+  GETVARINT_STEP(a, p, 0,  0x00,     0x80, *pi, 1);
+#else
+  a = (*p++);
+  assert( a & 0x80 );
+#endif
+
+  GETVARINT_STEP(a, p, 7,  0x7F,     0x4000, *pi, 2);
+  GETVARINT_STEP(a, p, 14, 0x3FFF,   0x200000, *pi, 3);
+  GETVARINT_STEP(a, p, 21, 0x1FFFFF, 0x10000000, *pi, 4);
+  a = (a & 0x0FFFFFFF );
+  *pi = (int)(a | ((u32)(*p & 0x0F) << 28));
+  return 5;
 }
 
 /*
@@ -1715,10 +1740,10 @@ static int fts3ScanInteriorNode(
     /* Load the next term on the node into zBuffer. Use realloc() to expand
     ** the size of zBuffer if required.  */
     if( !isFirstTerm ){
-      zCsr += sqlite3Fts3GetVarint32(zCsr, &nPrefix);
+      zCsr += fts3GetVarint32(zCsr, &nPrefix);
     }
     isFirstTerm = 0;
-    zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
+    zCsr += fts3GetVarint32(zCsr, &nSuffix);
     
     if( nPrefix<0 || nSuffix<0 || &zCsr[nSuffix]>zEnd ){
       rc = FTS_CORRUPT_VTAB;
@@ -1806,7 +1831,7 @@ static int fts3SelectLeaf(
 
   assert( piLeaf || piLeaf2 );
 
-  sqlite3Fts3GetVarint32(zNode, &iHeight);
+  fts3GetVarint32(zNode, &iHeight);
   rc = fts3ScanInteriorNode(zTerm, nTerm, zNode, nNode, piLeaf, piLeaf2);
   assert( !piLeaf2 || !piLeaf || rc!=SQLITE_OK || (*piLeaf<=*piLeaf2) );
 
@@ -2008,11 +2033,11 @@ static void fts3PoslistMerge(
     int iCol1;         /* The current column index in pp1 */
     int iCol2;         /* The current column index in pp2 */
 
-    if( *p1==POS_COLUMN ) sqlite3Fts3GetVarint32(&p1[1], &iCol1);
+    if( *p1==POS_COLUMN ) fts3GetVarint32(&p1[1], &iCol1);
     else if( *p1==POS_END ) iCol1 = POSITION_LIST_END;
     else iCol1 = 0;
 
-    if( *p2==POS_COLUMN ) sqlite3Fts3GetVarint32(&p2[1], &iCol2);
+    if( *p2==POS_COLUMN ) fts3GetVarint32(&p2[1], &iCol2);
     else if( *p2==POS_END ) iCol2 = POSITION_LIST_END;
     else iCol2 = 0;
 
@@ -2105,11 +2130,11 @@ static int fts3PoslistPhraseMerge(
   assert( p!=0 && *p1!=0 && *p2!=0 );
   if( *p1==POS_COLUMN ){ 
     p1++;
-    p1 += sqlite3Fts3GetVarint32(p1, &iCol1);
+    p1 += fts3GetVarint32(p1, &iCol1);
   }
   if( *p2==POS_COLUMN ){ 
     p2++;
-    p2 += sqlite3Fts3GetVarint32(p2, &iCol2);
+    p2 += fts3GetVarint32(p2, &iCol2);
   }
 
   while( 1 ){
@@ -2159,9 +2184,9 @@ static int fts3PoslistPhraseMerge(
       if( 0==*p1 || 0==*p2 ) break;
 
       p1++;
-      p1 += sqlite3Fts3GetVarint32(p1, &iCol1);
+      p1 += fts3GetVarint32(p1, &iCol1);
       p2++;
-      p2 += sqlite3Fts3GetVarint32(p2, &iCol2);
+      p2 += fts3GetVarint32(p2, &iCol2);
     }
 
     /* Advance pointer p1 or p2 (whichever corresponds to the smaller of
@@ -2173,12 +2198,12 @@ static int fts3PoslistPhraseMerge(
       fts3ColumnlistCopy(0, &p1);
       if( 0==*p1 ) break;
       p1++;
-      p1 += sqlite3Fts3GetVarint32(p1, &iCol1);
+      p1 += fts3GetVarint32(p1, &iCol1);
     }else{
       fts3ColumnlistCopy(0, &p2);
       if( 0==*p2 ) break;
       p2++;
-      p2 += sqlite3Fts3GetVarint32(p2, &iCol2);
+      p2 += fts3GetVarint32(p2, &iCol2);
     }
   }
 
@@ -5345,7 +5370,7 @@ static void fts3EvalUpdateCounts(Fts3Expr *pExpr){
         pExpr->aMI[iCol*3 + 2] += (iCnt>0);
         if( *p==0x00 ) break;
         p++;
-        p += sqlite3Fts3GetVarint32(p, &iCol);
+        p += fts3GetVarint32(p, &iCol);
       }
     }
 
@@ -5646,7 +5671,7 @@ int sqlite3Fts3EvalPhrasePoslist(
 
   if( *pIter==0x01 ){
     pIter++;
-    pIter += sqlite3Fts3GetVarint32(pIter, &iThis);
+    pIter += fts3GetVarint32(pIter, &iThis);
   }else{
     iThis = 0;
   }
@@ -5654,7 +5679,7 @@ int sqlite3Fts3EvalPhrasePoslist(
     fts3ColumnlistCopy(0, &pIter);
     if( *pIter==0x00 ) return 0;
     pIter++;
-    pIter += sqlite3Fts3GetVarint32(pIter, &iThis);
+    pIter += fts3GetVarint32(pIter, &iThis);
   }
 
   *ppOut = ((iCol==iThis)?pIter:0);

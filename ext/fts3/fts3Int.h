@@ -524,6 +524,10 @@ struct Fts3MultiSegReader {
 
 int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 
+#define fts3GetVarint32(p, piVal) (                                           \
+  (*(u8*)(p)&0x80) ? sqlite3Fts3GetVarint32(p, piVal) : (*piVal=*(u8*)(p), 1) \
+)
+
 /* fts3.c */
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
