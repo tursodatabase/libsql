@@ -1,5 +1,5 @@
-C Fix\stwo\stest\scases\s(due\sto\schanges\sin\sthe\sformatting\sof\sconstraint\serrors)\nso\sthat\sall\stests\snow\spass.
-D 2013-11-11T23:02:10.499
+C Import\srecent\sbug\sfixes\sfrom\strunk.
+D 2013-11-12T15:39:01.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in bb787d5227c6aa95915ff04e9634a0a469297ea4
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/spellfix.c 5e1d547e9a2aed13897fa91bac924333f62fd2d9
+F ext/misc/spellfix.c 76578f2c56ceaa23d22032338d90db79c68490fb
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -133,7 +133,7 @@ F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test 983e567b49b5dca165940f66b87e161aa30e82b2
-F ext/rtree/rtreeC.test 0c3dcd379e012c76df5e59d53bc99a8b48f1603b
+F ext/rtree/rtreeC.test 03975565f40a0bee165f613143e4dec716dd5a59
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h c34c1e41d1ab80bb8ad09aae402c9c956871a765
@@ -233,9 +233,9 @@ F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c a040df82c4ac90b27114e1c21a05d77cc6dc6f80
+F src/select.c 7317406831ecced390edba972818f3c5f82238c0
 F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
-F src/sqlite.h.in 359a06b4832eba83e832712b9708c731c2a13a7a
+F src/sqlite.h.in 7bdef2ad0d798aa6bdeb5408493e9da62e3083d3
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 4d218f4480af7672cff22bb4ef589410f5415f68
@@ -307,7 +307,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 85766647d693ed7cfba42dfce07e2cb9c3384bd9
+F src/where.c a80cab07e904b65a57849f7f2f6a1bc075fbdbec
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -419,7 +419,7 @@ F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
 F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
 F test/corruptF.test 1c7b6f77cf3f237fb7fbb5b61d6c921fd4c7b993
 F test/corruptG.test c67fd860e9e3943bc90b856a3049c9a28827167e
-F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
+F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -848,7 +848,7 @@ F test/tclsqlite.test a7308276aad2e6c0bfb5b0414424dd0d9cc0cad7
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 0a48d94222d50e6e50d72ac103606c4f8e7cbb81
-F test/tester.tcl c52441bc75166cf9eab488fef33a5367518b5a89
+F test/tester.tcl 1da66c6775f76be7dda05007125af7f79b815d9d
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1151,7 +1151,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5addd1234ded59ce60fb633b76ac87d483377edd
-R 7497a574757ea7847d650e9a557949cb
+P 129e2b69178147d04ee27fce66c17b39f8654da3 0f924c6ef6cf2ac5a61aafa8dd8e3309b3970499
+R 62e8cb7022fe8084fd35a1524fde4875
 U drh
-Z 55c6c2c9062609ee78397175c9785a12
+Z 1a520bb92f053e22297ab0364aa517fb

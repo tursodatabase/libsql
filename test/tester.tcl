@@ -1047,7 +1047,7 @@ proc explain_i {sql {db db}} {
   set D "\033\[39;0m"        ;# Default fg
   foreach opcode {
       Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
-      NoConflict Next Prev
+      NoConflict Next Prev VNext VPrev VFilter
   } {
     set color($opcode) $B
   }
@@ -1068,7 +1068,9 @@ proc explain_i {sql {db db}} {
       set bSeenGoto 1
     }
 
-    if {$opcode == "Next" || $opcode=="Prev"} {
+    if {$opcode=="Next"  || $opcode=="Prev" 
+     || $opcode=="VNext" || $opcode=="VPrev"
+    } {
       for {set i $p2} {$i<$addr} {incr i} {
         incr x($i) 2
       }

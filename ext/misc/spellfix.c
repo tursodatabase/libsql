@@ -2672,7 +2672,7 @@ static int spellfix1Update(
       const char *zCmd = 
          (const char*)sqlite3_value_text(argv[SPELLFIX_COL_COMMAND+2]);
       if( zCmd==0 ){
-        pVTab->zErrMsg = sqlite3_mprintf("%s.word may not be NULL",
+        pVTab->zErrMsg = sqlite3_mprintf("NOT NULL constraint failed: %s.word",
                                          p->zTableName);
         return SQLITE_CONSTRAINT_NOTNULL;
       }
