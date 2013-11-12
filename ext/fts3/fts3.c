@@ -343,7 +343,6 @@ int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
   const char *pStart = p;
   u32 a;
   u64 b;
-  int ret;
   int shift;
 
   GETVARINT_STEP(a, p, 0,  0x00,     0x80, *v, 1);

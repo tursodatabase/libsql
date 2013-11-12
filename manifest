@@ -1,5 +1,5 @@
-C Minor\senhancements\sto\sthe\sauxiliary\sinformation\sadded\sto\sEXPLAIN\soutput\swith\nSQLITE_EXPLAIN_ENABLE_COMMENTS.
-D 2013-11-12T20:18:14.367
+C Fix\sharmless\scompiler\swarning.
+D 2013-11-12T21:10:02.483
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 7eb3b2935f0bd5dca23c2215b296606bdd7760f6
+F ext/fts3/fts3.c dceaa5079833caa2e7945433e1eb93bb22f623a3
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb5f8029589f3d8f1dc7fd50c773326a640388b1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -1138,7 +1138,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c44467124623733aac64096d605f16139b733a7f
-R 6e0586ae35f6a5b0a0e54c1d5a933029
-U drh
-Z b01fa55693742bbd2cb099540a606861
+P 0d1328e33ca761eddcf8a50e8e83c997861e9047
+R 691489a4da1e379548bfdbb95fa25c81
+U mistachkin
+Z 7d610a332d7c23a451ca45725a291be3
