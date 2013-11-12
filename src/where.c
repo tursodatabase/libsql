@@ -2725,7 +2725,7 @@ static Bitmask codeOneLoopStart(
   bRev = (pWInfo->revMask>>iLevel)&1;
   omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
            && (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)==0;
-  VdbeNoopComment((v, "Begin WHERE-Loop %d: %s", iLevel,pTabItem->pTab->zName));
+  VdbeNoopComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -5679,6 +5679,7 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Done. */
+  VdbeNoopComment((v, "Begin WHERE-core"));
   return pWInfo;
 
   /* Jump here if malloc fails */
@@ -5705,6 +5706,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Generate loop termination code.
   */
+  VdbeNoopComment((v, "End WHERE-core"));
   sqlite3ExprCacheClear(pParse);
   for(i=pWInfo->nLevel-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
@@ -5744,7 +5746,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
       sqlite3VdbeJumpHere(v, addr);
     }
-    VdbeNoopComment((v, "End WHERE-Loop %d: %s", i,
+    VdbeNoopComment((v, "End WHERE-loop%d: %s", i,
                      pWInfo->pTabList->a[pLevel->iFrom].pTab->zName));
   }
 

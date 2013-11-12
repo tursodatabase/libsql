@@ -1,5 +1,5 @@
-C Break\sout\sthe\sstructure\sand\smacro\sdefinitions\sof\swhere.c\sinto\sa\sseparate\nheader\sfile\swhereInt.h\sfor\seasier\sediting\sand\sdebugging.
-D 2013-11-12T18:37:25.924
+C Minor\senhancements\sto\sthe\sauxiliary\sinformation\sadded\sto\sEXPLAIN\soutput\swith\nSQLITE_EXPLAIN_ENABLE_COMMENTS.
+D 2013-11-12T20:18:14.367
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/vdbe.c fda0d2ba5a3a5ab588f0467782e7fd64930ddb22
 F src/vdbe.h 8d5a7351024d80374fc0acdbbe3cfe65c51ba8b6
 F src/vdbeInt.h f2fa3ceccceeb757773921fb08af7c6e9f3caa1c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 84d2d421c11c3e534d4948274e4d0a5d5816a695
+F src/vdbeaux.c 75c5fee307004739d814a840699df5e853e02b79
 F src/vdbeblob.c ff60adf2953e0ffc1d59541b3101c9886b03a3de
 F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -293,8 +293,8 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 7ce9564fc41539a45fd9c416ea4282b3defc1311
-F src/whereInt.h fda11df00f43f9d4a16cc215c0675c83ba362efd
+F src/where.c 48404454d772af51f9075a33b485bd2270f31dd3
+F src/whereInt.h 63c8345d01d12ded6250b72e7c16855f0a358041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1138,7 +1138,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P aa7ba302ed13aedde89b5bcbe9119799c0da8a42
-R b1d0892fd01796ef0307192d25431345
+P c44467124623733aac64096d605f16139b733a7f
+R 6e0586ae35f6a5b0a0e54c1d5a933029
 U drh
-Z e9ed81f2d95ba49c17059d8287cc88cd
+Z b01fa55693742bbd2cb099540a606861

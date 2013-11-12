@@ -982,7 +982,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
     case P4_COLLSEQ: {
       CollSeq *pColl = pOp->p4.pColl;
-      sqlite3_snprintf(nTemp, zTemp, "collseq(%.20s)", pColl->zName);
+      sqlite3_snprintf(nTemp, zTemp, "(%.20s)", pColl->zName);
       break;
     }
     case P4_FUNCDEF: {

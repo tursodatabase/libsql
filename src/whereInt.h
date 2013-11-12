@@ -113,7 +113,8 @@ struct WhereLoop {
   LogEst nOut;          /* Estimated number of output rows */
   union {
     struct {               /* Information for internal btree tables */
-      int nEq;               /* Number of equality constraints */
+      u16 nEq;               /* Number of equality constraints */
+      u16 nSkip;             /* Number of initial index columns to skip */
       Index *pIndex;         /* Index used, or NULL */
     } btree;
     struct {               /* Information for virtual tables */
