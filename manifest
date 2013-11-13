@@ -1,5 +1,5 @@
-C Add\sthe\s"PRAGMA\svdbe_eqp"\scommand,\sonly\savailable\swith\sSQLITE_DEBUG.\s\sSimplify\nsome\sof\sthe\sother\sdebugging\slogic.
-D 2013-11-13T17:58:23.573
+C In\sthe\sshell\stool,\sif\san\s"EXPLAIN"\scommand\sis\sexecuted\sin\s".explain\son"\smode,\sattempt\sto\sautomatically\sindent\sthe\sbodies\sof\sloops\sin\sthe\soutput\sVDBE\sprogram.
+D 2013-11-13T18:35:01.894
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 7317406831ecced390edba972818f3c5f82238c0
-F src/shell.c 03d8d9b4052430343ff30d646334621f980f1202
+F src/shell.c 3b23017da75118da0a7e3518c6ce78a7b747fb05
 F src/sqlite.h.in 4dedcab5b32358bf7a596badffe7363be1f1a82d
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1138,7 +1138,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5196000930600d0cd931b87e864507791b9dab08
-R f5035ff28ea611640fd4871588416d7f
-U drh
-Z f0bce2e671cb5c826c0cf7f8a42a33dc
+P 8ce33f4c818e1c785a1c176f6f631b8184e1166b
+R 5d7c6b4eb6f0cadad72d4cdb7ed00f79
+U dan
+Z 87b1c90d92386c54cb5a5e86314bc13e
