@@ -2619,7 +2619,10 @@ static void explainOneScan(
   int iFrom,                      /* Value for "from" column of output */
   u16 wctrlFlags                  /* Flags passed to sqlite3WhereBegin() */
 ){
-  if( pParse->explain==2 ){
+#ifndef SQLITE_DEBUG
+  if( pParse->explain==2 )
+#endif
+  {
     struct SrcList_item *pItem = &pTabList->a[pLevel->iFrom];
     Vdbe *v = pParse->pVdbe;      /* VM being constructed */
     sqlite3 *db = pParse->db;     /* Database handle */
