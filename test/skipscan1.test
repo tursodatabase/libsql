@@ -1,0 +1,148 @@
+# 2013-11-13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests of the "skip-scan" query strategy.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test skipscan1-1.1 {
+  CREATE TABLE t1(a TEXT, b INT, c INT, d INT);
+  CREATE INDEX t1abc ON t1(a,b,c);
+  INSERT INTO t1 VALUES('abc',123,4,5);
+  INSERT INTO t1 VALUES('abc',234,5,6);
+  INSERT INTO t1 VALUES('abc',234,6,7);
+  INSERT INTO t1 VALUES('abc',345,7,8);
+  INSERT INTO t1 VALUES('def',567,8,9);
+  INSERT INTO t1 VALUES('def',345,9,10);
+  INSERT INTO t1 VALUES('bcd',100,6,11);
+
+  /* Fake the sqlite_stat1 table so that the query planner believes
+  ** the table contains thousands of rows and that the first few
+  ** columns are not selective. */
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1abc','10000 5000 2000 10');
+  ANALYZE sqlite_master;
+} {}
+
+# Simple queries that leave the first one or two columns of the
+# index unconstrainted.
+#
+do_execsql_test skipscan1-1.2 {
+  SELECT a,b,c,d,'|' FROM t1 WHERE b=345 ORDER BY a;
+} {abc 345 7 8 | def 345 9 10 |}
+do_execsql_test skipscan1-1.2eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE b=345 ORDER BY a;
+} {/* USING INDEX t1abc (ANY(a) AND b=?)*/}
+do_execsql_test skipscan1-1.2sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE b=345 ORDER BY a;
+} {~/*ORDER BY*/}
+
+do_execsql_test skipscan1-1.3 {
+  SELECT a,b,c,d,'|' FROM t1 WHERE b=345 ORDER BY a DESC;
+} {def 345 9 10 | abc 345 7 8 |}
+do_execsql_test skipscan1-1.3eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE b=345 ORDER BY a;
+} {/* USING INDEX t1abc (ANY(a) AND b=?)*/}
+do_execsql_test skipscan1-1.3sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE b=345 ORDER BY a;
+} {~/*ORDER BY*/}
+
+do_execsql_test skipscan1-1.4 {
+  SELECT a,b,c,d,'|' FROM t1 WHERE c=6 ORDER BY a, b, c;
+} {abc 234 6 7 | bcd 100 6 11 |}
+do_execsql_test skipscan1-1.4eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE c=6 ORDER BY a, b, c;
+} {/* USING INDEX t1abc (ANY(a) AND ANY(b) AND c=?)*/}
+do_execsql_test skipscan1-1.4sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE c=6 ORDER BY a, b, c;
+} {~/*ORDER BY*/}
+
+# Joins
+#
+do_execsql_test skipscan1-1.5 {
+  CREATE TABLE t1j(x TEXT, y INTEGER);
+  INSERT INTO t1j VALUES('one',1),('six',6),('ninty-nine',99);
+  SELECT x, a, b, c, d, '|' FROM t1j, t1 WHERE c=y ORDER BY +a;
+} {six abc 234 6 7 | six bcd 100 6 11 |}
+do_execsql_test skipscan1-1.5eqp {
+  EXPLAIN QUERY PLAN
+  SELECT x, a, b, c, d, '|' FROM t1j, t1 WHERE c=y ORDER BY +a;
+} {/* INDEX t1abc (ANY(a) AND ANY(b) AND c=?)*/}
+
+do_execsql_test skipscan1-1.6 {
+  SELECT x, a, b, c, d, '|' FROM t1j LEFT JOIN t1 ON c=y ORDER BY +y, +a;
+} {one {} {} {} {} | six abc 234 6 7 | six bcd 100 6 11 | ninty-nine {} {} {} {} |}
+do_execsql_test skipscan1-1.6eqp {
+  EXPLAIN QUERY PLAN
+  SELECT x, a, b, c, d, '|' FROM t1j LEFT JOIN t1 ON c=y ORDER BY +y, +a;
+} {/* INDEX t1abc (ANY(a) AND ANY(b) AND c=?)*/}
+
+do_execsql_test skipscan1-2.1 {
+  CREATE TABLE t2(a TEXT, b INT, c INT, d INT,
+                  PRIMARY KEY(a,b,c));
+  INSERT INTO t2 SELECT * FROM t1;
+
+  /* Fake the sqlite_stat1 table so that the query planner believes
+  ** the table contains thousands of rows and that the first few
+  ** columns are not selective. */
+  ANALYZE;
+  UPDATE sqlite_stat1 SET stat='10000 5000 2000 10' WHERE idx NOT NULL;
+  ANALYZE sqlite_master;
+} {}
+
+do_execsql_test skipscan1-2.2 {
+  SELECT a,b,c,d,'|' FROM t2 WHERE b=345 ORDER BY a;
+} {abc 345 7 8 | def 345 9 10 |}
+do_execsql_test skipscan1-2.2eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t2 WHERE b=345 ORDER BY a;
+} {/* USING INDEX sqlite_autoindex_t2_1 (ANY(a) AND b=?)*/}
+do_execsql_test skipscan1-2.2sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t2 WHERE b=345 ORDER BY a;
+} {~/*ORDER BY*/}
+
+
+do_execsql_test skipscan1-3.1 {
+  CREATE TABLE t3(a TEXT, b INT, c INT, d INT,
+                  PRIMARY KEY(a,b,c)) WITHOUT ROWID;
+  INSERT INTO t3 SELECT * FROM t1;
+
+  /* Fake the sqlite_stat1 table so that the query planner believes
+  ** the table contains thousands of rows and that the first few
+  ** columns are not selective. */
+  ANALYZE;
+  UPDATE sqlite_stat1 SET stat='10000 5000 2000 10' WHERE idx NOT NULL;
+  ANALYZE sqlite_master;
+} {}
+
+do_execsql_test skipscan1-3.2 {
+  SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;
+} {abc 345 7 8 | def 345 9 10 |}
+do_execsql_test skipscan1-3.2eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;
+} {/* INDEX sqlite_autoindex_t3_1 (ANY(a) AND b=?)*/}
+do_execsql_test skipscan1-3.2sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;
+} {~/*ORDER BY*/}
+
+finish_test

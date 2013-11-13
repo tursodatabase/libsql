@@ -1428,10 +1428,12 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   if( pTable==0 ){
     return 0;
   }
-  if( argv[1] ){
-    pIndex = sqlite3FindIndex(pInfo->db, argv[1], pInfo->zDatabase);
-  }else{
+  if( argv[1]==0 ){
     pIndex = 0;
+  }else if( sqlite3_stricmp(argv[0],argv[1])==0 ){
+    pIndex = sqlite3PrimaryKeyIndex(pTable);
+  }else{
+    pIndex = sqlite3FindIndex(pInfo->db, argv[1], pInfo->zDatabase);
   }
   z = argv[2];
 

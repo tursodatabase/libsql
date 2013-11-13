@@ -616,11 +616,24 @@ proc do_test {name cmd expected} {
         # regular expression PATTERN matches the result.  "~/PATTERN/" means
         # the regular expression must not match.
         if {[string index $expected 0]=="~"} {
-          set re [string map {# {[-0-9.]+}} [string range $expected 2 end-1]]
-          set ok [expr {![regexp $re $result]}]
+          set re [string range $expected 2 end-1]
+          if {[string index $re 0]=="*"} {
+            # If the regular expression begins with * then treat it as a glob instead
+            set ok [string match $re $result]
+          } else {
+            set re [string map {# {[-0-9.]+}} $re]
+            set ok [regexp $re $result]
+          }
+          set ok [expr {!$ok}]
         } else {
-          set re [string map {# {[-0-9.]+}} [string range $expected 1 end-1]]
-          set ok [regexp $re $result]
+          set re [string range $expected 1 end-1]
+          if {[string index $re 0]=="*"} {
+            # If the regular expression begins with * then treat it as a glob instead
+            set ok [string match $re $result]
+          } else {
+            set re [string map {# {[-0-9.]+}} $re]
+            set ok [regexp $re $result]
+          }
         }
       } elseif {[regexp {^~?\*.*\*$} $expected]} {
         # "expected" is of the form "*GLOB*" then the result if correct if
