@@ -98,6 +98,21 @@ do_execsql_test skipscan1-1.6sort {
   SELECT a,b,c,d,'|' FROM t1 WHERE c BETWEEN 6 AND 7 ORDER BY a, b, c;
 } {~/*ORDER BY*/}
 
+do_execsql_test skipscan1-1.7 {
+  SELECT a,b,c,d,'|' FROM t1 WHERE b IN (234, 345) AND c BETWEEN 6 AND 7
+   ORDER BY a, b;
+} {abc 234 6 7 | abc 345 7 8 |}
+do_execsql_test skipscan1-1.7eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE b IN (234, 345) AND c BETWEEN 6 AND 7
+   ORDER BY a, b;
+} {/* USING INDEX t1abc (ANY(a) AND b=? AND c>? AND c<?)*/}
+do_execsql_test skipscan1-1.7sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE b IN (234, 345) AND c BETWEEN 6 AND 7
+   ORDER BY a, b;
+} {~/*ORDER BY*/}
+
 
 # Joins
 #

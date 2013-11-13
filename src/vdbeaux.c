@@ -78,15 +78,6 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   pB->isPrepareV2 = pA->isPrepareV2;
 }
 
-#ifdef SQLITE_DEBUG
-/*
-** Turn tracing on or off
-*/
-void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
-  p->trace = trace;
-}
-#endif
-
 /*
 ** Resize the Vdbe.aOp array so that it is at least one op larger than 
 ** it was.
@@ -1415,15 +1406,17 @@ int sqlite3VdbeList(
 ** Print the SQL that was used to generate a VDBE program.
 */
 void sqlite3VdbePrintSql(Vdbe *p){
-  int nOp = p->nOp;
-  VdbeOp *pOp;
-  if( nOp<1 ) return;
-  pOp = &p->aOp[0];
-  if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
-    const char *z = pOp->p4.z;
-    while( sqlite3Isspace(*z) ) z++;
-    printf("SQL: [%s]\n", z);
+  const char *z = 0;
+  if( p->zSql ){
+    z = p->zSql;
+  }else if( p->nOp>=1 ){
+    const VdbeOp *pOp = &p->aOp[0];
+    if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
+      z = pOp->p4.z;
+      while( sqlite3Isspace(*z) ) z++;
+    }
   }
+  if( z ) printf("SQL: [%s]\n", z);
 }
 #endif
 
