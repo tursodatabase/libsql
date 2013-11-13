@@ -1186,6 +1186,18 @@ case OP_ResultRow: {
   assert( pOp->p1>0 );
   assert( pOp->p1+pOp->p2<=(p->nMem-p->nCursor)+1 );
 
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  /* Run the progress counter just before returning.
+  */
+  if( db->xProgress!=0
+   && nVmStep>=nProgressLimit
+   && db->xProgress(db->pProgressArg)!=0
+  ){
+    rc = SQLITE_INTERRUPT;
+    goto vdbe_error_halt;
+  }
+#endif
+
   /* If this statement has violated immediate foreign key constraints, do
   ** not return the number of rows modified. And do not RELEASE the statement
   ** transaction. It needs to be rolled back.  */
