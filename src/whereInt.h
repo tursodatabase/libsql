@@ -65,6 +65,7 @@ struct WhereLevel {
   int iIdxCur;          /* The VDBE cursor used to access pIdx */
   int addrBrk;          /* Jump here to break out of the loop */
   int addrNxt;          /* Jump here to start the next IN combination */
+  int addrSkip;         /* Jump here for next iteration of skip-scan */
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
   int addrBody;         /* Beginning of the body of this loop */
@@ -455,3 +456,4 @@ struct WhereInfo {
 #define WHERE_ONEROW       0x00001000  /* Selects no more than one row */
 #define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
 #define WHERE_AUTO_INDEX   0x00004000  /* Uses an ephemeral index */
+#define WHERE_SKIPSCAN     0x00008000  /* Uses the skip-scan algorithm */

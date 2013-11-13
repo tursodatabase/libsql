@@ -2422,7 +2422,7 @@ static int codeEqualityTerm(
 
 /*
 ** Generate code that will evaluate all == and IN constraints for an
-** index.
+** index scan.
 **
 ** For example, consider table t1(a,b,c,d,e,f) with index i1(a,b,c).
 ** Suppose the WHERE clause is this:  a==5 AND b IN (1,2,3) AND c>5 AND c<10
@@ -2437,9 +2437,15 @@ static int codeEqualityTerm(
 ** The only thing it does is allocate the pLevel->iMem memory cell and
 ** compute the affinity string.
 **
-** This routine always allocates at least one memory cell and returns
-** the index of that memory cell. The code that
-** calls this routine will use that memory cell to store the termination
+** The nExtraReg parameter is 0 or 1.  It is 0 if all WHERE clause constraints
+** are == or IN and are covered by the nEq.  nExtraReg is 1 if there is
+** an inequality constraint (such as the "c>=5 AND c<10" in the example) that
+** occurs after the nEq quality constraints.
+**
+** This routine allocates a range of nEq+nExtraReg memory cells and returns
+** the index of the first memory cell in that range. The code that
+** calls this routine will use that memory range to store keys for
+** start and termination conditions of the loop.
 ** key value of the loop.  If one or more IN operators appear, then
 ** this routine allocates an additional nEq memory cells for internal
 ** use.
@@ -2466,7 +2472,8 @@ static int codeAllEqualityTerms(
   int nExtraReg,        /* Number of extra registers to allocate */
   char **pzAff          /* OUT: Set to point to affinity string */
 ){
-  int nEq;                      /* The number of == or IN constraints to code */
+  u16 nEq;                      /* The number of == or IN constraints to code */
+  u16 nSkip;                    /* Number of left-most columns to skip */
   Vdbe *v = pParse->pVdbe;      /* The vm under construction */
   Index *pIdx;                  /* The index being used for this loop */
   WhereTerm *pTerm;             /* A single constraint term */
@@ -2480,6 +2487,7 @@ static int codeAllEqualityTerms(
   pLoop = pLevel->pWLoop;
   assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
   nEq = pLoop->u.btree.nEq;
+  nSkip = pLoop->u.btree.nSkip;
   pIdx = pLoop->u.btree.pIndex;
   assert( pIdx!=0 );
 
@@ -2494,14 +2502,29 @@ static int codeAllEqualityTerms(
     pParse->db->mallocFailed = 1;
   }
 
+  if( nSkip ){
+    int iIdxCur = pLevel->iIdxCur;
+    sqlite3VdbeAddOp1(v, (bRev?OP_Last:OP_Rewind), iIdxCur);
+    VdbeComment((v, "begin skip-scan on %s", pIdx->zName));
+    j = sqlite3VdbeAddOp0(v, OP_Goto);
+    pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLt:OP_SeekGt),
+                            iIdxCur, 0, regBase, nSkip);
+    sqlite3VdbeJumpHere(v, j);
+    for(j=0; j<nSkip; j++){
+      sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, j, regBase+j);
+      assert( pIdx->aiColumn[j]>=0 );
+      VdbeComment((v, "%s", pIdx->pTable->aCol[pIdx->aiColumn[j]].zName));
+    }
+  }    
+
   /* Evaluate the equality constraints
   */
   assert( zAff==0 || (int)strlen(zAff)>=nEq );
-  for(j=0; j<nEq; j++){
+  for(j=nSkip; j<nEq; j++){
     int r1;
     pTerm = pLoop->aLTerm[j];
     assert( pTerm!=0 );
-    /* The following true for indices with redundant columns. 
+    /* The following testcase is true for indices with redundant columns. 
     ** Ex: CREATE INDEX i1 ON t1(a,b,a); SELECT * FROM t1 WHERE a=0 AND b=0; */
     testcase( (pTerm->wtFlags & TERM_CODED)!=0 );
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
@@ -2575,7 +2598,8 @@ static void explainAppendTerm(
 */
 static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   Index *pIndex = pLoop->u.btree.pIndex;
-  int nEq = pLoop->u.btree.nEq;
+  u16 nEq = pLoop->u.btree.nEq;
+  u16 nSkip = pLoop->u.btree.nSkip;
   int i, j;
   Column *aCol = pTab->aCol;
   i16 *aiColumn = pIndex->aiColumn;
@@ -2589,7 +2613,14 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
     char *z = (i==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[i]].zName;
-    explainAppendTerm(&txt, i, z, "=");
+    if( i>=nSkip ){
+      explainAppendTerm(&txt, i, z, "=");
+    }else{
+      if( i ) sqlite3StrAccumAppend(&txt, " AND ", 5);
+      sqlite3StrAccumAppend(&txt, "ANY(", 4);
+      sqlite3StrAccumAppend(&txt, z, -1);
+      sqlite3StrAccumAppend(&txt, ")", 1);
+    }
   }
 
   j = i;
@@ -2955,8 +2986,9 @@ static Bitmask codeOneLoopStart(
       OP_IdxGE,            /* 1: (end_constraints && !bRev) */
       OP_IdxLT             /* 2: (end_constraints && bRev) */
     };
-    int nEq = pLoop->u.btree.nEq;  /* Number of == or IN terms */
-    int isMinQuery = 0;            /* If this is an optimized SELECT min(x).. */
+    u16 nEq = pLoop->u.btree.nEq;     /* Number of == or IN terms */
+    u16 nSkip = pLoop->u.btree.nSkip; /* Number of left index terms to skip */
+    int isMinQuery = 0;          /* If this is an optimized SELECT min(x).. */
     int regBase;                 /* Base register holding constraint values */
     int r1;                      /* Temp register */
     WhereTerm *pRangeStart = 0;  /* Inequality constraint at range start */
@@ -2974,6 +3006,7 @@ static Bitmask codeOneLoopStart(
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
+    assert( nEq>=nSkip );
 
     /* If this loop satisfies a sort order (pOrderBy) request that 
     ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -2987,8 +3020,7 @@ static Bitmask codeOneLoopStart(
      && (pWInfo->bOBSat!=0)
      && (pIdx->nKeyCol>nEq)
     ){
-      /* assert( pOrderBy->nExpr==1 ); */
-      /* assert( pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq] ); */
+      assert( nSkip==0 );
       isMinQuery = 1;
       nExtraReg = 1;
     }
@@ -3539,6 +3571,7 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3ExplainBegin(v);
     for(i=0; i<p->nLTerm; i++){
       WhereTerm *pTerm = p->aLTerm[i];
+      if( pTerm==0 ) continue;
       sqlite3ExplainPrintf(v, "  (%d) #%-2d ", i+1, (int)(pTerm-pWC->a));
       sqlite3ExplainPush(v);
       whereExplainTerm(v, pTerm);
@@ -3822,6 +3855,7 @@ static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop){
     if( (pTerm->prereqAll & notAllowed)!=0 ) continue;
     for(j=pLoop->nLTerm-1; j>=0; j--){
       pX = pLoop->aLTerm[j];
+      if( pX==0 ) continue;
       if( pX==pTerm ) break;
       if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
     }
@@ -3851,7 +3885,8 @@ static int whereLoopAddBtreeIndex(
   WhereScan scan;                 /* Iterator for WHERE terms */
   Bitmask saved_prereq;           /* Original value of pNew->prereq */
   u16 saved_nLTerm;               /* Original value of pNew->nLTerm */
-  int saved_nEq;                  /* Original value of pNew->u.btree.nEq */
+  u16 saved_nEq;                  /* Original value of pNew->u.btree.nEq */
+  u16 saved_nSkip;                /* Original value of pNew->u.btree.nSkip */
   u32 saved_wsFlags;              /* Original value of pNew->wsFlags */
   LogEst saved_nOut;              /* Original value of pNew->nOut */
   int iCol;                       /* Index of the column in the table */
@@ -3886,12 +3921,26 @@ static int whereLoopAddBtreeIndex(
   pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
                         opMask, pProbe);
   saved_nEq = pNew->u.btree.nEq;
+  saved_nSkip = pNew->u.btree.nSkip;
   saved_nLTerm = pNew->nLTerm;
   saved_wsFlags = pNew->wsFlags;
   saved_prereq = pNew->prereq;
   saved_nOut = pNew->nOut;
   pNew->rSetup = 0;
   rLogSize = estLog(sqlite3LogEst(pProbe->aiRowEst[0]));
+  if( pTerm==0
+   && saved_nEq==saved_nSkip
+   && saved_nEq+1<pProbe->nKeyCol
+   && pProbe->aiRowEst[saved_nEq+1]>50
+  ){
+    LogEst nIter;
+    pNew->u.btree.nEq++;
+    pNew->u.btree.nSkip++;
+    pNew->aLTerm[pNew->nLTerm++] = 0;
+    pNew->wsFlags |= WHERE_SKIPSCAN;
+    nIter = sqlite3LogEst(pProbe->aiRowEst[0]/pProbe->aiRowEst[saved_nEq+1]);
+    whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nIter);
+  }
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
@@ -3927,8 +3976,10 @@ static int whereLoopAddBtreeIndex(
       pNew->u.btree.nEq++;
       pNew->nOut = nRowEst + nInMul + nIn;
     }else if( pTerm->eOperator & (WO_EQ) ){
-      assert( (pNew->wsFlags & (WHERE_COLUMN_NULL|WHERE_COLUMN_IN))!=0
-                  || nInMul==0 );
+      assert(
+        (pNew->wsFlags & (WHERE_COLUMN_NULL|WHERE_COLUMN_IN|WHERE_SKIPSCAN))!=0
+        || nInMul==0
+      );
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       if( iCol<0  
        || (pProbe->onError!=OE_None && nInMul==0
@@ -4009,6 +4060,7 @@ static int whereLoopAddBtreeIndex(
   }
   pNew->prereq = saved_prereq;
   pNew->u.btree.nEq = saved_nEq;
+  pNew->u.btree.nSkip = saved_nSkip;
   pNew->wsFlags = saved_wsFlags;
   pNew->nOut = saved_nOut;
   pNew->nLTerm = saved_nLTerm;
@@ -4155,6 +4207,7 @@ static int whereLoopAddBtree(
       if( pTerm->prereqRight & pNew->maskSelf ) continue;
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
         pNew->u.btree.nEq = 1;
+        pNew->u.btree.nSkip = 0;
         pNew->u.btree.pIndex = 0;
         pNew->nLTerm = 1;
         pNew->aLTerm[0] = pTerm;
@@ -4184,6 +4237,7 @@ static int whereLoopAddBtree(
       continue;  /* Partial index inappropriate for this query */
     }
     pNew->u.btree.nEq = 0;
+    pNew->u.btree.nSkip = 0;
     pNew->nLTerm = 0;
     pNew->iSortIdx = 0;
     pNew->rSetup = 0;
@@ -4718,6 +4772,7 @@ static int wherePathSatisfiesOrderBy(
 
         /* Skip over == and IS NULL terms */
         if( j<pLoop->u.btree.nEq
+         && pLoop->u.btree.nSkip==0
          && ((i = pLoop->aLTerm[j]->eOperator) & (WO_EQ|WO_ISNULL))!=0
         ){
           if( i & WO_ISNULL ){
@@ -5143,6 +5198,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
   pWC = &pWInfo->sWC;
   pLoop = pBuilder->pNew;
   pLoop->wsFlags = 0;
+  pLoop->u.btree.nSkip = 0;
   pTerm = findTerm(pWC, iCur, -1, 0, WO_EQ, 0);
   if( pTerm ){
     pLoop->wsFlags = WHERE_COLUMN_EQ|WHERE_IPK|WHERE_ONEROW;
@@ -5716,6 +5772,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   VdbeNoopComment((v, "End WHERE-core"));
   sqlite3ExprCacheClear(pParse);
   for(i=pWInfo->nLevel-1; i>=0; i--){
+    int addr;
     pLevel = &pWInfo->a[i];
     pLoop = pLevel->pWLoop;
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);
@@ -5735,8 +5792,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3DbFree(db, pLevel->u.in.aInLoop);
     }
     sqlite3VdbeResolveLabel(v, pLevel->addrBrk);
+    if( pLevel->addrSkip ){
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrSkip);
+      VdbeComment((v, "next skip-scan on %s", pLoop->u.btree.pIndex->zName));
+      sqlite3VdbeJumpHere(v, pLevel->addrSkip);
+      sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
+    }
     if( pLevel->iLeftJoin ){
-      int addr;
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin);
       assert( (pLoop->wsFlags & WHERE_IDX_ONLY)==0
            || (pLoop->wsFlags & WHERE_INDEXED)!=0 );
