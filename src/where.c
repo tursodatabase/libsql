@@ -2504,11 +2504,11 @@ static int codeAllEqualityTerms(
 
   if( nSkip ){
     int iIdxCur = pLevel->iIdxCur;
-    sqlite3VdbeAddOp2(v, (bRev?OP_Last:OP_Rewind), iIdxCur, pLevel->addrNxt);
-    pLevel->addrSkip = sqlite3VdbeCurrentAddr(v);
-    pLevel->opSkip = bRev ? OP_SeekLt : OP_SeekGt;
-    pLevel->p3Skip = regBase;
-    pLevel->p4Skip = nSkip;
+    sqlite3VdbeAddOp1(v, (bRev?OP_Last:OP_Rewind), iIdxCur);
+    j = sqlite3VdbeAddOp0(v, OP_Goto);
+    pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLt:OP_SeekGt),
+                            iIdxCur, 0, regBase, nSkip);
+    sqlite3VdbeJumpHere(v, j);
     for(j=0; j<nSkip; j++){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, j, regBase+j);
       assert( pIdx->aiColumn[j]>=0 );
@@ -3928,11 +3928,13 @@ static int whereLoopAddBtreeIndex(
    && saved_nEq+1<pProbe->nKeyCol
    && pProbe->aiRowEst[saved_nEq+1]>50
   ){
+    LogEst nIter;
     pNew->u.btree.nEq++;
     pNew->u.btree.nSkip++;
     pNew->aLTerm[pNew->nLTerm++] = 0;
-    pNew->wsFlags |= WHERE_SKIP_SCAN;
-    whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul);
+    pNew->wsFlags |= WHERE_SKIPSCAN;
+    nIter = sqlite3LogEst(pProbe->aiRowEst[0]/pProbe->aiRowEst[saved_nEq+1]);
+    whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nIter);
   }
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     int nIn = 0;
@@ -3969,8 +3971,10 @@ static int whereLoopAddBtreeIndex(
       pNew->u.btree.nEq++;
       pNew->nOut = nRowEst + nInMul + nIn;
     }else if( pTerm->eOperator & (WO_EQ) ){
-      assert( (pNew->wsFlags & (WHERE_COLUMN_NULL|WHERE_COLUMN_IN))!=0
-                  || nInMul==0 );
+      assert(
+        (pNew->wsFlags & (WHERE_COLUMN_NULL|WHERE_COLUMN_IN|WHERE_SKIPSCAN))!=0
+        || nInMul==0
+      );
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       if( iCol<0  
        || (pProbe->onError!=OE_None && nInMul==0
@@ -5784,11 +5788,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     }
     sqlite3VdbeResolveLabel(v, pLevel->addrBrk);
     if( pLevel->addrSkip ){
-      addr = sqlite3VdbeAddOp4Int(v, pLevel->opSkip, pLevel->iIdxCur, 0,
-                                  pLevel->p3Skip, pLevel->p4Skip);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrSkip);
-      sqlite3VdbeJumpHere(v, pLevel->addrSkip-1);
-      sqlite3VdbeJumpHere(v, addr);
+      sqlite3VdbeJumpHere(v, pLevel->addrSkip);
+      sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
     }
     if( pLevel->iLeftJoin ){
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin);

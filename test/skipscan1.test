@@ -74,22 +74,49 @@ do_execsql_test skipscan1-1.4sort {
   SELECT a,b,c,d,'|' FROM t1 WHERE c=6 ORDER BY a, b, c;
 } {~/*ORDER BY*/}
 
+do_execsql_test skipscan1-1.5 {
+  SELECT a,b,c,d,'|' FROM t1 WHERE c IN (6,7) ORDER BY a, b, c;
+} {abc 234 6 7 | abc 345 7 8 | bcd 100 6 11 |}
+do_execsql_test skipscan1-1.5eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE c IN (6,7) ORDER BY a, b, c;
+} {/* USING INDEX t1abc (ANY(a) AND ANY(b) AND c=?)*/}
+do_execsql_test skipscan1-1.5sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE c IN (6,7) ORDER BY a, b, c;
+} {~/*ORDER BY*/}
+
+do_execsql_test skipscan1-1.6 {
+  SELECT a,b,c,d,'|' FROM t1 WHERE c BETWEEN 6 AND 7 ORDER BY a, b, c;
+} {abc 234 6 7 | abc 345 7 8 | bcd 100 6 11 |}
+do_execsql_test skipscan1-1.6eqp {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE c BETWEEN 6 AND 7 ORDER BY a, b, c;
+} {/* USING INDEX t1abc (ANY(a) AND ANY(b) AND c>? AND c<?)*/}
+do_execsql_test skipscan1-1.6sort {
+  EXPLAIN QUERY PLAN
+  SELECT a,b,c,d,'|' FROM t1 WHERE c BETWEEN 6 AND 7 ORDER BY a, b, c;
+} {~/*ORDER BY*/}
+
+
 # Joins
 #
-do_execsql_test skipscan1-1.5 {
+do_execsql_test skipscan1-1.51 {
   CREATE TABLE t1j(x TEXT, y INTEGER);
   INSERT INTO t1j VALUES('one',1),('six',6),('ninty-nine',99);
+  INSERT INTO sqlite_stat1 VALUES('t1j',null,'3');
+  ANALYZE sqlite_master;
   SELECT x, a, b, c, d, '|' FROM t1j, t1 WHERE c=y ORDER BY +a;
 } {six abc 234 6 7 | six bcd 100 6 11 |}
-do_execsql_test skipscan1-1.5eqp {
+do_execsql_test skipscan1-1.51eqp {
   EXPLAIN QUERY PLAN
   SELECT x, a, b, c, d, '|' FROM t1j, t1 WHERE c=y ORDER BY +a;
 } {/* INDEX t1abc (ANY(a) AND ANY(b) AND c=?)*/}
 
-do_execsql_test skipscan1-1.6 {
+do_execsql_test skipscan1-1.52 {
   SELECT x, a, b, c, d, '|' FROM t1j LEFT JOIN t1 ON c=y ORDER BY +y, +a;
 } {one {} {} {} {} | six abc 234 6 7 | six bcd 100 6 11 | ninty-nine {} {} {} {} |}
-do_execsql_test skipscan1-1.6eqp {
+do_execsql_test skipscan1-1.52eqp {
   EXPLAIN QUERY PLAN
   SELECT x, a, b, c, d, '|' FROM t1j LEFT JOIN t1 ON c=y ORDER BY +y, +a;
 } {/* INDEX t1abc (ANY(a) AND ANY(b) AND c=?)*/}

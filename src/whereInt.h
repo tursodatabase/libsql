@@ -71,10 +71,7 @@ struct WhereLevel {
   int addrBody;         /* Beginning of the body of this loop */
   u8 iFrom;             /* Which entry in the FROM clause */
   u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
-  u8 opSkip;            /* Opcode to terminate the skip-scan */
   int p1, p2;           /* Operands of the opcode used to ends the loop */
-  int p3Skip;           /* P3 operand for the skip-scan terminator */
-  u16 p4Skip;           /* P4 operand for the skip-scan terminator */
   union {               /* Information that depends on pWLoop->wsFlags */
     struct {
       int nIn;              /* Number of entries in aInLoop[] */
@@ -459,4 +456,4 @@ struct WhereInfo {
 #define WHERE_ONEROW       0x00001000  /* Selects no more than one row */
 #define WHERE_MULTI_OR     0x00002000  /* OR using multiple indices */
 #define WHERE_AUTO_INDEX   0x00004000  /* Uses an ephemeral index */
-#define WHERE_SKIP_SCAN    0x00008000  /* Uses the skip-scan algorithm */
+#define WHERE_SKIPSCAN     0x00008000  /* Uses the skip-scan algorithm */

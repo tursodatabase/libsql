@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sskip-scan.\s\sEnhance\s"do_test"\sso\sthat\sif\sthe\sexpected\sresult\nis\sof\sthe\sform\s"/*..*/"\sor\s"~/*..*/"\sit\streats\sthe\sexpected\sresult\sas\sa\sglob\npattern\srather\sthan\sas\sa\sregular\sexpression.\s\sFix\sa\sbug\sin\sANALYZE\sresult\nloading\sassociated\swith\sWITHOUT\sROWID\stables.
-D 2013-11-13T15:32:15.331
+C Improve\sthe\sway\sthat\sskip-scan\sloops\sare\sconstructued.\s\sAdd\stest\scases.\nImproved\sthe\sscoring\sof\sskip-scan\sloops.
+D 2013-11-13T16:58:54.547
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,8 +293,8 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 15170b152697e8819de5909031d72ad52a28a7ef
-F src/whereInt.h a0e8fa5364122c6cb27c6fa340b257a05c592bfb
+F src/where.c f50428d2e93ca3e5c541cc1c2084833b48db947c
+F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -805,7 +805,7 @@ F test/shell5.test 46c8c18d62732415c4fe084816c13d559831705e
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
-F test/skipscan1.test 63af32c300be545417410ea2ce44e78c5b2e34b1
+F test/skipscan1.test bc65ecb228eba396c404aa038f49798340f0677f
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 27dd5993d1ae5625eb94bf406421eb390d001be9
-R 56958c69a5559324c31384471b37b6dc
+P d3e6e9b2a74074c05429d3c341c23525504351ab
+R 2b49a424145c7566c72f185654c1a259
 U drh
-Z 2ff45f7229fb8bf180b3b10c0362f0e0
+Z 03bb67f899f79fcc8cd9bd00c60852e3
