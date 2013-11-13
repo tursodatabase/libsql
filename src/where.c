@@ -3116,8 +3116,12 @@ static Bitmask codeOneLoopStart(
     r1 = sqlite3GetTempReg(pParse);
     testcase( pLoop->wsFlags & WHERE_BTM_LIMIT );
     testcase( pLoop->wsFlags & WHERE_TOP_LIMIT );
-    if( (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0 ){
+    if( (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0 
+     && (j = pIdx->aiColumn[nEq])>=0 
+     && pIdx->pTable->aCol[j].notNull==0 
+    ){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
+      VdbeComment((v, "%s", pIdx->pTable->aCol[j].zName));
       sqlite3VdbeAddOp2(v, OP_IsNull, r1, addrCont);
     }
     sqlite3ReleaseTempReg(pParse, r1);

@@ -1,5 +1,5 @@
-C Adjust\sthe\sSQLITE_MALLOCSIZE\sdefines,\sprimarily\sto\smake\ssure\s_msize\sgets\sused\swith\sMSVC\swhen\sappropriate.
-D 2013-11-12T21:37:04.790
+C Avoid\san\sunnecessary\sOP_IfNull\swhile\sdoing\san\sindexed\ssearch.
+D 2013-11-13T08:55:02.907
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 48404454d772af51f9075a33b485bd2270f31dd3
+F src/where.c 346944c20b9c1ac191f16cfc1100dfbe58fa98d4
 F src/whereInt.h 63c8345d01d12ded6250b72e7c16855f0a358041
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1138,7 +1138,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ddacd10105c6df2d3a9d707947e72c62e88212eb
-R a1432779dd22915a7d5838c89a07f3c3
-U mistachkin
-Z f4a84974fe637056c9ba67de537af83a
+P 4e7e805e1139b2dc05d85e86e5c8254e5d361bf2
+R 24bac22755e297cd5d201f4faa2841ac
+U drh
+Z b52683f99c1f13f39fe1493c1b7d78a3
