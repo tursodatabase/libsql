@@ -2505,6 +2505,7 @@ static int codeAllEqualityTerms(
   if( nSkip ){
     int iIdxCur = pLevel->iIdxCur;
     sqlite3VdbeAddOp1(v, (bRev?OP_Last:OP_Rewind), iIdxCur);
+    VdbeComment((v, "begin skip-scan on %s", pIdx->zName));
     j = sqlite3VdbeAddOp0(v, OP_Goto);
     pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLt:OP_SeekGt),
                             iIdxCur, 0, regBase, nSkip);
@@ -5789,6 +5790,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     sqlite3VdbeResolveLabel(v, pLevel->addrBrk);
     if( pLevel->addrSkip ){
       sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrSkip);
+      VdbeComment((v, "next skip-scan on %s", pLoop->u.btree.pIndex->zName));
       sqlite3VdbeJumpHere(v, pLevel->addrSkip);
       sqlite3VdbeJumpHere(v, pLevel->addrSkip-2);
     }

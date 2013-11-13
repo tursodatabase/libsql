@@ -1,5 +1,5 @@
-C Improve\sthe\sway\sthat\sskip-scan\sloops\sare\sconstructued.\s\sAdd\stest\scases.\nImproved\sthe\sscoring\sof\sskip-scan\sloops.
-D 2013-11-13T16:58:54.547
+C Add\sVDBE\scomments\sto\sthe\sbeginning\sand\send\sof\sskip-scan\sloops.
+D 2013-11-13T17:24:39.000
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c f50428d2e93ca3e5c541cc1c2084833b48db947c
+F src/where.c 1d19a1d49a608441fa697ae32627399073be8dcf
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d3e6e9b2a74074c05429d3c341c23525504351ab
-R 2b49a424145c7566c72f185654c1a259
+P 5e75ab93881b85801cb4ebf70f2063ff7c51ac19
+R 324d2d53e7ac48858b72f1751f7e7610
 U drh
-Z 03bb67f899f79fcc8cd9bd00c60852e3
+Z 7cfb6326eedc7a21a0bd15f40c4f97e2
