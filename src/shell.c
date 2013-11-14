@@ -1591,6 +1591,11 @@ static char zTimerHelp[] =
 /* Forward reference */
 static int process_input(struct callback_data *p, FILE *in);
 
+/* Include the source code for various extensions when in debug mode: */
+#ifdef SQLITE_DEBUG
+# include "test_schema2.c"
+#endif
+
 /*
 ** Make sure the database is open.  If it is not, then open it.  If
 ** the database fails to open, print an error message and exit.
@@ -1612,6 +1617,9 @@ static void open_db(struct callback_data *p, int keepAlive){
     }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
+#endif
+#ifdef SQLITE_DEBUG
+    sqlite3_schema2_register(p->db);
 #endif
   }
 }

@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\sprogress\scallback\scheck.\sOn\sbranch\sremoved.
-D 2013-11-14T00:09:48.126
+C An\sexperimental\svirtual\stables\sfor\sshowing\sthe\scontent\sof\sinternal\sschema\nobjects.
+D 2013-11-14T15:35:43.564
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk f57b51e64f50e9924b3f14df3c2e8b66893a8ce5
+F main.mk fc7620245363d451c167095df5fab8b13e6e61d6
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -220,7 +220,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 7317406831ecced390edba972818f3c5f82238c0
-F src/shell.c 6ccc22b717afe4f6d7d3c8b6baa02e3b99a5fdf0
+F src/shell.c 044a79639c420ed293510cd560b358f75dae9472
 F src/sqlite.h.in 4dedcab5b32358bf7a596badffe7363be1f1a82d
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -264,6 +264,7 @@ F src/test_quota.c 30c64f0ef84734f2231a686df41ed882b0c59bc0
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
 F src/test_rtree.c f3d1d12538dccb75fd916e3fa58f250edbdd3b47
 F src/test_schema.c cd12a2223c3a394f4d07bb93bdf6d344c5c121b6
+F src/test_schema2.c c07c0826c77659ff37da580f8d8bc30e26849e3b
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c c1c1bbedbcaf82b93d83e4f9dd990e62476a680e
 F src/test_stat.c 9898687a6c2beca733b0dd6fe19163d987826d31
@@ -1139,7 +1140,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 21f59b04f74738d08ebad693646bbaea24dc45ef
-R 5afe90b6493eb21de1d0af561cfa69c0
+P 24ef16548eebcdb9d8b40308f6a16dabf8f8d474
+R d7a0355ea8d187cc731421105334e976
+T *branch * schema2-vtab
+T *sym-schema2-vtab *
+T -sym-trunk *
 U drh
-Z d0339b99c91e151f95c1864799fb36e8
+Z ad6b62ac80e7bb705f75b7062e44d1db

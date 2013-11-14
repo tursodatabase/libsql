@@ -379,9 +379,9 @@ libsqlite3.a:	$(LIBOBJ)
 	$(AR) libsqlite3.a $(LIBOBJ)
 	$(RANLIB) libsqlite3.a
 
-sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
+sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h $(TOP)/src/test_schema2.c
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE)                  \
-		$(TOP)/src/shell.c                                  \
+		-I$(TOP)/src $(TOP)/src/shell.c                     \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
 
 mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
