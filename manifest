@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sprogress\scallback\sis\sinvoked\sprior\sto\san\sSQLITE_ROW\sreturn\sif\nit\sis\soverdue\sto\sbe\scalled.
-D 2013-11-13T23:48:46.535
+C Simplification\sto\sthe\sprogress\scallback\scheck.\sOn\sbranch\sremoved.
+D 2013-11-14T00:09:48.126
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c 3de7e657b98ac67338d775c114a4068faf732402
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 0057612c2678b08812fc4a9d5019351cbeb9ee97
+F src/vdbe.c f9a4e08114f97e453a5f13a62c31a357301137cc
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 62eb680327011f3a4b0336642b0ca9d6ecc6eb91
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b0bb975c0986fe01f1184c1d4888fe397174ad0f
-R 51ebd76e04274e826e1e2a1145d2a6ab
+P 21f59b04f74738d08ebad693646bbaea24dc45ef
+R 5afe90b6493eb21de1d0af561cfa69c0
 U drh
-Z c57556eaf40c3f587321800fb5d2a1a5
+Z d0339b99c91e151f95c1864799fb36e8

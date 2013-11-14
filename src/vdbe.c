@@ -755,14 +755,11 @@ check_for_interrupt:
   ** a return code SQLITE_ABORT.
   */
   if( db->xProgress!=0 && nVmStep>=nProgressLimit ){
-    int prc;
-    prc = db->xProgress(db->pProgressArg);
-    if( prc!=0 ){
+    assert( db->nProgressOps!=0 );
+    nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
+    if( db->xProgress(db->pProgressArg) ){
       rc = SQLITE_INTERRUPT;
       goto vdbe_error_halt;
-    }
-    if( db->xProgress!=0 ){
-      nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
     }
   }
 #endif
