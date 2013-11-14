@@ -1173,9 +1173,10 @@ static int str_in_array(const char *zStr, const char **azArray){
 **       all opcodes that occur between the p2 jump destination and the opcode
 **       itself by 2 spaces.
 **
-**     * For each "Goto", if the jump destination is a "Yield", "SeekGt",
-**       or "SeekLt" instruction that occurs earlier in the program than
-**       the Goto itself, indent all opcodes between the earlier instruction
+**     * For each "Goto", if the jump destination is earlier in the program
+**       and ends on one of:
+**          Yield  SeekGt  SeekLt  RowSetRead
+**       then indent all opcodes between the earlier instruction
 **       and "Goto" by 2 spaces.
 */
 static void explain_data_prepare(struct callback_data *p, sqlite3_stmt *pSql){
@@ -1186,7 +1187,7 @@ static void explain_data_prepare(struct callback_data *p, sqlite3_stmt *pSql){
   int iOp;
 
   const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", 0 };
-  const char *azYield[] = { "Yield", "SeekLt", "SeekGt", 0 };
+  const char *azYield[] = { "Yield", "SeekLt", "SeekGt", "RowSetRead", 0 };
   const char *azGoto[] = { "Goto", 0 };
 
   /* Try to figure out if this is really an EXPLAIN statement. If this
