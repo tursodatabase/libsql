@@ -464,6 +464,8 @@ struct callback_data {
   const char *zVfs;           /* Name of VFS to use */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
   FILE *pLog;            /* Write log output here */
+  int *aiIndent;         /* Array of indents used in MODE_Explain */
+  int nIndent;           /* Size of array aiIndent[] */
 };
 
 /*
@@ -765,9 +767,14 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
         }else{
            w = 10;
         }
-        if( p->mode==MODE_Explain && azArg[i] && 
-           strlen30(azArg[i])>w ){
+        if( p->mode==MODE_Explain && azArg[i] && strlen30(azArg[i])>w ){
           w = strlen30(azArg[i]);
+        }
+        if( i==1 && p->aiIndent && p->pStmt ){
+          int iOp = sqlite3_column_int(p->pStmt, 0);
+          if( iOp<p->nIndent ){
+            fprintf(p->out, "%*.s", p->aiIndent[iOp], "");
+          }
         }
         if( w<0 ){
           fprintf(p->out,"%*.*s%s",-w,-w,
@@ -1142,6 +1149,90 @@ static int display_stats(
 }
 
 /*
+** Parameter azArray points to a zero-terminated array of strings. zStr
+** points to a single nul-terminated string. Return non-zero if zStr
+** is equal, according to strcmp(), to any of the strings in the array.
+** Otherwise, return zero.
+*/
+static int str_in_array(const char *zStr, const char **azArray){
+  int i;
+  for(i=0; azArray[i]; i++){
+    if( 0==strcmp(zStr, azArray[i]) ) return 1;
+  }
+  return 0;
+}
+
+/*
+** If compiled statement pSql appears to be an EXPLAIN statement, allocate
+** and populate the callback_data.aiIndent[] array with the number of
+** spaces each opcode should be indented before it is output. 
+**
+** The indenting rules are:
+**
+**     * For each "Next", "Prev", "VNext" or "VPrev" instruction, indent
+**       all opcodes that occur between the p2 jump destination and the opcode
+**       itself by 2 spaces.
+**
+**     * For each "Goto", if the jump destination is a "Yield", "SeekGt",
+**       or "SeekLt" instruction that occurs earlier in the program than
+**       the Goto itself, indent all opcodes between the earlier instruction
+**       and "Goto" by 2 spaces.
+*/
+static void explain_data_prepare(struct callback_data *p, sqlite3_stmt *pSql){
+  const char *zSql;               /* The text of the SQL statement */
+  const char *z;                  /* Used to check if this is an EXPLAIN */
+  int *abYield = 0;               /* True if op is an OP_Yield */
+  int nAlloc = 0;                 /* Allocated size of p->aiIndent[], abYield */
+  int iOp;
+
+  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", 0 };
+  const char *azYield[] = { "Yield", "SeekLt", "SeekGt", 0 };
+  const char *azGoto[] = { "Goto", 0 };
+
+  /* Try to figure out if this is really an EXPLAIN statement. If this
+  ** cannot be verified, return early.  */
+  zSql = sqlite3_sql(pSql);
+  if( zSql==0 ) return;
+  for(z=zSql; *z==' ' || *z=='\t' || *z=='\n' || *z=='\f' || *z=='\r'; z++);
+  if( sqlite3_strnicmp(z, "explain", 7) ) return;
+
+  for(iOp=0; SQLITE_ROW==sqlite3_step(pSql); iOp++){
+    int i;
+    const char *zOp = (const char*)sqlite3_column_text(pSql, 1);
+    int p2 = sqlite3_column_int(pSql, 3);
+
+    /* Grow the p->aiIndent array as required */
+    if( iOp>=nAlloc ){
+      nAlloc += 100;
+      p->aiIndent = (int*)sqlite3_realloc(p->aiIndent, nAlloc*sizeof(int));
+      abYield = (int*)sqlite3_realloc(abYield, nAlloc*sizeof(int));
+    }
+    abYield[iOp] = str_in_array(zOp, azYield);
+    p->aiIndent[iOp] = 0;
+    p->nIndent = iOp+1;
+
+    if( str_in_array(zOp, azNext) ){
+      for(i=p2; i<iOp; i++) p->aiIndent[i] += 2;
+    }
+    if( str_in_array(zOp, azGoto) && p2<p->nIndent && abYield[p2] ){
+      for(i=p2+1; i<iOp; i++) p->aiIndent[i] += 2;
+    }
+  }
+
+  sqlite3_free(abYield);
+  sqlite3_reset(pSql);
+}
+
+/*
+** Free the array allocated by explain_data_prepare().
+*/
+static void explain_data_delete(struct callback_data *p){
+  sqlite3_free(p->aiIndent);
+  p->aiIndent = 0;
+  p->nIndent = 0;
+}
+
+/*
 ** Execute a statement or set of statements.  Print 
 ** any result rows/columns depending on the current mode 
 ** set via the supplied callback.
@@ -1202,6 +1293,12 @@ static int shell_exec(
         }
       }
 
+      /* If the shell is currently in ".explain" mode, gather the extra
+      ** data required to add indents to the output.*/
+      if( pArg->mode==MODE_Explain ){
+        explain_data_prepare(pArg, pStmt);
+      }
+
       /* perform the first step.  this will tell us if we
       ** have a result set or not and how wide it is.
       */
@@ -1258,6 +1355,8 @@ static int shell_exec(
           } while( rc == SQLITE_ROW );
         }
       }
+
+      explain_data_delete(pArg);
 
       /* print usage stats if stats on */
       if( pArg && pArg->statsOn ){

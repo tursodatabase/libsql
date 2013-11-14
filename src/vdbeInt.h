@@ -355,9 +355,6 @@ struct Vdbe {
   i64 nStmtDefImmCons;    /* Number of def. imm constraints when stmt started */
   char *zSql;             /* Text of the SQL statement that generated this */
   void *pFree;            /* Free this when deleting the vdbe */
-#ifdef SQLITE_DEBUG
-  FILE *trace;            /* Write an execution trace here, if not NULL */
-#endif
 #ifdef SQLITE_ENABLE_TREE_EXPLAIN
   Explain *pExplain;      /* The explainer */
   char *zExplain;         /* Explanation of data structures */

@@ -427,37 +427,36 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
 /*
 ** Print the value of a register for tracing purposes:
 */
-static void memTracePrint(FILE *out, Mem *p){
+static void memTracePrint(Mem *p){
   if( p->flags & MEM_Invalid ){
-    fprintf(out, " undefined");
+    printf(" undefined");
   }else if( p->flags & MEM_Null ){
-    fprintf(out, " NULL");
+    printf(" NULL");
   }else if( (p->flags & (MEM_Int|MEM_Str))==(MEM_Int|MEM_Str) ){
-    fprintf(out, " si:%lld", p->u.i);
+    printf(" si:%lld", p->u.i);
   }else if( p->flags & MEM_Int ){
-    fprintf(out, " i:%lld", p->u.i);
+    printf(" i:%lld", p->u.i);
 #ifndef SQLITE_OMIT_FLOATING_POINT
   }else if( p->flags & MEM_Real ){
-    fprintf(out, " r:%g", p->r);
+    printf(" r:%g", p->r);
 #endif
   }else if( p->flags & MEM_RowSet ){
-    fprintf(out, " (rowset)");
+    printf(" (rowset)");
   }else{
     char zBuf[200];
     sqlite3VdbeMemPrettyPrint(p, zBuf);
-    fprintf(out, " ");
-    fprintf(out, "%s", zBuf);
+    printf(" %s", zBuf);
   }
 }
-static void registerTrace(FILE *out, int iReg, Mem *p){
-  fprintf(out, "REG[%d] = ", iReg);
-  memTracePrint(out, p);
-  fprintf(out, "\n");
+static void registerTrace(int iReg, Mem *p){
+  printf("REG[%d] = ", iReg);
+  memTracePrint(p);
+  printf("\n");
 }
 #endif
 
 #ifdef SQLITE_DEBUG
-#  define REGISTER_TRACE(R,M) if(p->trace)registerTrace(p->trace,R,M)
+#  define REGISTER_TRACE(R,M) if(db->flags&SQLITE_VdbeTrace)registerTrace(R,M)
 #else
 #  define REGISTER_TRACE(R,M)
 #endif
@@ -596,13 +595,28 @@ int sqlite3VdbeExec(
 #endif
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
-  if( p->pc==0  && (p->db->flags & SQLITE_VdbeListing)!=0 ){
+  if( p->pc==0
+   && (p->db->flags & (SQLITE_VdbeListing|SQLITE_VdbeEQP|SQLITE_VdbeTrace))!=0
+  ){
     int i;
-    printf("VDBE Program Listing:\n");
+    int once = 1;
     sqlite3VdbePrintSql(p);
-    for(i=0; i<p->nOp; i++){
-      sqlite3VdbePrintOp(stdout, i, &aOp[i]);
+    if( p->db->flags & SQLITE_VdbeListing ){
+      printf("VDBE Program Listing:\n");
+      for(i=0; i<p->nOp; i++){
+        sqlite3VdbePrintOp(stdout, i, &aOp[i]);
+      }
     }
+    if( p->db->flags & SQLITE_VdbeEQP ){
+      for(i=0; i<p->nOp; i++){
+        if( aOp[i].opcode==OP_Explain ){
+          if( once ) printf("VDBE Query Plan:\n");
+          printf("%s\n", aOp[i].p4.z);
+          once = 0;
+        }
+      }
+    }
+    if( p->db->flags & SQLITE_VdbeTrace )  printf("VDBE Trace:\n");
   }
   sqlite3EndBenignMalloc();
 #endif
@@ -619,12 +633,8 @@ int sqlite3VdbeExec(
     /* Only allow tracing if SQLITE_DEBUG is defined.
     */
 #ifdef SQLITE_DEBUG
-    if( p->trace ){
-      if( pc==0 ){
-        printf("VDBE Execution Trace:\n");
-        sqlite3VdbePrintSql(p);
-      }
-      sqlite3VdbePrintOp(p->trace, pc, pOp);
+    if( db->flags & SQLITE_VdbeTrace ){
+      sqlite3VdbePrintOp(stdout, pc, pOp);
     }
 #endif
       
@@ -755,14 +765,11 @@ check_for_interrupt:
   ** a return code SQLITE_ABORT.
   */
   if( db->xProgress!=0 && nVmStep>=nProgressLimit ){
-    int prc;
-    prc = db->xProgress(db->pProgressArg);
-    if( prc!=0 ){
+    assert( db->nProgressOps!=0 );
+    nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
+    if( db->xProgress(db->pProgressArg) ){
       rc = SQLITE_INTERRUPT;
       goto vdbe_error_halt;
-    }
-    if( db->xProgress!=0 ){
-      nProgressLimit = nVmStep + db->nProgressOps - (nVmStep%db->nProgressOps);
     }
   }
 #endif
@@ -1185,6 +1192,18 @@ case OP_ResultRow: {
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 );
   assert( pOp->p1+pOp->p2<=(p->nMem-p->nCursor)+1 );
+
+#ifndef SQLITE_OMIT_PROGRESS_CALLBACK
+  /* Run the progress counter just before returning.
+  */
+  if( db->xProgress!=0
+   && nVmStep>=nProgressLimit
+   && db->xProgress(db->pProgressArg)!=0
+  ){
+    rc = SQLITE_INTERRUPT;
+    goto vdbe_error_halt;
+  }
+#endif
 
   /* If this statement has violated immediate foreign key constraints, do
   ** not return the number of rows modified. And do not RELEASE the statement
@@ -6307,13 +6326,13 @@ default: {          /* This is really OP_Noop and OP_Explain */
     assert( pc>=-1 && pc<p->nOp );
 
 #ifdef SQLITE_DEBUG
-    if( p->trace ){
-      if( rc!=0 ) fprintf(p->trace,"rc=%d\n",rc);
+    if( db->flags & SQLITE_VdbeTrace ){
+      if( rc!=0 ) printf("rc=%d\n",rc);
       if( pOp->opflags & (OPFLG_OUT2_PRERELEASE|OPFLG_OUT2) ){
-        registerTrace(p->trace, pOp->p2, &aMem[pOp->p2]);
+        registerTrace(pOp->p2, &aMem[pOp->p2]);
       }
       if( pOp->opflags & OPFLG_OUT3 ){
-        registerTrace(p->trace, pOp->p3, &aMem[pOp->p3]);
+        registerTrace(pOp->p3, &aMem[pOp->p3]);
       }
     }
 #endif  /* SQLITE_DEBUG */

@@ -434,6 +434,10 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
     /* iArg:      */ SQLITE_SqlTrace|SQLITE_VdbeListing|SQLITE_VdbeTrace },
+  { /* zName:     */ "vdbe_eqp",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_VdbeEQP },
   { /* zName:     */ "vdbe_listing",
     /* ePragTyp:  */ PragTyp_FLAG,
     /* ePragFlag: */ 0,
@@ -461,7 +465,7 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 56 on by default, 68 total. */
+/* Number of pragmas: 56 on by default, 69 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
