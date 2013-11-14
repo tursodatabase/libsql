@@ -2987,7 +2987,6 @@ static Bitmask codeOneLoopStart(
       OP_IdxLT             /* 2: (end_constraints && bRev) */
     };
     u16 nEq = pLoop->u.btree.nEq;     /* Number of == or IN terms */
-    u16 nSkip = pLoop->u.btree.nSkip; /* Number of left index terms to skip */
     int isMinQuery = 0;          /* If this is an optimized SELECT min(x).. */
     int regBase;                 /* Base register holding constraint values */
     int r1;                      /* Temp register */
@@ -3006,7 +3005,7 @@ static Bitmask codeOneLoopStart(
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
-    assert( nEq>=nSkip );
+    assert( nEq>=pLoop->u.btree.nSkip );
 
     /* If this loop satisfies a sort order (pOrderBy) request that 
     ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -3020,7 +3019,7 @@ static Bitmask codeOneLoopStart(
      && (pWInfo->bOBSat!=0)
      && (pIdx->nKeyCol>nEq)
     ){
-      assert( nSkip==0 );
+      assert( pLoop->u.btree.nSkip==0 );
       isMinQuery = 1;
       nExtraReg = 1;
     }

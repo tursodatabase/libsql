@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\sprogress\scallback\scheck.\sOn\sbranch\sremoved.
-D 2013-11-14T00:09:48.126
+C Remove\san\sunused\slocal\svariable.
+D 2013-11-14T19:34:10.694
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 5a423b042eb1402ef77697d03d6a67378d97bc8d
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 2eb88f96a73d77bd61d6afd50c33ec5d63c15dd5
+F src/where.c 9d0b21b65b3d1c9f923b5c6bd0ba250dcd16b645
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 21f59b04f74738d08ebad693646bbaea24dc45ef
-R 5afe90b6493eb21de1d0af561cfa69c0
+P 24ef16548eebcdb9d8b40308f6a16dabf8f8d474
+R 0c320313c4ba09b8dc172b3453c72ead
 U drh
-Z d0339b99c91e151f95c1864799fb36e8
+Z bae383cbfc07908bca5c1197a0c507b6
