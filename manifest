@@ -1,5 +1,5 @@
-C Rework\sthe\slogic\sthat\sfactors\sconstant\sexpressions\sout\sof\sinner\sloops,\smaking\nit\sboth\ssimpler\sand\sfaster.
-D 2013-11-15T01:10:18.507
+C Merge\sEXPLAIN\sfixes\sfrom\strunk.
+D 2013-11-15T03:30:07.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c fc4673cc49b116e51e7f12de074c0acf8f2388f9
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 7317406831ecced390edba972818f3c5f82238c0
-F src/shell.c 65a259d538b283e190708b43ece0d596563097f8
+F src/shell.c b98e74123d6c2e20369607c1da2d23c71db633d9
 F src/sqlite.h.in 4dedcab5b32358bf7a596badffe7363be1f1a82d
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -280,7 +280,7 @@ F src/update.c 3de7e657b98ac67338d775c114a4068faf732402
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c f9a4e08114f97e453a5f13a62c31a357301137cc
+F src/vdbe.c d53b6b7e721b18c42754f10d68e75845e387f2ba
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 62eb680327011f3a4b0336642b0ca9d6ecc6eb91
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1139,10 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ea141a9b87dbb5fa1402bf7f6e36e89cc9de3cb3
-R ea4290df34dfa387f06721fb8b8fabb6
-T *branch * expr-codegen-enhancement
-T *sym-expr-codegen-enhancement *
-T -sym-trunk *
+P 8dc5c76c766828d7c28090bec30ff48227e7b140 d99a30a25d6102c389f1fb5ec389c137168615e9
+R 55f9276a49bf042aa3fa36f2f4c874b2
 U drh
-Z 42026cbf90dc1d9e1d914e786ac618c6
+Z d11ec7b7307706d351f4407390565b7b
