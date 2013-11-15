@@ -1,5 +1,5 @@
-C Add\sthe\s--query\soption\sto\sthe\swordcount\stest\sprogram.
-D 2013-11-15T13:12:30.792
+C Fix\scomments\son\sthe\sOP_Divide\sand\sOP_Remainder\soperators,\sespecially\sthe\n"Synopsis:"\scomment,\sso\sthat\sthey\sagree\swith\sthe\sactual\simplementation.
+D 2013-11-15T18:58:37.334
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c 3de7e657b98ac67338d775c114a4068faf732402
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c d53b6b7e721b18c42754f10d68e75845e387f2ba
+F src/vdbe.c 5573893423aec2d64871e8d504fadbcdaad39fed
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 62eb680327011f3a4b0336642b0ca9d6ecc6eb91
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d99a30a25d6102c389f1fb5ec389c137168615e9
-R 0d314918704a2d9deceec12d1b561362
+P 5960d11eba4fc6ca136331279689424d03bd6e76
+R eeac4cc42ec89642fb7c3d8492dc346d
 U drh
-Z 4de182ff7f969e11fcd8166760e38fe1
+Z cf9b95755a71f68840dd49a0488c3357

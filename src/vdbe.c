@@ -1322,7 +1322,7 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: Divide P1 P2 P3 * *
-** Synopsis:  r[P3]=r[P1]/r[P2]
+** Synopsis:  r[P3]=r[P2]/r[P1]
 **
 ** Divide the value in register P1 by the value in register P2
 ** and store the result in register P3 (P3=P2/P1). If the value in 
@@ -1330,11 +1330,11 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 ** NULL, the result is NULL.
 */
 /* Opcode: Remainder P1 P2 P3 * *
-** Synopsis:  r[P3]=r[P1]%r[P2]
+** Synopsis:  r[P3]=r[P2]%r[P1]
 **
-** Compute the remainder after integer division of the value in
-** register P1 by the value in register P2 and store the result in P3. 
-** If the value in register P2 is zero the result is NULL.
+** Compute the remainder after integer register P2 is divided by 
+** register P1 and store the result in register P3. 
+** If the value in register P1 is zero the result is NULL.
 ** If either operand is NULL, the result is NULL.
 */
 case OP_Add:                   /* same as TK_PLUS, in1, in2, out3 */
