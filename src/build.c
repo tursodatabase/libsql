@@ -187,7 +187,7 @@ void sqlite3FinishCoding(Parse *pParse){
         ExprList *pEL = pParse->pConstExpr;
         pParse->cookieGoto = 0;
         for(i=0; i<pEL->nExpr; i++){
-          sqlite3ExprCode(pParse, pEL->a[i].pExpr, pEL->a[i].iAlias);
+          sqlite3ExprCode(pParse, pEL->a[i].pExpr, pEL->a[i].u.iConstExprReg);
         }
       }
 

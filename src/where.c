@@ -669,9 +669,6 @@ static int isLikeOrGlob(
 
   pRight = pList->a[0].pExpr;
   op = pRight->op;
-  if( op==TK_REGISTER ){
-    op = pRight->op2;
-  }
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;
     int iCol = pRight->iColumn;

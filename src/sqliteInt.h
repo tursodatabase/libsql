@@ -1900,8 +1900,13 @@ struct ExprList {
     u8 sortOrder;           /* 1 for DESC or 0 for ASC */
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
-    u16 iOrderByCol;        /* For ORDER BY, column number in result set */
-    u16 iAlias;             /* Index into Parse.aAlias[] for zName */
+    union {
+      struct {
+        u16 iOrderByCol;      /* For ORDER BY, column number in result set */
+        u16 iAlias;           /* Index into Parse.aAlias[] for zName */
+      } x;
+      int iConstExprReg;      /* Register in which Expr value is cached */
+    } u;
   } *a;                  /* Alloc a power of two greater or equal to nExpr */
 };
 

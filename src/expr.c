@@ -930,8 +930,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->done = 0;
     pItem->bSpanIsTab = pOldItem->bSpanIsTab;
-    pItem->iOrderByCol = pOldItem->iOrderByCol;
-    pItem->iAlias = pOldItem->iAlias;
+    pItem->u = pOldItem->u;
   }
   return pNew;
 }
@@ -2908,7 +2907,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( (pX = pExpr->pLeft)!=0 ){
         tempX = *pX;
         testcase( pX->op==TK_COLUMN );
-        testcase( pX->op==TK_REGISTER );
         exprToRegister(&tempX, sqlite3ExprCodeTemp(pParse, pX, &regFree1));
         testcase( regFree1==0 );
         opCompare.op = TK_EQ;
@@ -2932,7 +2930,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         testcase( pTest->op==TK_COLUMN );
         sqlite3ExprIfFalse(pParse, pTest, nextCase, SQLITE_JUMPIFNULL);
         testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
-        testcase( aListelem[i+1].pExpr->op==TK_REGISTER );
         sqlite3ExprCode(pParse, aListelem[i+1].pExpr, target);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, endLabel);
         sqlite3ExprCachePop(pParse, 1);
@@ -3000,7 +2997,6 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
   int r2;
   pExpr = sqlite3ExprSkipCollate(pExpr);
   if( pParse->cookieGoto>0
-   && pParse->nMem<32768
    && pExpr->op!=TK_REGISTER
    && sqlite3ExprIsConstantNotJoin(pExpr)
   ){
@@ -3010,14 +3006,14 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
     if( p ){
       for(i=0; i<p->nExpr; i++){
         if( sqlite3ExprCompare(p->a[i].pExpr, pExpr, -1)==0 ){
-          return p->a[i].iAlias;
+          return p->a[i].u.iConstExprReg;
         }
       }
     }
     p = sqlite3ExprListAppend(pParse, p, sqlite3ExprDup(pParse->db, pExpr, 0));
     pParse->pConstExpr = p;
     r2 = ++pParse->nMem;
-    if( p ) p->a[p->nExpr-1].iAlias = r2;
+    if( p ) p->a[p->nExpr-1].u.iConstExprReg = r2;
   }else{
     int r1 = sqlite3GetTempReg(pParse);
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
@@ -3069,12 +3065,13 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   int inReg;
   inReg = sqlite3ExprCode(pParse, pExpr, target);
   assert( target>0 );
-  /* This routine is called for terms to INSERT or UPDATE.  And the only
-  ** other place where expressions can be converted into TK_REGISTER is
-  ** in WHERE clause processing.  So as currently implemented, there is
-  ** no way for a TK_REGISTER to exist here.  But it seems prudent to
-  ** keep the ALWAYS() in case the conditions above change with future
-  ** modifications or enhancements. */
+  /* The only place, other than this routine, where expressions can be
+  ** converted to TK_REGISTER is internal subexpressions in BETWEEN and
+  ** CASE operators.  Neither ever calls this routine.  And this routine
+  ** is never called twice on the same expression.  Hence it is impossible
+  ** for the input to this routine to already be a register.  Nevertheless,
+  ** it seems prudent to keep the ALWAYS() in case the conditions above
+  ** change with future modifications or enhancements. */
   if( ALWAYS(pExpr->op!=TK_REGISTER) ){  
     int iMem;
     iMem = ++pParse->nMem;
@@ -3745,7 +3742,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     }
     return 2;
   }
-  if( pA->op!=pB->op /*&& (pA->op!=TK_REGISTER || pA->op2!=pB->op)*/ ){
+  if( pA->op!=pB->op ){
     if( pA->op==TK_COLLATE && sqlite3ExprCompare(pA->pLeft, pB, iTab)<2 ){
       return 1;
     }
@@ -3760,8 +3757,6 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     }
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  testcase( combinedFlags & EP_TokenOnly );
-  testcase( combinedFlags & EP_Reduced );
   if( (combinedFlags & EP_TokenOnly)==0 ){
     if( combinedFlags & EP_xIsSelect ) return 2;
     if( sqlite3ExprCompare(pA->pLeft, pB->pLeft, iTab) ) return 2;
@@ -3770,7 +3765,6 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     if( (combinedFlags & EP_Reduced)==0 ){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->iTable!=pB->iTable 
-       && pA->op!=TK_REGISTER
        && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
     }
   }
