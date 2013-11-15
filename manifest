@@ -1,5 +1,5 @@
-C Merge\sEXPLAIN\sfixes\sfrom\strunk.
-D 2013-11-15T03:30:07.899
+C Simplify\sthe\srange\sscan\scode\sgenerate\swhile\salso\savoiding\san\sunnecessary\nOP_Affinity\sopcode.
+D 2013-11-15T12:41:01.696
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 9bff77c96e40bf472050bee6b2f7db8ed8e4402d
+F src/where.c 6e7e932ee32a4b2a0e4741880c06fe7a545e0059
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8dc5c76c766828d7c28090bec30ff48227e7b140 d99a30a25d6102c389f1fb5ec389c137168615e9
-R 55f9276a49bf042aa3fa36f2f4c874b2
+P cd579727b107a07140b94f5839d193959d29e6db
+R 16d0a5bce69ca1eea8baa7da2e33f0a4
 U drh
-Z d11ec7b7307706d351f4407390565b7b
+Z 29979dcda00f70bdf360a155d984f65d
