@@ -1,5 +1,5 @@
-C Simplify\sthe\srange\sscan\scode\sgenerate\swhile\salso\savoiding\san\sunnecessary\nOP_Affinity\sopcode.
-D 2013-11-15T12:41:01.696
+C Improvements\sto\sthe\sExpr\scomparison\sroutine\sto\smake\sit\smore\sgeneral.\nImprovements\sto\sunary-minus\scode\sgeneration\sso\sthat\sit\scan\smake\suse\sof\na\sglobal\sconstant\sregister\swith\sa\szero\svalue.
+D 2013-11-15T15:52:39.123
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c ddb92f44595366c4817e576b5f11cad5a915c3ef
-F src/expr.c b54ac7b5a77cf2967b4194aba95005544e8b705e
+F src/expr.c eb7eb7fa7848dc4e3b67a2f0bf32f794804ca38a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 78364daed38e26269c53ddb94c515bceac1063c6
 F src/func.c 96caa9dfd1febf9a4b720de4c43ccfb392a52b73
@@ -224,7 +224,7 @@ F src/shell.c b98e74123d6c2e20369607c1da2d23c71db633d9
 F src/sqlite.h.in 4dedcab5b32358bf7a596badffe7363be1f1a82d
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h c5dfd52fcc677725c750b1570b090f70a5cb60ec
+F src/sqliteInt.h 11b0dd04b1a2eb86a348fd818c7a63bf015cb0dd
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cd579727b107a07140b94f5839d193959d29e6db
-R 16d0a5bce69ca1eea8baa7da2e33f0a4
+P 372686bfbb1da08b04bddb085e30da5dbc8b30d8
+R a53a2df918863d2e307a62344ad87323
 U drh
-Z 29979dcda00f70bdf360a155d984f65d
+Z a11accb78dd4b773c18bb01c1b2ffc18

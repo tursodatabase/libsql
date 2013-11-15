@@ -2356,6 +2356,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   int regFree2 = 0;         /* If non-zero free this temporary register */
   int r1, r2, r3, r4;       /* Various register numbers */
   sqlite3 *db = pParse->db; /* The database connection */
+  Expr tempX;               /* Temporary expression node */
 
   assert( target>0 && target<=pParse->nMem );
   if( v==0 ){
@@ -2575,8 +2576,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         codeReal(v, pLeft->u.zToken, 1, target);
 #endif
       }else{
-        regFree1 = r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, r1);
+        tempX.op = TK_INTEGER;
+        tempX.flags = EP_IntValue|EP_TokenOnly;
+        tempX.u.iValue = 0;
+        r1 = sqlite3ExprCodeTemp(pParse, &tempX, &regFree1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree2);
         sqlite3VdbeAddOp3(v, OP_Subtract, r2, r1, target);
         testcase( regFree2==0 );
@@ -2892,7 +2895,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       ExprList *pEList;                 /* List of WHEN terms */
       struct ExprList_item *aListelem;  /* Array of WHEN terms */
       Expr opCompare;                   /* The X==Ei expression */
-      Expr cacheX;                      /* Cached expression X */
       Expr *pX;                         /* The X expression */
       Expr *pTest = 0;                  /* X==Ei (form A) or just Ei (form B) */
       VVA_ONLY( int iCacheLevel = pParse->iCacheLevel; )
@@ -2904,13 +2906,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       nExpr = pEList->nExpr;
       endLabel = sqlite3VdbeMakeLabel(v);
       if( (pX = pExpr->pLeft)!=0 ){
-        cacheX = *pX;
+        tempX = *pX;
         testcase( pX->op==TK_COLUMN );
         testcase( pX->op==TK_REGISTER );
-        exprToRegister(&cacheX, sqlite3ExprCodeTemp(pParse, pX, &regFree1));
+        exprToRegister(&tempX, sqlite3ExprCodeTemp(pParse, pX, &regFree1));
         testcase( regFree1==0 );
         opCompare.op = TK_EQ;
-        opCompare.pLeft = &cacheX;
+        opCompare.pLeft = &tempX;
         pTest = &opCompare;
         /* Ticket b351d95f9cd5ef17e9d9dbae18f5ca8611190001:
         ** The value in regFree1 might get SCopy-ed into the file result.
@@ -3732,16 +3734,18 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 ** an incorrect 0 or 1 could lead to a malfunction.
 */
 int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
-  if( pA==0||pB==0 ){
+  u32 combinedFlags;
+  if( pA==0 || pB==0 ){
     return pB==pA ? 0 : 2;
   }
-  assert( !ExprHasProperty(pA, EP_TokenOnly|EP_Reduced) );
-  assert( !ExprHasProperty(pB, EP_TokenOnly|EP_Reduced) );
-  if( ExprHasProperty(pA, EP_xIsSelect) || ExprHasProperty(pB, EP_xIsSelect) ){
+  combinedFlags = pA->flags | pB->flags;
+  if( combinedFlags & EP_IntValue ){
+    if( (pA->flags&pB->flags&EP_IntValue)!=0 && pA->u.iValue==pB->u.iValue ){
+      return 0;
+    }
     return 2;
   }
-  if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( pA->op!=pB->op && (pA->op!=TK_REGISTER || pA->op2!=pB->op) ){
+  if( pA->op!=pB->op /*&& (pA->op!=TK_REGISTER || pA->op2!=pB->op)*/ ){
     if( pA->op==TK_COLLATE && sqlite3ExprCompare(pA->pLeft, pB, iTab)<2 ){
       return 1;
     }
@@ -3750,21 +3754,24 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     }
     return 2;
   }
-  if( sqlite3ExprCompare(pA->pLeft, pB->pLeft, iTab) ) return 2;
-  if( sqlite3ExprCompare(pA->pRight, pB->pRight, iTab) ) return 2;
-  if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
-  if( pA->iColumn!=pB->iColumn ) return 2;
-  if( pA->iTable!=pB->iTable 
-   && pA->op!=TK_REGISTER
-   && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
-  if( ExprHasProperty(pA, EP_IntValue) ){
-    if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
-      return 2;
-    }
-  }else if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken){
-    if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
+  if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken ){
     if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return pA->op==TK_COLLATE ? 1 : 2;
+    }
+  }
+  if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
+  testcase( combinedFlags & EP_TokenOnly );
+  testcase( combinedFlags & EP_Reduced );
+  if( (combinedFlags & EP_TokenOnly)==0 ){
+    if( combinedFlags & EP_xIsSelect ) return 2;
+    if( sqlite3ExprCompare(pA->pLeft, pB->pLeft, iTab) ) return 2;
+    if( sqlite3ExprCompare(pA->pRight, pB->pRight, iTab) ) return 2;
+    if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
+    if( (combinedFlags & EP_Reduced)==0 ){
+      if( pA->iColumn!=pB->iColumn ) return 2;
+      if( pA->iTable!=pB->iTable 
+       && pA->op!=TK_REGISTER
+       && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
     }
   }
   return 0;

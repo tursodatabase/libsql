@@ -1829,7 +1829,7 @@ struct Expr {
 #define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
 #define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
 #define EP_Collate   0x000100 /* Tree contains a TK_COLLATE opeartor */
-#define EP_FixedDest 0x000200 /* Result needed in a specific register */
+      /* unused      0x000200 */
 #define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
 #define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
 #define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
