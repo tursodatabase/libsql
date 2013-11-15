@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sExpr\scomparison\sroutine\sto\smake\sit\smore\sgeneral.\nImprovements\sto\sunary-minus\scode\sgeneration\sso\sthat\sit\scan\smake\suse\sof\na\sglobal\sconstant\sregister\swith\sa\szero\svalue.
-D 2013-11-15T15:52:39.123
+C Add\stest\scases\sfor\sINSERT\sINTO\s...\sDEFAULT\sVALUES\son\stables\swith\snumeric\nconstants\sin\sCHECK\sconstraints.
+D 2013-11-15T16:48:23.550
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -423,7 +423,7 @@ F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
 F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
-F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
+F test/default.test 792c3c70836f1901e2a8cb34fa0880ed71e2c1a9
 F test/delete.test a065b05d2ebf60fd16639c579a4adfb7c381c701
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 372686bfbb1da08b04bddb085e30da5dbc8b30d8
-R a53a2df918863d2e307a62344ad87323
+P 835be656bb0e83c8108104869166aa9dd850d265
+R eed45a05b059c0c6c1ee8ceb9dc6b477
 U drh
-Z a11accb78dd4b773c18bb01c1b2ffc18
+Z 845e07c690cff6d1b0e87cc7b8d86036
