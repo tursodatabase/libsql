@@ -3757,15 +3757,15 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     }
   }
   if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( (combinedFlags & EP_TokenOnly)==0 ){
+  if( ALWAYS((combinedFlags & EP_TokenOnly)==0) ){
     if( combinedFlags & EP_xIsSelect ) return 2;
     if( sqlite3ExprCompare(pA->pLeft, pB->pLeft, iTab) ) return 2;
     if( sqlite3ExprCompare(pA->pRight, pB->pRight, iTab) ) return 2;
     if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
-    if( (combinedFlags & EP_Reduced)==0 ){
+    if( ALWAYS((combinedFlags & EP_Reduced)==0) ){
       if( pA->iColumn!=pB->iColumn ) return 2;
       if( pA->iTable!=pB->iTable 
-       && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
+       && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
   }
   return 0;
