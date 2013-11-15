@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\s"synopsis"\sfor\sthe\sOP_Lt\sopcode\sthat\scauses\san\s\nincorrect\scomment\sto\sbe\sadded\sto\sEXPLAIN\soutput.
-D 2013-11-15T03:21:43.898
+C Add\sthe\s--query\soption\sto\sthe\swordcount\stest\sprogram.
+D 2013-11-15T13:12:30.792
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1087,7 +1087,7 @@ F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
-F test/wordcount.c 2c2cc1119de42e6730ca8bd149666f0e0095108a
+F test/wordcount.c b8872ec44e8085bb671048a49cb696bed1100fe3
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cbe85cc2a991d89a6cca391ffa1be0582a684e49
-R 0c746aa4efd05e48b97b713c68a5a0db
+P d99a30a25d6102c389f1fb5ec389c137168615e9
+R 0d314918704a2d9deceec12d1b561362
 U drh
-Z 51d93302282dc3095ac1b627e9f3a079
+Z 4de182ff7f969e11fcd8166760e38fe1
