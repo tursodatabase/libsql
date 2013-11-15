@@ -1,5 +1,5 @@
-C Another\sadjustment\sto\sthe\sEXPLAIN\sindentation\slogic,\sin\sorder\sto\sdeal\swith\nthe\ssorter\sloop\son\sa\sCREATE\sINDEX\sstatement.
-D 2013-11-15T03:16:34.575
+C Fix\sa\stypo\sin\sthe\s"synopsis"\sfor\sthe\sOP_Lt\sopcode\sthat\scauses\san\s\nincorrect\scomment\sto\sbe\sadded\sto\sEXPLAIN\soutput.
+D 2013-11-15T03:21:43.898
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c 3de7e657b98ac67338d775c114a4068faf732402
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c f9a4e08114f97e453a5f13a62c31a357301137cc
+F src/vdbe.c d53b6b7e721b18c42754f10d68e75845e387f2ba
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 62eb680327011f3a4b0336642b0ca9d6ecc6eb91
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ea141a9b87dbb5fa1402bf7f6e36e89cc9de3cb3
-R 14569e96bfa99ce52d2e8d8452a6eab6
+P cbe85cc2a991d89a6cca391ffa1be0582a684e49
+R 0c746aa4efd05e48b97b713c68a5a0db
 U drh
-Z 75087cf5e4d4f5ef7b9253ba0c460b7b
+Z 51d93302282dc3095ac1b627e9f3a079

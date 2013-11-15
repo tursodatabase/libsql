@@ -1797,7 +1797,7 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 #endif /* !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_FLOATING_POINT) */
 
 /* Opcode: Lt P1 P2 P3 P4 P5
-** Synopsis: if r[P1]<r[P3] goto P3
+** Synopsis: if r[P1]<r[P3] goto P2
 **
 ** Compare the values in register P1 and P3.  If reg(P3)<reg(P1) then
 ** jump to address P2.  
