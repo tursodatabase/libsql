@@ -328,6 +328,7 @@ blob_open_out:
   }
   sqlite3Error(db, rc, (zErr ? "%s" : 0), zErr);
   sqlite3DbFree(db, zErr);
+  sqlite3ParserReset(pParse);
   sqlite3StackFree(db, pParse);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);

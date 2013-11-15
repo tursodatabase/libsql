@@ -2989,15 +2989,42 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 ** If the register is a temporary register that can be deallocated,
 ** then write its number into *pReg.  If the result register is not
 ** a temporary, then set *pReg to zero.
+**
+** If pExpr is a constant, then this routine might generate this
+** code to fill the register in the initialization section of the
+** VDBE program, in order to factor it out of the evaluation loop.
 */
 int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
-  int r1 = sqlite3GetTempReg(pParse);
-  int r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-  if( r2==r1 ){
-    *pReg = r1;
+  int r2;
+  pExpr = sqlite3ExprSkipCollate(pExpr);
+  if( pParse->cookieGoto>0
+   && pParse->nMem<32768
+   && pExpr->op!=TK_REGISTER
+   && sqlite3ExprIsConstantNotJoin(pExpr)
+  ){
+    ExprList *p = pParse->pConstExpr;
+    int i;
+    *pReg  = 0;
+    if( p ){
+      for(i=0; i<p->nExpr; i++){
+        if( sqlite3ExprCompare(p->a[i].pExpr, pExpr, -1)==0 ){
+          return p->a[i].iAlias;
+        }
+      }
+    }
+    p = sqlite3ExprListAppend(pParse, p, sqlite3ExprDup(pParse->db, pExpr, 0));
+    pParse->pConstExpr = p;
+    r2 = ++pParse->nMem;
+    if( p ) p->a[p->nExpr-1].iAlias = r2;
   }else{
-    sqlite3ReleaseTempReg(pParse, r1);
-    *pReg = 0;
+    int r1 = sqlite3GetTempReg(pParse);
+    r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
+    if( r2==r1 ){
+      *pReg = r1;
+    }else{
+      sqlite3ReleaseTempReg(pParse, r1);
+      *pReg = 0;
+    }
   }
   return r2;
 }
@@ -3327,140 +3354,6 @@ void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
   }
 }
 #endif /* SQLITE_DEBUG */
-
-/*
-** Return TRUE if pExpr is an constant expression that is appropriate
-** for factoring out of a loop.  Appropriate expressions are:
-**
-**    *  Any expression that evaluates to two or more opcodes.
-**
-**    *  Any OP_Integer, OP_Real, OP_String, OP_Blob, OP_Null, 
-**       or OP_Variable that does not need to be placed in a 
-**       specific register.
-**
-** There is no point in factoring out single-instruction constant
-** expressions that need to be placed in a particular register.  
-** We could factor them out, but then we would end up adding an
-** OP_SCopy instruction to move the value into the correct register
-** later.  We might as well just use the original instruction and
-** avoid the OP_SCopy.
-*/
-static int isAppropriateForFactoring(Expr *p){
-  if( !sqlite3ExprIsConstantNotJoin(p) ){
-    return 0;  /* Only constant expressions are appropriate for factoring */
-  }
-  if( (p->flags & EP_FixedDest)==0 ){
-    return 1;  /* Any constant without a fixed destination is appropriate */
-  }
-  while( p->op==TK_UPLUS ) p = p->pLeft;
-  switch( p->op ){
-#ifndef SQLITE_OMIT_BLOB_LITERAL
-    case TK_BLOB:
-#endif
-    case TK_VARIABLE:
-    case TK_INTEGER:
-    case TK_FLOAT:
-    case TK_NULL:
-    case TK_STRING: {
-      testcase( p->op==TK_BLOB );
-      testcase( p->op==TK_VARIABLE );
-      testcase( p->op==TK_INTEGER );
-      testcase( p->op==TK_FLOAT );
-      testcase( p->op==TK_NULL );
-      testcase( p->op==TK_STRING );
-      /* Single-instruction constants with a fixed destination are
-      ** better done in-line.  If we factor them, they will just end
-      ** up generating an OP_SCopy to move the value to the destination
-      ** register. */
-      return 0;
-    }
-    case TK_UMINUS: {
-      if( p->pLeft->op==TK_FLOAT || p->pLeft->op==TK_INTEGER ){
-        return 0;
-      }
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-  return 1;
-}
-
-/*
-** If pExpr is a constant expression that is appropriate for
-** factoring out of a loop, then evaluate the expression
-** into a register and convert the expression into a TK_REGISTER
-** expression.
-*/
-static int evalConstExpr(Walker *pWalker, Expr *pExpr){
-  Parse *pParse = pWalker->pParse;
-  switch( pExpr->op ){
-    case TK_IN:
-    case TK_REGISTER: {
-      return WRC_Prune;
-    }
-    case TK_COLLATE: {
-      return WRC_Continue;
-    }
-    case TK_FUNCTION:
-    case TK_AGG_FUNCTION:
-    case TK_CONST_FUNC: {
-      /* The arguments to a function have a fixed destination.
-      ** Mark them this way to avoid generated unneeded OP_SCopy
-      ** instructions. 
-      */
-      ExprList *pList = pExpr->x.pList;
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      if( pList ){
-        int i = pList->nExpr;
-        struct ExprList_item *pItem = pList->a;
-        for(; i>0; i--, pItem++){
-          if( ALWAYS(pItem->pExpr) ) pItem->pExpr->flags |= EP_FixedDest;
-        }
-      }
-      break;
-    }
-  }
-  if( isAppropriateForFactoring(pExpr) ){
-    int r1 = ++pParse->nMem;
-    int r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-    /* If r2!=r1, it means that register r1 is never used.  That is harmless
-    ** but suboptimal, so we want to know about the situation to fix it.
-    ** Hence the following assert: */
-    assert( r2==r1 );
-    exprToRegister(pExpr, r2);
-    return WRC_Prune;
-  }
-  return WRC_Continue;
-}
-
-/*
-** Preevaluate constant subexpressions within pExpr and store the
-** results in registers.  Modify pExpr so that the constant subexpresions
-** are TK_REGISTER opcodes that refer to the precomputed values.
-**
-** This routine is a no-op if the jump to the cookie-check code has
-** already occur.  Since the cookie-check jump is generated prior to
-** any other serious processing, this check ensures that there is no
-** way to accidently bypass the constant initializations.
-**
-** This routine is also a no-op if the SQLITE_FactorOutConst optimization
-** is disabled via the sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS)
-** interface.  This allows test logic to verify that the same answer is
-** obtained for queries regardless of whether or not constants are
-** precomputed into registers or if they are inserted in-line.
-*/
-void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
-  Walker w;
-  if( pParse->cookieGoto ) return;
-  if( OptimizationDisabled(pParse->db, SQLITE_FactorOutConst) ) return;
-  memset(&w, 0, sizeof(w));
-  w.xExprCallback = evalConstExpr;
-  w.pParse = pParse;
-  sqlite3WalkExpr(&w, pExpr);
-}
-
 
 /*
 ** Generate code that pushes the value of every element of the given
@@ -3863,7 +3756,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
   if( pA->iColumn!=pB->iColumn ) return 2;
   if( pA->iTable!=pB->iTable 
    && pA->op!=TK_REGISTER
-   && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
+   && (pA->iTable!=iTab || pB->iTable>=0) ) return 2;
   if( ExprHasProperty(pA, EP_IntValue) ){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
       return 2;

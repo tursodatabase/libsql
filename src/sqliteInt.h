@@ -2278,6 +2278,7 @@ struct Parse {
     int iReg;             /* Reg with value of this column. 0 means none. */
     int lru;              /* Least recently used entry has the smallest value */
   } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
+  ExprList *pConstExpr;/* Constant expressions */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
@@ -2891,7 +2892,6 @@ int sqlite3ExprCode(Parse*, Expr*, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 int sqlite3ExprCodeAndCache(Parse*, Expr*, int);
-void sqlite3ExprCodeConstants(Parse*, Expr*);
 int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int);
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
@@ -3259,6 +3259,7 @@ void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
+void sqlite3ParserReset(Parse*);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
 CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);

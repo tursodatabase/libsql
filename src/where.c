@@ -5426,7 +5426,6 @@ WhereInfo *sqlite3WhereBegin(
   */
   initMaskSet(pMaskSet);
   whereClauseInit(&pWInfo->sWC, pWInfo);
-  sqlite3ExprCodeConstants(pParse, pWhere);
   whereSplit(&pWInfo->sWC, pWhere, TK_AND);
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
     

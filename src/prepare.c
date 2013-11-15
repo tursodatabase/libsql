@@ -525,6 +525,13 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 }
 
 /*
+** Free all memory allocations in the pParse object
+*/
+void sqlite3ParserReset(Parse *pParse){
+  if( pParse ) sqlite3ExprListDelete(pParse->db, pParse->pConstExpr);
+}
+
+/*
 ** Compile the UTF-8 encoded SQL statement zSql into a statement handle.
 */
 static int sqlite3Prepare(
@@ -681,6 +688,7 @@ static int sqlite3Prepare(
 
 end_prepare:
 
+  sqlite3ParserReset(pParse);
   sqlite3StackFree(db, pParse);
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
