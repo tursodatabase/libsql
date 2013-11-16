@@ -433,7 +433,10 @@ void sqlite3DeleteFrom(
       */
       nKey = nPk; /* OP_Found will use an unpacked key */
       aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
-      if( aToOpen==0 ) goto delete_from_cleanup;
+      if( aToOpen==0 ){
+        sqlite3WhereEnd(pWInfo);
+        goto delete_from_cleanup;
+      }
       memset(aToOpen, 1, nIdx+1);
       aToOpen[nIdx+1] = 0;
       if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
