@@ -114,7 +114,6 @@ void sqlite3Update(
   u8 chngRowid;          /* Rowid changed in a normal table */
   u8 chngKey;            /* Either chngPk or chngRowid */
   Expr *pRowidExpr = 0;  /* Expression defining the new record number */
-  int openAll = 0;       /* True if all indices need to be opened */
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
   int iDb;               /* Database containing the table being updated */
@@ -622,7 +621,7 @@ void sqlite3Update(
   /* Close all tables */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     assert( aRegIdx );
-    if( openAll || aRegIdx[i]>0 ){
+    if( aToOpen[i+1] ){
       sqlite3VdbeAddOp2(v, OP_Close, iIdxCur+i, 0);
     }
   }

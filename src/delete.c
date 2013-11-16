@@ -403,7 +403,8 @@ void sqlite3DeleteFrom(
     ** to be deleted, based on the WHERE clause.
     */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 
-                               WHERE_ONEPASS_DESIRED, iTabCur+1);
+                               WHERE_ONEPASS_DESIRED|WHERE_DUPLICATES_OK,
+                               iTabCur+1);
     if( pWInfo==0 ) goto delete_from_cleanup;
     okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
   
