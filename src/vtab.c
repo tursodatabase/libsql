@@ -738,6 +738,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       sqlite3VdbeFinalize(pParse->pVdbe);
     }
     sqlite3DeleteTable(db, pParse->pNewTable);
+    sqlite3ParserReset(pParse);
     sqlite3StackFree(db, pParse);
   }
 

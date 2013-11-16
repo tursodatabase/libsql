@@ -96,6 +96,7 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
         rc = SQLITE_ERROR;
       }
       sqlite3DbFree(pErrorDb, pParse->zErrMsg);
+      sqlite3ParserReset(pParse);
       sqlite3StackFree(pErrorDb, pParse);
     }
     if( rc ){
