@@ -1,5 +1,5 @@
-C Simplification\sand\sperformance\simprovement\sto\sthe\slogic\sthat\sfactors\s\nconstant\sexpressions\souf\sof\sinner\sloops.
-D 2013-11-16T13:55:34.349
+C Avoid\sunnecessary\sOP_IfNull\schecks\swhen\sdoing\sa\srange\squery\swhere\sthere\nis\sa\sconstraint\son\sthe\slower\sbound\sof\sthe\srange.
+D 2013-11-16T14:03:53.332
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c c7d50e26bad54218d8fa109d3127b9769b9474ab
+F src/where.c de64e326bb2a07e5591900b11a93d743df2a6919
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1139,8 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c7f2ed9f44be3b66a542ee42c0db63bab8ffd2db cee835fe902e46f283257fb8ec9d9744c7d6dd77
-R 9a08d5cf387c0a6debd995e2224a08b5
-T +closed cee835fe902e46f283257fb8ec9d9744c7d6dd77
+P ee9353fdf3c8f19cd3c344ea8fb7c6d13cadd632
+R bbc3c855c90e1aef97168122cf6d1f16
 U drh
-Z c4756f7866a605223b6628b959e50ab9
+Z c2c8cf1e135b3375a8bab4d9c0d72dac
