@@ -1,5 +1,5 @@
-C Avoid\sunnecessary\sOP_IfNull\schecks\swhen\sdoing\sa\srange\squery\swhere\sthere\nis\sa\sconstraint\son\sthe\slower\sbound\sof\sthe\srange.
-D 2013-11-16T14:03:53.332
+C Fully\sconstraint\sthe\sORDER\sBY\son\sthe\stop-10\sline\sof\sthe\s--summary\soutput\nfrom\sthe\swordcount\stest\sprogram.\s\sAdd\sthe\srun-wordcount.bash\sscript\sfor\nrunning\swordcount\sin\svarious\sconfigurations.
+D 2013-11-16T15:35:18.956
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -757,6 +757,7 @@ F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test f777404492adb0e00868fd706a3721328fd3af48
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
+F test/run-wordcount.bash 1c6a8b75738db8c53e5125be3d81ab63ef9eefd0
 F test/savepoint.test 6c53f76dffe5df0dd87646efe3e7aa159c36e07b
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
@@ -1087,7 +1088,7 @@ F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
-F test/wordcount.c b8872ec44e8085bb671048a49cb696bed1100fe3
+F test/wordcount.c c80f378f26fbf6ada602c4313ae88fc47439263e
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
@@ -1139,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ee9353fdf3c8f19cd3c344ea8fb7c6d13cadd632
-R bbc3c855c90e1aef97168122cf6d1f16
+P de08a7e7abbad9b94d0268d096ef4555d31c8b0c
+R 172f7957a55e2959255a9b6c3406c731
 U drh
-Z c2c8cf1e135b3375a8bab4d9c0d72dac
+Z e8555787a9b5df5e1de6c7d36654ffb3

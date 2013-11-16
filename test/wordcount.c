@@ -459,7 +459,7 @@ int main(int argc, char **argv){
       "SELECT 'avg(cnt):  ', avg(cnt) FROM wordcount;\n"
       "SELECT 'sum(cnt=1):', sum(cnt=1) FROM wordcount;\n"
       "SELECT 'top 10:    ', group_concat(word, ', ') FROM "
-         "(SELECT word FROM wordcount ORDER BY cnt DESC LIMIT 10);\n"
+         "(SELECT word FROM wordcount ORDER BY cnt DESC, word LIMIT 10);\n"
       "SELECT 'checksum:  ', checksum(word, cnt) FROM "
          "(SELECT word, cnt FROM wordcount ORDER BY word);\n"
       "PRAGMA integrity_check;\n",
