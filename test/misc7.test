@@ -355,7 +355,7 @@ do_ioerr_test misc7-16 -sqlprep {
     COMMIT;
   }} msg]
 
-  if {!$rc || ($rc && [string first "columns" $msg]==0)} {
+  if {!$rc || ($rc && [string first "UNIQUE" $msg]==0)} {
     set msg
   } else {
     error $msg

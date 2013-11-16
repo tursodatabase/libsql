@@ -1,5 +1,5 @@
-C Fix\scomments\son\sthe\sOP_Divide\sand\sOP_Remainder\soperators,\sespecially\sthe\n"Synopsis:"\scomment,\sso\sthat\sthey\sagree\swith\sthe\sactual\simplementation.
-D 2013-11-15T18:58:37.334
+C Fix\stestcase\smisc7-16\sso\sthat\sit\sworks\swith\sthe\snew\sUNIQUE\sconstraint\serror\nmessage\sformat.
+D 2013-11-16T12:56:46.327
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -697,7 +697,7 @@ F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
 F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test 50c02c35ef7924c246eb3d8d71dfbf90ba352f8f
+F test/misc7.test 1265eb98c2e22a446a13fdef754118b272716684
 F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
 F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
@@ -1139,7 +1139,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5960d11eba4fc6ca136331279689424d03bd6e76
-R eeac4cc42ec89642fb7c3d8492dc346d
+P cc17f1f05f15e9c62659a49c0656ff2b667bf701
+R b62a58b0c81de204f01fd6d52945fa47
 U drh
-Z cf9b95755a71f68840dd49a0488c3357
+Z 7ba076cecbcdde244db85dd719f20d67
