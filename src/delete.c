@@ -386,20 +386,37 @@ void sqlite3DeleteFrom(
     iKey = ++pParse->nMem;
     iEph = pParse->nTab++;
 
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
+    addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iEph, nPk);
     sqlite3VdbeSetP4KeyInfo(pParse, pPk);
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 0, 0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0, 0, 
+                               WHERE_ONEPASS_DESIRED, iTabCur+1);
     if( pWInfo==0 ) goto delete_from_cleanup;
+    okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     for(i=0; i<nPk; i++){
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, pPk->aiColumn[i],iPk+i);
     }
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
-                      sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
-    sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, iKey);
     if( db->flags & SQLITE_CountRows ){
       sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
     }
+    if( okOnePass ){
+      aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
+      if( aToOpen==0 ) goto delete_from_cleanup;
+      memset(aToOpen, 1, nIdx+1);
+      aToOpen[nIdx+1] = 0;
+      if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
+      if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
+      sqlite3VdbeChangeToNoop(v, addr);
+      addr = sqlite3VdbeAddOp0(v, OP_Goto);
+    }else{
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
+                        sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
+      sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, iKey);
+    }
     sqlite3WhereEnd(pWInfo);
+    if( okOnePass ){
+      sqlite3VdbeAddOp0(v, OP_Halt);
+      sqlite3VdbeJumpHere(v, addr);
+    }
 
     /* Open cursors for all indices of the table.
     */
@@ -407,16 +424,20 @@ void sqlite3DeleteFrom(
                                &iDataCur, &iIdxCur);
 
     /* Loop over the primary keys to be deleted. */
-    addr = sqlite3VdbeAddOp1(v, OP_Rewind, iEph);
-    sqlite3VdbeAddOp2(v, OP_RowKey, iEph, iPk);
+    if( !okOnePass ){
+      addr = sqlite3VdbeAddOp1(v, OP_Rewind, iEph);
+      sqlite3VdbeAddOp2(v, OP_RowKey, iEph, iPk);
+    }
 
     /* Delete the row */
     sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                             iPk, 0, 1, OE_Default, 0);
+                             iPk, nPk*okOnePass, 1, OE_Default, okOnePass);
 
     /* End of the delete loop */
-    sqlite3VdbeAddOp2(v, OP_Next, iEph, addr+1);
-    sqlite3VdbeJumpHere(v, addr);
+    if( !okOnePass ){
+      sqlite3VdbeAddOp2(v, OP_Next, iEph, addr+1);
+      sqlite3VdbeJumpHere(v, addr);
+    }
 
     /* Close the cursors open on the table and its indexes. */
     assert( iDataCur>=iIdxCur );

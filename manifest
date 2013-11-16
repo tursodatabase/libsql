@@ -1,5 +1,5 @@
-C Enhance\sthe\sDELETE\slogic\sso\sthat\sit\scan\smake\suse\sof\sWHERE_ONEPASS_DESIRED\nfor\srowid\stables.
-D 2013-11-16T20:13:39.579
+C The\sone-pass\soptimization\sis\snow\sworking\sfor\sDELETE\son\sWITHOUT\sROWID\stables.
+D 2013-11-16T20:45:01.087
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 765215277172cd66123516b92c99804bfab490f1
+F src/delete.c 35750d35fe9f174ccb98bae0d6627dcf83a7965a
 F src/expr.c 1a295d8b0a2ba08919ad9300ebf7b67988ff4030
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 78364daed38e26269c53ddb94c515bceac1063c6
@@ -1140,10 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7edf39eb93a8f9059a788f5fccf41c2be40afd4d
-R a6d07ee396f35147cc60e236a37bb900
-T *branch * optimize-delete
-T *sym-optimize-delete *
-T -sym-trunk *
+P 8f479a72758ab6fedb171ada612b1963143c32fa
+R b6e41a6a6d551dfa6da0e7b0e42124eb
 U drh
-Z fab6ca68390544d72160beaeac98129b
+Z f0edfafd89abfe9d193a6a7758aa54ff
