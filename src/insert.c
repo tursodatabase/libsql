@@ -820,7 +820,7 @@ void sqlite3Insert(
   /* If this is not a view, open the table and and all indices */
   if( !isView ){
     int nIdx;
-    nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, -1,
+    nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, -1, 0,
                                       &iDataCur, &iIdxCur);
     aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(nIdx+1));
     if( aRegIdx==0 ){
@@ -1680,16 +1680,19 @@ int sqlite3OpenTableAndIndices(
   Table *pTab,     /* Table to be opened */
   int op,          /* OP_OpenRead or OP_OpenWrite */
   int iBase,       /* Use this for the table cursor, if there is one */
+  u8 *aToOpen,     /* If not NULL: boolean for each table and index */
   int *piDataCur,  /* Write the database source cursor number here */
   int *piIdxCur    /* Write the first index cursor number here */
 ){
   int i;
   int iDb;
+  int iDataCur;
   Index *pIdx;
   Vdbe *v;
 
   assert( op==OP_OpenRead || op==OP_OpenWrite );
   if( IsVirtual(pTab) ){
+    assert( aToOpen==0 );
     *piDataCur = 0;
     *piIdxCur = 1;
     return 0;
@@ -1698,20 +1701,25 @@ int sqlite3OpenTableAndIndices(
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   if( iBase<0 ) iBase = pParse->nTab;
-  if( HasRowid(pTab) ){
-    *piDataCur = iBase++;
-    sqlite3OpenTable(pParse, *piDataCur, iDb, pTab, op);
+  iDataCur = iBase++;
+  if( piDataCur ) *piDataCur = iDataCur;
+  if( HasRowid(pTab) && (aToOpen==0 || aToOpen[0]) ){
+    sqlite3OpenTable(pParse, iDataCur, iDb, pTab, op);
   }else{
     sqlite3TableLock(pParse, iDb, pTab->tnum, op==OP_OpenWrite, pTab->zName);
   }
-  *piIdxCur = iBase;
+  if( piIdxCur ) *piIdxCur = iBase;
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     int iIdxCur = iBase++;
     assert( pIdx->pSchema==pTab->pSchema );
-    if( pIdx->autoIndex==2 && !HasRowid(pTab) ) *piDataCur = iIdxCur;
-    sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
-    sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
-    VdbeComment((v, "%s", pIdx->zName));
+    if( pIdx->autoIndex==2 && !HasRowid(pTab) && piDataCur ){
+      *piDataCur = iIdxCur;
+    }
+    if( aToOpen==0 || aToOpen[i+1] ){
+      sqlite3VdbeAddOp3(v, op, iIdxCur, pIdx->tnum, iDb);
+      sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+      VdbeComment((v, "%s", pIdx->zName));
+    }
   }
   if( iBase>pParse->nTab ) pParse->nTab = iBase;
   return i;

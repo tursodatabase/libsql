@@ -234,12 +234,16 @@ void sqlite3DeleteFrom(
   int iTabCur;           /* Cursor number for the table */
   int iDataCur;          /* VDBE cursor for the canonical data source */
   int iIdxCur;           /* Cursor number of the first index */
+  int nIdx;              /* Number of indices */
   sqlite3 *db;           /* Main database structure */
   AuthContext sContext;  /* Authorization context */
   NameContext sNC;       /* Name context to resolve expressions in */
   int iDb;               /* Database number */
   int memCnt = -1;       /* Memory cell used for change counting */
   int rcauth;            /* Value returned by authorization callback */
+  int okOnePass;         /* True for one-pass algorithm without the FIFO */
+  int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
+  u8 *aToOpen = 0;       /* Open cursor iTabCur+j if aToOpen[j] is true */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
@@ -295,11 +299,11 @@ void sqlite3DeleteFrom(
   }
   assert(!isView || pTrigger);
 
-  /* Assign  cursor number to the table and all its indices.
+  /* Assign cursor numbers to the table and all its indices.
   */
   assert( pTabList->nSrc==1 );
   iTabCur = pTabList->a[0].iCursor = pParse->nTab++;
-  for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+  for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){
     pParse->nTab++;
   }
 
@@ -399,8 +403,8 @@ void sqlite3DeleteFrom(
 
     /* Open cursors for all indices of the table.
     */
-    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite,
-                               iTabCur, &iDataCur, &iIdxCur);
+    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
+                               &iDataCur, &iIdxCur);
 
     /* Loop over the primary keys to be deleted. */
     addr = sqlite3VdbeAddOp1(v, OP_Rewind, iEph);
@@ -424,22 +428,39 @@ void sqlite3DeleteFrom(
     ** all rowids to be deleted into a RowSet.
     */
     int iRowSet = ++pParse->nMem;   /* Register for rowset of rows to delete */
-    int iRowid = ++pParse->nMem;    /* Used for storing rowid values. */
     int regRowid;                   /* Actual register containing rowids */
 
     /* Collect rowids of every row to be deleted.
     */
     sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
     pWInfo = sqlite3WhereBegin(
-        pParse, pTabList, pWhere, 0, 0, WHERE_DUPLICATES_OK, 0
+        pParse, pTabList, pWhere, 0, 0,
+        WHERE_DUPLICATES_OK|WHERE_ONEPASS_DESIRED, iTabCur+1
     );
     if( pWInfo==0 ) goto delete_from_cleanup;
-    regRowid = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iTabCur, iRowid, 0);
-    sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, regRowid);
+    okOnePass = sqlite3WhereOkOnePass(pWInfo, aiCurOnePass);
     if( db->flags & SQLITE_CountRows ){
       sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
     }
+    regRowid = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iTabCur,
+                                        pParse->nMem+1, 0);
+    if( regRowid>pParse->nMem ) pParse->nMem = regRowid;
+    if( okOnePass ){
+      aToOpen = sqlite3DbMallocRaw(db, nIdx+2);
+      if( aToOpen==0 ) goto delete_from_cleanup;
+      memset(aToOpen, 1, nIdx+1);
+      aToOpen[nIdx+1] = 0;
+      if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iTabCur] = 0;
+      if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iTabCur] = 0;
+      addr = sqlite3VdbeAddOp0(v, OP_Goto);
+    }else{
+      sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, regRowid);
+    }
     sqlite3WhereEnd(pWInfo);
+    if( okOnePass ){
+      sqlite3VdbeAddOp0(v, OP_Halt);
+      sqlite3VdbeJumpHere(v, addr);
+    }
 
     /* Delete every item whose key was written to the list during the
     ** database scan.  We have to delete items after the scan is complete
@@ -451,20 +472,22 @@ void sqlite3DeleteFrom(
     ** only effect this statement has is to fire the INSTEAD OF 
     ** triggers.  */
     if( !isView ){
-      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur,
+      sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
                                  &iDataCur, &iIdxCur);
       assert( iDataCur==iTabCur );
       assert( iIdxCur==iDataCur+1 );
     }
 
-    addr = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, end, iRowid);
+    if( !okOnePass ){    
+      addr = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, end, regRowid);
+    }
 
     /* Delete the row */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pTab) ){
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       sqlite3VtabMakeWritable(pParse, pTab);
-      sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, iRowid, pVTab, P4_VTAB);
+      sqlite3VdbeAddOp4(v, OP_VUpdate, 0, 1, regRowid, pVTab, P4_VTAB);
       sqlite3VdbeChangeP5(v, OE_Abort);
       sqlite3MayAbort(pParse);
     }else
@@ -472,11 +495,13 @@ void sqlite3DeleteFrom(
     {
       int count = (pParse->nested==0);    /* True to count changes */
       sqlite3GenerateRowDelete(pParse, pTab, pTrigger, iDataCur, iIdxCur,
-                               iRowid, 1, count, OE_Default, 0);
+                               regRowid, 1, count, OE_Default, okOnePass);
     }
 
     /* End of the delete loop */
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addr);
+    if( !okOnePass ){
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addr);
+    }
     sqlite3VdbeResolveLabel(v, end);
 
     /* Close the cursors open on the table and its indexes. */
@@ -510,6 +535,7 @@ delete_from_cleanup:
   sqlite3AuthContextPop(&sContext);
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprDelete(db, pWhere);
+  sqlite3DbFree(db, aToOpen);
   return;
 }
 /* Make sure "isView" and other macros defined above are undefined. Otherwise
