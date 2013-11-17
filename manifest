@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sminor\sproblems\swith\sthe\snew\sdelete\slogic.
-D 2013-11-16T23:16:31.845
+C Make\ssure\sone-pass\sDELETE\sfor\sWITHOUT\sROWID\stables\scorrectly\spositions\sthe\nPRIMARY\sKEY\scursor.\s\sMake\sthe\ssame\sfix\sfor\sUPDATE.
+D 2013-11-17T02:42:02.540
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c b612d06c095acc5df50a208a9b023c96deb11e5a
+F src/delete.c d88e4fbfeca5a8cf48b7d358b9a68d5e81f314b7
 F src/expr.c 1a295d8b0a2ba08919ad9300ebf7b67988ff4030
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 78364daed38e26269c53ddb94c515bceac1063c6
@@ -276,7 +276,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
-F src/update.c 18e9b11b499c1205ec2b6e87322a7edc8772e550
+F src/update.c cc3d826923f7b61566dedbb3cfce5f13964f35a4
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P dc7be158b82ab9156d0fcdf3394f881eac4d23c3
-R 0c59b10189d7db2055b513cecd6f14e5
+P a11243f840d35aaed8ee3b9901c3950bc584a417
+R f429117cda51c1a8c08160d9a3f515e6
 U drh
-Z ca24d69af9eecebf1768d25aef1413b7
+Z 2718e457b564d6fbe8d10873d690a300

@@ -426,7 +426,8 @@ void sqlite3Update(
 
   /* Top of the update loop */
   if( okOnePass ){
-    if( pPk ){
+    if( aToOpen[iDataCur-iBaseCur] ){
+      assert( pPk!=0 );
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
     }
     labelContinue = labelBreak;

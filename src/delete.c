@@ -461,7 +461,8 @@ void sqlite3DeleteFrom(
     sqlite3WhereEnd(pWInfo);
     if( okOnePass ){
       /* Bypass the delete logic below if the WHERE loop found zero rows */
-      addrBypass = sqlite3VdbeAddOp0(v, OP_Goto);
+      addrBypass = sqlite3VdbeMakeLabel(v);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrBypass);
       sqlite3VdbeJumpHere(v, addrDelete);
     }
   
@@ -483,6 +484,10 @@ void sqlite3DeleteFrom(
     if( okOnePass ){
       /* Just one row.  Hence the top-of-loop is a no-op */
       assert( nKey==nPk ); /* OP_Found will use an unpacked key */
+      if( aToOpen[iDataCur-iTabCur] ){
+        assert( pPk!=0 );
+        sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
+      }
     }else if( pPk ){
       addrLoop = sqlite3VdbeAddOp1(v, OP_Rewind, iEphCur);
       sqlite3VdbeAddOp2(v, OP_RowKey, iEphCur, iKey);
@@ -510,7 +515,7 @@ void sqlite3DeleteFrom(
   
     /* End of the loop over all rowids/primary-keys. */
     if( okOnePass ){
-      sqlite3VdbeJumpHere(v, addrBypass);
+      sqlite3VdbeResolveLabel(v, addrBypass);
     }else if( pPk ){
       sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1);
       sqlite3VdbeJumpHere(v, addrLoop);
@@ -617,6 +622,7 @@ void sqlite3GenerateRowDelete(
   if( sqlite3FkRequired(pParse, pTab, 0, 0) || pTrigger ){
     u32 mask;                     /* Mask of OLD.* columns in use */
     int iCol;                     /* Iterator used while populating OLD.* */
+    int addrStart;                /* Start of BEFORE trigger programs */
 
     /* TODO: Could use temporary registers here. Also could attempt to
     ** avoid copying the contents of the rowid register.  */
@@ -637,15 +643,19 @@ void sqlite3GenerateRowDelete(
     }
 
     /* Invoke BEFORE DELETE trigger programs. */
+    addrStart = sqlite3VdbeCurrentAddr(v);
     sqlite3CodeRowTrigger(pParse, pTrigger, 
         TK_DELETE, 0, TRIGGER_BEFORE, pTab, iOld, onconf, iLabel
     );
 
-    /* Seek the cursor to the row to be deleted again. It may be that
-    ** the BEFORE triggers coded above have already removed the row
-    ** being deleted. Do not attempt to delete the row a second time, and 
-    ** do not fire AFTER triggers.  */
-    sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
+    /* If any BEFORE triggers were coded, then seek the cursor to the 
+    ** row to be deleted again. It may be that the BEFORE triggers moved
+    ** the cursor or of already deleted the row that the cursor was
+    ** pointing to.
+    */
+    if( addrStart<sqlite3VdbeCurrentAddr(v) ){
+      sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
+    }
 
     /* Do FK processing. This call checks that any FK constraints that
     ** refer to this table (i.e. constraints attached to other tables) 
