@@ -3918,10 +3918,15 @@ static int whereLoopAddBtreeIndex(
   saved_nOut = pNew->nOut;
   pNew->rSetup = 0;
   rLogSize = estLog(sqlite3LogEst(pProbe->aiRowEst[0]));
+
+  /* Consider using a skip-scan if there are no WHERE clause constraints
+  ** available for the left-most terms of the index, and if the average
+  ** number of repeats in the left-most terms is at least 50.
+  */
   if( pTerm==0
    && saved_nEq==saved_nSkip
    && saved_nEq+1<pProbe->nKeyCol
-   && pProbe->aiRowEst[saved_nEq+1]>50
+   && pProbe->aiRowEst[saved_nEq+1]>50  /* TUNING: Minimum for skip-scan */
   ){
     LogEst nIter;
     pNew->u.btree.nEq++;
