@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sthe\sshell\stool\sEXPLAIN\sindentation\scode\sand\sVDBE\ssub-programs.
-D 2013-11-18T08:41:06.910
+C Fix\sharmless\scompiler\swarnings\sfrom\sclang\sscan-build.
+D 2013-11-18T11:20:50.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c dceaa5079833caa2e7945433e1eb93bb22f623a3
+F ext/fts3/fts3.c 3ae281c073c91a10bb42787426499d03df295b7a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb5f8029589f3d8f1dc7fd50c773326a640388b1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -177,7 +177,7 @@ F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 909936019ccb8d0f4a10d0d10ad607c38ee62cbe
 F src/expr.c 1a295d8b0a2ba08919ad9300ebf7b67988ff4030
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
-F src/fkey.c 78364daed38e26269c53ddb94c515bceac1063c6
+F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 96caa9dfd1febf9a4b720de4c43ccfb392a52b73
 F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 44a07afdd9b3ae2460bc963383295deb0915f899
-R fd745146c0298a78435ee62db781f33d
-U dan
-Z ccddbfb4ee4200a6ab72b0a768e815b9
+P 9c8d6856253f8da06b2cb5dc6bd89b6952fa03ed
+R c9f2a197b3482dc9e1f22f87445d00db
+U drh
+Z 2979703407de49dd5b579d61d89bb322

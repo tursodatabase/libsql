@@ -548,6 +548,7 @@ static void fkScanChildren(
   assert( pIdx==0 || pIdx->pTable==pTab );
   assert( pIdx==0 || pIdx->nKeyCol==pFKey->nCol );
   assert( pIdx!=0 || pFKey->nCol==1 );
+  assert( pIdx!=0 || HasRowid(pTab) );
 
   if( nIncr<0 ){
     iFkIfZero = sqlite3VdbeAddOp2(v, OP_FkIfZero, pFKey->isDeferred, 0);
@@ -600,6 +601,7 @@ static void fkScanChildren(
     }else{
       Expr *pEq, *pAll = 0;
       Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+      assert( pIdx!=0 );
       for(i=0; i<pPk->nKeyCol; i++){
         i16 iCol = pIdx->aiColumn[i];
         pLeft = exprTableRegister(pParse, pTab, regData, iCol);
