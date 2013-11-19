@@ -2756,7 +2756,7 @@ static Bitmask codeOneLoopStart(
   bRev = (pWInfo->revMask>>iLevel)&1;
   omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
            && (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)==0;
-  VdbeNoopComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
+  VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -3461,7 +3461,7 @@ static Bitmask codeOneLoopStart(
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
     testcase( pAlt->eOperator & WO_EQ );
     testcase( pAlt->eOperator & WO_IN );
-    VdbeNoopComment((v, "begin transitive constraint"));
+    VdbeModuleComment((v, "begin transitive constraint"));
     pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
     if( pEAlt ){
       *pEAlt = *pAlt->pExpr;
@@ -5736,7 +5736,7 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Done. */
-  VdbeNoopComment((v, "Begin WHERE-core"));
+  VdbeModuleComment((v, "Begin WHERE-core"));
   return pWInfo;
 
   /* Jump here if malloc fails */
@@ -5763,7 +5763,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Generate loop termination code.
   */
-  VdbeNoopComment((v, "End WHERE-core"));
+  VdbeModuleComment((v, "End WHERE-core"));
   sqlite3ExprCacheClear(pParse);
   for(i=pWInfo->nLevel-1; i>=0; i--){
     int addr;
@@ -5809,7 +5809,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
       sqlite3VdbeJumpHere(v, addr);
     }
-    VdbeNoopComment((v, "End WHERE-loop%d: %s", i,
+    VdbeModuleComment((v, "End WHERE-loop%d: %s", i,
                      pWInfo->pTabList->a[pLevel->iFrom].pTab->zName));
   }
 

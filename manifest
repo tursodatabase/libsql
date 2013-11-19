@@ -1,5 +1,5 @@
-C Avoid\sseeking\son\sthe\smain\sdata\stable\sduring\sthe\sfirst\sloop\sof\san\sUPDATE\nif\san\sindex\sis\ssufficient\sto\scheck\sthe\sWHERE\sclause.
-D 2013-11-19T02:34:11.947
+C Change\sNoop-comments\sin\swhere.c\sinto\sModule-comments,\sso\sthat\sthey\sare\nomitting\swithout\sSQLITE_ENABLE_MODULE_COMMENTS.
+D 2013-11-19T12:33:23.661
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c c0a9bab3e783ecab6add9d08430dd5414810f2fe
+F src/where.c aa72ba871fa835a513cae1c7432dc1d785eb23e4
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 072412d5e3f92c9c6548f5c86d396d3f024df3f7
-R ef3f52da3f64e056bcf519f817dc69c2
+P 57158d9daf4d777411fffb1c1d20d89b291d9214
+R 4e071f5e12e1562d0bddca81679884f9
 U drh
-Z b9dbca4948b9d68d76792a11f3b2fa7e
+Z a3df5d2252057bf6401f296b034ac821
