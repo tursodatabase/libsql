@@ -263,6 +263,11 @@ void sqlite3Update(
   assert( chngPk==0 || chngPk==1 );
   chngKey = chngRowid + chngPk;
 
+  /* The SET expressions are not actually used inside the WHERE loop.
+  ** So reset the colUsed mask
+  */
+  pTabList->a[0].colUsed = 0;
+
   hasFK = sqlite3FkRequired(pParse, pTab, aXRef, chngKey);
 
   /* There is one entry in the aRegIdx[] array for each index on the table

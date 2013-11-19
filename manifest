@@ -1,5 +1,5 @@
-C Fix\san\srequirement\smark\sin\sa\stest\sscript\sso\sthat\sit\smatches\sthe\ntypo-corrected\srequirement.\s\sNo\schanges\sto\scode.
-D 2013-11-19T00:31:25.328
+C Avoid\sseeking\son\sthe\smain\sdata\stable\sduring\sthe\sfirst\sloop\sof\san\sUPDATE\nif\san\sindex\sis\ssufficient\sto\scheck\sthe\sWHERE\sclause.
+D 2013-11-19T02:34:11.947
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
-F src/update.c cc3d826923f7b61566dedbb3cfce5f13964f35a4
+F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e9df04cec48bb8b4ea26ec9024a22ea42b2338eb
-R 8f5d4972dc75b885604bc463d0ac1318
+P 072412d5e3f92c9c6548f5c86d396d3f024df3f7
+R ef3f52da3f64e056bcf519f817dc69c2
 U drh
-Z c2cf09f17232f53b07d5ac061fb00e80
+Z b9dbca4948b9d68d76792a11f3b2fa7e
