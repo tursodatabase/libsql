@@ -1,5 +1,5 @@
-C Add\scomments\sidentifing\swhere\sthe\sskip-scan\soption\sis\sdecided\sin\sthe\nquery\splanner,\sto\said\sin\stuning\sthat\sdecision.\s\sNo\schanges\sto\scode.
-D 2013-11-18T19:32:15.750
+C Fix\san\srequirement\smark\sin\sa\stest\sscript\sso\sthat\sit\smatches\sthe\ntypo-corrected\srequirement.\s\sNo\schanges\sto\scode.
+D 2013-11-19T00:31:25.328
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -437,7 +437,7 @@ F test/e_createtable.test 3b453432cd14a12732ee9467597d2274ca37ce36
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
-F test/e_expr.test d5cdda0e4ffb17760858ed4c7c4ece07efc40f71
+F test/e_expr.test 7d7feeadb555b49476e9ca4a145fcf7c0a81ce34
 F test/e_fkey.test d83a04478bb9c02d2c513518548a69f818869f41
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 1e44f84d2abe44d66e4fbf198be4b20e3cc724a0
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7caeb09c52bde4649b02b339f611c8e30f6d1c68
-R 05f4e654e5dee11a1ac27e9ef3c549a9
+P e9df04cec48bb8b4ea26ec9024a22ea42b2338eb
+R 8f5d4972dc75b885604bc463d0ac1318
 U drh
-Z b6f4e67d2e374e89823b36eebb6a35ba
+Z c2cf09f17232f53b07d5ac061fb00e80
