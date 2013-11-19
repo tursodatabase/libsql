@@ -1,5 +1,5 @@
-C Minor\sperformance\simprovement\sto\ssqlite3SerialTypeGet().
-D 2013-11-19T13:55:34.757
+C Fix\sa\sharmless\sMSVC\scompiler\swarning.
+D 2013-11-19T18:17:20.533
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 3ae281c073c91a10bb42787426499d03df295b7a
+F ext/fts3/fts3.c 1e667eacb3fe4b4ad6f863920da4286f071f6e07
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb5f8029589f3d8f1dc7fd50c773326a640388b1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3e577f40183c56e60866d8382b044688a1b77eaf
-R 9b965afdaedc9147b48bd003e56ae3cc
+P 17e8524fc05aa1e6074c19a8ccccc5ab5883103a
+R fdf3e89d3298858e83482c5ae882639e
 U drh
-Z 24ee7b128cc14b239861141ccdef04d6
+Z 293cb080495f6949faacc3bee3334f1e

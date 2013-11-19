@@ -360,7 +360,7 @@ int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
     if( (c & 0x80)==0 ) break;
   }
   *v = b;
-  return p - pStart;
+  return (int)(p - pStart);
 }
 
 /*
