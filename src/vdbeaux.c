@@ -2966,15 +2966,12 @@ u32 sqlite3VdbeSerialGet(
       return 0;
     }
     default: {
+      static const u16 aFlag[] = { MEM_Blob|MEM_Ephem, MEM_Str|MEM_Ephem };
       u32 len = (serial_type-12)/2;
       pMem->z = (char *)buf;
       pMem->n = len;
       pMem->xDel = 0;
-      if( serial_type&0x01 ){
-        pMem->flags = MEM_Str | MEM_Ephem;
-      }else{
-        pMem->flags = MEM_Blob | MEM_Ephem;
-      }
+      pMem->flags = aFlag[serial_type&1];
       return len;
     }
   }

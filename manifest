@@ -1,5 +1,5 @@
-C Change\sNoop-comments\sin\swhere.c\sinto\sModule-comments,\sso\sthat\sthey\sare\nomitting\swithout\sSQLITE_ENABLE_MODULE_COMMENTS.
-D 2013-11-19T12:33:23.661
+C Minor\sperformance\simprovement\sto\ssqlite3SerialTypeGet().
+D 2013-11-19T13:55:34.757
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/vdbe.c 5573893423aec2d64871e8d504fadbcdaad39fed
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 62eb680327011f3a4b0336642b0ca9d6ecc6eb91
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c dd0f6ab9dc159911facfc0a7a2164af44779bdda
+F src/vdbeaux.c 91f9e1fb59561fa7ba312b518b6123982c912d6c
 F src/vdbeblob.c d883398f7260725147dbf5b40c2b61332aee47f9
 F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 57158d9daf4d777411fffb1c1d20d89b291d9214
-R 4e071f5e12e1562d0bddca81679884f9
+P 3e577f40183c56e60866d8382b044688a1b77eaf
+R 9b965afdaedc9147b48bd003e56ae3cc
 U drh
-Z a3df5d2252057bf6401f296b034ac821
+Z 24ee7b128cc14b239861141ccdef04d6
