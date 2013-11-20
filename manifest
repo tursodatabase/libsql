@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sVdbeCursor\sobject.
-D 2013-11-20T02:53:58.741
+C Refactoring\sthe\sOP_Column\sopcode\sfor\simproved\sperformance\sand\nmaintainability.
+D 2013-11-20T17:25:55.912
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,11 +280,11 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c da810a2b71f26e23d597e3b966166db8f1117fad
+F src/vdbe.c d4b8a9067a163f18535324c76bafdddff6b93491
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h 4044cd2e9dc1aef3e15fc68f80cbdf2446eff369
+F src/vdbeInt.h fbae1c449049a1a26ebbdf44e1beb08344072b72
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 91f9e1fb59561fa7ba312b518b6123982c912d6c
+F src/vdbeaux.c c592609996435944837b8906fbbcfcfac0714c90
 F src/vdbeblob.c d883398f7260725147dbf5b40c2b61332aee47f9
 F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -1140,7 +1140,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 96a65388e75fed96e2e73ef65726f6db88cc5ccd
-R ca796b6fcdb020d784b4cd61fedf5893
+P 5562cd343d8f69242e06a51a7f1aef7ee7d78eec
+R 71521f10a62f5e2d15e34378a9a872cf
+T *branch * OP_Column-refactor
+T *sym-OP_Column-refactor *
+T -sym-trunk *
 U drh
-Z 97e722e14aa88f975fca1769e7e16ee6
+Z 41c0df82986aff89d8eb065b326b79ba

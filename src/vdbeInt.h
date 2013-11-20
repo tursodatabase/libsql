@@ -93,10 +93,14 @@ struct VdbeCursor {
   ** be NULL.
   */
   u32 cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
-  int payloadSize;      /* Total number of bytes in the record */
+  u32 payloadSize;      /* Total number of bytes in the record */
+  u16 nHdrParsed;       /* Number of header fields parsed so far */
+  u16 nFieldPresent;    /* Number of fields in the record */
+  u32 szRow;            /* Byte available in aRow */
+  u32 iHdrOffset;       /* Offset to next unparsed byte of the header */
   u32 *aType;           /* Type values for all entries in the record */
   u32 *aOffset;         /* Cached offsets to the start of each columns data */
-  u8 *aRow;             /* Data for the current row, if all on one page */
+  const u8 *aRow;       /* Data for the current row, if all on one page */
 };
 typedef struct VdbeCursor VdbeCursor;
 
