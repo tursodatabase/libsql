@@ -1,5 +1,5 @@
-C Further\sperformance\stweaks\sto\sOP_Column.
-D 2013-11-20T19:28:03.982
+C Improved\scomments\son\sthe\sOP_Column\schanges.\s\sOptimize\sout\sloading\sof\soverflow\npages\sfor\scontent\swith\szero\slength.\s\sAdd\stest\scases\sfor\sthe\slatter.
+D 2013-11-20T20:58:00.360
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 1a6e2c9413fca3b2d00c49e85a861e0adc8b6c6a
+F src/vdbe.c 987f375b8ba5b5c3d0ded64191f72706221f76f9
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h fbae1c449049a1a26ebbdf44e1beb08344072b72
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -573,7 +573,7 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test e28ba1a14181e709dcdf47455f207adf14c7cfe0
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test c7e80a44eebac8604397eb2ad83d0d5d9d541237
+F test/func.test 00667bbeac044d007f6f021af1b9f6150f0c7ff8
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7c914e3997d2b28164a2fa7eb4398262b6ddb4b2
-R 72749b37eba95a49879e9308fdcd90bb
+P 0e3f5df695216a27602a53eed5d25231b055adc8
+R 7b4a6a3b4e08d369fabb1ea696a3ba02
 U drh
-Z 441207295dddfadd80f4cc85b77f0a53
+Z a02194f256e2495862011254263d6e91

@@ -2284,11 +2284,11 @@ case OP_Column: {
   aType = pC->aType;
   aOffset = pC->aOffset;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  assert( pC->pVtabCursor==0 );
+  assert( pC->pVtabCursor==0 ); /* OP_Column never called on virtual table */
 #endif
   pCrsr = pC->pCursor;
-  assert( pCrsr!=0 || pC->pseudoTableReg>0 );
-  assert( pC->pseudoTableReg==0 || pC->nullRow );
+  assert( pCrsr!=0 || pC->pseudoTableReg>0 ); /* pCrsr NULL on PseudoTables */
+  assert( pCrsr!=0 || pC->nullRow );          /* pC->nullRow on PseudoTables */
 
   /* If the cursor cache is stale, bring it up-to-date */
   rc = sqlite3VdbeCursorMoveto(pC);
@@ -2339,12 +2339,15 @@ case OP_Column: {
         goto too_big;
       }
     }
-      
     pC->cacheStatus = p->cacheCtr;
     pC->iHdrOffset = getVarint32(pC->aRow, offset);
     pC->nHdrParsed = 0;
     aOffset[0] = offset;
     if( avail<offset ){
+      /* pC->aRow does not have to hold the entire row, but it does at least
+      ** need to cover the header of the record.  If pC->aRow does not contain
+      ** the complete header, then set it to zero, forcing the header to be
+      ** dynamically allocated. */
       pC->aRow = 0;
       pC->szRow = 0;
     }
@@ -2368,8 +2371,8 @@ case OP_Column: {
   ** parsed and valid information is in aOffset[] and aType[].
   */
   if( pC->nHdrParsed<=p2 ){
-    /* If there is more header available for parsing, try to extract 
-    ** additional fields up through the p2-th field 
+    /* If there is more header available for parsing in the record, try
+    ** to extract additional fields up through the p2+1-th field 
     */
     if( pC->iHdrOffset<aOffset[0] ){
       /* Make sure zData points to enough of the record to cover the header. */
@@ -2430,9 +2433,10 @@ case OP_Column: {
       }
     }
 
-    /* If after nHdrParsed is still not up to p2, that means that the record
-    ** has fewer than p2 columns.  So the result will be either the default
-    ** value or a NULL. */
+    /* If after trying to extra new entries from the header, nHdrParsed is
+    ** still not up to p2, that means that the record has fewer than p2
+    ** columns.  So the result will be either the default value or a NULL.
+    */
     if( pC->nHdrParsed<=p2 ){
       if( pOp->p4type==P4_MEM ){
         sqlite3VdbeMemShallowCopy(pDest, pOp->p4.pMem, MEM_Static);
@@ -2443,33 +2447,33 @@ case OP_Column: {
     }
   }
 
-  /* Get the column information. If aOffset[p2] is non-zero, then 
-  ** deserialize the value from the record. If aOffset[p2] is zero,
-  ** then there are not enough fields in the record to satisfy the
-  ** request.  In this case, set the value NULL or to P4 if P4 is
-  ** a pointer to a Mem object.
+  /* Extract the content for the p2+1-th column.  Control can only
+  ** reach this point if aOffset[p2], aOffset[p2+1], and aType[p2] are
+  ** all valid.
   */
   assert( p2<pC->nHdrParsed );
   assert( rc==SQLITE_OK );
   if( pC->szRow>=aOffset[p2+1] ){
-    /* This is the common case where the whole row fits on a single page */
+    /* This is the common case where the desired content fits on the original
+    ** page - where the content is not on an overflow page */
     VdbeMemRelease(pDest);
     sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
-    /* This branch happens only when the row overflows onto multiple pages */
+    /* This branch happens only when content is on overflow pages */	
     t = aType[p2];
-    if( (pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
-     && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0)
+    if( ((pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
+          && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0))
+     || (len = sqlite3VdbeSerialTypeLen(t))==0
     ){
       /* Content is irrelevant for the typeof() function and for
       ** the length(X) function if X is a blob.  So we might as well use
       ** bogus content rather than reading content from disk.  NULL works
       ** for text and blob and whatever is in the payloadSize64 variable
-      ** will work for everything else. */
-      zData = t<12 ? (u8*)&payloadSize64 : 0;
+      ** will work for everything else.  Content is also irrelevant if
+      ** the content length is 0. */
+      zData = t<=13 ? (u8*)&payloadSize64 : 0;
       sMem.zMalloc = 0;
     }else{
-      len = sqlite3VdbeSerialTypeLen(t);
       memset(&sMem, 0, sizeof(sMem));
       sqlite3VdbeMemMove(&sMem, pDest);
       rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
