@@ -36,7 +36,7 @@ typedef struct VdbeOp Op;
 /*
 ** Boolean values
 */
-typedef unsigned char Bool;
+typedef unsigned Bool;
 
 /* Opaque type used by code in vdbesort.c */
 typedef struct VdbeSorter VdbeSorter;
@@ -63,25 +63,22 @@ struct VdbeCursor {
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
   int pseudoTableReg;   /* Register holding pseudotable content. */
   i16 nField;           /* Number of fields in the header */
+  u16 nHdrParsed;       /* Number of header fields parsed so far */
   i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
-  Bool rowidIsValid;    /* True if lastRowid is valid */
-  Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
-  Bool nullRow;         /* True if pointing to a row with no data */
-  Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
-  Bool isTable;         /* True if a table requiring integer keys */
-  Bool isIndex;         /* True if an index containing keys only - no data */
-  Bool isOrdered;       /* True if the underlying table is BTREE_UNORDERED */
-  Bool isSorter;        /* True if a new-style sorter */
-  Bool multiPseudo;     /* Multi-register pseudo-cursor */
+  i8 seekResult;        /* Result of previous sqlite3BtreeMoveto() */
+  Bool nullRow:1;       /* True if pointing to a row with no data */
+  Bool rowidIsValid :1; /* True if lastRowid is valid */
+  Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
+  Bool deferredMoveto:1;/* A call to sqlite3BtreeMoveto() is needed */
+  Bool isTable:1;       /* True if a table requiring integer keys */
+  Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
+  Bool multiPseudo:1;   /* Multi-register pseudo-cursor */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
   const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   i64 lastRowid;        /* Rowid being deleted by OP_Delete */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
-
-  /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists */
-  int seekResult;
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheStatus matches
@@ -94,12 +91,9 @@ struct VdbeCursor {
   */
   u32 cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
   u32 payloadSize;      /* Total number of bytes in the record */
-  u16 nHdrParsed;       /* Number of header fields parsed so far */
-  u16 nFieldPresent;    /* Number of fields in the record */
   u32 szRow;            /* Byte available in aRow */
   u32 iHdrOffset;       /* Offset to next unparsed byte of the header */
   u32 *aType;           /* Type values for all entries in the record */
-  u32 *aOffset;         /* Cached offsets to the start of each columns data */
   const u8 *aRow;       /* Data for the current row, if all on one page */
 };
 typedef struct VdbeCursor VdbeCursor;

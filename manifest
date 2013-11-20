@@ -1,5 +1,5 @@
-C Improved\scomments\son\sthe\sOP_Column\schanges.\s\sOptimize\sout\sloading\sof\soverflow\npages\sfor\scontent\swith\szero\slength.\s\sAdd\stest\scases\sfor\sthe\slatter.
-D 2013-11-20T20:58:00.360
+C Reduce\sthe\ssize\sof\sthe\sVdbeCursor\sobject\sfrom\s144\sto\s120\sbytes.
+D 2013-11-20T21:51:33.976
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,12 +280,12 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 987f375b8ba5b5c3d0ded64191f72706221f76f9
+F src/vdbe.c b55581dbd26eee6a03a7c673e9080db306fb8113
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h fbae1c449049a1a26ebbdf44e1beb08344072b72
+F src/vdbeInt.h fc6a1ca59e679cb27f55fd2bc7d91cfb963251dd
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c c592609996435944837b8906fbbcfcfac0714c90
-F src/vdbeblob.c d883398f7260725147dbf5b40c2b61332aee47f9
+F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0e3f5df695216a27602a53eed5d25231b055adc8
-R 7b4a6a3b4e08d369fabb1ea696a3ba02
+P 0e05679db7aa302a49e087a81f85203844b98cbe
+R 25fcd0453526b0fb55425cafc8bedd31
 U drh
-Z a02194f256e2495862011254263d6e91
+Z 51316cd0cd8c72b5a20c8e69a256a48d

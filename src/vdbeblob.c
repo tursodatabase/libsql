@@ -64,7 +64,8 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
 
   rc = sqlite3_step(p->pStmt);
   if( rc==SQLITE_ROW ){
-    u32 type = v->apCsr[0]->aType[p->iCol];
+    VdbeCursor *pC = v->apCsr[0];
+    u32 type = pC->aType[p->iCol];
     if( type<12 ){
       zErr = sqlite3MPrintf(p->db, "cannot open value of type %s",
           type==0?"null": type==7?"real": "integer"
@@ -73,9 +74,9 @@ static int blobSeekToRow(Incrblob *p, sqlite3_int64 iRow, char **pzErr){
       sqlite3_finalize(p->pStmt);
       p->pStmt = 0;
     }else{
-      p->iOffset = v->apCsr[0]->aOffset[p->iCol];
+      p->iOffset = pC->aType[p->iCol + pC->nField];
       p->nByte = sqlite3VdbeSerialTypeLen(type);
-      p->pCsr =  v->apCsr[0]->pCursor;
+      p->pCsr =  pC->pCursor;
       sqlite3BtreeEnterCursor(p->pCsr);
       sqlite3BtreeCacheOverflow(p->pCsr);
       sqlite3BtreeLeaveCursor(p->pCsr);

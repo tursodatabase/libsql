@@ -228,7 +228,6 @@ static VdbeCursor *allocateCursor(
     pCx->nField = nField;
     if( nField ){
       pCx->aType = (u32 *)&pMem->z[ROUND8(sizeof(VdbeCursor))];
-      pCx->aOffset = pCx->aType + nField;
     }
     if( isBtreeCursor ){
       pCx->pCursor = (BtCursor*)
@@ -2282,7 +2281,7 @@ case OP_Column: {
   assert( pC!=0 );
   assert( p2<pC->nField );
   aType = pC->aType;
-  aOffset = pC->aOffset;
+  aOffset = aType + pC->nField;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   assert( pC->pVtabCursor==0 ); /* OP_Column never called on virtual table */
 #endif
@@ -2313,7 +2312,7 @@ case OP_Column: {
       }
     }else{
       assert( pCrsr );
-      if( pC->isIndex ){
+      if( pC->isTable==0 ){
         assert( sqlite3BtreeCursorIsValid(pCrsr) );
         VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &payloadSize64);
         assert( rc==SQLITE_OK ); /* True because of CursorMoveto() call above */
@@ -2378,8 +2377,8 @@ case OP_Column: {
       /* Make sure zData points to enough of the record to cover the header. */
       if( pC->aRow==0 ){
         memset(&sMem, 0, sizeof(sMem));
-        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, pC->aOffset[0], pC->isIndex,
-                                     &sMem);
+        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], 
+                                     !pC->isTable, &sMem);
         if( rc!=SQLITE_OK ){
           goto op_column_error;
         }
@@ -2476,7 +2475,7 @@ case OP_Column: {
     }else{
       memset(&sMem, 0, sizeof(sMem));
       sqlite3VdbeMemMove(&sMem, pDest);
-      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
+      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, !pC->isTable,
                                    &sMem);
       if( rc!=SQLITE_OK ){
         goto op_column_error;
@@ -3273,12 +3272,11 @@ case OP_OpenWrite: {
   ** sqlite3BtreeCursor() may return is SQLITE_OK. */
   assert( rc==SQLITE_OK );
 
-  /* Set the VdbeCursor.isTable and isIndex variables. Previous versions of
+  /* Set the VdbeCursor.isTable variable. Previous versions of
   ** SQLite used to check if the root-page flags were sane at this point
   ** and report database corruption if they were not, but this check has
   ** since moved into the btree layer.  */  
   pCur->isTable = pOp->p4type!=P4_KEYINFO;
-  pCur->isIndex = !pCur->isTable;
   break;
 }
 
@@ -3353,7 +3351,6 @@ case OP_OpenEphemeral: {
     }
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
-  pCx->isIndex = !pCx->isTable;
   break;
 }
 
@@ -3373,7 +3370,6 @@ case OP_SorterOpen: {
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
   assert( pCx->pKeyInfo->db==db );
   assert( pCx->pKeyInfo->enc==ENC(db) );
-  pCx->isSorter = 1;
   rc = sqlite3VdbeSorterInit(db, pCx);
   break;
 }
@@ -3405,7 +3401,6 @@ case OP_OpenPseudo: {
   pCx->nullRow = 1;
   pCx->pseudoTableReg = pOp->p2;
   pCx->isTable = 1;
-  pCx->isIndex = 0;
   pCx->multiPseudo = pOp->p5;
   break;
 }
@@ -3764,7 +3759,7 @@ case OP_Found: {        /* jump, in3 */
   if( rc!=SQLITE_OK ){
     break;
   }
-  pC->seekResult = res;
+  pC->seekResult = res==0 ? 0 : res<0 ? -1 : +1;
   alreadyExists = (res==0);
   pC->nullRow = 1-alreadyExists;
   pC->deferredMoveto = 0;
@@ -3818,7 +3813,7 @@ case OP_NotExists: {        /* jump, in3 */
     pc = pOp->p2 - 1;
     assert( pC->rowidIsValid==0 );
   }
-  pC->seekResult = res;
+  pC->seekResult = res==0 ? 0 : res<0 ? -1 : +1;
   break;
 }
 
@@ -4041,7 +4036,7 @@ case OP_InsertInt: {
   i64 iKey;         /* The integer ROWID or key for the record to be inserted */
   VdbeCursor *pC;   /* Cursor to table into which insert is written */
   int nZero;        /* Number of zero-bytes to append */
-  int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
+  i8 seekResult;    /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
   const char *zTbl; /* Table name - used by the opdate hook */
   int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
@@ -4221,7 +4216,7 @@ case OP_SorterData: {
 
   pOut = &aMem[pOp->p2];
   pC = p->apCsr[pOp->p1];
-  assert( pC->isSorter );
+  assert( isSorter(pC) );
   rc = sqlite3VdbeSorterRowkey(pC, pOut);
   break;
 }
@@ -4261,9 +4256,9 @@ case OP_RowData: {
   /* Note that RowKey and RowData are really exactly the same instruction */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  assert( pC->isSorter==0 );
+  assert( isSorter(pC)==0 );
   assert( pC->isTable || pOp->opcode!=OP_RowData );
-  assert( pC->isIndex || pOp->opcode==OP_RowData );
+  assert( pC->isTable==0 || pOp->opcode==OP_RowData );
   assert( pC!=0 );
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
@@ -4280,7 +4275,7 @@ case OP_RowData: {
   rc = sqlite3VdbeCursorMoveto(pC);
   if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
 
-  if( pC->isIndex ){
+  if( pC->isTable==0 ){
     assert( !pC->isTable );
     VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &n64);
     assert( rc==SQLITE_OK );    /* True because of CursorMoveto() call above */
@@ -4300,7 +4295,7 @@ case OP_RowData: {
   }
   pOut->n = n;
   MemSetTypeFlag(pOut, MEM_Blob);
-  if( pC->isIndex ){
+  if( pC->isTable==0 ){
     rc = sqlite3BtreeKey(pCrsr, 0, n, pOut->z);
   }else{
     rc = sqlite3BtreeData(pCrsr, 0, n, pOut->z);
@@ -4449,7 +4444,7 @@ case OP_Rewind: {        /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->isSorter==(pOp->opcode==OP_SorterSort) );
+  assert( isSorter(pC)==(pOp->opcode==OP_SorterSort) );
   res = 1;
   if( isSorter(pC) ){
     rc = sqlite3VdbeSorterRewind(db, pC, &res);
@@ -4513,7 +4508,7 @@ case OP_Next: {        /* jump */
   if( pC==0 ){
     break;  /* See ticket #2273 */
   }
-  assert( pC->isSorter==(pOp->opcode==OP_SorterNext) );
+  assert( isSorter(pC)==(pOp->opcode==OP_SorterNext) );
   if( isSorter(pC) ){
     assert( pOp->opcode==OP_SorterNext );
     rc = sqlite3VdbeSorterNext(db, pC, &res);
@@ -4561,7 +4556,7 @@ case OP_IdxInsert: {        /* in2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->isSorter==(pOp->opcode==OP_SorterInsert) );
+  assert( isSorter(pC)==(pOp->opcode==OP_SorterInsert) );
   pIn2 = &aMem[pOp->p2];
   assert( pIn2->flags & MEM_Blob );
   pCrsr = pC->pCursor;
