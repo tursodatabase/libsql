@@ -1193,7 +1193,7 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
     /* Consider functions to be constant if all their arguments are constant
     ** and pWalker->u.i==2 */
     case TK_FUNCTION:
-      if( pWalker->u.i==2 ) return 0;
+      if( pWalker->u.i==2 ) return WRC_Continue;
       /* Fall through */
     case TK_ID:
     case TK_COLUMN:

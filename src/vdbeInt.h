@@ -61,12 +61,10 @@ struct VdbeCursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
   Btree *pBt;           /* Separate file holding temporary table */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int iDb;              /* Index of cursor database in db->aDb[] (or -1) */
   int pseudoTableReg;   /* Register holding pseudotable content. */
-  int nField;           /* Number of fields in the header */
-  Bool zeroed;          /* True if zeroed out and ready for reuse */
+  i16 nField;           /* Number of fields in the header */
+  i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
   Bool rowidIsValid;    /* True if lastRowid is valid */
-  Bool atFirst;         /* True if pointing to first entry */
   Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
   Bool nullRow;         /* True if pointing to a row with no data */
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
@@ -79,7 +77,7 @@ struct VdbeCursor {
   const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
+  i64 lastRowid;        /* Rowid being deleted by OP_Delete */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
 
   /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists */

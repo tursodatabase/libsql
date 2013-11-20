@@ -4504,7 +4504,6 @@ case OP_Rewind: {        /* jump */
     pCrsr = pC->pCursor;
     assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
-    pC->atFirst = res==0 ?1:0;
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
     pC->rowidIsValid = 0;
