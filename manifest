@@ -1,5 +1,5 @@
-C Refactoring\sthe\sOP_Column\sopcode\sfor\simproved\sperformance\sand\nmaintainability.
-D 2013-11-20T17:25:55.912
+C Further\sperformance\stweaks\sto\sOP_Column.
+D 2013-11-20T19:28:03.982
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c d4b8a9067a163f18535324c76bafdddff6b93491
+F src/vdbe.c 1a6e2c9413fca3b2d00c49e85a861e0adc8b6c6a
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h fbae1c449049a1a26ebbdf44e1beb08344072b72
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -313,7 +313,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test d31defa011a561b938b4608d3538c1b4e0b5e92c
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 1b9b7e9a096d1536f03d9ad7b72f638ef5669347
+F test/analyze9.test 339e87723cd4dc158dc5e9095acd8df9e87faf79
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
@@ -1140,10 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5562cd343d8f69242e06a51a7f1aef7ee7d78eec
-R 71521f10a62f5e2d15e34378a9a872cf
-T *branch * OP_Column-refactor
-T *sym-OP_Column-refactor *
-T -sym-trunk *
+P 7c914e3997d2b28164a2fa7eb4398262b6ddb4b2
+R 72749b37eba95a49879e9308fdcd90bb
 U drh
-Z 41c0df82986aff89d8eb065b326b79ba
+Z 441207295dddfadd80f4cc85b77f0a53

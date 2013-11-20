@@ -2255,13 +2255,11 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 */
 case OP_Column: {
   i64 payloadSize64; /* Number of bytes in the record */
-  int p1;            /* P1 value of the opcode */
   int p2;            /* column number to retrieve */
   VdbeCursor *pC;    /* The VDBE cursor */
   BtCursor *pCrsr;   /* The BTree cursor */
   u32 *aType;        /* aType[i] holds the numeric type of the i-th column */
   u32 *aOffset;      /* aOffset[i] is offset to start of data for i-th column */
-  int nField;        /* number of fields in the record */
   int len;           /* The length of the serialized data for the column */
   int i;             /* Loop counter */
   Mem *pDest;        /* Where to write the extracted value */
@@ -2275,17 +2273,14 @@ case OP_Column: {
   u32 t;             /* A type code from the record header */
   Mem *pReg;         /* PseudoTable input register */
 
-  p1 = pOp->p1;
-  assert( p1<p->nCursor );
   p2 = pOp->p2;
-  sMem.zMalloc = 0;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
-  pC = p->apCsr[p1];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  nField = pC->nField;
-  assert( p2<nField );
+  assert( p2<pC->nField );
   aType = pC->aType;
   aOffset = pC->aOffset;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
@@ -2293,27 +2288,31 @@ case OP_Column: {
 #endif
   pCrsr = pC->pCursor;
   assert( pCrsr!=0 || pC->pseudoTableReg>0 );
+  assert( pC->pseudoTableReg==0 || pC->nullRow );
 
   /* If the cursor cache is stale, bring it up-to-date */
   rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
   if( pC->cacheStatus!=p->cacheCtr || (pOp->p5&OPFLAG_CLEARCACHE)!=0 ){
-    if( pCrsr==0 ){
-      assert( pC->pseudoTableReg>0 );
-      pReg = &aMem[pC->pseudoTableReg];
-      if( pC->multiPseudo ){
-        sqlite3VdbeMemShallowCopy(pDest, pReg+p2, MEM_Ephem);
-        Deephemeralize(pDest);
+    if( pC->nullRow ){
+      if( pCrsr==0 ){
+        assert( pC->pseudoTableReg>0 );
+        pReg = &aMem[pC->pseudoTableReg];
+        if( pC->multiPseudo ){
+          sqlite3VdbeMemShallowCopy(pDest, pReg+p2, MEM_Ephem);
+          Deephemeralize(pDest);
+          goto op_column_out;
+        }
+        assert( pReg->flags & MEM_Blob );
+        assert( memIsValid(pReg) );
+        pC->payloadSize = pC->szRow = avail = pReg->n;
+        pC->aRow = (u8*)pReg->z;
+      }else{
+        MemSetTypeFlag(pDest, MEM_Null);
         goto op_column_out;
       }
-      assert( pReg->flags & MEM_Blob );
-      assert( memIsValid(pReg) );
-      pC->payloadSize = pC->szRow = avail = pReg->n;
-      pC->aRow = (u8*)pReg->z;
-    }else if( pC->nullRow ){
-      MemSetTypeFlag(pDest, MEM_Null);
-      goto op_column_out;
     }else{
+      assert( pCrsr );
       if( pC->isIndex ){
         assert( sqlite3BtreeCursorIsValid(pCrsr) );
         VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &payloadSize64);
@@ -2361,65 +2360,85 @@ case OP_Column: {
     */
     if( offset > 98307 || offset > pC->payloadSize ){
       rc = SQLITE_CORRUPT_BKPT;
-      goto op_column_out;
+      goto op_column_error;
     }
   }
 
   /* Make sure at least the first p2+1 entries of the header have been
   ** parsed and valid information is in aOffset[] and aType[].
   */
-  if( pC->nHdrParsed<=p2 && pC->iHdrOffset<aOffset[0] ){
-    /* Make sure zData points to enough of the record to cover the header. */
-    if( pC->aRow==0 ){
-      memset(&sMem, 0, sizeof(sMem));
-      rc = sqlite3VdbeMemFromBtree(pCrsr, 0, pC->aOffset[0], pC->isIndex,&sMem);
-      if( rc!=SQLITE_OK ){
-        goto op_column_out;
-      }
-      zData = (u8*)sMem.z;
-    }else{
-      zData = pC->aRow;
-    }
-
-    /* Fill in aType[i] and aOffset[i] values through the p2-th field. */
-    i = pC->nHdrParsed;
-    offset = aOffset[i];
-    zHdr = zData + pC->iHdrOffset;
-    zEndHdr = zData + pC->aOffset[0];
-    for(; i<=p2 && zHdr<zEndHdr; i++){
-      if( zHdr[0]<0x80 ){
-        t = zHdr[0];
-        zHdr++;
-      }else{
-        zHdr += sqlite3GetVarint32(zHdr, &t);
-      }
-      aType[i] = t;
-      szField = sqlite3VdbeSerialTypeLen(t);
-      offset += szField;
-      if( offset<szField ){  /* True if offset overflows */
-        zHdr = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
-        break;
-      }
-      aOffset[i+1] = offset;
-    }
-    pC->nHdrParsed = i;
-    pC->iHdrOffset = (u32)(zHdr - zData);
-    if( pC->aRow==0 ){
-      sqlite3VdbeMemRelease(&sMem);
-      sMem.flags = MEM_Null;
-    }
-
-    /* If we have read more header data than was contained in the header,
-    ** or if the end of the last field appears to be past the end of the
-    ** record, or if the end of the last field appears to be before the end
-    ** of the record (when all fields present), then we must be dealing 
-    ** with a corrupt database.
+  if( pC->nHdrParsed<=p2 ){
+    /* If there is more header available for parsing, try to extract 
+    ** additional fields up through the p2-th field 
     */
-    if( (zHdr > zEndHdr)
-     || (offset > pC->payloadSize)
-     || (zHdr==zEndHdr && offset!=pC->payloadSize)
-    ){
-      rc = SQLITE_CORRUPT_BKPT;
+    if( pC->iHdrOffset<aOffset[0] ){
+      /* Make sure zData points to enough of the record to cover the header. */
+      if( pC->aRow==0 ){
+        memset(&sMem, 0, sizeof(sMem));
+        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, pC->aOffset[0], pC->isIndex,
+                                     &sMem);
+        if( rc!=SQLITE_OK ){
+          goto op_column_error;
+        }
+        zData = (u8*)sMem.z;
+      }else{
+        zData = pC->aRow;
+      }
+  
+      /* Fill in aType[i] and aOffset[i] values through the p2-th field. */
+      i = pC->nHdrParsed;
+      offset = aOffset[i];
+      zHdr = zData + pC->iHdrOffset;
+      zEndHdr = zData + aOffset[0];
+      assert( i<=p2 && zHdr<zEndHdr );
+      do{
+        if( zHdr[0]<0x80 ){
+          t = zHdr[0];
+          zHdr++;
+        }else{
+          zHdr += sqlite3GetVarint32(zHdr, &t);
+        }
+        aType[i] = t;
+        szField = sqlite3VdbeSerialTypeLen(t);
+        offset += szField;
+        if( offset<szField ){  /* True if offset overflows */
+          zHdr = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
+          break;
+        }
+        i++;
+        aOffset[i] = offset;
+      }while( i<=p2 && zHdr<zEndHdr );
+      pC->nHdrParsed = i;
+      pC->iHdrOffset = (u32)(zHdr - zData);
+      if( pC->aRow==0 ){
+        sqlite3VdbeMemRelease(&sMem);
+        sMem.flags = MEM_Null;
+      }
+  
+      /* If we have read more header data than was contained in the header,
+      ** or if the end of the last field appears to be past the end of the
+      ** record, or if the end of the last field appears to be before the end
+      ** of the record (when all fields present), then we must be dealing 
+      ** with a corrupt database.
+      */
+      if( (zHdr > zEndHdr)
+       || (offset > pC->payloadSize)
+       || (zHdr==zEndHdr && offset!=pC->payloadSize)
+      ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto op_column_error;
+      }
+    }
+
+    /* If after nHdrParsed is still not up to p2, that means that the record
+    ** has fewer than p2 columns.  So the result will be either the default
+    ** value or a NULL. */
+    if( pC->nHdrParsed<=p2 ){
+      if( pOp->p4type==P4_MEM ){
+        sqlite3VdbeMemShallowCopy(pDest, pOp->p4.pMem, MEM_Static);
+      }else{
+        MemSetTypeFlag(pDest, MEM_Null);
+      }
       goto op_column_out;
     }
   }
@@ -2430,64 +2449,56 @@ case OP_Column: {
   ** request.  In this case, set the value NULL or to P4 if P4 is
   ** a pointer to a Mem object.
   */
-  if( p2<pC->nHdrParsed ){
-    assert( rc==SQLITE_OK );
-    if( pC->szRow>=aOffset[p2+1] ){
-      /* This is the common case where the whole row fits on a single page */
-      VdbeMemRelease(pDest);
-      sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
-    }else{
-      /* This branch happens only when the row overflows onto multiple pages */
-      t = aType[p2];
-      if( (pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
-       && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0)
-      ){
-        /* Content is irrelevant for the typeof() function and for
-        ** the length(X) function if X is a blob.  So we might as well use
-        ** bogus content rather than reading content from disk.  NULL works
-        ** for text and blob and whatever is in the payloadSize64 variable
-        ** will work for everything else. */
-        zData = t<12 ? (u8*)&payloadSize64 : 0;
-      }else{
-        len = sqlite3VdbeSerialTypeLen(t);
-        memset(&sMem, 0, sizeof(sMem));
-        sqlite3VdbeMemMove(&sMem, pDest);
-        rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
-                                     &sMem);
-        if( rc!=SQLITE_OK ){
-          goto op_column_out;
-        }
-        zData = (u8*)sMem.z;
-      }
-      sqlite3VdbeSerialGet(zData, t, pDest);
-    }
-    pDest->enc = encoding;
+  assert( p2<pC->nHdrParsed );
+  assert( rc==SQLITE_OK );
+  if( pC->szRow>=aOffset[p2+1] ){
+    /* This is the common case where the whole row fits on a single page */
+    VdbeMemRelease(pDest);
+    sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
-    if( pOp->p4type==P4_MEM ){
-      sqlite3VdbeMemShallowCopy(pDest, pOp->p4.pMem, MEM_Static);
+    /* This branch happens only when the row overflows onto multiple pages */
+    t = aType[p2];
+    if( (pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
+     && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0)
+    ){
+      /* Content is irrelevant for the typeof() function and for
+      ** the length(X) function if X is a blob.  So we might as well use
+      ** bogus content rather than reading content from disk.  NULL works
+      ** for text and blob and whatever is in the payloadSize64 variable
+      ** will work for everything else. */
+      zData = t<12 ? (u8*)&payloadSize64 : 0;
+      sMem.zMalloc = 0;
     }else{
-      MemSetTypeFlag(pDest, MEM_Null);
+      len = sqlite3VdbeSerialTypeLen(t);
+      memset(&sMem, 0, sizeof(sMem));
+      sqlite3VdbeMemMove(&sMem, pDest);
+      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
+                                   &sMem);
+      if( rc!=SQLITE_OK ){
+        goto op_column_error;
+      }
+      zData = (u8*)sMem.z;
+    }
+    sqlite3VdbeSerialGet(zData, t, pDest);
+    /* If we dynamically allocated space to hold the data (in the
+    ** sqlite3VdbeMemFromBtree() call above) then transfer control of that
+    ** dynamically allocated space over to the pDest structure.
+    ** This prevents a memory copy. */
+    if( sMem.zMalloc ){
+      assert( sMem.z==sMem.zMalloc );
+      assert( !(pDest->flags & MEM_Dyn) );
+      assert( !(pDest->flags & (MEM_Blob|MEM_Str)) || pDest->z==sMem.z );
+      pDest->flags &= ~(MEM_Ephem|MEM_Static);
+      pDest->flags |= MEM_Term;
+      pDest->z = sMem.z;
+      pDest->zMalloc = sMem.zMalloc;
     }
   }
-
-  /* If we dynamically allocated space to hold the data (in the
-  ** sqlite3VdbeMemFromBtree() call above) then transfer control of that
-  ** dynamically allocated space over to the pDest structure.
-  ** This prevents a memory copy.
-  */
-  if( sMem.zMalloc ){
-    assert( sMem.z==sMem.zMalloc );
-    assert( !(pDest->flags & MEM_Dyn) );
-    assert( !(pDest->flags & (MEM_Blob|MEM_Str)) || pDest->z==sMem.z );
-    pDest->flags &= ~(MEM_Ephem|MEM_Static);
-    pDest->flags |= MEM_Term;
-    pDest->z = sMem.z;
-    pDest->zMalloc = sMem.zMalloc;
-  }
-
-  rc = sqlite3VdbeMemMakeWriteable(pDest);
+  pDest->enc = encoding;
 
 op_column_out:
+  rc = sqlite3VdbeMemMakeWriteable(pDest);
+op_column_error:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
   break;
