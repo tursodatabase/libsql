@@ -854,12 +854,7 @@ expr(A) ::= ID(X) LP STAR RP(E). {
   spanSet(&A,&X,&E);
 }
 term(A) ::= CTIME_KW(OP). {
-  /* The CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP values are
-  ** treated as functions that return constants */
-  A.pExpr = sqlite3ExprFunction(pParse, 0,&OP);
-  if( A.pExpr ){
-    A.pExpr->op = TK_CONST_FUNC;  
-  }
+  A.pExpr = sqlite3ExprFunction(pParse, 0, &OP);
   spanSet(&A, &OP, &OP);
 }
 

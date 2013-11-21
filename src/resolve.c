@@ -667,7 +667,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 
     /* Resolve function names
     */
-    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pList = pExpr->x.pList;    /* The argument list */
       int n = pList ? pList->nExpr : 0;    /* Number of arguments */
@@ -680,7 +679,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
-      testcase( pExpr->op==TK_CONST_FUNC );
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       notValidPartIdxWhere(pParse, pNC, "functions");
       zId = pExpr->u.zToken;

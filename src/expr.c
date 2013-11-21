@@ -2626,7 +2626,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }
       break;
     }
-    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pFarg;       /* List of function arguments */
       int nFarg;             /* Number of function arguments */
@@ -2639,8 +2638,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       CollSeq *pColl = 0;    /* A collating sequence */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      testcase( op==TK_CONST_FUNC );
-      testcase( op==TK_FUNCTION );
       if( ExprHasProperty(pExpr, EP_TokenOnly) ){
         pFarg = 0;
       }else{
@@ -3206,7 +3203,6 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
     }
 
     case TK_AGG_FUNCTION:
-    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pFarg;       /* List of function arguments */
       if( ExprHasProperty(pExpr, EP_TokenOnly) ){
