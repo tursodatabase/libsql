@@ -1081,15 +1081,15 @@ case OP_Move: {
   int p1;          /* Register to copy from */
   int p2;          /* Register to copy to */
 
-  n = pOp->p3 + 1;
+  n = pOp->p3;
   p1 = pOp->p1;
   p2 = pOp->p2;
-  assert( n>0 && p1>0 && p2>0 );
+  assert( n>=0 && p1>0 && p2>0 );
   assert( p1+n<=p2 || p2+n<=p1 );
 
   pIn1 = &aMem[p1];
   pOut = &aMem[p2];
-  while( n-- ){
+  do{
     assert( pOut<=&aMem[(p->nMem-p->nCursor)] );
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
@@ -1106,7 +1106,7 @@ case OP_Move: {
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
     pOut++;
-  }
+  }while( n-- );
   break;
 }
 
@@ -1532,7 +1532,8 @@ case OP_Function: {
 
   /* Copy the result of the function into register P3 */
   sqlite3VdbeChangeEncoding(&ctx.s, encoding);
-  sqlite3VdbeMemMove(pOut, &ctx.s);
+  assert( pOut->flags==MEM_Null );
+  memcpy(pOut, &ctx.s, sizeof(Mem));
   if( sqlite3VdbeMemTooBig(pOut) ){
     goto too_big;
   }
