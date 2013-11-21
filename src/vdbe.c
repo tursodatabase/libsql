@@ -1487,10 +1487,6 @@ case OP_Function: {
 
   assert( pOp->p4type==P4_FUNCDEF );
   ctx.pFunc = pOp->p4.pFunc;
-  ctx.s.flags = MEM_Null;
-  ctx.s.db = db;
-  ctx.s.xDel = 0;
-  ctx.s.zMalloc = 0;
   ctx.iOp = pc;
   ctx.pVdbe = p;
 
@@ -1498,7 +1494,10 @@ case OP_Function: {
   ** the pointer to ctx.s so in case the user-function can use
   ** the already allocated buffer instead of allocating a new one.
   */
-  sqlite3VdbeMemMove(&ctx.s, pOut);
+  memcpy(&ctx.s, pOut, sizeof(Mem));
+  pOut->flags = MEM_Null;
+  pOut->xDel = 0;
+  pOut->zMalloc = 0;
   MemSetTypeFlag(&ctx.s, MEM_Null);
 
   ctx.fErrorOrAux = 0;

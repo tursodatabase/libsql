@@ -1,5 +1,5 @@
-C Performance\soptimization\sto\sthe\sOP_Next\sand\sOP_Prev\sopcodes.
-D 2013-11-21T03:12:25.082
+C A\ssimple\schange\sto\sthe\sOP_Function\sopcode\simproves\soverall\sperformance\sby\nabout\s0.5%.
+D 2013-11-21T03:43:12.554
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 1aabde68130182a3cceb70d1c59122b93244b97e
+F src/vdbe.c 9d8490d65b06d2e21dd0f0e6286c07e7f3095a48
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 0ac03c790b8ea4568b747550ba9bbf92a8e8feb2
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 972881c6d394c199961f01dcbeb4a6e8b5c919a1
-R d4a5420dc1635b387e6b0a099e73a8c3
+P ecaac28a2e78aca148fc614fe54bf2706aed8be2
+R 33f1c98c35afb745f70ac2d0738f01fc
 U drh
-Z 0f90f7ea40ab09ca14f9f529358ed102
+Z a8c7ba243cd2d2fb4fb7b6cf27c27770
