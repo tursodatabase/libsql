@@ -1,5 +1,5 @@
-C Reduce\sthe\ssize\sof\sthe\sVdbeCursor\sobject\sfrom\s144\sto\s120\sbytes.
-D 2013-11-20T21:51:33.976
+C Unpack\ssome\sfields,\sadding\ssome\sspace\sback\sto\sthe\sVdbeCursor\sobject,\nin\sorder\sto\shelp\sthe\scode\sto\srun\sa\slittle\sfaster.
+D 2013-11-21T00:10:35.929
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,9 +280,9 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c b55581dbd26eee6a03a7c673e9080db306fb8113
+F src/vdbe.c fb6007ac59ebebf398ce1709f9cef367bfd15dce
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h fc6a1ca59e679cb27f55fd2bc7d91cfb963251dd
+F src/vdbeInt.h 7cb3c641d42154ea0c66055ca77557005ff4535d
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c c592609996435944837b8906fbbcfcfac0714c90
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0e05679db7aa302a49e087a81f85203844b98cbe
-R 25fcd0453526b0fb55425cafc8bedd31
+P 5f9d50688508affd0bc8e4d52e21dacfacdbb5ce
+R 11a6306351cf31959d33e284a4627112
 U drh
-Z 51316cd0cd8c72b5a20c8e69a256a48d
+Z 5afd15b6c955a3c65a923acb8d5d260f

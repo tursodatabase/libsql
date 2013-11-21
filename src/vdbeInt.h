@@ -61,15 +61,15 @@ struct VdbeCursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
   Btree *pBt;           /* Separate file holding temporary table */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
+  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
   int pseudoTableReg;   /* Register holding pseudotable content. */
   i16 nField;           /* Number of fields in the header */
   u16 nHdrParsed;       /* Number of header fields parsed so far */
   i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
-  i8 seekResult;        /* Result of previous sqlite3BtreeMoveto() */
-  Bool nullRow:1;       /* True if pointing to a row with no data */
-  Bool rowidIsValid :1; /* True if lastRowid is valid */
+  u8 nullRow;           /* True if pointing to a row with no data */
+  u8 rowidIsValid;      /* True if lastRowid is valid */
+  u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
-  Bool deferredMoveto:1;/* A call to sqlite3BtreeMoveto() is needed */
   Bool isTable:1;       /* True if a table requiring integer keys */
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
   Bool multiPseudo:1;   /* Multi-register pseudo-cursor */

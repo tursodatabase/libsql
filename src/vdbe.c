@@ -3759,7 +3759,7 @@ case OP_Found: {        /* jump, in3 */
   if( rc!=SQLITE_OK ){
     break;
   }
-  pC->seekResult = res==0 ? 0 : res<0 ? -1 : +1;
+  pC->seekResult = res;
   alreadyExists = (res==0);
   pC->nullRow = 1-alreadyExists;
   pC->deferredMoveto = 0;
@@ -3813,7 +3813,7 @@ case OP_NotExists: {        /* jump, in3 */
     pc = pOp->p2 - 1;
     assert( pC->rowidIsValid==0 );
   }
-  pC->seekResult = res==0 ? 0 : res<0 ? -1 : +1;
+  pC->seekResult = res;
   break;
 }
 
@@ -4036,7 +4036,7 @@ case OP_InsertInt: {
   i64 iKey;         /* The integer ROWID or key for the record to be inserted */
   VdbeCursor *pC;   /* Cursor to table into which insert is written */
   int nZero;        /* Number of zero-bytes to append */
-  i8 seekResult;    /* Result of prior seek or 0 if no USESEEKRESULT flag */
+  int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
   const char *zDb;  /* database name - used by the update hook */
   const char *zTbl; /* Table name - used by the opdate hook */
   int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
