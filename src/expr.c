@@ -1191,9 +1191,12 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
 
   switch( pExpr->op ){
     /* Consider functions to be constant if all their arguments are constant
-    ** and pWalker->u.i==2 */
+    ** and either pWalker->u.i==2 or the function as the SQLITE_FUNC_CONST
+    ** flag. */
     case TK_FUNCTION:
-      if( pWalker->u.i==2 ) return WRC_Continue;
+      if( pWalker->u.i==2 || ExprHasProperty(pExpr,EP_Constant) ){
+        return WRC_Continue;
+      }
       /* Fall through */
     case TK_ID:
     case TK_COLUMN:
@@ -2697,9 +2700,9 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           if( exprOp==TK_COLUMN || exprOp==TK_AGG_COLUMN ){
             assert( SQLITE_FUNC_LENGTH==OPFLAG_LENGTHARG );
             assert( SQLITE_FUNC_TYPEOF==OPFLAG_TYPEOFARG );
-            testcase( (pDef->funcFlags&~SQLITE_FUNC_ENCMASK)
-                       ==SQLITE_FUNC_LENGTH );
-            pFarg->a[0].pExpr->op2 = pDef->funcFlags&~SQLITE_FUNC_ENCMASK;
+            testcase( pDef->funcFlags & OPFLAG_LENGTHARG );
+            pFarg->a[0].pExpr->op2 = 
+                  pDef->funcFlags & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG);
           }
         }
 
