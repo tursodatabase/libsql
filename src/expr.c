@@ -2989,13 +2989,22 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 /*
 ** Factor out the code of the given expression to initialization time.
 */
-void sqlite3ExprCodeAtInit(Parse *pParse, Expr *pExpr, int regDest){
+void sqlite3ExprCodeAtInit(
+  Parse *pParse,    /* Parsing context */
+  Expr *pExpr,      /* The expression to code when the VDBE initializes */
+  int regDest,      /* Store the value in this register */
+  u8 reusable       /* True if this expression is reusable */
+){
   ExprList *p;
   assert( ConstFactorOk(pParse) );
   p = pParse->pConstExpr;
   pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
   p = sqlite3ExprListAppend(pParse, p, pExpr);
-  if( p ) p->a[p->nExpr-1].u.iConstExprReg = regDest;
+  if( p ){
+     struct ExprList_item *pItem = &p->a[p->nExpr-1];
+     pItem->u.iConstExprReg = regDest;
+     pItem->reusable = reusable;
+  }
   pParse->pConstExpr = p;
 }
 
@@ -3023,14 +3032,15 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
     int i;
     *pReg  = 0;
     if( p ){
-      for(i=0; i<p->nExpr; i++){
-        if( sqlite3ExprCompare(p->a[i].pExpr, pExpr, -1)==0 ){
-          return p->a[i].u.iConstExprReg;
+      struct ExprList_item *pItem;
+      for(pItem=p->a, i=p->nExpr; i>0; pItem++, i--){
+        if( pItem->reusable && sqlite3ExprCompare(pItem->pExpr,pExpr,-1)==0 ){
+          return pItem->u.iConstExprReg;
         }
       }
     }
     r2 = ++pParse->nMem;
-    sqlite3ExprCodeAtInit(pParse, pExpr, r2);
+    sqlite3ExprCodeAtInit(pParse, pExpr, r2, 1);
   }else{
     int r1 = sqlite3GetTempReg(pParse);
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
@@ -3399,7 +3409,7 @@ int sqlite3ExprCodeExprList(
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
     if( (flags & SQLITE_ECEL_FACTOR)!=0 && sqlite3ExprIsConstant(pExpr) ){
-      sqlite3ExprCodeAtInit(pParse, pExpr, target+i);
+      sqlite3ExprCodeAtInit(pParse, pExpr, target+i, 0);
     }else{
       int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
       if( inReg!=target+i ){

@@ -1,5 +1,5 @@
-C Fix\sthe\scode\sgenerator\sto\shonor\sturning\soff\sconstant\sexpression\sfactoring.
-D 2013-11-21T20:48:42.154
+C Do\snot\sreuse\sfactored\sconstants\sthat\smight\shave\shad\stheir\sencodings\schanged.
+D 2013-11-21T21:23:31.703
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 909936019ccb8d0f4a10d0d10ad607c38ee62cbe
-F src/expr.c afc039ecfe2b990572f813aee0cbd734c167c955
+F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c ef30d26ae4d79bbc7300c74e77fd117a0ba30235
@@ -224,7 +224,7 @@ F src/shell.c 849ee96c952d20e504d417e42a06acc5ca94ef17
 F src/sqlite.h.in a5dc058a909d9f14470bad9329d9e9303020ea4e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 5cf2c563e8909cd21378b47ace439826f1407120
+F src/sqliteInt.h 9d586cb37572cd9e0a48242d449c6a69c2e74e72
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -577,6 +577,7 @@ F test/func.test 00667bbeac044d007f6f021af1b9f6150f0c7ff8
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
+F test/func5.test 1435dd313c0bae70d6af089c97a2a997fc5d0e53
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -1140,7 +1141,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a89fdf87553f01c150729c570796b5078a9b069d
-R 71de4796954de06b931dd50d526bd744
+P 882622662dfadf49c65c7d80b7fd87533d079ce9
+R 919d251b93f214648dcb5abd041a55e3
 U drh
-Z 94a313bef91e05454ee1a8fb62156d74
+Z 333bbe2ad90c7a14f3cc2f1f3886517e
