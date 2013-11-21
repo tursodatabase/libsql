@@ -473,9 +473,9 @@ int main(int argc, char **argv){
 
   if( showTimer ){
     sqlite3_int64 elapseTime = realTime() - startTime;
-    fprintf(stderr, "%3d.%03d", (int)(elapseTime/1000),
+    fprintf(stderr, "%3d.%03d wordcount", (int)(elapseTime/1000),
                                    (int)(elapseTime%1000));
-    for(i=0; i<argc; i++) if( i!=showTimer ) fprintf(stderr, " %s", argv[i]);
+    for(i=1; i<argc; i++) if( i!=showTimer ) fprintf(stderr, " %s", argv[i]);
     fprintf(stderr, "\n");
   }
 
