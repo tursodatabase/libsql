@@ -136,8 +136,10 @@ END {
      || name=="OP_VUpdate"       \
      || name=="OP_VFilter"       \
      || name=="OP_Next"          \
+     || name=="OP_NextIfOpen"    \
      || name=="OP_SorterNext"    \
      || name=="OP_Prev"          \
+     || name=="OP_PrevIfOpen"    \
     ){
       cnt++
       while( used[cnt] ) cnt++

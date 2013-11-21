@@ -1,5 +1,5 @@
-C When\sone\sor\smore\sarguments\sto\sa\sfunction\sare\sconstants,\stry\sto\sfactor\nout\sjust\sthose\sarguments\sinto\sinitialization\scode.
-D 2013-11-21T16:08:52.350
+C Make\ssure\sthe\sOP_Next\sand\sOP_NextIfOpen\sopcodes\sare\snumbered\sclose\stogether\nfor\sefficiency\sin\sswitch()\sstatements.\s\sOP_Prev\sand\sOP_PrevIfOpen\stoo.
+D 2013-11-21T17:24:18.502
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -147,7 +147,7 @@ F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
-F mkopcodeh.awk 987ee588ff3bb4043bed2185c1ee2bdc39b1e526
+F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F mptest/config01.test 3c6adcbc50b991866855f1977ff172eb6d901271
 F mptest/config02.test 4415dfe36c48785f751e16e32c20b077c28ae504
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9b4217f055e9bced186b4c56a5753bd6da7115b5
-R cd046aaa4606fb86e4dbb88d28c9046d
+P 50d350abbc9176cd6fc606bc45b8fc3020719500
+R 16f76a040c17f047b64a9d8c8a36388d
 U drh
-Z f1aad5e966fd81185b357b5fc8c7f131
+Z fd90afc91aa027f8da5b0d6d8b4c3462
