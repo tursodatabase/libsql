@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sVdbeCursor\sobject.
-D 2013-11-20T02:53:58.741
+C Refactor\sthe\sOP_Column\sopcode\sto\smake\sit\sclearer\sand\seasier\sto\smaintain.\nOverall,\sperformance\stests\sshow\sabout\sa\s1%\sspeed\sincrease\swith\sthis\schange.
+D 2013-11-21T01:33:45.684
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,12 +280,12 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c da810a2b71f26e23d597e3b966166db8f1117fad
+F src/vdbe.c c375ba0385f747e58d98686f5f4f0439c6297b35
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h 4044cd2e9dc1aef3e15fc68f80cbdf2446eff369
+F src/vdbeInt.h 0ac03c790b8ea4568b747550ba9bbf92a8e8feb2
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 91f9e1fb59561fa7ba312b518b6123982c912d6c
-F src/vdbeblob.c d883398f7260725147dbf5b40c2b61332aee47f9
+F src/vdbeaux.c bbf06ccbb159611d55e32783c6e9fdec75b120d0
+F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
@@ -313,7 +313,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test d31defa011a561b938b4608d3538c1b4e0b5e92c
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 1b9b7e9a096d1536f03d9ad7b72f638ef5669347
+F test/analyze9.test 339e87723cd4dc158dc5e9095acd8df9e87faf79
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
@@ -573,7 +573,7 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test e28ba1a14181e709dcdf47455f207adf14c7cfe0
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test c7e80a44eebac8604397eb2ad83d0d5d9d541237
+F test/func.test 00667bbeac044d007f6f021af1b9f6150f0c7ff8
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
@@ -1140,7 +1140,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 96a65388e75fed96e2e73ef65726f6db88cc5ccd
-R ca796b6fcdb020d784b4cd61fedf5893
+P 5562cd343d8f69242e06a51a7f1aef7ee7d78eec 933939932c44bccb0958f203a5bd24e683c1cf38
+R 842b8e02c5c12ba51889f25ba6cef74b
+T +closed 933939932c44bccb0958f203a5bd24e683c1cf38
 U drh
-Z 97e722e14aa88f975fca1769e7e16ee6
+Z 16455d71573d7ca0de3f10177a1e6082
