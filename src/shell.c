@@ -1307,7 +1307,7 @@ static int shell_exec(
 
       /* If the shell is currently in ".explain" mode, gather the extra
       ** data required to add indents to the output.*/
-      if( pArg->mode==MODE_Explain ){
+      if( pArg && pArg->mode==MODE_Explain ){
         explain_data_prepare(pArg, pStmt);
       }
 

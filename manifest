@@ -1,5 +1,5 @@
-C Slight\schange\sto\sthe\s--timer\soutput\son\swordcount\sfor\sbetter\sdisplay\son\s\nwindows:\s\sAvoid\sshowing\sthe\sfull\spathname\sof\sthe\sexecutable.
-D 2013-11-21T22:02:52.851
+C Fix\sa\sharmless\sclang\swarning\sin\sthe\scommand-line\sshell.
+D 2013-11-21T23:37:02.064
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c a70e32ae6ccb7b780f2b6d3e9e21837affc25ee5
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
-F src/shell.c 849ee96c952d20e504d417e42a06acc5ca94ef17
+F src/shell.c c4d06a9238a515ff4bc86b8626139633c09a00a2
 F src/sqlite.h.in a5dc058a909d9f14470bad9329d9e9303020ea4e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1141,7 +1141,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4e8c5d0795cb7c603182bfa70f3855d654f0997e
-R ffed574cf9d774930b45b0d81c7e5184
+P b9e047b9e3c2ee4df4a2d921db62f590fa5452d3
+R e1c23de46d9a8c9f6f6b75ce3e87aab2
 U drh
-Z 0797bb1805b05388278b1c28ef08180c
+Z c20a6fbb51178b9cf782e69ef465aa75
