@@ -53,6 +53,9 @@ typedef struct AuxData AuxData;
 ** loop over all entries of the Btree.  You can also insert new BTree
 ** entries or retrieve the key or data from the entry that the cursor
 ** is currently pointing to.
+**
+** Cursors can also point to virtual tables, sorters, or "pseudo-tables".
+** A pseudo-table is a single-row table implemented by registers.
 ** 
 ** Every cursor that the virtual machine has open is represented by an
 ** instance of the following structure.
@@ -74,7 +77,6 @@ struct VdbeCursor {
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
   Bool multiPseudo:1;   /* Multi-register pseudo-cursor */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
-  const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   i64 lastRowid;        /* Rowid being deleted by OP_Delete */
@@ -93,8 +95,11 @@ struct VdbeCursor {
   u32 payloadSize;      /* Total number of bytes in the record */
   u32 szRow;            /* Byte available in aRow */
   u32 iHdrOffset;       /* Offset to next unparsed byte of the header */
-  u32 *aType;           /* Type values for all entries in the record */
   const u8 *aRow;       /* Data for the current row, if all on one page */
+  u32 aType[1];         /* Type values for all entries in the record */
+  /* 2*nField extra array elements allocated for aType[], beyond the one
+  ** static element declared in the structure.  nField total array slots for
+  ** aType[] and nField+1 array slots for aOffset[] */
 };
 typedef struct VdbeCursor VdbeCursor;
 
