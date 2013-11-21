@@ -1,5 +1,5 @@
-C Remove\sthe\sobsolete\sTK_CONST_FUNC\stoken\stype.
-D 2013-11-21T14:44:38.999
+C When\sone\sor\smore\sarguments\sto\sa\sfunction\sare\sconstants,\stry\sto\sfactor\nout\sjust\sthose\sarguments\sinto\sinitialization\scode.
+D 2013-11-21T16:08:52.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 909936019ccb8d0f4a10d0d10ad607c38ee62cbe
-F src/expr.c 98800f5a545bc93ab90acf4c89e904069c8b4bcf
+F src/expr.c 3c629b4b208933c115f5652d2c6fcc877188c4fb
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c ef30d26ae4d79bbc7300c74e77fd117a0ba30235
@@ -219,12 +219,12 @@ F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c a70e32ae6ccb7b780f2b6d3e9e21837affc25ee5
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 253cb683e4a05b0b56b0f9c816f3c4a4e5575ebb
+F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 849ee96c952d20e504d417e42a06acc5ca94ef17
 F src/sqlite.h.in a5dc058a909d9f14470bad9329d9e9303020ea4e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 300dbe249ea28b094bdf304d6d96d414fef0bb26
+F src/sqliteInt.h 8cd0bb5b2cd8430482460c2a302edd2619d17293
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1b0f779e19a5c0d51eddd2d88db50034d77d132c
-R 4765b9c971cb7bd4e939f413b1d14806
+P 9b4217f055e9bced186b4c56a5753bd6da7115b5
+R cd046aaa4606fb86e4dbb88d28c9046d
 U drh
-Z 408c8bf331ed8f56b61161d6e80b7e89
+Z f1aad5e966fd81185b357b5fc8c7f131

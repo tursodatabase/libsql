@@ -2681,8 +2681,21 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         break;
       }
 
+      for(i=0; i<nFarg; i++){
+        if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
+          constMask |= (1<<i);
+        }
+        if( (pDef->funcFlags & SQLITE_FUNC_NEEDCOLL)!=0 && !pColl ){
+          pColl = sqlite3ExprCollSeq(pParse, pFarg->a[i].pExpr);
+        }
+      }
       if( pFarg ){
-        r1 = sqlite3GetTempRange(pParse, nFarg);
+        if( constMask ){
+          r1 = pParse->nMem+1;
+          pParse->nMem += nFarg;
+        }else{
+          r1 = sqlite3GetTempRange(pParse, nFarg);
+        }
 
         /* For length() and typeof() functions with a column argument,
         ** set the P5 parameter to the OP_Column opcode to OPFLAG_LENGTHARG
@@ -2704,7 +2717,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         }
 
         sqlite3ExprCachePush(pParse);     /* Ticket 2ea2425d34be */
-        sqlite3ExprCodeExprList(pParse, pFarg, r1, 1);
+        sqlite3ExprCodeExprList(pParse, pFarg, r1, 
+                                SQLITE_ECEL_DUP|SQLITE_ECEL_FACTOR);
         sqlite3ExprCachePop(pParse, 1);   /* Ticket 2ea2425d34be */
       }else{
         r1 = 0;
@@ -2728,14 +2742,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         pDef = sqlite3VtabOverloadFunction(db, pDef, nFarg, pFarg->a[0].pExpr);
       }
 #endif
-      for(i=0; i<nFarg; i++){
-        if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
-          constMask |= (1<<i);
-        }
-        if( (pDef->funcFlags & SQLITE_FUNC_NEEDCOLL)!=0 && !pColl ){
-          pColl = sqlite3ExprCollSeq(pParse, pFarg->a[i].pExpr);
-        }
-      }
       if( pDef->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
@@ -2743,7 +2749,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       sqlite3VdbeAddOp4(v, OP_Function, constMask, r1, target,
                         (char*)pDef, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nFarg);
-      if( nFarg ){
+      if( nFarg && constMask==0 ){
         sqlite3ReleaseTempRange(pParse, r1, nFarg);
       }
       break;
@@ -2981,6 +2987,19 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 }
 
 /*
+** Factor out the code of the given expression to initialization time.
+*/
+void sqlite3ExprCodeAtInit(Parse *pParse, Expr *pExpr, int regDest){
+  ExprList *p;
+  assert( pParse->cookieGoto>0 ); /* Only possible if cookie will be coded */
+  p = pParse->pConstExpr;
+  pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
+  p = sqlite3ExprListAppend(pParse, p, pExpr);
+  if( p ) p->a[p->nExpr-1].u.iConstExprReg = regDest;
+  pParse->pConstExpr = p;
+}
+
+/*
 ** Generate code to evaluate an expression and store the results
 ** into a register.  Return the register number where the results
 ** are stored.
@@ -3010,10 +3029,8 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
         }
       }
     }
-    p = sqlite3ExprListAppend(pParse, p, sqlite3ExprDup(pParse->db, pExpr, 0));
-    pParse->pConstExpr = p;
     r2 = ++pParse->nMem;
-    if( p ) p->a[p->nExpr-1].u.iConstExprReg = r2;
+    sqlite3ExprCodeAtInit(pParse, pExpr, r2);
   }else{
     int r1 = sqlite3GetTempReg(pParse);
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
@@ -3358,25 +3375,36 @@ void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
 ** expression list into a sequence of registers beginning at target.
 **
 ** Return the number of elements evaluated.
+**
+** The SQLITE_ECEL_DUP flag prevents the arguments from being
+** filled using OP_SCopy.  OP_Copy must be used instead.
+**
+** The SQLITE_ECEL_FACTOR argument allows constant arguments to be
+** factored out into initialization code.
 */
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */
   ExprList *pList,   /* The expression list to be coded */
   int target,        /* Where to write results */
-  int doHardCopy     /* Make a hard copy of every element */
+  u8 flags           /* SQLITE_ECEL_* flags */
 ){
   struct ExprList_item *pItem;
   int i, n;
+  u8 copyOp = (flags & SQLITE_ECEL_DUP) ? OP_Copy : OP_SCopy;
   assert( pList!=0 );
   assert( target>0 );
   assert( pParse->pVdbe!=0 );  /* Never gets this far otherwise */
   n = pList->nExpr;
+  if( pParse->cookieGoto<=0 ) flags &= ~SQLITE_ECEL_FACTOR;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
-    int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
-    if( inReg!=target+i ){
-      sqlite3VdbeAddOp2(pParse->pVdbe, doHardCopy ? OP_Copy : OP_SCopy,
-                        inReg, target+i);
+    if( (flags & SQLITE_ECEL_FACTOR)!=0 && sqlite3ExprIsConstant(pExpr) ){
+      sqlite3ExprCodeAtInit(pParse, pExpr, target+i);
+    }else{
+      int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
+      if( inReg!=target+i ){
+        sqlite3VdbeAddOp2(pParse->pVdbe, copyOp, inReg, target+i);
+      }
     }
   }
   return n;

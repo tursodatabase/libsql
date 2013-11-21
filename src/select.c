@@ -599,7 +599,8 @@ static void selectInnerLoop(
     ** values returned by the SELECT are not required.
     */
     sqlite3ExprCacheClear(pParse);
-    sqlite3ExprCodeExprList(pParse, pEList, regResult, eDest==SRT_Output);
+    sqlite3ExprCodeExprList(pParse, pEList, regResult,
+                            (eDest==SRT_Output)?SQLITE_ECEL_DUP:0);
   }
   nColumn = nResultCol;
 
@@ -3885,7 +3886,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
-      sqlite3ExprCodeExprList(pParse, pList, regAgg, 1);
+      sqlite3ExprCodeExprList(pParse, pList, regAgg, SQLITE_ECEL_DUP);
     }else{
       nArg = 0;
       regAgg = 0;
