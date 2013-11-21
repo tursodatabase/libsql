@@ -2264,7 +2264,7 @@ case OP_Column: {
   const u8 *zEndHdr; /* Pointer to first byte after the header */
   u32 offset;        /* Offset into the data */
   u32 szField;       /* Number of bytes in the content of a field */
-  int avail;         /* Number of bytes of available data */
+  u32 avail;         /* Number of bytes of available data */
   u32 t;             /* A type code from the record header */
   Mem *pReg;         /* PseudoTable input register */
 

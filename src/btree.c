@@ -4206,7 +4206,7 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 */
 static const unsigned char *fetchPayload(
   BtCursor *pCur,      /* Cursor pointing to entry to read from */
-  int *pAmt,           /* Write the number of available bytes here */
+  u32 *pAmt,           /* Write the number of available bytes here */
   int skipKey          /* read beginning at data if this is true */
 ){
   unsigned char *aPayload;
@@ -4256,7 +4256,7 @@ static const unsigned char *fetchPayload(
 ** These routines is used to get quick access to key and data
 ** in the common case where no overflow pages are used.
 */
-const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
+const void *sqlite3BtreeKeyFetch(BtCursor *pCur, u32 *pAmt){
   const void *p = 0;
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
@@ -4265,7 +4265,7 @@ const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
   }
   return p;
 }
-const void *sqlite3BtreeDataFetch(BtCursor *pCur, int *pAmt){
+const void *sqlite3BtreeDataFetch(BtCursor *pCur, u32 *pAmt){
   const void *p = 0;
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );

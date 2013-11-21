@@ -424,7 +424,7 @@ double sqlite3VdbeRealValue(Mem*);
 void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemNumerify(Mem*);
-int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
+int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 void sqlite3VdbeMemReleaseExternal(Mem *p);
 #define VdbeMemRelease(X)  \

@@ -896,13 +896,13 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
 */
 int sqlite3VdbeMemFromBtree(
   BtCursor *pCur,   /* Cursor pointing at record to retrieve. */
-  int offset,       /* Offset from the start of data to return bytes from. */
-  int amt,          /* Number of bytes to return. */
+  u32 offset,       /* Offset from the start of data to return bytes from. */
+  u32 amt,          /* Number of bytes to return. */
   int key,          /* If true, retrieve from the btree key, not data. */
   Mem *pMem         /* OUT: Return data in this Mem structure. */
 ){
   char *zData;        /* Data from the btree layer */
-  int available = 0;  /* Number of bytes available on the local btree page */
+  u32 available = 0;  /* Number of bytes available on the local btree page */
   int rc = SQLITE_OK; /* Return code */
 
   assert( sqlite3BtreeCursorIsValid(pCur) );
@@ -936,7 +936,7 @@ int sqlite3VdbeMemFromBtree(
       sqlite3VdbeMemRelease(pMem);
     }
   }
-  pMem->n = amt;
+  pMem->n = (int)amt;
 
   return rc;
 }

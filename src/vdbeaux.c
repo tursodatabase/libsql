@@ -3205,7 +3205,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
 
   /* Read in the complete content of the index entry */
   memset(&m, 0, sizeof(m));
-  rc = sqlite3VdbeMemFromBtree(pCur, 0, (int)nCellKey, 1, &m);
+  rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
   }
@@ -3283,7 +3283,7 @@ int sqlite3VdbeIdxKeyCompare(
     return SQLITE_CORRUPT_BKPT;
   }
   memset(&m, 0, sizeof(m));
-  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (int)nCellKey, 1, &m);
+  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
   }

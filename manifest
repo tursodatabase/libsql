@@ -1,5 +1,5 @@
-C Modify\swordcount\sso\sthat\stimer\sinformation\sappears\son\sstandard\serror\sinstead\nof\sstandard\soutput.\s\sRename\sthe\srun-wordcount.bash\sscript\sto\srun-wordcount.sh\nand\ssimplify\sit\sso\sthat\sit\sstands\sa\sbetter\schance\sof\srunning\son\snon-GNU\s\nsystems.
-D 2013-11-21T21:40:45.620
+C Changes\ssome\soffset\sand\samount\sparameters\sfrom\s"int"\sto\s"u32"\sto\savoid\nharmless\ssigned/unsigned\scomparison\swarnings.
+D 2013-11-21T21:59:53.570
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,8 +166,8 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 260dedc13119e6fb7930380bd3d294b98362bf5a
-F src/btree.h bfe0e8c5759b4ec77b0d18390064a6ef3cdffaaf
+F src/btree.c 17ca5729d07ba03f81633aab56de87956d9b188a
+F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 07054d45319953e54a89d726e589a423e9c1c590
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
@@ -280,13 +280,13 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c bfbbaf9daddfd0228747e4e47677bd34dc306388
+F src/vdbe.c 4d637218b7ffcc76fdcf461c71d277e7a4250e74
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h 0ac03c790b8ea4568b747550ba9bbf92a8e8feb2
+F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 648f72365268979e89cd2ba8e5f2b4ecb1843fb0
+F src/vdbeaux.c 5251f17828ff49664f457b6d8a1585297ce7a7a9
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
-F src/vdbemem.c 4f227e2e28493a680dd84e6a4d28c9b01dca172b
+F src/vdbemem.c cd02a6ade205ebe989983b7e3d64a5358b8e5e1f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -758,7 +758,7 @@ F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test f777404492adb0e00868fd706a3721328fd3af48
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
-F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09 w test/run-wordcount.bash
+F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
 F test/savepoint.test 6c53f76dffe5df0dd87646efe3e7aa159c36e07b
 F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
@@ -1141,7 +1141,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 487f20366ce77f0c90865d10d5aaedd95af98694
-R 24abe371fb3b49f56b9cb321d5c8bf3d
+P 586c11ed7cc6b8e2c7181231e37791c2fbc95272
+R 723b7c82330581cbe6be5156936bfadc
 U drh
-Z e03360c4606d03267f7f33fe62a05d71
+Z 3bf6b81cb7a632df512ea0b6d5ca4d08
