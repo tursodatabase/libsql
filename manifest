@@ -1,5 +1,5 @@
-C Remove\sa\stest\sfrom\ssqlite3VdbeMemFromBtree()\swhich\swas\sunnecessary,\sand\nafter\sthe\srecent\sOP_Column\srefactoring,\sunreachable.
-D 2013-11-21T19:05:04.606
+C Add\sthe\s--timer\soption\sto\sthe\swordcount\stest\sprogram.
+D 2013-11-21T19:27:45.727
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1088,7 +1088,7 @@ F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
-F test/wordcount.c c80f378f26fbf6ada602c4313ae88fc47439263e
+F test/wordcount.c a42341b7a01229782b9bd97ff2eeebae830adbea
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d4ccf0f5c656c8f0e1c32d5f7971b131f42c3cbd
-R 66dccb4d546e53b7ddedb9ff6684fbe4
+P 23667f3ba09b7e839d76c42669dc9247a91262c8
+R 6f7d4c37e1e4a4d7b173a8698f60d4e6
 U drh
-Z 06ed94041404ba9e41a5bfcb0e125483
+Z be6cc4796ccce786831080c9b4f10bd9

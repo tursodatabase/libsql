@@ -29,6 +29,7 @@
 **     --commit NNN         Commit after every NNN operations
 **     --nosync             Use PRAGMA synchronous=OFF
 **     --journal MMMM       Use PRAGMA journal_mode=MMMM
+**     --timer              Time the operation of this program
 **
 ** Modes:
 **
@@ -79,6 +80,21 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "sqlite3.h"
+
+/* Return the current wall-clock time */
+static sqlite3_int64 realTime(void){
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t;
+}
 
 /* Print an error message and exit */
 static void fatal_error(const char *zMsg, ...){
@@ -186,6 +202,7 @@ int main(int argc, char **argv){
   int doTrace = 0;              /* True for --trace */
   int showStats = 0;            /* True for --stats */
   int showSummary = 0;          /* True for --summary */
+  int showTimer = 0;            /* True for --timer */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
   int pageSize = 0;             /* Desired page size.  0 means default */
   int commitInterval = 0;       /* How often to commit.  0 means never */
@@ -203,6 +220,7 @@ int main(int argc, char **argv){
   int rc;                       /* Return code from an SQLite interface */
   int iCur, iHiwtr;             /* Statistics values, current and "highwater" */
   sqlite3_int64 sumCnt = 0;     /* Sum in QUERY mode */
+  sqlite3_int64 startTime;
   char zInput[2000];            /* A single line of input */
 
   /* Process command-line arguments */
@@ -234,6 +252,8 @@ int main(int argc, char **argv){
         showStats = 1;
       }else if( strcmp(z,"summary")==0 ){
         showSummary = 1;
+      }else if( strcmp(z,"timer")==0 ){
+        showTimer = i;
       }else if( strcmp(z,"cachesize")==0 && i<argc-1 ){
         i++;
         cacheSize = atoi(argv[i]);
@@ -259,6 +279,7 @@ int main(int argc, char **argv){
   if( zDbName==0 ){
     fatal_error("Usage: %s [--options] DATABASE [INPUTFILE]\n", argv[0]);
   }
+  startTime = realTime();
 
   /* Open the database and the input file */
   if( sqlite3_open(zDbName, &db) ){
@@ -447,6 +468,14 @@ int main(int argc, char **argv){
       printf("double-check: %lld\n", sqlite3_column_int64(pSelect, 0));
     }
     sqlite3_finalize(pSelect);
+  }
+
+
+  if( showTimer ){
+    sqlite3_int64 elapseTime = realTime() - startTime;
+    printf("/* %3d.%03d", (int)(elapseTime/1000), (int)(elapseTime%1000));
+    for(i=0; i<argc; i++) if( i!=showTimer ) printf(" %s", argv[i]);
+    printf(" */\n");
   }
 
   if( showSummary ){
