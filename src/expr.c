@@ -2991,7 +2991,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 */
 void sqlite3ExprCodeAtInit(Parse *pParse, Expr *pExpr, int regDest){
   ExprList *p;
-  assert( pParse->cookieGoto>0 ); /* Only possible if cookie will be coded */
+  assert( ConstFactorOk(pParse) );
   p = pParse->pConstExpr;
   pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
   p = sqlite3ExprListAppend(pParse, p, pExpr);
@@ -3015,7 +3015,7 @@ void sqlite3ExprCodeAtInit(Parse *pParse, Expr *pExpr, int regDest){
 int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
   int r2;
   pExpr = sqlite3ExprSkipCollate(pExpr);
-  if( pParse->cookieGoto>0
+  if( ConstFactorOk(pParse)
    && pExpr->op!=TK_REGISTER
    && sqlite3ExprIsConstantNotJoin(pExpr)
   ){
@@ -3395,7 +3395,7 @@ int sqlite3ExprCodeExprList(
   assert( target>0 );
   assert( pParse->pVdbe!=0 );  /* Never gets this far otherwise */
   n = pList->nExpr;
-  if( pParse->cookieGoto<=0 ) flags &= ~SQLITE_ECEL_FACTOR;
+  if( !ConstFactorOk(pParse) ) flags &= ~SQLITE_ECEL_FACTOR;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
     if( (flags & SQLITE_ECEL_FACTOR)!=0 && sqlite3ExprIsConstant(pExpr) ){

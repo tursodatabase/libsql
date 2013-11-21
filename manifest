@@ -1,5 +1,5 @@
-C Add\sthe\s--timer\soption\sto\sthe\swordcount\stest\sprogram.
-D 2013-11-21T19:27:45.727
+C Fix\sthe\scode\sgenerator\sto\shonor\sturning\soff\sconstant\sexpression\sfactoring.
+D 2013-11-21T20:48:42.154
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 909936019ccb8d0f4a10d0d10ad607c38ee62cbe
-F src/expr.c 3c629b4b208933c115f5652d2c6fcc877188c4fb
+F src/expr.c afc039ecfe2b990572f813aee0cbd734c167c955
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c ef30d26ae4d79bbc7300c74e77fd117a0ba30235
@@ -224,7 +224,7 @@ F src/shell.c 849ee96c952d20e504d417e42a06acc5ca94ef17
 F src/sqlite.h.in a5dc058a909d9f14470bad9329d9e9303020ea4e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 8cd0bb5b2cd8430482460c2a302edd2619d17293
+F src/sqliteInt.h 5cf2c563e8909cd21378b47ace439826f1407120
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 23667f3ba09b7e839d76c42669dc9247a91262c8
-R 6f7d4c37e1e4a4d7b173a8698f60d4e6
+P a89fdf87553f01c150729c570796b5078a9b069d
+R 71de4796954de06b931dd50d526bd744
 U drh
-Z be6cc4796ccce786831080c9b4f10bd9
+Z 94a313bef91e05454ee1a8fb62156d74
