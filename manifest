@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sOP_Next\sand\sOP_NextIfOpen\sopcodes\sare\snumbered\sclose\stogether\nfor\sefficiency\sin\sswitch()\sstatements.\s\sOP_Prev\sand\sOP_PrevIfOpen\stoo.
-D 2013-11-21T17:24:18.502
+C Remove\sa\stest\sfrom\ssqlite3VdbeMemFromBtree()\swhich\swas\sunnecessary,\sand\nafter\sthe\srecent\sOP_Column\srefactoring,\sunreachable.
+D 2013-11-21T19:05:04.606
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeInt.h 0ac03c790b8ea4568b747550ba9bbf92a8e8feb2
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c 648f72365268979e89cd2ba8e5f2b4ecb1843fb0
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
-F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
+F src/vdbemem.c 4f227e2e28493a680dd84e6a4d28c9b01dca172b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -1140,7 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 50d350abbc9176cd6fc606bc45b8fc3020719500
-R 16f76a040c17f047b64a9d8c8a36388d
+P d4ccf0f5c656c8f0e1c32d5f7971b131f42c3cbd
+R 66dccb4d546e53b7ddedb9ff6684fbe4
 U drh
-Z fd90afc91aa027f8da5b0d6d8b4c3462
+Z 06ed94041404ba9e41a5bfcb0e125483

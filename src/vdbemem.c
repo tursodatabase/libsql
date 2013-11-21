@@ -917,7 +917,7 @@ int sqlite3VdbeMemFromBtree(
   }
   assert( zData!=0 );
 
-  if( offset+amt<=available && (pMem->flags&MEM_Dyn)==0 ){
+  if( offset+amt<=available ){
     sqlite3VdbeMemRelease(pMem);
     pMem->z = &zData[offset];
     pMem->flags = MEM_Blob|MEM_Ephem;
