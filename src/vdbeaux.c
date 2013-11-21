@@ -453,12 +453,14 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       }
 #endif
       case OP_Next:
+      case OP_NextIfOpen:
       case OP_SorterNext: {
         pOp->p4.xAdvance = sqlite3BtreeNext;
         pOp->p4type = P4_ADVANCE;
         break;
       }
-      case OP_Prev: {
+      case OP_Prev:
+      case OP_PrevIfOpen: {
         pOp->p4.xAdvance = sqlite3BtreePrevious;
         pOp->p4type = P4_ADVANCE;
         break;

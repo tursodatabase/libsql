@@ -4467,7 +4467,8 @@ case OP_Rewind: {        /* jump */
 ** to the following instruction.  But if the cursor advance was successful,
 ** jump immediately to P2.
 **
-** The P1 cursor must be for a real table, not a pseudo-table.
+** The P1 cursor must be for a real table, not a pseudo-table.  P1 must have
+** been opened prior to this opcode or the program will segfault.
 **
 ** P4 is always of type P4_ADVANCE. The function pointer points to
 ** sqlite3BtreeNext().
@@ -4475,7 +4476,12 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 **
-** See also: Prev
+** See also: Prev, NextIfOpen
+*/
+/* Opcode: NextIfOpen P1 P2 * * P5
+**
+** This opcode works just like OP_Next except that if cursor P1 is not
+** open it behaves a no-op.
 */
 /* Opcode: Prev P1 P2 * * P5
 **
@@ -4484,7 +4490,8 @@ case OP_Rewind: {        /* jump */
 ** to the following instruction.  But if the cursor backup was successful,
 ** jump immediately to P2.
 **
-** The P1 cursor must be for a real table, not a pseudo-table.
+** The P1 cursor must be for a real table, not a pseudo-table.  If P1 is
+** not open then the behavior is undefined.
 **
 ** P4 is always of type P4_ADVANCE. The function pointer points to
 ** sqlite3BtreePrevious().
@@ -4492,38 +4499,47 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
-case OP_SorterNext:    /* jump */
-case OP_Prev:          /* jump */
-case OP_Next: {        /* jump */
+/* Opcode: PrevIfOpen P1 P2 * * P5
+**
+** This opcode works just like OP_Prev except that if cursor P1 is not
+** open it behaves a no-op.
+*/
+case OP_SorterNext: {  /* jump */
   VdbeCursor *pC;
   int res;
 
+  pC = p->apCsr[pOp->p1];
+  assert( isSorter(pC) );
+  rc = sqlite3VdbeSorterNext(db, pC, &res);
+  goto next_tail;
+case OP_PrevIfOpen:    /* jump */
+case OP_NextIfOpen:    /* jump */
+  if( p->apCsr[pOp->p1]==0 ) break;
+  /* Fall through */
+case OP_Prev:          /* jump */
+case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5<ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
-  if( pC==0 ){
-    break;  /* See ticket #2273 */
-  }
-  assert( isSorter(pC)==(pOp->opcode==OP_SorterNext) );
-  if( isSorter(pC) ){
-    assert( pOp->opcode==OP_SorterNext );
-    rc = sqlite3VdbeSorterNext(db, pC, &res);
-  }else{
-    /* res = 1; // Always initialized by the xAdvance() call */
-    assert( pC->deferredMoveto==0 );
-    assert( pC->pCursor );
-    assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
-    assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
-    rc = pOp->p4.xAdvance(pC->pCursor, &res);
-  }
-  pC->nullRow = (u8)res;
+  assert( pC!=0 );
+  assert( pC->deferredMoveto==0 );
+  assert( pC->pCursor );
+  assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
+  assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
+  assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
+  assert( pOp->opcode!=OP_PrevIfOpen || pOp->p4.xAdvance==sqlite3BtreePrevious);
+  rc = pOp->p4.xAdvance(pC->pCursor, &res);
+next_tail:
   pC->cacheStatus = CACHE_STALE;
   if( res==0 ){
+    pC->nullRow = 0;
     pc = pOp->p2 - 1;
     p->aCounter[pOp->p5]++;
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
+  }else{
+    pC->nullRow = 1;
   }
   pC->rowidIsValid = 0;
   goto check_for_interrupt;

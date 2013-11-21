@@ -2406,7 +2406,7 @@ static int codeEqualityTerm(
       }else{
         pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
       }
-      pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
+      pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
       sqlite3VdbeAddOp1(v, OP_IsNull, iReg);
     }else{
       pLevel->u.in.nIn = 0;

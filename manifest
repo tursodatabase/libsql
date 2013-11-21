@@ -1,5 +1,5 @@
-C Refactor\sthe\sOP_Column\sopcode\sto\smake\sit\sclearer\sand\seasier\sto\smaintain.\nOverall,\sperformance\stests\sshow\sabout\sa\s1%\sspeed\sincrease\swith\sthis\schange.
-D 2013-11-21T01:33:45.684
+C Performance\soptimization\sto\sthe\sOP_Next\sand\sOP_Prev\sopcodes.
+D 2013-11-21T03:12:25.082
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,11 +280,11 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c c375ba0385f747e58d98686f5f4f0439c6297b35
+F src/vdbe.c 1aabde68130182a3cceb70d1c59122b93244b97e
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 0ac03c790b8ea4568b747550ba9bbf92a8e8feb2
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c bbf06ccbb159611d55e32783c6e9fdec75b120d0
+F src/vdbeaux.c 648f72365268979e89cd2ba8e5f2b4ecb1843fb0
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c cc529bbf4f13e4e181bdb446bf6e6962ab030b4b
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c aa72ba871fa835a513cae1c7432dc1d785eb23e4
+F src/where.c e558bfa67009ab7de08a7a1960ae0dd443241cdd
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1140,8 +1140,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5562cd343d8f69242e06a51a7f1aef7ee7d78eec 933939932c44bccb0958f203a5bd24e683c1cf38
-R 842b8e02c5c12ba51889f25ba6cef74b
-T +closed 933939932c44bccb0958f203a5bd24e683c1cf38
+P 972881c6d394c199961f01dcbeb4a6e8b5c919a1
+R d4a5420dc1635b387e6b0a099e73a8c3
 U drh
-Z 16455d71573d7ca0de3f10177a1e6082
+Z 0f90f7ea40ab09ca14f9f529358ed102
