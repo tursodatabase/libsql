@@ -1,5 +1,5 @@
-C Minor\scorrection\sto\sthe\sbatch\sbuild\stool\sfor\sMSVC.
-D 2013-11-22T00:49:43.704
+C Fix\sharmless\scompiler\swarning.
+D 2013-11-22T21:32:44.862
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 909936019ccb8d0f4a10d0d10ad607c38ee62cbe
+F src/delete.c b36db1f79ee50eaca979660c9dd36437f5410b93
 F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
@@ -1141,7 +1141,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3d47a556f0074e39b880186fb7661b1b8955f742
-R 57564d661112762174840a226a6b5fb4
+P 22144c9df260910c4b67960b0e6a6bd5a6758cd7
+R a6046c7308cc14b222954cb363712891
 U mistachkin
-Z 4e5d5b9eac4581fb824e1e1729660a2d
+Z 1a138036d5d9c73c4e767d01f06aef9f

@@ -244,7 +244,7 @@ void sqlite3DeleteFrom(
   int aiCurOnePass[2];   /* The write cursors opened by WHERE_ONEPASS */
   u8 *aToOpen = 0;       /* Open cursor iTabCur+j if aToOpen[j] is true */
   Index *pPk;            /* The PRIMARY KEY index on the table */
-  int iPk;               /* First of nPk registers holding PRIMARY KEY value */
+  int iPk = 0;           /* First of nPk registers holding PRIMARY KEY value */
   i16 nPk = 1;           /* Number of columns in the PRIMARY KEY */
   int iKey;              /* Memory cell holding key of row to be deleted */
   i16 nKey;              /* Number of memory cells in the row key */
