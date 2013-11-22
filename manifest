@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\sclang\swarning\sin\sthe\scommand-line\sshell.
-D 2013-11-21T23:37:02.064
+C Minor\scorrection\sto\sthe\sbatch\sbuild\stool\sfor\sMSVC.
+D 2013-11-22T00:49:43.704
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1092,7 +1092,7 @@ F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
 F test/wordcount.c 800b6ab98ac05b7c6343575c45055f72273c9cc2
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
-F tool/build-all-msvc.bat 1bac6adc3fdb4d9204f21d17b14be25778370e48 x
+F tool/build-all-msvc.bat e0917e787df675b020d250d60a00de8abaa4e30a x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1141,7 +1141,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b9e047b9e3c2ee4df4a2d921db62f590fa5452d3
-R e1c23de46d9a8c9f6f6b75ce3e87aab2
-U drh
-Z c20a6fbb51178b9cf782e69ef465aa75
+P 3d47a556f0074e39b880186fb7661b1b8955f742
+R 57564d661112762174840a226a6b5fb4
+U mistachkin
+Z 4e5d5b9eac4581fb824e1e1729660a2d
