@@ -1,5 +1,5 @@
-C Report\serrors\sfrom\ssqlite3_exec()\sand\ssqlite3_config()\sin\sspeedtest1.\s\sFix\na\sbug\sin\sthe\smain\stesting\slogic\sthat\swas\sfound\sby\sthese\serror\sreports.
-D 2013-11-23T11:45:58.348
+C Add\snewlines\sat\sthe\send\sof\ssome\serror\smessages\sin\sspeedtest1.
+D 2013-11-23T21:29:07.429
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -819,7 +819,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 34dfd9e87c6361fd5ddaed32470d72296a4d8f9e
+F test/speedtest1.c 3296bda6fdf2650773fa509dc51504b66da36e57
 F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test c8eccfe8fcd3f3cfc864ce22d5b9e803a3c69940
@@ -1142,7 +1142,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P dbe85ef6d265ed31f4b56dfc0c72bad6adcfd7f0
-R 3c84733d697c289c6df74ff384038ce3
+P 659f1a98ae698d062269f8fdac84f733a460f5de
+R 0d67753f14410df579db17c64fb3786e
 U drh
-Z 1e02960cbed70b5ceeaded68b201375e
+Z 430a11d968198395db1db68b7169dc35

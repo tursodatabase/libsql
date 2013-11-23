@@ -906,14 +906,14 @@ int main(int argc, char **argv){
     pHeap = malloc( nHeap );
     if( pHeap==0 ) fatal_error("cannot allocate %d-byte heap\n", nHeap);
     rc = sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nHeap, mnHeap);
-    if( rc ) fatal_error("heap configuration failed: %d", rc);
+    if( rc ) fatal_error("heap configuration failed: %d\n", rc);
   }
   if( nPCache>0 && szPCache>0 ){
     pPCache = malloc( nPCache*szPCache );
     if( pPCache==0 ) fatal_error("cannot allocate %d-byte pcache\n",
                                  nPCache*szPCache);
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
-    if( rc ) fatal_error("pcache configuration failed: %d", rc);
+    if( rc ) fatal_error("pcache configuration failed: %d\n", rc);
   }
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
@@ -926,7 +926,7 @@ int main(int argc, char **argv){
   if( nLook>0 && szLook>0 ){
     pLook = malloc( nLook*szLook );
     rc = sqlite3_db_config(g.db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook,nLook);
-    if( rc ) fatal_error("lookaside configuration failed: %d", rc);
+    if( rc ) fatal_error("lookaside configuration failed: %d\n", rc);
   }
 
   /* Set database connection options */
