@@ -907,7 +907,7 @@ int main(int argc, char **argv){
     pPCache = malloc( nPCache*szPCache );
     if( pPCache==0 ) fatal_error("cannot allocate %d-byte pcache\n",
                                  nPCache*szPCache);
-    sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, nPCache, szPCache);
+    sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
   }
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
