@@ -377,7 +377,10 @@ void speedtest1_exec(const char *zFormat, ...){
     while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
     printf("%.*s;\n", n, zSql);
   }else{
-    sqlite3_exec(g.db, zSql, 0, 0, 0);
+    char *zErrMsg = 0;
+    int rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
+    if( zErrMsg ) fatal_error("SQL error: %s\n%s\n", zErrMsg, zSql);
+    if( rc!=SQLITE_OK ) fatal_error("exec error: %s\n", sqlite3_errmsg(g.db));
   }
   sqlite3_free(zSql);
 }
@@ -731,8 +734,8 @@ void testset_main(void){
 
 
   speedtest1_begin_test(290, "Refill two %d-row tables using REPLACE", sz);
-  speedtest1_exec("REPLACE INTO t2 SELECT * FROM t1");
-  speedtest1_exec("REPLACE INTO t3 SELECT * FROM t1");
+  speedtest1_exec("REPLACE INTO t2(a,b,c) SELECT a,b,c FROM t1");
+  speedtest1_exec("REPLACE INTO t3(a,b,c) SELECT a,b,c FROM t1");
   speedtest1_end_test();
 
 
@@ -807,7 +810,8 @@ int main(int argc, char **argv){
   void *pLook = 0;              /* Allocated lookaside space */
   void *pPCache = 0;            /* Allocated storage for pcache */
   int iCur, iHi;                /* Stats values, current and "highwater" */
-  int i;
+  int i;                        /* Loop counter */
+  int rc;                       /* API return code */
 
   /* Process command-line arguments */
   g.zWR = "";
@@ -901,13 +905,15 @@ int main(int argc, char **argv){
   if( nHeap>0 ){
     pHeap = malloc( nHeap );
     if( pHeap==0 ) fatal_error("cannot allocate %d-byte heap\n", nHeap);
-    sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nHeap, mnHeap);
+    rc = sqlite3_config(SQLITE_CONFIG_HEAP, pHeap, nHeap, mnHeap);
+    if( rc ) fatal_error("heap configuration failed: %d", rc);
   }
   if( nPCache>0 && szPCache>0 ){
     pPCache = malloc( nPCache*szPCache );
     if( pPCache==0 ) fatal_error("cannot allocate %d-byte pcache\n",
                                  nPCache*szPCache);
-    sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
+    rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
+    if( rc ) fatal_error("pcache configuration failed: %d", rc);
   }
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
@@ -919,7 +925,8 @@ int main(int argc, char **argv){
   }
   if( nLook>0 && szLook>0 ){
     pLook = malloc( nLook*szLook );
-    sqlite3_db_config(g.db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook, nLook);
+    rc = sqlite3_db_config(g.db, SQLITE_DBCONFIG_LOOKASIDE, pLook, szLook,nLook);
+    if( rc ) fatal_error("lookaside configuration failed: %d", rc);
   }
 
   /* Set database connection options */
