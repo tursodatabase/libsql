@@ -214,16 +214,20 @@ static int memsys5Size(void *p){
 ** entry and return its index. 
 */
 static int memsys5UnlinkFirst(int iLogsize){
-  int i;
   int iFirst;
 
   assert( iLogsize>=0 && iLogsize<=LOGMAX );
-  i = iFirst = mem5.aiFreelist[iLogsize];
-  assert( iFirst>=0 );
-  while( i>0 ){
-    if( i<iFirst ) iFirst = i;
-    i = MEM5LINK(i)->next;
+  iFirst = mem5.aiFreelist[iLogsize];
+#if 0
+  {
+    int i = iFirst;
+    assert( iFirst>=0 );
+    while( i>0 ){
+      if( i<iFirst ) iFirst = i;
+      i = MEM5LINK(i)->next;
+    }
   }
+#endif
   memsys5Unlink(iFirst, iLogsize);
   return iFirst;
 }
