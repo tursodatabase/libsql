@@ -1342,6 +1342,10 @@ wordcount.exe:	$(TOP)/test/wordcount.c sqlite3.c
 	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
 		$(TOP)/test/wordcount.c sqlite3.c
 
+speedtest1.exe:	$(TOP)/test/speedtest1.c sqlite3.c
+	$(LTLINK) -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
+		$(TOP)/test/speedtest1.c sqlite3.c
+
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
 	del /Q *.cod *.da *.bb *.bbg gmon.out
