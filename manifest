@@ -1,5 +1,5 @@
-C Add\sthe\s--scratch\sparameter\sto\sspeedtest1.\s\sImproved\serror\smessages\swhen\nmisconfiguring\smemory\sparameters\sin\sspeedtest1.
-D 2013-11-24T01:14:14.123
+C Better\ssupport\sfor\sUTF-8\spaths\son\sCygwin.
+D 2013-11-24T23:18:21.299
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c ef091b347d682cb24fc575ac9a6290341af62e2b
+F src/os_win.c 1f7cc110551cb8045c2ca7d41ac42e2afa787d56
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
@@ -1142,7 +1142,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 12e612e8e7c4a6f83acf0daf5608151fb5ec1575
-R d231270eb8540c71c1fe43ad7f945ecf
-U drh
-Z 904197ecb3cb4ac430a652007d0a071c
+P 8f3c767a30c552548ead104ca125f182ce4849ad
+R cc715e8459c64ceb8b095c6997a4f82b
+T *branch * cygUtf8
+T *sym-cygUtf8 *
+T -sym-trunk *
+U mistachkin
+Z 13c3d5cd43d3e5bbf57c7a19839f68ff
