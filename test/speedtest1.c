@@ -9,7 +9,7 @@ static const char zHelp[] =
   "  --autovacuum        Enable AUTOVACUUM mode\n"
   "  --cachesize N       Set the cache size to N\n" 
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
-  "  --heap SIZE MIN     Use an alternative memory allocator with sizes given\n"
+  "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
   "  --journalmode M     Set the journal_mode to MODE\n"
   "  --key KEY           Set the encryption key to KEY\n"
@@ -20,6 +20,7 @@ static const char zHelp[] =
   "  --pcache N SZ       Configure N pages of pagecache each of size SZ bytes\n"
   "  --primarykey        Use PRIMARY KEY instead of UNIQUE where appropriate\n"
   "  --reprepare         Reprepare each statement upon every invocation\n"
+  "  --scratch N SZ      Configure scratch memory for N slots of SZ bytes each\n"
   "  --sqlonly           No-op.  Only show the SQL that would have been run.\n"
   "  --size N            Relative test size.  Default=100\n"
   "  --stats             Show statistics at the end\n"
@@ -57,91 +58,14 @@ static struct Global {
   char zResult[3000];        /* Text of the current result */
 } g;
 
-/*
-** Return non-zero if string z matches glob pattern zGlob and zero if the
-** pattern does not match.
-**
-** Globbing rules:
-**
-**      '*'       Matches any sequence of zero or more characters.
-**
-**      '?'       Matches exactly one character.
-**
-**     [...]      Matches one character from the enclosed list of
-**                characters.
-**
-**     [^...]     Matches one character not in the enclosed list.
-**
-**      '#'       Matches any sequence of one or more digits with an
-**                optional + or - sign in front
-*/
-int speedtest1_strglob(const char *zGlob, const char *z){
-  int c, c2;
-  int invert;
-  int seen;
 
-  while( (c = (*(zGlob++)))!=0 ){
-    if( c=='*' ){
-      while( (c=(*(zGlob++))) == '*' || c=='?' ){
-        if( c=='?' && (*(z++))==0 ) return 0;
-      }
-      if( c==0 ){
-        return 1;
-      }else if( c=='[' ){
-        while( *z && speedtest1_strglob(zGlob-1,z)==0 ){
-          z++;
-        }
-        return (*z)!=0;
-      }
-      while( (c2 = (*(z++)))!=0 ){
-        while( c2!=c ){
-          c2 = *(z++);
-          if( c2==0 ) return 0;
-        }
-        if( speedtest1_strglob(zGlob,z) ) return 1;
-      }
-      return 0;
-    }else if( c=='?' ){
-      if( (*(z++))==0 ) return 0;
-    }else if( c=='[' ){
-      int prior_c = 0;
-      seen = 0;
-      invert = 0;
-      c = *(z++);
-      if( c==0 ) return 0;
-      c2 = *(zGlob++);
-      if( c2=='^' ){
-        invert = 1;
-        c2 = *(zGlob++);
-      }
-      if( c2==']' ){
-        if( c==']' ) seen = 1;
-        c2 = *(zGlob++);
-      }
-      while( c2 && c2!=']' ){
-        if( c2=='-' && zGlob[0]!=']' && zGlob[0]!=0 && prior_c>0 ){
-          c2 = *(zGlob++);
-          if( c>=prior_c && c<=c2 ) seen = 1;
-          prior_c = 0;
-        }else{
-          if( c==c2 ){
-            seen = 1;
-          }
-          prior_c = c2;
-        }
-        c2 = *(zGlob++);
-      }
-      if( c2==0 || (seen ^ invert)==0 ) return 0;
-    }else if( c=='#' ){
-      if( (z[0]=='-' || z[0]=='+') && isdigit(z[1]) ) z++;
-      if( !isdigit(z[0]) ) return 0;
-      z++;
-      while( isdigit(z[0]) ){ z++; }
-    }else{
-      if( c!=(*(z++)) ) return 0;
-    }
-  }
-  return *z==0;
+/* Print an error message and exit */
+static void fatal_error(const char *zMsg, ...){
+  va_list ap;
+  va_start(ap, zMsg);
+  vfprintf(stderr, zMsg, ap);
+  va_end(ap);
+  exit(1);
 }
 
 /*
@@ -158,7 +82,7 @@ static int hexDigitValue(char c){
 /*
 ** Interpret zArg as an integer value, possibly with suffixes.
 */
-static sqlite3_int64 integerValue(const char *zArg){
+static int integerValue(const char *zArg){
   sqlite3_int64 v = 0;
   static const struct { char *zSuffix; int iMult; } aMult[] = {
     { "KiB", 1024 },
@@ -198,6 +122,7 @@ static sqlite3_int64 integerValue(const char *zArg){
       break;
     }
   }
+  if( v>=2147483648 ) fatal_error("parameter to large - max 2147483648");
   return isNeg? -v : v;
 }
 
@@ -354,15 +279,6 @@ void speedtest1_final(void){
     printf("       TOTAL%.*s %4d.%03ds\n", NAMEWIDTH-5, zDots,
            (int)(g.iTotal/1000), (int)(g.iTotal%1000));
   }
-}
-
-/* Print an error message and exit */
-static void fatal_error(const char *zMsg, ...){
-  va_list ap;
-  va_start(ap, zMsg);
-  vfprintf(stderr, zMsg, ap);
-  va_end(ap);
-  exit(1);
 }
 
 /* Run SQL */
@@ -800,6 +716,7 @@ int main(int argc, char **argv){
   int noSync = 0;               /* True for --nosync */
   int pageSize = 0;             /* Desired page size.  0 means default */
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
+  int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
   const char *zTSet = "main";   /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
@@ -809,6 +726,7 @@ int main(int argc, char **argv){
   void *pHeap = 0;              /* Allocated heap space */
   void *pLook = 0;              /* Allocated lookaside space */
   void *pPCache = 0;            /* Allocated storage for pcache */
+  void *pScratch = 0;           /* Allocated storage for scratch */
   int iCur, iHi;                /* Stats values, current and "highwater" */
   int i;                        /* Loop counter */
   int rc;                       /* API return code */
@@ -827,13 +745,13 @@ int main(int argc, char **argv){
       }else if( strcmp(z,"cachesize")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
         i++;
-        cacheSize = (int)integerValue(argv[i]);
+        cacheSize = integerValue(argv[i]);
       }else if( strcmp(z,"exclusive")==0 ){
         doExclusive = 1;
       }else if( strcmp(z,"heap")==0 ){
         if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
-        nHeap = (int)integerValue(argv[i+1]);
-        mnHeap = (int)integerValue(argv[i+2]);
+        nHeap = integerValue(argv[i+1]);
+        mnHeap = integerValue(argv[i+2]);
         i += 2;
       }else if( strcmp(z,"incrvacuum")==0 ){
         doIncrvac = 1;
@@ -845,8 +763,8 @@ int main(int argc, char **argv){
         zKey = argv[++i];
       }else if( strcmp(z,"lookaside")==0 ){
         if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
-        nLook = (int)integerValue(argv[i+1]);
-        szLook = (int)integerValue(argv[i+2]);
+        nLook = integerValue(argv[i+1]);
+        szLook = integerValue(argv[i+2]);
         i += 2;
       }else if( strcmp(z,"nosync")==0 ){
         noSync = 1;
@@ -854,21 +772,26 @@ int main(int argc, char **argv){
         g.zNN = "NOT NULL";
       }else if( strcmp(z,"pagesize")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
-        pageSize = (int)integerValue(argv[++i]);
+        pageSize = integerValue(argv[++i]);
       }else if( strcmp(z,"pcache")==0 ){
         if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
-        nPCache = (int)integerValue(argv[i+1]);
-        szPCache = (int)integerValue(argv[i+2]);
+        nPCache = integerValue(argv[i+1]);
+        szPCache = integerValue(argv[i+2]);
         i += 2;
       }else if( strcmp(z,"primarykey")==0 ){
         g.zPK = "PRIMARY KEY";
       }else if( strcmp(z,"reprepare")==0 ){
         g.bReprepare = 1;
+      }else if( strcmp(z,"scratch")==0 ){
+        if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
+        nScratch = integerValue(argv[i+1]);
+        szScratch = integerValue(argv[i+2]);
+        i += 2;
       }else if( strcmp(z,"sqlonly")==0 ){
         g.bSqlOnly = 1;
       }else if( strcmp(z,"size")==0 ){
         if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
-        g.szTest = (int)integerValue(argv[++i]);
+        g.szTest = integerValue(argv[++i]);
       }else if( strcmp(z,"stats")==0 ){
         showStats = 1;
       }else if( strcmp(z,"testset")==0 ){
@@ -909,11 +832,18 @@ int main(int argc, char **argv){
     if( rc ) fatal_error("heap configuration failed: %d\n", rc);
   }
   if( nPCache>0 && szPCache>0 ){
-    pPCache = malloc( nPCache*szPCache );
-    if( pPCache==0 ) fatal_error("cannot allocate %d-byte pcache\n",
-                                 nPCache*szPCache);
+    pPCache = malloc( nPCache*(sqlite3_int64)szPCache );
+    if( pPCache==0 ) fatal_error("cannot allocate %lld-byte pcache\n",
+                                 nPCache*(sqlite3_int64)szPCache);
     rc = sqlite3_config(SQLITE_CONFIG_PAGECACHE, pPCache, szPCache, nPCache);
     if( rc ) fatal_error("pcache configuration failed: %d\n", rc);
+  }
+  if( nScratch>0 && szScratch>0 ){
+    pScratch = malloc( nScratch*(sqlite3_int64)szScratch );
+    if( pScratch==0 ) fatal_error("cannot allocate %lld-byte scratch\n",
+                                 nScratch*(sqlite3_int64)szScratch);
+    rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
+    if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
   }
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
@@ -1015,6 +945,7 @@ int main(int argc, char **argv){
   /* Release memory */
   free( pLook );
   free( pPCache );
+  free( pScratch );
   free( pHeap );
   return 0;
 }

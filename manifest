@@ -1,5 +1,5 @@
-C The\sMEMSYS5\salgorithm\sdoes\snot\shave\sto\sreturn\sthe\sblock\swith\sthe\slowest\naddress.\s\sAny\sblock\sof\sthe\sappropriate\ssize\swill\sdo.\s\sUse\sthe\sfirst\sblock\nfound\son\sthe\sfreelist\sfor\sthe\sappropriate\ssize\sfor\sa\sperformance\simprovement.
-D 2013-11-24T00:46:00.452
+C Add\sthe\s--scratch\sparameter\sto\sspeedtest1.\s\sImproved\serror\smessages\swhen\nmisconfiguring\smemory\sparameters\sin\sspeedtest1.
+D 2013-11-24T01:14:14.123
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -819,7 +819,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 3296bda6fdf2650773fa509dc51504b66da36e57
+F test/speedtest1.c aa08ae8e3591bf5c028be9396a84237640761d8c
 F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test c8eccfe8fcd3f3cfc864ce22d5b9e803a3c69940
@@ -1142,8 +1142,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6b98f0af7a6522873245d30598d7c79b8aeb9fa0 8191b512122c13d7fa61d8e5487652f13ec172f7
-R c70b3f80a0897046826a17fb7011539e
-T +closed 8191b512122c13d7fa61d8e5487652f13ec172f7
+P 12e612e8e7c4a6f83acf0daf5608151fb5ec1575
+R d231270eb8540c71c1fe43ad7f945ecf
 U drh
-Z dce60b90fb1ae6b64b6c8216e4da2c33
+Z 904197ecb3cb4ac430a652007d0a071c
