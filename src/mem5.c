@@ -210,25 +210,6 @@ static int memsys5Size(void *p){
 }
 
 /*
-** Find the first entry on the freelist iLogsize.  Unlink that
-** entry and return its index. 
-*/
-static int memsys5UnlinkFirst(int iLogsize){
-  int i;
-  int iFirst;
-
-  assert( iLogsize>=0 && iLogsize<=LOGMAX );
-  i = iFirst = mem5.aiFreelist[iLogsize];
-  assert( iFirst>=0 );
-  while( i>0 ){
-    if( i<iFirst ) iFirst = i;
-    i = MEM5LINK(i)->next;
-  }
-  memsys5Unlink(iFirst, iLogsize);
-  return iFirst;
-}
-
-/*
 ** Return a block of memory of at least nBytes in size.
 ** Return NULL if unable.  Return NULL if nBytes==0.
 **
@@ -273,7 +254,8 @@ static void *memsys5MallocUnsafe(int nByte){
     sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes", nByte);
     return 0;
   }
-  i = memsys5UnlinkFirst(iBin);
+  i = mem5.aiFreelist[iBin];
+  memsys5Unlink(i, iBin);
   while( iBin>iLogsize ){
     int newSize;
 
