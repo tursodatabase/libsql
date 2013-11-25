@@ -1,5 +1,5 @@
-C Initial\swork\son\sisolating\susage\sof\sthe\sWindows\sheader\sfile.
-D 2013-11-25T09:36:07.707
+C Correct\sline-endings\sin\sthe\snew\sheader\sfile.
+D 2013-11-25T09:37:24.023
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 16254fb023b7e69788013f0da5ccdc2063ba2328
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os.h cd8fd6545d6a936bae05026136324ec8e620c7f8
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
 F src/os_win.c 423d8f815067f4980cb84abab501374afc9bd039
-F src/os_win.h db1d1d18f56ea2931ba1c2ec25ff4616ae1e581b
+F src/os_win.h ac253253d080dc3dd261efe5e98626c4b95e5a26
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
@@ -1143,10 +1143,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8f3c767a30c552548ead104ca125f182ce4849ad
-R e592d18e44da45424fc95ed6d55c4c01
-T *branch * winHdr
-T *sym-winHdr *
-T -sym-trunk *
+P 0d42c6b830ee50f45539d73e3948ed3bc50a11d1
+R 0e6472b71f09f9a7891e918b85232304
 U mistachkin
-Z 4118ce5841a2a285e11b8bcc9d8fe99e
+Z c441f2886dac757b12ddb73cf4ef6f57
