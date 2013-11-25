@@ -4662,7 +4662,8 @@ int sqlite3BtreeMovetoUnpacked(
     assert( pPage->intKey==(pIdxKey==0) );
     lwr = 0;
     upr = pPage->nCell-1;
-    idx = biasRight ? upr : upr/2;
+    assert( biasRight==0 || biasRight==1 );
+    idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
     pCur->aiIdx[pCur->iPage] = (u16)idx;
     if( pPage->intKey ){
       for(;;){
@@ -4685,15 +4686,15 @@ int sqlite3BtreeMovetoUnpacked(
           pCur->aiIdx[pCur->iPage] = (u16)idx;
           if( !pPage->leaf ){
             lwr = idx;
-            c = 0;
-            break;
+            goto moveto_next_layer;
           }else{
             *pRes = 0;
             rc = SQLITE_OK;
             goto moveto_finish;
           }
         }
-        idx = (lwr+upr)/2;
+        assert( lwr+upr>=0 );
+        idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2; */
       }
     }else{
       for(;;){
@@ -4759,10 +4760,9 @@ int sqlite3BtreeMovetoUnpacked(
           pCur->aiIdx[pCur->iPage] = (u16)idx;
           goto moveto_finish;
         }
-        if( lwr>upr ){
-          break;
-        }
-        idx = (lwr+upr)/2;
+        if( lwr>upr ) break;
+        assert( lwr+upr>=0 );
+        idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2 */
       }
     }
     assert( lwr==upr+1 || (pPage->intKey && !pPage->leaf) );
@@ -4773,7 +4773,9 @@ int sqlite3BtreeMovetoUnpacked(
       *pRes = c;
       rc = SQLITE_OK;
       goto moveto_finish;
-    }else if( lwr>=pPage->nCell ){
+    }
+moveto_next_layer:
+    if( lwr>=pPage->nCell ){
       chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     }else{
       chldPg = get4byte(findCell(pPage, lwr));
