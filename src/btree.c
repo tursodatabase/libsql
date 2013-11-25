@@ -4647,10 +4647,10 @@ int sqlite3BtreeMovetoUnpacked(
   }
   assert( pCur->apPage[0]->intKey || pIdxKey );
   for(;;){
-    int lwr, upr, idx;
+    int lwr, upr, idx, c;
     Pgno chldPg;
     MemPage *pPage = pCur->apPage[pCur->iPage];
-    int c;
+    u8 *pCell;                          /* Pointer to current cell in pPage */
 
     /* pPage->nCell must be greater than zero. If this is the root-page
     ** the cursor would have been INVALID above and this for(;;) loop
@@ -4667,30 +4667,45 @@ int sqlite3BtreeMovetoUnpacked(
     }else{
       pCur->aiIdx[pCur->iPage] = (u16)(idx = (upr+lwr)/2);
     }
-    for(;;){
-      u8 *pCell;                          /* Pointer to current cell in pPage */
-
+    pCur->info.nSize = 0;
+    if( pPage->intKey ){
       assert( idx==pCur->aiIdx[pCur->iPage] );
-      pCur->info.nSize = 0;
-      pCell = findCell(pPage, idx) + pPage->childPtrSize;
-      if( pPage->intKey ){
+      for(;;){
         i64 nCellKey;
+        pCell = findCell(pPage, idx) + pPage->childPtrSize;
         if( pPage->hasData ){
           u32 dummy;
           pCell += getVarint32(pCell, dummy);
         }
         getVarint(pCell, (u64*)&nCellKey);
         if( nCellKey==intKey ){
-          c = 0;
+          pCur->validNKey = 1;
+          pCur->info.nKey = nCellKey;
+          if( !pPage->leaf ){
+            lwr = idx;
+            break;
+          }else{
+            *pRes = 0;
+            rc = SQLITE_OK;
+            goto moveto_finish;
+          }
         }else if( nCellKey<intKey ){
           c = -1;
+          lwr = idx+1;
         }else{
           assert( nCellKey>intKey );
           c = +1;
+          upr = idx-1;
         }
-        pCur->validNKey = 1;
-        pCur->info.nKey = nCellKey;
-      }else{
+        if( lwr>upr ) break;
+        pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
+      }
+    }else{
+      for(;;){
+        int nCell;
+        assert( idx==pCur->aiIdx[pCur->iPage] );
+        pCell = findCell(pPage, idx) + pPage->childPtrSize;
+
         /* The maximum supported page-size is 65536 bytes. This means that
         ** the maximum number of record bytes stored on an index B-Tree
         ** page is less than 16384 bytes and may be stored as a 2-byte
@@ -4699,7 +4714,7 @@ int sqlite3BtreeMovetoUnpacked(
         ** stored entirely within the b-tree page by inspecting the first 
         ** 2 bytes of the cell.
         */
-        int nCell = pCell[0];
+        nCell = pCell[0];
         if( nCell<=pPage->max1bytePayload
          /* && (pCell+nCell)<pPage->aDataEnd */
         ){
@@ -4738,47 +4753,37 @@ int sqlite3BtreeMovetoUnpacked(
           c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
         }
-      }
-      if( c==0 ){
-        if( pPage->intKey && !pPage->leaf ){
-          lwr = idx;
-          break;
-        }else{
+        if( c==0 ){
           *pRes = 0;
           rc = SQLITE_OK;
           goto moveto_finish;
         }
+        if( c<0 ){
+          lwr = idx+1;
+        }else{
+          upr = idx-1;
+        }
+        if( lwr>upr ) break;
+        pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
       }
-      if( c<0 ){
-        lwr = idx+1;
-      }else{
-        upr = idx-1;
-      }
-      if( lwr>upr ){
-        break;
-      }
-      pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
     }
     assert( lwr==upr+1 || (pPage->intKey && !pPage->leaf) );
     assert( pPage->isInit );
     if( pPage->leaf ){
-      chldPg = 0;
+      assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+      *pRes = c;
+      rc = SQLITE_OK;
+      goto moveto_finish;
     }else if( lwr>=pPage->nCell ){
       chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     }else{
       chldPg = get4byte(findCell(pPage, lwr));
     }
-    if( chldPg==0 ){
-      assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
-      *pRes = c;
-      rc = SQLITE_OK;
-      goto moveto_finish;
-    }
     pCur->aiIdx[pCur->iPage] = (u16)lwr;
     pCur->info.nSize = 0;
     pCur->validNKey = 0;
     rc = moveToChild(pCur, chldPg);
-    if( rc ) goto moveto_finish;
+    if( rc ) break;
   }
 moveto_finish:
   return rc;
