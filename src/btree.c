@@ -4219,7 +4219,7 @@ static const unsigned char *fetchPayload(
   assert( cursorHoldsMutex(pCur) );
   pPage = pCur->apPage[pCur->iPage];
   assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
-  if( pCur->info.nSize==0 ){
+  if( NEVER(pCur->info.nSize==0) ){
     btreeParseCell(pCur->apPage[pCur->iPage], pCur->aiIdx[pCur->iPage],
                    &pCur->info);
   }
@@ -4670,7 +4670,9 @@ int sqlite3BtreeMovetoUnpacked(
         i64 nCellKey;
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
         if( pPage->hasData ){
-          while( 0x80 <= *(pCell++) && pCell<pPage->aDataEnd ){}
+          while( 0x80 <= *(pCell++) ){
+            if( pCell>=pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
+          }
         }
         getVarint(pCell, (u64*)&nCellKey);
         if( nCellKey<intKey ){
