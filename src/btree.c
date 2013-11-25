@@ -4662,7 +4662,7 @@ int sqlite3BtreeMovetoUnpacked(
     assert( pPage->intKey==(pIdxKey==0) );
     lwr = 0;
     upr = pPage->nCell-1;
-    idx = biasRight ? upr : (upr+lwr)/2;
+    idx = biasRight ? upr : upr/2;
     pCur->aiIdx[pCur->iPage] = (u16)idx;
     pCur->info.nSize = 0;
     if( pPage->intKey ){
@@ -4674,28 +4674,26 @@ int sqlite3BtreeMovetoUnpacked(
           pCell += getVarint32(pCell, dummy);
         }
         getVarint(pCell, (u64*)&nCellKey);
-        if( nCellKey==intKey ){
+        if( nCellKey<intKey ){
+          lwr = idx+1;
+          if( lwr>upr ){ c = -1; break; }
+        }else if( nCellKey>intKey ){
+          upr = idx-1;
+          if( lwr>upr ){ c = +1; break; }
+        }else{
+          assert( nCellKey==intKey );
           pCur->validNKey = 1;
           pCur->info.nKey = nCellKey;
           pCur->aiIdx[pCur->iPage] = (u16)idx;
           if( !pPage->leaf ){
             lwr = idx;
+            c = 0;
             break;
           }else{
             *pRes = 0;
             rc = SQLITE_OK;
             goto moveto_finish;
           }
-        }else if( nCellKey<intKey ){
-          lwr = idx+1;
-        }else{
-          assert( nCellKey>intKey );
-          upr = idx-1;
-        }
-        if( lwr>upr ){
-          c = nCellKey<intKey ? -1 : +1;
-          pCur->aiIdx[pCur->iPage] = (u16)idx;
-          break;
         }
         idx = (lwr+upr)/2;
       }
@@ -4752,19 +4750,18 @@ int sqlite3BtreeMovetoUnpacked(
           c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
         }
-        if( c==0 ){
+        if( c<0 ){
+          lwr = idx+1;
+        }else if( c>0 ){
+          upr = idx-1;
+        }else{
+          assert( c==0 );
           *pRes = 0;
           rc = SQLITE_OK;
           pCur->aiIdx[pCur->iPage] = (u16)idx;
           goto moveto_finish;
         }
-        if( c<0 ){
-          lwr = idx+1;
-        }else{
-          upr = idx-1;
-        }
         if( lwr>upr ){
-          pCur->aiIdx[pCur->iPage] = (u16)idx;
           break;
         }
         idx = (lwr+upr)/2;
@@ -4774,6 +4771,7 @@ int sqlite3BtreeMovetoUnpacked(
     assert( pPage->isInit );
     if( pPage->leaf ){
       assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+      pCur->aiIdx[pCur->iPage] = (u16)idx;
       *pRes = c;
       rc = SQLITE_OK;
       goto moveto_finish;
