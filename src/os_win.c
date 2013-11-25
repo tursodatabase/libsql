@@ -15,15 +15,15 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for Windows only */
 
-#ifdef __CYGWIN__
-# include <sys/cygwin.h>
-# include <errno.h> /* amalgamator: keep */
-#endif
-
 /*
 ** Include code that is common to all os_*.c files
 */
 #include "os_common.h"
+
+/*
+** Include the header file for the Windows VFS.
+*/
+#include "os_win.h"
 
 /*
 ** Compiling and using WAL mode requires several APIs that are only
