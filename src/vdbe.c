@@ -4075,7 +4075,7 @@ case OP_InsertInt: {
   sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
   rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
                           pData->z, pData->n, nZero,
-                          pOp->p5 & OPFLAG_APPEND, seekResult
+                          (pOp->p5 & OPFLAG_APPEND)!=0, seekResult
   );
   pC->rowidIsValid = 0;
   pC->deferredMoveto = 0;

@@ -1,5 +1,5 @@
-C Add\sthe\s--scratch\sparameter\sto\sspeedtest1.\s\sImproved\serror\smessages\swhen\nmisconfiguring\smemory\sparameters\sin\sspeedtest1.
-D 2013-11-24T01:14:14.123
+C Optimizations\sto\sthe\ssqlite3BtreeMovetoUnpacked()\sroutine\sin\sstorage\sengine\nmaking\sit\sabout\s17.8%\sfaster,\swhich\sin\sturn\smakes\sSQLite\sover\s1.2%\sfaster\noverall.
+D 2013-11-25T20:50:23.619
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 17ca5729d07ba03f81633aab56de87956d9b188a
+F src/btree.c c308e64d89de5ea87e5538f7380af4477892e067
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 07054d45319953e54a89d726e589a423e9c1c590
@@ -280,7 +280,7 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 2fa6c821d28bbdbeec1b2a7b091a281c9ef8f918
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 4d637218b7ffcc76fdcf461c71d277e7a4250e74
+F src/vdbe.c 23d0cfba65b6dadf39a0805d0fba266e8146d678
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1142,7 +1142,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 12e612e8e7c4a6f83acf0daf5608151fb5ec1575
-R d231270eb8540c71c1fe43ad7f945ecf
+P 8f3c767a30c552548ead104ca125f182ce4849ad b48c4e402125fb8d2208d358f6e9bbc351f3a49d
+R 5bcbc7e134df92bc8848f497a4ca3642
+T +closed b48c4e402125fb8d2208d358f6e9bbc351f3a49d
 U drh
-Z 904197ecb3cb4ac430a652007d0a071c
+Z 31605b8bf42e4d96e843b4f7dc30f0f2
