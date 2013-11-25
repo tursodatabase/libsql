@@ -4664,14 +4664,12 @@ int sqlite3BtreeMovetoUnpacked(
     upr = pPage->nCell-1;
     idx = biasRight ? upr : upr/2;
     pCur->aiIdx[pCur->iPage] = (u16)idx;
-//    pCur->info.nSize = 0;
     if( pPage->intKey ){
       for(;;){
         i64 nCellKey;
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
         if( pPage->hasData ){
-          u32 dummy;
-          pCell += getVarint32(pCell, dummy);
+          while( 0x80 <= *(pCell++) && pCell<pPage->aDataEnd ){}
         }
         getVarint(pCell, (u64*)&nCellKey);
         if( nCellKey<intKey ){
