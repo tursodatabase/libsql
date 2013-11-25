@@ -1,5 +1,5 @@
-C Performance\simprovements\sin\ssqlite3BtreeMovetoUnpacked().
-D 2013-11-25T02:38:55.810
+C More\simprovements\sto\ssqlite3BtreeMovetoUnpacked()\sperformance.
+D 2013-11-25T14:10:15.692
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c b0fd869c044bbf29640b9e53c43d8846a929d7f4
+F src/btree.c c300cb68948a03f0049addddd9e36f28551e78ae
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 07054d45319953e54a89d726e589a423e9c1c590
@@ -1142,10 +1142,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8f3c767a30c552548ead104ca125f182ce4849ad
-R c168ba651eff475cfa32f75aa61b62eb
-T *branch * btree-optimization
-T *sym-btree-optimization *
-T -sym-trunk *
+P d0fb7acea7cbfe6f2d84782a28bb51675a06576f
+R 29c1330ebdfb45d969bc6dbf6661ccf0
 U drh
-Z f59a524da90eada9da104b9026589d30
+Z d111eff6e7e1e09087be24d32976d9d6

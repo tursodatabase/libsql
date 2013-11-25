@@ -4662,14 +4662,10 @@ int sqlite3BtreeMovetoUnpacked(
     assert( pPage->intKey==(pIdxKey==0) );
     lwr = 0;
     upr = pPage->nCell-1;
-    if( biasRight ){
-      pCur->aiIdx[pCur->iPage] = (u16)(idx = upr);
-    }else{
-      pCur->aiIdx[pCur->iPage] = (u16)(idx = (upr+lwr)/2);
-    }
+    idx = biasRight ? upr : (upr+lwr)/2;
+    pCur->aiIdx[pCur->iPage] = (u16)idx;
     pCur->info.nSize = 0;
     if( pPage->intKey ){
-      assert( idx==pCur->aiIdx[pCur->iPage] );
       for(;;){
         i64 nCellKey;
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
@@ -4681,6 +4677,7 @@ int sqlite3BtreeMovetoUnpacked(
         if( nCellKey==intKey ){
           pCur->validNKey = 1;
           pCur->info.nKey = nCellKey;
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
           if( !pPage->leaf ){
             lwr = idx;
             break;
@@ -4690,20 +4687,21 @@ int sqlite3BtreeMovetoUnpacked(
             goto moveto_finish;
           }
         }else if( nCellKey<intKey ){
-          c = -1;
           lwr = idx+1;
         }else{
           assert( nCellKey>intKey );
-          c = +1;
           upr = idx-1;
         }
-        if( lwr>upr ) break;
-        pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
+        if( lwr>upr ){
+          c = nCellKey<intKey ? -1 : +1;
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
+          break;
+        }
+        idx = (lwr+upr)/2;
       }
     }else{
       for(;;){
         int nCell;
-        assert( idx==pCur->aiIdx[pCur->iPage] );
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
 
         /* The maximum supported page-size is 65536 bytes. This means that
@@ -4745,6 +4743,7 @@ int sqlite3BtreeMovetoUnpacked(
             rc = SQLITE_NOMEM;
             goto moveto_finish;
           }
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
           rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 0);
           if( rc ){
             sqlite3_free(pCellKey);
@@ -4756,6 +4755,7 @@ int sqlite3BtreeMovetoUnpacked(
         if( c==0 ){
           *pRes = 0;
           rc = SQLITE_OK;
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
           goto moveto_finish;
         }
         if( c<0 ){
@@ -4763,8 +4763,11 @@ int sqlite3BtreeMovetoUnpacked(
         }else{
           upr = idx-1;
         }
-        if( lwr>upr ) break;
-        pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
+        if( lwr>upr ){
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
+          break;
+        }
+        idx = (lwr+upr)/2;
       }
     }
     assert( lwr==upr+1 || (pPage->intKey && !pPage->leaf) );
