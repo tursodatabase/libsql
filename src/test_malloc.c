@@ -1151,7 +1151,7 @@ static int test_config_heap_size(
   }
   if( Tcl_GetIntFromObj(interp, aArg[0], &nByte) ) return TCL_ERROR;
 
-  rc = sqlite3_config(SQLITE_CONFIG_HEAP_SIZE, nByte);
+  rc = sqlite3_config(SQLITE_CONFIG_WIN32_HEAPSIZE, nByte);
 
   Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
   return TCL_OK;

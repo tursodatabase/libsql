@@ -1,5 +1,5 @@
-C Add\sexperimental\ssqlite3_config\soption\sto\scontrol\sthe\snative\sWin32\sheap\ssize.
-D 2013-11-23T00:27:29.844
+C Clarify\sdocs\sfor\sthe\sSQLITE_CONFIG_WIN32_HEAPSIZE\soption.
+D 2013-11-25T21:49:04.683
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 8a07bebafbfda0eb67728f4bd15a36201662d1a1
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 68e5b72cc2cdc2a0101c3bf7a1112fc39a4c6441
+F src/main.c 441a2e106d0e2913fec47e5f13d5802c742e32bb
 F src/malloc.c 543a8eb5508eaf4cadf55a9b503379eba2088128
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -221,7 +221,7 @@ F src/resolve.c a70e32ae6ccb7b780f2b6d3e9e21837affc25ee5
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c c4d06a9238a515ff4bc86b8626139633c09a00a2
-F src/sqlite.h.in 1399855c547dbe3cbc556f5423067834e0945b88
+F src/sqlite.h.in a63edec76cca981ce859b5cfa4776121b7a113e5
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 9d586cb37572cd9e0a48242d449c6a69c2e74e72
@@ -253,7 +253,7 @@ F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
 F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c eec5258da8ca468e3165bfa5e2e4461fe08ed385
+F src/test_malloc.c 1ff5b1243d96124c9a180f3b89424820a1f337f3
 F src/test_multiplex.c 9f304bf04170c91c0318238d512df2da039eb1c8
 F src/test_multiplex.h 110a8c4d356e0aa464ca8730375608a9a0b61ae1
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
@@ -1142,10 +1142,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f336c18fb72ab90e93640b12ac540d41accc7658
-R 4fb7e3d2adbb1a56917a356c46494b14
-T *branch * winHeapSize
-T *sym-winHeapSize *
-T -sym-trunk *
+P f09f11e94b5a7c2e51d99c3700d2acd2f3903de9
+R 27fb3c9a311fe5f2bbe8062f9b160f8d
 U mistachkin
-Z 570dda2e20bfd9c30436e58012ccd873
+Z d9c5f17d385924b0a9e66e3497c49033

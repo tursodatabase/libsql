@@ -516,7 +516,7 @@ int sqlite3_config(int op, ...){
     }
 
 #if SQLITE_OS_WIN && defined(SQLITE_WIN32_MALLOC)
-    case SQLITE_CONFIG_HEAP_SIZE: {
+    case SQLITE_CONFIG_WIN32_HEAPSIZE: {
       sqlite3GlobalConfig.nHeap = va_arg(ap, int);
       break;
     }
