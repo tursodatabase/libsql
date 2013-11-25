@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sfrom\sa\sbranch\sthat\sis\snow\sreachable\sduring\sOOM\sfaults.
-D 2013-11-25T21:41:24.083
+C Change\sa\swhile-loop\sinto\sa\sdo-loop\sin\ssqlite3VdbeRecordCompare()\sand\sadd\nan\sassert()\sto\sverify\sthat\sthe\sdo-loop\sreally\sis\sappropriate.\s\sThis\sgives\nabout\sa\s10%\sperformance\sboost\sin\sthat\sroutine,\sor\sa\s0.9%\sboost\soverall.
+D 2013-11-25T22:24:36.845
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/vdbe.c 23d0cfba65b6dadf39a0805d0fba266e8146d678
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 5251f17828ff49664f457b6d8a1585297ce7a7a9
+F src/vdbeaux.c a880c3c7d7c58543574ff7c96feddc5a1deaeae2
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c cd02a6ade205ebe989983b7e3d64a5358b8e5e1f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -1142,7 +1142,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 032e89934f36de10652d3454a0065a337827221a
-R 542bd751b886b00603f8e8e48c8170e2
+P 18bdcb05c26860643f53a6b9e85f84109a3ebe5a
+R dac23119194b70834a8988d5969d30b0
 U drh
-Z 7e8a0ac6a68793100fecd3fb349d5622
+Z 2ee808e2592f93c91c4a4d0443aab097
