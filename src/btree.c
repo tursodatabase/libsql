@@ -4219,7 +4219,7 @@ static const unsigned char *fetchPayload(
   assert( cursorHoldsMutex(pCur) );
   pPage = pCur->apPage[pCur->iPage];
   assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
-  if( NEVER(pCur->info.nSize==0) ){
+  if( pCur->info.nSize==0 ){
     btreeParseCell(pCur->apPage[pCur->iPage], pCur->aiIdx[pCur->iPage],
                    &pCur->info);
   }
