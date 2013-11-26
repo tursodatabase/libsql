@@ -1,5 +1,5 @@
-C Do\snot\stry\sto\srun\sthe\satof1.test\stest\sscript\son\sARM\shardware\swhich\slacks\nthe\s"long\sdouble"\stype.
-D 2013-11-26T16:20:28.799
+C Change\stclsqlite3.c\sso\sthat\sit\snever\sinvokes\sctype\smacros\swith\ssigned\ncharacter\sarguments.
+D 2013-11-26T16:48:04.270
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/sqliteInt.h 9d586cb37572cd9e0a48242d449c6a69c2e74e72
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 3b5f3716e320480659239abe887164521c575d83
+F src/tclsqlite.c 651b10698c87bbc3ae5772e2491e3444c5bbf153
 F src/test1.c 5757066e503a8ed51313cb3a5d9bcdcced2991a9
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -1143,7 +1143,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6f53fc7106658d44edf63068f9a8522fa5a7688b
-R 0b6d53f178500662f3ea7da63b0a8b9a
+P fafca560f28f526abdf1474c33af94665a65aaf0
+R 6dbbdfc524469f7c72c8eb6b873b5729
 U drh
-Z 1b696475d3b2c1907923dd0866112072
+Z 7b1df47f508bb396c6901395cdb1db93
