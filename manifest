@@ -1,5 +1,5 @@
-C Add\sSQLITE_CONFIG_WIN32_HEAPSIZE\soption\sto\sconfigure\sthe\smaximum\sisolated\sheap\ssize\son\sWindows.
-D 2013-11-25T23:42:21.085
+C Better\ssupport\sfor\sUTF-8\spaths\son\sCygwin.
+D 2013-11-26T00:28:50.946
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c 39e9fc083fc35caedeb72f7724791a089722f896
+F src/os_win.c cb3f26205ea785a63ea5bdc21a9c9f9ae3972d0f
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
@@ -1143,7 +1143,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 011a6be439eb884c944a3318bf631bed3135f8ec 51e876074af4e34ba01ed122e3bcc042243c9e88
-R a48ce81d597ca35b28409062489bab18
+P 914e6c9d88828b66e8385c4a264702471faa34cf 484162b6e5a8ad9385fe2eb2a5254d13d7b0bc36
+R 1b8f9bd2dcb67783ed3f85d3422a2824
 U mistachkin
-Z d1bf9d184524adde89c6b90b5f2f5190
+Z f0ab176076e12054e72ef7c2fe54ec51
