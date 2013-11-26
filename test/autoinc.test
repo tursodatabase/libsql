@@ -216,7 +216,7 @@ do_test autoinc-2.27 {
 } {t1 1238}
 do_test autoinc-2.28 {
   execsql {
-    UPDATE sqlite_sequence SET seq='12345678901234567890'
+    UPDATE sqlite_sequence SET seq='-12345678901234567890'
       WHERE name='t1';
     INSERT INTO t1 VALUES(NULL,6);
     SELECT * FROM t1;

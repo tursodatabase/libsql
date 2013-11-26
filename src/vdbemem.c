@@ -303,15 +303,8 @@ void sqlite3VdbeMemRelease(Mem *p){
 
 /*
 ** Convert a 64-bit IEEE double into a 64-bit signed integer.
-** If the double is too large, return 0x8000000000000000.
-**
-** Most systems appear to do this simply by assigning
-** variables and without the extra range tests.  But
-** there are reports that windows throws an expection
-** if the floating point value is out of range. (See ticket #2880.)
-** Because we do not completely understand the problem, we will
-** take the conservative approach and always do range tests
-** before attempting the conversion.
+** If the double is out of range of a 64-bit signed integer then
+** return the closest available 64-bit signed integer.
 */
 static i64 doubleToInt64(double r){
 #ifdef SQLITE_OMIT_FLOATING_POINT
@@ -328,14 +321,10 @@ static i64 doubleToInt64(double r){
   static const i64 maxInt = LARGEST_INT64;
   static const i64 minInt = SMALLEST_INT64;
 
-  if( r<(double)minInt ){
+  if( r<=(double)minInt ){
     return minInt;
-  }else if( r>(double)maxInt ){
-    /* minInt is correct here - not maxInt.  It turns out that assigning
-    ** a very large positive number to an integer results in a very large
-    ** negative integer.  This makes no sense, but it is what x86 hardware
-    ** does so for compatibility we will do the same in software. */
-    return minInt;
+  }else if( r>=(double)maxInt ){
+    return maxInt;
   }else{
     return (i64)r;
   }
@@ -417,17 +406,11 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   **
   ** The second and third terms in the following conditional enforces
   ** the second condition under the assumption that addition overflow causes
-  ** values to wrap around.  On x86 hardware, the third term is always
-  ** true and could be omitted.  But we leave it in because other
-  ** architectures might behave differently.
+  ** values to wrap around.
   */
   if( pMem->r==(double)pMem->u.i
    && pMem->u.i>SMALLEST_INT64
-#if defined(__i486__) || defined(__x86_64__)
-   && ALWAYS(pMem->u.i<LARGEST_INT64)
-#else
    && pMem->u.i<LARGEST_INT64
-#endif
   ){
     pMem->flags |= MEM_Int;
   }

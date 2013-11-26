@@ -3514,7 +3514,9 @@ case OP_SeekGt: {       /* jump, in3 */
       ** point number. */
       assert( (pIn3->flags & MEM_Real)!=0 );
 
-      if( iKey==SMALLEST_INT64 && (pIn3->r<(double)iKey || pIn3->r>0) ){
+      if( (iKey==SMALLEST_INT64 && pIn3->r<(double)iKey)
+       || (iKey==LARGEST_INT64 && pIn3->r>(double)iKey)
+      ){
         /* The P3 value is too large in magnitude to be expressed as an
         ** integer. */
         res = 1;
