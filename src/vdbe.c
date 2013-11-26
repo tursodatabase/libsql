@@ -3510,38 +3510,28 @@ case OP_SeekGt: {       /* jump, in3 */
         pc = pOp->p2 - 1;
         break;
       }
-      /* If we reach this point, then the P3 value must be a floating
-      ** point number. */
-      assert( (pIn3->flags & MEM_Real)!=0 );
 
-      if( (iKey==SMALLEST_INT64 && pIn3->r<(double)iKey)
-       || (iKey==LARGEST_INT64 && pIn3->r>(double)iKey)
-      ){
-        /* The P3 value is too large in magnitude to be expressed as an
-        ** integer. */
-        res = 1;
-        if( pIn3->r<0 ){
-          if( oc>=OP_SeekGe ){  assert( oc==OP_SeekGe || oc==OP_SeekGt );
-            rc = sqlite3BtreeFirst(pC->pCursor, &res);
-            if( rc!=SQLITE_OK ) goto abort_due_to_error;
-          }
-        }else{
-          if( oc<=OP_SeekLe ){  assert( oc==OP_SeekLt || oc==OP_SeekLe );
-            rc = sqlite3BtreeLast(pC->pCursor, &res);
-            if( rc!=SQLITE_OK ) goto abort_due_to_error;
-          }
-        }
-        if( res ){
-          pc = pOp->p2 - 1;
-        }
-        break;
-      }else if( oc==OP_SeekLt || oc==OP_SeekGe ){
-        /* Use the ceiling() function to convert real->int */
-        if( pIn3->r > (double)iKey ) iKey++;
-      }else{
-        /* Use the floor() function to convert real->int */
-        assert( oc==OP_SeekLe || oc==OP_SeekGt );
-        if( pIn3->r < (double)iKey ) iKey--;
+      /* If the approximation iKey is larger than the actual real search
+      ** term, substitute >= for > and < for <=. e.g. if the search term
+      ** is 4.9 and the integer approximation 5:
+      **
+      **        (x >  4.9)    ->     (x >= 5)
+      **        (x <= 4.9)    ->     (x <  5)
+      */
+      if( pIn3->r<(double)iKey ){
+        assert( OP_SeekGe==(OP_SeekGt-1) );
+        assert( OP_SeekLt==(OP_SeekLe-1) );
+        assert( (OP_SeekLe & 0x0001)==(OP_SeekGt & 0x0001) );
+        if( (oc & 0x0001)==(OP_SeekGt & 0x0001) ) oc--;
+      }
+
+      /* If the approximation iKey is smaller than the actual real search
+      ** term, substitute <= for < and > for >=.  */
+      else if( pIn3->r>(double)iKey ){
+        assert( OP_SeekLe==(OP_SeekLt+1) );
+        assert( OP_SeekGt==(OP_SeekGe+1) );
+        assert( (OP_SeekLt & 0x0001)==(OP_SeekGe & 0x0001) );
+        if( (oc & 0x0001)==(OP_SeekLt & 0x0001) ) oc++;
       }
     } 
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)iKey, 0, &res);
