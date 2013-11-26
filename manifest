@@ -1,5 +1,5 @@
-C Change\stclsqlite3.c\sso\sthat\sit\snever\sinvokes\sctype\smacros\swith\ssigned\ncharacter\sarguments.
-D 2013-11-26T16:48:04.270
+C Fix\sa\spossible\sNULL\spointer\sdeference\sin\sthe\swordcount\stest\sprogram.
+D 2013-11-26T16:51:13.426
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1091,7 +1091,7 @@ F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
-F test/wordcount.c 800b6ab98ac05b7c6343575c45055f72273c9cc2
+F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
 F tool/build-all-msvc.bat e0917e787df675b020d250d60a00de8abaa4e30a x
@@ -1143,7 +1143,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fafca560f28f526abdf1474c33af94665a65aaf0
-R 6dbbdfc524469f7c72c8eb6b873b5729
+P c07caabf2396c84b2ccb0e9f98ae6279ce41c59d
+R d1a47818d75d4c09a9dcb48899bdd6d5
 U drh
-Z 7b1df47f508bb396c6901395cdb1db93
+Z 42f2f4c4e3d27d9172438c5ee2b1524f

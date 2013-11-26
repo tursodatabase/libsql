@@ -116,7 +116,7 @@ static int printResult(void *NotUsed, int nArg, char **azArg, char **azNm){
   int i;
   printf("--");
   for(i=0; i<nArg; i++){
-    printf(" %s", azArg[i]);
+    printf(" %s", azArg[i] ? azArg[i] : "(null)");
   }
   printf("\n");
   return 0;
