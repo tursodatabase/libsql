@@ -492,9 +492,9 @@ GOTO no_errors
   GOTO :EOF
 
 :fn_CopyVariable
-  SETLOCAL
   IF NOT DEFINED %1 GOTO :EOF
   IF "%2" == "" GOTO :EOF
+  SETLOCAL
   SET __ECHO_CMD=ECHO %%%1%%
   FOR /F "delims=" %%V IN ('%__ECHO_CMD%') DO (
     SET VALUE=%%V

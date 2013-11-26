@@ -1664,8 +1664,8 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION2(ifnull,            2, 0, 0, noopFunc,  SQLITE_FUNC_COALESCE),
     FUNCTION2(unlikely,          1, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
     FUNCTION2(likelihood,        2, 0, 0, noopFunc,  SQLITE_FUNC_UNLIKELY),
-    FUNCTION(random,             0, 0, 0, randomFunc       ),
-    FUNCTION(randomblob,         1, 0, 0, randomBlob       ),
+    VFUNCTION(random,            0, 0, 0, randomFunc       ),
+    VFUNCTION(randomblob,        1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
     FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
@@ -1675,9 +1675,9 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
-    FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
-    FUNCTION(changes,            0, 0, 0, changes          ),
-    FUNCTION(total_changes,      0, 0, 0, total_changes    ),
+    VFUNCTION(last_insert_rowid, 0, 0, 0, last_insert_rowid),
+    VFUNCTION(changes,           0, 0, 0, changes          ),
+    VFUNCTION(total_changes,     0, 0, 0, total_changes    ),
     FUNCTION(replace,            3, 0, 0, replaceFunc      ),
     FUNCTION(zeroblob,           1, 0, 0, zeroblobFunc     ),
   #ifdef SQLITE_SOUNDEX

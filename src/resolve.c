@@ -108,10 +108,10 @@ static void resolveAlias(
     pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
     if( pDup==0 ) return;
     ExprSetProperty(pDup, EP_Skip);
-    if( pEList->a[iCol].iAlias==0 ){
-      pEList->a[iCol].iAlias = (u16)(++pParse->nAlias);
+    if( pEList->a[iCol].u.x.iAlias==0 ){
+      pEList->a[iCol].u.x.iAlias = (u16)(++pParse->nAlias);
     }
-    pDup->iTable = pEList->a[iCol].iAlias;
+    pDup->iTable = pEList->a[iCol].u.x.iAlias;
   }
   if( pExpr->op==TK_COLLATE ){
     pDup = sqlite3ExprAddCollateString(pParse, pDup, pExpr->u.zToken);
@@ -667,7 +667,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 
     /* Resolve function names
     */
-    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pList = pExpr->x.pList;    /* The argument list */
       int n = pList ? pList->nExpr : 0;    /* Number of arguments */
@@ -680,7 +679,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
-      testcase( pExpr->op==TK_CONST_FUNC );
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
       notValidPartIdxWhere(pParse, pNC, "functions");
       zId = pExpr->u.zToken;
@@ -725,6 +723,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
           pExpr->op = TK_NULL;
           return WRC_Prune;
         }
+        if( pDef->funcFlags & SQLITE_FUNC_CONSTANT ) ExprSetProperty(pExpr,EP_Constant);
       }
 #endif
       if( is_agg && (pNC->ncFlags & NC_AllowAgg)==0 ){
@@ -976,7 +975,7 @@ static int resolveCompoundOrderBy(
           pItem->pExpr->pLeft = pNew;
         }
         sqlite3ExprDelete(db, pE);
-        pItem->iOrderByCol = (u16)iCol;
+        pItem->u.x.iOrderByCol = (u16)iCol;
         pItem->done = 1;
       }else{
         moreToDo = 1;
@@ -997,8 +996,8 @@ static int resolveCompoundOrderBy(
 /*
 ** Check every term in the ORDER BY or GROUP BY clause pOrderBy of
 ** the SELECT statement pSelect.  If any term is reference to a
-** result set expression (as determined by the ExprList.a.iOrderByCol field)
-** then convert that term into a copy of the corresponding result set
+** result set expression (as determined by the ExprList.a.u.x.iOrderByCol
+** field) then convert that term into a copy of the corresponding result set
 ** column.
 **
 ** If any errors are detected, add an error message to pParse and
@@ -1025,12 +1024,12 @@ int sqlite3ResolveOrderGroupBy(
   pEList = pSelect->pEList;
   assert( pEList!=0 );  /* sqlite3SelectNew() guarantees this */
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
-    if( pItem->iOrderByCol ){
-      if( pItem->iOrderByCol>pEList->nExpr ){
+    if( pItem->u.x.iOrderByCol ){
+      if( pItem->u.x.iOrderByCol>pEList->nExpr ){
         resolveOutOfRangeError(pParse, zType, i+1, pEList->nExpr);
         return 1;
       }
-      resolveAlias(pParse, pEList, pItem->iOrderByCol-1, pItem->pExpr, zType,0);
+      resolveAlias(pParse, pEList, pItem->u.x.iOrderByCol-1, pItem->pExpr, zType,0);
     }
   }
   return 0;
@@ -1079,7 +1078,7 @@ static int resolveOrderGroupBy(
         ** a copy of the iCol-th result-set column.  The subsequent call to
         ** sqlite3ResolveOrderGroupBy() will convert the expression to a
         ** copy of the iCol-th result-set expression. */
-        pItem->iOrderByCol = (u16)iCol;
+        pItem->u.x.iOrderByCol = (u16)iCol;
         continue;
       }
     }
@@ -1091,18 +1090,18 @@ static int resolveOrderGroupBy(
         resolveOutOfRangeError(pParse, zType, i+1, nResult);
         return 1;
       }
-      pItem->iOrderByCol = (u16)iCol;
+      pItem->u.x.iOrderByCol = (u16)iCol;
       continue;
     }
 
     /* Otherwise, treat the ORDER BY term as an ordinary expression */
-    pItem->iOrderByCol = 0;
+    pItem->u.x.iOrderByCol = 0;
     if( sqlite3ResolveExprNames(pNC, pE) ){
       return 1;
     }
     for(j=0; j<pSelect->pEList->nExpr; j++){
       if( sqlite3ExprCompare(pE, pSelect->pEList->a[j].pExpr, -1)==0 ){
-        pItem->iOrderByCol = j+1;
+        pItem->u.x.iOrderByCol = j+1;
       }
     }
   }

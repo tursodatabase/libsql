@@ -1086,6 +1086,13 @@ struct sqlite3 {
 #endif
 
 /*
+** Return true if it OK to factor constant expressions into the initialization
+** code. The argument is a Parse object for the code generator.
+*/
+#define ConstFactorOk(P) \
+  ((P)->cookieGoto>0 && OptimizationEnabled((P)->db,SQLITE_FactorOutConst))
+
+/*
 ** Possible values for the sqlite.magic field.
 ** The numbers are obtained at random and have no special meaning, other
 ** than being distinct from one another.
@@ -1151,6 +1158,7 @@ struct FuncDestructor {
 #define SQLITE_FUNC_COUNT    0x100 /* Built-in count(*) aggregate */
 #define SQLITE_FUNC_COALESCE 0x200 /* Built-in coalesce() or ifnull() */
 #define SQLITE_FUNC_UNLIKELY 0x400 /* Built-in unlikely() function */
+#define SQLITE_FUNC_CONSTANT 0x800 /* Constant inputs give a constant output */
 
 /*
 ** The following three macros, FUNCTION(), LIKEFUNC() and AGGREGATE() are
@@ -1162,6 +1170,9 @@ struct FuncDestructor {
 **     value passed as iArg is cast to a (void*) and made available
 **     as the user-data (sqlite3_user_data()) for the function. If 
 **     argument bNC is true, then the SQLITE_FUNC_NEEDCOLL flag is set.
+**
+**   VFUNCTION(zName, nArg, iArg, bNC, xFunc)
+**     Like FUNCTION except it omits the SQLITE_FUNC_CONSTANT flag.
 **
 **   AGGREGATE(zName, nArg, iArg, bNC, xStep, xFinal)
 **     Used to create an aggregate function definition implemented by
@@ -1178,16 +1189,20 @@ struct FuncDestructor {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
+  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
+#define VFUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
 #define FUNCTION2(zName, nArg, iArg, bNC, xFunc, extraFlags) \
-  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags, \
+  {nArg,SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL)|extraFlags,\
    SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0, 0}
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
+  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|(bNC*SQLITE_FUNC_NEEDCOLL), \
    pArg, 0, xFunc, 0, 0, #zName, 0, 0}
 #define LIKEFUNC(zName, nArg, arg, flags) \
-  {nArg, SQLITE_UTF8|flags, (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
+  {nArg, SQLITE_FUNC_CONSTANT|SQLITE_UTF8|flags, \
+   (void *)arg, 0, likeFunc, 0, 0, #zName, 0, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
   {nArg, SQLITE_UTF8|(nc*SQLITE_FUNC_NEEDCOLL), \
    SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0,0}
@@ -1837,7 +1852,7 @@ struct Expr {
 #define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
 #define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
 #define EP_Collate   0x000100 /* Tree contains a TK_COLLATE opeartor */
-#define EP_FixedDest 0x000200 /* Result needed in a specific register */
+      /* unused      0x000200 */
 #define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
 #define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
 #define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
@@ -1847,6 +1862,7 @@ struct Expr {
 #define EP_MemToken  0x010000 /* Need to sqlite3DbFree() Expr.zToken */
 #define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 #define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
+#define EP_Constant  0x080000 /* Node is a constant */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1908,8 +1924,14 @@ struct ExprList {
     u8 sortOrder;           /* 1 for DESC or 0 for ASC */
     unsigned done :1;       /* A flag to indicate when processing is finished */
     unsigned bSpanIsTab :1; /* zSpan holds DB.TABLE.COLUMN */
-    u16 iOrderByCol;        /* For ORDER BY, column number in result set */
-    u16 iAlias;             /* Index into Parse.aAlias[] for zName */
+    unsigned reusable :1;   /* Constant expression is reusable */
+    union {
+      struct {
+        u16 iOrderByCol;      /* For ORDER BY, column number in result set */
+        u16 iAlias;           /* Index into Parse.aAlias[] for zName */
+      } x;
+      int iConstExprReg;      /* Register in which Expr value is cached */
+    } u;
   } *a;                  /* Alloc a power of two greater or equal to nExpr */
 };
 
@@ -2286,6 +2308,7 @@ struct Parse {
     int iReg;             /* Reg with value of this column. 0 means none. */
     int lru;              /* Least recently used entry has the smallest value */
   } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
+  ExprList *pConstExpr;/* Constant expressions */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
@@ -2900,11 +2923,13 @@ void sqlite3ExprCacheRemove(Parse*, int, int);
 void sqlite3ExprCacheClear(Parse*);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
 int sqlite3ExprCode(Parse*, Expr*, int);
+void sqlite3ExprCodeAtInit(Parse*, Expr*, int, u8);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
 int sqlite3ExprCodeAndCache(Parse*, Expr*, int);
-void sqlite3ExprCodeConstants(Parse*, Expr*);
-int sqlite3ExprCodeExprList(Parse*, ExprList*, int, int);
+int sqlite3ExprCodeExprList(Parse*, ExprList*, int, u8);
+#define SQLITE_ECEL_DUP      0x01  /* Deep, not shallow copies */
+#define SQLITE_ECEL_FACTOR   0x02  /* Factor out constant terms */
 void sqlite3ExprIfTrue(Parse*, Expr*, int, int);
 void sqlite3ExprIfFalse(Parse*, Expr*, int, int);
 Table *sqlite3FindTable(sqlite3*,const char*, const char*);
@@ -2949,7 +2974,7 @@ int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
                                      u8,u8,int,int*);
 void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
-int sqlite3OpenTableAndIndices(Parse*, Table*, int, int, int*, int*);
+int sqlite3OpenTableAndIndices(Parse*, Table*, int, int, u8*, int*, int*);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 void sqlite3MultiWrite(Parse*);
 void sqlite3MayAbort(Parse*);
@@ -3271,6 +3296,7 @@ void sqlite3InvalidFunction(sqlite3_context*,int,sqlite3_value**);
 sqlite3_int64 sqlite3StmtCurrentTime(sqlite3_context*);
 int sqlite3VdbeParameterIndex(Vdbe*, const char*, int);
 int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
+void sqlite3ParserReset(Parse*);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
 CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);

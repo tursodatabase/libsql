@@ -222,9 +222,8 @@ static VdbeCursor *allocateCursor(
   int nByte;
   VdbeCursor *pCx = 0;
   nByte = 
-      ROUND8(sizeof(VdbeCursor)) + 
-      (isBtreeCursor?sqlite3BtreeCursorSize():0) + 
-      2*nField*sizeof(u32);
+      ROUND8(sizeof(VdbeCursor)) + 2*sizeof(u32)*nField + 
+      (isBtreeCursor?sqlite3BtreeCursorSize():0);
 
   assert( iCur<p->nCursor );
   if( p->apCsr[iCur] ){
@@ -236,12 +235,9 @@ static VdbeCursor *allocateCursor(
     memset(pCx, 0, sizeof(VdbeCursor));
     pCx->iDb = iDb;
     pCx->nField = nField;
-    if( nField ){
-      pCx->aType = (u32 *)&pMem->z[ROUND8(sizeof(VdbeCursor))];
-    }
     if( isBtreeCursor ){
       pCx->pCursor = (BtCursor*)
-          &pMem->z[ROUND8(sizeof(VdbeCursor))+2*nField*sizeof(u32)];
+          &pMem->z[ROUND8(sizeof(VdbeCursor))+2*sizeof(u32)*nField];
       sqlite3BtreeCursorZero(pCx->pCursor);
     }
   }
@@ -1095,15 +1091,15 @@ case OP_Move: {
   int p1;          /* Register to copy from */
   int p2;          /* Register to copy to */
 
-  n = pOp->p3 + 1;
+  n = pOp->p3;
   p1 = pOp->p1;
   p2 = pOp->p2;
-  assert( n>0 && p1>0 && p2>0 );
+  assert( n>=0 && p1>0 && p2>0 );
   assert( p1+n<=p2 || p2+n<=p1 );
 
   pIn1 = &aMem[p1];
   pOut = &aMem[p2];
-  while( n-- ){
+  do{
     assert( pOut<=&aMem[(p->nMem-p->nCursor)] );
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
@@ -1120,7 +1116,7 @@ case OP_Move: {
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
     pOut++;
-  }
+  }while( n-- );
   break;
 }
 
@@ -1332,7 +1328,7 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 ** If either input is NULL, the result is NULL.
 */
 /* Opcode: Divide P1 P2 P3 * *
-** Synopsis:  r[P3]=r[P1]/r[P2]
+** Synopsis:  r[P3]=r[P2]/r[P1]
 **
 ** Divide the value in register P1 by the value in register P2
 ** and store the result in register P3 (P3=P2/P1). If the value in 
@@ -1340,11 +1336,11 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
 ** NULL, the result is NULL.
 */
 /* Opcode: Remainder P1 P2 P3 * *
-** Synopsis:  r[P3]=r[P1]%r[P2]
+** Synopsis:  r[P3]=r[P2]%r[P1]
 **
-** Compute the remainder after integer division of the value in
-** register P1 by the value in register P2 and store the result in P3. 
-** If the value in register P2 is zero the result is NULL.
+** Compute the remainder after integer register P2 is divided by 
+** register P1 and store the result in register P3. 
+** If the value in register P1 is zero the result is NULL.
 ** If either operand is NULL, the result is NULL.
 */
 case OP_Add:                   /* same as TK_PLUS, in1, in2, out3 */
@@ -1501,10 +1497,6 @@ case OP_Function: {
 
   assert( pOp->p4type==P4_FUNCDEF );
   ctx.pFunc = pOp->p4.pFunc;
-  ctx.s.flags = MEM_Null;
-  ctx.s.db = db;
-  ctx.s.xDel = 0;
-  ctx.s.zMalloc = 0;
   ctx.iOp = pc;
   ctx.pVdbe = p;
 
@@ -1512,7 +1504,10 @@ case OP_Function: {
   ** the pointer to ctx.s so in case the user-function can use
   ** the already allocated buffer instead of allocating a new one.
   */
-  sqlite3VdbeMemMove(&ctx.s, pOut);
+  memcpy(&ctx.s, pOut, sizeof(Mem));
+  pOut->flags = MEM_Null;
+  pOut->xDel = 0;
+  pOut->zMalloc = 0;
   MemSetTypeFlag(&ctx.s, MEM_Null);
 
   ctx.fErrorOrAux = 0;
@@ -1547,7 +1542,8 @@ case OP_Function: {
 
   /* Copy the result of the function into register P3 */
   sqlite3VdbeChangeEncoding(&ctx.s, encoding);
-  sqlite3VdbeMemMove(pOut, &ctx.s);
+  assert( pOut->flags==MEM_Null );
+  memcpy(pOut, &ctx.s, sizeof(Mem));
   if( sqlite3VdbeMemTooBig(pOut) ){
     goto too_big;
   }
@@ -1672,17 +1668,19 @@ case OP_AddImm: {            /* in1 */
 */
 case OP_MustBeInt: {            /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
-  applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
   if( (pIn1->flags & MEM_Int)==0 ){
-    if( pOp->p2==0 ){
-      rc = SQLITE_MISMATCH;
-      goto abort_due_to_error;
-    }else{
-      pc = pOp->p2 - 1;
+    applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
+    if( (pIn1->flags & MEM_Int)==0 ){
+      if( pOp->p2==0 ){
+        rc = SQLITE_MISMATCH;
+        goto abort_due_to_error;
+      }else{
+        pc = pOp->p2 - 1;
+        break;
+      }
     }
-  }else{
-    MemSetTypeFlag(pIn1, MEM_Int);
   }
+  MemSetTypeFlag(pIn1, MEM_Int);
   break;
 }
 
@@ -1807,7 +1805,7 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 #endif /* !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_FLOATING_POINT) */
 
 /* Opcode: Lt P1 P2 P3 P4 P5
-** Synopsis: if r[P1]<r[P3] goto P3
+** Synopsis: if r[P1]<r[P3] goto P2
 **
 ** Compare the values in register P1 and P3.  If reg(P3)<reg(P1) then
 ** jump to address P2.  
@@ -2261,151 +2259,103 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** skipped for length() and all content loading can be skipped for typeof().
 */
 case OP_Column: {
-  u32 payloadSize;   /* Number of bytes in the record */
   i64 payloadSize64; /* Number of bytes in the record */
-  int p1;            /* P1 value of the opcode */
   int p2;            /* column number to retrieve */
   VdbeCursor *pC;    /* The VDBE cursor */
-  char *zRec;        /* Pointer to complete record-data */
   BtCursor *pCrsr;   /* The BTree cursor */
   u32 *aType;        /* aType[i] holds the numeric type of the i-th column */
   u32 *aOffset;      /* aOffset[i] is offset to start of data for i-th column */
-  int nField;        /* number of fields in the record */
   int len;           /* The length of the serialized data for the column */
   int i;             /* Loop counter */
-  char *zData;       /* Part of the record being decoded */
   Mem *pDest;        /* Where to write the extracted value */
   Mem sMem;          /* For storing the record being decoded */
-  u8 *zIdx;          /* Index into header */
-  u8 *zEndHdr;       /* Pointer to first byte after the header */
+  const u8 *zData;   /* Part of the record being decoded */
+  const u8 *zHdr;    /* Next unparsed byte of the header */
+  const u8 *zEndHdr; /* Pointer to first byte after the header */
   u32 offset;        /* Offset into the data */
   u32 szField;       /* Number of bytes in the content of a field */
-  int szHdr;         /* Size of the header size field at start of record */
-  int avail;         /* Number of bytes of available data */
+  u32 avail;         /* Number of bytes of available data */
   u32 t;             /* A type code from the record header */
   Mem *pReg;         /* PseudoTable input register */
 
-
-  p1 = pOp->p1;
   p2 = pOp->p2;
-  pC = 0;
-  memset(&sMem, 0, sizeof(sMem));
-  assert( p1<p->nCursor );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pDest = &aMem[pOp->p3];
   memAboutToChange(p, pDest);
-  zRec = 0;
-
-  /* This block sets the variable payloadSize to be the total number of
-  ** bytes in the record.
-  **
-  ** zRec is set to be the complete text of the record if it is available.
-  ** The complete record text is always available for pseudo-tables
-  ** If the record is stored in a cursor, the complete record text
-  ** might be available in the  pC->aRow cache.  Or it might not be.
-  ** If the data is unavailable,  zRec is set to NULL.
-  **
-  ** We also compute the number of columns in the record.  For cursors,
-  ** the number of columns is stored in the VdbeCursor.nField element.
-  */
-  pC = p->apCsr[p1];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  assert( p2<pC->nField );
+  aType = pC->aType;
+  aOffset = aType + pC->nField;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  assert( pC->pVtabCursor==0 );
+  assert( pC->pVtabCursor==0 ); /* OP_Column never called on virtual table */
 #endif
   pCrsr = pC->pCursor;
-  if( pCrsr!=0 ){
-    /* The record is stored in a B-Tree */
-    rc = sqlite3VdbeCursorMoveto(pC);
-    if( rc ) goto abort_due_to_error;
+  assert( pCrsr!=0 || pC->pseudoTableReg>0 ); /* pCrsr NULL on PseudoTables */
+  assert( pCrsr!=0 || pC->nullRow );          /* pC->nullRow on PseudoTables */
+
+  /* If the cursor cache is stale, bring it up-to-date */
+  rc = sqlite3VdbeCursorMoveto(pC);
+  if( rc ) goto abort_due_to_error;
+  if( pC->cacheStatus!=p->cacheCtr || (pOp->p5&OPFLAG_CLEARCACHE)!=0 ){
     if( pC->nullRow ){
-      payloadSize = 0;
-    }else if( pC->cacheStatus==p->cacheCtr ){
-      payloadSize = pC->payloadSize;
-      zRec = (char*)pC->aRow;
-    }else if( pC->isIndex ){
-      assert( sqlite3BtreeCursorIsValid(pCrsr) );
-      VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &payloadSize64);
-      assert( rc==SQLITE_OK );   /* True because of CursorMoveto() call above */
-      /* sqlite3BtreeParseCellPtr() uses getVarint32() to extract the
-      ** payload size, so it is impossible for payloadSize64 to be
-      ** larger than 32 bits. */
-      assert( (payloadSize64 & SQLITE_MAX_U32)==(u64)payloadSize64 );
-      payloadSize = (u32)payloadSize64;
+      if( pCrsr==0 ){
+        assert( pC->pseudoTableReg>0 );
+        pReg = &aMem[pC->pseudoTableReg];
+        if( pC->multiPseudo ){
+          sqlite3VdbeMemShallowCopy(pDest, pReg+p2, MEM_Ephem);
+          Deephemeralize(pDest);
+          goto op_column_out;
+        }
+        assert( pReg->flags & MEM_Blob );
+        assert( memIsValid(pReg) );
+        pC->payloadSize = pC->szRow = avail = pReg->n;
+        pC->aRow = (u8*)pReg->z;
+      }else{
+        MemSetTypeFlag(pDest, MEM_Null);
+        goto op_column_out;
+      }
     }else{
-      assert( sqlite3BtreeCursorIsValid(pCrsr) );
-      VVA_ONLY(rc =) sqlite3BtreeDataSize(pCrsr, &payloadSize);
-      assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
+      assert( pCrsr );
+      if( pC->isTable==0 ){
+        assert( sqlite3BtreeCursorIsValid(pCrsr) );
+        VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &payloadSize64);
+        assert( rc==SQLITE_OK ); /* True because of CursorMoveto() call above */
+        /* sqlite3BtreeParseCellPtr() uses getVarint32() to extract the
+        ** payload size, so it is impossible for payloadSize64 to be
+        ** larger than 32 bits. */
+        assert( (payloadSize64 & SQLITE_MAX_U32)==(u64)payloadSize64 );
+        pC->aRow = sqlite3BtreeKeyFetch(pCrsr, &avail);
+        pC->payloadSize = (u32)payloadSize64;
+      }else{
+        assert( sqlite3BtreeCursorIsValid(pCrsr) );
+        VVA_ONLY(rc =) sqlite3BtreeDataSize(pCrsr, &pC->payloadSize);
+        assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
+        pC->aRow = sqlite3BtreeDataFetch(pCrsr, &avail);
+      }
+      assert( avail<=65536 );  /* Maximum page size is 64KiB */
+      if( pC->payloadSize <= (u32)avail ){
+        pC->szRow = pC->payloadSize;
+      }else{
+        pC->szRow = avail;
+      }
+      if( pC->payloadSize > (u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
+        goto too_big;
+      }
     }
-  }else{
-    assert( pC->pseudoTableReg>0 );
-    pReg = &aMem[pC->pseudoTableReg];
-    if( pC->multiPseudo ){
-      sqlite3VdbeMemShallowCopy(pDest, pReg+p2, MEM_Ephem);
-      Deephemeralize(pDest);
-      goto op_column_out;
-    }
-    assert( pReg->flags & MEM_Blob );
-    assert( memIsValid(pReg) );
-    payloadSize = pReg->n;
-    zRec = pReg->z;
-    pC->cacheStatus = (pOp->p5&OPFLAG_CLEARCACHE) ? CACHE_STALE : p->cacheCtr;
-    assert( payloadSize==0 || zRec!=0 );
-  }
-
-  /* If payloadSize is 0, then just store a NULL.  This can happen because of
-  ** nullRow or because of a corrupt database. */
-  if( payloadSize==0 ){
-    MemSetTypeFlag(pDest, MEM_Null);
-    goto op_column_out;
-  }
-  assert( db->aLimit[SQLITE_LIMIT_LENGTH]>=0 );
-  if( payloadSize > (u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
-    goto too_big;
-  }
-
-  nField = pC->nField;
-  assert( p2<nField );
-
-  /* Read and parse the table header.  Store the results of the parse
-  ** into the record header cache fields of the cursor.
-  */
-  aType = pC->aType;
-  if( pC->cacheStatus==p->cacheCtr ){
-    aOffset = pC->aOffset;
-  }else{
-    assert(aType);
-    avail = 0;
-    pC->aOffset = aOffset = &aType[nField];
-    pC->payloadSize = payloadSize;
     pC->cacheStatus = p->cacheCtr;
-
-    /* Figure out how many bytes are in the header */
-    if( zRec ){
-      zData = zRec;
-    }else{
-      if( pC->isIndex ){
-        zData = (char*)sqlite3BtreeKeyFetch(pCrsr, &avail);
-      }else{
-        zData = (char*)sqlite3BtreeDataFetch(pCrsr, &avail);
-      }
-      /* If KeyFetch()/DataFetch() managed to get the entire payload,
-      ** save the payload in the pC->aRow cache.  That will save us from
-      ** having to make additional calls to fetch the content portion of
-      ** the record.
-      */
-      assert( avail>=0 );
-      if( payloadSize <= (u32)avail ){
-        zRec = zData;
-        pC->aRow = (u8*)zData;
-      }else{
-        pC->aRow = 0;
-      }
+    pC->iHdrOffset = getVarint32(pC->aRow, offset);
+    pC->nHdrParsed = 0;
+    aOffset[0] = offset;
+    if( avail<offset ){
+      /* pC->aRow does not have to hold the entire row, but it does at least
+      ** need to cover the header of the record.  If pC->aRow does not contain
+      ** the complete header, then set it to zero, forcing the header to be
+      ** dynamically allocated. */
+      pC->aRow = 0;
+      pC->szRow = 0;
     }
-    /* The following assert is true in all cases except when
-    ** the database file has been corrupted externally.
-    **    assert( zRec!=0 || avail>=payloadSize || avail>=9 ); */
-    szHdr = getVarint32((u8*)zData, offset);
 
     /* Make sure a corrupt database has not given us an oversize header.
     ** Do this now to avoid an oversize memory allocation.
@@ -2416,155 +2366,148 @@ case OP_Column: {
     ** 3-byte type for each of the maximum of 32768 columns plus three
     ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
     */
-    if( offset > 98307 ){
+    if( offset > 98307 || offset > pC->payloadSize ){
       rc = SQLITE_CORRUPT_BKPT;
-      goto op_column_out;
+      goto op_column_error;
     }
+  }
 
-    /* Compute in len the number of bytes of data we need to read in order
-    ** to get nField type values.  offset is an upper bound on this.  But
-    ** nField might be significantly less than the true number of columns
-    ** in the table, and in that case, 5*nField+3 might be smaller than offset.
-    ** We want to minimize len in order to limit the size of the memory
-    ** allocation, especially if a corrupt database file has caused offset
-    ** to be oversized. Offset is limited to 98307 above.  But 98307 might
-    ** still exceed Robson memory allocation limits on some configurations.
-    ** On systems that cannot tolerate large memory allocations, nField*5+3
-    ** will likely be much smaller since nField will likely be less than
-    ** 20 or so.  This insures that Robson memory allocation limits are
-    ** not exceeded even for corrupt database files.
+  /* Make sure at least the first p2+1 entries of the header have been
+  ** parsed and valid information is in aOffset[] and aType[].
+  */
+  if( pC->nHdrParsed<=p2 ){
+    /* If there is more header available for parsing in the record, try
+    ** to extract additional fields up through the p2+1-th field 
     */
-    len = nField*5 + 3;
-    if( len > (int)offset ) len = (int)offset;
-
-    /* The KeyFetch() or DataFetch() above are fast and will get the entire
-    ** record header in most cases.  But they will fail to get the complete
-    ** record header if the record header does not fit on a single page
-    ** in the B-Tree.  When that happens, use sqlite3VdbeMemFromBtree() to
-    ** acquire the complete header text.
-    */
-    if( !zRec && avail<len ){
-      sMem.flags = 0;
-      sMem.db = 0;
-      rc = sqlite3VdbeMemFromBtree(pCrsr, 0, len, pC->isIndex, &sMem);
-      if( rc!=SQLITE_OK ){
-        goto op_column_out;
+    if( pC->iHdrOffset<aOffset[0] ){
+      /* Make sure zData points to enough of the record to cover the header. */
+      if( pC->aRow==0 ){
+        memset(&sMem, 0, sizeof(sMem));
+        rc = sqlite3VdbeMemFromBtree(pCrsr, 0, aOffset[0], 
+                                     !pC->isTable, &sMem);
+        if( rc!=SQLITE_OK ){
+          goto op_column_error;
+        }
+        zData = (u8*)sMem.z;
+      }else{
+        zData = pC->aRow;
       }
-      zData = sMem.z;
-    }
-    zEndHdr = (u8 *)&zData[len];
-    zIdx = (u8 *)&zData[szHdr];
-
-    /* Scan the header and use it to fill in the aType[] and aOffset[]
-    ** arrays.  aType[i] will contain the type integer for the i-th
-    ** column and aOffset[i] will contain the offset from the beginning
-    ** of the record to the start of the data for the i-th column
-    */
-    for(i=0; i<nField; i++){
-      if( zIdx<zEndHdr ){
-        aOffset[i] = offset;
-        if( zIdx[0]<0x80 ){
-          t = zIdx[0];
-          zIdx++;
+  
+      /* Fill in aType[i] and aOffset[i] values through the p2-th field. */
+      i = pC->nHdrParsed;
+      offset = aOffset[i];
+      zHdr = zData + pC->iHdrOffset;
+      zEndHdr = zData + aOffset[0];
+      assert( i<=p2 && zHdr<zEndHdr );
+      do{
+        if( zHdr[0]<0x80 ){
+          t = zHdr[0];
+          zHdr++;
         }else{
-          zIdx += sqlite3GetVarint32(zIdx, &t);
+          zHdr += sqlite3GetVarint32(zHdr, &t);
         }
         aType[i] = t;
         szField = sqlite3VdbeSerialTypeLen(t);
         offset += szField;
         if( offset<szField ){  /* True if offset overflows */
-          zIdx = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
+          zHdr = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
           break;
         }
-      }else{
-        /* If i is less that nField, then there are fewer fields in this
-        ** record than SetNumColumns indicated there are columns in the
-        ** table. Set the offset for any extra columns not present in
-        ** the record to 0. This tells code below to store the default value
-        ** for the column instead of deserializing a value from the record.
-        */
-        aOffset[i] = 0;
+        i++;
+        aOffset[i] = offset;
+      }while( i<=p2 && zHdr<zEndHdr );
+      pC->nHdrParsed = i;
+      pC->iHdrOffset = (u32)(zHdr - zData);
+      if( pC->aRow==0 ){
+        sqlite3VdbeMemRelease(&sMem);
+        sMem.flags = MEM_Null;
+      }
+  
+      /* If we have read more header data than was contained in the header,
+      ** or if the end of the last field appears to be past the end of the
+      ** record, or if the end of the last field appears to be before the end
+      ** of the record (when all fields present), then we must be dealing 
+      ** with a corrupt database.
+      */
+      if( (zHdr > zEndHdr)
+       || (offset > pC->payloadSize)
+       || (zHdr==zEndHdr && offset!=pC->payloadSize)
+      ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto op_column_error;
       }
     }
-    sqlite3VdbeMemRelease(&sMem);
-    sMem.flags = MEM_Null;
 
-    /* If we have read more header data than was contained in the header,
-    ** or if the end of the last field appears to be past the end of the
-    ** record, or if the end of the last field appears to be before the end
-    ** of the record (when all fields present), then we must be dealing 
-    ** with a corrupt database.
+    /* If after trying to extra new entries from the header, nHdrParsed is
+    ** still not up to p2, that means that the record has fewer than p2
+    ** columns.  So the result will be either the default value or a NULL.
     */
-    if( (zIdx > zEndHdr) || (offset > payloadSize)
-         || (zIdx==zEndHdr && offset!=payloadSize) ){
-      rc = SQLITE_CORRUPT_BKPT;
+    if( pC->nHdrParsed<=p2 ){
+      if( pOp->p4type==P4_MEM ){
+        sqlite3VdbeMemShallowCopy(pDest, pOp->p4.pMem, MEM_Static);
+      }else{
+        MemSetTypeFlag(pDest, MEM_Null);
+      }
       goto op_column_out;
     }
   }
 
-  /* Get the column information. If aOffset[p2] is non-zero, then 
-  ** deserialize the value from the record. If aOffset[p2] is zero,
-  ** then there are not enough fields in the record to satisfy the
-  ** request.  In this case, set the value NULL or to P4 if P4 is
-  ** a pointer to a Mem object.
+  /* Extract the content for the p2+1-th column.  Control can only
+  ** reach this point if aOffset[p2], aOffset[p2+1], and aType[p2] are
+  ** all valid.
   */
-  if( aOffset[p2] ){
-    assert( rc==SQLITE_OK );
-    if( zRec ){
-      /* This is the common case where the whole row fits on a single page */
-      VdbeMemRelease(pDest);
-      sqlite3VdbeSerialGet((u8 *)&zRec[aOffset[p2]], aType[p2], pDest);
-    }else{
-      /* This branch happens only when the row overflows onto multiple pages */
-      t = aType[p2];
-      if( (pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
-       && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0)
-      ){
-        /* Content is irrelevant for the typeof() function and for
-        ** the length(X) function if X is a blob.  So we might as well use
-        ** bogus content rather than reading content from disk.  NULL works
-        ** for text and blob and whatever is in the payloadSize64 variable
-        ** will work for everything else. */
-        zData = t<12 ? (char*)&payloadSize64 : 0;
-      }else{
-        len = sqlite3VdbeSerialTypeLen(t);
-        sqlite3VdbeMemMove(&sMem, pDest);
-        rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len,  pC->isIndex,
-                                     &sMem);
-        if( rc!=SQLITE_OK ){
-          goto op_column_out;
-        }
-        zData = sMem.z;
-      }
-      sqlite3VdbeSerialGet((u8*)zData, t, pDest);
-    }
-    pDest->enc = encoding;
+  assert( p2<pC->nHdrParsed );
+  assert( rc==SQLITE_OK );
+  if( pC->szRow>=aOffset[p2+1] ){
+    /* This is the common case where the desired content fits on the original
+    ** page - where the content is not on an overflow page */
+    VdbeMemRelease(pDest);
+    sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
-    if( pOp->p4type==P4_MEM ){
-      sqlite3VdbeMemShallowCopy(pDest, pOp->p4.pMem, MEM_Static);
+    /* This branch happens only when content is on overflow pages */	
+    t = aType[p2];
+    if( ((pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
+          && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0))
+     || (len = sqlite3VdbeSerialTypeLen(t))==0
+    ){
+      /* Content is irrelevant for the typeof() function and for
+      ** the length(X) function if X is a blob.  So we might as well use
+      ** bogus content rather than reading content from disk.  NULL works
+      ** for text and blob and whatever is in the payloadSize64 variable
+      ** will work for everything else.  Content is also irrelevant if
+      ** the content length is 0. */
+      zData = t<=13 ? (u8*)&payloadSize64 : 0;
+      sMem.zMalloc = 0;
     }else{
-      MemSetTypeFlag(pDest, MEM_Null);
+      memset(&sMem, 0, sizeof(sMem));
+      sqlite3VdbeMemMove(&sMem, pDest);
+      rc = sqlite3VdbeMemFromBtree(pCrsr, aOffset[p2], len, !pC->isTable,
+                                   &sMem);
+      if( rc!=SQLITE_OK ){
+        goto op_column_error;
+      }
+      zData = (u8*)sMem.z;
+    }
+    sqlite3VdbeSerialGet(zData, t, pDest);
+    /* If we dynamically allocated space to hold the data (in the
+    ** sqlite3VdbeMemFromBtree() call above) then transfer control of that
+    ** dynamically allocated space over to the pDest structure.
+    ** This prevents a memory copy. */
+    if( sMem.zMalloc ){
+      assert( sMem.z==sMem.zMalloc );
+      assert( !(pDest->flags & MEM_Dyn) );
+      assert( !(pDest->flags & (MEM_Blob|MEM_Str)) || pDest->z==sMem.z );
+      pDest->flags &= ~(MEM_Ephem|MEM_Static);
+      pDest->flags |= MEM_Term;
+      pDest->z = sMem.z;
+      pDest->zMalloc = sMem.zMalloc;
     }
   }
-
-  /* If we dynamically allocated space to hold the data (in the
-  ** sqlite3VdbeMemFromBtree() call above) then transfer control of that
-  ** dynamically allocated space over to the pDest structure.
-  ** This prevents a memory copy.
-  */
-  if( sMem.zMalloc ){
-    assert( sMem.z==sMem.zMalloc );
-    assert( !(pDest->flags & MEM_Dyn) );
-    assert( !(pDest->flags & (MEM_Blob|MEM_Str)) || pDest->z==sMem.z );
-    pDest->flags &= ~(MEM_Ephem|MEM_Static);
-    pDest->flags |= MEM_Term;
-    pDest->z = sMem.z;
-    pDest->zMalloc = sMem.zMalloc;
-  }
-
-  rc = sqlite3VdbeMemMakeWriteable(pDest);
+  pDest->enc = encoding;
 
 op_column_out:
+  rc = sqlite3VdbeMemMakeWriteable(pDest);
+op_column_error:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
   break;
@@ -3320,6 +3263,8 @@ case OP_OpenWrite: {
     nField = pOp->p4.i;
   }
   assert( pOp->p1>=0 );
+  assert( nField>=0 );
+  testcase( nField==0 );  /* Table with INTEGER PRIMARY KEY and nothing else */
   pCur = allocateCursor(p, pOp->p1, nField, iDb, 1);
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
@@ -3333,12 +3278,11 @@ case OP_OpenWrite: {
   ** sqlite3BtreeCursor() may return is SQLITE_OK. */
   assert( rc==SQLITE_OK );
 
-  /* Set the VdbeCursor.isTable and isIndex variables. Previous versions of
+  /* Set the VdbeCursor.isTable variable. Previous versions of
   ** SQLite used to check if the root-page flags were sane at this point
   ** and report database corruption if they were not, but this check has
   ** since moved into the btree layer.  */  
   pCur->isTable = pOp->p4type!=P4_KEYINFO;
-  pCur->isIndex = !pCur->isTable;
   break;
 }
 
@@ -3380,6 +3324,7 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_DELETEONCLOSE |
       SQLITE_OPEN_TRANSIENT_DB;
   assert( pOp->p1>=0 );
+  assert( pOp->p2>=0 );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
@@ -3412,7 +3357,6 @@ case OP_OpenEphemeral: {
     }
   }
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
-  pCx->isIndex = !pCx->isTable;
   break;
 }
 
@@ -3425,12 +3369,13 @@ case OP_OpenEphemeral: {
 case OP_SorterOpen: {
   VdbeCursor *pCx;
 
+  assert( pOp->p1>=0 );
+  assert( pOp->p2>=0 );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
   assert( pCx->pKeyInfo->db==db );
   assert( pCx->pKeyInfo->enc==ENC(db) );
-  pCx->isSorter = 1;
   rc = sqlite3VdbeSorterInit(db, pCx);
   break;
 }
@@ -3456,12 +3401,12 @@ case OP_OpenPseudo: {
   VdbeCursor *pCx;
 
   assert( pOp->p1>=0 );
+  assert( pOp->p3>=0 );
   pCx = allocateCursor(p, pOp->p1, pOp->p3, -1, 0);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->pseudoTableReg = pOp->p2;
   pCx->isTable = 1;
-  pCx->isIndex = 0;
   pCx->multiPseudo = pOp->p5;
   break;
 }
@@ -3579,7 +3524,9 @@ case OP_SeekGt: {       /* jump, in3 */
       ** point number. */
       assert( (pIn3->flags & MEM_Real)!=0 );
 
-      if( iKey==SMALLEST_INT64 && (pIn3->r<(double)iKey || pIn3->r>0) ){
+      if( (iKey==SMALLEST_INT64 && pIn3->r<(double)iKey)
+       || (iKey==LARGEST_INT64 && pIn3->r>(double)iKey)
+      ){
         /* The P3 value is too large in magnitude to be expressed as an
         ** integer. */
         res = 1;
@@ -4159,7 +4106,7 @@ case OP_InsertInt: {
   sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
   rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
                           pData->z, pData->n, nZero,
-                          pOp->p5 & OPFLAG_APPEND, seekResult
+                          (pOp->p5 & OPFLAG_APPEND)!=0, seekResult
   );
   pC->rowidIsValid = 0;
   pC->deferredMoveto = 0;
@@ -4319,7 +4266,7 @@ case OP_SorterData: {
 
   pOut = &aMem[pOp->p2];
   pC = p->apCsr[pOp->p1];
-  assert( pC->isSorter );
+  assert( isSorter(pC) );
   rc = sqlite3VdbeSorterRowkey(pC, pOut);
   break;
 }
@@ -4359,9 +4306,9 @@ case OP_RowData: {
   /* Note that RowKey and RowData are really exactly the same instruction */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
-  assert( pC->isSorter==0 );
+  assert( isSorter(pC)==0 );
   assert( pC->isTable || pOp->opcode!=OP_RowData );
-  assert( pC->isIndex || pOp->opcode==OP_RowData );
+  assert( pC->isTable==0 || pOp->opcode==OP_RowData );
   assert( pC!=0 );
   assert( pC->nullRow==0 );
   assert( pC->pseudoTableReg==0 );
@@ -4378,7 +4325,7 @@ case OP_RowData: {
   rc = sqlite3VdbeCursorMoveto(pC);
   if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
 
-  if( pC->isIndex ){
+  if( pC->isTable==0 ){
     assert( !pC->isTable );
     VVA_ONLY(rc =) sqlite3BtreeKeySize(pCrsr, &n64);
     assert( rc==SQLITE_OK );    /* True because of CursorMoveto() call above */
@@ -4398,7 +4345,7 @@ case OP_RowData: {
   }
   pOut->n = n;
   MemSetTypeFlag(pOut, MEM_Blob);
-  if( pC->isIndex ){
+  if( pC->isTable==0 ){
     rc = sqlite3BtreeKey(pCrsr, 0, n, pOut->z);
   }else{
     rc = sqlite3BtreeData(pCrsr, 0, n, pOut->z);
@@ -4471,6 +4418,7 @@ case OP_NullRow: {
   assert( pC!=0 );
   pC->nullRow = 1;
   pC->rowidIsValid = 0;
+  pC->cacheStatus = CACHE_STALE;
   assert( pC->pCursor || pC->pVtabCursor );
   if( pC->pCursor ){
     sqlite3BtreeClearCursor(pC->pCursor);
@@ -4546,7 +4494,7 @@ case OP_Rewind: {        /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->isSorter==(pOp->opcode==OP_SorterSort) );
+  assert( isSorter(pC)==(pOp->opcode==OP_SorterSort) );
   res = 1;
   if( isSorter(pC) ){
     rc = sqlite3VdbeSorterRewind(db, pC, &res);
@@ -4554,7 +4502,6 @@ case OP_Rewind: {        /* jump */
     pCrsr = pC->pCursor;
     assert( pCrsr );
     rc = sqlite3BtreeFirst(pCrsr, &res);
-    pC->atFirst = res==0 ?1:0;
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
     pC->rowidIsValid = 0;
@@ -4574,7 +4521,8 @@ case OP_Rewind: {        /* jump */
 ** to the following instruction.  But if the cursor advance was successful,
 ** jump immediately to P2.
 **
-** The P1 cursor must be for a real table, not a pseudo-table.
+** The P1 cursor must be for a real table, not a pseudo-table.  P1 must have
+** been opened prior to this opcode or the program will segfault.
 **
 ** P4 is always of type P4_ADVANCE. The function pointer points to
 ** sqlite3BtreeNext().
@@ -4582,7 +4530,12 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 **
-** See also: Prev
+** See also: Prev, NextIfOpen
+*/
+/* Opcode: NextIfOpen P1 P2 * * P5
+**
+** This opcode works just like OP_Next except that if cursor P1 is not
+** open it behaves a no-op.
 */
 /* Opcode: Prev P1 P2 * * P5
 **
@@ -4591,7 +4544,8 @@ case OP_Rewind: {        /* jump */
 ** to the following instruction.  But if the cursor backup was successful,
 ** jump immediately to P2.
 **
-** The P1 cursor must be for a real table, not a pseudo-table.
+** The P1 cursor must be for a real table, not a pseudo-table.  If P1 is
+** not open then the behavior is undefined.
 **
 ** P4 is always of type P4_ADVANCE. The function pointer points to
 ** sqlite3BtreePrevious().
@@ -4599,38 +4553,47 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
-case OP_SorterNext:    /* jump */
-case OP_Prev:          /* jump */
-case OP_Next: {        /* jump */
+/* Opcode: PrevIfOpen P1 P2 * * P5
+**
+** This opcode works just like OP_Prev except that if cursor P1 is not
+** open it behaves a no-op.
+*/
+case OP_SorterNext: {  /* jump */
   VdbeCursor *pC;
   int res;
 
+  pC = p->apCsr[pOp->p1];
+  assert( isSorter(pC) );
+  rc = sqlite3VdbeSorterNext(db, pC, &res);
+  goto next_tail;
+case OP_PrevIfOpen:    /* jump */
+case OP_NextIfOpen:    /* jump */
+  if( p->apCsr[pOp->p1]==0 ) break;
+  /* Fall through */
+case OP_Prev:          /* jump */
+case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5<ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
-  if( pC==0 ){
-    break;  /* See ticket #2273 */
-  }
-  assert( pC->isSorter==(pOp->opcode==OP_SorterNext) );
-  if( isSorter(pC) ){
-    assert( pOp->opcode==OP_SorterNext );
-    rc = sqlite3VdbeSorterNext(db, pC, &res);
-  }else{
-    /* res = 1; // Always initialized by the xAdvance() call */
-    assert( pC->deferredMoveto==0 );
-    assert( pC->pCursor );
-    assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
-    assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
-    rc = pOp->p4.xAdvance(pC->pCursor, &res);
-  }
-  pC->nullRow = (u8)res;
+  assert( pC!=0 );
+  assert( pC->deferredMoveto==0 );
+  assert( pC->pCursor );
+  assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
+  assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
+  assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
+  assert( pOp->opcode!=OP_PrevIfOpen || pOp->p4.xAdvance==sqlite3BtreePrevious);
+  rc = pOp->p4.xAdvance(pC->pCursor, &res);
+next_tail:
   pC->cacheStatus = CACHE_STALE;
   if( res==0 ){
+    pC->nullRow = 0;
     pc = pOp->p2 - 1;
     p->aCounter[pOp->p5]++;
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
+  }else{
+    pC->nullRow = 1;
   }
   pC->rowidIsValid = 0;
   goto check_for_interrupt;
@@ -4659,7 +4622,7 @@ case OP_IdxInsert: {        /* in2 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->isSorter==(pOp->opcode==OP_SorterInsert) );
+  assert( isSorter(pC)==(pOp->opcode==OP_SorterInsert) );
   pIn2 = &aMem[pOp->p2];
   assert( pIn2->flags & MEM_Blob );
   pCrsr = pC->pCursor;
@@ -5910,7 +5873,6 @@ case OP_VOpen: {
     pCur = allocateCursor(p, pOp->p1, 0, -1, 0);
     if( pCur ){
       pCur->pVtabCursor = pVtabCursor;
-      pCur->pModule = pVtabCursor->pVtab->pModule;
     }else{
       db->mallocFailed = 1;
       pModule->xClose(pVtabCursor);

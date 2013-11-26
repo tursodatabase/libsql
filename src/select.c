@@ -599,7 +599,8 @@ static void selectInnerLoop(
     ** values returned by the SELECT are not required.
     */
     sqlite3ExprCacheClear(pParse);
-    sqlite3ExprCodeExprList(pParse, pEList, regResult, eDest==SRT_Output);
+    sqlite3ExprCodeExprList(pParse, pEList, regResult,
+                            (eDest==SRT_Output)?SQLITE_ECEL_DUP:0);
   }
   nColumn = nResultCol;
 
@@ -2372,8 +2373,8 @@ static int multiSelectOrderBy(
     for(i=1; db->mallocFailed==0 && i<=p->pEList->nExpr; i++){
       struct ExprList_item *pItem;
       for(j=0, pItem=pOrderBy->a; j<nOrderBy; j++, pItem++){
-        assert( pItem->iOrderByCol>0 );
-        if( pItem->iOrderByCol==i ) break;
+        assert( pItem->u.x.iOrderByCol>0 );
+        if( pItem->u.x.iOrderByCol==i ) break;
       }
       if( j==nOrderBy ){
         Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
@@ -2381,7 +2382,7 @@ static int multiSelectOrderBy(
         pNew->flags |= EP_IntValue;
         pNew->u.iValue = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
-        if( pOrderBy ) pOrderBy->a[nOrderBy++].iOrderByCol = (u16)i;
+        if( pOrderBy ) pOrderBy->a[nOrderBy++].u.x.iOrderByCol = (u16)i;
       }
     }
   }
@@ -2397,8 +2398,9 @@ static int multiSelectOrderBy(
   if( aPermute ){
     struct ExprList_item *pItem;
     for(i=0, pItem=pOrderBy->a; i<nOrderBy; i++, pItem++){
-      assert( pItem->iOrderByCol>0  && pItem->iOrderByCol<=p->pEList->nExpr );
-      aPermute[i] = pItem->iOrderByCol - 1;
+      assert( pItem->u.x.iOrderByCol>0
+          && pItem->u.x.iOrderByCol<=p->pEList->nExpr );
+      aPermute[i] = pItem->u.x.iOrderByCol - 1;
     }
     pKeyMerge = sqlite3KeyInfoAlloc(db, nOrderBy, 1);
     if( pKeyMerge ){
@@ -2978,7 +2980,7 @@ static int flattenSubquery(
     if( p->pOrderBy ){
       int ii;
       for(ii=0; ii<p->pOrderBy->nExpr; ii++){
-        if( p->pOrderBy->a[ii].iOrderByCol==0 ) return 0;
+        if( p->pOrderBy->a[ii].u.x.iOrderByCol==0 ) return 0;
       }
     }
   }
@@ -3884,7 +3886,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
-      sqlite3ExprCodeExprList(pParse, pList, regAgg, 1);
+      sqlite3ExprCodeExprList(pParse, pList, regAgg, SQLITE_ECEL_DUP);
     }else{
       nArg = 0;
       regAgg = 0;
@@ -4385,10 +4387,10 @@ int sqlite3Select(
       struct ExprList_item *pItem;  /* For looping over expression in a list */
 
       for(k=p->pEList->nExpr, pItem=p->pEList->a; k>0; k--, pItem++){
-        pItem->iAlias = 0;
+        pItem->u.x.iAlias = 0;
       }
       for(k=pGroupBy->nExpr, pItem=pGroupBy->a; k>0; k--, pItem++){
-        pItem->iAlias = 0;
+        pItem->u.x.iAlias = 0;
       }
       if( p->nSelectRow>100 ) p->nSelectRow = 100;
     }else{

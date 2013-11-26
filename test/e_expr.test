@@ -1081,9 +1081,9 @@ ifcapable !icu {
 # EVIDENCE-OF: R-33693-50180 The REGEXP operator is a special syntax for
 # the regexp() user function.
 #
-# EVIDENCE-OF: R-57289-13578 If a application-defined SQL function named
-# "regexp" is added at run-time, that function will be called in order
-# to implement the REGEXP operator.
+# EVIDENCE-OF: R-65524-61849 If an application-defined SQL function
+# named "regexp" is added at run-time, then the "X REGEXP Y" operator
+# will be implemented as a call to "regexp(Y,X)".
 #
 proc regexpfunc {args} {
   eval lappend ::regexpargs $args
@@ -1606,14 +1606,14 @@ do_expr_test e_expr-31.1.4 { CAST(-0.99999 AS INTEGER) } integer 0
 # an INTEGER then the result of the cast is the largest negative
 # integer: -9223372036854775808.
 #
-do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer -9223372036854775808
+do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer 9223372036854775807
 do_expr_test e_expr-31.2.2 { CAST(-2e+50 AS INT) } integer -9223372036854775808
 do_expr_test e_expr-31.2.3 { 
   CAST(-9223372036854775809.0 AS INT)
 } integer -9223372036854775808
 do_expr_test e_expr-31.2.4 { 
   CAST(9223372036854775809.0 AS INT)
-} integer -9223372036854775808
+} integer 9223372036854775807
 
 
 # EVIDENCE-OF: R-09295-61337 Casting a TEXT or BLOB value into NUMERIC

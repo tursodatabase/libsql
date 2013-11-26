@@ -101,6 +101,7 @@ void sqlite3Update(
   Index *pIdx;           /* For looping over indices */
   Index *pPk;            /* The PRIMARY KEY index for WITHOUT ROWID tables */
   int nIdx;              /* Number of indices that need updating */
+  int iBaseCur;          /* Base cursor number */
   int iDataCur;          /* Cursor for the canonical data btree */
   int iIdxCur;           /* Cursor for the first index */
   sqlite3 *db;           /* The database structure */
@@ -108,11 +109,11 @@ void sqlite3Update(
   int *aXRef = 0;        /* aXRef[i] is the index in pChanges->a[] of the
                          ** an expression for the i-th column of the table.
                          ** aXRef[i]==-1 if the i-th column is not changed. */
+  u8 *aToOpen;           /* 1 for tables and indices to be opened */
   u8 chngPk;             /* PRIMARY KEY changed in a WITHOUT ROWID table */
   u8 chngRowid;          /* Rowid changed in a normal table */
   u8 chngKey;            /* Either chngPk or chngRowid */
   Expr *pRowidExpr = 0;  /* Expression defining the new record number */
-  int openAll = 0;       /* True if all indices need to be opened */
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
   int iDb;               /* Database containing the table being updated */
@@ -176,16 +177,13 @@ void sqlite3Update(
   if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
     goto update_cleanup;
   }
-  aXRef = sqlite3DbMallocRaw(db, sizeof(int) * pTab->nCol );
-  if( aXRef==0 ) goto update_cleanup;
-  for(i=0; i<pTab->nCol; i++) aXRef[i] = -1;
 
   /* Allocate a cursors for the main database table and for all indices.
   ** The index cursors might not be used, but if they are used they
   ** need to occur right after the database cursor.  So go ahead and
   ** allocate enough space, just in case.
   */
-  pTabList->a[0].iCursor = iDataCur = pParse->nTab++;
+  pTabList->a[0].iCursor = iBaseCur = iDataCur = pParse->nTab++;
   iIdxCur = iDataCur+1;
   pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(nIdx=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, nIdx++){
@@ -195,6 +193,17 @@ void sqlite3Update(
     }
     pParse->nTab++;
   }
+
+  /* Allocate space for aXRef[], aRegIdx[], and aToOpen[].  
+  ** Initialize aXRef[] and aToOpen[] to their default values.
+  */
+  aXRef = sqlite3DbMallocRaw(db, sizeof(int) * (pTab->nCol+nIdx) + nIdx+2 );
+  if( aXRef==0 ) goto update_cleanup;
+  aRegIdx = aXRef+pTab->nCol;
+  aToOpen = (u8*)(aRegIdx+nIdx);
+  memset(aToOpen, 1, nIdx+1);
+  aToOpen[nIdx+1] = 0;
+  for(i=0; i<pTab->nCol; i++) aXRef[i] = -1;
 
   /* Initialize the name-context */
   memset(&sNC, 0, sizeof(sNC));
@@ -254,17 +263,17 @@ void sqlite3Update(
   assert( chngPk==0 || chngPk==1 );
   chngKey = chngRowid + chngPk;
 
+  /* The SET expressions are not actually used inside the WHERE loop.
+  ** So reset the colUsed mask
+  */
+  pTabList->a[0].colUsed = 0;
+
   hasFK = sqlite3FkRequired(pParse, pTab, aXRef, chngKey);
 
-  /* Allocate memory for the array aRegIdx[].  There is one entry in the
-  ** array for each index associated with table being updated.  Fill in
-  ** the value with a register number for indices that are to be used
-  ** and with zero for unused indices.
+  /* There is one entry in the aRegIdx[] array for each index on the table
+  ** being updated.  Fill in aRegIdx[] with a register number that will hold
+  ** the key for accessing each index.  
   */
-  if( nIdx>0 ){
-    aRegIdx = sqlite3DbMallocRaw(db, sizeof(Index*) * nIdx );
-    if( aRegIdx==0 ) goto update_cleanup;
-  }
   for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
     int reg;
     if( chngKey || hasFK || pIdx->pPartIdxWhere || pIdx==pPk ){
@@ -278,6 +287,7 @@ void sqlite3Update(
         }
       }
     }
+    if( reg==0 ) aToOpen[j+1] = 0;
     aRegIdx[j] = reg;
   }
 
@@ -401,42 +411,30 @@ void sqlite3Update(
     ** action, then we need to open all indices because we might need
     ** to be deleting some records.
     */
-    if( !okOnePass && HasRowid(pTab) ){
-      sqlite3OpenTable(pParse, iDataCur, iDb, pTab, OP_OpenWrite); 
-    }
-    sqlite3TableLock(pParse, iDb, pTab->tnum, 1, pTab->zName);
     if( onError==OE_Replace ){
-      openAll = 1;
+      memset(aToOpen, 1, nIdx+1);
     }else{
-      openAll = 0;
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         if( pIdx->onError==OE_Replace ){
-          openAll = 1;
+          memset(aToOpen, 1, nIdx+1);
           break;
         }
       }
     }
-    for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
-      int iThisCur = iIdxCur+i;
-      assert( aRegIdx );
-      if( (openAll || aRegIdx[i]>0)
-       && iThisCur!=aiCurOnePass[1]
-      ){
-        assert( iThisCur!=aiCurOnePass[0] );
-        sqlite3VdbeAddOp3(v, OP_OpenWrite, iThisCur, pIdx->tnum, iDb);
-        sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
-        assert( pParse->nTab>iThisCur );
-        VdbeComment((v, "%s", pIdx->zName));
-        if( okOnePass && pPk && iThisCur==iDataCur ){
-          sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak,
-                               regKey, nKey);
-        }
-      }
+    if( okOnePass ){
+      if( aiCurOnePass[0]>=0 ) aToOpen[aiCurOnePass[0]-iBaseCur] = 0;
+      if( aiCurOnePass[1]>=0 ) aToOpen[aiCurOnePass[1]-iBaseCur] = 0;
     }
+    sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iBaseCur, aToOpen,
+                               0, 0);
   }
 
   /* Top of the update loop */
   if( okOnePass ){
+    if( aToOpen[iDataCur-iBaseCur] ){
+      assert( pPk!=0 );
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
+    }
     labelContinue = labelBreak;
     sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
   }else if( pPk ){
@@ -642,7 +640,7 @@ void sqlite3Update(
   /* Close all tables */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     assert( aRegIdx );
-    if( openAll || aRegIdx[i]>0 ){
+    if( aToOpen[i+1] ){
       sqlite3VdbeAddOp2(v, OP_Close, iIdxCur+i, 0);
     }
   }
@@ -669,8 +667,7 @@ void sqlite3Update(
 
 update_cleanup:
   sqlite3AuthContextPop(&sContext);
-  sqlite3DbFree(db, aRegIdx);
-  sqlite3DbFree(db, aXRef);
+  sqlite3DbFree(db, aXRef); /* Also frees aRegIdx[] and aToOpen[] */
   sqlite3SrcListDelete(db, pTabList);
   sqlite3ExprListDelete(db, pChanges);
   sqlite3ExprDelete(db, pWhere);

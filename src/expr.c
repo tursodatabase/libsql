@@ -930,8 +930,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
     pItem->sortOrder = pOldItem->sortOrder;
     pItem->done = 0;
     pItem->bSpanIsTab = pOldItem->bSpanIsTab;
-    pItem->iOrderByCol = pOldItem->iOrderByCol;
-    pItem->iAlias = pOldItem->iAlias;
+    pItem->u = pOldItem->u;
   }
   return pNew;
 }
@@ -1192,9 +1191,12 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
 
   switch( pExpr->op ){
     /* Consider functions to be constant if all their arguments are constant
-    ** and pWalker->u.i==2 */
+    ** and either pWalker->u.i==2 or the function as the SQLITE_FUNC_CONST
+    ** flag. */
     case TK_FUNCTION:
-      if( pWalker->u.i==2 ) return 0;
+      if( pWalker->u.i==2 || ExprHasProperty(pExpr,EP_Constant) ){
+        return WRC_Continue;
+      }
       /* Fall through */
     case TK_ID:
     case TK_COLUMN:
@@ -2356,6 +2358,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   int regFree2 = 0;         /* If non-zero free this temporary register */
   int r1, r2, r3, r4;       /* Various register numbers */
   sqlite3 *db = pParse->db; /* The database connection */
+  Expr tempX;               /* Temporary expression node */
 
   assert( target>0 && target<=pParse->nMem );
   if( v==0 ){
@@ -2575,8 +2578,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         codeReal(v, pLeft->u.zToken, 1, target);
 #endif
       }else{
-        regFree1 = r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, r1);
+        tempX.op = TK_INTEGER;
+        tempX.flags = EP_IntValue|EP_TokenOnly;
+        tempX.u.iValue = 0;
+        r1 = sqlite3ExprCodeTemp(pParse, &tempX, &regFree1);
         r2 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree2);
         sqlite3VdbeAddOp3(v, OP_Subtract, r2, r1, target);
         testcase( regFree2==0 );
@@ -2621,7 +2626,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }
       break;
     }
-    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pFarg;       /* List of function arguments */
       int nFarg;             /* Number of function arguments */
@@ -2634,8 +2638,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       CollSeq *pColl = 0;    /* A collating sequence */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      testcase( op==TK_CONST_FUNC );
-      testcase( op==TK_FUNCTION );
       if( ExprHasProperty(pExpr, EP_TokenOnly) ){
         pFarg = 0;
       }else{
@@ -2679,8 +2681,21 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         break;
       }
 
+      for(i=0; i<nFarg; i++){
+        if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
+          constMask |= (1<<i);
+        }
+        if( (pDef->funcFlags & SQLITE_FUNC_NEEDCOLL)!=0 && !pColl ){
+          pColl = sqlite3ExprCollSeq(pParse, pFarg->a[i].pExpr);
+        }
+      }
       if( pFarg ){
-        r1 = sqlite3GetTempRange(pParse, nFarg);
+        if( constMask ){
+          r1 = pParse->nMem+1;
+          pParse->nMem += nFarg;
+        }else{
+          r1 = sqlite3GetTempRange(pParse, nFarg);
+        }
 
         /* For length() and typeof() functions with a column argument,
         ** set the P5 parameter to the OP_Column opcode to OPFLAG_LENGTHARG
@@ -2695,14 +2710,15 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           if( exprOp==TK_COLUMN || exprOp==TK_AGG_COLUMN ){
             assert( SQLITE_FUNC_LENGTH==OPFLAG_LENGTHARG );
             assert( SQLITE_FUNC_TYPEOF==OPFLAG_TYPEOFARG );
-            testcase( (pDef->funcFlags&~SQLITE_FUNC_ENCMASK)
-                       ==SQLITE_FUNC_LENGTH );
-            pFarg->a[0].pExpr->op2 = pDef->funcFlags&~SQLITE_FUNC_ENCMASK;
+            testcase( pDef->funcFlags & OPFLAG_LENGTHARG );
+            pFarg->a[0].pExpr->op2 = 
+                  pDef->funcFlags & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG);
           }
         }
 
         sqlite3ExprCachePush(pParse);     /* Ticket 2ea2425d34be */
-        sqlite3ExprCodeExprList(pParse, pFarg, r1, 1);
+        sqlite3ExprCodeExprList(pParse, pFarg, r1, 
+                                SQLITE_ECEL_DUP|SQLITE_ECEL_FACTOR);
         sqlite3ExprCachePop(pParse, 1);   /* Ticket 2ea2425d34be */
       }else{
         r1 = 0;
@@ -2726,14 +2742,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         pDef = sqlite3VtabOverloadFunction(db, pDef, nFarg, pFarg->a[0].pExpr);
       }
 #endif
-      for(i=0; i<nFarg; i++){
-        if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
-          constMask |= (1<<i);
-        }
-        if( (pDef->funcFlags & SQLITE_FUNC_NEEDCOLL)!=0 && !pColl ){
-          pColl = sqlite3ExprCollSeq(pParse, pFarg->a[i].pExpr);
-        }
-      }
       if( pDef->funcFlags & SQLITE_FUNC_NEEDCOLL ){
         if( !pColl ) pColl = db->pDfltColl; 
         sqlite3VdbeAddOp4(v, OP_CollSeq, 0, 0, 0, (char *)pColl, P4_COLLSEQ);
@@ -2741,7 +2749,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       sqlite3VdbeAddOp4(v, OP_Function, constMask, r1, target,
                         (char*)pDef, P4_FUNCDEF);
       sqlite3VdbeChangeP5(v, (u8)nFarg);
-      if( nFarg ){
+      if( nFarg && constMask==0 ){
         sqlite3ReleaseTempRange(pParse, r1, nFarg);
       }
       break;
@@ -2892,7 +2900,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       ExprList *pEList;                 /* List of WHEN terms */
       struct ExprList_item *aListelem;  /* Array of WHEN terms */
       Expr opCompare;                   /* The X==Ei expression */
-      Expr cacheX;                      /* Cached expression X */
       Expr *pX;                         /* The X expression */
       Expr *pTest = 0;                  /* X==Ei (form A) or just Ei (form B) */
       VVA_ONLY( int iCacheLevel = pParse->iCacheLevel; )
@@ -2904,13 +2911,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       nExpr = pEList->nExpr;
       endLabel = sqlite3VdbeMakeLabel(v);
       if( (pX = pExpr->pLeft)!=0 ){
-        cacheX = *pX;
+        tempX = *pX;
         testcase( pX->op==TK_COLUMN );
-        testcase( pX->op==TK_REGISTER );
-        exprToRegister(&cacheX, sqlite3ExprCodeTemp(pParse, pX, &regFree1));
+        exprToRegister(&tempX, sqlite3ExprCodeTemp(pParse, pX, &regFree1));
         testcase( regFree1==0 );
         opCompare.op = TK_EQ;
-        opCompare.pLeft = &cacheX;
+        opCompare.pLeft = &tempX;
         pTest = &opCompare;
         /* Ticket b351d95f9cd5ef17e9d9dbae18f5ca8611190001:
         ** The value in regFree1 might get SCopy-ed into the file result.
@@ -2930,7 +2936,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         testcase( pTest->op==TK_COLUMN );
         sqlite3ExprIfFalse(pParse, pTest, nextCase, SQLITE_JUMPIFNULL);
         testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
-        testcase( aListelem[i+1].pExpr->op==TK_REGISTER );
         sqlite3ExprCode(pParse, aListelem[i+1].pExpr, target);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, endLabel);
         sqlite3ExprCachePop(pParse, 1);
@@ -2982,6 +2987,28 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 }
 
 /*
+** Factor out the code of the given expression to initialization time.
+*/
+void sqlite3ExprCodeAtInit(
+  Parse *pParse,    /* Parsing context */
+  Expr *pExpr,      /* The expression to code when the VDBE initializes */
+  int regDest,      /* Store the value in this register */
+  u8 reusable       /* True if this expression is reusable */
+){
+  ExprList *p;
+  assert( ConstFactorOk(pParse) );
+  p = pParse->pConstExpr;
+  pExpr = sqlite3ExprDup(pParse->db, pExpr, 0);
+  p = sqlite3ExprListAppend(pParse, p, pExpr);
+  if( p ){
+     struct ExprList_item *pItem = &p->a[p->nExpr-1];
+     pItem->u.iConstExprReg = regDest;
+     pItem->reusable = reusable;
+  }
+  pParse->pConstExpr = p;
+}
+
+/*
 ** Generate code to evaluate an expression and store the results
 ** into a register.  Return the register number where the results
 ** are stored.
@@ -2989,15 +3016,40 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 ** If the register is a temporary register that can be deallocated,
 ** then write its number into *pReg.  If the result register is not
 ** a temporary, then set *pReg to zero.
+**
+** If pExpr is a constant, then this routine might generate this
+** code to fill the register in the initialization section of the
+** VDBE program, in order to factor it out of the evaluation loop.
 */
 int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
-  int r1 = sqlite3GetTempReg(pParse);
-  int r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-  if( r2==r1 ){
-    *pReg = r1;
+  int r2;
+  pExpr = sqlite3ExprSkipCollate(pExpr);
+  if( ConstFactorOk(pParse)
+   && pExpr->op!=TK_REGISTER
+   && sqlite3ExprIsConstantNotJoin(pExpr)
+  ){
+    ExprList *p = pParse->pConstExpr;
+    int i;
+    *pReg  = 0;
+    if( p ){
+      struct ExprList_item *pItem;
+      for(pItem=p->a, i=p->nExpr; i>0; pItem++, i--){
+        if( pItem->reusable && sqlite3ExprCompare(pItem->pExpr,pExpr,-1)==0 ){
+          return pItem->u.iConstExprReg;
+        }
+      }
+    }
+    r2 = ++pParse->nMem;
+    sqlite3ExprCodeAtInit(pParse, pExpr, r2, 1);
   }else{
-    sqlite3ReleaseTempReg(pParse, r1);
-    *pReg = 0;
+    int r1 = sqlite3GetTempReg(pParse);
+    r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
+    if( r2==r1 ){
+      *pReg = r1;
+    }else{
+      sqlite3ReleaseTempReg(pParse, r1);
+      *pReg = 0;
+    }
   }
   return r2;
 }
@@ -3040,12 +3092,13 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   int inReg;
   inReg = sqlite3ExprCode(pParse, pExpr, target);
   assert( target>0 );
-  /* This routine is called for terms to INSERT or UPDATE.  And the only
-  ** other place where expressions can be converted into TK_REGISTER is
-  ** in WHERE clause processing.  So as currently implemented, there is
-  ** no way for a TK_REGISTER to exist here.  But it seems prudent to
-  ** keep the ALWAYS() in case the conditions above change with future
-  ** modifications or enhancements. */
+  /* The only place, other than this routine, where expressions can be
+  ** converted to TK_REGISTER is internal subexpressions in BETWEEN and
+  ** CASE operators.  Neither ever calls this routine.  And this routine
+  ** is never called twice on the same expression.  Hence it is impossible
+  ** for the input to this routine to already be a register.  Nevertheless,
+  ** it seems prudent to keep the ALWAYS() in case the conditions above
+  ** change with future modifications or enhancements. */
   if( ALWAYS(pExpr->op!=TK_REGISTER) ){  
     int iMem;
     iMem = ++pParse->nMem;
@@ -3177,7 +3230,6 @@ void sqlite3ExplainExpr(Vdbe *pOut, Expr *pExpr){
     }
 
     case TK_AGG_FUNCTION:
-    case TK_CONST_FUNC:
     case TK_FUNCTION: {
       ExprList *pFarg;       /* List of function arguments */
       if( ExprHasProperty(pExpr, EP_TokenOnly) ){
@@ -3329,163 +3381,40 @@ void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
 #endif /* SQLITE_DEBUG */
 
 /*
-** Return TRUE if pExpr is an constant expression that is appropriate
-** for factoring out of a loop.  Appropriate expressions are:
-**
-**    *  Any expression that evaluates to two or more opcodes.
-**
-**    *  Any OP_Integer, OP_Real, OP_String, OP_Blob, OP_Null, 
-**       or OP_Variable that does not need to be placed in a 
-**       specific register.
-**
-** There is no point in factoring out single-instruction constant
-** expressions that need to be placed in a particular register.  
-** We could factor them out, but then we would end up adding an
-** OP_SCopy instruction to move the value into the correct register
-** later.  We might as well just use the original instruction and
-** avoid the OP_SCopy.
-*/
-static int isAppropriateForFactoring(Expr *p){
-  if( !sqlite3ExprIsConstantNotJoin(p) ){
-    return 0;  /* Only constant expressions are appropriate for factoring */
-  }
-  if( (p->flags & EP_FixedDest)==0 ){
-    return 1;  /* Any constant without a fixed destination is appropriate */
-  }
-  while( p->op==TK_UPLUS ) p = p->pLeft;
-  switch( p->op ){
-#ifndef SQLITE_OMIT_BLOB_LITERAL
-    case TK_BLOB:
-#endif
-    case TK_VARIABLE:
-    case TK_INTEGER:
-    case TK_FLOAT:
-    case TK_NULL:
-    case TK_STRING: {
-      testcase( p->op==TK_BLOB );
-      testcase( p->op==TK_VARIABLE );
-      testcase( p->op==TK_INTEGER );
-      testcase( p->op==TK_FLOAT );
-      testcase( p->op==TK_NULL );
-      testcase( p->op==TK_STRING );
-      /* Single-instruction constants with a fixed destination are
-      ** better done in-line.  If we factor them, they will just end
-      ** up generating an OP_SCopy to move the value to the destination
-      ** register. */
-      return 0;
-    }
-    case TK_UMINUS: {
-      if( p->pLeft->op==TK_FLOAT || p->pLeft->op==TK_INTEGER ){
-        return 0;
-      }
-      break;
-    }
-    default: {
-      break;
-    }
-  }
-  return 1;
-}
-
-/*
-** If pExpr is a constant expression that is appropriate for
-** factoring out of a loop, then evaluate the expression
-** into a register and convert the expression into a TK_REGISTER
-** expression.
-*/
-static int evalConstExpr(Walker *pWalker, Expr *pExpr){
-  Parse *pParse = pWalker->pParse;
-  switch( pExpr->op ){
-    case TK_IN:
-    case TK_REGISTER: {
-      return WRC_Prune;
-    }
-    case TK_COLLATE: {
-      return WRC_Continue;
-    }
-    case TK_FUNCTION:
-    case TK_AGG_FUNCTION:
-    case TK_CONST_FUNC: {
-      /* The arguments to a function have a fixed destination.
-      ** Mark them this way to avoid generated unneeded OP_SCopy
-      ** instructions. 
-      */
-      ExprList *pList = pExpr->x.pList;
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      if( pList ){
-        int i = pList->nExpr;
-        struct ExprList_item *pItem = pList->a;
-        for(; i>0; i--, pItem++){
-          if( ALWAYS(pItem->pExpr) ) pItem->pExpr->flags |= EP_FixedDest;
-        }
-      }
-      break;
-    }
-  }
-  if( isAppropriateForFactoring(pExpr) ){
-    int r1 = ++pParse->nMem;
-    int r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-    /* If r2!=r1, it means that register r1 is never used.  That is harmless
-    ** but suboptimal, so we want to know about the situation to fix it.
-    ** Hence the following assert: */
-    assert( r2==r1 );
-    exprToRegister(pExpr, r2);
-    return WRC_Prune;
-  }
-  return WRC_Continue;
-}
-
-/*
-** Preevaluate constant subexpressions within pExpr and store the
-** results in registers.  Modify pExpr so that the constant subexpresions
-** are TK_REGISTER opcodes that refer to the precomputed values.
-**
-** This routine is a no-op if the jump to the cookie-check code has
-** already occur.  Since the cookie-check jump is generated prior to
-** any other serious processing, this check ensures that there is no
-** way to accidently bypass the constant initializations.
-**
-** This routine is also a no-op if the SQLITE_FactorOutConst optimization
-** is disabled via the sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS)
-** interface.  This allows test logic to verify that the same answer is
-** obtained for queries regardless of whether or not constants are
-** precomputed into registers or if they are inserted in-line.
-*/
-void sqlite3ExprCodeConstants(Parse *pParse, Expr *pExpr){
-  Walker w;
-  if( pParse->cookieGoto ) return;
-  if( OptimizationDisabled(pParse->db, SQLITE_FactorOutConst) ) return;
-  memset(&w, 0, sizeof(w));
-  w.xExprCallback = evalConstExpr;
-  w.pParse = pParse;
-  sqlite3WalkExpr(&w, pExpr);
-}
-
-
-/*
 ** Generate code that pushes the value of every element of the given
 ** expression list into a sequence of registers beginning at target.
 **
 ** Return the number of elements evaluated.
+**
+** The SQLITE_ECEL_DUP flag prevents the arguments from being
+** filled using OP_SCopy.  OP_Copy must be used instead.
+**
+** The SQLITE_ECEL_FACTOR argument allows constant arguments to be
+** factored out into initialization code.
 */
 int sqlite3ExprCodeExprList(
   Parse *pParse,     /* Parsing context */
   ExprList *pList,   /* The expression list to be coded */
   int target,        /* Where to write results */
-  int doHardCopy     /* Make a hard copy of every element */
+  u8 flags           /* SQLITE_ECEL_* flags */
 ){
   struct ExprList_item *pItem;
   int i, n;
+  u8 copyOp = (flags & SQLITE_ECEL_DUP) ? OP_Copy : OP_SCopy;
   assert( pList!=0 );
   assert( target>0 );
   assert( pParse->pVdbe!=0 );  /* Never gets this far otherwise */
   n = pList->nExpr;
+  if( !ConstFactorOk(pParse) ) flags &= ~SQLITE_ECEL_FACTOR;
   for(pItem=pList->a, i=0; i<n; i++, pItem++){
     Expr *pExpr = pItem->pExpr;
-    int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
-    if( inReg!=target+i ){
-      sqlite3VdbeAddOp2(pParse->pVdbe, doHardCopy ? OP_Copy : OP_SCopy,
-                        inReg, target+i);
+    if( (flags & SQLITE_ECEL_FACTOR)!=0 && sqlite3ExprIsConstant(pExpr) ){
+      sqlite3ExprCodeAtInit(pParse, pExpr, target+i, 0);
+    }else{
+      int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
+      if( inReg!=target+i ){
+        sqlite3VdbeAddOp2(pParse->pVdbe, copyOp, inReg, target+i);
+      }
     }
   }
   return n;
@@ -3839,16 +3768,18 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 ** an incorrect 0 or 1 could lead to a malfunction.
 */
 int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
-  if( pA==0||pB==0 ){
+  u32 combinedFlags;
+  if( pA==0 || pB==0 ){
     return pB==pA ? 0 : 2;
   }
-  assert( !ExprHasProperty(pA, EP_TokenOnly|EP_Reduced) );
-  assert( !ExprHasProperty(pB, EP_TokenOnly|EP_Reduced) );
-  if( ExprHasProperty(pA, EP_xIsSelect) || ExprHasProperty(pB, EP_xIsSelect) ){
+  combinedFlags = pA->flags | pB->flags;
+  if( combinedFlags & EP_IntValue ){
+    if( (pA->flags&pB->flags&EP_IntValue)!=0 && pA->u.iValue==pB->u.iValue ){
+      return 0;
+    }
     return 2;
   }
-  if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
-  if( pA->op!=pB->op && (pA->op!=TK_REGISTER || pA->op2!=pB->op) ){
+  if( pA->op!=pB->op ){
     if( pA->op==TK_COLLATE && sqlite3ExprCompare(pA->pLeft, pB, iTab)<2 ){
       return 1;
     }
@@ -3857,21 +3788,21 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB, int iTab){
     }
     return 2;
   }
-  if( sqlite3ExprCompare(pA->pLeft, pB->pLeft, iTab) ) return 2;
-  if( sqlite3ExprCompare(pA->pRight, pB->pRight, iTab) ) return 2;
-  if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
-  if( pA->iColumn!=pB->iColumn ) return 2;
-  if( pA->iTable!=pB->iTable 
-   && pA->op!=TK_REGISTER
-   && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
-  if( ExprHasProperty(pA, EP_IntValue) ){
-    if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
-      return 2;
-    }
-  }else if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken){
-    if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
+  if( pA->op!=TK_COLUMN && ALWAYS(pA->op!=TK_AGG_COLUMN) && pA->u.zToken ){
     if( strcmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return pA->op==TK_COLLATE ? 1 : 2;
+    }
+  }
+  if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
+  if( ALWAYS((combinedFlags & EP_TokenOnly)==0) ){
+    if( combinedFlags & EP_xIsSelect ) return 2;
+    if( sqlite3ExprCompare(pA->pLeft, pB->pLeft, iTab) ) return 2;
+    if( sqlite3ExprCompare(pA->pRight, pB->pRight, iTab) ) return 2;
+    if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList, iTab) ) return 2;
+    if( ALWAYS((combinedFlags & EP_Reduced)==0) ){
+      if( pA->iColumn!=pB->iColumn ) return 2;
+      if( pA->iTable!=pB->iTable 
+       && (pA->iTable!=iTab || NEVER(pB->iTable>=0)) ) return 2;
     }
   }
   return 0;

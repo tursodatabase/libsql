@@ -512,7 +512,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     u = u*10 + c - '0';
   }
   if( u>LARGEST_INT64 ){
-    *pNum = SMALLEST_INT64;
+    *pNum = neg ? SMALLEST_INT64 : LARGEST_INT64;
   }else if( neg ){
     *pNum = -(i64)u;
   }else{
@@ -543,7 +543,6 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
       /* zNum is exactly 9223372036854775808.  Fits if negative.  The
       ** special case 2 overflow if positive */
       assert( u-1==LARGEST_INT64 );
-      assert( (*pNum)==SMALLEST_INT64 );
       return neg ? 0 : 2;
     }
   }

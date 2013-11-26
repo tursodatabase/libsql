@@ -454,12 +454,14 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       }
 #endif
       case OP_Next:
+      case OP_NextIfOpen:
       case OP_SorterNext: {
         pOp->p4.xAdvance = sqlite3BtreeNext;
         pOp->p4type = P4_ADVANCE;
         break;
       }
-      case OP_Prev: {
+      case OP_Prev:
+      case OP_PrevIfOpen: {
         pOp->p4.xAdvance = sqlite3BtreePrevious;
         pOp->p4type = P4_ADVANCE;
         break;
@@ -1675,7 +1677,7 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   if( pCx->pVtabCursor ){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
-    const sqlite3_module *pModule = pCx->pModule;
+    const sqlite3_module *pModule = pVtabCursor->pVtab->pModule;
     p->inVtabMethod = 1;
     pModule->xClose(pVtabCursor);
     p->inVtabMethod = 0;
@@ -2659,7 +2661,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
 #endif
     p->deferredMoveto = 0;
     p->cacheStatus = CACHE_STALE;
-  }else if( ALWAYS(p->pCursor) ){
+  }else if( p->pCursor ){
     int hasMoved;
     int rc = sqlite3BtreeCursorHasMoved(p->pCursor, &hasMoved);
     if( rc ) return rc;
@@ -2967,15 +2969,12 @@ u32 sqlite3VdbeSerialGet(
       return 0;
     }
     default: {
+      static const u16 aFlag[] = { MEM_Blob|MEM_Ephem, MEM_Str|MEM_Ephem };
       u32 len = (serial_type-12)/2;
       pMem->z = (char *)buf;
       pMem->n = len;
       pMem->xDel = 0;
-      if( serial_type&0x01 ){
-        pMem->flags = MEM_Str | MEM_Ephem;
-      }else{
-        pMem->flags = MEM_Blob | MEM_Ephem;
-      }
+      pMem->flags = aFlag[serial_type&1];
       return len;
     }
   }
@@ -3117,7 +3116,8 @@ int sqlite3VdbeRecordCompare(
   d1 = szHdr1;
   assert( pKeyInfo->nField+pKeyInfo->nXField>=pPKey2->nField );
   assert( pKeyInfo->aSortOrder!=0 );
-  while( idx1<szHdr1 && i<pPKey2->nField ){
+  assert( idx1<szHdr1 && i<pPKey2->nField );
+  do{
     u32 serial_type1;
 
     /* Read the serial types for the next element in each key. */
@@ -3150,7 +3150,7 @@ int sqlite3VdbeRecordCompare(
       return rc;
     }
     i++;
-  }
+  }while( idx1<szHdr1 && i<pPKey2->nField );
 
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a
@@ -3208,7 +3208,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
 
   /* Read in the complete content of the index entry */
   memset(&m, 0, sizeof(m));
-  rc = sqlite3VdbeMemFromBtree(pCur, 0, (int)nCellKey, 1, &m);
+  rc = sqlite3VdbeMemFromBtree(pCur, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
   }
@@ -3286,7 +3286,7 @@ int sqlite3VdbeIdxKeyCompare(
     return SQLITE_CORRUPT_BKPT;
   }
   memset(&m, 0, sizeof(m));
-  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (int)nCellKey, 1, &m);
+  rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (u32)nCellKey, 1, &m);
   if( rc ){
     return rc;
   }

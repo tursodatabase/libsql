@@ -425,13 +425,12 @@ static int safeToUseEvalObjv(Tcl_Interp *interp, Tcl_Obj *pCmd){
 */
 static SqlFunc *findSqlFunc(SqliteDb *pDb, const char *zName){
   SqlFunc *p, *pNew;
-  int i;
-  pNew = (SqlFunc*)Tcl_Alloc( sizeof(*pNew) + strlen30(zName) + 1 );
+  int nName = strlen30(zName);
+  pNew = (SqlFunc*)Tcl_Alloc( sizeof(*pNew) + nName + 1 );
   pNew->zName = (char*)&pNew[1];
-  for(i=0; zName[i]; i++){ pNew->zName[i] = tolower(zName[i]); }
-  pNew->zName[i] = 0;
+  memcpy(pNew->zName, zName, nName+1);
   for(p=pDb->pFunc; p; p=p->pNext){ 
-    if( strcmp(p->zName, pNew->zName)==0 ){
+    if( sqlite3_stricmp(p->zName, pNew->zName)==0 ){
       Tcl_Free((char*)pNew);
       return p;
     }
@@ -1127,13 +1126,14 @@ static int dbPrepareAndBind(
   int nSql;                       /* Length of zSql in bytes */
   int nVar;                       /* Number of variables in statement */
   int iParm = 0;                  /* Next free entry in apParm */
+  char c;
   int i;
   Tcl_Interp *interp = pDb->interp;
 
   *ppPreStmt = 0;
 
   /* Trim spaces from the start of zSql and calculate the remaining length. */
-  while( isspace(zSql[0]) ){ zSql++; }
+  while( (c = zSql[0])==' ' || c=='\t' || c=='\r' || c=='\n' ){ zSql++; }
   nSql = strlen30(zSql);
 
   for(pPreStmt = pDb->stmtList; pPreStmt; pPreStmt=pPreStmt->pNext){

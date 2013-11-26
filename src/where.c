@@ -669,9 +669,6 @@ static int isLikeOrGlob(
 
   pRight = pList->a[0].pExpr;
   op = pRight->op;
-  if( op==TK_REGISTER ){
-    op = pRight->op2;
-  }
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;
     int iCol = pRight->iColumn;
@@ -2409,7 +2406,7 @@ static int codeEqualityTerm(
       }else{
         pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
       }
-      pIn->eEndLoopOp = bRev ? OP_Prev : OP_Next;
+      pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
       sqlite3VdbeAddOp1(v, OP_IsNull, iReg);
     }else{
       pLevel->u.in.nIn = 0;
@@ -2759,7 +2756,7 @@ static Bitmask codeOneLoopStart(
   bRev = (pWInfo->revMask>>iLevel)&1;
   omitTable = (pLoop->wsFlags & WHERE_IDX_ONLY)!=0 
            && (pWInfo->wctrlFlags & WHERE_FORCE_TABLE)==0;
-  VdbeNoopComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
+  VdbeModuleComment((v, "Begin WHERE-loop%d: %s",iLevel,pTabItem->pTab->zName));
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -2987,7 +2984,6 @@ static Bitmask codeOneLoopStart(
       OP_IdxLT             /* 2: (end_constraints && bRev) */
     };
     u16 nEq = pLoop->u.btree.nEq;     /* Number of == or IN terms */
-    u16 nSkip = pLoop->u.btree.nSkip; /* Number of left index terms to skip */
     int isMinQuery = 0;          /* If this is an optimized SELECT min(x).. */
     int regBase;                 /* Base register holding constraint values */
     int r1;                      /* Temp register */
@@ -3002,11 +2998,11 @@ static Bitmask codeOneLoopStart(
     int nExtraReg = 0;           /* Number of extra registers needed */
     int op;                      /* Instruction opcode */
     char *zStartAff;             /* Affinity for start of range constraint */
-    char *zEndAff;               /* Affinity for end of range constraint */
+    char cEndAff = 0;            /* Affinity for end of range constraint */
 
     pIdx = pLoop->u.btree.pIndex;
     iIdxCur = pLevel->iIdxCur;
-    assert( nEq>=nSkip );
+    assert( nEq>=pLoop->u.btree.nSkip );
 
     /* If this loop satisfies a sort order (pOrderBy) request that 
     ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -3020,7 +3016,7 @@ static Bitmask codeOneLoopStart(
      && (pWInfo->bOBSat!=0)
      && (pIdx->nKeyCol>nEq)
     ){
-      assert( nSkip==0 );
+      assert( pLoop->u.btree.nSkip==0 );
       isMinQuery = 1;
       nExtraReg = 1;
     }
@@ -3043,7 +3039,8 @@ static Bitmask codeOneLoopStart(
     ** starting at regBase.
     */
     regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
-    zEndAff = sqlite3DbStrDup(db, zStartAff);
+    assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
+    if( zStartAff ) cEndAff = zStartAff[nEq];
     addrNxt = pLevel->addrNxt;
 
     /* If we are doing a reverse order scan on an ascending index, or
@@ -3113,23 +3110,15 @@ static Bitmask codeOneLoopStart(
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0 ){
         sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
       }
-      if( zEndAff ){
-        if( sqlite3CompareAffinity(pRight, zEndAff[nEq])==SQLITE_AFF_NONE){
-          /* Since the comparison is to be performed with no conversions
-          ** applied to the operands, set the affinity to apply to pRight to 
-          ** SQLITE_AFF_NONE.  */
-          zEndAff[nEq] = SQLITE_AFF_NONE;
-        }
-        if( sqlite3ExprNeedsNoAffinityChange(pRight, zEndAff[nEq]) ){
-          zEndAff[nEq] = SQLITE_AFF_NONE;
-        }
-      }  
-      codeApplyAffinity(pParse, regBase, nEq+1, zEndAff);
+      if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_NONE
+       && !sqlite3ExprNeedsNoAffinityChange(pRight, cEndAff)
+      ){
+        codeApplyAffinity(pParse, regBase+nEq, 1, &cEndAff);
+      }
       nConstraint++;
       testcase( pRangeEnd->wtFlags & TERM_VIRTUAL );
     }
     sqlite3DbFree(db, zStartAff);
-    sqlite3DbFree(db, zEndAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
@@ -3154,6 +3143,7 @@ static Bitmask codeOneLoopStart(
     if( (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0 
      && (j = pIdx->aiColumn[nEq])>=0 
      && pIdx->pTable->aCol[j].notNull==0 
+     && (nEq || (pLoop->wsFlags & WHERE_BTM_LIMIT)==0)
     ){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
       VdbeComment((v, "%s", pIdx->pTable->aCol[j].zName));
@@ -3471,7 +3461,7 @@ static Bitmask codeOneLoopStart(
     if( pAlt->wtFlags & (TERM_CODED) ) continue;
     testcase( pAlt->eOperator & WO_EQ );
     testcase( pAlt->eOperator & WO_IN );
-    VdbeNoopComment((v, "begin transitive constraint"));
+    VdbeModuleComment((v, "begin transitive constraint"));
     pEAlt = sqlite3StackAllocRaw(db, sizeof(*pEAlt));
     if( pEAlt ){
       *pEAlt = *pAlt->pExpr;
@@ -3928,10 +3918,15 @@ static int whereLoopAddBtreeIndex(
   saved_nOut = pNew->nOut;
   pNew->rSetup = 0;
   rLogSize = estLog(sqlite3LogEst(pProbe->aiRowEst[0]));
+
+  /* Consider using a skip-scan if there are no WHERE clause constraints
+  ** available for the left-most terms of the index, and if the average
+  ** number of repeats in the left-most terms is at least 50.
+  */
   if( pTerm==0
    && saved_nEq==saved_nSkip
    && saved_nEq+1<pProbe->nKeyCol
-   && pProbe->aiRowEst[saved_nEq+1]>50
+   && pProbe->aiRowEst[saved_nEq+1]>50  /* TUNING: Minimum for skip-scan */
   ){
     LogEst nIter;
     pNew->u.btree.nEq++;
@@ -5427,7 +5422,6 @@ WhereInfo *sqlite3WhereBegin(
   */
   initMaskSet(pMaskSet);
   whereClauseInit(&pWInfo->sWC, pWInfo);
-  sqlite3ExprCodeConstants(pParse, pWhere);
   whereSplit(&pWInfo->sWC, pWhere, TK_AND);
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
     
@@ -5742,7 +5736,7 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Done. */
-  VdbeNoopComment((v, "Begin WHERE-core"));
+  VdbeModuleComment((v, "Begin WHERE-core"));
   return pWInfo;
 
   /* Jump here if malloc fails */
@@ -5769,7 +5763,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Generate loop termination code.
   */
-  VdbeNoopComment((v, "End WHERE-core"));
+  VdbeModuleComment((v, "End WHERE-core"));
   sqlite3ExprCacheClear(pParse);
   for(i=pWInfo->nLevel-1; i>=0; i--){
     int addr;
@@ -5815,7 +5809,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       }
       sqlite3VdbeJumpHere(v, addr);
     }
-    VdbeNoopComment((v, "End WHERE-loop%d: %s", i,
+    VdbeModuleComment((v, "End WHERE-loop%d: %s", i,
                      pWInfo->pTabList->a[pLevel->iFrom].pTab->zName));
   }
 

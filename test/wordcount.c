@@ -19,6 +19,7 @@
 **     --select             Use SELECT mode
 **     --update             Use UPDATE mode
 **     --delete             Use DELETE mode
+**     --query              Use QUERY mode
 **     --nocase             Add the NOCASE collating sequence to the words.
 **     --trace              Enable sqlite3_trace() output.
 **     --summary            Show summary information on the collected data.
@@ -28,6 +29,7 @@
 **     --commit NNN         Commit after every NNN operations
 **     --nosync             Use PRAGMA synchronous=OFF
 **     --journal MMMM       Use PRAGMA journal_mode=MMMM
+**     --timer              Time the operation of this program
 **
 ** Modes:
 **
@@ -51,11 +53,15 @@
 ** Delete mode means:
 **    (1) DELETE FROM wordcount WHERE word=$new
 **
-** Note that delete mode is only useful for preexisting databases.  The
-** wordcount table is created using IF NOT EXISTS so this utility can be
-** run multiple times on the same database file.  The --without-rowid,
-** --nocase, and --pagesize parameters are only effective when creating
-** a new database and are harmless no-ops on preexisting databases.
+** Query mode means:
+**    (1) SELECT cnt FROM wordcount WHERE word=$new
+**
+** Note that delete mode and query mode are only useful for preexisting
+** databases.  The wordcount table is created using IF NOT EXISTS so this
+** utility can be run multiple times on the same database file.  The
+** --without-rowid, --nocase, and --pagesize parameters are only effective
+** when creating a new database and are harmless no-ops on preexisting
+** databases.
 **
 ******************************************************************************
 **
@@ -74,6 +80,21 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include "sqlite3.h"
+
+/* Return the current wall-clock time */
+static sqlite3_int64 realTime(void){
+  static sqlite3_vfs *clockVfs = 0;
+  sqlite3_int64 t;
+  if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+    clockVfs->xCurrentTimeInt64(clockVfs, &t);
+  }else{
+    double r;
+    clockVfs->xCurrentTime(clockVfs, &r);
+    t = (sqlite3_int64)(r*86400000.0);
+  }
+  return t;
+}
 
 /* Print an error message and exit */
 static void fatal_error(const char *zMsg, ...){
@@ -95,7 +116,7 @@ static int printResult(void *NotUsed, int nArg, char **azArg, char **azNm){
   int i;
   printf("--");
   for(i=0; i<nArg; i++){
-    printf(" %s", azArg[i]);
+    printf(" %s", azArg[i] ? azArg[i] : "(null)");
   }
   printf("\n");
   return 0;
@@ -170,6 +191,7 @@ static void checksumFinalize(sqlite3_context *context){
 #define MODE_SELECT     2
 #define MODE_UPDATE     3
 #define MODE_DELETE     4
+#define MODE_QUERY      5
 
 int main(int argc, char **argv){
   const char *zFileToRead = 0;  /* Input file.  NULL for stdin */
@@ -180,6 +202,7 @@ int main(int argc, char **argv){
   int doTrace = 0;              /* True for --trace */
   int showStats = 0;            /* True for --stats */
   int showSummary = 0;          /* True for --summary */
+  int showTimer = 0;            /* True for --timer */
   int cacheSize = 0;            /* Desired cache size.  0 means default */
   int pageSize = 0;             /* Desired page size.  0 means default */
   int commitInterval = 0;       /* How often to commit.  0 means never */
@@ -196,6 +219,8 @@ int main(int argc, char **argv){
   FILE *in;                     /* The open input file */
   int rc;                       /* Return code from an SQLite interface */
   int iCur, iHiwtr;             /* Statistics values, current and "highwater" */
+  sqlite3_int64 sumCnt = 0;     /* Sum in QUERY mode */
+  sqlite3_int64 startTime;
   char zInput[2000];            /* A single line of input */
 
   /* Process command-line arguments */
@@ -215,6 +240,8 @@ int main(int argc, char **argv){
         iMode = MODE_UPDATE;
       }else if( strcmp(z,"delete")==0 ){
         iMode = MODE_DELETE;
+      }else if( strcmp(z,"query")==0 ){
+        iMode = MODE_QUERY;
       }else if( strcmp(z,"nocase")==0 ){
         useNocase = 1;
       }else if( strcmp(z,"trace")==0 ){
@@ -225,6 +252,8 @@ int main(int argc, char **argv){
         showStats = 1;
       }else if( strcmp(z,"summary")==0 ){
         showSummary = 1;
+      }else if( strcmp(z,"timer")==0 ){
+        showTimer = i;
       }else if( strcmp(z,"cachesize")==0 && i<argc-1 ){
         i++;
         cacheSize = atoi(argv[i]);
@@ -250,6 +279,7 @@ int main(int argc, char **argv){
   if( zDbName==0 ){
     fatal_error("Usage: %s [--options] DATABASE [INPUTFILE]\n", argv[0]);
   }
+  startTime = realTime();
 
   /* Open the database and the input file */
   if( sqlite3_open(zDbName, &db) ){
@@ -303,6 +333,13 @@ int main(int argc, char **argv){
   sqlite3_free(zSql);
 
   /* Prepare SQL statements that will be needed */
+  if( iMode==MODE_QUERY ){
+    rc = sqlite3_prepare_v2(db,
+          "SELECT cnt FROM wordcount WHERE word=?1",
+          -1, &pSelect, 0);
+    if( rc ) fatal_error("Could not prepare the SELECT statement: %s\n",
+                          sqlite3_errmsg(db));
+  }
   if( iMode==MODE_SELECT ){
     rc = sqlite3_prepare_v2(db,
           "SELECT 1 FROM wordcount WHERE word=?1",
@@ -385,6 +422,12 @@ int main(int argc, char **argv){
         }else{
           fatal_error("SELECT failed: %s\n", sqlite3_errmsg(db));
         }
+      }else if( iMode==MODE_QUERY ){
+        sqlite3_bind_text(pSelect, 1, zInput+i, j-i, SQLITE_STATIC);
+        if( sqlite3_step(pSelect)==SQLITE_ROW ){
+          sumCnt += sqlite3_column_int64(pSelect, 0);
+        }
+        sqlite3_reset(pSelect);
       }else{
         sqlite3_bind_text(pInsert, 1, zInput+i, j-i, SQLITE_STATIC);
         if( sqlite3_step(pInsert)!=SQLITE_DONE ){
@@ -417,6 +460,25 @@ int main(int argc, char **argv){
   sqlite3_finalize(pSelect);
   sqlite3_finalize(pDelete);
 
+  if( iMode==MODE_QUERY ){
+    printf("sum of cnt: %lld\n", sumCnt);
+    rc = sqlite3_prepare_v2(db,"SELECT sum(cnt*cnt) FROM wordcount", -1,
+                            &pSelect, 0);
+    if( rc==SQLITE_OK && sqlite3_step(pSelect)==SQLITE_ROW ){
+      printf("double-check: %lld\n", sqlite3_column_int64(pSelect, 0));
+    }
+    sqlite3_finalize(pSelect);
+  }
+
+
+  if( showTimer ){
+    sqlite3_int64 elapseTime = realTime() - startTime;
+    fprintf(stderr, "%3d.%03d wordcount", (int)(elapseTime/1000),
+                                   (int)(elapseTime%1000));
+    for(i=1; i<argc; i++) if( i!=showTimer ) fprintf(stderr, " %s", argv[i]);
+    fprintf(stderr, "\n");
+  }
+
   if( showSummary ){
     sqlite3_create_function(db, "checksum", -1, SQLITE_UTF8, 0,
                             0, checksumStep, checksumFinalize);
@@ -427,7 +489,7 @@ int main(int argc, char **argv){
       "SELECT 'avg(cnt):  ', avg(cnt) FROM wordcount;\n"
       "SELECT 'sum(cnt=1):', sum(cnt=1) FROM wordcount;\n"
       "SELECT 'top 10:    ', group_concat(word, ', ') FROM "
-         "(SELECT word FROM wordcount ORDER BY cnt DESC LIMIT 10);\n"
+         "(SELECT word FROM wordcount ORDER BY cnt DESC, word LIMIT 10);\n"
       "SELECT 'checksum:  ', checksum(word, cnt) FROM "
          "(SELECT word, cnt FROM wordcount ORDER BY word);\n"
       "PRAGMA integrity_check;\n",

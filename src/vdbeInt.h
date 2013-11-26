@@ -36,7 +36,7 @@ typedef struct VdbeOp Op;
 /*
 ** Boolean values
 */
-typedef unsigned char Bool;
+typedef unsigned Bool;
 
 /* Opaque type used by code in vdbesort.c */
 typedef struct VdbeSorter VdbeSorter;
@@ -53,6 +53,9 @@ typedef struct AuxData AuxData;
 ** loop over all entries of the Btree.  You can also insert new BTree
 ** entries or retrieve the key or data from the entry that the cursor
 ** is currently pointing to.
+**
+** Cursors can also point to virtual tables, sorters, or "pseudo-tables".
+** A pseudo-table is a single-row table implemented by registers.
 ** 
 ** Every cursor that the virtual machine has open is represented by an
 ** instance of the following structure.
@@ -61,29 +64,23 @@ struct VdbeCursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
   Btree *pBt;           /* Separate file holding temporary table */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
-  int iDb;              /* Index of cursor database in db->aDb[] (or -1) */
+  int seekResult;       /* Result of previous sqlite3BtreeMoveto() */
   int pseudoTableReg;   /* Register holding pseudotable content. */
-  int nField;           /* Number of fields in the header */
-  Bool zeroed;          /* True if zeroed out and ready for reuse */
-  Bool rowidIsValid;    /* True if lastRowid is valid */
-  Bool atFirst;         /* True if pointing to first entry */
-  Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
-  Bool nullRow;         /* True if pointing to a row with no data */
-  Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
-  Bool isTable;         /* True if a table requiring integer keys */
-  Bool isIndex;         /* True if an index containing keys only - no data */
-  Bool isOrdered;       /* True if the underlying table is BTREE_UNORDERED */
-  Bool isSorter;        /* True if a new-style sorter */
-  Bool multiPseudo;     /* Multi-register pseudo-cursor */
+  i16 nField;           /* Number of fields in the header */
+  u16 nHdrParsed;       /* Number of header fields parsed so far */
+  i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
+  u8 nullRow;           /* True if pointing to a row with no data */
+  u8 rowidIsValid;      /* True if lastRowid is valid */
+  u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
+  Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
+  Bool isTable:1;       /* True if a table requiring integer keys */
+  Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
+  Bool multiPseudo:1;   /* Multi-register pseudo-cursor */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
-  const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
-  i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
+  i64 lastRowid;        /* Rowid being deleted by OP_Delete */
   VdbeSorter *pSorter;  /* Sorter object for OP_SorterOpen cursors */
-
-  /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists */
-  int seekResult;
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheStatus matches
@@ -95,10 +92,14 @@ struct VdbeCursor {
   ** be NULL.
   */
   u32 cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
-  int payloadSize;      /* Total number of bytes in the record */
-  u32 *aType;           /* Type values for all entries in the record */
-  u32 *aOffset;         /* Cached offsets to the start of each columns data */
-  u8 *aRow;             /* Data for the current row, if all on one page */
+  u32 payloadSize;      /* Total number of bytes in the record */
+  u32 szRow;            /* Byte available in aRow */
+  u32 iHdrOffset;       /* Offset to next unparsed byte of the header */
+  const u8 *aRow;       /* Data for the current row, if all on one page */
+  u32 aType[1];         /* Type values for all entries in the record */
+  /* 2*nField extra array elements allocated for aType[], beyond the one
+  ** static element declared in the structure.  nField total array slots for
+  ** aType[] and nField+1 array slots for aOffset[] */
 };
 typedef struct VdbeCursor VdbeCursor;
 
@@ -442,7 +443,7 @@ double sqlite3VdbeRealValue(Mem*);
 void sqlite3VdbeIntegerAffinity(Mem*);
 int sqlite3VdbeMemRealify(Mem*);
 int sqlite3VdbeMemNumerify(Mem*);
-int sqlite3VdbeMemFromBtree(BtCursor*,int,int,int,Mem*);
+int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 void sqlite3VdbeMemReleaseExternal(Mem *p);
 #define VdbeMemRelease(X)  \

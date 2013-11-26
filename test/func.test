@@ -1319,6 +1319,24 @@ do_test func-29.6 {
   set x
 } {1}
 
+# The OP_Column opcode has an optimization that avoids loading content
+# for fields with content-length=0 when the content offset is on an overflow
+# page.  Make sure the optimization works.
+#
+do_execsql_test func-29.10 {
+  CREATE TABLE t29b(a,b,c,d,e,f,g,h,i);
+  INSERT INTO t29b 
+   VALUES(1, hex(randomblob(2000)), null, 0, 1, '', zeroblob(0),'x',x'01');
+  SELECT typeof(c), typeof(d), typeof(e), typeof(f),
+         typeof(g), typeof(h), typeof(i) FROM t29b;
+} {null integer integer text blob text blob}
+do_execsql_test func-29.11 {
+  SELECT length(f), length(g), length(h), length(i) FROM t29b;
+} {0 0 1 1}
+do_execsql_test func-29.12 {
+  SELECT quote(f), quote(g), quote(h), quote(i) FROM t29b;
+} {'' X'' 'x' X'01'}
+
 # EVIDENCE-OF: R-29701-50711 The unicode(X) function returns the numeric
 # unicode code point corresponding to the first character of the string
 # X.
