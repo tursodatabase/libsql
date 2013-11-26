@@ -121,6 +121,7 @@ SRC = \
   $(TOP)/src/os.c \
   $(TOP)/src/os.h \
   $(TOP)/src/os_common.h \
+  $(TOP)/src/os_setup.h \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
   $(TOP)/src/os_win.h \
@@ -340,6 +341,7 @@ HDR = \
    opcodes.h \
    $(TOP)/src/os.h \
    $(TOP)/src/os_common.h \
+   $(TOP)/src/os_setup.h \
    $(TOP)/src/os_win.h \
    $(TOP)/src/pager.h \
    $(TOP)/src/pcache.h \
