@@ -1,5 +1,5 @@
-C Change\sthe\sREAL-to-INTEGER\scasting\sbehavior\sso\sthat\sif\sthe\sREAL\svalue\nis\sgreater\sthan\s9223372036854775807.0\sthen\sit\sis\scast\sto\sthe\slatest\npossible\sinteger,\s9223372036854775807.\s\sThis\sis\ssensible\sand\sthe\sway\nmost\splatforms\swork\sin\shardware.\s\sThe\sformer\sbehavior\swas\sthat\soversize\nREALs\swould\sbe\scast\sto\sthe\ssmallest\spossible\sinteger,\s-9223372036854775808,\nwhich\sis\sthe\sway\sIntel\shardware\sworks.
-D 2013-11-26T15:45:02.186
+C Do\snot\stry\sto\srun\sthe\satof1.test\stest\sscript\son\sARM\shardware\swhich\slacks\nthe\s"long\sdouble"\stype.
+D 2013-11-26T16:20:28.799
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -321,7 +321,7 @@ F test/async2.test c0a9bd20816d7d6a2ceca7b8c03d3d69c28ffb8b
 F test/async3.test d73a062002376d7edc1fe3edff493edbec1fc2f7
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
 F test/async5.test 383ab533fdb9f7ad228cc99ee66e1acb34cc0dc0
-F test/atof1.test 9bf1d25180a2e05fc12ce3940cc8003033642f68
+F test/atof1.test 08a61df9365c341f334a65f4348897312d8f3db7
 F test/attach.test 0d112b7713611fdf0340260192749737135fda5f
 F test/attach2.test 0ec5defa340363de6cd50fd595046465e9aaba2d
 F test/attach3.test d89ccfe4fe6e2b5e368d480fcdfe4b496c54cf4e
@@ -1143,7 +1143,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9954327c0febc0ece46f62e05976330a1b82b48f
-R 55fc64123fadbe14b9ab9765d23a7587
+P 6f53fc7106658d44edf63068f9a8522fa5a7688b
+R 0b6d53f178500662f3ea7da63b0a8b9a
 U drh
-Z 850b84acf394562818ad72b52ff1802d
+Z 1b696475d3b2c1907923dd0866112072
