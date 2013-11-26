@@ -1,5 +1,5 @@
-C Reduce\sthe\samount\sof\scode\sused\sto\simplement\sOP_SeekGe\sand\ssimilar.
-D 2013-11-26T18:22:59.246
+C Changing\sthe\sCAST\sbehavior\sof\sREAL\svalues\sactually\schanged\sa\sdocumented\nrequirement.\s\sSo\swe\salso\shave\sto\schange\sthe\srequirement\sevidence\stext\sto\nmatch.
+D 2013-11-26T21:18:45.278
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -437,7 +437,7 @@ F test/e_createtable.test 3b453432cd14a12732ee9467597d2274ca37ce36
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
-F test/e_expr.test 0808bc72c7b2a2fab4291418ecd73f4d09d7d671
+F test/e_expr.test 5cc73445ccac0fa6e16ef05ccb42021c8bdd0c0e
 F test/e_fkey.test d83a04478bb9c02d2c513518548a69f818869f41
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 1e44f84d2abe44d66e4fbf198be4b20e3cc724a0
@@ -1143,7 +1143,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6f91dca0de908dc2b15130a6593a61c3147a409f
-R d3fc734a7145de0774dfe549644c265c
-U dan
-Z 32a0a7a512d388c26cfa54a9b929b27b
+P 8b12a15a2a8139d75f56a099f3f6af844da3ac9c
+R 1c9b8ea37e158d8aa056f9d55c189c9f
+U drh
+Z 4aa8d025d1cf631a0e550b5e09b9ad22
