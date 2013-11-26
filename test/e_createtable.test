@@ -1654,6 +1654,10 @@ do_execsql_test  4.19.4 { SELECT * FROM t5 } {}
 # of the special case-independent names "rowid", "oid", or "_rowid_" in
 # place of a column name.
 #
+# EVIDENCE-OF: R-06726-07466 A column name can be any of the names
+# defined in the CREATE TABLE statement or one of the following special
+# identifiers: "ROWID", "OID", or "_ROWID_".
+#
 drop_all_tables
 do_execsql_test 5.1.0 {
   CREATE TABLE t1(x, y);
@@ -1677,6 +1681,10 @@ do_createtable_tests 5.1 {
 # named "rowid", "oid" or "_rowid_", then that name always refers the
 # explicitly declared column and cannot be used to retrieve the integer
 # rowid value.
+#
+# EVIDENCE-OF: R-44615-33286 The special identifiers only refer to the
+# row key if the CREATE TABLE statement does not define a real column
+# with the same name.
 #
 do_execsql_test 5.2.0 {
   CREATE TABLE t2(oid, b);

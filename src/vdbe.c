@@ -4109,20 +4109,11 @@ case OP_Delete: {
   i64 iKey;
   VdbeCursor *pC;
 
-  iKey = 0;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
-
-  /* If the update-hook will be invoked, set iKey to the rowid of the
-  ** row being deleted.
-  */
-  if( db->xUpdateCallback && pOp->p4.z ){
-    assert( pC->isTable );
-    assert( pC->rowidIsValid );  /* lastRowid set by previous OP_NotFound */
-    iKey = pC->lastRowid;
-  }
+  iKey = pC->lastRowid;      /* Only used for the update hook */
 
   /* The OP_Delete opcode always follows an OP_NotExists or OP_Last or
   ** OP_Column on the same table without any intervening operations that
@@ -4140,7 +4131,7 @@ case OP_Delete: {
   pC->cacheStatus = CACHE_STALE;
 
   /* Invoke the update-hook if required. */
-  if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z ){
+  if( rc==SQLITE_OK && db->xUpdateCallback && pOp->p4.z && pC->isTable ){
     const char *zDb = db->aDb[pC->iDb].zName;
     const char *zTbl = pOp->p4.z;
     db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, zTbl, iKey);

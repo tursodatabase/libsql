@@ -352,7 +352,9 @@ static int lookupName(
           }
         }
         if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) && HasRowid(pTab) ){
-          iCol = -1;        /* IMP: R-44911-55124 */
+          /* IMP: R-24309-18625 */
+          /* IMP: R-44911-55124 */
+          iCol = -1;
         }
         if( iCol<pTab->nCol ){
           cnt++;

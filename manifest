@@ -1,5 +1,5 @@
-C Add\srequirements\stest\scases\sfor\sdetermining\swhen\san\sexpression\sis\strue\sand\nwhen\sit\sis\sfalse.
-D 2013-11-26T22:46:54.424
+C Make\ssure\sthe\supdate\shook\sis\snot\sinvoked\sfor\sWITHOUT\sROWID\stables,\sas\nthe\sdocumentation\sspecifies.\s\sThis\sbug\swas\sfound\swhile\sadding\srequirements\nmarks,\sso\sa\sfew\sextraneous\srequirements\smarks\sare\sincluded\sin\sthis\ncheck-in.
+D 2013-11-26T23:27:07.055
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/pragma.c 5ab7279d132143feb77f773688a24ab05da75fd7
 F src/prepare.c 359d1a1e9c9bd4488e4dd3a1aaaf2d2ebb9bb768
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
-F src/resolve.c a70e32ae6ccb7b780f2b6d3e9e21837affc25ee5
+F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c c4d06a9238a515ff4bc86b8626139633c09a00a2
@@ -280,7 +280,7 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c cbe054290f780fcd472b89d701c7404c51ec9684
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c d9c63f5c5679f6e6c96612264b5674b8020696c4
+F src/vdbe.c c2b3cd6baddb224a2f155e410ca69f74e6efc671
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -433,7 +433,7 @@ F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 44028aaf161a5e80a2f229622b3a174d3b352810
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test 3b453432cd14a12732ee9467597d2274ca37ce36
+F test/e_createtable.test a4561b93062e651d6def99c9e6956969dbf3754c
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
@@ -587,7 +587,7 @@ F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/hook.test 45cb22b940c3cc0af616ba7430f666e245711a48
+F test/hook.test 8b24a1a8a1ddf0883c6824825e7577f2636918dc
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -1143,7 +1143,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d84aa44e3919e25f9520c5120a35ec21e837a9ea
-R ceef359da24957280bf0acfc550c26b7
+P 838654e56304a5788ac384ca506c1938f48af488
+R e178483a3ba4d2f533907e57553db5a6
 U drh
-Z 5bb7513aebd7acd760a2df9416ad20ba
+Z 51c7e3abc8471c6679ba39e030a2dca2

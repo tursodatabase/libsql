@@ -135,9 +135,11 @@ do_test hook-4.1.1 {
   }
   execsql {
     CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t1w(a INT PRIMARY KEY, b) WITHOUT ROWID;
     INSERT INTO t1 VALUES(1, 'one');
     INSERT INTO t1 VALUES(2, 'two');
     INSERT INTO t1 VALUES(3, 'three');
+    INSERT INTO t1w SELECT * FROM t1;
   }
   db update_hook [list lappend ::update_hook]
 } {}
@@ -158,6 +160,20 @@ do_test hook-4.1.2 {
     DELETE main t1 3 \
     DELETE main t1 4 \
 ]
+
+# EVIDENCE-OF: R-61808-14344 The sqlite3_update_hook() interface does
+# not fire callbacks for changes to a WITHOUT ROWID table.
+#
+do_test hook-4.1.2w {
+  set ::update_hook {}
+  execsql {
+    INSERT INTO t1w VALUES(4, 'four');
+    DELETE FROM t1w WHERE b = 'two';
+    UPDATE t1w SET b = '' WHERE a = 1 OR a = 3;
+    DELETE FROM t1w WHERE 1; -- Avoid the truncate optimization (for now)
+  }
+  set ::update_hook
+} {}
 
 ifcapable trigger {
   # Update hook is not invoked for changes to sqlite_master
