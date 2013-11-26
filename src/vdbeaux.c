@@ -3114,7 +3114,8 @@ int sqlite3VdbeRecordCompare(
   d1 = szHdr1;
   assert( pKeyInfo->nField+pKeyInfo->nXField>=pPKey2->nField );
   assert( pKeyInfo->aSortOrder!=0 );
-  while( idx1<szHdr1 && i<pPKey2->nField ){
+  assert( idx1<szHdr1 && i<pPKey2->nField );
+  do{
     u32 serial_type1;
 
     /* Read the serial types for the next element in each key. */
@@ -3147,7 +3148,7 @@ int sqlite3VdbeRecordCompare(
       return rc;
     }
     i++;
-  }
+  }while( idx1<szHdr1 && i<pPKey2->nField );
 
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a

@@ -1131,6 +1131,33 @@ static int test_config_heap(
 }
 
 /*
+** Usage:    sqlite3_config_heap_size NBYTE
+*/
+static int test_config_heap_size(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int nByte;         /* Size to pass to sqlite3_config() */
+  int rc;            /* Return code of sqlite3_config() */
+
+  Tcl_Obj * CONST *aArg = &objv[1];
+  int nArg = objc-1;
+
+  if( nArg!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "NBYTE");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, aArg[0], &nByte) ) return TCL_ERROR;
+
+  rc = sqlite3_config(SQLITE_CONFIG_WIN32_HEAPSIZE, nByte);
+
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
 ** Usage:    sqlite3_config_error  [DB]
 **
 ** Invoke sqlite3_config() or sqlite3_db_config() with invalid
@@ -1473,6 +1500,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_db_status",          test_db_status                ,0 },
      { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0 },
      { "sqlite3_config_heap",        test_config_heap              ,0 },
+     { "sqlite3_config_heap_size",   test_config_heap_size         ,0 },
      { "sqlite3_config_memstatus",   test_config_memstatus         ,0 },
      { "sqlite3_config_lookaside",   test_config_lookaside         ,0 },
      { "sqlite3_config_error",       test_config_error             ,0 },

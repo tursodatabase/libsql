@@ -4219,7 +4219,7 @@ static const unsigned char *fetchPayload(
   assert( cursorHoldsMutex(pCur) );
   pPage = pCur->apPage[pCur->iPage];
   assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
-  if( NEVER(pCur->info.nSize==0) ){
+  if( pCur->info.nSize==0 ){
     btreeParseCell(pCur->apPage[pCur->iPage], pCur->aiIdx[pCur->iPage],
                    &pCur->info);
   }
@@ -4647,10 +4647,10 @@ int sqlite3BtreeMovetoUnpacked(
   }
   assert( pCur->apPage[0]->intKey || pIdxKey );
   for(;;){
-    int lwr, upr, idx;
+    int lwr, upr, idx, c;
     Pgno chldPg;
     MemPage *pPage = pCur->apPage[pCur->iPage];
-    int c;
+    u8 *pCell;                          /* Pointer to current cell in pPage */
 
     /* pPage->nCell must be greater than zero. If this is the root-page
     ** the cursor would have been INVALID above and this for(;;) loop
@@ -4662,35 +4662,47 @@ int sqlite3BtreeMovetoUnpacked(
     assert( pPage->intKey==(pIdxKey==0) );
     lwr = 0;
     upr = pPage->nCell-1;
-    if( biasRight ){
-      pCur->aiIdx[pCur->iPage] = (u16)(idx = upr);
-    }else{
-      pCur->aiIdx[pCur->iPage] = (u16)(idx = (upr+lwr)/2);
-    }
-    for(;;){
-      u8 *pCell;                          /* Pointer to current cell in pPage */
-
-      assert( idx==pCur->aiIdx[pCur->iPage] );
-      pCur->info.nSize = 0;
-      pCell = findCell(pPage, idx) + pPage->childPtrSize;
-      if( pPage->intKey ){
+    assert( biasRight==0 || biasRight==1 );
+    idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
+    pCur->aiIdx[pCur->iPage] = (u16)idx;
+    if( pPage->intKey ){
+      for(;;){
         i64 nCellKey;
+        pCell = findCell(pPage, idx) + pPage->childPtrSize;
         if( pPage->hasData ){
-          u32 dummy;
-          pCell += getVarint32(pCell, dummy);
+          while( 0x80 <= *(pCell++) ){
+            if( pCell>=pPage->aDataEnd ) return SQLITE_CORRUPT_BKPT;
+          }
         }
         getVarint(pCell, (u64*)&nCellKey);
-        if( nCellKey==intKey ){
-          c = 0;
-        }else if( nCellKey<intKey ){
-          c = -1;
+        if( nCellKey<intKey ){
+          lwr = idx+1;
+          if( lwr>upr ){ c = -1; break; }
+        }else if( nCellKey>intKey ){
+          upr = idx-1;
+          if( lwr>upr ){ c = +1; break; }
         }else{
-          assert( nCellKey>intKey );
-          c = +1;
+          assert( nCellKey==intKey );
+          pCur->validNKey = 1;
+          pCur->info.nKey = nCellKey;
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
+          if( !pPage->leaf ){
+            lwr = idx;
+            goto moveto_next_layer;
+          }else{
+            *pRes = 0;
+            rc = SQLITE_OK;
+            goto moveto_finish;
+          }
         }
-        pCur->validNKey = 1;
-        pCur->info.nKey = nCellKey;
-      }else{
+        assert( lwr+upr>=0 );
+        idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2; */
+      }
+    }else{
+      for(;;){
+        int nCell;
+        pCell = findCell(pPage, idx) + pPage->childPtrSize;
+
         /* The maximum supported page-size is 65536 bytes. This means that
         ** the maximum number of record bytes stored on an index B-Tree
         ** page is less than 16384 bytes and may be stored as a 2-byte
@@ -4699,7 +4711,7 @@ int sqlite3BtreeMovetoUnpacked(
         ** stored entirely within the b-tree page by inspecting the first 
         ** 2 bytes of the cell.
         */
-        int nCell = pCell[0];
+        nCell = pCell[0];
         if( nCell<=pPage->max1bytePayload
          /* && (pCell+nCell)<pPage->aDataEnd */
         ){
@@ -4730,6 +4742,7 @@ int sqlite3BtreeMovetoUnpacked(
             rc = SQLITE_NOMEM;
             goto moveto_finish;
           }
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
           rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 0);
           if( rc ){
             sqlite3_free(pCellKey);
@@ -4738,49 +4751,44 @@ int sqlite3BtreeMovetoUnpacked(
           c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
         }
-      }
-      if( c==0 ){
-        if( pPage->intKey && !pPage->leaf ){
-          lwr = idx;
-          break;
+        if( c<0 ){
+          lwr = idx+1;
+        }else if( c>0 ){
+          upr = idx-1;
         }else{
+          assert( c==0 );
           *pRes = 0;
           rc = SQLITE_OK;
+          pCur->aiIdx[pCur->iPage] = (u16)idx;
           goto moveto_finish;
         }
+        if( lwr>upr ) break;
+        assert( lwr+upr>=0 );
+        idx = (lwr+upr)>>1;  /* idx = (lwr+upr)/2 */
       }
-      if( c<0 ){
-        lwr = idx+1;
-      }else{
-        upr = idx-1;
-      }
-      if( lwr>upr ){
-        break;
-      }
-      pCur->aiIdx[pCur->iPage] = (u16)(idx = (lwr+upr)/2);
     }
     assert( lwr==upr+1 || (pPage->intKey && !pPage->leaf) );
     assert( pPage->isInit );
     if( pPage->leaf ){
-      chldPg = 0;
-    }else if( lwr>=pPage->nCell ){
-      chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
-    }else{
-      chldPg = get4byte(findCell(pPage, lwr));
-    }
-    if( chldPg==0 ){
       assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+      pCur->aiIdx[pCur->iPage] = (u16)idx;
       *pRes = c;
       rc = SQLITE_OK;
       goto moveto_finish;
     }
+moveto_next_layer:
+    if( lwr>=pPage->nCell ){
+      chldPg = get4byte(&pPage->aData[pPage->hdrOffset+8]);
+    }else{
+      chldPg = get4byte(findCell(pPage, lwr));
+    }
     pCur->aiIdx[pCur->iPage] = (u16)lwr;
-    pCur->info.nSize = 0;
-    pCur->validNKey = 0;
     rc = moveToChild(pCur, chldPg);
-    if( rc ) goto moveto_finish;
+    if( rc ) break;
   }
 moveto_finish:
+  pCur->info.nSize = 0;
+  pCur->validNKey = 0;
   return rc;
 }
 
