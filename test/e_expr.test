@@ -1849,5 +1849,43 @@ foreach {tn expr} {
   do_expr_test e_expr-36.4.$tn $expr null {}
 }
 
+# EVIDENCE-OF: R-62477-06476 For example, the values NULL, 0.0, 0,
+# 'english' and '0' are all considered to be false.
+#
+do_execsql_test e_expr-37.1 {
+   SELECT CASE WHEN NULL THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.2 {
+   SELECT CASE WHEN 0.0 THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.3 {
+   SELECT CASE WHEN 0 THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.4 {
+   SELECT CASE WHEN 'engligh' THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.5 {
+   SELECT CASE WHEN '0' THEN 'true' ELSE 'false' END;
+} {false}
+
+# EVIDENCE-OF: R-55532-10108 Values 1, 1.0, 0.1, -0.1 and '1english' are
+# considered to be true.
+#
+do_execsql_test e_expr-37.6 {
+   SELECT CASE WHEN 1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.7 {
+   SELECT CASE WHEN 1.0 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.8 {
+   SELECT CASE WHEN 0.1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.9 {
+   SELECT CASE WHEN -0.1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.10 {
+   SELECT CASE WHEN '1english' THEN 'true' ELSE 'false' END;
+} {true}
+
 
 finish_test
