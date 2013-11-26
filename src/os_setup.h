@@ -10,7 +10,8 @@
 **
 ******************************************************************************
 **
-** This file contains code that is specific to Windows.
+** This file contains pre-processor directives related to operating system
+** detection and/or setup.
 */
 #ifndef _OS_SETUP_H_
 #define _OS_SETUP_H_

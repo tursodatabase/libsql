@@ -1,5 +1,5 @@
-C Further\swork\son\sWindows\sheader\sfile\sreform.
-D 2013-11-26T01:00:31.440
+C Fix\scomment.
+D 2013-11-26T01:13:18.839
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5d0d35aef4d0601493f9b26e2f859b3e471b63ed
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_setup.h 55a27b7b02b8fb289e16749df17edcc376ba2dfb
+F src/os_setup.h 3f9e87d981eef070c8a11e76b4704842a0e5870f
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
 F src/os_win.c 99a5668c207bee7fae238209a3043c03b6050056
 F src/os_win.h ac253253d080dc3dd261efe5e98626c4b95e5a26
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c5ab4378756965b0c2ab218e5ec59c40898b89ea
-R 3f71be42bb92a89017dddc2d61b45fe7
+P 540f5525160b516de282136ca77f909115a51630
+R 4b6ba147833b38d11479654f460b02e2
 U mistachkin
-Z beeb2b639ff26c8bb19c3f48e2444291
+Z d79a165fcb75b9e4bfcba919773d7cea
