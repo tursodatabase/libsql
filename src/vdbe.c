@@ -3520,38 +3520,28 @@ case OP_SeekGt: {       /* jump, in3 */
         pc = pOp->p2 - 1;
         break;
       }
-      /* If we reach this point, then the P3 value must be a floating
-      ** point number. */
-      assert( (pIn3->flags & MEM_Real)!=0 );
 
-      if( (iKey==SMALLEST_INT64 && pIn3->r<(double)iKey)
-       || (iKey==LARGEST_INT64 && pIn3->r>(double)iKey)
-      ){
-        /* The P3 value is too large in magnitude to be expressed as an
-        ** integer. */
-        res = 1;
-        if( pIn3->r<0 ){
-          if( oc>=OP_SeekGe ){  assert( oc==OP_SeekGe || oc==OP_SeekGt );
-            rc = sqlite3BtreeFirst(pC->pCursor, &res);
-            if( rc!=SQLITE_OK ) goto abort_due_to_error;
-          }
-        }else{
-          if( oc<=OP_SeekLe ){  assert( oc==OP_SeekLt || oc==OP_SeekLe );
-            rc = sqlite3BtreeLast(pC->pCursor, &res);
-            if( rc!=SQLITE_OK ) goto abort_due_to_error;
-          }
-        }
-        if( res ){
-          pc = pOp->p2 - 1;
-        }
-        break;
-      }else if( oc==OP_SeekLt || oc==OP_SeekGe ){
-        /* Use the ceiling() function to convert real->int */
-        if( pIn3->r > (double)iKey ) iKey++;
-      }else{
-        /* Use the floor() function to convert real->int */
-        assert( oc==OP_SeekLe || oc==OP_SeekGt );
-        if( pIn3->r < (double)iKey ) iKey--;
+      /* If the approximation iKey is larger than the actual real search
+      ** term, substitute >= for > and < for <=. e.g. if the search term
+      ** is 4.9 and the integer approximation 5:
+      **
+      **        (x >  4.9)    ->     (x >= 5)
+      **        (x <= 4.9)    ->     (x <  5)
+      */
+      if( pIn3->r<(double)iKey ){
+        assert( OP_SeekGe==(OP_SeekGt-1) );
+        assert( OP_SeekLt==(OP_SeekLe-1) );
+        assert( (OP_SeekLe & 0x0001)==(OP_SeekGt & 0x0001) );
+        if( (oc & 0x0001)==(OP_SeekGt & 0x0001) ) oc--;
+      }
+
+      /* If the approximation iKey is smaller than the actual real search
+      ** term, substitute <= for < and > for >=.  */
+      else if( pIn3->r>(double)iKey ){
+        assert( OP_SeekLe==(OP_SeekLt+1) );
+        assert( OP_SeekGt==(OP_SeekGe+1) );
+        assert( (OP_SeekLt & 0x0001)==(OP_SeekGe & 0x0001) );
+        if( (oc & 0x0001)==(OP_SeekLt & 0x0001) ) oc++;
       }
     } 
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)iKey, 0, &res);
@@ -4084,6 +4074,7 @@ case OP_InsertInt: {
   if( db->xPreUpdateCallback 
    && pOp->p4type==P4_TABLE
    && (!(pOp->p5 & OPFLAG_ISUPDATE) || pC->rowidIsValid==0)
+   && HasRowid(pTab)
   ){
     sqlite3VdbePreUpdateHook(p, pC, SQLITE_INSERT, zDb, pTab, iKey, pOp->p2);
   }
@@ -4113,7 +4104,7 @@ case OP_InsertInt: {
   pC->cacheStatus = CACHE_STALE;
 
   /* Invoke the update-hook if required. */
-  if( rc==SQLITE_OK && db->xUpdateCallback && op ){
+  if( rc==SQLITE_OK && db->xUpdateCallback && op && HasRowid(pTab) ){
     db->xUpdateCallback(db->pUpdateArg, op, zDb, pTab->zName, iKey);
   }
   break;
@@ -4153,12 +4144,11 @@ case OP_Delete: {
   int opflags;
 
   opflags = pOp->p2;
-  iKey = 0;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
-  assert( pOp->p4type==P4_TABLE || pOp->p4type==P4_NOTUSED );
+  iKey = pC->lastRowid;      /* Only used for the update hook */
 
   /* The OP_Delete opcode always follows an OP_NotExists or OP_Last or
   ** OP_Column on the same table without any intervening operations that
@@ -4176,16 +4166,15 @@ case OP_Delete: {
   */
   if( pOp->p4.z && HAS_UPDATE_HOOK(db) ){
     assert( pC->iDb>=0 );
-    assert( pC->isTable );
-    assert( pC->rowidIsValid );  /* lastRowid set by previous OP_NotFound */
+    assert( pC->rowidIsValid || !HasRowid(pOp->p4.pTab) );
     iKey = pC->lastRowid;
     zDb = db->aDb[pC->iDb].zName;
     pTab = pOp->p4.pTab;
-  }
+ }
 
 #ifdef SQLITE_ENABLE_PREUPDATE_HOOK
   /* Invoke the pre-update-hook if required. */
-  if( db->xPreUpdateCallback && pOp->p4.z ){
+  if( db->xPreUpdateCallback && pOp->p4.z && HasRowid(pTab) ){
     assert( !(opflags & OPFLAG_ISUPDATE) || (aMem[pOp->p3].flags & MEM_Int) );
     sqlite3VdbePreUpdateHook(p, pC,
         (opflags & OPFLAG_ISUPDATE) ? SQLITE_UPDATE : SQLITE_DELETE, 
@@ -4205,7 +4194,7 @@ case OP_Delete: {
   if( opflags & OPFLAG_NCHANGE ){
     p->nChange++;
     assert( pOp->p4.z );
-    if( rc==SQLITE_OK && db->xUpdateCallback ){
+    if( rc==SQLITE_OK && db->xUpdateCallback && HasRowid(pTab) ){
       db->xUpdateCallback(db->pUpdateArg, SQLITE_DELETE, zDb, pTab->zName,iKey);
     }
   }

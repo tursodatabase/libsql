@@ -1407,10 +1407,12 @@ do_test e_expr-26.1.6 { set ::evalcount } {5}
 #-------------------------------------------------------------------------
 # Test statements related to CAST expressions.
 #
-# EVIDENCE-OF: R-65079-31758 Application of a CAST expression is
-# different to application of a column affinity, as with a CAST
-# expression the storage class conversion is forced even if it is lossy
-# and irrreversible.
+# EVIDENCE-OF: R-20854-17109 A CAST conversion is similar to the
+# conversion that takes place when a column affinity is applied to a
+# value except that with the CAST operator the conversion always takes
+# place even if the conversion lossy and irreversible, whereas column
+# affinity only changes the data type of a value if the change is
+# lossless and reversible.
 #
 do_execsql_test e_expr-27.1.1 {
   CREATE TABLE t3(a TEXT, b REAL, c INTEGER);
@@ -1594,17 +1596,20 @@ do_expr_test e_expr-30.4.1 { CAST('' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.2 { CAST('not a number' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.3 { CAST('XXI' AS INTEGER) } integer 0
 
-# EVIDENCE-OF: R-00741-38776 A cast of a REAL value into an INTEGER will
-# truncate the fractional part of the REAL.
+# EVIDENCE-OF: R-02752-50091 A cast of a REAL value into an INTEGER
+# results in the integer between the REAL value and zero that is closest
+# to the REAL value.
 #
 do_expr_test e_expr-31.1.1 { CAST(3.14159 AS INTEGER) } integer 3
 do_expr_test e_expr-31.1.2 { CAST(1.99999 AS INTEGER) } integer 1
 do_expr_test e_expr-31.1.3 { CAST(-1.99999 AS INTEGER) } integer -1
 do_expr_test e_expr-31.1.4 { CAST(-0.99999 AS INTEGER) } integer 0
 
-# EVIDENCE-OF: R-49503-28105 If a REAL is too large to be represented as
-# an INTEGER then the result of the cast is the largest negative
-# integer: -9223372036854775808.
+# EVIDENCE-OF: R-51517-40824 If a REAL is greater than the greatest
+# possible signed integer (+9223372036854775807) then the result is the
+# greatest possible signed integer and if the REAL is less than the
+# least possible signed integer (-9223372036854775808) then the result
+# is the least possible signed integer.
 #
 do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer 9223372036854775807
 do_expr_test e_expr-31.2.2 { CAST(-2e+50 AS INT) } integer -9223372036854775808
@@ -1846,6 +1851,44 @@ foreach {tn expr} {
 } {
   do_expr_test e_expr-36.4.$tn $expr null {}
 }
+
+# EVIDENCE-OF: R-62477-06476 For example, the values NULL, 0.0, 0,
+# 'english' and '0' are all considered to be false.
+#
+do_execsql_test e_expr-37.1 {
+   SELECT CASE WHEN NULL THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.2 {
+   SELECT CASE WHEN 0.0 THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.3 {
+   SELECT CASE WHEN 0 THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.4 {
+   SELECT CASE WHEN 'engligh' THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.5 {
+   SELECT CASE WHEN '0' THEN 'true' ELSE 'false' END;
+} {false}
+
+# EVIDENCE-OF: R-55532-10108 Values 1, 1.0, 0.1, -0.1 and '1english' are
+# considered to be true.
+#
+do_execsql_test e_expr-37.6 {
+   SELECT CASE WHEN 1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.7 {
+   SELECT CASE WHEN 1.0 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.8 {
+   SELECT CASE WHEN 0.1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.9 {
+   SELECT CASE WHEN -0.1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.10 {
+   SELECT CASE WHEN '1english' THEN 'true' ELSE 'false' END;
+} {true}
 
 
 finish_test

@@ -12,7 +12,9 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.21 2009/06/26 15:14:55 drh Exp $
+# EVIDENCE-OF: R-36924-43758 By default, every row in SQLite has a
+# special column, usually called the "rowid", that uniquely identifies
+# that row within the table.
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
