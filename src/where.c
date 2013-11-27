@@ -3921,12 +3921,14 @@ static int whereLoopAddBtreeIndex(
 
   /* Consider using a skip-scan if there are no WHERE clause constraints
   ** available for the left-most terms of the index, and if the average
-  ** number of repeats in the left-most terms is at least 50.
+  ** number of repeats in the left-most terms is at least 18.  The magic
+  ** number 18 was found by experimentation to be the payoff point where
+  ** skip-scan become faster than a full-scan.
   */
   if( pTerm==0
    && saved_nEq==saved_nSkip
    && saved_nEq+1<pProbe->nKeyCol
-   && pProbe->aiRowEst[saved_nEq+1]>50  /* TUNING: Minimum for skip-scan */
+   && pProbe->aiRowEst[saved_nEq+1]>=18  /* TUNING: Minimum for skip-scan */
   ){
     LogEst nIter;
     pNew->u.btree.nEq++;

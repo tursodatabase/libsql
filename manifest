@@ -1,5 +1,5 @@
-C Avoid\susing\sthe\sGetVersionEx\sfunctions\sif\sthey\sare\sconsidered\sdeprecated.
-D 2013-11-27T04:00:32.164
+C Lower\sthe\sthreshold\sfor\susing\sskip-scan\sfrom\s50\sto\s18,\sbased\son\sexperiments\nthat\sshow\sthat\s18\sis\sthe\sapproximate\sbreak-even\spoint\sfor\sa\svariety\sof\nschemas.
+D 2013-11-27T04:22:27.199
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c e558bfa67009ab7de08a7a1960ae0dd443241cdd
+F src/where.c e0a9909a58eee7dcde1d1bd5cf6381b0dbc83389
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1ae4915d4d08ee5ce526c04d1d0cda1078641793 0ea9e4722be10221c99cce5bc48d13c7b34e739f
-R 1408bb35546f8304605f0cd70b3a2cef
-U mistachkin
-Z 11a83dbec42d946c53dc2adfcd9de746
+P afdca29966805ed0d49fd61a161eb3a3919b5963
+R 7f77bcc3aede19c7431a578762bf35fa
+U drh
+Z 4656cf413e484f30bbac5ec324b067a0
