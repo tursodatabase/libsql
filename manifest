@@ -1,5 +1,5 @@
-C Make\ssure\sthe\scolWidth\sarray\sis\scorrectly\sinitialized\sin\sthe\s".explain"\ncommand\sof\sthe\sshell.
-D 2013-11-27T13:24:18.470
+C Additional\stest\scases\sfor\sskip-scan.
+D 2013-11-27T13:48:02.795
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -808,7 +808,7 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test 6bb4891c2cc5efd5690a9da9e7508e53d4a68e10
-F test/skipscan2.test c1e21a19ec8fa3674e9ccd0475f20ef82c275838
+F test/skipscan2.test 5a4db0799c338ddbacb154aaa5589c0254b36a8d
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 83c0bb9913838d18ba355033afde6e38b4690842
-R 67ef9465051c6a15a8474ed69b1e156e
+P ceebcdcaf1acf409b77b4cc2903b4570001f098a
+R bcfcf6f48c85e4fa706276f8ed169192
 U drh
-Z 9742934aff6856eb16d7b29615a17978
+Z 88c6067bf128a26cfad7d97b15ea7137
