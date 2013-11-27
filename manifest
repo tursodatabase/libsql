@@ -1,5 +1,5 @@
-C Add\sadditional\stest\scases\sand\srequirements\sevidence\smarks\sfor\sWITHOUT\sROWID.
-D 2013-11-27T00:45:49.889
+C Add\sadditional\stest\scases\sfor\sskip-scan.
+D 2013-11-27T01:23:53.318
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -808,6 +808,7 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test 6bb4891c2cc5efd5690a9da9e7508e53d4a68e10
+F test/skipscan2.test c1e21a19ec8fa3674e9ccd0475f20ef82c275838
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1144,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0978bac6b8aee229d7a0d148546f50d380d06a06
-R c5e238577bf88ba62aaf207d6ba68ed5
+P b408d788105efd007e3546f45d5dd15a5dc5688d
+R d4fd41c1f94c9f73ab9606b0e58d8a6b
 U drh
-Z 6729df1882fbf26a3a642e6e52bb3ce5
+Z 5fe0b4019eaac7439aed9d81168a0a2a
