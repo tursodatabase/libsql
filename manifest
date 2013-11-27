@@ -1,5 +1,5 @@
-C Add\sadditional\stest\scases\sfor\sskip-scan.
-D 2013-11-27T01:23:53.318
+C Avoid\susing\sthe\sGetVersionEx\sfunctions\sif\sthey\sare\sconsidered\sdeprecated.
+D 2013-11-27T04:00:32.164
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
-F src/os_win.c cb3f26205ea785a63ea5bdc21a9c9f9ae3972d0f
+F src/os_win.c 4323dd0bac4f7a7037fc4cf87fb4692d17f0b108
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b408d788105efd007e3546f45d5dd15a5dc5688d
-R d4fd41c1f94c9f73ab9606b0e58d8a6b
-U drh
-Z 5fe0b4019eaac7439aed9d81168a0a2a
+P 1ae4915d4d08ee5ce526c04d1d0cda1078641793 0ea9e4722be10221c99cce5bc48d13c7b34e739f
+R 1408bb35546f8304605f0cd70b3a2cef
+U mistachkin
+Z 11a83dbec42d946c53dc2adfcd9de746
