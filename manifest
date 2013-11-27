@@ -1,5 +1,5 @@
-C Update\sdocumentation\sof\ssqlite3_column()\sfor\sclarity.\s\sUpdate\sevidence\smarks\non\stest\scases.
-D 2013-11-27T19:17:49.817
+C Remove\sunnecessary\slocal\svariables\sfrom\ssqlite3VdbeExec()\sin\sorder\sto\nreduce\sstack-space\srequirements\sof\sthat\sroutine.
+D 2013-11-27T21:07:03.594
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c cbe054290f780fcd472b89d701c7404c51ec9684
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c c2b3cd6baddb224a2f155e410ca69f74e6efc671
+F src/vdbe.c 54894fde8dc806d259e015ac7c9680145e725835
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ae90300e8e3221c208343e5e0d5e5f2381f38107
-R b6ce75ba6132c1ec93bb8b6dc747cf97
+P ec2d47a1db2349d5c9b4fe465506e0e347f77921
+R 7567a16f49e2bdddacaa25bcadbc50b4
 U drh
-Z 0aae2730740447c74aeda3d2db2e7487
+Z d833492813320be0733490cbebae9751
