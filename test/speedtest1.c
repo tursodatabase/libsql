@@ -122,8 +122,8 @@ static int integerValue(const char *zArg){
       break;
     }
   }
-  if( v>=2147483648 ) fatal_error("parameter to large - max 2147483648");
-  return isNeg? -v : v;
+  if( v>0x7fffffff ) fatal_error("parameter to large - max 2147483648");
+  return (int)(isNeg? -v : v);
 }
 
 /* Return the current wall-clock time, in milliseconds */
@@ -256,8 +256,8 @@ void speedtest1_begin_test(int iTestNum, const char *zTestName, ...){
   sqlite3_free(zName);
   g.nResult = 0;
   g.iStart = speedtest1_timestamp();
-  g.x = 2903710987;
-  g.y = 1157229256;
+  g.x = 0xad131d0b;
+  g.y = 0x44f9eac8;
 }
 
 /* Complete a test case */
