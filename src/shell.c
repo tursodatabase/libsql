@@ -2096,7 +2096,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       */
       p->mode = MODE_Explain;
       p->showHeader = 1;
-      memset(p->colWidth,0,ArraySize(p->colWidth));
+      memset(p->colWidth,0,sizeof(p->colWidth));
       p->colWidth[0] = 4;                  /* addr */
       p->colWidth[1] = 13;                 /* opcode */
       p->colWidth[2] = 4;                  /* P1 */

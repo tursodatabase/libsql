@@ -1,5 +1,5 @@
-C Lower\sthe\sthreshold\sfor\susing\sskip-scan\sfrom\s50\sto\s18,\sbased\son\sexperiments\nthat\sshow\sthat\s18\sis\sthe\sapproximate\sbreak-even\spoint\sfor\sa\svariety\sof\nschemas.
-D 2013-11-27T04:22:27.199
+C Make\ssure\sthe\scolWidth\sarray\sis\scorrectly\sinitialized\sin\sthe\s".explain"\ncommand\sof\sthe\sshell.
+D 2013-11-27T13:24:18.470
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
-F src/shell.c c4d06a9238a515ff4bc86b8626139633c09a00a2
+F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
 F src/sqlite.h.in a8328969be639b6cd8d9225ed2a51d9d624fff5f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P afdca29966805ed0d49fd61a161eb3a3919b5963
-R 7f77bcc3aede19c7431a578762bf35fa
+P 83c0bb9913838d18ba355033afde6e38b4690842
+R 67ef9465051c6a15a8474ed69b1e156e
 U drh
-Z 4656cf413e484f30bbac5ec324b067a0
+Z 9742934aff6856eb16d7b29615a17978
