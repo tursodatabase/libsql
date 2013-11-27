@@ -122,7 +122,7 @@ static int integerValue(const char *zArg){
       break;
     }
   }
-  if( v>0x7fffffff ) fatal_error("parameter to large - max 2147483648");
+  if( v>0x7fffffff ) fatal_error("parameter too large - max 2147483648");
   return (int)(isNeg? -v : v);
 }
 
