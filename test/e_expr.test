@@ -1407,10 +1407,12 @@ do_test e_expr-26.1.6 { set ::evalcount } {5}
 #-------------------------------------------------------------------------
 # Test statements related to CAST expressions.
 #
-# EVIDENCE-OF: R-65079-31758 Application of a CAST expression is
-# different to application of a column affinity, as with a CAST
-# expression the storage class conversion is forced even if it is lossy
-# and irrreversible.
+# EVIDENCE-OF: R-20854-17109 A CAST conversion is similar to the
+# conversion that takes place when a column affinity is applied to a
+# value except that with the CAST operator the conversion always takes
+# place even if the conversion lossy and irreversible, whereas column
+# affinity only changes the data type of a value if the change is
+# lossless and reversible.
 #
 do_execsql_test e_expr-27.1.1 {
   CREATE TABLE t3(a TEXT, b REAL, c INTEGER);
@@ -1594,8 +1596,9 @@ do_expr_test e_expr-30.4.1 { CAST('' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.2 { CAST('not a number' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.3 { CAST('XXI' AS INTEGER) } integer 0
 
-# EVIDENCE-OF: R-00741-38776 A cast of a REAL value into an INTEGER will
-# truncate the fractional part of the REAL.
+# EVIDENCE-OF: R-02752-50091 A cast of a REAL value into an INTEGER
+# results in the integer between the REAL value and zero that is closest
+# to the REAL value.
 #
 do_expr_test e_expr-31.1.1 { CAST(3.14159 AS INTEGER) } integer 3
 do_expr_test e_expr-31.1.2 { CAST(1.99999 AS INTEGER) } integer 1

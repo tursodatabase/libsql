@@ -1103,7 +1103,7 @@ do_catchsql_test e_createtable-3.11.5 {
 # EVIDENCE-OF: R-52382-54248 Each table in SQLite may have at most one
 # PRIMARY KEY.
 # 
-# EVIDENCE-OF: R-62315-57691 An error is rasied if more than one PRIMARY
+# EVIDENCE-OF: R-31826-01813 An error is raised if more than one PRIMARY
 # KEY clause appears in a CREATE TABLE statement.
 #
 #     To test the two above, show that zero primary keys is Ok, one primary

@@ -1,5 +1,5 @@
-C Fix\sspelling\stypo\sin\sspeedtest1.exe.
-D 2013-11-27T18:00:20.146
+C Update\sdocumentation\sof\ssqlite3_column()\sfor\sclarity.\s\sUpdate\sevidence\smarks\non\stest\scases.
+D 2013-11-27T19:17:49.817
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
-F src/sqlite.h.in a8328969be639b6cd8d9225ed2a51d9d624fff5f
+F src/sqlite.h.in af7f4349f939c40848bdfa217855d0bb88f3a581
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 9d586cb37572cd9e0a48242d449c6a69c2e74e72
@@ -433,11 +433,11 @@ F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 44028aaf161a5e80a2f229622b3a174d3b352810
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test a4561b93062e651d6def99c9e6956969dbf3754c
+F test/e_createtable.test ee95d48664503d40f6cc9ef4a7d03216188e2ada
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
-F test/e_expr.test a9f7c084ea3648003bcc40dd50861af5d2341fc1
+F test/e_expr.test 5c71d183fbf519a4769fd2e2124afdc70b5b1f42
 F test/e_fkey.test d83a04478bb9c02d2c513518548a69f818869f41
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 1e44f84d2abe44d66e4fbf198be4b20e3cc724a0
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c75f561f337a56c14335366ed9990e44bc9fc594
-R 8fc0b17785407e52a1dbc354b6661932
-U mistachkin
-Z 8afea8796306e0cb7f61a719616561e8
+P ae90300e8e3221c208343e5e0d5e5f2381f38107
+R b6ce75ba6132c1ec93bb8b6dc747cf97
+U drh
+Z 0aae2730740447c74aeda3d2db2e7487
