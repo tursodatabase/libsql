@@ -1,5 +1,5 @@
-C Make\ssure\sthe\supdate\shook\sis\snot\sinvoked\sfor\sWITHOUT\sROWID\stables,\sas\nthe\sdocumentation\sspecifies.\s\sThis\sbug\swas\sfound\swhile\sadding\srequirements\nmarks,\sso\sa\sfew\sextraneous\srequirements\smarks\sare\sincluded\sin\sthis\ncheck-in.
-D 2013-11-26T23:27:07.055
+C Add\sadditional\stest\scases\sand\srequirements\sevidence\smarks\sfor\sWITHOUT\sROWID.
+D 2013-11-27T00:45:49.889
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -587,7 +587,7 @@ F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/hook.test 8b24a1a8a1ddf0883c6824825e7577f2636918dc
+F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -643,7 +643,7 @@ F test/jrnlmode.test 9ee3a78f53d52cca737db69293d15dc41c0cbd36
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
-F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
+F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 935fb4f608e3ea126891496a6e99b9468372bf5c
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
@@ -756,7 +756,7 @@ F test/releasetest.tcl 06d289d8255794073a58d2850742f627924545ce
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
-F test/rowid.test f777404492adb0e00868fd706a3721328fd3af48
+F test/rowid.test b78b30afb9537a73788ca1233a23a32190a3bb1f
 F test/rtree.test 0c8d9dd458d6824e59683c19ab2ffa9ef946f798
 F test/run-wordcount.sh 891e89c4c2d16e629cd45951d4ed899ad12afc09
 F test/savepoint.test 6c53f76dffe5df0dd87646efe3e7aa159c36e07b
@@ -1091,6 +1091,7 @@ F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
 F test/without_rowid4.test 4e08bcbaee0399f35d58b5581881e7a6243d458a
+F test/without_rowid5.test b4a639a367f04d382d20e8f44fc1be4f2d57d107
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test 209d7ed441f44cc5299e4ebffbef06fd5aabfefd
@@ -1143,7 +1144,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 838654e56304a5788ac384ca506c1938f48af488
-R e178483a3ba4d2f533907e57553db5a6
+P 0978bac6b8aee229d7a0d148546f50d380d06a06
+R c5e238577bf88ba62aaf207d6ba68ed5
 U drh
-Z 51c7e3abc8471c6679ba39e030a2dca2
+Z 6729df1882fbf26a3a642e6e52bb3ce5
