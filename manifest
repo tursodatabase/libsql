@@ -1,5 +1,5 @@
-C Remove\san\sassert()\scondition\sthat\smay\snot\sbe\strue\sif\sthe\sdatabase\sfile\sis\scorrupt.\sUpdate\sa\stest\scase\sin\scorruptC.test.
-D 2013-11-28T14:14:31.361
+C Update\sa\sfew\stest\scases\sto\saccount\sfor\sthe\snew\serror\smessage\sformats.
+D 2013-11-28T19:28:00.296
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -470,7 +470,7 @@ F test/fkey4.test 86446017011273aad8f9a99c1a65019e7bd9ca9d
 F test/fkey5.test 8a1fde4e7721ae00b05b3178888833726ca2df8d
 F test/fkey6.test abb59f866c1b44926fd02d1fdd217d831fe04f48
 F test/fkey7.test e31d0e71a41c1d29349a16448d6c420e2c53a8fc
-F test/fkey_malloc.test bb74c9cb8f8fceed03b58f8a7ef2df98520bbd51
+F test/fkey_malloc.test 594a7ea1fbab553c036c70813cd8bd9407d63749
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts-9fd058691.test 78b887e30ae6816df0e1fed6259de4b5a64ad33c
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -624,7 +624,7 @@ F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test dfe9a67a94b0b2d8f70545ba1a6cca10780d71cc
 F test/intpkey.test 7506090fc08e028712a8bf47e5f54111947e3844
 F test/io.test 3a7abcef18727cc0f2399e04b0e8903eccae50f8
-F test/ioerr.test 40bb2cfcab63fb6aa7424cd97812a84bc16b5fb8
+F test/ioerr.test 2a24bd6ed5a8b062e64bfe1f6cf94fb25e92210d
 F test/ioerr2.test 9d71166f8466eda510f1af6137bdabaa82b5408d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
@@ -989,7 +989,7 @@ F test/tpch01.test 8f4ac52f62f3e9f6bce0889105aecdf0275e331b
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
 F test/trace2.test e7a988fdd982cdec62f1f1f34b0360e6476d01a0
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
-F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
+F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
 F test/transitive1.test 03f532954f46cdf5608f7766bff0b0c52bf2a7cd
 F test/trigger1.test dc47573ac79ffe0ee3eecaa517d70d8dacbccd03
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c3b7a0e61f4ad690a56ece1d348a3ef74ab300fe
-R 21ad128f70c76813a75560c386843590
+P 0bcf75516f59e49536f9e5c5cd542058ab61e2fc
+R 6e7556e59872b6a951f274edf04e3ab4
 U dan
-Z 0b43b2d8a9067c8c1c1e6108e2a66815
+Z 028b27b689b89b3e9fc267cb7f1e10e7
