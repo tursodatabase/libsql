@@ -3114,7 +3114,6 @@ int sqlite3VdbeRecordCompare(
   d1 = szHdr1;
   assert( pKeyInfo->nField+pKeyInfo->nXField>=pPKey2->nField );
   assert( pKeyInfo->aSortOrder!=0 );
-  assert( idx1<szHdr1 && i<pPKey2->nField );
   do{
     u32 serial_type1;
 

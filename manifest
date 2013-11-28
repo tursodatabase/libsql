@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sin\stemptrigger.test\sso\sthat\sit\sworks\sin\sauto-vacuum\smode.
-D 2013-11-28T06:17:56.598
+C Remove\san\sassert()\scondition\sthat\smay\snot\sbe\strue\sif\sthe\sdatabase\sfile\sis\scorrupt.\sUpdate\sa\stest\scase\sin\scorruptC.test.
+D 2013-11-28T14:14:31.361
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/vdbe.c 54894fde8dc806d259e015ac7c9680145e725835
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c a880c3c7d7c58543574ff7c96feddc5a1deaeae2
+F src/vdbeaux.c 91438d61d807e738c876c902bf93911294fa4e9c
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c af650c2019dc197f062440cdb4650b7204e648bf
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -401,7 +401,7 @@ F test/corrupt8.test 48eb37ffb9a03bceada62219e2bd4c92f4b0cb75
 F test/corrupt9.test 959179e68dc0b7b99f424cf3e0381c86dcdd0112
 F test/corruptA.test fafa652aa585753be4f6b62ff0bb250266eaf7ce
 F test/corruptB.test 20d4a20cbed23958888c3e8995b424a47223d647
-F test/corruptC.test 62a767fe64acb1975f58cc6171192839c783edbb
+F test/corruptC.test b497c185822c6042d48e2397bbb61b6afa9145f2
 F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
 F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
 F test/corruptF.test 1c7b6f77cf3f237fb7fbb5b61d6c921fd4c7b993
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 81891288d9f281cf2ceb4cd701c0c3231b1bab19
-R e5054da8ef1fdd961404f7ffc7aa7a5a
+P c3b7a0e61f4ad690a56ece1d348a3ef74ab300fe
+R 21ad128f70c76813a75560c386843590
 U dan
-Z 17d1dc6a3f28e852709091d44bbd59ab
+Z 0b43b2d8a9067c8c1c1e6108e2a66815
