@@ -2583,14 +2583,15 @@ struct Sqlite3Config {
 **
 ** One writes:
 **
-**     assert( X || CORRUPTIBLE );
+**     assert( X || CORRUPT_DB );
 **
-** CORRUPTIBLE is true during normal operation.  But for many test cases,
-** it is set to false using a sqlite3_test_control().  This enables assert()
-** statements to prove things that are always true for well-formed
-** databases.
+** CORRUPT_DB is true during normal operation.  CORRUPT_DB does not indicate
+** that the database is definitely corrupt, only that it might be corrupt.
+** For most test cases, CORRUPT_DB is set to false using a special
+** sqlite3_test_control().  This enables assert() statements to prove
+** things that are always true for well-formed databases.
 */
-#define CORRUPTIBLE  (sqlite3Config.neverCorrupt==0)
+#define CORRUPT_DB  (sqlite3Config.neverCorrupt==0)
 
 /*
 ** Context pointer passed down through the tree-walk.

@@ -1,5 +1,5 @@
-C Add\sa\snew\ssqlite3_test_control()\sthat\sindicates\sthat\sdatabase\sfiles\sare\nalways\swell-formed.\s\sUse\sthis\sduring\stesting\sto\senable\sassert()\sstatements\nthat\sprove\sconditions\sthat\sare\salways\strue\sfor\swell-formed\sdatabases.
-D 2013-11-29T15:06:27.785
+C Change\sthe\sname\sof\sthe\sCORRUPTIBLE\smacro\sto\sCORRUPT_DB.
+D 2013-11-29T15:39:36.814
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
 F src/sqlite.h.in baf55c31c4e15a4b626acfeaa792f2aaa566657f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h c26e4cde71fd6dbe34b708f2abd2f6436ce191bf
+F src/sqliteInt.h f3a5d663fe9c6c0b2ee7fc2e20a6204eaea5bc7c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -284,7 +284,7 @@ F src/vdbe.c 54894fde8dc806d259e015ac7c9680145e725835
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 28a791e1694018f7143c349b154b78237f0ea1fb
+F src/vdbeaux.c 5b58b242afe50f6bae77da1c1e26330af32e51c7
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c af650c2019dc197f062440cdb4650b7204e648bf
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 65a5bce3ffb656a43a2e5d2308a4bc67497105de
-R e2c54e83c6d9de52db2502c5f23f4d01
+P 15e4f63d1f3cbcd0aa789fd3e460cd6e4d3338f9
+R 962cc490e8fc3a8042a30112d4f3290d
 U drh
-Z 79de7aa38f99c75e5cc2a8b158cbdc48
+Z d6583fce3162aa40a5f7e6ad518960af
