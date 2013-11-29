@@ -1886,5 +1886,11 @@ set AUTOVACUUM $sqlite_options(default_autovacuum)
 # Make sure the FTS enhanced query syntax is disabled.
 set sqlite_fts3_enable_parentheses 0
 
+# During testing, assume that all database files are well-formed.  The
+# few test cases that deliberately corrupt database files should rescind 
+# this setting by invoking "database_can_be_corrupt"
+#
+database_never_corrupt
+
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl

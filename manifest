@@ -1,5 +1,5 @@
-C Update\sa\sfew\stest\scases\sto\saccount\sfor\sthe\snew\serror\smessage\sformats.
-D 2013-11-28T19:28:00.296
+C Add\sa\snew\ssqlite3_test_control()\sthat\sindicates\sthat\sdatabase\sfiles\sare\nalways\swell-formed.\s\sUse\sthis\sduring\stesting\sto\senable\sassert()\sstatements\nthat\sprove\sconditions\sthat\sare\salways\strue\sfor\swell-formed\sdatabases.
+D 2013-11-29T15:06:27.785
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c ef30d26ae4d79bbc7300c74e77fd117a0ba30235
-F src/global.c 5caf4deab621abb45b4c607aad1bd21c20aac759
+F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -188,7 +188,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 441a2e106d0e2913fec47e5f13d5802c742e32bb
+F src/main.c 74bdee8f574588868e67c25cd377df7cba80102e
 F src/malloc.c 543a8eb5508eaf4cadf55a9b503379eba2088128
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -221,15 +221,15 @@ F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
-F src/sqlite.h.in af7f4349f939c40848bdfa217855d0bb88f3a581
+F src/sqlite.h.in baf55c31c4e15a4b626acfeaa792f2aaa566657f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 9d586cb37572cd9e0a48242d449c6a69c2e74e72
+F src/sqliteInt.h c26e4cde71fd6dbe34b708f2abd2f6436ce191bf
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 651b10698c87bbc3ae5772e2491e3444c5bbf153
-F src/test1.c 5757066e503a8ed51313cb3a5d9bcdcced2991a9
+F src/test1.c 760e0419705f712d80595f47199568cd7e3b57a4
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -284,7 +284,7 @@ F src/vdbe.c 54894fde8dc806d259e015ac7c9680145e725835
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 91438d61d807e738c876c902bf93911294fa4e9c
+F src/vdbeaux.c 28a791e1694018f7143c349b154b78237f0ea1fb
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c af650c2019dc197f062440cdb4650b7204e648bf
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -390,22 +390,22 @@ F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
 F test/conflict2.test 3ed0b6ec3c2cb8acebbc89677ea0e58c01aaa1ff
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
-F test/corrupt.test 4aabd06cff3fe759e3e658bcc17b71789710665e
-F test/corrupt2.test 9c0ab4becd50e9050bc1ebb8675456a4e5587bf0
-F test/corrupt3.test 889d7cdb811800303aa722d7813fe8a4299cf726
-F test/corrupt4.test b963f9e01e0f92d15c76fb0747876fd4b96dc30a
-F test/corrupt5.test c23da7bfb20917cc7fdbb13ee25c7cc4e9fffeff
-F test/corrupt6.test 4e4161aef1f30b9f34582bb4142334b7f47eacae
-F test/corrupt7.test a90caf89c7d7cb7893ea4d92529bd0c129317ee4
-F test/corrupt8.test 48eb37ffb9a03bceada62219e2bd4c92f4b0cb75
-F test/corrupt9.test 959179e68dc0b7b99f424cf3e0381c86dcdd0112
-F test/corruptA.test fafa652aa585753be4f6b62ff0bb250266eaf7ce
-F test/corruptB.test 20d4a20cbed23958888c3e8995b424a47223d647
-F test/corruptC.test b497c185822c6042d48e2397bbb61b6afa9145f2
-F test/corruptD.test 3b09903a2e2fe07ecafe775fea94177f8a4bb34f
-F test/corruptE.test d3a3d7e864a95978195741744dda4abfd8286018
-F test/corruptF.test 1c7b6f77cf3f237fb7fbb5b61d6c921fd4c7b993
-F test/corruptG.test c67fd860e9e3943bc90b856a3049c9a28827167e
+F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
+F test/corrupt2.test f2064e0bf934124cc38868fd8badb8f0dd67b552
+F test/corrupt3.test 4b548d0bbe2933bc81d3f54099a05fc4d28aff18
+F test/corrupt4.test b99652079d542b21f4965f6248703b983e40fe80
+F test/corrupt5.test 8ead52af76006f3286e9396cb41898018ccea107
+F test/corrupt6.test 269548d19427ac554c830763b1c5ea54a0252f80
+F test/corrupt7.test 22cc644c2e76c9804bc844121267aa6f8f7c0ded
+F test/corrupt8.test 2399dfe40d2c0c63af86706e30f3e6302a8d0516
+F test/corrupt9.test 730a3db08d4ab9aa43392ea30d9c2b4879cbff85
+F test/corruptA.test 53e56dafd180addcdadb402244b8cb9771d2ba26
+F test/corruptB.test 73a8d6c0b9833697ecf16b63e3c5c05c945b5dec
+F test/corruptC.test 02405cf7ed0c1e989060e1aab6d02ffbc3906fbb
+F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
+F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
+F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
+F test/corruptG.test c150f156dace653c00a121ad0f5772a0568c41ba
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -840,7 +840,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl bce6b929932498383ce92431da6a96432c690bf7
+F test/tester.tcl 2a7cce4abf404557c09323a84a2444b189835d0f
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0bcf75516f59e49536f9e5c5cd542058ab61e2fc
-R 6e7556e59872b6a951f274edf04e3ab4
-U dan
-Z 028b27b689b89b3e9fc267cb7f1e10e7
+P 65a5bce3ffb656a43a2e5d2308a4bc67497105de
+R e2c54e83c6d9de52db2502c5f23f4d01
+U drh
+Z 79de7aa38f99c75e5cc2a8b158cbdc48

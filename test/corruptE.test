@@ -24,6 +24,10 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 # Do not run the tests in this file if ENABLE_OVERSIZE_CELL_CHECK is on.
 #
 ifcapable oversize_cell_check {

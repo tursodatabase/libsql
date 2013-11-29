@@ -2538,6 +2538,7 @@ struct Sqlite3Config {
   int bOpenUri;                     /* True to interpret filenames as URIs */
   int bUseCis;                      /* Use covering indices for full-scans */
   int mxStrlen;                     /* Maximum string length */
+  int neverCorrupt;                 /* Database is always well-formed */
   int szLookaside;                  /* Default lookaside buffer size */
   int nLookaside;                   /* Default lookaside buffer count */
   sqlite3_mem_methods m;            /* Low-level memory allocation interface */
@@ -2573,6 +2574,23 @@ struct Sqlite3Config {
   void *pSqllogArg;
 #endif
 };
+
+/*
+** This macro is used inside of assert() statements to indicate that
+** the assert is only valid on a well-formed database.  Instead of:
+**
+**     assert( X );
+**
+** One writes:
+**
+**     assert( X || CORRUPTIBLE );
+**
+** CORRUPTIBLE is true during normal operation.  But for many test cases,
+** it is set to false using a sqlite3_test_control().  This enables assert()
+** statements to prove things that are always true for well-formed
+** databases.
+*/
+#define CORRUPTIBLE  (sqlite3Config.neverCorrupt==0)
 
 /*
 ** Context pointer passed down through the tree-walk.

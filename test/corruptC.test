@@ -27,6 +27,10 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 # Construct a compact, dense database for testing.
 #
 do_test corruptC-1.1 {
