@@ -694,6 +694,10 @@ static int btreeMoveto(
     );
     if( pIdxKey==0 ) return SQLITE_NOMEM;
     sqlite3VdbeRecordUnpack(pCur->pKeyInfo, (int)nKey, pKey, pIdxKey);
+    if( pIdxKey->nField==0 ){
+      sqlite3DbFree(pCur->pKeyInfo->db, pFree);
+      return SQLITE_CORRUPT_BKPT;
+    }
   }else{
     pIdxKey = 0;
   }
