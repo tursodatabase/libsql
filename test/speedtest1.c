@@ -79,6 +79,12 @@ static int hexDigitValue(char c){
   return -1;
 }
 
+/* Provide an alternative to sqlite3_stricmp() in older versions of
+** SQLite */
+#if SQLITE_VERSION_NUMBER<3007011
+# define sqlite3_stricmp strcmp
+#endif
+
 /*
 ** Interpret zArg as an integer value, possibly with suffixes.
 */
@@ -131,7 +137,7 @@ sqlite3_int64 speedtest1_timestamp(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
-  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
   }else{
     double r;
@@ -898,6 +904,7 @@ int main(int argc, char **argv){
 
   /* Database connection statistics printed after both prepared statements
   ** have been finalized */
+#if SQLITE_VERSION_NUMBER>=3007009
   if( showStats ){
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHi, 0);
     printf("-- Lookaside Slots Used:        %d (max %d)\n", iCur,iHi);
@@ -920,6 +927,7 @@ int main(int argc, char **argv){
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHi, 0);
     printf("-- Statement Heap Usage:        %d bytes\n", iCur); 
   }
+#endif
 
   sqlite3_close(g.db);
 
