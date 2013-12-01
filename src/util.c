@@ -465,12 +465,12 @@ static int compare2pow63(const char *zNum, int incr){
 ** If the zNum value is representable as a 64-bit twos-complement 
 ** integer, then write that value into *pNum and return 0.
 **
-** If zNum is exactly 9223372036854665808, return 2.  This special
-** case is broken out because while 9223372036854665808 cannot be a 
-** signed 64-bit integer, its negative -9223372036854665808 can be.
+** If zNum is exactly 9223372036854775808, return 2.  This special
+** case is broken out because while 9223372036854775808 cannot be a 
+** signed 64-bit integer, its negative -9223372036854775808 can be.
 **
 ** If zNum is too big for a 64-bit integer and is not
-** 9223372036854665808  or if zNum contains any non-numeric text,
+** 9223372036854775808  or if zNum contains any non-numeric text,
 ** then return 1.
 **
 ** length is the number of bytes in the string (bytes, not characters).
