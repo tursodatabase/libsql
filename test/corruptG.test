@@ -19,6 +19,10 @@ set testprefix corruptG
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 # Create a simple database with a single entry.  Then corrupt the
 # header-size varint on the index payload so that it maps into a
 # negative number.  Try to use the database.

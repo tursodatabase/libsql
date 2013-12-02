@@ -5454,6 +5454,37 @@ static int reset_prng_state(
 }
 
 /*
+** tclcmd:  database_may_be_corrupt
+**
+** Indicate that database files might be corrupt.  In other words, set the normal
+** state of operation.
+*/
+static int database_may_be_corrupt(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, 0);
+  return TCL_OK;
+}
+/*
+** tclcmd:  database_never_corrupt
+**
+** Indicate that database files are always well-formed.  This enables extra assert()
+** statements that test conditions that are always true for well-formed databases.
+*/
+static int database_never_corrupt(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, 1);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  pcache_stats
 */
 static int test_pcache_stats(
@@ -6331,6 +6362,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
+     { "database_never_corrupt",        database_never_corrupt, 0},
+     { "database_may_be_corrupt",       database_may_be_corrupt, 0},
      { "optimization_control",          optimization_control,0},
 #if SQLITE_OS_WIN
      { "lock_win32_file",               win32_file_lock,    0 },

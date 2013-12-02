@@ -3317,6 +3317,19 @@ int sqlite3_test_control(int op, ...){
     }
 #endif
 
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, int);
+    **
+    ** Set or clear a flag that indicates that the database file is always well-
+    ** formed and never corrupt.  This flag is clear by default, indicating that
+    ** database files might have arbitrary corruption.  Setting the flag during
+    ** testing causes certain assert() statements in the code to be activated
+    ** that demonstrat invariants on well-formed database files.
+    */
+    case SQLITE_TESTCTRL_NEVER_CORRUPT: {
+      sqlite3Config.neverCorrupt = va_arg(ap, int);
+      break;
+    }
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

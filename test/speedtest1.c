@@ -79,6 +79,12 @@ static int hexDigitValue(char c){
   return -1;
 }
 
+/* Provide an alternative to sqlite3_stricmp() in older versions of
+** SQLite */
+#if SQLITE_VERSION_NUMBER<3007011
+# define sqlite3_stricmp strcmp
+#endif
+
 /*
 ** Interpret zArg as an integer value, possibly with suffixes.
 */
@@ -131,9 +137,12 @@ sqlite3_int64 speedtest1_timestamp(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
-  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+#if SQLITE_VERSION_NUMBER>=3007000
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
-  }else{
+  }else
+#endif
+  {
     double r;
     clockVfs->xCurrentTime(clockVfs, &r);
     t = (sqlite3_int64)(r*86400000.0);
@@ -898,6 +907,7 @@ int main(int argc, char **argv){
 
   /* Database connection statistics printed after both prepared statements
   ** have been finalized */
+#if SQLITE_VERSION_NUMBER>=3007009
   if( showStats ){
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHi, 0);
     printf("-- Lookaside Slots Used:        %d (max %d)\n", iCur,iHi);
@@ -912,14 +922,17 @@ int main(int argc, char **argv){
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHi, 1);
     printf("-- Page cache hits:             %d\n", iCur);
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHi, 1);
-    printf("-- Page cache misses:           %d\n", iCur); 
+    printf("-- Page cache misses:           %d\n", iCur);
+#if SQLITE_VERSION_NUMBER>=3007012
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHi, 1);
     printf("-- Page cache writes:           %d\n", iCur); 
+#endif
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHi, 0);
     printf("-- Schema Heap Usage:           %d bytes\n", iCur); 
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHi, 0);
     printf("-- Statement Heap Usage:        %d bytes\n", iCur); 
   }
+#endif
 
   sqlite3_close(g.db);
 
@@ -928,8 +941,10 @@ int main(int argc, char **argv){
   if( showStats ){
     sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHi, 0);
     printf("-- Memory Used (bytes):         %d (max %d)\n", iCur,iHi);
+#if SQLITE_VERSION_NUMBER>=3007000
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHi, 0);
     printf("-- Outstanding Allocations:     %d (max %d)\n", iCur,iHi);
+#endif
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHi, 0);
     printf("-- Pcache Overflow Bytes:       %d (max %d)\n", iCur,iHi);
     sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHi, 0);
