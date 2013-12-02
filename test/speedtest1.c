@@ -922,9 +922,11 @@ int main(int argc, char **argv){
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHi, 1);
     printf("-- Page cache hits:             %d\n", iCur);
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHi, 1);
-    printf("-- Page cache misses:           %d\n", iCur); 
+    printf("-- Page cache misses:           %d\n", iCur);
+#if SQLITE_VERSION_NUMBER>=3007012
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHi, 1);
     printf("-- Page cache writes:           %d\n", iCur); 
+#endif
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHi, 0);
     printf("-- Schema Heap Usage:           %d bytes\n", iCur); 
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHi, 0);
