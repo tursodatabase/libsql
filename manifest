@@ -1,5 +1,5 @@
-C Add\ssome\s#if\sSQLITE_VERSION_NUMBER\smacros\sto\stest/speedtest1.c\sin\sorder\sto\nmake\sit\scompatible\swith\solder\sversions\sof\sSQLite\sso\sthat\sit\scan\sbe\sused\sfor\nhistorical\sspeed\scomparisons.
-D 2013-12-01T18:10:01.701
+C Still\smore\s#if\sSQLITE_VERSION_NUMBER\smacros\sin\stest/speedtest1.c\sto\senable\ncompilation\sagainst\solder\sversions\sof\sSQLite.
+D 2013-12-02T01:24:05.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -820,7 +820,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c aa1ff125bc9c4b8eb55db2e3cbb82ba76794dedf
+F test/speedtest1.c ae9d739b7ffba4d63086e365753c56561815514c
 F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test c8eccfe8fcd3f3cfc864ce22d5b9e803a3c69940
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c85e0c546ea6c6be46deea5c7a716b5fb553c7b4
-R 3cfbbdfa905179d97133dd917fc5f770
+P a9e1627ae714156cf6bd419e41cf9b79fbbe99a9
+R 84934b6097c3af0a8962d3cfd75d2be6
 U drh
-Z aec8d6f2ae39d50473657768f7788a16
+Z a36aa806db8ddb60dca1807195d9ce52

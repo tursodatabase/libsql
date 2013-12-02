@@ -137,9 +137,12 @@ sqlite3_int64 speedtest1_timestamp(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
+#if SQLITE_VERSION_NUMBER>=3007000
   if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
-  }else{
+  }else
+#endif
+  {
     double r;
     clockVfs->xCurrentTime(clockVfs, &r);
     t = (sqlite3_int64)(r*86400000.0);
@@ -936,8 +939,10 @@ int main(int argc, char **argv){
   if( showStats ){
     sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHi, 0);
     printf("-- Memory Used (bytes):         %d (max %d)\n", iCur,iHi);
+#if SQLITE_VERSION_NUMBER>=3007000
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHi, 0);
     printf("-- Outstanding Allocations:     %d (max %d)\n", iCur,iHi);
+#endif
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHi, 0);
     printf("-- Pcache Overflow Bytes:       %d (max %d)\n", iCur,iHi);
     sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHi, 0);
