@@ -1,5 +1,5 @@
-C Modify\stest\sfile\sconflict2.test\sso\sthat\sit\sworks\swith\sthe\s"inmemory_journal"\spermutation.
-D 2013-12-03T10:35:00.119
+C Fix\sa\stypo\sin\sfts3varint.test\spreventing\sthe\svalgrind\spermutation\stest\sfrom\srunning.
+D 2013-12-03T17:09:53.190
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -559,7 +559,7 @@ F test/fts3snippet.test d524af6bcef4714e059ef559113dbdc924cd33d1
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test b10d0a12a0ab5f905cea1200b745de233f37443f
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
-F test/fts3varint.test 23e79002ebebd6fbb1235504f7acb087b0fea741
+F test/fts3varint.test 752c08ed5d32c5d7dc211b056f4ed68a76b7e36e
 F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 72f972771457b8c8d9f859238d6a72b43f41d2c3
-R 020474fd63af79df89a67b479d50bb6b
+P e4164fd8f75ce1c8d63bec70db7049b68208c12c
+R 5dd75e0d17034f1dfb570f2b50097682
 U dan
-Z 3e14c48cef582c6bdd39cdd39332c46a
+Z 186cdf231e96bcfce0281b587d69f9f7
