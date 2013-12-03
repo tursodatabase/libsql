@@ -305,6 +305,11 @@ foreach {i conf1 cmd t0 t1 t2 t3 t4} {
  15 {}       {UPDATE OR ABORT}       1 {1 2 3 4}  1 0 1
  16 {}       {UPDATE OR ROLLBACK}    1 {1 2 3 4}  0 0 0
 } {
+
+  # When using in-memory journals, no temporary files are required for
+  # statement journals.
+  if {[permutation] == "inmemory_journal"} { set t4 0 }
+
   if {$t0} {set t1 {UNIQUE constraint failed: t1.a}}
   if {[info exists TEMP_STORE] && $TEMP_STORE==3} {
     set t3 0
