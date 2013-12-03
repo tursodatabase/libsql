@@ -1905,8 +1905,7 @@ static void whereKeyStats(
 #ifndef SQLITE_DEBUG
   UNUSED_PARAMETER( pParse );
 #endif
-  assert( pRec!=0 || pParse->db->mallocFailed );
-  if( pRec==0 ) return;
+  assert( pRec!=0 );
   iCol = pRec->nField - 1;
   assert( pIdx->nSample>0 );
   assert( pRec->nField>0 && iCol<pIdx->nSampleCol );
