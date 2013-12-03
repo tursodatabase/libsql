@@ -1297,7 +1297,6 @@ int sqlite3Stat4ProbeSetValue(
     pVal = valueNew(db, &alloc);
     if( pVal ){
       sqlite3VdbeMemSetNull((Mem*)pVal);
-      *pbOk = 1;
     }
   }else if( pExpr->op==TK_VARIABLE
         || NEVER(pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
@@ -1313,16 +1312,13 @@ int sqlite3Stat4ProbeSetValue(
           sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
         }
         pVal->db = pParse->db;
-        *pbOk = 1;
         sqlite3VdbeMemStoreType((Mem*)pVal);
       }
-    }else{
-      *pbOk = 0;
     }
   }else{
     rc = valueFromExpr(db, pExpr, ENC(db), affinity, &pVal, &alloc);
-    *pbOk = (pVal!=0);
   }
+  *pbOk = (pVal!=0);
 
   assert( pVal==0 || pVal->db==db );
   return rc;

@@ -1,5 +1,5 @@
-C Fix\san\salignment\sproblem\sin\sthe\sstat3/stat4\scode\saffecting\s32-bit\splatforms.
-D 2013-12-03T18:26:56.746
+C Fix\sa\spossible\s(and\sprobably\sharmless)\suninitialized\svariable\sin\sSTAT3/4.
+D 2013-12-03T19:16:06.615
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
 F src/vdbeaux.c 09b79d475f5af2b3b5068f639609d88e0ced9d95
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
-F src/vdbemem.c d9811b08c4cda6f9108b49223aa0d3b07d595eb5
+F src/vdbemem.c 20e349d2ca928802fc8f2d42a2cc488fd6981d3f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b654a4ec729c86c6e94365fb0d3f83c598d4461a
-R 9b643eb26a4f573bb81c9ce75c7a93ef
-U dan
-Z 1aa369240dc90be6769d251ab8ec5acc
+P 14f9bc79014e5762b88b9f0b98f4d47a8092d127
+R a21a54e67ec7aa45fd701d0774acda83
+U drh
+Z 49eaa17223688ae51427734254ac0a7e
