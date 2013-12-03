@@ -1,5 +1,5 @@
-C Remove\sa\sbranch\sin\sSTAT4\slogic\sthat\sis\sno\slonger\sreachable\safter\s\nthe\sprevious\schange.
-D 2013-12-03T19:49:55.482
+C Add\smemory\ssubsystem\srelated\sdefines\sto\sthe\scompile-time\soptions\slist.
+D 2013-12-03T22:32:48.485
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 1965c7b596ca6295b7ca59541ad186c57564b8f7
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
+F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c b36db1f79ee50eaca979660c9dd36437f5410b93
 F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
@@ -1145,7 +1145,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 33ad4f91477907b7b3e5808c7ba11aacc9a83ba6
-R b9a8385eb7153992ed9d3229f4d58e8a
-U drh
-Z 1abf6c68d7a5a613f293f6a4e7a65cb6
+P eca7d3f1612c7a009a9e4ef89f76f9b7e275d1e6
+R 532b42dc23159f7eb49f2139c4b28b74
+T *branch * memTests
+T *sym-memTests *
+T -sym-trunk *
+U mistachkin
+Z 95952b1fd2b9669de1eabdf9cc1c4e34
