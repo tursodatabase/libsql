@@ -162,7 +162,7 @@ RC = rc.exe
 !IFDEF NCC
 NCC = $(NCC:\\=\)
 !ELSEIF $(XCOMPILE)!=0
-NCC = "$(VCINSTALLDIR)\bin\cl.exe"
+NCC = "$(VCINSTALLDIR)\bin\$(CC)"
 NCC = $(NCC:\\=\)
 !ELSE
 NCC = $(CC)

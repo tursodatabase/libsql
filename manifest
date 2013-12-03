@@ -1,9 +1,9 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-12-03T22:33:35.657
+C Make\suse\sof\sthe\sCC\snmake\smacro\seven\swhen\scross-compiling\s(with\sMSVC).
+D 2013-12-03T23:33:29.475
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a6247094079f3ef97dcd7a69d0e13ff718c7073e
+F Makefile.msc bb1f271c8ee9773489c89be00f3f8ad7ed7ae8e0
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 52f7e22bfcec71a462e34194b4ae1671380fde59
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 52a44146dd7c5a7662545042045e23deab302c96
-R 2b3d133e432ced9c3134bb1e5c9a52ed
+P a12d214ecccc5d3372dbcedc88705b0092363971
+R 96895a4eb8660c34d34f5a43c1d0b764
 U mistachkin
-Z c9f1aceb76bb9affc6fd3e7a6bcd7640
+Z 57ab0c18bcd1f41d722261f64b89de43
