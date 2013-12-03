@@ -2790,7 +2790,7 @@ Index *sqlite3CreateIndex(
   const Column *pTabCol;           /* A column in the table */
   int nExtra = 0;                  /* Space allocated for zExtra[] */
   int nExtraCol;                   /* Number of extra columns needed */
-  char *zExtra;                    /* Extra space after the Index object */
+  char *zExtra = 0;                /* Extra space after the Index object */
   Index *pPk = 0;      /* PRIMARY KEY index for WITHOUT ROWID tables */
 
   assert( pParse->nErr==0 );      /* Never called with prior errors */

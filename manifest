@@ -1,5 +1,5 @@
-C Another\s#if\sSQLITE_VERSION_NUMBER\smacro\sin\sspeedtest1.c\sfor\scompatibility\nwith\solder\sversions\sof\sSQLite.
-D 2013-12-02T21:25:40.013
+C Fix\sa\sharmless\scompiler\swarning\son\sMacOS.
+D 2013-12-03T00:11:40.557
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +169,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c fe6c95c57fd14ed4b3329f4b5bb08132fe7c322d
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 07054d45319953e54a89d726e589a423e9c1c590
+F src/build.c 1965c7b596ca6295b7ca59541ad186c57564b8f7
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4b20cf4206ac12975ca9c4ec7ef76aa21bbd734d
-R fc7264469bd7eed8b2c47bd423fccf15
+P bc8eacc7f71413184ef5be1412e51f8fd7174cd1
+R 62604634a0764c5c22be734f75dfcb96
 U drh
-Z f0389d08b87706a34ccfa173cc3d5e77
+Z 14b44bb1d46bbe3c25a7b8e87798f10b
