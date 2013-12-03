@@ -1,5 +1,5 @@
-C Merge\sall\srecent\s3.8.2\sbeta\schanges\sfrom\strunk.
-D 2013-12-02T21:58:19.732
+C Merge\sin\strunk\schanges.
+D 2013-12-03T20:51:33.333
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 06b851f767034811d4f6e159367c453dc28d3925
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c fe6c95c57fd14ed4b3329f4b5bb08132fe7c322d
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 07054d45319953e54a89d726e589a423e9c1c590
+F src/build.c 1965c7b596ca6295b7ca59541ad186c57564b8f7
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
@@ -290,7 +290,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
-F src/update.c 046d7df2a4b3d85442a758f484eb2d40a48b5465
+F src/update.c 4ada523da2d315996296456a8e384f11983a9aa0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c c1d47254d805074226eb68bab2327f2559799d88
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -298,16 +298,16 @@ F src/vdbe.c 9c6fb9ed1b9165427b0fdc812bc9c48c031f77da
 F src/vdbe.h b7bfa7b468fcad2cf1890969fe7459325da00385
 F src/vdbeInt.h 1a5c604f33a5d46c839fee0cab16743aa3e1bc2e
 F src/vdbeapi.c e80d6d9dea792bd823cb64ae05cba446a7b3556a
-F src/vdbeaux.c aad7d1714be08e05999a92f366328173286ecaac
+F src/vdbeaux.c e3228efe9460dccdc92a0ef4f38a7147166226da
 F src/vdbeblob.c a2809461743e0b9dd9be871149ac65e8d2c80c08
-F src/vdbemem.c af650c2019dc197f062440cdb4650b7204e648bf
+F src/vdbemem.c 20e349d2ca928802fc8f2d42a2cc488fd6981d3f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c e0a9909a58eee7dcde1d1bd5cf6381b0dbc83389
+F src/where.c e6a4e713abe6f995495ea53dd6a5e48f88b53883
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -401,7 +401,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 841bcf7cabbfca39c577eb8411ea8601843b46a8
-F test/conflict2.test 3ed0b6ec3c2cb8acebbc89677ea0e58c01aaa1ff
+F test/conflict2.test 0d3af4fb534fa1bd020c79960bb56e4d52655f09
 F test/conflict3.test dec0634c0f31dec9a4b01c63063e939f0cd21b6b
 F test/contrib01.test 2a1cbc0f2f48955d7d073f725765da6fbceda6b4
 F test/corrupt.test 141c39ea650c1365e85a49e402fa05cb9617fb97
@@ -573,7 +573,7 @@ F test/fts3snippet.test d524af6bcef4714e059ef559113dbdc924cd33d1
 F test/fts3sort.test ed34c716a11cc2009a35210e84ad5f9c102362ca
 F test/fts3tok1.test b10d0a12a0ab5f905cea1200b745de233f37443f
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
-F test/fts3varint.test 23e79002ebebd6fbb1235504f7acb087b0fea741
+F test/fts3varint.test 752c08ed5d32c5d7dc211b056f4ed68a76b7e36e
 F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
@@ -595,7 +595,7 @@ F test/func5.test 1435dd313c0bae70d6af089c97a2a997fc5d0e53
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
-F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
+F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
@@ -1160,7 +1160,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3a2a1bd47875e114d8e6f31c1768908f401d2861 bc8eacc7f71413184ef5be1412e51f8fd7174cd1
-R 23fdb9bec4ca7fb51a8c2b5b5649fa63
+P 67c34ccfa9596a923695dc4994ec87b331f8326c eca7d3f1612c7a009a9e4ef89f76f9b7e275d1e6
+R edf2c1b422139b7ed86a96163f4a4748
 U drh
-Z d6ca9769225d05465b3da41409f1cf6b
+Z b6ef0142ade532e078158751859653ef

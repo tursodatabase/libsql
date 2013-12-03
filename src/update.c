@@ -592,11 +592,7 @@ void sqlite3Update(
       sqlite3VdbeChangeP4(v, -1, (char*)pTab, P4_TABLE);
     }
     if( bReplace || chngKey ){
-      if( sqlite3VdbeCurrentAddr(v)==j1+1 ){
-        sqlite3VdbeChangeToNoop(v, j1);
-      }else{
-        sqlite3VdbeJumpHere(v, j1);
-      }
+      sqlite3VdbeJumpHere(v, j1);
     }
 
     if( hasFK ){

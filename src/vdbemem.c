@@ -1016,7 +1016,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
       int i;                      /* Counter variable */
       int nCol = pIdx->nColumn;   /* Number of index columns including rowid */
   
-      nByte = sizeof(Mem) * nCol + sizeof(UnpackedRecord);
+      nByte = sizeof(Mem) * nCol + ROUND8(sizeof(UnpackedRecord));
       pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);
       if( pRec ){
         pRec->pKeyInfo = sqlite3KeyInfoOfIndex(p->pParse, pIdx);
@@ -1024,7 +1024,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
           assert( pRec->pKeyInfo->nField+pRec->pKeyInfo->nXField==nCol );
           assert( pRec->pKeyInfo->enc==ENC(db) );
           pRec->flags = UNPACKED_PREFIX_MATCH;
-          pRec->aMem = (Mem *)&pRec[1];
+          pRec->aMem = (Mem *)((u8*)pRec + ROUND8(sizeof(UnpackedRecord)));
           for(i=0; i<nCol; i++){
             pRec->aMem[i].flags = MEM_Null;
             pRec->aMem[i].type = SQLITE_NULL;
@@ -1078,16 +1078,7 @@ static int valueFromExpr(
     return SQLITE_OK;
   }
   op = pExpr->op;
-
-  /* op can only be TK_REGISTER if we have compiled with SQLITE_ENABLE_STAT4.
-  ** The ifdef here is to enable us to achieve 100% branch test coverage even
-  ** when SQLITE_ENABLE_STAT4 is omitted.
-  */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  if( op==TK_REGISTER ) op = pExpr->op2;
-#else
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
-#endif
 
   /* Handle negative integers in a single step.  This is needed in the
   ** case when the value is -9223372036854775808.
@@ -1306,10 +1297,9 @@ int sqlite3Stat4ProbeSetValue(
     pVal = valueNew(db, &alloc);
     if( pVal ){
       sqlite3VdbeMemSetNull((Mem*)pVal);
-      *pbOk = 1;
     }
   }else if( pExpr->op==TK_VARIABLE
-        || (pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
+        || NEVER(pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
   ){
     Vdbe *v;
     int iBindVar = pExpr->iColumn;
@@ -1322,16 +1312,13 @@ int sqlite3Stat4ProbeSetValue(
           sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
         }
         pVal->db = pParse->db;
-        *pbOk = 1;
         sqlite3VdbeMemStoreType((Mem*)pVal);
       }
-    }else{
-      *pbOk = 0;
     }
   }else{
     rc = valueFromExpr(db, pExpr, ENC(db), affinity, &pVal, &alloc);
-    *pbOk = (pVal!=0);
   }
+  *pbOk = (pVal!=0);
 
   assert( pVal==0 || pVal->db==db );
   return rc;
