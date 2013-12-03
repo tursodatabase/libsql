@@ -579,11 +579,7 @@ void sqlite3Update(
       sqlite3VdbeAddOp2(v, OP_Delete, iDataCur, 0);
     }
     if( bReplace || chngKey ){
-      if( sqlite3VdbeCurrentAddr(v)==j1+1 ){
-        sqlite3VdbeChangeToNoop(v, j1);
-      }else{
-        sqlite3VdbeJumpHere(v, j1);
-      }
+      sqlite3VdbeJumpHere(v, j1);
     }
 
     if( hasFK ){

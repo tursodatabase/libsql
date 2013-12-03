@@ -1,5 +1,5 @@
-C Add\sa\s"database_may_be_corrupt"\sdirective\sto\stest\sfile\sfuzz3.test.\sReformat\san\sassert()\sstatement\sin\svdbeaux.c\sto\smake\sits\sintent\sclearer.
-D 2013-12-03T09:49:52.308
+C Remove\san\sunnecessary\sbranch\sfrom\sthe\sUPDATE\slogic\s-\sone\sthat\swas\salso\nunreachable\sexcept\sfollowing\san\sOOM\son\sx64.
+D 2013-12-03T10:14:28.006
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F src/test_vfstrace.c 34b544e80ba7fb77be15395a609c669df2e660a2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
-F src/update.c c05a0ee658f1a149e0960dfd110f3b8bd846bcb0
+F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c c1d47254d805074226eb68bab2327f2559799d88
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7d99858bec699dface548c77649dfc50e7fb50d8
-R 01634e02d76e60e1c382f3065633e24e
-U dan
-Z 41f50bc12fef31f82fd848dddcf71f30
+P 9d8a0e132163f7adeaabbf6baba119e159addd41
+R b80304a65eb00e702388789b1ac9934c
+U drh
+Z 888bf6726ec80b20bf3ce578518b415f
