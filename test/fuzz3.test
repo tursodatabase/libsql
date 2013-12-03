@@ -18,6 +18,9 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
 
 expr srand(123)
 

@@ -1,5 +1,5 @@
-C Change\ssome\sunreachable\stest\sconditions\sto\sNEVER().
-D 2013-12-03T02:52:11.992
+C Add\sa\s"database_may_be_corrupt"\sdirective\sto\stest\sfile\sfuzz3.test.\sReformat\san\sassert()\sstatement\sin\svdbeaux.c\sto\smake\sits\sintent\sclearer.
+D 2013-12-03T09:49:52.308
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/vdbe.c 54894fde8dc806d259e015ac7c9680145e725835
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c 5b58b242afe50f6bae77da1c1e26330af32e51c7
+F src/vdbeaux.c 09b79d475f5af2b3b5068f639609d88e0ced9d95
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c fed9357c0b79cd707957c28b144f5bf9d7cc6bfc
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -581,7 +581,7 @@ F test/func5.test 1435dd313c0bae70d6af089c97a2a997fc5d0e53
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
-F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
+F test/fuzz3.test efd384b896c647b61a2c1848ba70d42aad60a7b3
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
@@ -1145,7 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 74328de1d720fb35a97b476034406ca17d35ff5f
-R d881184ebe8e40a91ad03d9c9de08f57
-U drh
-Z e99c771249b48673bb69ac05e8b183ed
+P 7d99858bec699dface548c77649dfc50e7fb50d8
+R 01634e02d76e60e1c382f3065633e24e
+U dan
+Z 41f50bc12fef31f82fd848dddcf71f30
