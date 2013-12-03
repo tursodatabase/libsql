@@ -1078,16 +1078,7 @@ static int valueFromExpr(
     return SQLITE_OK;
   }
   op = pExpr->op;
-
-  /* op can only be TK_REGISTER if we have compiled with SQLITE_ENABLE_STAT4.
-  ** The ifdef here is to enable us to achieve 100% branch test coverage even
-  ** when SQLITE_ENABLE_STAT4 is omitted.
-  */
-#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
-  if( op==TK_REGISTER ) op = pExpr->op2;
-#else
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
-#endif
 
   /* Handle negative integers in a single step.  This is needed in the
   ** case when the value is -9223372036854775808.
@@ -1309,7 +1300,7 @@ int sqlite3Stat4ProbeSetValue(
       *pbOk = 1;
     }
   }else if( pExpr->op==TK_VARIABLE
-        || (pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
+        || NEVER(pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
   ){
     Vdbe *v;
     int iBindVar = pExpr->iColumn;
