@@ -1,9 +1,9 @@
-C Fix\stwo\spotential\s(and\sapparently\sharmless)\sshift\soverflows\sdiscovered\sby\nthe\s-fcatch-undefined-behavior\soption\sof\sclang.
-D 2013-12-05T16:41:55.583
+C Fix\sharmless\scompiler\swarnings\sand\simprove\sthe\sMSVC\smakefile.
+D 2013-12-05T17:12:47.544
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc a6247094079f3ef97dcd7a69d0e13ff718c7073e
+F Makefile.msc bb1f271c8ee9773489c89be00f3f8ad7ed7ae8e0
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 52f7e22bfcec71a462e34194b4ae1671380fde59
@@ -172,7 +172,7 @@ F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 1965c7b596ca6295b7ca59541ad186c57564b8f7
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
+F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c b36db1f79ee50eaca979660c9dd36437f5410b93
 F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
@@ -194,7 +194,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
-F src/mem5.c 2221f7e4619619d2df16fcb8a1da2a165ae56d9d
+F src/mem5.c 19d9271cb936742707b6118ed44d779657c7c511
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
 F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
@@ -1145,7 +1145,8 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P eca7d3f1612c7a009a9e4ef89f76f9b7e275d1e6
-R ba7aebdef816e4dde9f2f30108dfb7a9
+P e19eead8c9977ed4f00eac54c5bc7e90db78caa8 aae7b30ebd9601882a02fe8cf46fbf0390ec3fac
+R 39f74301df16683d1c19ab7ca83b6451
+T +closed aae7b30ebd9601882a02fe8cf46fbf0390ec3fac
 U drh
-Z d225deef3eea562cd29618981c6f7c47
+Z b21886c5e68a29fa7489a30bb0f632c3

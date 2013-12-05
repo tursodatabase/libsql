@@ -347,6 +347,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_SOUNDEX
   "SOUNDEX",
 #endif
+#ifdef SQLITE_SYSTEM_MALLOC
+  "SYSTEM_MALLOC",
+#endif
 #ifdef SQLITE_TCL
   "TCL",
 #endif
@@ -361,6 +364,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #ifdef SQLITE_USE_ALLOCA
   "USE_ALLOCA",
+#endif
+#ifdef SQLITE_WIN32_MALLOC
+  "WIN32_MALLOC",
 #endif
 #ifdef SQLITE_ZERO_MALLOC
   "ZERO_MALLOC"
