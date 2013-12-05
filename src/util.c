@@ -1281,6 +1281,8 @@ u64 sqlite3LogEstToInt(LogEst x){
   x /= 10;
   if( n>=5 ) n -= 2;
   else if( n>=1 ) n -= 1;
-  if( x>=3 ) return (n+8)<<(x-3);
+  if( x>=3 ){
+    return x>60 ? (u64)LARGEST_INT64 : (n+8)<<(x-3);
+  }
   return (n+8)>>(3-x);
 }
