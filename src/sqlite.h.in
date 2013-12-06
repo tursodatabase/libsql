@@ -475,6 +475,7 @@ int sqlite3_exec(
 #define SQLITE_IOERR_MMAP              (SQLITE_IOERR | (24<<8))
 #define SQLITE_IOERR_GETTEMPPATH       (SQLITE_IOERR | (25<<8))
 #define SQLITE_IOERR_CONVPATH          (SQLITE_IOERR | (26<<8))
+#define SQLITE_IOERR_NODB              (SQLITE_IOERR | (27<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 #define SQLITE_BUSY_SNAPSHOT           (SQLITE_BUSY   |  (2<<8))
@@ -553,7 +554,9 @@ int sqlite3_exec(
 ** after reboot following a crash or power loss, the only bytes in a
 ** file that were written at the application level might have changed
 ** and that adjacent bytes, even bytes within the same sector are
-** guaranteed to be unchanged.
+** guaranteed to be unchanged.  The SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN
+** and SQLITE_IOCAP_UNMOVABLE_WHEN_OPEN flags indicate that a file 
+** cannot be deleted or renamed when open, respectively.
 */
 #define SQLITE_IOCAP_ATOMIC                 0x00000001
 #define SQLITE_IOCAP_ATOMIC512              0x00000002
@@ -568,6 +571,7 @@ int sqlite3_exec(
 #define SQLITE_IOCAP_SEQUENTIAL             0x00000400
 #define SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN  0x00000800
 #define SQLITE_IOCAP_POWERSAFE_OVERWRITE    0x00001000
+#define SQLITE_IOCAP_UNMOVABLE_WHEN_OPEN    0x00002000
 
 /*
 ** CAPI3REF: File Locking Levels

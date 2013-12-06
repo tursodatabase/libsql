@@ -1,0 +1,33 @@
+# 2013-12-06
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Tests for the SQLITE_IOERR_NODB error condition: the database file file
+# is unlinked or renamed out from under SQLite.
+#
+
+if {$tcl_platform(platform)!="unix"} return
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test pager4-1.1 {
+  CREATE TABLE t1(a,b,c);
+  INSERT INTO t1 VALUES(673,'stone','philips');
+  SELECT * FROM t1;
+} {673 stone philips}
+file delete -force test-xyz.db
+file rename test.db test-xyz.db
+do_catchsql_test pager4-1.2 {
+  SELECT * FROM t1;
+} {1 {disk I/O error}}
+
+
+finish_test

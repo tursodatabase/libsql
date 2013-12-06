@@ -4797,6 +4797,27 @@ int sqlite3PagerOpen(
 }
 
 
+/* Verify that the database file has not be deleted or renamed out from
+** under the pager.  Return SQLITE_OK if the database is still were it ought
+** to be on disk.  Return non-zero (SQLITE_IOERR_NODB or some other error
+** code from sqlite3OsAccess()) if the database has gone missing.
+*/
+static int databaseIsUnmoved(Pager *pPager){
+  const int fixedFlags = SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
+                         SQLITE_IOCAP_UNMOVABLE_WHEN_OPEN;
+  int dc;
+  int x = 0, rc;
+
+  if( pPager->tempFile ) return SQLITE_OK;
+  if( pPager->dbSize==0 ) return SQLITE_OK;
+  assert( pPager->zFilename && pPager->zFilename[0] );
+  dc = sqlite3OsDeviceCharacteristics(pPager->fd);
+  if( (dc&fixedFlags)==fixedFlags ) return SQLITE_OK;
+  rc = sqlite3OsAccess(pPager->pVfs, pPager->zFilename, SQLITE_ACCESS_EXISTS, &x);
+  if( rc==SQLITE_OK && !x ) rc = SQLITE_IOERR_NODB;
+  return rc;
+}
+
 
 /*
 ** This function is called after transitioning from PAGER_UNLOCK to
@@ -4969,6 +4990,10 @@ int sqlite3PagerSharedLock(Pager *pPager){
       assert( pPager->eLock==NO_LOCK || pPager->eLock==UNKNOWN_LOCK );
       goto failed;
     }
+
+    /* Verify that the database is unmoved and undeleted */
+    rc = databaseIsUnmoved(pPager);
+    if( rc ) goto failed;
 
     /* If a journal file exists, and there is no RESERVED lock on the
     ** database file, then it either needs to be played back or deleted.
