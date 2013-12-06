@@ -1,9 +1,9 @@
-C Merge\sin\strunk\schanges.
-D 2013-12-03T20:51:33.333
+C Update\sto\sthe\s3.8.2\srelease.
+D 2013-12-06T15:49:45.770
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 06b851f767034811d4f6e159367c453dc28d3925
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc da7f2a230af6e39b71b2706dbb4c35fff7222a0f
+F Makefile.msc 6a5de96f1aa7295af16da686c8248fea9e0a694c
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 52f7e22bfcec71a462e34194b4ae1671380fde59
@@ -186,7 +186,7 @@ F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 1965c7b596ca6295b7ca59541ad186c57564b8f7
 F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c ea4b7f3623a0fcb1146e7f245d7410033e86859c
+F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 65c34400e401c482501dac5cd14a12621260f6d0
 F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
@@ -208,7 +208,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
-F src/mem5.c 2221f7e4619619d2df16fcb8a1da2a165ae56d9d
+F src/mem5.c 19d9271cb936742707b6118ed44d779657c7c511
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
 F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
@@ -219,7 +219,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 143624d9eabb3b997c59cf594e0d06c56edd43e9
+F src/os_unix.c f076587029285554a3a65d30d0e71d50cd61f41f
 F src/os_win.c 4323dd0bac4f7a7037fc4cf87fb4692d17f0b108
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
@@ -292,7 +292,7 @@ F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
 F src/update.c 4ada523da2d315996296456a8e384f11983a9aa0
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
-F src/util.c c1d47254d805074226eb68bab2327f2559799d88
+F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 9c6fb9ed1b9165427b0fdc812bc9c48c031f77da
 F src/vdbe.h b7bfa7b468fcad2cf1890969fe7459325da00385
@@ -1160,7 +1160,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 67c34ccfa9596a923695dc4994ec87b331f8326c eca7d3f1612c7a009a9e4ef89f76f9b7e275d1e6
-R edf2c1b422139b7ed86a96163f4a4748
+P a2914d6b17358de05eb39f764c0c13d2d4cf8f3b 27392118af4c38c5203a04b8013e1afdb1cebd0d
+R 69ae16677deb75edc22ded28f7bb30e5
 U drh
-Z b6ef0142ade532e078158751859653ef
+Z 5c635bf114a19e035a1d251cc9d8650c

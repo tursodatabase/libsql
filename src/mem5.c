@@ -202,7 +202,7 @@ static void memsys5Leave(void){
 static int memsys5Size(void *p){
   int iSize = 0;
   if( p ){
-    int i = ((u8 *)p-mem5.zPool)/mem5.szAtom;
+    int i = (int)(((u8 *)p-mem5.zPool)/mem5.szAtom);
     assert( i>=0 && i<mem5.nBlock );
     iSize = mem5.szAtom * (1 << (mem5.aCtrl[i]&CTRL_LOGSIZE));
   }
@@ -289,7 +289,7 @@ static void memsys5FreeUnsafe(void *pOld){
   /* Set iBlock to the index of the block pointed to by pOld in 
   ** the array of mem5.szAtom byte blocks pointed to by mem5.zPool.
   */
-  iBlock = ((u8 *)pOld-mem5.zPool)/mem5.szAtom;
+  iBlock = (int)(((u8 *)pOld-mem5.zPool)/mem5.szAtom);
 
   /* Check that the pointer pOld points to a valid, non-free block. */
   assert( iBlock>=0 && iBlock<mem5.nBlock );
