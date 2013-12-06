@@ -4716,9 +4716,7 @@ int sqlite3BtreeMovetoUnpacked(
         ** 2 bytes of the cell.
         */
         nCell = pCell[0];
-        if( nCell<=pPage->max1bytePayload
-         /* && (pCell+nCell)<pPage->aDataEnd */
-        ){
+        if( nCell<=pPage->max1bytePayload ){
           /* This branch runs if the record-size field of the cell is a
           ** single byte varint and the record fits entirely on the main
           ** b-tree page.  */
@@ -4726,7 +4724,6 @@ int sqlite3BtreeMovetoUnpacked(
           c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
         }else if( !(pCell[1] & 0x80) 
           && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
-          /* && (pCell+nCell+2)<=pPage->aDataEnd */
         ){
           /* The record-size field is a 2 byte varint and the record 
           ** fits entirely on the main b-tree page.  */

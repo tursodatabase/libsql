@@ -1,5 +1,5 @@
-C Version\s3.8.2
-D 2013-12-06T14:53:30.888
+C Remove\ssome\scommented-out\scode\sfrom\ssqlite3BtreeMovetoUnpacked()\sto\stry\sto\smake\nit\smore\sreadable.
+D 2013-12-06T22:44:51.968
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c fe6c95c57fd14ed4b3329f4b5bb08132fe7c322d
+F src/btree.c 1c1228bfeff3142c3d30f37f41c62e1e1456a04b
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 1965c7b596ca6295b7ca59541ad186c57564b8f7
@@ -1145,10 +1145,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c632567063d81c4be404ce58cbac0eff7412f565
-R 39f74301df16683d1c19ab7ca83b6451
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.2 *
-U dan
-Z bddf39b758268961698f9899546a37dd
+P 27392118af4c38c5203a04b8013e1afdb1cebd0d
+R 37ccd3e8b8d51b4fffcef9ee439c7da2
+U drh
+Z b12a0af0516653b272442a79b4596fc8
