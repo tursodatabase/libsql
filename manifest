@@ -1,5 +1,5 @@
-C Add\scode\sto\sdetect\sif\sthe\sdatabase\sfile\sis\smoved\sor\sdeleted\sout\sfrom\sunder\nSQLite\sand\sreturn\san\sSQLITE_IOERR_NODB.
-D 2013-12-06T15:37:35.675
+C Only\serror\sout\son\sa\sdatabase\sfile\smove\swhen\sattempting\sto\sstart\sa\swrite\ntransaction.\s\sAssume\sread\stransactions\sare\sstill\ssafe.\s\sAnd\smake\sthe\serror\nSQLITE_READONLY_DBMOVED\sinstead\sof\sSQLITE_IOERR_NODB.
+D 2013-12-06T17:23:38.532
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c f076587029285554a3a65d30d0e71d50cd61f41f
 F src/os_win.c f149798adb6f32db835b2c9f9fac83d86015e004
-F src/pager.c 3648e602d484020d10cb514b04ef8f445ed06f30
+F src/pager.c 938874307e1b07a98a181cbab41c5625f2aa1666
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -221,7 +221,7 @@ F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
-F src/sqlite.h.in 4373b4a913ea460d91a9a4a54906ee18b350d573
+F src/sqlite.h.in 5ae0618d16a393ff8e66d1e373d3670892c2d254
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h f3a5d663fe9c6c0b2ee7fc2e20a6204eaea5bc7c
@@ -272,7 +272,7 @@ F src/test_syscall.c 16dbe79fb320fadb5acd7a0a59f49e52ab2d2091
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
-F src/test_vfstrace.c 21b99a6fe3f4c8be13c0fe83006ee13873154d78
+F src/test_vfstrace.c 3a0ab304682fecbceb689e7d9b904211fde11d78
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
@@ -726,7 +726,7 @@ F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pager4.test 1848509f0aa83f99d438a2bae02c3fd64dd1afe6
+F test/pager4.test afbffa3f6813bd9bf126eb5e66bc954717f36de5
 F test/pagerfault.test 7285379906ab2f1108b8e82bbdf2d386cc8ff3ff
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
@@ -1146,10 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 27392118af4c38c5203a04b8013e1afdb1cebd0d
-R 0833e0746c0a3bdbdf22e2e06343a85a
-T *branch * detect-moved-db
-T *sym-detect-moved-db *
-T -sym-trunk *
+P 8759a8e4d83b163e315eff316cf163f6ea42f2bb
+R 2ad1eaf9a51016580f9868708a4f6a69
 U drh
-Z 9ba43ea2faea1b2f751f5fd7fd1e8bc8
+Z 59055776a0fdbfce14961d0c6b6be93f

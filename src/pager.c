@@ -4799,7 +4799,7 @@ int sqlite3PagerOpen(
 
 /* Verify that the database file has not be deleted or renamed out from
 ** under the pager.  Return SQLITE_OK if the database is still were it ought
-** to be on disk.  Return non-zero (SQLITE_IOERR_NODB or some other error
+** to be on disk.  Return non-zero (SQLITE_READONLY_DBMOVED or some other error
 ** code from sqlite3OsAccess()) if the database has gone missing.
 */
 static int databaseIsUnmoved(Pager *pPager){
@@ -4814,7 +4814,7 @@ static int databaseIsUnmoved(Pager *pPager){
   dc = sqlite3OsDeviceCharacteristics(pPager->fd);
   if( (dc&fixedFlags)==fixedFlags ) return SQLITE_OK;
   rc = sqlite3OsAccess(pPager->pVfs, pPager->zFilename, SQLITE_ACCESS_EXISTS, &x);
-  if( rc==SQLITE_OK && !x ) rc = SQLITE_IOERR_NODB;
+  if( rc==SQLITE_OK && !x ) rc = SQLITE_READONLY_DBMOVED;
   return rc;
 }
 
@@ -4990,10 +4990,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
       assert( pPager->eLock==NO_LOCK || pPager->eLock==UNKNOWN_LOCK );
       goto failed;
     }
-
-    /* Verify that the database is unmoved and undeleted */
-    rc = databaseIsUnmoved(pPager);
-    if( rc ) goto failed;
 
     /* If a journal file exists, and there is no RESERVED lock on the
     ** database file, then it either needs to be played back or deleted.
@@ -5498,13 +5494,19 @@ static int pager_open_journal(Pager *pPager){
             (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL):
             (SQLITE_OPEN_MAIN_JOURNAL)
           );
-  #ifdef SQLITE_ENABLE_ATOMIC_WRITE
-        rc = sqlite3JournalOpen(
-            pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
-        );
-  #else
-        rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
-  #endif
+
+        /* Verify that the database still has the same name as it did when
+        ** it was originally opened. */
+        rc = databaseIsUnmoved(pPager);
+        if( rc==SQLITE_OK ){
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+          rc = sqlite3JournalOpen(
+              pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
+          );
+#else
+          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
+#endif
+        }
       }
       assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
     }
