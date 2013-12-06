@@ -4395,8 +4395,6 @@ static void moveToParent(BtCursor *pCur){
 static int moveToRoot(BtCursor *pCur){
   MemPage *pRoot;
   int rc = SQLITE_OK;
-  Btree *p = pCur->pBtree;
-  BtShared *pBt = p->pBt;
 
   assert( cursorHoldsMutex(pCur) );
   assert( CURSOR_INVALID < CURSOR_REQUIRESEEK );
@@ -4411,16 +4409,12 @@ static int moveToRoot(BtCursor *pCur){
   }
 
   if( pCur->iPage>=0 ){
-    int i;
-    for(i=1; i<=pCur->iPage; i++){
-      releasePage(pCur->apPage[i]);
-    }
-    pCur->iPage = 0;
+    while( pCur->iPage ) releasePage(pCur->apPage[pCur->iPage--]);
   }else if( pCur->pgnoRoot==0 ){
     pCur->eState = CURSOR_INVALID;
     return SQLITE_OK;
   }else{
-    rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->apPage[0],
+    rc = getAndInitPage(pCur->pBtree->pBt, pCur->pgnoRoot, &pCur->apPage[0],
                         pCur->wrFlag==0 ? PAGER_GET_READONLY : 0);
     if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
@@ -4453,14 +4447,16 @@ static int moveToRoot(BtCursor *pCur){
   pCur->atLast = 0;
   pCur->validNKey = 0;
 
-  if( pRoot->nCell==0 && !pRoot->leaf ){
+  if( pRoot->nCell>0 ){
+    pCur->eState = CURSOR_VALID;
+  }else if( !pRoot->leaf ){
     Pgno subpage;
     if( pRoot->pgno!=1 ) return SQLITE_CORRUPT_BKPT;
     subpage = get4byte(&pRoot->aData[pRoot->hdrOffset+8]);
     pCur->eState = CURSOR_VALID;
     rc = moveToChild(pCur, subpage);
   }else{
-    pCur->eState = ((pRoot->nCell>0)?CURSOR_VALID:CURSOR_INVALID);
+    pCur->eState = CURSOR_INVALID;
   }
   return rc;
 }
