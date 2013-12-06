@@ -1,5 +1,5 @@
-C Only\serror\sout\son\sa\sdatabase\sfile\smove\swhen\sattempting\sto\sstart\sa\swrite\ntransaction.\s\sAssume\sread\stransactions\sare\sstill\ssafe.\s\sAnd\smake\sthe\serror\nSQLITE_READONLY_DBMOVED\sinstead\sof\sSQLITE_IOERR_NODB.
-D 2013-12-06T17:23:38.532
+C Add\sthe\sSQLITE_READONLY_DBMOVED\serror\scode\sto\sthe\ssqlite3ErrName()\sfunction.
+D 2013-12-06T19:58:32.556
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 74bdee8f574588868e67c25cd377df7cba80102e
+F src/main.c 355fc9ab213b43a4d8a96aadf2a84622e6668f0a
 F src/malloc.c 543a8eb5508eaf4cadf55a9b503379eba2088128
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8759a8e4d83b163e315eff316cf163f6ea42f2bb
-R 2ad1eaf9a51016580f9868708a4f6a69
-U drh
-Z 59055776a0fdbfce14961d0c6b6be93f
+P 28348f2ada98c616241a51aecb70b63e87e6ddbb
+R 9bc31534cba9a5ca27509c106713cf4f
+U mistachkin
+Z 53877e3b824403e5e8a560ad04bec5a4
