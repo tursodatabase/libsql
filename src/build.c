@@ -4183,8 +4183,9 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
       assert( sqlite3KeyInfoIsWriteable(pKey) );
       for(i=0; i<nCol; i++){
         char *zColl = pIdx->azColl[i];
-        if( NEVER(zColl==0) ) zColl = "BINARY";
-        pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
+        assert( zColl!=0 );
+        pKey->aColl[i] = strcmp(zColl,"BINARY")==0 ? 0 :
+                          sqlite3LocateCollSeq(pParse, zColl);
         pKey->aSortOrder[i] = pIdx->aSortOrder[i];
       }
       if( pParse->nErr ){
