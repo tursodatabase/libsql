@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sand\simprove\sthe\sMSVC\smakefile.
-D 2013-12-05T17:12:47.544
+C Version\s3.8.2
+D 2013-12-06T14:53:30.888
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1145,8 +1145,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e19eead8c9977ed4f00eac54c5bc7e90db78caa8 aae7b30ebd9601882a02fe8cf46fbf0390ec3fac
+P c632567063d81c4be404ce58cbac0eff7412f565
 R 39f74301df16683d1c19ab7ca83b6451
-T +closed aae7b30ebd9601882a02fe8cf46fbf0390ec3fac
-U drh
-Z b21886c5e68a29fa7489a30bb0f632c3
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.2 *
+U dan
+Z bddf39b758268961698f9899546a37dd
