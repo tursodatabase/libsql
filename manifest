@@ -1,12 +1,12 @@
-C At\sthe\sstart\sof\seach\swrite\stransaction,\scheck\sto\ssee\sif\sthe\sdatabase\sfile\shas\nbeen\smoved,\sand\sif\sit\shas\srefuse\sto\sstart\sthe\stransaction,\sreturning\san\nSQLITE_READONLY_DBMOVED\serror\scode.
-D 2013-12-07T16:56:09.769
+C Increase\sthe\sversion\snumber\sto\s3.8.3.
+D 2013-12-07T17:01:23.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc bb1f271c8ee9773489c89be00f3f8ad7ed7ae8e0
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 52f7e22bfcec71a462e34194b4ae1671380fde59
+F VERSION 8ed548d87d0a27fd7d7620476f9e25f9fa742d73
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 87ca612393d0f439550634bd2c156ea9ff6195ae
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure f97b17cd80fa428e5df4e70a36ed5b4ed21100c2 x
+F configure 1673bc402f8fc95015f72c279adc5a9a668ee237 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1146,8 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b5842a70f8e26456a8f0d39539bc266f097480a4 9c59f5af7ac4908583fab85d37241f200c40f02d
-R b5502e212abebd79211cbde2351c1e6b
-T +closed 9c59f5af7ac4908583fab85d37241f200c40f02d
+P 369a23e00644f3ff8b6a2d2ed73b8cb65e9f124b
+R 0fdea442d6dfa8b801d4e6d289982778
 U drh
-Z aeb423432b55400118887674a2a0ba39
+Z 0e445b98f25b8020cec84ec084909f7b
