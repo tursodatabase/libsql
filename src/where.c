@@ -2745,6 +2745,7 @@ static void codeCursorHint(
     pTerm = &pWC->a[i];
     if( pTerm->prereqAll & msk ) continue;
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+    if( sqlite3ExprContainsSubquery(pTerm->pExpr) ) continue;
     for(j=0; j<pWLoop->nLTerm && pWLoop->aLTerm[j]!=pTerm; j++){}
     if( j<pWLoop->nLTerm ) continue;
     pExpr = sqlite3ExprAnd(db, pExpr, sqlite3ExprDup(db, pTerm->pExpr, 0));
