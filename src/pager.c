@@ -4803,19 +4803,21 @@ int sqlite3PagerOpen(
 ** code from sqlite3OsAccess()) if the database has gone missing.
 */
 static int databaseIsUnmoved(Pager *pPager){
-  const int fixedFlags = SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
-                         SQLITE_IOCAP_UNMOVABLE_WHEN_OPEN;
-  int dc;
   int bHasMoved = 0;
   int rc;
 
   if( pPager->tempFile ) return SQLITE_OK;
   if( pPager->dbSize==0 ) return SQLITE_OK;
   assert( pPager->zFilename && pPager->zFilename[0] );
-  dc = sqlite3OsDeviceCharacteristics(pPager->fd);
-  if( (dc&fixedFlags)==fixedFlags ) return SQLITE_OK;
   rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_HAS_MOVED, &bHasMoved);
-  if( rc==SQLITE_OK && bHasMoved ) rc = SQLITE_READONLY_DBMOVED;
+  if( rc==SQLITE_NOTFOUND ){
+    /* If the HAS_MOVED file-control is unimplemented, assume that the file
+    ** has not been moved.  That is the historical behavior of SQLite: prior to
+    ** version 3.8.3, it never checked */
+    rc = SQLITE_OK;
+  }else if( rc==SQLITE_OK && bHasMoved ){
+    rc = SQLITE_READONLY_DBMOVED;
+  }
   return rc;
 }
 
