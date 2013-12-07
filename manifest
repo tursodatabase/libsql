@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_READONLY_DBMOVED\serror\scode\sto\sthe\ssqlite3ErrName()\sfunction.
-D 2013-12-06T19:58:32.556
+C Actually\slook\sat\si-node\snumbers\sto\sdetermine\swhether\sor\snot\sthe\sdatabase\nfile\shas\smoved.
+D 2013-12-07T12:29:22.514
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,9 +205,9 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c f076587029285554a3a65d30d0e71d50cd61f41f
+F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
 F src/os_win.c f149798adb6f32db835b2c9f9fac83d86015e004
-F src/pager.c 938874307e1b07a98a181cbab41c5625f2aa1666
+F src/pager.c 6aa7d8eca75cac90f90f4c2619fb6c47153756e6
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -221,7 +221,7 @@ F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
-F src/sqlite.h.in 5ae0618d16a393ff8e66d1e373d3670892c2d254
+F src/sqlite.h.in eea3f417059c203f450ec64acbb19e6201063c0c
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h f3a5d663fe9c6c0b2ee7fc2e20a6204eaea5bc7c
@@ -726,7 +726,7 @@ F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
-F test/pager4.test afbffa3f6813bd9bf126eb5e66bc954717f36de5
+F test/pager4.test b40ecb4cc7dff957ee7916e41ab21d1ed702a642
 F test/pagerfault.test 7285379906ab2f1108b8e82bbdf2d386cc8ff3ff
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 28348f2ada98c616241a51aecb70b63e87e6ddbb
-R 9bc31534cba9a5ca27509c106713cf4f
-U mistachkin
-Z 53877e3b824403e5e8a560ad04bec5a4
+P 7789f801d720db5394117e764675cd4bbe6b2da1
+R 3bce36f2564839cff6784053e8b7c283
+U drh
+Z 80f483ee05b71fc1e6bab9b86a396c28

@@ -4806,15 +4806,16 @@ static int databaseIsUnmoved(Pager *pPager){
   const int fixedFlags = SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
                          SQLITE_IOCAP_UNMOVABLE_WHEN_OPEN;
   int dc;
-  int x = 0, rc;
+  int bHasMoved = 0;
+  int rc;
 
   if( pPager->tempFile ) return SQLITE_OK;
   if( pPager->dbSize==0 ) return SQLITE_OK;
   assert( pPager->zFilename && pPager->zFilename[0] );
   dc = sqlite3OsDeviceCharacteristics(pPager->fd);
   if( (dc&fixedFlags)==fixedFlags ) return SQLITE_OK;
-  rc = sqlite3OsAccess(pPager->pVfs, pPager->zFilename, SQLITE_ACCESS_EXISTS, &x);
-  if( rc==SQLITE_OK && !x ) rc = SQLITE_READONLY_DBMOVED;
+  rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_HAS_MOVED, &bHasMoved);
+  if( rc==SQLITE_OK && bHasMoved ) rc = SQLITE_READONLY_DBMOVED;
   return rc;
 }
 

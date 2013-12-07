@@ -1315,6 +1315,15 @@ static int findInodeInfo(
   return SQLITE_OK;
 }
 
+/*
+** Return TRUE if pFile has been renamed or unlinked since it was first opened.
+*/
+static int fileHasMoved(unixFile *pFile){
+  struct stat buf;
+  return pFile->pInode!=0 &&
+         (osStat(pFile->zPath, &buf)!=0 || buf.st_ino!=pFile->pInode->fileId.ino);
+}
+
 
 /*
 ** Check a unixFile that is a database.  Verify the following:
@@ -1349,10 +1358,7 @@ static void verifyDbFile(unixFile *pFile){
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
-  if( pFile->pInode!=0
-   && ((rc = osStat(pFile->zPath, &buf))!=0
-       || buf.st_ino!=pFile->pInode->fileId.ino)
-  ){
+  if( fileHasMoved(pFile) ){
     sqlite3_log(SQLITE_WARNING, "file renamed while open: %s", pFile->zPath);
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
@@ -3799,6 +3805,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
         unixGetTempname(pFile->pVfs->mxPathname, zTFile);
         *(char**)pArg = zTFile;
       }
+      return SQLITE_OK;
+    }
+    case SQLITE_FCNTL_HAS_MOVED: {
+      *(int*)pArg = fileHasMoved(pFile);
       return SQLITE_OK;
     }
 #if SQLITE_MAX_MMAP_SIZE>0
