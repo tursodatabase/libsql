@@ -764,6 +764,21 @@ int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
   return SQLITE_OK;
 }
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Give a hint to the cursor that it only has to deliver rows for which
+** the expression pExpr is true.  Within this expression, rows of the
+** cursor are identified by Expr.op==TK_COLUMN with Expr.iTable==iTable.
+**
+** This interfaces is not used by the standard storage engine of SQLite.
+** It is only useful to application that replace SQLite's built-in storage
+** engine with their own.
+*/
+void sqlite3BtreeCursorHint(BtCursor *pCur, int iTable, const Expr *pExpr){
+  /* Alternative storage engines might use this. */
+}
+#endif /* SQLITE_ENABLE_CURSOR_HINTS */
+
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
 ** Given a page number of a regular database page, return the page

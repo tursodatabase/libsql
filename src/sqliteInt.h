@@ -1064,6 +1064,7 @@ struct sqlite3 {
 #define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
 #define SQLITE_Stat3          0x0800   /* Use the SQLITE_STAT3 table */
 #define SQLITE_AdjustOutEst   0x1000   /* Adjust output estimates using WHERE */
+#define SQLITE_CursorHints    0x2000   /* Add OP_CursorHint opcodes */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*

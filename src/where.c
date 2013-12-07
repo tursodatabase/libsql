@@ -2715,6 +2715,49 @@ static void explainOneScan(
 # define explainOneScan(u,v,w,x,y,z)
 #endif /* SQLITE_OMIT_EXPLAIN */
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/*
+** Insert an OP_CursorHint instruction if it is appropriate to do so.
+*/
+static void codeCursorHint(
+  WhereInfo *pWInfo,
+  int iLevel
+){
+  Parse *pParse = pWInfo->pParse;
+  sqlite3 *db = pParse->db;
+  Vdbe *v = pParse->pVdbe;
+  WhereLevel *pLevel;
+  Expr *pExpr = 0;
+  int iCur;
+  Bitmask msk;
+  WhereClause *pWC;
+  WhereTerm *pTerm;
+  WhereLoop *pWLoop;
+  int i, j;
+
+  if( OptimizationDisabled(db, SQLITE_CursorHints) ) return;
+  pLevel = &pWInfo->a[iLevel];
+  pWLoop = pLevel->pWLoop;
+  iCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
+  msk = ~getMask(&pWInfo->sMaskSet, iCur);
+  pWC = &pWInfo->sWC;
+  for(i=0; i<pWC->nTerm; i++){
+    pTerm = &pWC->a[i];
+    if( pTerm->prereqAll & msk ) continue;
+    if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
+    for(j=0; j<pWLoop->nLTerm && pWLoop->aLTerm[j]!=pTerm; j++){}
+    if( j<pWLoop->nLTerm ) continue;
+    pExpr = sqlite3ExprAnd(db, pExpr, sqlite3ExprDup(db, pTerm->pExpr, 0));
+  } 
+  if( pExpr!=0 ){
+    sqlite3VdbeAddOp4(v, OP_CursorHint, pLevel->iTabCur, iCur, 0,
+                      (const char*)pExpr, P4_EXPR);
+  }
+}
+#else
+# define codeCursorHint(A,B)  /* No-op */
+#endif /* SQLITE_ENABLE_CURSOR_HINTS */
+
 
 /*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
@@ -2876,6 +2919,7 @@ static Bitmask codeOneLoopStart(
       pStart = pEnd;
       pEnd = pTerm;
     }
+    codeCursorHint(pWInfo, iLevel);
     if( pStart ){
       Expr *pX;             /* The expression that defines the start bound */
       int r1, rTemp;        /* Registers for holding the start boundary */
@@ -3061,6 +3105,7 @@ static Bitmask codeOneLoopStart(
     start_constraints = pRangeStart || nEq>0;
 
     /* Seek the index cursor to the start of the range. */
+    codeCursorHint(pWInfo, iLevel);
     nConstraint = nEq;
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
@@ -3408,6 +3453,7 @@ static Bitmask codeOneLoopStart(
     static const u8 aStep[] = { OP_Next, OP_Prev };
     static const u8 aStart[] = { OP_Rewind, OP_Last };
     assert( bRev==0 || bRev==1 );
+    codeCursorHint(pWInfo, iLevel);
     pLevel->op = aStep[bRev];
     pLevel->p1 = iCur;
     pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);

@@ -6170,6 +6170,24 @@ case OP_Trace: {
 }
 #endif
 
+#ifdef SQLITE_ENABLE_CURSOR_HINTS
+/* Opcode: CursorHint P1 P2 * P4 *
+**
+** Provide a hint to cursor P1 that it only needs to return rows that
+** satisfy the Expr tree given in P4.  P2 is the table number of cursor P1
+** such that references to cursor P1 in the Expr tree are given by
+** Expr.iTable==P2.
+*/
+case OP_CursorHint: {
+  VdbeCursor *pC;
+
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p4type==P4_EXPR );
+  pC = p->apCsr[pOp->p1];
+  if( pC )  sqlite3BtreeCursorHint(pC->pCursor, pOp->p2, pOp->p4.pExpr);
+  break;
+}
+#endif /* SQLITE_ENABLE_CURSOR_HINTS */
 
 /* Opcode: Noop * * * * *
 **
