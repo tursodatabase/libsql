@@ -4797,6 +4797,30 @@ int sqlite3PagerOpen(
 }
 
 
+/* Verify that the database file has not be deleted or renamed out from
+** under the pager.  Return SQLITE_OK if the database is still were it ought
+** to be on disk.  Return non-zero (SQLITE_READONLY_DBMOVED or some other error
+** code from sqlite3OsAccess()) if the database has gone missing.
+*/
+static int databaseIsUnmoved(Pager *pPager){
+  int bHasMoved = 0;
+  int rc;
+
+  if( pPager->tempFile ) return SQLITE_OK;
+  if( pPager->dbSize==0 ) return SQLITE_OK;
+  assert( pPager->zFilename && pPager->zFilename[0] );
+  rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_HAS_MOVED, &bHasMoved);
+  if( rc==SQLITE_NOTFOUND ){
+    /* If the HAS_MOVED file-control is unimplemented, assume that the file
+    ** has not been moved.  That is the historical behavior of SQLite: prior to
+    ** version 3.8.3, it never checked */
+    rc = SQLITE_OK;
+  }else if( rc==SQLITE_OK && bHasMoved ){
+    rc = SQLITE_READONLY_DBMOVED;
+  }
+  return rc;
+}
+
 
 /*
 ** This function is called after transitioning from PAGER_UNLOCK to
@@ -5473,13 +5497,19 @@ static int pager_open_journal(Pager *pPager){
             (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL):
             (SQLITE_OPEN_MAIN_JOURNAL)
           );
-  #ifdef SQLITE_ENABLE_ATOMIC_WRITE
-        rc = sqlite3JournalOpen(
-            pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
-        );
-  #else
-        rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
-  #endif
+
+        /* Verify that the database still has the same name as it did when
+        ** it was originally opened. */
+        rc = databaseIsUnmoved(pPager);
+        if( rc==SQLITE_OK ){
+#ifdef SQLITE_ENABLE_ATOMIC_WRITE
+          rc = sqlite3JournalOpen(
+              pVfs, pPager->zJournal, pPager->jfd, flags, jrnlBufferSize(pPager)
+          );
+#else
+          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
+#endif
+        }
       }
       assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
     }
