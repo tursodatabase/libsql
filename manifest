@@ -1,5 +1,5 @@
-C Interchange\stwo\sconditions\sin\san\s"if"\sstatment\sin\ssqlite3PagerAcquire()\sfor\nvery\sslight\s(0.06%)\soverall\sperformance\sincrease.
-D 2013-12-08T19:54:52.040
+C Avoid\sunnecessary\scalls\sto\ssqlite3VarintLen()\sfrom\sthe\sOP_MakeRecord\sopcode.
+D 2013-12-08T22:59:29.482
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 54894fde8dc806d259e015ac7c9680145e725835
+F src/vdbe.c 7f51e9d422aefe6bcbaf7bf680e0d4ca9f6288cb
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 23d00f22872a907a8ebf5b80689ff7aa66686a07
-R 8a0ad68f8a597479c8d7ee9e24cd34ea
+P fbcc1a3ebb016225c3580181c908a2904cc184a5
+R 09b58c480760cc431d5e01573bf9e4b3
 U drh
-Z ef2f6bbda3376e1ee20657f75cafac8c
+Z 1bf421a053293bdaa5254a0efb062c9a

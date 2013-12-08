@@ -2608,7 +2608,7 @@ case OP_MakeRecord: {
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
     nData += len;
-    nHdr += sqlite3VarintLen(serial_type);
+    nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
     if( pRec->flags & MEM_Zero ){
       /* Only pure zero-filled BLOBs can be input to this Opcode.
       ** We do not allow blobs with a prefix and a zero-filled tail. */
@@ -2619,9 +2619,14 @@ case OP_MakeRecord: {
   }
 
   /* Add the initial header varint and total the size */
-  nHdr += nVarint = sqlite3VarintLen(nHdr);
-  if( nVarint<sqlite3VarintLen(nHdr) ){
-    nHdr++;
+  if( nHdr<=126 ){
+    /* The common case */
+    nHdr += 1;
+  }else{
+    /* Rare case of a really large header */
+    nVarint = sqlite3VarintLen(nHdr);
+    nHdr += nVarint;
+    if( nVarint<sqlite3VarintLen(nHdr) ) nHdr++;
   }
   nByte = nHdr+nData-nZero;
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
