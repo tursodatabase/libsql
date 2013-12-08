@@ -2560,7 +2560,8 @@ case OP_MakeRecord: {
   int nField;            /* Number of fields in the record */
   char *zAffinity;       /* The affinity string for the record */
   int file_format;       /* File format to use for encoding */
-  int i;                 /* Space used in zNewRecord[] */
+  int i;                 /* Space used in zNewRecord[] header */
+  int j;                 /* Space used in zNewRecord[] content */
   int len;               /* Length of a field */
 
   /* Assuming the record contains N fields, the record format looks
@@ -2597,17 +2598,21 @@ case OP_MakeRecord: {
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
   */
-  for(pRec=pData0; pRec<=pLast; pRec++){
+  assert( pData0<=pLast );
+  pRec = pData0;
+  do{
     assert( memIsValid(pRec) );
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
     }
-    if( pRec->flags&MEM_Zero && pRec->n>0 ){
+    if( (pRec->flags&MEM_Zero)!=0 && pRec->n>0 ){
       sqlite3VdbeMemExpandBlob(pRec);
     }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
     nData += len;
+    testcase( serial_type==127 );
+    testcase( serial_type==128 );
     nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
     if( pRec->flags & MEM_Zero ){
       /* Only pure zero-filled BLOBs can be input to this Opcode.
@@ -2616,9 +2621,11 @@ case OP_MakeRecord: {
     }else if( len ){
       nZero = 0;
     }
-  }
+  }while( (++pRec)<=pLast );
 
   /* Add the initial header varint and total the size */
+  testcase( nHdr==126 );
+  testcase( nHdr==127 );
   if( nHdr<=126 ){
     /* The common case */
     nHdr += 1;
@@ -2645,14 +2652,16 @@ case OP_MakeRecord: {
 
   /* Write the record */
   i = putVarint32(zNewRecord, nHdr);
-  for(pRec=pData0; pRec<=pLast; pRec++){
+  j = nHdr;
+  assert( pData0<=pLast );
+  pRec = pData0;
+  do{
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     i += putVarint32(&zNewRecord[i], serial_type);      /* serial type */
-  }
-  for(pRec=pData0; pRec<=pLast; pRec++){  /* serial data */
-    i += sqlite3VdbeSerialPut(&zNewRecord[i], (int)(nByte-i), pRec,file_format);
-  }
-  assert( i==nByte );
+    j += sqlite3VdbeSerialPut(&zNewRecord[j], (int)(nByte-j), pRec,file_format);
+  }while( (++pRec)<=pLast );
+  assert( i==nHdr );
+  assert( j==nByte );
 
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pOut->n = (int)nByte;
