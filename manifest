@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.8.3.
-D 2013-12-07T17:01:23.631
+C Interchange\stwo\sconditions\sin\san\s"if"\sstatment\sin\ssqlite3PagerAcquire()\sfor\nvery\sslight\s(0.06%)\soverall\sperformance\sincrease.
+D 2013-12-08T19:54:52.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
 F src/os_win.c 4323dd0bac4f7a7037fc4cf87fb4692d17f0b108
-F src/pager.c d27dc8aaeac16c90eb0c859c074683bfc4533c41
+F src/pager.c 061d0b41354a8446256f5d765771e2a026ec8ed2
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 369a23e00644f3ff8b6a2d2ed73b8cb65e9f124b
-R 0fdea442d6dfa8b801d4e6d289982778
+P 23d00f22872a907a8ebf5b80689ff7aa66686a07
+R 8a0ad68f8a597479c8d7ee9e24cd34ea
 U drh
-Z 0e445b98f25b8020cec84ec084909f7b
+Z ef2f6bbda3376e1ee20657f75cafac8c

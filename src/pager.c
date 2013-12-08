@@ -5292,7 +5292,7 @@ int sqlite3PagerAcquire(
       if( rc!=SQLITE_OK ) goto pager_acquire_err;
     }
 
-    if( iFrame==0 && bMmapOk ){
+    if( bMmapOk && iFrame==0 ){
       void *pData = 0;
 
       rc = sqlite3OsFetch(pPager->fd, 
