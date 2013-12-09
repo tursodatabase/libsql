@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\stimes\sthat\sOP_Column\scalls\ssqlite3VdbeMemMakeWriteable().
-D 2013-12-09T21:06:46.044
+C Correct\sthe\sVFS\sname\sas\sreported\sby\sthe\sfile\scontrol\swhen\sexplicitly\susing\sthe\s'win32-longpath'\sVFS.
+D 2013-12-09T21:48:49.439
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
-F src/os_win.c 4323dd0bac4f7a7037fc4cf87fb4692d17f0b108
+F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
 F src/pager.c 19203eff37c099271189bf8b378a1143847b92e3
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
@@ -1088,7 +1088,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
-F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
+F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bf97598592ff60fab2a06d8b31b0201200b91684
-R 30f9bdfbb15779200abce614661249ba
-U drh
-Z 09a9fc22866f6b8bd3a17a9239808986
+P 6b51863553e51334880fb322bdf74e51e35d0e61
+R 02366bc03c0aa38f7c8d01b5c92fd1d6
+U mistachkin
+Z d9c38f842954179c02eb8030f4c6e2c4
