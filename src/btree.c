@@ -5733,9 +5733,6 @@ static void insertCell(
   int ins;          /* Index in data[] where new cell pointer is inserted */
   int cellOffset;   /* Address of first cell pointer in data[] */
   u8 *data;         /* The content of the whole page */
-  u8 *ptr;          /* Used for moving information around in data[] */
-  u8 *endPtr;       /* End of the loop */
-
   int nSkip = (iChild ? 4 : 0);
 
   if( *pRC ) return;
@@ -5786,13 +5783,7 @@ static void insertCell(
     if( iChild ){
       put4byte(&data[idx], iChild);
     }
-    ptr = &data[end];
-    endPtr = &data[ins];
-    assert( (SQLITE_PTR_TO_INT(ptr)&1)==0 );  /* ptr is always 2-byte aligned */
-    while( ptr>endPtr ){
-      *(u16*)ptr = *(u16*)&ptr[-2];
-      ptr -= 2;
-    }
+    memmove(&data[ins+2], &data[ins], end-ins);
     put2byte(&data[ins], idx);
     put2byte(&data[pPage->hdrOffset+3], pPage->nCell);
 #ifndef SQLITE_OMIT_AUTOVACUUM

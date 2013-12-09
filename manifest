@@ -1,5 +1,5 @@
-C Use\smemmove()\srather\sthan\sa\shome-made\scopy\sloop\sin\sdropCell()\sof\sbtree.c,\nfor\sa\ssize\sreduction\sand\sperformance\simprovement.
-D 2013-12-09T01:58:11.109
+C Use\smemmove()\srather\sthan\sa\shome-made\scopy\sloop\sin\sinsertCell()\stoo.
+D 2013-12-09T02:32:19.333
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c ac25a91a1ec94b361b09fdd99253b248ab0bbefc
+F src/btree.c 432c3e22ff76e8ee1caf57ff88ba9f8af1fcfc30
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 9b40580b62916612678bdb69ce0286e39c29a862
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 81f5ae13b2e23daee03151d32515387b7f5ba5e5
-R dff255530828faccbaffbe7aa2a8b29a
+P 78e1706804e88a0dd5dc40bee838a3a504cfa53b
+R 3d219561bfa9f63d670ef18564ca91c7
 U drh
-Z 8d4fe309cbbd963b83317f42164d5ecb
+Z a11cf025d0d9777faa558f3c1da4ce10
