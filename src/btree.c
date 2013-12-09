@@ -1652,7 +1652,7 @@ static int getAndInitPage(
     rc = SQLITE_CORRUPT_BKPT;
   }else{
     rc = btreeGetPage(pBt, pgno, ppPage, bReadonly);
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && (*ppPage)->isInit==0 ){
       rc = btreeInitPage(*ppPage);
       if( rc!=SQLITE_OK ){
         releasePage(*ppPage);
