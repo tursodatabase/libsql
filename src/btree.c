@@ -5543,7 +5543,7 @@ static int fillInCell(
     nHeader += 4;
   }
   if( pPage->hasData ){
-    nHeader += putVarint(&pCell[nHeader], nData+nZero);
+    nHeader += putVarint32(&pCell[nHeader], nData+nZero);
   }else{
     nData = nZero = 0;
   }

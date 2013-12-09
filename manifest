@@ -1,5 +1,5 @@
-C Another\ssimplification\sto\sthe\sOP_MakeRecord\sopcode,\smaking\sit\sslightly\nfaster\sand\svery\sslightly\ssmaller.
-D 2013-12-08T23:33:28.824
+C Use\sputVarint32()\sinstead\sof\sputVarint()\sfor\sa\squantity\sthat\scan\snever\nexceed\s2GiB\s-\s1.
+D 2013-12-09T00:47:11.109
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 4037f58ef3f4459d0b9bb1fc1aee1136277d9ba6
+F src/btree.c 6a5f69e455804d4ace172075d284124bc816edde
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 9b40580b62916612678bdb69ce0286e39c29a862
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7a234fc3c5e7970ffe0b8d6ac33c26acb64b5c4d
-R 57ac1272f14efea499bd7c6c07bb251b
+P f2f5a3ce9d075c4b1ac586c5db3a623d9035402d
+R bafb04b65bbcbde5a371c6f9a8f01895
 U drh
-Z f1f04177179428a44e2d9de7658a5211
+Z 59e808481ed95c39c5c7f4147ae52c5f
