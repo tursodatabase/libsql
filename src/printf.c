@@ -149,6 +149,14 @@ void sqlite3AppendSpace(StrAccum *pAccum, int N){
 }
 
 /*
+** Set the StrAccum object to an error mode.
+*/
+void setStrAccumError(StrAccum *p, u8 eError){
+  p->accError = eError;
+  p->nAlloc = 0;
+}
+
+/*
 ** On machines with a small stack size, you can redefine the
 ** SQLITE_PRINT_BUF_SIZE to be something smaller, if desired.
 */
@@ -359,7 +367,7 @@ void sqlite3VXPrintf(
           nOut = precision + 10;
           zOut = zExtra = sqlite3Malloc( nOut );
           if( zOut==0 ){
-            pAccum->accError = STRACCUM_NOMEM;
+            setStrAccumError(pAccum, STRACCUM_NOMEM);
             return;
           }
         }
@@ -471,7 +479,7 @@ void sqlite3VXPrintf(
         if( MAX(e2,0)+precision+width > etBUFSIZE - 15 ){
           bufpt = zExtra = sqlite3Malloc( MAX(e2,0)+precision+width+15 );
           if( bufpt==0 ){
-            pAccum->accError = STRACCUM_NOMEM;
+            setStrAccumError(pAccum, STRACCUM_NOMEM);
             return;
           }
         }
@@ -606,7 +614,7 @@ void sqlite3VXPrintf(
         if( n>etBUFSIZE ){
           bufpt = zExtra = sqlite3Malloc( n );
           if( bufpt==0 ){
-            pAccum->accError = STRACCUM_NOMEM;
+            setStrAccumError(pAccum, STRACCUM_NOMEM);
             return;
           }
         }else{
@@ -641,10 +649,10 @@ void sqlite3VXPrintf(
         struct SrcList_item *pItem = &pSrc->a[k];
         assert( k>=0 && k<pSrc->nSrc );
         if( pItem->zDatabase ){
-          sqlite3StrAccumAppend(pAccum, pItem->zDatabase, -1);
+          sqlite3StrAccumAppendAll(pAccum, pItem->zDatabase);
           sqlite3StrAccumAppend(pAccum, ".", 1);
         }
-        sqlite3StrAccumAppend(pAccum, pItem->zName, -1);
+        sqlite3StrAccumAppendAll(pAccum, pItem->zName);
         length = width = 0;
         break;
       }
@@ -684,21 +692,19 @@ void sqlite3VXPrintf(
 */
 void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   assert( z!=0 || N==0 );
-  if( p->accError ){
-    testcase(p->accError==STRACCUM_TOOBIG);
-    testcase(p->accError==STRACCUM_NOMEM);
-    return;
-  }
-  assert( p->zText!=0 || p->nChar==0 );
-  if( N<=0 ){
-    if( N==0 || z[0]==0 ) return;
-    N = sqlite3Strlen30(z);
-  }
+  assert( p->zText!=0 || p->nChar==0 || p->accError );
+  assert( N>=0 );
+  assert( p->accError==0 || p->nAlloc==0 );
   if( p->nChar+N >= p->nAlloc ){
     char *zNew;
+    if( p->accError ){
+      testcase(p->accError==STRACCUM_TOOBIG);
+      testcase(p->accError==STRACCUM_NOMEM);
+      return;
+    }
     if( !p->useMalloc ){
-      p->accError = STRACCUM_TOOBIG;
       N = p->nAlloc - p->nChar - 1;
+      setStrAccumError(p, STRACCUM_TOOBIG);
       if( N<=0 ){
         return;
       }
@@ -708,7 +714,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
       szNew += N + 1;
       if( szNew > p->mxAlloc ){
         sqlite3StrAccumReset(p);
-        p->accError = STRACCUM_TOOBIG;
+        setStrAccumError(p, STRACCUM_TOOBIG);
         return;
       }else{
         p->nAlloc = (int)szNew;
@@ -722,8 +728,8 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
         if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
         p->zText = zNew;
       }else{
-        p->accError = STRACCUM_NOMEM;
         sqlite3StrAccumReset(p);
+        setStrAccumError(p, STRACCUM_NOMEM);
         return;
       }
     }
@@ -732,6 +738,14 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   memcpy(&p->zText[p->nChar], z, N);
   p->nChar += N;
 }
+
+/*
+** Append the complete text of zero-terminated string z[] to the p string.
+*/
+void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
+  return sqlite3StrAccumAppend(p, z, sqlite3Strlen30(z));
+}
+
 
 /*
 ** Finish off a string by making sure it is zero-terminated.
@@ -750,7 +764,7 @@ char *sqlite3StrAccumFinish(StrAccum *p){
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
       }else{
-        p->accError = STRACCUM_NOMEM;
+        setStrAccumError(p, STRACCUM_NOMEM);
       }
     }
   }

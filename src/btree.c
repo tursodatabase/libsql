@@ -7745,7 +7745,7 @@ static void checkAppendMsg(
     sqlite3StrAccumAppend(&pCheck->errMsg, "\n", 1);
   }
   if( zMsg1 ){
-    sqlite3StrAccumAppend(&pCheck->errMsg, zMsg1, -1);
+    sqlite3StrAccumAppendAll(&pCheck->errMsg, zMsg1);
   }
   sqlite3VXPrintf(&pCheck->errMsg, 1, zFormat, ap);
   va_end(ap);
