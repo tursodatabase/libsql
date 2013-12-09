@@ -5671,7 +5671,6 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   u32 pc;         /* Offset to cell content of cell being deleted */
   u8 *data;       /* pPage->aData */
   u8 *ptr;        /* Used to move bytes around within data[] */
-  u8 *endPtr;     /* End of loop */
   int rc;         /* The return code */
   int hdr;        /* Beginning of the header.  0 most pages.  100 page 1 */
 
@@ -5696,13 +5695,8 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
     *pRC = rc;
     return;
   }
-  endPtr = &pPage->aCellIdx[2*pPage->nCell - 2];
-  assert( (SQLITE_PTR_TO_INT(ptr)&1)==0 );  /* ptr is always 2-byte aligned */
-  while( ptr<endPtr ){
-    *(u16*)ptr = *(u16*)&ptr[2];
-    ptr += 2;
-  }
   pPage->nCell--;
+  memmove(ptr, ptr+2, 2*(pPage->nCell - idx));
   put2byte(&data[hdr+3], pPage->nCell);
   pPage->nFree += 2;
 }
