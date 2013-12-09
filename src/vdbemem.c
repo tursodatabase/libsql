@@ -295,10 +295,12 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 */
 void sqlite3VdbeMemRelease(Mem *p){
   VdbeMemRelease(p);
-  sqlite3DbFree(p->db, p->zMalloc);
+  if( p->zMalloc ){
+    sqlite3DbFree(p->db, p->zMalloc);
+    p->zMalloc = 0;
+  }
   p->z = 0;
-  p->zMalloc = 0;
-  p->xDel = 0;
+  assert( p->xDel==0 );  /* Zeroed by VdbeMemRelease() above */
 }
 
 /*
