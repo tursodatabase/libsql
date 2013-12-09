@@ -1,5 +1,5 @@
-C Minor\sperformance\soptimizations\sin\spager.c.
-D 2013-12-09T19:25:28.392
+C Simplify\sthe\ssqlite3BtreeKeyFetch()\sand\ssqlite3BtreeDataFetch()\sinterfaces\nto\sthe\sstorage\sengine.
+D 2013-12-09T20:43:22.965
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 44a44aa21ee24763ddda98d9a41bd85498359ae2
+F src/btree.c 09285d6ffe7d819b9656ea9b7ecf1ab949a926fb
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 47ef8209e56d840d2b35b8a243c6ee567ad52bda
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9227ad48e1612b32a3a3e9551c49890f93abc0a7
-R 2aecb7bab925cdbd0159d9e849c7e955
+P ba9eef5f5293633d1479e1d877bf338edb2a9471
+R 11cbe9b8d7b59f7bcb32cf4280072bce
 U drh
-Z 455daaba8769a2d87fdc74aa6d107f2c
+Z c873c3f777f880d8ffd5cf3f18630860
