@@ -1,5 +1,5 @@
-C Performance\soptimizations\sfor\ssqlite3VXPrintf().
-D 2013-12-09T19:03:26.813
+C Minor\sperformance\soptimizations\sin\spager.c.
+D 2013-12-09T19:25:28.392
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
 F src/os_win.c 4323dd0bac4f7a7037fc4cf87fb4692d17f0b108
-F src/pager.c 061d0b41354a8446256f5d765771e2a026ec8ed2
+F src/pager.c 19203eff37c099271189bf8b378a1143847b92e3
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fbfc075a5a3c9c5c98353f396f9da7f7ec7c1c04
-R b8ab7b74939c13b89c303e9a6e5110d1
+P 9227ad48e1612b32a3a3e9551c49890f93abc0a7
+R 2aecb7bab925cdbd0159d9e849c7e955
 U drh
-Z 3687c2e0d19ee741a7e8e3f49ed7da21
+Z 455daaba8769a2d87fdc74aa6d107f2c
