@@ -2827,20 +2827,15 @@ static u64 floatSwap(u64 in){
 ** buf. It is assumed that the caller has allocated sufficient space.
 ** Return the number of bytes written.
 **
-** nBuf is the amount of space left in buf[].  nBuf must always be
-** large enough to hold the entire field.  Except, if the field is
-** a blob with a zero-filled tail, then buf[] might be just the right
-** size to hold everything except for the zero-filled tail.  If buf[]
-** is only big enough to hold the non-zero prefix, then only write that
-** prefix into buf[].  But if buf[] is large enough to hold both the
-** prefix and the tail then write the prefix and set the tail to all
-** zeros.
+** nBuf is the amount of space left in buf[].  The caller is responsible
+** for allocating enough space to buf[] to hold the entire field, exclusive
+** of the pMem->u.nZero bytes for a MEM_Zero value.
 **
 ** Return the number of bytes actually written into buf[].  The number
 ** of bytes in the zero-filled tail is included in the return value only
 ** if those bytes were zeroed in buf[].
 */ 
-u32 sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
+u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, int file_format){
   u32 serial_type = sqlite3VdbeSerialType(pMem, file_format);
   u32 len;
 
@@ -2856,7 +2851,6 @@ u32 sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
       v = pMem->u.i;
     }
     len = i = sqlite3VdbeSerialTypeLen(serial_type);
-    assert( len<=(u32)nBuf );
     while( i-- ){
       buf[i] = (u8)(v&0xFF);
       v >>= 8;
@@ -2868,17 +2862,8 @@ u32 sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
   if( serial_type>=12 ){
     assert( pMem->n + ((pMem->flags & MEM_Zero)?pMem->u.nZero:0)
              == (int)sqlite3VdbeSerialTypeLen(serial_type) );
-    assert( pMem->n<=nBuf );
     len = pMem->n;
     memcpy(buf, pMem->z, len);
-    if( pMem->flags & MEM_Zero ){
-      len += pMem->u.nZero;
-      assert( nBuf>=0 );
-      if( len > (u32)nBuf ){
-        len = (u32)nBuf;
-      }
-      memset(&buf[pMem->n], 0, len-pMem->n);
-    }
     return len;
   }
 

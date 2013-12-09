@@ -2599,29 +2599,27 @@ case OP_MakeRecord: {
   ** out how much space is required for the new record.
   */
   assert( pData0<=pLast );
-  pRec = pData0;
+  pRec = pLast;
   do{
     assert( memIsValid(pRec) );
     if( zAffinity ){
       applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
     }
-    if( (pRec->flags&MEM_Zero)!=0 && pRec->n>0 ){
-      sqlite3VdbeMemExpandBlob(pRec);
-    }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
+    if( pRec->flags & MEM_Zero ){
+      if( nData ){
+        sqlite3VdbeMemExpandBlob(pRec);
+      }else{
+        nZero += pRec->u.nZero;
+        len -= pRec->u.nZero;
+      }
+    }
     nData += len;
     testcase( serial_type==127 );
     testcase( serial_type==128 );
     nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
-    if( pRec->flags & MEM_Zero ){
-      /* Only pure zero-filled BLOBs can be input to this Opcode.
-      ** We do not allow blobs with a prefix and a zero-filled tail. */
-      nZero += pRec->u.nZero;
-    }else if( len ){
-      nZero = 0;
-    }
-  }while( (++pRec)<=pLast );
+  }while( (--pRec)>=pData0 );
 
   /* Add the initial header varint and total the size */
   testcase( nHdr==126 );
@@ -2635,7 +2633,7 @@ case OP_MakeRecord: {
     nHdr += nVarint;
     if( nVarint<sqlite3VarintLen(nHdr) ) nHdr++;
   }
-  nByte = nHdr+nData-nZero;
+  nByte = nHdr+nData;
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
@@ -2657,8 +2655,8 @@ case OP_MakeRecord: {
   pRec = pData0;
   do{
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    i += putVarint32(&zNewRecord[i], serial_type);      /* serial type */
-    j += sqlite3VdbeSerialPut(&zNewRecord[j], (int)(nByte-j), pRec,file_format);
+    i += putVarint32(&zNewRecord[i], serial_type);            /* serial type */
+    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, file_format); /* content */
   }while( (++pRec)<=pLast );
   assert( i==nHdr );
   assert( j==nByte );
