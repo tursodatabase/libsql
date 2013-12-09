@@ -2496,7 +2496,7 @@ case OP_Column: {
   pDest->enc = encoding;
 
 op_column_out:
-  rc = sqlite3VdbeMemMakeWriteable(pDest);
+  Deephemeralize(pDest);
 op_column_error:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);

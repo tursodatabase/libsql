@@ -1,5 +1,5 @@
-C Simplify\sthe\ssqlite3BtreeKeyFetch()\sand\ssqlite3BtreeDataFetch()\sinterfaces\nto\sthe\sstorage\sengine.
-D 2013-12-09T20:43:22.965
+C Reduce\sthe\snumber\sof\stimes\sthat\sOP_Column\scalls\ssqlite3VdbeMemMakeWriteable().
+D 2013-12-09T21:06:46.044
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 6ccb107de55a34b7676a9eaa0aeb827015723fa4
+F src/vdbe.c 5338567d17c055b26b9b3d280bdd8aa4e8e13d3f
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ba9eef5f5293633d1479e1d877bf338edb2a9471
-R 11cbe9b8d7b59f7bcb32cf4280072bce
+P bf97598592ff60fab2a06d8b31b0201200b91684
+R 30f9bdfbb15779200abce614661249ba
 U drh
-Z c873c3f777f880d8ffd5cf3f18630860
+Z 09a9fc22866f6b8bd3a17a9239808986
