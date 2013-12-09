@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\stest\snumber\sin\sthe\soutput\sof\sthe\sspeedtest1.c\sprogram.\s\sNo\nchanges\sto\sthe\stest\salgorithms.
-D 2013-12-09T12:24:23.629
+C Modify\sthe\sway\ssome\sinternal\sfile-controls\sare\sinvoked.\sIn\sorder\sto\ssupport\smulti-file\stransactions\sin\sthe\szipvfs\sextension.
+D 2013-12-09T20:42:03.163
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
 F src/analyze.c 581d5c18ce89c6f45d4dca65914d0de5b4dad41f
 F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 1809a7caa2504233bdddd12f5018422421789537
+F src/backup.c 6cb4c4ee1d302621eb18ad93a4216fed387b2568
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 432c3e22ff76e8ee1caf57ff88ba9f8af1fcfc30
@@ -207,8 +207,8 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
 F src/os_win.c 4323dd0bac4f7a7037fc4cf87fb4692d17f0b108
-F src/pager.c 061d0b41354a8446256f5d765771e2a026ec8ed2
-F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
+F src/pager.c b28711af0f595414a7017f6993d4e6f90a3d2114
+F src/pager.h 6a790b64a9ea79bc2c849bdefdd39e2344bca94a
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
@@ -221,7 +221,7 @@ F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
-F src/sqlite.h.in 125dc0b76f0116f1cd6f13536db52ba981e1c5bd
+F src/sqlite.h.in 767b7475655de093182ec3d7b1f66a0cf5f1c390
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h f3a5d663fe9c6c0b2ee7fc2e20a6204eaea5bc7c
@@ -234,7 +234,7 @@ F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c 4f958b71334695e65746d357dac77709732b28db
+F src/test6.c 6884dcfb1d04c26083ffb441ab329043967c09e5
 F src/test7.c 72b732baa5642f795655ba1126ea032af46ecfd2
 F src/test8.c c7aab1d9fbbf54fc33d43b73aa24aa55f9eaf534
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -841,7 +841,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 2a7cce4abf404557c09323a84a2444b189835d0f
+F test/tester.tcl 08e9f317afe60d398fa900993503ecaef3295bad
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1146,7 +1146,10 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2d6dd7c2eb5a64f8994162b564a99ef0014b7460
-R 9b7d54400c77029a626c96270fd35702
-U drh
-Z a893e863f82f8a1033dbfe922fa06c0b
+P fbfc075a5a3c9c5c98353f396f9da7f7ec7c1c04
+R e8a2a861e9953d868791659025627e6a
+T *branch * zipvfs-multifile-commit
+T *sym-zipvfs-multifile-commit *
+T -sym-trunk *
+U dan
+Z 19770b8e4b3ab930c64ec8e320e02ae3

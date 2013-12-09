@@ -1251,6 +1251,7 @@ proc crashsql {args} {
   set blocksize ""
   set crashdelay 1
   set prngseed 0
+  set opendb { sqlite3 db test.db -vfs crash }
   set tclbody {}
   set crashfile ""
   set dc ""
@@ -1262,6 +1263,7 @@ proc crashsql {args} {
     set z2 [lindex $args [expr $ii+1]]
 
     if     {$n>1 && [string first $z -delay]==0}     {set crashdelay $z2} \
+    elseif {$n>1 && [string first $z -opendb]==0}    {set opendb $z2} \
     elseif {$n>1 && [string first $z -seed]==0}      {set prngseed $z2} \
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
     elseif {$n>1 && [string first $z -tclbody]==0}   {set tclbody $z2}  \
@@ -1283,7 +1285,7 @@ proc crashsql {args} {
   puts $f "sqlite3_crash_enable 1"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
-  puts $f "sqlite3 db test.db -vfs crash"
+  puts $f $opendb 
 
   # This block sets the cache size of the main database to 10
   # pages. This is done in case the build is configured to omit
@@ -1291,6 +1293,7 @@ proc crashsql {args} {
   puts $f {db eval {SELECT * FROM sqlite_master;}}
   puts $f {set bt [btree_from_db db]}
   puts $f {btree_set_cache_size $bt 10}
+
   if {$prngseed} {
     set seed [expr {$prngseed%10007+1}]
     # puts seed=$seed

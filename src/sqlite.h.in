@@ -946,6 +946,8 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_TRACE                  19
 #define SQLITE_FCNTL_HAS_MOVED              20
 
+#define SQLITE_FCNTL_COMMIT_PHASETWO        21
+
 /*
 ** CAPI3REF: Mutex Handle
 **

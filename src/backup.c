@@ -526,7 +526,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
 
           /* Sync the database file to disk. */
           if( rc==SQLITE_OK ){
-            rc = sqlite3PagerSync(pDestPager);
+            rc = sqlite3PagerSync(pDestPager, 0);
           }
         }else{
           sqlite3PagerTruncateImage(pDestPager, nDestTruncate);

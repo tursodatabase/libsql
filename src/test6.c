@@ -409,13 +409,17 @@ static int cfRead(
   sqlite_int64 iOfst
 ){
   CrashFile *pCrash = (CrashFile *)pFile;
+  int nCopy = (int)MIN((i64)iAmt, (pCrash->iSize - iOfst));
+
+  if( nCopy>0 ){
+    memcpy(zBuf, &pCrash->zData[iOfst], nCopy);
+  }
 
   /* Check the file-size to see if this is a short-read */
-  if( pCrash->iSize<(iOfst+iAmt) ){
+  if( nCopy<iAmt ){
     return SQLITE_IOERR_SHORT_READ;
   }
 
-  memcpy(zBuf, &pCrash->zData[iOfst], iAmt);
   return SQLITE_OK;
 }
 

@@ -1249,6 +1249,7 @@ static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, u32 nMaster){
    || szJ<16
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-16, &len))
    || len>=nMaster 
+   || len==0 
    || SQLITE_OK!=(rc = read32bits(pJrnl, szJ-12, &cksum))
    || SQLITE_OK!=(rc = sqlite3OsRead(pJrnl, aMagic, 8, szJ-8))
    || memcmp(aMagic, aJournalMagic, 8)
@@ -2016,6 +2017,11 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     ** required size.  */
     assert( pPager->eLock==EXCLUSIVE_LOCK );
     rc = pager_truncate(pPager, pPager->dbSize);
+  }
+
+  if( rc==SQLITE_OK && bCommit && isOpen(pPager->fd) ){
+    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_COMMIT_PHASETWO, 0);
+    if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   }
 
   if( !pPager->exclusiveMode 
@@ -2831,7 +2837,7 @@ end_playback:
   if( rc==SQLITE_OK
    && (pPager->eState>=PAGER_WRITER_DBMOD || pPager->eState==PAGER_OPEN)
   ){
-    rc = sqlite3PagerSync(pPager);
+    rc = sqlite3PagerSync(pPager, 0);
   }
   if( rc==SQLITE_OK ){
     rc = pager_end_transaction(pPager, zMaster[0]!='\0', 0);
@@ -6006,17 +6012,17 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 ** If successful, or if called on a pager for which it is a no-op, this
 ** function returns SQLITE_OK. Otherwise, an IO error code is returned.
 */
-int sqlite3PagerSync(Pager *pPager){
+int sqlite3PagerSync(Pager *pPager, const char *zMaster){
   int rc = SQLITE_OK;
+
+  if( isOpen(pPager->fd) ){
+    void *pArg = (void*)zMaster;
+    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, pArg);
+    if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
+  }
   if( !pPager->noSync ){
     assert( !MEMDB );
     rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
-  }else if( isOpen(pPager->fd) ){
-    assert( !MEMDB );
-    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, 0);
-    if( rc==SQLITE_NOTFOUND ){
-      rc = SQLITE_OK;
-    }
   }
   return rc;
 }
@@ -6215,7 +6221,7 @@ int sqlite3PagerCommitPhaseOne(
   
       /* Finally, sync the database file. */
       if( !noSync ){
-        rc = sqlite3PagerSync(pPager);
+        rc = sqlite3PagerSync(pPager, zMaster);
       }
       IOTRACE(("DBSYNC %p\n", pPager))
     }
