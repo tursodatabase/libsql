@@ -1,5 +1,5 @@
-C Simplify\sand\simprove\sthe\sperformance\sof\sthe\ssqlite3VdbeMemGrow()\sroutine.
-D 2013-12-10T19:49:00.802
+C In\sthe\sOP_MakeRecord\sopcode,\sfactor\sout\saffinity\schanges\sinto\sseparate\sloop,\nfor\sa\sslight\sperformance\sadvantage.
+D 2013-12-10T20:53:01.865
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 4bfb1fe75a0ad08646e9b82670691c62699bc5ee
+F src/vdbe.c c5b17309048f28ff79e0b65aeb72d365a3a415a1
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
 F src/vdbeInt.h 7e38eef8f4bd7141e1638b0eacaebf9bc41b26bc
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7277a769694787e0332d1a4efc02041834661e2a
-R 3ef0e61f6611b17b108322b8d504b195
+P 48ecf18774ba9572d86696c60d87007a619d9f53
+R 8c35d8f315102eab592f6f641be2ff5b
 U drh
-Z 641e108686357e5c2dc6bc5a433b2dd9
+Z ddd4b5e4f3e2f25b93fe4a6cd498d64a

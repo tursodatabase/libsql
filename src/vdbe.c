@@ -2595,16 +2595,22 @@ case OP_MakeRecord: {
   pOut = &aMem[pOp->p3];
   memAboutToChange(p, pOut);
 
+  /* Apply the requested affinity to all inputs
+  */
+  assert( pData0<=pLast );
+  if( zAffinity ){
+    pRec = pData0;
+    do{
+      applyAffinity(pRec, *(zAffinity++), encoding);
+    }while( (++pRec)<=pLast );
+  }
+
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
   */
-  assert( pData0<=pLast );
   pRec = pLast;
   do{
     assert( memIsValid(pRec) );
-    if( zAffinity ){
-      applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
-    }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
     if( pRec->flags & MEM_Zero ){
