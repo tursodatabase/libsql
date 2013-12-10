@@ -6020,7 +6020,7 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
     rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, pArg);
     if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   }
-  if( !pPager->noSync ){
+  if( rc==SQLITE_OK && !pPager->noSync ){
     assert( !MEMDB );
     rc = sqlite3OsSync(pPager->fd, pPager->syncFlags);
   }
@@ -6350,7 +6350,9 @@ int sqlite3PagerRollback(Pager *pPager){
 
   assert( pPager->eState==PAGER_READER || rc!=SQLITE_OK );
   assert( rc==SQLITE_OK || rc==SQLITE_FULL || rc==SQLITE_CORRUPT
-          || rc==SQLITE_NOMEM || (rc&0xFF)==SQLITE_IOERR );
+          || rc==SQLITE_NOMEM || (rc&0xFF)==SQLITE_IOERR 
+          || rc==SQLITE_CANTOPEN
+  );
 
   /* If an error occurs during a ROLLBACK, we can no longer trust the pager
   ** cache. So call pager_error() on the way out to make any error persistent.
