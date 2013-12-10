@@ -1,5 +1,5 @@
-C In\sthe\sOP_MakeRecord\sopcode,\sfactor\sout\saffinity\schanges\sinto\sseparate\sloop,\nfor\sa\sslight\sperformance\sadvantage.
-D 2013-12-10T20:53:01.865
+C Avoid\sunnecessary\scalls\sto\ssqlite3VdbeSerialType()\sfrom\swithin\nsqlite3VdbeSerialPut().
+D 2013-12-10T21:38:08.728
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,13 +280,13 @@ F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c c5b17309048f28ff79e0b65aeb72d365a3a415a1
+F src/vdbe.c 02fac31f3921b0238d0ca72c90db31eb0c91e358
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h 7e38eef8f4bd7141e1638b0eacaebf9bc41b26bc
+F src/vdbeInt.h e103e9223787cb11e0de48cefb1cdb9fef18e2e8
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c d64bc2a057e77aef3e2a4bc6670b80f516a36d55
+F src/vdbeaux.c a66fde9e0ecf1d8b7fe60162d28bb6b95f2f6c30
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
-F src/vdbemem.c a381254caef0d102b091923a309c4c3a06a65393
+F src/vdbemem.c dedc9ee05a9d5f7c4913ee623db8d41bdb24363f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 48ecf18774ba9572d86696c60d87007a619d9f53
-R 8c35d8f315102eab592f6f641be2ff5b
+P 1c6ee9b85f61e5cdb5d9b7815cddf526dc78aaa7
+R 362b67923e10115892fb8388984a2dc3
 U drh
-Z ddd4b5e4f3e2f25b93fe4a6cd498d64a
+Z 43fa988f600d23d399ec0be485c6471b

@@ -2662,7 +2662,7 @@ case OP_MakeRecord: {
   do{
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     i += putVarint32(&zNewRecord[i], serial_type);            /* serial type */
-    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, file_format); /* content */
+    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, serial_type, file_format);
   }while( (++pRec)<=pLast );
   assert( i==nHdr );
   assert( j==nByte );
