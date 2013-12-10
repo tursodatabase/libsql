@@ -3989,9 +3989,9 @@ void sqlite3UniqueConstraint(
   for(j=0; j<pIdx->nKeyCol; j++){
     char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
     if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
-    sqlite3StrAccumAppend(&errMsg, pTab->zName, -1);
+    sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
     sqlite3StrAccumAppend(&errMsg, ".", 1);
-    sqlite3StrAccumAppend(&errMsg, zCol, -1);
+    sqlite3StrAccumAppendAll(&errMsg, zCol);
   }
   zErr = sqlite3StrAccumFinish(&errMsg);
   sqlite3HaltConstraint(pParse, 

@@ -4192,10 +4192,10 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 /*
 ** Return a pointer to payload information from the entry that the 
 ** pCur cursor is pointing to.  The pointer is to the beginning of
-** the key if skipKey==0 and it points to the beginning of data if
-** skipKey==1.  The number of bytes of available key/data is written
-** into *pAmt.  If *pAmt==0, then the value returned will not be
-** a valid pointer.
+** the key if index btrees (pPage->intKey==0) and is the data for
+** table btrees (pPage->intKey==1). The number of bytes of available
+** key/data is written into *pAmt.  If *pAmt==0, then the value
+** returned will not be a valid pointer.
 **
 ** This routine is an optimization.  It is common for the entire key
 ** and data to fit on the local page and for there to be no overflow
@@ -4208,41 +4208,21 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** page of the database.  The data might change or move the next time
 ** any btree routine is called.
 */
-static const unsigned char *fetchPayload(
+static const void *fetchPayload(
   BtCursor *pCur,      /* Cursor pointing to entry to read from */
-  u32 *pAmt,           /* Write the number of available bytes here */
-  int skipKey          /* read beginning at data if this is true */
+  u32 *pAmt            /* Write the number of available bytes here */
 ){
-  unsigned char *aPayload;
-  MemPage *pPage;
-  u32 nKey;
-  u32 nLocal;
-
   assert( pCur!=0 && pCur->iPage>=0 && pCur->apPage[pCur->iPage]);
   assert( pCur->eState==CURSOR_VALID );
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
-  pPage = pCur->apPage[pCur->iPage];
-  assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
+  assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
   if( pCur->info.nSize==0 ){
     btreeParseCell(pCur->apPage[pCur->iPage], pCur->aiIdx[pCur->iPage],
                    &pCur->info);
   }
-  aPayload = pCur->info.pCell;
-  aPayload += pCur->info.nHeader;
-  if( pPage->intKey ){
-    nKey = 0;
-  }else{
-    nKey = (int)pCur->info.nKey;
-  }
-  if( skipKey ){
-    aPayload += nKey;
-    nLocal = pCur->info.nLocal - nKey;
-  }else{
-    nLocal = pCur->info.nLocal;
-    assert( nLocal<=nKey );
-  }
-  *pAmt = nLocal;
-  return aPayload;
+  *pAmt = pCur->info.nLocal;
+  return (void*)(pCur->info.pCell + pCur->info.nHeader);
 }
 
 
@@ -4261,22 +4241,10 @@ static const unsigned char *fetchPayload(
 ** in the common case where no overflow pages are used.
 */
 const void *sqlite3BtreeKeyFetch(BtCursor *pCur, u32 *pAmt){
-  const void *p = 0;
-  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  assert( cursorHoldsMutex(pCur) );
-  if( ALWAYS(pCur->eState==CURSOR_VALID) ){
-    p = (const void*)fetchPayload(pCur, pAmt, 0);
-  }
-  return p;
+  return fetchPayload(pCur, pAmt);
 }
 const void *sqlite3BtreeDataFetch(BtCursor *pCur, u32 *pAmt){
-  const void *p = 0;
-  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  assert( cursorHoldsMutex(pCur) );
-  if( ALWAYS(pCur->eState==CURSOR_VALID) ){
-    p = (const void*)fetchPayload(pCur, pAmt, 1);
-  }
-  return p;
+  return fetchPayload(pCur, pAmt);
 }
 
 
@@ -7745,7 +7713,7 @@ static void checkAppendMsg(
     sqlite3StrAccumAppend(&pCheck->errMsg, "\n", 1);
   }
   if( zMsg1 ){
-    sqlite3StrAccumAppend(&pCheck->errMsg, zMsg1, -1);
+    sqlite3StrAccumAppendAll(&pCheck->errMsg, zMsg1);
   }
   sqlite3VXPrintf(&pCheck->errMsg, 1, zFormat, ap);
   va_end(ap);

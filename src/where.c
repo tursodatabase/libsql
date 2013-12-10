@@ -2568,7 +2568,7 @@ static void explainAppendTerm(
   const char *zOp             /* Name of the operator */
 ){
   if( iTerm ) sqlite3StrAccumAppend(pStr, " AND ", 5);
-  sqlite3StrAccumAppend(pStr, zColumn, -1);
+  sqlite3StrAccumAppendAll(pStr, zColumn);
   sqlite3StrAccumAppend(pStr, zOp, 1);
   sqlite3StrAccumAppend(pStr, "?", 1);
 }
@@ -2614,7 +2614,7 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
     }else{
       if( i ) sqlite3StrAccumAppend(&txt, " AND ", 5);
       sqlite3StrAccumAppend(&txt, "ANY(", 4);
-      sqlite3StrAccumAppend(&txt, z, -1);
+      sqlite3StrAccumAppendAll(&txt, z);
       sqlite3StrAccumAppend(&txt, ")", 1);
     }
   }

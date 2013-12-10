@@ -1221,7 +1221,7 @@ static void recordFunc(
   }else{
     aRet[0] = nSerial+1;
     sqlite3PutVarint(&aRet[1], iSerial);
-    sqlite3VdbeSerialPut(&aRet[1+nSerial], nVal, argv[0], file_format);
+    sqlite3VdbeSerialPut(&aRet[1+nSerial], argv[0], file_format);
     sqlite3_result_blob(context, aRet, nRet, SQLITE_TRANSIENT);
     sqlite3DbFree(db, aRet);
   }

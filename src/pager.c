@@ -5649,14 +5649,8 @@ static int pager_write(PgHdr *pPg){
        || pPager->eState==PAGER_WRITER_DBMOD
   );
   assert( assert_pager_state(pPager) );
-
-  /* If an error has been previously detected, report the same error
-  ** again. This should not happen, but the check provides robustness. */
-  if( NEVER(pPager->errCode) )  return pPager->errCode;
-
-  /* Higher-level routines never call this function if database is not
-  ** writable.  But check anyway, just for robustness. */
-  if( NEVER(pPager->readOnly) ) return SQLITE_PERM;
+  assert( pPager->errCode==0 );
+  assert( pPager->readOnly==0 );
 
   CHECK_PAGE(pPg);
 
@@ -5785,19 +5779,19 @@ int sqlite3PagerWrite(DbPage *pDbPage){
 
   PgHdr *pPg = pDbPage;
   Pager *pPager = pPg->pPager;
-  Pgno nPagePerSector = (pPager->sectorSize/pPager->pageSize);
 
   assert( (pPg->flags & PGHDR_MMAP)==0 );
   assert( pPager->eState>=PAGER_WRITER_LOCKED );
   assert( pPager->eState!=PAGER_ERROR );
   assert( assert_pager_state(pPager) );
 
-  if( nPagePerSector>1 ){
+  if( pPager->sectorSize > pPager->pageSize ){
     Pgno nPageCount;          /* Total number of pages in database file */
     Pgno pg1;                 /* First page of the sector pPg is located on. */
     int nPage = 0;            /* Number of pages starting at pg1 to journal */
     int ii;                   /* Loop counter */
     int needSync = 0;         /* True if any page has PGHDR_NEED_SYNC */
+    Pgno nPagePerSector = (pPager->sectorSize/pPager->pageSize);
 
     /* Set the doNotSpill NOSYNC bit to 1. This is because we cannot allow
     ** a journal header to be written between the pages journaled by
