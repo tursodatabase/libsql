@@ -1,5 +1,5 @@
-C Merge\schanges\sfrom\sthe\strunk.
-D 2013-12-10T16:35:42.772
+C Use\sSQLITE_FCNTL_SYNC\sinstead\sof\sSQLITE_FCNTL_SYNC_OMITTED.\sAdd\sdocumentation\sin\sfor\sFCNTL_SYNC\sand\sFCNTL_COMMIT_PHASETWO.
+D 2013-12-10T17:34:53.300
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
-F src/pager.c 458c580b63f7f023e9863050f938dcd6eaae026f
+F src/pager.c 994b3ee3716c89707952051115d72e0bd877e7b9
 F src/pager.h 6a790b64a9ea79bc2c849bdefdd39e2344bca94a
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -221,7 +221,7 @@ F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
-F src/sqlite.h.in 767b7475655de093182ec3d7b1f66a0cf5f1c390
+F src/sqlite.h.in 592057b6b3881573c2d516bad30fb20171f16b05
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h c59b756b3aebefdce24ff44c4a7b3c155a3c26ee
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d9a5f44f4a27336d41e60b6c3791bd018fbbff6f 7277a769694787e0332d1a4efc02041834661e2a
-R 7fad7524df4e460d9aeda5901ac3e435
+P 3ee736a39d1fc175a297c5fdd0d2e1c5a9b5b18e
+R 00ff1143b8ee30f4eb0b986958de8c12
 U dan
-Z 4d74f8c53424c0d52f5bb5be0f7994e7
+Z 4539dd639fdb6689f35ca693fd45b226

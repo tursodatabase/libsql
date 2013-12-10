@@ -786,15 +786,29 @@ struct sqlite3_io_methods {
 ** additional information.
 **
 ** <li>[[SQLITE_FCNTL_SYNC_OMITTED]]
-** ^(The [SQLITE_FCNTL_SYNC_OMITTED] opcode is generated internally by
-** SQLite and sent to all VFSes in place of a call to the xSync method
-** when the database connection has [PRAGMA synchronous] set to OFF.)^
-** Some specialized VFSes need this signal in order to operate correctly
-** when [PRAGMA synchronous | PRAGMA synchronous=OFF] is set, but most 
-** VFSes do not need this signal and should silently ignore this opcode.
-** Applications should not call [sqlite3_file_control()] with this
-** opcode as doing so may disrupt the operation of the specialized VFSes
-** that do require it.  
+** No longer in use.
+**
+** <li>[[SQLITE_FCNTL_SYNC]]
+** The [SQLITE_FCNTL_SYNC] opcode is generated internally by SQLite and
+** sent to the VFS immediately before the xSync method is invoked on a
+** database file descriptor. Or, if the xSync method is not invoked 
+** because the user has configured SQLite with 
+** [PRAGMA synchronous | PRAGMA synchronous=OFF] it is invoked in place 
+** of the xSync method. In most cases, the pointer argument passed with
+** this file-control is NULL. However, if the database file is being synced
+** as part of a multi-database commit, the argument points to a nul-terminated
+** string containing the transactions master-journal file name. VFSes that 
+** do not need this signal should silently ignore this opcode. Applications 
+** should not call [sqlite3_file_control()] with this opcode as doing so may 
+** disrupt the operation of the specialized VFSes that do require it.  
+**
+** <li>[[SQLITE_FCNTL_COMMIT_PHASETWO]]
+** The [SQLITE_FCNTL_COMMIT_PHASETWO] opcode is generated internally by SQLite
+** and sent to the VFS after a transaction has been committed immediately
+** but before the database is unlocked. VFSes that do not need this signal
+** should silently ignore this opcode. Applications should not call
+** [sqlite3_file_control()] with this opcode as doing so may disrupt the 
+** operation of the specialized VFSes that do require it.  
 **
 ** <li>[[SQLITE_FCNTL_WIN32_AV_RETRY]]
 ** ^The [SQLITE_FCNTL_WIN32_AV_RETRY] opcode is used to configure automatic
@@ -945,8 +959,8 @@ struct sqlite3_io_methods {
 #define SQLITE_FCNTL_MMAP_SIZE              18
 #define SQLITE_FCNTL_TRACE                  19
 #define SQLITE_FCNTL_HAS_MOVED              20
-
-#define SQLITE_FCNTL_COMMIT_PHASETWO        21
+#define SQLITE_FCNTL_SYNC                   21
+#define SQLITE_FCNTL_COMMIT_PHASETWO        22
 
 /*
 ** CAPI3REF: Mutex Handle

@@ -6011,7 +6011,7 @@ int sqlite3PagerSync(Pager *pPager, const char *zMaster){
 
   if( isOpen(pPager->fd) ){
     void *pArg = (void*)zMaster;
-    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC_OMITTED, pArg);
+    rc = sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SYNC, pArg);
     if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
   }
   if( rc==SQLITE_OK && !pPager->noSync ){
