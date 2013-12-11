@@ -2662,7 +2662,7 @@ case OP_MakeRecord: {
   do{
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     i += putVarint32(&zNewRecord[i], serial_type);            /* serial type */
-    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, serial_type, file_format);
+    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, serial_type); /* content */
   }while( (++pRec)<=pLast );
   assert( i==nHdr );
   assert( j==nByte );
@@ -3715,7 +3715,6 @@ case OP_Found: {        /* jump, in3 */
   if( pOp->opcode!=OP_NoConflict ) sqlite3_found_count++;
 #endif
 
-  alreadyExists = 0;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p4type==P4_INT32 );
   pC = p->apCsr[pOp->p1];
@@ -3723,6 +3722,7 @@ case OP_Found: {        /* jump, in3 */
   pIn3 = &aMem[pOp->p3];
   assert( pC->pCursor!=0 );
   assert( pC->isTable==0 );
+  pFree = 0;  /* Not needed.  Only used to suppress a compiler warning. */
   if( pOp->p4.i>0 ){
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
@@ -5353,7 +5353,6 @@ case OP_FkIfZero: {         /* jump */
 ** an integer.
 */
 case OP_MemMax: {        /* in2 */
-  Mem *pIn1;
   VdbeFrame *pFrame;
   if( p->pFrame ){
     for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);

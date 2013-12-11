@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2013-12-11T02:21:19.102
+C Fix\sharmless\scompiler\swarnings.
+D 2013-12-11T11:00:44.250
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/delete.c b36db1f79ee50eaca979660c9dd36437f5410b93
 F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
-F src/func.c ef30d26ae4d79bbc7300c74e77fd117a0ba30235
+F src/func.c fed87f35cf4da4a798b726d84abefc209b48d831
 F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -207,7 +207,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
-F src/pager.c 19203eff37c099271189bf8b378a1143847b92e3
+F src/pager.c 9bca84722e29d141089881937743daf8b5f74a2b
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -215,7 +215,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
 F src/pragma.c 5ab7279d132143feb77f773688a24ab05da75fd7
 F src/prepare.c 359d1a1e9c9bd4488e4dd3a1aaaf2d2ebb9bb768
-F src/printf.c e2f78b695b8053c23394e9ff79e3364e7308c5e4
+F src/printf.c b2778aa160ef792ba51c9f11b743bfc015b66679
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
@@ -280,15 +280,15 @@ F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c bdc4a981fb14843e09e0a369b6b5b40b54c92489
+F src/vdbe.c 919422843c859a1db08db0c88189912dbf625fc7
 F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h e103e9223787cb11e0de48cefb1cdb9fef18e2e8
+F src/vdbeInt.h a7bc268f844d75be48bb7ae16f77b418fd3c641c
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
-F src/vdbeaux.c a66fde9e0ecf1d8b7fe60162d28bb6b95f2f6c30
+F src/vdbeaux.c 74f3ad068f91d60ff56179a22610e7b0ef71e5d6
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
-F src/vdbemem.c dedc9ee05a9d5f7c4913ee623db8d41bdb24363f
+F src/vdbemem.c ac71e169dc056936f7a26ccaa808cd17456ffab1
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
-F src/vdbetrace.c e7ec40e1999ff3c6414424365d5941178966dcbc
+F src/vdbetrace.c 92c3d4f7a98ff59d44bf8351356ef82072f40517
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4d0781473a465b4ab0a307914014f3d2ddd0ce33
-R 10ffd50a76f97bbe2373fb173610ea36
-U mistachkin
-Z 53d10f2a6e8878035ff79985bd9a3564
+P 2525296d919245ebb01077aad541e4ae6eab7940
+R 24f899fa4dbed59efbcdd4778a6b73ec
+U drh
+Z 35945f2f4af25cff5df7e46d8c3b59e8
