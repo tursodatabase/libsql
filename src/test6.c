@@ -173,9 +173,6 @@ static void *crash_realloc(void *p, int n){
 static int writeDbFile(CrashFile *p, u8 *z, i64 iAmt, i64 iOff){
   int rc = SQLITE_OK;
   int iSkip = 0;
-  if( iOff==PENDING_BYTE && (p->flags&SQLITE_OPEN_MAIN_DB) ){
-    iSkip = 512;
-  }
   if( (iAmt-iSkip)>0 ){
     rc = sqlite3OsWrite(p->pRealFile, &z[iSkip], (int)(iAmt-iSkip), iOff+iSkip);
   }
@@ -643,7 +640,6 @@ static int cfOpen(
       for(iOff=0; iOff<pWrapper->iSize; iOff += 512){
         int nRead = (int)(pWrapper->iSize - iOff);
         if( nRead>512 ) nRead = 512;
-        if( isDb && iOff==PENDING_BYTE ) continue;
         rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], nRead, iOff);
       }
     }else{

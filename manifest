@@ -1,5 +1,5 @@
-C Use\sSQLITE_FCNTL_SYNC\sinstead\sof\sSQLITE_FCNTL_SYNC_OMITTED.\sAdd\sdocumentation\sin\sfor\sFCNTL_SYNC\sand\sFCNTL_COMMIT_PHASETWO.
-D 2013-12-10T17:34:53.300
+C Have\sthe\scrash-test\sinfrastructure\scode\sin\stest6.c\sread\sand\swrite\sthe\s512-byte\sblock\scontaining\sthe\spending-byte\slock\sas\snormal.\sEarlier\sversions\sdid\snot\saccess\sthis\spart\sof\sthe\sfile\sin\sorder\sto\savoid\striggering\san\sassert\sin\sos_unix.c.\sBut\sthe\sassert()\shas\ssince\sbeen\sremoved.\sAnd\snot\sreading/writing\sthis\spart\sof\sthe\sfile\scauses\sproblems\sfor\smultiplexor\stests.
+D 2013-12-11T11:03:19.250
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -234,7 +234,7 @@ F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
 F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
-F src/test6.c 6884dcfb1d04c26083ffb441ab329043967c09e5
+F src/test6.c 0c8fdf2e875ab23bb7fab6dee1a2c4c4ff03f5b0
 F src/test7.c 72b732baa5642f795655ba1126ea032af46ecfd2
 F src/test8.c c7aab1d9fbbf54fc33d43b73aa24aa55f9eaf534
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3ee736a39d1fc175a297c5fdd0d2e1c5a9b5b18e
-R 00ff1143b8ee30f4eb0b986958de8c12
+P 46231af985a1a872d1dc3418591cbaacb0b7c249
+R cf82896d56fef77694a1be0de6074b9d
 U dan
-Z 4539dd639fdb6689f35ca693fd45b226
+Z ff5d29c735004d7eb85a84bef2a95faa
