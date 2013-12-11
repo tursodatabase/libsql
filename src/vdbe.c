@@ -2694,6 +2694,7 @@ case OP_Count: {         /* out2-prerelease */
 
   pCrsr = p->apCsr[pOp->p1]->pCursor;
   assert( pCrsr );
+  nEntry = 0;  /* Not needed.  Only used to silence a warning. */
   rc = sqlite3BtreeCount(pCrsr, &nEntry);
   pOut->u.i = nEntry;
   break;
@@ -4654,6 +4655,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
   assert( pC->deferredMoveto==0 );
   assert( pC->isTable==0 );
   if( !pC->nullRow ){
+    rowid = 0;  /* Not needed.  Only used to silence a warning. */
     rc = sqlite3VdbeIdxRowid(db, pCrsr, &rowid);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -4717,6 +4719,7 @@ case OP_IdxGE: {        /* jump */
 #ifdef SQLITE_DEBUG
   { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
+  res = 0;  /* Not needed.  Only used to silence a warning. */
   rc = sqlite3VdbeIdxKeyCompare(pC, &r, &res);
   if( pOp->opcode==OP_IdxLT ){
     res = -res;
@@ -4777,6 +4780,7 @@ case OP_Destroy: {     /* out2-prerelease */
     iDb = pOp->p3;
     assert( iCnt==1 );
     assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
+    iMoved = 0;  /* Not needed.  Only to silence a warning. */
     rc = sqlite3BtreeDropTable(db->aDb[iDb].pBt, pOp->p1, &iMoved);
     pOut->flags = MEM_Int;
     pOut->u.i = iMoved;
