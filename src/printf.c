@@ -637,7 +637,7 @@ void sqlite3VXPrintf(
       }
       case etTOKEN: {
         Token *pToken = va_arg(ap, Token*);
-        if( pToken ){
+        if( pToken && pToken->n ){
           sqlite3StrAccumAppend(pAccum, (const char*)pToken->z, pToken->n);
         }
         length = width = 0;
@@ -691,7 +691,7 @@ void sqlite3VXPrintf(
 ** Append N bytes of text from z to the StrAccum object.
 */
 void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
-  assert( z!=0 || N==0 );
+  assert( z!=0 );
   assert( p->zText!=0 || p->nChar==0 || p->accError );
   assert( N>=0 );
   assert( p->accError==0 || p->nAlloc==0 );
@@ -743,7 +743,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
 ** Append the complete text of zero-terminated string z[] to the p string.
 */
 void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
-  return sqlite3StrAccumAppend(p, z, sqlite3Strlen30(z));
+  sqlite3StrAccumAppend(p, z, sqlite3Strlen30(z));
 }
 
 

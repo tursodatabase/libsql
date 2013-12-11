@@ -588,7 +588,8 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.bEnabled = 1;
     db->lookaside.bMalloced = pBuf==0 ?1:0;
   }else{
-    db->lookaside.pEnd = 0;
+    db->lookaside.pStart = db;
+    db->lookaside.pEnd = db;
     db->lookaside.bEnabled = 0;
     db->lookaside.bMalloced = 0;
   }

@@ -5785,7 +5785,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
   assert( pPager->eState!=PAGER_ERROR );
   assert( assert_pager_state(pPager) );
 
-  if( pPager->sectorSize > pPager->pageSize ){
+  if( pPager->sectorSize > (u32)pPager->pageSize ){
     Pgno nPageCount;          /* Total number of pages in database file */
     Pgno pg1;                 /* First page of the sector pPg is located on. */
     int nPage = 0;            /* Number of pages starting at pg1 to journal */

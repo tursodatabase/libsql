@@ -1511,11 +1511,11 @@ static void groupConcatStep(
         zSep = ",";
         nSep = 1;
       }
-      sqlite3StrAccumAppend(pAccum, zSep, nSep);
+      if( nSep ) sqlite3StrAccumAppend(pAccum, zSep, nSep);
     }
     zVal = (char*)sqlite3_value_text(argv[0]);
     nVal = sqlite3_value_bytes(argv[0]);
-    sqlite3StrAccumAppend(pAccum, zVal, nVal);
+    if( nVal ) sqlite3StrAccumAppend(pAccum, zVal, nVal);
   }
 }
 static void groupConcatFinalize(sqlite3_context *context){
