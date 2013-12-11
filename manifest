@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2013-12-11T11:00:44.250
+C Remove\san\sunreachable\sconditional\sinserted\sby\sthe\sprevious\scheck-in.
+D 2013-12-11T12:02:55.839
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,7 +288,7 @@ F src/vdbeaux.c 74f3ad068f91d60ff56179a22610e7b0ef71e5d6
 F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
 F src/vdbemem.c ac71e169dc056936f7a26ccaa808cd17456ffab1
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
-F src/vdbetrace.c 92c3d4f7a98ff59d44bf8351356ef82072f40517
+F src/vdbetrace.c f7eb148eb3b4fa3401b20024630dcb43d322e73c
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2525296d919245ebb01077aad541e4ae6eab7940
-R 24f899fa4dbed59efbcdd4778a6b73ec
+P a7e5fcd66659750eb2f4675082df324e7cf35427
+R 67c3fc3c4877c3d23735c8e7af689974
 U drh
-Z 35945f2f4af25cff5df7e46d8c3b59e8
+Z 7b01fedab63512666d5da7a3d79c1ff6

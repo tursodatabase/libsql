@@ -90,11 +90,10 @@ char *sqlite3VdbeExpandSql(
   if( db->nVdbeExec>1 ){
     while( *zRawSql ){
       const char *zStart = zRawSql;
-      int n;
       while( *(zRawSql++)!='\n' && *zRawSql );
       sqlite3StrAccumAppend(&out, "-- ", 3);
-      n = (int)(zRawSql - zStart);
-      if( n ) sqlite3StrAccumAppend(&out, zStart, n);
+      assert( (zRawSql - zStart) > 0 );
+      sqlite3StrAccumAppend(&out, zStart, (int)(zRawSql-zStart));
     }
   }else{
     while( zRawSql[0] ){
