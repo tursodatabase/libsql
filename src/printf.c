@@ -743,7 +743,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
 ** Append the complete text of zero-terminated string z[] to the p string.
 */
 void sqlite3StrAccumAppendAll(StrAccum *p, const char *z){
-  return sqlite3StrAccumAppend(p, z, sqlite3Strlen30(z));
+  sqlite3StrAccumAppend(p, z, sqlite3Strlen30(z));
 }
 
 

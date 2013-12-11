@@ -1,5 +1,5 @@
-C Do\snot\srun\sthe\stool/vdbe-compress.tcl\sscript\sthat\sgenerates\sthe\nvdbeExecUnion\sobject\sthat\sreduces\sthe\ssize\sof\sthe\ssqlite3VdbeExec()\nstack\sframe\sunless\sthe\sSQLITE_SMALL_STACK\scompile-time\soption\sis\nspecified\sas\son\sof\sthe\sOPTS\sin\sthe\smakefile.\s\sThe\svdbeExecUnion\sobject\ngets\sin\sthe\sway\sof\sC-compiler\soptimizer\sand\sresults\sin\sslightly\sslower\scode.
-D 2013-12-11T00:59:10.395
+C Fix\sharmless\scompiler\swarning.
+D 2013-12-11T02:21:19.102
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
 F src/pragma.c 5ab7279d132143feb77f773688a24ab05da75fd7
 F src/prepare.c 359d1a1e9c9bd4488e4dd3a1aaaf2d2ebb9bb768
-F src/printf.c aacd7f73018122689dbbe89d85c2e37f737b931f
+F src/printf.c e2f78b695b8053c23394e9ff79e3364e7308c5e4
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 079c04a5013074b68f7d90f1ce8bf8e7092ad8a2
-R 97669e12d755118ec7d7d468b1255e81
-U drh
-Z 0e355cefa23a2e0a8bf13198eee4bf26
+P 4d0781473a465b4ab0a307914014f3d2ddd0ce33
+R 10ffd50a76f97bbe2373fb173610ea36
+U mistachkin
+Z 53d10f2a6e8878035ff79985bd9a3564
