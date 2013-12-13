@@ -1038,8 +1038,8 @@ static int subjRequiresPage(PgHdr *pPg){
 /*
 ** Return true if the page is already in the journal file.
 */
-static int pageInJournal(PgHdr *pPg){
-  return sqlite3BitvecTest(pPg->pPager->pInJournal, pPg->pgno);
+static int pageInJournal(Pager *pPager, PgHdr *pPg){
+  return sqlite3BitvecTest(pPager->pInJournal, pPg->pgno);
 }
 
 /*
@@ -4335,7 +4335,7 @@ static int subjournalPage(PgHdr *pPg){
     assert( isOpen(pPager->jfd) || pagerUseWal(pPager) );
     assert( isOpen(pPager->sjfd) || pPager->nSubRec==0 );
     assert( pagerUseWal(pPager) 
-         || pageInJournal(pPg) 
+         || pageInJournal(pPager, pPg) 
          || pPg->pgno>pPager->dbOrigSize 
     );
     rc = openSubJournal(pPager);
@@ -5636,9 +5636,9 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 ** of any open savepoints as appropriate.
 */
 static int pager_write(PgHdr *pPg){
-  void *pData = pPg->pData;
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
+  int inJournal;
 
   /* This routine is not called unless a write-transaction has already 
   ** been started. The journal file may or may not be open at this point.
@@ -5674,7 +5674,8 @@ static int pager_write(PgHdr *pPg){
   ** to the journal then we can return right away.
   */
   sqlite3PcacheMakeDirty(pPg);
-  if( pageInJournal(pPg) && (pPager->nSavepoint==0 || !subjRequiresPage(pPg)) ){
+  inJournal = pageInJournal(pPager, pPg);
+  if( inJournal && (pPager->nSavepoint==0 || !subjRequiresPage(pPg)) ){
     assert( !pagerUseWal(pPager) );
   }else{
   
@@ -5682,7 +5683,7 @@ static int pager_write(PgHdr *pPg){
     ** EXCLUSIVE lock on the main database file.  Write the current page to
     ** the transaction journal if it is not there already.
     */
-    if( !pageInJournal(pPg) && !pagerUseWal(pPager) ){
+    if( !inJournal && !pagerUseWal(pPager) ){
       assert( pagerUseWal(pPager)==0 );
       if( pPg->pgno<=pPager->dbOrigSize && isOpen(pPager->jfd) ){
         u32 cksum;
@@ -5695,7 +5696,7 @@ static int pager_write(PgHdr *pPg){
         assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
 
         assert( pPager->journalHdr<=pPager->journalOff );
-        CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
+        CODEC2(pPager, pPg->pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
         cksum = pager_cksum(pPager, (u8*)pData2);
 
         /* Even if an IO or diskfull error occurs while journalling the
@@ -5747,7 +5748,7 @@ static int pager_write(PgHdr *pPg){
     ** the statement journal format differs from the standard journal format
     ** in that it omits the checksums and the header.
     */
-    if( subjRequiresPage(pPg) ){
+    if( pPager->nSavepoint>0 && subjRequiresPage(pPg) ){
       rc = subjournalPage(pPg);
     }
   }
@@ -6749,7 +6750,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit ){
     needSyncPgno = pPg->pgno;
     assert( pPager->journalMode==PAGER_JOURNALMODE_OFF ||
-            pageInJournal(pPg) || pPg->pgno>pPager->dbOrigSize );
+            pageInJournal(pPager, pPg) || pPg->pgno>pPager->dbOrigSize );
     assert( pPg->flags&PGHDR_DIRTY );
   }
 
