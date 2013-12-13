@@ -1,5 +1,5 @@
-C Create\sand\suse\sa\snew\spager\sinterface\ssqlite3PagerUnrefNotNull()\sthat\sworks\njust\slike\ssqlite3PagerUnref()\sbut\sguarantees\sthat\sits\sargument\sis\snot\sa\nNULL\spointer.
-D 2013-12-13T19:35:21.600
+C Reduce\sthe\snumber\sof\scalls\sto\sthe\ssubjRequiresPage()\sroutine\sinside\sof\spager.
+D 2013-12-13T19:48:04.970
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
-F src/pager.c 4757194b2f1ffd65a5fc45a3df4d38acc41fb7b3
+F src/pager.c 3436cc9cce915e3fbcf9ae26a877816c2e6158f1
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a845779cd31aec3204a6a9c776bd9c9f7d47dd24
-R 0519b15291565e2dff816e0cb01e063b
+P e00f37e2333cac5b53e17cf764ab56c4fcd5f617
+R f4a7260efd0973fe242850b07fa047a9
 U drh
-Z 0b683c4f7d4e0f307681d123364409c6
+Z 2c603ffc4b31451da49fbf26e09993c0

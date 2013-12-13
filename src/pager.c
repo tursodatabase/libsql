@@ -1024,15 +1024,12 @@ static char *print_pager_state(Pager *p){
 static int subjRequiresPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
   PagerSavepoint *p;
-  Pgno pgno;
+  Pgno pgno = pPg->pgno;
   int i;
-  if( pPager->nSavepoint ){
-    pgno = pPg->pgno;
-    for(i=0; i<pPager->nSavepoint; i++){
-      p = &pPager->aSavepoint[i];
-      if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
-        return 1;
-      }
+  for(i=0; i<pPager->nSavepoint; i++){
+    p = &pPager->aSavepoint[i];
+    if( p->nOrig>=pgno && 0==sqlite3BitvecTest(p->pInSavepoint, pgno) ){
+      return 1;
     }
   }
   return 0;
@@ -5677,7 +5674,7 @@ static int pager_write(PgHdr *pPg){
   ** to the journal then we can return right away.
   */
   sqlite3PcacheMakeDirty(pPg);
-  if( pageInJournal(pPg) && !subjRequiresPage(pPg) ){
+  if( pageInJournal(pPg) && (pPager->nSavepoint==0 || !subjRequiresPage(pPg)) ){
     assert( !pagerUseWal(pPager) );
   }else{
   
