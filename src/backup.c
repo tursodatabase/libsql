@@ -601,10 +601,10 @@ int sqlite3_backup_finish(sqlite3_backup *p){
 
   /* Set the error code of the destination database handle. */
   rc = (p->rc==SQLITE_DONE) ? SQLITE_OK : p->rc;
-  sqlite3Error(p->pDestDb, rc, 0);
-
-  /* Exit the mutexes and free the backup context structure. */
   if( p->pDestDb ){
+    sqlite3Error(p->pDestDb, rc, 0);
+
+    /* Exit the mutexes and free the backup context structure. */
     sqlite3LeaveMutexAndCloseZombie(p->pDestDb);
   }
   sqlite3BtreeLeave(p->pSrc);

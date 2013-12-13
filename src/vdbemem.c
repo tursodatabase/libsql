@@ -482,6 +482,9 @@ void sqlite3VdbeMemSetNull(Mem *pMem){
   MemSetTypeFlag(pMem, MEM_Null);
   pMem->type = SQLITE_NULL;
 }
+void sqlite3ValueSetNull(sqlite3_value *p){
+  sqlite3VdbeMemSetNull((Mem*)p); 
+}
 
 /*
 ** Delete any previous value and set the value to be a BLOB of length

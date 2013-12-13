@@ -2420,6 +2420,7 @@ int sqlite3VdbeTransferError(Vdbe *p){
   if( p->zErrMsg ){
     u8 mallocFailed = db->mallocFailed;
     sqlite3BeginBenignMalloc();
+    if( db->pErr==0 ) db->pErr = sqlite3ValueNew(db);
     sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
     sqlite3EndBenignMalloc();
     db->mallocFailed = mallocFailed;
@@ -2488,8 +2489,7 @@ int sqlite3VdbeReset(Vdbe *p){
     ** to sqlite3_step(). For consistency (since sqlite3_step() was
     ** called), set the database error in this case as well.
     */
-    sqlite3Error(db, p->rc, 0);
-    sqlite3ValueSetStr(db->pErr, -1, p->zErrMsg, SQLITE_UTF8, SQLITE_TRANSIENT);
+    sqlite3Error(db, p->rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = 0;
   }

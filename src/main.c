@@ -987,9 +987,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
 #endif
 
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
-  if( db->pErr ){
-    sqlite3ValueFree(db->pErr);
-  }
+  sqlite3ValueFree(db->pErr);
   sqlite3CloseExtensions(db);
 
   db->magic = SQLITE_MAGIC_ERROR;
@@ -1871,6 +1869,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( db->mallocFailed ){
     z = sqlite3ErrStr(SQLITE_NOMEM);
   }else{
+    testcase( db->pErr==0 );
     z = (char*)sqlite3_value_text(db->pErr);
     assert( !db->mallocFailed );
     if( z==0 ){
@@ -1912,8 +1911,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   }else{
     z = sqlite3_value_text16(db->pErr);
     if( z==0 ){
-      sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
-           SQLITE_UTF8, SQLITE_STATIC);
+      sqlite3Error(db, db->errCode, sqlite3ErrStr(db->errCode));
       z = sqlite3_value_text16(db->pErr);
     }
     /* A malloc() may have failed within the call to sqlite3_value_text16()
@@ -2626,8 +2624,6 @@ static int openDatabase(
     rc = sqlite3RtreeInit(db);
   }
 #endif
-
-  sqlite3Error(db, rc, 0);
 
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
