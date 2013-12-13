@@ -1673,10 +1673,11 @@ static void releasePage(MemPage *pPage){
   if( pPage ){
     assert( pPage->aData );
     assert( pPage->pBt );
+    assert( pPage->pDbPage!=0 );
     assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
     assert( sqlite3PagerGetData(pPage->pDbPage)==pPage->aData );
     assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-    sqlite3PagerUnref(pPage->pDbPage);
+    sqlite3PagerUnrefNotNull(pPage->pDbPage);
   }
 }
 

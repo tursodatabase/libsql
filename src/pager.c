@@ -1990,7 +1990,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
     PgHdr *p = pager_lookup(pPager, 1);
     if( p ){
       p->pageHash = 0;
-      sqlite3PagerUnref(p);
+      sqlite3PagerUnrefNotNull(p);
     }
   }
 #endif
@@ -2983,7 +2983,7 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
       if( rc==SQLITE_OK ){
         pPager->xReiniter(pPg);
       }
-      sqlite3PagerUnref(pPg);
+      sqlite3PagerUnrefNotNull(pPg);
     }
   }
 
@@ -5439,16 +5439,19 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
 ** are released, a rollback occurs and the lock on the database is
 ** removed.
 */
-void sqlite3PagerUnref(DbPage *pPg){
-  if( pPg ){
-    Pager *pPager = pPg->pPager;
-    if( pPg->flags & PGHDR_MMAP ){
-      pagerReleaseMapPage(pPg);
-    }else{
-      sqlite3PcacheRelease(pPg);
-    }
-    pagerUnlockIfUnused(pPager);
+void sqlite3PagerUnrefNotNull(DbPage *pPg){
+  Pager *pPager;
+  assert( pPg!=0 );
+  pPager = pPg->pPager;
+  if( pPg->flags & PGHDR_MMAP ){
+    pagerReleaseMapPage(pPg);
+  }else{
+    sqlite3PcacheRelease(pPg);
   }
+  pagerUnlockIfUnused(pPager);
+}
+void sqlite3PagerUnref(DbPage *pPg){
+  if( pPg ) sqlite3PagerUnrefNotNull(pPg);
 }
 
 /*
@@ -5830,14 +5833,14 @@ int sqlite3PagerWrite(DbPage *pDbPage){
             if( pPage->flags&PGHDR_NEED_SYNC ){
               needSync = 1;
             }
-            sqlite3PagerUnref(pPage);
+            sqlite3PagerUnrefNotNull(pPage);
           }
         }
       }else if( (pPage = pager_lookup(pPager, pg))!=0 ){
         if( pPage->flags&PGHDR_NEED_SYNC ){
           needSync = 1;
         }
-        sqlite3PagerUnref(pPage);
+        sqlite3PagerUnrefNotNull(pPage);
       }
     }
 
@@ -5853,7 +5856,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
         PgHdr *pPage = pager_lookup(pPager, pg1+ii);
         if( pPage ){
           pPage->flags |= PGHDR_NEED_SYNC;
-          sqlite3PagerUnref(pPage);
+          sqlite3PagerUnrefNotNull(pPage);
         }
       }
     }
@@ -6783,7 +6786,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   if( MEMDB ){
     assert( pPgOld );
     sqlite3PcacheMove(pPgOld, origPgno);
-    sqlite3PagerUnref(pPgOld);
+    sqlite3PagerUnrefNotNull(pPgOld);
   }
 
   if( needSyncPgno ){
@@ -6812,7 +6815,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     }
     pPgHdr->flags |= PGHDR_NEED_SYNC;
     sqlite3PcacheMakeDirty(pPgHdr);
-    sqlite3PagerUnref(pPgHdr);
+    sqlite3PagerUnrefNotNull(pPgHdr);
   }
 
   return SQLITE_OK;

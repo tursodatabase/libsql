@@ -136,6 +136,7 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag);
 DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno);
 void sqlite3PagerRef(DbPage*);
 void sqlite3PagerUnref(DbPage*);
+void sqlite3PagerUnrefNotNull(DbPage*);
 
 /* Operations on page references. */
 int sqlite3PagerWrite(DbPage*);
