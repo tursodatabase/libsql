@@ -683,7 +683,7 @@ void sqlite3VXPrintf(
         sqlite3AppendSpace(pAccum, nspace);
       }
     }
-    sqlite3_free(zExtra);
+    if( zExtra ) sqlite3_free(zExtra);
   }/* End for loop over the format string */
 } /* End of function */
 

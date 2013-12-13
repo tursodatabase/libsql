@@ -1,5 +1,5 @@
-C Simplication\sand\soptimization\sof\serror\smessage\shandling.
-D 2013-12-13T16:23:55.861
+C Avoid\sunnecessary\scalls\sto\ssqlite3_free()\sfrom\swithin\ssqlite3VXPrintf().
+D 2013-12-13T16:42:18.070
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
 F src/pragma.c 5ab7279d132143feb77f773688a24ab05da75fd7
 F src/prepare.c 359d1a1e9c9bd4488e4dd3a1aaaf2d2ebb9bb768
-F src/printf.c b2778aa160ef792ba51c9f11b743bfc015b66679
+F src/printf.c ba8b28e9d4ce984430e9f33f6ef1c85a1826d1dd
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 552f94d50f08cf11f33205730fde52bc2f06cff6
-R ab0976577ee6877312e7ddd6286ed77d
+P 9d347f547e7ba9590b0c68edf50a14ad94a2bb92
+R b5a32784d4c7409fae006d7d9202782e
 U drh
-Z 888310640adcc5f651502c7cdb27c0d3
+Z f8a864e171b1e45dee7c898a5141e356
