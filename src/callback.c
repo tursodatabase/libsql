@@ -357,7 +357,6 @@ FuncDef *sqlite3FindFunction(
 
   assert( nArg>=(-2) );
   assert( nArg>=(-1) || createFlag==0 );
-  assert( enc==SQLITE_UTF8 || enc==SQLITE_UTF16LE || enc==SQLITE_UTF16BE );
   h = (sqlite3UpperToLower[(u8)zName[0]] + nName) % ArraySize(db->aFunc.a);
 
   /* First search for a match amongst the application-defined functions.

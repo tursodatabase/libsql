@@ -942,9 +942,21 @@ static void ptrChngFunction(
   sqlite3_result_int(context, p1!=p2);
 }
 
+/*
+** This SQL function returns a different answer each time it is called, even if
+** the arguments are the same.
+*/
+static void nondeterministicFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  static int cnt = 0;
+  sqlite3_result_int(context, cnt++);
+}
 
 /*
-** Usage:  sqlite_test_create_function DB
+** Usage:  sqlite3_create_function DB
 **
 ** Call the sqlite3_create_function API on the given database in order
 ** to create a function named "x_coalesce".  This function does the same thing
@@ -973,16 +985,16 @@ static int test_create_function(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
+  rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_UTF8, 0, 
         t1_ifnullFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "hex8", 1, SQLITE_ANY, 0, 
-          hex8Func, 0, 0);
+    rc = sqlite3_create_function(db, "hex8", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+          0, hex8Func, 0, 0);
   }
 #ifndef SQLITE_OMIT_UTF16
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "hex16", 1, SQLITE_ANY, 0, 
-          hex16Func, 0, 0);
+    rc = sqlite3_create_function(db, "hex16", 1, SQLITE_UTF16 | SQLITE_DETERMINISTIC,
+          0, hex16Func, 0, 0);
   }
 #endif
   if( rc==SQLITE_OK ){
@@ -992,6 +1004,19 @@ static int test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "pointer_change", 4, SQLITE_ANY, 0, 
           ptrChngFunction, 0, 0);
+  }
+
+  /* Functions counter1() and counter2() have the same implementation - they
+  ** both return an ascending integer with each call.  But counter1() is marked
+  ** as non-deterministic and counter2() is marked as deterministic.
+  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "counter1", -1, SQLITE_UTF8,
+          0, nondeterministicFunction, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "counter2", -1, SQLITE_UTF8|SQLITE_DETERMINISTIC,
+          0, nondeterministicFunction, 0, 0);
   }
 
 #ifndef SQLITE_OMIT_UTF16

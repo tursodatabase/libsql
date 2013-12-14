@@ -2506,7 +2506,7 @@ case OP_Column: {
   pDest->enc = encoding;
 
 op_column_out:
-  rc = sqlite3VdbeMemMakeWriteable(pDest);
+  Deephemeralize(pDest);
 op_column_error:
   UPDATE_MAX_BLOBSIZE(pDest);
   REGISTER_TRACE(pOp->p3, pDest);
@@ -2570,7 +2570,8 @@ case OP_MakeRecord: {
   int nField;            /* Number of fields in the record */
   char *zAffinity;       /* The affinity string for the record */
   int file_format;       /* File format to use for encoding */
-  int i;                 /* Space used in zNewRecord[] */
+  int i;                 /* Space used in zNewRecord[] header */
+  int j;                 /* Space used in zNewRecord[] content */
   int len;               /* Length of a field */
 
   /* Assuming the record contains N fields, the record format looks
@@ -2604,36 +2605,51 @@ case OP_MakeRecord: {
   pOut = &aMem[pOp->p3];
   memAboutToChange(p, pOut);
 
+  /* Apply the requested affinity to all inputs
+  */
+  assert( pData0<=pLast );
+  if( zAffinity ){
+    pRec = pData0;
+    do{
+      applyAffinity(pRec, *(zAffinity++), encoding);
+    }while( (++pRec)<=pLast );
+  }
+
   /* Loop through the elements that will make up the record to figure
   ** out how much space is required for the new record.
   */
-  for(pRec=pData0; pRec<=pLast; pRec++){
+  pRec = pLast;
+  do{
     assert( memIsValid(pRec) );
-    if( zAffinity ){
-      applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
-    }
-    if( pRec->flags&MEM_Zero && pRec->n>0 ){
-      sqlite3VdbeMemExpandBlob(pRec);
-    }
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
     len = sqlite3VdbeSerialTypeLen(serial_type);
-    nData += len;
-    nHdr += sqlite3VarintLen(serial_type);
     if( pRec->flags & MEM_Zero ){
-      /* Only pure zero-filled BLOBs can be input to this Opcode.
-      ** We do not allow blobs with a prefix and a zero-filled tail. */
-      nZero += pRec->u.nZero;
-    }else if( len ){
-      nZero = 0;
+      if( nData ){
+        sqlite3VdbeMemExpandBlob(pRec);
+      }else{
+        nZero += pRec->u.nZero;
+        len -= pRec->u.nZero;
+      }
     }
-  }
+    nData += len;
+    testcase( serial_type==127 );
+    testcase( serial_type==128 );
+    nHdr += serial_type<=127 ? 1 : sqlite3VarintLen(serial_type);
+  }while( (--pRec)>=pData0 );
 
   /* Add the initial header varint and total the size */
-  nHdr += nVarint = sqlite3VarintLen(nHdr);
-  if( nVarint<sqlite3VarintLen(nHdr) ){
-    nHdr++;
+  testcase( nHdr==126 );
+  testcase( nHdr==127 );
+  if( nHdr<=126 ){
+    /* The common case */
+    nHdr += 1;
+  }else{
+    /* Rare case of a really large header */
+    nVarint = sqlite3VarintLen(nHdr);
+    nHdr += nVarint;
+    if( nVarint<sqlite3VarintLen(nHdr) ) nHdr++;
   }
-  nByte = nHdr+nData-nZero;
+  nByte = nHdr+nData;
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
@@ -2650,14 +2666,16 @@ case OP_MakeRecord: {
 
   /* Write the record */
   i = putVarint32(zNewRecord, nHdr);
-  for(pRec=pData0; pRec<=pLast; pRec++){
+  j = nHdr;
+  assert( pData0<=pLast );
+  pRec = pData0;
+  do{
     serial_type = sqlite3VdbeSerialType(pRec, file_format);
-    i += putVarint32(&zNewRecord[i], serial_type);      /* serial type */
-  }
-  for(pRec=pData0; pRec<=pLast; pRec++){  /* serial data */
-    i += sqlite3VdbeSerialPut(&zNewRecord[i], (int)(nByte-i), pRec,file_format);
-  }
-  assert( i==nByte );
+    i += putVarint32(&zNewRecord[i], serial_type);            /* serial type */
+    j += sqlite3VdbeSerialPut(&zNewRecord[j], pRec, serial_type); /* content */
+  }while( (++pRec)<=pLast );
+  assert( i==nHdr );
+  assert( j==nByte );
 
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pOut->n = (int)nByte;
@@ -2686,6 +2704,7 @@ case OP_Count: {         /* out2-prerelease */
 
   pCrsr = p->apCsr[pOp->p1]->pCursor;
   assert( pCrsr );
+  nEntry = 0;  /* Not needed.  Only used to silence a warning. */
   rc = sqlite3BtreeCount(pCrsr, &nEntry);
   pOut->u.i = nEntry;
   break;
@@ -3706,7 +3725,6 @@ case OP_Found: {        /* jump, in3 */
   if( pOp->opcode!=OP_NoConflict ) sqlite3_found_count++;
 #endif
 
-  alreadyExists = 0;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p4type==P4_INT32 );
   pC = p->apCsr[pOp->p1];
@@ -3714,6 +3732,7 @@ case OP_Found: {        /* jump, in3 */
   pIn3 = &aMem[pOp->p3];
   assert( pC->pCursor!=0 );
   assert( pC->isTable==0 );
+  pFree = 0;  /* Not needed.  Only used to suppress a compiler warning. */
   if( pOp->p4.i>0 ){
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
@@ -4697,6 +4716,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
   assert( pC->deferredMoveto==0 );
   assert( pC->isTable==0 );
   if( !pC->nullRow ){
+    rowid = 0;  /* Not needed.  Only used to silence a warning. */
     rc = sqlite3VdbeIdxRowid(db, pCrsr, &rowid);
     if( rc!=SQLITE_OK ){
       goto abort_due_to_error;
@@ -4760,6 +4780,7 @@ case OP_IdxGE: {        /* jump */
 #ifdef SQLITE_DEBUG
   { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
 #endif
+  res = 0;  /* Not needed.  Only used to silence a warning. */
   rc = sqlite3VdbeIdxKeyCompare(pC, &r, &res);
   if( pOp->opcode==OP_IdxLT ){
     res = -res;
@@ -4820,6 +4841,7 @@ case OP_Destroy: {     /* out2-prerelease */
     iDb = pOp->p3;
     assert( iCnt==1 );
     assert( (p->btreeMask & (((yDbMask)1)<<iDb))!=0 );
+    iMoved = 0;  /* Not needed.  Only to silence a warning. */
     rc = sqlite3BtreeDropTable(db->aDb[iDb].pBt, pOp->p1, &iMoved);
     pOut->flags = MEM_Int;
     pOut->u.i = iMoved;
@@ -5392,7 +5414,6 @@ case OP_FkIfZero: {         /* jump */
 ** an integer.
 */
 case OP_MemMax: {        /* in2 */
-  Mem *pIn1;
   VdbeFrame *pFrame;
   if( p->pFrame ){
     for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);

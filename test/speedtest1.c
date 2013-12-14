@@ -665,7 +665,7 @@ void testset_main(void){
 
 
   n = sz/5;
-  speedtest1_begin_test(290, "%d four-ways joins", n);
+  speedtest1_begin_test(300, "%d four-ways joins", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
     "SELECT t1.c FROM t1, t2, t3, t4\n"

@@ -3989,9 +3989,9 @@ void sqlite3UniqueConstraint(
   for(j=0; j<pIdx->nKeyCol; j++){
     char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
     if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
-    sqlite3StrAccumAppend(&errMsg, pTab->zName, -1);
+    sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
     sqlite3StrAccumAppend(&errMsg, ".", 1);
-    sqlite3StrAccumAppend(&errMsg, zCol, -1);
+    sqlite3StrAccumAppendAll(&errMsg, zCol);
   }
   zErr = sqlite3StrAccumFinish(&errMsg);
   sqlite3HaltConstraint(pParse, 
@@ -4183,8 +4183,9 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
       assert( sqlite3KeyInfoIsWriteable(pKey) );
       for(i=0; i<nCol; i++){
         char *zColl = pIdx->azColl[i];
-        if( NEVER(zColl==0) ) zColl = "BINARY";
-        pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
+        assert( zColl!=0 );
+        pKey->aColl[i] = strcmp(zColl,"BINARY")==0 ? 0 :
+                          sqlite3LocateCollSeq(pParse, zColl);
         pKey->aSortOrder[i] = pIdx->aSortOrder[i];
       }
       if( pParse->nErr ){

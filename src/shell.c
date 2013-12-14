@@ -1836,7 +1836,7 @@ static void csv_append_char(CSVReader *p, int c){
 **   +  Report syntax errors on stderr
 */
 static char *csv_read_one_field(CSVReader *p){
-  int c, pc;
+  int c, pc, ppc;
   int cSep = p->cSeparator;
   p->n = 0;
   c = fgetc(p->in);
@@ -1847,7 +1847,7 @@ static char *csv_read_one_field(CSVReader *p){
   if( c=='"' ){
     int startLine = p->nLine;
     int cQuote = c;
-    pc = 0;
+    pc = ppc = 0;
     while( 1 ){
       c = fgetc(p->in);
       if( c=='\n' ) p->nLine++;
@@ -1859,7 +1859,7 @@ static char *csv_read_one_field(CSVReader *p){
       }
       if( (c==cSep && pc==cQuote)
        || (c=='\n' && pc==cQuote)
-       || (c=='\n' && pc=='\r' && p->n>=2 && p->z[p->n-2]==cQuote)
+       || (c=='\n' && pc=='\r' && ppc==cQuote)
        || (c==EOF && pc==cQuote)
       ){
         do{ p->n--; }while( p->z[p->n]!=cQuote );
@@ -1877,6 +1877,7 @@ static char *csv_read_one_field(CSVReader *p){
         break;
       }
       csv_append_char(p, c);
+      ppc = pc;
       pc = c;
     }
   }else{

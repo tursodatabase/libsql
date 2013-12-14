@@ -408,7 +408,7 @@ void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
 u32 sqlite3VdbeSerialTypeLen(u32);
 u32 sqlite3VdbeSerialType(Mem*, int);
-u32 sqlite3VdbeSerialPut(unsigned char*, int, Mem*, int);
+u32 sqlite3VdbeSerialPut(unsigned char*, Mem*, u32);
 u32 sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(Vdbe*, int, int);
 
