@@ -1,5 +1,5 @@
-C Performance\soptimizations\sin\sthe\spager_write()\sroutine\sof\spager.c.
-D 2013-12-13T20:45:50.607
+C Allow\sthe\sSQLITE_DETERMINISTIC\sflag\sto\sbe\sORed\sinto\sthe\spreferred\stext\sencoding\nof\sapplication-defined\sfunctions,\sto\smark\sthe\sfunction\sas\sdeterministic.
+D 2013-12-14T13:44:22.886
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -170,7 +170,7 @@ F src/btree.c 11e29ef8cf16a42925fde036bcffbeffd9cc82df
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 47ef8209e56d840d2b35b8a243c6ee567ad52bda
-F src/callback.c f99a8957ba2adf369645fac0db09ad8adcf1caa2
+F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
@@ -188,7 +188,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c fafd3cd2a6c1211c29b9ef36b4af978ef01279ef
+F src/main.c 45e08d8ca4808625c4512a14898e9c61553e3d2a
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -221,7 +221,7 @@ F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 18924f6ccfa70da98bf9e388bab512c0fd1e792e
-F src/sqlite.h.in 592057b6b3881573c2d516bad30fb20171f16b05
+F src/sqlite.h.in 4ef56464aeaa3785a2c5ca37fb3a0fb229d68b2e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 3c1c14a551b019c94e1addcb67d92dd14a62e058
@@ -229,7 +229,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 651b10698c87bbc3ae5772e2491e3444c5bbf153
-F src/test1.c 760e0419705f712d80595f47199568cd7e3b57a4
+F src/test1.c 633e5e6a116acf4473b9289240bcceb5320a9d93
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -577,7 +577,7 @@ F test/func.test 00667bbeac044d007f6f021af1b9f6150f0c7ff8
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
-F test/func5.test 1435dd313c0bae70d6af089c97a2a997fc5d0e53
+F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
 F test/fuzz.test 77fd50afc12847af50fcf1941679d90adebadde6
 F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
@@ -1146,7 +1146,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e50ff39a93a51b5a5be4f0e82a76104b81c9e2a4
-R 5bf1150c318417a348672020b2f63094
+P bc5febef921bd12ca7760e9d07d3be0e67140320
+R 08fd6b0f6ffb77c364a2bec4efb57810
 U drh
-Z 1b9c31d5f496c5b0319085d207729750
+Z d2313ea9b793ebbfa6428f7e8b022d58

@@ -1370,6 +1370,7 @@ int sqlite3CreateFunc(
 ){
   FuncDef *p;
   int nName;
+  int extraFlags;
 
   assert( sqlite3_mutex_held(db->mutex) );
   if( zFunctionName==0 ||
@@ -1380,6 +1381,10 @@ int sqlite3CreateFunc(
       (255<(nName = sqlite3Strlen30( zFunctionName))) ){
     return SQLITE_MISUSE_BKPT;
   }
+
+  assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
+  extraFlags = enc &  SQLITE_DETERMINISTIC;
+  enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
   
 #ifndef SQLITE_OMIT_UTF16
   /* If SQLITE_UTF16 is specified as the encoding type, transform this
@@ -1393,10 +1398,10 @@ int sqlite3CreateFunc(
     enc = SQLITE_UTF16NATIVE;
   }else if( enc==SQLITE_ANY ){
     int rc;
-    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8,
+    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8|extraFlags,
          pUserData, xFunc, xStep, xFinal, pDestructor);
     if( rc==SQLITE_OK ){
-      rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE,
+      rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE|extraFlags,
           pUserData, xFunc, xStep, xFinal, pDestructor);
     }
     if( rc!=SQLITE_OK ){
@@ -1439,7 +1444,8 @@ int sqlite3CreateFunc(
     pDestructor->nRef++;
   }
   p->pDestructor = pDestructor;
-  p->funcFlags &= SQLITE_FUNC_ENCMASK;
+  p->funcFlags = (p->funcFlags & SQLITE_FUNC_ENCMASK) | extraFlags;
+  testcase( p->funcFlags & SQLITE_DETERMINISTIC );
   p->xFunc = xFunc;
   p->xStep = xStep;
   p->xFinalize = xFinal;
