@@ -606,7 +606,9 @@ void sqlite3VXPrintf(
 #endif /* !defined(SQLITE_OMIT_FLOATING_POINT) */
         break;
       case etSIZE:
-        if( !bArgList ) *(va_arg(ap,int*)) = pAccum->nChar;
+        if( !bArgList ){
+          *(va_arg(ap,int*)) = pAccum->nChar;
+        }
         length = width = 0;
         break;
       case etPERCENT:
@@ -616,7 +618,8 @@ void sqlite3VXPrintf(
         break;
       case etCHARX:
         if( bArgList ){
-          c = (int)getIntArg(pArgList);
+          bufpt = getTextArg(pArgList);
+          c = bufpt ? bufpt[0] : 0;
         }else{
           c = va_arg(ap,int);
         }

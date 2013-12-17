@@ -1,5 +1,5 @@
-C Add\sthe\sprintf()\sSQL\sfunction.
-D 2013-12-17T15:03:06.814
+C Fix\sthe\sformatting\sof\s%c\sin\sthe\sprintf()\sSQL\sfunction.
+D 2013-12-17T15:58:42.950
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -215,7 +215,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 57fee9a9a617218f5037afbbe49b09da65bde56b
 F src/pragma.c 5ab7279d132143feb77f773688a24ab05da75fd7
 F src/prepare.c 359d1a1e9c9bd4488e4dd3a1aaaf2d2ebb9bb768
-F src/printf.c 0c0cb58e43410d6237afe0f2751f265fc62eac59
+F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
@@ -739,7 +739,7 @@ F test/permutations.test af3278cbea3a19e025d5169be8193ff48dc3f862
 F test/pragma.test e882183ecd21d064cec5c7aaea174fbd36293429
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
-F test/printf2.test 7b1c2c27826702723ad2b1fcd92bce2ffc9f45f3
+F test/printf2.test 2f0978059768bb039d3ee09466bdcd06fc7a6a86
 F test/progress.test a282973d1d17f08071bc58a77d6b80f2a81c354d
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/queryonly.test 5f653159e0f552f0552d43259890c1089391dcca
@@ -1147,10 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5716fc2341ddd8cf64139e7168597f864da4e10b
-R 2b8d4659fa3fad9afbe93191f7aa6089
-T *branch * printf-sql-function
-T *sym-printf-sql-function *
-T -sym-trunk *
+P 6db7052eeefafdbf26b3153bc38600fecfb53ae6
+R 2f73ea36e182ebaad881490b3d78bb71
 U drh
-Z 77c6ba366806353f9c00efecee393357
+Z 671b11d5131d6faea51d8a864c8026f9
