@@ -742,6 +742,7 @@ typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
 typedef struct Parse Parse;
+typedef struct PrintfArguments PrintfArguments;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
@@ -2764,10 +2765,20 @@ void sqlite3StatusSet(int, int);
 # define sqlite3IsNaN(X)  0
 #endif
 
-void sqlite3VXPrintf(StrAccum*, int, const char*, va_list);
-#ifndef SQLITE_OMIT_TRACE
-void sqlite3XPrintf(StrAccum*, const char*, ...);
-#endif
+/*
+** An instance of the following structure holds information about SQL
+** functions arguments that are the parameters to the printf() function.
+*/
+struct PrintfArguments {
+  int nArg;                /* Total number of arguments */
+  int nUsed;               /* Number of arguments used so far */
+  sqlite3_value **apArg;   /* The argument values */
+};
+
+#define SQLITE_PRINTF_INTERNAL 0x01
+#define SQLITE_PRINTF_SQLFUNC  0x02
+void sqlite3VXPrintf(StrAccum*, u32, const char*, va_list);
+void sqlite3XPrintf(StrAccum*, u32, const char*, ...);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
