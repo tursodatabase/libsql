@@ -1565,7 +1565,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
 Vdbe *sqlite3GetVdbe(Parse *pParse){
   Vdbe *v = pParse->pVdbe;
   if( v==0 ){
-    v = pParse->pVdbe = sqlite3VdbeCreate(pParse->db);
+    v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
 #ifndef SQLITE_OMIT_TRACE
     if( v ){
       sqlite3VdbeAddOp0(v, OP_Trace);

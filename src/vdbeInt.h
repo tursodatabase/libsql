@@ -312,6 +312,9 @@ struct Vdbe {
   Mem **apArg;            /* Arguments to currently executing user function */
   Mem *aColName;          /* Column names to return */
   Mem *pResultSet;        /* Pointer to an array of results */
+#ifdef SQLITE_DEBUG
+  Parse *pParse;          /* Parsing context used to create this Vdbe */
+#endif
   int nMem;               /* Number of memory locations currently allocated */
   int nOp;                /* Number of instructions in the program */
   int nOpAlloc;           /* Number of slots allocated for aOp[] */

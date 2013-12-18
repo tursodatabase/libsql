@@ -20,7 +20,8 @@
 /*
 ** Create a new virtual database engine.
 */
-Vdbe *sqlite3VdbeCreate(sqlite3 *db){
+Vdbe *sqlite3VdbeCreate(Parse *pParse){
+  sqlite3 *db = pParse->db;
   Vdbe *p;
   p = sqlite3DbMallocZero(db, sizeof(Vdbe) );
   if( p==0 ) return 0;
@@ -32,6 +33,9 @@ Vdbe *sqlite3VdbeCreate(sqlite3 *db){
   p->pPrev = 0;
   db->pVdbe = p;
   p->magic = VDBE_MAGIC_INIT;
+#if SQLITE_DEBUG
+  p->pParse = pParse;
+#endif
   return p;
 }
 
@@ -151,6 +155,15 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #endif
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
+    int jj, kk;
+    Parse *pParse = p->pParse;
+    for(jj=kk=0; jj<SQLITE_N_COLCACHE; jj++){
+      struct yColCache *x = pParse->aColCache + jj;
+      if( x->iLevel>pParse->iCacheLevel || x->iReg==0 ) continue;
+      printf(" r[%d]={%d:%d}", x->iReg, x->iTable, x->iColumn);
+      kk++;
+    }
+    if( kk ) printf("\n");
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
     test_addop_breakpoint();
   }
