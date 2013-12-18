@@ -1,5 +1,5 @@
-C Add\sevidence\smarks\sand\sadditional\stest\scases\sfor\sthe\sprintf()\sSQL\sfunction.
-D 2013-12-17T16:32:56.710
+C Remove\san\sunnecessary\scolumn-cache\sflush\soperation.\s\sAdd\scode\sto\strace\sthe\ncolumn\scache\swhen\scompiled\swith\sSQLITE_DEBUG\sand\susing\nPRAGMA\svdbe_addoptrace=ON.
+D 2013-12-18T18:44:43.134
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c b36db1f79ee50eaca979660c9dd36437f5410b93
-F src/expr.c 31a2b65339f6c3795d4cfa5e99798cd72f9fdfdf
+F src/expr.c 962c29881bcee9e1d7b556020c1d29dc8bd8b906
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 6325ac2ec10833ccf4d5c36d323709221d37ea19
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
+F src/select.c ecb020aa28e030761f6addd0adf5438e938931c1
 F src/shell.c 18924f6ccfa70da98bf9e388bab512c0fd1e792e
 F src/sqlite.h.in 4ef56464aeaa3785a2c5ca37fb3a0fb229d68b2e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -281,11 +281,11 @@ F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c e71f19b272f05c8695cf747b4bac1732685f9e5c
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 919422843c859a1db08db0c88189912dbf625fc7
-F src/vdbe.h c06f0813f853566457ce9cfb1a4a4bc39a5da644
-F src/vdbeInt.h a7bc268f844d75be48bb7ae16f77b418fd3c641c
+F src/vdbe.h c3278ab2b410f17acf61faf91be7bce3fd466e8b
+F src/vdbeInt.h 8a4d2d69955570bb74a092c3cdbab04afb554963
 F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
-F src/vdbeaux.c a22cbd91b24503b82690cb03324ffec9f4ef63f6
-F src/vdbeblob.c 8cd05a5630e6d5563ad017bf82edaf812b28acde
+F src/vdbeaux.c 70aa77f7db7b9b627bbc44a4546deef8ba56c51b
+F src/vdbeblob.c bc40f98f256f0b34116d6a44b114da4a81a15d33
 F src/vdbemem.c 0e69351b2c6ff7d8b638688c0ae336a26befa6b2
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
@@ -822,7 +822,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c bb3a4cc62b6cf29f5bc72c85d2bee5991e207be7
+F test/speedtest1.c 47788d552a349241471ad06d239383dadd97164d
 F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test c8eccfe8fcd3f3cfc864ce22d5b9e803a3c69940
@@ -1147,7 +1147,8 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a1bb62f91a85af0584100c3ad77877a949c30cca
-R 69f0b68d0886123f335b52e69a6c748f
+P 93121d3097a43997af3c0de65bd9bd7663845fa2 97fdfc6b79833011fc0c506fe5e0985c0fb1906c
+R ad4bcfdba61e39f0bb9e7693f91a62e0
+T +closed 97fdfc6b79833011fc0c506fe5e0985c0fb1906c
 U drh
-Z 3ce3ba9d696aa32fcf98b10717e459c0
+Z d67945416ae9c517bb5d46293eed5eb3

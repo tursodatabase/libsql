@@ -663,9 +663,17 @@ void testset_main(void){
   speedtest1_exec("REPLACE INTO t3(a,b,c) SELECT a,b,c FROM t1");
   speedtest1_end_test();
 
+  speedtest1_begin_test(300, "Refill a %d-row table using (b&1)==(a&1)", sz);
+  speedtest1_exec("DELETE FROM t2;");
+  speedtest1_exec(
+     "INSERT INTO t2(a,b,c) SELECT a,b,c FROM t1 WHERE (b&1)==(a&1);"
+     "INSERT INTO t2(a,b,c) SELECT a,b,c FROM t1 WHERE (b&1)<>(a&1);"
+  );
+  speedtest1_end_test();
+
 
   n = sz/5;
-  speedtest1_begin_test(300, "%d four-ways joins", n);
+  speedtest1_begin_test(310, "%d four-ways joins", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
     "SELECT t1.c FROM t1, t2, t3, t4\n"
