@@ -598,7 +598,6 @@ static void selectInnerLoop(
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
-    sqlite3ExprCacheClear(pParse);
     sqlite3ExprCodeExprList(pParse, pEList, regResult,
                             (eDest==SRT_Output)?SQLITE_ECEL_DUP:0);
   }

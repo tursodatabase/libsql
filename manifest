@@ -1,5 +1,5 @@
-C Show\schanges\sto\sthe\scolumn\scache\swhen\sPRAGMA\svdbe_addoptrace=ON\sis\sset.
-D 2013-12-18T15:11:47.634
+C Remove\san\sunnecessary\scolumn-cache\sflush.\s\sAdd\sanother\stest\scase\sto\sthe\nspeedtest1.c\sprogram\sto\saccentuate\sthe\sbenefit\sof\snot\sflushing\sthe\scache\sat\nthat\spoint.
+D 2013-12-18T16:27:48.409
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c c1cd470c699ad55beb762022b2ea820cdfe12895
+F src/select.c ecb020aa28e030761f6addd0adf5438e938931c1
 F src/shell.c 18924f6ccfa70da98bf9e388bab512c0fd1e792e
 F src/sqlite.h.in 4ef56464aeaa3785a2c5ca37fb3a0fb229d68b2e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -822,7 +822,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c bb3a4cc62b6cf29f5bc72c85d2bee5991e207be7
+F test/speedtest1.c 47788d552a349241471ad06d239383dadd97164d
 F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test c8eccfe8fcd3f3cfc864ce22d5b9e803a3c69940
@@ -1147,10 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 93121d3097a43997af3c0de65bd9bd7663845fa2
-R 509cbb701cd3c7ed8d65fb3eb1823d74
-T *branch * column-cache-debug
-T *sym-column-cache-debug *
-T -sym-trunk *
+P 4c6a659c432e4f7c0285f58675a67f967b07bb0d
+R ad4bcfdba61e39f0bb9e7693f91a62e0
 U drh
-Z ece27495bc3ec8587c593a30b1f41a23
+Z e871bbf1438be1f459e194c32e33e3c1
