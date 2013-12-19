@@ -1,5 +1,5 @@
-C Make\ssure\serrors\sencountered\swhile\sinitializing\sextensions\ssuch\sas\sFTS4\nget\sreported\sout\sfrom\ssqlite3_open().\s\sThis\sfixes\sa\sbug\sintroduced\sby\ncheck-in\s[9d347f547e7ba9].\s\sAlso\sremove\slots\sof\sforgotten\s"breakpoint"\ncommands\sleft\sin\stest\sscripts\sover\sthe\syears.
-D 2013-12-19T16:26:05.208
+C Do\snot\sinject\sOOM\sfaults\sinto\sSQLITE_FCNTL_COMMIT_PHASE_TWO\sfile-control\sinvocations.\sIt\scauses\sproblems\sfor\stest\sscripts.
+D 2013-12-19T17:04:58.210
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -202,7 +202,7 @@ F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
 F src/mutex_w32.c 6108c88e1cb38d8fbb3534b170793815cbedbf97
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
-F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
+F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ffa092e13b3781677b18418cca40e3dd1e388aed
-R 62e1d728cd37281433b32cbd44f4c682
-U drh
-Z 83a1d9d85b0e444eca37253273a68154
+P ca3fdfd41961d8d3d1e39d20dc628e8a95dabb2f
+R b2d8ac3bed199d88ddec25ed7c70eec6
+U dan
+Z b85edb7cdda29606f3560dec5a14157c
