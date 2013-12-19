@@ -1,5 +1,5 @@
-C Omit\sone\sor\smore\spointless\sinstructions\sthat\soccur\sin\sbetween\sOP_NoConflict\nand\sOP_Halt.
-D 2013-12-19T02:23:45.916
+C Omit\san\sunnecessary\sOP_Null\sopcode\sfrom\sUPDATE.
+D 2013-12-19T02:56:01.711
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F src/test_vfstrace.c 3a0ab304682fecbceb689e7d9b904211fde11d78
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
-F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
+F src/update.c 47baf532e3ecec8e4093f92d613384f66785fc2f
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c e71f19b272f05c8695cf747b4bac1732685f9e5c
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 58704ed1f4cd78bb3b0c095ffd1626906a95a413
-R 464abf9a1fd9120477908520316caad2
+P 61e2f3575c4a94f9571c28fb2bd19da84b0edceb
+R df16247ba6ed01ab9a8dff3d1c0e5ea9
 U drh
-Z 1a25f8b4acb360c6ad6b1c4bc1cd07e9
+Z 56ef984ce433e185375b049dfac62028
