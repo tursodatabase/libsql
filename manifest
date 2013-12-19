@@ -1,5 +1,5 @@
-C Omit\san\sunnecessary\sOP_Null\sopcode\sfrom\sUPDATE.
-D 2013-12-19T02:56:01.711
+C Remove\san\sunneeded\scolumn-cache\sflush\sin\saggregate\sSELECT\nand\san\sunreachable\sbranch\sin\sthe\sINSERT\slogic.
+D 2013-12-19T14:34:34.832
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c d1b3fd53cd8e3f232e47675cf2c3d1b1f4101f2a
+F src/insert.c f165ba414eda735b327c8126def0a2428f9138de
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c ecb020aa28e030761f6addd0adf5438e938931c1
+F src/select.c 9d13850293cf19e5ffee59b231fa372e16ce65a9
 F src/shell.c 18924f6ccfa70da98bf9e388bab512c0fd1e792e
 F src/sqlite.h.in 4ef56464aeaa3785a2c5ca37fb3a0fb229d68b2e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 61e2f3575c4a94f9571c28fb2bd19da84b0edceb
-R df16247ba6ed01ab9a8dff3d1c0e5ea9
+P 72d111336c5016e5b5092dfebcd01253266a7685
+R a48136d424494fa9261ddc391e19f98d
 U drh
-Z 56ef984ce433e185375b049dfac62028
+Z 822c060ba762ff386aec37ff13c59f91

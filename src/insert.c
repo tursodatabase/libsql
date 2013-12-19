@@ -1515,7 +1515,7 @@ void sqlite3GenerateConstraintChecks(
         int x;
         /* Extract the PRIMARY KEY from the end of the index entry and
         ** store it in registers regR..regR+nPk-1 */
-        if( (isUpdate || onError==OE_Replace) && pIdx!=pPk ){
+        if( pIdx!=pPk ){
           for(i=0; i<pPk->nKeyCol; i++){
             x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
             sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);

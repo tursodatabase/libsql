@@ -3875,7 +3875,6 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   struct AggInfo_col *pC;
 
   pAggInfo->directMode = 1;
-  sqlite3ExprCacheClear(pParse);
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;
     int addrNext = 0;
