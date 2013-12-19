@@ -1279,7 +1279,6 @@ foreach {tn settings restart_sync commit_sync ckpt_sync} {
     PRAGMA synchronous = [lindex $settings 2];
   " {0 wal}
 
-if { $tn==2} breakpoint
   do_test 15.$tn.2 {
     set sync(normal) 0
     set sync(full) 0

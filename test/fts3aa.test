@@ -146,7 +146,6 @@ do_test fts3aa-3.3 {
   execsql {SELECT rowid FROM t1 WHERE content MATCH '-two one'}
 } {1 5 9 13 17 21 25 29}
 
-breakpoint
 do_test fts3aa-4.1 {
   execsql {SELECT rowid FROM t1 WHERE content MATCH 'one OR two'}
 } {1 2 3 5 6 7 9 10 11 13 14 15 17 18 19 21 22 23 25 26 27 29 30 31}

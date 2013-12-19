@@ -392,7 +392,6 @@ foreach T $tokenizers {
 #-------------------------------------------------------------------------
 # Test that the private use ranges are treated as alphanumeric.
 #
-breakpoint
 foreach {tn1 c} {
   1 \ue000 2 \ue001 3 \uf000 4 \uf8fe 5 \uf8ff
 } {
@@ -557,7 +556,3 @@ do_execsql_test 11.1 {
 }
 
 finish_test
-
-
-
-

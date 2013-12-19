@@ -253,7 +253,6 @@ check_doclist fts3d-4.4.10 1 0 was {[2 0[1]]}
 
 # Optimize should leave the result in the level of the highest-level
 # prior segment.
-breakpoint
 do_test fts3d-4.5 {
   execsql {
     SELECT OPTIMIZE(t1) FROM t1 LIMIT 1;

@@ -1191,7 +1191,6 @@ do_test capi3-18.2 {
   sqlite3_reset $STMT
   sqlite3_errcode db
 } {SQLITE_SCHEMA}
-breakpoint
 do_test capi3-18.3 {
   sqlite3_errmsg db
 } {database schema has changed}
