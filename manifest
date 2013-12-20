@@ -1,5 +1,5 @@
-C Combine\sadjacent\ssingle-register\sOP_Copy\sinstructions\sinto\sa\ssingle\nmulti-register\sOP_Copy,\swhere\spossible.\s\sFix\sthe\sSynopsis\scomment\sfor\nmulti-register\sOP_Copy\sinstructions\sto\sshow\sthe\scorrect\sregister\sranges.
-D 2013-12-20T15:59:20.716
+C Code\ssimplification\sin\ssqlite3GenerateIndexKey()\sby\smaking\suse\sof\sa\ssubroutine\nfound\sover\sin\sexpr.c.
+D 2013-12-20T18:44:35.386
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c b36db1f79ee50eaca979660c9dd36437f5410b93
+F src/delete.c 821da82527c24496bef0677ed4f61a53b44c27ee
 F src/expr.c ffe4bc79c66f711f450a6113fbd1943b9b2380f7
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P df70a1f30393b34146d6b8bf1df5a76aaf362efe
-R ae7f2b624bd6d9dcdad2f041ed2699ab
+P 2ae22dc0cbed2feca4baf89d02aaace0331971d6
+R 5c55bdf162e02aeda0ecbd1279176bdc
 U drh
-Z e4024102bfc5328ec565d390ad91c722
+Z da74200164ac95fa24bb1bb84f137616

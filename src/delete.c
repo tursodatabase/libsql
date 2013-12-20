@@ -768,7 +768,6 @@ int sqlite3GenerateIndexKey(
   Table *pTab = pIdx->pTable;
   int regBase;
   int nCol;
-  Index *pPk;
 
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
@@ -782,16 +781,9 @@ int sqlite3GenerateIndexKey(
   }
   nCol = (prefixOnly && pIdx->uniqNotNull) ? pIdx->nKeyCol : pIdx->nColumn;
   regBase = sqlite3GetTempRange(pParse, nCol);
-  pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
   for(j=0; j<nCol; j++){
-    i16 idx = pIdx->aiColumn[j];
-    if( pPk ) idx = sqlite3ColumnOfIndex(pPk, idx);
-    if( idx<0 || idx==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_Rowid, iDataCur, regBase+j);
-    }else{
-      sqlite3VdbeAddOp3(v, OP_Column, iDataCur, idx, regBase+j);
-      sqlite3ColumnDefault(v, pTab, pIdx->aiColumn[j], -1);
-    }
+    sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pIdx->aiColumn[j],
+                                    regBase+j);
   }
   if( regOut ){
     const char *zAff;
