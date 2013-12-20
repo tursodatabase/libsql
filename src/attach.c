@@ -38,10 +38,6 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
   if( pExpr ){
     if( pExpr->op!=TK_ID ){
       rc = sqlite3ResolveExprNames(pName, pExpr);
-      if( rc==SQLITE_OK && !sqlite3ExprIsConstant(pExpr) ){
-        sqlite3ErrorMsg(pName->pParse, "invalid name: \"%s\"", pExpr->u.zToken);
-        return SQLITE_ERROR;
-      }
     }else{
       pExpr->op = TK_STRING;
     }

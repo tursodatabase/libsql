@@ -1,5 +1,5 @@
-C Simplify\sthe\saccumulator\sreset\sfor\saggregate\squery\sprocessing\sso\sthat\sit\nuses\sa\ssingle\smulti-register\sOP_Null\srather\sthan\sa\sseparate\sOP_Null\sfor\seach\nregister.
-D 2013-12-20T13:11:45.101
+C Allow\sany\sarbitrary\sexpression\sas\sthe\sfilename\sin\san\sATTACH\sstatement,\nincluding\sfunctions\sand\ssubqueries.
+D 2013-12-20T14:48:12.779
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
 F src/analyze.c 581d5c18ce89c6f45d4dca65914d0de5b4dad41f
-F src/attach.c 0a17c9364895316ca4f52d06a97a72c0af1ae8b3
+F src/attach.c 3801129015ef59d76bf23c95ef9b0069d18a0c52
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8eb28d23e353139d24a8af78309d39249ab9eaf0
-R 488c9d6501762ac1c5b904ecc4a5a8a0
+P 2c7fd9b043f5f3d9d8e22dbefa84a9770ca951d0
+R d11a12f8bb29004dd6853b4e5004e340
 U drh
-Z c5be2c2c1ecdd01c10eef8b3332d3737
+Z efe52f7d54c1916342aa04894f1853b2
