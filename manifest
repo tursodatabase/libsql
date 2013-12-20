@@ -1,5 +1,5 @@
-C Code\ssimplification\sin\ssqlite3GenerateIndexKey()\sby\smaking\suse\sof\sa\ssubroutine\nfound\sover\sin\sexpr.c.
-D 2013-12-20T18:44:35.386
+C Fix\scompiler\sharmless\swarnings\sin\stclsqlite.c\sthat\sappeared\swith\sGCC\s4.8.x.
+D 2013-12-20T18:57:44.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/sqliteInt.h d0815177df125e900056e1e692504435e7610793
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 651b10698c87bbc3ae5772e2491e3444c5bbf153
+F src/tclsqlite.c c43379f77f90399802b0e215faa71c0adc3a4d2e
 F src/test1.c 633e5e6a116acf4473b9289240bcceb5320a9d93
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2ae22dc0cbed2feca4baf89d02aaace0331971d6
-R 5c55bdf162e02aeda0ecbd1279176bdc
+P 0026d3355340d66687a3fd4cbece28811ef1b505
+R 1e7ba7ea1368145f32bc284eea0efbfc
 U drh
-Z da74200164ac95fa24bb1bb84f137616
+Z b38a5e6618ad563a8f912c35a2908336
