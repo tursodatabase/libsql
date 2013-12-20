@@ -885,7 +885,17 @@ static int translateP(char c, const Op *pOp){
 }
 
 /*
-** Compute a string for the "comment" field of a VDBE opcode listing
+** Compute a string for the "comment" field of a VDBE opcode listing.
+**
+** The Synopsis: field in comments in the vdbe.c source file gets converted
+** to an extra string that is appended to the sqlite3OpcodeName().  In the
+** absence of other comments, this synopsis becomes the comment on the opcode.
+** Some translation occurs:
+**
+**       "PX"      ->  "r[X]"
+**       "PX@PY"   ->  "r[X..X+Y-1]"  or "r[x]" if y is 0 or 1
+**       "PX@PY+1" ->  "r[X..X+Y]"    or "r[x]" if y is 0
+**       "PY..PY"  ->  "r[X..Y]"      or "r[x]" if y<=x
 */
 static int displayComment(
   const Op *pOp,     /* The opcode to be commented */
@@ -919,7 +929,13 @@ static int displayComment(
             ii += 3;
             jj += sqlite3Strlen30(zTemp+jj);
             v2 = translateP(zSynopsis[ii], pOp);
-            if( v2>1 ) sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+            if( strncmp(zSynopsis+ii+1,"+1",2)==0 ){
+              ii += 2;
+              v2++;
+            }
+            if( v2>1 ){
+              sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+            }
           }else if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
             ii += 4;
           }
@@ -1151,6 +1167,9 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 #else
   zCom[0] = 0
 #endif
+  /* NB:  The sqlite3OpcodeName() function is implemented by code created
+  ** by the mkopcodeh.awk and mkopcodec.awk scripts which extract the
+  ** information from the vdbe.c source text */
   fprintf(pOut, zFormat1, pc, 
       sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, zP4, pOp->p5,
       zCom

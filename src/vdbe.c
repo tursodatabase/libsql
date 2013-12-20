@@ -1111,7 +1111,7 @@ case OP_Move: {
 }
 
 /* Opcode: Copy P1 P2 P3 * *
-** Synopsis: r[P2@P3]=r[P1@P3]
+** Synopsis: r[P2@P3+1]=r[P1@P3+1]
 **
 ** Make a copy of registers P1..P1+P3 into registers P2..P2+P3.
 **

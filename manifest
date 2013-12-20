@@ -1,5 +1,5 @@
-C Allow\sany\sarbitrary\sexpression\sas\sthe\sfilename\sin\san\sATTACH\sstatement,\nincluding\sfunctions\sand\ssubqueries.
-D 2013-12-20T14:48:12.779
+C Combine\sadjacent\ssingle-register\sOP_Copy\sinstructions\sinto\sa\ssingle\nmulti-register\sOP_Copy,\swhere\spossible.\s\sFix\sthe\sSynopsis\scomment\sfor\nmulti-register\sOP_Copy\sinstructions\sto\sshow\sthe\scorrect\sregister\sranges.
+D 2013-12-20T15:59:20.716
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c b36db1f79ee50eaca979660c9dd36437f5410b93
-F src/expr.c 962c29881bcee9e1d7b556020c1d29dc8bd8b906
+F src/expr.c ffe4bc79c66f711f450a6113fbd1943b9b2380f7
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 6325ac2ec10833ccf4d5c36d323709221d37ea19
@@ -280,11 +280,11 @@ F src/update.c 47baf532e3ecec8e4093f92d613384f66785fc2f
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c e71f19b272f05c8695cf747b4bac1732685f9e5c
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 919422843c859a1db08db0c88189912dbf625fc7
+F src/vdbe.c 6bcf27a80c3fdffee649f12eae91522718a06a64
 F src/vdbe.h c3278ab2b410f17acf61faf91be7bce3fd466e8b
 F src/vdbeInt.h 8a4d2d69955570bb74a092c3cdbab04afb554963
 F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
-F src/vdbeaux.c 70aa77f7db7b9b627bbc44a4546deef8ba56c51b
+F src/vdbeaux.c 6fb0607776fe707a12e1859e66fc94b439966274
 F src/vdbeblob.c bc40f98f256f0b34116d6a44b114da4a81a15d33
 F src/vdbemem.c 0e69351b2c6ff7d8b638688c0ae336a26befa6b2
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2c7fd9b043f5f3d9d8e22dbefa84a9770ca951d0
-R d11a12f8bb29004dd6853b4e5004e340
+P df70a1f30393b34146d6b8bf1df5a76aaf362efe
+R ae7f2b624bd6d9dcdad2f041ed2699ab
 U drh
-Z efe52f7d54c1916342aa04894f1853b2
+Z e4024102bfc5328ec565d390ad91c722
