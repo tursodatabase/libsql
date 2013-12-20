@@ -3822,14 +3822,23 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   Vdbe *v = pParse->pVdbe;
   int i;
   struct AggInfo_func *pFunc;
-  if( pAggInfo->nFunc+pAggInfo->nColumn==0 ){
-    return;
-  }
+  int nReg = pAggInfo->nFunc + pAggInfo->nColumn;
+  if( nReg==0 ) return;
+#ifdef SQLITE_DEBUG
+  /* Verify that all AggInfo registers are within the range specified by
+  ** AggInfo.mnReg..AggInfo.mxReg */
+  assert( nReg==pAggInfo->mxReg-pAggInfo->mnReg+1 );
   for(i=0; i<pAggInfo->nColumn; i++){
-    sqlite3VdbeAddOp2(v, OP_Null, 0, pAggInfo->aCol[i].iMem);
+    assert( pAggInfo->aCol[i].iMem>=pAggInfo->mnReg
+         && pAggInfo->aCol[i].iMem<=pAggInfo->mxReg );
   }
+  for(i=0; i<pAggInfo->nFunc; i++){
+    assert( pAggInfo->aFunc[i].iMem>=pAggInfo->mnReg
+         && pAggInfo->aFunc[i].iMem<=pAggInfo->mxReg );
+  }
+#endif
+  sqlite3VdbeAddOp3(v, OP_Null, 0, pAggInfo->mnReg, pAggInfo->mxReg);
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
-    sqlite3VdbeAddOp2(v, OP_Null, 0, pFunc->iMem);
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pExpr;
       assert( !ExprHasProperty(pE, EP_xIsSelect) );
@@ -4407,6 +4416,7 @@ int sqlite3Select(
     sNC.pParse = pParse;
     sNC.pSrcList = pTabList;
     sNC.pAggInfo = &sAggInfo;
+    sAggInfo.mnReg = pParse->nMem+1;
     sAggInfo.nSortingColumn = pGroupBy ? pGroupBy->nExpr+1 : 0;
     sAggInfo.pGroupBy = pGroupBy;
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
@@ -4421,6 +4431,7 @@ int sqlite3Select(
       sqlite3ExprAnalyzeAggList(&sNC, sAggInfo.aFunc[i].pExpr->x.pList);
       sNC.ncFlags &= ~NC_InAggFunc;
     }
+    sAggInfo.mxReg = pParse->nMem;
     if( db->mallocFailed ) goto select_end;
 
     /* Processing for aggregates with GROUP BY is very different and
