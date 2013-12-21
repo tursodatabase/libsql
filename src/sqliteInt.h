@@ -3138,8 +3138,7 @@ void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST) || \
-    defined(SQLITE_DEBUG_OS_TRACE)
+#if defined(SQLITE_TEST) 
 const char *sqlite3ErrName(int);
 #endif
 
