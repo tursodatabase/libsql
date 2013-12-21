@@ -1,5 +1,5 @@
-C Fix\sthe\s".echo\son"\sdot-command\sof\sthe\sshell\sso\sthat\sit\sechos\scomments\sin\naddition\sto\sSQL\sstatements\sand\sdot-commands.\s\sAdd\sthe\s--explain\soption\nto\sspeedtest1\sso\sthat\sthe\soutput\scan\sbe\spiped\sinto\sthe\scommand-line\sshell\nto\sshow\snicely-formated\sVDBE\scode\sfor\sthe\sentire\stest.
-D 2013-12-21T15:46:06.562
+C Fix\sharmless\scompiler\swarnings\sin\sFTS4.\s\sThis\sinvolved\scorrupting\nMartin\sPorter's\sbeautifully\swritten\sand\selegant\sstemmer\scode,\smaking\sit\na\slittle\sless\sbeautiful\sand\sa\slittle\sless\selegant.\s\sToday\sis\sa\ssad\nday.\s\sBut\sthe\swarnings\sfrom\sGCC\sgrow\sincreasingly\sverbose\sand\sirksome\nwith\seach\snew\srelease\sand\sso\ssomething\shad\sto\sbe\sdone.
+D 2013-12-21T16:06:47.439
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -86,7 +86,7 @@ F ext/fts3/fts3_expr.c 5165c365cb5a035f5be8bb296f7aa3211d43e4ac
 F ext/fts3/fts3_hash.c 8dd2d06b66c72c628c2732555a32bc0943114914
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
-F ext/fts3/fts3_porter.c a465b49fcb8249a755792f87516eff182efa42b3
+F ext/fts3/fts3_porter.c 7f8b4bf5af7c0f20f73b8e87e14fa9298f52e290
 F ext/fts3/fts3_snippet.c 51beb5c1498176fd9caccaf1c75b55cb803a985a
 F ext/fts3/fts3_term.c a521f75132f9a495bdca1bdd45949b3191c52763
 F ext/fts3/fts3_test.c 8a3a78c4458b2d7c631fcf4b152a5cd656fa7038
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 69a17336fdf4ae891e815914be8942f7222230c2
-R f8c33eb19f28c61795b29a236555d23d
+P 96397263f94256e284aae9506de1fc48fea89193
+R 38a4e7eb09a43c5c635590012754b8d4
 U drh
-Z 526508e712c84b42d21bbec0b02b9c9e
+Z dfc0154e1251c61263e69daa57fb4f97
