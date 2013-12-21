@@ -1,5 +1,5 @@
-C Avoid\scompiler\swarnings\sby\sonly\senabling\ssqlite3ErrName()\swhen\nSQLITE_TEST\sis\sdefined.
-D 2013-12-21T17:07:13.208
+C Fix\sspeedtest1.c\sso\sthat\sin\s--explain\smode\sit\sonly\soutputs\snon-explain\stext\nfor\sDDL\sstatements.
+D 2013-12-21T17:14:58.114
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -822,7 +822,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 0fb5502e0879e18991e7ecc791b41ba1c7fa74e8
+F test/speedtest1.c 7130d2cb6db45baa553a4ab2f715116c71c2d9f4
 F test/spellfix.test 8c40b169b104086d8795781f670ba3c786d6d8be
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P df05679838b571c16a7ab7e135f9564cd2d9647c
-R 4daa825d059abf8b202bf30d8a3dabe0
+P 862228e50534a6b89c9498c4db664610db11485e
+R 33225661bd52597ad2aaeac8ae83129d
 U drh
-Z 3cf2241a5e425a53db01dda8b63c0d1d
+Z dddf4f7b316491b40bac25a13a27215d

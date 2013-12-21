@@ -299,10 +299,12 @@ static void printSql(const char *zSql){
   if( g.bExplain ) printf("EXPLAIN ");
   printf("%.*s;\n", n, zSql);
   if( g.bExplain
-   && (sqlite3_strglob("CREATE *", zSql)
-     || sqlite3_strglob("DROP *", zSql)
-     || sqlite3_strglob("ALTER *", zSql)
+#if SQLITE_VERSION_NUMBER>=3007010 
+   && ( sqlite3_strglob("CREATE *", zSql)==0
+     || sqlite3_strglob("DROP *", zSql)==0
+     || sqlite3_strglob("ALTER *", zSql)==0
       )
+#endif
   ){
     printf("%.*s;\n", n, zSql);
   }
