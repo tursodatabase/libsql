@@ -378,6 +378,19 @@ static void randomFunc(
   sqlite3_result_int64(context, (sqlite3_int64)speedtest1_random());
 }
 
+/* Estimate the square root of an integer */
+static int est_square_root(int x){
+  int y0 = x/2;
+  int y1;
+  int n;
+  for(n=0; y0>0 && n<10; n++){
+    y1 = (y0 + x/y0)/2;
+    if( y1==y0 ) break;
+    y0 = y1;
+  }
+  return y0;
+}
+
 /*
 ** The main and default testset
 */
@@ -692,7 +705,15 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
-
+  speedtest1_begin_test(320, "subquery in result set", n);
+  speedtest1_prepare(
+    "SELECT sum(a), max(c),\n"
+    "       avg((SELECT a FROM t2 WHERE 5+t2.b=t1.b) AND rowid<?1), max(c)\n"
+    " FROM t1 WHERE rowid<?1;"
+  );
+  sqlite3_bind_int(g.pStmt, 1, est_square_root(g.szTest)*50);
+  speedtest1_run();
+  speedtest1_end_test();
 
   speedtest1_begin_test(980, "PRAGMA integrity_check");
   speedtest1_exec("PRAGMA integrity_check");
