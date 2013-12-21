@@ -155,7 +155,8 @@ SELECT * FROM foo1;
 2
 SELECT * FROM foo2;
 1
-2}}
+2
+}}
 
 # Test with echo on and headers on using dot command and 
 # multiple commands per line.
@@ -192,6 +193,7 @@ a
 SELECT * FROM foo2;
 b
 1
-2}}
+2
+}}
 
 finish_test
