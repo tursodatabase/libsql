@@ -72,7 +72,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
       sqlite3VdbeChangeP4(v, -1, (const char *)pValue, P4_MEM);
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
-    if( iReg>=0 && pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
+    if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
       sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
     }
 #endif

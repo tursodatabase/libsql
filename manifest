@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sWhereLoop.aLTerm[]\sarray\sis\slarge\senough\swhen\sprocessing\nthe\sskip-scan\soptimization.\s\sFix\sfor\sticket\s[520070ec7fbaac].
-D 2013-12-22T20:44:10.723
+C Remove\sa\scondition\sthat\sis\salways\sin\sthe\slogic\sthat\shandles\sreading\ndefault\svalues\sfor\scolumns.
+D 2013-12-22T22:45:14.083
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -276,7 +276,7 @@ F src/test_vfstrace.c 3a0ab304682fecbceb689e7d9b904211fde11d78
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
 F src/trigger.c d84e1f3669e9a217731a14a9d472b1c7b87c87ba
-F src/update.c 47baf532e3ecec8e4093f92d613384f66785fc2f
+F src/update.c c2706a6eb232a96345c35b7e1e75a188e26812bb
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c e71f19b272f05c8695cf747b4bac1732685f9e5c
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2d2b3c4951dc2b8317d5ba8b5cf72b1f4a6668f6
-R 7e8e2aceb29a9b78ef373006c69590e7
+P 46d040591f27be01b1860344f8a268797fe344f4
+R bad123e1d8507f7c1555170369546428
 U drh
-Z 57f75659f99699708c34bb9af2294488
+Z 0c66906b8c25c31efd308428f5c19196
