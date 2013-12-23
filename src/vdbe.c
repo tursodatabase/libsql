@@ -2454,7 +2454,7 @@ case OP_Column: {
     VdbeMemRelease(pDest);
     sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
-    /* This branch happens only when content is on overflow pages */	
+    /* This branch happens only when content is on overflow pages */
     t = aType[p2];
     if( ((pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
           && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0))
