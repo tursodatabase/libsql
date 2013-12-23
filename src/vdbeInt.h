@@ -312,15 +312,9 @@ struct Vdbe {
   Mem **apArg;            /* Arguments to currently executing user function */
   Mem *aColName;          /* Column names to return */
   Mem *pResultSet;        /* Pointer to an array of results */
-#ifdef SQLITE_DEBUG
   Parse *pParse;          /* Parsing context used to create this Vdbe */
-#endif
   int nMem;               /* Number of memory locations currently allocated */
   int nOp;                /* Number of instructions in the program */
-  int nOpAlloc;           /* Number of slots allocated for aOp[] */
-  int nLabel;             /* Number of labels used */
-  int *aLabel;            /* Space to hold the labels */
-  u16 nResColumn;         /* Number of columns in one row of the result set */
   int nCursor;            /* Number of slots in apCsr[] */
   u32 magic;              /* Magic number for sanity checking */
   char *zErrMsg;          /* Error message written here */
@@ -333,6 +327,7 @@ struct Vdbe {
   u32 cacheCtr;           /* VdbeCursor row cache generation counter */
   int pc;                 /* The program counter */
   int rc;                 /* Value to return */
+  u16 nResColumn;         /* Number of columns in one row of the result set */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 minWriteFileFormat;  /* Minimum file format for writable database files */
   bft explain:2;          /* True if EXPLAIN present on SQL command */

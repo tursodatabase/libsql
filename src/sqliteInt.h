@@ -2290,6 +2290,9 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
   int nOnce;           /* Number of OP_Once instructions so far */
+  int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
+  int nLabel;          /* Number of labels used */
+  int *aLabel;         /* Space to hold the labels */
   int ckBase;          /* Base register of data during check constraints */
   int iPartIdxTab;     /* Table corresponding to a partial index */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
