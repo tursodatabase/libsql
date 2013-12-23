@@ -187,4 +187,26 @@ do_execsql_test skipscan1-3.2sort {
   SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;
 } {~/*ORDER BY*/}
 
+# Ticket 520070ec7fbaac: Array overrun in the skip-scan optimization
+# 2013-12-22
+#
+do_execsql_test skipscan1-4.1 {
+  CREATE TABLE t4(a,b,c,d,e,f,g,h,i);
+  CREATE INDEX t4all ON t4(a,b,c,d,e,f,g,h);
+  INSERT INTO t4 VALUES(1,2,3,4,5,6,7,8,9);
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  INSERT INTO sqlite_stat1 
+    VALUES('t4','t4all','655360 163840 40960 10240 2560 640 160 40 10');
+  ANALYZE sqlite_master;
+  SELECT i FROM t4 WHERE a=1;
+  SELECT i FROM t4 WHERE b=2;
+  SELECT i FROM t4 WHERE c=3;
+  SELECT i FROM t4 WHERE d=4;
+  SELECT i FROM t4 WHERE e=5;
+  SELECT i FROM t4 WHERE f=6;
+  SELECT i FROM t4 WHERE g=7;
+  SELECT i FROM t4 WHERE h=8;
+} {9 9 9 9 9 9 9 9}
+
 finish_test
