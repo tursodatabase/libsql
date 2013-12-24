@@ -115,7 +115,6 @@ for {set i 1} {$i<=15} {incr i} {
   db eval "INSERT INTO t4(norm,plusone,invert) VALUES([join $vset ,]);"
 }
 
-breakpoint
 do_test fts3ab-4.1 {
   execsql {SELECT rowid FROM t4 WHERE t4 MATCH 'norm:one'}
 } {1 3 5 7 9 11 13 15}

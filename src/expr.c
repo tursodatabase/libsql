@@ -2170,6 +2170,11 @@ void sqlite3ExprCacheRemove(Parse *pParse, int iReg, int nReg){
 */
 void sqlite3ExprCachePush(Parse *pParse){
   pParse->iCacheLevel++;
+#ifdef SQLITE_DEBUG
+  if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
+    printf("PUSH to %d\n", pParse->iCacheLevel);
+  }
+#endif
 }
 
 /*
@@ -2183,6 +2188,11 @@ void sqlite3ExprCachePop(Parse *pParse, int N){
   assert( N>0 );
   assert( pParse->iCacheLevel>=N );
   pParse->iCacheLevel -= N;
+#ifdef SQLITE_DEBUG
+  if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
+    printf("POP  to %d\n", pParse->iCacheLevel);
+  }
+#endif
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
     if( p->iReg && p->iLevel>pParse->iCacheLevel ){
       cacheEntryClear(pParse, p);
@@ -2277,6 +2287,11 @@ void sqlite3ExprCacheClear(Parse *pParse){
   int i;
   struct yColCache *p;
 
+#if SQLITE_DEBUG
+  if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
+    printf("CLEAR\n");
+  }
+#endif
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
     if( p->iReg ){
       cacheEntryClear(pParse, p);
@@ -3413,7 +3428,17 @@ int sqlite3ExprCodeExprList(
     }else{
       int inReg = sqlite3ExprCodeTarget(pParse, pExpr, target+i);
       if( inReg!=target+i ){
-        sqlite3VdbeAddOp2(pParse->pVdbe, copyOp, inReg, target+i);
+        VdbeOp *pOp;
+        Vdbe *v = pParse->pVdbe;
+        if( copyOp==OP_Copy
+         && (pOp=sqlite3VdbeGetOp(v, -1))->opcode==OP_Copy
+         && pOp->p1+pOp->p3+1==inReg
+         && pOp->p2+pOp->p3+1==target+i
+        ){
+          pOp->p3++;
+        }else{
+          sqlite3VdbeAddOp2(v, copyOp, inReg, target+i);
+        }
       }
     }
   }

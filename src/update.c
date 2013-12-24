@@ -72,7 +72,7 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
       sqlite3VdbeChangeP4(v, -1, (const char *)pValue, P4_MEM);
     }
 #ifndef SQLITE_OMIT_FLOATING_POINT
-    if( iReg>=0 && pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
+    if( pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
       sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
     }
 #endif
@@ -496,10 +496,10 @@ void sqlite3Update(
   newmask = sqlite3TriggerColmask(
       pParse, pTrigger, pChanges, 1, TRIGGER_BEFORE, pTab, onError
   );
-  sqlite3VdbeAddOp3(v, OP_Null, 0, regNew, regNew+pTab->nCol-1);
+  /*sqlite3VdbeAddOp3(v, OP_Null, 0, regNew, regNew+pTab->nCol-1);*/
   for(i=0; i<pTab->nCol; i++){
     if( i==pTab->iPKey ){
-      /*sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);*/
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
     }else{
       j = aXRef[i];
       if( j>=0 ){
@@ -513,6 +513,8 @@ void sqlite3Update(
         testcase( i==31 );
         testcase( i==32 );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regNew+i);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regNew+i);
       }
     }
   }

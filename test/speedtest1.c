@@ -9,6 +9,7 @@ static const char zHelp[] =
   "  --autovacuum        Enable AUTOVACUUM mode\n"
   "  --cachesize N       Set the cache size to N\n" 
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
+  "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
   "  --journalmode M     Set the journal_mode to MODE\n"
@@ -49,6 +50,7 @@ static struct Global {
   int bWithoutRowid;         /* True for --without-rowid */
   int bReprepare;            /* True to reprepare the SQL on each rerun */
   int bSqlOnly;              /* True to print the SQL once only */
+  int bExplain;              /* Print SQL with EXPLAIN prefix */
   int szTest;                /* Scale factor for test iterations */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
@@ -290,6 +292,24 @@ void speedtest1_final(void){
   }
 }
 
+/* Print an SQL statement to standard output */
+static void printSql(const char *zSql){
+  int n = (int)strlen(zSql);
+  while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
+  if( g.bExplain ) printf("EXPLAIN ");
+  printf("%.*s;\n", n, zSql);
+  if( g.bExplain
+#if SQLITE_VERSION_NUMBER>=3007010 
+   && ( sqlite3_strglob("CREATE *", zSql)==0
+     || sqlite3_strglob("DROP *", zSql)==0
+     || sqlite3_strglob("ALTER *", zSql)==0
+      )
+#endif
+  ){
+    printf("%.*s;\n", n, zSql);
+  }
+}
+
 /* Run SQL */
 void speedtest1_exec(const char *zFormat, ...){
   va_list ap;
@@ -298,9 +318,7 @@ void speedtest1_exec(const char *zFormat, ...){
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( g.bSqlOnly ){
-    int n = (int)strlen(zSql);
-    while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
-    printf("%.*s;\n", n, zSql);
+    printSql(zSql);
   }else{
     char *zErrMsg = 0;
     int rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
@@ -318,9 +336,7 @@ void speedtest1_prepare(const char *zFormat, ...){
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( g.bSqlOnly ){
-    int n = (int)strlen(zSql);
-    while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
-    printf("%.*s;\n", n, zSql);
+    printSql(zSql);
   }else{
     int rc;
     if( g.pStmt ) sqlite3_finalize(g.pStmt);
@@ -376,6 +392,19 @@ static void randomFunc(
   sqlite3_value **NotUsed2
 ){
   sqlite3_result_int64(context, (sqlite3_int64)speedtest1_random());
+}
+
+/* Estimate the square root of an integer */
+static int est_square_root(int x){
+  int y0 = x/2;
+  int y1;
+  int n;
+  for(n=0; y0>0 && n<10; n++){
+    y1 = (y0 + x/y0)/2;
+    if( y1==y0 ) break;
+    y0 = y1;
+  }
+  return y0;
 }
 
 /*
@@ -484,15 +513,13 @@ void testset_main(void){
 
 
   speedtest1_begin_test(150, "CREATE INDEX five times");
-  speedtest1_exec(
-      "BEGIN;\n"
-      "CREATE UNIQUE INDEX t1b ON t1(b);\n"
-      "CREATE INDEX t1c ON t1(c);\n"
-      "CREATE UNIQUE INDEX t2b ON t2(b);\n"
-      "CREATE INDEX t2c ON t2(c DESC);\n"
-      "CREATE INDEX t3bc ON t3(b,c);\n"
-      "COMMIT;\n"
-  );
+  speedtest1_exec("BEGIN;");
+  speedtest1_exec("CREATE UNIQUE INDEX t1b ON t1(b);");
+  speedtest1_exec("CREATE INDEX t1c ON t1(c);");
+  speedtest1_exec("CREATE UNIQUE INDEX t2b ON t2(b);");
+  speedtest1_exec("CREATE INDEX t2c ON t2(c DESC);");
+  speedtest1_exec("CREATE INDEX t3bc ON t3(b,c);");
+  speedtest1_exec("COMMIT;");
   speedtest1_end_test();
 
 
@@ -566,10 +593,8 @@ void testset_main(void){
 
   n = sz;
   speedtest1_begin_test(190, "DELETE and REFILL one table", n);
-  speedtest1_exec(
-    "DELETE FROM t2;"
-    "INSERT INTO t2 SELECT * FROM t1;"
-  );
+  speedtest1_exec("DELETE FROM t2;");
+  speedtest1_exec("INSERT INTO t2 SELECT * FROM t1;");
   speedtest1_end_test();
 
 
@@ -663,9 +688,17 @@ void testset_main(void){
   speedtest1_exec("REPLACE INTO t3(a,b,c) SELECT a,b,c FROM t1");
   speedtest1_end_test();
 
+  speedtest1_begin_test(300, "Refill a %d-row table using (b&1)==(a&1)", sz);
+  speedtest1_exec("DELETE FROM t2;");
+  speedtest1_exec("INSERT INTO t2(a,b,c)\n"
+                  " SELECT a,b,c FROM t1  WHERE (b&1)==(a&1);");
+  speedtest1_exec("INSERT INTO t2(a,b,c)\n"
+                  " SELECT a,b,c FROM t1  WHERE (b&1)<>(a&1);");
+  speedtest1_end_test();
+
 
   n = sz/5;
-  speedtest1_begin_test(300, "%d four-ways joins", n);
+  speedtest1_begin_test(310, "%d four-ways joins", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
     "SELECT t1.c FROM t1, t2, t3, t4\n"
@@ -684,7 +717,15 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
-
+  speedtest1_begin_test(320, "subquery in result set", n);
+  speedtest1_prepare(
+    "SELECT sum(a), max(c),\n"
+    "       avg((SELECT a FROM t2 WHERE 5+t2.b=t1.b) AND rowid<?1), max(c)\n"
+    " FROM t1 WHERE rowid<?1;"
+  );
+  sqlite3_bind_int(g.pStmt, 1, est_square_root(g.szTest)*50);
+  speedtest1_run();
+  speedtest1_end_test();
 
   speedtest1_begin_test(980, "PRAGMA integrity_check");
   speedtest1_exec("PRAGMA integrity_check");
@@ -757,6 +798,9 @@ int main(int argc, char **argv){
         cacheSize = integerValue(argv[i]);
       }else if( strcmp(z,"exclusive")==0 ){
         doExclusive = 1;
+      }else if( strcmp(z,"explain")==0 ){
+        g.bSqlOnly = 1;
+        g.bExplain = 1;
       }else if( strcmp(z,"heap")==0 ){
         if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
         nHeap = integerValue(argv[i+1]);
@@ -896,6 +940,7 @@ int main(int argc, char **argv){
     speedtest1_exec("PRAGMA journal_mode=%s", zJMode);
   }
 
+  if( g.bExplain ) printf(".explain\n.echo on\n");
   if( strcmp(zTSet,"main")==0 ){
     testset_main();
   }else if( strcmp(zTSet,"debug1")==0 ){

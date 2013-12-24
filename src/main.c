@@ -1062,8 +1062,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 ** Return a static string containing the name corresponding to the error code
 ** specified in the argument.
 */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST) || \
-    defined(SQLITE_DEBUG_OS_TRACE)
+#if defined(SQLITE_TEST)
 const char *sqlite3ErrName(int rc){
   const char *zName = 0;
   int i, origRc = rc;
@@ -2661,6 +2660,8 @@ static int openDatabase(
   sqlite3PagerLockingMode(sqlite3BtreePager(db->aDb[0].pBt),
                           SQLITE_DEFAULT_LOCKING_MODE);
 #endif
+
+  if( rc ) sqlite3Error(db, rc, 0);
 
   /* Enable the lookaside-malloc subsystem */
   setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,

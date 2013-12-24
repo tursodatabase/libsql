@@ -567,7 +567,6 @@ do_test walfault-14-pre {
 } {}
 do_faultsim_test walfault-14 -prep {
   faultsim_restore_and_reopen
-  breakpoint
   execsql {
     SELECT count(*) FROM abc;
     PRAGMA locking_mode = exclusive;

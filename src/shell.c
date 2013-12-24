@@ -3038,7 +3038,10 @@ static int process_input(struct callback_data *p, FILE *in){
       seenInterrupt = 0;
     }
     lineno++;
-    if( nSql==0 && _all_whitespace(zLine) ) continue;
+    if( nSql==0 && _all_whitespace(zLine) ){
+      if( p->echoOn ) printf("%s\n", zLine);
+      continue;
+    }
     if( zLine && zLine[0]=='.' && nSql==0 ){
       if( p->echoOn ) printf("%s\n", zLine);
       rc = do_meta_command(zLine, p);
@@ -3100,6 +3103,7 @@ static int process_input(struct callback_data *p, FILE *in){
       }
       nSql = 0;
     }else if( nSql && _all_whitespace(zSql) ){
+      if( p->echoOn ) printf("%s\n", zSql);
       nSql = 0;
     }
   }

@@ -116,7 +116,6 @@ do_test vtab_shared-1.10 {
 } {1 {database table is locked: sqlite_master}}
 
 do_test vtab_shared-1.11 {
-breakpoint
   execsql {
     CREATE VIRTUAL TABLE t2 USING echo(t0);
     CREATE VIRTUAL TABLE t3 USING echo(t0);

@@ -20,7 +20,8 @@
 /*
 ** Create a new virtual database engine.
 */
-Vdbe *sqlite3VdbeCreate(sqlite3 *db){
+Vdbe *sqlite3VdbeCreate(Parse *pParse){
+  sqlite3 *db = pParse->db;
   Vdbe *p;
   p = sqlite3DbMallocZero(db, sizeof(Vdbe) );
   if( p==0 ) return 0;
@@ -32,6 +33,10 @@ Vdbe *sqlite3VdbeCreate(sqlite3 *db){
   p->pPrev = 0;
   db->pVdbe = p;
   p->magic = VDBE_MAGIC_INIT;
+  p->pParse = pParse;
+  assert( pParse->aLabel==0 );
+  assert( pParse->nLabel==0 );
+  assert( pParse->nOpAlloc==0 );
   return p;
 }
 
@@ -88,13 +93,14 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
 ** unchanged (this is so that any opcodes already allocated can be 
 ** correctly deallocated along with the rest of the Vdbe).
 */
-static int growOpArray(Vdbe *p){
+static int growOpArray(Vdbe *v){
   VdbeOp *pNew;
+  Parse *p = v->pParse;
   int nNew = (p->nOpAlloc ? p->nOpAlloc*2 : (int)(1024/sizeof(Op)));
-  pNew = sqlite3DbRealloc(p->db, p->aOp, nNew*sizeof(Op));
+  pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
     p->nOpAlloc = sqlite3DbMallocSize(p->db, pNew)/sizeof(Op);
-    p->aOp = pNew;
+    v->aOp = pNew;
   }
   return (pNew ? SQLITE_OK : SQLITE_NOMEM);
 }
@@ -133,7 +139,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   i = p->nOp;
   assert( p->magic==VDBE_MAGIC_INIT );
   assert( op>0 && op<0xff );
-  if( p->nOpAlloc<=i ){
+  if( p->pParse->nOpAlloc<=i ){
     if( growOpArray(p) ){
       return 1;
     }
@@ -152,6 +158,15 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
 #endif
 #ifdef SQLITE_DEBUG
   if( p->db->flags & SQLITE_VdbeAddopTrace ){
+    int jj, kk;
+    Parse *pParse = p->pParse;
+    for(jj=kk=0; jj<SQLITE_N_COLCACHE; jj++){
+      struct yColCache *x = pParse->aColCache + jj;
+      if( x->iLevel>pParse->iCacheLevel || x->iReg==0 ) continue;
+      printf(" r[%d]={%d:%d}", x->iReg, x->iTable, x->iColumn);
+      kk++;
+    }
+    if( kk ) printf("\n");
     sqlite3VdbePrintOp(0, i, &p->aOp[i]);
     test_addop_breakpoint();
   }
@@ -235,9 +250,10 @@ int sqlite3VdbeAddOp4Int(
 **
 ** Zero is returned if a malloc() fails.
 */
-int sqlite3VdbeMakeLabel(Vdbe *p){
+int sqlite3VdbeMakeLabel(Vdbe *v){
+  Parse *p = v->pParse;
   int i = p->nLabel++;
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( v->magic==VDBE_MAGIC_INIT );
   if( (i & (i-1))==0 ){
     p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel, 
                                        (i*2+1)*sizeof(p->aLabel[0]));
@@ -253,12 +269,13 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
 ** be inserted.  The parameter "x" must have been obtained from
 ** a prior call to sqlite3VdbeMakeLabel().
 */
-void sqlite3VdbeResolveLabel(Vdbe *p, int x){
+void sqlite3VdbeResolveLabel(Vdbe *v, int x){
+  Parse *p = v->pParse;
   int j = -1-x;
-  assert( p->magic==VDBE_MAGIC_INIT );
+  assert( v->magic==VDBE_MAGIC_INIT );
   assert( j<p->nLabel );
   if( j>=0 && p->aLabel ){
-    p->aLabel[j] = p->nOp;
+    p->aLabel[j] = v->nOp;
   }
 }
 
@@ -407,7 +424,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
   int nMaxArgs = *pMaxFuncArgs;
   Op *pOp;
-  int *aLabel = p->aLabel;
+  Parse *pParse = p->pParse;
+  int *aLabel = pParse->aLabel;
   p->readOnly = 1;
   p->bIsReader = 0;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
@@ -470,12 +488,13 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 
     pOp->opflags = sqlite3OpcodeProperty[opcode];
     if( (pOp->opflags & OPFLG_JUMP)!=0 && pOp->p2<0 ){
-      assert( -1-pOp->p2<p->nLabel );
+      assert( -1-pOp->p2<pParse->nLabel );
       pOp->p2 = aLabel[-1-pOp->p2];
     }
   }
-  sqlite3DbFree(p->db, p->aLabel);
-  p->aLabel = 0;
+  sqlite3DbFree(p->db, pParse->aLabel);
+  pParse->aLabel = 0;
+  pParse->nLabel = 0;
   *pMaxFuncArgs = nMaxArgs;
   assert( p->bIsReader!=0 || p->btreeMask==0 );
 }
@@ -519,7 +538,7 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
 int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->nOp + nOp > p->nOpAlloc && growOpArray(p) ){
+  if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p) ){
     return 0;
   }
   addr = p->nOp;
@@ -873,7 +892,17 @@ static int translateP(char c, const Op *pOp){
 }
 
 /*
-** Compute a string for the "comment" field of a VDBE opcode listing
+** Compute a string for the "comment" field of a VDBE opcode listing.
+**
+** The Synopsis: field in comments in the vdbe.c source file gets converted
+** to an extra string that is appended to the sqlite3OpcodeName().  In the
+** absence of other comments, this synopsis becomes the comment on the opcode.
+** Some translation occurs:
+**
+**       "PX"      ->  "r[X]"
+**       "PX@PY"   ->  "r[X..X+Y-1]"  or "r[x]" if y is 0 or 1
+**       "PX@PY+1" ->  "r[X..X+Y]"    or "r[x]" if y is 0
+**       "PY..PY"  ->  "r[X..Y]"      or "r[x]" if y<=x
 */
 static int displayComment(
   const Op *pOp,     /* The opcode to be commented */
@@ -907,7 +936,13 @@ static int displayComment(
             ii += 3;
             jj += sqlite3Strlen30(zTemp+jj);
             v2 = translateP(zSynopsis[ii], pOp);
-            if( v2>1 ) sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+            if( strncmp(zSynopsis+ii+1,"+1",2)==0 ){
+              ii += 2;
+              v2++;
+            }
+            if( v2>1 ){
+              sqlite3_snprintf(nTemp-jj, zTemp+jj, "..%d", v1+v2-1);
+            }
           }else if( strncmp(zSynopsis+ii+1, "..P3", 4)==0 && pOp->p3==0 ){
             ii += 4;
           }
@@ -1139,6 +1174,9 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 #else
   zCom[0] = 0
 #endif
+  /* NB:  The sqlite3OpcodeName() function is implemented by code created
+  ** by the mkopcodeh.awk and mkopcodec.awk scripts which extract the
+  ** information from the vdbe.c source text */
   fprintf(pOut, zFormat1, pc, 
       sqlite3OpcodeName(pOp->opcode), pOp->p1, pOp->p2, pOp->p3, zP4, pOp->p5,
       zCom
@@ -1570,6 +1608,7 @@ void sqlite3VdbeMakeReady(
   assert( p->nOp>0 );
   assert( pParse!=0 );
   assert( p->magic==VDBE_MAGIC_INIT );
+  assert( pParse==p->pParse );
   db = p->db;
   assert( db->mallocFailed==0 );
   nVar = pParse->nVar;
@@ -1593,8 +1632,8 @@ void sqlite3VdbeMakeReady(
   /* Allocate space for memory registers, SQL variables, VDBE cursors and 
   ** an array to marshal SQL function arguments in.
   */
-  zCsr = (u8*)&p->aOp[p->nOp];       /* Memory avaliable for allocation */
-  zEnd = (u8*)&p->aOp[p->nOpAlloc];  /* First byte past end of zCsr[] */
+  zCsr = (u8*)&p->aOp[p->nOp];            /* Memory avaliable for allocation */
+  zEnd = (u8*)&p->aOp[pParse->nOpAlloc];  /* First byte past end of zCsr[] */
 
   resolveP2Values(p, &nArg);
   p->usesStmtJournal = (u8)(pParse->isMultiWrite && pParse->mayAbort);
@@ -2597,7 +2636,6 @@ void sqlite3VdbeClearObject(sqlite3 *db, Vdbe *p){
   }
   for(i=p->nzVar-1; i>=0; i--) sqlite3DbFree(db, p->azVar[i]);
   vdbeFreeOpArray(db, p->aOp, p->nOp);
-  sqlite3DbFree(db, p->aLabel);
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   sqlite3DbFree(db, p->pFree);

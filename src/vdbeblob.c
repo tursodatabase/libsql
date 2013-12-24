@@ -259,7 +259,7 @@ int sqlite3_blob_open(
       }
     }
 
-    pBlob->pStmt = (sqlite3_stmt *)sqlite3VdbeCreate(db);
+    pBlob->pStmt = (sqlite3_stmt *)sqlite3VdbeCreate(pParse);
     assert( pBlob->pStmt || db->mallocFailed );
     if( pBlob->pStmt ){
       Vdbe *v = (Vdbe *)pBlob->pStmt;

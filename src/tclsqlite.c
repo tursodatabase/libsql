@@ -1574,9 +1574,9 @@ static int DbUseNre(void){
 */
 # define SQLITE_TCL_NRE 0
 # define DbUseNre() 0
-# define Tcl_NRAddCallback(a,b,c,d,e,f) 0
+# define Tcl_NRAddCallback(a,b,c,d,e,f) (void)0
 # define Tcl_NREvalObj(a,b,c) 0
-# define Tcl_NRCreateCommand(a,b,c,d,e,f) 0
+# define Tcl_NRCreateCommand(a,b,c,d,e,f) (void)0
 #endif
 
 /*
@@ -2855,7 +2855,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     ** or savepoint.  */
     if( DbUseNre() ){
       Tcl_NRAddCallback(interp, DbTransPostCmd, cd, 0, 0, 0);
-      Tcl_NREvalObj(interp, pScript, 0);
+      (void)Tcl_NREvalObj(interp, pScript, 0);
     }else{
       rc = DbTransPostCmd(&cd, interp, Tcl_EvalObjEx(interp, pScript, 0));
     }
@@ -3517,8 +3517,7 @@ static void MD5Final(unsigned char digest[16], MD5Context *ctx){
         byteReverse(ctx->in, 14);
 
         /* Append length in bits and transform */
-        ((uint32 *)ctx->in)[ 14 ] = ctx->bits[0];
-        ((uint32 *)ctx->in)[ 15 ] = ctx->bits[1];
+        memcpy(ctx->in + 14*4, ctx->bits, 8);
 
         MD5Transform(ctx->buf, (uint32 *)ctx->in);
         byteReverse((unsigned char *)ctx->buf, 4);

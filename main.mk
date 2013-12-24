@@ -395,7 +395,7 @@ mptester$(EXE):	sqlite3.c $(TOP)/mptest/mptest.c
 		$(TLIBS) $(THREADLIB)
 
 sqlite3.o:	sqlite3.c
-	$(TCCX) -c sqlite3.c
+	$(TCCX) -I. -c sqlite3.c
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -642,7 +642,7 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 		$(TOP)/test/wordcount.c sqlite3.c
 
 speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
-	$(TCC) -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB)
+	$(TCC) -I. -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB)
 
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the

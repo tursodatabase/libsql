@@ -75,7 +75,6 @@ do_test collate1-1.1 {
   }
 } {{} 0x119 0x2D}
 do_test collate1-1.2 {
-breakpoint
   execsql {
     SELECT c2 FROM collate1t1 ORDER BY 1 COLLATE hex;
   }

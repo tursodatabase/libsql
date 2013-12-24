@@ -1515,47 +1515,49 @@ void sqlite3GenerateConstraintChecks(
 
     /* Generate code to handle collisions */
     regR = (pIdx==pPk) ? regIdx : sqlite3GetTempRange(pParse, nPkField);
-    if( HasRowid(pTab) ){
-      sqlite3VdbeAddOp2(v, OP_IdxRowid, iThisCur, regR);
-      /* Conflict only if the rowid of the existing index entry
-      ** is different from old-rowid */
-      if( isUpdate ){
-        sqlite3VdbeAddOp3(v, OP_Eq, regR, addrUniqueOk, regOldData);
-      }
-    }else{
-      int x;
-      /* Extract the PRIMARY KEY from the end of the index entry and
-      ** store it in registers regR..regR+nPk-1 */
-      if( (isUpdate || onError==OE_Replace) && pIdx!=pPk ){
-        for(i=0; i<pPk->nKeyCol; i++){
-          x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
-          sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
-          VdbeComment((v, "%s.%s", pTab->zName,
-                       pTab->aCol[pPk->aiColumn[i]].zName));
+    if( isUpdate || onError==OE_Replace ){
+      if( HasRowid(pTab) ){
+        sqlite3VdbeAddOp2(v, OP_IdxRowid, iThisCur, regR);
+        /* Conflict only if the rowid of the existing index entry
+        ** is different from old-rowid */
+        if( isUpdate ){
+          sqlite3VdbeAddOp3(v, OP_Eq, regR, addrUniqueOk, regOldData);
         }
-      }
-      if( isUpdate ){
-        /* If currently processing the PRIMARY KEY of a WITHOUT ROWID 
-        ** table, only conflict if the new PRIMARY KEY values are actually
-        ** different from the old.
-        **
-        ** For a UNIQUE index, only conflict if the PRIMARY KEY values
-        ** of the matched index row are different from the original PRIMARY
-        ** KEY values of this row before the update.  */
-        int addrJump = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
-        int op = OP_Ne;
-        int regCmp = (pIdx->autoIndex==2 ? regIdx : regR);
-
-        for(i=0; i<pPk->nKeyCol; i++){
-          char *p4 = (char*)sqlite3LocateCollSeq(pParse, pPk->azColl[i]);
-          x = pPk->aiColumn[i];
-          if( i==(pPk->nKeyCol-1) ){
-            addrJump = addrUniqueOk;
-            op = OP_Eq;
+      }else{
+        int x;
+        /* Extract the PRIMARY KEY from the end of the index entry and
+        ** store it in registers regR..regR+nPk-1 */
+        if( pIdx!=pPk ){
+          for(i=0; i<pPk->nKeyCol; i++){
+            x = sqlite3ColumnOfIndex(pIdx, pPk->aiColumn[i]);
+            sqlite3VdbeAddOp3(v, OP_Column, iThisCur, x, regR+i);
+            VdbeComment((v, "%s.%s", pTab->zName,
+                         pTab->aCol[pPk->aiColumn[i]].zName));
           }
-          sqlite3VdbeAddOp4(v, op, 
-              regOldData+1+x, addrJump, regCmp+i, p4, P4_COLLSEQ
-          );
+        }
+        if( isUpdate ){
+          /* If currently processing the PRIMARY KEY of a WITHOUT ROWID 
+          ** table, only conflict if the new PRIMARY KEY values are actually
+          ** different from the old.
+          **
+          ** For a UNIQUE index, only conflict if the PRIMARY KEY values
+          ** of the matched index row are different from the original PRIMARY
+          ** KEY values of this row before the update.  */
+          int addrJump = sqlite3VdbeCurrentAddr(v)+pPk->nKeyCol;
+          int op = OP_Ne;
+          int regCmp = (pIdx->autoIndex==2 ? regIdx : regR);
+  
+          for(i=0; i<pPk->nKeyCol; i++){
+            char *p4 = (char*)sqlite3LocateCollSeq(pParse, pPk->azColl[i]);
+            x = pPk->aiColumn[i];
+            if( i==(pPk->nKeyCol-1) ){
+              addrJump = addrUniqueOk;
+              op = OP_Eq;
+            }
+            sqlite3VdbeAddOp4(v, op, 
+                regOldData+1+x, addrJump, regCmp+i, p4, P4_COLLSEQ
+            );
+          }
         }
       }
     }

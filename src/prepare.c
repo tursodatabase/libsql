@@ -528,7 +528,11 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
 ** Free all memory allocations in the pParse object
 */
 void sqlite3ParserReset(Parse *pParse){
-  if( pParse ) sqlite3ExprListDelete(pParse->db, pParse->pConstExpr);
+  if( pParse ){
+    sqlite3 *db = pParse->db;
+    sqlite3DbFree(db, pParse->aLabel);
+    sqlite3ExprListDelete(db, pParse->pConstExpr);
+  }
 }
 
 /*

@@ -1121,7 +1121,7 @@ case OP_Move: {
 }
 
 /* Opcode: Copy P1 P2 P3 * *
-** Synopsis: r[P2@P3]=r[P1@P3]
+** Synopsis: r[P2@P3+1]=r[P1@P3+1]
 **
 ** Make a copy of registers P1..P1+P3 into registers P2..P2+P3.
 **
@@ -2464,7 +2464,7 @@ case OP_Column: {
     VdbeMemRelease(pDest);
     sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
-    /* This branch happens only when content is on overflow pages */	
+    /* This branch happens only when content is on overflow pages */
     t = aType[p2];
     if( ((pOp->p5 & (OPFLAG_LENGTHARG|OPFLAG_TYPEOFARG))!=0
           && ((t>=12 && (t&1)==0) || (pOp->p5 & OPFLAG_TYPEOFARG)!=0))

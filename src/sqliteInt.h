@@ -743,6 +743,7 @@ typedef struct Module Module;
 typedef struct NameContext NameContext;
 typedef struct Parse Parse;
 typedef struct PreUpdate PreUpdate;
+typedef struct PrintfArguments PrintfArguments;
 typedef struct RowSet RowSet;
 typedef struct Savepoint Savepoint;
 typedef struct Select Select;
@@ -1695,6 +1696,7 @@ struct AggInfo {
   int sortingIdx;         /* Cursor number of the sorting index */
   int sortingIdxPTab;     /* Cursor number of pseudo-table */
   int nSortingColumn;     /* Number of columns in the sorting index */
+  int mnReg, mxReg;       /* Range of registers allocated for aCol and aFunc */
   ExprList *pGroupBy;     /* The group by clause */
   struct AggInfo_col {    /* For each column used in source tables */
     Table *pTab;             /* Source table */
@@ -2296,6 +2298,9 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
   int nOnce;           /* Number of OP_Once instructions so far */
+  int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
+  int nLabel;          /* Number of labels used */
+  int *aLabel;         /* Space to hold the labels */
   int ckBase;          /* Base register of data during check constraints */
   int iPartIdxTab;     /* Table corresponding to a partial index */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
@@ -2776,10 +2781,20 @@ void sqlite3StatusSet(int, int);
 # define sqlite3IsNaN(X)  0
 #endif
 
-void sqlite3VXPrintf(StrAccum*, int, const char*, va_list);
-#ifndef SQLITE_OMIT_TRACE
-void sqlite3XPrintf(StrAccum*, const char*, ...);
-#endif
+/*
+** An instance of the following structure holds information about SQL
+** functions arguments that are the parameters to the printf() function.
+*/
+struct PrintfArguments {
+  int nArg;                /* Total number of arguments */
+  int nUsed;               /* Number of arguments used so far */
+  sqlite3_value **apArg;   /* The argument values */
+};
+
+#define SQLITE_PRINTF_INTERNAL 0x01
+#define SQLITE_PRINTF_SQLFUNC  0x02
+void sqlite3VXPrintf(StrAccum*, u32, const char*, va_list);
+void sqlite3XPrintf(StrAccum*, u32, const char*, ...);
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
@@ -3138,8 +3153,7 @@ void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);
 
-#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST) || \
-    defined(SQLITE_DEBUG_OS_TRACE)
+#if defined(SQLITE_TEST) 
 const char *sqlite3ErrName(int);
 #endif
 
