@@ -1,5 +1,5 @@
-C Move\selements\sof\sthe\sVdbe\sobject\sthat\sare\sonly\sused\sduring\sstatement\npreparation\sout\sinto\sthe\sParse\sobject.
-D 2013-12-23T19:09:07.173
+C Add\s-I.\sto\sthe\smain.mk\smakefile\sfor\sbuilding\ssqlite3.o\sand\sspeedtest1.
+D 2013-12-24T12:04:24.811
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk 9f091ea7920f8b15e48c7b6e5b6fb0182577ab2e
+F main.mk 3ae543fa446525c1dec55f58de67f41b78651812
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 25b8a1c9ba77df3b7c78cbce922cb593d661696d
-R d5977954dd1c2aa7ce7a7105c092a6e6
+P c289a253c0c053ac8fc344efe138262c327d8096
+R 2bb3d3295c5bbe58e528a8069b6e67b9
 U drh
-Z 0801871ae5fea7f25834aba0df14ec53
+Z 2be15cf525011fea6a70c12bcaf2ac37
