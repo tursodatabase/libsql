@@ -1,5 +1,5 @@
-C Enhance\ssqlite3_randomness(N,P)\ssuch\sthat\sit\sresets\sthe\sinternal\sPRNG\nif\sN\sis\sless\sthan\s1.\s\sSubsequent\scalls\sto\ssqlite3_randomness()\swill\sreinitialize\nthe\sinternal\sPRNG\sby\scalling\sthe\sxRandomness()\smethod\sof\sthe\sdefault\sVFS.
-D 2014-01-01T14:00:13.905
+C Try\sto\sdetect\sprocess\sID\schanges\sdue\sto\sfork()\scalls\sin\sos_unix.c\sand\nreset\sthe\sPRNG\swhen\sa\sprocess\sID\schange\sis\sdetected.
+D 2014-01-01T15:18:36.453
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 60a7b3b23e6fcf83a50d1e320b280b551724e11f
+F src/os_unix.c abeb9d54036aaea6f4395050ce823f51217ae4d4
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cc72c5aec7fe93d4a1368517aab949dc98d33003
-R 4dbb82094f79fe324b8594c5661b9532
+P a221aa82bb5496885fd0bf76e4601443799511de
+R 0b5cbfb8643918ccfe030368af8a9f9c
 U drh
-Z 7f33812905741a2d8942dba59b43dd66
+Z 8d0b25dd26eff92b0e8709464c57dd81
