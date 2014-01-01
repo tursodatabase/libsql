@@ -3101,7 +3101,7 @@ int sqlite3_test_control(int op, ...){
     ** to the xRandomness method of the default VFS.
     */
     case SQLITE_TESTCTRL_PRNG_RESET: {
-      sqlite3PrngResetState();
+      sqlite3_randomness(0,0);
       break;
     }
 
