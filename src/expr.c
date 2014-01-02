@@ -523,16 +523,25 @@ Expr *sqlite3PExpr(
 }
 
 /*
-** Return 1 if an expression must be FALSE in all cases and 0 if the
-** expression might be true.  This is an optimization.  If is OK to
-** return 0 here even if the expression really is always false (a 
-** false negative).  But it is a bug to return 1 if the expression
-** might be true in some rare circumstances (a false positive.)
+** If the expression is always either TRUE or FALSE (respectively),
+** then return 1.  If one cannot determine the truth value of the
+** expression at compile-time return 0.
+**
+** This is an optimization.  If is OK to return 0 here even if
+** the expression really is always false or false (a false negative).
+** But it is a bug to return 1 if the expression might have different
+** boolean values in different circumstances (a false positive.)
 **
 ** Note that if the expression is part of conditional for a
 ** LEFT JOIN, then we cannot determine at compile-time whether or not
 ** is it true or false, so always return 0.
 */
+static int exprAlwaysTrue(Expr *p){
+  int v = 0;
+  if( ExprHasProperty(p, EP_FromJoin) ) return 0;
+  if( !sqlite3ExprIsInteger(p, &v) ) return 0;
+  return v!=0;
+}
 static int exprAlwaysFalse(Expr *p){
   int v = 0;
   if( ExprHasProperty(p, EP_FromJoin) ) return 0;
@@ -3614,10 +3623,16 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
 #endif
     default: {
-      r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
-      sqlite3VdbeAddOp3(v, OP_If, r1, dest, jumpIfNull!=0);
-      testcase( regFree1==0 );
-      testcase( jumpIfNull==0 );
+      if( exprAlwaysTrue(pExpr) ){
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, dest);
+      }else if( exprAlwaysFalse(pExpr) ){
+        /* No-op */
+      }else{
+        r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
+        sqlite3VdbeAddOp3(v, OP_If, r1, dest, jumpIfNull!=0);
+        testcase( regFree1==0 );
+        testcase( jumpIfNull==0 );
+      }
       break;
     }
   }
@@ -3759,10 +3774,16 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
 #endif
     default: {
-      r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
-      sqlite3VdbeAddOp3(v, OP_IfNot, r1, dest, jumpIfNull!=0);
-      testcase( regFree1==0 );
-      testcase( jumpIfNull==0 );
+      if( exprAlwaysFalse(pExpr) ){
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, dest);
+      }else if( exprAlwaysTrue(pExpr) ){
+        /* no-op */
+      }else{
+        r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
+        sqlite3VdbeAddOp3(v, OP_IfNot, r1, dest, jumpIfNull!=0);
+        testcase( regFree1==0 );
+        testcase( jumpIfNull==0 );
+      }
       break;
     }
   }
