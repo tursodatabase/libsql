@@ -727,6 +727,13 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
 }
 
 /*
+** Remove the last opcode inserted
+*/
+void sqlite3VdbeDeleteLastOpcode(Vdbe *p){
+  p->nOp--;
+}
+
+/*
 ** Change the value of the P4 operand for a specific instruction.
 ** This routine is useful when a large program is loaded from a
 ** static array using sqlite3VdbeAddOpList but we want to make a

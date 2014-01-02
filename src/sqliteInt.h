@@ -1056,7 +1056,7 @@ struct sqlite3 {
 #define SQLITE_ColumnCache    0x0002   /* Column cache */
 #define SQLITE_GroupByOrder   0x0004   /* GROUPBY cover of ORDERBY */
 #define SQLITE_FactorOutConst 0x0008   /* Constant factoring */
-#define SQLITE_IdxRealAsInt   0x0010   /* Store REAL as INT in indices */
+/*                not used    0x0010   // Was: SQLITE_IdxRealAsInt */
 #define SQLITE_DistinctOpt    0x0020   /* DISTINCT using indexes */
 #define SQLITE_CoverIdxScan   0x0040   /* Covering index scans */
 #define SQLITE_OrderByIdxJoin 0x0080   /* ORDER BY of joins via index */

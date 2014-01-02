@@ -784,18 +784,18 @@ int sqlite3GenerateIndexKey(
   for(j=0; j<nCol; j++){
     sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pIdx->aiColumn[j],
                                     regBase+j);
+    /* If the column affinity is REAL but the number is an integer, then it
+    ** might be stored in the table as an integer (using a compact
+    ** representation) then converted to REAL by an OP_RealAffinity opcode.
+    ** But we are getting ready to store this value back into an index, where
+    ** it should be converted by to INTEGER again.  So omit the OP_RealAffinity
+    ** opcode if it is present */
+    if( sqlite3VdbeGetOp(v, -1)->opcode==OP_RealAffinity ){
+      sqlite3VdbeDeleteLastOpcode(v);
+    }
   }
   if( regOut ){
-    const char *zAff;
-    if( pTab->pSelect
-     || OptimizationDisabled(pParse->db, SQLITE_IdxRealAsInt)
-    ){
-      zAff = 0;
-    }else{
-      zAff = sqlite3IndexAffinityStr(v, pIdx);
-    }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regOut);
-    sqlite3VdbeChangeP4(v, -1, zAff, P4_TRANSIENT);
   }
   sqlite3ReleaseTempRange(pParse, regBase, nCol);
   return regBase;

@@ -175,6 +175,7 @@ void sqlite3VdbeChangeP3(Vdbe*, u32 addr, int P3);
 void sqlite3VdbeChangeP5(Vdbe*, u8 P5);
 void sqlite3VdbeJumpHere(Vdbe*, int addr);
 void sqlite3VdbeChangeToNoop(Vdbe*, int addr);
+void sqlite3VdbeDeleteLastOpcode(Vdbe*);
 void sqlite3VdbeChangeP4(Vdbe*, int addr, const char *zP4, int N);
 void sqlite3VdbeSetP4KeyInfo(Parse*, Index*);
 void sqlite3VdbeUsesBtree(Vdbe*, int);
