@@ -1,5 +1,5 @@
-C Try\sto\sfactor\sconstant\ssubcomponents\sof\sthe\sWHERE\sclause\sout\sof\sthe\sloop.
-D 2014-01-02T21:05:10.654
+C Avoid\ssome\sunnecessary\sOP_SCopy\soperations\swhen\sinserting\sinto\sa\stable\nwith\smultiple\sindices.
+D 2014-01-03T16:03:43.440
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c f165ba414eda735b327c8126def0a2428f9138de
+F src/insert.c e6b3d7847aaf06170967ff6ea9076717fbc08d3f
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1147,7 +1147,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 10d851353c2abeadbd2852c210a7ff9f7f513e5d
-R c2b1a12fe347b39aeab4feaef9309c2b
+P 9d05777fe24e1a5ce71762de38db840931ef0bc8
+R 3a4d1de2d6235e13c562ba377a9da47e
 U drh
-Z c170c664d17a9fc9f22716e0d87d4dc7
+Z f5e03e0d190fce062c51c7968e7436da

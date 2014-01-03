@@ -1233,6 +1233,7 @@ void sqlite3GenerateConstraintChecks(
   int ipkTop = 0;      /* Top of the rowid change constraint check */
   int ipkBottom = 0;   /* Bottom of the rowid change constraint check */
   u8 isUpdate;         /* True if this is an UPDATE operation */
+  int regRowid = -1;   /* Register holding ROWID value */
 
   isUpdate = regOldData!=0;
   db = pParse->db;
@@ -1463,7 +1464,9 @@ void sqlite3GenerateConstraintChecks(
       int iField = pIdx->aiColumn[i];
       int x;
       if( iField<0 || iField==pTab->iPKey ){
+        if( regRowid==regIdx+i ) continue; /* ROWID already in regIdx+i */
         x = regNewData;
+        regRowid =  pIdx->pPartIdxWhere ? -1 : regIdx+i;
       }else{
         x = iField + regNewData + 1;
       }
