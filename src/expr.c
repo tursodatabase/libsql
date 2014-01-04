@@ -3388,7 +3388,7 @@ void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
       sqlite3ExplainPrintf(pOut, "item[%d] = ", i);
       sqlite3ExplainPush(pOut);
       sqlite3ExplainExpr(pOut, pList->a[i].pExpr);
-      sqlite3ExplainPop(pOut, 1);
+      sqlite3ExplainPop(pOut);
       if( pList->a[i].zName ){
         sqlite3ExplainPrintf(pOut, " AS %s", pList->a[i].zName);
       }

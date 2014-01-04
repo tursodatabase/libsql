@@ -1,5 +1,5 @@
-C Add\sthe\susual\s"fts3"\sprefix\sto\snew\sstatic\smethod\ssetEstimatedRows()\sin\sfts3.c.\sThis\sfixes\sa\sproblem\swhen\scompiling\sthe\samalgamation,\sas\sthe\sr-tree\smodule\salso\scontains\sa\sstatic\smethod\snamed\ssetEstimatedRows.
-D 2014-01-04T19:58:29.359
+C Fix\san\stypo\sthat\sbreaks\sthe\sbuild\swhen\sSQLITE_ENABLE_TREE_EXPLAIN\sis\sdefined.
+D 2014-01-04T20:00:14.172
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 91e1321021db5dc266360531b8b6550009d771ff
-F src/expr.c 15a86b7632da09924ccffb53fafa86e7d8727b70
+F src/expr.c 4115ad67088cdd55f4fa0ef3ddd22cb8da8f9c94
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 6325ac2ec10833ccf4d5c36d323709221d37ea19
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8f6e6149a165f516be6395fd753e163d52ffd52e
-R 2ae7b961fa0019d77bff10a5332fc93d
-U dan
-Z 855ecbcf8fda10bc6c9a4ba8bd1399e1
+P d6fcfc8890489b942e5b3f1bc271835d77c5ef96
+R 92a605458ee112680310df2ab331e715
+U drh
+Z 1b6a595171700e1d6836f451072293d3
