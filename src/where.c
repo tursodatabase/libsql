@@ -4338,6 +4338,7 @@ static int whereLoopAddVirtual(
   int nConstraint;
   int seenIn = 0;              /* True if an IN operator is seen */
   int seenVar = 0;             /* True if a non-constant constraint is seen */
+  int seenVarMatch = 0;        /* If a non-constant MATCH constraint is seen */
   int iPhase;                  /* 0: const w/o IN, 1: const, 2: no IN,  2: IN */
   WhereLoop *pNew;
   int rc = SQLITE_OK;
@@ -4382,6 +4383,7 @@ static int whereLoopAddVirtual(
           }
           if( pTerm->prereqRight!=0 ){
             seenVar = 1;
+            if( pTerm->eOperator & WO_MATCH ) seenVarMatch = 1;
           }else if( (pTerm->eOperator & WO_IN)==0 ){
             pIdxCons->usable = 1;
           }
@@ -4400,6 +4402,9 @@ static int whereLoopAddVirtual(
           break;
       }
     }
+    /* The following line ensures that, if there exists a MATCH constraint, 
+    ** no plans for which the MATCH constraint is not usable are considered. */
+    if( seenVarMatch && iPhase<=1 ) continue;
     memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
     if( pIdxInfo->needToFreeIdxStr ) sqlite3_free(pIdxInfo->idxStr);
     pIdxInfo->idxStr = 0;

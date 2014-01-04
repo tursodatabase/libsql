@@ -1,5 +1,5 @@
-C Avoid\ssome\sunnecessary\sOP_SCopy\soperations\swhen\sinserting\sinto\sa\stable\nwith\smultiple\sindices.
-D 2014-01-03T16:03:43.440
+C Have\sthe\splanner\sdetect\scases\swhere\sa\sMATCH\sconstraint\sis\sapplied\sto\sa\svirtual\stable,\sand\signore\sany\splans\sthat\sdo\snot\sallow\sthe\svirtual\stable\simplementation\sto\simplement\sthe\sMATCH\sfiltering.
+D 2014-01-04T14:16:06.902
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 8e3cb2030eaa242defb804aa30115b5d870e5cd4
+F src/where.c 14403429f7ad11b13b6ae0e466d089b8875ba195
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -547,6 +547,7 @@ F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
+F test/fts3join.test bc8e5ca3e6b6577cf98e81b5271291e33e020e87
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test ff423e73faab8fc6d7adeefedf74dd8e2b0b14e0
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
@@ -1147,7 +1148,10 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9d05777fe24e1a5ce71762de38db840931ef0bc8
-R 3a4d1de2d6235e13c562ba377a9da47e
-U drh
-Z f5e03e0d190fce062c51c7968e7436da
+P 429018b19cb525a4bb0843d20955457b53900d4b
+R 6571bb57c7cea9164f2f0721e5f9106f
+T *branch * avoid-unusable-match
+T *sym-avoid-unusable-match *
+T -sym-trunk *
+U dan
+Z 6e1a68d01b84e17020c8f255059d7b13
