@@ -1472,6 +1472,19 @@ static int fts3CreateMethod(
   return fts3InitVtab(1, db, pAux, argc, argv, ppVtab, pzErr);
 }
 
+/*
+** Set the pIdxInfo->estimatedRows variable to nRow. Unless this
+** extension is currently being used by a version of SQLite too old to
+** support estimatedRows. In that case this function is a no-op.
+*/
+static void setEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
+#if SQLITE_VERSION_NUMBER>=3008002
+  if( sqlite3_libversion_number()>=3008002 ){
+    pIdxInfo->estimatedRows = nRow;
+  }
+#endif
+}
+
 /* 
 ** Implementation of the xBestIndex method for FTS3 tables. There
 ** are three possible strategies, in order of preference:
@@ -1499,7 +1512,20 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   for(i=0; i<pInfo->nConstraint; i++){
     int bDocid;                 /* True if this constraint is on docid */
     struct sqlite3_index_constraint *pCons = &pInfo->aConstraint[i];
-    if( pCons->usable==0 ) continue;
+    if( pCons->usable==0 ){
+      if( pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH ){
+        /* There exists an unusable MATCH constraint. This means that if
+        ** the planner does elect to use the results of this call as part
+        ** of the overall query plan the user will see an "unable to use
+        ** function MATCH in the requested context" error. To discourage
+        ** this, return a very high cost here.  */
+        pInfo->idxNum = FTS3_FULLSCAN_SEARCH;
+        pInfo->estimatedCost = 1e50;
+        setEstimatedRows(pInfo, ((sqlite3_int64)1) << 50);
+        return SQLITE_OK;
+      }
+      continue;
+    }
 
     bDocid = (pCons->iColumn<0 || pCons->iColumn==p->nColumn+1);
 

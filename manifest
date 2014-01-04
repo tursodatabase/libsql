@@ -1,5 +1,5 @@
-C Avoid\ssome\sunnecessary\sOP_SCopy\soperations\swhen\sinserting\sinto\sa\stable\nwith\smultiple\sindices.
-D 2014-01-03T16:03:43.440
+C Have\sFTS\sassign\sextremely\shigh\scosts\sto\splans\sthat\sfeature\sunusable\sMATCH\sconstraints.\sThis\sdiscourages\sthe\splanner\sfrom\schoosing\ssuch\splans,\swhich\slead\sto\s"unable\sto\suse\sfunction\sMATCH\sin\sthe\srequested\scontext"\serrors.
+D 2014-01-04T14:46:39.188
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 1e667eacb3fe4b4ad6f863920da4286f071f6e07
+F ext/fts3/fts3.c 2af2cb2e742461b79710c132c7969fc7d949a59a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb5f8029589f3d8f1dc7fd50c773326a640388b1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -547,6 +547,7 @@ F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
+F test/fts3join.test 53e66a0c21eb568580674a43b21c059acb26f499
 F test/fts3malloc.test b0e4c133b8d61d4f6d112d8110f8320e9e453ef6
 F test/fts3matchinfo.test ff423e73faab8fc6d7adeefedf74dd8e2b0b14e0
 F test/fts3near.test 7e3354d46f155a822b59c0e957fd2a70c1d7e905
@@ -1147,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9d05777fe24e1a5ce71762de38db840931ef0bc8
-R 3a4d1de2d6235e13c562ba377a9da47e
-U drh
-Z f5e03e0d190fce062c51c7968e7436da
+P 429018b19cb525a4bb0843d20955457b53900d4b 24f84b38131866f7b435ffe641bb2f6991a70db2
+R 2d783783dbaa85fb88df6c2aa4454d7b
+U dan
+Z 183032db794c33dfd03471ac339127f5
