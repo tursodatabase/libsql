@@ -59,7 +59,7 @@ do_execsql_test 2.4 { SELECT * FROM ft3, ft2 WHERE y MATCH x; } {abc abc}
 
 do_catchsql_test 2.5 { 
   SELECT * FROM ft3, ft2 WHERE y MATCH x AND x MATCH y; 
-} {1 {no query solution}}
+} {1 {unable to use function MATCH in the requested context}}
 
 finish_test
 
