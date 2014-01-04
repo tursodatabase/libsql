@@ -3388,7 +3388,7 @@ void sqlite3ExplainExprList(Vdbe *pOut, ExprList *pList){
       sqlite3ExplainPrintf(pOut, "item[%d] = ", i);
       sqlite3ExplainPush(pOut);
       sqlite3ExplainExpr(pOut, pList->a[i].pExpr);
-      sqlite3ExplainPop(pOut);
+      sqlite3ExplainPop(pOut, 1);
       if( pList->a[i].zName ){
         sqlite3ExplainPrintf(pOut, " AS %s", pList->a[i].zName);
       }
@@ -3538,8 +3538,8 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_AND: {
       int d2 = sqlite3VdbeMakeLabel(v);
       testcase( jumpIfNull==0 );
-      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, d2,jumpIfNull^SQLITE_JUMPIFNULL);
+      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
       sqlite3ExprCachePop(pParse, 1);
@@ -3548,7 +3548,9 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_OR: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
+      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
+      sqlite3ExprCachePop(pParse, 1);
       break;
     }
     case TK_NOT: {
@@ -3695,14 +3697,16 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_AND: {
       testcase( jumpIfNull==0 );
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
+      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
+      sqlite3ExprCachePop(pParse, 1);
       break;
     }
     case TK_OR: {
       int d2 = sqlite3VdbeMakeLabel(v);
       testcase( jumpIfNull==0 );
-      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, d2, jumpIfNull^SQLITE_JUMPIFNULL);
+      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
       sqlite3ExprCachePop(pParse, 1);
