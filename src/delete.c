@@ -790,9 +790,7 @@ int sqlite3GenerateIndexKey(
     ** But we are getting ready to store this value back into an index, where
     ** it should be converted by to INTEGER again.  So omit the OP_RealAffinity
     ** opcode if it is present */
-    if( sqlite3VdbeGetOp(v, -1)->opcode==OP_RealAffinity ){
-      sqlite3VdbeDeleteLastOpcode(v);
-    }
+    sqlite3VdbeDeletePriorOpcode(v, OP_RealAffinity);
   }
   if( regOut ){
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regOut);

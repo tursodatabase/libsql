@@ -2293,6 +2293,7 @@ struct Parse {
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
   int nLabel;          /* Number of labels used */
   int *aLabel;         /* Space to hold the labels */
+  int iFixedOp;        /* Never back out opcodes iFixedOp-1 or earlier */
   int ckBase;          /* Base register of data during check constraints */
   int iPartIdxTab;     /* Table corresponding to a partial index */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */

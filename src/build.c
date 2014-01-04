@@ -140,6 +140,7 @@ void sqlite3FinishCoding(Parse *pParse){
   assert( !pParse->isMultiWrite 
        || sqlite3VdbeAssertMayAbort(v, pParse->mayAbort));
   if( v ){
+    while( sqlite3VdbeDeletePriorOpcode(v, OP_Close) ){}
     sqlite3VdbeAddOp0(v, OP_Halt);
 
     /* The cookie mask contains one bit for each database file open.

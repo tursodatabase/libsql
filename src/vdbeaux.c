@@ -276,6 +276,7 @@ void sqlite3VdbeResolveLabel(Vdbe *v, int x){
   if( j>=0 && p->aLabel ){
     p->aLabel[j] = v->nOp;
   }
+  p->iFixedOp = v->nOp - 1;
 }
 
 /*
@@ -624,7 +625,8 @@ void sqlite3VdbeChangeP5(Vdbe *p, u8 val){
 ** the address of the next instruction to be coded.
 */
 void sqlite3VdbeJumpHere(Vdbe *p, int addr){
-  if( ALWAYS(addr>=0) ) sqlite3VdbeChangeP2(p, addr, p->nOp);
+  sqlite3VdbeChangeP2(p, addr, p->nOp);
+  p->pParse->iFixedOp = p->nOp - 1;
 }
 
 
@@ -729,8 +731,13 @@ void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
 /*
 ** Remove the last opcode inserted
 */
-void sqlite3VdbeDeleteLastOpcode(Vdbe *p){
-  p->nOp--;
+int sqlite3VdbeDeletePriorOpcode(Vdbe *p, u8 op){
+  if( (p->nOp-1)>(p->pParse->iFixedOp) && p->aOp[p->nOp-1].opcode==op ){
+    sqlite3VdbeChangeToNoop(p, p->nOp-1);
+    return 1;
+  }else{
+    return 0;
+  }
 }
 
 /*
