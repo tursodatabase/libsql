@@ -1,5 +1,5 @@
-C Avoid\sredundant\sregister\sloads\sduring\sindex\skey\sgeneration\swhen\sdoing\sa\nDELETE\sor\sINTEGRITY_CHECK\son\sa\stable\swith\smultiple\sindices.
-D 2014-01-04T19:27:05.589
+C Add\sthe\susual\s"fts3"\sprefix\sto\snew\sstatic\smethod\ssetEstimatedRows()\sin\sfts3.c.\sThis\sfixes\sa\sproblem\swhen\scompiling\sthe\samalgamation,\sas\sthe\sr-tree\smodule\salso\scontains\sa\sstatic\smethod\snamed\ssetEstimatedRows.
+D 2014-01-04T19:58:29.359
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 2af2cb2e742461b79710c132c7969fc7d949a59a
+F ext/fts3/fts3.c 3fe91e36a0304ad4b35020f0e22ff37e95873166
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h eb5f8029589f3d8f1dc7fd50c773326a640388b1
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 874b7e9999811c288ad41d07709f88e458d2d497
-R fc5dbcd7a08b2e4b11ffb23dc1241ea1
-U drh
-Z 86dc65664e674593ae8c26084106bce8
+P 8f6e6149a165f516be6395fd753e163d52ffd52e
+R 2ae7b961fa0019d77bff10a5332fc93d
+U dan
+Z 855ecbcf8fda10bc6c9a4ba8bd1399e1

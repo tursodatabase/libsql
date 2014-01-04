@@ -1477,7 +1477,7 @@ static int fts3CreateMethod(
 ** extension is currently being used by a version of SQLite too old to
 ** support estimatedRows. In that case this function is a no-op.
 */
-static void setEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
+static void fts3SetEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
 #if SQLITE_VERSION_NUMBER>=3008002
   if( sqlite3_libversion_number()>=3008002 ){
     pIdxInfo->estimatedRows = nRow;
@@ -1521,7 +1521,7 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
         ** this, return a very high cost here.  */
         pInfo->idxNum = FTS3_FULLSCAN_SEARCH;
         pInfo->estimatedCost = 1e50;
-        setEstimatedRows(pInfo, ((sqlite3_int64)1) << 50);
+        fts3SetEstimatedRows(pInfo, ((sqlite3_int64)1) << 50);
         return SQLITE_OK;
       }
       continue;
