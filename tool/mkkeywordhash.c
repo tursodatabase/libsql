@@ -138,6 +138,11 @@ struct Keyword {
 #else
 #  define AUTOVACUUM 0x00020000
 #endif
+#ifdef SQLITE_OMIT_CONNECTBY
+#  define CONNECTBY  0
+#else
+#  define CONNECTBY  0x00040000
+#endif
 
 /*
 ** These are the keywords
@@ -167,6 +172,7 @@ static Keyword aKeywordTable[] = {
   { "COLUMN",           "TK_COLUMNKW",     ALTER                  },
   { "COMMIT",           "TK_COMMIT",       ALWAYS                 },
   { "CONFLICT",         "TK_CONFLICT",     CONFLICT               },
+  { "CONNECT",          "TK_CONNECT",      CONNECTBY              },
   { "CONSTRAINT",       "TK_CONSTRAINT",   ALWAYS                 },
   { "CREATE",           "TK_CREATE",       ALWAYS                 },
   { "CROSS",            "TK_JOIN_KW",      ALWAYS                 },
@@ -232,6 +238,7 @@ static Keyword aKeywordTable[] = {
   { "PLAN",             "TK_PLAN",         EXPLAIN                },
   { "PRAGMA",           "TK_PRAGMA",       PRAGMA                 },
   { "PRIMARY",          "TK_PRIMARY",      ALWAYS                 },
+  { "PRIOR",            "TK_PRIOR",        CONNECTBY              },
   { "QUERY",            "TK_QUERY",        EXPLAIN                },
   { "RAISE",            "TK_RAISE",        TRIGGER                },
   { "REFERENCES",       "TK_REFERENCES",   FKEY                   },
@@ -247,6 +254,7 @@ static Keyword aKeywordTable[] = {
   { "SAVEPOINT",        "TK_SAVEPOINT",    ALWAYS                 },
   { "SELECT",           "TK_SELECT",       ALWAYS                 },
   { "SET",              "TK_SET",          ALWAYS                 },
+  { "START",            "TK_START",        CONNECTBY              },
   { "TABLE",            "TK_TABLE",        ALWAYS                 },
   { "TEMP",             "TK_TEMP",         ALWAYS                 },
   { "TEMPORARY",        "TK_TEMP",         ALWAYS                 },
@@ -262,6 +270,7 @@ static Keyword aKeywordTable[] = {
   { "VALUES",           "TK_VALUES",       ALWAYS                 },
   { "VIEW",             "TK_VIEW",         VIEW                   },
   { "VIRTUAL",          "TK_VIRTUAL",      VTAB                   },
+  { "WITH",             "TK_WITH",         CONNECTBY              },
   { "WITHOUT",          "TK_WITHOUT",      ALWAYS                 },
   { "WHEN",             "TK_WHEN",         ALWAYS                 },
   { "WHERE",            "TK_WHERE",        ALWAYS                 },

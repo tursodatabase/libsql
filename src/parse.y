@@ -102,6 +102,15 @@ struct ValueList {
   Select *pSelect;
 };
 
+/*
+** An instance of this structure stores the optional Oracle Hierarchical
+** Query clauses - the START WITH and CONNECT BY clauses.
+*/
+struct HierarchicalQuery {
+  Expr *pStartWith;    /* The START WITH condition */
+  Expr *pConnectBy;    /* The CONNECT BY condition */
+};
+
 } // end %include
 
 // Input is a single SQL command
@@ -438,7 +447,7 @@ multiselect_op(A) ::= UNION(OP).             {A = @OP;}
 multiselect_op(A) ::= UNION ALL.             {A = TK_ALL;}
 multiselect_op(A) ::= EXCEPT|INTERSECT(OP).  {A = @OP;}
 %endif SQLITE_OMIT_COMPOUND_SELECT
-oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
+oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y) hq_opt
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
   A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L.pLimit,L.pOffset);
 }
@@ -638,6 +647,19 @@ limit_opt(A) ::= LIMIT expr(X) OFFSET expr(Y).
                                       {A.pLimit = X.pExpr; A.pOffset = Y.pExpr;}
 limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y). 
                                       {A.pOffset = X.pExpr; A.pLimit = Y.pExpr;}
+
+///////// Oracle-style CONNECT BY clauses for hierarchical queries ////////////
+
+%type hq_opt {struct HierarchicalQuery}
+%destructor hq_opt {
+  sqlite3ExprDelete(pParse->db, $$.pStartWith);
+  sqlite3ExprDelete(pParse->db, $$.pConnectBy);
+}
+
+hq_opt(A) ::= START WITH expr(X) CONNECT BY expr(Y).
+                        { A.pStartWith=X.pExpr; A.pConnectBy=Y.pExpr; }
+hq_opt(A) ::= CONNECT BY expr(Y).    { A.pStartWith=0; A.pConnectBy=Y.pExpr; }
+hq_opt(A) ::= .                      { A.pStartWith=0; A.pConnectBy=0; }
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //
@@ -985,6 +1007,8 @@ expr(A) ::= MINUS(B) expr(X). [BITNOT]
                                {spanUnaryPrefix(&A,pParse,TK_UMINUS,&X,&B);}
 expr(A) ::= PLUS(B) expr(X). [BITNOT]
                                {spanUnaryPrefix(&A,pParse,TK_UPLUS,&X,&B);}
+expr(A) ::= PRIOR(B) expr(X). [BITNOT]
+                               {spanUnaryPrefix(&A,pParse,TK_PRIOR,&X,&B);}
 
 %type between_op {int}
 between_op(A) ::= BETWEEN.     {A = 0;}
