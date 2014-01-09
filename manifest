@@ -1,5 +1,5 @@
-C Fix\san\stypo\sthat\sbreaks\sthe\sbuild\swhen\sSQLITE_ENABLE_TREE_EXPLAIN\sis\sdefined.
-D 2014-01-04T20:00:14.172
+C Fix\sharmless\scompiler\swarning\sin\sunixUnfetch().
+D 2014-01-09T13:39:07.144
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c abeb9d54036aaea6f4395050ce823f51217ae4d4
+F src/os_unix.c 9270957b8ebab7a6c930cc6891f98cf396771d9d
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d6fcfc8890489b942e5b3f1bc271835d77c5ef96
-R 92a605458ee112680310df2ab331e715
+P f461e2b3973d0fe6a7b8cb7a3aaab8a30b3e16c0
+R d5e72e34ba57bc2641d05089f26a27b4
 U drh
-Z 1b6a595171700e1d6836f451072293d3
+Z 8832e3e8b28de8e986889f1676a8ae62
