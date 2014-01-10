@@ -1,5 +1,5 @@
-C Fix\sanother\sharmless\scompiler\swarning\sin\sunixUnfetch().
-D 2014-01-10T16:40:21.047
+C Fix\sCREATE\sTABLE\s...\sAS\sso\sthat\sit\sworks\swith\scolumn\snames\sthat\sare\sempty\nstrings.
+D 2014-01-10T20:38:12.815
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +169,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 11e29ef8cf16a42925fde036bcffbeffd9cc82df
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 3609c8aa26947d7a035faa23eb1cb2cfc54b4680
+F src/build.c 8c56d91447770a746b16d08a6510109c161dbc1a
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
@@ -693,7 +693,7 @@ F test/minmax.test 42fbad0e81afaa6e0de41c960329f2b2c3526efd
 F test/minmax2.test b44bae787fc7b227597b01b0ca5575c7cb54d3bc
 F test/minmax3.test cc1e8b010136db0d01a6f2a29ba5a9f321034354
 F test/minmax4.test 536a3360470633a177e42fbc19660d146b51daef
-F test/misc1.test 9bed1bd334065a57dc841cff969d4fc1eeb6d49b
+F test/misc1.test 441a0fafc7087f841db09fbfca54e7aea9f5a84c
 F test/misc2.test 00d7de54eda90e237fc9a38b9e5ccc769ebf6d4d
 F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 618f248f4ea9fb0b6ff019a4c2cd72857389301f
-R 680b9cb5772eadf3cf119ad0606b2737
-U dan
-Z 5d71bf2b25857007a3e37b3d6409191a
+P 0484549bb82ca5246488330c8d266e429ccd19b9
+R 00ef541b0e35ee7a66a11f656f6dc3e2
+U drh
+Z 1394adca743ceab6563433db8e16d260
