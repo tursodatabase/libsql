@@ -50,6 +50,97 @@ static char *msort(char*,char**,int(*)(const char*,const char*));
 */
 #define lemonStrlen(X)   ((int)strlen(X))
 
+/*
+** Compilers are starting to complain about the use of sprintf() and strcpy(),
+** saying they are unsafe.  So we define our own versions of those routines too.
+**
+** There are three routines here:  lemon_sprintf(), lemon_vsprintf(), and
+** lemon_addtext().  The first two are replacements for sprintf() and vsprintf().
+** The third is a helper routine for vsnprintf() that adds texts to the end of a
+** buffer, making sure the buffer is always zero-terminated.
+**
+** The string formatter is a minimal subset of stdlib sprintf() supporting only
+** a few simply conversions:
+**
+**   %d
+**   %s
+**   %.*s
+**
+*/
+static void lemon_addtext(
+  char *zBuf,           /* The buffer to which text is added */
+  int *pnUsed,          /* Slots of the buffer used so far */
+  const char *zIn,      /* Text to add */
+  int nIn               /* Bytes of text to add.  -1 to use strlen() */
+){
+  if( nIn<0 ) for(nIn=0; zIn[nIn]; nIn++){}
+  if( nIn==0 ) return;
+  memcpy(&zBuf[*pnUsed], zIn, nIn);
+  *pnUsed += nIn;
+  zBuf[*pnUsed] = 0;
+}
+static int lemon_vsprintf(char *str, const char *zFormat, va_list ap){
+  int i, j, k, c, size;
+  int nUsed = 0;
+  const char *z;
+  char zTemp[50];
+  str[0] = 0;
+  for(i=j=0; (c = zFormat[i])!=0; i++){
+    if( c=='%' ){
+      lemon_addtext(str, &nUsed, &zFormat[j], i-j);
+      c = zFormat[++i];
+      if( c=='d' ){
+        int v = va_arg(ap, int);
+        if( v<0 ){
+          lemon_addtext(str, &nUsed, "-", 1);
+          v = -v;
+        }else if( v==0 ){
+          lemon_addtext(str, &nUsed, "0", 1);
+        }
+        k = 0;
+        while( v>0 ){
+          k++;
+          zTemp[sizeof(zTemp)-k] = (v%10) + '0';
+          v /= 10;
+        }
+        lemon_addtext(str, &nUsed, &zTemp[sizeof(zTemp)-k], k);
+      }else if( c=='s' ){
+        z = va_arg(ap, const char*);
+        lemon_addtext(str, &nUsed, z, -1);
+      }else if( c=='.' && memcmp(&zFormat[i], ".*s", 3)==0 ){
+        i += 2;
+        k = va_arg(ap, int);
+        z = va_arg(ap, const char*);
+        lemon_addtext(str, &nUsed, z, k);
+      }else if( c=='%' ){
+        lemon_addtext(str, &nUsed, "%", 1);
+      }else{
+        fprintf(stderr, "illegal format\n");
+        exit(1);
+      }
+      j = i+1;
+    }
+  }
+  lemon_addtext(str, &nUsed, &zFormat[j], i-j);
+  return nUsed;
+}
+static int lemon_sprintf(char *str, const char *format, ...){
+  va_list ap;
+  int rc;
+  va_start(ap, format);
+  rc = lemon_vsprintf(str, format, ap);
+  va_end(ap);
+  return rc;
+}
+static void lemon_strcpy(char *dest, const char *src){
+  while( (*(dest++) = *(src++))!=0 ){}
+}
+static void lemon_strcat(char *dest, const char *src){
+  while( *dest ) dest++;
+  lemon_strcpy(dest, src);
+}
+
+
 /* a few forward declarations... */
 struct rule;
 struct lemon;
@@ -1367,7 +1458,7 @@ static void handle_D_option(char *z){
     fprintf(stderr,"out of memory\n");
     exit(1);
   }
-  strcpy(*paz, z);
+  lemon_strcpy(*paz, z);
   for(z=*paz; *z && *z!='='; z++){}
   *z = 0;
 }
@@ -1378,7 +1469,7 @@ static void handle_T_option(char *z){
   if( user_templatename==0 ){
     memory_error();
   }
-  strcpy(user_templatename, z);
+  lemon_strcpy(user_templatename, z);
 }
 
 /* The main program.  Parse the command line and do it... */
@@ -2347,7 +2438,7 @@ to follow the previous rule.");
           for(z=psp->filename, nBack=0; *z; z++){
             if( *z=='\\' ) nBack++;
           }
-          sprintf(zLine, "#line %d ", psp->tokenlineno);
+          lemon_sprintf(zLine, "#line %d ", psp->tokenlineno);
           nLine = lemonStrlen(zLine);
           n += nLine + lemonStrlen(psp->filename) + nBack;
         }
@@ -2716,10 +2807,10 @@ PRIVATE char *file_makename(struct lemon *lemp, const char *suffix)
     fprintf(stderr,"Can't allocate space for a filename.\n");
     exit(1);
   }
-  strcpy(name,lemp->filename);
+  lemon_strcpy(name,lemp->filename);
   cp = strrchr(name,'.');
   if( cp ) *cp = 0;
-  strcat(name,suffix);
+  lemon_strcat(name,suffix);
   return name;
 }
 
@@ -2916,7 +3007,7 @@ void ReportOutput(struct lemon *lemp)
     while( cfp ){
       char buf[20];
       if( cfp->dot==cfp->rp->nrhs ){
-        sprintf(buf,"(%d)",cfp->rp->index);
+        lemon_sprintf(buf,"(%d)",cfp->rp->index);
         fprintf(fp,"    %5s ",buf);
       }else{
         fprintf(fp,"          ");
@@ -2981,7 +3072,7 @@ PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
     c = *cp;
     *cp = 0;
     path = (char *)malloc( lemonStrlen(argv0) + lemonStrlen(name) + 2 );
-    if( path ) sprintf(path,"%s/%s",argv0,name);
+    if( path ) lemon_sprintf(path,"%s/%s",argv0,name);
     *cp = c;
   }else{
     pathlist = getenv("PATH");
@@ -2990,13 +3081,13 @@ PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
     path = (char *)malloc( lemonStrlen(pathlist)+lemonStrlen(name)+2 );
     if( (pathbuf != 0) && (path!=0) ){
       pathbufptr = pathbuf;
-      strcpy(pathbuf, pathlist);
+      lemon_strcpy(pathbuf, pathlist);
       while( *pathbuf ){
         cp = strchr(pathbuf,':');
         if( cp==0 ) cp = &pathbuf[lemonStrlen(pathbuf)];
         c = *cp;
         *cp = 0;
-        sprintf(path,"%s/%s",pathbuf,name);
+        lemon_sprintf(path,"%s/%s",pathbuf,name);
         *cp = c;
         if( c==0 ) pathbuf[0] = 0;
         else pathbuf = &cp[1];
@@ -3087,9 +3178,9 @@ PRIVATE FILE *tplt_open(struct lemon *lemp)
 
   cp = strrchr(lemp->filename,'.');
   if( cp ){
-    sprintf(buf,"%.*s.lt",(int)(cp-lemp->filename),lemp->filename);
+    lemon_sprintf(buf,"%.*s.lt",(int)(cp-lemp->filename),lemp->filename);
   }else{
-    sprintf(buf,"%s.lt",lemp->filename);
+    lemon_sprintf(buf,"%s.lt",lemp->filename);
   }
   if( access(buf,004)==0 ){
     tpltname = buf;
@@ -3240,9 +3331,9 @@ PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
   while( n-- > 0 ){
     c = *(zText++);
     if( c=='%' && n>0 && zText[0]=='d' ){
-      sprintf(zInt, "%d", p1);
+      lemon_sprintf(zInt, "%d", p1);
       p1 = p2;
-      strcpy(&z[used], zInt);
+      lemon_strcpy(&z[used], zInt);
       used += lemonStrlen(&z[used]);
       zText++;
       n--;
@@ -3467,7 +3558,7 @@ void print_stack_union(
         fprintf(stderr,"Out of memory.\n");
         exit(1);
       }
-      strcpy(types[hash],stddt);
+      lemon_strcpy(types[hash],stddt);
     }
   }
 
@@ -3856,7 +3947,7 @@ void ReportTable(
   /* Generate a table containing the symbolic name of every symbol
   */
   for(i=0; i<lemp->nsymbol; i++){
-    sprintf(line,"\"%s\",",lemp->symbols[i]->name);
+    lemon_sprintf(line,"\"%s\",",lemp->symbols[i]->name);
     fprintf(out,"  %-15s",line);
     if( (i&3)==3 ){ fprintf(out,"\n"); lineno++; }
   }
@@ -4023,7 +4114,7 @@ void ReportHeader(struct lemon *lemp)
   if( in ){
     int nextChar;
     for(i=1; i<lemp->nterminal && fgets(line,LINESIZE,in); i++){
-      sprintf(pattern,"#define %s%-30s %2d\n",prefix,lemp->symbols[i]->name,i);
+      lemon_sprintf(pattern,"#define %s%-30s %2d\n",prefix,lemp->symbols[i]->name,i);
       if( strcmp(line,pattern) ) break;
     }
     nextChar = fgetc(in);
@@ -4253,7 +4344,7 @@ const char *Strsafe(const char *y)
   if( y==0 ) return 0;
   z = Strsafe_find(y);
   if( z==0 && (cpy=(char *)malloc( lemonStrlen(y)+1 ))!=0 ){
-    strcpy(cpy,y);
+    lemon_strcpy(cpy,y);
     z = cpy;
     Strsafe_insert(z);
   }
