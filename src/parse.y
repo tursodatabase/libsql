@@ -94,14 +94,6 @@ struct TrigEvent { int a; IdList * b; };
 */
 struct AttachKey { int type;  Token key; };
 
-/*
-** One or more VALUES claues
-*/
-struct ValueList {
-  ExprList *pList;
-  Select *pSelect;
-};
-
 } // end %include
 
 // Input is a single SQL command

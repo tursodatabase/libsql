@@ -1,5 +1,5 @@
-C Allow\sa\sVALUES\sclause\sto\sbe\sused\sany\splace\sthat\sa\sSELECT\sstatement\scan\sbe\nused.
-D 2014-01-10T20:46:55.338
+C Remove\sunused\sstructure\sdefinition\sfrom\sparse.y.
+D 2014-01-10T20:51:16.498
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -209,7 +209,7 @@ F src/os_unix.c 3a4dcb554d3c915075766162f28c3fd4cdb75968
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y 0a284e3f2bb78363ddce6f796ca2074e1e265eb7
+F src/parse.y 60baa3aced02c9f91259719d196315bc28580719
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 57fee9a9a617218f5037afbbe49b09da65bde56b
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 632045f21c553e10f59a14c772d50d7824ca0c2c
-R cf996bb200e200afa8de950e78c84a55
+P c9ea7d199f06a7801ab639e7ac98ebeb98706f24
+R b8682b1b95c61647eceb7cac2c7aa836
 U drh
-Z 54c4a7cb2ec6e5258f05fa3eca37aefd
+Z 2b3078d680e621e51a9cb7dd08f4a256
