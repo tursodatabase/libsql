@@ -442,6 +442,23 @@ oneselect(A) ::= SELECT distinct(D) selcollist(W) from(X) where_opt(Y)
                  groupby_opt(P) having_opt(Q) orderby_opt(Z) limit_opt(L). {
   A = sqlite3SelectNew(pParse,W,X,Y,P,Q,Z,D,L.pLimit,L.pOffset);
 }
+oneselect(A) ::= values(X).    {A = X;}
+
+%type values {Select*}
+%destructor values {sqlite3SelectDelete(pParse->db, $$);}
+values(A) ::= VALUES LP nexprlist(X) RP. {
+  A = sqlite3SelectNew(pParse,X,0,0,0,0,0,SF_Values,0,0);
+}
+values(A) ::= values(X) COMMA LP exprlist(Y) RP. {
+  Select *pRight = sqlite3SelectNew(pParse,Y,0,0,0,0,0,SF_Values,0,0);
+  if( pRight ){
+    pRight->op = TK_ALL;
+    pRight->pPrior = X;
+    A = pRight;
+  }else{
+    A = X;
+  }
+}
 
 // The "distinct" nonterminal is true (1) if the DISTINCT keyword is
 // present and false (0) if it is not.
@@ -696,57 +713,14 @@ setlist(A) ::= nm(X) EQ expr(Y). {
 
 ////////////////////////// The INSERT command /////////////////////////////////
 //
-cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) valuelist(Y).
-            {sqlite3Insert(pParse, X, Y.pList, Y.pSelect, F, R);}
 cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) select(S).
-            {sqlite3Insert(pParse, X, 0, S, F, R);}
+            {sqlite3Insert(pParse, X, S, F, R);}
 cmd ::= insert_cmd(R) INTO fullname(X) inscollist_opt(F) DEFAULT VALUES.
-            {sqlite3Insert(pParse, X, 0, 0, F, R);}
+            {sqlite3Insert(pParse, X, 0, F, R);}
 
 %type insert_cmd {u8}
 insert_cmd(A) ::= INSERT orconf(R).   {A = R;}
 insert_cmd(A) ::= REPLACE.            {A = OE_Replace;}
-
-// A ValueList is either a single VALUES clause or a comma-separated list
-// of VALUES clauses.  If it is a single VALUES clause then the
-// ValueList.pList field points to the expression list of that clause.
-// If it is a list of VALUES clauses, then those clauses are transformed
-// into a set of SELECT statements without FROM clauses and connected by
-// UNION ALL and the ValueList.pSelect points to the right-most SELECT in
-// that compound.
-%type valuelist {struct ValueList}
-%destructor valuelist {
-  sqlite3ExprListDelete(pParse->db, $$.pList);
-  sqlite3SelectDelete(pParse->db, $$.pSelect);
-}
-valuelist(A) ::= VALUES LP nexprlist(X) RP. {
-  A.pList = X;
-  A.pSelect = 0;
-}
-
-// Since a list of VALUEs is inplemented as a compound SELECT, we have
-// to disable the value list option if compound SELECTs are disabled.
-%ifndef SQLITE_OMIT_COMPOUND_SELECT
-valuelist(A) ::= valuelist(X) COMMA LP exprlist(Y) RP. {
-  Select *pRight = sqlite3SelectNew(pParse, Y, 0, 0, 0, 0, 0, 0, 0, 0);
-  if( X.pList ){
-    X.pSelect = sqlite3SelectNew(pParse, X.pList, 0, 0, 0, 0, 0, 0, 0, 0);
-    X.pList = 0;
-  }
-  A.pList = 0;
-  if( X.pSelect==0 || pRight==0 ){
-    sqlite3SelectDelete(pParse->db, pRight);
-    sqlite3SelectDelete(pParse->db, X.pSelect);
-    A.pSelect = 0;
-  }else{
-    pRight->op = TK_ALL;
-    pRight->pPrior = X.pSelect;
-    pRight->selFlags |= SF_Values;
-    pRight->pPrior->selFlags |= SF_Values;
-    A.pSelect = pRight;
-  }
-}
-%endif SQLITE_OMIT_COMPOUND_SELECT
 
 %type inscollist_opt {IdList*}
 %destructor inscollist_opt {sqlite3IdListDelete(pParse->db, $$);}
@@ -1295,12 +1269,8 @@ trigger_cmd(A) ::=
    { A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R); }
 
 // INSERT
-trigger_cmd(A) ::=
-   insert_cmd(R) INTO trnm(X) inscollist_opt(F) valuelist(Y).
-   {A = sqlite3TriggerInsertStep(pParse->db, &X, F, Y.pList, Y.pSelect, R);}
-
 trigger_cmd(A) ::= insert_cmd(R) INTO trnm(X) inscollist_opt(F) select(S).
-               {A = sqlite3TriggerInsertStep(pParse->db, &X, F, 0, S, R);}
+               {A = sqlite3TriggerInsertStep(pParse->db, &X, F, S, R);}
 
 // DELETE
 trigger_cmd(A) ::= DELETE FROM trnm(X) tridxby where_opt(Y).

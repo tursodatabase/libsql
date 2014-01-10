@@ -540,7 +540,6 @@ static int xferOptimization(
 void sqlite3Insert(
   Parse *pParse,        /* Parser context */
   SrcList *pTabList,    /* Name of table into which we are inserting */
-  ExprList *pList,      /* List of values to be inserted */
   Select *pSelect,      /* A SELECT statement to use as the data source */
   IdList *pColumn,      /* Column names corresponding to IDLIST. */
   int onError           /* How to handle constraint errors */
@@ -568,6 +567,7 @@ void sqlite3Insert(
   Db *pDb;              /* The database containing table being inserted into */
   int appendFlag = 0;   /* True if the insert is likely to be an append */
   int withoutRowid;     /* 0 for normal table.  1 for WITHOUT ROWID table */
+  ExprList *pList = 0;  /* List of VALUES() to be inserted  */
 
   /* Register allocations */
   int regFromSelect = 0;/* Base register for data coming from SELECT */
@@ -589,6 +589,17 @@ void sqlite3Insert(
   memset(&dest, 0, sizeof(dest));
   if( pParse->nErr || db->mallocFailed ){
     goto insert_cleanup;
+  }
+
+  /* If the Select object is really just a simple VALUES() list with a
+  ** single row values (the common case) then keep that one row of values
+  ** and go ahead and discard the Select object
+  */
+  if( pSelect && (pSelect->selFlags & SF_Values)!=0 && pSelect->pPrior==0 ){
+    pList = pSelect->pEList;
+    pSelect->pEList = 0;
+    sqlite3SelectDelete(db, pSelect);
+    pSelect = 0;
   }
 
   /* Locate the table into which we will be inserting new information.

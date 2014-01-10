@@ -2483,7 +2483,7 @@ struct TriggerStep {
   Select *pSelect;     /* SELECT statment or RHS of INSERT INTO .. SELECT ... */
   Token target;        /* Target table for DELETE, UPDATE, INSERT */
   Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
-  ExprList *pExprList; /* SET clause for UPDATE.  VALUES clause for INSERT */
+  ExprList *pExprList; /* SET clause for UPDATE. */
   IdList *pIdList;     /* Column names for INSERT */
   TriggerStep *pNext;  /* Next in the link-list */
   TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
@@ -2898,7 +2898,7 @@ void sqlite3DeleteTable(sqlite3*, Table*);
 # define sqlite3AutoincrementEnd(X)
 #endif
 int sqlite3CodeCoroutine(Parse*, Select*, SelectDest*);
-void sqlite3Insert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
+void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int);
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(sqlite3*, IdList*, Token*);
 int sqlite3IdListIndex(IdList*,const char*);
@@ -3036,7 +3036,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*);
   TriggerStep *sqlite3TriggerInsertStep(sqlite3*,Token*, IdList*,
-                                        ExprList*,Select*,u8);
+                                        Select*,u8);
   TriggerStep *sqlite3TriggerUpdateStep(sqlite3*,Token*,ExprList*, Expr*, u8);
   TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
