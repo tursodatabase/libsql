@@ -4848,9 +4848,9 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 ** may now be invalid and should be unmapped.
 */
 static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
-  UNUSED_PARAMETER(iOff);
 #if SQLITE_MAX_MMAP_SIZE>0
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
+  UNUSED_PARAMETER(iOff);
 
   /* If p==0 (unmap the entire file) then there must be no outstanding 
   ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),
@@ -4870,6 +4870,7 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
 #else
   UNUSED_PARAMETER(fd);
   UNUSED_PARAMETER(p);
+  UNUSED_PARAMETER(iOff);
 #endif
   return SQLITE_OK;
 }
