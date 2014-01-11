@@ -194,9 +194,7 @@ columnid(A) ::= nm(X). {
 // An IDENTIFIER can be a generic identifier, or one of several
 // keywords.  Any non-standard keyword can also be an identifier.
 //
-%type id {Token}
-id(A) ::= ID(X).         {A = X;}
-id(A) ::= INDEXED(X).    {A = X;}
+%token_class id  ID|INDEXED.
 
 // The following directive causes tokens ABORT, AFTER, ASC, etc. to
 // fallback to ID if they will not parse as their original value.
@@ -241,8 +239,7 @@ id(A) ::= INDEXED(X).    {A = X;}
 
 // And "ids" is an identifer-or-string.
 //
-%type ids {Token}
-ids(A) ::= ID|STRING(X).   {A = X;}
+%token_class ids  ID|STRING.
 
 // The name of a column or table can be any of the following:
 //
@@ -776,22 +773,22 @@ expr(A) ::= nm(X) DOT nm(Y) DOT nm(Z). {
 }
 term(A) ::= INTEGER|FLOAT|BLOB(X).  {spanExpr(&A, pParse, @X, &X);}
 term(A) ::= STRING(X).              {spanExpr(&A, pParse, @X, &X);}
-expr(A) ::= REGISTER(X).     {
-  /* When doing a nested parse, one can include terms in an expression
-  ** that look like this:   #1 #2 ...  These terms refer to registers
-  ** in the virtual machine.  #N is the N-th register. */
-  if( pParse->nested==0 ){
-    sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &X);
-    A.pExpr = 0;
-  }else{
-    A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &X);
-    if( A.pExpr ) sqlite3GetInt32(&X.z[1], &A.pExpr->iTable);
-  }
-  spanSet(&A, &X, &X);
-}
 expr(A) ::= VARIABLE(X).     {
-  spanExpr(&A, pParse, TK_VARIABLE, &X);
-  sqlite3ExprAssignVarNumber(pParse, A.pExpr);
+  if( X.n>=2 && X.z[0]=='#' && sqlite3Isdigit(X.z[1]) ){
+    /* When doing a nested parse, one can include terms in an expression
+    ** that look like this:   #1 #2 ...  These terms refer to registers
+    ** in the virtual machine.  #N is the N-th register. */
+    if( pParse->nested==0 ){
+      sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", &X);
+      A.pExpr = 0;
+    }else{
+      A.pExpr = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, &X);
+      if( A.pExpr ) sqlite3GetInt32(&X.z[1], &A.pExpr->iTable);
+    }
+  }else{
+    spanExpr(&A, pParse, TK_VARIABLE, &X);
+    sqlite3ExprAssignVarNumber(pParse, A.pExpr);
+  }
   spanSet(&A, &X, &X);
 }
 expr(A) ::= expr(E) COLLATE ids(C). {
@@ -805,7 +802,7 @@ expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
   spanSet(&A,&X,&Y);
 }
 %endif  SQLITE_OMIT_CAST
-expr(A) ::= ID(X) LP distinct(D) exprlist(Y) RP(E). {
+expr(A) ::= id(X) LP distinct(D) exprlist(Y) RP(E). {
   if( Y && Y->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
   }
@@ -815,7 +812,7 @@ expr(A) ::= ID(X) LP distinct(D) exprlist(Y) RP(E). {
     A.pExpr->flags |= EP_Distinct;
   }
 }
-expr(A) ::= ID(X) LP STAR RP(E). {
+expr(A) ::= id(X) LP STAR RP(E). {
   A.pExpr = sqlite3ExprFunction(pParse, 0, &X);
   spanSet(&A,&X,&E);
 }
@@ -1165,11 +1162,10 @@ nmnum(A) ::= ON(X).                   {A = X;}
 nmnum(A) ::= DELETE(X).               {A = X;}
 nmnum(A) ::= DEFAULT(X).              {A = X;}
 %endif SQLITE_OMIT_PRAGMA
+%token_class number INTEGER|FLOAT.
 plus_num(A) ::= PLUS number(X).       {A = X;}
 plus_num(A) ::= number(X).            {A = X;}
 minus_num(A) ::= MINUS number(X).     {A = X;}
-number(A) ::= INTEGER|FLOAT(X).       {A = X;}
-
 //////////////////////////// The CREATE TRIGGER command /////////////////////
 
 %ifndef SQLITE_OMIT_TRIGGER

@@ -303,24 +303,15 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       for(i=1; sqlite3Isdigit(z[i]); i++){}
       return i;
     }
-    case '#': {
-      for(i=1; sqlite3Isdigit(z[i]); i++){}
-      if( i>1 ){
-        /* Parameters of the form #NNN (where NNN is a number) are used
-        ** internally by sqlite3NestedParse.  */
-        *tokenType = TK_REGISTER;
-        return i;
-      }
-      /* Fall through into the next case if the '#' is not followed by
-      ** a digit. Try to match #AAAA where AAAA is a parameter name. */
-    }
 #ifndef SQLITE_OMIT_TCL_VARIABLE
     case '$':
 #endif
     case '@':  /* For compatibility with MS SQL Server */
+    case '#':
     case ':': {
       int n = 0;
-      testcase( z[0]=='$' );  testcase( z[0]=='@' );  testcase( z[0]==':' );
+      testcase( z[0]=='$' );  testcase( z[0]=='@' );
+      testcase( z[0]==':' );  testcase( z[0]=='#' );
       *tokenType = TK_VARIABLE;
       for(i=1; (c=z[i])!=0; i++){
         if( IdChar(c) ){

@@ -1,5 +1,5 @@
-C Add\sthe\s"%token_class"\sdirective\sto\sthe\sLEMON\sparser\sgenerator.\s\sThis\sopens\sup\nthe\spossibility\sof\ssimplifying\sthe\sparser.\s\sAlso\sremove\sall\scalls\sto\s\nsprintf(),\sstrcpy(),\sand\sstrcat()\sfrom\sLEMON\sto\savoid\scompiler\swarnings\non\sOpenBSD.\s\s(Aside:\s\sIt\sis\sthis\schange\sto\savoid\sharmless\scompiler\swarnings\nthat\swas\sthe\scause\sof\sthe\sreason\sspat\sof\sbugs.)
-D 2014-01-11T03:27:37.624
+C Optimizations\sto\sthe\sSQL\slanguage\sgrammar\sthat\sresult\sin\sa\ssmall\ssize\nreduction\sand\sspeed\sincrease.
+D 2014-01-11T03:54:05.594
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -8,7 +8,7 @@ F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 8ed548d87d0a27fd7d7620476f9e25f9fa742d73
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
-F addopcodes.awk 87ca612393d0f439550634bd2c156ea9ff6195ae
+F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
 F art/sqlite370.ico af56c1d00fee7cd4753e8631ed60703ed0fc6e90
 F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
@@ -209,7 +209,7 @@ F src/os_unix.c 3a4dcb554d3c915075766162f28c3fd4cdb75968
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y 60baa3aced02c9f91259719d196315bc28580719
+F src/parse.y 3c5384533a8bfce5abd256cc9cb2c38bec05ad61
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 57fee9a9a617218f5037afbbe49b09da65bde56b
@@ -274,7 +274,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c 3a0ab304682fecbceb689e7d9b904211fde11d78
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/tokenize.c ec4c1a62b890bf1dbcdb966399e140b904c700a4
+F src/tokenize.c 5d04a1b7d1fe7e18556a869788f5d3e132a586b6
 F src/trigger.c 5c1c0b899ac0ce284763dcb8fdbaa38ecf15ef98
 F src/update.c c2706a6eb232a96345c35b7e1e75a188e26812bb
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7f1e7ae313c7625ef2623d78883dce776eecca30 da7890ca6b1d8e511377a469047120220e8c3b2d
-R 4ba60b3fb47af12fdb784f3275ccdc2b
+P 8eb48c04bd0a14031488b3160fde67307eb8b35d
+R 754b7dd57633ea486f18a04af0e67e46
 U drh
-Z 11bef21bd681893c7b5fd9fec7621236
+Z 0bb5f8caa9532d2db9247df525167cc7
