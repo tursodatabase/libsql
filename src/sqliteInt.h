@@ -3329,6 +3329,10 @@ const char *sqlite3JournalModename(int);
   int sqlite3Checkpoint(sqlite3*, int, int, int*, int*);
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 #endif
+#ifndef SQLITE_OMIT_CTE
+  void sqlite3CteAdd(Parse*,Token*,ExprList*,Select*);
+  void sqlite3CteFinish(Parse*,int);
+#endif
 
 /* Declarations for functions in fkey.c. All of these are replaced by
 ** no-op macros if OMIT_FOREIGN_KEY is defined. In this case no foreign

@@ -4198,3 +4198,24 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   return sqlite3KeyInfoRef(pIdx->pKeyInfo);
 }
+
+#ifndef SQLITE_OMIT_CTE
+/* This routine is invoked when a single with_query of a
+** common-table-expression has been parsed.  Record the query.
+*/
+void sqlite3CteAdd(
+  Parse *pParse,          /* Parsing context */
+  Token *pName,           /* Name of the common-table */
+  ExprList *pArgList,     /* Optional column name list for the table */
+  Select *pQuery          /* Query used to initialize the table */
+){
+  sqlite3ExprListDelete(pParse->db, pArgList);
+  sqlite3SelectDelete(pParse->db, pQuery);
+}
+
+/* This routine is invoked at the end of the entire WITH clause.
+*/
+void sqlite3CteFinish(Parse *pParse, int isRecursive){
+  /* TBD */
+}
+#endif /* !defined(SQLITE_OMIT_CTE) */
