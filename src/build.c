@@ -4200,22 +4200,26 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
 }
 
 #ifndef SQLITE_OMIT_CTE
-/* This routine is invoked when a single with_query of a
-** common-table-expression has been parsed.  Record the query.
+/* 
+** This routine is invoked once per CTE by the parser while parsing a 
+** WITH clause. 
 */
-void sqlite3CteAdd(
+With *sqlite3WithAdd(
   Parse *pParse,          /* Parsing context */
+  With *pWith,            /* Existing WITH clause, or NULL */
   Token *pName,           /* Name of the common-table */
-  ExprList *pArgList,     /* Optional column name list for the table */
+  IdList *pArglist,       /* Optional column name list for the table */
   Select *pQuery          /* Query used to initialize the table */
 ){
-  sqlite3ExprListDelete(pParse->db, pArgList);
+  sqlite3IdListDelete(pParse->db, pArglist);
   sqlite3SelectDelete(pParse->db, pQuery);
+  return 0;
 }
 
-/* This routine is invoked at the end of the entire WITH clause.
+/*
+** Free the contents of the With object passed as the second argument.
 */
-void sqlite3CteFinish(Parse *pParse, int isRecursive){
+void sqlite3WithDelete(sqlite3 *db, With *pWith){
   /* TBD */
 }
 #endif /* !defined(SQLITE_OMIT_CTE) */

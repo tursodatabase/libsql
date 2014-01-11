@@ -760,6 +760,7 @@ typedef struct VTable VTable;
 typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
+typedef struct With With;
 
 /*
 ** Defer sourcing vdbe.h and btree.h until after the "u8" and 
@@ -2632,6 +2633,19 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 #define WRC_Abort       2   /* Abandon the tree walk */
 
 /*
+** An instance of this structure represents a set of CTEs (common table 
+** expressions) created by a single WITH clause.
+*/
+struct With {
+  int nCte;                       /* Number of CTEs */
+  struct Cte {
+    const char *zName;            /* Name of this CTE */
+    IdList *pCol;                 /* List of explicit column names, or NULL */
+    Select *pSelect;              /* The contents of the CTE */
+  } a[1];
+};
+
+/*
 ** Assuming zIn points to the first byte of a UTF-8 character,
 ** advance zIn to point to the first byte of the next UTF-8 character.
 */
@@ -3330,8 +3344,8 @@ const char *sqlite3JournalModename(int);
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 #endif
 #ifndef SQLITE_OMIT_CTE
-  void sqlite3CteAdd(Parse*,Token*,ExprList*,Select*);
-  void sqlite3CteFinish(Parse*,int);
+  With *sqlite3WithAdd(Parse*,With*,Token*,IdList*,Select*);
+  void sqlite3WithDelete(sqlite3*,With*);
 #endif
 
 /* Declarations for functions in fkey.c. All of these are replaced by

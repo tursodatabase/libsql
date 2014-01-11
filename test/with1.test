@@ -1,0 +1,40 @@
+# 2014 January 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the WITH clause.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix with1
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(x INTEGER, y INTEGER);
+  WITH x(a) AS ( SELECT * FROM t1) SELECT 10
+} {10}
+
+do_execsql_test 1.1 {
+  SELECT * FROM ( WITH x AS ( SELECT * FROM t1) SELECT 10 );
+} {10}
+
+do_execsql_test 1.2 {
+  WITH x(a) AS ( SELECT * FROM t1) INSERT INTO t1 VALUES(1,2);
+} {}
+
+do_execsql_test 1.3 {
+  WITH x(a) AS ( SELECT * FROM t1) DELETE FROM t1;
+} {}
+
+do_execsql_test 1.4 {
+  WITH x(a) AS ( SELECT * FROM t1) UPDATE t1 SET x = y;
+} {}
+ 
+finish_test

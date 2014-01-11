@@ -396,7 +396,7 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 
 //////////////////////// The SELECT statement /////////////////////////////////
 //
-cmd ::= with select(X).  {
+cmd ::= select(X).  {
   SelectDest dest = {SRT_Output, 0, 0, 0, 0};
   sqlite3Select(pParse, X, &dest);
   sqlite3ExplainBegin(pParse->pVdbe);
@@ -407,12 +407,16 @@ cmd ::= with select(X).  {
 
 %type select {Select*}
 %destructor select {sqlite3SelectDelete(pParse->db, $$);}
+%type selectnowith {Select*}
+%destructor selectnowith {sqlite3SelectDelete(pParse->db, $$);}
 %type oneselect {Select*}
 %destructor oneselect {sqlite3SelectDelete(pParse->db, $$);}
 
-select(A) ::= oneselect(X).                      {A = X;}
+select(A) ::= with selectnowith(X). {A = X;}
+
+selectnowith(A) ::= oneselect(X).                      {A = X;}
 %ifndef SQLITE_OMIT_COMPOUND_SELECT
-select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
+selectnowith(A) ::= selectnowith(X) multiselect_op(Y) oneselect(Z).  {
   if( Z ){
     Z->op = (u8)Y;
     Z->pPrior = X;
@@ -1365,13 +1369,19 @@ anylist ::= anylist ANY.
 
 
 //////////////////////// COMMON TABLE EXPRESSIONS ////////////////////////////
-with ::= .
+%type with {With*}
+%type wqlist {With*}
+%destructor with {sqlite3WithDelete(pParse->db, $$);}
+
+with(A) ::= . {A = 0;}
 %ifndef SQLITE_OMIT_CTE
-with ::= WITH wqlist.              {sqlite3CteFinish(pParse, 0);}
-with ::= WITH RECURSIVE wqlist.    {sqlite3CteFinish(pParse, 1);}
-wqlist ::= with_query.
-wqlist ::= wqlist COMMA with_query.
-with_query ::= nm(X) idxlist_opt(Y) AS LP select(Z) RP. {
-  sqlite3CteAdd(pParse, &X, Y, Z);
+with(A) ::= WITH wqlist(W).              { A = W; }
+with(A) ::= WITH RECURSIVE wqlist(W).    { A = W; }
+
+wqlist(A) ::= nm(X) inscollist_opt(Y) AS LP select(Z) RP. {
+  A = sqlite3WithAdd(pParse, 0, &X, Y, Z);
+}
+wqlist(A) ::= wqlist(W) COMMA nm(X) inscollist_opt(Y) AS LP select(Z) RP. {
+  A = sqlite3WithAdd(pParse, W, &X, Y, Z);
 }
 %endif  SQLITE_OMIT_CTE
