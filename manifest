@@ -1,5 +1,5 @@
-C Optimizations\sto\sthe\sSQL\slanguage\sgrammar\sthat\sresult\sin\sa\ssmall\ssize\nreduction\sand\sspeed\sincrease.
-D 2014-01-11T03:54:05.594
+C In\sLEMON,\slimit\sthe\ssize\sof\sthe\sgrammar\sfile\sto\s100MB.\s\sThis\sensures\sthat\nthe\sprogram\swill\snever\sexperience\sinteger\soverflow.\s\sTo\sbe\sdoubly\ssure,\nuse\scalloc()\sinstead\sof\smalloc()\swhen\sallocating\sarrays.
+D 2014-01-11T12:52:25.201
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1109,7 +1109,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 624b24c5dc048e09979f88a03e148bc728c70b73
+F tool/lemon.c 6842b2e7af12835f9f6e55808a0b1861cd0696fe
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8eb48c04bd0a14031488b3160fde67307eb8b35d
-R 754b7dd57633ea486f18a04af0e67e46
+P cb5d1f83e0a33d546d4c0cb817ef1f8440d1f738
+R 28679f157b50c114aa03e50f74a7a104
 U drh
-Z 0bb5f8caa9532d2db9247df525167cc7
+Z 608e7b6009060d93ac39bb2434b3c874

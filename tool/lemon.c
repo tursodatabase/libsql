@@ -2659,9 +2659,8 @@ void Parse(struct lemon *gp)
   filesize = ftell(fp);
   rewind(fp);
   filebuf = (char *)malloc( filesize+1 );
-  if( filebuf==0 ){
-    ErrorMsg(ps.filename,0,"Can't allocate %d of memory to hold this file.",
-      filesize+1);
+  if( filesize>100000000 || filebuf==0 ){
+    ErrorMsg(ps.filename,0,"Input file too large.");
     gp->errorcnt++;
     fclose(fp);
     return;
@@ -4442,8 +4441,7 @@ void Strsafe_init(){
   if( x1a ){
     x1a->size = 1024;
     x1a->count = 0;
-    x1a->tbl = (x1node*)malloc( 
-      (sizeof(x1node) + sizeof(x1node*))*1024 );
+    x1a->tbl = (x1node*)calloc(1024, sizeof(x1node) + sizeof(x1node*));
     if( x1a->tbl==0 ){
       free(x1a);
       x1a = 0;
@@ -4480,8 +4478,7 @@ int Strsafe_insert(const char *data)
     struct s_x1 array;
     array.size = size = x1a->size*2;
     array.count = x1a->count;
-    array.tbl = (x1node*)malloc(
-      (sizeof(x1node) + sizeof(x1node*))*size );
+    array.tbl = (x1node*)calloc(size, sizeof(x1node) + sizeof(x1node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x1node**)&(array.tbl[size]);
     for(i=0; i<size; i++) array.ht[i] = 0;
@@ -4611,8 +4608,7 @@ void Symbol_init(){
   if( x2a ){
     x2a->size = 128;
     x2a->count = 0;
-    x2a->tbl = (x2node*)malloc( 
-      (sizeof(x2node) + sizeof(x2node*))*128 );
+    x2a->tbl = (x2node*)calloc(128, sizeof(x2node) + sizeof(x2node*));
     if( x2a->tbl==0 ){
       free(x2a);
       x2a = 0;
@@ -4649,8 +4645,7 @@ int Symbol_insert(struct symbol *data, const char *key)
     struct s_x2 array;
     array.size = size = x2a->size*2;
     array.count = x2a->count;
-    array.tbl = (x2node*)malloc(
-      (sizeof(x2node) + sizeof(x2node*))*size );
+    array.tbl = (x2node*)calloc(size, sizeof(x2node) + sizeof(x2node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x2node**)&(array.tbl[size]);
     for(i=0; i<size; i++) array.ht[i] = 0;
@@ -4810,8 +4805,7 @@ void State_init(){
   if( x3a ){
     x3a->size = 128;
     x3a->count = 0;
-    x3a->tbl = (x3node*)malloc( 
-      (sizeof(x3node) + sizeof(x3node*))*128 );
+    x3a->tbl = (x3node*)calloc(128, sizeof(x3node) + sizeof(x3node*));
     if( x3a->tbl==0 ){
       free(x3a);
       x3a = 0;
@@ -4848,8 +4842,7 @@ int State_insert(struct state *data, struct config *key)
     struct s_x3 array;
     array.size = size = x3a->size*2;
     array.count = x3a->count;
-    array.tbl = (x3node*)malloc(
-      (sizeof(x3node) + sizeof(x3node*))*size );
+    array.tbl = (x3node*)calloc(size, sizeof(x3node) + sizeof(x3node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x3node**)&(array.tbl[size]);
     for(i=0; i<size; i++) array.ht[i] = 0;
@@ -4906,7 +4899,7 @@ struct state **State_arrayof()
   int i,size;
   if( x3a==0 ) return 0;
   size = x3a->count;
-  array = (struct state **)malloc( sizeof(struct state *)*size );
+  array = (struct state **)calloc(size, sizeof(struct state *));
   if( array ){
     for(i=0; i<size; i++) array[i] = x3a->tbl[i].data;
   }
@@ -4952,8 +4945,7 @@ void Configtable_init(){
   if( x4a ){
     x4a->size = 64;
     x4a->count = 0;
-    x4a->tbl = (x4node*)malloc( 
-      (sizeof(x4node) + sizeof(x4node*))*64 );
+    x4a->tbl = (x4node*)calloc(64, sizeof(x4node) + sizeof(x4node*));
     if( x4a->tbl==0 ){
       free(x4a);
       x4a = 0;
@@ -4990,8 +4982,7 @@ int Configtable_insert(struct config *data)
     struct s_x4 array;
     array.size = size = x4a->size*2;
     array.count = x4a->count;
-    array.tbl = (x4node*)malloc(
-      (sizeof(x4node) + sizeof(x4node*))*size );
+    array.tbl = (x4node*)calloc(size, sizeof(x4node) + sizeof(x4node*));
     if( array.tbl==0 ) return 0;  /* Fail due to malloc failure */
     array.ht = (x4node**)&(array.tbl[size]);
     for(i=0; i<size; i++) array.ht[i] = 0;
