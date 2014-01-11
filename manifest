@@ -1,5 +1,5 @@
-C Do\snot\suse\ssprintf(),\sstrcpy()\sor\sstrcat()\sin\sthe\simplementation\sof\sthe\nlemon\sparser\sgenerator\stool,\sto\savoid\scompiler\swarnings\sin\sOpenBSD.
-D 2014-01-10T23:21:00.243
+C In\sLEMON,\sfix\sa\sbug\sin\sthe\stext\sformatter\sintroduced\sby\sthe\sprevious\ncommit.\s\sAlso\sadd\sthe\snew\s"%token_class"\sdirective\sfor\sdefining\ssymbolic\nnames\sthat\sstand\sany\sone\sof\sa\scollection\sof\stokens.
+D 2014-01-11T03:06:18.172
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1109,7 +1109,7 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
-F tool/lemon.c 04f60c891f6c07643221b068bbc2621be46c039a
+F tool/lemon.c 4a3d4a579c5dff6a42785e97d1f2b59789f3b8dd
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7f1e7ae313c7625ef2623d78883dce776eecca30
-R 153a0201d8a4a180b2a188d3abd169a6
+P e43c522dde01e134f1adc94f534d2b3eda74afc2
+R 498b2eca2a4d9bdf3c22bba6f4386191
 U drh
-Z c49dfd6bd62bb08d757d02ffce1c49c4
+Z 303f39885598d1865b7eb401105ea9ea
