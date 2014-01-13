@@ -37,4 +37,107 @@ do_execsql_test 1.4 {
   WITH x(a) AS ( SELECT * FROM t1) UPDATE t1 SET x = y;
 } {}
  
+#--------------------------------------------------------------------------
+
+do_execsql_test 2.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  WITH tmp AS ( SELECT * FROM t1 ) SELECT x FROM tmp;
+} {1 2}
+
+do_execsql_test 2.2 {
+  WITH tmp(a) AS ( SELECT * FROM t1 ) SELECT a FROM tmp;
+} {1 2}
+
+do_execsql_test 2.3 {
+  SELECT * FROM (
+    WITH tmp(a) AS ( SELECT * FROM t1 ) SELECT a FROM tmp
+  );
+} {1 2}
+
+do_execsql_test 2.4 {
+  WITH tmp1(a) AS ( SELECT * FROM t1 ),
+       tmp2(x) AS ( SELECT * FROM tmp1)
+  SELECT * FROM tmp2;
+} {1 2}
+
+do_execsql_test 2.5 {
+  WITH tmp2(x) AS ( SELECT * FROM tmp1),
+       tmp1(a) AS ( SELECT * FROM t1 )
+  SELECT * FROM tmp2;
+} {1 2}
+
+#-------------------------------------------------------------------------
+do_catchsql_test 3.1 {
+  WITH tmp2(x) AS ( SELECT * FROM tmp1),
+       tmp1(a) AS ( SELECT * FROM tmp2 )
+  SELECT * FROM tmp1;
+} {1 {illegal recursive defininition in cte: tmp1}}
+
+do_catchsql_test 3.2 {
+  CREATE TABLE t2(x INTEGER);
+  WITH tmp(a) AS (SELECT * FROM t1),
+       tmp(a) AS (SELECT * FROM t1)
+  SELECT * FROM tmp;
+} {1 {duplicate cte name: tmp}}
+
+do_execsql_test 3.3 {
+  CREATE TABLE t3(x);
+  CREATE TABLE t4(x);
+
+  INSERT INTO t3 VALUES('T3');
+  INSERT INTO t4 VALUES('T4');
+
+  WITH t3(a) AS (SELECT * FROM t4)
+  SELECT * FROM t3;
+} {T4}
+
+do_execsql_test 3.4 {
+  WITH tmp  AS ( SELECT * FROM t3 ),
+       tmp2 AS ( WITH tmp AS ( SELECT * FROM t4 ) SELECT * FROM tmp )
+  SELECT * FROM tmp2;
+} {T4}
+
+do_execsql_test 3.5 {
+  WITH tmp  AS ( SELECT * FROM t3 ),
+       tmp2 AS ( WITH xxxx AS ( SELECT * FROM t4 ) SELECT * FROM tmp )
+  SELECT * FROM tmp2;
+} {T3}
+
+do_catchsql_test 3.6 {
+  WITH tmp AS ( SELECT * FROM t3 ),
+  SELECT * FROM tmp;
+} {1 {near "SELECT": syntax error}}
+
+#-------------------------------------------------------------------------
+do_execsql_test 4.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(x);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+  INSERT INTO t1 VALUES(4);
+
+  WITH dset AS ( SELECT 2 UNION ALL SELECT 4 )
+  DELETE FROM t1 WHERE x IN dset;
+  SELECT * FROM t1;
+} {1 3}
+
+do_execsql_test 4.2 {
+  WITH iset AS ( SELECT 2 UNION ALL SELECT 4 )
+  INSERT INTO t1 SELECT * FROM iset;
+  SELECT * FROM t1;
+} {1 3 2 4}
+
+do_execsql_test 4.3 {
+  WITH uset(a, b) AS ( SELECT 2, 8 UNION ALL SELECT 4, 9 )
+  UPDATE t1 SET x = COALESCE( (SELECT b FROM uset WHERE a=x), x );
+  SELECT * FROM t1;
+} {1 3 8 9}
+
 finish_test
+
+
+

@@ -29,6 +29,7 @@ static void clearSelect(sqlite3 *db, Select *p){
   sqlite3SelectDelete(db, p->pPrior);
   sqlite3ExprDelete(db, p->pLimit);
   sqlite3ExprDelete(db, p->pOffset);
+  sqlite3WithDelete(db, p->pWith);
 }
 
 /*
@@ -3393,6 +3394,62 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
+static struct Cte *searchWith(Parse *pParse, struct SrcList_item *p){
+  if( p->zDatabase==0 ){
+    char *zName = p->zName;
+    With *pWith;
+
+    for(pWith=pParse->pWith; pWith; pWith=pWith->pOuter){
+      int i;
+      for(i=0; i<pWith->nCte; i++){
+        if( sqlite3StrICmp(zName, pWith->a[i].zName)==0 ){
+          return &pWith->a[i];
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+void sqlite3WithPush(Parse *pParse, With *pWith){
+  if( pWith ){
+    pWith->pOuter = pParse->pWith;
+    pParse->pWith = pWith;
+  }
+}
+static void withPop(Parse *pParse, With *pWith){
+  if( pWith ){
+    assert( pParse->pWith==pWith );
+    pParse->pWith = pWith->pOuter;
+  }
+}
+
+static int ctePush(Parse *pParse, struct Cte *pCte){
+  if( pCte ){
+    struct Cte *p;
+    for(p=pParse->pCte; p; p=p->pOuterCte){
+      if( p==pCte ){
+        sqlite3ErrorMsg(
+            pParse, "illegal recursive defininition in cte: %s", pCte->zName
+        );
+        return SQLITE_ERROR;
+      }
+    }
+    
+    pCte->pOuterCte = pParse->pCte;
+    pParse->pCte = pCte;
+  }
+  return SQLITE_OK;
+}
+
+static void ctePop(Parse *pParse, struct Cte *pCte){
+  if( pCte ){
+    assert( pParse->pCte==pCte );
+    pParse->pCte = pCte->pOuterCte;
+  }
+}
+
+
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
 ** "Expanding" means to do the following:
@@ -3447,6 +3504,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   ** then create a transient table structure to describe the subquery.
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+    struct Cte *pCte = 0;
     Table *pTab;
     if( pFrom->pTab!=0 ){
       /* This statement has already been prepared.  There is no need
@@ -3454,19 +3512,34 @@ static int selectExpander(Walker *pWalker, Select *p){
       assert( i==0 );
       return WRC_Prune;
     }
-    if( pFrom->zName==0 ){
+#ifndef SQLITE_OMIT_CTE
+    pCte = searchWith(pParse, pFrom);
+    if( pCte ){
+      pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
+      if( pFrom->pSelect==0 ) return WRC_Abort;
+    }
+#endif
+    if( pFrom->zName==0 || pCte ){
 #ifndef SQLITE_OMIT_SUBQUERY
+      ExprList *pEList;
       Select *pSel = pFrom->pSelect;
       /* A sub-query in the FROM clause of a SELECT */
       assert( pSel!=0 );
       assert( pFrom->pTab==0 );
+      if( ctePush(pParse, pCte) ) return WRC_Abort;
       sqlite3WalkSelect(pWalker, pSel);
+      ctePop(pParse, pCte);
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
       pTab->nRef = 1;
       pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
-      selectColumnsFromExprList(pParse, pSel->pEList, &pTab->nCol, &pTab->aCol);
+      if( pCte && pCte->pCols ){
+        pEList = pCte->pCols;
+      }else{
+        pEList = pSel->pEList;
+      }
+      selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
       pTab->iPKey = -1;
       pTab->nRowEst = 1048576;
       pTab->tabFlags |= TF_Ephemeral;
@@ -3679,6 +3752,14 @@ static int selectExpander(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
+static int selectExpanderWith(Walker *pWalker, Select *p){
+  int res;
+  sqlite3WithPush(pWalker->pParse, p->pWith);
+  res = selectExpander(pWalker, p);
+  withPop(pWalker->pParse, p->pWith);
+  return res;
+}
+
 /*
 ** No-op routine for the parse-tree walker.
 **
@@ -3715,7 +3796,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     w.xSelectCallback = convertCompoundSelectToSubquery;
     sqlite3WalkSelect(&w, pSelect);
   }
-  w.xSelectCallback = selectExpander;
+  w.xSelectCallback = selectExpanderWith;
   sqlite3WalkSelect(&w, pSelect);
 }
 

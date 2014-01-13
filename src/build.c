@@ -4208,18 +4208,61 @@ With *sqlite3WithAdd(
   Parse *pParse,          /* Parsing context */
   With *pWith,            /* Existing WITH clause, or NULL */
   Token *pName,           /* Name of the common-table */
-  IdList *pArglist,       /* Optional column name list for the table */
+  ExprList *pArglist,     /* Optional column name list for the table */
   Select *pQuery          /* Query used to initialize the table */
 ){
-  sqlite3IdListDelete(pParse->db, pArglist);
-  sqlite3SelectDelete(pParse->db, pQuery);
-  return 0;
+  sqlite3 *db = pParse->db;
+  With *pNew;
+  char *zName;
+
+  /* Check that the CTE name is unique within this WITH clause. If
+  ** not, store an error in the Parse structure. */
+  zName = sqlite3NameFromToken(pParse->db, pName);
+  if( zName && pWith ){
+    int i;
+    for(i=0; i<pWith->nCte; i++){
+      if( sqlite3StrICmp(zName, pWith->a[i].zName)==0 ){
+        sqlite3ErrorMsg(pParse, "duplicate cte name: %s", zName);
+      }
+    }
+  }
+
+  if( pWith ){
+    int nByte = sizeof(*pWith) + (sizeof(pWith->a[1]) * pWith->nCte);
+    pNew = sqlite3DbRealloc(db, pWith, nByte);
+  }else{
+    pNew = sqlite3DbMallocZero(db, sizeof(*pWith));
+  }
+  assert( zName!=0 || pNew==0 );
+
+  if( pNew==0 ){
+    sqlite3WithDelete(db, pWith);
+    sqlite3ExprListDelete(db, pArglist);
+    sqlite3SelectDelete(db, pQuery);
+    sqlite3DbFree(db, zName);
+  }else{
+    pNew->a[pNew->nCte].pSelect = pQuery;
+    pNew->a[pNew->nCte].pCols = pArglist;
+    pNew->a[pNew->nCte].zName = zName;
+    pNew->nCte++;
+  }
+
+  return pNew;
 }
 
 /*
 ** Free the contents of the With object passed as the second argument.
 */
 void sqlite3WithDelete(sqlite3 *db, With *pWith){
-  /* TBD */
+  if( pWith ){
+    int i;
+    for(i=0; i<pWith->nCte; i++){
+      struct Cte *pCte = &pWith->a[i];
+      sqlite3ExprListDelete(db, pCte->pCols);
+      sqlite3SelectDelete(db, pCte->pSelect);
+      sqlite3DbFree(db, pCte->zName);
+    }
+    sqlite3DbFree(db, pWith);
+  }
 }
 #endif /* !defined(SQLITE_OMIT_CTE) */

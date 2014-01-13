@@ -2144,6 +2144,7 @@ struct Select {
   Select *pRightmost;    /* Right-most select in a compound select statement */
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   Expr *pOffset;         /* OFFSET expression. NULL means not used. */
+  With *pWith;           /* WITH clause attached to this select. Or NULL. */
 };
 
 /*
@@ -2365,6 +2366,8 @@ struct Parse {
 #endif
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
+  With *pWith;              /* Current WITH clause, or NULL */
+  struct Cte *pCte;         /* Current CTE, or NULL */
 };
 
 /*
@@ -2638,10 +2641,12 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 */
 struct With {
   int nCte;                       /* Number of CTEs */
+  With *pOuter;                   /* Containing WITH clause, or NULL */
   struct Cte {
-    const char *zName;            /* Name of this CTE */
-    IdList *pCol;                 /* List of explicit column names, or NULL */
+    char *zName;                  /* Name of this CTE */
+    ExprList *pCols;              /* List of explicit column names, or NULL */
     Select *pSelect;              /* The contents of the CTE */
+    struct Cte *pOuterCte;
   } a[1];
 };
 
@@ -3344,8 +3349,11 @@ const char *sqlite3JournalModename(int);
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
 #endif
 #ifndef SQLITE_OMIT_CTE
-  With *sqlite3WithAdd(Parse*,With*,Token*,IdList*,Select*);
+  With *sqlite3WithAdd(Parse*,With*,Token*,ExprList*,Select*);
   void sqlite3WithDelete(sqlite3*,With*);
+  void sqlite3WithPush(Parse*, With*);
+#else
+#define sqlite3WithPush(x,y)
 #endif
 
 /* Declarations for functions in fkey.c. All of these are replaced by
