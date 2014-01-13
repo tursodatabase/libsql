@@ -412,7 +412,14 @@ cmd ::= select(X).  {
 %type oneselect {Select*}
 %destructor oneselect {sqlite3SelectDelete(pParse->db, $$);}
 
-select(A) ::= with(W) selectnowith(X). { if( X ) X->pWith = W; A = X; }
+select(A) ::= with(W) selectnowith(X). { 
+  if( X ){
+    X->pWith = W; 
+  }else{
+    sqlite3WithDelete(pParse->db, W);
+  }
+  A = X; 
+}
 
 selectnowith(A) ::= oneselect(X).                      {A = X;}
 %ifndef SQLITE_OMIT_COMPOUND_SELECT

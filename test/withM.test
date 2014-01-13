@@ -22,12 +22,28 @@ do_execsql_test 1.0 {
   INSERT INTO t1 VALUES(123, 456);
 }
 
-do_faultsim_test withM-1 -prep {
+do_faultsim_test withM-1.1 -prep {
   sqlite3 db test.db
 } -body {
   execsql { 
     WITH tmp AS ( SELECT * FROM t1 )
     SELECT * FROM tmp;
+  }
+} -test {
+  faultsim_test_result {0 {123 456}}
+  db close
+}
+
+do_faultsim_test withM-1.2 -prep {
+  sqlite3 db test.db
+} -body {
+  execsql { 
+    WITH w1 AS ( SELECT * FROM t1 ),
+         w2 AS ( 
+           WITH w3 AS ( SELECT * FROM w1 )
+           SELECT * FROM w3
+         )
+    SELECT * FROM w2;
   }
 } -test {
   faultsim_test_result {0 {123 456}}

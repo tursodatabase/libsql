@@ -4234,12 +4234,13 @@ With *sqlite3WithAdd(
     pNew = sqlite3DbMallocZero(db, sizeof(*pWith));
   }
   assert( zName!=0 || pNew==0 );
+  assert( db->mallocFailed==0 || pNew==0 );
 
   if( pNew==0 ){
-    sqlite3WithDelete(db, pWith);
     sqlite3ExprListDelete(db, pArglist);
     sqlite3SelectDelete(db, pQuery);
     sqlite3DbFree(db, zName);
+    pNew = pWith;
   }else{
     pNew->a[pNew->nCte].pSelect = pQuery;
     pNew->a[pNew->nCte].pCols = pArglist;

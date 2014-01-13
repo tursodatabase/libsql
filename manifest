@@ -1,5 +1,5 @@
-C Add\scode\sto\shandle\snon-recursive\sCTEs\sin\sthe\ssame\sway\sas\sSQL\sviews.
-D 2014-01-13T15:12:23.149
+C Fix\ssome\smemory\sleaks\sand\scrashes\sthat\scould\sfollow\san\sOOM\scondition\sduring\sWITH\sclause\sparsing.
+D 2014-01-13T16:36:40.215
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -169,7 +169,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 11e29ef8cf16a42925fde036bcffbeffd9cc82df
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
-F src/build.c 1efdc65020e1f566383b66b30ccf730b4ef6f926
+F src/build.c 5a2daa6649640711ca60114046903be932348e52
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
@@ -209,7 +209,7 @@ F src/os_unix.c 3a4dcb554d3c915075766162f28c3fd4cdb75968
 F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y b433588d7993d6475d9944be0fda2fb3df3cb138
+F src/parse.y e5c4a23f445cde4b30d50948df8f21bc586dd7a4
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 57fee9a9a617218f5037afbbe49b09da65bde56b
@@ -1092,7 +1092,7 @@ F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/with1.test fb8409a35b1314be6e73a87597322f3369b59b2b
-F test/withM.test 036349a9ec081fee8b1f72e71ad8a5a5b80f1674
+F test/withM.test ac3ec7ee0b33a02d0fa15da91214d97ddea64e34
 F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
@@ -1150,7 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 704d3931b855562a619769955969d439c42ca406
-R fb5ad7a801e83802b92e3793bba4fd6c
+P a26f399ba485e8127c276c5f103ec6c555e11734
+R 7e06730d3714a8aceb489d831c2bc18d
 U dan
-Z 663a5542bd9dc2bb50ed6e3a07d040fb
+Z 780f0749f7ee296248db4bd00ffb23e3
