@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\sdefend\sagainst\sa\sNULL-pointer\sdereference\sin\sthe\ncase\swhere\ssqlite3_column_name()\sreturns\sNULL\s(as\smight\shappen\sfollowing\san\nOOM\serror).
-D 2014-01-13T20:38:35.227
+C For\sthe\sWin32\sVFS,\sdefining\swinShmMutexHeld\sshould\sbe\scontrolled\sby\sNDEBUG,\snot\sSQLITE_DEBUG.
+D 2014-01-14T10:17:02.428
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 3a4dcb554d3c915075766162f28c3fd4cdb75968
-F src/os_win.c 16eac0961603182ffc10c02b39fe830126538e07
+F src/os_win.c 1b21af72c5fa6f9e519a5fcab33e80d182b1aedb
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 3c5384533a8bfce5abd256cc9cb2c38bec05ad61
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 260587d2727f66d7fd65ef672ee46c92024f1d30
-R 10a3b37371baf3bb8cfb66250579708d
-U drh
-Z b723d9f207dc3deb542b9214e1e7a09c
+P ac15455abcb9bdb88b53129348668a1442f6899f
+R 455bba3b3836db70e207929cfbe74107
+U mistachkin
+Z 3f9ab398a4d1da777d1daf83b531e5c4
