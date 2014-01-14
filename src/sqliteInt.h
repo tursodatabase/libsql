@@ -1429,7 +1429,7 @@ struct Table {
 };
 
 /*
-** Allowed values for Tabe.tabFlags.
+** Allowed values for Table.tabFlags.
 */
 #define TF_Readonly        0x01    /* Read-only system table */
 #define TF_Ephemeral       0x02    /* An ephemeral table */
@@ -1437,6 +1437,7 @@ struct Table {
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
 #define TF_Virtual         0x10    /* Is a virtual table */
 #define TF_WithoutRowid    0x20    /* No rowid used. PRIMARY KEY is the key */
+#define TF_Recursive       0x40    /* Recursive reference within CTE */
 
 
 /*
@@ -2129,6 +2130,7 @@ struct NameContext {
 */
 struct Select {
   ExprList *pEList;      /* The fields of the result */
+  Table *pRecurse;       /* Non-NULL for the recursive part of recursive CTE */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
@@ -2182,6 +2184,7 @@ struct Select {
 #define SRT_Table        8  /* Store result as data with an automatic rowid */
 #define SRT_EphemTab     9  /* Create transient tab and store like SRT_Table */
 #define SRT_Coroutine   10  /* Generate a single row of result */
+#define SRT_DistTable   11  /* Like SRT_TABLE, but unique results only */
 
 /*
 ** An instance of this object describes where to put of the results of
@@ -2647,6 +2650,7 @@ struct With {
     ExprList *pCols;              /* List of explicit column names, or NULL */
     Select *pSelect;              /* The contents of the CTE */
     struct Cte *pOuterCte;
+    Table *pTab;
   } a[1];
 };
 

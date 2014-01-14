@@ -3369,6 +3369,53 @@ case OP_OpenEphemeral: {
   break;
 }
 
+/* Opcode: OpenEphreader P1 P2 * * *
+**
+** P2 is a cursor opened by the OpenEphemeral opcode. This opcode opens
+** a new read-only cursor named P1 that accesses the same epheremal table 
+** as P2.
+*/
+case OP_OpenEphreader: {
+  VdbeCursor *pEph;
+  VdbeCursor *pCx;
+  Pgno pgno;
+
+  pEph = p->apCsr[pOp->p2];
+  pCx = allocateCursor(p, pOp->p1, pEph->nField, -1, 1);
+  if( pCx==0 ) goto no_mem;
+  pCx->nullRow = 1;
+  pCx->pKeyInfo = pEph->pKeyInfo;
+  pCx->isTable = pEph->isTable;
+  pCx->isOrdered = pEph->isOrdered;
+  pgno = MASTER_ROOT + !pCx->isTable;
+  rc = sqlite3BtreeCursor(pEph->pBt, pgno, 0, pCx->pKeyInfo, pCx->pCursor);
+  break;
+}
+
+/* Opcode: SwapCursors P1 P2 * * *
+**
+** Parameters P1 and P2 are both cursors opened by the OpenEphemeral
+** opcode. This opcode deletes the contents of epheremal table P1,
+** then renames P2 to P1 and P1 to P2. In other words, following this
+** opcode cursor P2 is open on an empty table and P1 is open on the
+** table that was initially accessed by P2.
+*/
+case OP_SwapCursors: {
+  Mem tmp;
+  VdbeCursor *pTmp;
+
+  tmp = p->aMem[p->nMem - pOp->p1];
+  p->aMem[p->nMem - pOp->p1] = p->aMem[p->nMem - pOp->p2];
+  p->aMem[p->nMem - pOp->p2] = tmp;
+
+  pTmp = p->apCsr[pOp->p1];
+  p->apCsr[pOp->p1] = p->apCsr[pOp->p2];
+  p->apCsr[pOp->p2] = pTmp;
+
+  rc = sqlite3BtreeClearTable(pTmp->pBt, MASTER_ROOT + !pTmp->isTable, 0);
+  break;
+}
+
 /* Opcode: SorterOpen P1 * * P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens

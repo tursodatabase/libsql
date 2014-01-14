@@ -691,12 +691,26 @@ static void selectInnerLoop(
 
     /* Store the result as data using a unique key.
     */
+    case SRT_DistTable:
     case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       testcase( eDest==SRT_Table );
       testcase( eDest==SRT_EphemTab );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
+#ifndef SQLITE_OMIT_CTE
+      if( eDest==SRT_DistTable ){
+        /* If the destination is DistTable, then cursor (iParm+1) is open
+        ** on an ephemeral index. If the current row is already present
+        ** in the index, do not write it to the output. If not, add the
+        ** current row to the index and proceed with writing it to the
+        ** output table as well.  */
+        int addr = sqlite3VdbeCurrentAddr(v) + 4;
+        sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, addr, r1, 0);
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r1);
+        assert( pOrderBy==0 );
+      }
+#endif
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p, r1);
       }else{
@@ -1729,6 +1743,7 @@ static int multiSelect(
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
   */
   assert( p && p->pPrior );  /* Calling function guarantees this much */
+  assert( p->pRecurse==0 || p->op==TK_ALL || p->op==TK_UNION );
   db = pParse->db;
   pPrior = p->pPrior;
   assert( pPrior->pRightmost!=pPrior );
@@ -1774,11 +1789,81 @@ static int multiSelect(
     goto multi_select_end;
   }
 
+  /* If this is a recursive query, check that there is no ORDER BY or
+  ** LIMIT clause. Neither of these are supported.  */
+  assert( p->pOffset==0 || p->pLimit );
+  if( p->pRecurse && (p->pOrderBy || p->pLimit) ){
+    sqlite3ErrorMsg(pParse, "%s in a recursive query is not allowed",
+        p->pOrderBy ? "ORDER BY" : "LIMIT"
+    );
+    goto multi_select_end;
+  }
+
   /* Compound SELECTs that have an ORDER BY clause are handled separately.
   */
   if( p->pOrderBy ){
     return multiSelectOrderBy(pParse, p, pDest);
   }
+
+#ifndef SQLITE_OMIT_CTE
+  if( p->pRecurse ){
+    int nCol = p->pEList->nExpr;
+    int addrNext;
+    int addrSwap;
+    int iCont, iBreak;
+    int tmp1, tmp2;               /* Cursors used to access temporary tables */
+    int tmp3 = 0;                 /* To ensure unique results if UNION */
+    int eDest = SRT_Table;
+    SelectDest tmp2dest;
+
+    iBreak = sqlite3VdbeMakeLabel(v);
+    iCont = sqlite3VdbeMakeLabel(v);
+
+    tmp1 = pParse->nTab++;
+    tmp2 = pParse->nTab++;
+    if( p->op==TK_UNION ){
+      eDest = SRT_DistTable;
+      tmp3 = pParse->nTab++;
+    }
+    sqlite3SelectDestInit(&tmp2dest, eDest, tmp2);
+
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp1, nCol);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp2, nCol);
+    if( tmp3 ){
+      p->addrOpenEphm[0] = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp3, 0);
+      p->selFlags |= SF_UsesEphemeral;
+    }
+
+    /* Store the results of the initial SELECT in tmp2. */
+    rc = sqlite3Select(pParse, pPrior, &tmp2dest);
+    if( rc ) goto multi_select_end;
+
+    /* Clear tmp1. Then switch the contents of tmp1 and tmp2. Then teturn 
+    ** the contents of tmp1 to the caller. Or, if tmp1 is empty at this
+    ** point, the recursive query has finished - jump to address iBreak.  */
+    addrSwap = sqlite3VdbeAddOp2(v, OP_SwapCursors, tmp1, tmp2);
+    sqlite3VdbeAddOp2(v, OP_Rewind, tmp1, iBreak);
+    addrNext = sqlite3VdbeCurrentAddr(v);
+    selectInnerLoop(pParse, p, p->pEList, tmp1, p->pEList->nExpr,
+        0, 0, &dest, iCont, iBreak);
+    sqlite3VdbeResolveLabel(v, iCont);
+    sqlite3VdbeAddOp2(v, OP_Next, tmp1, addrNext);
+
+    /* Execute the recursive SELECT. Store the results in tmp2. While this
+    ** SELECT is running, the contents of tmp1 are read by recursive 
+    ** references to the current CTE.  */
+    p->pPrior = 0;
+    p->pRecurse->tnum = tmp1;
+    p->pRecurse->tabFlags |= TF_Recursive;
+    rc = sqlite3Select(pParse, p, &tmp2dest);
+    p->pRecurse->tabFlags &= ~TF_Recursive;
+    p->pPrior = pPrior;
+    if( rc ) goto multi_select_end;
+
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrSwap);
+    sqlite3VdbeResolveLabel(v, iBreak);
+  }else
+#endif
 
   /* Generate code for the left and right SELECT statements.
   */
@@ -3449,6 +3534,73 @@ static void ctePop(Parse *pParse, struct Cte *pCte){
   }
 }
 
+static int withExpand(
+  Walker *pWalker, 
+  struct SrcList_item *pFrom,
+  struct Cte *pCte
+){
+  Table *pTab;
+  Parse *pParse = pWalker->pParse;
+  sqlite3 *db = pParse->db;
+
+  assert( pFrom->pSelect==0 );
+  assert( pFrom->pTab==0 );
+
+  if( pCte==pParse->pCte && (pTab = pCte->pTab) ){
+    /* This is the recursive part of a recursive CTE */
+    pFrom->pTab = pTab;
+    pTab->nRef++;
+  }else{
+    ExprList *pEList;
+    Select *pSel;
+    int bRecursive;
+
+    pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
+    if( pTab==0 ) return WRC_Abort;
+    pTab->nRef = 1;
+    pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
+    pTab->iPKey = -1;
+    pTab->nRowEst = 1048576;
+    pTab->tabFlags |= TF_Ephemeral;
+    pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
+    if( db->mallocFailed ) return SQLITE_NOMEM;
+    assert( pFrom->pSelect );
+
+    if( ctePush(pParse, pCte) ) return WRC_Abort;
+    pSel = pFrom->pSelect;
+    bRecursive = (pSel->op==TK_ALL || pSel->op==TK_UNION);
+    if( bRecursive ){
+      assert( pSel->pPrior );
+      sqlite3WalkSelect(pWalker, pSel->pPrior);
+    }else{
+      sqlite3WalkSelect(pWalker, pSel);
+    }
+
+    if( pCte->pCols ){
+      pEList = pCte->pCols;
+    }else{
+      Select *pLeft;
+      for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
+      pEList = pLeft->pEList;
+    }
+    selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
+
+    if( bRecursive ){
+      int nRef = pTab->nRef;
+      pCte->pTab = pTab;
+      sqlite3WalkSelect(pWalker, pSel);
+      pCte->pTab = 0;
+      if( pTab->nRef > nRef){
+        pSel->pRecurse = pTab;
+        assert( pTab->tnum==0 );
+      }
+    }
+
+    ctePop(pParse, pCte);
+  }
+
+  return SQLITE_OK;
+}
 
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
@@ -3515,31 +3667,22 @@ static int selectExpander(Walker *pWalker, Select *p){
 #ifndef SQLITE_OMIT_CTE
     pCte = searchWith(pParse, pFrom);
     if( pCte ){
-      pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
-      if( pFrom->pSelect==0 ) return WRC_Abort;
-    }
+      if( withExpand(pWalker, pFrom, pCte) ) return WRC_Abort;
+    }else
 #endif
-    if( pFrom->zName==0 || pCte ){
+    if( pFrom->zName==0 ){
 #ifndef SQLITE_OMIT_SUBQUERY
-      ExprList *pEList;
       Select *pSel = pFrom->pSelect;
       /* A sub-query in the FROM clause of a SELECT */
       assert( pSel!=0 );
       assert( pFrom->pTab==0 );
-      if( ctePush(pParse, pCte) ) return WRC_Abort;
       sqlite3WalkSelect(pWalker, pSel);
-      ctePop(pParse, pCte);
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
       pTab->nRef = 1;
       pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
-      if( pCte && pCte->pCols ){
-        pEList = pCte->pCols;
-      }else{
-        pEList = pSel->pEList;
-      }
-      selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
+      selectColumnsFromExprList(pParse, pSel->pEList, &pTab->nCol, &pTab->aCol);
       pTab->iPKey = -1;
       pTab->nRowEst = 1048576;
       pTab->tabFlags |= TF_Ephemeral;
@@ -3831,9 +3974,10 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       if( ALWAYS(pTab!=0) && (pTab->tabFlags & TF_Ephemeral)!=0 ){
         /* A sub-query in the FROM clause of a SELECT */
         Select *pSel = pFrom->pSelect;
-        assert( pSel );
-        while( pSel->pPrior ) pSel = pSel->pPrior;
-        selectAddColumnTypeAndCollation(pParse, pTab, pSel);
+        if( pSel ){
+          while( pSel->pPrior ) pSel = pSel->pPrior;
+          selectAddColumnTypeAndCollation(pParse, pTab, pSel);
+        }
       }
     }
   }
