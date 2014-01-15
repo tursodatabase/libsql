@@ -3369,6 +3369,7 @@ case OP_OpenEphemeral: {
   break;
 }
 
+#ifndef SQLITE_OMIT_CTE
 /* Opcode: OpenEphreader P1 P2 * * *
 **
 ** P2 is a cursor opened by the OpenEphemeral opcode. This opcode opens
@@ -3415,6 +3416,7 @@ case OP_SwapCursors: {
   rc = sqlite3BtreeClearTable(pTmp->pBt, MASTER_ROOT + !pTmp->isTable, 0);
   break;
 }
+#endif /* ifndef SQLITE_OMIT_CTE */
 
 /* Opcode: SorterOpen P1 * * P4 *
 **

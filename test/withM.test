@@ -17,6 +17,11 @@ source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
 set ::testprefix withM
 
+ifcapable {!cte} {
+  finish_test
+  return
+}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(x INTEGER, y INTEGER);
   INSERT INTO t1 VALUES(123, 456);

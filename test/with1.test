@@ -16,6 +16,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set ::testprefix with1
 
+ifcapable {!cte} {
+  finish_test
+  return
+}
+
 do_execsql_test 1.0 {
   CREATE TABLE t1(x INTEGER, y INTEGER);
   WITH x(a) AS ( SELECT * FROM t1) SELECT 10

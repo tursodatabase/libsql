@@ -900,6 +900,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
 ** argument. If an OOM condition is encountered, NULL is returned
 ** and the db->mallocFailed flag set.
 */
+#ifndef SQLITE_OMIT_CTE
 static With *withDup(sqlite3 *db, With *p){
   With *pRet = 0;
   if( p ){
@@ -917,6 +918,9 @@ static With *withDup(sqlite3 *db, With *p){
   }
   return pRet;
 }
+#else
+# define withDup(x,y) 0
+#endif
 
 /*
 ** The following group of routines make deep copies of expressions,

@@ -1789,6 +1789,7 @@ static int multiSelect(
     goto multi_select_end;
   }
 
+#ifndef SQLITE_OMIT_CTE
   /* If this is a recursive query, check that there is no ORDER BY or
   ** LIMIT clause. Neither of these are supported.  */
   assert( p->pOffset==0 || p->pLimit );
@@ -1799,13 +1800,6 @@ static int multiSelect(
     goto multi_select_end;
   }
 
-  /* Compound SELECTs that have an ORDER BY clause are handled separately.
-  */
-  if( p->pOrderBy ){
-    return multiSelectOrderBy(pParse, p, pDest);
-  }
-
-#ifndef SQLITE_OMIT_CTE
   if( p->pRecurse ){
     int nCol = p->pEList->nExpr;
     int addrNext;
@@ -1838,7 +1832,7 @@ static int multiSelect(
     rc = sqlite3Select(pParse, pPrior, &tmp2dest);
     if( rc ) goto multi_select_end;
 
-    /* Clear tmp1. Then switch the contents of tmp1 and tmp2. Then teturn 
+    /* Clear tmp1. Then switch the contents of tmp1 and tmp2. Then return 
     ** the contents of tmp1 to the caller. Or, if tmp1 is empty at this
     ** point, the recursive query has finished - jump to address iBreak.  */
     addrSwap = sqlite3VdbeAddOp2(v, OP_SwapCursors, tmp1, tmp2);
@@ -1864,6 +1858,12 @@ static int multiSelect(
     sqlite3VdbeResolveLabel(v, iBreak);
   }else
 #endif
+
+  /* Compound SELECTs that have an ORDER BY clause are handled separately.
+  */
+  if( p->pOrderBy ){
+    return multiSelectOrderBy(pParse, p, pDest);
+  }else
 
   /* Generate code for the left and right SELECT statements.
   */
@@ -3482,20 +3482,23 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
-/* If the table identified by FROM clause element p is really
-** a common-table-expression (CTE) then return a pointer to the
-** CTE definition for that table.
+#ifndef SQLITE_OMIT_CTE
+/*
+** Argument pWith (which may be NULL) points to a linked list of nested 
+** WITH contexts, from inner to outermost. If the table identified by 
+** FROM clause element pItem is really a common-table-expression (CTE) 
+** then return a pointer to the CTE definition for that table. Otherwise
+** return NULL.
 */
-static struct Cte *searchWith(Parse *pParse, struct SrcList_item *p){
-  if( p->zDatabase==0 ){
-    char *zName = p->zName;
-    With *pWith;
-
-    for(pWith=pParse->pWith; pWith; pWith=pWith->pOuter){
+static struct Cte *searchWith(With *pWith, struct SrcList_item *pItem){
+  if( pItem->zDatabase==0 ){
+    const char *zName = pItem->zName;
+    With *p;
+    for(p=pWith; p; p=p->pOuter){
       int i;
-      for(i=0; i<pWith->nCte; i++){
-        if( sqlite3StrICmp(zName, pWith->a[i].zName)==0 ){
-          return &pWith->a[i];
+      for(i=0; i<p->nCte; i++){
+        if( sqlite3StrICmp(zName, p->a[i].zName)==0 ){
+          return &p->a[i];
         }
       }
     }
@@ -3514,16 +3517,16 @@ void sqlite3WithPush(Parse *pParse, With *pWith){
     pParse->pWith = pWith;
   }
 }
-static void withPop(Parse *pParse, With *pWith){
-  if( pWith ){
-    assert( pParse->pWith==pWith );
-    pParse->pWith = pWith->pOuter;
-  }
-}
 
-/* Push or pull a CTE on the stack of all CTEs currently being
-** coded.
-*/
+/*
+** If argument pCte is not NULL, check if it is already a part of the
+** stack of CTEs stored by the parser. If so, this indicates an illegal
+** recursive reference in a CTE, set of mutually recursive CTEs. Store
+** an error in the parser and return SQLITE_ERROR if this is the case.
+**
+** Otherwise, if pCte is not already part of the stack of CTEs stored
+** in the parser, push it onto the stop of that stack.
+*/ 
 static int ctePush(Parse *pParse, struct Cte *pCte){
   if( pCte ){
     struct Cte *p;
@@ -3541,6 +3544,11 @@ static int ctePush(Parse *pParse, struct Cte *pCte){
   }
   return SQLITE_OK;
 }
+/*
+** If argument pCte is not NULL, it must be a pointer to the CTE currently
+** on top of the stack of CTEs stored in the parser. Remove it from that
+** stack.
+*/
 static void ctePop(Parse *pParse, struct Cte *pCte){
   if( pCte ){
     assert( pParse->pCte==pCte );
@@ -3548,21 +3556,38 @@ static void ctePop(Parse *pParse, struct Cte *pCte){
   }
 }
 
+/*
+** This function checks if argument pFrom refers to a CTE declared by 
+** a WITH clause on the stack currently maintained by the parser. And,
+** if currently processing a CTE expression, if it is a recursive
+** reference to the current CTE.
+**
+** If pFrom falls into either of the two categories above, pFrom->pTab
+** and other fields are populated accordingly. The caller should check
+** (pFrom->pTab!=0) to determine whether or not a successful match
+** was found.
+**
+** Whether or not a match is found, SQLITE_OK is returned if no error
+** occurs. If an error does occur, an error message is stored in the
+** parser and some error code other than SQLITE_OK returned.
+*/
 static int withExpand(
   Walker *pWalker, 
-  struct SrcList_item *pFrom,
-  struct Cte *pCte
+  struct SrcList_item *pFrom
 ){
   Table *pTab;
   Parse *pParse = pWalker->pParse;
   sqlite3 *db = pParse->db;
+  struct Cte *pCte;
 
-  assert( pFrom->pSelect==0 );
   assert( pFrom->pTab==0 );
 
-  if( pCte==pParse->pCte && (pTab = pCte->pTab) ){
+  pCte = searchWith(pParse->pWith, pFrom);
+  if( pCte==0 ){
+    /* no-op */
+  }else if( pCte==pParse->pCte && (pTab = pCte->pTab) ){
     /* This is the recursive part of a recursive CTE */
-    assert( pFrom->pTab==0 && pFrom->isRecursive==0 );
+    assert( pFrom->pTab==0 && pFrom->isRecursive==0 && pFrom->pSelect==0 );
     pFrom->pTab = pTab;
     pFrom->isRecursive = 1;
     pTab->nRef++;
@@ -3623,6 +3648,7 @@ static int withExpand(
 
   return SQLITE_OK;
 }
+#endif
 
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
@@ -3678,7 +3704,6 @@ static int selectExpander(Walker *pWalker, Select *p){
   ** then create a transient table structure to describe the subquery.
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
-    struct Cte *pCte = 0;
     Table *pTab;
     if( pFrom->pTab!=0 ){
       /* This statement has already been prepared.  There is no need
@@ -3687,10 +3712,8 @@ static int selectExpander(Walker *pWalker, Select *p){
       return WRC_Prune;
     }
 #ifndef SQLITE_OMIT_CTE
-    pCte = searchWith(pParse, pFrom);
-    if( pCte ){
-      if( withExpand(pWalker, pFrom, pCte) ) return WRC_Abort;
-    }else
+    if( withExpand(pWalker, pFrom) ) return WRC_Abort;
+    if( pFrom->pTab ) {} else
 #endif
     if( pFrom->zName==0 ){
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -3917,13 +3940,29 @@ static int selectExpander(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
+/*
+** Function (or macro) selectExpanderWith is used as the SELECT callback
+** by sqlite3SelectExpand(). In builds that do not support CTEs, this
+** is equivalent to the selectExpander() function. In CTE-enabled builds,
+** any WITH clause associated with the SELECT statement needs to be
+** pushed onto the stack before calling selectExpander(), and popped
+** off again afterwards. 
+*/
+#ifndef SQLITE_OMIT_CTE
 static int selectExpanderWith(Walker *pWalker, Select *p){
+  Parse *pParse = pWalker->pParse;
   int res;
-  sqlite3WithPush(pWalker->pParse, p->pWith);
+  sqlite3WithPush(pParse, p->pWith);
   res = selectExpander(pWalker, p);
-  withPop(pWalker->pParse, p->pWith);
+  if( p->pWith ){
+    assert( pParse->pWith==p->pWith );
+    pParse->pWith = p->pWith->pOuter;
+  }
   return res;
 }
+#else
+#define selectExpanderWith selectExpander
+#endif
 
 /*
 ** No-op routine for the parse-tree walker.

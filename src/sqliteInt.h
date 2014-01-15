@@ -3359,6 +3359,7 @@ const char *sqlite3JournalModename(int);
   void sqlite3WithPush(Parse*, With*);
 #else
 #define sqlite3WithPush(x,y)
+#define sqlite3WithDelete(x,y)
 #endif
 
 /* Declarations for functions in fkey.c. All of these are replaced by
