@@ -260,6 +260,12 @@ struct unixFile {
 #endif
 };
 
+/* This variable holds the process id (pid) from when the xRandomness()
+** method was called.  If xOpen() is called from a different process id,
+** indicating that a fork() has occurred, the PRNG will be reset.
+*/
+static int randomnessPid = 0;
+
 /*
 ** Allowed values for the unixFile.ctrlFlags bitmask:
 */
@@ -5641,6 +5647,16 @@ static int unixOpen(
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
+  /* Detect a pid change and reset the PRNG.  There is a race condition
+  ** here such that two or more threads all trying to open databases at
+  ** the same instant might all reset the PRNG.  But multiple resets
+  ** are harmless.
+  */
+  if( randomnessPid!=getpid() ){
+    randomnessPid = getpid();
+    sqlite3_randomness(0,0);
+  }
+
   memset(p, 0, sizeof(unixFile));
 
   if( eType==SQLITE_OPEN_MAIN_DB ){
@@ -6028,18 +6044,18 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
   ** tests repeatable.
   */
   memset(zBuf, 0, nBuf);
+  randomnessPid = getpid();  
 #if !defined(SQLITE_TEST)
   {
-    int pid, fd, got;
+    int fd, got;
     fd = robust_open("/dev/urandom", O_RDONLY, 0);
     if( fd<0 ){
       time_t t;
       time(&t);
       memcpy(zBuf, &t, sizeof(t));
-      pid = getpid();
-      memcpy(&zBuf[sizeof(t)], &pid, sizeof(pid));
-      assert( sizeof(t)+sizeof(pid)<=(size_t)nBuf );
-      nBuf = sizeof(t) + sizeof(pid);
+      memcpy(&zBuf[sizeof(t)], &randomnessPid, sizeof(randomnessPid));
+      assert( sizeof(t)+sizeof(randomnessPid)<=(size_t)nBuf );
+      nBuf = sizeof(t) + sizeof(randomnessPid);
     }else{
       do{ got = osRead(fd, zBuf, nBuf); }while( got<0 && errno==EINTR );
       robust_close(0, fd, __LINE__);

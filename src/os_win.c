@@ -3119,7 +3119,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_VFSNAME: {
-      *(char**)pArg = sqlite3_mprintf("win32");
+      *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
       return SQLITE_OK;
     }
@@ -3224,7 +3224,7 @@ static void winShmEnterMutex(void){
 static void winShmLeaveMutex(void){
   sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
-#ifdef SQLITE_DEBUG
+#ifndef NDEBUG
 static int winShmMutexHeld(void) {
   return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }

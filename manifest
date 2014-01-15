@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sWhereLoop.aLTerm[]\sarray\sis\slarge\senough\swhen\sprocessing\nthe\sskip-scan\soptimization.\s\sFix\sfor\sticket\s[520070ec7fbaac].
-D 2013-12-23T15:35:54.039
+C Merge\srecent\sfixes\sfrom\strunk.\s\sCherrypick\sof\s[c43b59dac1],\s[a221aa82bb],\s[e1eba1fb09],\sand\s[1e131094b5].
+D 2014-01-15T00:24:22.522
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 74bdee8f574588868e67c25cd377df7cba80102e
+F src/main.c 6d0dfffd5d79ebe383308fe7c1c7584f18c687d1
 F src/malloc.c 543a8eb5508eaf4cadf55a9b503379eba2088128
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -205,8 +205,8 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c b4ad71336fd96f97776f75587cd9e8218288f5be
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c f076587029285554a3a65d30d0e71d50cd61f41f
-F src/os_win.c 4323dd0bac4f7a7037fc4cf87fb4692d17f0b108
+F src/os_unix.c 35b55bffd4b9de284af62da52775dfc6eff66818
+F src/os_win.c 1b21af72c5fa6f9e519a5fcab33e80d182b1aedb
 F src/pager.c 2aa4444ffe86e9282d03bc349a4a5e49bd77c0e8
 F src/pager.h f094af9f6ececfaa8a1e93876905a4f34233fb0c
 F src/parse.y acee1a9958539e21263362b194594c5255ad2fca
@@ -216,15 +216,15 @@ F src/pcache1.c a467393909a4ed7ca9de066d85ba5c5b04a5be63
 F src/pragma.c 5ab7279d132143feb77f773688a24ab05da75fd7
 F src/prepare.c 359d1a1e9c9bd4488e4dd3a1aaaf2d2ebb9bb768
 F src/printf.c da9119eb31a187a4b99f60aa4a225141c0ebb74b
-F src/random.c 0b2dbc37fdfbfa6bd455b091dfcef5bdb32dba68
+F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c d41381d80a22d3a83352aeca274cccf264ac277a
 F src/shell.c 936a72ff784efff3832cce274a96ed0b036e6758
-F src/sqlite.h.in baf55c31c4e15a4b626acfeaa792f2aaa566657f
+F src/sqlite.h.in c83230953bb3b8cca7aaa75d408a92b4e271a5f4
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h f3a5d663fe9c6c0b2ee7fc2e20a6204eaea5bc7c
+F src/sqliteInt.h 2f72428cff71d2e38ca0bf05116d80f1ef5a9d32
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1087,7 +1087,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
-F test/win32longpath.test e2aafc07e6990fe86c69be22a3d1a0e210cd329b
+F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
 F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
 F test/without_rowid2.test af260339f79d13cb220288b67cd287fbcf81ad99
 F test/without_rowid3.test eac3d5c8a1924725b58503a368f2cbd24fd6c8a0
@@ -1145,11 +1145,11 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 27392118af4c38c5203a04b8013e1afdb1cebd0d
-Q +46d040591f27be01b1860344f8a268797fe344f4
-R f261db23702291147b2b492eeebe71a1
-T *branch * branch-3.8.2
-T *sym-branch-3.8.2 *
-T -sym-trunk *
-U drh
-Z 4d3959d186d58f8ebce7f5fa0f32ef2d
+P ac5852d6403c9c9628ca0aa7be135c702f000698
+Q +1e131094b522103a0829f72193b067b04e42ce82
+Q +a221aa82bb5496885fd0bf76e4601443799511de
+Q +c43b59dac1fbb67ec3a9d921005543046ad416ce
+Q +e1eba1fb09d7db49d77928bd115b27b8002ae640
+R 9a2615403bfd61ea9575eeff6c57728d
+U mistachkin
+Z 9a636fd2c05ad5aa90446f6df2e80da4
