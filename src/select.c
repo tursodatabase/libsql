@@ -1217,7 +1217,7 @@ static const char *columnTypeImpl(
           sNC.pParse = pNC->pParse;
           zType = columnType(&sNC, p,&zOrigDb,&zOrigTab,&zOrigCol, &estWidth); 
         }
-      }else if( ALWAYS(pTab->pSchema) ){
+      }else if( pTab->pSchema ){
         /* A real table */
         assert( !pS );
         if( iCol<0 ) iCol = pTab->iPKey;
