@@ -502,6 +502,14 @@ lookupname_end:
     if( pExpr->op!=TK_AS ){
       sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     }
+
+    /* If this expression reads a column value from a recursive CTE 
+    ** reference, then this is equivalent to reading from the outermost
+    ** available name-context.  */
+    if( pMatch && pMatch->isRecursive ){
+      while( pNC->pNext ) pNC = pNC->pNext;
+    }
+
     /* Increment the nRef value on all name contexts from TopNC up to
     ** the point where the name matched. */
     for(;;){

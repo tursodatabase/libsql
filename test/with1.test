@@ -244,6 +244,25 @@ do_execsql_test 6.2 {
   /home/dan/public_html/index.html/logo.gif
 }
 
+do_execsql_test 6.3 {
+  WITH flat(fid, fpath) AS (
+    SELECT id, '' FROM f WHERE parentid IS NULL
+    UNION ALL
+    SELECT id, fpath || '/' || name FROM f, flat WHERE parentid=+fid
+  )
+  SELECT count(*) FROM flat;
+} {15}
+
+do_execsql_test 6.4 {
+  WITH x(i) AS (
+    SELECT 1
+    UNION ALL
+    SELECT i+1 FROM x WHERE i<10
+  )
+  SELECT count(*) FROM x
+} {10}
+
+
 finish_test
 
 

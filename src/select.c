@@ -3551,7 +3551,9 @@ static int withExpand(
 
   if( pCte==pParse->pCte && (pTab = pCte->pTab) ){
     /* This is the recursive part of a recursive CTE */
+    assert( pFrom->pTab==0 && pFrom->isRecursive==0 );
     pFrom->pTab = pTab;
+    pFrom->isRecursive = 1;
     pTab->nRef++;
   }else{
     ExprList *pEList;
