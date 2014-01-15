@@ -3556,6 +3556,7 @@ static int withExpand(
   }else{
     ExprList *pEList;
     Select *pSel;
+    Select *pLeft;                /* Left-most SELECT statement */
     int bRecursive;
 
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
@@ -3579,13 +3580,18 @@ static int withExpand(
       sqlite3WalkSelect(pWalker, pSel);
     }
 
+    for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
+    pEList = pLeft->pEList;
     if( pCte->pCols ){
+      if( pEList->nExpr!=pCte->pCols->nExpr ){
+        sqlite3ErrorMsg(pParse, "cte \"%s\" returns %d values for %d columns",
+            pCte->zName, pEList->nExpr, pCte->pCols->nExpr
+        );
+        return WRC_Abort;
+      }
       pEList = pCte->pCols;
-    }else{
-      Select *pLeft;
-      for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
-      pEList = pLeft->pEList;
     }
+
     selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
 
     if( bRecursive ){
