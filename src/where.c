@@ -4196,6 +4196,7 @@ static int whereLoopAddBtree(
    && !pSrc->notIndexed
    && HasRowid(pTab)
    && !pSrc->isCorrelated
+   && !pSrc->isRecursive
   ){
     /* Generate auto-index WhereLoops */
     WhereTerm *pTerm;

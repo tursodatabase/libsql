@@ -228,7 +228,7 @@ do_execsql_test 6.2 {
   WITH flat(fid, fpath) AS (
     SELECT id, '' FROM f WHERE parentid IS NULL
     UNION ALL
-    SELECT id, fpath || '/' || name FROM f, flat WHERE +parentid=+fid
+    SELECT id, fpath || '/' || name FROM f, flat WHERE parentid=fid
   )
   SELECT fpath FROM flat WHERE fpath!='' ORDER BY 1;
 } {
@@ -248,7 +248,7 @@ do_execsql_test 6.3 {
   WITH flat(fid, fpath) AS (
     SELECT id, '' FROM f WHERE parentid IS NULL
     UNION ALL
-    SELECT id, fpath || '/' || name FROM f, flat WHERE parentid=+fid
+    SELECT id, fpath || '/' || name FROM f, flat WHERE parentid=fid
   )
   SELECT count(*) FROM flat;
 } {15}
