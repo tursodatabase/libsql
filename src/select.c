@@ -3482,6 +3482,10 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
+/* If the table identified by p is a transient table of 
+** a common-table-expression (CTE) then return a pointer to the
+** CTE that defines table p.  If p is not a CTE, then return NULL.
+*/
 static struct Cte *searchWith(Parse *pParse, struct SrcList_item *p){
   if( p->zDatabase==0 ){
     char *zName = p->zName;
