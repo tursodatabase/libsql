@@ -1,5 +1,5 @@
-C Add\scode\sto\shandle\srecursive\sCTEs.
-D 2014-01-14T20:14:09.053
+C Use\sthe\suser-supplied\stable\sname\sin\sWITH\sRECURSIVE\stables\sas\sthe\sinternal\nname\sof\sthe\stable\sand\sthe\sname\sof\sthe\stable\sin\sVDBE\scomments.
+D 2014-01-15T02:40:11.688
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 0f7779b0c1c317dcac0f65f695d036030c16775f
+F src/select.c 3d93e3b4736a95507540b708106c1db6d01c41a8
 F src/shell.c a3541193d5fce37e91dad8ef46a9505aa7c9b344
 F src/sqlite.h.in d94a8b89522f526ba711182ee161e06f8669bcc9
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1150,7 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8839850c44a8938883e493eacd752fa686e542df
-R 1d5d9f6beb143e76aa04b4bf9953f5da
-U dan
-Z 1616366ca894deb1473f9b1eb1563ebc
+P a5c2a54a07d35166911abc792008c05dea897742
+R cc1fc541222b981017b72fc3aee14bde
+U drh
+Z dcce44e449a071e984cc874f0c8e1e54

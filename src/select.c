@@ -3558,7 +3558,7 @@ static int withExpand(
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return WRC_Abort;
     pTab->nRef = 1;
-    pTab->zName = sqlite3MPrintf(db, "sqlite_sq_%p", (void*)pTab);
+    pTab->zName = sqlite3MPrintf(db, "%s", pCte->zName);
     pTab->iPKey = -1;
     pTab->nRowEst = 1048576;
     pTab->tabFlags |= TF_Ephemeral;
