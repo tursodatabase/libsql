@@ -684,8 +684,9 @@ where_opt(A) ::= WHERE expr(X).       {A = X.pExpr;}
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
-cmd ::= with UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
+cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
+  sqlite3WithPush(pParse, C);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset, "UPDATE");

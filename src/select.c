@@ -2844,6 +2844,8 @@ static void substSelect(
 **
 ** Flattening is only attempted if all of the following are true:
 **
+**   (0)  The subquery is not a recursive CTE.
+**
 **   (1)  The subquery and the outer query do not both use aggregates.
 **
 **   (2)  The subquery is not an aggregate or the outer query is not a join.
@@ -2968,6 +2970,7 @@ static int flattenSubquery(
   iParent = pSubitem->iCursor;
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
+  if( pSub->pRecurse ) return 0;                         /* Restriction (0)  */
   if( isAgg && subqueryIsAgg ) return 0;                 /* Restriction (1)  */
   if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;          /* Restriction (2)  */
   pSubSrc = pSub->pSrc;

@@ -895,7 +895,12 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
   return pNew;
 }
 
-With *withDup(sqlite3 *db, With *p){
+/*
+** Create and return a deep copy of the object passed as the second 
+** argument. If an OOM condition is encountered, NULL is returned
+** and the db->mallocFailed flag set.
+*/
+static With *withDup(sqlite3 *db, With *p){
   With *pRet = 0;
   if( p ){
     int nByte = sizeof(*p) + sizeof(p->a[0]) * (p->nCte-1);
@@ -1055,7 +1060,8 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->addrOpenEphm[1] = -1;
   pNew->addrOpenEphm[2] = -1;
   pNew->pWith = withDup(db, p->pWith);
-  pNew->pRecurse = p->pRecurse;
+  assert( p->pRecurse==0 );
+  pNew->pRecurse = 0;
   return pNew;
 }
 #else

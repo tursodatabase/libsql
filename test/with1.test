@@ -164,6 +164,50 @@ do_execsql_test 5.5 {
   SELECT x FROM i LIMIT 20;
 } {1 2 3 4 5 6 7 8 9 0}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 6.1 {
+  CREATE TABLE f(
+      id INTEGER PRIMARY KEY, parentid REFERENCES f, name TEXT
+  );
+
+  INSERT INTO f VALUES(0, NULL, '');
+  INSERT INTO f VALUES(1, 0, 'bin');
+    INSERT INTO f VALUES(2, 1, 'true');
+    INSERT INTO f VALUES(3, 1, 'false');
+    INSERT INTO f VALUES(4, 1, 'ls');
+    INSERT INTO f VALUES(5, 1, 'grep');
+  INSERT INTO f VALUES(6, 0, 'etc');
+    INSERT INTO f VALUES(7, 6, 'rc.d');
+      INSERT INTO f VALUES(8, 7, 'rc.apache');
+      INSERT INTO f VALUES(9, 7, 'rc.samba');
+  INSERT INTO f VALUES(10, 0, 'home');
+    INSERT INTO f VALUES(11, 10, 'dan');
+      INSERT INTO f VALUES(12, 11, 'public_html');
+        INSERT INTO f VALUES(13, 12, 'index.html');
+          INSERT INTO f VALUES(14, 13, 'logo.gif');
+}
+
+do_execsql_test 6.2 {
+  WITH flat(fid, fpath) AS (
+    SELECT id, '' FROM f WHERE parentid IS NULL
+    UNION ALL
+    SELECT id, fpath || '/' || name FROM f, flat WHERE +parentid=+fid
+  )
+  SELECT fpath FROM flat WHERE fpath!='' ORDER BY 1;
+} {
+  /bin 
+  /bin/false /bin/grep /bin/ls /bin/true 
+  /etc 
+  /etc/rc.d 
+  /etc/rc.d/rc.apache /etc/rc.d/rc.samba 
+  /home 
+  /home/dan 
+  /home/dan/public_html 
+  /home/dan/public_html/index.html 
+  /home/dan/public_html/index.html/logo.gif
+}
+
 finish_test
 
 
