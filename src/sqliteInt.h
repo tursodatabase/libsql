@@ -2640,18 +2640,18 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 #define WRC_Abort       2   /* Abandon the tree walk */
 
 /*
-** An instance of this structure represents a set of CTEs (common table 
-** expressions) created by a single WITH clause.
+** An instance of this structure represents a set of on or more CTEs
+** (common table expressions) created by a single WITH clause.
 */
 struct With {
-  int nCte;                       /* Number of CTEs */
+  int nCte;                       /* Number of CTEs in the WITH clause */
   With *pOuter;                   /* Containing WITH clause, or NULL */
-  struct Cte {
-    char *zName;                  /* Name of this CTE */
-    ExprList *pCols;              /* List of explicit column names, or NULL */
-    Select *pSelect;              /* The contents of the CTE */
-    struct Cte *pOuterCte;
-    Table *pTab;
+  struct Cte {                    /* For each CTE in the WITH clause.... */
+    char *zName;                    /* Name of this CTE */
+    ExprList *pCols;                /* List of explicit column names, or NULL */
+    Select *pSelect;                /* The definition of this CTE */
+    struct Cte *pOuterCte;          /* Next WITH clause in outer context */
+    Table *pTab;                    /* Table object for this CTE */
   } a[1];
 };
 

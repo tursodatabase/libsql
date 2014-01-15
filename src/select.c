@@ -3482,9 +3482,9 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
-/* If the table identified by p is a transient table of 
+/* If the table identified by FROM clause element p is really
 ** a common-table-expression (CTE) then return a pointer to the
-** CTE that defines table p.  If p is not a CTE, then return NULL.
+** CTE definition for that table.
 */
 static struct Cte *searchWith(Parse *pParse, struct SrcList_item *p){
   if( p->zDatabase==0 ){
@@ -3503,6 +3503,11 @@ static struct Cte *searchWith(Parse *pParse, struct SrcList_item *p){
   return 0;
 }
 
+/* The code generator maintains a stack of active WITH clauses
+** with the inner-most WITH clause being at the top of the stack.
+**
+** These routines push and pull WITH clauses on the stack.
+*/
 void sqlite3WithPush(Parse *pParse, With *pWith){
   if( pWith ){
     pWith->pOuter = pParse->pWith;
@@ -3516,6 +3521,9 @@ static void withPop(Parse *pParse, With *pWith){
   }
 }
 
+/* Push or pull a CTE on the stack of all CTEs currently being
+** coded.
+*/
 static int ctePush(Parse *pParse, struct Cte *pCte){
   if( pCte ){
     struct Cte *p;
@@ -3533,7 +3541,6 @@ static int ctePush(Parse *pParse, struct Cte *pCte){
   }
   return SQLITE_OK;
 }
-
 static void ctePop(Parse *pParse, struct Cte *pCte){
   if( pCte ){
     assert( pParse->pCte==pCte );
