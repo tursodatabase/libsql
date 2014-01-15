@@ -1,5 +1,5 @@
-C Disable\sthe\sflattening\soptimization\sif\sthe\ssub-query\sis\sa\srecursive\sCTE.
-D 2014-01-15T14:17:31.048
+C Don't\stry\sto\sverify\sthe\sschema\sof\stransient\stable\s(such\sas\sgenerated\sinside\na\sWITH\sclause)\swhen\sgenerating\scode\sfor\s"IN\stable"\soperators.
+D 2014-01-15T14:40:41.242
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 91e1321021db5dc266360531b8b6550009d771ff
-F src/expr.c 2277282d8938b8eab782e4f5111ca0cd492529b3
+F src/expr.c 46ad3b4161aeaf299130305efd0259bc5643bfd6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 6325ac2ec10833ccf4d5c36d323709221d37ea19
@@ -1150,7 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a29330238be6366444269a0b1b328475b2d01ae2
-R baaf1d38169072daf03c7e43cc689f3b
-U dan
-Z e4d26324d0deafbbb1cfbafb0f22db9f
+P 9472f6d820a7fb233936d9b8f7a39c9d4c4d6d73
+R 719190df89fa0f9b34e7fe5eb5626240
+U drh
+Z 58f028530f5aaa7c16053558b5f5262a
