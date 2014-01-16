@@ -1378,8 +1378,9 @@ static void generateColumnNames(
         sqlite3VdbeSetColName(v, i, COLNAME_NAME, zCol, SQLITE_TRANSIENT);
       }
     }else{
-      sqlite3VdbeSetColName(v, i, COLNAME_NAME, 
-          sqlite3DbStrDup(db, pEList->a[i].zSpan), SQLITE_DYNAMIC);
+      const char *z = pEList->a[i].zSpan;
+      z = z==0 ? sqlite3MPrintf(db, "column%d", i+1) : sqlite3DbStrDup(db, z);
+      sqlite3VdbeSetColName(v, i, COLNAME_NAME, z, SQLITE_DYNAMIC);
     }
   }
   generateColumnTypes(pParse, pTabList, pEList);
@@ -3491,8 +3492,8 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
 ** return NULL.
 */
 static struct Cte *searchWith(With *pWith, struct SrcList_item *pItem){
-  if( pItem->zDatabase==0 ){
-    const char *zName = pItem->zName;
+  const char *zName;
+  if( pItem->zDatabase==0 && (zName = pItem->zName)!=0 ){
     With *p;
     for(p=pWith; p; p=p->pOuter){
       int i;

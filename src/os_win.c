@@ -3224,7 +3224,7 @@ static void winShmEnterMutex(void){
 static void winShmLeaveMutex(void){
   sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
-#ifdef SQLITE_DEBUG
+#ifndef NDEBUG
 static int winShmMutexHeld(void) {
   return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }

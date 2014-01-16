@@ -597,6 +597,7 @@ static void output_c_string(FILE *out, const char *z){
 */
 static void output_html_string(FILE *out, const char *z){
   int i;
+  if( z==0 ) z = "";
   while( *z ){
     for(i=0;   z[i] 
             && z[i]!='<' 

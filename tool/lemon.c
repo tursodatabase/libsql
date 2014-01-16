@@ -83,7 +83,7 @@ static void lemon_addtext(
   zBuf[*pnUsed] = 0;
 }
 static int lemon_vsprintf(char *str, const char *zFormat, va_list ap){
-  int i, j, k, c, size;
+  int i, j, k, c;
   int nUsed = 0;
   const char *z;
   char zTemp[50];
