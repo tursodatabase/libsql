@@ -5654,13 +5654,7 @@ WhereInfo *sqlite3WhereBegin(
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     pLoop = pLevel->pWLoop;
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ){
-#ifndef SQLITE_OMIT_CTE
-      if( pTab->tabFlags & TF_Recursive ){
-        int iCur = pTabItem->iCursor;
-        sqlite3VdbeAddOp2(v, OP_OpenEphreader, iCur, pTab->tnum);
-      }
-#endif
-      /* Otherwise do nothing */
+      /* Do nothing */
     }else
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( (pLoop->wsFlags & WHERE_VIRTUALTABLE)!=0 ){

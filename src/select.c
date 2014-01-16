@@ -1744,7 +1744,7 @@ static int multiSelect(
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
   */
   assert( p && p->pPrior );  /* Calling function guarantees this much */
-  assert( p->pRecurse==0 || p->op==TK_ALL || p->op==TK_UNION );
+  assert( (p->selFlags & SF_Recursive)==0 || p->op==TK_ALL || p->op==TK_UNION );
   db = pParse->db;
   pPrior = p->pPrior;
   assert( pPrior->pRightmost!=pPrior );
@@ -1794,27 +1794,36 @@ static int multiSelect(
   /* If this is a recursive query, check that there is no ORDER BY or
   ** LIMIT clause. Neither of these are supported.  */
   assert( p->pOffset==0 || p->pLimit );
-  if( p->pRecurse && (p->pOrderBy || p->pLimit) ){
+  if( (p->selFlags & SF_Recursive) && (p->pOrderBy || p->pLimit) ){
     sqlite3ErrorMsg(pParse, "%s in a recursive query is not allowed",
         p->pOrderBy ? "ORDER BY" : "LIMIT"
     );
     goto multi_select_end;
   }
 
-  if( p->pRecurse ){
+  if( p->selFlags & SF_Recursive ){
+    SrcList *pSrc = p->pSrc;
     int nCol = p->pEList->nExpr;
     int addrNext;
     int addrSwap;
     int iCont, iBreak;
-    int tmp1, tmp2;               /* Cursors used to access temporary tables */
+    int tmp1;                     /* Intermediate table */
+    int tmp2;                     /* Next intermediate table */
     int tmp3 = 0;                 /* To ensure unique results if UNION */
     int eDest = SRT_Table;
     SelectDest tmp2dest;
+    int i;
 
     iBreak = sqlite3VdbeMakeLabel(v);
     iCont = sqlite3VdbeMakeLabel(v);
 
-    tmp1 = pParse->nTab++;
+    for(i=0; ALWAYS(i<pSrc->nSrc); i++){
+      if( pSrc->a[i].isRecursive ){
+        tmp1 = pSrc->a[i].iCursor;
+        break;
+      }
+    }
+
     tmp2 = pParse->nTab++;
     if( p->op==TK_UNION ){
       eDest = SRT_DistTable;
@@ -1848,11 +1857,7 @@ static int multiSelect(
     ** SELECT is running, the contents of tmp1 are read by recursive 
     ** references to the current CTE.  */
     p->pPrior = 0;
-    p->pRecurse->tnum = tmp1;
-    assert( (p->pRecurse->tabFlags & TF_Recursive)==0 );
-    p->pRecurse->tabFlags |= TF_Recursive;
     rc = sqlite3Select(pParse, p, &tmp2dest);
-    p->pRecurse->tabFlags &= ~TF_Recursive;
     assert( p->pPrior==0 );
     p->pPrior = pPrior;
     if( rc ) goto multi_select_end;
@@ -3009,8 +3014,8 @@ static int flattenSubquery(
   if( pSub->pLimit && (p->selFlags & SF_Distinct)!=0 ){
      return 0;         /* Restriction (21) */
   }
-  if( pSub->pRecurse ) return 0;                         /* Restriction (22)  */
-  if( p->pRecurse && pSub->pPrior ) return 0;            /* Restriction (23)  */
+  if( pSub->selFlags & SF_Recursive ) return 0;          /* Restriction (22)  */
+  if( (p->selFlags & SF_Recursive) && pSub->pPrior ) return 0;       /* (23)  */
 
   /* OBSOLETE COMMENT 1:
   ** Restriction 3:  If the subquery is a join, make sure the subquery is 
@@ -3593,19 +3598,10 @@ static int withExpand(
   assert( pFrom->pTab==0 );
 
   pCte = searchWith(pParse->pWith, pFrom);
-  if( pCte==0 ){
-    /* no-op */
-  }else if( pCte==pParse->pCte && (pTab = pCte->pTab) ){
-    /* This is the recursive part of a recursive CTE */
-    assert( pFrom->pTab==0 && pFrom->isRecursive==0 && pFrom->pSelect==0 );
-    pFrom->pTab = pTab;
-    pFrom->isRecursive = 1;
-    pTab->nRef++;
-  }else{
+  if( pCte ){
     ExprList *pEList;
     Select *pSel;
     Select *pLeft;                /* Left-most SELECT statement */
-    int bRecursive;
 
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return WRC_Abort;
@@ -3618,15 +3614,36 @@ static int withExpand(
     if( db->mallocFailed ) return SQLITE_NOMEM;
     assert( pFrom->pSelect );
 
-    if( ctePush(pParse, pCte) ) return WRC_Abort;
+    /* Check if this is a recursive CTE. */
     pSel = pFrom->pSelect;
-    bRecursive = (pSel->op==TK_ALL || pSel->op==TK_UNION);
-    if( bRecursive ){
-      assert( pSel->pPrior );
-      sqlite3WalkSelect(pWalker, pSel->pPrior);
-    }else{
-      sqlite3WalkSelect(pWalker, pSel);
+    if( pSel->op==TK_ALL || pSel->op==TK_UNION ){
+      int i;
+      SrcList *pSrc = pFrom->pSelect->pSrc;
+      for(i=0; i<pSrc->nSrc; i++){
+        struct SrcList_item *pItem = &pSrc->a[i];
+        if( pItem->zDatabase==0 
+         && pItem->zName!=0 
+         && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
+          ){
+          pItem->pTab = pTab;
+          pItem->isRecursive = 1;
+          pTab->nRef++;
+          pSel->selFlags |= SF_Recursive;
+        }
+      }
     }
+
+    /* Only one recursive reference is permitted. */ 
+    if( pTab->nRef>2 ){
+      sqlite3ErrorMsg(
+          pParse, "multiple recursive references in cte: %s", pCte->zName
+      );
+      return WRC_Abort;
+    }
+    assert( pTab->nRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nRef==2 ));
+
+    if( ctePush(pParse, pCte) ) return WRC_Abort;
+    sqlite3WalkSelect(pWalker, pTab->nRef==2 ? pSel->pPrior : pSel);
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
     pEList = pLeft->pEList;
@@ -3639,20 +3656,9 @@ static int withExpand(
       }
       pEList = pCte->pCols;
     }
-
     selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
 
-    if( bRecursive ){
-      int nRef = pTab->nRef;
-      pCte->pTab = pTab;
-      sqlite3WalkSelect(pWalker, pSel);
-      pCte->pTab = 0;
-      if( pTab->nRef > nRef){
-        pSel->pRecurse = pTab;
-        assert( pTab->tnum==0 );
-      }
-    }
-
+    if( pSel->selFlags & SF_Recursive ) sqlite3WalkSelect(pWalker, pSel);
     ctePop(pParse, pCte);
   }
 
@@ -3715,6 +3721,8 @@ static int selectExpander(Walker *pWalker, Select *p){
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab;
+    assert( pFrom->isRecursive==0 || pFrom->pTab );
+    if( pFrom->isRecursive ) continue;
     if( pFrom->pTab!=0 ){
       /* This statement has already been prepared.  There is no need
       ** to go further. */

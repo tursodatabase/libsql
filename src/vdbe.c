@@ -3370,29 +3370,6 @@ case OP_OpenEphemeral: {
 }
 
 #ifndef SQLITE_OMIT_CTE
-/* Opcode: OpenEphreader P1 P2 * * *
-**
-** P2 is a cursor opened by the OpenEphemeral opcode. This opcode opens
-** a new read-only cursor named P1 that accesses the same epheremal table 
-** as P2.
-*/
-case OP_OpenEphreader: {
-  VdbeCursor *pEph;
-  VdbeCursor *pCx;
-  Pgno pgno;
-
-  pEph = p->apCsr[pOp->p2];
-  pCx = allocateCursor(p, pOp->p1, pEph->nField, -1, 1);
-  if( pCx==0 ) goto no_mem;
-  pCx->nullRow = 1;
-  pCx->pKeyInfo = pEph->pKeyInfo;
-  pCx->isTable = pEph->isTable;
-  pCx->isOrdered = pEph->isOrdered;
-  pgno = MASTER_ROOT + !pCx->isTable;
-  rc = sqlite3BtreeCursor(pEph->pBt, pgno, 0, pCx->pKeyInfo, pCx->pCursor);
-  break;
-}
-
 /* Opcode: SwapCursors P1 P2 * * *
 **
 ** Parameters P1 and P2 are both cursors opened by the OpenEphemeral

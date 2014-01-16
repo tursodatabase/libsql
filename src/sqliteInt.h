@@ -2131,7 +2131,6 @@ struct NameContext {
 */
 struct Select {
   ExprList *pEList;      /* The fields of the result */
-  Table *pRecurse;       /* Non-NULL for the recursive part of recursive CTE */
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
@@ -2165,6 +2164,7 @@ struct Select {
 #define SF_Materialize     0x0100  /* Force materialization of views */
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
+#define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
 
 
 /*
@@ -2640,7 +2640,7 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 #define WRC_Abort       2   /* Abandon the tree walk */
 
 /*
-** An instance of this structure represents a set of on or more CTEs
+** An instance of this structure represents a set of one or more CTEs
 ** (common table expressions) created by a single WITH clause.
 */
 struct With {
@@ -2651,7 +2651,6 @@ struct With {
     ExprList *pCols;                /* List of explicit column names, or NULL */
     Select *pSelect;                /* The definition of this CTE */
     struct Cte *pOuterCte;          /* Next WITH clause in outer context */
-    Table *pTab;                    /* Table object for this CTE */
   } a[1];
 };
 
