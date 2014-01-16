@@ -667,7 +667,7 @@ static int isLikeOrGlob(
   }
   assert( pLeft->iColumn!=(-1) ); /* Because IPK never has AFF_TEXT */
 
-  pRight = pList->a[0].pExpr;
+  pRight = sqlite3ExprSkipCollate(pList->a[0].pExpr);
   op = pRight->op;
   if( op==TK_VARIABLE ){
     Vdbe *pReprepare = pParse->pReprepare;

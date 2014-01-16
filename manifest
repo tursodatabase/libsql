@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning\sin\sLEMON.
-D 2014-01-14T10:17:21.693
+C Always\suse\savailable\sindices\sto\soptimize\sLIKE\soperators\seven\sif\sthe\spattern\nof\sthe\sLIKE\soperator\shas\sa\sCOLLATE\smodifier.\s\sThis\sfixes\san\sineffiency\sthat\nwas\sintroduced\sinto\s3.7.15\sby\scheck-in\s[8542e6180d4]\son\s2012-12-08.
+D 2014-01-16T15:31:41.806
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c 18f07fd0fd116a5880773c689eb7cd8e60175107
+F src/where.c 81cec50fe73633144b0730de477e141c53485862
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -646,7 +646,7 @@ F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test 935fb4f608e3ea126891496a6e99b9468372bf5c
+F test/like.test e191e536d0fcd722a6b965e7cd1ee0bfd12a5991
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test cc0ab63385239b63c72452b0e93700bf5e8f0b99
 F test/loadext.test 92e6dfefd1229c3ef4aaabd87419efd8fa57a7a5
@@ -1148,7 +1148,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1e131094b522103a0829f72193b067b04e42ce82
-R fe4a4148cfbc4d588ee2679597656da4
-U mistachkin
-Z d589f5ec7c09b4ac8c97497c20166016
+P f61a70589ac7e05008a362bd9d5b7bde5d07a758
+R c3393c71f3ebd7292d430bc7115b905d
+U drh
+Z 57df34b30b12b159eb99c0c8be54bec6
