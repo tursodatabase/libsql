@@ -1814,6 +1814,9 @@ static int multiSelect(
     SelectDest tmp2dest;
     int i;
 
+    if( sqlite3AuthCheck(pParse, SQLITE_RECURSIVE, 0, 0, 0) ){
+      goto multi_select_end;
+    }
     iBreak = sqlite3VdbeMakeLabel(v);
     iCont = sqlite3VdbeMakeLabel(v);
 
