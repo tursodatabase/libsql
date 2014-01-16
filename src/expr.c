@@ -1065,8 +1065,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->addrOpenEphm[1] = -1;
   pNew->addrOpenEphm[2] = -1;
   pNew->pWith = withDup(db, p->pWith);
-  assert( p->pRecurse==0 );
-  pNew->pRecurse = 0;
+  pNew->pRecurse = p->pRecurse;
   return pNew;
 }
 #else

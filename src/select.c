@@ -1849,9 +1849,11 @@ static int multiSelect(
     ** references to the current CTE.  */
     p->pPrior = 0;
     p->pRecurse->tnum = tmp1;
+    assert( (p->pRecurse->tabFlags & TF_Recursive)==0 );
     p->pRecurse->tabFlags |= TF_Recursive;
     rc = sqlite3Select(pParse, p, &tmp2dest);
     p->pRecurse->tabFlags &= ~TF_Recursive;
+    assert( p->pPrior==0 );
     p->pPrior = pPrior;
     if( rc ) goto multi_select_end;
 
@@ -2845,8 +2847,6 @@ static void substSelect(
 **
 ** Flattening is only attempted if all of the following are true:
 **
-**   (0)  The subquery is not a recursive CTE.
-**
 **   (1)  The subquery and the outer query do not both use aggregates.
 **
 **   (2)  The subquery is not an aggregate or the outer query is not a join.
@@ -2930,6 +2930,14 @@ static void substSelect(
 **  (21)  The subquery does not use LIMIT or the outer query is not
 **        DISTINCT.  (See ticket [752e1646fc]).
 **
+**  (22)  The subquery is not a recursive CTE.
+**
+**  (23)  The parent is not a recursive CTE, or the sub-query is not a
+**        compound query. This restriction is because transforming the
+**        parent to a compound query confuses the code that handles
+**        recursive queries in multiSelect().
+**
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -2971,7 +2979,6 @@ static int flattenSubquery(
   iParent = pSubitem->iCursor;
   pSub = pSubitem->pSelect;
   assert( pSub!=0 );
-  if( pSub->pRecurse ) return 0;                         /* Restriction (0)  */
   if( isAgg && subqueryIsAgg ) return 0;                 /* Restriction (1)  */
   if( subqueryIsAgg && pSrc->nSrc>1 ) return 0;          /* Restriction (2)  */
   pSubSrc = pSub->pSrc;
@@ -3002,6 +3009,8 @@ static int flattenSubquery(
   if( pSub->pLimit && (p->selFlags & SF_Distinct)!=0 ){
      return 0;         /* Restriction (21) */
   }
+  if( pSub->pRecurse ) return 0;                         /* Restriction (22)  */
+  if( p->pRecurse && pSub->pPrior ) return 0;            /* Restriction (23)  */
 
   /* OBSOLETE COMMENT 1:
   ** Restriction 3:  If the subquery is a join, make sure the subquery is 
