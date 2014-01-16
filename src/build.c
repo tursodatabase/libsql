@@ -4222,7 +4222,7 @@ With *sqlite3WithAdd(
     int i;
     for(i=0; i<pWith->nCte; i++){
       if( sqlite3StrICmp(zName, pWith->a[i].zName)==0 ){
-        sqlite3ErrorMsg(pParse, "duplicate cte name: %s", zName);
+        sqlite3ErrorMsg(pParse, "duplicate WITH table name: %s", zName);
       }
     }
   }

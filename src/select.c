@@ -3609,20 +3609,20 @@ static int withExpand(
     /* Only one recursive reference is permitted. */ 
     if( pTab->nRef>2 ){
       sqlite3ErrorMsg(
-          pParse, "multiple recursive references in cte: %s", pCte->zName
+          pParse, "multiple references to recursive table: %s", pCte->zName
       );
       return WRC_Abort;
     }
     assert( pTab->nRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nRef==2 ));
 
-    pCte->zErr = "circular reference to cte: %s";
+    pCte->zErr = "circular reference: %s";
     sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
     pEList = pLeft->pEList;
     if( pCte->pCols ){
       if( pEList->nExpr!=pCte->pCols->nExpr ){
-        sqlite3ErrorMsg(pParse, "cte \"%s\" returns %d values for %d columns",
+        sqlite3ErrorMsg(pParse, "table %s has %d values for %d columns",
             pCte->zName, pEList->nExpr, pCte->pCols->nExpr
         );
         return WRC_Abort;
@@ -3633,9 +3633,9 @@ static int withExpand(
 
     if( bMayRecursive ){
       if( pSel->selFlags & SF_Recursive ){
-        pCte->zErr = "multiple recursive references in cte: %s";
+        pCte->zErr = "multiple recursive references: %s";
       }else{
-        pCte->zErr = "recursive reference may not appear in sub-query: %s";
+        pCte->zErr = "recursive reference in a subquery: %s";
       }
       sqlite3WalkSelect(pWalker, pSel);
     }

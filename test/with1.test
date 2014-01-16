@@ -79,14 +79,14 @@ do_catchsql_test 3.1 {
   WITH tmp2(x) AS ( SELECT * FROM tmp1 ),
        tmp1(a) AS ( SELECT * FROM tmp2 )
   SELECT * FROM tmp1;
-} {1 {circular reference to cte: tmp1}}
+} {1 {circular reference: tmp1}}
 
 do_catchsql_test 3.2 {
   CREATE TABLE t2(x INTEGER);
   WITH tmp(a) AS (SELECT * FROM t1),
        tmp(a) AS (SELECT * FROM t1)
   SELECT * FROM tmp;
-} {1 {duplicate cte name: tmp}}
+} {1 {duplicate WITH table name: tmp}}
 
 do_execsql_test 3.3 {
   CREATE TABLE t3(x);
@@ -172,23 +172,23 @@ do_execsql_test 5.5 {
 do_catchsql_test 5.6.1 {
   WITH i(x, y) AS ( VALUES(1) )
   SELECT * FROM i;
-} {1 {cte "i" returns 1 values for 2 columns}}
+} {1 {table i has 1 values for 2 columns}}
 
 do_catchsql_test 5.6.2 {
   WITH i(x) AS ( VALUES(1,2) )
   SELECT * FROM i;
-} {1 {cte "i" returns 2 values for 1 columns}}
+} {1 {table i has 2 values for 1 columns}}
 
 do_catchsql_test 5.6.3 {
   CREATE TABLE t5(a, b);
   WITH i(x) AS ( SELECT * FROM t5 )
   SELECT * FROM i;
-} {1 {cte "i" returns 2 values for 1 columns}}
+} {1 {table i has 2 values for 1 columns}}
 
 do_catchsql_test 5.6.4 {
   WITH i(x) AS ( SELECT 1, 2 UNION ALL SELECT 1 )
   SELECT * FROM i;
-} {1 {cte "i" returns 2 values for 1 columns}}
+} {1 {table i has 2 values for 1 columns}}
 
 do_catchsql_test 5.6.5 {
   WITH i(x) AS ( SELECT 1 UNION ALL SELECT 1, 2 )
@@ -203,7 +203,7 @@ do_catchsql_test 5.6.6 {
 do_catchsql_test 5.6.7 {
   WITH i(x) AS ( SELECT 1, 2 UNION SELECT x+1 FROM i )
   SELECT * FROM i;
-} {1 {cte "i" returns 2 values for 1 columns}}
+} {1 {table i has 2 values for 1 columns}}
 
 #-------------------------------------------------------------------------
 #
@@ -304,7 +304,7 @@ do_catchsql_test 7.4 {
     SELECT i FROM tree WHERE p IN (SELECT id FROM t)
   ) 
   SELECT id FROM t;
-} {1 {recursive reference may not appear in sub-query: t}}
+} {1 {recursive reference in a subquery: t}}
 
 do_catchsql_test 7.5 {
   WITH t(id) AS (
@@ -313,7 +313,7 @@ do_catchsql_test 7.5 {
     SELECT i FROM tree, t WHERE p = id AND p IN (SELECT id FROM t)
   ) 
   SELECT id FROM t;
-} {1 {multiple recursive references in cte: t}}
+} {1 {multiple recursive references: t}}
 
 do_catchsql_test 7.6 {
   WITH t(id) AS (
@@ -322,11 +322,8 @@ do_catchsql_test 7.6 {
     SELECT i FROM tree, t WHERE p = id
   ) 
   SELECT id FROM t;
-} {1 {circular reference to cte: t}}
+} {1 {circular reference: t}}
 
 
 
 finish_test
-
-
-
