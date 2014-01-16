@@ -2371,7 +2371,6 @@ struct Parse {
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
-  struct Cte *pCte;         /* Current CTE, or NULL */
 };
 
 /*
@@ -2650,7 +2649,7 @@ struct With {
     char *zName;                    /* Name of this CTE */
     ExprList *pCols;                /* List of explicit column names, or NULL */
     Select *pSelect;                /* The definition of this CTE */
-    struct Cte *pOuterCte;          /* Next WITH clause in outer context */
+    const char *zErr;               /* Error message for circular references */
   } a[1];
 };
 

@@ -76,10 +76,10 @@ do_execsql_test 2.5 {
 
 #-------------------------------------------------------------------------
 do_catchsql_test 3.1 {
-  WITH tmp2(x) AS ( SELECT * FROM tmp1),
+  WITH tmp2(x) AS ( SELECT * FROM tmp1 ),
        tmp1(a) AS ( SELECT * FROM tmp2 )
   SELECT * FROM tmp1;
-} {1 {illegal recursive defininition in cte: tmp1}}
+} {1 {circular reference to cte: tmp1}}
 
 do_catchsql_test 3.2 {
   CREATE TABLE t2(x INTEGER);
@@ -266,6 +266,64 @@ do_execsql_test 6.4 {
   )
   SELECT count(*) FROM x
 } {10}
+
+
+#-------------------------------------------------------------------------
+
+do_execsql_test 7.1 {
+  CREATE TABLE tree(i, p);
+  INSERT INTO tree VALUES(1, NULL);
+  INSERT INTO tree VALUES(2, 1);
+  INSERT INTO tree VALUES(3, 1);
+  INSERT INTO tree VALUES(4, 2);
+  INSERT INTO tree VALUES(5, 4);
+}
+
+do_execsql_test 7.2 {
+  WITH t(id, path) AS (
+    SELECT i, '' FROM tree WHERE p IS NULL
+    UNION ALL
+    SELECT i, path || '/' || i FROM tree, t WHERE p = id
+  ) 
+  SELECT path FROM t;
+} {{} /2 /3 /2/4 /2/4/5}
+
+do_execsql_test 7.3 {
+  WITH t(id) AS (
+    VALUES(2)
+    UNION ALL
+    SELECT i FROM tree, t WHERE p = id
+  ) 
+  SELECT id FROM t;
+} {2 4 5}
+
+do_catchsql_test 7.4 {
+  WITH t(id) AS (
+    VALUES(2)
+    UNION ALL
+    SELECT i FROM tree WHERE p IN (SELECT id FROM t)
+  ) 
+  SELECT id FROM t;
+} {1 {recursive reference may not appear in sub-query: t}}
+
+do_catchsql_test 7.5 {
+  WITH t(id) AS (
+    VALUES(2)
+    UNION ALL
+    SELECT i FROM tree, t WHERE p = id AND p IN (SELECT id FROM t)
+  ) 
+  SELECT id FROM t;
+} {1 {multiple recursive references in cte: t}}
+
+do_catchsql_test 7.6 {
+  WITH t(id) AS (
+    SELECT i FROM tree WHERE 2 IN (SELECT id FROM t)
+    UNION ALL
+    SELECT i FROM tree, t WHERE p = id
+  ) 
+  SELECT id FROM t;
+} {1 {circular reference to cte: t}}
+
 
 
 finish_test

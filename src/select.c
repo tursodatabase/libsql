@@ -3534,44 +3534,6 @@ void sqlite3WithPush(Parse *pParse, With *pWith){
 }
 
 /*
-** If argument pCte is not NULL, check if it is already a part of the
-** stack of CTEs stored by the parser. If so, this indicates an illegal
-** recursive reference in a CTE, set of mutually recursive CTEs. Store
-** an error in the parser and return SQLITE_ERROR if this is the case.
-**
-** Otherwise, if pCte is not already part of the stack of CTEs stored
-** in the parser, push it onto the stop of that stack.
-*/ 
-static int ctePush(Parse *pParse, struct Cte *pCte){
-  if( pCte ){
-    struct Cte *p;
-    for(p=pParse->pCte; p; p=p->pOuterCte){
-      if( p==pCte ){
-        sqlite3ErrorMsg(
-            pParse, "illegal recursive defininition in cte: %s", pCte->zName
-        );
-        return SQLITE_ERROR;
-      }
-    }
-    
-    pCte->pOuterCte = pParse->pCte;
-    pParse->pCte = pCte;
-  }
-  return SQLITE_OK;
-}
-/*
-** If argument pCte is not NULL, it must be a pointer to the CTE currently
-** on top of the stack of CTEs stored in the parser. Remove it from that
-** stack.
-*/
-static void ctePop(Parse *pParse, struct Cte *pCte){
-  if( pCte ){
-    assert( pParse->pCte==pCte );
-    pParse->pCte = pCte->pOuterCte;
-  }
-}
-
-/*
 ** This function checks if argument pFrom refers to a CTE declared by 
 ** a WITH clause on the stack currently maintained by the parser. And,
 ** if currently processing a CTE expression, if it is a recursive
@@ -3602,6 +3564,16 @@ static int withExpand(
     ExprList *pEList;
     Select *pSel;
     Select *pLeft;                /* Left-most SELECT statement */
+    int bMayRecursive;            /* True if compound joined by UNION [ALL] */
+
+    /* If pCte->zErr is non-NULL at this point, then this is an illegal
+    ** recursive reference to CTE pCte. Leave an error in pParse and return
+    ** early. If pCte->zErr is NULL, then this is not a recursive reference.
+    ** In this case, proceed.  */
+    if( pCte->zErr ){
+      sqlite3ErrorMsg(pParse, pCte->zErr, pCte->zName);
+      return WRC_Abort;
+    }
 
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return WRC_Abort;
@@ -3616,7 +3588,8 @@ static int withExpand(
 
     /* Check if this is a recursive CTE. */
     pSel = pFrom->pSelect;
-    if( pSel->op==TK_ALL || pSel->op==TK_UNION ){
+    bMayRecursive = ( pSel->op==TK_ALL || pSel->op==TK_UNION );
+    if( bMayRecursive ){
       int i;
       SrcList *pSrc = pFrom->pSelect->pSrc;
       for(i=0; i<pSrc->nSrc; i++){
@@ -3642,8 +3615,8 @@ static int withExpand(
     }
     assert( pTab->nRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nRef==2 ));
 
-    if( ctePush(pParse, pCte) ) return WRC_Abort;
-    sqlite3WalkSelect(pWalker, pTab->nRef==2 ? pSel->pPrior : pSel);
+    pCte->zErr = "circular reference to cte: %s";
+    sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
     pEList = pLeft->pEList;
@@ -3658,8 +3631,15 @@ static int withExpand(
     }
     selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
 
-    if( pSel->selFlags & SF_Recursive ) sqlite3WalkSelect(pWalker, pSel);
-    ctePop(pParse, pCte);
+    if( bMayRecursive ){
+      if( pSel->selFlags & SF_Recursive ){
+        pCte->zErr = "multiple recursive references in cte: %s";
+      }else{
+        pCte->zErr = "recursive reference may not appear in sub-query: %s";
+      }
+      sqlite3WalkSelect(pWalker, pSel);
+    }
+    pCte->zErr = 0;
   }
 
   return SQLITE_OK;
