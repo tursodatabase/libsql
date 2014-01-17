@@ -1808,7 +1808,7 @@ static int multiSelect(
     ** are supported on recursive queries.  */
     assert( p->pOffset==0 || p->pLimit );
     if( p->pOrderBy || p->pLimit ){
-      sqlite3ErrorMsg(pParse, "%s in a recursive query is not allowed",
+      sqlite3ErrorMsg(pParse, "%s in a recursive query",
           p->pOrderBy ? "ORDER BY" : "LIMIT"
       );
       goto multi_select_end;

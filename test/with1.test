@@ -152,12 +152,12 @@ do_execsql_test 5.1 {
 do_catchsql_test 5.2 {
   WITH i(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM i ORDER BY 1)
   SELECT x FROM i LIMIT 10;
-} {1 {ORDER BY in a recursive query is not allowed}}
+} {1 {ORDER BY in a recursive query}}
 
 do_catchsql_test 5.3 {
   WITH i(x) AS ( VALUES(1) UNION ALL SELECT x+1 FROM i LIMIT 10 )
   SELECT x FROM i LIMIT 10;
-} {1 {LIMIT in a recursive query is not allowed}}
+} {1 {LIMIT in a recursive query}}
 
 do_execsql_test 5.4 {
   WITH i(x) AS ( VALUES(1) UNION ALL SELECT (x+1)%10 FROM i)
