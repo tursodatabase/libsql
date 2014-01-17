@@ -661,7 +661,7 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
 cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W) 
         orderby_opt(O) limit_opt(L). {
-  sqlite3WithPush(pParse,C);
+  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset, "DELETE");
   sqlite3DeleteFrom(pParse,X,W);
@@ -669,7 +669,7 @@ cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W)
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
 cmd ::= with(C) DELETE FROM fullname(X) indexed_opt(I) where_opt(W). {
-  sqlite3WithPush(pParse,C);
+  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3DeleteFrom(pParse,X,W);
 }
@@ -686,7 +686,7 @@ where_opt(A) ::= WHERE expr(X).       {A = X.pExpr;}
 %ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
 cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W) orderby_opt(O) limit_opt(L).  {
-  sqlite3WithPush(pParse, C);
+  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset, "UPDATE");
@@ -696,7 +696,7 @@ cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
 cmd ::= with(C) UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y)
         where_opt(W).  {
-  sqlite3WithPush(pParse, C);
+  sqlite3WithPush(pParse, C, 1);
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
   sqlite3Update(pParse,X,Y,W,R);
@@ -718,12 +718,12 @@ setlist(A) ::= nm(X) EQ expr(Y). {
 ////////////////////////// The INSERT command /////////////////////////////////
 //
 cmd ::= with(W) insert_cmd(R) INTO fullname(X) inscollist_opt(F) select(S). {
-  sqlite3WithPush(pParse, W);
+  sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, S, F, R);
 }
 cmd ::= with(W) insert_cmd(R) INTO fullname(X) inscollist_opt(F) DEFAULT VALUES.
 {
-  sqlite3WithPush(pParse, W);
+  sqlite3WithPush(pParse, W, 1);
   sqlite3Insert(pParse, X, 0, F, R);
 }
 

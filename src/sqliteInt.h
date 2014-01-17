@@ -2371,6 +2371,7 @@ struct Parse {
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
+  u8 bFreeWith;             /* True if pWith should be freed with parser */
 };
 
 /*
@@ -2612,9 +2613,9 @@ struct Sqlite3Config {
 struct Walker {
   int (*xExprCallback)(Walker*, Expr*);     /* Callback for expressions */
   int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
+  void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
   Parse *pParse;                            /* Parser context.  */
   int walkerDepth;                          /* Number of subqueries */
-  u8 bSelectDepthFirst;                     /* Do subqueries first */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                          /* Naming context */
     int i;                                     /* Integer value */
@@ -3354,9 +3355,9 @@ const char *sqlite3JournalModename(int);
 #ifndef SQLITE_OMIT_CTE
   With *sqlite3WithAdd(Parse*,With*,Token*,ExprList*,Select*);
   void sqlite3WithDelete(sqlite3*,With*);
-  void sqlite3WithPush(Parse*, With*);
+  void sqlite3WithPush(Parse*, With*, u8);
 #else
-#define sqlite3WithPush(x,y)
+#define sqlite3WithPush(x,y,z)
 #define sqlite3WithDelete(x,y)
 #endif
 

@@ -3527,12 +3527,19 @@ static struct Cte *searchWith(With *pWith, struct SrcList_item *pItem){
 /* The code generator maintains a stack of active WITH clauses
 ** with the inner-most WITH clause being at the top of the stack.
 **
-** These routines push and pull WITH clauses on the stack.
+** This routine pushes the WITH clause passed as the second argument
+** onto the top of the stack. If argument bFree is true, then this
+** WITH clause will never be popped from the stack. In this case it
+** should be freed along with the Parse object. In other cases, when
+** bFree==0, the With object will be freed along with the SELECT 
+** statement with which it is associated.
 */
-void sqlite3WithPush(Parse *pParse, With *pWith){
+void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
+  assert( bFree==0 || pParse->pWith==0 );
   if( pWith ){
     pWith->pOuter = pParse->pWith;
     pParse->pWith = pWith;
+    pParse->bFreeWith = bFree;
   }
 }
 
@@ -3649,6 +3656,19 @@ static int withExpand(
 }
 #endif
 
+#ifndef SQLITE_OMIT_CTE
+static void selectPopWith(Walker *pWalker, Select *p){
+  Parse *pParse = pWalker->pParse;
+  if( p->pWith ){
+    assert( pParse->pWith==p->pWith );
+    pParse->pWith = p->pWith->pOuter;
+  }
+  return WRC_Continue;
+}
+#else
+#define selectPopWith 0
+#endif
+
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
 ** "Expanding" means to do the following:
@@ -3692,6 +3712,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
+  sqlite3WithPush(pParse, p->pWith, 0);
 
   /* Make sure cursor numbers have been assigned to all entries in
   ** the FROM clause of the SELECT statement.
@@ -3710,6 +3731,9 @@ static int selectExpander(Walker *pWalker, Select *p){
       /* This statement has already been prepared.  There is no need
       ** to go further. */
       assert( i==0 );
+#ifndef SQLITE_OMIT_CTE
+      selectPopWith(pWalker, p);
+#endif
       return WRC_Prune;
     }
 #ifndef SQLITE_OMIT_CTE
@@ -3942,30 +3966,6 @@ static int selectExpander(Walker *pWalker, Select *p){
 }
 
 /*
-** Function (or macro) selectExpanderWith is used as the SELECT callback
-** by sqlite3SelectExpand(). In builds that do not support CTEs, this
-** is equivalent to the selectExpander() function. In CTE-enabled builds,
-** any WITH clause associated with the SELECT statement needs to be
-** pushed onto the stack before calling selectExpander(), and popped
-** off again afterwards. 
-*/
-#ifndef SQLITE_OMIT_CTE
-static int selectExpanderWith(Walker *pWalker, Select *p){
-  Parse *pParse = pWalker->pParse;
-  int res;
-  sqlite3WithPush(pParse, p->pWith);
-  res = selectExpander(pWalker, p);
-  if( p->pWith ){
-    assert( pParse->pWith==p->pWith );
-    pParse->pWith = p->pWith->pOuter;
-  }
-  return res;
-}
-#else
-#define selectExpanderWith selectExpander
-#endif
-
-/*
 ** No-op routine for the parse-tree walker.
 **
 ** When this routine is the Walker.xExprCallback then expression trees
@@ -4001,7 +4001,8 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     w.xSelectCallback = convertCompoundSelectToSubquery;
     sqlite3WalkSelect(&w, pSelect);
   }
-  w.xSelectCallback = selectExpanderWith;
+  w.xSelectCallback = selectExpander;
+  w.xSelectCallback2 = selectPopWith;
   sqlite3WalkSelect(&w, pSelect);
 }
 
@@ -4020,7 +4021,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
 ** at that point because identifiers had not yet been resolved.  This
 ** routine is called after identifier resolution.
 */
-static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
+static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   Parse *pParse;
   int i;
   SrcList *pTabList;
@@ -4043,7 +4044,6 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       }
     }
   }
-  return WRC_Continue;
 }
 #endif
 
@@ -4059,10 +4059,9 @@ static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
 #ifndef SQLITE_OMIT_SUBQUERY
   Walker w;
   memset(&w, 0, sizeof(w));
-  w.xSelectCallback = selectAddSubqueryTypeInfo;
+  w.xSelectCallback2 = selectAddSubqueryTypeInfo;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
-  w.bSelectDepthFirst = 1;
   sqlite3WalkSelect(&w, pSelect);
 #endif
 }
