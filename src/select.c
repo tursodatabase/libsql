@@ -1791,16 +1791,6 @@ static int multiSelect(
   }
 
 #ifndef SQLITE_OMIT_CTE
-  /* If this is a recursive query, check that there is no ORDER BY or
-  ** LIMIT clause. Neither of these are supported.  */
-  assert( p->pOffset==0 || p->pLimit );
-  if( (p->selFlags & SF_Recursive) && (p->pOrderBy || p->pLimit) ){
-    sqlite3ErrorMsg(pParse, "%s in a recursive query is not allowed",
-        p->pOrderBy ? "ORDER BY" : "LIMIT"
-    );
-    goto multi_select_end;
-  }
-
   if( p->selFlags & SF_Recursive ){
     SrcList *pSrc = p->pSrc;
     int nCol = p->pEList->nExpr;
@@ -1813,6 +1803,16 @@ static int multiSelect(
     int eDest = SRT_Table;
     SelectDest tmp2dest;
     int i;
+
+    /* Check that there is no ORDER BY or LIMIT clause. Neither of these 
+    ** are supported on recursive queries.  */
+    assert( p->pOffset==0 || p->pLimit );
+    if( p->pOrderBy || p->pLimit ){
+      sqlite3ErrorMsg(pParse, "%s in a recursive query is not allowed",
+          p->pOrderBy ? "ORDER BY" : "LIMIT"
+      );
+      goto multi_select_end;
+    }
 
     if( sqlite3AuthCheck(pParse, SQLITE_RECURSIVE, 0, 0, 0) ){
       goto multi_select_end;
@@ -3581,7 +3581,7 @@ static int withExpand(
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return WRC_Abort;
     pTab->nRef = 1;
-    pTab->zName = sqlite3MPrintf(db, "%s", pCte->zName);
+    pTab->zName = sqlite3DbStrDup(db, pCte->zName);
     pTab->iPKey = -1;
     pTab->nRowEst = 1048576;
     pTab->tabFlags |= TF_Ephemeral;

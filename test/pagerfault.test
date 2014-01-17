@@ -63,7 +63,6 @@ do_faultsim_test pagerfault-1 -prep {
     error "Database content appears incorrect"
   }
 }
-finish_test
 
 #-------------------------------------------------------------------------
 # Test fault-injection while rolling back a hot-journal file with a 

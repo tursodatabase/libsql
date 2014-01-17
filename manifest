@@ -1,5 +1,5 @@
-C Add\sthe\sability\sfor\sthe\sauthorizer\scallback\sto\sdisallow\srecursive\nqueries.
-D 2014-01-16T22:40:02.405
+C Remove\ssome\scode\sfrom\sresolve.c\sthat\swas\sonly\srequired\sfor\srecursive\scte\sreferences\sin\ssub-queries.\sAlso\sa\sstray\s"finish_test"\scommand\sin\spagerfault.test.
+D 2014-01-17T11:48:24.294
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,9 +217,9 @@ F src/pragma.c ed409ce4104cf4d9de6ead40ace70974f124853b
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
-F src/resolve.c ae278d8ce037883323f677e78c241f64289f12ec
+F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c fc7499ac90fd4d49782e0a16372d3a5efde2aa3b
+F src/select.c 65c13f22edfd6af04829439955c7cf5749ea4e87
 F src/shell.c 9f3bc02a658b8f61d2cbe60cfc482f660c1c6c48
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -728,7 +728,7 @@ F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pager4.test b40ecb4cc7dff957ee7916e41ab21d1ed702a642
-F test/pagerfault.test cee8488a935e42a4a2e241e0317dc2814c997783
+F test/pagerfault.test 7285379906ab2f1108b8e82bbdf2d386cc8ff3ff
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
@@ -1150,7 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 090a77d97808b86d1e9f5c63c743a2b159a15f5d
-R f01d2088e8545f61e859d9aad946ffb1
-U drh
-Z b5ce4714b23c3d6e2db0cb8e18c5a93d
+P 9efc120a1548c03f3d8aabbadf1050ff2a119c31
+R 175ad2c9f66168be6fabd0b7fdb44bd2
+U dan
+Z 6e3919f2cc39eeea18a32475675bdfc0
