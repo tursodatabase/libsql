@@ -667,7 +667,8 @@ void sqlite3Insert(
   **
   ** This is the 2nd template.
   */
-  if( pColumn==0 && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
+  if( pColumn==0 && pParse->pWith==0 
+   && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
     assert( !pTrigger );
     assert( pList==0 );
     goto insert_end;

@@ -760,6 +760,7 @@ typedef struct VTable VTable;
 typedef struct VtabCtx VtabCtx;
 typedef struct Walker Walker;
 typedef struct WhereInfo WhereInfo;
+typedef struct With With;
 
 /*
 ** Defer sourcing vdbe.h and btree.h until after the "u8" and 
@@ -1428,7 +1429,7 @@ struct Table {
 };
 
 /*
-** Allowed values for Tabe.tabFlags.
+** Allowed values for Table.tabFlags.
 */
 #define TF_Readonly        0x01    /* Read-only system table */
 #define TF_Ephemeral       0x02    /* An ephemeral table */
@@ -1436,6 +1437,7 @@ struct Table {
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
 #define TF_Virtual         0x10    /* Is a virtual table */
 #define TF_WithoutRowid    0x20    /* No rowid used. PRIMARY KEY is the key */
+#define TF_Recursive       0x40    /* Recursive reference within CTE */
 
 
 /*
@@ -2017,6 +2019,7 @@ struct SrcList {
     unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */
     unsigned viaCoroutine :1;  /* Implemented as a co-routine */
+    unsigned isRecursive :1;   /* True for recursive reference in WITH */
 #ifndef SQLITE_OMIT_EXPLAIN
     u8 iSelectId;     /* If pSelect!=0, the id of the sub-select in EQP */
 #endif
@@ -2143,6 +2146,7 @@ struct Select {
   Select *pRightmost;    /* Right-most select in a compound select statement */
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   Expr *pOffset;         /* OFFSET expression. NULL means not used. */
+  With *pWith;           /* WITH clause attached to this select. Or NULL. */
 };
 
 /*
@@ -2160,6 +2164,7 @@ struct Select {
 #define SF_Materialize     0x0100  /* Force materialization of views */
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
+#define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
 
 
 /*
@@ -2180,6 +2185,7 @@ struct Select {
 #define SRT_Table        8  /* Store result as data with an automatic rowid */
 #define SRT_EphemTab     9  /* Create transient tab and store like SRT_Table */
 #define SRT_Coroutine   10  /* Generate a single row of result */
+#define SRT_DistTable   11  /* Like SRT_TABLE, but unique results only */
 
 /*
 ** An instance of this object describes where to put of the results of
@@ -2364,6 +2370,8 @@ struct Parse {
 #endif
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
+  With *pWith;              /* Current WITH clause, or NULL */
+  u8 bFreeWith;             /* True if pWith should be freed with parser */
 };
 
 /*
@@ -2605,9 +2613,9 @@ struct Sqlite3Config {
 struct Walker {
   int (*xExprCallback)(Walker*, Expr*);     /* Callback for expressions */
   int (*xSelectCallback)(Walker*,Select*);  /* Callback for SELECTs */
+  void (*xSelectCallback2)(Walker*,Select*);/* Second callback for SELECTs */
   Parse *pParse;                            /* Parser context.  */
   int walkerDepth;                          /* Number of subqueries */
-  u8 bSelectDepthFirst;                     /* Do subqueries first */
   union {                                   /* Extra data for callback */
     NameContext *pNC;                          /* Naming context */
     int i;                                     /* Integer value */
@@ -2630,6 +2638,21 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 #define WRC_Continue    0   /* Continue down into children */
 #define WRC_Prune       1   /* Omit children but continue walking siblings */
 #define WRC_Abort       2   /* Abandon the tree walk */
+
+/*
+** An instance of this structure represents a set of one or more CTEs
+** (common table expressions) created by a single WITH clause.
+*/
+struct With {
+  int nCte;                       /* Number of CTEs in the WITH clause */
+  With *pOuter;                   /* Containing WITH clause, or NULL */
+  struct Cte {                    /* For each CTE in the WITH clause.... */
+    char *zName;                    /* Name of this CTE */
+    ExprList *pCols;                /* List of explicit column names, or NULL */
+    Select *pSelect;                /* The definition of this CTE */
+    const char *zErr;               /* Error message for circular references */
+  } a[1];
+};
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
@@ -3328,6 +3351,14 @@ const char *sqlite3JournalModename(int);
 #ifndef SQLITE_OMIT_WAL
   int sqlite3Checkpoint(sqlite3*, int, int, int*, int*);
   int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
+#endif
+#ifndef SQLITE_OMIT_CTE
+  With *sqlite3WithAdd(Parse*,With*,Token*,ExprList*,Select*);
+  void sqlite3WithDelete(sqlite3*,With*);
+  void sqlite3WithPush(Parse*, With*, u8);
+#else
+#define sqlite3WithPush(x,y,z)
+#define sqlite3WithDelete(x,y)
 #endif
 
 /* Declarations for functions in fkey.c. All of these are replaced by

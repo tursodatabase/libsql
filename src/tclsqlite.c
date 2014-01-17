@@ -914,6 +914,7 @@ static int auth_callback(
     case SQLITE_DROP_VTABLE       : zCode="SQLITE_DROP_VTABLE"; break;
     case SQLITE_FUNCTION          : zCode="SQLITE_FUNCTION"; break;
     case SQLITE_SAVEPOINT         : zCode="SQLITE_SAVEPOINT"; break;
+    case SQLITE_RECURSIVE         : zCode="SQLITE_RECURSIVE"; break;
     default                       : zCode="????"; break;
   }
   Tcl_DStringInit(&str);

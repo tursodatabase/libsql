@@ -896,6 +896,33 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
 }
 
 /*
+** Create and return a deep copy of the object passed as the second 
+** argument. If an OOM condition is encountered, NULL is returned
+** and the db->mallocFailed flag set.
+*/
+#ifndef SQLITE_OMIT_CTE
+static With *withDup(sqlite3 *db, With *p){
+  With *pRet = 0;
+  if( p ){
+    int nByte = sizeof(*p) + sizeof(p->a[0]) * (p->nCte-1);
+    pRet = sqlite3DbMallocZero(db, nByte);
+    if( pRet ){
+      int i;
+      pRet->nCte = p->nCte;
+      for(i=0; i<p->nCte; i++){
+        pRet->a[i].pSelect = sqlite3SelectDup(db, p->a[i].pSelect, 0);
+        pRet->a[i].pCols = sqlite3ExprListDup(db, p->a[i].pCols, 0);
+        pRet->a[i].zName = sqlite3DbStrDup(db, p->a[i].zName);
+      }
+    }
+  }
+  return pRet;
+}
+#else
+# define withDup(x,y) 0
+#endif
+
+/*
 ** The following group of routines make deep copies of expressions,
 ** expression lists, ID lists, and select statements.  The copies can
 ** be deleted (by being passed to their respective ...Delete() routines)
@@ -975,6 +1002,7 @@ SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
     pNewItem->regReturn = pOldItem->regReturn;
     pNewItem->isCorrelated = pOldItem->isCorrelated;
     pNewItem->viaCoroutine = pOldItem->viaCoroutine;
+    pNewItem->isRecursive = pOldItem->isRecursive;
     pNewItem->zIndex = sqlite3DbStrDup(db, pOldItem->zIndex);
     pNewItem->notIndexed = pOldItem->notIndexed;
     pNewItem->pIndex = pOldItem->pIndex;
@@ -1036,6 +1064,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->addrOpenEphm[2] = -1;
+  pNew->pWith = withDup(db, p->pWith);
   return pNew;
 }
 #else
@@ -1555,9 +1584,11 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     iCol = (i16)pExpr->iColumn;
    
     /* Code an OP_VerifyCookie and OP_TableLock for <table>. */
-    iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-    sqlite3CodeVerifySchema(pParse, iDb);
-    sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
+    if( pTab->pSchema ){
+      iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+      sqlite3CodeVerifySchema(pParse, iDb);
+      sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
+    }
 
     /* This function is only called from two places. In both cases the vdbe
     ** has already been allocated. So assume sqlite3GetVdbe() is always

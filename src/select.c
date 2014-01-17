@@ -29,6 +29,7 @@ static void clearSelect(sqlite3 *db, Select *p){
   sqlite3SelectDelete(db, p->pPrior);
   sqlite3ExprDelete(db, p->pLimit);
   sqlite3ExprDelete(db, p->pOffset);
+  sqlite3WithDelete(db, p->pWith);
 }
 
 /*
@@ -690,12 +691,26 @@ static void selectInnerLoop(
 
     /* Store the result as data using a unique key.
     */
+    case SRT_DistTable:
     case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       testcase( eDest==SRT_Table );
       testcase( eDest==SRT_EphemTab );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
+#ifndef SQLITE_OMIT_CTE
+      if( eDest==SRT_DistTable ){
+        /* If the destination is DistTable, then cursor (iParm+1) is open
+        ** on an ephemeral index. If the current row is already present
+        ** in the index, do not write it to the output. If not, add the
+        ** current row to the index and proceed with writing it to the
+        ** output table as well.  */
+        int addr = sqlite3VdbeCurrentAddr(v) + 4;
+        sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, addr, r1, 0);
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r1);
+        assert( pOrderBy==0 );
+      }
+#endif
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p, r1);
       }else{
@@ -1202,7 +1217,7 @@ static const char *columnTypeImpl(
           sNC.pParse = pNC->pParse;
           zType = columnType(&sNC, p,&zOrigDb,&zOrigTab,&zOrigCol, &estWidth); 
         }
-      }else if( ALWAYS(pTab->pSchema) ){
+      }else if( pTab->pSchema ){
         /* A real table */
         assert( !pS );
         if( iCol<0 ) iCol = pTab->iPKey;
@@ -1729,6 +1744,7 @@ static int multiSelect(
   ** the last (right-most) SELECT in the series may have an ORDER BY or LIMIT.
   */
   assert( p && p->pPrior );  /* Calling function guarantees this much */
+  assert( (p->selFlags & SF_Recursive)==0 || p->op==TK_ALL || p->op==TK_UNION );
   db = pParse->db;
   pPrior = p->pPrior;
   assert( pPrior->pRightmost!=pPrior );
@@ -1774,11 +1790,91 @@ static int multiSelect(
     goto multi_select_end;
   }
 
+#ifndef SQLITE_OMIT_CTE
+  if( p->selFlags & SF_Recursive ){
+    SrcList *pSrc = p->pSrc;
+    int nCol = p->pEList->nExpr;
+    int addrNext;
+    int addrSwap;
+    int iCont, iBreak;
+    int tmp1;                     /* Intermediate table */
+    int tmp2;                     /* Next intermediate table */
+    int tmp3 = 0;                 /* To ensure unique results if UNION */
+    int eDest = SRT_Table;
+    SelectDest tmp2dest;
+    int i;
+
+    /* Check that there is no ORDER BY or LIMIT clause. Neither of these 
+    ** are supported on recursive queries.  */
+    assert( p->pOffset==0 || p->pLimit );
+    if( p->pOrderBy || p->pLimit ){
+      sqlite3ErrorMsg(pParse, "%s in a recursive query is not allowed",
+          p->pOrderBy ? "ORDER BY" : "LIMIT"
+      );
+      goto multi_select_end;
+    }
+
+    if( sqlite3AuthCheck(pParse, SQLITE_RECURSIVE, 0, 0, 0) ){
+      goto multi_select_end;
+    }
+    iBreak = sqlite3VdbeMakeLabel(v);
+    iCont = sqlite3VdbeMakeLabel(v);
+
+    for(i=0; ALWAYS(i<pSrc->nSrc); i++){
+      if( pSrc->a[i].isRecursive ){
+        tmp1 = pSrc->a[i].iCursor;
+        break;
+      }
+    }
+
+    tmp2 = pParse->nTab++;
+    if( p->op==TK_UNION ){
+      eDest = SRT_DistTable;
+      tmp3 = pParse->nTab++;
+    }
+    sqlite3SelectDestInit(&tmp2dest, eDest, tmp2);
+
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp1, nCol);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp2, nCol);
+    if( tmp3 ){
+      p->addrOpenEphm[0] = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp3, 0);
+      p->selFlags |= SF_UsesEphemeral;
+    }
+
+    /* Store the results of the initial SELECT in tmp2. */
+    rc = sqlite3Select(pParse, pPrior, &tmp2dest);
+    if( rc ) goto multi_select_end;
+
+    /* Clear tmp1. Then switch the contents of tmp1 and tmp2. Then return 
+    ** the contents of tmp1 to the caller. Or, if tmp1 is empty at this
+    ** point, the recursive query has finished - jump to address iBreak.  */
+    addrSwap = sqlite3VdbeAddOp2(v, OP_SwapCursors, tmp1, tmp2);
+    sqlite3VdbeAddOp2(v, OP_Rewind, tmp1, iBreak);
+    addrNext = sqlite3VdbeCurrentAddr(v);
+    selectInnerLoop(pParse, p, p->pEList, tmp1, p->pEList->nExpr,
+        0, 0, &dest, iCont, iBreak);
+    sqlite3VdbeResolveLabel(v, iCont);
+    sqlite3VdbeAddOp2(v, OP_Next, tmp1, addrNext);
+
+    /* Execute the recursive SELECT. Store the results in tmp2. While this
+    ** SELECT is running, the contents of tmp1 are read by recursive 
+    ** references to the current CTE.  */
+    p->pPrior = 0;
+    rc = sqlite3Select(pParse, p, &tmp2dest);
+    assert( p->pPrior==0 );
+    p->pPrior = pPrior;
+    if( rc ) goto multi_select_end;
+
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrSwap);
+    sqlite3VdbeResolveLabel(v, iBreak);
+  }else
+#endif
+
   /* Compound SELECTs that have an ORDER BY clause are handled separately.
   */
   if( p->pOrderBy ){
     return multiSelectOrderBy(pParse, p, pDest);
-  }
+  }else
 
   /* Generate code for the left and right SELECT statements.
   */
@@ -2842,6 +2938,14 @@ static void substSelect(
 **  (21)  The subquery does not use LIMIT or the outer query is not
 **        DISTINCT.  (See ticket [752e1646fc]).
 **
+**  (22)  The subquery is not a recursive CTE.
+**
+**  (23)  The parent is not a recursive CTE, or the sub-query is not a
+**        compound query. This restriction is because transforming the
+**        parent to a compound query confuses the code that handles
+**        recursive queries in multiSelect().
+**
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -2913,6 +3017,8 @@ static int flattenSubquery(
   if( pSub->pLimit && (p->selFlags & SF_Distinct)!=0 ){
      return 0;         /* Restriction (21) */
   }
+  if( pSub->selFlags & SF_Recursive ) return 0;          /* Restriction (22)  */
+  if( (p->selFlags & SF_Recursive) && pSub->pPrior ) return 0;       /* (23)  */
 
   /* OBSOLETE COMMENT 1:
   ** Restriction 3:  If the subquery is a join, make sure the subquery is 
@@ -3394,6 +3500,183 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   return WRC_Continue;
 }
 
+#ifndef SQLITE_OMIT_CTE
+/*
+** Argument pWith (which may be NULL) points to a linked list of nested 
+** WITH contexts, from inner to outermost. If the table identified by 
+** FROM clause element pItem is really a common-table-expression (CTE) 
+** then return a pointer to the CTE definition for that table. Otherwise
+** return NULL.
+*/
+static struct Cte *searchWith(With *pWith, struct SrcList_item *pItem){
+  const char *zName;
+  if( pItem->zDatabase==0 && (zName = pItem->zName)!=0 ){
+    With *p;
+    for(p=pWith; p; p=p->pOuter){
+      int i;
+      for(i=0; i<p->nCte; i++){
+        if( sqlite3StrICmp(zName, p->a[i].zName)==0 ){
+          return &p->a[i];
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+/* The code generator maintains a stack of active WITH clauses
+** with the inner-most WITH clause being at the top of the stack.
+**
+** This routine pushes the WITH clause passed as the second argument
+** onto the top of the stack. If argument bFree is true, then this
+** WITH clause will never be popped from the stack. In this case it
+** should be freed along with the Parse object. In other cases, when
+** bFree==0, the With object will be freed along with the SELECT 
+** statement with which it is associated.
+*/
+void sqlite3WithPush(Parse *pParse, With *pWith, u8 bFree){
+  assert( bFree==0 || pParse->pWith==0 );
+  if( pWith ){
+    pWith->pOuter = pParse->pWith;
+    pParse->pWith = pWith;
+    pParse->bFreeWith = bFree;
+  }
+}
+
+/*
+** This function checks if argument pFrom refers to a CTE declared by 
+** a WITH clause on the stack currently maintained by the parser. And,
+** if currently processing a CTE expression, if it is a recursive
+** reference to the current CTE.
+**
+** If pFrom falls into either of the two categories above, pFrom->pTab
+** and other fields are populated accordingly. The caller should check
+** (pFrom->pTab!=0) to determine whether or not a successful match
+** was found.
+**
+** Whether or not a match is found, SQLITE_OK is returned if no error
+** occurs. If an error does occur, an error message is stored in the
+** parser and some error code other than SQLITE_OK returned.
+*/
+static int withExpand(
+  Walker *pWalker, 
+  struct SrcList_item *pFrom
+){
+  Table *pTab;
+  Parse *pParse = pWalker->pParse;
+  sqlite3 *db = pParse->db;
+  struct Cte *pCte;
+
+  assert( pFrom->pTab==0 );
+
+  pCte = searchWith(pParse->pWith, pFrom);
+  if( pCte ){
+    ExprList *pEList;
+    Select *pSel;
+    Select *pLeft;                /* Left-most SELECT statement */
+    int bMayRecursive;            /* True if compound joined by UNION [ALL] */
+
+    /* If pCte->zErr is non-NULL at this point, then this is an illegal
+    ** recursive reference to CTE pCte. Leave an error in pParse and return
+    ** early. If pCte->zErr is NULL, then this is not a recursive reference.
+    ** In this case, proceed.  */
+    if( pCte->zErr ){
+      sqlite3ErrorMsg(pParse, pCte->zErr, pCte->zName);
+      return WRC_Abort;
+    }
+
+    pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
+    if( pTab==0 ) return WRC_Abort;
+    pTab->nRef = 1;
+    pTab->zName = sqlite3DbStrDup(db, pCte->zName);
+    pTab->iPKey = -1;
+    pTab->nRowEst = 1048576;
+    pTab->tabFlags |= TF_Ephemeral;
+    pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
+    if( db->mallocFailed ) return SQLITE_NOMEM;
+    assert( pFrom->pSelect );
+
+    /* Check if this is a recursive CTE. */
+    pSel = pFrom->pSelect;
+    bMayRecursive = ( pSel->op==TK_ALL || pSel->op==TK_UNION );
+    if( bMayRecursive ){
+      int i;
+      SrcList *pSrc = pFrom->pSelect->pSrc;
+      for(i=0; i<pSrc->nSrc; i++){
+        struct SrcList_item *pItem = &pSrc->a[i];
+        if( pItem->zDatabase==0 
+         && pItem->zName!=0 
+         && 0==sqlite3StrICmp(pItem->zName, pCte->zName)
+          ){
+          pItem->pTab = pTab;
+          pItem->isRecursive = 1;
+          pTab->nRef++;
+          pSel->selFlags |= SF_Recursive;
+        }
+      }
+    }
+
+    /* Only one recursive reference is permitted. */ 
+    if( pTab->nRef>2 ){
+      sqlite3ErrorMsg(
+          pParse, "multiple references to recursive table: %s", pCte->zName
+      );
+      return WRC_Abort;
+    }
+    assert( pTab->nRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nRef==2 ));
+
+    pCte->zErr = "circular reference: %s";
+    sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
+
+    for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
+    pEList = pLeft->pEList;
+    if( pCte->pCols ){
+      if( pEList->nExpr!=pCte->pCols->nExpr ){
+        sqlite3ErrorMsg(pParse, "table %s has %d values for %d columns",
+            pCte->zName, pEList->nExpr, pCte->pCols->nExpr
+        );
+        return WRC_Abort;
+      }
+      pEList = pCte->pCols;
+    }
+    selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
+
+    if( bMayRecursive ){
+      if( pSel->selFlags & SF_Recursive ){
+        pCte->zErr = "multiple recursive references: %s";
+      }else{
+        pCte->zErr = "recursive reference in a subquery: %s";
+      }
+      sqlite3WalkSelect(pWalker, pSel);
+    }
+    pCte->zErr = 0;
+  }
+
+  return SQLITE_OK;
+}
+#endif
+
+#ifndef SQLITE_OMIT_CTE
+/*
+** If the SELECT passed as the second argument has an associated WITH 
+** clause, pop it from the stack stored as part of the Parse object.
+**
+** This function is used as the xSelectCallback2() callback by
+** sqlite3SelectExpand() when walking a SELECT tree to resolve table
+** names and other FROM clause elements. 
+*/
+static void selectPopWith(Walker *pWalker, Select *p){
+  Parse *pParse = pWalker->pParse;
+  if( p->pWith ){
+    assert( pParse->pWith==p->pWith );
+    pParse->pWith = p->pWith->pOuter;
+  }
+  return WRC_Continue;
+}
+#else
+#define selectPopWith 0
+#endif
+
 /*
 ** This routine is a Walker callback for "expanding" a SELECT statement.
 ** "Expanding" means to do the following:
@@ -3437,6 +3720,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   }
   pTabList = p->pSrc;
   pEList = p->pEList;
+  sqlite3WithPush(pParse, p->pWith, 0);
 
   /* Make sure cursor numbers have been assigned to all entries in
   ** the FROM clause of the SELECT statement.
@@ -3449,12 +3733,21 @@ static int selectExpander(Walker *pWalker, Select *p){
   */
   for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
     Table *pTab;
+    assert( pFrom->isRecursive==0 || pFrom->pTab );
+    if( pFrom->isRecursive ) continue;
     if( pFrom->pTab!=0 ){
       /* This statement has already been prepared.  There is no need
       ** to go further. */
       assert( i==0 );
+#ifndef SQLITE_OMIT_CTE
+      selectPopWith(pWalker, p);
+#endif
       return WRC_Prune;
     }
+#ifndef SQLITE_OMIT_CTE
+    if( withExpand(pWalker, pFrom) ) return WRC_Abort;
+    if( pFrom->pTab ) {} else
+#endif
     if( pFrom->zName==0 ){
 #ifndef SQLITE_OMIT_SUBQUERY
       Select *pSel = pFrom->pSelect;
@@ -3717,6 +4010,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
     sqlite3WalkSelect(&w, pSelect);
   }
   w.xSelectCallback = selectExpander;
+  w.xSelectCallback2 = selectPopWith;
   sqlite3WalkSelect(&w, pSelect);
 }
 
@@ -3735,7 +4029,7 @@ static void sqlite3SelectExpand(Parse *pParse, Select *pSelect){
 ** at that point because identifiers had not yet been resolved.  This
 ** routine is called after identifier resolution.
 */
-static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
+static void selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   Parse *pParse;
   int i;
   SrcList *pTabList;
@@ -3751,13 +4045,13 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
       if( ALWAYS(pTab!=0) && (pTab->tabFlags & TF_Ephemeral)!=0 ){
         /* A sub-query in the FROM clause of a SELECT */
         Select *pSel = pFrom->pSelect;
-        assert( pSel );
-        while( pSel->pPrior ) pSel = pSel->pPrior;
-        selectAddColumnTypeAndCollation(pParse, pTab, pSel);
+        if( pSel ){
+          while( pSel->pPrior ) pSel = pSel->pPrior;
+          selectAddColumnTypeAndCollation(pParse, pTab, pSel);
+        }
       }
     }
   }
-  return WRC_Continue;
 }
 #endif
 
@@ -3773,10 +4067,9 @@ static void sqlite3SelectAddTypeInfo(Parse *pParse, Select *pSelect){
 #ifndef SQLITE_OMIT_SUBQUERY
   Walker w;
   memset(&w, 0, sizeof(w));
-  w.xSelectCallback = selectAddSubqueryTypeInfo;
+  w.xSelectCallback2 = selectAddSubqueryTypeInfo;
   w.xExprCallback = exprWalkNoop;
   w.pParse = pParse;
-  w.bSelectDepthFirst = 1;
   sqlite3WalkSelect(&w, pSelect);
 #endif
 }

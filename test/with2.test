@@ -1,0 +1,56 @@
+# 2014 January 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the WITH clause.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix with2
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+}
+
+do_execsql_test 1.1 {
+  WITH x1 AS (SELECT * FROM t1)
+  SELECT sum(a) FROM x1;
+} {3}
+
+do_execsql_test 1.2 {
+  WITH x1 AS (SELECT * FROM t1)
+  SELECT (SELECT sum(a) FROM x1);
+} {3}
+
+do_execsql_test 1.3 {
+  WITH x1 AS (SELECT * FROM t1)
+  SELECT (SELECT sum(a) FROM x1);
+} {3}
+
+do_execsql_test 1.4 {
+  CREATE TABLE t2(i);
+  INSERT INTO t2 VALUES(2);
+  INSERT INTO t2 VALUES(3);
+  INSERT INTO t2 VALUES(5);
+
+  WITH x1   AS (SELECT i FROM t2),
+       i(a) AS (
+         SELECT min(i)-1 FROM x1 UNION SELECT a+1 FROM i WHERE a<10
+       )
+  SELECT a FROM i WHERE a NOT IN x1
+} {1 4 6 7 8 9 10}
+
+finish_test
+
+
+
