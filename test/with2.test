@@ -50,7 +50,24 @@ do_execsql_test 1.4 {
   SELECT a FROM i WHERE a NOT IN x1
 } {1 4 6 7 8 9 10}
 
+do_execsql_test 1.5 {
+  WITH x1 AS (SELECT a FROM t1),
+       x2 AS (SELECT i FROM t2),
+       x3 AS (SELECT * FROM x1, x2 WHERE x1.a IN x2 AND x2.i IN x1)
+  SELECT * FROM x3 
+} {2 2}
+
+do_execsql_test 1.6 {
+  CREATE TABLE t3 AS SELECT 3 AS x;
+  CREATE TABLE t4 AS SELECT 4 AS x;
+
+  WITH x1 AS (SELECT * FROM t3),
+       x2 AS (
+         WITH t3 AS (SELECT * FROM t4)
+         SELECT * FROM x1
+       )
+  SELECT * FROM x2;
+} {3}
+
 finish_test
-
-
 

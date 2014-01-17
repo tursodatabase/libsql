@@ -3507,8 +3507,15 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
 ** FROM clause element pItem is really a common-table-expression (CTE) 
 ** then return a pointer to the CTE definition for that table. Otherwise
 ** return NULL.
+**
+** If a non-NULL value is returned, set *ppContext to point to the With
+** object that the returned CTE belongs to.
 */
-static struct Cte *searchWith(With *pWith, struct SrcList_item *pItem){
+static struct Cte *searchWith(
+  With *pWith,                    /* Current outermost WITH clause */
+  struct SrcList_item *pItem,     /* FROM clause element to resolve */
+  With **ppContext                /* OUT: WITH clause return value belongs to */
+){
   const char *zName;
   if( pItem->zDatabase==0 && (zName = pItem->zName)!=0 ){
     With *p;
@@ -3516,6 +3523,7 @@ static struct Cte *searchWith(With *pWith, struct SrcList_item *pItem){
       int i;
       for(i=0; i<p->nCte; i++){
         if( sqlite3StrICmp(zName, p->a[i].zName)==0 ){
+          *ppContext = p;
           return &p->a[i];
         }
       }
@@ -3562,19 +3570,21 @@ static int withExpand(
   Walker *pWalker, 
   struct SrcList_item *pFrom
 ){
-  Table *pTab;
   Parse *pParse = pWalker->pParse;
   sqlite3 *db = pParse->db;
-  struct Cte *pCte;
+  struct Cte *pCte;               /* Matched CTE (or NULL if no match) */
+  With *pWith;                    /* WITH clause that pCte belongs to */
 
   assert( pFrom->pTab==0 );
 
-  pCte = searchWith(pParse->pWith, pFrom);
+  pCte = searchWith(pParse->pWith, pFrom, &pWith);
   if( pCte ){
+    Table *pTab;
     ExprList *pEList;
     Select *pSel;
     Select *pLeft;                /* Left-most SELECT statement */
     int bMayRecursive;            /* True if compound joined by UNION [ALL] */
+    With *pSavedWith;             /* Initial value of pParse->pWith */
 
     /* If pCte->zErr is non-NULL at this point, then this is an illegal
     ** recursive reference to CTE pCte. Leave an error in pParse and return
@@ -3582,7 +3592,7 @@ static int withExpand(
     ** In this case, proceed.  */
     if( pCte->zErr ){
       sqlite3ErrorMsg(pParse, pCte->zErr, pCte->zName);
-      return WRC_Abort;
+      return SQLITE_ERROR;
     }
 
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
@@ -3621,11 +3631,13 @@ static int withExpand(
       sqlite3ErrorMsg(
           pParse, "multiple references to recursive table: %s", pCte->zName
       );
-      return WRC_Abort;
+      return SQLITE_ERROR;
     }
     assert( pTab->nRef==1 || ((pSel->selFlags&SF_Recursive) && pTab->nRef==2 ));
 
     pCte->zErr = "circular reference: %s";
+    pSavedWith = pParse->pWith;
+    pParse->pWith = pWith;
     sqlite3WalkSelect(pWalker, bMayRecursive ? pSel->pPrior : pSel);
 
     for(pLeft=pSel; pLeft->pPrior; pLeft=pLeft->pPrior);
@@ -3635,12 +3647,13 @@ static int withExpand(
         sqlite3ErrorMsg(pParse, "table %s has %d values for %d columns",
             pCte->zName, pEList->nExpr, pCte->pCols->nExpr
         );
-        return WRC_Abort;
+        pParse->pWith = pSavedWith;
+        return SQLITE_ERROR;
       }
       pEList = pCte->pCols;
     }
-    selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
 
+    selectColumnsFromExprList(pParse, pEList, &pTab->nCol, &pTab->aCol);
     if( bMayRecursive ){
       if( pSel->selFlags & SF_Recursive ){
         pCte->zErr = "multiple recursive references: %s";
@@ -3650,6 +3663,7 @@ static int withExpand(
       sqlite3WalkSelect(pWalker, pSel);
     }
     pCte->zErr = 0;
+    pParse->pWith = pSavedWith;
   }
 
   return SQLITE_OK;
