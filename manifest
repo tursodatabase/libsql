@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\sin\sselectPopWith().
-D 2014-01-17T15:27:00.626
+C Add\stests\sthat\sverify\sthat\skeywords\sWITH,\sWITHOUT,\sand\sRECURSIVE\scan\sstill\nbe\sused\sas\stable\sand\scolumn\snames.
+D 2014-01-17T16:19:01.842
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -643,7 +643,7 @@ F test/journal3.test ff8af941f9e06161d3db1b46bb9f965ff0e7f307
 F test/jrnlmode.test 9ee3a78f53d52cca737db69293d15dc41c0cbd36
 F test/jrnlmode2.test 81610545a4e6ed239ea8fa661891893385e23a1d
 F test/jrnlmode3.test 556b447a05be0e0963f4311e95ab1632b11c9eaa
-F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
+F test/keyword1.test 37ef6bba5d2ed5b07ecdd6810571de2956599dff
 F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test e191e536d0fcd722a6b965e7cd1ee0bfd12a5991
@@ -1151,7 +1151,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0171e3bb4f663a9414b0e8b64c87b5d0683855b5
-R e6bcc1e354d62890d139633299faf33a
+P c8eb11635a356182611ce2ccb8f358b6c453486e
+R c791b577950f1652718e7fda0d0264df
 U drh
-Z 11b7b8a08f3ff8f2c5eec014f3cfaffd
+Z 3da1c453f8a3e6f09e0b3d8bdad77daa
