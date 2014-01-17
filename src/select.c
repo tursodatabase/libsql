@@ -3671,7 +3671,6 @@ static void selectPopWith(Walker *pWalker, Select *p){
     assert( pParse->pWith==p->pWith );
     pParse->pWith = p->pWith->pOuter;
   }
-  return WRC_Continue;
 }
 #else
 #define selectPopWith 0
