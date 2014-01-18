@@ -3390,7 +3390,8 @@ case OP_SwapCursors: {
   p->apCsr[pOp->p1] = p->apCsr[pOp->p2];
   p->apCsr[pOp->p2] = pTmp;
 
-  rc = sqlite3BtreeClearTable(pTmp->pBt, MASTER_ROOT + !pTmp->isTable, 0);
+  assert( pTmp->isTable );
+  rc = sqlite3BtreeClearTable(pTmp->pBt, MASTER_ROOT, 0);
   break;
 }
 #endif /* ifndef SQLITE_OMIT_CTE */

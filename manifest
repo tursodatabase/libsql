@@ -1,5 +1,5 @@
-C Avoid\sspurious\s"no\ssuch\stable"\serrors\sin\sstatements\sof\sthe\sform\s"INSERT\sINTO\stbl\sWITH\sxxx\sAS\s(...)\sSELECT\s*\sFROM\sxxx".
-D 2014-01-18T08:27:02.507
+C Add\sasserts()\sfor\sa\scouple\sof\sunreachable\sconditions.\s\sAdd\sthe\sMandelbrot\sSet\nquery\sas\sa\stest\scase.
+D 2014-01-18T15:22:53.229
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 91e1321021db5dc266360531b8b6550009d771ff
-F src/expr.c e239763d8b43356fa1f46f1cf41d62a076f7f72e
+F src/expr.c 8c7e482bc8f7982333f046851a610ccdb8a1ba94
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 6325ac2ec10833ccf4d5c36d323709221d37ea19
@@ -280,7 +280,7 @@ F src/update.c c2706a6eb232a96345c35b7e1e75a188e26812bb
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c e71f19b272f05c8695cf747b4bac1732685f9e5c
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c ccc8594e89751966022642464ec2b5c5fa7840a2
+F src/vdbe.c 98d96d04d9a2bef78ca850be1053dc91d031338a
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
 F src/vdbeInt.h 42db251e9f863401ff847b90d5fe1614c89a6a56
 F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
@@ -1091,7 +1091,7 @@ F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
-F test/with1.test 6e49c7841abb5603425f8f1316ab077f6a9bbb49
+F test/with1.test be21f7efdc08fe6ad182dc943d42704300f0fcdb
 F test/with2.test 5f7ea3453c998a6b9ed3456f251c80d94722f22a
 F test/withM.test 52448ce23e1c2ecba79d10e130ee49ce9f9a2a7a
 F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
@@ -1151,7 +1151,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P eecc325afd72e37d7d565787c8cea68aad6d7a5c
-R 2a1f6d87654c7bd1758f1648d991f83e
-U dan
-Z bdd16ade1b5f6c0b188978b71304d4f1
+P cccff8a0b427feb05cc8952a765b829e731394fd
+R 538a9377a8d02c8e21002b1bc024f5ac
+U drh
+Z 8baad4729759494d05074bc32769b912
