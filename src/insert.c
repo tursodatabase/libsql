@@ -667,8 +667,7 @@ void sqlite3Insert(
   **
   ** This is the 2nd template.
   */
-  if( pColumn==0 && pParse->pWith==0 
-   && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
+  if( pColumn==0 && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
     assert( !pTrigger );
     assert( pList==0 );
     goto insert_end;
@@ -1858,6 +1857,12 @@ static int xferOptimization(
 
   if( pSelect==0 ){
     return 0;   /* Must be of the form  INSERT INTO ... SELECT ... */
+  }
+  if( pParse->pWith || pSelect->pWith ){
+    /* Do not attempt to process this query if there are an WITH clauses
+    ** attached to it. Proceeding may generate a false "no such table: xxx"
+    ** error if pSelect reads from a CTE named "xxx".  */
+    return 0;
   }
   if( sqlite3TriggerList(pParse, pDest) ){
     return 0;   /* tab1 must not have triggers */

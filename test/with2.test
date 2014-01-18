@@ -175,5 +175,40 @@ do_execsql_test  4.5 [genstmt [expr $nLimit-1]] 1
 do_execsql_test  4.6 [genstmt $nLimit] 1
 do_catchsql_test 4.7 [genstmt [expr $nLimit+1]] {1 {too many columns in index}}
 
+#---------------------------------------------------------------------------
+# Check that adding a WITH clause to an INSERT disables the xfer 
+# optimization.
+#
+proc do_xfer_test {tn bXfer sql {res {}}} {
+  set ::sqlite3_xferopt_count 0
+  uplevel [list do_test $tn [subst -nocommands {
+    set dres [db eval {$sql}]
+    list [set ::sqlite3_xferopt_count] [set dres]
+  }] [list $bXfer $res]]
+}
+
+do_execsql_test 5.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+}
+
+do_xfer_test 5.2 1 { INSERT INTO t1 SELECT * FROM t2 }
+do_xfer_test 5.3 0 { INSERT INTO t1 SELECT a, b FROM t2 }
+do_xfer_test 5.4 0 { INSERT INTO t1 SELECT b, a FROM t2 }
+do_xfer_test 5.5 0 { 
+  WITH x AS (SELECT a, b FROM t2) INSERT INTO t1 SELECT * FROM x 
+}
+do_xfer_test 5.6 0 { 
+  WITH x AS (SELECT a, b FROM t2) INSERT INTO t1 SELECT * FROM t2 
+}
+do_xfer_test 5.7 0 { 
+ INSERT INTO t1 WITH x AS ( SELECT * FROM t2 ) SELECT * FROM x
+}
+do_xfer_test 5.8 0 { 
+ INSERT INTO t1 WITH x(a,b) AS ( SELECT * FROM t2 ) SELECT * FROM x
+}
+
 finish_test
 
