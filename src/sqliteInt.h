@@ -1437,7 +1437,6 @@ struct Table {
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
 #define TF_Virtual         0x10    /* Is a virtual table */
 #define TF_WithoutRowid    0x20    /* No rowid used. PRIMARY KEY is the key */
-#define TF_Recursive       0x40    /* Recursive reference within CTE */
 
 
 /*

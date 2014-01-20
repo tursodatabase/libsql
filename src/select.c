@@ -3595,6 +3595,7 @@ static int withExpand(
       return SQLITE_ERROR;
     }
 
+    assert( pFrom->pTab==0 );
     pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
     if( pTab==0 ) return WRC_Abort;
     pTab->nRef = 1;
