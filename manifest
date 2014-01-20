@@ -1,5 +1,5 @@
-C Remove\san\sunused\s#define\sand\sadd\san\sassert(),\sboth\sassociated\swith\sWITH\slogic.
-D 2014-01-20T14:58:55.056
+C Handle\sa\sfew\sobscure\sproblems\sthat\scould\smanifest\sif\sa\sdatabase\scorrupted\sin\sa\scertain\sway\swas\swritten\sby\sa\sconnection\sin\sthe\smiddle\sof\sa\sSELECT\sstatement\son\sthe\ssame\sdb.
+D 2014-01-20T18:25:44.841
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c c15e1722696b66c4029c487acfb830b0985bf142
+F src/btree.c 02e1a4e71d8fc37e9fd5216c15d989d148a77c87
 F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 7e6c275ab1731510d6f793d0f88373ab3e858e69
@@ -406,6 +406,7 @@ F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
 F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test c150f156dace653c00a121ad0f5772a0568c41ba
+F test/corruptH.test 0a247f3dc8a8f3578db5f639d86c6bb4d520207f
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1151,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8a973912e98c9b1bb9d3f914527d35c1e7f2011a
-R bcd03400ea7bd2e959020317f5125b8b
-U drh
-Z f5ee43186682e26d4e29624d49787797
+P a06235e0f6aa1e8fefa3f2873ee035eac9dac750
+R 05b4cba80caa92c648883df94b9ec5d5
+U dan
+Z 37a297a819c7d62ae4b0e647e3e25c85
