@@ -1376,4 +1376,23 @@ do_execsql_test 20.4 {
   ORDER BY 1, 2;
 } {5 5 6 6 11 11 12 12}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 21.1 {
+  CREATE TABLE t9(a,b,c);
+  CREATE VIRTUAL TABLE t9v USING echo(t9);
+
+  INSERT INTO t9 VALUES(1,2,3);
+  INSERT INTO t9 VALUES(3,2,1);
+  INSERT INTO t9 VALUES(2,2,2);
+}
+
+do_execsql_test 21.2 {
+  SELECT * FROM t9v WHERE a<b;
+} {1 2 3}
+
+do_execsql_test 21.3 {
+  SELECT * FROM t9v WHERE a=b;
+} {2 2 2}
+
 finish_test

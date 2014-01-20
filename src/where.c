@@ -1751,7 +1751,8 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
     testcase( pTerm->eOperator & WO_ISNULL );
-    if( pTerm->eOperator & (WO_ISNULL) ) continue;
+    testcase( pTerm->eOperator & WO_ALL );
+    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     nTerm++;
   }
@@ -1803,7 +1804,8 @@ static sqlite3_index_info *allocateIndexInfo(
     assert( IsPowerOfTwo(pTerm->eOperator & ~WO_EQUIV) );
     testcase( pTerm->eOperator & WO_IN );
     testcase( pTerm->eOperator & WO_ISNULL );
-    if( pTerm->eOperator & (WO_ISNULL) ) continue;
+    testcase( pTerm->eOperator & WO_ALL );
+    if( (pTerm->eOperator & ~(WO_ISNULL|WO_EQUIV))==0 ) continue;
     if( pTerm->wtFlags & TERM_VNULL ) continue;
     pIdxCons[j].iColumn = pTerm->u.leftColumn;
     pIdxCons[j].iTermOffset = i;
