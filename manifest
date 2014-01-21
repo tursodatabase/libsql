@@ -1,5 +1,5 @@
-C In\swhere.c,\sdo\snot\sallocate\sspace\sin\ssqlite3_index_info\sstructures\sfor\sthe\sinternal\sWHERE\sclause\s"terms"\sgenerated\sto\srecord\scolumn\sequivalencies.
-D 2014-01-20T19:55:33.120
+C Remove\sthe\sundocumented\srequirement\sfor\sapplications\sthat\suse\san\sSQLITE_ENABLE_SQLLOG\sbuild\sto\sdefine\sa\ssqlite3_init_sqllog()\sfunction.
+D 2014-01-21T15:04:47.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 37f55de2000f6c882414ad3e1bcdb751c531fddd
+F src/main.c 4a05a9706579c7649d7eebb0094586728eb53fcb
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P eba8a564e62f84a9620008beead80081fe90a1b7
-R c774305f58a7e7fff71d714265811a28
+P 7d9e22187daaa3160b875a1df17b924969bf718e
+R 72db5d0300da6235ddfc19ebd0af857f
 U dan
-Z 8e05aa582afc8018a3754b6d40d97300
+Z 21763f37f81635b2fe9a520f9fd3a652

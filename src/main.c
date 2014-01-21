@@ -135,13 +135,6 @@ int sqlite3_initialize(void){
   */
   if( sqlite3GlobalConfig.isInit ) return SQLITE_OK;
 
-#ifdef SQLITE_ENABLE_SQLLOG
-  {
-    extern void sqlite3_init_sqllog(void);
-    sqlite3_init_sqllog();
-  }
-#endif
-
   /* Make sure the mutex subsystem is initialized.  If unable to 
   ** initialize the mutex subsystem, return early with the error.
   ** If the system is so sick that we are unable to allocate a mutex,
