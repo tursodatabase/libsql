@@ -268,11 +268,15 @@ static int lookupName(
     SrcList *pSrcList = pNC->pSrcList;
 
 #ifndef SQLITE_OMIT_CTE
-    /* The identifier "LEVEL", with a table or database qualifier and within a
-    ** recursive common table expression, resolves to the special LEVEL pseudo-column.
-    ** To access table names called "level", add a table qualifier.
+    /* The identifier "LEVEL", without a table or database qualifier and
+    ** within a recursive common table expression, resolves to the special
+    ** LEVEL pseudo-column.  To access table names called "level", add a
+    ** table qualifier.
     */
-    if( (pNC->ncFlags&NC_Recursive)!=0 && zTab==0 && sqlite3_stricmp(zCol,"level")==0 ){
+    if( (pNC->ncFlags&NC_Recursive)!=0
+     && zTab==0
+     && sqlite3_stricmp(zCol,"level")==0
+    ){
       assert( cnt==0 );
       cnt = 1;
       newOp = TK_LEVEL;

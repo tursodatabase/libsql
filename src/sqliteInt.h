@@ -2107,7 +2107,7 @@ struct NameContext {
 #define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
 #define NC_PartIdx   0x10    /* True if resolving a partial index WHERE */
-#define NC_Recursive 0x20    /* Resolvingn a recursive CTE definition */
+#define NC_Recursive 0x20    /* Resolving a recursive CTE definition */
 #define NC_UsesLevel 0x40    /* The LEVEL pseudo-column has been seen */
 
 /*
