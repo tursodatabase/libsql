@@ -1792,20 +1792,21 @@ static int multiSelect(
 
 #ifndef SQLITE_OMIT_CTE
   if( p->selFlags & SF_Recursive ){
-    SrcList *pSrc = p->pSrc;
-    int nCol = p->pEList->nExpr;
-    int addrNext;
-    int addrSwap;
-    int iCont, iBreak;
-    int tmp1;                     /* Intermediate table */
-    int tmp2;                     /* Next intermediate table */
-    int tmp3 = 0;                 /* To ensure unique results if UNION */
-    int eDest = SRT_Table;
-    SelectDest tmp2dest;
-    int i;
+    SrcList *pSrc = p->pSrc;      /* The FROM clause of the recursive query */
+    int nCol = p->pEList->nExpr;  /* Number of columns in the CTE */
+    int addrTop;                  /* Top of the loop */
+    int addrCont, addrBreak;      /* CONTINUE and BREAK addresses */
+    int iCurrent;                 /* The Current table */
+    int regCurrent;               /* Register holding Current table */
+    int iQueue;                   /* The Queue table */
+    int iDistinct;                /* To ensure unique results if UNION */
+    int eDest;                    /* How to write to Queue */
+    SelectDest destQueue;         /* SelectDest targetting the Queue table */
+    int i;                        /* Loop counter */
 
     /* Check that there is no ORDER BY or LIMIT clause. Neither of these 
-    ** are supported on recursive queries.  */
+    ** are currently supported on recursive queries.
+    */
     assert( p->pOffset==0 || p->pLimit );
     if( p->pOrderBy || p->pLimit ){
       sqlite3ErrorMsg(pParse, "%s in a recursive query",
@@ -1817,56 +1818,66 @@ static int multiSelect(
     if( sqlite3AuthCheck(pParse, SQLITE_RECURSIVE, 0, 0, 0) ){
       goto multi_select_end;
     }
-    iBreak = sqlite3VdbeMakeLabel(v);
-    iCont = sqlite3VdbeMakeLabel(v);
+    addrBreak = sqlite3VdbeMakeLabel(v);
+    addrCont = sqlite3VdbeMakeLabel(v);
 
+    /* Locate the cursor number of the Current table */
     for(i=0; ALWAYS(i<pSrc->nSrc); i++){
       if( pSrc->a[i].isRecursive ){
-        tmp1 = pSrc->a[i].iCursor;
+        iCurrent = pSrc->a[i].iCursor;
         break;
       }
     }
 
-    tmp2 = pParse->nTab++;
+    /* Allocate cursors for Queue and Distinct.  The cursor number for
+    ** the Distinct table must be exactly one greater than Queue in order
+    ** for the SRT_DistTable destination to work. */
+    iQueue = pParse->nTab++;
     if( p->op==TK_UNION ){
       eDest = SRT_DistTable;
-      tmp3 = pParse->nTab++;
+      iDistinct = pParse->nTab++;
+    }else{
+      eDest = SRT_Table;
+      iDistinct = 0;
     }
-    sqlite3SelectDestInit(&tmp2dest, eDest, tmp2);
+    sqlite3SelectDestInit(&destQueue, eDest, iQueue);
 
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp1, nCol);
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp2, nCol);
-    if( tmp3 ){
-      p->addrOpenEphm[0] = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, tmp3, 0);
+    /* Allocate cursors for Current, Queue, and iDistinct. */
+    regCurrent = ++pParse->nMem;
+    sqlite3VdbeAddOp3(v, OP_OpenPseudo, iCurrent, regCurrent, nCol);
+    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iQueue, nCol);
+    if( iDistinct ){
+      p->addrOpenEphm[0] = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iDistinct, 0);
       p->selFlags |= SF_UsesEphemeral;
     }
 
-    /* Store the results of the initial SELECT in tmp2. */
-    rc = sqlite3Select(pParse, pPrior, &tmp2dest);
+    /* Store the results of the initial SELECT in Queue. */
+    rc = sqlite3Select(pParse, pPrior, &destQueue);
     if( rc ) goto multi_select_end;
 
-    /* Clear tmp1. Then switch the contents of tmp1 and tmp2. Then return 
-    ** the contents of tmp1 to the caller. Or, if tmp1 is empty at this
-    ** point, the recursive query has finished - jump to address iBreak.  */
-    addrSwap = sqlite3VdbeAddOp2(v, OP_SwapCursors, tmp1, tmp2);
-    sqlite3VdbeAddOp2(v, OP_Rewind, tmp1, iBreak);
-    addrNext = sqlite3VdbeCurrentAddr(v);
-    selectInnerLoop(pParse, p, p->pEList, tmp1, p->pEList->nExpr,
-        0, 0, &dest, iCont, iBreak);
-    sqlite3VdbeResolveLabel(v, iCont);
-    sqlite3VdbeAddOp2(v, OP_Next, tmp1, addrNext);
+    /* Find the next row in the Queue and output that row */
+    addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, iQueue, addrBreak);
+    selectInnerLoop(pParse, p, p->pEList, iQueue, p->pEList->nExpr,
+        0, 0, &dest, addrCont, addrBreak);
+    sqlite3VdbeResolveLabel(v, addrCont);
 
-    /* Execute the recursive SELECT. Store the results in tmp2. While this
-    ** SELECT is running, the contents of tmp1 are read by recursive 
-    ** references to the current CTE.  */
+    /* Transfer the next row in Queue over to Current */
+    sqlite3VdbeAddOp1(v, OP_NullRow, iCurrent); /* To reset column cache */
+    sqlite3VdbeAddOp2(v, OP_RowData, iQueue, regCurrent);
+    sqlite3VdbeAddOp1(v, OP_Delete, iQueue);
+
+    /* Execute the recursive SELECT taking the single row in Current as
+    ** the value for the CTE. Store the results in the Queue.
+    */
     p->pPrior = 0;
-    rc = sqlite3Select(pParse, p, &tmp2dest);
+    rc = sqlite3Select(pParse, p, &destQueue);
     assert( p->pPrior==0 );
     p->pPrior = pPrior;
     if( rc ) goto multi_select_end;
 
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrSwap);
-    sqlite3VdbeResolveLabel(v, iBreak);
+    /* Keep running the loop until the Queue is empty */
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
+    sqlite3VdbeResolveLabel(v, addrBreak);
   }else
 #endif
 
