@@ -1792,8 +1792,8 @@ static int multiSelect(
 
 #ifndef SQLITE_OMIT_CTE
   if( p->selFlags & SF_Recursive ){
-    SrcList *pSrc = p->pSrc;
-    int nCol = p->pEList->nExpr;
+    SrcList *pSrc = p->pSrc;      /* The FROM clause of the right-most SELECT */
+    int nCol = p->pEList->nExpr;  /* Number of columns in the result set */
     int addrNext;
     int addrSwap;
     int iCont, iBreak;
@@ -1803,6 +1803,8 @@ static int multiSelect(
     int eDest = SRT_Table;
     SelectDest tmp2dest;
     int i;
+    int regLevel = 0;             /* Register for LEVEL value */
+    int savedRegLevel;            /* Saved value of pParse->regLevel */
 
     /* Check that there is no ORDER BY or LIMIT clause. Neither of these 
     ** are supported on recursive queries.  */
@@ -1845,6 +1847,14 @@ static int multiSelect(
     rc = sqlite3Select(pParse, pPrior, &tmp2dest);
     if( rc ) goto multi_select_end;
 
+    /* Allocate and initialize a register to hold the LEVEL pseudo-column */
+    savedRegLevel = pParse->regLevel;
+    if( p->selFlags & SF_UsesLevel ){
+      regLevel = pParse->regLevel = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, regLevel);
+      VdbeComment((v, "level=0"));
+    }
+
     /* Clear tmp1. Then switch the contents of tmp1 and tmp2. Then return 
     ** the contents of tmp1 to the caller. Or, if tmp1 is empty at this
     ** point, the recursive query has finished - jump to address iBreak.  */
@@ -1855,6 +1865,10 @@ static int multiSelect(
         0, 0, &dest, iCont, iBreak);
     sqlite3VdbeResolveLabel(v, iCont);
     sqlite3VdbeAddOp2(v, OP_Next, tmp1, addrNext);
+    if( regLevel ){
+      sqlite3VdbeAddOp2(v, OP_AddImm, regLevel, 1);
+      VdbeComment((v, "level++"));
+    }
 
     /* Execute the recursive SELECT. Store the results in tmp2. While this
     ** SELECT is running, the contents of tmp1 are read by recursive 
@@ -1867,6 +1881,7 @@ static int multiSelect(
 
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addrSwap);
     sqlite3VdbeResolveLabel(v, iBreak);
+    pParse->regLevel = savedRegLevel;
   }else
 #endif
 

@@ -31,4 +31,5 @@ END {
   printf "#define TK_%-29s %4d\n", "UMINUS",          ++max
   printf "#define TK_%-29s %4d\n", "UPLUS",           ++max
   printf "#define TK_%-29s %4d\n", "REGISTER",        ++max
+  printf "#define TK_%-29s %4d\n", "LEVEL",           ++max
 }

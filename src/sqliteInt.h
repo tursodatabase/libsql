@@ -2107,6 +2107,8 @@ struct NameContext {
 #define NC_IsCheck   0x04    /* True if resolving names in a CHECK constraint */
 #define NC_InAggFunc 0x08    /* True if analyzing arguments to an agg func */
 #define NC_PartIdx   0x10    /* True if resolving a partial index WHERE */
+#define NC_Recursive 0x20    /* Resolvingn a recursive CTE definition */
+#define NC_UsesLevel 0x40    /* The LEVEL pseudo-column has been seen */
 
 /*
 ** An instance of the following structure contains all information
@@ -2164,6 +2166,7 @@ struct Select {
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
+#define SF_UsesLevel       0x1000  /* Uses the LEVEL pseudo-column */
 
 
 /*
@@ -2370,6 +2373,7 @@ struct Parse {
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
+  int regLevel;             /* Register holding the LEVEL variable */
   u8 bFreeWith;             /* True if pWith should be freed with parser */
 };
 

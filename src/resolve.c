@@ -226,7 +226,7 @@ static int lookupName(
   struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
   Schema *pSchema = 0;              /* Schema of the expression */
-  int isTrigger = 0;                /* True if resolved to a trigger column */
+  u8 newOp = TK_COLUMN;             /* pExpr->op after resolving name */
   Table *pTab = 0;                  /* Table hold the row */
   Column *pCol;                     /* A column of pTab */
 
@@ -266,6 +266,22 @@ static int lookupName(
   while( pNC && cnt==0 ){
     ExprList *pEList;
     SrcList *pSrcList = pNC->pSrcList;
+
+#ifndef SQLITE_OMIT_CTE
+    /* The identifier "LEVEL", with a table or database qualifier and within a
+    ** recursive common table expression, resolves to the special LEVEL pseudo-column.
+    ** To access table names called "level", add a table qualifier.
+    */
+    if( (pNC->ncFlags&NC_Recursive)!=0 && zTab==0 && sqlite3_stricmp(zCol,"level")==0 ){
+      assert( cnt==0 );
+      cnt = 1;
+      newOp = TK_LEVEL;
+      pExpr->iColumn = -1;
+      pExpr->affinity = SQLITE_AFF_INTEGER;
+      pNC->ncFlags |= NC_UsesLevel;
+      break;
+    }
+#endif
 
     if( pSrcList ){
       for(i=0, pItem=pSrcList->a; i<pSrcList->nSrc; i++, pItem++){
@@ -371,7 +387,7 @@ static int lookupName(
           }
           pExpr->iColumn = (i16)iCol;
           pExpr->pTab = pTab;
-          isTrigger = 1;
+          newOp = TK_TRIGGER;
         }
       }
     }
@@ -495,11 +511,11 @@ static int lookupName(
   pExpr->pLeft = 0;
   sqlite3ExprDelete(db, pExpr->pRight);
   pExpr->pRight = 0;
-  pExpr->op = (isTrigger ? TK_TRIGGER : TK_COLUMN);
+  pExpr->op = newOp;
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
-    if( pExpr->op!=TK_AS ){
+    if( pExpr->op!=TK_AS && pExpr->op!=TK_LEVEL ){
       sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
     }
     /* Increment the nRef value on all name contexts from TopNC up to
@@ -1196,6 +1212,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
     ** resolve the result-set expression list.
     */
     sNC.ncFlags = NC_AllowAgg;
+    if( p->selFlags & SF_Recursive ) sNC.ncFlags |= NC_Recursive;
     sNC.pSrcList = p->pSrc;
     sNC.pNext = pOuterNC;
   
@@ -1274,6 +1291,10 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
         }
       }
     }
+    if( sNC.ncFlags & NC_UsesLevel ){
+      p->selFlags |= SF_UsesLevel;
+    }
+    sNC.ncFlags &= ~(NC_Recursive|NC_UsesLevel);
 
     /* Advance to the next term of the compound
     */

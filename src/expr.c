@@ -2458,6 +2458,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
                                pExpr->op2);
       break;
     }
+#ifndef SQLITE_OMIT_CTE
+    case TK_LEVEL: {
+      inReg = pParse->regLevel;
+      break;
+    }
+#endif
     case TK_INTEGER: {
       codeInteger(pParse, pExpr, 0, target);
       break;
@@ -3081,6 +3087,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
   pExpr = sqlite3ExprSkipCollate(pExpr);
   if( ConstFactorOk(pParse)
    && pExpr->op!=TK_REGISTER
+   && pExpr->op!=TK_LEVEL
    && sqlite3ExprIsConstantNotJoin(pExpr)
   ){
     ExprList *p = pParse->pConstExpr;
