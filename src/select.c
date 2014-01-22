@@ -1774,7 +1774,7 @@ static void generateWithRecursiveQuery(
   Select *pSetup = p->pPrior;   /* The setup query */
   int addrTop;                  /* Top of the loop */
   int addrCont, addrBreak;      /* CONTINUE and BREAK addresses */
-  int iCurrent;                 /* The Current table */
+  int iCurrent = 0;             /* The Current table */
   int regCurrent;               /* Register holding Current table */
   int iQueue;                   /* The Queue table */
   int iDistinct = 0;            /* To ensure unique results if UNION */
@@ -1936,8 +1936,8 @@ static int multiSelect(
   Select *pDelete = 0;  /* Chain of simple selects to delete */
   sqlite3 *db;          /* Database connection */
 #ifndef SQLITE_OMIT_EXPLAIN
-  int iSub1;            /* EQP id of left-hand query */
-  int iSub2;            /* EQP id of right-hand query */
+  int iSub1 = 0;        /* EQP id of left-hand query */
+  int iSub2 = 0;        /* EQP id of right-hand query */
 #endif
 
   /* Make sure there is no ORDER BY or LIMIT clause on prior SELECTs.  Only

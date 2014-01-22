@@ -1584,11 +1584,9 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     iCol = (i16)pExpr->iColumn;
    
     /* Code an OP_VerifyCookie and OP_TableLock for <table>. */
-    if( ALWAYS(pTab->pSchema) ){
-      iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-      sqlite3CodeVerifySchema(pParse, iDb);
-      sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
-    }
+    iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+    sqlite3CodeVerifySchema(pParse, iDb);
+    sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
     /* This function is only called from two places. In both cases the vdbe
     ** has already been allocated. So assume sqlite3GetVdbe() is always

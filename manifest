@@ -1,5 +1,5 @@
-C Change\sthe\sWITH\sRECURSIVE\simplementation\sto\suse\sa\squeue\sinstead\sof\sa\spair\sof\ntables.\s\sAdd\ssupport\sfor\sORDER\sBY,\sLIMIT,\sand\sOFFSET\son\srecursive\squeries.
-D 2014-01-22T18:16:27.891
+C Fix\sharmless\scompiler\swarnings.
+D 2014-01-22T18:31:27.905
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 91e1321021db5dc266360531b8b6550009d771ff
-F src/expr.c 8c7e482bc8f7982333f046851a610ccdb8a1ba94
+F src/expr.c 61f9105820d6702d7153dfb6ca3d58e751a5e95a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 6325ac2ec10833ccf4d5c36d323709221d37ea19
@@ -209,7 +209,7 @@ F src/os_unix.c 3a4dcb554d3c915075766162f28c3fd4cdb75968
 F src/os_win.c 1b21af72c5fa6f9e519a5fcab33e80d182b1aedb
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y 475896cb883bbf4782e98abda42efbbdcbdb75f5
+F src/parse.y bd51bc17cbfe7549adb4ca3747b1c3d384645065
 F src/pcache.c f8043b433a57aba85384a531e3937a804432a346
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 57fee9a9a617218f5037afbbe49b09da65bde56b
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c f6d84f3a109d3e43d38089da6a4f131a5ce4c6ef
+F src/select.c a4ac380e9c07135b4613f9021c93e9252a1586d8
 F src/shell.c 24722d24d4ea8ca93db35e44db7308de786767ca
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1152,8 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a0ba55ff0596c5f15e9cdb254c68ef50df2dfaad 1945484e6b9769c1943f750f5b09860417fb190a
-R 0105f6ff7a9dec4a544ebd63835ab3ca
-T +closed 1945484e6b9769c1943f750f5b09860417fb190a
+P b6cea42006910d590373e8f9e296d7672edb114b
+R 1ba001345e8bb7e9c10a92447c5b79e1
 U drh
-Z c6c3dc0c740728b9edf5697c95361334
+Z 3fb7fa817c3bd22cb870eb237b846ff7

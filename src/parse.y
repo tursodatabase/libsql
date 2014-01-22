@@ -397,7 +397,7 @@ cmd ::= DROP VIEW ifexists(E) fullname(X). {
 //////////////////////// The SELECT statement /////////////////////////////////
 //
 cmd ::= select(X).  {
-  SelectDest dest = {SRT_Output, 0, 0, 0, 0};
+  SelectDest dest = {SRT_Output, 0, 0, 0, 0, 0};
   sqlite3Select(pParse, X, &dest);
   sqlite3ExplainBegin(pParse->pVdbe);
   sqlite3ExplainSelect(pParse->pVdbe, X);
