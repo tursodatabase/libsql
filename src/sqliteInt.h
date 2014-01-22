@@ -2199,10 +2199,6 @@ struct Select {
 **                     Apply the affinity pDest->affSdst before storing
 **                     results.  Used to implement "IN (SELECT ...)".
 **
-**     SRT_Table       Store results in temporary table pDest->iSDParm.
-**                     This is like SRT_EphemTab except that the table
-**                     is assumed to already be open.
-**
 **     SRT_EphemTab    Create an temporary table pDest->iSDParm and store
 **                     the result there. The cursor is left open after
 **                     returning.  This is like SRT_Table except that
@@ -2215,10 +2211,22 @@ struct Select {
 **                     and the result row is stored in pDest->nDest registers
 **                     starting with pDest->iSdst.
 **
+**     SRT_Table       Store results in temporary table pDest->iSDParm.
+**                     This is like SRT_EphemTab except that the table
+**                     is assumed to already be open.
+**
 **     SRT_DistTable   Store results in a temporary table pDest->iSDParm.
 **                     But also use temporary table pDest->iSDParm+1 as
 **                     a record of all prior results and ignore any duplicate
 **                     rows.  Name means:  "Distinct Table".
+**
+**     SRT_Queue       Store results in priority queue pDest->iSDParm (really
+**                     an index).  Append a sequence number so that all entries
+**                     are distinct.
+**
+**     SRT_DistQueue   Store results in priority queue pDest->iSDParm only if
+**                     the same record has never been stored before.  The
+**                     index at pDest->iSDParm+1 hold all prior stores.
 */
 #define SRT_Union        1  /* Store result as keys in an index */
 #define SRT_Except       2  /* Remove result from a UNION index */
@@ -2231,10 +2239,12 @@ struct Select {
 #define SRT_Output       5  /* Output each row of result */
 #define SRT_Mem          6  /* Store result in a memory cell */
 #define SRT_Set          7  /* Store results as keys in an index */
-#define SRT_Table        8  /* Store result as data with an automatic rowid */
-#define SRT_EphemTab     9  /* Create transient tab and store like SRT_Table */
-#define SRT_Coroutine   10  /* Generate a single row of result */
-#define SRT_DistTable   11  /* Like SRT_TABLE, but unique results only */
+#define SRT_EphemTab     8  /* Create transient tab and store like SRT_Table */
+#define SRT_Coroutine    9  /* Generate a single row of result */
+#define SRT_Table       10  /* Store result as data with an automatic rowid */
+#define SRT_DistTable   11  /* Like SRT_Table, but unique results only */
+#define SRT_Queue       12  /* Store result in an queue */
+#define SRT_DistQueue   13  /* Like SRT_Queue, but unique results only */
 
 /*
 ** An instance of this object describes where to put of the results of
