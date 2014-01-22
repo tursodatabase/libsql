@@ -2167,8 +2167,66 @@ struct Select {
 
 
 /*
-** The results of a select can be distributed in several ways.  The
-** "SRT" prefix means "SELECT Result Type".
+** The results of a SELECT can be distributed in several ways, as defined
+** by one of the following macros.  The "SRT" prefix means "SELECT Result
+** Type".
+**
+**     SRT_Union       Store results as a key in a temporary index 
+**                     identified by pDest->iSDParm.
+**
+**     SRT_Except      Remove results from the temporary index pDest->iSDParm.
+**
+**     SRT_Exists      Store a 1 in memory cell pDest->iSDParm if the result
+**                     set is not empty.
+**
+**     SRT_Discard     Throw the results away.  This is used by SELECT
+**                     statements within triggers whose only purpose is
+**                     the side-effects of functions.
+**
+** All of the above are free to ignore their ORDER BY clause. Those that
+** follow must honor the ORDER BY clause.
+**
+**     SRT_Output      Generate a row of output (using the OP_ResultRow
+**                     opcode) for each row in the result set.
+**
+**     SRT_Mem         Only valid if the result is a single column.
+**                     Store the first column of the first result row
+**                     in register pDest->iSDParm then abandon the rest
+**                     of the query.  This destination implies "LIMIT 1".
+**
+**     SRT_Set         The result must be a single column.  Store each
+**                     row of result as the key in table pDest->iSDParm. 
+**                     Apply the affinity pDest->affSdst before storing
+**                     results.  Used to implement "IN (SELECT ...)".
+**
+**     SRT_EphemTab    Create an temporary table pDest->iSDParm and store
+**                     the result there. The cursor is left open after
+**                     returning.  This is like SRT_Table except that
+**                     this destination uses OP_OpenEphemeral to create
+**                     the table first.
+**
+**     SRT_Coroutine   Generate a co-routine that returns a new row of
+**                     results each time it is invoked.  The entry point
+**                     of the co-routine is stored in register pDest->iSDParm
+**                     and the result row is stored in pDest->nDest registers
+**                     starting with pDest->iSdst.
+**
+**     SRT_Table       Store results in temporary table pDest->iSDParm.
+**                     This is like SRT_EphemTab except that the table
+**                     is assumed to already be open.
+**
+**     SRT_DistTable   Store results in a temporary table pDest->iSDParm.
+**                     But also use temporary table pDest->iSDParm+1 as
+**                     a record of all prior results and ignore any duplicate
+**                     rows.  Name means:  "Distinct Table".
+**
+**     SRT_Queue       Store results in priority queue pDest->iSDParm (really
+**                     an index).  Append a sequence number so that all entries
+**                     are distinct.
+**
+**     SRT_DistQueue   Store results in priority queue pDest->iSDParm only if
+**                     the same record has never been stored before.  The
+**                     index at pDest->iSDParm+1 hold all prior stores.
 */
 #define SRT_Union        1  /* Store result as keys in an index */
 #define SRT_Except       2  /* Remove result from a UNION index */
@@ -2181,21 +2239,24 @@ struct Select {
 #define SRT_Output       5  /* Output each row of result */
 #define SRT_Mem          6  /* Store result in a memory cell */
 #define SRT_Set          7  /* Store results as keys in an index */
-#define SRT_Table        8  /* Store result as data with an automatic rowid */
-#define SRT_EphemTab     9  /* Create transient tab and store like SRT_Table */
-#define SRT_Coroutine   10  /* Generate a single row of result */
-#define SRT_DistTable   11  /* Like SRT_TABLE, but unique results only */
+#define SRT_EphemTab     8  /* Create transient tab and store like SRT_Table */
+#define SRT_Coroutine    9  /* Generate a single row of result */
+#define SRT_Table       10  /* Store result as data with an automatic rowid */
+#define SRT_DistTable   11  /* Like SRT_Table, but unique results only */
+#define SRT_Queue       12  /* Store result in an queue */
+#define SRT_DistQueue   13  /* Like SRT_Queue, but unique results only */
 
 /*
 ** An instance of this object describes where to put of the results of
 ** a SELECT statement.
 */
 struct SelectDest {
-  u8 eDest;         /* How to dispose of the results.  On of SRT_* above. */
-  char affSdst;     /* Affinity used when eDest==SRT_Set */
-  int iSDParm;      /* A parameter used by the eDest disposal method */
-  int iSdst;        /* Base register where results are written */
-  int nSdst;        /* Number of registers allocated */
+  u8 eDest;            /* How to dispose of the results.  On of SRT_* above. */
+  char affSdst;        /* Affinity used when eDest==SRT_Set */
+  int iSDParm;         /* A parameter used by the eDest disposal method */
+  int iSdst;           /* Base register where results are written */
+  int nSdst;           /* Number of registers allocated */
+  ExprList *pOrderBy;  /* Key columns for SRT_Queue and SRT_DistQueue */
 };
 
 /*
