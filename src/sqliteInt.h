@@ -2251,11 +2251,12 @@ struct Select {
 ** a SELECT statement.
 */
 struct SelectDest {
-  u8 eDest;         /* How to dispose of the results.  On of SRT_* above. */
-  char affSdst;     /* Affinity used when eDest==SRT_Set */
-  int iSDParm;      /* A parameter used by the eDest disposal method */
-  int iSdst;        /* Base register where results are written */
-  int nSdst;        /* Number of registers allocated */
+  u8 eDest;            /* How to dispose of the results.  On of SRT_* above. */
+  char affSdst;        /* Affinity used when eDest==SRT_Set */
+  int iSDParm;         /* A parameter used by the eDest disposal method */
+  int iSdst;           /* Base register where results are written */
+  int nSdst;           /* Number of registers allocated */
+  ExprList *pOrderBy;  /* Key columns for SRT_Queue and SRT_DistQueue */
 };
 
 /*
