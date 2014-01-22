@@ -3411,6 +3411,8 @@ static Bitmask codeOneLoopStart(
     static const u8 aStart[] = { OP_Rewind, OP_Last };
     assert( bRev==0 || bRev==1 );
     if( pTabItem->isRecursive ){
+      /* Tables marked isRecursive have only a single row that is stored in
+      ** a pseudo-cursor.  Need need to Rewind or Next such cursors. */
       pLevel->op = OP_Noop;
     }else{
       pLevel->op = aStep[bRev];

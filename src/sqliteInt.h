@@ -2167,8 +2167,58 @@ struct Select {
 
 
 /*
-** The results of a select can be distributed in several ways.  The
-** "SRT" prefix means "SELECT Result Type".
+** The results of a SELECT can be distributed in several ways, as defined
+** by one of the following macros.  The "SRT" prefix means "SELECT Result
+** Type".
+**
+**     SRT_Union       Store results as a key in a temporary index 
+**                     identified by pDest->iSDParm.
+**
+**     SRT_Except      Remove results from the temporary index pDest->iSDParm.
+**
+**     SRT_Exists      Store a 1 in memory cell pDest->iSDParm if the result
+**                     set is not empty.
+**
+**     SRT_Discard     Throw the results away.  This is used by SELECT
+**                     statements within triggers whose only purpose is
+**                     the side-effects of functions.
+**
+** All of the above are free to ignore their ORDER BY clause. Those that
+** follow must honor the ORDER BY clause.
+**
+**     SRT_Output      Generate a row of output (using the OP_ResultRow
+**                     opcode) for each row in the result set.
+**
+**     SRT_Mem         Only valid if the result is a single column.
+**                     Store the first column of the first result row
+**                     in register pDest->iSDParm then abandon the rest
+**                     of the query.  This destination implies "LIMIT 1".
+**
+**     SRT_Set         The result must be a single column.  Store each
+**                     row of result as the key in table pDest->iSDParm. 
+**                     Apply the affinity pDest->affSdst before storing
+**                     results.  Used to implement "IN (SELECT ...)".
+**
+**     SRT_Table       Store results in temporary table pDest->iSDParm.
+**                     This is like SRT_EphemTab except that the table
+**                     is assumed to already be open.
+**
+**     SRT_EphemTab    Create an temporary table pDest->iSDParm and store
+**                     the result there. The cursor is left open after
+**                     returning.  This is like SRT_Table except that
+**                     this destination uses OP_OpenEphemeral to create
+**                     the table first.
+**
+**     SRT_Coroutine   Generate a co-routine that returns a new row of
+**                     results each time it is invoked.  The entry point
+**                     of the co-routine is stored in register pDest->iSDParm
+**                     and the result row is stored in pDest->nDest registers
+**                     starting with pDest->iSdst.
+**
+**     SRT_DistTable   Store results in a temporary table pDest->iSDParm.
+**                     But also use temporary table pDest->iSDParm+1 as
+**                     a record of all prior results and ignore any duplicate
+**                     rows.  Name means:  "Distinct Table".
 */
 #define SRT_Union        1  /* Store result as keys in an index */
 #define SRT_Except       2  /* Remove result from a UNION index */

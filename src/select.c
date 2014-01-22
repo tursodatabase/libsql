@@ -543,17 +543,16 @@ struct DistinctCtx {
 ** This routine generates the code for the inside of the inner loop
 ** of a SELECT.
 **
-** If srcTab and nColumn are both zero, then the pEList expressions
-** are evaluated in order to get the data for this row.  If nColumn>0
-** then data is pulled from srcTab and pEList is used only to get the
-** datatypes for each column.
+** If srcTab is negative, then the pEList expressions
+** are evaluated in order to get the data for this row.  If srcTab is
+** zero or more, then data is pulled from srcTab and pEList is used only 
+** to get number columns and the datatype for each column.
 */
 static void selectInnerLoop(
   Parse *pParse,          /* The parser context */
   Select *p,              /* The complete select statement being coded */
   ExprList *pEList,       /* List of values being extracted */
   int srcTab,             /* Pull data from this table */
-  int nColumn,            /* Number of columns in the source table */
   ExprList *pOrderBy,     /* If not NULL, sort results using this key */
   DistinctCtx *pDistinct, /* If not NULL, info on how to process DISTINCT */
   SelectDest *pDest,      /* How to dispose of the results */
@@ -569,7 +568,6 @@ static void selectInnerLoop(
   int nResultCol;             /* Number of result columns */
 
   assert( v );
-  if( NEVER(v==0) ) return;
   assert( pEList!=0 );
   hasDistinct = pDistinct ? pDistinct->eTnctType : WHERE_DISTINCT_NOOP;
   if( pOrderBy==0 && !hasDistinct ){
@@ -578,11 +576,7 @@ static void selectInnerLoop(
 
   /* Pull the requested columns.
   */
-  if( nColumn>0 ){
-    nResultCol = nColumn;
-  }else{
-    nResultCol = pEList->nExpr;
-  }
+  nResultCol = pEList->nExpr;
   if( pDest->iSdst==0 ){
     pDest->iSdst = pParse->nMem+1;
     pDest->nSdst = nResultCol;
@@ -591,9 +585,10 @@ static void selectInnerLoop(
     assert( pDest->nSdst==nResultCol );
   }
   regResult = pDest->iSdst;
-  if( nColumn>0 ){
-    for(i=0; i<nColumn; i++){
+  if( srcTab>=0 ){
+    for(i=0; i<nResultCol; i++){
       sqlite3VdbeAddOp3(v, OP_Column, srcTab, i, regResult+i);
+      VdbeComment((v, "%s", pEList->a[i].zName));
     }
   }else if( eDest!=SRT_Exists ){
     /* If the destination is an EXISTS(...) expression, the actual
@@ -602,15 +597,12 @@ static void selectInnerLoop(
     sqlite3ExprCodeExprList(pParse, pEList, regResult,
                             (eDest==SRT_Output)?SQLITE_ECEL_DUP:0);
   }
-  nColumn = nResultCol;
 
   /* If the DISTINCT keyword was present on the SELECT statement
   ** and this row has been seen before, then do not make this row
   ** part of the result.
   */
   if( hasDistinct ){
-    assert( pEList!=0 );
-    assert( pEList->nExpr==nColumn );
     switch( pDistinct->eTnctType ){
       case WHERE_DISTINCT_ORDERED: {
         VdbeOp *pOp;            /* No longer required OpenEphemeral instr. */
@@ -619,7 +611,7 @@ static void selectInnerLoop(
 
         /* Allocate space for the previous row */
         regPrev = pParse->nMem+1;
-        pParse->nMem += nColumn;
+        pParse->nMem += nResultCol;
 
         /* Change the OP_OpenEphemeral coded earlier to an OP_Null
         ** sets the MEM_Cleared bit on the first register of the
@@ -633,10 +625,10 @@ static void selectInnerLoop(
         pOp->p1 = 1;
         pOp->p2 = regPrev;
 
-        iJump = sqlite3VdbeCurrentAddr(v) + nColumn;
-        for(i=0; i<nColumn; i++){
+        iJump = sqlite3VdbeCurrentAddr(v) + nResultCol;
+        for(i=0; i<nResultCol; i++){
           CollSeq *pColl = sqlite3ExprCollSeq(pParse, pEList->a[i].pExpr);
-          if( i<nColumn-1 ){
+          if( i<nResultCol-1 ){
             sqlite3VdbeAddOp3(v, OP_Ne, regResult+i, iJump, regPrev+i);
           }else{
             sqlite3VdbeAddOp3(v, OP_Eq, regResult+i, iContinue, regPrev+i);
@@ -645,7 +637,7 @@ static void selectInnerLoop(
           sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
         }
         assert( sqlite3VdbeCurrentAddr(v)==iJump );
-        sqlite3VdbeAddOp3(v, OP_Copy, regResult, regPrev, nColumn-1);
+        sqlite3VdbeAddOp3(v, OP_Copy, regResult, regPrev, nResultCol-1);
         break;
       }
 
@@ -656,7 +648,7 @@ static void selectInnerLoop(
 
       default: {
         assert( pDistinct->eTnctType==WHERE_DISTINCT_UNORDERED );
-        codeDistinct(pParse, pDistinct->tabTnct, iContinue, nColumn, regResult);
+        codeDistinct(pParse, pDistinct->tabTnct, iContinue, nResultCol, regResult);
         break;
       }
     }
@@ -673,7 +665,7 @@ static void selectInnerLoop(
     case SRT_Union: {
       int r1;
       r1 = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm, r1);
       sqlite3ReleaseTempReg(pParse, r1);
       break;
@@ -684,7 +676,7 @@ static void selectInnerLoop(
     ** the temporary table iParm.
     */
     case SRT_Except: {
-      sqlite3VdbeAddOp3(v, OP_IdxDelete, iParm, regResult, nColumn);
+      sqlite3VdbeAddOp3(v, OP_IdxDelete, iParm, regResult, nResultCol);
       break;
     }
 #endif
@@ -697,7 +689,7 @@ static void selectInnerLoop(
       int r1 = sqlite3GetTempReg(pParse);
       testcase( eDest==SRT_Table );
       testcase( eDest==SRT_EphemTab );
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1);
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistTable ){
         /* If the destination is DistTable, then cursor (iParm+1) is open
@@ -730,7 +722,7 @@ static void selectInnerLoop(
     ** item into the set table with bogus data.
     */
     case SRT_Set: {
-      assert( nColumn==1 );
+      assert( nResultCol==1 );
       pDest->affSdst =
                   sqlite3CompareAffinity(pEList->a[0].pExpr, pDest->affSdst);
       if( pOrderBy ){
@@ -762,7 +754,7 @@ static void selectInnerLoop(
     ** of the scan loop.
     */
     case SRT_Mem: {
-      assert( nColumn==1 );
+      assert( nResultCol==1 );
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p, regResult);
       }else{
@@ -783,14 +775,14 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Output );
       if( pOrderBy ){
         int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
+        sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1);
         pushOntoSorter(pParse, pOrderBy, p, r1);
         sqlite3ReleaseTempReg(pParse, r1);
       }else if( eDest==SRT_Coroutine ){
         sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }else{
-        sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nColumn);
-        sqlite3ExprCacheAffinityChange(pParse, regResult, nColumn);
+        sqlite3VdbeAddOp2(v, OP_ResultRow, regResult, nResultCol);
+        sqlite3ExprCacheAffinityChange(pParse, regResult, nResultCol);
       }
       break;
     }
@@ -1857,7 +1849,7 @@ static int multiSelect(
 
     /* Find the next row in the Queue and output that row */
     addrTop = sqlite3VdbeAddOp2(v, OP_Rewind, iQueue, addrBreak);
-    selectInnerLoop(pParse, p, p->pEList, iQueue, p->pEList->nExpr,
+    selectInnerLoop(pParse, p, p->pEList, iQueue,
         0, 0, &dest, addrCont, addrBreak);
     sqlite3VdbeResolveLabel(v, addrCont);
 
@@ -2020,7 +2012,7 @@ static int multiSelect(
         computeLimitRegisters(pParse, p, iBreak);
         sqlite3VdbeAddOp2(v, OP_Rewind, unionTab, iBreak);
         iStart = sqlite3VdbeCurrentAddr(v);
-        selectInnerLoop(pParse, p, p->pEList, unionTab, p->pEList->nExpr,
+        selectInnerLoop(pParse, p, p->pEList, unionTab,
                         0, 0, &dest, iCont, iBreak);
         sqlite3VdbeResolveLabel(v, iCont);
         sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart);
@@ -2098,7 +2090,7 @@ static int multiSelect(
       iStart = sqlite3VdbeAddOp2(v, OP_RowKey, tab1, r1);
       sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0);
       sqlite3ReleaseTempReg(pParse, r1);
-      selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
+      selectInnerLoop(pParse, p, p->pEList, tab1,
                       0, 0, &dest, iCont, iBreak);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart);
@@ -4299,50 +4291,8 @@ static void explainSimpleCount(
 /*
 ** Generate code for the SELECT statement given in the p argument.  
 **
-** The results are distributed in various ways depending on the
-** contents of the SelectDest structure pointed to by argument pDest
-** as follows:
-**
-**     pDest->eDest    Result
-**     ------------    -------------------------------------------
-**     SRT_Output      Generate a row of output (using the OP_ResultRow
-**                     opcode) for each row in the result set.
-**
-**     SRT_Mem         Only valid if the result is a single column.
-**                     Store the first column of the first result row
-**                     in register pDest->iSDParm then abandon the rest
-**                     of the query.  This destination implies "LIMIT 1".
-**
-**     SRT_Set         The result must be a single column.  Store each
-**                     row of result as the key in table pDest->iSDParm. 
-**                     Apply the affinity pDest->affSdst before storing
-**                     results.  Used to implement "IN (SELECT ...)".
-**
-**     SRT_Union       Store results as a key in a temporary table 
-**                     identified by pDest->iSDParm.
-**
-**     SRT_Except      Remove results from the temporary table pDest->iSDParm.
-**
-**     SRT_Table       Store results in temporary table pDest->iSDParm.
-**                     This is like SRT_EphemTab except that the table
-**                     is assumed to already be open.
-**
-**     SRT_EphemTab    Create an temporary table pDest->iSDParm and store
-**                     the result there. The cursor is left open after
-**                     returning.  This is like SRT_Table except that
-**                     this destination uses OP_OpenEphemeral to create
-**                     the table first.
-**
-**     SRT_Coroutine   Generate a co-routine that returns a new row of
-**                     results each time it is invoked.  The entry point
-**                     of the co-routine is stored in register pDest->iSDParm.
-**
-**     SRT_Exists      Store a 1 in memory cell pDest->iSDParm if the result
-**                     set is not empty.
-**
-**     SRT_Discard     Throw the results away.  This is used by SELECT
-**                     statements within triggers whose only purpose is
-**                     the side-effects of functions.
+** The results are returned according to the SelectDest structure.
+** See comments in sqliteInt.h for further information.
 **
 ** This routine returns the number of errors.  If any errors are
 ** encountered, then an appropriate error message is left in
@@ -4683,7 +4633,7 @@ int sqlite3Select(
     }
 
     /* Use the standard inner loop. */
-    selectInnerLoop(pParse, p, pEList, 0, 0, pOrderBy, &sDistinct, pDest,
+    selectInnerLoop(pParse, p, pEList, -1, pOrderBy, &sDistinct, pDest,
                     sqlite3WhereContinueLabel(pWInfo),
                     sqlite3WhereBreakLabel(pWInfo));
 
@@ -4955,7 +4905,7 @@ int sqlite3Select(
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       finalizeAggFunctions(pParse, &sAggInfo);
       sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
-      selectInnerLoop(pParse, p, p->pEList, 0, 0, pOrderBy,
+      selectInnerLoop(pParse, p, p->pEList, -1, pOrderBy,
                       &sDistinct, pDest,
                       addrOutputRow+1, addrSetAbort);
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
@@ -5098,7 +5048,7 @@ int sqlite3Select(
 
       pOrderBy = 0;
       sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
-      selectInnerLoop(pParse, p, p->pEList, 0, 0, 0, 0, 
+      selectInnerLoop(pParse, p, p->pEList, -1, 0, 0, 
                       pDest, addrEnd, addrEnd);
       sqlite3ExprListDelete(db, pDel);
     }
