@@ -814,6 +814,7 @@ static void selectInnerLoop(
         ** been added */
         addrTest = sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, 0, r3, 0);
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r3);
+        sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
       }
       for(i=0; i<nKey; i++){
         sqlite3VdbeAddOp2(v, OP_SCopy,
