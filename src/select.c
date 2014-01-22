@@ -462,13 +462,13 @@ static void pushOntoSorter(
 */
 static void codeOffset(
   Vdbe *v,          /* Generate code into this VM */
-  Select *p,        /* The SELECT statement being coded */
+  int iOffset,      /* Register holding the offset counter */
   int iContinue     /* Jump here to skip the current record */
 ){
-  if( p->iOffset && iContinue!=0 ){
+  if( iOffset>0 && iContinue!=0 ){
     int addr;
-    sqlite3VdbeAddOp2(v, OP_AddImm, p->iOffset, -1);
-    addr = sqlite3VdbeAddOp1(v, OP_IfNeg, p->iOffset);
+    sqlite3VdbeAddOp2(v, OP_AddImm, iOffset, -1);
+    addr = sqlite3VdbeAddOp1(v, OP_IfNeg, iOffset);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iContinue);
     VdbeComment((v, "skip OFFSET records"));
     sqlite3VdbeJumpHere(v, addr);
@@ -571,7 +571,7 @@ static void selectInnerLoop(
   assert( pEList!=0 );
   hasDistinct = pDistinct ? pDistinct->eTnctType : WHERE_DISTINCT_NOOP;
   if( pOrderBy==0 && !hasDistinct ){
-    codeOffset(v, p, iContinue);
+    codeOffset(v, p->iOffset, iContinue);
   }
 
   /* Pull the requested columns.
@@ -653,7 +653,7 @@ static void selectInnerLoop(
       }
     }
     if( pOrderBy==0 ){
-      codeOffset(v, p, iContinue);
+      codeOffset(v, p->iOffset, iContinue);
     }
   }
 
@@ -1069,13 +1069,13 @@ static void generateSortTail(
     int ptab2 = pParse->nTab++;
     sqlite3VdbeAddOp3(v, OP_OpenPseudo, ptab2, regSortOut, pOrderBy->nExpr+2);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
-    codeOffset(v, p, addrContinue);
+    codeOffset(v, p->iOffset, addrContinue);
     sqlite3VdbeAddOp2(v, OP_SorterData, iTab, regSortOut);
     sqlite3VdbeAddOp3(v, OP_Column, ptab2, pOrderBy->nExpr+1, regRow);
     sqlite3VdbeChangeP5(v, OPFLAG_CLEARCACHE);
   }else{
     addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak);
-    codeOffset(v, p, addrContinue);
+    codeOffset(v, p->iOffset, addrContinue);
     sqlite3VdbeAddOp3(v, OP_Column, iTab, pOrderBy->nExpr+1, regRow);
   }
   switch( eDest ){
@@ -1639,8 +1639,13 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
 **
 ** This routine changes the values of iLimit and iOffset only if
 ** a limit or offset is defined by pLimit and pOffset.  iLimit and
-** iOffset should have been preset to appropriate default values
-** (usually but not always -1) prior to calling this routine.
+** iOffset should have been preset to appropriate default values (zero)
+** prior to calling this routine.
+**
+** The iOffset register (if it exists) is initialized to the value
+** of the OFFSET.  The iLimit register is initialized to LIMIT.  Register
+** iOffset+1 is initialized to LIMIT+OFFSET.
+**
 ** Only if pLimit!=0 or pOffset!=0 do the limit registers get
 ** redefined.  The UNION ALL operator uses this property to force
 ** the reuse of the same limit and offset registers across multiple
@@ -1664,7 +1669,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   if( p->pLimit ){
     p->iLimit = iLimit = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
-    if( NEVER(v==0) ) return;  /* VDBE should have already been allocated */
+    assert( v!=0 );
     if( sqlite3ExprIsInteger(p->pLimit, &n) ){
       sqlite3VdbeAddOp2(v, OP_Integer, n, iLimit);
       VdbeComment((v, "LIMIT counter"));
@@ -1778,21 +1783,21 @@ static void generateWithRecursiveQuery(
   int i;                        /* Loop counter */
   int rc;                       /* Result code */
   ExprList *pOrderBy;           /* The ORDER BY clause */
+  Expr *pLimit, *pOffset;       /* Saved LIMIT and OFFSET */
+  int regLimit, regOffset;      /* Registers used by LIMIT and OFFSET */
 
   /* Obtain authorization to do a recursive query */
   if( sqlite3AuthCheck(pParse, SQLITE_RECURSIVE, 0, 0, 0) ) return;
-  addrBreak = sqlite3VdbeMakeLabel(v);
 
-  /* Check that there is no ORDER BY or LIMIT clause. Neither of these 
-  ** are currently supported on recursive queries.
-  */
-  assert( p->pOffset==0 || p->pLimit );
-  if( /*p->pOrderBy ||*/ p->pLimit ){
-    sqlite3ErrorMsg(pParse, "%s in a recursive query",
-        p->pOrderBy ? "ORDER BY" : "LIMIT"
-    );
-    return;
-  }
+  /* Process the LIMIT and OFFSET clauses, if they exist */
+  addrBreak = sqlite3VdbeMakeLabel(v);
+  computeLimitRegisters(pParse, p, addrBreak);
+  pLimit = p->pLimit;
+  pOffset = p->pOffset;
+  regLimit = p->iLimit;
+  regOffset = p->iOffset;
+  p->pLimit = p->pOffset = 0;
+  p->iLimit = p->iOffset = 0;
 
   /* Locate the cursor number of the Current table */
   for(i=0; ALWAYS(i<pSrc->nSrc); i++){
@@ -1853,8 +1858,10 @@ static void generateWithRecursiveQuery(
 
   /* Output the single row in Current */
   addrCont = sqlite3VdbeMakeLabel(v);
+  codeOffset(v, regOffset, addrCont);
   selectInnerLoop(pParse, p, p->pEList, iCurrent,
       0, 0, pDest, addrCont, addrBreak);
+  if( regLimit ) sqlite3VdbeAddOp3(v, OP_IfZero, regLimit, addrBreak, -1);
   sqlite3VdbeResolveLabel(v, addrCont);
 
   /* Execute the recursive SELECT taking the single row in Current as
@@ -1871,6 +1878,8 @@ static void generateWithRecursiveQuery(
 
 end_of_recursive_query:
   p->pOrderBy = pOrderBy;
+  p->pLimit = pLimit;
+  p->pOffset = pOffset;
   return;
 }
 #endif
@@ -2326,7 +2335,7 @@ static int generateOutputSubroutine(
 
   /* Suppress the first OFFSET entries if there is an OFFSET clause
   */
-  codeOffset(v, p, iContinue);
+  codeOffset(v, p->iOffset, iContinue);
 
   switch( pDest->eDest ){
     /* Store the result as data using a unique key.
