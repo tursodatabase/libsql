@@ -1,5 +1,5 @@
-C Avoid\san\sextra\sseek\swhen\sinserting\srecords\sinto\sthe\sepheremal\sindex\sused\sto\sensure\sthat\srows\sreturned\sby\sUNION\srecursive\squeries\sare\sunique.
-D 2014-01-22T19:23:30.685
+C Modifications\sto\stest\sfiles\sto\somit\sany\stests\sthat\sintentionally\saccess\sout-of-bounds\slocations\sin\sclang\s-fsanitize=address\sbuilds.
+D 2014-01-23T14:44:08.207
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -229,7 +229,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 46073db71011b6542fde1f234c56a076d5ff23f9
-F src/test1.c db16ba651453b15001c7f2838c446284dde4ecaf
+F src/test1.c 2401eee14a4309a7cfe2aeb2f30ad517a1d9c299
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -364,9 +364,9 @@ F test/btreefault.test c2bcb542685eea44621275cfedbd8a13f65201e3
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 13bc046b26210471ca6f2889aceb1ea52dc717de
 F test/capi2.test 011c16da245fdc0106a2785035de6b242c05e738
-F test/capi3.test 56ab450125ead38846cbae7e5b6a216686c3cffa
+F test/capi3.test 6cdd49656bd62a296924f4d2fcfd05cd2a298369
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
-F test/capi3c.test 93d24621c9ff84da9da060f30431e0453db1cdb0
+F test/capi3c.test a21869e4d50d5dbb7e566e328fc0bc7c2efa6a32
 F test/capi3d.test 6d0fc0a86d73f42dd19a7d8b7761ab9bc02277d0
 F test/capi3e.test ad90088b18b0367125ff2d4b5400153fd2f99aab
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
@@ -439,7 +439,7 @@ F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
 F test/e_expr.test 5c71d183fbf519a4769fd2e2124afdc70b5b1f42
-F test/e_fkey.test d83a04478bb9c02d2c513518548a69f818869f41
+F test/e_fkey.test 630597377549af579d34faaf64c6959a5a68ef76
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 1e44f84d2abe44d66e4fbf198be4b20e3cc724a0
 F test/e_reindex.test 396b7b4f0a66863b4e95116a67d93b227193e589
@@ -700,8 +700,8 @@ F test/misc3.test cf3dda47d5dda3e53fc5804a100d3c82be736c9d
 F test/misc4.test 9c078510fbfff05a9869a0b6d8b86a623ad2c4f6
 F test/misc5.test 528468b26d03303b1f047146e5eefc941b9069f5
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test 1265eb98c2e22a446a13fdef754118b272716684
-F test/misuse.test ba4fb5d1a6101d1c171ea38b3c613d0661c83054
+F test/misc7.test edd0b63e2ee29a256900b0514f6fff27e19e9bb2
+F test/misuse.test 3c34719944ba045cc6c188a4852ba04680728912
 F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
@@ -783,7 +783,7 @@ F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 00179be44e531fe04c1c3f15df216439dff2519d
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test e76bd10a56988f15726c097a5d5a7966fe82d3b2
-F test/select7.test dad6f00f0d49728a879d6eb6451d4752db0b0abe
+F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
 F test/selectA.test 99cf21df033b93033ea4f34aba14a500f48f04fe
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P dea2ca6a159d5dcfd8deceedf1c2a73fb4ac1cfc
-R 94fca679783d65c2e2622ed1059ebe94
+P 72c4b3f07a3faacb5b62d5bc374b4e125a0bd8b3
+R 1a965aa9944d1df45f2b3d9d29de01da
 U dan
-Z f354f4f3e5d1356fcb7db559f2782a7e
+Z 5e3d3ac89b5b8048d3858093fe9eb7e9

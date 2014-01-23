@@ -2946,38 +2946,45 @@ proc test_on_update_recursion {limit} {
   "
 }
 
-do_test e_fkey-63.1.1 {
-  test_on_delete_recursion $SQLITE_MAX_TRIGGER_DEPTH
-} {0 0}
-do_test e_fkey-63.1.2 {
-  test_on_delete_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
-} {1 {too many levels of trigger recursion}}
-do_test e_fkey-63.1.3 {
-  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
-  test_on_delete_recursion 5
-} {0 0}
-do_test e_fkey-63.1.4 {
-  test_on_delete_recursion 6
-} {1 {too many levels of trigger recursion}}
-do_test e_fkey-63.1.5 {
-  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
-} {5}
-do_test e_fkey-63.2.1 {
-  test_on_update_recursion $SQLITE_MAX_TRIGGER_DEPTH
-} {0 0}
-do_test e_fkey-63.2.2 {
-  test_on_update_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
-} {1 {too many levels of trigger recursion}}
-do_test e_fkey-63.2.3 {
-  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
-  test_on_update_recursion 5
-} {0 0}
-do_test e_fkey-63.2.4 {
-  test_on_update_recursion 6
-} {1 {too many levels of trigger recursion}}
-do_test e_fkey-63.2.5 {
-  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
-} {5}
+# If the current build was created using clang with the -fsanitize=address
+# switch, then the library uses considerably more stack space than usual.
+# So much more, that some of the following tests cause stack overflows
+# if they are run under this configuration.
+#
+if {[clang_sanitize_address]==0} {
+  do_test e_fkey-63.1.1 {
+    test_on_delete_recursion $SQLITE_MAX_TRIGGER_DEPTH
+  } {0 0}
+  do_test e_fkey-63.1.2 {
+    test_on_delete_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
+  } {1 {too many levels of trigger recursion}}
+  do_test e_fkey-63.1.3 {
+    sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
+      test_on_delete_recursion 5
+  } {0 0}
+  do_test e_fkey-63.1.4 {
+    test_on_delete_recursion 6
+  } {1 {too many levels of trigger recursion}}
+  do_test e_fkey-63.1.5 {
+    sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
+  } {5}
+  do_test e_fkey-63.2.1 {
+    test_on_update_recursion $SQLITE_MAX_TRIGGER_DEPTH
+  } {0 0}
+  do_test e_fkey-63.2.2 {
+    test_on_update_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
+  } {1 {too many levels of trigger recursion}}
+  do_test e_fkey-63.2.3 {
+    sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
+      test_on_update_recursion 5
+  } {0 0}
+  do_test e_fkey-63.2.4 {
+    test_on_update_recursion 6
+  } {1 {too many levels of trigger recursion}}
+  do_test e_fkey-63.2.5 {
+    sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
+  } {5}
+}
 
 #-------------------------------------------------------------------------
 # The setting of the recursive_triggers pragma does not affect foreign
