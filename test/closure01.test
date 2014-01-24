@@ -47,8 +47,19 @@ do_timed_execsql_test 1.1-cte {
 } {/1 0 1 17 2 1 4 2 8 3 16 4 .* 65536 16/}
 
 # descendents of 32768
-do_execsql_test 1.2 {
+do_timed_execsql_test 1.2 {
   SELECT * FROM cx WHERE root=32768 ORDER BY id;
+} {32768 0 65536 1 65537 1 131072 2}
+do_timed_execsql_test 1.2-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(32768,0)
+       UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below on t1.y=below.id
+       WHERE below.depth<2
+    )
+  SELECT id, depth FROM below ORDER BY id;
 } {32768 0 65536 1 65537 1 131072 2}
 
 # descendents of 16384
@@ -76,18 +87,40 @@ do_execsql_test 1.4 {
 } {32768 1 {} t1 x y 32769 1 {} t1 x y}
 
 # great-grandparent of 16384
-do_execsql_test 1.5 {
+do_timed_execsql_test 1.5 {
   SELECT id, depth, root, tablename, idcolumn, parentcolumn FROM cx
    WHERE root=16384
      AND depth=3
      AND idcolumn='Y'
      AND parentcolumn='X';
 } {2048 3 {} t1 Y X}
+do_timed_execsql_test 1.5-cte {
+  WITH RECURSIVE
+    above(id,depth) AS (
+      VALUES(16384,0)
+      UNION ALL
+      SELECT t1.y, above.depth+1
+        FROM t1 JOIN above ON t1.x=above.id
+       WHERE above.depth<3
+    )
+  SELECT id FROM above WHERE depth=3;
+} {2048}
 
 # depth<5
-do_execsql_test 1.6 {
+do_timed_execsql_test 1.6 {
   SELECT count(*), depth FROM cx WHERE root=1 AND depth<5
    GROUP BY depth ORDER BY 1;
+} {1 0 2 1 4 2 8 3 16 4}
+do_timed_execsql_test 1.6-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(1,0)
+      UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below ON t1.y=below.id
+       WHERE below.depth<4
+    )
+  SELECT count(*), depth FROM below GROUP BY depth ORDER BY 1;
 } {1 0 2 1 4 2 8 3 16 4}
 
 # depth<=5
@@ -109,8 +142,19 @@ do_execsql_test 1.9 {
 } {8 3 16 4 32 5}
 
 # depth==5 with min() and max()
-do_execsql_test 1.10 {
+do_timed_execsql_test 1.10 {
   SELECT count(*), min(id), max(id) FROM cx WHERE root=1 AND depth=5;
+} {32 32 63}
+do_timed_execsql_test 1.10-cte {
+  WITH RECURSIVE
+    below(id,depth) AS (
+      VALUES(1,0)
+      UNION ALL
+      SELECT t1.x, below.depth+1
+        FROM t1 JOIN below ON t1.y=below.id
+       WHERE below.depth<5
+    )
+  SELECT count(*), min(id), max(id) FROM below WHERE depth=5;
 } {32 32 63}
 
 # Create a much smaller table t2 with only 32 elements 
