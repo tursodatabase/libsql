@@ -1,5 +1,5 @@
-C Add\stest\scases\sshowing\sthe\suse\sof\sORDER\sBY\son\sa\srecursive\squery\sto\scontrol\ndepth-first\sversus\sbreath-first\ssearch\sof\sa\stree.
-D 2014-01-24T11:16:01.884
+C Add\stest\scases\sthat\scompare\sthe\sperformance\sof\sthe\stransitive_closure\nvirtual\stable\sagain\scommon\stable\sexpressions\sfor\swalking\sa\stree.
+D 2014-01-24T14:37:44.938
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -372,7 +372,7 @@ F test/capi3e.test ad90088b18b0367125ff2d4b5400153fd2f99aab
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
 F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
-F test/closure01.test dbb28f1ea9eeaf0a53ec5bc0fed352e479def8c7
+F test/closure01.test 52036bd5f5d1734f41ba708e9038198aa274156a
 F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test 73b91005f264b7c403e2d63a6708d150679ac99a
 F test/collate2.test 9aaa410a00734e48bcb27f3872617d6f69b2a621
@@ -844,7 +844,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 08e9f317afe60d398fa900993503ecaef3295bad
+F test/tester.tcl 9bd04481b8b0ef1f2049ad01f28e175ee9a14f7b
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f4a701d55f5c4e1e62ed64b779ad4fff89dd31b7
-R 15c1d48ec007e0818a79a87f9c81fe3d
+P 83b0b2916589db0184435dbd4c304387f393ed60
+R f85f8ae6263bf3d6f45ffff44c95c74a
 U drh
-Z a61c87789af8810b68d544f76885410e
+Z be990f0e27dcbfb4abd20beb041780d7
