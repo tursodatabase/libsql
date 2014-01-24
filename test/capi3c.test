@@ -169,16 +169,18 @@ do_test capi3c-3.4 {
 do_test capi3c-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3c-3.6.1-misuse {
-  sqlite3_close $db2
-} {SQLITE_MISUSE}
-do_test capi3c-3.6.2-misuse {
-  sqlite3_errmsg $db2
-} {library routine called out of sequence}
-ifcapable {utf16} {
-  do_test capi3c-3.6.3-misuse {
-    utf8 [sqlite3_errmsg16 $db2]
+if {[clang_sanitize_address]==0} {
+  do_test capi3c-3.6.1-misuse {
+    sqlite3_close $db2
+  } {SQLITE_MISUSE}
+  do_test capi3c-3.6.2-misuse {
+    sqlite3_errmsg $db2
   } {library routine called out of sequence}
+  ifcapable {utf16} {
+    do_test capi3c-3.6.3-misuse {
+      utf8 [sqlite3_errmsg16 $db2]
+    } {library routine called out of sequence}
+  }
 }
 
 # rename sqlite3_open ""
@@ -627,13 +629,17 @@ check_data $STMT capi3c-6.3 {INTEGER} {1} {1.0} {1}
 do_test capi3c-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
-do_test capi3c-6.4 {
-  db cache flush
-  sqlite3_close $DB
-} {SQLITE_OK}
-do_test capi3c-6.99-misuse {
+if {[clang_sanitize_address]==0} {
+  do_test capi3c-6.4 {
+    db cache flush
+      sqlite3_close $DB
+  } {SQLITE_OK}
+  do_test capi3c-6.99-misuse {
+    db close
+  } {}
+} else {
   db close
-} {}
+}
 
 # This procedure sets the value of the file-format in file 'test.db'
 # to $newval. Also, the schema cookie is incremented.

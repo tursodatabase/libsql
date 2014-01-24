@@ -179,16 +179,18 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-3.6.1-misuse {
-  sqlite3_close $db2
-} {SQLITE_MISUSE}
-do_test capi3-3.6.2-misuse {
-  sqlite3_errmsg $db2
-} {library routine called out of sequence}
-ifcapable {utf16} {
-  do_test capi3-3.6.3-misuse {
-    utf8 [sqlite3_errmsg16 $db2]
+if {[clang_sanitize_address]==0} {
+  do_test capi3-3.6.1-misuse {
+    sqlite3_close $db2
+  } {SQLITE_MISUSE}
+  do_test capi3-3.6.2-misuse {
+    sqlite3_errmsg $db2
   } {library routine called out of sequence}
+  ifcapable {utf16} {
+    do_test capi3-3.6.3-misuse {
+      utf8 [sqlite3_errmsg16 $db2]
+    } {library routine called out of sequence}
+  }
 }
 
 do_test capi3-3.7 {
@@ -661,10 +663,12 @@ do_test capi3-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-do_test capi3-6.4-misuse {
-  db cache flush
-  sqlite3_close $DB
-} {SQLITE_OK}
+if {[clang_sanitize_address]==0} {
+  do_test capi3-6.4-misuse {
+    db cache flush
+    sqlite3_close $DB
+  } {SQLITE_OK}
+}
 db close
 
 # This procedure sets the value of the file-format in file 'test.db'
@@ -1060,11 +1064,13 @@ if {[llength [info commands sqlite3_sleep]]>0} {
 }
 
 # Ticket #1219:  Make sure binding APIs can handle a NULL pointer.
-#
-do_test capi3-14.1-misuse {
-  set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
-  lappend rc $msg
-} {1 SQLITE_MISUSE}
+# 
+if {[clang_sanitize_address]==0} {
+  do_test capi3-14.1-misuse {
+    set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
+      lappend rc $msg
+  } {1 SQLITE_MISUSE}
+}
 
 # Ticket #1650:  Honor the nBytes parameter to sqlite3_prepare.
 #

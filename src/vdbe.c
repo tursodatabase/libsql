@@ -4427,7 +4427,6 @@ case OP_NullRow: {
   pC->nullRow = 1;
   pC->rowidIsValid = 0;
   pC->cacheStatus = CACHE_STALE;
-  assert( pC->pCursor || pC->pVtabCursor );
   if( pC->pCursor ){
     sqlite3BtreeClearCursor(pC->pCursor);
   }

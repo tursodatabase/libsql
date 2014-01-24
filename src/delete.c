@@ -728,9 +728,10 @@ void sqlite3GenerateRowIndexDelete(
   int *aRegIdx       /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
 ){
   int i;             /* Index loop counter */
-  int r1;            /* Register holding an index key */
+  int r1 = -1;       /* Register holding an index key */
   int iPartIdxLabel; /* Jump destination for skipping partial index entries */
   Index *pIdx;       /* Current index */
+  Index *pPrior = 0; /* Prior index */
   Vdbe *v;           /* The prepared statement under construction */
   Index *pPk;        /* PRIMARY KEY index, or NULL for rowid tables */
 
@@ -741,10 +742,12 @@ void sqlite3GenerateRowIndexDelete(
     if( aRegIdx!=0 && aRegIdx[i]==0 ) continue;
     if( pIdx==pPk ) continue;
     VdbeModuleComment((v, "GenRowIdxDel for %s", pIdx->zName));
-    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1, &iPartIdxLabel);
+    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1,
+                                 &iPartIdxLabel, pPrior, r1);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
                       pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
     sqlite3VdbeResolveLabel(v, iPartIdxLabel);
+    pPrior = pIdx;
   }
 }
 
@@ -766,6 +769,17 @@ void sqlite3GenerateRowIndexDelete(
 ** to false or null.  If pIdx is not a partial index, *piPartIdxLabel
 ** will be set to zero which is an empty label that is ignored by
 ** sqlite3VdbeResolveLabel().
+**
+** The pPrior and regPrior parameters are used to implement a cache to
+** avoid unnecessary register loads.  If pPrior is not NULL, then it is
+** a pointer to a different index for which an index key has just been
+** computed into register regPrior.  If the current pIdx index is generating
+** its key into the same sequence of registers and if pPrior and pIdx share
+** a column in common, then the register corresponding to that column already
+** holds the correct value and the loading of that register is skipped.
+** This optimization is helpful when doing a DELETE or an INTEGRITY_CHECK 
+** on a table with multiple indices, and especially with the ROWID or
+** PRIMARY KEY columns of the index.
 */
 int sqlite3GenerateIndexKey(
   Parse *pParse,       /* Parsing context */
@@ -773,7 +787,9 @@ int sqlite3GenerateIndexKey(
   int iDataCur,        /* Cursor number from which to take column data */
   int regOut,          /* Put the new key into this register if not 0 */
   int prefixOnly,      /* Compute only a unique prefix of the key */
-  int *piPartIdxLabel  /* OUT: Jump to this label to skip partial index */
+  int *piPartIdxLabel, /* OUT: Jump to this label to skip partial index */
+  Index *pPrior,       /* Previously generated index key */
+  int regPrior         /* Register holding previous generated key */
 ){
   Vdbe *v = pParse->pVdbe;
   int j;
@@ -793,21 +809,21 @@ int sqlite3GenerateIndexKey(
   }
   nCol = (prefixOnly && pIdx->uniqNotNull) ? pIdx->nKeyCol : pIdx->nColumn;
   regBase = sqlite3GetTempRange(pParse, nCol);
+  if( pPrior && (regBase!=regPrior || pPrior->pPartIdxWhere) ) pPrior = 0;
   for(j=0; j<nCol; j++){
+    if( pPrior && pPrior->aiColumn[j]==pIdx->aiColumn[j] ) continue;
     sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pIdx->aiColumn[j],
                                     regBase+j);
+    /* If the column affinity is REAL but the number is an integer, then it
+    ** might be stored in the table as an integer (using a compact
+    ** representation) then converted to REAL by an OP_RealAffinity opcode.
+    ** But we are getting ready to store this value back into an index, where
+    ** it should be converted by to INTEGER again.  So omit the OP_RealAffinity
+    ** opcode if it is present */
+    sqlite3VdbeDeletePriorOpcode(v, OP_RealAffinity);
   }
   if( regOut ){
-    const char *zAff;
-    if( pTab->pSelect
-     || OptimizationDisabled(pParse->db, SQLITE_IdxRealAsInt)
-    ){
-      zAff = 0;
-    }else{
-      zAff = sqlite3IndexAffinityStr(v, pIdx);
-    }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regOut);
-    sqlite3VdbeChangeP4(v, -1, zAff, P4_TRANSIENT);
   }
   sqlite3ReleaseTempRange(pParse, regBase, nCol);
   return regBase;
