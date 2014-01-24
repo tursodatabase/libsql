@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sLIMIT\sand\sORDER\sBY\son\srecursive\sCTEs.
-D 2014-01-24T16:57:42.837
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sTcl\sinterface.
+D 2014-01-24T17:03:55.776
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/sqliteInt.h 87a90ad4818ac5d68d3463eb7fe3ed96e5209b25
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 46073db71011b6542fde1f234c56a076d5ff23f9
+F src/tclsqlite.c 21ca0043d7c48cde5dabed5c1116eee1be692f62
 F src/test1.c 2401eee14a4309a7cfe2aeb2f30ad517a1d9c299
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b1824344ea4918a13abbda4a3b7134d35fd867c4
-R 9a46b9863f9dd82900d571672109f9d1
-U dan
-Z c5f919f56b9fa0112bb7211064a506d1
+P 67d6c42d44cb191368ce20f553b32fcb14bfc4d7
+R 4c6f56cfb9673c8d50f2c5c8d045a419
+U mistachkin
+Z 1e8effcea2fae186977e2dc88d96ee04
