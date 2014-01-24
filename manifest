@@ -1,5 +1,5 @@
-C Add\sa\sfew\smore\sCTE\stest\scases\sto\sclosure.test.
-D 2014-01-24T15:42:51.397
+C Use\san\sunsigned\sinteger\sto\saccumulate\sthe\sstring\shash.\s\sAvoids\scompiler\nwarnings.
+D 2014-01-24T16:36:18.370
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c 6325ac2ec10833ccf4d5c36d323709221d37ea19
 F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
-F src/hash.c ac3470bbf1ca4ae4e306a8ecb0fdf1731810ffe4
+F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c a4450f0c46a9f221622e6551ab0953b03c4f8ee8
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9a23f020e8ed0e7a1ad227b4ab379fdf5e2de222
-R f2060716c43f1dee6a2c1f879c1129f5
+P 1b6405d9788c1bb89761b2bcdce560a5020ff503
+R f7e02965abaaba2b2c591f1141f3d7cf
 U drh
-Z 7914ad8fe58314f1f17f9965f9b13c5e
+Z 197e448152d1aa82b77763ec048456c7
