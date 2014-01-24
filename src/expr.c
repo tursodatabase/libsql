@@ -2685,7 +2685,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       FuncDef *pDef;         /* The function definition object */
       int nId;               /* Length of the function name in bytes */
       const char *zId;       /* The function name */
-      int constMask = 0;     /* Mask of function arguments that are constant */
+      u32 constMask = 0;     /* Mask of function arguments that are constant */
       int i;                 /* Loop counter */
       u8 enc = ENC(db);      /* The text encoding used by this database */
       CollSeq *pColl = 0;    /* A collating sequence */
@@ -2736,7 +2736,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 
       for(i=0; i<nFarg; i++){
         if( i<32 && sqlite3ExprIsConstant(pFarg->a[i].pExpr) ){
-          constMask |= (1<<i);
+          testcase( i==31 );
+          constMask |= MASKBIT32(i);
         }
         if( (pDef->funcFlags & SQLITE_FUNC_NEEDCOLL)!=0 && !pColl ){
           pColl = sqlite3ExprCollSeq(pParse, pFarg->a[i].pExpr);

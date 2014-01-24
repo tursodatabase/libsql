@@ -2615,8 +2615,9 @@ void sqlite3VdbeDeleteAuxData(Vdbe *pVdbe, int iOp, int mask){
   while( *pp ){
     AuxData *pAux = *pp;
     if( (iOp<0)
-     || (pAux->iOp==iOp && (pAux->iArg>31 || !(mask & ((u32)1<<pAux->iArg))))
+     || (pAux->iOp==iOp && (pAux->iArg>31 || !(mask & MASKBIT32(pAux->iArg))))
     ){
+      testcase( pAux->iArg==31 );
       if( pAux->xDelete ){
         pAux->xDelete(pAux->pAux);
       }
@@ -2931,6 +2932,9 @@ u32 sqlite3VdbeSerialGet(
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
+  u64 x;
+  u32 y;
+  int i;
   switch( serial_type ){
     case 10:   /* Reserved for future use */
     case 11:   /* Reserved for future use */
@@ -2944,23 +2948,26 @@ u32 sqlite3VdbeSerialGet(
       return 1;
     }
     case 2: { /* 2-byte signed integer */
-      pMem->u.i = (((signed char)buf[0])<<8) | buf[1];
+      i = 256*(signed char)buf[0] | buf[1];
+      pMem->u.i = (i64)i;
       pMem->flags = MEM_Int;
       return 2;
     }
     case 3: { /* 3-byte signed integer */
-      pMem->u.i = (((signed char)buf[0])<<16) | (buf[1]<<8) | buf[2];
+      i = 65536*(signed char)buf[0] | (buf[1]<<8) | buf[2];
+      pMem->u.i = (i64)i;
       pMem->flags = MEM_Int;
       return 3;
     }
     case 4: { /* 4-byte signed integer */
-      pMem->u.i = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      y = ((unsigned)buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      pMem->u.i = (i64)*(int*)&y;
       pMem->flags = MEM_Int;
       return 4;
     }
     case 5: { /* 6-byte signed integer */
-      u64 x = (((signed char)buf[0])<<8) | buf[1];
-      u32 y = (buf[2]<<24) | (buf[3]<<16) | (buf[4]<<8) | buf[5];
+      u64 x = 256*(signed char)buf[0] + buf[1];
+      u32 y = ((unsigned)buf[2]<<24) | (buf[3]<<16) | (buf[4]<<8) | buf[5];
       x = (x<<32) | y;
       pMem->u.i = *(i64*)&x;
       pMem->flags = MEM_Int;
@@ -2968,8 +2975,6 @@ u32 sqlite3VdbeSerialGet(
     }
     case 6:   /* 8-byte signed integer */
     case 7: { /* IEEE floating point */
-      u64 x;
-      u32 y;
 #if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
       /* Verify that integers and floating point values use the same
       ** byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
@@ -2982,9 +2987,8 @@ u32 sqlite3VdbeSerialGet(
       swapMixedEndianFloat(t2);
       assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
 #endif
-
-      x = (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
-      y = (buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
+      x = ((unsigned)buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      y = ((unsigned)buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
       x = (x<<32) | y;
       if( serial_type==6 ){
         pMem->u.i = *(i64*)&x;

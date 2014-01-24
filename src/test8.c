@@ -892,7 +892,7 @@ static int echoBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
     pIdxInfo->estimatedCost = cost;
   }else if( useIdx ){
     /* Approximation of log2(nRow). */
-    for( ii=0; ii<(sizeof(int)*8); ii++ ){
+    for( ii=0; ii<(sizeof(int)*8)-1; ii++ ){
       if( nRow & (1<<ii) ){
         pIdxInfo->estimatedCost = (double)ii;
       }

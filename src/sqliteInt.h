@@ -1982,6 +1982,7 @@ typedef u64 Bitmask;
 ** A bit in a Bitmask
 */
 #define MASKBIT(n)   (((Bitmask)1)<<(n))
+#define MASKBIT32(n) (((unsigned int)1)<<(n))
 
 /*
 ** The following structure describes the FROM clause of a SELECT statement.

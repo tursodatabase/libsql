@@ -720,6 +720,7 @@ static sqlite3_pcache_page *pcache1Fetch(
   PGroup *pGroup;
   PgHdr1 *pPage = 0;
 
+  assert( offsetof(PgHdr1,page)==0 );
   assert( pCache->bPurgeable || createFlag!=1 );
   assert( pCache->bPurgeable || pCache->nMin==0 );
   assert( pCache->bPurgeable==0 || pCache->nMin==10 );
@@ -825,7 +826,7 @@ fetch_out:
     pCache->iMaxKey = iKey;
   }
   pcache1LeaveMutex(pGroup);
-  return &pPage->page;
+  return (sqlite3_pcache_page*)pPage;
 }
 
 
