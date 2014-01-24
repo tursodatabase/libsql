@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sTcl\sinterface.
-D 2014-01-24T17:03:55.776
+C Select\scollation\ssequences\sfor\sORDER\sBY\sexpressions\sattached\sto\srecursive\sCTEs\sin\sthe\ssame\sway\sas\sthey\sare\sselected\sfor\sother\scompound\sSELECT\sstatements.
+D 2014-01-24T20:37:18.933
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 93764e0d81946c070e2c7f1127f35e21efabbcc3
+F src/select.c d88d739b7af398b8d5b6856d1d479b42d15c419d
 F src/shell.c 24722d24d4ea8ca93db35e44db7308de786767ca
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1092,7 +1092,7 @@ F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
-F test/with1.test 6c9c27b76e320d0ae3a3fc9ff6b236018201470d
+F test/with1.test ce15d69d34a2576b0e47d78c244d1ba2a31679d1
 F test/with2.test 2fe78fcd8deef2a0f9cfc49bfc755911d0b3fd64
 F test/withM.test e97f2a8c506ab3ea9eab94e6f6072f6cc924c991
 F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 67d6c42d44cb191368ce20f553b32fcb14bfc4d7
-R 4c6f56cfb9673c8d50f2c5c8d045a419
-U mistachkin
-Z 1e8effcea2fae186977e2dc88d96ee04
+P 35bc81f5ad4503c0db03127ba3c2ee4ce5227448
+R c1a71fcb2b287542b440975ad8562a1c
+U dan
+Z 0004644f36087f5d68980e2ae5cf51c5

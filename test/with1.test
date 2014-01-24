@@ -607,6 +607,97 @@ do_test 10.6 {
 }]
 
 
+# Test name resolution in ORDER BY clauses.
+#
+do_catchsql_test 10.7.1 {
+  WITH t(a) AS (
+    SELECT 1 AS b UNION ALL SELECT a+1 AS c FROM t WHERE a<5 ORDER BY a
+  ) 
+  SELECT * FROM t
+} {1 {1st ORDER BY term does not match any column in the result set}}
+do_execsql_test 10.7.2 {
+  WITH t(a) AS (
+    SELECT 1 AS b UNION ALL SELECT a+1 AS c FROM t WHERE a<5 ORDER BY b
+  ) 
+  SELECT * FROM t
+} {1 2 3 4 5}
+do_execsql_test 10.7.3 {
+  WITH t(a) AS (
+    SELECT 1 AS b UNION ALL SELECT a+1 AS c FROM t WHERE a<5 ORDER BY c
+  ) 
+  SELECT * FROM t
+} {1 2 3 4 5}
+
+# Test COLLATE clauses attached to ORDER BY.
+#
+insert_into_tree {
+  /a/b
+  /a/C
+  /a/d
+  /B/e
+  /B/F
+  /B/g
+  /c/h
+  /c/I
+  /c/j
+}
+
+do_execsql_test 10.8.1 {
+  WITH flat(fid, depth, p) AS (
+    SELECT id, 1, '/' || payload FROM tree WHERE parentid IS NULL
+    UNION ALL
+    SELECT id, depth+1, p||'/'||payload FROM flat, tree WHERE parentid=fid
+    ORDER BY 2, 3 COLLATE nocase
+  )
+  SELECT p FROM flat;
+} {
+  /a /B /c
+  /a/b /a/C /a/d /B/e /B/F /B/g /c/h /c/I /c/j
+}
+do_execsql_test 10.8.2 {
+  WITH flat(fid, depth, p) AS (
+      SELECT id, 1, ('/' || payload) COLLATE nocase 
+      FROM tree WHERE parentid IS NULL
+    UNION ALL
+      SELECT id, depth+1, (p||'/'||payload)
+      FROM flat, tree WHERE parentid=fid
+    ORDER BY 2, 3
+  )
+  SELECT p FROM flat;
+} {
+  /a /B /c
+  /a/b /a/C /a/d /B/e /B/F /B/g /c/h /c/I /c/j
+}
+
+do_execsql_test 10.8.3 {
+  WITH flat(fid, depth, p) AS (
+      SELECT id, 1, ('/' || payload)
+      FROM tree WHERE parentid IS NULL
+    UNION ALL
+      SELECT id, depth+1, (p||'/'||payload) COLLATE nocase 
+      FROM flat, tree WHERE parentid=fid
+    ORDER BY 2, 3
+  )
+  SELECT p FROM flat;
+} {
+  /a /B /c
+  /a/b /a/C /a/d /B/e /B/F /B/g /c/h /c/I /c/j
+}
+
+do_execsql_test 10.8.4.1 {
+  CREATE TABLE tst(a,b);
+  INSERT INTO tst VALUES('a', 'A');
+  INSERT INTO tst VALUES('b', 'B');
+  INSERT INTO tst VALUES('c', 'C');
+  SELECT a COLLATE nocase FROM tst UNION ALL SELECT b FROM tst ORDER BY 1;
+} {a A b B c C}
+do_execsql_test 10.8.4.2 {
+  SELECT a FROM tst UNION ALL SELECT b COLLATE nocase FROM tst ORDER BY 1;
+} {A B C a b c}
+do_execsql_test 10.8.4.3 {
+  SELECT a||'' FROM tst UNION ALL SELECT b COLLATE nocase FROM tst ORDER BY 1;
+} {a A b B c C}
+
 # Test cases to illustrate on the ORDER BY clause on a recursive query can be
 # used to control depth-first versus breath-first search in a tree.
 #

@@ -1725,6 +1725,44 @@ static CollSeq *multiSelectCollSeq(Parse *pParse, Select *p, int iCol){
   }
   return pRet;
 }
+
+/*
+** The select statement passed as the second parameter is a compound SELECT
+** with an ORDER BY clause. This function allocates and returns a KeyInfo
+** structure suitable for implementing the ORDER BY.
+**
+** Space to hold the KeyInfo structure is obtained from malloc. The calling
+** function is responsible for ensuring that this structure is eventually
+** freed.
+*/
+static KeyInfo *multiSelectOrderByKeyInfo(Parse *pParse, Select *p, int nExtra){
+  ExprList *pOrderBy = p->pOrderBy;
+  int nOrderBy = p->pOrderBy->nExpr;
+  sqlite3 *db = pParse->db;
+  KeyInfo *pRet = sqlite3KeyInfoAlloc(db, nOrderBy+nExtra, 1);
+  if( pRet ){
+    int i;
+    for(i=0; i<nOrderBy; i++){
+      struct ExprList_item *pItem = &pOrderBy->a[i];
+      Expr *pTerm = pItem->pExpr;
+      CollSeq *pColl;
+
+      if( pTerm->flags & EP_Collate ){
+        pColl = sqlite3ExprCollSeq(pParse, pTerm);
+      }else{
+        pColl = multiSelectCollSeq(pParse, p, pItem->u.x.iOrderByCol-1);
+        if( pColl==0 ) pColl = db->pDfltColl;
+        pOrderBy->a[i].pExpr =
+          sqlite3ExprAddCollateString(pParse, pTerm, pColl->zName);
+      }
+      assert( sqlite3KeyInfoIsWriteable(pRet) );
+      pRet->aColl[i] = pColl;
+      pRet->aSortOrder[i] = pOrderBy->a[i].sortOrder;
+    }
+  }
+
+  return pRet;
+}
 #endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
 #ifndef SQLITE_OMIT_CTE
@@ -1799,6 +1837,7 @@ static void generateWithRecursiveQuery(
   regOffset = p->iOffset;
   p->pLimit = p->pOffset = 0;
   p->iLimit = p->iOffset = 0;
+  pOrderBy = p->pOrderBy;
 
   /* Locate the cursor number of the Current table */
   for(i=0; ALWAYS(i<pSrc->nSrc); i++){
@@ -1807,10 +1846,6 @@ static void generateWithRecursiveQuery(
       break;
     }
   }
-
-  /* Detach the ORDER BY clause from the compound SELECT */
-  pOrderBy = p->pOrderBy;
-  p->pOrderBy = 0;
 
   /* Allocate cursors numbers for Queue and Distinct.  The cursor number for
   ** the Distinct table must be exactly one greater than Queue in order
@@ -1828,7 +1863,7 @@ static void generateWithRecursiveQuery(
   regCurrent = ++pParse->nMem;
   sqlite3VdbeAddOp3(v, OP_OpenPseudo, iCurrent, regCurrent, nCol);
   if( pOrderBy ){
-    KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pOrderBy, 1);
+    KeyInfo *pKeyInfo = multiSelectOrderByKeyInfo(pParse, p, 1);
     sqlite3VdbeAddOp4(v, OP_OpenEphemeral, iQueue, pOrderBy->nExpr+2, 0,
                       (char*)pKeyInfo, P4_KEYINFO);
     destQueue.pOrderBy = pOrderBy;
@@ -1840,6 +1875,9 @@ static void generateWithRecursiveQuery(
     p->addrOpenEphm[0] = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iDistinct, 0);
     p->selFlags |= SF_UsesEphemeral;
   }
+
+  /* Detach the ORDER BY clause from the compound SELECT */
+  p->pOrderBy = 0;
 
   /* Store the results of the setup-query in Queue. */
   rc = sqlite3Select(pParse, pSetup, &destQueue);
@@ -2625,24 +2663,7 @@ static int multiSelectOrderBy(
           && pItem->u.x.iOrderByCol<=p->pEList->nExpr );
       aPermute[i] = pItem->u.x.iOrderByCol - 1;
     }
-    pKeyMerge = sqlite3KeyInfoAlloc(db, nOrderBy, 1);
-    if( pKeyMerge ){
-      for(i=0; i<nOrderBy; i++){
-        CollSeq *pColl;
-        Expr *pTerm = pOrderBy->a[i].pExpr;
-        if( pTerm->flags & EP_Collate ){
-          pColl = sqlite3ExprCollSeq(pParse, pTerm);
-        }else{
-          pColl = multiSelectCollSeq(pParse, p, aPermute[i]);
-          if( pColl==0 ) pColl = db->pDfltColl;
-          pOrderBy->a[i].pExpr =
-             sqlite3ExprAddCollateString(pParse, pTerm, pColl->zName);
-        }
-        assert( sqlite3KeyInfoIsWriteable(pKeyMerge) );
-        pKeyMerge->aColl[i] = pColl;
-        pKeyMerge->aSortOrder[i] = pOrderBy->a[i].sortOrder;
-      }
-    }
+    pKeyMerge = multiSelectOrderByKeyInfo(pParse, p, 1);
   }else{
     pKeyMerge = 0;
   }
