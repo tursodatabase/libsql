@@ -1,5 +1,5 @@
-C Modifications\sto\stest\sfiles\sto\somit\sany\stests\sthat\sintentionally\saccess\sout-of-bounds\slocations\sin\sclang\s-fsanitize=address\sbuilds.
-D 2014-01-23T14:44:08.207
+C Add\stest\scases\sshowing\sthe\suse\sof\sORDER\sBY\son\sa\srecursive\squery\sto\scontrol\ndepth-first\sversus\sbreath-first\ssearch\sof\sa\stree.
+D 2014-01-24T11:16:01.884
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1092,7 +1092,7 @@ F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
 F test/win32lock.test 7a6bd73a5dcdee39b5bb93e92395e1773a194361
 F test/win32longpath.test 169c75a3b2e43481f4a62122510210c67b08f26d
-F test/with1.test 97166cc72de5327bbae782aece707c45ee40e41b
+F test/with1.test 9d3537372c8cf6d5e0a5e9af037a52f3375fb704
 F test/with2.test 2fe78fcd8deef2a0f9cfc49bfc755911d0b3fd64
 F test/withM.test e97f2a8c506ab3ea9eab94e6f6072f6cc924c991
 F test/without_rowid1.test aaa26da19d543cd8d3d2d0e686dfa255556c15c8
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 72c4b3f07a3faacb5b62d5bc374b4e125a0bd8b3
-R 1a965aa9944d1df45f2b3d9d29de01da
-U dan
-Z 5e3d3ac89b5b8048d3858093fe9eb7e9
+P f4a701d55f5c4e1e62ed64b779ad4fff89dd31b7
+R 15c1d48ec007e0818a79a87f9c81fe3d
+U drh
+Z a61c87789af8810b68d544f76885410e

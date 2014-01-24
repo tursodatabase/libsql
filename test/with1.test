@@ -374,7 +374,7 @@ do_catchsql_test 7.6 {
 
 # Compute the mandelbrot set using a recursive query
 #
-do_execsql_test 8.1 {
+do_execsql_test 8.1-mandelbrot {
   WITH RECURSIVE
     xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+0.05 FROM xaxis WHERE x<1.2),
     yaxis(y) AS (VALUES(-1.0) UNION ALL SELECT y+0.1 FROM yaxis WHERE y<1.0),
@@ -417,7 +417,7 @@ do_execsql_test 8.1 {
 
 # Solve a sudoku puzzle using a recursive query
 #
-do_execsql_test 8.2 {
+do_execsql_test 8.2-soduko {
   WITH RECURSIVE
     input(sud) AS (
       VALUES('53..7....6..195....98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79')
@@ -451,5 +451,124 @@ do_execsql_test 8.2 {
     )
   SELECT s FROM x WHERE ind=0;
 } {534678912672195348198342567859761423426853791713924856961537284287419635345286179}
+
+
+# Test cases to illustrate on the ORDER BY clause on a recursive query can be
+# used to control depth-first versus breath-first search in a tree.
+#
+do_execsql_test 9.1 {
+  CREATE TABLE org(
+    name TEXT PRIMARY KEY,
+    boss TEXT REFERENCES org
+  ) WITHOUT ROWID;
+  INSERT INTO org VALUES('Alice',NULL);
+  INSERT INTO org VALUES('Bob','Alice');
+  INSERT INTO org VALUES('Cindy','Alice');
+  INSERT INTO org VALUES('Dave','Bob');
+  INSERT INTO org VALUES('Emma','Bob');
+  INSERT INTO org VALUES('Fred','Cindy');
+  INSERT INTO org VALUES('Gail','Cindy');
+  INSERT INTO org VALUES('Harry','Dave');
+  INSERT INTO org VALUES('Ingrid','Dave');
+  INSERT INTO org VALUES('Jim','Emma');
+  INSERT INTO org VALUES('Kate','Emma');
+  INSERT INTO org VALUES('Lanny','Fred');
+  INSERT INTO org VALUES('Mary','Fred');
+  INSERT INTO org VALUES('Noland','Gail');
+  INSERT INTO org VALUES('Olivia','Gail');
+  -- The above are all under Alice.  Add a few more records for people
+  -- not in Alice's group, just to prove that they won't be selected.
+  INSERT INTO org VALUES('Xaviar',NULL);
+  INSERT INTO org VALUES('Xia','Xaviar');
+  INSERT INTO org VALUES('Xerxes','Xaviar');
+  INSERT INTO org VALUES('Xena','Xia');
+  -- Find all members of Alice's group, breath-first order  
+  WITH RECURSIVE
+    under_alice(name,level) AS (
+       VALUES('Alice','0')
+       UNION ALL
+       SELECT org.name, under_alice.level+1
+         FROM org, under_alice
+        WHERE org.boss=under_alice.name
+        ORDER BY 2
+    )
+  SELECT group_concat(substr('...............',1,level*3) || name,x'0a')
+    FROM under_alice;
+} {{Alice
+...Bob
+...Cindy
+......Dave
+......Emma
+......Fred
+......Gail
+.........Harry
+.........Ingrid
+.........Jim
+.........Kate
+.........Lanny
+.........Mary
+.........Noland
+.........Olivia}}
+
+# The previous query used "ORDER BY level" to yield a breath-first search.
+# Change that to "ORDER BY level DESC" for a depth-first search.
+#
+do_execsql_test 9.2 {
+  WITH RECURSIVE
+    under_alice(name,level) AS (
+       VALUES('Alice','0')
+       UNION ALL
+       SELECT org.name, under_alice.level+1
+         FROM org, under_alice
+        WHERE org.boss=under_alice.name
+        ORDER BY 2 DESC
+    )
+  SELECT group_concat(substr('...............',1,level*3) || name,x'0a')
+    FROM under_alice;
+} {{Alice
+...Bob
+......Dave
+.........Harry
+.........Ingrid
+......Emma
+.........Jim
+.........Kate
+...Cindy
+......Fred
+.........Lanny
+.........Mary
+......Gail
+.........Noland
+.........Olivia}}
+
+# Without an ORDER BY clause, the recursive query should use a FIFO,
+# resulting in a breath-first search.
+#
+do_execsql_test 9.3 {
+  WITH RECURSIVE
+    under_alice(name,level) AS (
+       VALUES('Alice','0')
+       UNION ALL
+       SELECT org.name, under_alice.level+1
+         FROM org, under_alice
+        WHERE org.boss=under_alice.name
+    )
+  SELECT group_concat(substr('...............',1,level*3) || name,x'0a')
+    FROM under_alice;
+} {{Alice
+...Bob
+...Cindy
+......Dave
+......Emma
+......Fred
+......Gail
+.........Harry
+.........Ingrid
+.........Jim
+.........Kate
+.........Lanny
+.........Mary
+.........Noland
+.........Olivia}}
 
 finish_test
