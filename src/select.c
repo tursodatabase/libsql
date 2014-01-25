@@ -1763,7 +1763,6 @@ static KeyInfo *multiSelectOrderByKeyInfo(Parse *pParse, Select *p, int nExtra){
 
   return pRet;
 }
-#endif /* SQLITE_OMIT_COMPOUND_SELECT */
 
 #ifndef SQLITE_OMIT_CTE
 /*
@@ -1921,7 +1920,7 @@ end_of_recursive_query:
   p->pOffset = pOffset;
   return;
 }
-#endif
+#endif /* SQLITE_OMIT_CTE */
 
 /* Forward references */
 static int multiSelectOrderBy(
@@ -1931,7 +1930,6 @@ static int multiSelectOrderBy(
 );
 
 
-#ifndef SQLITE_OMIT_COMPOUND_SELECT
 /*
 ** This routine is called to process a compound query form from
 ** two or more separate queries using UNION, UNION ALL, EXCEPT, or

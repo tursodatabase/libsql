@@ -1,5 +1,5 @@
-C Fixes\sfor\svarious\sclang\swarnings.
-D 2014-01-24T22:58:00.303
+C Fix\sa\sproblem\scausing\sSQLITE_OMIT_COMPOUND_SELECT\sbuilds\sto\sfail.
+D 2014-01-25T12:16:53.164
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c d88d739b7af398b8d5b6856d1d479b42d15c419d
+F src/select.c a421f3fb7f52a3c0b37f5caeabd27799e8a9ae58
 F src/shell.c 24722d24d4ea8ca93db35e44db7308de786767ca
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1127,7 +1127,7 @@ F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
 F tool/mkvsix.tcl 6477fb9dab838b7eea1eed50658ff1cda04850b5
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
-F tool/omittest.tcl 4665982e95a6e5c1bd806cf7bc3dea95be422d77
+F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9554519c126c5e714421a82fd2e8aa9b19e11493
-R c581db3b6e5511f2dddae190976cfffb
-U drh
-Z 8b12a1dace1d4f79f17e9cd04b2cccdf
+P 87bf60637e5863c54c5e2d05aaaca0835b7aace8
+R 69ab88b9bb0a730071944ebfada4d77f
+U dan
+Z d44703c5b70f5ed4164d3c8bc064c718
