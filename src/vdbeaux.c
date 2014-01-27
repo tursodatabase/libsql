@@ -2966,8 +2966,8 @@ u32 sqlite3VdbeSerialGet(
       return 4;
     }
     case 5: { /* 6-byte signed integer */
-      u64 x = 256*(signed char)buf[0] + buf[1];
-      u32 y = ((unsigned)buf[2]<<24) | (buf[3]<<16) | (buf[4]<<8) | buf[5];
+      x = 256*(signed char)buf[0] + buf[1];
+      y = ((unsigned)buf[2]<<24) | (buf[3]<<16) | (buf[4]<<8) | buf[5];
       x = (x<<32) | y;
       pMem->u.i = *(i64*)&x;
       pMem->flags = MEM_Int;
