@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\scausing\sSQLITE_OMIT_COMPOUND_SELECT\sbuilds\sto\sfail.
-D 2014-01-25T12:16:53.164
+C Fix\ssome\sproblems\sin\stest\sscripts.\sNo\scode\schanges.
+D 2014-01-27T08:48:10.724
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -406,7 +406,7 @@ F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
 F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test c150f156dace653c00a121ad0f5772a0568c41ba
-F test/corruptH.test 0a247f3dc8a8f3578db5f639d86c6bb4d520207f
+F test/corruptH.test 7c02f5d928499bc1b68ed4610bfc2c3f12565a35
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -825,7 +825,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c 7130d2cb6db45baa553a4ab2f715116c71c2d9f4
-F test/spellfix.test 674db5da8b16d2b54939b68ccc0ac31ca53d9977
+F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 87bf60637e5863c54c5e2d05aaaca0835b7aace8
-R 69ab88b9bb0a730071944ebfada4d77f
+P b30db0ac3096b43d55a6da40cafc7de569082bf8
+R c469588e2189e74bc2d9214e1aed9609
 U dan
-Z d44703c5b70f5ed4164d3c8bc064c718
+Z 7abd7bfcd6752912e65623c5ee39477d

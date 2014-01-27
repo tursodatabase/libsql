@@ -66,6 +66,7 @@ reset_db
 # Initialize the database.
 #
 do_execsql_test 2.1 {
+  PRAGMA auto_vacuum=0;
   PRAGMA page_size=1024;
 
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
