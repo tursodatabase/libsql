@@ -1,5 +1,5 @@
-C Fix\s(harmless)\sduplicate\svariable\sdeclaration.
-D 2014-01-27T13:58:58.483
+C Fix\sa\sproblem\sin\spagerfault.test\scausing\san\sassert()\sto\sfail.
+D 2014-01-27T14:19:22.594
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -729,7 +729,7 @@ F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
 F test/pager3.test 3856d9c80839be0668efee1b74811b1b7f7fc95f
 F test/pager4.test b40ecb4cc7dff957ee7916e41ab21d1ed702a642
-F test/pagerfault.test 7285379906ab2f1108b8e82bbdf2d386cc8ff3ff
+F test/pagerfault.test ae9ee0db5a30aecda9db8290ce3dd12e5f7bbaa1
 F test/pagerfault2.test caf4c7facb914fd3b03a17b31ae2b180c8d6ca1f
 F test/pagerfault3.test 1003fcda009bf48a8e22a516e193b6ef0dd1bbd8
 F test/pageropt.test 6b8f6a123a5572c195ad4ae40f2987007923bbd6
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 08acfc65877e207f1a62d31a14afb4add20c4c35
-R 56b35e8471481c78f01b8967b6b0512c
-U drh
-Z cff646eb741caa60bf91c3c7dcaf59ea
+P 94ed9bc4207873e0f3f8114009002f56d5aff359
+R 0be44d42254ead49d986d7d5578b5723
+U dan
+Z 0a8e95fd0596f45df583df2ebdde1bb1
