@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# Tests for the SQLITE_IOERR_NODB error condition: the database file file
+# Tests for the SQLITE_READONLY_DBMOVED error condition: the database file
 # is unlinked or renamed out from under SQLite.
 #
 
@@ -17,6 +17,11 @@ if {$tcl_platform(platform)!="unix"} return
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
 
 # Create a database file for testing
 #

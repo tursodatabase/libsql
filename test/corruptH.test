@@ -96,8 +96,31 @@ do_test 2.2 {
   sqlite3 db test.db
 } {}
 
+
+# The corruption migration caused by the test case below does not 
+# cause corruption to be detected in mmap mode.
+#
+# The trick here is that the root page of the tree scanned by the outer 
+# query is also currently on the free-list. So while the first seek on
+# the table (for a==1) works, by the time the second is attempted The 
+# "INSERT INTO t2..." statements have recycled the root page of t1 and
+# used it as an index leaf. Normally, BtreeMovetoUnpacked() detects
+# that the PgHdr object associated with said root page does not match
+# the cursor (as it is now marked with PgHdr.intKey==0) and returns
+# SQLITE_CORRUPT. 
+#
+# However, in mmap mode, the outer query and the inner queries use 
+# different PgHdr objects (same data, but different PgHdr container 
+# objects). And so the corruption is not detected. Instead, the second
+# seek fails to find anything and only a single row is returned.
+#
+set res23 {1 {database disk image is malformed}}
+if {[permutation]=="mmap"} {
+  set res23 {0 one}
+}
 do_test 2.3 {
   list [catch {
+  set res [list]
   db eval { SELECT * FROM t1 WHERE a IN (1, 2) } {
     db eval { 
       INSERT INTO t2 SELECT randomblob(100) FROM t2;
@@ -106,9 +129,11 @@ do_test 2.3 {
       INSERT INTO t2 SELECT randomblob(100) FROM t2;
       INSERT INTO t2 SELECT randomblob(100) FROM t2;
     }
+    lappend res $b
   }
+  set res
   } msg] $msg
-} {1 {database disk image is malformed}}
+} $res23
 
 #-------------------------------------------------------------------------
 reset_db
