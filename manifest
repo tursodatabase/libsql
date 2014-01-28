@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sover-size\sand\shence\sundefined\sshift\soperation.
-D 2014-01-28T18:53:29.749
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sshowdb\sutility\sprogram.
+D 2014-01-28T20:36:22.236
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1132,7 +1132,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 525ecc443578647703051308ad50a93de6ba2c4b
+F tool/showdb.c 1f3fe634d6f690b8d39ab1b9fd34583d468921e1
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5e3b9ecc7b2b2e50952de819b99bafdb7b9ff59e
-R 706dcce3a402caa9db92672703e679ae
+P 6379b0729521146bc4ec27a9924492c7dc1d8a31
+R d624107de1307ff82acc1c4254272e47
 U drh
-Z e7afb21bdb8343de7138a61b1fa9482c
+Z ce78bc9f9aa25be3c31879ef495a76f2
