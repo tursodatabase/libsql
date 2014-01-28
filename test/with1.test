@@ -452,11 +452,256 @@ do_execsql_test 8.2-soduko {
   SELECT s FROM x WHERE ind=0;
 } {534678912672195348198342567859761423426853791713924856961537284287419635345286179}
 
+#--------------------------------------------------------------------------
+# Some tests that use LIMIT and OFFSET in the definition of recursive CTEs.
+# 
+set I [list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
+proc limit_test {tn iLimit iOffset} {
+  if {$iOffset < 0} { set iOffset 0 }
+  if {$iLimit < 0 } {
+    set result [lrange $::I $iOffset end]
+  } else {
+    set result [lrange $::I $iOffset [expr $iLimit+$iOffset-1]]
+  }
+  uplevel [list do_execsql_test $tn [subst -nocommands {
+    WITH ii(a) AS (
+      VALUES(1)
+      UNION ALL 
+      SELECT a+1 FROM ii WHERE a<20 
+      LIMIT $iLimit OFFSET $iOffset
+    )
+    SELECT * FROM ii
+  }] $result]
+}
+
+limit_test 9.1    20  0
+limit_test 9.2     0  0
+limit_test 9.3    19  1
+limit_test 9.4    20 -1
+limit_test 9.5     5  5
+limit_test 9.6     0 -1
+limit_test 9.7    40 -1
+limit_test 9.8    -1 -1
+limit_test 9.9    -1 -1
+
+#--------------------------------------------------------------------------
+# Test the ORDER BY clause on recursive tables.
+#
+
+do_execsql_test 10.1 {
+  DROP TABLE IF EXISTS tree;
+  CREATE TABLE tree(id INTEGER PRIMARY KEY, parentid, payload);
+}
+
+proc insert_into_tree {L} {
+  db eval { DELETE FROM tree }
+  foreach key $L {
+    unset -nocomplain parentid
+    foreach seg [split $key /] {
+      if {$seg==""} continue
+      set id [db one {
+        SELECT id FROM tree WHERE parentid IS $parentid AND payload=$seg
+      }]
+      if {$id==""} {
+        db eval { INSERT INTO tree VALUES(NULL, $parentid, $seg) }
+        set parentid [db last_insert_rowid]
+      } else {
+        set parentid $id
+      }
+    }
+  }
+}
+
+insert_into_tree {
+  /a/a/a
+  /a/b/c
+  /a/b/c/d
+  /a/b/d
+}
+do_execsql_test 10.2 {
+  WITH flat(fid, p) AS (
+    SELECT id, '/' || payload FROM tree WHERE parentid IS NULL
+    UNION ALL
+    SELECT id, p || '/' || payload FROM flat, tree WHERE parentid=fid
+  )
+  SELECT p FROM flat ORDER BY p;
+} {
+  /a /a/a /a/a/a 
+     /a/b /a/b/c /a/b/c/d
+          /a/b/d
+}
+
+# Scan the tree-structure currently stored in table tree. Return a list
+# of nodes visited.
+#
+proc scan_tree {bDepthFirst bReverse} {
+
+  set order "ORDER BY "
+  if {$bDepthFirst==0} { append order "2 ASC," }
+  if {$bReverse==0} { 
+    append order " 3 ASC" 
+  } else {
+    append order " 3 DESC" 
+  }
+
+  db eval "
+    WITH flat(fid, depth, p) AS (
+        SELECT id, 1, '/' || payload FROM tree WHERE parentid IS NULL
+        UNION ALL
+        SELECT id, depth+1, p||'/'||payload FROM flat, tree WHERE parentid=fid
+        $order
+    )
+    SELECT p FROM flat;
+  "
+}
+
+insert_into_tree {
+  /a/b
+  /a/b/c
+  /a/d
+  /a/d/e
+  /a/d/f
+  /g/h
+}
+
+# Breadth first, siblings in ascending order.
+#
+do_test 10.3 {
+  scan_tree 0 0
+} [list {*}{
+  /a /g
+  /a/b /a/d /g/h
+  /a/b/c /a/d/e /a/d/f
+}]
+
+# Depth first, siblings in ascending order.
+#
+do_test 10.4 {
+  scan_tree 1 0
+} [list {*}{
+  /a /a/b /a/b/c
+     /a/d /a/d/e 
+          /a/d/f
+  /g /g/h
+}]
+
+# Breadth first, siblings in descending order.
+#
+do_test 10.5 {
+  scan_tree 0 1
+} [list {*}{
+  /g /a 
+  /g/h /a/d /a/b 
+  /a/d/f /a/d/e /a/b/c 
+}]
+
+# Depth first, siblings in ascending order.
+#
+do_test 10.6 {
+  scan_tree 1 1
+} [list {*}{
+  /g /g/h
+  /a /a/d /a/d/f 
+          /a/d/e 
+     /a/b /a/b/c
+}]
+
+
+# Test name resolution in ORDER BY clauses.
+#
+do_catchsql_test 10.7.1 {
+  WITH t(a) AS (
+    SELECT 1 AS b UNION ALL SELECT a+1 AS c FROM t WHERE a<5 ORDER BY a
+  ) 
+  SELECT * FROM t
+} {1 {1st ORDER BY term does not match any column in the result set}}
+do_execsql_test 10.7.2 {
+  WITH t(a) AS (
+    SELECT 1 AS b UNION ALL SELECT a+1 AS c FROM t WHERE a<5 ORDER BY b
+  ) 
+  SELECT * FROM t
+} {1 2 3 4 5}
+do_execsql_test 10.7.3 {
+  WITH t(a) AS (
+    SELECT 1 AS b UNION ALL SELECT a+1 AS c FROM t WHERE a<5 ORDER BY c
+  ) 
+  SELECT * FROM t
+} {1 2 3 4 5}
+
+# Test COLLATE clauses attached to ORDER BY.
+#
+insert_into_tree {
+  /a/b
+  /a/C
+  /a/d
+  /B/e
+  /B/F
+  /B/g
+  /c/h
+  /c/I
+  /c/j
+}
+
+do_execsql_test 10.8.1 {
+  WITH flat(fid, depth, p) AS (
+    SELECT id, 1, '/' || payload FROM tree WHERE parentid IS NULL
+    UNION ALL
+    SELECT id, depth+1, p||'/'||payload FROM flat, tree WHERE parentid=fid
+    ORDER BY 2, 3 COLLATE nocase
+  )
+  SELECT p FROM flat;
+} {
+  /a /B /c
+  /a/b /a/C /a/d /B/e /B/F /B/g /c/h /c/I /c/j
+}
+do_execsql_test 10.8.2 {
+  WITH flat(fid, depth, p) AS (
+      SELECT id, 1, ('/' || payload) COLLATE nocase 
+      FROM tree WHERE parentid IS NULL
+    UNION ALL
+      SELECT id, depth+1, (p||'/'||payload)
+      FROM flat, tree WHERE parentid=fid
+    ORDER BY 2, 3
+  )
+  SELECT p FROM flat;
+} {
+  /a /B /c
+  /a/b /a/C /a/d /B/e /B/F /B/g /c/h /c/I /c/j
+}
+
+do_execsql_test 10.8.3 {
+  WITH flat(fid, depth, p) AS (
+      SELECT id, 1, ('/' || payload)
+      FROM tree WHERE parentid IS NULL
+    UNION ALL
+      SELECT id, depth+1, (p||'/'||payload) COLLATE nocase 
+      FROM flat, tree WHERE parentid=fid
+    ORDER BY 2, 3
+  )
+  SELECT p FROM flat;
+} {
+  /a /B /c
+  /a/b /a/C /a/d /B/e /B/F /B/g /c/h /c/I /c/j
+}
+
+do_execsql_test 10.8.4.1 {
+  CREATE TABLE tst(a,b);
+  INSERT INTO tst VALUES('a', 'A');
+  INSERT INTO tst VALUES('b', 'B');
+  INSERT INTO tst VALUES('c', 'C');
+  SELECT a COLLATE nocase FROM tst UNION ALL SELECT b FROM tst ORDER BY 1;
+} {a A b B c C}
+do_execsql_test 10.8.4.2 {
+  SELECT a FROM tst UNION ALL SELECT b COLLATE nocase FROM tst ORDER BY 1;
+} {A B C a b c}
+do_execsql_test 10.8.4.3 {
+  SELECT a||'' FROM tst UNION ALL SELECT b COLLATE nocase FROM tst ORDER BY 1;
+} {a A b B c C}
 
 # Test cases to illustrate on the ORDER BY clause on a recursive query can be
 # used to control depth-first versus breath-first search in a tree.
 #
-do_execsql_test 9.1 {
+do_execsql_test 11.1 {
   CREATE TABLE org(
     name TEXT PRIMARY KEY,
     boss TEXT REFERENCES org
@@ -513,7 +758,7 @@ do_execsql_test 9.1 {
 # The previous query used "ORDER BY level" to yield a breath-first search.
 # Change that to "ORDER BY level DESC" for a depth-first search.
 #
-do_execsql_test 9.2 {
+do_execsql_test 11.2 {
   WITH RECURSIVE
     under_alice(name,level) AS (
        VALUES('Alice','0')
@@ -544,7 +789,7 @@ do_execsql_test 9.2 {
 # Without an ORDER BY clause, the recursive query should use a FIFO,
 # resulting in a breath-first search.
 #
-do_execsql_test 9.3 {
+do_execsql_test 11.3 {
   WITH RECURSIVE
     under_alice(name,level) AS (
        VALUES('Alice','0')
@@ -572,3 +817,4 @@ do_execsql_test 9.3 {
 .........Olivia}}
 
 finish_test
+

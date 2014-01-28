@@ -467,9 +467,10 @@ void sqlite3Update(
     );
     for(i=0; i<pTab->nCol; i++){
       if( oldmask==0xffffffff
-       || (i<32 && (oldmask & (1<<i)))
+       || (i<32 && (oldmask & MASKBIT32(i))!=0)
        || (pTab->aCol[i].colFlags & COLFLAG_PRIMKEY)!=0
       ){
+        testcase(  oldmask!=0xffffffff && i==31 );
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, i, regOld+i);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, regOld+i);
@@ -504,7 +505,7 @@ void sqlite3Update(
       j = aXRef[i];
       if( j>=0 ){
         sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regNew+i);
-      }else if( 0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask&(1<<i)) ){
+      }else if( 0==(tmask&TRIGGER_BEFORE) || i>31 || (newmask & MASKBIT32(i)) ){
         /* This branch loads the value of a column that will not be changed 
         ** into a register. This is done if there are no BEFORE triggers, or
         ** if there are one or more BEFORE triggers that use this value via

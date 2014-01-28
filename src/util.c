@@ -1001,7 +1001,8 @@ int sqlite3VarintLen(u64 v){
 ** Read or write a four-byte big-endian integer value.
 */
 u32 sqlite3Get4byte(const u8 *p){
-  return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
+  testcase( p[0]&0x80 );
+  return ((unsigned)p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
 }
 void sqlite3Put4byte(unsigned char *p, u32 v){
   p[0] = (u8)(v>>24);

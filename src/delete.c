@@ -643,7 +643,8 @@ void sqlite3GenerateRowDelete(
     ** used by any BEFORE and AFTER triggers that exist.  */
     sqlite3VdbeAddOp2(v, OP_Copy, iPk, iOld);
     for(iCol=0; iCol<pTab->nCol; iCol++){
-      if( mask==0xffffffff || mask&(1<<iCol) ){
+      testcase( mask!=0xffffffff && iCol==31 );
+      if( mask==0xffffffff || (mask & MASKBIT32(iCol))!=0 ){
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, iCol, iOld+iCol+1);
       }
     }

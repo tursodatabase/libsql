@@ -4097,7 +4097,7 @@ static int unixShmSystemLock(
 #ifdef SQLITE_DEBUG
   { u16 mask;
   OSTRACE(("SHM-LOCK "));
-  mask = ofst>31 ? 0xffffffff : (1<<(ofst+n)) - (1<<ofst);
+  mask = ofst>31 ? 0xffff : (1<<(ofst+n)) - (1<<ofst);
   if( rc==SQLITE_OK ){
     if( lockType==F_UNLCK ){
       OSTRACE(("unlock %d ok", ofst));

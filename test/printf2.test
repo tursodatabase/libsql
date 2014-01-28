@@ -59,7 +59,7 @@ do_execsql_test printf2-1.11 {
   SELECT printf('%lld%n',314159.2653,'hi');
 } {314159}
 
-# EVIDENCE-OF: R-20555-31089 The %z format is interchangable with %s.
+# EVIDENCE-OF: R-17002-27534 The %z format is interchangeable with %s.
 #
 do_execsql_test printf2-1.12 {
   SELECT printf('%.*z',5,'abcdefghijklmnop');

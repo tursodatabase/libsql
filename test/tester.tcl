@@ -59,6 +59,7 @@
 #      do_test                TESTNAME SCRIPT EXPECTED
 #      do_execsql_test        TESTNAME SQL EXPECTED
 #      do_catchsql_test       TESTNAME SQL EXPECTED
+#      do_timed_execsql_test  TESTNAME SQL EXPECTED
 #
 # Commands providing a lower level interface to the global test counters:
 #
@@ -723,6 +724,11 @@ proc do_catchsql_test {testname sql result} {
   fix_testname testname
   uplevel do_test [list $testname] [list "catchsql {$sql}"] [list $result]
 }
+proc do_timed_execsql_test {testname sql {result {}}} {
+  fix_testname testname
+  uplevel do_test [list $testname] [list "execsql_timed {$sql}"]\
+                                   [list [list {*}$result]]
+}
 proc do_eqp_test {name sql res} {
   uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
 }
@@ -1018,6 +1024,14 @@ proc show_memstats {} {
 proc execsql {sql {db db}} {
   # puts "SQL = $sql"
   uplevel [list $db eval $sql]
+}
+proc execsql_timed {sql {db db}} {
+  set tm [time {
+    set x [uplevel [list $db eval $sql]]
+  } 1]
+  set tm [lindex $tm 0]
+  puts -nonewline " ([expr {$tm*0.001}]ms) "
+  set x
 }
 
 # Execute SQL and catch exceptions.
