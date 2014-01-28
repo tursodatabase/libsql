@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sproblems\swith\snew\stest\sscripts\scausing\sthe\spermutations\stest\sto\sfail.
-D 2014-01-27T16:35:15.028
+C Minor\sbugfix\sin\smain.c\sso\sthat\sthe\slibrary\sbuilds\swith\sSQLITE_OMIT_WSD\sdefined.
+D 2014-01-28T17:49:13.545
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,7 +188,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 4a05a9706579c7649d7eebb0094586728eb53fcb
+F src/main.c 07225af6a00be0b7f34ac52e60f99cf5cbb2a475
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P be1acb610f7e594b417dd8409b7a7aa8f3af5f77
-R a3dad1261990ae79a41c0830e9dec218
+P 48d736c0ee1ac0879bd12d2f1901f208e87e538a
+R 2cc45274993cd572752bb3138d773ec9
 U dan
-Z bcec9d735db62477dd1be5e976533ffa
+Z efd313d0ce443bf7542f8c0ae313a99a

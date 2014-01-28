@@ -3303,7 +3303,7 @@ int sqlite3_test_control(int op, ...){
     ** that demonstrat invariants on well-formed database files.
     */
     case SQLITE_TESTCTRL_NEVER_CORRUPT: {
-      sqlite3Config.neverCorrupt = va_arg(ap, int);
+      sqlite3GlobalConfig.neverCorrupt = va_arg(ap, int);
       break;
     }
 
