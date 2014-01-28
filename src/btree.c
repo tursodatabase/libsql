@@ -4817,6 +4817,15 @@ int sqlite3BtreeEof(BtCursor *pCur){
 ** successful then set *pRes=0.  If the cursor
 ** was already pointing to the last entry in the database before
 ** this routine was called, then set *pRes=1.
+**
+** The calling function will set *pRes to 0 or 1.  The initial *pRes value
+** will be 1 if the cursor being stepped corresponds to an SQL index and
+** if this routine could have been skipped if that SQL index had been
+** a unique index.  Otherwise the caller will have set *pRes to zero.
+** Zero is the common case. The btree implementation is free to use the
+** initial *pRes value as a hint to improve performance, but the current
+** SQLite btree implementation does not. (Note that the comdb2 btree
+** implementation does use this hint, however.)
 */
 int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   int rc;
@@ -4825,6 +4834,7 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pRes!=0 );
+  assert( *pRes==0 || *pRes==1 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   if( pCur->eState!=CURSOR_VALID ){
     rc = restoreCursorPosition(pCur);
@@ -4903,6 +4913,15 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
 ** successful then set *pRes=0.  If the cursor
 ** was already pointing to the first entry in the database before
 ** this routine was called, then set *pRes=1.
+**
+** The calling function will set *pRes to 0 or 1.  The initial *pRes value
+** will be 1 if the cursor being stepped corresponds to an SQL index and
+** if this routine could have been skipped if that SQL index had been
+** a unique index.  Otherwise the caller will have set *pRes to zero.
+** Zero is the common case. The btree implementation is free to use the
+** initial *pRes value as a hint to improve performance, but the current
+** SQLite btree implementation does not. (Note that the comdb2 btree
+** implementation does use this hint, however.)
 */
 int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   int rc;
@@ -4910,6 +4929,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pRes!=0 );
+  assert( *pRes==0 || *pRes==1 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
   pCur->atLast = 0;
   if( pCur->eState!=CURSOR_VALID ){
@@ -7150,7 +7170,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   ** sub-tree headed by the child page of the cell being deleted. This makes
   ** balancing the tree following the delete operation easier.  */
   if( !pPage->leaf ){
-    int notUsed;
+    int notUsed = 0;
     rc = sqlite3BtreePrevious(pCur, &notUsed);
     if( rc ) return rc;
   }
