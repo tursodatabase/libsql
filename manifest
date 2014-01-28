@@ -1,5 +1,5 @@
-C Minor\sbugfix\sin\smain.c\sso\sthat\sthe\slibrary\sbuilds\swith\sSQLITE_OMIT_WSD\sdefined.
-D 2014-01-28T17:49:13.545
+C Fix\sa\spotential\sover-size\sand\shence\sundefined\sshift\soperation.
+D 2014-01-28T18:53:29.749
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 22e54756c08b194a29d51cd6552922028b3e21a9
+F src/delete.c d784e2ee2c6e90fbbd9dcf88a2030c9e12a9318d
 F src/expr.c 96f00a262308f3f97d2afd8519c7a284e25829f3
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 48d736c0ee1ac0879bd12d2f1901f208e87e538a
-R 2cc45274993cd572752bb3138d773ec9
-U dan
-Z efd313d0ce443bf7542f8c0ae313a99a
+P 5e3b9ecc7b2b2e50952de819b99bafdb7b9ff59e
+R 706dcce3a402caa9db92672703e679ae
+U drh
+Z e7afb21bdb8343de7138a61b1fa9482c
