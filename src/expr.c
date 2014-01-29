@@ -1064,6 +1064,7 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->addrOpenEphm[2] = -1;
+  pNew->nSelectRow = p->nSelectRow;
   pNew->pWith = withDup(db, p->pWith);
   return pNew;
 }

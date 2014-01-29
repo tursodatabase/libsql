@@ -644,7 +644,8 @@ void sqlite3GenerateRowDelete(
     sqlite3VdbeAddOp2(v, OP_Copy, iPk, iOld);
     for(iCol=0; iCol<pTab->nCol; iCol++){
       testcase( mask!=0xffffffff && iCol==31 );
-      if( mask==0xffffffff || (mask & MASKBIT32(iCol))!=0 ){
+      testcase( mask!=0xffffffff && iCol==32 );
+      if( mask==0xffffffff || (iCol<=31 && (mask & MASKBIT32(iCol))!=0) ){
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, iCol, iOld+iCol+1);
       }
     }

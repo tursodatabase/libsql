@@ -1,5 +1,5 @@
-C Bring\sin\sthe\slatest\supdates\sfrom\strunk.
-D 2014-01-28T18:06:17.362
+C Merge\slatest\sfixes\sfrom\sthe\strunk.
+D 2014-01-29T14:21:31.405
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -188,8 +188,8 @@ F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 85592961a0bef547562468c9496a56f3997b3c30
-F src/expr.c 96f00a262308f3f97d2afd8519c7a284e25829f3
+F src/delete.c a3f2007baa239c6e1fc3246cf366febd24c1a12e
+F src/expr.c e3e09af908b968305d4efeda8dc3499a087ee7d2
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c f4499b39d66b71825514334ce67b32ff14bd19f5
@@ -1147,7 +1147,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 525ecc443578647703051308ad50a93de6ba2c4b
+F tool/showdb.c 1f3fe634d6f690b8d39ab1b9fd34583d468921e1
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1167,7 +1167,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9b43e559195680e558264c4c00d34dc9cf9d9146 5e3b9ecc7b2b2e50952de819b99bafdb7b9ff59e
-R 51002a148d222844524dcb7bb9208985
-U drh
-Z 1a524338f4286caad02c997553ac895a
+P 7b5f3773867ed0e4ed17bd473ba972d500035318 5bb29b82109224a2ad02920658fabd8fb0f27b3f
+R 432574c0dd840817debf508c99b1ccfe
+U dan
+Z 2459ddf115f614b7a3ba484263d1245a
