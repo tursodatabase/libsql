@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sshowdb\sutility\sprogram.
-D 2014-01-28T20:36:22.236
+C Make\ssure\sthat\ssqlite3SelectDup()\sinitializes\sthe\snSelectRow\sof\sthe\nduplicate\sSelect\sobject.
+D 2014-01-29T01:46:12.389
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c d784e2ee2c6e90fbbd9dcf88a2030c9e12a9318d
-F src/expr.c 96f00a262308f3f97d2afd8519c7a284e25829f3
+F src/expr.c e3e09af908b968305d4efeda8dc3499a087ee7d2
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c f4499b39d66b71825514334ce67b32ff14bd19f5
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6379b0729521146bc4ec27a9924492c7dc1d8a31
-R d624107de1307ff82acc1c4254272e47
+P 27c27daa3324b7c9323acfb972330367630bb64e
+R f049cadfe79d3cfbcc34d51b06338c39
 U drh
-Z ce78bc9f9aa25be3c31879ef495a76f2
+Z 40ce23bc9f3b9d3c5fa7bebae22e1b10
