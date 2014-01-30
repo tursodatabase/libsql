@@ -1371,8 +1371,9 @@ foreach {tn select op1 op2} {
   do_catchsql_test e_select-7.2.$tn $select [list 1 $err]
 }
 
-# EVIDENCE-OF: R-22874-32655 ORDER BY and LIMIT clauses may only occur
-# at the end of the entire compound SELECT.
+# EVIDENCE-OF: R-45440-25633 ORDER BY and LIMIT clauses may only occur
+# at the end of the entire compound SELECT, and then only if the final
+# element of the compound is not a VALUES clause.
 #
 foreach {tn select} {
   1   "SELECT * FROM j1 UNION ALL SELECT * FROM j2,j3 ORDER BY a"
@@ -1384,6 +1385,7 @@ foreach {tn select} {
 
   7   "SELECT * FROM j1 UNION SELECT * FROM j2,j3 ORDER BY a"
   8   "SELECT count(*) FROM j1 UNION SELECT max(e) FROM j2 ORDER BY 1"
+  8b  "VALUES('8b') UNION SELECT max(e) FROM j2 ORDER BY 1"
   9   "SELECT count(*), * FROM j1 UNION SELECT *,* FROM j2 ORDER BY 1,2,3"
   10  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10" 
   11  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10 OFFSET 5" 
@@ -1404,6 +1406,14 @@ foreach {tn select} {
   24  "SELECT a FROM j1 INTERSECT SELECT g FROM j2,j3 LIMIT (SELECT 10)" 
 } {
   do_test e_select-7.3.$tn { catch {execsql $select} msg } 0
+}
+foreach {tn select} {
+  50   "SELECT * FROM j1 ORDER BY 1 UNION ALL SELECT * FROM j2,j3"
+  51   "SELECT * FROM j1 LIMIT 1 UNION ALL SELECT * FROM j2,j3"
+  52   "SELECT count(*) FROM j1 UNION ALL VALUES(11) ORDER BY 1"
+  53   "SELECT count(*) FROM j1 UNION ALL VALUES(11) LIMIT 1"
+} {
+  do_test e_select-7.3.$tn { catch {execsql $select} msg } 1
 }
 
 # EVIDENCE-OF: R-08531-36543 A compound SELECT created using UNION ALL

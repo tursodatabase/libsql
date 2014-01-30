@@ -1,5 +1,5 @@
-C Enhance\sthe\sMSVC\smakefile\sfor\sbetter\sdebugging\ssymbol\ssupport.
-D 2014-01-30T12:45:32.815
+C Update\sa\srequirement\smark\sand\sadd\ssome\sadditional\stest\scases\sto\scover\nthe\srequirement\sassociated\swith\sORDER\sBY\sand\sLIMIT\son\scompound\sSELECT\nstatements.
+D 2014-01-30T14:10:00.638
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -444,7 +444,7 @@ F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 1e44f84d2abe44d66e4fbf198be4b20e3cc724a0
 F test/e_reindex.test 396b7b4f0a66863b4e95116a67d93b227193e589
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
-F test/e_select.test 51c062a9bda16e0ae1bbeed50806bedbd040b282
+F test/e_select.test 5ea777ed64da80e9555c899418147545672d79e0
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test a2c92d80093a7efdcfbb11093651cbea87097b6b
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b222b61a98dc1f3c2c48ea06efe7d82d9fcf4d75 c723ec2784d6b60c9781a435c84800b2bc7818d5
-R e369e7ab83fcd9b334788d3ecd6a9d15
-U mistachkin
-Z 2464332c499b43b0d44ce106a9540b46
+P c9bef0f29a5a7f04914d80e58105104babd4168c
+R ae529b38795c843e83dc18ea74bfef1b
+U drh
+Z 79880c6c4300891d14acd2d52b2dcd6c
