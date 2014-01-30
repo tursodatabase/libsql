@@ -813,8 +813,8 @@ do_select_tests e_select-4.1 {
   }
 }
 
-# EVIDENCE-OF: R-61869-22578 It is an error to use a "*" or "alias.*"
-# expression in any context other than than a result expression list.
+# EVIDENCE-OF: R-38023-18396 It is an error to use a "*" or "alias.*"
+# expression in any context other than a result expression list.
 #
 # EVIDENCE-OF: R-44324-41166 It is also an error to use a "*" or
 # "alias.*" expression in a simple SELECT query that does not have a
@@ -1007,12 +1007,12 @@ do_execsql_test e_select-4.9.0 {
   INSERT INTO b3 VALUES('dEF', 'dEF');
 } {}
 
-# EVIDENCE-OF: R-57754-57109 If the SELECT statement is an aggregate
+# EVIDENCE-OF: R-07284-35990 If the SELECT statement is an aggregate
 # query with a GROUP BY clause, then each of the expressions specified
 # as part of the GROUP BY clause is evaluated for each row of the
 # dataset. Each row is then assigned to a "group" based on the results;
 # rows for which the results of evaluating the GROUP BY expressions are
-# the same are assigned to the same group.
+# the same get assigned to the same group.
 #
 #   These tests also show that the following is not untrue:
 #
