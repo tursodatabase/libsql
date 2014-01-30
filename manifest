@@ -1,5 +1,5 @@
-C Make\ssure\sthat\ssqlite3SelectDup()\sinitializes\sthe\snSelectRow\sof\sthe\nduplicate\sSelect\sobject.
-D 2014-01-29T01:46:12.389
+C Do\snot\srun\stest\sscript\smmapfault.test\sas\spart\sof\sthe\s"inmemory_journal"\spermutation\stest.
+D 2014-01-30T12:16:23.545
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -737,7 +737,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test af3278cbea3a19e025d5169be8193ff48dc3f862
+F test/permutations.test 40add071ba71aefe1c04f5845308cf46f7de8d04
 F test/pragma.test e882183ecd21d064cec5c7aaea174fbd36293429
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 27c27daa3324b7c9323acfb972330367630bb64e
-R f049cadfe79d3cfbcc34d51b06338c39
-U drh
-Z 40ce23bc9f3b9d3c5fa7bebae22e1b10
+P 5bb29b82109224a2ad02920658fabd8fb0f27b3f
+R 084406ca2af9d69eb5b38d017e1e87d2
+U dan
+Z c9a3e6c7abdab10d94b6f3e5600f8eec
