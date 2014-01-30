@@ -1,9 +1,9 @@
-C Do\snot\srun\stest\sscript\smmapfault.test\sas\spart\sof\sthe\s"inmemory_journal"\spermutation\stest.
-D 2014-01-30T12:16:23.545
+C Enhance\sthe\sMSVC\smakefile\sfor\sbetter\sdebugging\ssymbol\ssupport.
+D 2014-01-30T12:45:32.815
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 4d4ead6b71d1bf03028fbd61da0ba0ec5e1556e1
+F Makefile.msc 6ff3ff2eef45c7dd309a8626ff7947b20bd387e7
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 8ed548d87d0a27fd7d7620476f9e25f9fa742d73
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5bb29b82109224a2ad02920658fabd8fb0f27b3f
-R 084406ca2af9d69eb5b38d017e1e87d2
-U dan
-Z c9a3e6c7abdab10d94b6f3e5600f8eec
+P b222b61a98dc1f3c2c48ea06efe7d82d9fcf4d75 c723ec2784d6b60c9781a435c84800b2bc7818d5
+R e369e7ab83fcd9b334788d3ecd6a9d15
+U mistachkin
+Z 2464332c499b43b0d44ce106a9540b46
