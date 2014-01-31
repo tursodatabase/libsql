@@ -1,5 +1,5 @@
-C Update\sevidence\smarks\son\sSELECT\stests.\s\sComment\schanges\sonly.\nNo\schanges\sto\scode\sor\stests.
-D 2014-01-30T17:47:02.916
+C Update\sthe\s"sqlite3.1"\sunix\smanpage\sdocument.
+D 2014-01-31T11:50:20.694
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F mptest/mptest.c 499a74af4be293b7c1c7c3d40f332b67227dd739
 F mptest/multiwrite01.test 499ad0310da8dff8e8f98d2e272fc2a8aa741b2e
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
-F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
+F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
 F src/analyze.c 581d5c18ce89c6f45d4dca65914d0de5b4dad41f
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4a34378b9b02e463081729186dcb9b0404dbcd06
-R 449df259d7d735d626dd09fd972693fc
+P 1973d80e474cb95d053e04415b22154897d4d710
+R 42353486be3948c9479e543480f92b29
 U drh
-Z a5152c6e4bb0fbba75e0ba888180a1b9
+Z 7053d12f62aed1ad53b57dbef8a0decd
