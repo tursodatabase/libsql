@@ -1,5 +1,5 @@
-C Update\sevidence\smarks\son\sSELECT\stests.\s\sComment\schanges\sonly.\nNo\schanges\sto\scode\sor\stests.
-D 2014-01-30T17:47:02.916
+C Minor\schange\sto\sTEA\sextension\sdocs\sin\san\sattempt\sto\smake\slinks\swork\scorrectly.
+D 2014-01-31T06:35:37.211
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -27,7 +27,7 @@ F autoconf/tea/Makefile.in 5c3b0bdfb66c20d55ebff59d1718864461570ca9
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
 F autoconf/tea/configure.in e0466b881b53f31f5a4a69e7a91ad130902fb359
-F autoconf/tea/doc/sqlite3.n e268faa1691c33663d3a7faf9fa30673d14bd879
+F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
 F autoconf/tea/tclconfig/install-sh b087e5c4b92820c60bffb74acc1d9c2d40d80b8f
@@ -1152,7 +1152,10 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4a34378b9b02e463081729186dcb9b0404dbcd06
-R 449df259d7d735d626dd09fd972693fc
-U drh
-Z a5152c6e4bb0fbba75e0ba888180a1b9
+P 1973d80e474cb95d053e04415b22154897d4d710
+R fbd2e2f50b97b1d4e5868ed74b607215
+T *branch * teaDoc
+T *sym-teaDoc *
+T -sym-trunk *
+U mistachkin
+Z 3240d2babdfc522d2f9c123249df16a2
