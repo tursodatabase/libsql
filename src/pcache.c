@@ -23,7 +23,8 @@ struct PCache {
   int szCache;                        /* Configured cache size */
   int szPage;                         /* Size of every page in this cache */
   int szExtra;                        /* Size of extra space for each page */
-  int bPurgeable;                     /* True if pages are on backing store */
+  u8 bPurgeable;                      /* True if pages are on backing store */
+  u8 eCreate;                         /* eCreate value for for xFetch() */
   int (*xStress)(void*,PgHdr*);       /* Call to try make a page clean */
   void *pStress;                      /* Argument to xStress */
   sqlite3_pcache *pCache;             /* Pluggable cache module */
@@ -90,6 +91,10 @@ static void pcacheRemoveFromDirtyList(PgHdr *pPage){
   }else{
     assert( pPage==p->pDirty );
     p->pDirty = pPage->pDirtyNext;
+    if( p->pDirty==0 && p->bPurgeable ){
+      assert( p->eCreate==1 );
+      p->eCreate = 2;
+    }
   }
   pPage->pDirtyNext = 0;
   pPage->pDirtyPrev = 0;
@@ -110,6 +115,9 @@ static void pcacheAddToDirtyList(PgHdr *pPage){
   if( pPage->pDirtyNext ){
     assert( pPage->pDirtyNext->pDirtyPrev==0 );
     pPage->pDirtyNext->pDirtyPrev = pPage;
+  }else if( p->bPurgeable ){
+    assert( p->eCreate==2 );
+    p->eCreate = 1;
   }
   p->pDirty = pPage;
   if( !p->pDirtyTail ){
@@ -179,6 +187,7 @@ void sqlite3PcacheOpen(
   p->szPage = szPage;
   p->szExtra = szExtra;
   p->bPurgeable = bPurgeable;
+  p->eCreate = 2;
   p->xStress = xStress;
   p->pStress = pStress;
   p->szCache = 100;
@@ -218,7 +227,7 @@ int sqlite3PcacheFetch(
   int createFlag,       /* If true, create page if it does not exist already */
   PgHdr **ppPage        /* Write the page here */
 ){
-  sqlite3_pcache_page *pPage = 0;
+  sqlite3_pcache_page *pPage;
   PgHdr *pPgHdr = 0;
   int eCreate;
 
@@ -229,8 +238,12 @@ int sqlite3PcacheFetch(
   /* If the pluggable cache (sqlite3_pcache*) has not been allocated,
   ** allocate it now.
   */
-  if( !pCache->pCache && createFlag ){
+  if( !pCache->pCache ){
     sqlite3_pcache *p;
+    if( !createFlag ){
+      *ppPage = 0;
+      return SQLITE_OK;
+    }
     p = sqlite3GlobalConfig.pcache2.xCreate(
         pCache->szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
     );
@@ -241,11 +254,16 @@ int sqlite3PcacheFetch(
     pCache->pCache = p;
   }
 
-  eCreate = createFlag * (1 + (!pCache->bPurgeable || !pCache->pDirty));
-  if( pCache->pCache ){
-    pPage = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, eCreate);
-  }
-
+  /* eCreate defines what to do if the page does not exist.
+  **    0     Do not allocate a new page.  (createFlag==0)
+  **    1     Allocate a new page if doing so is inexpensive.
+  **          (createFlag==1 AND bPurgeable AND pDirty)
+  **    2     Allocate a new page even it doing so is difficult.
+  **          (createFlag==1 AND !(bPurgeable AND pDirty)
+  */
+  eCreate = createFlag==0 ? 0 : pCache->eCreate;
+  assert( (createFlag*(1+(!pCache->bPurgeable||!pCache->pDirty)))==eCreate );
+  pPage = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, eCreate);
   if( !pPage && eCreate==1 ){
     PgHdr *pPg;
 
