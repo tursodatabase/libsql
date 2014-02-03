@@ -1,5 +1,5 @@
-C Minor\schange\sto\sTEA\sextension\sdocs\sin\san\sattempt\sto\smake\slinks\swork\scorrectly.
-D 2014-02-03T13:49:40.898
+C Version\s3.8.3
+D 2014-02-03T13:52:03.248
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1152,8 +1152,10 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 21ce9e3a53aed62fbe075b0dbed9faa00218aadc 492585c8208457120dde24f5fbf4db7e4e10ae73
+P af3c775e5d6a399bfc985a5dae27451908766546
 R d59f4c16611ef76ed43b5f579f765c07
-T +closed 492585c8208457120dde24f5fbf4db7e4e10ae73
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.3 *
 U drh
-Z 2bef28b38855e6ad6cb1516abae9de60
+Z be66093eab6507921c2b573a40e5f8d7
