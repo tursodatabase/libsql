@@ -3184,6 +3184,8 @@ static Bitmask codeOneLoopStart(
       pLevel->op = OP_Next;
     }
     pLevel->p1 = iIdxCur;
+    assert( (WHERE_UNQ_WANTED>>16)==1 );
+    pLevel->p3 = (pLoop->wsFlags>>16)&1;
     if( (pLoop->wsFlags & WHERE_CONSTRAINT)==0 ){
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
     }else{
@@ -3986,12 +3988,13 @@ static int whereLoopAddBtreeIndex(
         || nInMul==0
       );
       pNew->wsFlags |= WHERE_COLUMN_EQ;
-      if( iCol<0  
-       || (pProbe->onError!=OE_None && nInMul==0
-           && pNew->u.btree.nEq==pProbe->nKeyCol-1)
-      ){
+      if( iCol<0 || (nInMul==0 && pNew->u.btree.nEq==pProbe->nKeyCol-1)){
         assert( (pNew->wsFlags & WHERE_COLUMN_IN)==0 || iCol<0 );
-        pNew->wsFlags |= WHERE_ONEROW;
+        if( iCol>=0 && pProbe->onError==OE_None ){
+          pNew->wsFlags |= WHERE_UNQ_WANTED;
+        }else{
+          pNew->wsFlags |= WHERE_ONEROW;
+        }
       }
       pNew->u.btree.nEq++;
       pNew->nOut = nRowEst + nInMul;
@@ -5785,7 +5788,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     pLoop = pLevel->pWLoop;
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){
-      sqlite3VdbeAddOp2(v, pLevel->op, pLevel->p1, pLevel->p2);
+      sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
       sqlite3VdbeChangeP5(v, pLevel->p5);
     }
     if( pLoop->wsFlags & WHERE_IN_ABLE && pLevel->u.in.nIn>0 ){

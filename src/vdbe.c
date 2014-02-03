@@ -3599,6 +3599,7 @@ case OP_SeekGt: {       /* jump, in3 */
 #endif
   if( oc>=OP_SeekGe ){  assert( oc==OP_SeekGe || oc==OP_SeekGt );
     if( res<0 || (res==0 && oc==OP_SeekGt) ){
+      res = 0;
       rc = sqlite3BtreeNext(pC->pCursor, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
       pC->rowidIsValid = 0;
@@ -3608,6 +3609,7 @@ case OP_SeekGt: {       /* jump, in3 */
   }else{
     assert( oc==OP_SeekLt || oc==OP_SeekLe );
     if( res>0 || (res==0 && oc==OP_SeekLt) ){
+      res = 0;
       rc = sqlite3BtreePrevious(pC->pCursor, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
       pC->rowidIsValid = 0;
@@ -4460,7 +4462,7 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
-/* Opcode: Next P1 P2 * * P5
+/* Opcode: Next P1 P2 P3 * P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
@@ -4470,6 +4472,11 @@ case OP_Rewind: {        /* jump */
 ** The P1 cursor must be for a real table, not a pseudo-table.  P1 must have
 ** been opened prior to this opcode or the program will segfault.
 **
+** The P3 value is a hint to the btree implementation. If P3==1, that
+** means P1 is an SQL index and that this instruction could have been
+** omitted if that index had been unique.  P3 is usually 0.  P3 is
+** always either 0 or 1.
+**
 ** P4 is always of type P4_ADVANCE. The function pointer points to
 ** sqlite3BtreeNext().
 **
@@ -4478,12 +4485,12 @@ case OP_Rewind: {        /* jump */
 **
 ** See also: Prev, NextIfOpen
 */
-/* Opcode: NextIfOpen P1 P2 * * P5
+/* Opcode: NextIfOpen P1 P2 P3 * P5
 **
 ** This opcode works just like OP_Next except that if cursor P1 is not
 ** open it behaves a no-op.
 */
-/* Opcode: Prev P1 P2 * * P5
+/* Opcode: Prev P1 P2 P3 * P5
 **
 ** Back up cursor P1 so that it points to the previous key/data pair in its
 ** table or index.  If there is no previous key/value pairs then fall through
@@ -4493,13 +4500,18 @@ case OP_Rewind: {        /* jump */
 ** The P1 cursor must be for a real table, not a pseudo-table.  If P1 is
 ** not open then the behavior is undefined.
 **
+** The P3 value is a hint to the btree implementation. If P3==1, that
+** means P1 is an SQL index and that this instruction could have been
+** omitted if that index had been unique.  P3 is usually 0.  P3 is
+** always either 0 or 1.
+**
 ** P4 is always of type P4_ADVANCE. The function pointer points to
 ** sqlite3BtreePrevious().
 **
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
-/* Opcode: PrevIfOpen P1 P2 * * P5
+/* Opcode: PrevIfOpen P1 P2 P3 * P5
 **
 ** This opcode works just like OP_Prev except that if cursor P1 is not
 ** open it behaves a no-op.
@@ -4521,9 +4533,12 @@ case OP_Next:          /* jump */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p5<ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
+  res = pOp->p3;
   assert( pC!=0 );
   assert( pC->deferredMoveto==0 );
   assert( pC->pCursor );
+  assert( res==0 || (res==1 && pC->isTable==0) );
+  testcase( res==1 );
   assert( pOp->opcode!=OP_Next || pOp->p4.xAdvance==sqlite3BtreeNext );
   assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
   assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
