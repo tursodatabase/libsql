@@ -272,6 +272,17 @@ TCC = $(TCC) -I$(TOP)\ext\session
 RCC = $(RCC) -I$(TOP)\ext\session
 !ENDIF
 
+# The mksqlite3c.tcl script accepts some options on the command
+# line.  When compiling with debugging enabled, some of these
+# options are necessary in order to allow debugging symbols to
+# work correctly with Visual Studio when using the amalgamation.
+#
+!IF $(DEBUG)>0
+MKSQLITE3C_ARGS = --linemacros
+!ELSE
+MKSQLITE3C_ARGS =
+!ENDIF
+
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
 # Omitting the define will cause extra debugging code to be inserted and
 # includes extra comments when "EXPLAIN stmt" is used.
@@ -935,7 +946,7 @@ mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
 	echo > .target_source
 
 sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl
+	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl $(MKSQLITE3C_ARGS)
 	copy tsrc\shell.c .
 	copy tsrc\sqlite3ext.h .
 	copy $(TOP)\ext\session\sqlite3session.h .
@@ -1357,17 +1368,17 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) -DBUILD_sqlite -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
-showdb.exe:	$(TOP)\tool\showdb.c sqlite3.c
-	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
-		$(TOP)\tool\showdb.c sqlite3.c
+showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showdb.c $(SQLITE3C)
 
-wordcount.exe:	$(TOP)\test\wordcount.c sqlite3.c
-	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
-		$(TOP)\test\wordcount.c sqlite3.c
+wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\test\wordcount.c $(SQLITE3C)
 
-speedtest1.exe:	$(TOP)\test\speedtest1.c sqlite3.c
-	$(LTLINK) -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
-		$(TOP)\test\speedtest1.c sqlite3.c
+speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\test\speedtest1.c $(SQLITE3C)
 
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib

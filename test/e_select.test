@@ -464,10 +464,10 @@ do_join_test e_select-1.4.2.1 {
 ]
 # TODO: Come back and add a few more like the above.
 
-# EVIDENCE-OF: R-20659-43267 In other words, if the left-hand dataset
-# consists of Nlhs rows of Mlhs columns, and the right-hand dataset of
-# Nrhs rows of Mrhs columns, then the cartesian product is a dataset of
-# Nlhs.Nrhs rows, each containing Mlhs+Mrhs columns.
+# EVIDENCE-OF: R-18439-38548 In other words, if the left-hand dataset
+# consists of Nleft rows of Mleft columns, and the right-hand dataset of
+# Nright rows of Mright columns, then the cartesian product is a dataset
+# of Nleft&times;Nright rows, each containing Mleft+Mright columns.
 #
 # x1, x2    (Nlhs=3, Nrhs=2)   (Mlhs=2, Mrhs=3)
 do_join_test e_select-1.4.3.1 { 
@@ -732,10 +732,10 @@ do_execsql_test e_select-3.0 {
   INSERT INTO x2 VALUES(7, 'mistrusted', 'standardized');
 } {}
 
-# EVIDENCE-OF: R-06999-14330 If a WHERE clause is specified, the WHERE
+# EVIDENCE-OF: R-60775-64916 If a WHERE clause is specified, the WHERE
 # expression is evaluated for each row in the input data as a boolean
-# expression. All rows for which the WHERE clause expression evaluates
-# to false are excluded from the dataset before continuing.
+# expression. Only rows for which the WHERE clause expression evaluates
+# to true are included from the dataset before continuing.
 #
 do_execsql_test e_select-3.1.1 { SELECT k FROM x1 WHERE x }         {3}
 do_execsql_test e_select-3.1.2 { SELECT k FROM x1 WHERE y }         {3 5 6}
@@ -813,8 +813,8 @@ do_select_tests e_select-4.1 {
   }
 }
 
-# EVIDENCE-OF: R-61869-22578 It is an error to use a "*" or "alias.*"
-# expression in any context other than than a result expression list.
+# EVIDENCE-OF: R-38023-18396 It is an error to use a "*" or "alias.*"
+# expression in any context other than a result expression list.
 #
 # EVIDENCE-OF: R-44324-41166 It is also an error to use a "*" or
 # "alias.*" expression in a simple SELECT query that does not have a
@@ -1007,12 +1007,12 @@ do_execsql_test e_select-4.9.0 {
   INSERT INTO b3 VALUES('dEF', 'dEF');
 } {}
 
-# EVIDENCE-OF: R-57754-57109 If the SELECT statement is an aggregate
+# EVIDENCE-OF: R-07284-35990 If the SELECT statement is an aggregate
 # query with a GROUP BY clause, then each of the expressions specified
 # as part of the GROUP BY clause is evaluated for each row of the
 # dataset. Each row is then assigned to a "group" based on the results;
 # rows for which the results of evaluating the GROUP BY expressions are
-# the same are assigned to the same group.
+# the same get assigned to the same group.
 #
 #   These tests also show that the following is not untrue:
 #
@@ -1371,8 +1371,9 @@ foreach {tn select op1 op2} {
   do_catchsql_test e_select-7.2.$tn $select [list 1 $err]
 }
 
-# EVIDENCE-OF: R-22874-32655 ORDER BY and LIMIT clauses may only occur
-# at the end of the entire compound SELECT.
+# EVIDENCE-OF: R-45440-25633 ORDER BY and LIMIT clauses may only occur
+# at the end of the entire compound SELECT, and then only if the final
+# element of the compound is not a VALUES clause.
 #
 foreach {tn select} {
   1   "SELECT * FROM j1 UNION ALL SELECT * FROM j2,j3 ORDER BY a"
@@ -1384,6 +1385,7 @@ foreach {tn select} {
 
   7   "SELECT * FROM j1 UNION SELECT * FROM j2,j3 ORDER BY a"
   8   "SELECT count(*) FROM j1 UNION SELECT max(e) FROM j2 ORDER BY 1"
+  8b  "VALUES('8b') UNION SELECT max(e) FROM j2 ORDER BY 1"
   9   "SELECT count(*), * FROM j1 UNION SELECT *,* FROM j2 ORDER BY 1,2,3"
   10  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10" 
   11  "SELECT * FROM j1 UNION SELECT * FROM j2,j3 LIMIT 10 OFFSET 5" 
@@ -1404,6 +1406,14 @@ foreach {tn select} {
   24  "SELECT a FROM j1 INTERSECT SELECT g FROM j2,j3 LIMIT (SELECT 10)" 
 } {
   do_test e_select-7.3.$tn { catch {execsql $select} msg } 0
+}
+foreach {tn select} {
+  50   "SELECT * FROM j1 ORDER BY 1 UNION ALL SELECT * FROM j2,j3"
+  51   "SELECT * FROM j1 LIMIT 1 UNION ALL SELECT * FROM j2,j3"
+  52   "SELECT count(*) FROM j1 UNION ALL VALUES(11) ORDER BY 1"
+  53   "SELECT count(*) FROM j1 UNION ALL VALUES(11) LIMIT 1"
+} {
+  do_test e_select-7.3.$tn { catch {execsql $select} msg } 1
 }
 
 # EVIDENCE-OF: R-08531-36543 A compound SELECT created using UNION ALL

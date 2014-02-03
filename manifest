@@ -1,9 +1,9 @@
-C Merge\slatest\sfixes\sfrom\sthe\strunk.
-D 2014-01-29T14:21:31.405
+C Sync\swith\sversion\s3.8.3.
+D 2014-02-03T13:58:42.546
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 043280f9ca15befa7236484a6c1448d9271abd73
+F Makefile.msc 71dd5335d266351598e51f2d694396db2a2e219f
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 8ed548d87d0a27fd7d7620476f9e25f9fa742d73
@@ -27,7 +27,7 @@ F autoconf/tea/Makefile.in 5c3b0bdfb66c20d55ebff59d1718864461570ca9
 F autoconf/tea/README 3e9a3c060f29a44344ab50aec506f4db903fb873
 F autoconf/tea/aclocal.m4 52c47aac44ce0ddb1f918b6993e8beb8eee88f43
 F autoconf/tea/configure.in e0466b881b53f31f5a4a69e7a91ad130902fb359
-F autoconf/tea/doc/sqlite3.n e268faa1691c33663d3a7faf9fa30673d14bd879
+F autoconf/tea/doc/sqlite3.n e1fe45d4f5286ee3d0ccc877aca2a0def488e9bb
 F autoconf/tea/license.terms 13bd403c9610fd2b76ece0ab50c4c5eda933d523
 F autoconf/tea/pkgIndex.tcl.in 3ef61715cf1c7bdcff56947ffadb26bc991ca39d
 F autoconf/tea/tclconfig/install-sh b087e5c4b92820c60bffb74acc1d9c2d40d80b8f
@@ -171,7 +171,7 @@ F mptest/mptest.c 499a74af4be293b7c1c7c3d40f332b67227dd739
 F mptest/multiwrite01.test 499ad0310da8dff8e8f98d2e272fc2a8aa741b2e
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
-F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
+F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c 2af0330bb1b601af7a7789bf7229675fd772a083
 F src/analyze.c 581d5c18ce89c6f45d4dca65914d0de5b4dad41f
@@ -458,7 +458,7 @@ F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 1e44f84d2abe44d66e4fbf198be4b20e3cc724a0
 F test/e_reindex.test 396b7b4f0a66863b4e95116a67d93b227193e589
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
-F test/e_select.test 51c062a9bda16e0ae1bbeed50806bedbd040b282
+F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
 F test/e_uri.test a2c92d80093a7efdcfbb11093651cbea87097b6b
@@ -751,7 +751,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 79927c8175c4dc889f30486388490dae229b3b11
+F test/permutations.test b7b8b410e3d22e616ff473e588078da6a377c082
 F test/pragma.test e882183ecd21d064cec5c7aaea174fbd36293429
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1167,7 +1167,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7b5f3773867ed0e4ed17bd473ba972d500035318 5bb29b82109224a2ad02920658fabd8fb0f27b3f
-R 432574c0dd840817debf508c99b1ccfe
-U dan
-Z 2459ddf115f614b7a3ba484263d1245a
+P 6b6dcd4cc75317628072abac7c58b41361cc72b4 e816dd924619db5f766de6df74ea2194f3e3b538
+R 346d101c294d20bde7ae1f470938d788
+U drh
+Z 539f6826e36788b480b45411fb5563b3
