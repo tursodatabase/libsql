@@ -97,10 +97,8 @@ void sqlite3MaterializeView(
   SrcList *pFrom;
   sqlite3 *db = pParse->db;
   int iDb = sqlite3SchemaToIndex(db, pView->pSchema);
-
   pWhere = sqlite3ExprDup(db, pWhere, 0);
   pFrom = sqlite3SrcListAppend(db, 0, 0, 0);
-
   if( pFrom ){
     assert( pFrom->nSrc==1 );
     pFrom->a[0].zName = sqlite3DbStrDup(db, pView->zName);
@@ -108,10 +106,7 @@ void sqlite3MaterializeView(
     assert( pFrom->a[0].pOn==0 );
     assert( pFrom->a[0].pUsing==0 );
   }
-
   pSel = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
-  if( pSel ) pSel->selFlags |= SF_Materialize;
-
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
   sqlite3Select(pParse, pSel, &dest);
   sqlite3SelectDelete(db, pSel);

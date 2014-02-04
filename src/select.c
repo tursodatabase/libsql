@@ -4552,8 +4552,8 @@ int sqlite3Select(
         p->selFlags |= SF_Aggregate;
       }
       i = -1;
-    }else if( pTabList->nSrc==1 && (p->selFlags & SF_Materialize)==0
-      && OptimizationEnabled(db, SQLITE_SubqCoroutine)
+    }else if( pTabList->nSrc==1
+           && OptimizationEnabled(db, SQLITE_SubqCoroutine)
     ){
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.

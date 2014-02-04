@@ -2161,7 +2161,7 @@ struct Select {
 #define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
 #define SF_UseSorter       0x0040  /* Sort using a sorter */
 #define SF_Values          0x0080  /* Synthesized from VALUES clause */
-#define SF_Materialize     0x0100  /* Force materialization of views */
+#define SF_Materialize     0x0100  /* NOT USED */
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
