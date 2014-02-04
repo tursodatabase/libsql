@@ -1,5 +1,5 @@
-C Remove\sthe\sSF_Materialize\sflag\sfrom\sthe\sSELECT\sobject\sas\sit\sdoes\snot\naccomplish\sanything\suseful.
-D 2014-02-04T20:46:41.282
+C Do\snot\smark\sthe\sephemeral\stables\sused\sto\shold\sthe\sRHS\sof\sIN\sclauses\sas\nunordered\sbecause\sthe\sNGQP\swill\suse\sthose\sephemeral\stables\sto\shelp\sorder\sthe\noutput.\s\sThis\sis\snot\san\sissue\sfor\sstandard\sSQLite\ssince\sephemeral\stables\nthere\sare\salways\sordered,\sregardless\sof\sthe\shint.\s\sIt\sonly\saffects\ssystems\nthat\ssubstitute\san\salternative\sstorage\sengine.
+D 2014-02-04T23:45:45.488
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 6765a421f08adbedc5d52d21760ec6dbe5123fd3
-F src/expr.c e3e09af908b968305d4efeda8dc3499a087ee7d2
+F src/expr.c 2c710c35a05486d8e2e142bff1e66bac6ed39a35
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
 F src/func.c f4499b39d66b71825514334ce67b32ff14bd19f5
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3e1a3f68d7457ff708222a3448404b593f018fc2
-R ade75eb85514e63b06c7a5a5e6c85df2
+P 65d5dcddbd34dfb2733a7a908c7c652ce2d610fe
+R 0cb9b0d02c191eb29e623ef228773cac
 U drh
-Z e551af7aa0a37f40c066574f60e01273
+Z 4064cb60834c8d1598bb0abfd98d0dc6
