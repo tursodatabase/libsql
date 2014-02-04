@@ -2358,22 +2358,23 @@ struct Parse {
   int nSet;            /* Number of sets used so far */
   int nOnce;           /* Number of OP_Once instructions so far */
   int nOpAlloc;        /* Number of slots allocated for Vdbe.aOp[] */
-  int nLabel;          /* Number of labels used */
-  int *aLabel;         /* Space to hold the labels */
   int iFixedOp;        /* Never back out opcodes iFixedOp-1 or earlier */
   int ckBase;          /* Base register of data during check constraints */
   int iPartIdxTab;     /* Table corresponding to a partial index */
   int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
   int iCacheCnt;       /* Counter used to generate aColCache[].lru values */
+  int nLabel;          /* Number of labels used */
+  int *aLabel;         /* Space to hold the labels */
   struct yColCache {
     int iTable;           /* Table cursor number */
-    int iColumn;          /* Table column number */
+    i16 iColumn;          /* Table column number */
     u8 tempReg;           /* iReg is a temp register that needs to be freed */
     int iLevel;           /* Nesting level */
     int iReg;             /* Reg with value of this column. 0 means none. */
     int lru;              /* Least recently used entry has the smallest value */
   } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
   ExprList *pConstExpr;/* Constant expressions */
+  Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
@@ -2381,7 +2382,6 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   int nMaxArg;         /* Max args passed to user function by sub-program */
-  Token constraintName;/* Name of the constraint currently being parsed */
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nTableLock;        /* Number of locks in aTableLock */
   TableLock *aTableLock; /* Required table locks for shared-cache mode */
@@ -2400,12 +2400,17 @@ struct Parse {
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
   u8 disableTriggers;  /* True to disable triggers */
 
-  /* Above is constant between recursions.  Below is reset before and after
-  ** each recursion */
+  /************************************************************************
+  ** Above is constant between recursions.  Below is reset before and after
+  ** each recursion.  The boundary between these two regions is determined
+  ** using offsetof(Parse,nVar) so the nVar field must be the first field
+  ** in the recursive region.
+  ************************************************************************/
 
   int nVar;                 /* Number of '?' variables seen in the SQL so far */
   int nzVar;                /* Number of available slots in azVar[] */
   u8 iPkSortOrder;          /* ASC or DESC for INTEGER PRIMARY KEY */
+  u8 bFreeWith;             /* True if pWith should be freed with parser */
   u8 explain;               /* True if the EXPLAIN flag is found on the query */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   u8 declareVtab;           /* True if inside sqlite3_declare_vtab() */
@@ -2432,7 +2437,6 @@ struct Parse {
   Table *pZombieTab;        /* List of Table objects to delete after code gen */
   TriggerPrg *pTriggerPrg;  /* Linked list of coded triggers */
   With *pWith;              /* Current WITH clause, or NULL */
-  u8 bFreeWith;             /* True if pWith should be freed with parser */
 };
 
 /*
