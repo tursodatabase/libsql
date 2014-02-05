@@ -2007,8 +2007,7 @@ static int multiSelect(
   */
   if( dest.eDest==SRT_EphemTab ){
     assert( p->pEList );
-    sqlite3VdbeAddOp2(v, OP_OpenEphemeral, dest.iSDParm, p->pEList->nExpr);
-    sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
+    sqlite3VdbeAddOp2(v, OP_OpenHash, dest.iSDParm, p->pEList->nExpr);
     dest.eDest = SRT_Table;
   }
 
@@ -4740,11 +4739,10 @@ int sqlite3Select(
   */
   if( p->selFlags & SF_Distinct ){
     sDistinct.tabTnct = pParse->nTab++;
-    sDistinct.addrTnct = sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
+    sDistinct.addrTnct = sqlite3VdbeAddOp4(v, OP_OpenHash,
                                 sDistinct.tabTnct, 0, 0,
                                 (char*)keyInfoFromExprList(pParse, p->pEList, 0),
                                 P4_KEYINFO);
-    sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
     sDistinct.eTnctType = WHERE_DISTINCT_UNORDERED;
   }else{
     sDistinct.eTnctType = WHERE_DISTINCT_NOOP;

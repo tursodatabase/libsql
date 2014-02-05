@@ -735,8 +735,7 @@ static void updateVirtualTable(
   */
   assert( v );
   ephemTab = pParse->nTab++;
-  sqlite3VdbeAddOp2(v, OP_OpenEphemeral, ephemTab, pTab->nCol+1+(pRowid!=0));
-  sqlite3VdbeChangeP5(v, BTREE_UNORDERED);
+  sqlite3VdbeAddOp2(v, OP_OpenHash, ephemTab, pTab->nCol+1+(pRowid!=0));
 
   /* fill the ephemeral table 
   */

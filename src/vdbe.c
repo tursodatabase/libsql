@@ -3295,7 +3295,7 @@ case OP_OpenWrite: {
   break;
 }
 
-/* Opcode: OpenEphemeral P1 P2 * P4 P5
+/* Opcode: OpenEphemeral P1 P2 * P4 *
 ** Synopsis: nColumn=P2
 **
 ** Open a new cursor P1 to a transient table.
@@ -3307,11 +3307,18 @@ case OP_OpenWrite: {
 ** The cursor points to a BTree table if P4==0 and to a BTree index
 ** if P4 is not 0.  If P4 is not NULL, it points to a KeyInfo structure
 ** that defines the format of keys in the index.
+*/
+/* Opcode: OpenHash P1 P2 * P4 *
+** Synopsis: nColumn=P2
 **
-** The P5 parameter can be a mask of the BTREE_* flags defined
-** in btree.h.  These flags control aspects of the operation of
-** the btree.  The BTREE_OMIT_JOURNAL and BTREE_SINGLE flags are
-** added automatically.
+** Open a new cursor P1 to a transient table.
+** P2 is the number of columns in the ephemeral table.
+** The cursor points to a BTree table if P4==0 and to a BTree index
+** if P4 is a KeyInfo structure.
+**
+** This opcode is identical to OP_OpenEphemeral except that it
+** adds the BTREE_UNORDERED parameter to the sqlite3BtreeOpen() call,
+** thus causing the underlying table to unordered.
 */
 /* Opcode: OpenAutoindex P1 P2 * P4 *
 ** Synopsis: nColumn=P2
@@ -3322,6 +3329,7 @@ case OP_OpenWrite: {
 ** indices in joins.
 */
 case OP_OpenAutoindex: 
+case OP_OpenHash:
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
   int btreeFlags;
@@ -3334,25 +3342,35 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
   assert( pOp->p1>=0 );
   assert( pOp->p2>=0 );
+  assert( pOp->p5==0 );
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  btreeFlags = BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5;
-  if( pOp->p4.pKeyInfo ) btreeFlags |= BTREE_SINGLE_INDEX;
+  btreeFlags = BTREE_OMIT_JOURNAL | BTREE_SINGLE;
+  if( pOp->opcode==OP_OpenHash ){
+    btreeFlags |= BTREE_UNORDERED;
+    pCx->isOrdered = 0;
+  }else{
+    pCx->isOrdered = 1;
+  }
+  if( pOp->p4.pKeyInfo ){
+    assert( pOp->p4type==P4_KEYINFO );
+    assert( pOp->p4.pKeyInfo->db==db );
+    assert( pOp->p4.pKeyInfo->enc==ENC(db) );
+    btreeFlags |= BTREE_SINGLE_INDEX;
+    pCx->isTable = 0;
+  }else{
+    pCx->isTable = 1;
+  }
   rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, btreeFlags, vfsFlags);
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
   }
-  assert( pOp->p4.pKeyInfo==0 || pOp->p4type==P4_KEYINFO );
-  assert( pOp->p4.pKeyInfo==0 || pOp->p4.pKeyInfo->db==db );
-  assert( pOp->p4.pKeyInfo==0 || pOp->p4.pKeyInfo->enc==ENC(db) );
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, pOp->p4.pKeyInfo,
                             pCx->pCursor);
   }
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
-  pCx->isTable = pCx->pKeyInfo==0;
-  pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   break;
 }
 
