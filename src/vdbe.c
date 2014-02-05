@@ -3324,7 +3324,7 @@ case OP_OpenWrite: {
 case OP_OpenAutoindex: 
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
-  KeyInfo *pKeyInfo;
+  int btreeFlags;
 
   static const int vfsFlags = 
       SQLITE_OPEN_READWRITE |
@@ -3337,34 +3337,21 @@ case OP_OpenEphemeral: {
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
-                        BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
+  btreeFlags = BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5;
+  if( pOp->p4.pKeyInfo ) btreeFlags |= BTREE_SINGLE_INDEX;
+  rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, btreeFlags, vfsFlags);
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeBeginTrans(pCx->pBt, 1);
   }
+  assert( pOp->p4.pKeyInfo==0 || pOp->p4type==P4_KEYINFO );
+  assert( pOp->p4.pKeyInfo==0 || pOp->p4.pKeyInfo->db==db );
+  assert( pOp->p4.pKeyInfo==0 || pOp->p4.pKeyInfo->enc==ENC(db) );
   if( rc==SQLITE_OK ){
-    /* If a transient index is required, create it by calling
-    ** sqlite3BtreeCreateTable() with the BTREE_BLOBKEY flag before
-    ** opening it. If a transient table is required, just use the
-    ** automatically created table with root-page 1 (an BLOB_INTKEY table).
-    */
-    if( (pKeyInfo = pOp->p4.pKeyInfo)!=0 ){
-      int pgno;
-      assert( pOp->p4type==P4_KEYINFO );
-      rc = sqlite3BtreeCreateTable(pCx->pBt, &pgno, BTREE_BLOBKEY | pOp->p5); 
-      if( rc==SQLITE_OK ){
-        assert( pgno==MASTER_ROOT+1 );
-        assert( pKeyInfo->db==db );
-        assert( pKeyInfo->enc==ENC(db) );
-        pCx->pKeyInfo = pKeyInfo;
-        rc = sqlite3BtreeCursor(pCx->pBt, pgno, 1, pKeyInfo, pCx->pCursor);
-      }
-      pCx->isTable = 0;
-    }else{
-      rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, 0, pCx->pCursor);
-      pCx->isTable = 1;
-    }
+    rc = sqlite3BtreeCursor(pCx->pBt, MASTER_ROOT, 1, pOp->p4.pKeyInfo,
+                            pCx->pCursor);
   }
+  pCx->pKeyInfo = pOp->p4.pKeyInfo;
+  pCx->isTable = pCx->pKeyInfo==0;
   pCx->isOrdered = (pOp->p5!=BTREE_UNORDERED);
   break;
 }

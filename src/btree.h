@@ -56,10 +56,11 @@ int sqlite3BtreeOpen(
 ** NOTE:  These values must match the corresponding PAGER_ values in
 ** pager.h.
 */
-#define BTREE_OMIT_JOURNAL  1  /* Do not create or use a rollback journal */
-#define BTREE_MEMORY        2  /* This is an in-memory DB */
-#define BTREE_SINGLE        4  /* The file contains at most 1 b-tree */
-#define BTREE_UNORDERED     8  /* Use of a hash implementation is OK */
+#define BTREE_OMIT_JOURNAL  0x01  /* Do not create or use a rollback journal */
+#define BTREE_MEMORY        0x02  /* This is an in-memory DB */
+#define BTREE_SINGLE        0x04  /* The file contains at most 1 b-tree */
+#define BTREE_UNORDERED     0x08  /* Use of a hash implementation is OK */
+#define BTREE_SINGLE_INDEX  0x10  /* File contains one index btree */
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);

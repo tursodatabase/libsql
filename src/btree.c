@@ -1527,7 +1527,7 @@ static int btreeInitPage(MemPage *pPage){
 ** Set up a raw page so that it looks like a database page holding
 ** no entries.
 */
-static void zeroPage(MemPage *pPage, int flags){
+static void zeroPage(MemPage *pPage, u8 flags){
   unsigned char *data = pPage->aData;
   BtShared *pBt = pPage->pBt;
   u8 hdr = pPage->hdrOffset;
@@ -2585,6 +2585,7 @@ static int newDatabase(BtShared *pBt){
   MemPage *pP1;
   unsigned char *data;
   int rc;
+  u8 flags;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   if( pBt->nPage>0 ){
@@ -2607,7 +2608,9 @@ static int newDatabase(BtShared *pBt){
   data[22] = 32;
   data[23] = 32;
   memset(&data[24], 0, 100-24);
-  zeroPage(pP1, PTF_INTKEY|PTF_LEAF|PTF_LEAFDATA );
+  flags = (pBt->openFlags&BTREE_SINGLE_INDEX) ? PTF_ZERODATA|PTF_LEAF
+                                              : PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF;
+  zeroPage(pP1, flags);
   pBt->btsFlags |= BTS_PAGESIZE_FIXED;
 #ifndef SQLITE_OMIT_AUTOVACUUM
   assert( pBt->autoVacuum==1 || pBt->autoVacuum==0 );
@@ -6109,7 +6112,7 @@ static int balance_nonroot(
   u16 leafCorrection;          /* 4 if pPage is a leaf.  0 if not */
   int leafData;                /* True if pPage is a leaf of a LEAFDATA tree */
   int usableSpace;             /* Bytes in pPage beyond the header */
-  int pageFlags;               /* Value of pPage->aData[0] */
+  u8 pageFlags;                /* Value of pPage->aData[0] */
   int subtotal;                /* Subtotal of bytes in cells on one page */
   int iSpace1 = 0;             /* First unused byte of aSpace1[] */
   int iOvflSpace = 0;          /* First unused byte of aOvflSpace[] */
@@ -7210,7 +7213,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int createTabFlags){
   MemPage *pRoot;
   Pgno pgnoRoot;
   int rc;
-  int ptfFlags;          /* Page-type flage for the root page of new table */
+  u8 ptfFlags;          /* Page-type flage for the root page of new table */
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( pBt->inTransaction==TRANS_WRITE );

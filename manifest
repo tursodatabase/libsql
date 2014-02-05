@@ -1,5 +1,5 @@
-C In\sthe\sWin32\sVFS,\sthe\swinSysInfo\svariable\sshould\sbe\sstatic.
-D 2014-02-05T11:05:47.687
+C Make\sthe\sroot\spage\sof\san\sephemeral\sindex\sbe\spage\s1\sinstead\sof\spage\s2.
+D 2014-02-05T17:08:07.143
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,8 +166,8 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 7b2c3cd16deedff7f4904f2e871e7b77328b9872
-F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
+F src/btree.c ae408b77caf025df8c1baab52aad8a5a393bed35
+F src/btree.h f1c65e0511d7a228fd1a7c7463ef842525364348
 F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
 F src/build.c 7e6c275ab1731510d6f793d0f88373ab3e858e69
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
@@ -280,7 +280,7 @@ F src/update.c a7df6fffce6bfedc578fda6136dd33e34a63f8ee
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 15ac2627f548f5481d0d7e6c4eb67be673027695
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c e703913e9a3b56d7824f3eb8b76d99f496ff6dc1
+F src/vdbe.c 361f6e555755cdde80ee64afc2e03ae992118b62
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
 F src/vdbeInt.h 42db251e9f863401ff847b90d5fe1614c89a6a56
 F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f2504089df0bf4011864e67825b37f6aa3d03458
-R f919fd88b0fe2a17b41d9c03ff44720f
-U mistachkin
-Z fecb65c3944a970d4d7662e030506246
+P 4a4dd371a72b7d475185923bebb4cd9bd83e1bd9
+R bf307b76d3eec71eba23d35d1544e183
+U drh
+Z c36144694714d745eac22adf0a8b4378
