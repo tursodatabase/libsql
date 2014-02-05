@@ -1,5 +1,5 @@
-C Do\snot\smark\sthe\sephemeral\stables\sused\sto\shold\sthe\sRHS\sof\sIN\sclauses\sas\nunordered\sbecause\sthe\sNGQP\swill\suse\sthose\sephemeral\stables\sto\shelp\sorder\sthe\noutput.\s\sThis\sis\snot\san\sissue\sfor\sstandard\sSQLite\ssince\sephemeral\stables\nthere\sare\salways\sordered,\sregardless\sof\sthe\shint.\s\sIt\sonly\saffects\ssystems\nthat\ssubstitute\san\salternative\sstorage\sengine.
-D 2014-02-04T23:45:45.488
+C In\sthe\sWin32\sVFS,\sthe\swinSysInfo\svariable\sshould\sbe\sstatic.
+D 2014-02-05T11:05:47.687
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c f3ed0e406cbf9c820565b2118232d0796346130f
-F src/os_win.c 1b21af72c5fa6f9e519a5fcab33e80d182b1aedb
+F src/os_win.c d4284f003445054a26689f1264b1b9bf7261bd1b
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y bd51bc17cbfe7549adb4ca3747b1c3d384645065
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 65d5dcddbd34dfb2733a7a908c7c652ce2d610fe
-R 0cb9b0d02c191eb29e623ef228773cac
-U drh
-Z 4064cb60834c8d1598bb0abfd98d0dc6
+P f2504089df0bf4011864e67825b37f6aa3d03458
+R f919fd88b0fe2a17b41d9c03ff44720f
+U mistachkin
+Z fecb65c3944a970d4d7662e030506246
