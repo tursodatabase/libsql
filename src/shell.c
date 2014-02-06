@@ -1581,7 +1581,7 @@ static char zHelp[] =
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
-  ".repair NEWDB          Recover data into NEWDB from a corrupt database\n"
+  ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   "                         If TABLE specified, only show tables matching\n"
@@ -1900,7 +1900,7 @@ static char *csv_read_one_field(CSVReader *p){
 /*
 ** Try to transfer data for table zTable
 */
-static void tryToRepairData(
+static void tryToCloneData(
   struct callback_data *p,
   sqlite3 *newDb,
   const char *zTable
@@ -2002,7 +2002,7 @@ end_data_xfer:
 ** Try to transfer all rows of the schema that match zWhere.  For
 ** each row, invoke xForEach() on the object defined by that row.
 */
-static void tryToRepairSchema(
+static void tryToCloneSchema(
   struct callback_data *p,
   sqlite3 *newDb,
   const char *zWhere,
@@ -2066,7 +2066,7 @@ end_schema_xfer:
 ** as possible out of the main database (which might be corrupt) and write it
 ** into zNewDb.
 */
-static void tryToRepair(struct callback_data *p, const char *zNewDb){
+static void tryToClone(struct callback_data *p, const char *zNewDb){
   int rc;
   sqlite3 *newDb = 0;
   if( access(zNewDb,0)==0 ){
@@ -2079,8 +2079,8 @@ static void tryToRepair(struct callback_data *p, const char *zNewDb){
             sqlite3_errmsg(newDb));
   }else{
     sqlite3_exec(newDb, "BEGIN EXCLUSIVE;", 0, 0, 0);
-    tryToRepairSchema(p, newDb, "type='table'", tryToRepairData);
-    tryToRepairSchema(p, newDb, "type!='table'", 0);
+    tryToCloneSchema(p, newDb, "type='table'", tryToCloneData);
+    tryToCloneSchema(p, newDb, "type!='table'", 0);
     sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
   }
   sqlite3_close(newDb);
@@ -2191,6 +2191,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   */
   if( c=='b' && n>=3 && strncmp(azArg[0], "breakpoint", n)==0 ){
     test_breakpoint();
+  }else
+
+  if( c=='c' && strncmp(azArg[0], "clone", n)==0 && nArg>1 && nArg<3 ){
+    tryToClone(p, azArg[1]);
   }else
 
   if( c=='d' && n>1 && strncmp(azArg[0], "databases", n)==0 && nArg==1 ){
@@ -2683,10 +2687,6 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       rc = process_input(p, alt);
       fclose(alt);
     }
-  }else
-
-  if( c=='r' && strncmp(azArg[0], "repair", n)==0 && nArg>1 && nArg<3 ){
-    tryToRepair(p, azArg[1]);
   }else
 
   if( c=='r' && n>=3 && strncmp(azArg[0], "restore", n)==0 && nArg>1 && nArg<4){
