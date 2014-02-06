@@ -1,5 +1,5 @@
-C Use\sOpenHash\sinstead\sof\sOpenEphemeral\sfor\sthe\sRHS\sof\sIN\soperators\sif\sthe\nresult\sis\snot\sneeded\sfor\ssorting.
-D 2014-02-06T03:31:41.891
+C Change\smore\sOP_OpenEphemeral\soperations\sto\sOP_OpenHash.
+D 2014-02-06T14:59:47.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 6765a421f08adbedc5d52d21760ec6dbe5123fd3
+F src/delete.c 3987ac3e32f6a447b1f3ca0268d67bdaf0a8b97f
 F src/expr.c fa9cd9b4bdc8989efce99d49c7e46484e17f41f4
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 2ab0f5384b70594468ef3ac5c7ed8ca24bfd17d5
@@ -183,7 +183,7 @@ F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c a4450f0c46a9f221622e6551ab0953b03c4f8ee8
+F src/insert.c c6b4ba486e62d0b600632fdfce4bca76213158cb
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 18aea8061277bf91a785b13d3e35fc8eb5295d8b
+F src/select.c d1acf45637f70d71a76cb8312507550e3aee6caa
 F src/shell.c 24722d24d4ea8ca93db35e44db7308de786767ca
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 61c34ba71b733b81312078d90c1e21a8cbad669a
-R 2869c52facbdf294824830f655817bcb
+P 715fac7749a6b1523fe9f7de8263f0c4d1571d07
+R f507eae713e5b72113d4535fdf641347
 U drh
-Z 2c24fe059c95b02acd2b9be5d0d0ed85
+Z 759564bb3627cf7a97644b4104ef33de

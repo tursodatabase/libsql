@@ -719,6 +719,9 @@ void sqlite3Insert(
       **         insert row from R..R+n into temp table
       **         goto L
       **      M: ...
+      **
+      ** Use OP_OpenEphemeral, not OP_OpenHash, so that srcTab behaves as
+      ** a FIFO.
       */
       int regRec;          /* Register to hold packed record */
       int regTempRowid;    /* Register to hold temp table ROWID */

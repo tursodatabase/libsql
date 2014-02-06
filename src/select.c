@@ -535,8 +535,8 @@ typedef struct DistinctCtx DistinctCtx;
 struct DistinctCtx {
   u8 isTnct;      /* True if the DISTINCT keyword is present */
   u8 eTnctType;   /* One of the WHERE_DISTINCT_* operators */
-  int tabTnct;    /* Ephemeral table used for DISTINCT processing */
-  int addrTnct;   /* Address of OP_OpenEphemeral opcode for tabTnct */
+  int tabTnct;    /* Table containing previously seen values */
+  int addrTnct;   /* Address of OpenEphemeral/OpenHash opcode for tabTnct */
 };
 
 /*
@@ -1871,7 +1871,7 @@ static void generateWithRecursiveQuery(
   }
   VdbeComment((v, "Queue table"));
   if( iDistinct ){
-    p->addrOpenEphm[0] = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, iDistinct, 0);
+    p->addrOpenEphm[0] = sqlite3VdbeAddOp2(v, OP_OpenHash, iDistinct, 0);
     p->selFlags |= SF_UsesEphemeral;
   }
 
@@ -2107,7 +2107,7 @@ static int multiSelect(
         */
         unionTab = pParse->nTab++;
         assert( p->pOrderBy==0 );
-        addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, unionTab, 0);
+        addr = sqlite3VdbeAddOp2(v, OP_OpenHash, unionTab, 0);
         assert( p->addrOpenEphm[0] == -1 );
         p->addrOpenEphm[0] = addr;
         p->pRightmost->selFlags |= SF_UsesEphemeral;
@@ -2190,7 +2190,8 @@ static int multiSelect(
 
       /* INTERSECT is different from the others since it requires
       ** two temporary tables.  Hence it has its own case.  Begin
-      ** by allocating the tables we will need.
+      ** by allocating the tables we will need.  The tables must be
+      ** ordered:  Use OP_OpenEphermeral, not OP_OpenHash.
       */
       tab1 = pParse->nTab++;
       tab2 = pParse->nTab++;
@@ -4301,7 +4302,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
         pFunc->iDistinct = -1;
       }else{
         KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pE->x.pList, 0);
-        sqlite3VdbeAddOp4(v, OP_OpenEphemeral, pFunc->iDistinct, 0, 0,
+        sqlite3VdbeAddOp4(v, OP_OpenHash, pFunc->iDistinct, 0, 0,
                           (char*)pKeyInfo, P4_KEYINFO);
       }
     }
@@ -4720,6 +4721,8 @@ int sqlite3Select(
   }
 
   /* If the output is destined for a temporary table, open that table.
+  ** Use OP_OpenEphemeral rather than OP_OpenHash to keep the rows in
+  ** their original order.
   */
   if( pDest->eDest==SRT_EphemTab ){
     sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pDest->iSDParm, pEList->nExpr);

@@ -383,7 +383,9 @@ void sqlite3DeleteFrom(
       sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
     }else{
       /* For a WITHOUT ROWID table, create an ephermeral table used to
-      ** hold all primary keys for rows to be deleted. */
+      ** hold all primary keys for rows to be deleted.  Use OP_OpenEphemeral
+      ** rather than OP_OpenHash since for efficiency reasons it is good to
+      ** process the primary keys in order. */
       pPk = sqlite3PrimaryKeyIndex(pTab);
       assert( pPk!=0 );
       nPk = pPk->nKeyCol;
