@@ -2946,7 +2946,7 @@ case OP_AutoCommit: {
   break;
 }
 
-/* Opcode: Transaction P1 P2 * * *
+/* Opcode: Transaction P1 P2 P3 P4 P5
 **
 ** Begin a transaction.  The transaction ends when a Commit or Rollback
 ** opcode is encountered.  Depending on the ON CONFLICT setting, the
@@ -2976,9 +2976,17 @@ case OP_AutoCommit: {
 ** will automatically commit when the VDBE halts.
 **
 ** If P2 is zero, then a read-lock is obtained on the database file.
+**
+** If P5!=0 then this opcode also checks the schema cookie against P3
+** and the schema generation counter against P4.
+** The cookie changes its value whenever the database schema changes.
+** This operation is used to detect when that the cookie has changed
+** and that the current process needs to reread the schema.
 */
 case OP_Transaction: {
   Btree *pBt;
+  int iMeta;
+  int iGen;
 
   assert( p->bIsReader );
   assert( p->readOnly==0 || pOp->p2==0 );
@@ -3022,6 +3030,35 @@ case OP_Transaction: {
       p->nStmtDefCons = db->nDeferredCons;
       p->nStmtDefImmCons = db->nDeferredImmCons;
     }
+
+    /* Gather the schema version number for checking */
+    sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
+    iGen = db->aDb[pOp->p1].pSchema->iGeneration;
+  }else{
+    iGen = iMeta = 0;
+  }
+  assert( pOp->p5==0 || pOp->p4type==P4_INT32 );
+  if( pOp->p5 && (iMeta!=pOp->p3 || iGen!=pOp->p4.i) ){
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
+    /* If the schema-cookie from the database file matches the cookie 
+    ** stored with the in-memory representation of the schema, do
+    ** not reload the schema from the database file.
+    **
+    ** If virtual-tables are in use, this is not just an optimization.
+    ** Often, v-tables store their data in other SQLite tables, which
+    ** are queried from within xNext() and other v-table methods using
+    ** prepared queries. If such a query is out-of-date, we do not want to
+    ** discard the database schema, as the user code implementing the
+    ** v-table would have to be ready for the sqlite3_vtab structure itself
+    ** to be invalidated whenever sqlite3_step() is called from within 
+    ** a v-table method.
+    */
+    if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
+      sqlite3ResetOneSchema(db, pOp->p1);
+    }
+    p->expired = 1;
+    rc = SQLITE_SCHEMA;
   }
   break;
 }
@@ -3092,66 +3129,6 @@ case OP_SetCookie: {       /* in3 */
     ** schema is changed.  Ticket #1644 */
     sqlite3ExpirePreparedStatements(db);
     p->expired = 0;
-  }
-  break;
-}
-
-/* Opcode: VerifyCookie P1 P2 P3 * *
-**
-** Check the value of global database parameter number 0 (the
-** schema version) and make sure it is equal to P2 and that the
-** generation counter on the local schema parse equals P3.
-**
-** P1 is the database number which is 0 for the main database file
-** and 1 for the file holding temporary tables and some higher number
-** for auxiliary databases.
-**
-** The cookie changes its value whenever the database schema changes.
-** This operation is used to detect when that the cookie has changed
-** and that the current process needs to reread the schema.
-**
-** Either a transaction needs to have been started or an OP_Open needs
-** to be executed (to establish a read lock) before this opcode is
-** invoked.
-*/
-case OP_VerifyCookie: {
-  int iMeta;
-  int iGen;
-  Btree *pBt;
-
-  assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (((yDbMask)1)<<pOp->p1))!=0 );
-  assert( sqlite3SchemaMutexHeld(db, pOp->p1, 0) );
-  assert( p->bIsReader );
-  pBt = db->aDb[pOp->p1].pBt;
-  if( pBt ){
-    sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
-    iGen = db->aDb[pOp->p1].pSchema->iGeneration;
-  }else{
-    iGen = iMeta = 0;
-  }
-  if( iMeta!=pOp->p2 || iGen!=pOp->p3 ){
-    sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
-    /* If the schema-cookie from the database file matches the cookie 
-    ** stored with the in-memory representation of the schema, do
-    ** not reload the schema from the database file.
-    **
-    ** If virtual-tables are in use, this is not just an optimization.
-    ** Often, v-tables store their data in other SQLite tables, which
-    ** are queried from within xNext() and other v-table methods using
-    ** prepared queries. If such a query is out-of-date, we do not want to
-    ** discard the database schema, as the user code implementing the
-    ** v-table would have to be ready for the sqlite3_vtab structure itself
-    ** to be invalidated whenever sqlite3_step() is called from within 
-    ** a v-table method.
-    */
-    if( db->aDb[pOp->p1].pSchema->schema_cookie!=iMeta ){
-      sqlite3ResetOneSchema(db, pOp->p1);
-    }
-
-    p->expired = 1;
-    rc = SQLITE_SCHEMA;
   }
   break;
 }

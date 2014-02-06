@@ -156,13 +156,14 @@ void sqlite3FinishCoding(Parse *pParse){
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
         if( (mask & pParse->cookieMask)==0 ) continue;
         sqlite3VdbeUsesBtree(v, iDb);
-        sqlite3VdbeAddOp2(v,OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
-        if( db->init.busy==0 ){
-          assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-          sqlite3VdbeAddOp3(v, OP_VerifyCookie,
-                            iDb, pParse->cookieValue[iDb],
-                            db->aDb[iDb].pSchema->iGeneration);
-        }
+        sqlite3VdbeAddOp4Int(v,
+          OP_Transaction,                    /* Opcode */
+          iDb,                               /* P1 */
+          (mask & pParse->writeMask)!=0,     /* P2 */
+          pParse->cookieValue[iDb],          /* P3 */
+          db->aDb[iDb].pSchema->iGeneration  /* P4 */
+        );
+        if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){

@@ -1584,7 +1584,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     pExpr = p->pEList->a[0].pExpr;
     iCol = (i16)pExpr->iColumn;
    
-    /* Code an OP_VerifyCookie and OP_TableLock for <table>. */
+    /* Code an OP_Transaction and OP_TableLock for <table>. */
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     sqlite3CodeVerifySchema(pParse, iDb);
     sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
