@@ -65,17 +65,17 @@ do_test in5-2.4 {
   }
 } {12a 56e}
 do_test in5-2.5.1 {
-  regexp {OpenEphemeral} [db eval {
+  regexp {Open(Ephemeral|Hash)} [db eval {
     EXPLAIN SELECT d FROM t2 WHERE a IN t3x AND b IN t1y AND c IN t1z
   }]
 } {1}
 do_test in5-2.5.2 {
-  regexp {OpenEphemeral} [db eval {
+  regexp {Open(Ephemeral|Hash)} [db eval {
     EXPLAIN SELECT d FROM t2 WHERE a IN t1x AND b IN t3y AND c IN t1z
   }]
 } {1}
 do_test in5-2.5.3 {
-  regexp {OpenEphemeral} [db eval {
+  regexp {Open(Ephemeral|Hash)} [db eval {
     EXPLAIN SELECT d FROM t2 WHERE a IN t1x AND b IN t1y AND c IN t3z
   }]
 } {1}

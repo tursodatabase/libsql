@@ -2348,16 +2348,17 @@ static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
 ** this routine sets up a loop that will iterate over all values of X.
 */
 static int codeEqualityTerm(
-  Parse *pParse,      /* The parsing context */
+  WhereInfo *pWInfo,  /* WHERE clause */
   WhereTerm *pTerm,   /* The term of the WHERE clause to be coded */
   WhereLevel *pLevel, /* The level of the FROM clause we are working on */
   int iEq,            /* Index of the equality term within this level */
   int bRev,           /* True for reverse-order IN operations */
   int iTarget         /* Attempt to leave results in this register */
 ){
-  Expr *pX = pTerm->pExpr;
-  Vdbe *v = pParse->pVdbe;
-  int iReg;                  /* Register holding results */
+  Expr *pX = pTerm->pExpr;            /* Expression to be coded */
+  Parse *pParse = pWInfo->pParse;     /* Parsing context */
+  Vdbe *v = pParse->pVdbe;            /* Prepared stmt under construction */
+  int iReg;                           /* Register holding results */
 
   assert( iTarget>0 );
   if( pX->op==TK_EQ ){
@@ -2382,7 +2383,7 @@ static int codeEqualityTerm(
     }
     assert( pX->op==TK_IN );
     iReg = iTarget;
-    eType = sqlite3FindInIndex(pParse, pX, 0);
+    eType = sqlite3FindInIndex(pParse, pX, 0, pWInfo->bOBSat);
     if( eType==IN_INDEX_INDEX_DESC ){
       testcase( bRev );
       bRev = !bRev;
@@ -2464,7 +2465,7 @@ static int codeEqualityTerm(
 ** string in this example would be set to SQLITE_AFF_NONE.
 */
 static int codeAllEqualityTerms(
-  Parse *pParse,        /* Parsing context */
+  WhereInfo *pWInfo,    /* WHERE clause */
   WhereLevel *pLevel,   /* Which nested loop of the FROM we are coding */
   int bRev,             /* Reverse the order of IN operators */
   int nExtraReg,        /* Number of extra registers to allocate */
@@ -2472,6 +2473,7 @@ static int codeAllEqualityTerms(
 ){
   u16 nEq;                      /* The number of == or IN constraints to code */
   u16 nSkip;                    /* Number of left-most columns to skip */
+  Parse *pParse = pWInfo->pParse; /* Parsing context */
   Vdbe *v = pParse->pVdbe;      /* The vm under construction */
   Index *pIdx;                  /* The index being used for this loop */
   WhereTerm *pTerm;             /* A single constraint term */
@@ -2526,7 +2528,7 @@ static int codeAllEqualityTerms(
     ** Ex: CREATE INDEX i1 ON t1(a,b,a); SELECT * FROM t1 WHERE a=0 AND b=0; */
     testcase( (pTerm->wtFlags & TERM_CODED)!=0 );
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
-    r1 = codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, regBase+j);
+    r1 = codeEqualityTerm(pWInfo, pTerm, pLevel, j, bRev, regBase+j);
     if( r1!=regBase+j ){
       if( nReg==1 ){
         sqlite3ReleaseTempReg(pParse, regBase);
@@ -2809,7 +2811,7 @@ static Bitmask codeOneLoopStart(
       pTerm = pLoop->aLTerm[j];
       if( pTerm==0 ) continue;
       if( pTerm->eOperator & WO_IN ){
-        codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
+        codeEqualityTerm(pWInfo, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
       }else{
         sqlite3ExprCode(pParse, pTerm->pExpr->pRight, iTarget);
@@ -2849,7 +2851,7 @@ static Bitmask codeOneLoopStart(
     assert( pTerm->pExpr!=0 );
     assert( omitTable==0 );
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
-    iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, bRev, iReleaseReg);
+    iRowidReg = codeEqualityTerm(pWInfo, pTerm, pLevel, 0, bRev, iReleaseReg);
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addrNxt, iRowidReg);
@@ -3039,7 +3041,7 @@ static Bitmask codeOneLoopStart(
     ** and store the values of those terms in an array of registers
     ** starting at regBase.
     */
-    regBase = codeAllEqualityTerms(pParse,pLevel,bRev,nExtraReg,&zStartAff);
+    regBase = codeAllEqualityTerms(pWInfo,pLevel,bRev,nExtraReg,&zStartAff);
     assert( zStartAff==0 || sqlite3Strlen30(zStartAff)>=nEq );
     if( zStartAff ) cEndAff = zStartAff[nEq];
     addrNxt = pLevel->addrNxt;

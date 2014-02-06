@@ -29,7 +29,7 @@ ifcapable !subquery {
 proc nEphemeral {sql} {
   set nEph 0
   foreach op [execsql "EXPLAIN $sql"] {
-    if {$op eq "OpenEphemeral"} {incr nEph}
+    if {$op eq "OpenEphemeral" || $op eq "OpenHash"} {incr nEph}
   }
   set nEph
 }

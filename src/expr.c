@@ -1509,7 +1509,8 @@ int sqlite3CodeOnce(Parse *pParse){
 static void sqlite3CreateInOperatorRhsTable(
   Parse *pParse,          /* Parsing context */
   Expr *pExpr,            /* The IN, SELECT, or EXISTS operator */
-  int isRowid             /* If true, LHS of IN operator is a rowid */
+  int isRowid,            /* If true, LHS of IN operator is a rowid */
+  int bOrdered            /* If true, must use btree, not a hash */
 ){
   int testAddr = -1;                      /* One-time test address */
   Vdbe *v = sqlite3GetVdbe(pParse);       /* prepared stmt under construction */
@@ -1561,7 +1562,8 @@ static void sqlite3CreateInOperatorRhsTable(
   ** is used.
   */
   pExpr->iTable = pParse->nTab++;
-  addr = sqlite3VdbeAddOp2(v, OP_OpenEphemeral, pExpr->iTable, !isRowid);
+  addr = sqlite3VdbeAddOp2(v, bOrdered ? OP_OpenEphemeral : OP_OpenHash,
+                           pExpr->iTable, !isRowid);
   pKeyInfo = isRowid ? 0 : sqlite3KeyInfoAlloc(pParse->db, 1, 1);
 
   if( ExprHasProperty(pExpr, EP_xIsSelect) ){
@@ -1722,9 +1724,12 @@ static void sqlite3CreateInOperatorRhsTable(
 **
 ** in order to avoid running the <test if data structure contains null>
 ** test more often than is necessary.
+**
+** IN_INDEX_EPH ephemeral tables must be in key order if the bOrdered flag
+** is true.  If bOrdered is false, the generated table can be a hash.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
+int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound, int bOrdered){
   Select *p;                            /* SELECT to the right of IN operator */
   int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
   int iTab = pParse->nTab++;            /* Cursor of the RHS table */
@@ -1817,7 +1822,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
         eType = IN_INDEX_ROWID;
       }
     }
-    sqlite3CreateInOperatorRhsTable(pParse, pX, eType==IN_INDEX_ROWID);
+    sqlite3CreateInOperatorRhsTable(pParse, pX, eType==IN_INDEX_ROWID,bOrdered);
     pParse->nQueryLoop = savedNQueryLoop;
   }else{
     pX->iTable = iTab;
@@ -1943,7 +1948,7 @@ static void sqlite3ExprCodeIN(
   v = pParse->pVdbe;
   assert( v!=0 );       /* OOM detected prior to this routine */
   VdbeNoopComment((v, "begin IN expr"));
-  eType = sqlite3FindInIndex(pParse, pExpr, &rRhsHasNull);
+  eType = sqlite3FindInIndex(pParse, pExpr, &rRhsHasNull, 0);
 
   /* Figure out the affinity to use to create a key from the results
   ** of the expression. affinityStr stores a static string suitable for

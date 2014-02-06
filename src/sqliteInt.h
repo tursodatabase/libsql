@@ -3478,7 +3478,7 @@ const char *sqlite3JournalModename(int);
 #define IN_INDEX_EPH             2
 #define IN_INDEX_INDEX_ASC       3
 #define IN_INDEX_INDEX_DESC      4
-int sqlite3FindInIndex(Parse *, Expr *, int*);
+int sqlite3FindInIndex(Parse *, Expr *, int*, int);
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);
