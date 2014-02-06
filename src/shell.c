@@ -1543,6 +1543,7 @@ static int run_schema_dump_query(
 static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail ON|OFF           Stop after hitting an error.  Default OFF\n"
+  ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   "                         If TABLE specified, only dump tables matching\n"
@@ -1581,7 +1582,6 @@ static char zHelp[] =
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
-  ".clone NEWDB           Clone data into NEWDB from the existing database\n"
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   "                         If TABLE specified, only show tables matching\n"
@@ -1898,7 +1898,9 @@ static char *csv_read_one_field(CSVReader *p){
 }
 
 /*
-** Try to transfer data for table zTable
+** Try to transfer data for table zTable.  If an error is seen while
+** moving forward, try to go backwards.  The backwards movement won't
+** work for WITHOUT ROWID tables.
 */
 static void tryToCloneData(
   struct callback_data *p,
@@ -1913,11 +1915,13 @@ static void tryToCloneData(
   int i, j, n;
   int nTable = (int)strlen(zTable);
   int k = 0;
+  int cnt = 0;
+  const int spinRate = 10000;
 
   zQuery = sqlite3_mprintf("SELECT * FROM \"%w\"", zTable);
   rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
   if( rc ){
-    fprintf(stderr, "Error: (%d) %s on [%s]\n",
+    fprintf(stderr, "Error %d: %s on [%s]\n",
             sqlite3_extended_errcode(p->db), sqlite3_errmsg(p->db),
             zQuery);
     goto end_data_xfer;
@@ -1938,7 +1942,7 @@ static void tryToCloneData(
   memcpy(zInsert+i, ");", 3);
   rc = sqlite3_prepare_v2(newDb, zInsert, -1, &pInsert, 0);
   if( rc ){
-    fprintf(stderr, "Error: (%d) %s on [%s]\n",
+    fprintf(stderr, "Error %d: %s on [%s]\n",
             sqlite3_extended_errcode(newDb), sqlite3_errmsg(newDb),
             zQuery);
     goto end_data_xfer;
@@ -1973,8 +1977,17 @@ static void tryToCloneData(
           }
         }
       } /* End for */
-      sqlite3_step(pInsert);
+      rc = sqlite3_step(pInsert);
+      if( rc!=SQLITE_OK && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
+        fprintf(stderr, "Error %d: %s\n", sqlite3_extended_errcode(newDb),
+                        sqlite3_errmsg(newDb));
+      }
       sqlite3_reset(pInsert);
+      cnt++;
+      if( (cnt%spinRate)==0 ){
+        printf("%c\b", "|/-\\"[(cnt/spinRate)%4]);
+        fflush(stdout);
+      }
     } /* End while */
     if( rc==SQLITE_DONE ) break;
     sqlite3_finalize(pQuery);
@@ -1983,10 +1996,8 @@ static void tryToCloneData(
                              zTable);
     rc = sqlite3_prepare_v2(p->db, zQuery, -1, &pQuery, 0);
     if( rc ){
-       fprintf(stderr, "Error: (%d) %s on [%s]\n",
-          sqlite3_extended_errcode(p->db), sqlite3_errmsg(p->db),
-          zQuery);
-       goto end_data_xfer;
+      fprintf(stderr, "Warning: cannot step \"%s\" backwards", zTable);
+      break;
     }
   } /* End for(k=0...) */
 
@@ -2001,6 +2012,8 @@ end_data_xfer:
 /*
 ** Try to transfer all rows of the schema that match zWhere.  For
 ** each row, invoke xForEach() on the object defined by that row.
+** If an error is encountered while moving forward through the
+** sqlite_master table, try again moving backwards.
 */
 static void tryToCloneSchema(
   struct callback_data *p,
@@ -2013,6 +2026,7 @@ static void tryToCloneSchema(
   int rc;
   const unsigned char *zName;
   const unsigned char *zSql;
+  char *zErrMsg = 0;
 
   zQuery = sqlite3_mprintf("SELECT name, sql FROM sqlite_master"
                            " WHERE %s", zWhere);
@@ -2027,7 +2041,12 @@ static void tryToCloneSchema(
     zName = sqlite3_column_text(pQuery, 0);
     zSql = sqlite3_column_text(pQuery, 1);
     printf("%s... ", zName); fflush(stdout);
-    sqlite3_exec(newDb, (const char*)zSql, 0, 0, 0);
+    sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
+    if( zErrMsg ){
+      fprintf(stderr, "Error: %s\nSQL: [%s]\n", zErrMsg, zSql);
+      sqlite3_free(zErrMsg);
+      zErrMsg = 0;
+    }
     if( xForEach ){
       xForEach(p, newDb, (const char*)zName);
     }
@@ -2049,7 +2068,12 @@ static void tryToCloneSchema(
       zName = sqlite3_column_text(pQuery, 0);
       zSql = sqlite3_column_text(pQuery, 1);
       printf("%s... ", zName); fflush(stdout);
-      sqlite3_exec(newDb, (const char*)zSql, 0, 0, 0);
+      sqlite3_exec(newDb, (const char*)zSql, 0, 0, &zErrMsg);
+      if( zErrMsg ){
+        fprintf(stderr, "Error: %s\nSQL: [%s]\n", zErrMsg, zSql);
+        sqlite3_free(zErrMsg);
+        zErrMsg = 0;
+      }
       if( xForEach ){
         xForEach(p, newDb, (const char*)zName);
       }
