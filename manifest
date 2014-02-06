@@ -1,5 +1,5 @@
-C Add\sadditional\serror\smessages\sand\sa\sprogress\sspinner\sto\sthe\s".clone"\scommand.
-D 2014-02-06T02:46:08.164
+C Change\sthe\sspellfix1\svirtual\stable\sto\sdeterministically\snames\sits\sshadow\ntables.
+D 2014-02-06T13:18:51.466
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -114,7 +114,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/spellfix.c adfc569fafef7a1eb8f21528e5277686b358c3ce
+F ext/misc/spellfix.c 3548c433f473c2054e080b6382771636fcaa2c4c
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4f9d95624ae4e123f83c835b5940f64d4a47be0d
-R f4dd749481e46684567e713bb83ed4e5
+P dd0db3f0cef1be46cea16d4e61ea3348b3b3bd3e
+R d1392d03f19b15b6d22c3ea00bdb4a28
 U drh
-Z 395514f5fdbe146277bb7612673c11cf
+Z 43f5ac71b446a3c191c2b0e127f22d0c
