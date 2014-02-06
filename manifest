@@ -1,5 +1,5 @@
-C In\sthe\sWin32\sVFS,\sthe\swinSysInfo\svariable\sshould\sbe\sstatic.
-D 2014-02-05T11:05:47.687
+C Add\sthe\s".repair"\scommand\sto\sthe\scommand-line\sshell.
+D 2014-02-06T00:49:12.328
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c b78f5e62c283aca2e38657938bc1fec1051df728
-F src/shell.c 24722d24d4ea8ca93db35e44db7308de786767ca
+F src/shell.c c128bf92b3ed268d8ec6f0df275a5d737edf2968
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f2504089df0bf4011864e67825b37f6aa3d03458
-R f919fd88b0fe2a17b41d9c03ff44720f
-U mistachkin
-Z fecb65c3944a970d4d7662e030506246
+P 4a4dd371a72b7d475185923bebb4cd9bd83e1bd9
+R 235c07c6649435d22d14c7aa202be2ed
+U drh
+Z b9d162ba79528a4d7df551b82e7b6e75
