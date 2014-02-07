@@ -393,7 +393,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
 ** Print the value of a register for tracing purposes:
 */
 static void memTracePrint(Mem *p){
-  if( p->flags & MEM_Invalid ){
+  if( p->flags & MEM_Undefined ){
     printf(" undefined");
   }else if( p->flags & MEM_Null ){
     printf(" NULL");
@@ -702,7 +702,6 @@ check_for_interrupt:
 }
 
 /* Opcode:  Gosub P1 P2 * * *
-** Synopsis:  r[P1]=pc; pc=P2
 **
 ** Write the current address onto register P1
 ** and then jump to address P2.
@@ -720,7 +719,6 @@ case OP_Gosub: {            /* jump */
 }
 
 /* Opcode:  Return P1 * * * *
-** Synopsis:  pc=r[P1]+1
 **
 ** Jump to the next instruction after the address in register P1.
 */
@@ -732,7 +730,6 @@ case OP_Return: {           /* in1 */
 }
 
 /* Opcode:  Yield P1 * * * *
-** Synopsis: swap(pc,r[P1])
 **
 ** Swap the program counter with the value in register P1.
 */
@@ -974,7 +971,7 @@ case OP_Null: {           /* out2-prerelease */
 }
 
 
-/* Opcode: Blob P1 P2 * P4
+/* Opcode: Blob P1 P2 * P4 *
 ** Synopsis: r[P2]=P4 (len=P1)
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
@@ -985,6 +982,21 @@ case OP_Blob: {                /* out2-prerelease */
   sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
   pOut->enc = encoding;
   UPDATE_MAX_BLOBSIZE(pOut);
+  break;
+}
+
+/* Opcode: Undef P1 * * * *
+** Synopsis: r[P1]=undef
+**
+** Mark register P1 as undefined.
+*/
+case OP_Undef: {
+  assert( pOp->p1>0 );
+  assert( pOp->p1<=(p->nMem-p->nCursor) );
+  pOut = &aMem[pOp->p1];
+  memAboutToChange(p, pOut);
+  VdbeMemRelease(pOut);
+  pOut->flags = MEM_Undefined;
   break;
 }
 
@@ -2138,6 +2150,19 @@ case OP_IfNot: {            /* jump, in1 */
   }
   if( c ){
     pc = pOp->p2-1;
+  }
+  break;
+}
+
+/* Opcode: IsUndef P1 P2 * * *
+** Synopsis:  if r[P1]==undefined goto P2
+**
+** Jump to P2 if the value in register P1 is undefined
+*/
+case OP_IsUndef: {            /* jump */
+  pIn1 = &aMem[pOp->p1];
+  if( (pIn1->flags & MEM_Undefined)!=0 ){
+    pc = pOp->p2 - 1;
   }
   break;
 }
@@ -5191,7 +5216,7 @@ case OP_Program: {        /* jump */
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
-      pMem->flags = MEM_Invalid;
+      pMem->flags = MEM_Undefined;
       pMem->db = db;
     }
   }else{

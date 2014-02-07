@@ -587,7 +587,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
   Mem *pX;
   for(i=1, pX=&pVdbe->aMem[1]; i<=pVdbe->nMem; i++, pX++){
     if( pX->pScopyFrom==pMem ){
-      pX->flags |= MEM_Invalid;
+      pX->flags |= MEM_Undefined;
       pX->pScopyFrom = 0;
     }
   }

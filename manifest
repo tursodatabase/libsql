@@ -1,5 +1,5 @@
-C More\scomment\supdates.\s\sNo\schanges\sto\scode.
-D 2014-02-07T03:28:02.783
+C Add\sthe\sOP_Undef\sand\sOP_IsUndef\sopcodes.\s\sWith\sthese,\suse\sthe\sfirst\sregister\nin\sthe\sresult\sregister\srange\sas\sthe\sflag\sto\sindicate\sEOF\son\san\sINSERT\sfrom\na\sSELECT,\srather\sthan\sallocating\sa\sseparate\sboolean\sregister\sfor\sthat\stask.
+D 2014-02-07T13:20:31.855
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c a4450f0c46a9f221622e6551ab0953b03c4f8ee8
+F src/insert.c fa98632fbf46e01c7b4d2130558c74b42947f50d
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -280,13 +280,13 @@ F src/update.c a7df6fffce6bfedc578fda6136dd33e34a63f8ee
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 15ac2627f548f5481d0d7e6c4eb67be673027695
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 575189caf33bc3f2b9557f420e9b815afcd5ace8
+F src/vdbe.c 8697f15ad86604c5a8d598b1566e1594a7956469
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
-F src/vdbeInt.h 42db251e9f863401ff847b90d5fe1614c89a6a56
+F src/vdbeInt.h bd6d5e70fe7c80f6aa4c56c34589762b9e933929
 F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
-F src/vdbeaux.c a3327afa8cfcc5bb3d38f2b2a599bac5fb63c6be
+F src/vdbeaux.c 3fd95b226330e1d50aedb40d750effe726ebb3fb
 F src/vdbeblob.c 9542e116c1db5ed813977581d506c176e117c0ec
-F src/vdbemem.c 23cdc14ed43e0aafa57bd72b9bf3d5b1641afa91
+F src/vdbemem.c c0bcc02d6816ab4218ac0f94b63c8ee78a0f739f
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1122b410de68a3c79b4c719a3a4cc4dc6a5bb39d
-R ba81bea358565b1489c187d643f4773f
-U mistachkin
-Z fafd555fb9fada47058f4a33fbcaaf41
+P be24fbc22106e508975e316abe0471edd3833291
+R 7163c03b39a8cc1205867ee33d31d20c
+U drh
+Z 84c60c97897782670b677e52594a24b3
