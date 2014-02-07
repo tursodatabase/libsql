@@ -720,20 +720,62 @@ case OP_Gosub: {            /* jump */
 
 /* Opcode:  Return P1 * * * *
 **
-** Jump to the next instruction after the address in register P1.
+** Jump to the next instruction after the address in register P1.  After
+** the jump, register P1 becomes undefined.
 */
 case OP_Return: {           /* in1 */
   pIn1 = &aMem[pOp->p1];
-  assert( pIn1->flags & MEM_Int );
+  assert( pIn1->flags==MEM_Int );
   pc = (int)pIn1->u.i;
+  pIn1->flags = MEM_Undefined;
   break;
 }
 
-/* Opcode:  Yield P1 * * * *
+/* Opcode: InitCoroutine P1 P2 * * *
+**
+** Identify the co-routine at address P2 using the register P1
+** as its return address.  Run this opcode prior to the first 
+** OP_Yield to invoke the co-routine.
+*/
+case OP_InitCoroutine: {     /* jump */
+  assert( pOp->p1>0 );
+  assert( pOp->p1<=(p->nMem-p->nCursor) );
+  pOut = &aMem[pOp->p1];
+  memAboutToChange(p, pOut);
+  VdbeMemRelease(pOut);
+  pOut->u.i = pOp->p2 - 1;
+  pOut->flags = MEM_Int;
+  break;
+}
+
+/* Opcode:  EndCoroutine P1 * * * *
+**
+** The instruction at the address in register P1 is an OP_Yield.
+** Jump to the P2 parameter of that OP_Yield.
+** After the jump, register P1 becomes undefined.
+*/
+case OP_EndCoroutine: {           /* in1 */
+  VdbeOp *pCaller;
+  pIn1 = &aMem[pOp->p1];
+  assert( pIn1->flags==MEM_Int );
+  assert( pIn1->u.i>=0 && pIn1->u.i<p->nOp );
+  pCaller = &aOp[pIn1->u.i];
+  assert( pCaller->opcode==OP_Yield );
+  assert( pCaller->p2>=0 && pCaller->p2<p->nOp );
+  pc = pCaller->p2 - 1;
+  pIn1->flags = MEM_Undefined;
+  break;
+}
+
+/* Opcode:  Yield P1 P2 * * *
 **
 ** Swap the program counter with the value in register P1.
+**
+** If the co-routine ends with OP_Yield or OP_Return then continue
+** to the next instruction.  But if the co-routine ends with
+** OP_EndCoroutine, jump immediately to P2.
 */
-case OP_Yield: {            /* in1 */
+case OP_Yield: {            /* in1, jump */
   int pcDest;
   pIn1 = &aMem[pOp->p1];
   assert( (pIn1->flags & MEM_Dyn)==0 );
@@ -982,21 +1024,6 @@ case OP_Blob: {                /* out2-prerelease */
   sqlite3VdbeMemSetStr(pOut, pOp->p4.z, pOp->p1, 0, 0);
   pOut->enc = encoding;
   UPDATE_MAX_BLOBSIZE(pOut);
-  break;
-}
-
-/* Opcode: Undef P1 * * * *
-** Synopsis: r[P1]=undef
-**
-** Mark register P1 as undefined.
-*/
-case OP_Undef: {
-  assert( pOp->p1>0 );
-  assert( pOp->p1<=(p->nMem-p->nCursor) );
-  pOut = &aMem[pOp->p1];
-  memAboutToChange(p, pOut);
-  VdbeMemRelease(pOut);
-  pOut->flags = MEM_Undefined;
   break;
 }
 
@@ -2150,19 +2177,6 @@ case OP_IfNot: {            /* jump, in1 */
   }
   if( c ){
     pc = pOp->p2-1;
-  }
-  break;
-}
-
-/* Opcode: IsUndef P1 P2 * * *
-** Synopsis:  if r[P1]==undefined goto P2
-**
-** Jump to P2 if the value in register P1 is undefined
-*/
-case OP_IsUndef: {            /* jump */
-  pIn1 = &aMem[pOp->p1];
-  if( (pIn1->flags & MEM_Undefined)!=0 ){
-    pc = pOp->p2 - 1;
   }
   break;
 }
