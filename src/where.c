@@ -2785,7 +2785,7 @@ static Bitmask codeOneLoopStart(
   /* Special case of a FROM clause subquery implemented as a co-routine */
   if( pTabItem->viaCoroutine ){
     int regYield = pTabItem->regReturn;
-    sqlite3VdbeAddOp2(v, OP_InitCoroutine, regYield, pTabItem->addrFillSub);
+    sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
     pLevel->p2 =  sqlite3VdbeAddOp2(v, OP_Yield, regYield, addrBrk);
     VdbeComment((v, "next row of co-routine %s", pTabItem->pTab->zName));
     pLevel->op = OP_Goto;

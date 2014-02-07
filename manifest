@@ -1,5 +1,5 @@
-C Get\srid\sof\sthe\sOP_Undef\sand\sOP_IsUndef\sopcodes\sin\sfavor\sof\shigher-level\nOP_InitCoroutine\sand\sOP_EndCoroutine.
-D 2014-02-07T18:27:53.008
+C Change\sthe\sOP_InitCoroutine\sinstruction\sto\sjump\sover\sthe\sco-routine\nimplementation.
+D 2014-02-07T19:18:10.928
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -183,7 +183,7 @@ F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 5997c3fbd5957b323f851d84d2ede380519cf2f6
+F src/insert.c b50cb5a51edb0d6e1a99e04b232b8632a54e522a
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 01d0eca0938b588daabb36cd73e395309bdc6097
+F src/select.c 47d93e6f0b58000e2093e7b489bdca778884f82a
 F src/shell.c 7dedf7367ee49050b0366bf8dbc8ec2bd15b42c7
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -280,9 +280,9 @@ F src/update.c a7df6fffce6bfedc578fda6136dd33e34a63f8ee
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 15ac2627f548f5481d0d7e6c4eb67be673027695
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 10ddcf5fd28ff23655b6e953e345c45b42642472
+F src/vdbe.c e7bb0587ad4866c0db5fe3b83104c4df8f93d19f
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
-F src/vdbeInt.h bd6d5e70fe7c80f6aa4c56c34589762b9e933929
+F src/vdbeInt.h b5d62957a408c4bea649484008e5f98335b09e97
 F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
 F src/vdbeaux.c 3fd95b226330e1d50aedb40d750effe726ebb3fb
 F src/vdbeblob.c 9542e116c1db5ed813977581d506c176e117c0ec
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 07179d15d72c1dfffaf7d175d7e26517de04971e
+F src/where.c 8c2aada8b44140382406cf07b84ff2f6127cb39e
 F src/whereInt.h 921f935af8b684ffb49705610bda7284db1db138
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1152,10 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6fb7448550f28a3c93053e125faeaf11de1011d0
-R 0b346c83ba3e4f94eace870fa077c226
-T *branch * coroutine-refactor
-T *sym-coroutine-refactor *
-T -sym-trunk *
+P 1ec0e9dd4b26d9f597adc8e062317d4866c5a6a6
+R dbad771d6a0c64046f81724e16a6d61c
 U drh
-Z 037b150ffb17771c8c249859dd8749bd
+Z bb5cd7d324cd2ad57b192424d498539f

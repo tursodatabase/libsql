@@ -2719,27 +2719,24 @@ static int multiSelectOrderBy(
   sqlite3SelectDestInit(&destA, SRT_Coroutine, regAddrA);
   sqlite3SelectDestInit(&destB, SRT_Coroutine, regAddrB);
 
-  /* Jump past the various subroutines and coroutines to the main
-  ** merge loop
-  */
-  j1 = sqlite3VdbeAddOp0(v, OP_Goto);
-
-
   /* Generate a coroutine to evaluate the SELECT statement to the
   ** left of the compound operator - the "A" select.
   */
-  VdbeNoopComment((v, "coroutine for left SELECT"));
-  addrSelectA = sqlite3VdbeCurrentAddr(v);
+  addrSelectA = sqlite3VdbeCurrentAddr(v) + 1;
+  j1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrA, 0, addrSelectA);
+  VdbeComment((v, "left SELECT"));
   pPrior->iLimit = regLimitA;
   explainSetInteger(iSub1, pParse->iNextSelectId);
   sqlite3Select(pParse, pPrior, &destA);
   sqlite3VdbeAddOp1(v, OP_EndCoroutine, regAddrA);
+  sqlite3VdbeJumpHere(v, j1);
 
   /* Generate a coroutine to evaluate the SELECT statement on 
   ** the right - the "B" select
   */
-  VdbeNoopComment((v, "coroutine for right SELECT"));
-  addrSelectB = sqlite3VdbeCurrentAddr(v);
+  addrSelectB = sqlite3VdbeCurrentAddr(v) + 1;
+  j1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrB, 0, addrSelectB);
+  VdbeComment((v, "right SELECT"));
   savedLimit = p->iLimit;
   savedOffset = p->iOffset;
   p->iLimit = regLimitB;
@@ -2829,8 +2826,6 @@ static int multiSelectOrderBy(
   /* This code runs once to initialize everything.
   */
   sqlite3VdbeJumpHere(v, j1);
-  sqlite3VdbeAddOp2(v, OP_InitCoroutine, regAddrA, addrSelectA);
-  sqlite3VdbeAddOp2(v, OP_InitCoroutine, regAddrB, addrSelectB);
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA_noB);
   sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB);
 

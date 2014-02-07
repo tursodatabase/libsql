@@ -389,22 +389,20 @@ void sqlite3AutoincrementEnd(Parse *pParse){
 int sqlite3CodeCoroutine(Parse *pParse, Select *pSelect, SelectDest *pDest){
   int regYield;       /* Register holding co-routine entry-point */
   int addrTop;        /* Top of the co-routine */
-  int j1;             /* Jump instruction */
   int rc;             /* Result code */
   Vdbe *v;            /* VDBE under construction */
 
   regYield = ++pParse->nMem;
   v = sqlite3GetVdbe(pParse);
-  addrTop = sqlite3VdbeCurrentAddr(v);
-  sqlite3VdbeAddOp2(v, OP_InitCoroutine, regYield, addrTop+2);
+  addrTop = sqlite3VdbeCurrentAddr(v) + 1;
+  sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, addrTop);
   sqlite3SelectDestInit(pDest, SRT_Coroutine, regYield);
-  j1 = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
   rc = sqlite3Select(pParse, pSelect, pDest);
   assert( pParse->nErr==0 || rc );
   if( pParse->db->mallocFailed && rc==SQLITE_OK ) rc = SQLITE_NOMEM;
   if( rc ) return rc;
   sqlite3VdbeAddOp1(v, OP_EndCoroutine, regYield);
-  sqlite3VdbeJumpHere(v, j1);                             /* label B: */
+  sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
   return rc;
 }
 

@@ -731,20 +731,24 @@ case OP_Return: {           /* in1 */
   break;
 }
 
-/* Opcode: InitCoroutine P1 P2 * * *
+/* Opcode: InitCoroutine P1 P2 P3 * *
 **
-** Identify the co-routine at address P2 using the register P1
-** as its return address.  Run this opcode prior to the first 
-** OP_Yield to invoke the co-routine.
+** Set up register P1 so that it will OP_Yield to the co-routine
+** located at address P3.
+**
+** If P2!=0 then the co-routine implementation immediately follows
+** this opcode.  So jump over the co-routine implementation to
+** address P2.
 */
 case OP_InitCoroutine: {     /* jump */
-  assert( pOp->p1>0 );
-  assert( pOp->p1<=(p->nMem-p->nCursor) );
+  assert( pOp->p1>0 &&  pOp->p1<=(p->nMem-p->nCursor) );
+  assert( pOp->p2>=0 && pOp->p2<p->nOp );
+  assert( pOp->p3>=0 && pOp->p3<p->nOp );
   pOut = &aMem[pOp->p1];
-  memAboutToChange(p, pOut);
-  VdbeMemRelease(pOut);
-  pOut->u.i = pOp->p2 - 1;
+  assert( !VdbeMemDynamic(pOut) );
+  pOut->u.i = pOp->p3 - 1;
   pOut->flags = MEM_Int;
+  if( pOp->p2 ) pc = pOp->p2 - 1;
   break;
 }
 
