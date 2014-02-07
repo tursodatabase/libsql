@@ -4492,13 +4492,13 @@ next_tail:
 ** P3 is a flag that provides a hint to the b-tree layer that this
 ** insert is likely to be an append.
 **
-** If P5 contains bet OPFLAG_NCHANGE, then the change counter is
-** incremented by this instruction.  If OPFLAG_NCHANGE is clear, then
-** the change counter is unchanged.
+** If P5 has the OPFLAG_NCHANGE bit set, then the change counter is
+** incremented by this instruction.  If the OPFLAG_NCHANGE bit is clear,
+** then the change counter is unchanged.
 **
-** If P5 contains OPFLAG_USESEEKRESULT then the cursor must have just
-** done a seek to the spot where the new entry is to be inserted.  This
-** flag avoids doing an extra seek.
+** If P5 has the OPFLAG_USESEEKRESULT bit set, then the cursor must have
+** just done a seek to the spot where the new entry is to be inserted.
+** This flag avoids doing an extra seek.
 **
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.

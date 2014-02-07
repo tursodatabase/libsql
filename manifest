@@ -1,5 +1,5 @@
-C Update\scomments\sin\svdbe.c.\s\sNo\schanges\sto\scode.
-D 2014-02-07T02:29:45.685
+C More\scomment\supdates.\s\sNo\schanges\sto\scode.
+D 2014-02-07T03:28:02.783
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c a7df6fffce6bfedc578fda6136dd33e34a63f8ee
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 15ac2627f548f5481d0d7e6c4eb67be673027695
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 962cb7aad1a89ecc2b0cb879d7021c591ddc9a31
+F src/vdbe.c 575189caf33bc3f2b9557f420e9b815afcd5ace8
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
 F src/vdbeInt.h 42db251e9f863401ff847b90d5fe1614c89a6a56
 F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2f3376ebf13df44e6acf27cb1f07172cd8b34033
-R aa84db7692e8a0ce37f76fa70188d582
-U drh
-Z 06749a17929b89f5bdf09dbcde9d47c5
+P 1122b410de68a3c79b4c719a3a4cc4dc6a5bb39d
+R ba81bea358565b1489c187d643f4773f
+U mistachkin
+Z fafd555fb9fada47058f4a33fbcaaf41
