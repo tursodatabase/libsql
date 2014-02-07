@@ -9,33 +9,8 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** The code in this file implements execution method of the 
-** Virtual Database Engine (VDBE).  A separate file ("vdbeaux.c")
-** handles housekeeping details such as creating and deleting
-** VDBE instances.  This file is solely interested in executing
-** the VDBE program.
-**
-** In the external interface, an "sqlite3_stmt*" is an opaque pointer
-** to a VDBE.
-**
-** The SQL parser generates a program which is then executed by
-** the VDBE to do the work of the SQL statement.  VDBE programs are 
-** similar in form to assembly language.  The program consists of
-** a linear sequence of operations.  Each operation has an opcode 
-** and 5 operands.  Operands P1, P2, and P3 are integers.  Operand P4 
-** is a null-terminated string.  Operand P5 is an unsigned character.
-** Few opcodes use all 5 operands.
-**
-** Computation results are stored on a set of registers numbered beginning
-** with 1 and going up to Vdbe.nMem.  Each register can store
-** either an integer, a null-terminated string, a floating point
-** number, or the SQL "NULL" value.  An implicit conversion from one
-** type to the other occurs as necessary.
-** 
-** Most of the code in this file is taken up by the sqlite3VdbeExec()
-** function which does the work of interpreting a VDBE program.
-** But other routines are also provided to help in building up
-** a program instruction by instruction.
+** The code in this file implements the function that runs the
+** bytecode of a prepared statement.
 **
 ** Various scripts scan this source file in order to generate HTML
 ** documentation, headers files, or other derived files.  The formatting
@@ -49,7 +24,11 @@
 /*
 ** Invoke this macro on memory cells just prior to changing the
 ** value of the cell.  This macro verifies that shallow copies are
-** not misused.
+** not misused.  A shallow copy of a string or blob just copies a
+** pointer to the string or blob, not the content.  If the original
+** is changed while the copy is still in use, the string or blob might
+** be changed out from under the copy.  This macro verifies that nothing
+** like that every happens.
 */
 #ifdef SQLITE_DEBUG
 # define memAboutToChange(P,M) sqlite3VdbeMemAboutToChange(P,M)
@@ -108,7 +87,7 @@ static void updateMaxBlobsize(Mem *p){
 #endif
 
 /*
-** The next global variable is incremented each type the OP_Found opcode
+** The next global variable is incremented each time the OP_Found opcode
 ** is executed. This is used to test whether or not the foreign key
 ** operation implemented using OP_FkIsZero is working. This variable
 ** has no function other than to help verify the correct operation of the
@@ -152,7 +131,7 @@ int sqlite3_found_count = 0;
        && sqlite3VdbeMemMakeWriteable(P) ){ goto no_mem;}
 
 /* Return true if the cursor was opened using the OP_OpenSorter opcode. */
-# define isSorter(x) ((x)->pSorter!=0)
+#define isSorter(x) ((x)->pSorter!=0)
 
 /*
 ** Argument pMem points at a register that will be passed to a
@@ -458,20 +437,6 @@ static void registerTrace(int iReg, Mem *p){
 
 #endif
 
-/*
-** The CHECK_FOR_INTERRUPT macro defined here looks to see if the
-** sqlite3_interrupt() routine has been called.  If it has been, then
-** processing of the VDBE program is interrupted.
-**
-** This macro added to every instruction that does a jump in order to
-** implement a loop.  This test used to be on every single instruction,
-** but that meant we more testing than we needed.  By only testing the
-** flag on jump instructions, we get a (small) speed improvement.
-*/
-#define CHECK_FOR_INTERRUPT \
-   if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
-
-
 #ifndef NDEBUG
 /*
 ** This function is only called from within an assert() expression. It
@@ -494,35 +459,8 @@ static int checkSavepointCount(sqlite3 *db){
 
 
 /*
-** Execute as much of a VDBE program as we can then return.
-**
-** sqlite3VdbeMakeReady() must be called before this routine in order to
-** close the program with a final OP_Halt and to set up the callbacks
-** and the error message pointer.
-**
-** Whenever a row or result data is available, this routine will either
-** invoke the result callback (if there is one) or return with
-** SQLITE_ROW.
-**
-** If an attempt is made to open a locked database, then this routine
-** will either invoke the busy callback (if there is one) or it will
-** return SQLITE_BUSY.
-**
-** If an error occurs, an error message is written to memory obtained
-** from sqlite3_malloc() and p->zErrMsg is made to point to that memory.
-** The error code is stored in p->rc and this routine returns SQLITE_ERROR.
-**
-** If the callback ever returns non-zero, then the program exits
-** immediately.  There will be no error message but the p->rc field is
-** set to SQLITE_ABORT and this routine will return SQLITE_ERROR.
-**
-** A memory allocation error causes p->rc to be set to SQLITE_NOMEM and this
-** routine to return SQLITE_ERROR.
-**
-** Other fatal errors return SQLITE_ERROR.
-**
-** After this routine has finished, sqlite3VdbeFinalize() should be
-** used to clean up the mess that was left behind.
+** Execute as much of a VDBE program as we can.
+** This is the core of sqlite3_step().  
 */
 int sqlite3VdbeExec(
   Vdbe *p                    /* The VDBE */
@@ -566,7 +504,7 @@ int sqlite3VdbeExec(
   assert( p->explain==0 );
   p->pResultSet = 0;
   db->busyHandler.nBusy = 0;
-  CHECK_FOR_INTERRUPT;
+  if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
   sqlite3VdbeIOTraceSql(p);
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   if( db->xProgress ){
@@ -742,7 +680,7 @@ case OP_Goto: {             /* jump */
   ** checks on every opcode.  This helps sqlite3_step() to run about 1.5%
   ** faster according to "valgrind --tool=cachegrind" */
 check_for_interrupt:
-  CHECK_FOR_INTERRUPT;
+  if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   /* Call the progress callback if it is configured and the required number
   ** of VDBE ops have been executed (either since this invocation of
@@ -764,6 +702,7 @@ check_for_interrupt:
 }
 
 /* Opcode:  Gosub P1 P2 * * *
+** Synopsis:  r[P1]=pc; pc=P2
 **
 ** Write the current address onto register P1
 ** and then jump to address P2.
@@ -781,6 +720,7 @@ case OP_Gosub: {            /* jump */
 }
 
 /* Opcode:  Return P1 * * * *
+** Synopsis:  pc=r[P1]+1
 **
 ** Jump to the next instruction after the address in register P1.
 */
@@ -792,6 +732,7 @@ case OP_Return: {           /* in1 */
 }
 
 /* Opcode:  Yield P1 * * * *
+** Synopsis: swap(pc,r[P1])
 **
 ** Swap the program counter with the value in register P1.
 */
@@ -808,7 +749,7 @@ case OP_Yield: {            /* in1 */
 }
 
 /* Opcode:  HaltIfNull  P1 P2 P3 P4 P5
-** Synopsis:  if r[P3] null then halt
+** Synopsis:  if r[P3]=null halt
 **
 ** Check the value in register P3.  If it is NULL then Halt using
 ** parameter P1, P2, and P4 as if this were a Halt instruction.  If the
@@ -956,7 +897,9 @@ case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
 ** Synopsis: r[P2]='P4'
 **
 ** P4 points to a nul terminated UTF-8 string. This opcode is transformed 
-** into an OP_String before it is executed for the first time.
+** into an OP_String before it is executed for the first time.  During
+** this transformation, the length of string P4 is computed and stored
+** as the P1 parameter.
 */
 case OP_String8: {         /* same as TK_STRING, out2-prerelease */
   assert( pOp->p4.z!=0 );
@@ -1050,7 +993,7 @@ case OP_Blob: {                /* out2-prerelease */
 **
 ** Transfer the values of bound parameter P1 into register P2
 **
-** If the parameter is named, then its name appears in P4 and P3==1.
+** If the parameter is named, then its name appears in P4.
 ** The P4 value is used by sqlite3_bind_parameter_name().
 */
 case OP_Variable: {            /* out2-prerelease */
@@ -1169,8 +1112,8 @@ case OP_SCopy: {            /* out2 */
 ** The registers P1 through P1+P2-1 contain a single row of
 ** results. This opcode causes the sqlite3_step() call to terminate
 ** with an SQLITE_ROW return code and it sets up the sqlite3_stmt
-** structure to provide access to the top P1 values as the result
-** row.
+** structure to provide access to the r[P1]..r[P1+P2-1] values as
+** the result row.
 */
 case OP_ResultRow: {
   Mem *pMem;
@@ -1698,7 +1641,7 @@ case OP_RealAffinity: {                  /* in1 */
 **
 ** Force the value in register P1 to be text.
 ** If the value is numeric, convert it to a string using the
-** equivalent of printf().  Blob values are unchanged and
+** equivalent of sprintf().  Blob values are unchanged and
 ** are afterwards simply interpreted as text.
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
@@ -2153,7 +2096,9 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 /* Opcode: Once P1 P2 * * *
 **
 ** Check if OP_Once flag P1 is set. If so, jump to instruction P2. Otherwise,
-** set the flag and fall through to the next instruction.
+** set the flag and fall through to the next instruction.  In other words,
+** this opcode causes all following up codes up through P2 (but not including
+** P2) to run just once and skipped on subsequent times through the loop.
 */
 case OP_Once: {             /* jump */
   assert( pOp->p1<p->nOnceFlag );
@@ -3346,7 +3291,7 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: SorterOpen P1 * * P4 *
+/* Opcode: SorterOpen P1 P2 * P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large
@@ -4213,7 +4158,7 @@ case OP_SorterData: {
 **
 ** Write into register P2 the complete row key for cursor P1.
 ** There is no interpretation of the data.  
-** The key is copied onto the P3 register exactly as 
+** The key is copied onto the P2 register exactly as 
 ** it is found in the database file.
 **
 ** If the P1 cursor must be pointing to a valid row (not a NULL row)
@@ -4439,7 +4384,7 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
-/* Opcode: Next P1 P2 P3 * P5
+/* Opcode: Next P1 P2 P3 P4 P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
@@ -4462,12 +4407,12 @@ case OP_Rewind: {        /* jump */
 **
 ** See also: Prev, NextIfOpen
 */
-/* Opcode: NextIfOpen P1 P2 P3 * P5
+/* Opcode: NextIfOpen P1 P2 P3 P4 P5
 **
 ** This opcode works just like OP_Next except that if cursor P1 is not
 ** open it behaves a no-op.
 */
-/* Opcode: Prev P1 P2 P3 * P5
+/* Opcode: Prev P1 P2 P3 P4 P5
 **
 ** Back up cursor P1 so that it points to the previous key/data pair in its
 ** table or index.  If there is no previous key/value pairs then fall through
@@ -4488,7 +4433,7 @@ case OP_Rewind: {        /* jump */
 ** If P5 is positive and the jump is taken, then event counter
 ** number P5-1 in the prepared statement is incremented.
 */
-/* Opcode: PrevIfOpen P1 P2 P3 * P5
+/* Opcode: PrevIfOpen P1 P2 P3 P4 P5
 **
 ** This opcode works just like OP_Prev except that if cursor P1 is not
 ** open it behaves a no-op.
@@ -4546,6 +4491,14 @@ next_tail:
 **
 ** P3 is a flag that provides a hint to the b-tree layer that this
 ** insert is likely to be an append.
+**
+** If P5 contains bet OPFLAG_NCHANGE, then the change counter is
+** incremented by this instruction.  If OPFLAG_NCHANGE is clear, then
+** the change counter is unchanged.
+**
+** If P5 contains OPFLAG_USESEEKRESULT then the cursor must have just
+** done a seek to the spot where the new entry is to be inserted.  This
+** flag avoids doing an extra seek.
 **
 ** This instruction only works for indices.  The equivalent instruction
 ** for tables is OP_Insert.
@@ -5147,7 +5100,7 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 
 #ifndef SQLITE_OMIT_TRIGGER
 
-/* Opcode: Program P1 P2 P3 P4 *
+/* Opcode: Program P1 P2 P3 P4 P5
 **
 ** Execute the trigger program passed as P4 (type P4_SUBPROGRAM). 
 **
@@ -5159,6 +5112,8 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 ** memory required by the sub-vdbe at runtime.
 **
 ** P4 is a pointer to the VM containing the trigger program.
+**
+** If P5 is non-zero, then recursive program invocation is enabled.
 */
 case OP_Program: {        /* jump */
   int nMem;               /* Number of memory registers for sub-program */
@@ -5546,7 +5501,7 @@ case OP_Checkpoint: {
 #endif
 
 #ifndef SQLITE_OMIT_PRAGMA
-/* Opcode: JournalMode P1 P2 P3 * P5
+/* Opcode: JournalMode P1 P2 P3 * *
 **
 ** Change the journal mode of database P1 to P3. P3 must be one of the
 ** PAGER_JOURNALMODE_XXX values. If changing between the various rollback
@@ -6032,7 +5987,7 @@ case OP_VRename: {
 #endif
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VUpdate P1 P2 P3 P4 *
+/* Opcode: VUpdate P1 P2 P3 P4 P5
 ** Synopsis: data=r[P3@P2]
 **
 ** P4 is a pointer to a virtual table object, an sqlite3_vtab structure.
@@ -6055,6 +6010,9 @@ case OP_VRename: {
 ** P1 is a boolean flag. If it is set to true and the xUpdate call
 ** is successful, then the value returned by sqlite3_last_insert_rowid() 
 ** is set to the value of the rowid for the row just inserted.
+**
+** P5 is the error actions (OE_Replace, OE_Fail, OE_Ignore, etc) to
+** apply in the case of a constraint failure on an insert or update.
 */
 case OP_VUpdate: {
   sqlite3_vtab *pVtab;
