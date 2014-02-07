@@ -1234,7 +1234,7 @@ static void releaseMemArray(Mem *p, int N){
         p->zMalloc = 0;
       }
 
-      p->flags = MEM_Invalid;
+      p->flags = MEM_Undefined;
     }
     db->mallocFailed = malloc_failed;
   }
@@ -1702,7 +1702,7 @@ void sqlite3VdbeMakeReady(
     p->aMem--;                      /* aMem[] goes from 1..nMem */
     p->nMem = nMem;                 /*       not from 0..nMem-1 */
     for(n=1; n<=nMem; n++){
-      p->aMem[n].flags = MEM_Invalid;
+      p->aMem[n].flags = MEM_Undefined;
       p->aMem[n].db = db;
     }
   }
@@ -1814,7 +1814,7 @@ static void Cleanup(Vdbe *p){
   int i;
   if( p->apCsr ) for(i=0; i<p->nCursor; i++) assert( p->apCsr[i]==0 );
   if( p->aMem ){
-    for(i=1; i<=p->nMem; i++) assert( p->aMem[i].flags==MEM_Invalid );
+    for(i=1; i<=p->nMem; i++) assert( p->aMem[i].flags==MEM_Undefined );
   }
 #endif
 

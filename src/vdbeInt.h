@@ -198,7 +198,7 @@ struct Mem {
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 #define MEM_RowSet    0x0020   /* Value is a RowSet object */
 #define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
-#define MEM_Invalid   0x0080   /* Value is undefined */
+#define MEM_Undefined 0x0080   /* Value is undefined */
 #define MEM_Cleared   0x0100   /* NULL set by OP_Null, not from data */
 #define MEM_TypeMask  0x01ff   /* Mask of type bits */
 
@@ -230,7 +230,7 @@ struct Mem {
 ** is for use inside assert() statements only.
 */
 #ifdef SQLITE_DEBUG
-#define memIsValid(M)  ((M)->flags & MEM_Invalid)==0
+#define memIsValid(M)  ((M)->flags & MEM_Undefined)==0
 #endif
 
 /*
@@ -425,9 +425,10 @@ int sqlite3VdbeMemNumerify(Mem*);
 int sqlite3VdbeMemFromBtree(BtCursor*,u32,u32,int,Mem*);
 void sqlite3VdbeMemRelease(Mem *p);
 void sqlite3VdbeMemReleaseExternal(Mem *p);
+#define VdbeMemDynamic(X)  \
+  (((X)->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame))!=0)
 #define VdbeMemRelease(X)  \
-  if((X)->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame)) \
-    sqlite3VdbeMemReleaseExternal(X);
+  if( VdbeMemDynamic(X) ) sqlite3VdbeMemReleaseExternal(X);
 int sqlite3VdbeMemFinalize(Mem*, FuncDef*);
 const char *sqlite3OpcodeName(int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);

@@ -393,7 +393,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
 ** Print the value of a register for tracing purposes:
 */
 static void memTracePrint(Mem *p){
-  if( p->flags & MEM_Invalid ){
+  if( p->flags & MEM_Undefined ){
     printf(" undefined");
   }else if( p->flags & MEM_Null ){
     printf(" NULL");
@@ -702,7 +702,6 @@ check_for_interrupt:
 }
 
 /* Opcode:  Gosub P1 P2 * * *
-** Synopsis:  r[P1]=pc; pc=P2
 **
 ** Write the current address onto register P1
 ** and then jump to address P2.
@@ -720,23 +719,67 @@ case OP_Gosub: {            /* jump */
 }
 
 /* Opcode:  Return P1 * * * *
-** Synopsis:  pc=r[P1]+1
 **
-** Jump to the next instruction after the address in register P1.
+** Jump to the next instruction after the address in register P1.  After
+** the jump, register P1 becomes undefined.
 */
 case OP_Return: {           /* in1 */
   pIn1 = &aMem[pOp->p1];
-  assert( pIn1->flags & MEM_Int );
+  assert( pIn1->flags==MEM_Int );
   pc = (int)pIn1->u.i;
+  pIn1->flags = MEM_Undefined;
   break;
 }
 
-/* Opcode:  Yield P1 * * * *
-** Synopsis: swap(pc,r[P1])
+/* Opcode: InitCoroutine P1 P2 P3 * *
+**
+** Set up register P1 so that it will OP_Yield to the co-routine
+** located at address P3.
+**
+** If P2!=0 then the co-routine implementation immediately follows
+** this opcode.  So jump over the co-routine implementation to
+** address P2.
+*/
+case OP_InitCoroutine: {     /* jump */
+  assert( pOp->p1>0 &&  pOp->p1<=(p->nMem-p->nCursor) );
+  assert( pOp->p2>=0 && pOp->p2<p->nOp );
+  assert( pOp->p3>=0 && pOp->p3<p->nOp );
+  pOut = &aMem[pOp->p1];
+  assert( !VdbeMemDynamic(pOut) );
+  pOut->u.i = pOp->p3 - 1;
+  pOut->flags = MEM_Int;
+  if( pOp->p2 ) pc = pOp->p2 - 1;
+  break;
+}
+
+/* Opcode:  EndCoroutine P1 * * * *
+**
+** The instruction at the address in register P1 is an OP_Yield.
+** Jump to the P2 parameter of that OP_Yield.
+** After the jump, register P1 becomes undefined.
+*/
+case OP_EndCoroutine: {           /* in1 */
+  VdbeOp *pCaller;
+  pIn1 = &aMem[pOp->p1];
+  assert( pIn1->flags==MEM_Int );
+  assert( pIn1->u.i>=0 && pIn1->u.i<p->nOp );
+  pCaller = &aOp[pIn1->u.i];
+  assert( pCaller->opcode==OP_Yield );
+  assert( pCaller->p2>=0 && pCaller->p2<p->nOp );
+  pc = pCaller->p2 - 1;
+  pIn1->flags = MEM_Undefined;
+  break;
+}
+
+/* Opcode:  Yield P1 P2 * * *
 **
 ** Swap the program counter with the value in register P1.
+**
+** If the co-routine ends with OP_Yield or OP_Return then continue
+** to the next instruction.  But if the co-routine ends with
+** OP_EndCoroutine, jump immediately to P2.
 */
-case OP_Yield: {            /* in1 */
+case OP_Yield: {            /* in1, jump */
   int pcDest;
   pIn1 = &aMem[pOp->p1];
   assert( (pIn1->flags & MEM_Dyn)==0 );
@@ -974,7 +1017,7 @@ case OP_Null: {           /* out2-prerelease */
 }
 
 
-/* Opcode: Blob P1 P2 * P4
+/* Opcode: Blob P1 P2 * P4 *
 ** Synopsis: r[P2]=P4 (len=P1)
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
@@ -5191,7 +5234,7 @@ case OP_Program: {        /* jump */
 
     pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
     for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
-      pMem->flags = MEM_Invalid;
+      pMem->flags = MEM_Undefined;
       pMem->db = db;
     }
   }else{

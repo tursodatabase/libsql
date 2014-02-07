@@ -765,12 +765,8 @@ static void selectInnerLoop(
     }
 #endif /* #ifndef SQLITE_OMIT_SUBQUERY */
 
-    /* Send the data to the callback function or to a subroutine.  In the
-    ** case of a subroutine, the subroutine itself is responsible for
-    ** popping the data from the stack.
-    */
-    case SRT_Coroutine:
-    case SRT_Output: {
+    case SRT_Coroutine:       /* Send data to a co-routine */
+    case SRT_Output: {        /* Return the results */
       testcase( eDest==SRT_Coroutine );
       testcase( eDest==SRT_Output );
       if( pOrderBy ){
@@ -2572,9 +2568,7 @@ static int multiSelectOrderBy(
   SelectDest destA;     /* Destination for coroutine A */
   SelectDest destB;     /* Destination for coroutine B */
   int regAddrA;         /* Address register for select-A coroutine */
-  int regEofA;          /* Flag to indicate when select-A is complete */
   int regAddrB;         /* Address register for select-B coroutine */
-  int regEofB;          /* Flag to indicate when select-B is complete */
   int addrSelectA;      /* Address of the select-A coroutine */
   int addrSelectB;      /* Address of the select-B coroutine */
   int regOutA;          /* Address register for the output-A subroutine */
@@ -2582,6 +2576,7 @@ static int multiSelectOrderBy(
   int addrOutA;         /* Address of the output-A subroutine */
   int addrOutB = 0;     /* Address of the output-B subroutine */
   int addrEofA;         /* Address of the select-A-exhausted subroutine */
+  int addrEofA_noB;     /* Alternate addrEofA if B is uninitialized */
   int addrEofB;         /* Address of the select-B-exhausted subroutine */
   int addrAltB;         /* Address of the A<B subroutine */
   int addrAeqB;         /* Address of the A==B subroutine */
@@ -2718,37 +2713,30 @@ static int multiSelectOrderBy(
   p->pOffset = 0;
 
   regAddrA = ++pParse->nMem;
-  regEofA = ++pParse->nMem;
   regAddrB = ++pParse->nMem;
-  regEofB = ++pParse->nMem;
   regOutA = ++pParse->nMem;
   regOutB = ++pParse->nMem;
   sqlite3SelectDestInit(&destA, SRT_Coroutine, regAddrA);
   sqlite3SelectDestInit(&destB, SRT_Coroutine, regAddrB);
 
-  /* Jump past the various subroutines and coroutines to the main
-  ** merge loop
-  */
-  j1 = sqlite3VdbeAddOp0(v, OP_Goto);
-  addrSelectA = sqlite3VdbeCurrentAddr(v);
-
-
   /* Generate a coroutine to evaluate the SELECT statement to the
   ** left of the compound operator - the "A" select.
   */
-  VdbeNoopComment((v, "Begin coroutine for left SELECT"));
+  addrSelectA = sqlite3VdbeCurrentAddr(v) + 1;
+  j1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrA, 0, addrSelectA);
+  VdbeComment((v, "left SELECT"));
   pPrior->iLimit = regLimitA;
   explainSetInteger(iSub1, pParse->iNextSelectId);
   sqlite3Select(pParse, pPrior, &destA);
-  sqlite3VdbeAddOp2(v, OP_Integer, 1, regEofA);
-  sqlite3VdbeAddOp1(v, OP_Yield, regAddrA);
-  VdbeNoopComment((v, "End coroutine for left SELECT"));
+  sqlite3VdbeAddOp1(v, OP_EndCoroutine, regAddrA);
+  sqlite3VdbeJumpHere(v, j1);
 
   /* Generate a coroutine to evaluate the SELECT statement on 
   ** the right - the "B" select
   */
-  addrSelectB = sqlite3VdbeCurrentAddr(v);
-  VdbeNoopComment((v, "Begin coroutine for right SELECT"));
+  addrSelectB = sqlite3VdbeCurrentAddr(v) + 1;
+  j1 = sqlite3VdbeAddOp3(v, OP_InitCoroutine, regAddrB, 0, addrSelectB);
+  VdbeComment((v, "right SELECT"));
   savedLimit = p->iLimit;
   savedOffset = p->iOffset;
   p->iLimit = regLimitB;
@@ -2757,9 +2745,7 @@ static int multiSelectOrderBy(
   sqlite3Select(pParse, p, &destB);
   p->iLimit = savedLimit;
   p->iOffset = savedOffset;
-  sqlite3VdbeAddOp2(v, OP_Integer, 1, regEofB);
-  sqlite3VdbeAddOp1(v, OP_Yield, regAddrB);
-  VdbeNoopComment((v, "End coroutine for right SELECT"));
+  sqlite3VdbeAddOp1(v, OP_EndCoroutine, regAddrB);
 
   /* Generate a subroutine that outputs the current row of the A
   ** select as the next output row of the compound select.
@@ -2783,13 +2769,12 @@ static int multiSelectOrderBy(
   /* Generate a subroutine to run when the results from select A
   ** are exhausted and only data in select B remains.
   */
-  VdbeNoopComment((v, "eof-A subroutine"));
   if( op==TK_EXCEPT || op==TK_INTERSECT ){
-    addrEofA = sqlite3VdbeAddOp2(v, OP_Goto, 0, labelEnd);
+    addrEofA_noB = addrEofA = labelEnd;
   }else{  
-    addrEofA = sqlite3VdbeAddOp2(v, OP_If, regEofB, labelEnd);
-    sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
-    sqlite3VdbeAddOp1(v, OP_Yield, regAddrB);
+    VdbeNoopComment((v, "eof-A subroutine"));
+    addrEofA = sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
+    addrEofA_noB = sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, labelEnd);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addrEofA);
     p->nSelectRow += pPrior->nSelectRow;
   }
@@ -2802,9 +2787,8 @@ static int multiSelectOrderBy(
     if( p->nSelectRow > pPrior->nSelectRow ) p->nSelectRow = pPrior->nSelectRow;
   }else{  
     VdbeNoopComment((v, "eof-B subroutine"));
-    addrEofB = sqlite3VdbeAddOp2(v, OP_If, regEofA, labelEnd);
-    sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
-    sqlite3VdbeAddOp1(v, OP_Yield, regAddrA);
+    addrEofB = sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
+    sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, labelEnd);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addrEofB);
   }
 
@@ -2812,8 +2796,7 @@ static int multiSelectOrderBy(
   */
   VdbeNoopComment((v, "A-lt-B subroutine"));
   addrAltB = sqlite3VdbeAddOp2(v, OP_Gosub, regOutA, addrOutA);
-  sqlite3VdbeAddOp1(v, OP_Yield, regAddrA);
-  sqlite3VdbeAddOp2(v, OP_If, regEofA, addrEofA);
+  sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA);
   sqlite3VdbeAddOp2(v, OP_Goto, 0, labelCmpr);
 
   /* Generate code to handle the case of A==B
@@ -2826,8 +2809,7 @@ static int multiSelectOrderBy(
   }else{
     VdbeNoopComment((v, "A-eq-B subroutine"));
     addrAeqB =
-    sqlite3VdbeAddOp1(v, OP_Yield, regAddrA);
-    sqlite3VdbeAddOp2(v, OP_If, regEofA, addrEofA);
+    sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, labelCmpr);
   }
 
@@ -2838,19 +2820,14 @@ static int multiSelectOrderBy(
   if( op==TK_ALL || op==TK_UNION ){
     sqlite3VdbeAddOp2(v, OP_Gosub, regOutB, addrOutB);
   }
-  sqlite3VdbeAddOp1(v, OP_Yield, regAddrB);
-  sqlite3VdbeAddOp2(v, OP_If, regEofB, addrEofB);
+  sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB);
   sqlite3VdbeAddOp2(v, OP_Goto, 0, labelCmpr);
 
   /* This code runs once to initialize everything.
   */
   sqlite3VdbeJumpHere(v, j1);
-  sqlite3VdbeAddOp2(v, OP_Integer, 0, regEofA);
-  sqlite3VdbeAddOp2(v, OP_Integer, 0, regEofB);
-  sqlite3VdbeAddOp2(v, OP_Gosub, regAddrA, addrSelectA);
-  sqlite3VdbeAddOp2(v, OP_Gosub, regAddrB, addrSelectB);
-  sqlite3VdbeAddOp2(v, OP_If, regEofA, addrEofA);
-  sqlite3VdbeAddOp2(v, OP_If, regEofB, addrEofB);
+  sqlite3VdbeAddOp2(v, OP_Yield, regAddrA, addrEofA_noB);
+  sqlite3VdbeAddOp2(v, OP_Yield, regAddrB, addrEofB);
 
   /* Implement the main merge loop
   */
@@ -4559,9 +4536,7 @@ int sqlite3Select(
       ** set on each invocation.
       */
       int addrTop;
-      int addrEof;
       pItem->regReturn = ++pParse->nMem;
-      addrEof = ++pParse->nMem;
       /* Before coding the OP_Goto to jump to the start of the main routine,
       ** ensure that the jump to the verify-schema routine has already
       ** been coded. Otherwise, the verify-schema would likely be coded as 
@@ -4574,10 +4549,8 @@ int sqlite3Select(
       sqlite3VdbeAddOp0(v, OP_Goto);
       addrTop = sqlite3VdbeAddOp1(v, OP_OpenPseudo, pItem->iCursor);
       sqlite3VdbeChangeP5(v, 1);
-      VdbeComment((v, "coroutine for %s", pItem->pTab->zName));
+      VdbeComment((v, "coroutine %s", pItem->pTab->zName));
       pItem->addrFillSub = addrTop;
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, addrEof);
-      sqlite3VdbeChangeP5(v, 1);
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
@@ -4585,9 +4558,7 @@ int sqlite3Select(
       pItem->viaCoroutine = 1;
       sqlite3VdbeChangeP2(v, addrTop, dest.iSdst);
       sqlite3VdbeChangeP3(v, addrTop, dest.nSdst);
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, addrEof);
-      sqlite3VdbeAddOp1(v, OP_Yield, pItem->regReturn);
-      VdbeComment((v, "end %s", pItem->pTab->zName));
+      sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);
     }else{
