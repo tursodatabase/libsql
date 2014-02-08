@@ -2019,6 +2019,7 @@ struct SrcList {
     Select *pSelect;  /* A SELECT statement used in place of a table name */
     int addrFillSub;  /* Address of subroutine to manifest a subquery */
     int regReturn;    /* Register holding return address of addrFillSub */
+    int regResult;    /* Registers holding results of a co-routine */
     u8 jointype;      /* Type of join between this able and the previous */
     unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */

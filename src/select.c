@@ -4541,16 +4541,13 @@ int sqlite3Select(
       pItem->regReturn = ++pParse->nMem;
       sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
       VdbeComment((v, "%s", pItem->pTab->zName));
-      sqlite3VdbeAddOp1(v, OP_OpenPseudo, pItem->iCursor);
-      sqlite3VdbeChangeP5(v, 1);
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
       pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
       pItem->viaCoroutine = 1;
-      sqlite3VdbeChangeP2(v, addrTop, dest.iSdst);
-      sqlite3VdbeChangeP3(v, addrTop, dest.nSdst);
+      pItem->regResult = dest.iSdst;
       sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
       sqlite3VdbeJumpHere(v, addrTop-1);
       sqlite3ClearTempRegCache(pParse);

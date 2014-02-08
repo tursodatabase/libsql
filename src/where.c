@@ -5835,11 +5835,37 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   assert( pWInfo->nLevel<=pTabList->nSrc );
   for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
+    int k, last;
+    VdbeOp *pOp;
     Index *pIdx = 0;
     struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     pLoop = pLevel->pWLoop;
+
+    /* For a co-routine, change all OP_Column references to the table of
+    ** the co-routine into OP_SCopy of result contained in a register.
+    ** OP_Rowid becomes OP_Null.
+    */
+    if( pTabItem->viaCoroutine ){
+      last = sqlite3VdbeCurrentAddr(v);
+      k = pLevel->addrBody;
+      pOp = sqlite3VdbeGetOp(v, k);
+      for(; k<last; k++, pOp++){
+        if( pOp->p1!=pLevel->iTabCur ) continue;
+        if( pOp->opcode==OP_Column ){
+          pOp->opcode = OP_SCopy;
+          pOp->p1 = pOp->p2 + pTabItem->regResult;
+          pOp->p2 = pOp->p3;
+          pOp->p3 = 0;
+        }else if( pOp->opcode==OP_Rowid ){
+          pOp->opcode = OP_Null;
+          pOp->p1 = 0;
+          pOp->p3 = 0;
+        }
+      }
+      continue;
+    }
 
     /* Close all of the cursors that were opened by sqlite3WhereBegin.
     ** Except, do not close cursors that will be reused by the OR optimization
@@ -5879,9 +5905,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       pIdx = pLevel->u.pCovidx;
     }
     if( pIdx && !db->mallocFailed ){
-      int k, last;
-      VdbeOp *pOp;
-
       last = sqlite3VdbeCurrentAddr(v);
       k = pLevel->addrBody;
       pOp = sqlite3VdbeGetOp(v, k);

@@ -2281,11 +2281,6 @@ case OP_Column: {
       if( pCrsr==0 ){
         assert( pC->pseudoTableReg>0 );
         pReg = &aMem[pC->pseudoTableReg];
-        if( pC->multiPseudo ){
-          sqlite3VdbeMemShallowCopy(pDest, pReg+p2, MEM_Ephem);
-          Deephemeralize(pDest);
-          goto op_column_out;
-        }
         assert( pReg->flags & MEM_Blob );
         assert( memIsValid(pReg) );
         pC->payloadSize = pC->szRow = avail = pReg->n;
@@ -3354,14 +3349,13 @@ case OP_SorterOpen: {
   break;
 }
 
-/* Opcode: OpenPseudo P1 P2 P3 * P5
+/* Opcode: OpenPseudo P1 P2 P3 * *
 ** Synopsis: content in r[P2@P3]
 **
 ** Open a new cursor that points to a fake table that contains a single
-** row of data.  The content of that one row in the content of memory
-** register P2 when P5==0.  In other words, cursor P1 becomes an alias for the 
-** MEM_Blob content contained in register P2.  When P5==1, then the
-** row is represented by P3 consecutive registers beginning with P2.
+** row of data.  The content of that one row is the content of memory
+** register P2.  In other words, cursor P1 becomes an alias for the 
+** MEM_Blob content contained in register P2.
 **
 ** A pseudo-table created by this opcode is used to hold a single
 ** row output from the sorter so that the row can be decomposed into
@@ -3381,7 +3375,7 @@ case OP_OpenPseudo: {
   pCx->nullRow = 1;
   pCx->pseudoTableReg = pOp->p2;
   pCx->isTable = 1;
-  pCx->multiPseudo = pOp->p5;
+  assert( pOp->p5==0 );
   break;
 }
 
