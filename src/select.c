@@ -4537,12 +4537,12 @@ int sqlite3Select(
       /* Implement a co-routine that will return a single row of the result
       ** set on each invocation.
       */
-      int addrTop;
+      int addrTop = sqlite3VdbeCurrentAddr(v)+1;
       pItem->regReturn = ++pParse->nMem;
-      sqlite3VdbeAddOp0(v, OP_Goto);
-      addrTop = sqlite3VdbeAddOp1(v, OP_OpenPseudo, pItem->iCursor);
+      sqlite3VdbeAddOp3(v, OP_InitCoroutine, pItem->regReturn, 0, addrTop);
+      VdbeComment((v, "%s", pItem->pTab->zName));
+      sqlite3VdbeAddOp1(v, OP_OpenPseudo, pItem->iCursor);
       sqlite3VdbeChangeP5(v, 1);
-      VdbeComment((v, "coroutine %s", pItem->pTab->zName));
       pItem->addrFillSub = addrTop;
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
@@ -4567,12 +4567,14 @@ int sqlite3Select(
       pItem->regReturn = ++pParse->nMem;
       topAddr = sqlite3VdbeAddOp2(v, OP_Integer, 0, pItem->regReturn);
       pItem->addrFillSub = topAddr+1;
-      VdbeNoopComment((v, "materialize %s", pItem->pTab->zName));
       if( pItem->isCorrelated==0 ){
         /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */
         onceAddr = sqlite3CodeOnce(pParse);
+        VdbeComment((v, "materialize \"%s\"", pItem->pTab->zName));
+      }else{
+        VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);

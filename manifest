@@ -1,5 +1,5 @@
-C Enable\sconstant\sexpression\sfactoring\seven\sif\sno\stables\sare\sread\sand\sno\ntransaction\sis\sstarted.
-D 2014-02-08T04:24:37.181
+C Tweaks\sto\sthe\sgenerated\sVDBE\scode\sto\smake\sit\sa\slittle\seasier\sto\sfollow.
+D 2014-02-08T13:12:19.189
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c deb41db22f671b4f2a3e0e48a99b896e227aefdb
+F src/select.c b854d23224c44f10a2dbe233c885e208701a5a08
 F src/shell.c 7dedf7367ee49050b0366bf8dbc8ec2bd15b42c7
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 924f24a04bb639eb391ad12618f941bfb641a472
+F src/where.c 30fd77c349cb97bf737c5a880b88f265b7c66316
 F src/whereInt.h 921f935af8b684ffb49705610bda7284db1db138
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 192dea97316144f15f6dd0eabff08a0bf9ef203e
-R e90c019788474c8101c0d70d2228b12b
+P a45b87713c0afca2be2ace9500513620a024c0a2
+R a1eedfcdaaa5c268df32788e5659e391
 U drh
-Z 46adb7aa7b0c0d2f1d0d873b94d6c7bb
+Z ddd6a3acafdcef4fba36e852a5d855f1

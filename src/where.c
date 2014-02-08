@@ -2787,7 +2787,7 @@ static Bitmask codeOneLoopStart(
     int regYield = pTabItem->regReturn;
     sqlite3VdbeAddOp3(v, OP_InitCoroutine, regYield, 0, pTabItem->addrFillSub);
     pLevel->p2 =  sqlite3VdbeAddOp2(v, OP_Yield, regYield, addrBrk);
-    VdbeComment((v, "next row of co-routine %s", pTabItem->pTab->zName));
+    VdbeComment((v, "next row of \"%s\"", pTabItem->pTab->zName));
     pLevel->op = OP_Goto;
   }else
 
