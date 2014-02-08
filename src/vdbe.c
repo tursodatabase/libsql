@@ -3694,15 +3694,13 @@ case OP_Found: {        /* jump, in3 */
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
     r.aMem = pIn3;
+    for(ii=0; ii<r.nField; ii++){
+      assert( memIsValid(&r.aMem[ii]) );
+      ExpandBlob(&r.aMem[ii]);
 #ifdef SQLITE_DEBUG
-    {
-      int i;
-      for(i=0; i<r.nField; i++){
-        assert( memIsValid(&r.aMem[i]) );
-        if( i ) REGISTER_TRACE(pOp->p3+i, &r.aMem[i]);
-      }
-    }
+      if( ii ) REGISTER_TRACE(pOp->p3+ii, &r.aMem[ii]);
 #endif
+    }
     r.flags = UNPACKED_PREFIX_MATCH;
     pIdxKey = &r;
   }else{
