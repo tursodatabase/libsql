@@ -149,7 +149,7 @@ void sqlite3FinishCoding(Parse *pParse){
     ** transaction on each used database and to verify the schema cookie
     ** on each used database.
     */
-    if( db->mallocFailed==0 && pParse->cookieMask ){
+    if( db->mallocFailed==0 && (pParse->cookieMask || pParse->pConstExpr) ){
       yDbMask mask;
       int iDb, i;
       assert( sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
@@ -3845,9 +3845,6 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
     pToplevel->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
     if( !OMIT_TEMPDB && iDb==1 ){
       sqlite3OpenTempDatabase(pToplevel);
-    }
-    if( pToplevel==pParse && OptimizationEnabled(db,SQLITE_FactorOutConst) ){
-      pParse->okConstFactor = 1;
     }
   }
 }

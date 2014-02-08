@@ -1616,6 +1616,12 @@ Vdbe *sqlite3GetVdbe(Parse *pParse){
   if( v==0 ){
     v = pParse->pVdbe = sqlite3VdbeCreate(pParse);
     if( v ) sqlite3VdbeAddOp0(v, OP_Init);
+    if( pParse->pToplevel==0
+     && OptimizationEnabled(pParse->db,SQLITE_FactorOutConst)
+    ){
+      pParse->okConstFactor = 1;
+    }
+
   }
   return v;
 }
