@@ -1683,7 +1683,7 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
 ** already in memory.
 */
 static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
-  PgHdr *p;                         /* Return value */
+  PgHdr *p = 0;                     /* Return value */
 
   /* It is not possible for a call to PcacheFetch() with createFlag==0 to
   ** fail, since no attempt to allocate dynamic memory will be made.
