@@ -863,14 +863,6 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** this routine is a valid pointer.  But because the dummy.opcode is 0,
 ** dummy will never be written to.  This is verified by code inspection and
 ** by running with Valgrind.
-**
-** About the #ifdef SQLITE_OMIT_TRACE:  Normally, this routine is never called
-** unless p->nOp>0.  This is because in the absense of SQLITE_OMIT_TRACE,
-** an OP_Trace instruction is always inserted by sqlite3VdbeGet() as soon as
-** a new VDBE is created.  So we are free to set addr to p->nOp-1 without
-** having to double-check to make sure that the result is non-negative. But
-** if SQLITE_OMIT_TRACE is defined, the OP_Trace is omitted and we do need to
-** check the value of p->nOp-1 before continuing.
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   /* C89 specifies that the constant "dummy" will be initialized to all
@@ -878,9 +870,6 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   static VdbeOp dummy;  /* Ignore the MSVC warning about no initializer */
   assert( p->magic==VDBE_MAGIC_INIT );
   if( addr<0 ){
-#ifdef SQLITE_OMIT_TRACE
-    if( p->nOp==0 ) return (VdbeOp*)&dummy;
-#endif
     addr = p->nOp - 1;
   }
   assert( (addr>=0 && addr<p->nOp) || p->db->mallocFailed );
@@ -1465,7 +1454,7 @@ void sqlite3VdbePrintSql(Vdbe *p){
     z = p->zSql;
   }else if( p->nOp>=1 ){
     const VdbeOp *pOp = &p->aOp[0];
-    if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
+    if( pOp->opcode==OP_Init && pOp->p4.z!=0 ){
       z = pOp->p4.z;
       while( sqlite3Isspace(*z) ) z++;
     }
@@ -1484,7 +1473,7 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
   if( sqlite3IoTrace==0 ) return;
   if( nOp<1 ) return;
   pOp = &p->aOp[0];
-  if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
+  if( pOp->opcode==OP_Init && pOp->p4.z!=0 ){
     int i, j;
     char z[1000];
     sqlite3_snprintf(sizeof(z), z, "%s", pOp->p4.z);

@@ -1088,8 +1088,7 @@ struct sqlite3 {
 ** Return true if it OK to factor constant expressions into the initialization
 ** code. The argument is a Parse object for the code generator.
 */
-#define ConstFactorOk(P) \
-  ((P)->cookieGoto>0 && OptimizationEnabled((P)->db,SQLITE_FactorOutConst))
+#define ConstFactorOk(P) ((P)->okConstFactor)
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -2354,6 +2353,7 @@ struct Parse {
   u8 isMultiWrite;     /* True if statement may modify/insert multiple rows */
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
+  u8 okConstFactor;    /* OK to factor out constants */
   int aTempReg[8];     /* Holding area for temporary registers */
   int nRangeReg;       /* Size of the temporary register block */
   int iRangeReg;       /* First register in temporary register block */
@@ -2382,7 +2382,6 @@ struct Parse {
   Token constraintName;/* Name of the constraint currently being parsed */
   yDbMask writeMask;   /* Start a write transaction on these databases */
   yDbMask cookieMask;  /* Bitmask of schema verified databases */
-  int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
   int cookieValue[SQLITE_MAX_ATTACHED+2];  /* Values of cookies to verify */
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */

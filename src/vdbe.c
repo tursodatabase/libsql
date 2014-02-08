@@ -6144,16 +6144,26 @@ case OP_MaxPgcnt: {            /* out2-prerelease */
 #endif
 
 
-#ifndef SQLITE_OMIT_TRACE
-/* Opcode: Trace * * * P4 *
+/* Opcode: Init * P2 * P4 *
+** Synopsis:  Start at P2
+**
+** Programs contain a single instance of this opcode as the very first
+** opcode.
 **
 ** If tracing is enabled (by the sqlite3_trace()) interface, then
 ** the UTF-8 string contained in P4 is emitted on the trace callback.
+** Or if P4 is blank, use the string returned by sqlite3_sql().
+**
+** If P2 is not zero, jump to instruction P2.
 */
-case OP_Trace: {
+case OP_Init: {          /* jump */
   char *zTrace;
   char *z;
 
+  if( pOp->p2 ){
+    pc = pOp->p2 - 1;
+  }
+#ifndef SQLITE_OMIT_TRACE
   if( db->xTrace
    && !p->doingRerun
    && (zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql))!=0
@@ -6179,9 +6189,9 @@ case OP_Trace: {
     sqlite3DebugPrintf("SQL-trace: %s\n", zTrace);
   }
 #endif /* SQLITE_DEBUG */
+#endif /* SQLITE_OMIT_TRACE */
   break;
 }
-#endif
 
 
 /* Opcode: Noop * * * * *

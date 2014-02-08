@@ -2038,7 +2038,7 @@ static int xferOptimization(
     sqlite3VdbeAddOp2(v, OP_Close, iSrc, 0);
     sqlite3VdbeAddOp2(v, OP_Close, iDest, 0);
   }
-  sqlite3VdbeJumpHere(v, emptySrcTest);
+  if( emptySrcTest ) sqlite3VdbeJumpHere(v, emptySrcTest);
   sqlite3ReleaseTempReg(pParse, regRowid);
   sqlite3ReleaseTempReg(pParse, regData);
   if( emptyDestTest ){

@@ -5436,7 +5436,6 @@ WhereInfo *sqlite3WhereBegin(
   initMaskSet(pMaskSet);
   whereClauseInit(&pWInfo->sWC, pWInfo);
   whereSplit(&pWInfo->sWC, pWhere, TK_AND);
-  sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
     
   /* Special case: a WHERE clause that is constant.  Evaluate the
   ** expression and either jump over all of the code or fall thru.
@@ -5725,7 +5724,7 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeSetP4KeyInfo(pParse, pIx);
       VdbeComment((v, "%s", pIx->zName));
     }
-    sqlite3CodeVerifySchema(pParse, iDb);
+    if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
     notReady &= ~getMask(&pWInfo->sMaskSet, pTabItem->iCursor);
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
