@@ -778,6 +778,7 @@ void testset_cte(void){
   };
   const char *zPuz;
   double rSpacing;
+  int nElem;
 
   if( g.szTest<25 ){
     zPuz = azPuzzle[0];
@@ -872,6 +873,20 @@ void testset_cte(void){
   );
   sqlite3_bind_double(g.pStmt, 1, rSpacing*.05);
   sqlite3_bind_double(g.pStmt, 2, rSpacing);
+  speedtest1_run();
+  speedtest1_end_test();
+
+  nElem = 10000*g.szTest;
+  speedtest1_begin_test(400, "EXCEPT operator on %d-element tables", nElem);
+  speedtest1_prepare(
+    "WITH RECURSIVE \n"
+    "  t1(x) AS (VALUES(2) UNION ALL SELECT x+2 FROM t1 WHERE x<%d),\n"
+    "  t2(y) AS (VALUES(3) UNION ALL SELECT y+3 FROM t2 WHERE y<%d)\n"
+    "SELECT count(x), avg(x) FROM (\n"
+    "  SELECT x FROM t1 EXCEPT SELECT y FROM t2 ORDER BY 1\n"
+    ");",
+    nElem, nElem
+  );
   speedtest1_run();
   speedtest1_end_test();
 
