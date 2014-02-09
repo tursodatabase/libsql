@@ -1060,7 +1060,6 @@ Select *sqlite3SelectDup(sqlite3 *db, Select *p, int flags){
   pNew->iLimit = 0;
   pNew->iOffset = 0;
   pNew->selFlags = p->selFlags & ~SF_UsesEphemeral;
-  pNew->pRightmost = 0;
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->addrOpenEphm[2] = -1;
