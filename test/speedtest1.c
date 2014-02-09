@@ -777,6 +777,7 @@ void testset_cte(void){
     "....8..79",
   };
   const char *zPuz;
+  double rSpacing;
 
   if( g.szTest<25 ){
     zPuz = azPuzzle[0];
@@ -847,6 +848,33 @@ void testset_cte(void){
   sqlite3_bind_text(g.pStmt, 1, zPuz, -1, SQLITE_STATIC);
   speedtest1_run();
   speedtest1_end_test();
+
+  rSpacing = 5.0/g.szTest;
+  speedtest1_begin_test(300, "Mandelbrot Set with spacing=%f", rSpacing);
+  speedtest1_prepare(
+   "WITH RECURSIVE \n"
+   "  xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+?1 FROM xaxis WHERE x<1.2),\n"
+   "  yaxis(y) AS (VALUES(-1.0) UNION ALL SELECT y+?2 FROM yaxis WHERE y<1.0),\n"
+   "  m(iter, cx, cy, x, y) AS (\n"
+   "    SELECT 0, x, y, 0.0, 0.0 FROM xaxis, yaxis\n"
+   "    UNION ALL\n"
+   "    SELECT iter+1, cx, cy, x*x-y*y + cx, 2.0*x*y + cy FROM m \n"
+   "     WHERE (x*x + y*y) < 4.0 AND iter<28\n"
+   "  ),\n"
+   "  m2(iter, cx, cy) AS (\n"
+   "    SELECT max(iter), cx, cy FROM m GROUP BY cx, cy\n"
+   "  ),\n"
+   "  a(t) AS (\n"
+   "    SELECT group_concat( substr(' .+*#', 1+min(iter/7,4), 1), '') \n"
+   "    FROM m2 GROUP BY cy\n"
+   "  )\n"
+   "SELECT group_concat(rtrim(t),x'0a') FROM a;"
+  );
+  sqlite3_bind_double(g.pStmt, 1, rSpacing*.05);
+  sqlite3_bind_double(g.pStmt, 2, rSpacing);
+  speedtest1_run();
+  speedtest1_end_test();
+
 }
 
 /*
