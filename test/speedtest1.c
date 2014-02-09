@@ -738,6 +738,118 @@ void testset_main(void){
 }
 
 /*
+** A testset for common table expressions.  This exercises code
+** for views, subqueries, co-routines, etc.
+*/
+void testset_cte(void){
+  static const char *azPuzzle[] = {
+    /* Easy */
+    "534...9.."
+    "67.195..."
+    ".98....6."
+    "8...6...3"
+    "4..8.3..1"
+    "....2...6"
+    ".6....28."
+    "...419..5"
+    "...28..79",
+
+    /* Medium */
+    "53....9.."
+    "6..195..."
+    ".98....6."
+    "8...6...3"
+    "4..8.3..1"
+    "....2...6"
+    ".6....28."
+    "...419..5"
+    "....8..79",
+
+    /* Hard */
+    "53......."
+    "6..195..."
+    ".98....6."
+    "8...6...3"
+    "4..8.3..1"
+    "....2...6"
+    ".6....28."
+    "...419..5"
+    "....8..79",
+  };
+  const char *zPuz;
+
+  if( g.szTest<25 ){
+    zPuz = azPuzzle[0];
+  }else if( g.szTest<70 ){
+    zPuz = azPuzzle[1];
+  }else{
+    zPuz = azPuzzle[2];
+  }
+  speedtest1_begin_test(100, "Sudoku with recursive 'digits'");
+  speedtest1_prepare(
+    "WITH RECURSIVE\n"
+    "  input(sud) AS (VALUES(?1)),\n"
+    "  digits(z,lp) AS (\n"
+    "    VALUES('1', 1)\n"
+    "    UNION ALL\n"
+    "    SELECT CAST(lp+1 AS TEXT), lp+1 FROM digits WHERE lp<9\n"
+    "  ),\n"
+    "  x(s, ind) AS (\n"
+    "    SELECT sud, instr(sud, '.') FROM input\n"
+    "    UNION ALL\n"
+    "    SELECT\n"
+    "      substr(s, 1, ind-1) || z || substr(s, ind+1),\n"
+    "      instr( substr(s, 1, ind-1) || z || substr(s, ind+1), '.' )\n"
+    "     FROM x, digits AS z\n"
+    "    WHERE ind>0\n"
+    "      AND NOT EXISTS (\n"
+    "            SELECT 1\n"
+    "              FROM digits AS lp\n"
+    "             WHERE z.z = substr(s, ((ind-1)/9)*9 + lp, 1)\n"
+    "                OR z.z = substr(s, ((ind-1)%%9) + (lp-1)*9 + 1, 1)\n"
+    "                OR z.z = substr(s, (((ind-1)/3) %% 3) * 3\n"
+    "                        + ((ind-1)/27) * 27 + lp\n"
+    "                        + ((lp-1) / 3) * 6, 1)\n"
+    "         )\n"
+    "  )\n"
+    "SELECT s FROM x WHERE ind=0;"
+  );
+  sqlite3_bind_text(g.pStmt, 1, zPuz, -1, SQLITE_STATIC);
+  speedtest1_run();
+  speedtest1_end_test();
+
+  speedtest1_begin_test(200, "Sudoku with VALUES 'digits'");
+  speedtest1_prepare(
+    "WITH RECURSIVE\n"
+    "  input(sud) AS (VALUES(?1)),\n"
+    "  digits(z,lp) AS (VALUES('1',1),('2',2),('3',3),('4',4),('5',5),\n"
+    "                         ('6',6),('7',7),('8',8),('9',9)),\n"
+    "  x(s, ind) AS (\n"
+    "    SELECT sud, instr(sud, '.') FROM input\n"
+    "    UNION ALL\n"
+    "    SELECT\n"
+    "      substr(s, 1, ind-1) || z || substr(s, ind+1),\n"
+    "      instr( substr(s, 1, ind-1) || z || substr(s, ind+1), '.' )\n"
+    "     FROM x, digits AS z\n"
+    "    WHERE ind>0\n"
+    "      AND NOT EXISTS (\n"
+    "            SELECT 1\n"
+    "              FROM digits AS lp\n"
+    "             WHERE z.z = substr(s, ((ind-1)/9)*9 + lp, 1)\n"
+    "                OR z.z = substr(s, ((ind-1)%%9) + (lp-1)*9 + 1, 1)\n"
+    "                OR z.z = substr(s, (((ind-1)/3) %% 3) * 3\n"
+    "                        + ((ind-1)/27) * 27 + lp\n"
+    "                        + ((lp-1) / 3) * 6, 1)\n"
+    "         )\n"
+    "  )\n"
+    "SELECT s FROM x WHERE ind=0;"
+  );
+  sqlite3_bind_text(g.pStmt, 1, zPuz, -1, SQLITE_STATIC);
+  speedtest1_run();
+  speedtest1_end_test();
+}
+
+/*
 ** A testset used for debugging speedtest1 itself.
 */
 void testset_debug1(void){
@@ -945,6 +1057,8 @@ int main(int argc, char **argv){
     testset_main();
   }else if( strcmp(zTSet,"debug1")==0 ){
     testset_debug1();
+  }else if( strcmp(zTSet,"cte")==0 ){
+    testset_cte();
   }else{
     fatal_error("unknown testset: \"%s\"\n", zTSet);
   }
