@@ -1,5 +1,5 @@
-C Add\sa\scompound-query\stest\sto\sthe\sspeedtest1\stest\sprogram.
-D 2014-02-09T23:59:28.966
+C Faster\sand\ssmaller\simplementation\sof\ssqlite3_value_type().
+D 2014-02-10T03:21:57.367
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -233,7 +233,7 @@ F src/test1.c 2401eee14a4309a7cfe2aeb2f30ad517a1d9c299
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
-F src/test5.c a6d1ac55ac054d0b2b8f37b5e655b6c92645a013
+F src/test5.c 41e6e732f14a54c7b47f753e364700760f6521b0
 F src/test6.c 41cacf3b0dd180823919bf9e1fbab287c9266723
 F src/test7.c 72b732baa5642f795655ba1126ea032af46ecfd2
 F src/test8.c 54ccd7b1df5062f0ecbf50a8f7b618f8b1f13b20
@@ -280,13 +280,13 @@ F src/update.c a7df6fffce6bfedc578fda6136dd33e34a63f8ee
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 15ac2627f548f5481d0d7e6c4eb67be673027695
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 78b41fd0a3b3ab4647e3bf99905fb65831a1a92a
+F src/vdbe.c 66c3e5c49ff61aaa3e3182fb9962ceddb847b05f
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
-F src/vdbeInt.h 6714e9eb5c3a481976d32ca767f03ac0469fc9df
-F src/vdbeapi.c ce4e68ea4842cc6081046f533d088dcf01d247ad
-F src/vdbeaux.c 379343f1d98b60b0771366e5955f3cab34f1a3ca
+F src/vdbeInt.h 5286af9067cabdb8ba57b87c0c988a931be6c6c8
+F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
+F src/vdbeaux.c dac6e571262a322b2f889752a8dd36549bdacd2b
 F src/vdbeblob.c 9542e116c1db5ed813977581d506c176e117c0ec
-F src/vdbemem.c c0bcc02d6816ab4218ac0f94b63c8ee78a0f739f
+F src/vdbemem.c 06603e8e9d2f3247b68c6bbe4bd37fb6721b5bda
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 67bfd59d9087a987f15f6148efa1ff104983e1fb
-R 08e9f131a35b941b5219bd5647483bf9
+P 532995759114ab7a7cba18cc9d8820d78eb1a96e
+R 1d6572df35f58f7e82be516ccbec8b1d
 U drh
-Z 03478c9c29bcc9ab89e223c27b70af04
+Z d879d19c9c74c4f3aa3952d43b5ccba0

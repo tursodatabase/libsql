@@ -134,30 +134,6 @@ int sqlite3_found_count = 0;
 #define isSorter(x) ((x)->pSorter!=0)
 
 /*
-** Argument pMem points at a register that will be passed to a
-** user-defined function or returned to the user as the result of a query.
-** This routine sets the pMem->type variable used by the sqlite3_value_*() 
-** routines.
-*/
-void sqlite3VdbeMemStoreType(Mem *pMem){
-  int flags = pMem->flags;
-  if( flags & MEM_Null ){
-    pMem->type = SQLITE_NULL;
-  }
-  else if( flags & MEM_Int ){
-    pMem->type = SQLITE_INTEGER;
-  }
-  else if( flags & MEM_Real ){
-    pMem->type = SQLITE_FLOAT;
-  }
-  else if( flags & MEM_Str ){
-    pMem->type = SQLITE_TEXT;
-  }else{
-    pMem->type = SQLITE_BLOB;
-  }
-}
-
-/*
 ** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
 ** if we run out of memory.
 */
@@ -285,12 +261,14 @@ static void applyAffinity(
 ** loss of information and return the revised type of the argument.
 */
 int sqlite3_value_numeric_type(sqlite3_value *pVal){
-  Mem *pMem = (Mem*)pVal;
-  if( pMem->type==SQLITE_TEXT ){
+  int eType = sqlite3_value_type(pVal);
+  if( eType==SQLITE_TEXT ){
+    Mem *pMem = (Mem*)pVal;
     applyNumericAffinity(pMem);
     sqlite3VdbeMemStoreType(pMem);
+    eType = sqlite3_value_type(pVal);
   }
-  return pMem->type;
+  return eType;
 }
 
 /*
