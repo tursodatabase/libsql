@@ -1359,7 +1359,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   assert( pFile );
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
 
-  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+  if( pFile->ctrlFlags & UNIXFILE_DEFERRED ){
     *pResOut = 0;
     return SQLITE_OK;
   }
@@ -1529,7 +1529,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
     return SQLITE_OK;
   }
 
-  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+  if( pFile->ctrlFlags & UNIXFILE_DEFERRED ){
     int eOrigLock = pFile->eFileLock;
     if( eFileLock==SHARED_LOCK ){
       int statrc;
@@ -1753,7 +1753,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     return SQLITE_OK;
   }
   unixEnterMutex();
-  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ) goto end_unlock;
+  if( pFile->ctrlFlags & UNIXFILE_DEFERRED ) goto end_unlock;
   pInode = pFile->pInode;
   assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
@@ -3205,7 +3205,7 @@ static int unixRead(
   );
 #endif
 
-  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+  if( pFile->ctrlFlags & UNIXFILE_DEFERRED ){
     int rc;
     struct stat sBuf;
     memset(&sBuf, 0, sizeof(sBuf));
@@ -3678,7 +3678,7 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   int rc;
   struct stat buf;
   assert( id );
-  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+  if( pFile->ctrlFlags & UNIXFILE_DEFERRED ){
     rc = osStat(pFile->zPath, &buf);
     if( rc && errno==ENOENT ){
       rc = 0;
@@ -5890,25 +5890,39 @@ static int unixOpenDeferred(
                   | SQLITE_OPEN_CREATE;
   const int mask2 = SQLITE_OPEN_READONLY  | SQLITE_OPEN_DELETEONCLOSE
                   | SQLITE_OPEN_EXCLUSIVE | SQLITE_OPEN_AUTOPROXY;
-  int rc = SQLITE_OK;          /* Return code */
 
   /* If all the flags in mask1 are set, and all the flags in mask2 are
-  ** clear, then this will be a deferred open.  */
-  if( zPath && (flags & (mask1 | mask2))==mask1 ){
-    unixFile *p = (unixFile*)pFile;
-    memset(p, 0, sizeof(unixFile));
-
-    p->pMethod = (**(finder_type*)pVfs->pAppData)(0, 0);
-    p->pVfs = pVfs;
-    p->h = -1;
-    p->ctrlFlags = UNIXFILE_DEFERRED;
-    p->openFlags = flags;
-    p->zPath = zPath;
-    if( pOutFlags ) *pOutFlags = flags;
-  }else{
-    rc = unixOpen(pVfs, zPath, pFile, flags, pOutFlags);
+  ** clear, the file does not exist but the directory does and is
+  ** writable, then this is a deferred open.  */
+  if( 0 && zPath && (flags & (mask1 | mask2))==mask1 ){
+    int posixrc;
+    posixrc = osAccess(zPath, F_OK);
+    if( posixrc && errno==ENOENT ){
+      char zDirname[MAX_PATHNAME+1];
+      int i;
+      for(i=(int)strlen(zPath); i>1 && zPath[i]!='/'; i--);
+      memcpy(zDirname, zPath, i);
+      zDirname[i] = '\0';
+      posixrc = osAccess(zDirname, W_OK);
+      if( posixrc==0 ){
+        unixFile *p = (unixFile*)pFile;
+        memset(p, 0, sizeof(unixFile));
+        p->pMethod = (**(finder_type*)pVfs->pAppData)(0, 0);
+        p->pVfs = pVfs;
+        p->h = -1;
+        p->ctrlFlags = UNIXFILE_DEFERRED;
+        if( sqlite3_uri_boolean(((flags & UNIXFILE_URI) ? zPath : 0),
+                           "psow", SQLITE_POWERSAFE_OVERWRITE) ){
+          p->ctrlFlags |= UNIXFILE_PSOW;
+        }
+        p->openFlags = flags;
+        p->zPath = zPath;
+        if( pOutFlags ) *pOutFlags = flags;
+        return SQLITE_OK;
+      }
+    }
   }
-  return rc;
+  return unixOpen(pVfs, zPath, pFile, flags, pOutFlags);
 }
 
 /*

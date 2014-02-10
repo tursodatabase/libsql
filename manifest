@@ -1,5 +1,5 @@
-C Experimental\schange\sto\sos_unix.c\sto\sdelay\screating\sa\sdatabase\sfile\suntil\sit\sis\sfirst\swritten.
-D 2014-02-10T19:37:03.413
+C Fix\sa\sbug\scausing\sthe\sPOWERSAFE_OVERWRITE\sdevice-characteristic\sflag\sto\sbe\sset\sincorrectly\sif\sfile\sopening\sis\sdeferred.
+D 2014-02-10T21:09:39.090
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c dcb7dd4fb2ef823b534383bb7e58efdf8cb7d582
+F src/os_unix.c a45a0d2fc8e0e78d018c4b25a705217212e990fa
 F src/os_win.c d4284f003445054a26689f1264b1b9bf7261bd1b
 F src/pager.c efa923693e958696eee69b205a20bfbc402c8480
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1152,10 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a45b87713c0afca2be2ace9500513620a024c0a2
-R 116d1a6917169d2dbbd8194f87400b30
-T *branch * deferred-open
-T *sym-deferred-open *
-T -sym-trunk *
+P 538f7b25e436682adba10a158f082de24782cf00
+R fc51d757e99a991be98333c8143d7ae1
 U dan
-Z 79711705a6aa2396617bcc4018494171
+Z 7f6e10654a9f0b8d3fc129f44354c867
