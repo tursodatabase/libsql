@@ -3501,6 +3501,29 @@ static void main_init(struct callback_data *data) {
 }
 
 /*
+** Arrange for subsequent text console output to be RED or normal.  Use
+** the SetConsoleTextAttribute() function on windows.  On all other
+** platforms, assume VT100 escape sequences are recognized.
+*/
+#ifdef _WIN32
+static void outputRed(void){
+   SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
+         FOREGROUND_RED|FOREGROUND_INTENSITY);
+}
+static void outputNormal(void){
+  SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),
+         FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE);
+}
+#else
+static void outputRed(void){
+  printf("\033[1;31m");
+}
+static void outputNormal(void){
+  printf("\033[0m");
+}
+#endif
+
+/*
 ** Get the argument to an --option.  Throw an error and die if no argument
 ** is available.
 */
@@ -3615,7 +3638,7 @@ int main(int argc, char **argv){
   if( data.zDbFilename==0 ){
 #ifndef SQLITE_OMIT_MEMORYDB
     data.zDbFilename = ":memory:";
-    warnInmemoryDb = 1;
+    warnInmemoryDb = argc==1;
 #else
     fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
     return 1;
@@ -3752,16 +3775,16 @@ int main(int argc, char **argv){
       int nHistory;
       printf(
         "SQLite version %s %.19s\n" /*extra-version-info*/
-        "Enter \".help\" for instructions\n"
-        "Enter SQL statements terminated with a \";\"\n",
+        "Enter \".help\" for usage hints.\n",
         sqlite3_libversion(), sqlite3_sourceid()
       );
       if( warnInmemoryDb ){
-         printf(
-            "Warning: connected to an in-memory database. "
-            "Use \".open FILENAME\" to change\nto a persistent "
-            "on-disk database.\n"
-         );
+        printf("Connected to a ");
+        outputRed();
+        printf("transient in-memory database");
+        outputNormal();
+        printf(".\nUse \".open FILENAME\" to reopen on a "
+               "persistent database.\n");
       }
       zHome = find_home_dir();
       if( zHome ){
