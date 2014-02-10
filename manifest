@@ -1,5 +1,5 @@
-C Faster\simplementation\sfor\ssqlite3MulInt64().
-D 2014-02-10T12:59:15.771
+C Improvements\sto\sa\s"Synopsis:"\scomment\sin\sthe\sVDBE\sengine.
+D 2014-02-10T15:56:34.917
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/update.c a7df6fffce6bfedc578fda6136dd33e34a63f8ee
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 66c3e5c49ff61aaa3e3182fb9962ceddb847b05f
+F src/vdbe.c e5c87476d717aebef5dafceab11417ebf2730554
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
 F src/vdbeInt.h 5286af9067cabdb8ba57b87c0c988a931be6c6c8
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5708bc24b8cab623b833121183042b43e5a7021b
-R 96b6443498b3eb7df60c900f013f8cef
+P 010c48f671e909cb406f3716102a0032bc72a592
+R 578e19c460bd25472755ddb73b8e954a
 U drh
-Z d856cf5d0cd482b54ac364a01a0fe1f8
+Z b51a63f783c162fa8d14eeaf754f2b2d
