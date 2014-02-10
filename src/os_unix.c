@@ -203,9 +203,7 @@ struct unixFile {
   int sectorSize;                     /* Device sector size */
   int deviceCharacteristics;          /* Precomputed device characteristics */
 #endif
-#if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                      /* The flags specified at open() */
-#endif
 #if SQLITE_ENABLE_LOCKING_STYLE || defined(__APPLE__)
   unsigned fsFlags;                   /* cached details from statfs() */
 #endif
@@ -255,7 +253,8 @@ static int randomnessPid = 0;
 #define UNIXFILE_DELETE      0x20     /* Delete on close */
 #define UNIXFILE_URI         0x40     /* Filename might have query parameters */
 #define UNIXFILE_NOLOCK      0x80     /* Do no file locking */
-#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() warnings have been issued */
+#define UNIXFILE_WARNED    0x0100     /* verifyDbFile() has issued warnings */
+#define UNIXFILE_DEFERRED  0x0200     /* File has not yet been opened */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1357,9 +1356,14 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   int reserved = 0;
   unixFile *pFile = (unixFile*)id;
 
+  assert( pFile );
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
 
-  assert( pFile );
+  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+    *pResOut = 0;
+    return SQLITE_OK;
+  }
+
   unixEnterMutex(); /* Because pFile->pInode is shared across threads */
 
   /* Check if a thread in this process holds such a lock */
@@ -1438,6 +1442,8 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
   }
   return rc;
 }
+
+static int unixOpen(sqlite3_vfs*, const char*, sqlite3_file*, int, int *);
 
 /*
 ** Lock the file with the lock specified by parameter eFileLock - one
@@ -1522,6 +1528,27 @@ static int unixLock(sqlite3_file *id, int eFileLock){
             azFileLock(eFileLock)));
     return SQLITE_OK;
   }
+
+  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+    int eOrigLock = pFile->eFileLock;
+    if( eFileLock==SHARED_LOCK ){
+      int statrc;
+      struct stat sBuf;
+      memset(&sBuf, 0, sizeof(sBuf));
+      statrc = osStat(pFile->zPath, &sBuf);
+      if( statrc && errno==ENOENT ){
+        pFile->eFileLock = SHARED_LOCK;
+        return SQLITE_OK;
+      }
+    }
+
+    rc = unixOpen(pFile->pVfs, pFile->zPath, id, pFile->openFlags, 0);
+    if( rc==SQLITE_OK && eOrigLock ){
+      rc = unixLock(id, eOrigLock);
+    }
+    if( rc!=SQLITE_OK ) return rc;
+  }
+  assert( (pFile->ctrlFlags & UNIXFILE_DEFERRED)==0 );
 
   /* Make sure the locking sequence is correct.
   **  (1) We never move from unlocked to anything higher than shared lock.
@@ -1726,6 +1753,7 @@ static int posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     return SQLITE_OK;
   }
   unixEnterMutex();
+  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ) goto end_unlock;
   pInode = pFile->pInode;
   assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
@@ -1933,18 +1961,22 @@ static int unixClose(sqlite3_file *id){
   unixEnterMutex();
 
   /* unixFile.pInode is always valid here. Otherwise, a different close
-  ** routine (e.g. nolockClose()) would be called instead.
-  */
-  assert( pFile->pInode->nLock>0 || pFile->pInode->bProcessLock==0 );
-  if( ALWAYS(pFile->pInode) && pFile->pInode->nLock ){
-    /* If there are outstanding locks, do not actually close the file just
-    ** yet because that would clear those locks.  Instead, add the file
-    ** descriptor to pInode->pUnused list.  It will be automatically closed 
-    ** when the last lock is cleared.
-    */
-    setPendingFd(pFile);
+  ** routine (e.g. nolockClose()) would be called instead.  */
+  assert( pFile->pInode==0 
+       || pFile->pInode->nLock>0 
+       || pFile->pInode->bProcessLock==0 
+  );
+  if( pFile->pInode ){
+    if( pFile->pInode->nLock ){
+      /* If there are outstanding locks, do not actually close the file just
+      ** yet because that would clear those locks.  Instead, add the file
+      ** descriptor to pInode->pUnused list.  It will be automatically closed 
+      ** when the last lock is cleared.
+      */
+      setPendingFd(pFile);
+    }
+    releaseInodeInfo(pFile);
   }
-  releaseInodeInfo(pFile);
   rc = closeUnixFile(id);
   unixLeaveMutex();
   return rc;
@@ -3173,6 +3205,23 @@ static int unixRead(
   );
 #endif
 
+  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+    int rc;
+    struct stat sBuf;
+    memset(&sBuf, 0, sizeof(sBuf));
+    rc = osStat(pFile->zPath, &sBuf);
+    if( rc!=0 ){
+      memset(pBuf, 0, amt);
+      rc = (errno==ENOENT ? SQLITE_IOERR_SHORT_READ : SQLITE_IOERR_FSTAT);
+    }else{
+      rc = unixOpen(pFile->pVfs, pFile->zPath, id, pFile->openFlags, 0);
+    }
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+  }
+  assert( (pFile->ctrlFlags & UNIXFILE_DEFERRED)==0 );
+
 #if SQLITE_MAX_MMAP_SIZE>0
   /* Deal with as much of this read request as possible by transfering
   ** data from the memory mapping using memcpy().  */
@@ -3625,10 +3674,19 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
 ** Determine the current size of a file in bytes
 */
 static int unixFileSize(sqlite3_file *id, i64 *pSize){
+  unixFile *pFile = (unixFile*)id;
   int rc;
   struct stat buf;
   assert( id );
-  rc = osFstat(((unixFile*)id)->h, &buf);
+  if( pFile->ctrlFlags==UNIXFILE_DEFERRED ){
+    rc = osStat(pFile->zPath, &buf);
+    if( rc && errno==ENOENT ){
+      rc = 0;
+      buf.st_size = 0;
+    }
+  }else{
+    rc = osFstat(pFile->h, &buf);
+  }
   SimulateIOError( rc=1 );
   if( rc!=0 ){
     ((unixFile*)id)->lastErrno = errno;
@@ -3643,7 +3701,6 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   ** really 1.   Ticket #3260.
   */
   if( *pSize==1 ) *pSize = 0;
-
 
   return SQLITE_OK;
 }
@@ -5176,7 +5233,7 @@ static int fillInUnixFile(
   pNew->h = h;
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
-  pNew->ctrlFlags = (u8)ctrlFlags;
+  pNew->ctrlFlags = (unsigned short)ctrlFlags;
 #if SQLITE_MAX_MMAP_SIZE>0
   pNew->mmapSizeMax = sqlite3GlobalConfig.szMmap;
 #endif
@@ -5822,6 +5879,37 @@ open_finished:
   return rc;
 }
 
+static int unixOpenDeferred(
+  sqlite3_vfs *pVfs,           /* The VFS for which this is the xOpen method */
+  const char *zPath,           /* Pathname of file to be opened */
+  sqlite3_file *pFile,         /* The file descriptor to be filled in */
+  int flags,                   /* Input flags to control the opening */
+  int *pOutFlags               /* Output flags returned to SQLite core */
+){
+  const int mask1 = SQLITE_OPEN_MAIN_DB | SQLITE_OPEN_READWRITE
+                  | SQLITE_OPEN_CREATE;
+  const int mask2 = SQLITE_OPEN_READONLY  | SQLITE_OPEN_DELETEONCLOSE
+                  | SQLITE_OPEN_EXCLUSIVE | SQLITE_OPEN_AUTOPROXY;
+  int rc = SQLITE_OK;          /* Return code */
+
+  /* If all the flags in mask1 are set, and all the flags in mask2 are
+  ** clear, then this will be a deferred open.  */
+  if( zPath && (flags & (mask1 | mask2))==mask1 ){
+    unixFile *p = (unixFile*)pFile;
+    memset(p, 0, sizeof(unixFile));
+
+    p->pMethod = (**(finder_type*)pVfs->pAppData)(0, 0);
+    p->pVfs = pVfs;
+    p->h = -1;
+    p->ctrlFlags = UNIXFILE_DEFERRED;
+    p->openFlags = flags;
+    p->zPath = zPath;
+    if( pOutFlags ) *pOutFlags = flags;
+  }else{
+    rc = unixOpen(pVfs, zPath, pFile, flags, pOutFlags);
+  }
+  return rc;
+}
 
 /*
 ** Delete the file at zPath. If the dirSync argument is true, fsync()
@@ -7376,7 +7464,7 @@ int sqlite3_os_init(void){
     0,                    /* pNext */                       \
     VFSNAME,              /* zName */                       \
     (void*)&FINDER,       /* pAppData */                    \
-    unixOpen,             /* xOpen */                       \
+    unixOpenDeferred,     /* xOpen */                       \
     unixDelete,           /* xDelete */                     \
     unixAccess,           /* xAccess */                     \
     unixFullPathname,     /* xFullPathname */               \

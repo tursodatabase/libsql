@@ -534,7 +534,10 @@ static int fake_big_file(
   }
   offset = n;
   offset *= 1024*1024;
+  sqlite3OsLock(fd, SHARED_LOCK);
+  sqlite3OsLock(fd, EXCLUSIVE_LOCK);
   rc = sqlite3OsWrite(fd, "Hello, World!", 14, offset);
+  sqlite3OsUnlock(fd, NO_LOCK);
   sqlite3OsCloseFree(fd);
   sqlite3_free(zFile);
   if( rc ){
