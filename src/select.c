@@ -3628,6 +3628,9 @@ static int convertCompoundSelectToSubquery(Walker *pWalker, Select *p){
   pNew->pHaving = 0;
   pNew->pOrderBy = 0;
   p->pPrior = 0;
+  p->pNext = 0;
+  p->selFlags &= ~SF_Compound;
+  if( pNew->pPrior ) pNew->pPrior->pNext = pNew;
   pNew->pLimit = 0;
   pNew->pOffset = 0;
   return WRC_Continue;
