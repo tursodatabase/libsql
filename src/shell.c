@@ -3516,7 +3516,7 @@ static void outputNormal(void){
 }
 #else
 static void outputRed(void){
-  printf("\033[1;31m");
+  printf("\033[1m");
 }
 static void outputNormal(void){
   printf("\033[0m");
