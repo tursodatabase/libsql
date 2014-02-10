@@ -1,5 +1,5 @@
-C Improvements\sto\sa\s"Synopsis:"\scomment\sin\sthe\sVDBE\sengine.
-D 2014-02-10T15:56:34.917
+C Modify\sthe\scommand-line\sshell\sto\sprint\sa\swarning\swhen\susing\san\sin-memory\ndatabase.
+D 2014-02-10T16:13:42.339
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c c055a9fa25a4e7fc8c1652c44a31d6382dbb1e8a
-F src/shell.c 7dedf7367ee49050b0366bf8dbc8ec2bd15b42c7
+F src/shell.c df7d96e50415a0aaf63a6cc96c15643229a603ac
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1152,7 +1152,10 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 010c48f671e909cb406f3716102a0032bc72a592
-R 578e19c460bd25472755ddb73b8e954a
+P 0dfa7ee9157ea6b1c745732d6c3fcd066cf4f849
+R 795791e045aa26fa5bb54a48e6e7e719
+T *branch * memdb-warning
+T *sym-memdb-warning *
+T -sym-trunk *
 U drh
-Z b51a63f783c162fa8d14eeaf754f2b2d
+Z fcf385e884073e6fe85607df422ee196

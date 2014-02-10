@@ -3520,6 +3520,7 @@ int main(int argc, char **argv){
   char *zFirstCmd = 0;
   int i;
   int rc = 0;
+  int warnInmemoryDb = 0;
 
   if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
     fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
@@ -3614,6 +3615,7 @@ int main(int argc, char **argv){
   if( data.zDbFilename==0 ){
 #ifndef SQLITE_OMIT_MEMORYDB
     data.zDbFilename = ":memory:";
+    warnInmemoryDb = 1;
 #else
     fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
     return 1;
@@ -3754,6 +3756,13 @@ int main(int argc, char **argv){
         "Enter SQL statements terminated with a \";\"\n",
         sqlite3_libversion(), sqlite3_sourceid()
       );
+      if( warnInmemoryDb ){
+         printf(
+            "Warning: connected to an in-memory database. "
+            "Use \".open FILENAME\" to change\nto a persistent "
+            "on-disk database.\n"
+         );
+      }
       zHome = find_home_dir();
       if( zHome ){
         nHistory = strlen30(zHome) + 20;
