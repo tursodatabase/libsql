@@ -1,12 +1,12 @@
-C Updates\sto\sthe\scommand-line\sshell.\s\sSimplify\sthe\sbanner\smessage.\s\sAdd\sthe\n".save"\scommand\sas\san\salias\sfor\s".backup".\s\sWhen\sstarting\swith\sno\sarguments,\ninclude\sa\sbanner\smessage\swarning\sthat\sthe\sdatabase\sis\stransient\sand\sin-memory\nand\smention\sthe\s".open"\scommand.
-D 2014-02-11T16:22:18.453
+C Increase\sthe\sversion\snumber\sto\s3.8.4
+D 2014-02-11T16:24:34.448
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 6ff3ff2eef45c7dd309a8626ff7947b20bd387e7
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 8ed548d87d0a27fd7d7620476f9e25f9fa742d73
+F VERSION 0dc30ad5cf90736d5fd9e540c9f05c542658abe7
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1673bc402f8fc95015f72c279adc5a9a668ee237 x
+F configure e12e1a4f031354f9af735bcb377941a72dc2cca5 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1153,7 +1153,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7989ce5f105657060a39be295255da8eff9ed56e fe284afe739c497e153ac2bc0275f7c9e862c824
-R 6488d4d20aaa0785dbe5d9952b0b36b8
+P f5ad1e1bf2828c5da70c1ff944d8212036142e6f
+R 07c665af95e97929880dcb47f3f495f9
 U drh
-Z d484b7c22506286af852445c160c123b
+Z 585a1fb26982d5587e4e3f114773e866
