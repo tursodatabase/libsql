@@ -197,4 +197,29 @@ do_test 3.1 {
   }]
 } {0}
 
+#-------------------------------------------------------------------------
+# Ticket  [fccbde530a6583bf2748400919f1603d5425995c] (2014-01-08)
+# The logic that computes DISTINCT sometimes thinks that a zeroblob()
+# and a blob of all zeros are different when they should be the same. 
+#
+do_execsql_test 4.1 {
+  DROP TABLE IF EXISTS t1;
+  DROP TABLE IF EXISTS t2;
+  CREATE TABLE t1(a INTEGER);
+  INSERT INTO t1 VALUES(3);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(1);
+  INSERT INTO t1 VALUES(2);
+  INSERT INTO t1 VALUES(3);
+  INSERT INTO t1 VALUES(1);
+  CREATE TABLE t2(x);
+  INSERT INTO t2
+    SELECT DISTINCT
+      CASE a WHEN 1 THEN x'0000000000'
+             WHEN 2 THEN zeroblob(5)
+             ELSE 'xyzzy' END
+      FROM t1;
+  SELECT quote(x) FROM t2 ORDER BY 1;
+} {'xyzzy' X'0000000000'}
+
 finish_test

@@ -75,7 +75,6 @@ struct VdbeCursor {
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
   Bool isTable:1;       /* True if a table requiring integer keys */
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
-  Bool multiPseudo:1;   /* Multi-register pseudo-cursor */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
@@ -169,7 +168,7 @@ struct Mem {
   } u;
   int n;              /* Number of characters in string value, excluding '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
-  u8  type;           /* One of SQLITE_NULL, SQLITE_TEXT, SQLITE_INTEGER, etc */
+  u8  memType;        /* Lower 5 bits of flags */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
@@ -435,7 +434,8 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
-void sqlite3VdbeMemStoreType(Mem *pMem);
+#define sqlite3VdbeMemStoreType(X)  (X)->memType = (u8)((X)->flags&0x1f)
+/* void sqlite3VdbeMemStoreType(Mem *pMem); */
 int sqlite3VdbeTransferError(Vdbe *p);
 
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);

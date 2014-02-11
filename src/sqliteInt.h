@@ -2019,6 +2019,7 @@ struct SrcList {
     Select *pSelect;  /* A SELECT statement used in place of a table name */
     int addrFillSub;  /* Address of subroutine to manifest a subquery */
     int regReturn;    /* Register holding return address of addrFillSub */
+    int regResult;    /* Registers holding results of a co-routine */
     u8 jointype;      /* Type of join between this able and the previous */
     unsigned notIndexed :1;    /* True if there is a NOT INDEXED clause */
     unsigned isCorrelated :1;  /* True if sub-query is correlated */
@@ -2147,7 +2148,6 @@ struct Select {
   ExprList *pOrderBy;    /* The ORDER BY clause */
   Select *pPrior;        /* Prior select in a compound select statement */
   Select *pNext;         /* Next select to the left in a compound */
-  Select *pRightmost;    /* Right-most select in a compound select statement */
   Expr *pLimit;          /* LIMIT expression. NULL means not used. */
   Expr *pOffset;         /* OFFSET expression. NULL means not used. */
   With *pWith;           /* WITH clause attached to this select. Or NULL. */
@@ -2169,6 +2169,7 @@ struct Select {
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
+#define SF_Compound        0x1000  /* Part of a compound query */
 
 
 /*

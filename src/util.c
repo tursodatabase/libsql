@@ -1123,13 +1123,12 @@ int sqlite3AddInt64(i64 *pA, i64 iB){
     testcase( iA>0 && LARGEST_INT64 - iA == iB );
     testcase( iA>0 && LARGEST_INT64 - iA == iB - 1 );
     if( iA>0 && LARGEST_INT64 - iA < iB ) return 1;
-    *pA += iB;
   }else{
     testcase( iA<0 && -(iA + LARGEST_INT64) == iB + 1 );
     testcase( iA<0 && -(iA + LARGEST_INT64) == iB + 2 );
     if( iA<0 && -(iA + LARGEST_INT64) > iB + 1 ) return 1;
-    *pA += iB;
   }
+  *pA += iB;
   return 0; 
 }
 int sqlite3SubInt64(i64 *pA, i64 iB){
@@ -1153,9 +1152,18 @@ int sqlite3MulInt64(i64 *pA, i64 iB){
   iA0 = iA % TWOPOWER32;
   iB1 = iB/TWOPOWER32;
   iB0 = iB % TWOPOWER32;
-  if( iA1*iB1 != 0 ) return 1;
-  assert( iA1*iB0==0 || iA0*iB1==0 );
-  r = iA1*iB0 + iA0*iB1;
+  if( iA1==0 ){
+    if( iB1==0 ){
+      *pA *= iB;
+      return 0;
+    }
+    r = iA0*iB1;
+  }else if( iB1==0 ){
+    r = iA1*iB0;
+  }else{
+    /* If both iA1 and iB1 are non-zero, overflow will result */
+    return 1;
+  }
   testcase( r==(-TWOPOWER31)-1 );
   testcase( r==(-TWOPOWER31) );
   testcase( r==TWOPOWER31 );

@@ -134,30 +134,6 @@ int sqlite3_found_count = 0;
 #define isSorter(x) ((x)->pSorter!=0)
 
 /*
-** Argument pMem points at a register that will be passed to a
-** user-defined function or returned to the user as the result of a query.
-** This routine sets the pMem->type variable used by the sqlite3_value_*() 
-** routines.
-*/
-void sqlite3VdbeMemStoreType(Mem *pMem){
-  int flags = pMem->flags;
-  if( flags & MEM_Null ){
-    pMem->type = SQLITE_NULL;
-  }
-  else if( flags & MEM_Int ){
-    pMem->type = SQLITE_INTEGER;
-  }
-  else if( flags & MEM_Real ){
-    pMem->type = SQLITE_FLOAT;
-  }
-  else if( flags & MEM_Str ){
-    pMem->type = SQLITE_TEXT;
-  }else{
-    pMem->type = SQLITE_BLOB;
-  }
-}
-
-/*
 ** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
 ** if we run out of memory.
 */
@@ -285,12 +261,14 @@ static void applyAffinity(
 ** loss of information and return the revised type of the argument.
 */
 int sqlite3_value_numeric_type(sqlite3_value *pVal){
-  Mem *pMem = (Mem*)pVal;
-  if( pMem->type==SQLITE_TEXT ){
+  int eType = sqlite3_value_type(pVal);
+  if( eType==SQLITE_TEXT ){
+    Mem *pMem = (Mem*)pVal;
     applyNumericAffinity(pMem);
     sqlite3VdbeMemStoreType(pMem);
+    eType = sqlite3_value_type(pVal);
   }
-  return pMem->type;
+  return eType;
 }
 
 /*
@@ -2281,11 +2259,6 @@ case OP_Column: {
       if( pCrsr==0 ){
         assert( pC->pseudoTableReg>0 );
         pReg = &aMem[pC->pseudoTableReg];
-        if( pC->multiPseudo ){
-          sqlite3VdbeMemShallowCopy(pDest, pReg+p2, MEM_Ephem);
-          Deephemeralize(pDest);
-          goto op_column_out;
-        }
         assert( pReg->flags & MEM_Blob );
         assert( memIsValid(pReg) );
         pC->payloadSize = pC->szRow = avail = pReg->n;
@@ -3354,14 +3327,13 @@ case OP_SorterOpen: {
   break;
 }
 
-/* Opcode: OpenPseudo P1 P2 P3 * P5
-** Synopsis: content in r[P2@P3]
+/* Opcode: OpenPseudo P1 P2 P3 * *
+** Synopsis: P3 columns in r[P2]
 **
 ** Open a new cursor that points to a fake table that contains a single
-** row of data.  The content of that one row in the content of memory
-** register P2 when P5==0.  In other words, cursor P1 becomes an alias for the 
-** MEM_Blob content contained in register P2.  When P5==1, then the
-** row is represented by P3 consecutive registers beginning with P2.
+** row of data.  The content of that one row is the content of memory
+** register P2.  In other words, cursor P1 becomes an alias for the 
+** MEM_Blob content contained in register P2.
 **
 ** A pseudo-table created by this opcode is used to hold a single
 ** row output from the sorter so that the row can be decomposed into
@@ -3381,7 +3353,7 @@ case OP_OpenPseudo: {
   pCx->nullRow = 1;
   pCx->pseudoTableReg = pOp->p2;
   pCx->isTable = 1;
-  pCx->multiPseudo = pOp->p5;
+  assert( pOp->p5==0 );
   break;
 }
 
@@ -3694,15 +3666,13 @@ case OP_Found: {        /* jump, in3 */
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p4.i;
     r.aMem = pIn3;
+    for(ii=0; ii<r.nField; ii++){
+      assert( memIsValid(&r.aMem[ii]) );
+      ExpandBlob(&r.aMem[ii]);
 #ifdef SQLITE_DEBUG
-    {
-      int i;
-      for(i=0; i<r.nField; i++){
-        assert( memIsValid(&r.aMem[i]) );
-        if( i ) REGISTER_TRACE(pOp->p3+i, &r.aMem[i]);
-      }
-    }
+      if( ii ) REGISTER_TRACE(pOp->p3+ii, &r.aMem[ii]);
 #endif
+    }
     r.flags = UNPACKED_PREFIX_MATCH;
     pIdxKey = &r;
   }else{
