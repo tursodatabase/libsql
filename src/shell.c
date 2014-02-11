@@ -45,14 +45,17 @@
 # include <sys/types.h>
 #endif
 
-#ifdef HAVE_EDITLINE
-# include <editline/editline.h>
-#endif
-#if defined(HAVE_READLINE) && HAVE_READLINE==1
+#if defined(HAVE_READLINE) && HAVE_READLINE!=0
 # include <readline/readline.h>
 # include <readline/history.h>
+#else
+# undef HAVE_READLINE
 #endif
-#if !defined(HAVE_EDITLINE) && (!defined(HAVE_READLINE) || HAVE_READLINE!=1)
+#if defined(HAVE_EDITLINE) && !defined(HAVE_READLINE)
+# define HAVE_READLINE 1
+# include <editline/readline.h>
+#endif
+#if !defined(HAVE_READLINE)
 # define add_history(X)
 # define read_history(X)
 # define write_history(X)
@@ -413,7 +416,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
     zResult = local_getline(zPrior, in);
   }else{
     zPrompt = isContinuation ? continuePrompt : mainPrompt;
-#if defined(HAVE_READLINE) && HAVE_READLINE==1
+#if defined(HAVE_READLINE)
     free(zPrior);
     zResult = readline(zPrompt);
     if( zResult && *zResult ) add_history(zResult);
@@ -3761,7 +3764,7 @@ int main(int argc, char **argv){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
         }
       }
-#if defined(HAVE_READLINE) && HAVE_READLINE==1
+#if defined(HAVE_READLINE)
       if( zHistory ) read_history(zHistory);
 #endif
       rc = process_input(&data, 0);
