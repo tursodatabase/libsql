@@ -46,6 +46,7 @@ do_test tkt4018-1.1 {
 # connection to test.db 10000 times. If file-descriptors are not being
 # reused, then the process will quickly exceed its maximum number of
 # file descriptors (1024 by default on linux).
+breakpoint
 do_test tkt4018-1.2 {
   for {set i 0} {$i < 10000} {incr i} {
     sqlite3 db2 test.db

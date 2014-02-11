@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges.
-D 2014-02-11T05:26:22.664
+C Test\scase\supdates\sto\saccount\sfor\sthe\sfact\sthat\sdatabase\sfiles\sare\snot\screated\suntil\sthey\sare\sfirst\swritten.
+D 2014-02-11T19:35:42.768
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c a45a0d2fc8e0e78d018c4b25a705217212e990fa
+F src/os_unix.c d75a3d63df53542d74fd8af2f76ef7ea639cfc71
 F src/os_win.c d4284f003445054a26689f1264b1b9bf7261bd1b
 F src/pager.c 0ffa313a30ed6d061d9c6601b7b175cc50a1cab7
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -336,9 +336,9 @@ F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
 F test/backcompat.test 5f8ad58b3eaebc78cd2c66c65476a42e6f32b2ad
-F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
+F test/backup.test cfac575288523288f0acfb6470b7e9cba6c16a52
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
-F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
+F test/backup4.test 4e3a2f9d83cdfeb4efd5dddb0dfbd06116d50957
 F test/backup_ioerr.test 4c3c7147cee85b024ecf6e150e090c32fdbb5135
 F test/backup_malloc.test 7162d604ec2b4683c4b3799a48657fb8b5e2d450
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -368,7 +368,7 @@ F test/capi3.test 6cdd49656bd62a296924f4d2fcfd05cd2a298369
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test a21869e4d50d5dbb7e566e328fc0bc7c2efa6a32
 F test/capi3d.test 6d0fc0a86d73f42dd19a7d8b7761ab9bc02277d0
-F test/capi3e.test ad90088b18b0367125ff2d4b5400153fd2f99aab
+F test/capi3e.test 1ecb23b79a6f2a50ba336142e795d6e677d1d2d4
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
 F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
@@ -447,7 +447,7 @@ F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
 F test/e_select2.test aceb80ab927d46fba5ce7586ebabf23e2bb0604f
 F test/e_update.test 312cb8f5ccfe41515a6bb092f8ea562a9bd54d52
-F test/e_uri.test a2c92d80093a7efdcfbb11093651cbea87097b6b
+F test/e_uri.test bfa56d624d693a81bb29ac2a9a999e35c2c8d9bf
 F test/e_vacuum.test 5bfbdc21b65c0abf24398d0ba31dc88d93ca77a9
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
@@ -457,7 +457,7 @@ F test/eqp.test 57c6c604c2807fb5531731c5323133453c24afac
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
-F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
+F test/exclusive2.test a3bfa5d21268d2d1f4dd1c094ad9cd583914ca73
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
 F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
@@ -987,7 +987,7 @@ F test/tkt3929.test cdf67acf5aa936ec4ffead81db87f8a71fe40e59
 F test/tkt3935.test e15261fedb9e30a4305a311da614a5d8e693c767
 F test/tkt3992.test f3e7d548ac26f763b47bc0f750da3d03c81071da
 F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
-F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
+F test/tkt4018.test 04115ae33ee39988a076bd78decef7cec820ebe0
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 8f4ac52f62f3e9f6bce0889105aecdf0275e331b
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
@@ -1152,7 +1152,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 95d0c58d2791d81b432e7d263f3fc2f26858d395 9367632dd7e4fec9197227e35b0627c2e81ebffc
-R 0c738095590e8f126bb6f4bdc18129b2
+P 1f2e1b0c64934ec80f09d596d512f7c320e36f81
+R 49abc8d6d7ef4006e5cb557bcc20c7b2
 U dan
-Z ac41b2fb5d4eee0ab8c3239008c3f099
+Z 6ee8c9c2c8d267732a52bf0bb533fbfa

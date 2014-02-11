@@ -70,9 +70,12 @@ foreach name $names {
     sqlite3_errcode $db2
   } {SQLITE_OK}
   do_test capi3e-1.2.$i {
+    sqlite3_exec $db2 { CREATE TABLE t1(x) }
+  } {0 {}}
+  do_test capi3e-1.3.$i {
     sqlite3_close $db2
   } {SQLITE_OK}
-  do_test capi3e-1.3.$i {
+  do_test capi3e-1.4.$i {
     file isfile $name
   } {1}
 }

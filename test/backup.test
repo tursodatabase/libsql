@@ -325,6 +325,13 @@ foreach nDestPgsz {512 1024 2048 4096} {
 }
 }
 
+proc file_size {zFile} {
+  if {[file exists $zFile]} {
+    return [file size $zFile]
+  }
+  return 0
+}
+
 #--------------------------------------------------------------------
 do_test backup-3.$iTest.1 {
   catch { forcedelete test.db }
@@ -333,14 +340,14 @@ do_test backup-3.$iTest.1 {
   set iTab 1
 
   db eval { PRAGMA page_size = 512 }
-  while {[file size test.db] <= $::sqlite_pending_byte} {
+  while {[file_size test.db] <= $::sqlite_pending_byte} {
     db eval "CREATE TABLE t${iTab}(a, b, c)"
     incr iTab
   }
 
   sqlite3 db2 test2.db
   db2 eval { PRAGMA page_size = 4096 }
-  while {[file size test2.db] < $::sqlite_pending_byte} {
+  while {[file_size test2.db] < $::sqlite_pending_byte} {
     db2 eval "CREATE TABLE t${iTab}(a, b, c)"
     incr iTab
   }
