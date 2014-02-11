@@ -3201,7 +3201,7 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 ** During sqlite3_os_init() we do a GetSystemInfo()
 ** to get the granularity size.
 */
-SYSTEM_INFO winSysInfo;
+static SYSTEM_INFO winSysInfo;
 
 #ifndef SQLITE_OMIT_WAL
 

@@ -2547,7 +2547,8 @@ static int sessionBindValue(
   int i,                          /* Parameter number to bind to */
   sqlite3_value *pVal             /* Value to bind */
 ){
-  if( (pVal->type==SQLITE_TEXT || pVal->type==SQLITE_BLOB) && pVal->z==0 ){
+  int eType = sqlite3_value_type(pVal);
+  if( (eType==SQLITE_TEXT || eType==SQLITE_BLOB) && pVal->z==0 ){
     /* This condition occurs when an earlier OOM in a call to
     ** sqlite3_value_text() or sqlite3_value_blob() (perhaps from within
     ** a conflict-hanler) has zeroed the pVal->z pointer. Return NOMEM. */

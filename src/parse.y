@@ -412,13 +412,26 @@ cmd ::= select(X).  {
 %type oneselect {Select*}
 %destructor oneselect {sqlite3SelectDelete(pParse->db, $$);}
 
-select(A) ::= with(W) selectnowith(X). { 
-  if( X ){
-    X->pWith = W; 
+select(A) ::= with(W) selectnowith(X). {
+  Select *p = X, *pNext, *pLoop;
+  if( p ){
+    int cnt = 0, mxSelect;
+    p->pWith = W;
+    if( p->pPrior ){
+      pNext = 0;
+      for(pLoop=p; pLoop; pNext=pLoop, pLoop=pLoop->pPrior, cnt++){
+        pLoop->pNext = pNext;
+        pLoop->selFlags |= SF_Compound;
+      }
+      mxSelect = pParse->db->aLimit[SQLITE_LIMIT_COMPOUND_SELECT];
+      if( mxSelect && cnt>mxSelect ){
+        sqlite3ErrorMsg(pParse, "too many terms in compound SELECT");
+      }
+    }
   }else{
     sqlite3WithDelete(pParse->db, W);
   }
-  A = X; 
+  A = p;
 }
 
 selectnowith(A) ::= oneselect(X).                      {A = X;}

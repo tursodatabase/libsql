@@ -864,14 +864,6 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** this routine is a valid pointer.  But because the dummy.opcode is 0,
 ** dummy will never be written to.  This is verified by code inspection and
 ** by running with Valgrind.
-**
-** About the #ifdef SQLITE_OMIT_TRACE:  Normally, this routine is never called
-** unless p->nOp>0.  This is because in the absense of SQLITE_OMIT_TRACE,
-** an OP_Trace instruction is always inserted by sqlite3VdbeGet() as soon as
-** a new VDBE is created.  So we are free to set addr to p->nOp-1 without
-** having to double-check to make sure that the result is non-negative. But
-** if SQLITE_OMIT_TRACE is defined, the OP_Trace is omitted and we do need to
-** check the value of p->nOp-1 before continuing.
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   /* C89 specifies that the constant "dummy" will be initialized to all
@@ -879,9 +871,6 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   static VdbeOp dummy;  /* Ignore the MSVC warning about no initializer */
   assert( p->magic==VDBE_MAGIC_INIT );
   if( addr<0 ){
-#ifdef SQLITE_OMIT_TRACE
-    if( p->nOp==0 ) return (VdbeOp*)&dummy;
-#endif
     addr = p->nOp - 1;
   }
   assert( (addr>=0 && addr<p->nOp) || p->db->mallocFailed );
@@ -1235,7 +1224,7 @@ static void releaseMemArray(Mem *p, int N){
         p->zMalloc = 0;
       }
 
-      p->flags = MEM_Invalid;
+      p->flags = MEM_Undefined;
     }
     db->mallocFailed = malloc_failed;
   }
@@ -1357,7 +1346,7 @@ int sqlite3VdbeList(
     }
     if( p->explain==1 ){
       pMem->flags = MEM_Int;
-      pMem->type = SQLITE_INTEGER;
+      pMem->memType = MEM_Int;
       pMem->u.i = i;                                /* Program counter */
       pMem++;
   
@@ -1365,7 +1354,7 @@ int sqlite3VdbeList(
       pMem->z = (char*)sqlite3OpcodeName(pOp->opcode); /* Opcode */
       assert( pMem->z!=0 );
       pMem->n = sqlite3Strlen30(pMem->z);
-      pMem->type = SQLITE_TEXT;
+      pMem->memType = MEM_Str;
       pMem->enc = SQLITE_UTF8;
       pMem++;
 
@@ -1391,17 +1380,17 @@ int sqlite3VdbeList(
 
     pMem->flags = MEM_Int;
     pMem->u.i = pOp->p1;                          /* P1 */
-    pMem->type = SQLITE_INTEGER;
+    pMem->memType = MEM_Int;
     pMem++;
 
     pMem->flags = MEM_Int;
     pMem->u.i = pOp->p2;                          /* P2 */
-    pMem->type = SQLITE_INTEGER;
+    pMem->memType = MEM_Int;
     pMem++;
 
     pMem->flags = MEM_Int;
     pMem->u.i = pOp->p3;                          /* P3 */
-    pMem->type = SQLITE_INTEGER;
+    pMem->memType = MEM_Int;
     pMem++;
 
     if( sqlite3VdbeMemGrow(pMem, 32, 0) ){            /* P4 */
@@ -1417,7 +1406,7 @@ int sqlite3VdbeList(
       pMem->n = sqlite3Strlen30(pMem->z);
       pMem->enc = SQLITE_UTF8;
     }
-    pMem->type = SQLITE_TEXT;
+    pMem->memType = MEM_Str;
     pMem++;
 
     if( p->explain==1 ){
@@ -1428,7 +1417,7 @@ int sqlite3VdbeList(
       pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
       pMem->n = 2;
       sqlite3_snprintf(3, pMem->z, "%.2x", pOp->p5);   /* P5 */
-      pMem->type = SQLITE_TEXT;
+      pMem->memType = MEM_Str;
       pMem->enc = SQLITE_UTF8;
       pMem++;
   
@@ -1439,11 +1428,11 @@ int sqlite3VdbeList(
       }
       pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
       pMem->n = displayComment(pOp, zP4, pMem->z, 500);
-      pMem->type = SQLITE_TEXT;
+      pMem->memType = MEM_Str;
       pMem->enc = SQLITE_UTF8;
 #else
       pMem->flags = MEM_Null;                       /* Comment */
-      pMem->type = SQLITE_NULL;
+      pMem->memType = MEM_Null;
 #endif
     }
 
@@ -1466,7 +1455,7 @@ void sqlite3VdbePrintSql(Vdbe *p){
     z = p->zSql;
   }else if( p->nOp>=1 ){
     const VdbeOp *pOp = &p->aOp[0];
-    if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
+    if( pOp->opcode==OP_Init && pOp->p4.z!=0 ){
       z = pOp->p4.z;
       while( sqlite3Isspace(*z) ) z++;
     }
@@ -1485,7 +1474,7 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
   if( sqlite3IoTrace==0 ) return;
   if( nOp<1 ) return;
   pOp = &p->aOp[0];
-  if( pOp->opcode==OP_Trace && pOp->p4.z!=0 ){
+  if( pOp->opcode==OP_Init && pOp->p4.z!=0 ){
     int i, j;
     char z[1000];
     sqlite3_snprintf(sizeof(z), z, "%s", pOp->p4.z);
@@ -1703,7 +1692,7 @@ void sqlite3VdbeMakeReady(
     p->aMem--;                      /* aMem[] goes from 1..nMem */
     p->nMem = nMem;                 /*       not from 0..nMem-1 */
     for(n=1; n<=nMem; n++){
-      p->aMem[n].flags = MEM_Invalid;
+      p->aMem[n].flags = MEM_Undefined;
       p->aMem[n].db = db;
     }
   }
@@ -1815,7 +1804,7 @@ static void Cleanup(Vdbe *p){
   int i;
   if( p->apCsr ) for(i=0; i<p->nCursor; i++) assert( p->apCsr[i]==0 );
   if( p->aMem ){
-    for(i=1; i<=p->nMem; i++) assert( p->aMem[i].flags==MEM_Invalid );
+    for(i=1; i<=p->nMem; i++) assert( p->aMem[i].flags==MEM_Undefined );
   }
 #endif
 

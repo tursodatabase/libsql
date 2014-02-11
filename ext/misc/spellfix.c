@@ -1933,7 +1933,6 @@ static int spellfix1Init(
 #define SPELLFIX_COL_COMMAND        11
     }
     if( rc==SQLITE_OK && isCreate ){
-      sqlite3_uint64 r;
       spellfix1DbExec(&rc, db,
          "CREATE TABLE IF NOT EXISTS \"%w\".\"%w_vocab\"(\n"
          "  id INTEGER PRIMARY KEY,\n"
@@ -1945,11 +1944,10 @@ static int spellfix1Init(
          ");\n",
          zDbName, zTableName
       );
-      sqlite3_randomness(sizeof(r), &r);
       spellfix1DbExec(&rc, db,
-         "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_index_%llx\" "
+         "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_vocab_index_langid_k2\" "
             "ON \"%w_vocab\"(langid,k2);",
-         zDbName, zModule, r, zTableName
+         zDbName, zModule, zTableName
       );
     }
     for(i=3; rc==SQLITE_OK && i<argc; i++){
