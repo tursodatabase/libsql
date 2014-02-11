@@ -1,5 +1,5 @@
-C Fix\sa\spointless\sconditional.\s\sAdd\sa\stest\scase.
-D 2014-02-10T21:07:51.589
+C Make\ssure\sthat\svirtual\sWHERE-clause\sterms\sdo\snot\sget\stransformed\sinto\sreal\nterms\swhen\sprocessing\sset\sof\sOR-connected\sterms.\nFix\sfor\sticket\s[4c86b126f22ad].
+D 2014-02-11T01:50:29.864
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -293,7 +293,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 90fef20dd178db262ecd522a214a4eee6f76a44b
+F src/where.c b0436385f40e86f0f4cc60355cd018bde2c89d4b
 F src/whereInt.h 921f935af8b684ffb49705610bda7284db1db138
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -869,6 +869,7 @@ F test/tkt-3998683a16.test 6d1d04d551ed1704eb3396ca87bb9ccc8c5c1eb7
 F test/tkt-3a77c9714e.test b08bca26de1140bdf004a37716582a43d7bd8be8
 F test/tkt-3fe897352e.test 27e26eb0f1811aeba4d65aba43a4c52e99da5e70
 F test/tkt-4a03edc4c8.test 91c0e135888cdc3d4eea82406a44b05c8c1648d0
+F test/tkt-4c86b126f2.test cbcc611becd0396890169ab23102dd70048bbc9a
 F test/tkt-4dd95f6943.test 3d0ce415d2ee15d3d564121960016b9c7be79407
 F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
 F test/tkt-5d863f876e.test c9f36ca503fa154a3655f92a69d2c30da1747bfa
@@ -1077,7 +1078,7 @@ F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
-F test/where8.test d2b4fd6d7b7c5d44f590182a05033d78a14c00a1
+F test/where8.test 84033c4da466d90fe7ef0152661ff67fd218105f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test 4f3eab951353a3ae164befc521c777dfa903e46c
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
@@ -1152,7 +1153,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 572d4be4db03ce4afe9ae70f148703c74e0d8de0
-R b7d0a27ba761fd3ba9cef17cacd1ce16
+P 9367632dd7e4fec9197227e35b0627c2e81ebffc
+R c0a7ad49332334bf360852ac9acfe6b0
 U drh
-Z 5a7d977408b7fd9f1bc56f50ea9feaff
+Z c0afcb3ac05ab221eadb28aadee413b3

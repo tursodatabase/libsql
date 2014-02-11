@@ -210,7 +210,7 @@ do_test where8-3.4 {
 
 do_test where8-3.5 {
   execsql_status {
-    SELECT a, d FROM t1, t2 WHERE (a = 2 OR a = 3) AND (d = a OR e = 'sixteen')
+    SELECT a, d FROM t1, t2 WHERE (a = 2 OR a = 3) AND (d = +a OR e = 'sixteen')
      ORDER BY +a, +d;
   }
 } {2 2 2 4 3 3 3 4 0 1}
@@ -222,7 +222,7 @@ do_test where8-3.6 {
   execsql_status {
     SELECT a, d 
     FROM t1, t2 
-    WHERE (a = 2 OR a = 3) AND (d = a OR e = 'sixteen')
+    WHERE (a = 2 OR a = 3) AND (d = +a OR e = 'sixteen')
     ORDER BY t1.rowid
   }
 } {2 2 2 4 3 3 3 4 0 1}
