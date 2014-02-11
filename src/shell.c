@@ -45,14 +45,17 @@
 # include <sys/types.h>
 #endif
 
-#ifdef HAVE_EDITLINE
-# include <editline/editline.h>
-#endif
-#if defined(HAVE_READLINE) && HAVE_READLINE==1
+#if defined(HAVE_READLINE) && HAVE_READLINE!=0
 # include <readline/readline.h>
 # include <readline/history.h>
+#else
+# undef HAVE_READLINE
 #endif
-#if !defined(HAVE_EDITLINE) && (!defined(HAVE_READLINE) || HAVE_READLINE!=1)
+#if defined(HAVE_EDITLINE) && !defined(HAVE_READLINE)
+# define HAVE_READLINE 1
+# include <editline/readline.h>
+#endif
+#if !defined(HAVE_READLINE)
 # define add_history(X)
 # define read_history(X)
 # define write_history(X)
@@ -413,7 +416,7 @@ static char *one_input_line(FILE *in, char *zPrior, int isContinuation){
     zResult = local_getline(zPrior, in);
   }else{
     zPrompt = isContinuation ? continuePrompt : mainPrompt;
-#if defined(HAVE_READLINE) && HAVE_READLINE==1
+#if defined(HAVE_READLINE)
     free(zPrior);
     zResult = readline(zPrompt);
     if( zResult && *zResult ) add_history(zResult);
@@ -1583,6 +1586,7 @@ static char zHelp[] =
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
+  ".save FILE             Write in-memory database into FILE\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   "                         If TABLE specified, only show tables matching\n"
   "                         LIKE pattern TABLE.\n"
@@ -2152,7 +2156,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( nArg==0 ) return 0; /* no tokens, no error */
   n = strlen30(azArg[0]);
   c = azArg[0][0];
-  if( c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0 ){
+  if( (c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0)
+   || (c=='s' && n>=3 && strncmp(azArg[0], "save", n)==0)
+  ){
     const char *zDestFile = 0;
     const char *zDb = 0;
     sqlite3 *pDest;
@@ -3501,6 +3507,26 @@ static void main_init(struct callback_data *data) {
 }
 
 /*
+** Output text to the console in a font that attracts extra attention.
+*/
+#ifdef _WIN32
+static void printBold(const char *zText){
+  HANDLE out = GetStdHandle(STD_OUTPUT_HANDLE);
+  CONSOLE_SCREEN_BUFFER_INFO defaultScreenInfo;
+  GetConsoleScreenBufferInfo(out, &defaultScreenInfo);
+  SetConsoleTextAttribute(out,
+         FOREGROUND_RED|FOREGROUND_INTENSITY
+  );
+  printf("%s", zText);
+  SetConsoleTextAttribute(out, defaultScreenInfo.wAttributes);
+}
+#else
+static void printBold(const char *zText){
+  printf("\033[1m%s\033[0m", zText);
+}
+#endif
+
+/*
 ** Get the argument to an --option.  Throw an error and die if no argument
 ** is available.
 */
@@ -3520,6 +3546,7 @@ int main(int argc, char **argv){
   char *zFirstCmd = 0;
   int i;
   int rc = 0;
+  int warnInmemoryDb = 0;
 
   if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
     fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
@@ -3614,6 +3641,7 @@ int main(int argc, char **argv){
   if( data.zDbFilename==0 ){
 #ifndef SQLITE_OMIT_MEMORYDB
     data.zDbFilename = ":memory:";
+    warnInmemoryDb = argc==1;
 #else
     fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
     return 1;
@@ -3750,10 +3778,15 @@ int main(int argc, char **argv){
       int nHistory;
       printf(
         "SQLite version %s %.19s\n" /*extra-version-info*/
-        "Enter \".help\" for instructions\n"
-        "Enter SQL statements terminated with a \";\"\n",
+        "Enter \".help\" for usage hints.\n",
         sqlite3_libversion(), sqlite3_sourceid()
       );
+      if( warnInmemoryDb ){
+        printf("Connected to a ");
+        printBold("transient in-memory database.");
+        printf("\nUse \".open FILENAME\" to reopen on a "
+               "persistent database.\n");
+      }
       zHome = find_home_dir();
       if( zHome ){
         nHistory = strlen30(zHome) + 20;
@@ -3761,7 +3794,7 @@ int main(int argc, char **argv){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
         }
       }
-#if defined(HAVE_READLINE) && HAVE_READLINE==1
+#if defined(HAVE_READLINE)
       if( zHistory ) read_history(zHistory);
 #endif
       rc = process_input(&data, 0);

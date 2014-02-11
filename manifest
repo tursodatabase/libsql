@@ -1,12 +1,12 @@
-C Sync\sthe\slatest\strunk\schanges,\sand\sin\sparticular\sthe\sSTAT4\sIS\sNOT\sNULL\sfix.
-D 2014-02-11T04:30:29.995
+C Sync\swith\strunk.\s\sBring\sin\sthe\scommand-line\sshell\supdates\sand\sthe\snew\s3.8.4\nversion\snumber.
+D 2014-02-11T16:31:14.706
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 71dd5335d266351598e51f2d694396db2a2e219f
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 8ed548d87d0a27fd7d7620476f9e25f9fa742d73
+F VERSION 0dc30ad5cf90736d5fd9e540c9f05c542658abe7
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1673bc402f8fc95015f72c279adc5a9a668ee237 x
+F configure e12e1a4f031354f9af735bcb377941a72dc2cca5 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -234,7 +234,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 7eda9097b29fcf3d2b42fdc17d1de672134e09b6
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 50961f0d0ab8f2d45ff29ec5f91d8db221330ca7
-F src/shell.c 7dedf7367ee49050b0366bf8dbc8ec2bd15b42c7
+F src/shell.c 3dd86bf73ccd079f0e32ef5069600586085e8239
 F src/sqlite.h.in a92d7fcdcb1a8003a62e916ec49025f27ccb56b8
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -818,7 +818,7 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test e7c0b9ebda25d5e78f0a3ea0dc4e31bb6d8098c0
+F test/shell1.test f2a1d471e5cd2b42f7a65b166dc1ace2b8d11583
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
@@ -1168,7 +1168,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a704b65b9476d60c88b5bc82f2743faa2bce5ac2 c950d6c4117d076f871518e738cdf9e8c46a19fc
-R 938a4c92585daead803d3d317e7d6a12
+P b006792695d23980e1923b21915d5c1138ecf29d 0a8bcbbd4e11a60923736b2be9b1ce83ea2263fb
+R 7d2fb347996fe34e28958e66dfeb20fe
 U drh
-Z d6bfa33b9fae0786f865ca76b023abf9
+Z 8dc7cf7da8fba0cbde1ad37473fe5303
