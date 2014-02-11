@@ -3314,7 +3314,9 @@ static Bitmask codeOneLoopStart(
         Expr *pExpr = pWC->a[iTerm].pExpr;
         if( &pWC->a[iTerm] == pTerm ) continue;
         if( ExprHasProperty(pExpr, EP_FromJoin) ) continue;
-        if( pWC->a[iTerm].wtFlags & (TERM_ORINFO) ) continue;
+        testcase( pWC->a[iTerm].wtFlags & TERM_ORINFO );
+        testcase( pWC->a[iTerm].wtFlags & TERM_VIRTUAL );
+        if( pWC->a[iTerm].wtFlags & (TERM_ORINFO|TERM_VIRTUAL) ) continue;
         if( (pWC->a[iTerm].eOperator & WO_ALL)==0 ) continue;
         pExpr = sqlite3ExprDup(db, pExpr, 0);
         pAndExpr = sqlite3ExprAnd(db, pAndExpr, pExpr);
