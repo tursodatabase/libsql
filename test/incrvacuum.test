@@ -38,7 +38,7 @@ do_test incrvacuum-1.2.0 {
   # File size is sometimes 1 instead of 0 due to the hack we put in
   # to work around ticket #3260.  Search for comments on #3260 in
   # os_unix.c.
-  expr {[file size test.db] > 1}
+  expr {[file_size test.db] > 1}
 } {0}
 do_test incrvacuum-1.2 {
   # This command will create the database.
@@ -700,7 +700,7 @@ do_test incrvacuum-13.1 {
   # File size is sometimes 1 instead of 0 due to the hack we put in
   # to work around ticket #3260.  Search for comments on #3260 in
   # os_unix.c.
-  expr {[file size test.db]>1}
+  expr {[file_size test.db]>1}
 } {0}
 do_test incrvacuum-13.2 {
   set ::STMT [sqlite3_prepare $::DB {PRAGMA auto_vacuum = 2} -1 DUMMY]

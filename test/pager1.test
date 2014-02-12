@@ -1373,7 +1373,7 @@ do_test pager1-9.4.1 {
   list [B step 10000] [B finish]
 } {SQLITE_DONE SQLITE_OK}
 do_test pager1-9.4.2 {
-  list [file size test.db2] [file size test.db]
+  list [file_size test.db2] [file_size test.db]
 } {1024 0}
 db2 close
 

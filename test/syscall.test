@@ -236,9 +236,10 @@ catch { db close }
 forcedelete test.db test.db2
 
 do_test 8.1 {
+  close [open test.db w]
   sqlite3 db test.db
   file_control_chunksize_test db main 4096
-  file size test.db
+  file_size test.db
 } {0}
 foreach {tn hint size} {
   1  1000    4096 
@@ -249,13 +250,14 @@ foreach {tn hint size} {
 } {
   do_test 8.2.$tn {
     file_control_sizehint_test db main $hint
-    file size test.db
+    file_size test.db
   } $size
 }
 
 do_test 8.3 {
   db close
   forcedelete test.db test.db2
+  close [open test.db w]
   sqlite3 db test.db
   file_control_chunksize_test db main 16
   file size test.db

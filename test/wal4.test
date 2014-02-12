@@ -56,8 +56,8 @@ do_faultsim_test wal4-2 -prep {
   if { $testrc==0 && [file exists test.db-wal] } { 
     error "Wal file was not deleted"
   }
-  if { [file size test.db]!=0 } { 
-    error "Db file grew to [file size test.db] bytes"
+  if { [file_size test.db]!=0 } { 
+    error "Db file grew to [file_size test.db] bytes"
   }
 }
 

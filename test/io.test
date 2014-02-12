@@ -391,7 +391,7 @@ ifcapable pager_pragmas {
     }
     # File size might be 1 due to the hack to work around ticket #3260.
     # Search for #3260 in os_unix.c for additional information.
-    expr {[file size test.db]>1}
+    expr {[file_size test.db]>1}
   } {0}
   do_test io-3.2 {
     execsql { CREATE TABLE abc(a, b) }

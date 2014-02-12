@@ -325,13 +325,6 @@ foreach nDestPgsz {512 1024 2048 4096} {
 }
 }
 
-proc file_size {zFile} {
-  if {[file exists $zFile]} {
-    return [file size $zFile]
-  }
-  return 0
-}
-
 #--------------------------------------------------------------------
 do_test backup-3.$iTest.1 {
   catch { forcedelete test.db }

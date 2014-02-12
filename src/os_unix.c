@@ -1445,6 +1445,19 @@ static int unixFileLock(unixFile *pFile, struct flock *pLock){
 
 static int unixOpen(sqlite3_vfs*, const char*, sqlite3_file*, int, int *);
 
+static int unixOpenAndLock(unixFile *pFile){
+  sqlite3_file *id = (sqlite3_file*)pFile;
+  int eOrigLock = pFile->eFileLock;
+  int rc;
+
+  assert( pFile->ctrlFlags & UNIXFILE_DEFERRED );
+  rc = unixOpen(pFile->pVfs, pFile->zPath, id, pFile->openFlags, 0);
+  if( rc==SQLITE_OK && eOrigLock ){
+    rc = id->pMethods->xLock(id, eOrigLock);
+  }
+  return rc;
+}
+
 /*
 ** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
@@ -1544,11 +1557,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
 
     /* Or, if the database file has been created or a write lock is 
     ** requested, open the database file now.  */
-    eOrigLock = pFile->eFileLock;
-    rc = unixOpen(pFile->pVfs, zPath, id, pFile->openFlags, 0);
-    if( rc==SQLITE_OK && eOrigLock ){
-      rc = unixLock(id, eOrigLock);
-    }
+    rc = unixOpenAndLock(pFile);
     if( rc!=SQLITE_OK ) return rc;
   }
   assert( (pFile->ctrlFlags & UNIXFILE_DEFERRED)==0 );
@@ -3325,6 +3334,15 @@ static int unixWrite(
   int wrote = 0;
   assert( id );
   assert( amt>0 );
+
+  /* SQLite never actually calls xWrite on an empty file before obtaining
+  ** a RESERVED lock on it. So the following condition is never true if 
+  ** the VFS is being used directly by SQLite. But it may be if this module
+  ** is being used in some other way. By the multiplexor VFS, for example. */
+  if( pFile->ctrlFlags & UNIXFILE_DEFERRED ){
+    int rc = unixOpenAndLock(pFile);
+    if( rc!=SQLITE_OK ) return rc;
+  }
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
@@ -5234,9 +5252,6 @@ static int fillInUnixFile(
   pNew->pVfs = pVfs;
   pNew->zPath = zFilename;
   pNew->ctrlFlags = (unsigned short)ctrlFlags;
-#if SQLITE_MAX_MMAP_SIZE>0
-  pNew->mmapSizeMax = sqlite3GlobalConfig.szMmap;
-#endif
   if( strcmp(pVfs->zName,"unix-excl")==0 ){
     pNew->ctrlFlags |= UNIXFILE_EXCL;
   }
@@ -5872,6 +5887,10 @@ static int unixOpen(
   rc = fillInUnixFile(pVfs, fd, pFile, zPath, ctrlFlags);
 
 open_finished:
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(p->pUnused);
+    p->pUnused = 0;
+  }
   return rc;
 }
 
@@ -5889,14 +5908,16 @@ static int unixOpenDeferred(
 
   int rc;                         /* Return code */
   unixFile *p = (unixFile*)pFile; /* File object to populate */
+  const char *zUri = (flags & UNIXFILE_URI) ? zPath : 0;
 
   /* Zero the file object */
   memset(p, 0, sizeof(unixFile));
-  if( (flags & UNIXFILE_URI) 
-   && sqlite3_uri_boolean(zPath, "psow", SQLITE_POWERSAFE_OVERWRITE) 
-  ){
+  if( sqlite3_uri_boolean(zUri, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     p->ctrlFlags |= UNIXFILE_PSOW;
   }
+#if SQLITE_MAX_MMAP_SIZE>0
+  p->mmapSizeMax = sqlite3GlobalConfig.szMmap;
+#endif
 
   /* If all the flags in mask1 are set, and all the flags in mask2 are
   ** clear, the file does not exist but the directory does and is
@@ -5913,14 +5934,16 @@ static int unixOpenDeferred(
       posixrc = osAccess(zDirname, W_OK);
       if( posixrc==0 ){
         p->pMethod = (**(finder_type*)pVfs->pAppData)(0, 0);
-        p->pVfs = pVfs;
-        p->h = -1;
-        p->ctrlFlags |= UNIXFILE_DEFERRED;
-        p->openFlags = flags;
-        p->zPath = zPath;
-        if( pOutFlags ) *pOutFlags = flags;
-        OpenCounter(+1);
-        return SQLITE_OK;
+        if( p->pMethod->xLock==unixLock ){
+          p->pVfs = pVfs;
+          p->h = -1;
+          p->ctrlFlags |= UNIXFILE_DEFERRED;
+          p->openFlags = flags;
+          p->zPath = zPath;
+          if( pOutFlags ) *pOutFlags = flags;
+          OpenCounter(+1);
+          return SQLITE_OK;
+        }
       }
     }
   }

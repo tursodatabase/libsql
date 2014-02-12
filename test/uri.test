@@ -76,6 +76,7 @@ foreach {tn uri file} {
   forcedelete $file
   do_test 1.$tn.1 { file exists $file } 0
   set DB [sqlite3_open $uri]
+  sqlite3_exec $DB {CREATE TABLE t1(x)}
   do_test 1.$tn.2 { file exists $file } 1
   sqlite3_close $DB
   forcedelete $file
@@ -83,6 +84,7 @@ foreach {tn uri file} {
   do_test 1.$tn.3 { file exists $file } 0
   sqlite3 db xxx.db
   catchsql { ATTACH $uri AS aux }
+  db eval {CREATE TABLE aux.t1(x)}
   do_test 1.$tn.4 { file exists $file } 1
   db close
 }

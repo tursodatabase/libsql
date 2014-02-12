@@ -23,13 +23,6 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix backup4
 
-proc file_size {zFile} {
-  if {[file exists $zFile]} {
-    return [file size $zFile]
-  }
-  return 0
-}
-
 #-------------------------------------------------------------------------
 # At one point this test was failing because [db] was using an out of
 # date schema in test case 1.2.

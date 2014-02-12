@@ -185,6 +185,16 @@ proc forcecopy {from to} {
   do_copy_file true $from $to
 }
 
+# If file $zFile exists in the file system, return its size in bytes. 
+# Otherwise, return zero.
+proc file_size {zFile} {
+  if {[file exists $zFile]} {
+    return [file size $zFile]
+  }
+  return 0
+}
+
+
 proc do_copy_file {force from to} {
   set nRetry [getFileRetries]     ;# Maximum number of retries.
   set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
