@@ -1542,13 +1542,12 @@ static void zeroPage(MemPage *pPage, int flags){
     memset(&data[hdr], 0, pBt->usableSize - hdr);
   }
   data[hdr] = (char)flags;
-  first = hdr + 8 + 4*((flags&PTF_LEAF)==0 ?1:0);
+  first = hdr + ((flags&PTF_LEAF)==0 ? 12 : 8);
   memset(&data[hdr+1], 0, 4);
   data[hdr+7] = 0;
   put2byte(&data[hdr+5], pBt->usableSize);
   pPage->nFree = (u16)(pBt->usableSize - first);
   decodeFlags(pPage, flags);
-  pPage->hdrOffset = hdr;
   pPage->cellOffset = first;
   pPage->aDataEnd = &data[pBt->usableSize];
   pPage->aCellIdx = &data[first];
