@@ -1,5 +1,5 @@
-C Make\ssure\s"rowid"\scolumns\sare\scorrectly\sresolved\sin\sjoins\sbetween\snormal\ntables\sand\sWITHOUT\sROWID\stables.\s\sFix\sfor\sticket\s[c34d0557f740c45070].
-D 2014-02-12T14:43:52.953
+C Remove\sthe\s"rowid\scache"\sthat\ssought\sto\sremember\sthe\slargest\srowid\sfor\sa\ntable\sand\sthereby\sspeed\sup\sOP_NewRowid.\s\sThat\scache\swas\sineffective.\nRemoving\sit\sresults\sin\sa\sperformance\sincrease\sof\s0.4%,\sless\smemory\susage,\nand\sa\sslightly\ssmaller\slibrary\ssize.
+D 2014-02-12T21:31:12.616
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,9 +166,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 7b2c3cd16deedff7f4904f2e871e7b77328b9872
-F src/btree.h a61ddebc78c66795a2b93181321a116746302cc9
-F src/btreeInt.h f038e818bfadf75afbd09819ed93c26a333d39e0
+F src/btree.c 97020a77cb53fb9d8e7f172d489b8f92af1d1b82
+F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
+F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
 F src/build.c 13b9d82181d95af7b00ec8a8e1304bac096432d4
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -280,7 +280,7 @@ F src/update.c a7df6fffce6bfedc578fda6136dd33e34a63f8ee
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c e5c87476d717aebef5dafceab11417ebf2730554
+F src/vdbe.c 3f0872b12ec3fc24ee540f8bb09de181ddad6d8d
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
 F src/vdbeInt.h 5286af9067cabdb8ba57b87c0c988a931be6c6c8
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
@@ -1153,7 +1153,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0a8bcbbd4e11a60923736b2be9b1ce83ea2263fb
-R ece7306a4645e7a68a79bfe14ec94970
+P 5d01426ddfb2d47c57f93f71378594e637424be0
+R 0f58210f2a6ea71dc58155d3b9fc47e4
 U drh
-Z 89db972fa80a38407f6b56a44d53bf78
+Z 0cd8ad70eddd970bc8638e6270cc29ff

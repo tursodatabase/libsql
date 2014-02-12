@@ -3834,59 +3834,54 @@ case OP_NewRowid: {           /* out2-prerelease */
 #endif
 
     if( !pC->useRandomRowid ){
-      v = sqlite3BtreeGetCachedRowid(pC->pCursor);
-      if( v==0 ){
-        rc = sqlite3BtreeLast(pC->pCursor, &res);
-        if( rc!=SQLITE_OK ){
-          goto abort_due_to_error;
-        }
-        if( res ){
-          v = 1;   /* IMP: R-61914-48074 */
+      rc = sqlite3BtreeLast(pC->pCursor, &res);
+      if( rc!=SQLITE_OK ){
+        goto abort_due_to_error;
+      }
+      if( res ){
+        v = 1;   /* IMP: R-61914-48074 */
+      }else{
+        assert( sqlite3BtreeCursorIsValid(pC->pCursor) );
+        rc = sqlite3BtreeKeySize(pC->pCursor, &v);
+        assert( rc==SQLITE_OK );   /* Cannot fail following BtreeLast() */
+        if( v>=MAX_ROWID ){
+          pC->useRandomRowid = 1;
         }else{
-          assert( sqlite3BtreeCursorIsValid(pC->pCursor) );
-          rc = sqlite3BtreeKeySize(pC->pCursor, &v);
-          assert( rc==SQLITE_OK );   /* Cannot fail following BtreeLast() */
-          if( v>=MAX_ROWID ){
-            pC->useRandomRowid = 1;
-          }else{
-            v++;   /* IMP: R-29538-34987 */
-          }
+          v++;   /* IMP: R-29538-34987 */
         }
       }
+    }
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
-      if( pOp->p3 ){
+    if( pOp->p3 ){
+      /* Assert that P3 is a valid memory cell. */
+      assert( pOp->p3>0 );
+      if( p->pFrame ){
+        for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
         /* Assert that P3 is a valid memory cell. */
-        assert( pOp->p3>0 );
-        if( p->pFrame ){
-          for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
-          /* Assert that P3 is a valid memory cell. */
-          assert( pOp->p3<=pFrame->nMem );
-          pMem = &pFrame->aMem[pOp->p3];
-        }else{
-          /* Assert that P3 is a valid memory cell. */
-          assert( pOp->p3<=(p->nMem-p->nCursor) );
-          pMem = &aMem[pOp->p3];
-          memAboutToChange(p, pMem);
-        }
-        assert( memIsValid(pMem) );
-
-        REGISTER_TRACE(pOp->p3, pMem);
-        sqlite3VdbeMemIntegerify(pMem);
-        assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P3) holds an integer */
-        if( pMem->u.i==MAX_ROWID || pC->useRandomRowid ){
-          rc = SQLITE_FULL;   /* IMP: R-12275-61338 */
-          goto abort_due_to_error;
-        }
-        if( v<pMem->u.i+1 ){
-          v = pMem->u.i + 1;
-        }
-        pMem->u.i = v;
+        assert( pOp->p3<=pFrame->nMem );
+        pMem = &pFrame->aMem[pOp->p3];
+      }else{
+        /* Assert that P3 is a valid memory cell. */
+        assert( pOp->p3<=(p->nMem-p->nCursor) );
+        pMem = &aMem[pOp->p3];
+        memAboutToChange(p, pMem);
       }
-#endif
+      assert( memIsValid(pMem) );
 
-      sqlite3BtreeSetCachedRowid(pC->pCursor, v<MAX_ROWID ? v+1 : 0);
+      REGISTER_TRACE(pOp->p3, pMem);
+      sqlite3VdbeMemIntegerify(pMem);
+      assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P3) holds an integer */
+      if( pMem->u.i==MAX_ROWID || pC->useRandomRowid ){
+        rc = SQLITE_FULL;   /* IMP: R-12275-61338 */
+        goto abort_due_to_error;
+      }
+      if( v<pMem->u.i+1 ){
+        v = pMem->u.i + 1;
+      }
+      pMem->u.i = v;
     }
+#endif
     if( pC->useRandomRowid ){
       /* IMPLEMENTATION-OF: R-07677-41881 If the largest ROWID is equal to the
       ** largest possible integer (9223372036854775807) then the database
@@ -4020,7 +4015,6 @@ case OP_InsertInt: {
   }else{
     nZero = 0;
   }
-  sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
   rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
                           pData->z, pData->n, nZero,
                           (pOp->p5 & OPFLAG_APPEND)!=0, seekResult
@@ -4082,7 +4076,6 @@ case OP_Delete: {
   rc = sqlite3VdbeCursorMoveto(pC);
   if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
 
-  sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
   rc = sqlite3BtreeDelete(pC->pCursor);
   pC->cacheStatus = CACHE_STALE;
 
