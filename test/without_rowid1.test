@@ -198,6 +198,20 @@ do_execsql_test 3.1.5 {
   INSERT INTO t3 SELECT * FROM t4;
   SELECT * FROM t3;
 } {i ii iii}
+
+############################################################################
+# Ticket [c34d0557f740c450709d6e33df72d4f3f651a3cc]
+# Name resolution issue with WITHOUT ROWID
+#
+do_execsql_test 4.1 {
+  CREATE TABLE t41(a PRIMARY KEY) WITHOUT ROWID;
+  INSERT INTO t41 VALUES('abc');
+  CREATE TABLE t42(x);
+  INSERT INTO t42 VALUES('xyz');
+  SELECT t42.rowid FROM t41, t42;
+} {1}
+do_execsql_test 4.2 {
+  SELECT t42.rowid FROM t42, t41;
+} {1}
   
 finish_test
-
