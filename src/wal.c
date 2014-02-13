@@ -2677,7 +2677,7 @@ static int walWriteToLog(
     iAmt -= iFirstAmt;
     pContent = (void*)(iFirstAmt + (char*)pContent);
     assert( p->syncFlags & (SQLITE_SYNC_NORMAL|SQLITE_SYNC_FULL) );
-    rc = sqlite3OsSync(p->pFd, p->syncFlags);
+    rc = sqlite3OsSync(p->pFd, p->syncFlags & SQLITE_SYNC_MASK);
     if( iAmt==0 || rc ) return rc;
   }
   rc = sqlite3OsWrite(p->pFd, pContent, iAmt, iOffset);
