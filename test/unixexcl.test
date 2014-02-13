@@ -109,7 +109,7 @@ do_multiclient_test tn {
     } {1 2}
     do_test unixexcl-3.$tn.3 {
       sql1 { PRAGMA wal_checkpoint; INSERT INTO t1 VALUES(3, 4); }
-    } {0 3 3}
+    } {0 5 5}
     do_test unixexcl-3.$tn.4 {
       sql2 { SELECT * FROM t1; }
     } {1 2}
@@ -121,7 +121,7 @@ do_multiclient_test tn {
     } {1 2 3 4}
     do_test unixexcl-3.$tn.7 {
       sql1 { PRAGMA wal_checkpoint; }
-    } {0 4 4}
+    } {0 7 7}
   }
 }
 
