@@ -1,11 +1,11 @@
-C Avoid\spassing\sa\sflags\sargument\swith\sthe\sinternal\sWAL_SYNC_TRANSACTIONS\sbit\sset\swhen\scalling\ssqlite3OsSync().
-D 2014-02-13T18:46:59.101
+C Change\sREADME\sto\sREADME.md\sand\sexpand\sit.\s\sRemove\sunrelated\sand\sobsolete\sfiles.
+D 2014-02-13T19:10:24.061
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 6ff3ff2eef45c7dd309a8626ff7947b20bd387e7
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
-F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
+F README.md 8ff4548af6f7cdf4b02e585d4dd552b233998a9b w README
 F VERSION 0dc30ad5cf90736d5fd9e540c9f05c542658abe7
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
@@ -143,9 +143,6 @@ F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
 F main.mk 3ae543fa446525c1dec55f58de67f41b78651812
-F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
-F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
-F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1153,7 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b81ba7a4bc7e840fce25fc6801957a64f877ff60
-R a59cd87bb88fdc66ea1a7d77759b0c27
-U dan
-Z 4fedb8574b1ff1640e605452066ee2b1
+P e3b79e920c298a39613631d689d1a2f182d00496
+R 32cef02970d5145eabe1c7cffe4376d1
+U drh
+Z 910a038630fdb9ee9dcf69294f2c5c44
