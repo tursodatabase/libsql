@@ -20,7 +20,7 @@ For example:
     ../sqlite/configure      ;#  Run the configure script
     make                     ;#  Run the makefile.
     make sqlite3.c           ;#  Build the "amalgamation" source file
-    make test                ;#  Run some tests (requires TCL)
+    make test                ;#  Run some tests (requires Tcl)
 
 See the makefile for additional targets.
 
@@ -30,10 +30,33 @@ script does not work out for you, there is a generic makefile named
 can copy and edit to suit your needs.  Comments on the generic makefile
 show what changes are needed.
 
-SQLite does not require TCL to run, but a TCL installation is required
-by the makefiles.  SQLite contains a lot of generated code and TCL is
-used to do much of that code generation.  The makefile also requires
-AWK.
+## Using MSVC
+
+On Windows, all applicable build products can be compiled with MSVC.
+First open the command prompt window associated with the desired compiler
+version (e.g. "Developer Command Prompt for VS2013").  Next, use NMAKE
+with the provided "Makefile.msc" to build one of the supported targets.
+
+For example:
+
+    mkdir bld
+    cd bld
+    nmake /f Makefile.msc TOP=..\sqlite
+    nmake /f Makefile.msc sqlite3.c TOP=..\sqlite
+    nmake /f Makefile.msc sqlite3.dll TOP=..\sqlite
+    nmake /f Makefile.msc sqlite3.exe TOP=..\sqlite
+    nmake /f Makefile.msc test TOP=..\sqlite
+
+There are several build options that can be set via the NMAKE command
+line.  For example, to build for WinRT, simply add "FOR_WINRT=1" argument
+to the "sqlite3.dll" command line above.  When debugging into the SQLite
+code, adding the "DEBUG=1" argument to one of the above command lines is
+recommended.
+
+SQLite does not require Tcl to run, but a Tcl installation is required
+by the makefiles (including those for MSVC).  SQLite contains a lot of
+generated code and Tcl is used to do much of that code generation.  The
+makefiles also require AWK.
 
 ## Source Code Tour
 
@@ -42,11 +65,11 @@ src/ also contains files used to build the "testfixture" test harness;
 those file all begin with "test".  And src/ contains the "shell.c" file
 which is the main program for the "sqlite3.exe" command-line shell and
 the "tclsqlite.c" file which implements the bindings to SQLite from the
-TCL programming language.  (Historical note:  SQLite began as a TCL
+Tcl programming language.  (Historical note:  SQLite began as a Tcl
 extension and only later escaped to the wild as an independent library.)
 
 Test scripts and programs are found in the **test/** subdirectory.
-There are other test suites for SQLite (see 
+There are other test suites for SQLite (see
 [How SQLite Is Tested](http://www.sqlite.org/testing.html))
 but those other test suites are
 in separate source repositories.
@@ -67,23 +90,23 @@ other sources rather than being typed in manually by a programmer.  This
 section will summarize those automatically-generated files.  To create all
 of the automatically-generated files, simply run "make target&#95;source".
 The "target&#95;source" make target will create a subdirectory "tsrc/" and
-fill it with all the source files needed to build SQLite, both 
+fill it with all the source files needed to build SQLite, both
 manually-edited files and automatically-generated files.
 
 The SQLite interface is defined by the **sqlite3.h** header file, which is
 generated from src/sqlite.h.in, ./manifest.uuid, and ./VERSION.  The
-TCL script at tool/mksqlite3h.tcl does the conversion.  The manifest.uuid
+Tcl script at tool/mksqlite3h.tcl does the conversion.  The manifest.uuid
 file contains the SHA1 hash of the particular check-in and is used to generate
 the SQLITE_SOURCE_ID macro.  The VERSION file contains the current SQLite
 version number.  The sqlite3.h header is really just a copy of src/sqlite.h.in
 with the source-id and version number inserted at just the right spots.
 Note that comment text in the sqlite3.h file is used to generate much of
-the SQLite API documentation.  The TCL scripts used to generate that
+the SQLite API documentation.  The Tcl scripts used to generate that
 documentation are in a separate source repository.
 
 The SQL language parser is **parse.c** which is generate from a grammar in
 the src/parse.y file.  The conversion of "parse.y" into "parse.c" is done
-by the [lemon](./doc/lemon.html) LALR(1) parser generator.  The source code 
+by the [lemon](./doc/lemon.html) LALR(1) parser generator.  The source code
 for lemon is at tool/lemon.c.  Lemon uses a
 template for generating its parser.  A generic template is in tool/lempar.c,
 but SQLite uses a slightly modified template found in src/lempar.c.
@@ -117,7 +140,7 @@ to perform more cross-procedure analysis and generate better code.  SQLite
 runs about 5% faster when compiled from the amalgamation versus when compiled
 from individual source files.
 
-The amalgamation is generated from the tool/mksqlite3c.tcl TCL script.
+The amalgamation is generated from the tool/mksqlite3c.tcl Tcl script.
 First, all of the individual source files must be gathered into the tsrc/
 subdirectory (using the equivalent of "make target_source") then the
 tool/mksqlite3c.tcl script is run to copy them all together in just the
@@ -125,23 +148,23 @@ right order while resolving internal "#include" references.
 
 The amalgamation source file is more than 100K lines long.  Some symbolic
 debuggers (most notably MSVC) are unable to deal with files longer than 64K
-lines.  To work around this, a separate TCL script, tool/split-sqlite3c.tcl,
+lines.  To work around this, a separate Tcl script, tool/split-sqlite3c.tcl,
 can be run on the amalgamation to break it up into a single small C file
 called **sqlite3-all.c** that does #include on about five other files
 named **sqlite3-1.c**, **sqlite3-2.c**, ..., **sqlite3-5.c**.  In this way,
 all of the source code is contained within a single translation unit so
-that the compiler can do extra cross-procedure optimization, but no 
+that the compiler can do extra cross-procedure optimization, but no
 individual source file exceeds 32K lines in length.
 
 ## How It All Fits Together
 
 SQLite is modular in design.
-See the [architectural description](http://www.sqlite.org/arch.html) 
+See the [architectural description](http://www.sqlite.org/arch.html)
 for details. Other documents that are useful in
 (helping to understand how SQLite works include the
 [file format](http://www.sqlite.org/fileformat2.html) description,
 the [virtual machine](http://www.sqlite.org/vdbe.html) that runs
-prepared statements, the description of 
+prepared statements, the description of
 [how transactions work](http://www.sqlite.org/atomiccommit.html), and
 the [overview of the query planner](http://www.sqlite.org/optoverview.html).
 
@@ -182,7 +205,7 @@ Key files:
   *  **os_unix.c** and **os_win.c** - These two files implement the interface
      between SQLite and the underlying operating system using the run-time
      pluggable VFS interface.
-  
+
 
 ## Contacts
 

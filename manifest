@@ -1,11 +1,11 @@
-C Ensure\sthat\sif\sthe\s"psow=0"\sURI\soption\sor\sFCNTL_POWERSAFE_OVERWRITE\sfile-control\sis\sused\sto\sclear\sthe\spower-safe\soverwrite\sflag,\sextra\spadding\sframes\sare\sadded\sto\sthe\sWAL\sfile.
-D 2014-02-13T19:27:08.812
+C Improvements\sto\sthe\smakefile\sand\sREADME\sfor\sMSVC.
+D 2014-02-13T21:57:48.016
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 6ff3ff2eef45c7dd309a8626ff7947b20bd387e7
+F Makefile.msc 371a17ef9cd011b103cfa1964119a8528f5427c9
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
-F README.md 8ff4548af6f7cdf4b02e585d4dd552b233998a9b
+F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 0dc30ad5cf90736d5fd9e540c9f05c542658abe7
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
@@ -1150,7 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 18d4e258c45c32984b23d97b896a761eeef2dbdf
-R 8c9ce91bde08452c57ff8bd83f7e4683
-U dan
-Z a2f4dabb4be0cf1b9a50023d91f3c52c
+P 48c821fd97a8f03757c90560c37a46bd0843570e
+R e8c48a1ab293ac2d556c755a2d22ba69
+U mistachkin
+Z fd16507dbadca8019665c7ea56e69ef4
