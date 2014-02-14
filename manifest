@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\smakefile\sand\sREADME\sfor\sMSVC.
-D 2014-02-13T21:57:48.016
+C Revise\show\sthe\sTcl\ssystem\sencoding\sis\shandled\sby\sthe\stest\ssuite.
+D 2014-02-14T00:25:03.606
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/sqliteInt.h 5b1f4e30c8332270e4c14254ef1fbcbd92a4a4c7
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 649d373f2a3cfbefe8e935a8dec83686616f9a85
+F src/tclsqlite.c e87c99e28a145943666b51b212dacae35fcea0bd
 F src/test1.c 2401eee14a4309a7cfe2aeb2f30ad517a1d9c299
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -365,7 +365,7 @@ F test/capi3.test 6cdd49656bd62a296924f4d2fcfd05cd2a298369
 F test/capi3b.test efb2b9cfd127efa84433cd7a2d72ce0454ae0dc4
 F test/capi3c.test a21869e4d50d5dbb7e566e328fc0bc7c2efa6a32
 F test/capi3d.test 6d0fc0a86d73f42dd19a7d8b7761ab9bc02277d0
-F test/capi3e.test ad90088b18b0367125ff2d4b5400153fd2f99aab
+F test/capi3e.test 3d49c01ef2a1a55f41d73cba2b23b5059ec460fe
 F test/cast.test 4c275cbdc8202d6f9c54a3596701719868ac7dc3
 F test/check.test 5831ddb6f2c687782eaf2e1a07b6e17f24c4f763
 F test/close.test 340bd24cc58b16c6bc01967402755027c37eb815
@@ -1150,7 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 48c821fd97a8f03757c90560c37a46bd0843570e
-R e8c48a1ab293ac2d556c755a2d22ba69
+P b22b61406899c2694dae984995d2484fdb8122f1
+R e61eea6addc7b24a1393827be3ebc05a
 U mistachkin
-Z fd16507dbadca8019665c7ea56e69ef4
+Z f753108c2da8e4ac5af912585f7a37ad

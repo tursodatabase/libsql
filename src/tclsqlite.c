@@ -3778,6 +3778,7 @@ int TCLSH_MAIN(int argc, char **argv){
   sqlite3_shutdown();
 
   Tcl_FindExecutable(argv[0]);
+  Tcl_SetSystemEncoding(NULL, "utf-8");
   interp = Tcl_CreateInterp();
 
 #if TCLSH==2
