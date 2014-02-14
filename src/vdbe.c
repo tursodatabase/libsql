@@ -3425,10 +3425,10 @@ case OP_Close: {
 **
 ** See also: Found, NotFound, Distinct, SeekGt, SeekGe, SeekLt
 */
-case OP_SeekLt:         /* jump, in3 */
-case OP_SeekLe:         /* jump, in3 */
-case OP_SeekGe:         /* jump, in3 */
-case OP_SeekGt: {       /* jump, in3 */
+case OP_SeekLT:         /* jump, in3 */
+case OP_SeekLE:         /* jump, in3 */
+case OP_SeekGE:         /* jump, in3 */
+case OP_SeekGT: {       /* jump, in3 */
   int res;
   int oc;
   VdbeCursor *pC;
@@ -3441,9 +3441,9 @@ case OP_SeekGt: {       /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pseudoTableReg==0 );
-  assert( OP_SeekLe == OP_SeekLt+1 );
-  assert( OP_SeekGe == OP_SeekLt+2 );
-  assert( OP_SeekGt == OP_SeekLt+3 );
+  assert( OP_SeekLE == OP_SeekLT+1 );
+  assert( OP_SeekGE == OP_SeekLT+2 );
+  assert( OP_SeekGT == OP_SeekLT+3 );
   assert( pC->isOrdered );
   assert( pC->pCursor!=0 );
   oc = pOp->opcode;
@@ -3475,19 +3475,19 @@ case OP_SeekGt: {       /* jump, in3 */
       **        (x <= 4.9)    ->     (x <  5)
       */
       if( pIn3->r<(double)iKey ){
-        assert( OP_SeekGe==(OP_SeekGt-1) );
-        assert( OP_SeekLt==(OP_SeekLe-1) );
-        assert( (OP_SeekLe & 0x0001)==(OP_SeekGt & 0x0001) );
-        if( (oc & 0x0001)==(OP_SeekGt & 0x0001) ) oc--;
+        assert( OP_SeekGE==(OP_SeekGT-1) );
+        assert( OP_SeekLT==(OP_SeekLE-1) );
+        assert( (OP_SeekLE & 0x0001)==(OP_SeekGT & 0x0001) );
+        if( (oc & 0x0001)==(OP_SeekGT & 0x0001) ) oc--;
       }
 
       /* If the approximation iKey is smaller than the actual real search
       ** term, substitute <= for < and > for >=.  */
       else if( pIn3->r>(double)iKey ){
-        assert( OP_SeekLe==(OP_SeekLt+1) );
-        assert( OP_SeekGt==(OP_SeekGe+1) );
-        assert( (OP_SeekLt & 0x0001)==(OP_SeekGe & 0x0001) );
-        if( (oc & 0x0001)==(OP_SeekLt & 0x0001) ) oc++;
+        assert( OP_SeekLE==(OP_SeekLT+1) );
+        assert( OP_SeekGT==(OP_SeekGE+1) );
+        assert( (OP_SeekLT & 0x0001)==(OP_SeekGE & 0x0001) );
+        if( (oc & 0x0001)==(OP_SeekLT & 0x0001) ) oc++;
       }
     } 
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)iKey, 0, &res);
@@ -3506,17 +3506,17 @@ case OP_SeekGt: {       /* jump, in3 */
     r.nField = (u16)nField;
 
     /* The next line of code computes as follows, only faster:
-    **   if( oc==OP_SeekGt || oc==OP_SeekLe ){
+    **   if( oc==OP_SeekGT || oc==OP_SeekLE ){
     **     r.flags = UNPACKED_INCRKEY;
     **   }else{
     **     r.flags = 0;
     **   }
     */
-    r.flags = (u8)(UNPACKED_INCRKEY * (1 & (oc - OP_SeekLt)));
-    assert( oc!=OP_SeekGt || r.flags==UNPACKED_INCRKEY );
-    assert( oc!=OP_SeekLe || r.flags==UNPACKED_INCRKEY );
-    assert( oc!=OP_SeekGe || r.flags==0 );
-    assert( oc!=OP_SeekLt || r.flags==0 );
+    r.flags = (u8)(UNPACKED_INCRKEY * (1 & (oc - OP_SeekLT)));
+    assert( oc!=OP_SeekGT || r.flags==UNPACKED_INCRKEY );
+    assert( oc!=OP_SeekLE || r.flags==UNPACKED_INCRKEY );
+    assert( oc!=OP_SeekGE || r.flags==0 );
+    assert( oc!=OP_SeekLT || r.flags==0 );
 
     r.aMem = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG
@@ -3534,8 +3534,8 @@ case OP_SeekGt: {       /* jump, in3 */
 #ifdef SQLITE_TEST
   sqlite3_search_count++;
 #endif
-  if( oc>=OP_SeekGe ){  assert( oc==OP_SeekGe || oc==OP_SeekGt );
-    if( res<0 || (res==0 && oc==OP_SeekGt) ){
+  if( oc>=OP_SeekGE ){  assert( oc==OP_SeekGE || oc==OP_SeekGT );
+    if( res<0 || (res==0 && oc==OP_SeekGT) ){
       res = 0;
       rc = sqlite3BtreeNext(pC->pCursor, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
@@ -3544,8 +3544,8 @@ case OP_SeekGt: {       /* jump, in3 */
       res = 0;
     }
   }else{
-    assert( oc==OP_SeekLt || oc==OP_SeekLe );
-    if( res>0 || (res==0 && oc==OP_SeekLt) ){
+    assert( oc==OP_SeekLT || oc==OP_SeekLE );
+    if( res>0 || (res==0 && oc==OP_SeekLT) ){
       res = 0;
       rc = sqlite3BtreePrevious(pC->pCursor, &res);
       if( rc!=SQLITE_OK ) goto abort_due_to_error;
@@ -4620,32 +4620,50 @@ case OP_IdxRowid: {              /* out2-prerelease */
 ** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
-** key that omits the ROWID.  Compare this key value against the index 
-** that P1 is currently pointing to, ignoring the ROWID on the P1 index.
+** key that omits the PRIMARY KEY.  Compare this key value against the index 
+** that P1 is currently pointing to, ignoring the PRIMARY KEY or ROWID 
+** fields at the end.
 **
 ** If the P1 index entry is greater than or equal to the key value
 ** then jump to P2.  Otherwise fall through to the next instruction.
+*/
+/* Opcode: IdxGT P1 P2 P3 P4 P5
+** Synopsis: key=r[P3@P4]
 **
-** If P5 is non-zero then the key value is increased by an epsilon 
-** prior to the comparison.  This make the opcode work like IdxGT except
-** that if the key from register P3 is a prefix of the key in the cursor,
-** the result is false whereas it would be true with IdxGT.
+** The P4 register values beginning with P3 form an unpacked index 
+** key that omits the PRIMARY KEY.  Compare this key value against the index 
+** that P1 is currently pointing to, ignoring the PRIMARY KEY or ROWID 
+** fields at the end.
+**
+** If the P1 index entry is greater than the key value
+** then jump to P2.  Otherwise fall through to the next instruction.
 */
 /* Opcode: IdxLT P1 P2 P3 P4 P5
 ** Synopsis: key=r[P3@P4]
 **
 ** The P4 register values beginning with P3 form an unpacked index 
-** key that omits the ROWID.  Compare this key value against the index 
-** that P1 is currently pointing to, ignoring the ROWID on the P1 index.
+** key that omits the PRIMARY KEY or ROWID.  Compare this key value against
+** the index that P1 is currently pointing to, ignoring the PRIMARY KEY or
+** ROWID on the P1 index.
 **
 ** If the P1 index entry is less than the key value then jump to P2.
 ** Otherwise fall through to the next instruction.
-**
-** If P5 is non-zero then the key value is increased by an epsilon prior 
-** to the comparison.  This makes the opcode work like IdxLE.
 */
+/* Opcode: IdxLE P1 P2 P3 P4 P5
+** Synopsis: key=r[P3@P4]
+**
+** The P4 register values beginning with P3 form an unpacked index 
+** key that omits the PRIMARY KEY or ROWID.  Compare this key value against
+** the index that P1 is currently pointing to, ignoring the PRIMARY KEY or
+** ROWID on the P1 index.
+**
+** If the P1 index entry is less than or equal to the key value then jump
+** to P2. Otherwise fall through to the next instruction.
+*/
+case OP_IdxLE:          /* jump */
+case OP_IdxGT:          /* jump */
 case OP_IdxLT:          /* jump */
-case OP_IdxGE: {        /* jump */
+case OP_IdxGE:  {       /* jump */
   VdbeCursor *pC;
   int res;
   UnpackedRecord r;
@@ -4660,9 +4678,11 @@ case OP_IdxGE: {        /* jump */
   assert( pOp->p4type==P4_INT32 );
   r.pKeyInfo = pC->pKeyInfo;
   r.nField = (u16)pOp->p4.i;
-  if( pOp->p5 ){
+  if( pOp->opcode<OP_IdxLT ){
+    assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxGT );
     r.flags = UNPACKED_INCRKEY | UNPACKED_PREFIX_MATCH;
   }else{
+    assert( pOp->opcode==OP_IdxGE || pOp->opcode==OP_IdxLT );
     r.flags = UNPACKED_PREFIX_MATCH;
   }
   r.aMem = &aMem[pOp->p3];
@@ -4671,10 +4691,12 @@ case OP_IdxGE: {        /* jump */
 #endif
   res = 0;  /* Not needed.  Only used to silence a warning. */
   rc = sqlite3VdbeIdxKeyCompare(pC, &r, &res);
-  if( pOp->opcode==OP_IdxLT ){
+  assert( (OP_IdxLE&1)==(OP_IdxLT&1) && (OP_IdxGE&1)==(OP_IdxGT&1) );
+  if( (pOp->opcode&1)==(OP_IdxLT&1) ){
+    assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxLT );
     res = -res;
   }else{
-    assert( pOp->opcode==OP_IdxGE );
+    assert( pOp->opcode==OP_IdxGE || pOp->opcode==OP_IdxGT );
     res++;
   }
   if( res>0 ){

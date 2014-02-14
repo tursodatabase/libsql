@@ -2505,7 +2505,7 @@ static int codeAllEqualityTerms(
     sqlite3VdbeAddOp1(v, (bRev?OP_Last:OP_Rewind), iIdxCur);
     VdbeComment((v, "begin skip-scan on %s", pIdx->zName));
     j = sqlite3VdbeAddOp0(v, OP_Goto);
-    pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLt:OP_SeekGt),
+    pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLT:OP_SeekGT),
                             iIdxCur, 0, regBase, nSkip);
     sqlite3VdbeJumpHere(v, j);
     for(j=0; j<nSkip; j++){
@@ -2885,10 +2885,10 @@ static Bitmask codeOneLoopStart(
       ** seek opcodes.  It depends on a particular ordering of TK_xx
       */
       const u8 aMoveOp[] = {
-           /* TK_GT */  OP_SeekGt,
-           /* TK_LE */  OP_SeekLe,
-           /* TK_LT */  OP_SeekLt,
-           /* TK_GE */  OP_SeekGe
+           /* TK_GT */  OP_SeekGT,
+           /* TK_LE */  OP_SeekLE,
+           /* TK_LT */  OP_SeekLT,
+           /* TK_GE */  OP_SeekGE
       };
       assert( TK_LE==TK_GT+1 );      /* Make sure the ordering.. */
       assert( TK_LT==TK_GT+2 );      /*  ... of the TK_xx values... */
@@ -2973,15 +2973,16 @@ static Bitmask codeOneLoopStart(
       0,
       OP_Rewind,           /* 2: (!start_constraints && startEq &&  !bRev) */
       OP_Last,             /* 3: (!start_constraints && startEq &&   bRev) */
-      OP_SeekGt,           /* 4: (start_constraints  && !startEq && !bRev) */
-      OP_SeekLt,           /* 5: (start_constraints  && !startEq &&  bRev) */
-      OP_SeekGe,           /* 6: (start_constraints  &&  startEq && !bRev) */
-      OP_SeekLe            /* 7: (start_constraints  &&  startEq &&  bRev) */
+      OP_SeekGT,           /* 4: (start_constraints  && !startEq && !bRev) */
+      OP_SeekLT,           /* 5: (start_constraints  && !startEq &&  bRev) */
+      OP_SeekGE,           /* 6: (start_constraints  &&  startEq && !bRev) */
+      OP_SeekLE            /* 7: (start_constraints  &&  startEq &&  bRev) */
     };
     static const u8 aEndOp[] = {
-      OP_Noop,             /* 0: (!end_constraints) */
-      OP_IdxGE,            /* 1: (end_constraints && !bRev) */
-      OP_IdxLT             /* 2: (end_constraints && bRev) */
+      OP_IdxGE,            /* 0: (end_constraints && !bRev && !endEq) */
+      OP_IdxGT,            /* 1: (end_constraints && !bRev &&  endEq) */
+      OP_IdxLE,            /* 2: (end_constraints &&  bRev && !endEq) */
+      OP_IdxLT,            /* 3: (end_constraints &&  bRev &&  endEq) */
     };
     u16 nEq = pLoop->u.btree.nEq;     /* Number of == or IN terms */
     int isMinQuery = 0;          /* If this is an optimized SELECT min(x).. */
@@ -3093,10 +3094,10 @@ static Bitmask codeOneLoopStart(
     assert( op!=0 );
     testcase( op==OP_Rewind );
     testcase( op==OP_Last );
-    testcase( op==OP_SeekGt );
-    testcase( op==OP_SeekGe );
-    testcase( op==OP_SeekLe );
-    testcase( op==OP_SeekLt );
+    testcase( op==OP_SeekGT );
+    testcase( op==OP_SeekGE );
+    testcase( op==OP_SeekLE );
+    testcase( op==OP_SeekLT );
     sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
 
     /* Load the value for the inequality constraint at the end of the
@@ -3124,13 +3125,13 @@ static Bitmask codeOneLoopStart(
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
 
     /* Check if the index cursor is past the end of the range. */
-    op = aEndOp[(pRangeEnd || nEq) * (1 + bRev)];
-    testcase( op==OP_Noop );
-    testcase( op==OP_IdxGE );
-    testcase( op==OP_IdxLT );
-    if( op!=OP_Noop ){
+    if( pRangeEnd || nEq ){
+      op = aEndOp[bRev*2 + endEq];
+      testcase( op==OP_IdxGT );
+      testcase( op==OP_IdxGE );
+      testcase( op==OP_IdxLT );
+      testcase( op==OP_IdxLE );
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
-      sqlite3VdbeChangeP5(v, endEq!=bRev ?1:0);
     }
 
     /* If there are inequality constraints, check that the value
