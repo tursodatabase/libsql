@@ -3134,17 +3134,15 @@ static Bitmask codeOneLoopStart(
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
     }
 
-    /* If there are inequality constraints, check that the value
-    ** of the table column that the inequality contrains is not NULL.
-    ** If it is, jump to the next iteration of the loop.
+    /* If there are inequality constraint upper bound but not a lower
+    ** bound, then check that the value of the table column that the
+    ** inequality contrains is not NULL since there is alway an implied
+    ** lower bound of "column>NULL".
     */
     r1 = sqlite3GetTempReg(pParse);
-    testcase( pLoop->wsFlags & WHERE_BTM_LIMIT );
-    testcase( pLoop->wsFlags & WHERE_TOP_LIMIT );
-    if( (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))!=0 
+    if( (pLoop->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT))==WHERE_TOP_LIMIT 
      && (j = pIdx->aiColumn[nEq])>=0 
      && pIdx->pTable->aCol[j].notNull==0 
-     && (nEq || (pLoop->wsFlags & WHERE_BTM_LIMIT)==0)
     ){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
       VdbeComment((v, "%s", pIdx->pTable->aCol[j].zName));
