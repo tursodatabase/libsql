@@ -1,5 +1,5 @@
-C Better\ssupport\sfor\sMinGW\s4.x.
-D 2014-02-14T23:35:49.555
+C Use\sthe\smodern\sMinGW\smajor\sversion\smacro,\snot\sthe\sdeprecated\sone.
+D 2014-02-16T19:20:00.825
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/shell.c 3dd86bf73ccd079f0e32ef5069600586085e8239
 F src/sqlite.h.in eed7f7d66a60daaa7b4a597dcd9bad87aad9611b
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h bc5e9c7e30d3d65ce2cd218b737f0057de0ce135
+F src/sqliteInt.h 168f311aa9887711ac5f31b52dc83f1ee33f7ab4
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1150,10 +1150,7 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3c1ae447dec8fc2af1c5105134061717594ac0e0
-R ce6f8022fe93ee0d0d6cf8a6cc271c33
-T *branch * mingw4x
-T *sym-mingw4x *
-T -sym-trunk *
+P e147230767383ed9f64085b613fd18508f74be21
+R 093f1edd2723941164ffa92a68b20dd8
 U mistachkin
-Z c1377b93302be214ebcce2f123ef84cb
+Z f128626e0ed2b197fa14de6fa8f864a7
