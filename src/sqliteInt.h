@@ -2990,7 +2990,6 @@ void sqlite3DeleteTable(sqlite3*, Table*);
 # define sqlite3AutoincrementBegin(X)
 # define sqlite3AutoincrementEnd(X)
 #endif
-int sqlite3CodeCoroutine(Parse*, Select*, SelectDest*);
 void sqlite3Insert(Parse*, SrcList*, Select*, IdList*, int);
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int*,int*);
 IdList *sqlite3IdListAppend(sqlite3*, IdList*, Token*);
@@ -3038,11 +3037,12 @@ void sqlite3ExprCachePop(Parse*, int);
 void sqlite3ExprCacheRemove(Parse*, int, int);
 void sqlite3ExprCacheClear(Parse*);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
-int sqlite3ExprCode(Parse*, Expr*, int);
+void sqlite3ExprCode(Parse*, Expr*, int);
+void sqlite3ExprCodeFactorable(Parse*, Expr*, int);
 void sqlite3ExprCodeAtInit(Parse*, Expr*, int, u8);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);
 int sqlite3ExprCodeTarget(Parse*, Expr*, int);
-int sqlite3ExprCodeAndCache(Parse*, Expr*, int);
+void sqlite3ExprCodeAndCache(Parse*, Expr*, int);
 int sqlite3ExprCodeExprList(Parse*, ExprList*, int, u8);
 #define SQLITE_ECEL_DUP      0x01  /* Deep, not shallow copies */
 #define SQLITE_ECEL_FACTOR   0x02  /* Factor out constant terms */

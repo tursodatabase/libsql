@@ -994,6 +994,20 @@ case OP_Null: {           /* out2-prerelease */
   break;
 }
 
+/* Opcode: SoftNull P1 * * * *
+** Synopsis:  r[P1]=NULL
+**
+** Set register P1 to have the value NULL as seen by the OP_MakeRecord
+** instruction, but do not free any string or blob memory associated with
+** the register, so that if the value was a string or blob that was
+** previously copied using OP_SCopy, the copies will continue to be valid.
+*/
+case OP_SoftNull: {
+  assert( pOp->p1>0 && pOp->p1<=(p->nMem-p->nCursor) );
+  pOut = &aMem[pOp->p1];
+  pOut->flags = (pOut->flags|MEM_Null)&~MEM_Undefined;
+  break;
+}
 
 /* Opcode: Blob P1 P2 * P4 *
 ** Synopsis: r[P2]=P4 (len=P1)
@@ -2909,22 +2923,16 @@ case OP_AutoCommit: {
 
 /* Opcode: Transaction P1 P2 P3 P4 P5
 **
-** Begin a transaction.  The transaction ends when a Commit or Rollback
-** opcode is encountered.  Depending on the ON CONFLICT setting, the
-** transaction might also be rolled back if an error is encountered.
+** Begin a transaction on database P1 if a transaction is not already
+** active.
+** If P2 is non-zero, then a write-transaction is started, or if a 
+** read-transaction is already active, it is upgraded to a write-transaction.
+** If P2 is zero, then a read-transaction is started.
 **
 ** P1 is the index of the database file on which the transaction is
 ** started.  Index 0 is the main database file and index 1 is the
 ** file used for temporary tables.  Indices of 2 or more are used for
 ** attached databases.
-**
-** If P2 is non-zero, then a write-transaction is started.  A RESERVED lock is
-** obtained on the database file when a write-transaction is started.  No
-** other process can start another write transaction while this transaction is
-** underway.  Starting a write transaction also creates a rollback journal. A
-** write transaction must be started before any changes can be made to the
-** database.  If P2 is greater than or equal to 2 then an EXCLUSIVE lock is
-** also obtained on the file.
 **
 ** If a write-transaction is started and the Vdbe.usesStmtJournal flag is
 ** true (this flag is set if the Vdbe may modify more than one row and may
@@ -2936,13 +2944,16 @@ case OP_AutoCommit: {
 ** entire transaction. If no error is encountered, the statement transaction
 ** will automatically commit when the VDBE halts.
 **
-** If P2 is zero, then a read-lock is obtained on the database file.
-**
 ** If P5!=0 then this opcode also checks the schema cookie against P3
 ** and the schema generation counter against P4.
 ** The cookie changes its value whenever the database schema changes.
 ** This operation is used to detect when that the cookie has changed
-** and that the current process needs to reread the schema.
+** and that the current process needs to reread the schema.  If the schema
+** cookie in P3 differs from the schema cookie in the database header or
+** if the schema generation counter in P4 differs from the current
+** generation counter, then an SQLITE_SCHEMA error is raised and execution
+** halts.  The sqlite3_step() wrapper function might then reprepare the
+** statement and rerun it from the beginning.
 */
 case OP_Transaction: {
   Btree *pBt;

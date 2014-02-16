@@ -3112,7 +3112,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
 ** results in register target.  The results are guaranteed to appear
 ** in register target.
 */
-int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
+void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   int inReg;
 
   assert( target>0 && target<=pParse->nMem );
@@ -3125,7 +3125,20 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
     }
   }
-  return target;
+}
+
+/*
+** Generate code that will evaluate expression pExpr and store the
+** results in register target.  The results are guaranteed to appear
+** in register target.  If the expression is constant, then this routine
+** might choose to code the expression at initialization time.
+*/
+void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
+  if( pParse->okConstFactor && sqlite3ExprIsConstant(pExpr) ){
+    sqlite3ExprCodeAtInit(pParse, pExpr, target, 0);
+  }else{
+    sqlite3ExprCode(pParse, pExpr, target);
+  }
 }
 
 /*
@@ -3140,25 +3153,16 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
 ** times.  They are evaluated once and the results of the expression
 ** are reused.
 */
-int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
+void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   Vdbe *v = pParse->pVdbe;
-  int inReg;
-  inReg = sqlite3ExprCode(pParse, pExpr, target);
+  int iMem;
+
   assert( target>0 );
-  /* The only place, other than this routine, where expressions can be
-  ** converted to TK_REGISTER is internal subexpressions in BETWEEN and
-  ** CASE operators.  Neither ever calls this routine.  And this routine
-  ** is never called twice on the same expression.  Hence it is impossible
-  ** for the input to this routine to already be a register.  Nevertheless,
-  ** it seems prudent to keep the ALWAYS() in case the conditions above
-  ** change with future modifications or enhancements. */
-  if( ALWAYS(pExpr->op!=TK_REGISTER) ){  
-    int iMem;
-    iMem = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Copy, inReg, iMem);
-    exprToRegister(pExpr, iMem);
-  }
-  return inReg;
+  assert( pExpr->op!=TK_REGISTER );
+  sqlite3ExprCode(pParse, pExpr, target);
+  iMem = ++pParse->nMem;
+  sqlite3VdbeAddOp2(v, OP_Copy, target, iMem);
+  exprToRegister(pExpr, iMem);
 }
 
 #if defined(SQLITE_ENABLE_TREE_EXPLAIN)

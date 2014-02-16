@@ -253,7 +253,7 @@ ifcapable vacuum {
 #
 do_test insert4-5.1 {
   # Table does not exist.
-  catchsql { INSERT INTO t2 SELECT * FROM nosuchtable }
+  catchsql { INSERT INTO t2 SELECT a, b FROM nosuchtable }
 } {1 {no such table: nosuchtable}}
 do_test insert4-5.2 {
   # Number of columns does not match.

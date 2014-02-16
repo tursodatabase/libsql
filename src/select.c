@@ -585,13 +585,19 @@ static void selectInnerLoop(
   /* Pull the requested columns.
   */
   nResultCol = pEList->nExpr;
+
   if( pDest->iSdst==0 ){
     pDest->iSdst = pParse->nMem+1;
-    pDest->nSdst = nResultCol;
     pParse->nMem += nResultCol;
-  }else{ 
-    assert( pDest->nSdst==nResultCol );
+  }else if( pDest->iSdst+nResultCol > pParse->nMem ){
+    /* This is an error condition that can result, for example, when a SELECT
+    ** on the right-hand side of an INSERT contains more result columns than
+    ** there are columns in the table on the left.  The error will be caught
+    ** and reported later.  But we need to make sure enough memory is allocated
+    ** to avoid other spurious errors in the meantime. */
+    pParse->nMem += nResultCol;
   }
+  pDest->nSdst = nResultCol;
   regResult = pDest->iSdst;
   if( srcTab>=0 ){
     for(i=0; i<nResultCol; i++){
