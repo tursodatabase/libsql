@@ -2657,6 +2657,13 @@ struct Sqlite3Config {
   void(*xSqllog)(void*,sqlite3*,const char*, int);
   void *pSqllogArg;
 #endif
+#ifdef SQLITE_VDBE_COVERAGE
+  /* The following callback (if not NULL) is invoked on every VDBE branch
+  ** operation.  Set the callback using SQLITE_TESTCTRL_VDBE_COVERAGE.
+  */
+  void (*xVdbeBranch)(void*,int iSrcLine,u8 eThis,u8 eMx);  /* Callback */
+  void *pVdbeBranchArg;                                     /* 1st argument */
+#endif
 };
 
 /*

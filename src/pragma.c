@@ -824,6 +824,7 @@ void sqlite3Pragma(
   ** size of historical compatibility.
   */
   case PragTyp_DEFAULT_CACHE_SIZE: {
+    static const int iLn = __LINE__+2;
     static const VdbeOpList getCacheSize[] = {
       { OP_Transaction, 0, 0,        0},                         /* 0 */
       { OP_ReadCookie,  0, 1,        BTREE_DEFAULT_CACHE_SIZE},  /* 1 */
@@ -841,7 +842,7 @@ void sqlite3Pragma(
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "cache_size", SQLITE_STATIC);
       pParse->nMem += 2;
-      addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize);
+      addr = sqlite3VdbeAddOpList(v, ArraySize(getCacheSize), getCacheSize,iLn);
       sqlite3VdbeChangeP1(v, addr, iDb);
       sqlite3VdbeChangeP1(v, addr+1, iDb);
       sqlite3VdbeChangeP1(v, addr+6, SQLITE_DEFAULT_CACHE_SIZE);
@@ -1086,6 +1087,7 @@ void sqlite3Pragma(
         ** file. Before writing to meta[6], check that meta[3] indicates
         ** that this really is an auto-vacuum capable database.
         */
+        static const int iLn = __LINE__+2;
         static const VdbeOpList setMeta6[] = {
           { OP_Transaction,    0,         1,                 0},    /* 0 */
           { OP_ReadCookie,     0,         1,         BTREE_LARGEST_ROOT_PAGE},
@@ -1095,7 +1097,7 @@ void sqlite3Pragma(
           { OP_SetCookie,      0,         BTREE_INCR_VACUUM, 1},    /* 5 */
         };
         int iAddr;
-        iAddr = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6);
+        iAddr = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6, iLn);
         sqlite3VdbeChangeP1(v, iAddr, iDb);
         sqlite3VdbeChangeP1(v, iAddr+1, iDb);
         sqlite3VdbeChangeP2(v, iAddr+2, iAddr+4);
@@ -1121,10 +1123,10 @@ void sqlite3Pragma(
     }
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3VdbeAddOp2(v, OP_Integer, iLimit, 1);
-    addr = sqlite3VdbeAddOp1(v, OP_IncrVacuum, iDb);
+    addr = sqlite3VdbeAddOp1(v, OP_IncrVacuum, iDb); VdbeCoverage(v);
     sqlite3VdbeAddOp1(v, OP_ResultRow, 1);
     sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
-    sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr);
+    sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr); VdbeCoverage(v);
     sqlite3VdbeJumpHere(v, addr);
     break;
   }
@@ -1695,7 +1697,7 @@ void sqlite3Pragma(
       assert( pParse->nErr>0 || pFK==0 );
       if( pFK ) break;
       if( pParse->nTab<i ) pParse->nTab = i;
-      addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, 0);
+      addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, 0); VdbeCoverage(v);
       for(i=1, pFK=pTab->pFKey; pFK; i++, pFK=pFK->pNextFrom){
         pParent = sqlite3FindTable(db, pFK->zTo, zDb);
         pIdx = 0;
@@ -1711,25 +1713,26 @@ void sqlite3Pragma(
           if( iKey!=pTab->iPKey ){
             sqlite3VdbeAddOp3(v, OP_Column, 0, iKey, regRow);
             sqlite3ColumnDefault(v, pTab, iKey, regRow);
-            sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk);
-            sqlite3VdbeAddOp2(v, OP_MustBeInt, regRow,
-               sqlite3VdbeCurrentAddr(v)+3);
+            sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk); VdbeCoverage(v);
+            sqlite3VdbeAddOp2(v, OP_MustBeInt, regRow, 
+               sqlite3VdbeCurrentAddr(v)+3); VdbeCoverage(v);
           }else{
             sqlite3VdbeAddOp2(v, OP_Rowid, 0, regRow);
           }
-          sqlite3VdbeAddOp3(v, OP_NotExists, i, 0, regRow);
+          sqlite3VdbeAddOp3(v, OP_NotExists, i, 0, regRow); VdbeCoverage(v);
           sqlite3VdbeAddOp2(v, OP_Goto, 0, addrOk);
           sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
         }else{
           for(j=0; j<pFK->nCol; j++){
             sqlite3ExprCodeGetColumnOfTable(v, pTab, 0,
                             aiCols ? aiCols[j] : pFK->aCol[j].iFrom, regRow+j);
-            sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk);
+            sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk); VdbeCoverage(v);
           }
           if( pParent ){
             sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
                               sqlite3IndexAffinityStr(v,pIdx), pFK->nCol);
             sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
+            VdbeCoverage(v);
           }
         }
         sqlite3VdbeAddOp2(v, OP_Rowid, 0, regResult+1);
@@ -1740,7 +1743,7 @@ void sqlite3Pragma(
         sqlite3VdbeResolveLabel(v, addrOk);
         sqlite3DbFree(db, aiCols);
       }
-      sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop+1);
+      sqlite3VdbeAddOp2(v, OP_Next, 0, addrTop+1); VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrTop);
     }
   }
@@ -1787,6 +1790,7 @@ void sqlite3Pragma(
     ** messages have been generated, output OK.  Otherwise output the
     ** error message
     */
+    static const int iLn = __LINE__+2;
     static const VdbeOpList endCode[] = {
       { OP_AddImm,      1, 0,        0},    /* 0 */
       { OP_IfNeg,       1, 0,        0},    /* 1 */
@@ -1835,6 +1839,7 @@ void sqlite3Pragma(
 
       sqlite3CodeVerifySchema(pParse, i);
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1); /* Halt if out of errors */
+      VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
       sqlite3VdbeJumpHere(v, addr);
 
@@ -1866,7 +1871,7 @@ void sqlite3Pragma(
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
       sqlite3VdbeChangeP5(v, (u8)i);
-      addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2);
+      addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2); VdbeCoverage(v);
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zName),
          P4_DYNAMIC);
@@ -1888,6 +1893,7 @@ void sqlite3Pragma(
         if( pTab->pIndex==0 ) continue;
         pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
         addr = sqlite3VdbeAddOp1(v, OP_IfPos, 1);  /* Stop if out of errors */
+        VdbeCoverage(v);
         sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
         sqlite3VdbeJumpHere(v, addr);
         sqlite3ExprCacheClear(pParse);
@@ -1898,7 +1904,7 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp2(v, OP_Integer, 0, 8+j); /* index entries counter */
         }
         pParse->nMem = MAX(pParse->nMem, 8+j);
-        sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0);
+        sqlite3VdbeAddOp2(v, OP_Rewind, iDataCur, 0); VdbeCoverage(v);
         loopTop = sqlite3VdbeAddOp2(v, OP_AddImm, 7, 1);
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           int jmp2, jmp3, jmp4;
@@ -1908,7 +1914,7 @@ void sqlite3Pragma(
           pPrior = pIdx;
           sqlite3VdbeAddOp2(v, OP_AddImm, 8+j, 1);  /* increment entry count */
           jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, iIdxCur+j, 0, r1,
-                                      pIdx->nColumn);
+                                      pIdx->nColumn); VdbeCoverage(v);
           sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, "row ", P4_STATIC);
           sqlite3VdbeAddOp3(v, OP_Concat, 7, 3, 3);
@@ -1918,13 +1924,13 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp4(v, OP_String8, 0, 4, 0, pIdx->zName, P4_TRANSIENT);
           sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 3);
           sqlite3VdbeAddOp2(v, OP_ResultRow, 3, 1);
-          jmp4 = sqlite3VdbeAddOp1(v, OP_IfPos, 1);
+          jmp4 = sqlite3VdbeAddOp1(v, OP_IfPos, 1); VdbeCoverage(v);
           sqlite3VdbeAddOp0(v, OP_Halt);
           sqlite3VdbeJumpHere(v, jmp4);
           sqlite3VdbeJumpHere(v, jmp2);
           sqlite3VdbeResolveLabel(v, jmp3);
         }
-        sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop);
+        sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);
 #ifndef SQLITE_OMIT_BTREECOUNT
         sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, 
@@ -1932,10 +1938,10 @@ void sqlite3Pragma(
         for(j=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, j++){
           if( pPk==pIdx ) continue;
           addr = sqlite3VdbeCurrentAddr(v);
-          sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr+2);
+          sqlite3VdbeAddOp2(v, OP_IfPos, 1, addr+2); VdbeCoverage(v);
           sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
           sqlite3VdbeAddOp2(v, OP_Count, iIdxCur+j, 3);
-          sqlite3VdbeAddOp3(v, OP_Eq, 8+j, addr+8, 3);
+          sqlite3VdbeAddOp3(v, OP_Eq, 8+j, addr+8, 3); VdbeCoverage(v);
           sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pIdx->zName, P4_TRANSIENT);
           sqlite3VdbeAddOp3(v, OP_Concat, 3, 2, 7);
@@ -1944,7 +1950,7 @@ void sqlite3Pragma(
 #endif /* SQLITE_OMIT_BTREECOUNT */
       } 
     }
-    addr = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode);
+    addr = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode, iLn);
     sqlite3VdbeChangeP2(v, addr, -mxErr);
     sqlite3VdbeJumpHere(v, addr+1);
     sqlite3VdbeChangeP4(v, addr+2, "ok", P4_STATIC);
@@ -2082,7 +2088,7 @@ void sqlite3Pragma(
         { OP_Integer,        0,  1,  0},    /* 1 */
         { OP_SetCookie,      0,  0,  1},    /* 2 */
       };
-      int addr = sqlite3VdbeAddOpList(v, ArraySize(setCookie), setCookie);
+      int addr = sqlite3VdbeAddOpList(v, ArraySize(setCookie), setCookie, 0);
       sqlite3VdbeChangeP1(v, addr, iDb);
       sqlite3VdbeChangeP1(v, addr+1, sqlite3Atoi(zRight));
       sqlite3VdbeChangeP1(v, addr+2, iDb);
@@ -2094,7 +2100,7 @@ void sqlite3Pragma(
         { OP_ReadCookie,      0,  1,  0},    /* 1 */
         { OP_ResultRow,       1,  1,  0}
       };
-      int addr = sqlite3VdbeAddOpList(v, ArraySize(readCookie), readCookie);
+      int addr = sqlite3VdbeAddOpList(v, ArraySize(readCookie), readCookie, 0);
       sqlite3VdbeChangeP1(v, addr, iDb);
       sqlite3VdbeChangeP1(v, addr+1, iDb);
       sqlite3VdbeChangeP3(v, addr+1, iCookie);
