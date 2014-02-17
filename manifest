@@ -1,5 +1,5 @@
-C Merge\sthe\sVDBE_PROFILE\sfixes\sfrom\strunk.
-D 2014-02-17T15:36:39.392
+C Add\sa\stest\scase\sfor\sOP_SoftNull.
+D 2014-02-17T15:40:19.609
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -613,7 +613,7 @@ F test/index7.test a3baf9a625bda7fd49471e99aeae04095fbfeecf
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
-F test/insert.test c120294273b18cf9c8b1a3158131f7a825bdba41
+F test/insert.test acf909b067b838eb55338d619e800e148c17f1f5
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 4791662c50518bdd37d394cae9a7a8014e845bb3
@@ -1151,7 +1151,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 35b4d6e938164fabaf30b504c54cfd9a69060cee 7adb3da235c8c162c84f05ef4ccf1cc463805d5f
-R 2b995c2f8f9fb3c739cf787130cc4e23
+P 2914e4191121004a3f564b1fbf1c235dcc595503
+R b009af851099e49da0fb1800028a0b8c
 U drh
-Z a75f767ce30ab2f817d9dd9884981718
+Z ba859408f13b87421335d53499aa861e
