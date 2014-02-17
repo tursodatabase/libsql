@@ -1174,7 +1174,7 @@ void sqlite3VdbePrintOp(FILE *pOut, int pc, Op *pOp){
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
   displayComment(pOp, zP4, zCom, sizeof(zCom));
 #else
-  zCom[0] = 0
+  zCom[0] = 0;
 #endif
   /* NB:  The sqlite3OpcodeName() function is implemented by code created
   ** by the mkopcodeh.awk and mkopcodec.awk scripts which extract the
@@ -2552,6 +2552,16 @@ int sqlite3VdbeReset(Vdbe *p){
         fprintf(out, "%02x", p->aOp[i].opcode);
       }
       fprintf(out, "\n");
+      if( p->zSql ){
+        char c, pc = 0;
+        fprintf(out, "-- ");
+        for(i=0; (c = p->zSql[i])!=0; i++){
+          if( pc=='\n' ) fprintf(out, "-- ");
+          putc(c, out);
+          pc = c;
+        }
+        if( pc!='\n' ) fprintf(out, "\n");
+      }
       for(i=0; i<p->nOp; i++){
         fprintf(out, "%6d %10lld %8lld ",
            p->aOp[i].cnt,

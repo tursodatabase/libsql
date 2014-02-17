@@ -1,5 +1,5 @@
-C Seek\spast\sNULLs\sin\sa\stop-constrained\ssearch.\s\sAvoid\schecking\sfor\sNULLs\sin\nthe\sbody\sof\sthe\ssearch.
-D 2014-02-14T23:49:13.552
+C Fix\sthe\sVDBE_PROFILE\slogic.\s\sAdd\sa\sscript\sto\sprocess\sthe\soutput\sfile.
+D 2014-02-17T01:13:28.650
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 543ed4ed0c41b34affad239374d4c07e6e5b2401
 F src/vdbe.h e6c4c610fcabad4fa80ebb1efc6822a9367e2b26
 F src/vdbeInt.h 5286af9067cabdb8ba57b87c0c988a931be6c6c8
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c dac6e571262a322b2f889752a8dd36549bdacd2b
+F src/vdbeaux.c 9098973ff22c6fdfd68d061e11c2e64f65eea2d1
 F src/vdbeblob.c 9542e116c1db5ed813977581d506c176e117c0ec
 F src/vdbemem.c 06603e8e9d2f3247b68c6bbe4bd37fb6721b5bda
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
@@ -1147,10 +1147,11 @@ F tool/symbols-mingw.sh 4dbcea7e74768305384c9fd2ed2b41bbf9f0414d
 F tool/symbols.sh fec58532668296d7c7dc48be9c87f75ccdb5814f
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
+F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3c1ae447dec8fc2af1c5105134061717594ac0e0
-R 20e62eafcdc3ac9a7a16fa36432e6177
+P e07a32f30862acf3b322d4d8deb015846d6f8f5f
+R a089b7b7dc577bc47ffd22f19eb9e985
 U drh
-Z f35a13e794e2689c6821aa3d892fcd6f
+Z f101c06fe6a48199aebfe3f4c9baeea7
