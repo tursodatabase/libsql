@@ -98,10 +98,16 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 }
 
 /*
-** Set P4 of the most recently inserted opcode to a column affinity
-** string for table pTab. A column affinity string has one character
-** for each column indexed by the index, according to the affinity of the
-** column:
+** Compute the affinity string for table pTab, if it has not already been
+** computed.  As an optimization, omit trailing SQLITE_AFF_NONE affinities.
+**
+** If the affinity exists (if it is no entirely SQLITE_AFF_NONE values and
+** if iReg>0 then code an OP_Affinity opcode that will set the affinities
+** for register iReg and following.  Or if affinities exists and iReg==0,
+** then just set the P4 operand of the previous opcode (which should  be
+** an OP_MakeRecord) to the affinity string.
+**
+** A column affinity string has one character column:
 **
 **  Character      Column affinity
 **  ------------------------------
@@ -111,19 +117,11 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 **  'd'            INTEGER
 **  'e'            REAL
 */
-void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
-  /* The first time a column affinity string for a particular table
-  ** is required, it is allocated and populated here. It is then 
-  ** stored as a member of the Table structure for subsequent use.
-  **
-  ** The column affinity string will eventually be deleted by
-  ** sqlite3DeleteTable() when the Table structure itself is cleaned up.
-  */
-  if( !pTab->zColAff ){
-    char *zColAff;
-    int i;
+void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
+  int i;
+  char *zColAff = pTab->zColAff;
+  if( zColAff==0 ){
     sqlite3 *db = sqlite3VdbeDb(v);
-
     zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
     if( !zColAff ){
       db->mallocFailed = 1;
@@ -133,12 +131,19 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
     for(i=0; i<pTab->nCol; i++){
       zColAff[i] = pTab->aCol[i].affinity;
     }
-    zColAff[pTab->nCol] = '\0';
-
+    do{
+      zColAff[i--] = 0;
+    }while( i>=0 && zColAff[i]==SQLITE_AFF_NONE );
     pTab->zColAff = zColAff;
   }
-
-  sqlite3VdbeChangeP4(v, -1, pTab->zColAff, P4_TRANSIENT);
+  i = sqlite3Strlen30(zColAff);
+  if( i ){
+    if( iReg ){
+      sqlite3VdbeAddOp4(v, OP_Affinity, iReg, i, 0, zColAff, i);
+    }else{
+      sqlite3VdbeChangeP4(v, -1, zColAff, i);
+    }
+  }
 }
 
 /*
@@ -846,8 +851,7 @@ void sqlite3Insert(
     ** table column affinities.
     */
     if( !isView ){
-      sqlite3VdbeAddOp2(v, OP_Affinity, regCols+1, pTab->nCol);
-      sqlite3TableAffinityStr(v, pTab);
+      sqlite3TableAffinity(v, pTab, regCols+1);
     }
 
     /* Fire BEFORE or INSTEAD OF triggers */
@@ -1153,6 +1157,7 @@ void sqlite3GenerateConstraintChecks(
   int ipkTop = 0;      /* Top of the rowid change constraint check */
   int ipkBottom = 0;   /* Bottom of the rowid change constraint check */
   u8 isUpdate;         /* True if this is an UPDATE operation */
+  u8 bAffinityDone = 0;  /* True if the OP_Affinity operation has been run */
   int regRowid = -1;   /* Register holding ROWID value */
 
   isUpdate = regOldData!=0;
@@ -1364,6 +1369,10 @@ void sqlite3GenerateConstraintChecks(
     int addrUniqueOk;    /* Jump here if the UNIQUE constraint is satisfied */
 
     if( aRegIdx[ix]==0 ) continue;  /* Skip indices that do not change */
+    if( bAffinityDone==0 ){
+      sqlite3TableAffinity(v, pTab, regNewData+1);
+      bAffinityDone = 1;
+    }
     iThisCur = iIdxCur+ix;
     addrUniqueOk = sqlite3VdbeMakeLabel(v);
 
@@ -1394,7 +1403,6 @@ void sqlite3GenerateConstraintChecks(
       VdbeComment((v, "%s", iField<0 ? "rowid" : pTab->aCol[iField].zName));
     }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn, aRegIdx[ix]);
-    sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), P4_TRANSIENT);
     VdbeComment((v, "for %s", pIdx->zName));
     sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn);
 
@@ -1539,12 +1547,14 @@ void sqlite3CompleteInsertion(
   int regData;        /* Content registers (after the rowid) */
   int regRec;         /* Register holding assemblied record for the table */
   int i;              /* Loop counter */
+  u8 bAffinityDone = 0; /* True if OP_Affinity has been run already */
 
   v = sqlite3GetVdbe(pParse);
   assert( v!=0 );
   assert( pTab->pSelect==0 );  /* This table is not a VIEW */
   for(i=0, pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext, i++){
     if( aRegIdx[i]==0 ) continue;
+    bAffinityDone = 1;
     if( pIdx->pPartIdxWhere ){
       sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
     }
@@ -1561,7 +1571,7 @@ void sqlite3CompleteInsertion(
   regData = regNewData + 1;
   regRec = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);
-  sqlite3TableAffinityStr(v, pTab);
+  if( !bAffinityDone ) sqlite3TableAffinity(v, pTab, 0);
   sqlite3ExprCacheAffinityChange(pParse, regData, pTab->nCol);
   if( pParse->nested ){
     pik_flags = 0;

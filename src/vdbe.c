@@ -2498,7 +2498,6 @@ case OP_Affinity: {
   while( (cAff = *(zAffinity++))!=0 ){
     assert( pIn1 <= &p->aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
-    ExpandBlob(pIn1);
     applyAffinity(pIn1, cAff, encoding);
     pIn1++;
   }
@@ -2576,8 +2575,9 @@ case OP_MakeRecord: {
   if( zAffinity ){
     pRec = pData0;
     do{
-      applyAffinity(pRec, *(zAffinity++), encoding);
-    }while( (++pRec)<=pLast );
+      applyAffinity(pRec++, *(zAffinity++), encoding);
+      assert( zAffinity[0]==0 || pRec<=pLast );
+    }while( zAffinity[0] );
   }
 
   /* Loop through the elements that will make up the record to figure

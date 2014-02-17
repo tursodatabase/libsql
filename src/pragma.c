@@ -1727,9 +1727,8 @@ void sqlite3Pragma(
             sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk);
           }
           if( pParent ){
-            sqlite3VdbeAddOp3(v, OP_MakeRecord, regRow, pFK->nCol, regKey);
-            sqlite3VdbeChangeP4(v, -1,
-                     sqlite3IndexAffinityStr(v,pIdx), P4_TRANSIENT);
+            sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
+                              sqlite3IndexAffinityStr(v,pIdx), pFK->nCol);
             sqlite3VdbeAddOp4Int(v, OP_Found, i, addrOk, regKey, 0);
           }
         }

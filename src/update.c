@@ -390,7 +390,7 @@ void sqlite3Update(
       regKey = iPk;
     }else{
       sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, regKey,
-                        sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
+                        sqlite3IndexAffinityStr(v, pPk), nPk);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, regKey);
     }
     sqlite3WhereEnd(pWInfo);
@@ -524,8 +524,7 @@ void sqlite3Update(
   ** verified. One could argue that this is wrong.
   */
   if( tmask&TRIGGER_BEFORE ){
-    sqlite3VdbeAddOp2(v, OP_Affinity, regNew, pTab->nCol);
-    sqlite3TableAffinityStr(v, pTab);
+    sqlite3TableAffinity(v, pTab, regNew);
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
         TRIGGER_BEFORE, pTab, regOldRowid, onError, labelContinue);
 

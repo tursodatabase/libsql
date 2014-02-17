@@ -1185,7 +1185,7 @@ static void analyzeOneTable(
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nCol+1, regSample);
 #endif
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 6, regTemp, "bbbbbb", 0);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regTabname, 6, regTemp);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regNewRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regTemp, regNewRowid);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, addrNext);

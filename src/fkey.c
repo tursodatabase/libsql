@@ -412,8 +412,8 @@ static void fkLookupParent(
         sqlite3VdbeAddOp2(v, OP_Goto, 0, iOk);
       }
   
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regTemp, nCol, regRec);
-      sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v,pIdx), P4_TRANSIENT);
+      sqlite3VdbeAddOp4(v, OP_MakeRecord, regTemp, nCol, regRec,
+                        sqlite3IndexAffinityStr(v,pIdx), nCol);
       sqlite3VdbeAddOp4Int(v, OP_Found, iCur, iOk, regRec, 0);
   
       sqlite3ReleaseTempReg(pParse, regRec);
