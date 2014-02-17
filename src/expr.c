@@ -1383,7 +1383,7 @@ void sqlite3ExprCodeIsNullJump(
   int iDest           /* Jump here if the value is null */
 ){
   if( sqlite3ExprCanBeNull(pExpr) ){
-    sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iDest);
+    sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iDest); VdbeCoverage(v);
   }
 }
 
@@ -1486,7 +1486,9 @@ static int isCandidateForInOpt(Select *p){
 */
 int sqlite3CodeOnce(Parse *pParse){
   Vdbe *v = sqlite3GetVdbe(pParse);      /* Virtual machine being coded */
-  return sqlite3VdbeAddOp1(v, OP_Once, pParse->nOnce++);
+  int addr = sqlite3VdbeAddOp1(v, OP_Once, pParse->nOnce++);
+  VdbeCoverage(v);
+  return addr;
 }
 
 /*
@@ -1837,6 +1839,7 @@ int sqlite3CodeSubselect(
             if( isRowid ){
               sqlite3VdbeAddOp2(v, OP_MustBeInt, r3,
                                 sqlite3VdbeCurrentAddr(v)+2);
+              VdbeCoverage(v);
               sqlite3VdbeAddOp3(v, OP_Insert, pExpr->iTable, r2, r3);
             }else{
               sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
@@ -1960,10 +1963,11 @@ static void sqlite3ExprCodeIN(
   if( destIfNull==destIfFalse ){
     /* Shortcut for the common case where the false and NULL outcomes are
     ** the same. */
-    sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull);
+    sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
   }else{
-    int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1);
+    int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+    VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
     sqlite3VdbeJumpHere(v, addr1);
   }
@@ -1971,8 +1975,9 @@ static void sqlite3ExprCodeIN(
   if( eType==IN_INDEX_ROWID ){
     /* In this case, the RHS is the ROWID of table b-tree
     */
-    sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, destIfFalse);
+    sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, destIfFalse); VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, destIfFalse, r1);
+    VdbeCoverage(v);
   }else{
     /* In this case, the RHS is an index b-tree.
     */
@@ -1993,7 +1998,7 @@ static void sqlite3ExprCodeIN(
       ** for this particular IN operator.
       */
       sqlite3VdbeAddOp4Int(v, OP_NotFound, pExpr->iTable, destIfFalse, r1, 1);
-
+      VdbeCoverage(v);
     }else{
       /* In this branch, the RHS of the IN might contain a NULL and
       ** the presence of a NULL on the RHS makes a difference in the
@@ -2006,6 +2011,7 @@ static void sqlite3ExprCodeIN(
       ** over all of the code that follows.
       */
       j1 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, r1, 1);
+      VdbeCoverage(v);
 
       /* Here we begin generating code that runs if the LHS is not
       ** contained within the RHS.  Generate additional code that
@@ -2013,8 +2019,9 @@ static void sqlite3ExprCodeIN(
       ** jump to destIfNull.  If there are no NULLs in the RHS then
       ** jump to destIfFalse.
       */
-      j2 = sqlite3VdbeAddOp1(v, OP_NotNull, rRhsHasNull);
+      j2 = sqlite3VdbeAddOp1(v, OP_NotNull, rRhsHasNull); VdbeCoverage(v);
       j3 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, rRhsHasNull, 1);
+      VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_Integer, -1, rRhsHasNull);
       sqlite3VdbeJumpHere(v, j3);
       sqlite3VdbeAddOp2(v, OP_AddImm, rRhsHasNull, 1);
@@ -2023,7 +2030,7 @@ static void sqlite3ExprCodeIN(
       /* Jump to the appropriate target depending on whether or not
       ** the RHS contains a NULL
       */
-      sqlite3VdbeAddOp2(v, OP_If, rRhsHasNull, destIfNull);
+      sqlite3VdbeAddOp2(v, OP_If, rRhsHasNull, destIfNull); VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
 
       /* The OP_Found at the top of this branch jumps here when true, 
@@ -2560,7 +2567,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, inReg, SQLITE_STOREP2);
+                  r1, r2, inReg, SQLITE_STOREP2); VdbeCoverage(v);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -2574,6 +2581,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       op = (op==TK_IS) ? TK_EQ : TK_NE;
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, inReg, SQLITE_STOREP2 | SQLITE_NULLEQ);
+      VdbeCoverage(v);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -2663,7 +2671,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
-      addr = sqlite3VdbeAddOp1(v, op, r1);
+      addr = sqlite3VdbeAddOp1(v, op, r1); VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
       sqlite3VdbeJumpHere(v, addr);
       break;
@@ -2715,6 +2723,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
         for(i=1; i<nFarg; i++){
           sqlite3VdbeAddOp2(v, OP_NotNull, target, endCoalesce);
+          VdbeCoverage(v);
           sqlite3ExprCacheRemove(pParse, target, 1);
           sqlite3ExprCachePush(pParse);
           sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
@@ -2853,12 +2862,14 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       r4 = sqlite3GetTempReg(pParse);
       codeCompare(pParse, pLeft, pRight, OP_Ge,
                   r1, r2, r3, SQLITE_STOREP2);
+      VdbeCoverage(v);
       pLItem++;
       pRight = pLItem->pExpr;
       sqlite3ReleaseTempReg(pParse, regFree2);
       r2 = sqlite3ExprCodeTemp(pParse, pRight, &regFree2);
       testcase( regFree2==0 );
       codeCompare(pParse, pLeft, pRight, OP_Le, r1, r2, r4, SQLITE_STOREP2);
+      VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_And, r3, r4, target);
       sqlite3ReleaseTempReg(pParse, r3);
       sqlite3ReleaseTempReg(pParse, r4);
@@ -3025,6 +3036,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( pExpr->affinity==OE_Ignore ){
         sqlite3VdbeAddOp4(
             v, OP_Halt, SQLITE_OK, OE_Ignore, 0, pExpr->u.zToken,0);
+        VdbeCoverage(v);
       }else{
         sqlite3HaltConstraint(pParse, SQLITE_CONSTRAINT_TRIGGER,
                               pExpr->affinity, pExpr->u.zToken, 0, 0);
@@ -3112,7 +3124,7 @@ int sqlite3ExprCodeTemp(Parse *pParse, Expr *pExpr, int *pReg){
 ** results in register target.  The results are guaranteed to appear
 ** in register target.
 */
-int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
+void sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
   int inReg;
 
   assert( target>0 && target<=pParse->nMem );
@@ -3125,7 +3137,20 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
       sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, inReg, target);
     }
   }
-  return target;
+}
+
+/*
+** Generate code that will evaluate expression pExpr and store the
+** results in register target.  The results are guaranteed to appear
+** in register target.  If the expression is constant, then this routine
+** might choose to code the expression at initialization time.
+*/
+void sqlite3ExprCodeFactorable(Parse *pParse, Expr *pExpr, int target){
+  if( pParse->okConstFactor && sqlite3ExprIsConstant(pExpr) ){
+    sqlite3ExprCodeAtInit(pParse, pExpr, target, 0);
+  }else{
+    sqlite3ExprCode(pParse, pExpr, target);
+  }
 }
 
 /*
@@ -3140,25 +3165,16 @@ int sqlite3ExprCode(Parse *pParse, Expr *pExpr, int target){
 ** times.  They are evaluated once and the results of the expression
 ** are reused.
 */
-int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
+void sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   Vdbe *v = pParse->pVdbe;
-  int inReg;
-  inReg = sqlite3ExprCode(pParse, pExpr, target);
+  int iMem;
+
   assert( target>0 );
-  /* The only place, other than this routine, where expressions can be
-  ** converted to TK_REGISTER is internal subexpressions in BETWEEN and
-  ** CASE operators.  Neither ever calls this routine.  And this routine
-  ** is never called twice on the same expression.  Hence it is impossible
-  ** for the input to this routine to already be a register.  Nevertheless,
-  ** it seems prudent to keep the ALWAYS() in case the conditions above
-  ** change with future modifications or enhancements. */
-  if( ALWAYS(pExpr->op!=TK_REGISTER) ){  
-    int iMem;
-    iMem = ++pParse->nMem;
-    sqlite3VdbeAddOp2(v, OP_Copy, inReg, iMem);
-    exprToRegister(pExpr, iMem);
-  }
-  return inReg;
+  assert( pExpr->op!=TK_REGISTER );
+  sqlite3ExprCode(pParse, pExpr, target);
+  iMem = ++pParse->nMem;
+  sqlite3VdbeAddOp2(v, OP_Copy, target, iMem);
+  exprToRegister(pExpr, iMem);
 }
 
 #if defined(SQLITE_ENABLE_TREE_EXPLAIN)
@@ -3609,7 +3625,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, jumpIfNull);
+                  r1, r2, dest, jumpIfNull);  VdbeCoverage(v);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -3622,7 +3638,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       op = (op==TK_IS) ? TK_EQ : TK_NE;
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, SQLITE_NULLEQ);
+                  r1, r2, dest, SQLITE_NULLEQ);  VdbeCoverage(v);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -3634,7 +3650,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       testcase( op==TK_ISNULL );
       testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      sqlite3VdbeAddOp2(v, op, r1, dest);
+      sqlite3VdbeAddOp2(v, op, r1, dest); VdbeCoverage(v);
       testcase( regFree1==0 );
       break;
     }
@@ -3661,6 +3677,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
         sqlite3VdbeAddOp3(v, OP_If, r1, dest, jumpIfNull!=0);
+        VdbeCoverage(v);
         testcase( regFree1==0 );
         testcase( jumpIfNull==0 );
       }
@@ -3762,7 +3779,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, jumpIfNull);
+                  r1, r2, dest, jumpIfNull);  VdbeCoverage(v);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -3775,7 +3792,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       op = (pExpr->op==TK_IS) ? TK_NE : TK_EQ;
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, SQLITE_NULLEQ);
+                  r1, r2, dest, SQLITE_NULLEQ);  VdbeCoverage(v);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -3785,7 +3802,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       testcase( op==TK_ISNULL );
       testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      sqlite3VdbeAddOp2(v, op, r1, dest);
+      sqlite3VdbeAddOp2(v, op, r1, dest); VdbeCoverage(v);
       testcase( regFree1==0 );
       break;
     }
@@ -3814,6 +3831,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       }else{
         r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
         sqlite3VdbeAddOp3(v, OP_IfNot, r1, dest, jumpIfNull!=0);
+        VdbeCoverage(v);
         testcase( regFree1==0 );
         testcase( jumpIfNull==0 );
       }

@@ -3307,6 +3307,21 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_VDBE_COVERAGE, xCallback, ptr);
+    **
+    ** Set the VDBE coverage callback function to xCallback with context 
+    ** pointer ptr.
+    */
+    case SQLITE_TESTCTRL_VDBE_COVERAGE: {
+#ifdef SQLITE_VDBE_COVERAGE
+      typedef void (*branch_callback)(void*,int,u8,u8);
+      sqlite3GlobalConfig.xVdbeBranch = va_arg(ap,branch_callback);
+      sqlite3GlobalConfig.pVdbeBranchArg = va_arg(ap,void*);
+#endif
+      break;
+    }
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

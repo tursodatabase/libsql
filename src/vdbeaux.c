@@ -174,6 +174,9 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   pOp->cycles = 0;
   pOp->cnt = 0;
 #endif
+#ifdef SQLITE_VDBE_COVERAGE
+  pOp->iSrcLine = 0;
+#endif
   return i;
 }
 int sqlite3VdbeAddOp0(Vdbe *p, int op){
@@ -535,7 +538,7 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
 ** Add a whole list of operations to the operation stack.  Return the
 ** address of the first operation added.
 */
-int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
+int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p) ){
@@ -562,6 +565,11 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       pOut->p5 = 0;
 #ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
       pOut->zComment = 0;
+#endif
+#ifdef SQLITE_VDBE_COVERAGE
+      pOut->iSrcLine = iLineno+i;
+#else
+      (void)iLineno;
 #endif
 #ifdef SQLITE_DEBUG
       if( p->db->flags & SQLITE_VdbeAddopTrace ){
@@ -850,6 +858,15 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
   }
 }
 #endif  /* NDEBUG */
+
+#ifdef SQLITE_VDBE_COVERAGE
+/*
+** Set the value if the iSrcLine field for the previously coded instruction.
+*/
+void sqlite3VdbeSetLineNumber(Vdbe *v, int iLine){
+  sqlite3VdbeGetOp(v,-1)->iSrcLine = iLine;
+}
+#endif /* SQLITE_VDBE_COVERAGE */
 
 /*
 ** Return the opcode for a given address.  If the address is -1, then

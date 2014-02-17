@@ -68,6 +68,9 @@ struct VdbeOp {
   int cnt;                 /* Number of times this instruction was executed */
   u64 cycles;              /* Total time spent executing this instruction */
 #endif
+#ifdef SQLITE_VDBE_COVERAGE
+  int iSrcLine;            /* Source-code line that generated this opcode */
+#endif
 };
 typedef struct VdbeOp VdbeOp;
 
@@ -167,7 +170,7 @@ int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
 int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
-int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
+int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, u32 addr, int P2);
@@ -236,6 +239,16 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 # define VdbeComment(X)
 # define VdbeNoopComment(X)
 # define VdbeModuleComment(X)
+#endif
+
+/* Set the Opcode.iSrcline field of the previous opcode */
+#ifdef SQLITE_VDBE_COVERAGE
+  void sqlite3VdbeSetLineNumber(Vdbe*,int);
+# define VdbeCoverage(v) sqlite3VdbeSetLineNumber(v,__LINE__)
+# define VdbeCoverageIf(v,x) if(x)sqlite3VdbeSetLineNumber(v,__LINE__)
+#else
+# define VdbeCoverage(v)
+# define VdbeCoverageIf(v,x)
 #endif
 
 #endif

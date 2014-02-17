@@ -1077,6 +1077,7 @@ static void analyzeOneTable(
     **
     */
     addrRewind = sqlite3VdbeAddOp1(v, OP_Rewind, iIdxCur);
+    VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regChng);
     addrGotoChng0 = sqlite3VdbeAddOp0(v, OP_Goto);
 
@@ -1098,6 +1099,7 @@ static void analyzeOneTable(
       aGotoChng[i] = 
       sqlite3VdbeAddOp4(v, OP_Ne, regTemp, 0, regPrev+i, pColl, P4_COLLSEQ);
       sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
+      VdbeCoverage(v);
     }
     sqlite3VdbeAddOp2(v, OP_Integer, nCol, regChng);
     aGotoChng[nCol] = sqlite3VdbeAddOp0(v, OP_Goto);
@@ -1144,7 +1146,7 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp3(v, OP_Function, 1, regStat4, regTemp);
     sqlite3VdbeChangeP4(v, -1, (char*)&statPushFuncdef, P4_FUNCDEF);
     sqlite3VdbeChangeP5(v, 2+IsStat34);
-    sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow);
+    sqlite3VdbeAddOp2(v, OP_Next, iIdxCur, addrNextRow); VdbeCoverage(v);
 
     /* Add the entry to the stat1 table. */
     callStatGet(v, regStat4, STAT_GET_STAT1, regStat1);
@@ -1171,10 +1173,12 @@ static void analyzeOneTable(
       addrNext = sqlite3VdbeCurrentAddr(v);
       callStatGet(v, regStat4, STAT_GET_ROWID, regSampleRowid);
       addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, regSampleRowid);
+      VdbeCoverage(v);
       callStatGet(v, regStat4, STAT_GET_NEQ, regEq);
       callStatGet(v, regStat4, STAT_GET_NLT, regLt);
       callStatGet(v, regStat4, STAT_GET_NDLT, regDLt);
       sqlite3VdbeAddOp4Int(v, seekOp, iTabCur, addrNext, regSampleRowid, 0);
+      VdbeCoverage(v);
 #ifdef SQLITE_ENABLE_STAT3
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, 
                                       pIdx->aiColumn[0], regSample);
@@ -1185,7 +1189,7 @@ static void analyzeOneTable(
       }
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nCol+1, regSample);
 #endif
-      sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 6, regTemp, "bbbbbb", 0);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regTabname, 6, regTemp);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regNewRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regTemp, regNewRowid);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, addrNext);
@@ -1205,7 +1209,7 @@ static void analyzeOneTable(
   if( pOnlyIdx==0 && needTableCnt ){
     VdbeComment((v, "%s", pTab->zName));
     sqlite3VdbeAddOp2(v, OP_Count, iTabCur, regStat1);
-    jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, regStat1);
+    jZeroRows = sqlite3VdbeAddOp1(v, OP_IfNot, regStat1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Null, 0, regIdxname);
     sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regTemp, "aaa", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regNewRowid);

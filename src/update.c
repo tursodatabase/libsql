@@ -390,7 +390,7 @@ void sqlite3Update(
       regKey = iPk;
     }else{
       sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, regKey,
-                        sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
+                        sqlite3IndexAffinityStr(v, pPk), nPk);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iEph, regKey);
     }
     sqlite3WhereEnd(pWInfo);
@@ -434,18 +434,23 @@ void sqlite3Update(
     if( aToOpen[iDataCur-iBaseCur] ){
       assert( pPk!=0 );
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
+      VdbeCoverage(v);
     }
     labelContinue = labelBreak;
     sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
+    VdbeCoverage(v);
   }else if( pPk ){
     labelContinue = sqlite3VdbeMakeLabel(v);
-    sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak);
+    sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak); VdbeCoverage(v);
     addrTop = sqlite3VdbeAddOp2(v, OP_RowKey, iEph, regKey);
     sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue, regKey, 0);
+    VdbeCoverage(v);
   }else{
     labelContinue = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet, labelBreak,
                              regOldRowid);
+    VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
+    VdbeCoverage(v);
   }
 
   /* If the record number will change, set register regNewRowid to
@@ -455,7 +460,7 @@ void sqlite3Update(
   assert( chngKey || pTrigger || hasFK || regOldRowid==regNewRowid );
   if( chngRowid ){
     sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
-    sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid);
+    sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid); VdbeCoverage(v);
   }
 
   /* Compute the old pre-UPDATE content of the row being changed, if that
@@ -524,8 +529,7 @@ void sqlite3Update(
   ** verified. One could argue that this is wrong.
   */
   if( tmask&TRIGGER_BEFORE ){
-    sqlite3VdbeAddOp2(v, OP_Affinity, regNew, pTab->nCol);
-    sqlite3TableAffinityStr(v, pTab);
+    sqlite3TableAffinity(v, pTab, regNew);
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
         TRIGGER_BEFORE, pTab, regOldRowid, onError, labelContinue);
 
@@ -537,8 +541,10 @@ void sqlite3Update(
     */
     if( pPk ){
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelContinue,regKey,nKey);
+      VdbeCoverage(v);
     }else{
       sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, labelContinue, regOldRowid);
+      VdbeCoverage(v);
     }
 
     /* If it did not delete it, the row-trigger may still have modified 
@@ -571,8 +577,10 @@ void sqlite3Update(
     if( bReplace || chngKey ){
       if( pPk ){
         j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, nKey);
+        VdbeCoverage(v);
       }else{
         j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
+        VdbeCoverage(v);
       }
     }
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx);
@@ -617,7 +625,7 @@ void sqlite3Update(
     /* Nothing to do at end-of-loop for a single-pass */
   }else if( pPk ){
     sqlite3VdbeResolveLabel(v, labelContinue);
-    sqlite3VdbeAddOp2(v, OP_Next, iEph, addrTop);
+    sqlite3VdbeAddOp2(v, OP_Next, iEph, addrTop); VdbeCoverage(v);
   }else{
     sqlite3VdbeAddOp2(v, OP_Goto, 0, labelContinue);
   }
@@ -746,7 +754,7 @@ static void updateVirtualTable(
   /* Generate code to scan the ephemeral table and call VUpdate. */
   iReg = ++pParse->nMem;
   pParse->nMem += pTab->nCol+1;
-  addr = sqlite3VdbeAddOp2(v, OP_Rewind, ephemTab, 0);
+  addr = sqlite3VdbeAddOp2(v, OP_Rewind, ephemTab, 0); VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, OP_Column,  ephemTab, 0, iReg);
   sqlite3VdbeAddOp3(v, OP_Column, ephemTab, (pRowid?1:0), iReg+1);
   for(i=0; i<pTab->nCol; i++){
@@ -756,7 +764,7 @@ static void updateVirtualTable(
   sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, iReg, pVTab, P4_VTAB);
   sqlite3VdbeChangeP5(v, onError==OE_Default ? OE_Abort : onError);
   sqlite3MayAbort(pParse);
-  sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1);
+  sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1); VdbeCoverage(v);
   sqlite3VdbeJumpHere(v, addr);
   sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);
 
