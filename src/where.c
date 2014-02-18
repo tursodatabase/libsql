@@ -1601,7 +1601,7 @@ static void constructAutomaticIndex(
   ** transient index on 2nd and subsequent iterations of the loop. */
   v = pParse->pVdbe;
   assert( v!=0 );
-  addrInit = sqlite3CodeOnce(pParse);
+  addrInit = sqlite3CodeOnce(pParse); VdbeCoverage(v);
 
   /* Count the number of columns that will be added to the index
   ** and used to match WHERE clause constraints */
@@ -2388,7 +2388,9 @@ static int codeEqualityTerm(
       bRev = !bRev;
     }
     iTab = pX->iTable;
-    sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0); VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iTab, 0);
+    VdbeCoverageIf(v, bRev);
+    VdbeCoverageIf(v, !bRev);
     assert( (pLoop->wsFlags & WHERE_MULTI_OR)==0 );
     pLoop->wsFlags |= WHERE_IN_ABLE;
     if( pLevel->u.in.nIn==0 ){
@@ -2502,11 +2504,15 @@ static int codeAllEqualityTerms(
 
   if( nSkip ){
     int iIdxCur = pLevel->iIdxCur;
-    sqlite3VdbeAddOp1(v, (bRev?OP_Last:OP_Rewind), iIdxCur); VdbeCoverage(v);
+    sqlite3VdbeAddOp1(v, (bRev?OP_Last:OP_Rewind), iIdxCur);
+    VdbeCoverageIf(v, bRev==0);
+    VdbeCoverageIf(v, bRev!=0);
     VdbeComment((v, "begin skip-scan on %s", pIdx->zName));
     j = sqlite3VdbeAddOp0(v, OP_Goto);
     pLevel->addrSkip = sqlite3VdbeAddOp4Int(v, (bRev?OP_SeekLT:OP_SeekGT),
-                            iIdxCur, 0, regBase, nSkip); VdbeCoverage(v);
+                            iIdxCur, 0, regBase, nSkip);
+    VdbeCoverageIf(v, bRev==0);
+    VdbeCoverageIf(v, bRev!=0);
     sqlite3VdbeJumpHere(v, j);
     for(j=0; j<nSkip; j++){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, j, regBase+j);
@@ -2539,7 +2545,10 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
-      sqlite3ExprCodeIsNullJump(v, pRight, regBase+j, pLevel->addrBrk);
+      if( sqlite3ExprCanBeNull(pRight) ){
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
+        VdbeCoverage(v);
+      }
       if( zAff ){
         if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_NONE ){
           zAff[j] = SQLITE_AFF_NONE;
@@ -2904,13 +2913,18 @@ static Bitmask codeOneLoopStart(
       testcase( pStart->leftCursor!=iCur ); /* transitive constraints */
       r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
       sqlite3VdbeAddOp3(v, aMoveOp[pX->op-TK_GT], iCur, addrBrk, r1);
-      VdbeComment((v, "pk")); VdbeCoverage(v);
+      VdbeComment((v, "pk"));
+      VdbeCoverageIf(v, pX->op==TK_GT);
+      VdbeCoverageIf(v, pX->op==TK_LE);
+      VdbeCoverageIf(v, pX->op==TK_LT);
+      VdbeCoverageIf(v, pX->op==TK_GE);
       sqlite3ExprCacheAffinityChange(pParse, r1, 1);
       sqlite3ReleaseTempReg(pParse, rTemp);
       disableTerm(pLevel, pStart);
     }else{
       sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, addrBrk);
-      VdbeCoverage(v);
+      VdbeCoverageIf(v, bRev==0);
+      VdbeCoverageIf(v, bRev!=0);
     }
     if( pEnd ){
       Expr *pX;
@@ -2938,7 +2952,10 @@ static Bitmask codeOneLoopStart(
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, iRowidReg);
       sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, iRowidReg);
-      VdbeCoverage(v);
+      VdbeCoverageIf(v, testOp==OP_Le);
+      VdbeCoverageIf(v, testOp==OP_Lt);
+      VdbeCoverageIf(v, testOp==OP_Ge);
+      VdbeCoverageIf(v, testOp==OP_Gt);
       sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
     }
   }else if( pLoop->wsFlags & WHERE_INDEXED ){
@@ -3080,8 +3097,11 @@ static Bitmask codeOneLoopStart(
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      if( (pRangeStart->wtFlags & TERM_VNULL)==0 ){
-        sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
+      if( (pRangeStart->wtFlags & TERM_VNULL)==0
+       && sqlite3ExprCanBeNull(pRight)
+      ){
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
+        VdbeCoverage(v);
       }
       if( zStartAff ){
         if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_NONE){
@@ -3105,20 +3125,14 @@ static Bitmask codeOneLoopStart(
     codeApplyAffinity(pParse, regBase, nConstraint - bSeekPastNull, zStartAff);
     op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
     assert( op!=0 );
-    testcase( op==OP_Rewind );
-    testcase( op==OP_Last );
-    testcase( op==OP_SeekGT );
-    testcase( op==OP_SeekGE );
-    testcase( op==OP_SeekLE );
-    testcase( op==OP_SeekLT );
     sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
     VdbeCoverage(v);
-    VdbeCoverageIf(v, op==OP_Rewind);
-    VdbeCoverageIf(v, op==OP_Last);
-    VdbeCoverageIf(v, op==OP_SeekGT);
-    VdbeCoverageIf(v, op==OP_SeekGE);
-    VdbeCoverageIf(v, op==OP_SeekLE);
-    VdbeCoverageIf(v, op==OP_SeekLT);
+    VdbeCoverageIf(v, op==OP_Rewind);  testcase( op==OP_Rewind );
+    VdbeCoverageIf(v, op==OP_Last);    testcase( op==OP_Last );
+    VdbeCoverageIf(v, op==OP_SeekGT);  testcase( op==OP_SeekGT );
+    VdbeCoverageIf(v, op==OP_SeekGE);  testcase( op==OP_SeekGE );
+    VdbeCoverageIf(v, op==OP_SeekLE);  testcase( op==OP_SeekLE );
+    VdbeCoverageIf(v, op==OP_SeekLT);  testcase( op==OP_SeekLT );
 
     /* Load the value for the inequality constraint at the end of the
     ** range (if any).
@@ -3128,8 +3142,11 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      if( (pRangeEnd->wtFlags & TERM_VNULL)==0 ){
-        sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
+      if( (pRangeEnd->wtFlags & TERM_VNULL)==0
+       && sqlite3ExprCanBeNull(pRight)
+      ){
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
+        VdbeCoverage(v);
       }
       if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_NONE
        && !sqlite3ExprNeedsNoAffinityChange(pRight, cEndAff)
@@ -3151,12 +3168,11 @@ static Bitmask codeOneLoopStart(
     /* Check if the index cursor is past the end of the range. */
     if( nConstraint ){
       op = aEndOp[bRev*2 + endEq];
-      testcase( op==OP_IdxGT );
-      testcase( op==OP_IdxGE );
-      testcase( op==OP_IdxLT );
-      testcase( op==OP_IdxLE );
       sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
-      VdbeCoverage(v);
+      testcase( op==OP_IdxGT );  VdbeCoverageIf(v, op==OP_IdxGT );
+      testcase( op==OP_IdxGE );  VdbeCoverageIf(v, op==OP_IdxGE );
+      testcase( op==OP_IdxLT );  VdbeCoverageIf(v, op==OP_IdxLT );
+      testcase( op==OP_IdxLE );  VdbeCoverageIf(v, op==OP_IdxLE );
     }
 
     /* Seek the table cursor, if required */
@@ -3430,8 +3446,8 @@ static Bitmask codeOneLoopStart(
       pLevel->op = aStep[bRev];
       pLevel->p1 = iCur;
       pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, aStart[bRev], iCur, addrBrk);
-      VdbeCoverageIf(v, bRev);
-      VdbeCoverageIf(v, !bRev);
+      VdbeCoverageIf(v, bRev==0);
+      VdbeCoverageIf(v, bRev!=0);
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
     }
   }
@@ -5802,6 +5818,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       sqlite3VdbeAddOp3(v, pLevel->op, pLevel->p1, pLevel->p2, pLevel->p3);
       sqlite3VdbeChangeP5(v, pLevel->p5);
       VdbeCoverage(v);
+      VdbeCoverageIf(v, pLevel->op==OP_Next);
+      VdbeCoverageIf(v, pLevel->op==OP_Prev);
+      VdbeCoverageIf(v, pLevel->op==OP_VNext);
     }
     if( pLoop->wsFlags & WHERE_IN_ABLE && pLevel->u.in.nIn>0 ){
       struct InLoop *pIn;
@@ -5811,6 +5830,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
         sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
         sqlite3VdbeAddOp2(v, pIn->eEndLoopOp, pIn->iCur, pIn->addrInTop);
         VdbeCoverage(v);
+        VdbeCoverageIf(v, pIn->eEndLoopOp==OP_PrevIfOpen);
+        VdbeCoverageIf(v, pIn->eEndLoopOp==OP_NextIfOpen);
         sqlite3VdbeJumpHere(v, pIn->addrInTop-1);
       }
       sqlite3DbFree(db, pLevel->u.in.aInLoop);

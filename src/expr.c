@@ -1370,24 +1370,6 @@ int sqlite3ExprCanBeNull(const Expr *p){
 }
 
 /*
-** Generate an OP_IsNull instruction that tests register iReg and jumps
-** to location iDest if the value in iReg is NULL.  The value in iReg 
-** was computed by pExpr.  If we can look at pExpr at compile-time and
-** determine that it can never generate a NULL, then the OP_IsNull operation
-** can be omitted.
-*/
-void sqlite3ExprCodeIsNullJump(
-  Vdbe *v,            /* The VDBE under construction */
-  const Expr *pExpr,  /* Only generate OP_IsNull if this expr can be NULL */
-  int iReg,           /* Test the value in this register for NULL */
-  int iDest           /* Jump here if the value is null */
-){
-  if( sqlite3ExprCanBeNull(pExpr) ){
-    sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iDest); VdbeCoverage(v);
-  }
-}
-
-/*
 ** Return TRUE if the given expression is a constant which would be
 ** unchanged by OP_Affinity with the affinity given in the second
 ** argument.
@@ -1486,9 +1468,7 @@ static int isCandidateForInOpt(Select *p){
 */
 int sqlite3CodeOnce(Parse *pParse){
   Vdbe *v = sqlite3GetVdbe(pParse);      /* Virtual machine being coded */
-  int addr = sqlite3VdbeAddOp1(v, OP_Once, pParse->nOnce++);
-  VdbeCoverage(v);
-  return addr;
+  return sqlite3VdbeAddOp1(v, OP_Once, pParse->nOnce++);
 }
 
 /*
@@ -1596,9 +1576,8 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     */
     assert(v);
     if( iCol<0 ){
-      int iAddr;
-
-      iAddr = sqlite3CodeOnce(pParse);
+      int iAddr = sqlite3CodeOnce(pParse);
+      VdbeCoverage(v);
 
       sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
       eType = IN_INDEX_ROWID;
@@ -1623,7 +1602,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
          && sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0)==pReq
          && (!mustBeUnique || (pIdx->nKeyCol==1 && pIdx->onError!=OE_None))
         ){
-          int iAddr = sqlite3CodeOnce(pParse);
+          int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
           sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);
           sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
           VdbeComment((v, "%s", pIdx->zName));
@@ -1723,7 +1702,7 @@ int sqlite3CodeSubselect(
   ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasProperty(pExpr, EP_VarSelect) ){
-    testAddr = sqlite3CodeOnce(pParse);
+    testAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
   }
 
 #ifndef SQLITE_OMIT_EXPLAIN
@@ -2548,22 +2527,16 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      assert( TK_LT==OP_Lt );
-      assert( TK_LE==OP_Le );
-      assert( TK_GT==OP_Gt );
-      assert( TK_GE==OP_Ge );
-      assert( TK_EQ==OP_Eq );
-      assert( TK_NE==OP_Ne );
-      testcase( op==TK_LT );
-      testcase( op==TK_LE );
-      testcase( op==TK_GT );
-      testcase( op==TK_GE );
-      testcase( op==TK_EQ );
-      testcase( op==TK_NE );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, inReg, SQLITE_STOREP2); VdbeCoverage(v);
+                  r1, r2, inReg, SQLITE_STOREP2);
+      assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
+      assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
+      assert(TK_GT==OP_Gt); testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);
+      assert(TK_GE==OP_Ge); testcase(op==OP_Ge); VdbeCoverageIf(v,op==OP_Ge);
+      assert(TK_EQ==OP_Eq); testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
+      assert(TK_NE==OP_Ne); testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -2577,7 +2550,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       op = (op==TK_IS) ? TK_EQ : TK_NE;
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, inReg, SQLITE_STOREP2 | SQLITE_NULLEQ);
-      VdbeCoverage(v);
+      VdbeCoverageIf(v, op==TK_EQ);
+      VdbeCoverageIf(v, op==TK_NE);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -2594,28 +2568,17 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_LSHIFT:
     case TK_RSHIFT: 
     case TK_CONCAT: {
-      assert( TK_AND==OP_And );
-      assert( TK_OR==OP_Or );
-      assert( TK_PLUS==OP_Add );
-      assert( TK_MINUS==OP_Subtract );
-      assert( TK_REM==OP_Remainder );
-      assert( TK_BITAND==OP_BitAnd );
-      assert( TK_BITOR==OP_BitOr );
-      assert( TK_SLASH==OP_Divide );
-      assert( TK_LSHIFT==OP_ShiftLeft );
-      assert( TK_RSHIFT==OP_ShiftRight );
-      assert( TK_CONCAT==OP_Concat );
-      testcase( op==TK_AND );
-      testcase( op==TK_OR );
-      testcase( op==TK_PLUS );
-      testcase( op==TK_MINUS );
-      testcase( op==TK_REM );
-      testcase( op==TK_BITAND );
-      testcase( op==TK_BITOR );
-      testcase( op==TK_SLASH );
-      testcase( op==TK_LSHIFT );
-      testcase( op==TK_RSHIFT );
-      testcase( op==TK_CONCAT );
+      assert( TK_AND==OP_And );            testcase( op==TK_AND );
+      assert( TK_OR==OP_Or );              testcase( op==TK_OR );
+      assert( TK_PLUS==OP_Add );           testcase( op==TK_PLUS );
+      assert( TK_MINUS==OP_Subtract );     testcase( op==TK_MINUS );
+      assert( TK_REM==OP_Remainder );      testcase( op==TK_REM );
+      assert( TK_BITAND==OP_BitAnd );      testcase( op==TK_BITAND );
+      assert( TK_BITOR==OP_BitOr );        testcase( op==TK_BITOR );
+      assert( TK_SLASH==OP_Divide );       testcase( op==TK_SLASH );
+      assert( TK_LSHIFT==OP_ShiftLeft );   testcase( op==TK_LSHIFT );
+      assert( TK_RSHIFT==OP_ShiftRight );  testcase( op==TK_RSHIFT );
+      assert( TK_CONCAT==OP_Concat );      testcase( op==TK_CONCAT );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       sqlite3VdbeAddOp3(v, op, r2, r1, target);
@@ -2647,10 +2610,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
     case TK_BITNOT:
     case TK_NOT: {
-      assert( TK_BITNOT==OP_BitNot );
-      assert( TK_NOT==OP_Not );
-      testcase( op==TK_BITNOT );
-      testcase( op==TK_NOT );
+      assert( TK_BITNOT==OP_BitNot );   testcase( op==TK_BITNOT );
+      assert( TK_NOT==OP_Not );         testcase( op==TK_NOT );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
       inReg = target;
@@ -2660,14 +2621,14 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_ISNULL:
     case TK_NOTNULL: {
       int addr;
-      assert( TK_ISNULL==OP_IsNull );
-      assert( TK_NOTNULL==OP_NotNull );
-      testcase( op==TK_ISNULL );
-      testcase( op==TK_NOTNULL );
+      assert( TK_ISNULL==OP_IsNull );   testcase( op==TK_ISNULL );
+      assert( TK_NOTNULL==OP_NotNull ); testcase( op==TK_NOTNULL );
       sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
-      addr = sqlite3VdbeAddOp1(v, op, r1); VdbeCoverage(v);
+      addr = sqlite3VdbeAddOp1(v, op, r1);
+      VdbeCoverageIf(v, op==TK_ISNULL);
+      VdbeCoverageIf(v, op==TK_NOTNULL);
       sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
       sqlite3VdbeJumpHere(v, addr);
       break;
@@ -2857,8 +2818,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       r3 = sqlite3GetTempReg(pParse);
       r4 = sqlite3GetTempReg(pParse);
       codeCompare(pParse, pLeft, pRight, OP_Ge,
-                  r1, r2, r3, SQLITE_STOREP2);
-      VdbeCoverage(v);
+                  r1, r2, r3, SQLITE_STOREP2);  VdbeCoverage(v);
       pLItem++;
       pRight = pLItem->pExpr;
       sqlite3ReleaseTempReg(pParse, regFree2);
@@ -3605,23 +3565,17 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      assert( TK_LT==OP_Lt );
-      assert( TK_LE==OP_Le );
-      assert( TK_GT==OP_Gt );
-      assert( TK_GE==OP_Ge );
-      assert( TK_EQ==OP_Eq );
-      assert( TK_NE==OP_Ne );
-      testcase( op==TK_LT );
-      testcase( op==TK_LE );
-      testcase( op==TK_GT );
-      testcase( op==TK_GE );
-      testcase( op==TK_EQ );
-      testcase( op==TK_NE );
       testcase( jumpIfNull==0 );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, jumpIfNull);  VdbeCoverage(v);
+                  r1, r2, dest, jumpIfNull);
+      assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
+      assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
+      assert(TK_GT==OP_Gt); testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);
+      assert(TK_GE==OP_Ge); testcase(op==OP_Ge); VdbeCoverageIf(v,op==OP_Ge);
+      assert(TK_EQ==OP_Eq); testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
+      assert(TK_NE==OP_Ne); testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -3634,19 +3588,21 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       op = (op==TK_IS) ? TK_EQ : TK_NE;
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, SQLITE_NULLEQ);  VdbeCoverage(v);
+                  r1, r2, dest, SQLITE_NULLEQ);
+      VdbeCoverageIf(v, op==TK_EQ);
+      VdbeCoverageIf(v, op==TK_NE);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
-      assert( TK_ISNULL==OP_IsNull );
-      assert( TK_NOTNULL==OP_NotNull );
-      testcase( op==TK_ISNULL );
-      testcase( op==TK_NOTNULL );
+      assert( TK_ISNULL==OP_IsNull );   testcase( op==TK_ISNULL );
+      assert( TK_NOTNULL==OP_NotNull ); testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      sqlite3VdbeAddOp2(v, op, r1, dest); VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, op, r1, dest);
+      VdbeCoverageIf(v, op==TK_ISNULL);
+      VdbeCoverageIf(v, op==TK_NOTNULL);
       testcase( regFree1==0 );
       break;
     }
@@ -3765,17 +3721,17 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     case TK_GE:
     case TK_NE:
     case TK_EQ: {
-      testcase( op==TK_LT );
-      testcase( op==TK_LE );
-      testcase( op==TK_GT );
-      testcase( op==TK_GE );
-      testcase( op==TK_EQ );
-      testcase( op==TK_NE );
       testcase( jumpIfNull==0 );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, jumpIfNull);  VdbeCoverage(v);
+                  r1, r2, dest, jumpIfNull);
+      assert(TK_LT==OP_Lt); testcase(op==OP_Lt); VdbeCoverageIf(v,op==OP_Lt);
+      assert(TK_LE==OP_Le); testcase(op==OP_Le); VdbeCoverageIf(v,op==OP_Le);
+      assert(TK_GT==OP_Gt); testcase(op==OP_Gt); VdbeCoverageIf(v,op==OP_Gt);
+      assert(TK_GE==OP_Ge); testcase(op==OP_Ge); VdbeCoverageIf(v,op==OP_Ge);
+      assert(TK_EQ==OP_Eq); testcase(op==OP_Eq); VdbeCoverageIf(v,op==OP_Eq);
+      assert(TK_NE==OP_Ne); testcase(op==OP_Ne); VdbeCoverageIf(v,op==OP_Ne);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
@@ -3788,17 +3744,19 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       r2 = sqlite3ExprCodeTemp(pParse, pExpr->pRight, &regFree2);
       op = (pExpr->op==TK_IS) ? TK_NE : TK_EQ;
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
-                  r1, r2, dest, SQLITE_NULLEQ);  VdbeCoverage(v);
+                  r1, r2, dest, SQLITE_NULLEQ);
+      VdbeCoverageIf(v, op==TK_EQ);
+      VdbeCoverageIf(v, op==TK_NE);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
-      testcase( op==TK_ISNULL );
-      testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
-      sqlite3VdbeAddOp2(v, op, r1, dest); VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, op, r1, dest);
+      testcase( op==TK_ISNULL );   VdbeCoverageIf(v, op==TK_ISNULL);
+      testcase( op==TK_NOTNULL );  VdbeCoverageIf(v, op==TK_NOTNULL);
       testcase( regFree1==0 );
       break;
     }

@@ -4595,7 +4595,7 @@ int sqlite3Select(
         /* If the subquery is not correlated and if we are not inside of
         ** a trigger, then we only need to compute the value of the subquery
         ** once. */
-        onceAddr = sqlite3CodeOnce(pParse);
+        onceAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
         VdbeComment((v, "materialize \"%s\"", pItem->pTab->zName));
       }else{
         VdbeNoopComment((v, "materialize \"%s\"", pItem->pTab->zName));
