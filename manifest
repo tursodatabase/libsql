@@ -1,5 +1,5 @@
-C Add\sVdbeCoverage()\sand\sVdbeCoverageIf()\smacros\sfor\simproved\sVDBE\scoverage\ntesting.
-D 2014-02-18T03:07:12.342
+C Enhance\sthe\sWin32\sVFS\sI/O\sretry\slogic.
+D 2014-02-18T05:18:36.863
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
-F src/os_win.c d4284f003445054a26689f1264b1b9bf7261bd1b
+F src/os_win.c 5c0f315a7cfb513b7151c87a0699a8ad0bc1acb2
 F src/pager.c 0ffa313a30ed6d061d9c6601b7b175cc50a1cab7
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y cce844ccb80b5f969b04c25100c8d94338488efb
@@ -1151,7 +1151,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 915f6f1c7aab54583729e60bdc1565f25ecc6f74
-R d0043e1267f21a1ea521214d42169c3d
-U drh
-Z f5a439caf79133298419241dae122f4e
+P b92d31a97d5fe4606d9ae1393c7f3e052f46bf5a
+R 36c4c6416a0341396e2a781bd502abeb
+T *branch * winIoRetry
+T *sym-winIoRetry *
+T -sym-trunk *
+U mistachkin
+Z b9d60eef2d6576ef4d346ab00acfffd9
