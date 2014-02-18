@@ -1909,7 +1909,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         MemSetTypeFlag(pOut, MEM_Null);
         REGISTER_TRACE(pOp->p2, pOut);
       }else{
-        VdbeBranchTaken((pOp->p5 & SQLITE_JUMPIFNULL)?2:3,4);
+        VdbeBranchTaken(2,3);
         if( pOp->p5 & SQLITE_JUMPIFNULL ){
           pc = pOp->p2-1;
         }
@@ -1946,7 +1946,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     pOut->u.i = res;
     REGISTER_TRACE(pOp->p2, pOut);
   }else{
-    VdbeBranchTaken(res!=0, 4);
+    VdbeBranchTaken(res!=0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
     if( res ){
       pc = pOp->p2-1;
     }
