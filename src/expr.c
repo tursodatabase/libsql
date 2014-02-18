@@ -1630,11 +1630,11 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
           assert( IN_INDEX_INDEX_DESC == IN_INDEX_INDEX_ASC+1 );
           eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
 
-          sqlite3VdbeJumpHere(v, iAddr);
           if( prNotFound && !pTab->aCol[iCol].notNull ){
             *prNotFound = ++pParse->nMem;
             sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
           }
+          sqlite3VdbeJumpHere(v, iAddr);
         }
       }
     }
@@ -2004,7 +2004,7 @@ static void sqlite3ExprCodeIN(
       ** the presence of a NULL on the RHS makes a difference in the
       ** outcome.
       */
-      int j1, j2, j3;
+      int j1, j2;
 
       /* First check to see if the LHS is contained in the RHS.  If so,
       ** then the presence of NULLs in the RHS does not matter, so jump
@@ -2019,19 +2019,15 @@ static void sqlite3ExprCodeIN(
       ** jump to destIfNull.  If there are no NULLs in the RHS then
       ** jump to destIfFalse.
       */
-      j2 = sqlite3VdbeAddOp1(v, OP_NotNull, rRhsHasNull); VdbeCoverage(v);
-      j3 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, rRhsHasNull, 1);
-      VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Integer, -1, rRhsHasNull);
-      sqlite3VdbeJumpHere(v, j3);
-      sqlite3VdbeAddOp2(v, OP_AddImm, rRhsHasNull, 1);
-      sqlite3VdbeJumpHere(v, j2);
-
-      /* Jump to the appropriate target depending on whether or not
-      ** the RHS contains a NULL
-      */
       sqlite3VdbeAddOp2(v, OP_If, rRhsHasNull, destIfNull); VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_IfNot, rRhsHasNull, destIfFalse); VdbeCoverage(v);
+      j2 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, rRhsHasNull, 1);
+      VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, rRhsHasNull);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
+      sqlite3VdbeJumpHere(v, j2);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, rRhsHasNull);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
 
       /* The OP_Found at the top of this branch jumps here when true, 
       ** causing the overall IN expression evaluation to fall through.

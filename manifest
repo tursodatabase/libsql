@@ -1,5 +1,5 @@
-C Merge\sin\sperformance\senhancements\sfor\sINSERT\soperations,\sespecially\sINSERTs\non\stables\sthat\shave\sno\saffinity\scolumns\sor\sthat\shave\smany\sindices\sor\sINSERTs\nwith\scontent\scoming\sfrom\sa\sSELECT.\s\sAdd\sthe\sSQLITE_TESTCTRL_VDBE_COVERAGE\ntest\scontrol\sand\sthe\sSQLITE_VDBE_COVERAGE\scompile-time\soption\sused\sfor\smeasure\ncoverage\sof\sbranches\sin\sVDBE\sprograms.
-D 2014-02-17T23:52:13.448
+C Improvements\sto\s"NOT\sIN\s(SELECT\s...)"\sprocessing.\s\sOnly\stest\sfor\sNULL\svalues\non\sthe\sRHS\son\sthe\sfirst\siteration,\sthen\sremember\sthe\sresult.\s\sThere\shas\sbeen\nlogic\sto\sdo\sthis\sfor\syear,\sbut\sit\sdidn't\swork\sright\sand\sended\sup\srepeating\nthe\sNULL\stest\son\severy\siteration.\s\sThis\sinefficiency\swas\sfound\susing\sthe\nVDBE\scoverage\stesting\stools.
+D 2014-02-18T01:07:38.047
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -172,7 +172,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c a00bf893bd39868c51020eba1fc5182eb36bfeb7
-F src/expr.c d1a8ccbf7e4dac6198674d33853e8ed01072eca4
+F src/expr.c e908787e4728beefdf742db90666248f89b1da01
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 3cd6ce998404fb1b7203d886d6fdff71cf3c8846
 F src/func.c f4499b39d66b71825514334ce67b32ff14bd19f5
@@ -1151,7 +1151,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7adb3da235c8c162c84f05ef4ccf1cc463805d5f ce184c7bb16988641d37c908d9b3042456d4be3d
-R 3842d7f2fc20472907a26e6db9a0b24a
+P a72687699ba2af2e7383be7371d4121750c7e34f
+R babb7ab4a8213aedecd107bc9c2410b3
 U drh
-Z d2a564f325f5059be0c19074b4cb10b9
+Z 3cb428699d451ff8a4012effde517352
