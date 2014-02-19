@@ -304,7 +304,7 @@ void sqlite3AutoincrementEnd(Parse *pParse){
   assert( v );
   for(p = pParse->pAinc; p; p = p->pNext){
     Db *pDb = &db->aDb[p->iDb];
-    int j1, j2, j3, j4, j5;
+    int j1;
     int iRec;
     int memId = p->regCtr;
 
@@ -312,17 +312,8 @@ void sqlite3AutoincrementEnd(Parse *pParse){
     assert( sqlite3SchemaMutexHeld(db, 0, pDb->pSchema) );
     sqlite3OpenTable(pParse, 0, p->iDb, pDb->pSchema->pSeqTab, OP_OpenWrite);
     j1 = sqlite3VdbeAddOp1(v, OP_NotNull, memId+1); VdbeCoverage(v);
-    j2 = sqlite3VdbeAddOp0(v, OP_Rewind); VdbeCoverage(v);
-    j3 = sqlite3VdbeAddOp3(v, OP_Column, 0, 0, iRec);
-    j4 = sqlite3VdbeAddOp3(v, OP_Eq, memId-1, 0, iRec); VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Next, 0, j3); VdbeCoverage(v);
-    sqlite3VdbeJumpHere(v, j2);
     sqlite3VdbeAddOp2(v, OP_NewRowid, 0, memId+1);
-    j5 = sqlite3VdbeAddOp0(v, OP_Goto);
-    sqlite3VdbeJumpHere(v, j4);
-    sqlite3VdbeAddOp2(v, OP_Rowid, 0, memId+1);
     sqlite3VdbeJumpHere(v, j1);
-    sqlite3VdbeJumpHere(v, j5);
     sqlite3VdbeAddOp3(v, OP_MakeRecord, memId-1, 2, iRec);
     sqlite3VdbeAddOp3(v, OP_Insert, 0, iRec, memId+1);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
@@ -1275,6 +1266,7 @@ void sqlite3GenerateConstraintChecks(
       ** it might have changed.  Skip the conflict logic below if the rowid
       ** is unchanged. */
       sqlite3VdbeAddOp3(v, OP_Eq, regNewData, addrRowidOk, regOldData);
+      sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
       VdbeCoverage(v);
     }
 
@@ -1446,6 +1438,7 @@ void sqlite3GenerateConstraintChecks(
         ** is different from old-rowid */
         if( isUpdate ){
           sqlite3VdbeAddOp3(v, OP_Eq, regR, addrUniqueOk, regOldData);
+          sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
           VdbeCoverage(v);
         }
       }else{
@@ -1481,7 +1474,10 @@ void sqlite3GenerateConstraintChecks(
             }
             sqlite3VdbeAddOp4(v, op, 
                 regOldData+1+x, addrJump, regCmp+i, p4, P4_COLLSEQ
-            );  VdbeCoverage(v);
+            );
+            sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
+            VdbeCoverageIf(v, op==OP_Eq);
+            VdbeCoverageIf(v, op==OP_Ne);
           }
         }
       }

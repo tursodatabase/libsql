@@ -1891,6 +1891,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
+      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 );
       if( (flags1&MEM_Null)!=0
        && (flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
@@ -4833,7 +4834,6 @@ case OP_Clear: {
  
   nChange = 0;
   assert( p->readOnly==0 );
-  assert( pOp->p1!=1 );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)

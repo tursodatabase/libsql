@@ -1314,10 +1314,16 @@ struct CollSeq {
 /*
 ** Additional bit values that can be ORed with an affinity without
 ** changing the affinity.
+**
+** The SQLITE_NOTNULL flag is a combination of NULLEQ and JUMPIFNULL.
+** It causes an assert() to fire if either operand to a comparison
+** operator is NULL.  It is added to certain comparison operators to
+** prove that the operands are always NOT NULL.
 */
 #define SQLITE_JUMPIFNULL   0x08  /* jumps if either operand is NULL */
 #define SQLITE_STOREP2      0x10  /* Store result in reg[P2] rather than jump */
 #define SQLITE_NULLEQ       0x80  /* NULL=NULL */
+#define SQLITE_NOTNULL      0x88  /* Assert that operands are never NULL */
 
 /*
 ** An object of this type is created for each virtual table present in
