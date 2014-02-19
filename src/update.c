@@ -434,7 +434,7 @@ void sqlite3Update(
     if( aToOpen[iDataCur-iBaseCur] ){
       assert( pPk!=0 );
       sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, labelBreak, regKey, nKey);
-      VdbeCoverage(v);
+      VdbeCoverageNeverTaken(v);
     }
     labelContinue = labelBreak;
     sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
@@ -577,11 +577,10 @@ void sqlite3Update(
     if( bReplace || chngKey ){
       if( pPk ){
         j1 = sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, 0, regKey, nKey);
-        VdbeCoverage(v);
       }else{
         j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iDataCur, 0, regOldRowid);
-        VdbeCoverage(v);
       }
+      VdbeCoverageNeverTaken(v);
     }
     sqlite3GenerateRowIndexDelete(pParse, pTab, iDataCur, iIdxCur, aRegIdx);
   

@@ -108,15 +108,31 @@ int sqlite3_found_count = 0;
 #endif
 
 /*
-** Invoke the VDBE coverage callback, if defined
+** Invoke the VDBE coverage callback, if that callback is defined.  This
+** feature is used for test suite validation only and does not appear an
+** production builds.
+**
+** M is an integer, 2 or 3, that indices how many different ways the
+** branch can go.  It is usually 2.  "I" is the direction the branch
+** goes.  0 means falls through.  1 means branch is taken.  2 means the
+** second alternative branch is taken.
 */
 #if !defined(SQLITE_VDBE_COVERAGE)
 # define VdbeBranchTaken(I,M)
 #else
-# define VdbeBranchTaken(I,M) \
-    if( sqlite3GlobalConfig.xVdbeBranch!=0 ){ \
-      sqlite3GlobalConfig.xVdbeBranch(sqlite3GlobalConfig.pVdbeBranchArg, \
-                                      pOp->iSrcLine,(I),(M)); }
+# define VdbeBranchTaken(I,M) vdbeTakeBranch(pOp->iSrcLine,I,M)
+  static void vdbeTakeBranch(int iSrcLine, u8 I, u8 M){
+    if( iSrcLine<=2 && ALWAYS(iSrcLine>0) ){
+      M = iSrcLine;
+      /* Assert the truth of VdbeCoverageAlwaysTaken() and 
+      ** VdbeCoverageNeverTaken() */
+      assert( (M & I)==I );
+    }else{
+      if( sqlite3GlobalConfig.xVdbeBranch==0 ) return;  /*NO_TEST*/
+      sqlite3GlobalConfig.xVdbeBranch(sqlite3GlobalConfig.pVdbeBranchArg,
+                                      iSrcLine,I,M);
+    }
+  }
 #endif
 
 /*

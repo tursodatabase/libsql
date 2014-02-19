@@ -1942,6 +1942,7 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp2(v, OP_Halt, 0, 0);
           sqlite3VdbeAddOp2(v, OP_Count, iIdxCur+j, 3);
           sqlite3VdbeAddOp3(v, OP_Eq, 8+j, addr+8, 3); VdbeCoverage(v);
+          sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
           sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1);
           sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pIdx->zName, P4_TRANSIENT);
           sqlite3VdbeAddOp3(v, OP_Concat, 3, 2, 7);
