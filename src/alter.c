@@ -77,8 +77,8 @@ static void renameTableFunc(
       assert( len>0 );
     } while( token!=TK_LP && token!=TK_USING );
 
-    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", ((u8*)tname.z) - zSql, zSql, 
-       zTableName, tname.z+tname.n);
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", (int)(((u8*)tname.z) - zSql),
+       zSql, zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
 }
@@ -130,7 +130,7 @@ static void renameParentFunc(
       sqlite3Dequote(zParent);
       if( 0==sqlite3StrICmp((const char *)zOld, zParent) ){
         char *zOut = sqlite3MPrintf(db, "%s%.*s\"%w\"", 
-            (zOutput?zOutput:""), z-zInput, zInput, (const char *)zNew
+            (zOutput?zOutput:""), (int)(z-zInput), zInput, (const char *)zNew
         );
         sqlite3DbFree(db, zOutput);
         zOutput = zOut;
@@ -216,8 +216,8 @@ static void renameTriggerFunc(
     /* Variable tname now contains the token that is the old table-name
     ** in the CREATE TRIGGER statement.
     */
-    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", ((u8*)tname.z) - zSql, zSql, 
-       zTableName, tname.z+tname.n);
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", (int)(((u8*)tname.z) - zSql),
+       zSql, zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
 }
