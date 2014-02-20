@@ -1175,7 +1175,7 @@ case OP_SCopy: {            /* out2 */
 ** The registers P1 through P1+P2-1 contain a single row of
 ** results. This opcode causes the sqlite3_step() call to terminate
 ** with an SQLITE_ROW return code and it sets up the sqlite3_stmt
-** structure to provide access to the r[P1]..r[P1+P2-1] values as
+** structure to provide access to the r(P1)..r(P1+P2-1) values as
 ** the result row.
 */
 case OP_ResultRow: {
