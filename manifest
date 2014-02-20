@@ -1,5 +1,5 @@
-C Make\ssure\sthat\sthe\sdifference\sbetween\stwo\sstring\spointers\sis\spassed\sinto\nsqlite3_mprintf()\sas\stype\s"int".
-D 2014-02-20T19:23:15.279
+C Fix\sa\sharmless\sshadowed-variable\swarning.
+D 2014-02-20T19:32:38.618
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -180,7 +180,7 @@ F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 429adb670176eb5471be9867ff7c88a190b23cb3
+F src/insert.c d3d1164299faa53b5347f8ff676d3787537fa9e5
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1151,7 +1151,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c1e94169dd8eb80b4d18c73be9f81585330d11ad
-R 09bf9547df25315bb17290d72fbff966
+P d5d973fedcf5a2eea219f10e11ba3dacdd0593f0
+R 76d0c1c651bb2a560b0883244ae73572
 U drh
-Z 6fdf325f579b53033b4ff3e16a9cc3b3
+Z 5adb32a47d049f70cd5fc6a5768d989a

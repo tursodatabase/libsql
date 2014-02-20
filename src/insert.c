@@ -677,18 +677,18 @@ void sqlite3Insert(
       */
       int regRec;          /* Register to hold packed record */
       int regTempRowid;    /* Register to hold temp table ROWID */
-      int addrTop;         /* Label "L" */
+      int addrL;           /* Label "L" */
 
       srcTab = pParse->nTab++;
       regRec = sqlite3GetTempReg(pParse);
       regTempRowid = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_OpenEphemeral, srcTab, nColumn);
-      addrTop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm); VdbeCoverage(v);
+      addrL = sqlite3VdbeAddOp1(v, OP_Yield, dest.iSDParm); VdbeCoverage(v);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
       sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regTempRowid);
       sqlite3VdbeAddOp3(v, OP_Insert, srcTab, regRec, regTempRowid);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
-      sqlite3VdbeJumpHere(v, addrTop);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, addrL);
+      sqlite3VdbeJumpHere(v, addrL);
       sqlite3ReleaseTempReg(pParse, regRec);
       sqlite3ReleaseTempReg(pParse, regTempRowid);
     }
