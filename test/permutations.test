@@ -642,7 +642,7 @@ test_suite "inmemory_journal" -description {
   ioerr.test ioerr2.test ioerr3.test ioerr4.test ioerr5.test
   vacuum3.test incrblob_err.test diskfull.test backup_ioerr.test
   e_fts3.test fts3cov.test fts3malloc.test fts3rnd.test
-  fts3snippet.test
+  fts3snippet.test mmapfault.test
 
   # Exclude test scripts that use tcl IO to access journal files or count
   # the number of fsync() calls.

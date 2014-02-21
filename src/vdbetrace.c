@@ -92,6 +92,7 @@ char *sqlite3VdbeExpandSql(
       const char *zStart = zRawSql;
       while( *(zRawSql++)!='\n' && *zRawSql );
       sqlite3StrAccumAppend(&out, "-- ", 3);
+      assert( (zRawSql - zStart) > 0 );
       sqlite3StrAccumAppend(&out, zStart, (int)(zRawSql-zStart));
     }
   }else{
@@ -124,9 +125,9 @@ char *sqlite3VdbeExpandSql(
       if( pVar->flags & MEM_Null ){
         sqlite3StrAccumAppend(&out, "NULL", 4);
       }else if( pVar->flags & MEM_Int ){
-        sqlite3XPrintf(&out, "%lld", pVar->u.i);
+        sqlite3XPrintf(&out, 0, "%lld", pVar->u.i);
       }else if( pVar->flags & MEM_Real ){
-        sqlite3XPrintf(&out, "%!.15g", pVar->r);
+        sqlite3XPrintf(&out, 0, "%!.15g", pVar->r);
       }else if( pVar->flags & MEM_Str ){
         int nOut;  /* Number of bytes of the string text to include in output */
 #ifndef SQLITE_OMIT_UTF16
@@ -147,15 +148,17 @@ char *sqlite3VdbeExpandSql(
           while( nOut<pVar->n && (pVar->z[nOut]&0xc0)==0x80 ){ nOut++; }
         }
 #endif    
-        sqlite3XPrintf(&out, "'%.*q'", nOut, pVar->z);
+        sqlite3XPrintf(&out, 0, "'%.*q'", nOut, pVar->z);
 #ifdef SQLITE_TRACE_SIZE_LIMIT
-        if( nOut<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-nOut);
+        if( nOut<pVar->n ){
+          sqlite3XPrintf(&out, 0, "/*+%d bytes*/", pVar->n-nOut);
+        }
 #endif
 #ifndef SQLITE_OMIT_UTF16
         if( enc!=SQLITE_UTF8 ) sqlite3VdbeMemRelease(&utf8);
 #endif
       }else if( pVar->flags & MEM_Zero ){
-        sqlite3XPrintf(&out, "zeroblob(%d)", pVar->u.nZero);
+        sqlite3XPrintf(&out, 0, "zeroblob(%d)", pVar->u.nZero);
       }else{
         int nOut;  /* Number of bytes of the blob to include in output */
         assert( pVar->flags & MEM_Blob );
@@ -165,11 +168,13 @@ char *sqlite3VdbeExpandSql(
         if( nOut>SQLITE_TRACE_SIZE_LIMIT ) nOut = SQLITE_TRACE_SIZE_LIMIT;
 #endif
         for(i=0; i<nOut; i++){
-          sqlite3XPrintf(&out, "%02x", pVar->z[i]&0xff);
+          sqlite3XPrintf(&out, 0, "%02x", pVar->z[i]&0xff);
         }
         sqlite3StrAccumAppend(&out, "'", 1);
 #ifdef SQLITE_TRACE_SIZE_LIMIT
-        if( nOut<pVar->n ) sqlite3XPrintf(&out, "/*+%d bytes*/", pVar->n-nOut);
+        if( nOut<pVar->n ){
+          sqlite3XPrintf(&out, 0, "/*+%d bytes*/", pVar->n-nOut);
+        }
 #endif
       }
     }
@@ -228,7 +233,7 @@ void sqlite3ExplainPrintf(Vdbe *pVdbe, const char *zFormat, ...){
       sqlite3AppendSpace(&p->str, p->aIndent[n-1]);
     }   
     va_start(ap, zFormat);
-    sqlite3VXPrintf(&p->str, 1, zFormat, ap);
+    sqlite3VXPrintf(&p->str, SQLITE_PRINTF_INTERNAL, zFormat, ap);
     va_end(ap);
   }
 }

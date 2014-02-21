@@ -592,4 +592,17 @@ do_test misc1-18.1 {
   expr {$n>=100}
 } {1}
 
+# 2014-01-10:  In a CREATE TABLE AS, if one or more of the column names
+# are an empty string, that is still OK.
+#
+do_execsql_test misc1-19.1 {
+  CREATE TABLE t19 AS SELECT 1, 2 AS '', 3;
+  SELECT * FROM t19;
+} {1 2 3}
+do_execsql_test misc1-19.2 {
+  CREATE TABLE t19b AS SELECT 4 AS '', 5 AS '',  6 AS '';
+  SELECT * FROM t19b;
+} {4 5 6}
+
+
 finish_test

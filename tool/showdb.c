@@ -119,7 +119,7 @@ static unsigned char *print_byte_range(
 /*
 ** Print an entire page of content as hex
 */
-static print_page(int iPg){
+static void print_page(int iPg){
   int iStart;
   unsigned char *aData;
   iStart = (iPg-1)*pagesize;
@@ -131,7 +131,7 @@ static print_page(int iPg){
 
 /* Print a line of decode output showing a 4-byte integer.
 */
-static print_decode_line(
+static void print_decode_line(
   unsigned char *aData,      /* Content being decoded */
   int ofst, int nByte,       /* Start and size of decode */
   const char *zMsg           /* Message to append */
@@ -428,7 +428,7 @@ static void decode_trunk_page(
   int detail,           /* Show leaf pages if true */
   int recursive         /* Follow the trunk change if true */
 ){
-  int n, i, k;
+  int n, i;
   unsigned char *a;
   while( pgno>0 ){
     a = getContent((pgno-1)*pagesize, pagesize);
@@ -495,7 +495,6 @@ static void page_usage_cell(
   int cellno              /* Index of the cell on the page */
 ){
   int i;
-  int nDesc = 0;
   int n = 0;
   i64 nPayload;
   i64 rowid;
@@ -677,7 +676,7 @@ static void page_usage_report(const char *zDbName){
     if( rc==SQLITE_OK ){
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
         int pgno = sqlite3_column_int(pStmt, 2);
-        page_usage_btree(pgno, 0, 0, sqlite3_column_text(pStmt, 1));
+        page_usage_btree(pgno, 0, 0, (const char*)sqlite3_column_text(pStmt,1));
       }
     }else{
       printf("ERROR: cannot query database: %s\n", sqlite3_errmsg(db));
@@ -835,7 +834,6 @@ int main(int argc, char **argv){
         free(a);
         continue;
       }else if( zLeft && zLeft[0]=='t' ){
-        unsigned char *a;
         int detail = 0;
         int recursive = 0;
         int i;
@@ -861,4 +859,5 @@ int main(int argc, char **argv){
     }
   }
   close(db);
+  return 0;
 }

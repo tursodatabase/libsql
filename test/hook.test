@@ -127,21 +127,52 @@ db2 close
 #         depopulation of indices, to make sure the update-hook is not 
 #         invoked incorrectly.
 #
+# EVIDENCE-OF: R-21999-45122 The sqlite3_update_hook() interface
+# registers a callback function with the database connection identified
+# by the first argument to be invoked whenever a row is updated,
+# inserted or deleted in a rowid table.
 
 # Simple tests
-do_test hook-4.1.1 {
+do_test hook-4.1.1a {
   catchsql {
     DROP TABLE t1;
   }
+  unset -nocomplain ::update_hook
+  set ::update_hook {}
+  db update_hook [list lappend ::update_hook]
+  #
+  # EVIDENCE-OF: R-52223-27275 The update hook is not invoked when
+  # internal system tables are modified (i.e. sqlite_master and
+  # sqlite_sequence).
+  #
   execsql {
     CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t1w(a INT PRIMARY KEY, b) WITHOUT ROWID;
+  }
+  set ::update_hook
+} {}
+do_test hook-4.1.1b {
+  execsql {
     INSERT INTO t1 VALUES(1, 'one');
     INSERT INTO t1 VALUES(2, 'two');
     INSERT INTO t1 VALUES(3, 'three');
+    INSERT INTO t1w SELECT * FROM t1;
   }
-  db update_hook [list lappend ::update_hook]
 } {}
+
+# EVIDENCE-OF: R-15506-57666 The second callback argument is one of
+# SQLITE_INSERT, SQLITE_DELETE, or SQLITE_UPDATE, depending on the
+# operation that caused the callback to be invoked.
+#
+# EVIDENCE-OF: R-29213-61195 The third and fourth arguments to the
+# callback contain pointers to the database and table name containing
+# the affected row.
+#
+# EVIDENCE-OF: R-30809-57812 The final callback parameter is the rowid
+# of the row.
+#
 do_test hook-4.1.2 {
+  set ::update_hook {}
   execsql {
     INSERT INTO t1 VALUES(4, 'four');
     DELETE FROM t1 WHERE b = 'two';
@@ -158,6 +189,23 @@ do_test hook-4.1.2 {
     DELETE main t1 3 \
     DELETE main t1 4 \
 ]
+
+# EVIDENCE-OF: R-61808-14344 The sqlite3_update_hook() interface does
+# not fire callbacks for changes to a WITHOUT ROWID table.
+#
+# EVIDENCE-OF: R-33257-44249 The update hook is not invoked when WITHOUT
+# ROWID tables are modified.
+#
+do_test hook-4.1.2w {
+  set ::update_hook {}
+  execsql {
+    INSERT INTO t1w VALUES(4, 'four');
+    DELETE FROM t1w WHERE b = 'two';
+    UPDATE t1w SET b = '' WHERE a = 1 OR a = 3;
+    DELETE FROM t1w WHERE 1; -- Avoid the truncate optimization (for now)
+  }
+  set ::update_hook
+} {}
 
 ifcapable trigger {
   # Update hook is not invoked for changes to sqlite_master

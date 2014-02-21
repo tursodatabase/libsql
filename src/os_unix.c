@@ -84,32 +84,6 @@
 #endif
 
 /*
-** These #defines should enable >2GB file support on Posix if the
-** underlying operating system supports it.  If the OS lacks
-** large file support, these should be no-ops.
-**
-** Large file support can be disabled using the -DSQLITE_DISABLE_LFS switch
-** on the compiler command line.  This is necessary if you are compiling
-** on a recent machine (ex: RedHat 7.2) but you want your code to work
-** on an older machine (ex: RedHat 6.0).  If you compile on RedHat 7.2
-** without this option, LFS is enable.  But LFS does not exist in the kernel
-** in RedHat 6.0, so the code won't work.  Hence, for maximum binary
-** portability you should omit LFS.
-**
-** The previous paragraph was written in 2005.  (This paragraph is written
-** on 2008-11-28.) These days, all Linux kernels support large files, so
-** you should probably leave LFS enabled.  But some embedded platforms might
-** lack LFS in which case the SQLITE_DISABLE_LFS macro might still be useful.
-*/
-#ifndef SQLITE_DISABLE_LFS
-# define _LARGE_FILE       1
-# ifndef _FILE_OFFSET_BITS
-#   define _FILE_OFFSET_BITS 64
-# endif
-# define _LARGEFILE_SOURCE 1
-#endif
-
-/*
 ** standard include files.
 */
 #include <sys/types.h>
@@ -259,6 +233,12 @@ struct unixFile {
   char aPadding[32];
 #endif
 };
+
+/* This variable holds the process id (pid) from when the xRandomness()
+** method was called.  If xOpen() is called from a different process id,
+** indicating that a fork() has occurred, the PRNG will be reset.
+*/
+static int randomnessPid = 0;
 
 /*
 ** Allowed values for the unixFile.ctrlFlags bitmask:
@@ -1315,6 +1295,15 @@ static int findInodeInfo(
   return SQLITE_OK;
 }
 
+/*
+** Return TRUE if pFile has been renamed or unlinked since it was first opened.
+*/
+static int fileHasMoved(unixFile *pFile){
+  struct stat buf;
+  return pFile->pInode!=0 &&
+         (osStat(pFile->zPath, &buf)!=0 || buf.st_ino!=pFile->pInode->fileId.ino);
+}
+
 
 /*
 ** Check a unixFile that is a database.  Verify the following:
@@ -1349,10 +1338,7 @@ static void verifyDbFile(unixFile *pFile){
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
-  if( pFile->pInode!=0
-   && ((rc = osStat(pFile->zPath, &buf))!=0
-       || buf.st_ino!=pFile->pInode->fileId.ino)
-  ){
+  if( fileHasMoved(pFile) ){
     sqlite3_log(SQLITE_WARNING, "file renamed while open: %s", pFile->zPath);
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
@@ -3801,6 +3787,10 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       }
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_HAS_MOVED: {
+      *(int*)pArg = fileHasMoved(pFile);
+      return SQLITE_OK;
+    }
 #if SQLITE_MAX_MMAP_SIZE>0
     case SQLITE_FCNTL_MMAP_SIZE: {
       i64 newLimit = *(i64*)pArg;
@@ -4081,7 +4071,7 @@ static int unixShmSystemLock(
 #ifdef SQLITE_DEBUG
   { u16 mask;
   OSTRACE(("SHM-LOCK "));
-  mask = (1<<(ofst+n)) - (1<<ofst);
+  mask = ofst>31 ? 0xffff : (1<<(ofst+n)) - (1<<ofst);
   if( rc==SQLITE_OK ){
     if( lockType==F_UNLCK ){
       OSTRACE(("unlock %d ok", ofst));
@@ -4832,10 +4822,10 @@ static int unixFetch(sqlite3_file *fd, i64 iOff, int nAmt, void **pp){
 ** may now be invalid and should be unmapped.
 */
 static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
+#if SQLITE_MAX_MMAP_SIZE>0
   unixFile *pFd = (unixFile *)fd;   /* The underlying database file */
   UNUSED_PARAMETER(iOff);
 
-#if SQLITE_MAX_MMAP_SIZE>0
   /* If p==0 (unmap the entire file) then there must be no outstanding 
   ** xFetch references. Or, if p!=0 (meaning it is an xFetch reference),
   ** then there must be at least one outstanding.  */
@@ -4851,6 +4841,10 @@ static int unixUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   }
 
   assert( pFd->nFetchOut>=0 );
+#else
+  UNUSED_PARAMETER(fd);
+  UNUSED_PARAMETER(p);
+  UNUSED_PARAMETER(iOff);
 #endif
   return SQLITE_OK;
 }
@@ -5641,6 +5635,16 @@ static int unixOpen(
        || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
+  /* Detect a pid change and reset the PRNG.  There is a race condition
+  ** here such that two or more threads all trying to open databases at
+  ** the same instant might all reset the PRNG.  But multiple resets
+  ** are harmless.
+  */
+  if( randomnessPid!=getpid() ){
+    randomnessPid = getpid();
+    sqlite3_randomness(0,0);
+  }
+
   memset(p, 0, sizeof(unixFile));
 
   if( eType==SQLITE_OPEN_MAIN_DB ){
@@ -6028,18 +6032,18 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
   ** tests repeatable.
   */
   memset(zBuf, 0, nBuf);
+  randomnessPid = getpid();  
 #if !defined(SQLITE_TEST)
   {
-    int pid, fd, got;
+    int fd, got;
     fd = robust_open("/dev/urandom", O_RDONLY, 0);
     if( fd<0 ){
       time_t t;
       time(&t);
       memcpy(zBuf, &t, sizeof(t));
-      pid = getpid();
-      memcpy(&zBuf[sizeof(t)], &pid, sizeof(pid));
-      assert( sizeof(t)+sizeof(pid)<=(size_t)nBuf );
-      nBuf = sizeof(t) + sizeof(pid);
+      memcpy(&zBuf[sizeof(t)], &randomnessPid, sizeof(randomnessPid));
+      assert( sizeof(t)+sizeof(randomnessPid)<=(size_t)nBuf );
+      nBuf = sizeof(t) + sizeof(randomnessPid);
     }else{
       do{ got = osRead(fd, zBuf, nBuf); }while( got<0 && errno==EINTR );
       robust_close(0, fd, __LINE__);

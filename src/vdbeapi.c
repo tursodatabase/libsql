@@ -172,7 +172,41 @@ const void *sqlite3_value_text16le(sqlite3_value *pVal){
 }
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_value_type(sqlite3_value* pVal){
-  return pVal->type;
+  static const u8 aType[] = {
+     SQLITE_BLOB,     /* 0x00 */
+     SQLITE_NULL,     /* 0x01 */
+     SQLITE_TEXT,     /* 0x02 */
+     SQLITE_NULL,     /* 0x03 */
+     SQLITE_INTEGER,  /* 0x04 */
+     SQLITE_NULL,     /* 0x05 */
+     SQLITE_INTEGER,  /* 0x06 */
+     SQLITE_NULL,     /* 0x07 */
+     SQLITE_FLOAT,    /* 0x08 */
+     SQLITE_NULL,     /* 0x09 */
+     SQLITE_FLOAT,    /* 0x0a */
+     SQLITE_NULL,     /* 0x0b */
+     SQLITE_INTEGER,  /* 0x0c */
+     SQLITE_NULL,     /* 0x0d */
+     SQLITE_INTEGER,  /* 0x0e */
+     SQLITE_NULL,     /* 0x0f */
+     SQLITE_BLOB,     /* 0x10 */
+     SQLITE_NULL,     /* 0x11 */
+     SQLITE_TEXT,     /* 0x12 */
+     SQLITE_NULL,     /* 0x13 */
+     SQLITE_INTEGER,  /* 0x14 */
+     SQLITE_NULL,     /* 0x15 */
+     SQLITE_INTEGER,  /* 0x16 */
+     SQLITE_NULL,     /* 0x17 */
+     SQLITE_FLOAT,    /* 0x18 */
+     SQLITE_NULL,     /* 0x19 */
+     SQLITE_FLOAT,    /* 0x1a */
+     SQLITE_NULL,     /* 0x1b */
+     SQLITE_INTEGER,  /* 0x1c */
+     SQLITE_NULL,     /* 0x1d */
+     SQLITE_INTEGER,  /* 0x1e */
+     SQLITE_NULL,     /* 0x1f */
+  };
+  return aType[pVal->memType&0x1f];
 }
 
 /**************************** sqlite3_result_  *******************************
@@ -486,7 +520,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     v->doingRerun = 1;
     assert( v->expired==0 );
   }
-  if( rc2!=SQLITE_OK && ALWAYS(v->isPrepareV2) && ALWAYS(db->pErr) ){
+  if( rc2!=SQLITE_OK ){
     /* This case occurs after failing to recompile an sql statement. 
     ** The error message from the SQL compiler has already been loaded 
     ** into the database handle. This block copies the error message 
@@ -496,6 +530,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     ** sqlite3_errmsg() and sqlite3_errcode().
     */
     const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
+    assert( zErr!=0 || db->mallocFailed );
     sqlite3DbFree(db, v->zErrMsg);
     if( !db->mallocFailed ){
       v->zErrMsg = sqlite3DbStrDup(db, zErr);
@@ -1130,7 +1165,7 @@ int sqlite3_bind_text16(
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
   int rc;
-  switch( pValue->type ){
+  switch( sqlite3_value_type((sqlite3_value*)pValue) ){
     case SQLITE_INTEGER: {
       rc = sqlite3_bind_int64(pStmt, i, pValue->u.i);
       break;

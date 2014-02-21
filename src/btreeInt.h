@@ -500,7 +500,6 @@ struct BtCursor {
   Pgno *aOverflow;          /* Cache of overflow page locations */
 #endif
   Pgno pgnoRoot;            /* The root page of this tree */
-  sqlite3_int64 cachedRowid; /* Next rowid cache.  0 means not valid */
   CellInfo info;            /* A parse of the cell we are pointing at */
   i64 nKey;        /* Size of pKey, or last integer key */
   void *pKey;      /* Saved key that was cursor's last known position */

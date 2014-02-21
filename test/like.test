@@ -893,5 +893,60 @@ do_test like-11.10 {
   }
 } {abc abcd sort {} t11cb}
 
+# A COLLATE clause on the pattern does not change the result of a
+# LIKE operator.
+#
+do_execsql_test like-12.1 {
+  CREATE TABLE t12nc(id INTEGER, x TEXT UNIQUE COLLATE nocase);
+  INSERT INTO t12nc VALUES(1,'abcde'),(2,'uvwxy'),(3,'ABCDEF');
+  CREATE TABLE t12b(id INTEGER, x TEXT UNIQUE COLLATE binary);
+  INSERT INTO t12b VALUES(1,'abcde'),(2,'uvwxy'),(3,'ABCDEF');
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.2 {
+  SELECT id FROM t12b WHERE x LIKE 'abc%' ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.3 {
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.4 {
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.5 {
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.6 {
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {1 3}
+
+# Adding a COLLATE clause to the pattern of a LIKE operator does nothing
+# to change the suitability of using an index to satisfy that LIKE
+# operator.
+#
+do_execsql_test like-12.11 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' ORDER BY +id;
+} {/SEARCH/}
+do_execsql_test like-12.12 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12b WHERE x LIKE 'abc%' ORDER BY +id;
+} {/SCAN/}
+do_execsql_test like-12.13 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {/SEARCH/}
+do_execsql_test like-12.14 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {/SCAN/}
+do_execsql_test like-12.15 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {/SEARCH/}
+do_execsql_test like-12.16 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {/SCAN/}
+
 
 finish_test

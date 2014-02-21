@@ -268,4 +268,23 @@ do_test shell5-1.9 {
 } {1 {} 11 | 2 x 22 | 3 {"} 33 | 4 hello 44 | 5 55 {} | 6 66 x | 7 77 {"} | 8 88 hello | {} 9 99 | x 10 110 | {"} 11 121 | hello 12 132 |}
 db close
 
+# Import columns containing quoted strings
+do_test shell5-1.10 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation lf
+  puts $out {column1,column2,column3,column4}
+  puts $out "field1,field2,\"x3 \"\"\r\ndata\"\" 3\",field4"
+  puts $out "x1,x2,\"x3 \"\"\ndata\"\" 3\",x4"
+  close $out
+  forcedelete test.db
+  catchcmd test.db {.mode csv
+    CREATE TABLE t1(a,b,c,d);
+.import shell5.csv t1
+  }
+  sqlite3 db test.db
+  db eval {SELECT hex(c) FROM t1 ORDER BY rowid}
+} {636F6C756D6E33 783320220D0A64617461222033 783320220A64617461222033}
+
+db close
+
 finish_test

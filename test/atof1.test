@@ -15,7 +15,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-if {![info exists __GNUC__]} {
+if {![info exists __GNUC__] || [regexp arm $tcl_platform(machine)]} {
   finish_test
   return
 }

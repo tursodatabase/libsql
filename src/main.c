@@ -135,13 +135,6 @@ int sqlite3_initialize(void){
   */
   if( sqlite3GlobalConfig.isInit ) return SQLITE_OK;
 
-#ifdef SQLITE_ENABLE_SQLLOG
-  {
-    extern void sqlite3_init_sqllog(void);
-    sqlite3_init_sqllog();
-  }
-#endif
-
   /* Make sure the mutex subsystem is initialized.  If unable to 
   ** initialize the mutex subsystem, return early with the error.
   ** If the system is so sick that we are unable to allocate a mutex,
@@ -588,7 +581,8 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.bEnabled = 1;
     db->lookaside.bMalloced = pBuf==0 ?1:0;
   }else{
-    db->lookaside.pEnd = 0;
+    db->lookaside.pStart = db;
+    db->lookaside.pEnd = db;
     db->lookaside.bEnabled = 0;
     db->lookaside.bMalloced = 0;
   }
@@ -986,9 +980,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
 #endif
 
   sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
-  if( db->pErr ){
-    sqlite3ValueFree(db->pErr);
-  }
+  sqlite3ValueFree(db->pErr);
   sqlite3CloseExtensions(db);
 
   db->magic = SQLITE_MAGIC_ERROR;
@@ -1063,8 +1055,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 ** Return a static string containing the name corresponding to the error code
 ** specified in the argument.
 */
-#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST) || \
-    defined(SQLITE_DEBUG_OS_TRACE)
+#if defined(SQLITE_TEST)
 const char *sqlite3ErrName(int rc){
   const char *zName = 0;
   int i, origRc = rc;
@@ -1086,6 +1077,7 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_READONLY_RECOVERY:  zName = "SQLITE_READONLY_RECOVERY"; break;
       case SQLITE_READONLY_CANTLOCK:  zName = "SQLITE_READONLY_CANTLOCK"; break;
       case SQLITE_READONLY_ROLLBACK:  zName = "SQLITE_READONLY_ROLLBACK"; break;
+      case SQLITE_READONLY_DBMOVED:   zName = "SQLITE_READONLY_DBMOVED";  break;
       case SQLITE_INTERRUPT:          zName = "SQLITE_INTERRUPT";         break;
       case SQLITE_IOERR:              zName = "SQLITE_IOERR";             break;
       case SQLITE_IOERR_READ:         zName = "SQLITE_IOERR_READ";        break;
@@ -1370,6 +1362,7 @@ int sqlite3CreateFunc(
 ){
   FuncDef *p;
   int nName;
+  int extraFlags;
 
   assert( sqlite3_mutex_held(db->mutex) );
   if( zFunctionName==0 ||
@@ -1380,6 +1373,10 @@ int sqlite3CreateFunc(
       (255<(nName = sqlite3Strlen30( zFunctionName))) ){
     return SQLITE_MISUSE_BKPT;
   }
+
+  assert( SQLITE_FUNC_CONSTANT==SQLITE_DETERMINISTIC );
+  extraFlags = enc &  SQLITE_DETERMINISTIC;
+  enc &= (SQLITE_FUNC_ENCMASK|SQLITE_ANY);
   
 #ifndef SQLITE_OMIT_UTF16
   /* If SQLITE_UTF16 is specified as the encoding type, transform this
@@ -1393,10 +1390,10 @@ int sqlite3CreateFunc(
     enc = SQLITE_UTF16NATIVE;
   }else if( enc==SQLITE_ANY ){
     int rc;
-    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8,
+    rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF8|extraFlags,
          pUserData, xFunc, xStep, xFinal, pDestructor);
     if( rc==SQLITE_OK ){
-      rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE,
+      rc = sqlite3CreateFunc(db, zFunctionName, nArg, SQLITE_UTF16LE|extraFlags,
           pUserData, xFunc, xStep, xFinal, pDestructor);
     }
     if( rc!=SQLITE_OK ){
@@ -1439,7 +1436,8 @@ int sqlite3CreateFunc(
     pDestructor->nRef++;
   }
   p->pDestructor = pDestructor;
-  p->funcFlags &= SQLITE_FUNC_ENCMASK;
+  p->funcFlags = (p->funcFlags & SQLITE_FUNC_ENCMASK) | extraFlags;
+  testcase( p->funcFlags & SQLITE_DETERMINISTIC );
   p->xFunc = xFunc;
   p->xStep = xStep;
   p->xFinalize = xFinal;
@@ -1869,6 +1867,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( db->mallocFailed ){
     z = sqlite3ErrStr(SQLITE_NOMEM);
   }else{
+    testcase( db->pErr==0 );
     z = (char*)sqlite3_value_text(db->pErr);
     assert( !db->mallocFailed );
     if( z==0 ){
@@ -1910,8 +1909,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   }else{
     z = sqlite3_value_text16(db->pErr);
     if( z==0 ){
-      sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
-           SQLITE_UTF8, SQLITE_STATIC);
+      sqlite3Error(db, db->errCode, sqlite3ErrStr(db->errCode));
       z = sqlite3_value_text16(db->pErr);
     }
     /* A malloc() may have failed within the call to sqlite3_value_text16()
@@ -2625,8 +2623,6 @@ static int openDatabase(
   }
 #endif
 
-  sqlite3Error(db, rc, 0);
-
   /* -DSQLITE_DEFAULT_LOCKING_MODE=1 makes EXCLUSIVE the default locking
   ** mode.  -DSQLITE_DEFAULT_LOCKING_MODE=0 make NORMAL the default locking
   ** mode.  Doing nothing at all also makes NORMAL the default.
@@ -2636,6 +2632,8 @@ static int openDatabase(
   sqlite3PagerLockingMode(sqlite3BtreePager(db->aDb[0].pBt),
                           SQLITE_DEFAULT_LOCKING_MODE);
 #endif
+
+  if( rc ) sqlite3Error(db, rc, 0);
 
   /* Enable the lookaside-malloc subsystem */
   setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
@@ -3096,7 +3094,7 @@ int sqlite3_test_control(int op, ...){
     ** to the xRandomness method of the default VFS.
     */
     case SQLITE_TESTCTRL_PRNG_RESET: {
-      sqlite3PrngResetState();
+      sqlite3_randomness(0,0);
       break;
     }
 
@@ -3295,6 +3293,34 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 #endif
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, int);
+    **
+    ** Set or clear a flag that indicates that the database file is always well-
+    ** formed and never corrupt.  This flag is clear by default, indicating that
+    ** database files might have arbitrary corruption.  Setting the flag during
+    ** testing causes certain assert() statements in the code to be activated
+    ** that demonstrat invariants on well-formed database files.
+    */
+    case SQLITE_TESTCTRL_NEVER_CORRUPT: {
+      sqlite3GlobalConfig.neverCorrupt = va_arg(ap, int);
+      break;
+    }
+
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_VDBE_COVERAGE, xCallback, ptr);
+    **
+    ** Set the VDBE coverage callback function to xCallback with context 
+    ** pointer ptr.
+    */
+    case SQLITE_TESTCTRL_VDBE_COVERAGE: {
+#ifdef SQLITE_VDBE_COVERAGE
+      typedef void (*branch_callback)(void*,int,u8,u8);
+      sqlite3GlobalConfig.xVdbeBranch = va_arg(ap,branch_callback);
+      sqlite3GlobalConfig.pVdbeBranchArg = va_arg(ap,void*);
+#endif
+      break;
+    }
 
   }
   va_end(ap);

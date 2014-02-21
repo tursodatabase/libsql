@@ -1933,7 +1933,6 @@ static int spellfix1Init(
 #define SPELLFIX_COL_COMMAND        11
     }
     if( rc==SQLITE_OK && isCreate ){
-      sqlite3_uint64 r;
       spellfix1DbExec(&rc, db,
          "CREATE TABLE IF NOT EXISTS \"%w\".\"%w_vocab\"(\n"
          "  id INTEGER PRIMARY KEY,\n"
@@ -1945,11 +1944,10 @@ static int spellfix1Init(
          ");\n",
          zDbName, zTableName
       );
-      sqlite3_randomness(sizeof(r), &r);
       spellfix1DbExec(&rc, db,
-         "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_index_%llx\" "
+         "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_vocab_index_langid_k2\" "
             "ON \"%w_vocab\"(langid,k2);",
-         zDbName, zModule, r, zTableName
+         zDbName, zModule, zTableName
       );
     }
     for(i=3; rc==SQLITE_OK && i<argc; i++){
@@ -2051,6 +2049,7 @@ static int spellfix1Close(sqlite3_vtab_cursor *cur){
 **   (D)    scope = $scope
 **   (E)    distance < $distance
 **   (F)    distance <= $distance
+**   (G)    rowid = $rowid
 **
 ** The plan number is a bit mask formed with these bits:
 **
@@ -2060,8 +2059,9 @@ static int spellfix1Close(sqlite3_vtab_cursor *cur){
 **   0x08   (D) is found
 **   0x10   (E) is found
 **   0x20   (F) is found
+**   0x40   (G) is found
 **
-** filter.argv[*] values contains $str, $langid, $top, and $scope,
+** filter.argv[*] values contains $str, $langid, $top, $scope and $rowid
 ** if specified and in that order.
 */
 static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
@@ -2070,6 +2070,7 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   int iTopTerm = -1;
   int iScopeTerm = -1;
   int iDistTerm = -1;
+  int iRowidTerm = -1;
   int i;
   const struct sqlite3_index_constraint *pConstraint;
   pConstraint = pIdxInfo->aConstraint;
@@ -2122,6 +2123,15 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       iPlan |= pConstraint->op==SQLITE_INDEX_CONSTRAINT_LT ? 16 : 32;
       iDistTerm = i;
     }
+
+    /* Terms of the form:  distance < $dist or distance <= $dist */
+    if( (iPlan & 64)==0
+     && pConstraint->iColumn<0
+     && pConstraint->op==SQLITE_INDEX_CONSTRAINT_EQ
+    ){
+      iPlan |= 64;
+      iRowidTerm = i;
+    }
   }
   if( iPlan&1 ){
     int idx = 2;
@@ -2149,6 +2159,11 @@ static int spellfix1BestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       pIdxInfo->aConstraintUsage[iDistTerm].omit = 1;
     }
     pIdxInfo->estimatedCost = 1e5;
+  }else if( (iPlan & 64) ){
+    pIdxInfo->idxNum = 64;
+    pIdxInfo->aConstraintUsage[iRowidTerm].argvIndex = 1;
+    pIdxInfo->aConstraintUsage[iRowidTerm].omit = 1;
+    pIdxInfo->estimatedCost = 5;
   }else{
     pIdxInfo->idxNum = 0;
     pIdxInfo->estimatedCost = 1e50;
@@ -2465,16 +2480,23 @@ static int spellfix1FilterForFullScan(
   int argc,
   sqlite3_value **argv
 ){
-  int rc;
+  int rc = SQLITE_OK;
   char *zSql;
   spellfix1_vtab *pVTab = pCur->pVTab;
   spellfix1ResetCursor(pCur);
+  assert( idxNum==0 || idxNum==64 );
   zSql = sqlite3_mprintf(
-     "SELECT word, rank, NULL, langid, id FROM \"%w\".\"%w_vocab\"",
-     pVTab->zDbName, pVTab->zTableName);
+     "SELECT word, rank, NULL, langid, id FROM \"%w\".\"%w_vocab\"%s",
+     pVTab->zDbName, pVTab->zTableName,
+     ((idxNum & 64) ? " WHERE rowid=?" : "")
+  );
   if( zSql==0 ) return SQLITE_NOMEM;
   rc = sqlite3_prepare_v2(pVTab->db, zSql, -1, &pCur->pFullScan, 0);
   sqlite3_free(zSql);
+  if( rc==SQLITE_OK && (idxNum & 64) ){
+    assert( argc==1 );
+    rc = sqlite3_bind_value(pCur->pFullScan, 1, argv[0]);
+  }
   pCur->nRow = pCur->iRow = 0;
   if( rc==SQLITE_OK ){
     rc = sqlite3_step(pCur->pFullScan);

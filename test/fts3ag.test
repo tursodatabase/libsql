@@ -78,7 +78,6 @@ do_test fts3ag-1.10 {
 # Test that docListOrMerge() correctly handles reaching the end of one
 # doclist before it reaches the end of the other.
 do_test fts3ag-1.11 {
-breakpoint
   execsql {SELECT rowid FROM t1 WHERE t1 MATCH 'this OR also'}
 } {1 2}
 do_test fts3ag-1.12 {

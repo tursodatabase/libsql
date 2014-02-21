@@ -59,6 +59,7 @@
 #      do_test                TESTNAME SCRIPT EXPECTED
 #      do_execsql_test        TESTNAME SQL EXPECTED
 #      do_catchsql_test       TESTNAME SQL EXPECTED
+#      do_timed_execsql_test  TESTNAME SQL EXPECTED
 #
 # Commands providing a lower level interface to the global test counters:
 #
@@ -717,6 +718,11 @@ proc do_catchsql_test {testname sql result} {
   fix_testname testname
   uplevel do_test [list $testname] [list "catchsql {$sql}"] [list $result]
 }
+proc do_timed_execsql_test {testname sql {result {}}} {
+  fix_testname testname
+  uplevel do_test [list $testname] [list "execsql_timed {$sql}"]\
+                                   [list [list {*}$result]]
+}
 proc do_eqp_test {name sql res} {
   uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
 }
@@ -1013,6 +1019,14 @@ proc execsql {sql {db db}} {
   # puts "SQL = $sql"
   uplevel [list $db eval $sql]
 }
+proc execsql_timed {sql {db db}} {
+  set tm [time {
+    set x [uplevel [list $db eval $sql]]
+  } 1]
+  set tm [lindex $tm 0]
+  puts -nonewline " ([expr {$tm*0.001}]ms) "
+  set x
+}
 
 # Execute SQL and catch exceptions.
 #
@@ -1251,6 +1265,7 @@ proc crashsql {args} {
   set blocksize ""
   set crashdelay 1
   set prngseed 0
+  set opendb { sqlite3 db test.db -vfs crash }
   set tclbody {}
   set crashfile ""
   set dc ""
@@ -1262,6 +1277,7 @@ proc crashsql {args} {
     set z2 [lindex $args [expr $ii+1]]
 
     if     {$n>1 && [string first $z -delay]==0}     {set crashdelay $z2} \
+    elseif {$n>1 && [string first $z -opendb]==0}    {set opendb $z2} \
     elseif {$n>1 && [string first $z -seed]==0}      {set prngseed $z2} \
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
     elseif {$n>1 && [string first $z -tclbody]==0}   {set tclbody $z2}  \
@@ -1283,7 +1299,7 @@ proc crashsql {args} {
   puts $f "sqlite3_crash_enable 1"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
-  puts $f "sqlite3 db test.db -vfs crash"
+  puts $f $opendb 
 
   # This block sets the cache size of the main database to 10
   # pages. This is done in case the build is configured to omit
@@ -1291,6 +1307,7 @@ proc crashsql {args} {
   puts $f {db eval {SELECT * FROM sqlite_master;}}
   puts $f {set bt [btree_from_db db]}
   puts $f {btree_set_cache_size $bt 10}
+
   if {$prngseed} {
     set seed [expr {$prngseed%10007+1}]
     # puts seed=$seed
@@ -1885,6 +1902,12 @@ set AUTOVACUUM $sqlite_options(default_autovacuum)
 
 # Make sure the FTS enhanced query syntax is disabled.
 set sqlite_fts3_enable_parentheses 0
+
+# During testing, assume that all database files are well-formed.  The
+# few test cases that deliberately corrupt database files should rescind 
+# this setting by invoking "database_can_be_corrupt"
+#
+database_never_corrupt
 
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl

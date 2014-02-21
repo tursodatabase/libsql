@@ -352,7 +352,9 @@ static int lookupName(
           }
         }
         if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) && HasRowid(pTab) ){
-          iCol = -1;        /* IMP: R-44911-55124 */
+          /* IMP: R-24309-18625 */
+          /* IMP: R-44911-55124 */
+          iCol = -1;
         }
         if( iCol<pTab->nCol ){
           cnt++;
@@ -378,8 +380,8 @@ static int lookupName(
     /*
     ** Perhaps the name is a reference to the ROWID
     */
-    assert( pTab!=0 || cntTab==0 );
-    if( cnt==0 && cntTab==1 && sqlite3IsRowid(zCol) && HasRowid(pTab) ){
+    if( cnt==0 && cntTab==1 && pMatch && sqlite3IsRowid(zCol)
+     && HasRowid(pMatch->pTab) ){
       cnt = 1;
       pExpr->iColumn = -1;     /* IMP: R-44911-55124 */
       pExpr->affinity = SQLITE_AFF_INTEGER;

@@ -164,7 +164,6 @@ db close
 forcedelete test.db
 sqlite3 db test.db
 register_dbstat_vtab db
-breakpoint
 do_execsql_test stat-5.1 {
   PRAGMA auto_vacuum = OFF;
   CREATE VIRTUAL TABLE temp.stat USING dbstat;

@@ -1306,7 +1306,7 @@ int sqlite3WalOpen(
     sqlite3OsClose(pRet->pWalFd);
     sqlite3_free(pRet);
   }else{
-    int iDC = sqlite3OsDeviceCharacteristics(pRet->pWalFd);
+    int iDC = sqlite3OsDeviceCharacteristics(pDbFd);
     if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->syncHeader = 0; }
     if( iDC & SQLITE_IOCAP_POWERSAFE_OVERWRITE ){
       pRet->padToSectorBoundary = 0;
@@ -2677,7 +2677,7 @@ static int walWriteToLog(
     iAmt -= iFirstAmt;
     pContent = (void*)(iFirstAmt + (char*)pContent);
     assert( p->syncFlags & (SQLITE_SYNC_NORMAL|SQLITE_SYNC_FULL) );
-    rc = sqlite3OsSync(p->pFd, p->syncFlags);
+    rc = sqlite3OsSync(p->pFd, p->syncFlags & SQLITE_SYNC_MASK);
     if( iAmt==0 || rc ) return rc;
   }
   rc = sqlite3OsWrite(p->pFd, pContent, iAmt, iOffset);

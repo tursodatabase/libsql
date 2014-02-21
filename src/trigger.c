@@ -397,25 +397,21 @@ TriggerStep *sqlite3TriggerInsertStep(
   sqlite3 *db,        /* The database connection */
   Token *pTableName,  /* Name of the table into which we insert */
   IdList *pColumn,    /* List of columns in pTableName to insert into */
-  ExprList *pEList,   /* The VALUE clause: a list of values to be inserted */
   Select *pSelect,    /* A SELECT statement that supplies values */
   u8 orconf           /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
 ){
   TriggerStep *pTriggerStep;
 
-  assert(pEList == 0 || pSelect == 0);
-  assert(pEList != 0 || pSelect != 0 || db->mallocFailed);
+  assert(pSelect != 0 || db->mallocFailed);
 
   pTriggerStep = triggerStepAllocate(db, TK_INSERT, pTableName);
   if( pTriggerStep ){
     pTriggerStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
     pTriggerStep->pIdList = pColumn;
-    pTriggerStep->pExprList = sqlite3ExprListDup(db, pEList, EXPRDUP_REDUCE);
     pTriggerStep->orconf = orconf;
   }else{
     sqlite3IdListDelete(db, pColumn);
   }
-  sqlite3ExprListDelete(db, pEList);
   sqlite3SelectDelete(db, pSelect);
 
   return pTriggerStep;
@@ -570,6 +566,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   assert( pTable!=0 );
   if( (v = sqlite3GetVdbe(pParse))!=0 ){
     int base;
+    static const int iLn = __LINE__+2;
     static const VdbeOpList dropTrigger[] = {
       { OP_Rewind,     0, ADDR(9),  0},
       { OP_String8,    0, 1,        0}, /* 1 */
@@ -584,7 +581,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3OpenMasterTable(pParse, iDb);
-    base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
+    base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger, iLn);
     sqlite3VdbeChangeP4(v, base+1, pTrigger->zName, P4_TRANSIENT);
     sqlite3VdbeChangeP4(v, base+4, "trigger", P4_STATIC);
     sqlite3ChangeCookie(pParse, iDb);
@@ -730,15 +727,7 @@ static int codeTriggerProgram(
     **   INSERT OR IGNORE INTO t1 ... ;  -- insert into t2 uses IGNORE policy
     */
     pParse->eOrconf = (orconf==OE_Default)?pStep->orconf:(u8)orconf;
-
-    /* Clear the cookieGoto flag. When coding triggers, the cookieGoto 
-    ** variable is used as a flag to indicate to sqlite3ExprCodeConstants()
-    ** that it is not safe to refactor constants (this happens after the
-    ** start of the first loop in the SQL statement is coded - at that 
-    ** point code may be conditionally executed, so it is no longer safe to 
-    ** initialize constant register values).  */
-    assert( pParse->cookieGoto==0 || pParse->cookieGoto==-1 );
-    pParse->cookieGoto = 0;
+    assert( pParse->okConstFactor==0 );
 
     switch( pStep->op ){
       case TK_UPDATE: {
@@ -753,7 +742,6 @@ static int codeTriggerProgram(
       case TK_INSERT: {
         sqlite3Insert(pParse, 
           targetSrcList(pParse, pStep),
-          sqlite3ExprListDup(db, pStep->pExprList, 0), 
           sqlite3SelectDup(db, pStep->pSelect, 0), 
           sqlite3IdListDup(db, pStep->pIdList), 
           pParse->eOrconf

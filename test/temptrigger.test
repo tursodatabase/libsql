@@ -265,10 +265,10 @@ do_test 6.1 {
 } {}
 
 do_execsql_test 6.2 {
-  SELECT * FROM aux.sqlite_master;
+  SELECT type,name,tbl_name,sql FROM aux.sqlite_master;
   INSERT INTO aux.t1 VALUES(1,2,3);
 } {
-  table t1 t1 2 {CREATE TABLE t1(a, b, c)}
+  table t1 t1 {CREATE TABLE t1(a, b, c)}
 }
 
 do_catchsql_test 6.3 {

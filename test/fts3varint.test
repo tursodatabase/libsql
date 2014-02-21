@@ -10,7 +10,7 @@
 # $Id: fts3.test,v 1.2 2008/07/23 18:17:32 drh Exp $
 
 set testdir [file dirname $argv0]
-source $testdir/permutations.test
+source $testdir/tester.tcl
 set testprefix fts3varint
 
 ifcapable !fts3 {

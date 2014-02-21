@@ -162,7 +162,7 @@ RC = rc.exe
 !IFDEF NCC
 NCC = $(NCC:\\=\)
 !ELSEIF $(XCOMPILE)!=0
-NCC = "$(VCINSTALLDIR)\bin\cl.exe"
+NCC = "$(VCINSTALLDIR)\bin\$(CC)"
 NCC = $(NCC:\\=\)
 !ELSE
 NCC = $(CC)
@@ -214,7 +214,7 @@ NLTLIBPATHS = "/LIBPATH:$(NCRTLIBPATH)" "/LIBPATH:$(NSDKLIBPATH)"
 # will run on the target platform.  (BCC and TCC are usually the
 # same unless your are cross-compiling.)
 #
-TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src -fp:precise
+TCC = $(CC) -W3 -DSQLITE_OS_WIN=1 -I. -I$(TOP) -I$(TOP)\src -fp:precise
 RCC = $(RC) -DSQLITE_OS_WIN=1 -I$(TOP) -I$(TOP)\src
 
 # Check if assembly code listings should be generated for the source
@@ -268,6 +268,17 @@ TCC = $(TCC) -I$(TOP)\ext\fts3
 RCC = $(RCC) -I$(TOP)\ext\fts3
 TCC = $(TCC) -I$(TOP)\ext\rtree
 RCC = $(RCC) -I$(TOP)\ext\rtree
+!ENDIF
+
+# The mksqlite3c.tcl script accepts some options on the command
+# line.  When compiling with debugging enabled, some of these
+# options are necessary in order to allow debugging symbols to
+# work correctly with Visual Studio when using the amalgamation.
+#
+!IF $(DEBUG)>0
+MKSQLITE3C_ARGS = --linemacros
+!ELSE
+MKSQLITE3C_ARGS =
 !ENDIF
 
 # Define -DNDEBUG to compile without debugging (i.e., for production usage)
@@ -915,12 +926,12 @@ mptester.exe:	$(TOP)\mptest\mptest.c libsqlite3.lib $(LIBRESOBJS) sqlite3.h
 	-mkdir tsrc
 	for %i in ($(SRC)) do copy /Y %i tsrc
 	del /Q tsrc\sqlite.h.in tsrc\parse.y
-	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl < tsrc\vdbe.c > vdbe.new
+	$(TCLSH_CMD) $(TOP)\tool\vdbe-compress.tcl $(OPTS) < tsrc\vdbe.c > vdbe.new
 	move vdbe.new tsrc\vdbe.c
 	echo > .target_source
 
 sqlite3.c:	.target_source $(TOP)\tool\mksqlite3c.tcl
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl
+	$(TCLSH_CMD) $(TOP)\tool\mksqlite3c.tcl $(MKSQLITE3C_ARGS)
 	copy tsrc\shell.c .
 	copy tsrc\sqlite3ext.h .
 
@@ -1212,7 +1223,7 @@ parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\addopcodes.awk
 	$(NAWK) -f $(TOP)\addopcodes.awk parse.h.temp > parse.h
 
 sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
-	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP) > sqlite3.h
+	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
 	$(BCC) -Fe$@ $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c /link $(NLTLIBPATHS)
@@ -1338,17 +1349,17 @@ sqlite3_analyzer.exe:	sqlite3_analyzer.c $(LIBRESOBJS)
 	$(LTLINK) -DBUILD_sqlite -DTCLSH=2 -I$(TCLINCDIR) sqlite3_analyzer.c \
 		/link $(LTLINKOPTS) $(LTLIBPATHS) $(LIBRESOBJS) $(LTLIBS) $(TLIBS)
 
-showdb.exe:	$(TOP)\tool\showdb.c sqlite3.c
-	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
-		$(TOP)\tool\showdb.c sqlite3.c
+showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showdb.c $(SQLITE3C)
 
-wordcount.exe:	$(TOP)\test\wordcount.c sqlite3.c
-	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
-		$(TOP)\test\wordcount.c sqlite3.c
+wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\test\wordcount.c $(SQLITE3C)
 
-speedtest1.exe:	$(TOP)\test\speedtest1.c sqlite3.c
-	$(LTLINK) -DSQLITE_OMIT_LOAD_EXTENSION -o $@ \
-		$(TOP)\test\speedtest1.c sqlite3.c
+speedtest1.exe:	$(TOP)\test\speedtest1.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\test\speedtest1.c $(SQLITE3C)
 
 clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib

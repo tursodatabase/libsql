@@ -140,6 +140,7 @@ void sqlite3FinishCoding(Parse *pParse){
   assert( !pParse->isMultiWrite 
        || sqlite3VdbeAssertMayAbort(v, pParse->mayAbort));
   if( v ){
+    while( sqlite3VdbeDeletePriorOpcode(v, OP_Close) ){}
     sqlite3VdbeAddOp0(v, OP_Halt);
 
     /* The cookie mask contains one bit for each database file open.
@@ -148,20 +149,22 @@ void sqlite3FinishCoding(Parse *pParse){
     ** transaction on each used database and to verify the schema cookie
     ** on each used database.
     */
-    if( pParse->cookieGoto>0 ){
+    if( db->mallocFailed==0 && (pParse->cookieMask || pParse->pConstExpr) ){
       yDbMask mask;
-      int iDb, i, addr;
-      sqlite3VdbeJumpHere(v, pParse->cookieGoto-1);
+      int iDb, i;
+      assert( sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
+      sqlite3VdbeJumpHere(v, 0);
       for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
         if( (mask & pParse->cookieMask)==0 ) continue;
         sqlite3VdbeUsesBtree(v, iDb);
-        sqlite3VdbeAddOp2(v,OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
-        if( db->init.busy==0 ){
-          assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-          sqlite3VdbeAddOp3(v, OP_VerifyCookie,
-                            iDb, pParse->cookieValue[iDb],
-                            db->aDb[iDb].pSchema->iGeneration);
-        }
+        sqlite3VdbeAddOp4Int(v,
+          OP_Transaction,                    /* Opcode */
+          iDb,                               /* P1 */
+          (mask & pParse->writeMask)!=0,     /* P2 */
+          pParse->cookieValue[iDb],          /* P3 */
+          db->aDb[iDb].pSchema->iGeneration  /* P4 */
+        );
+        if( db->init.busy==0 ) sqlite3VdbeChangeP5(v, 1);
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       for(i=0; i<pParse->nVtabLock; i++){
@@ -182,17 +185,16 @@ void sqlite3FinishCoding(Parse *pParse){
       sqlite3AutoincrementBegin(pParse);
 
       /* Code constant expressions that where factored out of inner loops */
-      addr = pParse->cookieGoto;
       if( pParse->pConstExpr ){
         ExprList *pEL = pParse->pConstExpr;
-        pParse->cookieGoto = 0;
+        pParse->okConstFactor = 0;
         for(i=0; i<pEL->nExpr; i++){
           sqlite3ExprCode(pParse, pEL->a[i].pExpr, pEL->a[i].u.iConstExprReg);
         }
       }
 
       /* Finally, jump back to the beginning of the executable code. */
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, addr);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, 1);
     }
   }
 
@@ -215,7 +217,6 @@ void sqlite3FinishCoding(Parse *pParse){
   pParse->nSet = 0;
   pParse->nVar = 0;
   pParse->cookieMask = 0;
-  pParse->cookieGoto = 0;
 }
 
 /*
@@ -947,7 +948,7 @@ void sqlite3StartTable(
     reg3 = ++pParse->nMem;
     sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, reg3, BTREE_FILE_FORMAT);
     sqlite3VdbeUsesBtree(v, iDb);
-    j1 = sqlite3VdbeAddOp1(v, OP_If, reg3);
+    j1 = sqlite3VdbeAddOp1(v, OP_If, reg3); VdbeCoverage(v);
     fileFormat = (db->flags & SQLITE_LegacyFileFmt)!=0 ?
                   1 : SQLITE_MAX_FILE_FORMAT;
     sqlite3VdbeAddOp2(v, OP_Integer, fileFormat, reg3);
@@ -1451,10 +1452,10 @@ static void identPut(char *z, int *pIdx, char *zSignedIdent){
   for(j=0; zIdent[j]; j++){
     if( !sqlite3Isalnum(zIdent[j]) && zIdent[j]!='_' ) break;
   }
-  needQuote = sqlite3Isdigit(zIdent[0]) || sqlite3KeywordCode(zIdent, j)!=TK_ID;
-  if( !needQuote ){
-    needQuote = zIdent[j];
-  }
+  needQuote = sqlite3Isdigit(zIdent[0])
+            || sqlite3KeywordCode(zIdent, j)!=TK_ID
+            || zIdent[j]!=0
+            || j==0;
 
   if( needQuote ) z[i++] = '"';
   for(j=0; zIdent[j]; j++){
@@ -2674,27 +2675,27 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   /* Open the table. Loop through all rows of the table, inserting index
   ** records into the sorter. */
   sqlite3OpenTable(pParse, iTab, iDb, pTab, OP_OpenRead);
-  addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
+  addr1 = sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0); VdbeCoverage(v);
   regRecord = sqlite3GetTempReg(pParse);
 
-  sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord, 0, &iPartIdxLabel);
+  sqlite3GenerateIndexKey(pParse,pIndex,iTab,regRecord,0,&iPartIdxLabel,0,0);
   sqlite3VdbeAddOp2(v, OP_SorterInsert, iSorter, regRecord);
   sqlite3VdbeResolveLabel(v, iPartIdxLabel);
-  sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1);
+  sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1); VdbeCoverage(v);
   sqlite3VdbeJumpHere(v, addr1);
   if( memRootPage<0 ) sqlite3VdbeAddOp2(v, OP_Clear, tnum, iDb);
   sqlite3VdbeAddOp4(v, OP_OpenWrite, iIdx, tnum, iDb, 
                     (char *)pKey, P4_KEYINFO);
   sqlite3VdbeChangeP5(v, OPFLAG_BULKCSR|((memRootPage>=0)?OPFLAG_P2ISREG:0));
 
-  addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0);
+  addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0); VdbeCoverage(v);
   assert( pKey!=0 || db->mallocFailed || pParse->nErr );
   if( pIndex->onError!=OE_None && pKey!=0 ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
     sqlite3VdbeAddOp2(v, OP_Goto, 0, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp4Int(v, OP_SorterCompare, iSorter, j2, regRecord,
-                         pKey->nField - pIndex->nKeyCol);
+                         pKey->nField - pIndex->nKeyCol); VdbeCoverage(v);
     sqlite3UniqueConstraint(pParse, OE_Abort, pIndex);
   }else{
     addr2 = sqlite3VdbeCurrentAddr(v);
@@ -2703,7 +2704,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   sqlite3VdbeAddOp3(v, OP_IdxInsert, iIdx, regRecord, 1);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);
-  sqlite3VdbeAddOp2(v, OP_SorterNext, iSorter, addr2);
+  sqlite3VdbeAddOp2(v, OP_SorterNext, iSorter, addr2); VdbeCoverage(v);
   sqlite3VdbeJumpHere(v, addr1);
 
   sqlite3VdbeAddOp1(v, OP_Close, iTab);
@@ -2790,7 +2791,7 @@ Index *sqlite3CreateIndex(
   const Column *pTabCol;           /* A column in the table */
   int nExtra = 0;                  /* Space allocated for zExtra[] */
   int nExtraCol;                   /* Number of extra columns needed */
-  char *zExtra;                    /* Extra space after the Index object */
+  char *zExtra = 0;                /* Extra space after the Index object */
   Index *pPk = 0;      /* PRIMARY KEY index for WITHOUT ROWID tables */
 
   assert( pParse->nErr==0 );      /* Never called with prior errors */
@@ -3824,59 +3825,26 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 }
 
 /*
-** Generate VDBE code that will verify the schema cookie and start
-** a read-transaction for all named database files.
-**
-** It is important that all schema cookies be verified and all
-** read transactions be started before anything else happens in
-** the VDBE program.  But this routine can be called after much other
-** code has been generated.  So here is what we do:
-**
-** The first time this routine is called, we code an OP_Goto that
-** will jump to a subroutine at the end of the program.  Then we
-** record every database that needs its schema verified in the
-** pParse->cookieMask field.  Later, after all other code has been
-** generated, the subroutine that does the cookie verifications and
-** starts the transactions will be coded and the OP_Goto P2 value
-** will be made to point to that subroutine.  The generation of the
-** cookie verification subroutine code happens in sqlite3FinishCoding().
-**
-** If iDb<0 then code the OP_Goto only - don't set flag to verify the
-** schema on any databases.  This can be used to position the OP_Goto
-** early in the code, before we know if any database tables will be used.
+** Record the fact that the schema cookie will need to be verified
+** for database iDb.  The code to actually verify the schema cookie
+** will occur at the end of the top-level VDBE and will be generated
+** later, by sqlite3FinishCoding().
 */
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
+  sqlite3 *db = pToplevel->db;
+  yDbMask mask;
 
-#ifndef SQLITE_OMIT_TRIGGER
-  if( pToplevel!=pParse ){
-    /* This branch is taken if a trigger is currently being coded. In this
-    ** case, set cookieGoto to a non-zero value to show that this function
-    ** has been called. This is used by the sqlite3ExprCodeConstants()
-    ** function. */
-    pParse->cookieGoto = -1;
-  }
-#endif
-  if( pToplevel->cookieGoto==0 ){
-    Vdbe *v = sqlite3GetVdbe(pToplevel);
-    if( v==0 ) return;  /* This only happens if there was a prior error */
-    pToplevel->cookieGoto = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0)+1;
-  }
-  if( iDb>=0 ){
-    sqlite3 *db = pToplevel->db;
-    yDbMask mask;
-
-    assert( iDb<db->nDb );
-    assert( db->aDb[iDb].pBt!=0 || iDb==1 );
-    assert( iDb<SQLITE_MAX_ATTACHED+2 );
-    assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-    mask = ((yDbMask)1)<<iDb;
-    if( (pToplevel->cookieMask & mask)==0 ){
-      pToplevel->cookieMask |= mask;
-      pToplevel->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
-      if( !OMIT_TEMPDB && iDb==1 ){
-        sqlite3OpenTempDatabase(pToplevel);
-      }
+  assert( iDb>=0 && iDb<db->nDb );
+  assert( db->aDb[iDb].pBt!=0 || iDb==1 );
+  assert( iDb<SQLITE_MAX_ATTACHED+2 );
+  assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
+  mask = ((yDbMask)1)<<iDb;
+  if( (pToplevel->cookieMask & mask)==0 ){
+    pToplevel->cookieMask |= mask;
+    pToplevel->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
+    if( !OMIT_TEMPDB && iDb==1 ){
+      sqlite3OpenTempDatabase(pToplevel);
     }
   }
 }
@@ -3989,9 +3957,9 @@ void sqlite3UniqueConstraint(
   for(j=0; j<pIdx->nKeyCol; j++){
     char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
     if( j ) sqlite3StrAccumAppend(&errMsg, ", ", 2);
-    sqlite3StrAccumAppend(&errMsg, pTab->zName, -1);
+    sqlite3StrAccumAppendAll(&errMsg, pTab->zName);
     sqlite3StrAccumAppend(&errMsg, ".", 1);
-    sqlite3StrAccumAppend(&errMsg, zCol, -1);
+    sqlite3StrAccumAppendAll(&errMsg, zCol);
   }
   zErr = sqlite3StrAccumFinish(&errMsg);
   sqlite3HaltConstraint(pParse, 
@@ -4183,8 +4151,9 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
       assert( sqlite3KeyInfoIsWriteable(pKey) );
       for(i=0; i<nCol; i++){
         char *zColl = pIdx->azColl[i];
-        if( NEVER(zColl==0) ) zColl = "BINARY";
-        pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
+        assert( zColl!=0 );
+        pKey->aColl[i] = strcmp(zColl,"BINARY")==0 ? 0 :
+                          sqlite3LocateCollSeq(pParse, zColl);
         pKey->aSortOrder[i] = pIdx->aSortOrder[i];
       }
       if( pParse->nErr ){
@@ -4196,3 +4165,73 @@ KeyInfo *sqlite3KeyInfoOfIndex(Parse *pParse, Index *pIdx){
   }
   return sqlite3KeyInfoRef(pIdx->pKeyInfo);
 }
+
+#ifndef SQLITE_OMIT_CTE
+/* 
+** This routine is invoked once per CTE by the parser while parsing a 
+** WITH clause. 
+*/
+With *sqlite3WithAdd(
+  Parse *pParse,          /* Parsing context */
+  With *pWith,            /* Existing WITH clause, or NULL */
+  Token *pName,           /* Name of the common-table */
+  ExprList *pArglist,     /* Optional column name list for the table */
+  Select *pQuery          /* Query used to initialize the table */
+){
+  sqlite3 *db = pParse->db;
+  With *pNew;
+  char *zName;
+
+  /* Check that the CTE name is unique within this WITH clause. If
+  ** not, store an error in the Parse structure. */
+  zName = sqlite3NameFromToken(pParse->db, pName);
+  if( zName && pWith ){
+    int i;
+    for(i=0; i<pWith->nCte; i++){
+      if( sqlite3StrICmp(zName, pWith->a[i].zName)==0 ){
+        sqlite3ErrorMsg(pParse, "duplicate WITH table name: %s", zName);
+      }
+    }
+  }
+
+  if( pWith ){
+    int nByte = sizeof(*pWith) + (sizeof(pWith->a[1]) * pWith->nCte);
+    pNew = sqlite3DbRealloc(db, pWith, nByte);
+  }else{
+    pNew = sqlite3DbMallocZero(db, sizeof(*pWith));
+  }
+  assert( zName!=0 || pNew==0 );
+  assert( db->mallocFailed==0 || pNew==0 );
+
+  if( pNew==0 ){
+    sqlite3ExprListDelete(db, pArglist);
+    sqlite3SelectDelete(db, pQuery);
+    sqlite3DbFree(db, zName);
+    pNew = pWith;
+  }else{
+    pNew->a[pNew->nCte].pSelect = pQuery;
+    pNew->a[pNew->nCte].pCols = pArglist;
+    pNew->a[pNew->nCte].zName = zName;
+    pNew->a[pNew->nCte].zErr = 0;
+    pNew->nCte++;
+  }
+
+  return pNew;
+}
+
+/*
+** Free the contents of the With object passed as the second argument.
+*/
+void sqlite3WithDelete(sqlite3 *db, With *pWith){
+  if( pWith ){
+    int i;
+    for(i=0; i<pWith->nCte; i++){
+      struct Cte *pCte = &pWith->a[i];
+      sqlite3ExprListDelete(db, pCte->pCols);
+      sqlite3SelectDelete(db, pCte->pSelect);
+      sqlite3DbFree(db, pCte->zName);
+    }
+    sqlite3DbFree(db, pWith);
+  }
+}
+#endif /* !defined(SQLITE_OMIT_CTE) */

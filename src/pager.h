@@ -136,6 +136,7 @@ int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag);
 DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno);
 void sqlite3PagerRef(DbPage*);
 void sqlite3PagerUnref(DbPage*);
+void sqlite3PagerUnrefNotNull(DbPage*);
 
 /* Operations on page references. */
 int sqlite3PagerWrite(DbPage*);
@@ -150,7 +151,7 @@ void sqlite3PagerPagecount(Pager*, int*);
 int sqlite3PagerBegin(Pager*, int exFlag, int);
 int sqlite3PagerCommitPhaseOne(Pager*,const char *zMaster, int);
 int sqlite3PagerExclusiveLock(Pager*);
-int sqlite3PagerSync(Pager *pPager);
+int sqlite3PagerSync(Pager *pPager, const char *zMaster);
 int sqlite3PagerCommitPhaseTwo(Pager*);
 int sqlite3PagerRollback(Pager*);
 int sqlite3PagerOpenSavepoint(Pager *pPager, int n);

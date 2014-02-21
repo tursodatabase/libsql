@@ -53,7 +53,7 @@ void sqlite3HashClear(Hash *pH){
 ** The hashing function.
 */
 static unsigned int strHash(const char *z, int nKey){
-  int h = 0;
+  unsigned int h = 0;
   assert( nKey>=0 );
   while( nKey > 0  ){
     h = (h<<3) ^ h ^ sqlite3UpperToLower[(unsigned char)*z++];

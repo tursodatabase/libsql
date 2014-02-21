@@ -9,6 +9,7 @@ static const char zHelp[] =
   "  --autovacuum        Enable AUTOVACUUM mode\n"
   "  --cachesize N       Set the cache size to N\n" 
   "  --exclusive         Enable locking_mode=EXCLUSIVE\n"
+  "  --explain           Like --sqlonly but with added EXPLAIN keywords\n"
   "  --heap SZ MIN       Memory allocator uses SZ bytes & min allocation MIN\n"
   "  --incrvacuum        Enable incremenatal vacuum mode\n"
   "  --journalmode M     Set the journal_mode to MODE\n"
@@ -49,6 +50,7 @@ static struct Global {
   int bWithoutRowid;         /* True for --without-rowid */
   int bReprepare;            /* True to reprepare the SQL on each rerun */
   int bSqlOnly;              /* True to print the SQL once only */
+  int bExplain;              /* Print SQL with EXPLAIN prefix */
   int szTest;                /* Scale factor for test iterations */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
@@ -78,6 +80,12 @@ static int hexDigitValue(char c){
   if( c>='A' && c<='F' ) return c - 'A' + 10;
   return -1;
 }
+
+/* Provide an alternative to sqlite3_stricmp() in older versions of
+** SQLite */
+#if SQLITE_VERSION_NUMBER<3007011
+# define sqlite3_stricmp strcmp
+#endif
 
 /*
 ** Interpret zArg as an integer value, possibly with suffixes.
@@ -122,8 +130,8 @@ static int integerValue(const char *zArg){
       break;
     }
   }
-  if( v>=2147483648 ) fatal_error("parameter to large - max 2147483648");
-  return isNeg? -v : v;
+  if( v>0x7fffffff ) fatal_error("parameter too large - max 2147483648");
+  return (int)(isNeg? -v : v);
 }
 
 /* Return the current wall-clock time, in milliseconds */
@@ -131,9 +139,12 @@ sqlite3_int64 speedtest1_timestamp(void){
   static sqlite3_vfs *clockVfs = 0;
   sqlite3_int64 t;
   if( clockVfs==0 ) clockVfs = sqlite3_vfs_find(0);
-  if( clockVfs->iVersion>=1 && clockVfs->xCurrentTimeInt64!=0 ){
+#if SQLITE_VERSION_NUMBER>=3007000
+  if( clockVfs->iVersion>=2 && clockVfs->xCurrentTimeInt64!=0 ){
     clockVfs->xCurrentTimeInt64(clockVfs, &t);
-  }else{
+  }else
+#endif
+  {
     double r;
     clockVfs->xCurrentTime(clockVfs, &r);
     t = (sqlite3_int64)(r*86400000.0);
@@ -256,8 +267,8 @@ void speedtest1_begin_test(int iTestNum, const char *zTestName, ...){
   sqlite3_free(zName);
   g.nResult = 0;
   g.iStart = speedtest1_timestamp();
-  g.x = 2903710987;
-  g.y = 1157229256;
+  g.x = 0xad131d0b;
+  g.y = 0x44f9eac8;
 }
 
 /* Complete a test case */
@@ -281,6 +292,24 @@ void speedtest1_final(void){
   }
 }
 
+/* Print an SQL statement to standard output */
+static void printSql(const char *zSql){
+  int n = (int)strlen(zSql);
+  while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
+  if( g.bExplain ) printf("EXPLAIN ");
+  printf("%.*s;\n", n, zSql);
+  if( g.bExplain
+#if SQLITE_VERSION_NUMBER>=3007010 
+   && ( sqlite3_strglob("CREATE *", zSql)==0
+     || sqlite3_strglob("DROP *", zSql)==0
+     || sqlite3_strglob("ALTER *", zSql)==0
+      )
+#endif
+  ){
+    printf("%.*s;\n", n, zSql);
+  }
+}
+
 /* Run SQL */
 void speedtest1_exec(const char *zFormat, ...){
   va_list ap;
@@ -289,9 +318,7 @@ void speedtest1_exec(const char *zFormat, ...){
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( g.bSqlOnly ){
-    int n = (int)strlen(zSql);
-    while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
-    printf("%.*s;\n", n, zSql);
+    printSql(zSql);
   }else{
     char *zErrMsg = 0;
     int rc = sqlite3_exec(g.db, zSql, 0, 0, &zErrMsg);
@@ -309,9 +336,7 @@ void speedtest1_prepare(const char *zFormat, ...){
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( g.bSqlOnly ){
-    int n = (int)strlen(zSql);
-    while( n>0 && (zSql[n-1]==';' || isspace(zSql[n-1])) ){ n--; }
-    printf("%.*s;\n", n, zSql);
+    printSql(zSql);
   }else{
     int rc;
     if( g.pStmt ) sqlite3_finalize(g.pStmt);
@@ -367,6 +392,19 @@ static void randomFunc(
   sqlite3_value **NotUsed2
 ){
   sqlite3_result_int64(context, (sqlite3_int64)speedtest1_random());
+}
+
+/* Estimate the square root of an integer */
+static int est_square_root(int x){
+  int y0 = x/2;
+  int y1;
+  int n;
+  for(n=0; y0>0 && n<10; n++){
+    y1 = (y0 + x/y0)/2;
+    if( y1==y0 ) break;
+    y0 = y1;
+  }
+  return y0;
 }
 
 /*
@@ -475,15 +513,13 @@ void testset_main(void){
 
 
   speedtest1_begin_test(150, "CREATE INDEX five times");
-  speedtest1_exec(
-      "BEGIN;\n"
-      "CREATE UNIQUE INDEX t1b ON t1(b);\n"
-      "CREATE INDEX t1c ON t1(c);\n"
-      "CREATE UNIQUE INDEX t2b ON t2(b);\n"
-      "CREATE INDEX t2c ON t2(c DESC);\n"
-      "CREATE INDEX t3bc ON t3(b,c);\n"
-      "COMMIT;\n"
-  );
+  speedtest1_exec("BEGIN;");
+  speedtest1_exec("CREATE UNIQUE INDEX t1b ON t1(b);");
+  speedtest1_exec("CREATE INDEX t1c ON t1(c);");
+  speedtest1_exec("CREATE UNIQUE INDEX t2b ON t2(b);");
+  speedtest1_exec("CREATE INDEX t2c ON t2(c DESC);");
+  speedtest1_exec("CREATE INDEX t3bc ON t3(b,c);");
+  speedtest1_exec("COMMIT;");
   speedtest1_end_test();
 
 
@@ -557,10 +593,8 @@ void testset_main(void){
 
   n = sz;
   speedtest1_begin_test(190, "DELETE and REFILL one table", n);
-  speedtest1_exec(
-    "DELETE FROM t2;"
-    "INSERT INTO t2 SELECT * FROM t1;"
-  );
+  speedtest1_exec("DELETE FROM t2;");
+  speedtest1_exec("INSERT INTO t2 SELECT * FROM t1;");
   speedtest1_end_test();
 
 
@@ -654,9 +688,17 @@ void testset_main(void){
   speedtest1_exec("REPLACE INTO t3(a,b,c) SELECT a,b,c FROM t1");
   speedtest1_end_test();
 
+  speedtest1_begin_test(300, "Refill a %d-row table using (b&1)==(a&1)", sz);
+  speedtest1_exec("DELETE FROM t2;");
+  speedtest1_exec("INSERT INTO t2(a,b,c)\n"
+                  " SELECT a,b,c FROM t1  WHERE (b&1)==(a&1);");
+  speedtest1_exec("INSERT INTO t2(a,b,c)\n"
+                  " SELECT a,b,c FROM t1  WHERE (b&1)<>(a&1);");
+  speedtest1_end_test();
+
 
   n = sz/5;
-  speedtest1_begin_test(290, "%d four-ways joins", n);
+  speedtest1_begin_test(310, "%d four-ways joins", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
     "SELECT t1.c FROM t1, t2, t3, t4\n"
@@ -675,7 +717,15 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
-
+  speedtest1_begin_test(320, "subquery in result set", n);
+  speedtest1_prepare(
+    "SELECT sum(a), max(c),\n"
+    "       avg((SELECT a FROM t2 WHERE 5+t2.b=t1.b) AND rowid<?1), max(c)\n"
+    " FROM t1 WHERE rowid<?1;"
+  );
+  sqlite3_bind_int(g.pStmt, 1, est_square_root(g.szTest)*50);
+  speedtest1_run();
+  speedtest1_end_test();
 
   speedtest1_begin_test(980, "PRAGMA integrity_check");
   speedtest1_exec("PRAGMA integrity_check");
@@ -685,6 +735,161 @@ void testset_main(void){
   speedtest1_begin_test(990, "ANALYZE");
   speedtest1_exec("ANALYZE");
   speedtest1_end_test();
+}
+
+/*
+** A testset for common table expressions.  This exercises code
+** for views, subqueries, co-routines, etc.
+*/
+void testset_cte(void){
+  static const char *azPuzzle[] = {
+    /* Easy */
+    "534...9.."
+    "67.195..."
+    ".98....6."
+    "8...6...3"
+    "4..8.3..1"
+    "....2...6"
+    ".6....28."
+    "...419..5"
+    "...28..79",
+
+    /* Medium */
+    "53....9.."
+    "6..195..."
+    ".98....6."
+    "8...6...3"
+    "4..8.3..1"
+    "....2...6"
+    ".6....28."
+    "...419..5"
+    "....8..79",
+
+    /* Hard */
+    "53......."
+    "6..195..."
+    ".98....6."
+    "8...6...3"
+    "4..8.3..1"
+    "....2...6"
+    ".6....28."
+    "...419..5"
+    "....8..79",
+  };
+  const char *zPuz;
+  double rSpacing;
+  int nElem;
+
+  if( g.szTest<25 ){
+    zPuz = azPuzzle[0];
+  }else if( g.szTest<70 ){
+    zPuz = azPuzzle[1];
+  }else{
+    zPuz = azPuzzle[2];
+  }
+  speedtest1_begin_test(100, "Sudoku with recursive 'digits'");
+  speedtest1_prepare(
+    "WITH RECURSIVE\n"
+    "  input(sud) AS (VALUES(?1)),\n"
+    "  digits(z,lp) AS (\n"
+    "    VALUES('1', 1)\n"
+    "    UNION ALL\n"
+    "    SELECT CAST(lp+1 AS TEXT), lp+1 FROM digits WHERE lp<9\n"
+    "  ),\n"
+    "  x(s, ind) AS (\n"
+    "    SELECT sud, instr(sud, '.') FROM input\n"
+    "    UNION ALL\n"
+    "    SELECT\n"
+    "      substr(s, 1, ind-1) || z || substr(s, ind+1),\n"
+    "      instr( substr(s, 1, ind-1) || z || substr(s, ind+1), '.' )\n"
+    "     FROM x, digits AS z\n"
+    "    WHERE ind>0\n"
+    "      AND NOT EXISTS (\n"
+    "            SELECT 1\n"
+    "              FROM digits AS lp\n"
+    "             WHERE z.z = substr(s, ((ind-1)/9)*9 + lp, 1)\n"
+    "                OR z.z = substr(s, ((ind-1)%%9) + (lp-1)*9 + 1, 1)\n"
+    "                OR z.z = substr(s, (((ind-1)/3) %% 3) * 3\n"
+    "                        + ((ind-1)/27) * 27 + lp\n"
+    "                        + ((lp-1) / 3) * 6, 1)\n"
+    "         )\n"
+    "  )\n"
+    "SELECT s FROM x WHERE ind=0;"
+  );
+  sqlite3_bind_text(g.pStmt, 1, zPuz, -1, SQLITE_STATIC);
+  speedtest1_run();
+  speedtest1_end_test();
+
+  speedtest1_begin_test(200, "Sudoku with VALUES 'digits'");
+  speedtest1_prepare(
+    "WITH RECURSIVE\n"
+    "  input(sud) AS (VALUES(?1)),\n"
+    "  digits(z,lp) AS (VALUES('1',1),('2',2),('3',3),('4',4),('5',5),\n"
+    "                         ('6',6),('7',7),('8',8),('9',9)),\n"
+    "  x(s, ind) AS (\n"
+    "    SELECT sud, instr(sud, '.') FROM input\n"
+    "    UNION ALL\n"
+    "    SELECT\n"
+    "      substr(s, 1, ind-1) || z || substr(s, ind+1),\n"
+    "      instr( substr(s, 1, ind-1) || z || substr(s, ind+1), '.' )\n"
+    "     FROM x, digits AS z\n"
+    "    WHERE ind>0\n"
+    "      AND NOT EXISTS (\n"
+    "            SELECT 1\n"
+    "              FROM digits AS lp\n"
+    "             WHERE z.z = substr(s, ((ind-1)/9)*9 + lp, 1)\n"
+    "                OR z.z = substr(s, ((ind-1)%%9) + (lp-1)*9 + 1, 1)\n"
+    "                OR z.z = substr(s, (((ind-1)/3) %% 3) * 3\n"
+    "                        + ((ind-1)/27) * 27 + lp\n"
+    "                        + ((lp-1) / 3) * 6, 1)\n"
+    "         )\n"
+    "  )\n"
+    "SELECT s FROM x WHERE ind=0;"
+  );
+  sqlite3_bind_text(g.pStmt, 1, zPuz, -1, SQLITE_STATIC);
+  speedtest1_run();
+  speedtest1_end_test();
+
+  rSpacing = 5.0/g.szTest;
+  speedtest1_begin_test(300, "Mandelbrot Set with spacing=%f", rSpacing);
+  speedtest1_prepare(
+   "WITH RECURSIVE \n"
+   "  xaxis(x) AS (VALUES(-2.0) UNION ALL SELECT x+?1 FROM xaxis WHERE x<1.2),\n"
+   "  yaxis(y) AS (VALUES(-1.0) UNION ALL SELECT y+?2 FROM yaxis WHERE y<1.0),\n"
+   "  m(iter, cx, cy, x, y) AS (\n"
+   "    SELECT 0, x, y, 0.0, 0.0 FROM xaxis, yaxis\n"
+   "    UNION ALL\n"
+   "    SELECT iter+1, cx, cy, x*x-y*y + cx, 2.0*x*y + cy FROM m \n"
+   "     WHERE (x*x + y*y) < 4.0 AND iter<28\n"
+   "  ),\n"
+   "  m2(iter, cx, cy) AS (\n"
+   "    SELECT max(iter), cx, cy FROM m GROUP BY cx, cy\n"
+   "  ),\n"
+   "  a(t) AS (\n"
+   "    SELECT group_concat( substr(' .+*#', 1+min(iter/7,4), 1), '') \n"
+   "    FROM m2 GROUP BY cy\n"
+   "  )\n"
+   "SELECT group_concat(rtrim(t),x'0a') FROM a;"
+  );
+  sqlite3_bind_double(g.pStmt, 1, rSpacing*.05);
+  sqlite3_bind_double(g.pStmt, 2, rSpacing);
+  speedtest1_run();
+  speedtest1_end_test();
+
+  nElem = 10000*g.szTest;
+  speedtest1_begin_test(400, "EXCEPT operator on %d-element tables", nElem);
+  speedtest1_prepare(
+    "WITH RECURSIVE \n"
+    "  t1(x) AS (VALUES(2) UNION ALL SELECT x+2 FROM t1 WHERE x<%d),\n"
+    "  t2(y) AS (VALUES(3) UNION ALL SELECT y+3 FROM t2 WHERE y<%d)\n"
+    "SELECT count(x), avg(x) FROM (\n"
+    "  SELECT x FROM t1 EXCEPT SELECT y FROM t2 ORDER BY 1\n"
+    ");",
+    nElem, nElem
+  );
+  speedtest1_run();
+  speedtest1_end_test();
+
 }
 
 /*
@@ -748,6 +953,9 @@ int main(int argc, char **argv){
         cacheSize = integerValue(argv[i]);
       }else if( strcmp(z,"exclusive")==0 ){
         doExclusive = 1;
+      }else if( strcmp(z,"explain")==0 ){
+        g.bSqlOnly = 1;
+        g.bExplain = 1;
       }else if( strcmp(z,"heap")==0 ){
         if( i>=argc-2 ) fatal_error("missing arguments on %s\n", argv[i]);
         nHeap = integerValue(argv[i+1]);
@@ -887,10 +1095,13 @@ int main(int argc, char **argv){
     speedtest1_exec("PRAGMA journal_mode=%s", zJMode);
   }
 
+  if( g.bExplain ) printf(".explain\n.echo on\n");
   if( strcmp(zTSet,"main")==0 ){
     testset_main();
   }else if( strcmp(zTSet,"debug1")==0 ){
     testset_debug1();
+  }else if( strcmp(zTSet,"cte")==0 ){
+    testset_cte();
   }else{
     fatal_error("unknown testset: \"%s\"\n", zTSet);
   }
@@ -898,6 +1109,7 @@ int main(int argc, char **argv){
 
   /* Database connection statistics printed after both prepared statements
   ** have been finalized */
+#if SQLITE_VERSION_NUMBER>=3007009
   if( showStats ){
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHi, 0);
     printf("-- Lookaside Slots Used:        %d (max %d)\n", iCur,iHi);
@@ -912,14 +1124,17 @@ int main(int argc, char **argv){
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_HIT, &iCur, &iHi, 1);
     printf("-- Page cache hits:             %d\n", iCur);
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_MISS, &iCur, &iHi, 1);
-    printf("-- Page cache misses:           %d\n", iCur); 
+    printf("-- Page cache misses:           %d\n", iCur);
+#if SQLITE_VERSION_NUMBER>=3007012
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_CACHE_WRITE, &iCur, &iHi, 1);
     printf("-- Page cache writes:           %d\n", iCur); 
+#endif
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_SCHEMA_USED, &iCur, &iHi, 0);
     printf("-- Schema Heap Usage:           %d bytes\n", iCur); 
     sqlite3_db_status(g.db, SQLITE_DBSTATUS_STMT_USED, &iCur, &iHi, 0);
     printf("-- Statement Heap Usage:        %d bytes\n", iCur); 
   }
+#endif
 
   sqlite3_close(g.db);
 
@@ -928,8 +1143,10 @@ int main(int argc, char **argv){
   if( showStats ){
     sqlite3_status(SQLITE_STATUS_MEMORY_USED, &iCur, &iHi, 0);
     printf("-- Memory Used (bytes):         %d (max %d)\n", iCur,iHi);
+#if SQLITE_VERSION_NUMBER>=3007000
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHi, 0);
     printf("-- Outstanding Allocations:     %d (max %d)\n", iCur,iHi);
+#endif
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHi, 0);
     printf("-- Pcache Overflow Bytes:       %d (max %d)\n", iCur,iHi);
     sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHi, 0);

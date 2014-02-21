@@ -246,7 +246,28 @@ static int test_io_trace(
   return TCL_OK;
 }
 
-
+/*
+** Usage:  clang_sanitize_address 
+**
+** Returns true if the program was compiled using clang with the 
+** -fsanitize=address switch on the command line. False otherwise.
+*/
+static int clang_sanitize_address(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  int res = 0;
+#if defined(__has_feature)
+# if __has_feature(address_sanitizer)
+  res = 1;
+# endif
+#endif
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(res));
+  return TCL_OK;
+}
+  
 /*
 ** Usage:  sqlite3_exec_printf  DB  FORMAT  STRING
 **
@@ -946,9 +967,21 @@ static void ptrChngFunction(
   sqlite3_result_int(context, p1!=p2);
 }
 
+/*
+** This SQL function returns a different answer each time it is called, even if
+** the arguments are the same.
+*/
+static void nondeterministicFunction(
+  sqlite3_context *context, 
+  int argc,  
+  sqlite3_value **argv
+){
+  static int cnt = 0;
+  sqlite3_result_int(context, cnt++);
+}
 
 /*
-** Usage:  sqlite_test_create_function DB
+** Usage:  sqlite3_create_function DB
 **
 ** Call the sqlite3_create_function API on the given database in order
 ** to create a function named "x_coalesce".  This function does the same thing
@@ -977,16 +1010,16 @@ static int test_create_function(
     return TCL_ERROR;
   }
   if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
-  rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_ANY, 0, 
+  rc = sqlite3_create_function(db, "x_coalesce", -1, SQLITE_UTF8, 0, 
         t1_ifnullFunc, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "hex8", 1, SQLITE_ANY, 0, 
-          hex8Func, 0, 0);
+    rc = sqlite3_create_function(db, "hex8", 1, SQLITE_UTF8 | SQLITE_DETERMINISTIC,
+          0, hex8Func, 0, 0);
   }
 #ifndef SQLITE_OMIT_UTF16
   if( rc==SQLITE_OK ){
-    rc = sqlite3_create_function(db, "hex16", 1, SQLITE_ANY, 0, 
-          hex16Func, 0, 0);
+    rc = sqlite3_create_function(db, "hex16", 1, SQLITE_UTF16 | SQLITE_DETERMINISTIC,
+          0, hex16Func, 0, 0);
   }
 #endif
   if( rc==SQLITE_OK ){
@@ -996,6 +1029,19 @@ static int test_create_function(
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "pointer_change", 4, SQLITE_ANY, 0, 
           ptrChngFunction, 0, 0);
+  }
+
+  /* Functions counter1() and counter2() have the same implementation - they
+  ** both return an ascending integer with each call.  But counter1() is marked
+  ** as non-deterministic and counter2() is marked as deterministic.
+  */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "counter1", -1, SQLITE_UTF8,
+          0, nondeterministicFunction, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_create_function(db, "counter2", -1, SQLITE_UTF8|SQLITE_DETERMINISTIC,
+          0, nondeterministicFunction, 0, 0);
   }
 
 #ifndef SQLITE_OMIT_UTF16
@@ -5458,6 +5504,37 @@ static int reset_prng_state(
 }
 
 /*
+** tclcmd:  database_may_be_corrupt
+**
+** Indicate that database files might be corrupt.  In other words, set the normal
+** state of operation.
+*/
+static int database_may_be_corrupt(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, 0);
+  return TCL_OK;
+}
+/*
+** tclcmd:  database_never_corrupt
+**
+** Indicate that database files are always well-formed.  This enables extra assert()
+** statements that test conditions that are always true for well-formed databases.
+*/
+static int database_never_corrupt(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3_test_control(SQLITE_TESTCTRL_NEVER_CORRUPT, 1);
+  return TCL_OK;
+}
+
+/*
 ** tclcmd:  pcache_stats
 */
 static int test_pcache_stats(
@@ -6108,7 +6185,6 @@ static int optimization_control(
     { "column-cache",        SQLITE_ColumnCache    },
     { "groupby-order",       SQLITE_GroupByOrder   },
     { "factor-constants",    SQLITE_FactorOutConst },
-    { "real-as-int",         SQLITE_IdxRealAsInt   },
     { "distinct-opt",        SQLITE_DistinctOpt    },
     { "cover-idx-scan",      SQLITE_CoverIdxScan   },
     { "order-by-idx-join",   SQLITE_OrderByIdxJoin },
@@ -6272,6 +6348,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_busy_timeout",          (Tcl_CmdProc*)test_busy_timeout     },
      { "printf",                        (Tcl_CmdProc*)test_printf           },
      { "sqlite3IoTrace",              (Tcl_CmdProc*)test_io_trace         },
+     { "clang_sanitize_address",        (Tcl_CmdProc*)clang_sanitize_address },
   };
   static struct {
      char *zName;
@@ -6335,6 +6412,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
+     { "database_never_corrupt",        database_never_corrupt, 0},
+     { "database_may_be_corrupt",       database_may_be_corrupt, 0},
      { "optimization_control",          optimization_control,0},
 #if SQLITE_OS_WIN
      { "lock_win32_file",               win32_file_lock,    0 },

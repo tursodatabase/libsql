@@ -90,7 +90,6 @@ do_execsql_test 1.13.1 {
   INSERT INTO c1(x) VALUES('a b c');
   INSERT INTO c1(x) VALUES('d e f');
 }
-breakpoint
 do_execsql_test 1.13.2 {
   SELECT * FROM c1, t1 WHERE input = x AND c1.rowid=t1.rowid;
 } {

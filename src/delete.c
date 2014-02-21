@@ -97,10 +97,8 @@ void sqlite3MaterializeView(
   SrcList *pFrom;
   sqlite3 *db = pParse->db;
   int iDb = sqlite3SchemaToIndex(db, pView->pSchema);
-
   pWhere = sqlite3ExprDup(db, pWhere, 0);
   pFrom = sqlite3SrcListAppend(db, 0, 0, 0);
-
   if( pFrom ){
     assert( pFrom->nSrc==1 );
     pFrom->a[0].zName = sqlite3DbStrDup(db, pView->zName);
@@ -108,10 +106,7 @@ void sqlite3MaterializeView(
     assert( pFrom->a[0].pOn==0 );
     assert( pFrom->a[0].pUsing==0 );
   }
-
   pSel = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
-  if( pSel ) pSel->selFlags |= SF_Materialize;
-
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
   sqlite3Select(pParse, pSel, &dest);
   sqlite3SelectDelete(db, pSel);
@@ -448,7 +443,7 @@ void sqlite3DeleteFrom(
       iKey = ++pParse->nMem;
       nKey = 0;   /* Zero tells OP_Found to use a composite key */
       sqlite3VdbeAddOp4(v, OP_MakeRecord, iPk, nPk, iKey,
-                        sqlite3IndexAffinityStr(v, pPk), P4_TRANSIENT);
+                        sqlite3IndexAffinityStr(v, pPk), nPk);
       sqlite3VdbeAddOp2(v, OP_IdxInsert, iEphCur, iKey);
     }else{
       /* Get the rowid of the row to be deleted and remember it in the RowSet */
@@ -486,13 +481,15 @@ void sqlite3DeleteFrom(
       if( aToOpen[iDataCur-iTabCur] ){
         assert( pPk!=0 );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);
+        VdbeCoverage(v);
       }
     }else if( pPk ){
-      addrLoop = sqlite3VdbeAddOp1(v, OP_Rewind, iEphCur);
+      addrLoop = sqlite3VdbeAddOp1(v, OP_Rewind, iEphCur); VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_RowKey, iEphCur, iKey);
       assert( nKey==0 );  /* OP_Found will use a composite key */
     }else{
       addrLoop = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, 0, iKey);
+      VdbeCoverage(v);
       assert( nKey==1 );
     }  
   
@@ -516,7 +513,7 @@ void sqlite3DeleteFrom(
     if( okOnePass ){
       sqlite3VdbeResolveLabel(v, addrBypass);
     }else if( pPk ){
-      sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1);
+      sqlite3VdbeAddOp2(v, OP_Next, iEphCur, addrLoop+1); VdbeCoverage(v);
       sqlite3VdbeJumpHere(v, addrLoop);
     }else{
       sqlite3VdbeAddOp2(v, OP_Goto, 0, addrLoop);
@@ -614,7 +611,11 @@ void sqlite3GenerateRowDelete(
   ** not attempt to delete it or fire any DELETE triggers.  */
   iLabel = sqlite3VdbeMakeLabel(v);
   opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
-  if( !bNoSeek ) sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
+  if( !bNoSeek ){
+    sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
+    VdbeCoverageIf(v, opSeek==OP_NotExists);
+    VdbeCoverageIf(v, opSeek==OP_NotFound);
+  }
  
   /* If there are any triggers to fire, allocate a range of registers to
   ** use for the old.* references in the triggers.  */
@@ -636,7 +637,9 @@ void sqlite3GenerateRowDelete(
     ** used by any BEFORE and AFTER triggers that exist.  */
     sqlite3VdbeAddOp2(v, OP_Copy, iPk, iOld);
     for(iCol=0; iCol<pTab->nCol; iCol++){
-      if( mask==0xffffffff || mask&(1<<iCol) ){
+      testcase( mask!=0xffffffff && iCol==31 );
+      testcase( mask!=0xffffffff && iCol==32 );
+      if( mask==0xffffffff || (iCol<=31 && (mask & MASKBIT32(iCol))!=0) ){
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, iCol, iOld+iCol+1);
       }
     }
@@ -654,6 +657,8 @@ void sqlite3GenerateRowDelete(
     */
     if( addrStart<sqlite3VdbeCurrentAddr(v) ){
       sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
+      VdbeCoverageIf(v, opSeek==OP_NotExists);
+      VdbeCoverageIf(v, opSeek==OP_NotFound);
     }
 
     /* Do FK processing. This call checks that any FK constraints that
@@ -716,9 +721,10 @@ void sqlite3GenerateRowIndexDelete(
   int *aRegIdx       /* Only delete if aRegIdx!=0 && aRegIdx[i]>0 */
 ){
   int i;             /* Index loop counter */
-  int r1;            /* Register holding an index key */
+  int r1 = -1;       /* Register holding an index key */
   int iPartIdxLabel; /* Jump destination for skipping partial index entries */
   Index *pIdx;       /* Current index */
+  Index *pPrior = 0; /* Prior index */
   Vdbe *v;           /* The prepared statement under construction */
   Index *pPk;        /* PRIMARY KEY index, or NULL for rowid tables */
 
@@ -729,10 +735,12 @@ void sqlite3GenerateRowIndexDelete(
     if( aRegIdx!=0 && aRegIdx[i]==0 ) continue;
     if( pIdx==pPk ) continue;
     VdbeModuleComment((v, "GenRowIdxDel for %s", pIdx->zName));
-    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1, &iPartIdxLabel);
+    r1 = sqlite3GenerateIndexKey(pParse, pIdx, iDataCur, 0, 1,
+                                 &iPartIdxLabel, pPrior, r1);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
                       pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
     sqlite3VdbeResolveLabel(v, iPartIdxLabel);
+    pPrior = pIdx;
   }
 }
 
@@ -754,6 +762,17 @@ void sqlite3GenerateRowIndexDelete(
 ** to false or null.  If pIdx is not a partial index, *piPartIdxLabel
 ** will be set to zero which is an empty label that is ignored by
 ** sqlite3VdbeResolveLabel().
+**
+** The pPrior and regPrior parameters are used to implement a cache to
+** avoid unnecessary register loads.  If pPrior is not NULL, then it is
+** a pointer to a different index for which an index key has just been
+** computed into register regPrior.  If the current pIdx index is generating
+** its key into the same sequence of registers and if pPrior and pIdx share
+** a column in common, then the register corresponding to that column already
+** holds the correct value and the loading of that register is skipped.
+** This optimization is helpful when doing a DELETE or an INTEGRITY_CHECK 
+** on a table with multiple indices, and especially with the ROWID or
+** PRIMARY KEY columns of the index.
 */
 int sqlite3GenerateIndexKey(
   Parse *pParse,       /* Parsing context */
@@ -761,14 +780,15 @@ int sqlite3GenerateIndexKey(
   int iDataCur,        /* Cursor number from which to take column data */
   int regOut,          /* Put the new key into this register if not 0 */
   int prefixOnly,      /* Compute only a unique prefix of the key */
-  int *piPartIdxLabel  /* OUT: Jump to this label to skip partial index */
+  int *piPartIdxLabel, /* OUT: Jump to this label to skip partial index */
+  Index *pPrior,       /* Previously generated index key */
+  int regPrior         /* Register holding previous generated key */
 ){
   Vdbe *v = pParse->pVdbe;
   int j;
   Table *pTab = pIdx->pTable;
   int regBase;
   int nCol;
-  Index *pPk;
 
   if( piPartIdxLabel ){
     if( pIdx->pPartIdxWhere ){
@@ -782,28 +802,21 @@ int sqlite3GenerateIndexKey(
   }
   nCol = (prefixOnly && pIdx->uniqNotNull) ? pIdx->nKeyCol : pIdx->nColumn;
   regBase = sqlite3GetTempRange(pParse, nCol);
-  pPk = HasRowid(pTab) ? 0 : sqlite3PrimaryKeyIndex(pTab);
+  if( pPrior && (regBase!=regPrior || pPrior->pPartIdxWhere) ) pPrior = 0;
   for(j=0; j<nCol; j++){
-    i16 idx = pIdx->aiColumn[j];
-    if( pPk ) idx = sqlite3ColumnOfIndex(pPk, idx);
-    if( idx<0 || idx==pTab->iPKey ){
-      sqlite3VdbeAddOp2(v, OP_Rowid, iDataCur, regBase+j);
-    }else{
-      sqlite3VdbeAddOp3(v, OP_Column, iDataCur, idx, regBase+j);
-      sqlite3ColumnDefault(v, pTab, pIdx->aiColumn[j], -1);
-    }
+    if( pPrior && pPrior->aiColumn[j]==pIdx->aiColumn[j] ) continue;
+    sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, pIdx->aiColumn[j],
+                                    regBase+j);
+    /* If the column affinity is REAL but the number is an integer, then it
+    ** might be stored in the table as an integer (using a compact
+    ** representation) then converted to REAL by an OP_RealAffinity opcode.
+    ** But we are getting ready to store this value back into an index, where
+    ** it should be converted by to INTEGER again.  So omit the OP_RealAffinity
+    ** opcode if it is present */
+    sqlite3VdbeDeletePriorOpcode(v, OP_RealAffinity);
   }
   if( regOut ){
-    const char *zAff;
-    if( pTab->pSelect
-     || OptimizationDisabled(pParse->db, SQLITE_IdxRealAsInt)
-    ){
-      zAff = 0;
-    }else{
-      zAff = sqlite3IndexAffinityStr(v, pIdx);
-    }
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol, regOut);
-    sqlite3VdbeChangeP4(v, -1, zAff, P4_TRANSIENT);
   }
   sqlite3ReleaseTempRange(pParse, regBase, nCol);
   return regBase;

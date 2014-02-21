@@ -137,7 +137,7 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
     case SQLITE_INTEGER: {
       i64 iVal = sqlite3_value_int64(argv[0]);
       if( iVal<0 ){
-        if( (iVal<<1)==0 ){
+        if( iVal==SMALLEST_INT64 ){
           /* IMP: R-31676-45509 If X is the integer -9223372036854775808
           ** then abs(X) throws an integer overflow error since there is no
           ** equivalent positive 64-bit two complement value. */
@@ -216,6 +216,32 @@ static void instrFunc(
   }
   if( nNeedle>nHaystack ) N = 0;
   sqlite3_result_int(context, N);
+}
+
+/*
+** Implementation of the printf() function.
+*/
+static void printfFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  PrintfArguments x;
+  StrAccum str;
+  const char *zFormat;
+  int n;
+
+  if( argc>=1 && (zFormat = (const char*)sqlite3_value_text(argv[0]))!=0 ){
+    x.nArg = argc-1;
+    x.nUsed = 0;
+    x.apArg = argv+1;
+    sqlite3StrAccumInit(&str, 0, 0, SQLITE_MAX_LENGTH);
+    str.db = sqlite3_context_db_handle(context);
+    sqlite3XPrintf(&str, SQLITE_PRINTF_SQLFUNC, zFormat, &x);
+    n = str.nChar;
+    sqlite3_result_text(context, sqlite3StrAccumFinish(&str), n,
+                        SQLITE_DYNAMIC);
+  }
 }
 
 /*
@@ -1511,11 +1537,11 @@ static void groupConcatStep(
         zSep = ",";
         nSep = 1;
       }
-      sqlite3StrAccumAppend(pAccum, zSep, nSep);
+      if( nSep ) sqlite3StrAccumAppend(pAccum, zSep, nSep);
     }
     zVal = (char*)sqlite3_value_text(argv[0]);
     nVal = sqlite3_value_bytes(argv[0]);
-    sqlite3StrAccumAppend(pAccum, zVal, nVal);
+    if( nVal ) sqlite3StrAccumAppend(pAccum, zVal, nVal);
   }
 }
 static void groupConcatFinalize(sqlite3_context *context){
@@ -1648,6 +1674,7 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(instr,              2, 0, 0, instrFunc        ),
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
+    FUNCTION(printf,            -1, 0, 0, printfFunc       ),
     FUNCTION(unicode,            1, 0, 0, unicodeFunc      ),
     FUNCTION(char,              -1, 0, 0, charFunc         ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),

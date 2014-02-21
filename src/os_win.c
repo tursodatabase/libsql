@@ -60,6 +60,34 @@
 #endif
 
 /*
+** Define the required Windows SDK version constants if they are not
+** already available.
+*/
+#ifndef NTDDI_WIN8
+#  define NTDDI_WIN8                        0x06020000
+#endif
+
+#ifndef NTDDI_WINBLUE
+#  define NTDDI_WINBLUE                     0x06030000
+#endif
+
+/*
+** Check if the GetVersionEx[AW] functions should be considered deprecated
+** and avoid using them in that case.  It should be noted here that if the
+** value of the SQLITE_WIN32_GETVERSIONEX pre-processor macro is zero
+** (whether via this block or via being manually specified), that implies
+** the underlying operating system will always be based on the Windows NT
+** Kernel.
+*/
+#ifndef SQLITE_WIN32_GETVERSIONEX
+#  if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WINBLUE
+#    define SQLITE_WIN32_GETVERSIONEX   0
+#  else
+#    define SQLITE_WIN32_GETVERSIONEX   1
+#  endif
+#endif
+
+/*
 ** This constant should already be defined (in the "WinDef.h" SDK file).
 */
 #ifndef MAX_PATH
@@ -694,7 +722,8 @@ static struct win_syscall {
 
 #define osGetTickCount ((DWORD(WINAPI*)(VOID))aSyscall[33].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI)
+#if defined(SQLITE_WIN32_HAS_ANSI) && defined(SQLITE_WIN32_GETVERSIONEX) && \
+        SQLITE_WIN32_GETVERSIONEX
   { "GetVersionExA",           (SYSCALL)GetVersionExA,           0 },
 #else
   { "GetVersionExA",           (SYSCALL)0,                       0 },
@@ -703,7 +732,8 @@ static struct win_syscall {
 #define osGetVersionExA ((BOOL(WINAPI*)( \
         LPOSVERSIONINFOA))aSyscall[34].pCurrent)
 
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
+        defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
   { "GetVersionExW",           (SYSCALL)GetVersionExW,           0 },
 #else
   { "GetVersionExW",           (SYSCALL)0,                       0 },
@@ -1260,11 +1290,10 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
 */
-#ifndef NTDDI_WIN8
-#  define NTDDI_WIN8                        0x06020000
-#endif
 
-#if SQLITE_OS_WINCE || SQLITE_OS_WINRT || !defined(SQLITE_WIN32_HAS_ANSI)
+#if !defined(SQLITE_WIN32_GETVERSIONEX) || !SQLITE_WIN32_GETVERSIONEX
+# define osIsNT()  (1)
+#elif SQLITE_OS_WINCE || SQLITE_OS_WINRT || !defined(SQLITE_WIN32_HAS_ANSI)
 # define osIsNT()  (1)
 #elif !defined(SQLITE_WIN32_HAS_WIDE)
 # define osIsNT()  (0)
@@ -3090,7 +3119,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_VFSNAME: {
-      *(char**)pArg = sqlite3_mprintf("win32");
+      *(char**)pArg = sqlite3_mprintf("%s", pFile->pVfs->zName);
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
       return SQLITE_OK;
     }
@@ -3172,7 +3201,7 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 ** During sqlite3_os_init() we do a GetSystemInfo()
 ** to get the granularity size.
 */
-SYSTEM_INFO winSysInfo;
+static SYSTEM_INFO winSysInfo;
 
 #ifndef SQLITE_OMIT_WAL
 
@@ -3195,7 +3224,7 @@ static void winShmEnterMutex(void){
 static void winShmLeaveMutex(void){
   sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
-#ifdef SQLITE_DEBUG
+#ifndef NDEBUG
 static int winShmMutexHeld(void) {
   return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
