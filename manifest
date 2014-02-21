@@ -1,5 +1,5 @@
-C Fix\sthe\stext\sof\sa\scomment\sused\sto\sgenerate\sVDBE\sopcode\sdocumentation\sso\sthat\nit\somits\ssymbols\sthat\scan\sbe\smistaken\sfor\sa\shyperlink\sby\sthe\sparser.
-D 2014-02-20T19:42:00.531
+C Better\sloadable\sextension\shandling\sin\sthe\sWin32\sVFS\swhen\scompiled\sfor\sCygwin.
+D 2014-02-21T05:44:18.393
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
-F src/os_win.c d4284f003445054a26689f1264b1b9bf7261bd1b
+F src/os_win.c 23bd567f897b8934096ee7ce51b21ba43aa94ec7
 F src/pager.c 0ffa313a30ed6d061d9c6601b7b175cc50a1cab7
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 2613ca5d609c2f3d71dd297351f010bcec16e1e0
@@ -1151,7 +1151,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 824029090d1c4c4c608f67dd197961eba29c039d
-R 819e2e4df777a2f59b5f5445b2831eb5
-U drh
-Z c4d587ace814e560a6dc901fdec24d15
+P b46d4e8923e6e367412bba7aeac07039bbcbabd1
+R a7d693d1ea11a2ee85a54f6ea757a9d1
+T *branch * cygDlOpen
+T *sym-cygDlOpen *
+T -sym-trunk *
+U mistachkin
+Z 4b80816c39a01dfdffbdf857b2bcb9b9
