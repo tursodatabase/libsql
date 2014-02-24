@@ -2580,11 +2580,13 @@ int sqlite3VdbeReset(Vdbe *p){
         if( pc!='\n' ) fprintf(out, "\n");
       }
       for(i=0; i<p->nOp; i++){
-        fprintf(out, "%6d %10lld %8lld ",
+        char zHdr[100];
+        sqlite3_snprintf(sizeof(zHdr), zHdr, "%6u %12llu %8llu ",
            p->aOp[i].cnt,
            p->aOp[i].cycles,
            p->aOp[i].cnt>0 ? p->aOp[i].cycles/p->aOp[i].cnt : 0
         );
+        fprintf(out, "%s", zHdr);
         sqlite3VdbePrintOp(out, i, &p->aOp[i]);
       }
       fclose(out);
