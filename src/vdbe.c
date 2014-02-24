@@ -492,7 +492,6 @@ int sqlite3VdbeExec(
   i64 lastRowid = db->lastRowid;  /* Saved value of the last insert ROWID */
 #ifdef VDBE_PROFILE
   u64 start;                 /* CPU clock count at start of opcode */
-  int origPc;                /* Program counter at start of opcode */
 #endif
   /*** INSERT STACK UNION HERE ***/
 
@@ -554,7 +553,6 @@ int sqlite3VdbeExec(
     assert( pc>=0 && pc<p->nOp );
     if( db->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
-    origPc = pc;
     start = sqlite3Hwtime();
 #endif
     nVmStep++;
@@ -6275,10 +6273,6 @@ default: {          /* This is really OP_Noop and OP_Explain */
       u64 elapsed = sqlite3Hwtime() - start;
       pOp->cycles += elapsed;
       pOp->cnt++;
-#if 0
-        fprintf(stdout, "%10llu ", elapsed);
-        sqlite3VdbePrintOp(stdout, origPc, &aOp[origPc]);
-#endif
     }
 #endif
 
