@@ -5164,12 +5164,12 @@ static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   winGetLastErrorMsg(osGetLastError(), nBuf, zBufOut);
 }
 static void (*winDlSym(sqlite3_vfs *pVfs,void *pH,const char *zSym))(void){
-  FARPROC pProc;
+  FARPROC proc;
   UNUSED_PARAMETER(pVfs);
-  pProc = osGetProcAddressA((HANDLE)pH, zSym);
-  OSTRACE(("DLSYM handle=%p, symbol=%s, proc=%p\n",
-           (void*)pH, zSym, (void*)pProc));
-  return (void(*)(void))pProc;
+  proc = osGetProcAddressA((HANDLE)pH, zSym);
+  OSTRACE(("DLSYM handle=%p, symbol=%s, address=%p\n",
+           (void*)pH, zSym, (void*)proc));
+  return (void(*)(void))proc;
 }
 static void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
   UNUSED_PARAMETER(pVfs);
