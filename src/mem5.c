@@ -275,6 +275,12 @@ static void *memsys5MallocUnsafe(int nByte){
   if( mem5.maxCount<mem5.currentCount ) mem5.maxCount = mem5.currentCount;
   if( mem5.maxOut<mem5.currentOut ) mem5.maxOut = mem5.currentOut;
 
+#ifdef SQLITE_DEBUG
+  /* Make sure the allocated memory does not assume that it is set to zero
+  ** or retains a value from a previous allocation */
+  memset(&mem5.zPool[i*mem5.szAtom], 0xAA, iFullSz);
+#endif
+
   /* Return a pointer to the allocated memory. */
   return (void*)&mem5.zPool[i*mem5.szAtom];
 }
@@ -332,6 +338,13 @@ static void memsys5FreeUnsafe(void *pOld){
     }
     size *= 2;
   }
+
+#ifdef SQLITE_DEBUG
+  /* Overwrite freed memory with the 0x55 bit pattern to verify that it is
+  ** not used after being freed */
+  memset(&mem5.zPool[iBlock*mem5.szAtom], 0x55, size);
+#endif
+
   memsys5Link(iBlock, iLogsize);
 }
 
