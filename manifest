@@ -1,5 +1,5 @@
-C In\smemsys5,\sinitialize\snew\sallocations\sto\snon-zero\sbytes.\s\sChange\sthe\scontent\nof\sfreed\sallocations\sto\sprevent\suse\safter\sfree.\s\sThese\schanges\sin\sSQLITE_DEBUG\nonly.
-D 2014-02-24T19:07:51.519
+C Close\ssome\sstray\sconnections\sin\swalro.test.
+D 2014-02-24T19:49:36.852
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1064,7 +1064,7 @@ F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test 4022fe03ae6e830583672caa101f046438a0473c
 F test/walnoshm.test 84ca10c544632a756467336b7c3b864d493ee496
 F test/walpersist.test 8c6b7e3ec1ba91b5e4dc4e0921d6d3f87cd356a6
-F test/walro.test 6cc247a0cc9b36aeea2057dd28a922a1cdfbd630
+F test/walro.test 34422d1d95aaff0388f0791ec20edb34e2a3ed57
 F test/walshared.test 0befc811dcf0b287efae21612304d15576e35417
 F test/walslow.test e7be6d9888f83aa5d3d3c7c08aa9b5c28b93609a
 F test/walthread.test de8dbaf6d9e41481c460ba31ca61e163d7348f8e
@@ -1151,7 +1151,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4df0ac9023d9261145a4425a508ba009a10276fc
-R d75bf2d1dc1afee51bd2a2b5f0c23dc4
-U drh
-Z e260958c722bfd17d5ba07190b7e2529
+P ba5f0a5599dece6d8f3dfe652800c28875c74a24
+R 55b5056ebfab7e0aa95c7fc2968f106d
+U dan
+Z 43d53118dac35420ad2faa5a259188da
