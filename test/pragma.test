@@ -1575,6 +1575,8 @@ do_test pragma-20.8 {
 forcedelete data_dir
 } ;# endif windows
 
+database_may_be_corrupt
+
 do_test 21.1 {
   # Create a corrupt database in testerr.db. And a non-corrupt at test.db.
   #
@@ -1680,4 +1682,5 @@ do_test 23.5 {
   }
 } {0 0 t1 y {} {NO ACTION} {NO ACTION} NONE}
 
+database_never_corrupt
 finish_test

@@ -409,7 +409,7 @@ static void vdbeSorterCompare(
         return;
       }
     }
-    r2->flags |= UNPACKED_PREFIX_MATCH;
+    assert( r2->default_rc==0 );
   }
 
   *pRes = sqlite3VdbeRecordCompare(nKey1, pKey1, r2);

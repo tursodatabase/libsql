@@ -3555,16 +3555,16 @@ case OP_SeekGT: {       /* jump, in3 */
 
     /* The next line of code computes as follows, only faster:
     **   if( oc==OP_SeekGT || oc==OP_SeekLE ){
-    **     r.flags = UNPACKED_INCRKEY;
+    **     r.default_rc = -1;
     **   }else{
-    **     r.flags = 0;
+    **     r.default_rc = +1;
     **   }
     */
-    r.flags = (u8)(UNPACKED_INCRKEY * (1 & (oc - OP_SeekLT)));
-    assert( oc!=OP_SeekGT || r.flags==UNPACKED_INCRKEY );
-    assert( oc!=OP_SeekLE || r.flags==UNPACKED_INCRKEY );
-    assert( oc!=OP_SeekGE || r.flags==0 );
-    assert( oc!=OP_SeekLT || r.flags==0 );
+    r.default_rc = ((1 & (oc - OP_SeekLT)) ? -1 : +1);
+    assert( oc!=OP_SeekGT || r.default_rc==-1 );
+    assert( oc!=OP_SeekLE || r.default_rc==-1 );
+    assert( oc!=OP_SeekGE || r.default_rc==+1 );
+    assert( oc!=OP_SeekLT || r.default_rc==+1 );
 
     r.aMem = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG
@@ -3722,7 +3722,6 @@ case OP_Found: {        /* jump, in3 */
       if( ii ) REGISTER_TRACE(pOp->p3+ii, &r.aMem[ii]);
 #endif
     }
-    r.flags = UNPACKED_PREFIX_MATCH;
     pIdxKey = &r;
   }else{
     pIdxKey = sqlite3VdbeAllocUnpackedRecord(
@@ -3732,8 +3731,8 @@ case OP_Found: {        /* jump, in3 */
     assert( pIn3->flags & MEM_Blob );
     assert( (pIn3->flags & MEM_Zero)==0 );  /* zeroblobs already expanded */
     sqlite3VdbeRecordUnpack(pC->pKeyInfo, pIn3->n, pIn3->z, pIdxKey);
-    pIdxKey->flags |= UNPACKED_PREFIX_MATCH;
   }
+  pIdxKey->default_rc = 0;
   if( pOp->opcode==OP_NoConflict ){
     /* For the OP_NoConflict opcode, take the jump if any of the
     ** input fields are NULL, since any key with a NULL will not
@@ -4622,7 +4621,7 @@ case OP_IdxDelete: {
   assert( pOp->p5==0 );
   r.pKeyInfo = pC->pKeyInfo;
   r.nField = (u16)pOp->p3;
-  r.flags = UNPACKED_PREFIX_MATCH;
+  r.default_rc = 0;
   r.aMem = &aMem[pOp->p2];
 #ifdef SQLITE_DEBUG
   { int i; for(i=0; i<r.nField; i++) assert( memIsValid(&r.aMem[i]) ); }
@@ -4736,10 +4735,10 @@ case OP_IdxGE:  {       /* jump */
   r.nField = (u16)pOp->p4.i;
   if( pOp->opcode<OP_IdxLT ){
     assert( pOp->opcode==OP_IdxLE || pOp->opcode==OP_IdxGT );
-    r.flags = UNPACKED_INCRKEY | UNPACKED_PREFIX_MATCH;
+    r.default_rc = -1;
   }else{
     assert( pOp->opcode==OP_IdxGE || pOp->opcode==OP_IdxLT );
-    r.flags = UNPACKED_PREFIX_MATCH;
+    r.default_rc = 0;
   }
   r.aMem = &aMem[pOp->p3];
 #ifdef SQLITE_DEBUG

@@ -214,6 +214,9 @@ void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo *, char *, int, char **);
 
+typedef int (*RecordCompare)(int,const void*, UnpackedRecord*);
+RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *);
+
 #ifndef SQLITE_OMIT_TRIGGER
 void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 #endif

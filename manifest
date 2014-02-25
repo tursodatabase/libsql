@@ -1,5 +1,5 @@
-C Also\sadjust\sthe\sorder\sof\sfiles\sin\sthe\samalgamation\sto\sensure\sthat\n_FILE_OFFSET_BITS\sis\sdefined\sbefore\sany\s#include,\sfor\sQNX.
-D 2014-02-25T18:12:58.878
+C Attempt\sto\sspeed\sup\ssqlite3VdbeRecordCompare()\sby\svarious\smeans.\sThis\scode\sis\sin\san\sinterim\sstate.
+D 2014-02-25T21:01:25.824
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c b945df4f0114b4cc71006acc2fbb1333fb33a200
+F src/btree.c f4d85c3e2e189a219965d6d4525330333735fd1d
 F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
 F src/build.c 00ce613bc2256e525c9195cb10d0df7bcc48d1f0
@@ -221,7 +221,7 @@ F src/shell.c 3dd86bf73ccd079f0e32ef5069600586085e8239
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 6725dc99b3985a97bad315910e59c3f7f5058916
+F src/sqliteInt.h 6d868994f476b616ddb1795a51aa83c331ef5a62
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -277,14 +277,14 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 6c8f28911e702151c8ef03c568db5a066d3a85d4
-F src/vdbe.h 147027d6e8e667a63e87177a38e2b42c71fdacf8
+F src/vdbe.c ab910206dd8c9c5c1455f82953934bdbfe0bcc2a
+F src/vdbe.h 0758eff7f1bf939bcafa377b2fafba4f5be63007
 F src/vdbeInt.h 5286af9067cabdb8ba57b87c0c988a931be6c6c8
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c 8b8eeb3cd89e4b3d4f40186344915b49b7c1c0f7
+F src/vdbeaux.c 988269c675ebb75a3610479840b65bcb8ea92647
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
-F src/vdbemem.c 06603e8e9d2f3247b68c6bbe4bd37fb6721b5bda
-F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
+F src/vdbemem.c 25cc487244bf6ad647105c5adbc3052403dfd143
+F src/vdbesort.c 5144d84bd7d0d2545af1c6322edbbf07f97e3892
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -735,7 +735,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test 40add071ba71aefe1c04f5845308cf46f7de8d04
-F test/pragma.test e882183ecd21d064cec5c7aaea174fbd36293429
+F test/pragma.test c1bc3a29f664b57d0ae40b498ad31f370de8daa6
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/printf2.test bed79b4c3e5da08ba88ad637c0bf62586843cfb1
@@ -1151,7 +1151,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 953cdd6adadfd46b51ad61d7939cecca154a02cb
-R d169e5164f16cb0355a3972eba04326c
-U drh
-Z 6c6f89e1dd41d2a146386cfa06ae53d9
+P 23001a85cd334090cf6c70d4d7e722a01f4f6899
+R 04ade79c9b23add6f2d6adf0c34db1e4
+T *branch * experimental
+T *sym-experimental *
+T -sym-trunk *
+U dan
+Z d3f147085a7b8a8eca4578239439871b
