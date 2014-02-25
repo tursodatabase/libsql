@@ -647,6 +647,7 @@ void sqlite3Insert(
     assert( pParse->nErr==0 || rc );
     if( rc || db->mallocFailed ) goto insert_cleanup;
     sqlite3VdbeAddOp1(v, OP_EndCoroutine, regYield);
+    sqlite3ClearTempRegCache(pParse);
     sqlite3VdbeJumpHere(v, addrTop - 1);                       /* label B: */
     assert( pSelect->pEList );
     nColumn = pSelect->pEList->nExpr;

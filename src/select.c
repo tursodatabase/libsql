@@ -2751,6 +2751,7 @@ static int multiSelectOrderBy(
   explainSetInteger(iSub1, pParse->iNextSelectId);
   sqlite3Select(pParse, pPrior, &destA);
   sqlite3VdbeAddOp1(v, OP_EndCoroutine, regAddrA);
+  sqlite3ClearTempRegCache(pParse);
   sqlite3VdbeJumpHere(v, j1);
 
   /* Generate a coroutine to evaluate the SELECT statement on 
@@ -2768,6 +2769,7 @@ static int multiSelectOrderBy(
   p->iLimit = savedLimit;
   p->iOffset = savedOffset;
   sqlite3VdbeAddOp1(v, OP_EndCoroutine, regAddrB);
+  sqlite3ClearTempRegCache(pParse);
 
   /* Generate a subroutine that outputs the current row of the A
   ** select as the next output row of the compound select.
