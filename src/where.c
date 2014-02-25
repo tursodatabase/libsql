@@ -2853,13 +2853,14 @@ static Bitmask codeOneLoopStart(
     **          construct.
     */
     assert( pLoop->u.btree.nEq==1 );
-    iReleaseReg = sqlite3GetTempReg(pParse);
     pTerm = pLoop->aLTerm[0];
     assert( pTerm!=0 );
     assert( pTerm->pExpr!=0 );
     assert( omitTable==0 );
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
+    iReleaseReg = ++pParse->nMem;
     iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, 0, bRev, iReleaseReg);
+    if( iRowidReg!=iReleaseReg ) sqlite3ReleaseTempReg(pParse, iReleaseReg);
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt); VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addrNxt, iRowidReg);
@@ -2948,7 +2949,7 @@ static Bitmask codeOneLoopStart(
     pLevel->p2 = start;
     assert( pLevel->p5==0 );
     if( testOp!=OP_Noop ){
-      iRowidReg = iReleaseReg = sqlite3GetTempReg(pParse);
+      iRowidReg = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, iRowidReg);
       sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, iRowidReg);
@@ -3181,7 +3182,7 @@ static Bitmask codeOneLoopStart(
     if( omitTable ){
       /* pIdx is a covering index.  No need to access the main table. */
     }else if( HasRowid(pIdx->pTable) ){
-      iRowidReg = iReleaseReg = sqlite3GetTempReg(pParse);
+      iRowidReg = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
       sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
@@ -3529,7 +3530,6 @@ static Bitmask codeOneLoopStart(
       pTerm->wtFlags |= TERM_CODED;
     }
   }
-  sqlite3ReleaseTempReg(pParse, iReleaseReg);
 
   return pLevel->notReady;
 }
