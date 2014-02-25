@@ -12,7 +12,6 @@
 ** Internal interface definitions for SQLite.
 **
 */
-#include "sqlite3.h"
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
 
@@ -47,6 +46,11 @@
 # endif
 # define _LARGEFILE_SOURCE 1
 #endif
+
+/* The public SQLite interface.  The _FILE_OFFSET_BITS macro must appear
+** first in QNX.
+*/
+#include "sqlite3.h"
 
 /*
 ** Include the configuration header output by 'configure' if we're using the
