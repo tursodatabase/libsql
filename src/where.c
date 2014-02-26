@@ -4901,9 +4901,12 @@ static int wherePathSatisfiesOrderBy(
       orderDistinctMask |= pLoop->maskSelf;
       for(i=0; i<nOrderBy; i++){
         Expr *p;
+        Bitmask mTerm;
         if( MASKBIT(i) & obSat ) continue;
         p = pOrderBy->a[i].pExpr;
-        if( (exprTableUsage(&pWInfo->sMaskSet, p)&~orderDistinctMask)==0 ){
+        mTerm = exprTableUsage(&pWInfo->sMaskSet,p);
+        if( mTerm==0 && !sqlite3ExprIsConstant(p) ) continue;
+        if( (mTerm&~orderDistinctMask)==0 ){
           obSat |= MASKBIT(i);
         }
       }
@@ -5524,22 +5527,6 @@ WhereInfo *sqlite3WhereBegin(
   exprAnalyzeAll(pTabList, &pWInfo->sWC);
   if( db->mallocFailed ){
     goto whereBeginError;
-  }
-
-  /* If the ORDER BY (or GROUP BY) clause contains references to general
-  ** expressions, then we won't be able to satisfy it using indices, so
-  ** go ahead and disable it now.
-  */
-  if( pOrderBy && (wctrlFlags & WHERE_WANT_DISTINCT)!=0 ){
-    for(ii=0; ii<pOrderBy->nExpr; ii++){
-      Expr *pExpr = sqlite3ExprSkipCollate(pOrderBy->a[ii].pExpr);
-      if( pExpr->op!=TK_COLUMN ){
-        pWInfo->pOrderBy = pOrderBy = 0;
-        break;
-      }else if( pExpr->iColumn<0 ){
-        break;
-      }
-    }
   }
 
   if( wctrlFlags & WHERE_WANT_DISTINCT ){
