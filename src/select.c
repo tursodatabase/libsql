@@ -37,6 +37,7 @@ static void clearSelect(sqlite3 *db, Select *p){
 */
 void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
   pDest->eDest = (u8)eDest;
+  pDest->wctrlFlags = 0;
   pDest->iSDParm = iParm;
   pDest->affSdst = 0;
   pDest->iSdst = 0;
@@ -1927,6 +1928,7 @@ static void generateWithRecursiveQuery(
   ** the value for the recursive-table. Store the results in the Queue.
   */
   p->pPrior = 0;
+  destQueue.wctrlFlags |= WHERE_OPEN_ONCE;
   sqlite3Select(pParse, p, &destQueue);
   assert( p->pPrior==0 );
   p->pPrior = pSetup;
@@ -4727,7 +4729,8 @@ int sqlite3Select(
 
   if( !isAgg && pGroupBy==0 ){
     /* No aggregate functions and no GROUP BY clause */
-    u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
+    u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0) 
+                     | pDest->wctrlFlags;
 
     /* Begin the database scan. */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pOrderBy, p->pEList,

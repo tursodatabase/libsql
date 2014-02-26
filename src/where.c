@@ -5673,6 +5673,7 @@ WhereInfo *sqlite3WhereBegin(
     Table *pTab;     /* Table to open */
     int iDb;         /* Index of database containing table/index */
     struct SrcList_item *pTabItem;
+    int addrOnce = 0;
 
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
@@ -5697,6 +5698,10 @@ WhereInfo *sqlite3WhereBegin(
         op = OP_OpenWrite;
         pWInfo->aiCurOnePass[0] = pTabItem->iCursor;
       };
+      if( wctrlFlags & WHERE_OPEN_ONCE ){
+        addrOnce = sqlite3CodeOnce(pParse);
+        VdbeCoverage(v);
+      }
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
       assert( pTabItem->iCursor==pLevel->iTabCur );
       testcase( !pWInfo->okOnePass && pTab->nCol==BMS-1 );
@@ -5740,6 +5745,7 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3VdbeSetP4KeyInfo(pParse, pIx);
       VdbeComment((v, "%s", pIx->zName));
     }
+    if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
     notReady &= ~getMask(&pWInfo->sMaskSet, pTabItem->iCursor);
   }
@@ -5897,7 +5903,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     */
     if( (pTab->tabFlags & TF_Ephemeral)==0
      && pTab->pSelect==0
-     && (pWInfo->wctrlFlags & WHERE_OMIT_OPEN_CLOSE)==0
+     && (pWInfo->wctrlFlags & (WHERE_OMIT_OPEN_CLOSE|WHERE_OPEN_ONCE))==0
     ){
       int ws = pLoop->wsFlags;
       if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){

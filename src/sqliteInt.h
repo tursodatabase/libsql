@@ -2075,6 +2075,7 @@ struct SrcList {
 #define WHERE_GROUPBY          0x0100 /* pOrderBy is really a GROUP BY */
 #define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
+#define WHERE_OPEN_ONCE        0x0800 /* Open on first iteration only */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
@@ -2269,6 +2270,7 @@ struct Select {
 struct SelectDest {
   u8 eDest;            /* How to dispose of the results.  On of SRT_* above. */
   char affSdst;        /* Affinity used when eDest==SRT_Set */
+  u16 wctrlFlags;      /* Extra flags for sqlite3WhereBegin() */
   int iSDParm;         /* A parameter used by the eDest disposal method */
   int iSdst;           /* Base register where results are written */
   int nSdst;           /* Number of registers allocated */
