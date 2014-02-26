@@ -1893,7 +1893,7 @@ static char *csv_read_one_field(CSVReader *p){
     }
     if( c=='\n' ){
       p->nLine++;
-      if( p->n>1 && p->z[p->n-1]=='\r' ) p->n--;
+      if( p->n>0 && p->z[p->n-1]=='\r' ) p->n--;
     }
     p->cTerm = c;
   }

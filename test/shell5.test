@@ -285,6 +285,25 @@ do_test shell5-1.10 {
   db eval {SELECT hex(c) FROM t1 ORDER BY rowid}
 } {636F6C756D6E33 783320220D0A64617461222033 783320220A64617461222033}
 
+# Blank last column with \r\n line endings.
+do_test shell5-1.11 {
+  set out [open shell5.csv w]
+  fconfigure $out -translation binary
+  puts $out "column1,column2,column3\r"
+  puts $out "a,b, \r"
+  puts $out "x,y,\r"
+  puts $out "p,q,r\r"
+  close $out
+  catch {db close}
+  forcedelete test.db
+  catchcmd test.db {.mode csv
+.import shell5.csv t1
+  }
+  sqlite3 db test.db
+  db eval {SELECT *, '|' FROM t1}
+} {a b { } | x y {} | p q r |}
+
+
 db close
 
 finish_test

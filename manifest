@@ -1,5 +1,5 @@
-C Improved\shandling\sof\sconstants\sand\sespecially\sconstant\sfunctions\sin\sthe\nORDER\sBY\sclause\sof\sa\squery.\s\sDo\snot\soptimize\sout\s"ORDER\sBY\srandom()".\nFix\sfor\sticket\s[65bdeb9739605cc2296].
-D 2014-02-26T02:26:09.921
+C In\sthe\scommand-line\sshell\sfor\sCSV\simport,\sif\sthe\slines\sare\s\\r\\n\sterminated\nand\sthe\slast\sfield\sis\sblank,\smake\ssure\san\sempty\sstring\sand\snot\sa\s"\\r"\sstring\nis\simported.
+D 2014-02-26T13:53:34.384
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c ca8b99d894164435f5c55cb304c1b8121705c51e
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 28bff39f9bc5ec618b0719fe3f7b4be9f88b6f02
-F src/shell.c 3dd86bf73ccd079f0e32ef5069600586085e8239
+F src/shell.c ca2b066ab31793532530e0c2fcf79e99628f3b2b
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -804,7 +804,7 @@ F test/shell1.test f2a1d471e5cd2b42f7a65b166dc1ace2b8d11583
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test cee83b4385f842fec1f2a0bec9ea811f35386edf
+F test/shell5.test bb755ea9144b8078a752fc56223582627070b5f1
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -1152,7 +1152,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 97a8c9733cba97c78e979dfd5c66610c23e90288
-R a3177866e2afe2abf843086af2a9a3a2
+P dca1945aeb3fb005263f9be00ee8e72b966ae303
+R 4bbcd8ca02f23a972c97ceb5ec0d3c0c
 U drh
-Z c50f86b62c93dcd00c53d2ca75883787
+Z 998297c355a76316139497aa81dafb02
