@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell\sfor\sCSV\simport,\sif\sthe\slines\sare\s\\r\\n\sterminated\nand\sthe\slast\sfield\sis\sblank,\smake\ssure\san\sempty\sstring\sand\snot\sa\s"\\r"\sstring\nis\simported.
-D 2014-02-26T13:53:34.384
+C More\sefficient\sremoval\sof\sduplicates\sin\srecursive\squeries\susing\sthe\sUNION\ncompound\soperator.
+D 2014-02-26T21:35:31.484
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c ca8b99d894164435f5c55cb304c1b8121705c51e
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 28bff39f9bc5ec618b0719fe3f7b4be9f88b6f02
+F src/select.c 35b07a47fdee9a98e03c4ffb3801026c72114cb7
 F src/shell.c ca2b066ab31793532530e0c2fcf79e99628f3b2b
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1152,7 +1152,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P dca1945aeb3fb005263f9be00ee8e72b966ae303
-R 4bbcd8ca02f23a972c97ceb5ec0d3c0c
+P 9c2e7612cd137895e13ee872e668ce1216719d85
+R 8af1befb78d550449f6afe7ccc2f524b
 U drh
-Z 998297c355a76316139497aa81dafb02
+Z 54acbfe19bff5d9f12c833489ea306bb
