@@ -613,7 +613,8 @@ void sqlite3GenerateRowDelete(
   opSeek = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
   if( !bNoSeek ){
     sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
-    VdbeCoverage(v);
+    VdbeCoverageIf(v, opSeek==OP_NotExists);
+    VdbeCoverageIf(v, opSeek==OP_NotFound);
   }
  
   /* If there are any triggers to fire, allocate a range of registers to
@@ -656,7 +657,8 @@ void sqlite3GenerateRowDelete(
     */
     if( addrStart<sqlite3VdbeCurrentAddr(v) ){
       sqlite3VdbeAddOp4Int(v, opSeek, iDataCur, iLabel, iPk, nPk);
-      VdbeCoverage(v);
+      VdbeCoverageIf(v, opSeek==OP_NotExists);
+      VdbeCoverageIf(v, opSeek==OP_NotFound);
     }
 
     /* Do FK processing. This call checks that any FK constraints that

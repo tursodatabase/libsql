@@ -108,15 +108,31 @@ int sqlite3_found_count = 0;
 #endif
 
 /*
-** Invoke the VDBE coverage callback, if defined
+** Invoke the VDBE coverage callback, if that callback is defined.  This
+** feature is used for test suite validation only and does not appear an
+** production builds.
+**
+** M is an integer, 2 or 3, that indices how many different ways the
+** branch can go.  It is usually 2.  "I" is the direction the branch
+** goes.  0 means falls through.  1 means branch is taken.  2 means the
+** second alternative branch is taken.
 */
 #if !defined(SQLITE_VDBE_COVERAGE)
 # define VdbeBranchTaken(I,M)
 #else
-# define VdbeBranchTaken(I,M) \
-    if( sqlite3GlobalConfig.xVdbeBranch!=0 ){ \
-      sqlite3GlobalConfig.xVdbeBranch(sqlite3GlobalConfig.pVdbeBranchArg, \
-                                      pOp->iSrcLine,(I),(M)); }
+# define VdbeBranchTaken(I,M) vdbeTakeBranch(pOp->iSrcLine,I,M)
+  static void vdbeTakeBranch(int iSrcLine, u8 I, u8 M){
+    if( iSrcLine<=2 && ALWAYS(iSrcLine>0) ){
+      M = iSrcLine;
+      /* Assert the truth of VdbeCoverageAlwaysTaken() and 
+      ** VdbeCoverageNeverTaken() */
+      assert( (M & I)==I );
+    }else{
+      if( sqlite3GlobalConfig.xVdbeBranch==0 ) return;  /*NO_TEST*/
+      sqlite3GlobalConfig.xVdbeBranch(sqlite3GlobalConfig.pVdbeBranchArg,
+                                      iSrcLine,I,M);
+    }
+  }
 #endif
 
 /*
@@ -476,7 +492,6 @@ int sqlite3VdbeExec(
   i64 lastRowid = db->lastRowid;  /* Saved value of the last insert ROWID */
 #ifdef VDBE_PROFILE
   u64 start;                 /* CPU clock count at start of opcode */
-  int origPc;                /* Program counter at start of opcode */
 #endif
   /*** INSERT STACK UNION HERE ***/
 
@@ -538,7 +553,6 @@ int sqlite3VdbeExec(
     assert( pc>=0 && pc<p->nOp );
     if( db->mallocFailed ) goto no_mem;
 #ifdef VDBE_PROFILE
-    origPc = pc;
     start = sqlite3Hwtime();
 #endif
     nVmStep++;
@@ -1159,7 +1173,7 @@ case OP_SCopy: {            /* out2 */
 ** The registers P1 through P1+P2-1 contain a single row of
 ** results. This opcode causes the sqlite3_step() call to terminate
 ** with an SQLITE_ROW return code and it sets up the sqlite3_stmt
-** structure to provide access to the r[P1]..r[P1+P2-1] values as
+** structure to provide access to the r(P1)..r(P1+P2-1) values as
 ** the result row.
 */
 case OP_ResultRow: {
@@ -1891,6 +1905,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
       */
       assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
       assert( (flags1 & MEM_Cleared)==0 );
+      assert( (pOp->p5 & SQLITE_JUMPIFNULL)==0 );
       if( (flags1&MEM_Null)!=0
        && (flags3&MEM_Null)!=0
        && (flags3&MEM_Cleared)==0
@@ -1909,7 +1924,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
         MemSetTypeFlag(pOut, MEM_Null);
         REGISTER_TRACE(pOp->p2, pOut);
       }else{
-        VdbeBranchTaken((pOp->p5 & SQLITE_JUMPIFNULL)?2:3,4);
+        VdbeBranchTaken(2,3);
         if( pOp->p5 & SQLITE_JUMPIFNULL ){
           pc = pOp->p2-1;
         }
@@ -1946,7 +1961,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
     pOut->u.i = res;
     REGISTER_TRACE(pOp->p2, pOut);
   }else{
-    VdbeBranchTaken(res!=0, 4);
+    VdbeBranchTaken(res!=0, (pOp->p5 & SQLITE_NULLEQ)?2:3);
     if( res ){
       pc = pOp->p2-1;
     }
@@ -4833,7 +4848,6 @@ case OP_Clear: {
  
   nChange = 0;
   assert( p->readOnly==0 );
-  assert( pOp->p1!=1 );
   assert( (p->btreeMask & (((yDbMask)1)<<pOp->p2))!=0 );
   rc = sqlite3BtreeClearTable(
       db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)
@@ -6259,10 +6273,6 @@ default: {          /* This is really OP_Noop and OP_Explain */
       u64 elapsed = sqlite3Hwtime() - start;
       pOp->cycles += elapsed;
       pOp->cnt++;
-#if 0
-        fprintf(stdout, "%10llu ", elapsed);
-        sqlite3VdbePrintOp(stdout, origPc, &aOp[origPc]);
-#endif
     }
 #endif
 

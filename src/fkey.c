@@ -369,6 +369,7 @@ static void fkLookupParent(
       ** increment the constraint-counter.  */
       if( pTab==pFKey->pFrom && nIncr==1 ){
         sqlite3VdbeAddOp3(v, OP_Eq, regData, iOk, regTemp); VdbeCoverage(v);
+        sqlite3VdbeChangeP5(v, SQLITE_NOTNULL);
       }
   
       sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
