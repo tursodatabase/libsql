@@ -3548,7 +3548,7 @@ int main(int argc, char **argv){
   int rc = 0;
   int warnInmemoryDb = 0;
 
-#if !defined(USE_SYSTEM_SQLITE) || USE_SYSTEM_SQLITE!=1
+#if USE_SYSTEM_SQLITE+0!=1
   if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
     fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
             sqlite3_sourceid(), SQLITE_SOURCE_ID);
