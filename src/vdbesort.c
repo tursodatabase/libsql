@@ -105,6 +105,7 @@ struct VdbeSorter {
   sqlite3_file *pTemp1;           /* PMA file 1 */
   SorterRecord *pRecord;          /* Head of in-memory record list */
   UnpackedRecord *pUnpacked;      /* Used to unpack keys */
+  RecordCompare xRecordCompare;   /* Record compare function */
 };
 
 /*
@@ -412,7 +413,10 @@ static void vdbeSorterCompare(
     assert( r2->default_rc==0 );
   }
 
+#if 0
   *pRes = sqlite3VdbeRecordCompare(nKey1, pKey1, r2);
+#endif
+  *pRes = pSorter->xRecordCompare(nKey1, pKey1, *((u8*)pKey1), 1, r2);
 }
 
 /*
@@ -488,6 +492,7 @@ int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
     if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
     pSorter->mxPmaSize = mxCache * pgsz;
   }
+  pSorter->xRecordCompare = sqlite3VdbeFindSorterCompare(pCsr->pKeyInfo);
 
   return SQLITE_OK;
 }

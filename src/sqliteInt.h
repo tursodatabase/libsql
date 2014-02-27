@@ -1592,6 +1592,8 @@ struct UnpackedRecord {
   u16 nField;         /* Number of entries in apMem[] */
   char default_rc;    /* Comparison result if keys are equal */
   Mem *aMem;          /* Values */
+  int r1;
+  int r2;
 };
 
 
