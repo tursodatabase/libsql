@@ -818,14 +818,16 @@ static void selectInnerLoop(
       r1 = sqlite3GetTempReg(pParse);
       r2 = sqlite3GetTempRange(pParse, nKey+2);
       r3 = r2+nKey+1;
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r3);
       if( eDest==SRT_DistQueue ){
         /* If the destination is DistQueue, then cursor (iParm+1) is open
         ** on a second ephemeral index that holds all values every previously
-        ** added to the queue.  Only add this new value if it has never before
-        ** been added */
-        addrTest = sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, 0, r3, 0);
+        ** added to the queue. */
+        addrTest = sqlite3VdbeAddOp4Int(v, OP_Found, iParm+1, 0, 
+                                        regResult, nResultCol);
         VdbeCoverage(v);
+      }
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r3);
+      if( eDest==SRT_DistQueue ){
         sqlite3VdbeAddOp2(v, OP_IdxInsert, iParm+1, r3);
         sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
       }
