@@ -326,6 +326,7 @@ do_execsql_test 6.2 {
 reset_db
 sqlite3_db_config_lookaside db 0 0 0
 
+database_may_be_corrupt
 do_execsql_test 7.1 {
   CREATE TABLE t1(a, b);
   CREATE INDEX i1 ON t1(a, b);
@@ -365,6 +366,8 @@ do_execsql_test 7.5 {
   ANALYZE sqlite_master;
   SELECT * FROM t1 WHERE a = 5;
 } {5 5}
+
+database_never_corrupt
 
 #-------------------------------------------------------------------------
 #

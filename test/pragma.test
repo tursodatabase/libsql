@@ -1602,11 +1602,16 @@ Multiple uses for byte 672 of page 15}
 set auxerr {*** in database aux ***
 Multiple uses for byte 672 of page 15}
 
+set mainerr {/{\*\*\* in database main \*\*\*
+Multiple uses for byte 672 of page 15}.*/}
+set auxerr {/{\*\*\* in database aux \*\*\*
+Multiple uses for byte 672 of page 15}.*/}
+
 do_test 22.2 {
   catch { db close }
   sqlite3 db testerr.db
   execsql { PRAGMA integrity_check }
-} [list $mainerr]
+} $mainerr
 
 do_test 22.3.1 {
   catch { db close }
@@ -1615,13 +1620,13 @@ do_test 22.3.1 {
     ATTACH 'testerr.db' AS 'aux';
     PRAGMA integrity_check;
   }
-} [list $auxerr]
+} $auxerr
 do_test 22.3.2 {
   execsql { PRAGMA main.integrity_check; }
 } {ok}
 do_test 22.3.3 {
   execsql { PRAGMA aux.integrity_check; }
-} [list $auxerr]
+} $auxerr
 
 do_test 22.4.1 {
   catch { db close }
@@ -1630,10 +1635,10 @@ do_test 22.4.1 {
     ATTACH 'test.db' AS 'aux';
     PRAGMA integrity_check;
   }
-} [list $mainerr]
+} $mainerr
 do_test 22.4.2 {
   execsql { PRAGMA main.integrity_check; }
-} [list $mainerr]
+} $mainerr
 do_test 22.4.3 {
   execsql { PRAGMA aux.integrity_check; }
 } {ok}
