@@ -3558,6 +3558,7 @@ static int vdbeRecordCompareInt(
   i64 lhs;
 
   switch( serial_type ){
+
     case 1:
       lhs = (char)(aKey[0]);
       break;
@@ -3593,6 +3594,15 @@ static int vdbeRecordCompareInt(
       lhs = 1;
       break;
 
+    /* This case could be removed without changing the results of running
+    ** this code. Including it causes gcc to generate a faster switch 
+    ** statement (since the range of switch targets now starts at zero and
+    ** is contiguous)) but does not cause any duplicate code to be generated
+    ** (as gcc is clever enough to combine the two like cases). Other 
+    ** compilers might be similar.  */ 
+    case 0: case 7:
+      return vdbeRecordCompare(nKey1, pKey1, szHdr, 1, pPKey2);
+
     default:
       return vdbeRecordCompare(nKey1, pKey1, szHdr, 1, pPKey2);
   }
@@ -3602,8 +3612,12 @@ static int vdbeRecordCompareInt(
   }else if( v<lhs ){
     res = pPKey2->r2;
   }else if( pPKey2->nField>1 ){
+    /* The first fields of the two keys are equal. Compare the trailing 
+    ** fields.  */
     res = vdbeRecordCompare(nKey1, pKey1, szHdr, 0, pPKey2);
   }else{
+    /* The first fields of the two keys are equal and there are no trailing
+    ** fields. Return pPKey2->default_rc in this case. */
     res = pPKey2->default_rc;
   }
 

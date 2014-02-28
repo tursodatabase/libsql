@@ -1,5 +1,5 @@
-C Merge\sin\slatest\strunk\schanges.
-D 2014-02-27T20:52:26.303
+C Minor\stweak\sto\svdbeRecordCompareInt().
+D 2014-02-28T09:48:30.694
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c ab910206dd8c9c5c1455f82953934bdbfe0bcc2a
 F src/vdbe.h 6833579fc0fbdc1c933e34519064841abda5b9b3
 F src/vdbeInt.h 5286af9067cabdb8ba57b87c0c988a931be6c6c8
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c 80e5315957377554c9011858f5afde61afedc181
+F src/vdbeaux.c fc95358566a454fadcf17858d582ff38c2e55c54
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 25cc487244bf6ad647105c5adbc3052403dfd143
 F src/vdbesort.c 72290f12428973c2c6b9d4f95ad0a7c8181e1280
@@ -1152,7 +1152,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 570893740067a7caa952f259fa078cdf67017d71 51ce713c6ee91bdf0126155334dcc800b3daa509
-R f4fa5a4e2d9c34dae5f26cd35d7bbdb3
+P 8f30b09518d23c3f6cecd244a66ef918fdb55323
+R c980d8afe2372c0277fee962182b32ac
 U dan
-Z 489718005e4064c97910e87ca8ac5405
+Z 7196a891773623dba164b983a9b4c516
