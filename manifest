@@ -1,5 +1,5 @@
-C Update\ssome\stest\scases\sthat\sdeal\swith\scorrupt\sdatabases.
-D 2014-02-28T18:39:51.462
+C Remove\sthe\svdbeRecordCompareLargeHeader\sfunction.\sFix\ssome\sother\sdetails.
+D 2014-03-01T19:44:56.574
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 77f175987c80ebec063f8653cb7d300776411413
+F src/btree.c d288e668614449571ec269535dc4aaf216a23db2
 F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
 F src/build.c 00ce613bc2256e525c9195cb10d0df7bcc48d1f0
@@ -221,7 +221,7 @@ F src/shell.c bf75ce6bea4c8f56c1b46bee201c25acddffb675
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 843e23d43ee2ab9369e68eb778815ba02835da59
+F src/sqliteInt.h b06500d391d4b7bf4c69fc110e37dd45719b760c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -278,19 +278,19 @@ F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c ab910206dd8c9c5c1455f82953934bdbfe0bcc2a
-F src/vdbe.h 6833579fc0fbdc1c933e34519064841abda5b9b3
+F src/vdbe.h c6dc01f85cf3bdcc992d244aeff952c033fd5ad0
 F src/vdbeInt.h 5286af9067cabdb8ba57b87c0c988a931be6c6c8
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c aad5345869c110f45074e2c1ca230e623b1ba182
+F src/vdbeaux.c da0979ce81ecdf3d018be9ee1e8998110181fb12
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 93fc3f13ebe6809ebaac8d0a17c812ec053ba233
-F src/vdbesort.c 72290f12428973c2c6b9d4f95ad0a7c8181e1280
+F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 6042e1a377cf7dc72c10493269ed75e276275cd8
+F src/where.c 36ef94b653a10944b39e34938ee4c758f3f42879
 F src/whereInt.h 921f935af8b684ffb49705610bda7284db1db138
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1152,7 +1152,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 284bde0ee20261737446eb8f5b6b36ad9bc3f355
-R 75b55639e7bdd048d8263d0acfa3cf8a
+P 3a09f5605ac7c6e503eb10acfdc607010414d917
+R b23b5e438c1d698174ad52d7cfba370e
 U dan
-Z d116a418c5c97c83b8ebfe7a3e655c3c
+Z 35d9cecacf0cc917a2c2ed9a75b36eab

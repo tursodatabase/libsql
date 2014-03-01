@@ -1586,14 +1586,17 @@ struct KeyInfo {
 **
 ** This structure holds a record that has already been disassembled
 ** into its constituent fields.
+**
+** The r1 and r2 member variables are only used by the optimized comparison
+** functions vdbeRecordCompareInt() and vdbeRecordCompareString().
 */
 struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   u16 nField;         /* Number of entries in apMem[] */
   char default_rc;    /* Comparison result if keys are equal */
   Mem *aMem;          /* Values */
-  int r1;
-  int r2;
+  int r1;             /* Value to return if (lhs > rhs) */
+  int r2;             /* Value to return if (rhs < lhs) */
 };
 
 

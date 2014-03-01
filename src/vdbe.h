@@ -211,12 +211,11 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 #endif
 
 void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
-int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
+int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*,int);
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo *, char *, int, char **);
 
-typedef int (*RecordCompare)(int,const void*,int,u32,UnpackedRecord*);
+typedef int (*RecordCompare)(int,const void*,UnpackedRecord*,int);
 RecordCompare sqlite3VdbeFindCompare(UnpackedRecord*);
-RecordCompare sqlite3VdbeFindSorterCompare(KeyInfo*);
 
 #ifndef SQLITE_OMIT_TRIGGER
 void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
