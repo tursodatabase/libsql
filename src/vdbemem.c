@@ -67,12 +67,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 ** in pMem->z is discarded.
 */
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
-  assert( 1 >=
-    ((pMem->zMalloc && pMem->zMalloc==pMem->z) ? 1 : 0) +
-    (((pMem->flags&MEM_Dyn)&&pMem->xDel) ? 1 : 0) + 
-    ((pMem->flags&MEM_Ephem) ? 1 : 0) + 
-    ((pMem->flags&MEM_Static) ? 1 : 0)
-  );
+  assert( memSanity1(pMem) );
   assert( (pMem->flags&MEM_RowSet)==0 );
 
   /* If the bPreserve flag is set to true, then the memory cell must already
@@ -292,6 +287,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 ** (Mem.memType==MEM_Str).
 */
 void sqlite3VdbeMemRelease(Mem *p){
+  assert( memSanity1(p) );
   VdbeMemRelease(p);
   if( p->zMalloc ){
     sqlite3DbFree(p->db, p->zMalloc);

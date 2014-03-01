@@ -1220,6 +1220,7 @@ static void releaseMemArray(Mem *p, int N){
     }
     for(pEnd=&p[N]; p<pEnd; p++){
       assert( (&p[1])==pEnd || p[0].db==p[1].db );
+      assert( memSanity1(p) );
 
       /* This block is really an inlined version of sqlite3VdbeMemRelease()
       ** that takes advantage of the fact that the memory cell value is 
