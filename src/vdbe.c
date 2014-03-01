@@ -600,21 +600,21 @@ int sqlite3VdbeExec(
       assert( pOp->p1>0 );
       assert( pOp->p1<=(p->nMem-p->nCursor) );
       assert( memIsValid(&aMem[pOp->p1]) );
-      assert( memSanity1(&aMem[pOp->p1]) );
+      assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p1]) );
       REGISTER_TRACE(pOp->p1, &aMem[pOp->p1]);
     }
     if( (pOp->opflags & OPFLG_IN2)!=0 ){
       assert( pOp->p2>0 );
       assert( pOp->p2<=(p->nMem-p->nCursor) );
       assert( memIsValid(&aMem[pOp->p2]) );
-      assert( memSanity1(&aMem[pOp->p2]) );
+      assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p2]) );
       REGISTER_TRACE(pOp->p2, &aMem[pOp->p2]);
     }
     if( (pOp->opflags & OPFLG_IN3)!=0 ){
       assert( pOp->p3>0 );
       assert( pOp->p3<=(p->nMem-p->nCursor) );
       assert( memIsValid(&aMem[pOp->p3]) );
-      assert( memSanity1(&aMem[pOp->p3]) );
+      assert( sqlite3VdbeCheckMemInvariants(&aMem[pOp->p3]) );
       REGISTER_TRACE(pOp->p3, &aMem[pOp->p3]);
     }
     if( (pOp->opflags & OPFLG_OUT2)!=0 ){
@@ -2463,7 +2463,7 @@ case OP_Column: {
   */
   assert( p2<pC->nHdrParsed );
   assert( rc==SQLITE_OK );
-  assert( memSanity1(pDest) );
+  assert( sqlite3VdbeCheckMemInvariants(pDest) );
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */

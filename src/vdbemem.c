@@ -18,6 +18,24 @@
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
+#ifdef SQLITE_DEBUG
+/*
+** Check invariants on a Mem object.
+**
+** This routine is intended for use inside of assert() statements, like
+** this:    assert( sqlite3VdbeCheckMemInvariants(pMem) );
+*/
+int sqlite3VdbeCheckMemInvariants(Mem *p){
+  assert( 
+    (((p)->zMalloc && (p)->zMalloc==(p)->z) ? 1 : 0) +
+    ((((p)->flags&MEM_Dyn)&&(p)->xDel) ? 1 : 0) +
+    (((p)->flags&MEM_Ephem) ? 1 : 0) +
+    (((p)->flags&MEM_Static) ? 1 : 0) <= 1 );
+  return 1;
+}
+#endif
+
+
 /*
 ** If pMem is an object with a valid string representation, this routine
 ** ensures the internal encoding for the string representation is
@@ -67,7 +85,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
 ** in pMem->z is discarded.
 */
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
-  assert( memSanity1(pMem) );
+  assert( sqlite3VdbeCheckMemInvariants(pMem) );
   assert( (pMem->flags&MEM_RowSet)==0 );
 
   /* If the bPreserve flag is set to true, then the memory cell must already
@@ -287,7 +305,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 ** (Mem.memType==MEM_Str).
 */
 void sqlite3VdbeMemRelease(Mem *p){
-  assert( memSanity1(p) );
+  assert( sqlite3VdbeCheckMemInvariants(p) );
   VdbeMemRelease(p);
   if( p->zMalloc ){
     sqlite3DbFree(p->db, p->zMalloc);

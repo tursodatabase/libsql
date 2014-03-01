@@ -1,5 +1,5 @@
-C Add\sextra\sassert()\sstatements\strying\sto\scatch\sa\sMem\sobject\sin\san\sinconsistent\nstate.
-D 2014-03-01T14:45:18.939
+C Factor\sthe\sMem\sinvariant\schecker\sinto\sa\sseparate\sprocedure\s(rather\sthan\sa\nmacro)\sso\sthat\sit\scan\sbe\smore\seasily\sextended.
+D 2014-03-01T16:24:44.768
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,13 +277,13 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c e9eda47b8d8410d35840589daf8f3177efa04478
+F src/vdbe.c 9abaa1ebb8b98e33121ea1aade1022fdc195b464
 F src/vdbe.h 147027d6e8e667a63e87177a38e2b42c71fdacf8
-F src/vdbeInt.h fa0cadb90633d260f0c7d21f68a2ec5b1c6900e2
+F src/vdbeInt.h a82d5ab4fd8138bdff7de4a267ea5c04e4cbb370
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c 087e7c75643157a903c9794294f4ff45cec28e7e
+F src/vdbeaux.c 2f97cd756e2704b06006b398ce468f0bcc006055
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
-F src/vdbemem.c 7db453561091f0ed8fc7c96ee635cc612334025f
+F src/vdbemem.c 8c84ec056c7934cef359f4d49fa32b856eeffd88
 F src/vdbesort.c 9d83601f9d6243fe70dd0169a2820c5ddfd48147
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -1152,10 +1152,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e6ecf7337658624d664e1e71ba3fc527fd6578c1
-R ac78e315b388dc3aeb5c2c8983219f64
-T *branch * enhanced-mem-check
-T *sym-enhanced-mem-check *
-T -sym-trunk *
+P 4aeb3ae435c78070232fef21a147fde4e1c5cd31
+R c42d4082e634170a16f76850fb72106d
 U drh
-Z 099f8256c2a0fcf00ebef2162229fe0b
+Z e1bae2e998058d57d79a76345aaf3403

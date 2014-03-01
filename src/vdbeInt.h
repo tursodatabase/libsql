@@ -233,24 +233,6 @@ struct Mem {
 #endif
 
 /*
-** A sanity check on a Mem object and especially the Mem.z field.
-** This check says that no more than one of the following may be true:
-**   (1) Mem.z comes from Mem.zMalloc
-**   (2) Mem.z has a destructor Mem.xDel
-**   (3) Mem.z is an ephemeral string
-**   (4) Mem.z is a static string
-**
-** Use only inside of an assert() as follows:  assert( memSanify(pMem) );
-*/
-#ifdef SQLITE_DEBUG
-#define memSanity1(p)                                  \
-   ((((p)->zMalloc && (p)->zMalloc==(p)->z) ? 1 : 0) + \
-    ((((p)->flags&MEM_Dyn)&&(p)->xDel) ? 1 : 0) +      \
-    (((p)->flags&MEM_Ephem) ? 1 : 0) +                 \
-    (((p)->flags&MEM_Static) ? 1 : 0) <= 1 )
-#endif
-
-/*
 ** Each auxilliary data pointer stored by a user defined function 
 ** implementation calling sqlite3_set_auxdata() is stored in an instance
 ** of this structure. All such structures associated with a single VM
@@ -474,6 +456,7 @@ int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 
 #ifdef SQLITE_DEBUG
 void sqlite3VdbeMemAboutToChange(Vdbe*,Mem*);
+int sqlite3VdbeCheckMemInvariants(Mem*);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
