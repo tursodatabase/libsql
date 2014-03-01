@@ -1414,7 +1414,7 @@ int sqlite3VdbeList(
       assert( p->db->mallocFailed );
       return SQLITE_ERROR;
     }
-    pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
+    pMem->flags = MEM_Str|MEM_Term;
     zP4 = displayP4(pOp, pMem->z, 32);
     if( zP4!=pMem->z ){
       sqlite3VdbeMemSetStr(pMem, zP4, -1, SQLITE_UTF8, 0);
@@ -1431,7 +1431,7 @@ int sqlite3VdbeList(
         assert( p->db->mallocFailed );
         return SQLITE_ERROR;
       }
-      pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
+      pMem->flags = MEM_Str|MEM_Term;
       pMem->n = 2;
       sqlite3_snprintf(3, pMem->z, "%.2x", pOp->p5);   /* P5 */
       pMem->memType = MEM_Str;
@@ -1443,7 +1443,7 @@ int sqlite3VdbeList(
         assert( p->db->mallocFailed );
         return SQLITE_ERROR;
       }
-      pMem->flags = MEM_Dyn|MEM_Str|MEM_Term;
+      pMem->flags = MEM_Str|MEM_Term;
       pMem->n = displayComment(pOp, zP4, pMem->z, 500);
       pMem->memType = MEM_Str;
       pMem->enc = SQLITE_UTF8;

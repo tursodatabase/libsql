@@ -208,7 +208,7 @@ struct Mem {
 ** string is \000 or \u0000 terminated
 */
 #define MEM_Term      0x0200   /* String rep is nul terminated */
-#define MEM_Dyn       0x0400   /* Need to call sqliteFree() on Mem.z */
+#define MEM_Dyn       0x0400   /* Need to call Mem.xDel() on Mem.z */
 #define MEM_Static    0x0800   /* Mem.z points to a static string */
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
 #define MEM_Agg       0x2000   /* Mem.z points to an agg function context */

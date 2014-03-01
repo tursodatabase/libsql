@@ -26,11 +26,29 @@
 ** this:    assert( sqlite3VdbeCheckMemInvariants(pMem) );
 */
 int sqlite3VdbeCheckMemInvariants(Mem *p){
-  assert( 
-    (((p)->zMalloc && (p)->zMalloc==(p)->z) ? 1 : 0) +
-    ((((p)->flags&MEM_Dyn)&&(p)->xDel) ? 1 : 0) +
-    (((p)->flags&MEM_Ephem) ? 1 : 0) +
-    (((p)->flags&MEM_Static) ? 1 : 0) <= 1 );
+  /* The MEM_Dyn bit is set if and only if Mem.xDel is a non-NULL destructor
+  ** function for Mem.z 
+  */
+  assert( (p->flags & MEM_Dyn)==0 || p->xDel!=0 );
+  assert( (p->flags & MEM_Dyn)!=0 || p->xDel==0 );
+
+  /* If p holds a string or blob, the Mem.z must point to exactly
+  ** one of the following:
+  **
+  **   (1) Memory in Mem.zMalloc and managed by the Mem object
+  **   (2) Memory to be freed using Mem.xDel
+  **   (3) An ephermal string or blob
+  **   (4) A static string or blob
+  */
+  if( (p->flags & (MEM_Str|MEM_Blob)) && p->z!=0 ){
+    assert( 
+      ((p->z==p->zMalloc)? 1 : 0) +
+      ((p->flags&MEM_Dyn)!=0 ? 1 : 0) +
+      ((p->flags&MEM_Ephem)!=0 ? 1 : 0) +
+      ((p->flags&MEM_Static)!=0 ? 1 : 0) == 1
+    );
+  }
+
   return 1;
 }
 #endif
@@ -103,7 +121,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
       pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
     if( pMem->zMalloc==0 ){
-      sqlite3VdbeMemRelease(pMem);
+      VdbeMemRelease(pMem);
       pMem->flags = MEM_Null;  
       return SQLITE_NOMEM;
     }
@@ -112,13 +130,13 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
   if( pMem->z && bPreserve && pMem->z!=pMem->zMalloc ){
     memcpy(pMem->zMalloc, pMem->z, pMem->n);
   }
-  if( (pMem->flags&MEM_Dyn)!=0 && pMem->xDel ){
-    assert( pMem->xDel!=SQLITE_DYNAMIC );
+  if( (pMem->flags&MEM_Dyn)!=0 ){
+    assert( pMem->xDel!=0 && pMem->xDel!=SQLITE_DYNAMIC );
     pMem->xDel((void *)(pMem->z));
   }
 
   pMem->z = pMem->zMalloc;
-  pMem->flags &= ~(MEM_Ephem|MEM_Static);
+  pMem->flags &= ~(MEM_Dyn|MEM_Ephem|MEM_Static);
   pMem->xDel = 0;
   return SQLITE_OK;
 }
@@ -287,9 +305,9 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
     sqlite3VdbeMemFinalize(p, p->u.pDef);
     assert( (p->flags & MEM_Agg)==0 );
     sqlite3VdbeMemRelease(p);
-  }else if( p->flags&MEM_Dyn && p->xDel ){
+  }else if( p->flags&MEM_Dyn ){
     assert( (p->flags&MEM_RowSet)==0 );
-    assert( p->xDel!=SQLITE_DYNAMIC );
+    assert( p->xDel!=SQLITE_DYNAMIC && p->xDel!=0 );
     p->xDel((void *)p->z);
     p->xDel = 0;
   }else if( p->flags&MEM_RowSet ){
@@ -643,6 +661,7 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   VdbeMemRelease(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
+  pTo->xDel = 0;
 
   if( pTo->flags&(MEM_Str|MEM_Blob) ){
     if( 0==(pFrom->flags&MEM_Static) ){
@@ -922,7 +941,7 @@ int sqlite3VdbeMemFromBtree(
     pMem->z = &zData[offset];
     pMem->flags = MEM_Blob|MEM_Ephem;
   }else if( SQLITE_OK==(rc = sqlite3VdbeMemGrow(pMem, amt+2, 0)) ){
-    pMem->flags = MEM_Blob|MEM_Dyn|MEM_Term;
+    pMem->flags = MEM_Blob|MEM_Term;
     pMem->enc = 0;
     pMem->memType = MEM_Blob;
     if( key ){

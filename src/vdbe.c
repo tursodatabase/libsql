@@ -152,7 +152,7 @@ int sqlite3_found_count = 0;
 **
 ** This routine converts an ephemeral string into a dynamically allocated
 ** string that the register itself controls.  In other words, it
-** converts an MEM_Ephem string into an MEM_Dyn string.
+** converts an MEM_Ephem string into a string with P.z==P.zMalloc.
 */
 #define Deephemeralize(P) \
    if( ((P)->flags&MEM_Ephem)!=0 \
@@ -716,7 +716,7 @@ check_for_interrupt:
 case OP_Gosub: {            /* jump */
   assert( pOp->p1>0 && pOp->p1<=(p->nMem-p->nCursor) );
   pIn1 = &aMem[pOp->p1];
-  assert( (pIn1->flags & MEM_Dyn)==0 );
+  assert( VdbeMemDynamic(pIn1)==0 );
   memAboutToChange(p, pIn1);
   pIn1->flags = MEM_Int;
   pIn1->u.i = pc;
@@ -789,7 +789,7 @@ case OP_EndCoroutine: {           /* in1 */
 case OP_Yield: {            /* in1, jump */
   int pcDest;
   pIn1 = &aMem[pOp->p1];
-  assert( (pIn1->flags & MEM_Dyn)==0 );
+  assert( VdbeMemDynamic(pIn1)==0 );
   pIn1->flags = MEM_Int;
   pcDest = (int)pIn1->u.i;
   pIn1->u.i = pc;
@@ -962,10 +962,9 @@ case OP_String8: {         /* same as TK_STRING, out2-prerelease */
     if( rc==SQLITE_TOOBIG ) goto too_big;
     if( SQLITE_OK!=sqlite3VdbeChangeEncoding(pOut, encoding) ) goto no_mem;
     assert( pOut->zMalloc==pOut->z );
-    assert( pOut->flags & MEM_Dyn );
+    assert( VdbeMemDynamic(pOut)==0 );
     pOut->zMalloc = 0;
     pOut->flags |= MEM_Static;
-    pOut->flags &= ~MEM_Dyn;
     if( pOp->p4type==P4_DYNAMIC ){
       sqlite3DbFree(db, pOp->p4.z);
     }
@@ -1101,14 +1100,16 @@ case OP_Move: {
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
+    VdbeMemRelease(pOut);
     zMalloc = pOut->zMalloc;
-    pOut->zMalloc = 0;
-    sqlite3VdbeMemMove(pOut, pIn1);
+    memcpy(pOut, pIn1, sizeof(Mem));
 #ifdef SQLITE_DEBUG
     if( pOut->pScopyFrom>=&aMem[p1] && pOut->pScopyFrom<&aMem[p1+pOp->p3] ){
       pOut->pScopyFrom += p1 - pOp->p2;
     }
 #endif
+    pIn1->flags = MEM_Undefined;
+    pIn1->xDel = 0;
     pIn1->zMalloc = zMalloc;
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
@@ -1285,10 +1286,10 @@ case OP_Concat: {           /* same as TK_CONCAT, in1, in2, out3 */
   if( nByte>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
-  MemSetTypeFlag(pOut, MEM_Str);
   if( sqlite3VdbeMemGrow(pOut, (int)nByte+2, pOut==pIn2) ){
     goto no_mem;
   }
+  MemSetTypeFlag(pOut, MEM_Str);
   if( pOut!=pIn2 ){
     memcpy(pOut->z, pIn2->z, pIn2->n);
   }
@@ -2501,8 +2502,8 @@ case OP_Column: {
     ** This prevents a memory copy. */
     if( sMem.zMalloc ){
       assert( sMem.z==sMem.zMalloc );
-      assert( !(pDest->flags & MEM_Dyn) );
-      assert( !(pDest->flags & (MEM_Blob|MEM_Str)) || pDest->z==sMem.z );
+      assert( VdbeMemDynamic(pDest)==0 );
+      assert( (pDest->flags & (MEM_Blob|MEM_Str))==0 || pDest->z==sMem.z );
       pDest->flags &= ~(MEM_Ephem|MEM_Static);
       pDest->flags |= MEM_Term;
       pDest->z = sMem.z;
@@ -2685,7 +2686,7 @@ case OP_MakeRecord: {
 
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pOut->n = (int)nByte;
-  pOut->flags = MEM_Blob | MEM_Dyn;
+  pOut->flags = MEM_Blob;
   pOut->xDel = 0;
   if( nZero ){
     pOut->u.nZero = nZero;
