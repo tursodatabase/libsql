@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings.
-D 2014-03-03T18:25:24.475
+C Fix\sa\stypo\sin\sa\scomment.\s\sNo\schanges\sto\scode.
+D 2014-03-03T19:29:28.807
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 75c3f5d27ab79af214646cf37d7551bc8cec09c2
 F src/vdbe.h d189f92468a17a6f04daeec9df3b767f50557b21
 F src/vdbeInt.h 9ccca0bc7646c918d065943e44bead4bf5de213d
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c f6d49b824fb9b4025098d73ba63a579bceab46c1
+F src/vdbeaux.c b817480055ea37f04cbda6524cbcda56d8620c78
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 2d7918e4c80546d943414668b1485b2581f58a28
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
@@ -1153,7 +1153,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1d60356462f111ed147aa865dd17a13511db6ab7
-R 21f5b7d1de45908a8d9a08e2efe5ba51
+P ba8993727e5752cbc92c7d78437e9e0510c899f7
+R 84a57b7d3530d77238186688acf2fb15
 U drh
-Z bf94921d4ecf2467a56de90bb29e8bf1
+Z 743719e98998c2037f212aec24c916c8

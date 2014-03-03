@@ -3846,7 +3846,7 @@ int sqlite3VdbeIdxKeyCompare(
   assert( sqlite3BtreeCursorIsValid(pCur) );
   VVA_ONLY(rc =) sqlite3BtreeKeySize(pCur, &nCellKey);
   assert( rc==SQLITE_OK );    /* pCur is always valid so KeySize cannot fail */
-  /* nCellKey will always be between 0 and 0xffffffff because of the say
+  /* nCellKey will always be between 0 and 0xffffffff because of the way
   ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
   if( nCellKey<=0 || nCellKey>0x7fffffff ){
     *res = 0;
