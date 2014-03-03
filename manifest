@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scan\soccur\sfollowing\san\sOOM\serror.
-D 2014-03-03T14:20:30.542
+C Change\sthe\s"explain_i"\stcl\stest\scommand\sso\sthat\sxterm\scolor\scodes\sare\sonly\sadded\sif\sthe\soutput\sis\sactually\sa\sterminal.
+D 2014-03-03T16:48:47.992
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -841,7 +841,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl 9bd04481b8b0ef1f2049ad01f28e175ee9a14f7b
+F test/tester.tcl f31bea1483ea1d39620f982130026e76f872d744
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1152,7 +1152,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e3f6c61e0333d4d237dcd2ba2e404f0a91ee5069
-R eaec45cec313455580b422d7721ccfeb
+P 7fdd378d54754a3ffdc01c6c0a66cf6d5899a495
+R d76d9cf70a7a6abc4c8a0d1e487a1b2f
 U dan
-Z 0f4ad0e1bfa9fac79dc39c1726a86e9b
+Z 3cca059248ddd2dc717b9671dde6b1cc

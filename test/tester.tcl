@@ -1062,10 +1062,17 @@ proc explain_i {sql {db db}} {
   #   Blue:  Opcodes that reposition or seek a cursor. 
   #   Green: The ResultRow opcode.
   #
-  set R "\033\[31;1m"        ;# Red fg
-  set G "\033\[32;1m"        ;# Green fg
-  set B "\033\[34;1m"        ;# Red fg
-  set D "\033\[39;0m"        ;# Default fg
+  if { [catch {fconfigure stdout -mode}]==0 } {
+    set R "\033\[31;1m"        ;# Red fg
+    set G "\033\[32;1m"        ;# Green fg
+    set B "\033\[34;1m"        ;# Red fg
+    set D "\033\[39;0m"        ;# Default fg
+  } else {
+    set R ""
+    set G ""
+    set B ""
+    set D ""
+  }
   foreach opcode {
       Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
       NoConflict Next Prev VNext VPrev VFilter
