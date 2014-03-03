@@ -3499,7 +3499,7 @@ int sqlite3VdbeRecordCompare(
           mem1.enc = pKeyInfo->enc;
           mem1.db = pKeyInfo->db;
           mem1.flags = MEM_Str;
-          mem1.z = &aKey1[d1];
+          mem1.z = (char*)&aKey1[d1];
           rc = vdbeCompareMemString(&mem1, pRhs, pKeyInfo->aColl[i]);
         }else{
           int nCmp = MIN(mem1.n, pRhs->n);

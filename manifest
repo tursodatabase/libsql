@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges.
-D 2014-03-03T14:45:06.920
+C Fix\sa\sharmless\scompiler\swarning.
+D 2014-03-03T15:13:27.429
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 75c3f5d27ab79af214646cf37d7551bc8cec09c2
 F src/vdbe.h c6dc01f85cf3bdcc992d244aeff952c033fd5ad0
 F src/vdbeInt.h d55cab859abb2c6656911497ae74eba9dcf34e28
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c f0532f7ce4fc3f4d9811d0bc29c6ce56d448596e
+F src/vdbeaux.c e4a0f89d15097debae8117ba17e4a640a0d3116f
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 2d7918e4c80546d943414668b1485b2581f58a28
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
@@ -1152,7 +1152,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9c1747b5ded995e77fdab2fa9d334ec3c17c7c14 7fdd378d54754a3ffdc01c6c0a66cf6d5899a495
-R 4cede51faff0bb760b6f55494711c674
-U dan
-Z 2c68a923f498f2b3622ae1d55f13bc1f
+P e00ed717fbe456010ec6c746490d7c3e9d94ec5a
+R 8e3a8f60ae350e66db9c9ecb1f09657d
+U drh
+Z 6dbc33a5cff12ba0585c075afb66f191
