@@ -1,5 +1,5 @@
-C Change\sthe\s"explain_i"\stcl\stest\scommand\sso\sthat\sxterm\scolor\scodes\sare\sonly\sadded\sif\sthe\soutput\sis\sactually\sa\sterminal.
-D 2014-03-03T16:48:47.992
+C Change\san\sOP_SCopy\sinto\san\sOP_Copy\sin\sa\scase\swhere\sthe\sdestination\smight\sbe\nused\safter\sthe\ssource\shas\schanged.
+D 2014-03-03T17:36:39.940
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c ca8b99d894164435f5c55cb304c1b8121705c51e
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 35b07a47fdee9a98e03c4ffb3801026c72114cb7
+F src/select.c 780bbf39e401091845ba745a38326eabe5d44293
 F src/shell.c 7bf07bcacb181ecc3fc3ccacfdfeb4084aee67ed
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -788,6 +788,7 @@ F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
 F test/selectE.test fc02a1eb04c8eb537091482644b7d778ae8759b7
+F test/selectF.test 21c94e6438f76537b72532fa9fd4710cdd455fc3
 F test/server1.test 46803bd3fe8b99b30dbc5ff38ffc756f5c13a118
 F test/shared.test 1da9dbad400cee0d93f252ccf76e1ae007a63746
 F test/shared2.test 03eb4a8d372e290107d34b6ce1809919a698e879
@@ -1152,7 +1153,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7fdd378d54754a3ffdc01c6c0a66cf6d5899a495
-R d76d9cf70a7a6abc4c8a0d1e487a1b2f
-U dan
-Z 3cca059248ddd2dc717b9671dde6b1cc
+P 559835e54e0715f2b4d207d056199a8268af739e
+R 0f407d04c62b2be5f5455aa20c5e914d
+U drh
+Z c144dcb8dd86ca2b393613351986e190

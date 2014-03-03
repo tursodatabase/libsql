@@ -609,7 +609,7 @@ static void selectInnerLoop(
     ** values returned by the SELECT are not required.
     */
     sqlite3ExprCodeExprList(pParse, pEList, regResult,
-                            (eDest==SRT_Output)?SQLITE_ECEL_DUP:0);
+                  (eDest==SRT_Output||eDest==SRT_Coroutine)?SQLITE_ECEL_DUP:0);
   }
 
   /* If the DISTINCT keyword was present on the SELECT statement
