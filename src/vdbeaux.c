@@ -3575,7 +3575,8 @@ static int vdbeRecordCompareInt(
   const UnpackedRecord *pPKey2, /* Right key */
   int bSkip                     /* Ignored */
 ){
-  const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1];
+  int szHdr = *(const u8*)pKey1;
+  const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
   int serial_type = ((const u8*)pKey1)[1];
   int res;
   i64 v = pPKey2->aMem[0].u.i;
@@ -3583,7 +3584,6 @@ static int vdbeRecordCompareInt(
   UNUSED_PARAMETER(bSkip);
 
   assert( bSkip==0 );
-
   switch( serial_type ){
     case 1:
       lhs = (char)(aKey[0]);
@@ -3718,12 +3718,20 @@ static int vdbeRecordCompareString(
 ** as the only argument.
 */
 RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
-  /* As the varints that make up a record header are all 5 bytes in size
-  ** or less, if the binary keys being compared have 25 or fewer fields 
-  ** then it is guaranteed that the varint at the start of every record 
-  ** (the record-header size in bytes) fits in a single byte. If this
-  ** is not the case, then sqlite3VdbeRecordCompare() must be used.  */
-  if( (p->pKeyInfo->nField + p->pKeyInfo->nXField)<=25 ){
+  /* varintRecordCompareInt() and varintRecordCompareString() both assume
+  ** that the size-of-header varint that occurs at the start of each record
+  ** fits in a single byte (i.e. is 127 or less). varintRecordCompareInt()
+  ** also assumes that it is safe to overread a buffer by at least the 
+  ** maximum possible legal header size plus 8 bytes. Because there is
+  ** guaranteed to be at least 74 (but not 136) bytes of padding following each
+  ** buffer passed to varintRecordCompareInt() this makes it convenient to
+  ** limit the size of the header to 64 bytes in cases where the first field
+  ** is an integer.
+  **
+  ** The easiest way to enforce this limit is to consider only records with
+  ** 13 fields or less. If the first field is an integer, the maximum legal
+  ** header size is (12*5 + 1 + 1) bytes.  */
+  if( (p->pKeyInfo->nField + p->pKeyInfo->nXField)<=13 ){
     int flags = p->aMem[0].flags;
     if( p->pKeyInfo->aSortOrder[0] ){
       p->r1 = 1;
