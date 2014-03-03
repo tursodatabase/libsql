@@ -3103,7 +3103,7 @@ void sqlite3VdbeRecordUnpack(
   u32 szHdr;
   Mem *pMem = p->aMem;
 
-  p->flags = 0;
+  p->default_rc = 0;
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
@@ -3124,26 +3124,18 @@ void sqlite3VdbeRecordUnpack(
   p->nField = u;
 }
 
+#if SQLITE_DEBUG
 /*
-** This function compares the two table rows or index records
-** specified by {nKey1, pKey1} and pPKey2.  It returns a negative, zero
-** or positive integer if key1 is less than, equal to or 
-** greater than key2.  The {nKey1, pKey1} key must be a blob
-** created by th OP_MakeRecord opcode of the VDBE.  The pPKey2
-** key must be a parsed key such as obtained from
-** sqlite3VdbeParseRecord.
-**
-** Key1 and Key2 do not have to contain the same number of fields.
-** The key with fewer fields is usually compares less than the 
-** longer key.  However if the UNPACKED_INCRKEY flags in pPKey2 is set
-** and the common prefixes are equal, then key1 is less than key2.
-** Or if the UNPACKED_MATCH_PREFIX flag is set and the prefixes are
-** equal, then the keys are considered to be equal and
-** the parts beyond the common prefix are ignored.
+** This function compares two index or table record keys in the same way
+** as the sqlite3VdbeRecordCompare() routine. Unlike VdbeRecordCompare(),
+** this function deserializes and compares values using the
+** sqlite3VdbeSerialGet() and sqlite3MemCompare() functions. It is used
+** in assert() statements to ensure that the optimized code in
+** sqlite3VdbeRecordCompare() returns results with these two primitives.
 */
-int sqlite3VdbeRecordCompare(
+static int vdbeRecordCompareDebug(
   int nKey1, const void *pKey1, /* Left key */
-  UnpackedRecord *pPKey2        /* Right key */
+  const UnpackedRecord *pPKey2  /* Right key */
 ){
   u32 d1;            /* Offset into aKey[] of next data element */
   u32 idx1;          /* Offset into aKey[] of next header element */
@@ -3217,24 +3209,548 @@ int sqlite3VdbeRecordCompare(
   assert( mem1.zMalloc==0 );
 
   /* rc==0 here means that one of the keys ran out of fields and
-  ** all the fields up to that point were equal. If the UNPACKED_INCRKEY
-  ** flag is set, then break the tie by treating key2 as larger.
-  ** If the UPACKED_PREFIX_MATCH flag is set, then keys with common prefixes
-  ** are considered to be equal.  Otherwise, the longer key is the 
-  ** larger.  As it happens, the pPKey2 will always be the longer
-  ** if there is a difference.
+  ** all the fields up to that point were equal. Return the the default_rc
+  ** value.  */
+  return pPKey2->default_rc;
+}
+#endif
+
+/*
+** Both *pMem1 and *pMem2 contain string values. Compare the two values
+** using the collation sequence pColl. As usual, return a negative , zero
+** or positive value if *pMem1 is less than, equal to or greater than 
+** *pMem2, respectively. Similar in spirit to "rc = (*pMem1) - (*pMem2);".
+*/
+static int vdbeCompareMemString(
+  const Mem *pMem1,
+  const Mem *pMem2,
+  const CollSeq *pColl
+){
+  if( pMem1->enc==pColl->enc ){
+    /* The strings are already in the correct encoding.  Call the
+     ** comparison function directly */
+    return pColl->xCmp(pColl->pUser,pMem1->n,pMem1->z,pMem2->n,pMem2->z);
+  }else{
+    int rc;
+    const void *v1, *v2;
+    int n1, n2;
+    Mem c1;
+    Mem c2;
+    memset(&c1, 0, sizeof(c1));
+    memset(&c2, 0, sizeof(c2));
+    sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
+    sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
+    v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
+    n1 = v1==0 ? 0 : c1.n;
+    v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
+    n2 = v2==0 ? 0 : c2.n;
+    rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
+    sqlite3VdbeMemRelease(&c1);
+    sqlite3VdbeMemRelease(&c2);
+    return rc;
+  }
+}
+
+/*
+** Compare the values contained by the two memory cells, returning
+** negative, zero or positive if pMem1 is less than, equal to, or greater
+** than pMem2. Sorting order is NULL's first, followed by numbers (integers
+** and reals) sorted numerically, followed by text ordered by the collating
+** sequence pColl and finally blob's ordered by memcmp().
+**
+** Two NULL values are considered equal by this function.
+*/
+int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
+  int rc;
+  int f1, f2;
+  int combined_flags;
+
+  f1 = pMem1->flags;
+  f2 = pMem2->flags;
+  combined_flags = f1|f2;
+  assert( (combined_flags & MEM_RowSet)==0 );
+ 
+  /* If one value is NULL, it is less than the other. If both values
+  ** are NULL, return 0.
   */
-  assert( rc==0 );
-  if( pPKey2->flags & UNPACKED_INCRKEY ){
-    rc = -1;
-  }else if( pPKey2->flags & UNPACKED_PREFIX_MATCH ){
-    /* Leave rc==0 */
-  }else if( idx1<szHdr1 ){
-    rc = 1;
+  if( combined_flags&MEM_Null ){
+    return (f2&MEM_Null) - (f1&MEM_Null);
+  }
+
+  /* If one value is a number and the other is not, the number is less.
+  ** If both are numbers, compare as reals if one is a real, or as integers
+  ** if both values are integers.
+  */
+  if( combined_flags&(MEM_Int|MEM_Real) ){
+    double r1, r2;
+    if( (f1 & f2 & MEM_Int)!=0 ){
+      if( pMem1->u.i < pMem2->u.i ) return -1;
+      if( pMem1->u.i > pMem2->u.i ) return 1;
+      return 0;
+    }
+    if( (f1&MEM_Real)!=0 ){
+      r1 = pMem1->r;
+    }else if( (f1&MEM_Int)!=0 ){
+      r1 = (double)pMem1->u.i;
+    }else{
+      return 1;
+    }
+    if( (f2&MEM_Real)!=0 ){
+      r2 = pMem2->r;
+    }else if( (f2&MEM_Int)!=0 ){
+      r2 = (double)pMem2->u.i;
+    }else{
+      return -1;
+    }
+    if( r1<r2 ) return -1;
+    if( r1>r2 ) return 1;
+    return 0;
+  }
+
+  /* If one value is a string and the other is a blob, the string is less.
+  ** If both are strings, compare using the collating functions.
+  */
+  if( combined_flags&MEM_Str ){
+    if( (f1 & MEM_Str)==0 ){
+      return 1;
+    }
+    if( (f2 & MEM_Str)==0 ){
+      return -1;
+    }
+
+    assert( pMem1->enc==pMem2->enc );
+    assert( pMem1->enc==SQLITE_UTF8 || 
+            pMem1->enc==SQLITE_UTF16LE || pMem1->enc==SQLITE_UTF16BE );
+
+    /* The collation sequence must be defined at this point, even if
+    ** the user deletes the collation sequence after the vdbe program is
+    ** compiled (this was not always the case).
+    */
+    assert( !pColl || pColl->xCmp );
+
+    if( pColl ){
+      return vdbeCompareMemString(pMem1, pMem2, pColl);
+    }
+    /* If a NULL pointer was passed as the collate function, fall through
+    ** to the blob case and use memcmp().  */
+  }
+ 
+  /* Both values must be blobs.  Compare using memcmp().  */
+  rc = memcmp(pMem1->z, pMem2->z, (pMem1->n>pMem2->n)?pMem2->n:pMem1->n);
+  if( rc==0 ){
+    rc = pMem1->n - pMem2->n;
   }
   return rc;
 }
- 
+
+
+/*
+** The first argument passed to this function is a serial-type that
+** corresponds to an integer - all values between 1 and 9 inclusive 
+** except 7. The second points to a buffer containing an integer value
+** serialized according to serial_type. This function deserializes
+** and returns the value.
+*/
+static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
+  assert( CORRUPT_DB || (serial_type>=1 && serial_type<=9 && serial_type!=7) );
+  switch( serial_type ){
+    case 0:
+    case 1:
+      return (char)aKey[0];
+    case 2:
+      return ((char)aKey[0] << 8) | aKey[1];
+    case 3:
+      return ((char)aKey[0] << 16) | (aKey[1] << 8) | aKey[2];
+    case 4:
+      return ((char)aKey[0]<<24) | (aKey[1]<<16) | (aKey[2]<<8)| aKey[3];
+    case 5: {
+      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
+      u32 lsw = (aKey[4] << 8) | aKey[5];
+      return (i64)( msw << 16 | (u64)lsw );
+    }
+    case 6: {
+      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
+      u32 lsw = ((unsigned)aKey[4]<<24)|(aKey[5]<<16)|(aKey[6]<<8)|aKey[7];
+      return (i64)( msw << 32 | (u64)lsw );
+    }
+  }
+
+  return (serial_type - 8);
+}
+
+/*
+** This function compares the two table rows or index records
+** specified by {nKey1, pKey1} and pPKey2.  It returns a negative, zero
+** or positive integer if key1 is less than, equal to or 
+** greater than key2.  The {nKey1, pKey1} key must be a blob
+** created by th OP_MakeRecord opcode of the VDBE.  The pPKey2
+** key must be a parsed key such as obtained from
+** sqlite3VdbeParseRecord.
+**
+** If argument bSkip is non-zero, it is assumed that the caller has already
+** determined that the first fields of the keys are equal.
+**
+** Key1 and Key2 do not have to contain the same number of fields. If all 
+** fields that appear in both keys are equal, then pPKey2->default_rc is 
+** returned.
+*/
+int sqlite3VdbeRecordCompare(
+  int nKey1, const void *pKey1,   /* Left key */
+  const UnpackedRecord *pPKey2,   /* Right key */
+  int bSkip                       /* If true, skip the first field */
+){
+  u32 d1;                         /* Offset into aKey[] of next data element */
+  int i;                          /* Index of next field to compare */
+  int szHdr1;                     /* Size of record header in bytes */
+  u32 idx1;                       /* Offset of first type in header */
+  int rc = 0;                     /* Return value */
+  Mem *pRhs = pPKey2->aMem;       /* Next field of pPKey2 to compare */
+  KeyInfo *pKeyInfo = pPKey2->pKeyInfo;
+  const unsigned char *aKey1 = (const unsigned char *)pKey1;
+  Mem mem1;
+
+  /* If bSkip is true, then the caller has already determined that the first
+  ** two elements in the keys are equal. Fix the various stack variables so
+  ** that this routine begins comparing at the second field. */
+  if( bSkip ){
+    u32 s1;
+    idx1 = 1 + getVarint32(&aKey1[1], s1);
+    szHdr1 = aKey1[0];
+    d1 = szHdr1 + sqlite3VdbeSerialTypeLen(s1);
+    i = 1;
+    pRhs++;
+  }else{
+    idx1 = getVarint32(aKey1, szHdr1);
+    d1 = szHdr1;
+    i = 0;
+  }
+
+  VVA_ONLY( mem1.zMalloc = 0; ) /* Only needed by assert() statements */
+  assert( pPKey2->pKeyInfo->nField+pPKey2->pKeyInfo->nXField>=pPKey2->nField 
+       || CORRUPT_DB );
+  assert( pPKey2->pKeyInfo->aSortOrder!=0 );
+  assert( pPKey2->pKeyInfo->nField>0 );
+  assert( idx1<=szHdr1 || CORRUPT_DB );
+  do{
+    u32 serial_type;
+
+    /* RHS is an integer */
+    if( pRhs->flags & MEM_Int ){
+      serial_type = aKey1[idx1];
+      if( serial_type>=12 ){
+        rc = +1;
+      }else if( serial_type==0 ){
+        rc = -1;
+      }else if( serial_type==7 ){
+        double rhs = (double)pRhs->u.i;
+        sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
+        if( mem1.r<rhs ){
+          rc = -1;
+        }else if( mem1.r>rhs ){
+          rc = +1;
+        }
+      }else{
+        i64 lhs = vdbeRecordDecodeInt(serial_type, &aKey1[d1]);
+        i64 rhs = pRhs->u.i;
+        if( lhs<rhs ){
+          rc = -1;
+        }else if( lhs>rhs ){
+          rc = +1;
+        }
+      }
+    }
+
+    /* RHS is real */
+    else if( pRhs->flags & MEM_Real ){
+      serial_type = aKey1[idx1];
+      if( serial_type>=12 ){
+        rc = +1;
+      }else if( serial_type==0 ){
+        rc = -1;
+      }else{
+        double rhs = pRhs->r;
+        double lhs;
+        sqlite3VdbeSerialGet(&aKey1[d1], serial_type, &mem1);
+        if( serial_type==7 ){
+          lhs = mem1.r;
+        }else{
+          lhs = (double)mem1.u.i;
+        }
+        if( lhs<rhs ){
+          rc = -1;
+        }else if( lhs>rhs ){
+          rc = +1;
+        }
+      }
+    }
+
+    /* RHS is a string */
+    else if( pRhs->flags & MEM_Str ){
+      getVarint32(&aKey1[idx1], serial_type);
+      if( serial_type<12 ){
+        rc = -1;
+      }else if( !(serial_type & 0x01) ){
+        rc = +1;
+      }else{
+        mem1.n = (serial_type - 12) / 2;
+        if( (d1+mem1.n) > (unsigned)nKey1 ){
+          rc = 1;                /* Corruption */
+        }else if( pKeyInfo->aColl[i] ){
+          mem1.enc = pKeyInfo->enc;
+          mem1.db = pKeyInfo->db;
+          mem1.flags = MEM_Str;
+          mem1.z = (char*)&aKey1[d1];
+          rc = vdbeCompareMemString(&mem1, pRhs, pKeyInfo->aColl[i]);
+        }else{
+          int nCmp = MIN(mem1.n, pRhs->n);
+          rc = memcmp(&aKey1[d1], pRhs->z, nCmp);
+          if( rc==0 ) rc = mem1.n - pRhs->n; 
+        }
+      }
+    }
+
+    /* RHS is a blob */
+    else if( pRhs->flags & MEM_Blob ){
+      getVarint32(&aKey1[idx1], serial_type);
+      if( serial_type<12 || (serial_type & 0x01) ){
+        rc = -1;
+      }else{
+        int nStr = (serial_type - 12) / 2;
+        if( (d1+nStr) > (unsigned)nKey1 ){
+          rc = 1;                /* Corruption */
+        }else{
+          int nCmp = MIN(nStr, pRhs->n);
+          rc = memcmp(&aKey1[d1], pRhs->z, nCmp);
+          if( rc==0 ) rc = nStr - pRhs->n;
+        }
+      }
+    }
+
+    /* RHS is null */
+    else{
+      serial_type = aKey1[idx1];
+      rc = (serial_type!=0);
+    }
+
+    if( rc!=0 ){
+      if( pKeyInfo->aSortOrder[i] ){
+        rc = -rc;
+      }
+      assert( CORRUPT_DB 
+          || (rc<0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)<0)
+          || (rc>0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)>0)
+      );
+      assert( mem1.zMalloc==0 );  /* See comment below */
+      return rc;
+    }
+
+    i++;
+    pRhs++;
+    d1 += sqlite3VdbeSerialTypeLen(serial_type);
+    idx1 += sqlite3VarintLen(serial_type);
+  }while( idx1<(unsigned)szHdr1 && i<pPKey2->nField && d1<=(unsigned)nKey1 );
+
+  /* No memory allocation is ever used on mem1.  Prove this using
+  ** the following assert().  If the assert() fails, it indicates a
+  ** memory leak and a need to call sqlite3VdbeMemRelease(&mem1).  */
+  assert( mem1.zMalloc==0 );
+
+  /* rc==0 here means that one or both of the keys ran out of fields and
+  ** all the fields up to that point were equal. Return the the default_rc
+  ** value.  */
+  assert( CORRUPT_DB 
+       || pPKey2->default_rc==vdbeRecordCompareDebug(nKey1, pKey1, pPKey2) 
+  );
+  return pPKey2->default_rc;
+}
+
+/*
+** This function is an optimized version of sqlite3VdbeRecordCompare() 
+** that (a) the first field of pPKey2 is an integer, and (b) the 
+** size-of-header varint at the start of (pKey1/nKey1) fits in a single
+** byte (i.e. is less than 128).
+*/
+static int vdbeRecordCompareInt(
+  int nKey1, const void *pKey1, /* Left key */
+  const UnpackedRecord *pPKey2, /* Right key */
+  int bSkip                     /* Ignored */
+){
+  const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
+  int serial_type = ((const u8*)pKey1)[1];
+  int res;
+  i64 v = pPKey2->aMem[0].u.i;
+  i64 lhs;
+  UNUSED_PARAMETER(bSkip);
+
+  assert( bSkip==0 );
+  switch( serial_type ){
+    case 1:
+      lhs = (char)(aKey[0]);
+      break;
+    case 2:
+      lhs = 256*(signed char)aKey[0] + aKey[1];
+      break;
+    case 3:
+      lhs = 65536*(char)aKey[0] | (aKey[1]<<8) | aKey[2];
+      break;
+    case 4:
+      lhs = (int)(((u32)aKey[0]<<24) | (aKey[1]<<16) | (aKey[2]<<8)| aKey[3]);
+      break;
+    case 5: {
+      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
+      u32 lsw = (aKey[4] << 8) | aKey[5];
+      lhs = (i64)( msw << 16 | (u64)lsw );
+      break;
+    }
+    case 6: {
+      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
+      u32 lsw = ((unsigned)aKey[4]<<24)|(aKey[5]<<16)|(aKey[6]<<8)|aKey[7];
+      lhs = (i64)( msw << 32 | (u64)lsw );
+      break;
+    }
+    case 8: 
+      lhs = 0;
+      break;
+    case 9:
+      lhs = 1;
+      break;
+
+    /* This case could be removed without changing the results of running
+    ** this code. Including it causes gcc to generate a faster switch 
+    ** statement (since the range of switch targets now starts at zero and
+    ** is contiguous) but does not cause any duplicate code to be generated
+    ** (as gcc is clever enough to combine the two like cases). Other 
+    ** compilers might be similar.  */ 
+    case 0: case 7:
+      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 0);
+
+    default:
+      return sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 0);
+  }
+
+  if( v>lhs ){
+    res = pPKey2->r1;
+  }else if( v<lhs ){
+    res = pPKey2->r2;
+  }else if( pPKey2->nField>1 ){
+    /* The first fields of the two keys are equal. Compare the trailing 
+    ** fields.  */
+    res = sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 1);
+  }else{
+    /* The first fields of the two keys are equal and there are no trailing
+    ** fields. Return pPKey2->default_rc in this case. */
+    res = pPKey2->default_rc;
+  }
+
+  assert( (res==0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)==0)
+       || (res<0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)<0)
+       || (res>0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)>0)
+       || CORRUPT_DB
+  );
+  return res;
+}
+
+/*
+** This function is an optimized version of sqlite3VdbeRecordCompare() 
+** that (a) the first field of pPKey2 is a string, that (b) the first field
+** uses the collation sequence BINARY and (c) that the size-of-header varint 
+** at the start of (pKey1/nKey1) fits in a single byte.
+*/
+static int vdbeRecordCompareString(
+  int nKey1, const void *pKey1, /* Left key */
+  const UnpackedRecord *pPKey2, /* Right key */
+  int bSkip
+){
+  const u8 *aKey1 = (const u8*)pKey1;
+  int serial_type;
+  int res;
+  UNUSED_PARAMETER(bSkip);
+
+  assert( bSkip==0 );
+  getVarint32(&aKey1[1], serial_type);
+
+  if( serial_type<12 ){
+    res = pPKey2->r1;      /* (pKey1/nKey1) is a number or a null */
+  }else if( !(serial_type & 0x01) ){ 
+    res = pPKey2->r2;      /* (pKey1/nKey1) is a blob */
+  }else{
+    int nCmp;
+    int nStr;
+    int szHdr = aKey1[0];
+
+    nStr = (serial_type-12) / 2;
+    if( (szHdr + nStr) > nKey1 ) return 0;    /* Corruption */
+    nCmp = MIN( pPKey2->aMem[0].n, nStr );
+    res = memcmp(&aKey1[szHdr], pPKey2->aMem[0].z, nCmp);
+
+    if( res==0 ){
+      res = nStr - pPKey2->aMem[0].n;
+      if( res==0 ){
+        if( pPKey2->nField>1 ){
+          res = sqlite3VdbeRecordCompare(nKey1, pKey1, pPKey2, 1);
+        }else{
+          res = pPKey2->default_rc;
+        }
+      }else if( res>0 ){
+        res = pPKey2->r2;
+      }else{
+        res = pPKey2->r1;
+      }
+    }else if( res>0 ){
+      res = pPKey2->r2;
+    }else{
+      res = pPKey2->r1;
+    }
+  }
+
+  assert( (res==0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)==0)
+       || (res<0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)<0)
+       || (res>0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)>0)
+       || CORRUPT_DB
+  );
+  return res;
+}
+
+/*
+** Return a pointer to an sqlite3VdbeRecordCompare() compatible function
+** suitable for comparing serialized records to the unpacked record passed
+** as the only argument.
+*/
+RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
+  /* varintRecordCompareInt() and varintRecordCompareString() both assume
+  ** that the size-of-header varint that occurs at the start of each record
+  ** fits in a single byte (i.e. is 127 or less). varintRecordCompareInt()
+  ** also assumes that it is safe to overread a buffer by at least the 
+  ** maximum possible legal header size plus 8 bytes. Because there is
+  ** guaranteed to be at least 74 (but not 136) bytes of padding following each
+  ** buffer passed to varintRecordCompareInt() this makes it convenient to
+  ** limit the size of the header to 64 bytes in cases where the first field
+  ** is an integer.
+  **
+  ** The easiest way to enforce this limit is to consider only records with
+  ** 13 fields or less. If the first field is an integer, the maximum legal
+  ** header size is (12*5 + 1 + 1) bytes.  */
+  if( (p->pKeyInfo->nField + p->pKeyInfo->nXField)<=13 ){
+    int flags = p->aMem[0].flags;
+    if( p->pKeyInfo->aSortOrder[0] ){
+      p->r1 = 1;
+      p->r2 = -1;
+    }else{
+      p->r1 = -1;
+      p->r2 = 1;
+    }
+    if( (flags & MEM_Int) ){
+      return vdbeRecordCompareInt;
+    }
+    if( (flags & (MEM_Int|MEM_Real|MEM_Null|MEM_Blob))==0 
+        && p->pKeyInfo->aColl[0]==0 
+    ){
+      return vdbeRecordCompareString;
+    }
+  }
+
+  return sqlite3VdbeRecordCompare;
+}
 
 /*
 ** pCur points at an index entry created using the OP_MakeRecord opcode.
@@ -3325,9 +3841,9 @@ idx_rowid_corruption:
 ** of the keys prior to the final rowid, not the entire key.
 */
 int sqlite3VdbeIdxKeyCompare(
-  VdbeCursor *pC,             /* The cursor to compare against */
-  UnpackedRecord *pUnpacked,  /* Unpacked version of key to compare against */
-  int *res                    /* Write the comparison result here */
+  VdbeCursor *pC,                  /* The cursor to compare against */
+  const UnpackedRecord *pUnpacked, /* Unpacked version of key */
+  int *res                         /* Write the comparison result here */
 ){
   i64 nCellKey = 0;
   int rc;
@@ -3337,7 +3853,7 @@ int sqlite3VdbeIdxKeyCompare(
   assert( sqlite3BtreeCursorIsValid(pCur) );
   VVA_ONLY(rc =) sqlite3BtreeKeySize(pCur, &nCellKey);
   assert( rc==SQLITE_OK );    /* pCur is always valid so KeySize cannot fail */
-  /* nCellKey will always be between 0 and 0xffffffff because of the say
+  /* nCellKey will always be between 0 and 0xffffffff because of the way
   ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
   if( nCellKey<=0 || nCellKey>0x7fffffff ){
     *res = 0;
@@ -3348,8 +3864,7 @@ int sqlite3VdbeIdxKeyCompare(
   if( rc ){
     return rc;
   }
-  assert( pUnpacked->flags & UNPACKED_PREFIX_MATCH );
-  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked);
+  *res = sqlite3VdbeRecordCompare(m.n, m.z, pUnpacked, 0);
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
 }
