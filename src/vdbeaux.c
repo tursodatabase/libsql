@@ -3135,7 +3135,7 @@ void sqlite3VdbeRecordUnpack(
 */
 static int vdbeRecordCompareDebug(
   int nKey1, const void *pKey1, /* Left key */
-  UnpackedRecord *pPKey2        /* Right key */
+  const UnpackedRecord *pPKey2  /* Right key */
 ){
   u32 d1;            /* Offset into aKey[] of next data element */
   u32 idx1;          /* Offset into aKey[] of next header element */
@@ -3396,7 +3396,7 @@ static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
 */
 int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1,   /* Left key */
-  UnpackedRecord *const pPKey2,   /* Right key */
+  const UnpackedRecord *pPKey2,   /* Right key */
   int bSkip                       /* If true, skip the first field */
 ){
   u32 d1;                         /* Offset into aKey[] of next data element */
@@ -3474,7 +3474,7 @@ int sqlite3VdbeRecordCompare(
         if( serial_type==7 ){
           lhs = mem1.r;
         }else{
-          lhs = mem1.u.i;
+          lhs = (double)mem1.u.i;
         }
         if( lhs<rhs ){
           rc = -1;
@@ -3493,7 +3493,7 @@ int sqlite3VdbeRecordCompare(
         rc = +1;
       }else{
         mem1.n = (serial_type - 12) / 2;
-        if( (d1+mem1.n) > nKey1 ){
+        if( (d1+mem1.n) > (unsigned)nKey1 ){
           rc = 1;                /* Corruption */
         }else if( pKeyInfo->aColl[i] ){
           mem1.enc = pKeyInfo->enc;
@@ -3516,7 +3516,7 @@ int sqlite3VdbeRecordCompare(
         rc = -1;
       }else{
         int nStr = (serial_type - 12) / 2;
-        if( (d1+nStr) > nKey1 ){
+        if( (d1+nStr) > (unsigned)nKey1 ){
           rc = 1;                /* Corruption */
         }else{
           int nCmp = MIN(nStr, pRhs->n);
@@ -3548,7 +3548,7 @@ int sqlite3VdbeRecordCompare(
     pRhs++;
     d1 += sqlite3VdbeSerialTypeLen(serial_type);
     idx1 += sqlite3VarintLen(serial_type);
-  }while( idx1<szHdr1 && i<pPKey2->nField && d1<=nKey1 );
+  }while( idx1<(unsigned)szHdr1 && i<pPKey2->nField && d1<=(unsigned)nKey1 );
 
   /* No memory allocation is ever used on mem1.  Prove this using
   ** the following assert().  If the assert() fails, it indicates a
@@ -3572,7 +3572,7 @@ int sqlite3VdbeRecordCompare(
 */
 static int vdbeRecordCompareInt(
   int nKey1, const void *pKey1, /* Left key */
-  UnpackedRecord *pPKey2,       /* Right key */
+  const UnpackedRecord *pPKey2, /* Right key */
   int bSkip                     /* Ignored */
 ){
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1];
@@ -3580,6 +3580,7 @@ static int vdbeRecordCompareInt(
   int res;
   i64 v = pPKey2->aMem[0].u.i;
   i64 lhs;
+  UNUSED_PARAMETER(bSkip);
 
   assert( bSkip==0 );
 
@@ -3658,12 +3659,13 @@ static int vdbeRecordCompareInt(
 */
 static int vdbeRecordCompareString(
   int nKey1, const void *pKey1, /* Left key */
-  UnpackedRecord *pPKey2,       /* Right key */
+  const UnpackedRecord *pPKey2, /* Right key */
   int bSkip
 ){
   const u8 *aKey1 = (const u8*)pKey1;
   int serial_type;
   int res;
+  UNUSED_PARAMETER(bSkip);
 
   assert( bSkip==0 );
   getVarint32(&aKey1[1], serial_type);
@@ -3832,9 +3834,9 @@ idx_rowid_corruption:
 ** of the keys prior to the final rowid, not the entire key.
 */
 int sqlite3VdbeIdxKeyCompare(
-  VdbeCursor *pC,             /* The cursor to compare against */
-  UnpackedRecord *pUnpacked,  /* Unpacked version of key to compare against */
-  int *res                    /* Write the comparison result here */
+  VdbeCursor *pC,                  /* The cursor to compare against */
+  const UnpackedRecord *pUnpacked, /* Unpacked version of key */
+  int *res                         /* Write the comparison result here */
 ){
   i64 nCellKey = 0;
   int rc;

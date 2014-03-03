@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges.
-D 2014-03-03T17:48:03.279
+C Fix\scompiler\swarnings.
+D 2014-03-03T18:25:24.475
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,10 +278,10 @@ F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 75c3f5d27ab79af214646cf37d7551bc8cec09c2
-F src/vdbe.h c6dc01f85cf3bdcc992d244aeff952c033fd5ad0
-F src/vdbeInt.h d55cab859abb2c6656911497ae74eba9dcf34e28
+F src/vdbe.h d189f92468a17a6f04daeec9df3b767f50557b21
+F src/vdbeInt.h 9ccca0bc7646c918d065943e44bead4bf5de213d
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c e4a0f89d15097debae8117ba17e4a640a0d3116f
+F src/vdbeaux.c f6d49b824fb9b4025098d73ba63a579bceab46c1
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 2d7918e4c80546d943414668b1485b2581f58a28
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
@@ -1153,7 +1153,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d7f6837e6997a4d5c0fd2d08b52887d691dd6f97 c0fa0c0e2de50d7eda19ab8862496b18eff93538
-R 9a9d986bbf5df1b40c16a7d9f71c4a7c
-U dan
-Z 5c6a6f0f42fa42f03fa0c54709a35c4c
+P 1d60356462f111ed147aa865dd17a13511db6ab7
+R 21f5b7d1de45908a8d9a08e2efe5ba51
+U drh
+Z bf94921d4ecf2467a56de90bb29e8bf1
