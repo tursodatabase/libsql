@@ -317,7 +317,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   sqlite3VdbeMemRelease(pMem);
   pMem->flags &= ~(MEM_Static|MEM_Dyn|MEM_Ephem);
   pMem->enc = desiredEnc;
-  pMem->flags |= (MEM_Term|MEM_Dyn);
+  pMem->flags |= (MEM_Term);
   pMem->z = (char*)zOut;
   pMem->zMalloc = pMem->z;
 
@@ -445,7 +445,6 @@ char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte, u8 enc){
   }
   assert( (m.flags & MEM_Term)!=0 || db->mallocFailed );
   assert( (m.flags & MEM_Str)!=0 || db->mallocFailed );
-  assert( (m.flags & MEM_Dyn)!=0 || db->mallocFailed );
   assert( m.z || db->mallocFailed );
   return m.z;
 }
