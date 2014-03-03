@@ -4575,6 +4575,8 @@ int sqlite3BtreeMovetoUnpacked(
          || pIdxKey->default_rc==0 
          || pIdxKey->default_rc==-1
     );
+  }else{
+    xRecordCompare = 0; /* Not actually used.  Avoids a compiler warning. */
   }
 
   rc = moveToRoot(pCur);

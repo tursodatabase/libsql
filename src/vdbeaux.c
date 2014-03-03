@@ -3575,7 +3575,6 @@ static int vdbeRecordCompareInt(
   const UnpackedRecord *pPKey2, /* Right key */
   int bSkip                     /* Ignored */
 ){
-  int szHdr = *(const u8*)pKey1;
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
   int serial_type = ((const u8*)pKey1)[1];
   int res;
