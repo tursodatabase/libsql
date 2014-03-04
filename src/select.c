@@ -1522,7 +1522,7 @@ static int selectColumnsFromExprList(
         char *zNewName;
         int k;
         for(k=nName-1; k>1 && sqlite3Isdigit(zName[k]); k--){}
-        if( zName[k]==':' ) nName = k;
+        if( k>=0 && zName[k]==':' ) nName = k;
         zName[nName] = 0;
         zNewName = sqlite3MPrintf(db, "%s:%d", zName, ++cnt);
         sqlite3DbFree(db, zName);

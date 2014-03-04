@@ -611,4 +611,17 @@ ifcapable progress {
   } {1 interrupted}
 }
 
+db close
+sqlite3 db :memory:
+do_execsql_test view-22.1 {
+  CREATE VIEW x1 AS SELECT 123 AS '', 234 AS '', 345 AS '';
+  SELECT * FROM x1;
+} {123 234 345}
+do_test view-22.2 {
+  unset -nocomplain x
+  db eval {SELECT * FROM x1} x break
+  lsort [array names x]
+} {{} * :1 :2}
+
+
 finish_test

@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\s"DEFAULT\s(-(-9223372036854775808))"\sclauses\sin\sALTER\sTABLE\s...\sADD\sCOLUMN\scommands.
-D 2014-03-04T21:00:20.840
+C Avoid\sindexing\soff\sthe\sfront\send\sof\san\sarray\swhen\screating\sa\sview\swith\ntwo\sor\smore\sblank\scolumn\snames\sin\sthe\sSELECT\sstatement\sthat\sdefines\sthe\sview.
+D 2014-03-04T21:19:51.375
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 780bbf39e401091845ba745a38326eabe5d44293
+F src/select.c 0adf172d33cc610ff5ffe26edfd2ba67c3551655
 F src/shell.c 7bf07bcacb181ecc3fc3ccacfdfeb4084aee67ed
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1028,7 +1028,7 @@ F test/vacuum3.test 77ecdd54592b45a0bcb133339f99f1ae0ae94d0d
 F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test 57ab846bacf7b90cf4e9a672721ea5c5b669b661
-F test/view.test 4057630287bfa5955628fe90a13d4c225d1c7352
+F test/view.test f311691d696a5cc27e3c1b875cec1b0866b4ccd9
 F test/vtab1.test b631d147b198cfd7903ab5fed028eb2a3d321dc6
 F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 767ccb1fa11b3e7b895fb8c2e91f79e3b4202907
-R 8626b9d0aec4fcc431f7a3c606cbb670
-U dan
-Z 5677ac60eef96d141429e6ff969758a5
+P e072cb3ee2a03d786c08230cecc6e970de2cec5b
+R 213bc20e67a019cbd9a16484715bd6d2
+U drh
+Z 02c018f7f11d0867eb15887f2517d7cb
