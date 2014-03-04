@@ -87,13 +87,13 @@ do_test where8-1.8 {
 
 do_test where8-1.9 {
   execsql_status2 { SELECT c FROM t1 WHERE a >= 9 OR b <= 'eight' }
-} {IX X VIII 0 0 6}
+} {IX X VIII 0 0 7}
 
 do_test where8-1.10 {
   execsql_status2 { 
     SELECT c FROM t1 WHERE (a >= 9 AND c != 'X') OR b <= 'eight' 
   }
-} {IX VIII 0 0 6}
+} {IX VIII 0 0 7}
 
 do_test where8-1.11 {
   execsql_status2 { 

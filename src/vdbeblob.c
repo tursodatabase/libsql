@@ -135,14 +135,13 @@ int sqlite3_blob_open(
   ** which closes the b-tree cursor and (possibly) commits the 
   ** transaction.
   */
+  static const int iLn = __LINE__+4;
   static const VdbeOpList openBlob[] = {
     /* {OP_Transaction, 0, 0, 0},  // 0: Inserted separately */
     {OP_TableLock, 0, 0, 0},       /* 1: Acquire a read or write lock */
-
     /* One of the following two instructions is replaced by an OP_Noop. */
     {OP_OpenRead, 0, 0, 0},        /* 2: Open cursor 0 for reading */
     {OP_OpenWrite, 0, 0, 0},       /* 3: Open cursor 0 for read/write */
-
     {OP_Variable, 1, 1, 1},        /* 4: Push the rowid to the stack */
     {OP_NotExists, 0, 10, 1},      /* 5: Seek the cursor */
     {OP_Column, 0, 0, 1},          /* 6  */
@@ -269,7 +268,7 @@ int sqlite3_blob_open(
                            pTab->pSchema->schema_cookie,
                            pTab->pSchema->iGeneration);
       sqlite3VdbeChangeP5(v, 1);     
-      sqlite3VdbeAddOpList(v, sizeof(openBlob)/sizeof(VdbeOpList), openBlob);
+      sqlite3VdbeAddOpList(v, ArraySize(openBlob), openBlob, iLn);
 
       /* Make sure a mutex is held on the table to be accessed */
       sqlite3VdbeUsesBtree(v, iDb); 

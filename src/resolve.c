@@ -337,6 +337,8 @@ static int lookupName(
       }else if( op!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
         pExpr->iTable = 0;
         pTab = pParse->pTriggerTab;
+      }else{
+        pTab = 0;
       }
 
       if( pTab ){ 
@@ -380,8 +382,8 @@ static int lookupName(
     /*
     ** Perhaps the name is a reference to the ROWID
     */
-    assert( pTab!=0 || cntTab==0 );
-    if( cnt==0 && cntTab==1 && sqlite3IsRowid(zCol) && HasRowid(pTab) ){
+    if( cnt==0 && cntTab==1 && pMatch && sqlite3IsRowid(zCol)
+     && HasRowid(pMatch->pTab) ){
       cnt = 1;
       pExpr->iColumn = -1;     /* IMP: R-44911-55124 */
       pExpr->affinity = SQLITE_AFF_INTEGER;

@@ -66,8 +66,11 @@ struct VdbeOp {
   char *zComment;          /* Comment to improve readability */
 #endif
 #ifdef VDBE_PROFILE
-  int cnt;                 /* Number of times this instruction was executed */
+  u32 cnt;                 /* Number of times this instruction was executed */
   u64 cycles;              /* Total time spent executing this instruction */
+#endif
+#ifdef SQLITE_VDBE_COVERAGE
+  int iSrcLine;            /* Source-code line that generated this opcode */
 #endif
 };
 typedef struct VdbeOp VdbeOp;
@@ -169,7 +172,7 @@ int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
 int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
-int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
+int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp, int iLineno);
 void sqlite3VdbeAddParseSchemaOp(Vdbe*,int,char*);
 void sqlite3VdbeChangeP1(Vdbe*, u32 addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, u32 addr, int P2);
@@ -210,8 +213,11 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 #endif
 
 void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
-int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
+int sqlite3VdbeRecordCompare(int,const void*,const UnpackedRecord*,int);
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo *, char *, int, char **);
+
+typedef int (*RecordCompare)(int,const void*,const UnpackedRecord*,int);
+RecordCompare sqlite3VdbeFindCompare(UnpackedRecord*);
 
 #ifndef SQLITE_OMIT_TRIGGER
 void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
@@ -238,6 +244,41 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 # define VdbeComment(X)
 # define VdbeNoopComment(X)
 # define VdbeModuleComment(X)
+#endif
+
+/*
+** The VdbeCoverage macros are used to set a coverage testing point
+** for VDBE branch instructions.  The coverage testing points are line
+** numbers in the sqlite3.c source file.  VDBE branch coverage testing
+** only works with an amalagmation build.  That's ok since a VDBE branch
+** coverage build designed for testing the test suite only.  No application
+** should ever ship with VDBE branch coverage measuring turned on.
+**
+**    VdbeCoverage(v)                  // Mark the previously coded instruction
+**                                     // as a branch
+**
+**    VdbeCoverageIf(v, conditional)   // Mark previous if conditional true
+**
+**    VdbeCoverageAlwaysTaken(v)       // Previous branch is always taken
+**
+**    VdbeCoverageNeverTaken(v)        // Previous branch is never taken
+**
+** Every VDBE branch operation must be tagged with one of the macros above.
+** If not, then when "make test" is run with -DSQLITE_VDBE_COVERAGE and
+** -DSQLITE_DEBUG then an ALWAYS() will fail in the vdbeTakeBranch()
+** routine in vdbe.c, alerting the developer to the missed tag.
+*/
+#ifdef SQLITE_VDBE_COVERAGE
+  void sqlite3VdbeSetLineNumber(Vdbe*,int);
+# define VdbeCoverage(v) sqlite3VdbeSetLineNumber(v,__LINE__)
+# define VdbeCoverageIf(v,x) if(x)sqlite3VdbeSetLineNumber(v,__LINE__)
+# define VdbeCoverageAlwaysTaken(v) sqlite3VdbeSetLineNumber(v,2);
+# define VdbeCoverageNeverTaken(v) sqlite3VdbeSetLineNumber(v,1);
+#else
+# define VdbeCoverage(v)
+# define VdbeCoverageIf(v,x)
+# define VdbeCoverageAlwaysTaken(v)
+# define VdbeCoverageNeverTaken(v)
 #endif
 
 #endif

@@ -237,10 +237,10 @@ do_test where-1.34 {
 } {97 99}
 do_test where-1.35 {
   count {SELECT w FROM t1 WHERE w<3}
-} {1 2 2}
+} {1 2 3}
 do_test where-1.36 {
   count {SELECT w FROM t1 WHERE w<=3}
-} {1 2 3 3}
+} {1 2 3 4}
 do_test where-1.37 {
   count {SELECT w FROM t1 WHERE w+1<=4 ORDER BY w}
 } {1 2 3 99}

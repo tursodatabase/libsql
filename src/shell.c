@@ -65,7 +65,9 @@
 #if defined(_WIN32) || defined(WIN32)
 # include <io.h>
 #define isatty(h) _isatty(h)
-#define access(f,m) _access((f),(m))
+#ifndef access
+# define access(f,m) _access((f),(m))
+#endif
 #undef popen
 #define popen _popen
 #undef pclose
@@ -444,6 +446,7 @@ struct previous_mode_data {
 struct callback_data {
   sqlite3 *db;           /* The database */
   int echoOn;            /* True to echo input commands */
+  int autoEQP;           /* Run EXPLAIN QUERY PLAN prior to seach SQL statement */
   int statsOn;           /* True to display memory stats before each finalize */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
@@ -1008,7 +1011,7 @@ static int run_table_dump_query(
   int nResult;
   int i;
   const char *z;
-  rc = sqlite3_prepare(p->db, zSelect, -1, &pSelect, 0);
+  rc = sqlite3_prepare_v2(p->db, zSelect, -1, &pSelect, 0);
   if( rc!=SQLITE_OK || !pSelect ){
     fprintf(p->out, "/**** ERROR: (%d) %s *****/\n", rc, sqlite3_errmsg(p->db));
     if( (rc&0xff)!=SQLITE_CORRUPT ) p->nErr++;
@@ -1300,6 +1303,23 @@ static int shell_exec(
         fprintf(pArg->out, "%s\n", zStmtSql ? zStmtSql : zSql);
       }
 
+      /* Show the EXPLAIN QUERY PLAN if .eqp is on */
+      if( pArg && pArg->autoEQP ){
+        sqlite3_stmt *pExplain;
+        char *zEQP = sqlite3_mprintf("EXPLAIN QUERY PLAN %s", sqlite3_sql(pStmt));
+        rc = sqlite3_prepare_v2(db, zEQP, -1, &pExplain, 0);
+        if( rc==SQLITE_OK ){
+          while( sqlite3_step(pExplain)==SQLITE_ROW ){
+            fprintf(pArg->out,"--EQP-- %d,", sqlite3_column_int(pExplain, 0));
+            fprintf(pArg->out,"%d,", sqlite3_column_int(pExplain, 1));
+            fprintf(pArg->out,"%d,", sqlite3_column_int(pExplain, 2));
+            fprintf(pArg->out,"%s\n", sqlite3_column_text(pExplain, 3));
+          }
+        }
+        sqlite3_finalize(pExplain);
+        sqlite3_free(zEQP);
+      }
+
       /* Output TESTCTRL_EXPLAIN text of requested */
       if( pArg && pArg->mode==MODE_Explain ){
         const char *zExplain = 0;
@@ -1456,7 +1476,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     zTableInfo = appendText(zTableInfo, zTable, '"');
     zTableInfo = appendText(zTableInfo, ");", 0);
 
-    rc = sqlite3_prepare(p->db, zTableInfo, -1, &pTableInfo, 0);
+    rc = sqlite3_prepare_v2(p->db, zTableInfo, -1, &pTableInfo, 0);
     free(zTableInfo);
     if( rc!=SQLITE_OK || !pTableInfo ){
       return 1;
@@ -1893,7 +1913,7 @@ static char *csv_read_one_field(CSVReader *p){
     }
     if( c=='\n' ){
       p->nLine++;
-      if( p->n>1 && p->z[p->n-1]=='\r' ) p->n--;
+      if( p->n>0 && p->z[p->n-1]=='\r' ) p->n--;
     }
     p->cTerm = c;
   }
@@ -2299,6 +2319,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     p->echoOn = booleanValue(azArg[1]);
   }else
 
+  if( c=='e' && strncmp(azArg[0], "eqp", n)==0 && nArg>1 && nArg<3 ){
+    p->autoEQP = booleanValue(azArg[1]);
+  }else
+
   if( c=='e' && strncmp(azArg[0], "exit", n)==0 ){
     if( nArg>1 && (rc = (int)integerValue(azArg[1]))!=0 ) exit(rc);
     rc = 2;
@@ -2399,7 +2423,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       return 1;
     }
     nByte = strlen30(zSql);
-    rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     if( rc && sqlite3_strglob("no such table: *", sqlite3_errmsg(db))==0 ){
       char *zCreate = sqlite3_mprintf("CREATE TABLE %s", zTable);
       char cSep = '(';
@@ -2425,7 +2449,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         xCloser(sCsv.in);
         return 1;
       }
-      rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
+      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     }
     sqlite3_free(zSql);
     if( rc ){
@@ -2452,7 +2476,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     zSql[j++] = ')';
     zSql[j] = 0;
-    rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
+    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
@@ -2871,6 +2895,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='s' && strncmp(azArg[0], "show", n)==0 && nArg==1 ){
     int i;
     fprintf(p->out,"%9.9s: %s\n","echo", p->echoOn ? "on" : "off");
+    fprintf(p->out,"%9.9s: %s\n","eqp", p->autoEQP ? "on" : "off");
     fprintf(p->out,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" :"off");
     fprintf(p->out,"%9.9s: %s\n","headers", p->showHeader ? "on" : "off");
     fprintf(p->out,"%9.9s: %s\n","mode", modeDescr[p->mode]);
@@ -3548,11 +3573,13 @@ int main(int argc, char **argv){
   int rc = 0;
   int warnInmemoryDb = 0;
 
+#if USE_SYSTEM_SQLITE+0!=1
   if( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)!=0 ){
     fprintf(stderr, "SQLite header and source version mismatch\n%s\n%s\n",
             sqlite3_sourceid(), SQLITE_SOURCE_ID);
     exit(1);
   }
+#endif
   Argv0 = argv[0];
   main_init(&data);
   stdin_is_interactive = isatty(0);
@@ -3646,6 +3673,11 @@ int main(int argc, char **argv){
     fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
     return 1;
 #endif
+#ifdef SQLITE_SHELL_DBNAME_PROC
+    { extern void SQLITE_SHELL_DBNAME_PROC(const char**);
+      SQLITE_SHELL_DBNAME_PROC(&data.zDbFilename);
+      warnInmemoryDb = 0; }
+#endif
   }
   data.out = stdout;
 
@@ -3701,6 +3733,8 @@ int main(int argc, char **argv){
       data.showHeader = 0;
     }else if( strcmp(z,"-echo")==0 ){
       data.echoOn = 1;
+    }else if( strcmp(z,"-eqp")==0 ){
+      data.autoEQP = 1;
     }else if( strcmp(z,"-stats")==0 ){
       data.statsOn = 1;
     }else if( strcmp(z,"-bail")==0 ){
