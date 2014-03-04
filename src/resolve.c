@@ -337,6 +337,8 @@ static int lookupName(
       }else if( op!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
         pExpr->iTable = 0;
         pTab = pParse->pTriggerTab;
+      }else{
+        pTab = 0;
       }
 
       if( pTab ){ 

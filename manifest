@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarning.
-D 2014-03-04T11:16:20.925
+C Fix\sname\sresolution\sproblem\sin\ssub-selects\swithin\striggers,\sticket\s[4ef7e3cfca].
+D 2014-03-04T11:29:42.399
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/pragma.c a46ee83671f5c95f53d2ceeb5e1a818d7b1df99a
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
-F src/resolve.c ca8b99d894164435f5c55cb304c1b8121705c51e
+F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 780bbf39e401091845ba745a38326eabe5d44293
 F src/shell.c 7bf07bcacb181ecc3fc3ccacfdfeb4084aee67ed
@@ -1154,7 +1154,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3325ad5bdc2f81f63b556d6f4d0589d89b142b2b
-R cb72f483f7d75c1651c42a378d8bb016
+P 8d18a803bdeab290a6e9ff26911897f5f8683876
+R a0a3e47c5907244e634e0e73af124fa7
 U mistachkin
-Z 266049d6eb1d68d04ea732570e934710
+Z 20401020b81859c6f4c872d433156214
