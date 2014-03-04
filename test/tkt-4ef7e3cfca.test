@@ -1,4 +1,4 @@
-# 2013-10-30
+# 2014-03-04
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -15,7 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix tkt-4ef7e3cfca.test
+set testprefix tkt-4ef7e3cfca
 
 do_catchsql_test 1.1 {
   CREATE TABLE x(a);
@@ -65,7 +65,4 @@ do_execsql_test 3.2 {
   SELECT * FROM z;
 } {15}
 
-  
 finish_test
-
-
