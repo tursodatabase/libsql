@@ -9,8 +9,8 @@
 #
 #***********************************************************************
 #
-# This file implements regression tests for SQLite library.  The
-# focus of this file is testing WITHOUT ROWID tables.
+# This file implements tests to verify that ticket [4ef7e3cfca] has been
+# fixed.
 #
 
 set testdir [file dirname $argv0]
