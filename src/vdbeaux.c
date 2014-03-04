@@ -3404,7 +3404,7 @@ int sqlite3VdbeRecordCompare(
 ){
   u32 d1;                         /* Offset into aKey[] of next data element */
   int i;                          /* Index of next field to compare */
-  int szHdr1;                     /* Size of record header in bytes */
+  u32 szHdr1;                     /* Size of record header in bytes */
   u32 idx1;                       /* Offset of first type in header */
   int rc = 0;                     /* Return value */
   Mem *pRhs = pPKey2->aMem;       /* Next field of pPKey2 to compare */

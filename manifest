@@ -1,5 +1,5 @@
-C Refactor\sthe\ssqlite3VdbeRecordCompare()\sroutine\sused\sto\scompare\sbtree\srecords.\nCreate\sfast-track\sspecial\scase\sroutines\sto\shandle\sthe\scommon\scases\smore\nquickly.\s\sThis\sgives\sa\ssignificant\sperformance\sboost.
-D 2014-03-04T04:12:56.404
+C Fix\sharmless\scompiler\swarning.
+D 2014-03-04T11:16:20.925
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 75c3f5d27ab79af214646cf37d7551bc8cec09c2
 F src/vdbe.h d189f92468a17a6f04daeec9df3b767f50557b21
 F src/vdbeInt.h 9ccca0bc7646c918d065943e44bead4bf5de213d
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c b3bd75b2dfe314fb411c967034314b5316342820
+F src/vdbeaux.c 636a7e2eaaa48c3e3585b28b9b1673df78fc0fad
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 2d7918e4c80546d943414668b1485b2581f58a28
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
@@ -1154,8 +1154,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c0fa0c0e2de50d7eda19ab8862496b18eff93538 f10130ede433a19b3945753f23962871c8d2dcf3
-R 76afae803c9615945e7c1ed11c396a45
-T +closed f10130ede433a19b3945753f23962871c8d2dcf3
-U drh
-Z ac0c95f2ad16dfe0178099b125074c2f
+P 3325ad5bdc2f81f63b556d6f4d0589d89b142b2b
+R cb72f483f7d75c1651c42a378d8bb016
+U mistachkin
+Z 266049d6eb1d68d04ea732570e934710
