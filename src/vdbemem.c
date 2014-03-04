@@ -1042,9 +1042,9 @@ static int valueFromExpr(
     ){
       sqlite3VdbeMemNumerify(pVal);
       if( pVal->u.i==SMALLEST_INT64 ){
-        pVal->flags &= MEM_Int;
+        pVal->flags &= ~MEM_Int;
         pVal->flags |= MEM_Real;
-        pVal->r = (double)LARGEST_INT64;
+        pVal->r = (double)SMALLEST_INT64;
       }else{
         pVal->u.i = -pVal->u.i;
       }

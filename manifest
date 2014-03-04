@@ -1,5 +1,5 @@
-C Fix\sa\spotential\smemory\suse-after-free\sproblem\sfollowing\san\sOOM\serror.
-D 2014-03-04T18:06:04.531
+C Fix\sa\sproblem\swith\s"DEFAULT\s(-(-9223372036854775808))"\sclauses\sin\sALTER\sTABLE\s...\sADD\sCOLUMN\scommands.
+D 2014-03-04T21:00:20.840
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbeInt.h 9ccca0bc7646c918d065943e44bead4bf5de213d
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
 F src/vdbeaux.c 0be881d8da9c4413038bb0722de9ecc54788de39
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
-F src/vdbemem.c 1b1ca620f2638e800a5bef6508d1c4320a3a4f11
+F src/vdbemem.c ba5cbafdbf123cb51208580d2281312cc45905eb
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -300,7 +300,7 @@ F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
 F test/alter.test e88dfa77e020c2b48e52a8020c70171ab828e079
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
-F test/alter4.test 8e93bf7a7e6919b14b0c9a6c1e4908bcf21b0165
+F test/alter4.test d6c011fa0d6227abba762498cafbb607c9609e93
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 1772936d66471c65221e437b6d1999c3a03166c4
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 53f6ec792f5f62fcdbf25e0fce5545dd1c3048a4
-R b289979daf151f0fbafb28fbb7956db7
-U drh
-Z f463125a8b67b6cdc900f4915889d477
+P 767ccb1fa11b3e7b895fb8c2e91f79e3b4202907
+R 8626b9d0aec4fcc431f7a3c606cbb670
+U dan
+Z 5677ac60eef96d141429e6ff969758a5
