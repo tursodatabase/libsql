@@ -76,6 +76,6 @@ do_test 2.1 {
   # incorrect answer from a corrupt database file, that is OK.  If the
   # result below changes, that just means that "undefined behavior" has
   # changed.
-} {0 52}
+} {/0 .*/}
 
 finish_test

@@ -4547,6 +4547,7 @@ int sqlite3BtreeMovetoUnpacked(
   int *pRes                /* Write search results here */
 ){
   int rc;
+  RecordCompare xRecordCompare;
 
   assert( cursorHoldsMutex(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
@@ -4566,6 +4567,16 @@ int sqlite3BtreeMovetoUnpacked(
       *pRes = -1;
       return SQLITE_OK;
     }
+  }
+
+  if( pIdxKey ){
+    xRecordCompare = sqlite3VdbeFindCompare(pIdxKey);
+    assert( pIdxKey->default_rc==1 
+         || pIdxKey->default_rc==0 
+         || pIdxKey->default_rc==-1
+    );
+  }else{
+    xRecordCompare = 0; /* Not actually used.  Avoids a compiler warning. */
   }
 
   rc = moveToRoot(pCur);
@@ -4652,14 +4663,14 @@ int sqlite3BtreeMovetoUnpacked(
           ** single byte varint and the record fits entirely on the main
           ** b-tree page.  */
           testcase( pCell+nCell+1==pPage->aDataEnd );
-          c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
+          c = xRecordCompare(nCell, (void*)&pCell[1], pIdxKey, 0);
         }else if( !(pCell[1] & 0x80) 
           && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
         ){
           /* The record-size field is a 2 byte varint and the record 
           ** fits entirely on the main b-tree page.  */
           testcase( pCell+nCell+2==pPage->aDataEnd );
-          c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
+          c = xRecordCompare(nCell, (void*)&pCell[2], pIdxKey, 0);
         }else{
           /* The record flows over onto one or more overflow pages. In
           ** this case the whole cell needs to be parsed, a buffer allocated
@@ -4680,7 +4691,7 @@ int sqlite3BtreeMovetoUnpacked(
             sqlite3_free(pCellKey);
             goto moveto_finish;
           }
-          c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
+          c = xRecordCompare(nCell, pCellKey, pIdxKey, 0);
           sqlite3_free(pCellKey);
         }
         if( c<0 ){

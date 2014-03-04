@@ -788,119 +788,6 @@ int sqlite3VdbeMemSetStr(
 }
 
 /*
-** Compare the values contained by the two memory cells, returning
-** negative, zero or positive if pMem1 is less than, equal to, or greater
-** than pMem2. Sorting order is NULL's first, followed by numbers (integers
-** and reals) sorted numerically, followed by text ordered by the collating
-** sequence pColl and finally blob's ordered by memcmp().
-**
-** Two NULL values are considered equal by this function.
-*/
-int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
-  int rc;
-  int f1, f2;
-  int combined_flags;
-
-  f1 = pMem1->flags;
-  f2 = pMem2->flags;
-  combined_flags = f1|f2;
-  assert( (combined_flags & MEM_RowSet)==0 );
- 
-  /* If one value is NULL, it is less than the other. If both values
-  ** are NULL, return 0.
-  */
-  if( combined_flags&MEM_Null ){
-    return (f2&MEM_Null) - (f1&MEM_Null);
-  }
-
-  /* If one value is a number and the other is not, the number is less.
-  ** If both are numbers, compare as reals if one is a real, or as integers
-  ** if both values are integers.
-  */
-  if( combined_flags&(MEM_Int|MEM_Real) ){
-    double r1, r2;
-    if( (f1 & f2 & MEM_Int)!=0 ){
-      if( pMem1->u.i < pMem2->u.i ) return -1;
-      if( pMem1->u.i > pMem2->u.i ) return 1;
-      return 0;
-    }
-    if( (f1&MEM_Real)!=0 ){
-      r1 = pMem1->r;
-    }else if( (f1&MEM_Int)!=0 ){
-      r1 = (double)pMem1->u.i;
-    }else{
-      return 1;
-    }
-    if( (f2&MEM_Real)!=0 ){
-      r2 = pMem2->r;
-    }else if( (f2&MEM_Int)!=0 ){
-      r2 = (double)pMem2->u.i;
-    }else{
-      return -1;
-    }
-    if( r1<r2 ) return -1;
-    if( r1>r2 ) return 1;
-    return 0;
-  }
-
-  /* If one value is a string and the other is a blob, the string is less.
-  ** If both are strings, compare using the collating functions.
-  */
-  if( combined_flags&MEM_Str ){
-    if( (f1 & MEM_Str)==0 ){
-      return 1;
-    }
-    if( (f2 & MEM_Str)==0 ){
-      return -1;
-    }
-
-    assert( pMem1->enc==pMem2->enc );
-    assert( pMem1->enc==SQLITE_UTF8 || 
-            pMem1->enc==SQLITE_UTF16LE || pMem1->enc==SQLITE_UTF16BE );
-
-    /* The collation sequence must be defined at this point, even if
-    ** the user deletes the collation sequence after the vdbe program is
-    ** compiled (this was not always the case).
-    */
-    assert( !pColl || pColl->xCmp );
-
-    if( pColl ){
-      if( pMem1->enc==pColl->enc ){
-        /* The strings are already in the correct encoding.  Call the
-        ** comparison function directly */
-        return pColl->xCmp(pColl->pUser,pMem1->n,pMem1->z,pMem2->n,pMem2->z);
-      }else{
-        const void *v1, *v2;
-        int n1, n2;
-        Mem c1;
-        Mem c2;
-        memset(&c1, 0, sizeof(c1));
-        memset(&c2, 0, sizeof(c2));
-        sqlite3VdbeMemShallowCopy(&c1, pMem1, MEM_Ephem);
-        sqlite3VdbeMemShallowCopy(&c2, pMem2, MEM_Ephem);
-        v1 = sqlite3ValueText((sqlite3_value*)&c1, pColl->enc);
-        n1 = v1==0 ? 0 : c1.n;
-        v2 = sqlite3ValueText((sqlite3_value*)&c2, pColl->enc);
-        n2 = v2==0 ? 0 : c2.n;
-        rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
-        sqlite3VdbeMemRelease(&c1);
-        sqlite3VdbeMemRelease(&c2);
-        return rc;
-      }
-    }
-    /* If a NULL pointer was passed as the collate function, fall through
-    ** to the blob case and use memcmp().  */
-  }
- 
-  /* Both values must be blobs.  Compare using memcmp().  */
-  rc = memcmp(pMem1->z, pMem2->z, (pMem1->n>pMem2->n)?pMem2->n:pMem1->n);
-  if( rc==0 ){
-    rc = pMem1->n - pMem2->n;
-  }
-  return rc;
-}
-
-/*
 ** Move data out of a btree key or data field and into a Mem structure.
 ** The data or key is taken from the entry that pCur is currently pointing
 ** to.  offset and amt determine what portion of the data or key to retrieve.
@@ -1059,7 +946,6 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
         if( pRec->pKeyInfo ){
           assert( pRec->pKeyInfo->nField+pRec->pKeyInfo->nXField==nCol );
           assert( pRec->pKeyInfo->enc==ENC(db) );
-          pRec->flags = UNPACKED_PREFIX_MATCH;
           pRec->aMem = (Mem *)((u8*)pRec + ROUND8(sizeof(UnpackedRecord)));
           for(i=0; i<nCol; i++){
             pRec->aMem[i].flags = MEM_Null;
