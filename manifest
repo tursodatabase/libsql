@@ -1,5 +1,5 @@
-C Fix\sname\sresolution\sproblem\sin\ssub-selects\swithin\striggers,\sticket\s[4ef7e3cfca].
-D 2014-03-04T11:29:42.399
+C Add\stests\sto\sverify\sthe\sfix\sfor\sbug\s[4ef7e3cfca].
+D 2014-03-04T11:35:20.387
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -870,6 +870,7 @@ F test/tkt-3fe897352e.test 27e26eb0f1811aeba4d65aba43a4c52e99da5e70
 F test/tkt-4a03edc4c8.test 91c0e135888cdc3d4eea82406a44b05c8c1648d0
 F test/tkt-4c86b126f2.test cbcc611becd0396890169ab23102dd70048bbc9a
 F test/tkt-4dd95f6943.test 3d0ce415d2ee15d3d564121960016b9c7be79407
+F test/tkt-4ef7e3cfca.test 9d7ac520e022c62ac69aea55df58f06ae2fdb86c
 F test/tkt-54844eea3f.test a12b851128f46a695e4e378cca67409b9b8f5894
 F test/tkt-5d863f876e.test c9f36ca503fa154a3655f92a69d2c30da1747bfa
 F test/tkt-5e10420e8d.test 904d1687b3c06d43e5b3555bbcf6802e7c0ffd84
@@ -1154,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8d18a803bdeab290a6e9ff26911897f5f8683876
-R a0a3e47c5907244e634e0e73af124fa7
-U mistachkin
-Z 20401020b81859c6f4c872d433156214
+P 5bcd0b1ca5d73ffbe7978ee9d73fe5e769e3d3a2
+R ada57a884b5a4f5da4f1cf238fd54717
+U dan
+Z 0e893b0948d9d4cf092e0210eb113968
