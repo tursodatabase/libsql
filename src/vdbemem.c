@@ -122,6 +122,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
     }
     if( pMem->zMalloc==0 ){
       VdbeMemRelease(pMem);
+      pMem->z = 0;
       pMem->flags = MEM_Null;  
       return SQLITE_NOMEM;
     }
