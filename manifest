@@ -1,5 +1,5 @@
-C Ensure\sthat\sBtreeMovetoUnpacked()\sdoes\snot\stry\sto\sinvoke\sxRecordCompare\swhen\sit\sis\sset\sto\sNULL.
-D 2014-03-04T16:05:25.328
+C Fix\san\sassert()\sso\sthat\sit\stakes\sOOM\serrors\sinto\saccount.
+D 2014-03-04T16:21:18.103
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 75c3f5d27ab79af214646cf37d7551bc8cec09c2
 F src/vdbe.h d189f92468a17a6f04daeec9df3b767f50557b21
 F src/vdbeInt.h 9ccca0bc7646c918d065943e44bead4bf5de213d
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c 636a7e2eaaa48c3e3585b28b9b1673df78fc0fad
+F src/vdbeaux.c 0be881d8da9c4413038bb0722de9ecc54788de39
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 10b250f09a3843ee2bcabcadf50ca21fc3ff1f87
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9830c343bc954b828f6ca752f8ae63e2c0a980c1
-R b15237a6eb7d81dbdc119d4772ab8878
-U dan
-Z 8043d866c01ebc393e98f71c0dcb2e87
+P 2879234b7c373be422af3fe180cae9840943e29a
+R 2b2904237b1b4d9d5fce461560fa87d0
+U drh
+Z 60f0b04eed352e57b9c570cb2f1addac

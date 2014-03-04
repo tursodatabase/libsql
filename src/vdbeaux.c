@@ -3539,9 +3539,10 @@ int sqlite3VdbeRecordCompare(
       if( pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
-      assert( CORRUPT_DB 
+      assert( CORRUPT_DB
           || (rc<0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)<0)
           || (rc>0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)>0)
+          || pKeyInfo->db->mallocFailed
       );
       assert( mem1.zMalloc==0 );  /* See comment below */
       return rc;
