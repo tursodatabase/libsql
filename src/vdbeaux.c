@@ -2942,6 +2942,14 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
   return 0;
 }
 
+/* Input "x" is a sequence of unsigned characters that represent a
+** big-endian integer.  Return the equivalent native integer
+*/
+#define ONE_BYTE_INT(x)    ((i8)(x)[0])
+#define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
+#define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
+#define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+
 /*
 ** Deserialize the data blob pointed to by buf as serial type serial_type
 ** and store the result in pMem.  Return the number of bytes read.
@@ -2953,7 +2961,6 @@ u32 sqlite3VdbeSerialGet(
 ){
   u64 x;
   u32 y;
-  int i;
   switch( serial_type ){
     case 10:   /* Reserved for future use */
     case 11:   /* Reserved for future use */
@@ -2962,33 +2969,28 @@ u32 sqlite3VdbeSerialGet(
       break;
     }
     case 1: { /* 1-byte signed integer */
-      pMem->u.i = (signed char)buf[0];
+      pMem->u.i = ONE_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       return 1;
     }
     case 2: { /* 2-byte signed integer */
-      i = 256*(signed char)buf[0] | buf[1];
-      pMem->u.i = (i64)i;
+      pMem->u.i = TWO_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       return 2;
     }
     case 3: { /* 3-byte signed integer */
-      i = 65536*(signed char)buf[0] | (buf[1]<<8) | buf[2];
-      pMem->u.i = (i64)i;
+      pMem->u.i = THREE_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       return 3;
     }
     case 4: { /* 4-byte signed integer */
-      y = ((unsigned)buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
+      y = FOUR_BYTE_UINT(buf);
       pMem->u.i = (i64)*(int*)&y;
       pMem->flags = MEM_Int;
       return 4;
     }
     case 5: { /* 6-byte signed integer */
-      x = 256*(signed char)buf[0] + buf[1];
-      y = ((unsigned)buf[2]<<24) | (buf[3]<<16) | (buf[4]<<8) | buf[5];
-      x = (x<<32) | y;
-      pMem->u.i = *(i64*)&x;
+      pMem->u.i = FOUR_BYTE_UINT(buf+2) + (((i64)1)<<32)*TWO_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       return 6;
     }
@@ -3006,8 +3008,8 @@ u32 sqlite3VdbeSerialGet(
       swapMixedEndianFloat(t2);
       assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
 #endif
-      x = ((unsigned)buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | buf[3];
-      y = ((unsigned)buf[4]<<24) | (buf[5]<<16) | (buf[6]<<8) | buf[7];
+      x = FOUR_BYTE_UINT(buf);
+      y = FOUR_BYTE_UINT(buf+4);
       x = (x<<32) | y;
       if( serial_type==6 ){
         pMem->u.i = *(i64*)&x;
@@ -3352,26 +3354,27 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
 ** and returns the value.
 */
 static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
+  u32 y;
   assert( CORRUPT_DB || (serial_type>=1 && serial_type<=9 && serial_type!=7) );
   switch( serial_type ){
     case 0:
     case 1:
-      return (char)aKey[0];
+      return ONE_BYTE_INT(aKey);
     case 2:
-      return ((char)aKey[0] << 8) | aKey[1];
+      return TWO_BYTE_INT(aKey);
     case 3:
-      return ((char)aKey[0] << 16) | (aKey[1] << 8) | aKey[2];
-    case 4:
-      return ((char)aKey[0]<<24) | (aKey[1]<<16) | (aKey[2]<<8)| aKey[3];
+      return THREE_BYTE_INT(aKey);
+    case 4: {
+      y = FOUR_BYTE_UINT(aKey);
+      return (i64)*(int*)&y;
+    }
     case 5: {
-      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
-      u32 lsw = (aKey[4] << 8) | aKey[5];
-      return (i64)( msw << 16 | (u64)lsw );
+      return FOUR_BYTE_UINT(aKey+2) + (((i64)1)<<32)*TWO_BYTE_INT(aKey);
     }
     case 6: {
-      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
-      u32 lsw = ((unsigned)aKey[4]<<24)|(aKey[5]<<16)|(aKey[6]<<8)|aKey[7];
-      return (i64)( msw << 32 | (u64)lsw );
+      u64 x = FOUR_BYTE_UINT(aKey);
+      x = (x<<32) | FOUR_BYTE_UINT(aKey+4);
+      return (i64)*(i64*)&x;
     }
   }
 
@@ -3578,34 +3581,39 @@ static int vdbeRecordCompareInt(
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
   int serial_type = ((const u8*)pKey1)[1];
   int res;
+  u32 y;
+  u64 x;
   i64 v = pPKey2->aMem[0].u.i;
   i64 lhs;
   UNUSED_PARAMETER(bSkip);
 
   assert( bSkip==0 );
   switch( serial_type ){
-    case 1:
-      lhs = (char)(aKey[0]);
-      break;
-    case 2:
-      lhs = 256*(signed char)aKey[0] + aKey[1];
-      break;
-    case 3:
-      lhs = 65536*(char)aKey[0] | (aKey[1]<<8) | aKey[2];
-      break;
-    case 4:
-      lhs = (int)(((u32)aKey[0]<<24) | (aKey[1]<<16) | (aKey[2]<<8)| aKey[3]);
-      break;
-    case 5: {
-      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
-      u32 lsw = (aKey[4] << 8) | aKey[5];
-      lhs = (i64)( msw << 16 | (u64)lsw );
+    case 1: { /* 1-byte signed integer */
+      lhs = ONE_BYTE_INT(aKey);
       break;
     }
-    case 6: {
-      i64 msw = ((char)aKey[0]<<24)|(aKey[1]<<16)|(aKey[2]<<8)|aKey[3];
-      u32 lsw = ((unsigned)aKey[4]<<24)|(aKey[5]<<16)|(aKey[6]<<8)|aKey[7];
-      lhs = (i64)( msw << 32 | (u64)lsw );
+    case 2: { /* 2-byte signed integer */
+      lhs = TWO_BYTE_INT(aKey);
+      break;
+    }
+    case 3: { /* 3-byte signed integer */
+      lhs = THREE_BYTE_INT(aKey);
+      break;
+    }
+    case 4: { /* 4-byte signed integer */
+      y = FOUR_BYTE_UINT(aKey);
+      lhs = (i64)*(int*)&y;
+      break;
+    }
+    case 5: { /* 6-byte signed integer */
+      lhs = FOUR_BYTE_UINT(aKey+2) + (((i64)1)<<32)*TWO_BYTE_INT(aKey);
+      break;
+    }
+    case 6: { /* 8-byte signed integer */
+      x = FOUR_BYTE_UINT(aKey);
+      x = (x<<32) | FOUR_BYTE_UINT(aKey+4);
+      lhs = *(i64*)&x;
       break;
     }
     case 8: 

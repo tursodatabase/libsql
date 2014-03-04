@@ -1,5 +1,5 @@
-C Do\snot\sassume\sthat\s'char'\sis\ssigned.\s\sMake\sit\sexplicit.
-D 2014-03-04T00:15:16.875
+C Fix\smore\sinstances\sof\sassuming\s'char'\sis\ssigned.\s\sAnd,\smake\ssure\sto\snever\sshift\na\ssigned\sinteger.
+D 2014-03-04T04:04:33.269
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/vdbe.c 75c3f5d27ab79af214646cf37d7551bc8cec09c2
 F src/vdbe.h d189f92468a17a6f04daeec9df3b767f50557b21
 F src/vdbeInt.h 9ccca0bc7646c918d065943e44bead4bf5de213d
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
-F src/vdbeaux.c 5adf67ef9cdaa57b393c0a8bf0a29eadbd6f9158
+F src/vdbeaux.c b3bd75b2dfe314fb411c967034314b5316342820
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 2d7918e4c80546d943414668b1485b2581f58a28
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
@@ -1154,7 +1154,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P aec5473a750e412eb1e11e17bbafd760db086c86
-R 3fc76904aa4a71ad8f46b000aee0d4b3
+P 979da752e6f8767a61a8efed824ffad9605d0f4c
+R 76afae803c9615945e7c1ed11c396a45
 U drh
-Z f6bc4780db4acc20db7127296b21d314
+Z 4679453e8217252329a19e88ce1ddc0d
