@@ -1,5 +1,5 @@
-C Improve\sclarity\sof\spresentation\sin\sthe\ssqlite3VdbeMemFromBtree()\sroutine.
-D 2014-03-04T13:18:23.018
+C Ensure\sthat\sBtreeMovetoUnpacked()\sdoes\snot\stry\sto\sinvoke\sxRecordCompare\swhen\sit\sis\sset\sto\sNULL.
+D 2014-03-04T16:05:25.328
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -163,7 +163,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 7a81c2c6b5c0bf6334b4247e709c639c573fbcc1
+F src/btree.c ad795be588e394a0921796f87cc27717359738cc
 F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
 F src/build.c 00ce613bc2256e525c9195cb10d0df7bcc48d1f0
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1e57f67b20a1c01ede36d684be628e9270bf109a
-R a19a15248ea3d7c53bb59593fa01c33d
-U drh
-Z e6c94fb8a2515aaa56cdd644b73247d7
+P 9830c343bc954b828f6ca752f8ae63e2c0a980c1
+R b15237a6eb7d81dbdc119d4772ab8878
+U dan
+Z 8043d866c01ebc393e98f71c0dcb2e87
