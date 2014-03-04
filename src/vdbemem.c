@@ -827,22 +827,23 @@ int sqlite3VdbeMemFromBtree(
     sqlite3VdbeMemRelease(pMem);
     pMem->z = &zData[offset];
     pMem->flags = MEM_Blob|MEM_Ephem;
+    pMem->n = (int)amt;
   }else if( SQLITE_OK==(rc = sqlite3VdbeMemGrow(pMem, amt+2, 0)) ){
-    pMem->flags = MEM_Blob|MEM_Term;
-    pMem->enc = 0;
-    pMem->memType = MEM_Blob;
     if( key ){
       rc = sqlite3BtreeKey(pCur, offset, amt, pMem->z);
     }else{
       rc = sqlite3BtreeData(pCur, offset, amt, pMem->z);
     }
-    pMem->z[amt] = 0;
-    pMem->z[amt+1] = 0;
-    if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_OK ){
+      pMem->z[amt] = 0;
+      pMem->z[amt+1] = 0;
+      pMem->flags = MEM_Blob|MEM_Term;
+      pMem->memType = MEM_Blob;
+      pMem->n = (int)amt;
+    }else{
       sqlite3VdbeMemRelease(pMem);
     }
   }
-  pMem->n = (int)amt;
 
   return rc;
 }

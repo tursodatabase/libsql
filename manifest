@@ -1,5 +1,5 @@
-C Fix\scomment\sin\stest.
-D 2014-03-04T12:07:24.678
+C Improve\sclarity\sof\spresentation\sin\sthe\ssqlite3VdbeMemFromBtree()\sroutine.
+D 2014-03-04T13:18:23.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbeInt.h 9ccca0bc7646c918d065943e44bead4bf5de213d
 F src/vdbeapi.c 5bc41aaea448a7fc250902c418f1795859be3820
 F src/vdbeaux.c 636a7e2eaaa48c3e3585b28b9b1673df78fc0fad
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
-F src/vdbemem.c 2d7918e4c80546d943414668b1485b2581f58a28
+F src/vdbemem.c 10b250f09a3843ee2bcabcadf50ca21fc3ff1f87
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3cbb9b1b4f8c5c2735799e84dc80614586222cd2
-R 6bc642348ddf6f33974f36f3d8fd1bd7
-U mistachkin
-Z 8b1594ffbd0318ed08d8afbfa1da0977
+P 1e57f67b20a1c01ede36d684be628e9270bf109a
+R a19a15248ea3d7c53bb59593fa01c33d
+U drh
+Z e6c94fb8a2515aaa56cdd644b73247d7
