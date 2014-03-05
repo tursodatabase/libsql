@@ -2026,8 +2026,8 @@ typedef u64 Bitmask;
 ** contains more than 63 columns and the 64-th or later column is used.
 */
 struct SrcList {
-  u8 nSrc;        /* Number of tables or subqueries in the FROM clause */
-  u8 nAlloc;      /* Number of entries allocated in a[] below */
+  int nSrc;        /* Number of tables or subqueries in the FROM clause */
+  u32 nAlloc;      /* Number of entries allocated in a[] below */
   struct SrcList_item {
     Schema *pSchema;  /* Schema to which this item is fixed */
     char *zDatabase;  /* Name of database holding this table */

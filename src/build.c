@@ -3473,7 +3473,7 @@ SrcList *sqlite3SrcListEnlarge(
   assert( iStart<=pSrc->nSrc );
 
   /* Allocate additional space if needed */
-  if( pSrc->nSrc+nExtra>pSrc->nAlloc ){
+  if( (u32)pSrc->nSrc+nExtra>pSrc->nAlloc ){
     SrcList *pNew;
     int nAlloc = pSrc->nSrc+nExtra;
     int nGot;
@@ -3485,7 +3485,7 @@ SrcList *sqlite3SrcListEnlarge(
     }
     pSrc = pNew;
     nGot = (sqlite3DbMallocSize(db, pNew) - sizeof(*pSrc))/sizeof(pSrc->a[0])+1;
-    pSrc->nAlloc = (u8)nGot;
+    pSrc->nAlloc = nGot;
   }
 
   /* Move existing slots that come after the newly inserted slots
@@ -3493,7 +3493,7 @@ SrcList *sqlite3SrcListEnlarge(
   for(i=pSrc->nSrc-1; i>=iStart; i--){
     pSrc->a[i+nExtra] = pSrc->a[i];
   }
-  pSrc->nSrc += (i8)nExtra;
+  pSrc->nSrc += nExtra;
 
   /* Zero the newly allocated slots */
   memset(&pSrc->a[iStart], 0, sizeof(pSrc->a[0])*nExtra);

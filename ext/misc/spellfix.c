@@ -26,8 +26,8 @@ SQLITE_EXTENSION_INIT1
 # define NEVER(X)   0
   typedef unsigned char u8;
   typedef unsigned short u16;
-# include <ctype.h>
 #endif
+#include <ctype.h>
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
