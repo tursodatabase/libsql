@@ -303,7 +303,6 @@ int sqlite3_value_numeric_type(sqlite3_value *pVal){
   if( eType==SQLITE_TEXT ){
     Mem *pMem = (Mem*)pVal;
     applyNumericAffinity(pMem);
-    sqlite3VdbeMemStoreType(pMem);
     eType = sqlite3_value_type(pVal);
   }
   return eType;
@@ -1253,7 +1252,6 @@ case OP_ResultRow: {
     assert( (pMem[i].flags & MEM_Ephem)==0
             || (pMem[i].flags & (MEM_Str|MEM_Blob))==0 );
     sqlite3VdbeMemNulTerminate(&pMem[i]);
-    sqlite3VdbeMemStoreType(&pMem[i]);
     REGISTER_TRACE(pOp->p1+i, &pMem[i]);
   }
   if( db->mallocFailed ) goto no_mem;
@@ -1499,7 +1497,6 @@ case OP_Function: {
     assert( memIsValid(pArg) );
     apVal[i] = pArg;
     Deephemeralize(pArg);
-    sqlite3VdbeMemStoreType(pArg);
     REGISTER_TRACE(pOp->p2+i, pArg);
   }
 
@@ -5555,7 +5552,6 @@ case OP_AggStep: {
     assert( memIsValid(pRec) );
     apVal[i] = pRec;
     memAboutToChange(p, pRec);
-    sqlite3VdbeMemStoreType(pRec);
   }
   ctx.pFunc = pOp->p4.pFunc;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
@@ -5989,7 +5985,6 @@ case OP_VFilter: {   /* jump */
     apArg = p->apArg;
     for(i = 0; i<nArg; i++){
       apArg[i] = &pArgc[i+1];
-      sqlite3VdbeMemStoreType(apArg[i]);
     }
 
     p->inVtabMethod = 1;
@@ -6196,7 +6191,6 @@ case OP_VUpdate: {
     for(i=0; i<nArg; i++){
       assert( memIsValid(pX) );
       memAboutToChange(p, pX);
-      sqlite3VdbeMemStoreType(pX);
       apArg[i] = pX;
       pX++;
     }

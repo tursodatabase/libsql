@@ -135,7 +135,6 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
     sqlite3VdbeMemExpandBlob(p);
-    p->flags &= ~MEM_Str;
     p->flags |= MEM_Blob;
     return p->n ? p->z : 0;
   }else{
@@ -206,7 +205,7 @@ int sqlite3_value_type(sqlite3_value* pVal){
      SQLITE_INTEGER,  /* 0x1e */
      SQLITE_NULL,     /* 0x1f */
   };
-  return aType[pVal->memType&0x1f];
+  return aType[pVal->flags&MEM_AffMask];
 }
 
 /**************************** sqlite3_result_  *******************************
@@ -732,19 +731,23 @@ int sqlite3_data_count(sqlite3_stmt *pStmt){
 */
 static const Mem *columnNullValue(void){
   /* Even though the Mem structure contains an element
-  ** of type i64, on certain architecture (x86) with certain compiler
+  ** of type i64, on certain architectures (x86) with certain compiler
   ** switches (-Os), gcc may align this Mem object on a 4-byte boundary
   ** instead of an 8-byte one. This all works fine, except that when
   ** running with SQLITE_DEBUG defined the SQLite code sometimes assert()s
   ** that a Mem structure is located on an 8-byte boundary. To prevent
-  ** this assert() from failing, when building with SQLITE_DEBUG defined
-  ** using gcc, force nullMem to be 8-byte aligned using the magical
+  ** these assert()s from failing, when building with SQLITE_DEBUG defined
+  ** using gcc, we force nullMem to be 8-byte aligned using the magical
   ** __attribute__((aligned(8))) macro.  */
   static const Mem nullMem 
 #if defined(SQLITE_DEBUG) && defined(__GNUC__)
-  __attribute__((aligned(8))) 
+    __attribute__((aligned(8))) 
 #endif
-    = {0, "", (double)0, {0}, 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
+    = {0, "", (double)0, {0}, 0, MEM_Null, 0,
+#ifdef SQLITE_DEBUG
+       0, 0,  /* pScopyFrom, pFiller */
+#endif
+       0, 0 };
   return &nullMem;
 }
 
@@ -1420,7 +1423,6 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
     if( iIdx==p->iPKey ){
       sqlite3VdbeMemSetInt64(*ppValue, p->iKey1);
     }
-    sqlite3VdbeMemStoreType(*ppValue);
   }
 
  preupdate_old_out:
@@ -1499,7 +1501,6 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
       if( iIdx==p->iPKey ){
         sqlite3VdbeMemSetInt64(pMem, p->iKey2);
       }
-      sqlite3VdbeMemStoreType(pMem);
     }
   }else{
     /* For an UPDATE, memory cell (p->iNewReg+1+iIdx) contains the required
@@ -1524,7 +1525,6 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
         rc = sqlite3VdbeMemCopy(pMem, &p->v->aMem[p->iNewReg+1+iIdx]);
         if( rc!=SQLITE_OK ) goto preupdate_new_out;
       }
-      sqlite3VdbeMemStoreType(pMem);
     }
   }
   *ppValue = pMem;

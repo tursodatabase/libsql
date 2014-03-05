@@ -4611,7 +4611,7 @@ int sqlite3BtreeMovetoUnpacked(
     assert( biasRight==0 || biasRight==1 );
     idx = upr>>(1-biasRight); /* idx = biasRight ? upr : (lwr+upr)/2; */
     pCur->aiIdx[pCur->iPage] = (u16)idx;
-    if( pPage->intKey ){
+    if( xRecordCompare==0 ){
       for(;;){
         i64 nCellKey;
         pCell = findCell(pPage, idx) + pPage->childPtrSize;
