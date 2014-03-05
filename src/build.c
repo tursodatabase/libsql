@@ -3473,7 +3473,7 @@ SrcList *sqlite3SrcListEnlarge(
   assert( iStart<=pSrc->nSrc );
 
   /* Allocate additional space if needed */
-  if( pSrc->nSrc+nExtra>pSrc->nAlloc ){
+  if( (u32)pSrc->nSrc+nExtra>pSrc->nAlloc ){
     SrcList *pNew;
     int nAlloc = pSrc->nSrc+nExtra;
     int nGot;

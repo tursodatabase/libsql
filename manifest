@@ -1,5 +1,5 @@
-C Add\sSQLITE_OMIT_CTE\sto\sthe\slist\sof\scompile\soptions\sthat\smight\sbe\sreturned\sby\s"PRAGMA\scompile_options".
-D 2014-03-05T17:29:34.044
+C Fix\sa\sharmless\scompiler\swarning\son\sMSVC.
+D 2014-03-05T19:04:46.223
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c ad795be588e394a0921796f87cc27717359738cc
 F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
-F src/build.c 04acd702f9c3ffd6670cf50be89d3561cb886fe6
+F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ef1a998625e1fc051732228844388d6c59665382
-R 466a7e3f69162573de9bfcfa517638a1
-U dan
-Z 7d97bf825e792d4219e6e7e5c97b5b1b
+P f33f2b3f924347e3da26741d153749330cb645ec
+R bec805b30a62102ab84493bc76693952
+U drh
+Z 267f872091e9a8fb36e5f21325487fbe
