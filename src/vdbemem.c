@@ -321,7 +321,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 /*
 ** Release any memory held by the Mem. This may leave the Mem in an
 ** inconsistent state, for example with (Mem.z==0) and
-** (Mem.memType==MEM_Str).
+** (Mem.flags==MEM_Str).
 */
 void sqlite3VdbeMemRelease(Mem *p){
   assert( sqlite3VdbeCheckMemInvariants(p) );
@@ -513,7 +513,6 @@ void sqlite3VdbeMemSetNull(Mem *pMem){
     sqlite3RowSetClear(pMem->u.pRowSet);
   }
   MemSetTypeFlag(pMem, MEM_Null);
-  pMem->memType = MEM_Null;
 }
 void sqlite3ValueSetNull(sqlite3_value *p){
   sqlite3VdbeMemSetNull((Mem*)p); 
@@ -526,7 +525,6 @@ void sqlite3ValueSetNull(sqlite3_value *p){
 void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
   sqlite3VdbeMemRelease(pMem);
   pMem->flags = MEM_Blob|MEM_Zero;
-  pMem->memType = MEM_Blob;
   pMem->n = 0;
   if( n<0 ) n = 0;
   pMem->u.nZero = n;
@@ -549,7 +547,6 @@ void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
   sqlite3VdbeMemRelease(pMem);
   pMem->u.i = val;
   pMem->flags = MEM_Int;
-  pMem->memType = MEM_Int;
 }
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -564,7 +561,6 @@ void sqlite3VdbeMemSetDouble(Mem *pMem, double val){
     sqlite3VdbeMemRelease(pMem);
     pMem->r = val;
     pMem->flags = MEM_Real;
-    pMem->memType = MEM_Real;
   }
 }
 #endif
@@ -773,7 +769,6 @@ int sqlite3VdbeMemSetStr(
   pMem->n = nByte;
   pMem->flags = flags;
   pMem->enc = (enc==0 ? SQLITE_UTF8 : enc);
-  pMem->memType = flags&0x1f;
 
 #ifndef SQLITE_OMIT_UTF16
   if( pMem->enc!=SQLITE_UTF8 && sqlite3VdbeMemHandleBom(pMem) ){
@@ -839,7 +834,6 @@ int sqlite3VdbeMemFromBtree(
       pMem->z[amt] = 0;
       pMem->z[amt+1] = 0;
       pMem->flags = MEM_Blob|MEM_Term;
-      pMem->memType = MEM_Blob;
       pMem->n = (int)amt;
     }else{
       sqlite3VdbeMemRelease(pMem);
@@ -902,7 +896,6 @@ sqlite3_value *sqlite3ValueNew(sqlite3 *db){
   Mem *p = sqlite3DbMallocZero(db, sizeof(*p));
   if( p ){
     p->flags = MEM_Null;
-    p->memType = MEM_Null;
     p->db = db;
   }
   return p;
@@ -951,7 +944,6 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
           pRec->aMem = (Mem *)((u8*)pRec + ROUND8(sizeof(UnpackedRecord)));
           for(i=0; i<nCol; i++){
             pRec->aMem[i].flags = MEM_Null;
-            pRec->aMem[i].memType = MEM_Null;
             pRec->aMem[i].db = db;
           }
         }else{
@@ -1024,7 +1016,6 @@ static int valueFromExpr(
       zVal = sqlite3MPrintf(db, "%s%s", zNeg, pExpr->u.zToken);
       if( zVal==0 ) goto no_mem;
       sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
-      if( op==TK_FLOAT ) pVal->memType = MEM_Real;
     }
     if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_NONE ){
       sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
@@ -1070,9 +1061,6 @@ static int valueFromExpr(
   }
 #endif
 
-  if( pVal ){
-    sqlite3VdbeMemStoreType(pVal);
-  }
   *ppVal = pVal;
   return rc;
 
@@ -1236,7 +1224,6 @@ int sqlite3Stat4ProbeSetValue(
           sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
         }
         pVal->db = pParse->db;
-        sqlite3VdbeMemStoreType((Mem*)pVal);
       }
     }
   }else{

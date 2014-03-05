@@ -1363,7 +1363,6 @@ int sqlite3VdbeList(
     }
     if( p->explain==1 ){
       pMem->flags = MEM_Int;
-      pMem->memType = MEM_Int;
       pMem->u.i = i;                                /* Program counter */
       pMem++;
   
@@ -1371,7 +1370,6 @@ int sqlite3VdbeList(
       pMem->z = (char*)sqlite3OpcodeName(pOp->opcode); /* Opcode */
       assert( pMem->z!=0 );
       pMem->n = sqlite3Strlen30(pMem->z);
-      pMem->memType = MEM_Str;
       pMem->enc = SQLITE_UTF8;
       pMem++;
 
@@ -1397,17 +1395,14 @@ int sqlite3VdbeList(
 
     pMem->flags = MEM_Int;
     pMem->u.i = pOp->p1;                          /* P1 */
-    pMem->memType = MEM_Int;
     pMem++;
 
     pMem->flags = MEM_Int;
     pMem->u.i = pOp->p2;                          /* P2 */
-    pMem->memType = MEM_Int;
     pMem++;
 
     pMem->flags = MEM_Int;
     pMem->u.i = pOp->p3;                          /* P3 */
-    pMem->memType = MEM_Int;
     pMem++;
 
     if( sqlite3VdbeMemGrow(pMem, 32, 0) ){            /* P4 */
@@ -1423,7 +1418,6 @@ int sqlite3VdbeList(
       pMem->n = sqlite3Strlen30(pMem->z);
       pMem->enc = SQLITE_UTF8;
     }
-    pMem->memType = MEM_Str;
     pMem++;
 
     if( p->explain==1 ){
@@ -1434,7 +1428,6 @@ int sqlite3VdbeList(
       pMem->flags = MEM_Str|MEM_Term;
       pMem->n = 2;
       sqlite3_snprintf(3, pMem->z, "%.2x", pOp->p5);   /* P5 */
-      pMem->memType = MEM_Str;
       pMem->enc = SQLITE_UTF8;
       pMem++;
   
@@ -1445,11 +1438,9 @@ int sqlite3VdbeList(
       }
       pMem->flags = MEM_Str|MEM_Term;
       pMem->n = displayComment(pOp, zP4, pMem->z, 500);
-      pMem->memType = MEM_Str;
       pMem->enc = SQLITE_UTF8;
 #else
       pMem->flags = MEM_Null;                       /* Comment */
-      pMem->memType = MEM_Null;
 #endif
     }
 
@@ -3937,7 +3928,6 @@ sqlite3_value *sqlite3VdbeGetBoundValue(Vdbe *v, int iVar, u8 aff){
       if( pRet ){
         sqlite3VdbeMemCopy((Mem *)pRet, pMem);
         sqlite3ValueApplyAffinity(pRet, aff, SQLITE_UTF8);
-        sqlite3VdbeMemStoreType((Mem *)pRet);
       }
       return pRet;
     }

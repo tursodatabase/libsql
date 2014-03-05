@@ -76,7 +76,6 @@ static int test_value_overhead(
 
   val.flags = MEM_Str|MEM_Term|MEM_Static;
   val.z = "hello world";
-  val.memType = MEM_Str;
   val.enc = SQLITE_UTF8;
 
   for(i=0; i<repeat_count; i++){
