@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\son\sMSVC.
-D 2014-03-05T19:04:46.223
+C Avoid\srunning\sa\scouple\sof\stest\scases\sthat\suse\srealloc()\sextensively\sif\sSQLITE_MEMDEBUG\sis\sdefined.
+D 2014-03-05T19:13:32.745
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -630,7 +630,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/join.test 533dc4c1ca70d1c876a58df058307ab9c6931a05
+F test/join.test 559b81eb56ae350246f9c25986aa52c81c725c7e
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f33f2b3f924347e3da26741d153749330cb645ec
-R bec805b30a62102ab84493bc76693952
-U drh
-Z 267f872091e9a8fb36e5f21325487fbe
+P 0723effc9ccae7c660fb847b36ce9324e0cb5042
+R fd55c551a93656dfa35ae57a4e3f4bce
+U dan
+Z 8fe6d9b1a050fe779092fc8bd960685b
