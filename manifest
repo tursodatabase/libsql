@@ -1,5 +1,5 @@
-C Add\sa\stest\scase\sfor\sthe\sproblem\sfixed\sby\s[1d134ba2ed].
-D 2014-03-05T15:04:36.099
+C Count\sthe\snumber\sof\selements\sin\sa\sSrcList\sobject\susing\san\s"int"\srather\sthan\na\s"u8",\sto\savoid\soverflows\sand\sto\swork\saround\san\sissue\sin\sthe\sC\scompiler\son\nAIX.
+D 2014-03-05T15:52:43.396
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c ad795be588e394a0921796f87cc27717359738cc
 F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
-F src/build.c 00ce613bc2256e525c9195cb10d0df7bcc48d1f0
+F src/build.c 04acd702f9c3ffd6670cf50be89d3561cb886fe6
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 77779efbe78dd678d84bfb4fc2e87b6b6ad8dccd
@@ -221,7 +221,7 @@ F src/shell.c 7bf07bcacb181ecc3fc3ccacfdfeb4084aee67ed
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h bf529055591dd81ec92a84d35dba0854642f6cc2
+F src/sqliteInt.h 7497e95a42f3ec87bf524f1b7231836ac69ed5b0
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1d134ba2edbdb8c0cf9e99590a69cd17e0b874a9
-R 374319ceadfe35c573eb8d6fe8e86cec
-U dan
-Z 517538463510fd631bac600f6056aa59
+P d4fbc05df9501a09623d420fcd5b2bce3a57201b
+R 9cc9aba61da37a98f68738296ca8fbec
+U drh
+Z ce6864cda23669740d5f0005c13c1ece
