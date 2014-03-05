@@ -1,5 +1,5 @@
-C Count\sthe\snumber\sof\selements\sin\sa\sSrcList\sobject\susing\san\s"int"\srather\sthan\na\s"u8",\sto\savoid\soverflows\sand\sto\swork\saround\san\sissue\sin\sthe\sC\scompiler\son\nAIX.
-D 2014-03-05T15:52:43.396
+C Add\stests\sto\sjoin.test\sto\sverify\sthat\sit\sis\snot\spossible\sto\suse\smore\sthan\s64\stables\sin\sa\sjoin.
+D 2014-03-05T16:15:07.836
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -630,7 +630,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/join.test 8d63cc4d230a7affafa4b6ab0b97c49b8ccb365c
+F test/join.test 533dc4c1ca70d1c876a58df058307ab9c6931a05
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d4fbc05df9501a09623d420fcd5b2bce3a57201b
-R 9cc9aba61da37a98f68738296ca8fbec
-U drh
-Z ce6864cda23669740d5f0005c13c1ece
+P eee2a13f2caa48b7b8a693680edc2bbc9275292c
+R e372b7c4ce133454234e558c8bea46b7
+U dan
+Z bf5a892fb8860fb651f9bf5f3493984f
