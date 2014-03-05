@@ -215,6 +215,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_OMIT_COMPOUND_SELECT
   "OMIT_COMPOUND_SELECT",
 #endif
+#ifdef SQLITE_OMIT_CTE
+  "OMIT_CTE",
+#endif
 #ifdef SQLITE_OMIT_DATETIME_FUNCS
   "OMIT_DATETIME_FUNCS",
 #endif
