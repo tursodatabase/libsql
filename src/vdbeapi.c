@@ -135,7 +135,6 @@ const void *sqlite3_value_blob(sqlite3_value *pVal){
   Mem *p = (Mem*)pVal;
   if( p->flags & (MEM_Blob|MEM_Str) ){
     sqlite3VdbeMemExpandBlob(p);
-    p->flags &= ~MEM_Str;
     p->flags |= MEM_Blob;
     return p->n ? p->z : 0;
   }else{

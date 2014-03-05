@@ -1,5 +1,5 @@
-C Separate\sthe\scolumn\sNULL\svalue\sconstant\sinto\sa\sseparate\sroutine\sfor\sgreater\ncommonality\swith\sthe\ssessions\sbranch.
-D 2014-03-05T12:47:55.519
+C When\sconverting\sa\sresult\stype\sfrom\sTEXT\sto\sBLOB\susing\sthe\nsqlite3_value_blob()\sinterface,\scontinue\sto\sreport\sSQLITE_TEXT\sas\nthe\strue\stype\sfrom\ssqlite3_value_text()\sas\slong\sas\sthat\stext\sis\sstill\nvalid.\s\sThe\smaintains\slegacy\sbehavior\sfrom\sbefore\sthe\snoMemType\schange.
+D 2014-03-05T14:40:22.888
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 8c6fc7bb9f2218c0e43f24d847e596effa8671e2
 F src/vdbe.h d189f92468a17a6f04daeec9df3b767f50557b21
 F src/vdbeInt.h e54fc4f289fce48e81b3371128446033d097733b
-F src/vdbeapi.c 77fbd57c0340a7d548a61b666143637fff726e06
+F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 43bee29ac866f7ce6af90c4f084bb22c160b8b70
 F src/vdbeblob.c d939997de046b8fcc607cfee4248f3d33dbcca50
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9e8528578966e4f1a16d63333de648fd8cdaf0f2
-R cd61be35c414ec0c232f9ea3f0efe193
+P 12cbebb997705e37769460e00a4aaa52c12f305e
+R d261f37d595757cff592b0cc63c2909e
 U drh
-Z d8b63809d3f1784ecbab68dab389a740
+Z 2ff0e0e9e50bbeda593af44f5801ea80
