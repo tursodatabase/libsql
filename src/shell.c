@@ -1184,6 +1184,7 @@ static int str_in_array(const char *zStr, const char **azArray){
 **     * For each "Goto", if the jump destination is earlier in the program
 **       and ends on one of:
 **          Yield  SeekGt  SeekLt  RowSetRead  Rewind
+**       or if the P1 parameter is one instead of zero,
 **       then indent all opcodes between the earlier instruction
 **       and "Goto" by 2 spaces.
 */
@@ -1231,7 +1232,9 @@ static void explain_data_prepare(struct callback_data *p, sqlite3_stmt *pSql){
     if( str_in_array(zOp, azNext) ){
       for(i=p2op; i<iOp; i++) p->aiIndent[i] += 2;
     }
-    if( str_in_array(zOp, azGoto) && p2op<p->nIndent && abYield[p2op] ){
+    if( str_in_array(zOp, azGoto) && p2op<p->nIndent
+     && (abYield[p2op] || sqlite3_column_int(pSql, 2))
+    ){
       for(i=p2op+1; i<iOp; i++) p->aiIndent[i] += 2;
     }
   }
@@ -3817,8 +3820,8 @@ int main(int argc, char **argv){
       );
       if( warnInmemoryDb ){
         printf("Connected to a ");
-        printBold("transient in-memory database.");
-        printf("\nUse \".open FILENAME\" to reopen on a "
+        printBold("transient in-memory database");
+        printf(".\nUse \".open FILENAME\" to reopen on a "
                "persistent database.\n");
       }
       zHome = find_home_dir();

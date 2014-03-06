@@ -3057,13 +3057,13 @@ static Bitmask codeOneLoopStart(
       pRangeEnd = pLoop->aLTerm[j++];
       nExtraReg = 1;
       if( pRangeStart==0
-       && (pRangeEnd->wtFlags & TERM_VNULL)==0
        && (j = pIdx->aiColumn[nEq])>=0 
        && pIdx->pTable->aCol[j].notNull==0
       ){
         bSeekPastNull = 1;
       }
     }
+    assert( pRangeEnd==0 || (pRangeEnd->wtFlags & TERM_VNULL)==0 );
 
     /* Generate code to evaluate all constraint terms using == or IN
     ** and store the values of those terms in an array of registers

@@ -1235,6 +1235,10 @@ static void releaseMemArray(Mem *p, int N){
       ** with no indexes using a single prepared INSERT statement, bind() 
       ** and reset(). Inserts are grouped into a transaction.
       */
+      testcase( p->flags & MEM_Agg );
+      testcase( p->flags & MEM_Dyn );
+      testcase( p->flags & MEM_Frame );
+      testcase( p->flags & MEM_RowSet );
       if( p->flags&(MEM_Agg|MEM_Dyn|MEM_Frame|MEM_RowSet) ){
         sqlite3VdbeMemRelease(p);
       }else if( p->zMalloc ){
@@ -2963,27 +2967,32 @@ u32 sqlite3VdbeSerialGet(
     case 1: { /* 1-byte signed integer */
       pMem->u.i = ONE_BYTE_INT(buf);
       pMem->flags = MEM_Int;
+      testcase( pMem->u.i<0 );
       return 1;
     }
     case 2: { /* 2-byte signed integer */
       pMem->u.i = TWO_BYTE_INT(buf);
       pMem->flags = MEM_Int;
+      testcase( pMem->u.i<0 );
       return 2;
     }
     case 3: { /* 3-byte signed integer */
       pMem->u.i = THREE_BYTE_INT(buf);
       pMem->flags = MEM_Int;
+      testcase( pMem->u.i<0 );
       return 3;
     }
     case 4: { /* 4-byte signed integer */
       y = FOUR_BYTE_UINT(buf);
       pMem->u.i = (i64)*(int*)&y;
       pMem->flags = MEM_Int;
+      testcase( pMem->u.i<0 );
       return 4;
     }
     case 5: { /* 6-byte signed integer */
       pMem->u.i = FOUR_BYTE_UINT(buf+2) + (((i64)1)<<32)*TWO_BYTE_INT(buf);
       pMem->flags = MEM_Int;
+      testcase( pMem->u.i<0 );
       return 6;
     }
     case 6:   /* 8-byte signed integer */
@@ -3006,6 +3015,7 @@ u32 sqlite3VdbeSerialGet(
       if( serial_type==6 ){
         pMem->u.i = *(i64*)&x;
         pMem->flags = MEM_Int;
+        testcase( pMem->u.i<0 );
       }else{
         assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
         swapMixedEndianFloat(x);
@@ -3352,20 +3362,26 @@ static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
   switch( serial_type ){
     case 0:
     case 1:
+      testcase( aKey[0]&0x80 );
       return ONE_BYTE_INT(aKey);
     case 2:
+      testcase( aKey[0]&0x80 );
       return TWO_BYTE_INT(aKey);
     case 3:
+      testcase( aKey[0]&0x80 );
       return THREE_BYTE_INT(aKey);
     case 4: {
+      testcase( aKey[0]&0x80 );
       y = FOUR_BYTE_UINT(aKey);
       return (i64)*(int*)&y;
     }
     case 5: {
+      testcase( aKey[0]&0x80 );
       return FOUR_BYTE_UINT(aKey+2) + (((i64)1)<<32)*TWO_BYTE_INT(aKey);
     }
     case 6: {
       u64 x = FOUR_BYTE_UINT(aKey);
+      testcase( aKey[0]&0x80 );
       x = (x<<32) | FOUR_BYTE_UINT(aKey+4);
       return (i64)*(i64*)&x;
     }
@@ -3433,6 +3449,7 @@ int sqlite3VdbeRecordCompare(
     /* RHS is an integer */
     if( pRhs->flags & MEM_Int ){
       serial_type = aKey1[idx1];
+      testcase( serial_type==12 );
       if( serial_type>=12 ){
         rc = +1;
       }else if( serial_type==0 ){
@@ -3483,12 +3500,15 @@ int sqlite3VdbeRecordCompare(
     /* RHS is a string */
     else if( pRhs->flags & MEM_Str ){
       getVarint32(&aKey1[idx1], serial_type);
+      testcase( serial_type==12 );
       if( serial_type<12 ){
         rc = -1;
       }else if( !(serial_type & 0x01) ){
         rc = +1;
       }else{
         mem1.n = (serial_type - 12) / 2;
+        testcase( (d1+mem1.n)==(unsigned)nKey1 );
+        testcase( (d1+mem1.n+1)==(unsigned)nKey1 );
         if( (d1+mem1.n) > (unsigned)nKey1 ){
           rc = 1;                /* Corruption */
         }else if( pKeyInfo->aColl[i] ){
@@ -3508,10 +3528,13 @@ int sqlite3VdbeRecordCompare(
     /* RHS is a blob */
     else if( pRhs->flags & MEM_Blob ){
       getVarint32(&aKey1[idx1], serial_type);
+      testcase( serial_type==12 );
       if( serial_type<12 || (serial_type & 0x01) ){
         rc = -1;
       }else{
         int nStr = (serial_type - 12) / 2;
+        testcase( (d1+nStr)==(unsigned)nKey1 );
+        testcase( (d1+nStr+1)==(unsigned)nKey1 );
         if( (d1+nStr) > (unsigned)nKey1 ){
           rc = 1;                /* Corruption */
         }else{
@@ -3585,29 +3608,35 @@ static int vdbeRecordCompareInt(
   switch( serial_type ){
     case 1: { /* 1-byte signed integer */
       lhs = ONE_BYTE_INT(aKey);
+      testcase( lhs<0 );
       break;
     }
     case 2: { /* 2-byte signed integer */
       lhs = TWO_BYTE_INT(aKey);
+      testcase( lhs<0 );
       break;
     }
     case 3: { /* 3-byte signed integer */
       lhs = THREE_BYTE_INT(aKey);
+      testcase( lhs<0 );
       break;
     }
     case 4: { /* 4-byte signed integer */
       y = FOUR_BYTE_UINT(aKey);
       lhs = (i64)*(int*)&y;
+      testcase( lhs<0 );
       break;
     }
     case 5: { /* 6-byte signed integer */
       lhs = FOUR_BYTE_UINT(aKey+2) + (((i64)1)<<32)*TWO_BYTE_INT(aKey);
+      testcase( lhs<0 );
       break;
     }
     case 6: { /* 8-byte signed integer */
       x = FOUR_BYTE_UINT(aKey);
       x = (x<<32) | FOUR_BYTE_UINT(aKey+4);
       lhs = *(i64*)&x;
+      testcase( lhs<0 );
       break;
     }
     case 8: 
@@ -3744,9 +3773,11 @@ RecordCompare sqlite3VdbeFindCompare(UnpackedRecord *p){
     if( (flags & MEM_Int) ){
       return vdbeRecordCompareInt;
     }
-    if( (flags & (MEM_Int|MEM_Real|MEM_Null|MEM_Blob))==0 
-        && p->pKeyInfo->aColl[0]==0 
-    ){
+    testcase( flags & MEM_Real );
+    testcase( flags & MEM_Null );
+    testcase( flags & MEM_Blob );
+    if( (flags & (MEM_Real|MEM_Null|MEM_Blob))==0 && p->pKeyInfo->aColl[0]==0 ){
+      assert( flags & MEM_Str );
       return vdbeRecordCompareString;
     }
   }

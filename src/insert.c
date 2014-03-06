@@ -101,13 +101,13 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 ** Compute the affinity string for table pTab, if it has not already been
 ** computed.  As an optimization, omit trailing SQLITE_AFF_NONE affinities.
 **
-** If the affinity exists (if it is no entirely SQLITE_AFF_NONE values and
+** If the affinity exists (if it is no entirely SQLITE_AFF_NONE values) and
 ** if iReg>0 then code an OP_Affinity opcode that will set the affinities
 ** for register iReg and following.  Or if affinities exists and iReg==0,
 ** then just set the P4 operand of the previous opcode (which should  be
 ** an OP_MakeRecord) to the affinity string.
 **
-** A column affinity string has one character column:
+** A column affinity string has one character per column:
 **
 **  Character      Column affinity
 **  ------------------------------
@@ -148,10 +148,9 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
 
 /*
 ** Return non-zero if the table pTab in database iDb or any of its indices
-** have been opened at any point in the VDBE program beginning at location
-** iStartAddr throught the end of the program.  This is used to see if 
+** have been opened at any point in the VDBE program. This is used to see if 
 ** a statement of the form  "INSERT INTO <iDb, pTab> SELECT ..." can 
-** run without using temporary table for the results of the SELECT. 
+** run without using a temporary table for the results of the SELECT. 
 */
 static int readsTable(Parse *p, int iDb, Table *pTab){
   Vdbe *v = sqlite3GetVdbe(p);
