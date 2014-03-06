@@ -3817,8 +3817,8 @@ int main(int argc, char **argv){
       );
       if( warnInmemoryDb ){
         printf("Connected to a ");
-        printBold("transient in-memory database.");
-        printf("\nUse \".open FILENAME\" to reopen on a "
+        printBold("transient in-memory database");
+        printf(".\nUse \".open FILENAME\" to reopen on a "
                "persistent database.\n");
       }
       zHome = find_home_dir();

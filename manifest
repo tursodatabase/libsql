@@ -1,5 +1,5 @@
-C Fix\ssome\sincorrect\scomments\sand\stypos\sin\scomments.\s\sAdd\stestcase()\smacros\nto\ssome\sof\sthe\snew\srecord\scomparison\scode.
-D 2014-03-06T01:56:33.418
+C Cosmetic\schange\sto\sthe\sshell\sin-memory\sdatabase\swarning\sto\sskip\scoloring\sthe\strailing\speriod.
+D 2014-03-06T02:15:42.988
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 0adf172d33cc610ff5ffe26edfd2ba67c3551655
-F src/shell.c 7bf07bcacb181ecc3fc3ccacfdfeb4084aee67ed
+F src/shell.c c0cbbbe5eec0923caafd1b9593925f8b241addb8
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 29b0a4f158785449b6f3da6fcceeb63442c9711c
-R 6ebc5b98243298bdc1108377764c8e0d
-U drh
-Z 431ba6c46f093bf18085ee790e19125c
+P b83cfe899d84fe9d61540e9984321ca30401638c
+R a229689d692fc13174e0ca3780072f0f
+U mistachkin
+Z 057b46befe5b696e1f097c5fbeb7d34a
