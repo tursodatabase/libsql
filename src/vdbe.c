@@ -28,7 +28,7 @@
 ** pointer to the string or blob, not the content.  If the original
 ** is changed while the copy is still in use, the string or blob might
 ** be changed out from under the copy.  This macro verifies that nothing
-** like that every happens.
+** like that ever happens.
 */
 #ifdef SQLITE_DEBUG
 # define memAboutToChange(P,M) sqlite3VdbeMemAboutToChange(P,M)
@@ -2166,8 +2166,8 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 **
 ** Check if OP_Once flag P1 is set. If so, jump to instruction P2. Otherwise,
 ** set the flag and fall through to the next instruction.  In other words,
-** this opcode causes all following up codes up through P2 (but not including
-** P2) to run just once and skipped on subsequent times through the loop.
+** this opcode causes all following opcodes up through P2 (but not including
+** P2) to run just once and to be skipped on subsequent times through the loop.
 */
 case OP_Once: {             /* jump */
   assert( pOp->p1<p->nOnceFlag );
