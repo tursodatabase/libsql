@@ -671,6 +671,11 @@ int sqlite3VdbeExec(
 ** The next instruction executed will be 
 ** the one at index P2 from the beginning of
 ** the program.
+**
+** The P1 parameter is not actually used by this opcode.  However, it
+** is sometimes set to 1 instead of 0 as a hint to the command-line shell
+** that this Goto is the bottom of a loop and that the lines from P2 down
+** to the current line should be indented for EXPLAIN output.
 */
 case OP_Goto: {             /* jump */
   pc = pOp->p2 - 1;
