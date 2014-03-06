@@ -1,5 +1,5 @@
-C Better\ssupport\sfor\sMinGW\s4.x.
-D 2014-03-06T00:28:57.468
+C Better\sloadable\sextension\shandling\sin\sthe\sWin32\sVFS\swhen\scompiled\sfor\sCygwin.
+D 2014-03-06T00:30:27.980
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
-F src/os_win.c c47f107fc5c9d3466c06ea4aa35822f3568e81ee
+F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
 F src/pager.c 0ffa313a30ed6d061d9c6601b7b175cc50a1cab7
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 2613ca5d609c2f3d71dd297351f010bcec16e1e0
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bfd75f471a607b442d8cd8a7070491a158e8fb1a 057c16ee9786efcad6372a29b02d743ff3d628ff
-R b889d993282d9fdfec953c32c532c8a0
+P 170e0585202eec6882e9513eba05e6d5767bfc5b 854d410ad3a2bb3af5465d933ac9535fe3f22bfe
+R dbc36dfda03a0ba225e8ff052c2c6fea
 U mistachkin
-Z 62fcd2f0166a563cdb61df2df73d8704
+Z 97b3517e69e758ff54d2564329fd6e38
