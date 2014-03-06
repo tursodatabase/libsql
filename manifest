@@ -1,5 +1,5 @@
-C Enhance\sthe\stest\sharness\sfor\sthe\ssessions\sinterface\sso\sthat\sit\sdoes\snot\nuse\sSQLite\soperations\sthat\scan\sencounter\san\sOOM\serror\sin\splaces\swhere\sit\nis\sunable\sto\sreport\san\sOOM\serror\sback\sup\sto\sthe\stest\sscript.
-D 2014-03-06T14:53:25.586
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\ssessions\stest\sharness.
+D 2014-03-06T15:01:11.376
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -152,7 +152,7 @@ F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
 F ext/session/sqlite3session.c 34e19186d05d534e5a37a4f5a8a3c3e24e3fa88a
 F ext/session/sqlite3session.h 6c35057241567ed6319f750ee504a81c459225e1
-F ext/session/test_session.c b74ddeb47ef034618af1e7e7f7d70dadfd61e13c
+F ext/session/test_session.c 7878ac0e2fe9675e8ec24d54f6a538ccc105977f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1ed463d91866182fbc884fb88770717ee5bf33ce
-R 96958e98af456557b41c042e55a4957f
+P bc0e661033b78f27866932244e6204985ae39000
+R 973bedbe61265104f3741c995c452b29
 U drh
-Z 0502c27f4f3e5bf50ee9c481e253dd89
+Z 1571e450ec5231b885fc926309559de1
