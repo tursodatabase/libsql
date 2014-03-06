@@ -159,7 +159,7 @@ static void test_session_del(void *clientData){
   TestSession *p = (TestSession*)clientData;
   if( p->pFilterScript ) Tcl_DecrRefCount(p->pFilterScript);
   sqlite3session_delete(p->pSession);
-  ckfree(p);
+  ckfree((char*)p);
 }
 
 /*
@@ -191,7 +191,7 @@ static int test_sqlite3session(
   memset(p, 0, sizeof(TestSession));
   rc = sqlite3session_create(db, Tcl_GetString(objv[3]), &p->pSession);
   if( rc!=SQLITE_OK ){
-    ckfree(p);
+    ckfree((char*)p);
     return test_session_error(interp, rc);
   }
 
@@ -222,10 +222,13 @@ static void test_append_value(Tcl_Obj *pList, sqlite3_value *pVal){
         Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj("f", 1));
         pObj = Tcl_NewDoubleObj(sqlite3_value_double(pVal));
         break;
-      case SQLITE_TEXT:
+      case SQLITE_TEXT: {
+        const char *z = (char*)sqlite3_value_blob(pVal);
+        int n = sqlite3_value_bytes(pVal);
         Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj("t", 1));
-        pObj = Tcl_NewStringObj((char *)sqlite3_value_text(pVal), -1);
+        pObj = Tcl_NewStringObj(z, n);
         break;
+      }
       case SQLITE_BLOB:
         Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj("b", 1));
         pObj = Tcl_NewByteArrayObj(
