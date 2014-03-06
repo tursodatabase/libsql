@@ -47,8 +47,41 @@
 # define _LARGEFILE_SOURCE 1
 #endif
 
+/*
+** For MinGW, check to see if we can include the header file containing its
+** version information, among other things.  Normally, this internal MinGW
+** header file would [only] be included automatically by other MinGW header
+** files; however, the contained version information is now required by this
+** header file to work around binary compatibility issues (see below) and
+** this is the only known way to reliably obtain it.  This entire #if block
+** would be completely unnecessary if there was any other way of detecting
+** MinGW via their preprocessor (e.g. if they customized their GCC to define
+** some MinGW-specific macros).  When compiling for MinGW, either the
+** _HAVE_MINGW_H or _HAVE__MINGW_H (note the extra underscore) macro must be
+** defined; otherwise, detection of conditions specific to MinGW will be
+** disabled.
+*/
+#if defined(_HAVE_MINGW_H)
+# include "mingw.h"
+#elif defined(_HAVE__MINGW_H)
+# include "_mingw.h"
+#endif
+
+/*
+** For MinGW version 4.x (and higher), check to see if the _USE_32BIT_TIME_T
+** define is required to maintain binary compatibility with the MSVC runtime
+** library in use (e.g. for Windows XP).
+*/
+#if !defined(_USE_32BIT_TIME_T) && !defined(_USE_64BIT_TIME_T) && \
+    defined(_WIN32) && !defined(_WIN64) && \
+    defined(__MINGW_MAJOR_VERSION) && __MINGW_MAJOR_VERSION >= 4 && \
+    defined(__MSVCRT__)
+# define _USE_32BIT_TIME_T
+#endif
+
 /* The public SQLite interface.  The _FILE_OFFSET_BITS macro must appear
-** first in QNX.
+** first in QNX.  Also, the _USE_32BIT_TIME_T macro must appear first for
+** MinGW.
 */
 #include "sqlite3.h"
 
