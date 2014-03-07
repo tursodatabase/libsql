@@ -1,5 +1,5 @@
-C Revise\schange\sfrom\sthe\sprevious\scheck-in\sto\sclarify\sthe\ssituation\swhen\shandling\sopen\sjournal\sfiles,\sregardless\sof\sjournal\smode.
-D 2014-03-07T03:31:35.143
+C Improved\scomment\son\sthe\spager.c\sPERSIST\srollback\sjournal\sdelete\slogic\ninside\sof\shasHotJournal().\s\sNo\schanges\sto\scode.
+D 2014-03-07T14:57:07.028
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,7 +204,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
 F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
-F src/pager.c ab9b5331e402f438effb02575955ffea673246cd
+F src/pager.c 97a8908bf4e6e7c3adea09d3597cfa48ae33ab4e
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 2613ca5d609c2f3d71dd297351f010bcec16e1e0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fdc651e2ec7a0babee669e24fd56632e7cd5f0e9
-R dd6c54a8aa52f6e2a8e41a668b913ede
-U mistachkin
-Z 7a2dfaabd9df7aaa8958f21cc25c2459
+P 1c318ef3b76e9a9a5ff2f156a9acddfc1bda0949
+R 061864752fb659e79b9068736cf1ac45
+U drh
+Z 9721365445b2c154201b5f1346741e86
