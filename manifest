@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sthe\ssessions\stest\sharness.
-D 2014-03-06T15:01:11.376
+C Merge\sthe\sfix\sfor\sthe\sjournal_mode=PERSIST\serror\srecovery\sdelay\sbug.
+D 2014-03-07T14:36:50.554
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
 F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
-F src/pager.c 0ffa313a30ed6d061d9c6601b7b175cc50a1cab7
+F src/pager.c ab9b5331e402f438effb02575955ffea673246cd
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 2613ca5d609c2f3d71dd297351f010bcec16e1e0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -417,7 +417,7 @@ F test/corruptD.test b3c205fac7952b1de645ce44bb02335cd9e3e040
 F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 58ec333a01997fe655e34e5bea52b7a2a6b9704d
-F test/corruptH.test 9d8186f6f8751efdfd445d8546fd98f073499039
+F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
 F test/corruptI.test 88886ec9cd1bdba835263566bbf60ee009c6ea09
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
@@ -1035,7 +1035,7 @@ F test/unique.test 93f8b2ef5ea51b9495f8d6493429b1fd0f465264
 F test/unixexcl.test cd6c765f75e50e8e2c2ba763149e5d340ea19825
 F test/unordered.test ef85ac8f2f3c93ed2b9e811b684de73175fc464c
 F test/update.test 1b6c488a8f993d090b7ee9ad0e234faa161b3aeb
-F test/uri.test 63e03df051620a18f794b4f4adcdefb3c23b6751
+F test/uri.test 23662b7b61958b0f0e47082de7d06341ccf85d5b
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test ce91c39f7f91a4273bf620efad21086b5aa6ef1d
 F test/vacuum2.test af432e6e3bfc0ea20a80cb86a03c7d9876d38324
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bc0e661033b78f27866932244e6204985ae39000
-R 973bedbe61265104f3741c995c452b29
+P d389e20ab07a76d0c4be3801265977fa977a4394 1c318ef3b76e9a9a5ff2f156a9acddfc1bda0949
+R 11d40879c4a4163bd84e04c80c6b51aa
 U drh
-Z 1571e450ec5231b885fc926309559de1
+Z 5baca92522a934140dc6eba1ba109b11
