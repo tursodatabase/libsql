@@ -4897,7 +4897,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
       */
       rc = pagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
-        if( nPage==0 && pPager->journalMode!=PAGER_JOURNALMODE_PERSIST ){
+        if( nPage==0 && !jrnlOpen ){
           sqlite3BeginBenignMalloc();
           if( pagerLockDb(pPager, RESERVED_LOCK)==SQLITE_OK ){
             sqlite3OsDelete(pVfs, pPager->zJournal, 0);
