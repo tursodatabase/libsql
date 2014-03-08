@@ -1,5 +1,5 @@
-C Improved\scomment\son\sthe\spager.c\sPERSIST\srollback\sjournal\sdelete\slogic\ninside\sof\shasHotJournal().\s\sNo\schanges\sto\scode.
-D 2014-03-07T14:57:07.028
+C Fix\sa\sbug\scausing\s"SELECT\schar()"\sto\sreturn\sSQLITE_NOMEM.
+D 2014-03-08T19:07:03.394
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -175,7 +175,7 @@ F src/delete.c cdd57149543bb28304d8f717c243f2a86b1fc280
 F src/expr.c 014b8087a15c4c314bdd798cb1cb0b32693f8b40
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
-F src/func.c f4499b39d66b71825514334ce67b32ff14bd19f5
+F src/func.c 2945bb2c4cdc0ac43733046285a4434310be1811
 F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -573,7 +573,7 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test 00667bbeac044d007f6f021af1b9f6150f0c7ff8
+F test/func.test a21814945d32137412b553d98ad2107f9b2173a9
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
@@ -1155,7 +1155,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 1c318ef3b76e9a9a5ff2f156a9acddfc1bda0949
-R 061864752fb659e79b9068736cf1ac45
-U drh
-Z 9721365445b2c154201b5f1346741e86
+P e5b17a9d07a35c9b44ff977ba81b93d745d26a11
+R f73df97bd275791734e233575a443767
+U dan
+Z 7931bffb2eb7579d713d462f61979bc1
