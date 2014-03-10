@@ -824,7 +824,7 @@ void sqlite3Pragma(
   ** size of historical compatibility.
   */
   case PragTyp_DEFAULT_CACHE_SIZE: {
-    static const int iLn = __LINE__+2;
+    static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList getCacheSize[] = {
       { OP_Transaction, 0, 0,        0},                         /* 0 */
       { OP_ReadCookie,  0, 1,        BTREE_DEFAULT_CACHE_SIZE},  /* 1 */
@@ -1087,7 +1087,7 @@ void sqlite3Pragma(
         ** file. Before writing to meta[6], check that meta[3] indicates
         ** that this really is an auto-vacuum capable database.
         */
-        static const int iLn = __LINE__+2;
+        static const int iLn = VDBE_OFFSET_LINENO(2);
         static const VdbeOpList setMeta6[] = {
           { OP_Transaction,    0,         1,                 0},    /* 0 */
           { OP_ReadCookie,     0,         1,         BTREE_LARGEST_ROOT_PAGE},
@@ -1790,7 +1790,7 @@ void sqlite3Pragma(
     ** messages have been generated, output OK.  Otherwise output the
     ** error message
     */
-    static const int iLn = __LINE__+2;
+    static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList endCode[] = {
       { OP_AddImm,      1, 0,        0},    /* 0 */
       { OP_IfNeg,       1, 0,        0},    /* 1 */

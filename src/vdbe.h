@@ -272,11 +272,13 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 # define VdbeCoverageIf(v,x) if(x)sqlite3VdbeSetLineNumber(v,__LINE__)
 # define VdbeCoverageAlwaysTaken(v) sqlite3VdbeSetLineNumber(v,2);
 # define VdbeCoverageNeverTaken(v) sqlite3VdbeSetLineNumber(v,1);
+# define VDBE_OFFSET_LINENO(x) (__LINE__+x)
 #else
 # define VdbeCoverage(v)
 # define VdbeCoverageIf(v,x)
 # define VdbeCoverageAlwaysTaken(v)
 # define VdbeCoverageNeverTaken(v)
+# define VDBE_OFFSET_LINENO(x) 0
 #endif
 
 #endif
