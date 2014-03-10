@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scausing\s"SELECT\schar()"\sto\sreturn\sSQLITE_NOMEM.
-D 2014-03-08T19:07:03.394
+C Version\s3.8.4
+D 2014-03-10T12:20:37.813
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1155,7 +1155,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e5b17a9d07a35c9b44ff977ba81b93d745d26a11
+P ba39df9d4f7ffc6475ae0dc794f7d3f58c486de8
 R f73df97bd275791734e233575a443767
-U dan
-Z 7931bffb2eb7579d713d462f61979bc1
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.4 *
+U drh
+Z 82f901d4413784b1ea9af3cba9303801
