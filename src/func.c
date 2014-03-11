@@ -1017,7 +1017,7 @@ static void charFunc(
 ){
   unsigned char *z, *zOut;
   int i;
-  zOut = z = sqlite3_malloc( argc*4 );
+  zOut = z = sqlite3_malloc( argc*4+1 );
   if( z==0 ){
     sqlite3_result_error_nomem(context);
     return;

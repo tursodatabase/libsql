@@ -1361,4 +1361,9 @@ for {set i 65536} {$i<=0x10ffff} {incr i 139} {
   do_execsql_test func-30.5.$i {SELECT unicode(char($i))} $i
 }
 
+# Test char().
+#
+do_execsql_test func-31.1 { 
+  SELECT char(), length(char()), typeof(char()) 
+} {{} 0 text}
 finish_test
