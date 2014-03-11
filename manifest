@@ -1,5 +1,5 @@
-C Version\s3.8.4.1
-D 2014-03-11T15:27:36.923
+C Enable\sthe\sb-tree\scursor\sobjects\soverflow\spage-number\scache,\swhich\sis\snormally\senabled\sonly\sfor\sincr-blob\scursors,\sfor\sall\scursors.
+D 2014-03-11T20:33:04.219
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,9 +164,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 4d28fb15543f0e071b1780b2af8cd2ee489de32d
-F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
-F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
+F src/btree.c c748d8387789d01769e442b9da65e52ed61f408e
+F src/btree.h 6b0c1a3f0937f9852ec727c820e71dbdd4bd0b27
+F src/btreeInt.h 22a8f07968ec821910ab93cc822d7f0c404c74d1
 F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -283,7 +283,7 @@ F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h e54fc4f289fce48e81b3371128446033d097733b
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c e45e3f9daf38c5be3fd39e9aacc1c9066af57a06
-F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
+F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 46801acb342e5e4c07ba1777fe58880c143abb59
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
@@ -1156,10 +1156,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 33f5694fa42d9a521ca081de4ddd1e9dc8952b16
-R 581994aed374f15c1c6bac5b0a9a5df5
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.4.1 *
-U drh
-Z c1ec45dc8a92b80bfa16f4c74ccfeec8
+P 018d317b1257ce68a92908b05c9c7cf1494050d0
+R 9660042129e37a760044c3b5edf13974
+T *branch * overflow-pgno-cache
+T *sym-overflow-pgno-cache *
+T -sym-trunk *
+U dan
+Z 262878375cf61ff20b91f83b47f52bc2

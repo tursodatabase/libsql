@@ -497,6 +497,8 @@ struct BtCursor {
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
 #ifndef SQLITE_OMIT_INCRBLOB
+  int nOvflAlloc;           /* Allocated size of aOverflow[] array */
+  u8 bOvflValid;            /* True if size and contents of aOverflow[] valid */
   Pgno *aOverflow;          /* Cache of overflow page locations */
 #endif
   Pgno pgnoRoot;            /* The root page of this tree */
