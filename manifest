@@ -1,5 +1,5 @@
-C Update\sversion\snumber\sto\s3.8.4.1
-D 2014-03-11T15:25:43.839
+C Version\s3.8.4.1
+D 2014-03-11T15:27:36.923
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1156,7 +1156,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5527e23636eee192030f6a3c41628030b6c50bb8
+P 33f5694fa42d9a521ca081de4ddd1e9dc8952b16
 R 581994aed374f15c1c6bac5b0a9a5df5
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.4.1 *
 U drh
-Z 8230a7efb9bcd6e2bb88b717c62ea7a8
+Z c1ec45dc8a92b80bfa16f4c74ccfeec8
