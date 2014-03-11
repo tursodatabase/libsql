@@ -1,5 +1,5 @@
-C Combine\sthe\svarious\sboolean\sfields\sof\sthe\sBtCursor\sobject\sinto\sa\ssingle\nbit-vector.\s\sThis\sallows\ssetting\sor\sclearing\smore\sthan\sone\sboolean\sat\sa\ntime\sand\smakes\sthe\soverflow-pgno-cache\sbranch\sfaster\sthan\strunk\son\s\nspeedtest1.
-D 2014-03-11T23:40:44.961
+C Remove\sa\sstray\sC99-style\scomment.
+D 2014-03-11T23:44:10.719
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 225a3f4d5511d4f5eab38a686f6c7e22290739f3
+F src/btree.c 33b5ad54a14c2b62e8adbc7656dec2b7cd760cbf
 F src/btree.h 6b0c1a3f0937f9852ec727c820e71dbdd4bd0b27
 F src/btreeInt.h d1784d1e17d08d29e890190dbb9836fa64573381
 F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P da59198505990a4fe832be7932117c7e014955b7
-R a9a97bb8415d8a76adacb051af2ccc88
+P 968fec44d7fde3adbd3e9603e4282351f0d4bda1
+R c766c2eb192c274bbd3dc0af3849118d
 U drh
-Z 90b8a93448c14945f126312bc79eea6f
+Z 264233dee2a1cd950306c0e6dc59ee29

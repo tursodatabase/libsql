@@ -4337,7 +4337,6 @@ static int moveToRoot(BtCursor *pCur){
   assert( CURSOR_INVALID < CURSOR_REQUIRESEEK );
   assert( CURSOR_VALID   < CURSOR_REQUIRESEEK );
   assert( CURSOR_FAULT   > CURSOR_REQUIRESEEK );
-//  invalidateOverflowCache(pCur);
   if( pCur->eState>=CURSOR_REQUIRESEEK ){
     if( pCur->eState==CURSOR_FAULT ){
       assert( pCur->skipNext!=SQLITE_OK );
