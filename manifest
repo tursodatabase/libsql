@@ -1,5 +1,5 @@
-C Adjustments\sto\sthe\scost\scomputation\sfor\sthe\sskip-scan\squery\splan,\sto\stake\ninto\saccount\sthe\sfact\sthat\sa\sseek\shas\sto\soccur\son\seach\sskip.
-D 2014-03-10T20:12:31.746
+C Add\sa\stest\sto\ssee\swhat\shappens\sif\san\srtree\sconstructor\sencounters\san\sSQLITE_BUSY\serror.\sNo\schanges\sto\scode.
+D 2014-03-11T09:19:26.952
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -134,6 +134,7 @@ F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test 983e567b49b5dca165940f66b87e161aa30e82b2
 F ext/rtree/rtreeC.test 03975565f40a0bee165f613143e4dec716dd5a59
+F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h c34c1e41d1ab80bb8ad09aae402c9c956871a765
@@ -1155,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0a5318bc272b844e937cb1df3a07224034bc3450
-R e70fe0ad6a94758a25d6a041a31ecb69
-U drh
-Z 344f247bc956540503c85d9ccd8fecb9
+P 0769eebd028ce31375cf93509a1d3687f7b117eb
+R 69f07d6dc46567fe52be3d501cb07a93
+U dan
+Z a17034cb7e3a0293ec242be23e8c481f
