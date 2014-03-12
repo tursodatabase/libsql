@@ -3241,6 +3241,8 @@ static int rtreeInit(
   if( rc==SQLITE_OK ){
     *ppVtab = (sqlite3_vtab *)pRtree;
   }else{
+    assert( *ppVtab==0 );
+    assert( pRtree->nBusy==1 );
     rtreeRelease(pRtree);
   }
   return rc;

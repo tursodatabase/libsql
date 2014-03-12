@@ -243,6 +243,32 @@ do_eqp_test 5.8 {
   0 1 1 {SCAN TABLE rt VIRTUAL TABLE INDEX 1:}
 }
 
+#--------------------------------------------------------------------
+# Test that having a second connection drop the sqlite_stat1 table
+# before it is required by rtreeConnect() does not cause problems.
+#
+ifcapable rtree {
+  reset_db
+  do_execsql_test 6.1 {
+    CREATE TABLE t1(x);
+    CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2);
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO rt VALUES(1,2,3);
+    ANALYZE;
+  }
+  db close
+  sqlite3 db test.db
+  do_execsql_test 6.2 { SELECT * FROM t1 } {1}
+  
+  do_test 6.3 {
+    sqlite3 db2 test.db
+    db2 eval { DROP TABLE sqlite_stat1 }
+    db2 close
+    execsql { SELECT * FROM rt }
+  } {1 2.0 3.0}
+  db close
+}
+
 
 finish_test
 
