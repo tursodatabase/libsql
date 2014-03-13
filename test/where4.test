@@ -71,7 +71,7 @@ do_test where4-1.5 {
 } {1 2}
 do_test where4-1.6 {
   count {SELECT rowid FROM t1 WHERE w=1 AND x<9}
-} {1 3}
+} {1 2}
 do_test where4-1.7 {
   count {SELECT rowid FROM t1 WHERE w=1 AND x IS NULL AND y=3}
 } {2 2}
@@ -98,7 +98,7 @@ do_test where4-1.14 {
 } {7 2}
 do_test where4-1.15 {
   count {SELECT rowid FROM t1 WHERE w IS NULL AND x IS NULL AND y<0}
-} {2}
+} {1}
 do_test where4-1.16 {
   count {SELECT rowid FROM t1 WHERE w IS NULL AND x IS NULL AND y>=0}
 } {1}

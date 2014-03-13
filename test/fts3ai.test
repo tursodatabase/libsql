@@ -19,6 +19,11 @@ ifcapable !fts3 {
   return
 }
 
+ifcapable !utf16 {
+  finish_test
+  return
+}
+
 # Return the UTF-16 representation of the supplied UTF-8 string $str.
 # If $nt is true, append two 0x00 bytes as a nul terminator.
 # NOTE(shess) Copied from capi3.test.

@@ -23,6 +23,10 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 set presql ""
 catch { set presql "$::G(perm:presql);" }
 unset -nocomplain ::G(perm:presql)

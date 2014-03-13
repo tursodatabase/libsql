@@ -133,6 +133,10 @@ const unsigned char sqlite3CtypeMap[256] = {
 # define  SQLITE_USE_URI 0
 #endif
 
+#ifndef SQLITE_ALLOW_COVERING_INDEX_SCAN
+# define SQLITE_ALLOW_COVERING_INDEX_SCAN 1
+#endif
+
 /*
 ** The following singleton contains the global configuration for
 ** the SQLite library.
@@ -142,7 +146,9 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    1,                         /* bCoreMutex */
    SQLITE_THREADSAFE==1,      /* bFullMutex */
    SQLITE_USE_URI,            /* bOpenUri */
+   SQLITE_ALLOW_COVERING_INDEX_SCAN,   /* bUseCis */
    0x7ffffffe,                /* mxStrlen */
+   0,                         /* neverCorrupt */
    128,                       /* szLookaside */
    500,                       /* nLookaside */
    {0,0,0,0,0,0,0,0},         /* m */
@@ -151,6 +157,8 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    (void*)0,                  /* pHeap */
    0,                         /* nHeap */
    0, 0,                      /* mnHeap, mxHeap */
+   SQLITE_DEFAULT_MMAP_SIZE,  /* szMmap */
+   SQLITE_MAX_MMAP_SIZE,      /* mxMmap */
    (void*)0,                  /* pScratch */
    0,                         /* szScratch */
    0,                         /* nScratch */
@@ -170,8 +178,11 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* xLog */
    0,                         /* pLogArg */
    0,                         /* bLocaltimeFault */
+#ifdef SQLITE_ENABLE_SQLLOG
+   0,                         /* xSqllog */
+   0                          /* pSqllogArg */
+#endif
 };
-
 
 /*
 ** Hash table for global functions - functions common to all

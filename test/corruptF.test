@@ -19,6 +19,10 @@ set testprefix corruptF
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 proc str {i} { format %08d $i }
 
 # Create a 6 page database containing a single table - t1. Table t1 
@@ -147,4 +151,3 @@ for {set i 127} {$i >= 0} {incr i -1} {
 }
 
 finish_test
-

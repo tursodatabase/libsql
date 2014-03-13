@@ -29,9 +29,8 @@ do_execsql_test e_delete-0.0 {
   CREATE INDEX i1 ON t1(a);
 } {}
 
-# EVIDENCE-OF: R-62077-19799 -- syntax diagram delete-stmt
-#
-# EVIDENCE-OF: R-60796-31013 -- syntax diagram qualified-table-name
+# -- syntax diagram delete-stmt
+# -- syntax diagram qualified-table-name
 #
 do_delete_tests e_delete-0.1 {
   1  "DELETE FROM t1"                              {}
@@ -292,7 +291,7 @@ do_delete_tests e_delete-2.5 -error { near "%s": syntax error } {
 # of the DELETE statement is extended by the addition of optional ORDER
 # BY and LIMIT clauses:
 #
-# EVIDENCE-OF: R-52694-53361 -- syntax diagram delete-stmt-limited
+# -- syntax diagram delete-stmt-limited
 #
 do_delete_tests e_delete-3.1 {
   1   "DELETE FROM t1 LIMIT 5"                                    {}

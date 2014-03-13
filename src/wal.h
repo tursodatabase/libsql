@@ -31,7 +31,6 @@
 # define sqlite3WalClose(w,x,y,z)                0
 # define sqlite3WalBeginReadTransaction(y,z)     0
 # define sqlite3WalEndReadTransaction(z)
-# define sqlite3WalRead(v,w,x,y,z)               0
 # define sqlite3WalDbsize(y)                     0
 # define sqlite3WalBeginWriteTransaction(y)      0
 # define sqlite3WalEndWriteTransaction(x)        0
@@ -44,6 +43,7 @@
 # define sqlite3WalExclusiveMode(y,z)            0
 # define sqlite3WalHeapMemory(z)                 0
 # define sqlite3WalFramesize(z)                  0
+# define sqlite3WalFindFrame(x,y,z)              0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4
@@ -71,7 +71,8 @@ int sqlite3WalBeginReadTransaction(Wal *pWal, int *);
 void sqlite3WalEndReadTransaction(Wal *pWal);
 
 /* Read a page from the write-ahead log, if it is present. */
-int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, int nOut, u8 *pOut);
+int sqlite3WalFindFrame(Wal *, Pgno, u32 *);
+int sqlite3WalReadFrame(Wal *, u32, int, u8 *);
 
 /* If the WAL is not empty, return the size of the database. */
 Pgno sqlite3WalDbsize(Wal *pWal);

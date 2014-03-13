@@ -344,16 +344,16 @@ foreach {tn indexes} {
   catchsql { DROP INDEX i3 }
   execsql $indexes
 
-  # EVIDENCE-OF: R-46122-14930 If the join-op is "CROSS JOIN", "INNER
-  # JOIN", "JOIN" or a comma (",") and there is no ON or USING clause,
-  # then the result of the join is simply the cartesian product of the
-  # left and right-hand datasets.
+  # EVIDENCE-OF: R-49872-03192 If the join-operator is "CROSS JOIN",
+  # "INNER JOIN", "JOIN" or a comma (",") and there is no ON or USING
+  # clause, then the result of the join is simply the cartesian product of
+  # the left and right-hand datasets.
   #
   # EVIDENCE-OF: R-46256-57243 There is no difference between the "INNER
   # JOIN", "JOIN" and "," join operators.
   #
-  # EVIDENCE-OF: R-07544-24155 The "CROSS JOIN" join operator produces the
-  # same data as the "INNER JOIN", "JOIN" and "," operators
+  # EVIDENCE-OF: R-25071-21202 The "CROSS JOIN" join operator produces the
+  # same result as the "INNER JOIN", "JOIN" and "," operators
   #
   test_join $tn.1.1  "t1, t2"                {t1 t2}
   test_join $tn.1.2  "t1 INNER JOIN t2"      {t1 t2}
@@ -368,10 +368,10 @@ foreach {tn indexes} {
   test_join $tn.1.11 "t2 CROSS JOIN t2 AS x" {t2 t2}
   test_join $tn.1.12 "t2 JOIN t2 AS x"       {t2 t2}
 
-  # EVIDENCE-OF: R-22775-56496 If there is an ON clause specified, then
-  # the ON expression is evaluated for each row of the cartesian product
-  # as a boolean expression. All rows for which the expression evaluates
-  # to false are excluded from the dataset.
+  # EVIDENCE-OF: R-38465-03616 If there is an ON clause then the ON
+  # expression is evaluated for each row of the cartesian product as a
+  # boolean expression. Only rows for which the expression evaluates to
+  # true are included from the dataset.
   #
   test_join $tn.2.1  "t1, t2 ON (t1.a=t2.a)"  {t1 t2 -on {te_equals a a}}
   test_join $tn.2.2  "t2, t1 ON (t1.a=t2.a)"  {t2 t1 -on {te_equals a a}}
@@ -504,14 +504,14 @@ do_execsql_test e_select-2.2.0 {
   INSERT INTO t5 VALUES(2, 'two');
 } {}
 
-# EVIDENCE-OF: R-55824-40976 A sub-select specified in the join-source
-# following the FROM clause in a simple SELECT statement is handled as
-# if it was a table containing the data returned by executing the
-# sub-select statement.
+# EVIDENCE-OF: R-59237-46742 A subquery specified in the
+# table-or-subquery following the FROM clause in a simple SELECT
+# statement is handled as if it was a table containing the data returned
+# by executing the subquery statement.
 #
-# EVIDENCE-OF: R-42612-06757 Each column of the sub-select dataset
-# inherits the collation sequence and affinity of the corresponding
-# expression in the sub-select statement.
+# EVIDENCE-OF: R-27438-53558 Each column of the subquery has the
+# collation sequence and affinity of the corresponding expression in the
+# subquery statement.
 #
 foreach {tn subselect select spec} {
   1   "SELECT * FROM t2"   "SELECT * FROM t1 JOIN %ss%" 

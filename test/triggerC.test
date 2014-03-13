@@ -157,7 +157,7 @@ do_test triggerC-1.14 {
 } {}
 do_test triggerC-1.15 {
   catchsql { UPDATE OR ROLLBACK t1 SET a=100 }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 
 
 #-------------------------------------------------------------------------
@@ -222,7 +222,7 @@ foreach {n tdefn rc} {
     execsql  $tdefn
     catchsql {
       INSERT INTO t2 VALUES(10);
-      SELECT * FROM t2;
+      SELECT * FROM t2 ORDER BY rowid;
     }
   } $rc
 }
@@ -547,7 +547,7 @@ foreach {n insert log} {
     eval concat [execsql " 
       DELETE FROM log;
       $insert ; 
-      SELECT * FROM log;
+      SELECT * FROM log ORDER BY rowid;
     "]
   } [join $log " "]
 } 
@@ -584,8 +584,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g;
-        SELECT * FROM t5;
+        SELECT * FROM t5g ORDER BY rowid;
+        SELECT * FROM t5 ORDER BY rowid;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -611,8 +611,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g;
-        SELECT * FROM t5;
+        SELECT * FROM t5g ORDER BY rowid;
+        SELECT * FROM t5 ORDER BY rowid;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -633,8 +633,8 @@ foreach {n dml t5g t5} {
     execsql "
       BEGIN;
         $dml ;
-        SELECT * FROM t5g;
-        SELECT * FROM t5;
+        SELECT * FROM t5g ORDER BY rowid;
+        SELECT * FROM t5 ORDER BY rowid;
       ROLLBACK;
     "
   } [concat $t5g $t5]
@@ -949,6 +949,48 @@ do_catchsql_test triggerC-13.2 {
   UPDATE t12 SET a=a+1, b=b+1;
 } {1 {too many levels of trigger recursion}}
 
+#-------------------------------------------------------------------------
+# The following tests seek to verify that constant values (i.e. literals)
+# are not factored out of loops within trigger programs. SQLite does
+# not factor constants out of loops within trigger programs as it may only
+# do so in code generated before the first table or index is opened. And
+# by the time a trigger program is coded, at least one table or index has
+# always been opened.
+#
+# At one point, due to a bug allowing constant factoring within triggers,
+# the following SQL would produce the wrong result.
+#
+set SQL {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX i1 ON t1(a, c);
+  CREATE INDEX i2 ON t1(b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
 
+  CREATE TABLE t2(e, f);
+  CREATE INDEX i3 ON t2(e);
+  INSERT INTO t2 VALUES(1234567, 3);
+
+  CREATE TABLE empty(x);
+  CREATE TABLE not_empty(x);
+  INSERT INTO not_empty VALUES(2);
+
+  CREATE TABLE t4(x);
+  CREATE TABLE t5(g, h, i);
+
+  CREATE TRIGGER trig BEFORE INSERT ON t4 BEGIN
+    INSERT INTO t5 SELECT * FROM t1 WHERE 
+        (a IN (SELECT x FROM empty) OR b IN (SELECT x FROM not_empty)) 
+        AND c IN (SELECT f FROM t2 WHERE e=1234567);
+  END;
+
+  INSERT INTO t4 VALUES(0);
+  SELECT * FROM t5;
+}
+
+reset_db
+do_execsql_test triggerC-14.1 $SQL {1 2 3}
+reset_db
+optimization_control db factor-constants 0
+do_execsql_test triggerC-14.2 $SQL {1 2 3}
 
 finish_test

@@ -179,7 +179,7 @@ static int sqlite3MemSize(void *p){
     return 0;
   }
   pHdr = sqlite3MemsysGetHeader(p);
-  return pHdr->iSize;
+  return (int)pHdr->iSize;
 }
 
 /*
@@ -221,7 +221,7 @@ static void randomFill(char *pBuf, int nByte){
   x = SQLITE_PTR_TO_INT(pBuf);
   y = nByte | 1;
   while( nByte >= 4 ){
-    x = (x>>1) ^ (-(x&1) & 0xd0000001);
+    x = (x>>1) ^ (-(int)(x&1) & 0xd0000001);
     y = y*1103515245 + 12345;
     r = x ^ y;
     *(int*)pBuf = r;
@@ -229,7 +229,7 @@ static void randomFill(char *pBuf, int nByte){
     nByte -= 4;
   }
   while( nByte-- > 0 ){
-    x = (x>>1) ^ (-(x&1) & 0xd0000001);
+    x = (x>>1) ^ (-(int)(x&1) & 0xd0000001);
     y = y*1103515245 + 12345;
     r = x ^ y;
     *(pBuf++) = r & 0xff;
@@ -324,9 +324,9 @@ static void sqlite3MemFree(void *pPrior){
   }
   z = (char*)pBt;
   z -= pHdr->nTitle;
-  adjustStats(pHdr->iSize, -1);
+  adjustStats((int)pHdr->iSize, -1);
   randomFill(z, sizeof(void*)*pHdr->nBacktraceSlots + sizeof(*pHdr) +
-                pHdr->iSize + sizeof(int) + pHdr->nTitle);
+                (int)pHdr->iSize + sizeof(int) + pHdr->nTitle);
   free(z);
   sqlite3_mutex_leave(mem.mutex);  
 }
@@ -348,9 +348,9 @@ static void *sqlite3MemRealloc(void *pPrior, int nByte){
   pOldHdr = sqlite3MemsysGetHeader(pPrior);
   pNew = sqlite3MemMalloc(nByte);
   if( pNew ){
-    memcpy(pNew, pPrior, nByte<pOldHdr->iSize ? nByte : pOldHdr->iSize);
+    memcpy(pNew, pPrior, (int)(nByte<pOldHdr->iSize ? nByte : pOldHdr->iSize));
     if( nByte>pOldHdr->iSize ){
-      randomFill(&((char*)pNew)[pOldHdr->iSize], nByte - pOldHdr->iSize);
+      randomFill(&((char*)pNew)[pOldHdr->iSize], nByte - (int)pOldHdr->iSize);
     }
     sqlite3MemFree(pPrior);
   }
@@ -465,7 +465,7 @@ void sqlite3MemdebugSync(){
   for(pHdr=mem.pFirst; pHdr; pHdr=pHdr->pNext){
     void **pBt = (void**)pHdr;
     pBt -= pHdr->nBacktraceSlots;
-    mem.xBacktrace(pHdr->iSize, pHdr->nBacktrace-1, &pBt[1]);
+    mem.xBacktrace((int)pHdr->iSize, pHdr->nBacktrace-1, &pBt[1]);
   }
 }
 

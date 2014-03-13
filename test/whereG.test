@@ -1,0 +1,170 @@
+# 2013-09-05
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+# Test cases for query planning decisions and the unlikely() and
+# likelihood() functions.
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_execsql_test whereG-1.0 {
+  CREATE TABLE composer(
+    cid INTEGER PRIMARY KEY,
+    cname TEXT
+  );
+  CREATE TABLE album(
+    aid INTEGER PRIMARY KEY,
+    aname TEXT
+  );
+  CREATE TABLE track(
+    tid INTEGER PRIMARY KEY,
+    cid INTEGER REFERENCES composer,
+    aid INTEGER REFERENCES album,
+    title TEXT
+  );
+  CREATE INDEX track_i1 ON track(cid);
+  CREATE INDEX track_i2 ON track(aid);
+  INSERT INTO composer VALUES(1, 'W. A. Mozart');
+  INSERT INTO composer VALUES(2, 'Beethoven');
+  INSERT INTO composer VALUES(3, 'Thomas Tallis');
+  INSERT INTO composer VALUES(4, 'Joseph Hayden');
+  INSERT INTO composer VALUES(5, 'Thomas Weelkes');
+  INSERT INTO composer VALUES(6, 'J. S. Bach');
+  INSERT INTO composer VALUES(7, 'Orlando Gibbons');
+  INSERT INTO composer VALUES(8, 'Josquin des Prés');
+  INSERT INTO composer VALUES(9, 'Byrd');
+  INSERT INTO composer VALUES(10, 'Francis Poulenc');
+  INSERT INTO composer VALUES(11, 'Mendelsshon');
+  INSERT INTO composer VALUES(12, 'Zoltán Kodály');
+  INSERT INTO composer VALUES(13, 'Handel');
+  INSERT INTO album VALUES(100, 'Kodály: Missa Brevis');
+  INSERT INTO album VALUES(101, 'Messiah');
+  INSERT INTO album VALUES(102, 'Missa Brevis in D-, K.65');
+  INSERT INTO album VALUES(103, 'The complete English anthems');
+  INSERT INTO album VALUES(104, 'Mass in B Minor, BWV 232');
+  INSERT INTO track VALUES(10005, 12, 100, 'Sanctus');
+  INSERT INTO track VALUES(10007, 12, 100, 'Agnus Dei');
+  INSERT INTO track VALUES(10115, 13, 101, 'Surely He Hath Borne Our Griefs');
+  INSERT INTO track VALUES(10129, 13, 101, 'Since By Man Came Death');
+  INSERT INTO track VALUES(10206, 1, 102, 'Agnus Dei');
+  INSERT INTO track VALUES(10301, 3, 103, 'If Ye Love Me');
+  INSERT INTO track VALUES(10402, 6, 104, 'Domine Deus');
+  INSERT INTO track VALUES(10403, 6, 104, 'Qui tollis');
+} {}
+do_eqp_test whereG-1.1 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE unlikely(cname LIKE '%bach%')
+     AND composer.cid=track.cid
+     AND album.aid=track.aid;
+} {/.*composer.*track.*album.*/}
+do_execsql_test whereG-1.2 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE unlikely(cname LIKE '%bach%')
+     AND composer.cid=track.cid
+     AND album.aid=track.aid;
+} {{Mass in B Minor, BWV 232}}
+
+do_eqp_test whereG-1.3 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE likelihood(cname LIKE '%bach%', 0.5)
+     AND composer.cid=track.cid
+     AND album.aid=track.aid;
+} {/.*track.*composer.*album.*/}
+do_execsql_test whereG-1.4 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE likelihood(cname LIKE '%bach%', 0.5)
+     AND composer.cid=track.cid
+     AND album.aid=track.aid;
+} {{Mass in B Minor, BWV 232}}
+
+do_eqp_test whereG-1.5 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE cname LIKE '%bach%'
+     AND composer.cid=track.cid
+     AND album.aid=track.aid;
+} {/.*track.*composer.*album.*/}
+do_execsql_test whereG-1.6 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE cname LIKE '%bach%'
+     AND composer.cid=track.cid
+     AND album.aid=track.aid;
+} {{Mass in B Minor, BWV 232}}
+
+do_eqp_test whereG-1.7 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE cname LIKE '%bach%'
+     AND unlikely(composer.cid=track.cid)
+     AND unlikely(album.aid=track.aid);
+} {/.*track.*composer.*album.*/}
+do_execsql_test whereG-1.8 {
+  SELECT DISTINCT aname
+    FROM album, composer, track
+   WHERE cname LIKE '%bach%'
+     AND unlikely(composer.cid=track.cid)
+     AND unlikely(album.aid=track.aid);
+} {{Mass in B Minor, BWV 232}}
+
+do_test whereG-2.1 {
+  catchsql {
+    SELECT DISTINCT aname
+      FROM album, composer, track
+     WHERE likelihood(cname LIKE '%bach%', -0.01)
+       AND composer.cid=track.cid
+       AND album.aid=track.aid;
+  }
+} {1 {second argument to likelihood() must be a constant between 0.0 and 1.0}}
+do_test whereG-2.2 {
+  catchsql {
+    SELECT DISTINCT aname
+      FROM album, composer, track
+     WHERE likelihood(cname LIKE '%bach%', 1.01)
+       AND composer.cid=track.cid
+       AND album.aid=track.aid;
+  }
+} {1 {second argument to likelihood() must be a constant between 0.0 and 1.0}}
+do_test whereG-2.3 {
+  catchsql {
+    SELECT DISTINCT aname
+      FROM album, composer, track
+     WHERE likelihood(cname LIKE '%bach%', track.cid)
+       AND composer.cid=track.cid
+       AND album.aid=track.aid;
+  }
+} {1 {second argument to likelihood() must be a constant between 0.0 and 1.0}}
+
+# Commuting a term of the WHERE clause should not change the query plan
+#
+do_execsql_test whereG-3.0 {
+  CREATE TABLE a(a1 PRIMARY KEY, a2);
+  CREATE TABLE b(b1 PRIMARY KEY, b2);
+} {}
+do_eqp_test whereG-3.1 {
+  SELECT * FROM a, b WHERE b1=a1 AND a2=5;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+do_eqp_test whereG-3.2 {
+  SELECT * FROM a, b WHERE a1=b1 AND a2=5;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+do_eqp_test whereG-3.3 {
+  SELECT * FROM a, b WHERE a2=5 AND b1=a1;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+do_eqp_test whereG-3.4 {
+  SELECT * FROM a, b WHERE a2=5 AND a1=b1;
+} {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
+
+
+finish_test

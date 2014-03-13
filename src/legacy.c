@@ -38,7 +38,6 @@ int sqlite3_exec(
   const char *zLeftover;      /* Tail of unprocessed SQL */
   sqlite3_stmt *pStmt = 0;    /* The current SQL statement */
   char **azCols = 0;          /* Names of result columns */
-  int nRetry = 0;             /* Number of retry attempts */
   int callbackIsInit;         /* True if callback data is initialized */
 
   if( !sqlite3SafetyCheckOk(db) ) return SQLITE_MISUSE_BKPT;
@@ -46,12 +45,12 @@ int sqlite3_exec(
 
   sqlite3_mutex_enter(db->mutex);
   sqlite3Error(db, SQLITE_OK, 0);
-  while( (rc==SQLITE_OK || (rc==SQLITE_SCHEMA && (++nRetry)<2)) && zSql[0] ){
+  while( rc==SQLITE_OK && zSql[0] ){
     int nCol;
     char **azVals = 0;
 
     pStmt = 0;
-    rc = sqlite3_prepare(db, zSql, -1, &pStmt, &zLeftover);
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
     assert( rc==SQLITE_OK || pStmt==0 );
     if( rc!=SQLITE_OK ){
       continue;
@@ -108,11 +107,8 @@ int sqlite3_exec(
       if( rc!=SQLITE_ROW ){
         rc = sqlite3VdbeFinalize((Vdbe *)pStmt);
         pStmt = 0;
-        if( rc!=SQLITE_SCHEMA ){
-          nRetry = 0;
-          zSql = zLeftover;
-          while( sqlite3Isspace(zSql[0]) ) zSql++;
-        }
+        zSql = zLeftover;
+        while( sqlite3Isspace(zSql[0]) ) zSql++;
         break;
       }
     }

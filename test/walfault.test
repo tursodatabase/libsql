@@ -548,6 +548,43 @@ do_faultsim_test walfault-14 -prep {
   set nRow [db eval {SELECT count(*) FROM abc}]
   if {!(($nRow==2 && $testrc) || $nRow==3)} { error "Bad db content" }
 }
-finish_test
+
+#-------------------------------------------------------------------------
+# Test fault-handling when switching out of exclusive-locking mode.
+#
+do_test walfault-14-pre {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA auto_vacuum = 0;
+    PRAGMA journal_mode = WAL;
+    BEGIN;
+      CREATE TABLE abc(a PRIMARY KEY);
+      INSERT INTO abc VALUES(randomblob(1500));
+      INSERT INTO abc VALUES(randomblob(1500));
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test walfault-14 -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    SELECT count(*) FROM abc;
+    PRAGMA locking_mode = exclusive;
+    BEGIN;
+      INSERT INTO abc VALUES(randomblob(1500));
+    COMMIT;
+  }
+} -body {
+  db eval { 
+    PRAGMA locking_mode = normal;
+    BEGIN;
+      INSERT INTO abc VALUES(randomblob(1500));
+    COMMIT;
+  }
+} -test {
+  faultsim_integrity_check
+  set nRow [db eval {SELECT count(*) FROM abc}]
+  if {$nRow!=3 && $nRow!=4} { error "Bad db content" }
+}
 
 finish_test

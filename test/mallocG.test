@@ -53,6 +53,11 @@ do_malloc_test mallocG-3 -sqlprep {
      AND x BETWEEN 'i' AND 'm'
 }
 
+ifcapable !utf16 {
+  finish_test
+  return
+}
+
 proc utf16 {utf8} {
   set utf16 [encoding convertto unicode $utf8]
   append utf16 "\x00\x00"

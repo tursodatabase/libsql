@@ -137,6 +137,16 @@ typedef union RtreeCoord RtreeCoord;
 */
 #define HASHSIZE 128
 
+/* The xBestIndex method of this virtual table requires an estimate of
+** the number of rows in the virtual table to calculate the costs of
+** various strategies. If possible, this estimate is loaded from the
+** sqlite_stat1 table (with RTREE_MIN_ROWEST as a hard-coded minimum).
+** Otherwise, if no sqlite_stat1 entry is available, use 
+** RTREE_DEFAULT_ROWEST.
+*/
+#define RTREE_DEFAULT_ROWEST 1048576
+#define RTREE_MIN_ROWEST         100
+
 /* 
 ** An rtree virtual-table object.
 */
@@ -151,6 +161,7 @@ struct Rtree {
   char *zName;                /* Name of r-tree table */ 
   RtreeNode *aHash[HASHSIZE]; /* Hash table of in-memory nodes. */ 
   int nBusy;                  /* Current number of users of this structure */
+  i64 nRowEst;                /* Estimated number of rows in this table */
 
   /* List of nodes removed during a CondenseTree operation. List is
   ** linked together via the pointer normally used for hash chains -
@@ -1344,6 +1355,19 @@ static int rtreeFilter(
 }
 
 /*
+** Set the pIdxInfo->estimatedRows variable to nRow. Unless this
+** extension is currently being used by a version of SQLite too old to
+** support estimatedRows. In that case this function is a no-op.
+*/
+static void setEstimatedRows(sqlite3_index_info *pIdxInfo, i64 nRow){
+#if SQLITE_VERSION_NUMBER>=3008002
+  if( sqlite3_libversion_number()>=3008002 ){
+    pIdxInfo->estimatedRows = nRow;
+  }
+#endif
+}
+
+/*
 ** Rtree virtual table module xBestIndex method. There are three
 ** table scan strategies to choose from (in order from most to 
 ** least desirable):
@@ -1378,13 +1402,14 @@ static int rtreeFilter(
 ** is 'a', the second from the left 'b' etc.
 */
 static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  Rtree *pRtree = (Rtree*)tab;
   int rc = SQLITE_OK;
   int ii;
+  i64 nRow;                       /* Estimated rows returned by this scan */
 
   int iIdx = 0;
   char zIdxStr[RTREE_MAX_DIMENSIONS*8+1];
   memset(zIdxStr, 0, sizeof(zIdxStr));
-  UNUSED_PARAMETER(tab);
 
   assert( pIdxInfo->idxStr==0 );
   for(ii=0; ii<pIdxInfo->nConstraint && iIdx<(int)(sizeof(zIdxStr)-1); ii++){
@@ -1404,9 +1429,11 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
       /* This strategy involves a two rowid lookups on an B-Tree structures
       ** and then a linear search of an R-Tree node. This should be 
       ** considered almost as quick as a direct rowid lookup (for which 
-      ** sqlite uses an internal cost of 0.0).
+      ** sqlite uses an internal cost of 0.0). It is expected to return
+      ** a single row.
       */ 
-      pIdxInfo->estimatedCost = 10.0;
+      pIdxInfo->estimatedCost = 30.0;
+      setEstimatedRows(pIdxInfo, 1);
       return SQLITE_OK;
     }
 
@@ -1435,8 +1462,11 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
   if( iIdx>0 && 0==(pIdxInfo->idxStr = sqlite3_mprintf("%s", zIdxStr)) ){
     return SQLITE_NOMEM;
   }
-  assert( iIdx>=0 );
-  pIdxInfo->estimatedCost = (2000000.0 / (double)(iIdx + 1));
+
+  nRow = pRtree->nRowEst / (iIdx + 1);
+  pIdxInfo->estimatedCost = (double)6.0 * (double)nRow;
+  setEstimatedRows(pIdxInfo, nRow);
+
   return rc;
 }
 
@@ -2660,12 +2690,12 @@ static int newRowid(Rtree *pRtree, i64 *piRowid){
 */
 static int rtreeDeleteRowid(Rtree *pRtree, sqlite3_int64 iDelete){
   int rc;                         /* Return code */
-  RtreeNode *pLeaf;               /* Leaf node containing record iDelete */
+  RtreeNode *pLeaf = 0;           /* Leaf node containing record iDelete */
   int iCell;                      /* Index of iDelete cell in pLeaf */
   RtreeNode *pRoot;               /* Root node of rtree structure */
 
 
-  /* Obtain a reference to the root node to initialise Rtree.iDepth */
+  /* Obtain a reference to the root node to initialize Rtree.iDepth */
   rc = nodeAcquire(pRtree, 1, 0, &pRoot);
 
   /* Obtain a reference to the leaf node that contains the entry 
@@ -2863,7 +2893,7 @@ static int rtreeUpdate(
   */
   if( rc==SQLITE_OK && nData>1 ){
     /* Insert the new record into the r-tree */
-    RtreeNode *pLeaf;
+    RtreeNode *pLeaf = 0;
 
     /* Figure out the rowid of the new row. */
     if( bHaveRowid==0 ){
@@ -2908,6 +2938,43 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
     rc = sqlite3_exec(pRtree->db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
   }
+  return rc;
+}
+
+/*
+** This function populates the pRtree->nRowEst variable with an estimate
+** of the number of rows in the virtual table. If possible, this is based
+** on sqlite_stat1 data. Otherwise, use RTREE_DEFAULT_ROWEST.
+*/
+static int rtreeQueryStat1(sqlite3 *db, Rtree *pRtree){
+  const char *zFmt = "SELECT stat FROM %Q.sqlite_stat1 WHERE tbl = '%q_rowid'";
+  char *zSql;
+  sqlite3_stmt *p;
+  int rc;
+  i64 nRow = 0;
+
+  zSql = sqlite3_mprintf(zFmt, pRtree->zDb, pRtree->zName);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare_v2(db, zSql, -1, &p, 0);
+    if( rc==SQLITE_OK ){
+      if( sqlite3_step(p)==SQLITE_ROW ) nRow = sqlite3_column_int64(p, 0);
+      rc = sqlite3_finalize(p);
+    }else if( rc!=SQLITE_NOMEM ){
+      rc = SQLITE_OK;
+    }
+
+    if( rc==SQLITE_OK ){
+      if( nRow==0 ){
+        pRtree->nRowEst = RTREE_DEFAULT_ROWEST;
+      }else{
+        pRtree->nRowEst = MAX(nRow, RTREE_MIN_ROWEST);
+      }
+    }
+    sqlite3_free(zSql);
+  }
+
   return rc;
 }
 
@@ -2996,6 +3063,7 @@ static int rtreeSqlInit(
   appStmt[7] = &pRtree->pWriteParent;
   appStmt[8] = &pRtree->pDeleteParent;
 
+  rc = rtreeQueryStat1(db, pRtree);
   for(i=0; i<N_STATEMENT && rc==SQLITE_OK; i++){
     char *zSql = sqlite3_mprintf(azSql[i], zDb, zPrefix);
     if( zSql ){
@@ -3049,7 +3117,8 @@ static int getIntFromStmt(sqlite3 *db, const char *zSql, int *piVal){
 static int getNodeSize(
   sqlite3 *db,                    /* Database handle */
   Rtree *pRtree,                  /* Rtree handle */
-  int isCreate                    /* True for xCreate, false for xConnect */
+  int isCreate,                   /* True for xCreate, false for xConnect */
+  char **pzErr                    /* OUT: Error message, if any */
 ){
   int rc;
   char *zSql;
@@ -3062,6 +3131,8 @@ static int getNodeSize(
       if( (4+pRtree->nBytesPerCell*RTREE_MAXCELLS)<pRtree->iNodeSize ){
         pRtree->iNodeSize = 4+pRtree->nBytesPerCell*RTREE_MAXCELLS;
       }
+    }else{
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }
   }else{
     zSql = sqlite3_mprintf(
@@ -3069,6 +3140,9 @@ static int getNodeSize(
         pRtree->zDb, pRtree->zName
     );
     rc = getIntFromStmt(db, zSql, &pRtree->iNodeSize);
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    }
   }
 
   sqlite3_free(zSql);
@@ -3132,7 +3206,7 @@ static int rtreeInit(
   memcpy(pRtree->zName, argv[2], nName);
 
   /* Figure out the node size to use. */
-  rc = getNodeSize(db, pRtree, isCreate);
+  rc = getNodeSize(db, pRtree, isCreate, pzErr);
 
   /* Create/Connect to the underlying relational database schema. If
   ** that is successful, call sqlite3_declare_vtab() to configure
@@ -3167,6 +3241,8 @@ static int rtreeInit(
   if( rc==SQLITE_OK ){
     *ppVtab = (sqlite3_vtab *)pRtree;
   }else{
+    assert( *ppVtab==0 );
+    assert( pRtree->nBusy==1 );
     rtreeRelease(pRtree);
   }
   return rc;
@@ -3344,7 +3420,10 @@ int sqlite3_rtree_geometry_callback(
 }
 
 #if !SQLITE_CORE
-int sqlite3_extension_init(
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_rtree_init(
   sqlite3 *db,
   char **pzErrMsg,
   const sqlite3_api_routines *pApi

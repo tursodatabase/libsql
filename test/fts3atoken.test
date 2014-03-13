@@ -193,5 +193,3 @@ do_test fts3token-internal {
 
 
 finish_test
-
-

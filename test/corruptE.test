@@ -24,6 +24,10 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 # Do not run the tests in this file if ENABLE_OVERSIZE_CELL_CHECK is on.
 #
 ifcapable oversize_cell_check {
@@ -49,7 +53,7 @@ do_test corruptE-1.1 {
     INSERT OR IGNORE INTO t1 SELECT x*17,y FROM t1;
     INSERT OR IGNORE INTO t1 SELECT x*19,y FROM t1;
     CREATE INDEX t1i1 ON t1(x);
-    CREATE TABLE t2 AS SELECT x,2 as y FROM t1 WHERE rowid%5!=0;
+    CREATE TABLE t2 AS SELECT x,2 as y FROM t1 WHERE rowid%5!=0 ORDER BY rowid;
     COMMIT;
   }
 } {}

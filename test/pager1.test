@@ -15,6 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 source $testdir/wal_common.tcl
+set testprefix pager1
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -270,7 +271,7 @@ do_execsql_test pager1-3.1.2 {
 } {3 0}
 do_catchsql_test pager1-3.1.3 {
     INSERT INTO t1 SELECT a+3, randomblob(1500) FROM t1
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: counter}}
 do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
 do_execsql_test pager1-3.5 { SELECT a FROM t1 } {1 2 3}
 do_execsql_test pager1-3.6 { COMMIT } {}
@@ -752,7 +753,7 @@ sqlite3 db test.db -readonly 1
 do_catchsql_test pager1.4.5.6 {
   SELECT * FROM t1;
   SELECT * FROM t2;
-} {1 {disk I/O error}}
+} {1 {attempt to write a readonly database}}
 db close
 
 # Snapshot the file-system just before multi-file commit. Save the name
@@ -883,12 +884,20 @@ do_execsql_test pager1.4.7.1 {
 tv filter {}
 db close
 tv delete 
+catch {
+  test_syscall install fchmod
+  test_syscall fault 1 1
+}
 do_test pager1.4.7.2 {
   faultsim_restore_and_reopen
   catch {file attributes test.db-journal -permissions r--------}
   catch {file attributes test.db-journal -readonly 1}
   catchsql { SELECT * FROM t1 }
 } {1 {unable to open database file}}
+catch {
+  test_syscall reset
+  test_syscall fault 0 0
+}
 do_test pager1.4.7.3 {
   db close
   catch {file attributes test.db-journal -permissions rw-rw-rw-}
@@ -1365,7 +1374,7 @@ do_test pager1-9.4.1 {
 } {SQLITE_DONE SQLITE_OK}
 do_test pager1-9.4.2 {
   list [file size test.db2] [file size test.db]
-} {0 0}
+} {1024 0}
 db2 close
 
 #-------------------------------------------------------------------------
@@ -1374,6 +1383,7 @@ db2 close
 #
 testvfs tv -default 1
 foreach sectorsize {
+    16
     32   64   128   256   512   1024   2048 
     4096 8192 16384 32768 65536 131072 262144
 } {
@@ -1396,7 +1406,7 @@ foreach sectorsize {
       COMMIT;
     }
     file size test.db-journal
-  } [expr $sectorsize > 65536 ? 65536 : $sectorsize]
+  } [expr $sectorsize > 65536 ? 65536 : ($sectorsize<32 ? 512 : $sectorsize)]
 
   do_test pager1-10.$sectorsize.2 {
     execsql { 
@@ -1693,7 +1703,7 @@ do_catchsql_test pager1-14.1.4 {
   BEGIN;
     INSERT INTO t1(rowid, a, b) SELECT a+3, b, b FROM t1;
     INSERT INTO t1(rowid, a, b) SELECT a+3, b, b FROM t1;
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t1.rowid}}
 do_execsql_test pager1-14.1.5 {
   COMMIT;
   SELECT * FROM t1;
@@ -2235,7 +2245,6 @@ do_test pager1-25-1 {
   }
   db close
 } {}
-breakpoint
 do_test pager1-25-2 {
   faultsim_delete_and_reopen
   execsql {
@@ -2486,5 +2495,323 @@ do_test pager1-32.1 {
 
 # Cleanup 20MB file left by the previous test.
 forcedelete test.db
+
+#-------------------------------------------------------------------------
+# Test that if a transaction is committed in journal_mode=DELETE mode,
+# and the call to unlink() returns an ENOENT error, the COMMIT does not
+# succeed.
+#
+if {$::tcl_platform(platform)=="unix"} {
+  do_test pager1-33.1 {
+    sqlite3 db test.db
+    execsql {
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES('one');
+      INSERT INTO t1 VALUES('two');
+      BEGIN;
+        INSERT INTO t1 VALUES('three');
+        INSERT INTO t1 VALUES('four');
+    }
+    forcedelete bak-journal
+    file rename test.db-journal bak-journal
+
+    catchsql COMMIT
+  } {1 {disk I/O error}}
+
+  do_test pager1-33.2 {
+    file rename bak-journal test.db-journal
+    execsql { SELECT * FROM t1 }
+  } {one two}
+}
+
+#-------------------------------------------------------------------------
+# Test that appending pages to the database file then moving those pages
+# to the free-list before the transaction is committed does not cause
+# an error.
+#
+foreach {tn pragma strsize} {
+  1 { PRAGMA mmap_size = 0 } 2400
+  2 { }                       2400
+  3 { PRAGMA mmap_size = 0 } 4400
+  4 { }                       4400
+} {
+  reset_db
+  db func a_string a_string
+  db eval $pragma
+  do_execsql_test 34.$tn.1 {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+  do_execsql_test 34.$tn.2 {
+    BEGIN;
+    INSERT INTO t1 VALUES(2, a_string($strsize));
+    DELETE FROM t1 WHERE oid=2;
+    COMMIT;
+    PRAGMA integrity_check;
+  } {ok}
+}
+
+#-------------------------------------------------------------------------
+#
+reset_db
+do_test 35 {
+  sqlite3 db test.db
+
+  execsql {
+    CREATE TABLE t1(x, y);
+    PRAGMA journal_mode = WAL;
+    INSERT INTO t1 VALUES(1, 2);
+  }
+
+  execsql {
+    BEGIN;
+      CREATE TABLE t2(a, b);
+  }
+
+  hexio_write test.db-shm [expr 16*1024] [string repeat 0055 8192]
+  catchsql ROLLBACK
+} {0 {}}
+
+do_multiclient_test tn {
+  sql1 {
+    PRAGMA auto_vacuum = 0;
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+
+  do_test 36.$tn.1 { 
+    sql2 { PRAGMA max_page_count = 2 }
+    list [catch { sql2 { CREATE TABLE t2(x) } } msg] $msg
+  } {1 {database or disk is full}}
+
+  sql1 { PRAGMA checkpoint_fullfsync = 1 }
+  sql1 { CREATE TABLE t2(x) }
+
+  do_test 36.$tn.2 { 
+    sql2 { INSERT INTO t2 VALUES('xyz') }
+    list [catch { sql2 { CREATE TABLE t3(x) } } msg] $msg
+  } {1 {database or disk is full}}
+}
+
+forcedelete test1 test2
+foreach {tn uri} {
+  1   {file:?mode=memory&cache=shared}
+  2   {file:one?mode=memory&cache=shared}
+  3   {file:test1?cache=shared}
+  4   {file:test2?another=parameter&yet=anotherone}
+} {
+  do_test 37.$tn {
+    catch { db close }
+    sqlite3_shutdown
+    sqlite3_config_uri 1
+    sqlite3 db $uri
+
+    db eval {
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES(1);
+      SELECT * FROM t1;
+    }
+  } {1}
+
+  do_execsql_test 37.$tn.2 {
+    VACUUM;
+    SELECT * FROM t1;
+  } {1}
+
+  db close
+  sqlite3_shutdown
+  sqlite3_config_uri 0
+}
+
+do_test 38.1 {
+  catch { db close }
+  forcedelete test.db
+  set fd [open test.db w]
+  puts $fd "hello world"
+  close $fd
+  sqlite3 db test.db
+  catchsql { CREATE TABLE t1(x) }
+} {1 {file is encrypted or is not a database}}
+do_test 38.2 {
+  catch { db close }
+  forcedelete test.db
+} {}
+
+do_test 39.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA auto_vacuum = 1;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES('xxx');
+    INSERT INTO t1 VALUES('two');
+    INSERT INTO t1 VALUES(randomblob(400));
+    INSERT INTO t1 VALUES(randomblob(400));
+    INSERT INTO t1 VALUES(randomblob(400));
+    INSERT INTO t1 VALUES(randomblob(400));
+    BEGIN;
+    UPDATE t1 SET x = 'one' WHERE rowid=1;
+  }
+  set ::stmt [sqlite3_prepare db "SELECT * FROM t1 ORDER BY rowid" -1 dummy]
+  sqlite3_step $::stmt
+  sqlite3_column_text $::stmt 0
+} {one}
+do_test 39.2 {
+  execsql { CREATE TABLE t2(x) }
+  sqlite3_step $::stmt
+  sqlite3_column_text $::stmt 0
+} {two}
+do_test 39.3 {
+  sqlite3_finalize $::stmt
+  execsql COMMIT
+} {}
+
+do_execsql_test 39.4 {
+  PRAGMA auto_vacuum = 2;
+  CREATE TABLE t3(x);
+  CREATE TABLE t4(x);
+
+  DROP TABLE t2;
+  DROP TABLE t3;
+  DROP TABLE t4;
+}
+do_test 39.5 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA cache_size = 1;
+    PRAGMA incremental_vacuum;
+    PRAGMA integrity_check;
+  }
+} {ok}
+
+do_test 40.1 {
+  reset_db
+  execsql {
+    PRAGMA auto_vacuum = 1;
+    CREATE TABLE t1(x PRIMARY KEY);
+    INSERT INTO t1 VALUES(randomblob(1200));
+    PRAGMA page_count;
+  }
+} {6}
+do_test 40.2 {
+  execsql {
+    INSERT INTO t1 VALUES(randomblob(1200));
+    INSERT INTO t1 VALUES(randomblob(1200));
+    INSERT INTO t1 VALUES(randomblob(1200));
+  }
+} {}
+do_test 40.3 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA cache_size = 1;
+    CREATE TABLE t2(x);
+    PRAGMA integrity_check;
+  }
+} {ok}
+
+do_test 41.1 {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY);
+    INSERT INTO t1 VALUES(randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200) FROM t1;
+  }
+} {}
+do_test 41.2 {
+  testvfs tv -default 1
+  tv sectorsize 16384;
+  tv devchar [list]
+  db close
+  sqlite3 db test.db
+  execsql {
+    PRAGMA cache_size = 1;
+    DELETE FROM t1 WHERE rowid%4;
+    PRAGMA integrity_check;
+  }
+} {ok}
+db close
+tv delete
+
+set pending_prev [sqlite3_test_control_pending_byte 0x1000000]
+do_test 42.1 {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  db close
+  sqlite3_test_control_pending_byte 0x0010000
+  sqlite3 db test.db
+  db eval { PRAGMA mmap_size = 0 }
+  catchsql { SELECT sum(length(y)) FROM t1 }
+} {1 {database disk image is malformed}}
+do_test 42.2 {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  db close
+
+  testvfs tv -default 1
+  tv sectorsize 16384;
+  tv devchar [list]
+  sqlite3 db test.db -vfs tv
+  execsql { UPDATE t1 SET x = randomblob(200) }
+} {}
+db close
+tv delete
+sqlite3_test_control_pending_byte $pending_prev
+
+do_test 43.1 {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x, y);
+    INSERT INTO t1 VALUES(1, 2);
+    CREATE TABLE t2(x, y);
+    INSERT INTO t2 VALUES(1, 2);
+    CREATE TABLE t3(x, y);
+    INSERT INTO t3 VALUES(1, 2);
+  }
+  db close
+  sqlite3 db test.db
+
+  db eval { PRAGMA mmap_size = 0 }
+  db eval { SELECT * FROM t1 }
+  sqlite3_db_status db CACHE_MISS 0
+} {0 2 0}
+
+do_test 43.2 {
+  db eval { SELECT * FROM t2 }
+  sqlite3_db_status db CACHE_MISS 1
+} {0 3 0}
+
+do_test 43.3 {
+  db eval { SELECT * FROM t3 }
+  sqlite3_db_status db CACHE_MISS 0
+} {0 1 0}
 
 finish_test

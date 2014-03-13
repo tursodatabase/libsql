@@ -707,4 +707,3 @@ foreach {tn create} {
 
 set sqlite_fts3_enable_parentheses $sfep
 finish_test
-

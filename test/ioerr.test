@@ -258,7 +258,7 @@ do_ioerr_test ioerr-10 -ckrefcount true -tclprep {
     INSERT INTO t1 SELECT (a+500)%900, 'good string' FROM t1;
   }} msg
 
-  if {$msg != "column a is not unique"} {
+  if {$msg != "UNIQUE constraint failed: t1.a"} {
     error $msg
   }
 }

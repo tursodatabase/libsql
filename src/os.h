@@ -99,14 +99,6 @@
 # define SQLITE_OS_WINRT 0
 #endif
 
-/*
-** When compiled for WinCE or WinRT, there is no concept of the current
-** directory.
- */
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
-# define SQLITE_CURDIR 1
-#endif
-
 /* If the SET_FULLSYNC macro is not defined above, then make it
 ** a no-op
 */
@@ -259,6 +251,8 @@ int sqlite3OsShmMap(sqlite3_file *,int,int,int,void volatile **);
 int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
 void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmUnmap(sqlite3_file *id, int);
+int sqlite3OsFetch(sqlite3_file *id, i64, int, void **);
+int sqlite3OsUnfetch(sqlite3_file *, i64, void *);
 
 
 /* 

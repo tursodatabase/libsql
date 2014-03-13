@@ -34,7 +34,7 @@ do_test index3-1.2 {
     BEGIN;
     CREATE UNIQUE INDEX i1 ON t1(a);
   }
-} {1 {indexed columns are not unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test index3-1.3 {
   catchsql COMMIT;
 } {0 {}}

@@ -32,12 +32,24 @@
 /* If not building as part of the core, include sqlite3ext.h. */
 #ifndef SQLITE_CORE
 # include "sqlite3ext.h" 
-extern const sqlite3_api_routines *sqlite3_api;
+SQLITE_EXTENSION_INIT3
 #endif
 
 #include "sqlite3.h"
 #include "fts3_tokenizer.h"
 #include "fts3_hash.h"
+
+/*
+** This constant determines the maximum depth of an FTS expression tree
+** that the library will create and use. FTS uses recursion to perform 
+** various operations on the query tree, so the disadvantage of a large
+** limit is that it may allow very large queries to use large amounts
+** of stack space (perhaps causing a stack overflow).
+*/
+#ifndef SQLITE_FTS3_MAX_EXPR_DEPTH
+# define SQLITE_FTS3_MAX_EXPR_DEPTH 12
+#endif
+
 
 /*
 ** This constant controls how often segments are merged. Once there are
@@ -194,6 +206,7 @@ struct Fts3Table {
   const char *zName;              /* virtual table name */
   int nColumn;                    /* number of named columns in virtual table */
   char **azColumn;                /* column names.  malloced */
+  u8 *abNotindexed;               /* True for 'notindexed' columns */
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
   char *zContentTbl;              /* content=xxx option, or NULL */
   char *zLanguageid;              /* languageid=xxx option, or NULL */
@@ -210,7 +223,7 @@ struct Fts3Table {
 
   int nNodeSize;                  /* Soft limit for node size */
   u8 bFts4;                       /* True for FTS4, false for FTS3 */
-  u8 bHasStat;                    /* True if %_stat table exists */
+  u8 bHasStat;                    /* True if %_stat table exists (2==unknown) */
   u8 bHasDocsize;                 /* True if %_docsize table exists */
   u8 bDescIdx;                    /* True if doclists are in reverse order */
   u8 bIgnoreSavepoint;            /* True to ignore xSavepoint invocations */
@@ -254,6 +267,12 @@ struct Fts3Table {
   int inTransaction;     /* True after xBegin but before xCommit/xRollback */
   int mxSavepoint;       /* Largest valid xSavepoint integer */
 #endif
+
+#ifdef SQLITE_TEST
+  /* True to disable the incremental doclist optimization. This is controled
+  ** by special insert command 'test-no-incr-doclist'.  */
+  int bNoIncrDoclist;
+#endif
 };
 
 /*
@@ -279,7 +298,8 @@ struct Fts3Cursor {
   int eEvalmode;                  /* An FTS3_EVAL_XX constant */
   int nRowAvg;                    /* Average size of database rows, in pages */
   sqlite3_int64 nDoc;             /* Documents in table */
-
+  i64 iMinDocid;                  /* Minimum docid to return */
+  i64 iMaxDocid;                  /* Maximum docid to return */
   int isMatchinfoNeeded;          /* True when aMatchinfo[] needs filling in */
   u32 *aMatchinfo;                /* Information about most recent match */
   int nMatchinfo;                 /* Number of elements in aMatchinfo[] */
@@ -309,6 +329,15 @@ struct Fts3Cursor {
 #define FTS3_DOCID_SEARCH    1    /* Lookup by rowid on %_content table */
 #define FTS3_FULLTEXT_SEARCH 2    /* Full-text index search */
 
+/*
+** The lower 16-bits of the sqlite3_index_info.idxNum value set by
+** the xBestIndex() method contains the Fts3Cursor.eSearch value described
+** above. The upper 16-bits contain a combination of the following
+** bits, used to describe extra constraints on full-text searches.
+*/
+#define FTS3_HAVE_LANGID    0x00010000      /* languageid=? */
+#define FTS3_HAVE_DOCID_GE  0x00020000      /* docid>=? */
+#define FTS3_HAVE_DOCID_LE  0x00040000      /* docid<=? */
 
 struct Fts3Doclist {
   char *aAll;                    /* Array containing doclist (or NULL) */
@@ -421,7 +450,6 @@ int sqlite3Fts3SegReaderPending(
   Fts3Table*,int,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
 int sqlite3Fts3AllSegdirs(Fts3Table*, int, int, int, sqlite3_stmt **);
-int sqlite3Fts3ReadLock(Fts3Table *);
 int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char **, int*, int*);
 
 int sqlite3Fts3SelectDoctotal(Fts3Table *, sqlite3_stmt **);
@@ -496,6 +524,10 @@ struct Fts3MultiSegReader {
 
 int sqlite3Fts3Incrmerge(Fts3Table*,int,int);
 
+#define fts3GetVarint32(p, piVal) (                                           \
+  (*(u8*)(p)&0x80) ? sqlite3Fts3GetVarint32(p, piVal) : (*piVal=*(u8*)(p), 1) \
+)
+
 /* fts3.c */
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
@@ -524,7 +556,7 @@ void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *, const char *);
 
 /* fts3_expr.c */
 int sqlite3Fts3ExprParse(sqlite3_tokenizer *, int,
-  char **, int, int, int, const char *, int, Fts3Expr **
+  char **, int, int, int, const char *, int, Fts3Expr **, char **
 );
 void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST
@@ -548,6 +580,9 @@ int sqlite3Fts3MsrIncrNext(
 int sqlite3Fts3EvalPhrasePoslist(Fts3Cursor *, Fts3Expr *, int iCol, char **); 
 int sqlite3Fts3MsrOvfl(Fts3Cursor *, Fts3MultiSegReader *, int *);
 int sqlite3Fts3MsrIncrRestart(Fts3MultiSegReader *pCsr);
+
+/* fts3_tokenize_vtab.c */
+int sqlite3Fts3InitTok(sqlite3*, Fts3Hash *);
 
 /* fts3_unicode2.c (functions generated by parsing unicode text files) */
 #ifdef SQLITE_ENABLE_FTS4_UNICODE61

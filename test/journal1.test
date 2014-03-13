@@ -41,7 +41,7 @@ do_test journal1-1.1 {
 } 8
 
 # Make changes to the database and save the journal file.
-# Then delete the database.  Replace the the journal file
+# Then delete the database.  Replace the journal file
 # and try to create a new database with the same name.  The
 # old journal should not attempt to rollback into the new
 # database.

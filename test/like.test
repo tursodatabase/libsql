@@ -156,14 +156,27 @@ ifcapable !like_opt {
 
 # This procedure executes the SQL.  Then it appends to the result the
 # "sort" or "nosort" keyword (as in the cksort procedure above) then
-# it appends the ::sqlite_query_plan variable.
+# it appends the names of the table and index used.
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
   set data [execsql $sql]
   if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
-  return [concat $data $::sqlite_query_plan]
+  set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
+  # puts eqp=$eqp
+  foreach {a b c x} $eqp {
+    if {[regexp { TABLE (\w+ AS )?(\w+) USING COVERING INDEX (\w+)\y} \
+        $x all as tab idx]} {
+      lappend data {} $idx
+    } elseif {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all as tab idx]} {
+      lappend data $tab $idx
+    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+      lappend data $tab *
+    }
+  }
+  return $data   
 }
 
 # Perform tests on the like optimization.
@@ -176,7 +189,7 @@ do_test like-3.1 {
   queryplan {
     SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
   }
-} {ABC {ABC abc xyz} abc abcd sort t1 {}}
+} {ABC {ABC abc xyz} abc abcd sort t1 *}
 do_test like-3.2 {
   set sqlite_like_count
 } {12}
@@ -269,8 +282,8 @@ do_test like-3.12 {
 #
 do_test like-3.13 {
   set sqlite_like_count 0
+  db eval {PRAGMA case_sensitive_like=off;}
   queryplan {
-    PRAGMA case_sensitive_like=off;
     SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
   }
 } {ABC {ABC abc xyz} abc abcd nosort {} i1}
@@ -282,12 +295,14 @@ do_test like-3.14 {
 #
 do_test like-3.15 {
   set sqlite_like_count 0
-  queryplan {
+  db eval {
     PRAGMA case_sensitive_like=on;
     DROP INDEX i1;
+  }
+  queryplan {
     SELECT x FROM t1 WHERE x LIKE 'abc%' ORDER BY 1;
   }
-} {abc abcd sort t1 {}}
+} {abc abcd sort t1 *}
 do_test like-3.16 {
   set sqlite_like_count
 } 12
@@ -299,7 +314,7 @@ do_test like-3.17 {
   queryplan {
     SELECT x FROM t1 WHERE x GLOB 'abc*' ORDER BY 1;
   }
-} {abc abcd sort t1 {}}
+} {abc abcd sort t1 *}
 do_test like-3.18 {
   set sqlite_like_count
 } 12
@@ -318,8 +333,8 @@ do_test like-3.20 {
 } 0
 do_test like-3.21 {
   set sqlite_like_count 0
+  db eval {PRAGMA case_sensitive_like=on;}
   queryplan {
-    PRAGMA case_sensitive_like=on;
     SELECT x FROM t1 WHERE x GLOB 'abc*' ORDER BY 1;
   }
 } {abc abcd nosort {} i1}
@@ -328,8 +343,8 @@ do_test like-3.22 {
 } 0
 do_test like-3.23 {
   set sqlite_like_count 0
+  db eval {PRAGMA case_sensitive_like=off;}
   queryplan {
-    PRAGMA case_sensitive_like=off;
     SELECT x FROM t1 WHERE x GLOB 'a[bc]d' ORDER BY 1;
   }
 } {abd acd nosort {} i1}
@@ -406,7 +421,7 @@ do_test like-5.2 {
 do_test like-5.3 {
   execsql {
     CREATE TABLE t2(x TEXT COLLATE NOCASE);
-    INSERT INTO t2 SELECT * FROM t1;
+    INSERT INTO t2 SELECT * FROM t1 ORDER BY rowid;
     CREATE INDEX i2 ON t2(x COLLATE NOCASE);
   }
   set sqlite_like_count 0
@@ -662,8 +677,8 @@ ifcapable like_opt&&!icu {
       set res [sqlite3_exec_hex db {
          EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%ff%25'
       }]
-      regexp {INDEX i2} $res
-    } {0}
+      regexp {SCAN TABLE t2} $res
+    } {1}
   }
   do_test like-9.5.1 {
     set res [sqlite3_exec_hex db {
@@ -809,60 +824,66 @@ do_test like-11.0 {
   }
 } {12}
 do_test like-11.1 {
+  db eval {PRAGMA case_sensitive_like=OFF;}
   queryplan {
-    PRAGMA case_sensitive_like=OFF;
     SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
   }
 } {abc abcd ABC ABCD nosort t11 *}
 do_test like-11.2 {
+  db eval {PRAGMA case_sensitive_like=ON;}
   queryplan {
-    PRAGMA case_sensitive_like=ON;
     SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
   }
 } {abc abcd nosort t11 *}
 do_test like-11.3 {
-  queryplan {
+  db eval {
     PRAGMA case_sensitive_like=OFF;
     CREATE INDEX t11b ON t11(b);
+  }
+  queryplan {
     SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11b}
 do_test like-11.4 {
+  db eval {PRAGMA case_sensitive_like=ON;}
   queryplan {
-    PRAGMA case_sensitive_like=ON;
     SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY a;
   }
 } {abc abcd nosort t11 *}
 do_test like-11.5 {
-  queryplan {
+  db eval {
     PRAGMA case_sensitive_like=OFF;
     DROP INDEX t11b;
     CREATE INDEX t11bnc ON t11(b COLLATE nocase);
+  }
+  queryplan {
     SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11bnc}
 do_test like-11.6 {
+  db eval {CREATE INDEX t11bb ON t11(b COLLATE binary);}
   queryplan {
-    CREATE INDEX t11bb ON t11(b COLLATE binary);
     SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11bnc}
 do_test like-11.7 {
+  db eval {PRAGMA case_sensitive_like=ON;}
   queryplan {
-    PRAGMA case_sensitive_like=ON;
     SELECT b FROM t11 WHERE b LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd sort {} t11bb}
 do_test like-11.8 {
+  db eval {PRAGMA case_sensitive_like=OFF;}
   queryplan {
-    PRAGMA case_sensitive_like=OFF;
     SELECT b FROM t11 WHERE b GLOB 'abc*' ORDER BY +a;
   }
 } {abc abcd sort {} t11bb}
 do_test like-11.9 {
-  queryplan {
+  db eval {
     CREATE INDEX t11cnc ON t11(c COLLATE nocase);
     CREATE INDEX t11cb ON t11(c COLLATE binary);
+  }
+  queryplan {
     SELECT c FROM t11 WHERE c LIKE 'abc%' ORDER BY +a;
   }
 } {abc abcd ABC ABCD sort {} t11cnc}
@@ -871,6 +892,61 @@ do_test like-11.10 {
     SELECT c FROM t11 WHERE c GLOB 'abc*' ORDER BY +a;
   }
 } {abc abcd sort {} t11cb}
+
+# A COLLATE clause on the pattern does not change the result of a
+# LIKE operator.
+#
+do_execsql_test like-12.1 {
+  CREATE TABLE t12nc(id INTEGER, x TEXT UNIQUE COLLATE nocase);
+  INSERT INTO t12nc VALUES(1,'abcde'),(2,'uvwxy'),(3,'ABCDEF');
+  CREATE TABLE t12b(id INTEGER, x TEXT UNIQUE COLLATE binary);
+  INSERT INTO t12b VALUES(1,'abcde'),(2,'uvwxy'),(3,'ABCDEF');
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.2 {
+  SELECT id FROM t12b WHERE x LIKE 'abc%' ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.3 {
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.4 {
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.5 {
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {1 3}
+do_execsql_test like-12.6 {
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {1 3}
+
+# Adding a COLLATE clause to the pattern of a LIKE operator does nothing
+# to change the suitability of using an index to satisfy that LIKE
+# operator.
+#
+do_execsql_test like-12.11 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' ORDER BY +id;
+} {/SEARCH/}
+do_execsql_test like-12.12 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12b WHERE x LIKE 'abc%' ORDER BY +id;
+} {/SCAN/}
+do_execsql_test like-12.13 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {/SEARCH/}
+do_execsql_test like-12.14 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE nocase ORDER BY +id;
+} {/SCAN/}
+do_execsql_test like-12.15 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12nc WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {/SEARCH/}
+do_execsql_test like-12.16 {
+  EXPLAIN QUERY PLAN
+  SELECT id FROM t12b WHERE x LIKE 'abc%' COLLATE binary ORDER BY +id;
+} {/SCAN/}
 
 
 finish_test

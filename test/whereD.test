@@ -1,0 +1,222 @@
+# 2012 August 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing that an index may be used as a covering
+# index when there are OR expressions in the WHERE clause. 
+#
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set ::testprefix whereD
+
+do_execsql_test 1.1 {
+  CREATE TABLE t(i,j,k,m,n);
+  CREATE INDEX ijk ON t(i,j,k);
+  CREATE INDEX jmn ON t(j,m,n);
+
+  INSERT INTO t VALUES(3, 3, 'three', 3, 'tres');
+  INSERT INTO t VALUES(2, 2, 'two', 2, 'dos');
+  INSERT INTO t VALUES(1, 1, 'one', 1, 'uno');
+  INSERT INTO t VALUES(4, 4, 'four', 4, 'cuatro');
+}
+
+do_execsql_test 1.2 {
+  SELECT k FROM t WHERE (i=1 AND j=1) OR (i=2 AND j=2);
+} {one two}
+do_execsql_test 1.3 {
+  SELECT k FROM t WHERE (i=1 AND j=1) OR (+i=2 AND j=2);
+} {one two}
+do_execsql_test 1.4 {
+  SELECT n FROM t WHERE (i=1 AND j=1) OR (i=2 AND j=2);
+} {uno dos}
+do_execsql_test 1.5 {
+  SELECT k, n FROM t WHERE (i=1 AND j=1) OR (i=2 AND j=2);
+} {one uno two dos}
+do_execsql_test 1.6 {
+  SELECT k FROM t WHERE (i=1 AND j=1) OR (i=2 AND j=2) OR (i=3 AND j=3);
+} {one two three}
+do_execsql_test 1.7 {
+  SELECT n FROM t WHERE (i=1 AND j=1) OR (i=2 AND j=2) OR (i=3 AND j=3);
+} {uno dos tres}
+do_execsql_test 1.8 {
+  SELECT k FROM t WHERE (i=1 AND j=1) OR (j=2 AND m=2);
+} {one two}
+do_execsql_test 1.9 {
+  SELECT k FROM t WHERE (i=1 AND j=1) OR (i=2 AND j=2) OR (j=3 AND m=3);
+} {one two three}
+do_execsql_test 1.10 {
+  SELECT n FROM t WHERE (i=1 AND j=1) OR (i=2 AND j=2) OR (j=3 AND m=3);
+} {uno dos tres}
+do_execsql_test 1.11 {
+  SELECT k FROM t WHERE (i=1 AND j=1) OR (j=2 AND m=2) OR (i=3 AND j=3);
+} {one two three}
+do_execsql_test 1.12 {
+  SELECT n FROM t WHERE (i=1 AND j=1) OR (j=2 AND m=2) OR (i=3 AND j=3);
+} {uno dos tres}
+do_execsql_test 1.13 {
+  SELECT k FROM t WHERE (j=1 AND m=1) OR (i=2 AND j=2) OR (i=3 AND j=3);
+} {one two three}
+do_execsql_test 1.14 {
+  SELECT k FROM t WHERE (i=1 AND j=1) OR (j=2 AND i=2) OR (i=3 AND j=3);
+} {one two three}
+do_execsql_test 1.15 {
+  SELECT k FROM t WHERE (i=1 AND j=2) OR (i=2 AND j=1) OR (i=3 AND j=4);
+} {}
+do_execsql_test 1.16 {
+  SELECT k FROM t WHERE (i=1 AND (j=1 or j=2)) OR (i=3 AND j=3);
+} {one three}
+
+do_execsql_test 2.0 {
+  CREATE TABLE t1(a,b,c,d);
+  CREATE INDEX t1b ON t1(b);
+  CREATE INDEX t1c ON t1(c);
+  CREATE INDEX t1d ON t1(d);
+  CREATE TABLE t2(x,y);
+  CREATE INDEX t2y ON t2(y);
+  
+  INSERT INTO t1 VALUES(1,2,3,4);
+  INSERT INTO t1 VALUES(5,6,7,8);
+  INSERT INTO t2 VALUES(1,2);
+  INSERT INTO t2 VALUES(2,7);
+  INSERT INTO t2 VALUES(3,4);
+} {}
+do_execsql_test 2.1 {
+  SELECT a, x FROM t1 JOIN t2 ON +y=d OR x=7 ORDER BY a, x;
+} {1 3}
+do_execsql_test 2.2 {
+  SELECT a, x FROM t1 JOIN t2 ON y=d OR x=7 ORDER BY a, x;
+} {1 3}
+
+
+# Similar to [do_execsql_test], except that two elements are appended
+# to the result - the string "search" and the number of times test variable
+# sqlite3_search_count is incremented by running the supplied SQL. e.g.
+# 
+#   do_searchcount_test 1.0 { SELECT * FROM t1 } {x y search 2}
+#
+proc do_searchcount_test {tn sql res} {
+  uplevel [subst -nocommands {
+    do_test $tn {
+      set ::sqlite_search_count 0
+      concat [db eval {$sql}] search [set ::sqlite_search_count]
+    } [list $res]
+  }] 
+}
+
+do_execsql_test 3.0 {
+  CREATE TABLE t3(a, b, c);
+  CREATE UNIQUE INDEX i3 ON t3(a, b);
+  INSERT INTO t3 VALUES(1, 'one', 'i');
+  INSERT INTO t3 VALUES(3, 'three', 'iii');
+  INSERT INTO t3 VALUES(6, 'six', 'vi');
+  INSERT INTO t3 VALUES(2, 'two', 'ii');
+  INSERT INTO t3 VALUES(4, 'four', 'iv');
+  INSERT INTO t3 VALUES(5, 'five', 'v');
+
+  CREATE TABLE t4(x PRIMARY KEY, y);
+  INSERT INTO t4 VALUES('a', 'one');
+  INSERT INTO t4 VALUES('b', 'two');
+}
+
+do_searchcount_test 3.1 {
+  SELECT a, b FROM t3 WHERE (a=1 AND b='one') OR (a=2 AND b='two')
+} {1 one 2 two search 2}
+
+do_searchcount_test 3.2 {
+  SELECT a, c FROM t3 WHERE (a=1 AND b='one') OR (a=2 AND b='two')
+} {1 i 2 ii search 4}
+
+do_searchcount_test 3.4.1 {
+  SELECT y FROM t4 WHERE x='a'
+} {one search 2}
+do_searchcount_test 3.4.2 {
+  SELECT a, b FROM t3 WHERE 
+        (a=1 AND b=(SELECT y FROM t4 WHERE x='a')) 
+     OR (a=2 AND b='two')
+} {1 one 2 two search 4}
+do_searchcount_test 3.4.3 {
+  SELECT a, b FROM t3 WHERE 
+        (a=2 AND b='two')
+     OR (a=1 AND b=(SELECT y FROM t4 WHERE x='a')) 
+} {2 two 1 one search 4}
+do_searchcount_test 3.4.4 {
+  SELECT a, b FROM t3 WHERE 
+        (a=2 AND b=(SELECT y FROM t4 WHERE x='b')) 
+     OR (a=1 AND b=(SELECT y FROM t4 WHERE x='a')) 
+} {2 two 1 one search 6}
+
+do_searchcount_test 3.5.1 {
+  SELECT a, b FROM t3 WHERE (a=1 AND b='one') OR rowid=4
+} {1 one 2 two search 2}
+do_searchcount_test 3.5.2 {
+  SELECT a, c FROM t3 WHERE (a=1 AND b='one') OR rowid=4
+} {1 i 2 ii search 2}
+
+# Ticket [d02e1406a58ea02d] (2012-10-04)
+# LEFT JOIN with an OR in the ON clause causes segfault 
+#
+do_test 4.1 {
+  db eval {
+    CREATE TABLE t41(a,b,c);
+    INSERT INTO t41 VALUES(1,2,3), (4,5,6);
+    CREATE TABLE t42(d,e,f);
+    INSERT INTO t42 VALUES(3,6,9), (4,8,12);
+    SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.e=x.b);
+  }
+} {1 2 3 3 6 9 4 5 6 {} {} {}}
+do_test 4.2 {
+  db eval {
+    CREATE INDEX t42d ON t42(d);
+    CREATE INDEX t42e ON t42(e);
+    SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.e=x.b);
+  }
+} {1 2 3 3 6 9 4 5 6 {} {} {}}
+do_test 4.3 {
+  db eval {
+    SELECT * FROM t41 AS x LEFT JOIN t42 AS y ON (y.d=x.c) OR (y.d=x.b);
+  }
+} {1 2 3 3 6 9 4 5 6 {} {} {}}
+
+# Ticket [bc1aea7b725f276177]
+# Incorrect result on LEFT JOIN with OR constraints and an ORDER BY clause.
+#
+do_execsql_test 4.4 {
+  CREATE TABLE t44(a INTEGER, b INTEGER);
+  INSERT INTO t44 VALUES(1,2);
+  INSERT INTO t44 VALUES(3,4);
+  SELECT *
+    FROM t44 AS x
+       LEFT JOIN (SELECT a AS c, b AS d FROM t44) AS y ON a=c
+   WHERE d=4 OR d IS NULL;
+} {3 4 3 4}
+do_execsql_test 4.5 {
+  SELECT *
+    FROM t44 AS x
+       LEFT JOIN (SELECT a AS c, b AS d FROM t44) AS y ON a=c
+   WHERE d=4 OR d IS NULL
+   ORDER BY a;
+} {3 4 3 4}
+do_execsql_test 4.6 {
+  CREATE TABLE t46(c INTEGER, d INTEGER);
+  INSERT INTO t46 SELECT a, b FROM t44;
+  SELECT * FROM t44 LEFT JOIN t46 ON a=c
+   WHERE d=4 OR d IS NULL;
+} {3 4 3 4}
+do_execsql_test 4.7 {
+  SELECT * FROM t44 LEFT JOIN t46 ON a=c
+   WHERE d=4 OR d IS NULL
+   ORDER BY a;
+} {3 4 3 4}
+
+
+
+finish_test

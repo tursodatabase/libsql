@@ -28,7 +28,7 @@
 
 #include "sqlite3.h"
 #include "sqlite3ext.h"
-SQLITE_EXTENSION_INIT1
+SQLITE_EXTENSION_INIT3
 
 #include "fts2_hash.h"
 #include "fts2_tokenizer.h"
@@ -319,7 +319,7 @@ static void intTestFunc(
 /*
 ** Set up SQL objects in database db used to access the contents of
 ** the hash table pointed to by argument pHash. The hash table must
-** been initialised to use string keys, and to take a private copy 
+** been initialized to use string keys, and to take a private copy 
 ** of the key when a value is inserted. i.e. by a call similar to:
 **
 **    sqlite3Fts2HashInit(pHash, FTS2_HASH_STRING, 1);

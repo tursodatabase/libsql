@@ -74,7 +74,7 @@ do_test tkt35xx-1.2.2 {
     DROP TABLE t5;
     INSERT INTO t3(a, b) SELECT c, d FROM t4;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t3.a}}
 do_test tkt35xx-1.2.3 {
   # Show that the transaction has not been rolled back.
   catchsql BEGIN

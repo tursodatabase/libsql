@@ -36,6 +36,12 @@ do_test filectrl-1.5 {
   sqlite3 db test_control_lockproxy.db
   file_control_lockproxy_test db [get_pwd]
 } {}
+do_test filectrl-1.6 {
+  sqlite3 db test.db
+  set fn [file_control_tempfilename db]
+  puts -nonewline \[$fn\]
+  set fn
+} {/etilqs_/}
 db close
 forcedelete .test_control_lockproxy.db-conch test.proxy
 finish_test

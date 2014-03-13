@@ -32,7 +32,7 @@ ifcapable {!utf16} {
 # enc2.3.*: Simple tests with a UTF-16BE db.
 # enc2.4.*: Test that attached databases must have the same text encoding
 #           as the main database.
-# enc2.5.*: Test the behaviour of the library when a collation sequence is
+# enc2.5.*: Test the behavior of the library when a collation sequence is
 #           not available for the most desirable text encoding.
 # enc2.6.*: Similar test for user functions.
 # enc2.7.*: Test that the VerifyCookie opcode protects against assuming the

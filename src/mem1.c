@@ -49,16 +49,6 @@
 ** macros.
 */
 #ifdef SQLITE_SYSTEM_MALLOC
-
-/*
-** The MSVCRT has malloc_usable_size() but it is called _msize().
-** The use of _msize() is automatic, but can be disabled by compiling
-** with -DSQLITE_WITHOUT_MSIZE
-*/
-#if defined(_MSC_VER) && !defined(SQLITE_WITHOUT_MSIZE)
-# define SQLITE_MALLOCSIZE _msize
-#endif
-
 #if defined(__APPLE__) && !defined(SQLITE_WITHOUT_ZONEMALLOC)
 
 /*
@@ -81,21 +71,47 @@ static malloc_zone_t* _sqliteZone_;
 ** Use standard C library malloc and free on non-Apple systems.  
 ** Also used by Apple systems if SQLITE_WITHOUT_ZONEMALLOC is defined.
 */
-#define SQLITE_MALLOC(x)    malloc(x)
-#define SQLITE_FREE(x)      free(x)
-#define SQLITE_REALLOC(x,y) realloc((x),(y))
+#define SQLITE_MALLOC(x)             malloc(x)
+#define SQLITE_FREE(x)               free(x)
+#define SQLITE_REALLOC(x,y)          realloc((x),(y))
 
-#if (defined(_MSC_VER) && !defined(SQLITE_WITHOUT_MSIZE)) \
-      || (defined(HAVE_MALLOC_H) && defined(HAVE_MALLOC_USABLE_SIZE))
-# include <malloc.h>    /* Needed for malloc_usable_size on linux */
+/*
+** The malloc.h header file is needed for malloc_usable_size() function
+** on some systems (e.g. Linux).
+*/
+#if defined(HAVE_MALLOC_H) && defined(HAVE_MALLOC_USABLE_SIZE)
+#  define SQLITE_USE_MALLOC_H
+#  define SQLITE_USE_MALLOC_USABLE_SIZE
+/*
+** The MSVCRT has malloc_usable_size(), but it is called _msize().  The
+** use of _msize() is automatic, but can be disabled by compiling with
+** -DSQLITE_WITHOUT_MSIZE.  Using the _msize() function also requires
+** the malloc.h header file.
+*/
+#elif defined(_MSC_VER) && !defined(SQLITE_WITHOUT_MSIZE)
+#  define SQLITE_USE_MALLOC_H
+#  define SQLITE_USE_MSIZE
 #endif
-#ifdef HAVE_MALLOC_USABLE_SIZE
-# ifndef SQLITE_MALLOCSIZE
-#  define SQLITE_MALLOCSIZE(x) malloc_usable_size(x)
-# endif
-#else
-# undef SQLITE_MALLOCSIZE
-#endif
+
+/*
+** Include the malloc.h header file, if necessary.  Also set define macro
+** SQLITE_MALLOCSIZE to the appropriate function name, which is _msize()
+** for MSVC and malloc_usable_size() for most other systems (e.g. Linux).
+** The memory size function can always be overridden manually by defining
+** the macro SQLITE_MALLOCSIZE to the desired function name.
+*/
+#if defined(SQLITE_USE_MALLOC_H)
+#  include <malloc.h>
+#  if defined(SQLITE_USE_MALLOC_USABLE_SIZE)
+#    if !defined(SQLITE_MALLOCSIZE)
+#      define SQLITE_MALLOCSIZE(x)   malloc_usable_size(x)
+#    endif
+#  elif defined(SQLITE_USE_MSIZE)
+#    if !defined(SQLITE_MALLOCSIZE)
+#      define SQLITE_MALLOCSIZE      _msize
+#    endif
+#  endif
+#endif /* defined(SQLITE_USE_MALLOC_H) */
 
 #endif /* __APPLE__ or not __APPLE__ */
 

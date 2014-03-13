@@ -75,7 +75,7 @@ int sqlite3async_initialize(const char *zParent, int isDefault);
 ** On win32 platforms, this function also releases the small number of 
 ** critical section and event objects created by sqlite3async_initialize().
 */ 
-void sqlite3async_shutdown();
+void sqlite3async_shutdown(void);
 
 /*
 ** This function may only be called when the asynchronous IO VFS is 
@@ -94,7 +94,7 @@ void sqlite3async_shutdown();
 ** If multiple simultaneous calls are made to sqlite3async_run() from two
 ** or more threads, then the calls are serialized internally.
 */
-void sqlite3async_run();
+void sqlite3async_run(void);
 
 /*
 ** This function may only be called when the asynchronous IO VFS is 

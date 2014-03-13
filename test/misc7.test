@@ -15,9 +15,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-do_test misc7-1-misuse {
-  c_misuse_test
-} {}
+if {[clang_sanitize_address]==0} {
+  do_test misc7-1-misuse {
+    c_misuse_test
+  } {}
+}
 
 do_test misc7-2 {
   c_realloc_test
@@ -269,17 +271,17 @@ ifcapable explain {
     CREATE TABLE abc(a PRIMARY KEY, b, c);
     EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE rowid = 1;
   } {
-    0 0 0 {SEARCH TABLE abc AS t2 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+    0 0 0 {SEARCH TABLE abc AS t2 USING INTEGER PRIMARY KEY (rowid=?)}
   }
   do_execsql_test misc7-14.2 {
     EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 WHERE a = 1;
   } {0 0 0 
-     {SEARCH TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (a=?) (~1 rows)}
+     {SEARCH TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (a=?)}
   }
   do_execsql_test misc7-14.3 {
     EXPLAIN QUERY PLAN SELECT * FROM abc AS t2 ORDER BY a;
   } {0 0 0 
-     {SCAN TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1 (~1000000 rows)}
+     {SCAN TABLE abc AS t2 USING INDEX sqlite_autoindex_abc_1}
   }
 }
 
@@ -355,7 +357,7 @@ do_ioerr_test misc7-16 -sqlprep {
     COMMIT;
   }} msg]
 
-  if {!$rc || ($rc && [string first "columns" $msg]==0)} {
+  if {!$rc || ($rc && [string first "UNIQUE" $msg]==0)} {
     set msg
   } else {
     error $msg
@@ -488,6 +490,34 @@ do_test misc7-21.1 {
   list $rc $msg
 } {1 {unable to open database file}}
 
+# Try to do hot-journal rollback with a read-only connection. The 
+# error code should be SQLITE_READONLY_ROLLBACK.
+#
+do_test misc7-22.1 {
+  db close
+  forcedelete test.db copy.db-journal
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  db close
+  sqlite3 db test.db -readonly 1
+  catchsql {
+    INSERT INTO t1 VALUES(5, 6);
+  }
+} {1 {attempt to write a readonly database}}
+do_test misc7-22.2 { execsql { SELECT * FROM t1 } } {1 2 3 4}
+do_test misc7-22.3 { 
+  set fd [open test.db-journal w]
+  puts $fd [string repeat abc 1000]
+  close $fd
+  catchsql { SELECT * FROM t1 }
+} {1 {attempt to write a readonly database}}
+do_test misc7-22.4 { 
+  sqlite3_extended_errcode db
+} SQLITE_READONLY_ROLLBACK
 
 db close
 forcedelete test.db

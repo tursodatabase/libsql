@@ -397,16 +397,16 @@ do_test incrblob2-8.4 {
 } {cccccccccccccccccccc}
 do_test incrblob2-8.5 {
   catchsql {UPDATE t3 SET a = 6 WHERE a > 3}
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: t3.a}}
 do_test incrblob2-8.6 {
   catchsql {UPDATE t3 SET a = 6 WHERE a > 3}
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: t3.a}}
 do_test incrblob2-8.7 {
   sqlite3_blob_read $h 0 20
 } {cccccccccccccccccccc}
 do_test incrblob2-8.8 {
   catchsql {UPDATE t3 SET a = 6 WHERE a = 3 OR a = 5}
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: t3.a}}
 do_test incrblob2-8.9 {
   set rc [catch {sqlite3_blob_read $h 0 20} msg]
   list $rc $msg

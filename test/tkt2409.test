@@ -107,7 +107,7 @@ do_test tkt2409-1.2 {
 integrity_check tkt2409-1.3
 
 # Check that the transaction was rolled back. Because the INSERT
-# statement in which the "I/O error" occured did not open a statement
+# statement in which the "I/O error" occurred did not open a statement
 # transaction, SQLite had no choice but to roll back the transaction.
 #
 do_test tkt2409-1.4 {
@@ -175,7 +175,7 @@ do_test tkt2409-3.2 {
 integrity_check tkt2409-3.3
 
 # Check that the transaction was rolled back. Because the INSERT
-# statement in which the "I/O error" occured did not open a statement
+# statement in which the "I/O error" occurred did not open a statement
 # transaction, SQLite had no choice but to roll back the transaction.
 #
 do_test tkt2409-3.4 {

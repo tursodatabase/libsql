@@ -53,6 +53,8 @@ struct PgHdr {
 #define PGHDR_REUSE_UNLIKELY    0x010  /* A hint that reuse is unlikely */
 #define PGHDR_DONT_WRITE        0x020  /* Do not write content to disk */
 
+#define PGHDR_MMAP              0x040  /* This is an mmap page object */
+
 /* Initialize and shutdown the page cache subsystem */
 int sqlite3PcacheInitialize(void);
 void sqlite3PcacheShutdown(void);

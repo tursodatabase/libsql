@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix temptrigger
 
 ifcapable {!trigger || !shared_cache} { finish_test ; return }
 
@@ -200,5 +201,79 @@ do_test temptrigger-3.4 {
 
 catch { db close }
 catch { db2 close }
+
+
+#-------------------------------------------------------------------------
+# Test that creating a temp table after a temp trigger on the same name
+# has been created is an error.
+#
+reset_db
+do_execsql_test 4.0 {
+  CREATE TABLE t1(x);
+  CREATE TEMP TRIGGER tr1 BEFORE INSERT ON t1 BEGIN
+    SELECT 1,2,3;
+  END;
+}
+
+do_execsql_test 4.1 {
+  CREATE TEMP TABLE t1(x);
+}
+
+#-------------------------------------------------------------------------
+# Test that no harm is done if the table a temp trigger is attached to is
+# deleted by an external connection.
+#
+reset_db
+do_execsql_test 5.0 {
+  CREATE TABLE t1(x);
+  CREATE TEMP TRIGGER tr1 BEFORE INSERT ON t1 BEGIN SELECT 1,2,3; END;
+}
+
+do_test 5.1 {
+  sqlite3 db2 test.db
+  execsql { DROP TABLE t1 } db2
+} {}
+
+do_execsql_test 5.2 {
+  SELECT * FROM sqlite_master;
+  SELECT * FROM sqlite_temp_master;
+} {
+  trigger tr1 t1 0 
+  {CREATE TRIGGER tr1 BEFORE INSERT ON t1 BEGIN SELECT 1,2,3; END}
+}
+db2 close
+
+#-------------------------------------------------------------------------
+# Check that if a second connection creates a table in an attached database
+# with the same name as a table in the main database that has a temp
+# trigger attached to it nothing goes awry.
+#
+reset_db
+forcedelete test.db2
+
+do_execsql_test 6.0 {
+  CREATE TABLE t1(x);
+  CREATE TEMP TRIGGER tr1 BEFORE INSERT ON t1 BEGIN 
+    SELECT raise(ABORT, 'error'); 
+  END;
+  ATTACH 'test.db2' AS aux;
+}
+
+do_test 6.1 {
+  sqlite3 db2 test.db2
+  execsql { CREATE TABLE t1(a, b, c); } db2
+} {}
+
+do_execsql_test 6.2 {
+  SELECT type,name,tbl_name,sql FROM aux.sqlite_master;
+  INSERT INTO aux.t1 VALUES(1,2,3);
+} {
+  table t1 t1 {CREATE TABLE t1(a, b, c)}
+}
+
+do_catchsql_test 6.3 {
+  INSERT INTO main.t1 VALUES(1);
+} {1 error}
+db2 close
 
 finish_test

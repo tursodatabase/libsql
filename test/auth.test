@@ -2080,6 +2080,42 @@ ifcapable {altertable} {
   execsql {DROP TABLE t5}
 } ;# ifcapable altertable
 
+ifcapable {cte} {
+  do_test auth-1.310 {
+    proc auth {code arg1 arg2 arg3 arg4} {
+      if {$code=="SQLITE_RECURSIVE"} {
+        return SQLITE_DENY
+      }
+      return SQLITE_OK
+    }
+    db eval {
+       DROP TABLE IF EXISTS t1;
+       CREATE TABLE t1(a,b);
+       INSERT INTO t1 VALUES(1,2),(3,4),(5,6);
+    }
+  } {}
+  do_catchsql_test auth-1.311 {
+    WITH
+       auth1311(x,y) AS (SELECT a+b, b-a FROM t1)
+    SELECT * FROM auth1311 ORDER BY x;
+  } {0 {3 1 7 1 11 1}}
+  do_catchsql_test auth-1.312 {
+    WITH RECURSIVE
+       auth1312(x,y) AS (SELECT a+b, b-a FROM t1)
+    SELECT x, y FROM auth1312 ORDER BY x;
+  } {0 {3 1 7 1 11 1}}
+  do_catchsql_test auth-1.313 {
+    WITH RECURSIVE
+       auth1313(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM auth1313 WHERE x<5)
+    SELECT * FROM t1;
+  } {0 {1 2 3 4 5 6}}
+  do_catchsql_test auth-1.314 {
+    WITH RECURSIVE
+       auth1314(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM auth1314 WHERE x<5)
+    SELECT * FROM t1 LEFT JOIN auth1314;
+  } {1 {not authorized}}
+} ;# ifcapable cte
+
 do_test auth-2.1 {
   proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="x"} {
@@ -2262,7 +2298,9 @@ do_test auth-4.3 {
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   {} \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_SELECT {}     {} {} v1   \
   SQLITE_READ   v1     x  main v1 \
   SQLITE_INSERT v1chng {} main r2 \
   SQLITE_READ   v1     x  main r2 \
@@ -2288,7 +2326,9 @@ do_test auth-4.5 {
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
-  SQLITE_SELECT {}     {} {}   {} \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_READ   v1     x  main v1 \
+  SQLITE_SELECT {}     {} {} v1   \
   SQLITE_READ   v1     x  main v1 \
   SQLITE_INSERT v1chng {} main r3 \
   SQLITE_READ   v1     x  main r3 \
@@ -2321,10 +2361,14 @@ ifcapable compound&&subquery {
       }
     }
   }
-  ifcapable stat3 {
-    set stat3 "sqlite_stat3 "
+  ifcapable stat4 {
+    set stat4 "sqlite_stat4 "
   } else {
-    set stat3 ""
+    ifcapable stat3 {
+      set stat4 "sqlite_stat3 "
+    } else {
+      set stat4 ""
+    }
   }
   do_test auth-5.2 {
     execsql {
@@ -2333,7 +2377,7 @@ ifcapable compound&&subquery {
       WHERE type='table'
       ORDER BY name
     }
-  } "sqlite_stat1 ${stat3}t1 t2 t3 t4"
+  } "sqlite_stat1 ${stat4}t1 t2 t3 t4"
 }
 
 # Ticket #3944
@@ -2364,6 +2408,29 @@ ifcapable trigger {
   } {1}
 }
 
+# Ticket [0eb70d77cb05bb22720]:  Invalid pointer passsed to the authorizer
+# callback when updating a ROWID.
+#
+do_test auth-6.1 {
+  execsql {
+    CREATE TABLE t6(a,b,c,d,e,f,g,h);
+    INSERT INTO t6 VALUES(1,2,3,4,5,6,7,8);
+  }
+} {}
+set ::authargs [list]
+proc auth {args} {
+  eval lappend ::authargs $args
+  return SQLITE_OK
+}
+do_test auth-6.2 {
+  execsql {UPDATE t6 SET rowID=rowID+100}
+  set ::authargs
+} [list SQLITE_READ   t6 ROWID main {} \
+        SQLITE_UPDATE t6 ROWID main {} \
+]
+do_test auth-6.3 {
+  execsql {SELECT rowid, * FROM t6}
+} {101 1 2 3 4 5 6 7 8}
 
 rename proc {}
 rename proc_real proc

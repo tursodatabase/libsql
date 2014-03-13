@@ -26,7 +26,7 @@ do_execsql_test e_reindex-0.0 {
   CREATE INDEX i2 ON t1(b, a);
 } {}
 
-# EVIDENCE-OF: R-51477-38549 -- syntax diagram reindex-stmt
+#  -- syntax diagram reindex-stmt
 #
 do_reindex_tests e_reindex-0.1 {
   1   "REINDEX"           {}
@@ -67,10 +67,10 @@ sqlite3 db test.db
 do_execsql_test e_reindex-1.3 {
   PRAGMA integrity_check;
 } [list \
-  {rowid 4 missing from index i2} \
-  {rowid 4 missing from index i1} \
-  {rowid 5 missing from index i2} \
-  {rowid 5 missing from index i1} \
+  {row 3 missing from index i2} \
+  {row 3 missing from index i1} \
+  {row 4 missing from index i2} \
+  {row 4 missing from index i1} \
   {wrong # of entries in index i2} \
   {wrong # of entries in index i1}
 ]
@@ -98,7 +98,7 @@ proc sort_by_length {lhs rhs} {
 array set V {one 1 two 2 three 3 four 4 five 5 six 6 seven 7 eight 8}
 proc sort_by_value {lhs rhs} {
   global V
-  set res [expr {$V($lhs) - $V(rhs)}]
+  set res [expr {$V($lhs) - $V($rhs)}]
   if {$res!=0} {return $res}
   return [string compare $lhs $rhs]
 }

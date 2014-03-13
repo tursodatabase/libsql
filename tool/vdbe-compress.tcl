@@ -13,7 +13,7 @@
 # Script usage:
 #
 #          mv vdbe.c vdbe.c.template
-#          tclsh vdbe-compress.tcl <vdbe.c.template >vdbe.c
+#          tclsh vdbe-compress.tcl $CFLAGS <vdbe.c.template >vdbe.c
 #
 # Modifications made:
 #
@@ -41,6 +41,16 @@ set beforeUnion {}   ;# C code before union
 set unionDef {}      ;# C code of the union
 set afterUnion {}    ;# C code after the union
 set sCtr 0           ;# Context counter
+
+# If the SQLITE_SMALL_STACK compile-time option is missing, then
+# this transformation becomes a no-op.
+#
+if {![regexp {SQLITE_SMALL_STACK} $argv]} {
+  while {![eof stdin]} {
+    puts [gets stdin]
+  }
+  exit
+}
 
 # Read program text up to the spot where the union should be
 # inserted.
@@ -79,6 +89,9 @@ while {![eof stdin]} {
         append unionDef "    $line\n"
         append afterUnion $line\n
         lappend vlist $vname
+      } elseif {[regexp {^#(if|endif)} $line] && [llength $vlist]>0} {
+        append unionDef "$line\n"
+        append afterUnion $line\n
       } else {
         break
       }

@@ -48,14 +48,24 @@ do_test between-1.0 {
 
 # This procedure executes the SQL.  Then it appends to the result the
 # "sort" or "nosort" keyword depending on whether or not any sorting
-# is done.  Then it appends the ::sqlite_query_plan variable.
+# is done.  Then it appends the names of the table and index used.
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
   set data [execsql $sql]
   if {$::sqlite_sort_count} {set x sort} {set x nosort}
   lappend data $x
-  return [concat $data $::sqlite_query_plan]
+  set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
+  # puts eqp=$eqp
+  foreach {a b c x} $eqp {
+    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all as tab idx]} {
+      lappend data $tab $idx
+    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+      lappend data $tab *
+    }
+  }
+  return $data   
 }
 
 do_test between-1.1.1 {
@@ -67,7 +77,7 @@ do_test between-1.1.2 {
   queryplan {
     SELECT * FROM t1 WHERE +w BETWEEN 5 AND 6 ORDER BY +w
   }
-} {5 2 36 38 6 2 49 51 sort t1 {}}
+} {5 2 36 38 6 2 49 51 sort t1 *}
 do_test between-1.2.1 {
   queryplan {
     SELECT * FROM t1 WHERE w BETWEEN 5 AND 65-y ORDER BY +w
@@ -77,7 +87,7 @@ do_test between-1.2.2 {
   queryplan {
     SELECT * FROM t1 WHERE +w BETWEEN 5 AND 65-y ORDER BY +w
   }
-} {5 2 36 38 6 2 49 51 sort t1 {}}
+} {5 2 36 38 6 2 49 51 sort t1 *}
 do_test between-1.3.1 {
   queryplan {
     SELECT * FROM t1 WHERE w BETWEEN 41-y AND 6 ORDER BY +w
@@ -87,12 +97,12 @@ do_test between-1.3.2 {
   queryplan {
     SELECT * FROM t1 WHERE +w BETWEEN 41-y AND 6 ORDER BY +w
   }
-} {5 2 36 38 6 2 49 51 sort t1 {}}
+} {5 2 36 38 6 2 49 51 sort t1 *}
 do_test between-1.4 {
   queryplan {
     SELECT * FROM t1 WHERE w BETWEEN 41-y AND 65-y ORDER BY +w
   }
-} {5 2 36 38 6 2 49 51 sort t1 {}}
+} {5 2 36 38 6 2 49 51 sort t1 *}
 do_test between-1.5.1 {
   queryplan {
     SELECT * FROM t1 WHERE 26 BETWEEN y AND z ORDER BY +w
@@ -107,7 +117,7 @@ do_test between-1.5.3 {
   queryplan {
     SELECT * FROM t1 WHERE 26 BETWEEN y AND +z ORDER BY +w
   }
-} {4 2 25 27 sort t1 {}}
+} {4 2 25 27 sort t1 *}
 
 
 finish_test

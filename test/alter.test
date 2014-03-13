@@ -847,7 +847,8 @@ do_test alter-14.2 {
 set system_table_list {1 sqlite_master}
 catchsql ANALYZE
 ifcapable analyze { lappend system_table_list 2 sqlite_stat1 }
-ifcapable stat3   { lappend system_table_list 4 sqlite_stat3 }
+ifcapable stat3   { lappend system_table_list 3 sqlite_stat3 }
+ifcapable stat4   { lappend system_table_list 4 sqlite_stat4 }
 
 foreach {tn tbl} $system_table_list {
   do_test alter-15.$tn.1 {
@@ -859,5 +860,19 @@ foreach {tn tbl} $system_table_list {
   } [list 1 "table $tbl may not be altered"]
 }
 
+#------------------------------------------------------------------------
+# Verify that ALTER TABLE works on tables with the WITHOUT rowid option.
+#
+do_execsql_test alter-16.1 {
+  CREATE TABLE t16a(a TEXT, b REAL, c INT, PRIMARY KEY(a,b)) WITHOUT rowid;
+  INSERT INTO t16a VALUES('abc',1.25,99);
+  ALTER TABLE t16a ADD COLUMN d TEXT DEFAULT 'xyzzy';
+  INSERT INTO t16a VALUES('cba',5.5,98,'fizzle');
+  SELECT * FROM t16a ORDER BY a;
+} {abc 1.25 99 xyzzy cba 5.5 98 fizzle}
+do_execsql_test alter-16.2 {
+  ALTER TABLE t16a RENAME TO t16a_rn;
+  SELECT * FROM t16a_rn ORDER BY a;
+} {abc 1.25 99 xyzzy cba 5.5 98 fizzle}
 
 finish_test

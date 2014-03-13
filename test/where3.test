@@ -103,12 +103,22 @@ ifcapable explain {
 }
 
 # This procedure executes the SQL.  Then it appends 
-# the ::sqlite_query_plan variable.
+# the names of the table and index used
 #
 proc queryplan {sql} {
   set ::sqlite_sort_count 0
   set data [execsql $sql]
-  return [concat $data $::sqlite_query_plan]
+  set eqp [execsql "EXPLAIN QUERY PLAN $sql"]
+  # puts eqp=$eqp
+  foreach {a b c x} $eqp {
+    if {[regexp { TABLE (\w+ AS )?(\w+) USING.* INDEX (\w+)\y} \
+        $x all as tab idx]} {
+      lappend data $tab $idx
+    } elseif {[regexp { TABLE (\w+ AS )?(\w+)\y} $x all as tab]} {
+      lappend data $tab *
+    }
+  }
+  return $data   
 }
 
 
@@ -144,73 +154,73 @@ do_test where3-2.1 {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND bpk=ax
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.1 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON cx=dpk
      WHERE cpk=bx AND bpk=ax
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.2 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON cx=dpk
      WHERE bx=cpk AND bpk=ax
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.3 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON cx=dpk
      WHERE bx=cpk AND ax=bpk
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.4 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE bx=cpk AND ax=bpk
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.1.5 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND ax=bpk
   }
-} {tA {} tB * tC * tD *}
+} {tA * tB * tC * tD *}
 do_test where3-2.2 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND apk=bx
   }
-} {tB {} tA * tC * tD *}
+} {tB * tA * tC * tD *}
 do_test where3-2.3 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND apk=bx
   }
-} {tB {} tA * tC * tD *}
+} {tB * tA * tC * tD *}
 do_test where3-2.4 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE apk=cx AND bpk=ax
   }
-} {tC {} tA * tB * tD *}
+} {tC * tA * tB * tD *}
 do_test where3-2.5 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=ax AND bpk=cx
   }
-} {tA {} tC * tB * tD *}
+} {tA * tC * tB * tD *}
 do_test where3-2.6 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE bpk=cx AND apk=bx
   }
-} {tC {} tB * tA * tD *}
+} {tC * tB * tA * tD *}
 do_test where3-2.7 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND apk=cx
   }
-} {tB {} tC * tA * tD *}
+} {tB * tC * tA * tD *}
 
 # Ticket [13f033c865f878953]
 # If the outer loop must be a full table scan, do not let ANALYZE trick
@@ -226,17 +236,24 @@ do_execsql_test where3-3.0 {
   ANALYZE;
   explain query plan SELECT * FROM t302, t301 WHERE t302.x=5 AND t301.a=t302.y;
 } {
-  0 0 0 {SCAN TABLE t302 (~1 rows)} 
-  0 1 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+  0 0 0 {SCAN TABLE t302} 
+  0 1 1 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)}
 }
 do_execsql_test where3-3.1 {
   explain query plan
   SELECT * FROM t301, t302 WHERE t302.x=5 AND t301.a=t302.y;
 } {
-  0 0 1 {SCAN TABLE t302 (~1 rows)} 
-  0 1 0 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)}
+  0 0 1 {SCAN TABLE t302} 
+  0 1 0 {SEARCH TABLE t301 USING INTEGER PRIMARY KEY (rowid=?)}
 }
+do_execsql_test where3-3.2 {
+  SELECT * FROM t301 WHERE c=3 AND a IS NULL;
+} {}
+do_execsql_test where3-3.3 {
+  SELECT * FROM t301 WHERE c=3 AND a IS NOT NULL;
+} {1 2 3}
 
+if 0 {  # Query planner no longer does this
 # Verify that when there are multiple tables in a join which must be
 # full table scans that the query planner attempts put the table with
 # the fewest number of output rows as the outer loop.
@@ -248,26 +265,27 @@ do_execsql_test where3-4.0 {
   EXPLAIN QUERY PLAN
   SELECT * FROM t400, t401, t402 WHERE t402.z GLOB 'abc*';
 } {
-  0 0 2 {SCAN TABLE t402 (~500000 rows)} 
-  0 1 0 {SCAN TABLE t400 (~1000000 rows)} 
-  0 2 1 {SCAN TABLE t401 (~1000000 rows)}
+  0 0 2 {SCAN TABLE t402} 
+  0 1 0 {SCAN TABLE t400} 
+  0 2 1 {SCAN TABLE t401}
 }
 do_execsql_test where3-4.1 {
   EXPLAIN QUERY PLAN
   SELECT * FROM t400, t401, t402 WHERE t401.r GLOB 'abc*';
 } {
-  0 0 1 {SCAN TABLE t401 (~500000 rows)} 
-  0 1 0 {SCAN TABLE t400 (~1000000 rows)} 
-  0 2 2 {SCAN TABLE t402 (~1000000 rows)}
+  0 0 1 {SCAN TABLE t401} 
+  0 1 0 {SCAN TABLE t400} 
+  0 2 2 {SCAN TABLE t402}
 }
 do_execsql_test where3-4.2 {
   EXPLAIN QUERY PLAN
   SELECT * FROM t400, t401, t402 WHERE t400.c GLOB 'abc*';
 } {
-  0 0 0 {SCAN TABLE t400 (~500000 rows)} 
-  0 1 1 {SCAN TABLE t401 (~1000000 rows)} 
-  0 2 2 {SCAN TABLE t402 (~1000000 rows)}
+  0 0 0 {SCAN TABLE t400} 
+  0 1 1 {SCAN TABLE t401} 
+  0 2 2 {SCAN TABLE t402}
 }
+} ;# endif
 
 # Verify that a performance regression encountered by firefox
 # has been fixed.
@@ -298,8 +316,8 @@ do_execsql_test where3-5.0 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 1 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
+  0 1 1 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 do_execsql_test where3-5.1 {
@@ -311,8 +329,8 @@ do_execsql_test where3-5.1 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 1 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
+  0 1 1 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 do_execsql_test where3-5.2 {
@@ -324,8 +342,8 @@ do_execsql_test where3-5.2 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 0 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
+  0 1 0 {SEARCH TABLE bbb USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 do_execsql_test where3-5.3 {
@@ -337,8 +355,8 @@ do_execsql_test where3-5.3 {
       AND bbb.parent = 4
     ORDER BY bbb.title COLLATE NOCASE ASC;
 } {
-  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?) (~10 rows)} 
-  0 1 0 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 1 {SEARCH TABLE aaa USING INDEX aaa_333 (fk=?)} 
+  0 1 0 {SEARCH TABLE aaa AS bbb USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 
@@ -422,6 +440,49 @@ foreach predicate {
     append sql $::predicate
     db eval $sql
   } {1 w-one x-one y-one z-one 9 w-nine x-nine y-nine z-nine}
+}
+
+do_execsql_test where3-7-setup {
+  CREATE TABLE t71(x1 INTEGER PRIMARY KEY, y1);
+  CREATE TABLE t72(x2 INTEGER PRIMARY KEY, y2);
+  CREATE TABLE t73(x3, y3);
+  CREATE TABLE t74(x4, y4);
+  INSERT INTO t71 VALUES(123,234);
+  INSERT INTO t72 VALUES(234,345);
+  INSERT INTO t73 VALUES(123,234);
+  INSERT INTO t74 VALUES(234,345);
+  INSERT INTO t74 VALUES(234,678);
+} {}
+foreach disabled_opt {none omit-noop-join all} {
+  optimization_control db all 1
+  optimization_control db $disabled_opt 0
+  do_execsql_test where3-7.$disabled_opt.1 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.2 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 WHERE y2 IS NULL;
+  } {}
+  do_execsql_test where3-7.$disabled_opt.3 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 WHERE y2 IS NOT NULL;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.4 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 AND y2 IS NULL;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.5 {
+    SELECT x1 FROM t71 LEFT JOIN t72 ON x2=y1 AND y2 IS NOT NULL;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.6 {
+    SELECT x3 FROM t73 LEFT JOIN t72 ON x2=y3;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.7 {
+    SELECT DISTINCT x3 FROM t73 LEFT JOIN t72 ON x2=y3;
+  } {123}
+  do_execsql_test where3-7.$disabled_opt.8 {
+    SELECT x3 FROM t73 LEFT JOIN t74 ON x4=y3;
+  } {123 123}
+  do_execsql_test where3-7.$disabled_opt.9 {
+    SELECT DISTINCT x3 FROM t73 LEFT JOIN t74 ON x4=y3;
+  } {123}
 }
 
 

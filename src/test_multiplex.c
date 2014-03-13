@@ -60,7 +60,7 @@
 
 /* 
 ** These should be defined to be the same as the values in 
-** sqliteInt.h.  They are defined seperately here so that
+** sqliteInt.h.  They are defined separately here so that
 ** the multiplex VFS shim can be built as a loadable 
 ** module.
 */
@@ -755,9 +755,11 @@ static int multiplexRead(
   multiplexConn *p = (multiplexConn*)pConn;
   multiplexGroup *pGroup = p->pGroup;
   int rc = SQLITE_OK;
-  multiplexEnter();
+  int nMutex = 0;
+  multiplexEnter(); nMutex++;
   if( !pGroup->bEnabled ){
     sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, 0, &rc, NULL, 0);
+    multiplexLeave(); nMutex--;
     if( pSubOpen==0 ){
       rc = SQLITE_IOERR_READ;
     }else{
@@ -766,7 +768,10 @@ static int multiplexRead(
   }else{
     while( iAmt > 0 ){
       int i = (int)(iOfst / pGroup->szChunk);
-      sqlite3_file *pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL, 1);
+      sqlite3_file *pSubOpen;
+      if( nMutex==0 ){ multiplexEnter(); nMutex++; }
+      pSubOpen = multiplexSubOpen(pGroup, i, &rc, NULL, 1);
+      multiplexLeave(); nMutex--;
       if( pSubOpen ){
         int extra = ((int)(iOfst % pGroup->szChunk) + iAmt) - pGroup->szChunk;
         if( extra<0 ) extra = 0;
@@ -783,7 +788,8 @@ static int multiplexRead(
       }
     }
   }
-  multiplexLeave();
+  assert( nMutex==0 || nMutex==1 );
+  if( nMutex ) multiplexLeave();
   return rc;
 }
 
@@ -1183,7 +1189,7 @@ int sqlite3_multiplex_shutdown(void){
 /***************************** Test Code ***********************************/
 #ifdef SQLITE_TEST
 #include <tcl.h>
-extern const char *sqlite3TestErrorName(int);
+extern const char *sqlite3ErrName(int);
 
 
 /*
@@ -1212,7 +1218,7 @@ static int test_multiplex_initialize(
 
   /* Call sqlite3_multiplex_initialize() */
   rc = sqlite3_multiplex_initialize(zName, makeDefault);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 
   return TCL_OK;
 }
@@ -1237,7 +1243,7 @@ static int test_multiplex_shutdown(
 
   /* Call sqlite3_multiplex_shutdown() */
   rc = sqlite3_multiplex_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 
   return TCL_OK;
 }
@@ -1355,7 +1361,7 @@ static int test_multiplex_control(
   }
 
   rc = sqlite3_file_control(db, Tcl_GetString(objv[2]), aSub[idx].op, pArg);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
   return (rc==SQLITE_OK) ? TCL_OK : TCL_ERROR;
 }
 

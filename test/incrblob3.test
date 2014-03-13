@@ -269,4 +269,3 @@ db close
 tvfs delete
 
 finish_test
-

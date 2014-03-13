@@ -235,7 +235,7 @@ do_test misc1-7.4 {
   catchsql {
     INSERT INTO t5 VALUES(1,2,4);
   }
-} {1 {columns a, b are not unique}}
+} {1 {UNIQUE constraint failed: t5.a, t5.b}}
 do_test misc1-7.5 {
   catchsql {
     INSERT INTO t5 VALUES(0,2,4);
@@ -591,5 +591,18 @@ do_test misc1-18.1 {
   set n [sqlite3_sleep 100]
   expr {$n>=100}
 } {1}
+
+# 2014-01-10:  In a CREATE TABLE AS, if one or more of the column names
+# are an empty string, that is still OK.
+#
+do_execsql_test misc1-19.1 {
+  CREATE TABLE t19 AS SELECT 1, 2 AS '', 3;
+  SELECT * FROM t19;
+} {1 2 3}
+do_execsql_test misc1-19.2 {
+  CREATE TABLE t19b AS SELECT 4 AS '', 5 AS '',  6 AS '';
+  SELECT * FROM t19b;
+} {4 5 6}
+
 
 finish_test

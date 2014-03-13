@@ -208,7 +208,8 @@ int sqlite3_db_status(
 
       db->pnBytesFreed = &nByte;
       for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
-        sqlite3VdbeDeleteObject(db, pVdbe);
+        sqlite3VdbeClearObject(db, pVdbe);
+        sqlite3DbFree(db, pVdbe);
       }
       db->pnBytesFreed = 0;
 
@@ -239,6 +240,16 @@ int sqlite3_db_status(
       }
       *pHighwater = 0;
       *pCurrent = nRet;
+      break;
+    }
+
+    /* Set *pCurrent to non-zero if there are unresolved deferred foreign
+    ** key constraints.  Set *pCurrent to zero if all foreign key constraints
+    ** have been satisfied.  The *pHighwater is always set to zero.
+    */
+    case SQLITE_DBSTATUS_DEFERRED_FKS: {
+      *pHighwater = 0;
+      *pCurrent = db->nDeferredImmCons>0 || db->nDeferredCons>0;
       break;
     }
 

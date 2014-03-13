@@ -114,7 +114,7 @@ foreach delete_order $delete_orders {
     }
     do_test autovacuum-1.$tn.($delete).3 {
       execsql {
-        select a from av1
+        select a from av1 order by rowid
       }
     } $::tbl_data
   }
@@ -526,7 +526,7 @@ do_test autovacuum-4.2 {
   catchsql {
     CREATE UNIQUE INDEX av1_i ON av1(a);
   }
-} {1 {indexed columns are not unique}}
+} {1 {UNIQUE constraint failed: av1.a}}
 do_test autovacuum-4.3 {
   execsql {
     SELECT sum(a) FROM av1;

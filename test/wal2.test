@@ -86,7 +86,7 @@ proc incr_tvfs_hdr {file idx incrval} {
 #
 #   2. Attempt to read the database using the reader. Before the reader
 #      has a chance to snapshot the wal-index header, increment one
-#      of the the integer fields (so that the reader ends up with a corrupted
+#      of the integer fields (so that the reader ends up with a corrupted
 #      header).
 #
 #   3. Check that the reader recovers the wal-index and reads the correct
@@ -1279,7 +1279,6 @@ foreach {tn settings restart_sync commit_sync ckpt_sync} {
     PRAGMA synchronous = [lindex $settings 2];
   " {0 wal}
 
-if { $tn==2} breakpoint
   do_test 15.$tn.2 {
     set sync(normal) 0
     set sync(full) 0

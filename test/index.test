@@ -666,7 +666,7 @@ ifcapable conflict {
       BEGIN;
       INSERT INTO t7 VALUES(1);
     }
-  } {1 {column a is not unique}}
+  } {1 {UNIQUE constraint failed: t7.a}}
   do_test index-19.3 {
     catchsql {
       BEGIN;
@@ -676,7 +676,7 @@ ifcapable conflict {
     catchsql {
       INSERT INTO t8 VALUES(1);
     }
-  } {1 {column a is not unique}}
+  } {1 {UNIQUE constraint failed: t8.a}}
   do_test index-19.5 {
     catchsql {
       BEGIN;
@@ -715,6 +715,23 @@ do_test index-20.2 {
     DROP INDEX "t6i1";
   }
 } {}
+
+# Try to create a TEMP index on a non-TEMP table. */
+#
+do_test index-21.1 {
+  catchsql {
+     CREATE INDEX temp.i21 ON t6(c);
+  }
+} {1 {cannot create a TEMP index on non-TEMP table "t6"}}
+do_test index-21.2 {
+  catchsql {
+     CREATE TEMP TABLE t6(x);
+     INSERT INTO temp.t6 values(1),(5),(9);
+     CREATE INDEX temp.i21 ON t6(x);
+     SELECT x FROM t6 ORDER BY x DESC;
+  }
+} {0 {9 5 1}}
+
    
 
 finish_test

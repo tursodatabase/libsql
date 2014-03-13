@@ -5051,7 +5051,7 @@ static int leavesReaderAtEnd(LeavesReader *pReader){
 ** modification to control flow all over the place, though, so for now
 ** just punt.
 **
-** Note the the current system assumes that segment merges will run to
+** Note the current system assumes that segment merges will run to
 ** completion, which is why this particular probably hasn't arisen in
 ** this case.  Probably a brittle assumption.
 */
@@ -6779,7 +6779,7 @@ void sqlite3Fts2IcuTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 int sqlite3Fts2InitHashTable(sqlite3 *, fts2Hash *, const char *);
 
 /*
-** Initialise the fts2 extension. If this extension is built as part
+** Initialize the fts2 extension. If this extension is built as part
 ** of the sqlite library, then this function is called directly by
 ** SQLite. If fts2 is built as a dynamically loadable extension, this
 ** function is called by the sqlite3_extension_init() entry point.
@@ -6797,7 +6797,7 @@ int sqlite3Fts2Init(sqlite3 *db){
   sqlite3Fts2IcuTokenizerModule(&pIcu);
 #endif
 
-  /* Allocate and initialise the hash-table used to store tokenizers. */
+  /* Allocate and initialize the hash-table used to store tokenizers. */
   pHash = sqlite3_malloc(sizeof(fts2Hash));
   if( !pHash ){
     rc = SQLITE_NOMEM;
@@ -6844,7 +6844,10 @@ int sqlite3Fts2Init(sqlite3 *db){
 }
 
 #if !SQLITE_CORE
-int sqlite3_extension_init(
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+int sqlite3_fts2_init(
   sqlite3 *db, 
   char **pzErrMsg,
   const sqlite3_api_routines *pApi

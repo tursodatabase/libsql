@@ -366,9 +366,9 @@ db collate reverse reverse_collate
 # EVIDENCE-OF: R-59577-33471 The COLLATE operator is a unary postfix
 # operator that assigns a collating sequence to an expression.
 #
-# EVIDENCE-OF: R-23441-22541 The COLLATE operator has a higher
-# precedence (binds more tightly) than any prefix unary operator or any
-# binary operator.
+# EVIDENCE-OF: R-36231-30731 The COLLATE operator has a higher
+# precedence (binds more tightly) than any binary operator and any unary
+# prefix operator except "~".
 #
 do_execsql_test e_expr-9.1 { SELECT  'abcd' < 'bbbb'    COLLATE reverse } 0
 do_execsql_test e_expr-9.2 { SELECT ('abcd' < 'bbbb')   COLLATE reverse } 1
@@ -631,7 +631,7 @@ do_test e_expr-11.7.1 { sqlite3_finalize $stmt } SQLITE_OK
 #-------------------------------------------------------------------------
 # "Test" the syntax diagrams in lang_expr.html.
 #
-# EVIDENCE-OF: R-02989-21050 -- syntax diagram signed-number
+# -- syntax diagram signed-number
 #
 do_execsql_test e_expr-12.1.1 { SELECT 0, +0, -0 } {0 0 0}
 do_execsql_test e_expr-12.1.2 { SELECT 1, +1, -1 } {1 1 -1}
@@ -646,7 +646,7 @@ do_execsql_test e_expr-12.1.6 {
   SELECT 0.0001, +0.0001, -0.0001 
 } {0.0001 0.0001 -0.0001}
 
-# EVIDENCE-OF: R-43188-60852 -- syntax diagram literal-value
+# -- syntax diagram literal-value
 #
 set sqlite_current_time 1
 do_execsql_test e_expr-12.2.1 {SELECT 123}               {123}
@@ -659,7 +659,7 @@ do_execsql_test e_expr-12.2.7 {SELECT CURRENT_DATE}      {1970-01-01}
 do_execsql_test e_expr-12.2.8 {SELECT CURRENT_TIMESTAMP} {{1970-01-01 00:00:01}}
 set sqlite_current_time 0
 
-# EVIDENCE-OF: R-50544-32159 -- syntax diagram expr
+# -- syntax diagram expr
 #
 forcedelete test.db2
 execsql {
@@ -816,7 +816,7 @@ foreach {tn expr} {
   }
 }
 
-# EVIDENCE-OF: R-39820-63916 -- syntax diagram raise-function
+# -- syntax diagram raise-function
 #
 foreach {tn raiseexpr} {
   1 "RAISE(IGNORE)"
@@ -1081,9 +1081,9 @@ ifcapable !icu {
 # EVIDENCE-OF: R-33693-50180 The REGEXP operator is a special syntax for
 # the regexp() user function.
 #
-# EVIDENCE-OF: R-57289-13578 If a application-defined SQL function named
-# "regexp" is added at run-time, that function will be called in order
-# to implement the REGEXP operator.
+# EVIDENCE-OF: R-65524-61849 If an application-defined SQL function
+# named "regexp" is added at run-time, then the "X REGEXP Y" operator
+# will be implemented as a call to "regexp(Y,X)".
 #
 proc regexpfunc {args} {
   eval lappend ::regexpargs $args
@@ -1294,7 +1294,7 @@ proc rev {str} {
   set ret
 }
 proc reverse {lhs rhs} {
-  string compare [rev $lhs] [ref $rhs]
+  string compare [rev $lhs] [rev $rhs]
 }
 db collate reverse reverse
 do_execsql_test e_expr-23.1.1 {
@@ -1317,7 +1317,7 @@ do_execsql_test e_expr-23.1.4 {
 } {B}
 do_execsql_test e_expr-23.1.5 {
   SELECT CASE b WHEN a THEN 'A' ELSE 'B' END FROM t1
-} {A}
+} {B}
 do_execsql_test e_expr-23.1.6 {
   SELECT CASE 55 WHEN '55' THEN 'A' ELSE 'B' END
 } {B}
@@ -1407,10 +1407,12 @@ do_test e_expr-26.1.6 { set ::evalcount } {5}
 #-------------------------------------------------------------------------
 # Test statements related to CAST expressions.
 #
-# EVIDENCE-OF: R-65079-31758 Application of a CAST expression is
-# different to application of a column affinity, as with a CAST
-# expression the storage class conversion is forced even if it is lossy
-# and irrreversible.
+# EVIDENCE-OF: R-20854-17109 A CAST conversion is similar to the
+# conversion that takes place when a column affinity is applied to a
+# value except that with the CAST operator the conversion always takes
+# place even if the conversion lossy and irreversible, whereas column
+# affinity only changes the data type of a value if the change is
+# lossless and reversible.
 #
 do_execsql_test e_expr-27.1.1 {
   CREATE TABLE t3(a TEXT, b REAL, c INTEGER);
@@ -1594,26 +1596,29 @@ do_expr_test e_expr-30.4.1 { CAST('' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.2 { CAST('not a number' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.3 { CAST('XXI' AS INTEGER) } integer 0
 
-# EVIDENCE-OF: R-00741-38776 A cast of a REAL value into an INTEGER will
-# truncate the fractional part of the REAL.
+# EVIDENCE-OF: R-02752-50091 A cast of a REAL value into an INTEGER
+# results in the integer between the REAL value and zero that is closest
+# to the REAL value.
 #
 do_expr_test e_expr-31.1.1 { CAST(3.14159 AS INTEGER) } integer 3
 do_expr_test e_expr-31.1.2 { CAST(1.99999 AS INTEGER) } integer 1
 do_expr_test e_expr-31.1.3 { CAST(-1.99999 AS INTEGER) } integer -1
 do_expr_test e_expr-31.1.4 { CAST(-0.99999 AS INTEGER) } integer 0
 
-# EVIDENCE-OF: R-49503-28105 If a REAL is too large to be represented as
-# an INTEGER then the result of the cast is the largest negative
-# integer: -9223372036854775808.
+# EVIDENCE-OF: R-51517-40824 If a REAL is greater than the greatest
+# possible signed integer (+9223372036854775807) then the result is the
+# greatest possible signed integer and if the REAL is less than the
+# least possible signed integer (-9223372036854775808) then the result
+# is the least possible signed integer.
 #
-do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer -9223372036854775808
+do_expr_test e_expr-31.2.1 { CAST(2e+50 AS INT) } integer 9223372036854775807
 do_expr_test e_expr-31.2.2 { CAST(-2e+50 AS INT) } integer -9223372036854775808
 do_expr_test e_expr-31.2.3 { 
   CAST(-9223372036854775809.0 AS INT)
 } integer -9223372036854775808
 do_expr_test e_expr-31.2.4 { 
   CAST(9223372036854775809.0 AS INT)
-} integer -9223372036854775808
+} integer 9223372036854775807
 
 
 # EVIDENCE-OF: R-09295-61337 Casting a TEXT or BLOB value into NUMERIC
@@ -1846,6 +1851,44 @@ foreach {tn expr} {
 } {
   do_expr_test e_expr-36.4.$tn $expr null {}
 }
+
+# EVIDENCE-OF: R-62477-06476 For example, the values NULL, 0.0, 0,
+# 'english' and '0' are all considered to be false.
+#
+do_execsql_test e_expr-37.1 {
+   SELECT CASE WHEN NULL THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.2 {
+   SELECT CASE WHEN 0.0 THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.3 {
+   SELECT CASE WHEN 0 THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.4 {
+   SELECT CASE WHEN 'engligh' THEN 'true' ELSE 'false' END;
+} {false}
+do_execsql_test e_expr-37.5 {
+   SELECT CASE WHEN '0' THEN 'true' ELSE 'false' END;
+} {false}
+
+# EVIDENCE-OF: R-55532-10108 Values 1, 1.0, 0.1, -0.1 and '1english' are
+# considered to be true.
+#
+do_execsql_test e_expr-37.6 {
+   SELECT CASE WHEN 1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.7 {
+   SELECT CASE WHEN 1.0 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.8 {
+   SELECT CASE WHEN 0.1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.9 {
+   SELECT CASE WHEN -0.1 THEN 'true' ELSE 'false' END;
+} {true}
+do_execsql_test e_expr-37.10 {
+   SELECT CASE WHEN '1english' THEN 'true' ELSE 'false' END;
+} {true}
 
 
 finish_test

@@ -1246,5 +1246,304 @@ do_faultsim_test pagerfault-27 -faults ioerr-persistent -prep {
   faultsim_integrity_check
 }
 
-finish_test
 
+#-------------------------------------------------------------------------
+#
+do_test pagerfault-28-pre {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA page_size = 512;
+
+    PRAGMA journal_mode = wal;
+    PRAGMA wal_autocheckpoint = 0;
+    PRAGMA cache_size = 100000;
+
+    BEGIN;
+      CREATE TABLE t2(a UNIQUE, b UNIQUE);
+      INSERT INTO t2 VALUES( a_string(800), a_string(800) );
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    COMMIT;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+  }
+  expr {[file size test.db-shm] >= 96*1024}
+} {1}
+faultsim_save_and_close
+
+do_faultsim_test pagerfault-28a -faults oom* -prep {
+  faultsim_restore_and_reopen
+  execsql { PRAGMA mmap_size=0 }
+
+  sqlite3 db2 test.db
+  db2 eval { SELECT count(*) FROM t2 }
+
+  db func a_string a_string
+  execsql { 
+    BEGIN;
+      INSERT INTO t1 VALUES(a_string(2000), a_string(2000));
+      INSERT INTO t1 VALUES(a_string(2000), a_string(2000));
+  }
+  set ::STMT [sqlite3_prepare db "SELECT * FROM t1 ORDER BY a" -1 DUMMY]
+  sqlite3_step $::STMT
+} -body {
+  execsql { ROLLBACK }
+} -test {
+  db2 close
+  sqlite3_finalize $::STMT
+  catchsql { ROLLBACK }
+  faultsim_integrity_check
+}
+
+faultsim_restore_and_reopen
+sqlite3 db2 test.db
+db2 eval {SELECT count(*) FROM t2}
+db close
+
+do_faultsim_test pagerfault-28b -faults oom* -prep {
+  sqlite3 db test.db
+} -body {
+  execsql { SELECT count(*) FROM t2 }
+} -test {
+  faultsim_test_result {0 2048}
+  db close
+}
+
+db2 close
+
+#-------------------------------------------------------------------------
+# Try this:
+#
+#    1) Put the pager in ERROR state (error during rollback)
+#
+#    2) Next time the connection is used inject errors into all xWrite() and
+#       xUnlock() calls. This causes the hot-journal rollback to fail and
+#       the pager to declare its locking state UNKNOWN.
+#
+#    3) Same again.
+#
+#    4a) Stop injecting errors. Allow the rollback to succeed. Check that
+#        the database is Ok. Or, 
+#
+#    4b) Close and reopen the db. Check that the db is Ok.
+#
+proc custom_injectinstall {} {
+  testvfs custom -default true
+  custom filter {xWrite xUnlock}
+}
+proc custom_injectuninstall {} {
+  catch {db  close}
+  catch {db2 close}
+  custom delete
+}
+proc custom_injectstart {iFail} {
+  custom ioerr $iFail 1
+}
+proc custom_injectstop {} {
+  custom ioerr
+}
+set ::FAULTSIM(custom)          [list      \
+  -injectinstall   custom_injectinstall    \
+  -injectstart     custom_injectstart      \
+  -injectstop      custom_injectstop       \
+  -injecterrlist   {{1 {disk I/O error}}}  \
+  -injectuninstall custom_injectuninstall  \
+]
+
+do_test pagerfault-29-pre {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA cache_size = 5;
+
+    BEGIN;
+      CREATE TABLE t2(a UNIQUE, b UNIQUE);
+      INSERT INTO t2 VALUES( a_string(800), a_string(800) );
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+      INSERT INTO t2 SELECT a_string(800), a_string(800) FROM t2;
+    COMMIT;
+  }
+  expr {[file size test.db] >= 50*1024}
+} {1}
+faultsim_save_and_close
+foreach {tn tt} {
+  29 { catchsql ROLLBACK }
+  30 { db close ; sqlite3 db test.db }
+} {
+  do_faultsim_test pagerfault-$tn -faults custom -prep {
+    faultsim_restore_and_reopen
+      db func a_string a_string
+      execsql {
+        PRAGMA cache_size = 5;
+        BEGIN;
+        UPDATE t2 SET a = a_string(799);
+      }
+  } -body {
+    catchsql ROLLBACK
+    catchsql ROLLBACK
+    catchsql ROLLBACK
+  } -test {
+    eval $::tt
+    if {"ok" != [db one {PRAGMA integrity_check}]} {
+      error "integrity check failed"
+    }
+  }
+}
+
+do_test pagerfault-31-pre {
+  sqlite3_shutdown
+  sqlite3_config_uri 1
+} {SQLITE_OK}
+do_faultsim_test pagerfault-31 -faults oom* -body {
+  sqlite3 db {file:one?mode=memory&cache=shared}
+  db eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1);
+    SELECT * FROM t1;
+  }
+} -test {
+  faultsim_test_result {0 1} {1 {}}
+  catch { db close }
+}
+sqlite3_shutdown
+sqlite3_config_uri 0
+
+do_test pagerfault-32-pre {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES('one');
+  }
+} {}
+faultsim_save_and_close
+
+do_faultsim_test pagerfault-32 -prep {
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM t1; }
+} -body {
+  execsql { SELECT * FROM t1; }
+} -test {
+  faultsim_test_result {0 one}
+}
+sqlite3_shutdown
+sqlite3_config_uri 0
+
+do_faultsim_test pagerfault-33a -prep {
+  sqlite3 db :memory:
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+} -body {
+  execsql { VACUUM }
+} -test {
+  faultsim_test_result {0 {}}
+} 
+do_faultsim_test pagerfault-33b -prep {
+  sqlite3 db ""
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+} -body {
+  execsql { VACUUM }
+} -test {
+  faultsim_test_result {0 {}}
+} 
+
+do_test pagerfault-34-pre {
+  reset_db
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY);
+  }
+} {}
+faultsim_save_and_close
+do_faultsim_test pagerfault-34 -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES( randomblob(4000) );
+      DELETE FROM t1;
+  }
+} -body {
+  execsql COMMIT
+} -test {
+  faultsim_test_result {0 {}}
+} 
+
+do_test pagerfault-35-pre {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+testvfs tv -default 1
+tv sectorsize 8192;
+tv devchar [list]
+do_faultsim_test pagerfault-35 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { UPDATE t1 SET x=randomblob(200) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+catch {db close}
+tv delete
+
+sqlite3_shutdown
+sqlite3_config_uri 1
+do_test pagerfault-36-pre {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(randomblob(200), randomblob(200));
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+    INSERT INTO t1 SELECT randomblob(200), randomblob(200) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-36 -prep {
+  faultsim_restore
+  sqlite3 db file:test.db?cache=shared
+  sqlite3 db2 file:test.db?cache=shared
+  db2 eval {
+    BEGIN;
+    SELECT count(*) FROM sqlite_master;
+  }
+  db eval {
+    PRAGMA cache_size = 1;
+    BEGIN;
+      UPDATE t1 SET x = randomblob(200);
+  }
+} -body {
+  execsql ROLLBACK db
+} -test {
+  catch { db eval {UPDATE t1 SET x = randomblob(200)} }
+  faultsim_test_result {0 {}}
+  catch { db close }
+  catch { db2 close }
+}
+
+sqlite3_shutdown
+sqlite3_config_uri 0
+sqlite3_initialize
+
+finish_test

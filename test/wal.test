@@ -322,7 +322,7 @@ do_test wal-5.4 {
       INSERT INTO t3 VALUES('abc');
   }
   catchsql { INSERT INTO t3 VALUES('abc') }
-} {1 {column x is not unique}}
+} {1 {UNIQUE constraint failed: t3.x}}
 do_test wal-5.5 {
   execsql {
     COMMIT;
@@ -727,6 +727,9 @@ do_test wal-11.9 {
   list [expr [file size test.db]/1024] [log_deleted test.db-wal]
 } {37 1}
 sqlite3_wal db test.db
+set nWal 39
+if {[permutation]!="mmap"} {set nWal 37}
+ifcapable !mmap {set nWal 37}
 do_test wal-11.10 {
   execsql {
     PRAGMA cache_size = 10;
@@ -735,7 +738,7 @@ do_test wal-11.10 {
       SELECT count(*) FROM t1;
   }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 37 1024]]
+} [list 37 [wal_file_size $nWal 1024]]
 do_test wal-11.11 {
   execsql {
       SELECT count(*) FROM t1;
@@ -745,7 +748,7 @@ do_test wal-11.11 {
 } {32 16}
 do_test wal-11.12 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 37 1024]]
+} [list 37 [wal_file_size $nWal 1024]]
 do_test wal-11.13 {
   execsql {
     INSERT INTO t1 VALUES( blob(900) );
@@ -755,7 +758,7 @@ do_test wal-11.13 {
 } {17 ok}
 do_test wal-11.14 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [wal_file_size 37 1024]]
+} [list 37 [wal_file_size $nWal 1024]]
 
 
 #-------------------------------------------------------------------------
@@ -849,7 +852,6 @@ do_test wal-13.1.2 {
   sqlite3 db test.db
   execsql { SELECT * FROM t2 }
 } {B 2}
-breakpoint
 do_test wal-13.1.3 {
   db close
   file exists test.db-wal
@@ -1509,10 +1511,10 @@ do_test wal-23.3 {
   faultsim_restore_and_reopen
   execsql { SELECT * FROM t1 }
 } {1 2 3 4}
-set nPage [expr 2+$AUTOVACUUM]
 do_test wal-23.4 { 
   set ::log 
-} [list SQLITE_OK "Recovered $nPage frames from WAL file $walfile"]
+} [list SQLITE_NOTICE_RECOVER_WAL \
+    "recovered 2 frames from WAL file $walfile"]
 
 
 ifcapable autovacuum {
