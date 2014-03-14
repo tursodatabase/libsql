@@ -2161,6 +2161,7 @@ int sqlite3BtreeSetCacheSize(Btree *p, int mxPage){
   return SQLITE_OK;
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
 /*
 ** Change the limit on the amount of the database file that may be
 ** memory mapped.
@@ -2173,6 +2174,7 @@ int sqlite3BtreeSetMmapLimit(Btree *p, sqlite3_int64 szMmap){
   sqlite3BtreeLeave(p);
   return SQLITE_OK;
 }
+#endif /* SQLITE_MAX_MMAP_SIZE>0 */
 
 /*
 ** Change the way data is synced to disk in order to increase or decrease

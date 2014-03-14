@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sbug\scausing\ssqlite3_close()\sto\sfail\sif\sthere\sare\svirtual\stables\son\sthe\sdisconnect\slist\swhen\sit\sis\scalled.
-D 2014-03-12T19:38:38.004
+C Fix\sa\sharmless\scompiler\swarning\sthat\scrops\sup\swith\sSQLITE_MAX_MMAP_SIZE=0.
+D 2014-03-14T11:46:10.508
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,8 +164,8 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 4d28fb15543f0e071b1780b2af8cd2ee489de32d
-F src/btree.h 9e0f97c01b972f779eb7655cfb4f8727fd6dc26f
+F src/btree.c 2a0e73f26c329f49e426237e71a879ffd205d778
+F src/btree.h da1b69b441ecee21f8b34ba73f0ae339540c4025
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
 F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c67a52c356416cc200f51f9168d942e78db11d34
-R 675a28e896dc8931c7ccad371f04b002
-U dan
-Z 867ad6b65f1e7902a3a764dd985f4266
+P 6504aa47a8ebb13827be017c4cb4b2dc3c4c55f4
+R afd560ffe96625fe4d1d6971544be730
+U drh
+Z 413087b4f5e9f622f8abe560a87a95ed
