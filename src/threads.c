@@ -47,7 +47,6 @@ int sqlite3ThreadCreate(
   void *pIn                 /* Argument passed into xTask() */
 ){
   SQLiteThread *p;
-  int rc;
 
   assert( ppThread!=0 );
   assert( xTask!=0 );
