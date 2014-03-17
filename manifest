@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sthat\scrops\sup\swith\sSQLITE_MAX_MMAP_SIZE=0.
-D 2014-03-14T11:46:10.508
+C Performance\senhancements\sand\ssize\sreduction\sfor\ssqlite3VXPrintf()
+D 2014-03-17T14:24:27.523
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -213,7 +213,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
 F src/pragma.c e78b4bf2a267de2c17ee09f90b6807cf8d40e6a3
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
-F src/printf.c 85d07756e45d7496d19439dcae3e6e9e0090f269
+F src/printf.c d95ea1b8a1e825a2f4756322f2ce35f91289fa1a
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6504aa47a8ebb13827be017c4cb4b2dc3c4c55f4
-R afd560ffe96625fe4d1d6971544be730
+P 1277932b7e8bb36c7070ffafbf110a8e128c267b
+R 6d92934790c660d014aba176737edbd6
 U drh
-Z 413087b4f5e9f622f8abe560a87a95ed
+Z c25cfd9c876d8aae4bc2be28c38a9b40

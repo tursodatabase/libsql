@@ -135,20 +135,6 @@ static char et_getdigit(LONGDOUBLE_TYPE *val, int *cnt){
 #endif /* SQLITE_OMIT_FLOATING_POINT */
 
 /*
-** Append N space characters to the given string buffer.
-*/
-void sqlite3AppendSpace(StrAccum *pAccum, int N){
-  static const char zSpaces[] = "                             ";
-  while( N>=(int)sizeof(zSpaces)-1 ){
-    sqlite3StrAccumAppend(pAccum, zSpaces, sizeof(zSpaces)-1);
-    N -= sizeof(zSpaces)-1;
-  }
-  if( N>0 ){
-    sqlite3StrAccumAppend(pAccum, zSpaces, N);
-  }
-}
-
-/*
 ** Set the StrAccum object to an error mode.
 */
 static void setStrAccumError(StrAccum *p, u8 eError){
@@ -237,11 +223,9 @@ void sqlite3VXPrintf(
   }
   for(; (c=(*fmt))!=0; ++fmt){
     if( c!='%' ){
-      int amt;
       bufpt = (char *)fmt;
-      amt = 1;
-      while( (c=(*++fmt))!='%' && c!=0 ) amt++;
-      sqlite3StrAccumAppend(pAccum, bufpt, amt);
+      while( (c=(*++fmt))!='%' && c!=0 ){};
+      sqlite3StrAccumAppend(pAccum, bufpt, (int)(fmt - bufpt));
       if( c==0 ) break;
     }
     if( (c=(*++fmt))==0 ){
@@ -729,29 +713,89 @@ void sqlite3VXPrintf(
     ** "length" characters long.  The field width is "width".  Do
     ** the output.
     */
-    if( !flag_leftjustify ){
-      register int nspace;
-      nspace = width-length;
-      if( nspace>0 ){
-        sqlite3AppendSpace(pAccum, nspace);
-      }
-    }
-    if( length>0 ){
-      sqlite3StrAccumAppend(pAccum, bufpt, length);
-    }
-    if( flag_leftjustify ){
-      register int nspace;
-      nspace = width-length;
-      if( nspace>0 ){
-        sqlite3AppendSpace(pAccum, nspace);
-      }
-    }
+    width -= length;
+    if( width>0 && !flag_leftjustify ) sqlite3AppendSpace(pAccum, width);
+    sqlite3StrAccumAppend(pAccum, bufpt, length);
+    if( width>0 && flag_leftjustify ) sqlite3AppendSpace(pAccum, width);
+
     if( zExtra ) sqlite3_free(zExtra);
   }/* End for loop over the format string */
 } /* End of function */
 
 /*
-** Append N bytes of text from z to the StrAccum object.
+** Enlarge the memory allocation on a StrAccum object so that it is
+** able to accept at least N more bytes of text.
+**
+** Return the number of bytes of text that StrAccum is able to accept
+** after the attempted enlargement.  The value returned might be zero.
+*/
+static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
+  char *zNew;
+  assert( p->nChar+N >= p->nAlloc ); /* Only called if really needed */
+  if( p->accError ){
+    testcase(p->accError==STRACCUM_TOOBIG);
+    testcase(p->accError==STRACCUM_NOMEM);
+    return 0;
+  }
+  if( !p->useMalloc ){
+    N = p->nAlloc - p->nChar - 1;
+    setStrAccumError(p, STRACCUM_TOOBIG);
+    return N;
+  }else{
+    char *zOld = (p->zText==p->zBase ? 0 : p->zText);
+    i64 szNew = p->nChar;
+    szNew += N + 1;
+    if( szNew > p->mxAlloc ){
+      sqlite3StrAccumReset(p);
+      setStrAccumError(p, STRACCUM_TOOBIG);
+      return 0;
+    }else{
+      p->nAlloc = (int)szNew;
+    }
+    if( p->useMalloc==1 ){
+      zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
+    }else{
+      zNew = sqlite3_realloc(zOld, p->nAlloc);
+    }
+    if( zNew ){
+      if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
+      p->zText = zNew;
+    }else{
+      sqlite3StrAccumReset(p);
+      setStrAccumError(p, STRACCUM_NOMEM);
+      return 0;
+    }
+  }
+  return N;
+}
+
+/*
+** Append N space characters to the given string buffer.
+*/
+void sqlite3AppendSpace(StrAccum *p, int N){
+  if( p->nChar+N >= p->nAlloc && (N = sqlite3StrAccumEnlarge(p, N))<=0 ) return;
+  while( (N--)>0 ) p->zText[p->nChar++] = ' ';
+}
+
+/*
+** The StrAccum "p" is not large enough to accept N new bytes of z[].
+** So enlarge if first, then do the append.
+**
+** This is a helper routine to sqlite3StrAccumAppend() that does special-case
+** work (enlarging the buffer) using tail recursion, so that the
+** sqlite3StrAccumAppend() routine can use fast calling semantics.
+*/
+static void enlargeAndAppend(StrAccum *p, const char *z, int N){
+  N = sqlite3StrAccumEnlarge(p, N);
+  if( N>0 ){
+    memcpy(&p->zText[p->nChar], z, N);
+    p->nChar += N;
+  }
+}
+
+/*
+** Append N bytes of text from z to the StrAccum object.  Increase the
+** size of the memory allocation for StrAccum if necessary.
 */
 void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   assert( z!=0 );
@@ -759,43 +803,8 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   assert( N>=0 );
   assert( p->accError==0 || p->nAlloc==0 );
   if( p->nChar+N >= p->nAlloc ){
-    char *zNew;
-    if( p->accError ){
-      testcase(p->accError==STRACCUM_TOOBIG);
-      testcase(p->accError==STRACCUM_NOMEM);
-      return;
-    }
-    if( !p->useMalloc ){
-      N = p->nAlloc - p->nChar - 1;
-      setStrAccumError(p, STRACCUM_TOOBIG);
-      if( N<=0 ){
-        return;
-      }
-    }else{
-      char *zOld = (p->zText==p->zBase ? 0 : p->zText);
-      i64 szNew = p->nChar;
-      szNew += N + 1;
-      if( szNew > p->mxAlloc ){
-        sqlite3StrAccumReset(p);
-        setStrAccumError(p, STRACCUM_TOOBIG);
-        return;
-      }else{
-        p->nAlloc = (int)szNew;
-      }
-      if( p->useMalloc==1 ){
-        zNew = sqlite3DbRealloc(p->db, zOld, p->nAlloc);
-      }else{
-        zNew = sqlite3_realloc(zOld, p->nAlloc);
-      }
-      if( zNew ){
-        if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
-        p->zText = zNew;
-      }else{
-        sqlite3StrAccumReset(p);
-        setStrAccumError(p, STRACCUM_NOMEM);
-        return;
-      }
-    }
+    enlargeAndAppend(p,z,N);
+    return;
   }
   assert( p->zText );
   memcpy(&p->zText[p->nChar], z, N);
