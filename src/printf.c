@@ -406,10 +406,8 @@ void sqlite3VXPrintf(
           *(--bufpt) = zOrd[x*2];
         }
         {
-          register const char *cset;      /* Use registers for speed */
-          register int base;
-          cset = &aDigits[infop->charset];
-          base = infop->base;
+          const char *cset = &aDigits[infop->charset];
+          u8 base = infop->base;
           do{                                           /* Convert to ascii */
             *(--bufpt) = cset[longvalue%base];
             longvalue = longvalue/base;
