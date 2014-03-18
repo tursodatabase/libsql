@@ -4916,7 +4916,13 @@ static i8 wherePathSatisfiesOrderBy(
     }
   } /* End the loop over all WhereLoops from outer-most down to inner-most */
   if( obSat==obDone ) return nOrderBy;
-  if( !isOrderDistinct ) return 0;
+  if( !isOrderDistinct ){
+    for(i=nOrderBy-1; i>0; i--){
+      Bitmask m = MASKBIT(i) - 1;
+      if( (obSat&m)==m ) return i;
+    }
+    return 0;
+  }
   return -1;
 }
 
@@ -4953,11 +4959,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   int iLoop;                /* Loop counter over the terms of the join */
   int ii, jj;               /* Loop counters */
   int mxI = 0;              /* Index of next entry to replace */
+  int nOrderBy;             /* Number of ORDER BY clause terms */
   LogEst rCost;             /* Cost of a path */
   LogEst nOut;              /* Number of outputs */
   LogEst mxCost = 0;        /* Maximum cost of a set of paths */
   LogEst mxOut = 0;         /* Maximum nOut value on the set of paths */
-  LogEst rSortCost;         /* Cost to do a sort */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
   WherePath *aTo;           /* The nTo best paths at the current level */
@@ -4999,17 +5005,12 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
   /* Precompute the cost of sorting the final result set, if the caller
   ** to sqlite3WhereBegin() was concerned about sorting */
-  rSortCost = 0;
   if( pWInfo->pOrderBy==0 || nRowEst==0 ){
     aFrom[0].isOrdered = 0;
+    nOrderBy = 0;
   }else{
-    /* TUNING: Estimated cost of sorting is 48*N*log2(N) where N is the
-    ** number of output rows. The 48 is the expected size of a row to sort. 
-    ** FIXME:  compute a better estimate of the 48 multiplier based on the
-    ** result set expressions. */
     aFrom[0].isOrdered = -1;
-    rSortCost = nRowEst + estLog(nRowEst);
-    WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
+    nOrderBy = pWInfo->pOrderBy->nExpr;
   }
 
   /* Compute successively longer WherePaths using the previous generation
@@ -5034,7 +5035,16 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           isOrdered = wherePathSatisfiesOrderBy(pWInfo,
                        pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
                        iLoop, pWLoop, &revMask);
-          if( isOrdered==0 ){
+          if( isOrdered>=0 && isOrdered<nOrderBy ){
+            /* TUNING: Estimated cost of sorting cost as roughly 4*N*log(N).
+            ** If some but not all of the columns are in sorted order, then
+            ** scale down the log(N) term. */
+            LogEst rSortCost = 20 + nRowEst +
+                                estLog(nRowEst)*(nOrderBy-isOrdered)/nOrderBy;
+            WHERETRACE(0x002,
+               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
+                rSortCost, (nOrderBy-isOrdered), nOrderBy, rCost,
+                sqlite3LogEstAdd(rCost,rSortCost)));
             rCost = sqlite3LogEstAdd(rCost, rSortCost);
           }
         }else{
