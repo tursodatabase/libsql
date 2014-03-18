@@ -562,6 +562,7 @@ static void selectInnerLoop(
   ExprList *pEList,       /* List of values being extracted */
   int srcTab,             /* Pull data from this table */
   ExprList *pOrderBy,     /* If not NULL, sort results using this key */
+  int nOBSat,             /* Terms of ORDER BY already satisfied */
   DistinctCtx *pDistinct, /* If not NULL, info on how to process DISTINCT */
   SelectDest *pDest,      /* How to dispose of the results */
   int iContinue,          /* Jump here to continue with next row */
@@ -1054,10 +1055,10 @@ static void explainComposite(
 static void generateSortTail(
   Parse *pParse,    /* Parsing context */
   Select *p,        /* The SELECT statement */
-  Vdbe *v,          /* Generate code into this VDBE */
   int nColumn,      /* Number of columns of data */
   SelectDest *pDest /* Write the sorted results here */
 ){
+  Vdbe *v = pParse->pVdbe;                     /* The prepared statement */
   int addrBreak = sqlite3VdbeMakeLabel(v);     /* Jump here to exit loop */
   int addrContinue = sqlite3VdbeMakeLabel(v);  /* Jump here for next cycle */
   int addr;
@@ -1918,7 +1919,7 @@ static void generateWithRecursiveQuery(
   addrCont = sqlite3VdbeMakeLabel(v);
   codeOffset(v, regOffset, addrCont);
   selectInnerLoop(pParse, p, p->pEList, iCurrent,
-      0, 0, pDest, addrCont, addrBreak);
+      0, 0, 0, pDest, addrCont, addrBreak);
   if( regLimit ){
     sqlite3VdbeAddOp3(v, OP_IfZero, regLimit, addrBreak, -1);
     VdbeCoverage(v);
@@ -2192,7 +2193,7 @@ static int multiSelect(
         sqlite3VdbeAddOp2(v, OP_Rewind, unionTab, iBreak); VdbeCoverage(v);
         iStart = sqlite3VdbeCurrentAddr(v);
         selectInnerLoop(pParse, p, p->pEList, unionTab,
-                        0, 0, &dest, iCont, iBreak);
+                        0, 0, 0, &dest, iCont, iBreak);
         sqlite3VdbeResolveLabel(v, iCont);
         sqlite3VdbeAddOp2(v, OP_Next, unionTab, iStart); VdbeCoverage(v);
         sqlite3VdbeResolveLabel(v, iBreak);
@@ -2270,7 +2271,7 @@ static int multiSelect(
       sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0); VdbeCoverage(v);
       sqlite3ReleaseTempReg(pParse, r1);
       selectInnerLoop(pParse, p, p->pEList, tab1,
-                      0, 0, &dest, iCont, iBreak);
+                      0, 0, 0, &dest, iCont, iBreak);
       sqlite3VdbeResolveLabel(v, iCont);
       sqlite3VdbeAddOp2(v, OP_Next, tab1, iStart); VdbeCoverage(v);
       sqlite3VdbeResolveLabel(v, iBreak);
@@ -4730,6 +4731,7 @@ int sqlite3Select(
   if( !isAgg && pGroupBy==0 ){
     /* No aggregate functions and no GROUP BY clause */
     u16 wctrlFlags = (sDistinct.isTnct ? WHERE_WANT_DISTINCT : 0);
+    int nOBSat;
 
     /* Begin the database scan. */
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pOrderBy, p->pEList,
@@ -4741,7 +4743,8 @@ int sqlite3Select(
     if( sDistinct.isTnct && sqlite3WhereIsDistinct(pWInfo) ){
       sDistinct.eTnctType = sqlite3WhereIsDistinct(pWInfo);
     }
-    if( pOrderBy && sqlite3WhereIsOrdered(pWInfo) ) pOrderBy = 0;
+    nOBSat = sqlite3WhereIsOrdered(pWInfo);
+    if( pOrderBy && nOBSat==pOrderBy->nExpr ){ pOrderBy = 0;  nOBSat = 0; }
 
     /* If sorting index that was created by a prior OP_OpenEphemeral 
     ** instruction ended up not being needed, then change the OP_OpenEphemeral
@@ -4753,7 +4756,7 @@ int sqlite3Select(
     }
 
     /* Use the standard inner loop. */
-    selectInnerLoop(pParse, p, pEList, -1, pOrderBy, &sDistinct, pDest,
+    selectInnerLoop(pParse, p, pEList, -1, pOrderBy, nOBSat, &sDistinct, pDest,
                     sqlite3WhereContinueLabel(pWInfo),
                     sqlite3WhereBreakLabel(pWInfo));
 
@@ -4875,7 +4878,7 @@ int sqlite3Select(
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0, 
                                  WHERE_GROUPBY, 0);
       if( pWInfo==0 ) goto select_end;
-      if( sqlite3WhereIsOrdered(pWInfo) ){
+      if( sqlite3WhereIsOrdered(pWInfo)==pGroupBy->nExpr ){
         /* The optimizer is able to deliver rows in group by order so
         ** we do not have to sort.  The OP_OpenEphemeral table will be
         ** cancelled later because we still need to use the pKeyInfo
@@ -5026,7 +5029,7 @@ int sqlite3Select(
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
       finalizeAggFunctions(pParse, &sAggInfo);
       sqlite3ExprIfFalse(pParse, pHaving, addrOutputRow+1, SQLITE_JUMPIFNULL);
-      selectInnerLoop(pParse, p, p->pEList, -1, pOrderBy,
+      selectInnerLoop(pParse, p, p->pEList, -1, pOrderBy, 0,
                       &sDistinct, pDest,
                       addrOutputRow+1, addrSetAbort);
       sqlite3VdbeAddOp1(v, OP_Return, regOutputRow);
@@ -5158,7 +5161,7 @@ int sqlite3Select(
         }
         updateAccumulator(pParse, &sAggInfo);
         assert( pMinMax==0 || pMinMax->nExpr==1 );
-        if( sqlite3WhereIsOrdered(pWInfo) ){
+        if( sqlite3WhereIsOrdered(pWInfo)>0 ){
           sqlite3VdbeAddOp2(v, OP_Goto, 0, sqlite3WhereBreakLabel(pWInfo));
           VdbeComment((v, "%s() by index",
                 (flag==WHERE_ORDERBY_MIN?"min":"max")));
@@ -5169,7 +5172,7 @@ int sqlite3Select(
 
       pOrderBy = 0;
       sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
-      selectInnerLoop(pParse, p, p->pEList, -1, 0, 0, 
+      selectInnerLoop(pParse, p, p->pEList, -1, 0, 0, 0, 
                       pDest, addrEnd, addrEnd);
       sqlite3ExprListDelete(db, pDel);
     }
@@ -5186,7 +5189,7 @@ int sqlite3Select(
   */
   if( pOrderBy ){
     explainTempTable(pParse, "ORDER BY");
-    generateSortTail(pParse, p, v, pEList->nExpr, pDest);
+    generateSortTail(pParse, p, pEList->nExpr, pDest);
   }
 
   /* Jump here to skip this query
