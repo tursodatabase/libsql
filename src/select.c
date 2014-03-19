@@ -482,16 +482,16 @@ static void pushOntoSorter(
     VdbeOp *pOp;      /* Opcode that opens the sorter */
     int nKey;         /* Number of sorting key columns, including OP_Sequence */
 
+    regPrevKey = pParse->nMem+1;
+    pParse->nMem += pSort->nOBSat;
+    nKey = nExpr - pSort->nOBSat + 1;
     addrFirst = sqlite3VdbeAddOp1(v, OP_IfNot, regBase+nExpr); VdbeCoverage(v);
+    sqlite3VdbeAddOp3(v, OP_Compare, regPrevKey, regBase, pSort->nOBSat);
     pOp = sqlite3VdbeGetOp(v, pSort->addrSortIndex);
     pOp->opcode = OP_OpenEphemeral;
     pSort->sortFlags &= ~SORTFLAG_UseSorter;
-    nKey = nExpr - pSort->nOBSat + 1;
     pOp->p2 = nKey + 1;
-    regPrevKey = pParse->nMem+1;
-    pParse->nMem += pSort->nOBSat;
-    sqlite3VdbeAddOp4(v, OP_Compare, regPrevKey, regBase, pSort->nOBSat,
-                      (char*)pOp->p4.pKeyInfo, P4_KEYINFO);
+    sqlite3VdbeChangeP4(v, -1, (char*)pOp->p4.pKeyInfo, P4_KEYINFO);
     pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat, 1);
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
