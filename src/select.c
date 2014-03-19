@@ -509,8 +509,10 @@ static void pushOntoSorter(
     op = OP_IdxInsert;
   }
   sqlite3VdbeAddOp2(v, op, pSort->iECursor, regRecord);
-  sqlite3ReleaseTempReg(pParse, regRecord);
-  sqlite3ReleaseTempRange(pParse, regBase, nExpr+2);
+  if( nOBSat==0 ){
+    sqlite3ReleaseTempReg(pParse, regRecord);
+    sqlite3ReleaseTempRange(pParse, regBase, nExpr+2);
+  }
   if( pSelect->iLimit ){
     int addr1, addr2;
     int iLimit;
