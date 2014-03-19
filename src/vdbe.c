@@ -4872,20 +4872,26 @@ case OP_Clear: {
   break;
 }
 
-/* Opcode: ClearEphem P1 * * * *
+/* Opcode: ResetSorter P1 * * * *
 **
-** Delete all contents from the ephemeral table that is open on cursor P1.
+** Delete all contents from the ephemeral table or sorter
+** that is open on cursor P1.
 **
-** See also: Clear, Destroy
+** This opcode only works for cursors used for sorting and
+** opened with OP_OpenEphemeral or OP_SorterOpen.
 */
-case OP_ClearEphem: {
+case OP_ResetSorter: {
   VdbeCursor *pC;
  
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->isEphemeral );
-  rc = sqlite3BtreeClearTableOfCursor(pC->pCursor);
+  if( pC->pSorter ){
+    sqlite3VdbeSorterReset(db, pC->pSorter);
+  }else{
+    assert( pC->isEphemeral );
+    rc = sqlite3BtreeClearTableOfCursor(pC->pCursor);
+  }
   break;
 }
 

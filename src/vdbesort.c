@@ -505,22 +505,39 @@ static void vdbeSorterRecordFree(sqlite3 *db, SorterRecord *pRecord){
 }
 
 /*
+** Reset a sorting cursor back to its original empty state.
+*/
+void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
+  if( pSorter->aIter ){
+    int i;
+    for(i=0; i<pSorter->nTree; i++){
+      vdbeSorterIterZero(db, &pSorter->aIter[i]);
+    }
+    sqlite3DbFree(db, pSorter->aIter);
+    pSorter->aIter = 0;
+  }
+  if( pSorter->pTemp1 ){
+    sqlite3OsCloseFree(pSorter->pTemp1);
+    pSorter->pTemp1 = 0;
+  }
+  vdbeSorterRecordFree(db, pSorter->pRecord);
+  pSorter->pRecord = 0;
+  pSorter->iWriteOff = 0;
+  pSorter->iReadOff = 0;
+  pSorter->nInMemory = 0;
+  pSorter->nTree = 0;
+  pSorter->nPMA = 0;
+  pSorter->aTree = 0;
+}
+
+
+/*
 ** Free any cursor components allocated by sqlite3VdbeSorterXXX routines.
 */
 void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
   VdbeSorter *pSorter = pCsr->pSorter;
   if( pSorter ){
-    if( pSorter->aIter ){
-      int i;
-      for(i=0; i<pSorter->nTree; i++){
-        vdbeSorterIterZero(db, &pSorter->aIter[i]);
-      }
-      sqlite3DbFree(db, pSorter->aIter);
-    }
-    if( pSorter->pTemp1 ){
-      sqlite3OsCloseFree(pSorter->pTemp1);
-    }
-    vdbeSorterRecordFree(db, pSorter->pRecord);
+    sqlite3VdbeSorterReset(db, pSorter);
     sqlite3DbFree(db, pSorter->pUnpacked);
     sqlite3DbFree(db, pSorter);
     pCsr->pSorter = 0;

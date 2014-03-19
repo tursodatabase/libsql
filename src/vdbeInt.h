@@ -438,6 +438,7 @@ int sqlite3VdbeFrameRestore(VdbeFrame *);
 int sqlite3VdbeTransferError(Vdbe *p);
 
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
+void sqlite3VdbeSorterReset(sqlite3 *, VdbeSorter *);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);

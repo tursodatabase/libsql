@@ -488,8 +488,6 @@ static void pushOntoSorter(
     addrFirst = sqlite3VdbeAddOp1(v, OP_IfNot, regBase+nExpr); VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_Compare, regPrevKey, regBase, pSort->nOBSat);
     pOp = sqlite3VdbeGetOp(v, pSort->addrSortIndex);
-    pOp->opcode = OP_OpenEphemeral;
-    pSort->sortFlags &= ~SORTFLAG_UseSorter;
     pOp->p2 = nKey + 1;
     sqlite3VdbeChangeP4(v, -1, (char*)pOp->p4.pKeyInfo, P4_KEYINFO);
     pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat, 1);
@@ -498,7 +496,7 @@ static void pushOntoSorter(
     pSort->labelBkOut = sqlite3VdbeMakeLabel(v);
     pSort->regReturn = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
-    sqlite3VdbeAddOp1(v, OP_ClearEphem, pSort->iECursor);
+    sqlite3VdbeAddOp1(v, OP_ResetSorter, pSort->iECursor);
     sqlite3VdbeJumpHere(v, addrFirst);
     sqlite3VdbeAddOp3(v, OP_Move, regBase, regPrevKey, pSort->nOBSat);
     sqlite3VdbeJumpHere(v, addrJmp);
