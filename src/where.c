@@ -5198,9 +5198,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
     }
   }
-  if( pWInfo->pOrderBy && pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
+  if( pWInfo->pOrderBy ){
     if( pWInfo->wctrlFlags & WHERE_DISTINCTBY ){
-      pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
+      if( pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
+        pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
+      }
     }else{
       pWInfo->nOBSat = pFrom->isOrdered;
       pWInfo->revMask = pFrom->revLoop;

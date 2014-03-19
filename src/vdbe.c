@@ -1080,10 +1080,11 @@ case OP_Variable: {            /* out2-prerelease */
 /* Opcode: Move P1 P2 P3 * *
 ** Synopsis:  r[P2@P3]=r[P1@P3]
 **
-** Move the values in register P1..P1+P3 over into
-** registers P2..P2+P3.  Registers P1..P1+P3 are
+** Move the P3 values in register P1..P1+P3-1 over into
+** registers P2..P2+P3-1.  Registers P1..P1+P3-1 are
 ** left holding a NULL.  It is an error for register ranges
-** P1..P1+P3 and P2..P2+P3 to overlap.
+** P1..P1+P3-1 and P2..P2+P3-1 to overlap.  It is an error
+** for P3 to be less than 1.
 */
 case OP_Move: {
   char *zMalloc;   /* Holding variable for allocated memory */
@@ -1094,7 +1095,7 @@ case OP_Move: {
   n = pOp->p3;
   p1 = pOp->p1;
   p2 = pOp->p2;
-  assert( n>=0 && p1>0 && p2>0 );
+  assert( n>0 && p1>0 && p2>0 );
   assert( p1+n<=p2 || p2+n<=p1 );
 
   pIn1 = &aMem[p1];
@@ -1118,7 +1119,7 @@ case OP_Move: {
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
     pOut++;
-  }while( n-- );
+  }while( --n );
   break;
 }
 
@@ -1995,6 +1996,7 @@ case OP_Permutation: {
 }
 
 /* Opcode: Compare P1 P2 P3 P4 P5
+** Synopsis: r[P1@P3] <-> r[P2@P3]
 **
 ** Compare two vectors of registers in reg(P1)..reg(P1+P3-1) (call this
 ** vector "A") and in reg(P2)..reg(P2+P3-1) ("B").  Save the result of
@@ -3330,6 +3332,7 @@ case OP_OpenEphemeral: {
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
+  pCx->isEphemeral = 1;
   rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
                         BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
@@ -3820,7 +3823,7 @@ case OP_NotExists: {        /* jump, in3 */
 }
 
 /* Opcode: Sequence P1 P2 * * *
-** Synopsis: r[P2]=rowid
+** Synopsis: r[P2]=cursor[P1].ctr++
 **
 ** Find the next available sequence number for cursor P1.
 ** Write the sequence number into register P2.
@@ -4866,6 +4869,23 @@ case OP_Clear: {
       aMem[pOp->p3].u.i += nChange;
     }
   }
+  break;
+}
+
+/* Opcode: ClearEphem P1 * * * *
+**
+** Delete all contents from the ephemeral table that is open on cursor P1.
+**
+** See also: Clear, Destroy
+*/
+case OP_ClearEphem: {
+  VdbeCursor *pC;
+ 
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  assert( pC->isEphemeral );
+  rc = sqlite3BtreeClearTableOfCursor(pC->pCursor);
   break;
 }
 

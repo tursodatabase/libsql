@@ -115,6 +115,7 @@ int sqlite3BtreeIncrVacuum(Btree *);
 
 int sqlite3BtreeDropTable(Btree*, int, int*);
 int sqlite3BtreeClearTable(Btree*, int, int*);
+int sqlite3BtreeClearTableOfCursor(BtCursor*);
 void sqlite3BtreeTripAllCursors(Btree*, int);
 
 void sqlite3BtreeGetMeta(Btree *pBtree, int idx, u32 *pValue);
