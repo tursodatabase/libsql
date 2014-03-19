@@ -5039,11 +5039,17 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                        pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
                        iLoop, pWLoop, &revMask);
           if( isOrdered>=0 && isOrdered<nOrderBy ){
-            /* TUNING: Estimated cost of sorting cost as roughly 4*N*log(N).
+            /* TUNING: Estimated cost of sorting cost as roughly N*log(N).
             ** If some but not all of the columns are in sorted order, then
             ** scale down the log(N) term. */
-            LogEst rSortCost = 20 + nRowEst +
-                                estLog(nRowEst)*(nOrderBy-isOrdered)/nOrderBy;
+            LogEst rScale = sqlite3LogEst((nOrderBy-isOrdered)*100/nOrderBy);
+            LogEst rSortCost = nRowEst + estLog(nRowEst) + rScale - 66;
+            /* TUNING: The cost of implementing DISTINCT using a B-TREE is
+            ** also N*log(N) but it has a larger constant of proportionality.
+            ** Multiply by 3.0. */
+            if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
+              rSortCost += 16;
+            }
             WHERETRACE(0x002,
                ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
                 rSortCost, (nOrderBy-isOrdered), nOrderBy, rCost,

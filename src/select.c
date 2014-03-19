@@ -1004,12 +1004,12 @@ static KeyInfo *keyInfoFromExprList(
   pInfo = sqlite3KeyInfoAlloc(db, nExpr+nExtra-iStart, 1);
   if( pInfo ){
     assert( sqlite3KeyInfoIsWriteable(pInfo) );
-    for(i=iStart, pItem=pList->a; i<nExpr; i++, pItem++){
+    for(i=iStart, pItem=pList->a+iStart; i<nExpr; i++, pItem++){
       CollSeq *pColl;
       pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
       if( !pColl ) pColl = db->pDfltColl;
-      pInfo->aColl[i] = pColl;
-      pInfo->aSortOrder[i] = pItem->sortOrder;
+      pInfo->aColl[i-iStart] = pColl;
+      pInfo->aSortOrder[i-iStart] = pItem->sortOrder;
     }
   }
   return pInfo;
@@ -5257,7 +5257,7 @@ int sqlite3Select(
   ** and send them to the callback one by one.
   */
   if( sSort.pOrderBy ){
-    explainTempTable(pParse, "ORDER BY");
+    explainTempTable(pParse, sSort.nOBSat>0 ? "RIGHT PART OF ORDER BY":"ORDER BY");
     generateSortTail(pParse, p, &sSort, pEList->nExpr, pDest);
   }
 

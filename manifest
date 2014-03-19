@@ -1,5 +1,5 @@
-C Make\sit\spossible\sfor\sblock-sort\sto\suse\sthe\sOP_SorterOpen\ssorter\sin\saddition\nto\sa\sgeneric\sOP_OpenEphemeral.
-D 2014-03-19T17:41:36.148
+C Fix\squery\splanner\sweights\sassociated\swith\schoosing\sblock-sorting.\s\sFix\nblock\ssorting\sof\stables\swith\scollating\sfunctions.\s\sFix\svarious\stest\scases.\nAll\s"veryquick"\stests\sare\snow\spassing,\sthough\smore\stests\sneed\sto\sbe\sadded.
+D 2014-03-19T23:24:49.240
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c f481ab847cfb3ad2b2dce671a4dcbfdb50f8e666
+F src/select.c 12534449e77ff54fca5d3e9fcddc10031b13fbc1
 F src/shell.c bab4de12b441369491812ecc93212ff4deda68fa
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -291,7 +291,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 1757f31c7f1c59a35ac8ffe931d22d66b43f9f1f
+F src/where.c 7c74debe2e76711082d6cb503aa89dd2afaf84cf
 F src/whereInt.h 2564055b440e44ebec8b47f237bbccae6719b7af
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -431,7 +431,7 @@ F test/descidx1.test 6d03b44c8538fe0eb4924e19fba10cdd8f3c9240
 F test/descidx2.test 9f1a0c83fd57f8667c82310ca21b30a350888b5d
 F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
-F test/distinct.test c7b194ef95dbddb32d77acbbab2e023c6eed0cb2
+F test/distinct.test 086e70c765f172e8974e9f83b9ac5ca03c154e77
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_createtable.test ee95d48664503d40f6cc9ef4a7d03216188e2ada
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
@@ -722,7 +722,7 @@ F test/orderby1.test 9b524aff9147288da43a6d7ddfdcff47fa2303c6
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
-F test/orderby5.test 0eb82d5890c3f3d0563966560cfdc984ea69e30c
+F test/orderby5.test 2490183fef54417209d1df253633a605d46bd350
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1089,7 +1089,7 @@ F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
 F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
-F test/whereG.test 2a3d5181decc801b36600fa1c40b0dad2ccc267f
+F test/whereG.test eb3a46b3eaf38e25e3013433b2db8a25a866c215
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 62f3a22050e0f11c789374f8a3785df0a84c24cb
-R 83d570cd19fdb25aa0d409b1a1586b4b
+P 7ce2daafd39a117041bfdd0a7132e2764fe7a74b
+R f3bf694b0186fa15aaedfb1a5982c72f
 U drh
-Z 5d298c6da64eb9d6d4284253fdadfab0
+Z 15ce545d4c6482a35d82cbe6b958fe2e

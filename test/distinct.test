@@ -162,7 +162,7 @@ do_execsql_test 2.0 {
 foreach {tn sql temptables res} {
   1   "a, b FROM t1"                                       {}      {A B a b}
   2   "b, a FROM t1"                                       {}      {B A b a}
-  3   "a, b, c FROM t1"                                    {hash}  {a b c A B C}
+  3   "a, b, c FROM t1"                                    {hash}  {A B C a b c}
   4   "a, b, c FROM t1 ORDER BY a, b, c"                   {btree} {A B C a b c}
   5   "b FROM t1 WHERE a = 'a'"                            {}      {b}
   6   "b FROM t1 ORDER BY +b COLLATE binary"          {btree hash} {B b}
