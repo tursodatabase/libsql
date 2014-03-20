@@ -33,6 +33,7 @@
 char sqlite3ExprAffinity(Expr *pExpr){
   int op;
   pExpr = sqlite3ExprSkipCollate(pExpr);
+  if( pExpr->flags & EP_Generic ) return SQLITE_AFF_NONE;
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
@@ -65,7 +66,11 @@ char sqlite3ExprAffinity(Expr *pExpr){
 ** If a memory allocation error occurs, that fact is recorded in pParse->db
 ** and the pExpr parameter is returned unchanged.
 */
-Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr *pExpr, Token *pCollName){
+Expr *sqlite3ExprAddCollateToken(
+  Parse *pParse,           /* Parsing context */
+  Expr *pExpr,             /* Add the "COLLATE" clause to this expression */
+  const Token *pCollName   /* Name of collating sequence */
+){
   if( pCollName->n>0 ){
     Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, 1);
     if( pNew ){
@@ -118,6 +123,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   Expr *p = pExpr;
   while( p ){
     int op = p->op;
+    if( p->flags & EP_Generic ) break;
     if( op==TK_CAST || op==TK_UPLUS ){
       p = p->pLeft;
       continue;
@@ -1628,7 +1634,6 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
       *prNotFound = rMayHaveNull = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
     }else{
-      testcase( pParse->nQueryLoop>0 );
       pParse->nQueryLoop = 0;
       if( pX->pLeft->iColumn<0 && !ExprHasProperty(pX, EP_xIsSelect) ){
         eType = IN_INDEX_ROWID;

@@ -1010,12 +1010,12 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
         ** a value equivalent to pIter2. So set pKey2 to NULL to prevent
         ** vdbeSorterCompare() from decoding pIter2 again.  */
         if( iRes<=0 ){
-          pSorter->aTree[i] = (pIter1 - pSorter->aIter);
+          pSorter->aTree[i] = (int)(pIter1 - pSorter->aIter);
           pIter2 = &pSorter->aIter[ pSorter->aTree[i ^ 0x0001] ];
           pKey2 = pIter2->aKey;
         }else{
           if( pIter1->pFile ) pKey2 = 0;
-          pSorter->aTree[i] = (pIter2 - pSorter->aIter);
+          pSorter->aTree[i] = (int)(pIter2 - pSorter->aIter);
           pIter1 = &pSorter->aIter[ pSorter->aTree[i ^ 0x0001] ];
         }
 
