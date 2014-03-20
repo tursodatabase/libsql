@@ -1,5 +1,5 @@
-C Remove\sa\sstray\sC99-style\scomment.
-D 2014-03-11T23:44:10.719
+C Only\suse\sthe\sdirect-overflow-read\soptimization\sif\sall\sdata\sfrom\sthe\soverflow\spage\sin\squestion\sis\sbeing\sread.
+D 2014-03-20T18:56:35.309
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 33b5ad54a14c2b62e8adbc7656dec2b7cd760cbf
+F src/btree.c 0384d399cfb12b3767edec355f00996658bb093e
 F src/btree.h 6b0c1a3f0937f9852ec727c820e71dbdd4bd0b27
 F src/btreeInt.h d1784d1e17d08d29e890190dbb9836fa64573381
 F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
@@ -574,7 +574,7 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test a21814945d32137412b553d98ad2107f9b2173a9
+F test/func.test c2cbfc23d554c5bf8678d0fb271aa4f8ef94839c
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 968fec44d7fde3adbd3e9603e4282351f0d4bda1
-R c766c2eb192c274bbd3dc0af3849118d
-U drh
-Z 264233dee2a1cd950306c0e6dc59ee29
+P f500e87d6ec6fa43c13f4e94edf32789f36e4233
+R 97d65ef8b8853428f883a03b9234ff63
+U dan
+Z c025d7be55b561d9bf0252bb6230f9e0

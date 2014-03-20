@@ -3951,6 +3951,7 @@ static int accessPayload(
   int iIdx = 0;
   MemPage *pPage = pCur->apPage[pCur->iPage]; /* Btree page of current entry */
   BtShared *pBt = pCur->pBt;                  /* Btree this cursor belongs to */
+  int bEnd;                       /* True if reading to end of data */
 
   assert( pPage );
   assert( pCur->eState==CURSOR_VALID );
@@ -3960,6 +3961,7 @@ static int accessPayload(
   getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
   nKey = (pPage->intKey ? 0 : (int)pCur->info.nKey);
+  bEnd = (offset+amt==nKey+pCur->info.nData);
 
   if( NEVER(offset+amt > nKey+pCur->info.nData) 
    || &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
@@ -4064,6 +4066,7 @@ static int accessPayload(
         **   3) the database is file-backed, and
         **   4) there is no open write-transaction, and
         **   5) the database is not a WAL database,
+        **   6) all data from the page is being read.
         **
         ** then data can be read directly from the database file into the
         ** output buffer, bypassing the page-cache altogether. This speeds
@@ -4071,6 +4074,7 @@ static int accessPayload(
         */
         if( (eOp&0x01)==0                                      /* (1) */
          && offset==0                                          /* (2) */
+         && (bEnd || a==ovflSize)                              /* (6) */
          && pBt->inTransaction==TRANS_READ                     /* (4) */
          && (fd = sqlite3PagerFile(pBt->pPager))->pMethods     /* (3) */
          && pBt->pPage1->aData[19]==0x01                       /* (5) */
