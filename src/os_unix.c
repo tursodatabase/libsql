@@ -323,6 +323,7 @@ static int posixFchown(int fd, uid_t uid, gid_t gid){
 
 /* Forward reference */
 static int openDirectory(const char*, int*);
+static int unixGetpagesize(void);
 
 /*
 ** Many system calls are accessed through pointer-to-functions so that
@@ -445,6 +446,9 @@ static struct unix_syscall {
 #endif
 #define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[23].pCurrent)
 #endif
+
+  { "getpagesize",  (sqlite3_syscall_ptr)unixGetpagesize, 0 },
+#define osGetpagesize ((int(*)(void))aSyscall[24].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -4107,8 +4111,11 @@ static int unixShmSystemLock(
 
 /*
 ** Return the system page size.
+**
+** This function should not be called directly by other code in this file. 
+** Instead, it should be called via macro osGetpagesize().
 */
-static int unixGetPagesize(void){
+static int unixGetpagesize(void){
 #if defined(_BSD_SOURCE)
   return getpagesize();
 #else
@@ -4127,7 +4134,7 @@ static int unixGetPagesize(void){
 */
 static int unixShmRegionPerMap(void){
   int shmsz = 32*1024;            /* SHM region size */
-  int pgsz = unixGetPagesize();   /* System page size */
+  int pgsz = osGetpagesize();   /* System page size */
   assert( ((pgsz-1)&pgsz)==0 );   /* Page size must be a power of 2 */
   if( pgsz<shmsz ) return 1;
   return pgsz/shmsz;
@@ -4710,7 +4717,7 @@ static void unixRemapfile(
 #if HAVE_MREMAP
     i64 nReuse = pFd->mmapSize;
 #else
-    const int szSyspage = unixGetPagesize();
+    const int szSyspage = osGetpagesize();
     i64 nReuse = (pFd->mmapSize & ~(szSyspage-1));
 #endif
     u8 *pReq = &pOrig[nReuse];
@@ -7458,7 +7465,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==24 );
+  assert( ArraySize(aSyscall)==25 );
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
