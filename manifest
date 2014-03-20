@@ -1,5 +1,5 @@
-C Fix\sthe\sEXPLAIN\sindenter\sin\sthe\scommand-line\sshell\sto\scorrectly\nhandle\sNextIfOpen\sand\sPrevIfOpen\sopcodes.
-D 2014-03-20T18:45:27.340
+C Remove\sa\stestcase()\sthat\sis\snow\salways\strue\sdue\sto\sthe\s"x\sIN\s(?)"\soptimization.\nAdd\san\sALWAYS()\saround\sa\sconditional\sin\sthe\sparser\sthat\scannot\sbe\sfalse.
+D 2014-03-20T19:04:56.106
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -173,7 +173,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c cdd57149543bb28304d8f717c243f2a86b1fc280
-F src/expr.c 16ea9cefe7c8f998816b4eb8b8e7a88f0d2d3797
+F src/expr.c 6e1e8bca468753f06758db7835a85e5408351e7a
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
 F src/func.c 2945bb2c4cdc0ac43733046285a4434310be1811
@@ -207,7 +207,7 @@ F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
 F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
 F src/pager.c 97a8908bf4e6e7c3adea09d3597cfa48ae33ab4e
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y fb3280d85a103f623e5cf551b5b96b9df33151ac
+F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2ea4a9f75f46eaa928ba17e9e91bc0432750d46d
-R 4c494d6d400709087b8c24162b58f63e
+P 01944c53f5c129f48ce8842faaedcf5607dd381e
+R 608adcc59408221c1aef74de280cb552
 U drh
-Z f93731af177c8fb155193dbd5a919278
+Z 43de690b7d9666e906803652c8c9527b

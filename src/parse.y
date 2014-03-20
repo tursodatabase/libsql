@@ -1040,7 +1040,9 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       Expr *pRHS = Y->a[0].pExpr;
       Y->a[0].pExpr = 0;
       sqlite3ExprListDelete(pParse->db, Y);
-      if( pRHS ){
+      /* pRHS cannot be NULL because a malloc error would have been detected
+      ** before now and control would have never reached this point */
+      if( ALWAYS(pRHS) ){
         pRHS->flags &= ~EP_Collate;
         pRHS->flags |= EP_Generic;
       }

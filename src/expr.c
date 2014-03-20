@@ -1636,7 +1636,6 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
       *prNotFound = rMayHaveNull = ++pParse->nMem;
       sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
     }else{
-      testcase( pParse->nQueryLoop>0 );
       pParse->nQueryLoop = 0;
       if( pX->pLeft->iColumn<0 && !ExprHasProperty(pX, EP_xIsSelect) ){
         eType = IN_INDEX_ROWID;
