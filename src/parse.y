@@ -1026,15 +1026,24 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       **      expr1 IN (?1)
       **      expr1 NOT IN (?2)
       **
-      ** with exactly one value on the RHS can be simplified to:
+      ** with exactly one value on the RHS can be simplified to something
+      ** like this:
       **
-      **      expr1 == (+?1 COLLATE binary)
-      **      expr1 <> (+?2 COLLATE binary)
+      **      expr1 == ?1
+      **      expr1 <> ?2
+      **
+      ** But, the RHS of the == or <> is marked with the EP_Generic flag
+      ** so that it may not contribute to the computation of comparison
+      ** affinity or the collating sequence to use for comparison.  Otherwise,
+      ** the semantics would be subtly different from IN or NOT IN.
       */
-      Expr *pRHS = sqlite3ExprAddCollateString(pParse, Y->a[0].pExpr, "binary");
+      Expr *pRHS = Y->a[0].pExpr;
       Y->a[0].pExpr = 0;
       sqlite3ExprListDelete(pParse->db, Y);
-      pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0, 0);
+      if( pRHS ){
+        pRHS->flags &= ~EP_Collate;
+        pRHS->flags |= EP_Generic;
+      }
       A.pExpr = sqlite3PExpr(pParse, N ? TK_NE : TK_EQ, X.pExpr, pRHS, 0);
     }else{
       A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);

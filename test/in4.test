@@ -302,8 +302,38 @@ do_execsql_test in4-4.19 {
   SELECT c FROM t4b WHERE +b IN (a);
 } {}
 
+do_execsql_test in4-5.1 {
+  CREATE TABLE t5(c INTEGER PRIMARY KEY, d TEXT COLLATE nocase);
+  INSERT INTO t5 VALUES(17, 'fuzz');
+  SELECT 1 FROM t5 WHERE 'fuzz' IN (d);  -- match
+  SELECT 2 FROM t5 WHERE 'FUZZ' IN (d);  -- no match
+  SELECT 3 FROM t5 WHERE d IN ('fuzz');  -- match
+  SELECT 4 FROM t5 WHERE d IN ('FUZZ');  -- match
+} {1 3 4}
 
+# An expression of the form "x IN (y)" can be used as "x=y" by the
+# query planner when computing transitive constraints or to run the
+# query using an index on y.
+#
+do_execsql_test in4-6.1 {
+  CREATE TABLE t6a(a INTEGER PRIMARY KEY, b);
+  INSERT INTO t6a VALUES(1,2),(3,4),(5,6);
+  CREATE TABLE t6b(c INTEGER PRIMARY KEY, d);
+  INSERT INTO t6b VALUES(4,44),(5,55),(6,66);
 
+  SELECT * FROM t6a, t6b WHERE a=3 AND b IN (c);
+} {3 4 4 44}
+do_execsql_test in4-6.1-eqp {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t6a, t6b WHERE a=3 AND b IN (c);
+} {~/SCAN/}
+do_execsql_test in4-6.2 {
+  SELECT * FROM t6a, t6b WHERE a=3 AND c IN (b);
+} {3 4 4 44}
+do_execsql_test in4-6.2-eqp {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t6a, t6b WHERE a=3 AND c IN (b);
+} {~/SCAN/}
 
 
 finish_test

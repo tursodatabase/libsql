@@ -33,6 +33,7 @@
 char sqlite3ExprAffinity(Expr *pExpr){
   int op;
   pExpr = sqlite3ExprSkipCollate(pExpr);
+  if( pExpr->flags & EP_Generic ) return SQLITE_AFF_NONE;
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );
@@ -122,6 +123,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   Expr *p = pExpr;
   while( p ){
     int op = p->op;
+    if( p->flags & EP_Generic ) break;
     if( op==TK_CAST || op==TK_UPLUS ){
       p = p->pLeft;
       continue;
