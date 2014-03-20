@@ -1028,12 +1028,14 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       **
       ** with exactly one value on the RHS can be simplified to:
       **
-      **      expr1 == ?1
-      **      expr1 <> ?2
+      **      expr1 == (+?1 COLLATE binary)
+      **      expr1 <> (+?2 COLLATE binary)
       */
-      Expr *pRHS = Y->a[0].pExpr;
+      static const Token collBin = { "binary", 6 };
+      Expr *pRHS = sqlite3ExprAddCollateToken(pParse, Y->a[0].pExpr, &collBin);
       Y->a[0].pExpr = 0;
       sqlite3ExprListDelete(pParse->db, Y);
+      pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0, 0);
       A.pExpr = sqlite3PExpr(pParse, N ? TK_NE : TK_EQ, X.pExpr, pRHS, 0);
     }else{
       A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);

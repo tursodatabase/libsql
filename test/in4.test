@@ -245,6 +245,65 @@ do_execsql_test in4-3.48 {
   SELECT * FROM t3 WHERE x NOT IN (10);
 } {~/OpenEphemeral/}
 
+# Make sure that when "x IN (?)" is converted into "x==?" that collating
+# sequence and affinity computations do not get messed up.
+#
+do_execsql_test in4-4.1 {
+  CREATE TABLE t4a(a TEXT, b TEXT COLLATE nocase, c);
+  INSERT INTO t4a VALUES('ABC','abc',1);
+  INSERT INTO t4a VALUES('def','xyz',2);
+  INSERT INTO t4a VALUES('ghi','ghi',3);
+  SELECT c FROM t4a WHERE a=b ORDER BY c;
+} {3}
+do_execsql_test in4-4.2 {
+  SELECT c FROM t4a WHERE b=a ORDER BY c;
+} {1 3}
+do_execsql_test in4-4.3 {
+  SELECT c FROM t4a WHERE (a||'')=b ORDER BY c;
+} {1 3}
+do_execsql_test in4-4.4 {
+  SELECT c FROM t4a WHERE (a||'')=(b||'') ORDER BY c;
+} {3}
+do_execsql_test in4-4.5 {
+  SELECT c FROM t4a WHERE a IN (b) ORDER BY c;
+} {3}
+do_execsql_test in4-4.6 {
+  SELECT c FROM t4a WHERE (a||'') IN (b) ORDER BY c;
+} {3}
+
+
+do_execsql_test in4-4.11 {
+  CREATE TABLE t4b(a TEXT, b NUMERIC, c);
+  INSERT INTO t4b VALUES('1.0',1,4);
+  SELECT c FROM t4b WHERE a=b;
+} {4}
+do_execsql_test in4-4.12 {
+  SELECT c FROM t4b WHERE b=a;
+} {4}
+do_execsql_test in4-4.13 {
+  SELECT c FROM t4b WHERE +a=b;
+} {4}
+do_execsql_test in4-4.14 {
+  SELECT c FROM t4b WHERE a=+b;
+} {}
+do_execsql_test in4-4.15 {
+  SELECT c FROM t4b WHERE +b=a;
+} {}
+do_execsql_test in4-4.16 {
+  SELECT c FROM t4b WHERE b=+a;
+} {4}
+do_execsql_test in4-4.17 {
+  SELECT c FROM t4b WHERE a IN (b);
+} {}
+do_execsql_test in4-4.18 {
+  SELECT c FROM t4b WHERE b IN (a);
+} {4}
+do_execsql_test in4-4.19 {
+  SELECT c FROM t4b WHERE +b IN (a);
+} {}
+
+
+
 
 
 finish_test

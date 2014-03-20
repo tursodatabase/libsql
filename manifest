@@ -1,5 +1,5 @@
-C Convert\sexpressions\sof\sthe\sform\s"X\sIN\s(?)"\swith\sexactly\sone\svalue\son\sthe\nRHS\sof\sthe\sIN\sinto\sequality\stests:\s\s"X=?".\s\sAdd\stest\scases\sto\sverify\sthat\nstatements\swork\scorrectly\son\sthis\scorner\scase.\nFix\sfor\sticket\s[e39d032577df6942].
-D 2014-03-20T13:26:47.152
+C Previous\scheck-in\sis\snot\squite\scorrect.\s\s"x\sIN\s(?)"\sis\snot\sexactly\sthe\ssame\nas\s"x==?"\sdo\sto\scollation\sand\saffinity\sissues.\s\sThe\scorrect\sconverstion\sshould\nbe\sto\s"x==(+?\sCOLLATE\sbinary)".\s\sThe\scurrent\scheck-in\sfixes\sthis\sproblem\sand\nprovides\stest\scases.\s\sTicket\s[e39d032577df69]
+D 2014-03-20T14:56:47.071
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
 F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
 F src/pager.c 97a8908bf4e6e7c3adea09d3597cfa48ae33ab4e
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
-F src/parse.y 52d749e7fd1289d9a576fe88782d9637a2f7bb6d
+F src/parse.y c9189eca0888ecd2711c77a199ae7a7c86f57546
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
@@ -593,7 +593,7 @@ F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/in4.test ed42587bed8c8e2219a09a6a6e3675edffc011da
+F test/in4.test 18202389003284e8e019750c04e4bc6333df9c99
 F test/in5.test 99f9a40af01711b06d2d614ecfe96129f334fba3
 F test/incrblob.test e81846d214f3637622620fbde7cd526781cfe328
 F test/incrblob2.test bf4d549aa4a466d7fbe3e3a3693d3861263d5600
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ca3140813198ab7ce470cf86334e55207f3461f9
-R abb091fc1f04a82c7540caf08b56e8dd
+P e68b427afbc82e201c64474117851aa4c9eb0c92
+R 8739dc742c6ff38e89fff08724b87c5b
 U drh
-Z 8ed34cb3369a2d9b188815f2f4b333aa
+Z c6097cc93dfeb105af183d7216a869ad
