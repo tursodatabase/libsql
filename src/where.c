@@ -4019,7 +4019,8 @@ static int whereLoopAddBtreeIndex(
       );
       pNew->wsFlags |= WHERE_COLUMN_EQ;
       if( iCol<0 || (nInMul==0 && pNew->u.btree.nEq==pProbe->nKeyCol-1)){
-        assert( (pNew->wsFlags & WHERE_COLUMN_IN)==0 || iCol<0 );
+        /* Ticket [e39d032577df]: WHERE a=? AND b IN (?) -- a, b indexed */
+        testcase( (pNew->wsFlags & WHERE_COLUMN_IN)!=0 && iCol>=0 );
         if( iCol>=0 && pProbe->onError==OE_None ){
           pNew->wsFlags |= WHERE_UNQ_WANTED;
         }else{
