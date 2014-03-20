@@ -4105,6 +4105,33 @@ static int unixShmSystemLock(
   return rc;        
 }
 
+/*
+** Return the system page size.
+*/
+static int unixGetPagesize(void){
+#if defined(_BSD_SOURCE)
+  return getpagesize();
+#else
+  return (int)sysconf(_SC_PAGESIZE);
+#endif
+}
+
+/*
+** Return the minimum number of 32KB shm regions that should be mapped at
+** a time, assuming that each mapping must be an integer multiple of the
+** current system page-size.
+**
+** Usually, this is 1. The exception seems to be systems that are configured
+** to use 64KB pages - in this case each mapping must cover at least two
+** shm regions.
+*/
+static int unixShmRegionPerMap(void){
+  int shmsz = 32*1024;            /* SHM region size */
+  int pgsz = unixGetPagesize();   /* System page size */
+  assert( ((pgsz-1)&pgsz)==0 );   /* Page size must be a power of 2 */
+  if( pgsz<shmsz ) return 1;
+  return pgsz/shmsz;
+}
 
 /*
 ** Purge the unixShmNodeList list of all entries with unixShmNode.nRef==0.
@@ -4116,10 +4143,11 @@ static void unixShmPurge(unixFile *pFd){
   unixShmNode *p = pFd->pInode->pShmNode;
   assert( unixMutexHeld() );
   if( p && p->nRef==0 ){
+    int nShmPerMap = unixShmRegionPerMap();
     int i;
     assert( p->pInode==pFd->pInode );
     sqlite3_mutex_free(p->mutex);
-    for(i=0; i<p->nRegion; i++){
+    for(i=0; i<p->nRegion; i+=nShmPerMap){
       if( p->h>=0 ){
         osMunmap(p->apRegion[i], p->szRegion);
       }else{
@@ -4326,6 +4354,8 @@ static int unixShmMap(
   unixShm *p;
   unixShmNode *pShmNode;
   int rc = SQLITE_OK;
+  int nShmPerMap = unixShmRegionPerMap();
+  int nReqRegion;
 
   /* If the shared-memory file has not yet been opened, open it now. */
   if( pDbFd->pShm==0 ){
@@ -4341,9 +4371,12 @@ static int unixShmMap(
   assert( pShmNode->h>=0 || pDbFd->pInode->bProcessLock==1 );
   assert( pShmNode->h<0 || pDbFd->pInode->bProcessLock==0 );
 
-  if( pShmNode->nRegion<=iRegion ){
+  /* Minimum number of regions required to be mapped. */
+  nReqRegion = ((iRegion+nShmPerMap) / nShmPerMap) * nShmPerMap;
+
+  if( pShmNode->nRegion<nReqRegion ){
     char **apNew;                      /* New apRegion[] array */
-    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
+    int nByte = nReqRegion*szRegion;   /* Minimum required file size */
     struct stat sStat;                 /* Used by fstat() */
 
     pShmNode->szRegion = szRegion;
@@ -4392,17 +4425,19 @@ static int unixShmMap(
 
     /* Map the requested memory region into this processes address space. */
     apNew = (char **)sqlite3_realloc(
-        pShmNode->apRegion, (iRegion+1)*sizeof(char *)
+        pShmNode->apRegion, nReqRegion*sizeof(char *)
     );
     if( !apNew ){
       rc = SQLITE_IOERR_NOMEM;
       goto shmpage_out;
     }
     pShmNode->apRegion = apNew;
-    while(pShmNode->nRegion<=iRegion){
+    while( pShmNode->nRegion<nReqRegion ){
+      int nMap = szRegion*nShmPerMap;
+      int i;
       void *pMem;
       if( pShmNode->h>=0 ){
-        pMem = osMmap(0, szRegion,
+        pMem = osMmap(0, nMap,
             pShmNode->isReadonly ? PROT_READ : PROT_READ|PROT_WRITE, 
             MAP_SHARED, pShmNode->h, szRegion*(i64)pShmNode->nRegion
         );
@@ -4418,8 +4453,11 @@ static int unixShmMap(
         }
         memset(pMem, 0, szRegion);
       }
-      pShmNode->apRegion[pShmNode->nRegion] = pMem;
-      pShmNode->nRegion++;
+
+      for(i=0; i<nShmPerMap; i++){
+        pShmNode->apRegion[pShmNode->nRegion+i] = &((char*)pMem)[szRegion*i];
+      }
+      pShmNode->nRegion += nShmPerMap;
     }
   }
 
@@ -4634,19 +4672,6 @@ static void unixUnmapfile(unixFile *pFd){
 }
 
 /*
-** Return the system page size.
-*/
-static int unixGetPagesize(void){
-#if HAVE_MREMAP
-  return 512;
-#elif defined(_BSD_SOURCE)
-  return getpagesize();
-#else
-  return (int)sysconf(_SC_PAGESIZE);
-#endif
-}
-
-/*
 ** Attempt to set the size of the memory mapping maintained by file 
 ** descriptor pFd to nNew bytes. Any existing mapping is discarded.
 **
@@ -4682,8 +4707,12 @@ static void unixRemapfile(
   if( (pFd->ctrlFlags & UNIXFILE_RDONLY)==0 ) flags |= PROT_WRITE;
 
   if( pOrig ){
+#if HAVE_MREMAP
+    i64 nReuse = pFd->mmapSize;
+#else
     const int szSyspage = unixGetPagesize();
     i64 nReuse = (pFd->mmapSize & ~(szSyspage-1));
+#endif
     u8 *pReq = &pOrig[nReuse];
 
     /* Unmap any pages of the existing mapping that cannot be reused. */

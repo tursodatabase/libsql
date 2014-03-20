@@ -1,5 +1,5 @@
-C Avoid\ssome\sunnecessary\scalls\sto\ssqlite3VdbeRecordUnpack()\sthat\swere\sbeing\smade\swhen\smerging\sdata\sfrom\stwo\sor\smore\stemp\sfiles\stogether\sin\svdbesort.c
-D 2014-03-19T20:01:25.712
+C Add\san\sexperimental\sfix\sto\savoid\sattempting\sto\smmap\smemory\sfrom\san\soffset\sthat\sis\snot\sa\smultiple\sof\sthe\ssystem\spage\ssize\son\ssystems\swith\spage\ssizes\slarger\sthan\s32KB.
+D 2014-03-20T08:59:47.455
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -203,7 +203,7 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_unix.c 18f7f95dc6bcb9cf4d4a238d8e2de96611bc2ae5
+F src/os_unix.c 7e2f6348e99bd215d36cb5d40161b06456089e21
 F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
 F src/pager.c 97a8908bf4e6e7c3adea09d3597cfa48ae33ab4e
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1156,7 +1156,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ecd9d3f9453be0bb8e312d8027fd1a9e55882f36
-R 597feeb3c9b32d5be1e5c696f1b077da
+P 707ea170b3e26965b7e3982f7554d122d130b9a6
+R df2b4ee35d794d54be353b7886f4773f
+T *branch * shm-mapping-fix
+T *sym-shm-mapping-fix *
+T -sym-trunk *
 U dan
-Z 03e3772c0627172d43f05f231b29ede3
+Z 8f1167a615e2deebf3a41d21381f8bfc
