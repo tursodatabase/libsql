@@ -65,7 +65,11 @@ char sqlite3ExprAffinity(Expr *pExpr){
 ** If a memory allocation error occurs, that fact is recorded in pParse->db
 ** and the pExpr parameter is returned unchanged.
 */
-Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr *pExpr, Token *pCollName){
+Expr *sqlite3ExprAddCollateToken(
+  Parse *pParse,           /* Parsing context */
+  Expr *pExpr,             /* Add the "COLLATE" clause to this expression */
+  const Token *pCollName   /* Name of collating sequence */
+){
   if( pCollName->n>0 ){
     Expr *pNew = sqlite3ExprAlloc(pParse->db, TK_COLLATE, pCollName, 1);
     if( pNew ){

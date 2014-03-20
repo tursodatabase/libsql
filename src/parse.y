@@ -1031,8 +1031,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       **      expr1 == (+?1 COLLATE binary)
       **      expr1 <> (+?2 COLLATE binary)
       */
-      static const Token collBin = { "binary", 6 };
-      Expr *pRHS = sqlite3ExprAddCollateToken(pParse, Y->a[0].pExpr, &collBin);
+      Expr *pRHS = sqlite3ExprAddCollateString(pParse, Y->a[0].pExpr, "binary");
       Y->a[0].pExpr = 0;
       sqlite3ExprListDelete(pParse->db, Y);
       pRHS = sqlite3PExpr(pParse, TK_UPLUS, pRHS, 0, 0);
