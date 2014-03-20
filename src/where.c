@@ -4009,6 +4009,8 @@ static int whereLoopAddBtreeIndex(
         /* "x IN (value, value, ...)" */
         nIn = sqlite3LogEst(pExpr->x.pList->nExpr);
       }
+      assert( nIn>0 );  /* RHS always has 2 or more terms...  The parser
+                        ** changes "x IN (?)" into "x=?". */
       pNew->rRun += nIn;
       pNew->u.btree.nEq++;
       pNew->nOut = nRowEst + nInMul + nIn;

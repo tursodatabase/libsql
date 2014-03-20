@@ -159,4 +159,92 @@ do_test in4-3.12 {
   execsql { SELECT * FROM t3 WHERE x IN (1, 2) AND y IN ()}
 } {}
 
+# Tests for "... IN (?)" and "... NOT IN (?)".  In other words, tests
+# for when the RHS of IN is a single expression.  This should work the
+# same as the == and <> operators.
+#
+do_execsql_test in4-3.21 {
+  SELECT * FROM t3 WHERE x=10 AND y IN (10);
+} {10 10 10}
+do_execsql_test in4-3.22 {
+  SELECT * FROM t3 WHERE x IN (10) AND y=10;
+} {10 10 10}
+do_execsql_test in4-3.23 {
+  SELECT * FROM t3 WHERE x IN (10) AND y IN (10);
+} {10 10 10}
+do_execsql_test in4-3.24 {
+  SELECT * FROM t3 WHERE x=1 AND y NOT IN (10);
+} {1 1 1}
+do_execsql_test in4-3.25 {
+  SELECT * FROM t3 WHERE x  NOT IN (10) AND y=1;
+} {1 1 1}
+do_execsql_test in4-3.26 {
+  SELECT * FROM t3 WHERE x NOT IN (10) AND y NOT IN (10);
+} {1 1 1}
+
+# The query planner recognizes that "x IN (?)" only generates a
+# single match and can use this information to optimize-out ORDER BY
+# clauses.
+#
+do_execsql_test in4-3.31 {
+  DROP INDEX t3i1;
+  CREATE UNIQUE INDEX t3xy ON t3(x,y);
+
+  SELECT *, '|' FROM t3 A, t3 B
+   WHERE A.x=10 AND A.y IN (10)
+     AND B.x=1 AND B.y IN (1);
+} {10 10 10 1 1 1 |}
+do_execsql_test in4-3.32 {
+  EXPLAIN QUERY PLAN
+  SELECT *, '|' FROM t3 A, t3 B
+   WHERE A.x=10 AND A.y IN (10)
+     AND B.x=1 AND B.y IN (1);
+} {~/B-TREE/}  ;# No separate sorting pass
+do_execsql_test in4-3.33 {
+  SELECT *, '|' FROM t3 A, t3 B
+   WHERE A.x IN (10) AND A.y=10
+     AND B.x IN (1) AND B.y=1;
+} {10 10 10 1 1 1 |}
+do_execsql_test in4-3.34 {
+  EXPLAIN QUERY PLAN
+  SELECT *, '|' FROM t3 A, t3 B
+   WHERE A.x IN (10) AND A.y=10
+     AND B.x IN (1) AND B.y=1;
+} {~/B-TREE/}  ;# No separate sorting pass
+
+# An expression of the form "x IN (?,?)" creates an ephemeral table to
+# hold the list of values on the RHS.  But "x IN (?)" does not create
+# an ephemeral table.
+#
+do_execsql_test in4-3.41 {
+  SELECT * FROM t3 WHERE x IN (10,11);
+} {10 10 10}
+do_execsql_test in4-3.42 {
+  EXPLAIN
+  SELECT * FROM t3 WHERE x IN (10,11);
+} {/OpenEphemeral/}
+do_execsql_test in4-3.43 {
+  SELECT * FROM t3 WHERE x IN (10);
+} {10 10 10}
+do_execsql_test in4-3.44 {
+  EXPLAIN
+  SELECT * FROM t3 WHERE x IN (10);
+} {~/OpenEphemeral/}
+do_execsql_test in4-3.45 {
+  SELECT * FROM t3 WHERE x NOT IN (10,11);
+} {1 1 1}
+do_execsql_test in4-3.46 {
+  EXPLAIN
+  SELECT * FROM t3 WHERE x NOT IN (10,11);
+} {/OpenEphemeral/}
+do_execsql_test in4-3.47 {
+  SELECT * FROM t3 WHERE x NOT IN (10);
+} {1 1 1}
+do_execsql_test in4-3.48 {
+  EXPLAIN
+  SELECT * FROM t3 WHERE x NOT IN (10);
+} {~/OpenEphemeral/}
+
+
+
 finish_test
