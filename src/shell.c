@@ -1195,7 +1195,8 @@ static void explain_data_prepare(struct callback_data *p, sqlite3_stmt *pSql){
   int nAlloc = 0;                 /* Allocated size of p->aiIndent[], abYield */
   int iOp;                        /* Index of operation in p->aiIndent[] */
 
-  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext", 0 };
+  const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext",
+                           "NextIfOpen", "PrevIfOpen", 0 };
   const char *azYield[] = { "Yield", "SeekLt", "SeekGt", "RowSetRead", "Rewind", 0 };
   const char *azGoto[] = { "Goto", 0 };
 
