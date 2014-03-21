@@ -1,5 +1,5 @@
-C Remove\sa\stestcase()\sthat\sis\snow\salways\strue\sdue\sto\sthe\s"x\sIN\s(?)"\soptimization.\nAdd\san\sALWAYS()\saround\sa\sconditional\sin\sthe\sparser\sthat\scannot\sbe\sfalse.
-D 2014-03-20T19:04:56.106
+C Fix\sthe\sOFFSET\sclause\sso\sthat\sit\sworks\scorrectly\son\squeries\sthat\slack\na\sFROM\sclause.\s\sTicket\s[07d6a0453d4ed8].
+D 2014-03-21T18:16:23.398
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 0adf172d33cc610ff5ffe26edfd2ba67c3551655
+F src/select.c bea5181682a75940f4f555bfd1020169cc8f1657
 F src/shell.c cee9f46f2688a261601b1fd3d7f4b3cddf9b5cdf
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -291,7 +291,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c a2f20bdc6565a3add38ac5e4d9e71523ed5b2f2b
+F src/where.c eed0b83bd7ffef4ac2f7a2fcc9dcfa66b18b8b9e
 F src/whereInt.h 921f935af8b684ffb49705610bda7284db1db138
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -648,7 +648,7 @@ F test/lastinsert.test 42e948fd6442f07d60acbd15d33fb86473e0ef63
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test e191e536d0fcd722a6b965e7cd1ee0bfd12a5991
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
-F test/limit.test cc0ab63385239b63c72452b0e93700bf5e8f0b99
+F test/limit.test 3d7df19c35ac672a11f7de406cd3205d592babbb
 F test/loadext.test 648cb95f324d1775c54a55c12271b2d1156b633b
 F test/loadext2.test 0408380b57adca04004247179837a18e866a74f7
 F test/lock.test 87af515b0c4cf928576d0f89946d67d7c265dfb4
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 01944c53f5c129f48ce8842faaedcf5607dd381e
-R 608adcc59408221c1aef74de280cb552
+P d5a1530bdc7ace053d05d1a037551110021d3758
+R e96408bb9b93596f5e755db9dbf77630
 U drh
-Z 43de690b7d9666e906803652c8c9527b
+Z f1228f80df0ab7ad7b6a23acd634c66b
