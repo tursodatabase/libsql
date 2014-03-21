@@ -1,5 +1,5 @@
-C Avoid\sleaking\smemory\sin\san\sobscure\scase\swhere\sthe\sflattener\sadds\san\sORDER\sBY\sclause\sto\sthe\srecursive\spart\sof\sa\srecursive\squery.
-D 2014-03-21T19:27:54.828
+C Change\sthe\snames\sof\sSRT_DistTable\sand\sSRT_Table\sused\sby\sCTE\sto\smore\nmeaningful\sSRT_DistFifo\sand\sSRT_Fifo,\srespectively.\s\sSimplify\sthe\nIgnorableOrderby()\smacro\sin\sthe\sprocess.
+D 2014-03-21T19:56:09.443
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,12 +217,12 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 0f7542b85f92d8b0c59a21d7ddcf5c0228e60fdc
+F src/select.c cbee644f795a5fa14fa79bd760c3c9c883a6b4d8
 F src/shell.c cee9f46f2688a261601b1fd3d7f4b3cddf9b5cdf
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 828f61d3c58608ad2e871369950f3cf70428e917
+F src/sqliteInt.h 76b1cf0836f0d022aec5045474f5c6c90f7b9730
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 179ef81648b0ad557df78b7712f216b876b6fb65
-R d6ea5c2b32ee3608a1c16a03630c7806
-U dan
-Z 37d6162a1c996286e576ee6c912ca01b
+P 1f413aca00015100224273480e1ce39a76bf93ab
+R 26118dcbaf585402aab527afe8f97345
+U drh
+Z d7e9ffdc5a42e976a5961e8287a0561b

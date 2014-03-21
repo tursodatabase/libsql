@@ -2261,13 +2261,15 @@ struct Select {
 **                     starting with pDest->iSdst.
 **
 **     SRT_Table       Store results in temporary table pDest->iSDParm.
-**                     This is like SRT_EphemTab except that the table
-**                     is assumed to already be open.
+**     SRT_Fifo        This is like SRT_EphemTab except that the table
+**                     is assumed to already be open.  SRT_Fifo has
+**                     the additional property of being able to ignore
+**                     the ORDER BY clause.
 **
-**     SRT_DistTable   Store results in a temporary table pDest->iSDParm.
+**     SRT_DistFifo    Store results in a temporary table pDest->iSDParm.
 **                     But also use temporary table pDest->iSDParm+1 as
 **                     a record of all prior results and ignore any duplicate
-**                     rows.  Name means:  "Distinct Table".
+**                     rows.  Name means:  "Distinct Fifo".
 **
 **     SRT_Queue       Store results in priority queue pDest->iSDParm (really
 **                     an index).  Append a sequence number so that all entries
@@ -2281,19 +2283,20 @@ struct Select {
 #define SRT_Except       2  /* Remove result from a UNION index */
 #define SRT_Exists       3  /* Store 1 if the result is not empty */
 #define SRT_Discard      4  /* Do not save the results anywhere */
+#define SRT_Fifo         5  /* Store result as data with an automatic rowid */
+#define SRT_DistFifo     6  /* Like SRT_Fifo, but unique results only */
+#define SRT_Queue        7  /* Store result in an queue */
+#define SRT_DistQueue    8  /* Like SRT_Queue, but unique results only */
 
 /* The ORDER BY clause is ignored for all of the above */
-#define IgnorableOrderby(X) ((X->eDest)<=SRT_Discard || (X->eDest)>SRT_Table)
+#define IgnorableOrderby(X) ((X->eDest)<=SRT_DistQueue)
 
-#define SRT_Output       5  /* Output each row of result */
-#define SRT_Mem          6  /* Store result in a memory cell */
-#define SRT_Set          7  /* Store results as keys in an index */
-#define SRT_EphemTab     8  /* Create transient tab and store like SRT_Table */
-#define SRT_Coroutine    9  /* Generate a single row of result */
-#define SRT_Table       10  /* Store result as data with an automatic rowid */
-#define SRT_DistTable   11  /* Like SRT_Table, but unique results only */
-#define SRT_Queue       12  /* Store result in an queue */
-#define SRT_DistQueue   13  /* Like SRT_Queue, but unique results only */
+#define SRT_Output       9  /* Output each row of result */
+#define SRT_Mem         10  /* Store result in a memory cell */
+#define SRT_Set         11  /* Store results as keys in an index */
+#define SRT_EphemTab    12  /* Create transient tab and store like SRT_Table */
+#define SRT_Coroutine   13  /* Generate a single row of result */
+#define SRT_Table       14  /* Store result as data with an automatic rowid */
 
 /*
 ** An instance of this object describes where to put of the results of

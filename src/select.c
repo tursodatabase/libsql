@@ -700,7 +700,8 @@ static void selectInnerLoop(
 
     /* Store the result as data using a unique key.
     */
-    case SRT_DistTable:
+    case SRT_Fifo:
+    case SRT_DistFifo:
     case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
@@ -708,8 +709,8 @@ static void selectInnerLoop(
       testcase( eDest==SRT_EphemTab );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1);
 #ifndef SQLITE_OMIT_CTE
-      if( eDest==SRT_DistTable ){
-        /* If the destination is DistTable, then cursor (iParm+1) is open
+      if( eDest==SRT_DistFifo ){
+        /* If the destination is DistFifo, then cursor (iParm+1) is open
         ** on an ephemeral index. If the current row is already present
         ** in the index, do not write it to the output. If not, add the
         ** current row to the index and proceed with writing it to the
@@ -1835,7 +1836,7 @@ static void generateWithRecursiveQuery(
   int regCurrent;               /* Register holding Current table */
   int iQueue;                   /* The Queue table */
   int iDistinct = 0;            /* To ensure unique results if UNION */
-  int eDest = SRT_Table;        /* How to write to Queue */
+  int eDest = SRT_Fifo;         /* How to write to Queue */
   SelectDest destQueue;         /* SelectDest targetting the Queue table */
   int i;                        /* Loop counter */
   int rc;                       /* Result code */
@@ -1867,13 +1868,13 @@ static void generateWithRecursiveQuery(
 
   /* Allocate cursors numbers for Queue and Distinct.  The cursor number for
   ** the Distinct table must be exactly one greater than Queue in order
-  ** for the SRT_DistTable and SRT_DistQueue destinations to work. */
+  ** for the SRT_DistFifo and SRT_DistQueue destinations to work. */
   iQueue = pParse->nTab++;
   if( p->op==TK_UNION ){
-    eDest = pOrderBy ? SRT_DistQueue : SRT_DistTable;
+    eDest = pOrderBy ? SRT_DistQueue : SRT_DistFifo;
     iDistinct = pParse->nTab++;
   }else{
-    eDest = pOrderBy ? SRT_Queue : SRT_Table;
+    eDest = pOrderBy ? SRT_Queue : SRT_Fifo;
   }
   sqlite3SelectDestInit(&destQueue, eDest, iQueue);
 
@@ -4488,14 +4489,15 @@ int sqlite3Select(
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 
-  assert( p->pOrderBy==0 || pDest->eDest!=SRT_DistTable );
+  assert( p->pOrderBy==0 || pDest->eDest!=SRT_DistFifo );
+  assert( p->pOrderBy==0 || pDest->eDest!=SRT_Fifo );
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_DistQueue );
   assert( p->pOrderBy==0 || pDest->eDest!=SRT_Queue );
   if( IgnorableOrderby(pDest) ){
     assert(pDest->eDest==SRT_Exists || pDest->eDest==SRT_Union || 
            pDest->eDest==SRT_Except || pDest->eDest==SRT_Discard ||
-           pDest->eDest==SRT_Queue  || pDest->eDest==SRT_DistTable ||
-           pDest->eDest==SRT_DistQueue);
+           pDest->eDest==SRT_Queue  || pDest->eDest==SRT_DistFifo ||
+           pDest->eDest==SRT_DistQueue || pDest->eDest==SRT_Fifo);
     /* If ORDER BY makes no difference in the output then neither does
     ** DISTINCT so it can be removed too. */
     sqlite3ExprListDelete(db, p->pOrderBy);
