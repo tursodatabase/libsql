@@ -39,7 +39,7 @@ int sqlite3WhereIsDistinct(WhereInfo *pWInfo){
 ** Return FALSE if the output needs to be sorted.
 */
 int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
-  return pWInfo->bOBSat!=0;
+  return pWInfo->nOBSat;
 }
 
 /*
@@ -3037,8 +3037,11 @@ static Bitmask codeOneLoopStart(
     ** the first one after the nEq equality constraints in the index,
     ** this requires some special handling.
     */
+    assert( pWInfo->pOrderBy==0
+         || pWInfo->pOrderBy->nExpr==1
+         || (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)==0 );
     if( (pWInfo->wctrlFlags&WHERE_ORDERBY_MIN)!=0
-     && (pWInfo->bOBSat!=0)
+     && pWInfo->nOBSat>0
      && (pIdx->nKeyCol>nEq)
     ){
       assert( pLoop->u.btree.nSkip==0 );
@@ -4508,8 +4511,8 @@ static int whereLoopAddVirtual(
       pNew->u.vtab.needFree = pIdxInfo->needToFreeIdxStr;
       pIdxInfo->needToFreeIdxStr = 0;
       pNew->u.vtab.idxStr = pIdxInfo->idxStr;
-      pNew->u.vtab.isOrdered = (u8)((pIdxInfo->nOrderBy!=0)
-                                     && pIdxInfo->orderByConsumed);
+      pNew->u.vtab.isOrdered = (i8)(pIdxInfo->orderByConsumed ?
+                                      pIdxInfo->nOrderBy : 0);
       pNew->rSetup = 0;
       pNew->rRun = sqlite3LogEstFromDouble(pIdxInfo->estimatedCost);
       pNew->nOut = sqlite3LogEst(pIdxInfo->estimatedRows);
@@ -4670,11 +4673,11 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 /*
 ** Examine a WherePath (with the addition of the extra WhereLoop of the 5th
 ** parameters) to see if it outputs rows in the requested ORDER BY
-** (or GROUP BY) without requiring a separate sort operation.  Return:
+** (or GROUP BY) without requiring a separate sort operation.  Return N:
 ** 
-**    0:  ORDER BY is not satisfied.  Sorting required
-**    1:  ORDER BY is satisfied.      Omit sorting
-**   -1:  Unknown at this time
+**   N>0:   N terms of the ORDER BY clause are satisfied
+**   N==0:  No terms of the ORDER BY clause are satisfied
+**   N<0:   Unknown yet how many terms of ORDER BY might be satisfied.   
 **
 ** Note that processing for WHERE_GROUPBY and WHERE_DISTINCTBY is not as
 ** strict.  With GROUP BY and DISTINCT the only requirement is that
@@ -4684,7 +4687,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 ** the pOrderBy terms can be matched in any order.  With ORDER BY, the 
 ** pOrderBy terms must be matched in strict left-to-right order.
 */
-static int wherePathSatisfiesOrderBy(
+static i8 wherePathSatisfiesOrderBy(
   WhereInfo *pWInfo,    /* The WHERE clause */
   ExprList *pOrderBy,   /* ORDER BY or GROUP BY or DISTINCT clause to check */
   WherePath *pPath,     /* The WherePath to check */
@@ -4917,8 +4920,14 @@ static int wherePathSatisfiesOrderBy(
       }
     }
   } /* End the loop over all WhereLoops from outer-most down to inner-most */
-  if( obSat==obDone ) return 1;
-  if( !isOrderDistinct ) return 0;
+  if( obSat==obDone ) return nOrderBy;
+  if( !isOrderDistinct ){
+    for(i=nOrderBy-1; i>0; i--){
+      Bitmask m = MASKBIT(i) - 1;
+      if( (obSat&m)==m ) return i;
+    }
+    return 0;
+  }
   return -1;
 }
 
@@ -4955,11 +4964,11 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   int iLoop;                /* Loop counter over the terms of the join */
   int ii, jj;               /* Loop counters */
   int mxI = 0;              /* Index of next entry to replace */
+  int nOrderBy;             /* Number of ORDER BY clause terms */
   LogEst rCost;             /* Cost of a path */
   LogEst nOut;              /* Number of outputs */
   LogEst mxCost = 0;        /* Maximum cost of a set of paths */
   LogEst mxOut = 0;         /* Maximum nOut value on the set of paths */
-  LogEst rSortCost;         /* Cost to do a sort */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
   WherePath *aTo;           /* The nTo best paths at the current level */
@@ -5001,16 +5010,12 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
 
   /* Precompute the cost of sorting the final result set, if the caller
   ** to sqlite3WhereBegin() was concerned about sorting */
-  rSortCost = 0;
   if( pWInfo->pOrderBy==0 || nRowEst==0 ){
-    aFrom[0].isOrderedValid = 1;
+    aFrom[0].isOrdered = 0;
+    nOrderBy = 0;
   }else{
-    /* TUNING: Estimated cost of sorting is 48*N*log2(N) where N is the
-    ** number of output rows. The 48 is the expected size of a row to sort. 
-    ** FIXME:  compute a better estimate of the 48 multiplier based on the
-    ** result set expressions. */
-    rSortCost = nRowEst + estLog(nRowEst);
-    WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
+    aFrom[0].isOrdered = -1;
+    nOrderBy = pWInfo->pOrderBy->nExpr;
   }
 
   /* Compute successively longer WherePaths using the previous generation
@@ -5022,8 +5027,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
         Bitmask maskNew;
         Bitmask revMask = 0;
-        u8 isOrderedValid = pFrom->isOrderedValid;
-        u8 isOrdered = pFrom->isOrdered;
+        i8 isOrdered = pFrom->isOrdered;
         if( (pWLoop->prereq & ~pFrom->maskLoop)!=0 ) continue;
         if( (pWLoop->maskSelf & pFrom->maskLoop)!=0 ) continue;
         /* At this point, pWLoop is a candidate to be the next loop. 
@@ -5032,21 +5036,27 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         rCost = sqlite3LogEstAdd(rCost, pFrom->rCost);
         nOut = pFrom->nRow + pWLoop->nOut;
         maskNew = pFrom->maskLoop | pWLoop->maskSelf;
-        if( !isOrderedValid ){
-          switch( wherePathSatisfiesOrderBy(pWInfo,
+        if( isOrdered<0 ){
+          isOrdered = wherePathSatisfiesOrderBy(pWInfo,
                        pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
-                       iLoop, pWLoop, &revMask) ){
-            case 1:  /* Yes.  pFrom+pWLoop does satisfy the ORDER BY clause */
-              isOrdered = 1;
-              isOrderedValid = 1;
-              break;
-            case 0:  /* No.  pFrom+pWLoop will require a separate sort */
-              isOrdered = 0;
-              isOrderedValid = 1;
-              rCost = sqlite3LogEstAdd(rCost, rSortCost);
-              break;
-            default: /* Cannot tell yet.  Try again on the next iteration */
-              break;
+                       iLoop, pWLoop, &revMask);
+          if( isOrdered>=0 && isOrdered<nOrderBy ){
+            /* TUNING: Estimated cost of sorting cost as roughly N*log(N).
+            ** If some but not all of the columns are in sorted order, then
+            ** scale down the log(N) term. */
+            LogEst rScale = sqlite3LogEst((nOrderBy-isOrdered)*100/nOrderBy);
+            LogEst rSortCost = nRowEst + estLog(nRowEst) + rScale - 66;
+            /* TUNING: The cost of implementing DISTINCT using a B-TREE is
+            ** also N*log(N) but it has a larger constant of proportionality.
+            ** Multiply by 3.0. */
+            if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
+              rSortCost += 16;
+            }
+            WHERETRACE(0x002,
+               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
+                rSortCost, (nOrderBy-isOrdered), nOrderBy, rCost,
+                sqlite3LogEstAdd(rCost,rSortCost)));
+            rCost = sqlite3LogEstAdd(rCost, rSortCost);
           }
         }else{
           revMask = pFrom->revLoop;
@@ -5054,7 +5064,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         /* Check to see if pWLoop should be added to the mxChoice best so far */
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
           if( pTo->maskLoop==maskNew
-           && pTo->isOrderedValid==isOrderedValid
+           && ((pTo->isOrdered^isOrdered)&80)==0
            && ((pTo->rCost<=rCost && pTo->nRow<=nOut) ||
                 (pTo->rCost>=rCost && pTo->nRow>=nOut))
           ){
@@ -5068,7 +5078,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf("Skip   %s cost=%-3d,%3d order=%c\n",
                   wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
-                  isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+                  isOrdered>=0 ? isOrdered+'0' : '?');
             }
 #endif
             continue;
@@ -5086,7 +5096,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           if( sqlite3WhereTrace&0x4 ){
             sqlite3DebugPrintf("New    %s cost=%-3d,%3d order=%c\n",
                 wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
-                isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+                isOrdered>=0 ? isOrdered+'0' : '?');
           }
 #endif
         }else{
@@ -5096,10 +5106,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
               sqlite3DebugPrintf(
                   "Skip   %s cost=%-3d,%3d order=%c",
                   wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
-                  isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+                  isOrdered>=0 ? isOrdered+'0' : '?');
               sqlite3DebugPrintf("   vs %s cost=%-3d,%d order=%c\n",
                   wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
-                  pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
+                  pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
             }
 #endif
             testcase( pTo->rCost==rCost );
@@ -5112,10 +5122,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             sqlite3DebugPrintf(
                 "Update %s cost=%-3d,%3d order=%c",
                 wherePathName(pFrom, iLoop, pWLoop), rCost, nOut,
-                isOrderedValid ? (isOrdered ? 'Y' : 'N') : '?');
+                isOrdered>=0 ? isOrdered+'0' : '?');
             sqlite3DebugPrintf("  was %s cost=%-3d,%3d order=%c\n",
                 wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
-                pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
+                pTo->isOrdered>=0 ? pTo->isOrdered+'0' : '?');
           }
 #endif
         }
@@ -5124,7 +5134,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         pTo->revLoop = revMask;
         pTo->nRow = nOut;
         pTo->rCost = rCost;
-        pTo->isOrderedValid = isOrderedValid;
         pTo->isOrdered = isOrdered;
         memcpy(pTo->aLoop, pFrom->aLoop, sizeof(WhereLoop*)*iLoop);
         pTo->aLoop[iLoop] = pWLoop;
@@ -5149,8 +5158,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       for(ii=0, pTo=aTo; ii<nTo; ii++, pTo++){
         sqlite3DebugPrintf(" %s cost=%-3d nrow=%-3d order=%c",
            wherePathName(pTo, iLoop+1, 0), pTo->rCost, pTo->nRow,
-           pTo->isOrderedValid ? (pTo->isOrdered ? 'Y' : 'N') : '?');
-        if( pTo->isOrderedValid && pTo->isOrdered ){
+           pTo->isOrdered>=0 ? (pTo->isOrdered+'0') : '?');
+        if( pTo->isOrdered>0 ){
           sqlite3DebugPrintf(" rev=0x%llx\n", pTo->revLoop);
         }else{
           sqlite3DebugPrintf("\n");
@@ -5193,13 +5202,18 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     Bitmask notUsed;
     int rc = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pResultSet, pFrom,
                  WHERE_DISTINCTBY, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed);
-    if( rc==1 ) pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
-  }
-  if( pFrom->isOrdered ){
-    if( pWInfo->wctrlFlags & WHERE_DISTINCTBY ){
+    if( rc==pWInfo->pResultSet->nExpr ){
       pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
+    }
+  }
+  if( pWInfo->pOrderBy ){
+    if( pWInfo->wctrlFlags & WHERE_DISTINCTBY ){
+      if( pFrom->isOrdered==pWInfo->pOrderBy->nExpr ){
+        pWInfo->eDistinct = WHERE_DISTINCT_ORDERED;
+      }
     }else{
-      pWInfo->bOBSat = 1;
+      pWInfo->nOBSat = pFrom->isOrdered;
+      if( pWInfo->nOBSat<0 ) pWInfo->nOBSat = 0;
       pWInfo->revMask = pFrom->revLoop;
     }
   }
@@ -5284,7 +5298,7 @@ static int whereShortCut(WhereLoopBuilder *pBuilder){
     pLoop->maskSelf = getMask(&pWInfo->sMaskSet, iCur);
     pWInfo->a[0].iTabCur = iCur;
     pWInfo->nRowOut = 1;
-    if( pWInfo->pOrderBy ) pWInfo->bOBSat =  1;
+    if( pWInfo->pOrderBy ) pWInfo->nOBSat =  pWInfo->pOrderBy->nExpr;
     if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
@@ -5388,7 +5402,7 @@ WhereInfo *sqlite3WhereBegin(
   Parse *pParse,        /* The parser context */
   SrcList *pTabList,    /* FROM clause: A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
-  ExprList *pOrderBy,   /* An ORDER BY clause, or NULL */
+  ExprList *pOrderBy,   /* An ORDER BY (or GROUP BY) clause, or NULL */
   ExprList *pResultSet, /* Result set of the query */
   u16 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
   int iIdxCur           /* If WHERE_ONETABLE_ONLY is set, index cursor number */
@@ -5410,6 +5424,10 @@ WhereInfo *sqlite3WhereBegin(
   /* Variable initialization */
   db = pParse->db;
   memset(&sWLB, 0, sizeof(sWLB));
+
+  /* An ORDER/GROUP BY clause of more than 63 terms cannot be optimized */
+  testcase( pOrderBy && pOrderBy->nExpr==BMS-1 );
+  if( pOrderBy && pOrderBy->nExpr>=BMS ) pOrderBy = 0;
   sWLB.pOrderBy = pOrderBy;
 
   /* Disable the DISTINCT optimization if SQLITE_DistinctOpt is set via
@@ -5488,7 +5506,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Special case: No FROM clause
   */
   if( nTabList==0 ){
-    if( pOrderBy ) pWInfo->bOBSat = 1;
+    if( pOrderBy ) pWInfo->nOBSat = pOrderBy->nExpr;
     if( wctrlFlags & WHERE_WANT_DISTINCT ){
       pWInfo->eDistinct = WHERE_DISTINCT_UNIQUE;
     }
@@ -5599,8 +5617,8 @@ WhereInfo *sqlite3WhereBegin(
   if( sqlite3WhereTrace ){
     int ii;
     sqlite3DebugPrintf("---- Solution nRow=%d", pWInfo->nRowOut);
-    if( pWInfo->bOBSat ){
-      sqlite3DebugPrintf(" ORDERBY=0x%llx", pWInfo->revMask);
+    if( pWInfo->nOBSat>0 ){
+      sqlite3DebugPrintf(" ORDERBY=%d,0x%llx", pWInfo->nOBSat, pWInfo->revMask);
     }
     switch( pWInfo->eDistinct ){
       case WHERE_DISTINCT_UNIQUE: {
