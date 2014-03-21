@@ -537,7 +537,7 @@ static void codeOffset(
   int iOffset,      /* Register holding the offset counter */
   int iContinue     /* Jump here to skip the current record */
 ){
-  if( iOffset>0 && iContinue!=0 ){
+  if( iOffset>0 ){
     int addr;
     sqlite3VdbeAddOp2(v, OP_AddImm, iOffset, -1);
     addr = sqlite3VdbeAddOp1(v, OP_IfNeg, iOffset); VdbeCoverage(v);
@@ -631,6 +631,7 @@ static void selectInnerLoop(
   hasDistinct = pDistinct ? pDistinct->eTnctType : WHERE_DISTINCT_NOOP;
   if( pSort && pSort->pOrderBy==0 ) pSort = 0;
   if( pSort==0 && !hasDistinct ){
+    assert( iContinue!=0 );
     codeOffset(v, p->iOffset, iContinue);
   }
 

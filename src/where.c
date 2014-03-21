@@ -47,6 +47,7 @@ int sqlite3WhereIsOrdered(WhereInfo *pWInfo){
 ** immediately with the next row of a WHERE clause.
 */
 int sqlite3WhereContinueLabel(WhereInfo *pWInfo){
+  assert( pWInfo->iContinue!=0 );
   return pWInfo->iContinue;
 }
 
@@ -5471,7 +5472,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pTabList = pTabList;
   pWInfo->pOrderBy = pOrderBy;
   pWInfo->pResultSet = pResultSet;
-  pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
+  pWInfo->iBreak = pWInfo->iContinue = sqlite3VdbeMakeLabel(v);
   pWInfo->wctrlFlags = wctrlFlags;
   pWInfo->savedNQueryLoop = pParse->nQueryLoop;
   pMaskSet = &pWInfo->sMaskSet;
