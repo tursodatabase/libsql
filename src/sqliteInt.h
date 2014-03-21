@@ -2283,7 +2283,7 @@ struct Select {
 #define SRT_Discard      4  /* Do not save the results anywhere */
 
 /* The ORDER BY clause is ignored for all of the above */
-#define IgnorableOrderby(X) ((X->eDest)<=SRT_Discard)
+#define IgnorableOrderby(X) ((X->eDest)<=SRT_Discard || (X->eDest)>SRT_Table)
 
 #define SRT_Output       5  /* Output each row of result */
 #define SRT_Mem          6  /* Store result in a memory cell */
