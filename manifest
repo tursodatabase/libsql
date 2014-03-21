@@ -1,5 +1,5 @@
-C Merge\strunk\sfixes\sfor\s"x\sIN\s(?)"\shandling.
-D 2014-03-20T20:56:49.315
+C New\stest\scase\sfor\sblock-sorting.
+D 2014-03-21T15:24:07.126
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -723,6 +723,7 @@ F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
 F test/orderby5.test 2490183fef54417209d1df253633a605d46bd350
+F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1156,7 +1157,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e4bfffb988283c077778c60696be0d285ad66c3c d5a1530bdc7ace053d05d1a037551110021d3758
-R a45d230e7f98fec92659279ce8b3552c
+P eca35871c34374ca9189c7c9b6d490ac3c30357f
+R f6c9f43506e02e19d33da5c08cba37a5
 U drh
-Z 027a45adb600d40b2564e06474072c41
+Z 983388db59b02f32fb79fe85b7106067
