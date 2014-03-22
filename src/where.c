@@ -4872,23 +4872,23 @@ static i8 wherePathSatisfiesOrderBy(
           isMatch = 1;
           break;
         }
+        if( isMatch && (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
+          /* Make sure the sort order is compatible in an ORDER BY clause.
+          ** Sort order is irrelevant for a GROUP BY clause. */
+          if( revSet ){
+            if( (rev ^ revIdx)!=pOrderBy->a[i].sortOrder ) isMatch = 0;
+          }else{
+            rev = revIdx ^ pOrderBy->a[i].sortOrder;
+            if( rev ) *pRevMask |= MASKBIT(iLoop);
+            revSet = 1;
+          }
+        }
         if( isMatch ){
           if( iColumn<0 ){
             testcase( distinctColumns==0 );
             distinctColumns = 1;
           }
           obSat |= MASKBIT(i);
-          if( (pWInfo->wctrlFlags & WHERE_GROUPBY)==0 ){
-            /* Make sure the sort order is compatible in an ORDER BY clause.
-            ** Sort order is irrelevant for a GROUP BY clause. */
-            if( revSet ){
-              if( (rev ^ revIdx)!=pOrderBy->a[i].sortOrder ) return 0;
-            }else{
-              rev = revIdx ^ pOrderBy->a[i].sortOrder;
-              if( rev ) *pRevMask |= MASKBIT(iLoop);
-              revSet = 1;
-            }
-          }
         }else{
           /* No match found */
           if( j==0 || j<nKeyCol ){

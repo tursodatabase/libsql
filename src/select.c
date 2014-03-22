@@ -488,6 +488,7 @@ static void pushOntoSorter(
     addrFirst = sqlite3VdbeAddOp1(v, OP_IfNot, regBase+nExpr); VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_Compare, regPrevKey, regBase, pSort->nOBSat);
     pOp = sqlite3VdbeGetOp(v, pSort->addrSortIndex);
+    if( pParse->db->mallocFailed ) return;
     pOp->p2 = nKey + 1;
     sqlite3VdbeChangeP4(v, -1, (char*)pOp->p4.pKeyInfo, P4_KEYINFO);
     pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat, 1);
