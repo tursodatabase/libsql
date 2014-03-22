@@ -1,12 +1,12 @@
-C Fix\sthe\sORDER\sBY\soptimization\slogic\sso\sthat\sit\swill\sdo\sa\sblock-sort\son\na\spartial\sDESC\sORDER\sBY.\s\sThis\senhancement\suncovered\sa\smemory\sleak\sin\npushUntoSorter()\swhich\sis\salso\sfixed.
-D 2014-03-22T00:27:14.500
+C Increase\sthe\sversion\snumber\sto\s3.8.5.
+D 2014-03-22T01:52:17.580
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc fdacba6fb574868c71fde6db6b77789a383a4c19
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION c3b0d47c3c5cf25c5bd4ff9e6f3af2f9d7934ea6
+F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 6a7a482649dd20b7ee31424bf6553c6f20ca7936 x
+F configure 5de98fac90452f876511fee8a35565a55dfb191f x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1157,7 +1157,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fa06a6fed9f48322d9b89721799ba12c46efa898
-R c7b944946040f3192afd04e740c2e57c
+P c36f74611cf17ad2ff198a2ac2054d7ab451a72c
+R c87966e812e5349386ca47468f11243f
 U drh
-Z 5cc077b206326620cdb0818e6e6de660
+Z 4135b8e90212e093f926ac90192216e8
