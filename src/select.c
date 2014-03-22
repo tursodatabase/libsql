@@ -481,6 +481,7 @@ static void pushOntoSorter(
     int addrJmp;      /* Address of the OP_Jump opcode */
     VdbeOp *pOp;      /* Opcode that opens the sorter */
     int nKey;         /* Number of sorting key columns, including OP_Sequence */
+    KeyInfo *pKI;     /* Original KeyInfo on the sorter table */
 
     regPrevKey = pParse->nMem+1;
     pParse->nMem += pSort->nOBSat;
@@ -490,7 +491,9 @@ static void pushOntoSorter(
     pOp = sqlite3VdbeGetOp(v, pSort->addrSortIndex);
     if( pParse->db->mallocFailed ) return;
     pOp->p2 = nKey + 1;
-    sqlite3VdbeChangeP4(v, -1, (char*)pOp->p4.pKeyInfo, P4_KEYINFO);
+    pKI = pOp->p4.pKeyInfo;
+    memset(pKI->aSortOrder, 0, pKI->nField); /* Makes OP_Jump below testable */
+    sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
     pOp->p4.pKeyInfo = keyInfoFromExprList(pParse, pSort->pOrderBy, nOBSat, 1);
     addrJmp = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp3(v, OP_Jump, addrJmp+1, 0, addrJmp+1); VdbeCoverage(v);
