@@ -1,5 +1,5 @@
-C Merge\sthe\sOFFSET-on-query-without-FROM\sfix\sfrom\strunk.
-D 2014-03-21T18:45:19.215
+C Use\sonly\sa\ssingle\sOP_MakeRecord\sinstead\sof\stwo\swhen\sconstructing\sentries\nto\sgo\sonto\sa\ssorter.
+D 2014-03-23T17:45:03.365
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 596b8098be41e6256968f167d1d8ece2be08d082
+F src/select.c b1e0ac15d846c1d584c26f95bd92e887313b55df
 F src/shell.c cee9f46f2688a261601b1fd3d7f4b3cddf9b5cdf
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -845,7 +845,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl f31bea1483ea1d39620f982130026e76f872d744
+F test/tester.tcl bc0889a2f86d9c17307992ca1e70391794780265
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1157,7 +1157,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e70cfa28aa393661ccc742ecd5e672d807bdd0a9 179ef81648b0ad557df78b7712f216b876b6fb65
-R 654a6218c0c034c3e6462d9f9d0a06b2
+P 71e9ae72c272dc86720b2bfe719f57de437c400b
+R d93a4c6f8aefee44f30ed73f4e05ae09
 U drh
-Z 7a7ab7eaa2946af0174662f0ca0e6009
+Z 5ef6faddb00682067ed8bb051e6b9892
