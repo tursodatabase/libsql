@@ -1,5 +1,5 @@
-C Clear\sthe\ssort-order\sflags\son\sthe\sKeyInfo\sobject\sassociated\swith\sthe\nOP_Compare/OP_Jump\sof\sthe\sblock-sort\slogic,\sin\sorder\sto\smake\sthe\sOP_Jump\nfully\stestable.
-D 2014-03-22T02:19:53.523
+C Avoid\sa\spossible\suse\sof\san\suninitialized\svariable\sfollowing\san\sI/O\sor\sOOM\nerror.
+D 2014-03-23T16:29:23.966
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,7 +278,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 37cfae03a0c40515304fb0a8a1a97ac3aa965e87
+F src/vdbe.c 5c0feeb6c9e6a0e0cc2a9715aa6045830643809d
 F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h 2b9a6849166d0014c843ae3fd83a062be4efa325
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -1157,7 +1157,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9760879d086b61476890927f01806a93798d4eee
-R 9c4612b02334319090d26af6339ff92f
+P 9b2838f23e5f52369eeb078f60bd231cc54362f8
+R 5e47a0912e77eb3fe11c659549f1088a
 U drh
-Z c09bf15737bf88995e1679f9f666a1a6
+Z 7a01e94679f2d88e0c9f56d7135921af
