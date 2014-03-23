@@ -4514,6 +4514,7 @@ case OP_SorterNext: {  /* jump */
 
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
+  res = 0;
   rc = sqlite3VdbeSorterNext(db, pC, &res);
   goto next_tail;
 case OP_PrevIfOpen:    /* jump */
