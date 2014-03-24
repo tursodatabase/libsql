@@ -480,6 +480,7 @@ int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
   pSorter->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pCsr->pKeyInfo, 0, 0, &d);
   if( pSorter->pUnpacked==0 ) return SQLITE_NOMEM;
   assert( pSorter->pUnpacked==(UnpackedRecord *)d );
+  pSorter->pUnpacked->nField = pCsr->pKeyInfo->nField;
 
   if( !sqlite3TempInMemory(db) ){
     pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
