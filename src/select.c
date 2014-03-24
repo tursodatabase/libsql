@@ -473,8 +473,7 @@ static void pushOntoSorter(
   int nOBSat = pSort->nOBSat;                      /* No. ORDER BY terms to skip */
   int op;                               /* Opcode to add sorter record to sorter */
 
-  sqlite3ExprCacheClear(pParse);
-  sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, 0);
+  sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, SQLITE_ECEL_DUP);
   sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
   sqlite3VdbeAddOp3(v, OP_Move, regData, regBase+nExpr+1, nData);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
@@ -1127,7 +1126,6 @@ static void generateSortTail(
   int addr;
   int addrOnce = 0;
   int iTab;
-  int pseudoTab = 0;
   ExprList *pOrderBy = pSort->pOrderBy;
   int eDest = pDest->eDest;
   int iParm = pDest->iSDParm;
@@ -1138,6 +1136,9 @@ static void generateSortTail(
   int nSortData;                  /* Trailing values to read from sorter */
   u8 p5;                          /* p5 parameter for 1st OP_Column */
   int i;
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+  struct ExprList_item *aOutEx = p->pEList->a;
+#endif
 
   if( pSort->labelBkOut ){
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
@@ -1148,8 +1149,6 @@ static void generateSortTail(
   iTab = pSort->iECursor;
   regRow = sqlite3GetTempReg(pParse);
   if( eDest==SRT_Output || eDest==SRT_Coroutine ){
-    pseudoTab = pParse->nTab++;
-    sqlite3VdbeAddOp3(v, OP_OpenPseudo, pseudoTab, regRow, nColumn);
     regRowid = 0;
     regRow = pDest->iSdst;
     nSortData = nColumn;
@@ -1180,6 +1179,7 @@ static void generateSortTail(
   for(i=0; i<nSortData; i++){
     sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+1+i, regRow+i);
     if( i==0 ) sqlite3VdbeChangeP5(v, p5);
+    VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){
     case SRT_Table:
