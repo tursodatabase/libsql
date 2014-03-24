@@ -291,6 +291,10 @@ static int codeCompare(
   addr = sqlite3VdbeAddOp4(pParse->pVdbe, opcode, in2, dest, in1,
                            (void*)p4, P4_COLLSEQ);
   sqlite3VdbeChangeP5(pParse->pVdbe, (u8)p5);
+  if( p5!=SQLITE_AFF_NONE ){
+    sqlite3ExprCacheAffinityChange(pParse, in1, 1);
+    sqlite3ExprCacheAffinityChange(pParse, in2, 1);
+  }
   return addr;
 }
 
