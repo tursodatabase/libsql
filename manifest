@@ -1,5 +1,5 @@
-C Remove\sa\spointless\sOP_Once\soperation\sin\sORDER\sBY\sclauses\swith\sLIMIT.
-D 2014-03-24T02:20:53.278
+C Remove\san\sunnecessary\stemporary\sregister\sallocation.
+D 2014-03-24T09:34:58.396
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c ece2324b5505317477cbb30cde1ddf67f6304a73
+F src/select.c a088183774c4efae4105076355ac4010c62390a8
 F src/shell.c cee9f46f2688a261601b1fd3d7f4b3cddf9b5cdf
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -1157,7 +1157,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e7188fad87ec82d36a39b80ccaf8006bf45a9bcd
-R 7cf4844b34fb28597f11c358a9ceae37
-U drh
-Z 5144b0c0a9c74c80111921622c3f3ee8
+P e6c59d23316c83b318b1a94d9b28a5d321737fa5
+R ab9aa4f9f7d5ea8c370ac77061403538
+U dan
+Z 631d6a70f4aeb5d6a455a81761c8aefd
