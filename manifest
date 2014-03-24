@@ -1,5 +1,5 @@
-C Avoid\sattempting\sto\smmap\smemory\sfrom\san\soffset\sthat\sis\snot\sa\smultiple\sof\sthe\ssystem\spage\ssize\son\ssystems\swith\spage\ssizes\slarger\sthan\s32KB.
-D 2014-03-24T11:23:17.736
+C Fix\sarithmetic\soperators\sso\sthat\sthey\sdo\snot\schange\sthe\saffinity\sof\stheir\ninput\soperands.\s\sTicket\s[a8a0d2996a].
+D 2014-03-24T15:00:15.271
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,7 +278,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 5c0feeb6c9e6a0e0cc2a9715aa6045830643809d
+F src/vdbe.c 74c7386e83eee56f921a17bb4a0396c9551f5bc7
 F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h 2b9a6849166d0014c843ae3fd83a062be4efa325
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -892,6 +892,7 @@ F test/tkt-94c04eaadb.test f738c57c7f68ab8be1c054415af7774617cb6223
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-9f2eb3abac.test 85bc63e749f050e6a61c8f9207f1eee65c9d3395
 F test/tkt-a7b7803e.test 159ef554234fa1f9fb318c751b284bd1cf858da4
+F test/tkt-a8a0d2996a.test eb597379dbcefa24765763d7f682c00cb5924fa9
 F test/tkt-b1d3a2e531.test 8f7576e41ca179289ee1a8fee28386fd8e4b0550
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test a95e8cdad0b98af1853ac7f0afd4ab27b77bf5f3
@@ -1158,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 641408a1395bfc911ca619ef9e5f073b913d856b e3d2be3ba47cdaafd26347620ae3bc2813203f16
-R aadeef09c98319ee1e1acbdf39605080
-U dan
-Z a7c50b19ab534dd04ee960894cca4791
+P db7d62c8d58eb1e8654a762c9b199ae4e2759038
+R c2ec5fb627231252d937ea015ddf100a
+U drh
+Z 7360db1b973f463e9c0480db05633068
