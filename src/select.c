@@ -463,19 +463,28 @@ static void pushOntoSorter(
   SortCtx *pSort,        /* Information about the ORDER BY clause */
   Select *pSelect,       /* The whole SELECT statement */
   int regData,           /* First register holding data to be sorted */
-  int nData              /* Number of elements in the data array */
+  int nData,             /* Number of elements in the data array */
+  int nPrefixReg         /* No. of reg prior to regData available for use */
 ){
   Vdbe *v = pParse->pVdbe;                         /* Stmt under construction */
   int nExpr = pSort->pOrderBy->nExpr;              /* No. of ORDER BY terms */
   int nBase = nExpr + 1 + nData;                   /* Fields in sorter record */
-  int regBase = sqlite3GetTempRange(pParse, nBase); /* Regs for sorter record */
+  int regBase;                                     /* Regs for sorter record */
   int regRecord = sqlite3GetTempReg(pParse);       /* Assemblied sorter record */
   int nOBSat = pSort->nOBSat;                      /* No. ORDER BY terms to skip */
   int op;                               /* Opcode to add sorter record to sorter */
 
+  if( nPrefixReg ){
+    assert( nPrefixReg==nExpr+1 );
+    regBase = regData - nExpr - 1;
+  }else{
+    regBase = sqlite3GetTempRange(pParse, nBase);
+  }
   sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, SQLITE_ECEL_DUP);
   sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
-  sqlite3VdbeAddOp3(v, OP_Move, regData, regBase+nExpr+1, nData);
+  if( nPrefixReg==0 ){
+    sqlite3VdbeAddOp3(v, OP_Move, regData, regBase+nExpr+1, nData);
+  }
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
   if( nOBSat>0 ){
     int regPrevKey;   /* The first nOBSat columns of the previous row */
@@ -515,7 +524,9 @@ static void pushOntoSorter(
   sqlite3VdbeAddOp2(v, op, pSort->iECursor, regRecord);
   if( nOBSat==0 ){
     sqlite3ReleaseTempReg(pParse, regRecord);
-    sqlite3ReleaseTempRange(pParse, regBase, nBase);
+    if( nPrefixReg==0 ){
+      sqlite3ReleaseTempRange(pParse, regBase, nBase);
+    }
   }
   if( pSelect->iLimit ){
     int addr1, addr2;
@@ -631,6 +642,7 @@ static void selectInnerLoop(
   int eDest = pDest->eDest;   /* How to dispose of results */
   int iParm = pDest->iSDParm; /* First argument to disposal method */
   int nResultCol;             /* Number of result columns */
+  int nPrefixReg = 0;         /* Number of extra registers before regResult */
 
   assert( v );
   assert( pEList!=0 );
@@ -646,6 +658,10 @@ static void selectInnerLoop(
   nResultCol = pEList->nExpr;
 
   if( pDest->iSdst==0 ){
+    if( pSort ){
+      nPrefixReg = pSort->pOrderBy->nExpr + 1;
+      pParse->nMem += nPrefixReg;
+    }
     pDest->iSdst = pParse->nMem+1;
     pParse->nMem += nResultCol;
   }else if( pDest->iSdst+nResultCol > pParse->nMem ){
@@ -762,10 +778,10 @@ static void selectInnerLoop(
     case SRT_DistFifo:
     case SRT_Table:
     case SRT_EphemTab: {
-      int r1 = sqlite3GetTempReg(pParse);
+      int r1 = sqlite3GetTempRange(pParse, nPrefixReg+1);
       testcase( eDest==SRT_Table );
       testcase( eDest==SRT_EphemTab );
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -780,7 +796,7 @@ static void selectInnerLoop(
       }
 #endif
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, r1, 1);
+        pushOntoSorter(pParse, pSort, p, r1+nPrefixReg, 1, nPrefixReg);
       }else{
         int r2 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, r2);
@@ -788,7 +804,7 @@ static void selectInnerLoop(
         sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
         sqlite3ReleaseTempReg(pParse, r2);
       }
-      sqlite3ReleaseTempReg(pParse, r1);
+      sqlite3ReleaseTempRange(pParse, r1, nPrefixReg+1);
       break;
     }
 
@@ -806,7 +822,7 @@ static void selectInnerLoop(
         ** ORDER BY in this case since the order of entries in the set
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
-        pushOntoSorter(pParse, pSort, p, regResult, 1);
+        pushOntoSorter(pParse, pSort, p, regResult, 1, nPrefixReg);
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult,1,r1, &pDest->affSdst, 1);
@@ -832,7 +848,7 @@ static void selectInnerLoop(
     case SRT_Mem: {
       assert( nResultCol==1 );
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, regResult, 1);
+        pushOntoSorter(pParse, pSort, p, regResult, 1, nPrefixReg);
       }else{
         sqlite3ExprCodeMove(pParse, regResult, iParm, 1);
         /* The LIMIT clause will jump out of the loop for us */
@@ -846,7 +862,7 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Coroutine );
       testcase( eDest==SRT_Output );
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, regResult, nResultCol);
+        pushOntoSorter(pParse, pSort, p, regResult, nResultCol, nPrefixReg);
       }else if( eDest==SRT_Coroutine ){
         sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }else{
