@@ -28,7 +28,7 @@
 #include "sqliteInt.h"
 
 /********************************* Unix Pthreads ****************************/
-#if SQLITE_OS_UNIX && defined(SQLITE_MUTEX_PTHREADS)
+#if SQLITE_OS_UNIX && defined(SQLITE_MUTEX_PTHREADS) && SQLITE_THREADSAFE>0
 
 #define SQLITE_THREADS_IMPLEMENTED 1  /* Prevent the single-thread code below */
 #include <pthread.h>
@@ -85,7 +85,7 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
 
 /********************************* Win32 Threads ****************************/
-#if SQLITE_OS_WIN && !SQLITE_OS_WINRT
+#if SQLITE_OS_WIN && !SQLITE_OS_WINRT && SQLITE_THREADSAFE>0
 
 #define SQLITE_THREADS_IMPLEMENTED 1  /* Prevent the single-thread code below */
 #include <process.h>

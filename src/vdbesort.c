@@ -31,7 +31,7 @@ typedef struct FileWriter FileWriter;
 ** operations to be single-threaded.
 */
 #ifndef SQLITE_MAX_SORTER_THREAD
-# define SQLITE_MAX_SORTER_THREAD 1
+# define SQLITE_MAX_SORTER_THREAD 4
 #endif
 
 /*

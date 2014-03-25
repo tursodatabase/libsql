@@ -1,5 +1,5 @@
-C Merge\sall\sfixes\sand\senhancements\sfrom\strunk.
-D 2014-03-25T13:17:41.050
+C Enable\sfour\ssorting\sthreads\sby\sdefault\sin\sthe\scommand-line\sshell.
+D 2014-03-25T14:12:16.989
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 269c3e31a450fce642a10569221a49180348c88e
-F src/shell.c cee9f46f2688a261601b1fd3d7f4b3cddf9b5cdf
+F src/shell.c f48b63f8e582e7998ecefd051d697f91fb1453df
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -272,7 +272,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c 3a0ab304682fecbceb689e7d9b904211fde11d78
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c cde9d885fd562b5427f89a42a8829085f88b17df
+F src/threads.c b96d62f88c06d4fa980a4a92685d1b130c4c84d3
 F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 68dbdc77cdc008eeabc088b8b8a60aa743ba8d2a
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 0fbaf5b3ec3e779d81c4db4eb2f0ae5f44fbb02c
+F src/vdbesort.c c3e427de848b78e9e9feaa25f68fb64686bab6cd
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1160,7 +1160,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ff0b5c851ba7d04d1836d7c6a3222713e7d8d357 e6798871ce94961135762669af418cd78540c121
-R 5887d7b59f581a1221f99e7d95aac2b8
+P b415dfb6cb0df0c69992ca2bb700c15664f158e6
+R a4b6dbfcec045a7fea4740daec225662
 U drh
-Z 5e51466328d6bc63d3b26ee7aec599ce
+Z a12cd4438cfae19c4441f02ed27b5761
