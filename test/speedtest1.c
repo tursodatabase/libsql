@@ -512,6 +512,26 @@ void testset_main(void){
   speedtest1_end_test();
 
 
+  n = g.szTest/5;
+  speedtest1_begin_test(145, "%d SELECTS w/ORDER BY, unindexed", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_prepare(
+    "SELECT a, b, c FROM t1 WHERE c LIKE ?1\n"
+    " ORDER BY a LIMIT 10; -- %d times", n
+  );
+  for(i=1; i<=n; i++){
+    x1 = speedtest1_random()%maxb;
+    zNum[0] = '%';
+    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+    zNum[len] = '%';
+    zNum[len+1] = 0;
+    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+
   speedtest1_begin_test(150, "CREATE INDEX five times");
   speedtest1_exec("BEGIN;");
   speedtest1_exec("CREATE UNIQUE INDEX t1b ON t1(b);");
