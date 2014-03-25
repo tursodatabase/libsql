@@ -2735,7 +2735,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
     if( rc ) return rc;
     if( hasMoved ){
       p->cacheStatus = CACHE_STALE;
-      p->nullRow = 1;
+      if( hasMoved==2 ) p->nullRow = 1;
     }
   }
   return SQLITE_OK;
