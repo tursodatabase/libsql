@@ -1,5 +1,5 @@
-C Add\sanother\sperformance\stest\scase\sto\sspeedtest1.\s\sThis\scase\sis\sanother\nORDER\sBY\stest\sbut\sthis\stime\swithout\sLIMIT.
-D 2014-03-25T17:45:49.623
+C Adjust\sthe\srepeat\scounts\son\sseveral\stests\sin\sspeedtest1\sso\sthat\sthe\srelative\ntime\sspent\son\sthe\stest\sis\sroughly\sthe\ssame\sregardless\sof\s--size.
+D 2014-03-25T20:28:38.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -825,7 +825,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 2bec93920c6d26adfa781b509b1c9ca0a4d8f39d
+F test/speedtest1.c 90446861e566a9965a8d005381a3c964ff333646
 F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 588122641e57e957813d329ea071e13ccbde5acd
-R 6b6fe86503bb240eaed31036f5ef1e04
+P 9ab7ffd59209aef0ffbf384b3902a93fd3b86a6d
+R 8ec1b9b9d2439aad92a9a0c48f5fc5b8
 U drh
-Z 513f3088d16b4a60fe04e39489233db6
+Z 44fa9dae5e4277ca9cc29c89c29e96c1

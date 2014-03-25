@@ -474,7 +474,7 @@ void testset_main(void){
   speedtest1_end_test();
 
 
-  n = g.szTest/2;
+  n = 25;
   speedtest1_begin_test(130, "%d SELECTS, numeric BETWEEN, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
@@ -492,7 +492,7 @@ void testset_main(void){
   speedtest1_end_test();
 
 
-  n = g.szTest/5;
+  n = 10;
   speedtest1_begin_test(140, "%d SELECTS, LIKE, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
@@ -512,7 +512,7 @@ void testset_main(void){
   speedtest1_end_test();
 
 
-  n = g.szTest/5;
+  n = 10;
   speedtest1_begin_test(142, "%d SELECTS w/ORDER BY, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
@@ -531,7 +531,7 @@ void testset_main(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
-  n = g.szTest/5;
+  n = 10; //g.szTest/5;
   speedtest1_begin_test(145, "%d SELECTS w/ORDER BY and LIMIT, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
