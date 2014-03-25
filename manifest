@@ -1,5 +1,5 @@
-C Omit\sthe\ssequence\svalue\sfrom\ssorter\srecords\sused\sby\sGROUP\sBY\squeries\sthat\scannot\suse\san\sindex.
-D 2014-03-24T20:19:07.793
+C Remove\sthe\ssequence\svalues\sfrom\ssorter\srecords\sused\sby\sORDER\sBY\sas\swell.
+D 2014-03-25T15:04:07.777
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,7 +217,7 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
-F src/select.c 2b8722c9888be5e2b358dcd1369a652b38d7ccc4
+F src/select.c 20055cf917222e660c4222fea306bd13a0623caa
 F src/shell.c cee9f46f2688a261601b1fd3d7f4b3cddf9b5cdf
 F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -278,7 +278,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 5c0feeb6c9e6a0e0cc2a9715aa6045830643809d
+F src/vdbe.c 42177064bd02fc55984aabc3a241368fda01e8b4
 F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h 2b9a6849166d0014c843ae3fd83a062be4efa325
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -1157,7 +1157,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4f472accf072d9cb64f209923924b26f21b13d27
-R e1309a603202b4d83715c783fe89f3da
+P 3f90abddc31ac20739778c235a834c33f7057997
+R 743d88a284437e5e0babc8e33ec37e61
 U dan
-Z 8e3a9a2ddbbe8575a70cbc6b0dba434a
+Z 5024d9c780855d9abccbd4c6c23f3054
