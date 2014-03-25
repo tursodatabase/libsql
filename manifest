@@ -1,5 +1,5 @@
-C Remove\sunused\svariables\sParse.nColCache\sand\sParse.iColCache.
-D 2014-03-24T16:30:06.093
+C Detect\swhen\sa\sVdbeCursor\sis\sstill\spointing\sat\sa\svalid\srow\sbut\sthat\srow\shas\nmoved,\sand\sinvalidated\sthe\sreturn\sfrom\sprior\ssqlite3BtreeDataFetch()\sor\nsqlite3BtreeKeyFetch()\scalls.
+D 2014-03-25T11:00:21.320
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 029cec7b98fe0a985922c03f101630391044c4ad
+F src/btree.c 8d7e432bdd27d63182865c708ea0e7606489b6d1
 F src/btree.h 232836cb51753f2e96aa8ce0f052c6df850f76ba
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
 F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
@@ -282,7 +282,7 @@ F src/vdbe.c 74c7386e83eee56f921a17bb4a0396c9551f5bc7
 F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h 2b9a6849166d0014c843ae3fd83a062be4efa325
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c 5078ca7de4fd5ba4535bd17fe44d5b56c2d3294c
+F src/vdbeaux.c 68dbdc77cdc008eeabc088b8b8a60aa743ba8d2a
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 4abb7c0f8f19b7d7d82f4558d5da1a30fdf9ea38
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 221f8f944703108e47d789fa8ce6c00fe2abcbb6
-R dc20bd716d0015e30edc93a05e72ad4b
-U dan
-Z 0a61715f43b39f80ef65df2d7add7843
+P 4d7551ce464c8038147e81667368924f2a7485a6
+R 8613a90c52863cb0b93f254b2d121d4b
+U drh
+Z f61d5d3cf5132dbd8d9ed764bc0739f9

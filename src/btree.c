@@ -746,20 +746,32 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
 ** at is deleted out from under them.
 **
 ** This routine returns an error code if something goes wrong.  The
-** integer *pHasMoved is set to one if the cursor has moved and 0 if not.
+** integer *pHasMoved is set as follows:
+**
+**    0:   The cursor is unchanged
+**    1:   The cursor is still pointing at the same row, but the pointers
+**         returned by sqlite3BtreeKeyFetch() or sqlite3BtreeDataFetch()
+**         might now be invalid because of a balance() or other change to the
+**         b-tree.
+**    2:   The cursor is no longer pointing to the row.  The row might have
+**         been deleted out from under the cursor.
 */
 int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
   int rc;
 
+  if( pCur->eState==CURSOR_VALID ){
+    *pHasMoved = 0;
+    return SQLITE_OK;
+  }
   rc = restoreCursorPosition(pCur);
   if( rc ){
-    *pHasMoved = 1;
+    *pHasMoved = 2;
     return rc;
   }
   if( pCur->eState!=CURSOR_VALID || NEVER(pCur->skipNext!=0) ){
-    *pHasMoved = 1;
+    *pHasMoved = 2;
   }else{
-    *pHasMoved = 0;
+    *pHasMoved = 1;
   }
   return SQLITE_OK;
 }
@@ -4188,10 +4200,13 @@ static const void *fetchPayload(
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+  assert( pCur->info.nSize>0 );
+#if 0
   if( pCur->info.nSize==0 ){
     btreeParseCell(pCur->apPage[pCur->iPage], pCur->aiIdx[pCur->iPage],
                    &pCur->info);
   }
+#endif
   *pAmt = pCur->info.nLocal;
   return (void*)(pCur->info.pCell + pCur->info.nHeader);
 }
