@@ -562,6 +562,9 @@ static int vdbeSorterOpenTempFile(sqlite3 *db, sqlite3_file **ppFile){
 /*
 ** Merge the two sorted lists p1 and p2 into a single list.
 ** Set *ppOut to the head of the new list.
+**
+** In cases where key values are equal, keys from list p1 are considered
+** to be smaller than list p2.
 */
 static void vdbeSorterMerge(
   const VdbeCursor *pCsr,         /* For pKeyInfo */
@@ -597,6 +600,11 @@ static void vdbeSorterMerge(
 ** Sort the linked list of records headed at pCsr->pRecord. Return SQLITE_OK
 ** if successful, or an SQLite error code (i.e. SQLITE_NOMEM) if an error
 ** occurs.
+**
+** The sort is required to be stable - if two elements compare as equal
+** then the one added to the sorter first is considered the smaller.
+** Currently, the list is sorted from newest to oldest - pSorter->pRecord
+** points to the most recently added sort key.
 */
 static int vdbeSorterSort(const VdbeCursor *pCsr){
   int i;
@@ -837,7 +845,7 @@ static int vdbeSorterInitMerge(
   int i;                          /* Used to iterator through aIter[] */
   i64 nByte = 0;                  /* Total bytes in all opened PMAs */
 
-  /* Initialize the iterators. */
+  /* Initialize the iterators. Iterator 0 contains the oldest data. */
   for(i=0; i<SORTER_MAX_MERGE_COUNT; i++){
     VdbeSorterIter *pIter = &pSorter->aIter[i];
     rc = vdbeSorterIterInit(db, pSorter, pSorter->iReadOff, pIter, &nByte);
@@ -1009,8 +1017,13 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
         ** set aTree[i] to its index and update pIter1. If vdbeSorterCompare()
         ** was actually called above, then pSorter->pUnpacked now contains
         ** a value equivalent to pIter2. So set pKey2 to NULL to prevent
-        ** vdbeSorterCompare() from decoding pIter2 again.  */
-        if( iRes<=0 ){
+        ** vdbeSorterCompare() from decoding pIter2 again.  
+        **
+        ** If the two values were equal, then the value from the oldest
+        ** PMA should be considered smaller. The VdbeSorter.aIter[] array
+        ** is sorted from oldest to newest, so pIter1 contains older values
+        ** than pIter2 iff (pIter1<pIter2).  */
+        if( iRes<0 || (iRes==0 && pIter1<pIter2) ){
           pSorter->aTree[i] = (int)(pIter1 - pSorter->aIter);
           pIter2 = &pSorter->aIter[ pSorter->aTree[i ^ 0x0001] ];
           pKey2 = pIter2->aKey;
@@ -1019,7 +1032,6 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
           pSorter->aTree[i] = (int)(pIter2 - pSorter->aIter);
           pIter1 = &pSorter->aIter[ pSorter->aTree[i ^ 0x0001] ];
         }
-
       }
       *pbEof = (pSorter->aIter[pSorter->aTree[1]].pFile==0);
     }
