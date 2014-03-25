@@ -310,6 +310,29 @@ void sqlite3ValueApplyAffinity(
   applyAffinity((Mem *)pVal, affinity, enc);
 }
 
+/*
+** Return the numeric type for pMem, either MEM_Int or MEM_Real or both or
+** none.  
+**
+** Unlike applyNumericAffinity(), this routine does not modify pMem->flags.
+** But it does set pMem->r and pMem->u.i appropriately.
+*/
+static u16 numericType(Mem *pMem){
+  if( pMem->flags & (MEM_Int|MEM_Real) ){
+    return pMem->flags & (MEM_Int|MEM_Real);
+  }
+  if( pMem->flags & (MEM_Str|MEM_Blob) ){
+    if( sqlite3AtoF(pMem->z, &pMem->r, pMem->n, pMem->enc)==0 ){
+      return 0;
+    }
+    if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==SQLITE_OK ){
+      return MEM_Int;
+    }
+    return MEM_Real;
+  }
+  return 0;
+}
+
 #ifdef SQLITE_DEBUG
 /*
 ** Write a nice string representation of the contents of cell pMem
@@ -1080,10 +1103,11 @@ case OP_Variable: {            /* out2-prerelease */
 /* Opcode: Move P1 P2 P3 * *
 ** Synopsis:  r[P2@P3]=r[P1@P3]
 **
-** Move the values in register P1..P1+P3 over into
-** registers P2..P2+P3.  Registers P1..P1+P3 are
+** Move the P3 values in register P1..P1+P3-1 over into
+** registers P2..P2+P3-1.  Registers P1..P1+P3-1 are
 ** left holding a NULL.  It is an error for register ranges
-** P1..P1+P3 and P2..P2+P3 to overlap.
+** P1..P1+P3-1 and P2..P2+P3-1 to overlap.  It is an error
+** for P3 to be less than 1.
 */
 case OP_Move: {
   char *zMalloc;   /* Holding variable for allocated memory */
@@ -1094,7 +1118,7 @@ case OP_Move: {
   n = pOp->p3;
   p1 = pOp->p1;
   p2 = pOp->p2;
-  assert( n>=0 && p1>0 && p2>0 );
+  assert( n>0 && p1>0 && p2>0 );
   assert( p1+n<=p2 || p2+n<=p1 );
 
   pIn1 = &aMem[p1];
@@ -1118,7 +1142,7 @@ case OP_Move: {
     REGISTER_TRACE(p2++, pOut);
     pIn1++;
     pOut++;
-  }while( n-- );
+  }while( --n );
   break;
 }
 
@@ -1350,20 +1374,22 @@ case OP_Multiply:              /* same as TK_STAR, in1, in2, out3 */
 case OP_Divide:                /* same as TK_SLASH, in1, in2, out3 */
 case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
   char bIntint;   /* Started out as two integer operands */
-  int flags;      /* Combined MEM_* flags from both inputs */
+  u16 flags;      /* Combined MEM_* flags from both inputs */
+  u16 type1;      /* Numeric type of left operand */
+  u16 type2;      /* Numeric type of right operand */
   i64 iA;         /* Integer value of left operand */
   i64 iB;         /* Integer value of right operand */
   double rA;      /* Real value of left operand */
   double rB;      /* Real value of right operand */
 
   pIn1 = &aMem[pOp->p1];
-  applyNumericAffinity(pIn1);
+  type1 = numericType(pIn1);
   pIn2 = &aMem[pOp->p2];
-  applyNumericAffinity(pIn2);
+  type2 = numericType(pIn2);
   pOut = &aMem[pOp->p3];
   flags = pIn1->flags | pIn2->flags;
   if( (flags & MEM_Null)!=0 ) goto arithmetic_result_is_null;
-  if( (pIn1->flags & pIn2->flags & MEM_Int)==MEM_Int ){
+  if( (type1 & type2 & MEM_Int)!=0 ){
     iA = pIn1->u.i;
     iB = pIn2->u.i;
     bIntint = 1;
@@ -1419,7 +1445,7 @@ fp_math:
     }
     pOut->r = rB;
     MemSetTypeFlag(pOut, MEM_Real);
-    if( (flags & MEM_Real)==0 && !bIntint ){
+    if( ((type1|type2)&MEM_Real)==0 && !bIntint ){
       sqlite3VdbeIntegerAffinity(pOut);
     }
 #endif
@@ -1995,6 +2021,7 @@ case OP_Permutation: {
 }
 
 /* Opcode: Compare P1 P2 P3 P4 P5
+** Synopsis: r[P1@P3] <-> r[P2@P3]
 **
 ** Compare two vectors of registers in reg(P1)..reg(P1+P3-1) (call this
 ** vector "A") and in reg(P2)..reg(P2+P3-1) ("B").  Save the result of
@@ -3330,6 +3357,7 @@ case OP_OpenEphemeral: {
   pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
+  pCx->isEphemeral = 1;
   rc = sqlite3BtreeOpen(db->pVfs, 0, db, &pCx->pBt, 
                         BTREE_OMIT_JOURNAL | BTREE_SINGLE | pOp->p5, vfsFlags);
   if( rc==SQLITE_OK ){
@@ -3820,7 +3848,7 @@ case OP_NotExists: {        /* jump, in3 */
 }
 
 /* Opcode: Sequence P1 P2 * * *
-** Synopsis: r[P2]=rowid
+** Synopsis: r[P2]=cursor[P1].ctr++
 **
 ** Find the next available sequence number for cursor P1.
 ** Write the sequence number into register P2.
@@ -4511,6 +4539,7 @@ case OP_SorterNext: {  /* jump */
 
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
+  res = 0;
   rc = sqlite3VdbeSorterNext(db, pC, &res);
   goto next_tail;
 case OP_PrevIfOpen:    /* jump */
@@ -4865,6 +4894,29 @@ case OP_Clear: {
       memAboutToChange(p, &aMem[pOp->p3]);
       aMem[pOp->p3].u.i += nChange;
     }
+  }
+  break;
+}
+
+/* Opcode: ResetSorter P1 * * * *
+**
+** Delete all contents from the ephemeral table or sorter
+** that is open on cursor P1.
+**
+** This opcode only works for cursors used for sorting and
+** opened with OP_OpenEphemeral or OP_SorterOpen.
+*/
+case OP_ResetSorter: {
+  VdbeCursor *pC;
+ 
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  if( pC->pSorter ){
+    sqlite3VdbeSorterReset(db, pC->pSorter);
+  }else{
+    assert( pC->isEphemeral );
+    rc = sqlite3BtreeClearTableOfCursor(pC->pCursor);
   }
   break;
 }

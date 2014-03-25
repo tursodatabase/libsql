@@ -63,7 +63,9 @@ int sqlite3BtreeOpen(
 
 int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);
-int sqlite3BtreeSetMmapLimit(Btree*,sqlite3_int64);
+#if SQLITE_MAX_MMAP_SIZE>0
+  int sqlite3BtreeSetMmapLimit(Btree*,sqlite3_int64);
+#endif
 int sqlite3BtreeSetPagerFlags(Btree*,unsigned);
 int sqlite3BtreeSyncDisabled(Btree*);
 int sqlite3BtreeSetPageSize(Btree *p, int nPagesize, int nReserve, int eFix);
@@ -113,6 +115,7 @@ int sqlite3BtreeIncrVacuum(Btree *);
 
 int sqlite3BtreeDropTable(Btree*, int, int*);
 int sqlite3BtreeClearTable(Btree*, int, int*);
+int sqlite3BtreeClearTableOfCursor(BtCursor*);
 void sqlite3BtreeTripAllCursors(Btree*, int);
 
 void sqlite3BtreeGetMeta(Btree *pBtree, int idx, u32 *pValue);

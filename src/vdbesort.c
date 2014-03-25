@@ -597,11 +597,13 @@ static void vdbeSorterRecordFree(sqlite3 *db, SorterRecord *pRecord){
 */
 static void vdbeSorterThreadCleanup(sqlite3 *db, SorterThread *pThread){
   sqlite3DbFree(db, pThread->pUnpacked);
+  pThread->pUnpacked = 0;
   vdbeSorterRecordFree(0, pThread->pList);
+  pThread->pList = 0;
   if( pThread->pTemp1 ){
     sqlite3OsCloseFree(pThread->pTemp1);
+    pThread->pTemp1 = 0;
   }
-  memset(pThread, 0, sizeof(SorterThread));
 }
 
 /*
@@ -642,21 +644,45 @@ static SorterMerger *vdbeSorterMergerNew(int nIter){
     pNew->aIter = (VdbeSorterIter*)&pNew[1];
     pNew->aTree = (int*)&pNew->aIter[N];
   }
-
   return pNew;
 }
+
+/*
+** Reset a merger
+*/
+static void vdbeSorterMergerReset(SorterMerger *pMerger){
+  int i;
+  if( pMerger ){
+    for(i=0; i<pMerger->nTree; i++){
+      vdbeSorterIterZero(&pMerger->aIter[i]);
+    }
+  }
+}
+
 
 /*
 ** Free the SorterMerger object passed as the only argument.
 */
 static void vdbeSorterMergerFree(SorterMerger *pMerger){
-  if( pMerger ){
-    int i;
-    for(i=0; i<pMerger->nTree; i++){
-      vdbeSorterIterZero(&pMerger->aIter[i]);
-    }
-    sqlite3_free(pMerger);
+  vdbeSorterMergerReset(pMerger);
+  sqlite3_free(pMerger);
+}
+
+/*
+** Reset a sorting cursor back to its original empty state.
+*/
+void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
+  int i;
+  vdbeSorterJoinAll(pSorter, SQLITE_OK);
+  for(i=0; i<SQLITE_MAX_SORTER_THREAD; i++){
+    SorterThread *pThread = &pSorter->aThread[i];
+    vdbeSorterThreadCleanup(db, pThread);
   }
+  vdbeSorterRecordFree(0, pSorter->pRecord);
+  vdbeSorterMergerReset(pSorter->pMerger);
+  pSorter->pRecord = 0;
+  pSorter->nInMemory = 0;
+  pSorter->bUsePMA = 0;
 }
 
 /*
@@ -665,14 +691,7 @@ static void vdbeSorterMergerFree(SorterMerger *pMerger){
 void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
   VdbeSorter *pSorter = pCsr->pSorter;
   if( pSorter ){
-    int i;
-    vdbeSorterJoinAll(pSorter, SQLITE_OK);
-    for(i=0; i<SQLITE_MAX_SORTER_THREAD; i++){
-      SorterThread *pThread = &pSorter->aThread[i];
-      vdbeSorterThreadCleanup(db, pThread);
-    }
-
-    vdbeSorterRecordFree(0, pSorter->pRecord);
+    sqlite3VdbeSorterReset(db, pSorter);
     vdbeSorterMergerFree(pSorter->pMerger);
     sqlite3DbFree(db, pSorter);
     pCsr->pSorter = 0;

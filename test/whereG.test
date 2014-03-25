@@ -95,7 +95,7 @@ do_eqp_test whereG-1.5 {
    WHERE cname LIKE '%bach%'
      AND composer.cid=track.cid
      AND album.aid=track.aid;
-} {/.*track.*composer.*album.*/}
+} {/.*track.*(composer.*album|album.*composer).*/}
 do_execsql_test whereG-1.6 {
   SELECT DISTINCT aname
     FROM album, composer, track
@@ -110,7 +110,7 @@ do_eqp_test whereG-1.7 {
    WHERE cname LIKE '%bach%'
      AND unlikely(composer.cid=track.cid)
      AND unlikely(album.aid=track.aid);
-} {/.*track.*composer.*album.*/}
+} {/.*track.*(composer.*album|album.*composer).*/}
 do_execsql_test whereG-1.8 {
   SELECT DISTINCT aname
     FROM album, composer, track
