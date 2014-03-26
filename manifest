@@ -1,5 +1,5 @@
-C Adjust\sthe\srepeat\scounts\son\sseveral\stests\sin\sspeedtest1\sso\sthat\sthe\srelative\ntime\sspent\son\sthe\stest\sis\sroughly\sthe\ssame\sregardless\sof\s--size.
-D 2014-03-25T20:28:38.512
+C Add\san\sassert()\sand\sa\scomment\sto\sclarify\sthe\soperation\sof\sthe\nvdbeRecordCompareInt()\sroutine.
+D 2014-03-26T12:02:38.907
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/vdbe.c 74c7386e83eee56f921a17bb4a0396c9551f5bc7
 F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h 2b9a6849166d0014c843ae3fd83a062be4efa325
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c 68dbdc77cdc008eeabc088b8b8a60aa743ba8d2a
+F src/vdbeaux.c 9898720db88a8e733acce7d72fbd56f4565d6d82
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 4abb7c0f8f19b7d7d82f4558d5da1a30fdf9ea38
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9ab7ffd59209aef0ffbf384b3902a93fd3b86a6d
-R 8ec1b9b9d2439aad92a9a0c48f5fc5b8
+P 7922809ee0d3978ce9221fbb7df63aa0684d0c4d
+R 0dc0a56d9b4e58b2ad9ea1b209a9c778
 U drh
-Z 44fa9dae5e4277ca9cc29c89c29e96c1
+Z d2e0055a9ca933f7d0981ccf44961bc7
