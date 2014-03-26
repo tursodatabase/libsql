@@ -1,12 +1,12 @@
-C Fix\sa\spotential\sbuffer\soverread\sthat\scould\shave\soccurred\swhen\ssearching\na\scorrupt\sdatabase\sfile.
-D 2014-03-26T16:22:38.603
+C Increase\sthe\sversion\snumber\sto\s3.8.4.2.
+D 2014-03-26T16:25:42.944
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc fdacba6fb574868c71fde6db6b77789a383a4c19
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION c3b0d47c3c5cf25c5bd4ff9e6f3af2f9d7934ea6
+F VERSION 8641f71307fcfa987ad08940c79abeeb2eef15f2
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 6a7a482649dd20b7ee31424bf6553c6f20ca7936 x
+F configure 47660a145d20c0a01ca44d787189ae7b1e943b40 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1156,13 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 018d317b1257ce68a92908b05c9c7cf1494050d0
-Q +28ddecff044dbc2dff50a7d8406ab67dfe06587f
-Q +2b28e8d582cf10936fa1faca04a16ca2eeead66f
-Q +f585f5d7a0f9bf8c590388654a3638231eba8892
-R d3c352c55aee563c98af249e5e0d2457
-T *branch * branch-3.8.4
-T *sym-branch-3.8.4 *
-T -sym-trunk *
+P db2935473eab91cde3c01353ae29e112ab0c7acb
+R 9cacf50647b82d868fed3d2e303cd494
 U drh
-Z 010e4636395249d78c141a982e21e290
+Z a988539d5a7c20fca24737a4b109c572
