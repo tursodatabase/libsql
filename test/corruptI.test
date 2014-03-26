@@ -40,13 +40,9 @@ do_test 1.2 {
   set offset [hexio_get_int [hexio_read test.db [expr 2*1024 + 8] 2]]
   set off [expr 2*1024 + $offset + 1]
   hexio_write test.db $off FF06
-
-  breakpoint
-
   sqlite3 db test.db
   catchsql { SELECT * FROM t1 WHERE a = 10 }
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 
 finish_test
-

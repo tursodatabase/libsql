@@ -1,5 +1,5 @@
-C Add\san\sassert()\sand\sa\scomment\sto\sclarify\sthe\soperation\sof\sthe\nvdbeRecordCompareInt()\sroutine.
-D 2014-03-26T12:02:38.907
+C Earlier\sdetection\sof\scorruption\sin\ssqlite3VdbeRecordCompare()\sin\sorder\sto\navoid\sa\spotential\sbuffer\soverread.
+D 2014-03-26T14:51:07.017
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/vdbe.c 74c7386e83eee56f921a17bb4a0396c9551f5bc7
 F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h 2b9a6849166d0014c843ae3fd83a062be4efa325
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c 9898720db88a8e733acce7d72fbd56f4565d6d82
+F src/vdbeaux.c f81ef920dcf76aceaa1ce77081e9fc5d7a0993dd
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 4abb7c0f8f19b7d7d82f4558d5da1a30fdf9ea38
@@ -405,7 +405,7 @@ F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 58ec333a01997fe655e34e5bea52b7a2a6b9704d
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
-F test/corruptI.test 88886ec9cd1bdba835263566bbf60ee009c6ea09
+F test/corruptI.test 645794bfc0bbcb962df34302a52118b0ed6a21fb
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7922809ee0d3978ce9221fbb7df63aa0684d0c4d
-R 0dc0a56d9b4e58b2ad9ea1b209a9c778
+P 851abdb8fd9b5a8a6ce21db53d30dbac3c430cc7
+R 08734d76a115f4a142a4825f21f3cdab
 U drh
-Z d2e0055a9ca933f7d0981ccf44961bc7
+Z 2973842cba6cb939f8ad2063fb07de64
