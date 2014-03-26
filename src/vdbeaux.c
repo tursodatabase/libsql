@@ -784,7 +784,9 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     addr = p->nOp - 1;
   }
   pOp = &p->aOp[addr];
-  assert( pOp->p4type==P4_NOTUSED || pOp->p4type==P4_INT32 );
+  assert( pOp->p4type==P4_NOTUSED
+       || pOp->p4type==P4_INT32
+       || pOp->p4type==P4_KEYINFO );
   freeP4(db, pOp->p4type, pOp->p4.p);
   pOp->p4.p = 0;
   if( n==P4_INT32 ){
@@ -2734,7 +2736,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
     if( rc ) return rc;
     if( hasMoved ){
       p->cacheStatus = CACHE_STALE;
-      p->nullRow = 1;
+      if( hasMoved==2 ) p->nullRow = 1;
     }
   }
   return SQLITE_OK;
@@ -3434,6 +3436,7 @@ int sqlite3VdbeRecordCompare(
   }else{
     idx1 = getVarint32(aKey1, szHdr1);
     d1 = szHdr1;
+    if( d1>(unsigned)nKey1 ) return 1;  /* Corruption */
     i = 0;
   }
 
@@ -3589,6 +3592,9 @@ int sqlite3VdbeRecordCompare(
 ** that (a) the first field of pPKey2 is an integer, and (b) the 
 ** size-of-header varint at the start of (pKey1/nKey1) fits in a single
 ** byte (i.e. is less than 128).
+**
+** To avoid concerns about buffer overreads, this routine is only used
+** on schemas where the maximum valid header size is 63 bytes or less.
 */
 static int vdbeRecordCompareInt(
   int nKey1, const void *pKey1, /* Left key */
@@ -3605,6 +3611,7 @@ static int vdbeRecordCompareInt(
   UNUSED_PARAMETER(bSkip);
 
   assert( bSkip==0 );
+  assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
   switch( serial_type ){
     case 1: { /* 1-byte signed integer */
       lhs = ONE_BYTE_INT(aKey);

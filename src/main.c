@@ -800,6 +800,7 @@ static void disconnectAllVtab(sqlite3 *db){
       }
     }
   }
+  sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
 #else
   UNUSED_PARAMETER(db);

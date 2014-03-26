@@ -1410,10 +1410,7 @@ static int fts3InitVtab(
   ** addition of a %_stat table so that it can use incremental merge.
   */
   if( !isFts4 && !isCreate ){
-    int rc2 = SQLITE_OK;
-    fts3DbExec(&rc2, db, "SELECT 1 FROM %Q.'%q_stat' WHERE id=2",
-               p->zDb, p->zName);
-    if( rc2==SQLITE_OK ) p->bHasStat = 1;
+    p->bHasStat = 2;
   }
 
   /* Figure out the page-size for the database. This is required in order to
@@ -3320,7 +3317,34 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 }
 
 /*
-** Implementation of xBegin() method. This is a no-op.
+** If it is currently unknown whether or not the FTS table has an %_stat
+** table (if p->bHasStat==2), attempt to determine this (set p->bHasStat
+** to 0 or 1). Return SQLITE_OK if successful, or an SQLite error code
+** if an error occurs.
+*/
+static int fts3SetHasStat(Fts3Table *p){
+  int rc = SQLITE_OK;
+  if( p->bHasStat==2 ){
+    const char *zFmt ="SELECT 1 FROM %Q.sqlite_master WHERE tbl_name='%q_stat'";
+    char *zSql = sqlite3_mprintf(zFmt, p->zDb, p->zName);
+    if( zSql ){
+      sqlite3_stmt *pStmt = 0;
+      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
+      if( rc==SQLITE_OK ){
+        int bHasStat = (sqlite3_step(pStmt)==SQLITE_ROW);
+        rc = sqlite3_finalize(pStmt);
+        if( rc==SQLITE_OK ) p->bHasStat = bHasStat;
+      }
+      sqlite3_free(zSql);
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
+  return rc;
+}
+
+/*
+** Implementation of xBegin() method. 
 */
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
   Fts3Table *p = (Fts3Table*)pVtab;
@@ -3331,7 +3355,7 @@ static int fts3BeginMethod(sqlite3_vtab *pVtab){
   TESTONLY( p->inTransaction = 1 );
   TESTONLY( p->mxSavepoint = -1; );
   p->nLeafAdd = 0;
-  return SQLITE_OK;
+  return fts3SetHasStat(p);
 }
 
 /*
@@ -3580,6 +3604,10 @@ static int fts3RenameMethod(
   sqlite3 *db = p->db;            /* Database connection */
   int rc;                         /* Return Code */
 
+  /* At this point it must be known if the %_stat table exists or not.
+  ** So bHasStat may not be 2.  */
+  rc = fts3SetHasStat(p);
+  
   /* As it happens, the pending terms table is always empty here. This is
   ** because an "ALTER TABLE RENAME TABLE" statement inside a transaction 
   ** always opens a savepoint transaction. And the xSavepoint() method 
@@ -3587,7 +3615,9 @@ static int fts3RenameMethod(
   ** PendingTermsFlush() in in case that changes.
   */
   assert( p->nPendingData==0 );
-  rc = sqlite3Fts3PendingTermsFlush(p);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts3PendingTermsFlush(p);
+  }
 
   if( p->zContentTbl==0 ){
     fts3DbExec(&rc, db,
