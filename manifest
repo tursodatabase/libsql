@@ -1,5 +1,5 @@
-C Earlier\sdetection\sof\scorruption\sin\ssqlite3VdbeRecordCompare()\sin\sorder\sto\navoid\sa\spotential\sbuffer\soverread.
-D 2014-03-26T14:51:07.017
+C Add\sa\stest\scase\sto\sverify\sthat\sthe\sprevious\schange\savoids\sexcess\sbuffer\noverread\sin\ssqlite3VdbeRecordCompare().
+D 2014-03-26T15:05:56.169
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -405,7 +405,7 @@ F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 58ec333a01997fe655e34e5bea52b7a2a6b9704d
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
-F test/corruptI.test 645794bfc0bbcb962df34302a52118b0ed6a21fb
+F test/corruptI.test 487e9e5eac227fca974eed0a0bd5791cccc9eb86
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 851abdb8fd9b5a8a6ce21db53d30dbac3c430cc7
-R 08734d76a115f4a142a4825f21f3cdab
+P 28ddecff044dbc2dff50a7d8406ab67dfe06587f
+R 6b54752b8296f7dffb679821462bd1b5
 U drh
-Z 2973842cba6cb939f8ad2063fb07de64
+Z 7c53e6dad71c7413b3950e5c5e55a2eb
