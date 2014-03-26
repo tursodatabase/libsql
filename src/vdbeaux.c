@@ -3432,6 +3432,7 @@ int sqlite3VdbeRecordCompare(
   }else{
     idx1 = getVarint32(aKey1, szHdr1);
     d1 = szHdr1;
+    if( d1>(unsigned)nKey1 ) return 1;  /* Corruption */
     i = 0;
   }
 
