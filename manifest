@@ -1,5 +1,5 @@
-C Merge\senhancements\sand\sfixes\sfrom\strunk.
-D 2014-03-25T18:29:12.015
+C Merge\sthe\slatest\strunk\schanges\sand\sthe\sfix\sfor\sthe\scrash\son\sa\scorrupt\ndatabase.
+D 2014-03-27T00:09:00.185
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,7 +282,7 @@ F src/vdbe.c 02f2de0b2f3b198438e3e64a2ceba9407bb8348b
 F src/vdbe.h fb2c48c198300a7c632f09fc940011d2ad2fc2ae
 F src/vdbeInt.h 2b9a6849166d0014c843ae3fd83a062be4efa325
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c 68dbdc77cdc008eeabc088b8b8a60aa743ba8d2a
+F src/vdbeaux.c f81ef920dcf76aceaa1ce77081e9fc5d7a0993dd
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 691f2186ae0943cd746ea7f5498cc9abebb7a7cc
@@ -405,7 +405,7 @@ F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 58ec333a01997fe655e34e5bea52b7a2a6b9704d
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
-F test/corruptI.test 88886ec9cd1bdba835263566bbf60ee009c6ea09
+F test/corruptI.test 1b796461e5b635e0a74e3c4ecb1121c82d319dff
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -825,7 +825,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 2bec93920c6d26adfa781b509b1c9ca0a4d8f39d
+F test/speedtest1.c 90446861e566a9965a8d005381a3c964ff333646
 F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d3e640afe611b6ae0b7f2cff5b00900d7e4d5ee3 9ab7ffd59209aef0ffbf384b3902a93fd3b86a6d
-R 335a8527f823954338585adf78102470
+P e005f2d6dd9faf38cc8fdb9428b5aa6192a6adae f585f5d7a0f9bf8c590388654a3638231eba8892
+R 9012cf758152dd3775ad665fff626f11
 U drh
-Z 4f8dfdcfe6d8ef52977c5b1537285eeb
+Z ffbdc2f043e4deddac6c4b509aff14ac
