@@ -1,5 +1,5 @@
-C Add\san\sextra\stest\scase\sfor\sthe\spotential\sbuffer\soverread\spatched\sby\s[28ddecff04].
-D 2014-03-26T15:14:59.762
+C Enhance\sthe\slogest.c\sutility\swith\snew\soperators:\s"dup",\s"inv",\s"log",\sand\n"nlogn".\s\sProvide\shelp\son\san\sinvalid\sinput.
+D 2014-03-27T14:05:38.733
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1121,7 +1121,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 07aba6270d5a5016ba8107b09e431eea4ecdc123
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/logest.c 7ad625cac3d54012b27d468b7af6612f78b9ba75
+F tool/logest.c 388c318c7ac8b52b7c08ca1e2de0f4ca9a8f7e81
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c c9e05e4a7bcab8fab9f583d5b321fb72f565ad97
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2b28e8d582cf10936fa1faca04a16ca2eeead66f
-R 76c12b0a4284d7654cb2771b2fc9c8eb
-U dan
-Z 22c3e1f8cdae5a20dae420dc313d8edd
+P f585f5d7a0f9bf8c590388654a3638231eba8892
+R fc449dde2f7cf3aac00c9e1a5da52aee
+U drh
+Z ebedee01c152a936b8dfbac0e8a85bc4
