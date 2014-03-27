@@ -1,5 +1,5 @@
-C Use\sxFetch()\sto\saccess\stemporary\sfiles\sin\svdbesort.c.\sUse\sa\ssingle\slarge\sallocation\sinstead\sof\smany\ssmall\sallocations\swhen\saccumulating\srecords\sin\svdbesort.c.\sThis\sis\san\sinterim\scommit\s-\sit\sallocates\sa\sbuffer\sthe\ssize\sof\sthe\spage-cache\severy\stime\sdata\sis\ssorted.
-D 2014-03-27T17:23:41.403
+C Instead\sof\sallocating\sa\ssingle\slarge\sbuffer\sat\sthe\sbeginning\sof\seach\ssort\soperation,\sstart\swith\sa\ssmall\sbuffer\sand\sextend\sit\susing\srealloc()\sas\srequired.
+D 2014-03-27T19:25:02.222
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -285,7 +285,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c f81ef920dcf76aceaa1ce77081e9fc5d7a0993dd
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c d46f384af1997a4441ef9c65759181954efc89cf
+F src/vdbesort.c 08d5e1ee199599d9571942f0560f84963c7a1a9b
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0b35346c32dba14963c85ec178f2b46aa2bbf6dc
-R 8f417577dbf4ab5b5ce5a802872c70f0
+P f4ac1bf28c4ba395ccab8f1c9df72614a61095a7
+R 5fefa7763a5f0d580046ba5219de21a5
 U dan
-Z 2c1a0a402e8f93dd4df9cfe6e1bca5e6
+Z 8f7301353335dd4530b24cac1ad9c37a
