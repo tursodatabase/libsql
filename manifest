@@ -1,5 +1,5 @@
-C Enhance\sthe\slogest.c\sutility\swith\snew\soperators:\s"dup",\s"inv",\s"log",\sand\n"nlogn".\s\sProvide\shelp\son\san\sinvalid\sinput.
-D 2014-03-27T14:05:38.733
+C Minor\scleanup\sof\sthe\scode\sin\sthe\squery\splanner\sthat\scomputes\sthe\scosts\s\nestimates\sfor\sthe\svarious\splans.\s\sThere\sare\sno\schanges\sto\sthe\scosts\sat\sthis\ntime.\s\sBut\sthe\scode\sis\sslightly\smore\sreadable\snow\sand\sthat\smight\sfacilitate\nfuture\senhancements.
+D 2014-03-27T18:36:34.321
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c da8ec216f14af617505799b0b4e52c73dda7a5ca
+F src/where.c 7c53de68bd6762848b746510cf4eb077ffd7d70d
 F src/whereInt.h 2564055b440e44ebec8b47f237bbccae6719b7af
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f585f5d7a0f9bf8c590388654a3638231eba8892
-R fc449dde2f7cf3aac00c9e1a5da52aee
+P b4bd2a062c4baf5f622d61b7411f00de5904ef56
+R 96966a646967b8a2388d32a924ac0ae2
 U drh
-Z ebedee01c152a936b8dfbac0e8a85bc4
+Z 308d20d60c0618b1b3ae79dc397c2638
