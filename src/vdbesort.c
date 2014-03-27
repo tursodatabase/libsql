@@ -105,6 +105,8 @@ struct VdbeSorter {
   sqlite3_file *pTemp1;           /* PMA file 1 */
   SorterRecord *pRecord;          /* Head of in-memory record list */
   UnpackedRecord *pUnpacked;      /* Used to unpack keys */
+  u8* aMemory;                    /* Block to allocate records from */
+  int iMemory;                    /* Offset of free space in aMemory */
 };
 
 /*
@@ -121,6 +123,7 @@ struct VdbeSorterIter {
   u8 *aKey;                       /* Pointer to current key */
   u8 *aBuffer;                    /* Current read buffer */
   int nBuffer;                    /* Size of read buffer in bytes */
+  u8 *aMap;                       /* Pointer to mapping of pFile */
 };
 
 /*
@@ -163,6 +166,7 @@ struct SorterRecord {
 static void vdbeSorterIterZero(sqlite3 *db, VdbeSorterIter *pIter){
   sqlite3DbFree(db, pIter->aAlloc);
   sqlite3DbFree(db, pIter->aBuffer);
+  if( pIter->aMap ) sqlite3OsUnfetch(pIter->pFile, 0, pIter->aMap);
   memset(pIter, 0, sizeof(VdbeSorterIter));
 }
 
@@ -183,6 +187,13 @@ static int vdbeSorterIterRead(
 ){
   int iBuf;                       /* Offset within buffer to read from */
   int nAvail;                     /* Bytes of data available in buffer */
+
+  if( p->aMap ){
+    *ppOut = &p->aMap[p->iReadOff];
+    p->iReadOff += nByte;
+    return SQLITE_OK;
+  }
+
   assert( p->aBuffer );
 
   /* If there is no more data to be read from the buffer, read the next 
@@ -264,18 +275,22 @@ static int vdbeSorterIterRead(
 static int vdbeSorterIterVarint(sqlite3 *db, VdbeSorterIter *p, u64 *pnOut){
   int iBuf;
 
-  iBuf = p->iReadOff % p->nBuffer;
-  if( iBuf && (p->nBuffer-iBuf)>=9 ){
-    p->iReadOff += sqlite3GetVarint(&p->aBuffer[iBuf], pnOut);
+  if( p->aMap ){
+    p->iReadOff += sqlite3GetVarint(&p->aMap[p->iReadOff], pnOut);
   }else{
-    u8 aVarint[16], *a;
-    int i = 0, rc;
-    do{
-      rc = vdbeSorterIterRead(db, p, 1, &a);
-      if( rc ) return rc;
-      aVarint[(i++)&0xf] = a[0];
-    }while( (a[0]&0x80)!=0 );
-    sqlite3GetVarint(aVarint, pnOut);
+    iBuf = p->iReadOff % p->nBuffer;
+    if( iBuf && (p->nBuffer-iBuf)>=9 ){
+      p->iReadOff += sqlite3GetVarint(&p->aBuffer[iBuf], pnOut);
+    }else{
+      u8 aVarint[16], *a;
+      int i = 0, rc;
+      do{
+        rc = vdbeSorterIterRead(db, p, 1, &a);
+        if( rc ) return rc;
+        aVarint[(i++)&0xf] = a[0];
+      }while( (a[0]&0x80)!=0 );
+      sqlite3GetVarint(aVarint, pnOut);
+    }
   }
 
   return SQLITE_OK;
@@ -323,6 +338,7 @@ static int vdbeSorterIterInit(
 ){
   int rc = SQLITE_OK;
   int nBuf;
+  void *pMap;
 
   nBuf = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
 
@@ -333,33 +349,41 @@ static int vdbeSorterIterInit(
   pIter->iReadOff = iStart;
   pIter->nAlloc = 128;
   pIter->aAlloc = (u8 *)sqlite3DbMallocRaw(db, pIter->nAlloc);
-  pIter->nBuffer = nBuf;
-  pIter->aBuffer = (u8 *)sqlite3DbMallocRaw(db, nBuf);
 
-  if( !pIter->aBuffer ){
-    rc = SQLITE_NOMEM;
+  /* See if this PMA can be read using xFetch. */
+  rc = sqlite3OsFetch(pIter->pFile, 0, pSorter->iWriteOff, &pMap);
+  if( rc!=SQLITE_OK ) return rc;
+  if( pMap ){
+    pIter->aMap = (u8*)pMap;
   }else{
-    int iBuf;
+    pIter->nBuffer = nBuf;
+    pIter->aBuffer = (u8 *)sqlite3DbMallocRaw(db, nBuf);
 
-    iBuf = iStart % nBuf;
-    if( iBuf ){
-      int nRead = nBuf - iBuf;
-      if( (iStart + nRead) > pSorter->iWriteOff ){
-        nRead = (int)(pSorter->iWriteOff - iStart);
+    if( !pIter->aBuffer ){
+      rc = SQLITE_NOMEM;
+    }else{
+      int iBuf;
+
+      iBuf = iStart % nBuf;
+      if( iBuf ){
+        int nRead = nBuf - iBuf;
+        if( (iStart + nRead) > pSorter->iWriteOff ){
+          nRead = (int)(pSorter->iWriteOff - iStart);
+        }
+        rc = sqlite3OsRead(
+            pSorter->pTemp1, &pIter->aBuffer[iBuf], nRead, iStart
+        );
+        assert( rc!=SQLITE_IOERR_SHORT_READ );
       }
-      rc = sqlite3OsRead(
-          pSorter->pTemp1, &pIter->aBuffer[iBuf], nRead, iStart
-      );
-      assert( rc!=SQLITE_IOERR_SHORT_READ );
     }
+  }
 
-    if( rc==SQLITE_OK ){
-      u64 nByte;                       /* Size of PMA in bytes */
-      pIter->iEof = pSorter->iWriteOff;
-      rc = vdbeSorterIterVarint(db, pIter, &nByte);
-      pIter->iEof = pIter->iReadOff + nByte;
-      *pnByte += nByte;
-    }
+  if( rc==SQLITE_OK ){
+    u64 nByte;                       /* Size of PMA in bytes */
+    pIter->iEof = pSorter->iWriteOff;
+    rc = vdbeSorterIterVarint(db, pIter, &nByte);
+    pIter->iEof = pIter->iReadOff + nByte;
+    *pnByte += nByte;
   }
 
   if( rc==SQLITE_OK ){
@@ -488,6 +512,10 @@ int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
     mxCache = db->aDb[0].pSchema->cache_size;
     if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
     pSorter->mxPmaSize = mxCache * pgsz;
+
+    pSorter->aMemory = (u8*)sqlite3DbMallocRaw(db, pSorter->mxPmaSize);
+    assert( pSorter->iMemory==0 );
+    if( !pSorter->aMemory ) return SQLITE_NOMEM;
   }
 
   return SQLITE_OK;
@@ -521,7 +549,9 @@ void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
     sqlite3OsCloseFree(pSorter->pTemp1);
     pSorter->pTemp1 = 0;
   }
-  vdbeSorterRecordFree(db, pSorter->pRecord);
+  if( pSorter->aMemory==0 ){
+    vdbeSorterRecordFree(db, pSorter->pRecord);
+  }
   pSorter->pRecord = 0;
   pSorter->iWriteOff = 0;
   pSorter->iReadOff = 0;
@@ -529,6 +559,7 @@ void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
   pSorter->nTree = 0;
   pSorter->nPMA = 0;
   pSorter->aTree = 0;
+  pSorter->iMemory = 0;
 }
 
 
@@ -540,6 +571,7 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
   if( pSorter ){
     sqlite3VdbeSorterReset(db, pSorter);
     sqlite3DbFree(db, pSorter->pUnpacked);
+    sqlite3DbFree(db, pSorter->aMemory);
     sqlite3DbFree(db, pSorter);
     pCsr->pSorter = 0;
   }
@@ -551,12 +583,17 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
 ** Otherwise, set *ppFile to 0 and return an SQLite error code.
 */
 static int vdbeSorterOpenTempFile(sqlite3 *db, sqlite3_file **ppFile){
-  int dummy;
-  return sqlite3OsOpenMalloc(db->pVfs, 0, ppFile,
+  int rc;
+  rc = sqlite3OsOpenMalloc(db->pVfs, 0, ppFile,
       SQLITE_OPEN_TEMP_JOURNAL |
       SQLITE_OPEN_READWRITE    | SQLITE_OPEN_CREATE |
-      SQLITE_OPEN_EXCLUSIVE    | SQLITE_OPEN_DELETEONCLOSE, &dummy
+      SQLITE_OPEN_EXCLUSIVE    | SQLITE_OPEN_DELETEONCLOSE, &rc
   );
+  if( rc==SQLITE_OK ){
+    i64 max = SQLITE_MAX_MMAP_SIZE;
+    sqlite3OsFileControlHint( *ppFile, SQLITE_FCNTL_MMAP_SIZE, (void*)&max);
+  }
+  return rc;
 }
 
 /*
@@ -725,6 +762,29 @@ static void fileWriterWriteVarint(FileWriter *p, u64 iVal){
   fileWriterWrite(p, aByte, nByte);
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
+/*
+** The first argument is a file-handle open on a temporary file. The file
+** is guaranteed to be nByte bytes or smaller in size. This function 
+** attempts to extend the file to nByte bytes in size and to ensure that
+** the VFS has memory mapped it.
+**
+** Whether or not the file does end up memory mapped of course depends on 
+** the specific VFS implementation.
+*/
+static int vdbeSorterExtendFile(sqlite3_file *pFile, i64 nByte){
+  int rc = sqlite3OsTruncate(pFile, nByte);
+  if( rc==SQLITE_OK ){
+    void *p = 0;
+    sqlite3OsFetch(pFile, 0, nByte, &p);
+    sqlite3OsUnfetch(pFile, 0, p);
+  }
+  return rc;
+}
+#else
+# define vdbeSorterExtendFile(x,y) SQLITE_OK
+#endif
+
 /*
 ** Write the current contents of the in-memory linked-list to a PMA. Return
 ** SQLITE_OK if successful, or an SQLite error code otherwise.
@@ -760,6 +820,13 @@ static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
     assert( pSorter->nPMA==0 );
   }
 
+  /* Try to get the file to memory map */
+  if( rc==SQLITE_OK ){
+    rc = vdbeSorterExtendFile(
+        pSorter->pTemp1, pSorter->iWriteOff + pSorter->nInMemory + 9
+    );
+  }
+
   if( rc==SQLITE_OK ){
     SorterRecord *p;
     SorterRecord *pNext = 0;
@@ -771,12 +838,14 @@ static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
       pNext = p->pNext;
       fileWriterWriteVarint(&writer, p->nVal);
       fileWriterWrite(&writer, p->pVal, p->nVal);
-      sqlite3DbFree(db, p);
+      if( pSorter->aMemory==0 ) sqlite3DbFree(db, p);
     }
     pSorter->pRecord = p;
     rc = fileWriterFinish(db, &writer, &pSorter->iWriteOff);
   }
 
+  if( pSorter->aMemory ) pSorter->pRecord = 0;
+  assert( pSorter->pRecord==0 || rc!=SQLITE_OK );
   return rc;
 }
 
@@ -789,22 +858,36 @@ int sqlite3VdbeSorterWrite(
   Mem *pVal                       /* Memory cell containing record */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
+  SorterRecord sRecord;           /* Used for aMemory overflow record */
   int rc = SQLITE_OK;             /* Return Code */
   SorterRecord *pNew;             /* New list element */
 
   assert( pSorter );
   pSorter->nInMemory += sqlite3VarintLen(pVal->n) + pVal->n;
 
-  pNew = (SorterRecord *)sqlite3DbMallocRaw(db, pVal->n + sizeof(SorterRecord));
-  if( pNew==0 ){
-    rc = SQLITE_NOMEM;
+  if( pSorter->aMemory ){
+    int nReq = sizeof(SorterRecord) + pVal->n;
+    if( (pSorter->iMemory+nReq) > pSorter->mxPmaSize ){
+      pNew = &sRecord;
+      pNew->pVal = pVal->z;
+    }else{
+      pNew = &pSorter->aMemory[pSorter->iMemory];
+      pSorter->iMemory += ROUND8(nReq);
+    }
   }else{
-    pNew->pVal = (void *)&pNew[1];
-    memcpy(pNew->pVal, pVal->z, pVal->n);
-    pNew->nVal = pVal->n;
-    pNew->pNext = pSorter->pRecord;
-    pSorter->pRecord = pNew;
+    pNew = (SorterRecord *)sqlite3DbMallocRaw(db, pVal->n+sizeof(SorterRecord));
+    if( pNew==0 ){
+      return SQLITE_NOMEM;
+    }
   }
+
+  if( pNew!=&sRecord ){
+    pNew->pVal = (void*)&pNew[1];
+    memcpy(pNew->pVal, pVal->z, pVal->n);
+  }
+  pNew->nVal = pVal->n;
+  pNew->pNext = pSorter->pRecord;
+  pSorter->pRecord = pNew;
 
   /* See if the contents of the sorter should now be written out. They
   ** are written out when either of the following are true:
@@ -815,18 +898,22 @@ int sqlite3VdbeSorterWrite(
   **   * The total memory allocated for the in-memory list is greater 
   **     than (page-size * 10) and sqlite3HeapNearlyFull() returns true.
   */
-  if( rc==SQLITE_OK && pSorter->mxPmaSize>0 && (
-        (pSorter->nInMemory>pSorter->mxPmaSize)
-     || (pSorter->nInMemory>pSorter->mnPmaSize && sqlite3HeapNearlyFull())
-  )){
+  if( pSorter->mxPmaSize>0 ){
+    if( (pNew==&sRecord) || (pSorter->aMemory==0 && (
+        (pSorter->nInMemory > pSorter->mxPmaSize)
+     || (pSorter->nInMemory > pSorter->mnPmaSize && sqlite3HeapNearlyFull())
+    ))){
 #ifdef SQLITE_DEBUG
-    i64 nExpect = pSorter->iWriteOff
-                + sqlite3VarintLen(pSorter->nInMemory)
-                + pSorter->nInMemory;
+      i64 nExpect = pSorter->iWriteOff
+        + sqlite3VarintLen(pSorter->nInMemory)
+        + pSorter->nInMemory;
 #endif
-    rc = vdbeSorterListToPMA(db, pCsr);
-    pSorter->nInMemory = 0;
-    assert( rc!=SQLITE_OK || (nExpect==pSorter->iWriteOff) );
+      rc = vdbeSorterListToPMA(db, pCsr);
+      pSorter->nInMemory = 0;
+      pSorter->iMemory = 0;
+      assert( rc!=SQLITE_OK || (nExpect==pSorter->iWriteOff) );
+      assert( rc!=SQLITE_OK || pSorter->pRecord==0 );
+    }
   }
 
   return rc;
@@ -934,6 +1021,9 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
       if( pTemp2==0 ){
         assert( iWrite2==0 );
         rc = vdbeSorterOpenTempFile(db, &pTemp2);
+        if( rc==SQLITE_OK ){
+          rc = vdbeSorterExtendFile(pTemp2, pSorter->iWriteOff);
+        }
       }
 
       if( rc==SQLITE_OK ){
@@ -1039,7 +1129,9 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
     SorterRecord *pFree = pSorter->pRecord;
     pSorter->pRecord = pFree->pNext;
     pFree->pNext = 0;
-    vdbeSorterRecordFree(db, pFree);
+    if( pSorter->aMemory==0 ){
+      vdbeSorterRecordFree(db, pFree);
+    }
     *pbEof = !pSorter->pRecord;
     rc = SQLITE_OK;
   }
