@@ -4936,7 +4936,7 @@ static i8 wherePathSatisfiesOrderBy(
       }
     }
   } /* End the loop over all WhereLoops from outer-most down to inner-most */
-  if( obSat==obDone ) return nOrderBy;
+  if( obSat==obDone ) return (i8)nOrderBy;
   if( !isOrderDistinct ){
     for(i=nOrderBy-1; i>0; i--){
       Bitmask m = MASKBIT(i) - 1;
