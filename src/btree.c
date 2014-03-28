@@ -4588,6 +4588,7 @@ int sqlite3BtreeMovetoUnpacked(
 
   if( pIdxKey ){
     xRecordCompare = sqlite3VdbeFindCompare(pIdxKey);
+    pIdxKey->isCorrupt = 0;
     assert( pIdxKey->default_rc==1 
          || pIdxKey->default_rc==0 
          || pIdxKey->default_rc==-1
@@ -4711,6 +4712,7 @@ int sqlite3BtreeMovetoUnpacked(
           c = xRecordCompare(nCell, pCellKey, pIdxKey, 0);
           sqlite3_free(pCellKey);
         }
+        assert( pIdxKey->isCorrupt==0 || c==0 );
         if( c<0 ){
           lwr = idx+1;
         }else if( c>0 ){
@@ -4720,6 +4722,7 @@ int sqlite3BtreeMovetoUnpacked(
           *pRes = 0;
           rc = SQLITE_OK;
           pCur->aiIdx[pCur->iPage] = (u16)idx;
+          if( pIdxKey->isCorrupt ) rc = SQLITE_CORRUPT;
           goto moveto_finish;
         }
         if( lwr>upr ) break;

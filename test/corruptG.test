@@ -47,12 +47,12 @@ do_test 1.2 {
   catchsql {
     SELECT c FROM t1 WHERE a>'abc';
   }
-} {0 {}}
+} {1 {database disk image is malformed}}
 do_test 1.3 {
   catchsql {
      PRAGMA integrity_check
   }
-} {0 ok}
+} {1 {database disk image is malformed}}
 do_test 1.4 {
   catchsql {
     SELECT c FROM t1 ORDER BY a;
@@ -71,11 +71,6 @@ do_test 2.1 {
   catchsql {
     SELECT rowid FROM t1 WHERE a='abc' and b='xyz123456789XYZ';
   }
-  # The following test result is brittle.  The point above is to try to
-  # force a buffer overread by a corrupt database file.  If we get an
-  # incorrect answer from a corrupt database file, that is OK.  If the
-  # result below changes, that just means that "undefined behavior" has
-  # changed.
-} {/0 .*/}
+} {1 {database disk image is malformed}}
 
 finish_test
