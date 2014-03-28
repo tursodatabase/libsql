@@ -3410,6 +3410,24 @@ case OP_SorterOpen: {
   break;
 }
 
+/* Opcode: SequenceTest P1 P2 * * *
+** Synopsis: if( cursor[P1].ctr++ ) pc = P2
+**
+** P1 is a sorter cursor. If the sequence counter is currently zero, jump
+** to P2. Regardless of whether or not the jump is taken, increment the
+** the sequence value.
+*/
+case OP_SequenceTest: {
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC->pSorter );
+  if( (pC->seqCount++)==0 ){
+    pc = pOp->p2 - 1;
+  }
+  break;
+}
+
 /* Opcode: OpenPseudo P1 P2 P3 * *
 ** Synopsis: P3 columns in r[P2]
 **

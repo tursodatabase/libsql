@@ -19,6 +19,11 @@ set testprefix wal64k
 
 ifcapable !wal {finish_test ; return }
 
+if {$tcl_platform(platform) != "unix"} {
+  finish_test
+  return
+}
+
 db close
 test_syscall pagesize 65536
 sqlite3 db test.db
@@ -44,4 +49,3 @@ integrity_check 1.3
 db close
 test_syscall pagesize -1
 finish_test
-
