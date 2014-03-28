@@ -959,7 +959,8 @@ int sqlite3VdbeSorterWrite(
 
       aNew = sqlite3Realloc(pSorter->aMemory, nNew);
       if( !aNew ) return SQLITE_NOMEM;
-      pSorter->pRecord = aNew + ((u8*)pSorter->pRecord - pSorter->aMemory);
+      pSorter->pRecord = (SorterRecord*)
+           (aNew + ((u8*)pSorter->pRecord - pSorter->aMemory));
       pSorter->aMemory = aNew;
       pSorter->nMemory = nNew;
     }
@@ -1052,7 +1053,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
   pSorter->aTree = (int *)&pSorter->aIter[N];
   pSorter->nTree = N;
 
-  do {
+  while(1){
     int iNew;                     /* Index of new, merged, PMA */
 
     for(iNew=0; 
@@ -1105,6 +1106,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
         if( rc==SQLITE_OK ) rc = rc2;
       }
     }
+    if( rc ) break;
 
     if( pSorter->nPMA<=SORTER_MAX_MERGE_COUNT ){
       break;
@@ -1117,7 +1119,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
       pSorter->iReadOff = 0;
       iWrite2 = 0;
     }
-  }while( rc==SQLITE_OK );
+  }
 
   if( pTemp2 ){
     sqlite3OsCloseFree(pTemp2);
