@@ -1280,7 +1280,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
     if( bUseFg==0 ){
       /* Launch a background thread for this operation */
       void *pCtx = (void*)pThread;
-      assert( pSorter->aMemory==0 || pThread->aListMemory==0 );
+      assert( pSorter->aMemory==0 || pThread->aListMemory!=0 );
       if( pThread->aListMemory ){
         if( pSorter->aMemory==0 ){
           pSorter->aMemory = sqlite3Malloc(pSorter->nMemory);

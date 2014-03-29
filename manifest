@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\svdbesort.c\scausing\sspurious\sSQLITE_NOMEM\serrors\swhen\susing\smemsys3\sor\smemsys5.
-D 2014-03-29T09:34:45.457
+C Fix\sa\sbroken\sassert()\sin\svdbesort.c.
+D 2014-03-29T10:01:58.802
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 1153175fb57a8454e1c8cf79b59b7bf92b26779d
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 80812ceb596febe778d506587d24bef6fabc00d4
+F src/vdbesort.c 2881297f4acdba5908078c5d7f00635288a1ca08
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1160,7 +1160,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fc4d04e6b039ea5aeb47739e38c5926e63a4b01b
-R 58d9f269ef794b7845b0943176283ea0
+P a683c05f6250389e84b980b16559e162ba1a27c2
+R d8e63408790a442d33eec2a57272c54d
 U dan
-Z 849635fb9198ef253e10fe8fcdddee0e
+Z 6c5e71d99f167a1ded5f09353b3e0513
