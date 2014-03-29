@@ -1046,7 +1046,6 @@ static int vdbeSorterNext(
 ){
   int rc;
   int iPrev = pMerger->aTree[1];/* Index of iterator to advance */
-  int i;                        /* Index of aTree[] to recalculate */
 
   /* Advance the current iterator */
   rc = vdbeSorterIterNext(&pMerger->aIter[iPrev]);
@@ -1281,11 +1280,14 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
     if( bUseFg==0 ){
       /* Launch a background thread for this operation */
       void *pCtx = (void*)pThread;
-      if( pSorter->aMemory==0 ){
-        pSorter->aMemory = sqlite3Malloc(pSorter->nMemory);
-        if( pSorter->aMemory==0 ) return SQLITE_NOMEM;
-      }else{
-        pSorter->nMemory = sqlite3MallocSize(pSorter->aMemory);
+      assert( pSorter->aMemory==0 || pThread->aListMemory==0 );
+      if( pThread->aListMemory ){
+        if( pSorter->aMemory==0 ){
+          pSorter->aMemory = sqlite3Malloc(pSorter->nMemory);
+          if( pSorter->aMemory==0 ) return SQLITE_NOMEM;
+        }else{
+          pSorter->nMemory = sqlite3MallocSize(pSorter->aMemory);
+        }
       }
       rc = sqlite3ThreadCreate(&pThread->pThread, vdbeSorterThreadMain, pCtx);
     }else{
@@ -1337,19 +1339,21 @@ int sqlite3VdbeSorterWrite(
   */
   nReq = pVal->n + sizeof(SorterRecord);
   nPMA = pVal->n + sqlite3VarintLen(pVal->n);
-  if( pSorter->aMemory ){
-    bFlush = pSorter->iMemory && (pSorter->iMemory+nReq) > pSorter->mxPmaSize;
-  }else{
-    bFlush = (
-        (pSorter->nInMemory > pSorter->mxPmaSize)
-     || (pSorter->nInMemory > pSorter->mnPmaSize && sqlite3HeapNearlyFull())
-    );
-  }
-  if( bFlush ){
-    rc = vdbeSorterFlushPMA(db, pCsr, 0);
-    pSorter->nInMemory = 0;
-    pSorter->iMemory = 0;
-    assert( rc!=SQLITE_OK || pSorter->pRecord==0 );
+  if( pSorter->mxPmaSize ){
+    if( pSorter->aMemory ){
+      bFlush = pSorter->iMemory && (pSorter->iMemory+nReq) > pSorter->mxPmaSize;
+    }else{
+      bFlush = (
+          (pSorter->nInMemory > pSorter->mxPmaSize)
+       || (pSorter->nInMemory > pSorter->mnPmaSize && sqlite3HeapNearlyFull())
+      );
+    }
+    if( bFlush ){
+      rc = vdbeSorterFlushPMA(db, pCsr, 0);
+      pSorter->nInMemory = 0;
+      pSorter->iMemory = 0;
+      assert( rc!=SQLITE_OK || pSorter->pRecord==0 );
+    }
   }
 
   pSorter->nInMemory += nPMA;
@@ -1375,7 +1379,7 @@ int sqlite3VdbeSorterWrite(
     pSorter->iMemory += ROUND8(nReq);
     pNew->u.iNext = (u8*)(pSorter->pRecord) - pSorter->aMemory;
   }else{
-    pNew = (SorterRecord *)sqlite3Malloc(pVal->n+sizeof(SorterRecord));
+    pNew = (SorterRecord *)sqlite3Malloc(nReq);
     if( pNew==0 ){
       return SQLITE_NOMEM;
     }
