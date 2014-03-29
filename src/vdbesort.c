@@ -1052,11 +1052,59 @@ static int vdbeSorterNext(
   rc = vdbeSorterIterNext(&pMerger->aIter[iPrev]);
 
   /* Update contents of aTree[] */
-  for(i=(pMerger->nTree+iPrev)/2; rc==SQLITE_OK && i>0; i=i/2){
-    rc = vdbeSorterDoCompare(pThread, pMerger, i);
+  if( rc==SQLITE_OK ){
+    int i;                      /* Index of aTree[] to recalculate */
+    VdbeSorterIter *pIter1;     /* First iterator to compare */
+    VdbeSorterIter *pIter2;     /* Second iterator to compare */
+    u8 *pKey2;                  /* To pIter2->aKey, or 0 if record cached */
+
+    /* Find the first two iterators to compare. The one that was just
+    ** advanced (iPrev) and the one next to it in the array.  */
+    pIter1 = &pMerger->aIter[(iPrev & 0xFFFE)];
+    pIter2 = &pMerger->aIter[(iPrev | 0x0001)];
+    pKey2 = pIter2->aKey;
+
+    for(i=(pMerger->nTree+iPrev)/2; i>0; i=i/2){
+      /* Compare pIter1 and pIter2. Store the result in variable iRes. */
+      int iRes;
+      if( pIter1->pFile==0 ){
+        iRes = +1;
+      }else if( pIter2->pFile==0 ){
+        iRes = -1;
+      }else{
+        vdbeSorterCompare(pThread, 0,
+            pIter1->aKey, pIter1->nKey, pKey2, pIter2->nKey, &iRes
+        );
+      }
+
+      /* If pIter1 contained the smaller value, set aTree[i] to its index.
+      ** Then set pIter2 to the next iterator to compare to pIter1. In this
+      ** case there is no cache of pIter2 in pThread->pUnpacked, so set
+      ** pKey2 to point to the record belonging to pIter2.
+      **
+      ** Alternatively, if pIter2 contains the smaller of the two values,
+      ** set aTree[i] to its index and update pIter1. If vdbeSorterCompare()
+      ** was actually called above, then pThread->pUnpacked now contains
+      ** a value equivalent to pIter2. So set pKey2 to NULL to prevent
+      ** vdbeSorterCompare() from decoding pIter2 again.
+      **
+      ** If the two values were equal, then the value from the oldest
+      ** PMA should be considered smaller. The VdbeSorter.aIter[] array
+      ** is sorted from oldest to newest, so pIter1 contains older values
+      ** than pIter2 iff (pIter1<pIter2).  */
+      if( iRes<0 || (iRes==0 && pIter1<pIter2) ){
+        pMerger->aTree[i] = (int)(pIter1 - pMerger->aIter);
+        pIter2 = &pMerger->aIter[ pMerger->aTree[i ^ 0x0001] ];
+        pKey2 = pIter2->aKey;
+      }else{
+        if( pIter1->pFile ) pKey2 = 0;
+        pMerger->aTree[i] = (int)(pIter2 - pMerger->aIter);
+        pIter1 = &pMerger->aIter[ pMerger->aTree[i ^ 0x0001] ];
+      }
+    }
+    *pbEof = (pMerger->aIter[pMerger->aTree[1]].pFile==0);
   }
 
-  *pbEof = (pMerger->aIter[pMerger->aTree[1]].pFile==0);
   return rc;
 }
 
