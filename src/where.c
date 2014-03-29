@@ -3712,59 +3712,24 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 }
 
 /*
-** Insert or replace a WhereLoop entry using the template supplied.
+** Search the list of WhereLoops in *ppPrev looking for one that can be
+** supplanted by pTemplate.
 **
-** An existing WhereLoop entry might be overwritten if the new template
-** is better and has fewer dependencies.  Or the template will be ignored
-** and no insert will occur if an existing WhereLoop is faster and has
-** fewer dependencies than the template.  Otherwise a new WhereLoop is
-** added based on the template.
+** Return NULL if the WhereLoop list contains an entry that can supplant
+** pTemplate, in other words if pTemplate does not belong on the list.
 **
-** If pBuilder->pOrSet is not NULL then we only care about only the
-** prerequisites and rRun and nOut costs of the N best loops.  That
-** information is gathered in the pBuilder->pOrSet object.  This special
-** processing mode is used only for OR clause processing.
+** If pX is a WhereLoop that pTemplate can supplant, then return the
+** link that points to pX.
 **
-** When accumulating multiple loops (when pBuilder->pOrSet is NULL) we
-** still might overwrite similar loops with the new template if the
-** template is better.  Loops may be overwritten if the following 
-** conditions are met:
-**
-**    (1)  They have the same iTab.
-**    (2)  They have the same iSortIdx.
-**    (3)  The template has same or fewer dependencies than the current loop
-**    (4)  The template has the same or lower cost than the current loop
-**    (5)  The template uses more terms of the same index but has no additional
-**         dependencies          
+** If pTemplate cannot supplant any existing element of the list but needs
+** to be added to the list, then return a pointer to the tail of the list.
 */
-static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
-  WhereLoop **ppPrev, *p, *pNext = 0;
-  WhereInfo *pWInfo = pBuilder->pWInfo;
-  sqlite3 *db = pWInfo->pParse->db;
-
-  /* If pBuilder->pOrSet is defined, then only keep track of the costs
-  ** and prereqs.
-  */
-  if( pBuilder->pOrSet!=0 ){
-#if WHERETRACE_ENABLED
-    u16 n = pBuilder->pOrSet->n;
-    int x =
-#endif
-    whereOrInsert(pBuilder->pOrSet, pTemplate->prereq, pTemplate->rRun,
-                                    pTemplate->nOut);
-#if WHERETRACE_ENABLED /* 0x8 */
-    if( sqlite3WhereTrace & 0x8 ){
-      sqlite3DebugPrintf(x?"   or-%d:  ":"   or-X:  ", n);
-      whereLoopPrint(pTemplate, pBuilder->pWC);
-    }
-#endif
-    return SQLITE_OK;
-  }
-
-  /* Search for an existing WhereLoop to overwrite, or which takes
-  ** priority over pTemplate.
-  */
-  for(ppPrev=&pWInfo->pLoops, p=*ppPrev; p; ppPrev=&p->pNextLoop, p=*ppPrev){
+static WhereLoop **whereLoopFindLesser(
+  WhereLoop **ppPrev,
+  const WhereLoop *pTemplate
+){
+  WhereLoop *p;
+  for(p=(*ppPrev); p; ppPrev=&p->pNextLoop, p=*ppPrev){
     if( p->iTab!=pTemplate->iTab || p->iSortIdx!=pTemplate->iSortIdx ){
       /* If either the iTab or iSortIdx values for two WhereLoop are different
       ** then those WhereLoops need to be considered separately.  Neither is
@@ -3799,12 +3764,10 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       ){
         /* Overwrite an existing WhereLoop with an similar one that uses
         ** more terms of the index */
-        pNext = p->pNextLoop;
         break;
       }else{
-        /* pTemplate is not helpful.
-        ** Return without changing or adding anything */
-        goto whereLoopInsert_noop;
+        /* There is an existing WhereLoop that is better than pTemplate */
+        return 0;
       }
     }
     if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
@@ -3816,9 +3779,78 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       ** or (4) number of output rows, and is no worse in any of those
       ** categories. */
       assert( p->rSetup>=pTemplate->rSetup ); /* SETUP-INVARIANT above */
-      pNext = p->pNextLoop;
       break;
     }
+  }
+  return ppPrev;
+}
+
+/*
+** Insert or replace a WhereLoop entry using the template supplied.
+**
+** An existing WhereLoop entry might be overwritten if the new template
+** is better and has fewer dependencies.  Or the template will be ignored
+** and no insert will occur if an existing WhereLoop is faster and has
+** fewer dependencies than the template.  Otherwise a new WhereLoop is
+** added based on the template.
+**
+** If pBuilder->pOrSet is not NULL then we care about only the
+** prerequisites and rRun and nOut costs of the N best loops.  That
+** information is gathered in the pBuilder->pOrSet object.  This special
+** processing mode is used only for OR clause processing.
+**
+** When accumulating multiple loops (when pBuilder->pOrSet is NULL) we
+** still might overwrite similar loops with the new template if the
+** template is better.  Loops may be overwritten if the following 
+** conditions are met:
+**
+**    (1)  They have the same iTab.
+**    (2)  They have the same iSortIdx.
+**    (3)  The template has same or fewer dependencies than the current loop
+**    (4)  The template has the same or lower cost than the current loop
+**    (5)  The template uses more terms of the same index but has no additional
+**         dependencies          
+*/
+static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
+  WhereLoop **ppPrev, *p;
+  WhereInfo *pWInfo = pBuilder->pWInfo;
+  sqlite3 *db = pWInfo->pParse->db;
+
+  /* If pBuilder->pOrSet is defined, then only keep track of the costs
+  ** and prereqs.
+  */
+  if( pBuilder->pOrSet!=0 ){
+#if WHERETRACE_ENABLED
+    u16 n = pBuilder->pOrSet->n;
+    int x =
+#endif
+    whereOrInsert(pBuilder->pOrSet, pTemplate->prereq, pTemplate->rRun,
+                                    pTemplate->nOut);
+#if WHERETRACE_ENABLED /* 0x8 */
+    if( sqlite3WhereTrace & 0x8 ){
+      sqlite3DebugPrintf(x?"   or-%d:  ":"   or-X:  ", n);
+      whereLoopPrint(pTemplate, pBuilder->pWC);
+    }
+#endif
+    return SQLITE_OK;
+  }
+
+  /* Look for an existing WhereLoop to replace with pTemplate
+  */
+  ppPrev = whereLoopFindLesser(&pWInfo->pLoops, pTemplate);
+
+  if( ppPrev==0 ){
+    /* There already exists a WhereLoop on the list that is better
+    ** than pTemplate, so just ignore pTemplate */
+#if WHERETRACE_ENABLED /* 0x8 */
+    if( sqlite3WhereTrace & 0x8 ){
+      sqlite3DebugPrintf("ins-noop: ");
+      whereLoopPrint(pTemplate, pBuilder->pWC);
+    }
+#endif
+    return SQLITE_OK;  
+  }else{
+    p = *ppPrev;
   }
 
   /* If we reach this point it means that either p[] should be overwritten
@@ -3836,13 +3868,33 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   }
 #endif
   if( p==0 ){
-    p = sqlite3DbMallocRaw(db, sizeof(WhereLoop));
+    /* Allocate a new WhereLoop to add to the end of the list */
+    *ppPrev = p = sqlite3DbMallocRaw(db, sizeof(WhereLoop));
     if( p==0 ) return SQLITE_NOMEM;
     whereLoopInit(p);
+    p->pNextLoop = 0;
+  }else{
+    /* We will be overwriting WhereLoop p[].  But before we do, first
+    ** go through the rest of the list and delete any other entries besides
+    ** p[] that are also supplated by pTemplate */
+    WhereLoop **ppTail = &p->pNextLoop;
+    WhereLoop *pToDel;
+    while( *ppTail ){
+      ppTail = whereLoopFindLesser(ppTail, pTemplate);
+      if( NEVER(ppTail==0) ) break;
+      pToDel = *ppTail;
+      if( pToDel==0 ) break;
+      *ppTail = pToDel->pNextLoop;
+#if WHERETRACE_ENABLED /* 0x8 */
+      if( sqlite3WhereTrace & 0x8 ){
+        sqlite3DebugPrintf("ins-del: ");
+        whereLoopPrint(pToDel, pBuilder->pWC);
+      }
+#endif
+      whereLoopDelete(db, pToDel);
+    }
   }
   whereLoopXfer(db, p, pTemplate);
-  p->pNextLoop = pNext;
-  *ppPrev = p;
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
     Index *pIndex = p->u.btree.pIndex;
     if( pIndex && pIndex->tnum==0 ){
@@ -3850,16 +3902,6 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     }
   }
   return SQLITE_OK;
-
-  /* Jump here if the insert is a no-op */
-whereLoopInsert_noop:
-#if WHERETRACE_ENABLED /* 0x8 */
-  if( sqlite3WhereTrace & 0x8 ){
-    sqlite3DebugPrintf("ins-noop: ");
-    whereLoopPrint(pTemplate, pBuilder->pWC);
-  }
-#endif
-  return SQLITE_OK;  
 }
 
 /*
