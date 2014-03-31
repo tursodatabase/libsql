@@ -3712,6 +3712,51 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 }
 
 /*
+** Compare every WhereLoop X on the list p against pTemplate.  If:
+**
+**    (1) both X and pTemplate refer to the same table, and
+**    (2) both X and pTemplate use a single index, and
+**    (3) pTemplate uses all the same WHERE clause terms as X plus
+**        at least one more term,
+**
+** then make sure the cost pTemplate is less than the cost of X, adjusting
+** the cost of pTemplate downward if necessary.
+**
+** Example: When computing the query plan for the SELECT below:
+**
+**     CREATE TABLE t1(a,b,c,d);
+**     CREATE INDEX t1abc ON t1(a,b,c);
+**     CREATE INDEX t1bc ON t1(b,c);
+**     SELECT d FROM t1 WHERE a=? AND b=? AND c>=? ORDER BY c;
+** 
+** Make sure the cost of using three three columns of index t1abc is less
+** than the cost of using both columns of t1bc.
+*/
+static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
+  if( (pTemplate->wsFlags & WHERE_INDEXED)==0 ) return;
+  if( pTemplate->nLTerm==0 ) return;
+  for(; p; p=p->pNextLoop){
+    if( p->iTab==pTemplate->iTab
+     && (p->wsFlags & WHERE_INDEXED)!=0
+     && p->nLTerm<pTemplate->nLTerm
+     && (p->rRun<pTemplate->rRun || (p->rRun==pTemplate->rRun &&
+                                     p->nOut<=pTemplate->nOut))
+    ){
+      int i, j;
+      for(j=0, i=p->nLTerm-1; i>=0 && j>=0; i--){
+        for(j=pTemplate->nLTerm-1; j>=0; j--){
+          if( pTemplate->aLTerm[j]==p->aLTerm[i] ) break;
+        }
+      }
+      if( j>=0 ){
+        pTemplate->rRun = p->rRun;
+        pTemplate->nOut = p->nOut - 1;
+      }
+    }
+  }
+}
+
+/*
 ** Search the list of WhereLoops in *ppPrev looking for one that can be
 ** supplanted by pTemplate.
 **
@@ -3747,39 +3792,30 @@ static WhereLoop **whereLoopFindLesser(
     ** rSetup. Call this SETUP-INVARIANT */
     assert( p->rSetup>=pTemplate->rSetup );
 
-    if( (p->prereq & pTemplate->prereq)==p->prereq
-     && p->rSetup<=pTemplate->rSetup
-     && p->rRun<=pTemplate->rRun
-     && p->nOut<=pTemplate->nOut
+    /* If existing WhereLoop p is better than pTemplate, pTemplate can be
+    ** discarded.  WhereLoop p is better if:
+    **   (1)  p has no more dependencies than pTemplate, and
+    **   (2)  p has an equal or lower cost than pTemplate
+    */
+    if( (p->prereq & pTemplate->prereq)==p->prereq    /* (1)  */
+     && p->rSetup<=pTemplate->rSetup                  /* (2a) */
+     && p->rRun<=pTemplate->rRun                      /* (2b) */
+     && p->nOut<=pTemplate->nOut                      /* (2c) */
     ){
-      /* This branch taken when p is equal or better than pTemplate in 
-      ** all of (1) dependencies (2) setup-cost, (3) run-cost, and
-      ** (4) number of output rows. */
-      assert( p->rSetup==pTemplate->rSetup );
-      if( p->prereq==pTemplate->prereq
-       && p->nLTerm<pTemplate->nLTerm
-       && (p->wsFlags & pTemplate->wsFlags & WHERE_INDEXED)!=0
-       && (p->u.btree.pIndex==pTemplate->u.btree.pIndex
-          || pTemplate->rRun+p->nLTerm<=p->rRun+pTemplate->nLTerm)
-      ){
-        /* Overwrite an existing WhereLoop with an similar one that uses
-        ** more terms of the index */
-        break;
-      }else{
-        /* There is an existing WhereLoop that is better than pTemplate */
-        return 0;
-      }
+      return 0;  /* Discard pTemplate */
     }
-    if( (p->prereq & pTemplate->prereq)==pTemplate->prereq
-     && p->rRun>=pTemplate->rRun
-     && p->nOut>=pTemplate->nOut
+
+    /* If pTemplate is always better than p, then cause p to be overwritten
+    ** with pTemplate.  pTemplate is better than p if:
+    **   (1)  pTemplate has no more dependences than p, and
+    **   (2)  pTemplate has an equal or lower cost than p.
+    */
+    if( (p->prereq & pTemplate->prereq)==pTemplate->prereq   /* (1)  */
+     && p->rRun>=pTemplate->rRun                             /* (2a) */
+     && p->nOut>=pTemplate->nOut                             /* (2b) */
     ){
-      /* Overwrite an existing WhereLoop with a better one: one that is
-      ** better at one of (1) dependencies, (2) setup-cost, (3) run-cost
-      ** or (4) number of output rows, and is no worse in any of those
-      ** categories. */
       assert( p->rSetup>=pTemplate->rSetup ); /* SETUP-INVARIANT above */
-      break;
+      break;   /* Cause p to be overwritten by pTemplate */
     }
   }
   return ppPrev;
@@ -3801,15 +3837,13 @@ static WhereLoop **whereLoopFindLesser(
 **
 ** When accumulating multiple loops (when pBuilder->pOrSet is NULL) we
 ** still might overwrite similar loops with the new template if the
-** template is better.  Loops may be overwritten if the following 
+** new template is better.  Loops may be overwritten if the following 
 ** conditions are met:
 **
 **    (1)  They have the same iTab.
 **    (2)  They have the same iSortIdx.
 **    (3)  The template has same or fewer dependencies than the current loop
 **    (4)  The template has the same or lower cost than the current loop
-**    (5)  The template uses more terms of the same index but has no additional
-**         dependencies          
 */
 static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
   WhereLoop **ppPrev, *p;
@@ -3837,6 +3871,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 
   /* Look for an existing WhereLoop to replace with pTemplate
   */
+  whereLoopAdjustCost(pWInfo->pLoops, pTemplate);
   ppPrev = whereLoopFindLesser(&pWInfo->pLoops, pTemplate);
 
   if( ppPrev==0 ){
