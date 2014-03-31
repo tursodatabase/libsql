@@ -783,7 +783,9 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     addr = p->nOp - 1;
   }
   pOp = &p->aOp[addr];
-  assert( pOp->p4type==P4_NOTUSED || pOp->p4type==P4_INT32 );
+  assert( pOp->p4type==P4_NOTUSED
+       || pOp->p4type==P4_INT32
+       || pOp->p4type==P4_KEYINFO );
   freeP4(db, pOp->p4type, pOp->p4.p);
   pOp->p4.p = 0;
   if( n==P4_INT32 ){
@@ -2733,7 +2735,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
     if( rc ) return rc;
     if( hasMoved ){
       p->cacheStatus = CACHE_STALE;
-      p->nullRow = 1;
+      if( hasMoved==2 ) p->nullRow = 1;
     }
   }
   return SQLITE_OK;
@@ -3403,10 +3405,13 @@ static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
 ** Key1 and Key2 do not have to contain the same number of fields. If all 
 ** fields that appear in both keys are equal, then pPKey2->default_rc is 
 ** returned.
+**
+** If database corruption is discovered, set pPKey2->isCorrupt to non-zero
+** and return 0.
 */
 int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1,   /* Left key */
-  const UnpackedRecord *pPKey2,   /* Right key */
+  UnpackedRecord *pPKey2,         /* Right key */
   int bSkip                       /* If true, skip the first field */
 ){
   u32 d1;                         /* Offset into aKey[] of next data element */
@@ -3432,6 +3437,10 @@ int sqlite3VdbeRecordCompare(
   }else{
     idx1 = getVarint32(aKey1, szHdr1);
     d1 = szHdr1;
+    if( d1>(unsigned)nKey1 ){ 
+      pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+      return 0;  /* Corruption */
+    }
     i = 0;
   }
 
@@ -3508,7 +3517,8 @@ int sqlite3VdbeRecordCompare(
         testcase( (d1+mem1.n)==(unsigned)nKey1 );
         testcase( (d1+mem1.n+1)==(unsigned)nKey1 );
         if( (d1+mem1.n) > (unsigned)nKey1 ){
-          rc = 1;                /* Corruption */
+          pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+          return 0;                /* Corruption */
         }else if( pKeyInfo->aColl[i] ){
           mem1.enc = pKeyInfo->enc;
           mem1.db = pKeyInfo->db;
@@ -3534,7 +3544,8 @@ int sqlite3VdbeRecordCompare(
         testcase( (d1+nStr)==(unsigned)nKey1 );
         testcase( (d1+nStr+1)==(unsigned)nKey1 );
         if( (d1+nStr) > (unsigned)nKey1 ){
-          rc = 1;                /* Corruption */
+          pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+          return 0;                /* Corruption */
         }else{
           int nCmp = MIN(nStr, pRhs->n);
           rc = memcmp(&aKey1[d1], pRhs->z, nCmp);
@@ -3587,10 +3598,13 @@ int sqlite3VdbeRecordCompare(
 ** that (a) the first field of pPKey2 is an integer, and (b) the 
 ** size-of-header varint at the start of (pKey1/nKey1) fits in a single
 ** byte (i.e. is less than 128).
+**
+** To avoid concerns about buffer overreads, this routine is only used
+** on schemas where the maximum valid header size is 63 bytes or less.
 */
 static int vdbeRecordCompareInt(
   int nKey1, const void *pKey1, /* Left key */
-  const UnpackedRecord *pPKey2, /* Right key */
+  UnpackedRecord *pPKey2,       /* Right key */
   int bSkip                     /* Ignored */
 ){
   const u8 *aKey = &((const u8*)pKey1)[*(const u8*)pKey1 & 0x3F];
@@ -3603,6 +3617,7 @@ static int vdbeRecordCompareInt(
   UNUSED_PARAMETER(bSkip);
 
   assert( bSkip==0 );
+  assert( (*(u8*)pKey1)<=0x3F || CORRUPT_DB );
   switch( serial_type ){
     case 1: { /* 1-byte signed integer */
       lhs = ONE_BYTE_INT(aKey);
@@ -3687,7 +3702,7 @@ static int vdbeRecordCompareInt(
 */
 static int vdbeRecordCompareString(
   int nKey1, const void *pKey1, /* Left key */
-  const UnpackedRecord *pPKey2, /* Right key */
+  UnpackedRecord *pPKey2,       /* Right key */
   int bSkip
 ){
   const u8 *aKey1 = (const u8*)pKey1;
@@ -3708,7 +3723,10 @@ static int vdbeRecordCompareString(
     int szHdr = aKey1[0];
 
     nStr = (serial_type-12) / 2;
-    if( (szHdr + nStr) > nKey1 ) return 0;    /* Corruption */
+    if( (szHdr + nStr) > nKey1 ){
+      pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+      return 0;    /* Corruption */
+    }
     nCmp = MIN( pPKey2->aMem[0].n, nStr );
     res = memcmp(&aKey1[szHdr], pPKey2->aMem[0].z, nCmp);
 
@@ -3873,7 +3891,7 @@ idx_rowid_corruption:
 */
 int sqlite3VdbeIdxKeyCompare(
   VdbeCursor *pC,                  /* The cursor to compare against */
-  const UnpackedRecord *pUnpacked, /* Unpacked version of key */
+  UnpackedRecord *pUnpacked,       /* Unpacked version of key */
   int *res                         /* Write the comparison result here */
 ){
   i64 nCellKey = 0;

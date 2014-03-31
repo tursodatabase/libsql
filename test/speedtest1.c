@@ -474,7 +474,7 @@ void testset_main(void){
   speedtest1_end_test();
 
 
-  n = g.szTest/2;
+  n = 25;
   speedtest1_begin_test(130, "%d SELECTS, numeric BETWEEN, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
@@ -492,12 +492,51 @@ void testset_main(void){
   speedtest1_end_test();
 
 
-  n = g.szTest/5;
+  n = 10;
   speedtest1_begin_test(140, "%d SELECTS, LIKE, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
     "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
     " WHERE c LIKE ?1; -- %d times", n
+  );
+  for(i=1; i<=n; i++){
+    x1 = speedtest1_random()%maxb;
+    zNum[0] = '%';
+    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+    zNum[len] = '%';
+    zNum[len+1] = 0;
+    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+
+  n = 10;
+  speedtest1_begin_test(142, "%d SELECTS w/ORDER BY, unindexed", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_prepare(
+    "SELECT a, b, c FROM t1 WHERE c LIKE ?1\n"
+    " ORDER BY a; -- %d times", n
+  );
+  for(i=1; i<=n; i++){
+    x1 = speedtest1_random()%maxb;
+    zNum[0] = '%';
+    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+    zNum[len] = '%';
+    zNum[len+1] = 0;
+    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  n = 10; //g.szTest/5;
+  speedtest1_begin_test(145, "%d SELECTS w/ORDER BY and LIMIT, unindexed", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_prepare(
+    "SELECT a, b, c FROM t1 WHERE c LIKE ?1\n"
+    " ORDER BY a LIMIT 10; -- %d times", n
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%maxb;

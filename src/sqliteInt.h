@@ -1627,6 +1627,7 @@ struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   u16 nField;         /* Number of entries in apMem[] */
   i8 default_rc;      /* Comparison result if keys are equal */
+  u8 isCorrupt;       /* Corruption detected by xRecordCompare() */
   Mem *aMem;          /* Values */
   int r1;             /* Value to return if (lhs > rhs) */
   int r2;             /* Value to return if (rhs < lhs) */
@@ -1893,8 +1894,8 @@ struct Expr {
 #define EP_VarSelect 0x000020 /* pSelect is correlated, not constant */
 #define EP_DblQuoted 0x000040 /* token.z was originally in "..." */
 #define EP_InfixFunc 0x000080 /* True for an infix function: LIKE, GLOB, etc */
-#define EP_Collate   0x000100 /* Tree contains a TK_COLLATE opeartor */
-      /* unused      0x000200 */
+#define EP_Collate   0x000100 /* Tree contains a TK_COLLATE operator */
+#define EP_Generic   0x000200 /* Ignore COLLATE or affinity on this tree */
 #define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
 #define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
 #define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
@@ -1958,7 +1959,6 @@ struct Expr {
 */
 struct ExprList {
   int nExpr;             /* Number of expressions on the list */
-  int iECursor;          /* VDBE Cursor associated with this ExprList */
   struct ExprList_item { /* For each expression in the list */
     Expr *pExpr;            /* The list of expressions */
     char *zName;            /* Token associated with this expression */
@@ -2182,7 +2182,7 @@ struct Select {
   u8 op;                 /* One of: TK_UNION TK_ALL TK_INTERSECT TK_EXCEPT */
   u16 selFlags;          /* Various SF_* values */
   int iLimit, iOffset;   /* Memory registers holding LIMIT & OFFSET counters */
-  int addrOpenEphm[3];   /* OP_OpenEphem opcodes related to this select */
+  int addrOpenEphm[2];   /* OP_OpenEphem opcodes related to this select */
   u64 nSelectRow;        /* Estimated number of result rows */
   SrcList *pSrc;         /* The FROM clause */
   Expr *pWhere;          /* The WHERE clause */
@@ -2206,9 +2206,9 @@ struct Select {
 #define SF_UsesEphemeral   0x0008  /* Uses the OpenEphemeral opcode */
 #define SF_Expanded        0x0010  /* sqlite3SelectExpand() called on this */
 #define SF_HasTypeInfo     0x0020  /* FROM subqueries have Table metadata */
-#define SF_UseSorter       0x0040  /* Sort using a sorter */
+                    /*     0x0040  NOT USED */
 #define SF_Values          0x0080  /* Synthesized from VALUES clause */
-#define SF_Materialize     0x0100  /* NOT USED */
+                    /*     0x0100  NOT USED */
 #define SF_NestedFrom      0x0200  /* Part of a parenthesized FROM clause */
 #define SF_MaybeConvert    0x0400  /* Need convertCompoundSelectToSubquery() */
 #define SF_Recursive       0x0800  /* The recursive part of a recursive CTE */
@@ -2261,13 +2261,15 @@ struct Select {
 **                     starting with pDest->iSdst.
 **
 **     SRT_Table       Store results in temporary table pDest->iSDParm.
-**                     This is like SRT_EphemTab except that the table
-**                     is assumed to already be open.
+**     SRT_Fifo        This is like SRT_EphemTab except that the table
+**                     is assumed to already be open.  SRT_Fifo has
+**                     the additional property of being able to ignore
+**                     the ORDER BY clause.
 **
-**     SRT_DistTable   Store results in a temporary table pDest->iSDParm.
+**     SRT_DistFifo    Store results in a temporary table pDest->iSDParm.
 **                     But also use temporary table pDest->iSDParm+1 as
 **                     a record of all prior results and ignore any duplicate
-**                     rows.  Name means:  "Distinct Table".
+**                     rows.  Name means:  "Distinct Fifo".
 **
 **     SRT_Queue       Store results in priority queue pDest->iSDParm (really
 **                     an index).  Append a sequence number so that all entries
@@ -2281,19 +2283,20 @@ struct Select {
 #define SRT_Except       2  /* Remove result from a UNION index */
 #define SRT_Exists       3  /* Store 1 if the result is not empty */
 #define SRT_Discard      4  /* Do not save the results anywhere */
+#define SRT_Fifo         5  /* Store result as data with an automatic rowid */
+#define SRT_DistFifo     6  /* Like SRT_Fifo, but unique results only */
+#define SRT_Queue        7  /* Store result in an queue */
+#define SRT_DistQueue    8  /* Like SRT_Queue, but unique results only */
 
 /* The ORDER BY clause is ignored for all of the above */
-#define IgnorableOrderby(X) ((X->eDest)<=SRT_Discard)
+#define IgnorableOrderby(X) ((X->eDest)<=SRT_DistQueue)
 
-#define SRT_Output       5  /* Output each row of result */
-#define SRT_Mem          6  /* Store result in a memory cell */
-#define SRT_Set          7  /* Store results as keys in an index */
-#define SRT_EphemTab     8  /* Create transient tab and store like SRT_Table */
-#define SRT_Coroutine    9  /* Generate a single row of result */
-#define SRT_Table       10  /* Store result as data with an automatic rowid */
-#define SRT_DistTable   11  /* Like SRT_Table, but unique results only */
-#define SRT_Queue       12  /* Store result in an queue */
-#define SRT_DistQueue   13  /* Like SRT_Queue, but unique results only */
+#define SRT_Output       9  /* Output each row of result */
+#define SRT_Mem         10  /* Store result in a memory cell */
+#define SRT_Set         11  /* Store results as keys in an index */
+#define SRT_EphemTab    12  /* Create transient tab and store like SRT_Table */
+#define SRT_Coroutine   13  /* Generate a single row of result */
+#define SRT_Table       14  /* Store result as data with an automatic rowid */
 
 /*
 ** An instance of this object describes where to put of the results of
@@ -2391,8 +2394,6 @@ struct Parse {
   u8 checkSchema;      /* Causes schema cookie check after an error */
   u8 nested;           /* Number of nested calls to the parser/code generator */
   u8 nTempReg;         /* Number of temporary registers in aTempReg[] */
-  u8 nColCache;        /* Number of entries in aColCache[] */
-  u8 iColCache;        /* Next entry in aColCache[] to replace */
   u8 isMultiWrite;     /* True if statement may modify/insert multiple rows */
   u8 mayAbort;         /* True if statement may throw an ABORT exception */
   u8 hasCompound;      /* Need to invoke convertCompoundSelectToSubquery() */
@@ -3291,7 +3292,7 @@ int sqlite3ReadSchema(Parse *pParse);
 CollSeq *sqlite3FindCollSeq(sqlite3*,u8 enc, const char*,int);
 CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char*zName);
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr);
-Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, Token*);
+Expr *sqlite3ExprAddCollateToken(Parse *pParse, Expr*, const Token*);
 Expr *sqlite3ExprAddCollateString(Parse*,Expr*,const char*);
 Expr *sqlite3ExprSkipCollate(Expr*);
 int sqlite3CheckCollSeq(Parse *, CollSeq *);
