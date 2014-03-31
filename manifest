@@ -1,5 +1,5 @@
-C Disable\sthe\swal64k.test\sscript\sfor\snon-unix\ssystems\ssince\sit\sdepends\son\nunix-only\sfeatures.
-D 2014-03-28T14:41:35.536
+C Avoid\sa\s(harmless)\sbuffer\soverread\sthat\sis\spossible\son\san\sOOM\swhen\nMEMSYS5\sis\sengaged.
+D 2014-03-31T13:42:42.977
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
-F src/mem5.c aeb019f271ea53de83d651ec526877e6ba863450
+F src/mem5.c 74670012946c4adc8a6ad84d03acc80959c3e529
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
 F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a4e47150f32b3a4120b1f89ccc66d633d829e3bb
-R 578568415288cd31fe0adba6128329da
+P 27deb6e49bcc76714dbdc61b34748603155ac770
+R 74e3f11f049d7792447568e00e413b7f
 U drh
-Z 045e2748905f8bd05ecf1197b97d7f20
+Z 4989508149fff1b415b46911a02fce9e
