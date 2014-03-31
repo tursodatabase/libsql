@@ -514,10 +514,10 @@ struct BtCursor {
 /*
 ** Legal values for BtCursor.curFlags
 */
-#define BTCF_ValidNKey    0x01   /* True if info.nKey is valid */
-#define BTCF_ValidOvfl    0x02   /* True if aOverflow is valid */
-#define BTCF_AtLast       0x04   /* Cursor is pointing ot the last entry */
-#define BTCF_WriteFlag    0x08   /* True if a write cursor */
+#define BTCF_WriteFlag    0x01   /* True if a write cursor */
+#define BTCF_ValidNKey    0x02   /* True if info.nKey is valid */
+#define BTCF_ValidOvfl    0x04   /* True if aOverflow is valid */
+#define BTCF_AtLast       0x08   /* Cursor is pointing ot the last entry */
 #define BTCF_Incrblob     0x10   /* True if an incremental I/O handle */
 
 /*

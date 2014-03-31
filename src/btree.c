@@ -3633,7 +3633,8 @@ static int btreeCursor(
   pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
   pCur->pBt = pBt;
-  pCur->curFlags = wrFlag ? BTCF_WriteFlag : 0;
+  assert( wrFlag==0 || wrFlag==BTCF_WriteFlag );
+  pCur->curFlags = wrFlag;
   pCur->pNext = pBt->pCursor;
   if( pCur->pNext ){
     pCur->pNext->pPrev = pCur;
@@ -3965,7 +3966,9 @@ static int accessPayload(
   int iIdx = 0;
   MemPage *pPage = pCur->apPage[pCur->iPage]; /* Btree page of current entry */
   BtShared *pBt = pCur->pBt;                  /* Btree this cursor belongs to */
-  int bEnd;                       /* True if reading to end of data */
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
+  int bEnd;                                   /* True if reading to end of data */
+#endif
 
   assert( pPage );
   assert( pCur->eState==CURSOR_VALID );
@@ -3975,7 +3978,9 @@ static int accessPayload(
   getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
   nKey = (pPage->intKey ? 0 : (int)pCur->info.nKey);
+#ifdef SQLITE_DIRECT_OVERFLOW_READ
   bEnd = (offset+amt==nKey+pCur->info.nData);
+#endif
 
   if( NEVER(offset+amt > nKey+pCur->info.nData) 
    || &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
