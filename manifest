@@ -1,5 +1,5 @@
-C Also\smake\ssure\san\sindex\sthat\sis\sa\sproper\ssubset\sof\ssome\sother\sindex\shas\sa\nhigher\scost\sthan\sthat\sother\sindex.\s\sAdd\stest\scases.
-D 2014-03-31T19:49:00.374
+C Remove\san\sunnecessary\sconditional.
+D 2014-03-31T20:05:20.135
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 182f16d91060418dfcc7401d24e43d8ec24e026c
+F src/where.c 7b5010f5c4d6cf81a8d6fcc9e09b05faad71b395
 F src/whereInt.h 2564055b440e44ebec8b47f237bbccae6719b7af
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1160,7 +1160,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ea8b0910040198751551b0b960e6b783913607df
-R 176e1ff66c14893be5de17b3890f1972
+P b7830d232b073a197aa1092e78cb24e88cb10fd3
+R ddf1c9d2d849c5f13c78d81687d216d7
 U drh
-Z 3bf4657410567331f2f5534ba4eae60e
+Z 7ba197d4f98bb2ab782217a2f7675fd9

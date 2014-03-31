@@ -3717,7 +3717,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 */
 static int whereLoopProperSubset(const WhereLoop *pA, const WhereLoop *pB){
   int i, j;
-  if( pA->nLTerm>=pB->nLTerm ) return 0;
+  assert( pA->nLTerm<pB->nLTerm );  /* Checked by calling function */
   for(j=0, i=pA->nLTerm-1; i>=0 && j>=0; i--){
     for(j=pB->nLTerm-1; j>=0; j--){
       if( pB->aLTerm[j]==pA->aLTerm[i] ) break;
