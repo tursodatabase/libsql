@@ -3712,46 +3712,54 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 }
 
 /*
-** Compare every WhereLoop X on the list p against pTemplate.  If:
+** Return TRUE if the set of WHERE clause terms used by pA is a proper
+** subset of the WHERE clause terms used by pB.
+*/
+static int whereLoopProperSubset(const WhereLoop *pA, const WhereLoop *pB){
+  int i, j;
+  if( pA->nLTerm>=pB->nLTerm ) return 0;
+  for(j=0, i=pA->nLTerm-1; i>=0 && j>=0; i--){
+    for(j=pB->nLTerm-1; j>=0; j--){
+      if( pB->aLTerm[j]==pA->aLTerm[i] ) break;
+    }
+  }
+  return j>=0;
+}
+
+/*
+** Try to adjust the cost of WhereLoop pTemplate upwards or downwards so
+** that:
 **
-**    (1) both X and pTemplate refer to the same table, and
-**    (2) both X and pTemplate use a single index, and
-**    (3) pTemplate uses all the same WHERE clause terms as X plus
-**        at least one more term,
+**   (1) pTemplate costs less than any other WhereLoops that are a proper
+**       subset of pTemplate
 **
-** then make sure the cost pTemplate is less than the cost of X, adjusting
-** the cost of pTemplate downward if necessary.
+**   (2) pTemplate costs more than any other WhereLoops for which pTemplate
+**       is a proper subset.
 **
-** Example: When computing the query plan for the SELECT below:
-**
-**     CREATE TABLE t1(a,b,c,d);
-**     CREATE INDEX t1abc ON t1(a,b,c);
-**     CREATE INDEX t1bc ON t1(b,c);
-**     SELECT d FROM t1 WHERE a=? AND b=? AND c>=? ORDER BY c;
-** 
-** Make sure the cost of using three three columns of index t1abc is less
-** than the cost of using both columns of t1bc.
+** To say "WhereLoop X is a proper subset of Y" means that X uses fewer
+** WHERE clause terms than Y and that every WHERE clause term used by X is
+** also used by Y.
 */
 static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
   if( (pTemplate->wsFlags & WHERE_INDEXED)==0 ) return;
-  if( pTemplate->nLTerm==0 ) return;
   for(; p; p=p->pNextLoop){
-    if( p->iTab==pTemplate->iTab
-     && (p->wsFlags & WHERE_INDEXED)!=0
-     && p->nLTerm<pTemplate->nLTerm
+    if( p->iTab!=pTemplate->iTab ) continue;
+    if( (p->wsFlags & WHERE_INDEXED)==0 ) continue;
+    if( p->nLTerm<pTemplate->nLTerm
      && (p->rRun<pTemplate->rRun || (p->rRun==pTemplate->rRun &&
                                      p->nOut<=pTemplate->nOut))
+     && whereLoopProperSubset(p, pTemplate)
     ){
-      int i, j;
-      for(j=0, i=p->nLTerm-1; i>=0 && j>=0; i--){
-        for(j=pTemplate->nLTerm-1; j>=0; j--){
-          if( pTemplate->aLTerm[j]==p->aLTerm[i] ) break;
-        }
-      }
-      if( j>=0 ){
-        pTemplate->rRun = p->rRun;
-        pTemplate->nOut = p->nOut - 1;
-      }
+      pTemplate->rRun = p->rRun;
+      pTemplate->nOut = p->nOut - 1;
+    }else
+    if( p->nLTerm>pTemplate->nLTerm
+     && (p->rRun>pTemplate->rRun || (p->rRun==pTemplate->rRun &&
+                                     p->nOut>=pTemplate->nOut))
+     && whereLoopProperSubset(pTemplate, p)
+    ){
+      pTemplate->rRun = p->rRun;
+      pTemplate->nOut = p->nOut + 1;
     }
   }
 }
