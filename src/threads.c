@@ -27,6 +27,8 @@
 */
 #include "sqliteInt.h"
 
+#if SQLITE_MAX_WORKER_THREADS>0
+
 /********************************* Unix Pthreads ****************************/
 #if SQLITE_OS_UNIX && defined(SQLITE_MUTEX_PTHREADS) && SQLITE_THREADSAFE>0
 
@@ -215,3 +217,4 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
 #endif /* !defined(SQLITE_THREADS_IMPLEMENTED) */
 /****************************** End Single-Threaded *************************/
+#endif /* SQLITE_MAX_WORKER_THREADS>0 */

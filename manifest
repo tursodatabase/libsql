@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\svdbesort.c.
-D 2014-03-29T10:01:58.802
+C Add\sthe\sSQLITE_MAX_WORKER_THREADS\scompile\stime\soption.\sAnd\sthe\sSQLITE_CONFIG_WORKER_THREADS\ssqlite3_config()\sswitch.
+D 2014-03-31T19:57:34.075
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/expr.c da2b3cb41081af6b56e95e7c9e95949564ce2e21
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
 F src/func.c 2945bb2c4cdc0ac43733046285a4434310be1811
-F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
+F src/global.c 57d9dd92f4e2469cf4046847f456d45bdda0f202
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -186,7 +186,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 691b25754bef596108fe60ff1bcbe8445369c9db
+F src/main.c d3655832585baef4c2356529a5c6ca5ca3bd7c1f
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -219,10 +219,10 @@ F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 20055cf917222e660c4222fea306bd13a0623caa
 F src/shell.c f48b63f8e582e7998ecefd051d697f91fb1453df
-F src/sqlite.h.in a2ef671f92747a5a1c8a47bad5c585a8dd9eca80
+F src/sqlite.h.in 0249af5d9d3bbeab0dc1f58e1f9fee878807732a
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 3f5190a4e07ca227035334da8d66ebe227071528
+F src/sqliteInt.h 7f42c2792b951db22fa189bbed828a5e3b38789c
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -272,7 +272,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c 3a0ab304682fecbceb689e7d9b904211fde11d78
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c b96d62f88c06d4fa980a4a92685d1b130c4c84d3
+F src/threads.c 6992f70cab8d5d8451a6b5641a9256d1749af87b
 F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 1153175fb57a8454e1c8cf79b59b7bf92b26779d
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 2881297f4acdba5908078c5d7f00635288a1ca08
+F src/vdbesort.c b4d6133bada297e118492420346f83cd76c6da31
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1160,7 +1160,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a683c05f6250389e84b980b16559e162ba1a27c2
-R d8e63408790a442d33eec2a57272c54d
+P 18d1b402f2dbe78f1a1113bb356b710e348365ef
+R 8b3347b8372cc17a3226330524ab6da6
 U dan
-Z 6c5e71d99f167a1ded5f09353b3e0513
+Z 11cb5db8cbfdddf6047ddaf9c26850df

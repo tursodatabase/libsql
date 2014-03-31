@@ -1715,6 +1715,16 @@ struct sqlite3_mem_methods {
 ** SQLITE_CONFIG_WIN32_HEAPSIZE takes a 32-bit unsigned integer value
 ** that specifies the maximum size of the created heap.
 ** </dl>
+**
+** [[SQLITE_CONFIG_WORKER_THREADS]]
+** <dt>SQLITE_CONFIG_WORKER_THREADS
+** <dd>^SQLITE_CONFIG_WORKER_THREADS takes a single argument of type int.
+** It is used to set the number of background worker threads that may be
+** launched when sorting large amounts of data. A value of 0 means launch 
+** no background threads at all. The maximum number of background threads 
+** allowed is configured at build-time by the SQLITE_MAX_WORKER_THREADS 
+** pre-processor option. 
+** </dl>
 */
 #define SQLITE_CONFIG_SINGLETHREAD  1  /* nil */
 #define SQLITE_CONFIG_MULTITHREAD   2  /* nil */
@@ -1739,6 +1749,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_SQLLOG       21  /* xSqllog, void* */
 #define SQLITE_CONFIG_MMAP_SIZE    22  /* sqlite3_int64, sqlite3_int64 */
 #define SQLITE_CONFIG_WIN32_HEAPSIZE      23  /* int nByte */
+#define SQLITE_CONFIG_WORKER_THREADS      24  /* int nWorker */
 
 /*
 ** CAPI3REF: Database Connection Configuration Options

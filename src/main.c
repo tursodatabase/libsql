@@ -515,6 +515,13 @@ int sqlite3_config(int op, ...){
     }
 #endif
 
+    case SQLITE_CONFIG_WORKER_THREADS: {
+      int n = va_arg(ap, int);
+      if( n>SQLITE_MAX_WORKER_THREADS ) n = SQLITE_MAX_WORKER_THREADS;
+      if( n>=0 ) sqlite3GlobalConfig.nWorker = n;
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
       break;

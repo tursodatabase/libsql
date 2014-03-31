@@ -27,14 +27,6 @@ typedef struct FileWriter FileWriter;
 
 
 /*
-** Maximum number of threads to use. Setting this value to 1 forces all
-** operations to be single-threaded.
-*/
-#ifndef SQLITE_MAX_SORTER_THREAD
-# define SQLITE_MAX_SORTER_THREAD 4
-#endif
-
-/*
 ** Candidate values for SorterThread.eWork
 */
 #define SORTER_THREAD_SORT   1
@@ -48,9 +40,10 @@ typedef struct FileWriter FileWriter;
 ** is configured and passed to vdbeSorterThreadMain() - either directly by 
 ** the main thread or via a background thread.
 **
-** Exactly SQLITE_MAX_SORTER_THREAD instances of this structure are allocated
+** Exactly SorterThread.nThread instances of this structure are allocated
 ** as part of each VdbeSorter object. Instances are never allocated any other
-** way.
+** way. SorterThread.nThread is set to the number of worker threads allowed
+** (see SQLITE_CONFIG_WORKER_THREADS) plus one (the main thread).
 **
 ** When a background thread is launched to perform work, SorterThread.bDone
 ** is set to 0 and the SorterThread.pThread variable set to point to the
@@ -59,7 +52,7 @@ typedef struct FileWriter FileWriter;
 ** exits. SorterThread.pThread and bDone are always cleared after the 
 ** background thread has been joined.
 **
-** One object (specifically, VdbeSorter.aThread[SQLITE_MAX_SORTER_THREAD-1])
+** One object (specifically, VdbeSorter.aThread[SorterThread.nThread-1])
 ** is reserved for the foreground thread.
 **
 ** The nature of the work performed is determined by SorterThread.eWork,
@@ -187,7 +180,8 @@ struct VdbeSorter {
   u8 *aMemory;                    /* Block of memory to alloc records from */
   int iMemory;                    /* Offset of first free byte in aMemory */
   int nMemory;                    /* Size of aMemory allocation in bytes */
-  SorterThread aThread[SQLITE_MAX_SORTER_THREAD];
+  int nThread;                    /* Size of aThread[] array */
+  SorterThread aThread[1];
 };
 
 /*
@@ -572,7 +566,7 @@ static int vdbeSorterDoCompare(
     iRes = i1;
   }else{
     int res;
-    assert( pThread->pUnpacked!=0 );  /* allocated in vdbeSorterMerge() */
+    assert( pThread->pUnpacked!=0 );  /* allocated in vdbeSorterThreadMain() */
     vdbeSorterCompare(
         pThread, 0, p1->aKey, p1->nKey, p2->aKey, p2->nKey, &res
     );
@@ -597,21 +591,26 @@ int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
   VdbeSorter *pSorter;            /* The new sorter */
   KeyInfo *pKeyInfo;              /* Copy of pCsr->pKeyInfo with db==0 */
   int szKeyInfo;                  /* Size of pCsr->pKeyInfo in bytes */
+  int sz;                         /* Size of pSorter in bytes */
   int rc = SQLITE_OK;
+  int nWorker = (sqlite3GlobalConfig.bCoreMutex?sqlite3GlobalConfig.nWorker:0);
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
   szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nField-1)*sizeof(CollSeq*);
-  pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sizeof(VdbeSorter)+szKeyInfo);
+  sz = sizeof(VdbeSorter) + nWorker * sizeof(SorterThread);
+
+  pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
   pCsr->pSorter = pSorter;
   if( pSorter==0 ){
     rc = SQLITE_NOMEM;
   }else{
-    pKeyInfo = (KeyInfo*)&pSorter[1];
+    pKeyInfo = (KeyInfo*)((u8*)pSorter + sz);
     memcpy(pKeyInfo, pCsr->pKeyInfo, szKeyInfo);
     pKeyInfo->db = 0;
     pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
 
-    for(i=0; i<SQLITE_MAX_SORTER_THREAD; i++){
+    pSorter->nThread = nWorker + 1;
+    for(i=0; i<pSorter->nThread; i++){
       SorterThread *pThread = &pSorter->aThread[i];
       pThread->pKeyInfo = pKeyInfo;
       pThread->pVfs = db->pVfs;
@@ -674,10 +673,11 @@ static void vdbeSorterThreadCleanup(sqlite3 *db, SorterThread *pThread){
 /*
 ** Join all threads.  
 */
+#if SQLITE_MAX_WORKER_THREADS>0
 static int vdbeSorterJoinAll(VdbeSorter *pSorter, int rcin){
   int rc = rcin;
   int i;
-  for(i=0; i<SQLITE_MAX_SORTER_THREAD; i++){
+  for(i=0; i<pSorter->nThread; i++){
     SorterThread *pThread = &pSorter->aThread[i];
     if( pThread->pThread ){
       void *pRet;
@@ -690,6 +690,9 @@ static int vdbeSorterJoinAll(VdbeSorter *pSorter, int rcin){
   }
   return rc;
 }
+#else
+# define vdbeSorterJoinAll(x,rcin) (rcin)
+#endif
 
 /*
 ** Allocate a new SorterMerger object with space for nIter iterators.
@@ -739,7 +742,7 @@ static void vdbeSorterMergerFree(SorterMerger *pMerger){
 void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
   int i;
   vdbeSorterJoinAll(pSorter, SQLITE_OK);
-  for(i=0; i<SQLITE_MAX_SORTER_THREAD; i++){
+  for(i=0; i<pSorter->nThread; i++){
     SorterThread *pThread = &pSorter->aThread[i];
     vdbeSorterThreadCleanup(db, pThread);
   }
@@ -1246,8 +1249,9 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
   SorterThread *pThread;        /* Thread context used to create new PMA */
 
   pSorter->bUsePMA = 1;
-  for(i=0; ALWAYS( i<SQLITE_MAX_SORTER_THREAD ); i++){
+  for(i=0; ALWAYS( i<pSorter->nThread ); i++){
     pThread = &pSorter->aThread[i];
+#if SQLITE_MAX_WORKER_THREADS>0
     if( pThread->bDone ){
       void *pRet;
       assert( pThread->pThread );
@@ -1258,11 +1262,12 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
         rc = SQLITE_PTR_TO_INT(pRet);
       }
     }
+#endif
     if( pThread->pThread==0 ) break;
   }
 
   if( rc==SQLITE_OK ){
-    int bUseFg = (bFg || i==(SQLITE_MAX_SORTER_THREAD-1));
+    int bUseFg = (bFg || i==(pSorter->nThread-1));
 
     assert( pThread->pThread==0 && pThread->bDone==0 );
     pThread->eWork = SORTER_THREAD_TO_PMA;
@@ -1277,6 +1282,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
       pSorter->aMemory = aMem;
     }
 
+#if SQLITE_MAX_WORKER_THREADS>0
     if( bUseFg==0 ){
       /* Launch a background thread for this operation */
       void *pCtx = (void*)pThread;
@@ -1290,7 +1296,9 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
         }
       }
       rc = sqlite3ThreadCreate(&pThread->pThread, vdbeSorterThreadMain, pCtx);
-    }else{
+    }else
+#endif
+    {
       /* Use the foreground thread for this operation */
       u8 *aMem;
       rc = vdbeSorterRunThread(pThread);
@@ -1370,7 +1378,9 @@ int sqlite3VdbeSorterWrite(
 
       aNew = sqlite3Realloc(pSorter->aMemory, nNew);
       if( !aNew ) return SQLITE_NOMEM;
-      pSorter->pRecord = aNew + ((u8*)pSorter->pRecord - pSorter->aMemory);
+      pSorter->pRecord = (SorterRecord*)(
+          aNew + ((u8*)pSorter->pRecord - pSorter->aMemory)
+      );
       pSorter->aMemory = aNew;
       pSorter->nMemory = nNew;
     }
@@ -1399,7 +1409,7 @@ int sqlite3VdbeSorterWrite(
 static int vdbeSorterCountPMA(VdbeSorter *pSorter){
   int nPMA = 0;
   int i;
-  for(i=0; i<SQLITE_MAX_SORTER_THREAD; i++){
+  for(i=0; i<pSorter->nThread; i++){
     nPMA += pSorter->aThread[i].nPMA;
   }
   return nPMA;
@@ -1446,19 +1456,21 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
 
   /* If there are more than SORTER_MAX_MERGE_COUNT PMAs on disk, merge
   ** some of them together so that this is no longer the case. */
-  assert( SORTER_MAX_MERGE_COUNT>=SQLITE_MAX_SORTER_THREAD );
   if( vdbeSorterCountPMA(pSorter)>SORTER_MAX_MERGE_COUNT ){
     int i;
-    for(i=0; rc==SQLITE_OK && i<SQLITE_MAX_SORTER_THREAD; i++){
+    for(i=0; rc==SQLITE_OK && i<pSorter->nThread; i++){
       SorterThread *pThread = &pSorter->aThread[i];
       if( pThread->pTemp1 ){
-        pThread->nConsolidate = SORTER_MAX_MERGE_COUNT/SQLITE_MAX_SORTER_THREAD;
+        pThread->nConsolidate = SORTER_MAX_MERGE_COUNT/pSorter->nThread;
         pThread->eWork = SORTER_THREAD_CONS;
 
-        if( i<(SQLITE_MAX_SORTER_THREAD-1) ){
+#if SQLITE_MAX_WORKER_THREADS>0
+        if( i<(pSorter->nThread-1) ){
           void *pCtx = (void*)pThread;
           rc = sqlite3ThreadCreate(&pThread->pThread,vdbeSorterThreadMain,pCtx);
-        }else{
+        }else
+#endif
+        {
           rc = vdbeSorterRunThread(pThread);
         }
       }
@@ -1475,7 +1487,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
     int nIter = 0;                /* Number of iterators used */
     int i;
     SorterMerger *pMerger;
-    for(i=0; i<SQLITE_MAX_SORTER_THREAD; i++){
+    for(i=0; i<pSorter->nThread; i++){
       nIter += pSorter->aThread[i].nPMA;
     }
 
@@ -1485,7 +1497,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
     }else{
       int iIter = 0;
       int iThread = 0;
-      for(iThread=0; iThread<SQLITE_MAX_SORTER_THREAD; iThread++){
+      for(iThread=0; iThread<pSorter->nThread; iThread++){
         int iPMA;
         i64 iReadOff = 0;
         SorterThread *pThread = &pSorter->aThread[iThread];
