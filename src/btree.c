@@ -3974,6 +3974,7 @@ static int accessPayload(
   assert( pCur->eState==CURSOR_VALID );
   assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
   assert( cursorHoldsMutex(pCur) );
+  assert( eOp!=2 || offset==0 );      /* Always start from beginning for eOp==2 */
 
   getCellInfo(pCur);
   aPayload = pCur->info.pCell + pCur->info.nHeader;
@@ -4009,12 +4010,13 @@ static int accessPayload(
 
     nextPage = get4byte(&aPayload[pCur->info.nLocal]);
 
-    /* If the BTCF_Incrblob flag is set and the BtCursor.aOverflow[]
-    ** has not been allocated, allocate it now. The array is sized at
-    ** one entry for each overflow page in the overflow chain. The
-    ** page number of the first overflow page is stored in aOverflow[0],
-    ** etc. A value of 0 in the aOverflow[] array means "not yet known"
-    ** (the cache is lazily populated).
+    /* If the BtCursor.aOverflow[] has not been allocated, allocate it now.
+    ** Except, do not allocate aOverflow[] for eOp==2.
+    **
+    ** The aOverflow[] array is sized at one entry for each overflow page
+    ** in the overflow chain. The page number of the first overflow page is
+    ** stored in aOverflow[0], etc. A value of 0 in the aOverflow[] array
+    ** means "not yet known" (the cache is lazily populated).
     */
     if( eOp!=2 && (pCur->curFlags & BTCF_ValidOvfl)==0 ){
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
@@ -4059,11 +4061,17 @@ static int accessPayload(
         ** data is not required. So first try to lookup the overflow
         ** page-list cache, if any, then fall back to the getOverflowPage()
         ** function.
+        **
+        ** Note that the aOverflow[] array must be allocated because eOp!=2
+        ** here.  If eOp==2, then offset==0 and this branch is never taken.
         */
-        if( (pCur->curFlags & BTCF_ValidOvfl)!=0 && pCur->aOverflow[iIdx+1] ){
+        assert( eOp!=2 );
+        assert( pCur->curFlags & BTCF_ValidOvfl );
+        if( pCur->aOverflow[iIdx+1] ){
           nextPage = pCur->aOverflow[iIdx+1];
-        } else 
+        }else{
           rc = getOverflowPage(pBt, nextPage, 0, &nextPage);
+        }
         offset -= ovflSize;
       }else{
         /* Need to read this page properly. It contains some of the

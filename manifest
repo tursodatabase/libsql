@@ -1,5 +1,5 @@
-C Fix\sa\scompiler\swarning\swhen\sSQLITE_DIRECT_OVERFLOW_READ\sis\sdefined.\nMinor\sperformance\senhancement\sand\ssize\sreduction.
-D 2014-03-31T23:57:41.627
+C Remove\san\sunnecessary\sconditional,\sreplacing\sit\swith\san\sassert().\nImprovements\sto\scomments.
+D 2014-04-01T01:24:34.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c b1d6309d6623f4ea8d9466aebd1ec84adc40cb9b
+F src/btree.c 6c9b51abd404ce5b78b173b6f2248e8cb824758c
 F src/btree.h d79306df4ed9181b48916737fe8871a4392c4594
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f6211540c9d66a08dc580dd733e4f4a98968ae30
-R a9646e8cad6830bc030ac01ef7720050
+P 96385dc460545807a5c8fcf6280a971700f84866
+R 193f537069a669cf49d79f97b46daa7e
 U drh
-Z be4271c513a3efe06acb17f300ec9933
+Z 9306db9f51cd1c998fccb67bf7fedc94
