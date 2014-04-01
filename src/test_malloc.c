@@ -1254,6 +1254,32 @@ static int test_config_cis(
 }
 
 /*
+** Usage:    sqlite3_config_worker_threads N
+*/
+static int test_config_worker_threads(
+  void * clientData, 
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc;
+  int nThread;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "N");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &nThread) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3_config(SQLITE_CONFIG_WORKER_THREADS, nThread);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_VOLATILE);
+
+  return TCL_OK;
+}
+
+/*
 ** Usage:    sqlite3_dump_memsys3  FILENAME
 **           sqlite3_dump_memsys5  FILENAME
 **
@@ -1506,6 +1532,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_error",       test_config_error             ,0 },
      { "sqlite3_config_uri",         test_config_uri               ,0 },
      { "sqlite3_config_cis",         test_config_cis               ,0 },
+     { "sqlite3_config_worker_threads", test_config_worker_threads ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },

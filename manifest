@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sOOM\shandling\sin\sthe\ssorter\scode.
-D 2014-04-01T10:19:02.635
+C Even\sif\scompile\stime\soption\sSQLITE_MAX_WORKER_THREADS\sis\sset\sto\sone\sor\sgreater,\sset\sthe\sdefault\snumber\sof\sworker\sthreads\sto\szero.\sDistribute\sdata\smore\sevenly\sbetween\sthreads\sin\ssqlite3VdbeSorterWrite()\sto\simprove\sperformance\swhen\ssorting\slarge\samounts\sof\sdata.\sAdd\snew\stest\sfile\ssort2.test.
+D 2014-04-01T15:38:44.990
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/expr.c da2b3cb41081af6b56e95e7c9e95949564ce2e21
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
 F src/func.c 2945bb2c4cdc0ac43733046285a4434310be1811
-F src/global.c 57d9dd92f4e2469cf4046847f456d45bdda0f202
+F src/global.c deadd872189b92aca4ee2566332a86315839f811
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -218,7 +218,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 20055cf917222e660c4222fea306bd13a0623caa
-F src/shell.c f48b63f8e582e7998ecefd051d697f91fb1453df
+F src/shell.c a08060750f92461fc462b4f767e3b0d19d6b832e
 F src/sqlite.h.in 0249af5d9d3bbeab0dc1f58e1f9fee878807732a
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -240,7 +240,7 @@ F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
-F src/test_config.c 0336e0bdbe541b4af89d7e3dd0656e8e6b51e585
+F src/test_config.c ebd0a42983b696f2b121515d577753cf2afdc9b0
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -251,7 +251,7 @@ F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
 F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
-F src/test_malloc.c 1ff5b1243d96124c9a180f3b89424820a1f337f3
+F src/test_malloc.c 27047a841f5bff1cb638123806a2c30714771307
 F src/test_multiplex.c 9f304bf04170c91c0318238d512df2da039eb1c8
 F src/test_multiplex.h 110a8c4d356e0aa464ca8730375608a9a0b61ae1
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 35c270630fa5af14791fc6abc70024d1aeeaac0e
+F src/vdbesort.c 375919a7165647cccf9f7218422540fa61e1dcb1
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -818,6 +818,7 @@ F test/skipscan2.test 5a4db0799c338ddbacb154aaa5589c0254b36a8d
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 79dc647c4e9b123a64e57b7080b7f9a2df43f87a
+F test/sort2.test 65c1e8b49f13f5973d1b03e3ef5b1c864eadd574
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
@@ -1160,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2774710df8cd2bfaca49888c69f1b01c0ddadf9a
-R a6fe6d7d652069432584e1a691602cb5
+P 59cd5229e2b5be5272cf57c7e7d09e97d16a5425
+R 574aa31e9a2482d16cbf0b6e42831c35
 U dan
-Z ac080311c2ad2c3d7bf733448ffc0f03
+Z 53e6ec40073ce4b7a6ae1cb9efd4c01b

@@ -180,6 +180,7 @@ struct VdbeSorter {
   u8 *aMemory;                    /* Block of memory to alloc records from */
   int iMemory;                    /* Offset of first free byte in aMemory */
   int nMemory;                    /* Size of aMemory allocation in bytes */
+  int iPrev;                      /* Previous thread used to flush PMA */
   int nThread;                    /* Size of aThread[] array */
   SorterThread aThread[1];
 };
@@ -1251,11 +1252,13 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
   VdbeSorter *pSorter = pCsr->pSorter;
   int rc = SQLITE_OK;
   int i;
-  SorterThread *pThread;        /* Thread context used to create new PMA */
+  SorterThread *pThread = 0;    /* Thread context used to create new PMA */
+  int nWorker = (pSorter->nThread-1);
 
   pSorter->bUsePMA = 1;
-  for(i=0; ALWAYS( i<pSorter->nThread ); i++){
-    pThread = &pSorter->aThread[i];
+  for(i=0; i<nWorker; i++){
+    int iTest = (pSorter->iPrev + i + 1) % nWorker;
+    pThread = &pSorter->aThread[iTest];
 #if SQLITE_MAX_WORKER_THREADS>0
     if( pThread->bDone ){
       void *pRet;
@@ -1269,7 +1272,12 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
     }
 #endif
     if( pThread->pThread==0 ) break;
+    pThread = 0;
   }
+  if( pThread==0 ){
+    pThread = &pSorter->aThread[nWorker];
+  }
+  pSorter->iPrev = (pThread - pSorter->aThread);
 
   if( rc==SQLITE_OK ){
     assert( pThread->pThread==0 && pThread->bDone==0 );
@@ -1286,7 +1294,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
     }
 
 #if SQLITE_MAX_WORKER_THREADS>0
-    if( bFg || i==(pSorter->nThread-1) ){
+    if( !bFg && pThread!=&pSorter->aThread[nWorker] ){
       /* Launch a background thread for this operation */
       void *pCtx = (void*)pThread;
       assert( pSorter->aMemory==0 || pThread->aListMemory!=0 );
@@ -1464,7 +1472,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
     for(i=0; rc==SQLITE_OK && i<pSorter->nThread; i++){
       SorterThread *pThread = &pSorter->aThread[i];
       if( pThread->pTemp1 ){
-        pThread->nConsolidate = SORTER_MAX_MERGE_COUNT/pSorter->nThread;
+        pThread->nConsolidate = SORTER_MAX_MERGE_COUNT / pSorter->nThread;
         pThread->eWork = SORTER_THREAD_CONS;
 
 #if SQLITE_MAX_WORKER_THREADS>0
