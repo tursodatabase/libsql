@@ -489,47 +489,27 @@ static int vdbeSorterIterInit(
 
 /*
 ** Compare key1 (buffer pKey1, size nKey1 bytes) with key2 (buffer pKey2, 
-** size nKey2 bytes).  Argument pKeyInfo supplies the collation functions
-** used by the comparison. If an error occurs, return an SQLite error code.
-** Otherwise, return SQLITE_OK and set *pRes to a negative, zero or positive
-** value, depending on whether key1 is smaller, equal to or larger than key2.
+** size nKey2 bytes). Use (pThread->pKeyInfo) for the collation sequences
+** used by the comparison. Return the result of the comparison.
 **
-** If the bOmitRowid argument is non-zero, assume both keys end in a rowid
-** field. For the purposes of the comparison, ignore it. Also, if bOmitRowid
-** is true and key1 contains even a single NULL value, it is considered to
-** be less than key2. Even if key2 also contains NULL values.
+** Before returning, object (pThread->pUnpacked) is populated with the
+** unpacked version of key2. Or, if pKey2 is passed a NULL pointer, then it 
+** is assumed that the (pThread->pUnpacked) structure already contains the 
+** unpacked key to use as key2.
 **
-** If pKey2 is passed a NULL pointer, then it is assumed that the pCsr->aSpace
-** has been allocated and contains an unpacked record that is used as key2.
+** If an OOM error is encountered, (pThread->pUnpacked->error_rc) is set
+** to SQLITE_NOMEM.
 */
-static void vdbeSorterCompare(
+static int vdbeSorterCompare(
   SorterThread *pThread,          /* Thread context (for pKeyInfo) */
-  int nIgnore,                    /* Ignore the last nIgnore fields */
   const void *pKey1, int nKey1,   /* Left side of comparison */
-  const void *pKey2, int nKey2,   /* Right side of comparison */
-  int *pRes                       /* OUT: Result of comparison */
+  const void *pKey2, int nKey2    /* Right side of comparison */
 ){
-  KeyInfo *pKeyInfo = pThread->pKeyInfo;
   UnpackedRecord *r2 = pThread->pUnpacked;
-  int i;
-
   if( pKey2 ){
-    sqlite3VdbeRecordUnpack(pKeyInfo, nKey2, pKey2, r2);
+    sqlite3VdbeRecordUnpack(pThread->pKeyInfo, nKey2, pKey2, r2);
   }
-
-  if( nIgnore ){
-    r2->nField = pKeyInfo->nField - nIgnore;
-    assert( r2->nField>0 );
-    for(i=0; i<r2->nField; i++){
-      if( r2->aMem[i].flags & MEM_Null ){
-        *pRes = -1;
-        return;
-      }
-    }
-    assert( r2->default_rc==0 );
-  }
-
-  *pRes = sqlite3VdbeRecordCompare(nKey1, pKey1, r2, 0);
+  return sqlite3VdbeRecordCompare(nKey1, pKey1, r2, 0);
 }
 
 /*
@@ -568,8 +548,8 @@ static int vdbeSorterDoCompare(
   }else{
     int res;
     assert( pThread->pUnpacked!=0 );  /* allocated in vdbeSorterThreadMain() */
-    vdbeSorterCompare(
-        pThread, 0, p1->aKey, p1->nKey, p2->aKey, p2->nKey, &res
+    res = vdbeSorterCompare(
+        pThread, p1->aKey, p1->nKey, p2->aKey, p2->nKey
     );
     if( res<=0 ){
       iRes = i1;
@@ -585,7 +565,7 @@ static int vdbeSorterDoCompare(
 /*
 ** Initialize the temporary index cursor just opened as a sorter cursor.
 */
-int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
+int sqlite3VdbeSorterInit(sqlite3 *db, int nField, VdbeCursor *pCsr){
   int pgsz;                       /* Page size of main database */
   int i;                          /* Used to iterate through aThread[] */
   int mxCache;                    /* Cache size */
@@ -608,6 +588,7 @@ int sqlite3VdbeSorterInit(sqlite3 *db, VdbeCursor *pCsr){
     pKeyInfo = (KeyInfo*)((u8*)pSorter + sz);
     memcpy(pKeyInfo, pCsr->pKeyInfo, szKeyInfo);
     pKeyInfo->db = 0;
+    if( nField && nWorker==0 ) pKeyInfo->nField = nField;
     pgsz = sqlite3BtreeGetPageSize(db->aDb[0].pBt);
 
     pSorter->nThread = nWorker + 1;
@@ -806,7 +787,7 @@ static void vdbeSorterMerge(
 
   while( p1 && p2 ){
     int res;
-    vdbeSorterCompare(pThread, 0, SRVAL(p1), p1->nVal, pVal2, p2->nVal, &res);
+    res = vdbeSorterCompare(pThread, SRVAL(p1), p1->nVal, pVal2, p2->nVal);
     if( res<=0 ){
       *pp = p1;
       pp = &p1->u.pNext;
@@ -1075,8 +1056,8 @@ static int vdbeSorterNext(
       }else if( pIter2->pFile==0 ){
         iRes = -1;
       }else{
-        vdbeSorterCompare(pThread, 0,
-            pIter1->aKey, pIter1->nKey, pKey2, pIter2->nKey, &iRes
+        iRes = vdbeSorterCompare(pThread, 
+            pIter1->aKey, pIter1->nKey, pKey2, pIter2->nKey
         );
       }
 
@@ -1596,6 +1577,9 @@ int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
 ** passed as the first argument currently points to. For the purposes of
 ** the comparison, ignore the rowid field at the end of each record.
 **
+** If the sorter cursor key contains any NULL values, consider it to be
+** less than pVal. Evn if pVal also contains NULL values.
+**
 ** If an error occurs, return an SQLite error code (i.e. SQLITE_NOMEM).
 ** Otherwise, set *pRes to a negative, zero or positive value if the
 ** key in pVal is smaller than, equal to or larger than the current sorter
@@ -1608,10 +1592,23 @@ int sqlite3VdbeSorterCompare(
   int *pRes                       /* OUT: Result of comparison */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
-  SorterThread *pMain = &pSorter->aThread[0];
+  UnpackedRecord *r2 = pSorter->aThread[0].pUnpacked;
+  KeyInfo *pKeyInfo = pCsr->pKeyInfo;
+  int i;
   void *pKey; int nKey;           /* Sorter key to compare pVal with */
 
+  assert( r2->nField>=pKeyInfo->nField-nIgnore );
+  r2->nField = pKeyInfo->nField-nIgnore;
+
   pKey = vdbeSorterRowkey(pSorter, &nKey);
-  vdbeSorterCompare(pMain, nIgnore, pVal->z, pVal->n, pKey, nKey, pRes);
+  sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, r2);
+  for(i=0; i<r2->nField; i++){
+    if( r2->aMem[i].flags & MEM_Null ){
+      *pRes = -1;
+      return SQLITE_OK;
+    }
+  }
+
+  *pRes = sqlite3VdbeRecordCompare(pVal->n, pVal->z, r2, 0);
   return SQLITE_OK;
 }

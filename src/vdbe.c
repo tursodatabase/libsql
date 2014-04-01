@@ -3390,11 +3390,15 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: SorterOpen P1 P2 * P4 *
+/* Opcode: SorterOpen P1 P2 P3 P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large
 ** tables using an external merge-sort algorithm.
+**
+** If argument P3 is non-zero, then it indicates that the sorter may
+** assume that a stable sort considering the first P3 fields of each
+** key is sufficient to produce the required results.
 */
 case OP_SorterOpen: {
   VdbeCursor *pCx;
@@ -3406,7 +3410,7 @@ case OP_SorterOpen: {
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
   assert( pCx->pKeyInfo->db==db );
   assert( pCx->pKeyInfo->enc==ENC(db) );
-  rc = sqlite3VdbeSorterInit(db, pCx);
+  rc = sqlite3VdbeSorterInit(db, pOp->p3, pCx);
   break;
 }
 

@@ -33,6 +33,20 @@ do_execsql_test 1 {
   20000 100 20000 100 20000 100 20000 100 20000 100
 }
 
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a, b);
+  WITH r(x,y) AS (
+    SELECT 1, randomblob(100)
+    UNION ALL
+    SELECT x+1, randomblob(100) FROM r
+    LIMIT 10000
+  ) INSERT INTO t1 SELECT * FROM r;
+}
+
+do_execsql_test 2.2 {
+  CREATE UNIQUE INDEX i1 ON t1(b, a);
+}
+
 db close
 sqlite3_shutdown
 sqlite3_config_worker_threads 0

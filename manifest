@@ -1,5 +1,5 @@
-C Even\sif\scompile\stime\soption\sSQLITE_MAX_WORKER_THREADS\sis\sset\sto\sone\sor\sgreater,\sset\sthe\sdefault\snumber\sof\sworker\sthreads\sto\szero.\sDistribute\sdata\smore\sevenly\sbetween\sthreads\sin\ssqlite3VdbeSorterWrite()\sto\simprove\sperformance\swhen\ssorting\slarge\samounts\sof\sdata.\sAdd\snew\stest\sfile\ssort2.test.
-D 2014-04-01T15:38:44.990
+C When\ssorting\sdata\sfor\sa\sCREATE\sINDEX\sstatement\sin\ssingle-threaded\smode,\sassume\sthat\skeys\sare\sdelivered\sto\sthe\ssorter\sin\sprimary\skey\sorder.\sAlso\sfix\svarious\scomments\sthat\shad\sfallen\sout\sof\sdate.
+D 2014-04-01T18:41:51.759
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 0d1be67448c45eccc40114556186397eb9da7f7d
 F src/btree.h 232836cb51753f2e96aa8ce0f052c6df850f76ba
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
-F src/build.c 0d50ef95aad63f4c4fc47f3fa2670d4557c45db0
+F src/build.c b507fb9b4ce943139401d5c9a2daa94a568a8cf1
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -279,14 +279,14 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 02f2de0b2f3b198438e3e64a2ceba9407bb8348b
+F src/vdbe.c eed2230017ca8ac5ca8fc221b38be036bba48499
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
-F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
+F src/vdbeInt.h ba1069627d0ab75e9ddb8f9c10958b86cdbd333d
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 375919a7165647cccf9f7218422540fa61e1dcb1
+F src/vdbesort.c be494ad4a1cb5845c51c9bc25b8ec151f504d49c
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -818,7 +818,7 @@ F test/skipscan2.test 5a4db0799c338ddbacb154aaa5589c0254b36a8d
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 79dc647c4e9b123a64e57b7080b7f9a2df43f87a
-F test/sort2.test 65c1e8b49f13f5973d1b03e3ef5b1c864eadd574
+F test/sort2.test 21cd865e31adecdc8fc81c8d95431e629676a8d8
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
@@ -1161,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 59cd5229e2b5be5272cf57c7e7d09e97d16a5425
-R 574aa31e9a2482d16cbf0b6e42831c35
+P 643c86a056168e39fcb7f39b8a72731f1eb246db
+R c2ac1c0b48f44ef7c812322485a83f86
 U dan
-Z 53e6ec40073ce4b7a6ae1cb9efd4c01b
+Z 23ba0058a55a91ed976e2b1f4e943278
