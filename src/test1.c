@@ -2704,6 +2704,46 @@ bad_args:
 }
 
 /*
+** Usage: add_test_utf16bin_collate <db ptr>
+**
+** Add a utf-16 collation sequence named "utf16bin" to the database
+** handle. This collation sequence compares arguments in the same way as the
+** built-in collation "binary".
+*/
+static int test_utf16bin_collate_func(
+  void *pCtx, 
+  int nA, const void *zA,
+  int nB, const void *zB
+){
+  int nCmp = (nA>nB ? nB : nA);
+  int res = memcmp(zA, zB, nCmp);
+  if( res==0 ) res = nA - nB;
+  return res;
+}
+static int test_utf16bin_collate(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ) goto bad_args;
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+
+  rc = sqlite3_create_collation(db, "utf16bin", SQLITE_UTF16, 0, 
+      test_utf16bin_collate_func
+  );
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  return TCL_OK;
+
+bad_args:
+  Tcl_WrongNumArgs(interp, 1, objv, "DB");
+  return TCL_ERROR;
+}
+
+/*
 ** When the collation needed callback is invoked, record the name of 
 ** the requested collating function here.  The recorded name is linked
 ** to a TCL variable and used to make sure that the requested collation
@@ -6481,6 +6521,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "add_test_collate",        test_collate, 0            },
      { "add_test_collate_needed", test_collate_needed, 0     },
      { "add_test_function",       test_function, 0           },
+     { "add_test_utf16bin_collate",    test_utf16bin_collate, 0        },
 #endif
      { "sqlite3_test_errstr",     test_errstr, 0             },
      { "tcl_variable_type",       tcl_variable_type, 0       },

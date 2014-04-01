@@ -1134,6 +1134,7 @@ static void *vdbeSorterThreadMain(void *pCtx){
       goto thread_out;
     }
     pThread->pUnpacked->nField = pThread->pKeyInfo->nField;
+    pThread->pUnpacked->errCode = 0;
   }
 
   if( pThread->eWork==SORTER_THREAD_CONS ){
@@ -1222,6 +1223,10 @@ static void *vdbeSorterThreadMain(void *pCtx){
 
  thread_out:
   pThread->bDone = 1;
+  if( rc==SQLITE_OK && pThread->pUnpacked->errCode ){
+    assert( pThread->pUnpacked->errCode==SQLITE_NOMEM );
+    rc = SQLITE_NOMEM;
+  }
   return SQLITE_INT_TO_PTR(rc);
 }
 
@@ -1267,8 +1272,6 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
   }
 
   if( rc==SQLITE_OK ){
-    int bUseFg = (bFg || i==(pSorter->nThread-1));
-
     assert( pThread->pThread==0 && pThread->bDone==0 );
     pThread->eWork = SORTER_THREAD_TO_PMA;
     pThread->pList = pSorter->pRecord;
@@ -1283,7 +1286,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
     }
 
 #if SQLITE_MAX_WORKER_THREADS>0
-    if( bUseFg==0 ){
+    if( bFg || i==(pSorter->nThread-1) ){
       /* Launch a background thread for this operation */
       void *pCtx = (void*)pThread;
       assert( pSorter->aMemory==0 || pThread->aListMemory!=0 );

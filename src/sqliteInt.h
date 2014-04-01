@@ -1641,7 +1641,7 @@ struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   u16 nField;         /* Number of entries in apMem[] */
   i8 default_rc;      /* Comparison result if keys are equal */
-  u8 isCorrupt;       /* Corruption detected by xRecordCompare() */
+  u8 errCode;         /* Error detected by xRecordCompare (CORRUPT or NOMEM) */
   Mem *aMem;          /* Values */
   int r1;             /* Value to return if (lhs > rhs) */
   int r2;             /* Value to return if (rhs < lhs) */

@@ -3229,7 +3229,8 @@ static int vdbeRecordCompareDebug(
 static int vdbeCompareMemString(
   const Mem *pMem1,
   const Mem *pMem2,
-  const CollSeq *pColl
+  const CollSeq *pColl,
+  u8 *prcErr                      /* If an OOM occurs, set to SQLITE_NOMEM */
 ){
   if( pMem1->enc==pColl->enc ){
     /* The strings are already in the correct encoding.  Call the
@@ -3252,6 +3253,7 @@ static int vdbeCompareMemString(
     rc = pColl->xCmp(pColl->pUser, n1, v1, n2, v2);
     sqlite3VdbeMemRelease(&c1);
     sqlite3VdbeMemRelease(&c2);
+    if( (v1==0 || v2==0) && prcErr ) *prcErr = SQLITE_NOMEM;
     return rc;
   }
 }
@@ -3334,7 +3336,7 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
     assert( !pColl || pColl->xCmp );
 
     if( pColl ){
-      return vdbeCompareMemString(pMem1, pMem2, pColl);
+      return vdbeCompareMemString(pMem1, pMem2, pColl, 0);
     }
     /* If a NULL pointer was passed as the collate function, fall through
     ** to the blob case and use memcmp().  */
@@ -3406,8 +3408,10 @@ static i64 vdbeRecordDecodeInt(u32 serial_type, const u8 *aKey){
 ** fields that appear in both keys are equal, then pPKey2->default_rc is 
 ** returned.
 **
-** If database corruption is discovered, set pPKey2->isCorrupt to non-zero
-** and return 0.
+** If database corruption is discovered, set pPKey2->errCode to 
+** SQLITE_CORRUPT and return 0. If an OOM error is encountered, 
+** pPKey2->errCode is set to SQLITE_NOMEM and, if it is not NULL, the
+** malloc-failed flag set on database handle (pPKey2->pKeyInfo->db).
 */
 int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1,   /* Left key */
@@ -3438,7 +3442,7 @@ int sqlite3VdbeRecordCompare(
     idx1 = getVarint32(aKey1, szHdr1);
     d1 = szHdr1;
     if( d1>(unsigned)nKey1 ){ 
-      pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+      pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
       return 0;  /* Corruption */
     }
     i = 0;
@@ -3517,14 +3521,16 @@ int sqlite3VdbeRecordCompare(
         testcase( (d1+mem1.n)==(unsigned)nKey1 );
         testcase( (d1+mem1.n+1)==(unsigned)nKey1 );
         if( (d1+mem1.n) > (unsigned)nKey1 ){
-          pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+          pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
         }else if( pKeyInfo->aColl[i] ){
           mem1.enc = pKeyInfo->enc;
           mem1.db = pKeyInfo->db;
           mem1.flags = MEM_Str;
           mem1.z = (char*)&aKey1[d1];
-          rc = vdbeCompareMemString(&mem1, pRhs, pKeyInfo->aColl[i]);
+          rc = vdbeCompareMemString(
+              &mem1, pRhs, pKeyInfo->aColl[i], &pPKey2->errCode
+          );
         }else{
           int nCmp = MIN(mem1.n, pRhs->n);
           rc = memcmp(&aKey1[d1], pRhs->z, nCmp);
@@ -3544,7 +3550,7 @@ int sqlite3VdbeRecordCompare(
         testcase( (d1+nStr)==(unsigned)nKey1 );
         testcase( (d1+nStr+1)==(unsigned)nKey1 );
         if( (d1+nStr) > (unsigned)nKey1 ){
-          pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+          pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
           return 0;                /* Corruption */
         }else{
           int nCmp = MIN(nStr, pRhs->n);
@@ -3564,7 +3570,7 @@ int sqlite3VdbeRecordCompare(
       if( pKeyInfo->aSortOrder[i] ){
         rc = -rc;
       }
-      assert( CORRUPT_DB
+      assert( CORRUPT_DB || pKeyInfo->db==0
           || (rc<0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)<0)
           || (rc>0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)>0)
           || pKeyInfo->db->mallocFailed
@@ -3724,7 +3730,7 @@ static int vdbeRecordCompareString(
 
     nStr = (serial_type-12) / 2;
     if( (szHdr + nStr) > nKey1 ){
-      pPKey2->isCorrupt = (u8)SQLITE_CORRUPT_BKPT;
+      pPKey2->errCode = (u8)SQLITE_CORRUPT_BKPT;
       return 0;    /* Corruption */
     }
     nCmp = MIN( pPKey2->aMem[0].n, nStr );
