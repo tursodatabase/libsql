@@ -443,10 +443,13 @@ static int vdbeSorterIterInit(
   pIter->iReadOff = iStart;
   pIter->nAlloc = 128;
   pIter->aAlloc = (u8*)sqlite3Malloc(pIter->nAlloc);
-
-  /* Try to xFetch() a mapping of the entire temp file. If this is possible,
-  ** the PMA will be read via the mapping. Otherwise, use xRead().  */
-  rc = sqlite3OsFetch(pIter->pFile, 0, pThread->iTemp1Off, &pMap);
+  if( pIter->aAlloc ){
+    /* Try to xFetch() a mapping of the entire temp file. If this is possible,
+    ** the PMA will be read via the mapping. Otherwise, use xRead().  */
+    rc = sqlite3OsFetch(pIter->pFile, 0, pThread->iTemp1Off, &pMap);
+  }else{
+    rc = SQLITE_NOMEM;
+  }
 
   if( rc==SQLITE_OK ){
     if( pMap ){
@@ -698,23 +701,15 @@ static SorterMerger *vdbeSorterMergerNew(int nIter){
 }
 
 /*
-** Reset a merger
+** Free the SorterMerger object passed as the only argument.
 */
-static void vdbeSorterMergerReset(SorterMerger *pMerger){
+static void vdbeSorterMergerFree(SorterMerger *pMerger){
   int i;
   if( pMerger ){
     for(i=0; i<pMerger->nTree; i++){
       vdbeSorterIterZero(&pMerger->aIter[i]);
     }
   }
-}
-
-
-/*
-** Free the SorterMerger object passed as the only argument.
-*/
-static void vdbeSorterMergerFree(SorterMerger *pMerger){
-  vdbeSorterMergerReset(pMerger);
   sqlite3_free(pMerger);
 }
 
@@ -724,6 +719,8 @@ static void vdbeSorterMergerFree(SorterMerger *pMerger){
 void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
   int i;
   vdbeSorterJoinAll(pSorter, SQLITE_OK);
+  vdbeSorterMergerFree(pSorter->pMerger);
+  pSorter->pMerger = 0;
   for(i=0; i<pSorter->nThread; i++){
     SortSubtask *pThread = &pSorter->aThread[i];
     vdbeSortSubtaskCleanup(db, pThread);
@@ -731,7 +728,6 @@ void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
   if( pSorter->aMemory==0 ){
     vdbeSorterRecordFree(0, pSorter->pRecord);
   }
-  vdbeSorterMergerReset(pSorter->pMerger);
   pSorter->pRecord = 0;
   pSorter->nInMemory = 0;
   pSorter->bUsePMA = 0;
@@ -1292,11 +1288,13 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
 #endif
     {
       /* Use the foreground thread for this operation */
-      u8 *aMem;
       rc = vdbeSorterRunThread(pThread);
-      aMem = pThread->aListMemory;
-      pThread->aListMemory = pSorter->aMemory;
-      pSorter->aMemory = aMem;
+      if( rc==SQLITE_OK ){
+        u8 *aMem = pThread->aListMemory;
+        pThread->aListMemory = pSorter->aMemory;
+        pSorter->aMemory = aMem;
+        assert( pThread->pList==0 );
+      }
     }
   }
 
