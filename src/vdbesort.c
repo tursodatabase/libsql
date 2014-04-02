@@ -20,57 +20,57 @@
 
 
 typedef struct VdbeSorterIter VdbeSorterIter;
-typedef struct SorterThread SorterThread;
+typedef struct SortSubtask SortSubtask;
 typedef struct SorterRecord SorterRecord;
 typedef struct SorterMerger SorterMerger;
 typedef struct FileWriter FileWriter;
 
 
 /*
-** Candidate values for SorterThread.eWork
+** Candidate values for SortSubtask.eWork
 */
-#define SORTER_THREAD_SORT   1
-#define SORTER_THREAD_TO_PMA 2
-#define SORTER_THREAD_CONS   3
+#define SORTER_THREAD_SORT   1  /* Sort records on pList */
+#define SORTER_THREAD_TO_PMA 2  /* Xfer pList to Packed-Memory-Array pFile */
+#define SORTER_THREAD_CONS   3  /* Consolidate multiple PMAs */
 
 /*
 ** Much of the work performed in this module to sort the list of records is 
 ** broken down into smaller units that may be peformed in parallel. In order
 ** to perform such a unit of work, an instance of the following structure
-** is configured and passed to vdbeSorterThreadMain() - either directly by 
+** is configured and passed to vdbeSortSubtaskMain() - either directly by 
 ** the main thread or via a background thread.
 **
-** Exactly SorterThread.nThread instances of this structure are allocated
+** Exactly SortSubtask.nThread instances of this structure are allocated
 ** as part of each VdbeSorter object. Instances are never allocated any other
-** way. SorterThread.nThread is set to the number of worker threads allowed
+** way. SortSubtask.nThread is set to the number of worker threads allowed
 ** (see SQLITE_CONFIG_WORKER_THREADS) plus one (the main thread).
 **
-** When a background thread is launched to perform work, SorterThread.bDone
-** is set to 0 and the SorterThread.pThread variable set to point to the
-** thread handle. SorterThread.bDone is set to 1 (to indicate to the main
-** thread that joining SorterThread.pThread will not block) before the thread
-** exits. SorterThread.pThread and bDone are always cleared after the 
+** When a background thread is launched to perform work, SortSubtask.bDone
+** is set to 0 and the SortSubtask.pThread variable set to point to the
+** thread handle. SortSubtask.bDone is set to 1 (to indicate to the main
+** thread that joining SortSubtask.pThread will not block) before the thread
+** exits. SortSubtask.pThread and bDone are always cleared after the 
 ** background thread has been joined.
 **
-** One object (specifically, VdbeSorter.aThread[SorterThread.nThread-1])
+** One object (specifically, VdbeSorter.aThread[SortSubtask.nThread-1])
 ** is reserved for the foreground thread.
 **
-** The nature of the work performed is determined by SorterThread.eWork,
+** The nature of the work performed is determined by SortSubtask.eWork,
 ** as follows:
 **
 **   SORTER_THREAD_SORT:
-**     Sort the linked list of records at SorterThread.pList.
+**     Sort the linked list of records at SortSubtask.pList.
 **
 **   SORTER_THREAD_TO_PMA:
-**     Sort the linked list of records at SorterThread.pList, and write
-**     the results to a new PMA in temp file SorterThread.pTemp1. Open
+**     Sort the linked list of records at SortSubtask.pList, and write
+**     the results to a new PMA in temp file SortSubtask.pTemp1. Open
 **     the temp file if it is not already open.
 **
 **   SORTER_THREAD_CONS:
-**     Merge existing PMAs until SorterThread.nConsolidate or fewer
-**     remain in temp file SorterThread.pTemp1.
+**     Merge existing PMAs until SortSubtask.nConsolidate or fewer
+**     remain in temp file SortSubtask.pTemp1.
 */
-struct SorterThread {
+struct SortSubtask {
   SQLiteThread *pThread;          /* Thread handle, or NULL */
   int bDone;                      /* Set to true by pThread when finished */
 
@@ -182,7 +182,7 @@ struct VdbeSorter {
   int nMemory;                    /* Size of aMemory allocation in bytes */
   int iPrev;                      /* Previous thread used to flush PMA */
   int nThread;                    /* Size of aThread[] array */
-  SorterThread aThread[1];
+  SortSubtask aThread[1];
 };
 
 /*
@@ -427,7 +427,7 @@ static int vdbeSorterIterNext(VdbeSorterIter *pIter){
 ** PMA is empty).
 */
 static int vdbeSorterIterInit(
-  SorterThread *pThread,          /* Thread context */
+  SortSubtask *pThread,           /* Thread context */
   i64 iStart,                     /* Start offset in pThread->pTemp1 */
   VdbeSorterIter *pIter,          /* Iterator to populate */
   i64 *pnByte                     /* IN/OUT: Increment this value by PMA size */
@@ -501,7 +501,7 @@ static int vdbeSorterIterInit(
 ** to SQLITE_NOMEM.
 */
 static int vdbeSorterCompare(
-  SorterThread *pThread,          /* Thread context (for pKeyInfo) */
+  SortSubtask *pThread,           /* Thread context (for pKeyInfo) */
   const void *pKey1, int nKey1,   /* Left side of comparison */
   const void *pKey2, int nKey2    /* Right side of comparison */
 ){
@@ -518,7 +518,7 @@ static int vdbeSorterCompare(
 ** value to recalculate.
 */
 static int vdbeSorterDoCompare(
-  SorterThread *pThread, 
+  SortSubtask *pThread, 
   SorterMerger *pMerger, 
   int iOut
 ){
@@ -547,7 +547,7 @@ static int vdbeSorterDoCompare(
     iRes = i1;
   }else{
     int res;
-    assert( pThread->pUnpacked!=0 );  /* allocated in vdbeSorterThreadMain() */
+    assert( pThread->pUnpacked!=0 );  /* allocated in vdbeSortSubtaskMain() */
     res = vdbeSorterCompare(
         pThread, p1->aKey, p1->nKey, p2->aKey, p2->nKey
     );
@@ -578,7 +578,7 @@ int sqlite3VdbeSorterInit(sqlite3 *db, int nField, VdbeCursor *pCsr){
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
   szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nField-1)*sizeof(CollSeq*);
-  sz = sizeof(VdbeSorter) + nWorker * sizeof(SorterThread);
+  sz = sizeof(VdbeSorter) + nWorker * sizeof(SortSubtask);
 
   pSorter = (VdbeSorter*)sqlite3DbMallocZero(db, sz + szKeyInfo);
   pCsr->pSorter = pSorter;
@@ -593,7 +593,7 @@ int sqlite3VdbeSorterInit(sqlite3 *db, int nField, VdbeCursor *pCsr){
 
     pSorter->nThread = nWorker + 1;
     for(i=0; i<pSorter->nThread; i++){
-      SorterThread *pThread = &pSorter->aThread[i];
+      SortSubtask *pThread = &pSorter->aThread[i];
       pThread->pKeyInfo = pKeyInfo;
       pThread->pVfs = db->pVfs;
       pThread->pgsz = pgsz;
@@ -636,7 +636,7 @@ static void vdbeSorterRecordFree(sqlite3 *db, SorterRecord *pRecord){
 ** Free all resources owned by the object indicated by argument pThread. All 
 ** fields of *pThread are zeroed before returning.
 */
-static void vdbeSorterThreadCleanup(sqlite3 *db, SorterThread *pThread){
+static void vdbeSortSubtaskCleanup(sqlite3 *db, SortSubtask *pThread){
   sqlite3DbFree(db, pThread->pUnpacked);
   pThread->pUnpacked = 0;
   if( pThread->aListMemory==0 ){
@@ -660,7 +660,7 @@ static int vdbeSorterJoinAll(VdbeSorter *pSorter, int rcin){
   int rc = rcin;
   int i;
   for(i=0; i<pSorter->nThread; i++){
-    SorterThread *pThread = &pSorter->aThread[i];
+    SortSubtask *pThread = &pSorter->aThread[i];
     if( pThread->pThread ){
       void *pRet;
       int rc2 = sqlite3ThreadJoin(pThread->pThread, &pRet);
@@ -725,8 +725,8 @@ void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
   int i;
   vdbeSorterJoinAll(pSorter, SQLITE_OK);
   for(i=0; i<pSorter->nThread; i++){
-    SorterThread *pThread = &pSorter->aThread[i];
-    vdbeSorterThreadCleanup(db, pThread);
+    SortSubtask *pThread = &pSorter->aThread[i];
+    vdbeSortSubtaskCleanup(db, pThread);
   }
   if( pSorter->aMemory==0 ){
     vdbeSorterRecordFree(0, pSorter->pRecord);
@@ -776,7 +776,7 @@ static int vdbeSorterOpenTempFile(sqlite3_vfs *pVfs, sqlite3_file **ppFile){
 ** Set *ppOut to the head of the new list.
 */
 static void vdbeSorterMerge(
-  SorterThread *pThread,          /* Calling thread context */
+  SortSubtask *pThread,          /* Calling thread context */
   SorterRecord *p1,               /* First list to merge */
   SorterRecord *p2,               /* Second list to merge */
   SorterRecord **ppOut            /* OUT: Head of merged list */
@@ -810,7 +810,7 @@ static void vdbeSorterMerge(
 ** SQLITE_OK if successful, or an SQLite error code (i.e. SQLITE_NOMEM) if 
 ** an error occurs.
 */
-static int vdbeSorterSort(SorterThread *pThread){
+static int vdbeSorterSort(SortSubtask *pThread){
   int i;
   SorterRecord **aSlot;
   SorterRecord *p;
@@ -974,7 +974,7 @@ static int vdbeSorterExtendFile(sqlite3_file *pFile, i64 nByte){
 **       Each record consists of a varint followed by a blob of data (the 
 **       key). The varint is the number of bytes in the blob of data.
 */
-static int vdbeSorterListToPMA(SorterThread *pThread){
+static int vdbeSorterListToPMA(SortSubtask *pThread){
   int rc = SQLITE_OK;             /* Return code */
   FileWriter writer;              /* Object used to write to the file */
 
@@ -1025,7 +1025,7 @@ static int vdbeSorterListToPMA(SorterThread *pThread){
 ** Return SQLITE_OK if successful or an error code if an error occurs.
 */
 static int vdbeSorterNext(
-  SorterThread *pThread, 
+  SortSubtask *pThread, 
   SorterMerger *pMerger, 
   int *pbEof
 ){
@@ -1095,9 +1095,9 @@ static int vdbeSorterNext(
 /*
 ** The main routine for sorter-thread operations.
 */
-static void *vdbeSorterThreadMain(void *pCtx){
+static void *vdbeSortSubtaskMain(void *pCtx){
   int rc = SQLITE_OK;
-  SorterThread *pThread = (SorterThread*)pCtx;
+  SortSubtask *pThread = (SortSubtask*)pCtx;
 
   assert( pThread->eWork==SORTER_THREAD_SORT
        || pThread->eWork==SORTER_THREAD_TO_PMA
@@ -1216,8 +1216,8 @@ static void *vdbeSorterThreadMain(void *pCtx){
 ** Run the activity scheduled by the object passed as the only argument
 ** in the current thread.
 */
-static int vdbeSorterRunThread(SorterThread *pThread){
-  int rc = SQLITE_PTR_TO_INT( vdbeSorterThreadMain((void*)pThread) );
+static int vdbeSorterRunThread(SortSubtask *pThread){
+  int rc = SQLITE_PTR_TO_INT( vdbeSortSubtaskMain((void*)pThread) );
   assert( pThread->bDone );
   pThread->bDone = 0;
   return rc;
@@ -1233,7 +1233,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
   VdbeSorter *pSorter = pCsr->pSorter;
   int rc = SQLITE_OK;
   int i;
-  SorterThread *pThread = 0;    /* Thread context used to create new PMA */
+  SortSubtask *pThread = 0;    /* Thread context used to create new PMA */
   int nWorker = (pSorter->nThread-1);
 
   pSorter->bUsePMA = 1;
@@ -1287,7 +1287,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
           pSorter->nMemory = sqlite3MallocSize(pSorter->aMemory);
         }
       }
-      rc = sqlite3ThreadCreate(&pThread->pThread, vdbeSorterThreadMain, pCtx);
+      rc = sqlite3ThreadCreate(&pThread->pThread, vdbeSortSubtaskMain, pCtx);
     }else
 #endif
     {
@@ -1422,7 +1422,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
   ** from the in-memory list.  */
   if( pSorter->bUsePMA==0 ){
     if( pSorter->pRecord ){
-      SorterThread *pThread = &pSorter->aThread[0];
+      SortSubtask *pThread = &pSorter->aThread[0];
       *pbEof = 0;
       pThread->pList = pSorter->pRecord;
       pThread->eWork = SORTER_THREAD_SORT;
@@ -1451,7 +1451,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
   if( vdbeSorterCountPMA(pSorter)>SORTER_MAX_MERGE_COUNT ){
     int i;
     for(i=0; rc==SQLITE_OK && i<pSorter->nThread; i++){
-      SorterThread *pThread = &pSorter->aThread[i];
+      SortSubtask *pThread = &pSorter->aThread[i];
       if( pThread->pTemp1 ){
         pThread->nConsolidate = SORTER_MAX_MERGE_COUNT / pSorter->nThread;
         pThread->eWork = SORTER_THREAD_CONS;
@@ -1459,7 +1459,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
 #if SQLITE_MAX_WORKER_THREADS>0
         if( i<(pSorter->nThread-1) ){
           void *pCtx = (void*)pThread;
-          rc = sqlite3ThreadCreate(&pThread->pThread,vdbeSorterThreadMain,pCtx);
+          rc = sqlite3ThreadCreate(&pThread->pThread,vdbeSortSubtaskMain,pCtx);
         }else
 #endif
         {
@@ -1492,7 +1492,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
       for(iThread=0; iThread<pSorter->nThread; iThread++){
         int iPMA;
         i64 iReadOff = 0;
-        SorterThread *pThread = &pSorter->aThread[iThread];
+        SortSubtask *pThread = &pSorter->aThread[iThread];
         for(iPMA=0; iPMA<pThread->nPMA && rc==SQLITE_OK; iPMA++){
           i64 nDummy = 0;
           VdbeSorterIter *pIter = &pMerger->aIter[iIter++];
