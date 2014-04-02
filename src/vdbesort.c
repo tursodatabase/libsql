@@ -1,5 +1,5 @@
 /*
-** 2011 July 9
+** 2011-07-09
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -10,15 +10,87 @@
 **
 *************************************************************************
 ** This file contains code for the VdbeSorter object, used in concert with
-** a VdbeCursor to sort large numbers of keys (as may be required, for
-** example, by CREATE INDEX statements on tables too large to fit in main
-** memory).
+** a VdbeCursor to sort large numbers of keys for CREATE TABLE statements
+** or by SELECT statements with ORDER BY clauses that cannot be satisfied
+** using indexes and without LIMIT clauses.
+**
+** The VdbeSorter object implements a multi-threaded external merge sort
+** algorithm that is efficient even if the number of element being sorted
+** exceeds the available memory.
+**
+** Here is the (internal, non-API) interface between this module and the
+** rest of the SQLite system:
+**
+**    sqlite3VdbeSorterInit()       Create a new VdbeSorter object.
+**
+**    sqlite3VdbeSorterWrite()      Add a single new row to the VdbeSorter
+**                                  object.  The row is a binary blob in the
+**                                  OP_MakeRecord format that contains both
+**                                  the ORDER BY key columns and result columns
+**                                  in the case of a SELECT w/ ORDER BY, or
+**                                  the complete record for an index entry
+**                                  in the case of a CREATE INDEX.
+**
+**    sqlite3VdbeSorterRewind()     Sort all content previously added.
+**                                  Position the read cursor on the
+**                                  first sorted element.
+**
+**    sqlite3VdbeSorterNext()       Advance the read cursor to the next sorted
+**                                  element.
+**
+**    sqlite3VdbeSorterRowkey()     Return the complete binary blob for the
+**                                  row currently under the read cursor.
+**
+**    sqlite3VdbeSorterCompare()    Compare the binary blob for the row
+**                                  currently under the read cursor against
+**                                  another binary blob X and report if
+**                                  X is strictly less than the read cursor.
+**                                  Used to enforce uniqueness in a
+**                                  CREATE UNIQUE INDEX statement.
+**
+**    sqlite3VdbeSorterClose()      Close the VdbeSorter object and reclaim
+**                                  all resources.
+**
+**    sqlite3VdbeSorterReset()      Refurbish the VdbeSorter for reuse.  This
+**                                  is like Close() followed by Init() only
+**                                  much faster.
+**
+** The interfaces above must be called in a particular order.  Write() can 
+** only occur in between Init()/Reset() and Rewind().  Next(), Rowkey(), and
+** Compare() can only occur in between Rewind() and Close()/Reset().
+**
+** Algorithm:
+**
+** Records to be sorted are initially held in memory, in the order in
+** which they arrive from Write().  When the amount of memory needed exceeds
+** a threshold, all in-memory records are sorted and then appended to
+** a temporary file as a "Packed-Memory-Array" or "PMA" and the memory is
+** reset.  There is a single temporary file used for all PMAs.  The PMAs
+** are packed one after another in the file.  The VdbeSorter object keeps
+** track of the number of PMAs written.
+**
+** When the Rewind() is seen, any records still held in memory are sorted.
+** If no PMAs have been written (if all records are still held in memory)
+** then subsequent Rowkey(), Next(), and Compare() operations work directly
+** from memory.  But if PMAs have been written things get a little more
+** complicated.
+**
+** When Rewind() is seen after PMAs have been written, any records still
+** in memory are sorted and written as a final PMA.  Then all the PMAs
+** are merged together into a single massive PMA that Next(), Rowkey(),
+** and Compare() walk to extract the records in sorted order.
+**
+** If SQLITE_MAX_WORKER_THREADS is non-zero, various steps of the above
+** algorithm might be performed in parallel by separate threads.  Threads
+** are only used when one or more PMA spill to disk.  If the sort is small
+** enough to fit entirely in memory, everything happens on the main thread.
 */
-
 #include "sqliteInt.h"
 #include "vdbeInt.h"
 
-
+/*
+** Private objects used by the sorter
+*/
 typedef struct VdbeSorterIter VdbeSorterIter;
 typedef struct SortSubtask SortSubtask;
 typedef struct SorterRecord SorterRecord;
@@ -29,20 +101,18 @@ typedef struct FileWriter FileWriter;
 /*
 ** Candidate values for SortSubtask.eWork
 */
-#define SORTER_THREAD_SORT   1  /* Sort records on pList */
-#define SORTER_THREAD_TO_PMA 2  /* Xfer pList to Packed-Memory-Array pFile */
-#define SORTER_THREAD_CONS   3  /* Consolidate multiple PMAs */
+#define SORT_SUBTASK_SORT   1     /* Sort records on pList */
+#define SORT_SUBTASK_TO_PMA 2     /* Xfer pList to Packed-Memory-Array pTemp1 */
+#define SORT_SUBTASK_CONS   3     /* Consolidate multiple PMAs */
 
 /*
-** Much of the work performed in this module to sort the list of records is 
-** broken down into smaller units that may be peformed in parallel. In order
-** to perform such a unit of work, an instance of the following structure
-** is configured and passed to vdbeSortSubtaskMain() - either directly by 
-** the main thread or via a background thread.
+** Sorting is divided up into smaller subtasks.  Each subtask is controlled
+** by an instance of this object.  Subtask might run in either the main thread
+** or in a background thread.
 **
-** Exactly SortSubtask.nThread instances of this structure are allocated
+** Exactly VdbeSorter.nThread instances of this object are allocated
 ** as part of each VdbeSorter object. Instances are never allocated any other
-** way. SortSubtask.nThread is set to the number of worker threads allowed
+** way. VdbeSorter.nThread is set to the number of worker threads allowed
 ** (see SQLITE_CONFIG_WORKER_THREADS) plus one (the main thread).
 **
 ** When a background thread is launched to perform work, SortSubtask.bDone
@@ -52,21 +122,21 @@ typedef struct FileWriter FileWriter;
 ** exits. SortSubtask.pThread and bDone are always cleared after the 
 ** background thread has been joined.
 **
-** One object (specifically, VdbeSorter.aThread[SortSubtask.nThread-1])
+** One object (specifically, VdbeSorter.aThread[VdbeSorter.nThread-1])
 ** is reserved for the foreground thread.
 **
 ** The nature of the work performed is determined by SortSubtask.eWork,
 ** as follows:
 **
-**   SORTER_THREAD_SORT:
+**   SORT_SUBTASK_SORT:
 **     Sort the linked list of records at SortSubtask.pList.
 **
-**   SORTER_THREAD_TO_PMA:
+**   SORT_SUBTASK_TO_PMA:
 **     Sort the linked list of records at SortSubtask.pList, and write
 **     the results to a new PMA in temp file SortSubtask.pTemp1. Open
 **     the temp file if it is not already open.
 **
-**   SORTER_THREAD_CONS:
+**   SORT_SUBTASK_CONS:
 **     Merge existing PMAs until SortSubtask.nConsolidate or fewer
 **     remain in temp file SortSubtask.pTemp1.
 */
@@ -79,8 +149,8 @@ struct SortSubtask {
   UnpackedRecord *pUnpacked;      /* Space to unpack a record */
   int pgsz;                       /* Main database page size */
 
-  u8 eWork;                       /* One of the SORTER_THREAD_* constants */
-  int nConsolidate;               /* For THREAD_CONS, max final PMAs */
+  u8 eWork;                       /* One of the SORT_SUBTASK_* constants */
+  int nConsolidate;               /* For SORT_SUBTASK_CONS, max final PMAs */
   SorterRecord *pList;            /* List of records for pThread to sort */
   int nInMemory;                  /* Expected size of PMA based on pList */
   u8 *aListMemory;                /* Records memory (or NULL) */
@@ -1095,9 +1165,9 @@ static void *vdbeSortSubtaskMain(void *pCtx){
   int rc = SQLITE_OK;
   SortSubtask *pThread = (SortSubtask*)pCtx;
 
-  assert( pThread->eWork==SORTER_THREAD_SORT
-       || pThread->eWork==SORTER_THREAD_TO_PMA
-       || pThread->eWork==SORTER_THREAD_CONS
+  assert( pThread->eWork==SORT_SUBTASK_SORT
+       || pThread->eWork==SORT_SUBTASK_TO_PMA
+       || pThread->eWork==SORT_SUBTASK_CONS
   );
   assert( pThread->bDone==0 );
 
@@ -1115,7 +1185,7 @@ static void *vdbeSortSubtaskMain(void *pCtx){
     pThread->pUnpacked->errCode = 0;
   }
 
-  if( pThread->eWork==SORTER_THREAD_CONS ){
+  if( pThread->eWork==SORT_SUBTASK_CONS ){
     assert( pThread->pList==0 );
     while( pThread->nPMA>pThread->nConsolidate && rc==SQLITE_OK ){
       int nIter = MIN(pThread->nPMA, SORTER_MAX_MERGE_COUNT);
@@ -1188,7 +1258,7 @@ static void *vdbeSortSubtaskMain(void *pCtx){
     rc = vdbeSorterSort(pThread);
 
     /* If required, write the list out to a PMA. */
-    if( rc==SQLITE_OK && pThread->eWork==SORTER_THREAD_TO_PMA ){
+    if( rc==SQLITE_OK && pThread->eWork==SORT_SUBTASK_TO_PMA ){
 #ifdef SQLITE_DEBUG
       i64 nExpect = pThread->nInMemory
         + sqlite3VarintLen(pThread->nInMemory)
@@ -1258,7 +1328,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
 
   if( rc==SQLITE_OK ){
     assert( pThread->pThread==0 && pThread->bDone==0 );
-    pThread->eWork = SORTER_THREAD_TO_PMA;
+    pThread->eWork = SORT_SUBTASK_TO_PMA;
     pThread->pList = pSorter->pRecord;
     pThread->nInMemory = pSorter->nInMemory;
     pSorter->nInMemory = 0;
@@ -1306,7 +1376,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
 */
 int sqlite3VdbeSorterWrite(
   sqlite3 *db,                    /* Database handle */
-  const VdbeCursor *pCsr,               /* Sorter cursor */
+  const VdbeCursor *pCsr,         /* Sorter cursor */
   Mem *pVal                       /* Memory cell containing record */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
@@ -1423,7 +1493,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
       SortSubtask *pThread = &pSorter->aThread[0];
       *pbEof = 0;
       pThread->pList = pSorter->pRecord;
-      pThread->eWork = SORTER_THREAD_SORT;
+      pThread->eWork = SORT_SUBTASK_SORT;
       assert( pThread->aListMemory==0 );
       pThread->aListMemory = pSorter->aMemory;
       rc = vdbeSorterRunThread(pThread);
@@ -1452,7 +1522,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
       SortSubtask *pThread = &pSorter->aThread[i];
       if( pThread->pTemp1 ){
         pThread->nConsolidate = SORTER_MAX_MERGE_COUNT / pSorter->nThread;
-        pThread->eWork = SORTER_THREAD_CONS;
+        pThread->eWork = SORT_SUBTASK_CONS;
 
 #if SQLITE_MAX_WORKER_THREADS>0
         if( i<(pSorter->nThread-1) ){
@@ -1576,12 +1646,15 @@ int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
 ** the comparison, ignore the rowid field at the end of each record.
 **
 ** If the sorter cursor key contains any NULL values, consider it to be
-** less than pVal. Evn if pVal also contains NULL values.
+** less than pVal. Even if pVal also contains NULL values.
 **
 ** If an error occurs, return an SQLite error code (i.e. SQLITE_NOMEM).
 ** Otherwise, set *pRes to a negative, zero or positive value if the
 ** key in pVal is smaller than, equal to or larger than the current sorter
 ** key.
+**
+** This routine forms the core of the OP_SorterCompare opcode, which in
+** turn is used to verify uniqueness when constructing a UNIQUE INDEX.
 */
 int sqlite3VdbeSorterCompare(
   const VdbeCursor *pCsr,         /* Sorter cursor */
