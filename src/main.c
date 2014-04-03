@@ -2504,6 +2504,7 @@ static int openDatabase(
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
+  db->nMaxSorterMmap = 0x7FFFFFFF;
   db->flags |= SQLITE_ShortColNames | SQLITE_EnableTrigger | SQLITE_CacheSpill
 #if !defined(SQLITE_DEFAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
                  | SQLITE_AutoIndex
@@ -3327,6 +3328,13 @@ int sqlite3_test_control(int op, ...){
       sqlite3GlobalConfig.xVdbeBranch = va_arg(ap,branch_callback);
       sqlite3GlobalConfig.pVdbeBranchArg = va_arg(ap,void*);
 #endif
+      break;
+    }
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_SORTER_MMAP, db, nMax); */
+    case SQLITE_TESTCTRL_SORTER_MMAP: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      db->nMaxSorterMmap = va_arg(ap, int);
       break;
     }
 

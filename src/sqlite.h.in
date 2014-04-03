@@ -6129,7 +6129,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_EXPLAIN_STMT            19
 #define SQLITE_TESTCTRL_NEVER_CORRUPT           20
 #define SQLITE_TESTCTRL_VDBE_COVERAGE           21
-#define SQLITE_TESTCTRL_LAST                    21
+#define SQLITE_TESTCTRL_SORTER_MMAP             22
+#define SQLITE_TESTCTRL_LAST                    22
 
 /*
 ** CAPI3REF: SQLite Runtime Status

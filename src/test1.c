@@ -5884,6 +5884,7 @@ static int test_test_control(
     int i;
   } aVerb[] = {
     { "SQLITE_TESTCTRL_LOCALTIME_FAULT", SQLITE_TESTCTRL_LOCALTIME_FAULT }, 
+    { "SQLITE_TESTCTRL_SORTER_MMAP", SQLITE_TESTCTRL_SORTER_MMAP }, 
   };
   int iVerb;
   int iFlag;
@@ -5909,6 +5910,19 @@ static int test_test_control(
       }
       if( Tcl_GetBooleanFromObj(interp, objv[2], &val) ) return TCL_ERROR;
       sqlite3_test_control(SQLITE_TESTCTRL_LOCALTIME_FAULT, val);
+      break;
+    }
+
+    case SQLITE_TESTCTRL_SORTER_MMAP: {
+      int val;
+      sqlite3 *db;
+      if( objc!=4 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "DB LIMIT");
+        return TCL_ERROR;
+      }
+      if( getDbPointer(interp, Tcl_GetString(objv[2]), &db) ) return TCL_ERROR;
+      if( Tcl_GetIntFromObj(interp, objv[3], &val) ) return TCL_ERROR;
+      sqlite3_test_control(SQLITE_TESTCTRL_SORTER_MMAP, db, val);
       break;
     }
   }

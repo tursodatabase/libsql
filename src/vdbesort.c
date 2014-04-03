@@ -144,7 +144,7 @@ struct SortSubtask {
   SQLiteThread *pThread;          /* Thread handle, or NULL */
   int bDone;                      /* Set to true by pTask when finished */
 
-  sqlite3_vfs *pVfs;              /* VFS used to open temporary files */
+  sqlite3 *db;                    /* Database connection */
   KeyInfo *pKeyInfo;              /* How to compare records */
   UnpackedRecord *pUnpacked;      /* Space to unpack a record */
   int pgsz;                       /* Main database page size */
@@ -514,7 +514,9 @@ static int vdbePmaReaderInit(
   if( pIter->aAlloc ){
     /* Try to xFetch() a mapping of the entire temp file. If this is possible,
     ** the PMA will be read via the mapping. Otherwise, use xRead().  */
-    rc = sqlite3OsFetch(pIter->pFile, 0, pTask->iTemp1Off, &pMap);
+    if( pTask->iTemp1Off<=(i64)(pTask->db->nMaxSorterMmap) ){
+      rc = sqlite3OsFetch(pIter->pFile, 0, pTask->iTemp1Off, &pMap);
+    }
   }else{
     rc = SQLITE_NOMEM;
   }
@@ -670,8 +672,8 @@ int sqlite3VdbeSorterInit(
     for(i=0; i<pSorter->nTask; i++){
       SortSubtask *pTask = &pSorter->aTask[i];
       pTask->pKeyInfo = pKeyInfo;
-      pTask->pVfs = db->pVfs;
       pTask->pgsz = pgsz;
+      pTask->db = db;
     }
 
     if( !sqlite3TempInMemory(db) ){
@@ -1015,17 +1017,20 @@ static void vdbePmaWriteVarint(PmaWriter *p, u64 iVal){
 ** Whether or not the file does end up memory mapped of course depends on
 ** the specific VFS implementation.
 */
-static int vdbeSorterExtendFile(sqlite3_file *pFile, i64 nByte){
-  int rc = sqlite3OsTruncate(pFile, nByte);
-  if( rc==SQLITE_OK ){
-    void *p = 0;
-    sqlite3OsFetch(pFile, 0, nByte, &p);
-    sqlite3OsUnfetch(pFile, 0, p);
+static int vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFile, i64 nByte){
+  int rc = SQLITE_OK;
+  if( nByte<=(i64)(db->nMaxSorterMmap) ){
+    rc = sqlite3OsTruncate(pFile, nByte);
+    if( rc==SQLITE_OK ){
+      void *p = 0;
+      sqlite3OsFetch(pFile, 0, nByte, &p);
+      sqlite3OsUnfetch(pFile, 0, p);
+    }
   }
   return rc;
 }
 #else
-# define vdbeSorterExtendFile(x,y) SQLITE_OK
+# define vdbeSorterExtendFile(x,y,z) SQLITE_OK
 #endif
 
 
@@ -1051,7 +1056,7 @@ static int vdbeSorterListToPMA(SortSubtask *pTask){
 
   /* If the first temporary PMA file has not been opened, open it now. */
   if( pTask->pTemp1==0 ){
-    rc = vdbeSorterOpenTempFile(pTask->pVfs, &pTask->pTemp1);
+    rc = vdbeSorterOpenTempFile(pTask->db->pVfs, &pTask->pTemp1);
     assert( rc!=SQLITE_OK || pTask->pTemp1 );
     assert( pTask->iTemp1Off==0 );
     assert( pTask->nPMA==0 );
@@ -1059,7 +1064,7 @@ static int vdbeSorterListToPMA(SortSubtask *pTask){
 
   /* Try to get the file to memory map */
   if( rc==SQLITE_OK ){
-    rc = vdbeSorterExtendFile(
+    rc = vdbeSorterExtendFile(pTask->db, 
         pTask->pTemp1, pTask->iTemp1Off + pTask->nInMemory + 9
     );
   }
@@ -1206,9 +1211,9 @@ static void *vdbeSortSubtaskMain(void *pCtx){
       }
 
       /* Open a second temp file to write merged data to */
-      rc = vdbeSorterOpenTempFile(pTask->pVfs, &pTemp2);
+      rc = vdbeSorterOpenTempFile(pTask->db->pVfs, &pTemp2);
       if( rc==SQLITE_OK ){
-        rc = vdbeSorterExtendFile(pTemp2, pTask->iTemp1Off);
+        rc = vdbeSorterExtendFile(pTask->db, pTemp2, pTask->iTemp1Off);
       }
       if( rc!=SQLITE_OK ){
         vdbeMergeEngineFree(pMerger);

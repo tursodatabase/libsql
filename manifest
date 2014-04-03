@@ -1,5 +1,5 @@
-C Fix\sminor\serrors\scausing\scompilation\sto\sfail\swith\sSQLITE_MAX_WORKER_THREADS\sset\sto\sa\svalue\sgreater\sthan\szero.
-D 2014-04-03T14:29:08.251
+C Fix\san\sinteger\soverflow\sproblem\sin\sthe\ssorter.
+D 2014-04-03T16:25:29.778
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -186,7 +186,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c d3655832585baef4c2356529a5c6ca5ca3bd7c1f
+F src/main.c fcceb01d74a79c2d7984f33545b35b06da3bb1e8
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -219,15 +219,15 @@ F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 20055cf917222e660c4222fea306bd13a0623caa
 F src/shell.c a08060750f92461fc462b4f767e3b0d19d6b832e
-F src/sqlite.h.in 0249af5d9d3bbeab0dc1f58e1f9fee878807732a
+F src/sqlite.h.in 81221c50addbf698c3247154d92efd1095bfd885
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 3ed0fedb5b64ece395a2114b7c73417678f3e420
+F src/sqliteInt.h 78c89401120b062660427c7b642de4de7673bc46
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e87c99e28a145943666b51b212dacae35fcea0bd
-F src/test1.c 31596bf8a9c0629f88e514a4ec864847c8946c4e
+F src/test1.c 0cd73ae82fdf7add76ca603e3575380ae7539ae2
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 5e7ed44bb4f2af809b6d229ae00f97825efab89a
+F src/vdbesort.c 252d7ab7620649945b53289510a172bc73133f17
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -738,7 +738,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 40add071ba71aefe1c04f5845308cf46f7de8d04
+F test/permutations.test a214a42b4767bbbc7cd0fd965ea6198044ab414d
 F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1161,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d284e30eb1db144965fa85566e4234e30464350b
-R 45d899d78ea7a6cd4a92080d8bb33ecf
+P 0561272abf357a2f4709f6c02866e570d19cd344
+R 8288f2959bddd3667c4349a94ca23e0f
 U dan
-Z 013157fb51930f7eb005a94358375580
+Z 4eb0e7377049f06d09d1ea7ce591ab92
