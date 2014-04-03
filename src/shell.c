@@ -2130,10 +2130,12 @@ static void tryToClone(struct callback_data *p, const char *zNewDb){
     fprintf(stderr, "Cannot create output database: %s\n",
             sqlite3_errmsg(newDb));
   }else{
+    sqlite3_exec(p->db, "PRAGMA writable_schema=ON;", 0, 0, 0);
     sqlite3_exec(newDb, "BEGIN EXCLUSIVE;", 0, 0, 0);
     tryToCloneSchema(p, newDb, "type='table'", tryToCloneData);
     tryToCloneSchema(p, newDb, "type!='table'", 0);
     sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
+    sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
   }
   sqlite3_close(newDb);
 }

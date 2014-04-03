@@ -166,5 +166,18 @@ do_eqp_test whereG-3.4 {
   SELECT * FROM a, b WHERE a2=5 AND a1=b1;
 } {/.*SCAN TABLE a.*SEARCH TABLE b USING INDEX .*b_1 .b1=..*/}
 
+# Ticket [1e64dd782a126f48d78c43a664844a41d0e6334e]:
+# Incorrect result in a nested GROUP BY/DISTINCT due to the use of an OP_SCopy
+# where an OP_Copy was needed.
+#
+do_execsql_test whereG-4.0 {
+  CREATE TABLE t4(x);
+  INSERT INTO t4 VALUES('right'),('wrong');
+  SELECT DISTINCT x
+   FROM (SELECT x FROM t4 GROUP BY x)
+   WHERE x='right'
+   ORDER BY x;
+} {right}
+
 
 finish_test

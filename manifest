@@ -1,5 +1,5 @@
-C Fix\san\sinteger\soverflow\sproblem\sin\sthe\ssorter.
-D 2014-04-03T16:25:29.778
+C Merge\sall\srecent\schanges\sfrom\strunk.
+D 2014-04-03T16:42:21.478
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -192,7 +192,7 @@ F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
-F src/mem5.c aeb019f271ea53de83d651ec526877e6ba863450
+F src/mem5.c 74670012946c4adc8a6ad84d03acc80959c3e529
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
 F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
@@ -218,7 +218,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 20055cf917222e660c4222fea306bd13a0623caa
-F src/shell.c a08060750f92461fc462b4f767e3b0d19d6b832e
+F src/shell.c afc0b1a5a646d287142ef0c9a2a6e3139d57cba2
 F src/sqlite.h.in 81221c50addbf698c3247154d92efd1095bfd885
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -279,7 +279,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c eed2230017ca8ac5ca8fc221b38be036bba48499
+F src/vdbe.c 9f3d1b35b5fe8c7f3a4f734bd524d0df844a2576
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h ba1069627d0ab75e9ddb8f9c10958b86cdbd333d
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -292,7 +292,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 7d539cedb1c6a6d6b5d2075b8fea3a48db4838eb
+F src/where.c ebad891b7494d0c5f925cf7ab135380bd958cba3
 F src/whereInt.h 2564055b440e44ebec8b47f237bbccae6719b7af
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1094,7 +1094,7 @@ F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
 F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
-F test/whereG.test eb3a46b3eaf38e25e3013433b2db8a25a866c215
+F test/whereG.test 2533b72ed4a31fd1687230a499b557b911525344
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1161,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0561272abf357a2f4709f6c02866e570d19cd344
-R 8288f2959bddd3667c4349a94ca23e0f
-U dan
-Z 4eb0e7377049f06d09d1ea7ce591ab92
+P 9d3351b8d713232133dad149c73fb2a27c72abb1 d5513dfa23baa0b0a095aaf17d19aacd30dcef61
+R 6137d1586a278eeecb535398f89aa582
+U drh
+Z 41afe239279763eb22b85c89d966d688

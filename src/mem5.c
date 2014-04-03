@@ -248,7 +248,7 @@ static void *memsys5MallocUnsafe(int nByte){
   ** block.  If not, then split a block of the next larger power of
   ** two in order to create a new free block of size iLogsize.
   */
-  for(iBin=iLogsize; mem5.aiFreelist[iBin]<0 && iBin<=LOGMAX; iBin++){}
+  for(iBin=iLogsize; iBin<=LOGMAX && mem5.aiFreelist[iBin]<0; iBin++){}
   if( iBin>LOGMAX ){
     testcase( sqlite3GlobalConfig.xLog!=0 );
     sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes", nByte);
