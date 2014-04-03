@@ -5880,7 +5880,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
-          pOp->opcode = OP_SCopy;
+          pOp->opcode = OP_Copy;
           pOp->p1 = pOp->p2 + pTabItem->regResult;
           pOp->p2 = pOp->p3;
           pOp->p3 = 0;
