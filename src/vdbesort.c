@@ -736,10 +736,10 @@ static int vdbeSorterJoinAll(VdbeSorter *pSorter, int rcin){
   int i;
   for(i=0; i<pSorter->nTask; i++){
     SortSubtask *pTask = &pSorter->aTask[i];
-    if( pTask->pTask ){
+    if( pTask->pThread ){
       void *pRet;
-      int rc2 = sqlite3ThreadJoin(pTask->pTask, &pRet);
-      pTask->pTask = 0;
+      int rc2 = sqlite3ThreadJoin(pTask->pThread, &pRet);
+      pTask->pThread = 0;
       pTask->bDone = 0;
       if( rc==SQLITE_OK ) rc = rc2;
       if( rc==SQLITE_OK ) rc = SQLITE_PTR_TO_INT(pRet);
@@ -1312,9 +1312,9 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
 #if SQLITE_MAX_WORKER_THREADS>0
     if( pTask->bDone ){
       void *pRet;
-      assert( pTask->pTask );
-      rc = sqlite3ThreadJoin(pTask->pTask, &pRet);
-      pTask->pTask = 0;
+      assert( pTask->pThread );
+      rc = sqlite3ThreadJoin(pTask->pThread, &pRet);
+      pTask->pThread = 0;
       pTask->bDone = 0;
       if( rc==SQLITE_OK ){
         rc = SQLITE_PTR_TO_INT(pRet);
@@ -1356,7 +1356,7 @@ static int vdbeSorterFlushPMA(sqlite3 *db, const VdbeCursor *pCsr, int bFg){
           pSorter->nMemory = sqlite3MallocSize(pSorter->aMemory);
         }
       }
-      rc = sqlite3ThreadCreate(&pTask->pTask, vdbeSortSubtaskMain, pCtx);
+      rc = sqlite3ThreadCreate(&pTask->pThread, vdbeSortSubtaskMain, pCtx);
     }else
 #endif
     {
@@ -1531,7 +1531,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
 #if SQLITE_MAX_WORKER_THREADS>0
         if( i<(pSorter->nTask-1) ){
           void *pCtx = (void*)pTask;
-          rc = sqlite3ThreadCreate(&pTask->pTask,vdbeSortSubtaskMain,pCtx);
+          rc = sqlite3ThreadCreate(&pTask->pThread, vdbeSortSubtaskMain, pCtx);
         }else
 #endif
         {
