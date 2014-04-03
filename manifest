@@ -1,5 +1,5 @@
-C Add\sa\sbig\sintroductory\scomment\sto\svdbesort.c\sexplaining\sits\soperation\sat\sa\nhigh\slevel.\s\sAlso\sadjust\ssome\ssymbolic\snames\sand\sfix\sother\scomment\sissues\sin\nthat\sfile.
-D 2014-04-02T18:58:49.259
+C Refactor\slocal\sobject\sand\smethod\snames\sin\svdbesort.c\sso\sthat\stheir\snames\nmore\sclosely\sreflect\stheir\sactual\suse.
+D 2014-04-03T02:54:27.677
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 523283d7c3f499444df97d700503f3c9ddd746b7
+F src/vdbesort.c a4e349ff62196dc3d98eacb0f9281e2468c44cab
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1161,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 47e702bd8392bc50c4edaf6a2c8c499af87b520e
-R a364509f4308441b3af07ec467078f09
+P eef60f1bf54fcdc7b32f96ebb87a9a0bf0776e8b
+R 0d1e8a8cee97e3fb0928896d3dcac011
 U drh
-Z a6f0e24eb45caefc4a14c210e684429c
+Z 523d07a773fda305bad8a184629c5049
