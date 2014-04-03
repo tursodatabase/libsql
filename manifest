@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\srun\sset\swritable_schema\sbefore\srunning\sthe\n".clone"\scommand.
-D 2014-04-03T00:32:13.777
+C Fix\sa\stypo\sin\sthe\s"Synopsis:"\scomment\sfor\sthe\sOP_VFilter\sopcode.
+D 2014-04-03T14:31:00.074
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,7 +278,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 74c7386e83eee56f921a17bb4a0396c9551f5bc7
+F src/vdbe.c e811a0081149fb90db367026d154cd7efb3c7098
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -1159,7 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b3296267fb67b9f59719a37093253062edde3746
-R 3857796e3bb74e57525267a0574c950a
+P 9d2ae6342c8afa904bec591ebe134ff7f536b71c
+R 06523ad1e0d97e48aa9a162217a28d3b
 U drh
-Z e5eef1fbe323934e85f2b63b760c4a7b
+Z 64c7c8526eed6d4962d61576f8ab00f6
