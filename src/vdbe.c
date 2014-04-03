@@ -5990,7 +5990,7 @@ case OP_VOpen: {
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /* Opcode: VFilter P1 P2 P3 P4 *
-** Synopsis: iPlan=r[P3] zPlan='P4'
+** Synopsis: iplan=r[P3] zplan='P4'
 **
 ** P1 is a cursor opened using VOpen.  P2 is an address to jump to if
 ** the filtered result set is empty.

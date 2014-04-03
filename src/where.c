@@ -4328,18 +4328,34 @@ static int whereLoopAddBtree(
           )
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
+        /* TUNING:  The base cost of an index scan is N + log2(N).
+        ** The log2(N) is for the initial seek to the beginning and the N
+        ** is for the scan itself. */
+        pNew->rRun = sqlite3LogEstAdd(rSize, rLogSize);
         if( m==0 ){
           /* TUNING: Cost of a covering index scan is K*(N + log2(N)).
           **  +  The extra factor K of between 1.1 and 3.0 that depends
           **     on the relative sizes of the table and the index.  K
           **     is smaller for smaller indices, thus favoring them.
+          **     The upper bound on K (3.0) matches the penalty factor
+          **     on a full table scan that tries to encourage the use of
+          **     indexed lookups over full scans.
           */
-          pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 1 +
-                        (15*pProbe->szIdxRow)/pTab->szTabRow;
+          pNew->rRun +=  1 + (15*pProbe->szIdxRow)/pTab->szTabRow;
         }else{
-          /* TUNING: Cost of scanning a non-covering index is (N+1)*log2(N)
-          ** which we will simplify to just N*log2(N) */
-          pNew->rRun = rSize + rLogSize;
+          /* TUNING: The cost of scanning a non-covering index is multiplied
+          ** by log2(N) to account for the binary search of the main table
+          ** that must happen for each row of the index.
+          ** TODO: Should there be a multiplier here, analogous to the 3x
+          ** multiplier for a fulltable scan or covering index scan, to
+          ** further discourage the use of an index scan?  Or is the log2(N)
+          ** term sufficient discouragement?
+          ** TODO: What if some or all of the WHERE clause terms can be
+          ** computed without reference to the original table.  Then the
+          ** penality should reduce to logK where K is the number of output
+          ** rows.
+          */
+          pNew->rRun += rLogSize;
         }
         whereLoopOutputAdjust(pWC, pNew);
         rc = whereLoopInsert(pBuilder, pNew);
@@ -4920,7 +4936,7 @@ static i8 wherePathSatisfiesOrderBy(
       }
     }
   } /* End the loop over all WhereLoops from outer-most down to inner-most */
-  if( obSat==obDone ) return nOrderBy;
+  if( obSat==obDone ) return (i8)nOrderBy;
   if( !isOrderDistinct ){
     for(i=nOrderBy-1; i>0; i--){
       Bitmask m = MASKBIT(i) - 1;
@@ -5041,11 +5057,19 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                        pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
                        iLoop, pWLoop, &revMask);
           if( isOrdered>=0 && isOrdered<nOrderBy ){
-            /* TUNING: Estimated cost of sorting cost as roughly N*log(N).
-            ** If some but not all of the columns are in sorted order, then
-            ** scale down the log(N) term. */
-            LogEst rScale = sqlite3LogEst((nOrderBy-isOrdered)*100/nOrderBy);
-            LogEst rSortCost = nRowEst + estLog(nRowEst) + rScale - 66;
+            /* TUNING: Estimated cost of sorting is N*log(N).
+            ** If the order-by clause has X terms but only the last Y terms
+            ** are out of order, then block-sorting will reduce the sorting
+            ** cost to N*log(N)*log(Y/X).  The log(Y/X) term is computed
+            ** by rScale.
+            ** TODO: Should the sorting cost get a small multiplier to help
+            ** discourage the use of sorting and encourage the use of index
+            ** scans instead?
+            */
+            LogEst rScale, rSortCost;
+            assert( nOrderBy>0 );
+            rScale = sqlite3LogEst((nOrderBy-isOrdered)*100/nOrderBy) - 66;
+            rSortCost = nRowEst + estLog(nRowEst) + rScale;
             /* TUNING: The cost of implementing DISTINCT using a B-TREE is
             ** also N*log(N) but it has a larger constant of proportionality.
             ** Multiply by 3.0. */
@@ -5900,7 +5924,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       for(; k<last; k++, pOp++){
         if( pOp->p1!=pLevel->iTabCur ) continue;
         if( pOp->opcode==OP_Column ){
-          pOp->opcode = OP_SCopy;
+          pOp->opcode = OP_Copy;
           pOp->p1 = pOp->p2 + pTabItem->regResult;
           pOp->p2 = pOp->p3;
           pOp->p3 = 0;
