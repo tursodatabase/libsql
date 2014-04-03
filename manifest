@@ -1,12 +1,12 @@
-C Use\sOP_Copy\sinstead\sof\sOP_SCopy\swhen\smoving\sresults\sout\sof\sa\ssubquery,\nto\sprevent\sthe\ssubquery\sresults\sfrom\schanging\sout\sfrom\sunder\sthe\souter\nquery.\s\sFix\sfor\sticket\s[1e64dd782a126f48d78].
-D 2014-04-03T16:16:36.087
+C Increase\sthe\sversion\snumber\sto\s3.8.4.3
+D 2014-04-03T16:18:57.768
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc fdacba6fb574868c71fde6db6b77789a383a4c19
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION 8641f71307fcfa987ad08940c79abeeb2eef15f2
+F VERSION f2e148dd23e570d315c957fee69bd5d302242840
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 47660a145d20c0a01ca44d787189ae7b1e943b40 x
+F configure 215e976e24f3a008409277800f29dac638b2b3e8 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1156,7 +1156,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 02ea166372bdb2ef9d8dfbb05e78a97609673a8e
-R 389acb6e4dd6103b4ea80a6d92c6b43f
+P ec6a06246e04eee5f25f1c28507df73b697099c0
+R d2e6a9f3fa74174124bde3b843da1650
 U drh
-Z 7258da5426dca37d98c8d457554c4020
+Z e8f77651f21d3a312b1783183c2be979
