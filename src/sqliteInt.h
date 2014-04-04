@@ -3652,8 +3652,10 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 /*
 ** Threading interface
 */
+#if SQLITE_MAX_WORKER_THREADS>0
 int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
 int sqlite3ThreadJoin(SQLiteThread*, void**);
+#endif
 
 /*
 ** Win32 interface

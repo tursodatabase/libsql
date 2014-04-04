@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sa\sWindows\sthreading\ssupport\sroutine.
-D 2014-04-04T21:40:38.243
+C Fix\sharmless\scompiler\swarnings.
+D 2014-04-04T22:44:59.018
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 0d1be67448c45eccc40114556186397eb9da7f7d
 F src/btree.h 232836cb51753f2e96aa8ce0f052c6df850f76ba
 F src/btreeInt.h 0be66063468a520e4d66b80c7a1dc26d04ee6ea4
-F src/build.c b507fb9b4ce943139401d5c9a2daa94a568a8cf1
+F src/build.c e120a3693ac78ab3e74048205f07a3a522d9b982
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -222,7 +222,7 @@ F src/shell.c afc0b1a5a646d287142ef0c9a2a6e3139d57cba2
 F src/sqlite.h.in 81221c50addbf698c3247154d92efd1095bfd885
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 78c89401120b062660427c7b642de4de7673bc46
+F src/sqliteInt.h 533154bf9d8401ff3e6f8030f4373774c0a6ad41
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1163,7 +1163,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 39ac79cffe716f88af0871bdd206231b6a6511ff
-R 0cd4553a2bbfab9bd06e3f865048f05f
-U mistachkin
-Z cb7697a0807ce9ae67c5a22136134623
+P 5e3dfa27c71a666e122e3cf64897038ff8424800
+R bbcde0d30a2bb025a3c15f4a10b2b404
+U drh
+Z 9376e61a8443d421f4f6f69d3d5500ac

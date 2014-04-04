@@ -3018,7 +3018,7 @@ Index *sqlite3CreateIndex(
       pParse->checkSchema = 1;
       goto exit_create_index;
     }
-    assert( pTab->nCol<=0x7fff && j<=0x7fff );
+    assert( j<=0x7fff );
     pIndex->aiColumn[i] = (i16)j;
     if( pListItem->pExpr ){
       int nColl;
