@@ -1017,17 +1017,15 @@ static void vdbePmaWriteVarint(PmaWriter *p, u64 iVal){
 ** Whether or not the file does end up memory mapped of course depends on
 ** the specific VFS implementation.
 */
-static int vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFile, i64 nByte){
-  int rc = SQLITE_OK;
+static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFile, i64 nByte){
   if( nByte<=(i64)(db->nMaxSorterMmap) ){
-    rc = sqlite3OsTruncate(pFile, nByte);
+    int rc = sqlite3OsTruncate(pFile, nByte);
     if( rc==SQLITE_OK ){
       void *p = 0;
       sqlite3OsFetch(pFile, 0, nByte, &p);
       sqlite3OsUnfetch(pFile, 0, p);
     }
   }
-  return rc;
 }
 #else
 # define vdbeSorterExtendFile(x,y,z) SQLITE_OK
@@ -1064,7 +1062,7 @@ static int vdbeSorterListToPMA(SortSubtask *pTask){
 
   /* Try to get the file to memory map */
   if( rc==SQLITE_OK ){
-    rc = vdbeSorterExtendFile(pTask->db, 
+    vdbeSorterExtendFile(pTask->db, 
         pTask->pTemp1, pTask->iTemp1Off + pTask->nInMemory + 9
     );
   }
@@ -1213,16 +1211,15 @@ static void *vdbeSortSubtaskMain(void *pCtx){
       /* Open a second temp file to write merged data to */
       rc = vdbeSorterOpenTempFile(pTask->db->pVfs, &pTemp2);
       if( rc==SQLITE_OK ){
-        rc = vdbeSorterExtendFile(pTask->db, pTemp2, pTask->iTemp1Off);
-      }
-      if( rc!=SQLITE_OK ){
+        vdbeSorterExtendFile(pTask->db, pTemp2, pTask->iTemp1Off);
+      }else{
         vdbeMergeEngineFree(pMerger);
         break;
       }
 
       /* This loop runs once for each output PMA. Each output PMA is made
       ** of data merged from up to SORTER_MAX_MERGE_COUNT input PMAs. */
-      for(i=0; i<pTask->nPMA; i+=SORTER_MAX_MERGE_COUNT){
+      for(i=0; rc==SQLITE_OK && i<pTask->nPMA; i+=SORTER_MAX_MERGE_COUNT){
         PmaWriter writer;         /* Object for writing data to pTemp2 */
         i64 nOut = 0;             /* Bytes of data in output PMA */
         int bEof = 0;
