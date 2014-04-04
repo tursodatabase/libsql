@@ -1,5 +1,5 @@
-C Add\stest\sfile\ssort3.test,\swhich\sshould\shave\sbeen\spart\sof\scommit\s[9d3351b8d7].
-D 2014-04-04T07:52:44.563
+C Merge\sthe\slatest\strunk\schanges\sinto\sthe\sthreads\sbranch.
+D 2014-04-04T18:37:36.101
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c 8245fe9184300e641d02e29a8ca95cefe0cb0fd0
-F src/pager.c 97a8908bf4e6e7c3adea09d3597cfa48ae33ab4e
+F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -292,7 +292,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c ebad891b7494d0c5f925cf7ab135380bd958cba3
+F src/where.c 70eb10da08cebbd6a576ced18edb7c8f79d41597
 F src/whereInt.h 2564055b440e44ebec8b47f237bbccae6719b7af
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1053,7 +1053,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
-F test/wal.test 40073e54359d43354925b2b700b7eebd5e207285
+F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
 F test/wal2.test a8e3963abf6b232cf0b852b09b53665ef34007af
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1096,6 +1096,7 @@ F test/whereD.test 6c2feb79ef1f68381b07f39017fe5f9b96da8d62
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test 2533b72ed4a31fd1687230a499b557b911525344
+F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1162,7 +1163,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 217814bc4b53fab7bdad433e24e8aef8998c38fe
-R 3decea650c26960f7b93e4d30e9eb4e6
-U dan
-Z 1dd1e90c2d62e06b6853f5bd55d6e7b2
+P dceed2c803fca23c83c02c448d5ae7c4698efee1 683dd379a293b2f330e1e4cd746f190527fe48ee
+R ded894407cec029874d1f7230b628469
+U drh
+Z 4f065338769b0de2d9e8b418eaae9ff0
