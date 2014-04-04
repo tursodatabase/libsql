@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\sthreads\sbranch.
-D 2014-04-04T18:37:36.101
+C Fix\stypo\sin\sa\sWindows\sthreading\ssupport\sroutine.
+D 2014-04-04T21:40:38.243
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -272,7 +272,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c 3a0ab304682fecbceb689e7d9b904211fde11d78
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c 6992f70cab8d5d8451a6b5641a9256d1749af87b
+F src/threads.c b8e7232f2b9c9d148d6886117160de394d172f85
 F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
@@ -1163,7 +1163,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P dceed2c803fca23c83c02c448d5ae7c4698efee1 683dd379a293b2f330e1e4cd746f190527fe48ee
-R ded894407cec029874d1f7230b628469
-U drh
-Z 4f065338769b0de2d9e8b418eaae9ff0
+P 39ac79cffe716f88af0871bdd206231b6a6511ff
+R 0cd4553a2bbfab9bd06e3f865048f05f
+U mistachkin
+Z cb7697a0807ce9ae67c5a22136134623
