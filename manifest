@@ -1,5 +1,5 @@
-C Change\svdbeSorterExtendFile()\sso\sthat\sit\smakes\sa\sbest\seffort\sto\screate\sthe\nPMA\sfile\sof\sthe\sdesired\ssize,\sbut\sdoes\snot\sreturn\san\serror\sif\sunable.
-D 2014-04-04T02:13:26.507
+C Add\stest\sfile\ssort3.test,\swhich\sshould\shave\sbeen\spart\sof\scommit\s[9d3351b8d7].
+D 2014-04-04T07:52:44.563
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -819,6 +819,7 @@ F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 79dc647c4e9b123a64e57b7080b7f9a2df43f87a
 F test/sort2.test 21cd865e31adecdc8fc81c8d95431e629676a8d8
+F test/sort3.test c3f88d233452a129de519de311d109a0ad0da0af
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
@@ -1161,7 +1162,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a0910079adde95245680dee59b43613b60903f10
-R ae0d06309ee79fa9e2b8e2b495c941f2
-U drh
-Z 2dc7a665c4d0ee5a145d17c4c35dd575
+P 217814bc4b53fab7bdad433e24e8aef8998c38fe
+R 3decea650c26960f7b93e4d30e9eb4e6
+U dan
+Z 1dd1e90c2d62e06b6853f5bd55d6e7b2
