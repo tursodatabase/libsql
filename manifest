@@ -1,5 +1,5 @@
-C Use\sOP_Copy\sinstead\sof\sOP_SCopy\swhen\smoving\sresults\sout\sof\sa\ssubquery,\nto\sprevent\sthe\ssubquery\sresults\sfrom\schanging\sout\sfrom\sunder\sthe\souter\nquery.\s\sFix\sfor\sticket\s[1e64dd782a126f48d78].
-D 2014-04-03T16:29:31.330
+C Ensure\sthe\s"PRAGMA\sjournal_mode=WAL"\sworks\scoming\sfrom\sany\sother\sjournal_mode\nwith\sATTACH-ed\sdatabases.
+D 2014-04-04T14:12:52.073
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
-F src/pager.c 97a8908bf4e6e7c3adea09d3597cfa48ae33ab4e
+F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -1050,7 +1050,7 @@ F test/vtabF.test fd5ad376f5a34fe0891df1f3cddb4fe7c3eb077e
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
-F test/wal.test 40073e54359d43354925b2b700b7eebd5e207285
+F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
 F test/wal2.test a8e3963abf6b232cf0b852b09b53665ef34007af
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
@@ -1159,8 +1159,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 48ecdd4aff03741f96c070dced69c3c273b652cb
-Q +ec6a06246e04eee5f25f1c28507df73b697099c0
-R b6a2fefa5b61ea0e64da4db2aaa10286
+P d5513dfa23baa0b0a095aaf17d19aacd30dcef61
+R dda37fe73fefd9a3a9bbbb33bf2f4700
 U drh
-Z f1f1ceb5f31f4e26d736a13a2a5aca0f
+Z ec7ec754ade71c9dc3d6dc5092f63d72

@@ -1574,4 +1574,17 @@ sqlite3_shutdown
 test_sqlite3_log
 sqlite3_initialize
 
+# Make sure PRAGMA journal_mode=WAL works with ATTACHED databases in
+# all journal modes.
+#
+foreach mode {OFF MEMORY PERSIST DELETE TRUNCATE WAL} {
+  delete_file test.db test2.db
+  sqlite3 db test.db
+  do_test wal-25.$mode {
+    db eval "PRAGMA journal_mode=$mode"
+    db eval {ATTACH 'test2.db' AS t2; PRAGMA journal_mode=WAL;}
+  } {wal}
+  db close
+}
+
 finish_test
