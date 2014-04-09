@@ -47,6 +47,12 @@ do_execsql_test 2.2 {
   CREATE UNIQUE INDEX i1 ON t1(b, a);
 }
 
+do_execsql_test 2.3 {
+  CREATE UNIQUE INDEX i2 ON t1(a);
+}
+
+do_execsql_test 2.4 { PRAGMA integrity_check } {ok}
+
 db close
 sqlite3_shutdown
 sqlite3_config_worker_threads 0

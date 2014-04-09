@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2014-04-04T22:44:59.018
+C Experimental\smulti-threaded\ssorting\schanges\sto\sallow\sthe\ssorter\sto\sbegin\sreturning\sitems\sto\sthe\sVDBE\sbefore\sall\sdata\sis\ssorted.
+D 2014-04-09T20:04:17.324
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 8da916fc74e78edd5bc95653206942e01710ac09
+F src/vdbesort.c 26823b626c3231a52e45f5e78a18cb8681bb1b88
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -818,7 +818,7 @@ F test/skipscan2.test 5a4db0799c338ddbacb154aaa5589c0254b36a8d
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 79dc647c4e9b123a64e57b7080b7f9a2df43f87a
-F test/sort2.test 21cd865e31adecdc8fc81c8d95431e629676a8d8
+F test/sort2.test bbc2eb244fb862141a900a851056d48705b5997b
 F test/sort3.test c3f88d233452a129de519de311d109a0ad0da0af
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -1163,7 +1163,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5e3dfa27c71a666e122e3cf64897038ff8424800
-R bbcde0d30a2bb025a3c15f4a10b2b404
-U drh
-Z 9376e61a8443d421f4f6f69d3d5500ac
+P e54dded2012f0ab486ee138e9bd57c528af33980
+R 803b4ddf4cddf7e21aeddc04109caaf0
+T *branch * threads-experimental
+T *sym-threads-experimental *
+T -sym-threads *
+U dan
+Z 3b5c615396ccbaaa23add5a8103bd906
