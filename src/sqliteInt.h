@@ -3019,7 +3019,7 @@ int sqlite3BitvecBuiltinTest(int,int*);
 RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
 void sqlite3RowSetClear(RowSet*);
 void sqlite3RowSetInsert(RowSet*, i64);
-int sqlite3RowSetTest(RowSet*, u8 iBatch, i64);
+int sqlite3RowSetTest(RowSet*, int iBatch, i64);
 int sqlite3RowSetNext(RowSet*, i64*);
 
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
