@@ -1,5 +1,5 @@
-C Merge\sall\srecent\schanges\sfrom\strunk,\nincluding\sthe\sfix\sfor\sthe\sOP_SCopy-vs-OP_Copy\sproblem.
-D 2014-04-03T16:35:33.203
+C Update\scomments\sin\sthe\sR-Tree\smodule\sin\spreparation\sfor\ssome\sbig\schanges.\nAdd\san\s"rtree"\sperformance\stest\sto\sspeedtest1.
+D 2014-04-11T16:14:54.092
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 2d9f95da404d850474e628c720c5ce15d29b47de
+F ext/rtree/rtree.c 043f16a6c3f823c760657b975f2ff1de7fe5c197
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -840,7 +840,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 90446861e566a9965a8d005381a3c964ff333646
+F test/speedtest1.c 3e06b48e8c578eaa61a01e8c7c4d8734c9dd3776
 F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1174,7 +1174,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P fc8ca1a87e7127bd28f32fd809aec3e24355fbfa d5513dfa23baa0b0a095aaf17d19aacd30dcef61
-R 507e4fb477cf51261d2563e52f7cfa77
+P 9515c8344a6743bbb0c6a6e49fb79fb3139090df
+R 57f2249bba89c44cd5839664eafe6658
+T *branch * rtree-enhancements
+T *sym-rtree-enhancements *
+T -sym-sessions *
 U drh
-Z a91c37323943563a6d3bfb60a104e003
+Z bdd5cbefa0a4dcc9a9cc6ed610b85f71

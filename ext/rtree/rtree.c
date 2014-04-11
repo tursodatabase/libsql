@@ -110,6 +110,7 @@
 #include "sqlite3rtree.h"
 typedef sqlite3_int64 i64;
 typedef unsigned char u8;
+typedef unsigned short u16;
 typedef unsigned int u32;
 #endif
 
@@ -135,7 +136,7 @@ typedef union RtreeCoord RtreeCoord;
 ** ever contain very many entries, so a fixed number of buckets is 
 ** used.
 */
-#define HASHSIZE 128
+#define HASHSIZE 97
 
 /* The xBestIndex method of this virtual table requires an estimate of
 ** the number of rows in the virtual table to calculate the costs of
@@ -151,15 +152,15 @@ typedef union RtreeCoord RtreeCoord;
 ** An rtree virtual-table object.
 */
 struct Rtree {
-  sqlite3_vtab base;
+  sqlite3_vtab base;          /* Base class.  Must be first */
   sqlite3 *db;                /* Host database connection */
   int iNodeSize;              /* Size in bytes of each node in the node table */
-  int nDim;                   /* Number of dimensions */
-  int nBytesPerCell;          /* Bytes consumed per cell */
+  u8 nDim;                    /* Number of dimensions */
+  u8 eCoordType;              /* RTREE_COORD_REAL32 or RTREE_COORD_INT32 */
+  u8 nBytesPerCell;           /* Bytes consumed per cell */
   int iDepth;                 /* Current depth of the r-tree structure */
   char *zDb;                  /* Name of database containing r-tree table */
   char *zName;                /* Name of r-tree table */ 
-  RtreeNode *aHash[HASHSIZE]; /* Hash table of in-memory nodes. */ 
   int nBusy;                  /* Current number of users of this structure */
   i64 nRowEst;                /* Estimated number of rows in this table */
 
@@ -186,10 +187,10 @@ struct Rtree {
   sqlite3_stmt *pWriteParent;
   sqlite3_stmt *pDeleteParent;
 
-  int eCoordType;
+  RtreeNode *aHash[HASHSIZE]; /* Hash table of in-memory nodes. */ 
 };
 
-/* Possible values for eCoordType: */
+/* Possible values for Rtree.eCoordType: */
 #define RTREE_COORD_REAL32 0
 #define RTREE_COORD_INT32  1
 
@@ -232,7 +233,7 @@ struct Rtree {
 ** An rtree cursor object.
 */
 struct RtreeCursor {
-  sqlite3_vtab_cursor base;
+  sqlite3_vtab_cursor base;         /* Base class.  Must be first */
   RtreeNode *pNode;                 /* Node cursor is currently pointing at */
   int iCell;                        /* Index of current cell in pNode */
   int iStrategy;                    /* Copy of idxNum search parameter */
@@ -240,9 +241,13 @@ struct RtreeCursor {
   RtreeConstraint *aConstraint;     /* Search constraints. */
 };
 
+/*
+** A coordinate can be either a floating point number or a integer.  All
+** coordinates within a single R-Tree are always of the same time.
+*/
 union RtreeCoord {
-  RtreeValue f;
-  int i;
+  RtreeValue f;      /* Floating point value */
+  int i;             /* Integer value */
 };
 
 /*
@@ -284,21 +289,23 @@ struct RtreeConstraint {
 ** An rtree structure node.
 */
 struct RtreeNode {
-  RtreeNode *pParent;               /* Parent node */
-  i64 iNode;
-  int nRef;
-  int isDirty;
-  u8 *zData;
-  RtreeNode *pNext;                 /* Next node in this hash chain */
+  RtreeNode *pParent;          /* Parent node */
+  i64 iNode;                   /* The node number */
+  int nRef;                    /* Number of references to this node */
+  int isDirty;                 /* True if the node needs to be written to disk */
+  u8 *zData;                   /* Content of the node, as should be on disk */
+  RtreeNode *pNext;            /* Next node in this hash collision chain */
 };
+
+/* Return the number of cells in a node  */
 #define NCELL(pNode) readInt16(&(pNode)->zData[2])
 
 /* 
-** Structure to store a deserialized rtree record.
+** A single cell from a node, deserialized
 */
 struct RtreeCell {
-  i64 iRowid;
-  RtreeCoord aCoord[RTREE_MAX_DIMENSIONS*2];
+  i64 iRowid;                                 /* Node or entry ID */
+  RtreeCoord aCoord[RTREE_MAX_DIMENSIONS*2];  /* Bounding box coordinates */
 };
 
 
@@ -426,10 +433,7 @@ static void nodeZero(Rtree *pRtree, RtreeNode *p){
 ** in the Rtree.aHash table.
 */
 static int nodeHash(i64 iNode){
-  return (
-    (iNode>>56) ^ (iNode>>48) ^ (iNode>>40) ^ (iNode>>32) ^ 
-    (iNode>>24) ^ (iNode>>16) ^ (iNode>> 8) ^ (iNode>> 0)
-  ) % HASHSIZE;
+  return iNode % HASHSIZE;
 }
 
 /*
@@ -489,8 +493,7 @@ static RtreeNode *nodeNew(Rtree *pRtree, RtreeNode *pParent){
 /*
 ** Obtain a reference to an r-tree node.
 */
-static int
-nodeAcquire(
+static int nodeAcquire(
   Rtree *pRtree,             /* R-tree structure */
   i64 iNode,                 /* Node number to load */
   RtreeNode *pParent,        /* Either the parent node or NULL */
@@ -579,10 +582,10 @@ nodeAcquire(
 ** Overwrite cell iCell of node pNode with the contents of pCell.
 */
 static void nodeOverwriteCell(
-  Rtree *pRtree, 
-  RtreeNode *pNode,  
-  RtreeCell *pCell, 
-  int iCell
+  Rtree *pRtree,             /* The overall R-Tree */
+  RtreeNode *pNode,          /* The node into which the cell is to be written */
+  RtreeCell *pCell,          /* The cell to write */
+  int iCell                  /* Index into pNode into which pCell is written */
 ){
   int ii;
   u8 *p = &pNode->zData[4 + pRtree->nBytesPerCell*iCell];
@@ -594,7 +597,7 @@ static void nodeOverwriteCell(
 }
 
 /*
-** Remove cell the cell with index iCell from node pNode.
+** Remove the cell with index iCell from node pNode.
 */
 static void nodeDeleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell){
   u8 *pDst = &pNode->zData[4 + pRtree->nBytesPerCell*iCell];
@@ -611,11 +614,10 @@ static void nodeDeleteCell(Rtree *pRtree, RtreeNode *pNode, int iCell){
 **
 ** If there is not enough free space in pNode, return SQLITE_FULL.
 */
-static int
-nodeInsertCell(
-  Rtree *pRtree, 
-  RtreeNode *pNode, 
-  RtreeCell *pCell 
+static int nodeInsertCell(
+  Rtree *pRtree,                /* The overall R-Tree */
+  RtreeNode *pNode,             /* Write new cell into this node */
+  RtreeCell *pCell              /* The cell to be inserted */
 ){
   int nCell;                    /* Current number of cells in pNode */
   int nMaxCell;                 /* Maximum number of cells for pNode */
@@ -636,8 +638,7 @@ nodeInsertCell(
 /*
 ** If the node is dirty, write it out to the database.
 */
-static int
-nodeWrite(Rtree *pRtree, RtreeNode *pNode){
+static int nodeWrite(Rtree *pRtree, RtreeNode *pNode){
   int rc = SQLITE_OK;
   if( pNode->isDirty ){
     sqlite3_stmt *p = pRtree->pWriteNode;
@@ -662,8 +663,7 @@ nodeWrite(Rtree *pRtree, RtreeNode *pNode){
 ** Release a reference to a node. If the node is dirty and the reference
 ** count drops to zero, the node data is written to the database.
 */
-static int
-nodeRelease(Rtree *pRtree, RtreeNode *pNode){
+static int nodeRelease(Rtree *pRtree, RtreeNode *pNode){
   int rc = SQLITE_OK;
   if( pNode ){
     assert( pNode->nRef>0 );
@@ -691,9 +691,9 @@ nodeRelease(Rtree *pRtree, RtreeNode *pNode){
 ** an internal node, then the 64-bit integer is a child page number.
 */
 static i64 nodeGetRowid(
-  Rtree *pRtree, 
-  RtreeNode *pNode, 
-  int iCell
+  Rtree *pRtree,       /* The overall R-Tree */
+  RtreeNode *pNode,    /* The node from which to extract the ID */
+  int iCell            /* The cell index from which to extract the ID */
 ){
   assert( iCell<NCELL(pNode) );
   return readInt64(&pNode->zData[4 + pRtree->nBytesPerCell*iCell]);
@@ -703,11 +703,11 @@ static i64 nodeGetRowid(
 ** Return coordinate iCoord from cell iCell in node pNode.
 */
 static void nodeGetCoord(
-  Rtree *pRtree, 
-  RtreeNode *pNode, 
-  int iCell,
-  int iCoord,
-  RtreeCoord *pCoord           /* Space to write result to */
+  Rtree *pRtree,               /* The overall R-Tree */
+  RtreeNode *pNode,            /* The node from which to extract a coordinate */
+  int iCell,                   /* The index of the cell within the node */
+  int iCoord,                  /* Which coordinate to extract */
+  RtreeCoord *pCoord           /* OUT: Space to write result to */
 ){
   readCoord(&pNode->zData[12 + pRtree->nBytesPerCell*iCell + 4*iCoord], pCoord);
 }
@@ -717,10 +717,10 @@ static void nodeGetCoord(
 ** to by pCell with the results.
 */
 static void nodeGetCell(
-  Rtree *pRtree, 
-  RtreeNode *pNode, 
-  int iCell,
-  RtreeCell *pCell
+  Rtree *pRtree,               /* The overall R-Tree */
+  RtreeNode *pNode,            /* The node containing the cell to be read */
+  int iCell,                   /* Index of the cell within the node */
+  RtreeCell *pCell             /* OUT: Write the cell contents here */
 ){
   int ii;
   pCell->iRowid = nodeGetRowid(pRtree, pNode, iCell);

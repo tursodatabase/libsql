@@ -931,6 +931,98 @@ void testset_cte(void){
 
 }
 
+/* Generate two numbers between 1 and mx.  The first number is less than
+** the second.  Usually the numbers are near each other but can sometimes
+** be far apart.
+*/
+static void twoCoords(
+  unsigned mx,                      /* Range of 1..mx */
+  unsigned *pX0, unsigned *pX1      /* OUT: write results here */
+){
+  unsigned d, x0, x1, span;
+
+  span = mx/100 + 1;
+  if( speedtest1_random()%3==0 ) span *= 3;
+  if( speedtest1_random()%17==0 ) span = mx - 5;
+  d = speedtest1_random()%span + 1;
+  x0 = speedtest1_random()%(mx-d) + 1;
+  x1 = x0 + d;
+  *pX0 = x0;
+  *pX1 = x1;
+}
+
+/*
+** A testset for the R-Tree virtual table
+*/
+void testset_rtree(void){
+  unsigned i, n;
+  unsigned mxCoord;
+  unsigned x0, x1, y0, y1, z0, z1;
+
+  mxCoord = g.szTest*600;
+  n = g.szTest*100;
+  speedtest1_begin_test(100, "%d INSERTs into an r-tree", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE VIRTUAL TABLE rt1 USING rtree(id,x0,x1,y0,y1,z0,z1)");
+  speedtest1_prepare("INSERT INTO rt1(id,x0,x1,y0,y1,z0,z1)"
+                     "VALUES(?1,?2,?3,?4,?5,?6,?7)");
+  for(i=1; i<=n; i++){
+    twoCoords(mxCoord, &x0, &x1);
+    twoCoords(mxCoord, &y0, &y1);
+    twoCoords(mxCoord, &z0, &z1);
+    sqlite3_bind_int(g.pStmt, 1, i);
+    sqlite3_bind_int(g.pStmt, 2, x0);
+    sqlite3_bind_int(g.pStmt, 3, x1);
+    sqlite3_bind_int(g.pStmt, 4, y0);
+    sqlite3_bind_int(g.pStmt, 5, y1);
+    sqlite3_bind_int(g.pStmt, 6, z0);
+    sqlite3_bind_int(g.pStmt, 7, z1);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  n = g.szTest*20;
+  speedtest1_begin_test(110, "%d one-dimensional intersect slice queries", n);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x0>=?1 AND x1<=?2");
+  for(i=0; i<mxCoord; i+=(mxCoord/n)){
+    sqlite3_bind_int(g.pStmt, 1, i);
+    sqlite3_bind_int(g.pStmt, 2, i+mxCoord/n);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*20;
+  speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
+  for(i=0; i<mxCoord; i+=(mxCoord/n)){
+    sqlite3_bind_int(g.pStmt, 1, i);
+    sqlite3_bind_int(g.pStmt, 2, i+mxCoord/n);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*80;
+  speedtest1_begin_test(130, "%d three-dimensional intersect box queries", n);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x1>=?1 AND x0<=?2"
+                     " AND y1>=?1 AND y0<=?2 AND z1>=?1 AND z0<=?2");
+  for(i=0; i<mxCoord; i+=(mxCoord/n)){
+    sqlite3_bind_int(g.pStmt, 1, i);
+    sqlite3_bind_int(g.pStmt, 2, i+mxCoord/n);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*100;
+  speedtest1_begin_test(140, "%d rowid queries", n);
+  speedtest1_prepare("SELECT * FROM rt1 WHERE id=?1");
+  for(i=1; i<=n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+}
+
 /*
 ** A testset used for debugging speedtest1 itself.
 */
@@ -1141,8 +1233,11 @@ int main(int argc, char **argv){
     testset_debug1();
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
+  }else if( strcmp(zTSet,"rtree")==0 ){
+    testset_rtree();
   }else{
-    fatal_error("unknown testset: \"%s\"\n", zTSet);
+    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
+                 zTSet);
   }
   speedtest1_final();
 
