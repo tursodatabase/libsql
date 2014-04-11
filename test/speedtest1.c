@@ -938,14 +938,15 @@ void testset_cte(void){
 ** be far apart.
 */
 static void twoCoords(
+  int p1, int p2,                   /* Parameters adjusting sizes */
   unsigned mx,                      /* Range of 1..mx */
   unsigned *pX0, unsigned *pX1      /* OUT: write results here */
 ){
   unsigned d, x0, x1, span;
 
   span = mx/100 + 1;
-  if( speedtest1_random()%3==0 ) span *= 3;
-  if( speedtest1_random()%17==0 ) span = mx - 5;
+  if( speedtest1_random()%3==0 ) span *= p1;
+  if( speedtest1_random()%p2==0 ) span = mx/2;
   d = speedtest1_random()%span + 1;
   x0 = speedtest1_random()%(mx-d) + 1;
   x1 = x0 + d;
@@ -976,14 +977,14 @@ static int xsliceGeometryCallback(
 /*
 ** A testset for the R-Tree virtual table
 */
-void testset_rtree(void){
+void testset_rtree(int p1, int p2){
   unsigned i, n;
   unsigned mxCoord;
   unsigned x0, x1, y0, y1, z0, z1;
   unsigned iStep;
   int *aCheck = sqlite3_malloc( sizeof(int)*g.szTest*100 );
 
-  mxCoord = g.szTest*600;
+  mxCoord = 15000;
   n = g.szTest*100;
   speedtest1_begin_test(100, "%d INSERTs into an r-tree", n);
   speedtest1_exec("BEGIN");
@@ -991,9 +992,9 @@ void testset_rtree(void){
   speedtest1_prepare("INSERT INTO rt1(id,x0,x1,y0,y1,z0,z1)"
                      "VALUES(?1,?2,?3,?4,?5,?6,?7)");
   for(i=1; i<=n; i++){
-    twoCoords(mxCoord, &x0, &x1);
-    twoCoords(mxCoord, &y0, &y1);
-    twoCoords(mxCoord, &z0, &z1);
+    twoCoords(p1, p2, mxCoord, &x0, &x1);
+    twoCoords(p1, p2, mxCoord, &y0, &y1);
+    twoCoords(p1, p2, mxCoord, &z0, &z1);
     sqlite3_bind_int(g.pStmt, 1, i);
     sqlite3_bind_int(g.pStmt, 2, x0);
     sqlite3_bind_int(g.pStmt, 3, x1);
@@ -1322,7 +1323,7 @@ int main(int argc, char **argv){
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
   }else if( strcmp(zTSet,"rtree")==0 ){
-    testset_rtree();
+    testset_rtree(6, 147);
   }else{
     fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
                  zTSet);

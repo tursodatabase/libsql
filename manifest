@@ -1,5 +1,5 @@
-C Add\sthe\s--verify\soption\sto\sspeedtest1.\s\sAdd\sverification\stest\scases\sto\nthe\s"rtree"\stestset\sand\sa\scase\sthat\suses\sa\scustom\sgeometry\scallback.
-D 2014-04-11T17:41:08.614
+C Add\sthe\snew\sinterfaces\sto\srtree,\sthough\sthey\sdo\snot\syet\swork.\s\sAdd\sthe\n"show_speedtest1_rtree.tcl"\sscript\sfor\sshowing\sthe\stest\sdata\sused\sfor\sthe\nR-Tree\stests\sof\sspeedtest1.\s\sChange\sspeedtest1\sto\sgenerate\sbetter\sR-Tree\ntest\sdata.
+D 2014-04-11T23:14:48.914
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 043f16a6c3f823c760657b975f2ff1de7fe5c197
+F ext/rtree/rtree.c 541016f8a53bbedda4dc2deb0067f6955b0accb9
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -137,7 +137,7 @@ F ext/rtree/rtreeC.test 16d7aa86ecb6a876d2a38cf590a1471a41b3a46d
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
-F ext/rtree/sqlite3rtree.h c34c1e41d1ab80bb8ad09aae402c9c956871a765
+F ext/rtree/sqlite3rtree.h f93a466456ed25a9dadf90ad050e2945a2c49cff
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/session1.test 894e3bc9f497c4fa07a2aa3271e3911f3670c3d8
@@ -157,7 +157,7 @@ F ext/session/test_session.c 7878ac0e2fe9675e8ec24d54f6a538ccc105977f
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk a3028a846754a96c8841d1a7227890c471c65ec2
+F main.mk 82b154dd823b75c2f1247f1bb98893bf94a5af57
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -825,6 +825,7 @@ F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
 F test/shell5.test bb755ea9144b8078a752fc56223582627070b5f1
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
+F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test bed8cbe9d554c8c27afb6c88500f704c86a9196f
@@ -840,7 +841,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 017473605f9df5f4770dd60ddb4038e6d6829916
+F test/speedtest1.c d29c8048beb7ea9254191f3fde9414709166a920
 F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1174,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 20a73ec0b2f56609a4504052e198e32803d30207
-R 47999e8bbddb67bbaef79a4f5741e58b
+P 9d485c4207a81f32334857d4a608c5c511dd2b83
+R 0017d933bc77106350e8e33449b1c08c
 U drh
-Z 73dffdddfd99e7f86f5cf9f646a8ff0c
+Z 0d8113e9fad970081c8175cf29f2569d
