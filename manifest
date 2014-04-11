@@ -1,5 +1,5 @@
-C Update\scomments\sin\sthe\sR-Tree\smodule\sin\spreparation\sfor\ssome\sbig\schanges.\nAdd\san\s"rtree"\sperformance\stest\sto\sspeedtest1.
-D 2014-04-11T16:14:54.092
+C Add\sthe\s--verify\soption\sto\sspeedtest1.\s\sAdd\sverification\stest\scases\sto\nthe\s"rtree"\stestset\sand\sa\scase\sthat\suses\sa\scustom\sgeometry\scallback.
+D 2014-04-11T17:41:08.614
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -840,7 +840,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 3e06b48e8c578eaa61a01e8c7c4d8734c9dd3776
+F test/speedtest1.c 017473605f9df5f4770dd60ddb4038e6d6829916
 F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1174,10 +1174,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9515c8344a6743bbb0c6a6e49fb79fb3139090df
-R 57f2249bba89c44cd5839664eafe6658
-T *branch * rtree-enhancements
-T *sym-rtree-enhancements *
-T -sym-sessions *
+P 20a73ec0b2f56609a4504052e198e32803d30207
+R 47999e8bbddb67bbaef79a4f5741e58b
 U drh
-Z bdd5cbefa0a4dcc9a9cc6ed610b85f71
+Z 73dffdddfd99e7f86f5cf9f646a8ff0c

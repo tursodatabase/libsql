@@ -29,6 +29,7 @@ static const char zHelp[] =
   "  --trace             Turn on SQL tracing\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
   "  --utf16le           Set text encoding to UTF-16LE\n"
+  "  --verify            Run additional verification steps.\n"
   "  --without-rowid     Use WITHOUT ROWID where appropriate\n"
 ;
 
@@ -51,6 +52,7 @@ static struct Global {
   int bReprepare;            /* True to reprepare the SQL on each rerun */
   int bSqlOnly;              /* True to print the SQL once only */
   int bExplain;              /* Print SQL with EXPLAIN prefix */
+  int bVerify;               /* Try to verify that results are correct */
   int szTest;                /* Scale factor for test iterations */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
@@ -951,6 +953,26 @@ static void twoCoords(
   *pX1 = x1;
 }
 
+/* The following routine is an R-Tree geometry callback.  It returns
+** true if the object overlaps a slice on the Y coordinate between the
+** two values given as arguments.  In other words
+**
+**     SELECT count(*) FROM rt1 WHERE id MATCH xslice(10,20);
+**
+** Is the same as saying:
+**
+**     SELECT count(*) FROM rt1 WHERE y1>=10 AND y0<=20;
+*/
+static int xsliceGeometryCallback(
+  sqlite3_rtree_geometry *p,
+  int nCoord,
+  double *aCoord,
+  int *pRes
+){
+  *pRes = aCoord[3]>=p->aParam[0] && aCoord[2]<=p->aParam[1];
+  return SQLITE_OK;
+}
+
 /*
 ** A testset for the R-Tree virtual table
 */
@@ -958,6 +980,8 @@ void testset_rtree(void){
   unsigned i, n;
   unsigned mxCoord;
   unsigned x0, x1, y0, y1, z0, z1;
+  unsigned iStep;
+  int *aCheck = sqlite3_malloc( sizeof(int)*g.szTest*100 );
 
   mxCoord = g.szTest*600;
   n = g.szTest*100;
@@ -982,23 +1006,83 @@ void testset_rtree(void){
   speedtest1_exec("COMMIT");
   speedtest1_end_test();
 
-  n = g.szTest*20;
-  speedtest1_begin_test(110, "%d one-dimensional intersect slice queries", n);
-  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x0>=?1 AND x1<=?2");
-  for(i=0; i<mxCoord; i+=(mxCoord/n)){
-    sqlite3_bind_int(g.pStmt, 1, i);
-    sqlite3_bind_int(g.pStmt, 2, i+mxCoord/n);
-    speedtest1_run();
-  }
+  speedtest1_begin_test(101, "Copy from rtree to a regular table");
+  speedtest1_exec("CREATE TABLE t1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
+  speedtest1_exec("INSERT INTO t1 SELECT * FROM rt1");
   speedtest1_end_test();
 
   n = g.szTest*20;
+  speedtest1_begin_test(110, "%d one-dimensional intersect slice queries", n);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x0>=?1 AND x1<=?2");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  if( g.bVerify ){
+    n = g.szTest*20;
+    speedtest1_begin_test(111, "Verify result from 1-D intersect slice queries");
+    speedtest1_prepare("SELECT count(*) FROM t1 WHERE x0>=?1 AND x1<=?2");
+    iStep = mxCoord/n;
+    for(i=0; i<n; i++){
+      sqlite3_bind_int(g.pStmt, 1, i*iStep);
+      sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+      speedtest1_run();
+      if( aCheck[i]!=atoi(g.zResult) ){
+        fatal_error("Count disagree step %d: %d..%d.  %d vs %d",
+                    i, i*iStep, (i+1)*iStep, aCheck[i], atoi(g.zResult));
+      }
+    }
+    speedtest1_end_test();
+  }
+  
+  n = g.szTest*20;
   speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
-  for(i=0; i<mxCoord; i+=(mxCoord/n)){
-    sqlite3_bind_int(g.pStmt, 1, i);
-    sqlite3_bind_int(g.pStmt, 2, i+mxCoord/n);
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
     speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  if( g.bVerify ){
+    n = g.szTest*20;
+    speedtest1_begin_test(121, "Verify result from 1-D overlap slice queries");
+    speedtest1_prepare("SELECT count(*) FROM t1 WHERE y1>=?1 AND y0<=?2");
+    iStep = mxCoord/n;
+    for(i=0; i<n; i++){
+      sqlite3_bind_int(g.pStmt, 1, i*iStep);
+      sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+      speedtest1_run();
+      if( aCheck[i]!=atoi(g.zResult) ){
+        fatal_error("Count disagree step %d: %d..%d.  %d vs %d",
+                    i, i*iStep, (i+1)*iStep, aCheck[i], atoi(g.zResult));
+      }
+    }
+    speedtest1_end_test();
+  }
+  
+
+  n = g.szTest*20;
+  speedtest1_begin_test(125, "%d custom geometry callback queries", n);
+  sqlite3_rtree_geometry_callback(g.db, "xslice", xsliceGeometryCallback, 0);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE id MATCH xslice(?1,?2)");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+    speedtest1_run();
+    if( aCheck[i]!=atoi(g.zResult) ){
+      fatal_error("Count disagree step %d: %d..%d.  %d vs %d",
+                  i, i*iStep, (i+1)*iStep, aCheck[i], atoi(g.zResult));
+    }
   }
   speedtest1_end_test();
 
@@ -1006,10 +1090,12 @@ void testset_rtree(void){
   speedtest1_begin_test(130, "%d three-dimensional intersect box queries", n);
   speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x1>=?1 AND x0<=?2"
                      " AND y1>=?1 AND y0<=?2 AND z1>=?1 AND z0<=?2");
-  for(i=0; i<mxCoord; i+=(mxCoord/n)){
-    sqlite3_bind_int(g.pStmt, 1, i);
-    sqlite3_bind_int(g.pStmt, 2, i+mxCoord/n);
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
     speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
   }
   speedtest1_end_test();
 
@@ -1142,6 +1228,8 @@ int main(int argc, char **argv){
         zEncoding = "utf16le";
       }else if( strcmp(z,"utf16be")==0 ){
         zEncoding = "utf16be";
+      }else if( strcmp(z,"verify")==0 ){
+        g.bVerify = 1;
       }else if( strcmp(z,"without-rowid")==0 ){
         g.zWR = "WITHOUT ROWID";
         g.zPK = "PRIMARY KEY";
