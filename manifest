@@ -1,5 +1,5 @@
-C Experimental\smulti-threaded\ssorting\schanges\sto\sallow\sthe\ssorter\sto\sbegin\sreturning\sitems\sto\sthe\sVDBE\sbefore\sall\sdata\sis\ssorted.
-D 2014-04-09T20:04:17.324
+C Avoid\shaving\sthe\ssorter\smerge\stoo\smany\sPMAs\sat\sa\stime\swhen\sincrementally\smerging\sdata\sfollowing\sa\sSorterRewind().
+D 2014-04-11T19:43:07.755
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c 64655f1a627c9c212d9ab497899e7424a34222e0
 F src/select.c 20055cf917222e660c4222fea306bd13a0623caa
-F src/shell.c afc0b1a5a646d287142ef0c9a2a6e3139d57cba2
+F src/shell.c b44c3f17f0bf41b3431e9cc171706251156ae85f
 F src/sqlite.h.in 81221c50addbf698c3247154d92efd1095bfd885
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 26823b626c3231a52e45f5e78a18cb8681bb1b88
+F src/vdbesort.c 2984e3624383adf9c762558b8f85a17a626c11a7
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -818,7 +818,7 @@ F test/skipscan2.test 5a4db0799c338ddbacb154aaa5589c0254b36a8d
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 79dc647c4e9b123a64e57b7080b7f9a2df43f87a
-F test/sort2.test bbc2eb244fb862141a900a851056d48705b5997b
+F test/sort2.test 04e99d0d028b469c6cfab2c647c6c28755504063
 F test/sort3.test c3f88d233452a129de519de311d109a0ad0da0af
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -1163,10 +1163,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e54dded2012f0ab486ee138e9bd57c528af33980
-R 803b4ddf4cddf7e21aeddc04109caaf0
-T *branch * threads-experimental
-T *sym-threads-experimental *
-T -sym-threads *
+P f9d5e09afaf64d68a0e461c1c2f38179bcea4b1f
+R f6c598c1c558c5930404cda096730209
 U dan
-Z 3b5c615396ccbaaa23add5a8103bd906
+Z 3e9d4ee1a6e7b343cf831d1b18651067
