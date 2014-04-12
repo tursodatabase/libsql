@@ -1,5 +1,5 @@
-C Add\sthe\snew\sinterfaces\sto\srtree,\sthough\sthey\sdo\snot\syet\swork.\s\sAdd\sthe\n"show_speedtest1_rtree.tcl"\sscript\sfor\sshowing\sthe\stest\sdata\sused\sfor\sthe\nR-Tree\stests\sof\sspeedtest1.\s\sChange\sspeedtest1\sto\sgenerate\sbetter\sR-Tree\ntest\sdata.
-D 2014-04-11T23:14:48.914
+C Continuing\sclean-up\sof\sthe\sR-Tree\smodule\sin\spreparation\sfor\scutting\sin\sthe\nnew\sgeneralized\squery\smechanism.
+D 2014-04-12T17:44:00.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 541016f8a53bbedda4dc2deb0067f6955b0accb9
+F ext/rtree/rtree.c 8778f55ece9016ab3b17969f19f9656a06f6e100
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -274,7 +274,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 30c64f0ef84734f2231a686df41ed882b0c59bc0
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_rtree.c f3d1d12538dccb75fd916e3fa58f250edbdd3b47
+F src/test_rtree.c cd35d54c0b847c0c373d66f91616c49697ab4edf
 F src/test_schema.c cd12a2223c3a394f4d07bb93bdf6d344c5c121b6
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c c1c1bbedbcaf82b93d83e4f9dd990e62476a680e
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9d485c4207a81f32334857d4a608c5c511dd2b83
-R 0017d933bc77106350e8e33449b1c08c
+P 0b70275972c7a6a533566c1e50bffbf3ac531e95
+R 958d8acaf66c9f2ba2d270349d1218f7
 U drh
-Z 0d8113e9fad970081c8175cf29f2569d
+Z 02617e452696d44ca40af16d5a687407

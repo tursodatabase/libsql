@@ -289,12 +289,12 @@ struct RtreeConstraint {
 ** An rtree structure node.
 */
 struct RtreeNode {
-  RtreeNode *pParent;          /* Parent node */
-  i64 iNode;                   /* The node number */
-  int nRef;                    /* Number of references to this node */
-  int isDirty;                 /* True if the node needs to be written to disk */
-  u8 *zData;                   /* Content of the node, as should be on disk */
-  RtreeNode *pNext;            /* Next node in this hash collision chain */
+  RtreeNode *pParent;         /* Parent node */
+  i64 iNode;                  /* The node number */
+  int nRef;                   /* Number of references to this node */
+  int isDirty;                /* True if the node needs to be written to disk */
+  u8 *zData;                  /* Content of the node, as should be on disk */
+  RtreeNode *pNext;           /* Next node in this hash collision chain */
 };
 
 /* Return the number of cells in a node  */
@@ -310,32 +310,17 @@ struct RtreeCell {
 
 
 /*
-** Value for the first field of every RtreeMatchArg object. The MATCH
-** operator tests that the first field of a blob operand matches this
-** value to avoid operating on invalid blobs (which could cause a segfault).
-*/
-#define RTREE_GEOMETRY_MAGIC 0x891245AB
-
-/*
-** An instance of this structure must be supplied as a blob argument to
-** the right-hand-side of an SQL MATCH operator used to constrain an
-** r-tree query.
-*/
-struct RtreeMatchArg {
-  u32 magic;                      /* Always RTREE_GEOMETRY_MAGIC */
-  int (*xGeom)(sqlite3_rtree_geometry *, int, RtreeDValue*, int *);
-  int (*xQueryFunc)(sqlite3_rtree_query_info*);
-  void *pContext;
-  int nParam;
-  RtreeDValue aParam[1];
-};
-
-/*
-** When a geometry callback is created using either
-** sqlite3_rtree_geometry_callback() or sqlite3_rtree_query_callback(),
-** a single instance of the following structure is allocated. It is used
-** as the context for the user-function created by sqlite3_rtree_*_callback().
-** The object is eventually deleted by the destructor mechanism provided by
+** This object becomes the sqlite3_user_data() for the SQL functions
+** that are created by sqlite3_rtree_geometry_callback() and
+** sqlite3_rtree_query_callback() and which appear on the right of MATCH
+** operators in order to constrain a search.
+**
+** xGeom and xQueryFunc are the callback functions.  Exactly one of 
+** xGeom and xQueryFunc fields is non-NULL, depending on whether the
+** SQL function was created using sqlite3_rtree_geometry_callback() or
+** sqlite3_rtree_query_callback().
+** 
+** This object is deleted automatically by the destructor mechanism in
 ** sqlite3_create_function_v2().
 */
 struct RtreeGeomCallback {
@@ -343,6 +328,27 @@ struct RtreeGeomCallback {
   int (*xQueryFunc)(sqlite3_rtree_query_info*);
   void (*xDestructor)(void*);
   void *pContext;
+};
+
+
+/*
+** Value for the first field of every RtreeMatchArg object. The MATCH
+** operator tests that the first field of a blob operand matches this
+** value to avoid operating on invalid blobs (which could cause a segfault).
+*/
+#define RTREE_GEOMETRY_MAGIC 0x891245AB
+
+/*
+** An instance of this structure (in the form of a BLOB) is returned by
+** the SQL functions that sqlite3_rtree_geometry_callback() and
+** sqlite3_rtree_query_callback() create, and is read as the right-hand
+** operand to the MATCH operator of an R-Tree.
+*/
+struct RtreeMatchArg {
+  u32 magic;                  /* Always RTREE_GEOMETRY_MAGIC */
+  RtreeGeomCallback cb;       /* Info about the callback functions */
+  int nParam;                 /* Number of parameters to the SQL function */
+  RtreeDValue aParam[1];      /* Values for parameters to the SQL function */
 };
 
 #ifndef MAX
@@ -1253,11 +1259,11 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
     return SQLITE_ERROR;
   }
 
-  pGeom->pContext = p->pContext;
+  pGeom->pContext = p->cb.pContext;
   pGeom->nParam = p->nParam;
   pGeom->aParam = p->aParam;
 
-  pCons->xGeom = p->xGeom;
+  pCons->xGeom = p->cb.xGeom;
   pCons->pGeom = pGeom;
   return SQLITE_OK;
 }
@@ -3355,9 +3361,11 @@ int sqlite3RtreeInit(sqlite3 *db){
 }
 
 /*
-** This routine is called when a custom geometry function or custom query
-** function is cancelled.  The pointer is to a RtreeGeomCallback object
-** that needs to be freed.
+** This routine deletes the RtreeGeomCallback object that was attached
+** one of the SQL functions create by sqlite3_rtree_geometry_callback()
+** or sqlite3_rtree_query_callback().  In other words, this routine is the
+** destructor for an RtreeGeomCallback objecct.  This routine is called when
+** the corresponding SQL function is deleted.
 */
 static void rtreeFreeCallback(void *p){
   RtreeGeomCallback *pGeom = (RtreeGeomCallback*)p;
@@ -3368,10 +3376,16 @@ static void rtreeFreeCallback(void *p){
 /*
 ** Each call to sqlite3_rtree_geometry_callback() or
 ** sqlite3_rtree_query_callback() creates an ordinary SQLite
-** scalar user function that is implemented by this routine.
+** scalar function that is implemented by this routine.
 **
-** This function returns a blob that is interpreted by r-tree
-** table MATCH operator.
+** All this function does is construct an RtreeMatchArg object that
+** contains the geometry-checking callback routines and a list of
+** parameters to this function, then return that RtreeMatchArg object
+** as a BLOB.
+**
+** The R-Tree MATCH operator will read the returned BLOB, deserialize
+** the RtreeMatchArg object, and use the RtreeMatchArg object to figure
+** out which elements of the R-Tree should be returned by the query.
 */
 static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
   RtreeGeomCallback *pGeomCtx = (RtreeGeomCallback *)sqlite3_user_data(ctx);
@@ -3385,8 +3399,7 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
   }else{
     int i;
     pBlob->magic = RTREE_GEOMETRY_MAGIC;
-    pBlob->xGeom = pGeomCtx->xGeom;
-    pBlob->pContext = pGeomCtx->pContext;
+    pBlob->cb = pGeomCtx[0];
     pBlob->nParam = nArg;
     for(i=0; i<nArg; i++){
 #ifdef SQLITE_RTREE_INT_ONLY
@@ -3403,10 +3416,10 @@ static void geomCallback(sqlite3_context *ctx, int nArg, sqlite3_value **aArg){
 ** Register a new geometry function for use with the r-tree MATCH operator.
 */
 int sqlite3_rtree_geometry_callback(
-  sqlite3 *db,
-  const char *zGeom,
-  int (*xGeom)(sqlite3_rtree_geometry *, int, RtreeDValue *, int *),
-  void *pContext
+  sqlite3 *db,                  /* Register SQL function on this connection */
+  const char *zGeom,            /* Name of the new SQL function */
+  int (*xGeom)(sqlite3_rtree_geometry*,int,RtreeDValue*,int*), /* Callback */
+  void *pContext                /* Extra data associated with the callback */
 ){
   RtreeGeomCallback *pGeomCtx;      /* Context object for new user-function */
 
@@ -3417,9 +3430,6 @@ int sqlite3_rtree_geometry_callback(
   pGeomCtx->xQueryFunc = 0;
   pGeomCtx->xDestructor = 0;
   pGeomCtx->pContext = pContext;
-
-  /* Create the new user-function. Register a destructor function to delete
-  ** the context object when it is no longer required.  */
   return sqlite3_create_function_v2(db, zGeom, -1, SQLITE_ANY, 
       (void *)pGeomCtx, geomCallback, 0, 0, rtreeFreeCallback
   );
@@ -3430,11 +3440,11 @@ int sqlite3_rtree_geometry_callback(
 ** r-tree MATCH operator.
 */
 int sqlite3_rtree_query_callback(
-  sqlite3 *db,
-  const char *zQueryFunc,
-  int (*xQueryFunc)(sqlite3_rtree_query_info*),
-  void *pContext,
-  void (*xDestructor)(void*)
+  sqlite3 *db,                 /* Register SQL function on this connection */
+  const char *zQueryFunc,      /* Name of new SQL function */
+  int (*xQueryFunc)(sqlite3_rtree_query_info*), /* Callback */
+  void *pContext,              /* Extra data passed into the callback */
+  void (*xDestructor)(void*)   /* Destructor for the extra data */
 ){
   RtreeGeomCallback *pGeomCtx;      /* Context object for new user-function */
 
@@ -3445,9 +3455,6 @@ int sqlite3_rtree_query_callback(
   pGeomCtx->xQueryFunc = xQueryFunc;
   pGeomCtx->xDestructor = xDestructor;
   pGeomCtx->pContext = pContext;
-
-  /* Create the new user-function. Register a destructor function to delete
-  ** the context object when it is no longer required.  */
   return sqlite3_create_function_v2(db, zQueryFunc, -1, SQLITE_ANY, 
       (void *)pGeomCtx, geomCallback, 0, 0, rtreeFreeCallback
   );
