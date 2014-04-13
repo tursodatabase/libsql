@@ -1,5 +1,5 @@
-C Continuing\sclean-up\sof\sthe\sR-Tree\smodule\sin\spreparation\sfor\scutting\sin\sthe\nnew\sgeneralized\squery\smechanism.
-D 2014-04-12T17:44:00.241
+C Continuing\swork\son\sthe\snew\scustom\squery\smechanism\sfor\sr-tree.
+D 2014-04-13T16:10:09.443
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 8778f55ece9016ab3b17969f19f9656a06f6e100
+F ext/rtree/rtree.c 527490ab54b8f1bb88bece47037f0d947534cece
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -137,7 +137,7 @@ F ext/rtree/rtreeC.test 16d7aa86ecb6a876d2a38cf590a1471a41b3a46d
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
-F ext/rtree/sqlite3rtree.h f93a466456ed25a9dadf90ad050e2945a2c49cff
+F ext/rtree/sqlite3rtree.h 488cf8834d2012b913d33683157d3cf5f1327a69
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/session1.test 894e3bc9f497c4fa07a2aa3271e3911f3670c3d8
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 0b70275972c7a6a533566c1e50bffbf3ac531e95
-R 958d8acaf66c9f2ba2d270349d1218f7
+P 66c858f20586424e15d0bfa3d7b56643bde66226
+R c2e5d1b590c0114514efc7f22a499336
 U drh
-Z 02617e452696d44ca40af16d5a687407
+Z 7b1f11ecd50995d28149a37777f2c7ae

@@ -77,6 +77,10 @@ int sqlite3_rtree_query_callback(
 ** A pointer to a structure of the following type is passed as the 
 ** argument to scored geometry callback registered using
 ** sqlite3_rtree_query_callback().
+**
+** Note that the first 5 fields of this structure are identical to
+** sqlite3_rtree_geometry.  This structure is a subclass of
+** sqlite3_rtree_geometry.
 */
 struct sqlite3_rtree_query_info {
   void *pContext;                   /* pContext from when function registered */

@@ -272,9 +272,12 @@ union RtreeCoord {
 struct RtreeConstraint {
   int iCoord;                     /* Index of constrained coordinate */
   int op;                         /* Constraining operation */
-  RtreeDValue rValue;             /* Constraint value. */
-  int (*xGeom)(sqlite3_rtree_geometry*, int, RtreeDValue*, int*);
-  sqlite3_rtree_geometry *pGeom;  /* Constraint callback argument for a MATCH */
+  union {
+    RtreeDValue rValue;             /* Constraint value. */
+    int (*xGeom)(sqlite3_rtree_geometry*,int,RtreeDValue*,int*);
+    int (*xQueryFunc)(sqlite3_rtree_query_info*);
+  } u;
+  sqlite3_rtree_query_info *pGeom;  /* xGeom and xQueryFunc argument */
 };
 
 /* Possible values for RtreeConstraint.op */
@@ -283,7 +286,8 @@ struct RtreeConstraint {
 #define RTREE_LT    0x43
 #define RTREE_GE    0x44
 #define RTREE_GT    0x45
-#define RTREE_MATCH 0x46
+#define RTREE_MATCH 0x46  /* Old-style sqlite3_rtree_geometry_callback() */
+#define RTREE_QUERY 0x47  /* New-style sqlite3_rtree_query_callback() */
 
 /* 
 ** An rtree structure node.
@@ -860,7 +864,7 @@ static void freeCursorConstraints(RtreeCursor *pCsr){
   if( pCsr->aConstraint ){
     int i;                        /* Used to iterate through constraint array */
     for(i=0; i<pCsr->nConstraint; i++){
-      sqlite3_rtree_geometry *pGeom = pCsr->aConstraint[i].pGeom;
+      sqlite3_rtree_query_info *pGeom = pCsr->aConstraint[i].pGeom;
       if( pGeom ){
         if( pGeom->xDelUser ) pGeom->xDelUser(pGeom->pUser);
         sqlite3_free(pGeom);
@@ -915,7 +919,8 @@ static int testRtreeGeom(
   for(i=0; i<nCoord; i++){
     aCoord[i] = DCOORD(pCell->aCoord[i]);
   }
-  return pConstraint->xGeom(pConstraint->pGeom, nCoord, aCoord, pbRes);
+  return pConstraint->u.xGeom((sqlite3_rtree_geometry*)pConstraint->pGeom,
+                              nCoord, aCoord, pbRes);
 }
 
 /* 
@@ -945,15 +950,15 @@ static int testRtreeCell(Rtree *pRtree, RtreeCursor *pCursor, int *pbEof){
 
     switch( p->op ){
       case RTREE_LE: case RTREE_LT: 
-        bRes = p->rValue<cell_min; 
+        bRes = p->u.rValue<cell_min; 
         break;
 
       case RTREE_GE: case RTREE_GT: 
-        bRes = p->rValue>cell_max; 
+        bRes = p->u.rValue>cell_max; 
         break;
 
       case RTREE_EQ:
-        bRes = (p->rValue>cell_max || p->rValue<cell_min);
+        bRes = (p->u.rValue>cell_max || p->u.rValue<cell_min);
         break;
 
       default: {
@@ -995,11 +1000,11 @@ static int testRtreeEntry(Rtree *pRtree, RtreeCursor *pCursor, int *pbEof){
         || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_MATCH
     );
     switch( p->op ){
-      case RTREE_LE: res = (coord<=p->rValue); break;
-      case RTREE_LT: res = (coord<p->rValue);  break;
-      case RTREE_GE: res = (coord>=p->rValue); break;
-      case RTREE_GT: res = (coord>p->rValue);  break;
-      case RTREE_EQ: res = (coord==p->rValue); break;
+      case RTREE_LE: res = (coord<=p->u.rValue); break;
+      case RTREE_LT: res = (coord<p->u.rValue);  break;
+      case RTREE_GE: res = (coord>=p->u.rValue); break;
+      case RTREE_GT: res = (coord>p->u.rValue);  break;
+      case RTREE_EQ: res = (coord==p->u.rValue); break;
       default: {
         int rc;
         assert( p->op==RTREE_MATCH );
@@ -1230,7 +1235,7 @@ static int findLeafNode(Rtree *pRtree, i64 iRowid, RtreeNode **ppLeaf){
 */
 static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   RtreeMatchArg *p;
-  sqlite3_rtree_geometry *pGeom;
+  sqlite3_rtree_query_info *pGeom;
   int nBlob;
 
   /* Check that value is actually a blob. */
@@ -1244,12 +1249,10 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
     return SQLITE_ERROR;
   }
 
-  pGeom = (sqlite3_rtree_geometry *)sqlite3_malloc(
-      sizeof(sqlite3_rtree_geometry) + nBlob
-  );
+  pGeom = (sqlite3_rtree_query_info*)sqlite3_malloc( sizeof(*pGeom)+nBlob );
   if( !pGeom ) return SQLITE_NOMEM;
-  memset(pGeom, 0, sizeof(sqlite3_rtree_geometry));
-  p = (RtreeMatchArg *)&pGeom[1];
+  memset(pGeom, 0, sizeof(*pGeom));
+  p = (RtreeMatchArg*)&pGeom[1];
 
   memcpy(p, sqlite3_value_blob(pValue), nBlob);
   if( p->magic!=RTREE_GEOMETRY_MAGIC 
@@ -1263,7 +1266,7 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
   pGeom->nParam = p->nParam;
   pGeom->aParam = p->aParam;
 
-  pCons->xGeom = p->cb.xGeom;
+  pCons->u.xGeom = p->cb.xGeom;
   pCons->pGeom = pGeom;
   return SQLITE_OK;
 }
@@ -1326,9 +1329,9 @@ static int rtreeFilter(
             }
           }else{
 #ifdef SQLITE_RTREE_INT_ONLY
-            p->rValue = sqlite3_value_int64(argv[ii]);
+            p->u.rValue = sqlite3_value_int64(argv[ii]);
 #else
-            p->rValue = sqlite3_value_double(argv[ii]);
+            p->u.rValue = sqlite3_value_double(argv[ii]);
 #endif
           }
         }
