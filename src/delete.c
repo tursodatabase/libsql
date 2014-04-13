@@ -832,6 +832,6 @@ int sqlite3GenerateIndexKey(
 void sqlite3ResolvePartIdxLabel(Parse *pParse, int iLabel){
   if( iLabel ){
     sqlite3VdbeResolveLabel(pParse->pVdbe, iLabel);
-    sqlite3ExprCachePop(pParse, 1);
+    sqlite3ExprCachePop(pParse);
   }
 }
