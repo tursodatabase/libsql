@@ -1771,6 +1771,7 @@ static int vdbeIncrInit2(PmaReader *pIter, int eMode){
   return rc;
 }
 
+#if SQLITE_MAX_WORKER_THREADS>0
 static void *vdbeIncrInit2Thread(void *pCtx){
   PmaReader *pReader = (PmaReader*)pCtx;
   void *pRet = SQLITE_INT_TO_PTR( vdbeIncrInit2(pReader, INCRINIT2_TASK) );
@@ -1784,6 +1785,7 @@ static int vdbeIncrBgInit2(PmaReader *pIter){
       &pIter->pIncr->thread, vdbeIncrInit2Thread, pCtx
   );
 }
+#endif
 
 /*
 ** Allocate a new MergeEngine object to merge the contents of nPMA level-0
@@ -1948,7 +1950,9 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter, PmaReader *pIter){
       pIter->pIncr = vdbeIncrNew(pLast, pMain);
       if( pIter->pIncr==0 ){
         rc = SQLITE_NOMEM;
-      }else{
+      }
+#if SQLITE_MAX_WORKER_THREADS>0
+      else{
         vdbeIncrSetThreads(pIter->pIncr, pSorter->bUseThreads);
         for(iTask=0; iTask<(pSorter->nTask-1); iTask++){
           IncrMerger *pIncr;
@@ -1965,6 +1969,7 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter, PmaReader *pIter){
           }
         }
       }
+#endif
     }
   }
   if( rc==SQLITE_OK ){
