@@ -54,48 +54,6 @@
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
 
-/*
-** This file contains an implementation of a couple of different variants
-** of the r-tree algorithm. See the README file for further details. The 
-** same data-structure is used for all, but the algorithms for insert and
-** delete operations vary. The variants used are selected at compile time 
-** by defining the following symbols:
-*/
-
-/* Either, both or none of the following may be set to activate 
-** r*tree variant algorithms.
-*/
-#define VARIANT_RSTARTREE_CHOOSESUBTREE 0
-#define VARIANT_RSTARTREE_REINSERT      1
-
-/* 
-** Exactly one of the following must be set to 1.
-*/
-#define VARIANT_GUTTMAN_QUADRATIC_SPLIT 0
-#define VARIANT_GUTTMAN_LINEAR_SPLIT    0
-#define VARIANT_RSTARTREE_SPLIT         1
-
-#define VARIANT_GUTTMAN_SPLIT \
-        (VARIANT_GUTTMAN_LINEAR_SPLIT||VARIANT_GUTTMAN_QUADRATIC_SPLIT)
-
-#if VARIANT_GUTTMAN_QUADRATIC_SPLIT
-  #define PickNext QuadraticPickNext
-  #define PickSeeds QuadraticPickSeeds
-  #define AssignCells splitNodeGuttman
-#endif
-#if VARIANT_GUTTMAN_LINEAR_SPLIT
-  #define PickNext LinearPickNext
-  #define PickSeeds LinearPickSeeds
-  #define AssignCells splitNodeGuttman
-#endif
-#if VARIANT_RSTARTREE_SPLIT
-  #define AssignCells splitNodeStartree
-#endif
-
-#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
-# define NDEBUG 1
-#endif
-
 #ifndef SQLITE_CORE
   #include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
@@ -1556,62 +1514,32 @@ static RtreeDValue cellGrowth(Rtree *pRtree, RtreeCell *p, RtreeCell *pCell){
   return (cellArea(pRtree, &cell)-area);
 }
 
-#if VARIANT_RSTARTREE_CHOOSESUBTREE || VARIANT_RSTARTREE_SPLIT
 static RtreeDValue cellOverlap(
   Rtree *pRtree, 
   RtreeCell *p, 
   RtreeCell *aCell, 
-  int nCell, 
-  int iExclude
+  int nCell
 ){
   int ii;
   RtreeDValue overlap = 0.0;
   for(ii=0; ii<nCell; ii++){
-#if VARIANT_RSTARTREE_CHOOSESUBTREE
-    if( ii!=iExclude )
-#else
-    assert( iExclude==-1 );
-    UNUSED_PARAMETER(iExclude);
-#endif
-    {
-      int jj;
-      RtreeDValue o = (RtreeDValue)1;
-      for(jj=0; jj<(pRtree->nDim*2); jj+=2){
-        RtreeDValue x1, x2;
-
-        x1 = MAX(DCOORD(p->aCoord[jj]), DCOORD(aCell[ii].aCoord[jj]));
-        x2 = MIN(DCOORD(p->aCoord[jj+1]), DCOORD(aCell[ii].aCoord[jj+1]));
-
-        if( x2<x1 ){
-          o = 0.0;
-          break;
-        }else{
-          o = o * (x2-x1);
-        }
+    int jj;
+    RtreeDValue o = (RtreeDValue)1;
+    for(jj=0; jj<(pRtree->nDim*2); jj+=2){
+      RtreeDValue x1, x2;
+      x1 = MAX(DCOORD(p->aCoord[jj]), DCOORD(aCell[ii].aCoord[jj]));
+      x2 = MIN(DCOORD(p->aCoord[jj+1]), DCOORD(aCell[ii].aCoord[jj+1]));
+      if( x2<x1 ){
+        o = (RtreeDValue)0;
+        break;
+      }else{
+        o = o * (x2-x1);
       }
-      overlap += o;
     }
+    overlap += o;
   }
   return overlap;
 }
-#endif
-
-#if VARIANT_RSTARTREE_CHOOSESUBTREE
-static RtreeDValue cellOverlapEnlargement(
-  Rtree *pRtree, 
-  RtreeCell *p, 
-  RtreeCell *pInsert, 
-  RtreeCell *aCell, 
-  int nCell, 
-  int iExclude
-){
-  RtreeDValue before, after;
-  before = cellOverlap(pRtree, p, aCell, nCell, iExclude);
-  cellUnion(pRtree, p, pInsert);
-  after = cellOverlap(pRtree, p, aCell, nCell, iExclude);
-  return (after-before);
-}
-#endif
 
 
 /*
@@ -1635,32 +1563,12 @@ static int ChooseLeaf(
 
     RtreeDValue fMinGrowth = 0.0;
     RtreeDValue fMinArea = 0.0;
-#if VARIANT_RSTARTREE_CHOOSESUBTREE
-    RtreeDValue fMinOverlap = 0.0;
-    RtreeDValue overlap;
-#endif
 
     int nCell = NCELL(pNode);
     RtreeCell cell;
     RtreeNode *pChild;
 
     RtreeCell *aCell = 0;
-
-#if VARIANT_RSTARTREE_CHOOSESUBTREE
-    if( ii==(pRtree->iDepth-1) ){
-      int jj;
-      aCell = sqlite3_malloc(sizeof(RtreeCell)*nCell);
-      if( !aCell ){
-        rc = SQLITE_NOMEM;
-        nodeRelease(pRtree, pNode);
-        pNode = 0;
-        continue;
-      }
-      for(jj=0; jj<nCell; jj++){
-        nodeGetCell(pRtree, pNode, jj, &aCell[jj]);
-      }
-    }
-#endif
 
     /* Select the child node which will be enlarged the least if pCell
     ** is inserted into it. Resolve ties by choosing the entry with
@@ -1673,26 +1581,9 @@ static int ChooseLeaf(
       nodeGetCell(pRtree, pNode, iCell, &cell);
       growth = cellGrowth(pRtree, &cell, pCell);
       area = cellArea(pRtree, &cell);
-
-#if VARIANT_RSTARTREE_CHOOSESUBTREE
-      if( ii==(pRtree->iDepth-1) ){
-        overlap = cellOverlapEnlargement(pRtree,&cell,pCell,aCell,nCell,iCell);
-      }else{
-        overlap = 0.0;
-      }
-      if( (iCell==0) 
-       || (overlap<fMinOverlap) 
-       || (overlap==fMinOverlap && growth<fMinGrowth)
-       || (overlap==fMinOverlap && growth==fMinGrowth && area<fMinArea)
-      ){
-        bBest = 1;
-        fMinOverlap = overlap;
-      }
-#else
       if( iCell==0||growth<fMinGrowth||(growth==fMinGrowth && area<fMinArea) ){
         bBest = 1;
       }
-#endif
       if( bBest ){
         fMinGrowth = growth;
         fMinArea = area;
@@ -1763,155 +1654,6 @@ static int parentWrite(Rtree *pRtree, sqlite3_int64 iNode, sqlite3_int64 iPar){
 
 static int rtreeInsertCell(Rtree *, RtreeNode *, RtreeCell *, int);
 
-#if VARIANT_GUTTMAN_LINEAR_SPLIT
-/*
-** Implementation of the linear variant of the PickNext() function from
-** Guttman[84].
-*/
-static RtreeCell *LinearPickNext(
-  Rtree *pRtree,
-  RtreeCell *aCell, 
-  int nCell, 
-  RtreeCell *pLeftBox, 
-  RtreeCell *pRightBox,
-  int *aiUsed
-){
-  int ii;
-  for(ii=0; aiUsed[ii]; ii++);
-  aiUsed[ii] = 1;
-  return &aCell[ii];
-}
-
-/*
-** Implementation of the linear variant of the PickSeeds() function from
-** Guttman[84].
-*/
-static void LinearPickSeeds(
-  Rtree *pRtree,
-  RtreeCell *aCell, 
-  int nCell, 
-  int *piLeftSeed, 
-  int *piRightSeed
-){
-  int i;
-  int iLeftSeed = 0;
-  int iRightSeed = 1;
-  RtreeDValue maxNormalInnerWidth = (RtreeDValue)0;
-
-  /* Pick two "seed" cells from the array of cells. The algorithm used
-  ** here is the LinearPickSeeds algorithm from Gutman[1984]. The 
-  ** indices of the two seed cells in the array are stored in local
-  ** variables iLeftSeek and iRightSeed.
-  */
-  for(i=0; i<pRtree->nDim; i++){
-    RtreeDValue x1 = DCOORD(aCell[0].aCoord[i*2]);
-    RtreeDValue x2 = DCOORD(aCell[0].aCoord[i*2+1]);
-    RtreeDValue x3 = x1;
-    RtreeDValue x4 = x2;
-    int jj;
-
-    int iCellLeft = 0;
-    int iCellRight = 0;
-
-    for(jj=1; jj<nCell; jj++){
-      RtreeDValue left = DCOORD(aCell[jj].aCoord[i*2]);
-      RtreeDValue right = DCOORD(aCell[jj].aCoord[i*2+1]);
-
-      if( left<x1 ) x1 = left;
-      if( right>x4 ) x4 = right;
-      if( left>x3 ){
-        x3 = left;
-        iCellRight = jj;
-      }
-      if( right<x2 ){
-        x2 = right;
-        iCellLeft = jj;
-      }
-    }
-
-    if( x4!=x1 ){
-      RtreeDValue normalwidth = (x3 - x2) / (x4 - x1);
-      if( normalwidth>maxNormalInnerWidth ){
-        iLeftSeed = iCellLeft;
-        iRightSeed = iCellRight;
-      }
-    }
-  }
-
-  *piLeftSeed = iLeftSeed;
-  *piRightSeed = iRightSeed;
-}
-#endif /* VARIANT_GUTTMAN_LINEAR_SPLIT */
-
-#if VARIANT_GUTTMAN_QUADRATIC_SPLIT
-/*
-** Implementation of the quadratic variant of the PickNext() function from
-** Guttman[84].
-*/
-static RtreeCell *QuadraticPickNext(
-  Rtree *pRtree,
-  RtreeCell *aCell, 
-  int nCell, 
-  RtreeCell *pLeftBox, 
-  RtreeCell *pRightBox,
-  int *aiUsed
-){
-  #define FABS(a) ((a)<0.0?-1.0*(a):(a))
-
-  int iSelect = -1;
-  RtreeDValue fDiff;
-  int ii;
-  for(ii=0; ii<nCell; ii++){
-    if( aiUsed[ii]==0 ){
-      RtreeDValue left = cellGrowth(pRtree, pLeftBox, &aCell[ii]);
-      RtreeDValue right = cellGrowth(pRtree, pLeftBox, &aCell[ii]);
-      RtreeDValue diff = FABS(right-left);
-      if( iSelect<0 || diff>fDiff ){
-        fDiff = diff;
-        iSelect = ii;
-      }
-    }
-  }
-  aiUsed[iSelect] = 1;
-  return &aCell[iSelect];
-}
-
-/*
-** Implementation of the quadratic variant of the PickSeeds() function from
-** Guttman[84].
-*/
-static void QuadraticPickSeeds(
-  Rtree *pRtree,
-  RtreeCell *aCell, 
-  int nCell, 
-  int *piLeftSeed, 
-  int *piRightSeed
-){
-  int ii;
-  int jj;
-
-  int iLeftSeed = 0;
-  int iRightSeed = 1;
-  RtreeDValue fWaste = 0.0;
-
-  for(ii=0; ii<nCell; ii++){
-    for(jj=ii+1; jj<nCell; jj++){
-      RtreeDValue right = cellArea(pRtree, &aCell[jj]);
-      RtreeDValue growth = cellGrowth(pRtree, &aCell[ii], &aCell[jj]);
-      RtreeDValue waste = growth - right;
-
-      if( waste>fWaste ){
-        iLeftSeed = ii;
-        iRightSeed = jj;
-        fWaste = waste;
-      }
-    }
-  }
-
-  *piLeftSeed = iLeftSeed;
-  *piRightSeed = iRightSeed;
-}
-#endif /* VARIANT_GUTTMAN_QUADRATIC_SPLIT */
 
 /*
 ** Arguments aIdx, aDistance and aSpare all point to arrays of size
@@ -2052,7 +1794,6 @@ static void SortByDimension(
   }
 }
 
-#if VARIANT_RSTARTREE_SPLIT
 /*
 ** Implementation of the R*-tree variant of SplitNode from Beckman[1990].
 */
@@ -2120,7 +1861,7 @@ static int splitNodeStartree(
       }
       margin += cellMargin(pRtree, &left);
       margin += cellMargin(pRtree, &right);
-      overlap = cellOverlap(pRtree, &left, &right, 1, -1);
+      overlap = cellOverlap(pRtree, &left, &right, 1);
       area = cellArea(pRtree, &left) + cellArea(pRtree, &right);
       if( (nLeft==RTREE_MINCELLS(pRtree))
        || (overlap<fBestOverlap)
@@ -2152,63 +1893,7 @@ static int splitNodeStartree(
   sqlite3_free(aaSorted);
   return SQLITE_OK;
 }
-#endif
 
-#if VARIANT_GUTTMAN_SPLIT
-/*
-** Implementation of the regular R-tree SplitNode from Guttman[1984].
-*/
-static int splitNodeGuttman(
-  Rtree *pRtree,
-  RtreeCell *aCell,
-  int nCell,
-  RtreeNode *pLeft,
-  RtreeNode *pRight,
-  RtreeCell *pBboxLeft,
-  RtreeCell *pBboxRight
-){
-  int iLeftSeed = 0;
-  int iRightSeed = 1;
-  int *aiUsed;
-  int i;
-
-  aiUsed = sqlite3_malloc(sizeof(int)*nCell);
-  if( !aiUsed ){
-    return SQLITE_NOMEM;
-  }
-  memset(aiUsed, 0, sizeof(int)*nCell);
-
-  PickSeeds(pRtree, aCell, nCell, &iLeftSeed, &iRightSeed);
-
-  memcpy(pBboxLeft, &aCell[iLeftSeed], sizeof(RtreeCell));
-  memcpy(pBboxRight, &aCell[iRightSeed], sizeof(RtreeCell));
-  nodeInsertCell(pRtree, pLeft, &aCell[iLeftSeed]);
-  nodeInsertCell(pRtree, pRight, &aCell[iRightSeed]);
-  aiUsed[iLeftSeed] = 1;
-  aiUsed[iRightSeed] = 1;
-
-  for(i=nCell-2; i>0; i--){
-    RtreeCell *pNext;
-    pNext = PickNext(pRtree, aCell, nCell, pBboxLeft, pBboxRight, aiUsed);
-    RtreeDValue diff =  
-      cellGrowth(pRtree, pBboxLeft, pNext) - 
-      cellGrowth(pRtree, pBboxRight, pNext)
-    ;
-    if( (RTREE_MINCELLS(pRtree)-NCELL(pRight)==i)
-     || (diff>0.0 && (RTREE_MINCELLS(pRtree)-NCELL(pLeft)!=i))
-    ){
-      nodeInsertCell(pRtree, pRight, pNext);
-      cellUnion(pRtree, pBboxRight, pNext);
-    }else{
-      nodeInsertCell(pRtree, pLeft, pNext);
-      cellUnion(pRtree, pBboxLeft, pNext);
-    }
-  }
-
-  sqlite3_free(aiUsed);
-  return SQLITE_OK;
-}
-#endif
 
 static int updateMapping(
   Rtree *pRtree, 
@@ -2286,7 +1971,7 @@ static int SplitNode(
   memset(pLeft->zData, 0, pRtree->iNodeSize);
   memset(pRight->zData, 0, pRtree->iNodeSize);
 
-  rc = AssignCells(pRtree, aCell, nCell, pLeft, pRight, &leftbbox, &rightbbox);
+  rc = splitNodeStartree(pRtree, aCell, nCell, pLeft, pRight,&leftbbox,&rightbbox);
   if( rc!=SQLITE_OK ){
     goto splitnode_out;
   }
@@ -2635,16 +2320,12 @@ static int rtreeInsertCell(
     }
   }
   if( nodeInsertCell(pRtree, pNode, pCell) ){
-#if VARIANT_RSTARTREE_REINSERT
     if( iHeight<=pRtree->iReinsertHeight || pNode->iNode==1){
       rc = SplitNode(pRtree, pNode, pCell, iHeight);
     }else{
       pRtree->iReinsertHeight = iHeight;
       rc = Reinsert(pRtree, pNode, pCell, iHeight);
     }
-#else
-    rc = SplitNode(pRtree, pNode, pCell, iHeight);
-#endif
   }else{
     rc = AdjustTree(pRtree, pNode, pCell);
     if( rc==SQLITE_OK ){
