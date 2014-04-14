@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\ssecond\sargument\sfrom\ssqlite3ExprCachePop().\s\sAdd\san\nALWAYS()\son\san\salways-true\sconditional\sin\ssqlite3VdbeResolveLabel().
-D 2014-04-13T19:28:15.499
+C Make\ssure\sthe\sundocumented\ssqlite_rename_parent()\sfunction\sdoes\snot\ncrash\seven\sif\sit\sis\sinvoked\swith\sNULL\sarguments.\nTicket\s[264b970c4379fd4b94]
+D 2014-04-14T19:48:25.984
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -157,7 +157,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
-F src/alter.c 5d99edbac5bc416032772b723ee30182ee6e5de0
+F src/alter.c b00900877f766f116f9e16116f1ccacdc21d82f1
 F src/analyze.c 663e0b291d27eb03c9fd6b421e2d61ba348a2389
 F src/attach.c 3801129015ef59d76bf23c95ef9b0069d18a0c52
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
@@ -298,7 +298,7 @@ F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
-F test/alter.test e88dfa77e020c2b48e52a8020c70171ab828e079
+F test/alter.test 547dc2d292644301ac9a7dda22b319b74f9c08d2
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
 F test/alter4.test d6c011fa0d6227abba762498cafbb607c9609e93
@@ -1160,7 +1160,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3122b8364082be783821da01d4af2af6a9586327
-R e1df7805a07beb887bab893b56a4a7f9
+P ab23abf392175d3e256ff619b13abbbe732a49ed
+R 410ec05c8f2a9918dc68eaaf465de80d
 U drh
-Z 77065e6cb595843b2b0b90941a9d16f6
+Z 8590c3c7b25dad5b568a22b07ca7e219
