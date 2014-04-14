@@ -2946,10 +2946,10 @@ static int rtreeInit(
 ** Implementation of a scalar function that decodes r-tree nodes to
 ** human readable strings. This can be used for debugging and analysis.
 **
-** The scalar function takes two arguments, a blob of data containing
-** an r-tree node, and the number of dimensions the r-tree indexes.
-** For a two-dimensional r-tree structure called "rt", to deserialize
-** all nodes, a statement like:
+** The scalar function takes two arguments: (1) the number of dimensions
+** to the rtree (between 1 and 5, inclusive) and (2) a blob of data containing
+** an r-tree node.  For a two-dimensional r-tree structure called "rt", to
+** deserialize all nodes, a statement like:
 **
 **   SELECT rtreenode(2, data) FROM rt_node;
 **
@@ -3003,6 +3003,15 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   sqlite3_result_text(ctx, zText, -1, sqlite3_free);
 }
 
+/* This routine implements an SQL function that returns the "depth" parameter
+** from the front of a blob that is an r-tree node.  For example:
+**
+**     SELECT rtreedepth(data) FROM rt_node WHERE nodeno=1;
+**
+** The depth value is 0 for all nodes other than the root node, and the root
+** node always has nodeno=1, so the example above is the primary use for this
+** routine.  This routine is intended for testing and analysis only.
+*/
 static void rtreedepth(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
   UNUSED_PARAMETER(nArg);
   if( sqlite3_value_type(apArg[0])!=SQLITE_BLOB 

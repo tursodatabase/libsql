@@ -1,5 +1,5 @@
-C Remove\sover\s300\slines\sof\sunused\scode,\scode\sthat\simplemented\sthe\solder\s\nGuttman\sinsertion\salgorithms\sthat\sare\sno\slonger\sused.
-D 2014-04-14T12:18:17.185
+C Fix\scomments\son\sthe\srtreenode()\sand\srtreedepth()\stest\sfunction\sin\sthe\sR-Tree\nmodule.
+D 2014-04-14T14:43:09.474
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c d7fbe473260cc53463c372c9cf7303495a40fbc8
+F ext/rtree/rtree.c 07630c252ce0ba63d2d0e6922847eff6eec64fbc
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ca7357e66ca60f59477b1db000c2cdaeb8082ae1
-R cf842e59d29c59dde99b1f71fa55bf0f
+P 3ba5f295c709faebf5505e61f6dc5266b811b086
+R e7b36f9b46b38d0d4d4bc75aff5d0712
 U drh
-Z e4f991d8b5489d1278b0a7eb150a81ec
+Z 1c3694849e99525baeaeac92e41be917
