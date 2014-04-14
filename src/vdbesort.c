@@ -1710,7 +1710,10 @@ static void vdbeIncrSetThreads(IncrMerger *pIncr, int bUseThread){
   }
 }
 
-static int vdbeIncrInit2(PmaReader *pIter){
+#define INCRINIT2_NORMAL 0
+#define INCRINIT2_TASK   1
+#define INCRINIT2_ROOT   2
+static int vdbeIncrInit2(PmaReader *pIter, int eMode){
   int rc = SQLITE_OK;
   IncrMerger *pIncr = pIter->pIncr;
   if( pIncr ){
@@ -1719,7 +1722,12 @@ static int vdbeIncrInit2(PmaReader *pIter){
     MergeEngine *pMerger = pIncr->pMerger;
 
     for(i=0; rc==SQLITE_OK && i<pMerger->nTree; i++){
-      rc = vdbeIncrInit2(&pMerger->aIter[i]);
+      IncrMerger *p;
+      if( eMode==INCRINIT2_ROOT ){
+        rc = vdbePmaReaderNext(&pMerger->aIter[i]);
+      }else{
+        rc = vdbeIncrInit2(&pMerger->aIter[i], INCRINIT2_NORMAL);
+      }
     }
 
     /* Set up the required files for pIncr */
@@ -1751,14 +1759,30 @@ static int vdbeIncrInit2(PmaReader *pIter){
     }
 
     if( rc==SQLITE_OK && pIncr->bUseThread ){
-      rc = vdbeIncrBgPopulate(pIncr);
+      /* Use the current thread */
+      assert( eMode==INCRINIT2_ROOT || eMode==INCRINIT2_TASK );
+      rc = vdbeIncrPopulate(pIncr);
     }
 
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && eMode!=INCRINIT2_TASK ){
       rc = vdbePmaReaderNext(pIter);
     }
   }
   return rc;
+}
+
+static void *vdbeIncrInit2Thread(void *pCtx){
+  PmaReader *pReader = (PmaReader*)pCtx;
+  void *pRet = SQLITE_INT_TO_PTR( vdbeIncrInit2(pReader, INCRINIT2_TASK) );
+  pReader->pIncr->thread.bDone = 1;
+  return pRet;
+}
+
+static int vdbeIncrBgInit2(PmaReader *pIter){
+  void *pCtx = (void*)pIter;
+  return vdbeSorterCreateThread(
+      &pIter->pIncr->thread, vdbeIncrInit2Thread, pCtx
+  );
 }
 
 /*
@@ -1933,10 +1957,20 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter, PmaReader *pIter){
             assert( pIncr->pTask!=pLast );
           }
         }
+        if( pSorter->nTask>1 ){
+          for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
+            PmaReader *p = &pMain->aIter[iTask];
+            assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
+            if( p->pIncr ){ rc = vdbeIncrBgInit2(p); }
+          }
+        }
       }
     }
   }
-  if( rc==SQLITE_OK ) rc = vdbeIncrInit2(pIter);
+  if( rc==SQLITE_OK ){
+    int eMode = (pSorter->nTask>1 ? INCRINIT2_ROOT : INCRINIT2_NORMAL);
+    rc = vdbeIncrInit2(pIter, eMode);
+  }
 
   sqlite3_free(aMerge);
   return rc;

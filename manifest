@@ -1,5 +1,5 @@
-C Fix\smany\sissues\swith\snew\scode.
-D 2014-04-12T19:34:44.467
+C Improve\suse\sof\smultiple\sthreads\sin\ssqlite3VdbeSorterRewind().
+D 2014-04-14T07:30:39.899
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c bc0d90e00abcc88997f463d4d41b7ba4a10cfd88
+F src/vdbesort.c b047de6a9c89b122ad8649b083c848b6336b91cb
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1163,7 +1163,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 98bf0307b121b0776a7170108cc8d3f948a7ebfe
-R f3107fdb117ba86f9bee4609a5b08bfd
+P 62c406a042d7246f6df6b943421182a88483b2e3
+R c3e4d1b3a81e551661cfec7b71fa4391
 U dan
-Z 5a1b16a83fca264558f06f5fb6536949
+Z 2f53ddd699d6387555ef072104853e10
