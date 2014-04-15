@@ -1,5 +1,5 @@
-C Fix\sfurther\scode\sand\sdocumentation\sissues\sin\svdbesort.c.
-D 2014-04-15T19:52:34.797
+C Fix\ssome\sproblems\sto\sdo\swith\sOOM\sconditions\sin\svdbesort.c.\sSome\sproblems\sremain.
+D 2014-04-15T20:52:27.270
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c ceb8e16055327d0c52bdd2087fcdd7d132fe314f
+F src/vdbesort.c 56c663772aaa7cd790ba2eb8f3bd3b4a4ac1fa4d
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -820,6 +820,7 @@ F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 79dc647c4e9b123a64e57b7080b7f9a2df43f87a
 F test/sort2.test 04e99d0d028b469c6cfab2c647c6c28755504063
 F test/sort3.test c3f88d233452a129de519de311d109a0ad0da0af
+F test/sortfault.test 2e2337aa5db6ab5cd546368cf2410676c11cb577
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
@@ -1163,7 +1164,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P cb0ab20c48962cdee03115efa93d7d501780ac73
-R 44c59b06ba4f012b63c2d0e26d30a7e6
+P d03f5b8622d304f029f73c7cd0bee3182a81d081
+R a54791a581239e379f5a047014cbfa51
 U dan
-Z 2cc8bdff8b0228a6efe530348d9564c8
+Z b9d6664d305a1dc63db907b778150c9a

@@ -625,7 +625,7 @@ static int vdbePmaReaderSeek(
       if( pIter->aBuffer==0 ) rc = SQLITE_NOMEM;
       pIter->nBuffer = pgsz;
     }
-    if( iBuf ){
+    if( rc==SQLITE_OK && iBuf ){
       int nRead = pgsz - iBuf;
       if( (pIter->iReadOff + nRead) > pIter->iEof ){
         nRead = (int)(pIter->iEof - pIter->iReadOff);
@@ -1990,6 +1990,7 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter){
           }
         }
         rc = vdbeAddToBuilder(pTask, &aMerge[0], pMerger);
+        if( rc!=SQLITE_OK ) break;
       }
     }
 
@@ -2016,6 +2017,10 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter){
         if( pNew==0 ) rc = SQLITE_NOMEM;
       }
       memset(aMerge, 0, nMerge*sizeof(aMerge[0]));
+    }
+
+    if( rc!=SQLITE_OK ){
+      vdbeMergeEngineFree(pRoot);
     }
   }
 
@@ -2050,6 +2055,7 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter){
               if( p->pIncr ){ rc = vdbeIncrBgInit2(p); }
             }
           }
+          pMain = 0;
         }
       }
       if( rc==SQLITE_OK ){
@@ -2061,9 +2067,17 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter){
     {
       pSorter->pMerger = pMain;
       rc = vdbeIncrInitMerger(pTask0, pMain, INCRINIT2_NORMAL);
+      pMain = 0;
     }
   }
 
+  if( rc!=SQLITE_OK ){
+    int i;
+    for(i=0; rc==SQLITE_OK && i<nMerge; i++){
+      vdbeMergeEngineFree(aMerge[i].pMerger);
+    }
+    vdbeMergeEngineFree(pMain);
+  }
   sqlite3_free(aMerge);
   return rc;
 }
