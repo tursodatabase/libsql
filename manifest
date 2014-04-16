@@ -1,5 +1,5 @@
-C Fix\scomments\son\sthe\srtreenode()\sand\srtreedepth()\stest\sfunction\sin\sthe\sR-Tree\nmodule.
-D 2014-04-14T14:43:09.474
+C Convert\sthe\sRTree\smodule\squery\smechanism\sover\sto\susing\sa\spriority\squeue\sfor\nwalking\sthe\sRTree.
+D 2014-04-16T17:23:23.188
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 07630c252ce0ba63d2d0e6922847eff6eec64fbc
+F ext/rtree/rtree.c 142d70dc3bb8db1caf6c0e94b88ec0e8047d36ee
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -132,7 +132,7 @@ F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
 F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
-F ext/rtree/rtreeB.test 983e567b49b5dca165940f66b87e161aa30e82b2
+F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test 16d7aa86ecb6a876d2a38cf590a1471a41b3a46d
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
@@ -1175,7 +1175,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 3ba5f295c709faebf5505e61f6dc5266b811b086
-R e7b36f9b46b38d0d4d4bc75aff5d0712
+P ade5b986e8baab9df7bdaf7ccfaee2d6ba55fa3c f864baccd3fe0ee939ac1ec20069792f649cddc0
+R f6b681e4a8814b2c282cb2ca3c357703
+T +closed f864baccd3fe0ee939ac1ec20069792f649cddc0
 U drh
-Z 1c3694849e99525baeaeac92e41be917
+Z c6c15dd382844155e286fbab3c8ec41d
