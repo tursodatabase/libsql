@@ -1230,6 +1230,7 @@ static void traceQueue(RtreeCursor *pCur, const char *zPrefix){
     tracePoint(&pCur->aPoint[ii], ii, pCur);
   }
 }
+# define RTREE_QUEUE_TRACE(A,B) traceQueue(A,B)
 #else
 # define RTREE_QUEUE_TRACE(A,B)   /* no-op */
 #endif
@@ -1284,7 +1285,6 @@ static void rtreeSearchPointPop(RtreeCursor *p){
 */
 static int rtreeStepToLeaf(RtreeCursor *pCur){
   RtreeSearchPoint *p;
-  RtreeSearchPoint *pNew;
   Rtree *pRtree = RTREE_OF_CURSOR(pCur);
   RtreeNode *pNode;
   int eWithin;
@@ -1313,17 +1313,16 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
         RTREE_QUEUE_TRACE(pCur, "POP-S:");
         rtreeSearchPointPop(pCur);
       }
-      pNew = rtreeSearchPointNew(pCur, /*rScore*/0.0, x.iLevel-1);
-      if( pNew==0 ) return SQLITE_NOMEM;
-      pNew->eWithin = eWithin;
-      if( pNew->iLevel ){
-        pNew->id = cell.iRowid;
-        pNew->iCell = 0;
+      p = rtreeSearchPointNew(pCur, /*rScore*/0.0, x.iLevel-1);
+      if( p==0 ) return SQLITE_NOMEM;
+      p->eWithin = eWithin;
+      if( p->iLevel ){
+        p->id = cell.iRowid;
+        p->iCell = 0;
       }else{
-        pNew->id = x.id;
-        pNew->iCell = x.iCell;
+        p->id = x.id;
+        p->iCell = x.iCell;
       }
-      p = pNew;
       RTREE_QUEUE_TRACE(pCur, "PUSH-S:");
       break;
     }
@@ -1496,7 +1495,9 @@ static int rtreeFilter(
     rc = findLeafNode(pRtree, iRowid, &pLeaf, &p->id);
     pCsr->aNode[0] = pLeaf;
     p->eWithin = PARTLY_WITHIN;
-    if( rc ) rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &iCell);
+    if( rc==SQLITE_OK ){
+      rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &iCell);
+    }
     p->iCell = iCell;
     RTREE_QUEUE_TRACE(pCsr, "PUSH-F1:");
   }else{
