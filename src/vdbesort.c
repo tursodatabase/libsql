@@ -1789,7 +1789,7 @@ static void vdbeIncrSetThreads(IncrMerger *pIncr, int bUseThread){
 #define INCRINIT2_NORMAL 0
 #define INCRINIT2_TASK   1
 #define INCRINIT2_ROOT   2
-static int vdbeIncrInit2(PmaReader *pIter, int eMode);
+static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode);
 
 /*
 ** Initialize the merger argument passed as the second argument. Once this
@@ -1804,7 +1804,8 @@ static int vdbeIncrInit2(PmaReader *pIter, int eMode);
 ** its first key.
 **
 ** Otherwise, if eMode is any value other than INCRINIT2_ROOT, then use 
-** vdbeIncrInit2() to initialize each PmaReader that feeds data to pMerger.
+** vdbePmaReaderIncrInit() to initialize each PmaReader that feeds data 
+** to pMerger.
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
@@ -1820,7 +1821,7 @@ static int vdbeIncrInitMerger(
     if( eMode==INCRINIT2_ROOT ){
       rc = vdbePmaReaderNext(&pMerger->aIter[i]);
     }else{
-      rc = vdbeIncrInit2(&pMerger->aIter[i], INCRINIT2_NORMAL);
+      rc = vdbePmaReaderIncrInit(&pMerger->aIter[i], INCRINIT2_NORMAL);
     }
   }
 
@@ -1831,7 +1832,7 @@ static int vdbeIncrInitMerger(
   return rc;
 }
 
-static int vdbeIncrInit2(PmaReader *pIter, int eMode){
+static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
   int rc = SQLITE_OK;
   IncrMerger *pIncr = pIter->pIncr;
   if( pIncr ){
@@ -1879,26 +1880,27 @@ static int vdbeIncrInit2(PmaReader *pIter, int eMode){
 
 #if SQLITE_MAX_WORKER_THREADS>0
 /*
-** The main routine for vdbeIncrInit2() operations run in background threads.
+** The main routine for vdbePmaReaderIncrInit() operations run in 
+** background threads.
 */
-static void *vdbeIncrInit2Thread(void *pCtx){
+static void *vdbePmaReaderBgInit(void *pCtx){
   PmaReader *pReader = (PmaReader*)pCtx;
-  void *pRet = SQLITE_INT_TO_PTR( vdbeIncrInit2(pReader, INCRINIT2_TASK) );
+  void *pRet = SQLITE_INT_TO_PTR(vdbePmaReaderIncrInit(pReader,INCRINIT2_TASK));
   pReader->pIncr->pTask->bDone = 1;
   return pRet;
 }
 
 /*
-** Use a background thread to invoke vdbeIncrInit2(INCRINIT2_TASK) on the
-** the PmaReader object passed as the first argument.
+** Use a background thread to invoke vdbePmaReaderIncrInit(INCRINIT2_TASK) 
+** on the the PmaReader object passed as the first argument.
 **
 ** This call will initialize the various fields of the pIter->pIncr 
 ** structure and, if it is a multi-threaded IncrMerger, launch a 
 ** background thread to populate aFile[1].
 */
-static int vdbeIncrBgInit2(PmaReader *pIter){
+static int vdbePmaReaderBgIncrInit(PmaReader *pIter){
   void *pCtx = (void*)pIter;
-  return vdbeSorterCreateThread(pIter->pIncr->pTask, vdbeIncrInit2Thread, pCtx);
+  return vdbeSorterCreateThread(pIter->pIncr->pTask, vdbePmaReaderBgInit, pCtx);
 }
 #endif
 
@@ -2087,10 +2089,15 @@ static int vdbeSorterMergeTreeBuild(VdbeSorter *pSorter, MergeEngine **ppOut){
 }
 
 /*
-** Populate iterator *pIter so that it may be used to iterate through all 
-** keys stored in all PMAs created by this sorter.
+** This function is called as part of an sqlite3VdbeSorterRewind() operation
+** on a sorter that has written two or more PMAs to temporary files. It sets
+** up either VdbeSorter.pMerger (for single threaded sorters) or pReader
+** (for multi-threaded sorters) so that it can be used to iterate through
+** all records stored in the sorter.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-static int vdbePmaReaderIncrInit(VdbeSorter *pSorter){
+static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
   int rc;                         /* Return code */
   SortSubtask *pTask0 = &pSorter->aTask[0];
   MergeEngine *pMain = 0;
@@ -2123,7 +2130,7 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter){
             for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
               PmaReader *p = &pMain->aIter[iTask];
               assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
-              if( p->pIncr ){ rc = vdbeIncrBgInit2(p); }
+              if( p->pIncr ){ rc = vdbePmaReaderBgIncrInit(p); }
             }
           }
         }
@@ -2131,7 +2138,7 @@ static int vdbePmaReaderIncrInit(VdbeSorter *pSorter){
       }
       if( rc==SQLITE_OK ){
         int eMode = (pSorter->nTask>1 ? INCRINIT2_ROOT : INCRINIT2_NORMAL);
-        rc = vdbeIncrInit2(pIter, eMode);
+        rc = vdbePmaReaderIncrInit(pIter, eMode);
       }
     }else
 #endif
@@ -2187,7 +2194,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
   ** incrementally read and merge all remaining PMAs.  */
   assert( pSorter->pReader==0 );
   if( rc==SQLITE_OK ){
-    rc = vdbePmaReaderIncrInit(pSorter);
+    rc = vdbeSorterSetupMerge(pSorter);
     *pbEof = 0;
   }
 
