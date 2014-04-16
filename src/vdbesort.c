@@ -794,6 +794,22 @@ static int vdbeSorterDoCompare(
 
 /*
 ** Initialize the temporary index cursor just opened as a sorter cursor.
+**
+** Usually, the sorter module uses the value of (pCsr->pKeyInfo->nField)
+** to determine the number of fields that should be compared from the
+** records being sorted. However, if the value passed as argument nField
+** is non-zero and the sorter is able to guarantee a stable sort, nField
+** is used instead. This is used when sorting records for a CREATE INDEX
+** statement. In this case, keys are always delivered to the sorter in
+** order of the primary key, which happens to be make up the final part 
+** of the records being sorted. So if the sort is stable, there is never
+** any reason to compare PK fields and they can be ignored for a small
+** performance boost.
+**
+** The sorter can guarantee a stable sort when running in single-threaded
+** mode, but not in multi-threaded mode.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
 int sqlite3VdbeSorterInit(
   sqlite3 *db,                    /* Database connection (for malloc()) */
