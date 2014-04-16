@@ -729,10 +729,15 @@ static void nodeGetCell(
   int iCell,                   /* Index of the cell within the node */
   RtreeCell *pCell             /* OUT: Write the cell contents here */
 ){
-  int ii;
+  u8 *pData;
+  u8 *pEnd;
+  RtreeCoord *pCoord;
   pCell->iRowid = nodeGetRowid(pRtree, pNode, iCell);
-  for(ii=0; ii<pRtree->nDim*2; ii++){
-    nodeGetCoord(pRtree, pNode, iCell, ii, &pCell->aCoord[ii]);
+  pData = pNode->zData + (12 + pRtree->nBytesPerCell*iCell);
+  pEnd = pData + pRtree->nDim*8;
+  pCoord = pCell->aCoord;
+  for(; pData<pEnd; pData+=4, pCoord++){
+    readCoord(pData, pCoord);
   }
 }
 

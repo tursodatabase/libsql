@@ -1,5 +1,5 @@
-C Convert\sthe\sRTree\smodule\squery\smechanism\sover\sto\susing\sa\spriority\squeue\sfor\nwalking\sthe\sRTree.
-D 2014-04-16T17:23:23.188
+C Performance\soptimization\son\snodeGetCell()\sin\sR-Tree.
+D 2014-04-16T21:02:28.844
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 142d70dc3bb8db1caf6c0e94b88ec0e8047d36ee
+F ext/rtree/rtree.c 1a59db351a8dfaa46c59b3105865a1aaa5192a61
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1175,8 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ade5b986e8baab9df7bdaf7ccfaee2d6ba55fa3c f864baccd3fe0ee939ac1ec20069792f649cddc0
-R f6b681e4a8814b2c282cb2ca3c357703
-T +closed f864baccd3fe0ee939ac1ec20069792f649cddc0
+P f26936f71a16ab25590540f7feb273514dfb69ff
+R b2b62cbe51f5e73202ce646c31659a05
 U drh
-Z c6c15dd382844155e286fbab3c8ec41d
+Z 74eaec9038e9087250153055260f329f
