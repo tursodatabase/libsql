@@ -1239,7 +1239,7 @@ static void traceQueue(RtreeCursor *pCur, const char *zPrefix){
 */
 static void rtreeSearchPointPop(RtreeCursor *p){
   int i, j, k, n;
-  i = p->bPoint;
+  i = 1 - p->bPoint;
   assert( i==0 || i==1 );
   if( p->aNode[i] ){
     nodeRelease(RTREE_OF_CURSOR(p), p->aNode[i]);
@@ -1345,7 +1345,7 @@ static int rtreeNext(sqlite3_vtab_cursor *pVtabCursor){
   /* Move to the next entry that matches the configured constraints. */
   RTREE_QUEUE_TRACE(pCsr, "POP-Nx:");
   rtreeSearchPointPop(pCsr);
-  rtreeStepToLeaf(pCsr);
+  rc = rtreeStepToLeaf(pCsr);
   return rc;
 }
 
@@ -1490,16 +1490,20 @@ static int rtreeFilter(
     RtreeNode *pLeaf;        /* Leaf on which the required cell resides */
     RtreeSearchPoint *p;     /* Search point for the the leaf */
     i64 iRowid = sqlite3_value_int64(argv[0]);
-    p = rtreeSearchPointNew(pCsr, 0.0, 0);
-    if( p==0 ) return SQLITE_NOMEM;
-    rc = findLeafNode(pRtree, iRowid, &pLeaf, &p->id);
-    pCsr->aNode[0] = pLeaf;
-    p->eWithin = PARTLY_WITHIN;
-    if( rc==SQLITE_OK ){
+    i64 iNode = 0;
+    rc = findLeafNode(pRtree, iRowid, &pLeaf, &iNode);
+    if( rc==SQLITE_OK && pLeaf!=0 ){
+      p = rtreeSearchPointNew(pCsr, 0.0, 0);
+      assert( p!=0 );  /* Always returns pCsr->sPoint */
+      pCsr->aNode[0] = pLeaf;
+      p->id = iNode;
+      p->eWithin = PARTLY_WITHIN;
       rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &iCell);
+      p->iCell = iCell;
+      RTREE_QUEUE_TRACE(pCsr, "PUSH-F1:");
+    }else{
+      pCsr->atEOF = 1;
     }
-    p->iCell = iCell;
-    RTREE_QUEUE_TRACE(pCsr, "PUSH-F1:");
   }else{
     /* Normal case - r-tree scan. Set up the RtreeCursor.aConstraint array 
     ** with the configured constraints. 
