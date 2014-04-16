@@ -1098,14 +1098,15 @@ static void rtreeSearchPointSwap(RtreeCursor *p, int i, int j){
   assert( i<j );
   p->aPoint[i] = p->aPoint[j];
   p->aPoint[j] = t;
-  if( i<RTREE_CACHE_SZ-1 ){
-    if( j>=RTREE_CACHE_SZ-1 ){
-      nodeRelease(RTREE_OF_CURSOR(p), p->aNode[i+1]);
-      p->aNode[i+1] = 0;
+  i++; j++;
+  if( i<RTREE_CACHE_SZ ){
+    if( j>=RTREE_CACHE_SZ ){
+      nodeRelease(RTREE_OF_CURSOR(p), p->aNode[i]);
+      p->aNode[i] = 0;
     }else{
-      RtreeNode *pTemp = p->aNode[i+i];
-      p->aNode[i+1] = p->aNode[j+1];
-      p->aNode[j+1] = pTemp;
+      RtreeNode *pTemp = p->aNode[i];
+      p->aNode[i] = p->aNode[j];
+      p->aNode[j] = pTemp;
     }
   }
 }
@@ -1182,10 +1183,16 @@ static RtreeSearchPoint *rtreeSearchPointNew(
    || (pFirst->rScore==rScore && pFirst->iLevel>iLevel)
   ){
     if( pCur->bPoint ){
+      int ii;
       pNew = rtreeEnqueue(pCur, rScore, iLevel);
       if( pNew==0 ) return 0;
-      assert( pCur->aNode[1]==0 );
-      pCur->aNode[1] = pCur->aNode[0];
+      ii = (int)(pNew - pCur->aPoint) + 1;
+      if( ii<RTREE_CACHE_SZ ){
+        assert( pCur->aNode[ii]==0 );
+        pCur->aNode[ii] = pCur->aNode[0];
+       }else{
+        nodeRelease(RTREE_OF_CURSOR(pCur), pCur->aNode[0]);
+      }
       pCur->aNode[0] = 0;
       *pNew = pCur->sPoint;
     }
@@ -1198,13 +1205,34 @@ static RtreeSearchPoint *rtreeSearchPointNew(
   }
 }
 
-static void traceTop(RtreeCursor *pCur, const char *zPrefix){
-  RtreeSearchPoint *p = rtreeSearchPointFirst(pCur);
-  if( p ){
-    printf("=== %6s id=%lld lvl=%d iCell=%d rScore=%g eWithin=%d\n",
-       zPrefix, p->id, p->iLevel, p->iCell, p->rScore, p->eWithin);
+#if 0
+/* Tracing routines for the RtreeSearchPoint queue */
+static void tracePoint(RtreeSearchPoint *p, int idx, RtreeCursor *pCur){
+  if( idx<0 ){ printf(" s"); }else{ printf("%2d", idx); }
+  printf(" %d.%05lld.%02d %g %d",
+    p->iLevel, p->id, p->iCell, p->rScore, p->eWithin
+  );
+  idx++;
+  if( idx<RTREE_CACHE_SZ ){
+    printf(" %p\n", pCur->aNode[idx]);
+  }else{
+    printf("\n");
   }
 }
+static void traceQueue(RtreeCursor *pCur, const char *zPrefix){
+  int ii;
+  printf("=== %9s ", zPrefix);
+  if( pCur->bPoint ){
+    tracePoint(&pCur->sPoint, -1, pCur);
+  }
+  for(ii=0; ii<pCur->nPoint; ii++){
+    if( ii>0 || pCur->bPoint ) printf("              ");
+    tracePoint(&pCur->aPoint[ii], ii, pCur);
+  }
+}
+#else
+# define RTREE_QUEUE_TRACE(A,B)   /* no-op */
+#endif
 
 /* Remove the search point with the lowest current score.
 */
@@ -1221,6 +1249,10 @@ static void rtreeSearchPointPop(RtreeCursor *p){
   }else if( p->nPoint ){
     n = --p->nPoint;
     p->aPoint[0] = p->aPoint[n];
+    if( n<RTREE_CACHE_SZ-1 ){
+      p->aNode[1] = p->aNode[n+1];
+      p->aNode[n+1] = 0;
+    }
     i = 0;
     while( (j = i*2+1)<n ){
       k = j+1;
@@ -1276,11 +1308,11 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
       if( rc ) return rc;
       x = *p;
       p->iCell++;
+      if( eWithin==NOT_WITHIN ) continue;
       if( p->iCell>=nCell ){
-traceTop(pCur, "POP:");
+        RTREE_QUEUE_TRACE(pCur, "POP-S:");
         rtreeSearchPointPop(pCur);
       }
-      if( eWithin==NOT_WITHIN ) continue;
       pNew = rtreeSearchPointNew(pCur, /*rScore*/0.0, x.iLevel-1);
       if( pNew==0 ) return SQLITE_NOMEM;
       pNew->eWithin = eWithin;
@@ -1291,8 +1323,13 @@ traceTop(pCur, "POP:");
         pNew->id = x.id;
         pNew->iCell = x.iCell;
       }
-traceTop(pCur, "PUSH:");
+      p = pNew;
+      RTREE_QUEUE_TRACE(pCur, "PUSH-S:");
       break;
+    }
+    if( p->iCell>=nCell ){
+      RTREE_QUEUE_TRACE(pCur, "POP-Se:");
+      rtreeSearchPointPop(pCur);
     }
   }
   pCur->atEOF = p==0;
@@ -1307,7 +1344,7 @@ static int rtreeNext(sqlite3_vtab_cursor *pVtabCursor){
   int rc = SQLITE_OK;
 
   /* Move to the next entry that matches the configured constraints. */
-traceTop(pCsr, "POP:");
+  RTREE_QUEUE_TRACE(pCsr, "POP-Nx:");
   rtreeSearchPointPop(pCsr);
   rtreeStepToLeaf(pCsr);
   return rc;
@@ -1461,7 +1498,7 @@ static int rtreeFilter(
     p->eWithin = PARTLY_WITHIN;
     if( rc ) rc = nodeRowidIndex(pRtree, pLeaf, iRowid, &iCell);
     p->iCell = iCell;
-traceTop(pCsr, "PUSH:");
+    RTREE_QUEUE_TRACE(pCsr, "PUSH-F1:");
   }else{
     /* Normal case - r-tree scan. Set up the RtreeCursor.aConstraint array 
     ** with the configured constraints. 
@@ -1510,7 +1547,7 @@ traceTop(pCsr, "PUSH:");
       pNew->eWithin = PARTLY_WITHIN;
       assert( pCsr->bPoint==1 );
       pCsr->aNode[0] = pRoot;
-traceTop(pCsr, "PUSH:");
+      RTREE_QUEUE_TRACE(pCsr, "PUSH-Fm:");
       rc = rtreeStepToLeaf(pCsr);
     }
   }
@@ -3177,7 +3214,7 @@ static void rtreenode(sqlite3_context *ctx, int nArg, sqlite3_value **apArg){
     nCell = (int)strlen(zCell);
     for(jj=0; jj<tree.nDim*2; jj++){
 #ifndef SQLITE_RTREE_INT_ONLY
-      sqlite3_snprintf(512-nCell,&zCell[nCell], " %f",
+      sqlite3_snprintf(512-nCell,&zCell[nCell], " %g",
                        (double)cell.aCoord[jj].f);
 #else
       sqlite3_snprintf(512-nCell,&zCell[nCell], " %d",

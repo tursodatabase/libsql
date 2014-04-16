@@ -1,5 +1,5 @@
-C Initial\sattempt\sat\sgetting\sR-Tree\squeries\sto\swork\susing\sa\spriority\squeue.\nThis\scheck-in\scompiles,\sbut\sR-Trees\sdo\snot\swork\swell.\s\sAnd\sthere\sare\ndebugging\sprintf()s\sleft\sin\sthe\scode.\s\sThis\sis\san\sincremental\scheck-in.
-D 2014-04-15T21:06:14.359
+C Bug\sfixes\sto\sthe\spriority-queue\simplementation\sfor\sR-Trees.\s\sImproved\stracing\ncapability.\s\sSome\squeries\swork\snow,\sbut\sstill\smany\sproblems.
+D 2014-04-16T13:00:08.915
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 2f4d35a0689d588698cd0dd7d513761dff20c8fa
+F ext/rtree/rtree.c 3105c5514d6dbf99c39aceac84c4c0f9e00f90ea
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -1175,10 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P ade5b986e8baab9df7bdaf7ccfaee2d6ba55fa3c
-R 52e87385ec75daf64fa5f31a0250db29
-T *branch * rtree-queue
-T *sym-rtree-queue *
-T -sym-rtree-enhancements *
+P 53688a25c23c394278a357829793889970aa4157
+R 67a30187386908beb1eb82f50c3b2dfd
 U drh
-Z d0176a391caa75c92333b568fa6cbbbf
+Z ba82d149b9f56c655f1e6f2a959cfc71
