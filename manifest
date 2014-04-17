@@ -1,5 +1,5 @@
-C Clarify\sthe\spurpose\sof\sthe\snField\sargument\spassed\sto\ssqlite3VdbeSorterInit().
-D 2014-04-16T19:04:23.830
+C Fix\sbuild\sproblems\sin\svdbesort.c.\sAdd\sfurther\scomments\sand\schanges\sto\smake\sthings\seasier\sto\sunderstand.
+D 2014-04-17T08:57:17.925
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -286,7 +286,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c d8dc38965507a34b0e150c0d7fc82b02f8cf25ea
 F src/vdbeblob.c 15377abfb59251bccedd5a9c7d014a895f0c04aa
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c fcd15eb438a3462f4dbeebf506ee9050947236bf
+F src/vdbesort.c a41721a8e97735597afb80c930f04f195d86a817
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1164,7 +1164,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 6622d87675c1d7992b1e6d52ae7da1007a1568a4
-R dd88eb57ef2cb3488d23de10e0a80225
+P c0c8cff17b7311bbc4fd081313a5552f927c3833
+R 5c2193354b4ddf9cc33c16483e4c137f
 U dan
-Z 28b7dc83a03f9f7e8d724df0f79c29e1
+Z c671751bbf58b5cb738173e8c3e25105

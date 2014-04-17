@@ -911,7 +911,7 @@ static void vdbeSortSubtaskCleanup(sqlite3 *db, SortSubtask *pTask){
 static void vdbeSorterWorkDebug(SortSubtask *pTask, const char *zEvent){
   i64 t;
   int iTask = (pTask - pTask->pSorter->aTask);
-  sqlite3OsCurrentTimeInt64(pTask->db->pVfs, &t);
+  sqlite3OsCurrentTimeInt64(pTask->pSorter->db->pVfs, &t);
   fprintf(stderr, "%lld:%d %s\n", t, iTask, zEvent);
 }
 static void vdbeSorterRewindDebug(sqlite3 *db, const char *zEvent){
@@ -925,7 +925,7 @@ static void vdbeSorterPopulateDebug(
 ){
   i64 t;
   int iTask = (pTask - pTask->pSorter->aTask);
-  sqlite3OsCurrentTimeInt64(pTask->db->pVfs, &t);
+  sqlite3OsCurrentTimeInt64(pTask->pSorter->db->pVfs, &t);
   fprintf(stderr, "%lld:bg%d %s\n", t, iTask, zEvent);
 }
 static void vdbeSorterBlockDebug(
@@ -935,7 +935,7 @@ static void vdbeSorterBlockDebug(
 ){
   if( bBlocked ){
     i64 t;
-    sqlite3OsCurrentTimeInt64(pTask->db->pVfs, &t);
+    sqlite3OsCurrentTimeInt64(pTask->pSorter->db->pVfs, &t);
     fprintf(stderr, "%lld:main %s\n", t, zEvent);
   }
 }
@@ -1094,21 +1094,52 @@ void sqlite3VdbeSorterClose(sqlite3 *db, VdbeCursor *pCsr){
   }
 }
 
+#if SQLITE_MAX_MMAP_SIZE>0
+/*
+** The first argument is a file-handle open on a temporary file. The file
+** is guaranteed to be nByte bytes or smaller in size. This function
+** attempts to extend the file to nByte bytes in size and to ensure that
+** the VFS has memory mapped it.
+**
+** Whether or not the file does end up memory mapped of course depends on
+** the specific VFS implementation.
+*/
+static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFile, i64 nByte){
+  if( nByte<=(i64)(db->nMaxSorterMmap) ){
+    int rc = sqlite3OsTruncate(pFile, nByte);
+    if( rc==SQLITE_OK ){
+      void *p = 0;
+      sqlite3OsFetch(pFile, 0, nByte, &p);
+      sqlite3OsUnfetch(pFile, 0, p);
+    }
+  }
+}
+#else
+# define vdbeSorterExtendFile(x,y,z) SQLITE_OK
+#endif
+
 /*
 ** Allocate space for a file-handle and open a temporary file. If successful,
 ** set *ppFile to point to the malloc'd file-handle and return SQLITE_OK.
 ** Otherwise, set *ppFile to 0 and return an SQLite error code.
 */
-static int vdbeSorterOpenTempFile(sqlite3_vfs *pVfs, sqlite3_file **ppFile){
+static int vdbeSorterOpenTempFile(
+  sqlite3 *db,                    /* Database handle doing sort */
+  i64 nExtend,                    /* Attempt to extend file to this size */
+  sqlite3_file **ppFile
+){
   int rc;
-  rc = sqlite3OsOpenMalloc(pVfs, 0, ppFile,
+  rc = sqlite3OsOpenMalloc(db->pVfs, 0, ppFile,
       SQLITE_OPEN_TEMP_JOURNAL |
       SQLITE_OPEN_READWRITE    | SQLITE_OPEN_CREATE |
       SQLITE_OPEN_EXCLUSIVE    | SQLITE_OPEN_DELETEONCLOSE, &rc
   );
   if( rc==SQLITE_OK ){
     i64 max = SQLITE_MAX_MMAP_SIZE;
-    sqlite3OsFileControlHint( *ppFile, SQLITE_FCNTL_MMAP_SIZE, (void*)&max);
+    sqlite3OsFileControlHint(*ppFile, SQLITE_FCNTL_MMAP_SIZE, (void*)&max);
+    if( nExtend>0 ){
+      vdbeSorterExtendFile(db, *ppFile, nExtend);
+    }
   }
   return rc;
 }
@@ -1307,31 +1338,6 @@ static void vdbePmaWriteVarint(PmaWriter *p, u64 iVal){
   vdbePmaWriteBlob(p, aByte, nByte);
 }
 
-#if SQLITE_MAX_MMAP_SIZE>0
-/*
-** The first argument is a file-handle open on a temporary file. The file
-** is guaranteed to be nByte bytes or smaller in size. This function
-** attempts to extend the file to nByte bytes in size and to ensure that
-** the VFS has memory mapped it.
-**
-** Whether or not the file does end up memory mapped of course depends on
-** the specific VFS implementation.
-*/
-static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFile, i64 nByte){
-  if( nByte<=(i64)(db->nMaxSorterMmap) ){
-    int rc = sqlite3OsTruncate(pFile, nByte);
-    if( rc==SQLITE_OK ){
-      void *p = 0;
-      sqlite3OsFetch(pFile, 0, nByte, &p);
-      sqlite3OsUnfetch(pFile, 0, p);
-    }
-  }
-}
-#else
-# define vdbeSorterExtendFile(x,y,z) SQLITE_OK
-#endif
-
-
 /*
 ** Write the current contents of in-memory linked-list pList to a level-0
 ** PMA in the temp file belonging to sub-task pTask. Return SQLITE_OK if 
@@ -1363,7 +1369,7 @@ static int vdbeSorterListToPMA(SortSubtask *pTask, SorterList *pList){
 
   /* If the first temporary PMA file has not been opened, open it now. */
   if( pTask->file.pFd==0 ){
-    rc = vdbeSorterOpenTempFile(db->pVfs, &pTask->file.pFd);
+    rc = vdbeSorterOpenTempFile(db, 0, &pTask->file.pFd);
     assert( rc!=SQLITE_OK || pTask->file.pFd );
     assert( pTask->file.iEof==0 );
     assert( pTask->nPMA==0 );
@@ -1802,9 +1808,9 @@ static void vdbeIncrSetThreads(IncrMerger *pIncr, int bUseThread){
   }
 }
 
-#define INCRINIT2_NORMAL 0
-#define INCRINIT2_TASK   1
-#define INCRINIT2_ROOT   2
+#define INCRINIT_NORMAL 0
+#define INCRINIT_TASK   1
+#define INCRINIT_ROOT   2
 static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode);
 
 /*
@@ -1812,14 +1818,14 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode);
 ** function returns, the first key of merged data may be read from the merger
 ** object in the usual fashion.
 **
-** If argument eMode is INCRINIT2_ROOT, then it is assumed that any IncrMerge
+** If argument eMode is INCRINIT_ROOT, then it is assumed that any IncrMerge
 ** objects attached to the PmaReader objects that the merger reads from have
 ** already been populated, but that they have not yet populated aFile[0] and
 ** set the PmaReader objects up to read from it. In this case all that is
 ** required is to call vdbePmaReaderNext() on each iterator to point it at
 ** its first key.
 **
-** Otherwise, if eMode is any value other than INCRINIT2_ROOT, then use 
+** Otherwise, if eMode is any value other than INCRINIT_ROOT, then use 
 ** vdbePmaReaderIncrInit() to initialize each PmaReader that feeds data 
 ** to pMerger.
 **
@@ -1828,16 +1834,16 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode);
 static int vdbeIncrInitMerger(
   SortSubtask *pTask, 
   MergeEngine *pMerger, 
-  int eMode                       /* One of the INCRINIT2_XXX constants */
+  int eMode                       /* One of the INCRINIT_XXX constants */
 ){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* For iterating through PmaReader objects */
 
   for(i=0; rc==SQLITE_OK && i<pMerger->nTree; i++){
-    if( eMode==INCRINIT2_ROOT ){
+    if( eMode==INCRINIT_ROOT ){
       rc = vdbePmaReaderNext(&pMerger->aIter[i]);
     }else{
-      rc = vdbePmaReaderIncrInit(&pMerger->aIter[i], INCRINIT2_NORMAL);
+      rc = vdbePmaReaderIncrInit(&pMerger->aIter[i], INCRINIT_NORMAL);
     }
   }
 
@@ -1848,6 +1854,39 @@ static int vdbeIncrInitMerger(
   return rc;
 }
 
+/*
+** If the PmaReader passed as the first argument is not an incremental-reader
+** (if pIter->pIncr==0), then this function is a no-op. Otherwise, it serves
+** to open and/or initialize the temp file related fields of the IncrMerge
+** object at (pIter->pIncr).
+**
+** If argument eMode is set to INCRINIT_NORMAL, then PmaReader iterators
+** in the sub-tree headed by pIter are also initialized. Data is then loaded
+** into the buffers belonging to this iterator, pIter, and it is set to
+** point to the first key in its range.
+**
+** If argument eMode is set to INCRINIT_TASK, then PmaReader is guaranteed
+** to be a multi-threaded iterator and this function is being called in a
+** background thread. In this case all iterators in the sub-tree are 
+** initialized as for INCRINIT_NORMAL and the aFile[1] buffer belonging to
+** pIter is populated. However, the iterator itself is not set up to point
+** to its first key. A call to vdbePmaReaderNext() is still required to do
+** that. 
+**
+** The reason this function does not call vdbePmaReaderNext() immediately 
+** in the INCRINIT_TASK case is that vdbePmaReaderNext() assumes that has
+** to block on thread (pTask->thread) before accessing aFile[1]. But, since
+** this entire function is being run by thread (pTask->thread), that will
+** lead to the current background thread attempting to join itself.
+**
+** Finally, if argument eMode is set to INCRINIT_ROOT, it may be assumed
+** that pIter->pIncr is a multi-threaded IncrMerge objects, and that all
+** child-trees have already been initialized using IncrInit(INCRINIT_TASK).
+** In this case vdbePmaReaderNext() is called on all child iterators and
+** the current iterator set to point to the first key in its range.
+**
+** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
+*/
 static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
   int rc = SQLITE_OK;
   IncrMerger *pIncr = pIter->pIncr;
@@ -1855,39 +1894,42 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
     SortSubtask *pTask = pIncr->pTask;
     sqlite3 *db = pTask->pSorter->db;
 
+    assert( eMode==INCRINIT_NORMAL || pIncr->bUseThread==1 );
     rc = vdbeIncrInitMerger(pTask, pIncr->pMerger, eMode);
 
-    /* Set up the required files for pIncr */
+    /* Set up the required files for pIncr. A multi-theaded IncrMerge object
+    ** requires two temp files to itself, whereas a single-threaded object
+    ** only requires a region of pTask->file2. */
     if( rc==SQLITE_OK ){
+      int mxSz = pIncr->mxSz;
       if( pIncr->bUseThread==0 ){
         if( pTask->file2.pFd==0 ){
-          rc = vdbeSorterOpenTempFile(db->pVfs, &pTask->file2.pFd);
           assert( pTask->file2.iEof>0 );
-          if( rc==SQLITE_OK ){
-            vdbeSorterExtendFile(db, pTask->file2.pFd, pTask->file2.iEof);
-            pTask->file2.iEof = 0;
-          }
+          rc = vdbeSorterOpenTempFile(db, pTask->file2.iEof, &pTask->file2.pFd);
+          pTask->file2.iEof = 0;
         }
         if( rc==SQLITE_OK ){
           pIncr->aFile[1].pFd = pTask->file2.pFd;
           pIncr->iStartOff = pTask->file2.iEof;
-          pTask->file2.iEof += pIncr->mxSz;
+          pTask->file2.iEof += mxSz;
         }
       }else{
-        rc = vdbeSorterOpenTempFile(db->pVfs, &pIncr->aFile[0].pFd);
+        rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[0].pFd);
         if( rc==SQLITE_OK ){
-          rc = vdbeSorterOpenTempFile(db->pVfs, &pIncr->aFile[1].pFd);
+          rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[1].pFd);
         }
       }
     }
 
     if( rc==SQLITE_OK && pIncr->bUseThread ){
-      /* Use the current thread */
-      assert( eMode==INCRINIT2_ROOT || eMode==INCRINIT2_TASK );
+      /* Use the current thread to populate aFile[1], even though this
+      ** iterator is multi-threaded. The reason being that this function
+      ** is already running in background thread pIncr->pTask->thread. */
+      assert( eMode==INCRINIT_ROOT || eMode==INCRINIT_TASK );
       rc = vdbeIncrPopulate(pIncr);
     }
 
-    if( rc==SQLITE_OK && eMode!=INCRINIT2_TASK ){
+    if( rc==SQLITE_OK && eMode!=INCRINIT_TASK ){
       rc = vdbePmaReaderNext(pIter);
     }
   }
@@ -1901,13 +1943,13 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
 */
 static void *vdbePmaReaderBgInit(void *pCtx){
   PmaReader *pReader = (PmaReader*)pCtx;
-  void *pRet = SQLITE_INT_TO_PTR(vdbePmaReaderIncrInit(pReader,INCRINIT2_TASK));
+  void *pRet = SQLITE_INT_TO_PTR(vdbePmaReaderIncrInit(pReader,INCRINIT_TASK));
   pReader->pIncr->pTask->bDone = 1;
   return pRet;
 }
 
 /*
-** Use a background thread to invoke vdbePmaReaderIncrInit(INCRINIT2_TASK) 
+** Use a background thread to invoke vdbePmaReaderIncrInit(INCRINIT_TASK) 
 ** on the the PmaReader object passed as the first argument.
 **
 ** This call will initialize the various fields of the pIter->pIncr 
@@ -2153,13 +2195,13 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
         pMain = 0;
       }
       if( rc==SQLITE_OK ){
-        int eMode = (pSorter->nTask>1 ? INCRINIT2_ROOT : INCRINIT2_NORMAL);
+        int eMode = (pSorter->nTask>1 ? INCRINIT_ROOT : INCRINIT_NORMAL);
         rc = vdbePmaReaderIncrInit(pIter, eMode);
       }
     }else
 #endif
     {
-      rc = vdbeIncrInitMerger(pTask0, pMain, INCRINIT2_NORMAL);
+      rc = vdbeIncrInitMerger(pTask0, pMain, INCRINIT_NORMAL);
       pSorter->pMerger = pMain;
       pMain = 0;
     }
