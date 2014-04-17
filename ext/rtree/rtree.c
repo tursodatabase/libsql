@@ -274,13 +274,13 @@ struct RtreeConstraint {
 };
 
 /* Possible values for RtreeConstraint.op */
-#define RTREE_EQ    0x41
-#define RTREE_LE    0x42
-#define RTREE_LT    0x43
-#define RTREE_GE    0x44
-#define RTREE_GT    0x45
-#define RTREE_MATCH 0x46  /* Old-style sqlite3_rtree_geometry_callback() */
-#define RTREE_QUERY 0x47  /* New-style sqlite3_rtree_query_callback() */
+#define RTREE_EQ    0x41  /* A */
+#define RTREE_LE    0x42  /* B */
+#define RTREE_LT    0x43  /* C */
+#define RTREE_GE    0x44  /* D */
+#define RTREE_GT    0x45  /* E */
+#define RTREE_MATCH 0x46  /* F: Old-style sqlite3_rtree_geometry_callback() */
+#define RTREE_QUERY 0x47  /* G: New-style sqlite3_rtree_query_callback() */
 
 
 /* 
@@ -900,149 +900,131 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
 }
 
 /*
-** The r-tree constraint passed as the second argument to this function is
-** guaranteed to be a MATCH constraint.
+** Convert raw bits from the on-disk RTree record into a coordinate value
+** The on-disk record stores integer coordinates if eInt is true and it
+** stores 32-bit floating point records if eInt is false.  a[] is the four
+** bytes of the on-disk record to be decoded.  Store the results in "r".
 */
-static int rtreeTestGeom(
-  Rtree *pRtree,                  /* R-Tree object */
-  RtreeConstraint *pConstraint,   /* MATCH constraint to test */
-  RtreeCell *pCell,               /* Cell to test */
-  int *pbRes                      /* OUT: Test result */
-){
-  int i;
-  RtreeDValue aCoord[RTREE_MAX_DIMENSIONS*2];
-  int nCoord = pRtree->nDim*2;
-
-  assert( pConstraint->op==RTREE_MATCH );
-  assert( pConstraint->pGeom );
-
-  for(i=0; i<nCoord; i++){
-    aCoord[i] = DCOORD(pCell->aCoord[i]);
-  }
-  return pConstraint->u.xGeom((sqlite3_rtree_geometry*)pConstraint->pGeom,
-                              nCoord, aCoord, pbRes);
+#define RTREE_DECODE_COORD(eInt, a, r) {                        \
+    u32 x;           /* Raw bits of the coordinate value */     \
+    RtreeCoord c;    /* Coordinate decoded */                   \
+    x = ((u32)a[0]<<24) + ((u32)a[1]<<16)                       \
+           +((u32)a[2]<<8) + a[3];                              \
+    c.i = *(int*)&x;                                            \
+    r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
 }
+   
 
-/* 
-** Cursor pCursor currently points to a cell in a non-leaf page.
-** Set *peWithin to NOT_WITHIN if the constraints in pCursor->aConstraint[]
-** are guaranteed to never be satisfied by any subelement under the
-** current cell.  If some subelement of the cell might satisfy all
-** constraints, then set *peWithin to PARTLY_WITHIN.  If all subelements
-** of the cell are guaranteed to fully satisfy all constraints, then
-** set *peWithin to FULLY_WITHIN.
-**
-** In other words, set *peWithin to NOT_WITHIN, PARTLY_WITHIN, or
-** FULLY_WITHIN if the cell is completely outside of the field-of-view,
-** overlaps the field of view, or is completely contained within the
-** field of view, respectively.
-**
-** It is not an error to set *peWithin to PARTLY_WITHIN when FULLY_WITHIN
-** would be correct.  Doing so is suboptimal, but will still give the
-** correct answer.  
-**
-** Return SQLITE_OK if successful or an SQLite error code if an error
-** occurs.  Errors can only possible if there is a geometry callback.
+/*
+** Check the RTree node or entry given by pCellData and p against the MATCH
+** constraint pConstraint.  
 */
-static int rtreeTestCell(
-  RtreeCursor *pCursor,      /* The cursor to check */
-  RtreeCell *pCell,          /* The cell to check */
-  int *peWithin              /* Set true if element is out-of-bounds */
+static int rtreeCallbackConstraint(
+  RtreeConstraint *pConstraint,  /* The constraint to test */
+  int eInt,                      /* True if RTree holding integer coordinates */
+  u8 *pCellData,                 /* Raw cell content */
+  RtreeSearchPoint *pSearch,     /* Container of this cell */
+  sqlite3_rtree_dbl *prScore,    /* OUT: score for the cell */
+  int *peWithin                  /* OUT: visibility of the cell */
 ){
-  int ii;
-  int bOutOfBounds = 0;
-  int rc = SQLITE_OK;
-  Rtree *pRtree = RTREE_OF_CURSOR(pCursor);
+  int i;                                                /* Loop counter */
+  sqlite3_rtree_query_info *pGeom = pConstraint->pGeom; /* Callback info */
+  int nCoord = pGeom->nCoord;                           /* No. of coordinates */
+  int rc;                                             /* Callback return code */
+  sqlite3_rtree_dbl aCoord[RTREE_MAX_DIMENSIONS*2];   /* Decoded coordinates */
 
-  for(ii=0; bOutOfBounds==0 && ii<pCursor->nConstraint; ii++){
-    RtreeConstraint *p = &pCursor->aConstraint[ii];
-    RtreeDValue cell_min = DCOORD(pCell->aCoord[(p->iCoord>>1)*2]);
-    RtreeDValue cell_max = DCOORD(pCell->aCoord[(p->iCoord>>1)*2+1]);
+  assert( pConstraint->op==RTREE_MATCH || pConstraint->op==RTREE_QUERY );
+  assert( nCoord==2 || nCoord==4 || nCoord==6 || nCoord==8 || nCoord==10 );
 
-    assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
-        || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_MATCH
-    );
-
-    switch( p->op ){
-      case RTREE_LE: case RTREE_LT: 
-        bOutOfBounds = p->u.rValue<cell_min; 
-        break;
-
-      case RTREE_GE: case RTREE_GT: 
-        bOutOfBounds = p->u.rValue>cell_max; 
-        break;
-
-      case RTREE_EQ:
-        bOutOfBounds = (p->u.rValue>cell_max || p->u.rValue<cell_min);
-        break;
-
-      default: {
-        assert( p->op==RTREE_MATCH );
-        rc = rtreeTestGeom(pRtree, p, pCell, &bOutOfBounds);
-        bOutOfBounds = !bOutOfBounds;
-        break;
-      }
-    }
+  pCellData += 8;
+  for(i=0; i<nCoord; i++, pCellData += 4){
+    RTREE_DECODE_COORD(eInt, pCellData, aCoord[i]);
   }
-
-  *peWithin = bOutOfBounds ? NOT_WITHIN : PARTLY_WITHIN;
+  if( pConstraint->op==RTREE_MATCH ){
+    rc = pConstraint->u.xGeom((sqlite3_rtree_geometry*)pGeom,
+                              nCoord, aCoord, &i);
+    if( i==0 ) *peWithin = NOT_WITHIN;
+  }else{
+    pGeom->aCoord = aCoord;
+    pGeom->iLevel = pSearch->iLevel;
+    pGeom->rScore = pGeom->rParentScore = pSearch->rScore;
+    pGeom->eWithin = pGeom->eParentWithin = pSearch->eWithin;
+    rc = pConstraint->u.xQueryFunc(pGeom);
+    if( pGeom->eWithin<*peWithin ) *peWithin = pGeom->eWithin;
+    if( pGeom->rScore<*prScore ) *prScore = pGeom->rScore;
+  }
   return rc;
 }
 
 /* 
-** pCursor points to a leaf r-tree entry which is a candidate for output.
-** This routine sets *peWithin to one of NOT_WITHIN, PARTLY_WITHIN, or
-** FULLY_WITHIN depending on whether or not the leaf entry is completely
-** outside the region defined by pCursor->aConstraints[], or overlaps the
-** region, or is completely within the region, respectively.
-**
-** This routine is more selective than rtreeTestCell().  rtreeTestCell()
-** will return PARTLY_WITHIN or FULLY_WITHIN if the constraints are such
-** that a subelement of the cell to be included in the result set.  This
-** routine is is only called for leaf r-tree entries and does not need
-** to concern itself with subelements.  Hence it only sets *peWithin to
-** PARTLY_WITHIN or FULLY_WITHIN if the cell itself meets the requirements.
-**
-** Return SQLITE_OK if successful or an SQLite error code if an error
-** occurs within a geometry callback.
-**
-** This function assumes that the cell is part of a leaf node.
+** Check the internal RTree node given by pCellData against constraint p.
+** If this constraint cannot be satisfied by any child within the node,
+** set *peWithin to NOT_WITHIN.
 */
-static int rtreeTestEntry(
-  RtreeCursor *pCursor,   /* Cursor pointing to the leaf element */
-  RtreeCell *pCell,       /* The cell to check */
-  int *peWithin           /* OUT: NOT_WITHIN, PARTLY_WITHIN, or FULLY_WITHIN */
+static void rtreeNonleafConstraint(
+  RtreeConstraint *p,        /* The constraint to test */
+  int eInt,                  /* True if RTree holds integer coordinates */
+  u8 *pCellData,             /* Raw cell content as appears on disk */
+  int *peWithin              /* Adjust downward, as appropriate */
 ){
-  Rtree *pRtree = RTREE_OF_CURSOR(pCursor);
-  int ii;
-  int res = 1;     /* Innocent until proven guilty */
+  sqlite3_rtree_dbl val;     /* Coordinate value convert to a double */
 
-  for(ii=0; res && ii<pCursor->nConstraint; ii++){
-    RtreeConstraint *p = &pCursor->aConstraint[ii];
-    RtreeDValue coord = DCOORD(pCell->aCoord[p->iCoord]);
-    assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
-        || p->op==RTREE_GT || p->op==RTREE_EQ || p->op==RTREE_MATCH
-    );
-    switch( p->op ){
-      case RTREE_LE: res = (coord<=p->u.rValue); break;
-      case RTREE_LT: res = (coord<p->u.rValue);  break;
-      case RTREE_GE: res = (coord>=p->u.rValue); break;
-      case RTREE_GT: res = (coord>p->u.rValue);  break;
-      case RTREE_EQ: res = (coord==p->u.rValue); break;
-      default: {
-        int rc;
-        assert( p->op==RTREE_MATCH );
-        rc = rtreeTestGeom(pRtree, p, pCell, &res);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-        break;
-      }
-    }
+  /* p->iCoord might point to either a lower or upper bound coordinate
+  ** in a coordinate pair.  But make pCellData point to the lower bound.
+  */
+  pCellData += 8 + 4*(p->iCoord&0xfe);
+
+  assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
+      || p->op==RTREE_GT || p->op==RTREE_EQ );
+  switch( p->op ){
+    case RTREE_LE:
+    case RTREE_LT:
+    case RTREE_EQ:
+      RTREE_DECODE_COORD(eInt, pCellData, val);
+      /* val now holds the lower bound of the coordinate pair */
+      if( p->u.rValue>=val ) return;
+      if( p->op!=RTREE_EQ ) break;  /* RTREE_LE and RTREE_LT end here */
+      /* Fall through for the RTREE_EQ case */
+
+    default: /* RTREE_GT or RTREE_GE,  or fallthrough of RTREE_EQ */
+      pCellData += 4;
+      RTREE_DECODE_COORD(eInt, pCellData, val);
+      /* val now holds the upper bound of the coordinate pair */
+      if( p->u.rValue<=val ) return;
   }
+  *peWithin = NOT_WITHIN;
+}
 
-  *peWithin = res ? FULLY_WITHIN : NOT_WITHIN;
-  return SQLITE_OK;
+/*
+** Check the leaf RTree cell given by pCellData against constraint p.
+** If this constraint is not satisfied, set *peWithin to NOT_WITHIN.
+** If the constraint is satisfied, leave *peWithin unchanged.
+**
+** The constraint is of the form:  xN op $val
+**
+** The op is given by p->op.  The xN is p->iCoord-th coordinate in
+** pCellData.  $val is given by p->u.rValue.
+*/
+static void rtreeLeafConstraint(
+  RtreeConstraint *p,        /* The constraint to test */
+  int eInt,                  /* True if RTree holds integer coordinates */
+  u8 *pCellData,             /* Raw cell content as appears on disk */
+  int *peWithin              /* Adjust downward, as appropriate */
+){
+  RtreeDValue xN;      /* Coordinate value converted to a double */
+
+  assert(p->op==RTREE_LE || p->op==RTREE_LT || p->op==RTREE_GE 
+      || p->op==RTREE_GT || p->op==RTREE_EQ );
+  pCellData += 8 + p->iCoord*4;
+  RTREE_DECODE_COORD(eInt, pCellData, xN);
+  switch( p->op ){
+    case RTREE_LE: if( xN <= p->u.rValue ) return;  break;
+    case RTREE_LT: if( xN <  p->u.rValue ) return;  break;
+    case RTREE_GE: if( xN >= p->u.rValue ) return;  break;
+    case RTREE_GT: if( xN >  p->u.rValue ) return;  break;
+    default:       if( xN == p->u.rValue ) return;  break;
+  }
+  *peWithin = NOT_WITHIN;
 }
 
 /*
@@ -1295,39 +1277,53 @@ static int rtreeStepToLeaf(RtreeCursor *pCur){
   int eWithin;
   int rc = SQLITE_OK;
   int nCell;
-  RtreeCell cell;
+  int nConstraint = pCur->nConstraint;
+  int ii;
+  int eInt;
   RtreeSearchPoint x;
 
+  eInt = pRtree->eCoordType==RTREE_COORD_INT32;
   while( (p = rtreeSearchPointFirst(pCur))!=0 && p->iLevel>0 ){
     pNode = rtreeNodeOfFirstSearchPoint(pCur, &rc);
     if( rc ) return rc;
     nCell = NCELL(pNode);
     assert( nCell<200 );
     while( p->iCell<nCell ){
-      nodeGetCell(pRtree, pNode, p->iCell, &cell);
-      if( p->iLevel==1 ){
-        rc = rtreeTestEntry(pCur, &cell, &eWithin);
-      }else{
-        rc = rtreeTestCell(pCur, &cell, &eWithin);
+      sqlite3_rtree_dbl rScore = (sqlite3_rtree_dbl)0;
+      u8 *pCellData = pNode->zData + (4+pRtree->nBytesPerCell*p->iCell);
+      eWithin = FULLY_WITHIN;
+      for(ii=0; ii<nConstraint; ii++){
+        RtreeConstraint *pConstraint = pCur->aConstraint + ii;
+        if( pConstraint->op>=RTREE_MATCH ){
+          rc = rtreeCallbackConstraint(pConstraint, eInt, pCellData, p,
+                                       &rScore, &eWithin);
+          if( rc ) return rc;
+        }else if( p->iLevel==1 ){
+          rtreeLeafConstraint(pConstraint, eInt, pCellData, &eWithin);
+        }else{
+          rtreeNonleafConstraint(pConstraint, eInt, pCellData, &eWithin);
+        }
+        if( eWithin==NOT_WITHIN ) break;
       }
-      if( rc ) return rc;
-      x = *p;
       p->iCell++;
       if( eWithin==NOT_WITHIN ) continue;
+      x.iLevel = p->iLevel - 1;
+      if( x.iLevel ){
+        x.id = readInt64(pCellData);
+        x.iCell = 0;
+      }else{
+        x.id = p->id;
+        x.iCell = p->iCell - 1;
+      }
       if( p->iCell>=nCell ){
         RTREE_QUEUE_TRACE(pCur, "POP-S:");
         rtreeSearchPointPop(pCur);
       }
-      p = rtreeSearchPointNew(pCur, /*rScore*/0.0, x.iLevel-1);
+      p = rtreeSearchPointNew(pCur, rScore, x.iLevel);
       if( p==0 ) return SQLITE_NOMEM;
       p->eWithin = eWithin;
-      if( p->iLevel ){
-        p->id = cell.iRowid;
-        p->iCell = 0;
-      }else{
-        p->id = x.id;
-        p->iCell = x.iCell;
-      }
+      p->id = x.id;
+      p->iCell = x.iCell;
       RTREE_QUEUE_TRACE(pCur, "PUSH-S:");
       break;
     }
@@ -1460,7 +1456,6 @@ static int deserializeGeometry(sqlite3_value *pValue, RtreeConstraint *pCons){
     sqlite3_free(pGeom);
     return SQLITE_ERROR;
   }
-
   pGeom->pContext = p->cb.pContext;
   pGeom->nParam = p->nParam;
   pGeom->aParam = p->aParam;
@@ -1525,7 +1520,7 @@ static int rtreeFilter(
         for(ii=0; ii<argc; ii++){
           RtreeConstraint *p = &pCsr->aConstraint[ii];
           p->op = idxStr[ii*2];
-          p->iCoord = idxStr[ii*2+1]-'a';
+          p->iCoord = idxStr[ii*2+1]-'0';
           if( p->op==RTREE_MATCH ){
             /* A MATCH operator. The right-hand-side must be a blob that
             ** can be cast into an RtreeMatchArg object. One created using
@@ -1535,6 +1530,7 @@ static int rtreeFilter(
             if( rc!=SQLITE_OK ){
               break;
             }
+            p->pGeom->nCoord = pRtree->nDim*2;
           }else{
 #ifdef SQLITE_RTREE_INT_ONLY
             p->u.rValue = sqlite3_value_int64(argv[ii]);
@@ -1663,7 +1659,7 @@ static int rtreeBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
           break;
       }
       zIdxStr[iIdx++] = op;
-      zIdxStr[iIdx++] = p->iColumn - 1 + 'a';
+      zIdxStr[iIdx++] = p->iColumn - 1 + '0';
       pIdxInfo->aConstraintUsage[ii].argvIndex = (iIdx/2);
       pIdxInfo->aConstraintUsage[ii].omit = 1;
     }
