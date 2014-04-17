@@ -35,6 +35,7 @@ struct Circle {
   double centerx;
   double centery;
   double radius;
+  double mxArea;
 };
 
 /*
@@ -58,7 +59,12 @@ static int circle_geom(
   double xmin, xmax;              /* X dimensions of box being tested */
   double ymin, ymax;              /* X dimensions of box being tested */
 
-  if( p->pUser==0 ){
+  xmin = aCoord[0];
+  xmax = aCoord[1];
+  ymin = aCoord[2];
+  ymax = aCoord[3];
+  pCircle = (Circle *)p->pUser;
+  if( pCircle==0 ){
     /* If pUser is still 0, then the parameter values have not been tested
     ** for correctness or stored into a Circle structure yet. Do this now. */
 
@@ -104,13 +110,8 @@ static int circle_geom(
     pCircle->aBox[1].xmax = pCircle->centerx - pCircle->radius;
     pCircle->aBox[1].ymin = pCircle->centery;
     pCircle->aBox[1].ymax = pCircle->centery;
+    pCircle->mxArea = (xmax - xmin)*(ymax - ymin) + 1.0;
   }
-
-  pCircle = (Circle *)p->pUser;
-  xmin = aCoord[0];
-  xmax = aCoord[1];
-  ymin = aCoord[2];
-  ymax = aCoord[3];
 
   /* Check if any of the 4 corners of the bounding-box being tested lie 
   ** inside the circular region. If they do, then the bounding-box does
@@ -161,7 +162,12 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
   double ymin, ymax;              /* X dimensions of box being tested */
   int nWithin = 0;                /* Number of corners inside the circle */
 
-  if( p->pUser==0 ){
+  xmin = p->aCoord[0];
+  xmax = p->aCoord[1];
+  ymin = p->aCoord[2];
+  ymax = p->aCoord[3];
+  pCircle = (Circle *)p->pUser;
+  if( pCircle==0 ){
     /* If pUser is still 0, then the parameter values have not been tested
     ** for correctness or stored into a Circle structure yet. Do this now. */
 
@@ -207,13 +213,8 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     pCircle->aBox[1].xmax = pCircle->centerx - pCircle->radius;
     pCircle->aBox[1].ymin = pCircle->centery;
     pCircle->aBox[1].ymax = pCircle->centery;
+    pCircle->mxArea = 200.0*200.0;
   }
-
-  pCircle = (Circle *)p->pUser;
-  xmin = p->aCoord[0];
-  xmax = p->aCoord[1];
-  ymin = p->aCoord[2];
-  ymax = p->aCoord[3];
 
   /* Check if any of the 4 corners of the bounding-box being tested lie 
   ** inside the circular region. If they do, then the bounding-box does
@@ -246,7 +247,12 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     }
   }
 
-  p->rScore = p->iLevel;
+  if( p->iLevel==2 ){
+    p->rScore = 1.0 - (xmax-xmin)*(ymax-ymin)/pCircle->mxArea;
+    if( p->rScore<0.01 ) p->rScore = 0.01;
+  }else{
+    p->rScore = 0.0;
+  }
   if( nWithin==0 ){
     p->eWithin = NOT_WITHIN;
   }else if( nWithin>=4 ){

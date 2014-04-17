@@ -1,5 +1,5 @@
-C Refactor\sthe\sconstraint\schecking\slogic\sin\sRTree.\s\sThe\snew-style\sconstraint\ncallbacks\screated\sby\ssqlite3_rtree_query_callback()\sare\snow\shooked\sup\sfrom\nend\sto\send,\sthough\sstill\suntested.
-D 2014-04-17T13:15:33.281
+C Test\scases\sand\sbug\sfixes\sfor\sthe\ssqlite3_rtree_query_callback()\nmechanism.
+D 2014-04-17T14:52:20.025
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 117aaebed87a7c1e5d3e03afbad83c3700aa5ab8
+F ext/rtree/rtree.c 6a47918e44697dd32f5bba8a79d3490e56bd76c9
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test cf679265ecafff494a768ac9c2f43a70915a6290
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -135,6 +135,7 @@ F ext/rtree/rtreeA.test ace05e729a36e342d40cf94e9efc7b4723d9dcdf
 F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test df158dcc81f1a43ce7eef361af03c48ec91f1e06
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
+F ext/rtree/rtreeE.test c8c951df54fd556d30eb621ecc2acd8771970a5e
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 488cf8834d2012b913d33683157d3cf5f1327a69
@@ -274,7 +275,7 @@ F src/test_osinst.c 90a845c8183013d80eccb1f29e8805608516edba
 F src/test_pcache.c a5cd24730cb43c5b18629043314548c9169abb00
 F src/test_quota.c 30c64f0ef84734f2231a686df41ed882b0c59bc0
 F src/test_quota.h 8761e463b25e75ebc078bd67d70e39b9c817a0cb
-F src/test_rtree.c cd35d54c0b847c0c373d66f91616c49697ab4edf
+F src/test_rtree.c 636d2a5bc9ded2fa1df4e7d4c575eb0d3f13b334
 F src/test_schema.c cd12a2223c3a394f4d07bb93bdf6d344c5c121b6
 F src/test_server.c a2615049954cbb9cfb4a62e18e2f0616e4dc38fe
 F src/test_sqllog.c c1c1bbedbcaf82b93d83e4f9dd990e62476a680e
@@ -1175,7 +1176,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5d20ff9ec837ad35bc44d6c25d13764b350e81dd
-R 9ddd572c495f4e9fca0e8e969ae19d88
+P 32a13870175a1dd1d33af3572dde09ff607a04b6
+R 1f38906450e19fda5c27a4543b70f18c
 U drh
-Z 43698a2882be63e69b530e3c48875378
+Z 26a5b86beaa061e155488cf6e80f8d30
