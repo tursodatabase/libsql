@@ -243,6 +243,7 @@ struct RtreeCursor {
 union RtreeCoord {
   RtreeValue f;      /* Floating point value */
   int i;             /* Integer value */
+  u32 u;             /* Unsigned for byte-order conversions */
 };
 
 /*
@@ -902,19 +903,32 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
 }
 
 /*
-** Convert raw bits from the on-disk RTree record into a coordinate value
-** The on-disk record stores integer coordinates if eInt is true and it
-** stores 32-bit floating point records if eInt is false.  a[] is the four
+** Convert raw bits from the on-disk RTree record into a coordinate value.
+** The on-disk format is big-endian and needs to be converted for little-endian
+** platforms.  The on-disk record stores integer coordinates if eInt is true
+** and it stores 32-bit floating point records if eInt is false.  a[] is the four
 ** bytes of the on-disk record to be decoded.  Store the results in "r".
+**
+** The first version of this macro is fast on x86, x86_64 and ARM, all of which
+** are little-endian.  The second version of this macro is cross-platform but
+** takes twice as long, according to valgrind on linux x64.
 */
+#if defined(__x86) || defined(__x86_64) || defined(__arm__) || defined(_MSC_VER)
 #define RTREE_DECODE_COORD(eInt, a, r) {                        \
-    u32 x;           /* Raw bits of the coordinate value */     \
     RtreeCoord c;    /* Coordinate decoded */                   \
-    x = ((u32)a[0]<<24) + ((u32)a[1]<<16)                       \
-           +((u32)a[2]<<8) + a[3];                              \
-    c.i = *(int*)&x;                                            \
+    memcpy(&c.u,a,4);                                           \
+    c.u = ((c.u>>24)&0xff)|((c.u>>8)&0xff00)|                   \
+          ((c.u&0xff)<<24)|((c.u&0xff00)<<8);                   \
     r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
 }
+#else
+#define RTREE_DECODE_COORD(eInt, a, r) {                        \
+    RtreeCoord c;    /* Coordinate decoded */                   \
+    c.u = ((u32)a[0]<<24) + ((u32)a[1]<<16)                     \
+           +((u32)a[2]<<8) + a[3];                              \
+    r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
+}
+#endif
    
 
 /*
