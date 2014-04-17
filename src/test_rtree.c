@@ -36,6 +36,7 @@ struct Circle {
   double centery;
   double radius;
   double mxArea;
+  int eScoreType;
 };
 
 /*
@@ -175,10 +176,10 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     ** Return an error if the table does not have exactly 2 dimensions. */
     if( p->nCoord!=4 ) return SQLITE_ERROR;
 
-    /* Test that the correct number of parameters (3) have been supplied,
+    /* Test that the correct number of parameters (4) have been supplied,
     ** and that the parameters are in range (that the radius of the circle 
     ** radius is greater than zero). */
-    if( p->nParam!=3 || p->aParam[2]<0.0 ) return SQLITE_ERROR;
+    if( p->nParam!=4 || p->aParam[2]<0.0 ) return SQLITE_ERROR;
 
     /* Allocate a structure to cache parameter data in. Return SQLITE_NOMEM
     ** if the allocation fails. */
@@ -193,6 +194,7 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     pCircle->centerx = p->aParam[0];
     pCircle->centery = p->aParam[1];
     pCircle->radius = p->aParam[2];
+    pCircle->eScoreType = (int)p->aParam[3];
 
     /* Define two bounding box regions. The first, aBox[0], extends to
     ** infinity in the X dimension. It covers the same range of the Y dimension
@@ -247,11 +249,21 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     }
   }
 
-  if( p->iLevel==2 ){
-    p->rScore = 1.0 - (xmax-xmin)*(ymax-ymin)/pCircle->mxArea;
-    if( p->rScore<0.01 ) p->rScore = 0.01;
+  if( pCircle->eScoreType==1 ){
+    /* Depth first search */
+    p->rScore = p->iLevel;
+  }else if( pCircle->eScoreType==2 ){
+    /* Breadth first search */
+    p->rScore = 100 - p->iLevel;
   }else{
-    p->rScore = 0.0;
+    /* Depth-first search, except sort the leaf nodes by area with
+    ** the largest area first */
+    if( p->iLevel==2 ){
+      p->rScore = 1.0 - (xmax-xmin)*(ymax-ymin)/pCircle->mxArea;
+      if( p->rScore<0.01 ) p->rScore = 0.01;
+    }else{
+      p->rScore = 0.0;
+    }
   }
   if( nWithin==0 ){
     p->eWithin = NOT_WITHIN;
@@ -259,6 +271,39 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     p->eWithin = FULLY_WITHIN;
   }else{
     p->eWithin = PARTLY_WITHIN;
+  }
+  return SQLITE_OK;
+}
+/*
+** Implementation of "breadthfirstsearch" r-tree geometry callback using the 
+** 2nd-generation interface that allows scoring.
+**
+**     ... WHERE id MATCH breadthfirstsearch($x0,$x1,$y0,$y1) ...
+**
+** It returns all entries whose bounding boxes overlap with $x0,$x1,$y0,$y1.
+*/
+static int bfs_query_func(sqlite3_rtree_query_info *p){
+  double x0,x1,y0,y1;        /* Dimensions of box being tested */
+  double bx0,bx1,by0,by1;    /* Boundary of the query function */
+
+  if( p->nParam!=4 ) return SQLITE_ERROR;
+  x0 = p->aCoord[0];
+  x1 = p->aCoord[1];
+  y0 = p->aCoord[2];
+  y1 = p->aCoord[3];
+  bx0 = p->aParam[0];
+  bx1 = p->aParam[1];
+  by0 = p->aParam[2];
+  by1 = p->aParam[3];
+  p->rScore = 100 - p->iLevel;
+  if( p->eParentWithin==FULLY_WITHIN ){
+    p->eWithin = FULLY_WITHIN;
+  }else if( x0>=bx0 && x1<=bx1 && y0>=by0 && y1<=by1 ){
+    p->eWithin = FULLY_WITHIN;
+  }else if( x1>=bx0 && x0<=bx1 && y1>=by0 && y0<=by1 ){
+    p->eWithin = PARTLY_WITHIN;
+  }else{
+    p->eWithin = NOT_WITHIN;
   }
   return SQLITE_OK;
 }
@@ -401,6 +446,10 @@ static int register_circle_geom(
   if( rc==SQLITE_OK ){
     rc = sqlite3_rtree_query_callback(db, "Qcircle",
                                       circle_query_func, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_rtree_query_callback(db, "breadthfirstsearch",
+                                      bfs_query_func, 0, 0);
   }
   Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 #endif
