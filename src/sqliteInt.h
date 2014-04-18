@@ -546,22 +546,39 @@ typedef INT16_TYPE LogEst;
 
 /*
 ** Macros to determine whether the machine is big or little endian,
-** evaluated at runtime.
+** and whether or not that determination is run-time or compile-time.
+**
+** For best performance, an attempt is made to guess at the byte-order
+** using C-preprocessor macros.  If that is unsuccessful, or if
+** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
+** at run-time.
 */
 #ifdef SQLITE_AMALGAMATION
 const int sqlite3one = 1;
 #else
 extern const int sqlite3one;
 #endif
-#if defined(i386) || defined(__i386__) || defined(_M_IX86)\
-                             || defined(__x86_64) || defined(__x86_64__)
+#if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+     defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
+     defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
+     defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
+# define SQLITE_BYTEORDER    1234
 # define SQLITE_BIGENDIAN    0
 # define SQLITE_LITTLEENDIAN 1
 # define SQLITE_UTF16NATIVE  SQLITE_UTF16LE
-#else
+#endif
+#if (defined(sparc)    || defined(__ppc__))  \
+    && !defined(SQLITE_RUNTIME_BYTEORDER)
+# define SQLITE_BYTEORDER    4321
+# define SQLITE_BIGENDIAN    1
+# define SQLITE_LITTLEENDIAN 0
+# define SQLITE_UTF16NATIVE  SQLITE_UTF16BE
+#endif
+#if !defined(SQLITE_BYTEORDER)
+# define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
 # define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 # define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
-# define SQLITE_UTF16NATIVE (SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE)
+# define SQLITE_UTF16NATIVE  (SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE)
 #endif
 
 /*
@@ -3031,7 +3048,7 @@ int sqlite3BitvecBuiltinTest(int,int*);
 RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
 void sqlite3RowSetClear(RowSet*);
 void sqlite3RowSetInsert(RowSet*, i64);
-int sqlite3RowSetTest(RowSet*, u8 iBatch, i64);
+int sqlite3RowSetTest(RowSet*, int iBatch, i64);
 int sqlite3RowSetNext(RowSet*, i64*);
 
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
@@ -3095,7 +3112,7 @@ void sqlite3ExprCodeGetColumnOfTable(Vdbe*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCacheStore(Parse*, int, int, int);
 void sqlite3ExprCachePush(Parse*);
-void sqlite3ExprCachePop(Parse*, int);
+void sqlite3ExprCachePop(Parse*);
 void sqlite3ExprCacheRemove(Parse*, int, int);
 void sqlite3ExprCacheClear(Parse*);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
@@ -3147,6 +3164,7 @@ int sqlite3IsRowid(const char*);
 void sqlite3GenerateRowDelete(Parse*,Table*,Trigger*,int,int,int,i16,u8,u8,u8);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int, int*,Index*,int);
+void sqlite3ResolvePartIdxLabel(Parse*,int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int*,int,int,int,int,
                                      u8,u8,int,int*);
 void sqlite3CompleteInsertion(Parse*,Table*,int,int,int,int*,int,int,int);
