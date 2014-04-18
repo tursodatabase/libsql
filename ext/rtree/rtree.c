@@ -904,21 +904,32 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
 
 /*
 ** Convert raw bits from the on-disk RTree record into a coordinate value.
-** The on-disk format is big-endian and needs to be converted for little-endian
-** platforms.  The on-disk record stores integer coordinates if eInt is true
-** and it stores 32-bit floating point records if eInt is false.  a[] is the four
-** bytes of the on-disk record to be decoded.  Store the results in "r".
+** The on-disk format is big-endian and needs to be converted for little-
+** endian platforms.  The on-disk record stores integer coordinates if
+** eInt is true and it stores 32-bit floating point records if eInt is
+** false.  a[] is the four bytes of the on-disk record to be decoded.
+** Store the results in "r".
 **
-** The first version of this macro is fast on x86, x86_64 and ARM, all of which
-** are little-endian.  The second version of this macro is cross-platform but
-** takes twice as long, according to valgrind on linux x64.
+** There are three versions of this macro, one each for little-endian and
+** big-endian processors and a third generic implementation.  The endian-
+** specific implementations are much faster and are preferred if the
+** processor endianness is known at compile-time.  The SQLITE_BYTEORDER
+** macro is part of sqliteInt.h and hence the endian-specific
+** implementation will only be used if this module is compiled as part
+** of the amalgamation.
 */
-#if defined(__x86) || defined(__x86_64) || defined(__arm__) || defined(_MSC_VER)
+#if defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==1234
 #define RTREE_DECODE_COORD(eInt, a, r) {                        \
     RtreeCoord c;    /* Coordinate decoded */                   \
     memcpy(&c.u,a,4);                                           \
     c.u = ((c.u>>24)&0xff)|((c.u>>8)&0xff00)|                   \
           ((c.u&0xff)<<24)|((c.u&0xff00)<<8);                   \
+    r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
+}
+#elif defined(SQLITE_BYTEORDER) && SQLITE_BYTEORDER==4321
+#define RTREE_DECODE_COORD(eInt, a, r) {                        \
+    RtreeCoord c;    /* Coordinate decoded */                   \
+    memcpy(&c.u,a,4);                                           \
     r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
 }
 #else
@@ -929,7 +940,6 @@ static int rtreeEof(sqlite3_vtab_cursor *cur){
     r = eInt ? (sqlite3_rtree_dbl)c.i : (sqlite3_rtree_dbl)c.f; \
 }
 #endif
-   
 
 /*
 ** Check the RTree node or entry given by pCellData and p against the MATCH
@@ -2242,7 +2252,8 @@ static int SplitNode(
   memset(pLeft->zData, 0, pRtree->iNodeSize);
   memset(pRight->zData, 0, pRtree->iNodeSize);
 
-  rc = splitNodeStartree(pRtree, aCell, nCell, pLeft, pRight,&leftbbox,&rightbbox);
+  rc = splitNodeStartree(pRtree, aCell, nCell, pLeft, pRight,
+                         &leftbbox, &rightbbox);
   if( rc!=SQLITE_OK ){
     goto splitnode_out;
   }
@@ -3003,7 +3014,8 @@ static int rtreeSqlInit(
     char *zCreate = sqlite3_mprintf(
 "CREATE TABLE \"%w\".\"%w_node\"(nodeno INTEGER PRIMARY KEY, data BLOB);"
 "CREATE TABLE \"%w\".\"%w_rowid\"(rowid INTEGER PRIMARY KEY, nodeno INTEGER);"
-"CREATE TABLE \"%w\".\"%w_parent\"(nodeno INTEGER PRIMARY KEY, parentnode INTEGER);"
+"CREATE TABLE \"%w\".\"%w_parent\"(nodeno INTEGER PRIMARY KEY,"
+                                  " parentnode INTEGER);"
 "INSERT INTO '%q'.'%q_node' VALUES(1, zeroblob(%d))",
       zDb, zPrefix, zDb, zPrefix, zDb, zPrefix, zDb, zPrefix, pRtree->iNodeSize
     );
