@@ -1928,7 +1928,7 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp0(v, OP_Halt);
           sqlite3VdbeJumpHere(v, jmp4);
           sqlite3VdbeJumpHere(v, jmp2);
-          sqlite3VdbeResolveLabel(v, jmp3);
+          sqlite3ResolvePartIdxLabel(pParse, jmp3);
         }
         sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);

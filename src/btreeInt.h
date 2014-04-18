@@ -496,26 +496,29 @@ struct BtCursor {
   BtShared *pBt;            /* The BtShared this cursor points to */
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
-#ifndef SQLITE_OMIT_INCRBLOB
   Pgno *aOverflow;          /* Cache of overflow page locations */
-#endif
-  Pgno pgnoRoot;            /* The root page of this tree */
   CellInfo info;            /* A parse of the cell we are pointing at */
-  i64 nKey;        /* Size of pKey, or last integer key */
-  void *pKey;      /* Saved key that was cursor's last known position */
+  i64 nKey;                 /* Size of pKey, or last integer key */
+  void *pKey;               /* Saved key that was cursor last known position */
+  Pgno pgnoRoot;            /* The root page of this tree */
+  int nOvflAlloc;           /* Allocated size of aOverflow[] array */
   int skipNext;    /* Prev() is noop if negative. Next() is noop if positive */
-  u8 wrFlag;                /* True if writable */
-  u8 atLast;                /* Cursor pointing to the last entry */
-  u8 validNKey;             /* True if info.nKey is valid */
+  u8 curFlags;              /* zero or more BTCF_* flags defined below */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
-#ifndef SQLITE_OMIT_INCRBLOB
-  u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
-#endif
   u8 hints;                             /* As configured by CursorSetHints() */
   i16 iPage;                            /* Index of current page in apPage */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
   MemPage *apPage[BTCURSOR_MAX_DEPTH];  /* Pages from root to current page */
 };
+
+/*
+** Legal values for BtCursor.curFlags
+*/
+#define BTCF_WriteFlag    0x01   /* True if a write cursor */
+#define BTCF_ValidNKey    0x02   /* True if info.nKey is valid */
+#define BTCF_ValidOvfl    0x04   /* True if aOverflow is valid */
+#define BTCF_AtLast       0x08   /* Cursor is pointing ot the last entry */
+#define BTCF_Incrblob     0x10   /* True if an incremental I/O handle */
 
 /*
 ** Potential values for BtCursor.eState.

@@ -248,4 +248,23 @@ do_execsql_test index6-5.0 {
   SELECT stat+0 FROM sqlite_stat1 WHERE idx='t3b';
 } {6 6}
 
+# Test case for ticket [2ea3e9fe6379fc3f6ce7e090ce483c1a3a80d6c9] from
+# 2014-04-13: Partial index causes assertion fault on UPDATE OR REPLACE.
+#
+do_execsql_test index6-6.0 {
+  CREATE TABLE t6(a,b);
+  CREATE UNIQUE INDEX t6ab ON t1(a,b);
+  CREATE INDEX t6b ON t6(b) WHERE b=1;
+  INSERT INTO t6(a,b) VALUES(123,456);
+  SELECT * FROM t6;
+} {123 456}
+do_execsql_test index6-6.1 {
+  UPDATE OR REPLACE t6 SET b=789;
+  SELECT * FROM t6;
+} {123 789}
+do_execsql_test index6-6.2 {
+  PRAGMA integrity_check;
+} {ok}
+
+
 finish_test
