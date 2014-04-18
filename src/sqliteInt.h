@@ -553,15 +553,18 @@ const int sqlite3one = 1;
 #else
 extern const int sqlite3one;
 #endif
-#if defined(i386) || defined(__i386__) || defined(_M_IX86)\
-                             || defined(__x86_64) || defined(__x86_64__)
+#if   defined(i386)     || defined(__i386__)   || defined(_M_IX86)     \
+   || defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)      \
+   || defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)
+# define SQLITE_BYTEORDER    1234
 # define SQLITE_BIGENDIAN    0
 # define SQLITE_LITTLEENDIAN 1
 # define SQLITE_UTF16NATIVE  SQLITE_UTF16LE
 #else
+# define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
 # define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 # define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
-# define SQLITE_UTF16NATIVE (SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE)
+# define SQLITE_UTF16NATIVE  (SQLITE_BIGENDIAN?SQLITE_UTF16BE:SQLITE_UTF16LE)
 #endif
 
 /*
