@@ -546,21 +546,35 @@ typedef INT16_TYPE LogEst;
 
 /*
 ** Macros to determine whether the machine is big or little endian,
-** evaluated at runtime.
+** and whether or not that determination is run-time or compile-time.
+**
+** For best performance, an attempt is made to guess at the byte-order
+** using C-preprocessor macros.  If that is unsuccessful, or if
+** -DSQLITE_RUNTIME_BYTEORDER=1 is set, then byte-order is determined
+** at run-time.
 */
 #ifdef SQLITE_AMALGAMATION
 const int sqlite3one = 1;
 #else
 extern const int sqlite3one;
 #endif
-#if   defined(i386)     || defined(__i386__)   || defined(_M_IX86)     \
-   || defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)      \
-   || defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)
+#if (defined(i386)     || defined(__i386__)   || defined(_M_IX86) ||    \
+     defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)  ||    \
+     defined(_M_AMD64) || defined(_M_ARM)     || defined(__x86)   ||    \
+     defined(__arm__)) && !defined(SQLITE_RUNTIME_BYTEORDER)
 # define SQLITE_BYTEORDER    1234
 # define SQLITE_BIGENDIAN    0
 # define SQLITE_LITTLEENDIAN 1
 # define SQLITE_UTF16NATIVE  SQLITE_UTF16LE
-#else
+#endif
+#if (defined(sparc)    || defined(__ppc__))  \
+    && !defined(SQLITE_RUNTIME_BYTEORDER)
+# define SQLITE_BYTEORDER    4321
+# define SQLITE_BIGENDIAN    1
+# define SQLITE_LITTLEENDIAN 0
+# define SQLITE_UTF16NATIVE  SQLITE_UTF16BE
+#endif
+#if !defined(SQLITE_BYTEORDER)
 # define SQLITE_BYTEORDER    0     /* 0 means "unknown at compile-time" */
 # define SQLITE_BIGENDIAN    (*(char *)(&sqlite3one)==0)
 # define SQLITE_LITTLEENDIAN (*(char *)(&sqlite3one)==1)
