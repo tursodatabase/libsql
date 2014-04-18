@@ -4234,6 +4234,7 @@ case OP_SorterCompare: {
   assert( pOp->p4type==P4_INT32 );
   pIn3 = &aMem[pOp->p3];
   nIgnore = pOp->p4.i;
+  res = 0;
   rc = sqlite3VdbeSorterCompare(pC, pIn3, nIgnore, &res);
   VdbeBranchTaken(res!=0,2);
   if( res ){
@@ -4483,7 +4484,7 @@ case OP_Rewind: {        /* jump */
   assert( isSorter(pC)==(pOp->opcode==OP_SorterSort) );
   res = 1;
   if( isSorter(pC) ){
-    rc = sqlite3VdbeSorterRewind(db, pC, &res);
+    rc = sqlite3VdbeSorterRewind(pC, &res);
   }else{
     pCrsr = pC->pCursor;
     assert( pCrsr );
@@ -4642,7 +4643,7 @@ case OP_IdxInsert: {        /* in2 */
   rc = ExpandBlob(pIn2);
   if( rc==SQLITE_OK ){
     if( isSorter(pC) ){
-      rc = sqlite3VdbeSorterWrite(db, pC, pIn2);
+      rc = sqlite3VdbeSorterWrite(pC, pIn2);
     }else{
       nKey = pIn2->n;
       zKey = pIn2->z;
