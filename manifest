@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2014-04-18T13:40:07.511
+C Add\sto\sspeedtest1.c\sthe\s--threads\soption\sfor\ssetting\sthe\nSQLITE_CONFIG_WORKER_THREADS\sconfiguration.
+D 2014-04-18T13:57:39.195
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -829,7 +829,7 @@ F test/speed3.test d32043614c08c53eafdc80f33191d5bd9b920523
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/speedtest1.c 90446861e566a9965a8d005381a3c964ff333646
+F test/speedtest1.c bd150a4c29e26ff4ddbdd505e0a0d96347ffca51
 F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
@@ -1164,7 +1164,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 8729aa3e3ed1da2e15408ef8705cbe185cd2a5ac
-R 1501533958e541baa710100e336c4bc8
+P f8f72ecb9052a4cace1db75879fb8b5131ea4f50
+R ec8b910c95550d011d611a610b4db207
 U drh
-Z 328a0fa311f69db138a2df8298545ace
+Z 39c3a2898ecaace6ee1641d24df0dd67

@@ -27,6 +27,7 @@ static const char zHelp[] =
   "  --stats             Show statistics at the end\n"
   "  --testset T         Run test-set T\n"
   "  --trace             Turn on SQL tracing\n"
+  "  --threads N         Use up to N threads for sorting\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
   "  --utf16le           Set text encoding to UTF-16LE\n"
   "  --without-rowid     Use WITHOUT ROWID where appropriate\n"
@@ -962,6 +963,7 @@ int main(int argc, char **argv){
   int nPCache = 0, szPCache = 0;/* --pcache configuration */
   int nScratch = 0, szScratch=0;/* --scratch configuration */
   int showStats = 0;            /* True for --stats */
+  int nThread = 0;              /* --threads value */
   const char *zTSet = "main";   /* Which --testset torun */
   int doTrace = 0;              /* True for --trace */
   const char *zEncoding = 0;    /* --utf16be or --utf16le */
@@ -1046,6 +1048,9 @@ int main(int argc, char **argv){
         zTSet = argv[++i];
       }else if( strcmp(z,"trace")==0 ){
         doTrace = 1;
+      }else if( strcmp(z,"threads")==0 ){
+        if( i>=argc-1 ) fatal_error("missing argument on %s\n", argv[i]);
+        nThread = integerValue(argv[++i]);
       }else if( strcmp(z,"utf16le")==0 ){
         zEncoding = "utf16le";
       }else if( strcmp(z,"utf16be")==0 ){
@@ -1092,6 +1097,11 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
     if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
   }
+#ifdef SQLITE_CONFIG_WORKER_THREADS
+  if( nThread>0 ){
+    sqlite3_config(SQLITE_CONFIG_WORKER_THREADS, nThread);
+  }
+#endif
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
   }
