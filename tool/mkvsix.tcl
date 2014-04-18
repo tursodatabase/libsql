@@ -256,7 +256,8 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set displayName "SQLite for Windows Runtime"
   set targetPlatformIdentifier Windows
   set targetPlatformVersion v8.0
-  set minVsVersion 11.0
+  set minVsVersion [appendArgs \
+      "\r\n    " {MinVSVersion="11.0"}]
   set extraSdkPath ""
   set extraFileListAttributes [appendArgs \
       "\r\n    " {AppliesTo="WindowsAppContainer"} \
@@ -266,7 +267,8 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set displayName "SQLite for Windows Runtime (Windows 8.1)"
   set targetPlatformIdentifier Windows
   set targetPlatformVersion v8.1
-  set minVsVersion 12.0
+  set minVsVersion [appendArgs \
+      "\r\n    " {MinVSVersion="12.0"}]
   set extraSdkPath ""
   set extraFileListAttributes [appendArgs \
       "\r\n    " {AppliesTo="WindowsAppContainer"} \
@@ -276,7 +278,17 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set displayName "SQLite for Windows Phone"
   set targetPlatformIdentifier "Windows Phone"
   set targetPlatformVersion v8.0
-  set minVsVersion 11.0
+  set minVsVersion [appendArgs \
+      "\r\n    " {MinVSVersion="11.0"}]
+  set extraSdkPath "\\..\\$targetPlatformIdentifier"
+  set extraFileListAttributes ""
+} elseif {[string equal -nocase $packageFlavor WP81]} then {
+  set shortName SQLite.WP81
+  set displayName "SQLite for Windows Phone 8.1"
+  set targetPlatformIdentifier "WindowsPhoneApp"
+  set targetPlatformVersion v8.1
+  set minVsVersion [appendArgs \
+      "\r\n    " {MinVSVersion="12.0"}]
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes ""
 } elseif {[string equal -nocase $packageFlavor Win32]} then {
@@ -284,13 +296,16 @@ if {[string equal -nocase $packageFlavor WinRT]} then {
   set displayName "SQLite for Windows"
   set targetPlatformIdentifier Windows
   set targetPlatformVersion v8.0
-  set minVsVersion 11.0
+  set minVsVersion [appendArgs \
+      "\r\n    " {MinVSVersion="11.0"}]
   set extraSdkPath ""
   set extraFileListAttributes [appendArgs \
       "\r\n    " {AppliesTo="VisualC"} \
       "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
 } else {
-  fail "unsupported package flavor, must be one of: WinRT WinRT81 WP80 Win32"
+  fail [appendArgs \
+      "unsupported package flavor, must be one of: " \
+      "WinRT WinRT81 WP80 WP81 Win32"]
 }
 
 if {$argc >= 4} then {
