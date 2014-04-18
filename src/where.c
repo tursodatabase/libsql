@@ -3712,18 +3712,36 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if the set of WHERE clause terms used by pA is a proper
-** subset of the WHERE clause terms used by pB.
+** Return TRUE if both of the following are true:
+**
+**   (1)  X has the same or lower cost that Y
+**   (2)  X is a proper subset of Y
+**
+** By "proper subset" we mean that X uses fewer WHERE clause terms
+** than Y and that every WHERE clause term used by X is also used
+** by Y.
+**
+** If X is a proper subset of Y then Y is a better choice and ought
+** to have a lower cost.  This routine returns TRUE when that cost 
+** relationship is inverted and needs to be adjusted.
 */
-static int whereLoopProperSubset(const WhereLoop *pA, const WhereLoop *pB){
+static int whereLoopCheaperProperSubset(
+  const WhereLoop *pX,       /* First WhereLoop to compare */
+  const WhereLoop *pY        /* Compare against this WhereLoop */
+){
   int i, j;
-  assert( pA->nLTerm<pB->nLTerm );  /* Checked by calling function */
-  for(j=0, i=pA->nLTerm-1; i>=0 && j>=0; i--){
-    for(j=pB->nLTerm-1; j>=0; j--){
-      if( pB->aLTerm[j]==pA->aLTerm[i] ) break;
-    }
+  if( pX->nLTerm >= pY->nLTerm ) return 0; /* X is not a subset of Y */
+  if( pX->rRun >= pY->rRun ){
+    if( pX->rRun > pY->rRun ) return 0;    /* X costs more than Y */
+    if( pX->nOut > pY->nOut ) return 0;    /* X costs more than Y */
   }
-  return j>=0;
+  for(j=0, i=pX->nLTerm-1; i>=0; i--){
+    for(j=pY->nLTerm-1; j>=0; j--){
+      if( pY->aLTerm[j]==pX->aLTerm[i] ) break;
+    }
+    if( j<0 ) return 0;  /* X not a subset of Y since term X[i] not used by Y */
+  }
+  return 1;  /* All conditions meet */
 }
 
 /*
@@ -3745,19 +3763,14 @@ static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
   for(; p; p=p->pNextLoop){
     if( p->iTab!=pTemplate->iTab ) continue;
     if( (p->wsFlags & WHERE_INDEXED)==0 ) continue;
-    if( p->nLTerm<pTemplate->nLTerm
-     && (p->rRun<pTemplate->rRun || (p->rRun==pTemplate->rRun &&
-                                     p->nOut<=pTemplate->nOut))
-     && whereLoopProperSubset(p, pTemplate)
-    ){
+    if( whereLoopCheaperProperSubset(p, pTemplate) ){
+      /* Adjust pTemplate cost downward so that it is cheaper than its 
+      ** subset p */
       pTemplate->rRun = p->rRun;
       pTemplate->nOut = p->nOut - 1;
-    }else
-    if( p->nLTerm>pTemplate->nLTerm
-     && (p->rRun>pTemplate->rRun || (p->rRun==pTemplate->rRun &&
-                                     p->nOut>=pTemplate->nOut))
-     && whereLoopProperSubset(pTemplate, p)
-    ){
+    }else if( whereLoopCheaperProperSubset(pTemplate, p) ){
+      /* Adjust pTemplate cost upward so that it is costlier than p since
+      ** pTemplate is a proper subset of p */
       pTemplate->rRun = p->rRun;
       pTemplate->nOut = p->nOut + 1;
     }
