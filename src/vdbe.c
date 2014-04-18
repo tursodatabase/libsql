@@ -5249,9 +5249,7 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
   assert( pOp->p4type==P4_INT32 );
   assert( iSet==-1 || iSet>=0 );
   if( iSet ){
-    exists = sqlite3RowSetTest(pIn1->u.pRowSet, 
-                               (u8)(iSet>=0 ? iSet & 0xf : 0xff),
-                               pIn3->u.i);
+    exists = sqlite3RowSetTest(pIn1->u.pRowSet, iSet, pIn3->u.i);
     VdbeBranchTaken(exists!=0,2);
     if( exists ){
       pc = pOp->p2 - 1;

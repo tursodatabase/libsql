@@ -739,7 +739,7 @@ void sqlite3GenerateRowIndexDelete(
                                  &iPartIdxLabel, pPrior, r1);
     sqlite3VdbeAddOp3(v, OP_IdxDelete, iIdxCur+i, r1,
                       pIdx->uniqNotNull ? pIdx->nKeyCol : pIdx->nColumn);
-    sqlite3VdbeResolveLabel(v, iPartIdxLabel);
+    sqlite3ResolvePartIdxLabel(pParse, iPartIdxLabel);
     pPrior = pIdx;
   }
 }
@@ -758,10 +758,11 @@ void sqlite3GenerateRowIndexDelete(
 **
 ** If *piPartIdxLabel is not NULL, fill it in with a label and jump
 ** to that label if pIdx is a partial index that should be skipped.
+** The label should be resolved using sqlite3ResolvePartIdxLabel().
 ** A partial index should be skipped if its WHERE clause evaluates
 ** to false or null.  If pIdx is not a partial index, *piPartIdxLabel
 ** will be set to zero which is an empty label that is ignored by
-** sqlite3VdbeResolveLabel().
+** sqlite3ResolvePartIdxLabel().
 **
 ** The pPrior and regPrior parameters are used to implement a cache to
 ** avoid unnecessary register loads.  If pPrior is not NULL, then it is
@@ -794,6 +795,7 @@ int sqlite3GenerateIndexKey(
     if( pIdx->pPartIdxWhere ){
       *piPartIdxLabel = sqlite3VdbeMakeLabel(v);
       pParse->iPartIdxTab = iDataCur;
+      sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pIdx->pPartIdxWhere, *piPartIdxLabel, 
                          SQLITE_JUMPIFNULL);
     }else{
@@ -820,4 +822,16 @@ int sqlite3GenerateIndexKey(
   }
   sqlite3ReleaseTempRange(pParse, regBase, nCol);
   return regBase;
+}
+
+/*
+** If a prior call to sqlite3GenerateIndexKey() generated a jump-over label
+** because it was a partial index, then this routine should be called to
+** resolve that label.
+*/
+void sqlite3ResolvePartIdxLabel(Parse *pParse, int iLabel){
+  if( iLabel ){
+    sqlite3VdbeResolveLabel(pParse->pVdbe, iLabel);
+    sqlite3ExprCachePop(pParse);
+  }
 }
