@@ -4796,7 +4796,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 ** Note that processing for WHERE_GROUPBY and WHERE_DISTINCTBY is not as
 ** strict.  With GROUP BY and DISTINCT the only requirement is that
 ** equivalent rows appear immediately adjacent to one another.  GROUP BY
-** and DISTINT do not require rows to appear in any particular order as long
+** and DISTINCT do not require rows to appear in any particular order as long
 ** as equivelent rows are grouped together.  Thus for GROUP BY and DISTINCT
 ** the pOrderBy terms can be matched in any order.  With ORDER BY, the 
 ** pOrderBy terms must be matched in strict left-to-right order.
@@ -4965,7 +4965,7 @@ static i8 wherePathSatisfiesOrderBy(
         }
 
         /* Find the ORDER BY term that corresponds to the j-th column
-        ** of the index and and mark that ORDER BY term off 
+        ** of the index and mark that ORDER BY term off 
         */
         bOnce = 1;
         isMatch = 0;
@@ -5045,6 +5045,36 @@ static i8 wherePathSatisfiesOrderBy(
   return -1;
 }
 
+
+/*
+** If the WHERE_GROUPBY flag is set in the mask passed to sqlite3WhereBegin(),
+** the planner assumes that the specified pOrderBy list is actually a GROUP
+** BY clause - and so any order that groups rows as required satisfies the
+** request.
+**
+** Normally, in this case it is not possible for the caller to determine
+** whether or not the rows are really being delivered in sorted order, or
+** just in some other order that provides the required grouping. However,
+** if the WHERE_SORTBYGROUP flag is also passed to sqlite3WhereBegin(), then
+** this function may be called on the returned WhereInfo object. It returns
+** true if the rows really will be sorted in the specified order, or false
+** otherwise.
+**
+** For example, assuming:
+**
+**   CREATE INDEX i1 ON t1(x, Y);
+**
+** then
+**
+**   SELECT * FROM t1 GROUP BY x,y ORDER BY x,y;   -- IsSorted()==1
+**   SELECT * FROM t1 GROUP BY y,x ORDER BY y,x;   -- IsSorted()==0
+*/
+int sqlite3WhereIsSorted(WhereInfo *pWInfo){
+  assert( pWInfo->wctrlFlags & WHERE_GROUPBY );
+  assert( pWInfo->wctrlFlags & WHERE_SORTBYGROUP );
+  return pWInfo->sorted;
+}
+
 #ifdef WHERETRACE_ENABLED
 /* For debugging use only: */
 static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
@@ -5056,7 +5086,6 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
   return zName;
 }
 #endif
-
 
 /*
 ** Given the list of WhereLoop objects at pWInfo->pLoops, this routine
@@ -5338,7 +5367,19 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       if( pWInfo->nOBSat<0 ) pWInfo->nOBSat = 0;
       pWInfo->revMask = pFrom->revLoop;
     }
+    if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
+        && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr
+    ){
+      Bitmask notUsed = 0;
+      int nOrder = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, 
+          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed
+      );
+      assert( pWInfo->sorted==0 );
+      pWInfo->sorted = (nOrder==pWInfo->pOrderBy->nExpr);
+    }
   }
+
+
   pWInfo->nRowOut = pFrom->nRow;
 
   /* Free temporary memory and return success */

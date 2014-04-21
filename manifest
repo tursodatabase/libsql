@@ -1,5 +1,5 @@
-C Clean\sup\sthe\sproper-subset\scost\sadjustment\slogic\sto\smake\sit\smore\scompact\nand\seasier\sto\sread\sand\sso\sthat\sfull\sbranch\stest\scoverage\sis\smore\seasily\nobtained.
-D 2014-04-18T22:20:31.054
+C Avoid\sdiscarding\san\sORDER\sBY\sclause\sin\sthe\scase\swhere\san\sidentical\sGROUP\sBY\sclauses\suses\san\sindex\sto\sgroup,\sbut\snot\ssort,\sthe\srows.\sFix\sfor\s[b75a9ca6b0].
+D 2014-04-21T13:21:56.964
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,12 +217,12 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
-F src/select.c 269c3e31a450fce642a10569221a49180348c88e
+F src/select.c bc7feff0fb4c4a1b9d655b717bef166846b48e33
 F src/shell.c 2afe7a7154e97be0c74c5feacf09626bda8493be
 F src/sqlite.h.in bde98816e1ba0c9ffef50afe7b32f4e5a8f54fe0
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h d3ca0bdd6743c9af2f333cb372b4bf95b19cd1fd
+F src/sqliteInt.h 03e2f60ccb0745fa2d3a072cb4f75fa29251d2ee
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -291,8 +291,8 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 114b480d3c2eefd9fbc395ee96e03fbd883f418d
-F src/whereInt.h 2564055b440e44ebec8b47f237bbccae6719b7af
+F src/where.c 3b127bdc24b7aa84ffa69729170be11555cd7733
+F src/whereInt.h 929c1349b5355fd44f22cee5c14d72b3329c58a6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -896,6 +896,7 @@ F test/tkt-a8a0d2996a.test eb597379dbcefa24765763d7f682c00cb5924fa9
 F test/tkt-b1d3a2e531.test 8f7576e41ca179289ee1a8fee28386fd8e4b0550
 F test/tkt-b351d95f9.test d14a503c414c5c58fdde3e80f9a3cfef986498c0
 F test/tkt-b72787b1.test a95e8cdad0b98af1853ac7f0afd4ab27b77bf5f3
+F test/tkt-b75a9ca6b0.test 3f4f7ca6ab552b6efdb664f821bc798a08929b2c
 F test/tkt-bd484a090c.test 60460bf946f79a79712b71f202eda501ca99b898
 F test/tkt-bdc6bbbb38.test fc38bb09bdd440e3513a1f5f98fc60a075182d7d
 F test/tkt-c48d99d690.test ba61977d62ab612fc515b3c488a6fbd6464a2447
@@ -1160,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2c5363873a6f990a0abaacac6303acd46b48befc
-R b712e75910761b4771536f725cdc6409
-U drh
-Z e77c4b2dd81e4b608cc5f9bf1e51b6ae
+P 9a5d38c79d2482a23bcfbc3ff35ca4fa269c768d
+R ee944819c64836615905c8a0073df726
+U dan
+Z 6ac990d90beb1121a87e97a89a4f2118
