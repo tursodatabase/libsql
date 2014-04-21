@@ -1,5 +1,5 @@
-C Preliminary\schanges\sto\ssupport\sbuilding\sVSIX\spackages\sfor\sWindows\sPhone\s8.1.
-D 2014-04-18T00:08:13.436
+C Preliminary\schanges\sto\ssupport\sbuilding\sVSIX\spackages\sfor\sWindows\s8.0\sand\sWindows\sPhone\s8.0\susing\sVisual\sStudio\s2013.
+D 2014-04-21T18:00:11.146
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1132,7 +1132,7 @@ F tool/mksqlite3c-noext.tcl 8bce31074e4cbe631bb7676526a048335f4c9f02
 F tool/mksqlite3c.tcl ed5b4e9ca8bf209ff401059a16362f37710fd8b8
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl 3dca7bb5374cee003379b8cbac73714f610ef795
-F tool/mkvsix.tcl df937e1fadbd98995c701002b2a4b0187a04f6ff
+F tool/mkvsix.tcl 0d439bb042d0f889210afa91674fe7bf07131d39
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1160,10 +1160,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 9c6961967ae00e563ebe2859eaf2639a79f2cb01
-R cd982f22bbf931205d39222b6f2ba26d
-T *branch * vsixWinPhone81
-T *sym-vsixWinPhone81 *
-T -sym-trunk *
+P a1b2f28ba85b043df68875f5d3446140db4f2cb0
+R c68a023e71ddd46ca56f8a556c77ce10
 U mistachkin
-Z 0f515f990cd1ad75013b0794d9a0c168
+Z aa4cbe46e2e91580e28bf4f7ed1db0b0
