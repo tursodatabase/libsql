@@ -258,7 +258,7 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
   }else{
     /* Depth-first search, except sort the leaf nodes by area with
     ** the largest area first */
-    if( p->iLevel==2 ){
+    if( p->iLevel==1 ){
       p->rScore = 1.0 - (xmax-xmin)*(ymax-ymin)/pCircle->mxArea;
       if( p->rScore<0.01 ) p->rScore = 0.01;
     }else{

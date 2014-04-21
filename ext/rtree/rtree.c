@@ -973,7 +973,7 @@ static int rtreeCallbackConstraint(
     *prScore = RTREE_ZERO;
   }else{
     pInfo->aCoord = aCoord;
-    pInfo->iLevel = pSearch->iLevel;
+    pInfo->iLevel = pSearch->iLevel - 1;
     pInfo->rScore = pInfo->rParentScore = pSearch->rScore;
     pInfo->eWithin = pInfo->eParentWithin = pSearch->eWithin;
     rc = pConstraint->u.xQueryFunc(pInfo);
