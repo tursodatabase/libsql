@@ -962,7 +962,7 @@ static int rtreeCallbackConstraint(
   assert( pConstraint->op==RTREE_MATCH || pConstraint->op==RTREE_QUERY );
   assert( nCoord==2 || nCoord==4 || nCoord==6 || nCoord==8 || nCoord==10 );
 
-  if( pConstraint->op==RTREE_MATCH && pSearch->iLevel==1 ){
+  if( pConstraint->op==RTREE_QUERY && pSearch->iLevel==1 ){
     pInfo->iRowid = readInt64(pCellData);
   }
   pCellData += 8;

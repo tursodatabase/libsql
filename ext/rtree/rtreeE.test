@@ -67,6 +67,16 @@ do_execsql_test rtreeE-1.4 {
   SELECT id FROM rt1 WHERE id MATCH Qcircle(0,0,1000,3) AND id%100==0
 } {200 100 0}
 
+# Exclude odd rowids on a depth-first search
+do_execsql_test rtreeE-1.5 {
+  SELECT id FROM rt1 WHERE id MATCH Qcircle(0,0,1000,4) ORDER BY +id
+} {0 2 4 6 8 10 12 14 16 18 20 22 24 100 102 104 106 108 110 112 114 116 118 120 122 124 200 202 204 206 208 210 212 214 216 218 220 222 224}
+
+# Exclude odd rowids on a breadth-first search.
+do_execsql_test rtreeE-1.6 {
+  SELECT id FROM rt1 WHERE id MATCH Qcircle(0,0,1000,5) ORDER BY +id
+} {0 2 4 6 8 10 12 14 16 18 20 22 24 100 102 104 106 108 110 112 114 116 118 120 122 124 200 202 204 206 208 210 212 214 216 218 220 222 224}
+
 # Construct a large 2-D RTree with thousands of random entries.
 #
 do_test rtreeE-2.1 {

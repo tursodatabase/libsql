@@ -255,7 +255,7 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
   }else if( pCircle->eScoreType==2 ){
     /* Breadth first search */
     p->rScore = 100 - p->iLevel;
-  }else{
+  }else if( pCircle->eScoreType==3 ){
     /* Depth-first search, except sort the leaf nodes by area with
     ** the largest area first */
     if( p->iLevel==1 ){
@@ -264,6 +264,14 @@ static int circle_query_func(sqlite3_rtree_query_info *p){
     }else{
       p->rScore = 0.0;
     }
+  }else if( pCircle->eScoreType==4 ){
+    /* Depth-first search, except exclude odd rowids */
+    p->rScore = p->iLevel;
+    if( p->iRowid&1 ) nWithin = 0;
+  }else{
+    /* Breadth-first search, except exclude odd rowids */
+    p->rScore = 100 - p->iLevel;
+    if( p->iRowid&1 ) nWithin = 0;
   }
   if( nWithin==0 ){
     p->eWithin = NOT_WITHIN;
