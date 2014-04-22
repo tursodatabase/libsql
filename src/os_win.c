@@ -2861,6 +2861,7 @@ static int winLock(sqlite3_file *id, int locktype){
   OSTRACE(("LOCK file=%p, oldLock=%d(%d), newLock=%d\n",
            pFile->h, pFile->locktype, pFile->sharedLockByte, locktype));
   if( pFile->ctrlFlags & WINFILE_NOLOCK ){
+    OSTRACE(("LOCK-NOP file=%p, rc=SQLITE_OK\n", pFile->h));
     return SQLITE_OK;
   }
 
@@ -2992,6 +2993,7 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   assert( id!=0 );
   if( pFile->ctrlFlags & WINFILE_NOLOCK ){
     rc = 0;
+    OSTRACE(("TEST-WR-LOCK file=%p, rc=%d (nop)\n", pFile->h, rc));
   }else if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
     OSTRACE(("TEST-WR-LOCK file=%p, rc=%d (local)\n", pFile->h, rc));
@@ -3029,6 +3031,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
   OSTRACE(("UNLOCK file=%p, oldLock=%d(%d), newLock=%d\n",
            pFile->h, pFile->locktype, pFile->sharedLockByte, locktype));
   if( pFile->ctrlFlags & WINFILE_NOLOCK ){
+    OSTRACE(("UNLOCK-NOP file=%p, rc=SQLITE_OK\n", pFile->h));
     return SQLITE_OK;
   }
   type = pFile->locktype;
