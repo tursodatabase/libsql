@@ -275,6 +275,7 @@ struct winFile {
 #define WINFILE_RDONLY          0x02   /* Connection is read only */
 #define WINFILE_PERSIST_WAL     0x04   /* Persistent WAL mode */
 #define WINFILE_PSOW            0x10   /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
+#define WINFILE_NOLOCK          0x20   /* Never do any real locking */
 
 /*
  * The size of the buffer used by sqlite3_win32_write_debug().
@@ -2859,6 +2860,9 @@ static int winLock(sqlite3_file *id, int locktype){
   assert( id!=0 );
   OSTRACE(("LOCK file=%p, oldLock=%d(%d), newLock=%d\n",
            pFile->h, pFile->locktype, pFile->sharedLockByte, locktype));
+  if( pFile->ctrlFlags & WINFILE_NOLOCK ){
+    return SQLITE_OK;
+  }
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -2986,7 +2990,9 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   OSTRACE(("TEST-WR-LOCK file=%p, pResOut=%p\n", pFile->h, pResOut));
 
   assert( id!=0 );
-  if( pFile->locktype>=RESERVED_LOCK ){
+  if( pFile->ctrlFlags & WINFILE_NOLOCK ){
+    rc = 0;
+  }else if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
     OSTRACE(("TEST-WR-LOCK file=%p, rc=%d (local)\n", pFile->h, rc));
   }else{
@@ -3022,6 +3028,9 @@ static int winUnlock(sqlite3_file *id, int locktype){
   assert( locktype<=SHARED_LOCK );
   OSTRACE(("UNLOCK file=%p, oldLock=%d(%d), newLock=%d\n",
            pFile->h, pFile->locktype, pFile->sharedLockByte, locktype));
+  if( pFile->ctrlFlags & WINFILE_NOLOCK ){
+    return SQLITE_OK;
+  }
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     winUnlockFile(&pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
@@ -4692,6 +4701,9 @@ static int winOpen(
   if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pFile->ctrlFlags |= WINFILE_PSOW;
   }
+  if( strcmp(pVfs->zName,"win32-none")==0 ){
+    pFile->ctrlFlags |= WINFILE_NOLOCK;
+  }
   pFile->lastErrno = NO_ERROR;
   pFile->zPath = zName;
 #if SQLITE_MAX_MMAP_SIZE>0
@@ -5416,6 +5428,30 @@ int sqlite3_os_init(void){
     winNextSystemCall,   /* xNextSystemCall */
   };
 #endif
+  static sqlite3_vfs winNoneVfs = {
+    3,                   /* iVersion */
+    sizeof(winFile),     /* szOsFile */
+    SQLITE_WIN32_MAX_PATH_BYTES, /* mxPathname */
+    0,                   /* pNext */
+    "win32-none",        /* zName */
+    0,                   /* pAppData */
+    winOpen,             /* xOpen */
+    winDelete,           /* xDelete */
+    winAccess,           /* xAccess */
+    winFullPathname,     /* xFullPathname */
+    winDlOpen,           /* xDlOpen */
+    winDlError,          /* xDlError */
+    winDlSym,            /* xDlSym */
+    winDlClose,          /* xDlClose */
+    winRandomness,       /* xRandomness */
+    winSleep,            /* xSleep */
+    winCurrentTime,      /* xCurrentTime */
+    winGetLastError,     /* xGetLastError */
+    winCurrentTimeInt64, /* xCurrentTimeInt64 */
+    winSetSystemCall,    /* xSetSystemCall */
+    winGetSystemCall,    /* xGetSystemCall */
+    winNextSystemCall,   /* xNextSystemCall */
+  };
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
@@ -5432,6 +5468,7 @@ int sqlite3_os_init(void){
   assert( winSysInfo.dwPageSize>0 );
 
   sqlite3_vfs_register(&winVfs, 1);
+  sqlite3_vfs_register(&winNoneVfs, 0);
 
 #if defined(SQLITE_WIN32_HAS_WIDE)
   sqlite3_vfs_register(&winLongPathVfs, 0);

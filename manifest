@@ -1,5 +1,5 @@
-C Comment\stweaks\son\sthe\stest\scase\sfor\sthe\s[b75a9ca6b0]\sbug\sfix.
-D 2014-04-21T13:36:54.639
+C Add\sthe\swin32-none\sVFS\swhich\somits\srollback-journal\slocking.
+D 2014-04-22T19:30:00.797
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,7 +204,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
-F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
+F src/os_win.c a49ee67a07d7aff98bd9793e7ac8c68ee12712b4
 F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
@@ -1161,7 +1161,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P de9a490f594183f337a2ec9e0f87792eac83548b
-R ce888b84132e0cad3bcca115a32951d3
+P 65d2544af9adc1e2f1d193e57f8be0422fb0d5eb
+R a9779ff2bb2c9843026c8b0117f1fe75
+T *branch * win32-none
+T *sym-win32-none *
+T -sym-trunk *
 U drh
-Z cf9f241149456ab1fa24984e95a412d2
+Z d17256f50e94b0475de531ab714c2ce7
