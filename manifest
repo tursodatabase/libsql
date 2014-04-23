@@ -1,5 +1,5 @@
-C Comment\stweaks\son\sthe\stest\scase\sfor\sthe\s[b75a9ca6b0]\sbug\sfix.
-D 2014-04-21T13:36:54.639
+C Enhancements\sto\sthe\sdate\sand\stime\sfunctions\sso\sthat\sthey\soptionally\ssupport\na\s5-digit\syear.\s\sNot\ssure\swe\swant\sto\sinclude\sthis\sin\strunk.\s\sSaved\sin\sa\sbranch\nfor\sfuture\sreference.
+D 2014-04-23T12:00:20.142
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -171,7 +171,7 @@ F src/build.c 5bfeea8f302ec2926c9eea321a61daea92a29fa4
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
-F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
+F src/date.c 483fd9eeb74e06c2ddc4b33ade4a8a9611230386
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
 F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -1161,7 +1161,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P de9a490f594183f337a2ec9e0f87792eac83548b
-R ce888b84132e0cad3bcca115a32951d3
+P 65d2544af9adc1e2f1d193e57f8be0422fb0d5eb
+R 65a7ac109a1878f6dcc92cd296f64cbc
+T *branch * five-digit-year
+T *sym-five-digit-year *
+T -sym-trunk *
 U drh
-Z cf9f241149456ab1fa24984e95a412d2
+Z 20a358e6aab334ebda712a29750f60b8

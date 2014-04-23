@@ -229,7 +229,7 @@ static void computeJD(DateTime *p){
   }
   A = Y/100;
   B = 2 - A + (A/4);
-  X1 = 36525*(Y+4716)/100;
+  X1 = 365*(Y+4716) + 25*(Y+4716)/100;
   X2 = 306001*(M+1)/10000;
   p->iJD = (sqlite3_int64)((X1 + X2 + D + B - 1524.5 ) * 86400000);
   p->validJD = 1;
@@ -258,18 +258,23 @@ static void computeJD(DateTime *p){
 */
 static int parseYyyyMmDd(const char *zDate, DateTime *p){
   int Y, M, D, neg;
+  char c;
 
   if( zDate[0]=='-' ){
     zDate++;
     neg = 1;
   }else{
     neg = 0;
+    if( zDate[0]=='+' ) zDate++;
   }
-  if( getDigits(zDate,4,0,9999,'-',&Y,2,1,12,'-',&M,2,1,31,0,&D)!=3 ){
+  if( getDigits(zDate,4,0,9999,'-',&Y,2,1,12,'-',&M,2,1,31,0,&D)==3 ){
+    zDate += 10;
+  }else if( getDigits(zDate,5,0,99999,'-',&Y,2,1,12,'-',&M,2,1,31,0,&D)==3 ){
+    zDate += 11;
+  }else{
     return 1;
   }
-  zDate += 10;
-  while( sqlite3Isspace(*zDate) || 'T'==*(u8*)zDate ){ zDate++; }
+  while( (c = zDate[0])=='T' || c=='t' || sqlite3Isspace(c) ){ zDate++; }
   if( parseHhMmSs(zDate, p)==0 ){
     /* We got the time */
   }else if( *zDate==0 ){
@@ -355,7 +360,7 @@ static void computeYMD(DateTime *p){
     A = Z + 1 + A - (A/4);
     B = A + 1524;
     C = (int)((B - 122.1)/365.25);
-    D = (36525*C)/100;
+    D = 365*C + (25*C)/100;
     E = (int)((B-D)/30.6001);
     X1 = (int)(30.6001*E);
     p->D = B - D - X1;
@@ -577,19 +582,8 @@ static int parseModifier(sqlite3_context *pCtx, const char *zMod, DateTime *p){
     }
 #endif
     case 'u': {
-      /*
-      **    unixepoch
-      **
-      ** Treat the current value of p->iJD as the number of
-      ** seconds since 1970.  Convert to a real julian day number.
-      */
-      if( strcmp(z, "unixepoch")==0 && p->validJD ){
-        p->iJD = (p->iJD + 43200)/86400 + 21086676*(i64)10000000;
-        clearYMD_HMS_TZ(p);
-        rc = 0;
-      }
 #ifndef SQLITE_OMIT_LOCALTIME
-      else if( strcmp(z, "utc")==0 ){
+      if( strcmp(z, "utc")==0 ){
         sqlite3_int64 c1;
         computeJD(p);
         c1 = localtimeOffset(p, pCtx, &rc);
@@ -761,7 +755,7 @@ static int isDate(
   sqlite3_value **argv, 
   DateTime *p
 ){
-  int i;
+  int i = 1;
   const unsigned char *z;
   int eType;
   memset(p, 0, sizeof(*p));
@@ -770,7 +764,14 @@ static int isDate(
   }
   if( (eType = sqlite3_value_type(argv[0]))==SQLITE_FLOAT
                    || eType==SQLITE_INTEGER ){
-    p->iJD = (sqlite3_int64)(sqlite3_value_double(argv[0])*86400000.0 + 0.5);
+    if( argc>=2 && sqlite3_value_type(argv[1])==SQLITE_TEXT
+       && strcmp((const char*)sqlite3_value_text(argv[1]),"unixepoch")==0 ){
+      i = 2;
+      p->iJD = (sqlite3_int64)(sqlite3_value_double(argv[0])*1000.0) +
+                21086676*(i64)10000000;
+    }else{
+      p->iJD = (sqlite3_int64)(sqlite3_value_double(argv[0])*86400000.0 + 0.5);
+    }
     p->validJD = 1;
   }else{
     z = sqlite3_value_text(argv[0]);
@@ -778,8 +779,8 @@ static int isDate(
       return 1;
     }
   }
-  for(i=1; i<argc; i++){
-    z = sqlite3_value_text(argv[i]);
+  while( i<argc ){
+    z = sqlite3_value_text(argv[i++]);
     if( z==0 || parseModifier(context, (char*)z, p) ) return 1;
   }
   return 0;
@@ -809,9 +810,26 @@ static void juliandayFunc(
 }
 
 /*
+** Render an ISO-8601 year value into the given buffer.  Return the
+** number of characters.
+**
+** Years are rendered differently depending on magnitude:
+**
+**      0..9999        YYYY
+**  10000..99999     +YYYYY
+**  -9999..-1         -YYYY
+** -99999..-10000    -YYYYY
+*/
+static int renderYear(char *zBuf, int Y){
+  sqlite3_snprintf(10, zBuf, Y<0 ? "%05d" : Y>=10000 ? "%+05d" : "%04d", Y);
+  return sqlite3Strlen30(zBuf);
+}
+
+/*
 **    datetime( TIMESTRING, MOD, MOD, ...)
 **
-** Return YYYY-MM-DD HH:MM:SS
+** Return YYYY-MM-DD HH:MM:SS.  The YYYY might be +YYYYY or -YYYY or -YYYYY
+** depending on the year.
 */
 static void datetimeFunc(
   sqlite3_context *context,
@@ -820,10 +838,12 @@ static void datetimeFunc(
 ){
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
+    int i;
     char zBuf[100];
     computeYMD_HMS(&x);
-    sqlite3_snprintf(sizeof(zBuf), zBuf, "%04d-%02d-%02d %02d:%02d:%02d",
-                     x.Y, x.M, x.D, x.h, x.m, (int)(x.s));
+    i = renderYear(zBuf, x.Y);
+    sqlite3_snprintf(sizeof(zBuf)-i, zBuf+i, "-%02d-%02d %02d:%02d:%02d",
+                     x.M, x.D, x.h, x.m, (int)(x.s));
     sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
   }
 }
@@ -850,7 +870,10 @@ static void timeFunc(
 /*
 **    date( TIMESTRING, MOD, MOD, ...)
 **
-** Return YYYY-MM-DD
+** Return   YYYY-MM-DD
+** or     +YYYYY-MM-DD
+** or      -YYYY-MM-DD
+** or     -YYYYY-MM-DD
 */
 static void dateFunc(
   sqlite3_context *context,
@@ -859,9 +882,11 @@ static void dateFunc(
 ){
   DateTime x;
   if( isDate(context, argc, argv, &x)==0 ){
+    int i;
     char zBuf[100];
     computeYMD(&x);
-    sqlite3_snprintf(sizeof(zBuf), zBuf, "%04d-%02d-%02d", x.Y, x.M, x.D);
+    i = renderYear(zBuf, x.Y);
+    sqlite3_snprintf(sizeof(zBuf)-i, zBuf+i, "-%02d-%02d", x.M, x.D);
     sqlite3_result_text(context, zBuf, -1, SQLITE_TRANSIENT);
   }
 }
