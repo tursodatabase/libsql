@@ -3712,18 +3712,36 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
 }
 
 /*
-** Return TRUE if the set of WHERE clause terms used by pA is a proper
-** subset of the WHERE clause terms used by pB.
+** Return TRUE if both of the following are true:
+**
+**   (1)  X has the same or lower cost that Y
+**   (2)  X is a proper subset of Y
+**
+** By "proper subset" we mean that X uses fewer WHERE clause terms
+** than Y and that every WHERE clause term used by X is also used
+** by Y.
+**
+** If X is a proper subset of Y then Y is a better choice and ought
+** to have a lower cost.  This routine returns TRUE when that cost 
+** relationship is inverted and needs to be adjusted.
 */
-static int whereLoopProperSubset(const WhereLoop *pA, const WhereLoop *pB){
+static int whereLoopCheaperProperSubset(
+  const WhereLoop *pX,       /* First WhereLoop to compare */
+  const WhereLoop *pY        /* Compare against this WhereLoop */
+){
   int i, j;
-  assert( pA->nLTerm<pB->nLTerm );  /* Checked by calling function */
-  for(j=0, i=pA->nLTerm-1; i>=0 && j>=0; i--){
-    for(j=pB->nLTerm-1; j>=0; j--){
-      if( pB->aLTerm[j]==pA->aLTerm[i] ) break;
-    }
+  if( pX->nLTerm >= pY->nLTerm ) return 0; /* X is not a subset of Y */
+  if( pX->rRun >= pY->rRun ){
+    if( pX->rRun > pY->rRun ) return 0;    /* X costs more than Y */
+    if( pX->nOut > pY->nOut ) return 0;    /* X costs more than Y */
   }
-  return j>=0;
+  for(j=0, i=pX->nLTerm-1; i>=0; i--){
+    for(j=pY->nLTerm-1; j>=0; j--){
+      if( pY->aLTerm[j]==pX->aLTerm[i] ) break;
+    }
+    if( j<0 ) return 0;  /* X not a subset of Y since term X[i] not used by Y */
+  }
+  return 1;  /* All conditions meet */
 }
 
 /*
@@ -3745,19 +3763,14 @@ static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
   for(; p; p=p->pNextLoop){
     if( p->iTab!=pTemplate->iTab ) continue;
     if( (p->wsFlags & WHERE_INDEXED)==0 ) continue;
-    if( p->nLTerm<pTemplate->nLTerm
-     && (p->rRun<pTemplate->rRun || (p->rRun==pTemplate->rRun &&
-                                     p->nOut<=pTemplate->nOut))
-     && whereLoopProperSubset(p, pTemplate)
-    ){
+    if( whereLoopCheaperProperSubset(p, pTemplate) ){
+      /* Adjust pTemplate cost downward so that it is cheaper than its 
+      ** subset p */
       pTemplate->rRun = p->rRun;
       pTemplate->nOut = p->nOut - 1;
-    }else
-    if( p->nLTerm>pTemplate->nLTerm
-     && (p->rRun>pTemplate->rRun || (p->rRun==pTemplate->rRun &&
-                                     p->nOut>=pTemplate->nOut))
-     && whereLoopProperSubset(pTemplate, p)
-    ){
+    }else if( whereLoopCheaperProperSubset(pTemplate, p) ){
+      /* Adjust pTemplate cost upward so that it is costlier than p since
+      ** pTemplate is a proper subset of p */
       pTemplate->rRun = p->rRun;
       pTemplate->nOut = p->nOut + 1;
     }
@@ -4783,7 +4796,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 ** Note that processing for WHERE_GROUPBY and WHERE_DISTINCTBY is not as
 ** strict.  With GROUP BY and DISTINCT the only requirement is that
 ** equivalent rows appear immediately adjacent to one another.  GROUP BY
-** and DISTINT do not require rows to appear in any particular order as long
+** and DISTINCT do not require rows to appear in any particular order as long
 ** as equivelent rows are grouped together.  Thus for GROUP BY and DISTINCT
 ** the pOrderBy terms can be matched in any order.  With ORDER BY, the 
 ** pOrderBy terms must be matched in strict left-to-right order.
@@ -4952,7 +4965,7 @@ static i8 wherePathSatisfiesOrderBy(
         }
 
         /* Find the ORDER BY term that corresponds to the j-th column
-        ** of the index and and mark that ORDER BY term off 
+        ** of the index and mark that ORDER BY term off 
         */
         bOnce = 1;
         isMatch = 0;
@@ -5032,6 +5045,36 @@ static i8 wherePathSatisfiesOrderBy(
   return -1;
 }
 
+
+/*
+** If the WHERE_GROUPBY flag is set in the mask passed to sqlite3WhereBegin(),
+** the planner assumes that the specified pOrderBy list is actually a GROUP
+** BY clause - and so any order that groups rows as required satisfies the
+** request.
+**
+** Normally, in this case it is not possible for the caller to determine
+** whether or not the rows are really being delivered in sorted order, or
+** just in some other order that provides the required grouping. However,
+** if the WHERE_SORTBYGROUP flag is also passed to sqlite3WhereBegin(), then
+** this function may be called on the returned WhereInfo object. It returns
+** true if the rows really will be sorted in the specified order, or false
+** otherwise.
+**
+** For example, assuming:
+**
+**   CREATE INDEX i1 ON t1(x, Y);
+**
+** then
+**
+**   SELECT * FROM t1 GROUP BY x,y ORDER BY x,y;   -- IsSorted()==1
+**   SELECT * FROM t1 GROUP BY y,x ORDER BY y,x;   -- IsSorted()==0
+*/
+int sqlite3WhereIsSorted(WhereInfo *pWInfo){
+  assert( pWInfo->wctrlFlags & WHERE_GROUPBY );
+  assert( pWInfo->wctrlFlags & WHERE_SORTBYGROUP );
+  return pWInfo->sorted;
+}
+
 #ifdef WHERETRACE_ENABLED
 /* For debugging use only: */
 static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
@@ -5043,7 +5086,6 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
   return zName;
 }
 #endif
-
 
 /*
 ** Given the list of WhereLoop objects at pWInfo->pLoops, this routine
@@ -5325,7 +5367,19 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
       if( pWInfo->nOBSat<0 ) pWInfo->nOBSat = 0;
       pWInfo->revMask = pFrom->revLoop;
     }
+    if( (pWInfo->wctrlFlags & WHERE_SORTBYGROUP)
+        && pWInfo->nOBSat==pWInfo->pOrderBy->nExpr
+    ){
+      Bitmask notUsed = 0;
+      int nOrder = wherePathSatisfiesOrderBy(pWInfo, pWInfo->pOrderBy, 
+          pFrom, 0, nLoop-1, pFrom->aLoop[nLoop-1], &notUsed
+      );
+      assert( pWInfo->sorted==0 );
+      pWInfo->sorted = (nOrder==pWInfo->pOrderBy->nExpr);
+    }
   }
+
+
   pWInfo->nRowOut = pFrom->nRow;
 
   /* Free temporary memory and return success */

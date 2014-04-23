@@ -4751,18 +4751,6 @@ int sqlite3Select(
   }
 #endif
 
-  /* If there is both a GROUP BY and an ORDER BY clause and they are
-  ** identical, then disable the ORDER BY clause since the GROUP BY
-  ** will cause elements to come out in the correct order.  This is
-  ** an optimization - the correct answer should result regardless.
-  ** Use the SQLITE_GroupByOrder flag with SQLITE_TESTCTRL_OPTIMIZER
-  ** to disable this optimization for testing purposes.
-  */
-  if( sqlite3ExprListCompare(p->pGroupBy, sSort.pOrderBy, -1)==0
-         && OptimizationEnabled(db, SQLITE_GroupByOrder) ){
-    sSort.pOrderBy = 0;
-  }
-
   /* If the query is DISTINCT with an ORDER BY but is not an aggregate, and 
   ** if the select-list is the same as the ORDER BY list, then this query
   ** can be rewritten as a GROUP BY. In other words, this:
@@ -4892,6 +4880,7 @@ int sqlite3Select(
     int addrEnd;        /* End of processing for this SELECT */
     int sortPTab = 0;   /* Pseudotable used to decode sorting results */
     int sortOut = 0;    /* Output register from the sorter */
+    int orderByGrp = 0; /* True if the GROUP BY and ORDER BY are the same */
 
     /* Remove any and all aliases between the result set and the
     ** GROUP BY clause.
@@ -4911,6 +4900,18 @@ int sqlite3Select(
       p->nSelectRow = 1;
     }
 
+
+    /* If there is both a GROUP BY and an ORDER BY clause and they are
+    ** identical, then it may be possible to disable the ORDER BY clause 
+    ** on the grounds that the GROUP BY will cause elements to come out 
+    ** in the correct order. It also may not - the GROUP BY may use a
+    ** database index that causes rows to be grouped together as required
+    ** but not actually sorted. Either way, record the fact that the
+    ** ORDER BY and GROUP BY clauses are the same by setting the orderByGrp
+    ** variable.  */
+    if( sqlite3ExprListCompare(pGroupBy, sSort.pOrderBy, -1)==0 ){
+      orderByGrp = 1;
+    }
  
     /* Create a label to jump to when we want to abort the query */
     addrEnd = sqlite3VdbeMakeLabel(v);
@@ -4991,7 +4992,8 @@ int sqlite3Select(
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
       pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, pGroupBy, 0,
-                                 WHERE_GROUPBY, 0);
+          WHERE_GROUPBY | (orderByGrp ? WHERE_SORTBYGROUP : 0), 0
+      );
       if( pWInfo==0 ) goto select_end;
       if( sqlite3WhereIsOrdered(pWInfo)==pGroupBy->nExpr ){
         /* The optimizer is able to deliver rows in group by order so
@@ -5055,6 +5057,21 @@ int sqlite3Select(
         VdbeComment((v, "GROUP BY sort")); VdbeCoverage(v);
         sAggInfo.useSortingIdx = 1;
         sqlite3ExprCacheClear(pParse);
+
+      }
+
+      /* If the index or temporary table used by the GROUP BY sort
+      ** will naturally deliver rows in the order required by the ORDER BY
+      ** clause, cancel the ephemeral table open coded earlier.
+      **
+      ** This is an optimization - the correct answer should result regardless.
+      ** Use the SQLITE_GroupByOrder flag with SQLITE_TESTCTRL_OPTIMIZER to 
+      ** disable this optimization for testing purposes.  */
+      if( orderByGrp && OptimizationEnabled(db, SQLITE_GroupByOrder) 
+       && (groupBySort || sqlite3WhereIsSorted(pWInfo))
+      ){
+        sSort.pOrderBy = 0;
+        sqlite3VdbeChangeToNoop(v, sSort.addrSortIndex);
       }
 
       /* Evaluate the current GROUP BY terms and store in b0, b1, b2...
