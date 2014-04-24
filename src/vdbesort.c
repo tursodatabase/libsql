@@ -1,5 +1,5 @@
 /*
-** 2011 July 9
+** 2011-07-09
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -10,9 +10,55 @@
 **
 *************************************************************************
 ** This file contains code for the VdbeSorter object, used in concert with
-** a VdbeCursor to sort large numbers of keys (as may be required, for
-** example, by CREATE INDEX statements on tables too large to fit in main
-** memory).
+** a VdbeCursor to sort large numbers of keys for CREATE TABLE statements
+** or by SELECT statements with ORDER BY clauses that cannot be satisfied
+** using indexes and without LIMIT clauses.
+**
+** The VdbeSorter object implements a external merge sort
+** algorithm that is efficient even if the aggregate size of 
+** the elements being sorted exceeds the available memory.
+**
+** Here is the (internal, non-API) interface between this module and the
+** rest of the SQLite system:
+**
+**    sqlite3VdbeSorterInit()       Create a new VdbeSorter object.
+**
+**    sqlite3VdbeSorterWrite()      Add a single new row to the VdbeSorter
+**                                  object.  The row is a binary blob in the
+**                                  OP_MakeRecord format that contains both
+**                                  the ORDER BY key columns and result columns
+**                                  in the case of a SELECT w/ ORDER BY, or
+**                                  the complete record for an index entry
+**                                  in the case of a CREATE INDEX.
+**
+**    sqlite3VdbeSorterRewind()     Sort all content previously added.
+**                                  Position the read cursor on the
+**                                  first sorted element.
+**
+**    sqlite3VdbeSorterNext()       Advance the read cursor to the next sorted
+**                                  element.
+**
+**    sqlite3VdbeSorterRowkey()     Return the complete binary blob for the
+**                                  row currently under the read cursor.
+**
+**    sqlite3VdbeSorterCompare()    Compare the binary blob for the row
+**                                  currently under the read cursor against
+**                                  another binary blob X and report if
+**                                  X is strictly less than the read cursor.
+**                                  Used to enforce uniqueness in a
+**                                  CREATE UNIQUE INDEX statement.
+**
+**    sqlite3VdbeSorterClose()      Close the VdbeSorter object and reclaim
+**                                  all resources.
+**
+**    sqlite3VdbeSorterReset()      Refurbish the VdbeSorter for reuse.  This
+**                                  is like Close() followed by Init() only
+**                                  much faster.
+**
+** The interfaces above must be called in a particular order.  Write() can 
+** only occur in between Init()/Reset() and Rewind().  Next(), Rowkey(), and
+** Compare() can only occur in between Rewind() and Close()/Reset().
+**
 */
 
 #include "sqliteInt.h"
@@ -893,7 +939,7 @@ static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
 */
 int sqlite3VdbeSorterWrite(
   sqlite3 *db,                    /* Database handle */
-  const VdbeCursor *pCsr,               /* Sorter cursor */
+  const VdbeCursor *pCsr,         /* Sorter cursor */
   Mem *pVal                       /* Memory cell containing record */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
