@@ -227,7 +227,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   if( p && ExprHasProperty(p, EP_Unlikely) ){
     pTerm->truthProb = sqlite3LogEst(p->iTable) - 99;
   }else{
-    pTerm->truthProb = -1;
+    pTerm->truthProb = 1;
   }
   pTerm->pExpr = sqlite3ExprSkipCollate(p);
   pTerm->wtFlags = wtFlags;
@@ -1976,6 +1976,31 @@ static void whereKeyStats(
 #endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
 /*
+** If it is not NULL, pTerm is a term that provides an upper or lower
+** bound on a range scan. Without considering pTerm, it is estimated 
+** that the scan will visit nNew rows. This function returns the number
+** estimated to be visited after taking pTerm into account.
+**
+** If the user explicitly specified a likelihood() value for this term,
+** then the return value is the likelihood multiplied by the number of
+** input rows. Otherwise, this function assumes that an "IS NOT NULL" term
+** has a likelihood of 0.50, and any other term a likelihood of 0.25.
+*/
+static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
+  LogEst nRet = nNew;
+  if( pTerm ){
+    if( pTerm->truthProb<=0 ){
+      nRet += pTerm->truthProb;
+    }else if( pTerm->wtFlags & TERM_VNULL ){
+      nRet -= 10;        assert( 10==sqlite3LogEst(2) );
+    }else{
+      nRet -= 20;        assert( 20==sqlite3LogEst(4) );
+    }
+  }
+  return nRet;
+}
+
+/*
 ** This function is used to estimate the number of rows that will be visited
 ** by scanning an index for a range of values. The range may have an upper
 ** bound, a lower bound, or both. The WHERE clause terms that set the upper
@@ -2127,17 +2152,9 @@ static int whereRangeScanEst(
   UNUSED_PARAMETER(pBuilder);
 #endif
   assert( pLower || pUpper );
-  /* TUNING:  Each inequality constraint reduces the search space 4-fold.
-  ** A BETWEEN operator, therefore, reduces the search space 16-fold */
-  nNew = nOut;
-  if( pLower && (pLower->wtFlags & TERM_VNULL)==0 ){
-    nNew -= 20;        assert( 20==sqlite3LogEst(4) );
-    nOut--;
-  }
-  if( pUpper ){
-    nNew -= 20;        assert( 20==sqlite3LogEst(4) );
-    nOut--;
-  }
+  nNew = whereRangeAdjust(pLower, nOut);
+  nNew = whereRangeAdjust(pUpper, nNew);
+  nOut -= (pLower!=0) + (pUpper!=0);
   if( nNew<10 ) nNew = 10;
   if( nNew<nOut ) nOut = nNew;
   pLoop->nOut = (LogEst)nOut;
@@ -3987,7 +4004,9 @@ static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop){
       if( pX==pTerm ) break;
       if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
     }
-    if( j<0 ) pLoop->nOut += pTerm->truthProb;
+    if( j<0 ){
+      pLoop->nOut += (pTerm->truthProb<=0 ? pTerm->truthProb : -1);
+    }
   }
 }
 
@@ -4081,6 +4100,7 @@ static int whereLoopAddBtreeIndex(
     pNew->nOut = saved_nOut;
   }
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
+    LogEst rCostIdx;
     int nIn = 0;
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     int nRecValid = pBuilder->nRecValid;
@@ -4154,7 +4174,8 @@ static int whereLoopAddBtreeIndex(
                      pNew->aLTerm[pNew->nLTerm-2] : 0;
     }
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
-      /* Adjust nOut and rRun for STAT3 range values */
+      /* Adjust nOut using stat3/stat4 data. Or, if there is no stat3/stat4
+      ** data, using some other estimate.  */
       assert( pNew->nOut==saved_nOut );
       whereRangeScanEst(pParse, pBuilder, pBtm, pTop, pNew);
     }
@@ -4181,13 +4202,16 @@ static int whereLoopAddBtreeIndex(
       }
     }
 #endif
+    /* Set rCostIdx to the cost of visiting selected rows in index. Add
+    ** it to pNew->rRun, which is currently set to the cost of the index
+    ** seek only. Then, if this is a non-covering index, add the cost of
+    ** visiting the rows in the main table.  */
+    rCostIdx = pNew->nOut + 1 + (15*pProbe->szIdxRow)/pSrc->pTab->szTabRow;
+    pNew->rRun = sqlite3LogEstAdd(pNew->rRun, rCostIdx);
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
-      /* Each row involves a step of the index, then a binary search of
-      ** the main table */
-      pNew->rRun =  sqlite3LogEstAdd(pNew->rRun,rLogSize>27 ? rLogSize-17 : 10);
+      pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
     }
-    /* Step cost for each output row */
-    pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut);
+
     whereLoopOutputAdjust(pBuilder->pWC, pNew);
     rc = whereLoopInsert(pBuilder, pNew);
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
@@ -4319,6 +4343,7 @@ static int whereLoopAddBtree(
     sPk.aiRowEst = aiRowEstPk;
     sPk.onError = OE_Replace;
     sPk.pTable = pTab;
+    sPk.szIdxRow = pTab->szTabRow;
     aiRowEstPk[0] = pTab->nRowEst;
     aiRowEstPk[1] = 1;
     pFirst = pSrc->pTab->pIndex;
@@ -4396,10 +4421,8 @@ static int whereLoopAddBtree(
 
       /* Full table scan */
       pNew->iSortIdx = b ? iSortIdx : 0;
-      /* TUNING: Cost of full table scan is 3*(N + log2(N)).
-      **  +  The extra 3 factor is to encourage the use of indexed lookups
-      **     over full scans.  FIXME */
-      pNew->rRun = sqlite3LogEstAdd(rSize,rLogSize) + 16;
+      /* TUNING: Cost of full table scan is (N*3.0). */
+      pNew->rRun = rSize + 16;
       whereLoopOutputAdjust(pWC, pNew);
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
@@ -4426,35 +4449,16 @@ static int whereLoopAddBtree(
           )
       ){
         pNew->iSortIdx = b ? iSortIdx : 0;
-        /* TUNING:  The base cost of an index scan is N + log2(N).
-        ** The log2(N) is for the initial seek to the beginning and the N
-        ** is for the scan itself. */
-        pNew->rRun = sqlite3LogEstAdd(rSize, rLogSize);
-        if( m==0 ){
-          /* TUNING: Cost of a covering index scan is K*(N + log2(N)).
-          **  +  The extra factor K of between 1.1 and 3.0 that depends
-          **     on the relative sizes of the table and the index.  K
-          **     is smaller for smaller indices, thus favoring them.
-          **     The upper bound on K (3.0) matches the penalty factor
-          **     on a full table scan that tries to encourage the use of
-          **     indexed lookups over full scans.
-          */
-          pNew->rRun +=  1 + (15*pProbe->szIdxRow)/pTab->szTabRow;
-        }else{
-          /* TUNING: The cost of scanning a non-covering index is multiplied
-          ** by log2(N) to account for the binary search of the main table
-          ** that must happen for each row of the index.
-          ** TODO: Should there be a multiplier here, analogous to the 3x
-          ** multiplier for a fulltable scan or covering index scan, to
-          ** further discourage the use of an index scan?  Or is the log2(N)
-          ** term sufficient discouragement?
-          ** TODO: What if some or all of the WHERE clause terms can be
-          ** computed without reference to the original table.  Then the
-          ** penality should reduce to logK where K is the number of output
-          ** rows.
-          */
-          pNew->rRun += rLogSize;
+
+        /* The cost of visiting the index rows is N*K, where K is
+        ** between 1.1 and 3.0, depending on the relative sizes of the
+        ** index and table rows. If this is a non-covering index scan,
+        ** also add the cost of visiting table rows (N*3.0).  */
+        pNew->rRun = rSize + 1 + (15*pProbe->szIdxRow)/pTab->szTabRow;
+        if( m!=0 ){
+          pNew->rRun = sqlite3LogEstAdd(pNew->rRun, rSize+16);
         }
+
         whereLoopOutputAdjust(pWC, pNew);
         rc = whereLoopInsert(pBuilder, pNew);
         pNew->nOut = rSize;
@@ -4732,8 +4736,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       pNew->iSortIdx = 0;
       memset(&pNew->u, 0, sizeof(pNew->u));
       for(i=0; rc==SQLITE_OK && i<sSum.n; i++){
-        /* TUNING: Multiple by 3.5 for the secondary table lookup */
-        pNew->rRun = sSum.a[i].rRun + 18;
+        pNew->rRun = sSum.a[i].rRun;
         pNew->nOut = sSum.a[i].nOut;
         pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
