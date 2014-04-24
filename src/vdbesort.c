@@ -15,7 +15,7 @@
 ** using indexes and without LIMIT clauses.
 **
 ** The VdbeSorter object implements a multi-threaded external merge sort
-** algorithm that is efficient even if the number of element being sorted
+** algorithm that is efficient even if the number of elements being sorted
 ** exceeds the available memory.
 **
 ** Here is the (internal, non-API) interface between this module and the
@@ -104,9 +104,7 @@
 **
 ** When Rewind() is called, any data remaining in memory is flushed to a 
 ** final PMA. So at this point the data is stored in some number of sorted
-** PMAs within temporary files on disk. Within a single file sorter is 
-** running in single threaded mode, or distributed between one or more files
-** for multi-threaded sorters.
+** PMAs within temporary files on disk.
 **
 ** If there are fewer than SORTER_MAX_MERGE_COUNT PMAs in total and the
 ** sorter is running in single-threaded mode, then these PMAs are merged
@@ -158,7 +156,7 @@ typedef struct SorterRecord SorterRecord;   /* A record being sorted */
 typedef struct SortSubtask SortSubtask;     /* A sub-task in the sort process */
 typedef struct SorterFile SorterFile;       /* Temporary file object wrapper */
 typedef struct SorterList SorterList;       /* In-memory list of records */
-typedef struct IncrMerger IncrMerger;
+typedef struct IncrMerger IncrMerger;       /* Read & merge multiple PMAs */
 
 /*
 ** A container for a temp file handle and the current amount of data 
@@ -170,11 +168,16 @@ struct SorterFile {
 };
 
 /*
-** In memory linked list of records.
+** An in-memory list of objects to be sorted.
+**
+** If aMemory==0 then each object is allocated separately and the objects
+** are connected using SorterRecord.u.pNext.  If aMemory!=0 then all objects
+** are stored in the aMemory[] bulk memory, one right after the other, and
+** are connected using SorterRecord.u.iNext.
 */
 struct SorterList {
   SorterRecord *pList;            /* Linked list of records */
-  u8 *aMemory;                    /* If non-NULL, blob of memory for pList */
+  u8 *aMemory;                    /* If non-NULL, bulk memory to hold pList */
   int szPMA;                      /* Size of pList as PMA in bytes */
 };
 

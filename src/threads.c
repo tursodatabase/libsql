@@ -37,9 +37,11 @@
 
 /* A running thread */
 struct SQLiteThread {
-  pthread_t tid;
-  int done;
-  void *pOut;
+  pthread_t tid;                 /* Thread ID */
+  int done;                      /* Set to true when thread finishes */
+  void *pOut;                    /* Result returned by the thread */
+  void *(*xTask)(void*);         /* The thread routine */
+  void *pIn;                     /* Argument to the thread */
 };
 
 /* Create a new thread */
@@ -56,6 +58,8 @@ int sqlite3ThreadCreate(
   p = sqlite3Malloc(sizeof(*p));
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
+  p->xTask = xTask;
+  p->pIn = pIn;
   if( sqlite3GlobalConfig.bCoreMutex==0
     || pthread_create(&p->tid, 0, xTask, pIn)!=0 
   ){
