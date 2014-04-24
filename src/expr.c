@@ -1883,7 +1883,7 @@ int sqlite3CodeSubselect(
   if( testAddr>=0 ){
     sqlite3VdbeJumpHere(v, testAddr);
   }
-  sqlite3ExprCachePop(pParse, 1);
+  sqlite3ExprCachePop(pParse);
 
   return rReg;
 }
@@ -2018,7 +2018,7 @@ static void sqlite3ExprCodeIN(
     }
   }
   sqlite3ReleaseTempReg(pParse, r1);
-  sqlite3ExprCachePop(pParse, 1);
+  sqlite3ExprCachePop(pParse);
   VdbeComment((v, "end IN expr"));
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
@@ -2201,15 +2201,14 @@ void sqlite3ExprCachePush(Parse *pParse){
 
 /*
 ** Remove from the column cache any entries that were added since the
-** the previous N Push operations.  In other words, restore the cache
-** to the state it was in N Pushes ago.
+** the previous sqlite3ExprCachePush operation.  In other words, restore
+** the cache to the state it was in prior the most recent Push.
 */
-void sqlite3ExprCachePop(Parse *pParse, int N){
+void sqlite3ExprCachePop(Parse *pParse){
   int i;
   struct yColCache *p;
-  assert( N>0 );
-  assert( pParse->iCacheLevel>=N );
-  pParse->iCacheLevel -= N;
+  assert( pParse->iCacheLevel>=1 );
+  pParse->iCacheLevel--;
 #ifdef SQLITE_DEBUG
   if( pParse->db->flags & SQLITE_VdbeAddopTrace ){
     printf("POP  to %d\n", pParse->iCacheLevel);
@@ -2687,7 +2686,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           sqlite3ExprCacheRemove(pParse, target, 1);
           sqlite3ExprCachePush(pParse);
           sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
-          sqlite3ExprCachePop(pParse, 1);
+          sqlite3ExprCachePop(pParse);
         }
         sqlite3VdbeResolveLabel(v, endCoalesce);
         break;
@@ -2741,7 +2740,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3ExprCachePush(pParse);     /* Ticket 2ea2425d34be */
         sqlite3ExprCodeExprList(pParse, pFarg, r1,
                                 SQLITE_ECEL_DUP|SQLITE_ECEL_FACTOR);
-        sqlite3ExprCachePop(pParse, 1);   /* Ticket 2ea2425d34be */
+        sqlite3ExprCachePop(pParse);      /* Ticket 2ea2425d34be */
       }else{
         r1 = 0;
       }
@@ -2961,13 +2960,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
         sqlite3ExprCode(pParse, aListelem[i+1].pExpr, target);
         sqlite3VdbeAddOp2(v, OP_Goto, 0, endLabel);
-        sqlite3ExprCachePop(pParse, 1);
+        sqlite3ExprCachePop(pParse);
         sqlite3VdbeResolveLabel(v, nextCase);
       }
       if( (nExpr&1)!=0 ){
         sqlite3ExprCachePush(pParse);
         sqlite3ExprCode(pParse, pEList->a[nExpr-1].pExpr, target);
-        sqlite3ExprCachePop(pParse, 1);
+        sqlite3ExprCachePop(pParse);
       }else{
         sqlite3VdbeAddOp2(v, OP_Null, 0, target);
       }
@@ -3546,7 +3545,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
-      sqlite3ExprCachePop(pParse, 1);
+      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_OR: {
@@ -3554,7 +3553,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfTrue(pParse, pExpr->pRight, dest, jumpIfNull);
-      sqlite3ExprCachePop(pParse, 1);
+      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_NOT: {
@@ -3700,7 +3699,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3ExprIfFalse(pParse, pExpr->pLeft, dest, jumpIfNull);
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
-      sqlite3ExprCachePop(pParse, 1);
+      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_OR: {
@@ -3710,7 +3709,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       sqlite3ExprCachePush(pParse);
       sqlite3ExprIfFalse(pParse, pExpr->pRight, dest, jumpIfNull);
       sqlite3VdbeResolveLabel(v, d2);
-      sqlite3ExprCachePop(pParse, 1);
+      sqlite3ExprCachePop(pParse);
       break;
     }
     case TK_NOT: {

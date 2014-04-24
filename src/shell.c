@@ -2130,10 +2130,12 @@ static void tryToClone(struct callback_data *p, const char *zNewDb){
     fprintf(stderr, "Cannot create output database: %s\n",
             sqlite3_errmsg(newDb));
   }else{
+    sqlite3_exec(p->db, "PRAGMA writable_schema=ON;", 0, 0, 0);
     sqlite3_exec(newDb, "BEGIN EXCLUSIVE;", 0, 0, 0);
     tryToCloneSchema(p, newDb, "type='table'", tryToCloneData);
     tryToCloneSchema(p, newDb, "type!='table'", 0);
     sqlite3_exec(newDb, "COMMIT;", 0, 0, 0);
+    sqlite3_exec(p->db, "PRAGMA writable_schema=OFF;", 0, 0, 0);
   }
   sqlite3_close(newDb);
 }
@@ -3025,6 +3027,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       { "optimizations",         SQLITE_TESTCTRL_OPTIMIZATIONS          },
       { "iskeyword",             SQLITE_TESTCTRL_ISKEYWORD              },
       { "scratchmalloc",         SQLITE_TESTCTRL_SCRATCHMALLOC          },
+      { "byteorder",             SQLITE_TESTCTRL_BYTEORDER              },
     };
     int testctrl = -1;
     int rc = 0;
@@ -3065,9 +3068,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           break;
 
         /* sqlite3_test_control(int) */
-        case SQLITE_TESTCTRL_PRNG_SAVE:           
-        case SQLITE_TESTCTRL_PRNG_RESTORE:        
+        case SQLITE_TESTCTRL_PRNG_SAVE:
+        case SQLITE_TESTCTRL_PRNG_RESTORE:
         case SQLITE_TESTCTRL_PRNG_RESET:
+        case SQLITE_TESTCTRL_BYTEORDER:
           if( nArg==2 ){
             rc = sqlite3_test_control(testctrl);
             fprintf(p->out, "%d (0x%08x)\n", rc, rc);

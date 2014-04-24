@@ -398,6 +398,7 @@ struct WhereInfo {
   LogEst nRowOut;           /* Estimated number of output rows */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
+  u8 sorted;                /* True if really sorted (not just grouped) */
   u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
   u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
