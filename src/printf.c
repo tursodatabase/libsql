@@ -189,6 +189,7 @@ static void appendSpace(StrAccum *pAccum, int N){
 ** On machines with a small stack size, you can redefine the
 ** SQLITE_PRINT_BUF_SIZE to be less than 350.
 */
+#define SQLITE_PRINT_BUF_SIZE 2000
 #ifndef SQLITE_PRINT_BUF_SIZE
 # if defined(SQLITE_SMALL_STACK)
 #   define SQLITE_PRINT_BUF_SIZE 50

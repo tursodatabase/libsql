@@ -3092,6 +3092,25 @@ static int pagerPagecount(Pager *pPager, Pgno *pnPage){
   return SQLITE_OK;
 }
 
+/* Log diagnostic information about the pager */
+void sqlite3PagerLogDiagnostics(Pager *pPager){
+  int rc;
+  i64 n;
+  sqlite3_log(SQLITE_INTERNAL, "Pager filename=[%s]", pPager->zFilename);
+  sqlite3_log(SQLITE_INTERNAL, "Pager journal=[%s]", pPager->zJournal);
+  sqlite3_log(SQLITE_INTERNAL,
+    "Pager diagnostics: pWal=%p isOpen=%d pageSize=%d dbSize=%d eState=%d",
+    pPager->pWal, isOpen(pPager->fd)!=0,
+    pPager->pageSize, pPager->dbSize, pPager->eState
+  );
+  if( isOpen(pPager->fd) ){
+    n = 0;
+    rc = sqlite3OsFileSize(pPager->fd, &n);
+    sqlite3_log(SQLITE_INTERNAL, "Pager OsFileSize: %lld (%d)", n, rc);
+  }
+}
+
+
 #ifndef SQLITE_OMIT_WAL
 /*
 ** Check if the *-wal file that corresponds to the database opened by pPager

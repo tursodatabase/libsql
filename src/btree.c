@@ -2393,6 +2393,8 @@ static int lockBtree(BtShared *pBt){
       return rc;
     }
     if( (pBt->db->flags & SQLITE_RecoveryMode)==0 && nPage>nPageFile ){
+      sqlite3_log(SQLITE_CORRUPT, "nPage=%d nPageFile=%d", nPage, nPageFile);
+      sqlite3PagerLogDiagnostics(pBt->pPager);
       rc = SQLITE_CORRUPT_BKPT;
       goto page1_init_failed;
     }
