@@ -89,8 +89,10 @@ struct sqlite3_rtree_query_info {
   void *pUser;                      /* callback can use this, if desired */
   void (*xDelUser)(void*);          /* function to free pUser */
   sqlite3_rtree_dbl *aCoord;        /* Coordinates of node or entry to check */
+  unsigned int *anQueue;            /* Number of pending entries in the queue */
   int nCoord;                       /* Number of coordinates */
   int iLevel;                       /* Level of current node or entry */
+  int mxLevel;                      /* The largest iLevel value in the tree */
   sqlite3_int64 iRowid;             /* Rowid for current entry */
   sqlite3_rtree_dbl rParentScore;   /* Score of parent node */
   int eParentWithin;                /* Visibility of parent node */

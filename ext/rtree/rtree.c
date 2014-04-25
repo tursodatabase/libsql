@@ -228,9 +228,11 @@ struct RtreeCursor {
   RtreeConstraint *aConstraint;     /* Search constraints. */
   int nPointAlloc;                  /* Number of slots allocated for aPoint[] */
   int nPoint;                       /* Number of slots used in aPoint[] */
+  int mxLevel;                      /* iLevel value for root of the tree */
   RtreeSearchPoint *aPoint;         /* Priority queue for search points */
   RtreeSearchPoint sPoint;          /* Cached next search point */
   RtreeNode *aNode[RTREE_CACHE_SZ]; /* Rtree node cache */
+  u32 anQueue[RTREE_MAX_DEPTH+1];   /* Number of queued entries by iLevel */
 };
 
 /* Return the Rtree of a RtreeCursor */
@@ -1179,7 +1181,8 @@ static RtreeSearchPoint *rtreeEnqueue(
   i = pCur->nPoint++;
   pNew = pCur->aPoint + i;
   pNew->rScore = rScore;
-  pNew->iLevel = iLevel;  
+  pNew->iLevel = iLevel;
+  assert( iLevel>=0 && iLevel<=RTREE_MAX_DEPTH );
   while( i>0 ){
     RtreeSearchPoint *pParent;
     j = (i-1)/2;
@@ -1203,6 +1206,7 @@ static RtreeSearchPoint *rtreeSearchPointNew(
 ){
   RtreeSearchPoint *pNew, *pFirst;
   pFirst = rtreeSearchPointFirst(pCur);
+  pCur->anQueue[iLevel]++;
   if( pFirst==0
    || pFirst->rScore>rScore 
    || (pFirst->rScore==rScore && pFirst->iLevel>iLevel)
@@ -1271,8 +1275,10 @@ static void rtreeSearchPointPop(RtreeCursor *p){
     p->aNode[i] = 0;
   }
   if( p->bPoint ){
+    p->anQueue[p->sPoint.iLevel]--;
     p->bPoint = 0;
   }else if( p->nPoint ){
+    p->anQueue[p->aPoint[0].iLevel]--;
     n = --p->nPoint;
     p->aPoint[0] = p->aPoint[n];
     if( n<RTREE_CACHE_SZ-1 ){
@@ -1553,13 +1559,15 @@ static int rtreeFilter(
     /* Normal case - r-tree scan. Set up the RtreeCursor.aConstraint array 
     ** with the configured constraints. 
     */
-    if( argc>0 ){
+    rc = nodeAcquire(pRtree, 1, 0, &pRoot);
+    if( rc==SQLITE_OK && argc>0 ){
       pCsr->aConstraint = sqlite3_malloc(sizeof(RtreeConstraint)*argc);
       pCsr->nConstraint = argc;
       if( !pCsr->aConstraint ){
         rc = SQLITE_NOMEM;
       }else{
         memset(pCsr->aConstraint, 0, sizeof(RtreeConstraint)*argc);
+        memset(pCsr->anQueue, 0, sizeof(u32)*(pRtree->iDepth + 1));
         assert( (idxStr==0 && argc==0)
                 || (idxStr && (int)strlen(idxStr)==argc*2) );
         for(ii=0; ii<argc; ii++){
@@ -1576,6 +1584,8 @@ static int rtreeFilter(
               break;
             }
             p->pInfo->nCoord = pRtree->nDim*2;
+            p->pInfo->anQueue = pCsr->anQueue;
+            p->pInfo->mxLevel = pRtree->iDepth + 1;
           }else{
 #ifdef SQLITE_RTREE_INT_ONLY
             p->u.rValue = sqlite3_value_int64(argv[ii]);
@@ -1586,10 +1596,6 @@ static int rtreeFilter(
         }
       }
     }
-  
-    if( rc==SQLITE_OK ){
-      rc = nodeAcquire(pRtree, 1, 0, &pRoot);
-    }
     if( rc==SQLITE_OK ){
       RtreeSearchPoint *pNew;
       pNew = rtreeSearchPointNew(pCsr, RTREE_ZERO, pRtree->iDepth+1);
@@ -1599,11 +1605,13 @@ static int rtreeFilter(
       pNew->eWithin = PARTLY_WITHIN;
       assert( pCsr->bPoint==1 );
       pCsr->aNode[0] = pRoot;
+      pRoot = 0;
       RTREE_QUEUE_TRACE(pCsr, "PUSH-Fm:");
       rc = rtreeStepToLeaf(pCsr);
     }
   }
 
+  nodeRelease(pRtree, pRoot);
   rtreeRelease(pRtree);
   return rc;
 }

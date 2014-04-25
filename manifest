@@ -1,5 +1,5 @@
-C Fix\sthe\sgeneration\sof\ssqlite3_rtree_query_info.iRowid\sand\sadd\stest\scases\nto\sverify\sthat\sit\sis\sfixed.
-D 2014-04-21T18:13:37.363
+C Enhance\sthe\ssqlite3_rtree_query_info\sobject\sto\sreport\son\sthe\snumber\sof\s\nelements\sin\sthe\spriority\squeue\sat\seach\slevel.
+D 2014-04-25T16:29:03.796
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e4ee6d36cdf6136aee0158675a3b24dd3bf31a5a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -120,7 +120,7 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 77fdd459e7edf78a385a83930e2b072b2f0131b5
+F ext/rtree/rtree.c 6f70db93e0e42c369325c5cddcf2024c5a87ca43
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test e2da4aaa426918d27122d1a1066c6ecf8409a514
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
@@ -138,7 +138,7 @@ F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtreeE.test 388c1c8602c3ce55c15f03b509e9cf545fb7c41f
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
-F ext/rtree/sqlite3rtree.h 488cf8834d2012b913d33683157d3cf5f1327a69
+F ext/rtree/sqlite3rtree.h 83349d519fe5f518b3ea025d18dd1fe51b1684bd
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/session/session1.test 894e3bc9f497c4fa07a2aa3271e3911f3670c3d8
@@ -1177,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4394693882c04c19ebe87ef7547c57e679554397
-R 9a6527f0d42b13ef1dcd87b1f989aba6
+P eba95ead49f8f8ce45d400186562ff0066537c5c
+R efef19137bd31aa6c6fdc7dea3b8daf2
 U drh
-Z 8819b772d7d2f245af8d8a9675d9c9d8
+Z ded30c2c8b9ed7281fad6af13254832e
