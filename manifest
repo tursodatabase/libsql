@@ -1,5 +1,5 @@
-C Make\ssure\sORDER\sBY\sclauses\son\sjoins\sthat\sinvolve\svirtual\stables\sand\sthat\nhave\sa\sDISTINCT\sclause\swork\scorrectly.\s\sThis\sis\sa\scandidate\sfix\sfor\nticket\s[388d01d4bb8f9].\s\sTest\scases\sfor\sthat\sticket\swill\sbe\schecked\sin\nseparately.
-D 2014-04-25T14:42:17.085
+C Add\stest\scases\sto\sensure\scorrect\soperation\sof\sjoins\swith\sa\svirtual\stable\nthat\sinclude\sDISTINCT\sand\sORDER\sBY\sclauses.\s\sVerification\sfor\sticket\n[388d01d4bb8f9].
+D 2014-04-25T17:37:16.863
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -724,6 +724,7 @@ F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
 F test/orderby5.test 2490183fef54417209d1df253633a605d46bd350
 F test/orderby6.test 8b38138ab0972588240b3fca0985d2e400432859
+F test/orderby7.test 3d1383d52ade5b9eb3a173b3147fdd296f0202da
 F test/oserror.test 50417780d0e0d7cd23cf12a8277bb44024765df3
 F test/pager1.test 1acbdb14c5952a72dd43129cabdbf69aaa3ed1fa
 F test/pager2.test 67b8f40ae98112bcdba1f2b2d03ea83266418c71
@@ -1161,7 +1162,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4e88042f9d3e678914da96c0eb276f3d8fca5a94
-R 1db9e5d4fb5773f03fcd55df7d35ffca
+P 171138122690faafde0dcab0201b90bdf02d3637
+R a91060e3dc13463e0dda2e961246be75
 U drh
-Z 5fd090bfe2e284c7964226b5abb1772a
+Z 5a55daa8fd800f752600937698ffd8a1
