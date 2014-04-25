@@ -1680,9 +1680,6 @@ struct UnpackedRecord {
 struct Index {
   char *zName;             /* Name of this index */
   i16 *aiColumn;           /* Which columns are used by this index.  1st is 0 */
-#if 0
-  tRowcnt *aiRowEst;       /* From ANALYZE: Est. rows selected by each column */
-#endif
   LogEst *aiRowLogEst;     /* From ANALYZE: Est. rows selected by each column */
   Table *pTable;           /* The SQL table being indexed */
   char *zColAff;           /* String defining the affinity of each column */
