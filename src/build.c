@@ -905,7 +905,7 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
-  pTable->nRowEst = 1048576;
+  pTable->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;
 
@@ -2730,15 +2730,15 @@ Index *sqlite3AllocateIndexObject(
 
   nByte = ROUND8(sizeof(Index)) +              /* Index structure  */
           ROUND8(sizeof(char*)*nCol) +         /* Index.azColl     */
-          ROUND8(sizeof(tRowcnt)*(nCol+1) +    /* Index.aiRowEst   */
+          ROUND8(sizeof(LogEst)*(nCol+1) +     /* Index.aiRowLogEst   */
                  sizeof(i16)*nCol +            /* Index.aiColumn   */
                  sizeof(u8)*nCol);             /* Index.aSortOrder */
   p = sqlite3DbMallocZero(db, nByte + nExtra);
   if( p ){
     char *pExtra = ((char*)p)+ROUND8(sizeof(Index));
-    p->azColl = (char**)pExtra;      pExtra += ROUND8(sizeof(char*)*nCol);
-    p->aiRowEst = (tRowcnt*)pExtra;  pExtra += sizeof(tRowcnt)*(nCol+1);
-    p->aiColumn = (i16*)pExtra;      pExtra += sizeof(i16)*nCol;
+    p->azColl = (char**)pExtra;       pExtra += ROUND8(sizeof(char*)*nCol);
+    p->aiRowLogEst = (LogEst*)pExtra; pExtra += sizeof(LogEst)*(nCol+1);
+    p->aiColumn = (i16*)pExtra;       pExtra += sizeof(i16)*nCol;
     p->aSortOrder = (u8*)pExtra;
     p->nColumn = nCol;
     p->nKeyCol = nCol - 1;
@@ -2968,7 +2968,7 @@ Index *sqlite3CreateIndex(
   if( db->mallocFailed ){
     goto exit_create_index;
   }
-  assert( EIGHT_BYTE_ALIGNMENT(pIndex->aiRowEst) );
+  assert( EIGHT_BYTE_ALIGNMENT(pIndex->aiRowLogEst) );
   assert( EIGHT_BYTE_ALIGNMENT(pIndex->azColl) );
   pIndex->zName = zExtra;
   zExtra += nName + 1;
@@ -3249,7 +3249,7 @@ exit_create_index:
 ** Since we do not know, guess 1 million.  aiRowEst[1] is an estimate of the
 ** number of rows in the table that match any particular value of the
 ** first column of the index.  aiRowEst[2] is an estimate of the number
-** of rows that match any particular combiniation of the first 2 columns
+** of rows that match any particular combination of the first 2 columns
 ** of the index.  And so forth.  It must always be the case that
 *
 **           aiRowEst[N]<=aiRowEst[N-1]
@@ -3260,6 +3260,7 @@ exit_create_index:
 ** are based on typical values found in actual indices.
 */
 void sqlite3DefaultRowEst(Index *pIdx){
+#if 0
   tRowcnt *a = pIdx->aiRowEst;
   int i;
   tRowcnt n;
@@ -3273,6 +3274,17 @@ void sqlite3DefaultRowEst(Index *pIdx){
   }
   if( pIdx->onError!=OE_None ){
     a[pIdx->nKeyCol] = 1;
+  }
+#endif
+  /*            1000000, 10,  9,  8,  7,  6,  5,  4,  3,  2 */
+  LogEst aVal[] = { 33, 32, 30, 28, 26, 23, 20, 16, 10 };
+  LogEst *a = pIdx->aiRowLogEst;
+  int nCopy = MIN(ArraySize(aVal), pIdx->nKeyCol);
+
+  a[0] = pIdx->pTable->nRowLogEst;
+  memcpy(&a[1], aVal, nCopy*sizeof(LogEst));
+  if( pIdx->onError!=OE_None ){
+    a[pIdx->nKeyCol] = 0;
   }
 }
 
