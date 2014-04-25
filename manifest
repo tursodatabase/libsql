@@ -1,5 +1,5 @@
-C Comment\stweaks\son\sthe\stest\scase\sfor\sthe\s[b75a9ca6b0]\sbug\sfix.
-D 2014-04-21T13:36:54.639
+C When\sVDBE_PROFILE\sis\senabled,\signore\snegative\sopcode\stimes,\swhich\ssometimes\noccur,\sperhaps\sdue\sto\scontext\sswaps.
+D 2014-04-25T12:35:31.621
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -278,7 +278,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c bf284edea1cee0508dc93c79a73498e0f317edb7
+F src/vdbe.c 699693bea6710ed436392c928b02cb4e91944137
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -1161,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P de9a490f594183f337a2ec9e0f87792eac83548b
-R ce888b84132e0cad3bcca115a32951d3
+P 65d2544af9adc1e2f1d193e57f8be0422fb0d5eb
+R c6b40d1b54d6305d3c2bd44472b1c76f
 U drh
-Z cf9f241149456ab1fa24984e95a412d2
+Z 6f02403cb59a60204ab5357a363dc55d
