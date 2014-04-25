@@ -1,5 +1,5 @@
-C When\sVDBE_PROFILE\sis\senabled,\signore\snegative\sopcode\stimes,\swhich\ssometimes\noccur,\sperhaps\sdue\sto\scontext\sswaps.
-D 2014-04-25T12:35:31.621
+C Make\ssure\sORDER\sBY\sclauses\son\sjoins\sthat\sinvolve\svirtual\stables\sand\sthat\nhave\sa\sDISTINCT\sclause\swork\scorrectly.\s\sThis\sis\sa\scandidate\sfix\sfor\nticket\s[388d01d4bb8f9].\s\sTest\scases\sfor\sthat\sticket\swill\sbe\schecked\sin\nseparately.
+D 2014-04-25T14:42:17.085
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 3b127bdc24b7aa84ffa69729170be11555cd7733
+F src/where.c 6ae02f1e8b1b29744d9e8cd9b95eac4c5232736d
 F src/whereInt.h 929c1349b5355fd44f22cee5c14d72b3329c58a6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1161,7 +1161,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 65d2544af9adc1e2f1d193e57f8be0422fb0d5eb
-R c6b40d1b54d6305d3c2bd44472b1c76f
+P 4e88042f9d3e678914da96c0eb276f3d8fca5a94
+R 1db9e5d4fb5773f03fcd55df7d35ffca
 U drh
-Z 6f02403cb59a60204ab5357a363dc55d
+Z 5fd090bfe2e284c7964226b5abb1772a

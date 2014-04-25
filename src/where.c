@@ -4857,14 +4857,6 @@ static i8 wherePathSatisfiesOrderBy(
   */
 
   assert( pOrderBy!=0 );
-
-  /* Sortability of virtual tables is determined by the xBestIndex method
-  ** of the virtual table itself */
-  if( pLast->wsFlags & WHERE_VIRTUALTABLE ){
-    testcase( nLoop>0 );  /* True when outer loops are one-row and match 
-                          ** no ORDER BY terms */
-    return pLast->u.vtab.isOrdered;
-  }
   if( nLoop && OptimizationDisabled(db, SQLITE_OrderByIdxJoin) ) return 0;
 
   nOrderBy = pOrderBy->nExpr;
@@ -4877,7 +4869,10 @@ static i8 wherePathSatisfiesOrderBy(
   for(iLoop=0; isOrderDistinct && obSat<obDone && iLoop<=nLoop; iLoop++){
     if( iLoop>0 ) ready |= pLoop->maskSelf;
     pLoop = iLoop<nLoop ? pPath->aLoop[iLoop] : pLast;
-    assert( (pLoop->wsFlags & WHERE_VIRTUALTABLE)==0 );
+    if( pLoop->wsFlags & WHERE_VIRTUALTABLE ){
+      if( pLoop->u.vtab.isOrdered ) obSat = obDone;
+      break;
+    }
     iCur = pWInfo->pTabList->a[pLoop->iTab].iCursor;
 
     /* Mark off any ORDER BY term X that is a column in the table of
