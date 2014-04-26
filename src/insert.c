@@ -1876,8 +1876,10 @@ static int xferOptimization(
     if( pDestCol->notNull && !pSrcCol->notNull ){
       return 0;    /* tab2 must be NOT NULL if tab1 is */
     }
-    if( (pDestCol->zDflt==0)!=(pSrcCol->zDflt==0) 
-     || (pDestCol->zDflt && strcmp(pDestCol->zDflt, pSrcCol->zDflt))
+    /* Default values for second and subsequent columns need to match. */
+    if( i>0
+     && ((pDestCol->zDflt==0)!=(pSrcCol->zDflt==0) 
+         || (pDestCol->zDflt && strcmp(pDestCol->zDflt, pSrcCol->zDflt)!=0))
     ){
       return 0;    /* Default values must be the same for all columns */
     }

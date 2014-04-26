@@ -30,8 +30,13 @@ foreach {tn tbls xfer} {
   2 { CREATE TABLE t1(a, b DEFAULT 'x'); CREATE TABLE t2(a, b) }             0
   3 { CREATE TABLE t1(a, b DEFAULT 'x'); CREATE TABLE t2(a, b DEFAULT 'x') } 1
   4 { CREATE TABLE t1(a, b DEFAULT NULL); CREATE TABLE t2(a, b) }            0
-  5 { CREATE TABLE t1(a DEFAULT 2, b); CREATE TABLE t2(a DEFAULT 1, b) }     0
+  5 { CREATE TABLE t1(a DEFAULT 2, b); CREATE TABLE t2(a DEFAULT 1, b) }     1
   6 { CREATE TABLE t1(a DEFAULT 1, b); CREATE TABLE t2(a DEFAULT 1, b) }     1
+  7 { CREATE TABLE t1(a DEFAULT 1, b DEFAULT 1);
+      CREATE TABLE t2(a DEFAULT 3, b DEFAULT 1) }                            1
+  8 { CREATE TABLE t1(a DEFAULT 1, b DEFAULT 1);
+      CREATE TABLE t2(a DEFAULT 3, b DEFAULT 3) }                            0
+
 } {
 
   execsql { DROP TABLE t1; DROP TABLE t2 }
@@ -46,5 +51,3 @@ foreach {tn tbls xfer} {
 }
 
 finish_test
-
-
