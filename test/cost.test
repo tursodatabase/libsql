@@ -1,0 +1,68 @@
+# 2014-04-26
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# 
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix cost
+
+
+do_execsql_test 1.1 {
+  CREATE TABLE t3(id INTEGER PRIMARY KEY, b NOT NULL);
+  CREATE TABLE t4(c, d, e);
+  CREATE UNIQUE INDEX i3 ON t3(b);
+  CREATE UNIQUE INDEX i4 ON t4(c, d);
+}
+do_eqp_test 1.2 {
+  SELECT e FROM t3, t4 WHERE b=c ORDER BY b, d;
+} {
+  0 0 0 {SCAN TABLE t3 USING COVERING INDEX i3} 
+  0 1 1 {SEARCH TABLE t4 USING INDEX i4 (c=?)}
+}
+
+
+do_execsql_test 2.1 {
+  CREATE TABLE t1(a, b);
+  CREATE INDEX i1 ON t1(a);
+}
+
+# It is better to use an index for ORDER BY than sort externally, even 
+# if the index is a non-covering index.
+do_eqp_test 2.2 {
+  SELECT * FROM t1 ORDER BY a;
+} {
+  0 0 0 {SCAN TABLE t1 USING INDEX i1}
+}
+
+do_execsql_test 3.1 {
+  CREATE TABLE t5(a INTEGER PRIMARY KEY,b,c,d,e,f,g);
+  CREATE INDEX t5b ON t5(b);
+  CREATE INDEX t5c ON t5(c);
+  CREATE INDEX t5d ON t5(d);
+  CREATE INDEX t5e ON t5(e);
+  CREATE INDEX t5f ON t5(f);
+  CREATE INDEX t5g ON t5(g);
+}
+
+do_eqp_test 3.2 {
+  SELECT a FROM t5 
+  WHERE b IS NULL OR c IS NULL OR d IS NULL 
+  ORDER BY a;
+} {
+  0 0 0 {SEARCH TABLE t5 USING INDEX t5b (b=?)} 
+  0 0 0 {SEARCH TABLE t5 USING INDEX t5c (c=?)} 
+  0 0 0 {SEARCH TABLE t5 USING INDEX t5d (d=?)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
+
+
+
+finish_test

@@ -4147,14 +4147,15 @@ static int whereLoopAddBtreeIndex(
           pNew->wsFlags |= WHERE_ONEROW;
         }
       }
-
+    }else if( eOp & WO_ISNULL ){
+      pNew->wsFlags |= WHERE_COLUMN_NULL;
     }else if( eOp & (WO_GT|WO_GE) ){
       testcase( eOp & WO_GT );
       testcase( eOp & WO_GE );
       pNew->wsFlags |= WHERE_COLUMN_RANGE|WHERE_BTM_LIMIT;
       pBtm = pTerm;
       pTop = 0;
-    }else if( (eOp & WO_ISNULL)==0 ){
+    }else{
       assert( eOp & (WO_LT|WO_LE) );
       testcase( eOp & WO_LT );
       testcase( eOp & WO_LE );
@@ -5225,9 +5226,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
             ** scans instead?
             */
             LogEst rScale, rSortCost;
-            assert( nOrderBy>0 );
+            assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
             rScale = sqlite3LogEst((nOrderBy-isOrdered)*100/nOrderBy) - 66;
-            rSortCost = nRowEst + estLog(nRowEst) + rScale;
+            rSortCost = nRowEst + estLog(nRowEst) + rScale + 16;
+
             /* TUNING: The cost of implementing DISTINCT using a B-TREE is
             ** also N*log(N) but it has a larger constant of proportionality.
             ** Multiply by 3.0. */
