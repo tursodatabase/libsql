@@ -1865,14 +1865,21 @@ static int xferOptimization(
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
   }
   for(i=0; i<pDest->nCol; i++){
-    if( pDest->aCol[i].affinity!=pSrc->aCol[i].affinity ){
+    Column *pDestCol = &pDest->aCol[i];
+    Column *pSrcCol = &pSrc->aCol[i];
+    if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
-    if( !xferCompatibleCollation(pDest->aCol[i].zColl, pSrc->aCol[i].zColl) ){
+    if( !xferCompatibleCollation(pDestCol->zColl, pSrcCol->zColl) ){
       return 0;    /* Collating sequence must be the same on all columns */
     }
-    if( pDest->aCol[i].notNull && !pSrc->aCol[i].notNull ){
+    if( pDestCol->notNull && !pSrcCol->notNull ){
       return 0;    /* tab2 must be NOT NULL if tab1 is */
+    }
+    if( (pDestCol->zDflt==0)!=(pSrcCol->zDflt==0) 
+     || (pDestCol->zDflt && strcmp(pDestCol->zDflt, pSrcCol->zDflt))
+    ){
+      return 0;    /* Default values must be the same for all columns */
     }
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){

@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\sensure\scorrect\soperation\sof\sjoins\swith\sa\svirtual\stable\nthat\sinclude\sDISTINCT\sand\sORDER\sBY\sclauses.\s\sVerification\sfor\sticket\n[388d01d4bb8f9].
-D 2014-04-25T17:37:16.863
+C Avoid\stransfering\srecords\sbetween\stables\sunless\sthe\sdefault\svalues\sfor\sall\scolumns\sare\sthe\ssame.\sFix\sfor\s[f67b41381a].
+D 2014-04-26T14:07:57.099
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c d8bb30535c8c0785876025a4a07f9074640a15d1
+F src/insert.c 08de23111439c650cac52861a5b80d10d9d40560
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -906,6 +906,7 @@ F test/tkt-d11f09d36e.test d999b548fef885d1d1afa49a0e8544ecf436869d
 F test/tkt-d635236375.test 9d37e988b47d87505bc9445be0ca447002df5d09
 F test/tkt-d82e3f3721.test bcc0dfba658d15bab30fd4a9320c9e35d214ce30
 F test/tkt-f3e5abed55.test d5a0126118142d13e27f6ce9f4c47096e9321c00
+F test/tkt-f67b41381a.test 18d3477b6fe82e6c5ec5e233d79642d7e6d0de77
 F test/tkt-f777251dc7a.test af6531446c64bfd268416f07b4df7be7f9c749d2
 F test/tkt-f7b4edec.test d998a08ff2b18b7f62edce8e3044317c45efe6c7
 F test/tkt-f973c7ac31.test 28ef85c7f015477916795246d8286aeda39d4ead
@@ -1162,7 +1163,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 171138122690faafde0dcab0201b90bdf02d3637
-R a91060e3dc13463e0dda2e961246be75
-U drh
-Z 5a55daa8fd800f752600937698ffd8a1
+P 5ada136f43ce744ae8c349eff39838eb44611b6e
+R 72b6179d3d1a0fd8f077c8cde285a253
+U dan
+Z 7eecc39cd60ba5323d907c2532e97144
