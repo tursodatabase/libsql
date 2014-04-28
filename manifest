@@ -1,5 +1,5 @@
-C Update\stest\sscript\sanalyze3.test\sto\saccount\sfor\sthe\sfact\sthat\sSQLite\snow\sprefers\sa\sfull-table\sscan\sover\sa\snon-covering\sindex\sscan\sthat\svisits\sa\slarge\spercentage\sof\sthe\stable\srows.
-D 2014-04-28T10:00:59.075
+C Add\san\sextra\scolumn\sto\sa\stable\sin\sanalyze9.test\sto\sgive\sthe\splanner\sa\slittle\smore\sreason\sto\sselect\san\sindex.
+D 2014-04-28T12:08:23.821
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -311,7 +311,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test d31defa011a561b938b4608d3538c1b4e0b5e92c
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test e219daa58fd8677c6a43d771798cf37d68f51d3e
+F test/analyze9.test 623e02a99a78fa12fe5def2fd559032d5d887e0f
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
@@ -1162,7 +1162,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 88a5758dcce891eb7be15432ebdc9f80071d413b
-R a1e1c4a3f11d62d0bb62f198394034d8
+P 35f46a55d866b9a87c1321aab8e0cfe86ccadb93
+R 8aefc1341eaf7a6ece9efb278712f5a6
 U dan
-Z fd306a356911acfe444509c2efb0dade
+Z ba7221d22e50ff31dad54b0ec475658f
