@@ -1,5 +1,5 @@
-C Modify\sinternal\sfunction\swhereLoopAdjustCost()\sso\sthat\sit\sdoes\snot\sprefer\sa\sskip-scan\sover\sa\sregular\sindex\sscan\seven\sif\sthe\sregular\sscan\suses\sa\ssubset\sof\sthe\sWHERE\sterms\sused\sby\sthe\sskip-scan.
-D 2014-04-28T09:35:31.541
+C Update\stest\sscript\sanalyze3.test\sto\saccount\sfor\sthe\sfact\sthat\sSQLite\snow\sprefers\sa\sfull-table\sscan\sover\sa\snon-covering\sindex\sscan\sthat\svisits\sa\slarge\spercentage\sof\sthe\stable\srows.
+D 2014-04-28T10:00:59.075
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -305,7 +305,7 @@ F test/alter4.test d6c011fa0d6227abba762498cafbb607c9609e93
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 1772936d66471c65221e437b6d1999c3a03166c4
-F test/analyze3.test 412f690dfe95b337475e3e78a84a85d25f6f125d
+F test/analyze3.test bf41f0f680dd1e0d44eed5e769531e93a5320275
 F test/analyze4.test eff2df19b8dd84529966420f29ea52edc6b56213
 F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test d31defa011a561b938b4608d3538c1b4e0b5e92c
@@ -1162,7 +1162,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d491de62fce69d93e89f65f7713972f7c2c451f7
-R a36e9b880c1d76e2d8cd1072dd5871be
+P 88a5758dcce891eb7be15432ebdc9f80071d413b
+R a1e1c4a3f11d62d0bb62f198394034d8
 U dan
-Z 07995bb3734998fef6b8bca04739721a
+Z fd306a356911acfe444509c2efb0dade
