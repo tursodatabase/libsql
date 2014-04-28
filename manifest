@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sestimating\sof\sthe\snumber\sof\srows\svisited\sby\sa\srange\sscan.
-D 2014-04-28T08:49:54.584
+C Modify\sinternal\sfunction\swhereLoopAdjustCost()\sso\sthat\sit\sdoes\snot\sprefer\sa\sskip-scan\sover\sa\sregular\sindex\sscan\seven\sif\sthe\sregular\sscan\suses\sa\ssubset\sof\sthe\sWHERE\sterms\sused\sby\sthe\sskip-scan.
+D 2014-04-28T09:35:31.541
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c d4efd09b7b2c3604e48b015199f5393578ed417b
+F src/where.c 263f8940aa21adabbc397590046f040c54aca5f4
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1162,7 +1162,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P dee204092421a239f9f60ab83c3a5b3e24d1baea
-R 3b87cec4307de74fea71def903d4f518
+P d491de62fce69d93e89f65f7713972f7c2c451f7
+R a36e9b880c1d76e2d8cd1072dd5871be
 U dan
-Z dce0ef4becf30f1f5b6dab0637076369
+Z 07995bb3734998fef6b8bca04739721a
