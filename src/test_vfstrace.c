@@ -678,7 +678,7 @@ static int vfstraceAccess(
   vfstrace_info *pInfo = (vfstrace_info*)pVfs->pAppData;
   sqlite3_vfs *pRoot = pInfo->pRootVfs;
   int rc;
-  vfstrace_printf(pInfo, "%s.xDelete(\"%s\",%d)",
+  vfstrace_printf(pInfo, "%s.xAccess(\"%s\",%d)",
                   pInfo->zVfsName, zPath, flags);
   rc = pRoot->xAccess(pRoot, zPath, flags, pResOut);
   vfstrace_print_errcode(pInfo, " -> %s", rc);
