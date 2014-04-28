@@ -1992,9 +1992,7 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
   if( pTerm ){
     if( pTerm->truthProb<=0 ){
       nRet += pTerm->truthProb;
-    }else if( pTerm->wtFlags & TERM_VNULL ){
-      nRet -= 10;        assert( 10==sqlite3LogEst(2) );
-    }else{
+    }else if( (pTerm->wtFlags & TERM_VNULL)==0 ){
       nRet -= 20;        assert( 20==sqlite3LogEst(4) );
     }
   }
@@ -2153,14 +2151,17 @@ static int whereRangeScanEst(
   UNUSED_PARAMETER(pBuilder);
 #endif
   assert( pLower || pUpper );
+  assert( pUpper==0 || (pUpper->wtFlags & TERM_VNULL)==0 );
   nNew = whereRangeAdjust(pLower, nOut);
   nNew = whereRangeAdjust(pUpper, nNew);
+
   /* TUNING: If there is both an upper and lower limit, assume the range is
   ** reduced by an additional 75%. This means that, by default, an open-ended
   ** range query (e.g. col > ?) is assumed to match 1/4 of the rows in the
   ** index. While a closed range (e.g. col BETWEEN ? AND ?) is estimated to
   ** match 1/64 of the index. */ 
   if( pLower && pUpper ) nNew -= 20;
+
   nOut -= (pLower!=0) + (pUpper!=0);
   if( nNew<10 ) nNew = 10;
   if( nNew<nOut ) nOut = nNew;
@@ -4446,6 +4447,7 @@ static int whereLoopAddBtree(
      && !whereUsablePartialIndex(pNew->iTab, pWC, pProbe->pPartIdxWhere) ){
       continue;  /* Partial index inappropriate for this query */
     }
+    rSize = pProbe->aiRowLogEst[0];
     pNew->u.btree.nEq = 0;
     pNew->u.btree.nSkip = 0;
     pNew->nLTerm = 0;
