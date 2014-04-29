@@ -35,6 +35,8 @@ struct Circle {
   double centerx;
   double centery;
   double radius;
+  double mxArea;
+  int eScoreType;
 };
 
 /*
@@ -50,11 +52,7 @@ static void circle_del(void *p){
 static int circle_geom(
   sqlite3_rtree_geometry *p,
   int nCoord, 
-#ifdef SQLITE_RTREE_INT_ONLY
-  sqlite3_int64 *aCoord,
-#else
-  double *aCoord, 
-#endif
+  sqlite3_rtree_dbl *aCoord,
   int *pRes
 ){
   int i;                          /* Iterator variable */
@@ -62,7 +60,12 @@ static int circle_geom(
   double xmin, xmax;              /* X dimensions of box being tested */
   double ymin, ymax;              /* X dimensions of box being tested */
 
-  if( p->pUser==0 ){
+  xmin = aCoord[0];
+  xmax = aCoord[1];
+  ymin = aCoord[2];
+  ymax = aCoord[3];
+  pCircle = (Circle *)p->pUser;
+  if( pCircle==0 ){
     /* If pUser is still 0, then the parameter values have not been tested
     ** for correctness or stored into a Circle structure yet. Do this now. */
 
@@ -108,13 +111,8 @@ static int circle_geom(
     pCircle->aBox[1].xmax = pCircle->centerx - pCircle->radius;
     pCircle->aBox[1].ymin = pCircle->centery;
     pCircle->aBox[1].ymax = pCircle->centery;
+    pCircle->mxArea = (xmax - xmin)*(ymax - ymin) + 1.0;
   }
-
-  pCircle = (Circle *)p->pUser;
-  xmin = aCoord[0];
-  xmax = aCoord[1];
-  ymin = aCoord[2];
-  ymax = aCoord[3];
 
   /* Check if any of the 4 corners of the bounding-box being tested lie 
   ** inside the circular region. If they do, then the bounding-box does
@@ -151,6 +149,170 @@ static int circle_geom(
   /* The specified bounding box does not intersect the circular region. Set
   ** the output variable to zero and return SQLITE_OK. */
   *pRes = 0;
+  return SQLITE_OK;
+}
+
+/*
+** Implementation of "circle" r-tree geometry callback using the 
+** 2nd-generation interface that allows scoring.
+*/
+static int circle_query_func(sqlite3_rtree_query_info *p){
+  int i;                          /* Iterator variable */
+  Circle *pCircle;                /* Structure defining circular region */
+  double xmin, xmax;              /* X dimensions of box being tested */
+  double ymin, ymax;              /* X dimensions of box being tested */
+  int nWithin = 0;                /* Number of corners inside the circle */
+
+  xmin = p->aCoord[0];
+  xmax = p->aCoord[1];
+  ymin = p->aCoord[2];
+  ymax = p->aCoord[3];
+  pCircle = (Circle *)p->pUser;
+  if( pCircle==0 ){
+    /* If pUser is still 0, then the parameter values have not been tested
+    ** for correctness or stored into a Circle structure yet. Do this now. */
+
+    /* This geometry callback is for use with a 2-dimensional r-tree table.
+    ** Return an error if the table does not have exactly 2 dimensions. */
+    if( p->nCoord!=4 ) return SQLITE_ERROR;
+
+    /* Test that the correct number of parameters (4) have been supplied,
+    ** and that the parameters are in range (that the radius of the circle 
+    ** radius is greater than zero). */
+    if( p->nParam!=4 || p->aParam[2]<0.0 ) return SQLITE_ERROR;
+
+    /* Allocate a structure to cache parameter data in. Return SQLITE_NOMEM
+    ** if the allocation fails. */
+    pCircle = (Circle *)(p->pUser = sqlite3_malloc(sizeof(Circle)));
+    if( !pCircle ) return SQLITE_NOMEM;
+    p->xDelUser = circle_del;
+
+    /* Record the center and radius of the circular region. One way that
+    ** tested bounding boxes that intersect the circular region are detected
+    ** is by testing if each corner of the bounding box lies within radius
+    ** units of the center of the circle. */
+    pCircle->centerx = p->aParam[0];
+    pCircle->centery = p->aParam[1];
+    pCircle->radius = p->aParam[2];
+    pCircle->eScoreType = (int)p->aParam[3];
+
+    /* Define two bounding box regions. The first, aBox[0], extends to
+    ** infinity in the X dimension. It covers the same range of the Y dimension
+    ** as the circular region. The second, aBox[1], extends to infinity in
+    ** the Y dimension and is constrained to the range of the circle in the
+    ** X dimension.
+    **
+    ** Then imagine each box is split in half along its short axis by a line
+    ** that intersects the center of the circular region. A bounding box
+    ** being tested can be said to intersect the circular region if it contains
+    ** points from each half of either of the two infinite bounding boxes.
+    */
+    pCircle->aBox[0].xmin = pCircle->centerx;
+    pCircle->aBox[0].xmax = pCircle->centerx;
+    pCircle->aBox[0].ymin = pCircle->centery + pCircle->radius;
+    pCircle->aBox[0].ymax = pCircle->centery - pCircle->radius;
+    pCircle->aBox[1].xmin = pCircle->centerx + pCircle->radius;
+    pCircle->aBox[1].xmax = pCircle->centerx - pCircle->radius;
+    pCircle->aBox[1].ymin = pCircle->centery;
+    pCircle->aBox[1].ymax = pCircle->centery;
+    pCircle->mxArea = 200.0*200.0;
+  }
+
+  /* Check if any of the 4 corners of the bounding-box being tested lie 
+  ** inside the circular region. If they do, then the bounding-box does
+  ** intersect the region of interest. Set the output variable to true and
+  ** return SQLITE_OK in this case. */
+  for(i=0; i<4; i++){
+    double x = (i&0x01) ? xmax : xmin;
+    double y = (i&0x02) ? ymax : ymin;
+    double d2;
+    
+    d2  = (x-pCircle->centerx)*(x-pCircle->centerx);
+    d2 += (y-pCircle->centery)*(y-pCircle->centery);
+    if( d2<(pCircle->radius*pCircle->radius) ) nWithin++;
+  }
+
+  /* Check if the bounding box covers any other part of the circular region.
+  ** See comments above for a description of how this test works. If it does
+  ** cover part of the circular region, set the output variable to true
+  ** and return SQLITE_OK. */
+  if( nWithin==0 ){
+    for(i=0; i<2; i++){
+      if( xmin<=pCircle->aBox[i].xmin 
+       && xmax>=pCircle->aBox[i].xmax 
+       && ymin<=pCircle->aBox[i].ymin 
+       && ymax>=pCircle->aBox[i].ymax 
+      ){
+        nWithin = 1;
+        break;
+      }
+    }
+  }
+
+  if( pCircle->eScoreType==1 ){
+    /* Depth first search */
+    p->rScore = p->iLevel;
+  }else if( pCircle->eScoreType==2 ){
+    /* Breadth first search */
+    p->rScore = 100 - p->iLevel;
+  }else if( pCircle->eScoreType==3 ){
+    /* Depth-first search, except sort the leaf nodes by area with
+    ** the largest area first */
+    if( p->iLevel==1 ){
+      p->rScore = 1.0 - (xmax-xmin)*(ymax-ymin)/pCircle->mxArea;
+      if( p->rScore<0.01 ) p->rScore = 0.01;
+    }else{
+      p->rScore = 0.0;
+    }
+  }else if( pCircle->eScoreType==4 ){
+    /* Depth-first search, except exclude odd rowids */
+    p->rScore = p->iLevel;
+    if( p->iRowid&1 ) nWithin = 0;
+  }else{
+    /* Breadth-first search, except exclude odd rowids */
+    p->rScore = 100 - p->iLevel;
+    if( p->iRowid&1 ) nWithin = 0;
+  }
+  if( nWithin==0 ){
+    p->eWithin = NOT_WITHIN;
+  }else if( nWithin>=4 ){
+    p->eWithin = FULLY_WITHIN;
+  }else{
+    p->eWithin = PARTLY_WITHIN;
+  }
+  return SQLITE_OK;
+}
+/*
+** Implementation of "breadthfirstsearch" r-tree geometry callback using the 
+** 2nd-generation interface that allows scoring.
+**
+**     ... WHERE id MATCH breadthfirstsearch($x0,$x1,$y0,$y1) ...
+**
+** It returns all entries whose bounding boxes overlap with $x0,$x1,$y0,$y1.
+*/
+static int bfs_query_func(sqlite3_rtree_query_info *p){
+  double x0,x1,y0,y1;        /* Dimensions of box being tested */
+  double bx0,bx1,by0,by1;    /* Boundary of the query function */
+
+  if( p->nParam!=4 ) return SQLITE_ERROR;
+  x0 = p->aCoord[0];
+  x1 = p->aCoord[1];
+  y0 = p->aCoord[2];
+  y1 = p->aCoord[3];
+  bx0 = p->aParam[0];
+  bx1 = p->aParam[1];
+  by0 = p->aParam[2];
+  by1 = p->aParam[3];
+  p->rScore = 100 - p->iLevel;
+  if( p->eParentWithin==FULLY_WITHIN ){
+    p->eWithin = FULLY_WITHIN;
+  }else if( x0>=bx0 && x1<=bx1 && y0>=by0 && y1<=by1 ){
+    p->eWithin = FULLY_WITHIN;
+  }else if( x1>=bx0 && x0<=bx1 && y1>=by0 && y0<=by1 ){
+    p->eWithin = PARTLY_WITHIN;
+  }else{
+    p->eWithin = NOT_WITHIN;
+  }
   return SQLITE_OK;
 }
 
@@ -194,11 +356,7 @@ static int gHere = 42;
 static int cube_geom(
   sqlite3_rtree_geometry *p,
   int nCoord,
-#ifdef SQLITE_RTREE_INT_ONLY
-  sqlite3_int64 *aCoord, 
-#else
-  double *aCoord, 
-#endif
+  sqlite3_rtree_dbl *aCoord,
   int *piRes
 ){
   Cube *pCube = (Cube *)p->pUser;
@@ -293,6 +451,14 @@ static int register_circle_geom(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   rc = sqlite3_rtree_geometry_callback(db, "circle", circle_geom, 0);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_rtree_query_callback(db, "Qcircle",
+                                      circle_query_func, 0, 0);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3_rtree_query_callback(db, "breadthfirstsearch",
+                                      bfs_query_func, 0, 0);
+  }
   Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 #endif
   return TCL_OK;
