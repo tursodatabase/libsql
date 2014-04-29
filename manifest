@@ -1,5 +1,5 @@
-C Do\snot\sreduce\sthe\snumber\sof\srows\sscanned\sat\sall\sfor\s"IS\sNOT\sNULL"\sconstraints.\sFix\sa\sbug\sin\scalculating\sthe\snumber\sof\srows\svisited\sby\sscans\sof\spartial\sindicies.
-D 2014-04-28T20:11:20.674
+C Fix\sa\stest\scase\sso\sthat\sit\supdates\ssqlite_stat1\sconsistently.
+D 2014-04-29T12:01:35.119
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -814,7 +814,7 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test bed8cbe9d554c8c27afb6c88500f704c86a9196f
-F test/skipscan2.test 5a4db0799c338ddbacb154aaa5589c0254b36a8d
+F test/skipscan2.test d77f79cdbba25f0f6f35298136cff21a7d7a553a
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1162,7 +1162,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4047ac75e2a8f0b330255501c42e4f04e5ab500d
-R fc72ae401d0e8a316c9dd5e0ec98069f
+P a8ae93f0cffa116df0ba34d46a53f49d42dace41
+R 176e01464114f39a9f52a0420836d3f7
 U dan
-Z f6f096240da2e8d5cf26af9c9310dce5
+Z 9c22069b17d97b138b62636ee980813e
