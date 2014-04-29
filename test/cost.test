@@ -66,10 +66,10 @@ do_eqp_test 3.2 {
 #-------------------------------------------------------------------------
 # If there is no likelihood() or stat3 data, SQLite assumes that a closed
 # range scan (e.g. one constrained by "col BETWEEN ? AND ?" constraint)
-# visits 1/16 of the rows in a table.
+# visits 1/64 of the rows in a table.
 #
-# Note: 1/17 =~ 0.058
-# Note: 1/15 =~ 0.067
+# Note: 1/63 =~ 0.016
+# Note: 1/65 =~ 0.015
 #
 reset_db
 do_execsql_test 4.1 {
@@ -78,12 +78,12 @@ do_execsql_test 4.1 {
   CREATE INDEX i2 ON t1(b);
 }
 do_eqp_test 4.2 {
-  SELECT * FROM t1 WHERE likelihood(a=?, 0.058) AND b BETWEEN ? AND ?;
+  SELECT * FROM t1 WHERE likelihood(a=?, 0.014) AND b BETWEEN ? AND ?;
 } {
   0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}
 }
 do_eqp_test 4.3 {
-  SELECT * FROM t1 WHERE likelihood(a=?, 0.067) AND b BETWEEN ? AND ?;
+  SELECT * FROM t1 WHERE likelihood(a=?, 0.016) AND b BETWEEN ? AND ?;
 } {
   0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b>? AND b<?)}
 }
@@ -100,14 +100,13 @@ do_execsql_test 5.1 {
 do_eqp_test 5.2 {
   SELECT * FROM t2 ORDER BY x, y;
 } {}
-#exit
 
-# TODO: Check this one out!!
-# set sqlite_where_trace 0xfff
 do_eqp_test 5.3 {
   SELECT * FROM t2 WHERE x BETWEEN ? AND ? ORDER BY rowid;
-} {}
-#exit
+} {
+  0 0 0 {SEARCH TABLE t2 USING INDEX t2i1 (x>? AND x<?)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
+}
 
 # where7.test, where8.test:
 #
@@ -117,11 +116,12 @@ do_execsql_test 6.1 {
   CREATE INDEX t3i2 ON t3(c);
 }
 
-#set sqlite_where_trace 0xfff
-# eqp.test
 do_eqp_test 6.2 {
   SELECT a FROM t3 WHERE (b BETWEEN 2 AND 4) OR c=100 ORDER BY a
 } {
+  0 0 0 {SEARCH TABLE t3 USING INDEX t3i1 (b>? AND b<?)} 
+  0 0 0 {SEARCH TABLE t3 USING INDEX t3i2 (c=?)}
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 
 #-------------------------------------------------------------------------
@@ -142,6 +142,9 @@ do_eqp_test 7.2 {
      WHERE (b>=950 AND b<=1010) OR (b IS NULL AND c NOT NULL)
   ORDER BY a
 } {
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)} 
+  0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)} 
+  0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 
 #set sqlite_where_trace 0xfff
@@ -150,8 +153,9 @@ do_eqp_test 7.3 {
   WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
-} {}
-#exit
+} {
+  0 0 0 {SCAN TABLE t1}
+}
 
 #-------------------------------------------------------------------------
 #
@@ -182,6 +186,10 @@ do_eqp_test 8.2 {
      AND unlikely(composer.cid=track.cid)
      AND unlikely(album.aid=track.aid);
 } {
+  0 0 2 {SCAN TABLE track} 
+  0 1 0 {SEARCH TABLE album USING INTEGER PRIMARY KEY (rowid=?)}
+  0 2 1 {SEARCH TABLE composer USING INTEGER PRIMARY KEY (rowid=?)}
+  0 0 0 {USE TEMP B-TREE FOR DISTINCT}
 }
 
 finish_test

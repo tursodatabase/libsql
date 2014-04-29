@@ -1,5 +1,5 @@
-C Fix\sa\stest\scase\sso\sthat\sit\supdates\ssqlite_stat1\sconsistently.
-D 2014-04-29T12:01:35.119
+C Ignore\slikelihood()\svalues\son\sindexed\sIPK\slookups.
+D 2014-04-29T16:10:22.104
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c da9c2c1d0c2ecf51ea3b7a27c826999972f24086
+F src/where.c 397bd5d4f402238c396d73b3c98b9fa2c312eea4
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -406,7 +406,7 @@ F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
 F test/corruptI.test b3e4203d420490fc3d3062711597bc1dea06a789
-F test/cost.test 84473f27749e0f3b6837a8e1403967010c347ca5
+F test/cost.test 62386ccac862ea9a808a0954037f430690974b0f
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1162,7 +1162,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a8ae93f0cffa116df0ba34d46a53f49d42dace41
-R 176e01464114f39a9f52a0420836d3f7
+P 2dc5a0b55567f13f0528ed17242e680cde2f2a29
+R b5feca3cdcf90dbcdc4d81625fcb13e8
 U dan
-Z 9c22069b17d97b138b62636ee980813e
+Z d7294cbb283905147264033ecb5a94d9

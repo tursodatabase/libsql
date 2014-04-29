@@ -4189,7 +4189,7 @@ static int whereLoopAddBtreeIndex(
       assert( eOp & (WO_ISNULL|WO_EQ|WO_IN) );
 
       assert( pNew->nOut==saved_nOut );
-      if( pTerm->truthProb<=0 ){
+      if( pTerm->truthProb<=0 && iCol>=0 ){
         assert( (eOp & WO_IN) || nIn==0 );
         pNew->nOut += pTerm->truthProb;
         pNew->nOut -= nIn;
