@@ -1,5 +1,5 @@
-C Merge\strunk\schanges\sinto\sthis\sbranch.
-D 2014-04-29T16:46:24.176
+C Test\sthat\sthe\sdefault\svalues\sused\swhen\ssqlite_stat1\sdata\sis\snot\savailable\sare\scalculated\scorrectly.\sFixes\sfor\sthe\ssame.
+D 2014-04-29T19:01:57.481
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 6c9b51abd404ce5b78b173b6f2248e8cb824758c
 F src/btree.h d79306df4ed9181b48916737fe8871a4392c4594
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
-F src/build.c 9f7b2ed2af66dd2d186c0835d1c2a672d1f768e0
+F src/build.c 02665ca158431a0926b10cbd7d8178a4c9fc4a22
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -407,7 +407,7 @@ F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
 F test/corruptI.test b3e4203d420490fc3d3062711597bc1dea06a789
-F test/cost.test 62386ccac862ea9a808a0954037f430690974b0f
+F test/cost.test 41b350fcc811a4fcccffbab06a3a79f33b8ea0de
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 5bb7757a7b32a74482d3e93e9c9eea02273fe981 af2cbe64adab5f9e3b0f3da00d06428088589d7f
-R 9c74729ef8e10b97c890b0be6d308bd3
+P d74299f037f3a6a4b3bce8b4d1c76c407c1f3b3e
+R e73cccb2b7e246d7f5476a97d396afde
 U dan
-Z e5760c6e9001de9044df542c0c7c165c
+Z 19f8efc43d85a395f7ff59d4035b6f55

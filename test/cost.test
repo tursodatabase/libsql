@@ -192,6 +192,51 @@ do_eqp_test 8.2 {
   0 0 0 {USE TEMP B-TREE FOR DISTINCT}
 }
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 9.1 {
+  CREATE TABLE t1(
+    a,b,c,d,e, f,g,h,i,j,
+    k,l,m,n,o, p,q,r,s,t
+  );
+  CREATE INDEX i1 ON t1(k,l,m,n,o,p,q,r,s,t);
+}
+do_test 9.2 {
+  for {set i 0} {$i < 100} {incr i} {
+    execsql { INSERT INTO t1 DEFAULT VALUES }
+  }
+  execsql {
+    ANALYZE;
+    CREATE INDEX i2 ON t1(a,b,c,d,e,f,g,h,i,j);
+  }
+} {}
+
+set L [list a=? b=? c=? d=? e=? f=? g=? h=? i=? j=?]
+foreach {tn nTerm nRow} {
+  1   1 10
+  2   2  9
+  3   3  8
+  4   4  7
+  5   5  6
+  6   6  5
+  7   7  5
+  8   8  5
+  9   9  5
+  10 10  5
+} {
+  set w [join [lrange $L 0 [expr $nTerm-1]] " AND "]
+  set p1 [expr ($nRow-1) / 100.0]
+  set p2 [expr ($nRow+1) / 100.0]
+
+  set sql1 "SELECT * FROM t1 WHERE likelihood(k=?, $p1) AND $w"
+  set sql2 "SELECT * FROM t1 WHERE likelihood(k=?, $p2) AND $w"
+
+  do_eqp_test 9.3.$tn.1 $sql1 {/INDEX i1/}
+  do_eqp_test 9.3.$tn.2 $sql2 {/INDEX i2/}
+}
+
+
+
 finish_test
 
 

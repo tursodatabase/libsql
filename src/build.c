@@ -3260,32 +3260,27 @@ exit_create_index:
 ** are based on typical values found in actual indices.
 */
 void sqlite3DefaultRowEst(Index *pIdx){
-#if 0
-  tRowcnt *a = pIdx->aiRowEst;
-  int i;
-  tRowcnt n;
-  assert( a!=0 );
-  a[0] = pIdx->pTable->nRowEst;
-  if( a[0]<10 ) a[0] = 10;
-  n = 10;
-  for(i=1; i<=pIdx->nKeyCol; i++){
-    a[i] = n;
-    if( n>5 ) n--;
-  }
-  if( pIdx->onError!=OE_None ){
-    a[pIdx->nKeyCol] = 1;
-  }
-#endif
-  /*            1000000, 10,  9,  8,  7,  6,  5,  4,  3,  2 */
-  LogEst aVal[] = { 33, 32, 30, 28, 26, 23, 20, 16, 10 };
+  /*                10,  9,  8,  7,  6 */
+  LogEst aVal[] = { 33, 32, 30, 28, 26 };
   LogEst *a = pIdx->aiRowLogEst;
   int nCopy = MIN(ArraySize(aVal), pIdx->nKeyCol);
+  int i;
 
+  /* Set the first entry (number of rows in the index) to the estimated 
+  ** number of rows in the table. Or 10, if the estimated number of rows 
+  ** in the table is less than that.  */
   a[0] = pIdx->pTable->nRowLogEst;
+  if( a[0]<33 ) a[0] = 33;        assert( 33==sqlite3LogEst(10) );
+
+  /* Estimate that a[1] is 10, a[2] is 9, a[3] is 8, a[4] is 7, a[5] is
+  ** 6 and each subsequent value (if any) is 5.  */
   memcpy(&a[1], aVal, nCopy*sizeof(LogEst));
-  if( pIdx->onError!=OE_None ){
-    a[pIdx->nKeyCol] = 0;
+  for(i=nCopy+1; i<=pIdx->nKeyCol; i++){
+    a[i] = 23;                    assert( 23==sqlite3LogEst(5) );
   }
+
+  assert( 0==sqlite3LogEst(1) );
+  if( pIdx->onError!=OE_None ) a[pIdx->nKeyCol] = 0;
 }
 
 /*
