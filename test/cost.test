@@ -99,7 +99,10 @@ do_execsql_test 5.1 {
 
 do_eqp_test 5.2 {
   SELECT * FROM t2 ORDER BY x, y;
-} {}
+} {
+  0 0 0 {SCAN TABLE t2 USING INDEX t2i1} 
+  0 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+}
 
 do_eqp_test 5.3 {
   SELECT * FROM t2 WHERE x BETWEEN ? AND ? ORDER BY rowid;

@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sout-of-date\scomments\sin\swhere.c.
-D 2014-04-30T14:47:01.628
+C Update\sa\scouple\sof\stest\scases\sto\saccount\sfor\sthe\sfact\sthat\sthis\sbranch\sprefers\san\sindex\sscan\sand\spartial\ssort\sover\sa\sfull-table\sscan\sand\sfull\sexternal\ssort.
+D 2014-04-30T14:53:21.345
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -407,7 +407,7 @@ F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
 F test/corruptI.test b3e4203d420490fc3d3062711597bc1dea06a789
-F test/cost.test 41b350fcc811a4fcccffbab06a3a79f33b8ea0de
+F test/cost.test 3f7904d623ef8dc6e55f2206db5ce0549077b438
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
 F test/crash.test fb9dc4a02dcba30d4aa5c2c226f98b220b2b959f
@@ -454,7 +454,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
-F test/eqp.test 57c6c604c2807fb5531731c5323133453c24afac
+F test/eqp.test 90b56d03a93a2e7bb90f88be6083a8ea53f11a0e
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 32910c8c595858245bb7ecfe3aa0f90eeae641af
-R 26fff8d56fc56eff56bc1e57cba958ab
+P eefeda32d54efbbdf7d20b719299eda48b891fae
+R 50e654a1c0b26308b8a927bcd26c6421
 U dan
-Z b9aa63fbb519903c6b0c5b0a6a8e051f
+Z f4d62e136a5d6e05753f5050c6fb0c4a
