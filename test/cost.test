@@ -150,12 +150,17 @@ do_eqp_test 7.2 {
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 
-#set sqlite_where_trace 0xfff
 do_eqp_test 7.3 {
   SELECT rowid FROM t1
   WHERE (+b IS NULL AND c NOT NULL AND d NOT NULL)
         OR (b NOT NULL AND c IS NULL AND d NOT NULL)
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+} {
+  0 0 0 {SCAN TABLE t1}
+}
+
+do_eqp_test 7.4 {
+  SELECT rowid FROM t1 WHERE (+b IS NULL AND c NOT NULL) OR c IS NULL
 } {
   0 0 0 {SCAN TABLE t1}
 }

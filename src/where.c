@@ -4738,7 +4738,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   int iCur;
   WhereClause tempWC;
   WhereLoopBuilder sSubBuild;
-  WhereOrSet sSum, sCur, sPrev;
+  WhereOrSet sSum, sCur;
   struct SrcList_item *pItem;
   
   pWC = pBuilder->pWC;
@@ -4794,6 +4794,7 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
           whereOrMove(&sSum, &sCur);
           once = 0;
         }else{
+          WhereOrSet sPrev;
           whereOrMove(&sPrev, &sSum);
           sSum.n = 0;
           for(i=0; i<sPrev.n; i++){
@@ -4812,7 +4813,19 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
       pNew->iSortIdx = 0;
       memset(&pNew->u, 0, sizeof(pNew->u));
       for(i=0; rc==SQLITE_OK && i<sSum.n; i++){
-        pNew->rRun = sSum.a[i].rRun;
+        /* TUNING: Currently sSum.a[i].rRun is set to the sum of the costs
+        ** of all sub-scans required by the OR-scan. However, due to rounding
+        ** errors, it may be that the cost of the OR-scan is equal to its
+        ** most expensive sub-scan. Add the smallest possible penalty 
+        ** (equivalent to multiplying the cost by 1.07) to ensure that 
+        ** this does not happen. Otherwise, for WHERE clauses such as the
+        ** following where there is an index on "y":
+        **
+        **     WHERE likelihood(x=?, 0.99) OR y=?
+        **
+        ** the planner may elect to "OR" together a full-table scan and an
+        ** index lookup. And other similarly odd results.  */
+        pNew->rRun = sSum.a[i].rRun + 1;
         pNew->nOut = sSum.a[i].nOut;
         pNew->prereq = sSum.a[i].prereq;
         rc = whereLoopInsert(pBuilder, pNew);
