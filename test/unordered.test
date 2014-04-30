@@ -42,7 +42,7 @@ foreach idxmode {ordered unordered} {
     1   "SELECT * FROM t1 ORDER BY a"
         {0 0 0 {SCAN TABLE t1 USING INDEX i1}}
         {0 0 0 {SCAN TABLE t1} 0 0 0 {USE TEMP B-TREE FOR ORDER BY}}
-    2   "SELECT * FROM t1 WHERE a >?"
+    2   "SELECT * FROM t1 WHERE a > 100"
         {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?)}}
         {0 0 0 {SCAN TABLE t1}}
     3   "SELECT * FROM t1 WHERE a = ? ORDER BY rowid"

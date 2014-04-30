@@ -1488,13 +1488,15 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp2(v, OP_Null, 0, 2);
       sqlite3VdbeAddOp2(v, OP_Integer,
                            (int)sqlite3LogEstToInt(pTab->szTabRow), 3);
-      sqlite3VdbeAddOp2(v, OP_Integer, (int)pTab->nRowEst, 4);
+      sqlite3VdbeAddOp2(v, OP_Integer, 
+          (int)sqlite3LogEstToInt(pTab->nRowLogEst), 4);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
         sqlite3VdbeAddOp2(v, OP_Integer,
                              (int)sqlite3LogEstToInt(pIdx->szIdxRow), 3);
-        sqlite3VdbeAddOp2(v, OP_Integer, (int)pIdx->aiRowEst[0], 4);
+        sqlite3VdbeAddOp2(v, OP_Integer, 
+            (int)sqlite3LogEstToInt(pIdx->aiRowLogEst[0]), 4);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       }
     }

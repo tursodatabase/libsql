@@ -80,11 +80,11 @@ do_execsql_test 2.1a {
   EXPLAIN QUERY PLAN
   SELECT * FROM t2 WHERE a=0 ORDER BY a, b, c;
 } {~/B-TREE/}
+
 do_execsql_test 2.1b {
   EXPLAIN QUERY PLAN
-  SELECT * FROM t1 WHERE a=0 ORDER BY a, b, c;
+  SELECT * FROM t1 WHERE likelihood(a=0, 0.05) ORDER BY a, b, c;
 } {/B-TREE/}
-
 
 do_execsql_test 2.2 {
   EXPLAIN QUERY PLAN
