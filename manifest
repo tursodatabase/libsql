@@ -1,5 +1,5 @@
-C Test\sthat\sthe\sdefault\svalues\sused\swhen\ssqlite_stat1\sdata\sis\snot\savailable\sare\scalculated\scorrectly.\sFixes\sfor\sthe\ssame.
-D 2014-04-29T19:01:57.481
+C Fix\slong-standing\stypos\sin\scomments.
+D 2014-04-30T13:19:09.070
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/shell.c 2afe7a7154e97be0c74c5feacf09626bda8493be
 F src/sqlite.h.in bde98816e1ba0c9ffef50afe7b32f4e5a8f54fe0
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 63656cfa5a8221c3eb1a182e97d61b1fe2dfd7da
+F src/sqliteInt.h b2947801eccefd7ba3e5f14e1353289351a83cf3
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -277,7 +277,7 @@ F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
-F src/util.c c46c90459ef9bdc0c6c73803cf4c55425b4771cf
+F src/util.c 2b5fb283a190aacdb286f7835a447c45b345b83c
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 699693bea6710ed436392c928b02cb4e91944137
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d74299f037f3a6a4b3bce8b4d1c76c407c1f3b3e
-R e73cccb2b7e246d7f5476a97d396afde
-U dan
-Z 19f8efc43d85a395f7ff59d4035b6f55
+P e2d42f909de85a0586389f2dc0e654f7af2e351a
+R cdeda4c4d8ae1ea7276fce5a8779e48d
+U drh
+Z 6915f97ffb226384426800091a7da39d
