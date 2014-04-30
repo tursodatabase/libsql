@@ -4022,8 +4022,13 @@ static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop){
 }
 
 /*
-** We have so far matched pBuilder->pNew->u.btree.nEq terms of the index pIndex.
-** Try to match one more.
+** We have so far matched pBuilder->pNew->u.btree.nEq terms of the 
+** index pIndex. Try to match one more.
+**
+** When this function is called, pBuilder->pNew->nOut contains the 
+** number of rows expected to be visited by filtering using the nEq 
+** terms only. If it is modified, this value is restored before this 
+** function returns.
 **
 ** If pProbe->tnum==0, that means pIndex is a fake index used for the
 ** INTEGER PRIMARY KEY.
@@ -4085,10 +4090,14 @@ static int whereLoopAddBtreeIndex(
 
   /* Consider using a skip-scan if there are no WHERE clause constraints
   ** available for the left-most terms of the index, and if the average
-  ** number of repeats in the left-most terms is at least 18.  The magic
-  ** number 18 was found by experimentation to be the payoff point where
-  ** skip-scan become faster than a full-scan.
-  */
+  ** number of repeats in the left-most terms is at least 18. 
+  **
+  ** The magic number 18 is selected on the basis that scanning 17 rows
+  ** is almost always quicker than an index seek (even though if the index
+  ** contains fewer than 2^17 rows we assume otherwise in other parts of
+  ** the code). And, even if it is not, it should not be too much slower. 
+  ** On the other hand, the extra seeks could end up being significantly
+  ** more expensive.  */
   assert( 42==sqlite3LogEst(18) );
   if( pTerm==0
    && saved_nEq==saved_nSkip
@@ -5226,23 +5235,27 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
                        pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
                        iLoop, pWLoop, &revMask);
           if( isOrdered>=0 && isOrdered<nOrderBy ){
-            /* TUNING: Estimated cost of sorting is N*log(N).
-            ** If the order-by clause has X terms but only the last Y terms
-            ** are out of order, then block-sorting will reduce the sorting
-            ** cost to N*log(N)*log(Y/X).  The log(Y/X) term is computed
-            ** by rScale.
-            ** TODO: Should the sorting cost get a small multiplier to help
-            ** discourage the use of sorting and encourage the use of index
-            ** scans instead?
-            */
+            /* TUNING: Estimated cost of a full external sort, where N is 
+            ** the number of rows to sort is:
+            **
+            **   cost = (3.0 * N * log(N)).
+            ** 
+            ** Or, if the order-by clause has X terms but only the last Y 
+            ** terms are out of order, then block-sorting will reduce the 
+            ** sorting cost to:
+            **
+            **   cost = (3.0 * N * log(N)) * (Y/X)
+            **
+            ** The (Y/X) term is implemented using stack variable rScale
+            ** below.  */
             LogEst rScale, rSortCost;
             assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
             rScale = sqlite3LogEst((nOrderBy-isOrdered)*100/nOrderBy) - 66;
             rSortCost = nRowEst + estLog(nRowEst) + rScale + 16;
 
             /* TUNING: The cost of implementing DISTINCT using a B-TREE is
-            ** also N*log(N) but it has a larger constant of proportionality.
-            ** Multiply by 3.0. */
+            ** similar but with a larger constant of proportionality. 
+            ** Multiply by an additional factor of 3.0.  */
             if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
               rSortCost += 16;
             }
