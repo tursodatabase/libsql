@@ -4349,6 +4349,29 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
 ** Add all WhereLoop objects for a single table of the join where the table
 ** is idenfied by pBuilder->pNew->iTab.  That table is guaranteed to be
 ** a b-tree table, not a virtual table.
+**
+** The costs (WhereLoop.rRun) of the b-tree loops added by this function
+** are calculated as follows:
+**
+** For a full scan, assuming the table (or index) contains nRow rows:
+**
+**     cost = nRow * 3.0                    // full-table scan
+**     cost = nRow * K                      // scan of covering index
+**     cost = nRow * (K+3.0)                // scan of non-covering index
+**
+** where K is a value between 1.1 and 3.0 set based on the relative 
+** estimated average size of the index and table records.
+**
+** For an index scan, where nVisit is the number of index rows visited
+** by the scan, and nSeek is the number of seek operations required on 
+** the index b-tree:
+**
+**     cost = nSeek * (log(nRow) + K * nVisit)          // covering index
+**     cost = nSeek * (log(nRow) + (K+3.0) * nVisit)    // non-covering index
+**
+** Normally, nSeek is 1. nSeek values greater than 1 come about if the 
+** WHERE clause includes "x IN (....)" terms used in place of "x=?". Or when 
+** implicit "x IN (SELECT x FROM tbl)" terms are added for skip-scans.
 */
 static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
