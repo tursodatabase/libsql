@@ -626,7 +626,8 @@ struct Pager {
   u8 ckptSyncFlags;           /* SYNC_NORMAL or SYNC_FULL for checkpoint */
   u8 walSyncFlags;            /* SYNC_NORMAL or SYNC_FULL for wal writes */
   u8 syncFlags;               /* SYNC_NORMAL or SYNC_FULL otherwise */
-  u8 tempFile;                /* zFilename is a temporary file */
+  u8 tempFile;                /* zFilename is a temporary or immutable file */
+  u8 noLock;                  /* Do not lock (except in WAL mode) */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
 
@@ -1089,9 +1090,9 @@ static int pagerUnlockDb(Pager *pPager, int eLock){
   assert( !pPager->exclusiveMode || pPager->eLock==eLock );
   assert( eLock==NO_LOCK || eLock==SHARED_LOCK );
   assert( eLock!=NO_LOCK || pagerUseWal(pPager)==0 );
-  if( isOpen(pPager->fd) && !pPager->tempFile ){
+  if( isOpen(pPager->fd) ){
     assert( pPager->eLock>=eLock );
-    rc = sqlite3OsUnlock(pPager->fd, eLock);
+    rc = pPager->noLock ? SQLITE_OK : sqlite3OsUnlock(pPager->fd, eLock);
     if( pPager->eLock!=UNKNOWN_LOCK ){
       pPager->eLock = (u8)eLock;
     }
@@ -1115,7 +1116,7 @@ static int pagerLockDb(Pager *pPager, int eLock){
 
   assert( eLock==SHARED_LOCK || eLock==RESERVED_LOCK || eLock==EXCLUSIVE_LOCK );
   if( pPager->eLock<eLock || pPager->eLock==UNKNOWN_LOCK ){
-    rc = sqlite3OsLock(pPager->fd, eLock);
+    rc = pPager->noLock ? SQLITE_OK : sqlite3OsLock(pPager->fd, eLock);
     if( rc==SQLITE_OK && (pPager->eLock!=UNKNOWN_LOCK||eLock==EXCLUSIVE_LOCK) ){
       pPager->eLock = (u8)eLock;
       IOTRACE(("LOCK %p %d\n", pPager, eLock))
@@ -4699,6 +4700,7 @@ int sqlite3PagerOpen(
           }
         }
 #endif
+        pPager->noLock = sqlite3_uri_boolean(zFilename, "nolock", 0);
         if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0
          || sqlite3_uri_boolean(zFilename, "immutable", 0) ){
             vfsFlags |= SQLITE_OPEN_READONLY;
@@ -4714,11 +4716,14 @@ int sqlite3PagerOpen(
     ** This branch is also run for an in-memory database. An in-memory
     ** database is the same as a temp-file that is never written out to
     ** disk and uses an in-memory rollback journal.
+    **
+    ** This branch also runs for files marked as immutable.
     */ 
 act_like_temp_file:
     tempFile = 1;
-    pPager->eState = PAGER_READER;
-    pPager->eLock = EXCLUSIVE_LOCK;
+    pPager->eState = PAGER_READER;     /* Pretend we already have a lock */
+    pPager->eLock = EXCLUSIVE_LOCK;    /* Pretend we are in EXCLUSIVE locking mode */
+    pPager->noLock = 1;                /* Do no locking */
     readOnly = (vfsFlags&SQLITE_OPEN_READONLY);
   }
 

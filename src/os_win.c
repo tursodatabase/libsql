@@ -275,7 +275,6 @@ struct winFile {
 #define WINFILE_RDONLY          0x02   /* Connection is read only */
 #define WINFILE_PERSIST_WAL     0x04   /* Persistent WAL mode */
 #define WINFILE_PSOW            0x10   /* SQLITE_IOCAP_POWERSAFE_OVERWRITE */
-#define WINFILE_NOLOCK          0x20   /* Never do any real locking */
 
 /*
  * The size of the buffer used by sqlite3_win32_write_debug().
@@ -2860,10 +2859,6 @@ static int winLock(sqlite3_file *id, int locktype){
   assert( id!=0 );
   OSTRACE(("LOCK file=%p, oldLock=%d(%d), newLock=%d\n",
            pFile->h, pFile->locktype, pFile->sharedLockByte, locktype));
-  if( pFile->ctrlFlags & WINFILE_NOLOCK ){
-    OSTRACE(("LOCK-NOP file=%p, rc=SQLITE_OK\n", pFile->h));
-    return SQLITE_OK;
-  }
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -2991,10 +2986,7 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   OSTRACE(("TEST-WR-LOCK file=%p, pResOut=%p\n", pFile->h, pResOut));
 
   assert( id!=0 );
-  if( pFile->ctrlFlags & WINFILE_NOLOCK ){
-    rc = 0;
-    OSTRACE(("TEST-WR-LOCK file=%p, rc=%d (nop)\n", pFile->h, rc));
-  }else if( pFile->locktype>=RESERVED_LOCK ){
+  if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
     OSTRACE(("TEST-WR-LOCK file=%p, rc=%d (local)\n", pFile->h, rc));
   }else{
@@ -3030,10 +3022,6 @@ static int winUnlock(sqlite3_file *id, int locktype){
   assert( locktype<=SHARED_LOCK );
   OSTRACE(("UNLOCK file=%p, oldLock=%d(%d), newLock=%d\n",
            pFile->h, pFile->locktype, pFile->sharedLockByte, locktype));
-  if( pFile->ctrlFlags & WINFILE_NOLOCK ){
-    OSTRACE(("UNLOCK-NOP file=%p, rc=SQLITE_OK\n", pFile->h));
-    return SQLITE_OK;
-  }
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     winUnlockFile(&pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
@@ -4703,9 +4691,6 @@ static int winOpen(
   }
   if( sqlite3_uri_boolean(zName, "psow", SQLITE_POWERSAFE_OVERWRITE) ){
     pFile->ctrlFlags |= WINFILE_PSOW;
-  }
-  if( sqlite3_uri_boolean(zName, "nolock", 0) ){
-    pFile->ctrlFlags |= WINFILE_NOLOCK;
   }
   pFile->lastErrno = NO_ERROR;
   pFile->zPath = zName;
