@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\scalculating\sthe\scosts\sof\s"OR"\sscans.
-D 2014-04-30T18:11:55.566
+C Update\sa\stest\scase\sin\swal2.test\sthat\sexplicitly\scorrupts\sa\schecksum\sin\sthe\swal\sfile\sto\saccount\sfor\sthe\sfact\sthat\sthe\sfirst\sbyte\sof\ssaid\schecksum\smay\sinitially\sbe\s0xFF.
+D 2014-05-01T10:19:16.340
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1057,7 +1057,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test ea8778d5b0df200adef2ca7c00c3c37d4375f772
 F test/wal.test 885f32b2b390b30b4aa3dbb0e568f8f78d40f5cc
-F test/wal2.test a8e3963abf6b232cf0b852b09b53665ef34007af
+F test/wal2.test 1f841d2048080d32f552942e333fd99ce541dada
 F test/wal3.test b22eb662bcbc148c5f6d956eaf94b047f7afe9c0
 F test/wal4.test 4744e155cd6299c6bd99d3eab1c82f77db9cdb3c
 F test/wal5.test 8f888b50f66b78821e61ed0e233ded5de378224b
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 90e36676476e8db00658772e6c938242f766d306
-R cf0f5a4a25fa17ee63b35d342904cb95
+P 9bbca48b42e4fe16f2188e18dc736da30a96435c
+R 82092de2428e80a3b03a937e23116b0e
 U dan
-Z 15897e765882c5d27e5f655ffd8d3c94
+Z f6ffad5e4f0572fc8e2909e59c29de84
