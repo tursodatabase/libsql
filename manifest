@@ -1,5 +1,5 @@
-C Add\sthe\simmutable=TRUE\squery\sparameter\sand\sSQLITE_IOCAP_IMMUTABLE,\seither\nof\swhich\sprevents\slocking\sof\sthe\sdatabase\sand\somits\stests\sfor\sexistance\nof\sjournal\sfiles.
-D 2014-05-01T01:13:08.624
+C Avoid\sunnecessary\sxUnlock\soperations\son\stemp\sfile.
+D 2014-05-01T01:20:05.808
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c 1662c40d22be162698a31725e836eede09e841ed
-F src/pager.c 5c296b584df0d675e2377196472ff8a993ad079d
+F src/pager.c 52b7f435cb06063ccb52ff7089dfbc7be613b9b2
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 84243f844417f888ab731841f7dbf95749f6e034
-R 5c0369593ee1e8996babaee6957b771b
+P 71f152c85d79ebd9ca48bc9c4c71fc4debaf2437
+R 936969710ee66727ffa03c716e1344c2
 U drh
-Z 54ea9e774afb5e969c7607c1ec92b0eb
+Z b6af320858436be94ae3e128e461e236
