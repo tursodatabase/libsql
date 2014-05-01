@@ -4200,6 +4200,7 @@ static int whereLoopAddBtreeIndex(
       assert( pNew->nOut==saved_nOut );
       if( pTerm->truthProb<=0 && iCol>=0 ){
         assert( (eOp & WO_IN) || nIn==0 );
+        testcase( eOp & WO_IN );
         pNew->nOut += pTerm->truthProb;
         pNew->nOut -= nIn;
         pNew->wsFlags |= WHERE_LIKELIHOOD;

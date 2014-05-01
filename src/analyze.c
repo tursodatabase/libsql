@@ -1390,9 +1390,15 @@ static void decodeIntArray(
       v = v*10 + c - '0';
       z++;
     }
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
     if( aOut ){
       aOut[i] = v;
-    }else{
+    }else
+#else
+    assert( aOut==0 );
+    UNUSED_PARAMETER(aOut);
+#endif
+    {
       aLog[i] = sqlite3LogEst(v);
     }
     if( *z==' ' ) z++;
