@@ -555,7 +555,10 @@ int sqlite3_exec(
 ** file that were written at the application level might have changed
 ** and that adjacent bytes, even bytes within the same sector are
 ** guaranteed to be unchanged.  The SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN
-** flag indicate that a file cannot be deleted when open.
+** flag indicate that a file cannot be deleted when open.  The
+** SQLITE_IOCAP_IMMUTABLE flag indicates that the file is on
+** read-only media and cannot be changed even by processes with
+** elevated privileges.
 */
 #define SQLITE_IOCAP_ATOMIC                 0x00000001
 #define SQLITE_IOCAP_ATOMIC512              0x00000002
@@ -570,6 +573,7 @@ int sqlite3_exec(
 #define SQLITE_IOCAP_SEQUENTIAL             0x00000400
 #define SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN  0x00000800
 #define SQLITE_IOCAP_POWERSAFE_OVERWRITE    0x00001000
+#define SQLITE_IOCAP_IMMUTABLE              0x00002000
 
 /*
 ** CAPI3REF: File Locking Levels
