@@ -1,5 +1,5 @@
-C Add\s#ifdefs\sfor\stest\scoverage.\s\sAdd\sa\stestcase().
-D 2014-05-01T20:24:21.190
+C Fix\san\sobscure\sproblem\sto\sdo\swith\stemp\sregister\sallocation\sthat\scould\soccur\sif\smore\sthan\sone\ssimple\sSELECT\swithin\sa\scompound\sSELECT\suses\sa\spartial\ssort.
+D 2014-05-01T20:26:48.793
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
-F src/select.c ed459f7f478a1e533d19c4b953693b3ffa2efd15
+F src/select.c 089c4d46f067a5cccae93524c6377f981ba99bd9
 F src/shell.c 2afe7a7154e97be0c74c5feacf09626bda8493be
 F src/sqlite.h.in bde98816e1ba0c9ffef50afe7b32f4e5a8f54fe0
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -279,7 +279,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c 2b5fb283a190aacdb286f7835a447c45b345b83c
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 699693bea6710ed436392c928b02cb4e91944137
+F src/vdbe.c 7f359193bf2366cc914a9ece093ebf284e56acdc
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -789,7 +789,7 @@ F test/select6.test e76bd10a56988f15726c097a5d5a7966fe82d3b2
 F test/select7.test 7fd2ef598cfabb6b9ff6ac13973b91d0527df49d
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test aebc2bb0c3bc44606125033cbcaac2c8d1f33a95
-F test/selectA.test 77adaffe9704cb80e301ebaeff4b107b58d435c5
+F test/selectA.test 64b88a80271c1710966e50e633380696b60a12a4
 F test/selectB.test 954e4e49cf1f896d61794e440669e03a27ceea25
 F test/selectC.test 871fb55d884d3de5943c4057ebd22c2459e71977
 F test/selectD.test b0f02a04ef7737decb24e08be2c39b9664b43394
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2b935bdea1452505f36dc8c7aad49e6c42f4eceb
-R a1dff26029b41608141f15cdd82c4ee9
-U drh
-Z 39b43641ac7d3a2ec2ad0946638e023c
+P be2702ce35c713b33c9b7689643b45fb0de6af2a
+R 31df819a20c9dcbfb809510504bd5463
+U dan
+Z aa2318c066a07655ea4b90fb2a4008ea

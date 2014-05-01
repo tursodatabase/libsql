@@ -4232,6 +4232,7 @@ case OP_SorterData: {
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
   rc = sqlite3VdbeSorterRowkey(pC, pOut);
+  assert( rc!=SQLITE_OK || (pOut->flags & MEM_Blob) );
   break;
 }
 

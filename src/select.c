@@ -466,15 +466,17 @@ static void pushOntoSorter(
 ){
   Vdbe *v = pParse->pVdbe;
   int nExpr = pSort->pOrderBy->nExpr;
-  int regBase = sqlite3GetTempRange(pParse, nExpr+2);
-  int regRecord = sqlite3GetTempReg(pParse);
+  int regRecord = ++pParse->nMem;
+  int regBase = pParse->nMem+1;
   int nOBSat = pSort->nOBSat;
   int op;
+
+  pParse->nMem += nExpr+2;        /* nExpr+2 registers allocated at regBase */
   sqlite3ExprCacheClear(pParse);
   sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, 0);
   sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
   sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+1, 1);
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nExpr+2-nOBSat, regRecord);
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nExpr+2-nOBSat,regRecord);
   if( nOBSat>0 ){
     int regPrevKey;   /* The first nOBSat columns of the previous row */
     int addrFirst;    /* Address of the OP_IfNot opcode */
@@ -511,10 +513,6 @@ static void pushOntoSorter(
     op = OP_IdxInsert;
   }
   sqlite3VdbeAddOp2(v, op, pSort->iECursor, regRecord);
-  if( nOBSat==0 ){
-    sqlite3ReleaseTempReg(pParse, regRecord);
-    sqlite3ReleaseTempRange(pParse, regBase, nExpr+2);
-  }
   if( pSelect->iLimit ){
     int addr1, addr2;
     int iLimit;
