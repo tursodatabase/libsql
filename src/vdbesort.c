@@ -1900,7 +1900,6 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
     SortSubtask *pTask = pIncr->pTask;
     sqlite3 *db = pTask->pSorter->db;
 
-    assert( eMode==INCRINIT_NORMAL || pIncr->bUseThread==1 );
     rc = vdbeIncrInitMerger(pTask, pIncr->pMerger, eMode);
 
     /* Set up the required files for pIncr. A multi-theaded IncrMerge object
