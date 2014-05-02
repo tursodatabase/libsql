@@ -477,7 +477,7 @@ parse.c:	$(TOP)/src/parse.y lemon $(TOP)/addopcodes.awk
 	mv parse.h parse.h.temp
 	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION $(TOP)/ext/rtree/sqlite3rtree.h
 	tclsh $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c

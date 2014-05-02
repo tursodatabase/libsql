@@ -21,6 +21,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix selectA
 
 ifcapable !compound {
   finish_test
@@ -1309,5 +1310,69 @@ do_execsql_test selectA-3.98 {
     )
   SELECT n FROM xyz ORDER BY +n;
 } {MAD MAD+ MAD++}
+
+#-------------------------------------------------------------------------
+# At one point the following code exposed a temp register reuse problem.
+#
+proc f {args} { return 1 }
+db func f f
+
+do_execsql_test 4.1.1 {
+  CREATE TABLE t4(a, b);
+  CREATE TABLE t5(c, d);
+
+  INSERT INTO t5 VALUES(1, 'x');
+  INSERT INTO t5 VALUES(2, 'x');
+  INSERT INTO t4 VALUES(3, 'x');
+  INSERT INTO t4 VALUES(4, 'x');
+
+  CREATE INDEX i1 ON t4(a);
+  CREATE INDEX i2 ON t5(c);
+}
+
+do_eqp_test 4.1.2 {
+  SELECT c, d FROM t5 
+  UNION ALL
+  SELECT a, b FROM t4 WHERE f()==f()
+  ORDER BY 1,2
+} {
+  1 0 0 {SCAN TABLE t5 USING INDEX i2} 
+  1 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  2 0 0 {SCAN TABLE t4 USING INDEX i1} 
+  2 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  0 0 0 {COMPOUND SUBQUERIES 1 AND 2 (UNION ALL)}
+}
+
+do_execsql_test 4.1.3 {
+  SELECT c, d FROM t5 
+  UNION ALL
+  SELECT a, b FROM t4 WHERE f()==f()
+  ORDER BY 1,2
+} {
+  1 x 2 x 3 x 4 x
+}
+
+do_execsql_test 4.2.1 {
+  CREATE TABLE t6(a, b);
+  CREATE TABLE t7(c, d);
+
+  INSERT INTO t7 VALUES(2, 9);
+  INSERT INTO t6 VALUES(3, 0);
+  INSERT INTO t6 VALUES(4, 1);
+  INSERT INTO t7 VALUES(5, 6);
+  INSERT INTO t6 VALUES(6, 0);
+  INSERT INTO t7 VALUES(7, 6);
+
+  CREATE INDEX i6 ON t6(a);
+  CREATE INDEX i7 ON t7(c);
+}
+
+do_execsql_test 4.2.2 {
+  SELECT c, f(d,c,d,c,d) FROM t7
+  UNION ALL
+  SELECT a, b FROM t6 
+  ORDER BY 1,2
+} {/2 . 3 . 4 . 5 . 6 . 7 ./}
+
 
 finish_test

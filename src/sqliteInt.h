@@ -538,10 +538,10 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 ** gives a possible range of values of approximately 1.0e986 to 1e-986.
 ** But the allowed values are "grainy".  Not every value is representable.
 ** For example, quantities 16 and 17 are both represented by a LogEst
-** of 40.  However, since LogEst quantatites are suppose to be estimates,
+** of 40.  However, since LogEst quantaties are suppose to be estimates,
 ** not exact values, this imprecision is not a problem.
 **
-** "LogEst" is short for "Logarithimic Estimate".
+** "LogEst" is short for "Logarithmic Estimate".
 **
 ** Examples:
 **      1 -> 0              20 -> 43          10000 -> 132
@@ -1486,7 +1486,7 @@ struct Table {
 #ifndef SQLITE_OMIT_CHECK
   ExprList *pCheck;    /* All CHECK constraints */
 #endif
-  tRowcnt nRowEst;     /* Estimated rows in table - from sqlite_stat1 table */
+  LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
   int tnum;            /* Root BTree node for this table (see note above) */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   i16 nCol;            /* Number of columns in this table */
@@ -1695,7 +1695,7 @@ struct UnpackedRecord {
 struct Index {
   char *zName;             /* Name of this index */
   i16 *aiColumn;           /* Which columns are used by this index.  1st is 0 */
-  tRowcnt *aiRowEst;       /* From ANALYZE: Est. rows selected by each column */
+  LogEst *aiRowLogEst;     /* From ANALYZE: Est. rows selected by each column */
   Table *pTable;           /* The SQL table being indexed */
   char *zColAff;           /* String defining the affinity of each column */
   Index *pNext;            /* The next index associated with the same table */
