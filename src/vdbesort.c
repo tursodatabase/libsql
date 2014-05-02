@@ -857,17 +857,16 @@ static void fileWriterWriteVarint(FileWriter *p, u64 iVal){
 ** Whether or not the file does end up memory mapped of course depends on 
 ** the specific VFS implementation.
 */
-static int vdbeSorterExtendFile(sqlite3_file *pFile, i64 nByte){
+static void vdbeSorterExtendFile(sqlite3_file *pFile, i64 nByte){
   int rc = sqlite3OsTruncate(pFile, nByte);
   if( rc==SQLITE_OK ){
     void *p = 0;
     sqlite3OsFetch(pFile, 0, nByte, &p);
     sqlite3OsUnfetch(pFile, 0, p);
   }
-  return rc;
 }
 #else
-# define vdbeSorterExtendFile(x,y) SQLITE_OK
+# define vdbeSorterExtendFile(x,y)
 #endif
 
 /*
@@ -907,8 +906,8 @@ static int vdbeSorterListToPMA(sqlite3 *db, const VdbeCursor *pCsr){
 
   /* Try to get the file to memory map */
   if( rc==SQLITE_OK ){
-    rc = vdbeSorterExtendFile(
-        pSorter->pTemp1, pSorter->iWriteOff + pSorter->nInMemory + 9
+    vdbeSorterExtendFile(
+      pSorter->pTemp1, pSorter->iWriteOff + pSorter->nInMemory + 9
     );
   }
 
@@ -1132,7 +1131,7 @@ int sqlite3VdbeSorterRewind(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
         assert( iWrite2==0 );
         rc = vdbeSorterOpenTempFile(db, &pTemp2);
         if( rc==SQLITE_OK ){
-          rc = vdbeSorterExtendFile(pTemp2, pSorter->iWriteOff);
+          vdbeSorterExtendFile(pTemp2, pSorter->iWriteOff);
         }
       }
 
