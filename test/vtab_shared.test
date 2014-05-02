@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix vtab_shared
 
 ifcapable !vtab||!shared_cache {
   finish_test
@@ -228,5 +229,51 @@ do_test vtab_shared_1.15.3 {
 
 db close
 db2 close
+
+#---------------------------------------------------------------
+# Test calling sqlite3_close() with vtabs on the disconnect list.
+#
+ifcapable rtree {
+  reset_db
+  do_test 2.1.1 {
+    sqlite3 db  test.db
+    sqlite3 db2 test.db
+  
+    # Create a virtual table using [db]. 
+    execsql {
+      CREATE VIRTUAL TABLE rt USING rtree(id, x1, x2);
+      INSERT INTO rt VALUES(1, 2 ,3);
+      SELECT * FROM rt;
+    }
+  
+    # Drop the virtual table using [db2]. The sqlite3_vtab object belonging
+    # to [db] is moved to the sqlite3.pDisconnect list.
+    execsql { DROP TABLE rt } db2
+  
+    # Immediately close [db]. At one point this would fail due to the 
+    # unfinalized statements held by the un-xDisconnect()ed sqlite3_vtab.
+    db close
+  } {}
+  db2 close
+}
+
+ifcapable fts3 {
+  # Same test as above, except using fts3 instead of rtree.
+  reset_db
+  do_test 2.2.1 {
+    sqlite3 db  test.db
+    sqlite3 db2 test.db
+    execsql {
+      CREATE VIRTUAL TABLE ft USING fts3;
+      INSERT INTO ft VALUES('hello world');
+      SELECT * FROM ft;
+    } 
+    execsql { DROP TABLE ft } db2
+    db close
+  } {}
+  db2 close
+}
+
 sqlite3_enable_shared_cache 0
 finish_test
+

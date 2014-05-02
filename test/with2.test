@@ -385,6 +385,33 @@ do_execsql_test 7.5 {
   )
 } {14 28 42}
 
+#-------------------------------------------------------------------------
+# At one point the following was causing an assertion failure and a 
+# memory leak.
+#
+do_execsql_test 8.1 {
+  CREATE TABLE t7(y);
+  INSERT INTO t7 VALUES(NULL);
+  CREATE VIEW v AS SELECT * FROM t7 ORDER BY y;
+}
+
+do_execsql_test 8.2 {
+  WITH q(a) AS (
+    SELECT 1
+    UNION 
+    SELECT a+1 FROM q, v WHERE a<5
+  )
+  SELECT * FROM q;
+} {1 2 3 4 5}
+
+do_execsql_test 8.3 {
+  WITH q(a) AS (
+    SELECT 1
+    UNION ALL
+    SELECT a+1 FROM q, v WHERE a<5
+  )
+  SELECT * FROM q;
+} {1 2 3 4 5}
 
 
 finish_test

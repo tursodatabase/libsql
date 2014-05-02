@@ -209,4 +209,42 @@ do_execsql_test skipscan1-4.1 {
   SELECT i FROM t4 WHERE h=8;
 } {9 9 9 9 9 9 9 9}
 
+# Make sure skip-scan cost computation in the query planner takes into
+# account the fact that the seek must occur multiple times.
+#
+# Prior to 2014-03-10, the costs were computed incorrectly which would
+# cause index t5i2 to be used instead of t5i1 on the skipscan1-5.3.
+#
+do_execsql_test skipscan1-5.1 {
+  CREATE TABLE t5(
+    id INTEGER PRIMARY KEY,
+    loc TEXT,
+    lang INTEGER,
+    utype INTEGER,
+    xa INTEGER,
+    xd INTEGER,
+    xh INTEGER
+  );
+  CREATE INDEX t5i1 on t5(loc, xh, xa, utype, lang);
+  CREATE INDEX t5i2 ON t5(xd,loc,utype,lang);
+  EXPLAIN QUERY PLAN
+    SELECT xh, loc FROM t5 WHERE loc >= 'M' AND loc < 'N';
+} {/.*COVERING INDEX t5i1 .*/}
+do_execsql_test skipscan1-5.2 {
+  ANALYZE;
+  DELETE FROM sqlite_stat1;
+  DROP TABLE IF EXISTS sqlite_stat4;
+  DROP TABLE IF EXISTS sqlite_stat3;
+  INSERT INTO sqlite_stat1 VALUES('t5','t5i1','2702931 3 2 2 2 2');
+  INSERT INTO sqlite_stat1 VALUES('t5','t5i2','2702931 686 2 2 2');
+  ANALYZE sqlite_master;
+} {}
+db cache flush
+do_execsql_test skipscan1-5.3 {
+  EXPLAIN QUERY PLAN
+    SELECT xh, loc FROM t5 WHERE loc >= 'M' AND loc < 'N';
+} {/.*COVERING INDEX t5i1 .*/}
+
+
+
 finish_test

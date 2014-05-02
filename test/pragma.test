@@ -1575,6 +1575,8 @@ do_test pragma-20.8 {
 forcedelete data_dir
 } ;# endif windows
 
+database_may_be_corrupt
+
 do_test 21.1 {
   # Create a corrupt database in testerr.db. And a non-corrupt at test.db.
   #
@@ -1600,11 +1602,16 @@ Multiple uses for byte 672 of page 15}
 set auxerr {*** in database aux ***
 Multiple uses for byte 672 of page 15}
 
+set mainerr {/{\*\*\* in database main \*\*\*
+Multiple uses for byte 672 of page 15}.*/}
+set auxerr {/{\*\*\* in database aux \*\*\*
+Multiple uses for byte 672 of page 15}.*/}
+
 do_test 22.2 {
   catch { db close }
   sqlite3 db testerr.db
   execsql { PRAGMA integrity_check }
-} [list $mainerr]
+} $mainerr
 
 do_test 22.3.1 {
   catch { db close }
@@ -1613,13 +1620,13 @@ do_test 22.3.1 {
     ATTACH 'testerr.db' AS 'aux';
     PRAGMA integrity_check;
   }
-} [list $auxerr]
+} $auxerr
 do_test 22.3.2 {
   execsql { PRAGMA main.integrity_check; }
 } {ok}
 do_test 22.3.3 {
   execsql { PRAGMA aux.integrity_check; }
-} [list $auxerr]
+} $auxerr
 
 do_test 22.4.1 {
   catch { db close }
@@ -1628,10 +1635,10 @@ do_test 22.4.1 {
     ATTACH 'test.db' AS 'aux';
     PRAGMA integrity_check;
   }
-} [list $mainerr]
+} $mainerr
 do_test 22.4.2 {
   execsql { PRAGMA main.integrity_check; }
-} [list $mainerr]
+} $mainerr
 do_test 22.4.3 {
   execsql { PRAGMA aux.integrity_check; }
 } {ok}
@@ -1680,4 +1687,5 @@ do_test 23.5 {
   }
 } {0 0 t1 y {} {NO ACTION} {NO ACTION} NONE}
 
+database_never_corrupt
 finish_test

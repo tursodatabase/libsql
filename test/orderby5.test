@@ -64,10 +64,28 @@ do_execsql_test 1.7 {
   EXPLAIN QUERY PLAN
   SELECT DISTINCT c, b, a FROM t1 WHERE +a=0;
 } {/B-TREE/}
-do_execsql_test 2.1 {
+
+# In some cases, it is faster to do repeated index lookups than it is to
+# sort.  But in other cases, it is faster to sort than to do repeated index
+# lookups.
+#
+do_execsql_test 2.1a {
+  CREATE TABLE t2(a,b,c);
+  CREATE INDEX t2bc ON t2(b,c);
+  ANALYZE;
+  INSERT INTO sqlite_stat1 VALUES('t1','t1bc','1000000 10 9');
+  INSERT INTO sqlite_stat1 VALUES('t2','t2bc','100 10 5');
+  ANALYZE sqlite_master;
+
   EXPLAIN QUERY PLAN
-  SELECT * FROM t1 WHERE a=0 ORDER BY a, b, c;
+  SELECT * FROM t2 WHERE a=0 ORDER BY a, b, c;
 } {~/B-TREE/}
+
+do_execsql_test 2.1b {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM t1 WHERE likelihood(a=0, 0.05) ORDER BY a, b, c;
+} {/B-TREE/}
+
 do_execsql_test 2.2 {
   EXPLAIN QUERY PLAN
   SELECT * FROM t1 WHERE +a=0 ORDER BY a, b, c;

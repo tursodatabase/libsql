@@ -5168,8 +5168,25 @@ static int winFullPathname(
 */
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   HANDLE h;
+#if defined(__CYGWIN__)
+  int nFull = pVfs->mxPathname+1;
+  char *zFull = sqlite3MallocZero( nFull );
+  void *zConverted = 0;
+  if( zFull==0 ){
+    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
+    return 0;
+  }
+  if( winFullPathname(pVfs, zFilename, nFull, zFull)!=SQLITE_OK ){
+    sqlite3_free(zFull);
+    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
+    return 0;
+  }
+  zConverted = winConvertFromUtf8Filename(zFull);
+  sqlite3_free(zFull);
+#else
   void *zConverted = winConvertFromUtf8Filename(zFilename);
   UNUSED_PARAMETER(pVfs);
+#endif
   if( zConverted==0 ){
     OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
     return 0;

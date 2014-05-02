@@ -116,6 +116,7 @@ static void renameParentFunc(
   int token;                      /* Type of token */
 
   UNUSED_PARAMETER(NotUsed);
+  if( zInput==0 || zOld==0 ) return;
   for(z=zInput; *z; z=z+n){
     n = sqlite3GetToken(z, &token);
     if( token==TK_REFERENCES ){

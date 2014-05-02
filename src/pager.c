@@ -1624,12 +1624,11 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
 
   if( !zMaster 
    || pPager->journalMode==PAGER_JOURNALMODE_MEMORY 
-   || pPager->journalMode==PAGER_JOURNALMODE_OFF 
+   || !isOpen(pPager->jfd)
   ){
     return SQLITE_OK;
   }
   pPager->setMaster = 1;
-  assert( isOpen(pPager->jfd) );
   assert( pPager->journalHdr <= pPager->journalOff );
 
   /* Calculate the length in bytes and the checksum of zMaster */
@@ -4889,15 +4888,17 @@ static int hasHotJournal(Pager *pPager, int *pExists){
     if( rc==SQLITE_OK && !locked ){
       Pgno nPage;                 /* Number of pages in database file */
 
-      /* Check the size of the database file. If it consists of 0 pages,
-      ** then delete the journal file. See the header comment above for 
-      ** the reasoning here.  Delete the obsolete journal file under
-      ** a RESERVED lock to avoid race conditions and to avoid violating
-      ** [H33020].
-      */
       rc = pagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
-        if( nPage==0 ){
+        /* If the database is zero pages in size, that means that either (1) the
+        ** journal is a remnant from a prior database with the same name where
+        ** the database file but not the journal was deleted, or (2) the initial
+        ** transaction that populates a new database is being rolled back.
+        ** In either case, the journal file can be deleted.  However, take care
+        ** not to delete the journal file if it is already open due to
+        ** journal_mode=PERSIST.
+        */
+        if( nPage==0 && !jrnlOpen ){
           sqlite3BeginBenignMalloc();
           if( pagerLockDb(pPager, RESERVED_LOCK)==SQLITE_OK ){
             sqlite3OsDelete(pVfs, pPager->zJournal, 0);

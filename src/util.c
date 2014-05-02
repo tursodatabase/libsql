@@ -1246,8 +1246,8 @@ LogEst sqlite3LogEstAdd(LogEst a, LogEst b){
 }
 
 /*
-** Convert an integer into a LogEst.  In other words, compute a
-** good approximatation for 10*log2(x).
+** Convert an integer into a LogEst.  In other words, compute an
+** approximation for 10*log2(x).
 */
 LogEst sqlite3LogEst(u64 x){
   static LogEst a[] = { 0, 2, 3, 5, 6, 7, 8, 9 };
