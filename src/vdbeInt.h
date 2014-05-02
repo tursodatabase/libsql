@@ -72,6 +72,7 @@ struct VdbeCursor {
   u8 nullRow;           /* True if pointing to a row with no data */
   u8 rowidIsValid;      /* True if lastRowid is valid */
   u8 deferredMoveto;    /* A call to sqlite3BtreeMoveto() is needed */
+  Bool isEphemeral:1;   /* True for an ephemeral table */
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
   Bool isTable:1;       /* True if a table requiring integer keys */
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
@@ -168,7 +169,6 @@ struct Mem {
   } u;
   int n;              /* Number of characters in string value, excluding '\0' */
   u16 flags;          /* Some combination of MEM_Null, MEM_Str, MEM_Dyn, etc. */
-  u8  memType;        /* Lower 5 bits of flags */
   u8  enc;            /* SQLITE_UTF8, SQLITE_UTF16BE, SQLITE_UTF16LE */
 #ifdef SQLITE_DEBUG
   Mem *pScopyFrom;    /* This Mem is a shallow copy of pScopyFrom */
@@ -195,6 +195,7 @@ struct Mem {
 #define MEM_Int       0x0004   /* Value is an integer */
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
+#define MEM_AffMask   0x001f   /* Mask of affinity bits */
 #define MEM_RowSet    0x0020   /* Value is a RowSet object */
 #define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
 #define MEM_Undefined 0x0080   /* Value is undefined */
@@ -208,7 +209,7 @@ struct Mem {
 ** string is \000 or \u0000 terminated
 */
 #define MEM_Term      0x0200   /* String rep is nul terminated */
-#define MEM_Dyn       0x0400   /* Need to call sqliteFree() on Mem.z */
+#define MEM_Dyn       0x0400   /* Need to call Mem.xDel() on Mem.z */
 #define MEM_Static    0x0800   /* Mem.z points to a static string */
 #define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
 #define MEM_Agg       0x2000   /* Mem.z points to an agg function context */
@@ -434,11 +435,10 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
-#define sqlite3VdbeMemStoreType(X)  (X)->memType = (u8)((X)->flags&0x1f)
-/* void sqlite3VdbeMemStoreType(Mem *pMem); */
 int sqlite3VdbeTransferError(Vdbe *p);
 
 int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
+void sqlite3VdbeSorterReset(sqlite3 *, VdbeSorter *);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);
@@ -456,6 +456,7 @@ int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 
 #ifdef SQLITE_DEBUG
 void sqlite3VdbeMemAboutToChange(Vdbe*,Mem*);
+int sqlite3VdbeCheckMemInvariants(Mem*);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY

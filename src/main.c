@@ -800,6 +800,7 @@ static void disconnectAllVtab(sqlite3 *db){
       }
     }
   }
+  sqlite3VtabUnlockList(db);
   sqlite3BtreeLeaveAll(db);
 #else
   UNUSED_PARAMETER(db);
@@ -3201,6 +3202,22 @@ int sqlite3_test_control(int op, ...){
     case SQLITE_TESTCTRL_ALWAYS: {
       int x = va_arg(ap,int);
       rc = ALWAYS(x);
+      break;
+    }
+
+    /*
+    **   sqlite3_test_control(SQLITE_TESTCTRL_BYTEORDER);
+    **
+    ** The integer returned reveals the byte-order of the computer on which
+    ** SQLite is running:
+    **
+    **       1     big-endian,    determined at run-time
+    **      10     little-endian, determined at run-time
+    **  432101     big-endian,    determined at compile-time
+    **  123410     little-endian, determined at compile-time
+    */ 
+    case SQLITE_TESTCTRL_BYTEORDER: {
+      rc = SQLITE_BYTEORDER*100 + SQLITE_LITTLEENDIAN*10 + SQLITE_BIGENDIAN;
       break;
     }
 

@@ -5135,15 +5135,29 @@ static int winFullPathname(
 ** Interfaces for opening a shared library, finding entry points
 ** within the shared library, and closing the shared library.
 */
-/*
-** Interfaces for opening a shared library, finding entry points
-** within the shared library, and closing the shared library.
-*/
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   HANDLE h;
+#if defined(__CYGWIN__)
+  int nFull = pVfs->mxPathname+1;
+  char *zFull = sqlite3MallocZero( nFull );
+  void *zConverted = 0;
+  if( zFull==0 ){
+    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
+    return 0;
+  }
+  if( winFullPathname(pVfs, zFilename, nFull, zFull)!=SQLITE_OK ){
+    sqlite3_free(zFull);
+    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
+    return 0;
+  }
+  zConverted = winConvertFromUtf8Filename(zFull);
+  sqlite3_free(zFull);
+#else
   void *zConverted = winConvertFromUtf8Filename(zFilename);
   UNUSED_PARAMETER(pVfs);
+#endif
   if( zConverted==0 ){
+    OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
     return 0;
   }
   if( osIsNT() ){
@@ -5158,6 +5172,7 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
     h = osLoadLibraryA((char*)zConverted);
   }
 #endif
+  OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)h));
   sqlite3_free(zConverted);
   return (void*)h;
 }
@@ -5166,12 +5181,17 @@ static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   winGetLastErrorMsg(osGetLastError(), nBuf, zBufOut);
 }
 static void (*winDlSym(sqlite3_vfs *pVfs,void *pH,const char *zSym))(void){
+  FARPROC proc;
   UNUSED_PARAMETER(pVfs);
-  return (void(*)(void))osGetProcAddressA((HANDLE)pH, zSym);
+  proc = osGetProcAddressA((HANDLE)pH, zSym);
+  OSTRACE(("DLSYM handle=%p, symbol=%s, address=%p\n",
+           (void*)pH, zSym, (void*)proc));
+  return (void(*)(void))proc;
 }
 static void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
   UNUSED_PARAMETER(pVfs);
   osFreeLibrary((HANDLE)pHandle);
+  OSTRACE(("DLCLOSE handle=%p\n", (void*)pHandle));
 }
 #else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
   #define winDlOpen  0

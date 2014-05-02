@@ -334,4 +334,25 @@ do_test alter4-8.2 {
   }
 } [list $::sql]
 
+
+# Test that a default value equal to -1 multipied by the smallest possible
+# 64-bit integer is correctly converted to a real.
+do_execsql_test alter4-9.1 {
+  CREATE TABLE t5(
+    a INTEGER DEFAULT -9223372036854775808,
+    b INTEGER DEFAULT (-(-9223372036854775808))
+  );
+  INSERT INTO t5 DEFAULT VALUES;
+}
+
+do_execsql_test alter4-9.2 { SELECT typeof(a), a, typeof(b), b FROM t5; } {
+  integer -9223372036854775808
+  real     9.22337203685478e+18
+}
+
+do_execsql_test alter4-9.3 { 
+  ALTER TABLE t5 ADD COLUMN c INTEGER DEFAULT (-(-9223372036854775808));
+  SELECT typeof(c), c FROM t5;
+} {real 9.22337203685478e+18}
+
 finish_test

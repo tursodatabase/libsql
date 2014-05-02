@@ -101,13 +101,13 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
 ** Compute the affinity string for table pTab, if it has not already been
 ** computed.  As an optimization, omit trailing SQLITE_AFF_NONE affinities.
 **
-** If the affinity exists (if it is no entirely SQLITE_AFF_NONE values and
+** If the affinity exists (if it is no entirely SQLITE_AFF_NONE values) and
 ** if iReg>0 then code an OP_Affinity opcode that will set the affinities
 ** for register iReg and following.  Or if affinities exists and iReg==0,
 ** then just set the P4 operand of the previous opcode (which should  be
 ** an OP_MakeRecord) to the affinity string.
 **
-** A column affinity string has one character column:
+** A column affinity string has one character per column:
 **
 **  Character      Column affinity
 **  ------------------------------
@@ -148,10 +148,9 @@ void sqlite3TableAffinity(Vdbe *v, Table *pTab, int iReg){
 
 /*
 ** Return non-zero if the table pTab in database iDb or any of its indices
-** have been opened at any point in the VDBE program beginning at location
-** iStartAddr throught the end of the program.  This is used to see if 
+** have been opened at any point in the VDBE program. This is used to see if 
 ** a statement of the form  "INSERT INTO <iDb, pTab> SELECT ..." can 
-** run without using temporary table for the results of the SELECT. 
+** run without using a temporary table for the results of the SELECT. 
 */
 static int readsTable(Parse *p, int iDb, Table *pTab){
   Vdbe *v = sqlite3GetVdbe(p);
@@ -1866,14 +1865,23 @@ static int xferOptimization(
     return 0;   /* Both tables must have the same INTEGER PRIMARY KEY */
   }
   for(i=0; i<pDest->nCol; i++){
-    if( pDest->aCol[i].affinity!=pSrc->aCol[i].affinity ){
+    Column *pDestCol = &pDest->aCol[i];
+    Column *pSrcCol = &pSrc->aCol[i];
+    if( pDestCol->affinity!=pSrcCol->affinity ){
       return 0;    /* Affinity must be the same on all columns */
     }
-    if( !xferCompatibleCollation(pDest->aCol[i].zColl, pSrc->aCol[i].zColl) ){
+    if( !xferCompatibleCollation(pDestCol->zColl, pSrcCol->zColl) ){
       return 0;    /* Collating sequence must be the same on all columns */
     }
-    if( pDest->aCol[i].notNull && !pSrc->aCol[i].notNull ){
+    if( pDestCol->notNull && !pSrcCol->notNull ){
       return 0;    /* tab2 must be NOT NULL if tab1 is */
+    }
+    /* Default values for second and subsequent columns need to match. */
+    if( i>0
+     && ((pDestCol->zDflt==0)!=(pSrcCol->zDflt==0) 
+         || (pDestCol->zDflt && strcmp(pDestCol->zDflt, pSrcCol->zDflt)!=0))
+    ){
+      return 0;    /* Default values must be the same for all columns */
     }
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){

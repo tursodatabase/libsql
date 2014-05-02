@@ -326,6 +326,7 @@ do_execsql_test 6.2 {
 reset_db
 sqlite3_db_config_lookaside db 0 0 0
 
+database_may_be_corrupt
 do_execsql_test 7.1 {
   CREATE TABLE t1(a, b);
   CREATE INDEX i1 ON t1(a, b);
@@ -365,6 +366,8 @@ do_execsql_test 7.5 {
   ANALYZE sqlite_master;
   SELECT * FROM t1 WHERE a = 5;
 } {5 5}
+
+database_never_corrupt
 
 #-------------------------------------------------------------------------
 #
@@ -563,7 +566,7 @@ foreach {tn schema} {
 drop_all_tables
 do_test 13.1 {
   execsql {
-    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t1(a, b, c, d);
     CREATE INDEX i1 ON t1(a);
     CREATE INDEX i2 ON t1(b, c);
   }
@@ -574,16 +577,16 @@ do_test 13.1 {
   execsql ANALYZE
 } {}
 do_eqp_test 13.2.1 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<15 AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<15 AND b<12
 } {/SEARCH TABLE t1 USING INDEX i1/}
 do_eqp_test 13.2.2 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<'15' AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<'15' AND b<12
 } {/SEARCH TABLE t1 USING INDEX i1/}
 do_eqp_test 13.3.1 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<100 AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<100 AND b<12
 } {/SEARCH TABLE t1 USING INDEX i2/}
 do_eqp_test 13.3.2 {
-  SELECT * FROM t1 WHERE a='abc' AND rowid<'100' AND b<20
+  SELECT * FROM t1 WHERE a='abc' AND rowid<'100' AND b<12
 } {/SEARCH TABLE t1 USING INDEX i2/}
 
 #-------------------------------------------------------------------------

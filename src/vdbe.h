@@ -65,7 +65,7 @@ struct VdbeOp {
   char *zComment;          /* Comment to improve readability */
 #endif
 #ifdef VDBE_PROFILE
-  int cnt;                 /* Number of times this instruction was executed */
+  u32 cnt;                 /* Number of times this instruction was executed */
   u64 cycles;              /* Total time spent executing this instruction */
 #endif
 #ifdef SQLITE_VDBE_COVERAGE
@@ -211,8 +211,11 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 #endif
 
 void sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,UnpackedRecord*);
-int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
+int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*,int);
 UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(KeyInfo *, char *, int, char **);
+
+typedef int (*RecordCompare)(int,const void*,UnpackedRecord*,int);
+RecordCompare sqlite3VdbeFindCompare(UnpackedRecord*);
 
 #ifndef SQLITE_OMIT_TRIGGER
 void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
@@ -269,11 +272,13 @@ void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
 # define VdbeCoverageIf(v,x) if(x)sqlite3VdbeSetLineNumber(v,__LINE__)
 # define VdbeCoverageAlwaysTaken(v) sqlite3VdbeSetLineNumber(v,2);
 # define VdbeCoverageNeverTaken(v) sqlite3VdbeSetLineNumber(v,1);
+# define VDBE_OFFSET_LINENO(x) (__LINE__+x)
 #else
 # define VdbeCoverage(v)
 # define VdbeCoverageIf(v,x)
 # define VdbeCoverageAlwaysTaken(v)
 # define VdbeCoverageNeverTaken(v)
+# define VDBE_OFFSET_LINENO(x) 0
 #endif
 
 #endif

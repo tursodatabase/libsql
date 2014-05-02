@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set ::testprefix capi3
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -1220,6 +1221,23 @@ sqlite3_finalize $STMT
 do_test capi3-19.1 {
   sqlite3_prepare_tkt3134 db
 } {}
+
+# Test that calling sqlite3_column_blob() on a TEXT value does not change
+# the return type of subsequent calls to sqlite3_column_type().
+#
+do_execsql_test 20.1 {
+  CREATE TABLE t4(x);
+  INSERT INTO t4 VALUES('abcdefghij');
+}
+do_test 20.2 {
+  set stmt [sqlite3_prepare db "SELECT * FROM t4" -1 dummy]
+  sqlite3_step $stmt
+} {SQLITE_ROW}
+do_test 20.3 { sqlite3_column_type $stmt 0 } {TEXT}
+do_test 20.4 { sqlite3_column_blob $stmt 0 } {abcdefghij}
+do_test 20.5 { sqlite3_column_type $stmt 0 } {TEXT}
+do_test 20.6 { sqlite3_finalize $stmt } SQLITE_OK
+
 
 # Tests of the interface when no VFS is registered.
 #

@@ -824,7 +824,7 @@ void sqlite3Pragma(
   ** size of historical compatibility.
   */
   case PragTyp_DEFAULT_CACHE_SIZE: {
-    static const int iLn = __LINE__+2;
+    static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList getCacheSize[] = {
       { OP_Transaction, 0, 0,        0},                         /* 0 */
       { OP_ReadCookie,  0, 1,        BTREE_DEFAULT_CACHE_SIZE},  /* 1 */
@@ -1087,7 +1087,7 @@ void sqlite3Pragma(
         ** file. Before writing to meta[6], check that meta[3] indicates
         ** that this really is an auto-vacuum capable database.
         */
-        static const int iLn = __LINE__+2;
+        static const int iLn = VDBE_OFFSET_LINENO(2);
         static const VdbeOpList setMeta6[] = {
           { OP_Transaction,    0,         1,                 0},    /* 0 */
           { OP_ReadCookie,     0,         1,         BTREE_LARGEST_ROOT_PAGE},
@@ -1488,13 +1488,15 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp2(v, OP_Null, 0, 2);
       sqlite3VdbeAddOp2(v, OP_Integer,
                            (int)sqlite3LogEstToInt(pTab->szTabRow), 3);
-      sqlite3VdbeAddOp2(v, OP_Integer, (int)pTab->nRowEst, 4);
+      sqlite3VdbeAddOp2(v, OP_Integer, 
+          (int)sqlite3LogEstToInt(pTab->nRowLogEst), 4);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
         sqlite3VdbeAddOp2(v, OP_Integer,
                              (int)sqlite3LogEstToInt(pIdx->szIdxRow), 3);
-        sqlite3VdbeAddOp2(v, OP_Integer, (int)pIdx->aiRowEst[0], 4);
+        sqlite3VdbeAddOp2(v, OP_Integer, 
+            (int)sqlite3LogEstToInt(pIdx->aiRowLogEst[0]), 4);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 4);
       }
     }
@@ -1790,7 +1792,7 @@ void sqlite3Pragma(
     ** messages have been generated, output OK.  Otherwise output the
     ** error message
     */
-    static const int iLn = __LINE__+2;
+    static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList endCode[] = {
       { OP_AddImm,      1, 0,        0},    /* 0 */
       { OP_IfNeg,       1, 0,        0},    /* 1 */
@@ -1875,7 +1877,7 @@ void sqlite3Pragma(
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zName),
          P4_DYNAMIC);
-      sqlite3VdbeAddOp2(v, OP_Move, 2, 4);
+      sqlite3VdbeAddOp3(v, OP_Move, 2, 4, 1);
       sqlite3VdbeAddOp3(v, OP_Concat, 4, 3, 2);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 2, 1);
       sqlite3VdbeJumpHere(v, addr);
@@ -1928,7 +1930,7 @@ void sqlite3Pragma(
           sqlite3VdbeAddOp0(v, OP_Halt);
           sqlite3VdbeJumpHere(v, jmp4);
           sqlite3VdbeJumpHere(v, jmp2);
-          sqlite3VdbeResolveLabel(v, jmp3);
+          sqlite3ResolvePartIdxLabel(pParse, jmp3);
         }
         sqlite3VdbeAddOp2(v, OP_Next, iDataCur, loopTop); VdbeCoverage(v);
         sqlite3VdbeJumpHere(v, loopTop-1);

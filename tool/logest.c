@@ -17,13 +17,7 @@
 **
 **      ./LogEst ARGS
 **
-** Arguments:
-**
-**    'x'    Multiple the top two elements of the stack
-**    '+'    Add the top two elements of the stack
-**    NUM    Convert NUM from integer to LogEst and push onto the stack
-**   ^NUM    Interpret NUM as a LogEst and push onto stack.
-**
+** See the showHelp() routine for a description of valid arguments.
 ** Examples:
 **
 ** To convert 123 from LogEst to integer:
@@ -89,7 +83,8 @@ static LogEst logEstFromDouble(double x){
   LogEst e;
   assert( sizeof(x)==8 && sizeof(a)==8 );
   if( x<=0.0 ) return -32768;
-  if( x<1.0 ) return -logEstFromDouble(1/x);
+  if( x<0.01 ) return -logEstFromDouble(1.0/x);
+  if( x<1.0 ) return logEstFromDouble(100.0*x) - 66;
   if( x<1024.0 ) return logEstFromInteger((sqlite3_uint64)(1024.0*x)) - 100;
   if( x<=2000000000.0 ) return logEstFromInteger((sqlite3_uint64)x);
   memcpy(&a, &x, 8);
@@ -97,12 +92,31 @@ static LogEst logEstFromDouble(double x){
   return e*10;
 }
 
+int isInteger(const char *z){
+  while( z[0]>='0' && z[0]<='9' ) z++;
+  return z[0]==0;
+}
+
 int isFloat(const char *z){
-  while( z[0] ){
-    if( z[0]=='.' || z[0]=='E' || z[0]=='e' ) return 1;
-    z++;
-  }
-  return 0;
+  char c;
+  while( ((c=z[0])>='0' && c<='9') || c=='.' || c=='E' || c=='e'
+          || c=='+' || c=='-'  ) z++;
+  return z[0]==0;
+}
+
+static void showHelp(const char *zArgv0){
+  printf("Usage: %s ARGS...\n", zArgv0);
+  printf("Arguments:\n"
+    "  NUM    Convert NUM from integer to LogEst and push onto the stack\n"
+    " ^NUM    Interpret NUM as a LogEst and push onto stack\n"
+    "  x      Multiple the top two elements of the stack\n"
+    "  +      Add the top two elements of the stack\n"
+    "  dup    Dupliate the top element on the stack\n"
+    "  inv    Take the reciprocal of the top of stack.  N = 1/N.\n"
+    "  log    Find the LogEst of the number on top of stack\n"
+    "  nlogn  Compute NlogN where N is the top of stack\n"
+  );
+  exit(1);
 }
 
 int main(int argc, char **argv){
@@ -111,30 +125,45 @@ int main(int argc, char **argv){
   LogEst a[100];
   for(i=1; i<argc; i++){
     const char *z = argv[i];
-    if( z[0]=='+' ){
+    if( strcmp(z,"+")==0 ){
       if( n>=2 ){
         a[n-2] = logEstAdd(a[n-2],a[n-1]);
         n--;
       }
-    }else if( z[0]=='x' ){
+    }else if( strcmp(z,"x")==0 ){
       if( n>=2 ){
         a[n-2] = logEstMultiply(a[n-2],a[n-1]);
         n--;
       }
+    }else if( strcmp(z,"dup")==0 ){
+      if( n>0 ){
+        a[n] = a[n-1];
+        n++;
+      }
+    }else if( strcmp(z,"log")==0 ){
+      if( n>0 ) a[n-1] = logEstFromInteger(a[n-1]) - 33;
+    }else if( strcmp(z,"nlogn")==0 ){
+      if( n>0 ) a[n-1] += logEstFromInteger(a[n-1]) - 33;
+    }else if( strcmp(z,"inv")==0 ){
+      if( n>0 ) a[n-1] = -a[n-1];
     }else if( z[0]=='^' ){
       a[n++] = atoi(z+1);
-    }else if( isFloat(z) ){
+    }else if( isInteger(z) ){
+      a[n++] = logEstFromInteger(atoi(z));
+    }else if( isFloat(z) && z[0]!='-' ){
       a[n++] = logEstFromDouble(atof(z));
     }else{
-      a[n++] = logEstFromInteger(atoi(z));
+      showHelp(argv[0]);
     }
   }
   for(i=n-1; i>=0; i--){
-    if( a[i]<0 ){
-      printf("%d (%f)\n", a[i], 1.0/(double)logEstToInt(-a[i]));
+    if( a[i]<-40 ){
+      printf("%5d (%f)\n", a[i], 1.0/(double)logEstToInt(-a[i]));
+    }else if( a[i]<10 ){
+      printf("%5d (%f)\n", a[i], logEstToInt(a[i]+100)/1024.0);
     }else{
       sqlite3_uint64 x = logEstToInt(a[i]+100)*100/1024;
-      printf("%d (%lld.%02lld)\n", a[i], x/100, x%100);
+      printf("%5d (%lld.%02lld)\n", a[i], x/100, x%100);
     }
   }
   return 0;

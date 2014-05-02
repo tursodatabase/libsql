@@ -29,6 +29,7 @@ static const char zHelp[] =
   "  --trace             Turn on SQL tracing\n"
   "  --utf16be           Set text encoding to UTF-16BE\n"
   "  --utf16le           Set text encoding to UTF-16LE\n"
+  "  --verify            Run additional verification steps.\n"
   "  --without-rowid     Use WITHOUT ROWID where appropriate\n"
 ;
 
@@ -51,6 +52,7 @@ static struct Global {
   int bReprepare;            /* True to reprepare the SQL on each rerun */
   int bSqlOnly;              /* True to print the SQL once only */
   int bExplain;              /* Print SQL with EXPLAIN prefix */
+  int bVerify;               /* Try to verify that results are correct */
   int szTest;                /* Scale factor for test iterations */
   const char *zWR;           /* Might be WITHOUT ROWID */
   const char *zNN;           /* Might be NOT NULL */
@@ -474,7 +476,7 @@ void testset_main(void){
   speedtest1_end_test();
 
 
-  n = g.szTest/2;
+  n = 25;
   speedtest1_begin_test(130, "%d SELECTS, numeric BETWEEN, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
@@ -492,12 +494,51 @@ void testset_main(void){
   speedtest1_end_test();
 
 
-  n = g.szTest/5;
+  n = 10;
   speedtest1_begin_test(140, "%d SELECTS, LIKE, unindexed", n);
   speedtest1_exec("BEGIN");
   speedtest1_prepare(
     "SELECT count(*), avg(b), sum(length(c)) FROM t1\n"
     " WHERE c LIKE ?1; -- %d times", n
+  );
+  for(i=1; i<=n; i++){
+    x1 = speedtest1_random()%maxb;
+    zNum[0] = '%';
+    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+    zNum[len] = '%';
+    zNum[len+1] = 0;
+    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+
+  n = 10;
+  speedtest1_begin_test(142, "%d SELECTS w/ORDER BY, unindexed", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_prepare(
+    "SELECT a, b, c FROM t1 WHERE c LIKE ?1\n"
+    " ORDER BY a; -- %d times", n
+  );
+  for(i=1; i<=n; i++){
+    x1 = speedtest1_random()%maxb;
+    zNum[0] = '%';
+    len = speedtest1_numbername(i, zNum+1, sizeof(zNum)-2);
+    zNum[len] = '%';
+    zNum[len+1] = 0;
+    sqlite3_bind_text(g.pStmt, 1, zNum, len, SQLITE_STATIC);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  n = 10; //g.szTest/5;
+  speedtest1_begin_test(145, "%d SELECTS w/ORDER BY and LIMIT, unindexed", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_prepare(
+    "SELECT a, b, c FROM t1 WHERE c LIKE ?1\n"
+    " ORDER BY a LIMIT 10; -- %d times", n
   );
   for(i=1; i<=n; i++){
     x1 = speedtest1_random()%maxb;
@@ -892,6 +933,183 @@ void testset_cte(void){
 
 }
 
+/* Generate two numbers between 1 and mx.  The first number is less than
+** the second.  Usually the numbers are near each other but can sometimes
+** be far apart.
+*/
+static void twoCoords(
+  int p1, int p2,                   /* Parameters adjusting sizes */
+  unsigned mx,                      /* Range of 1..mx */
+  unsigned *pX0, unsigned *pX1      /* OUT: write results here */
+){
+  unsigned d, x0, x1, span;
+
+  span = mx/100 + 1;
+  if( speedtest1_random()%3==0 ) span *= p1;
+  if( speedtest1_random()%p2==0 ) span = mx/2;
+  d = speedtest1_random()%span + 1;
+  x0 = speedtest1_random()%(mx-d) + 1;
+  x1 = x0 + d;
+  *pX0 = x0;
+  *pX1 = x1;
+}
+
+/* The following routine is an R-Tree geometry callback.  It returns
+** true if the object overlaps a slice on the Y coordinate between the
+** two values given as arguments.  In other words
+**
+**     SELECT count(*) FROM rt1 WHERE id MATCH xslice(10,20);
+**
+** Is the same as saying:
+**
+**     SELECT count(*) FROM rt1 WHERE y1>=10 AND y0<=20;
+*/
+static int xsliceGeometryCallback(
+  sqlite3_rtree_geometry *p,
+  int nCoord,
+  double *aCoord,
+  int *pRes
+){
+  *pRes = aCoord[3]>=p->aParam[0] && aCoord[2]<=p->aParam[1];
+  return SQLITE_OK;
+}
+
+/*
+** A testset for the R-Tree virtual table
+*/
+void testset_rtree(int p1, int p2){
+  unsigned i, n;
+  unsigned mxCoord;
+  unsigned x0, x1, y0, y1, z0, z1;
+  unsigned iStep;
+  int *aCheck = sqlite3_malloc( sizeof(int)*g.szTest*100 );
+
+  mxCoord = 15000;
+  n = g.szTest*100;
+  speedtest1_begin_test(100, "%d INSERTs into an r-tree", n);
+  speedtest1_exec("BEGIN");
+  speedtest1_exec("CREATE VIRTUAL TABLE rt1 USING rtree(id,x0,x1,y0,y1,z0,z1)");
+  speedtest1_prepare("INSERT INTO rt1(id,x0,x1,y0,y1,z0,z1)"
+                     "VALUES(?1,?2,?3,?4,?5,?6,?7)");
+  for(i=1; i<=n; i++){
+    twoCoords(p1, p2, mxCoord, &x0, &x1);
+    twoCoords(p1, p2, mxCoord, &y0, &y1);
+    twoCoords(p1, p2, mxCoord, &z0, &z1);
+    sqlite3_bind_int(g.pStmt, 1, i);
+    sqlite3_bind_int(g.pStmt, 2, x0);
+    sqlite3_bind_int(g.pStmt, 3, x1);
+    sqlite3_bind_int(g.pStmt, 4, y0);
+    sqlite3_bind_int(g.pStmt, 5, y1);
+    sqlite3_bind_int(g.pStmt, 6, z0);
+    sqlite3_bind_int(g.pStmt, 7, z1);
+    speedtest1_run();
+  }
+  speedtest1_exec("COMMIT");
+  speedtest1_end_test();
+
+  speedtest1_begin_test(101, "Copy from rtree to a regular table");
+  speedtest1_exec("CREATE TABLE t1(id INTEGER PRIMARY KEY,x0,x1,y0,y1,z0,z1)");
+  speedtest1_exec("INSERT INTO t1 SELECT * FROM rt1");
+  speedtest1_end_test();
+
+  n = g.szTest*20;
+  speedtest1_begin_test(110, "%d one-dimensional intersect slice queries", n);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x0>=?1 AND x1<=?2");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  if( g.bVerify ){
+    n = g.szTest*20;
+    speedtest1_begin_test(111, "Verify result from 1-D intersect slice queries");
+    speedtest1_prepare("SELECT count(*) FROM t1 WHERE x0>=?1 AND x1<=?2");
+    iStep = mxCoord/n;
+    for(i=0; i<n; i++){
+      sqlite3_bind_int(g.pStmt, 1, i*iStep);
+      sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+      speedtest1_run();
+      if( aCheck[i]!=atoi(g.zResult) ){
+        fatal_error("Count disagree step %d: %d..%d.  %d vs %d",
+                    i, i*iStep, (i+1)*iStep, aCheck[i], atoi(g.zResult));
+      }
+    }
+    speedtest1_end_test();
+  }
+  
+  n = g.szTest*20;
+  speedtest1_begin_test(120, "%d one-dimensional overlap slice queries", n);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE y1>=?1 AND y0<=?2");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  if( g.bVerify ){
+    n = g.szTest*20;
+    speedtest1_begin_test(121, "Verify result from 1-D overlap slice queries");
+    speedtest1_prepare("SELECT count(*) FROM t1 WHERE y1>=?1 AND y0<=?2");
+    iStep = mxCoord/n;
+    for(i=0; i<n; i++){
+      sqlite3_bind_int(g.pStmt, 1, i*iStep);
+      sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+      speedtest1_run();
+      if( aCheck[i]!=atoi(g.zResult) ){
+        fatal_error("Count disagree step %d: %d..%d.  %d vs %d",
+                    i, i*iStep, (i+1)*iStep, aCheck[i], atoi(g.zResult));
+      }
+    }
+    speedtest1_end_test();
+  }
+  
+
+  n = g.szTest*20;
+  speedtest1_begin_test(125, "%d custom geometry callback queries", n);
+  sqlite3_rtree_geometry_callback(g.db, "xslice", xsliceGeometryCallback, 0);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE id MATCH xslice(?1,?2)");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+    speedtest1_run();
+    if( aCheck[i]!=atoi(g.zResult) ){
+      fatal_error("Count disagree step %d: %d..%d.  %d vs %d",
+                  i, i*iStep, (i+1)*iStep, aCheck[i], atoi(g.zResult));
+    }
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*80;
+  speedtest1_begin_test(130, "%d three-dimensional intersect box queries", n);
+  speedtest1_prepare("SELECT count(*) FROM rt1 WHERE x1>=?1 AND x0<=?2"
+                     " AND y1>=?1 AND y0<=?2 AND z1>=?1 AND z0<=?2");
+  iStep = mxCoord/n;
+  for(i=0; i<n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i*iStep);
+    sqlite3_bind_int(g.pStmt, 2, (i+1)*iStep);
+    speedtest1_run();
+    aCheck[i] = atoi(g.zResult);
+  }
+  speedtest1_end_test();
+
+  n = g.szTest*100;
+  speedtest1_begin_test(140, "%d rowid queries", n);
+  speedtest1_prepare("SELECT * FROM rt1 WHERE id=?1");
+  for(i=1; i<=n; i++){
+    sqlite3_bind_int(g.pStmt, 1, i);
+    speedtest1_run();
+  }
+  speedtest1_end_test();
+}
+
 /*
 ** A testset used for debugging speedtest1 itself.
 */
@@ -1011,6 +1229,8 @@ int main(int argc, char **argv){
         zEncoding = "utf16le";
       }else if( strcmp(z,"utf16be")==0 ){
         zEncoding = "utf16be";
+      }else if( strcmp(z,"verify")==0 ){
+        g.bVerify = 1;
       }else if( strcmp(z,"without-rowid")==0 ){
         g.zWR = "WITHOUT ROWID";
         g.zPK = "PRIMARY KEY";
@@ -1102,8 +1322,11 @@ int main(int argc, char **argv){
     testset_debug1();
   }else if( strcmp(zTSet,"cte")==0 ){
     testset_cte();
+  }else if( strcmp(zTSet,"rtree")==0 ){
+    testset_rtree(6, 147);
   }else{
-    fatal_error("unknown testset: \"%s\"\n", zTSet);
+    fatal_error("unknown testset: \"%s\"\nChoices: main debug1 cte rtree\n",
+                 zTSet);
   }
   speedtest1_final();
 
