@@ -1,9 +1,9 @@
-C Do\snot\srun\sthe\svdbeRecordCompareDebug()\sassert\sif\spKeyInfo->db\sis\sNULL\ssince\nin\sthat\scase\sthere\swould\sbe\sno\sway\sto\scheck\sfor\sa\smemory\sallocation\sfailure.
-D 2014-05-02T18:46:52.058
+C Fix\stypo\sin\sWindows\smakefile.\s\sMake\ssure\sthe\sWaitForSingleObjectEx\ssystem\scall\sis\salways\savailable.
+D 2014-05-02T19:12:37.015
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 153eb9b9725bc7b8e4dbe963219298e0c4a644b0
+F Makefile.msc 7d6981e8e14d8189a2a2f9b4a485f40b2032cb2e
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -205,7 +205,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
-F src/os_win.c 8245fe9184300e641d02e29a8ca95cefe0cb0fd0
+F src/os_win.c 187fad4d385b3b26ec6fd4b703b1b087ad6a5c4d
 F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P d9549de31741239ece060e448b592ce8fc5b8042
-R bd79c5eed170ef831b62fddde9ae2198
-U drh
-Z beeab334f565837c4ac52f73c3e92e7b
+P 63ed2d6acb82be8a74dbf6a61388be6da6113985
+R 820b790c56c4122e03b250f07fbb06ef
+U mistachkin
+Z 87a0e192077836669877b548f0fe55d8
