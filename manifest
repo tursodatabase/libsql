@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sproblem\sto\sdo\swith\stemp\sregister\sallocation\sthat\scould\soccur\sif\smore\sthan\sone\ssimple\sSELECT\swithin\sa\scompound\sSELECT\suses\sa\spartial\ssort.
-D 2014-05-01T20:26:48.793
+C Add\sa\scomment\sexplaining\swhy\sWhereLoop\scost\sadjustments\sare\somitted\sfor\nskip-scan\sloops.
+D 2014-05-02T00:09:40.134
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -292,7 +292,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 9e67d6c48006445d964bc835ea82500c190c3a6f
+F src/where.c 91dfd382273c3f67fcdc0ac4728f9140f91c6ab3
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P be2702ce35c713b33c9b7689643b45fb0de6af2a
-R 31df819a20c9dcbfb809510504bd5463
-U dan
-Z aa2318c066a07655ea4b90fb2a4008ea
+P 427409ae106cdab7892a6b50fe30c5f52de5addc
+R ee65c8e54ebb299c9693aee246a7e200
+U drh
+Z 5a37e5aacc1e047352493d523b6fb849

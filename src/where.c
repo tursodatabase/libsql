@@ -3783,6 +3783,17 @@ static int whereLoopCheaperProperSubset(
 ** To say "WhereLoop X is a proper subset of Y" means that X uses fewer
 ** WHERE clause terms than Y and that every WHERE clause term used by X is
 ** also used by Y.
+**
+** This adjustment is omitted for SKIPSCAN loops.  In a SKIPSCAN loop, the
+** WhereLoop.nLTerm field is not an accurate measure of the number of WHERE
+** clause terms covered, since some of the first nLTerm entries in aLTerm[]
+** will be NULL (because they are skipped).  That makes it more difficult
+** to compare the loops.  We could add extra code to do the comparison, and
+** perhaps we will someday.  But SKIPSCAN is sufficiently uncommon, and this
+** adjustment is sufficient minor, that it is very difficult to construct
+** a test case where the extra code would improve the query plan.  Better
+** to avoid the added complexity and just omit cost adjustments to SKIPSCAN
+** loops.
 */
 static void whereLoopAdjustCost(const WhereLoop *p, WhereLoop *pTemplate){
   if( (pTemplate->wsFlags & WHERE_INDEXED)==0 ) return;
