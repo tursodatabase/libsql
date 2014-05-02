@@ -1,5 +1,5 @@
-C Remove\sa\sfaulty\sassert()\sfrom\svdbesort.c.
-D 2014-05-02T16:03:57.598
+C Fix\ssome\sbroken\sasserts\sin\sbtree.c\sand\svdbeaux.c\sthat\smay\sfail\sfollowing\san\sOOM\serror.
+D 2014-05-02T17:12:41.912
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -164,7 +164,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 1e8fa0e597f73cc1b144285065f175f5a661ee75
+F src/btree.c e14daeed62b5b1499835a6523f9a47d660c297c8
 F src/btree.h d79306df4ed9181b48916737fe8871a4392c4594
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 9ea11e29230d8f454580870465354c707bd42851
@@ -283,7 +283,7 @@ F src/vdbe.c b50cd3009a2e3067746c73dce36153f19df2e42e
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h c78ace64dc37495806dd50596eded1f6cd2b5a64
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c 8289ed68e2262844334461ccb1b91c4d55b29b0b
+F src/vdbeaux.c 6e6993fa4be39ab96bdd565994bee8ec3bef06ab
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 0095545ae3786d00c9104d036f5d092953a1e2d3
@@ -663,7 +663,7 @@ F test/lock_common.tcl 0c270b121d40959fa2f3add382200c27045b3d95
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 39c4bb8a157f57298ed1659d6df89d9f35aaf2c8
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test 26ae08a09cc15a98d147ee63925e3a66048e71c9
+F test/malloc.test ada8ae15193ffc6415bf431a6db31d4ec507dbfe
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test fafce0aa9157060445cd1a56ad50fc79d82f28c3
@@ -1165,7 +1165,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9fb5e212089d85cdd3b4787dd69c72e6d84560b6
-R ee91b52dc43b32be4c405d028722e931
+P d95d68aa1d14b750888d50068380cc107f9070df
+R 2642a9b7016b11d8b125fe44a5d1acd4
 U dan
-Z 8b01b62c4d596e9ee4b370ddc9560981
+Z 60595d854f9f1dca901aef6c64df6a77

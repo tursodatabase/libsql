@@ -4735,7 +4735,7 @@ int sqlite3BtreeMovetoUnpacked(
         }
         assert( 
             (pIdxKey->errCode!=SQLITE_CORRUPT || c==0)
-         && (pIdxKey->errCode!=SQLITE_NOMEM || !pCur->pBtree->db->mallocFailed)
+         && (pIdxKey->errCode!=SQLITE_NOMEM || pCur->pBtree->db->mallocFailed)
         );
         if( c<0 ){
           lwr = idx+1;

@@ -902,6 +902,26 @@ do_faultsim_test 40.3 -faults oom-trans* -body {
   faultsim_integrity_check
 }
 
+reset_db
+add_test_utf16bin_collate db
+set big [string repeat x 200]
+do_execsql_test 41.1 {
+  DROP TABLE IF EXISTS t1;
+  CREATE TABLE t1(a COLLATE utf16bin);
+  INSERT INTO t1 VALUES('fghij' || $::big);
+  INSERT INTO t1 VALUES('pqrst' || $::big);
+  INSERT INTO t1 VALUES('abcde' || $::big);
+  INSERT INTO t1 VALUES('uvwxy' || $::big);
+  INSERT INTO t1 VALUES('klmno' || $::big);
+  CREATE INDEX i1 ON t1(a);
+}
+do_faultsim_test 41.2 -faults oom* -body {
+  execsql { SELECT * FROM t1 WHERE a = ('abcde' || $::big)}
+} -test {
+  faultsim_test_result [list 0 "abcde$::big"]
+  faultsim_integrity_check
+}
+
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {
   catch {db close}
