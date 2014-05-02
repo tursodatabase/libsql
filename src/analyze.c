@@ -1371,6 +1371,7 @@ static void decodeIntArray(
   char *zIntArray,       /* String containing int array to decode */
   int nOut,              /* Number of slots in aOut[] */
   tRowcnt *aOut,         /* Store integers here */
+  LogEst *aLog,          /* Or, if aOut==0, here */
   Index *pIndex          /* Handle extra flags for this index, if not NULL */
 ){
   char *z = zIntArray;
@@ -1389,7 +1390,17 @@ static void decodeIntArray(
       v = v*10 + c - '0';
       z++;
     }
-    aOut[i] = v;
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+    if( aOut ){
+      aOut[i] = v;
+    }else
+#else
+    assert( aOut==0 );
+    UNUSED_PARAMETER(aOut);
+#endif
+    {
+      aLog[i] = sqlite3LogEst(v);
+    }
     if( *z==' ' ) z++;
   }
 #ifndef SQLITE_ENABLE_STAT3_OR_STAT4
@@ -1445,12 +1456,12 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   z = argv[2];
 
   if( pIndex ){
-    decodeIntArray((char*)z, pIndex->nKeyCol+1, pIndex->aiRowEst, pIndex);
-    if( pIndex->pPartIdxWhere==0 ) pTable->nRowEst = pIndex->aiRowEst[0];
+    decodeIntArray((char*)z, pIndex->nKeyCol+1, 0, pIndex->aiRowLogEst, pIndex);
+    if( pIndex->pPartIdxWhere==0 ) pTable->nRowLogEst = pIndex->aiRowLogEst[0];
   }else{
     Index fakeIdx;
     fakeIdx.szIdxRow = pTable->szTabRow;
-    decodeIntArray((char*)z, 1, &pTable->nRowEst, &fakeIdx);
+    decodeIntArray((char*)z, 1, 0, &pTable->nRowLogEst, &fakeIdx);
     pTable->szTabRow = fakeIdx.szIdxRow;
   }
 
@@ -1642,9 +1653,9 @@ static int loadStatTbl(
       pPrevIdx = pIdx;
     }
     pSample = &pIdx->aSample[pIdx->nSample];
-    decodeIntArray((char*)sqlite3_column_text(pStmt,1), nCol, pSample->anEq, 0);
-    decodeIntArray((char*)sqlite3_column_text(pStmt,2), nCol, pSample->anLt, 0);
-    decodeIntArray((char*)sqlite3_column_text(pStmt,3), nCol, pSample->anDLt,0);
+    decodeIntArray((char*)sqlite3_column_text(pStmt,1),nCol,pSample->anEq,0,0);
+    decodeIntArray((char*)sqlite3_column_text(pStmt,2),nCol,pSample->anLt,0,0);
+    decodeIntArray((char*)sqlite3_column_text(pStmt,3),nCol,pSample->anDLt,0,0);
 
     /* Take a copy of the sample. Add two 0x00 bytes the end of the buffer.
     ** This is in case the sample record is corrupted. In that case, the

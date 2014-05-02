@@ -471,7 +471,7 @@ static void pushOntoSorter(
   int nExpr = pSort->pOrderBy->nExpr;              /* No. of ORDER BY terms */
   int nBase = nExpr + bSeq + nData;                /* Fields in sorter record */
   int regBase;                                     /* Regs for sorter record */
-  int regRecord = sqlite3GetTempReg(pParse);       /* Assembled sorter record */
+  int regRecord = ++pParse->nMem;                  /* Assembled sorter record */
   int nOBSat = pSort->nOBSat;                      /* ORDER BY terms to skip */
   int op;                            /* Opcode to add sorter record to sorter */
 
@@ -480,7 +480,8 @@ static void pushOntoSorter(
     assert( nPrefixReg==nExpr+bSeq );
     regBase = regData - nExpr - bSeq;
   }else{
-    regBase = sqlite3GetTempRange(pParse, nBase);
+    regBase = pParse->nMem + 1;
+    pParse->nMem += nBase;
   }
   sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, SQLITE_ECEL_DUP);
   if( bSeq ){
@@ -511,7 +512,7 @@ static void pushOntoSorter(
     sqlite3VdbeAddOp3(v, OP_Compare, regPrevKey, regBase, pSort->nOBSat);
     pOp = sqlite3VdbeGetOp(v, pSort->addrSortIndex);
     if( pParse->db->mallocFailed ) return;
-    pOp->p2 = nKey + 1;
+    pOp->p2 = nKey + nData;
     pKI = pOp->p4.pKeyInfo;
     memset(pKI->aSortOrder, 0, pKI->nField); /* Makes OP_Jump below testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
@@ -532,12 +533,6 @@ static void pushOntoSorter(
     op = OP_IdxInsert;
   }
   sqlite3VdbeAddOp2(v, op, pSort->iECursor, regRecord);
-  if( nOBSat==0 ){
-    sqlite3ReleaseTempReg(pParse, regRecord);
-    if( nPrefixReg==0 ){
-      sqlite3ReleaseTempRange(pParse, regBase, nBase);
-    }
-  }
   if( pSelect->iLimit ){
     int addr1, addr2;
     int iLimit;
@@ -1722,7 +1717,7 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   assert( db->lookaside.bEnabled==0 );
   pTab->nRef = 1;
   pTab->zName = 0;
-  pTab->nRowEst = 1048576;
+  pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
   selectColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
   selectAddColumnTypeAndCollation(pParse, pTab, pSelect);
   pTab->iPKey = -1;
@@ -3861,7 +3856,7 @@ static int withExpand(
     pTab->nRef = 1;
     pTab->zName = sqlite3DbStrDup(db, pCte->zName);
     pTab->iPKey = -1;
-    pTab->nRowEst = 1048576;
+    pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
     pTab->tabFlags |= TF_Ephemeral;
     pFrom->pSelect = sqlite3SelectDup(db, pCte->pSelect, 0);
     if( db->mallocFailed ) return SQLITE_NOMEM;
@@ -4037,7 +4032,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
       selectColumnsFromExprList(pParse, pSel->pEList, &pTab->nCol, &pTab->aCol);
       pTab->iPKey = -1;
-      pTab->nRowEst = 1048576;
+      pTab->nRowLogEst = 200; assert( 200==sqlite3LogEst(1048576) );
       pTab->tabFlags |= TF_Ephemeral;
 #endif
     }else{
@@ -4687,7 +4682,7 @@ int sqlite3Select(
       sqlite3SelectDestInit(&dest, SRT_Coroutine, pItem->regReturn);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
-      pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
+      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
       pItem->viaCoroutine = 1;
       pItem->regResult = dest.iSdst;
       sqlite3VdbeAddOp1(v, OP_EndCoroutine, pItem->regReturn);
@@ -4718,7 +4713,7 @@ int sqlite3Select(
       sqlite3SelectDestInit(&dest, SRT_EphemTab, pItem->iCursor);
       explainSetInteger(pItem->iSelectId, (u8)pParse->iNextSelectId);
       sqlite3Select(pParse, pSub, &dest);
-      pItem->pTab->nRowEst = (unsigned)pSub->nSelectRow;
+      pItem->pTab->nRowLogEst = sqlite3LogEst(pSub->nSelectRow);
       if( onceAddr ) sqlite3VdbeJumpHere(v, onceAddr);
       retAddr = sqlite3VdbeAddOp1(v, OP_Return, pItem->regReturn);
       VdbeComment((v, "end %s", pItem->pTab->zName));
