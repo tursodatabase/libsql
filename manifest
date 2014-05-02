@@ -1,5 +1,5 @@
-C Failure\sto\sextend\sa\stemp\sfile\sfor\suse\swith\smmap()\sin\svdbesort.c\sis\sbenign.
-D 2014-05-02T16:22:55.791
+C Simplify\sassert()\sstatements\sused\sto\sverify\scorrect\soperation\sof\s\nrecord\scomparison\sroutines.
+D 2014-05-02T17:33:16.279
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/vdbe.c b3510cc71f706beffc66e2aa4bbda54bcd5e9668
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c e493f38758c4b8f4ca2007cf6a700bd405d192f3
+F src/vdbeaux.c c9a8c917776c941af99285594d5c30d99e21c99a
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 6bcf73fb160ee5bb8ce8a8ec61fda268b081dbb7
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9196ce407379ca3b151b601b98848771e5cb4e8f
-R 51e21c516ddbd5830d43ea54f991a56e
+P d4d396387d373bd1e82eda2c7c2e7ca35ec099c4
+R defe6572bf21263fd4b2b33706bcd8e7
 U drh
-Z 19bdd7c6b9f54ab4b2fbcff19d13a623
+Z 26e6dec065eafceab8263c10d377378f
