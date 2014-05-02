@@ -733,10 +733,10 @@ static int vdbeSorterSort(const VdbeCursor *pCsr){
   while( p ){
     SorterRecord *pNext;
     if( pSorter->aMemory ){
-      assert( p->u.iNext<pSorter->nMemory );
       if( (u8*)p==pSorter->aMemory ){
         pNext = 0;
       }else{
+        assert( p->u.iNext<pSorter->nMemory );
         pNext = (SorterRecord*)&pSorter->aMemory[p->u.iNext];
       }
     }else{
