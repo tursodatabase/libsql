@@ -1,5 +1,5 @@
-C Merge\sorderby-planning\swith\sthis\sbranch.
-D 2014-05-02T18:05:38.568
+C Do\snot\srun\sthe\svdbeRecordCompareDebug()\sassert\sif\spKeyInfo->db\sis\sNULL\ssince\nin\sthat\scase\sthere\swould\sbe\sno\sway\sto\scheck\sfor\sa\smemory\sallocation\sfailure.
+D 2014-05-02T18:46:52.058
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -284,7 +284,7 @@ F src/vdbe.c 89ab2ded5123e823b47293aedd7931a4742fb6bd
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h c78ace64dc37495806dd50596eded1f6cd2b5a64
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c f651c4de1193326597b3da2b8f91d993e8a6e97b
+F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
 F src/vdbesort.c 0095545ae3786d00c9104d036f5d092953a1e2d3
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e15f47064bef431c0afd8bf93eb4e160c23ad562 3300d62dcbe74842cf86ca436959fe4e77a89f84
-R 6fa5ff1df255fa8dfad56d587950c625
-U dan
-Z 63362d13bfcb7640057f1ca0f3721e45
+P d9549de31741239ece060e448b592ce8fc5b8042
+R bd79c5eed170ef831b62fddde9ae2198
+U drh
+Z beeab334f565837c4ac52f73c3e92e7b
