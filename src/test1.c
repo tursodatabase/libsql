@@ -6336,6 +6336,40 @@ static int tclLoadStaticExtensionCmd(
   return TCL_OK;
 }
 
+/*
+**     sorter_test_fakeheap BOOL
+**
+*/
+static int sorter_test_fakeheap(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int bArg;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BOOL");
+    return TCL_ERROR;
+  }
+
+  if( Tcl_GetBooleanFromObj(interp, objv[1], &bArg) ){
+    return TCL_ERROR;
+  }
+
+  if( bArg ){
+    if( sqlite3GlobalConfig.pHeap==0 ){
+      sqlite3GlobalConfig.pHeap = SQLITE_INT_TO_PTR(-1);
+    }
+  }else{
+    if( sqlite3GlobalConfig.pHeap==SQLITE_INT_TO_PTR(-1) ){
+      sqlite3GlobalConfig.pHeap = 0;
+    }
+  }
+
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -6569,6 +6603,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "getrusage", test_getrusage },
 #endif
      { "load_static_extension", tclLoadStaticExtensionCmd },
+     { "sorter_test_fakeheap", sorter_test_fakeheap },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

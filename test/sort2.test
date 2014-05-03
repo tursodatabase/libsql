@@ -10,6 +10,9 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
+# Specifically, the tests in this file attempt to verify that 
+# multi-threaded sorting works.
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

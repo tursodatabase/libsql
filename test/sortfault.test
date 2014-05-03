@@ -10,6 +10,9 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
+# Specifically, it tests the effects of fault injection on the sorter
+# module (code in vdbesort.c).
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,20 +23,26 @@ do_execsql_test 1.0 {
   PRAGMA cache_size = 5;
 }
 
-do_faultsim_test 1 -prep {
-  sqlite3 db test.db
-} -body {
-  execsql { 
-    WITH r(x,y) AS (
-      SELECT 1, randomblob(1000)
-      UNION ALL
-      SELECT x+1, randomblob(1000) FROM r
-      LIMIT 500
-    )
-    SELECT count(x), length(y) FROM r GROUP BY (x%5)
-  } 
-} -test {
-  faultsim_test_result {0 {100 1000 100 1000 100 1000 100 1000 100 1000}}
+foreach {tn mmap_limit} {
+  1 0
+  2 100000
+} {
+  do_faultsim_test 1.$tn -prep {
+    sqlite3 db test.db
+    sqlite3_test_control SQLITE_TESTCTRL_SORTER_MMAP db $::mmap_limit
+  } -body {
+    execsql { 
+      WITH r(x,y) AS (
+          SELECT 1, randomblob(1000)
+          UNION ALL
+          SELECT x+1, randomblob(1000) FROM r
+          LIMIT 500
+          )
+        SELECT count(x), length(y) FROM r GROUP BY (x%5)
+    } 
+  } -test {
+    faultsim_test_result {0 {100 1000 100 1000 100 1000 100 1000 100 1000}}
+  }
 }
 
 finish_test

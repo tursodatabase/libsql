@@ -332,6 +332,12 @@ test_suite "coverage-analyze" -description {
   analyze.test analyzeB.test mallocA.test
 } 
 
+test_suite "coverage-sorter" -description {
+  Coverage tests for file vdbesort.c.
+} -files {
+  sort.test sortfault.test
+} 
+
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------

@@ -1556,7 +1556,7 @@ static int vdbeSorterFlushPMA(VdbeSorter *pSorter){
       if( aMem ){
         pSorter->list.aMemory = aMem;
         pSorter->nMemory = sqlite3MallocSize(aMem);
-      }else{
+      }else if( pSorter->list.aMemory ){
         pSorter->list.aMemory = sqlite3Malloc(pSorter->nMemory);
         if( !pSorter->list.aMemory ) return SQLITE_NOMEM;
       }
