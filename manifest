@@ -1,5 +1,5 @@
-C Add\stwo\snew\sstatic\smutexes,\sSQLITE_MUTEX_STATIC_APP1\sand\s_APP2,\sfor\suse\sby\nthe\sapplication\sprogram.\s\sFirst\sintended\suse\sis\sin\stest\sprograms\sfor\sthe\nmemory\sallocation\slogic\swhere\sone\sdoes\snot\swant\sto\sallocating\sa\s_FAST\nor\s_RECURSIVE\smutex\ssince\sthat\swould\sinvolve\susing\sthe\smemory\sallocation\nsystem\sunder\stest.
-D 2014-05-03T12:00:01.738
+C Get\sSQLITE_MUTEX_STATIC_APP1\sand\s_APP2\sworking\sfor\sthe\sdebugMutex\nimplementation.
+D 2014-05-03T13:53:37.085
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -195,9 +195,9 @@ F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 74670012946c4adc8a6ad84d03acc80959c3e529
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
-F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
+F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
-F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
+F src/mutex_noop.c 4222773e5f61e506f232aedc9ad9e16ca00c1399
 F src/mutex_unix.c 56e22c1bc6aabfa2f9736317a8f56acd5d0c5f7c
 F src/mutex_w32.c f648cebb542b7a7ab98cecaa79259e8519e8f492
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P e0dea89b3e9f295f80210fcca007681bf1b08692
-R 29c0adc487699967d8fac6f96f2dadac
+P 13686035dd1cf67ad9c6d282ab13c3259e7273d1
+R 7c657c53542f045bb02fc7656a8fcff4
 U drh
-Z ccb706fc99bd01bffced28b368a2dc97
+Z af16da93d438f6495f6a372d4f94c5d4
