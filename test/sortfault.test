@@ -23,27 +23,45 @@ do_execsql_test 1.0 {
   PRAGMA cache_size = 5;
 }
 
-foreach {tn mmap_limit} {
-  1 0
-  2 100000
+foreach {tn mmap_limit nWorker tmpstore threadsmode fakeheap} {
+          1          0       0     file multithread    false
+          2     100000       0     file multithread    false
 } {
+  catch { db close }
+  sqlite3_shutdown
+  sqlite3_config_worker_threads $nWorker
+  sqlite3_config $threadsmode
+  sqlite3_initialize
+  sorter_test_fakeheap $fakeheap
+
+  set str [string repeat a 1000]
+
   do_faultsim_test 1.$tn -prep {
     sqlite3 db test.db
     sqlite3_test_control SQLITE_TESTCTRL_SORTER_MMAP db $::mmap_limit
+    execsql { PRAGMA cache_size = 5 }
   } -body {
     execsql { 
       WITH r(x,y) AS (
-          SELECT 1, randomblob(1000)
+          SELECT 1, $::str
           UNION ALL
-          SELECT x+1, randomblob(1000) FROM r
-          LIMIT 500
-          )
-        SELECT count(x), length(y) FROM r GROUP BY (x%5)
-    } 
+          SELECT x+1, $::str FROM r
+          LIMIT 200
+      )
+      SELECT count(x), length(y) FROM r GROUP BY (x%5)
+    }
   } -test {
-    faultsim_test_result {0 {100 1000 100 1000 100 1000 100 1000 100 1000}}
+    faultsim_test_result {0 {40 1000 40 1000 40 1000 40 1000 40 1000}}
   }
 }
 
+catch { db close }
+sqlite3_shutdown
+sqlite3_config_worker_threads 0
+set t(0) singlethread
+set t(1) multithread
+set t(2) serialized
+sqlite3_config $t($sqlite_options(threadsafe))
+sqlite3_initialize
 finish_test
 

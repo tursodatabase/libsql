@@ -651,6 +651,7 @@ static int vdbePmaReaderNext(PmaReader *pIter){
   int rc = SQLITE_OK;             /* Return Code */
   u64 nRec = 0;                   /* Size of record in bytes */
 
+
   if( pIter->iReadOff>=pIter->iEof ){
     IncrMerger *pIncr = pIter->pIncr;
     int bEof = 1;
@@ -1844,10 +1845,18 @@ static int vdbeIncrInitMerger(
 ){
   int rc = SQLITE_OK;             /* Return code */
   int i;                          /* For iterating through PmaReader objects */
+  int nTree = pMerger->nTree;
 
-  for(i=0; rc==SQLITE_OK && i<pMerger->nTree; i++){
+  for(i=0; rc==SQLITE_OK && i<nTree; i++){
     if( eMode==INCRINIT_ROOT ){
-      rc = vdbePmaReaderNext(&pMerger->aIter[i]);
+      /* Iterators should be normally initialized in order, as if they are
+      ** reading from the same temp file this makes for more linear file IO.
+      ** However, in the INCRINIT_ROOT case, if iterator aIter[nTask-1] is
+      ** in use it will block the vdbePmaReaderNext() call while it uses
+      ** the main thread to fill its buffer. So calling PmaReaderNext()
+      ** on this iterator before any of the multi-threaded iterators takes
+      ** better advantage of multi-processor hardware. */
+      rc = vdbePmaReaderNext(&pMerger->aIter[nTree-i-1]);
     }else{
       rc = vdbePmaReaderIncrInit(&pMerger->aIter[i], INCRINIT_NORMAL);
     }
@@ -2196,7 +2205,13 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
             for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
               PmaReader *p = &pMain->aIter[iTask];
               assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
-              if( p->pIncr ){ rc = vdbePmaReaderBgIncrInit(p); }
+              if( p->pIncr ){ 
+                if( iTask==pSorter->nTask-1 ){
+                  rc = vdbePmaReaderIncrInit(p, INCRINIT_TASK);
+                }else{
+                  rc = vdbePmaReaderBgIncrInit(p);
+                }
+              }
             }
           }
         }

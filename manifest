@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\ssorter\scausing\sit\sto\sreturn\sspurious\sSQLITE_NOMEM\serrors\swhen\sconfigured\sto\suse\smemsys3\sor\smemsys5.
-D 2014-05-03T14:28:14.676
+C Fix\sa\srace\scondition\sin\sthe\ssorter.
+D 2014-05-03T19:33:00.713
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -287,7 +287,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 3e8827bb9d12465556357c24641f8805a7e2bba0
+F src/vdbesort.c c443cdf00fc8b90b17fbeaa1ad833d3091b0bf5c
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -821,10 +821,10 @@ F test/skipscan1.test bed8cbe9d554c8c27afb6c88500f704c86a9196f
 F test/skipscan2.test d77f79cdbba25f0f6f35298136cff21a7d7a553a
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
-F test/sort.test 8330b31b160483b52bb502a3ac4013f3f9028d73
+F test/sort.test 2af626b7963eddb8c93b6c87babf81396c379ef5
 F test/sort2.test c5e25eb674689e291d06b5209fe8d337ae0ec010
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
-F test/sortfault.test 7fdc4a9bd76280a659c5782cdc6d95806d62d512
+F test/sortfault.test f875d29c58b2eafdca1b51c0810075570d5a3cbc
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P f49ba1c926c63ee1c4609930138389fca182c845
-R ecf8f8bb6befc88e6cfdbe14a65100aa
+P 3a66c4e1bf311d38668dfcdcd77867feff6db7bd
+R 07ad433b1f531db0a3f09b334b377488
 U dan
-Z 4d5ad6cf671998327bccef4dcd098843
+Z 8b4c7c15ef224489143b17033ef5ced9

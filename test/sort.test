@@ -541,7 +541,6 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap} {
           5          0       0   memory     false     true
 } {
   db close
-
   sqlite3_shutdown
   sqlite3_config_worker_threads $nWorker
   if {$coremutex} {
@@ -550,7 +549,6 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap} {
     sqlite3_config singlethread
   }
   sqlite3_initialize
-
   sorter_test_fakeheap $fakeheap
 
   reset_db
@@ -597,7 +595,6 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap} {
 
 db close
 sqlite3_shutdown
-#sqlite3_config_worker_threads $sqlite_options(worker_threads)
 sqlite3_config_worker_threads 0
 set t(0) singlethread
 set t(1) multithread
