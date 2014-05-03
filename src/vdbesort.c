@@ -2179,6 +2179,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
       if( rc==SQLITE_OK ){
         pIter = (PmaReader*)sqlite3DbMallocZero(db, sizeof(PmaReader));
         pSorter->pReader = pIter;
+        if( pIter==0 ) rc = SQLITE_NOMEM;
       }
       if( rc==SQLITE_OK ){
         rc = vdbeIncrNew(pLast, pMain, &pIter->pIncr);

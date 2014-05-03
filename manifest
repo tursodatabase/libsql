@@ -1,5 +1,5 @@
-C Fix\stypo\sin\sWindows\smakefile.\s\sMake\ssure\sthe\sWaitForSingleObjectEx\ssystem\scall\sis\salways\savailable.
-D 2014-05-02T19:12:37.015
+C Add\sthe\sSQLITE_DEFAULT_WORKER_THREADS\scompile-time\soption.\s\nFix\sa\sNULL-pointer\sdereference\sthat\scan\soccur\sfollowing\sOOM.
+D 2014-05-03T11:22:09.616
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -178,7 +178,7 @@ F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
 F src/func.c 2945bb2c4cdc0ac43733046285a4434310be1811
-F src/global.c deadd872189b92aca4ee2566332a86315839f811
+F src/global.c b7943ff485c31660ec0b17c68467034804df01b1
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -223,7 +223,7 @@ F src/shell.c 6946aea9f21af551fa84bc6b2a8de55d93bf0004
 F src/sqlite.h.in 579aebacdea59386d9cdf01fd4a16f4cafbb248f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 76bd7ba54008909d9e437807565a54b1075983dc
+F src/sqliteInt.h 851003126071d4a3bac86a0db75c48197fbd0ff0
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -287,7 +287,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 0095545ae3786d00c9104d036f5d092953a1e2d3
+F src/vdbesort.c d205b56d0a1c2cbd8f6c8c4f513337ab0096d0b3
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 63ed2d6acb82be8a74dbf6a61388be6da6113985
-R 820b790c56c4122e03b250f07fbb06ef
-U mistachkin
-Z 87a0e192077836669877b548f0fe55d8
+P d7ed529fa2aa5cb13edaabca2acaad06dffef569
+R bf6d771799174fcada0f5c36289734b7
+U drh
+Z 521faa6705b79213c3ba83b826f10b41
