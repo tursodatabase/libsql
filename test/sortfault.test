@@ -26,6 +26,7 @@ do_execsql_test 1.0 {
 foreach {tn mmap_limit nWorker tmpstore threadsmode fakeheap} {
           1          0       0     file multithread    false
           2     100000       0     file multithread    false
+          3     100000       1     file multithread    false
 } {
   catch { db close }
   sqlite3_shutdown
@@ -53,6 +54,27 @@ foreach {tn mmap_limit nWorker tmpstore threadsmode fakeheap} {
   } -test {
     faultsim_test_result {0 {40 1000 40 1000 40 1000 40 1000 40 1000}}
   }
+
+
+  do_faultsim_test 2.$tn -prep {
+    sqlite3 db test.db
+    sqlite3_test_control SQLITE_TESTCTRL_SORTER_MMAP db $::mmap_limit
+    add_test_utf16bin_collate db
+    execsql { PRAGMA cache_size = 5 }
+  } -body {
+    execsql { 
+      WITH r(x,y) AS (
+          SELECT 100, $::str
+          UNION ALL
+          SELECT x-1, $::str FROM r
+          LIMIT 100
+      )
+      SELECT count(x), length(y) FROM r GROUP BY y COLLATE utf16bin, (x%5)
+    }
+  } -test {
+    faultsim_test_result {0 {20 1000 20 1000 20 1000 20 1000 20 1000}}
+  }
+
 }
 
 catch { db close }

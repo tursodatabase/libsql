@@ -1807,11 +1807,9 @@ static int vdbeIncrNew(
 /*
 ** Set the "use-threads" flag on object pIncr.
 */
-static void vdbeIncrSetThreads(IncrMerger *pIncr, int bUseThread){
-  if( bUseThread ){
-    pIncr->bUseThread = 1;
-    pIncr->pTask->file2.iEof -= pIncr->mxSz;
-  }
+static void vdbeIncrSetThreads(IncrMerger *pIncr){
+  pIncr->bUseThread = 1;
+  pIncr->pTask->file2.iEof -= pIncr->mxSz;
 }
 #endif /* SQLITE_MAX_WORKER_THREADS>0 */
 
@@ -2193,11 +2191,11 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
       if( rc==SQLITE_OK ){
         rc = vdbeIncrNew(pLast, pMain, &pIter->pIncr);
         if( rc==SQLITE_OK ){
-          vdbeIncrSetThreads(pIter->pIncr, pSorter->bUseThreads);
+          vdbeIncrSetThreads(pIter->pIncr);
           for(iTask=0; iTask<(pSorter->nTask-1); iTask++){
             IncrMerger *pIncr;
             if( (pIncr = pMain->aIter[iTask].pIncr) ){
-              vdbeIncrSetThreads(pIncr, pSorter->bUseThreads);
+              vdbeIncrSetThreads(pIncr);
               assert( pIncr->pTask!=pLast );
             }
           }
