@@ -4232,6 +4232,7 @@ case OP_SorterData: {
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
   rc = sqlite3VdbeSorterRowkey(pC, pOut);
+  assert( rc!=SQLITE_OK || (pOut->flags & MEM_Blob) );
   break;
 }
 
@@ -6323,8 +6324,8 @@ default: {          /* This is really OP_Noop and OP_Explain */
 
 #ifdef VDBE_PROFILE
     {
-      u64 elapsed = sqlite3Hwtime() - start;
-      pOp->cycles += elapsed;
+      u64 endTime = sqlite3Hwtime();
+      if( endTime>start ) pOp->cycles += endTime - start;
       pOp->cnt++;
     }
 #endif

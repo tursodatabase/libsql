@@ -884,9 +884,10 @@ do_execsql_test e_createtable-3.3.1 {
   );
 } {}
 
-# EVIDENCE-OF: R-10288-43169 For the purposes of the DEFAULT clause, an
+# EVIDENCE-OF: R-36381-62919 For the purposes of the DEFAULT clause, an
 # expression is considered constant provided that it does not contain
-# any sub-queries or string constants enclosed in double quotes.
+# any sub-queries, column or table references, or string literals
+# enclosed in double-quotes instead of single-quotes.
 #
 do_createtable_tests 3.4.1 -error {
   default value of column [x] is not constant

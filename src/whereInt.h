@@ -398,6 +398,7 @@ struct WhereInfo {
   LogEst nRowOut;           /* Estimated number of output rows */
   u16 wctrlFlags;           /* Flags originally passed to sqlite3WhereBegin() */
   i8 nOBSat;                /* Number of ORDER BY terms satisfied by indices */
+  u8 sorted;                /* True if really sorted (not just grouped) */
   u8 okOnePass;             /* Ok to use one-pass algorithm for UPDATE/DELETE */
   u8 untestedTerms;         /* Not all WHERE terms resolved by outer loop */
   u8 eDistinct;             /* One of the WHERE_DISTINCT_* values below */
@@ -457,3 +458,4 @@ struct WhereInfo {
 #define WHERE_AUTO_INDEX   0x00004000  /* Uses an ephemeral index */
 #define WHERE_SKIPSCAN     0x00008000  /* Uses the skip-scan algorithm */
 #define WHERE_UNQ_WANTED   0x00010000  /* WHERE_ONEROW would have been helpful*/
+#define WHERE_LIKELIHOOD   0x00020000  /* A likelihood() is affecting nOut */

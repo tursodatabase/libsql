@@ -145,11 +145,11 @@ do_test index6-2.1 {
   execsql {
     CREATE TABLE t2(a,b);
     INSERT INTO t2(a,b) SELECT value, value FROM nums WHERE value<1000;
-    UPDATE t2 SET a=NULL WHERE b%5==0;
+    UPDATE t2 SET a=NULL WHERE b%2==0;
     CREATE INDEX t2a1 ON t2(a) WHERE a IS NOT NULL;
     SELECT count(*) FROM t2 WHERE a IS NOT NULL;
   }
-} {800}
+} {500}
 do_test index6-2.2 {
   execsql {
     EXPLAIN QUERY PLAN
@@ -157,6 +157,7 @@ do_test index6-2.2 {
   }
 } {/.* TABLE t2 USING INDEX t2a1 .*/}
 ifcapable stat4||stat3 {
+  execsql ANALYZE
   do_test index6-2.3stat4 {
     execsql {
       EXPLAIN QUERY PLAN
