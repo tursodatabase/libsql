@@ -109,6 +109,12 @@ set pragma_def {
   IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
   IF:   !defined(SQLITE_OMIT_CHECK)
 
+  NAME: omit_check_constraints
+  TYPE: FLAG
+  ARG:  SQLITE_OmitChecks
+  IF:   !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+  IF:   !defined(SQLITE_OMIT_CHECK)
+
   NAME: writable_schema
   TYPE: FLAG
   ARG:  SQLITE_WriteSchema|SQLITE_RecoveryMode

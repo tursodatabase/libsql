@@ -307,6 +307,16 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_MMAP_SIZE,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+#endif
+#if !defined(SQLITE_OMIT_FLAG_PRAGMAS)
+#if !defined(SQLITE_OMIT_CHECK)
+  { /* zName:     */ "omit_check_constraints",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_OmitChecks },
+#endif
+#endif
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "page_count",
     /* ePragTyp:  */ PragTyp_PAGE_COUNT,
     /* ePragFlag: */ PragFlag_NeedSchema,
@@ -465,7 +475,7 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 56 on by default, 69 total. */
+/* Number of pragmas: 57 on by default, 70 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -1406,7 +1416,6 @@ void sqlite3Pragma(
       */
       sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
       setAllPagerFlags(db);
-      if( mask==SQLITE_IgnoreChecks ) sqlite3ResetAllSchemasOfConnection(db);
     }
     break;
   }

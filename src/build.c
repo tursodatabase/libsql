@@ -1308,7 +1308,7 @@ void sqlite3AddCheckConstraint(
   Table *pTab = pParse->pNewTable;
   if( pTab
    && !IN_DECLARE_VTAB
-   && (pParse->db->flags & SQLITE_IgnoreChecks)==0
+   && (pParse->db->flags & SQLITE_OmitChecks)==0
   ){
     pTab->pCheck = sqlite3ExprListAppend(pParse, pTab->pCheck, pCheckExpr);
     if( pParse->constraintName.n ){

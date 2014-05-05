@@ -1,5 +1,5 @@
-C Incorporate\sthe\slatest\strunk\schanges\sso\sthat\shopefully\snow\sthis\sbranch\nwill\sbuild\son\sbeagleboard.
-D 2014-05-05T20:34:25.748
+C Add\sthe\s"omit_check_constraints"\spragma\sthat\scauses\sthe\scheck\sconstraint\nexpressions\sto\sbe\somitted\sfrom\sthe\sparse\stree.
+D 2014-05-05T22:49:24.729
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 6c9b51abd404ce5b78b173b6f2248e8cb824758c
 F src/btree.h d79306df4ed9181b48916737fe8871a4392c4594
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
-F src/build.c 7fec8e35d4786f307517010e15bb1de1bd9408b5
+F src/build.c be2063ff92feff4c45c6701ee4ba3abf7273086e
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -214,7 +214,7 @@ F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
-F src/pragma.c f89b68223ab587c2d9e425c519dc2654373783f8
+F src/pragma.c 1f392e4e9b3aaf276c4a1d19c554b91d625a7f11
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
@@ -225,7 +225,7 @@ F src/shell.c 2afe7a7154e97be0c74c5feacf09626bda8493be
 F src/sqlite.h.in bde98816e1ba0c9ffef50afe7b32f4e5a8f54fe0
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h b1707e267c6a2a4a1cd09ce01d235f150f49e4aa
+F src/sqliteInt.h cf88022af730ee717ab4cac92dcacf08a8d86beb
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1134,7 +1134,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c c9e05e4a7bcab8fab9f583d5b321fb72f565ad97
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 78a77b2c554d534c6f2dc903130186ed15715460
+F tool/mkpragmatab.tcl 6c523433c26f106b52f3fbb980abf716fb554dd0
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
 F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
@@ -1168,7 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 35a9f3f1787ed20b72a22cdf86cb8b8b0f4976cc bd92e0f80c1158d810b0d47e38f2fe06ff24bb8c
-R bdbe61e3ac3af99cac3789456fdac635
+P 2647b17d7038dcb5ad94d309520db834f4392f26
+R daac56c2ad97686c056adc332e046ef9
 U drh
-Z 54dfc15052cc67334832336427ed702a
+Z 079cc35c1964fd29a62813976b6098ce
