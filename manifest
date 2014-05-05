@@ -1,5 +1,5 @@
-C Add\stests\sso\sthat\sthe\s"coverage-sorter"\stest\spermutation\scovers\sall\sbranches\sin\svdbesort.c.\sFix\sa\sfew\sminor\sproblems\sin\sthe\ssame\sfile.
-D 2014-05-05T09:08:54.007
+C Fix\sa\srace\scondition\sin\sthe\ssorter\scode.
+D 2014-05-05T15:58:40.542
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -287,7 +287,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c af752fa4c125ab2bfeee1c4e0b50504e79aa7051
+F src/vdbesort.c b36070436d33372237541e9eaa6068e1a61bc402
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P a33a366ba8a0da81ddd895d552a348441ef8529a
-R 48fa4af9d614a9372c1dc3ff956ba091
+P bde28b702dabd02269e333535cc41481351c5efc
+R e53afa0ba1bd427219aede77058d3d04
 U dan
-Z 1076615c7d8998a9f1b953b2c0f517bb
+Z ba1cae0a2780ce3568cf6b58bd76a820

@@ -991,7 +991,15 @@ static int vdbeSorterCreateThread(
 static int vdbeSorterJoinAll(VdbeSorter *pSorter, int rcin){
   int rc = rcin;
   int i;
-  for(i=0; i<pSorter->nTask; i++){
+
+  /* This function is always called by the main user thread.
+  **
+  ** If this function is being called after SorterRewind() has been called, 
+  ** it is possible that thread pSorter->aTask[pSorter->nTask-1].pThread
+  ** is currently attempt to join one of the other threads. To avoid a race
+  ** condition where this thread also attempts to join the same object, join 
+  ** thread pSorter->aTask[pSorter->nTask-1].pThread first. */
+  for(i=pSorter->nTask-1; i>=0; i--){
     SortSubtask *pTask = &pSorter->aTask[i];
     int rc2 = vdbeSorterJoinThread(pTask);
     if( rc==SQLITE_OK ) rc = rc2;
