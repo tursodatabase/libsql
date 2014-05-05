@@ -1,5 +1,5 @@
-C Merge\supdates\sfrom\strunk.
-D 2014-05-02T21:38:02.443
+C Fix\sseveral\sheader\sfile\scomments.\s\sNo\schanges\sto\scode.
+D 2014-05-05T17:43:28.823
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -204,10 +204,10 @@ F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
-F src/os_setup.h 3f9e87d981eef070c8a11e76b4704842a0e5870f
+F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c 089fcb45dabe90a4c87369cc69846838198dd221
-F src/os_win.h ac253253d080dc3dd261efe5e98626c4b95e5a26
+F src/os_win.h ca9c83efaf41298691553e1d0f7e11328168d8b8
 F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
@@ -1168,7 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 09cf240a7fb4022aeb1d7ae2a2455b5f97b53d68 faa469355eabb2c407f24638b090725448aac37f
-R 332509ae33dff41f389350276535e395
+P c4d1d8a0db48f523d1624f2468261c171152c0f7
+R e81e8bbcb0f41d36dce23eda3c309a85
 U mistachkin
-Z 6c2182b94bf292df6ecab4543f02e83a
+Z 2824130e829ad3dc4daa36d25ec17b58

@@ -22,7 +22,7 @@
 **
 ** After the following block of preprocess macros, all of SQLITE_OS_UNIX,
 ** SQLITE_OS_WIN, and SQLITE_OS_OTHER will defined to either 1 or 0.  One of
-** the four will be 1.  The other three will be 0.
+** the three will be 1.  The other two will be 0.
 */
 #if defined(SQLITE_OS_OTHER)
 #  if SQLITE_OS_OTHER==1

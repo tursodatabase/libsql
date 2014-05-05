@@ -16,7 +16,7 @@
 #define _OS_WIN_H_
 
 /*
-** Include the Windows SDK header file.
+** Include the primary Windows SDK header file.
 */
 #include "windows.h"
 
@@ -28,8 +28,8 @@
 /*
 ** Determine if we are dealing with Windows NT.
 **
-** We ought to be able to determine if we are compiling for win98 or winNT
-** using the _WIN32_WINNT macro as follows:
+** We ought to be able to determine if we are compiling for Windows 9x or
+** Windows NT using the _WIN32_WINNT macro as follows:
 **
 ** #if defined(_WIN32_WINNT)
 ** # define SQLITE_OS_WINNT 1
@@ -37,18 +37,18 @@
 ** # define SQLITE_OS_WINNT 0
 ** #endif
 **
-** However, vs2005 does not set _WIN32_WINNT by default, as it ought to,
-** so the above test does not work.  We'll just assume that everything is
-** winNT unless the programmer explicitly says otherwise by setting
-** SQLITE_OS_WINNT to 0.
+** However, Visual Studio 2005 does not set _WIN32_WINNT by default, as
+** it ought to, so the above test does not work.  We'll just assume that
+** everything is Windows NT unless the programmer explicitly says otherwise
+** by setting SQLITE_OS_WINNT to 0.
 */
 #if SQLITE_OS_WIN && !defined(SQLITE_OS_WINNT)
 # define SQLITE_OS_WINNT 1
 #endif
 
 /*
-** Determine if we are dealing with WindowsCE - which has a much
-** reduced API.
+** Determine if we are dealing with Windows CE - which has a much reduced
+** API.
 */
 #if defined(_WIN32_WCE)
 # define SQLITE_OS_WINCE 1
