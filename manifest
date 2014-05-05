@@ -1,5 +1,5 @@
-C Create\snew\sheader\sfile\s"os_setup.h"\sused\sto\sdetect\sthe\soperating\ssystem\nat\scompile-time,\sand\s"os_win.h"\sthat\scontains\swindows-specific\sheader\sin\nformation.
-D 2014-05-05T20:32:15.817
+C More\smodularization\swork\son\sthe\sMSVC\sbatch\sbuild\stool.
+D 2014-05-05T21:08:47.656
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1118,7 +1118,7 @@ F test/without_rowid5.test b4a639a367f04d382d20e8f44fc1be4f2d57d107
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat 3ffc57eadcf6229ee8b940dde2cb2eac03813bf3 x
+F tool/build-all-msvc.bat b4f0b5577fd248529c3247c06309226c35db9ff6 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1168,7 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P b5a72dfd59fba6a9938ac1afdec06a2e6809fd2d 3ac75725a66730566105ad184a988a8f80f51055
-R 8d3da72aab741dd9279195207e6c8bd7
-U drh
-Z 892b3ce35265d0d6387ad7a7c3c1d88b
+P bd92e0f80c1158d810b0d47e38f2fe06ff24bb8c
+R 219607b5b5ba75498daf10431b648c43
+U mistachkin
+Z de5605f1e301dc16c5db1ce3f5edb9e1

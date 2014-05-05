@@ -147,6 +147,17 @@ IF NOT DEFINED CONFIGURATIONS (
 %_VECHO% Configurations = '%CONFIGURATIONS%'
 
 REM
+REM NOTE: If the command used to invoke NMAKE is not already set, use the
+REM       default.
+REM
+IF NOT DEFINED NMAKE_CMD (
+  SET NMAKE_CMD=nmake -B -f Makefile.msc
+)
+
+%_VECHO% NmakeCmd = '%NMAKE_CMD%'
+%_VECHO% NmakeArgs = '%NMAKE_ARGS%'
+
+REM
 REM NOTE: Setup environment variables to translate between the MSVC platform
 REM       names and the names to be used for the platform-specific binary
 REM       directories.
@@ -303,6 +314,8 @@ FOR %%P IN (%PLATFORMS%) DO (
       REM       environment variables to be picked up by the MSVC makefile
       REM       itself.
       REM
+      %_AECHO% Building the "%%B" configuration for platform "%%D"...
+
       IF /I "%%B" == "Debug" (
         SET DEBUG=2
         SET MEMDEBUG=1
@@ -395,7 +408,7 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       file, etc.
         REM
         IF NOT DEFINED NOCLEAN (
-          %__ECHO% nmake -f Makefile.msc clean
+          %__ECHO% %NMAKE_CMD% clean
 
           IF ERRORLEVEL 1 (
             ECHO Failed to clean for platform %%P.
@@ -407,6 +420,7 @@ FOR %%P IN (%PLATFORMS%) DO (
           REM       need to remove the build output for the files we are
           REM       specifically wanting to build for each platform.
           REM
+          %_AECHO% Cleaning final output files only...
           %__ECHO% DEL /Q *.lo sqlite3.dll sqlite3.lib sqlite3.pdb
         )
 
@@ -417,7 +431,7 @@ FOR %%P IN (%PLATFORMS%) DO (
         REM       Also, disable looking for and/or linking to the native Tcl
         REM       runtime library.
         REM
-        %__ECHO% nmake -f Makefile.msc sqlite3.dll XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
+        %__ECHO% %NMAKE_CMD% sqlite3.dll XCOMPILE=1 USE_NATIVE_LIBPATHS=1 NO_TCL=1 %NMAKE_ARGS%
 
         IF ERRORLEVEL 1 (
           ECHO Failed to build %%B "sqlite3.dll" for platform %%P.
