@@ -1,5 +1,5 @@
-C Centralize\sand\sreform\suse\sof\sthe\sWin32\srelated\sinclude\sfiles.
-D 2014-05-05T18:24:47.522
+C Attempt\sto\sfix\sthe\sbuild\son\sbeagleboard.
+D 2014-05-05T20:21:52.937
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c 485d06a93965f306c7281fca0937829292367234
-F src/os_win.h ca9c83efaf41298691553e1d0f7e11328168d8b8
+F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
@@ -1137,7 +1137,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 78a77b2c554d534c6f2dc903130186ed15715460
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
-F tool/mksqlite3c.tcl 1be89affd8ad71a31b6e5d49cc7bf790db7686ff
+F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
 F tool/mkvsix.tcl 6477fb9dab838b7eea1eed50658ff1cda04850b5
@@ -1168,7 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4760504396bcf44528eb8de9ed7aa5d9659c54b6 a3cfd81339267c87db511cedf35ec209ee1f1a72
-R 938ab94058764b9d56f0ca54851e9d8f
-U mistachkin
-Z 010c73dcd5fc4fed61a248b3b687b42d
+P 857f2baf9b722e4eb1ac0d50fe03e32d5176185b
+R 13f47e22fa817432bd25922bb1ff1b2f
+U drh
+Z 55108ca91e730f32aa309dbf16d83499

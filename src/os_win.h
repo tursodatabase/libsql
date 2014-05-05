@@ -22,7 +22,7 @@
 
 #ifdef __CYGWIN__
 # include <sys/cygwin.h>
-# include <errno.h> /* amalgamator: keep */
+# include <errno.h> /* amalgamator: dontcache */
 #endif
 
 /*
