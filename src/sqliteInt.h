@@ -1882,13 +1882,13 @@ struct Expr {
   ** access them will result in a segfault or malfunction.
   *********************************************************************/
 
-#if SQLITE_MAX_EXPR_DEPTH>0
-  int nHeight;           /* Height of the tree headed by this node */
-#endif
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old
                          ** EP_Unlikely:  1000 times likelihood */
+#if SQLITE_MAX_EXPR_DEPTH>0
+  int nHeight;           /* Height of the tree headed by this node */
+#endif
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
                          ** TK_VARIABLE: variable number (always >= 1). */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */

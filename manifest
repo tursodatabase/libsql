@@ -1,5 +1,5 @@
-C Centralize\sand\sreform\suse\sof\sthe\sWin32\srelated\sinclude\sfiles.
-D 2014-05-05T18:24:47.522
+C Try\sto\sreduce\sthe\samount\sof\smemory\sused\sto\shold\sthe\sschema\swhen\nPRAGMA\signore_check_constraints\sis\sactive.
+D 2014-05-05T19:57:09.081
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c 6c9b51abd404ce5b78b173b6f2248e8cb824758c
 F src/btree.h d79306df4ed9181b48916737fe8871a4392c4594
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
-F src/build.c 02665ca158431a0926b10cbd7d8178a4c9fc4a22
+F src/build.c 7fec8e35d4786f307517010e15bb1de1bd9408b5
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -214,7 +214,7 @@ F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
-F src/pragma.c 810ef31ccfaa233201dcf100637a9777cc24e897
+F src/pragma.c f89b68223ab587c2d9e425c519dc2654373783f8
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
@@ -225,7 +225,7 @@ F src/shell.c 2afe7a7154e97be0c74c5feacf09626bda8493be
 F src/sqlite.h.in bde98816e1ba0c9ffef50afe7b32f4e5a8f54fe0
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h b2947801eccefd7ba3e5f14e1353289351a83cf3
+F src/sqliteInt.h b1707e267c6a2a4a1cd09ce01d235f150f49e4aa
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1168,7 +1168,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 4760504396bcf44528eb8de9ed7aa5d9659c54b6 a3cfd81339267c87db511cedf35ec209ee1f1a72
-R 938ab94058764b9d56f0ca54851e9d8f
-U mistachkin
-Z 010c73dcd5fc4fed61a248b3b687b42d
+P 857f2baf9b722e4eb1ac0d50fe03e32d5176185b
+R 69cfb806886499369b394e960a7bda2c
+T *branch * reduce-schema-size
+T *sym-reduce-schema-size *
+T -sym-trunk *
+U drh
+Z 4e457bba1bbaad4242f130453c9a00dd

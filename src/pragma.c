@@ -1406,6 +1406,7 @@ void sqlite3Pragma(
       */
       sqlite3VdbeAddOp2(v, OP_Expire, 0, 0);
       setAllPagerFlags(db);
+      if( mask==SQLITE_IgnoreChecks ) sqlite3ResetAllSchemasOfConnection(db);
     }
     break;
   }
