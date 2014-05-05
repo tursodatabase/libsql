@@ -510,15 +510,19 @@ LTLIBOPTS = /MACHINE:$(PLATFORM)
 !IF $(FOR_WINRT)!=0
 LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
 !IF "$(VISUALSTUDIOVERSION)"=="12.0"
+!IFNDEF STORELIBPATH
 !IF "$(PLATFORM)"=="x86"
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(VCINSTALLDIR)\lib\store"
+STORELIBPATH = $(NCRTLIBPATH)\store
 !ELSEIF "$(PLATFORM)"=="x64"
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(VCINSTALLDIR)\lib\store\amd64"
+STORELIBPATH = $(NCRTLIBPATH)\store\amd64
 !ELSEIF "$(PLATFORM)"=="ARM"
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(VCINSTALLDIR)\lib\store\arm"
+STORELIBPATH = $(NCRTLIBPATH)\store\arm
 !ELSE
-LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(VCINSTALLDIR)\lib\store"
+STORELIBPATH = $(NCRTLIBPATH)\store
 !ENDIF
+!ENDIF
+STORELIBPATH = $(STORELIBPATH:\\=\)
+LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
 !ENDIF
 !ENDIF
 
@@ -1374,8 +1378,8 @@ clean:
 	del /Q *.lo *.ilk *.lib *.obj *.pdb sqlite3.exe libsqlite3.lib
 	del /Q *.cod *.da *.bb *.bbg gmon.out
 	del /Q sqlite3.h opcodes.c opcodes.h
-	del /Q lemon.exe lempar.c parse.*
-	del /Q mkkeywordhash.exe keywordhash.h
+	del /Q lemon.* lempar.c parse.*
+	del /Q mkkeywordhash.* keywordhash.h
 	del /Q notasharedlib.*
 	-rmdir /Q/S .deps
 	-rmdir /Q/S .libs

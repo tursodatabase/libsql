@@ -1,9 +1,9 @@
-C Try\sto\sreduce\sthe\samount\sof\smemory\sused\sto\shold\sthe\sschema\swhen\nPRAGMA\signore_check_constraints\sis\sactive.
-D 2014-05-05T19:57:09.081
+C Incorporate\sthe\slatest\strunk\schanges\sso\sthat\shopefully\snow\sthis\sbranch\nwill\sbuild\son\sbeagleboard.
+D 2014-05-05T20:34:25.748
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc d1d9474b660e87a0134acd33693281883cb328b1
+F Makefile.msc cf9737350840c56f1e46204aa310227b8183c221
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -207,7 +207,7 @@ F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c 485d06a93965f306c7281fca0937829292367234
-F src/os_win.h ca9c83efaf41298691553e1d0f7e11328168d8b8
+F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
@@ -1118,7 +1118,7 @@ F test/without_rowid5.test b4a639a367f04d382d20e8f44fc1be4f2d57d107
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat e0917e787df675b020d250d60a00de8abaa4e30a x
+F tool/build-all-msvc.bat 3ffc57eadcf6229ee8b940dde2cb2eac03813bf3 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1137,7 +1137,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 78a77b2c554d534c6f2dc903130186ed15715460
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
-F tool/mksqlite3c.tcl 1be89affd8ad71a31b6e5d49cc7bf790db7686ff
+F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
 F tool/mkvsix.tcl 6477fb9dab838b7eea1eed50658ff1cda04850b5
@@ -1168,10 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 857f2baf9b722e4eb1ac0d50fe03e32d5176185b
-R 69cfb806886499369b394e960a7bda2c
-T *branch * reduce-schema-size
-T *sym-reduce-schema-size *
-T -sym-trunk *
+P 35a9f3f1787ed20b72a22cdf86cb8b8b0f4976cc bd92e0f80c1158d810b0d47e38f2fe06ff24bb8c
+R bdbe61e3ac3af99cac3789456fdac635
 U drh
-Z 4e457bba1bbaad4242f130453c9a00dd
+Z 54dfc15052cc67334832336427ed702a
