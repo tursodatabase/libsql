@@ -277,6 +277,7 @@ FOR %%P IN (%PLATFORMS%) DO (
     REM       and/or Visual Studio.  This block may need to be updated in the
     REM       future to account for additional environment variables.
     REM
+    CALL :fn_UnsetVariable CommandPromptType
     CALL :fn_UnsetVariable DevEnvDir
     CALL :fn_UnsetVariable ExtensionSdkDir
     CALL :fn_UnsetVariable Framework35Version
@@ -314,7 +315,7 @@ FOR %%P IN (%PLATFORMS%) DO (
       REM       environment variables to be picked up by the MSVC makefile
       REM       itself.
       REM
-      %_AECHO% Building the "%%B" configuration for platform "%%D"...
+      %_AECHO% Building the %%B configuration for platform %%P with name %%D...
 
       IF /I "%%B" == "Debug" (
         SET DEBUG=2
@@ -395,6 +396,8 @@ FOR %%P IN (%PLATFORMS%) DO (
             REM
             IF DEFINED USE_WINV63_NSDKLIBPATH (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\winv6.3\um\x86
+            ) ELSE IF "%VisualStudioVersion%" == "12.0" (
+              CALL :fn_AppendVariable NSDKLIBPATH \..\8.0\lib\win8\um\x86
             ) ELSE (
               CALL :fn_AppendVariable NSDKLIBPATH \lib\win8\um\x86
             )

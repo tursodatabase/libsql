@@ -1,9 +1,9 @@
-C More\smodularization\swork\son\sthe\sMSVC\sbatch\sbuild\stool.
-D 2014-05-05T21:08:47.656
+C When\sbuilding\sfor\sWindows\s8.0\susing\sVisual\sStudio\s2013,\smake\ssure\sthe\scross-compilation\snative\slibrary\spath\sis\sset\scorrectly.
+D 2014-05-05T22:43:17.621
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc cf9737350840c56f1e46204aa310227b8183c221
+F Makefile.msc 7e6c495d9a145054a09f518781916c7503f7a8e9
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -1118,7 +1118,7 @@ F test/without_rowid5.test b4a639a367f04d382d20e8f44fc1be4f2d57d107
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat b4f0b5577fd248529c3247c06309226c35db9ff6 x
+F tool/build-all-msvc.bat a0534c971b86fe95f1983f445db5b896d3394818 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1168,7 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bd92e0f80c1158d810b0d47e38f2fe06ff24bb8c
-R 219607b5b5ba75498daf10431b648c43
+P 9a06773acc181e981f61f476a8e56417b98beba9
+R e91b1cf1dddb5793408fd6de2be74034
 U mistachkin
-Z de5605f1e301dc16c5db1ce3f5edb9e1
+Z b713eaa9517cf3b104e3dc82bdd65124
