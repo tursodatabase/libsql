@@ -1,9 +1,9 @@
-C Enhance\sthe\sWin32\sVFS\sI/O\sretry\slogic.
-D 2014-05-02T22:39:54.345
+C Work\son\scleaning\sup\sthe\sMSVC\sbatch\sbuild\stool\sintegration\swith\sVisual\sStudio\s2013.
+D 2014-05-05T20:24:34.916
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc fdacba6fb574868c71fde6db6b77789a383a4c19
+F Makefile.msc 1e8c0f7e80f73b36d04520844e1e6c335cfe2000
 F Makefile.vxworks db21ed42a01d5740e656b16f92cb5d8d5e5dd315
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -1116,7 +1116,7 @@ F test/without_rowid5.test b4a639a367f04d382d20e8f44fc1be4f2d57d107
 F test/wordcount.c 9915e06cb33d8ca8109b8700791afe80d305afda
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F test/zerodamage.test cf6748bad89553cc1632be51a6f54e487e4039ac
-F tool/build-all-msvc.bat e0917e787df675b020d250d60a00de8abaa4e30a x
+F tool/build-all-msvc.bat 3ffc57eadcf6229ee8b940dde2cb2eac03813bf3 x
 F tool/build-shell.sh 950f47c6174f1eea171319438b93ba67ff5bf367
 F tool/checkSpacing.c 810e51703529a204fc4e1eb060e9ab663e3c06d2
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -1166,7 +1166,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P faa469355eabb2c407f24638b090725448aac37f 598a3875ce98015e9a38db54bd0cb6290424c3d8
-R ea09ee65f031a4f810c7f319ecf812cc
+P 4760504396bcf44528eb8de9ed7aa5d9659c54b6
+R 430719bf3d22eab8999716ab9edcc7d3
 U mistachkin
-Z f9afa829a6179e568b33b0a29e5a3328
+Z 9015c1d19aac4c8ce51a7c46f2b60a96
