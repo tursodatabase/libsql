@@ -20,6 +20,11 @@
 #ifdef SQLITE_MUTEX_W32
 
 /*
+** Include the header file for the Windows VFS.
+*/
+#include "os_win.h"
+
+/*
 ** Each recursive mutex is an instance of the following structure.
 */
 struct sqlite3_mutex {
