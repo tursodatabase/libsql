@@ -1251,11 +1251,10 @@ static int vdbeSorterSort(SortSubtask *pTask, SorterList *pList){
   pList->pList = p;
 
   sqlite3_free(aSlot);
-  if( pTask->pUnpacked->errCode ){
-    assert( pTask->pUnpacked->errCode==SQLITE_NOMEM );
-    return SQLITE_NOMEM;
-  }
-  return SQLITE_OK;
+  assert( pTask->pUnpacked->errCode==SQLITE_OK 
+       || pTask->pUnpacked->errCode==SQLITE_NOMEM 
+  );
+  return pTask->pUnpacked->errCode;
 }
 
 /*
@@ -1485,7 +1484,7 @@ static int vdbeSorterNext(
     *pbEof = (pMerger->aIter[pMerger->aTree[1]].pFile==0);
   }
 
-  return rc;
+  return (rc==SQLITE_OK ? pTask->pUnpacked->errCode : rc);
 }
 
 #if SQLITE_MAX_WORKER_THREADS>0
@@ -1534,7 +1533,7 @@ static int vdbeSorterFlushPMA(VdbeSorter *pSorter){
     if( pTask->bDone ){
       rc = vdbeSorterJoinThread(pTask);
     }
-    if( pTask->pThread==0 || rc!=SQLITE_OK ) break;
+    if( rc!=SQLITE_OK || pTask->pThread==0 ) break;
   }
 
   if( rc==SQLITE_OK ){
@@ -1864,7 +1863,7 @@ static int vdbeIncrInitMerger(
     rc = vdbeSorterDoCompare(pTask, pMerger, i);
   }
 
-  return rc;
+  return (rc==SQLITE_OK ? pTask->pUnpacked->errCode : rc);
 }
 
 /*
@@ -2074,9 +2073,10 @@ static int vdbeSorterAddToTree(
         rc = vdbeIncrNew(pTask, pNew, &pIter->pIncr);
       }
     }
-
-    p = pIter->pIncr->pMerger;
-    nDiv = nDiv / SORTER_MAX_MERGE_COUNT;
+    if( rc==SQLITE_OK ){
+      p = pIter->pIncr->pMerger;
+      nDiv = nDiv / SORTER_MAX_MERGE_COUNT;
+    }
   }
 
   if( rc==SQLITE_OK ){
@@ -2178,6 +2178,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
   rc = vdbeSorterMergeTreeBuild(pSorter, &pMain);
   if( rc==SQLITE_OK ){
 #if SQLITE_MAX_WORKER_THREADS
+    assert( pSorter->bUseThreads==0 || pSorter->nTask>1 );
     if( pSorter->bUseThreads ){
       int iTask;
       PmaReader *pIter;
@@ -2199,16 +2200,14 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
               assert( pIncr->pTask!=pLast );
             }
           }
-          if( pSorter->nTask>1 ){
-            for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
-              PmaReader *p = &pMain->aIter[iTask];
-              assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
-              if( p->pIncr ){ 
-                if( iTask==pSorter->nTask-1 ){
-                  rc = vdbePmaReaderIncrInit(p, INCRINIT_TASK);
-                }else{
-                  rc = vdbePmaReaderBgIncrInit(p);
-                }
+          for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
+            PmaReader *p = &pMain->aIter[iTask];
+            assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
+            if( p->pIncr ){ 
+              if( iTask==pSorter->nTask-1 ){
+                rc = vdbePmaReaderIncrInit(p, INCRINIT_TASK);
+              }else{
+                rc = vdbePmaReaderBgIncrInit(p);
               }
             }
           }
@@ -2216,8 +2215,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
         pMain = 0;
       }
       if( rc==SQLITE_OK ){
-        int eMode = (pSorter->nTask>1 ? INCRINIT_ROOT : INCRINIT_NORMAL);
-        rc = vdbePmaReaderIncrInit(pIter, eMode);
+        rc = vdbePmaReaderIncrInit(pIter, INCRINIT_ROOT);
       }
     }else
 #endif
@@ -2259,10 +2257,12 @@ int sqlite3VdbeSorterRewind(const VdbeCursor *pCsr, int *pbEof){
     return rc;
   }
 
-  /* Write the current in-memory list to a PMA. */
-  if( pSorter->list.pList ){
-    rc = vdbeSorterFlushPMA(pSorter);
-  }
+  /* Write the current in-memory list to a PMA. When the VdbeSorterWrite() 
+  ** function flushes the contents of memory to disk, it immediately always
+  ** creates a new list consisting of a single key immediately afterwards.
+  ** So the list is never empty at this point.  */
+  assert( pSorter->list.pList );
+  rc = vdbeSorterFlushPMA(pSorter);
 
   /* Join all threads */
   rc = vdbeSorterJoinAll(pSorter, rc);

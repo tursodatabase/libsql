@@ -208,6 +208,7 @@ int sqlite3ThreadCreate(
 
 /* Get the results of the thread */
 int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
+
   assert( ppOut!=0 );
   if( p==0 ) return SQLITE_NOMEM;
   if( p->xTask ){
@@ -216,6 +217,15 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
     *ppOut = p->pResult;
   }
   sqlite3_free(p);
+
+#if defined(SQLITE_TEST)
+  {
+    void *pTstAlloc = sqlite3Malloc(10);
+    if (!pTstAlloc) return SQLITE_NOMEM;
+    sqlite3_free(pTstAlloc);
+  }
+#endif
+
   return SQLITE_OK;
 }
 

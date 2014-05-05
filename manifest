@@ -1,5 +1,5 @@
-C Add\san\sextra\sfault-injection\stest\sto\ssortfault.test.\sRemove\san\sunreachable\sbranch\sfrom\svdbesort.c.
-D 2014-05-03T20:43:13.986
+C Add\stests\sso\sthat\sthe\s"coverage-sorter"\stest\spermutation\scovers\sall\sbranches\sin\svdbesort.c.\sFix\sa\sfew\sminor\sproblems\sin\sthe\ssame\sfile.
+D 2014-05-05T09:08:54.007
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,7 +144,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk 97673939d94f210b7218a8236df6c8799d4a0da6
+F main.mk f51f401a87fd07be255bcecae8b03105ca2024e8
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -273,7 +273,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c e35de159f9ced746266ff4b2129b7a828e59119c
+F src/threads.c b9daffcb6ae3a9c080da37b905e790d45a8f99db
 F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
@@ -287,7 +287,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c db67b5b54c476163f3068a194a734c394ecb675e
+F src/vdbesort.c af752fa4c125ab2bfeee1c4e0b50504e79aa7051
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -821,10 +821,10 @@ F test/skipscan1.test bed8cbe9d554c8c27afb6c88500f704c86a9196f
 F test/skipscan2.test d77f79cdbba25f0f6f35298136cff21a7d7a553a
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
-F test/sort.test 2af626b7963eddb8c93b6c87babf81396c379ef5
+F test/sort.test 688468cef8c9a66fcc1d54235de8e4deac745690
 F test/sort2.test c5e25eb674689e291d06b5209fe8d337ae0ec010
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
-F test/sortfault.test f2f94227d97f7efb6351aff29e77498e877d6216
+F test/sortfault.test 1a12b6e27d475f50658a8164aaa34f0080a86b36
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
 F test/speed1p.test b180e98609c7677382cf618c0ec9b69f789033a8
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 32ccf3ae18531682dfd039fa8df6ad9a907ac455
-R 5ede29f57c1094d89ff6cfb82c23c871
+P a33a366ba8a0da81ddd895d552a348441ef8529a
+R 48fa4af9d614a9372c1dc3ff956ba091
 U dan
-Z 83a8a7f60269415a80d26ca6a02bda49
+Z 1076615c7d8998a9f1b953b2c0f517bb

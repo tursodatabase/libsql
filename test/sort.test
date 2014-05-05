@@ -533,12 +533,14 @@ foreach {tn mmap_limit} {
 
 #-------------------------------------------------------------------------
 #
-foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap} {
-          1          0       3     file      true    false
-          2          0       3     file      true     true
-          3          0       0     file      true    false
-          4    1000000       3     file      true    false
-          5          0       0   memory     false     true
+foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap softheaplimit} {
+          1          0       3     file      true    false             0
+          2          0       3     file      true     true             0
+          3          0       0     file      true    false             0
+          4    1000000       3     file      true    false             0
+          5          0       0   memory     false     true             0
+          6          0       0     file     false     true       1000000     
+          7          0       0     file     false     true         10000
 } {
   db close
   sqlite3_shutdown
@@ -550,6 +552,7 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap} {
   }
   sqlite3_initialize
   sorter_test_fakeheap $fakeheap
+  sqlite3_soft_heap_limit $softheaplimit
 
   reset_db
   sqlite3_test_control SQLITE_TESTCTRL_SORTER_MMAP db $mmap_limit
@@ -558,8 +561,13 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap} {
   set ten [string repeat X 10300]
   set one [string repeat y   200]
 
+  if {$softheaplimit} {
+    execsql { PRAGMA cache_size = 20 };
+  } else {
+    execsql { PRAGMA cache_size = 5 };
+  }
+
   do_execsql_test 15.$tn.1 {
-    PRAGMA cache_size = 5;
     WITH rr AS (
       SELECT 4, $ten UNION ALL
       SELECT 2, $one UNION ALL
@@ -582,7 +590,6 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap} {
   } {1 2 3 4 5 6}
 
   do_execsql_test 15.$tn.3 {
-    PRAGMA cache_size = 5;
     WITH rr AS (
       SELECT 4, $ten UNION ALL
       SELECT 2, $one
@@ -601,6 +608,33 @@ set t(1) multithread
 set t(2) serialized
 sqlite3_config $t($sqlite_options(threadsafe))
 sqlite3_initialize
+sqlite3_soft_heap_limit 0
+
+reset_db
+do_catchsql_test 16.1 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(1, NULL, 3);
+  INSERT INTO t1 VALUES(NULL, 2, 3);
+  INSERT INTO t1 VALUES(1, 2, NULL);
+  INSERT INTO t1 VALUES(4, 5, 6);
+  CREATE UNIQUE INDEX i1 ON t1(b, a, c);
+} {0 {}}
+reset_db
+do_catchsql_test 16.2 {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(1, NULL, 3);
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(1, 2, NULL);
+  INSERT INTO t1 VALUES(4, 5, 6);
+  CREATE UNIQUE INDEX i1 ON t1(b, a, c);
+} {1 {UNIQUE constraint failed: t1.b, t1.a, t1.c}}
+
+reset_db
+do_execsql_test 17.1 {
+  SELECT * FROM sqlite_master ORDER BY sql;
+} {}
 
 finish_test
 

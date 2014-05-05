@@ -312,6 +312,7 @@ TESTSRC2 = \
   $(TOP)/src/pcache.c \
   $(TOP)/src/pcache1.c \
   $(TOP)/src/select.c \
+  $(TOP)/src/threads.c \
   $(TOP)/src/tokenize.c \
   $(TOP)/src/utf.c \
   $(TOP)/src/util.c \
