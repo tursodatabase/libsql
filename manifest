@@ -1,5 +1,5 @@
-C Fix\sa\srace\scondition\sin\sthe\ssorter\scode.
-D 2014-05-05T15:58:40.542
+C Add\stest\sfile\ssort4.test,\scontaining\sbrute\sforce\stests\sfor\sthe\smulti-theaded\ssorter.
+D 2014-05-05T20:03:50.967
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -741,7 +741,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 46a18489379943fcbd2ef07faa3858a88adb30cb
+F test/permutations.test 465bc22a873ced74a6d1dedc0dde5da424be6e6a
 F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -824,6 +824,7 @@ F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 688468cef8c9a66fcc1d54235de8e4deac745690
 F test/sort2.test c5e25eb674689e291d06b5209fe8d337ae0ec010
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
+F test/sort4.test a29761a7d05f194e516e91a03d38f8194ac9849d
 F test/sortfault.test 1a12b6e27d475f50658a8164aaa34f0080a86b36
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -1170,7 +1171,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bde28b702dabd02269e333535cc41481351c5efc
-R e53afa0ba1bd427219aede77058d3d04
+P 2d2edfe58db101d42a96772b856e6e55b401aab6
+R a3f7784643670968322db5c49315411c
 U dan
-Z ba1cae0a2780ce3568cf6b58bd76a820
+Z cca87b3c456f151b38b423a6310da351

@@ -1,0 +1,145 @@
+# 2014 May 6.
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. 
+#
+# The tests in this file are brute force tests of the multi-threaded
+# sorter.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix sort4
+
+catch { db close }
+sqlite3_shutdown
+sqlite3_config_worker_threads 3
+sqlite3_initialize
+reset_db
+
+#--------------------------------------------------------------------
+# Set up a table "t1" containing $nRow rows. Each row contains also
+# contains blob fields that total to at least $nPayload bytes of 
+# content.
+#
+proc populate_table {nRow nPayload} {
+  set nCol 0
+
+  set n 0
+  for {set nCol 0} {$n < $nPayload} {incr nCol} {
+    incr n [expr (4 << $nCol)]
+  }
+
+  set cols [lrange [list xxx c0 c1 c2 c3 c4 c5 c6 c7] 1 $nCol]
+  set data [lrange [list xxx \
+      randomblob(4) randomblob(8) randomblob(16) randomblob(32) \
+      randomblob(64) randomblob(128) randomblob(256) randomblob(512) \
+  ] 1 $nCol]
+
+  execsql { DROP TABLE IF EXISTS t1 }
+
+  db transaction {
+    execsql "CREATE TABLE t1(a, [join $cols ,], b);"
+    set insert "INSERT INTO t1 VALUES(:k, [join $data ,], :k)"
+    for {set i 0} {$i < $nRow} {incr i} {
+      set k [expr int(rand()*1000000000)]
+      execsql $insert
+    }
+  }
+}
+
+# Helper for [do_sorter_test]
+#
+proc sorter_test {nRow nRead {nPayload 100} {cache_size 10}} {
+  db eval "PRAGMA cache_size = $cache_size"
+  set res [list]
+
+  set nLoad [expr ($nRow > $nRead) ? $nRead : $nRow]
+
+  set nPayload [expr (($nPayload+3)/4) * 4]
+  set cols [list]
+  foreach {mask col} { 
+    0x04  c0 0x08  c1 0x10  c2 0x20  c3 
+    0x40  c4 0x80  c5 0x100 c6 0x200 c7 
+  } {
+    if {$nPayload & $mask} { lappend cols $col }
+  }
+
+  set n 0
+  db eval "SELECT a, [join $cols ,], b FROM t1 WHERE rowid<=$nRow ORDER BY a" {
+    if {$a!=$b} { error "a!=b (a=$a b=$b)" }
+    lappend res $a
+    incr n
+    if {$n==$nLoad} break
+  }
+
+
+  set sql {SELECT a FROM t1 WHERE rowid<=$nRow ORDER BY a LIMIT $nRead}
+  if {$res != [db eval $sql]} {
+    puts $res
+    puts [db eval {SELECT a FROM t1 WHERE rowid<=$nLoad ORDER BY a}]
+    error "data no good"
+  }
+
+  set {} {} 
+}
+
+# Usage:
+#
+#   do_sorter_test <testname> <args>...
+#
+# where <args> are any of the following switches:
+#
+#   -rows N          (number of rows to have sorter sort)
+#   -read N          (number of rows to read out of sorter)
+#   -payload N       (bytes of payload to read with each row)
+#   -cachesize N     (Value for "PRAGMA cache_size = ?")
+#   -repeats N       (number of times to repeat test)
+#
+proc do_sorter_test {tn args} {
+  set a(-rows)      1000
+  set a(-repeats)   1
+  set a(-read)      100
+  set a(-payload)   100
+  set a(-cachesize) 100
+
+  foreach {s val} $args {
+    if {[info exists a($s)]==0} { 
+      unset a(-cachesize)
+      set optlist "[join [array names a] ,] or -cachesize"
+      error "Unknown option $s, expected $optlist"
+    }
+    set a($s) $val
+  }
+
+  for {set i 0} {$i < $a(-repeats)} {incr i} {
+    set cmd [list sorter_test $a(-rows) $a(-read) $a(-payload) $a(-cachesize)]
+    do_test $tn.$i $cmd {}
+  }
+}
+
+do_test 1 {
+  execsql "PRAGMA page_size = 4096"
+  populate_table 100000 500
+} {}
+
+do_sorter_test 2 -repeats 10 -rows 1000   -read 100
+do_sorter_test 3 -repeats 10 -rows 100000 -read 1000
+do_sorter_test 4 -repeats 10 -rows 100000 -read 1000 -payload 500
+do_sorter_test 5 -repeats 10 -rows 100000 -read 100000 -payload 8
+do_sorter_test 6 -repeats 10 -rows 100000 -read 10 -payload 8
+
+catch { db close }
+sqlite3_shutdown
+sqlite3_config_worker_threads 0
+sqlite3_initialize
+finish_test
+
+
