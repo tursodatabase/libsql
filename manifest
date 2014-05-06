@@ -1,5 +1,5 @@
-C Merge\supdates\sfrom\strunk.
-D 2014-05-05T22:50:19.792
+C Refactor\sVSIX\spackage\screation\stool\sto\sbetter\ssupport\sVisual\sStudio\s2013.
+D 2014-05-06T00:09:46.488
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1140,7 +1140,7 @@ F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
 F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
-F tool/mkvsix.tcl 0d439bb042d0f889210afa91674fe7bf07131d39
+F tool/mkvsix.tcl ee6cf791d22baeac5d488a30bac156e5098fabb9
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1168,7 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P eaa8fc810fcff8171b6c5cff8c661a6faf0e023b c1ab9092e29bc9d172c1f1a3becbcc83b79f2080
-R 6e2bd0951e32bcb3346844cc25759e20
+P 668ed76ac6cfd5810aea7319c752d77fafaab319
+R 5812195e1a7ed7ccc7cd4024eddb3bfc
 U mistachkin
-Z 072e655b0f9d22e16552a74286be445f
+Z add6d3433971df64a412a72ae0f72bd9
