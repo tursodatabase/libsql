@@ -6370,6 +6370,79 @@ static int sorter_test_fakeheap(
   return TCL_OK;
 }
 
+/*
+**     sorter_test_sort4_helper DB SQL1 NSTEP SQL2
+**
+** Compile SQL statement $SQL1 and step it $NSTEP times. For each row, 
+** check that the leftmost and rightmost columns returned are both integers,
+** and that both contain the same value.
+**
+** Then execute statement $SQL2. Check that the statement returns the same
+** set of integers in the same order as in the previous step (using $SQL1).
+*/
+static int sorter_test_sort4_helper(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  const char *zSql1;
+  const char *zSql2;
+  int nStep; 
+  int iStep; 
+  int iCksum1 = 0; 
+  int iCksum2 = 0; 
+  int rc;
+  int iB;
+  sqlite3 *db;
+  sqlite3_stmt *pStmt;
+  
+  if( objc!=5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB SQL1 NSTEP SQL2");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  zSql1 = Tcl_GetString(objv[2]);
+  if( Tcl_GetIntFromObj(interp, objv[3], &nStep) ) return TCL_ERROR;
+  zSql2 = Tcl_GetString(objv[4]);
+
+  rc = sqlite3_prepare_v2(db, zSql1, -1, &pStmt, 0);
+  if( rc!=SQLITE_OK ) goto sql_error;
+
+  iB = sqlite3_column_count(pStmt)-1;
+  for(iStep=0; iStep<nStep && SQLITE_ROW==sqlite3_step(pStmt); iStep++){
+    int a = sqlite3_column_int(pStmt, 0);
+    if( a!=sqlite3_column_int(pStmt, iB) ){
+      Tcl_AppendResult(interp, "data error: (a!=b)", 0);
+      return TCL_ERROR;
+    }
+
+    iCksum1 += (iCksum1 << 3) + a;
+  }
+  rc = sqlite3_finalize(pStmt);
+  if( rc!=SQLITE_OK ) goto sql_error;
+
+  rc = sqlite3_prepare_v2(db, zSql2, -1, &pStmt, 0);
+  if( rc!=SQLITE_OK ) goto sql_error;
+  for(iStep=0; SQLITE_ROW==sqlite3_step(pStmt); iStep++){
+    int a = sqlite3_column_int(pStmt, 0);
+    iCksum2 += (iCksum2 << 3) + a;
+  }
+  rc = sqlite3_finalize(pStmt);
+  if( rc!=SQLITE_OK ) goto sql_error;
+
+  if( iCksum1!=iCksum2 ){
+    Tcl_AppendResult(interp, "checksum mismatch", 0);
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+ sql_error:
+  Tcl_AppendResult(interp, "sql error: ", sqlite3_errmsg(db), 0);
+  return TCL_ERROR;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -6604,6 +6677,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
      { "load_static_extension", tclLoadStaticExtensionCmd },
      { "sorter_test_fakeheap", sorter_test_fakeheap },
+     { "sorter_test_sort4_helper", sorter_test_sort4_helper },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

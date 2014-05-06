@@ -1,5 +1,5 @@
-C Add\stest\sfile\ssort4.test,\scontaining\sbrute\sforce\stests\sfor\sthe\smulti-theaded\ssorter.
-D 2014-05-05T20:03:50.967
+C Re-implement\sthe\score\sof\sthe\smulti-threaded\ssorter\stests\sin\ssort4.test\susing\sC.\sRun\seach\stest\sin\ssort4.test\sten\stimes,\sor\srepeat\sall\stests\sfor\s300\sseconds\sas\spart\sof\sthe\s"multithread"\spermutation\stest.
+D 2014-05-06T15:38:07.762
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e87c99e28a145943666b51b212dacae35fcea0bd
-F src/test1.c bd88cc00bff2f15279d808e84501f06148c144f9
+F src/test1.c a0e59104fec5626bb1d1bd746157f43e85245e4b
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -741,7 +741,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 465bc22a873ced74a6d1dedc0dde5da424be6e6a
+F test/permutations.test 33e7e239ba494fdb30e2f4ffc64c508b145ff42f
 F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -824,7 +824,7 @@ F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 688468cef8c9a66fcc1d54235de8e4deac745690
 F test/sort2.test c5e25eb674689e291d06b5209fe8d337ae0ec010
 F test/sort3.test 6178ade30810ac9166fcdf14b7065e49c0f534e2
-F test/sort4.test a29761a7d05f194e516e91a03d38f8194ac9849d
+F test/sort4.test 5cce4601abc9b1b63ac25d087723b257710577bb
 F test/sortfault.test 1a12b6e27d475f50658a8164aaa34f0080a86b36
 F test/speed1.test f2974a91d79f58507ada01864c0e323093065452
 F test/speed1p.explain d841e650a04728b39e6740296b852dccdca9b2cb
@@ -1171,7 +1171,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 2d2edfe58db101d42a96772b856e6e55b401aab6
-R a3f7784643670968322db5c49315411c
+P 9cc364c42cc64ab7b55b5c55e303fb63a456cf00
+R 3ed4f872bc36ee2cfbd000cc3f4dde43
 U dan
-Z cca87b3c456f151b38b423a6310da351
+Z 5684026d864e64d9d77cb71d6b4cd16b

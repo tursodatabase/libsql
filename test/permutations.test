@@ -469,7 +469,7 @@ test_suite "multithread" -description {
 } -files {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
-  types2.test   types3.test
+  types2.test   types3.test   sort4.test
 } -shutdown {
   catch {db close}
   sqlite3_shutdown

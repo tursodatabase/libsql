@@ -18,16 +18,39 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 set testprefix sort4
 
+# Configure the sorter to use 3 background threads.
 catch { db close }
 sqlite3_shutdown
 sqlite3_config_worker_threads 3
 sqlite3_initialize
 reset_db
 
+# Minimum number of seconds to run for. If the value is 0, each test
+# is run exactly once. Otherwise, tests are repeated until the timeout
+# expires.
+set SORT4TIMEOUT 0
+if {[permutation] == "multithread"} { set SORT4TIMEOUT 300 }
+
 #--------------------------------------------------------------------
 # Set up a table "t1" containing $nRow rows. Each row contains also
-# contains blob fields that total to at least $nPayload bytes of 
-# content.
+# contains blob fields that collectively contain at least $nPayload 
+# bytes of content. The table schema is as follows:
+#
+#   CREATE TABLE t1(a INTEGER, <extra-columns>, b INTEGER);
+#
+# For each row, the values of columns "a" and "b" are set to the same
+# pseudo-randomly selected integer. The "extra-columns", of which there
+# are at most eight, are named c0, c1, c2 etc. Column c0 contains a 4
+# byte string. Column c1 an 8 byte string. Field c2 16 bytes, and so on.
+#
+# This table is intended to be used for testing queries of the form: 
+#
+#   SELECT a, <cols>, b FROM t1 ORDER BY a;
+#
+# The test code checks that rows are returned in order, and that the 
+# values of "a" and "b" are the same for each row (the idea being that
+# if field "b" at the end of the sorter record has not been corrupted, 
+# the rest of the record is probably Ok as well).
 #
 proc populate_table {nRow nPayload} {
   set nCol 0
@@ -57,8 +80,7 @@ proc populate_table {nRow nPayload} {
 
 # Helper for [do_sorter_test]
 #
-proc sorter_test {nRow nRead {nPayload 100} {cache_size 10}} {
-  db eval "PRAGMA cache_size = $cache_size"
+proc sorter_test {nRow nRead nPayload} {
   set res [list]
 
   set nLoad [expr ($nRow > $nRead) ? $nRead : $nRow]
@@ -72,22 +94,25 @@ proc sorter_test {nRow nRead {nPayload 100} {cache_size 10}} {
     if {$nPayload & $mask} { lappend cols $col }
   }
 
-  set n 0
-  db eval "SELECT a, [join $cols ,], b FROM t1 WHERE rowid<=$nRow ORDER BY a" {
-    if {$a!=$b} { error "a!=b (a=$a b=$b)" }
-    lappend res $a
-    incr n
-    if {$n==$nLoad} break
-  }
+  # Create two SELECT statements. Statement $sql1 uses the sorter to sort
+  # $nRow records of a bit over $nPayload bytes each read from the "t1"
+  # table created by [populate_table] proc above. Rows are sorted in order
+  # of the integer field in each "t1" record.
+  #
+  # The second SQL statement sorts the same set of rows as the first, but
+  # uses a LIMIT clause, causing SQLite to use a temp table instead of the
+  # sorter for sorting.
+  #
+  set sql1 "SELECT a, [join $cols ,], b FROM t1 WHERE rowid<=$nRow ORDER BY a"
+  set sql2 "SELECT a FROM t1 WHERE rowid<=$nRow ORDER BY a LIMIT $nRead"
 
-
-  set sql {SELECT a FROM t1 WHERE rowid<=$nRow ORDER BY a LIMIT $nRead}
-  if {$res != [db eval $sql]} {
-    puts $res
-    puts [db eval {SELECT a FROM t1 WHERE rowid<=$nLoad ORDER BY a}]
-    error "data no good"
-  }
-
+  # Pass the two SQL statements to a helper command written in C. This
+  # command steps statement $sql1 $nRead times and compares the integer
+  # values in the rows returned with the results of executing $sql2. If
+  # the comparison fails (indicating some bug in the sorter), a Tcl
+  # exception is thrown.
+  #
+  sorter_test_sort4_helper db $sql1 $nRead $sql2
   set {} {} 
 }
 
@@ -119,27 +144,45 @@ proc do_sorter_test {tn args} {
     set a($s) $val
   }
 
-  for {set i 0} {$i < $a(-repeats)} {incr i} {
-    set cmd [list sorter_test $a(-rows) $a(-read) $a(-payload) $a(-cachesize)]
-    do_test $tn.$i $cmd {}
-  }
+  db eval "PRAGMA cache_size = $a(-cachesize)"
+
+  do_test $tn [subst -nocommands {
+    for {set i 0} {[set i] < $a(-repeats)} {incr i} {
+      sorter_test $a(-rows) $a(-read) $a(-payload)
+    }
+  }] {}
 }
 
+proc clock_seconds {} {
+  db one {SELECT strftime('%s')}
+}
+
+#-------------------------------------------------------------------------
+# Begin tests here.
+
+# Create a test database.
 do_test 1 {
   execsql "PRAGMA page_size = 4096"
   populate_table 100000 500
 } {}
 
-do_sorter_test 2 -repeats 10 -rows 1000   -read 100
-do_sorter_test 3 -repeats 10 -rows 100000 -read 1000
-do_sorter_test 4 -repeats 10 -rows 100000 -read 1000 -payload 500
-do_sorter_test 5 -repeats 10 -rows 100000 -read 100000 -payload 8
-do_sorter_test 6 -repeats 10 -rows 100000 -read 10 -payload 8
+set iTimeLimit [expr [clock_seconds] + $SORT4TIMEOUT]
+
+for {set tn 2} {1} {incr tn} {
+  do_sorter_test $tn.2 -repeats 10 -rows 1000   -read 100
+  do_sorter_test $tn.3 -repeats 10 -rows 100000 -read 1000
+  do_sorter_test $tn.4 -repeats 10 -rows 100000 -read 1000 -payload 500
+  do_sorter_test $tn.5 -repeats 10 -rows 100000 -read 100000 -payload 8
+  do_sorter_test $tn.6 -repeats 10 -rows 100000 -read 10 -payload 8
+
+  set iNow [clock_seconds]
+  if {$iNow>=$iTimeLimit} break
+  do_test "$testprefix-([expr $iTimeLimit-$iNow] seconds remain)" {} {}
+}
 
 catch { db close }
 sqlite3_shutdown
 sqlite3_config_worker_threads 0
 sqlite3_initialize
 finish_test
-
 
