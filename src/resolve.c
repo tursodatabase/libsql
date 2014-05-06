@@ -197,7 +197,7 @@ int sqlite3MatchSpanName(
 **    pExpr->iColumn       Set to the column number within the table.
 **    pExpr->op            Set to TK_COLUMN.
 **    pExpr->pLeft         Any expression this points to is deleted
-**    pExpr->pRight        Any expression this points to is deleted.
+**    pExpr->x.pRight      Any expression this points to is deleted.
 **
 ** The zDb variable is the name of the database (the "X").  This value may be
 ** NULL meaning that name is of the form Y.Z or Z.  Any available database
@@ -415,7 +415,7 @@ static int lookupName(
         char *zAs = pEList->a[j].zName;
         if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
           Expr *pOrig;
-          assert( pExpr->pLeft==0 && pExpr->pRight==0 );
+          assert( pExpr->pLeft==0 && pExpr->x.pRight==0 );
           assert( pExpr->x.pList==0 );
           assert( pExpr->x.pSelect==0 );
           pOrig = pEList->a[j].pExpr;
@@ -495,8 +495,10 @@ static int lookupName(
   */
   sqlite3ExprDelete(db, pExpr->pLeft);
   pExpr->pLeft = 0;
-  sqlite3ExprDelete(db, pExpr->pRight);
-  pExpr->pRight = 0;
+  if( ExprUsesRight(pExpr) ){
+    sqlite3ExprDelete(db, pExpr->x.pRight);
+    pExpr->x.pRight = 0;
+  }
   pExpr->op = (isTrigger ? TK_TRIGGER : TK_COLUMN);
 lookupname_end:
   if( cnt==1 ){
@@ -655,16 +657,18 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       Expr *pRight;
 
       /* if( pSrcList==0 ) break; */
-      pRight = pExpr->pRight;
+      assert( ExprUsesRight(pExpr) );
+      pRight = pExpr->x.pRight;
       if( pRight->op==TK_ID ){
         zDb = 0;
         zTable = pExpr->pLeft->u.zToken;
         zColumn = pRight->u.zToken;
       }else{
         assert( pRight->op==TK_DOT );
+        assert( ExprUsesRight(pRight) );
         zDb = pExpr->pLeft->u.zToken;
         zTable = pRight->pLeft->u.zToken;
-        zColumn = pRight->pRight->u.zToken;
+        zColumn = pRight->x.pRight->u.zToken;
       }
       return lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
     }
@@ -683,7 +687,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       FuncDef *pDef;              /* Information about the function */
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+      assert( ExprHasProperty(pExpr, EP_xIsList) || pList==0 );
       notValidPartIdxWhere(pParse, pNC, "functions");
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);

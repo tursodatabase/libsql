@@ -260,7 +260,8 @@ static void whereSplit(WhereClause *pWC, Expr *pExpr, u8 op){
     whereClauseInsert(pWC, pExpr, 0);
   }else{
     whereSplit(pWC, pExpr->pLeft, op);
-    whereSplit(pWC, pExpr->pRight, op);
+    assert( ExprUsesRight(pExpr) );
+    whereSplit(pWC, pExpr->x.pRight, op);
   }
 }
 
@@ -311,11 +312,13 @@ static Bitmask exprTableUsage(WhereMaskSet *pMaskSet, Expr *p){
     mask = getMask(pMaskSet, p->iTable);
     return mask;
   }
-  mask = exprTableUsage(pMaskSet, p->pRight);
-  mask |= exprTableUsage(pMaskSet, p->pLeft);
-  if( ExprHasProperty(p, EP_xIsSelect) ){
+  mask = exprTableUsage(pMaskSet, p->pLeft);
+  if( ExprUsesRight(p) ){
+    mask |= exprTableUsage(pMaskSet, p->x.pRight);
+  }else if( ExprHasProperty(p, EP_xIsSelect) ){
     mask |= exprSelectTableUsage(pMaskSet, p->x.pSelect);
   }else{
+    assert( ExprHasProperty(p, EP_xIsList) );
     mask |= exprListTableUsage(pMaskSet, p->x.pList);
   }
   return mask;
@@ -382,15 +385,16 @@ static int allowedOp(int op){
 ** is not commuted.
 */
 static void exprCommute(Parse *pParse, Expr *pExpr){
-  u16 expRight = (pExpr->pRight->flags & EP_Collate);
+  u16 expRight = (pExpr->x.pRight->flags & EP_Collate);
   u16 expLeft = (pExpr->pLeft->flags & EP_Collate);
+  assert( ExprUsesRight(pExpr) );
   assert( allowedOp(pExpr->op) && pExpr->op!=TK_IN );
   if( expRight==expLeft ){
     /* Either X and Y both have COLLATE operator or neither do */
     if( expRight ){
       /* Both X and Y have COLLATE operators.  Make sure X is always
       ** used by clearing the EP_Collate flag from Y. */
-      pExpr->pRight->flags &= ~EP_Collate;
+      pExpr->x.pRight->flags &= ~EP_Collate;
     }else if( sqlite3ExprCollSeq(pParse, pExpr->pLeft)!=0 ){
       /* Neither X nor Y have COLLATE operators, but X has a non-default
       ** collating sequence.  So add the EP_Collate marker on X to cause
@@ -398,7 +402,7 @@ static void exprCommute(Parse *pParse, Expr *pExpr){
       pExpr->pLeft->flags |= EP_Collate;
     }
   }
-  SWAP(Expr*,pExpr->pRight,pExpr->pLeft);
+  SWAP(Expr*,pExpr->x.pRight,pExpr->pLeft);
   if( pExpr->op>=TK_GT ){
     assert( TK_LT==TK_GT+2 );
     assert( TK_GE==TK_LE+2 );
@@ -459,7 +463,8 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
            && pScan->nEquiv<ArraySize(pScan->aEquiv)
           ){
             int j;
-            pX = sqlite3ExprSkipCollate(pTerm->pExpr->pRight);
+            assert( ExprUsesRight(pTerm->pExpr) );
+            pX = sqlite3ExprSkipCollate(pTerm->pExpr->x.pRight);
             assert( pX->op==TK_COLUMN );
             for(j=0; j<pScan->nEquiv; j+=2){
               if( pScan->aEquiv[j]==pX->iTable
@@ -482,16 +487,16 @@ static WhereTerm *whereScanNext(WhereScan *pScan){
               if( !sqlite3IndexAffinityOk(pX, pScan->idxaff) ){
                 continue;
               }
-              assert(pX->pLeft);
-              pColl = sqlite3BinaryCompareCollSeq(pParse,
-                                                  pX->pLeft, pX->pRight);
+              assert( pX->pLeft!=0 );
+              pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft,
+                             ExprUsesRight(pX) ? pX->x.pRight : 0);
               if( pColl==0 ) pColl = pParse->db->pDfltColl;
               if( sqlite3StrICmp(pColl->zName, pScan->zCollName) ){
                 continue;
               }
             }
             if( (pTerm->eOperator & WO_EQ)!=0
-             && (pX = pTerm->pExpr->pRight)->op==TK_COLUMN
+             && (pX = pTerm->pExpr->x.pRight)->op==TK_COLUMN
              && pX->iTable==pScan->aEquiv[0]
              && pX->iColumn==pScan->aEquiv[1]
             ){
@@ -1016,7 +1021,8 @@ static void exprAnalyzeOrTerm(
           ** of both right and left sides must be such that no type
           ** conversions are required on the right.  (Ticket #2249)
           */
-          affRight = sqlite3ExprAffinity(pOrTerm->pExpr->pRight);
+          assert( ExprUsesRight(pOrTerm->pExpr) );
+          affRight = sqlite3ExprAffinity(pOrTerm->pExpr->x.pRight);
           affLeft = sqlite3ExprAffinity(pOrTerm->pExpr->pLeft);
           if( affRight!=0 && affRight!=affLeft ){
             okToChngToIN = 0;
@@ -1042,7 +1048,8 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->eOperator & WO_EQ );
         assert( pOrTerm->leftCursor==iCursor );
         assert( pOrTerm->u.leftColumn==iColumn );
-        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight, 0);
+        assert( ExprUsesRight(pOrTerm->pExpr) );
+        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->x.pRight, 0);
         pList = sqlite3ExprListAppend(pWInfo->pParse, pList, pDup);
         pLeft = pOrTerm->pExpr->pLeft;
       }
@@ -1052,7 +1059,7 @@ static void exprAnalyzeOrTerm(
       if( pNew ){
         int idxNew;
         transferJoinMarkings(pNew, pExpr);
-        assert( !ExprHasProperty(pNew, EP_xIsSelect) );
+        ExprSetProperty(pNew, EP_xIsList);
         pNew->x.pList = pList;
         idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
         testcase( idxNew==0 );
@@ -1116,16 +1123,16 @@ static void exprAnalyze(
   prereqLeft = exprTableUsage(pMaskSet, pExpr->pLeft);
   op = pExpr->op;
   if( op==TK_IN ){
-    assert( pExpr->pRight==0 );
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       pTerm->prereqRight = exprSelectTableUsage(pMaskSet, pExpr->x.pSelect);
     }else{
+      assert( ExprHasProperty(pExpr, EP_xIsList) || pExpr->x.pList==0 );
       pTerm->prereqRight = exprListTableUsage(pMaskSet, pExpr->x.pList);
     }
   }else if( op==TK_ISNULL ){
     pTerm->prereqRight = 0;
-  }else{
-    pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->pRight);
+  }else if( ExprUsesRight(pExpr) ){
+    pTerm->prereqRight = exprTableUsage(pMaskSet, pExpr->x.pRight);
   }
   prereqAll = exprTableUsage(pMaskSet, pExpr);
   if( ExprHasProperty(pExpr, EP_FromJoin) ){
@@ -1140,14 +1147,17 @@ static void exprAnalyze(
   pTerm->eOperator = 0;
   if( allowedOp(op) ){
     Expr *pLeft = sqlite3ExprSkipCollate(pExpr->pLeft);
-    Expr *pRight = sqlite3ExprSkipCollate(pExpr->pRight);
+    Expr *pRight;
     u16 opMask = (pTerm->prereqRight & prereqLeft)==0 ? WO_ALL : WO_EQUIV;
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
       pTerm->u.leftColumn = pLeft->iColumn;
       pTerm->eOperator = operatorMask(op) & opMask;
     }
-    if( pRight && pRight->op==TK_COLUMN ){
+    if( ExprUsesRight(pExpr)
+     && (pRight = sqlite3ExprSkipCollate(pExpr->x.pRight))!=0
+     && pRight->op==TK_COLUMN
+    ){
       WhereTerm *pNew;
       Expr *pDup;
       u16 eExtraOp = 0;        /* Extra bits for pNew->eOperator */
@@ -1673,7 +1683,8 @@ static void constructAutomaticIndex(
         Expr *pX = pTerm->pExpr;
         idxCols |= cMask;
         pIdx->aiColumn[n] = pTerm->u.leftColumn;
-        pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+        assert( ExprUsesRight(pX) );
+        pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->x.pRight);
         pIdx->azColl[n] = ALWAYS(pColl) ? pColl->zName : "BINARY";
         n++;
       }
@@ -2103,7 +2114,8 @@ static int whereRangeScanEst(
     /* If possible, improve on the iLower estimate using ($P:$L). */
     if( pLower ){
       int bOk;                    /* True if value is extracted from pExpr */
-      Expr *pExpr = pLower->pExpr->pRight;
+      Expr *pExpr = pLower->pExpr->x.pRight;
+      assert( ExprUsesRight(pLower->pExpr) );
       assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
       rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
       if( rc==SQLITE_OK && bOk ){
@@ -2118,7 +2130,8 @@ static int whereRangeScanEst(
     /* If possible, improve on the iUpper estimate using ($P:$U). */
     if( pUpper ){
       int bOk;                    /* True if value is extracted from pExpr */
-      Expr *pExpr = pUpper->pExpr->pRight;
+      Expr *pExpr = pUpper->pExpr->x.pRight;
+      assert( ExprUsesRight(pUpper->pExpr) );
       assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
       rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
       if( rc==SQLITE_OK && bOk ){
@@ -2388,7 +2401,8 @@ static int codeEqualityTerm(
 
   assert( iTarget>0 );
   if( pX->op==TK_EQ ){
-    iReg = sqlite3ExprCodeTarget(pParse, pX->pRight, iTarget);
+    assert( ExprUsesRight(pX) );
+    iReg = sqlite3ExprCodeTarget(pParse, pX->x.pRight, iTarget);
   }else if( pX->op==TK_ISNULL ){
     iReg = iTarget;
     sqlite3VdbeAddOp2(v, OP_Null, 0, iReg);
@@ -2571,7 +2585,8 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
-      Expr *pRight = pTerm->pExpr->pRight;
+      Expr *pRight = pTerm->pExpr->x.pRight;
+      assert( ExprUsesRight(pTerm->pExpr) );
       if( sqlite3ExprCanBeNull(pRight) ){
         sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
@@ -2848,7 +2863,8 @@ static Bitmask codeOneLoopStart(
         codeEqualityTerm(pParse, pTerm, pLevel, j, bRev, iTarget);
         addrNotFound = pLevel->addrNxt;
       }else{
-        sqlite3ExprCode(pParse, pTerm->pExpr->pRight, iTarget);
+        assert( ExprUsesRight(pTerm->pExpr) );
+        sqlite3ExprCode(pParse, pTerm->pExpr->x.pRight, iTarget);
       }
     }
     sqlite3VdbeAddOp2(v, OP_Integer, pLoop->u.vtab.idxNum, iReg);
@@ -2939,7 +2955,8 @@ static Bitmask codeOneLoopStart(
       pX = pStart->pExpr;
       assert( pX!=0 );
       testcase( pStart->leftCursor!=iCur ); /* transitive constraints */
-      r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
+      assert( ExprUsesRight(pX) );
+      r1 = sqlite3ExprCodeTemp(pParse, pX->x.pRight, &rTemp);
       sqlite3VdbeAddOp3(v, aMoveOp[pX->op-TK_GT], iCur, addrBrk, r1);
       VdbeComment((v, "pk"));
       VdbeCoverageIf(v, pX->op==TK_GT);
@@ -2962,7 +2979,8 @@ static Bitmask codeOneLoopStart(
       testcase( pEnd->leftCursor!=iCur ); /* Transitive constraints */
       testcase( pEnd->wtFlags & TERM_VIRTUAL );
       memEndValue = ++pParse->nMem;
-      sqlite3ExprCode(pParse, pX->pRight, memEndValue);
+      assert( ExprUsesRight(pX) );
+      sqlite3ExprCode(pParse, pX->x.pRight, memEndValue);
       if( pX->op==TK_LT || pX->op==TK_GT ){
         testOp = bRev ? OP_Le : OP_Ge;
       }else{
@@ -3126,7 +3144,8 @@ static Bitmask codeOneLoopStart(
     /* Seek the index cursor to the start of the range. */
     nConstraint = nEq;
     if( pRangeStart ){
-      Expr *pRight = pRangeStart->pExpr->pRight;
+      Expr *pRight = pRangeStart->pExpr->x.pRight;
+      assert( ExprUsesRight(pRangeStart->pExpr) );
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
@@ -3170,7 +3189,8 @@ static Bitmask codeOneLoopStart(
     */
     nConstraint = nEq;
     if( pRangeEnd ){
-      Expr *pRight = pRangeEnd->pExpr->pRight;
+      Expr *pRight = pRangeEnd->pExpr->x.pRight;
+      assert( ExprUsesRight(pRangeEnd->pExpr) );
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
@@ -4229,7 +4249,8 @@ static int whereLoopAddBtreeIndex(
           if( (eOp & (WO_EQ|WO_ISNULL))!=0 ){
             testcase( eOp & WO_EQ );
             testcase( eOp & WO_ISNULL );
-            rc = whereEqualScanEst(pParse, pBuilder, pExpr->pRight, &nOut);
+            assert( ExprUsesRight(pExpr) );
+            rc = whereEqualScanEst(pParse, pBuilder, pExpr->x.pRight, &nOut);
           }else{
             rc = whereInScanEst(pParse, pBuilder, pExpr->x.pList, &nOut);
           }

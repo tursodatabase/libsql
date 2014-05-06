@@ -1606,7 +1606,7 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 }
 
 /*
-** pExpr points to an expression which implements a function.  If
+** pExpr might point to an expression which implements a function.  If
 ** it is appropriate to apply the LIKE optimization to that function
 ** then set aWc[0] through aWc[2] to the wildcard characters and
 ** return TRUE.  If the function is not a LIKE-style function then
@@ -1614,13 +1614,11 @@ void sqlite3RegisterLikeFunctions(sqlite3 *db, int caseSensitive){
 */
 int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
   FuncDef *pDef;
-  if( pExpr->op!=TK_FUNCTION 
-   || !pExpr->x.pList 
-   || pExpr->x.pList->nExpr!=2
-  ){
+  if( pExpr->op!=TK_FUNCTION ) return 0;
+  assert( ExprHasProperty(pExpr, EP_xIsList) || pExpr->x.pList==0 );
+  if( !pExpr->x.pList || pExpr->x.pList->nExpr!=2 ){
     return 0;
   }
-  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
   pDef = sqlite3FindFunction(db, pExpr->u.zToken, 
                              sqlite3Strlen30(pExpr->u.zToken),
                              2, SQLITE_UTF8, 0);

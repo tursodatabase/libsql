@@ -524,13 +524,13 @@ int sqlite3FixExpr(
       }
     }
     if( ExprHasProperty(pExpr, EP_TokenOnly) ) break;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    if( ExprUsesRight(pExpr) ){
+      if( sqlite3FixExpr(pFix, pExpr->x.pRight) ) return 1;
+    }else if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
     }else{
+      assert( ExprHasProperty(pExpr, EP_xIsList) );
       if( sqlite3FixExprList(pFix, pExpr->x.pList) ) return 1;
-    }
-    if( sqlite3FixExpr(pFix, pExpr->pRight) ){
-      return 1;
     }
     pExpr = pExpr->pLeft;
   }

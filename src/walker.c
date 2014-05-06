@@ -45,10 +45,12 @@ int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
   if( rc==WRC_Continue
               && !ExprHasProperty(pExpr,EP_TokenOnly) ){
     if( sqlite3WalkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
-    if( sqlite3WalkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    if( ExprUsesRight(pExpr) ){
+      if( sqlite3WalkExpr(pWalker, pExpr->x.pRight) ) return WRC_Abort;
+    }else if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
     }else{
+      assert( ExprHasProperty(pExpr, EP_xIsList) );
       if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
     }
   }

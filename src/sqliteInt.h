@@ -1871,8 +1871,8 @@ struct Expr {
   *********************************************************************/
 
   Expr *pLeft;           /* Left subnode */
-  Expr *pRight;          /* Right subnode */
   union {
+    Expr *pRight;        /* Right subnode */
     ExprList *pList;     /* op = IN, EXISTS, SELECT, CASE, FUNCTION, BETWEEN */
     Select *pSelect;     /* EP_xIsSelect and op = IN, EXISTS, SELECT */
   } x;
@@ -1882,13 +1882,13 @@ struct Expr {
   ** access them will result in a segfault or malfunction.
   *********************************************************************/
 
-#if SQLITE_MAX_EXPR_DEPTH>0
-  int nHeight;           /* Height of the tree headed by this node */
-#endif
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old
                          ** EP_Unlikely:  1000 times likelihood */
+#if SQLITE_MAX_EXPR_DEPTH>0
+  int nHeight;           /* Height of the tree headed by this node */
+#endif
   ynVar iColumn;         /* TK_COLUMN: column index.  -1 for rowid.
                          ** TK_VARIABLE: variable number (always >= 1). */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
@@ -1914,7 +1914,6 @@ struct Expr {
 #define EP_Collate   0x000100 /* Tree contains a TK_COLLATE operator */
 #define EP_Generic   0x000200 /* Ignore COLLATE or affinity on this tree */
 #define EP_IntValue  0x000400 /* Integer value contained in u.iValue */
-#define EP_xIsSelect 0x000800 /* x.pSelect is valid (otherwise x.pList is) */
 #define EP_Skip      0x001000 /* COLLATE, AS, or UNLIKELY */
 #define EP_Reduced   0x002000 /* Expr struct EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly 0x004000 /* Expr struct EXPR_TOKENONLYSIZE bytes only */
@@ -1923,6 +1922,9 @@ struct Expr {
 #define EP_NoReduce  0x020000 /* Cannot EXPRDUP_REDUCE this Expr */
 #define EP_Unlikely  0x040000 /* unlikely() or likelihood() function */
 #define EP_Constant  0x080000 /* Node is a constant */
+#define EP_xIsSelect 0x100000 /* Use x.pSelect, not x.pList or x.pRight */
+#define EP_xIsList   0x200000 /* Use x.pList, not x.pSelect or x.pRight */
+#define EP_xMask     0x300000 /* Combination of xIsSelect and xIsList */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1932,6 +1934,10 @@ struct Expr {
 #define ExprHasAllProperty(E,P)  (((E)->flags&(P))==(P))
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
+
+/* True if the x.pRight field of Expr E is valid */
+#define ExprUsesRight(E)         (((E)->flags&EP_xMask)==0)
+
 
 /* The ExprSetVVAProperty() macro is used for Verification, Validation,
 ** and Accreditation only.  It works like ExprSetProperty() during VVA

@@ -340,7 +340,7 @@ static void setJoinExpr(Expr *p, int iTable){
     ExprSetVVAProperty(p, EP_NoReduce);
     p->iRightJoinTable = (i16)iTable;
     setJoinExpr(p->pLeft, iTable);
-    p = p->pRight;
+    p = ExprUsesRight(p) ? p->x.pRight : 0;
   } 
 }
 
@@ -1562,7 +1562,8 @@ static int selectColumnsFromExprList(
       Expr *pColExpr = p;  /* The expression that is the result column name */
       Table *pTab;         /* Table associated with this expression */
       while( pColExpr->op==TK_DOT ){
-        pColExpr = pColExpr->pRight;
+        assert( ExprUsesRight(pColExpr) );
+        pColExpr = pColExpr->x.pRight;
         assert( pColExpr!=0 );
       }
       if( pColExpr->op==TK_COLUMN && ALWAYS(pColExpr->pTab!=0) ){
@@ -2994,17 +2995,19 @@ static Expr *substExpr(
     }else{
       Expr *pNew;
       assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
-      assert( pExpr->pLeft==0 && pExpr->pRight==0 );
+      assert( pExpr->pLeft==0 && pExpr->x.pRight==0 );
       pNew = sqlite3ExprDup(db, pEList->a[pExpr->iColumn].pExpr, 0);
       sqlite3ExprDelete(db, pExpr);
       pExpr = pNew;
     }
   }else{
     pExpr->pLeft = substExpr(db, pExpr->pLeft, iTable, pEList);
-    pExpr->pRight = substExpr(db, pExpr->pRight, iTable, pEList);
-    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+    if( ExprUsesRight(pExpr) ){
+      pExpr->x.pRight = substExpr(db, pExpr->x.pRight, iTable, pEList);
+    }else if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       substSelect(db, pExpr->x.pSelect, iTable, pEList);
     }else{
+      assert( ExprHasProperty(pExpr, EP_xIsList) );
       substExprList(db, pExpr->x.pList, iTable, pEList);
     }
   }
@@ -4054,9 +4057,9 @@ static int selectExpander(Walker *pWalker, Select *p){
   for(k=0; k<pEList->nExpr; k++){
     pE = pEList->a[k].pExpr;
     if( pE->op==TK_ALL ) break;
-    assert( pE->op!=TK_DOT || pE->pRight!=0 );
+    assert( pE->op!=TK_DOT || !ExprUsesRight(pE) || pE->x.pRight!=0 );
     assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
-    if( pE->op==TK_DOT && pE->pRight->op==TK_ALL ) break;
+    if( pE->op==TK_DOT && pE->x.pRight->op==TK_ALL ) break;
   }
   if( k<pEList->nExpr ){
     /*
@@ -4079,7 +4082,7 @@ static int selectExpander(Walker *pWalker, Select *p){
 
     for(k=0; k<pEList->nExpr; k++){
       pE = a[k].pExpr;
-      pRight = pE->pRight;
+      pRight = ExprUsesRight(pE) ? pE->x.pRight : 0;
       assert( pE->op!=TK_DOT || pRight!=0 );
       if( pE->op!=TK_ALL && (pE->op!=TK_DOT || pRight->op!=TK_ALL) ){
         /* This particular expression does not need to be expanded.
@@ -4376,7 +4379,7 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
   for(pFunc=pAggInfo->aFunc, i=0; i<pAggInfo->nFunc; i++, pFunc++){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pExpr;
-      assert( !ExprHasProperty(pE, EP_xIsSelect) );
+      assert( ExprHasProperty(pE, EP_xIsList) || pE->x.pList==0 );
       if( pE->x.pList==0 || pE->x.pList->nExpr!=1 ){
         sqlite3ErrorMsg(pParse, "DISTINCT aggregates must have exactly one "
            "argument");
@@ -4400,7 +4403,7 @@ static void finalizeAggFunctions(Parse *pParse, AggInfo *pAggInfo){
   struct AggInfo_func *pF;
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     ExprList *pList = pF->pExpr->x.pList;
-    assert( !ExprHasProperty(pF->pExpr, EP_xIsSelect) );
+    assert( ExprHasProperty(pF->pExpr, EP_xIsList) || pList==0 );
     sqlite3VdbeAddOp4(v, OP_AggFinal, pF->iMem, pList ? pList->nExpr : 0, 0,
                       (void*)pF->pFunc, P4_FUNCDEF);
   }
@@ -4424,7 +4427,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     int addrNext = 0;
     int regAgg;
     ExprList *pList = pF->pExpr->x.pList;
-    assert( !ExprHasProperty(pF->pExpr, EP_xIsSelect) );
+    assert( ExprHasProperty(pF->pExpr, EP_xIsList) || pList==0 );
     if( pList ){
       nArg = pList->nExpr;
       regAgg = sqlite3GetTempRange(pParse, nArg);
@@ -4899,7 +4902,8 @@ int sqlite3Select(
     }
     sAggInfo.nAccumulator = sAggInfo.nColumn;
     for(i=0; i<sAggInfo.nFunc; i++){
-      assert( !ExprHasProperty(sAggInfo.aFunc[i].pExpr, EP_xIsSelect) );
+      assert( ExprHasProperty(sAggInfo.aFunc[i].pExpr, EP_xIsList)
+                 || sAggInfo.aFunc[i].pExpr->x.pList==0 );
       sNC.ncFlags |= NC_InAggFunc;
       sqlite3ExprAnalyzeAggList(&sNC, sAggInfo.aFunc[i].pExpr->x.pList);
       sNC.ncFlags &= ~NC_InAggFunc;

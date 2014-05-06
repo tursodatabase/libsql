@@ -942,8 +942,9 @@ expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
     sqlite3 *db = pParse->db;
     if( db->mallocFailed==0 && pY->op==TK_NULL ){
       pA->op = (u8)op;
-      sqlite3ExprDelete(db, pA->pRight);
-      pA->pRight = 0;
+      assert( ExprUsesRight(pA) );
+      sqlite3ExprDelete(db, pA->x.pRight);
+      pA->x.pRight = 0;
     }
   }
 }
@@ -997,6 +998,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   A.pExpr = sqlite3PExpr(pParse, TK_BETWEEN, W.pExpr, 0, 0);
   if( A.pExpr ){
     A.pExpr->x.pList = pList;
+    ExprSetProperty(A.pExpr, EP_xIsList);
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   } 
@@ -1051,6 +1053,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
       A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
       if( A.pExpr ){
         A.pExpr->x.pList = Y;
+        ExprSetProperty(A.pExpr, EP_xIsList);
         sqlite3ExprSetHeight(pParse, A.pExpr);
       }else{
         sqlite3ExprListDelete(pParse->db, Y);
@@ -1118,6 +1121,7 @@ expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
   A.pExpr = sqlite3PExpr(pParse, TK_CASE, X, 0, 0);
   if( A.pExpr ){
     A.pExpr->x.pList = Z ? sqlite3ExprListAppend(pParse,Y,Z) : Y;
+    ExprSetProperty(A.pExpr, EP_xIsList);
     sqlite3ExprSetHeight(pParse, A.pExpr);
   }else{
     sqlite3ExprListDelete(pParse->db, Y);
