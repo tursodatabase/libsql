@@ -1,5 +1,5 @@
-C When\sbuilding\sfor\sWindows\s8.0\susing\sVisual\sStudio\s2013,\smake\ssure\sthe\scross-compilation\snative\slibrary\spath\sis\sset\scorrectly.
-D 2014-05-05T22:43:17.621
+C Enhance\sthe\sVSIX\spackage\screation\stool\sto\sbetter\ssupport\sVisual\sStudio\s2013.
+D 2014-05-06T21:26:34.436
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1140,7 +1140,7 @@ F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
 F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
-F tool/mkvsix.tcl 6477fb9dab838b7eea1eed50658ff1cda04850b5
+F tool/mkvsix.tcl 924dcdecda86969686833301c08f84cca2600d94
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1168,7 +1168,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 9a06773acc181e981f61f476a8e56417b98beba9
-R e91b1cf1dddb5793408fd6de2be74034
+P c1ab9092e29bc9d172c1f1a3becbcc83b79f2080
+R a58107e75319df920bcb764f3109ea62
 U mistachkin
-Z b713eaa9517cf3b104e3dc82bdd65124
+Z 469c7a319e5e989d73df4c062d995fca
