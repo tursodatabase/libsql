@@ -1,5 +1,5 @@
-C Enhance\sthe\sVSIX\spackage\screation\stool\sto\sbetter\ssupport\sVisual\sStudio\s2013.
-D 2014-05-06T21:26:34.436
+C Update\sthe\stemplate\sVSIX\spackage\sfile\sas\swell.
+D 2014-05-06T21:37:10.782
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1167,8 +1167,8 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
-F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P c1ab9092e29bc9d172c1f1a3becbcc83b79f2080
-R a58107e75319df920bcb764f3109ea62
+F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
+P c1fb04f61eb74d80d1b7607ae6904fe2e1717988
+R e86d9d0c4e9d221c23e483062a69a0ee
 U mistachkin
-Z 469c7a319e5e989d73df4c062d995fca
+Z 61035ffe1ca5b1a658207d61a8a19a18
