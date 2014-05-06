@@ -127,6 +127,7 @@ proc sorter_test {nRow nRead nPayload} {
 #   -payload N       (bytes of payload to read with each row)
 #   -cachesize N     (Value for "PRAGMA cache_size = ?")
 #   -repeats N       (number of times to repeat test)
+#   -fakeheap BOOL   (true to use separate allocations for in-memory records)
 #
 proc do_sorter_test {tn args} {
   set a(-rows)      1000
@@ -134,6 +135,7 @@ proc do_sorter_test {tn args} {
   set a(-read)      100
   set a(-payload)   100
   set a(-cachesize) 100
+  set a(-fakeheap)  0
 
   foreach {s val} $args {
     if {[info exists a($s)]==0} { 
@@ -143,14 +145,20 @@ proc do_sorter_test {tn args} {
     }
     set a($s) $val
   }
+  if {[permutation] == "memsys3" || [permutation] == "memsys5"} {
+    set a(-fakeheap) 0
+  }
+  if {$a(-fakeheap)} { sorter_test_fakeheap 1 }
+
 
   db eval "PRAGMA cache_size = $a(-cachesize)"
-
   do_test $tn [subst -nocommands {
     for {set i 0} {[set i] < $a(-repeats)} {incr i} {
       sorter_test $a(-rows) $a(-read) $a(-payload)
     }
   }] {}
+
+  if {$a(-fakeheap)} { sorter_test_fakeheap 0 }
 }
 
 proc clock_seconds {} {
@@ -168,12 +176,14 @@ do_test 1 {
 
 set iTimeLimit [expr [clock_seconds] + $SORT4TIMEOUT]
 
-for {set tn 2} {1} {incr tn} {
-  do_sorter_test $tn.2 -repeats 10 -rows 1000   -read 100
-  do_sorter_test $tn.3 -repeats 10 -rows 100000 -read 1000
-  do_sorter_test $tn.4 -repeats 10 -rows 100000 -read 1000 -payload 500
-  do_sorter_test $tn.5 -repeats 10 -rows 100000 -read 100000 -payload 8
-  do_sorter_test $tn.6 -repeats 10 -rows 100000 -read 10 -payload 8
+for {set t 2} {1} {incr tn} {
+  do_sorter_test $t.2 -repeats 10 -rows 1000   -read 100
+  do_sorter_test $t.3 -repeats 10 -rows 100000 -read 1000
+  do_sorter_test $t.4 -repeats 10 -rows 100000 -read 1000 -payload 500
+  do_sorter_test $t.5 -repeats 10 -rows 100000 -read 100000 -payload 8
+  do_sorter_test $t.6 -repeats 10 -rows 100000 -read 10 -payload 8
+  do_sorter_test $t.7 -repeats 10 -rows 10000 -read 10000 -payload 8 -fakeheap 1
+  do_sorter_test $t.8 -repeats 10 -rows 100000 -read 10000 -cachesize 250
 
   set iNow [clock_seconds]
   if {$iNow>=$iTimeLimit} break
