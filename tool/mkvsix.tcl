@@ -65,15 +65,15 @@
 # argument is optional and if present must contain the name of the directory
 # containing the root of the source tree for SQLite.  The third argument is
 # optional and if present must contain the flavor the VSIX package to build.
-# Currently, the only supported package flavors are "WinRT", "WinRT81", and
-# "WP80", "WP81", and "Win32".  The fourth argument is optional and if present
-# must be a string containing a list of platforms to include in the VSIX
-# package.  The platform list is "platform1,platform2,platform3".  The fifth
-# argument is optional and if present must contain the version of Visual Studio
-# required by the package.  Currently, the only supported versions are "2012"
-# and "2013".  The package flavors "WinRT81" and "WP81" are only supported when
-# the Visual Studio version is "2013".  Typically, when on Windows, this script
-# is executed using commands similar to the following from a normal Windows
+# Currently, the only supported package flavors are "WinRT", "WinRT81", "WP80",
+# "WP81", and "Win32".  The fourth argument is optional and if present must be
+# a string containing a list of platforms to include in the VSIX package.  The
+# platform list is "platform1,platform2,platform3".  The fifth argument is
+# optional and if present must contain the version of Visual Studio required by
+# the package.  Currently, the only supported versions are "2012" and "2013".
+# The package flavors "WinRT81" and "WP81" are only supported when the Visual
+# Studio version is "2013".  Typically, when on Windows, this script is
+# executed using commands similar to the following from a normal Windows
 # command prompt:
 #
 #                         CD /D C:\dev\sqlite\core
