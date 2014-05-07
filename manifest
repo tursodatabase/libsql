@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_IOCAP_IMMUTABLE\sbit\sas\sa\spossible\sreturn\svalue\sfrom\nthe\sxDeviceCharacteristics\smethod\sin\sthe\sVFS.\s\sAdd\sthe\s"nolock"\sand\n"immutable"\squery\sparameters\sto\sURI\sfilenames.
-D 2014-05-07T15:46:04.082
+C Make\ssure\sthe\sgroup_concat()\sfunction\sreturns\san\sempty\sstring,\snot\sa\sNULL,\s\nif\sit\shas\sat\sleast\sone\sinput\srow.\sFix\sfor\sticket\s[55746f9e65f8587].
+D 2014-05-07T18:23:04.692
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
 F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
-F src/func.c 2945bb2c4cdc0ac43733046285a4434310be1811
+F src/func.c 2077ccd5c77952fb654997eb81bc7be57c955ba2
 F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -578,7 +578,7 @@ F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
-F test/func.test c2cbfc23d554c5bf8678d0fb271aa4f8ef94839c
+F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
@@ -1169,8 +1169,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 99d96765cc378fde7b285f4577ea2b5d130d9a61 e193aced2942e7405d0f45f90d4954b5663b4ba5
-R 397fc32d1bd36ead839d4c78d231487f
-T +closed e193aced2942e7405d0f45f90d4954b5663b4ba5
+P 1a0d7d3d9dd54b783e3a805961287dd01f94770c f03fbf3700d9d4a654e3aa2e5caa810a8416bed9
+R aaf6cc2f3f5ec9bee45f0a384deaafae
+T +closed f03fbf3700d9d4a654e3aa2e5caa810a8416bed9
 U drh
-Z 57c6364c482e6b92f356dd08394fdb62
+Z fad451fce86c7077ae7b04e526f1422c
