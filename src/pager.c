@@ -4676,8 +4676,8 @@ int sqlite3PagerOpen(
     **    + The largest page size that can be written atomically.
     */
     if( rc==SQLITE_OK ){
+      int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
       if( !readOnly ){
-        int iDc = sqlite3OsDeviceCharacteristics(pPager->fd);
         setSectorSize(pPager);
         assert(SQLITE_DEFAULT_PAGE_SIZE<=SQLITE_MAX_DEFAULT_PAGE_SIZE);
         if( szPageDflt<pPager->sectorSize ){
@@ -4700,12 +4700,12 @@ int sqlite3PagerOpen(
           }
         }
 #endif
-        pPager->noLock = sqlite3_uri_boolean(zFilename, "nolock", 0);
-        if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0
-         || sqlite3_uri_boolean(zFilename, "immutable", 0) ){
-            vfsFlags |= SQLITE_OPEN_READONLY;
-            goto act_like_temp_file;
-        }
+      }
+      pPager->noLock = sqlite3_uri_boolean(zFilename, "nolock", 0);
+      if( (iDc & SQLITE_IOCAP_IMMUTABLE)!=0
+       || sqlite3_uri_boolean(zFilename, "immutable", 0) ){
+          vfsFlags |= SQLITE_OPEN_READONLY;
+          goto act_like_temp_file;
       }
     }
   }else{

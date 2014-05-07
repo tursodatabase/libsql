@@ -67,6 +67,24 @@ do_test nolock-1.2 {
        xCheckReservedLock $::tvfs_calls(xCheckReservedLock)
 } {xLock 0 xUnlock 0 xCheckReservedLock 0}
 
+do_test nolock-1.3 {
+  db close
+  tvfs_reset
+  sqlite db file:test.db?nolock=0 -vfs tvfs -uri 1 -readonly 1
+  db eval {SELECT * FROM t1}
+  list xLock $::tvfs_calls(xLock) xUnlock $::tvfs_calls(xUnlock) \
+       xCheckReservedLock $::tvfs_calls(xCheckReservedLock)
+} {xLock 2 xUnlock 2 xCheckReservedLock 0}
+
+do_test nolock-1.4 {
+  db close
+  tvfs_reset
+  sqlite db file:test.db?nolock=1 -vfs tvfs -uri 1 -readonly 1
+  db eval {SELECT * FROM t1}
+  list xLock $::tvfs_calls(xLock) xUnlock $::tvfs_calls(xUnlock) \
+       xCheckReservedLock $::tvfs_calls(xCheckReservedLock)
+} {xLock 0 xUnlock 0 xCheckReservedLock 0}
+
 #############################################################################
 # Verify that immutable=1 disables both locking and xAccess calls to the
 # journal files.
@@ -121,6 +139,18 @@ do_test nolock-2.22 {
        xAccess $::tvfs_calls(xAccess)
 } {xLock 0 xUnlock 0 xCheckReservedLock 0 xAccess 0}
 
+do_test nolock-2.31 {
+  db2 close
+  tvfs_reset
+  sqlite3 db2 file:test.db?immutable=1 -vfs tvfs -uri 1 -readonly 1
+  db2 eval {SELECT * FROM t1, t2}
+} {hello world 12345 67890}
+do_test nolock-2.32 {
+  list xLock $::tvfs_calls(xLock) xUnlock $::tvfs_calls(xUnlock) \
+       xCheckReservedLock $::tvfs_calls(xCheckReservedLock) \
+       xAccess $::tvfs_calls(xAccess)
+} {xLock 0 xUnlock 0 xCheckReservedLock 0 xAccess 0}
+
 ############################################################################
 # Verify that the SQLITE_IOCAP_IMMUTABLE flag works
 #
@@ -132,6 +162,18 @@ do_test nolock-3.1 {
   db2 eval {SELECT * FROM t1, t2}
 } {hello world 12345 67890}
 do_test nolock-3.2 {
+  list xLock $::tvfs_calls(xLock) xUnlock $::tvfs_calls(xUnlock) \
+       xCheckReservedLock $::tvfs_calls(xCheckReservedLock) \
+       xAccess $::tvfs_calls(xAccess)
+} {xLock 0 xUnlock 0 xCheckReservedLock 0 xAccess 0}
+
+do_test nolock-3.11 {
+  db2 close
+  tvfs_reset
+  sqlite3 db2 test.db -vfs tvfs -readonly 1
+  db2 eval {SELECT * FROM t1, t2}
+} {hello world 12345 67890}
+do_test nolock-3.12 {
   list xLock $::tvfs_calls(xLock) xUnlock $::tvfs_calls(xUnlock) \
        xCheckReservedLock $::tvfs_calls(xCheckReservedLock) \
        xAccess $::tvfs_calls(xAccess)

@@ -1,5 +1,5 @@
-C Add\stest\scases\sand\sdocumentation\sfor\sthe\snolock\sand\simmutable\squery\nparameters.
-D 2014-05-07T15:09:24.618
+C Fix\snolock\sand\simmutable\sso\sthat\sthey\swork\seven\sif\sREADONLY\sis\srequested.
+D 2014-05-07T15:32:03.879
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 2ef13430cd359f7b361bb863504e227b25cc7f81
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c e71678ac927d0a0fb11d993db20a9748eabf808e
-F src/pager.c 6ed54e169933200b8d113674d5da46a5cbd32c6c
+F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -713,7 +713,7 @@ F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
-F test/nolock.test 77b278317fa765b1ada5f88d59219cdeb8364f8f
+F test/nolock.test 0540dd96f39b8876e3ffdd8814fad0ea425efeee
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test ce23eb522c9e1fff6443f96376fe67872202061c
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
@@ -1167,7 +1167,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 725c1c14be331bce9bf074960dbfa7b6d4c1ba87
-R 89db3fd7a34cc009fbfa4be31d82927f
+P 19d56cbaca222b32e2e354063149cccd89441d73
+R 330846b5261a6146788edf187c03b165
 U drh
-Z 2af631f996ea658459fe7078e363eaf4
+Z 1507cbe7cdb05905b7ab13bc4a3a8db3
