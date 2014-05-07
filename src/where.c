@@ -3761,7 +3761,7 @@ static int whereLoopCheaperProperSubset(
     if( pX->rRun > pY->rRun ) return 0;    /* X costs more than Y */
     if( pX->nOut > pY->nOut ) return 0;    /* X costs more than Y */
   }
-  for(j=0, i=pX->nLTerm-1; i>=0; i--){
+  for(i=pX->nLTerm-1; i>=0; i--){
     for(j=pY->nLTerm-1; j>=0; j--){
       if( pY->aLTerm[j]==pX->aLTerm[i] ) break;
     }

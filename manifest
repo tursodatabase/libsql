@@ -1,5 +1,5 @@
-C A\sbetter\sfix\sfor\sthe\sgroup_concat()\sproblem.
-D 2014-05-07T20:24:00.613
+C Remove\sa\ssuperfluous\svariable\sinitialization.
+D 2014-05-07T20:33:17.262
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 91dfd382273c3f67fcdc0ac4728f9140f91c6ab3
+F src/where.c fd4b525cd5ab652cea2fbc71ac15c975271ca461
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P e21bf7a2ade6373e94ea403c665f78e1ad22143f
-R afe7614324621c209bd24609b796c72c
+P 1c086deebd0eb442918972e4b9185a5a0db3b8c3
+R 995ed9b07fad6d84d47ce217aca5ca74
 U drh
-Z 90528f628504d485125985a9d758e5e7
+Z 2d839c831dc7cae35991010f3444c69e
