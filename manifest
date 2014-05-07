@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sgroup_concat()\sfunction\sreturns\san\sempty\sstring,\snot\sa\sNULL,\s\nif\sit\shas\sat\sleast\sone\sinput\srow.\sFix\sfor\sticket\s[55746f9e65f8587].
-D 2014-05-07T18:23:04.692
+C Fix\sthe\sway\sparenthesis\sin\sMATCH\sexpressions\sare\shandled\sby\sFTS\sif\sthe\stokenizer\sconsiders\sthem\sto\sbe\stoken\scharacters.
+D 2014-05-07T19:59:36.446
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c 41b1920b9a8657963f09cb93b208c2671c5568db
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h bdeb9015405e8facffb8fc7e09174521a2a780f4
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
-F ext/fts3/fts3_expr.c 5165c365cb5a035f5be8bb296f7aa3211d43e4ac
+F ext/fts3/fts3_expr.c 2ac35bda474f00c14c19608e49a02c8c7ceb9970
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -541,13 +541,14 @@ F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
 F test/fts3d.test 597b0b76e41f0d672e2731c4d7b631d628efd13f
 F test/fts3defer.test 0be4440b73a2e651fc1e472066686d6ada4b9963
-F test/fts3defer2.test a3b6cbeabaf28c9398652a4d101ea224d9358479
+F test/fts3defer2.test e880e3b65bdf999f4746cdaefa65f14a98b9b724
 F test/fts3defer3.test dd53fc13223c6d8264a98244e9b19abd35ed71cd
 F test/fts3drop.test 1b906e293d6773812587b3dc458cb9e8f3f0c297
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
-F test/fts3expr.test 06f1a96facc8f3e4b1ad5cc001dc5c8e83e68b9f
+F test/fts3expr.test 3401d47b229c4504424caf362cc4ff704cad4162
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3expr3.test 9e91b8edbcb197bf2e92161aa7696446d96dce5f
+F test/fts3expr4.test 0713d94ab951ed88a8c3629a4889a48c55c4067c
 F test/fts3fault.test cb72dccb0a3b9f730f16c5240f3fcb9303eb1660
 F test/fts3fault2.test 3198eef2804deea7cac8403e771d9cbcb752d887
 F test/fts3first.test dbdedd20914c8d539aa3206c9b34a23775644641
@@ -1169,8 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 1a0d7d3d9dd54b783e3a805961287dd01f94770c f03fbf3700d9d4a654e3aa2e5caa810a8416bed9
-R aaf6cc2f3f5ec9bee45f0a384deaafae
-T +closed f03fbf3700d9d4a654e3aa2e5caa810a8416bed9
-U drh
-Z fad451fce86c7077ae7b04e526f1422c
+P d01cedaa73d8f9e5502502a1068a9509d1de295c
+R 28138eb84e0bfcefa0d0799bd622d421
+U dan
+Z 3413f41d3a51a750e0d3b3c404322221
