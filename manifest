@@ -1,5 +1,5 @@
-C Remove\sa\ssuperfluous\svariable\sinitialization.
-D 2014-05-07T20:33:17.262
+C Include\ssqlite3rtree.h\sin\sthe\stsrc/\spile\sof\ssource\sfiles\sduring\ntarget_source\sin\sthe\smain.mk\smakefile.
+D 2014-05-07T21:16:56.524
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,7 +144,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk 601f43d91e6c7043127ec192bf85c9a1ae940621
+F main.mk cfa185eed4e0f7e9d28a2e3167cecaa9d6cb39f3
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 1c086deebd0eb442918972e4b9185a5a0db3b8c3
-R 995ed9b07fad6d84d47ce217aca5ca74
+P 68766f837491cb89c2103f2627eb9e23ab326a68
+R 1b75d6e5e9a19ccc14f8e59e21c749f6
 U drh
-Z 2d839c831dc7cae35991010f3444c69e
+Z 3528e73d8f87faaf66e6658213b6d573
