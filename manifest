@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sgroup_concat()\sfunction\sreturns\san\sempty\sstring,\snot\sa\sNULL,\nif\sit\shas\sat\sleast\sone\sinput\srow.\s\sFix\sfor\sticket\s[55746f9e65f8587].
-D 2014-05-07T17:19:31.457
+C Ensure\sthat\sthe\ssqlite3StrAccumAppend()\sroutine\sis\snever\scalled\swith\sa\sNULL\nsecond\sargument.\s\sDoing\sso\sis\sharmless\swhen\sN==0,\sbut\sit\scauses\san\sassert()\nto\sfail\sthat\swas\splaced\sto\squiet\sstatic\sanalyzers.
+D 2014-05-07T18:21:56.753
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
 F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
-F src/func.c 1db49570e01b31fd3cd00ff2c13da8f2f05e9051
+F src/func.c 2077ccd5c77952fb654997eb81bc7be57c955ba2
 F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -1169,7 +1169,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 1a0d7d3d9dd54b783e3a805961287dd01f94770c
-R 34db7d5fd6dab33bdc52f4f3fa07974a
+P 0deac8737545a020d344be96fff16660a7977ab8
+R aaf6cc2f3f5ec9bee45f0a384deaafae
 U drh
-Z eb431a80b9a77174dcfd85ab3e28a5a4
+Z daf5890128d88bd8d8d454e0919fc158
