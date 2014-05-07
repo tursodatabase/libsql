@@ -1,5 +1,5 @@
-C Fix\sthe\sway\sparenthesis\sin\sMATCH\sexpressions\sare\shandled\sby\sFTS\sif\sthe\stokenizer\sconsiders\sthem\sto\sbe\stoken\scharacters.
-D 2014-05-07T19:59:36.446
+C A\sbetter\sfix\sfor\sthe\sgroup_concat()\sproblem.
+D 2014-05-07T20:24:00.613
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
 F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 5269ef07b100763134f71b889327c333bd0989cf
-F src/func.c 2077ccd5c77952fb654997eb81bc7be57c955ba2
+F src/func.c 2e16316ec3a6365a0dc3e553c586f91b20f7f6c8
 F src/global.c 1d7bb7ea8254ae6a68ed9bfaf65fcb3d1690b486
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P d01cedaa73d8f9e5502502a1068a9509d1de295c
-R 28138eb84e0bfcefa0d0799bd622d421
-U dan
-Z 3413f41d3a51a750e0d3b3c404322221
+P e21bf7a2ade6373e94ea403c665f78e1ad22143f
+R afe7614324621c209bd24609b796c72c
+U drh
+Z 90528f628504d485125985a9d758e5e7
