@@ -1,5 +1,5 @@
-C Update\sthe\stemplate\sVSIX\spackage\sfile\sas\swell.
-D 2014-05-06T21:37:10.782
+C Add\sthe\sSQLITE_IOCAP_IMMUTABLE\sbit\sas\sa\spossible\sreturn\svalue\sfrom\nthe\sxDeviceCharacteristics\smethod\sin\sthe\sVFS.\s\sAdd\sthe\s"nolock"\sand\n"immutable"\squery\sparameters\sto\sURI\sfilenames.
+D 2014-05-07T15:46:04.082
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -208,7 +208,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
 F src/os_win.c 485d06a93965f306c7281fca0937829292367234
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
-F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
+F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -222,7 +222,7 @@ F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 089c4d46f067a5cccae93524c6377f981ba99bd9
 F src/shell.c 2afe7a7154e97be0c74c5feacf09626bda8493be
-F src/sqlite.h.in bde98816e1ba0c9ffef50afe7b32f4e5a8f54fe0
+F src/sqlite.h.in 564fc23db33870b5096b20d72df7491ce0b8b74f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h b2947801eccefd7ba3e5f14e1353289351a83cf3
@@ -272,7 +272,7 @@ F src/test_superlock.c 2b97936ca127d13962c3605dbc9a4ef269c424cd
 F src/test_syscall.c 2e21ca7f7dc54a028f1967b63f1e76155c356f9b
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
-F src/test_vfs.c e72f555ef7a59080f898fcf1a233deb9eb704ea9
+F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
@@ -715,6 +715,7 @@ F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test e9648b9d007c7045242af35e11a984d4b169443a
+F test/nolock.test 0540dd96f39b8876e3ffdd8814fad0ea425efeee
 F test/notify1.test 669b2b743618efdc18ca4b02f45423d5d2304abf
 F test/notify2.test ce23eb522c9e1fff6443f96376fe67872202061c
 F test/notify3.test 10ff25cde502e72a92053a2f215d64bece4ef934
@@ -1168,7 +1169,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P c1fb04f61eb74d80d1b7607ae6904fe2e1717988
-R e86d9d0c4e9d221c23e483062a69a0ee
-U mistachkin
-Z 61035ffe1ca5b1a658207d61a8a19a18
+P 99d96765cc378fde7b285f4577ea2b5d130d9a61 e193aced2942e7405d0f45f90d4954b5663b4ba5
+R 397fc32d1bd36ead839d4c78d231487f
+T +closed e193aced2942e7405d0f45f90d4954b5663b4ba5
+U drh
+Z 57c6364c482e6b92f356dd08394fdb62
