@@ -1,5 +1,5 @@
-C Add\sa\slittle\sextra\svariety\sto\sthe\stests\sin\ssort4.test.
-D 2014-05-06T16:21:30.441
+C Fix\sstatic\svariable\sdeclaration\sissue\son\sWindows.
+D 2014-05-08T22:01:08.441
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -199,7 +199,7 @@ F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 4222773e5f61e506f232aedc9ad9e16ca00c1399
 F src/mutex_unix.c 56e22c1bc6aabfa2f9736317a8f56acd5d0c5f7c
-F src/mutex_w32.c f648cebb542b7a7ab98cecaa79259e8519e8f492
+F src/mutex_w32.c c4726d3bfe80996665a39d27598ebd056e2d6b89
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
@@ -1171,7 +1171,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 208b2b04d4d282bec4424ea7160a123ba549d118
-R b3799ca8720be78abdc748ed84ab7526
-U dan
-Z f689b9a36b0734ece63c5c5e094898f6
+P 7de6aee6a5cb5c7f89dced89f2ebf38f8be7a4fa
+R 117bf7d69b405485b3cb8ed74140d14c
+U mistachkin
+Z 6be3c46bf656f034e9d870a5f4b03d3e
