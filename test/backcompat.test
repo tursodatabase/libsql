@@ -200,6 +200,42 @@ do_allbackcompat_test {
 
   do_test backcompat-1.2.7 { sql1 { PRAGMA integrity_check } } {ok}
   do_test backcompat-1.2.8 { sql2 { PRAGMA integrity_check } } {ok}
+
+  do_test backcompat-2.1 {
+    sql1 {
+      CREATE TABLE t2(a UNIQUE, b PRIMARY KEY, c UNIQUE);
+      INSERT INTO t2 VALUES(1,9,5);
+      INSERT INTO t2 VALUES(5,5,1);
+      INSERT INTO t2 VALUES(9,1,9);
+      SELECT * FROM t2 ORDER BY a;
+    }
+  } {1 9 5 5 5 1 9 1 9}
+  do_test backcompat-2.2 {
+    sql2 {
+      SELECT * FROM sqlite_master WHERE rootpage=-1;
+      SELECT * FROM t2 ORDER BY a;
+    }
+  } {1 9 5 5 5 1 9 1 9}
+  do_test backcompat-2.3 {
+    sql1 {
+      SELECT * FROM t2 ORDER BY b;
+    }
+  } {9 1 9 5 5 1 1 9 5}
+  do_test backcompat-2.4 {
+    sql2 {
+      SELECT * FROM t2 ORDER BY b;
+    }
+  } {9 1 9 5 5 1 1 9 5}
+  do_test backcompat-2.5 {
+    sql1 {
+      SELECT * FROM t2 ORDER BY c;
+    }
+  } {5 5 1 1 9 5 9 1 9}
+  do_test backcompat-2.6 {
+    sql2 {
+      SELECT * FROM t2 ORDER BY c;
+    }
+  } {5 5 1 1 9 5 9 1 9}
 }
 foreach k [lsort [array names ::incompatible]] {
   puts "ERROR: Detected journal incompatibility with version $k"

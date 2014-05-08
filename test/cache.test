@@ -46,7 +46,7 @@ do_test cache-1.2 {
 # leaked, but would not be reused until the pager-cache was full (i.e. 
 # 2000 pages by default).
 #
-# This tests that once the pager-cache is initialised, it can be locked
+# This tests that once the pager-cache is initialized, it can be locked
 # and unlocked repeatedly without internally allocating any new pages.
 #
 set cache_size [pager_cache_size db]

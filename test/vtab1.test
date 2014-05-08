@@ -618,8 +618,9 @@ do_test vtab1-5-6 {
 do_test vtab1-5-7 {
   filter $::echo_module
 } [list \
-  xFilter {SELECT rowid, * FROM 't2' WHERE d = ?} \
   xFilter {SELECT rowid, * FROM 't1'}             \
+  xFilter {SELECT rowid, * FROM 't2' WHERE d = ?} \
+  xFilter {SELECT rowid, * FROM 't2' WHERE d = ?} \
 ]
 
 execsql {
@@ -1039,10 +1040,10 @@ do_test vtab1.12-1 {
 # First test outside of a transaction.
 do_test vtab1.12-2 {
   catchsql { INSERT INTO echo_c SELECT * FROM b; }
-} {1 {echo-vtab-error: column a is not unique}}
+} {1 {echo-vtab-error: UNIQUE constraint failed: c.a}}
 do_test vtab1.12-2.1 {
   sqlite3_errmsg db
-} {echo-vtab-error: column a is not unique}
+} {echo-vtab-error: UNIQUE constraint failed: c.a}
 do_test vtab1.12-3 {
   execsql { SELECT * FROM c }
 } {3 G H}
@@ -1051,7 +1052,7 @@ do_test vtab1.12-3 {
 do_test vtab1.12-4 {
   execsql  {BEGIN}
   catchsql { INSERT INTO echo_c SELECT * FROM b; }
-} {1 {echo-vtab-error: column a is not unique}}
+} {1 {echo-vtab-error: UNIQUE constraint failed: c.a}}
 do_test vtab1.12-5 {
   execsql { SELECT * FROM c }
 } {3 G H}
@@ -1091,12 +1092,54 @@ do_test vtab1.13-3 {
 } {15 {} 16}
 
 
-do_test vtab1-14.1 {
-  execsql { DELETE FROM c }
-  set echo_module ""
-  execsql { SELECT * FROM echo_c WHERE rowid IN (1, 2, 3) }
-  set echo_module
-} [list xBestIndex {SELECT rowid, * FROM 'c'} xFilter {SELECT rowid, * FROM 'c'}]
+do_test vtab1-14.001 {
+  execsql {SELECT rowid, * FROM echo_c WHERE +rowid IN (1,2,3)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.002 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid IN (1,2,3)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.003 {
+  execsql {SELECT rowid, * FROM echo_c WHERE +rowid IN (0,1,5,2,'a',3,NULL)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.004 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid IN (0,1,5,'a',2,3,NULL)}
+} {1 3 G H 2 {} 15 16 3 15 {} 16}
+do_test vtab1-14.005 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid NOT IN (0,1,5,'a',2,3)}
+} {}
+do_test vtab1-14.006 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid NOT IN (0,5,'a',2,3)}
+} {1 3 G H}
+do_test vtab1-14.007 {
+  execsql {SELECT rowid, * FROM echo_c WHERE +rowid NOT IN (0,5,'a',2,3,NULL)}
+} {}
+do_test vtab1-14.008 {
+  execsql {SELECT rowid, * FROM echo_c WHERE rowid NOT IN (0,5,'a',2,3,NULL)}
+} {}
+do_test vtab1-14.011 {
+  execsql {SELECT * FROM echo_c WHERE +a IN (1,3,8,'x',NULL,15,24)}
+} {3 G H 15 {} 16}
+do_test vtab1-14.012 {
+  execsql {SELECT * FROM echo_c WHERE a IN (1,3,8,'x',NULL,15,24)}
+} {3 G H 15 {} 16}
+do_test vtab1-14.013 {
+  execsql {SELECT * FROM echo_c WHERE a NOT IN (1,8,'x',15,24)}
+} {3 G H}
+do_test vtab1-14.014 {
+  execsql {SELECT * FROM echo_c WHERE a NOT IN (1,8,'x',NULL,15,24)}
+} {}
+do_test vtab1-14.015 {
+  execsql {SELECT * FROM echo_c WHERE +a NOT IN (1,8,'x',NULL,15,24)}
+} {}
+
+
+
+#do_test vtab1-14.1 {
+#  execsql { DELETE FROM c }
+#  set echo_module ""
+#  execsql { SELECT * FROM echo_c WHERE rowid IN (1, 2, 3) }
+#  set echo_module
+#} {/.*xBestIndex {SELECT rowid, . FROM 'c' WHERE rowid = .} xFilter {SELECT rowid, . FROM 'c'} 1/}
 
 do_test vtab1-14.2 {
   set echo_module ""
@@ -1110,11 +1153,11 @@ do_test vtab1-14.3 {
   set echo_module
 } [list xBestIndex {SELECT rowid, * FROM 'c' WHERE a = ?} xFilter {SELECT rowid, * FROM 'c' WHERE a = ?} 1]
 
-do_test vtab1-14.4 {
-  set echo_module ""
-  execsql { SELECT * FROM echo_c WHERE a IN (1, 2) }
-  set echo_module
-} [list xBestIndex {SELECT rowid, * FROM 'c'} xFilter {SELECT rowid, * FROM 'c'}]
+#do_test vtab1-14.4 {
+#  set echo_module ""
+#  execsql { SELECT * FROM echo_c WHERE a IN (1, 2) }
+#  set echo_module
+#} {/xBestIndex {SELECT rowid, . FROM 'c' WHERE a = .} xFilter {SELECT rowid, . FROM 'c' WHERE a = .} 1/}
 
 do_test vtab1-15.1 {
   execsql {
@@ -1292,5 +1335,64 @@ do_test 19.2 {
 do_test 19.3 {
   db2 close
 } {}
+
+#-------------------------------------------------------------------------
+# Test that the bug fixed by [b0c1ba655d69] really is fixed.
+#
+do_execsql_test 20.1 {
+  CREATE TABLE t7 (a, b);
+  CREATE TABLE t8 (c, d);
+  CREATE INDEX i2 ON t7(a);
+  CREATE INDEX i3 ON t7(b);
+  CREATE INDEX i4 ON t8(c);
+  CREATE INDEX i5 ON t8(d);
+
+  CREATE VIRTUAL TABLE t7v USING echo(t7);
+  CREATE VIRTUAL TABLE t8v USING echo(t8);
+}
+
+do_test 20.2 {
+  for {set i 0} {$i < 1000} {incr i} {
+    db eval {INSERT INTO t7 VALUES($i, $i)}
+    db eval {INSERT INTO t8 VALUES($i, $i)}
+  }
+} {}
+
+do_execsql_test 20.3 {
+  SELECT a, b FROM (
+      SELECT a, b FROM t7 WHERE a=11 OR b=12
+      UNION ALL
+      SELECT c, d FROM t8 WHERE c=5 OR d=6
+  )
+  ORDER BY 1, 2;
+} {5 5 6 6 11 11 12 12}
+
+do_execsql_test 20.4 {
+  SELECT a, b FROM (
+      SELECT a, b FROM t7v WHERE a=11 OR b=12
+      UNION ALL
+      SELECT c, d FROM t8v WHERE c=5 OR d=6
+  )
+  ORDER BY 1, 2;
+} {5 5 6 6 11 11 12 12}
+
+#-------------------------------------------------------------------------
+#
+do_execsql_test 21.1 {
+  CREATE TABLE t9(a,b,c);
+  CREATE VIRTUAL TABLE t9v USING echo(t9);
+
+  INSERT INTO t9 VALUES(1,2,3);
+  INSERT INTO t9 VALUES(3,2,1);
+  INSERT INTO t9 VALUES(2,2,2);
+}
+
+do_execsql_test 21.2 {
+  SELECT * FROM t9v WHERE a<b;
+} {1 2 3}
+
+do_execsql_test 21.3 {
+  SELECT * FROM t9v WHERE a=b;
+} {2 2 2}
 
 finish_test

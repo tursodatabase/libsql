@@ -30,6 +30,10 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 
 do_test corruptB-1.1 {
   execsql {

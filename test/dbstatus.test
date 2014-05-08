@@ -61,7 +61,7 @@ proc lookaside {db} {
   }
 }
 
-ifcapable stat3 {
+ifcapable stat4||stat3 {
   set STAT3 1
 } else {
   set STAT3 0
@@ -134,7 +134,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
       CREATE TABLE t2(c, d);
       CREATE VIEW v1 AS SELECT * FROM t1 UNION SELECT * FROM t2;
     }
-    6y {
+    6k {
       CREATE TABLE t1(a, b);
       CREATE INDEX i1 ON t1(a);
       CREATE INDEX i2 ON t1(a,b);
@@ -204,6 +204,11 @@ foreach ::lookaside_buffer_size {0 64 120} {
     set nSchema4 [lindex [sqlite3_db_status db SQLITE_DBSTATUS_SCHEMA_USED 0] 1]
     set nFree [expr {$nAlloc1-$nAlloc2}]
     
+    # Tests for which the test name ends in an "k" report slightly less
+    # memory than is actually freed when all schema items are finalized.
+    # This is because memory allocated by KeyInfo objects is no longer
+    # counted as "schema memory".
+    #
     # Tests for which the test name ends in an "x" report slightly less
     # memory than is actually freed when all schema items are finalized.
     # This is because memory allocated by virtual table implementations
@@ -214,13 +219,14 @@ foreach ::lookaside_buffer_size {0 64 120} {
     # much greater than just that reported by DBSTATUS_SCHEMA_USED in this
     # case.
     #
-    # Some of the memory used for sqlite_stat3 is unaccounted for by
+    # Some of the memory used for sqlite_stat4 is unaccounted for by
     # dbstatus.
     #
     # Finally, on osx the estimate of memory used by the schema may be
     # slightly low. 
     #
-    if {[string match *x $tn] || $AUTOVACUUM
+    if {[string match *k $tn]
+         || [string match *x $tn] || $AUTOVACUUM
          || ([string match *y $tn] && $STAT3)
          || ($::tcl_platform(os) == "Darwin")
     } {
@@ -246,7 +252,7 @@ foreach ::lookaside_buffer_size {0 64 120} {
   #      lookaside memory allocated by SQLite, and the memory allocated 
   #      for the prepared statements according to sqlite3_db_status().
   #
-  #   3. Finalize all prepared statements Measure the total memory 
+  #   3. Finalize all prepared statements. Measure the total memory 
   #      and the prepared statement memory again.
   #
   #   4. Repeat step 2.

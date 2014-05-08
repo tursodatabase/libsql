@@ -433,7 +433,7 @@ void sqlite3ScratchFree(void *p){
 */
 #ifndef SQLITE_OMIT_LOOKASIDE
 static int isLookaside(sqlite3 *db, void *p){
-  return p && p>=db->lookaside.pStart && p<db->lookaside.pEnd;
+  return p>=db->lookaside.pStart && p<db->lookaside.pEnd;
 }
 #else
 #define isLookaside(A,B) 0
@@ -449,8 +449,9 @@ int sqlite3MallocSize(void *p){
   return sqlite3GlobalConfig.m.xSize(p);
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
-  assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  if( db && isLookaside(db, p) ){
+  assert( db!=0 );
+  assert( sqlite3_mutex_held(db->mutex) );
+  if( isLookaside(db, p) ){
     return db->lookaside.sz;
   }else{
     assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
@@ -484,6 +485,7 @@ void sqlite3_free(void *p){
 */
 void sqlite3DbFree(sqlite3 *db, void *p){
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
+  if( p==0 ) return;
   if( db ){
     if( db->pnBytesFreed ){
       *db->pnBytesFreed += sqlite3DbMallocSize(db, p);

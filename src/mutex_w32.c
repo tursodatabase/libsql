@@ -20,6 +20,11 @@
 #ifdef SQLITE_MUTEX_W32
 
 /*
+** Include the header file for the Windows VFS.
+*/
+#include "os_win.h"
+
+/*
 ** Each recursive mutex is an instance of the following structure.
 */
 struct sqlite3_mutex {
@@ -69,7 +74,7 @@ struct sqlite3_mutex {
     }
     return osType==2;
   }
-#endif /* SQLITE_OS_WINCE */
+#endif /* SQLITE_OS_WINCE || SQLITE_OS_WINRT */
 #endif
 
 #ifdef SQLITE_DEBUG
@@ -107,7 +112,7 @@ static int winMutex_isInit = 0;
 ** processing, the "interlocked" magic is probably not
 ** strictly necessary.
 */
-static long winMutex_lock = 0;
+static LONG winMutex_lock = 0;
 
 void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
 

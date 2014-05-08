@@ -138,21 +138,23 @@ ifcapable {subquery && compound} {
 # Verify that an error occurs if you have too many terms on a
 # compound select statement.
 #
-ifcapable compound {
-  if {$SQLITE_MAX_COMPOUND_SELECT>0} {
-    set sql {SELECT 0}
-    set result 0
-    for {set i 1} {$i<$SQLITE_MAX_COMPOUND_SELECT} {incr i} {
-      append sql " UNION ALL SELECT $i"
-      lappend result $i
+if {[clang_sanitize_address]==0} {
+  ifcapable compound {
+    if {$SQLITE_MAX_COMPOUND_SELECT>0} {
+      set sql {SELECT 0}
+      set result 0
+        for {set i 1} {$i<$SQLITE_MAX_COMPOUND_SELECT} {incr i} {
+          append sql " UNION ALL SELECT $i"
+            lappend result $i
+        }
+      do_test select7-6.1 {
+        catchsql $sql
+      } [list 0 $result]
+      append sql { UNION ALL SELECT 99999999}
+      do_test select7-6.2 {
+        catchsql $sql
+      } {1 {too many terms in compound SELECT}}
     }
-    do_test select7-6.1 {
-      catchsql $sql
-    } [list 0 $result]
-    append sql { UNION ALL SELECT 99999999}
-    do_test select7-6.2 {
-      catchsql $sql
-    } {1 {too many terms in compound SELECT}}
   }
 }
 

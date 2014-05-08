@@ -243,5 +243,35 @@ do_faultsim_test 3 -faults vfsfault-* -prep {
   faultsim_test_result {0 20000}
 }
 
-finish_test
+#-------------------------------------------------------------------------
+# Test errors in mmap().
+#
+proc vfsfault_install {} { 
+  test_syscall reset
+  test_syscall install {mmap}
+}
 
+faultsim_delete_and_reopen
+execsql {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+}
+faultsim_save_and_close
+
+do_faultsim_test 4 -faults vfsfault-* -prep {
+  faultsim_restore_and_reopen
+  file_control_chunksize_test db main 8192
+  execsql { 
+    PRAGMA mmap_size = 1000000;
+  }
+} -body {
+  test_syscall errno mmap     EACCES
+
+  execsql {
+    SELECT * FROM t1;
+  }
+} -test {
+  faultsim_test_result {0 {1 2}} {1 {disk I/O error}}
+}
+
+finish_test

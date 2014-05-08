@@ -59,6 +59,14 @@ static int createFile(JournalFile *p){
         assert(p->iSize<=p->nBuf);
         rc = sqlite3OsWrite(p->pReal, p->zBuf, p->iSize, 0);
       }
+      if( rc!=SQLITE_OK ){
+        /* If an error occurred while writing to the file, close it before
+        ** returning. This way, SQLite uses the in-memory journal data to 
+        ** roll back changes made to the internal page-cache before this
+        ** function was called.  */
+        sqlite3OsClose(pReal);
+        p->pReal = 0;
+      }
     }
   }
   return rc;
@@ -226,6 +234,16 @@ int sqlite3JournalCreate(sqlite3_file *p){
     return SQLITE_OK;
   }
   return createFile((JournalFile *)p);
+}
+
+/*
+** The file-handle passed as the only argument is guaranteed to be an open
+** file. It may or may not be of class JournalFile. If the file is a
+** JournalFile, and the underlying file on disk has not yet been opened,
+** return 0. Otherwise, return 1.
+*/
+int sqlite3JournalExists(sqlite3_file *p){
+  return (p->pMethods!=&JournalFileMethods || ((JournalFile *)p)->pReal!=0);
 }
 
 /* 

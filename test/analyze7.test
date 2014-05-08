@@ -26,7 +26,7 @@ ifcapable {!analyze||!vtab} {
 # Generate some test data
 #
 do_test analyze7-1.0 {
-  register_wholenumber_module db
+  load_static_extension db wholenumber
   execsql {
     CREATE TABLE t1(a,b,c,d);
     CREATE INDEX t1a ON t1(a);
@@ -37,13 +37,13 @@ do_test analyze7-1.0 {
                     WHERE value BETWEEN 1 AND 256;
     EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123;
   }
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
 do_test analyze7-1.1 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=123;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}}
 do_test analyze7-1.2 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?)}}
 
 # Run an analyze on one of the three indices.  Verify that this
 # effects the row-count estimate on the one query that uses that
@@ -53,20 +53,20 @@ do_test analyze7-2.0 {
   execsql {ANALYZE t1a;}
   db cache flush
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
 do_test analyze7-2.1 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=123;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}}
 do_test analyze7-2.2 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?)}}
 
 # Verify that since the query planner now things that t1a is more
 # selective than t1b, it prefers to use t1a.
 #
 do_test analyze7-2.3 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND b=123}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
 
 # Run an analysis on another of the three indices.  Verify  that this
 # new analysis works and does not disrupt the previous analysis.
@@ -75,39 +75,40 @@ do_test analyze7-3.0 {
   execsql {ANALYZE t1cd;}
   db cache flush;
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
 do_test analyze7-3.1 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b=123;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}}
 do_test analyze7-3.2.1 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=?;}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~86 rows)}}
-ifcapable stat3 {
-  # If ENABLE_STAT3 is defined, SQLite comes up with a different estimated
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?)}}
+ifcapable stat4||stat3 {
+  # If ENABLE_STAT4 is defined, SQLite comes up with a different estimated
   # row count for (c=2) than it does for (c=?).
   do_test analyze7-3.2.2 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~57 rows)}}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?)}}
 } else {
-  # If ENABLE_STAT3 is not defined, the expected row count for (c=2) is the
+  # If ENABLE_STAT4 is not defined, the expected row count for (c=2) is the
   # same as that for (c=?).
   do_test analyze7-3.2.3 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=2;}
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?) (~86 rows)}}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=?)}}
 }
 do_test analyze7-3.3 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND b=123}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
-ifcapable {!stat3} {
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
+
+ifcapable {!stat4 && !stat3} {
   do_test analyze7-3.4 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND b=123}
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?) (~2 rows)}}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b=?)}}
   do_test analyze7-3.5 {
     execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE a=123 AND c=123}
-  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?) (~1 rows)}}
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1a (a=?)}}
 }
 do_test analyze7-3.6 {
   execsql {EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE c=123 AND d=123 AND b=123}
-} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=? AND d=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX t1cd (c=? AND d=?)}}
 
 finish_test

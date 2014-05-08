@@ -44,49 +44,13 @@
 #define sqlite3_mutex_notheld(X)  ((void)(X),1)
 #endif /* SQLITE_THREADSAFE==0 */
 
-
-/*
-** Figure out if we are dealing with Unix, Windows, or some other
-** operating system.  After the following block of preprocess macros,
-** all of SQLITE_OS_UNIX, SQLITE_OS_WIN, and SQLITE_OS_OTHER 
-** will defined to either 1 or 0.  One of the four will be 1.  The other 
-** three will be 0.
-*/
-#if defined(SQLITE_OS_OTHER)
-# if SQLITE_OS_OTHER==1
-#   undef SQLITE_OS_UNIX
-#   define SQLITE_OS_UNIX 0
-#   undef SQLITE_OS_WIN
-#   define SQLITE_OS_WIN 0
-# else
-#   undef SQLITE_OS_OTHER
-# endif
-#endif
-#if !defined(SQLITE_OS_UNIX) && !defined(SQLITE_OS_OTHER)
-# define SQLITE_OS_OTHER 0
-# ifndef SQLITE_OS_WIN
-#   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) \
-                       || defined(__MINGW32__) || defined(__BORLANDC__)
-#     define SQLITE_OS_WIN 1
-#     define SQLITE_OS_UNIX 0
-#   else
-#     define SQLITE_OS_WIN 0
-#     define SQLITE_OS_UNIX 1
-#  endif
-# else
-#  define SQLITE_OS_UNIX 0
-# endif
-#else
-# ifndef SQLITE_OS_WIN
-#  define SQLITE_OS_WIN 0
-# endif
-#endif
+#include "os_setup.h"
 
 #if SQLITE_OS_UNIX
 # include <unistd.h>
 #endif
 #if SQLITE_OS_WIN
-# include <windows.h>
+# include "os_win.h"
 # include <io.h>
 #endif
 
@@ -1073,7 +1037,7 @@ size_t sqlite3_quota_fwrite(
   /* If the write was incomplete, adjust the file size and group size
   ** downward */
   if( rc<nmemb && pFile ){
-    size_t nWritten = rc>=0 ? rc : 0;
+    size_t nWritten = rc;
     sqlite3_int64 iNewEnd = iOfst + size*nWritten;
     if( iNewEnd<iEnd ) iNewEnd = iEnd;
     quotaEnter();
@@ -1179,7 +1143,13 @@ int sqlite3_quota_ftruncate(quota_FILE *p, sqlite3_int64 szNew){
   rc = ftruncate(fileno(p->f), szNew);
 #endif
 #if SQLITE_OS_WIN
-  rc = _chsize_s(_fileno(p->f), szNew);
+#  if defined(__MINGW32__) && defined(SQLITE_TEST)
+     /* _chsize_s() is missing from MingW (as of 2012-11-06).  Use
+     ** _chsize() as a work-around for testing purposes. */
+     rc = _chsize(_fileno(p->f), (long)szNew);
+#  else
+     rc = _chsize_s(_fileno(p->f), szNew);
+#  endif
 #endif
   if( pFile && rc==0 ){
     quotaGroup *pGroup = pFile->pGroup;
@@ -1289,7 +1259,7 @@ int sqlite3_quota_remove(const char *zFilename){
   if( pGroup ){
     for(pFile=pGroup->pFiles; pFile && rc==SQLITE_OK; pFile=pNextFile){
       pNextFile = pFile->pNext;
-      diff = memcmp(zFull, pFile->zFilename, nFull);
+      diff = strncmp(zFull, pFile->zFilename, nFull);
       if( diff==0 && ((c = pFile->zFilename[nFull])==0 || c=='/' || c=='\\') ){
         if( pFile->nRef ){
           pFile->deleteOnClose = 1;
@@ -1319,7 +1289,7 @@ struct TclQuotaCallback {
   Tcl_Obj *pScript;      /* Script to be run */
 };
 
-extern const char *sqlite3TestErrorName(int);
+extern const char *sqlite3ErrName(int);
 
 
 /*
@@ -1354,8 +1324,10 @@ static void tclQuotaCallback(
   rc = Tcl_EvalObjEx(p->interp, pEval, TCL_EVAL_GLOBAL);
 
   if( rc==TCL_OK ){
+    Tcl_WideInt x;
     Tcl_Obj *pLimit = Tcl_ObjGetVar2(p->interp, pVarname, 0, 0);
-    rc = Tcl_GetWideIntFromObj(p->interp, pLimit, piLimit);
+    rc = Tcl_GetWideIntFromObj(p->interp, pLimit, &x);
+    *piLimit = x;
     Tcl_UnsetVar(p->interp, Tcl_GetString(pVarname), 0);
   }
 
@@ -1399,7 +1371,7 @@ static int test_quota_initialize(
 
   /* Call sqlite3_quota_initialize() */
   rc = sqlite3_quota_initialize(zName, makeDefault);
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 
   return TCL_OK;
 }
@@ -1422,7 +1394,7 @@ static int test_quota_shutdown(
 
   /* Call sqlite3_quota_shutdown() */
   rc = sqlite3_quota_shutdown();
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 
   return TCL_OK;
 }
@@ -1437,7 +1409,7 @@ static int test_quota_set(
   Tcl_Obj *CONST objv[]
 ){
   const char *zPattern;           /* File pattern to configure */
-  sqlite3_int64 iLimit;           /* Initial quota in bytes */
+  Tcl_WideInt iLimit;             /* Initial quota in bytes */
   Tcl_Obj *pScript;               /* Tcl script to invoke to increase quota */
   int rc;                         /* Value returned by quota_set() */
   TclQuotaCallback *p;            /* Callback object */
@@ -1477,7 +1449,7 @@ static int test_quota_set(
   /* Invoke sqlite3_quota_set() */
   rc = sqlite3_quota_set(zPattern, iLimit, xCallback, (void*)p, xDestroy);
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
   return TCL_OK;
 }
 
@@ -1503,7 +1475,7 @@ static int test_quota_file(
   /* Invoke sqlite3_quota_file() */
   rc = sqlite3_quota_file(zFilename);
 
-  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_STATIC);
+  Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
   return TCL_OK;
 }
 
@@ -1613,7 +1585,6 @@ static int test_quota_fread(
     return TCL_ERROR;
   }
   got = sqlite3_quota_fread(zBuf, sz, nElem, p);
-  if( got<0 ) got = 0;
   zBuf[got*sz] = 0;
   Tcl_SetResult(interp, zBuf, TCL_VOLATILE);
   sqlite3_free(zBuf);

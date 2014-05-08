@@ -120,7 +120,7 @@ do_execsql_test 2.1 {
 }
 do_catchsql_test 2.2 {
   CREATE UNIQUE INDEX i3 ON t2(x);
-} {1 {indexed columns are not unique}}
+} {1 {UNIQUE constraint failed: t2.x}}
 
 
 finish_test

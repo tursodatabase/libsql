@@ -165,7 +165,6 @@ do_test fts3near-3.6 {
     SELECT offsets(t1) FROM t1 WHERE content MATCH 'three NEAR/0 "two four"'
   }
 } {{0 0 8 5 0 1 14 3 0 2 18 4}}
-breakpoint
 do_test fts3near-3.7 {
   execsql {
     SELECT offsets(t1) FROM t1 WHERE content MATCH '"two four" NEAR/0 three'}
@@ -579,6 +578,20 @@ do_test fts3near-6.5 {
     SELECT docid FROM t1 WHERE content MATCH 'abbrev NEAR/10000 zygosis'
   }
 } {3}
+
+# Ticket 38b1ae018f.
+#
+do_execsql_test fts3near-7.1 {
+  CREATE VIRTUAL TABLE x USING fts4(y,z);
+  INSERT INTO x VALUES('aaa bbb ccc ddd', 'bbb ddd aaa ccc');
+  SELECT * FROM x where y MATCH 'bbb NEAR/6 aaa';
+} {{aaa bbb ccc ddd} {bbb ddd aaa ccc}}
+
+do_execsql_test fts3near-7.2 {
+  CREATE VIRTUAL TABLE t2 USING fts4(a, b);
+  INSERT INTO t2 VALUES('A B C', 'A D E');
+  SELECT * FROM t2 where t2 MATCH 'a:A NEAR E'
+} {}
 
 
 finish_test

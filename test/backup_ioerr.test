@@ -115,7 +115,7 @@ proc clear_ioerr_simulation {} {
 #      reported, then the backup process is concluded with a call to 
 #      backup_finish().
 #
-#      Test that if an IO error occurs, or if one occured while updating
+#      Test that if an IO error occurs, or if one occurred while updating
 #      the backup database during step 4, then the conditions listed
 #      under step 3 are all true.
 #
@@ -214,7 +214,7 @@ for {set iError 1} {$bStop == 0} {incr iError} {
   set rc [catchsql { UPDATE t1 SET b = randstr(1000,1000) WHERE a < 50 } sdb]
 
   if {[lindex $rc 0] && $::sqlite_io_error_persist==0} {
-    # The IO error occured while updating the source database. In this
+    # The IO error occurred while updating the source database. In this
     # case the backup should be able to continue.
     set rc [B step 5000]
     if { $rc != "SQLITE_IOERR_UNLOCK" } {

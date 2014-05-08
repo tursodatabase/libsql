@@ -62,6 +62,9 @@ do_error_test fts3_malloc-1.5 {
 do_write_test fts3_malloc-1.6 sqlite_master {
   CREATE VIRTUAL TABLE ft6 USING fts3(a, b, tokenize porter)
 }
+do_write_test fts3_malloc-1.7 sqlite_master {
+  CREATE VIRTUAL TABLE ft7 USING fts4(a, b, notindexed=b)
+}
 
 # Test the xConnect/xDisconnect methods:
 #db eval { ATTACH 'test2.db' AS aux }
@@ -81,6 +84,7 @@ do_test fts3_malloc-2.0 {
     DROP TABLE ft3;
     DROP TABLE ft4;
     DROP TABLE ft6;
+    DROP TABLE ft7;
   }
   execsql { CREATE VIRTUAL TABLE ft USING fts3(a, b) }
   for {set ii 1} {$ii < 32} {incr ii} {
@@ -301,4 +305,3 @@ do_write_test fts3_malloc-5.3 ft_content {
 
 
 finish_test
-

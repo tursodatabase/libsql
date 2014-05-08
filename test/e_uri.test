@@ -261,9 +261,9 @@ foreach {tn uri error} "
 }
 
 
-# EVIDENCE-OF: R-09651-31805 If "ro" is specified, then the database is
+# EVIDENCE-OF: R-43036-46756 If "ro" is specified, then the database is
 # opened for read-only access, just as if the SQLITE_OPEN_READONLY flag
-# had been set in the third argument to sqlite3_prepare_v2().
+# had been set in the third argument to sqlite3_open_v2().
 #
 # EVIDENCE-OF: R-40137-26050 If the mode option is set to "rw", then the
 # database is opened for read-write (but not create) access, as if
@@ -359,9 +359,9 @@ foreach {tn uri error} "
 # EVIDENCE-OF: R-49793-28525 Setting the cache parameter to "private" is
 # equivalent to setting the SQLITE_OPEN_PRIVATECACHE bit.
 #
-# EVIDENCE-OF: R-19510-48080 If sqlite3_open_v2() is used and the
+# EVIDENCE-OF: R-31773-41793 If sqlite3_open_v2() is used and the
 # "cache" parameter is present in a URI filename, its value overrides
-# any behaviour requested by setting SQLITE_OPEN_PRIVATECACHE or
+# any behavior requested by setting SQLITE_OPEN_PRIVATECACHE or
 # SQLITE_OPEN_SHAREDCACHE flag.
 #
 set orig [sqlite3_enable_shared_cache]

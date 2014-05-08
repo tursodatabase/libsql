@@ -40,12 +40,43 @@ do_test tkt1567-1.4 {
   catchsql {
     UPDATE t1 SET a = CASE WHEN rowid<90 THEN substr(a,1,10) ELSE '9999' END;
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test tkt1567-1.5 {
   execsql {
     COMMIT;
   }
 } {}
 integrity_check tkt1567-1.6
+
+do_test tkt1567-2.1 {
+  execsql {
+    CREATE TABLE t2(a TEXT PRIMARY KEY, rowid INT) WITHOUT rowid;
+  }
+  set bigstr abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ
+  for {set i 0} {$i<100} {incr i} {
+    set x [format %5d [expr $i*2]]
+    set sql "INSERT INTO t2 VALUES('$x-$bigstr', $i+1)"
+    execsql $sql
+  }
+} {}
+integrity_check tkt1567-2.2
+
+do_test tkt1567-2.3 {
+  execsql {
+    BEGIN;
+    UPDATE t2 SET a = a||'x' WHERE rowid%2==0;
+  }
+} {}
+do_test tkt1567-2.4 {
+  catchsql {
+    UPDATE t2 SET a = CASE WHEN rowid<90 THEN substr(a,1,10) ELSE '9999' END;
+  }
+} {1 {UNIQUE constraint failed: t2.a}}
+do_test tkt1567-2.5 {
+  execsql {
+    COMMIT;
+  }
+} {}
+integrity_check tkt1567-2.6
 
 finish_test

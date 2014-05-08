@@ -273,9 +273,19 @@ do_test tkt2822-7.1 {
     SELECT * FROM t7 ORDER BY 0;
   }
 } {1 {1st ORDER BY term out of range - should be between 1 and 25}}
-do_test tkt2822-7.2 {
+do_test tkt2822-7.2.1 {
   catchsql {
     SELECT * FROM t7 ORDER BY 1, 0;
+  }
+} {1 {2nd ORDER BY term out of range - should be between 1 and 25}}
+do_test tkt2822-7.2.2 {
+  catchsql {
+    SELECT * FROM t7 ORDER BY 1, 26;
+  }
+} {1 {2nd ORDER BY term out of range - should be between 1 and 25}}
+do_test tkt2822-7.2.3 {
+  catchsql {
+    SELECT * FROM t7 ORDER BY 1, 65536;
   }
 } {1 {2nd ORDER BY term out of range - should be between 1 and 25}}
 do_test tkt2822-7.3 {

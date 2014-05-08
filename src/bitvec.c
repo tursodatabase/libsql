@@ -72,7 +72,7 @@
 /*
 ** A bitmap is an instance of the following structure.
 **
-** This bitmap records the existance of zero or more bits
+** This bitmap records the existence of zero or more bits
 ** with values between 1 and iSize, inclusive.
 **
 ** There are three possible representations of the bitmap.

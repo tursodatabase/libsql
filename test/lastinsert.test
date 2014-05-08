@@ -36,6 +36,17 @@ do_test lastinsert-1.1 {
     }
 } {0 3}
 
+# EVIDENCE-OF: R-47220-63683 The sqlite3_last_insert_rowid() function
+# does not work for WITHOUT ROWID tables.
+#
+do_test lastinsert-1.1w {
+    catchsql {
+        create table t1w (k integer primary key) WITHOUT ROWID;
+        insert into t1w values (123456);
+        select last_insert_rowid(); -- returns 3 from above.
+    }
+} {0 3}
+
 # LIRID unchanged after an update on a table
 do_test lastinsert-1.2 {
     catchsql {

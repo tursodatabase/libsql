@@ -23,6 +23,10 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 # We must have the page_size pragma for these tests to work.
 #
 ifcapable !pager_pragmas {

@@ -77,8 +77,8 @@ static void renameTableFunc(
       assert( len>0 );
     } while( token!=TK_LP && token!=TK_USING );
 
-    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", ((u8*)tname.z) - zSql, zSql, 
-       zTableName, tname.z+tname.n);
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", (int)(((u8*)tname.z) - zSql),
+       zSql, zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
 }
@@ -116,6 +116,7 @@ static void renameParentFunc(
   int token;                      /* Type of token */
 
   UNUSED_PARAMETER(NotUsed);
+  if( zInput==0 || zOld==0 ) return;
   for(z=zInput; *z; z=z+n){
     n = sqlite3GetToken(z, &token);
     if( token==TK_REFERENCES ){
@@ -130,7 +131,7 @@ static void renameParentFunc(
       sqlite3Dequote(zParent);
       if( 0==sqlite3StrICmp((const char *)zOld, zParent) ){
         char *zOut = sqlite3MPrintf(db, "%s%.*s\"%w\"", 
-            (zOutput?zOutput:""), z-zInput, zInput, (const char *)zNew
+            (zOutput?zOutput:""), (int)(z-zInput), zInput, (const char *)zNew
         );
         sqlite3DbFree(db, zOutput);
         zOutput = zOut;
@@ -216,8 +217,8 @@ static void renameTriggerFunc(
     /* Variable tname now contains the token that is the old table-name
     ** in the CREATE TRIGGER statement.
     */
-    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", ((u8*)tname.z) - zSql, zSql, 
-       zTableName, tname.z+tname.n);
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", (int)(((u8*)tname.z) - zSql),
+       zSql, zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
 }
@@ -414,7 +415,7 @@ void sqlite3AlterRenameTable(
   assert( pSrc->nSrc==1 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
 
-  pTab = sqlite3LocateTable(pParse, 0, pSrc->a[0].zName, pSrc->a[0].zDatabase);
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_rename_table;
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zName;
@@ -469,7 +470,7 @@ void sqlite3AlterRenameTable(
   }
 #endif
 
-  /* Begin a transaction and code the VerifyCookie for database iDb. 
+  /* Begin a transaction for database iDb. 
   ** Then modify the schema cookie (since the ALTER TABLE modifies the
   ** schema). Open a statement transaction if the table is a virtual
   ** table.
@@ -605,6 +606,7 @@ void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
     sqlite3VdbeUsesBtree(v, iDb);
     sqlite3VdbeAddOp2(v, OP_Integer, minFormat, r2);
     j1 = sqlite3VdbeAddOp3(v, OP_Ge, r2, 0, r1);
+    sqlite3VdbeChangeP5(v, SQLITE_NOTNULL); VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, r2);
     sqlite3VdbeJumpHere(v, j1);
     sqlite3ReleaseTempReg(pParse, r1);
@@ -687,7 +689,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   ** can handle (i.e. not CURRENT_TIME etc.)
   */
   if( pDflt ){
-    sqlite3_value *pVal;
+    sqlite3_value *pVal = 0;
     if( sqlite3ValueFromExpr(db, pDflt, SQLITE_UTF8, SQLITE_AFF_NONE, &pVal) ){
       db->mallocFailed = 1;
       return;
@@ -757,7 +759,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   assert( pParse->pNewTable==0 );
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   if( db->mallocFailed ) goto exit_begin_add_column;
-  pTab = sqlite3LocateTable(pParse, 0, pSrc->a[0].zName, pSrc->a[0].zDatabase);
+  pTab = sqlite3LocateTableItem(pParse, 0, &pSrc->a[0]);
   if( !pTab ) goto exit_begin_add_column;
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE

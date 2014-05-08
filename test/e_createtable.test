@@ -58,8 +58,6 @@ proc table_list {} {
 }
 
 
-# EVIDENCE-OF: R-47266-09114 -- syntax diagram type-name
-#
 do_createtable_tests 0.1.1 -repair {
   drop_all_tables
 } {
@@ -79,7 +77,7 @@ do_createtable_tests 0.1.2 -error {
 }
 
 
-# EVIDENCE-OF: R-60689-48779 -- syntax diagram column-constraint
+# syntax diagram column-constraint
 #
 do_createtable_tests 0.2.1 -repair {
   drop_all_tables 
@@ -126,7 +124,7 @@ do_createtable_tests 0.2.1 -repair {
   } {}
 }
 
-# EVIDENCE-OF: R-58169-51804 -- syntax diagram table-constraint
+# -- syntax diagram table-constraint
 #
 do_createtable_tests 0.3.1 -repair {
   drop_all_tables 
@@ -145,7 +143,7 @@ do_createtable_tests 0.3.1 -repair {
   4.1   "CREATE TABLE t1(c1, c2, FOREIGN KEY(c1) REFERENCES t2)"           {}
 }
 
-# EVIDENCE-OF: R-44826-22243 -- syntax diagram column-def
+# -- syntax diagram column-def
 #
 do_createtable_tests 0.4.1 -repair {
   drop_all_tables 
@@ -160,7 +158,7 @@ do_createtable_tests 0.4.1 -repair {
         } {}
 }
 
-# EVIDENCE-OF: R-45698-45677 -- syntax diagram create-table-stmt
+# -- syntax diagram create-table-stmt
 #
 do_createtable_tests 0.5.1 -repair {
   drop_all_tables 
@@ -185,7 +183,6 @@ do_createtable_tests 0.5.1 -repair {
   15    "CREATE TABLE t1 AS SELECT count(*), max(b), min(a) FROM t2"  {}
 }
 
-# EVIDENCE-OF: R-24369-11919 -- syntax diagram foreign-key-clause
 #
 #   1:         Explicit parent-key columns.
 #   2:         Implicit child-key columns.
@@ -887,9 +884,10 @@ do_execsql_test e_createtable-3.3.1 {
   );
 } {}
 
-# EVIDENCE-OF: R-10288-43169 For the purposes of the DEFAULT clause, an
+# EVIDENCE-OF: R-36381-62919 For the purposes of the DEFAULT clause, an
 # expression is considered constant provided that it does not contain
-# any sub-queries or string constants enclosed in double quotes.
+# any sub-queries, column or table references, or string literals
+# enclosed in double-quotes instead of single-quotes.
 #
 do_createtable_tests 3.4.1 -error {
   default value of column [x] is not constant
@@ -1106,8 +1104,8 @@ do_catchsql_test e_createtable-3.11.5 {
 # EVIDENCE-OF: R-52382-54248 Each table in SQLite may have at most one
 # PRIMARY KEY.
 # 
-# EVIDENCE-OF: R-18080-47271 If there is more than one PRIMARY KEY
-# clause in a single CREATE TABLE statement, it is an error.
+# EVIDENCE-OF: R-31826-01813 An error is raised if more than one PRIMARY
+# KEY clause appears in a CREATE TABLE statement.
 #
 #     To test the two above, show that zero primary keys is Ok, one primary
 #     key is Ok, and two or more primary keys is an error.
@@ -1129,6 +1127,17 @@ do_createtable_tests 4.1.2 -error {
   5    "CREATE TABLE t5(a PRIMARY KEY, b, c, PRIMARY KEY(a))"            {}
   6    "CREATE TABLE t5(a INTEGER PRIMARY KEY, b, c, PRIMARY KEY(a))"    {}
 }
+
+# EVIDENCE-OF: R-54755-39291 The PRIMARY KEY is optional for ordinary
+# tables but is required for WITHOUT ROWID tables.
+#
+do_catchsql_test 4.1.3 {
+  CREATE TABLE t6(a, b); --ok
+} {0 {}}
+do_catchsql_test 4.1.4 {
+  CREATE TABLE t7(a, b) WITHOUT ROWID; --Error, no PRIMARY KEY
+} {1 {PRIMARY KEY missing on table t7}}
+
 
 proc table_pk {tbl} { 
   set pk [list]
@@ -1163,8 +1172,8 @@ do_createtable_tests 4.2 -repair {
   2.3    "CREATE TABLE t5(a, b INTEGER PRIMARY KEY, c)"       {b}
 }
 
-# EVIDENCE-OF: R-33986-09410 Each row in a table with a primary key must
-# feature a unique combination of values in its primary key columns.
+# EVIDENCE-OF: R-59124-61339 Each row in a table with a primary key must
+# have a unique combination of values in its primary key columns.
 #
 # EVIDENCE-OF: R-39102-06737 If an INSERT or UPDATE statement attempts
 # to modify the table content so that two or more rows feature identical
@@ -1185,13 +1194,14 @@ do_execsql_test 4.3.0 {
   INSERT INTO t2 VALUES(X'ABCDEF',  'three');
 } {}
 
-do_createtable_tests 4.3.1 -error { %s not unique } {
+do_createtable_tests 4.3.1 -error {UNIQUE constraint failed: t1.x} {
   1    "INSERT INTO t1 VALUES(0, 0)"                 {"column x is"}
   2    "INSERT INTO t1 VALUES(45.5, 'abc')"          {"column x is"}
   3    "INSERT INTO t1 VALUES(0.0, 'abc')"           {"column x is"}
   4    "INSERT INTO t1 VALUES('brambles', 'abc')"    {"column x is"}
   5    "INSERT INTO t1 VALUES(X'ABCDEF', 'abc')"     {"column x is"}
-
+}
+do_createtable_tests 4.3.1 -error {UNIQUE constraint failed: t2.x, t2.y} {
   6    "INSERT INTO t2 VALUES(0, 'zero')"            {"columns x, y are"}
   7    "INSERT INTO t2 VALUES(45.5, 'one')"          {"columns x, y are"}
   8    "INSERT INTO t2 VALUES(0.0, 'zero')"          {"columns x, y are"}
@@ -1211,13 +1221,14 @@ do_createtable_tests 4.3.2 {
   9    "INSERT INTO t2 VALUES('brambles', 'abc')"    {}
   10   "INSERT INTO t2 VALUES(X'ABCDEF', 'abc')"     {}
 }
-do_createtable_tests 4.3.3 -error { %s not unique } {
+do_createtable_tests 4.3.3 -error {UNIQUE constraint failed: t1.x} {
   1    "UPDATE t1 SET x=0           WHERE y='two'"    {"column x is"}
   2    "UPDATE t1 SET x='brambles'  WHERE y='three'"  {"column x is"}
   3    "UPDATE t1 SET x=45.5        WHERE y='zero'"   {"column x is"}
   4    "UPDATE t1 SET x=X'ABCDEF'   WHERE y='one'"    {"column x is"}
   5    "UPDATE t1 SET x=0.0         WHERE y='three'"  {"column x is"}
-
+}
+do_createtable_tests 4.3.3 -error {UNIQUE constraint failed: t2.x, t2.y} {
   6    "UPDATE t2 SET x=0, y='zero' WHERE y='two'"    {"columns x, y are"}
   7    "UPDATE t2 SET x='brambles', y='two' WHERE y='three'"  
        {"columns x, y are"}
@@ -1253,11 +1264,12 @@ do_createtable_tests 4.4 {
   14   "INSERT INTO t2 VALUES(NULL, NULL)"           {}
 }
 
-# EVIDENCE-OF: R-61866-38053 Unless the column is an INTEGER PRIMARY KEY
-# SQLite allows NULL values in a PRIMARY KEY column.
+# EVIDENCE-OF: R-35113-43214 Unless the column is an INTEGER PRIMARY KEY
+# or the table is a WITHOUT ROWID table or the column is declared NOT
+# NULL, SQLite allows NULL values in a PRIMARY KEY column.
 #
 #     If the column is an integer primary key, attempting to insert a NULL
-#     into the column triggers the auto-increment behaviour. Attempting
+#     into the column triggers the auto-increment behavior. Attempting
 #     to use UPDATE to set an ipk column to a NULL value is an error.
 #
 do_createtable_tests 4.5.1 {
@@ -1276,6 +1288,14 @@ do_catchsql_test 4.5.3 {
   INSERT INTO t3 VALUES(2, 5, 3);
   UPDATE t3 SET u = NULL WHERE s = 2;
 } {1 {datatype mismatch}}
+do_catchsql_test 4.5.4 {
+  CREATE TABLE t4(s, u INT PRIMARY KEY, v) WITHOUT ROWID;
+  INSERT INTO t4 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t4.u}}
+do_catchsql_test 4.5.5 {
+  CREATE TABLE t5(s, u INT PRIMARY KEY NOT NULL, v);
+  INSERT INTO t5 VALUES(1, NULL, 2);
+} {1 {NOT NULL constraint failed: t5.u}}
 
 # EVIDENCE-OF: R-00227-21080 A UNIQUE constraint is similar to a PRIMARY
 # KEY constraint, except that a single table may have any number of
@@ -1289,14 +1309,12 @@ do_createtable_tests 4.6 {
   4    "CREATE TABLE t4(a, b, c, UNIQUE(a, b, c))"                 {}
 }
 
-# EVIDENCE-OF: R-55240-58877 For each UNIQUE constraint on the table,
-# each row must feature a unique combination of values in the columns
+# EVIDENCE-OF: R-30981-64168 For each UNIQUE constraint on the table,
+# each row must contain a unique combination of values in the columns
 # identified by the UNIQUE constraint.
 #
-# EVIDENCE-OF: R-47733-51480 If an INSERT or UPDATE statement attempts
-# to modify the table content so that two or more rows feature identical
-# values in a set of columns that are subject to a UNIQUE constraint, it
-# is a constraint violation.
+# EVIDENCE-OF: R-59124-61339 Each row in a table with a primary key must
+# have a unique combination of values in its primary key columns.
 #
 do_execsql_test 4.7.0 {
   INSERT INTO t1 VALUES(1, 2);
@@ -1308,29 +1326,29 @@ do_execsql_test 4.7.0 {
   INSERT INTO t4 VALUES('xyx', 2, 1);
   INSERT INTO t4 VALUES('uvw', 1, 1);
 }
-do_createtable_tests 4.7.1 -error { %s not unique } {
-  1    "INSERT INTO t1 VALUES(1, 'one')"             {{column a is}}
-  2    "INSERT INTO t1 VALUES(4.3, 'two')"           {{column a is}}
-  3    "INSERT INTO t1 VALUES('reveal', 'three')"    {{column a is}}
-  4    "INSERT INTO t1 VALUES(X'123456', 'four')"    {{column a is}}
+do_createtable_tests 4.7.1 -error {UNIQUE constraint failed: %s} {
+  1    "INSERT INTO t1 VALUES(1, 'one')"             {{t1.a}}
+  2    "INSERT INTO t1 VALUES(4.3, 'two')"           {{t1.a}}
+  3    "INSERT INTO t1 VALUES('reveal', 'three')"    {{t1.a}}
+  4    "INSERT INTO t1 VALUES(X'123456', 'four')"    {{t1.a}}
 
-  5    "UPDATE t1 SET a = 1 WHERE rowid=2"           {{column a is}}
-  6    "UPDATE t1 SET a = 4.3 WHERE rowid=3"         {{column a is}}
-  7    "UPDATE t1 SET a = 'reveal' WHERE rowid=4"    {{column a is}}
-  8    "UPDATE t1 SET a = X'123456' WHERE rowid=1"   {{column a is}}
+  5    "UPDATE t1 SET a = 1 WHERE rowid=2"           {{t1.a}}
+  6    "UPDATE t1 SET a = 4.3 WHERE rowid=3"         {{t1.a}}
+  7    "UPDATE t1 SET a = 'reveal' WHERE rowid=4"    {{t1.a}}
+  8    "UPDATE t1 SET a = X'123456' WHERE rowid=1"   {{t1.a}}
 
-  9    "INSERT INTO t4 VALUES('xyx', 1, 1)"          {{columns a, b, c are}}
-  10   "INSERT INTO t4 VALUES('xyx', 2, 1)"          {{columns a, b, c are}}
-  11   "INSERT INTO t4 VALUES('uvw', 1, 1)"          {{columns a, b, c are}}
+  9    "INSERT INTO t4 VALUES('xyx', 1, 1)"          {{t4.a, t4.b, t4.c}}
+  10   "INSERT INTO t4 VALUES('xyx', 2, 1)"          {{t4.a, t4.b, t4.c}}
+  11   "INSERT INTO t4 VALUES('uvw', 1, 1)"          {{t4.a, t4.b, t4.c}}
 
-  12   "UPDATE t4 SET a='xyx' WHERE rowid=3"         {{columns a, b, c are}}
-  13   "UPDATE t4 SET b=1 WHERE rowid=2"             {{columns a, b, c are}}
-  14   "UPDATE t4 SET a=0, b=0, c=0"                 {{columns a, b, c are}}
+  12   "UPDATE t4 SET a='xyx' WHERE rowid=3"         {{t4.a, t4.b, t4.c}}
+  13   "UPDATE t4 SET b=1 WHERE rowid=2"             {{t4.a, t4.b, t4.c}}
+  14   "UPDATE t4 SET a=0, b=0, c=0"                 {{t4.a, t4.b, t4.c}}
 }
 
-# EVIDENCE-OF: R-21289-11559 As with PRIMARY KEY constraints, for the
-# purposes of UNIQUE constraints NULL values are considered distinct
-# from all other values (including other NULLs).
+# EVIDENCE-OF: R-00404-17670 For the purposes of UNIQUE constraints,
+# NULL values are considered distinct from all other values, including
+# other NULLs.
 #
 do_createtable_tests 4.8 {
   1    "INSERT INTO t1 VALUES(NULL, NULL)"           {}
@@ -1345,10 +1363,9 @@ do_createtable_tests 4.8 {
   9    "UPDATE t4 SET c = NULL"                      {}
 }
 
-# EVIDENCE-OF: R-26983-26377 INTEGER PRIMARY KEY columns aside, both
-# UNIQUE and PRIMARY KEY constraints are implemented by creating an
-# index in the database (in the same way as a "CREATE UNIQUE INDEX"
-# statement would).
+# EVIDENCE-OF: R-55820-29984 In most cases, UNIQUE and PRIMARY KEY
+# constraints are implemented by creating a unique index in the
+# database.
 do_createtable_tests 4.9 -repair drop_all_tables -query {
   SELECT count(*) FROM sqlite_master WHERE type='index'
 } {
@@ -1359,7 +1376,7 @@ do_createtable_tests 4.9 -repair drop_all_tables -query {
   5    "CREATE TABLE t1(a PRIMARY KEY, b, c, UNIQUE(c, b))"  2
 }
 
-# EVIDENCE-OF: R-02252-33116 Such an index is used like any other index
+# Obsolete: R-02252-33116 Such an index is used like any other index
 # in the database to optimize queries.
 #
 do_execsql_test 4.10.0 {
@@ -1368,13 +1385,13 @@ do_execsql_test 4.10.0 {
 }
 do_createtable_tests 4.10 {
   1    "EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b = 5" 
-       {0 0 0 {SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (b=?) (~1 rows)}}
+       {0 0 0 {SEARCH TABLE t1 USING INDEX sqlite_autoindex_t1_1 (b=?)}}
 
   2    "EXPLAIN QUERY PLAN SELECT * FROM t2 ORDER BY b, c"
-       {0 0 0 {SCAN TABLE t2 USING INDEX sqlite_autoindex_t2_1 (~1000000 rows)}}
+       {0 0 0 {SCAN TABLE t2 USING INDEX sqlite_autoindex_t2_1}}
 
   3    "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE b=10 AND c>10"
-       {0 0 0 {SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?) (~2 rows)}}
+       {0 0 0 {SEARCH TABLE t2 USING INDEX sqlite_autoindex_t2_1 (b=? AND c>?)}}
 }
 
 # EVIDENCE-OF: R-45493-35653 A CHECK constraint may be attached to a
@@ -1407,21 +1424,21 @@ do_execsql_test 4.11 {
   INSERT INTO t2 SELECT * FROM x2;
 }
 
-do_createtable_tests 4.11 -error {constraint failed} {
-  1a    "INSERT INTO x1 VALUES('one', 0)"       {}
-  1b    "INSERT INTO t1 VALUES('one', -4.0)"    {}
+do_createtable_tests 4.11 -error {CHECK constraint failed: %s} {
+  1a    "INSERT INTO x1 VALUES('one', 0)"       {x1}
+  1b    "INSERT INTO t1 VALUES('one', -4.0)"    {t1}
 
-  2a    "INSERT INTO x2 VALUES('abc', 1)"       {}
-  2b    "INSERT INTO t2 VALUES('abc', 1)"       {}
+  2a    "INSERT INTO x2 VALUES('abc', 1)"       {x2}
+  2b    "INSERT INTO t2 VALUES('abc', 1)"       {t2}
 
-  3a    "INSERT INTO x2 VALUES(0, 'abc')"       {}
-  3b    "INSERT INTO t2 VALUES(0, 'abc')"       {}
+  3a    "INSERT INTO x2 VALUES(0, 'abc')"       {x2}
+  3b    "INSERT INTO t2 VALUES(0, 'abc')"       {t2}
 
-  4a    "UPDATE t1 SET b=-1 WHERE rowid=1"      {}
-  4b    "UPDATE x1 SET b=-1 WHERE rowid=1"      {}
+  4a    "UPDATE t1 SET b=-1 WHERE rowid=1"      {t1}
+  4b    "UPDATE x1 SET b=-1 WHERE rowid=1"      {x1}
 
-  4a    "UPDATE x2 SET a='' WHERE rowid=1"      {}
-  4b    "UPDATE t2 SET a='' WHERE rowid=1"      {}
+  4a    "UPDATE x2 SET a='' WHERE rowid=1"      {x2}
+  4b    "UPDATE t2 SET a='' WHERE rowid=1"      {t2}
 }
 
 # EVIDENCE-OF: R-34109-39108 If the CHECK expression evaluates to NULL,
@@ -1472,9 +1489,7 @@ do_execsql_test 4.14.0 {
   INSERT INTO t3 VALUES('x', 'y', 'z');
   INSERT INTO t3 VALUES(1, 2, 3);
 }
-do_createtable_tests 4.14 -error {
-  %s may not be NULL
-} {
+do_createtable_tests 4.14 -error {NOT NULL constraint failed: %s} {
   1    "INSERT INTO t1 VALUES(NULL, 'a')"         {t1.a}
   2    "INSERT INTO t2 VALUES(NULL, 'b')"         {t2.a}
   3    "INSERT INTO t3 VALUES('c', 'd', NULL)"    {t3.c}
@@ -1540,12 +1555,12 @@ do_execsql_test 4.15.0 {
 }
 
 foreach {tn tbl res ac data} {
-  1   t1_ab    {1 {column a is not unique}} 0 {1 one 2 two 3 three}
-  2   t1_ro    {1 {column a is not unique}} 1 {1 one 2 two}
-  3   t1_fa    {1 {column a is not unique}} 0 {1 one 2 two 3 three 4 string}
+  1   t1_ab    {1 {UNIQUE constraint failed: t1_ab.a}} 0 {1 one 2 two 3 three}
+  2   t1_ro    {1 {UNIQUE constraint failed: t1_ro.a}} 1 {1 one 2 two}
+  3   t1_fa    {1 {UNIQUE constraint failed: t1_fa.a}} 0 {1 one 2 two 3 three 4 string}
   4   t1_ig    {0 {}} 0 {1 one 2 two 3 three 4 string 6 string}
   5   t1_re    {0 {}} 0 {1 one 2 two 4 string 3 string 6 string}
-  6   t1_xx    {1 {column a is not unique}} 0 {1 one 2 two 3 three}
+  6   t1_xx    {1 {UNIQUE constraint failed: t1_xx.a}} 0 {1 one 2 two 3 three}
 } {
   catchsql COMMIT
   do_execsql_test  4.15.$tn.1 "BEGIN; INSERT INTO $tbl VALUES(3, 'three')"
@@ -1558,12 +1573,12 @@ foreach {tn tbl res ac data} {
   do_execsql_test 4.15.$tn.4 "SELECT * FROM $tbl" $data
 }
 foreach {tn tbl res ac data} {
-  1   t2_ab    {1 {t2_ab.b may not be NULL}} 0 {1 one 2 two 3 three}
-  2   t2_ro    {1 {t2_ro.b may not be NULL}} 1 {1 one 2 two}
-  3   t2_fa    {1 {t2_fa.b may not be NULL}} 0 {1 one 2 two 3 three 4 xx}
+  1   t2_ab    {1 {NOT NULL constraint failed: t2_ab.b}} 0 {1 one 2 two 3 three}
+  2   t2_ro    {1 {NOT NULL constraint failed: t2_ro.b}} 1 {1 one 2 two}
+  3   t2_fa    {1 {NOT NULL constraint failed: t2_fa.b}} 0 {1 one 2 two 3 three 4 xx}
   4   t2_ig    {0 {}} 0 {1 one 2 two 3 three 4 xx 6 xx}
-  5   t2_re    {1 {t2_re.b may not be NULL}} 0 {1 one 2 two 3 three}
-  6   t2_xx    {1 {t2_xx.b may not be NULL}} 0 {1 one 2 two 3 three}
+  5   t2_re    {1 {NOT NULL constraint failed: t2_re.b}} 0 {1 one 2 two 3 three}
+  6   t2_xx    {1 {NOT NULL constraint failed: t2_xx.b}} 0 {1 one 2 two 3 three}
 } {
   catchsql COMMIT
   do_execsql_test  4.16.$tn.1 "BEGIN; INSERT INTO $tbl VALUES(3, 'three')"
@@ -1576,12 +1591,16 @@ foreach {tn tbl res ac data} {
   do_execsql_test 4.16.$tn.4 "SELECT * FROM $tbl" $data
 }
 foreach {tn tbl res ac data} {
-  1   t3_ab    {1 {columns a, b are not unique}} 0 {1 one 2 two 3 three}
-  2   t3_ro    {1 {columns a, b are not unique}} 1 {1 one 2 two}
-  3   t3_fa    {1 {columns a, b are not unique}} 0 {1 one 2 two 3 three 4 three}
+  1   t3_ab    {1 {UNIQUE constraint failed: t3_ab.a, t3_ab.b}}
+               0 {1 one 2 two 3 three}
+  2   t3_ro    {1 {UNIQUE constraint failed: t3_ro.a, t3_ro.b}}
+               1 {1 one 2 two}
+  3   t3_fa    {1 {UNIQUE constraint failed: t3_fa.a, t3_fa.b}}
+               0 {1 one 2 two 3 three 4 three}
   4   t3_ig    {0 {}} 0 {1 one 2 two 3 three 4 three 6 three}
   5   t3_re    {0 {}} 0 {1 one 2 two 4 three 3 three 6 three}
-  6   t3_xx    {1 {columns a, b are not unique}} 0 {1 one 2 two 3 three}
+  6   t3_xx    {1 {UNIQUE constraint failed: t3_xx.a, t3_xx.b}}
+               0 {1 one 2 two 3 three}
 } {
   catchsql COMMIT
   do_execsql_test  4.17.$tn.1 "BEGIN; INSERT INTO $tbl VALUES(3, 'three')"
@@ -1612,7 +1631,7 @@ do_execsql_test 4.18.1 {
 do_execsql_test  4.18.2 { BEGIN; INSERT INTO t4 VALUES(5, 6) }
 do_catchsql_test 4.18.3 { 
   INSERT INTO t4 SELECT a+4, b+4 FROM t4
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t4}}
 do_test e_createtable-4.18.4 { sqlite3_get_autocommit db } 0
 do_execsql_test 4.18.5 { SELECT * FROM t4 } {1 2 3 4 5 6}
 
@@ -1625,7 +1644,7 @@ do_execsql_test 4.19.0 {
 do_catchsql_test 4.19.1 { INSERT INTO t5 VALUES(NULL, 'not null') } {0 {}}
 do_execsql_test  4.19.2 { SELECT * FROM t5 } {}
 do_catchsql_test 4.19.3 { INSERT INTO t5 VALUES('not null', NULL) } \
-  {1 {t5.b may not be NULL}}
+  {1 {NOT NULL constraint failed: t5.b}}
 do_execsql_test  4.19.4 { SELECT * FROM t5 } {}
 
 #------------------------------------------------------------------------
@@ -1635,6 +1654,10 @@ do_execsql_test  4.19.4 { SELECT * FROM t5 } {}
 # EVIDENCE-OF: R-52584-04009 The rowid value can be accessed using one
 # of the special case-independent names "rowid", "oid", or "_rowid_" in
 # place of a column name.
+#
+# EVIDENCE-OF: R-06726-07466 A column name can be any of the names
+# defined in the CREATE TABLE statement or one of the following special
+# identifiers: "ROWID", "OID", or "_ROWID_".
 #
 drop_all_tables
 do_execsql_test 5.1.0 {
@@ -1659,6 +1682,10 @@ do_createtable_tests 5.1 {
 # named "rowid", "oid" or "_rowid_", then that name always refers the
 # explicitly declared column and cannot be used to retrieve the integer
 # rowid value.
+#
+# EVIDENCE-OF: R-44615-33286 The special identifiers only refer to the
+# row key if the CREATE TABLE statement does not define a real column
+# with the same name.
 #
 do_execsql_test 5.2.0 {
   CREATE TABLE t2(oid, b);
@@ -1694,10 +1721,10 @@ proc is_integer_primary_key {tbl col} {
   }]] 0
 }
 
-# EVIDENCE-OF: R-53738-31673 With one exception, if a table has a
-# primary key that consists of a single column, and the declared type of
-# that column is "INTEGER" in any mixture of upper and lower case, then
-# the column becomes an alias for the rowid.
+# EVIDENCE-OF: R-47901-33947 With one exception noted below, if a rowid
+# table has a primary key that consists of a single column and the
+# declared type of that column is "INTEGER" in any mixture of upper and
+# lower case, then the column becomes an alias for the rowid.
 #
 # EVIDENCE-OF: R-45951-08347 if the declaration of a column with
 # declared type "INTEGER" includes an "PRIMARY KEY DESC" clause, it does
@@ -1750,16 +1777,16 @@ do_execsql_test 5.4.3 {
 
 do_catchsql_test 5.4.4.1 { 
   INSERT INTO t6 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {UNIQUE constraint failed: t6.pk}}
 do_catchsql_test 5.4.4.2 { 
   INSERT INTO t7 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {UNIQUE constraint failed: t7.pk}}
 do_catchsql_test 5.4.4.3 { 
   INSERT INTO t8 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {UNIQUE constraint failed: t8.pk}}
 do_catchsql_test 5.4.4.4 { 
   INSERT INTO t9 VALUES(2) 
-} {1 {column pk is not unique}}
+} {1 {UNIQUE constraint failed: t9.pk}}
 
 # EVIDENCE-OF: R-56094-57830 the following three table declarations all
 # cause the column "x" to be an alias for the rowid (an integer primary

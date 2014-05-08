@@ -139,8 +139,9 @@ ifcapable shared_cache {
     # Figure out how big the database is and how many free pages it
     # has before running incremental-vacuum.
     #
-    set nPage [expr {[file size test.db]/1024}]
     set nFree [execsql {pragma freelist_count} db1]
+    set nPage [execsql {pragma page_count} db1]
+    puts "nFree=$nFree nPage=$nPage"
   
     # Now run incremental-vacuum to vacuum 5 pages from the db file.
     # The iTest'th I/O call is set to fail.
@@ -158,11 +159,11 @@ ifcapable shared_cache {
     set ::sqlite_io_error_hardhit 0
   
     set nFree2 [execsql {pragma freelist_count} db1]
-    set nPage2 [expr {[file size test.db]/1024}]
+    set nPage2 [execsql {pragma page_count} db1]
   
     do_test incrvacuum-ioerr-4.$iTest.2 {
       set shrink [expr {$nPage-$nPage2}]
-      expr {$shrink==0 || $shrink==5}
+      expr {$shrink==0 || $shrink==5 || ($nFree<5 && $shrink==$nFree)}
     } {1}
   
     do_test incrvacuum-ioerr-4.$iTest.3 {

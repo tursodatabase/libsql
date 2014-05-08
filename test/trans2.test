@@ -161,7 +161,7 @@ for {set i 2} {$i<=30} {incr i} {
           z = CASE WHEN id<$max_rowid
                    THEN zeroblob((random()&65535)%5000 + 1000) END;
     }
-  } {1 {t1.z may not be NULL}}
+  } {1 {NOT NULL constraint failed: t1.z}}
   do_test trans2-$i.11 {
     db eval {SELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY id}
   } $newres
@@ -185,7 +185,7 @@ for {set i 2} {$i<=30} {incr i} {
           z = CASE WHEN id<$max1
                    THEN zeroblob((random()&65535)%5000 + 1000) END;
     }
-  } {1 {t1.z may not be NULL}}
+  } {1 {NOT NULL constraint failed: t1.z}}
   do_test trans2-$i.31 {
     db eval {SELECT md5sum(u1), md5sum(u2) FROM t1 ORDER BY id}
   } $origres

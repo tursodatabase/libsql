@@ -6,7 +6,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include "sqlite3.h"
@@ -115,7 +119,7 @@ static unsigned char *print_byte_range(
 /*
 ** Print an entire page of content as hex
 */
-static print_page(int iPg){
+static void print_page(int iPg){
   int iStart;
   unsigned char *aData;
   iStart = (iPg-1)*pagesize;
@@ -127,7 +131,7 @@ static print_page(int iPg){
 
 /* Print a line of decode output showing a 4-byte integer.
 */
-static print_decode_line(
+static void print_decode_line(
   unsigned char *aData,      /* Content being decoded */
   int ofst, int nByte,       /* Start and size of decode */
   const char *zMsg           /* Message to append */
@@ -172,7 +176,7 @@ static void print_db_header(void){
   print_decode_line(aData, 56, 4, "Text encoding");
   print_decode_line(aData, 60, 4, "User version");
   print_decode_line(aData, 64, 4, "Incremental-vacuum mode");
-  print_decode_line(aData, 68, 4, "meta[7]");
+  print_decode_line(aData, 68, 4, "Application ID");
   print_decode_line(aData, 72, 4, "meta[8]");
   print_decode_line(aData, 76, 4, "meta[9]");
   print_decode_line(aData, 80, 4, "meta[10]");
@@ -424,7 +428,7 @@ static void decode_trunk_page(
   int detail,           /* Show leaf pages if true */
   int recursive         /* Follow the trunk change if true */
 ){
-  int n, i, k;
+  int n, i;
   unsigned char *a;
   while( pgno>0 ){
     a = getContent((pgno-1)*pagesize, pagesize);
@@ -467,7 +471,7 @@ static void page_usage_msg(int pgno, const char *zFormat, ...){
   zMsg = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( pgno<=0 || pgno>mxPage ){
-    printf("ERROR: page %d out of bounds.  Range=1..%d.  Msg: %s\n",
+    printf("ERROR: page %d out of range 1..%d: %s\n",
             pgno, mxPage, zMsg);
     sqlite3_free(zMsg);
     return;
@@ -475,7 +479,7 @@ static void page_usage_msg(int pgno, const char *zFormat, ...){
   if( zPageUse[pgno]!=0 ){
     printf("ERROR: page %d used multiple times:\n", pgno);
     printf("ERROR:    previous: %s\n", zPageUse[pgno]);
-    printf("ERROR:    current:  %s\n", zPageUse[pgno]);
+    printf("ERROR:    current:  %s\n", zMsg);
     sqlite3_free(zPageUse[pgno]);
   }
   zPageUse[pgno] = zMsg;
@@ -491,7 +495,6 @@ static void page_usage_cell(
   int cellno              /* Index of the cell on the page */
 ){
   int i;
-  int nDesc = 0;
   int n = 0;
   i64 nPayload;
   i64 rowid;
@@ -612,14 +615,31 @@ static void page_usage_freelist(int pgno){
 }
 
 /*
+** Determine pages used as PTRMAP pages
+*/
+static void page_usage_ptrmap(unsigned char *a){
+  if( a[55] ){
+    int usable = pagesize - a[20];
+    int pgno = 2;
+    int perPage = usable/5;
+    while( pgno<=mxPage ){
+      page_usage_msg(pgno, "PTRMAP page covering %d..%d",
+                           pgno+1, pgno+perPage);
+      pgno += perPage + 1;
+    }
+  }
+}
+
+/*
 ** Try to figure out how every page in the database file is being used.
 */
 static void page_usage_report(const char *zDbName){
-  int i;
+  int i, j;
   int rc;
   sqlite3 *db;
   sqlite3_stmt *pStmt;
   unsigned char *a;
+  char zQuery[200];
 
   /* Avoid the pathological case */
   if( mxPage<1 ){
@@ -644,20 +664,26 @@ static void page_usage_report(const char *zDbName){
   /* Discover the usage of each page */
   a = getContent(0, 100);
   page_usage_freelist(decodeInt32(a+32));
+  page_usage_ptrmap(a);
   free(a);
   page_usage_btree(1, 0, 0, "sqlite_master");
-  rc = sqlite3_prepare_v2(db,
-           "SELECT type, name, rootpage FROM SQLITE_MASTER WHERE rootpage",
-           -1, &pStmt, 0);
-  if( rc==SQLITE_OK ){
-    while( sqlite3_step(pStmt)==SQLITE_ROW ){
-      int pgno = sqlite3_column_int(pStmt, 2);
-      page_usage_btree(pgno, 0, 0, sqlite3_column_text(pStmt, 1));
+  sqlite3_exec(db, "PRAGMA writable_schema=ON", 0, 0, 0);
+  for(j=0; j<2; j++){
+    sqlite3_snprintf(sizeof(zQuery), zQuery,
+             "SELECT type, name, rootpage FROM SQLITE_MASTER WHERE rootpage"
+             " ORDER BY rowid %s", j?"DESC":"");
+    rc = sqlite3_prepare_v2(db, zQuery, -1, &pStmt, 0);
+    if( rc==SQLITE_OK ){
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        int pgno = sqlite3_column_int(pStmt, 2);
+        page_usage_btree(pgno, 0, 0, (const char*)sqlite3_column_text(pStmt,1));
+      }
+    }else{
+      printf("ERROR: cannot query database: %s\n", sqlite3_errmsg(db));
     }
-  }else{
-    printf("ERROR: cannot query database: %s\n", sqlite3_errmsg(db));
+    rc = sqlite3_finalize(pStmt);
+    if( rc==SQLITE_OK ) break;
   }
-  sqlite3_finalize(pStmt);
   sqlite3_close(db);
 
   /* Print the report and free memory used */
@@ -670,6 +696,53 @@ static void page_usage_report(const char *zDbName){
 }
 
 /*
+** Try to figure out how every page in the database file is being used.
+*/
+static void ptrmap_coverage_report(const char *zDbName){
+  unsigned int pgno;
+  unsigned char *aHdr;
+  unsigned char *a;
+  int usable;
+  int perPage;
+  unsigned int i;
+
+  /* Avoid the pathological case */
+  if( mxPage<1 ){
+    printf("empty database\n");
+    return;
+  }
+
+  /* Make sure PTRMAPs are used in this database */
+  aHdr = getContent(0, 100);
+  if( aHdr[55]==0 ){
+    printf("database does not use PTRMAP pages\n");
+    return;
+  }
+  usable = pagesize - aHdr[20];
+  perPage = usable/5;
+  free(aHdr);
+  printf("%5d: root of sqlite_master\n", 1);
+  for(pgno=2; pgno<=mxPage; pgno += perPage+1){
+    printf("%5d: PTRMAP page covering %d..%d\n", pgno,
+           pgno+1, pgno+perPage);
+    a = getContent((pgno-1)*pagesize, usable);
+    for(i=0; i+5<=usable && pgno+1+i/5<=mxPage; i+=5){
+      const char *zType = "???";
+      unsigned int iFrom = decodeInt32(&a[i+1]);
+      switch( a[i] ){
+        case 1:  zType = "b-tree root page";        break;
+        case 2:  zType = "freelist page";           break;
+        case 3:  zType = "first page of overflow";  break;
+        case 4:  zType = "later page of overflow";  break;
+        case 5:  zType = "b-tree non-root page";    break;
+      }
+      printf("%5d: %s, parent=%u\n", pgno+1+i/5, zType, iFrom);
+    }
+    free(a);
+  }
+}
+
+/*
 ** Print a usage comment
 */
 static void usage(const char *argv0){
@@ -678,6 +751,7 @@ static void usage(const char *argv0){
     "args:\n"
     "    dbheader        Show database header\n"
     "    pgidx           Index of how each page is used\n"
+    "    ptrmap          Show all PTRMAP page content\n"
     "    NNN..MMM        Show hex of pages NNN through MMM\n"
     "    NNN..end        Show hex of pages NNN through end of file\n"
     "    NNNb            Decode btree page NNN\n"
@@ -727,6 +801,14 @@ int main(int argc, char **argv){
         page_usage_report(argv[1]);
         continue;
       }
+      if( strcmp(argv[i], "ptrmap")==0 ){
+        ptrmap_coverage_report(argv[1]);
+        continue;
+      }
+      if( strcmp(argv[i], "help")==0 ){
+        usage(argv[0]);
+        continue;
+      }
       if( !isdigit(argv[i][0]) ){
         fprintf(stderr, "%s: unknown option: [%s]\n", argv[0], argv[i]);
         continue;
@@ -752,7 +834,6 @@ int main(int argc, char **argv){
         free(a);
         continue;
       }else if( zLeft && zLeft[0]=='t' ){
-        unsigned char *a;
         int detail = 0;
         int recursive = 0;
         int i;
@@ -778,4 +859,5 @@ int main(int argc, char **argv){
     }
   }
   close(db);
+  return 0;
 }

@@ -1207,8 +1207,9 @@ finished:
     ** checkpointing the log file.
     */
     if( pWal->hdr.nPage ){
-      sqlite3_log(SQLITE_OK, "Recovered %d frames from WAL file %s",
-          pWal->hdr.nPage, pWal->zWalName
+      sqlite3_log(SQLITE_NOTICE_RECOVER_WAL,
+          "recovered %d frames from WAL file %s",
+          pWal->hdr.mxFrame, pWal->zWalName
       );
     }
   }
@@ -1310,7 +1311,7 @@ int sqlite3WalOpen(
     sqlite3OsClose(pRet->pWalFd);
     sqlite3_free(pRet);
   }else{
-    int iDC = sqlite3OsDeviceCharacteristics(pRet->pWalFd);
+    int iDC = sqlite3OsDeviceCharacteristics(pDbFd);
     if( iDC & SQLITE_IOCAP_SEQUENTIAL ){ pRet->syncHeader = 0; }
     if( iDC & SQLITE_IOCAP_POWERSAFE_OVERWRITE ){
       pRet->padToSectorBoundary = 0;
@@ -1727,8 +1728,8 @@ static int walCheckpoint(
       rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
     }
 
-    /* If the database file may grow as a result of this checkpoint, hint
-    ** about the eventual size of the db file to the VFS layer. 
+    /* If the database may grow as a result of this checkpoint, hint
+    ** about the eventual size of the db file to the VFS layer.
     */
     if( rc==SQLITE_OK ){
       i64 nReq = ((i64)mxPage * szPage);
@@ -1737,6 +1738,7 @@ static int walCheckpoint(
         sqlite3OsFileControlHint(pWal->pDbFd, SQLITE_FCNTL_SIZE_HINT, &nReq);
       }
     }
+
 
     /* Iterate through the contents of the WAL, copying data to the db file. */
     while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
@@ -2295,19 +2297,17 @@ void sqlite3WalEndReadTransaction(Wal *pWal){
 }
 
 /*
-** Read a page from the WAL, if it is present in the WAL and if the 
-** current read transaction is configured to use the WAL.  
+** Search the wal file for page pgno. If found, set *piRead to the frame that
+** contains the page. Otherwise, if pgno is not in the wal file, set *piRead
+** to zero.
 **
-** The *pInWal is set to 1 if the requested page is in the WAL and
-** has been loaded.  Or *pInWal is set to 0 if the page was not in 
-** the WAL and needs to be read out of the database.
+** Return SQLITE_OK if successful, or an error code if an error occurs. If an
+** error does occur, the final value of *piRead is undefined.
 */
-int sqlite3WalRead(
+int sqlite3WalFindFrame(
   Wal *pWal,                      /* WAL handle */
   Pgno pgno,                      /* Database page number to read data for */
-  int *pInWal,                    /* OUT: True if data is read from WAL */
-  int nOut,                       /* Size of buffer pOut in bytes */
-  u8 *pOut                        /* Buffer to write page data to */
+  u32 *piRead                     /* OUT: Frame number (or zero) */
 ){
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
   u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
@@ -2323,7 +2323,7 @@ int sqlite3WalRead(
   ** WAL were empty.
   */
   if( iLast==0 || pWal->readLock==0 ){
-    *pInWal = 0;
+    *piRead = 0;
     return SQLITE_OK;
   }
 
@@ -2394,26 +2394,31 @@ int sqlite3WalRead(
   }
 #endif
 
-  /* If iRead is non-zero, then it is the log frame number that contains the
-  ** required page. Read and return data from the log file.
-  */
-  if( iRead ){
-    int sz;
-    i64 iOffset;
-    sz = pWal->hdr.szPage;
-    sz = (sz&0xfe00) + ((sz&0x0001)<<16);
-    testcase( sz<=32768 );
-    testcase( sz>=65536 );
-    iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
-    *pInWal = 1;
-    /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
-    return sqlite3OsRead(pWal->pWalFd, pOut, (nOut>sz ? sz : nOut), iOffset);
-  }
-
-  *pInWal = 0;
+  *piRead = iRead;
   return SQLITE_OK;
 }
 
+/*
+** Read the contents of frame iRead from the wal file into buffer pOut
+** (which is nOut bytes in size). Return SQLITE_OK if successful, or an
+** error code otherwise.
+*/
+int sqlite3WalReadFrame(
+  Wal *pWal,                      /* WAL handle */
+  u32 iRead,                      /* Frame to read */
+  int nOut,                       /* Size of buffer pOut in bytes */
+  u8 *pOut                        /* Buffer to write page data to */
+){
+  int sz;
+  i64 iOffset;
+  sz = pWal->hdr.szPage;
+  sz = (sz&0xfe00) + ((sz&0x0001)<<16);
+  testcase( sz<=32768 );
+  testcase( sz>=65536 );
+  iOffset = walFrameOffset(iRead, sz) + WAL_FRAME_HDRSIZE;
+  /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
+  return sqlite3OsRead(pWal->pWalFd, pOut, (nOut>sz ? sz : nOut), iOffset);
+}
 
 /* 
 ** Return the size of the database in pages (or zero, if unknown).
@@ -2475,7 +2480,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   if( memcmp(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr))!=0 ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
-    rc = SQLITE_BUSY;
+    rc = SQLITE_BUSY_SNAPSHOT;
   }
 
   return rc;
@@ -2535,7 +2540,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       assert( walFramePgno(pWal, iFrame)!=1 );
       rc = xUndo(pUndoCtx, walFramePgno(pWal, iFrame));
     }
-    walCleanupHash(pWal);
+    if( iMax!=pWal->hdr.mxFrame ) walCleanupHash(pWal);
   }
   assert( rc==SQLITE_OK );
   return rc;
@@ -2693,7 +2698,7 @@ static int walWriteToLog(
     iAmt -= iFirstAmt;
     pContent = (void*)(iFirstAmt + (char*)pContent);
     assert( p->syncFlags & (SQLITE_SYNC_NORMAL|SQLITE_SYNC_FULL) );
-    rc = sqlite3OsSync(p->pFd, p->syncFlags);
+    rc = sqlite3OsSync(p->pFd, p->syncFlags & SQLITE_SYNC_MASK);
     if( iAmt==0 || rc ) return rc;
   }
   rc = sqlite3OsWrite(p->pFd, pContent, iAmt, iOffset);
@@ -2870,7 +2875,7 @@ int sqlite3WalFrames(
   */
   if( isCommit && (sync_flags & WAL_SYNC_TRANSACTIONS)!=0 ){
     if( pWal->padToSectorBoundary ){
-      int sectorSize = sqlite3OsSectorSize(pWal->pWalFd);
+      int sectorSize = sqlite3SectorSize(pWal->pWalFd);
       w.iSyncPoint = ((iOffset+sectorSize-1)/sectorSize)*sectorSize;
       while( iOffset<w.iSyncPoint ){
         rc = walWriteOneFrame(&w, pLast, nTruncate, iOffset);
@@ -2997,6 +3002,9 @@ int sqlite3WalCheckpoint(
   /* Read the wal-index header. */
   if( rc==SQLITE_OK ){
     rc = walIndexReadHdr(pWal, &isChanged);
+    if( isChanged && pWal->pDbFd->pMethods->iVersion>=3 ){
+      sqlite3OsUnfetch(pWal->pDbFd, 0, 0);
+    }
   }
 
   /* Copy data from the log to the database file. */

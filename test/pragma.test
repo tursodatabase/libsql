@@ -285,31 +285,31 @@ ifcapable attach {
       db close
       sqlite3 db test.db
       execsql {PRAGMA integrity_check}
-    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.3 {
       execsql {PRAGMA integrity_check=1}
-    } {{rowid 1 missing from index i2}}
+    } {{row 1 missing from index i2}}
     do_test pragma-3.4 {
       execsql {
         ATTACH DATABASE 'test.db' AS t2;
         PRAGMA integrity_check
       }
-    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.5 {
       execsql {
         PRAGMA integrity_check=4
       }
-    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2}}
+    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2}}
     do_test pragma-3.6 {
       execsql {
         PRAGMA integrity_check=xyz
       }
-    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.7 {
       execsql {
         PRAGMA integrity_check=0
       }
-    } {{rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
+    } {{row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
   
     # Add additional corruption by appending unused pages to the end of
     # the database file testerr.db
@@ -344,7 +344,7 @@ ifcapable attach {
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
+Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.10 {
       execsql {
         PRAGMA integrity_check=1
@@ -358,7 +358,7 @@ Page 4 is never used}}
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2}}
+Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2}}
     do_test pragma-3.12 {
       execsql {
         PRAGMA integrity_check=4
@@ -366,7 +366,7 @@ Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from inde
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2}}
+Page 6 is never used} {row 1 missing from index i2}}
     do_test pragma-3.13 {
       execsql {
         PRAGMA integrity_check=3
@@ -390,10 +390,10 @@ Page 5 is never used}}
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2}}
+Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2}}
     do_test pragma-3.16 {
       execsql {
         PRAGMA integrity_check(10)
@@ -401,10 +401,10 @@ Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from inde
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2}}
+Page 6 is never used} {row 1 missing from index i2}}
     do_test pragma-3.17 {
       execsql {
         PRAGMA integrity_check=8
@@ -412,7 +412,7 @@ Page 6 is never used} {rowid 1 missing from index i2}}
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2} {rowid 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
+Page 6 is never used} {row 1 missing from index i2} {row 2 missing from index i2} {wrong # of entries in index i2} {*** in database t3 ***
 Page 4 is never used
 Page 5 is never used}}
     do_test pragma-3.18 {
@@ -422,7 +422,7 @@ Page 5 is never used}}
     } {{*** in database t2 ***
 Page 4 is never used
 Page 5 is never used
-Page 6 is never used} {rowid 1 missing from index i2}}
+Page 6 is never used} {row 1 missing from index i2}}
   }
   do_test pragma-3.19 {
     catch {db close}
@@ -534,12 +534,20 @@ do_test pragma-6.2.2 {
       b DEFAULT (5+3),
       c TEXT,
       d INTEGER DEFAULT NULL,
-      e TEXT DEFAULT ''
+      e TEXT DEFAULT '',
+      UNIQUE(b,c,d),
+      PRIMARY KEY(e,b,c)
     );
     PRAGMA table_info(t5);
   }
-} {0 a TEXT 0 CURRENT_TIMESTAMP 0 1 b {} 0 5+3 0 2 c TEXT 0 <<NULL>> 0 3 d INTEGER 0 NULL 0 4 e TEXT 0 '' 0}
+} {0 a TEXT 0 CURRENT_TIMESTAMP 0 1 b {} 0 5+3 2 2 c TEXT 0 <<NULL>> 3 3 d INTEGER 0 NULL 0 4 e TEXT 0 '' 1}
 db nullvalue {}
+do_test pragma-6.2.3 {
+  execsql {
+    CREATE TABLE t2_3(a,b INTEGER PRIMARY KEY,c);
+    pragma table_info(t2_3)
+  }
+} {0 a {} 0 {} 0 1 b INTEGER 0 {} 1 2 c {} 0 {} 0}
 ifcapable {foreignkey} {
   do_test pragma-6.3.1 {
     execsql {
@@ -928,6 +936,16 @@ proc check_temp_store {} {
   return "unknown"
 }
 
+# Application_ID
+#
+do_test pragma-8.3.1 {
+  execsql {
+    PRAGMA application_id;
+  }
+} {0}
+do_test pragma-8.3.2 {
+  execsql {PRAGMA Application_ID(12345); PRAGMA application_id;}
+} {12345}
 
 # Test temp_store and temp_store_directory pragmas
 #
@@ -1662,6 +1680,8 @@ do_test pragma-20.8 {
 forcedelete data_dir
 } ;# endif windows
 
+database_may_be_corrupt
+
 do_test 21.1 {
   # Create a corrupt database in testerr.db. And a non-corrupt at test.db.
   #
@@ -1687,11 +1707,16 @@ Multiple uses for byte 672 of page 15}
 set auxerr {*** in database aux ***
 Multiple uses for byte 672 of page 15}
 
+set mainerr {/{\*\*\* in database main \*\*\*
+Multiple uses for byte 672 of page 15}.*/}
+set auxerr {/{\*\*\* in database aux \*\*\*
+Multiple uses for byte 672 of page 15}.*/}
+
 do_test 22.2 {
   catch { db close }
   sqlite3 db testerr.db
   execsql { PRAGMA integrity_check }
-} [list $mainerr]
+} $mainerr
 
 do_test 22.3.1 {
   catch { db close }
@@ -1700,13 +1725,13 @@ do_test 22.3.1 {
     ATTACH 'testerr.db' AS 'aux';
     PRAGMA integrity_check;
   }
-} [list $auxerr]
+} $auxerr
 do_test 22.3.2 {
   execsql { PRAGMA main.integrity_check; }
 } {ok}
 do_test 22.3.3 {
   execsql { PRAGMA aux.integrity_check; }
-} [list $auxerr]
+} $auxerr
 
 do_test 22.4.1 {
   catch { db close }
@@ -1715,14 +1740,57 @@ do_test 22.4.1 {
     ATTACH 'test.db' AS 'aux';
     PRAGMA integrity_check;
   }
-} [list $mainerr]
+} $mainerr
 do_test 22.4.2 {
   execsql { PRAGMA main.integrity_check; }
-} [list $mainerr]
+} $mainerr
 do_test 22.4.3 {
   execsql { PRAGMA aux.integrity_check; }
 } {ok}
 
+db close
+forcedelete test.db test.db-wal test.db-journal
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test 23.1 {
+  db eval {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY,b,c,d);
+    CREATE INDEX i1 ON t1(b,c);
+    CREATE INDEX i2 ON t1(c,d);
+    CREATE TABLE t2(x INTEGER REFERENCES t1);
+  }
+  db2 eval {SELECT name FROM sqlite_master}
+} {t1 i1 i2 t2}
+do_test 23.2 {
+  db eval {
+    DROP INDEX i2;
+    CREATE INDEX i2 ON t1(c,d,b);
+  }
+  db2 eval {PRAGMA index_info(i2)}
+} {0 2 c 1 3 d 2 1 b}
+do_test 23.3 {
+  db eval {
+    CREATE INDEX i3 ON t1(d,b,c);
+  }
+  db2 eval {PRAGMA index_list(t1)}
+} {0 i3 0 1 i2 0 2 i1 0}
+do_test 23.4 {
+  db eval {
+    ALTER TABLE t1 ADD COLUMN e;
+  }
+  db2 eval {
+    PRAGMA table_info(t1);
+  }
+} {/4 e {} 0 {} 0/}
+do_test 23.5 {
+  db eval {
+    DROP TABLE t2;
+    CREATE TABLE t2(x, y INTEGER REFERENCES t1);
+  }
+  db2 eval {
+    PRAGMA foreign_key_list(t2);
+  }
+} {0 0 t1 y {} {NO ACTION} {NO ACTION} NONE}
+
+database_never_corrupt
 finish_test
-
-

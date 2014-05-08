@@ -96,13 +96,13 @@ void sqlite3Fts3HashClear(Fts3Hash *pH){
 */
 static int fts3StrHash(const void *pKey, int nKey){
   const char *z = (const char *)pKey;
-  int h = 0;
+  unsigned h = 0;
   if( nKey<=0 ) nKey = (int) strlen(z);
   while( nKey > 0  ){
     h = (h<<3) ^ h ^ *z++;
     nKey--;
   }
-  return h & 0x7fffffff;
+  return (int)(h & 0x7fffffff);
 }
 static int fts3StrCompare(const void *pKey1, int n1, const void *pKey2, int n2){
   if( n1!=n2 ) return 1;

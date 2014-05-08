@@ -105,7 +105,7 @@ do_test shell1-1.7.1 {
   set rc [lindex $res 0]
   list $rc \
        [regexp {SQLite version} $res] \
-       [regexp {Enter SQL statements} $res]
+       [regexp {Enter ".help" for usage hints} $res]
 } {0 1 1}
 
 # -batch               force batch I/O
@@ -149,7 +149,7 @@ do_test shell1-1.14.3 {
   set res [catchcmd "-separator" ""]
   set rc [lindex $res 0]
   list $rc \
-       [regexp {Error: missing argument for option: -separator} $res]
+       [regexp {Error: missing argument to -separator} $res]
 } {1 1}
 
 # -stats               print memory stats before each finalize
@@ -168,7 +168,7 @@ do_test shell1-1.15.3 {
   set res [catchcmd "-nullvalue" ""]
   set rc [lindex $res 0]
   list $rc \
-       [regexp {Error: missing argument for option: -nullvalue} $res]
+       [regexp {Error: missing argument to -nullvalue} $res]
 } {1 1}
 
 # -version             show SQLite version
@@ -220,7 +220,7 @@ do_test shell1-2.3.2 {
 } {0 {}}
 do_test shell1-2.3.3 {
   catchcmd "test.db" ".explain \"1 2 3\""
-} {0 {}}
+} {1 {ERROR: Not a boolean value: "1 2 3". Assuming "no".}}
 do_test shell1-2.3.4 {
   catchcmd "test.db" ".explain \"OFF\""
 } {0 {}}
@@ -253,7 +253,7 @@ do_test shell1-2.4.2 {
 # .backup ?DB? FILE      Backup DB (default "main") to FILE
 do_test shell1-3.1.1 {
   catchcmd "test.db" ".backup"
-} {1 {Error: unknown command or invalid arguments:  "backup". Enter ".help" for help}}
+} {1 {missing FILENAME argument on .backup}}
 do_test shell1-3.1.2 {
   catchcmd "test.db" ".backup FOO"
 } {0 {}}
@@ -263,7 +263,7 @@ do_test shell1-3.1.3 {
 do_test shell1-3.1.4 {
   # too many arguments
   catchcmd "test.db" ".backup FOO BAR BAD"
-} {1 {Error: unknown command or invalid arguments:  "backup". Enter ".help" for help}}
+} {1 {too many arguments to .backup}}
 
 # .bail ON|OFF           Stop after hitting an error.  Default OFF
 do_test shell1-3.2.1 {
@@ -326,10 +326,6 @@ do_test shell1-3.5.4 {
 do_test shell1-3.6.1 {
   catchcmd "test.db" ".exit"
 } {0 {}}
-do_test shell1-3.6.2 {
-  # too many arguments
-  catchcmd "test.db" ".exit BAD"
-} {1 {Error: unknown command or invalid arguments:  "exit". Enter ".help" for help}}
 
 # .explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
 do_test shell1-3.7.1 {
@@ -401,9 +397,9 @@ do_test shell1-3.11.1 {
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
-do_test shell1-3.11.2 {
-  catchcmd "test.db" ".import FOO BAR"
-} {1 {Error: no such table: BAR}}
+#do_test shell1-3.11.2 {
+#  catchcmd "test.db" ".import FOO BAR"
+#} {1 {Error: no such table: BAR}}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
@@ -540,7 +536,7 @@ do_test shell1-3.19.1 {
   catchcmd "test.db" ".read"
 } {1 {Error: unknown command or invalid arguments:  "read". Enter ".help" for help}}
 do_test shell1-3.19.2 {
-  file delete -force FOO
+  forcedelete FOO
   catchcmd "test.db" ".read FOO"
 } {1 {Error: cannot open "FOO"}}
 do_test shell1-3.19.3 {
@@ -714,18 +710,32 @@ do_test shell1-3-29.1 {
   catchcmd "test.db" ".print this is a test"
 } {0 {this is a test}}
 
+# dot-command argument quoting
+do_test shell1-3-30.1 {
+  catchcmd {test.db} {.print "this\"is'a\055test" 'this\"is\\a\055test'}
+} {0 {this"is'a-test this\"is\\a\055test}}
+do_test shell1-3-31.1 {
+  catchcmd {test.db} {.print "this\nis\ta\\test" 'this\nis\ta\\test'}
+} [list 0 "this\nis\ta\\test this\\nis\\ta\\\\test"]
+
+
 # Test the output of the ".dump" command
 #
 do_test shell1-4.1 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
   db eval {
+    PRAGMA encoding=UTF16;
     CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(null), (1), (2.25), ('hello'), (x'807f');
+    INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
   }
   catchcmd test.db {.dump}
 } {0 {PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE t1(x);
 INSERT INTO "t1" VALUES(NULL);
+INSERT INTO "t1" VALUES('');
 INSERT INTO "t1" VALUES(1);
 INSERT INTO "t1" VALUES(2.25);
 INSERT INTO "t1" VALUES('hello');
@@ -737,10 +747,66 @@ COMMIT;}}
 do_test shell1-4.2 {
   catchcmd test.db ".mode insert t1\nselect * from t1;"
 } {0 {INSERT INTO t1 VALUES(NULL);
+INSERT INTO t1 VALUES('');
 INSERT INTO t1 VALUES(1);
 INSERT INTO t1 VALUES(2.25);
 INSERT INTO t1 VALUES('hello');
 INSERT INTO t1 VALUES(X'807f');}}
 
+# Test the output of ".mode tcl"
+#
+do_test shell1-4.3 {
+  db close
+  forcedelete test.db
+  sqlite3 db test.db
+  db eval {
+    PRAGMA encoding=UTF8;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(null), (''), (1), (2.25), ('hello'), (x'807f');
+  }
+  catchcmd test.db ".mode tcl\nselect * from t1;"
+} {0 {""
+""
+"1"
+"2.25"
+"hello"
+"\200\177"}}
+
+# Test the output of ".mode tcl" with multiple columns
+#
+do_test shell1-4.4 {
+  db eval {
+    CREATE TABLE t2(x,y);
+    INSERT INTO t2 VALUES(null, ''), (1, 2.25), ('hello', x'807f');
+  }
+  catchcmd test.db ".mode tcl\nselect * from t2;"
+} {0 {"" ""
+"1" "2.25"
+"hello" "\200\177"}}
+
+# Test the output of ".mode tcl" with ".nullvalue"
+#
+do_test shell1-4.5 {
+  catchcmd test.db ".mode tcl\n.nullvalue NULL\nselect * from t2;"
+} {0 {"NULL" ""
+"1" "2.25"
+"hello" "\200\177"}}
+
+# Test the output of ".mode tcl" with Tcl reserved characters
+#
+do_test shell1-4.6 {
+  db eval {
+    CREATE TABLE tcl1(x);
+    INSERT INTO tcl1 VALUES('"'), ('['), (']'), ('\{'), ('\}'), (';'), ('$');
+  }
+  foreach {x y} [catchcmd test.db ".mode tcl\nselect * from tcl1;"] break
+  list $x $y [llength $y]
+} {0 {"\""
+"["
+"]"
+"\\{"
+"\\}"
+";"
+"$"} 7}
 
 finish_test

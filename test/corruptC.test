@@ -27,6 +27,10 @@ source $testdir/tester.tcl
 #
 do_not_use_codec
 
+# These tests deal with corrupt database files
+#
+database_may_be_corrupt
+
 # Construct a compact, dense database for testing.
 #
 do_test corruptC-1.1 {
@@ -202,6 +206,10 @@ do_test corruptC-2.8 {
 } {1 {database disk image is malformed}}
 
 # corruption (seed 170434)
+#
+# UPDATE: Prior to 3.8.2, this used to return SQLITE_CORRUPT. It no longer
+# does. That is Ok, the point of these tests is to verify that no buffer
+# overruns or overreads can be caused by corrupt databases.
 do_test corruptC-2.9 {
   db close
   forcecopy test.bu test.db
@@ -211,7 +219,7 @@ do_test corruptC-2.9 {
 
   sqlite3 db test.db
   catchsql {BEGIN; DELETE FROM t1 WHERE x>13; ROLLBACK;}
-} {1 {database disk image is malformed}}
+} {0 {}}
 
 # corruption (seed 186504)
 do_test corruptC-2.10 {

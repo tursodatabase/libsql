@@ -35,7 +35,34 @@
 
 # Remember the TK_ values from the parse.h file
 /^#define TK_/ {
-  tk[$2] = 0+$3
+  tk[$2] = 0+$3    # tk[x] holds the numeric value for TK symbol X
+}
+
+# Find "/* Opcode: " lines in the vdbe.c file.  Each one introduces
+# a new opcode.  Remember which parameters are used.
+/^.. Opcode: / {
+  currentOp = "OP_" $3
+  m = 0
+  for(i=4; i<=NF; i++){
+    x = $i
+    if( x=="P1" ) m += 1
+    if( x=="P2" ) m += 2
+    if( x=="P3" ) m += 4
+    if( x=="P4" ) m += 8
+    if( x=="P5" ) m += 16
+  }
+  paramused[currentOp] = m
+}
+
+# Find "** Synopsis: " lines that follow Opcode:
+/^.. Synopsis: / {
+  if( currentOp ){
+    x = $3
+    for(i=4; i<=NF; i++){
+      x = x " " $i
+    }
+    synopsis[currentOp] = x
+  }
 }
 
 # Scan for "case OP_aaaa:" lines in the vdbe.c file
@@ -43,7 +70,7 @@
   name = $2
   sub(/:/,"",name)
   sub("\r","",name)
-  op[name] = -1
+  op[name] = -1       # op[x] holds the numeric value for OP symbol x
   jump[name] = 0
   out2_prerelease[name] = 0
   in1[name] = 0
@@ -55,9 +82,11 @@
     if($i=="same" && $(i+1)=="as"){
       sym = $(i+2)
       sub(/,/,"",sym)
-      op[name] = tk[sym]
-      used[op[name]] = 1
-      sameas[op[name]] = sym
+      val = tk[sym]
+      op[name] = val
+      used[val] = 1
+      sameas[val] = sym
+      def[val] = name
     }
     x = $i
     sub(",","",x)
@@ -90,31 +119,69 @@ END {
   order[n_op++] = "OP_Noop";
   op["OP_Explain"] = -1;
   order[n_op++] = "OP_Explain";
+
+  # Assign small values to opcodes that are processed by resolveP2Values()
+  # to make code generation for the switch() statement smaller and faster.
+  for(i=0; i<n_op; i++){
+    name = order[i];
+    if( op[name]>=0 ) continue;
+    if( name=="OP_Function"      \
+     || name=="OP_AggStep"       \
+     || name=="OP_Transaction"   \
+     || name=="OP_AutoCommit"    \
+     || name=="OP_Savepoint"     \
+     || name=="OP_Checkpoint"    \
+     || name=="OP_Vacuum"        \
+     || name=="OP_JournalMode"   \
+     || name=="OP_VUpdate"       \
+     || name=="OP_VFilter"       \
+     || name=="OP_Next"          \
+     || name=="OP_NextIfOpen"    \
+     || name=="OP_SorterNext"    \
+     || name=="OP_Prev"          \
+     || name=="OP_PrevIfOpen"    \
+    ){
+      cnt++
+      while( used[cnt] ) cnt++
+      op[name] = cnt
+      used[cnt] = 1
+      def[cnt] = name
+    }
+  }
+
+  # Generate the numeric values for opcodes
   for(i=0; i<n_op; i++){
     name = order[i];
     if( op[name]<0 ){
       cnt++
       while( used[cnt] ) cnt++
       op[name] = cnt
+      used[cnt] = 1
+      def[cnt] = name
     }
-    used[op[name]] = 1;
-    if( op[name]>max ) max = op[name]
-    printf "#define %-25s %15d", name, op[name]
-    if( sameas[op[name]] ) {
-      printf "   /* same as %-12s*/", sameas[op[name]]
-    } 
-    printf "\n"
-
   }
-  seenUnused = 0;
-  for(i=1; i<max; i++){
+  max = cnt
+  for(i=1; i<=max; i++){
     if( !used[i] ){
-      if( !seenUnused ){
-        printf "\n/* The following opcode values are never used */\n"
-        seenUnused = 1
-      }
-      printf "#define %-25s %15d\n", sprintf( "OP_NotUsed_%-3d", i ), i
+      def[i] = "OP_NotUsed_" i 
     }
+    printf "#define %-16s %3d", def[i], i
+    com = ""
+    if( sameas[i] ){
+      com = "same as " sameas[i]
+    }
+    x = synopsis[def[i]]
+    if( x ){
+      if( com=="" ){
+        com = "synopsis: " x
+      } else {
+        com = com ", synopsis: " x
+      }
+    }
+    if( com!="" ){
+      printf " /* %-42s */", com
+    }
+    printf "\n"
   }
 
   # Generate the bitvectors:
@@ -123,12 +190,9 @@ END {
   #  bit 1:     pushes a result onto stack
   #  bit 2:     output to p1.  release p1 before opcode runs
   #
-  for(i=0; i<=max; i++) bv[i] = 0;
-  for(i=0; i<n_op; i++){
-    name = order[i];
-    x = op[name]
+  for(i=0; i<=max; i++){
+    name = def[i]
     a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = 0
-    # a7 = a9 = a10 = a11 = a12 = a13 = a14 = a15 = 0
     if( jump[name] ) a0 = 1;
     if( out2_prerelease[name] ) a1 = 2;
     if( in1[name] ) a2 = 4;
@@ -136,8 +200,7 @@ END {
     if( in3[name] ) a4 = 16;
     if( out2[name] ) a5 = 32;
     if( out3[name] ) a6 = 64;
-    # bv[x] = a0+a1+a2+a3+a4+a5+a6+a7+a8+a9+a10+a11+a12+a13+a14+a15;
-    bv[x] = a0+a1+a2+a3+a4+a5+a6+a7;
+    bv[i] = a0+a1+a2+a3+a4+a5+a6+a7;
   }
   print "\n"
   print "/* Properties such as \"out2\" or \"jump\" that are specified in"
@@ -158,4 +221,15 @@ END {
     if( i%8==7 ) printf("\\\n");
   }
   print "}"
+  if( 0 ){
+    print "\n/* Bitmask to indicate which fields (P1..P5) of each opcode are"
+    print "** actually used.\n*/"
+    print "#define OP_PARAM_USED_INITIALIZER {\\"
+    for(i=0; i<=max; i++){
+      if( i%8==0 ) printf("/* %3d */",i)
+      printf " 0x%02x,", paramused[def[i]]
+      if( i%8==7 ) printf("\\\n");
+    }
+    print "}"
+  }
 }

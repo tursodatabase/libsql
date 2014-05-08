@@ -56,13 +56,13 @@
 **
 **   OFFSET   SIZE    DESCRIPTION
 **      0      16     Header string: "SQLite format 3\000"
-**     16       2     Page size in bytes.  
+**     16       2     Page size in bytes.  (1 means 65536)
 **     18       1     File format write version
 **     19       1     File format read version
 **     20       1     Bytes of unused space at the end of each page
-**     21       1     Max embedded payload fraction
-**     22       1     Min embedded payload fraction
-**     23       1     Min leaf payload fraction
+**     21       1     Max embedded payload fraction (must be 64)
+**     22       1     Min embedded payload fraction (must be 32)
+**     23       1     Min leaf payload fraction (must be 32)
 **     24       4     File change counter
 **     28       4     Reserved for future use
 **     32       4     First freelist page
@@ -76,9 +76,10 @@
 **     56       4     1=UTF-8 2=UTF16le 3=UTF16be
 **     60       4     User version
 **     64       4     Incremental vacuum mode
-**     68       4     unused
-**     72       4     unused
-**     76       4     unused
+**     68       4     Application-ID
+**     72      20     unused
+**     92       4     The version-valid-for number
+**     96       4     SQLITE_VERSION_NUMBER
 **
 ** All of the integer values are big-endian (most significant byte first).
 **
@@ -411,6 +412,7 @@ struct BtShared {
 #ifndef SQLITE_OMIT_AUTOVACUUM
   u8 autoVacuum;        /* True if auto-vacuum is enabled */
   u8 incrVacuum;        /* True if incr-vacuum is enabled */
+  u8 bDoTruncate;       /* True to truncate db on commit */
 #endif
   u8 inTransaction;     /* Transaction state */
   u8 max1bytePayload;   /* Maximum first byte of cell for a 1-byte payload */
@@ -494,22 +496,15 @@ struct BtCursor {
   BtShared *pBt;            /* The BtShared this cursor points to */
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
-#ifndef SQLITE_OMIT_INCRBLOB
   Pgno *aOverflow;          /* Cache of overflow page locations */
-#endif
-  Pgno pgnoRoot;            /* The root page of this tree */
-  sqlite3_int64 cachedRowid; /* Next rowid cache.  0 means not valid */
   CellInfo info;            /* A parse of the cell we are pointing at */
-  i64 nKey;        /* Size of pKey, or last integer key */
-  void *pKey;      /* Saved key that was cursor's last known position */
+  i64 nKey;                 /* Size of pKey, or last integer key */
+  void *pKey;               /* Saved key that was cursor last known position */
+  Pgno pgnoRoot;            /* The root page of this tree */
+  int nOvflAlloc;           /* Allocated size of aOverflow[] array */
   int skipNext;    /* Prev() is noop if negative. Next() is noop if positive */
-  u8 wrFlag;                /* True if writable */
-  u8 atLast;                /* Cursor pointing to the last entry */
-  u8 validNKey;             /* True if info.nKey is valid */
+  u8 curFlags;              /* zero or more BTCF_* flags defined below */
   u8 eState;                /* One of the CURSOR_XXX constants (see below) */
-#ifndef SQLITE_OMIT_INCRBLOB
-  u8 isIncrblobHandle;      /* True if this cursor is an incr. io handle */
-#endif
   u8 hints;                             /* As configured by CursorSetHints() */
   i16 iPage;                            /* Index of current page in apPage */
   u16 aiIdx[BTCURSOR_MAX_DEPTH];        /* Current index in apPage[i] */
@@ -517,15 +512,29 @@ struct BtCursor {
 };
 
 /*
+** Legal values for BtCursor.curFlags
+*/
+#define BTCF_WriteFlag    0x01   /* True if a write cursor */
+#define BTCF_ValidNKey    0x02   /* True if info.nKey is valid */
+#define BTCF_ValidOvfl    0x04   /* True if aOverflow is valid */
+#define BTCF_AtLast       0x08   /* Cursor is pointing ot the last entry */
+#define BTCF_Incrblob     0x10   /* True if an incremental I/O handle */
+
+/*
 ** Potential values for BtCursor.eState.
-**
-** CURSOR_VALID:
-**   Cursor points to a valid entry. getPayload() etc. may be called.
 **
 ** CURSOR_INVALID:
 **   Cursor does not point to a valid entry. This can happen (for example) 
 **   because the table is empty or because BtreeCursorFirst() has not been
 **   called.
+**
+** CURSOR_VALID:
+**   Cursor points to a valid entry. getPayload() etc. may be called.
+**
+** CURSOR_SKIPNEXT:
+**   Cursor is valid except that the Cursor.skipNext field is non-zero
+**   indicating that the next sqlite3BtreeNext() or sqlite3BtreePrevious()
+**   operation should be a no-op.
 **
 ** CURSOR_REQUIRESEEK:
 **   The table that this cursor was opened on still exists, but has been 
@@ -543,8 +552,9 @@ struct BtCursor {
 */
 #define CURSOR_INVALID           0
 #define CURSOR_VALID             1
-#define CURSOR_REQUIRESEEK       2
-#define CURSOR_FAULT             3
+#define CURSOR_SKIPNEXT          2
+#define CURSOR_REQUIRESEEK       3
+#define CURSOR_FAULT             4
 
 /* 
 ** The database page the PENDING_BYTE occupies. This page is never used.

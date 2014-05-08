@@ -21,6 +21,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set testprefix selectA
 
 ifcapable !compound {
   finish_test
@@ -281,13 +282,13 @@ do_test selectA-2.34 {
 do_test selectA-2.35 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-2.36 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE DESC,a,c
+    ORDER BY y COLLATE NOCASE DESC,x,z
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
 do_test selectA-2.37 {
@@ -311,7 +312,7 @@ do_test selectA-2.39 {
 do_test selectA-2.40 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-2.41 {
@@ -602,7 +603,7 @@ do_test selectA-2.85 {
 do_test selectA-2.86 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-2.87 {
@@ -632,7 +633,7 @@ do_test selectA-2.90 {
 do_test selectA-2.91 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-2.92 {
@@ -893,13 +894,13 @@ do_test selectA-3.34 {
 do_test selectA-3.35 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-3.36 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY b COLLATE NOCASE DESC,a,c
+    ORDER BY y COLLATE NOCASE DESC,x,z
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u hare m M abc e e hello d D {} C c 9.9 b B 1 a a}
 do_test selectA-3.37 {
@@ -923,7 +924,7 @@ do_test selectA-3.39 {
 do_test selectA-3.40 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t1
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-3.41 {
@@ -1214,7 +1215,7 @@ do_test selectA-3.85 {
 do_test selectA-3.86 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY b COLLATE NOCASE,a,c
+    ORDER BY y COLLATE NOCASE,x,z
   }
 } {1 a a 9.9 b B {} C c hello d D abc e e hare m M {} U u 5200000.0 X x -23 Y y mad Z z}
 do_test selectA-3.87 {
@@ -1244,7 +1245,7 @@ do_test selectA-3.90 {
 do_test selectA-3.91 {
   execsql {
     SELECT x,y,z FROM t2 UNION SELECT a,b,c FROM t3
-    ORDER BY c COLLATE BINARY DESC,a,b
+    ORDER BY z COLLATE BINARY DESC,x,y
   }
 } {mad Z z -23 Y y 5200000.0 X x {} U u abc e e {} C c 1 a a hare m M hello d D 9.9 b B}
 do_test selectA-3.92 {
@@ -1292,5 +1293,86 @@ do_test selectA-3.97 {
       ORDER BY y COLLATE NOCASE DESC,x,z)))
   }
 } {MAD}
+do_execsql_test selectA-3.98 {
+  WITH RECURSIVE
+    xyz(n) AS (
+      SELECT upper((SELECT x FROM (
+        SELECT x,y,z FROM t2
+        INTERSECT SELECT a,b,c FROM t3
+        EXCEPT SELECT c,b,a FROM t1
+        UNION SELECT a,b,c FROM t3
+        INTERSECT SELECT a,b,c FROM t3
+        EXCEPT SELECT c,b,a FROM t1
+        UNION SELECT a,b,c FROM t3
+        ORDER BY y COLLATE NOCASE DESC,x,z)))
+      UNION ALL
+      SELECT n || '+' FROM xyz WHERE length(n)<5
+    )
+  SELECT n FROM xyz ORDER BY +n;
+} {MAD MAD+ MAD++}
+
+#-------------------------------------------------------------------------
+# At one point the following code exposed a temp register reuse problem.
+#
+proc f {args} { return 1 }
+db func f f
+
+do_execsql_test 4.1.1 {
+  CREATE TABLE t4(a, b);
+  CREATE TABLE t5(c, d);
+
+  INSERT INTO t5 VALUES(1, 'x');
+  INSERT INTO t5 VALUES(2, 'x');
+  INSERT INTO t4 VALUES(3, 'x');
+  INSERT INTO t4 VALUES(4, 'x');
+
+  CREATE INDEX i1 ON t4(a);
+  CREATE INDEX i2 ON t5(c);
+}
+
+do_eqp_test 4.1.2 {
+  SELECT c, d FROM t5 
+  UNION ALL
+  SELECT a, b FROM t4 WHERE f()==f()
+  ORDER BY 1,2
+} {
+  1 0 0 {SCAN TABLE t5 USING INDEX i2} 
+  1 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  2 0 0 {SCAN TABLE t4 USING INDEX i1} 
+  2 0 0 {USE TEMP B-TREE FOR RIGHT PART OF ORDER BY}
+  0 0 0 {COMPOUND SUBQUERIES 1 AND 2 (UNION ALL)}
+}
+
+do_execsql_test 4.1.3 {
+  SELECT c, d FROM t5 
+  UNION ALL
+  SELECT a, b FROM t4 WHERE f()==f()
+  ORDER BY 1,2
+} {
+  1 x 2 x 3 x 4 x
+}
+
+do_execsql_test 4.2.1 {
+  CREATE TABLE t6(a, b);
+  CREATE TABLE t7(c, d);
+
+  INSERT INTO t7 VALUES(2, 9);
+  INSERT INTO t6 VALUES(3, 0);
+  INSERT INTO t6 VALUES(4, 1);
+  INSERT INTO t7 VALUES(5, 6);
+  INSERT INTO t6 VALUES(6, 0);
+  INSERT INTO t7 VALUES(7, 6);
+
+  CREATE INDEX i6 ON t6(a);
+  CREATE INDEX i7 ON t7(c);
+}
+
+do_execsql_test 4.2.2 {
+  SELECT c, f(d,c,d,c,d) FROM t7
+  UNION ALL
+  SELECT a, b FROM t6 
+  ORDER BY 1,2
+} {/2 . 3 . 4 . 5 . 6 . 7 ./}
+
 
 finish_test

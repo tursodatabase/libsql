@@ -29,6 +29,7 @@ do_malloc_test fkey_malloc-1 -sqlprep {
   INSERT INTO t2 VALUES('aaa');
   UPDATE t1 SET a = 'bbb';
   DELETE FROM t1;
+  PRAGMA foreign_key_check;
 }
 
 do_malloc_test fkey_malloc-2 -sqlprep {
@@ -68,7 +69,10 @@ proc catch_fk_error {zSql} {
   if {[string match {*foreign key*} $msg]} {
     return ""
   }
-  if {$msg eq "out of memory" || $msg eq "constraint failed"} {
+  if {$msg eq "out of memory" 
+   || $msg eq "FOREIGN KEY constraint failed"
+   || $msg eq "constraint failed"
+  } {
     error 1
   }
   error $msg
@@ -128,5 +132,3 @@ do_malloc_test fkey_malloc-7 -sqlprep {
 }
 
 finish_test
-
-

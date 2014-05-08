@@ -473,6 +473,32 @@ void sqlite3_server_start(void){
 }
 
 /*
+** A wrapper around sqlite3_server() that decrements the int variable
+** pointed to by the first argument after the sqlite3_server() call
+** returns.
+*/
+static void *serverWrapper(void *pnDecr){
+  void *p = sqlite3_server(0);
+  (*(int*)pnDecr)--;
+  return p;
+}
+
+/*
+** This function is the similar to sqlite3_server_start(), except that
+** the integer pointed to by the first argument is decremented when
+** the server thread exits. 
+*/
+void sqlite3_server_start2(int *pnDecr){
+  pthread_t x;
+  int rc;
+  g.serverHalt = 0;
+  rc = pthread_create(&x, 0, serverWrapper, (void*)pnDecr);
+  if( rc==0 ){
+    pthread_detach(x);
+  }
+}
+
+/*
 ** If a server thread is running, then stop it.  If no server is
 ** running, this routine is effectively a no-op.
 **

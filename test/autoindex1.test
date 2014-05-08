@@ -23,6 +23,14 @@ ifcapable {!autoindex} {
   return
 }
 
+# Setup for logging 
+db close
+sqlite3_shutdown
+test_sqlite3_log [list lappend ::log]
+set ::log [list]
+sqlite3 db test.db
+
+
 # With automatic index turned off, we do a full scan of the T2 table
 do_test autoindex1-100 {
   db eval {
@@ -60,6 +68,15 @@ do_test autoindex1-111 {
 do_test autoindex1-112 {
   db status autoindex
 } {7}
+do_test autoindex1-113 {
+  set ::log
+} {SQLITE_WARNING_AUTOINDEX {automatic index on t2(c)}}
+
+db close
+sqlite3_shutdown
+test_sqlite3_log
+sqlite3_initialize
+sqlite3 db test.db
 
 # The same test as above, but this time the T2 query is a subquery rather
 # than a join.
@@ -78,6 +95,11 @@ do_test autoindex1-202 {
 do_test autoindex1-210 {
   db eval {
     PRAGMA automatic_index=ON;
+    ANALYZE;
+    UPDATE sqlite_stat1 SET stat='10000' WHERE tbl='t1';
+    -- Table t2 actually contains 8 rows.
+    UPDATE sqlite_stat1 SET stat='16' WHERE tbl='t2';
+    ANALYZE sqlite_master;
     SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
   }
 } {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
@@ -91,9 +113,15 @@ do_test autoindex1-212 {
 
 # Modify the second table of the join while the join is in progress
 #
+do_execsql_test autoindex1-299 {
+  UPDATE sqlite_stat1 SET stat='10000' WHERE tbl='t2';
+  ANALYZE sqlite_master;
+  EXPLAIN QUERY PLAN
+  SELECT b, d FROM t1 CROSS JOIN t2 ON (c=a);
+} {/AUTOMATIC COVERING INDEX/}
 do_test autoindex1-300 {
   set r {}
-  db eval {SELECT b, d FROM t1 JOIN t2 ON (c=a)} {
+  db eval {SELECT b, d FROM t1 CROSS JOIN t2 ON (c=a)} {
     lappend r $b $d
     db eval {UPDATE t2 SET d=d+1}
   }
@@ -143,22 +171,25 @@ do_test autoindex1-401 {
 do_execsql_test autoindex1-500 {
   CREATE TABLE t501(a INTEGER PRIMARY KEY, b);
   CREATE TABLE t502(x INTEGER PRIMARY KEY, y);
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t501',null,'1000000');
+  INSERT INTO sqlite_stat1(tbl,idx,stat) VALUES('t502',null,'1000');
+  ANALYZE sqlite_master;
   EXPLAIN QUERY PLAN
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=?);
 } {
-  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~25 rows)} 
+  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {EXECUTE LIST SUBQUERY 1} 
-  1 0 0 {SCAN TABLE t502 (~100000 rows)}
+  1 0 0 {SCAN TABLE t502}
 }
 do_execsql_test autoindex1-501 {
   EXPLAIN QUERY PLAN
   SELECT b FROM t501
    WHERE t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
-  0 0 0 {SCAN TABLE t501 (~500000 rows)} 
+  0 0 0 {SCAN TABLE t501} 
   0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
-  1 0 0 {SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?) (~7 rows)}
+  1 0 0 {SEARCH TABLE t502 USING AUTOMATIC COVERING INDEX (y=?)}
 }
 do_execsql_test autoindex1-502 {
   EXPLAIN QUERY PLAN
@@ -166,9 +197,9 @@ do_execsql_test autoindex1-502 {
    WHERE t501.a=123
      AND t501.a IN (SELECT x FROM t502 WHERE y=t501.b);
 } {
-  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?) (~1 rows)} 
+  0 0 0 {SEARCH TABLE t501 USING INTEGER PRIMARY KEY (rowid=?)} 
   0 0 0 {EXECUTE CORRELATED LIST SUBQUERY 1} 
-  1 0 0 {SCAN TABLE t502 (~100000 rows)}
+  1 0 0 {SCAN TABLE t502}
 }
 
 
@@ -240,12 +271,12 @@ do_execsql_test autoindex1-600 {
    WHERE y.sheep_no IS NULL
    ORDER BY x.registering_flock;
 } {
-  1 0 0 {SCAN TABLE sheep AS s (~1000000 rows)} 
-  1 1 1 {SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?) (~2 rows)} 
+  1 0 0 {SCAN TABLE sheep AS s} 
+  1 1 1 {SEARCH TABLE flock_owner AS prev USING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date<?)} 
   1 0 0 {EXECUTE CORRELATED SCALAR SUBQUERY 2} 
-  2 0 0 {SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?) (~1 rows)} 
-  0 0 0 {SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index (~1000000 rows)} 
-  0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?) (~8 rows)}
+  2 0 0 {SEARCH TABLE flock_owner AS later USING COVERING INDEX sqlite_autoindex_flock_owner_1 (flock_no=? AND owner_change_date>? AND owner_change_date<?)} 
+  0 0 0 {SCAN TABLE sheep AS x USING INDEX sheep_reg_flock_index} 
+  0 1 1 {SEARCH SUBQUERY 1 AS y USING AUTOMATIC COVERING INDEX (sheep_no=?)}
 }
 
 
@@ -253,9 +284,133 @@ do_execsql_test autoindex1-700 {
   CREATE TABLE t5(a, b, c);
   EXPLAIN QUERY PLAN SELECT a FROM t5 WHERE b=10 ORDER BY c;
 } {
-  0 0 0 {SCAN TABLE t5 (~100000 rows)} 
+  0 0 0 {SCAN TABLE t5} 
   0 0 0 {USE TEMP B-TREE FOR ORDER BY}
 }
 
+# The following checks a performance issue reported on the sqlite-dev
+# mailing list on 2013-01-10
+#
+do_execsql_test autoindex1-800 {
+  CREATE TABLE accounts(
+    _id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_name TEXT,
+    account_type TEXT,
+    data_set TEXT
+  );
+  CREATE TABLE data(
+    _id INTEGER PRIMARY KEY AUTOINCREMENT,
+    package_id INTEGER REFERENCES package(_id),
+    mimetype_id INTEGER REFERENCES mimetype(_id) NOT NULL,
+    raw_contact_id INTEGER REFERENCES raw_contacts(_id) NOT NULL,
+    is_read_only INTEGER NOT NULL DEFAULT 0,
+    is_primary INTEGER NOT NULL DEFAULT 0,
+    is_super_primary INTEGER NOT NULL DEFAULT 0,
+    data_version INTEGER NOT NULL DEFAULT 0,
+    data1 TEXT,
+    data2 TEXT,
+    data3 TEXT,
+    data4 TEXT,
+    data5 TEXT,
+    data6 TEXT,
+    data7 TEXT,
+    data8 TEXT,
+    data9 TEXT,
+    data10 TEXT,
+    data11 TEXT,
+    data12 TEXT,
+    data13 TEXT,
+    data14 TEXT,
+    data15 TEXT,
+    data_sync1 TEXT,
+    data_sync2 TEXT,
+    data_sync3 TEXT,
+    data_sync4 TEXT 
+  );
+  CREATE TABLE mimetypes(
+    _id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mimetype TEXT NOT NULL
+  );
+  CREATE TABLE raw_contacts(
+    _id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER REFERENCES accounts(_id),
+    sourceid TEXT,
+    raw_contact_is_read_only INTEGER NOT NULL DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 1,
+    dirty INTEGER NOT NULL DEFAULT 0,
+    deleted INTEGER NOT NULL DEFAULT 0,
+    contact_id INTEGER REFERENCES contacts(_id),
+    aggregation_mode INTEGER NOT NULL DEFAULT 0,
+    aggregation_needed INTEGER NOT NULL DEFAULT 1,
+    custom_ringtone TEXT,
+    send_to_voicemail INTEGER NOT NULL DEFAULT 0,
+    times_contacted INTEGER NOT NULL DEFAULT 0,
+    last_time_contacted INTEGER,
+    starred INTEGER NOT NULL DEFAULT 0,
+    display_name TEXT,
+    display_name_alt TEXT,
+    display_name_source INTEGER NOT NULL DEFAULT 0,
+    phonetic_name TEXT,
+    phonetic_name_style TEXT,
+    sort_key TEXT,
+    sort_key_alt TEXT,
+    name_verified INTEGER NOT NULL DEFAULT 0,
+    sync1 TEXT,
+    sync2 TEXT,
+    sync3 TEXT,
+    sync4 TEXT,
+    sync_uid TEXT,
+    sync_version INTEGER NOT NULL DEFAULT 1,
+    has_calendar_event INTEGER NOT NULL DEFAULT 0,
+    modified_time INTEGER,
+    is_restricted INTEGER DEFAULT 0,
+    yp_source TEXT,
+    method_selected INTEGER DEFAULT 0,
+    custom_vibration_type INTEGER DEFAULT 0,
+    custom_ringtone_path TEXT,
+    message_notification TEXT,
+    message_notification_path TEXT
+  );
+  CREATE INDEX data_mimetype_data1_index ON data (mimetype_id,data1);
+  CREATE INDEX data_raw_contact_id ON data (raw_contact_id);
+  CREATE UNIQUE INDEX mime_type ON mimetypes (mimetype);
+  CREATE INDEX raw_contact_sort_key1_index ON raw_contacts (sort_key);
+  CREATE INDEX raw_contact_sort_key2_index ON raw_contacts (sort_key_alt);
+  CREATE INDEX raw_contacts_contact_id_index ON raw_contacts (contact_id);
+  CREATE INDEX raw_contacts_source_id_account_id_index
+      ON raw_contacts (sourceid, account_id);
+  ANALYZE sqlite_master;
+  INSERT INTO sqlite_stat1
+     VALUES('raw_contacts','raw_contact_sort_key2_index','1600 4');
+  INSERT INTO sqlite_stat1
+     VALUES('raw_contacts','raw_contact_sort_key1_index','1600 4');
+  INSERT INTO sqlite_stat1
+     VALUES('raw_contacts','raw_contacts_source_id_account_id_index',
+            '1600 1600 1600');
+  INSERT INTO sqlite_stat1
+     VALUES('raw_contacts','raw_contacts_contact_id_index','1600 1');
+  INSERT INTO sqlite_stat1 VALUES('mimetypes','mime_type','12 1');
+  INSERT INTO sqlite_stat1
+     VALUES('data','data_mimetype_data1_index','9819 2455 3');
+  INSERT INTO sqlite_stat1 VALUES('data','data_raw_contact_id','9819 7');
+  INSERT INTO sqlite_stat1 VALUES('accounts',NULL,'1');
+  DROP TABLE IF EXISTS sqlite_stat3;
+  ANALYZE sqlite_master;
+  
+  EXPLAIN QUERY PLAN
+  SELECT * FROM 
+        data JOIN mimetypes ON (data.mimetype_id=mimetypes._id) 
+             JOIN raw_contacts ON (data.raw_contact_id=raw_contacts._id) 
+             JOIN accounts ON (raw_contacts.account_id=accounts._id)
+   WHERE mimetype_id=10 AND data14 IS NOT NULL;
+} {/SEARCH TABLE data .*SEARCH TABLE raw_contacts/}
+do_execsql_test autoindex1-801 {
+  EXPLAIN QUERY PLAN
+  SELECT * FROM 
+        data JOIN mimetypes ON (data.mimetype_id=mimetypes._id) 
+             JOIN raw_contacts ON (data.raw_contact_id=raw_contacts._id) 
+             JOIN accounts ON (raw_contacts.account_id=accounts._id)
+   WHERE mimetypes._id=10 AND data14 IS NOT NULL;
+} {/SEARCH TABLE data .*SEARCH TABLE raw_contacts/}
 
 finish_test

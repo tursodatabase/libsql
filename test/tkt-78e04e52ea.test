@@ -18,23 +18,23 @@ source $testdir/tester.tcl
 
 do_test tkt-78e04-1.0 {
   execsql {
-    CREATE TABLE ""("" UNIQUE);
+    CREATE TABLE ""("" UNIQUE, x CHAR(100));
     CREATE TABLE t2(x);
-    INSERT INTO "" VALUES(1);
+    INSERT INTO ""("") VALUES(1);
     INSERT INTO t2 VALUES(2);
     SELECT * FROM "", t2;
   }
-} {1 2}
+} {1 {} 2}
 do_test tkt-78e04-1.1 {
   catchsql {
-    INSERT INTO "" VALUES(1);
+    INSERT INTO ""("") VALUES(1);
   }
-} {1 {column  is not unique}}
+} {1 {UNIQUE constraint failed: .}}
 do_test tkt-78e04-1.2 {
   execsql {
     PRAGMA table_info("");
   }
-} {0 {} {} 0 {} 0}
+} {0 {} {} 0 {} 0 1 x CHAR(100) 0 {} 0}
 do_test tkt-78e04-1.3 {
   execsql {
     CREATE INDEX i1 ON ""("" COLLATE nocase);
@@ -42,9 +42,9 @@ do_test tkt-78e04-1.3 {
 } {}
 do_test tkt-78e04-1.4 {
   execsql {
-    EXPLAIN QUERY PLAN SELECT * FROM "" WHERE "" LIKE 'abc%';
+    EXPLAIN QUERY PLAN SELECT "" FROM "" WHERE "" LIKE 'abc%';
   }
-} {0 0 0 {SCAN TABLE  USING COVERING INDEX i1 (~500000 rows)}}
+} {0 0 0 {SCAN TABLE  USING COVERING INDEX i1}}
 do_test tkt-78e04-1.5 {
   execsql {
     DROP TABLE "";
@@ -57,12 +57,12 @@ do_test tkt-78e04-2.1 {
     CREATE INDEX "" ON t2(x);
     EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE x=5;
   }
-} {0 0 0 {SEARCH TABLE t2 USING COVERING INDEX  (x=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t2 USING COVERING INDEX  (x=?)}}
 do_test tkt-78e04-2.2 {
   execsql {
     DROP INDEX "";
     EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE x=2;
   }
-} {0 0 0 {SCAN TABLE t2 (~100000 rows)}}
+} {0 0 0 {SCAN TABLE t2}}
 
 finish_test

@@ -43,7 +43,7 @@ int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
   testcase( ExprHasProperty(pExpr, EP_Reduced) );
   rc = pWalker->xExprCallback(pWalker, pExpr);
   if( rc==WRC_Continue
-              && !ExprHasAnyProperty(pExpr,EP_TokenOnly) ){
+              && !ExprHasProperty(pExpr,EP_TokenOnly) ){
     if( sqlite3WalkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
     if( sqlite3WalkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
@@ -113,7 +113,12 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 /*
 ** Call sqlite3WalkExpr() for every expression in Select statement p.
 ** Invoke sqlite3WalkSelect() for subqueries in the FROM clause and
-** on the compound select chain, p->pPrior.
+** on the compound select chain, p->pPrior. 
+**
+** If it is not NULL, the xSelectCallback() callback is invoked before
+** the walk of the expressions and FROM clause. The xSelectCallback2()
+** method, if it is not NULL, is invoked following the walk of the 
+** expressions and FROM clause.
 **
 ** Return WRC_Continue under normal conditions.  Return WRC_Abort if
 ** there is an abort request.
@@ -123,17 +128,24 @@ int sqlite3WalkSelectFrom(Walker *pWalker, Select *p){
 */
 int sqlite3WalkSelect(Walker *pWalker, Select *p){
   int rc;
-  if( p==0 || pWalker->xSelectCallback==0 ) return WRC_Continue;
+  if( p==0 || (pWalker->xSelectCallback==0 && pWalker->xSelectCallback2==0) ){
+    return WRC_Continue;
+  }
   rc = WRC_Continue;
   pWalker->walkerDepth++;
   while( p ){
-    rc = pWalker->xSelectCallback(pWalker, p);
-    if( rc ) break;
+    if( pWalker->xSelectCallback ){
+       rc = pWalker->xSelectCallback(pWalker, p);
+       if( rc ) break;
+    }
     if( sqlite3WalkSelectExpr(pWalker, p)
      || sqlite3WalkSelectFrom(pWalker, p)
     ){
       pWalker->walkerDepth--;
       return WRC_Abort;
+    }
+    if( pWalker->xSelectCallback2 ){
+      pWalker->xSelectCallback2(pWalker, p);
     }
     p = p->pPrior;
   }

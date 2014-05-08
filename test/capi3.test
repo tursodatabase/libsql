@@ -16,6 +16,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set ::testprefix capi3
 
 # Do not use a codec for tests in this file, as the database file is
 # manipulated directly using tcl scripts (using the [hexio_write] command).
@@ -179,16 +180,18 @@ do_test capi3-3.4 {
 do_test capi3-3.5 {
   sqlite3_close $db2
 } {SQLITE_OK}
-do_test capi3-3.6.1-misuse {
-  sqlite3_close $db2
-} {SQLITE_MISUSE}
-do_test capi3-3.6.2-misuse {
-  sqlite3_errmsg $db2
-} {library routine called out of sequence}
-ifcapable {utf16} {
-  do_test capi3-3.6.3-misuse {
-    utf8 [sqlite3_errmsg16 $db2]
+if {[clang_sanitize_address]==0} {
+  do_test capi3-3.6.1-misuse {
+    sqlite3_close $db2
+  } {SQLITE_MISUSE}
+  do_test capi3-3.6.2-misuse {
+    sqlite3_errmsg $db2
   } {library routine called out of sequence}
+  ifcapable {utf16} {
+    do_test capi3-3.6.3-misuse {
+      utf8 [sqlite3_errmsg16 $db2]
+    } {library routine called out of sequence}
+  }
 }
 
 do_test capi3-3.7 {
@@ -661,10 +664,12 @@ do_test capi3-6.3 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
-do_test capi3-6.4-misuse {
-  db cache flush
-  sqlite3_close $DB
-} {SQLITE_OK}
+if {[clang_sanitize_address]==0} {
+  do_test capi3-6.4-misuse {
+    db cache flush
+    sqlite3_close $DB
+  } {SQLITE_OK}
+}
 db close
 
 # This procedure sets the value of the file-format in file 'test.db'
@@ -1060,11 +1065,13 @@ if {[llength [info commands sqlite3_sleep]]>0} {
 }
 
 # Ticket #1219:  Make sure binding APIs can handle a NULL pointer.
-#
-do_test capi3-14.1-misuse {
-  set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
-  lappend rc $msg
-} {1 SQLITE_MISUSE}
+# 
+if {[clang_sanitize_address]==0} {
+  do_test capi3-14.1-misuse {
+    set rc [catch {sqlite3_bind_text 0 1 hello 5} msg]
+      lappend rc $msg
+  } {1 SQLITE_MISUSE}
+}
 
 # Ticket #1650:  Honor the nBytes parameter to sqlite3_prepare.
 #
@@ -1214,6 +1221,23 @@ sqlite3_finalize $STMT
 do_test capi3-19.1 {
   sqlite3_prepare_tkt3134 db
 } {}
+
+# Test that calling sqlite3_column_blob() on a TEXT value does not change
+# the return type of subsequent calls to sqlite3_column_type().
+#
+do_execsql_test 20.1 {
+  CREATE TABLE t4(x);
+  INSERT INTO t4 VALUES('abcdefghij');
+}
+do_test 20.2 {
+  set stmt [sqlite3_prepare db "SELECT * FROM t4" -1 dummy]
+  sqlite3_step $stmt
+} {SQLITE_ROW}
+do_test 20.3 { sqlite3_column_type $stmt 0 } {TEXT}
+do_test 20.4 { sqlite3_column_blob $stmt 0 } {abcdefghij}
+do_test 20.5 { sqlite3_column_type $stmt 0 } {TEXT}
+do_test 20.6 { sqlite3_finalize $stmt } SQLITE_OK
+
 
 # Tests of the interface when no VFS is registered.
 #

@@ -46,6 +46,10 @@
 #define MULTIPLEX_CTRL_SET_CHUNK_SIZE  214015
 #define MULTIPLEX_CTRL_SET_MAX_CHUNKS  214016
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
 ** CAPI: Initialize the multiplex VFS shim - sqlite3_multiplex_initialize()
 **
@@ -88,4 +92,8 @@ extern int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefaul
 */
 extern int sqlite3_multiplex_shutdown(void);
 
+#ifdef __cplusplus
+}  /* End of the 'extern "C"' block */
 #endif
+
+#endif /* _TEST_MULTIPLEX_H */

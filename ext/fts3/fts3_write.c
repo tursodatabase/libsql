@@ -489,37 +489,30 @@ static void fts3SqlExec(
 
 
 /*
-** This function ensures that the caller has obtained a shared-cache
-** table-lock on the %_content table. This is required before reading
-** data from the fts3 table. If this lock is not acquired first, then
-** the caller may end up holding read-locks on the %_segments and %_segdir
-** tables, but no read-lock on the %_content table. If this happens 
-** a second connection will be able to write to the fts3 table, but
-** attempting to commit those writes might return SQLITE_LOCKED or
-** SQLITE_LOCKED_SHAREDCACHE (because the commit attempts to obtain 
-** write-locks on the %_segments and %_segdir ** tables). 
+** This function ensures that the caller has obtained an exclusive 
+** shared-cache table-lock on the %_segdir table. This is required before 
+** writing data to the fts3 table. If this lock is not acquired first, then
+** the caller may end up attempting to take this lock as part of committing
+** a transaction, causing SQLite to return SQLITE_LOCKED or 
+** LOCKED_SHAREDCACHEto a COMMIT command.
 **
-** We try to avoid this because if FTS3 returns any error when committing
-** a transaction, the whole transaction will be rolled back. And this is
-** not what users expect when they get SQLITE_LOCKED_SHAREDCACHE. It can
-** still happen if the user reads data directly from the %_segments or
-** %_segdir tables instead of going through FTS3 though.
-**
-** This reasoning does not apply to a content=xxx table.
+** It is best to avoid this because if FTS3 returns any error when 
+** committing a transaction, the whole transaction will be rolled back. 
+** And this is not what users expect when they get SQLITE_LOCKED_SHAREDCACHE. 
+** It can still happen if the user locks the underlying tables directly 
+** instead of accessing them via FTS.
 */
-int sqlite3Fts3ReadLock(Fts3Table *p){
-  int rc;                         /* Return code */
-  sqlite3_stmt *pStmt;            /* Statement used to obtain lock */
-
-  if( p->zContentTbl==0 ){
-    rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pStmt, 0);
+static int fts3Writelock(Fts3Table *p){
+  int rc = SQLITE_OK;
+  
+  if( p->nPendingData==0 ){
+    sqlite3_stmt *pStmt;
+    rc = fts3SqlStmt(p, SQL_DELETE_SEGDIR_LEVEL, &pStmt, 0);
     if( rc==SQLITE_OK ){
       sqlite3_bind_null(pStmt, 1);
       sqlite3_step(pStmt);
       rc = sqlite3_reset(pStmt);
     }
-  }else{
-    rc = SQLITE_OK;
   }
 
   return rc;
@@ -776,16 +769,16 @@ static int fts3PendingTermsAdd(
   int iLangid,                    /* Language id to use */
   const char *zText,              /* Text of document to be inserted */
   int iCol,                       /* Column into which text is being inserted */
-  u32 *pnWord                     /* OUT: Number of tokens inserted */
+  u32 *pnWord                     /* IN/OUT: Incr. by number tokens inserted */
 ){
   int rc;
-  int iStart;
-  int iEnd;
-  int iPos;
+  int iStart = 0;
+  int iEnd = 0;
+  int iPos = 0;
   int nWord = 0;
 
   char const *zToken;
-  int nToken;
+  int nToken = 0;
 
   sqlite3_tokenizer *pTokenizer = p->pTokenizer;
   sqlite3_tokenizer_module const *pModule = pTokenizer->pModule;
@@ -840,7 +833,7 @@ static int fts3PendingTermsAdd(
   }
 
   pModule->xClose(pCsr);
-  *pnWord = nWord;
+  *pnWord += nWord;
   return (rc==SQLITE_DONE ? SQLITE_OK : rc);
 }
 
@@ -907,12 +900,15 @@ static int fts3InsertTerms(
 ){
   int i;                          /* Iterator variable */
   for(i=2; i<p->nColumn+2; i++){
-    const char *zText = (const char *)sqlite3_value_text(apVal[i]);
-    int rc = fts3PendingTermsAdd(p, iLangid, zText, i-2, &aSz[i-2]);
-    if( rc!=SQLITE_OK ){
-      return rc;
+    int iCol = i-2;
+    if( p->abNotindexed[iCol]==0 ){
+      const char *zText = (const char *)sqlite3_value_text(apVal[i]);
+      int rc = fts3PendingTermsAdd(p, iLangid, zText, iCol, &aSz[iCol]);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+      aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
     }
-    aSz[p->nColumn] += sqlite3_value_bytes(apVal[i]);
   }
   return SQLITE_OK;
 }
@@ -1044,11 +1040,13 @@ static void fts3DeleteTerms(
   int *pRC,               /* Result code */
   Fts3Table *p,           /* The FTS table to delete from */
   sqlite3_value *pRowid,  /* The docid to be deleted */
-  u32 *aSz                /* Sizes of deleted document written here */
+  u32 *aSz,               /* Sizes of deleted document written here */
+  int *pbFound            /* OUT: Set to true if row really does exist */
 ){
   int rc;
   sqlite3_stmt *pSelect;
 
+  assert( *pbFound==0 );
   if( *pRC ) return;
   rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pSelect, &pRowid);
   if( rc==SQLITE_OK ){
@@ -1057,15 +1055,19 @@ static void fts3DeleteTerms(
       int iLangid = langidFromSelect(p, pSelect);
       rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pSelect, 0));
       for(i=1; rc==SQLITE_OK && i<=p->nColumn; i++){
-        const char *zText = (const char *)sqlite3_column_text(pSelect, i);
-        rc = fts3PendingTermsAdd(p, iLangid, zText, -1, &aSz[i-1]);
-        aSz[p->nColumn] += sqlite3_column_bytes(pSelect, i);
+        int iCol = i-1;
+        if( p->abNotindexed[iCol]==0 ){
+          const char *zText = (const char *)sqlite3_column_text(pSelect, i);
+          rc = fts3PendingTermsAdd(p, iLangid, zText, -1, &aSz[iCol]);
+          aSz[p->nColumn] += sqlite3_column_bytes(pSelect, i);
+        }
       }
       if( rc!=SQLITE_OK ){
         sqlite3_reset(pSelect);
         *pRC = rc;
         return;
       }
+      *pbFound = 1;
     }
     rc = sqlite3_reset(pSelect);
   }else{
@@ -1342,8 +1344,8 @@ static int fts3SegReaderNext(
   
   /* Because of the FTS3_NODE_PADDING bytes of padding, the following is 
   ** safe (no risk of overread) even if the node data is corrupted. */
-  pNext += sqlite3Fts3GetVarint32(pNext, &nPrefix);
-  pNext += sqlite3Fts3GetVarint32(pNext, &nSuffix);
+  pNext += fts3GetVarint32(pNext, &nPrefix);
+  pNext += fts3GetVarint32(pNext, &nSuffix);
   if( nPrefix<0 || nSuffix<=0 
    || &pNext[nSuffix]>&pReader->aNode[pReader->nNode] 
   ){
@@ -1366,7 +1368,7 @@ static int fts3SegReaderNext(
   memcpy(&pReader->zTerm[nPrefix], pNext, nSuffix);
   pReader->nTerm = nPrefix+nSuffix;
   pNext += nSuffix;
-  pNext += sqlite3Fts3GetVarint32(pNext, &pReader->nDoclist);
+  pNext += fts3GetVarint32(pNext, &pReader->nDoclist);
   pReader->aDoclist = pNext;
   pReader->pOffsetList = 0;
 
@@ -1459,7 +1461,7 @@ static int fts3SegReaderNextDocid(
       /* The following line of code (and the "p++" below the while() loop) is
       ** normally all that is required to move pointer p to the desired 
       ** position. The exception is if this node is being loaded from disk
-      ** incrementally and pointer "p" now points to the first byte passed
+      ** incrementally and pointer "p" now points to the first byte past
       ** the populated part of pReader->aNode[].
       */
       while( *p | c ) c = *p++ & 0x80;
@@ -1479,6 +1481,7 @@ static int fts3SegReaderNextDocid(
       *pnOffsetList = (int)(p - pReader->pOffsetList - 1);
     }
 
+    /* List may have been edited in place by fts3EvalNearTrim() */
     while( p<pEnd && *p==0 ) p++;
   
     /* If there are no more entries in the doclist, set pOffsetList to
@@ -2494,9 +2497,13 @@ static int fts3DeleteSegdir(
 **
 ** If there are no entries in the input position list for column iCol, then
 ** *pnList is set to zero before returning.
+**
+** If parameter bZero is non-zero, then any part of the input list following
+** the end of the output list is zeroed before returning.
 */
 static void fts3ColumnFilter(
   int iCol,                       /* Column to filter on */
+  int bZero,                      /* Zero out anything following *ppList */
   char **ppList,                  /* IN/OUT: Pointer to position list */
   int *pnList                     /* IN/OUT: Size of buffer *ppList in bytes */
 ){
@@ -2522,9 +2529,12 @@ static void fts3ColumnFilter(
       break;
     }
     p = &pList[1];
-    p += sqlite3Fts3GetVarint32(p, &iCurrent);
+    p += fts3GetVarint32(p, &iCurrent);
   }
 
+  if( bZero && &pList[nList]!=pEnd ){
+    memset(&pList[nList], 0, pEnd - &pList[nList]);
+  }
   *ppList = pList;
   *pnList = nList;
 }
@@ -2598,19 +2608,19 @@ int sqlite3Fts3MsrIncrNext(
       if( rc!=SQLITE_OK ) return rc;
       fts3SegReaderSort(pMsr->apSegment, nMerge, j, xCmp);
 
+      if( nList>0 && fts3SegReaderIsPending(apSegment[0]) ){
+        rc = fts3MsrBufferData(pMsr, pList, nList+1);
+        if( rc!=SQLITE_OK ) return rc;
+        assert( (pMsr->aBuffer[nList] & 0xFE)==0x00 );
+        pList = pMsr->aBuffer;
+      }
+
       if( pMsr->iColFilter>=0 ){
-        fts3ColumnFilter(pMsr->iColFilter, &pList, &nList);
+        fts3ColumnFilter(pMsr->iColFilter, 1, &pList, &nList);
       }
 
       if( nList>0 ){
-        if( fts3SegReaderIsPending(apSegment[0]) ){
-          rc = fts3MsrBufferData(pMsr, pList, nList+1);
-          if( rc!=SQLITE_OK ) return rc;
-          *paPoslist = pMsr->aBuffer;
-          assert( (pMsr->aBuffer[nList] & 0xFE)==0x00 );
-        }else{
-          *paPoslist = pList;
-        }
+        *paPoslist = pList;
         *piDocid = iDocid;
         *pnPoslist = nList;
         break;
@@ -2838,8 +2848,8 @@ int sqlite3Fts3SegReaderStep(
       fts3SegReaderSort(apSegment, nMerge, nMerge, xCmp);
       while( apSegment[0]->pOffsetList ){
         int j;                    /* Number of segments that share a docid */
-        char *pList;
-        int nList;
+        char *pList = 0;
+        int nList = 0;
         int nByte;
         sqlite3_int64 iDocid = apSegment[0]->iDocid;
         fts3SegReaderNextDocid(p, apSegment[0], &pList, &nList);
@@ -2853,7 +2863,7 @@ int sqlite3Fts3SegReaderStep(
         }
 
         if( isColFilter ){
-          fts3ColumnFilter(pFilter->iCol, &pList, &nList);
+          fts3ColumnFilter(pFilter->iCol, 0, &pList, &nList);
         }
 
         if( !isIgnoreEmpty || nList>0 ){
@@ -3290,11 +3300,13 @@ static int fts3DoRebuild(Fts3Table *p){
       int iCol;
       int iLangid = langidFromSelect(p, pStmt);
       rc = fts3PendingTermsDocid(p, iLangid, sqlite3_column_int64(pStmt, 0));
-      aSz[p->nColumn] = 0;
+      memset(aSz, 0, sizeof(aSz[0]) * (p->nColumn+1));
       for(iCol=0; rc==SQLITE_OK && iCol<p->nColumn; iCol++){
-        const char *z = (const char *) sqlite3_column_text(pStmt, iCol+1);
-        rc = fts3PendingTermsAdd(p, iLangid, z, iCol, &aSz[iCol]);
-        aSz[p->nColumn] += sqlite3_column_bytes(pStmt, iCol+1);
+        if( p->abNotindexed[iCol]==0 ){
+          const char *z = (const char *) sqlite3_column_text(pStmt, iCol+1);
+          rc = fts3PendingTermsAdd(p, iLangid, z, iCol, &aSz[iCol]);
+          aSz[p->nColumn] += sqlite3_column_bytes(pStmt, iCol+1);
+        }
       }
       if( p->bHasDocsize ){
         fts3InsertDocsize(&rc, p, aSz);
@@ -3482,9 +3494,9 @@ static int nodeReaderNext(NodeReader *p){
     p->aNode = 0;
   }else{
     if( bFirst==0 ){
-      p->iOff += sqlite3Fts3GetVarint32(&p->aNode[p->iOff], &nPrefix);
+      p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &nPrefix);
     }
-    p->iOff += sqlite3Fts3GetVarint32(&p->aNode[p->iOff], &nSuffix);
+    p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &nSuffix);
 
     blobGrowBuffer(&p->term, nPrefix+nSuffix, &rc);
     if( rc==SQLITE_OK ){
@@ -3492,7 +3504,7 @@ static int nodeReaderNext(NodeReader *p){
       p->term.n = nPrefix+nSuffix;
       p->iOff += nSuffix;
       if( p->iChild==0 ){
-        p->iOff += sqlite3Fts3GetVarint32(&p->aNode[p->iOff], &p->nDoclist);
+        p->iOff += fts3GetVarint32(&p->aNode[p->iOff], &p->nDoclist);
         p->aDoclist = &p->aNode[p->iOff];
         p->iOff += p->nDoclist;
       }
@@ -4544,7 +4556,7 @@ static int fts3IncrmergeHintPop(Blob *pHint, i64 *piAbsLevel, int *pnInput){
 
   pHint->n = i;
   i += sqlite3Fts3GetVarint(&pHint->a[i], piAbsLevel);
-  i += sqlite3Fts3GetVarint32(&pHint->a[i], pnInput);
+  i += fts3GetVarint32(&pHint->a[i], pnInput);
   if( i!=nHint ) return SQLITE_CORRUPT_VTAB;
 
   return SQLITE_OK;
@@ -4768,7 +4780,7 @@ static int fts3DoAutoincrmerge(
     if( rc ) return rc;
   }
   rc = fts3SqlStmt(p, SQL_REPLACE_STAT, &pStmt, 0);
-  if( rc ) return rc;;
+  if( rc ) return rc;
   sqlite3_bind_int(pStmt, 1, FTS_STAT_AUTOINCRMERGE);
   sqlite3_bind_int(pStmt, 2, p->bAutoincrmerge);
   sqlite3_step(pStmt);
@@ -4934,9 +4946,9 @@ static int fts3IntegrityCheck(Fts3Table *p, int *pbOk){
         rc = sqlite3Fts3OpenTokenizer(p->pTokenizer, iLang, zText, nText, &pT);
         while( rc==SQLITE_OK ){
           char const *zToken;       /* Buffer containing token */
-          int nToken;               /* Number of bytes in token */
-          int iDum1, iDum2;         /* Dummy variables */
-          int iPos;                 /* Position of token in zText */
+          int nToken = 0;           /* Number of bytes in token */
+          int iDum1 = 0, iDum2 = 0; /* Dummy variables */
+          int iPos = 0;             /* Position of token in zText */
 
           rc = pModule->xNext(pT, &zToken, &nToken, &iDum1, &iDum2, &iPos);
           if( rc==SQLITE_OK ){
@@ -5038,6 +5050,9 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 9) ){
     p->nMaxPendingData = atoi(&zVal[11]);
     rc = SQLITE_OK;
+  }else if( nVal>21 && 0==sqlite3_strnicmp(zVal, "test-no-incr-doclist=", 21) ){
+    p->bNoIncrDoclist = atoi(&zVal[21]);
+    rc = SQLITE_OK;
 #endif
   }else{
     rc = SQLITE_ERROR;
@@ -5097,32 +5112,34 @@ int sqlite3Fts3CacheDeferredDoclists(Fts3Cursor *pCsr){
     iDocid = sqlite3_column_int64(pCsr->pStmt, 0);
   
     for(i=0; i<p->nColumn && rc==SQLITE_OK; i++){
-      const char *zText = (const char *)sqlite3_column_text(pCsr->pStmt, i+1);
-      sqlite3_tokenizer_cursor *pTC = 0;
-  
-      rc = sqlite3Fts3OpenTokenizer(pT, pCsr->iLangid, zText, -1, &pTC);
-      while( rc==SQLITE_OK ){
-        char const *zToken;       /* Buffer containing token */
-        int nToken;               /* Number of bytes in token */
-        int iDum1, iDum2;         /* Dummy variables */
-        int iPos;                 /* Position of token in zText */
-  
-        rc = pModule->xNext(pTC, &zToken, &nToken, &iDum1, &iDum2, &iPos);
-        for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
-          Fts3PhraseToken *pPT = pDef->pToken;
-          if( (pDef->iCol>=p->nColumn || pDef->iCol==i)
-           && (pPT->bFirst==0 || iPos==0)
-           && (pPT->n==nToken || (pPT->isPrefix && pPT->n<nToken))
-           && (0==memcmp(zToken, pPT->z, pPT->n))
-          ){
-            fts3PendingListAppend(&pDef->pList, iDocid, i, iPos, &rc);
+      if( p->abNotindexed[i]==0 ){
+        const char *zText = (const char *)sqlite3_column_text(pCsr->pStmt, i+1);
+        sqlite3_tokenizer_cursor *pTC = 0;
+
+        rc = sqlite3Fts3OpenTokenizer(pT, pCsr->iLangid, zText, -1, &pTC);
+        while( rc==SQLITE_OK ){
+          char const *zToken;       /* Buffer containing token */
+          int nToken = 0;           /* Number of bytes in token */
+          int iDum1 = 0, iDum2 = 0; /* Dummy variables */
+          int iPos = 0;             /* Position of token in zText */
+
+          rc = pModule->xNext(pTC, &zToken, &nToken, &iDum1, &iDum2, &iPos);
+          for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
+            Fts3PhraseToken *pPT = pDef->pToken;
+            if( (pDef->iCol>=p->nColumn || pDef->iCol==i)
+                && (pPT->bFirst==0 || iPos==0)
+                && (pPT->n==nToken || (pPT->isPrefix && pPT->n<nToken))
+                && (0==memcmp(zToken, pPT->z, pPT->n))
+              ){
+              fts3PendingListAppend(&pDef->pList, iDocid, i, iPos, &rc);
+            }
           }
         }
+        if( pTC ) pModule->xClose(pTC);
+        if( rc==SQLITE_DONE ) rc = SQLITE_OK;
       }
-      if( pTC ) pModule->xClose(pTC);
-      if( rc==SQLITE_DONE ) rc = SQLITE_OK;
     }
-  
+
     for(pDef=pCsr->pDeferred; pDef && rc==SQLITE_OK; pDef=pDef->pNext){
       if( pDef->pList ){
         rc = fts3PendingListAppendVarint(&pDef->pList, 0);
@@ -5194,28 +5211,32 @@ int sqlite3Fts3DeferToken(
 static int fts3DeleteByRowid(
   Fts3Table *p, 
   sqlite3_value *pRowid, 
-  int *pnDoc,
+  int *pnChng,                    /* IN/OUT: Decrement if row is deleted */
   u32 *aSzDel
 ){
-  int isEmpty = 0;
-  int rc = fts3IsEmpty(p, pRowid, &isEmpty);
-  if( rc==SQLITE_OK ){
-    if( isEmpty ){
-      /* Deleting this row means the whole table is empty. In this case
-      ** delete the contents of all three tables and throw away any
-      ** data in the pendingTerms hash table.  */
-      rc = fts3DeleteAll(p, 1);
-      *pnDoc = *pnDoc - 1;
-    }else{
-      fts3DeleteTerms(&rc, p, pRowid, aSzDel);
-      if( p->zContentTbl==0 ){
-        fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, &pRowid);
-        if( sqlite3_changes(p->db) ) *pnDoc = *pnDoc - 1;
+  int rc = SQLITE_OK;             /* Return code */
+  int bFound = 0;                 /* True if *pRowid really is in the table */
+
+  fts3DeleteTerms(&rc, p, pRowid, aSzDel, &bFound);
+  if( bFound && rc==SQLITE_OK ){
+    int isEmpty = 0;              /* Deleting *pRowid leaves the table empty */
+    rc = fts3IsEmpty(p, pRowid, &isEmpty);
+    if( rc==SQLITE_OK ){
+      if( isEmpty ){
+        /* Deleting this row means the whole table is empty. In this case
+        ** delete the contents of all three tables and throw away any
+        ** data in the pendingTerms hash table.  */
+        rc = fts3DeleteAll(p, 1);
+        *pnChng = 0;
+        memset(aSzDel, 0, sizeof(u32) * (p->nColumn+1) * 2);
       }else{
-        *pnDoc = *pnDoc - 1;
-      }
-      if( p->bHasDocsize ){
-        fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, &pRowid);
+        *pnChng = *pnChng - 1;
+        if( p->zContentTbl==0 ){
+          fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, &pRowid);
+        }
+        if( p->bHasDocsize ){
+          fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, &pRowid);
+        }
       }
     }
   }
@@ -5246,9 +5267,13 @@ int sqlite3Fts3UpdateMethod(
   int rc = SQLITE_OK;             /* Return Code */
   int isRemove = 0;               /* True for an UPDATE or DELETE */
   u32 *aSzIns = 0;                /* Sizes of inserted documents */
-  u32 *aSzDel;                    /* Sizes of deleted documents */
+  u32 *aSzDel = 0;                /* Sizes of deleted documents */
   int nChng = 0;                  /* Net change in number of documents */
   int bInsertDone = 0;
+
+  /* At this point it must be known if the %_stat table exists or not.
+  ** So bHasStat may not be 2.  */
+  assert( p->bHasStat==0 || p->bHasStat==1 );
 
   assert( p->pSegments==0 );
   assert( 
@@ -5274,13 +5299,16 @@ int sqlite3Fts3UpdateMethod(
   }
 
   /* Allocate space to hold the change in document sizes */
-  aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*(p->nColumn+1)*2 );
-  if( aSzIns==0 ){
+  aSzDel = sqlite3_malloc( sizeof(aSzDel[0])*(p->nColumn+1)*2 );
+  if( aSzDel==0 ){
     rc = SQLITE_NOMEM;
     goto update_out;
   }
-  aSzDel = &aSzIns[p->nColumn+1];
-  memset(aSzIns, 0, sizeof(aSzIns[0])*(p->nColumn+1)*2);
+  aSzIns = &aSzDel[p->nColumn+1];
+  memset(aSzDel, 0, sizeof(aSzDel[0])*(p->nColumn+1)*2);
+
+  rc = fts3Writelock(p);
+  if( rc!=SQLITE_OK ) goto update_out;
 
   /* If this is an INSERT operation, or an UPDATE that modifies the rowid
   ** value, then this operation requires constraint handling.
@@ -5365,7 +5393,7 @@ int sqlite3Fts3UpdateMethod(
   }
 
  update_out:
-  sqlite3_free(aSzIns);
+  sqlite3_free(aSzDel);
   sqlite3Fts3SegmentsClose(p);
   return rc;
 }

@@ -97,4 +97,3 @@ do_test walcrash2-1.3 {
 catch { db2 close }
 
 finish_test
-

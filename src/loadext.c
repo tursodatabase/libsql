@@ -378,6 +378,19 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_blob_reopen,
   sqlite3_vtab_config,
   sqlite3_vtab_on_conflict,
+  sqlite3_close_v2,
+  sqlite3_db_filename,
+  sqlite3_db_readonly,
+  sqlite3_db_release_memory,
+  sqlite3_errstr,
+  sqlite3_stmt_busy,
+  sqlite3_stmt_readonly,
+  sqlite3_stricmp,
+  sqlite3_uri_boolean,
+  sqlite3_uri_int64,
+  sqlite3_uri_parameter,
+  sqlite3_vsnprintf,
+  sqlite3_wal_checkpoint_v2
 };
 
 /*
@@ -402,8 +415,23 @@ static int sqlite3LoadExtension(
   void *handle;
   int (*xInit)(sqlite3*,char**,const sqlite3_api_routines*);
   char *zErrmsg = 0;
+  const char *zEntry;
+  char *zAltEntry = 0;
   void **aHandle;
   int nMsg = 300 + sqlite3Strlen30(zFile);
+  int ii;
+
+  /* Shared library endings to try if zFile cannot be loaded as written */
+  static const char *azEndings[] = {
+#if SQLITE_OS_WIN
+     "dll"   
+#elif defined(__APPLE__)
+     "dylib"
+#else
+     "so"
+#endif
+  };
+
 
   if( pzErrMsg ) *pzErrMsg = 0;
 
@@ -420,11 +448,17 @@ static int sqlite3LoadExtension(
     return SQLITE_ERROR;
   }
 
-  if( zProc==0 ){
-    zProc = "sqlite3_extension_init";
-  }
+  zEntry = zProc ? zProc : "sqlite3_extension_init";
 
   handle = sqlite3OsDlOpen(pVfs, zFile);
+#if SQLITE_OS_UNIX || SQLITE_OS_WIN
+  for(ii=0; ii<ArraySize(azEndings) && handle==0; ii++){
+    char *zAltFile = sqlite3_mprintf("%s.%s", zFile, azEndings[ii]);
+    if( zAltFile==0 ) return SQLITE_NOMEM;
+    handle = sqlite3OsDlOpen(pVfs, zAltFile);
+    sqlite3_free(zAltFile);
+  }
+#endif
   if( handle==0 ){
     if( pzErrMsg ){
       *pzErrMsg = zErrmsg = sqlite3_malloc(nMsg);
@@ -437,20 +471,57 @@ static int sqlite3LoadExtension(
     return SQLITE_ERROR;
   }
   xInit = (int(*)(sqlite3*,char**,const sqlite3_api_routines*))
-                   sqlite3OsDlSym(pVfs, handle, zProc);
+                   sqlite3OsDlSym(pVfs, handle, zEntry);
+
+  /* If no entry point was specified and the default legacy
+  ** entry point name "sqlite3_extension_init" was not found, then
+  ** construct an entry point name "sqlite3_X_init" where the X is
+  ** replaced by the lowercase value of every ASCII alphabetic 
+  ** character in the filename after the last "/" upto the first ".",
+  ** and eliding the first three characters if they are "lib".  
+  ** Examples:
+  **
+  **    /usr/local/lib/libExample5.4.3.so ==>  sqlite3_example_init
+  **    C:/lib/mathfuncs.dll              ==>  sqlite3_mathfuncs_init
+  */
+  if( xInit==0 && zProc==0 ){
+    int iFile, iEntry, c;
+    int ncFile = sqlite3Strlen30(zFile);
+    zAltEntry = sqlite3_malloc(ncFile+30);
+    if( zAltEntry==0 ){
+      sqlite3OsDlClose(pVfs, handle);
+      return SQLITE_NOMEM;
+    }
+    memcpy(zAltEntry, "sqlite3_", 8);
+    for(iFile=ncFile-1; iFile>=0 && zFile[iFile]!='/'; iFile--){}
+    iFile++;
+    if( sqlite3_strnicmp(zFile+iFile, "lib", 3)==0 ) iFile += 3;
+    for(iEntry=8; (c = zFile[iFile])!=0 && c!='.'; iFile++){
+      if( sqlite3Isalpha(c) ){
+        zAltEntry[iEntry++] = (char)sqlite3UpperToLower[(unsigned)c];
+      }
+    }
+    memcpy(zAltEntry+iEntry, "_init", 6);
+    zEntry = zAltEntry;
+    xInit = (int(*)(sqlite3*,char**,const sqlite3_api_routines*))
+                     sqlite3OsDlSym(pVfs, handle, zEntry);
+  }
   if( xInit==0 ){
     if( pzErrMsg ){
-      nMsg += sqlite3Strlen30(zProc);
+      nMsg += sqlite3Strlen30(zEntry);
       *pzErrMsg = zErrmsg = sqlite3_malloc(nMsg);
       if( zErrmsg ){
         sqlite3_snprintf(nMsg, zErrmsg,
-            "no entry point [%s] in shared library [%s]", zProc,zFile);
+            "no entry point [%s] in shared library [%s]", zEntry, zFile);
         sqlite3OsDlError(pVfs, nMsg-1, zErrmsg);
       }
-      sqlite3OsDlClose(pVfs, handle);
     }
+    sqlite3OsDlClose(pVfs, handle);
+    sqlite3_free(zAltEntry);
     return SQLITE_ERROR;
-  }else if( xInit(db, &zErrmsg, &sqlite3Apis) ){
+  }
+  sqlite3_free(zAltEntry);
+  if( xInit(db, &zErrmsg, &sqlite3Apis) ){
     if( pzErrMsg ){
       *pzErrMsg = sqlite3_mprintf("error during initialization: %s", zErrmsg);
     }
@@ -595,6 +666,35 @@ int sqlite3_auto_extension(void (*xInit)(void)){
     assert( (rc&0xff)==rc );
     return rc;
   }
+}
+
+/*
+** Cancel a prior call to sqlite3_auto_extension.  Remove xInit from the
+** set of routines that is invoked for each new database connection, if it
+** is currently on the list.  If xInit is not on the list, then this
+** routine is a no-op.
+**
+** Return 1 if xInit was found on the list and removed.  Return 0 if xInit
+** was not on the list.
+*/
+int sqlite3_cancel_auto_extension(void (*xInit)(void)){
+#if SQLITE_THREADSAFE
+  sqlite3_mutex *mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
+#endif
+  int i;
+  int n = 0;
+  wsdAutoextInit;
+  sqlite3_mutex_enter(mutex);
+  for(i=wsdAutoext.nExt-1; i>=0; i--){
+    if( wsdAutoext.aExt[i]==xInit ){
+      wsdAutoext.nExt--;
+      wsdAutoext.aExt[i] = wsdAutoext.aExt[wsdAutoext.nExt];
+      n++;
+      break;
+    }
+  }
+  sqlite3_mutex_leave(mutex);
+  return n;
 }
 
 /*

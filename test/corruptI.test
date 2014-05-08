@@ -1,0 +1,79 @@
+# 2014-01-20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix corruptI
+
+if {[permutation]=="mmap"} {
+  finish_test
+  return
+}
+
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+database_may_be_corrupt
+
+# Initialize the database.
+#
+do_execsql_test 1.1 {
+  PRAGMA page_size=1024;
+  PRAGMA auto_vacuum=0;
+  CREATE TABLE t1(a);
+  CREATE INDEX i1 ON t1(a);
+  INSERT INTO t1 VALUES('abcdefghijklmnop');
+} {}
+db close
+
+do_test 1.2 {
+  set offset [hexio_get_int [hexio_read test.db [expr 2*1024 + 8] 2]]
+  set off [expr 2*1024 + $offset + 1]
+  hexio_write test.db $off 7f06
+  sqlite3 db test.db
+  catchsql { SELECT * FROM t1 WHERE a = 10 }
+} {0 {}}
+
+do_test 1.3 {
+  db close
+  set offset [hexio_get_int [hexio_read test.db [expr 2*1024 + 8] 2]]
+  set off [expr 2*1024 + $offset + 1]
+  hexio_write test.db $off FFFF7f02
+  sqlite3 db test.db
+  catchsql { SELECT * FROM t1 WHERE a = 10 }
+} {1 {database disk image is malformed}}
+
+do_test 2.0 {
+  execsql {
+    CREATE TABLE r(x);
+    INSERT INTO r VALUES('ABCDEFGHIJK');
+    CREATE INDEX r1 ON r(x);
+  }
+  set pg [db one {SELECT rootpage FROM sqlite_master WHERE name = 'r1'}]
+} {5}
+
+do_test 2.1 {
+  db close
+  set offset [hexio_get_int [hexio_read test.db [expr (5-1)*1024 + 8] 2]]
+  set off [expr (5-1)*1024 + $offset + 1]
+  hexio_write test.db $off FFFF0004
+  sqlite3 db test.db
+  catchsql { SELECT * FROM r WHERE x >= 10.0 }
+} {1 {database disk image is malformed}}
+
+do_test 2.2 {
+  catchsql { SELECT * FROM r WHERE x >= 10 }
+} {1 {database disk image is malformed}}
+
+
+finish_test

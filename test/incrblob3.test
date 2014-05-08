@@ -274,4 +274,3 @@ if {[path_is_local "."]} {
 tvfs delete
 
 finish_test
-

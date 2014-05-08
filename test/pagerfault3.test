@@ -61,4 +61,3 @@ do_faultsim_test pagerfault3-1 -faults ioerr-transient -prep {
 }
 
 finish_test
-

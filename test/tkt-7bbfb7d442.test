@@ -152,5 +152,3 @@ do_execsql_test 2.3 {
 
 
 finish_test
-
-

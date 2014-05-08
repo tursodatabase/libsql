@@ -842,7 +842,7 @@ do_malloc_test 36 -sqlprep {
   SELECT test_agg_errmsg16(), group_concat(a) FROM t1
 }
 
-# At one point, if an OOM occured immediately after obtaining a shared lock
+# At one point, if an OOM occurred immediately after obtaining a shared lock
 # on the database file, the file remained locked. This test case ensures
 # that bug has been fixed.i
 if {[db eval {PRAGMA locking_mode}]!="exclusive"} {

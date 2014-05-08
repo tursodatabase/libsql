@@ -235,8 +235,9 @@ do_test capi2-3.13 {
 do_test capi2-3.13b {db changes} {0}
 
 do_test capi2-3.14 {
-  list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
-} {SQLITE_CONSTRAINT {column a is not unique}}
+  list [sqlite3_finalize $VM] [sqlite3_errmsg $DB] \
+       [sqlite3_extended_errcode $DB]
+} {SQLITE_CONSTRAINT {UNIQUE constraint failed: t1.a} SQLITE_CONSTRAINT_UNIQUE}
 do_test capi2-3.15 {
   set VM [sqlite3_prepare $DB {CREATE TABLE t2(a NOT NULL, b)} -1 TAIL]
   set TAIL
@@ -258,8 +259,9 @@ do_test capi2-3.18 {
        [get_column_names $VM]
 } {SQLITE_ERROR 0 {} {}}
 do_test capi2-3.19 {
-  list [sqlite3_finalize $VM] [sqlite3_errmsg $DB]
-} {SQLITE_CONSTRAINT {t2.a may not be NULL}}
+  list [sqlite3_finalize $VM] [sqlite3_errmsg $DB] \
+       [sqlite3_extended_errcode $DB]
+} {SQLITE_CONSTRAINT {NOT NULL constraint failed: t2.a} SQLITE_CONSTRAINT_NOTNULL}
 
 do_test capi2-3.20 {
   execsql {
@@ -278,8 +280,8 @@ do_test capi2-3.23 {
   sqlite3_finalize $VM
 } {SQLITE_CONSTRAINT}
 do_test capi2-3.24 {
-  sqlite3_errcode $DB
-} {SQLITE_CONSTRAINT}
+  list [sqlite3_errcode $DB] [sqlite3_extended_errcode $DB]
+} {SQLITE_CONSTRAINT SQLITE_CONSTRAINT_UNIQUE}
 
 # Two or more virtual machines exists at the same time.
 #
@@ -553,7 +555,7 @@ do_test capi2-6.27 {
     INSERT INTO t1 VALUES(2,4,5);
     SELECT * FROM t1;
   }
-} {1 {column a is not unique}}
+} {1 {UNIQUE constraint failed: t1.a}}
 do_test capi2-6.28 {
   list [sqlite3_step $VM1] \
        [sqlite3_column_count $VM1] \

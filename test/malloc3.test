@@ -27,6 +27,24 @@ if {!$MEMDEBUG} {
    return
 }
 
+
+# Do not run these tests with an in-memory journal.
+#
+# In the pager layer, if an IO or OOM error occurs during a ROLLBACK, or
+# when flushing a page to disk due to cache-stress, the pager enters an
+# "error state". The only way out of the error state is to unlock the
+# database file and end the transaction, leaving whatever journal and
+# database files happen to be on disk in place. The next time the current
+# (or any other) connection opens a read transaction, hot-journal rollback
+# is performed if necessary.
+#
+# Of course, this doesn't work with an in-memory journal.
+#
+if {[permutation]=="inmemory_journal"} {
+  finish_test
+  return
+}
+
 #--------------------------------------------------------------------------
 # NOTES ON RECOVERING FROM A MALLOC FAILURE
 # 
@@ -147,6 +165,7 @@ if {!$MEMDEBUG} {
 # ::run_test_script. At the end of this file, the proc [run_test] is used
 # to execute the program (and all test cases contained therein).
 #
+set ::run_test_sql_id 0
 set ::run_test_script [list]
 proc TEST {id t} {lappend ::run_test_script -test [list $id $t]}
 proc PREP {p} {lappend ::run_test_script -prep [string trim $p]}
@@ -162,13 +181,14 @@ proc DEBUG {s} {lappend ::run_test_script -debug $s}
 # transaction only.
 #
 proc SQL  {a1 {a2 ""}} {
-  # An SQL primitive parameter is a list of two elements, a boolean value
-  # indicating if the statement may cause transaction rollback when malloc()
-  # fails, and the sql statement itself.
+  # An SQL primitive parameter is a list of three elements, an id, a boolean
+  # value indicating if the statement may cause transaction rollback when
+  # malloc() fails, and the sql statement itself.
+  set id [incr ::run_test_sql_id]
   if {$a2 == ""} {
-    lappend ::run_test_script -sql [list true [string trim $a1]]
+    lappend ::run_test_script -sql [list $id true [string trim $a1]]
   } else {
-    lappend ::run_test_script -sql [list false [string trim $a2]]
+    lappend ::run_test_script -sql [list $id false [string trim $a2]]
   }
 }
 
@@ -258,7 +278,7 @@ TEST 5 {
 set sql {
   BEGIN;DELETE FROM abc;
 }
-for {set i 1} {$i < 15} {incr i} {
+for {set i 1} {$i < 100} {incr i} {
   set a $i
   set b "String value $i"
   set c [string repeat X $i]
@@ -529,12 +549,13 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
   }
 
   for {set i 0} {$i < $pcstart} {incr i} {
-    set k2 [lindex $arglist [expr 2 * $i]]
-    set v2 [lindex $arglist [expr 2 * $i + 1]]
+    set k2 [lindex $arglist [expr {2 * $i}]]
+    set v2 [lindex $arglist [expr {2 * $i + 1}]]
     set ac [sqlite3_get_autocommit $::DB]        ;# Auto-Commit
     switch -- $k2 {
-      -sql  {db eval [lindex $v2 1]}
+      -sql  {db eval [lindex $v2 2]}
       -prep {db eval $v2}
+      -debug {eval $v2}
     }
     set nac [sqlite3_get_autocommit $::DB]       ;# New Auto-Commit 
     if {$ac && !$nac} {set begin_pc $i}
@@ -545,33 +566,39 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
   set iFail $iFailStart
   set pc $pcstart
   while {$pc*2 < [llength $arglist]} {
+    # Fetch the current instruction type and payload.
+    set k [lindex $arglist [expr {2 * $pc}]]
+    set v [lindex $arglist [expr {2 * $pc + 1}]]
 
     # Id of this iteration:
-    set k [lindex $arglist [expr 2 * $pc]]
     set iterid "pc=$pc.iFail=$iFail$k"
-    set v [lindex $arglist [expr 2 * $pc + 1]]
 
     switch -- $k {
 
       -test { 
         foreach {id script} $v {}
+        set testid "malloc3-(test $id).$iterid"
+        eval $script
         incr pc
       }
 
       -sql {
         set ::rollback_hook_count 0
 
+        set id [lindex $v 0]
+        set testid "malloc3-(integrity $id).$iterid"
+
         set ac [sqlite3_get_autocommit $::DB]        ;# Auto-Commit
         sqlite3_memdebug_fail $iFail -repeat 0
-        set rc [catch {db eval [lindex $v 1]} msg]   ;# True error occurs
+        set rc [catch {db eval [lindex $v 2]} msg]   ;# True error occurs
         set nac [sqlite3_get_autocommit $::DB]       ;# New Auto-Commit 
 
         if {$rc != 0 && $nac && !$ac} {
           # Before [db eval] the auto-commit flag was clear. Now it
-          # is set. Since an error occured we assume this was not a
-          # commit - therefore a rollback occured. Check that the
+          # is set. Since an error occurred we assume this was not a
+          # commit - therefore a rollback occurred. Check that the
           # rollback-hook was invoked.
-          do_test malloc3-rollback_hook.$iterid {
+          do_test malloc3-rollback_hook_count.$iterid {
             set ::rollback_hook_count
           } {1}
         }
@@ -582,8 +609,9 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
             # calls should be equal to the number of benign failures.
             # Otherwise a malloc() failed and the error was not reported.
             # 
-            if {$nFail!=$nBenign} {
-              error "Unreported malloc() failure"
+            set expr {$nFail!=$nBenign}
+            if {[expr $expr]} {
+              error "Unreported malloc() failure, test \"$testid\", $expr"
             }
 
             if {$ac && !$nac} {
@@ -595,24 +623,23 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
 
             incr pc
             set iFail 1
-            integrity_check "malloc3-(integrity).$iterid"
+            integrity_check $testid
         } elseif {[regexp {.*out of memory} $msg] || [db errorcode] == 3082} {
             # Out of memory error, as expected.
             #
-            integrity_check "malloc3-(integrity).$iterid"
+            integrity_check $testid
             incr iFail
             if {$nac && !$ac} {
-
-              if {![lindex $v 0] && [db errorcode] != 3082} {
-                # error "Statement \"[lindex $v 1]\" caused a rollback"
+              if {![lindex $v 1] && [db errorcode] != 3082} {
+                # error "Statement \"[lindex $v 2]\" caused a rollback"
               }
 
               for {set i $begin_pc} {$i < $pc} {incr i} {
-                set k2 [lindex $arglist [expr 2 * $i]]
-                set v2 [lindex $arglist [expr 2 * $i + 1]]
+                set k2 [lindex $arglist [expr {2 * $i}]]
+                set v2 [lindex $arglist [expr {2 * $i + 1}]]
                 set catchupsql ""
                 switch -- $k2 {
-                  -sql  {set catchupsql [lindex $v2 1]}
+                  -sql  {set catchupsql [lindex $v2 2]}
                   -prep {set catchupsql $v2}
                 }
                 db eval $catchupsql
@@ -622,7 +649,8 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
             error $msg
         }
 
-        while {[lindex $arglist [expr 2 * ($pc -1)]] == "-test"} {
+        # back up to the previous "-test" block.
+        while {[lindex $arglist [expr {2 * ($pc - 1)}]] == "-test"} {
           incr pc -1
         }
       }
@@ -642,7 +670,7 @@ proc run_test {arglist iRepeat {pcstart 0} {iFailStart 1}} {
   }
 }
 
-# Turn of the Tcl interface's prepared statement caching facility. Then
+# Turn off the Tcl interface's prepared statement caching facility. Then
 # run the tests with "persistent" malloc failures.
 sqlite3_extended_result_codes db 1
 db cache size 0

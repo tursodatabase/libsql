@@ -239,7 +239,10 @@ proc an_load_unicodedata_text {zName} {
     foreach $lField $fields {}
 
     set iCode [expr "0x$code"]
-    set bAlnum [expr {[lsearch {L N} [string range $general_category 0 0]]>=0}]
+    set bAlnum [expr {
+         [lsearch {L N} [string range $general_category 0 0]] >= 0
+      || $general_category=="Co"
+    }]
 
     if { !$bAlnum } { lappend lRet $iCode }
   }
@@ -360,7 +363,7 @@ proc print_isalnum {zFunc lRange} {
     }
     assert( aEntry[0]<key );
     assert( key>=aEntry[iRes] );
-    return (c >= ((aEntry[iRes]>>10) + (aEntry[iRes]&0x3FF)));
+    return (((unsigned int)c) >= ((aEntry[iRes]>>10) + (aEntry[iRes]&0x3FF)));
   }
   return 1;}
   puts "\}"
@@ -729,7 +732,7 @@ proc print_fileheader {} {
 */
   }]
   puts ""
-  puts "#if !defined(SQLITE_DISABLE_FTS3_UNICODE)"
+  puts "#if defined(SQLITE_ENABLE_FTS4_UNICODE61)"
   puts "#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)"
   puts ""
   puts "#include <assert.h>"
@@ -805,4 +808,4 @@ if {$::generate_test_code} {
 }
 
 puts "#endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */"
-puts "#endif /* !defined(SQLITE_DISABLE_FTS3_UNICODE) */"
+puts "#endif /* !defined(SQLITE_ENABLE_FTS4_UNICODE61) */"

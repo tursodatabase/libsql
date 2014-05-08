@@ -317,7 +317,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   sqlite3VdbeMemRelease(pMem);
   pMem->flags &= ~(MEM_Static|MEM_Dyn|MEM_Ephem);
   pMem->enc = desiredEnc;
-  pMem->flags |= (MEM_Term|MEM_Dyn);
+  pMem->flags |= (MEM_Term);
   pMem->z = (char*)zOut;
   pMem->zMalloc = pMem->z;
 
@@ -445,36 +445,9 @@ char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte, u8 enc){
   }
   assert( (m.flags & MEM_Term)!=0 || db->mallocFailed );
   assert( (m.flags & MEM_Str)!=0 || db->mallocFailed );
-  assert( (m.flags & MEM_Dyn)!=0 || db->mallocFailed );
   assert( m.z || db->mallocFailed );
   return m.z;
 }
-
-/*
-** Convert a UTF-8 string to the UTF-16 encoding specified by parameter
-** enc. A pointer to the new string is returned, and the value of *pnOut
-** is set to the length of the returned string in bytes. The call should
-** arrange to call sqlite3DbFree() on the returned pointer when it is
-** no longer required.
-** 
-** If a malloc failure occurs, NULL is returned and the db.mallocFailed
-** flag set.
-*/
-#ifdef SQLITE_ENABLE_STAT3
-char *sqlite3Utf8to16(sqlite3 *db, u8 enc, char *z, int n, int *pnOut){
-  Mem m;
-  memset(&m, 0, sizeof(m));
-  m.db = db;
-  sqlite3VdbeMemSetStr(&m, z, n, SQLITE_UTF8, SQLITE_STATIC);
-  if( sqlite3VdbeMemTranslate(&m, enc) ){
-    assert( db->mallocFailed );
-    return 0;
-  }
-  assert( m.z==m.zMalloc );
-  *pnOut = m.n;
-  return m.z;
-}
-#endif
 
 /*
 ** zIn is a UTF-16 encoded unicode string at least nChar characters long.

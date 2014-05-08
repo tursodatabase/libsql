@@ -23,8 +23,8 @@
 #include "sqlite3.h"
 #include <assert.h>
 
-/* From test1.c */
-const char *sqlite3TestErrorName(int);
+/* From main.c */
+extern const char *sqlite3ErrName(int);
 
 
 struct TestAsyncGlobal {
@@ -60,7 +60,7 @@ static int testAsyncInit(
 
   rc = sqlite3async_initialize(zParent, isDefault);
   if( rc!=SQLITE_OK ){
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -208,7 +208,7 @@ static int testAsyncControl(
   }
 
   if( rc!=SQLITE_OK ){
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_ERROR;
   }
 

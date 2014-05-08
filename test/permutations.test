@@ -138,6 +138,14 @@ test_suite "veryquick" -prefix "" -description {
   test_set $allquicktests -exclude *malloc* *ioerr* *fault*
 ]
 
+test_suite "mmap" -prefix "mm-" -description {
+  Similar to veryquick. Except with memory mapping disabled.
+} -presql {
+  pragma mmap_size = 268435456;
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* -include malloc.test
+]
+
 test_suite "valgrind" -prefix "" -description {
   Run the "veryquick" test suite with a couple of multi-process tests (that
   fail under valgrind) omitted.
@@ -178,6 +186,7 @@ test_suite "fts3" -prefix "" -description {
   fts3ak.test fts3al.test fts3am.test fts3an.test fts3ao.test
   fts3atoken.test fts3b.test fts3c.test fts3cov.test fts3d.test
   fts3defer.test fts3defer2.test fts3e.test fts3expr.test fts3expr2.test 
+  fts3expr3.test
   fts3near.test fts3query.test fts3shared.test fts3snippet.test 
   fts3sort.test
   fts3fault.test fts3malloc.test fts3matchinfo.test
@@ -185,7 +194,8 @@ test_suite "fts3" -prefix "" -description {
   fts4aa.test fts4content.test
   fts3conf.test fts3prefix.test fts3fault2.test fts3corrupt.test
   fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
-  fts4check.test fts4unicode.test
+  fts4check.test fts4unicode.test fts4noti.test
+  fts3varint.test
 }
 
 test_suite "nofaultsim" -prefix "" -description {
@@ -203,6 +213,93 @@ test_suite "nofaultsim" -prefix "" -description {
 } -shutdown {
   unset -nocomplain ::G(valgrind)
 }
+
+test_suite "queryplanner" -prefix "" -description {
+  Tests of the query planner and query optimizer
+} -files {
+  alter2.test alter3.test alter4.test alter.test analyze3.test
+  analyze4.test analyze5.test analyze6.test analyze7.test analyze8.test
+  analyze.test attach2.test attach3.test attach4.test
+  attach.test autoinc.test autoindex1.test between.test cast.test
+  check.test closure01.test coalesce.test collate1.test collate2.test
+  collate3.test collate4.test collate5.test collate6.test collate7.test
+  collate8.test collate9.test collateA.test colmeta.test colname.test
+  conflict.test count.test coveridxscan.test createtab.test cse.test
+  date.test dbstatus2.test dbstatus.test default.test delete2.test
+  delete3.test delete.test descidx1.test descidx2.test descidx3.test
+  distinctagg.test distinct.test e_createtable.test e_delete.test
+  e_droptrigger.test e_dropview.test e_expr.test e_insert.test
+  eqp.test e_reindex.test e_resolve.test e_select2.test e_select.test
+  e_update.test exists.test expr.test fkey1.test fkey2.test fkey3.test
+  fkey4.test fkey5.test func2.test func3.test func.test 
+  in3.test in4.test in5.test index2.test index3.test
+  index4.test index5.test indexedby.test index.test
+  insert2.test insert3.test insert4.test insert5.test insert.test
+  instr.test in.test intpkey.test join2.test join3.test join4.test
+  join5.test join6.test join.test like2.test like.test limit.test
+  minmax2.test minmax3.test minmax4.test minmax.test misc1.test misc2.test
+  misc3.test misc4.test misc5.test misc6.test misc7.test orderby1.test
+  orderby2.test orderby3.test orderby4.test randexpr1.test regexp1.test
+  reindex.test rowhash.test rowid.test schema2.test schema3.test
+  schema4.test schema5.test schema.test
+  select1.test select2.test select3.test select4.test select5.test
+  select6.test select7.test select8.test select9.test selectA.test
+  selectB.test selectC.test selectD.test selectE.test sidedelete.test
+  sort.test spellfix.test subquery2.test subquery.test subselect.test
+  substr.test tkt-02a8e81d44.test tkt1435.test tkt1443.test tkt1444.test
+  tkt1449.test tkt1473.test tkt1501.test tkt1512.test tkt1514.test
+  tkt1536.test tkt1537.test tkt1567.test tkt1644.test tkt1667.test
+  tkt1873.test tkt2141.test tkt2192.test tkt2213.test tkt2251.test
+  tkt2285.test tkt2332.test tkt2339.test tkt2391.test tkt2409.test
+  tkt2450.test tkt2565.test tkt2640.test tkt2643.test tkt2686.test
+  tkt-26ff0c2d1e.test tkt2767.test tkt2817.test tkt2820.test tkt2822.test
+  tkt2832.test tkt2854.test tkt2920.test tkt2927.test tkt2942.test
+  tkt-2a5629202f.test tkt-2d1a5c67d.test tkt-2ea2425d34.test tkt3080.test
+  tkt3093.test tkt3121.test tkt-31338dca7e.test tkt-313723c356.test
+  tkt3201.test tkt3292.test tkt3298.test tkt3334.test tkt3346.test
+  tkt3357.test tkt3419.test tkt3424.test tkt3442.test tkt3457.test
+  tkt3461.test tkt3493.test tkt3508.test tkt3522.test tkt3527.test
+  tkt3541.test tkt3554.test tkt3581.test tkt35xx.test tkt3630.test
+  tkt3718.test tkt3731.test tkt3757.test tkt3761.test tkt3762.test
+  tkt3773.test tkt3791.test tkt3793.test tkt3810.test tkt3824.test
+  tkt3832.test tkt3838.test tkt3841.test tkt-385a5b56b9.test tkt3871.test
+  tkt3879.test tkt-38cb5df375.test tkt3911.test tkt3918.test tkt3922.test
+  tkt3929.test tkt3935.test tkt3992.test tkt3997.test tkt-3998683a16.test
+  tkt-3a77c9714e.test tkt-3fe897352e.test tkt4018.test tkt-4a03edc4c8.test
+  tkt-4dd95f6943.test tkt-54844eea3f.test tkt-5d863f876e.test
+  tkt-5e10420e8d.test tkt-5ee23731f.test tkt-6bfb98dfc0.test
+  tkt-752e1646fc.test tkt-78e04e52ea.test tkt-7a31705a7e6.test
+  tkt-7bbfb7d442.test tkt-80ba201079.test tkt-80e031a00f.test
+  tkt-8454a207b9.test tkt-91e2e8ba6f.test tkt-94c04eaadb.test
+  tkt-9d68c883.test tkt-a7b7803e.test tkt-b1d3a2e531.test
+  tkt-b351d95f9.test tkt-b72787b1.test tkt-bd484a090c.test
+  tkt-bdc6bbbb38.test tkt-c48d99d690.test tkt-cbd054fa6b.test
+  tkt-d11f09d36e.test tkt-d635236375.test tkt-d82e3f3721.test
+  tkt-f3e5abed55.test tkt-f777251dc7a.test tkt-f7b4edec.test
+  tkt-f973c7ac31.test tkt-fa7bf5ec.test tkt-fc62af4523.test
+  tkt-fc7bd6358f.test trigger1.test trigger2.test trigger3.test
+  trigger4.test trigger5.test trigger6.test trigger7.test trigger8.test
+  trigger9.test triggerA.test triggerB.test triggerC.test triggerD.test
+  types2.test types3.test types.test unique.test unordered.test
+  update.test view.test vtab1.test vtab2.test vtab3.test vtab4.test
+  vtab5.test vtab6.test vtab7.test vtab8.test vtab9.test vtab_alter.test
+  vtabA.test vtabB.test vtabC.test vtabD.test vtabE.test
+  vtabF.test where2.test where3.test where4.test where5.test where6.test
+  where7.test where8m.test where8.test where9.test whereA.test whereB.test
+  whereC.test whereD.test whereE.test whereF.test wherelimit.test
+  where.test
+}
+
+test_suite "vfslog" -prefix "" -description {
+  "Vfslog" quick test suite. Like "veryquick" except does not omits
+  a few tests that do not work with a version 1 VFS. And the quota* tests,
+  which do not work with a VFS that uses the pVfs argument passed to
+  sqlite3_vfs methods.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* oserror.test \
+  pager1.test syscall.test sysfault.test tkt3457.test quota* superlock* \
+  wal* mmap*
+]
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
@@ -226,6 +323,14 @@ test_suite "coverage-pager" -description {
   walfault.test  walbak.test  journal2.test    tkt-9d68c883.test
 } 
 
+test_suite "coverage-analyze" -description {
+  Coverage tests for file analyze.c.
+} -files {
+  analyze3.test analyze4.test analyze5.test analyze6.test
+  analyze7.test analyze8.test analyze9.test analyzeA.test
+  analyze.test analyzeB.test mallocA.test
+} 
+
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
@@ -234,10 +339,14 @@ lappend ::testsuitelist xxx
 
 # Run some tests using pre-allocated page and scratch blocks.
 #
+# mmap1.test is excluded because a good number of its tests depend on 
+# the page-cache being larger than the database. But this permutation
+# causes the effective limit on the page-cache to be just 24 pages.
+#
 test_suite "memsubsys1" -description {
   Tests using pre-allocated page and scratch blocks
 } -files [
-  test_set $::allquicktests -exclude ioerr5.test malloc5.test
+  test_set $::allquicktests -exclude ioerr5.test malloc5.test mmap1.test
 ] -initialize {
   catch {db close}
   sqlite3_shutdown
@@ -411,6 +520,8 @@ test_suite "utf16" -description {
   pragma encoding = 'UTF-16'
 } -files {
     alter.test alter3.test
+    analyze.test analyze3.test analyze4.test analyze5.test analyze6.test
+    analyze7.test analyze8.test analyze9.test analyzeA.test analyzeB.test
     auth.test bind.test blob.test capi2.test capi3.test collate1.test
     collate2.test collate3.test collate4.test collate5.test collate6.test
     conflict.test date.test delete.test expr.test fkey1.test func.test
@@ -531,7 +642,7 @@ test_suite "inmemory_journal" -description {
   ioerr.test ioerr2.test ioerr3.test ioerr4.test ioerr5.test
   vacuum3.test incrblob_err.test diskfull.test backup_ioerr.test
   e_fts3.test fts3cov.test fts3malloc.test fts3rnd.test
-  fts3snippet.test
+  fts3snippet.test mmapfault.test
 
   # Exclude test scripts that use tcl IO to access journal files or count
   # the number of fsync() calls.

@@ -401,6 +401,8 @@ do_malloc_test shared_err-8 -tclprep {
     execsql {INSERT INTO t1 VALUES($a, $b)} db2
   }
   execsql {COMMIT} db2
+  execsql BEGIN
+  execsql ROLLBACK
   set ::DB2 [sqlite3_connection_pointer db2]
   set ::STMT [sqlite3_prepare $::DB2 "SELECT a FROM t1 ORDER BY a" -1 DUMMY]
   sqlite3_step $::STMT       ;# Cursor points at 0000000000
@@ -409,8 +411,7 @@ do_malloc_test shared_err-8 -tclprep {
   execsql {
     BEGIN;
     INSERT INTO t1 VALUES(6, NULL);
-    ROLLBACK;
-  }
+    ROLLBACK}
 } -cleanup {
   # UPDATE: As of [5668], if the rollback fails SQLITE_CORRUPT is returned. 
   # So these tests have been updated to expect SQLITE_CORRUPT and its

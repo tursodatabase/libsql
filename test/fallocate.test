@@ -154,4 +154,3 @@ if {!$skipwaltests} {
 
 
 finish_test
-

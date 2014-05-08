@@ -264,7 +264,7 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
   if( p->azModuleArg ){
     int i;
     for(i=0; i<p->nModuleArg; i++){
-      sqlite3DbFree(db, p->azModuleArg[i]);
+      if( i!=1 ) sqlite3DbFree(db, p->azModuleArg[i]);
     }
     sqlite3DbFree(db, p->azModuleArg);
   }
@@ -324,7 +324,7 @@ void sqlite3VtabBeginParse(
   pTable->tabFlags |= TF_Virtual;
   pTable->nModuleArg = 0;
   addModuleArgument(db, pTable, sqlite3NameFromToken(db, pModuleName));
-  addModuleArgument(db, pTable, sqlite3DbStrDup(db, db->aDb[iDb].zName));
+  addModuleArgument(db, pTable, 0);
   addModuleArgument(db, pTable, sqlite3DbStrDup(db, pTable->zName));
   pParse->sNameToken.n = (int)(&pModuleName->z[pModuleName->n] - pName1->z);
 
@@ -481,6 +481,7 @@ static int vtabCallConstructor(
   int nArg = pTab->nModuleArg;
   char *zErr = 0;
   char *zModuleName = sqlite3MPrintf(db, "%s", pTab->zName);
+  int iDb;
 
   if( !zModuleName ){
     return SQLITE_NOMEM;
@@ -493,6 +494,9 @@ static int vtabCallConstructor(
   }
   pVTable->db = db;
   pVTable->pMod = pMod;
+
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
+  pTab->azModuleArg[1] = db->aDb[iDb].zName;
 
   /* Invoke the virtual table constructor */
   assert( &db->pVtabCtx );
@@ -734,6 +738,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       sqlite3VdbeFinalize(pParse->pVdbe);
     }
     sqlite3DeleteTable(db, pParse->pNewTable);
+    sqlite3ParserReset(pParse);
     sqlite3StackFree(db, pParse);
   }
 
@@ -806,10 +811,9 @@ static void callFinaliser(sqlite3 *db, int offset){
 ** array. Return the error code for the first error that occurs, or
 ** SQLITE_OK if all xSync operations are successful.
 **
-** Set *pzErrmsg to point to a buffer that should be released using 
-** sqlite3DbFree() containing an error message, if one is available.
+** If an error message is available, leave it in p->zErrMsg.
 */
-int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
+int sqlite3VtabSync(sqlite3 *db, Vdbe *p){
   int i;
   int rc = SQLITE_OK;
   VTable **aVTrans = db->aVTrans;
@@ -820,9 +824,7 @@ int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
     sqlite3_vtab *pVtab = aVTrans[i]->pVtab;
     if( pVtab && (x = pVtab->pModule->xSync)!=0 ){
       rc = x(pVtab);
-      sqlite3DbFree(db, *pzErrmsg);
-      *pzErrmsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
-      sqlite3_free(pVtab->zErrMsg);
+      sqlite3VtabImportErrmsg(p, pVtab);
     }
   }
   db->aVTrans = aVTrans;
@@ -1012,7 +1014,7 @@ FuncDef *sqlite3VtabOverloadFunction(
   memcpy(pNew->zName, pDef->zName, sqlite3Strlen30(pDef->zName)+1);
   pNew->xFunc = xFunc;
   pNew->pUserData = pArg;
-  pNew->flags |= SQLITE_FUNC_EPHEM;
+  pNew->funcFlags |= SQLITE_FUNC_EPHEM;
   return pNew;
 }
 

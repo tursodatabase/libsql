@@ -294,8 +294,8 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
 ** Return the number of errors.
 */
 static int setDateTimeToCurrent(sqlite3_context *context, DateTime *p){
-  sqlite3 *db = sqlite3_context_db_handle(context);
-  if( sqlite3OsCurrentTimeInt64(db->pVfs, &p->iJD)==SQLITE_OK ){
+  p->iJD = sqlite3StmtCurrentTime(context);
+  if( p->iJD>0 ){
     p->validJD = 1;
     return 0;
   }else{
@@ -426,6 +426,10 @@ static void clearYMD_HMS_TZ(DateTime *p){
 **
 ** If the sqlite3GlobalConfig.bLocaltimeFault variable is true then this
 ** routine will always fail.
+**
+** EVIDENCE-OF: R-62172-00036 In this implementation, the standard C
+** library function localtime_r() is used to assist in the calculation of
+** local time.
 */
 static int osLocaltime(time_t *t, struct tm *pTm){
   int rc;
@@ -482,6 +486,11 @@ static sqlite3_int64 localtimeOffset(
   x = *p;
   computeYMD_HMS(&x);
   if( x.Y<1971 || x.Y>=2038 ){
+    /* EVIDENCE-OF: R-55269-29598 The localtime_r() C function normally only
+    ** works for years between 1970 and 2037. For dates outside this range,
+    ** SQLite attempts to map the year into an equivalent year within this
+    ** range, do the calculation, then map the year back.
+    */
     x.Y = 2000;
     x.M = 1;
     x.D = 1;
@@ -1078,8 +1087,8 @@ static void currentTimeFunc(
   UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
 
-  db = sqlite3_context_db_handle(context);
-  if( sqlite3OsCurrentTimeInt64(db->pVfs, &iT) ) return;
+  iT = sqlite3StmtCurrentTime(context);
+  if( iT<=0 ) return;
   t = iT/1000 - 10000*(sqlite3_int64)21086676;
 #ifdef HAVE_GMTIME_R
   pTm = gmtime_r(&t, &sNow);

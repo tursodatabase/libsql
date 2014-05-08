@@ -283,7 +283,7 @@ ifcapable {explain} {
       }]
       set y [regexp { 123456789012 } $x]
       lappend y [regexp { 4.5678 } $x]
-      lappend y [regexp {,-BINARY} $x]
+      lappend y [regexp {,-B} $x]
     } {1 1 1}
   } else {
     do_test misc3-6.11-utf8 {
@@ -293,7 +293,7 @@ ifcapable {explain} {
       set y [regexp { 123456789012 } $x]
       lappend y [regexp { 4.5678 } $x]
       lappend y [regexp { hello } $x]
-      lappend y [regexp {,-BINARY} $x]
+      lappend y [regexp {,-B} $x]
     } {1 1 1 1}
   }
 }

@@ -12,7 +12,6 @@
 # is testing of where.c. More specifically, the focus is the optimization
 # of WHERE clauses that feature the OR operator.
 #
-# $Id: where8.test,v 1.9 2009/07/31 06:14:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -88,13 +87,13 @@ do_test where8-1.8 {
 
 do_test where8-1.9 {
   execsql_status2 { SELECT c FROM t1 WHERE a >= 9 OR b <= 'eight' }
-} {IX X VIII 0 0 6}
+} {IX X VIII 0 0 7}
 
 do_test where8-1.10 {
   execsql_status2 { 
     SELECT c FROM t1 WHERE (a >= 9 AND c != 'X') OR b <= 'eight' 
   }
-} {IX VIII 0 0 6}
+} {IX VIII 0 0 7}
 
 do_test where8-1.11 {
   execsql_status2 { 
@@ -211,9 +210,10 @@ do_test where8-3.4 {
 
 do_test where8-3.5 {
   execsql_status {
-    SELECT a, d FROM t1, t2 WHERE (a = 2 OR a = 3) AND (d = a OR e = 'sixteen')
+    SELECT a, d FROM t1, t2 WHERE (a = 2 OR a = 3) AND (d = +a OR e = 'sixteen')
+     ORDER BY +a, +d;
   }
-} {2 2 2 4 3 3 3 4 0 0}
+} {2 2 2 4 3 3 3 4 0 1}
 
 do_test where8-3.6 {
   # The first part of the WHERE clause in this query, (a=2 OR a=3) is
@@ -222,7 +222,7 @@ do_test where8-3.6 {
   execsql_status {
     SELECT a, d 
     FROM t1, t2 
-    WHERE (a = 2 OR a = 3) AND (d = a OR e = 'sixteen')
+    WHERE (a = 2 OR a = 3) AND (d = +a OR e = 'sixteen')
     ORDER BY t1.rowid
   }
 } {2 2 2 4 3 3 3 4 0 1}
@@ -233,7 +233,7 @@ do_test where8-3.7 {
     WHERE a = 2 AND (d = a OR e = 'sixteen')
     ORDER BY t1.rowid
   }
-} {2 2 2 4 0 0}
+} {/2 2 2 4 0 [01]/}
 do_test where8-3.8 {
   execsql_status {
     SELECT a, d 
@@ -268,7 +268,7 @@ do_test where8-3.12 {
   execsql_status {
     SELECT a, d FROM t1, t2 WHERE (a=d OR b=e) AND +a<5 ORDER BY a
   }
-} {1 1 2 2 3 3 4 2 4 4 0 0}
+} {1 1 2 2 3 3 4 2 4 4 9 0}
 do_test where8-3.13 {
   execsql_status {
     SELECT a, d FROM t1, t2 WHERE (a=d OR b=e) AND +a<5
@@ -289,6 +289,38 @@ do_test where8-3.15 {
     ORDER BY c
   }
 } {I I I I I I I I I I II II II II II II II II II II III III III III III 9 1}
+
+
+do_test where8-3.21 {
+  execsql_status {
+    SELECT a, d FROM t1, (t2) WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+do_test where8-3.21.1 {
+  execsql_status {
+    SELECT a, d FROM t1, ((t2)) AS t3 WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+if {[permutation] != "no_optimization"} {
+do_test where8-3.21.2 {
+  execsql_status {
+    SELECT a, d FROM t1, ((SELECT * FROM t2)) AS t3 WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+}
+do_test where8-3.22 {
+  execsql_status {
+    SELECT a, d FROM ((((((t1))), (((t2))))))
+     WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+if {[permutation] != "no_optimization"} {
+do_test where8-3.23 {
+  execsql_status {
+    SELECT * FROM ((SELECT * FROM t2)) AS t3;
+  }
+} {1 {} I 2 four IV 3 {} IX 4 sixteen XVI 5 {} XXV 6 thirtysix XXXVI 7 fortynine XLIX 8 sixtyeight LXIV 9 eightyone LXXXIX 10 {} C 9 0}
+}
 
 #-----------------------------------------------------------------------
 # The following tests - where8-4.* - verify that adding or removing 
@@ -715,5 +747,14 @@ do_test where8-5.3 {
     )
   }
 } {1 {}}
+
+# The OR optimization and WITHOUT ROWID
+#
+do_execsql_test where8-6.1 {
+  CREATE TABLE t600(a PRIMARY KEY, b) WITHOUT rowid;
+  CREATE INDEX t600b ON t600(b);
+  INSERT INTO t600 VALUES('state','screen'),('exact','dolphin'),('green','mercury');
+  SELECT a, b, '|' FROM t600 WHERE a=='state' OR b='mercury' ORDER BY +a;
+} {green mercury | state screen |}
 
 finish_test

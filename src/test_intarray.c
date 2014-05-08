@@ -278,7 +278,7 @@ int sqlite3_intarray_bind(
 extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
 extern void *sqlite3TestTextToPtr(const char*);
 extern int sqlite3TestMakePointerStr(Tcl_Interp*, char *zPtr, void*);
-extern const char *sqlite3TestErrorName(int);
+extern const char *sqlite3ErrName(int);
 
 /*
 **    sqlite3_intarray_create  DB  NAME
@@ -309,7 +309,7 @@ static int test_intarray_create(
 #endif
   if( rc!=SQLITE_OK ){
     assert( pArray==0 );
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), (char*)0);
     return TCL_ERROR;
   }
   sqlite3TestMakePointerStr(interp, zPtr, pArray);
@@ -346,12 +346,13 @@ static int test_intarray_bind(
     return TCL_ERROR;
   }
   for(i=0; i<n; i++){
-    a[i] = 0;
-    Tcl_GetWideIntFromObj(0, objv[i+2], &a[i]);
+    Tcl_WideInt x = 0;
+    Tcl_GetWideIntFromObj(0, objv[i+2], &x);
+    a[i] = x;
   }
   rc = sqlite3_intarray_bind(pArray, n, a, sqlite3_free);
   if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
+    Tcl_AppendResult(interp, sqlite3ErrName(rc), (char*)0);
     return TCL_ERROR;
   }
 #endif

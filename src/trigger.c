@@ -148,8 +148,8 @@ void sqlite3BeginTrigger(
   /* Ensure the table name matches database name and that the table exists */
   if( db->mallocFailed ) goto trigger_cleanup;
   assert( pTableName->nSrc==1 );
-  if( sqlite3FixInit(&sFix, pParse, iDb, "trigger", pName) && 
-      sqlite3FixSrcList(&sFix, pTableName) ){
+  sqlite3FixInit(&sFix, pParse, iDb, "trigger", pName);
+  if( sqlite3FixSrcList(&sFix, pTableName) ){
     goto trigger_cleanup;
   }
   pTab = sqlite3SrcListLookup(pParse, pTableName);
@@ -291,8 +291,10 @@ void sqlite3FinishTrigger(
   }
   nameToken.z = pTrig->zName;
   nameToken.n = sqlite3Strlen30(nameToken.z);
-  if( sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken) 
-          && sqlite3FixTriggerStep(&sFix, pTrig->step_list) ){
+  sqlite3FixInit(&sFix, pParse, iDb, "trigger", &nameToken);
+  if( sqlite3FixTriggerStep(&sFix, pTrig->step_list) 
+   || sqlite3FixExpr(&sFix, pTrig->pWhen) 
+  ){
     goto triggerfinish_cleanup;
   }
 
@@ -395,25 +397,21 @@ TriggerStep *sqlite3TriggerInsertStep(
   sqlite3 *db,        /* The database connection */
   Token *pTableName,  /* Name of the table into which we insert */
   IdList *pColumn,    /* List of columns in pTableName to insert into */
-  ExprList *pEList,   /* The VALUE clause: a list of values to be inserted */
   Select *pSelect,    /* A SELECT statement that supplies values */
   u8 orconf           /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
 ){
   TriggerStep *pTriggerStep;
 
-  assert(pEList == 0 || pSelect == 0);
-  assert(pEList != 0 || pSelect != 0 || db->mallocFailed);
+  assert(pSelect != 0 || db->mallocFailed);
 
   pTriggerStep = triggerStepAllocate(db, TK_INSERT, pTableName);
   if( pTriggerStep ){
     pTriggerStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
     pTriggerStep->pIdList = pColumn;
-    pTriggerStep->pExprList = sqlite3ExprListDup(db, pEList, EXPRDUP_REDUCE);
     pTriggerStep->orconf = orconf;
   }else{
     sqlite3IdListDelete(db, pColumn);
   }
-  sqlite3ExprListDelete(db, pEList);
   sqlite3SelectDelete(db, pSelect);
 
   return pTriggerStep;
@@ -568,6 +566,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
   assert( pTable!=0 );
   if( (v = sqlite3GetVdbe(pParse))!=0 ){
     int base;
+    static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList dropTrigger[] = {
       { OP_Rewind,     0, ADDR(9),  0},
       { OP_String8,    0, 1,        0}, /* 1 */
@@ -582,7 +581,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 
     sqlite3BeginWriteOperation(pParse, 0, iDb);
     sqlite3OpenMasterTable(pParse, iDb);
-    base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger);
+    base = sqlite3VdbeAddOpList(v,  ArraySize(dropTrigger), dropTrigger, iLn);
     sqlite3VdbeChangeP4(v, base+1, pTrigger->zName, P4_TRANSIENT);
     sqlite3VdbeChangeP4(v, base+4, "trigger", P4_STATIC);
     sqlite3ChangeCookie(pParse, iDb);
@@ -728,6 +727,7 @@ static int codeTriggerProgram(
     **   INSERT OR IGNORE INTO t1 ... ;  -- insert into t2 uses IGNORE policy
     */
     pParse->eOrconf = (orconf==OE_Default)?pStep->orconf:(u8)orconf;
+    assert( pParse->okConstFactor==0 );
 
     switch( pStep->op ){
       case TK_UPDATE: {
@@ -742,7 +742,6 @@ static int codeTriggerProgram(
       case TK_INSERT: {
         sqlite3Insert(pParse, 
           targetSrcList(pParse, pStep),
-          sqlite3ExprListDup(db, pStep->pExprList, 0), 
           sqlite3SelectDup(db, pStep->pSelect, 0), 
           sqlite3IdListDup(db, pStep->pIdList), 
           pParse->eOrconf
@@ -773,7 +772,7 @@ static int codeTriggerProgram(
   return 0;
 }
 
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
 /*
 ** This function is used to add VdbeComment() annotations to a VDBE
 ** program. It is not used in production code, only for debugging.
@@ -913,6 +912,7 @@ static TriggerPrg *codeRowTrigger(
 
   assert( !pSubParse->pAinc       && !pSubParse->pZombieTab );
   assert( !pSubParse->pTriggerPrg && !pSubParse->nMaxArg );
+  sqlite3ParserReset(pSubParse);
   sqlite3StackFree(db, pSubParse);
 
   return pPrg;
@@ -993,7 +993,7 @@ void sqlite3CodeRowTriggerDirect(
 /*
 ** This is called to code the required FOR EACH ROW triggers for an operation
 ** on table pTab. The operation to code triggers for (INSERT, UPDATE or DELETE)
-** is given by the op paramater. The tr_tm parameter determines whether the
+** is given by the op parameter. The tr_tm parameter determines whether the
 ** BEFORE or AFTER triggers are coded. If the operation is an UPDATE, then
 ** parameter pChanges is passed the list of columns being modified.
 **

@@ -23,7 +23,7 @@
 **
 **         open        close      access   getcwd   stat      fstat    
 **         ftruncate   fcntl      read     pread    pread64   write
-**         pwrite      pwrite64   fchmod   fallocate
+**         pwrite      pwrite64   fchmod   fallocate mmap
 **
 **   test_syscall uninstall
 **     Uninstall all wrapper functions.
@@ -67,20 +67,26 @@
 **   test_syscall list
 **     Return a list of all system calls. The list is constructed using
 **     the xNextSystemCall() VFS method.
+**
+**   test_syscall pagesize PGSZ
+**     If PGSZ is a power of two greater than 256, install a wrapper around
+**     OS function getpagesize() that reports the system page size as PGSZ.
+**     Or, if PGSZ is less than zero, remove any wrapper already installed.
 */
 
+#include "sqliteInt.h"
 #include "sqlite3.h"
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
-#include "sqliteInt.h"
 #if SQLITE_OS_UNIX
 
-/* From test1.c */
-extern const char *sqlite3TestErrorName(int);
+/* From main.c */
+extern const char *sqlite3ErrName(int);
 
+#include <sys/mman.h>
 #include <sys/types.h>
 #include <errno.h>
 
@@ -88,7 +94,9 @@ static struct TestSyscallGlobal {
   int bPersist;                   /* 1 for persistent errors, 0 for transient */
   int nCount;                     /* Fail after this many more calls */
   int nFail;                      /* Number of failures that have occurred */
-} gSyscall = { 0, 0 };
+  int pgsz;
+  sqlite3_syscall_ptr orig_getpagesize;
+} gSyscall = { 0, 0, 0, 0, 0 };
 
 static int ts_open(const char *, int, int);
 static int ts_close(int fd);
@@ -106,7 +114,8 @@ static int ts_pwrite(int fd, const void *aBuf, size_t nBuf, off_t off);
 static int ts_pwrite64(int fd, const void *aBuf, size_t nBuf, off_t off);
 static int ts_fchmod(int fd, mode_t mode);
 static int ts_fallocate(int fd, off_t off, off_t len);
-
+static void *ts_mmap(void *, size_t, int, int, int, off_t);
+static void *ts_mremap(void*, size_t, size_t, int, ...);
 
 struct TestSyscallArray {
   const char *zName;
@@ -131,6 +140,8 @@ struct TestSyscallArray {
   /* 13 */ { "pwrite64",  (sqlite3_syscall_ptr)ts_pwrite64,  0, 0, 0 },
   /* 14 */ { "fchmod",    (sqlite3_syscall_ptr)ts_fchmod,    0, 0, 0 },
   /* 15 */ { "fallocate", (sqlite3_syscall_ptr)ts_fallocate, 0, 0, 0 },
+  /* 16 */ { "mmap",      (sqlite3_syscall_ptr)ts_mmap,      0, 0, 0 },
+  /* 17 */ { "mremap",    (sqlite3_syscall_ptr)ts_mremap,    0, 0, 0 },
            { 0, 0, 0, 0, 0 }
 };
 
@@ -152,6 +163,8 @@ struct TestSyscallArray {
                        aSyscall[13].xOrig)
 #define orig_fchmod    ((int(*)(int,mode_t))aSyscall[14].xOrig)
 #define orig_fallocate ((int(*)(int,off_t,off_t))aSyscall[15].xOrig)
+#define orig_mmap      ((void*(*)(void*,size_t,int,int,int,off_t))aSyscall[16].xOrig)
+#define orig_mremap    ((void*(*)(void*,size_t,size_t,int,...))aSyscall[17].xOrig)
 
 /*
 ** This function is called exactly once from within each invocation of a
@@ -377,6 +390,31 @@ static int ts_fallocate(int fd, off_t off, off_t len){
   return orig_fallocate(fd, off, len);
 }
 
+static void *ts_mmap(
+  void *pAddr, 
+  size_t nByte, 
+  int prot, 
+  int flags, 
+  int fd, 
+  off_t iOff
+){
+  if( tsIsFailErrno("mmap") ){
+    return MAP_FAILED;
+  }
+  return orig_mmap(pAddr, nByte, prot, flags, fd, iOff);
+}
+
+static void *ts_mremap(void *a, size_t b, size_t c, int d, ...){
+  va_list ap;
+  void *pArg;
+  if( tsIsFailErrno("mremap") ){
+    return MAP_FAILED;
+  }
+  va_start(ap, d);
+  pArg = va_arg(ap, void *);
+  return orig_mremap(a, b, c, d, pArg);
+}
+
 static int test_syscall_install(
   void * clientData,
   Tcl_Interp *interp,
@@ -467,7 +505,7 @@ static int test_syscall_reset(
     }
   }
   if( rc!=SQLITE_OK ){
-    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3ErrName(rc), -1));
     return TCL_ERROR;
   }
 
@@ -619,6 +657,45 @@ static int test_syscall_defaultvfs(
   return TCL_OK;
 }
 
+static int ts_getpagesize(void){
+  return gSyscall.pgsz;
+}
+
+static int test_syscall_pagesize(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  int pgsz;
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 2, objv, "PGSZ");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[2], &pgsz) ){
+    return TCL_ERROR;
+  }
+
+  if( pgsz<0 ){
+    if( gSyscall.orig_getpagesize ){
+      pVfs->xSetSystemCall(pVfs, "getpagesize", gSyscall.orig_getpagesize);
+    }
+  }else{
+    if( pgsz<512 || (pgsz & (pgsz-1)) ){
+      Tcl_AppendResult(interp, "pgsz out of range", 0);
+      return TCL_ERROR;
+    }
+    gSyscall.orig_getpagesize = pVfs->xGetSystemCall(pVfs, "getpagesize");
+    gSyscall.pgsz = pgsz;
+    pVfs->xSetSystemCall(
+        pVfs, "getpagesize", (sqlite3_syscall_ptr)ts_getpagesize
+    );
+  }
+
+  return TCL_OK;
+}
+
 static int test_syscall(
   void * clientData,
   Tcl_Interp *interp,
@@ -637,6 +714,7 @@ static int test_syscall(
     { "exists",     test_syscall_exists },
     { "list",       test_syscall_list },
     { "defaultvfs", test_syscall_defaultvfs },
+    { "pagesize",   test_syscall_pagesize },
     { 0, 0 }
   };
   int iCmd;

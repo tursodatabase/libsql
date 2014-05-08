@@ -14,7 +14,7 @@
 # $Id: tester.tcl,v 1.143 2009/04/09 01:23:49 drh Exp $
 
 #-------------------------------------------------------------------------
-# The commands provided by the code in this file to help with creating 
+# The commands provided by the code in this file to help with creating
 # test cases are as follows:
 #
 # Commands to manipulate the db and the file-system at a high level:
@@ -42,6 +42,7 @@
 #
 # Commands to execute/explain SQL statements:
 #
+#      memdbsql               SQL
 #      stepsql                DB SQL
 #      execsql2               SQL
 #      explain_no_trace       SQL
@@ -54,9 +55,11 @@
 #      do_ioerr_test          TESTNAME ARGS...
 #      crashsql               ARGS...
 #      integrity_check        TESTNAME ?DB?
+#      verify_ex_errcode      TESTNAME EXPECTED ?DB?
 #      do_test                TESTNAME SCRIPT EXPECTED
 #      do_execsql_test        TESTNAME SQL EXPECTED
 #      do_catchsql_test       TESTNAME SQL EXPECTED
+#      do_timed_execsql_test  TESTNAME SQL EXPECTED
 #
 # Commands providing a lower level interface to the global test counters:
 #
@@ -79,7 +82,7 @@
 #      presql
 #
 
-# Set the precision of FP arithmatic used by the interpreter. And 
+# Set the precision of FP arithmatic used by the interpreter. And
 # configure SQLite to take database file locks on the page that begins
 # 64KB into the database file instead of the one 1GB in. This means
 # the code that handles that special case can be tested without creating
@@ -89,7 +92,7 @@ set tcl_precision 15
 sqlite3_test_control_pending_byte 0x0010000
 
 
-# If the pager codec is available, create a wrapper for the [sqlite3] 
+# If the pager codec is available, create a wrapper for the [sqlite3]
 # command that appends "-key {xyzzy}" to the command line. i.e. this:
 #
 #     sqlite3 db test.db
@@ -121,8 +124,8 @@ if {[info command sqlite_orig]==""} {
       }
       set res
     } else {
-      # This command is not opening a new database connection. Pass the 
-      # arguments through to the C implemenation as the are.
+      # This command is not opening a new database connection. Pass the
+      # arguments through to the C implementation as the are.
       #
       uplevel 1 sqlite_orig $args
     }
@@ -290,6 +293,66 @@ proc do_delete_file {force args} {
   }
 }
 
+if {$::tcl_platform(platform) eq "windows"} {
+  proc do_remove_win32_dir {args} {
+    set nRetry [getFileRetries]     ;# Maximum number of retries.
+    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
+
+    foreach dirName $args {
+      # On windows, sometimes even a [remove_win32_dir] can fail just after
+      # a directory is emptied. The cause is usually "tag-alongs" - programs
+      # like anti-virus software, automatic backup tools and various explorer
+      # extensions that keep a file open a little longer than we expect,
+      # causing the delete to fail.
+      #
+      # The solution is to wait a short amount of time before retrying the
+      # removal.
+      #
+      if {$nRetry > 0} {
+        for {set i 0} {$i < $nRetry} {incr i} {
+          set rc [catch {
+            remove_win32_dir $dirName
+          } msg]
+          if {$rc == 0} break
+          if {$nDelay > 0} { after $nDelay }
+        }
+        if {$rc} { error $msg }
+      } else {
+        remove_win32_dir $dirName
+      }
+    }
+  }
+
+  proc do_delete_win32_file {args} {
+    set nRetry [getFileRetries]     ;# Maximum number of retries.
+    set nDelay [getFileRetryDelay]  ;# Delay in ms before retrying.
+
+    foreach fileName $args {
+      # On windows, sometimes even a [delete_win32_file] can fail just after
+      # a file is closed. The cause is usually "tag-alongs" - programs like
+      # anti-virus software, automatic backup tools and various explorer
+      # extensions that keep a file open a little longer than we expect,
+      # causing the delete to fail.
+      #
+      # The solution is to wait a short amount of time before retrying the
+      # delete.
+      #
+      if {$nRetry > 0} {
+        for {set i 0} {$i < $nRetry} {incr i} {
+          set rc [catch {
+            delete_win32_file $fileName
+          } msg]
+          if {$rc == 0} break
+          if {$nDelay > 0} { after $nDelay }
+        }
+        if {$rc} { error $msg }
+      } else {
+        delete_win32_file $fileName
+      }
+    }
+  }
+}
+
 proc execpresql {handle args} {
   trace remove execution $handle enter [list execpresql $handle]
   if {[info exists ::G(perm:presql)]} {
@@ -311,8 +374,8 @@ proc do_not_use_codec {} {
 #
 if {[info exists cmdlinearg]==0} {
 
-  # Parse any options specified in the $argv array. This script accepts the 
-  # following options: 
+  # Parse any options specified in the $argv array. This script accepts the
+  # following options:
   #
   #   --pause
   #   --soft-heap-limit=NN
@@ -341,7 +404,7 @@ if {[info exists cmdlinearg]==0} {
   foreach a $argv {
     switch -regexp -- $a {
       {^-+pause$} {
-        # Wait for user input before continuing. This is to give the user an 
+        # Wait for user input before continuing. This is to give the user an
         # opportunity to connect profiling tools to the process.
         puts -nonewline "Press RETURN to begin..."
         flush stdout
@@ -404,8 +467,8 @@ if {[info exists cmdlinearg]==0} {
   # Install the malloc layer used to inject OOM errors. And the 'automatic'
   # extensions. This only needs to be done once for the process.
   #
-  sqlite3_shutdown 
-  install_malloc_faultsim 1 
+  sqlite3_shutdown
+  install_malloc_faultsim 1
   sqlite3_initialize
   autoinstall_test_functions
 
@@ -486,6 +549,7 @@ if {0==[info exists ::SLAVE]} {
   set TC(count)     0
   set TC(fail_list) [list]
   set TC(omit_list) [list]
+  set TC(warn_list) [list]
 
   proc set_test_counter {counter args} {
     if {[llength $args]} {
@@ -520,6 +584,18 @@ proc fail_test {name} {
   }
 }
 
+# Remember a warning message to be displayed at the conclusion of all testing
+#
+proc warning {msg {append 1}} {
+  puts "Warning: $msg"
+  set warnList [set_test_counter warn_list]
+  if {$append} {
+    lappend warnList $msg
+  }
+  set_test_counter warn_list $warnList
+}
+
+
 # Increment the number of tests run
 #
 proc incr_ntest {} {
@@ -527,7 +603,7 @@ proc incr_ntest {} {
 }
 
 
-# Invoke the do_test procedure to run a single test 
+# Invoke the do_test procedure to run a single test
 #
 proc do_test {name cmd expected} {
   global argv cmdlinearg
@@ -536,7 +612,7 @@ proc do_test {name cmd expected} {
 
   sqlite3_memdebug_settitle $name
 
-#  if {[llength $argv]==0} { 
+#  if {[llength $argv]==0} {
 #    set go 1
 #  } else {
 #    set go 0
@@ -562,12 +638,38 @@ proc do_test {name cmd expected} {
       fail_test $name
     } else {
       if {[regexp {^~?/.*/$} $expected]} {
+        # "expected" is of the form "/PATTERN/" then the result if correct if
+        # regular expression PATTERN matches the result.  "~/PATTERN/" means
+        # the regular expression must not match.
         if {[string index $expected 0]=="~"} {
-          set re [string map {# {[-0-9.]+}} [string range $expected 2 end-1]]
-          set ok [expr {![regexp $re $result]}]
+          set re [string range $expected 2 end-1]
+          if {[string index $re 0]=="*"} {
+            # If the regular expression begins with * then treat it as a glob instead
+            set ok [string match $re $result]
+          } else {
+            set re [string map {# {[-0-9.]+}} $re]
+            set ok [regexp $re $result]
+          }
+          set ok [expr {!$ok}]
         } else {
-          set re [string map {# {[-0-9.]+}} [string range $expected 1 end-1]]
-          set ok [regexp $re $result]
+          set re [string range $expected 1 end-1]
+          if {[string index $re 0]=="*"} {
+            # If the regular expression begins with * then treat it as a glob instead
+            set ok [string match $re $result]
+          } else {
+            set re [string map {# {[-0-9.]+}} $re]
+            set ok [regexp $re $result]
+          }
+        }
+      } elseif {[regexp {^~?\*.*\*$} $expected]} {
+        # "expected" is of the form "*GLOB*" then the result if correct if
+        # glob pattern GLOB matches the result.  "~/GLOB/" means
+        # the glob must not match.
+        if {[string index $expected 0]=="~"} {
+          set e [string range $expected 1 end]
+          set ok [expr {![string match $e $result]}]
+        } else {
+          set ok [string match $expected $result]
         }
       } else {
         set ok [expr {[string compare $result $expected]==0}]
@@ -626,13 +728,13 @@ proc do_realnum_test {name cmd expected} {
 
 proc fix_testname {varname} {
   upvar $varname testname
-  if {[info exists ::testprefix] 
+  if {[info exists ::testprefix]
    && [string is digit [string range $testname 0 0]]
   } {
     set testname "${::testprefix}-$testname"
   }
 }
-    
+
 proc do_execsql_test {testname sql {result {}}} {
   fix_testname testname
   uplevel do_test [list $testname] [list "execsql {$sql}"] [list [list {*}$result]]
@@ -640,6 +742,11 @@ proc do_execsql_test {testname sql {result {}}} {
 proc do_catchsql_test {testname sql result} {
   fix_testname testname
   uplevel do_test [list $testname] [list "catchsql {$sql}"] [list $result]
+}
+proc do_timed_execsql_test {testname sql {result {}}} {
+  fix_testname testname
+  uplevel do_test [list $testname] [list "execsql_timed {$sql}"]\
+                                   [list [list {*}$result]]
 }
 proc do_eqp_test {name sql res} {
   uplevel do_execsql_test $name [list "EXPLAIN QUERY PLAN $sql"] [list $res]
@@ -718,7 +825,7 @@ proc delete_all_data {} {
   }
 }
 
-# Run an SQL script.  
+# Run an SQL script.
 # Return the number of microseconds per statement.
 #
 proc speed_trial {name numstmt units sql} {
@@ -804,9 +911,31 @@ proc finalize_testing {} {
   set nTest [incr_ntest]
   set nErr [set_test_counter errors]
 
-  puts "$nErr errors out of $nTest tests"
-  if {$nErr>0} {
-    puts "Failures on these tests: [set_test_counter fail_list]"
+  set nKnown 0
+  if {[file readable known-problems.txt]} {
+    set fd [open known-problems.txt]
+    set content [read $fd]
+    close $fd
+    foreach x $content {set known_error($x) 1}
+    foreach x [set_test_counter fail_list] {
+      if {[info exists known_error($x)]} {incr nKnown}
+    }
+  }
+  if {$nKnown>0} {
+    puts "[expr {$nErr-$nKnown}] new errors and $nKnown known errors\
+         out of $nTest tests"
+  } else {
+    puts "$nErr errors out of $nTest tests"
+  }
+  if {$nErr>$nKnown} {
+    puts -nonewline "Failures on these tests:"
+    foreach x [set_test_counter fail_list] {
+      if {![info exists known_error($x)]} {puts -nonewline " $x"}
+    }
+    puts ""
+  }
+  foreach warning [set_test_counter warn_list] {
+    puts "Warning: $warning"
   }
   run_thread_tests 1
   if {[llength $omitList]>0} {
@@ -919,6 +1048,14 @@ proc execsql {sql {db db}} {
   # puts "SQL = $sql"
   uplevel [list $db eval $sql]
 }
+proc execsql_timed {sql {db db}} {
+  set tm [time {
+    set x [uplevel [list $db eval $sql]]
+  } 1]
+  set tm [lindex $tm 0]
+  puts -nonewline " ([expr {$tm*0.001}]ms) "
+  set x
+}
 
 # Execute SQL and catch exceptions.
 #
@@ -942,6 +1079,87 @@ proc explain {sql {db db}} {
   }
 }
 
+proc explain_i {sql {db db}} {
+  puts ""
+  puts "addr  opcode        p1      p2      p3      p4                p5  #"
+  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+
+
+  # Set up colors for the different opcodes. Scheme is as follows:
+  #
+  #   Red:   Opcodes that write to a b-tree.
+  #   Blue:  Opcodes that reposition or seek a cursor. 
+  #   Green: The ResultRow opcode.
+  #
+  if { [catch {fconfigure stdout -mode}]==0 } {
+    set R "\033\[31;1m"        ;# Red fg
+    set G "\033\[32;1m"        ;# Green fg
+    set B "\033\[34;1m"        ;# Red fg
+    set D "\033\[39;0m"        ;# Default fg
+  } else {
+    set R ""
+    set G ""
+    set B ""
+    set D ""
+  }
+  foreach opcode {
+      Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
+      NoConflict Next Prev VNext VPrev VFilter
+  } {
+    set color($opcode) $B
+  }
+  foreach opcode {ResultRow} {
+    set color($opcode) $G
+  }
+  foreach opcode {IdxInsert Insert Delete IdxDelete} {
+    set color($opcode) $R
+  }
+
+  set bSeenGoto 0
+  $db eval "explain $sql" {} {
+    set x($addr) 0
+    set op($addr) $opcode
+
+    if {$opcode == "Goto" && ($bSeenGoto==0 || ($p2 > $addr+10))} {
+      set linebreak($p2) 1
+      set bSeenGoto 1
+    }
+
+    if {$opcode=="Next"  || $opcode=="Prev" 
+     || $opcode=="VNext" || $opcode=="VPrev"
+    } {
+      for {set i $p2} {$i<$addr} {incr i} {
+        incr x($i) 2
+      }
+    }
+
+    if {$opcode == "Goto" && $p2<$addr && $op($p2)=="Yield"} {
+      for {set i [expr $p2+1]} {$i<$addr} {incr i} {
+        incr x($i) 2
+      }
+    }
+
+    if {$opcode == "Halt" && $comment == "End of coroutine"} {
+      set linebreak([expr $addr+1]) 1
+    }
+  }
+
+  $db eval "explain $sql" {} {
+    if {[info exists linebreak($addr)]} {
+      puts ""
+    }
+    set I [string repeat " " $x($addr)]
+
+    set col ""
+    catch { set col $color($opcode) }
+
+    puts [format {%-4d  %s%s%-12.12s%s  %-6d  %-6d  %-6d  % -17s %s  %s} \
+      $addr $I $col $opcode $D $p1 $p2 $p3 $p4 $p5 $comment
+    ]
+  }
+  puts "----  ------------  ------  ------  ------  ----------------  --  -"
+}
+
 # Show the VDBE program for an SQL statement but omit the Trace
 # opcode at the beginning.  This procedure can be used to prove
 # that different SQL statements generate exactly the same VDBE code.
@@ -961,6 +1179,15 @@ proc execsql2 {sql} {
       lappend result $f $data($f)
     }
   }
+  return $result
+}
+
+# Use a temporary in-memory database to execute SQL statements
+#
+proc memdbsql {sql} {
+  sqlite3 memdb :memory:
+  set result [memdb eval $sql]
+  memdb close
   return $result
 }
 
@@ -995,6 +1222,12 @@ proc integrity_check {name {db db}} {
   ifcapable integrityck {
     do_test $name [list execsql {PRAGMA integrity_check} $db] {ok}
   }
+}
+
+# Check the extended error code
+#
+proc verify_ex_errcode {name expected {db db}} {
+  do_test $name [list sqlite3_extended_errcode $db] $expected
 }
 
 
@@ -1059,7 +1292,7 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
 # boolean, indicating whether or not the process actually crashed or
 # reported some other error. The second element in the returned list is the
 # error message. This is "child process exited abnormally" if the crash
-# occured.
+# occurred.
 #
 #   crashsql -delay CRASHDELAY -file CRASHFILE ?-blocksize BLOCKSIZE? $sql
 #
@@ -1068,17 +1301,19 @@ proc crashsql {args} {
   set blocksize ""
   set crashdelay 1
   set prngseed 0
+  set opendb { sqlite3 db test.db -vfs crash }
   set tclbody {}
   set crashfile ""
   set dc ""
   set sql [lindex $args end]
-  
+
   for {set ii 0} {$ii < [llength $args]-1} {incr ii 2} {
     set z [lindex $args $ii]
     set n [string length $z]
     set z2 [lindex $args [expr $ii+1]]
 
     if     {$n>1 && [string first $z -delay]==0}     {set crashdelay $z2} \
+    elseif {$n>1 && [string first $z -opendb]==0}    {set opendb $z2} \
     elseif {$n>1 && [string first $z -seed]==0}      {set prngseed $z2} \
     elseif {$n>1 && [string first $z -file]==0}      {set crashfile $z2}  \
     elseif {$n>1 && [string first $z -tclbody]==0}   {set tclbody $z2}  \
@@ -1091,7 +1326,7 @@ proc crashsql {args} {
     error "Compulsory option -file missing"
   }
 
-  # $crashfile gets compared to the native filename in 
+  # $crashfile gets compared to the native filename in
   # cfSync(), which can be different then what TCL uses by
   # default, so here we force it to the "nativename" format.
   set cfile [string map {\\ \\\\} [file nativename [file join [get_pwd] $crashfile]]]
@@ -1100,7 +1335,7 @@ proc crashsql {args} {
   puts $f "sqlite3_crash_enable 1"
   puts $f "sqlite3_crashparams $blocksize $dc $crashdelay $cfile"
   puts $f "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
-  puts $f "sqlite3 db test.db -vfs crash"
+  puts $f $opendb 
 
   # This block sets the cache size of the main database to 10
   # pages. This is done in case the build is configured to omit
@@ -1108,6 +1343,7 @@ proc crashsql {args} {
   puts $f {db eval {SELECT * FROM sqlite_master;}}
   puts $f {set bt [btree_from_db db]}
   puts $f {btree_set_cache_size $bt 10}
+
   if {$prngseed} {
     set seed [expr {$prngseed%10007+1}]
     # puts seed=$seed
@@ -1126,7 +1362,7 @@ proc crashsql {args} {
   set r [catch {
     exec [info nameofexec] crash.tcl >@stdout
   } msg]
-  
+
   # Windows/ActiveState TCL returns a slightly different
   # error message.  We map that to the expected message
   # so that we don't have to change all of the test
@@ -1136,14 +1372,33 @@ proc crashsql {args} {
       set msg "child process exited abnormally"
     }
   }
-  
+
   lappend r $msg
+}
+
+proc run_ioerr_prep {} {
+  set ::sqlite_io_error_pending 0
+  catch {db close}
+  catch {db2 close}
+  catch {forcedelete test.db}
+  catch {forcedelete test.db-journal}
+  catch {forcedelete test2.db}
+  catch {forcedelete test2.db-journal}
+  set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
+  sqlite3_extended_result_codes $::DB $::ioerropts(-erc)
+  if {[info exists ::ioerropts(-tclprep)]} {
+    eval $::ioerropts(-tclprep)
+  }
+  if {[info exists ::ioerropts(-sqlprep)]} {
+    execsql $::ioerropts(-sqlprep)
+  }
+  expr 0
 }
 
 # Usage: do_ioerr_test <test number> <options...>
 #
 # This proc is used to implement test cases that check that IO errors
-# are correctly handled. The first argument, <test number>, is an integer 
+# are correctly handled. The first argument, <test number>, is an integer
 # used to name the tests executed by this proc. Options are as follows:
 #
 #     -tclprep          TCL script to run to prepare test.
@@ -1173,14 +1428,30 @@ proc do_ioerr_test {testname args} {
   # a couple of obscure IO errors that do not return them.
   set ::ioerropts(-erc) 0
 
+  # Create a single TCL script from the TCL and SQL specified
+  # as the body of the test.
+  set ::ioerrorbody {}
+  if {[info exists ::ioerropts(-tclbody)]} {
+    append ::ioerrorbody "$::ioerropts(-tclbody)\n"
+  }
+  if {[info exists ::ioerropts(-sqlbody)]} {
+    append ::ioerrorbody "db eval {$::ioerropts(-sqlbody)}"
+  }
+
+  save_prng_state
+  if {$::ioerropts(-cksum)} {
+    run_ioerr_prep
+    eval $::ioerrorbody
+    set ::goodcksum [cksum]
+  }
+
   set ::go 1
   #reset_prng_state
-  save_prng_state
   for {set n $::ioerropts(-start)} {$::go} {incr n} {
     set ::TN $n
     incr ::ioerropts(-count) -1
     if {$::ioerropts(-count)<0} break
- 
+
     # Skip this IO error if it was specified with the "-exclude" option.
     if {[info exists ::ioerropts(-exclude)]} {
       if {[lsearch $::ioerropts(-exclude) $n]!=-1} continue
@@ -1189,30 +1460,15 @@ proc do_ioerr_test {testname args} {
       restore_prng_state
     }
 
-    # Delete the files test.db and test2.db, then execute the TCL and 
+    # Delete the files test.db and test2.db, then execute the TCL and
     # SQL (in that order) to prepare for the test case.
     do_test $testname.$n.1 {
-      set ::sqlite_io_error_pending 0
-      catch {db close}
-      catch {db2 close}
-      catch {forcedelete test.db}
-      catch {forcedelete test.db-journal}
-      catch {forcedelete test2.db}
-      catch {forcedelete test2.db-journal}
-      set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
-      sqlite3_extended_result_codes $::DB $::ioerropts(-erc)
-      if {[info exists ::ioerropts(-tclprep)]} {
-        eval $::ioerropts(-tclprep)
-      }
-      if {[info exists ::ioerropts(-sqlprep)]} {
-        execsql $::ioerropts(-sqlprep)
-      }
-      expr 0
+      run_ioerr_prep
     } {0}
 
     # Read the 'checksum' of the database.
     if {$::ioerropts(-cksum)} {
-      set checksum [cksum]
+      set ::checksum [cksum]
     }
 
     # Set the Nth IO error to fail.
@@ -1220,20 +1476,10 @@ proc do_ioerr_test {testname args} {
       set ::sqlite_io_error_persist $::ioerropts(-persist)
       set ::sqlite_io_error_pending $n
     }] $n
-  
-    # Create a single TCL script from the TCL and SQL specified
-    # as the body of the test.
-    set ::ioerrorbody {}
-    if {[info exists ::ioerropts(-tclbody)]} {
-      append ::ioerrorbody "$::ioerropts(-tclbody)\n"
-    }
-    if {[info exists ::ioerropts(-sqlbody)]} {
-      append ::ioerrorbody "db eval {$::ioerropts(-sqlbody)}"
-    }
 
-    # Execute the TCL Script created in the above block. If
-    # there are at least N IO operations performed by SQLite as
-    # a result of the script, the Nth will fail.
+    # Execute the TCL script created for the body of this test. If
+    # at least N IO operations performed by SQLite as a result of
+    # the script, the Nth will fail.
     do_test $testname.$n.3 {
       set ::sqlite_io_error_hit 0
       set ::sqlite_io_error_hardhit 0
@@ -1286,12 +1532,12 @@ proc do_ioerr_test {testname args} {
     set ::sqlite_io_error_hit 0
     set ::sqlite_io_error_pending 0
 
-    # Check that no page references were leaked. There should be 
-    # a single reference if there is still an active transaction, 
+    # Check that no page references were leaked. There should be
+    # a single reference if there is still an active transaction,
     # or zero otherwise.
     #
     # UPDATE: If the IO error occurs after a 'BEGIN' but before any
-    # locks are established on database files (i.e. if the error 
+    # locks are established on database files (i.e. if the error
     # occurs while attempting to detect a hot-journal file), then
     # there may 0 page references and an active transaction according
     # to [sqlite3_get_autocommit].
@@ -1307,7 +1553,7 @@ proc do_ioerr_test {testname args} {
       } {1}
     }
 
-    # If there is an open database handle and no open transaction, 
+    # If there is an open database handle and no open transaction,
     # and the pager is not running in exclusive-locking mode,
     # check that the pager is in "unlocked" state. Theoretically,
     # if a call to xUnlock() failed due to an IO error the underlying
@@ -1329,7 +1575,7 @@ proc do_ioerr_test {testname args} {
       }
     }
 
-    # If an IO error occured, then the checksum of the database should
+    # If an IO error occurred, then the checksum of the database should
     # be the same as before the script that caused the IO error was run.
     #
     if {$::go && $::sqlite_io_error_hardhit && $::ioerropts(-cksum)} {
@@ -1337,8 +1583,15 @@ proc do_ioerr_test {testname args} {
         catch {db close}
         catch {db2 close}
         set ::DB [sqlite3 db test.db; sqlite3_connection_pointer db]
-        cksum
-      } $checksum
+        set nowcksum [cksum]
+        set res [expr {$nowcksum==$::checksum || $nowcksum==$::goodcksum}]
+        if {$res==0} {
+          puts "now=$nowcksum"
+          puts "the=$::checksum"
+          puts "fwd=$::goodcksum"
+        }
+        set res
+      } 1
     }
 
     set ::sqlite_io_error_hardhit 0
@@ -1404,7 +1657,7 @@ proc allcksum {{db db}} {
 }
 
 # Generate a checksum based on the contents of a single database with
-# a database connection.  The name of the database is $dbname.  
+# a database connection.  The name of the database is $dbname.
 # Examples of $dbname are "temp" or "main".
 #
 proc dbcksum {db dbname} {
@@ -1498,8 +1751,8 @@ proc drop_all_tables {{db db}} {
 
 #-------------------------------------------------------------------------
 # If a test script is executed with global variable $::G(perm:name) set to
-# "wal", then the tests are run in WAL mode. Otherwise, they should be run 
-# in rollback mode. The following Tcl procs are used to make this less 
+# "wal", then the tests are run in WAL mode. Otherwise, they should be run
+# in rollback mode. The following Tcl procs are used to make this less
 # intrusive:
 #
 #   wal_set_journal_mode ?DB?
@@ -1514,9 +1767,9 @@ proc drop_all_tables {{db db}} {
 #     Otherwise (if not running a WAL permutation) this is a no-op.
 #
 #   wal_is_wal_mode
-#   
+#
 #     Returns true if this test should be run in WAL mode. False otherwise.
-# 
+#
 proc wal_is_wal_mode {} {
   expr {[permutation] eq "wal"}
 }
@@ -1630,10 +1883,10 @@ proc slave_test_file {zFile} {
   }
   set ::sqlite_open_file_count 0
 
-  # Test that the global "shared-cache" setting was not altered by 
+  # Test that the global "shared-cache" setting was not altered by
   # the test script.
   #
-  ifcapable shared_cache { 
+  ifcapable shared_cache {
     set res [expr {[sqlite3_enable_shared_cache] == $scs}]
     do_test ${tail}-sharedcachesetting [list set {} $res] 1
   }
@@ -1698,6 +1951,12 @@ set AUTOVACUUM $sqlite_options(default_autovacuum)
 
 # Make sure the FTS enhanced query syntax is disabled.
 set sqlite_fts3_enable_parentheses 0
+
+# During testing, assume that all database files are well-formed.  The
+# few test cases that deliberately corrupt database files should rescind 
+# this setting by invoking "database_can_be_corrupt"
+#
+database_never_corrupt
 
 source $testdir/thread_common.tcl
 source $testdir/malloc_common.tcl

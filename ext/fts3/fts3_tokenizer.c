@@ -251,10 +251,10 @@ static void testFunc(
   const char *azArg[64];
 
   const char *zToken;
-  int nToken;
-  int iStart;
-  int iEnd;
-  int iPos;
+  int nToken = 0;
+  int iStart = 0;
+  int iEnd = 0;
+  int iPos = 0;
   int i;
 
   Tcl_Obj *pRet;
@@ -428,7 +428,7 @@ static void intTestFunc(
 /*
 ** Set up SQL objects in database db used to access the contents of
 ** the hash table pointed to by argument pHash. The hash table must
-** been initialised to use string keys, and to take a private copy 
+** been initialized to use string keys, and to take a private copy 
 ** of the key when a value is inserted. i.e. by a call similar to:
 **
 **    sqlite3Fts3HashInit(pHash, FTS3_HASH_STRING, 1);

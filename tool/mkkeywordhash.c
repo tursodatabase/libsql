@@ -138,6 +138,11 @@ struct Keyword {
 #else
 #  define AUTOVACUUM 0x00020000
 #endif
+#ifdef SQLITE_OMIT_CTE
+#  define CTE        0
+#else
+#  define CTE        0x00040000
+#endif
 
 /*
 ** These are the keywords
@@ -234,6 +239,7 @@ static Keyword aKeywordTable[] = {
   { "PRIMARY",          "TK_PRIMARY",      ALWAYS                 },
   { "QUERY",            "TK_QUERY",        EXPLAIN                },
   { "RAISE",            "TK_RAISE",        TRIGGER                },
+  { "RECURSIVE",        "TK_RECURSIVE",    CTE                    },
   { "REFERENCES",       "TK_REFERENCES",   FKEY                   },
   { "REGEXP",           "TK_LIKE_KW",      ALWAYS                 },
   { "REINDEX",          "TK_REINDEX",      REINDEX                },
@@ -262,6 +268,8 @@ static Keyword aKeywordTable[] = {
   { "VALUES",           "TK_VALUES",       ALWAYS                 },
   { "VIEW",             "TK_VIEW",         VIEW                   },
   { "VIRTUAL",          "TK_VIRTUAL",      VTAB                   },
+  { "WITH",             "TK_WITH",         CTE                    },
+  { "WITHOUT",          "TK_WITHOUT",      ALWAYS                 },
   { "WHEN",             "TK_WHEN",         ALWAYS                 },
   { "WHERE",            "TK_WHERE",        ALWAYS                 },
 };

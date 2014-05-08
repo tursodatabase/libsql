@@ -24,10 +24,27 @@ ifcapable !integrityck {
   return
 }
 
-sqlite3_soft_heap_limit -1
-sqlite3_soft_heap_limit 0
-sqlite3_soft_heap_limit 5000
+do_test softheap1-1.0 {
+  execsql {PRAGMA soft_heap_limit}
+} [sqlite3_soft_heap_limit -1]
 do_test softheap1-1.1 {
+  execsql {PRAGMA soft_heap_limit=123456; PRAGMA soft_heap_limit;}
+} {123456 123456}
+do_test softheap1-1.2 {
+  sqlite3_soft_heap_limit -1
+} {123456}
+do_test softheap1-1.3 {
+  execsql {PRAGMA soft_heap_limit(-1); PRAGMA soft_heap_limit;}
+} {123456 123456}
+do_test softheap1-1.4 {
+  execsql {PRAGMA soft_heap_limit(0); PRAGMA soft_heap_limit;}
+} {0 0}
+
+sqlite3_soft_heap_limit 5000
+do_test softheap1-2.0 {
+  execsql {PRAGMA soft_heap_limit}
+} {5000}
+do_test softheap1-2.1 {
   execsql {
     PRAGMA auto_vacuum=1;
     CREATE TABLE t1(x);

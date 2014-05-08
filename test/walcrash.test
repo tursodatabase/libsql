@@ -294,4 +294,3 @@ for {set i 1} {$i < $REPEATS} {incr i} {
 }
 
 finish_test
-

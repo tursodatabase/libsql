@@ -112,7 +112,17 @@ do_execsql_test stat-2.1 {
   t3 /00e/ 22 leaf 2 730 276 366                         \
   t3 /00f/ 23 leaf 2 738 268 370                         \
 ]
-do_execsql_test stat-2.2 { DROP TABLE t3 } {}
+
+# With every index entry overflowing, make sure no pages are missed 
+# (other than the locking page which is 64 in this test build.)
+#
+do_execsql_test stat-2.2 {
+  UPDATE t3 SET a=a||hex(randomblob(700));
+  VACUUM;
+  SELECT pageno FROM stat EXCEPT SELECT pageno-1 FROM stat;
+} {64 136}
+
+do_execsql_test stat-2.3 { DROP TABLE t3; VACUUM; } {}
 
 do_execsql_test stat-3.1 {
   CREATE TABLE t4(x);
@@ -122,22 +132,22 @@ do_execsql_test stat-3.1 {
     FROM stat WHERE name != 'sqlite_master';
 } [list \
   i4 / 3 leaf 1 103 905 7782                 \
-  i4 /000+000000 9 overflow 0 1020 0 0       \
-  i4 /000+000001 10 overflow 0 1020 0 0      \
-  i4 /000+000002 11 overflow 0 1020 0 0      \
-  i4 /000+000003 12 overflow 0 1020 0 0      \
-  i4 /000+000004 13 overflow 0 1020 0 0      \
-  i4 /000+000005 14 overflow 0 1020 0 0      \
-  i4 /000+000006 15 overflow 0 1020 0 0      \
-  i4 /000+000007 16 overflow 0 539 481 0     \
+  i4 /000+000000 4 overflow 0 1020 0 0       \
+  i4 /000+000001 5 overflow 0 1020 0 0      \
+  i4 /000+000002 6 overflow 0 1020 0 0      \
+  i4 /000+000003 7 overflow 0 1020 0 0      \
+  i4 /000+000004 8 overflow 0 1020 0 0      \
+  i4 /000+000005 9 overflow 0 1020 0 0      \
+  i4 /000+000006 10 overflow 0 1020 0 0      \
+  i4 /000+000007 11 overflow 0 539 481 0     \
   t4 / 2 leaf 1 640 367 7780                 \
-  t4 /000+000000 22 overflow 0 1020 0 0      \
-  t4 /000+000001 23 overflow 0 1020 0 0      \
-  t4 /000+000002 21 overflow 0 1020 0 0      \
-  t4 /000+000003 20 overflow 0 1020 0 0      \
-  t4 /000+000004 19 overflow 0 1020 0 0      \
-  t4 /000+000005 18 overflow 0 1020 0 0      \
-  t4 /000+000006 17 overflow 0 1020 0 0      \
+  t4 /000+000000 12 overflow 0 1020 0 0      \
+  t4 /000+000001 13 overflow 0 1020 0 0      \
+  t4 /000+000002 14 overflow 0 1020 0 0      \
+  t4 /000+000003 15 overflow 0 1020 0 0      \
+  t4 /000+000004 16 overflow 0 1020 0 0      \
+  t4 /000+000005 17 overflow 0 1020 0 0      \
+  t4 /000+000006 18 overflow 0 1020 0 0      \
 ]
 
 do_execsql_test stat-4.1 {
@@ -146,15 +156,14 @@ do_execsql_test stat-4.1 {
   SELECT name, path, pageno, pagetype, ncell, payload, unused, mx_payload
     FROM stat WHERE name = 't5' OR name = 'i5';
 } [list  \
-  i5 / 5 leaf 0 0 1016 0 \
-  t5 / 4 leaf 0 0 1016 0 \
+  i5 / 20 leaf 0 0 1016 0 \
+  t5 / 19 leaf 0 0 1016 0 \
 ]
 
 db close
 forcedelete test.db
 sqlite3 db test.db
 register_dbstat_vtab db
-breakpoint
 do_execsql_test stat-5.1 {
   PRAGMA auto_vacuum = OFF;
   CREATE VIRTUAL TABLE temp.stat USING dbstat;

@@ -13,6 +13,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+set ::testprefix indexedby
 
 # Create a schema with some indexes.
 #
@@ -42,15 +43,15 @@ proc EQP {sql} {
 #
 do_execsql_test indexedby-1.2 {
   EXPLAIN QUERY PLAN select * from t1 WHERE a = 10; 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-1.3 {
   EXPLAIN QUERY PLAN select * from t1 ; 
-} {0 0 0 {SCAN TABLE t1 (~1000000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-1.4 {
   EXPLAIN QUERY PLAN select * from t1, t2 WHERE c = 10; 
 } {
-  0 0 1 {SEARCH TABLE t2 USING INDEX i3 (c=?) (~10 rows)} 
-  0 1 0 {SCAN TABLE t1 (~1000000 rows)}
+  0 0 1 {SEARCH TABLE t2 USING INDEX i3 (c=?)} 
+  0 1 0 {SCAN TABLE t1}
 }
 
 # Parser tests. Test that an INDEXED BY or NOT INDEX clause can be 
@@ -85,21 +86,21 @@ do_test indexedby-2.7 {
 #
 do_execsql_test indexedby-3.1 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 NOT INDEXED WHERE a = 'one' AND b = 'two'
-} {0 0 0 {SCAN TABLE t1 (~10000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-3.2 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t1 INDEXED BY i1 WHERE a = 'one' AND b = 'two'
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-3.3 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' AND b = 'two'
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_test indexedby-3.4 {
   catchsql { SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' }
-} {1 {cannot use index: i2}}
+} {1 {no query solution}}
 do_test indexedby-3.5 {
   catchsql { SELECT * FROM t1 INDEXED BY i2 ORDER BY a }
-} {1 {cannot use index: i2}}
+} {1 {no query solution}}
 do_test indexedby-3.6 {
   catchsql { SELECT * FROM t1 INDEXED BY i1 WHERE a = 'one' }
 } {0 {}}
@@ -110,14 +111,14 @@ do_test indexedby-3.7 {
 do_execsql_test indexedby-3.8 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 ORDER BY e 
-} {0 0 0 {SCAN TABLE t3 USING INDEX sqlite_autoindex_t3_1 (~1000000 rows)}}
+} {0 0 0 {SCAN TABLE t3 USING INDEX sqlite_autoindex_t3_1}}
 do_execsql_test indexedby-3.9 {
   EXPLAIN QUERY PLAN 
   SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE e = 10 
-} {0 0 0 {SEARCH TABLE t3 USING INDEX sqlite_autoindex_t3_1 (e=?) (~1 rows)}}
+} {0 0 0 {SEARCH TABLE t3 USING INDEX sqlite_autoindex_t3_1 (e=?)}}
 do_test indexedby-3.10 {
   catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE f = 10 }
-} {1 {cannot use index: sqlite_autoindex_t3_1}}
+} {1 {no query solution}}
 do_test indexedby-3.11 {
   catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_2 WHERE f = 10 }
 } {1 {no such index: sqlite_autoindex_t3_2}}
@@ -127,25 +128,25 @@ do_test indexedby-3.11 {
 do_execsql_test indexedby-4.1 {
   EXPLAIN QUERY PLAN SELECT * FROM t1, t2 WHERE a = c 
 } {
-  0 0 0 {SCAN TABLE t1 (~1000000 rows)} 
-  0 1 1 {SEARCH TABLE t2 USING INDEX i3 (c=?) (~10 rows)}
+  0 0 0 {SCAN TABLE t1} 
+  0 1 1 {SEARCH TABLE t2 USING INDEX i3 (c=?)}
 }
 do_execsql_test indexedby-4.2 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 INDEXED BY i1, t2 WHERE a = c 
 } {
-  0 0 1 {SCAN TABLE t2 (~1000000 rows)} 
-  0 1 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~10 rows)}
+  0 0 1 {SCAN TABLE t2} 
+  0 1 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}
 }
 do_test indexedby-4.3 {
   catchsql {
     SELECT * FROM t1 INDEXED BY i1, t2 INDEXED BY i3 WHERE a=c
   }
-} {1 {cannot use index: i1}}
+} {1 {no query solution}}
 do_test indexedby-4.4 {
   catchsql {
     SELECT * FROM t2 INDEXED BY i3, t1 INDEXED BY i1 WHERE a=c
   }
-} {1 {cannot use index: i3}}
+} {1 {no query solution}}
 
 # Test embedding an INDEXED BY in a CREATE VIEW statement. This block
 # also tests that nothing bad happens if an index refered to by
@@ -154,10 +155,10 @@ do_test indexedby-4.4 {
 do_execsql_test indexedby-5.1 {
   CREATE VIEW v2 AS SELECT * FROM t1 INDEXED BY i1 WHERE a > 5;
   EXPLAIN QUERY PLAN SELECT * FROM v2 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~250000 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?)}}
 do_execsql_test indexedby-5.2 {
   EXPLAIN QUERY PLAN SELECT * FROM v2 WHERE b = 10 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?) (~25000 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a>?)}}
 do_test indexedby-5.3 {
   execsql { DROP INDEX i1 }
   catchsql { SELECT * FROM v2 }
@@ -166,7 +167,7 @@ do_test indexedby-5.4 {
   # Recreate index i1 in such a way as it cannot be used by the view query.
   execsql { CREATE INDEX i1 ON t1(b) }
   catchsql { SELECT * FROM v2 }
-} {1 {cannot use index: i1}}
+} {1 {no query solution}}
 do_test indexedby-5.5 {
   # Drop and recreate index i1 again. This time, create it so that it can
   # be used by the query.
@@ -178,54 +179,54 @@ do_test indexedby-5.5 {
 # 
 do_execsql_test indexedby-6.1 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE b = 10 ORDER BY rowid 
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_execsql_test indexedby-6.2 {
   EXPLAIN QUERY PLAN SELECT * FROM t1 NOT INDEXED WHERE b = 10 ORDER BY rowid 
-} {0 0 0 {SCAN TABLE t1 USING INTEGER PRIMARY KEY (~100000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 
 # Test that "INDEXED BY" can be used in a DELETE statement.
 # 
 do_execsql_test indexedby-7.1 {
   EXPLAIN QUERY PLAN DELETE FROM t1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.2 {
   EXPLAIN QUERY PLAN DELETE FROM t1 NOT INDEXED WHERE a = 5 
-} {0 0 0 {SCAN TABLE t1 (~100000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-7.3 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.4 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i1 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-7.5 {
   EXPLAIN QUERY PLAN DELETE FROM t1 INDEXED BY i2 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_test indexedby-7.6 {
   catchsql { DELETE FROM t1 INDEXED BY i2 WHERE a = 5}
-} {1 {cannot use index: i2}}
+} {1 {no query solution}}
 
 # Test that "INDEXED BY" can be used in an UPDATE statement.
 # 
 do_execsql_test indexedby-8.1 {
   EXPLAIN QUERY PLAN UPDATE t1 SET rowid=rowid+1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-8.2 {
   EXPLAIN QUERY PLAN UPDATE t1 NOT INDEXED SET rowid=rowid+1 WHERE a = 5 
-} {0 0 0 {SCAN TABLE t1 (~100000 rows)}}
+} {0 0 0 {SCAN TABLE t1}}
 do_execsql_test indexedby-8.3 {
   EXPLAIN QUERY PLAN UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 
-} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?) (~10 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING COVERING INDEX i1 (a=?)}}
 do_execsql_test indexedby-8.4 {
   EXPLAIN QUERY PLAN 
   UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i1 (a=?)}}
 do_execsql_test indexedby-8.5 {
   EXPLAIN QUERY PLAN 
   UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5 AND b = 10
-} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?) (~2 rows)}}
+} {0 0 0 {SEARCH TABLE t1 USING INDEX i2 (b=?)}}
 do_test indexedby-8.6 {
   catchsql { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5}
-} {1 {cannot use index: i2}}
+} {1 {no query solution}}
 
 # Test that bug #3560 is fixed.
 #
@@ -243,10 +244,10 @@ do_test indexedby-9.2 {
     joinme as j indexed by joinme_id_text_idx
     on ( m.id  = j.id_int)
   }
-} {1 {cannot use index: joinme_id_text_idx}}
+} {1 {no query solution}}
 do_test indexedby-9.3 {
   catchsql { select * from maintable, joinme INDEXED by joinme_id_text_idx }
-} {1 {cannot use index: joinme_id_text_idx}}
+} {1 {no query solution}}
 
 # Make sure we can still create tables, indices, and columns whose name
 # is "indexed".
@@ -273,5 +274,51 @@ do_test indexedby-10.3 {
     SELECT * FROM t10 indexed by indexed WHERE indexed>0
   }
 } {1}
+
+#-------------------------------------------------------------------------
+# Ensure that the rowid at the end of each index entry may be used
+# for equality constraints in the same way as other indexed fields.
+#
+do_execsql_test 11.1 {
+  CREATE TABLE x1(a, b TEXT);
+  CREATE INDEX x1i ON x1(a, b);
+  INSERT INTO x1 VALUES(1, 1);
+  INSERT INTO x1 VALUES(1, 1);
+  INSERT INTO x1 VALUES(1, 1);
+  INSERT INTO x1 VALUES(1, 1);
+}
+do_execsql_test 11.2 {
+  SELECT a,b,rowid FROM x1 INDEXED BY x1i WHERE a=1 AND b=1 AND rowid=3;
+} {1 1 3}
+do_execsql_test 11.3 {
+  SELECT a,b,rowid FROM x1 INDEXED BY x1i WHERE a=1 AND b=1 AND rowid='3';
+} {1 1 3}
+do_execsql_test 11.4 {
+  SELECT a,b,rowid FROM x1 INDEXED BY x1i WHERE a=1 AND b=1 AND rowid='3.0';
+} {1 1 3}
+do_eqp_test 11.5 {
+  SELECT a,b,rowid FROM x1 INDEXED BY x1i WHERE a=1 AND b=1 AND rowid='3.0';
+} {0 0 0 {SEARCH TABLE x1 USING COVERING INDEX x1i (a=? AND b=? AND rowid=?)}}
+
+do_execsql_test 11.6 {
+  CREATE TABLE x2(c INTEGER PRIMARY KEY, a, b TEXT);
+  CREATE INDEX x2i ON x2(a, b);
+  INSERT INTO x2 VALUES(1, 1, 1);
+  INSERT INTO x2 VALUES(2, 1, 1);
+  INSERT INTO x2 VALUES(3, 1, 1);
+  INSERT INTO x2 VALUES(4, 1, 1);
+}
+do_execsql_test 11.7 {
+  SELECT a,b,c FROM x2 INDEXED BY x2i WHERE a=1 AND b=1 AND c=3;
+} {1 1 3}
+do_execsql_test 11.8 {
+  SELECT a,b,c FROM x2 INDEXED BY x2i WHERE a=1 AND b=1 AND c='3';
+} {1 1 3}
+do_execsql_test 11.9 {
+  SELECT a,b,c FROM x2 INDEXED BY x2i WHERE a=1 AND b=1 AND c='3.0';
+} {1 1 3}
+do_eqp_test 11.10 {
+  SELECT a,b,c FROM x2 INDEXED BY x2i WHERE a=1 AND b=1 AND c='3.0';
+} {0 0 0 {SEARCH TABLE x2 USING COVERING INDEX x2i (a=? AND b=? AND rowid=?)}}
 
 finish_test

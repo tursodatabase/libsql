@@ -96,4 +96,3 @@ do_faultsim_test pagerfault2-2 -faults oom-transient -prep {
 
 sqlite3_memdebug_vfs_oom_test 1
 finish_test
-

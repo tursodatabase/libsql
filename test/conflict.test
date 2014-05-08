@@ -242,7 +242,7 @@ foreach {i conf1 cmd t0 t1 t2} {
  15 {}       {INSERT OR ABORT}       1 {}  1
  16 {}       {INSERT OR ROLLBACK}    1 {}  {}
 } {
-  if {$t0} {set t1 {t1.c may not be NULL}}
+  if {$t0} {set t1 {NOT NULL constraint failed: t1.c}}
   do_test conflict-5.$i {
     if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
     set r0 [catch {execsql [subst {
@@ -306,7 +306,7 @@ foreach {i conf1 cmd t0 t1 t2 t3 t4} {
  15 {}       {UPDATE OR ABORT}       1 {1 2 3 4}  1 0 1
  16 {}       {UPDATE OR ROLLBACK}    1 {1 2 3 4}  0 0 0
 } {
-  if {$t0} {set t1 {column a is not unique}}
+  if {$t0} {set t1 {UNIQUE constraint failed: t1.a}}
   if {[info exists TEMP_STORE] && $TEMP_STORE==3} {
     set t3 0
   } else {
@@ -493,13 +493,13 @@ do_test conflict-9.5 {
     INSERT INTO t2 VALUES(3,1,3,3,3);
     SELECT * FROM t2;
   }
-} {1 {column b is not unique}}
+} {1 {UNIQUE constraint failed: t2.b}}
 do_test conflict-9.6 {
   catchsql {
     UPDATE t2 SET b=b+1 WHERE b=1;
     SELECT * FROM t2;
   }
-} {1 {column b is not unique}}
+} {1 {UNIQUE constraint failed: t2.b}}
 do_test conflict-9.7 {
   catchsql {
     BEGIN;
@@ -507,7 +507,7 @@ do_test conflict-9.7 {
     INSERT INTO t2 VALUES(3,1,3,3,3);
     SELECT * FROM t2;
   }
-} {1 {column b is not unique}}
+} {1 {UNIQUE constraint failed: t2.b}}
 do_test conflict-9.8 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -519,7 +519,7 @@ do_test conflict-9.9 {
     UPDATE t2 SET b=b+1 WHERE b=1;
     SELECT * FROM t2;
   }
-} {1 {column b is not unique}}
+} {1 {UNIQUE constraint failed: t2.b}}
 do_test conflict-9.10 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -529,13 +529,13 @@ do_test conflict-9.11 {
     INSERT INTO t2 VALUES(3,3,3,1,3);
     SELECT * FROM t2;
   }
-} {1 {column d is not unique}}
+} {1 {UNIQUE constraint failed: t2.d}}
 do_test conflict-9.12 {
   catchsql {
     UPDATE t2 SET d=d+1 WHERE d=1;
     SELECT * FROM t2;
   }
-} {1 {column d is not unique}}
+} {1 {UNIQUE constraint failed: t2.d}}
 do_test conflict-9.13 {
   catchsql {
     BEGIN;
@@ -543,7 +543,7 @@ do_test conflict-9.13 {
     INSERT INTO t2 VALUES(3,3,3,1,3);
     SELECT * FROM t2;
   }
-} {1 {column d is not unique}}
+} {1 {UNIQUE constraint failed: t2.d}}
 do_test conflict-9.14 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -555,7 +555,7 @@ do_test conflict-9.15 {
     UPDATE t2 SET d=d+1 WHERE d=1;
     SELECT * FROM t2;
   }
-} {1 {column d is not unique}}
+} {1 {UNIQUE constraint failed: t2.d}}
 do_test conflict-9.16 {
   execsql {COMMIT}
   execsql {SELECT * FROM t3}
@@ -565,13 +565,13 @@ do_test conflict-9.17 {
     INSERT INTO t2 VALUES(3,3,3,3,1);
     SELECT * FROM t2;
   }
-} {1 {column e is not unique}}
+} {1 {UNIQUE constraint failed: t2.e}}
 do_test conflict-9.18 {
   catchsql {
     UPDATE t2 SET e=e+1 WHERE e=1;
     SELECT * FROM t2;
   }
-} {1 {column e is not unique}}
+} {1 {UNIQUE constraint failed: t2.e}}
 do_test conflict-9.19 {
   catchsql {
     BEGIN;
@@ -579,7 +579,8 @@ do_test conflict-9.19 {
     INSERT INTO t2 VALUES(3,3,3,3,1);
     SELECT * FROM t2;
   }
-} {1 {column e is not unique}}
+} {1 {UNIQUE constraint failed: t2.e}}
+verify_ex_errcode conflict-9.21b SQLITE_CONSTRAINT_UNIQUE
 do_test conflict-9.20 {
   catch {execsql {COMMIT}}
   execsql {SELECT * FROM t3}
@@ -591,7 +592,8 @@ do_test conflict-9.21 {
     UPDATE t2 SET e=e+1 WHERE e=1;
     SELECT * FROM t2;
   }
-} {1 {column e is not unique}}
+} {1 {UNIQUE constraint failed: t2.e}}
+verify_ex_errcode conflict-9.21b SQLITE_CONSTRAINT_UNIQUE
 do_test conflict-9.22 {
   catch {execsql {COMMIT}}
   execsql {SELECT * FROM t3}
@@ -780,13 +782,22 @@ do_test conflict-12.3 {
   catchsql {
     UPDATE t5 SET a=a+1 WHERE a=1;
   }
-} {1 {PRIMARY KEY must be unique}}
+} {1 {UNIQUE constraint failed: t5.a}}
+verify_ex_errcode conflict-12.3b SQLITE_CONSTRAINT_PRIMARYKEY
 do_test conflict-12.4 {
   execsql {
     UPDATE OR REPLACE t5 SET a=a+1 WHERE a=1;
     SELECT * FROM t5;
   }
 } {2 one}
+do_test conflict-12.5 {
+  catchsql {
+    CREATE TABLE t5b(x);
+    INSERT INTO t5b(rowid, x) VALUES(1,10),(2,11);
+    UPDATE t5b SET rowid=rowid+1 WHERE x=10;
+  }
+} {1 {UNIQUE constraint failed: t5b.rowid}}
+verify_ex_errcode conflict-12.5b SQLITE_CONSTRAINT_ROWID
 
 
 # Ticket [c38baa3d969eab7946dc50ba9d9b4f0057a19437]
@@ -801,7 +812,8 @@ do_test conflict-13.1 {
   catchsql {
     REPLACE INTO t13 VALUES(2);
   }
-} {1 {constraint failed}}
+} {1 {CHECK constraint failed: t13}}
+verify_ex_errcode conflict-13.1b SQLITE_CONSTRAINT_CHECK
 do_test conflict-13.2 {
   execsql {
     REPLACE INTO t13 VALUES(3);

@@ -61,7 +61,7 @@ do_test rtree5-1.9 {
 do_test rtree5-1.10 { 
   execsql { SELECT (1<<31)-5, (1<<31)-1, -1*(1<<31), -1*(1<<31)+5 }
 } {2147483643 2147483647 -2147483648 -2147483643}
-do_test rtree5-1.10 { 
+do_test rtree5-1.11 { 
   execsql { 
     INSERT INTO t1 VALUES(2, (1<<31)-5, (1<<31)-1, -1*(1<<31), -1*(1<<31)+5) 
   }
