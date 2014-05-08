@@ -1,5 +1,5 @@
-C Fix\sstatic\svariable\sdeclaration\sissue\son\sWindows.
-D 2014-05-08T22:01:08.441
+C Experimental\schanges\sto\spre-cache\sa\sdatabase\sfile\sprior\sto\sit\sbeing\sfully\sopened.
+D 2014-05-08T22:01:26.332
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
-F src/os_win.c 187fad4d385b3b26ec6fd4b703b1b087ad6a5c4d
+F src/os_win.c 70e5fd4b931d9e4ed2395683503cc253be705192
 F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
@@ -1171,7 +1171,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7de6aee6a5cb5c7f89dced89f2ebf38f8be7a4fa
-R 117bf7d69b405485b3cb8ed74140d14c
+P a41d29691307067523c8637b486941c5f7c33775
+R deeebf5d0a3a3431a16dc9cbda6dc0e2
+T *branch * winPreCache
+T *sym-winPreCache *
+T -sym-threads *
 U mistachkin
-Z 6be3c46bf656f034e9d870a5f4b03d3e
+Z 18b582a9491b79449552acaadfabfb63

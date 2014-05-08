@@ -267,6 +267,7 @@ struct winFile {
   sqlite3_int64 mmapSizeActual; /* Actual size of mapped region */
   sqlite3_int64 mmapSizeMax;    /* Configured FCNTL_MMAP_SIZE value */
 #endif
+  SQLiteThread *preCacheThread; /* Thread used to pre-cache file contents */
 };
 
 /*
@@ -1043,6 +1044,11 @@ static struct win_syscall {
 
 #define osCreateFileMappingFromApp ((HANDLE(WINAPI*)(HANDLE, \
         LPSECURITY_ATTRIBUTES,ULONG,ULONG64,LPCWSTR))aSyscall[75].pCurrent)
+
+  { "DuplicateHandle",          (SYSCALL)DuplicateHandle,        0 },
+
+#define osDuplicateHandle ((BOOL(WINAPI*)(HANDLE, \
+        HANDLE,HANDLE,LPHANDLE,DWORD,BOOL,DWORD))aSyscall[76].pCurrent)
 
 }; /* End of the overrideable system calls */
 
@@ -2354,6 +2360,13 @@ static int winClose(sqlite3_file *id){
   assert( pFile->h!=NULL && pFile->h!=INVALID_HANDLE_VALUE );
   OSTRACE(("CLOSE file=%p\n", pFile->h));
 
+#if SQLITE_MAX_WORKER_THREADS>0
+  if( pFile->preCacheThread ){
+    void *pOut = 0;
+    sqlite3ThreadJoin(pFile->preCacheThread, &pOut);
+  }
+#endif
+
 #if SQLITE_MAX_MMAP_SIZE>0
   winUnmapfile(pFile);
 #endif
@@ -3196,6 +3209,78 @@ static int winDeviceCharacteristics(sqlite3_file *id){
   winFile *p = (winFile*)id;
   return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN |
          ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
+}
+
+/*
+** Thread routine that seeks to the end of an open file and reads one byte.
+** This is used to provide a hint to the operating system that the entire
+** file should be held in the cache.
+*/
+static void *winPreCacheThread(void *pCtx){
+  winFile *pFile = (winFile*)pCtx;
+  void *pBuf = 0;
+  DWORD lastErrno;
+  HANDLE dupHandle = NULL;
+  DWORD dwSize, dwRet;
+  DWORD dwAmt;
+  DWORD nRead;
+
+  if( !osDuplicateHandle(GetCurrentProcess(), pFile->h, GetCurrentProcess(),
+                         &dupHandle, 0, FALSE, DUPLICATE_SAME_ACCESS) ){
+    pFile->lastErrno = osGetLastError();
+    OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR\n", dupHandle));
+    return winLogError(SQLITE_IOERR, pFile->lastErrno,
+                       "winPreCacheThread1", pFile->zPath);
+  }
+  dwSize = osSetFilePointer(dupHandle, 0, 0, FILE_END);
+  if( (dwSize==INVALID_SET_FILE_POINTER
+      && ((lastErrno = osGetLastError())!=NO_ERROR)) ){
+    pFile->lastErrno = lastErrno;
+    osCloseHandle(dupHandle);
+    OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_SEEK\n", dupHandle));
+    return winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
+                       "winPreCacheThread2", pFile->zPath);
+  }
+  dwRet = osSetFilePointer(dupHandle, 0, 0, FILE_BEGIN);
+  if( (dwRet==INVALID_SET_FILE_POINTER
+      && ((lastErrno = osGetLastError())!=NO_ERROR)) ){
+    pFile->lastErrno = lastErrno;
+    osCloseHandle(dupHandle);
+    OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_SEEK\n", dupHandle));
+    return winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
+                       "winPreCacheThread2", pFile->zPath);
+  }
+  dwAmt = 4194304; /* TODO: Tuning. */
+  if( dwSize<dwAmt ){
+    dwAmt = dwSize;
+  }
+  pBuf = sqlite3MallocZero( dwAmt );
+  if( pBuf==0 ){
+    osCloseHandle(dupHandle);
+    OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_NOMEM\n", dupHandle));
+    return SQLITE_IOERR_NOMEM;
+  }
+  while( 1 ){
+    if( !osReadFile(dupHandle, pBuf, dwAmt, &nRead, 0) ){
+      pFile->lastErrno = osGetLastError();
+      osCloseHandle(dupHandle);
+      OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_READ\n", dupHandle));
+      return winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
+                         "winPreCacheThread3", pFile->zPath);
+    }
+    if( nRead<dwAmt ){
+      osCloseHandle(dupHandle);
+      OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_SHORT_READ\n", dupHandle));
+      return winLogError(SQLITE_IOERR_SHORT_READ, pFile->lastErrno,
+                         "winPreCacheThread4", pFile->zPath);
+    }
+    dwSize -= dwAmt;
+    if( dwSize==0 ){
+      break;
+    }
+  }
+  osCloseHandle(dupHandle);
+  return SQLITE_OK;
 }
 
 /* 
@@ -4704,6 +4789,15 @@ static int winOpen(
   pFile->mmapSizeActual = 0;
   pFile->mmapSizeMax = sqlite3GlobalConfig.szMmap;
 #endif
+#if SQLITE_MAX_WORKER_THREADS>0
+  sqlite3ThreadCreate(&pFile->preCacheThread, winPreCacheThread, pFile);
+
+  {
+    void *pOut = 0;
+    sqlite3ThreadJoin(pFile->preCacheThread, &pOut);
+    pFile->preCacheThread = 0;
+  }
+#endif
 
   OpenCounter(+1);
   return rc;
@@ -5422,7 +5516,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==76 );
+  assert( ArraySize(aSyscall)==77 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
