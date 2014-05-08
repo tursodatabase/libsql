@@ -1,5 +1,5 @@
-C Update\scomments\sand\sonly\sinclude\sthe\sthread\sroutine\swhen\srequired.
-D 2014-05-08T22:05:30.985
+C Fix\sa\smemory\sleak\sof\sthe\stemporary\sread\sbuffer.
+D 2014-05-08T22:08:22.181
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
-F src/os_win.c 59befa19fb087727c4817ad5f9db82c76bbd96c0
+F src/os_win.c c9a60c0c174b979ec59c9153f073cdd0090c4b99
 F src/pager.c ab62a24218d87dda1be641f6c5ad291bff78fd94
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
@@ -1171,7 +1171,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 38cbcedbb6e57dc3c2d452a0eb573cabc7df0c75
-R 60f2ea98a5702c8ea1c862ad01804d2b
+P a60c545f255f7da53e0ebcde8743532b54bafdb6
+R 5f08c0c074dd1c10ad2faeb58305095e
 U mistachkin
-Z 0c7549836f40b93874f4f8a3e18828f8
+Z 8753af9b4d783bb233d495311dbe8a85
