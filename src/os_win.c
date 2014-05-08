@@ -3211,10 +3211,11 @@ static int winDeviceCharacteristics(sqlite3_file *id){
          ((p->ctrlFlags & WINFILE_PSOW)?SQLITE_IOCAP_POWERSAFE_OVERWRITE:0);
 }
 
+#if SQLITE_MAX_WORKER_THREADS>0
 /*
-** Thread routine that seeks to the end of an open file and reads one byte.
-** This is used to provide a hint to the operating system that the entire
-** file should be held in the cache.
+** Thread routine that attempts to read the entire file.  This is used to
+** provide a hint to the operating system that the entire file should be held
+** in the cache.
 */
 static void *winPreCacheThread(void *pCtx){
   winFile *pFile = (winFile*)pCtx;
@@ -3282,6 +3283,7 @@ static void *winPreCacheThread(void *pCtx){
   osCloseHandle(dupHandle);
   return SQLITE_OK;
 }
+#endif
 
 /* 
 ** Windows will only let you create file view mappings
