@@ -59,6 +59,7 @@ do_execsql_test 1.2.1 {
   SELECT content FROM t1 WHERE t1 MATCH 'f (e NEAR/2 a)';
 } {{a b c d e f a x y}}
 
+
 do_execsql_test 1.2.2 {
   SELECT snippet(t1, '[', ']'), offsets(t1), mit(matchinfo(t1, 'pcxnal'))
   FROM t1 WHERE t1 MATCH 'f (e NEAR/2 a)';

@@ -1194,6 +1194,18 @@ do_test func-24.12 {
                           WHEN 'program' THEN null ELSE t1 END) FROM tbl1
   }
 } {,is,free,software}
+# Tests to verify ticket http://www.sqlite.org/src/tktview/55746f9e65f8587c0
+do_test func-24.13 {
+  execsql {
+    SELECT typeof(group_concat(x)) FROM (SELECT '' AS x);
+  }
+} {text}
+do_test func-24.14 {
+  execsql {
+    SELECT typeof(group_concat(x,''))
+      FROM (SELECT '' AS x UNION ALL SELECT '');
+  }
+} {text}
 
 
 # Use the test_isolation function to make sure that type conversions

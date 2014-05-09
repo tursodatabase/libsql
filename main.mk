@@ -210,6 +210,7 @@ SRC += \
   $(TOP)/ext/icu/sqliteicu.h \
   $(TOP)/ext/icu/icu.c
 SRC += \
+  $(TOP)/ext/rtree/sqlite3rtree.h \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
 
