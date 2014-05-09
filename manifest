@@ -1,9 +1,9 @@
-C Include\ssqlite3rtree.h\sin\sthe\stsrc/\spile\sof\ssource\sfiles\sduring\ntarget_source\sin\sthe\smain.mk\smakefile.
-D 2014-05-07T21:16:56.524
+C When\scross-compiling\swith\sthe\sMSVC\smakefile,\smake\ssure\sthe\scorrect\slibrary\spath\sis\sused.\s\sAlso,\skeep\strack\sof\sthe\srequired\scompilation\soptions\sseparately.
+D 2014-05-09T20:51:17.136
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 7e6c495d9a145054a09f518781916c7503f7a8e9
+F Makefile.msc f4b4d99d61cfe4ec508600dccd1a0ab2dc8a8b9b
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 68766f837491cb89c2103f2627eb9e23ab326a68
-R 1b75d6e5e9a19ccc14f8e59e21c749f6
-U drh
-Z 3528e73d8f87faaf66e6658213b6d573
+P 116bed5af664899a73b46dca528ac0c021fc50c3
+R 88c72e40fa185e1eb8f17237cccbb934
+U mistachkin
+Z b5868dcc5cdf0f5ef12e0a431c431ca8
