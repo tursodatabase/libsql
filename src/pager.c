@@ -7252,6 +7252,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
       ** hint is enabled. */
       if( rc==SQLITE_OK ){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
+        if( rc==SQLITE_IOERR_DELETE_NOENT ) rc = SQLITE_OK;
       }
     }
   }

@@ -5334,8 +5334,10 @@ static int path_is_local(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
+#ifdef __APPLE__
   const char *zPath;
   int nPath;
+  struct statfs fsInfo;
   
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -5343,21 +5345,16 @@ static int path_is_local(
     return TCL_ERROR;
   }
   zPath = Tcl_GetStringFromObj(objv[1], &nPath);
-  
-#ifdef __APPLE__
-  {
-    struct statfs fsInfo;
-    if( statfs(zPath, &fsInfo) == -1 ){
-      int err = errno;
-      Tcl_AppendResult(interp, "Error calling statfs on path",
-                       Tcl_NewIntObj(err), 0);
-      return TCL_ERROR;
-    }
-    if( fsInfo.f_flags&MNT_LOCAL ){
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
-    } else {
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 
-    }
+  if( statfs(zPath, &fsInfo) == -1 ){
+    int err = errno;
+    Tcl_AppendResult(interp, "Error calling statfs on path",
+                     Tcl_NewIntObj(err), 0);
+    return TCL_ERROR;
+  }
+  if( fsInfo.f_flags&MNT_LOCAL ){
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 
   }
 #else
   Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
@@ -5375,8 +5372,10 @@ static int path_is_dos(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
+#ifdef __APPLE__
   const char *zPath;
   int nPath;
+  struct statfs fsInfo;
   
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -5384,23 +5383,18 @@ static int path_is_dos(
     return TCL_ERROR;
   }
   zPath = Tcl_GetStringFromObj(objv[1], &nPath);
-  
-#ifdef __APPLE__
-  {
-    struct statfs fsInfo;
-    if( statfs(zPath, &fsInfo) == -1 ){
-      int err = errno;
-      Tcl_AppendResult(interp, "Error calling statfs on path",
-                       Tcl_NewIntObj(err), 0);
-      return TCL_ERROR;
-    }
-    if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
-    } else if (0 == strncmp("exfat", fsInfo.f_fstypename, 5)) {
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
-    } else {
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 
-    }
+  if( statfs(zPath, &fsInfo) == -1 ){
+    int err = errno;
+    Tcl_AppendResult(interp, "Error calling statfs on path",
+                     Tcl_NewIntObj(err), 0);
+    return TCL_ERROR;
+  }
+  if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
+  } else if (0 == strncmp("exfat", fsInfo.f_fstypename, 5)) {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(1)); 
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 
   }
 #else
   Tcl_SetObjResult(interp, Tcl_NewIntObj(0)); 

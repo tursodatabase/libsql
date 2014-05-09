@@ -1,5 +1,5 @@
-C Fix\san\sincorrect\scheck\sfor\sAPI\smisuse.
-D 2014-05-09T12:18:06.331
+C Fix\scompiler\swarnings.\s\sWhen\sforcing\sthe\sdelete\sof\sa\sWAL\sfile,\sdo\snot\nfail\sif\sthe\sWAL\sfiles\sdoes\snot\sexist.\s\sAll\s"veryquick.tcl"\stests\sare\snow\npassing\son\sLinux\sunder\sthe\sstandard\scompile-time\soptions.
+D 2014-05-09T13:27:38.567
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 444faa7b5c5b3189fa674ff42be94d87a37eba9d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a0ebd5f039e35f4a7e6f254b279a08324166fd00
 F src/os_win.c 31f80c90591fdee22a76682c4b1dd5552d5a69a9
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
-F src/pager.c 0f8835053ca30c67177bcebf10a2011dde152e27
+F src/pager.c d878c40eb8c75e9ae79b00cc80ad9710679f9a31
 F src/pager.h 8feb18f845951ab37e1f65a319b2da24185173ac
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
@@ -234,7 +234,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e87c99e28a145943666b51b212dacae35fcea0bd
-F src/test1.c d289efd4896bf3536c99c097a9181a3239201ca4
+F src/test1.c 472c069b3e1abd30972cddee330225ff5b70ac25
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P d66fe706dad000888a177c19aa217bbb68edb4d2
-R 193271f9b3a2d4c11c9ecb85f750f8b1
+P 856400dc20752e5630aaea8d17a707c502a1245b
+R ba6e1237cb6f5e485ffe03b68923e63f
 U drh
-Z b7dc0ec5504dd712ada8fe06e9d0faa1
+Z 602483bd18626cf960b243b906c38aba
