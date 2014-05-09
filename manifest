@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings.\s\sWhen\sforcing\sthe\sdelete\sof\sa\sWAL\sfile,\sdo\snot\nfail\sif\sthe\sWAL\sfiles\sdoes\snot\sexist.\s\sAll\s"veryquick.tcl"\stests\sare\snow\npassing\son\sLinux\sunder\sthe\sstandard\scompile-time\soptions.
-D 2014-05-09T13:27:38.567
+C Fix\sa\smisplaced\s#endif\sand\sa\sC99-ism\sin\sthe\sunix\sVFS.
+D 2014-05-09T14:56:16.432
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 444faa7b5c5b3189fa674ff42be94d87a37eba9d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -208,7 +208,7 @@ F src/os.c 25df79baf4bec87f75a2c4e995d63361b66b918a
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c a0ebd5f039e35f4a7e6f254b279a08324166fd00
+F src/os_unix.c 6a54dad9ffb25faaa81604a3eebedeb04da9b639
 F src/os_win.c 31f80c90591fdee22a76682c4b1dd5552d5a69a9
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c d878c40eb8c75e9ae79b00cc80ad9710679f9a31
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 856400dc20752e5630aaea8d17a707c502a1245b
-R ba6e1237cb6f5e485ffe03b68923e63f
+P eafd8aa1862fb4bbe0d2441cbd110aba1abc772c
+R 5048a0723adffb556115dc15010c4791
 U drh
-Z 602483bd18626cf960b243b906c38aba
+Z 039ea58c206e5d3d88aef40fd75f7a9b

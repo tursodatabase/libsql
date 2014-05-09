@@ -2272,7 +2272,6 @@ static int closeUnixFile(sqlite3_file *id){
     robust_close(pFile, pFile->h, __LINE__);
     pFile->h = -1;
   }
-#endif
 #if OS_VXWORKS
   if( pFile->pId ){
     if( pFile->ctrlFlags & UNIXFILE_DELETE ){
@@ -3699,6 +3698,7 @@ static int unixWrite(
       }
     }
   }
+#endif
 
 #if SQLITE_MAX_MMAP_SIZE>0
   /* Deal with as much of this write request as possible by transfering
@@ -4964,6 +4964,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   pShmNode = pInode->pShmNode;
   if( pShmNode==0 ){
     struct stat sStat;                 /* fstat() info for database file */
+    const char *zBasePath = pDbFd->zPath;
 
     /* Call fstat() to figure out the permissions on the database file. If
     ** a new *-shm file is created, an attempt will be made to create it
@@ -4974,7 +4975,6 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       goto shm_open_err;
     }
 
-    const char *zBasePath = pDbFd->zPath;
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
     /* If pDbFd is configured with proxy locking mode, use the local 
      ** lock file path to determine the -shm file path
