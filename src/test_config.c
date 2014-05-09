@@ -20,6 +20,10 @@
 #include "sqliteLimit.h"
 
 #include "sqliteInt.h"
+#if SQLITE_OS_WIN
+#  include "os_win.h"
+#endif
+
 #include "tcl.h"
 #include <stdlib.h>
 #include <string.h>

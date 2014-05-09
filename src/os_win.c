@@ -15,15 +15,15 @@
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for Windows only */
 
-#ifdef __CYGWIN__
-# include <sys/cygwin.h>
-# include <errno.h> /* amalgamator: keep */
-#endif
-
 /*
 ** Include code that is common to all os_*.c files
 */
 #include "os_common.h"
+
+/*
+** Include the header file for the Windows VFS.
+*/
+#include "os_win.h"
 
 /*
 ** Compiling and using WAL mode requires several APIs that are only
@@ -1837,6 +1837,32 @@ static int winIoerrRetry = SQLITE_WIN32_IOERR_RETRY;
 static int winIoerrRetryDelay = SQLITE_WIN32_IOERR_RETRY_DELAY;
 
 /*
+** The "winIoerrCanRetry1" macro is used to determine if a particular I/O
+** error code obtained via GetLastError() is eligible to be retried.  It
+** must accept the error code DWORD as its only argument and should return
+** non-zero if the error code is transient in nature and the operation
+** responsible for generating the original error might succeed upon being
+** retried.  The argument to this macro should be a variable.
+**
+** Additionally, a macro named "winIoerrCanRetry2" may be defined.  If it
+** is defined, it will be consulted only when the macro "winIoerrCanRetry1"
+** returns zero.  The "winIoerrCanRetry2" macro is completely optional and
+** may be used to include additional error codes in the set that should
+** result in the failing I/O operation being retried by the caller.  If
+** defined, the "winIoerrCanRetry2" macro must exhibit external semantics
+** identical to those of the "winIoerrCanRetry1" macro.
+*/
+#if !defined(winIoerrCanRetry1)
+#define winIoerrCanRetry1(a) (((a)==ERROR_ACCESS_DENIED)        || \
+                              ((a)==ERROR_SHARING_VIOLATION)    || \
+                              ((a)==ERROR_LOCK_VIOLATION)       || \
+                              ((a)==ERROR_DEV_NOT_EXIST)        || \
+                              ((a)==ERROR_NETNAME_DELETED)      || \
+                              ((a)==ERROR_SEM_TIMEOUT)          || \
+                              ((a)==ERROR_NETWORK_UNREACHABLE))
+#endif
+
+/*
 ** If a ReadFile() or WriteFile() error occurs, invoke this routine
 ** to see if it should be retried.  Return TRUE to retry.  Return FALSE
 ** to give up with an error.
@@ -1849,13 +1875,18 @@ static int winRetryIoerr(int *pnRetry, DWORD *pError){
     }
     return 0;
   }
-  if( e==ERROR_ACCESS_DENIED ||
-      e==ERROR_LOCK_VIOLATION ||
-      e==ERROR_SHARING_VIOLATION ){
+  if( winIoerrCanRetry1(e) ){
     sqlite3_win32_sleep(winIoerrRetryDelay*(1+*pnRetry));
     ++*pnRetry;
     return 1;
   }
+#if defined(winIoerrCanRetry2)
+  else if( winIoerrCanRetry2(e) ){
+    sqlite3_win32_sleep(winIoerrRetryDelay*(1+*pnRetry));
+    ++*pnRetry;
+    return 1;
+  }
+#endif
   if( pError ){
     *pError = e;
   }

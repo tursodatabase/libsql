@@ -103,6 +103,8 @@ foreach hdr {
    mutex.h
    opcodes.h
    os_common.h
+   os_setup.h
+   os_win.h
    os.h
    pager.h
    parse.h
@@ -168,7 +170,9 @@ proc copy_file {filename} {
           if {$linemacros} {puts $out "#line [expr {$ln+1}] \"$filename\""}
         }
       } elseif {![info exists seen_hdr($hdr)]} {
-        set seen_hdr($hdr) 1
+        if {![regexp {/\*\s+amalgamator:\s+dontcache\s+\*/} $line]} {
+          set seen_hdr($hdr) 1
+        }
         puts $out $line
       } elseif {[regexp {/\*\s+amalgamator:\s+keep\s+\*/} $line]} {
         # This include file must be kept because there was a "keep"
