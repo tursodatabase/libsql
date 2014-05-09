@@ -1,5 +1,5 @@
-C Bring\sthe\sPRAGMA\slogic\sinto\scloser\salignment\swith\strunk,\sand\sin\sthe\sprocess\nfix\sa\scouple\sof\scrashes.
-D 2014-05-09T11:45:55.952
+C Fix\san\sincorrect\scheck\sfor\sAPI\smisuse.
+D 2014-05-09T12:18:06.331
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 444faa7b5c5b3189fa674ff42be94d87a37eba9d
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,7 +288,7 @@ F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 0c64781331869342b7c1b2fd7140318da0d9a3a8
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
-F src/vdbeapi.c e37d694feecdcd458427715d8d7ab62e1a5761ef
+F src/vdbeapi.c 32a443608642a93b77ca4b13e42e2a4d7b0fc123
 F src/vdbeaux.c a82cfad30a3b4c1758c28dcee2b4fc20a70cd121
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 9411d7dc6fbee689730c6f74736341bccd333d9e
-R 5b8ea3b425b610bd1791d7adc3895350
+P d66fe706dad000888a177c19aa217bbb68edb4d2
+R 193271f9b3a2d4c11c9ecb85f750f8b1
 U drh
-Z a9d0aca766697d2a0e74827de095980b
+Z b7dc0ec5504dd712ada8fe06e9d0faa1

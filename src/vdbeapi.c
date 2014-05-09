@@ -40,8 +40,7 @@ int sqlite3_expired(sqlite3_stmt *pStmt){
 ** invalid).  Return false if it is ok.
 */
 static int vdbeSafety(Vdbe *p){
-  sqlite3* db = p->db;
-  if((db==0) || (db->magic != SQLITE_MAGIC_OPEN) || ((p->magic != VDBE_MAGIC_RUN) && (p->magic != VDBE_MAGIC_HALT))){
+  if( p->db==0 ){
     sqlite3_log(SQLITE_MISUSE, "API called with finalized prepared statement");
     return 1;
   }else{
