@@ -601,12 +601,12 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
 /*
 ** Generate code to return a single integer value.
 */
-static void returnSingleInt(Parse *pParse, const char *zLabel, i64 *pValue){
+static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int mem = ++pParse->nMem;
-  i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(*pValue));
+  i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(value));
   if( pI64 ){
-    memcpy(pI64, pValue, sizeof(*pValue));
+    memcpy(pI64, &value, sizeof(value));
   }
   sqlite3VdbeAddOp4(v, OP_Int64, 0, mem, 0, (char*)pI64, P4_INT64);
   sqlite3VdbeSetNumCols(v, 1);
@@ -629,11 +629,11 @@ static void setAllPagerFlags(sqlite3 *db){
     assert( SQLITE_CacheSpill==PAGER_CACHESPILL );
     assert( (PAGER_FULLFSYNC | PAGER_CKPT_FULLFSYNC | PAGER_CACHESPILL)
              ==  PAGER_FLAGS_MASK );
-    assert( (pDb->safety_level & PAGER_SYNCHRONOUS_MASK)==pDb->safety_level );
     while( (n--) > 0 ){
       if( pDb->pBt ){
         sqlite3BtreeSetPagerFlags(pDb->pBt,
-                 pDb->safety_level | (db->flags & PAGER_FLAGS_MASK) );
+                 (pDb->safety_level & PAGER_SYNCHRONOUS_MASK)
+                   | (db->flags & PAGER_FLAGS_MASK) );
       }
       pDb++;
     }
@@ -873,8 +873,8 @@ void sqlite3Pragma(
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
     if( !zRight ){
-      i64 size = ALWAYS(pBt) ? sqlite3BtreeGetPageSize(pBt) : 0;
-      returnSingleInt(pParse, "page_size", &size);
+      int size = ALWAYS(pBt) ? sqlite3BtreeGetPageSize(pBt) : 0;
+      returnSingleInt(pParse, "page_size", size);
     }else{
       /* Malloc may fail when setting the page-size, as there is an internal
       ** buffer that the pager module resizes using sqlite3_realloc().
@@ -897,7 +897,7 @@ void sqlite3Pragma(
   */
   case PragTyp_SECURE_DELETE: {
     Btree *pBt = pDb->pBt;
-    sqlite3_int64 b = -1;
+    int b = -1;
     assert( pBt!=0 );
     if( zRight ){
       b = sqlite3GetBoolean(zRight, 0);
@@ -905,11 +905,11 @@ void sqlite3Pragma(
     if( pId2->n==0 && b>=0 ){
       int ii;
       for(ii=0; ii<db->nDb; ii++){
-        sqlite3BtreeSecureDelete(db->aDb[ii].pBt, (int)b);
+        sqlite3BtreeSecureDelete(db->aDb[ii].pBt, b);
       }
     }
-    b = (int)sqlite3BtreeSecureDelete(pBt, (int)b);
-    returnSingleInt(pParse, "secure_delete", &b);
+    b = sqlite3BtreeSecureDelete(pBt, b);
+    returnSingleInt(pParse, "secure_delete", b);
     break;
   }
 
@@ -1066,7 +1066,7 @@ void sqlite3Pragma(
       if( iLimit<-1 ) iLimit = -1;
     }
     iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
-    returnSingleInt(pParse, "journal_size_limit", &iLimit);
+    returnSingleInt(pParse, "journal_size_limit", iLimit);
     break;
   }
 
@@ -1161,8 +1161,7 @@ void sqlite3Pragma(
   case PragTyp_CACHE_SIZE: {
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
     if( !zRight ){
-      i64 cacheSize = pDb->pSchema->cache_size;
-      returnSingleInt(pParse, "cache_size", &cacheSize);
+      returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
     }else{
       int size = sqlite3Atoi(zRight);
       pDb->pSchema->cache_size = size;
@@ -1228,8 +1227,7 @@ void sqlite3Pragma(
   */
   case PragTyp_TEMP_STORE: {
     if( !zRight ){
-      i64 tempStore = db->temp_store;
-      returnSingleInt(pParse, "temp_store", &tempStore);
+      returnSingleInt(pParse, "temp_store", db->temp_store);
     }else{
       changeTempStorage(pParse, zRight);
     }
@@ -1382,16 +1380,15 @@ void sqlite3Pragma(
   */
   case PragTyp_SYNCHRONOUS: {
     if( !zRight ){
-      u8 level = pDb->safety_level;
-      i64 safetyLevel = (i64)(SQLITE_DbSafetyLevelValue(level)-1);
-      returnSingleInt(pParse, "synchronous", &safetyLevel);
+      returnSingleInt(pParse, "synchronous", 
+            SQLITE_DbSafetyLevelValue(pDb->safety_level)-1);
     }else{
       if( !db->autoCommit ){
         sqlite3ErrorMsg(pParse, 
             "Safety level may not be changed inside a transaction");
       }else{
-        u8 level = getSafetyLevel(zRight,0,1)+1;
-        pDb->safety_level = (level | SQLITE_SAFETYLEVEL_FIXED);
+        pDb->safety_level = (getSafetyLevel(zRight,0,1)+1)
+                                      | SQLITE_SAFETYLEVEL_FIXED;
         setAllPagerFlags(db);
       }
     }
@@ -2190,14 +2187,12 @@ void sqlite3Pragma(
   ** of N.
   */
   case PragTyp_WAL_AUTOCHECKPOINT: {
-    i64 walArg = 0;
     if( zRight ){
       sqlite3_wal_autocheckpoint(db, sqlite3Atoi(zRight));
     }
-    if( db->xWalCallback==sqlite3WalDefaultHook ){
-      walArg = SQLITE_PTR_TO_INT(db->pWalArg);
-    }
-    returnSingleInt(pParse, "wal_autocheckpoint", &walArg);
+    returnSingleInt(pParse, "wal_autocheckpoint", 
+       db->xWalCallback==sqlite3WalDefaultHook ? 
+           SQLITE_PTR_TO_INT(db->pWalArg) : 0);
   }
   break;
 #endif
@@ -2227,7 +2222,7 @@ void sqlite3Pragma(
     if( zRight ){
       sqlite3_busy_timeout(db, sqlite3Atoi(zRight));
     }
-    returnSingleInt(pParse, "timeout",  &db->busyTimeout);
+    returnSingleInt(pParse, "timeout",  db->busyTimeout);
     break;
   }
 
