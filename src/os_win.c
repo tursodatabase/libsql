@@ -3230,8 +3230,8 @@ static void *winPreCacheThread(void *pCtx){
                          &dupHandle, 0, FALSE, DUPLICATE_SAME_ACCESS) ){
     pFile->lastErrno = osGetLastError();
     OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR\n", dupHandle));
-    return winLogError(SQLITE_IOERR, pFile->lastErrno,
-                       "winPreCacheThread1", pFile->zPath);
+    return SQLITE_INT_TO_PTR(winLogError(SQLITE_IOERR, pFile->lastErrno,
+                                         "winPreCacheThread1", pFile->zPath));
   }
   dwSize = osSetFilePointer(dupHandle, 0, 0, FILE_END);
   if( (dwSize==INVALID_SET_FILE_POINTER
@@ -3239,8 +3239,8 @@ static void *winPreCacheThread(void *pCtx){
     pFile->lastErrno = lastErrno;
     osCloseHandle(dupHandle);
     OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_SEEK\n", dupHandle));
-    return winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
-                       "winPreCacheThread2", pFile->zPath);
+    return SQLITE_INT_TO_PTR(winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
+                                         "winPreCacheThread2", pFile->zPath));
   }
   dwRet = osSetFilePointer(dupHandle, 0, 0, FILE_BEGIN);
   if( (dwRet==INVALID_SET_FILE_POINTER
@@ -3248,8 +3248,8 @@ static void *winPreCacheThread(void *pCtx){
     pFile->lastErrno = lastErrno;
     osCloseHandle(dupHandle);
     OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_SEEK\n", dupHandle));
-    return winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
-                       "winPreCacheThread3", pFile->zPath);
+    return SQLITE_INT_TO_PTR(winLogError(SQLITE_IOERR_SEEK, pFile->lastErrno,
+                                         "winPreCacheThread3", pFile->zPath));
   }
   dwAmt = 4194304; /* TODO: Tuning. */
   if( dwSize<dwAmt ){
@@ -3259,7 +3259,7 @@ static void *winPreCacheThread(void *pCtx){
   if( pBuf==0 ){
     osCloseHandle(dupHandle);
     OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_NOMEM\n", dupHandle));
-    return SQLITE_IOERR_NOMEM;
+    return SQLITE_INT_TO_PTR(SQLITE_IOERR_NOMEM);
   }
   while( 1 ){
     if( !osReadFile(dupHandle, pBuf, dwAmt, &nRead, 0) ){
@@ -3267,15 +3267,16 @@ static void *winPreCacheThread(void *pCtx){
       sqlite3_free(pBuf);
       osCloseHandle(dupHandle);
       OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_READ\n", dupHandle));
-      return winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
-                         "winPreCacheThread4", pFile->zPath);
+      return SQLITE_INT_TO_PTR(winLogError(SQLITE_IOERR_READ, pFile->lastErrno,
+                                           "winPreCacheThread4", pFile->zPath));
     }
     if( nRead<dwAmt ){
       sqlite3_free(pBuf);
       osCloseHandle(dupHandle);
       OSTRACE(("PRE-CACHE file=%p, rc=SQLITE_IOERR_SHORT_READ\n", dupHandle));
-      return winLogError(SQLITE_IOERR_SHORT_READ, pFile->lastErrno,
-                         "winPreCacheThread5", pFile->zPath);
+      return SQLITE_INT_TO_PTR(winLogError(SQLITE_IOERR_SHORT_READ,
+                                           pFile->lastErrno,
+                                           "winPreCacheThread5", pFile->zPath));
     }
     dwSize -= dwAmt;
     if( dwSize==0 ){
@@ -3284,7 +3285,7 @@ static void *winPreCacheThread(void *pCtx){
   }
   sqlite3_free(pBuf);
   osCloseHandle(dupHandle);
-  return SQLITE_OK;
+  return SQLITE_INT_TO_PTR(SQLITE_OK);
 }
 #endif
 
