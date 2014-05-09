@@ -1,9 +1,9 @@
-C Merge\supdates\sfrom\strunk.
-D 2014-05-09T20:54:07.623
+C Further\sMSVC\smakefile\schanges\sto\ssupport\sWindows\sPhone\s8.1.
+D 2014-05-09T23:31:55.574
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc f4b4d99d61cfe4ec508600dccd1a0ab2dc8a8b9b
+F Makefile.msc 26164f8288a7380b05587534ca3974c3837e5bd0
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 69698ae90c415cb32d2c144725853483da65f0ff c3dce2e7390eec3a337be1b99f80ad5f721cc647
-R 5a8ec6fb329eaf82ce72337357145445
+P f4fea7bb8a4b118bdceff400a6c49c6291c0d58e
+R cc5d4172ed1063b929dacadc942922f5
 U mistachkin
-Z 30139e1f65fbd864d0f9d58c85a7550e
+Z e9a82f6e684a32dc44406c7db15e32b2
