@@ -6039,6 +6039,7 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_STATIC_PMEM      7  /* sqlite3PageMalloc() */
 #define SQLITE_MUTEX_STATIC_APP1      8  /* For use by application */
 #define SQLITE_MUTEX_STATIC_APP2      9  /* For use by application */
+#define SQLITE_MUTEX_STATIC_APP3     10  /* For use by application */
 
 /*
 ** CAPI3REF: Retrieve the mutex for a database connection

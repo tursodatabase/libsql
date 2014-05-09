@@ -1,5 +1,5 @@
-C Fix\sstatic\svariable\sdeclaration\sissue\son\sWindows.
-D 2014-05-08T22:01:08.441
+C Add\snew\sstatic\smutex\sSQLITE_MUTEX_STATIC_APP3.
+D 2014-05-09T11:15:57.314
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ad0921c4b2780d01868cf69b419a4f102308d125
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -197,9 +197,9 @@ F src/mem5.c 74670012946c4adc8a6ad84d03acc80959c3e529
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
 F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
-F src/mutex_noop.c 4222773e5f61e506f232aedc9ad9e16ca00c1399
-F src/mutex_unix.c 56e22c1bc6aabfa2f9736317a8f56acd5d0c5f7c
-F src/mutex_w32.c c4726d3bfe80996665a39d27598ebd056e2d6b89
+F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
+F src/mutex_unix.c 1b10d5413dfc794364a8adf3eb3a192926b43fa3
+F src/mutex_w32.c 6509b34042b0a8cdd8ea849f5987e187a969f225
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 4a46270a64e9193af4a0aaa3bc2c66dc07c29b3f
@@ -220,7 +220,7 @@ F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c a5ed3fdc82ebab5b9b095ea1971515a7f8a303d2
 F src/shell.c 6946aea9f21af551fa84bc6b2a8de55d93bf0004
-F src/sqlite.h.in ed6d0cc90da850340c3863c84351e6e164c0ef00
+F src/sqlite.h.in 3f3934dd2ff0adbd79d259fbbb2eee38a2c12367
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 851003126071d4a3bac86a0db75c48197fbd0ff0
@@ -1171,7 +1171,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P 7de6aee6a5cb5c7f89dced89f2ebf38f8be7a4fa
-R 117bf7d69b405485b3cb8ed74140d14c
-U mistachkin
-Z 6be3c46bf656f034e9d870a5f4b03d3e
+P a41d29691307067523c8637b486941c5f7c33775
+R dfeb990bf911fd0420714aaa7823f840
+U dan
+Z 6074041396d198afcfcf58f3847bacd2
