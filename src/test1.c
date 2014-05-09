@@ -14,6 +14,10 @@
 ** testing of the SQLite library.
 */
 #include "sqliteInt.h"
+#if SQLITE_OS_WIN
+#  include "os_win.h"
+#endif
+
 #include "vdbeInt.h"
 #include "tcl.h"
 #include <stdlib.h>
