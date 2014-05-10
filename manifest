@@ -1,5 +1,5 @@
-C Further\sMSVC\smakefile\schanges\sto\ssupport\sWindows\sPhone\s8.1.
-D 2014-05-09T23:31:55.574
+C Merge\supdates\sfrom\strunk.\s\sEmit\sthe\sAppliesTo\sand\sDependsOn\sSDK\smanifest\sattributes\swhen\sbuilding\sthe\sVSIX\sfor\sWindows\sPhone\s8.1.
+D 2014-05-10T17:33:11.251
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1142,7 +1142,7 @@ F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
 F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
-F tool/mkvsix.tcl 021504dacf6c9a6dda0c3eb9caa684d259feb297
+F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1169,8 +1169,8 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
-F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P f4fea7bb8a4b118bdceff400a6c49c6291c0d58e
-R cc5d4172ed1063b929dacadc942922f5
+F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
+P a9c81815e1b7a9c05da61f75edac45cb1a954135 0a4f59676bd0ab33b2c86c9a35a2ebbdbaf09ee7
+R 566b9ec973b9ed84721aad7b56534653
 U mistachkin
-Z e9a82f6e684a32dc44406c7db15e32b2
+Z d0f2cebdc1f1db62afc3fe0e1790de3f

@@ -190,13 +190,44 @@ proc getMinVsVersionXmlChunk { vsVersion } {
   }
 }
 
+proc getMaxPlatformVersionXmlChunk { packageFlavor vsVersion } {
+  #
+  # NOTE: Only Visual Studio 2013 supports this SDK manifest attribute.
+  #
+  if {![string equal $vsVersion 2013]} then {
+    return ""
+  }
+
+  switch -exact $packageFlavor {
+    WinRT {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.0"}]
+    }
+    WinRT81 {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.1"}]
+    }
+    WP80 {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.0"}]
+    }
+    WP81 {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.1"}]
+    }
+    default {
+      return ""
+    }
+  }
+}
+
 proc getExtraFileListXmlChunk { packageFlavor vsVersion } {
   #
-  # NOTE: Neither Windows Phone 8.0 nor Windows Phone 8.1 require any extra
-  #       attributes in their VSIX package SDK manifests.
+  # NOTE: Windows Phone 8.0 does not require any extra attributes in its VSIX
+  #       package SDK manifests; however, it appears that Windows Phone 8.1
+  #       does.
   #
-  if {[string equal $packageFlavor WP80] || \
-      [string equal $packageFlavor WP81]} then {
+  if {[string equal $packageFlavor WP80]} then {
     return ""
   }
 
@@ -323,7 +354,7 @@ if {[string length $vsVersion] == 0} then {
   fail "invalid Visual Studio version"
 }
 
-if {$vsVersion ne "2012" && $vsVersion ne "2013"} then {
+if {![string equal $vsVersion 2012] && ![string equal $vsVersion 2013]} then {
   fail [appendArgs \
       "unsupported Visual Studio version, must be one of: " \
       [list 2012 2013]]
@@ -353,6 +384,8 @@ if {[string equal $packageFlavor WinRT]} then {
   set targetPlatformIdentifier Windows
   set targetPlatformVersion v8.0
   set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
   set extraSdkPath ""
   set extraFileListAttributes \
       [getExtraFileListXmlChunk $packageFlavor $vsVersion]
@@ -367,6 +400,8 @@ if {[string equal $packageFlavor WinRT]} then {
   set targetPlatformIdentifier Windows
   set targetPlatformVersion v8.1
   set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
   set extraSdkPath ""
   set extraFileListAttributes \
       [getExtraFileListXmlChunk $packageFlavor $vsVersion]
@@ -376,6 +411,8 @@ if {[string equal $packageFlavor WinRT]} then {
   set targetPlatformIdentifier "Windows Phone"
   set targetPlatformVersion v8.0
   set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes \
       [getExtraFileListXmlChunk $packageFlavor $vsVersion]
@@ -390,6 +427,8 @@ if {[string equal $packageFlavor WinRT]} then {
   set targetPlatformIdentifier WindowsPhoneApp
   set targetPlatformVersion v8.1
   set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes \
       [getExtraFileListXmlChunk $packageFlavor $vsVersion]
@@ -399,6 +438,8 @@ if {[string equal $packageFlavor WinRT]} then {
   set targetPlatformIdentifier Windows
   set targetPlatformVersion v8.0
   set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
   set extraSdkPath ""
   set extraFileListAttributes \
       [getExtraFileListXmlChunk $packageFlavor $vsVersion]
