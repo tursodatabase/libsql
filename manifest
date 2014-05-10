@@ -1,5 +1,5 @@
-C When\scross-compiling\swith\sthe\sMSVC\smakefile,\smake\ssure\sthe\scorrect\slibrary\spath\sis\sused.\s\sAlso,\skeep\strack\sof\sthe\srequired\scompilation\soptions\sseparately.
-D 2014-05-09T20:51:17.136
+C When\susing\sVisual\sStudio\s2013,\sadd\sthe\sappropriate\sMaxPlatformVersion\sattribute\sto\sthe\sVSIX\sSDK\smanifest.
+D 2014-05-10T17:28:45.158
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1142,7 +1142,7 @@ F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
 F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
-F tool/mkvsix.tcl 924dcdecda86969686833301c08f84cca2600d94
+F tool/mkvsix.tcl 64805dc0677009f0ba6b6e7199b2f7613cac3ebe
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1169,8 +1169,8 @@ F tool/vdbe-compress.tcl 0cf56e9263a152b84da86e75a5c0cdcdb7a47891
 F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
-F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P 116bed5af664899a73b46dca528ac0c021fc50c3
-R 88c72e40fa185e1eb8f17237cccbb934
+F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
+P c3dce2e7390eec3a337be1b99f80ad5f721cc647
+R 7cb8e1b3df65a486b753c19d33da3975
 U mistachkin
-Z b5868dcc5cdf0f5ef12e0a431c431ca8
+Z f2874f77f50d8a6763121ff9dede6833
