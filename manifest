@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges\sinto\sthe\sthreads\sbranch.
-D 2014-05-09T15:00:32.924
+C In\sthe\ssorter,\sonly\suse\slarge\smemory\sallocations\sif\sscratch\smemory\shas\snot\nbeen\sconfigured.\s\sAdd\s#ifdefs\sto\sdisable\sunused\scode\swhen\s\nSQLITE_MAX_WORKER_THREADS\sis\szero.\s\sOther\ssorter\schanges\sin\ssupport\nof\stestability.
+D 2014-05-12T15:30:00.944
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de92112472618cb869d27249966bad1783e4a853
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -187,7 +187,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 2ba4f6eeb84cf8efd8bb632c1abe203dc86adcac
+F src/main.c 274a72f5de174a8eb20d01bbd83393347c092592
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -289,7 +289,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c b36070436d33372237541e9eaa6068e1a61bc402
+F src/vdbesort.c 0daa029978b50d9c1d103d179ac1e2b38d9daa20
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix a94fb9b1b1ef06efc2898975cdfcfa9643731f5e
-P ee0ab09c80a648e9202757fc04122952375e7c8c 116bed5af664899a73b46dca528ac0c021fc50c3
-R e8e0d3ce5fd31e02042e8e0c64134243
-U dan
-Z b9842070469fd517448a2bc084149835
+P 9ac8f1e7115bc50663235adedeb0d3e1234c5740
+R 6fb72f0b0bf6c011a8428254c9753d68
+U drh
+Z 8d87c7cf2c9f964aeaecc8906e4a1927

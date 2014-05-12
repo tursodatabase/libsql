@@ -449,7 +449,7 @@ static void vdbePmaReaderClear(PmaReader *pIter){
   sqlite3_free(pIter->aAlloc);
   sqlite3_free(pIter->aBuffer);
   if( pIter->aMap ) sqlite3OsUnfetch(pIter->pFile, 0, pIter->aMap);
-  if( pIter->pIncr ) vdbeIncrFree(pIter->pIncr);
+  vdbeIncrFree(pIter->pIncr);
   memset(pIter, 0, sizeof(PmaReader));
 }
 
@@ -828,7 +828,11 @@ int sqlite3VdbeSorterInit(
   int szKeyInfo;                  /* Size of pCsr->pKeyInfo in bytes */
   int sz;                         /* Size of pSorter in bytes */
   int rc = SQLITE_OK;
+#if SQLITE_MAX_WORKER_THREADS==0
+  const int nWorker = 0;
+#else
   int nWorker = (sqlite3GlobalConfig.bCoreMutex?sqlite3GlobalConfig.nWorker:0);
+#endif
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
   szKeyInfo = sizeof(KeyInfo) + (pCsr->pKeyInfo->nField-1)*sizeof(CollSeq*);
@@ -858,10 +862,13 @@ int sqlite3VdbeSorterInit(
       if( mxCache<SORTER_MIN_WORKING ) mxCache = SORTER_MIN_WORKING;
       pSorter->mxPmaSize = mxCache * pgsz;
 
-      /* If the application is using memsys3 or memsys5, use a separate 
-      ** allocation for each sort-key in memory. Otherwise, use a single big
-      ** allocation at pSorter->aMemory for all sort-keys.  */
-      if( sqlite3GlobalConfig.pHeap==0 ){
+      /* If the application has not configure scratch memory using
+      ** SQLITE_CONFIG_SCRATCH then we assume it is OK to do large memory
+      ** allocations.  If scratch memory has been configured, then assume
+      ** large memory allocations should be avoided to prevent heap
+      ** fragmentation.
+      */
+      if( sqlite3GlobalConfig.pScratch==0 ){
         assert( pSorter->iMemory==0 );
         pSorter->nMemory = pgsz;
         pSorter->list.aMemory = (u8*)sqlite3Malloc(pgsz);
@@ -1921,7 +1928,15 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
     ** only requires a region of pTask->file2. */
     if( rc==SQLITE_OK ){
       int mxSz = pIncr->mxSz;
-      if( pIncr->bUseThread==0 ){
+#if SQLITE_MAX_WORKER_THREADS>0
+      if( pIncr->bUseThread ){
+        rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[0].pFd);
+        if( rc==SQLITE_OK ){
+          rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[1].pFd);
+        }
+      }else
+#endif
+      /*if( !pIncr->bUseThread )*/{
         if( pTask->file2.pFd==0 ){
           assert( pTask->file2.iEof>0 );
           rc = vdbeSorterOpenTempFile(db, pTask->file2.iEof, &pTask->file2.pFd);
@@ -1932,14 +1947,10 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
           pIncr->iStartOff = pTask->file2.iEof;
           pTask->file2.iEof += mxSz;
         }
-      }else{
-        rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[0].pFd);
-        if( rc==SQLITE_OK ){
-          rc = vdbeSorterOpenTempFile(db, mxSz, &pIncr->aFile[1].pFd);
-        }
       }
     }
 
+#if SQLITE_MAX_WORKER_THREADS>0
     if( rc==SQLITE_OK && pIncr->bUseThread ){
       /* Use the current thread to populate aFile[1], even though this
       ** iterator is multi-threaded. The reason being that this function
@@ -1947,6 +1958,7 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
       assert( eMode==INCRINIT_ROOT || eMode==INCRINIT_TASK );
       rc = vdbeIncrPopulate(pIncr);
     }
+#endif
 
     if( rc==SQLITE_OK && eMode!=INCRINIT_TASK ){
       rc = vdbePmaReaderNext(pIter);
@@ -2111,6 +2123,7 @@ static int vdbeSorterMergeTreeBuild(VdbeSorter *pSorter, MergeEngine **ppOut){
   int rc = SQLITE_OK;
   int iTask;
 
+#if SQLITE_MAX_WORKER_THREADS>0
   /* If the sorter uses more than one task, then create the top-level 
   ** MergeEngine here. This MergeEngine will read data from exactly 
   ** one PmaReader per sub-task.  */
@@ -2119,6 +2132,7 @@ static int vdbeSorterMergeTreeBuild(VdbeSorter *pSorter, MergeEngine **ppOut){
     pMain = vdbeMergeEngineNew(pSorter->nTask);
     if( pMain==0 ) rc = SQLITE_NOMEM;
   }
+#endif
 
   for(iTask=0; iTask<pSorter->nTask && rc==SQLITE_OK; iTask++){
     SortSubtask *pTask = &pSorter->aTask[iTask];
@@ -2301,10 +2315,13 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
     assert( pSorter->pReader==0 || pSorter->pMerger==0 );
     assert( pSorter->bUseThreads==0 || pSorter->pReader );
     assert( pSorter->bUseThreads==1 || pSorter->pMerger );
+#if SQLITE_MAX_WORKER_THREADS>0
     if( pSorter->bUseThreads ){
       rc = vdbePmaReaderNext(pSorter->pReader);
       *pbEof = (pSorter->pReader->pFile==0);
-    }else{
+    }else
+#endif
+    /*if( !pSorter->bUseThreads )*/ {
       rc = vdbeSorterNext(&pSorter->aTask[0], pSorter->pMerger, pbEof);
     }
   }else{
@@ -2328,9 +2345,15 @@ static void *vdbeSorterRowkey(
 ){
   void *pKey;
   if( pSorter->bUsePMA ){
-    PmaReader *pReader = (pSorter->bUseThreads ?
-        pSorter->pReader : &pSorter->pMerger->aIter[pSorter->pMerger->aTree[1]]
-    );
+    PmaReader *pReader;
+#if SQLITE_MAX_WORKER_THREADS>0
+    if( pSorter->bUseThreads ){
+      pReader = pSorter->pReader;
+    }else
+#endif
+    /*if( !pSorter->bUseThreads )*/{
+      pReader = &pSorter->pMerger->aIter[pSorter->pMerger->aTree[1]];
+    }
     *pnKey = pReader->nKey;
     pKey = pReader->aKey;
   }else{
