@@ -1,9 +1,9 @@
-C Add\sVSIX\spackaging\ssupport\sfor\sWindows\sPhone\s8.1\susing\sVisual\sStudio\s2013\sUpdate\s2.
-D 2014-05-12T21:12:04.686
+C Improve\sa\scomment\sin\sthe\sMSVC\smakefile.\s\sNo\schanges\sto\scode.
+D 2014-05-12T22:36:50.007
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 26164f8288a7380b05587534ca3974c3837e5bd0
+F Makefile.msc 52911c6bfeaf9b40f47ef4615ab66d98ab0f2b3d
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 93ffbcc0b1d207950851dbb16a8c101afb949d5f f6237a5f190bd5693ceed0ca1f048c3ec2a4da67
-R c51ed0a7c3ef74dbf1467c7d22b0e47a
+P 013738f3d531078fb47f9992c18a0d630e771a32
+R 50044157f65da46177a12dafd4a6afe2
 U mistachkin
-Z 837dec045ed2c03443718363cb8f5388
+Z 53f9d3afbf5bc14f8e3dfdbc370843ae

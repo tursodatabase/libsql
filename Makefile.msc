@@ -16,7 +16,8 @@ TOP = .
 USE_AMALGAMATION = 1
 !ENDIF
 
-# Set this non-0 to use the libraries necessary for Windows Phone 8.1.
+# Set this non-0 to use the library paths and other options necessary for
+# Windows Phone 8.1.
 #
 !IFNDEF USE_WP81_OPTS
 USE_WP81_OPTS = 0
