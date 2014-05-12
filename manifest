@@ -1,5 +1,5 @@
-C When\susing\sVisual\sStudio\s2013,\sadd\sthe\sappropriate\sMaxPlatformVersion\sattribute\sto\sthe\sVSIX\sSDK\smanifest.
-D 2014-05-10T17:28:45.158
+C In\smutex_w32.c,\smake\sinclusion\sof\sthe\sWindows\sheader\sfile\sdependent\son\sSQLITE_OS_WIN,\snot\sSQLITE_MUTEX_W32.
+D 2014-05-12T15:37:03.806
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -199,7 +199,7 @@ F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c ab08c0fc54b71979370ca7c8f42fc64a9f211ebb
+F src/mutex_w32.c 9bcab6e699fdb20eae784237c36b299830fb3316
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c3dce2e7390eec3a337be1b99f80ad5f721cc647
-R 7cb8e1b3df65a486b753c19d33da3975
+P 0a4f59676bd0ab33b2c86c9a35a2ebbdbaf09ee7
+R 4aed61add01807e8cd6ee17e1b6f3cd9
 U mistachkin
-Z f2874f77f50d8a6763121ff9dede6833
+Z 68de491dda45b3ab2f8417b0d5d6b640
