@@ -1,9 +1,9 @@
-C In\smutex_w32.c,\smake\sinclusion\sof\sthe\sWindows\sheader\sfile\sdependent\son\sSQLITE_OS_WIN,\snot\sSQLITE_MUTEX_W32.
-D 2014-05-12T15:37:03.806
+C Add\sVSIX\spackaging\ssupport\sfor\sWindows\sPhone\s8.1\susing\sVisual\sStudio\s2013\sUpdate\s2.
+D 2014-05-12T21:12:04.686
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc f4b4d99d61cfe4ec508600dccd1a0ab2dc8a8b9b
+F Makefile.msc 26164f8288a7380b05587534ca3974c3837e5bd0
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -1142,7 +1142,7 @@ F tool/mksqlite3c-noext.tcl 1712d3d71256ca1f297046619c89e77a4d7c8f6d
 F tool/mksqlite3c.tcl ba274df71f5e6534b0a913c7c48eabfcbd0934b6
 F tool/mksqlite3h.tcl ba24038056f51fde07c0079c41885ab85e2cff12
 F tool/mksqlite3internalh.tcl b6514145a7d5321b47e64e19b8116cc44f973eb1
-F tool/mkvsix.tcl 64805dc0677009f0ba6b6e7199b2f7613cac3ebe
+F tool/mkvsix.tcl 52a4c613707ac34ae9c226e5ccc69cb948556105
 F tool/offsets.c fe4262fdfa378e8f5499a42136d17bf3b98f6091
 F tool/omittest.tcl 34d7ac01fe4fd18e3637f64abe12c40eca0f6b97
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -1170,7 +1170,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a4f59676bd0ab33b2c86c9a35a2ebbdbaf09ee7
-R 4aed61add01807e8cd6ee17e1b6f3cd9
+P 93ffbcc0b1d207950851dbb16a8c101afb949d5f f6237a5f190bd5693ceed0ca1f048c3ec2a4da67
+R c51ed0a7c3ef74dbf1467c7d22b0e47a
 U mistachkin
-Z 68de491dda45b3ab2f8417b0d5d6b640
+Z 837dec045ed2c03443718363cb8f5388
