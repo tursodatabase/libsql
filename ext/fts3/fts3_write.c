@@ -193,6 +193,7 @@ struct SegmentWriter {
   int nSize;                      /* Size of allocation at aData */
   int nData;                      /* Bytes of data in aData */
   char *aData;                    /* Pointer to block from malloc() */
+  i64 nLeafData;                  /* Number of bytes of leaf data written */
 };
 
 /*
@@ -267,6 +268,10 @@ struct SegmentNode {
 #define SQL_SEGMENT_IS_APPENDABLE     34
 #define SQL_SELECT_INDEXES            35
 #define SQL_SELECT_MXLEVEL            36
+
+#define SQL_SELECT_LEVEL_RANGE2       37
+#define SQL_UPDATE_LEVEL_IDX          38
+#define SQL_UPDATE_LEVEL              39
 
 /*
 ** This function is used to obtain an SQLite prepared statement handle
@@ -369,7 +374,17 @@ static int fts3SqlStmt(
 
 /* SQL_SELECT_MXLEVEL
 **   Return the largest relative level in the FTS index or indexes.  */
-/* 36 */  "SELECT max( level %% 1024 ) FROM %Q.'%q_segdir'"
+/* 36 */  "SELECT max( level %% 1024 ) FROM %Q.'%q_segdir'",
+
+          /* Return segments in order from oldest to newest.*/ 
+/* 37 */  "SELECT level, idx, end_block "
+            "FROM %Q.'%q_segdir' WHERE level BETWEEN ? AND ?"
+            "ORDER BY level DESC, idx ASC",
+
+          /* Update statements used while promoting segments */
+/* 38 */  "UPDATE %Q.'%q_segdir' SET level=-1,idx=? WHERE level=? AND idx=?",
+/* 39 */  "UPDATE %Q.'%q_segdir' SET level=? WHERE level=-1"
+
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -1910,6 +1925,7 @@ static int fts3WriteSegdir(
   sqlite3_int64 iStartBlock,      /* Value for "start_block" field */
   sqlite3_int64 iLeafEndBlock,    /* Value for "leaves_end_block" field */
   sqlite3_int64 iEndBlock,        /* Value for "end_block" field */
+  sqlite3_int64 nLeafData,        /* Bytes of leaf data in segment */
   char *zRoot,                    /* Blob value for "root" field */
   int nRoot                       /* Number of bytes in buffer zRoot */
 ){
@@ -1920,7 +1936,13 @@ static int fts3WriteSegdir(
     sqlite3_bind_int(pStmt, 2, iIdx);
     sqlite3_bind_int64(pStmt, 3, iStartBlock);
     sqlite3_bind_int64(pStmt, 4, iLeafEndBlock);
-    sqlite3_bind_int64(pStmt, 5, iEndBlock);
+    if( nLeafData==0 ){
+      sqlite3_bind_int64(pStmt, 5, iEndBlock);
+    }else{
+      char *zEnd = sqlite3_mprintf("%lld %lld", iEndBlock, nLeafData);
+      if( !zEnd ) return SQLITE_NOMEM;
+      sqlite3_bind_text(pStmt, 5, zEnd, -1, sqlite3_free);
+    }
     sqlite3_bind_blob(pStmt, 6, zRoot, nRoot, SQLITE_STATIC);
     sqlite3_step(pStmt);
     rc = sqlite3_reset(pStmt);
@@ -2246,6 +2268,9 @@ static int fts3SegWriterAdd(
       nDoclist;                             /* Doclist data */
   }
 
+  /* Increase the total number of bytes written to account for the new entry. */
+  pWriter->nLeafData += nReq;
+
   /* If the buffer currently allocated is too small for this entry, realloc
   ** the buffer to make it large enough.
   */
@@ -2317,13 +2342,13 @@ static int fts3SegWriterFlush(
           pWriter->iFirst, pWriter->iFree, &iLast, &zRoot, &nRoot);
     }
     if( rc==SQLITE_OK ){
-      rc = fts3WriteSegdir(
-          p, iLevel, iIdx, pWriter->iFirst, iLastLeaf, iLast, zRoot, nRoot);
+      rc = fts3WriteSegdir(p, iLevel, iIdx, 
+          pWriter->iFirst, iLastLeaf, iLast, pWriter->nLeafData, zRoot, nRoot);
     }
   }else{
     /* The entire tree fits on the root node. Write it to the segdir table. */
-    rc = fts3WriteSegdir(
-        p, iLevel, iIdx, 0, 0, 0, pWriter->aData, pWriter->nData);
+    rc = fts3WriteSegdir(p, iLevel, iIdx, 
+        0, 0, 0, pWriter->nLeafData, pWriter->aData, pWriter->nData);
   }
   p->nLeafAdd++;
   return rc;
@@ -2943,6 +2968,106 @@ void sqlite3Fts3SegReaderFinish(
 }
 
 /*
+** Decode the "end_block" field, selected by column iCol of the SELECT 
+** statement passed as the first argument. 
+*/
+static void fts3ReadEndBlockField(
+  sqlite3_stmt *pStmt, 
+  int iCol, 
+  i64 *piEndBlock, 
+  i64 *pnByte
+){
+  const unsigned char *zText = sqlite3_column_text(pStmt, iCol);
+  if( zText ){
+    int i;
+    i64 iVal = 0;
+    for(i=0; zText[i]>='0' && zText[i]<='9'; i++){
+      iVal = iVal*10 + (zText[i] - '0');
+    }
+    *piEndBlock = iVal;
+    while( zText[i]==' ' ) i++;
+    iVal = 0;
+    for(/* no-op */; zText[i]>='0' && zText[i]<='9'; i++){
+      iVal = iVal*10 + (zText[i] - '0');
+    }
+    *pnByte = iVal;
+  }
+}
+
+
+/*
+** A segment of size nByte bytes has just been written to absolute level
+** iAbsLevel. Promote any segments that should be promoted as a result.
+*/
+static int fts3PromoteSegments(
+  Fts3Table *p,                   /* FTS table handle */
+  int iAbsLevel,                  /* Absolute level just updated */
+  sqlite3_int64 nByte             /* Size of new segment at iAbsLevel */
+){
+  int rc = SQLITE_OK;
+  sqlite3_stmt *pRange;
+
+  rc = fts3SqlStmt(p, SQL_SELECT_LEVEL_RANGE2, &pRange, 0);
+
+  if( rc==SQLITE_OK ){
+    int bOk = 1;
+    int iLast = (iAbsLevel/FTS3_SEGDIR_MAXLEVEL + 1) * FTS3_SEGDIR_MAXLEVEL - 1;
+
+    sqlite3_bind_int(pRange, 1, iAbsLevel+1);
+    sqlite3_bind_int(pRange, 2, iLast);
+    while( SQLITE_ROW==sqlite3_step(pRange) ){
+      i64 nSize, dummy;
+      fts3ReadEndBlockField(pRange, 2, &dummy, &nSize);
+      if( nSize>nByte ){
+        bOk = 0;
+        break;
+      }
+    }
+    rc = sqlite3_reset(pRange);
+
+    if( bOk ){
+      int iIdx = 0;
+      sqlite3_stmt *pUpdate1;
+      sqlite3_stmt *pUpdate2;
+
+      if( rc==SQLITE_OK ){
+        rc = fts3SqlStmt(p, SQL_UPDATE_LEVEL_IDX, &pUpdate1, 0);
+      }
+      if( rc==SQLITE_OK ){
+        rc = fts3SqlStmt(p, SQL_UPDATE_LEVEL, &pUpdate2, 0);
+      }
+
+      if( rc==SQLITE_OK ){
+        sqlite3_bind_int(pRange, 1, iAbsLevel);
+        while( SQLITE_ROW==sqlite3_step(pRange) ){
+          sqlite3_bind_int(pUpdate1, 1, iIdx++);
+          sqlite3_bind_int(pUpdate1, 2, sqlite3_column_int(pRange, 0));
+          sqlite3_bind_int(pUpdate1, 3, sqlite3_column_int(pRange, 1));
+          sqlite3_step(pUpdate1);
+          rc = sqlite3_reset(pUpdate1);
+          if( rc!=SQLITE_OK ){
+            sqlite3_reset(pRange);
+            break;
+          }
+        }
+      }
+      if( rc==SQLITE_OK ){
+        rc = sqlite3_reset(pRange);
+      }
+
+      if( rc==SQLITE_OK ){
+        sqlite3_bind_int(pUpdate2, 1, iAbsLevel);
+        sqlite3_step(pUpdate2);
+        rc = sqlite3_reset(pUpdate2);
+      }
+    }
+  }
+
+
+  return rc;
+}
+
+/*
 ** Merge all level iLevel segments in the database into a single 
 ** iLevel+1 segment. Or, if iLevel<0, merge all segments into a
 ** single segment with a level equal to the numerically largest level 
@@ -3026,6 +3151,9 @@ static int fts3SegmentMerge(
     if( rc!=SQLITE_OK ) goto finished;
   }
   rc = fts3SegWriterFlush(p, pWriter, iNewLevel, iIdx);
+  if( rc==SQLITE_OK ){
+    rc = fts3PromoteSegments(p, iNewLevel, pWriter->nLeafData);
+  }
 
  finished:
   fts3SegWriterFree(pWriter);
@@ -3035,7 +3163,7 @@ static int fts3SegmentMerge(
 
 
 /* 
-** Flush the contents of pendingTerms to level 0 segments.
+** Flush the contents of pendingTerms to level 0 segments. 
 */
 int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
   int rc = SQLITE_OK;
@@ -3426,6 +3554,7 @@ struct IncrmergeWriter {
   int iIdx;                       /* Index of *output* segment in iAbsLevel+1 */
   sqlite3_int64 iStart;           /* Block number of first allocated block */
   sqlite3_int64 iEnd;             /* Block number of last allocated block */
+  sqlite3_int64 nLeafData;        /* Bytes of leaf page data so far */
   NodeWriter aNodeWriter[FTS_MAX_APPENDABLE_HEIGHT];
 };
 
@@ -3764,8 +3893,8 @@ static int fts3IncrmergeAppend(
     nSpace += sqlite3Fts3VarintLen(nDoclist) + nDoclist;
   }
 
+  pWriter->nLeafData += nSpace;
   blobGrowBuffer(&pLeaf->block, pLeaf->block.n + nSpace, &rc);
-
   if( rc==SQLITE_OK ){
     if( pLeaf->block.n==0 ){
       pLeaf->block.n = 1;
@@ -3864,6 +3993,7 @@ static void fts3IncrmergeRelease(
         pWriter->iStart,                    /* start_block */
         pWriter->aNodeWriter[0].iBlock,     /* leaves_end_block */
         pWriter->iEnd,                      /* end_block */
+        pWriter->nLeafData,                 /* end_block */
         pRoot->block.a, pRoot->block.n      /* root */
     );
   }
@@ -3965,7 +4095,7 @@ static int fts3IncrmergeLoad(
     if( sqlite3_step(pSelect)==SQLITE_ROW ){
       iStart = sqlite3_column_int64(pSelect, 1);
       iLeafEnd = sqlite3_column_int64(pSelect, 2);
-      iEnd = sqlite3_column_int64(pSelect, 3);
+      fts3ReadEndBlockField(pSelect, 3, &iEnd, &pWriter->nLeafData);
       nRoot = sqlite3_column_bytes(pSelect, 4);
       aRoot = sqlite3_column_blob(pSelect, 4);
     }else{
@@ -4566,11 +4696,11 @@ static int fts3IncrmergeHintPop(Blob *pHint, i64 *piAbsLevel, int *pnInput){
 /*
 ** Attempt an incremental merge that writes nMerge leaf blocks.
 **
-** Incremental merges happen nMin segments at a time. The two
-** segments to be merged are the nMin oldest segments (the ones with
-** the smallest indexes) in the highest level that contains at least
-** nMin segments. Multiple merges might occur in an attempt to write the 
-** quota of nMerge leaf blocks.
+** Incremental merges happen nMin segments at a time. The segments 
+** to be merged are the nMin oldest segments (the ones with the smallest 
+** values for the _segdir.idx field) in the highest level that contains 
+** at least nMin segments. Multiple merges might occur in an attempt to 
+** write the quota of nMerge leaf blocks.
 */
 int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
   int rc;                         /* Return code */
@@ -4687,6 +4817,9 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
       }
 
       fts3IncrmergeRelease(p, pWriter, &rc);
+      if( nSeg==0 ){
+        fts3PromoteSegments(p, iAbsLevel+1, pWriter->nLeafData);
+      }
     }
 
     sqlite3Fts3SegReaderFinish(pCsr);

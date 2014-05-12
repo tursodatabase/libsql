@@ -216,7 +216,7 @@ struct Fts3Table {
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
   */
-  sqlite3_stmt *aStmt[37];
+  sqlite3_stmt *aStmt[40];
 
   char *zReadExprlist;
   char *zWriteExprlist;
