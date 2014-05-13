@@ -1,5 +1,5 @@
-C Experimental\scode\sto\sprevent\sFTS\sindexes\sfrom\sgrowing\sindefinitely\sas\sthe\stable\sis\supdated.
-D 2014-05-12T20:04:48.571
+C Fix\sa\sproblem\spreventing\sdelete\smarkers\sfrom\sever\sbeing\sremoved\sfrom\sthe\sFTS\sindex.
+D 2014-05-13T20:11:37.423
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 5fd2aa9d1812387c6254304e20d9ac2b29e16700
+F ext/fts3/fts3_write.c 283b24477729129a210d91b48f7c53181583a848
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -539,7 +539,7 @@ F test/fts3conf.test ee8500c86dd58ec075e8831a1e216a79989436de
 F test/fts3corrupt.test 2710b77983cc7789295ddbffea52c1d3b7506dbb
 F test/fts3corrupt2.test 6d96efae2f8a6af3eeaf283aba437e6d0e5447ba
 F test/fts3cov.test e0fb00d8b715ddae4a94c305992dfc3ef70353d7
-F test/fts3d.test 597b0b76e41f0d672e2731c4d7b631d628efd13f
+F test/fts3d.test 95c17d1b67b33a5eac0bf5a0d11116a0c0ac7a3a
 F test/fts3defer.test 0be4440b73a2e651fc1e472066686d6ada4b9963
 F test/fts3defer2.test e880e3b65bdf999f4746cdaefa65f14a98b9b724
 F test/fts3defer3.test dd53fc13223c6d8264a98244e9b19abd35ed71cd
@@ -570,7 +570,7 @@ F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
-F test/fts4growth.test f7eac9fadfe67765c4a0d6202c85f7272766fb9e
+F test/fts4growth.test 3b1f8c98b603b38dc9fe4a266f4f5ddb0c73f092
 F test/fts4incr.test 361960ed3550e781f3f313e17e2182ef9cefc0e9
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
@@ -1171,10 +1171,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a4f59676bd0ab33b2c86c9a35a2ebbdbaf09ee7
-R de45a14af3a90f6b390273a9a2d8cfa9
-T *branch * fts4-experimental
-T *sym-fts4-experimental *
-T -sym-trunk *
+P b3b505a4dd0c679437a4272109f1188175088cd1
+R d1a058fc899c4ecbd09fd7fceab935e7
 U dan
-Z a03d85f9bfa278d813164b1e97a88ff7
+Z f678f48fb654227badac5ce98e23d62c
