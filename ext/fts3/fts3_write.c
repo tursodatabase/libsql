@@ -2971,16 +2971,23 @@ void sqlite3Fts3SegReaderFinish(
 /*
 ** Decode the "end_block" field, selected by column iCol of the SELECT 
 ** statement passed as the first argument. 
+**
+** The "end_block" field may contain either an integer, or a text field
+** containing the text representation of two non-negative integers separated 
+** by one or more space (0x20) characters. In the first case, set *piEndBlock 
+** to the integer value and *pnByte to zero before returning. In the second, 
+** set *piEndBlock to the first value and *pnByte to the second.
 */
 static void fts3ReadEndBlockField(
   sqlite3_stmt *pStmt, 
   int iCol, 
-  i64 *piEndBlock, 
+  i64 *piEndBlock,
   i64 *pnByte
 ){
   const unsigned char *zText = sqlite3_column_text(pStmt, iCol);
   if( zText ){
     int i;
+    int iMul = 1;
     i64 iVal = 0;
     for(i=0; zText[i]>='0' && zText[i]<='9'; i++){
       iVal = iVal*10 + (zText[i] - '0');
@@ -2988,10 +2995,14 @@ static void fts3ReadEndBlockField(
     *piEndBlock = iVal;
     while( zText[i]==' ' ) i++;
     iVal = 0;
+    if( zText[i]=='-' ){
+      i++;
+      iMul = -1;
+    }
     for(/* no-op */; zText[i]>='0' && zText[i]<='9'; i++){
       iVal = iVal*10 + (zText[i] - '0');
     }
-    *pnByte = iVal;
+    *pnByte = (iVal * (i64)iMul);
   }
 }
 
@@ -3011,18 +3022,30 @@ static int fts3PromoteSegments(
   rc = fts3SqlStmt(p, SQL_SELECT_LEVEL_RANGE2, &pRange, 0);
 
   if( rc==SQLITE_OK ){
-    int bOk = 1;
+    int bOk = 0;
     int iLast = (iAbsLevel/FTS3_SEGDIR_MAXLEVEL + 1) * FTS3_SEGDIR_MAXLEVEL - 1;
+    i64 nLimit = (nByte*3)/2;
 
+    /* Loop through all entries in the %_segdir table corresponding to 
+    ** segments in this index on levels greater than iAbsLevel. If there is
+    ** at least one such segment, and it is possible to determine that all 
+    ** such segments are smaller than nLimit bytes in size, they will be 
+    ** promoted to level iAbsLevel.  */
     sqlite3_bind_int(pRange, 1, iAbsLevel+1);
     sqlite3_bind_int(pRange, 2, iLast);
     while( SQLITE_ROW==sqlite3_step(pRange) ){
       i64 nSize, dummy;
       fts3ReadEndBlockField(pRange, 2, &dummy, &nSize);
-      if( nSize>nByte ){
+      if( nSize<=0 || nSize>nLimit ){
+        /* If nSize==0, then the %_segdir.end_block field does not not 
+        ** contain a size value. This happens if it was written by an
+        ** old version of FTS. In this case it is not possible to determine
+        ** the size of the segment, and so segment promotion does not
+        ** take place.  */
         bOk = 0;
         break;
       }
+      bOk = 1;
     }
     rc = sqlite3_reset(pRange);
 
@@ -3039,6 +3062,16 @@ static int fts3PromoteSegments(
       }
 
       if( rc==SQLITE_OK ){
+
+        /* Loop through all %_segdir entries for segments in this index with
+        ** levels equal to or greater than iAbsLevel. As each entry is visited,
+        ** updated it to set (level = -1) and (idx = N), where N is 0 for the
+        ** oldest segment in the range, 1 for the next oldest, and so on.
+        **
+        ** In other words, move all segments being promoted to level -1,
+        ** setting the "idx" fields as appropriate to keep them in the same
+        ** order. The contents of level -1 (which is never used, except
+        ** transiently here), will be moved back to level iAbsLevel below.  */
         sqlite3_bind_int(pRange, 1, iAbsLevel);
         while( SQLITE_ROW==sqlite3_step(pRange) ){
           sqlite3_bind_int(pUpdate1, 1, iIdx++);
@@ -3056,6 +3089,7 @@ static int fts3PromoteSegments(
         rc = sqlite3_reset(pRange);
       }
 
+      /* Move level -1 to level iAbsLevel */
       if( rc==SQLITE_OK ){
         sqlite3_bind_int(pUpdate2, 1, iAbsLevel);
         sqlite3_step(pUpdate2);
@@ -3188,14 +3222,15 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
   ** estimate the number of leaf blocks of content to be written
   */
   if( rc==SQLITE_OK && p->bHasStat
-   && p->bAutoincrmerge==0xff && p->nLeafAdd>0
+   && p->nAutoincrmerge==0xff && p->nLeafAdd>0
   ){
     sqlite3_stmt *pStmt = 0;
     rc = fts3SqlStmt(p, SQL_SELECT_STAT, &pStmt, 0);
     if( rc==SQLITE_OK ){
       sqlite3_bind_int(pStmt, 1, FTS_STAT_AUTOINCRMERGE);
       rc = sqlite3_step(pStmt);
-      p->bAutoincrmerge = (rc==SQLITE_ROW && sqlite3_column_int(pStmt, 0));
+      p->nAutoincrmerge = (rc==SQLITE_ROW && sqlite3_column_int(pStmt, 0));
+      if( p->nAutoincrmerge==1 ) p->nAutoincrmerge = 8;
       rc = sqlite3_reset(pStmt);
     }
   }
@@ -4105,6 +4140,9 @@ static int fts3IncrmergeLoad(
       iStart = sqlite3_column_int64(pSelect, 1);
       iLeafEnd = sqlite3_column_int64(pSelect, 2);
       fts3ReadEndBlockField(pSelect, 3, &iEnd, &pWriter->nLeafData);
+      if( pWriter->nLeafData<0 ){
+        pWriter->nLeafData = pWriter->nLeafData * -1;
+      }
       nRoot = sqlite3_column_bytes(pSelect, 4);
       aRoot = sqlite3_column_blob(pSelect, 4);
     }else{
@@ -4828,6 +4866,9 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
         }
       }
 
+      if( nSeg!=0 ){
+        pWriter->nLeafData = pWriter->nLeafData * -1;
+      }
       fts3IncrmergeRelease(p, pWriter, &rc);
       if( nSeg==0 ){
         fts3PromoteSegments(p, iAbsLevel+1, pWriter->nLeafData);
@@ -4918,7 +4959,10 @@ static int fts3DoAutoincrmerge(
 ){
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt = 0;
-  p->bAutoincrmerge = fts3Getint(&zParam)!=0;
+  p->nAutoincrmerge = fts3Getint(&zParam);
+  if( p->nAutoincrmerge==1 || p->nAutoincrmerge>FTS3_MERGE_COUNT ){
+    p->nAutoincrmerge = 8;
+  }
   if( !p->bHasStat ){
     assert( p->bFts4==0 );
     sqlite3Fts3CreateStatTable(&rc, p);
@@ -4927,7 +4971,7 @@ static int fts3DoAutoincrmerge(
   rc = fts3SqlStmt(p, SQL_REPLACE_STAT, &pStmt, 0);
   if( rc ) return rc;
   sqlite3_bind_int(pStmt, 1, FTS_STAT_AUTOINCRMERGE);
-  sqlite3_bind_int(pStmt, 2, p->bAutoincrmerge);
+  sqlite3_bind_int(pStmt, 2, p->nAutoincrmerge);
   sqlite3_step(pStmt);
   rc = sqlite3_reset(pStmt);
   return rc;
