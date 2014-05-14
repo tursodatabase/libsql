@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sto\sdo\swith\sloading\sthe\svalue\sof\sthe\sFTS\sautomerge\ssetting\sfrom\sthe\sdatabase.
-D 2014-05-14T18:45:27.234
+C Do\snot\ssearch\sfor\spromotable\ssegments\sfollowing\san\sFTS\s'optimize'\soperation\sor\screation\sof\sa\snew\ssegment\son\sthe\soldest\sexisting\slevel.
+D 2014-05-14T19:49:17.392
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 6cb17b13b08fa2f36c8079726207736246a7176c
+F ext/fts3/fts3_write.c e58c8df149436dcc85e2face5516b75a01c7a583
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -1008,7 +1008,7 @@ F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/tpch01.test 8f4ac52f62f3e9f6bce0889105aecdf0275e331b
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
-F test/trace2.test e7a988fdd982cdec62f1f1f34b0360e6476d01a0
+F test/trace2.test 93b47ca6996c66b47f57224cfb146f34e07df382
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test 62bd045bfc7a1c14c5ba83ba64d21ade31583f76
 F test/trans3.test 373ac5183cc56be69f48ae44090e7f672939f732
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 21491a9bc686e63bec32f1a67103622f1160a2f9
-R 67348fc4be2e8c129b7e6e89a490a40b
+P 7268119f74602929b372b88eca7b3c3b4964f7d5
+R 38e0e000cd94731b650020d6321d9a1b
 U dan
-Z e904ec03ef68eb7c18f9e542f40d2d02
+Z 73a15f3066e0e6dc1f73e5ba383c60f7

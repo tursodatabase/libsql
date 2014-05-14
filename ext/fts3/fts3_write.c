@@ -378,7 +378,7 @@ static int fts3SqlStmt(
 
           /* Return segments in order from oldest to newest.*/ 
 /* 37 */  "SELECT level, idx, end_block "
-            "FROM %Q.'%q_segdir' WHERE level BETWEEN ? AND ?"
+            "FROM %Q.'%q_segdir' WHERE level BETWEEN ? AND ? "
             "ORDER BY level DESC, idx ASC",
 
           /* Update statements used while promoting segments */
@@ -3194,7 +3194,9 @@ static int fts3SegmentMerge(
   if( pWriter ){
     rc = fts3SegWriterFlush(p, pWriter, iNewLevel, iIdx);
     if( rc==SQLITE_OK ){
-      rc = fts3PromoteSegments(p, iNewLevel, pWriter->nLeafData);
+      if( iLevel==FTS3_SEGCURSOR_PENDING || iNewLevel<iMaxLevel ){
+        rc = fts3PromoteSegments(p, iNewLevel, pWriter->nLeafData);
+      }
     }
   }
 
@@ -3232,6 +3234,8 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
       if( rc==SQLITE_ROW ){
         p->nAutoincrmerge = sqlite3_column_int(pStmt, 0);
         if( p->nAutoincrmerge==1 ) p->nAutoincrmerge = 8;
+      }else if( rc==SQLITE_DONE ){
+        p->nAutoincrmerge = 0;
       }
       rc = sqlite3_reset(pStmt);
     }
