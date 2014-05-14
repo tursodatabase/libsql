@@ -1,5 +1,5 @@
-C Fix\svarious\sproblems\sto\sdo\swith\ssegment\spromotion.\sAdd\stest\sfile\sfts4growth2.test,\scontaining\stests\sto\scheck\sthat\sthe\sFTS\sindex\sdoes\snot\sgrow\sindefinitely\sas\sthe\stable\sis\supdated.
-D 2014-05-14T15:58:47.565
+C Fix\sa\sproblem\sto\sdo\swith\sloading\sthe\svalue\sof\sthe\sFTS\sautomerge\ssetting\sfrom\sthe\sdatabase.
+D 2014-05-14T18:45:27.234
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 5e13a15dad44bf516181e9d6251c7d6a27861dee
+F ext/fts3/fts3_write.c 6cb17b13b08fa2f36c8079726207736246a7176c
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -571,13 +571,13 @@ F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
 F test/fts4growth.test 50befaa001a6dd4046d32e5d7b3cb75df8360ca8
-F test/fts4growth2.test 19fda88600266629b63a4cece512c2dc6f7c9fc5
+F test/fts4growth2.test 4ea35ea97c7d87e8f19d5ede939ab356f9f75cf0
 F test/fts4incr.test 361960ed3550e781f3f313e17e2182ef9cefc0e9
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
 F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
-F test/fts4merge4.test c19c85ca1faa7b6d536832b49c12e1867235f584
+F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
@@ -746,7 +746,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 975f65293a46cf8deb896ecdaf1ba563ccaca24a
+F test/permutations.test d8946218493c77806ec1029df473d8ed4ad9aef6
 F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7f47ae5c5ddb1227484ddae7c6960183932a052a
-R a0acf9231899e84a47fa0a8ff85a8e05
+P 21491a9bc686e63bec32f1a67103622f1160a2f9
+R 67348fc4be2e8c129b7e6e89a490a40b
 U dan
-Z 4a0ad803ddf94719a771980af32709c7
+Z e904ec03ef68eb7c18f9e542f40d2d02

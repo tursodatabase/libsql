@@ -15,7 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-set testprefix fts4growth
+set testprefix fts4growth2
 
 # If SQLITE_ENABLE_FTS3 is defined, omit this file.
 ifcapable !fts3 {
@@ -30,13 +30,12 @@ fts_kjv_genesis
 
 proc tt {val} {
   execsql {
-    BEGIN;
-      DELETE FROM x1 
-        WHERE docid IN (SELECT docid FROM t1 WHERE (rowid-1)%4==$val+0);
-      INSERT INTO x1(docid, content) 
-        SELECT docid, words FROM t1 WHERE (rowid%4)==$val+0;
-    COMMIT;
+    DELETE FROM x1 
+      WHERE docid IN (SELECT docid FROM t1 WHERE (rowid-1)%4==$val+0);
+    INSERT INTO x1(docid, content) 
+      SELECT docid, words FROM t1 WHERE (rowid%4)==$val+0;
   }
+  #puts [db eval {SELECT level, idx, end_block FROM x1_segdir}]
 }
 
 do_execsql_test 1.1 {
@@ -45,24 +44,24 @@ do_execsql_test 1.1 {
 }
 
 do_test 1.2 {
-  for {set i 0} {$i < 100} {incr i} {
+  for {set i 0} {$i < 40} {incr i} {
     tt 0 ; tt 1 ; tt 2 ; tt 3
   }
   execsql { 
     SELECT max(level) FROM x1_segdir; 
-    SELECT count(*) FROM x1_segdir WHERE level=4;
+    SELECT count(*) FROM x1_segdir WHERE level=3;
   }
-} {4 1}
+} {3 1}
 
 do_test 1.3 {
-  for {set i 0} {$i < 100} {incr i} {
+  for {set i 0} {$i < 40} {incr i} {
     tt 0 ; tt 1 ; tt 2 ; tt 3
   }
   execsql { 
     SELECT max(level) FROM x1_segdir; 
-    SELECT count(*) FROM x1_segdir WHERE level=4;
+    SELECT count(*) FROM x1_segdir WHERE level=2;
   }
-} {4 1}
+} {2 1}
 
 #-------------------------------------------------------------------------
 #

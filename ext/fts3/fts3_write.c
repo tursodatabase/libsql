@@ -3229,8 +3229,10 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
     if( rc==SQLITE_OK ){
       sqlite3_bind_int(pStmt, 1, FTS_STAT_AUTOINCRMERGE);
       rc = sqlite3_step(pStmt);
-      p->nAutoincrmerge = (rc==SQLITE_ROW && sqlite3_column_int(pStmt, 0));
-      if( p->nAutoincrmerge==1 ) p->nAutoincrmerge = 8;
+      if( rc==SQLITE_ROW ){
+        p->nAutoincrmerge = sqlite3_column_int(pStmt, 0);
+        if( p->nAutoincrmerge==1 ) p->nAutoincrmerge = 8;
+      }
       rc = sqlite3_reset(pStmt);
     }
   }
