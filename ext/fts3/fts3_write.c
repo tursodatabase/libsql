@@ -2434,6 +2434,37 @@ static int fts3SegmentMaxLevel(
 }
 
 /*
+** iAbsLevel is an absolute level that may be assumed to exist within
+** the database. This function checks if it is the largest level number
+** within its index. Assuming no error occurs, *pbMax is set to 1 if
+** iAbsLevel is indeed the largest level, or 0 otherwise, and SQLITE_OK
+** is returned. If an error occurs, an error code is returned and the
+** final value of *pbMax is undefined.
+*/
+static int fts3SegmentIsMaxLevel(Fts3Table *p, i64 iAbsLevel, int *pbMax){
+
+  /* Set pStmt to the compiled version of:
+  **
+  **   SELECT max(level) FROM %Q.'%q_segdir' WHERE level BETWEEN ? AND ?
+  **
+  ** (1024 is actually the value of macro FTS3_SEGDIR_PREFIXLEVEL_STR).
+  */
+  sqlite3_stmt *pStmt;
+  int rc = fts3SqlStmt(p, SQL_SELECT_SEGDIR_MAX_LEVEL, &pStmt, 0);
+  if( rc!=SQLITE_OK ) return rc;
+  sqlite3_bind_int64(pStmt, 1, iAbsLevel+1);
+  sqlite3_bind_int64(pStmt, 2, 
+      ((iAbsLevel/FTS3_SEGDIR_MAXLEVEL)+1) * FTS3_SEGDIR_MAXLEVEL
+  );
+
+  *pbMax = 0;
+  if( SQLITE_ROW==sqlite3_step(pStmt) ){
+    *pbMax = sqlite3_column_type(pStmt, 0)==SQLITE_NULL;
+  }
+  return sqlite3_reset(pStmt);
+}
+
+/*
 ** Delete all entries in the %_segments table associated with the segment
 ** opened with seg-reader pSeg. This function does not affect the contents
 ** of the %_segdir table.
@@ -4836,8 +4867,15 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
     if( rc==SQLITE_OK ){
       rc = fts3IncrmergeOutputIdx(p, iAbsLevel, &iIdx);
       assert( bUseHint==1 || bUseHint==0 );
-      if( (iIdx-bUseHint)==0 ) pFilter->flags |= FTS3_SEGMENT_IGNORE_EMPTY;
+      if( iIdx==0 || (bUseHint && iIdx==1) ){
+        int bIgnore;
+        rc = fts3SegmentIsMaxLevel(p, iAbsLevel+1, &bIgnore);
+        if( bIgnore ){
+          pFilter->flags |= FTS3_SEGMENT_IGNORE_EMPTY;
+        }
+      }
     }
+
     if( rc==SQLITE_OK ){
       rc = fts3IncrmergeCsr(p, iAbsLevel, nSeg, pCsr);
     }
