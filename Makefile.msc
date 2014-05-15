@@ -16,6 +16,13 @@ TOP = .
 USE_AMALGAMATION = 1
 !ENDIF
 
+# Set this non-0 to use the library paths and other options necessary for
+# Windows Phone 8.1.
+#
+!IFNDEF USE_WP81_OPTS
+USE_WP81_OPTS = 0
+!ENDIF
+
 # Set this non-0 to split the SQLite amalgamation file into chunks to
 # be used for debugging with Visual Studio.
 #
@@ -131,6 +138,12 @@ OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
 ###############################################################################
 ############################### END OF OPTIONS ################################
 ###############################################################################
+
+# This assumes that MSVC is always installed in 32-bit Program Files directory
+# and sets the variable for use in locating other 32-bit installs accordingly.
+#
+PROGRAMFILES_X86 = $(VCINSTALLDIR)\..\..
+PROGRAMFILES_X86 = $(PROGRAMFILES_X86:\\=\)
 
 # Check for the predefined command macro CC.  This should point to the compiler
 # binary for the target platform.  If it is not defined, simply define it to
@@ -548,6 +561,33 @@ STORELIBPATH = $(CRTLIBPATH)\store
 STORELIBPATH = $(STORELIBPATH:\\=\)
 LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
 !ENDIF
+!ENDIF
+
+# When compiling for Windows Phone 8.1, an extra library path is
+# required.
+#
+!IF $(USE_WP81_OPTS)!=0
+!IFNDEF WP81LIBPATH
+!IF "$(PLATFORM)"=="x86"
+WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
+!ELSEIF "$(PLATFORM)"=="ARM"
+WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\ARM
+!ELSE
+WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
+!ENDIF
+!ENDIF
+!ENDIF
+
+# When compiling for Windows Phone 8.1, some extra linker options
+# are also required.
+#
+!IF $(USE_WP81_OPTS)!=0
+!IFDEF WP81LIBPATH
+LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
+!ENDIF
+LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
+LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
+LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
 !ENDIF
 
 # If either debugging or symbols are enabled, enable PDBs.

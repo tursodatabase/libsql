@@ -13,16 +13,18 @@
 */
 #include "sqliteInt.h"
 
+#if SQLITE_OS_WIN
+/*
+** Include the header file for the Windows VFS.
+*/
+#include "os_win.h"
+#endif
+
 /*
 ** The code in this file is only used if we are compiling multithreaded
 ** on a win32 system.
 */
 #ifdef SQLITE_MUTEX_W32
-
-/*
-** Include the header file for the Windows VFS.
-*/
-#include "os_win.h"
 
 /*
 ** Each recursive mutex is an instance of the following structure.

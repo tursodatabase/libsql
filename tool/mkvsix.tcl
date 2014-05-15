@@ -66,14 +66,15 @@
 # containing the root of the source tree for SQLite.  The third argument is
 # optional and if present must contain the flavor the VSIX package to build.
 # Currently, the only supported package flavors are "WinRT", "WinRT81", "WP80",
-# and "Win32".  The fourth argument is optional and if present must be a string
-# containing a list of platforms to include in the VSIX package.  The platform
-# list is "platform1,platform2,platform3".  The fifth argument is optional and
-# if present must contain the version of Visual Studio required by the package.
-# Currently, the only supported versions are "2012" and "2013".  The package
-# flavor "WinRT81" is only supported when the Visual Studio version is "2013".
-# Typically, when on Windows, this script is executed using commands similar to
-# the following from a normal Windows command prompt:
+# "WP81", and "Win32".  The fourth argument is optional and if present must be
+# a string containing a list of platforms to include in the VSIX package.  The
+# platform list is "platform1,platform2,platform3".  The fifth argument is
+# optional and if present must contain the version of Visual Studio required by
+# the package.  Currently, the only supported versions are "2012" and "2013".
+# The package flavors "WinRT81" and "WP81" are only supported when the Visual
+# Studio version is "2013".  Typically, when on Windows, this script is
+# executed using commands similar to the following from a normal Windows
+# command prompt:
 #
 #                         CD /D C:\dev\sqlite\core
 #                         tclsh85 tool\mkvsix.tcl C:\Temp
@@ -210,6 +211,10 @@ proc getMaxPlatformVersionXmlChunk { packageFlavor vsVersion } {
       return [appendArgs \
           "\r\n    " {MaxPlatformVersion="8.0"}]
     }
+    WP81 {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.1"}]
+    }
     default {
       return ""
     }
@@ -219,7 +224,8 @@ proc getMaxPlatformVersionXmlChunk { packageFlavor vsVersion } {
 proc getExtraFileListXmlChunk { packageFlavor vsVersion } {
   #
   # NOTE: Windows Phone 8.0 does not require any extra attributes in its VSIX
-  #       package SDK manifests.
+  #       package SDK manifests; however, it appears that Windows Phone 8.1
+  #       does.
   #
   if {[string equal $packageFlavor WP80]} then {
     return ""
@@ -359,6 +365,7 @@ set shortNames(WinRT,2013) SQLite.WinRT.2013
 set shortNames(WinRT81,2013) SQLite.WinRT81
 set shortNames(WP80,2012) SQLite.WP80
 set shortNames(WP80,2013) SQLite.WP80.2013
+set shortNames(WP81,2013) SQLite.WP81
 set shortNames(Win32,2012) SQLite.Win32
 set shortNames(Win32,2013) SQLite.Win32.2013
 
@@ -367,6 +374,7 @@ set displayNames(WinRT,2013) "SQLite for Windows Runtime"
 set displayNames(WinRT81,2013) "SQLite for Windows Runtime (Windows 8.1)"
 set displayNames(WP80,2012) "SQLite for Windows Phone"
 set displayNames(WP80,2013) "SQLite for Windows Phone"
+set displayNames(WP81,2013) "SQLite for Windows Phone 8.1"
 set displayNames(Win32,2012) "SQLite for Windows"
 set displayNames(Win32,2013) "SQLite for Windows"
 
@@ -408,6 +416,22 @@ if {[string equal $packageFlavor WinRT]} then {
   set extraSdkPath "\\..\\$targetPlatformIdentifier"
   set extraFileListAttributes \
       [getExtraFileListXmlChunk $packageFlavor $vsVersion]
+} elseif {[string equal $packageFlavor WP81]} then {
+  if {$vsVersion ne "2013"} then {
+    fail [appendArgs \
+        "unsupported combination, package flavor " $packageFlavor \
+        " is only supported with Visual Studio 2013"]
+  }
+  set shortName $shortNames($packageFlavor,$vsVersion)
+  set displayName $displayNames($packageFlavor,$vsVersion)
+  set targetPlatformIdentifier WindowsPhoneApp
+  set targetPlatformVersion v8.1
+  set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
+  set extraSdkPath "\\..\\$targetPlatformIdentifier"
+  set extraFileListAttributes \
+      [getExtraFileListXmlChunk $packageFlavor $vsVersion]
 } elseif {[string equal $packageFlavor Win32]} then {
   set shortName $shortNames($packageFlavor,$vsVersion)
   set displayName $displayNames($packageFlavor,$vsVersion)
@@ -422,7 +446,7 @@ if {[string equal $packageFlavor WinRT]} then {
 } else {
   fail [appendArgs \
       "unsupported package flavor, must be one of: " \
-      [list WinRT WinRT81 WP80 Win32]]
+      [list WinRT WinRT81 WP80 WP81 Win32]]
 }
 
 ###############################################################################
