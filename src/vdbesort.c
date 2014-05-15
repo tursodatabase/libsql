@@ -1077,11 +1077,14 @@ static void vdbeIncrFree(IncrMerger *pIncr){
 void sqlite3VdbeSorterReset(sqlite3 *db, VdbeSorter *pSorter){
   int i;
   (void)vdbeSorterJoinAll(pSorter, SQLITE_OK);
+  assert( pSorter->bUseThreads || pSorter->pReader==0 );
+#if SQLITE_MAX_WORKER_THREADS>0
   if( pSorter->pReader ){
     vdbePmaReaderClear(pSorter->pReader);
     sqlite3DbFree(db, pSorter->pReader);
     pSorter->pReader = 0;
   }
+#endif
   vdbeMergeEngineFree(pSorter->pMerger);
   pSorter->pMerger = 0;
   for(i=0; i<pSorter->nTask; i++){
