@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scausing\san\sincorrect\ssegment\ssize\svalue\sto\sbe\sstored\sif\sboth\san\sold\sand\snew\sFTS\sversion\sperformed\swork\son\sthe\ssame\sincremental\smerge\soperation.
-D 2014-05-16T10:30:44.076
+C Add\sextra\stest\sto\sbackcompat.test\sto\sensure\sthat\sold\sand\snew\sversions\sof\sFTS\smay\swork\stogether\son\sthe\ssame\sincremental\smerge\soperation.
+D 2014-05-16T15:48:17.688
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -336,7 +336,7 @@ F test/autoindex1.test 762ff3f8e25d852aae55c6462ca166a80c0cde61
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
-F test/backcompat.test 5f8ad58b3eaebc78cd2c66c65476a42e6f32b2ad
+F test/backcompat.test 19a1f337c68419b020a7481dd272a472c4ad8ef4
 F test/backup.test c9cdd23a495864b9edf75a9fa66f5cb7e10fcf62
 F test/backup2.test 34986ef926ea522911a51dfdb2f8e99b7b75ebcf
 F test/backup4.test 2a2e4a64388090b152de753fd9e123f28f6a3bd4
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5809986ffcc5d9cbab64760f8d7fbfbb6b626ee7
-R 12132d8d56290c779558e11739c0e6c3
+P a9a2aeab298ba2ac0b8835e61406e2d83bf7e39b
+R 03d2cea8f8e26027c7bf9b05231d6fb8
 U dan
-Z a463ca0b0e1281a342011aafc1248dc1
+Z ba763e498b0d066dca73ae5326487971
