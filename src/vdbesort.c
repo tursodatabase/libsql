@@ -108,8 +108,9 @@
 **
 ** If there are fewer than SORTER_MAX_MERGE_COUNT PMAs in total and the
 ** sorter is running in single-threaded mode, then these PMAs are merged
-** incrementally as keys are retreived from the sorter by the VDBE. See
-** comments above object MergeEngine below for details.
+** incrementally as keys are retreived from the sorter by the VDBE.  The
+** MergeEngine object, described in further detail below, performs this
+** merge.
 **
 ** Or, if running in multi-threaded mode, then a background thread is
 ** launched to merge the existing PMAs. Once the background thread has
@@ -900,11 +901,17 @@ static void vdbeSorterRecordFree(sqlite3 *db, SorterRecord *pRecord){
 static void vdbeSortSubtaskCleanup(sqlite3 *db, SortSubtask *pTask){
   sqlite3DbFree(db, pTask->pUnpacked);
   pTask->pUnpacked = 0;
-  if( pTask->list.aMemory==0 ){
-    vdbeSorterRecordFree(0, pTask->list.pList);
-  }else{
+#if SQLITE_MAX_WORKER_THREADS>0
+  /* pTask->list.aMemory can only be non-zero if it was handed memory
+  ** from the main thread.  That only occurs SQLITE_MAX_WORKER_THREADS>0 */
+  if( pTask->list.aMemory ){
     sqlite3_free(pTask->list.aMemory);
     pTask->list.aMemory = 0;
+  }else
+#endif
+  {
+    assert( pTask->list.aMemory==0 );
+    vdbeSorterRecordFree(0, pTask->list.pList);
   }
   pTask->list.pList = 0;
   if( pTask->file.pFd ){
@@ -2138,7 +2145,7 @@ static int vdbeSorterMergeTreeBuild(VdbeSorter *pSorter, MergeEngine **ppOut){
   }
 #endif
 
-  for(iTask=0; iTask<pSorter->nTask && rc==SQLITE_OK; iTask++){
+  for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
     SortSubtask *pTask = &pSorter->aTask[iTask];
     if( pTask->nPMA ){
       MergeEngine *pRoot = 0;     /* Root node of tree for this task */
@@ -2165,10 +2172,14 @@ static int vdbeSorterMergeTreeBuild(VdbeSorter *pSorter, MergeEngine **ppOut){
       }
 
       if( rc==SQLITE_OK ){
-        if( pMain==0 ){
-          pMain = pRoot;
-        }else{
+#if SQLITE_MAX_WORKER_THREADS>0
+        if( pMain!=0 ){
           rc = vdbeIncrNew(pTask, pRoot, &pMain->aIter[iTask].pIncr);
+        }else
+#endif
+        {
+          assert( pMain==0 );
+          pMain = pRoot;
         }
       }else{
         vdbeMergeEngineFree(pRoot);

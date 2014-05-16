@@ -1128,7 +1128,7 @@ case OP_Move: {
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
-    VdbeMemRelease(pOut);
+    sqlite3VdbeMemRelease(pOut);
     zMalloc = pOut->zMalloc;
     memcpy(pOut, pIn1, sizeof(Mem));
 #ifdef SQLITE_DEBUG

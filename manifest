@@ -1,5 +1,5 @@
-C Add\sa\spair\sof\ssqlite3FaultSim(100)\scalls\sto\svdbesort.c\sto\sfacilitate\stesting\nof\sobscure\sand\shard\sto\sreach\serror\sconditions.
-D 2014-05-16T17:31:42.435
+C Rearrange\ssome\sconditionals\sand\sadd\s#if\sstatements\sto\smake\sthe\scode\smore\ntestable.
+D 2014-05-16T20:24:51.024
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de92112472618cb869d27249966bad1783e4a853
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -282,14 +282,14 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c 049fe1d3c0e2209c1bee107aec2fcff6285f909f
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 89ab2ded5123e823b47293aedd7931a4742fb6bd
+F src/vdbe.c 4d11273a6a6644d948c534a17bdeaf42a2793d30
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h c78ace64dc37495806dd50596eded1f6cd2b5a64
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c f126a837c4bea832f3b91796081131b22d7b9c7e
+F src/vdbesort.c 15d1405fcfbb2f4a2ad667872be211153d69fa36
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1175,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 43fcbd9116401f30781fdcbe55d1674d6b96311b
-R 2be9e504fbe8e48aafd8e17341d9b966
+P cceac14fd83ddd8f868c1767cdc66635607cb159
+R 48ad2b172d9e67d362d3e27e91c64651
 U drh
-Z 9396ea859eaf958c2b1d37dca9017593
+Z 9751e875adf689a22af045a3a24a99e5
