@@ -829,7 +829,7 @@ int sqlite3VdbeSorterInit(
   int sz;                         /* Size of pSorter in bytes */
   int rc = SQLITE_OK;
 #if SQLITE_MAX_WORKER_THREADS==0
-  const int nWorker = 0;
+# define nWorker 0
 #else
   int nWorker = (sqlite3GlobalConfig.bCoreMutex?sqlite3GlobalConfig.nWorker:0);
 #endif
@@ -879,6 +879,7 @@ int sqlite3VdbeSorterInit(
 
   return rc;
 }
+#undef nWorker   /* Defined at the top of this function */
 
 /*
 ** Free the list of sorted records starting at pRecord.
@@ -1806,9 +1807,8 @@ static int vdbeIncrNew(
   IncrMerger **ppOut
 ){
   int rc = SQLITE_OK;
-  IncrMerger *pIncr = *ppOut = (IncrMerger*)sqlite3_malloc(sizeof(IncrMerger));
+  IncrMerger *pIncr = *ppOut = (IncrMerger*)sqlite3MallocZero(sizeof(*pIncr));
   if( pIncr ){
-    memset(pIncr, 0, sizeof(IncrMerger));
     pIncr->pMerger = pMerger;
     pIncr->pTask = pTask;
     pIncr->mxSz = MAX(pTask->pSorter->mxKeysize+9,pTask->pSorter->mxPmaSize/2);
