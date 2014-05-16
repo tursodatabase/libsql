@@ -3044,7 +3044,7 @@ static void fts3ReadEndBlockField(
 */
 static int fts3PromoteSegments(
   Fts3Table *p,                   /* FTS table handle */
-  int iAbsLevel,                  /* Absolute level just updated */
+  sqlite3_int64 iAbsLevel,        /* Absolute level just updated */
   sqlite3_int64 nByte             /* Size of new segment at iAbsLevel */
 ){
   int rc = SQLITE_OK;
@@ -3054,7 +3054,7 @@ static int fts3PromoteSegments(
 
   if( rc==SQLITE_OK ){
     int bOk = 0;
-    int iLast = (iAbsLevel/FTS3_SEGDIR_MAXLEVEL + 1) * FTS3_SEGDIR_MAXLEVEL - 1;
+    i64 iLast = (iAbsLevel/FTS3_SEGDIR_MAXLEVEL + 1) * FTS3_SEGDIR_MAXLEVEL - 1;
     i64 nLimit = (nByte*3)/2;
 
     /* Loop through all entries in the %_segdir table corresponding to 
@@ -3062,8 +3062,8 @@ static int fts3PromoteSegments(
     ** at least one such segment, and it is possible to determine that all 
     ** such segments are smaller than nLimit bytes in size, they will be 
     ** promoted to level iAbsLevel.  */
-    sqlite3_bind_int(pRange, 1, iAbsLevel+1);
-    sqlite3_bind_int(pRange, 2, iLast);
+    sqlite3_bind_int64(pRange, 1, iAbsLevel+1);
+    sqlite3_bind_int64(pRange, 2, iLast);
     while( SQLITE_ROW==sqlite3_step(pRange) ){
       i64 nSize, dummy;
       fts3ReadEndBlockField(pRange, 2, &dummy, &nSize);
@@ -3103,7 +3103,7 @@ static int fts3PromoteSegments(
         ** setting the "idx" fields as appropriate to keep them in the same
         ** order. The contents of level -1 (which is never used, except
         ** transiently here), will be moved back to level iAbsLevel below.  */
-        sqlite3_bind_int(pRange, 1, iAbsLevel);
+        sqlite3_bind_int64(pRange, 1, iAbsLevel);
         while( SQLITE_ROW==sqlite3_step(pRange) ){
           sqlite3_bind_int(pUpdate1, 1, iIdx++);
           sqlite3_bind_int(pUpdate1, 2, sqlite3_column_int(pRange, 0));
@@ -3122,7 +3122,7 @@ static int fts3PromoteSegments(
 
       /* Move level -1 to level iAbsLevel */
       if( rc==SQLITE_OK ){
-        sqlite3_bind_int(pUpdate2, 1, iAbsLevel);
+        sqlite3_bind_int64(pUpdate2, 1, iAbsLevel);
         sqlite3_step(pUpdate2);
         rc = sqlite3_reset(pUpdate2);
       }
