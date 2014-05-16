@@ -3636,6 +3636,7 @@ struct IncrmergeWriter {
   sqlite3_int64 iStart;           /* Block number of first allocated block */
   sqlite3_int64 iEnd;             /* Block number of last allocated block */
   sqlite3_int64 nLeafData;        /* Bytes of leaf page data so far */
+  u8 bNoLeafData;                 /* If true, store 0 for segment size */
   NodeWriter aNodeWriter[FTS_MAX_APPENDABLE_HEIGHT];
 };
 
@@ -4074,7 +4075,7 @@ static void fts3IncrmergeRelease(
         pWriter->iStart,                    /* start_block */
         pWriter->aNodeWriter[0].iBlock,     /* leaves_end_block */
         pWriter->iEnd,                      /* end_block */
-        pWriter->nLeafData,                 /* end_block */
+        (pWriter->bNoLeafData==0 ? pWriter->nLeafData : 0),   /* end_block */
         pRoot->block.a, pRoot->block.n      /* root */
     );
   }
@@ -4180,6 +4181,7 @@ static int fts3IncrmergeLoad(
       if( pWriter->nLeafData<0 ){
         pWriter->nLeafData = pWriter->nLeafData * -1;
       }
+      pWriter->bNoLeafData = (pWriter->nLeafData==0);
       nRoot = sqlite3_column_bytes(pSelect, 4);
       aRoot = sqlite3_column_blob(pSelect, 4);
     }else{
@@ -4914,7 +4916,7 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
         pWriter->nLeafData = pWriter->nLeafData * -1;
       }
       fts3IncrmergeRelease(p, pWriter, &rc);
-      if( nSeg==0 ){
+      if( nSeg==0 && pWriter->bNoLeafData==0 ){
         fts3PromoteSegments(p, iAbsLevel+1, pWriter->nLeafData);
       }
     }

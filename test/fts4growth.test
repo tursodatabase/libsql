@@ -366,21 +366,72 @@ do_execsql_test 6.5 {
   0 1 {1329 8297} 0 0 {1320 28009} 0 2 {1449 118006}
 }
 
-#do_test 3.2 {
-  #t1_to_x2
-  #execsql {SELECT level, count(*) FROM x2_segdir GROUP BY level}
-#} {0 13 1 15 2 5}
+#--------------------------------------------------------------------------
+# Ensure that if part of an incremental merge is performed by an old
+# version that does not support storing segment sizes in the end_block
+# field, no size is stored in the final segment (as it would be incorrect).
+#
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE x6 USING fts4;
+  INSERT INTO x6 SELECT words FROM t1;
+  INSERT INTO x6 SELECT words FROM t1;
+  INSERT INTO x6 SELECT words FROM t1;
+  INSERT INTO x6 SELECT words FROM t1;
+  INSERT INTO x6 SELECT words FROM t1;
+  INSERT INTO x6 SELECT words FROM t1;
+  SELECT level, idx, end_block FROM x6_segdir;
+} {
+  0 0 {118 117483} 0 1 {238 118006} 0 2 {358 118006} 
+  0 3 {478 118006} 0 4 {598 118006} 0 5 {718 118006}
+}
 
-#proc second {x} { lindex $x 1 }
-#db func second second
-#for {set i 0} {$i <1000} {incr i} {
-#  t1_to_x2
-#  db eval {
-#    SELECT level, group_concat( second(end_block), ' ' ) AS c FROM x2_segdir GROUP BY level;
-#  } {
-#    puts "$i.$level: $c"
-#  }
-#}
+do_execsql_test 7.2 {
+  INSERT INTO x6(x6) VALUES('merge=25,4');
+  SELECT level, idx, end_block FROM x6_segdir;
+} {
+  0 0 {118 117483} 0 1 {238 118006} 0 2 {358 118006} 
+  0 3 {478 118006} 0 4 {598 118006} 0 5 {718 118006}
+  1 0 {16014 -51226}
+}
+
+do_execsql_test 7.3 {
+  UPDATE x6_segdir SET end_block = first(end_block) WHERE level=1;
+  SELECT level, idx, end_block FROM x6_segdir;
+} {
+  0 0 {118 117483} 0 1 {238 118006} 0 2 {358 118006} 
+  0 3 {478 118006} 0 4 {598 118006} 0 5 {718 118006}
+  1 0 16014
+}
+
+do_execsql_test 7.4 {
+  INSERT INTO x6(x6) VALUES('merge=25,4');
+  SELECT level, idx, end_block FROM x6_segdir;
+} {
+  0 0 {118 117483} 0 1 {238 118006} 0 2 {358 118006} 
+  0 3 {478 118006} 0 4 {598 118006} 0 5 {718 118006}
+  1 0 16014
+}
+
+do_execsql_test 7.5 {
+  INSERT INTO x6(x6) VALUES('merge=2500,4');
+  SELECT level, idx, end_block FROM x6_segdir;
+} {
+  0 0 {598 118006} 0 1 {718 118006} 1 0 16014
+}
+
+do_execsql_test 7.6 {
+  INSERT INTO x6(x6) VALUES('merge=2500,2');
+  SELECT level, idx, start_block, leaves_end_block, end_block FROM x6_segdir;
+} {
+  2 0 23695 24147 {41262 633507}
+}
+
+do_execsql_test 7.7 {
+  SELECT sum(length(block)) FROM x6_segments 
+  WHERE blockid BETWEEN 23695 AND 24147
+} {633507}
+
+
 
 finish_test
 

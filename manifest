@@ -1,5 +1,5 @@
-C Merge\slatest\strunk\schanges\swith\sthis\sbranch.
-D 2014-05-15T19:05:55.306
+C Fix\sa\sbug\scausing\san\sincorrect\ssegment\ssize\svalue\sto\sbe\sstored\sif\sboth\san\sold\sand\snew\sFTS\sversion\sperformed\swork\son\sthe\ssame\sincremental\smerge\soperation.
+D 2014-05-16T10:30:44.076
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c b90173c62460a215498b0da3046f5e429b3a66b0
+F ext/fts3/fts3_write.c 6681e4855bd24e74e91e2017f3fdc44460449fc1
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -570,7 +570,7 @@ F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
 F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
-F test/fts4growth.test 50befaa001a6dd4046d32e5d7b3cb75df8360ca8
+F test/fts4growth.test df10fde9f47cf5c71861e63fd8efcd573c4f7e53
 F test/fts4growth2.test 4ea35ea97c7d87e8f19d5ede939ab356f9f75cf0
 F test/fts4incr.test 361960ed3550e781f3f313e17e2182ef9cefc0e9
 F test/fts4langid.test 24a6e41063b416bbdf371ff6b4476fa41c194aa7
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2b09bd17eb85ea3c682e930d2aabc6441f2265e0 0901dccedaf5679691ba803ec76d113de170185d
-R bc36878656a1df406ce5faa15b3690cd
+P 5809986ffcc5d9cbab64760f8d7fbfbb6b626ee7
+R 12132d8d56290c779558e11739c0e6c3
 U dan
-Z 7b26c3764a28756f379665cd911542c0
+Z a463ca0b0e1281a342011aafc1248dc1
