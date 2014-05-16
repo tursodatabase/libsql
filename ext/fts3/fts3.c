@@ -1333,7 +1333,7 @@ static int fts3InitVtab(
   p->bHasStat = isFts4;
   p->bFts4 = isFts4;
   p->bDescIdx = bDescIdx;
-  p->bAutoincrmerge = 0xff;   /* 0xff means setting unknown */
+  p->nAutoincrmerge = 0xff;   /* 0xff means setting unknown */
   p->zContentTbl = zContent;
   p->zLanguageid = zLanguageid;
   zContent = 0;
@@ -3302,7 +3302,10 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
   Fts3Table *p = (Fts3Table*)pVtab;
   int rc = sqlite3Fts3PendingTermsFlush(p);
 
-  if( rc==SQLITE_OK && p->bAutoincrmerge==1 && p->nLeafAdd>(nMinMerge/16) ){
+  if( rc==SQLITE_OK 
+   && p->nLeafAdd>(nMinMerge/16) 
+   && p->nAutoincrmerge && p->nAutoincrmerge!=0xff
+  ){
     int mxLevel = 0;              /* Maximum relative level value in db */
     int A;                        /* Incr-merge parameter A */
 
@@ -3310,7 +3313,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
     assert( rc==SQLITE_OK || mxLevel==0 );
     A = p->nLeafAdd * mxLevel;
     A += (A/2);
-    if( A>(int)nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, 8);
+    if( A>(int)nMinMerge ) rc = sqlite3Fts3Incrmerge(p, A, p->nAutoincrmerge);
   }
   sqlite3Fts3SegmentsClose(p);
   return rc;
