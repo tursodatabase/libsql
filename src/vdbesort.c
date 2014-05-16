@@ -1032,7 +1032,7 @@ static MergeEngine *vdbeMergeEngineNew(int nIter){
   while( N<nIter ) N += N;
   nByte = sizeof(MergeEngine) + N * (sizeof(int) + sizeof(PmaReader));
 
-  pNew = (MergeEngine*)sqlite3MallocZero(nByte);
+  pNew = sqlite3FaultSim(100) ? 0 : (MergeEngine*)sqlite3MallocZero(nByte);
   if( pNew ){
     pNew->nTree = N;
     pNew->aIter = (PmaReader*)&pNew[1];
@@ -1807,7 +1807,8 @@ static int vdbeIncrNew(
   IncrMerger **ppOut
 ){
   int rc = SQLITE_OK;
-  IncrMerger *pIncr = *ppOut = (IncrMerger*)sqlite3MallocZero(sizeof(*pIncr));
+  IncrMerger *pIncr = *ppOut = (IncrMerger*)
+       (sqlite3FaultSim(100) ? 0 : sqlite3MallocZero(sizeof(*pIncr)));
   if( pIncr ){
     pIncr->pMerger = pMerger;
     pIncr->pTask = pTask;
