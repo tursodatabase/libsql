@@ -568,7 +568,90 @@ static int testPendingByte(
   rc = sqlite3_test_control(SQLITE_TESTCTRL_PENDING_BYTE, pbyte);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
   return TCL_OK;
-}  
+}
+
+/*
+** The sqlite3FaultSim() callback:
+*/
+static Tcl_Interp *faultSimInterp = 0;
+static int faultSimScriptSize = 0;
+static char *faultSimScript;
+static int faultSimCallback(int x){
+  char zInt[30];
+  int i;
+  int isNeg;
+  int rc;
+  if( x==0 ){
+    memcpy(faultSimScript+faultSimScriptSize, "0", 2);
+  }else{
+    /* Convert x to text without using any sqlite3 routines */
+    if( x<0 ){
+      isNeg = 1;
+      x = -x;
+    }else{
+      isNeg = 0;
+    }
+    zInt[sizeof(zInt)-1] = 0;
+    for(i=sizeof(zInt)-2; i>0 && x>0; i--, x /= 10){
+      zInt[i] = (x%10) + '0';
+    }
+    if( isNeg ) zInt[i--] = '-';
+    memcpy(faultSimScript+faultSimScriptSize, zInt+i+1, sizeof(zInt)-i);
+  }
+  rc = Tcl_Eval(faultSimInterp, faultSimScript);
+  if( rc ){
+    fprintf(stderr, "fault simulator script failed: [%s]", faultSimScript);
+    rc = SQLITE_ERROR;
+  }else{
+    rc = atoi(Tcl_GetStringResult(faultSimInterp));
+  }
+  Tcl_ResetResult(faultSimInterp);
+  return rc;
+}
+
+/*
+** sqlite3_test_control_fault_install SCRIPT
+**
+** Arrange to invoke SCRIPT with the integer argument to sqlite3FaultSim()
+** appended, whenever sqlite3FaultSim() is called.  Or, if SCRIPT is the
+** empty string, cancel the sqlite3FaultSim() callback.
+*/
+static int faultInstallCmd(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  const char *zScript;
+  int nScript;
+  int rc;
+  if( argc!=1 && argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                     " SCRIPT\"", (void*)0);
+  }
+  zScript = argc==2 ? argv[1] : "";
+  nScript = (int)strlen(zScript);
+  if( faultSimScript ){
+    free(faultSimScript);
+    faultSimScript = 0;
+  }
+  if( nScript==0 ){
+    rc = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_INSTALL, 0);
+  }else{
+    faultSimScript = malloc( nScript+100 );
+    if( faultSimScript==0 ){
+      Tcl_AppendResult(interp, "out of memory", (void*)0);
+      return SQLITE_ERROR;
+    }
+    memcpy(faultSimScript, zScript, nScript);
+    faultSimScript[nScript] = ' ';
+    faultSimScriptSize = nScript+1;
+    faultSimInterp = interp;
+    rc = sqlite3_test_control(SQLITE_TESTCTRL_FAULT_INSTALL, faultSimCallback);
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return SQLITE_OK;
+}
 
 /*
 ** sqlite3BitvecBuiltinTest SIZE PROGRAM
@@ -638,7 +721,8 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
     { "fake_big_file",           (Tcl_CmdProc*)fake_big_file       },
 #endif
     { "sqlite3BitvecBuiltinTest",(Tcl_CmdProc*)testBitvecBuiltinTest     },
-    { "sqlite3_test_control_pending_byte", (Tcl_CmdProc*)testPendingByte },
+    { "sqlite3_test_control_pending_byte",  (Tcl_CmdProc*)testPendingByte },
+    { "sqlite3_test_control_fault_install", (Tcl_CmdProc*)faultInstallCmd },
   };
   int i;
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
