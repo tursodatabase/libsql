@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\stest\scase\sin\sfts4growth2.test.
-D 2014-05-17T15:10:37.982
+C Internally,\suse\sa\s64-bit\sintegers\sfor\ssegment\slevel\snumbers.
+D 2014-05-17T16:56:52.166
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 6681e4855bd24e74e91e2017f3fdc44460449fc1
+F ext/fts3/fts3_write.c 9e4e8579ad26cff3ee7743aaf5c3fe937fc441b4
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9623a29c11e3a90513016ea3306c085d2bf91b62
-R 7fbf0d1c98f8f088bba70604a90180b5
+P 9fde5b960af39b187474e5b2909ff0e56d5e0bf9 7e60347e21a7473974061965a8d1f2eadde987e2
+R 760c47be4e4c59e75f81e88f9a3c89bc
 U dan
-Z 9d3390acf23fdcf50586fd0f9fba7a93
+Z a762a27782746cb8cee894bb7c1f28d3
