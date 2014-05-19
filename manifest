@@ -1,5 +1,5 @@
-C Changes\sto\shelp\sensure\sthat\sa\smultiplication\sdoes\snot\soverflow\swhen\scomputing\nthe\snumber\sof\sbytes\sneeded\sfor\sa\smemory\sallocation,\sand\scause\sa\smalfunction.\nNo\sproblems\sexisting\sproblems\swere\sdiscovered.\s\sHowever,\sthese\schanges\sshould\nhelp\sto\sensure\sthat\sno\sproblems\sarise\sin\sthe\sfuture.
-D 2014-05-19T15:16:11.494
+C Fix\sharmless\scompiler\swarnings\sin\sMSVC.
+D 2014-05-19T19:26:24.291
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c e83f894cf1adaf8decd6b1de76bfdcdb79b25507
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 16cddf2d7b0e5f3681615ae1d8ca0e45fca44918
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
-F ext/fts3/fts3_expr.c 2ac35bda474f00c14c19608e49a02c8c7ceb9970
+F ext/fts3/fts3_expr.c b491cccc20d9f1d1b75c611acdb20a85c59a88ef
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -188,7 +188,7 @@ F src/legacy.c 311f98da3e24164358fa93753e149108326ff8e7
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 84de402d4d0827761532fe141a3ccb69de874e11
 F src/main.c 5c9f16a84b1bcd4683bee1433390f4f587629465
-F src/malloc.c 6a1fbdadf00298dad6c76885beb47b9c49f5973a
+F src/malloc.c 35ee353f4ef2a0c510ca204b079add15c2845eac
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
@@ -288,7 +288,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 808daddbcd3cd52f9aed80a13a78baac8ec29b00
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c c996131ae65b3631a87fdb8530ddd2b899395e26
-F src/vdbesort.c 2024607750e873c0285102615872446b51f9a714
+F src/vdbesort.c 5b3e6963de1d76d29b0b6abfc652d695d7b4c015
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c cf7523838ae3d5778055e7e881a8a46c44ca2c40
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1172,10 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8180e320ee4090e41511836678e49a98c0b228e8
-R a8107f0932a0cdb06db254e30ec29b62
-T *branch * safer-malloc
-T *sym-safer-malloc *
-T -sym-trunk *
+P 17349a49d2db61c70e04e19f024b47e34737e78e
+R 964d52cf644e536907a8f4848091b88b
 U drh
-Z ba80a44d535d65fb144ac87fb1f1c9d7
+Z 372168e2fe91658ab6efbb38cb19451e

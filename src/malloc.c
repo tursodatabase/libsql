@@ -536,7 +536,7 @@ void *sqlite3Realloc(void *pOld, i64 nBytes){
     pNew = pOld;
   }else if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
-    sqlite3StatusSet(SQLITE_STATUS_MALLOC_SIZE, nBytes);
+    sqlite3StatusSet(SQLITE_STATUS_MALLOC_SIZE, (int)nBytes);
     nDiff = nNew - nOld;
     if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED) >= 
           mem0.alarmThreshold-nDiff ){
@@ -546,7 +546,7 @@ void *sqlite3Realloc(void *pOld, i64 nBytes){
     assert( sqlite3MemdebugNoType(pOld, ~MEMTYPE_HEAP) );
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     if( pNew==0 && mem0.alarmCallback ){
-      sqlite3MallocAlarm(nBytes);
+      sqlite3MallocAlarm((int)nBytes);
       pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     }
     if( pNew ){
@@ -579,7 +579,7 @@ void *sqlite3_realloc(void *pOld, int n){
 void *sqlite3MallocZero(i64 n){
   void *p = sqlite3Malloc(n);
   if( p ){
-    memset(p, 0, n);
+    memset(p, 0, (int)n);
   }
   return p;
 }
@@ -591,7 +591,7 @@ void *sqlite3MallocZero(i64 n){
 void *sqlite3DbMallocZero(sqlite3 *db, i64 n){
   void *p = sqlite3DbMallocRaw(db, n);
   if( p ){
-    memset(p, 0, n);
+    memset(p, 0, (int)n);
   }
   return p;
 }
@@ -679,7 +679,7 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, i64 n){
       assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
       assert( sqlite3MemdebugHasType(p, MEMTYPE_LOOKASIDE|MEMTYPE_HEAP) );
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-      pNew = sqlite3_realloc(p, n);
+      pNew = sqlite3Realloc(p, n);
       if( !pNew ){
         sqlite3MemdebugSetType(p, MEMTYPE_DB|MEMTYPE_HEAP);
         db->mallocFailed = 1;
@@ -713,7 +713,7 @@ void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, i64 n){
 */
 char *sqlite3DbStrDup(sqlite3 *db, const char *z){
   char *zNew;
-  i64 n;
+  int n;
   if( z==0 ){
     return 0;
   }

@@ -226,7 +226,7 @@ static int vdbeSorterIterRead(
       while( nByte>nNew ) nNew = nNew*2;
       p->aAlloc = sqlite3DbReallocOrFree(db, p->aAlloc, nNew);
       if( !p->aAlloc ) return SQLITE_NOMEM;
-      p->nAlloc = nNew;
+      p->nAlloc = (int)nNew;
     }
 
     /* Copy as much data as is available in the buffer into the start of
