@@ -120,7 +120,7 @@ static int rehash(Hash *pH, unsigned int new_size){
   ** may be larger than the requested amount).
   */
   sqlite3BeginBenignMalloc();
-  new_ht = (struct _ht *)sqlite3Malloc( new_size*sizeof(struct _ht) );
+  new_ht = (struct _ht *)sqlite3Malloc( new_size*(i64)sizeof(struct _ht) );
   sqlite3EndBenignMalloc();
 
   if( new_ht==0 ) return 0;

@@ -197,7 +197,7 @@ void sqlite3Update(
   /* Allocate space for aXRef[], aRegIdx[], and aToOpen[].  
   ** Initialize aXRef[] and aToOpen[] to their default values.
   */
-  aXRef = sqlite3DbMallocRaw(db, sizeof(int) * (pTab->nCol+nIdx) + nIdx+2 );
+  aXRef = sqlite3DbMallocRaw(db, sizeof(int)*(i64)(pTab->nCol+nIdx) + nIdx+2 );
   if( aXRef==0 ) goto update_cleanup;
   aRegIdx = aXRef+pTab->nCol;
   aToOpen = (u8*)(aRegIdx+nIdx);

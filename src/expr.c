@@ -665,7 +665,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     if( x>0 ){
       if( x>pParse->nzVar ){
         char **a;
-        a = sqlite3DbRealloc(db, pParse->azVar, x*sizeof(a[0]));
+        a = sqlite3DbRealloc(db, pParse->azVar, (i64)x*sizeof(a[0]));
         if( a==0 ) return;  /* Error reported through db->mallocFailed */
         pParse->azVar = a;
         memset(&a[pParse->nzVar], 0, (x-pParse->nzVar)*sizeof(a[0]));
@@ -910,7 +910,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
 static With *withDup(sqlite3 *db, With *p){
   With *pRet = 0;
   if( p ){
-    int nByte = sizeof(*p) + sizeof(p->a[0]) * (p->nCte-1);
+    i64 nByte = sizeof(*p) + sizeof(p->a[0]) * (i64)(p->nCte-1);
     pRet = sqlite3DbMallocZero(db, nByte);
     if( pRet ){
       int i;
@@ -957,7 +957,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
   if( pNew==0 ) return 0;
   pNew->nExpr = i = p->nExpr;
   if( (flags & EXPRDUP_REDUCE)==0 ) for(i=1; i<p->nExpr; i+=i){}
-  pNew->a = pItem = sqlite3DbMallocRaw(db,  i*sizeof(p->a[0]) );
+  pNew->a = pItem = sqlite3DbMallocRaw(db,  (i64)i*sizeof(p->a[0]) );
   if( pItem==0 ){
     sqlite3DbFree(db, pNew);
     return 0;
@@ -987,7 +987,7 @@ ExprList *sqlite3ExprListDup(sqlite3 *db, ExprList *p, int flags){
 SrcList *sqlite3SrcListDup(sqlite3 *db, SrcList *p, int flags){
   SrcList *pNew;
   int i;
-  int nByte;
+  i64 nByte;
   if( p==0 ) return 0;
   nByte = sizeof(*p) + (p->nSrc>0 ? sizeof(p->a[0]) * (p->nSrc-1) : 0);
   pNew = sqlite3DbMallocRaw(db, nByte );
@@ -1029,7 +1029,7 @@ IdList *sqlite3IdListDup(sqlite3 *db, IdList *p){
   pNew = sqlite3DbMallocRaw(db, sizeof(*pNew) );
   if( pNew==0 ) return 0;
   pNew->nId = p->nId;
-  pNew->a = sqlite3DbMallocRaw(db, p->nId*sizeof(p->a[0]) );
+  pNew->a = sqlite3DbMallocRaw(db, (i64)p->nId*sizeof(p->a[0]) );
   if( pNew->a==0 ){
     sqlite3DbFree(db, pNew);
     return 0;
@@ -1103,7 +1103,7 @@ ExprList *sqlite3ExprListAppend(
   }else if( (pList->nExpr & (pList->nExpr-1))==0 ){
     struct ExprList_item *a;
     assert( pList->nExpr>0 );
-    a = sqlite3DbRealloc(db, pList->a, pList->nExpr*2*sizeof(pList->a[0]));
+    a = sqlite3DbRealloc(db, pList->a, (i64)pList->nExpr*2*sizeof(pList->a[0]));
     if( a==0 ){
       goto no_mem;
     }

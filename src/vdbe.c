@@ -5107,7 +5107,7 @@ case OP_IntegrityCk: {
   assert( p->bIsReader );
   nRoot = pOp->p2;
   assert( nRoot>0 );
-  aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(nRoot+1) );
+  aRoot = sqlite3DbMallocRaw(db, sizeof(int)*(i64)(nRoot+1) );
   if( aRoot==0 ) goto no_mem;
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   pnErr = &aMem[pOp->p3];
@@ -5261,7 +5261,7 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 */
 case OP_Program: {        /* jump */
   int nMem;               /* Number of memory registers for sub-program */
-  int nByte;              /* Bytes of runtime space required for sub-program */
+  i64 nByte;              /* Bytes of runtime space required for sub-program */
   Mem *pRt;               /* Register to allocate runtime space */
   Mem *pMem;              /* Used to iterate through memory cells */
   Mem *pEnd;              /* Last memory cell in new array */
@@ -5308,9 +5308,9 @@ case OP_Program: {        /* jump */
     */
     nMem = pProgram->nMem + pProgram->nCsr;
     nByte = ROUND8(sizeof(VdbeFrame))
-              + nMem * sizeof(Mem)
-              + pProgram->nCsr * sizeof(VdbeCursor *)
-              + pProgram->nOnce * sizeof(u8);
+              + (i64)nMem * sizeof(Mem)
+              + (i64)pProgram->nCsr * sizeof(VdbeCursor *)
+              + (i64)pProgram->nOnce * sizeof(u8);
     pFrame = sqlite3DbMallocZero(db, nByte);
     if( !pFrame ){
       goto no_mem;

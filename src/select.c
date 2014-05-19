@@ -932,7 +932,7 @@ static void selectInnerLoop(
 */
 KeyInfo *sqlite3KeyInfoAlloc(sqlite3 *db, int N, int X){
   KeyInfo *p = sqlite3DbMallocZero(0, 
-                   sizeof(KeyInfo) + (N+X)*(sizeof(CollSeq*)+1));
+                   sizeof(KeyInfo) + (i64)(N+X)*(sizeof(CollSeq*)+1));
   if( p ){
     p->aSortOrder = (u8*)&p->aColl[N+X];
     p->nField = (u16)N;
@@ -1542,7 +1542,7 @@ static int selectColumnsFromExprList(
 
   if( pEList ){
     nCol = pEList->nExpr;
-    aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
+    aCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*(i64)nCol);
     testcase( aCol==0 );
   }else{
     nCol = 0;
@@ -2744,7 +2744,7 @@ static int multiSelectOrderBy(
   ** to the right and the left are evaluated, they use the correct
   ** collation.
   */
-  aPermute = sqlite3DbMallocRaw(db, sizeof(int)*nOrderBy);
+  aPermute = sqlite3DbMallocRaw(db, sizeof(int)*(i64)nOrderBy);
   if( aPermute ){
     struct ExprList_item *pItem;
     for(i=0, pItem=pOrderBy->a; i<nOrderBy; i++, pItem++){

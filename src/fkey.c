@@ -219,7 +219,7 @@ int sqlite3FkLocateIndex(
     }
   }else if( paiCol ){
     assert( nCol>1 );
-    aiCol = (int *)sqlite3DbMallocRaw(pParse->db, nCol*sizeof(int));
+    aiCol = (int *)sqlite3DbMallocRaw(pParse->db, (i64)nCol*sizeof(int));
     if( !aiCol ) return 1;
     *paiCol = aiCol;
   }

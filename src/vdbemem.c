@@ -934,6 +934,7 @@ static sqlite3_value *valueNew(sqlite3 *db, struct ValueNewStat4Ctx *p){
       int i;                      /* Counter variable */
       int nCol = pIdx->nColumn;   /* Number of index columns including rowid */
   
+      assert( sizeof(pIdx->nColumn)==2 && nCol<=0xffff );
       nByte = sizeof(Mem) * nCol + ROUND8(sizeof(UnpackedRecord));
       pRec = (UnpackedRecord*)sqlite3DbMallocZero(db, nByte);
       if( pRec ){

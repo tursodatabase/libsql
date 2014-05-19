@@ -278,7 +278,7 @@ void sqlite3VtabClear(sqlite3 *db, Table *p){
 */
 static void addModuleArgument(sqlite3 *db, Table *pTable, char *zArg){
   int i = pTable->nModuleArg++;
-  int nBytes = sizeof(char *)*(1+pTable->nModuleArg);
+  i64 nBytes = sizeof(char *)*(i64)(1+pTable->nModuleArg);
   char **azModuleArg;
   azModuleArg = sqlite3DbRealloc(db, pTable->azModuleArg, nBytes);
   if( azModuleArg==0 ){
@@ -620,7 +620,7 @@ static int growVTrans(sqlite3 *db){
   /* Grow the sqlite3.aVTrans array if required */
   if( (db->nVTrans%ARRAY_INCR)==0 ){
     VTable **aVTrans;
-    int nBytes = sizeof(sqlite3_vtab *) * (db->nVTrans + ARRAY_INCR);
+    i64 nBytes = sizeof(sqlite3_vtab *)*(i64)(db->nVTrans + ARRAY_INCR);
     aVTrans = sqlite3DbRealloc(db, (void *)db->aVTrans, nBytes);
     if( !aVTrans ){
       return SQLITE_NOMEM;

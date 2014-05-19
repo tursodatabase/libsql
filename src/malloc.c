@@ -294,7 +294,7 @@ static int mallocWithAlarm(int n, void **pp){
 ** Allocate memory.  This routine is like sqlite3_malloc() except that it
 ** assumes the memory subsystem has already been initialized.
 */
-void *sqlite3Malloc(int n){
+void *sqlite3Malloc(i64 n){
   void *p;
   if( n<=0               /* IMP: R-65312-04917 */ 
    || n>=0x7fffff00
@@ -307,10 +307,10 @@ void *sqlite3Malloc(int n){
     p = 0;
   }else if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
-    mallocWithAlarm(n, &p);
+    mallocWithAlarm((int)n, &p);
     sqlite3_mutex_leave(mem0.mutex);
   }else{
-    p = sqlite3GlobalConfig.m.xMalloc(n);
+    p = sqlite3GlobalConfig.m.xMalloc((int)n);
   }
   assert( EIGHT_BYTE_ALIGNMENT(p) );  /* IMP: R-04675-44850 */
   return p;
@@ -513,7 +513,7 @@ void sqlite3DbFree(sqlite3 *db, void *p){
 /*
 ** Change the size of an existing memory allocation
 */
-void *sqlite3Realloc(void *pOld, int nBytes){
+void *sqlite3Realloc(void *pOld, i64 nBytes){
   int nOld, nNew, nDiff;
   void *pNew;
   if( pOld==0 ){
@@ -531,7 +531,7 @@ void *sqlite3Realloc(void *pOld, int nBytes){
   /* IMPLEMENTATION-OF: R-46199-30249 SQLite guarantees that the second
   ** argument to xRealloc is always a value returned by a prior call to
   ** xRoundup. */
-  nNew = sqlite3GlobalConfig.m.xRoundup(nBytes);
+  nNew = sqlite3GlobalConfig.m.xRoundup((int)nBytes);
   if( nOld==nNew ){
     pNew = pOld;
   }else if( sqlite3GlobalConfig.bMemstat ){
@@ -576,7 +576,7 @@ void *sqlite3_realloc(void *pOld, int n){
 /*
 ** Allocate and zero memory.
 */ 
-void *sqlite3MallocZero(int n){
+void *sqlite3MallocZero(i64 n){
   void *p = sqlite3Malloc(n);
   if( p ){
     memset(p, 0, n);
@@ -588,7 +588,7 @@ void *sqlite3MallocZero(int n){
 ** Allocate and zero memory.  If the allocation fails, make
 ** the mallocFailed flag in the connection pointer.
 */
-void *sqlite3DbMallocZero(sqlite3 *db, int n){
+void *sqlite3DbMallocZero(sqlite3 *db, i64 n){
   void *p = sqlite3DbMallocRaw(db, n);
   if( p ){
     memset(p, 0, n);
@@ -614,7 +614,7 @@ void *sqlite3DbMallocZero(sqlite3 *db, int n){
 ** In other words, if a subsequent malloc (ex: "b") worked, it is assumed
 ** that all prior mallocs (ex: "a") worked too.
 */
-void *sqlite3DbMallocRaw(sqlite3 *db, int n){
+void *sqlite3DbMallocRaw(sqlite3 *db, i64 n){
   void *p;
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
   assert( db==0 || db->pnBytesFreed==0 );
@@ -658,7 +658,7 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
 ** Resize the block of memory pointed to by p to n bytes. If the
 ** resize fails, set the mallocFailed flag in the connection object.
 */
-void *sqlite3DbRealloc(sqlite3 *db, void *p, int n){
+void *sqlite3DbRealloc(sqlite3 *db, void *p, i64 n){
   void *pNew = 0;
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
@@ -695,7 +695,7 @@ void *sqlite3DbRealloc(sqlite3 *db, void *p, int n){
 ** Attempt to reallocate p.  If the reallocation fails, then free p
 ** and set the mallocFailed flag in the database connection.
 */
-void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, int n){
+void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, i64 n){
   void *pNew;
   pNew = sqlite3DbRealloc(db, p, n);
   if( !pNew ){
@@ -713,13 +713,12 @@ void *sqlite3DbReallocOrFree(sqlite3 *db, void *p, int n){
 */
 char *sqlite3DbStrDup(sqlite3 *db, const char *z){
   char *zNew;
-  size_t n;
+  i64 n;
   if( z==0 ){
     return 0;
   }
   n = sqlite3Strlen30(z) + 1;
-  assert( (n&0x7fffffff)==n );
-  zNew = sqlite3DbMallocRaw(db, (int)n);
+  zNew = sqlite3DbMallocRaw(db, n);
   if( zNew ){
     memcpy(zNew, z, n);
   }
@@ -730,8 +729,7 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, int n){
   if( z==0 ){
     return 0;
   }
-  assert( (n&0x7fffffff)==n );
-  zNew = sqlite3DbMallocRaw(db, n+1);
+  zNew = sqlite3DbMallocRaw(db, (i64)n+1);
   if( zNew ){
     memcpy(zNew, z, n);
     zNew[n] = 0;

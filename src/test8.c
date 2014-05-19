@@ -178,14 +178,14 @@ static int getColumnNames(
 
   if( rc==SQLITE_OK ){
     int ii;
-    int nBytes;
+    i64 nBytes;
     char *zSpace;
     nCol = sqlite3_column_count(pStmt);
 
     /* Figure out how much space to allocate for the array of column names 
     ** (including space for the strings themselves). Then allocate it.
     */
-    nBytes = sizeof(char *) * nCol;
+    nBytes = sizeof(char *) * (i64)nCol;
     for(ii=0; ii<nCol; ii++){
       const char *zName = sqlite3_column_name(pStmt, ii);
       if( !zName ){
@@ -244,7 +244,7 @@ static int getIndexArray(
   char *zSql;
 
   /* Allocate space for the index array */
-  aIndex = (int *)sqlite3MallocZero(sizeof(int) * nCol);
+  aIndex = (int *)sqlite3MallocZero(sizeof(int) * (i64)nCol);
   if( !aIndex ){
     rc = SQLITE_NOMEM;
     goto get_index_array_out;

@@ -2443,7 +2443,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   rc = sqlite3OsFileSize(pMaster, &nMasterJournal);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   nMasterPtr = pVfs->mxPathname+1;
-  zMasterJournal = sqlite3Malloc((int)nMasterJournal + nMasterPtr + 1);
+  zMasterJournal = sqlite3Malloc(nMasterJournal + nMasterPtr + 1);
   if( !zMasterJournal ){
     rc = SQLITE_NOMEM;
     goto delmaster_out;
@@ -4574,7 +4574,7 @@ int sqlite3PagerOpen(
   if( zFilename && zFilename[0] ){
     const char *z;
     nPathname = pVfs->mxPathname+1;
-    zPathname = sqlite3DbMallocRaw(0, nPathname*2);
+    zPathname = sqlite3DbMallocRaw(0, (i64)nPathname*2);
     if( zPathname==0 ){
       return SQLITE_NOMEM;
     }
@@ -4619,7 +4619,7 @@ int sqlite3PagerOpen(
     ROUND8(sizeof(*pPager)) +      /* Pager structure */
     ROUND8(pcacheSize) +           /* PCache object */
     ROUND8(pVfs->szOsFile) +       /* The main db file */
-    journalFileSize * 2 +          /* The two journal files */ 
+    (i64)journalFileSize * 2 +     /* The two journal files */ 
     nPathname + 1 + nUri +         /* zFilename */
     nPathname + 8 + 2              /* zJournal */
 #ifndef SQLITE_OMIT_WAL
@@ -6478,7 +6478,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
     ** malloc failure occurs while populating it in the for(...) loop below.
     */
     aNew = (PagerSavepoint *)sqlite3Realloc(
-        pPager->aSavepoint, sizeof(PagerSavepoint)*nSavepoint
+        pPager->aSavepoint, sizeof(PagerSavepoint)*(i64)nSavepoint
     );
     if( !aNew ){
       return SQLITE_NOMEM;

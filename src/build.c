@@ -1036,7 +1036,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   }
   if( (p->nCol & 0x7)==0 ){
     Column *aNew;
-    aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
+    aNew = sqlite3DbRealloc(db,p->aCol,(i64)(p->nCol+8)*sizeof(p->aCol[0]));
     if( aNew==0 ){
       sqlite3DbFree(db, z);
       return;
@@ -1491,6 +1491,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     zSep2 = ",\n  ";
     zEnd = "\n)";
   }
+  assert( sizeof(p->nCol)==2 );
   n += 35 + 6*p->nCol;
   zStmt = sqlite3DbMallocRaw(0, n);
   if( zStmt==0 ){
@@ -1542,10 +1543,10 @@ static char *createTableStmt(sqlite3 *db, Table *p){
 */
 static int resizeIndexObject(sqlite3 *db, Index *pIdx, int N){
   char *zExtra;
-  int nByte;
+  i64 nByte;
   if( pIdx->nColumn>=N ) return SQLITE_OK;
   assert( pIdx->isResized==0 );
-  nByte = (sizeof(char*) + sizeof(i16) + 1)*N;
+  nByte = (sizeof(char*) + sizeof(i16) + 1)*(i64)N;
   zExtra = sqlite3DbMallocZero(db, nByte);
   if( zExtra==0 ) return SQLITE_NOMEM;
   memcpy(zExtra, pIdx->azColl, sizeof(char*)*pIdx->nColumn);
@@ -2503,7 +2504,7 @@ void sqlite3CreateForeignKey(
   FKey *pFKey = 0;
   FKey *pNextTo;
   Table *p = pParse->pNewTable;
-  int nByte;
+  i64 nByte;
   int i;
   int nCol;
   char *z;
@@ -2528,7 +2529,7 @@ void sqlite3CreateForeignKey(
   }else{
     nCol = pFromCol->nExpr;
   }
-  nByte = sizeof(*pFKey) + (nCol-1)*sizeof(pFKey->aCol[0]) + pTo->n + 1;
+  nByte = sizeof(*pFKey) + (i64)(nCol-1)*sizeof(pFKey->aCol[0]) + pTo->n + 1;
   if( pToCol ){
     for(i=0; i<pToCol->nExpr; i++){
       nByte += sqlite3Strlen30(pToCol->a[i].zName) + 1;
@@ -3379,7 +3380,7 @@ void *sqlite3ArrayAllocate(
   int n = *pnEntry;
   if( (n & (n-1))==0 ){
     int sz = (n==0) ? 1 : 2*n;
-    void *pNew = sqlite3DbRealloc(db, pArray, sz*szEntry);
+    void *pNew = sqlite3DbRealloc(db, pArray, sz*(i64)szEntry);
     if( pNew==0 ){
       *pIdx = -1;
       return pArray;
@@ -3485,7 +3486,7 @@ SrcList *sqlite3SrcListEnlarge(
     int nAlloc = pSrc->nSrc+nExtra;
     int nGot;
     pNew = sqlite3DbRealloc(db, pSrc,
-               sizeof(*pSrc) + (nAlloc-1)*sizeof(pSrc->a[0]) );
+               sizeof(*pSrc) + (nAlloc-1)*(i64)sizeof(pSrc->a[0]) );
     if( pNew==0 ){
       assert( db->mallocFailed );
       return pSrc;
@@ -4202,7 +4203,7 @@ With *sqlite3WithAdd(
   }
 
   if( pWith ){
-    int nByte = sizeof(*pWith) + (sizeof(pWith->a[1]) * pWith->nCte);
+    i64 nByte = sizeof(*pWith) + (sizeof(pWith->a[1])*(i64)pWith->nCte);
     pNew = sqlite3DbRealloc(db, pWith, nByte);
   }else{
     pNew = sqlite3DbMallocZero(db, sizeof(*pWith));

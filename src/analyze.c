@@ -819,7 +819,7 @@ static void statGet(
     char *z;
     int i;
 
-    char *zRet = sqlite3MallocZero(p->nCol * 25);
+    char *zRet = sqlite3MallocZero((i64)p->nCol * 25);
     if( zRet==0 ){
       sqlite3_result_error_nomem(context);
       return;
@@ -870,7 +870,7 @@ static void statGet(
     if( IsStat3 ){
       sqlite3_result_int64(context, (i64)aCnt[0]);
     }else{
-      char *zRet = sqlite3MallocZero(p->nCol * 25);
+      char *zRet = sqlite3MallocZero((i64)p->nCol * 25);
       if( zRet==0 ){
         sqlite3_result_error_nomem(context);
       }else{
@@ -998,6 +998,7 @@ static void analyzeOneTable(
     if( pIdx->pPartIdxWhere==0 ) needTableCnt = 0;
     VdbeNoopComment((v, "Begin analysis of %s", pIdx->zName));
     nCol = pIdx->nKeyCol;
+    assert( sizeof(pIdx->nKeyCol)==2 && nCol<=0xffff );
     aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*(nCol+1));
     if( aGotoChng==0 ) continue;
 
@@ -1588,8 +1589,8 @@ static int loadStatTbl(
 
     char *zIndex;   /* Index name */
     Index *pIdx;    /* Pointer to the index object */
-    int nSample;    /* Number of samples */
-    int nByte;      /* Bytes of space required */
+    i64 nSample;    /* Number of samples */
+    i64 nByte;      /* Bytes of space required */
     int i;          /* Bytes of space required */
     tRowcnt *pSpace;
 

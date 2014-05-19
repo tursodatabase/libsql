@@ -531,7 +531,7 @@ static int sqlite3LoadExtension(
   }
 
   /* Append the new shared library handle to the db->aExtension array. */
-  aHandle = sqlite3DbMallocZero(db, sizeof(handle)*(db->nExtension+1));
+  aHandle = sqlite3DbMallocZero(db, sizeof(handle)*(i64)(db->nExtension+1));
   if( aHandle==0 ){
     return SQLITE_NOMEM;
   }

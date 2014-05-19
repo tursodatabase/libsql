@@ -747,7 +747,7 @@ void sqlite3Insert(
     int nIdx;
     nIdx = sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, -1, 0,
                                       &iDataCur, &iIdxCur);
-    aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(nIdx+1));
+    aRegIdx = sqlite3DbMallocRaw(db, sizeof(int)*(i64)(nIdx+1));
     if( aRegIdx==0 ){
       goto insert_cleanup;
     }

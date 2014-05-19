@@ -606,7 +606,7 @@ static int saveCursorPosition(BtCursor *pCur){
   ** data.
   */
   if( 0==pCur->apPage[0]->intKey ){
-    void *pKey = sqlite3Malloc( (int)pCur->nKey );
+    void *pKey = sqlite3Malloc( pCur->nKey );
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
       if( rc==SQLITE_OK ){
@@ -4022,7 +4022,7 @@ static int accessPayload(
       int nOvfl = (pCur->info.nPayload-pCur->info.nLocal+ovflSize-1)/ovflSize;
       if( nOvfl>pCur->nOvflAlloc ){
         Pgno *aNew = (Pgno*)sqlite3DbRealloc(
-            pCur->pBtree->db, pCur->aOverflow, nOvfl*2*sizeof(Pgno)
+            pCur->pBtree->db, pCur->aOverflow, (i64)nOvfl*2*sizeof(Pgno)
         );
         if( aNew==0 ){
           rc = SQLITE_NOMEM;

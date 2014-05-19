@@ -258,7 +258,7 @@ void sqlite3ConnectionUnlocked(sqlite3 *db){
        || (aDyn && nArg==(int)(sqlite3MallocSize(aDyn)/sizeof(void*)))
       ){
         /* The aArg[] array needs to grow. */
-        void **pNew = (void **)sqlite3Malloc(nArg*sizeof(void *)*2);
+        void **pNew = (void **)sqlite3Malloc((i64)nArg*sizeof(void *)*2);
         if( pNew ){
           memcpy(pNew, aArg, nArg*sizeof(void *));
           sqlite3_free(aDyn);

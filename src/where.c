@@ -209,7 +209,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   if( pWC->nTerm>=pWC->nSlot ){
     WhereTerm *pOld = pWC->a;
     sqlite3 *db = pWC->pWInfo->pParse->db;
-    pWC->a = sqlite3DbMallocRaw(db, sizeof(pWC->a[0])*pWC->nSlot*2 );
+    pWC->a = sqlite3DbMallocRaw(db, sizeof(pWC->a[0])*(i64)pWC->nSlot*2 );
     if( pWC->a==0 ){
       if( wtFlags & TERM_DYNAMIC ){
         sqlite3ExprDelete(db, p);
@@ -1777,8 +1777,8 @@ static sqlite3_index_info *allocateIndexInfo(
   /* Allocate the sqlite3_index_info structure
   */
   pIdxInfo = sqlite3DbMallocZero(pParse->db, sizeof(*pIdxInfo)
-                           + (sizeof(*pIdxCons) + sizeof(*pUsage))*nTerm
-                           + sizeof(*pIdxOrderBy)*nOrderBy );
+                           + (sizeof(*pIdxCons) + sizeof(*pUsage))*(i64)nTerm
+                           + sizeof(*pIdxOrderBy)*(i64)nOrderBy );
   if( pIdxInfo==0 ){
     sqlite3ErrorMsg(pParse, "out of memory");
     return 0;
@@ -3686,7 +3686,7 @@ static int whereLoopResize(sqlite3 *db, WhereLoop *p, int n){
   WhereTerm **paNew;
   if( p->nLSlot>=n ) return SQLITE_OK;
   n = (n+7)&~7;
-  paNew = sqlite3DbMallocRaw(db, sizeof(p->aLTerm[0])*n);
+  paNew = sqlite3DbMallocRaw(db, sizeof(p->aLTerm[0])*(i64)n);
   if( paNew==0 ) return SQLITE_NOMEM;
   memcpy(paNew, p->aLTerm, sizeof(p->aLTerm[0])*p->nLSlot);
   if( p->aLTerm!=p->aLTermSpace ) sqlite3DbFree(db, p->aLTerm);
@@ -5231,8 +5231,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   WHERETRACE(0x002, ("---- begin solver\n"));
 
   /* Allocate and initialize space for aTo and aFrom */
-  ii = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
-  pSpace = sqlite3DbMallocRaw(db, ii);
+  pSpace = sqlite3DbMallocRaw(db, 
+               (sizeof(WherePath)+sizeof(WhereLoop*)*(i64)nLoop)*mxChoice*2);
   if( pSpace==0 ) return SQLITE_NOMEM;
   aTo = (WherePath*)pSpace;
   aFrom = aTo+mxChoice;

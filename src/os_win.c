@@ -1533,7 +1533,7 @@ static LPWSTR winUtf8ToUnicode(const char *zFilename){
   if( nChar==0 ){
     return 0;
   }
-  zWideFilename = sqlite3MallocZero( nChar*sizeof(zWideFilename[0]) );
+  zWideFilename = sqlite3MallocZero( (i64)nChar*sizeof(zWideFilename[0]) );
   if( zWideFilename==0 ){
     return 0;
   }
@@ -1588,7 +1588,7 @@ static LPWSTR winMbcsToUnicode(const char *zFilename){
   if( nByte==0 ){
     return 0;
   }
-  zMbcsFilename = sqlite3MallocZero( nByte*sizeof(zMbcsFilename[0]) );
+  zMbcsFilename = sqlite3MallocZero( (i64)nByte*sizeof(zMbcsFilename[0]) );
   if( zMbcsFilename==0 ){
     return 0;
   }
@@ -4329,7 +4329,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
 #elif !SQLITE_OS_WINRT && !defined(__CYGWIN__)
   else if( osIsNT() ){
     char *zMulti;
-    LPWSTR zWidePath = sqlite3MallocZero( nMax*sizeof(WCHAR) );
+    LPWSTR zWidePath = sqlite3MallocZero( (i64)nMax*sizeof(WCHAR) );
     if( !zWidePath ){
       sqlite3_free(zBuf);
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
@@ -5108,7 +5108,7 @@ static int winFullPathname(
                          "winFullPathname1", zRelative);
     }
     nByte += 3;
-    zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
+    zTemp = sqlite3MallocZero( (i64)nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqlite3_free(zConverted);
       return SQLITE_IOERR_NOMEM;
@@ -5134,7 +5134,7 @@ static int winFullPathname(
                          "winFullPathname3", zRelative);
     }
     nByte += 3;
-    zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
+    zTemp = sqlite3MallocZero( (i64)nByte*sizeof(zTemp[0]) );
     if( zTemp==0 ){
       sqlite3_free(zConverted);
       return SQLITE_IOERR_NOMEM;

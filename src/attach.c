@@ -113,7 +113,7 @@ static void attachFunc(
     if( aNew==0 ) return;
     memcpy(aNew, db->aDb, sizeof(db->aDb[0])*2);
   }else{
-    aNew = sqlite3DbRealloc(db, db->aDb, sizeof(db->aDb[0])*(db->nDb+1) );
+    aNew = sqlite3DbRealloc(db, db->aDb, sizeof(db->aDb[0])*(i64)(db->nDb+1) );
     if( aNew==0 ) return;
   }
   db->aDb = aNew;

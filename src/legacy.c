@@ -73,7 +73,7 @@ int sqlite3_exec(
           (SQLITE_DONE==rc && !callbackIsInit
                            && db->flags&SQLITE_NullCallback)) ){
         if( !callbackIsInit ){
-          azCols = sqlite3DbMallocZero(db, 2*nCol*sizeof(const char*) + 1);
+          azCols = sqlite3DbMallocZero(db, 2*(i64)nCol*sizeof(const char*) + 1);
           if( azCols==0 ){
             goto exec_out;
           }

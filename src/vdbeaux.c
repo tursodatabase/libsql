@@ -96,7 +96,7 @@ static int growOpArray(Vdbe *v){
   VdbeOp *pNew;
   Parse *p = v->pParse;
   int nNew = (p->nOpAlloc ? p->nOpAlloc*2 : (int)(1024/sizeof(Op)));
-  pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
+  pNew = sqlite3DbRealloc(p->db, v->aOp, (i64)nNew*sizeof(Op));
   if( pNew ){
     p->nOpAlloc = sqlite3DbMallocSize(p->db, pNew)/sizeof(Op);
     v->aOp = pNew;
@@ -258,7 +258,7 @@ int sqlite3VdbeMakeLabel(Vdbe *v){
   assert( v->magic==VDBE_MAGIC_INIT );
   if( (i & (i-1))==0 ){
     p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel, 
-                                       (i*2+1)*sizeof(p->aLabel[0]));
+                                       (i64)(i*2+1)*sizeof(p->aLabel[0]));
   }
   if( p->aLabel ){
     p->aLabel[i] = -1;
@@ -340,7 +340,7 @@ static Op *opIterNext(VdbeOpIter *p){
     }
   
     if( pRet->p4type==P4_SUBPROGRAM ){
-      int nByte = (p->nSub+1)*sizeof(SubProgram*);
+      i64 nByte = (p->nSub+1)*(i64)sizeof(SubProgram*);
       int j;
       for(j=0; j<p->nSub; j++){
         if( p->apSub[j]==pRet->p4.pProgram ) break;
@@ -1531,10 +1531,10 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 */
 static void *allocSpace(
   void *pBuf,          /* Where return pointer will be stored */
-  int nByte,           /* Number of bytes to allocate */
+  i64 nByte,           /* Number of bytes to allocate */
   u8 **ppFrom,         /* IN/OUT: Allocate from *ppFrom */
   u8 *pEnd,            /* Pointer to 1 byte past the end of *ppFrom buffer */
-  int *pnByte          /* If allocation cannot be made, increment *pnByte */
+  i64 *pnByte          /* If allocation cannot be made, increment *pnByte */
 ){
   assert( EIGHT_BYTE_ALIGNMENT(*ppFrom) );
   if( pBuf ) return pBuf;
@@ -1619,7 +1619,7 @@ void sqlite3VdbeMakeReady(
   int n;                         /* Loop counter */
   u8 *zCsr;                      /* Memory available for allocation */
   u8 *zEnd;                      /* First byte past allocated memory */
-  int nByte;                     /* How much extra memory is needed */
+  i64 nByte;                     /* How much extra memory is needed */
 
   assert( p!=0 );
   assert( p->nOp>0 );
@@ -1674,11 +1674,11 @@ void sqlite3VdbeMakeReady(
   */
   do {
     nByte = 0;
-    p->aMem = allocSpace(p->aMem, nMem*sizeof(Mem), &zCsr, zEnd, &nByte);
-    p->aVar = allocSpace(p->aVar, nVar*sizeof(Mem), &zCsr, zEnd, &nByte);
-    p->apArg = allocSpace(p->apArg, nArg*sizeof(Mem*), &zCsr, zEnd, &nByte);
-    p->azVar = allocSpace(p->azVar, nVar*sizeof(char*), &zCsr, zEnd, &nByte);
-    p->apCsr = allocSpace(p->apCsr, nCursor*sizeof(VdbeCursor*),
+    p->aMem = allocSpace(p->aMem, (i64)nMem*sizeof(Mem), &zCsr, zEnd, &nByte);
+    p->aVar = allocSpace(p->aVar, (i64)nVar*sizeof(Mem), &zCsr, zEnd, &nByte);
+    p->apArg = allocSpace(p->apArg, (i64)nArg*sizeof(Mem*), &zCsr, zEnd,&nByte);
+    p->azVar = allocSpace(p->azVar, (i64)nVar*sizeof(char*), &zCsr,zEnd,&nByte);
+    p->apCsr = allocSpace(p->apCsr, (i64)nCursor*sizeof(VdbeCursor*),
                           &zCsr, zEnd, &nByte);
     p->aOnceFlag = allocSpace(p->aOnceFlag, nOnce, &zCsr, zEnd, &nByte);
     if( nByte ){
@@ -1838,6 +1838,7 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
   int n;
   sqlite3 *db = p->db;
 
+  assert( nResColumn <= 0xffff );
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqlite3DbFree(db, p->aColName);
   n = nResColumn*COLNAME_N;
@@ -3073,6 +3074,7 @@ UnpackedRecord *sqlite3VdbeAllocUnpackedRecord(
   ** it by.  If pSpace is already 8-byte aligned, nOff should be zero.
   */
   nOff = (8 - (SQLITE_PTR_TO_INT(pSpace) & 7)) & 7;
+  assert( sizeof(pKeyInfo->nField)==2 );
   nByte = ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nField+1);
   if( nByte>szSpace+nOff ){
     p = (UnpackedRecord *)sqlite3DbMallocRaw(pKeyInfo->db, nByte);

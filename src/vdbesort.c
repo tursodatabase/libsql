@@ -222,7 +222,7 @@ static int vdbeSorterIterRead(
 
     /* Extend the p->aAlloc[] allocation if required. */
     if( p->nAlloc<nByte ){
-      int nNew = p->nAlloc*2;
+      i64 nNew = p->nAlloc*2;
       while( nByte>nNew ) nNew = nNew*2;
       p->aAlloc = sqlite3DbReallocOrFree(db, p->aAlloc, nNew);
       if( !p->aAlloc ) return SQLITE_NOMEM;

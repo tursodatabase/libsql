@@ -942,7 +942,7 @@ static void strftimeFunc(
     sqlite3_result_error_toobig(context);
     return;
   }else{
-    z = sqlite3DbMallocRaw(db, (int)n);
+    z = sqlite3DbMallocRaw(db, n);
     if( z==0 ){
       sqlite3_result_error_nomem(context);
       return;
