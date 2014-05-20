@@ -1,5 +1,5 @@
-C In\svdbesort.c,\schange\sthe\snames\sof\sPmaReader\svariables\s"pIter"\sto\s"pReadr".\nOther\srelated\scomment\schanges.\s\sThe\sgenerated\sobject\scode\sshould\sbe\sthe\ssame.
-D 2014-05-20T11:03:53.818
+C Improvements\sto\sthe\stestability\sof\sthe\sthreads.c\smodule.
+D 2014-05-20T19:11:50.626
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de92112472618cb869d27249966bad1783e4a853
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -275,7 +275,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c b9daffcb6ae3a9c080da37b905e790d45a8f99db
+F src/threads.c 3c63f60ce0aae4c40ed4b8dc745490ff42a05308
 F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
@@ -1177,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6eefdad946da6a5f4052ac51d327777890fa3f18
-R 7346935112c4ac3d3d573eb5af19111a
+P 99efb235a08784020535a770d7e7d96d9ccee12d
+R 41b3a138387644de9249d3787f3c7d11
 U drh
-Z 3f1d10c1aba3efc362d8ec22de1a631d
+Z 514d5c30144e64644ef12bde520c79ea

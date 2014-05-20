@@ -54,15 +54,16 @@ int sqlite3ThreadCreate(
 
   assert( ppThread!=0 );
   assert( xTask!=0 );
+  /* This routine is never used in single-threaded mode */
+  assert( sqlite3GlobalConfig.bCoreMutex!=0 );
+
   *ppThread = 0;
   p = sqlite3Malloc(sizeof(*p));
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
   p->xTask = xTask;
   p->pIn = pIn;
-  if( sqlite3GlobalConfig.bCoreMutex==0
-    || pthread_create(&p->tid, 0, xTask, pIn)!=0 
-  ){
+  if( sqlite3FaultSim(200) ? 1 : pthread_create(&p->tid, 0, xTask, pIn) ){
     p->done = 1;
     p->pOut = xTask(pIn);
   }
@@ -80,10 +81,10 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
     *ppOut = p->pOut;
     rc = SQLITE_OK;
   }else{
-    rc = pthread_join(p->tid, ppOut);
+    rc = pthread_join(p->tid, ppOut) ? SQLITE_ERROR : SQLITE_OK;
   }
   sqlite3_free(p);
-  return rc ? SQLITE_ERROR : SQLITE_OK;
+  return rc;
 }
 
 #endif /* SQLITE_OS_UNIX && defined(SQLITE_MUTEX_PTHREADS) */
