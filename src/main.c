@@ -3246,6 +3246,28 @@ int sqlite3_test_control(int op, ...){
     }
 
     /*
+    **  sqlite3_test_control(FAULT_INSTALL, xCallback)
+    **
+    ** Arrange to invoke xCallback() whenever sqlite3FaultSim() is called,
+    ** if xCallback is not NULL.
+    **
+    ** As a test of the fault simulator mechanism itself, sqlite3FaultSim(0)
+    ** is called immediately after installing the new callback and the return
+    ** value from sqlite3FaultSim(0) becomes the return from
+    ** sqlite3_test_control().
+    */
+    case SQLITE_TESTCTRL_FAULT_INSTALL: {
+      /* MSVC is picky about pulling func ptrs from va lists.
+      ** http://support.microsoft.com/kb/47961
+      ** sqlite3Config.xTestCallback = va_arg(ap, int(*)(int));
+      */
+      typedef int(*TESTCALLBACKFUNC_t)(int);
+      sqlite3Config.xTestCallback = va_arg(ap, TESTCALLBACKFUNC_t);
+      rc = sqlite3FaultSim(0);
+      break;
+    }
+
+    /*
     **  sqlite3_test_control(BENIGN_MALLOC_HOOKS, xBegin, xEnd)
     **
     ** Register hooks to call to indicate which malloc() failures 

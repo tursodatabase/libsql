@@ -58,12 +58,24 @@ proc do_backcompat_test {rv bin1 bin2 script} {
   code1 { sqlite3 db test.db }
   code2 { sqlite3 db test.db }
 
+  foreach c {code1 code2} {
+    $c {
+      set v [split [db version] .]
+      if {[llength $v]==3} {lappend v 0}
+      set ::sqlite_libversion [format \
+        "%d%.2d%.2d%2d" [lindex $v 0] [lindex $v 1] [lindex $v 2] [lindex $v 3]
+      ]
+    }
+  }
+
   uplevel $script
 
   catch { code1 { db close } }
   catch { code2 { db close } }
   catch { close $::bc_chan2 }
   catch { close $::bc_chan1 }
+
+
 }
 
 array set ::incompatible [list]
@@ -380,6 +392,48 @@ ifcapable fts3 {
         8    "SELECT offsets(t1) FROM t1 WHERE t1 MATCH 'a*'"
       } {
         do_test backcompat-3.7 [list sql1 $q] [sql2 $q]
+      }
+
+      # Now test that an incremental merge can be started by one version
+      # and finished by another. And that the integrity-check still 
+      # passes.
+      do_test backcompat-3.8 {
+        sql1 { 
+          DROP TABLE IF EXISTS t1;
+          DROP TABLE IF EXISTS t2;
+          CREATE TABLE t1(docid, words);
+          CREATE VIRTUAL TABLE t2 USING fts3(words);
+        }
+        code1 [list source $testdir/genesis.tcl]
+        code1 { fts_kjv_genesis }
+        sql1 {
+          INSERT INTO t2 SELECT words FROM t1;
+          INSERT INTO t2 SELECT words FROM t1;
+          INSERT INTO t2 SELECT words FROM t1;
+          INSERT INTO t2 SELECT words FROM t1;
+          INSERT INTO t2 SELECT words FROM t1;
+          INSERT INTO t2 SELECT words FROM t1;
+          SELECT level, group_concat(idx, ' ') FROM t2_segdir GROUP BY level;
+        }
+      } {0 {0 1 2 3 4 5}}
+
+      if {[code1 { set ::sqlite_libversion }] >=3071200 
+       && [code2 { set ::sqlite_libversion }] >=3071200 
+      } {
+        do_test backcompat-3.9 {
+          sql1 { INSERT INTO t2(t2) VALUES('merge=100,4'); }
+          sql2 { INSERT INTO t2(t2) VALUES('merge=100,4'); }
+          sql1 { INSERT INTO t2(t2) VALUES('merge=100,4'); }
+          sql2 { INSERT INTO t2(t2) VALUES('merge=2500,4'); }
+          sql2 {
+            SELECT level, group_concat(idx, ' ') FROM t2_segdir GROUP BY level;
+          }
+        } {0 {0 1} 1 0}
+
+        do_test backcompat-3.10 {
+          sql1 { INSERT INTO t2(t2) VALUES('integrity-check') }
+          sql2 { INSERT INTO t2(t2) VALUES('integrity-check') }
+        } {}
       }
     }
   }

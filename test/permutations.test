@@ -112,6 +112,7 @@ set allquicktests [test_set $alltests -exclude {
   incrvacuum_ioerr.test autovacuum_crash.test btree8.test shared_err.test
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
+  fts4growth.test fts4growth2.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -196,6 +197,7 @@ test_suite "fts3" -prefix "" -description {
   fts3corrupt2.test fts3first.test fts4langid.test fts4merge.test
   fts4check.test fts4unicode.test fts4noti.test
   fts3varint.test
+  fts4growth.test fts4growth2.test
 }
 
 test_suite "nofaultsim" -prefix "" -description {

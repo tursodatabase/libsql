@@ -31,6 +31,24 @@ void sqlite3Coverage(int x){
 }
 #endif
 
+/*
+** Give a callback to the test harness that can be used to simulate faults
+** in places where it is difficult or expensive to do so purely by means
+** of inputs.
+**
+** The intent of the integer argument is to let the fault simulator know
+** which of multiple sqlite3FaultSim() calls has been hit.
+**
+** Return whatever integer value the test callback returns, or return
+** SQLITE_OK if no test callback is installed.
+*/
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+int sqlite3FaultSim(int iTest){
+  int (*xCallback)(int) = sqlite3GlobalConfig.xTestCallback;
+  return xCallback ? xCallback(iTest) : SQLITE_OK;
+}
+#endif
+
 #ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** Return true if the floating point value is Not a Number (NaN).

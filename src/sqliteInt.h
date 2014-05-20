@@ -2719,11 +2719,10 @@ struct Sqlite3Config {
   int isMutexInit;                  /* True after mutexes are initialized */
   int isMallocInit;                 /* True after malloc is initialized */
   int isPCacheInit;                 /* True after malloc is initialized */
-  sqlite3_mutex *pInitMutex;        /* Mutex used by sqlite3_initialize() */
   int nRefInitMutex;                /* Number of users of pInitMutex */
+  sqlite3_mutex *pInitMutex;        /* Mutex used by sqlite3_initialize() */
   void (*xLog)(void*,int,const char*); /* Function for logging */
   void *pLogArg;                       /* First argument to xLog() */
-  int bLocaltimeFault;              /* True to fail localtime() calls */
 #ifdef SQLITE_ENABLE_SQLLOG
   void(*xSqllog)(void*,sqlite3*,const char*, int);
   void *pSqllogArg;
@@ -2735,6 +2734,10 @@ struct Sqlite3Config {
   void (*xVdbeBranch)(void*,int iSrcLine,u8 eThis,u8 eMx);  /* Callback */
   void *pVdbeBranchArg;                                     /* 1st argument */
 #endif
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+  int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
+#endif
+  int bLocaltimeFault;              /* True to fail localtime() calls */
 };
 
 /*
@@ -3035,6 +3038,12 @@ int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
 Btree *sqlite3DbNameToBtree(sqlite3*,const char*);
 int sqlite3CodeOnce(Parse *);
+
+#ifdef SQLITE_OMIT_BUILTIN_TEST
+# define sqlite3FaultSim(X) SQLITE_OK
+#else
+  int sqlite3FaultSim(int);
+#endif
 
 Bitvec *sqlite3BitvecCreate(u32);
 int sqlite3BitvecTest(Bitvec*, u32);

@@ -604,5 +604,21 @@ do_execsql_test misc1-19.2 {
   SELECT * FROM t19b;
 } {4 5 6}
 
+# 2014-05-16:  Tests for the SQLITE_TESTCTRL_FAULT_INSTALL feature.
+#
+unset -nocomplain fault_callbacks
+set fault_callbacks {}
+proc fault_callback {n} {
+  lappend ::fault_callbacks $n
+  return 0
+}
+do_test misc1-19.1 {
+  sqlite3_test_control_fault_install fault_callback
+  set fault_callbacks
+} {0}
+do_test misc1-19.2 {
+  sqlite3_test_control_fault_install
+  set fault_callbacks
+} {0}
 
 finish_test

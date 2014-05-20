@@ -1,6 +1,9 @@
 #
 # nmake Makefile for SQLite
 #
+###############################################################################
+############################## START OF OPTIONS ###############################
+###############################################################################
 
 # The toplevel directory of the source tree.  This is the directory
 # that contains this "Makefile.msc".
@@ -11,6 +14,13 @@ TOP = .
 #
 !IFNDEF USE_AMALGAMATION
 USE_AMALGAMATION = 1
+!ENDIF
+
+# Set this non-0 to use the library paths and other options necessary for
+# Windows Phone 8.1.
+#
+!IFNDEF USE_WP81_OPTS
+USE_WP81_OPTS = 0
 !ENDIF
 
 # Set this non-0 to split the SQLite amalgamation file into chunks to
@@ -116,6 +126,25 @@ DEBUG = 0
 OPTIMIZATIONS = 2
 !ENDIF
 
+# These are the "standard" SQLite compilation options used when compiling for
+# the Windows platform.
+#
+!IFNDEF OPT_FEATURE_FLAGS
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
+OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
+!ENDIF
+
+###############################################################################
+############################### END OF OPTIONS ################################
+###############################################################################
+
+# This assumes that MSVC is always installed in 32-bit Program Files directory
+# and sets the variable for use in locating other 32-bit installs accordingly.
+#
+PROGRAMFILES_X86 = $(VCINSTALLDIR)\..\..
+PROGRAMFILES_X86 = $(PROGRAMFILES_X86:\\=\)
+
 # Check for the predefined command macro CC.  This should point to the compiler
 # binary for the target platform.  If it is not defined, simply define it to
 # the legacy default value 'cl.exe'.
@@ -139,6 +168,15 @@ LD = link.exe
 !IFNDEF RC
 RC = rc.exe
 !ENDIF
+
+# Check for the MSVC runtime library path macro.  Othertise, this value will
+# default to the 'lib' directory underneath the MSVC installation directory.
+#
+!IFNDEF CRTLIBPATH
+CRTLIBPATH = $(VCINSTALLDIR)\lib
+!ENDIF
+
+CRTLIBPATH = $(CRTLIBPATH:\\=\)
 
 # Check for the command macro NCC.  This should point to the compiler binary
 # for the platform the compilation process is taking place on.  If it is not
@@ -168,8 +206,8 @@ NCC = $(NCC:\\=\)
 NCC = $(CC)
 !ENDIF
 
-# Check for the MSVC runtime library path macro.  Othertise, this
-# value will default to the 'lib' directory underneath the MSVC
+# Check for the MSVC native runtime library path macro.  Othertise,
+# this value will default to the 'lib' directory underneath the MSVC
 # installation directory.
 #
 !IFNDEF NCRTLIBPATH
@@ -306,7 +344,6 @@ TCC = $(TCC) -DSQLITE_ENABLE_IOTRACE
 RCC = $(RCC) -DSQLITE_ENABLE_IOTRACE
 !ENDIF
 
-#
 # Prevent warnings about "insecure" MSVC runtime library functions
 # being used.
 #
@@ -314,28 +351,24 @@ TCC = $(TCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 BCC = $(BCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 RCC = $(RCC) -D_CRT_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
 
-#
 # Prevent warnings about "deprecated" POSIX functions being used.
 #
 TCC = $(TCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 BCC = $(BCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 RCC = $(RCC) -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_NONSTDC_NO_WARNINGS
 
-#
 # Use the SQLite debugging heap subsystem?
 #
 !IF $(MEMDEBUG)!=0
 TCC = $(TCC) -DSQLITE_MEMDEBUG=1
 RCC = $(RCC) -DSQLITE_MEMDEBUG=1
 
-#
 # Use native Win32 heap subsystem instead of malloc/free?
 #
 !ELSEIF $(WIN32HEAP)!=0
 TCC = $(TCC) -DSQLITE_WIN32_MALLOC=1
 RCC = $(RCC) -DSQLITE_WIN32_MALLOC=1
 
-#
 # Validate the heap on every call into the native Win32 heap subsystem?
 #
 !IF $(DEBUG)>2
@@ -430,25 +463,25 @@ RCC = $(RCC) -DSQLITE_TEMP_STORE=1
 # The same set of OMIT and ENABLE flags should be passed to the
 # LEMON parser generator and the mkkeywordhash tool as well.
 
-# BEGIN standard options
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_FTS3=1
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_RTREE=1
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_ENABLE_COLUMN_METADATA=1
-# END standard options
+# These are the required SQLite compilation options used when compiling for
+# the Windows platform.
+#
+REQ_FEATURE_FLAGS = $(REQ_FEATURE_FLAGS) -DSQLITE_MAX_TRIGGER_DEPTH=100
 
-# BEGIN required Windows option
-OPT_FEATURE_FLAGS = $(OPT_FEATURE_FLAGS) -DSQLITE_MAX_TRIGGER_DEPTH=100
-# END required Windows option
+# Add the required and optional SQLite compilation options into the command
+# lines used to invoke the MSVC code and resource compilers.
+#
+TCC = $(TCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS)
+RCC = $(RCC) $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS)
 
-TCC = $(TCC) $(OPT_FEATURE_FLAGS)
-RCC = $(RCC) $(OPT_FEATURE_FLAGS)
-
-# Add in any optional parameters specified on the make commane line
-# ie.  make "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1".
+# Add in any optional parameters specified on the commane line, e.g.
+# nmake /f Makefile.msc all "OPTS=-DSQLITE_ENABLE_FOO=1 -DSQLITE_OMIT_FOO=1"
+#
 TCC = $(TCC) $(OPTS)
 RCC = $(RCC) $(OPTS)
 
 # If compiling for debugging, add some defines.
+#
 !IF $(DEBUG)>0
 TCC = $(TCC) -D_DEBUG
 BCC = $(BCC) -D_DEBUG
@@ -457,6 +490,7 @@ RCC = $(RCC) -D_DEBUG
 
 # If optimizations are enabled or disabled (either implicitly or
 # explicitly), add the necessary flags.
+#
 !IF $(DEBUG)>0 || $(OPTIMIZATIONS)==0
 TCC = $(TCC) -Od
 BCC = $(BCC) -Od
@@ -472,12 +506,14 @@ BCC = $(BCC) -O1
 !ENDIF
 
 # If symbols are enabled (or compiling for debugging), enable PDBs.
+#
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
 TCC = $(TCC) -Zi
 BCC = $(BCC) -Zi
 !ENDIF
 
 # If ICU support is enabled, add the compiler options for it.
+#
 !IF $(USE_ICU)!=0
 TCC = $(TCC) -DSQLITE_ENABLE_ICU=1
 RCC = $(RCC) -DSQLITE_ENABLE_ICU=1
@@ -489,6 +525,7 @@ RCC = $(RCC) -I$(ICUINCDIR)
 
 # Command line prefixes for compiling code, compiling resources,
 # linking, etc.
+#
 LTCOMPILE = $(TCC) -Fo$@
 LTRCOMPILE = $(RCC) -r
 LTLIB = lib.exe
@@ -512,13 +549,13 @@ LTLINKOPTS = $(LTLINKOPTS) /APPCONTAINER
 !IF "$(VISUALSTUDIOVERSION)"=="12.0"
 !IFNDEF STORELIBPATH
 !IF "$(PLATFORM)"=="x86"
-STORELIBPATH = $(NCRTLIBPATH)\store
+STORELIBPATH = $(CRTLIBPATH)\store
 !ELSEIF "$(PLATFORM)"=="x64"
-STORELIBPATH = $(NCRTLIBPATH)\store\amd64
+STORELIBPATH = $(CRTLIBPATH)\store\amd64
 !ELSEIF "$(PLATFORM)"=="ARM"
-STORELIBPATH = $(NCRTLIBPATH)\store\arm
+STORELIBPATH = $(CRTLIBPATH)\store\arm
 !ELSE
-STORELIBPATH = $(NCRTLIBPATH)\store
+STORELIBPATH = $(CRTLIBPATH)\store
 !ENDIF
 !ENDIF
 STORELIBPATH = $(STORELIBPATH:\\=\)
@@ -526,24 +563,55 @@ LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(STORELIBPATH)"
 !ENDIF
 !ENDIF
 
+# When compiling for Windows Phone 8.1, an extra library path is
+# required.
+#
+!IF $(USE_WP81_OPTS)!=0
+!IFNDEF WP81LIBPATH
+!IF "$(PLATFORM)"=="x86"
+WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
+!ELSEIF "$(PLATFORM)"=="ARM"
+WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\ARM
+!ELSE
+WP81LIBPATH = $(PROGRAMFILES_X86)\Windows Phone Kits\8.1\lib\x86
+!ENDIF
+!ENDIF
+!ENDIF
+
+# When compiling for Windows Phone 8.1, some extra linker options
+# are also required.
+#
+!IF $(USE_WP81_OPTS)!=0
+!IFDEF WP81LIBPATH
+LTLINKOPTS = $(LTLINKOPTS) "/LIBPATH:$(WP81LIBPATH)"
+!ENDIF
+LTLINKOPTS = $(LTLINKOPTS) /DYNAMICBASE
+LTLINKOPTS = $(LTLINKOPTS) WindowsPhoneCore.lib RuntimeObject.lib PhoneAppModelHost.lib
+LTLINKOPTS = $(LTLINKOPTS) /NODEFAULTLIB:kernel32.lib /NODEFAULTLIB:ole32.lib
+!ENDIF
+
 # If either debugging or symbols are enabled, enable PDBs.
+#
 !IF $(DEBUG)>0 || $(SYMBOLS)!=0
 LDFLAGS = /DEBUG
 !ENDIF
 
 # Start with the Tcl related linker options.
+#
 !IF $(NO_TCL)==0
 LTLIBPATHS = /LIBPATH:$(TCLLIBDIR)
 LTLIBS = $(LIBTCL)
 !ENDIF
 
 # If ICU support is enabled, add the linker options for it.
+#
 !IF $(USE_ICU)!=0
 LTLIBPATHS = $(LTLIBPATHS) /LIBPATH:$(ICULIBDIR)
 LTLIBS = $(LTLIBS) $(LIBICU)
 !ENDIF
 
 # nawk compatible awk.
+#
 !IFNDEF NAWK
 NAWK = gawk.exe
 !ENDIF
@@ -1222,7 +1290,7 @@ parse.h:	parse.c
 parse.c:	$(TOP)\src\parse.y lemon.exe $(TOP)\addopcodes.awk
 	del /Q parse.y parse.h parse.h.temp
 	copy $(TOP)\src\parse.y .
-	.\lemon.exe $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
+	.\lemon.exe $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) parse.y
 	move parse.h parse.h.temp
 	$(NAWK) -f $(TOP)\addopcodes.awk parse.h.temp > parse.h
 
@@ -1230,7 +1298,7 @@ sqlite3.h:	$(TOP)\src\sqlite.h.in $(TOP)\manifest.uuid $(TOP)\VERSION
 	$(TCLSH_CMD) $(TOP)\tool\mksqlite3h.tcl $(TOP:\=/) > sqlite3.h
 
 mkkeywordhash.exe:	$(TOP)\tool\mkkeywordhash.c
-	$(BCC) -Fe$@ $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
+	$(BCC) -Fe$@ $(REQ_FEATURE_FLAGS) $(OPT_FEATURE_FLAGS) $(OPTS) $(TOP)\tool\mkkeywordhash.c /link $(NLTLINKOPTS) $(NLTLIBPATHS)
 
 keywordhash.h:	$(TOP)\tool\mkkeywordhash.c mkkeywordhash.exe
 	.\mkkeywordhash.exe > keywordhash.h
