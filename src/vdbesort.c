@@ -188,11 +188,11 @@ struct SorterList {
 ** combined into one big PMA in order to be able to step through the sorted
 ** records in order.
 **
-** The aIter[] array contains a PmaReader object for each of the PMAs being
-** merged.  An aIter[] object either points to a valid key or else is at EOF.
+** The aReadr[] array contains a PmaReader object for each of the PMAs being
+** merged.  An aReadr[] object either points to a valid key or else is at EOF.
 ** For the purposes of the paragraphs below, we assume that the array is
 ** actually N elements in size, where N is the smallest power of 2 greater
-** to or equal to the number of PMAs being merged. The extra aIter[] elements
+** to or equal to the number of PMAs being merged. The extra aReadr[] elements
 ** are treated as if they are empty (always at EOF).
 **
 ** The aTree[] array is also N elements in size. The value of N is stored in
@@ -200,7 +200,7 @@ struct SorterList {
 **
 ** The final (N/2) elements of aTree[] contain the results of comparing
 ** pairs of PMA keys together. Element i contains the result of 
-** comparing aIter[2*i-N] and aIter[2*i-N+1]. Whichever key is smaller, the
+** comparing aReadr[2*i-N] and aReadr[2*i-N+1]. Whichever key is smaller, the
 ** aTree element is set to the index of it. 
 **
 ** For the purposes of this comparison, EOF is considered greater than any
@@ -208,34 +208,34 @@ struct SorterList {
 ** values), it doesn't matter which index is stored.
 **
 ** The (N/4) elements of aTree[] that precede the final (N/2) described 
-** above contains the index of the smallest of each block of 4 iterators.
-** And so on. So that aTree[1] contains the index of the iterator that 
+** above contains the index of the smallest of each block of 4 PmaReaders
+** And so on. So that aTree[1] contains the index of the PmaReader that 
 ** currently points to the smallest key value. aTree[0] is unused.
 **
 ** Example:
 **
-**     aIter[0] -> Banana
-**     aIter[1] -> Feijoa
-**     aIter[2] -> Elderberry
-**     aIter[3] -> Currant
-**     aIter[4] -> Grapefruit
-**     aIter[5] -> Apple
-**     aIter[6] -> Durian
-**     aIter[7] -> EOF
+**     aReadr[0] -> Banana
+**     aReadr[1] -> Feijoa
+**     aReadr[2] -> Elderberry
+**     aReadr[3] -> Currant
+**     aReadr[4] -> Grapefruit
+**     aReadr[5] -> Apple
+**     aReadr[6] -> Durian
+**     aReadr[7] -> EOF
 **
 **     aTree[] = { X, 5   0, 5    0, 3, 5, 6 }
 **
 ** The current element is "Apple" (the value of the key indicated by 
-** iterator 5). When the Next() operation is invoked, iterator 5 will
+** PmaReader 5). When the Next() operation is invoked, PmaReader 5 will
 ** be advanced to the next key in its segment. Say the next key is
 ** "Eggplant":
 **
-**     aIter[5] -> Eggplant
+**     aReadr[5] -> Eggplant
 **
-** The contents of aTree[] are updated first by comparing the new iterator
-** 5 key to the current key of iterator 4 (still "Grapefruit"). The iterator
+** The contents of aTree[] are updated first by comparing the new PmaReader
+** 5 key to the current key of PmaReader 4 (still "Grapefruit"). The PmaReader
 ** 5 value is still smaller, so aTree[6] is set to 5. And so on up the tree.
-** The value of iterator 6 - "Durian" - is now smaller than that of iterator
+** The value of PmaReader 6 - "Durian" - is now smaller than that of PmaReader
 ** 5, so aTree[3] is set to 6. Key 0 is smaller than key 6 (Banana<Durian),
 ** so the value written into element 1 of the array is 0. As follows:
 **
@@ -246,9 +246,9 @@ struct SorterList {
 ** being merged (rounded up to the next power of 2).
 */
 struct MergeEngine {
-  int nTree;                 /* Used size of aTree/aIter (power of 2) */
+  int nTree;                 /* Used size of aTree/aReadr (power of 2) */
   int *aTree;                /* Current state of incremental merge */
-  PmaReader *aIter;          /* Array of iterators to merge data from */
+  PmaReader *aReadr;         /* Array of PmaReaders to merge data from */
 };
 
 /*
@@ -304,7 +304,7 @@ struct VdbeSorter {
   int mxPmaSize;                  /* Maximum PMA size, in bytes.  0==no limit */
   int mxKeysize;                  /* Largest serialized key seen so far */
   int pgsz;                       /* Main database page size */
-  PmaReader *pReader;             /* Read data from here after Rewind() */
+  PmaReader *pReader;             /* Readr data from here after Rewind() */
   MergeEngine *pMerger;           /* Or here, if bUseThreads==0 */
   sqlite3 *db;                    /* Database connection */
   KeyInfo *pKeyInfo;              /* How to compare records */
@@ -326,10 +326,10 @@ struct VdbeSorter {
 */
 struct PmaReader {
   i64 iReadOff;                   /* Current read offset */
-  i64 iEof;                       /* 1 byte past EOF for this iterator */
+  i64 iEof;                       /* 1 byte past EOF for this PmaReader */
   int nAlloc;                     /* Bytes of space at aAlloc */
   int nKey;                       /* Number of bytes in key */
-  sqlite3_file *pFile;            /* File iterator is reading from */
+  sqlite3_file *pFile;            /* File we are reading from */
   u8 *aAlloc;                     /* Allocated space */
   u8 *aKey;                       /* Pointer to current key */
   u8 *aBuffer;                    /* Current read buffer */
@@ -446,12 +446,12 @@ static void vdbeIncrFree(IncrMerger *);
 ** Free all memory belonging to the PmaReader object passed as the second
 ** argument. All structure fields are set to zero before returning.
 */
-static void vdbePmaReaderClear(PmaReader *pIter){
-  sqlite3_free(pIter->aAlloc);
-  sqlite3_free(pIter->aBuffer);
-  if( pIter->aMap ) sqlite3OsUnfetch(pIter->pFile, 0, pIter->aMap);
-  vdbeIncrFree(pIter->pIncr);
-  memset(pIter, 0, sizeof(PmaReader));
+static void vdbePmaReaderClear(PmaReader *pReadr){
+  sqlite3_free(pReadr->aAlloc);
+  sqlite3_free(pReadr->aBuffer);
+  if( pReadr->aMap ) sqlite3OsUnfetch(pReadr->pFile, 0, pReadr->aMap);
+  vdbeIncrFree(pReadr->pIncr);
+  memset(pReadr, 0, sizeof(PmaReader));
 }
 
 /*
@@ -464,7 +464,7 @@ static void vdbePmaReaderClear(PmaReader *pIter){
 ** next call to this function.
 */
 static int vdbePmaReadBlob(
-  PmaReader *p,                   /* Iterator */
+  PmaReader *p,                   /* PmaReader from which to take the blob */
   int nByte,                      /* Bytes of data to read */
   u8 **ppOut                      /* OUT: Pointer to buffer containing data */
 ){
@@ -495,7 +495,7 @@ static int vdbePmaReadBlob(
     }
     assert( nRead>0 );
 
-    /* Read data from the file. Return early if an error occurs. */
+    /* Readr data from the file. Return early if an error occurs. */
     rc = sqlite3OsRead(p->pFile, p->aBuffer, nRead, p->iReadOff);
     assert( rc!=SQLITE_IOERR_SHORT_READ );
     if( rc!=SQLITE_OK ) return rc;
@@ -599,43 +599,43 @@ static int vdbeSorterMapFile(SortSubtask *pTask, SorterFile *pFile, u8 **pp){
 }
 
 /*
-** Seek iterator pIter to offset iOff within file pFile. Return SQLITE_OK 
+** Seek PmaReader pReadr to offset iOff within file pFile. Return SQLITE_OK 
 ** if successful, or an SQLite error code if an error occurs.
 */
 static int vdbePmaReaderSeek(
   SortSubtask *pTask,             /* Task context */
-  PmaReader *pIter,               /* Iterate to populate */
+  PmaReader *pReadr,              /* Iterate to populate */
   SorterFile *pFile,              /* Sorter file to read from */
   i64 iOff                        /* Offset in pFile */
 ){
   int rc = SQLITE_OK;
 
-  assert( pIter->pIncr==0 || pIter->pIncr->bEof==0 );
+  assert( pReadr->pIncr==0 || pReadr->pIncr->bEof==0 );
 
-  if( pIter->aMap ){
-    sqlite3OsUnfetch(pIter->pFile, 0, pIter->aMap);
-    pIter->aMap = 0;
+  if( pReadr->aMap ){
+    sqlite3OsUnfetch(pReadr->pFile, 0, pReadr->aMap);
+    pReadr->aMap = 0;
   }
-  pIter->iReadOff = iOff;
-  pIter->iEof = pFile->iEof;
-  pIter->pFile = pFile->pFd;
+  pReadr->iReadOff = iOff;
+  pReadr->iEof = pFile->iEof;
+  pReadr->pFile = pFile->pFd;
 
-  rc = vdbeSorterMapFile(pTask, pFile, &pIter->aMap);
-  if( rc==SQLITE_OK && pIter->aMap==0 ){
+  rc = vdbeSorterMapFile(pTask, pFile, &pReadr->aMap);
+  if( rc==SQLITE_OK && pReadr->aMap==0 ){
     int pgsz = pTask->pSorter->pgsz;
-    int iBuf = pIter->iReadOff % pgsz;
-    if( pIter->aBuffer==0 ){
-      pIter->aBuffer = (u8*)sqlite3Malloc(pgsz);
-      if( pIter->aBuffer==0 ) rc = SQLITE_NOMEM;
-      pIter->nBuffer = pgsz;
+    int iBuf = pReadr->iReadOff % pgsz;
+    if( pReadr->aBuffer==0 ){
+      pReadr->aBuffer = (u8*)sqlite3Malloc(pgsz);
+      if( pReadr->aBuffer==0 ) rc = SQLITE_NOMEM;
+      pReadr->nBuffer = pgsz;
     }
     if( rc==SQLITE_OK && iBuf ){
       int nRead = pgsz - iBuf;
-      if( (pIter->iReadOff + nRead) > pIter->iEof ){
-        nRead = (int)(pIter->iEof - pIter->iReadOff);
+      if( (pReadr->iReadOff + nRead) > pReadr->iEof ){
+        nRead = (int)(pReadr->iEof - pReadr->iReadOff);
       }
       rc = sqlite3OsRead(
-          pIter->pFile, &pIter->aBuffer[iBuf], nRead, pIter->iReadOff
+          pReadr->pFile, &pReadr->aBuffer[iBuf], nRead, pReadr->iReadOff
       );
       assert( rc!=SQLITE_IOERR_SHORT_READ );
     }
@@ -645,22 +645,22 @@ static int vdbePmaReaderSeek(
 }
 
 /*
-** Advance iterator pIter to the next key in its PMA. Return SQLITE_OK if
+** Advance PmaReader pReadr to the next key in its PMA. Return SQLITE_OK if
 ** no error occurs, or an SQLite error code if one does.
 */
-static int vdbePmaReaderNext(PmaReader *pIter){
+static int vdbePmaReaderNext(PmaReader *pReadr){
   int rc = SQLITE_OK;             /* Return Code */
   u64 nRec = 0;                   /* Size of record in bytes */
 
 
-  if( pIter->iReadOff>=pIter->iEof ){
-    IncrMerger *pIncr = pIter->pIncr;
+  if( pReadr->iReadOff>=pReadr->iEof ){
+    IncrMerger *pIncr = pReadr->pIncr;
     int bEof = 1;
     if( pIncr ){
       rc = vdbeIncrSwap(pIncr);
       if( rc==SQLITE_OK && pIncr->bEof==0 ){
         rc = vdbePmaReaderSeek(
-            pIncr->pTask, pIter, &pIncr->aFile[0], pIncr->iStartOff
+            pIncr->pTask, pReadr, &pIncr->aFile[0], pIncr->iStartOff
         );
         bEof = 0;
       }
@@ -668,26 +668,26 @@ static int vdbePmaReaderNext(PmaReader *pIter){
 
     if( bEof ){
       /* This is an EOF condition */
-      vdbePmaReaderClear(pIter);
+      vdbePmaReaderClear(pReadr);
       return rc;
     }
   }
 
   if( rc==SQLITE_OK ){
-    rc = vdbePmaReadVarint(pIter, &nRec);
+    rc = vdbePmaReadVarint(pReadr, &nRec);
   }
   if( rc==SQLITE_OK ){
-    pIter->nKey = (int)nRec;
-    rc = vdbePmaReadBlob(pIter, (int)nRec, &pIter->aKey);
+    pReadr->nKey = (int)nRec;
+    rc = vdbePmaReadBlob(pReadr, (int)nRec, &pReadr->aKey);
   }
 
   return rc;
 }
 
 /*
-** Initialize iterator pIter to scan through the PMA stored in file pFile
+** Initialize PmaReader pReadr to scan through the PMA stored in file pFile
 ** starting at offset iStart and ending at offset iEof-1. This function 
-** leaves the iterator pointing to the first key in the PMA (or EOF if the 
+** leaves the PmaReader pointing to the first key in the PMA (or EOF if the 
 ** PMA is empty).
 **
 ** If the pnByte parameter is NULL, then it is assumed that the file 
@@ -697,26 +697,26 @@ static int vdbePmaReaderInit(
   SortSubtask *pTask,             /* Task context */
   SorterFile *pFile,              /* Sorter file to read from */
   i64 iStart,                     /* Start offset in pFile */
-  PmaReader *pIter,               /* Iterator to populate */
+  PmaReader *pReadr,              /* PmaReader to populate */
   i64 *pnByte                     /* IN/OUT: Increment this value by PMA size */
 ){
   int rc;
 
   assert( pFile->iEof>iStart );
-  assert( pIter->aAlloc==0 && pIter->nAlloc==0 );
-  assert( pIter->aBuffer==0 );
-  assert( pIter->aMap==0 );
+  assert( pReadr->aAlloc==0 && pReadr->nAlloc==0 );
+  assert( pReadr->aBuffer==0 );
+  assert( pReadr->aMap==0 );
 
-  rc = vdbePmaReaderSeek(pTask, pIter, pFile, iStart);
+  rc = vdbePmaReaderSeek(pTask, pReadr, pFile, iStart);
   if( rc==SQLITE_OK ){
     u64 nByte;                    /* Size of PMA in bytes */
-    rc = vdbePmaReadVarint(pIter, &nByte);
-    pIter->iEof = pIter->iReadOff + nByte;
+    rc = vdbePmaReadVarint(pReadr, &nByte);
+    pReadr->iEof = pReadr->iReadOff + nByte;
     *pnByte += nByte;
   }
 
   if( rc==SQLITE_OK ){
-    rc = vdbePmaReaderNext(pIter);
+    rc = vdbePmaReaderNext(pReadr);
   }
   return rc;
 }
@@ -748,7 +748,7 @@ static int vdbeSorterCompare(
 }
 
 /*
-** This function is called to compare two iterator keys when merging 
+** This function is called to compare two PmaReader keys when merging 
 ** multiple b-tree segments. Parameter iOut is the index of the aTree[] 
 ** value to recalculate.
 */
@@ -773,8 +773,8 @@ static int vdbeSorterDoCompare(
     i2 = pMerger->aTree[iOut*2+1];
   }
 
-  p1 = &pMerger->aIter[i1];
-  p2 = &pMerger->aIter[i2];
+  p1 = &pMerger->aReadr[i1];
+  p2 = &pMerger->aReadr[i2];
 
   if( p1->pFile==0 ){
     iRes = i2;
@@ -1027,23 +1027,23 @@ static int vdbeSorterJoinAll(VdbeSorter *pSorter, int rcin){
 #endif
 
 /*
-** Allocate a new MergeEngine object with space for nIter iterators.
+** Allocate a new MergeEngine object with space for nReader PmaReaders.
 */
-static MergeEngine *vdbeMergeEngineNew(int nIter){
-  int N = 2;                      /* Smallest power of two >= nIter */
+static MergeEngine *vdbeMergeEngineNew(int nReader){
+  int N = 2;                      /* Smallest power of two >= nReader */
   int nByte;                      /* Total bytes of space to allocate */
   MergeEngine *pNew;              /* Pointer to allocated object to return */
 
-  assert( nIter<=SORTER_MAX_MERGE_COUNT );
+  assert( nReader<=SORTER_MAX_MERGE_COUNT );
 
-  while( N<nIter ) N += N;
+  while( N<nReader ) N += N;
   nByte = sizeof(MergeEngine) + N * (sizeof(int) + sizeof(PmaReader));
 
   pNew = sqlite3FaultSim(100) ? 0 : (MergeEngine*)sqlite3MallocZero(nByte);
   if( pNew ){
     pNew->nTree = N;
-    pNew->aIter = (PmaReader*)&pNew[1];
-    pNew->aTree = (int*)&pNew->aIter[N];
+    pNew->aReadr = (PmaReader*)&pNew[1];
+    pNew->aTree = (int*)&pNew->aReadr[N];
   }
   return pNew;
 }
@@ -1055,7 +1055,7 @@ static void vdbeMergeEngineFree(MergeEngine *pMerger){
   int i;
   if( pMerger ){
     for(i=0; i<pMerger->nTree; i++){
-      vdbePmaReaderClear(&pMerger->aIter[i]);
+      vdbePmaReaderClear(&pMerger->aReadr[i]);
     }
   }
   sqlite3_free(pMerger);
@@ -1439,8 +1439,8 @@ static int vdbeSorterListToPMA(SortSubtask *pTask, SorterList *pList){
 }
 
 /*
-** Advance the MergeEngine iterator passed as the second argument to
-** the next entry. Set *pbEof to true if this means the iterator has 
+** Advance the MergeEngine PmaReader passed as the second argument to
+** the next entry. Set *pbEof to true if this means the PmaReader has 
 ** reached EOF.
 **
 ** Return SQLITE_OK if successful or an error code if an error occurs.
@@ -1451,63 +1451,63 @@ static int vdbeSorterNext(
   int *pbEof
 ){
   int rc;
-  int iPrev = pMerger->aTree[1];/* Index of iterator to advance */
+  int iPrev = pMerger->aTree[1];/* Index of PmaReader to advance */
 
-  /* Advance the current iterator */
-  rc = vdbePmaReaderNext(&pMerger->aIter[iPrev]);
+  /* Advance the current PmaReader */
+  rc = vdbePmaReaderNext(&pMerger->aReadr[iPrev]);
 
   /* Update contents of aTree[] */
   if( rc==SQLITE_OK ){
     int i;                      /* Index of aTree[] to recalculate */
-    PmaReader *pIter1;     /* First iterator to compare */
-    PmaReader *pIter2;     /* Second iterator to compare */
-    u8 *pKey2;                  /* To pIter2->aKey, or 0 if record cached */
+    PmaReader *pReadr1;         /* First PmaReader to compare */
+    PmaReader *pReadr2;         /* Second PmaReader to compare */
+    u8 *pKey2;                  /* To pReadr2->aKey, or 0 if record cached */
 
-    /* Find the first two iterators to compare. The one that was just
+    /* Find the first two PmaReaders to compare. The one that was just
     ** advanced (iPrev) and the one next to it in the array.  */
-    pIter1 = &pMerger->aIter[(iPrev & 0xFFFE)];
-    pIter2 = &pMerger->aIter[(iPrev | 0x0001)];
-    pKey2 = pIter2->aKey;
+    pReadr1 = &pMerger->aReadr[(iPrev & 0xFFFE)];
+    pReadr2 = &pMerger->aReadr[(iPrev | 0x0001)];
+    pKey2 = pReadr2->aKey;
 
     for(i=(pMerger->nTree+iPrev)/2; i>0; i=i/2){
-      /* Compare pIter1 and pIter2. Store the result in variable iRes. */
+      /* Compare pReadr1 and pReadr2. Store the result in variable iRes. */
       int iRes;
-      if( pIter1->pFile==0 ){
+      if( pReadr1->pFile==0 ){
         iRes = +1;
-      }else if( pIter2->pFile==0 ){
+      }else if( pReadr2->pFile==0 ){
         iRes = -1;
       }else{
         iRes = vdbeSorterCompare(pTask, 
-            pIter1->aKey, pIter1->nKey, pKey2, pIter2->nKey
+            pReadr1->aKey, pReadr1->nKey, pKey2, pReadr2->nKey
         );
       }
 
-      /* If pIter1 contained the smaller value, set aTree[i] to its index.
-      ** Then set pIter2 to the next iterator to compare to pIter1. In this
-      ** case there is no cache of pIter2 in pTask->pUnpacked, so set
-      ** pKey2 to point to the record belonging to pIter2.
+      /* If pReadr1 contained the smaller value, set aTree[i] to its index.
+      ** Then set pReadr2 to the next PmaReader to compare to pReadr1. In this
+      ** case there is no cache of pReadr2 in pTask->pUnpacked, so set
+      ** pKey2 to point to the record belonging to pReadr2.
       **
-      ** Alternatively, if pIter2 contains the smaller of the two values,
-      ** set aTree[i] to its index and update pIter1. If vdbeSorterCompare()
+      ** Alternatively, if pReadr2 contains the smaller of the two values,
+      ** set aTree[i] to its index and update pReadr1. If vdbeSorterCompare()
       ** was actually called above, then pTask->pUnpacked now contains
-      ** a value equivalent to pIter2. So set pKey2 to NULL to prevent
-      ** vdbeSorterCompare() from decoding pIter2 again.
+      ** a value equivalent to pReadr2. So set pKey2 to NULL to prevent
+      ** vdbeSorterCompare() from decoding pReadr2 again.
       **
       ** If the two values were equal, then the value from the oldest
-      ** PMA should be considered smaller. The VdbeSorter.aIter[] array
-      ** is sorted from oldest to newest, so pIter1 contains older values
-      ** than pIter2 iff (pIter1<pIter2).  */
-      if( iRes<0 || (iRes==0 && pIter1<pIter2) ){
-        pMerger->aTree[i] = (int)(pIter1 - pMerger->aIter);
-        pIter2 = &pMerger->aIter[ pMerger->aTree[i ^ 0x0001] ];
-        pKey2 = pIter2->aKey;
+      ** PMA should be considered smaller. The VdbeSorter.aReadr[] array
+      ** is sorted from oldest to newest, so pReadr1 contains older values
+      ** than pReadr2 iff (pReadr1<pReadr2).  */
+      if( iRes<0 || (iRes==0 && pReadr1<pReadr2) ){
+        pMerger->aTree[i] = (int)(pReadr1 - pMerger->aReadr);
+        pReadr2 = &pMerger->aReadr[ pMerger->aTree[i ^ 0x0001] ];
+        pKey2 = pReadr2->aKey;
       }else{
-        if( pIter1->pFile ) pKey2 = 0;
-        pMerger->aTree[i] = (int)(pIter2 - pMerger->aIter);
-        pIter1 = &pMerger->aIter[ pMerger->aTree[i ^ 0x0001] ];
+        if( pReadr1->pFile ) pKey2 = 0;
+        pMerger->aTree[i] = (int)(pReadr2 - pMerger->aReadr);
+        pReadr1 = &pMerger->aReadr[ pMerger->aTree[i ^ 0x0001] ];
       }
     }
-    *pbEof = (pMerger->aIter[pMerger->aTree[1]].pFile==0);
+    *pbEof = (pMerger->aReadr[pMerger->aTree[1]].pFile==0);
   }
 
   return (rc==SQLITE_OK ? pTask->pUnpacked->errCode : rc);
@@ -1709,7 +1709,7 @@ static int vdbeIncrPopulate(IncrMerger *pIncr){
   vdbePmaWriterInit(pOut->pFd, &writer, pTask->pSorter->pgsz, iStart);
   while( rc==SQLITE_OK ){
     int dummy;
-    PmaReader *pReader = &pMerger->aIter[ pMerger->aTree[1] ];
+    PmaReader *pReader = &pMerger->aReadr[ pMerger->aTree[1] ];
     int nKey = pReader->nKey;
     i64 iEof = writer.iWriteOff + writer.iBufEnd;
 
@@ -1755,7 +1755,7 @@ static int vdbeIncrBgPopulate(IncrMerger *pIncr){
 /*
 ** This function is called when the PmaReader corresponding to pIncr has
 ** finished reading the contents of aFile[0]. Its purpose is to "refill"
-** aFile[0] such that the iterator should start rereading it from the
+** aFile[0] such that the PmaReader should start rereading it from the
 ** beginning.
 **
 ** For single-threaded objects, this is accomplished by literally reading 
@@ -1841,7 +1841,7 @@ static void vdbeIncrSetThreads(IncrMerger *pIncr){
 #define INCRINIT_NORMAL 0
 #define INCRINIT_TASK   1
 #define INCRINIT_ROOT   2
-static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode);
+static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode);
 
 /*
 ** Initialize the merger argument passed as the second argument. Once this
@@ -1852,7 +1852,7 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode);
 ** objects attached to the PmaReader objects that the merger reads from have
 ** already been populated, but that they have not yet populated aFile[0] and
 ** set the PmaReader objects up to read from it. In this case all that is
-** required is to call vdbePmaReaderNext() on each iterator to point it at
+** required is to call vdbePmaReaderNext() on each PmaReader to point it at
 ** its first key.
 **
 ** Otherwise, if eMode is any value other than INCRINIT_ROOT, then use 
@@ -1867,21 +1867,21 @@ static int vdbeIncrInitMerger(
   int eMode                       /* One of the INCRINIT_XXX constants */
 ){
   int rc = SQLITE_OK;             /* Return code */
-  int i;                          /* For iterating through PmaReader objects */
+  int i;                          /* For looping over PmaReader objects */
   int nTree = pMerger->nTree;
 
   for(i=0; rc==SQLITE_OK && i<nTree; i++){
     if( eMode==INCRINIT_ROOT ){
-      /* Iterators should be normally initialized in order, as if they are
+      /* PmaReaders should be normally initialized in order, as if they are
       ** reading from the same temp file this makes for more linear file IO.
-      ** However, in the INCRINIT_ROOT case, if iterator aIter[nTask-1] is
+      ** However, in the INCRINIT_ROOT case, if PmaReader aReadr[nTask-1] is
       ** in use it will block the vdbePmaReaderNext() call while it uses
       ** the main thread to fill its buffer. So calling PmaReaderNext()
-      ** on this iterator before any of the multi-threaded iterators takes
+      ** on this PmaReader before any of the multi-threaded PmaReaders takes
       ** better advantage of multi-processor hardware. */
-      rc = vdbePmaReaderNext(&pMerger->aIter[nTree-i-1]);
+      rc = vdbePmaReaderNext(&pMerger->aReadr[nTree-i-1]);
     }else{
-      rc = vdbePmaReaderIncrInit(&pMerger->aIter[i], INCRINIT_NORMAL);
+      rc = vdbePmaReaderIncrInit(&pMerger->aReadr[i], INCRINIT_NORMAL);
     }
   }
 
@@ -1894,20 +1894,20 @@ static int vdbeIncrInitMerger(
 
 /*
 ** If the PmaReader passed as the first argument is not an incremental-reader
-** (if pIter->pIncr==0), then this function is a no-op. Otherwise, it serves
+** (if pReadr->pIncr==0), then this function is a no-op. Otherwise, it serves
 ** to open and/or initialize the temp file related fields of the IncrMerge
-** object at (pIter->pIncr).
+** object at (pReadr->pIncr).
 **
-** If argument eMode is set to INCRINIT_NORMAL, then PmaReader iterators
-** in the sub-tree headed by pIter are also initialized. Data is then loaded
-** into the buffers belonging to this iterator, pIter, and it is set to
+** If argument eMode is set to INCRINIT_NORMAL, then PmaReader PmaReaders
+** in the sub-tree headed by pReadr are also initialized. Data is then loaded
+** into the buffers belonging to this PmaReader, pReadr, and it is set to
 ** point to the first key in its range.
 **
 ** If argument eMode is set to INCRINIT_TASK, then PmaReader is guaranteed
-** to be a multi-threaded iterator and this function is being called in a
-** background thread. In this case all iterators in the sub-tree are 
+** to be a multi-threaded PmaReader and this function is being called in a
+** background thread. In this case all PmaReaders in the sub-tree are 
 ** initialized as for INCRINIT_NORMAL and the aFile[1] buffer belonging to
-** pIter is populated. However, the iterator itself is not set up to point
+** pReadr is populated. However, the PmaReader itself is not set up to point
 ** to its first key. A call to vdbePmaReaderNext() is still required to do
 ** that. 
 **
@@ -1918,16 +1918,16 @@ static int vdbeIncrInitMerger(
 ** lead to the current background thread attempting to join itself.
 **
 ** Finally, if argument eMode is set to INCRINIT_ROOT, it may be assumed
-** that pIter->pIncr is a multi-threaded IncrMerge objects, and that all
+** that pReadr->pIncr is a multi-threaded IncrMerge objects, and that all
 ** child-trees have already been initialized using IncrInit(INCRINIT_TASK).
-** In this case vdbePmaReaderNext() is called on all child iterators and
-** the current iterator set to point to the first key in its range.
+** In this case vdbePmaReaderNext() is called on all child PmaReaders and
+** the current PmaReader set to point to the first key in its range.
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
+static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode){
   int rc = SQLITE_OK;
-  IncrMerger *pIncr = pIter->pIncr;
+  IncrMerger *pIncr = pReadr->pIncr;
   if( pIncr ){
     SortSubtask *pTask = pIncr->pTask;
     sqlite3 *db = pTask->pSorter->db;
@@ -1964,7 +1964,7 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
 #if SQLITE_MAX_WORKER_THREADS>0
     if( rc==SQLITE_OK && pIncr->bUseThread ){
       /* Use the current thread to populate aFile[1], even though this
-      ** iterator is multi-threaded. The reason being that this function
+      ** PmaReader is multi-threaded. The reason being that this function
       ** is already running in background thread pIncr->pTask->thread. */
       assert( eMode==INCRINIT_ROOT || eMode==INCRINIT_TASK );
       rc = vdbeIncrPopulate(pIncr);
@@ -1972,7 +1972,7 @@ static int vdbePmaReaderIncrInit(PmaReader *pIter, int eMode){
 #endif
 
     if( rc==SQLITE_OK && eMode!=INCRINIT_TASK ){
-      rc = vdbePmaReaderNext(pIter);
+      rc = vdbePmaReaderNext(pReadr);
     }
   }
   return rc;
@@ -1994,13 +1994,13 @@ static void *vdbePmaReaderBgInit(void *pCtx){
 ** Use a background thread to invoke vdbePmaReaderIncrInit(INCRINIT_TASK) 
 ** on the the PmaReader object passed as the first argument.
 **
-** This call will initialize the various fields of the pIter->pIncr 
+** This call will initialize the various fields of the pReadr->pIncr 
 ** structure and, if it is a multi-threaded IncrMerger, launch a 
 ** background thread to populate aFile[1].
 */
-static int vdbePmaReaderBgIncrInit(PmaReader *pIter){
-  void *pCtx = (void*)pIter;
-  return vdbeSorterCreateThread(pIter->pIncr->pTask, vdbePmaReaderBgInit, pCtx);
+static int vdbePmaReaderBgIncrInit(PmaReader *pReadr){
+  void *pCtx = (void*)pReadr;
+  return vdbeSorterCreateThread(pReadr->pIncr->pTask, vdbePmaReaderBgInit, pCtx);
 }
 #endif
 
@@ -2019,7 +2019,7 @@ static int vdbePmaReaderBgIncrInit(PmaReader *pIter){
 static int vdbeMergeEngineLevel0(
   SortSubtask *pTask,             /* Sorter task to read from */
   int nPMA,                       /* Number of PMAs to read */
-  i64 *piOffset,                  /* IN/OUT: Read offset in pTask->file */
+  i64 *piOffset,                  /* IN/OUT: Readr offset in pTask->file */
   MergeEngine **ppOut             /* OUT: New merge-engine */
 ){
   MergeEngine *pNew;              /* Merge engine to return */
@@ -2032,9 +2032,9 @@ static int vdbeMergeEngineLevel0(
 
   for(i=0; i<nPMA && rc==SQLITE_OK; i++){
     i64 nDummy;
-    PmaReader *pIter = &pNew->aIter[i];
-    rc = vdbePmaReaderInit(pTask, &pTask->file, iOff, pIter, &nDummy);
-    iOff = pIter->iEof;
+    PmaReader *pReadr = &pNew->aReadr[i];
+    rc = vdbePmaReaderInit(pTask, &pTask->file, iOff, pReadr, &nDummy);
+    iOff = pReadr->iEof;
   }
 
   if( rc!=SQLITE_OK ){
@@ -2094,24 +2094,24 @@ static int vdbeSorterAddToTree(
 
   for(i=1; i<nDepth && rc==SQLITE_OK; i++){
     int iIter = (iSeq / nDiv) % SORTER_MAX_MERGE_COUNT;
-    PmaReader *pIter = &p->aIter[iIter];
+    PmaReader *pReadr = &p->aReadr[iIter];
 
-    if( pIter->pIncr==0 ){
+    if( pReadr->pIncr==0 ){
       MergeEngine *pNew = vdbeMergeEngineNew(SORTER_MAX_MERGE_COUNT);
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = vdbeIncrNew(pTask, pNew, &pIter->pIncr);
+        rc = vdbeIncrNew(pTask, pNew, &pReadr->pIncr);
       }
     }
     if( rc==SQLITE_OK ){
-      p = pIter->pIncr->pMerger;
+      p = pReadr->pIncr->pMerger;
       nDiv = nDiv / SORTER_MAX_MERGE_COUNT;
     }
   }
 
   if( rc==SQLITE_OK ){
-    p->aIter[iSeq % SORTER_MAX_MERGE_COUNT].pIncr = pIncr;
+    p->aReadr[iSeq % SORTER_MAX_MERGE_COUNT].pIncr = pIncr;
   }else{
     vdbeIncrFree(pIncr);
   }
@@ -2174,7 +2174,7 @@ static int vdbeSorterMergeTreeBuild(VdbeSorter *pSorter, MergeEngine **ppOut){
       if( rc==SQLITE_OK ){
 #if SQLITE_MAX_WORKER_THREADS>0
         if( pMain!=0 ){
-          rc = vdbeIncrNew(pTask, pRoot, &pMain->aIter[iTask].pIncr);
+          rc = vdbeIncrNew(pTask, pRoot, &pMain->aReadr[iTask].pIncr);
         }else
 #endif
         {
@@ -2218,27 +2218,27 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
     assert( pSorter->bUseThreads==0 || pSorter->nTask>1 );
     if( pSorter->bUseThreads ){
       int iTask;
-      PmaReader *pIter;
+      PmaReader *pReadr;
       SortSubtask *pLast = &pSorter->aTask[pSorter->nTask-1];
       rc = vdbeSortAllocUnpacked(pLast);
       if( rc==SQLITE_OK ){
-        pIter = (PmaReader*)sqlite3DbMallocZero(db, sizeof(PmaReader));
-        pSorter->pReader = pIter;
-        if( pIter==0 ) rc = SQLITE_NOMEM;
+        pReadr = (PmaReader*)sqlite3DbMallocZero(db, sizeof(PmaReader));
+        pSorter->pReader = pReadr;
+        if( pReadr==0 ) rc = SQLITE_NOMEM;
       }
       if( rc==SQLITE_OK ){
-        rc = vdbeIncrNew(pLast, pMain, &pIter->pIncr);
+        rc = vdbeIncrNew(pLast, pMain, &pReadr->pIncr);
         if( rc==SQLITE_OK ){
-          vdbeIncrSetThreads(pIter->pIncr);
+          vdbeIncrSetThreads(pReadr->pIncr);
           for(iTask=0; iTask<(pSorter->nTask-1); iTask++){
             IncrMerger *pIncr;
-            if( (pIncr = pMain->aIter[iTask].pIncr) ){
+            if( (pIncr = pMain->aReadr[iTask].pIncr) ){
               vdbeIncrSetThreads(pIncr);
               assert( pIncr->pTask!=pLast );
             }
           }
           for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
-            PmaReader *p = &pMain->aIter[iTask];
+            PmaReader *p = &pMain->aReadr[iTask];
             assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
             if( p->pIncr ){ 
               if( iTask==pSorter->nTask-1 ){
@@ -2252,7 +2252,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
         pMain = 0;
       }
       if( rc==SQLITE_OK ){
-        rc = vdbePmaReaderIncrInit(pIter, INCRINIT_ROOT);
+        rc = vdbePmaReaderIncrInit(pReadr, INCRINIT_ROOT);
       }
     }else
 #endif
@@ -2367,7 +2367,7 @@ static void *vdbeSorterRowkey(
     }else
 #endif
     /*if( !pSorter->bUseThreads )*/{
-      pReader = &pSorter->pMerger->aIter[pSorter->pMerger->aTree[1]];
+      pReader = &pSorter->pMerger->aReadr[pSorter->pMerger->aTree[1]];
     }
     *pnKey = pReader->nKey;
     pKey = pReader->aKey;

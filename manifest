@@ -1,5 +1,5 @@
-C Merge\srecent\schanges\sfrom\strunk.
-D 2014-05-19T23:17:33.708
+C In\svdbesort.c,\schange\sthe\snames\sof\sPmaReader\svariables\s"pIter"\sto\s"pReadr".\nOther\srelated\scomment\schanges.\s\sThe\sgenerated\sobject\scode\sshould\sbe\sthe\ssame.
+D 2014-05-20T11:03:53.818
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in de92112472618cb869d27249966bad1783e4a853
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -289,7 +289,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c 44d4d1f5711f71eaf0d624de5c3e4976fe4e180b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 15d1405fcfbb2f4a2ad667872be211153d69fa36
+F src/vdbesort.c a8b8798f23baa4b293804597532a94470e44f248
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1177,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 17afd77057f8695733a9a60225646c1d8813b1a0 8180e320ee4090e41511836678e49a98c0b228e8
-R caf94a64ae09103b6f818ad8457d731e
+P 6eefdad946da6a5f4052ac51d327777890fa3f18
+R 7346935112c4ac3d3d573eb5af19111a
 U drh
-Z 654b19280087cc59a60d4e21f62a0c05
+Z 3f1d10c1aba3efc362d8ec22de1a631d
