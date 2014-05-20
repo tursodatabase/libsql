@@ -44,49 +44,13 @@
 #define sqlite3_mutex_notheld(X)  ((void)(X),1)
 #endif /* SQLITE_THREADSAFE==0 */
 
-
-/*
-** Figure out if we are dealing with Unix, Windows, or some other
-** operating system.  After the following block of preprocess macros,
-** all of SQLITE_OS_UNIX, SQLITE_OS_WIN, and SQLITE_OS_OTHER 
-** will defined to either 1 or 0.  One of the four will be 1.  The other 
-** three will be 0.
-*/
-#if defined(SQLITE_OS_OTHER)
-# if SQLITE_OS_OTHER==1
-#   undef SQLITE_OS_UNIX
-#   define SQLITE_OS_UNIX 0
-#   undef SQLITE_OS_WIN
-#   define SQLITE_OS_WIN 0
-# else
-#   undef SQLITE_OS_OTHER
-# endif
-#endif
-#if !defined(SQLITE_OS_UNIX) && !defined(SQLITE_OS_OTHER)
-# define SQLITE_OS_OTHER 0
-# ifndef SQLITE_OS_WIN
-#   if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) \
-                       || defined(__MINGW32__) || defined(__BORLANDC__)
-#     define SQLITE_OS_WIN 1
-#     define SQLITE_OS_UNIX 0
-#   else
-#     define SQLITE_OS_WIN 0
-#     define SQLITE_OS_UNIX 1
-#  endif
-# else
-#  define SQLITE_OS_UNIX 0
-# endif
-#else
-# ifndef SQLITE_OS_WIN
-#  define SQLITE_OS_WIN 0
-# endif
-#endif
+#include "os_setup.h"
 
 #if SQLITE_OS_UNIX
 # include <unistd.h>
 #endif
 #if SQLITE_OS_WIN
-# include <windows.h>
+# include "os_win.h"
 # include <io.h>
 #endif
 

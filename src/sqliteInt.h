@@ -525,10 +525,10 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 ** gives a possible range of values of approximately 1.0e986 to 1e-986.
 ** But the allowed values are "grainy".  Not every value is representable.
 ** For example, quantities 16 and 17 are both represented by a LogEst
-** of 40.  However, since LogEst quantatites are suppose to be estimates,
+** of 40.  However, since LogEst quantaties are suppose to be estimates,
 ** not exact values, this imprecision is not a problem.
 **
-** "LogEst" is short for "Logarithimic Estimate".
+** "LogEst" is short for "Logarithmic Estimate".
 **
 ** Examples:
 **      1 -> 0              20 -> 43          10000 -> 132
@@ -1479,7 +1479,7 @@ struct Table {
 #ifndef SQLITE_OMIT_CHECK
   ExprList *pCheck;    /* All CHECK constraints */
 #endif
-  tRowcnt nRowEst;     /* Estimated rows in table - from sqlite_stat1 table */
+  LogEst nRowLogEst;   /* Estimated rows in table - from sqlite_stat1 table */
   int tnum;            /* Root BTree node for this table (see note above) */
   i16 iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   i16 nCol;            /* Number of columns in this table */
@@ -1688,7 +1688,7 @@ struct UnpackedRecord {
 struct Index {
   char *zName;             /* Name of this index */
   i16 *aiColumn;           /* Which columns are used by this index.  1st is 0 */
-  tRowcnt *aiRowEst;       /* From ANALYZE: Est. rows selected by each column */
+  LogEst *aiRowLogEst;     /* From ANALYZE: Est. rows selected by each column */
   Table *pTable;           /* The SQL table being indexed */
   char *zColAff;           /* String defining the affinity of each column */
   Index *pNext;            /* The next index associated with the same table */
@@ -2721,11 +2721,10 @@ struct Sqlite3Config {
   int isMutexInit;                  /* True after mutexes are initialized */
   int isMallocInit;                 /* True after malloc is initialized */
   int isPCacheInit;                 /* True after malloc is initialized */
-  sqlite3_mutex *pInitMutex;        /* Mutex used by sqlite3_initialize() */
   int nRefInitMutex;                /* Number of users of pInitMutex */
+  sqlite3_mutex *pInitMutex;        /* Mutex used by sqlite3_initialize() */
   void (*xLog)(void*,int,const char*); /* Function for logging */
   void *pLogArg;                       /* First argument to xLog() */
-  int bLocaltimeFault;              /* True to fail localtime() calls */
 #ifdef SQLITE_ENABLE_SQLLOG
   void(*xSqllog)(void*,sqlite3*,const char*, int);
   void *pSqllogArg;
@@ -2737,6 +2736,10 @@ struct Sqlite3Config {
   void (*xVdbeBranch)(void*,int iSrcLine,u8 eThis,u8 eMx);  /* Callback */
   void *pVdbeBranchArg;                                     /* 1st argument */
 #endif
+#ifndef SQLITE_OMIT_BUILTIN_TEST
+  int (*xTestCallback)(int);        /* Invoked by sqlite3FaultSim() */
+#endif
+  int bLocaltimeFault;              /* True to fail localtime() calls */
 };
 
 /*
@@ -3037,6 +3040,12 @@ int sqlite3ParseUri(const char*,const char*,unsigned int*,
                     sqlite3_vfs**,char**,char **);
 Btree *sqlite3DbNameToBtree(sqlite3*,const char*);
 int sqlite3CodeOnce(Parse *);
+
+#ifdef SQLITE_OMIT_BUILTIN_TEST
+# define sqlite3FaultSim(X) SQLITE_OK
+#else
+  int sqlite3FaultSim(int);
+#endif
 
 Bitvec *sqlite3BitvecCreate(u32);
 int sqlite3BitvecTest(Bitvec*, u32);

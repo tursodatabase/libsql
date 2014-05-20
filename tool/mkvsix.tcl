@@ -65,12 +65,16 @@
 # argument is optional and if present must contain the name of the directory
 # containing the root of the source tree for SQLite.  The third argument is
 # optional and if present must contain the flavor the VSIX package to build.
-# Currently, the only supported package flavors are "WinRT", "WinRT81", and
-# "WP80".  The fourth argument is optional and if present must be a string
-# containing a list of platforms to include in the VSIX package.  The format
-# of the platform list string is "platform1,platform2,platform3".  Typically,
-# when on Windows, this script is executed using commands similar to the
-# following from a normal Windows command prompt:
+# Currently, the only supported package flavors are "WinRT", "WinRT81", "WP80",
+# "WP81", and "Win32".  The fourth argument is optional and if present must be
+# a string containing a list of platforms to include in the VSIX package.  The
+# platform list is "platform1,platform2,platform3".  The fifth argument is
+# optional and if present must contain the version of Visual Studio required by
+# the package.  Currently, the only supported versions are "2012" and "2013".
+# The package flavors "WinRT81" and "WP81" are only supported when the Visual
+# Studio version is "2013".  Typically, when on Windows, this script is
+# executed using commands similar to the following from a normal Windows
+# command prompt:
 #
 #                         CD /D C:\dev\sqlite\core
 #                         tclsh85 tool\mkvsix.tcl C:\Temp
@@ -100,7 +104,7 @@ proc fail { {error ""} {usage false} } {
   puts stdout "usage:\
 [file tail [info nameofexecutable]]\
 [file tail [info script]] <binaryDirectory> \[sourceDirectory\]\
-\[packageFlavor\] \[platformNames\]"
+\[packageFlavor\] \[platformNames\] \[vsVersion\]"
 
   exit 1
 }
@@ -170,13 +174,81 @@ proc writeFile { fileName data } {
   return ""
 }
 
-proc substFile { fileName } {
+proc getMinVsVersionXmlChunk { vsVersion } {
+  switch -exact $vsVersion {
+    2012 {
+      return [appendArgs \
+          "\r\n    " {MinVSVersion="11.0"}]
+    }
+    2013 {
+      return [appendArgs \
+          "\r\n    " {MinVSVersion="12.0"}]
+    }
+    default {
+      return ""
+    }
+  }
+}
+
+proc getMaxPlatformVersionXmlChunk { packageFlavor vsVersion } {
   #
-  # NOTE: Performs all Tcl command, variable, and backslash substitutions in
-  #       the specified file and then rewrites the contents of that same file
-  #       with the substituted data.
+  # NOTE: Only Visual Studio 2013 supports this SDK manifest attribute.
   #
-  return [writeFile $fileName [uplevel 1 [list subst [readFile $fileName]]]]
+  if {![string equal $vsVersion 2013]} then {
+    return ""
+  }
+
+  switch -exact $packageFlavor {
+    WinRT {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.0"}]
+    }
+    WinRT81 {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.1"}]
+    }
+    WP80 {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.0"}]
+    }
+    WP81 {
+      return [appendArgs \
+          "\r\n    " {MaxPlatformVersion="8.1"}]
+    }
+    default {
+      return ""
+    }
+  }
+}
+
+proc getExtraFileListXmlChunk { packageFlavor vsVersion } {
+  #
+  # NOTE: Windows Phone 8.0 does not require any extra attributes in its VSIX
+  #       package SDK manifests; however, it appears that Windows Phone 8.1
+  #       does.
+  #
+  if {[string equal $packageFlavor WP80]} then {
+    return ""
+  }
+
+  set appliesTo [expr {[string equal $packageFlavor Win32] ? \
+      "VisualC" : "WindowsAppContainer"}]
+
+  switch -exact $vsVersion {
+    2012 {
+      return [appendArgs \
+          "\r\n    " AppliesTo=\" $appliesTo \" \
+          "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
+    }
+    2013 {
+      return [appendArgs \
+          "\r\n    " AppliesTo=\" $appliesTo \" \
+          "\r\n    " {DependsOn="Microsoft.VCLibs, version=12.0"}]
+    }
+    default {
+      return ""
+    }
+  }
 }
 
 proc replaceFileNameTokens { fileName name buildName platformName } {
@@ -186,6 +258,15 @@ proc replaceFileNameTokens { fileName name buildName platformName } {
   #
   return [string map [list <build> $buildName <platform> $platformName \
       <name> $name] $fileName]
+}
+
+proc substFile { fileName } {
+  #
+  # NOTE: Performs all Tcl command, variable, and backslash substitutions in
+  #       the specified file and then rewrites the contents of that same file
+  #       with the substituted data.
+  #
+  return [writeFile $fileName [uplevel 1 [list subst [readFile $fileName]]]]
 }
 
 #
@@ -206,7 +287,7 @@ set rootName [file rootname [file tail $script]]
 # NOTE: Process and verify all the command line arguments.
 #
 set argc [llength $argv]
-if {$argc < 1 || $argc > 4} then {fail}
+if {$argc < 1 || $argc > 5} then {fail}
 
 set binaryDirectory [lindex $argv 0]
 
@@ -251,56 +332,121 @@ if {[string length $packageFlavor] == 0} then {
   fail "invalid package flavor"
 }
 
-if {[string equal -nocase $packageFlavor WinRT]} then {
-  set shortName SQLite.WinRT
-  set displayName "SQLite for Windows Runtime"
-  set targetPlatformIdentifier Windows
-  set targetPlatformVersion v8.0
-  set minVsVersion 11.0
-  set extraSdkPath ""
-  set extraFileListAttributes [appendArgs \
-      "\r\n    " {AppliesTo="WindowsAppContainer"} \
-      "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
-} elseif {[string equal -nocase $packageFlavor WinRT81]} then {
-  set shortName SQLite.WinRT81
-  set displayName "SQLite for Windows Runtime (Windows 8.1)"
-  set targetPlatformIdentifier Windows
-  set targetPlatformVersion v8.1
-  set minVsVersion 12.0
-  set extraSdkPath ""
-  set extraFileListAttributes [appendArgs \
-      "\r\n    " {AppliesTo="WindowsAppContainer"} \
-      "\r\n    " {DependsOn="Microsoft.VCLibs, version=12.0"}]
-} elseif {[string equal -nocase $packageFlavor WP80]} then {
-  set shortName SQLite.WP80
-  set displayName "SQLite for Windows Phone"
-  set targetPlatformIdentifier "Windows Phone"
-  set targetPlatformVersion v8.0
-  set minVsVersion 11.0
-  set extraSdkPath "\\..\\$targetPlatformIdentifier"
-  set extraFileListAttributes ""
-} elseif {[string equal -nocase $packageFlavor Win32]} then {
-  set shortName SQLite.Win32
-  set displayName "SQLite for Windows"
-  set targetPlatformIdentifier Windows
-  set targetPlatformVersion v8.0
-  set minVsVersion 11.0
-  set extraSdkPath ""
-  set extraFileListAttributes [appendArgs \
-      "\r\n    " {AppliesTo="VisualC"} \
-      "\r\n    " {DependsOn="Microsoft.VCLibs, version=11.0"}]
-} else {
-  fail "unsupported package flavor, must be one of: WinRT WinRT81 WP80 Win32"
-}
-
 if {$argc >= 4} then {
   set platformNames [list]
 
   foreach platformName [split [lindex $argv 3] ", "] {
+    set platformName [string trim $platformName]
+
     if {[string length $platformName] > 0} then {
       lappend platformNames $platformName
     }
   }
+}
+
+if {$argc >= 5} then {
+  set vsVersion [lindex $argv 4]
+} else {
+  set vsVersion 2012
+}
+
+if {[string length $vsVersion] == 0} then {
+  fail "invalid Visual Studio version"
+}
+
+if {![string equal $vsVersion 2012] && ![string equal $vsVersion 2013]} then {
+  fail [appendArgs \
+      "unsupported Visual Studio version, must be one of: " \
+      [list 2012 2013]]
+}
+
+set shortNames(WinRT,2012) SQLite.WinRT
+set shortNames(WinRT,2013) SQLite.WinRT.2013
+set shortNames(WinRT81,2013) SQLite.WinRT81
+set shortNames(WP80,2012) SQLite.WP80
+set shortNames(WP80,2013) SQLite.WP80.2013
+set shortNames(WP81,2013) SQLite.WP81
+set shortNames(Win32,2012) SQLite.Win32
+set shortNames(Win32,2013) SQLite.Win32.2013
+
+set displayNames(WinRT,2012) "SQLite for Windows Runtime"
+set displayNames(WinRT,2013) "SQLite for Windows Runtime"
+set displayNames(WinRT81,2013) "SQLite for Windows Runtime (Windows 8.1)"
+set displayNames(WP80,2012) "SQLite for Windows Phone"
+set displayNames(WP80,2013) "SQLite for Windows Phone"
+set displayNames(WP81,2013) "SQLite for Windows Phone 8.1"
+set displayNames(Win32,2012) "SQLite for Windows"
+set displayNames(Win32,2013) "SQLite for Windows"
+
+if {[string equal $packageFlavor WinRT]} then {
+  set shortName $shortNames($packageFlavor,$vsVersion)
+  set displayName $displayNames($packageFlavor,$vsVersion)
+  set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.0
+  set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
+  set extraSdkPath ""
+  set extraFileListAttributes \
+      [getExtraFileListXmlChunk $packageFlavor $vsVersion]
+} elseif {[string equal $packageFlavor WinRT81]} then {
+  if {$vsVersion ne "2013"} then {
+    fail [appendArgs \
+        "unsupported combination, package flavor " $packageFlavor \
+        " is only supported with Visual Studio 2013"]
+  }
+  set shortName $shortNames($packageFlavor,$vsVersion)
+  set displayName $displayNames($packageFlavor,$vsVersion)
+  set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.1
+  set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
+  set extraSdkPath ""
+  set extraFileListAttributes \
+      [getExtraFileListXmlChunk $packageFlavor $vsVersion]
+} elseif {[string equal $packageFlavor WP80]} then {
+  set shortName $shortNames($packageFlavor,$vsVersion)
+  set displayName $displayNames($packageFlavor,$vsVersion)
+  set targetPlatformIdentifier "Windows Phone"
+  set targetPlatformVersion v8.0
+  set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
+  set extraSdkPath "\\..\\$targetPlatformIdentifier"
+  set extraFileListAttributes \
+      [getExtraFileListXmlChunk $packageFlavor $vsVersion]
+} elseif {[string equal $packageFlavor WP81]} then {
+  if {$vsVersion ne "2013"} then {
+    fail [appendArgs \
+        "unsupported combination, package flavor " $packageFlavor \
+        " is only supported with Visual Studio 2013"]
+  }
+  set shortName $shortNames($packageFlavor,$vsVersion)
+  set displayName $displayNames($packageFlavor,$vsVersion)
+  set targetPlatformIdentifier WindowsPhoneApp
+  set targetPlatformVersion v8.1
+  set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
+  set extraSdkPath "\\..\\$targetPlatformIdentifier"
+  set extraFileListAttributes \
+      [getExtraFileListXmlChunk $packageFlavor $vsVersion]
+} elseif {[string equal $packageFlavor Win32]} then {
+  set shortName $shortNames($packageFlavor,$vsVersion)
+  set displayName $displayNames($packageFlavor,$vsVersion)
+  set targetPlatformIdentifier Windows
+  set targetPlatformVersion v8.0
+  set minVsVersion [getMinVsVersionXmlChunk $vsVersion]
+  set maxPlatformVersion \
+      [getMaxPlatformVersionXmlChunk $packageFlavor $vsVersion]
+  set extraSdkPath ""
+  set extraFileListAttributes \
+      [getExtraFileListXmlChunk $packageFlavor $vsVersion]
+} else {
+  fail [appendArgs \
+      "unsupported package flavor, must be one of: " \
+      [list WinRT WinRT81 WP80 WP81 Win32]]
 }
 
 ###############################################################################
@@ -490,7 +636,7 @@ if {![info exists buildNames]} then {
 #       overridden via the command line or the user-specific customizations
 #       file.
 #
-if {![info exists platformNames]} then {
+if {![info exists platformNames] || [llength $platformNames] == 0} then {
   set platformNames [list x86 x64 ARM]
 }
 
