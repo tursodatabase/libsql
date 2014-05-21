@@ -194,6 +194,7 @@ void sqlite3BtreeIncrblobCursor(BtCursor *);
 void sqlite3BtreeClearCursor(BtCursor *);
 int sqlite3BtreeSetVersion(Btree *pBt, int iVersion);
 void sqlite3BtreeCursorHints(BtCursor *, unsigned int mask);
+int sqlite3BtreeIsReadonly(Btree *pBt);
 
 #ifndef NDEBUG
 int sqlite3BtreeCursorIsValid(BtCursor*);
