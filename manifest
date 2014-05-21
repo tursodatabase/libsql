@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_db_readonly()\sAPI\sso\sthat\sit\sreports\strue\sif\sthe\sdatabase\nis\sreadonly\sbecause\sthe\sfile\sformat\swrite\sversion\s(byte\s18\sof\sthe\sheader)\nis\stoo\slarge.
-D 2014-05-21T08:21:07.032
+C Do\snot\sburn\smemory\sremembering\sCHECK\sconstraints\sin\sa\sread-only\sdatabase.
+D 2014-05-21T08:48:18.532
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
 F src/btree.c e29fc07a968f8d1bbe38b5736d71db59959f545c
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
-F src/build.c 02665ca158431a0926b10cbd7d8178a4c9fc4a22
+F src/build.c 92539f47043ac9c48921450a9b2162da672bda4a
 F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8180e320ee4090e41511836678e49a98c0b228e8
-R b879444f11b669403e97810357ceb345
+P 8d8af114dac301335ec10671c1e9a5a6d8266a60
+R e3f2cbc8b83052bc0aa4ff53432816c5
 U drh
-Z b05cb2782a9599f9d7e92cfd6f56d7de
+Z 10e89db95d2e717eb3caaf3547ece60f
