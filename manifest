@@ -1,5 +1,5 @@
-C Do\snot\sburn\smemory\sremembering\sCHECK\sconstraints\sin\sa\sread-only\sdatabase.
-D 2014-05-21T08:48:18.532
+C Add\sa\stest\sfor\sthe\sEQP\soutput\sof\sa\sskip-scan\squery\sthat\suses\sthe\sPK\sindex\sof\sa\sWITHOUT\sROWID\stable.
+D 2014-05-22T09:58:45.113
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -823,7 +823,7 @@ F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test bed8cbe9d554c8c27afb6c88500f704c86a9196f
-F test/skipscan2.test d77f79cdbba25f0f6f35298136cff21a7d7a553a
+F test/skipscan2.test 03206134fd1e3aac391e578ba2ee531b25d33877
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8d8af114dac301335ec10671c1e9a5a6d8266a60
-R e3f2cbc8b83052bc0aa4ff53432816c5
-U drh
-Z 10e89db95d2e717eb3caaf3547ece60f
+P 34ddf02d3d21151b8099c0c25706530a03d93887
+R 2ae64d8090fc3e5fdd65f9927391668c
+U dan
+Z d9d9ca17c26e25b6a9c95794829b32a1
