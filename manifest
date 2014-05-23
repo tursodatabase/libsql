@@ -1,5 +1,5 @@
-C Make\ssure\ssufficient\sVDBE\sregisters\sare\sallocated\sfor\san\sINSERT...SELECT\nwhen\sthere\sis\san\sidlist\son\sthe\sinsert\stable\sthat\sincludes\san\sexplicit\nrowid.\s\sTicket\s[9654505cfda93610585fde5a9bbf2e730c8a8d5]
-D 2014-05-23T11:48:57.262
+C In\sthe\scommand-line\sshell,\sif\sthree\sor\smore\sinterrupt\ssignals\s(control-c)\nare\sreceived\sin\sa\srow\swithout\sa\sresponse\sfrom\ssqlite3_interrupt()\sthen\ncall\sexit(1)\simmediately.\s\sThis\sallows\scontrol-C\sto\sinterrupt\sthe\sshell\neven\sif\sit\sis\sstuck\sin\sa\scomputation\sor\sloop\sthat\sdoes\snot\sinvolve\sthe\nVDBE.
+D 2014-05-23T12:03:47.471
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 089c4d46f067a5cccae93524c6377f981ba99bd9
-F src/shell.c 2afe7a7154e97be0c74c5feacf09626bda8493be
+F src/shell.c 86a6aa8417c50f61b9f7da8c8733a2606d07a313
 F src/sqlite.h.in 564fc23db33870b5096b20d72df7491ce0b8b74f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 10238fad94a198c0639461645227b6c5ebe16eee
-R 8b009b9161335da63146a2b946f50c6a
+P 9a2dd18776cc7003752980be0a0920a8799e5f35
+R 89228faedfb11c58ca8a5f2f2fdd1632
 U drh
-Z 94c16efee189e228a9e978b05a24c5a4
+Z 5594636828b263886b55cc678f3ac12f

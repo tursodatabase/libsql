@@ -697,7 +697,8 @@ static void output_csv(struct callback_data *p, const char *z, int bSep){
 */
 static void interrupt_handler(int NotUsed){
   UNUSED_PARAMETER(NotUsed);
-  seenInterrupt = 1;
+  seenInterrupt++;
+  if( seenInterrupt>2 ) exit(1);
   if( db ) sqlite3_interrupt(db);
 }
 #endif
