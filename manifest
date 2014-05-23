@@ -1,5 +1,5 @@
-C In\sthe\scommand-line\sshell,\sif\sthree\sor\smore\sinterrupt\ssignals\s(control-c)\nare\sreceived\sin\sa\srow\swithout\sa\sresponse\sfrom\ssqlite3_interrupt()\sthen\ncall\sexit(1)\simmediately.\s\sThis\sallows\scontrol-C\sto\sinterrupt\sthe\sshell\neven\sif\sit\sis\sstuck\sin\sa\scomputation\sor\sloop\sthat\sdoes\snot\sinvolve\sthe\nVDBE.
-D 2014-05-23T12:03:47.471
+C Changes\sto\sthe\soutput\sof\sEXPLAIN\sQUERY\sPLAN\sto\smake\sit\sclearer\swhen\sa\squery\suses\sthe\sPRIMARY\sKEY\sindex\sof\sa\sWITHOUT\sROWID\stable.
+D 2014-05-23T17:17:06.736
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
-F src/select.c 089c4d46f067a5cccae93524c6377f981ba99bd9
+F src/select.c a6e8fe35d2929911448fe29fc9194eec73c6c0a5
 F src/shell.c 86a6aa8417c50f61b9f7da8c8733a2606d07a313
 F src/sqlite.h.in 564fc23db33870b5096b20d72df7491ce0b8b74f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -294,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c fd4b525cd5ab652cea2fbc71ac15c975271ca461
+F src/where.c 9d351a5ecefdcc104d0bb7d9b5631dce4d60757c
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -456,7 +456,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 83437a79ba1545a55fb549309175c683fb334473
 F test/enc3.test 90683ad0e6ea587b9d5542ca93568af9a9858c40
 F test/enc4.test c8f1ce3618508fd0909945beb8b8831feef2c020
-F test/eqp.test 90b56d03a93a2e7bb90f88be6083a8ea53f11a0e
+F test/eqp.test 85873fa5816c48915c82c4e74cb5c35a5b48160f
 F test/errmsg.test f31592a594b44ee121371d25ddd5d63497bb3401
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test c7ebbc756eacf544c108b15eed64d7d4e5f86b75
@@ -822,8 +822,8 @@ F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
-F test/skipscan1.test bed8cbe9d554c8c27afb6c88500f704c86a9196f
-F test/skipscan2.test 03206134fd1e3aac391e578ba2ee531b25d33877
+F test/skipscan1.test 28c7faa41a0d7265040ecb0a0abd90c0904270b2
+F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9a2dd18776cc7003752980be0a0920a8799e5f35
-R 89228faedfb11c58ca8a5f2f2fdd1632
-U drh
-Z 5594636828b263886b55cc678f3ac12f
+P b5cde57166fd874d00dec23d3a59bf3a23979fc5
+R 95b58110418b282213fae9a9ae120c97
+U dan
+Z 904df162d630dffcdb8ed4cc227020da
