@@ -1,5 +1,5 @@
-C Changes\sto\sthe\soutput\sof\sEXPLAIN\sQUERY\sPLAN\sto\smake\sit\sclearer\swhen\sa\squery\suses\sthe\sPRIMARY\sKEY\sindex\sof\sa\sWITHOUT\sROWID\stable.
-D 2014-05-23T17:17:06.736
+C Remove\sreferences\sin\scomments\sto\sVDBE\sopcodes\sthat\sno\slonger\sexist.\s\sThis\nis\sa\sdocumentation\schange\sonly;\sno\schanges\sto\scode.
+D 2014-05-24T17:15:15.576
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c 049fe1d3c0e2209c1bee107aec2fcff6285f909f
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 7f359193bf2366cc914a9ece093ebf284e56acdc
+F src/vdbe.c 3ebcbe6a83198045b0411956fc6005b9f4a6991c
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b5cde57166fd874d00dec23d3a59bf3a23979fc5
-R 95b58110418b282213fae9a9ae120c97
-U dan
-Z 904df162d630dffcdb8ed4cc227020da
+P 9268df305b90ac11e44b3107bbab5becf38860b7
+R bc701579fd7f073e7430b8784d345a7f
+U drh
+Z e5b850c5c7a548d035682ab5ac668a73
