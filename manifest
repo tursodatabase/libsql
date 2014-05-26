@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sthe\sshell\swhen\simporting\sCSV\sfiles.\sIf\sthe\sleftmost\sfield\sof\sthe\sfirst\srow\sin\sthe\sCSV\sfile\swas\sboth\szero\sbytes\sin\ssize\sand\sunquoted,\sno\sdata\swas\simported.
-D 2014-05-26T18:27:12.472
+C Enable\sthe\sOR\soptimization\sfor\sWITHOUT\sROWID\stables.\sUse\sa\stemp\stable\sinstead\sof\sthe\sRowSet\sobject\sto\strack\sthe\srows\sthat\shave\salready\sbeen\sincluded\sin\sthe\sresult\sset.
+D 2014-05-26T20:06:45.481
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 9d351a5ecefdcc104d0bb7d9b5631dce4d60757c
+F src/where.c a911a484ed86fc4a3d52219c8adb64b19f7afeb7
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1106,6 +1106,7 @@ F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test 0ac23e5e8311b69d87245f4a85112de321031658
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
+F test/whereI.test 6cc613df883a17ca3df36021c6d6e514f5f3bd23
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1172,7 +1173,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d90c4964fcf46b0b043dbfd58267098582267001
-R 4f49cf43bba70559a864b8b79fde7303
+P 856d44a206d82e96265103556dedda39ca3602b1
+R 9e568de169ca65397feb1345691b1a68
+T *branch * without-rowid-or-opt
+T *sym-without-rowid-or-opt *
+T -sym-trunk *
 U dan
-Z b7657af7a09e4e39091c8340eac623cc
+Z 2a22ab55186c5c60531d14f3d4d18429

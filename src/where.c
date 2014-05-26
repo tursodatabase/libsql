@@ -3307,6 +3307,7 @@ static Bitmask codeOneLoopStart(
     int untestedTerms = 0;             /* Some terms not completely tested */
     int ii;                            /* Loop counter */
     Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
+    Table *pTab = pTabItem->pTab;
    
     pTerm = pLoop->aLTerm[0];
     assert( pTerm!=0 );
@@ -3350,9 +3351,16 @@ static Bitmask codeOneLoopStart(
     ** called on an uninitialized cursor.
     */
     if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
-      regRowset = ++pParse->nMem;
+      if( HasRowid(pTab) ){
+        regRowset = ++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
+      }else{
+        Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+        regRowset = pParse->nTab++;
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, regRowset, pPk->nKeyCol);
+        sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+      }
       regRowid = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
     }
     iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
 
@@ -3408,13 +3416,52 @@ static Bitmask codeOneLoopStart(
               pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
           if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
-            int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             int r;
-            r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
-                                         regRowid, 0);
-            sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset,
-                                 sqlite3VdbeCurrentAddr(v)+2, r, iSet);
-            VdbeCoverage(v);
+            int addr;             /* Address just past Gosub coded below */
+            int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
+            if( HasRowid(pTab) ){
+              r = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, regRowid, 0);
+              addr = sqlite3VdbeCurrentAddr(v)+2;
+              sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, addr, r, iSet);
+              VdbeCoverage(v);
+            }else{
+              Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+              int nPk = pPk->nKeyCol;
+              int iPk;
+
+              /* Read the PK into an array of temp registers. */
+              r = sqlite3GetTempRange(pParse, nPk);
+              for(iPk=0; iPk<nPk; iPk++){
+                int iCol = pPk->aiColumn[iPk];
+                sqlite3ExprCodeGetColumn(pParse, pTab, iCol, iCur, r+iPk, 0);
+              }
+
+              /* Check if the temp table already contains this key. If so,
+              ** the row has already been included in the result set and
+              ** can be ignored (by jumping past the Gosub below). Otherwise,
+              ** insert the key into the temp table and proceed with processing
+              ** the row.
+              **
+              ** Use some of the same optimizations as OP_RowSetTest: If iSet
+              ** is zero, assume that the key cannot already be present in
+              ** the temp table. And if iSet is -1, assume that there is no 
+              ** need to insert the key into the temp table, as it will never 
+              ** be tested for.  */ 
+              if( iSet ){
+                addr = sqlite3VdbeCurrentAddr(v) + 2 + ((iSet>0) ? 2 : 0);
+                sqlite3VdbeAddOp4Int(v, OP_Found, regRowset, addr, r, nPk);
+              }
+              if( iSet>=0 ){
+                sqlite3VdbeAddOp3(v, OP_MakeRecord, r, nPk, regRowid);
+                sqlite3VdbeAddOp3(v, OP_IdxInsert, regRowset, regRowid, 0);
+                if( iSet ) sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+              }
+
+              /* Release the array of temp registers */
+              sqlite3ReleaseTempRange(pParse, r, nPk);
+            }
+            assert( db->mallocFailed 
+                 || iSet==0 || addr==(sqlite3VdbeCurrentAddr(v)+1) );
           }
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
 
@@ -4766,7 +4813,6 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   pNew = pBuilder->pNew;
   memset(&sSum, 0, sizeof(sSum));
   pItem = pWInfo->pTabList->a + pNew->iTab;
-  if( !HasRowid(pItem->pTab) ) return SQLITE_OK;
   iCur = pItem->iCursor;
 
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
