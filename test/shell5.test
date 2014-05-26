@@ -302,8 +302,60 @@ do_test shell5-1.11 {
   sqlite3 db test.db
   db eval {SELECT *, '|' FROM t1}
 } {a b { } | x y {} | p q r |}
-
-
 db close
+
+#----------------------------------------------------------------------------
+# 
+reset_db
+sqlite3 db test.db
+do_test shell5-2.1 {
+  set fd [open shell5.csv w]
+  puts $fd ",hello"
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t1(a, b);
+.import shell5.csv t1
+  }]
+  db eval { SELECT * FROM t1 }
+} {{} hello}
+
+do_test shell5-2.2 {
+  set fd [open shell5.csv w]
+  puts $fd {"",hello}
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t2(a, b);
+.import shell5.csv t2
+  }]
+  db eval { SELECT * FROM t2 }
+} {{} hello}
+
+do_test shell5-2.3 {
+  set fd [open shell5.csv w]
+  puts $fd {"x""y",hello}
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t3(a, b);
+.import shell5.csv t3
+  }]
+  db eval { SELECT * FROM t3 }
+} {x\"y hello}
+
+do_test shell5-2.4 {
+  set fd [open shell5.csv w]
+  puts $fd {"xy""",hello}
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t4(a, b);
+.import shell5.csv t4
+  }]
+  db eval { SELECT * FROM t4 }
+} {xy\" hello}
+
+
 
 finish_test

@@ -2718,13 +2718,20 @@ static void explainOneScan(
     if( (flags & (WHERE_IPK|WHERE_VIRTUALTABLE))==0
      && ALWAYS(pLoop->u.btree.pIndex!=0)
     ){
+      const char *zFmt;
+      Index *pIdx = pLoop->u.btree.pIndex;
       char *zWhere = explainIndexRange(db, pLoop, pItem->pTab);
-      zMsg = sqlite3MAppendf(db, zMsg,
-               ((flags & WHERE_AUTO_INDEX) ? 
-                   "%s USING AUTOMATIC %sINDEX%.0s%s" :
-                   "%s USING %sINDEX %s%s"), 
-               zMsg, ((flags & WHERE_IDX_ONLY) ? "COVERING " : ""),
-               pLoop->u.btree.pIndex->zName, zWhere);
+      assert( !(flags&WHERE_AUTO_INDEX) || (flags&WHERE_IDX_ONLY) );
+      if( !HasRowid(pItem->pTab) && pIdx->autoIndex==2 ){
+        zFmt = zWhere ? "%s USING PRIMARY KEY%.0s%s" : "%s%.0s%s";
+      }else if( flags & WHERE_AUTO_INDEX ){
+        zFmt = "%s USING AUTOMATIC COVERING INDEX%.0s%s";
+      }else if( flags & WHERE_IDX_ONLY ){
+        zFmt = "%s USING COVERING INDEX %s%s";
+      }else{
+        zFmt = "%s USING INDEX %s%s";
+      }
+      zMsg = sqlite3MAppendf(db, zMsg, zFmt, zMsg, pIdx->zName, zWhere);
       sqlite3DbFree(db, zWhere);
     }else if( (flags & WHERE_IPK)!=0 && (flags & WHERE_CONSTRAINT)!=0 ){
       zMsg = sqlite3MAppendf(db, zMsg, "%s USING INTEGER PRIMARY KEY", zMsg);
