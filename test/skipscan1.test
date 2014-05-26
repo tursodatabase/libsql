@@ -181,7 +181,7 @@ do_execsql_test skipscan1-3.2 {
 do_execsql_test skipscan1-3.2eqp {
   EXPLAIN QUERY PLAN
   SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;
-} {/* INDEX sqlite_autoindex_t3_1 (ANY(a) AND b=?)*/}
+} {/* PRIMARY KEY (ANY(a) AND b=?)*/}
 do_execsql_test skipscan1-3.2sort {
   EXPLAIN QUERY PLAN
   SELECT a,b,c,d,'|' FROM t3 WHERE b=345 ORDER BY a;

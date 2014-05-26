@@ -1306,7 +1306,10 @@ void sqlite3AddCheckConstraint(
 ){
 #ifndef SQLITE_OMIT_CHECK
   Table *pTab = pParse->pNewTable;
-  if( pTab && !IN_DECLARE_VTAB ){
+  sqlite3 *db = pParse->db;
+  if( pTab && !IN_DECLARE_VTAB
+   && !sqlite3BtreeIsReadonly(db->aDb[db->init.iDb].pBt)
+  ){
     pTab->pCheck = sqlite3ExprListAppend(pParse, pTab->pCheck, pCheckExpr);
     if( pParse->constraintName.n ){
       sqlite3ExprListSetName(pParse, pTab->pCheck, &pParse->constraintName, 1);
