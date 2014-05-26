@@ -3293,6 +3293,10 @@ static Bitmask codeOneLoopStart(
     **
     **       B: <after the loop>
     **
+    ** Added 2014-05-26: If the table is a WITHOUT ROWID table, then
+    ** use an ephermeral index instead of a RowSet to record the primary
+    ** keys of the rows we have already seen.
+    **
     */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     SrcList *pOrTab;       /* Shortened table list or OR-clause generation */
@@ -3340,7 +3344,8 @@ static Bitmask codeOneLoopStart(
     }
 
     /* Initialize the rowset register to contain NULL. An SQL NULL is 
-    ** equivalent to an empty rowset.
+    ** equivalent to an empty rowset.  Or, create an ephermeral index
+    ** capable of holding primary keys in the case of a WITHOUT ROWID.
     **
     ** Also initialize regReturn to contain the address of the instruction 
     ** immediately following the OP_Return at the bottom of the loop. This
@@ -3401,6 +3406,7 @@ static Bitmask codeOneLoopStart(
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
         WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
         Expr *pOrExpr = pOrTerm->pExpr;
+        int j1 = 0;                    /* Address of jump operation */
         if( pAndExpr && !ExprHasProperty(pOrExpr, EP_FromJoin) ){
           pAndExpr->pLeft = pOrExpr;
           pOrExpr = pAndExpr;
@@ -3417,12 +3423,10 @@ static Bitmask codeOneLoopStart(
           );
           if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
             int r;
-            int addr;             /* Address just past Gosub coded below */
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             if( HasRowid(pTab) ){
               r = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, regRowid, 0);
-              addr = sqlite3VdbeCurrentAddr(v)+2;
-              sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, addr, r, iSet);
+              j1 = sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, 0, r,iSet);
               VdbeCoverage(v);
             }else{
               Index *pPk = sqlite3PrimaryKeyIndex(pTab);
@@ -3448,8 +3452,7 @@ static Bitmask codeOneLoopStart(
               ** need to insert the key into the temp table, as it will never 
               ** be tested for.  */ 
               if( iSet ){
-                addr = sqlite3VdbeCurrentAddr(v) + 2 + ((iSet>0) ? 2 : 0);
-                sqlite3VdbeAddOp4Int(v, OP_Found, regRowset, addr, r, nPk);
+                j1 = sqlite3VdbeAddOp4Int(v, OP_Found, regRowset, 0, r, nPk);
                 VdbeCoverage(v);
               }
               if( iSet>=0 ){
@@ -3461,10 +3464,9 @@ static Bitmask codeOneLoopStart(
               /* Release the array of temp registers */
               sqlite3ReleaseTempRange(pParse, r, nPk);
             }
-            assert( db->mallocFailed 
-                 || iSet==0 || addr==(sqlite3VdbeCurrentAddr(v)+1) );
           }
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
+          if( j1 ) sqlite3VdbeJumpHere(v, j1);
 
           /* The pSubWInfo->untestedTerms flag means that this OR term
           ** contained one or more AND term from a notReady table.  The
