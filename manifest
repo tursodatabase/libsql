@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sFTS4\swhere\scolumns\swith\snames\sthat\sare\sprefixes\sof\sany\snotindexed\scolumn\swere\salso\sbeing\s(incorrectly)\smarked\sas\snot\sindexed.\sFor\sexample\sin\s"CREATE\s...\st1(abc,\sbc,\sabcd,\snotindexed=abcd)",\sboth\sabc\sand\sabcd\swere\sbeing\streated\sas\snotindexed.
-D 2014-05-26T16:40:02.009
+C Fix\sa\sproblem\sin\sthe\sshell\swhen\simporting\sCSV\sfiles.\sIf\sthe\sleftmost\sfield\sof\sthe\sfirst\srow\sin\sthe\sCSV\sfile\swas\sboth\szero\sbytes\sin\ssize\sand\sunquoted,\sno\sdata\swas\simported.
+D 2014-05-26T18:27:12.472
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c a6e8fe35d2929911448fe29fc9194eec73c6c0a5
-F src/shell.c 86a6aa8417c50f61b9f7da8c8733a2606d07a313
+F src/shell.c bfac06fb15f3cd0d447e2e72ab3a283fac301813
 F src/sqlite.h.in 564fc23db33870b5096b20d72df7491ce0b8b74f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -817,7 +817,7 @@ F test/shell1.test f2a1d471e5cd2b42f7a65b166dc1ace2b8d11583
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test bb755ea9144b8078a752fc56223582627070b5f1
+F test/shell5.test fa5583230c0aea5c9ff33f0ac1e26b1e3f03d153
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ebfb51fe40756713d269b4c0ade752666910bb6e
-R 36deadd8d69ebb9247626122117eb3bc
+P d90c4964fcf46b0b043dbfd58267098582267001
+R 4f49cf43bba70559a864b8b79fde7303
 U dan
-Z 0240f0d26606ac6bcf34313be52fa724
+Z b7657af7a09e4e39091c8340eac623cc
