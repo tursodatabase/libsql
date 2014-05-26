@@ -1,5 +1,5 @@
-C Remove\sreferences\sin\scomments\sto\sVDBE\sopcodes\sthat\sno\slonger\sexist.\s\sThis\nis\sa\sdocumentation\schange\sonly;\sno\schanges\sto\scode.
-D 2014-05-24T17:15:15.576
+C Fix\sa\sproblem\sin\sFTS4\swhere\scolumns\swith\snames\sthat\sare\sprefixes\sof\sany\snotindexed\scolumn\swere\salso\sbeing\s(incorrectly)\smarked\sas\snot\sindexed.\sFor\sexample\sin\s"CREATE\s...\st1(abc,\sbc,\sabcd,\snotindexed=abcd)",\sboth\sabc\sand\sabcd\swere\sbeing\streated\sas\snotindexed.
+D 2014-05-26T16:40:02.009
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,7 +78,7 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e83f894cf1adaf8decd6b1de76bfdcdb79b25507
+F ext/fts3/fts3.c 0a9813c01ce7cc33d63680725ea30755d77c7b39
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 16cddf2d7b0e5f3681615ae1d8ca0e45fca44918
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
@@ -578,7 +578,7 @@ F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
-F test/fts4noti.test aed33ba44808852dcb24bf70fa132e7bf530f057
+F test/fts4noti.test 9695c7c6c32480ea9fc20a2b38ed1de0640bcaec
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1172,7 +1172,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9268df305b90ac11e44b3107bbab5becf38860b7
-R bc701579fd7f073e7430b8784d345a7f
-U drh
-Z e5b850c5c7a548d035682ab5ac668a73
+P ebfb51fe40756713d269b4c0ade752666910bb6e
+R 36deadd8d69ebb9247626122117eb3bc
+U dan
+Z 0240f0d26606ac6bcf34313be52fa724
