@@ -3464,7 +3464,7 @@ case OP_Close: {
 ** is greater than or equal to the key value. If there are no records 
 ** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
-** See also: Found, NotFound, Distinct, SeekLt, SeekGt, SeekLe
+** See also: Found, NotFound, SeekLt, SeekGt, SeekLe
 */
 /* Opcode: SeekGt P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
@@ -3478,7 +3478,7 @@ case OP_Close: {
 ** is greater than the key value. If there are no records greater than 
 ** the key and P2 is not zero, then jump to P2.
 **
-** See also: Found, NotFound, Distinct, SeekLt, SeekGe, SeekLe
+** See also: Found, NotFound, SeekLt, SeekGe, SeekLe
 */
 /* Opcode: SeekLt P1 P2 P3 P4 * 
 ** Synopsis: key=r[P3@P4]
@@ -3492,7 +3492,7 @@ case OP_Close: {
 ** is less than the key value. If there are no records less than 
 ** the key and P2 is not zero, then jump to P2.
 **
-** See also: Found, NotFound, Distinct, SeekGt, SeekGe, SeekLe
+** See also: Found, NotFound, SeekGt, SeekGe, SeekLe
 */
 /* Opcode: SeekLe P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
@@ -3506,7 +3506,7 @@ case OP_Close: {
 ** is less than or equal to the key value. If there are no records 
 ** less than or equal to the key and P2 is not zero, then jump to P2.
 **
-** See also: Found, NotFound, Distinct, SeekGt, SeekGe, SeekLt
+** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
 case OP_SeekLT:         /* jump, in3 */
 case OP_SeekLE:         /* jump, in3 */

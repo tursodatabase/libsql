@@ -8553,3 +8553,10 @@ void sqlite3BtreeCursorHints(BtCursor *pCsr, unsigned int mask){
   assert( mask==BTREE_BULKLOAD || mask==0 );
   pCsr->hints = mask;
 }
+
+/*
+** Return true if the given Btree is read-only.
+*/
+int sqlite3BtreeIsReadonly(Btree *p){
+  return (p->pBt->btsFlags & BTS_READ_ONLY)!=0;
+}

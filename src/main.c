@@ -3576,7 +3576,7 @@ const char *sqlite3_db_filename(sqlite3 *db, const char *zDbName){
 */
 int sqlite3_db_readonly(sqlite3 *db, const char *zDbName){
   Btree *pBt = sqlite3DbNameToBtree(db, zDbName);
-  return pBt ? sqlite3PagerIsreadonly(sqlite3BtreePager(pBt)) : -1;
+  return pBt ? sqlite3BtreeIsReadonly(pBt) : -1;
 }
 
 #if (SQLITE_ENABLE_APPLE_SPI>0) && defined(__APPLE__)
