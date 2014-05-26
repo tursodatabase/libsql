@@ -3450,6 +3450,7 @@ static Bitmask codeOneLoopStart(
               if( iSet ){
                 addr = sqlite3VdbeCurrentAddr(v) + 2 + ((iSet>0) ? 2 : 0);
                 sqlite3VdbeAddOp4Int(v, OP_Found, regRowset, addr, r, nPk);
+                VdbeCoverage(v);
               }
               if( iSet>=0 ){
                 sqlite3VdbeAddOp3(v, OP_MakeRecord, r, nPk, regRowid);

@@ -1,5 +1,5 @@
-C Enable\sthe\sOR\soptimization\sfor\sWITHOUT\sROWID\stables.\sUse\sa\stemp\stable\sinstead\sof\sthe\sRowSet\sobject\sto\strack\sthe\srows\sthat\shave\salready\sbeen\sincluded\sin\sthe\sresult\sset.
-D 2014-05-26T20:06:45.481
+C Add\sa\smissing\sVdbeCoverage()\smacro\son\san\sOP_Found\sopcode\sadded\sin\sthe\sprevious\ncheck-in.
+D 2014-05-26T20:25:34.589
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c a911a484ed86fc4a3d52219c8adb64b19f7afeb7
+F src/where.c d46d73c76f48ede86e0e5bb112b2bcc91947bfaa
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1173,10 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 856d44a206d82e96265103556dedda39ca3602b1
-R 9e568de169ca65397feb1345691b1a68
-T *branch * without-rowid-or-opt
-T *sym-without-rowid-or-opt *
-T -sym-trunk *
-U dan
-Z 2a22ab55186c5c60531d14f3d4d18429
+P 2c7e277bbebd5c93dec53d381d9737909d40d846
+R 3707fb894adfd77b824ab9f7bdc17e79
+U drh
+Z 370b7f2e785b22f24333c303cca00bc0
