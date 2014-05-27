@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\swhereI.test\sthat\suses\sa\smulti-column\sPK.
-D 2014-05-27T11:42:23.800
+C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sFTS4\slogic.
+D 2014-05-27T11:54:48.854
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -82,7 +82,7 @@ F ext/fts3/fts3.c 0a9813c01ce7cc33d63680725ea30755d77c7b39
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 16cddf2d7b0e5f3681615ae1d8ca0e45fca44918
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
-F ext/fts3/fts3_expr.c 2ac35bda474f00c14c19608e49a02c8c7ceb9970
+F ext/fts3/fts3_expr.c 351395fad6fcb16ecfc61db0861008a70101330c
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
 F ext/fts3/fts3_hash.h 39cf6874dc239d6b4e30479b1975fe5b22a3caaf
 F ext/fts3/fts3_icu.c e319e108661147bcca8dd511cd562f33a1ba81b5
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 994b2b7a591f08609140eb504253c141aec6206a
-R 9f5fb115adc3bda89f20bf959aa72d38
-U dan
-Z 82d2f3f55de0a896d1573b7f67dc993e
+P aa183e60929bdbbcea3c436dd8cc674fc44ad09a
+R dc3220081ccb63ed0a892f7c8cb59b2d
+U drh
+Z f463b60fc8d319117d5bb0fe1cac3b72
