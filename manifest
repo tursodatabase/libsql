@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sthe\sFTS4\slogic.
-D 2014-05-27T11:54:48.854
+C Remove\sunused\scode\s(previously\s#ifdef-ed\sout)\sfrom\sbtree.c.
+D 2014-05-27T15:21:42.410
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -165,7 +165,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c e29fc07a968f8d1bbe38b5736d71db59959f545c
+F src/btree.c 70c60a3807b2072982f184d9614e020d2953f89c
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 92539f47043ac9c48921450a9b2162da672bda4a
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P aa183e60929bdbbcea3c436dd8cc674fc44ad09a
-R dc3220081ccb63ed0a892f7c8cb59b2d
+P 64a869ad2388d9d62601b93d5139f2dc57f260f7
+R ce6739b7102ff2fcf5c416b0ad7372b3
 U drh
-Z f463b60fc8d319117d5bb0fe1cac3b72
+Z 7d981ef6a78ea000e412f69d3d0c7cf8
