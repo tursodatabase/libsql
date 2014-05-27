@@ -1,5 +1,5 @@
-C Add\sthe\sOR-optimization\sto\sWITHOUT\sROWID\stables.
-D 2014-05-26T22:05:46.794
+C Fix\sfor\s(unsupported)\sSQLITE_USE_FCNTL_TRACE\scode.
+D 2014-05-27T10:57:37.938
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/update.c 5b3e74a03b3811e586b4f2b4cbd7c49f01c93115
 F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
 F src/util.c 049fe1d3c0e2209c1bee107aec2fcff6285f909f
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 3ebcbe6a83198045b0411956fc6005b9f4a6991c
+F src/vdbe.c 9bfe6becfc094382ae213656fbe511055ad83a54
 F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
 F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
@@ -1173,8 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 856d44a206d82e96265103556dedda39ca3602b1 cbec30d0c49a3f618c3df3ae0ca3d651b48841c2
-R 8f53ac145522e21d9a1c5059c77f2db7
-T +closed cbec30d0c49a3f618c3df3ae0ca3d651b48841c2
+P 06a23b8b32f0439b22936dc4107890481e4a1327
+R 1ea67ea23f6d65217b1fa5e6a1cb1745
 U drh
-Z 4f60de2d6ef2869c107540511682c313
+Z 5395f720c06a5e5e2e7f0dd6ed7719cf
