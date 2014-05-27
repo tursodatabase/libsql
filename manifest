@@ -1,5 +1,5 @@
-C Fix\sfor\s(unsupported)\sSQLITE_USE_FCNTL_TRACE\scode.
-D 2014-05-27T10:57:37.938
+C Add\sa\stest\sto\swhereI.test\sthat\suses\sa\smulti-column\sPK.
+D 2014-05-27T11:42:23.800
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1106,7 +1106,7 @@ F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test 0ac23e5e8311b69d87245f4a85112de321031658
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
-F test/whereI.test 6cc613df883a17ca3df36021c6d6e514f5f3bd23
+F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 06a23b8b32f0439b22936dc4107890481e4a1327
-R 1ea67ea23f6d65217b1fa5e6a1cb1745
-U drh
-Z 5395f720c06a5e5e2e7f0dd6ed7719cf
+P 994b2b7a591f08609140eb504253c141aec6206a
+R 9f5fb115adc3bda89f20bf959aa72d38
+U dan
+Z 82d2f3f55de0a896d1573b7f67dc993e

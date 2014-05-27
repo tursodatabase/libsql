@@ -69,6 +69,24 @@ do_execsql_test 2.3 {
   SELECT a FROM t2 WHERE b='a' OR c='z'
 } {i}
 
-finish_test
+#----------------------------------------------------------------------
+# On a table with a multi-column PK.
+#
+do_execsql_test 3.0 {
+  CREATE TABLE t3(a, b, c, d, PRIMARY KEY(c, b)) WITHOUT ROWID;
 
+  INSERT INTO t3 VALUES('f', 1, 1, 'o');
+  INSERT INTO t3 VALUES('o', 2, 1, 't');
+  INSERT INTO t3 VALUES('t', 1, 2, 't');
+  INSERT INTO t3 VALUES('t', 2, 2, 'f');
+
+  CREATE INDEX t3i1 ON t3(d);
+  CREATE INDEX t3i2 ON t3(a);
+
+  SELECT c||'.'||b FROM t3 WHERE a='t' OR d='t'
+} {
+  2.1 2.2 1.2
+}
+
+finish_test
 
