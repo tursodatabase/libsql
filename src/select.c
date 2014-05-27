@@ -4498,7 +4498,7 @@ static void explainSimpleCount(
   Index *pIdx                     /* Index used to optimize scan, or NULL */
 ){
   if( pParse->explain==2 ){
-    int bCover = (pIdx!=0 && (HasRowid(pTab) || pIdx->autoIndex!=2));
+    int bCover = (pIdx!=0 && (HasRowid(pTab) || !IsPrimaryKeyIndex(pIdx)));
     char *zEqp = sqlite3MPrintf(pParse->db, "SCAN TABLE %s%s%s",
         pTab->zName,
         bCover ? " USING COVERING INDEX " : "",

@@ -2722,7 +2722,7 @@ static void explainOneScan(
       Index *pIdx = pLoop->u.btree.pIndex;
       char *zWhere = explainIndexRange(db, pLoop, pItem->pTab);
       assert( !(flags&WHERE_AUTO_INDEX) || (flags&WHERE_IDX_ONLY) );
-      if( !HasRowid(pItem->pTab) && pIdx->autoIndex==2 ){
+      if( !HasRowid(pItem->pTab) && IsPrimaryKeyIndex(pIdx) ){
         zFmt = zWhere ? "%s USING PRIMARY KEY%.0s%s" : "%s%.0s%s";
       }else if( flags & WHERE_AUTO_INDEX ){
         zFmt = "%s USING AUTOMATIC COVERING INDEX%.0s%s";
@@ -3505,7 +3505,7 @@ static Bitmask codeOneLoopStart(
           assert( (pSubLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
           if( (pSubLoop->wsFlags & WHERE_INDEXED)!=0
            && (ii==0 || pSubLoop->u.btree.pIndex==pCov)
-           && (HasRowid(pTab) || pSubLoop->u.btree.pIndex->autoIndex!=2)
+           && (HasRowid(pTab) || !IsPrimaryKeyIndex(pSubLoop->u.btree.pIndex))
           ){
             assert( pSubWInfo->a[0].iIdxCur==iCovCur );
             pCov = pSubLoop->u.btree.pIndex;
@@ -6079,7 +6079,7 @@ WhereInfo *sqlite3WhereBegin(
       int op = OP_OpenRead;
       /* iIdxCur is always set if to a positive value if ONEPASS is possible */
       assert( iIdxCur!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
-      if( !HasRowid(pTab) && pIx->autoIndex==2
+      if( !HasRowid(pTab) && IsPrimaryKeyIndex(pIx)
        && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0
       ){
         /* This is one term of an OR-optimization using the PRIMARY KEY of a
