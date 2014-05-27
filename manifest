@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2014-05-27T19:18:36.162
+C Remove\san\sincorrect\sassert()\sin\sthe\ssorter.
+D 2014-05-27T20:19:06.293
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -288,7 +288,7 @@ F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
 F src/vdbeaux.c e493f38758c4b8f4ca2007cf6a700bd405d192f3
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
-F src/vdbesort.c 4abb7c0f8f19b7d7d82f4558d5da1a30fdf9ea38
+F src/vdbesort.c 44441d73b08b3a638dcdb725afffb87c6574ad27
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d16e575dacc811de0f7b58a0d1cd243678dce6c5
-R b87af21bb1b8599ff9f8b8b0d9487163
+P 20b75460c0661b5dc071177b4a0791aceccda029
+R d313f2f9d0d10f0cab7c1f3623a16b09
 U drh
-Z 6454dd72a172141a989aefb8a68747be
+Z b3d89b92529dc184b6d7c7b851a6fe5b
