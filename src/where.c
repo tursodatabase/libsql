@@ -3401,12 +3401,16 @@ static Bitmask codeOneLoopStart(
       }
     }
 
+    /* Run a separate WHERE clause for each term of the OR clause.  After
+    ** eliminating duplicates from other WHERE clauses, the action for each
+    ** sub-WHERE clause is to to invoke the main loop body as a subroutine.
+    */
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
-        WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
-        Expr *pOrExpr = pOrTerm->pExpr;
-        int j1 = 0;                    /* Address of jump operation */
+        WhereInfo *pSubWInfo;           /* Info for single OR-term scan */
+        Expr *pOrExpr = pOrTerm->pExpr; /* Current OR clause term */
+        int j1 = 0;                     /* Address of jump operation */
         if( pAndExpr && !ExprHasProperty(pOrExpr, EP_FromJoin) ){
           pAndExpr->pLeft = pOrExpr;
           pOrExpr = pAndExpr;
@@ -3421,6 +3425,11 @@ static Bitmask codeOneLoopStart(
           explainOneScan(
               pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
+          /* This is the sub-WHERE clause body.  First skip over
+          ** duplicate rows from prior sub-WHERE clauses, and record the
+          ** rowid (or PRIMARY KEY) for the current row so that the same
+          ** row will be skipped in subsequent sub-WHERE clauses.
+          */
           if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
             int r;
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
@@ -3465,7 +3474,12 @@ static Bitmask codeOneLoopStart(
               sqlite3ReleaseTempRange(pParse, r, nPk);
             }
           }
+
+          /* Invoke the main loop body as a subroutine */
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
+
+          /* Jump here (skipping the main loop body subroutine) if the
+          ** current sub-WHERE row is a duplicate from prior sub-WHEREs. */
           if( j1 ) sqlite3VdbeJumpHere(v, j1);
 
           /* The pSubWInfo->untestedTerms flag means that this OR term
