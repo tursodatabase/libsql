@@ -1,5 +1,5 @@
-C Improved\scomments\son\sthe\sOR-optimization\slogic\sin\sthe\squery\splanner.
-D 2014-05-27T16:41:39.846
+C Avoid\sunnecessary\scursor\sopens\sand\sseeks\swhen\srunning\sthe\sOR-optimization\non\sa\sWITHOUT\sROWID\stable.
+D 2014-05-27T17:57:32.885
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c c0d3d347448ce49cce09f6d9c9c77b2e50cb04e8
+F src/where.c a2dba34bd878afd6266f21c72858cede8fd015b3
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8bc9737112e2700f337ff377cda040c8ba9d729f
-R c7cb76eccf21aa84ad851897e7d321d9
+P 77fef5a3987fc16f84a8e755283ca6ec1363013c
+R 9c15bb60113056d77932f80a5eec6f19
 U drh
-Z 007914f5e44aaaab8e86bcf739f9064c
+Z 4fb05aa38d1f916817ea122f0841369f
