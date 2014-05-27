@@ -3065,7 +3065,7 @@ static int fts3PromoteSegments(
     sqlite3_bind_int64(pRange, 1, iAbsLevel+1);
     sqlite3_bind_int64(pRange, 2, iLast);
     while( SQLITE_ROW==sqlite3_step(pRange) ){
-      i64 nSize, dummy;
+      i64 nSize = 0, dummy;
       fts3ReadEndBlockField(pRange, 2, &dummy, &nSize);
       if( nSize<=0 || nSize>nLimit ){
         /* If nSize==0, then the %_segdir.end_block field does not not 
@@ -4870,7 +4870,7 @@ int sqlite3Fts3Incrmerge(Fts3Table *p, int nMerge, int nMin){
       rc = fts3IncrmergeOutputIdx(p, iAbsLevel, &iIdx);
       assert( bUseHint==1 || bUseHint==0 );
       if( iIdx==0 || (bUseHint && iIdx==1) ){
-        int bIgnore;
+        int bIgnore = 0;
         rc = fts3SegmentIsMaxLevel(p, iAbsLevel+1, &bIgnore);
         if( bIgnore ){
           pFilter->flags |= FTS3_SEGMENT_IGNORE_EMPTY;

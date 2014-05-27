@@ -1376,7 +1376,7 @@ static int fts3InitVtab(
     int n = (int)strlen(p->azColumn[iCol]);
     for(i=0; i<nNotindexed; i++){
       char *zNot = azNotindexed[i];
-      if( zNot && strlen(zNot)==n 
+      if( zNot && n==(int)strlen(zNot)
        && 0==sqlite3_strnicmp(p->azColumn[iCol], zNot, n) 
       ){
         p->abNotindexed[iCol] = 1;
