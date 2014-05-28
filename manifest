@@ -1,5 +1,5 @@
-C Remove\san\sincorrect\sassert()\sin\sthe\ssorter.
-D 2014-05-27T20:19:06.293
+C Revise\show\sOSTRACE\sreports\slogically\sboolean\sresults\sin\sthe\sWin32\sVFS.
+D 2014-05-28T03:23:55.937
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -206,7 +206,7 @@ F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
-F src/os_win.c 485d06a93965f306c7281fca0937829292367234
+F src/os_win.c 648f842876e25391b7c454c8e49f7db1fd981d65
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 20b75460c0661b5dc071177b4a0791aceccda029
-R d313f2f9d0d10f0cab7c1f3623a16b09
-U drh
-Z b3d89b92529dc184b6d7c7b851a6fe5b
+P b8b66103de8c554cb87df40bf040760ec29f2ae1
+R fb2228bf340b8e64476c0b547456f447
+U mistachkin
+Z 33db4268ebdb5368353cf9e380a10aca
