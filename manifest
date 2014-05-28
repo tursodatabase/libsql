@@ -1,5 +1,5 @@
-C Revise\show\sOSTRACE\sreports\slogically\sboolean\sresults\sin\sthe\sWin32\sVFS.
-D 2014-05-28T03:23:55.937
+C Add\san\sextra\stest\sto\sverify\sthat\sthe\sFTS\snotindexed\soption\sis\sworking.
+D 2014-05-28T10:00:38.278
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -578,7 +578,7 @@ F test/fts4merge.test c424309743fdd203f8e56a1f1cd7872cd66cc0ee
 F test/fts4merge2.test 5faa558d1b672f82b847d2a337465fa745e46891
 F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
-F test/fts4noti.test 9695c7c6c32480ea9fc20a2b38ed1de0640bcaec
+F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8b66103de8c554cb87df40bf040760ec29f2ae1
-R fb2228bf340b8e64476c0b547456f447
-U mistachkin
-Z 33db4268ebdb5368353cf9e380a10aca
+P c405f971cf03e29110019ff863cbfb026d97e1e6
+R e5a9e845a94856ba3834be3d275aa741
+U dan
+Z 682e816d8cc7267dd27dd1b8bd8b3242
