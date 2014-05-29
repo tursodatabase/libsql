@@ -6281,7 +6281,7 @@ case OP_Init: {          /* jump */
   if( zTrace ){
     int i;
     for(i=0; i<db->nDb; i++){
-      if( MASKBIT(i) & p->btreeMask)==0 ) continue;
+      if( (MASKBIT(i) & p->btreeMask)==0 ) continue;
       sqlite3_file_control(db, db->aDb[i].zName, SQLITE_FCNTL_TRACE, zTrace);
     }
   }

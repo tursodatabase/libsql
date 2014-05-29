@@ -4245,12 +4245,6 @@ static const void *fetchPayload(
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
   assert( pCur->info.nSize>0 );
-#if 0
-  if( pCur->info.nSize==0 ){
-    btreeParseCell(pCur->apPage[pCur->iPage], pCur->aiIdx[pCur->iPage],
-                   &pCur->info);
-  }
-#endif
   *pAmt = pCur->info.nLocal;
   return (void*)(pCur->info.pCell + pCur->info.nHeader);
 }

@@ -502,7 +502,7 @@ static int getNextNode(
       return rc;
     }else if( *zInput==')' ){
       pParse->nNest--;
-      *pnConsumed = (zInput - z) + 1;
+      *pnConsumed = (int)((zInput - z) + 1);
       *ppExpr = 0;
       return SQLITE_DONE;
     }

@@ -350,7 +350,6 @@ static int vdbeSorterIterInit(
       rc = sqlite3OsRead(
           pSorter->pTemp1, &pIter->aBuffer[iBuf], nRead, iStart
       );
-      assert( rc!=SQLITE_IOERR_SHORT_READ );
     }
 
     if( rc==SQLITE_OK ){

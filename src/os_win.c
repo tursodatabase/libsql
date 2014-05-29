@@ -2825,7 +2825,7 @@ static int winGetReadLock(winFile *pFile){
     pFile->lastErrno = osGetLastError();
     /* No need to log a failure to lock */
   }
-  OSTRACE(("READ-LOCK file=%p, rc=%s\n", pFile->h, sqlite3ErrName(res)));
+  OSTRACE(("READ-LOCK file=%p, result=%d\n", pFile->h, res));
   return res;
 }
 
@@ -2849,7 +2849,7 @@ static int winUnlockReadLock(winFile *pFile){
     winLogError(SQLITE_IOERR_UNLOCK, pFile->lastErrno,
                 "winUnlockReadLock", pFile->zPath);
   }
-  OSTRACE(("READ-UNLOCK file=%p, rc=%s\n", pFile->h, sqlite3ErrName(res)));
+  OSTRACE(("READ-UNLOCK file=%p, result=%d\n", pFile->h, res));
   return res;
 }
 
@@ -2924,8 +2924,8 @@ static int winLock(sqlite3_file *id, int locktype){
       ** If you are using this code as a model for alternative VFSes, do not
       ** copy this retry logic.  It is a hack intended for Windows only.
       */
-      OSTRACE(("LOCK-PENDING-FAIL file=%p, count=%d, rc=%s\n",
-               pFile->h, cnt, sqlite3ErrName(res)));
+      OSTRACE(("LOCK-PENDING-FAIL file=%p, count=%d, result=%d\n",
+               pFile->h, cnt, res));
       if( cnt ) sqlite3_win32_sleep(1);
     }
     gotPendingLock = res;
@@ -3010,7 +3010,7 @@ static int winLock(sqlite3_file *id, int locktype){
 ** non-zero, otherwise zero.
 */
 static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
-  int rc;
+  int res;
   winFile *pFile = (winFile*)id;
 
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
@@ -3018,17 +3018,17 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
 
   assert( id!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
-    rc = 1;
-    OSTRACE(("TEST-WR-LOCK file=%p, rc=%d (local)\n", pFile->h, rc));
+    res = 1;
+    OSTRACE(("TEST-WR-LOCK file=%p, result=%d (local)\n", pFile->h, res));
   }else{
-    rc = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS,RESERVED_BYTE, 0, 1, 0);
-    if( rc ){
+    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS,RESERVED_BYTE, 0, 1, 0);
+    if( res ){
       winUnlockFile(&pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
-    rc = !rc;
-    OSTRACE(("TEST-WR-LOCK file=%p, rc=%d (remote)\n", pFile->h, rc));
+    res = !res;
+    OSTRACE(("TEST-WR-LOCK file=%p, result=%d (remote)\n", pFile->h, res));
   }
-  *pResOut = rc;
+  *pResOut = res;
   OSTRACE(("TEST-WR-LOCK file=%p, pResOut=%p, *pResOut=%d, rc=SQLITE_OK\n",
            pFile->h, pResOut, *pResOut));
   return SQLITE_OK;

@@ -268,7 +268,7 @@ do_test shell1-3.1.4 {
 # .bail ON|OFF           Stop after hitting an error.  Default OFF
 do_test shell1-3.2.1 {
   catchcmd "test.db" ".bail"
-} {1 {Error: unknown command or invalid arguments:  "bail". Enter ".help" for help}}
+} {1 {Usage: .bail on|off}}
 do_test shell1-3.2.2 {
   catchcmd "test.db" ".bail ON"
 } {0 {}}
@@ -278,16 +278,16 @@ do_test shell1-3.2.3 {
 do_test shell1-3.2.4 {
   # too many arguments
   catchcmd "test.db" ".bail OFF BAD"
-} {1 {Error: unknown command or invalid arguments:  "bail". Enter ".help" for help}}
+} {1 {Usage: .bail on|off}}
 
 # .databases             List names and files of attached databases
 do_test shell1-3.3.1 {
   catchcmd "-csv test.db" ".databases"
 } "/0 +.*main +[string map {/ .} [string range [get_pwd] 0 10]].*/"
 do_test shell1-3.3.2 {
-  # too many arguments
+  # extra arguments ignored
   catchcmd "test.db" ".databases BAD"
-} {1 {Error: unknown command or invalid arguments:  "databases". Enter ".help" for help}}
+} "/0 +.*main +[string map {/ .} [string range [get_pwd] 0 10]].*/"
 
 # .dump ?TABLE? ...      Dump the database in an SQL text format
 #                          If TABLE specified, only dump tables matching
@@ -305,12 +305,12 @@ do_test shell1-3.4.2 {
 do_test shell1-3.4.3 {
   # too many arguments
   catchcmd "test.db" ".dump FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "dump". Enter ".help" for help}}
+} {1 {Usage: .dump ?LIKE-PATTERN?}}
 
 # .echo ON|OFF           Turn command echo on or off
 do_test shell1-3.5.1 {
   catchcmd "test.db" ".echo"
-} {1 {Error: unknown command or invalid arguments:  "echo". Enter ".help" for help}}
+} {1 {Usage: .echo on|off}}
 do_test shell1-3.5.2 {
   catchcmd "test.db" ".echo ON"
 } {0 {}}
@@ -320,7 +320,7 @@ do_test shell1-3.5.3 {
 do_test shell1-3.5.4 {
   # too many arguments
   catchcmd "test.db" ".echo OFF BAD"
-} {1 {Error: unknown command or invalid arguments:  "echo". Enter ".help" for help}}
+} {1 {Usage: .echo on|off}}
 
 # .exit                  Exit this program
 do_test shell1-3.6.1 {
@@ -339,15 +339,15 @@ do_test shell1-3.7.3 {
   catchcmd "test.db" ".explain OFF"
 } {0 {}}
 do_test shell1-3.7.4 {
-  # too many arguments
+  # extra arguments ignored
   catchcmd "test.db" ".explain OFF BAD"
-} {1 {Error: unknown command or invalid arguments:  "explain". Enter ".help" for help}}
+} {0 {}}
 
 
 # .header(s) ON|OFF      Turn display of headers on or off
 do_test shell1-3.9.1 {
   catchcmd "test.db" ".header"
-} {1 {Error: unknown command or invalid arguments:  "header". Enter ".help" for help}}
+} {1 {Usage: .headers on|off}}
 do_test shell1-3.9.2 {
   catchcmd "test.db" ".header ON"
 } {0 {}}
@@ -357,11 +357,11 @@ do_test shell1-3.9.3 {
 do_test shell1-3.9.4 {
   # too many arguments
   catchcmd "test.db" ".header OFF BAD"
-} {1 {Error: unknown command or invalid arguments:  "header". Enter ".help" for help}}
+} {1 {Usage: .headers on|off}}
 
 do_test shell1-3.9.5 {
   catchcmd "test.db" ".headers"
-} {1 {Error: unknown command or invalid arguments:  "headers". Enter ".help" for help}}
+} {1 {Usage: .headers on|off}}
 do_test shell1-3.9.6 {
   catchcmd "test.db" ".headers ON"
 } {0 {}}
@@ -371,7 +371,7 @@ do_test shell1-3.9.7 {
 do_test shell1-3.9.8 {
   # too many arguments
   catchcmd "test.db" ".headers OFF BAD"
-} {1 {Error: unknown command or invalid arguments:  "headers". Enter ".help" for help}}
+} {1 {Usage: .headers on|off}}
 
 # .help                  Show this message
 do_test shell1-3.10.1 {
@@ -393,17 +393,17 @@ do_test shell1-3.10.2 {
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell1-3.11.1 {
   catchcmd "test.db" ".import"
-} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+} {1 {Usage: .import FILE TABLE}}
 do_test shell1-3.11.2 {
   catchcmd "test.db" ".import FOO"
-} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+} {1 {Usage: .import FILE TABLE}}
 #do_test shell1-3.11.2 {
 #  catchcmd "test.db" ".import FOO BAR"
 #} {1 {Error: no such table: BAR}}
 do_test shell1-3.11.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+} {1 {Usage: .import FILE TABLE}}
 
 # .indices ?TABLE?       Show names of all indices
 #                          If TABLE specified, only show indices for tables
@@ -417,7 +417,7 @@ do_test shell1-3.12.2 {
 do_test shell1-3.12.3 {
   # too many arguments
   catchcmd "test.db" ".indices FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "indices". Enter ".help" for help}}
+} {1 {Usage: .indices ?LIKE-PATTERN?}}
 
 # .mode MODE ?TABLE?     Set output mode where MODE is one of:
 #                          csv      Comma-separated values
@@ -430,7 +430,7 @@ do_test shell1-3.12.3 {
 #                          tcl      TCL list elements
 do_test shell1-3.13.1 {
   catchcmd "test.db" ".mode"
-} {1 {Error: unknown command or invalid arguments:  "mode". Enter ".help" for help}}
+} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
 do_test shell1-3.13.2 {
   catchcmd "test.db" ".mode FOO"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
@@ -459,9 +459,9 @@ do_test shell1-3.13.10 {
   catchcmd "test.db" ".mode tcl"
 } {0 {}}
 do_test shell1-3.13.11 {
-  # too many arguments
+  # extra arguments ignored
   catchcmd "test.db" ".mode tcl BAD"
-} {1 {Error: invalid arguments:  "BAD". Enter ".help" for help}}
+} {0 {}}
 
 # don't allow partial mode type matches
 do_test shell1-3.13.12 {
@@ -472,31 +472,31 @@ do_test shell1-3.13.13 {
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
 do_test shell1-3.13.14 {
   catchcmd "test.db" ".mode lin"
-} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+} {0 {}}
 
 # .nullvalue STRING      Print STRING in place of NULL values
 do_test shell1-3.14.1 {
   catchcmd "test.db" ".nullvalue"
-} {1 {Error: unknown command or invalid arguments:  "nullvalue". Enter ".help" for help}}
+} {1 {Usage: .nullvalue STRING}}
 do_test shell1-3.14.2 {
   catchcmd "test.db" ".nullvalue FOO"
 } {0 {}}
 do_test shell1-3.14.3 {
   # too many arguments
   catchcmd "test.db" ".nullvalue FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "nullvalue". Enter ".help" for help}}
+} {1 {Usage: .nullvalue STRING}}
 
 # .output FILENAME       Send output to FILENAME
 do_test shell1-3.15.1 {
   catchcmd "test.db" ".output"
-} {1 {Error: unknown command or invalid arguments:  "output". Enter ".help" for help}}
+} {0 {}}
 do_test shell1-3.15.2 {
   catchcmd "test.db" ".output FOO"
 } {0 {}}
 do_test shell1-3.15.3 {
   # too many arguments
   catchcmd "test.db" ".output FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "output". Enter ".help" for help}}
+} {1 {Usage: .output FILE}}
 
 # .output stdout         Send output to the screen
 do_test shell1-3.16.1 {
@@ -505,12 +505,12 @@ do_test shell1-3.16.1 {
 do_test shell1-3.16.2 {
   # too many arguments
   catchcmd "test.db" ".output stdout BAD"
-} {1 {Error: unknown command or invalid arguments:  "output". Enter ".help" for help}}
+} {1 {Usage: .output FILE}}
 
 # .prompt MAIN CONTINUE  Replace the standard prompts
 do_test shell1-3.17.1 {
   catchcmd "test.db" ".prompt"
-} {1 {Error: unknown command or invalid arguments:  "prompt". Enter ".help" for help}}
+} {0 {}}
 do_test shell1-3.17.2 {
   catchcmd "test.db" ".prompt FOO"
 } {0 {}}
@@ -520,7 +520,7 @@ do_test shell1-3.17.3 {
 do_test shell1-3.17.4 {
   # too many arguments
   catchcmd "test.db" ".prompt FOO BAR BAD"
-} {1 {Error: unknown command or invalid arguments:  "prompt". Enter ".help" for help}}
+} {0 {}}
 
 # .quit                  Exit this program
 do_test shell1-3.18.1 {
@@ -529,12 +529,12 @@ do_test shell1-3.18.1 {
 do_test shell1-3.18.2 {
   # too many arguments
   catchcmd "test.db" ".quit BAD"
-} {1 {Error: unknown command or invalid arguments:  "quit". Enter ".help" for help}}
+} {0 {}}
 
 # .read FILENAME         Execute SQL in FILENAME
 do_test shell1-3.19.1 {
   catchcmd "test.db" ".read"
-} {1 {Error: unknown command or invalid arguments:  "read". Enter ".help" for help}}
+} {1 {Usage: .read FILE}}
 do_test shell1-3.19.2 {
   forcedelete FOO
   catchcmd "test.db" ".read FOO"
@@ -542,12 +542,12 @@ do_test shell1-3.19.2 {
 do_test shell1-3.19.3 {
   # too many arguments
   catchcmd "test.db" ".read FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "read". Enter ".help" for help}}
+} {1 {Usage: .read FILE}}
 
 # .restore ?DB? FILE     Restore content of DB (default "main") from FILE
 do_test shell1-3.20.1 {
   catchcmd "test.db" ".restore"
-} {1 {Error: unknown command or invalid arguments:  "restore". Enter ".help" for help}}
+} {1 {Usage: .restore ?DB? FILE}}
 do_test shell1-3.20.2 {
   catchcmd "test.db" ".restore FOO"
 } {0 {}}
@@ -557,7 +557,7 @@ do_test shell1-3.20.3 {
 do_test shell1-3.20.4 {
   # too many arguments
   catchcmd "test.db" ".restore FOO BAR BAD"
-} {1 {Error: unknown command or invalid arguments:  "restore". Enter ".help" for help}}
+} {1 {Usage: .restore ?DB? FILE}}
 
 # .schema ?TABLE?        Show the CREATE statements
 #                          If TABLE specified, only show tables matching
@@ -571,7 +571,7 @@ do_test shell1-3.21.2 {
 do_test shell1-3.21.3 {
   # too many arguments
   catchcmd "test.db" ".schema FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "schema". Enter ".help" for help}}
+} {1 {Usage: .schema ?LIKE-PATTERN?}}
 
 do_test shell1-3.21.4 {
   catchcmd "test.db" {
@@ -588,14 +588,14 @@ db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
 # .separator STRING      Change separator used by output mode and .import
 do_test shell1-3.22.1 {
   catchcmd "test.db" ".separator"
-} {1 {Error: unknown command or invalid arguments:  "separator". Enter ".help" for help}}
+} {1 {Usage: .separator STRING}}
 do_test shell1-3.22.2 {
   catchcmd "test.db" ".separator FOO"
 } {0 {}}
 do_test shell1-3.22.3 {
   # too many arguments
   catchcmd "test.db" ".separator FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "separator". Enter ".help" for help}}
+} {1 {Usage: .separator STRING}}
 
 # .show                  Show the current values for various settings
 do_test shell1-3.23.1 {
@@ -613,12 +613,12 @@ do_test shell1-3.23.1 {
 do_test shell1-3.23.2 {
   # too many arguments
   catchcmd "test.db" ".show BAD"
-} {1 {Error: unknown command or invalid arguments:  "show". Enter ".help" for help}}
+} {1 {Usage: .show}}
 
 # .stats ON|OFF          Turn stats on or off
 do_test shell1-3.23b.1 {
   catchcmd "test.db" ".stats"
-} {1 {Error: unknown command or invalid arguments:  "stats". Enter ".help" for help}}
+} {1 {Usage: .stats on|off}}
 do_test shell1-3.23b.2 {
   catchcmd "test.db" ".stats ON"
 } {0 {}}
@@ -628,7 +628,7 @@ do_test shell1-3.23b.3 {
 do_test shell1-3.23b.4 {
   # too many arguments
   catchcmd "test.db" ".stats OFF BAD"
-} {1 {Error: unknown command or invalid arguments:  "stats". Enter ".help" for help}}
+} {1 {Usage: .stats on|off}}
 
 # .tables ?TABLE?        List names of tables
 #                          If TABLE specified, only list tables matching
@@ -642,12 +642,12 @@ do_test shell1-3.24.2 {
 do_test shell1-3.24.3 {
   # too many arguments
   catchcmd "test.db" ".tables FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "tables". Enter ".help" for help}}
+} {0 {}}
 
 # .timeout MS            Try opening locked tables for MS milliseconds
 do_test shell1-3.25.1 {
   catchcmd "test.db" ".timeout"
-} {1 {Error: unknown command or invalid arguments:  "timeout". Enter ".help" for help}}
+} {0 {}}
 do_test shell1-3.25.2 {
   catchcmd "test.db" ".timeout zzz"
   # this should be treated the same as a '0' timeout
@@ -658,12 +658,12 @@ do_test shell1-3.25.3 {
 do_test shell1-3.25.4 {
   # too many arguments
   catchcmd "test.db" ".timeout 1 BAD"
-} {1 {Error: unknown command or invalid arguments:  "timeout". Enter ".help" for help}}
+} {0 {}}
 
 # .width NUM NUM ...     Set column widths for "column" mode
 do_test shell1-3.26.1 {
   catchcmd "test.db" ".width"
-} {1 {Error: unknown command or invalid arguments:  "width". Enter ".help" for help}}
+} {0 {}}
 do_test shell1-3.26.2 {
   catchcmd "test.db" ".width xxx"
   # this should be treated the same as a '0' width for col 1
@@ -689,7 +689,7 @@ do_test shell1-3.26.6 {
 # .timer ON|OFF          Turn the CPU timer measurement on or off
 do_test shell1-3.27.1 {
   catchcmd "test.db" ".timer"
-} {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}
+} {1 {Usage: .timer on|off}}
 do_test shell1-3.27.2 {
   catchcmd "test.db" ".timer ON"
 } {0 {}}
@@ -699,7 +699,7 @@ do_test shell1-3.27.3 {
 do_test shell1-3.27.4 {
   # too many arguments
   catchcmd "test.db" ".timer OFF BAD"
-} {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}
+} {1 {Usage: .timer on|off}}
 
 do_test shell1-3-28.1 {
   catchcmd test.db \
