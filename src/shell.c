@@ -1200,7 +1200,7 @@ static void explain_data_prepare(struct callback_data *p, sqlite3_stmt *pSql){
 
   const char *azNext[] = { "Next", "Prev", "VPrev", "VNext", "SorterNext",
                            "NextIfOpen", "PrevIfOpen", 0 };
-  const char *azYield[] = { "Yield", "SeekLt", "SeekGt", "RowSetRead", "Rewind", 0 };
+  const char *azYield[] = { "Yield", "SeekLT", "SeekGT", "RowSetRead", "Rewind", 0 };
   const char *azGoto[] = { "Goto", 0 };
 
   /* Try to figure out if this is really an EXPLAIN statement. If this

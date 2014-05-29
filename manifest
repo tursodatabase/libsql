@@ -1,5 +1,5 @@
-C Improvements\sto\serror\smessages\sfor\serrors\sin\sthe\sdot-commands\sof\sthe\ncommand-line\sshell.\s\sAdd\sthe\s".once"\scommand.\s\sThe\soutput\sof\s".help"\nnow\sgoes\sto\sthe\sdesignated\soutput\schannel.
-D 2014-05-29T12:36:14.908
+C Fix\sto\sthe\sEXPLAIN\sindentation\slogic\sin\sthe\scommand-line\sshell.
+D 2014-05-29T20:17:57.027
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 7df17ec5506c2427576d412bee0e6ea740e12563
-F src/shell.c a94689054bc0a66608f3d75b3ced2b886c3d7f50
+F src/shell.c 33f6c0bc0e32eae099f7c2b79cfa7515b4b4702c
 F src/sqlite.h.in 564fc23db33870b5096b20d72df7491ce0b8b74f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e58f4bd39d51c4c1a28684dab6427de81173d564
-R 7215154feb44506111be05bd24ee86a7
+P 48dce821a07ac29da6ce05e92cf3f6e52b6eb388
+R f3f6ddac33e05ba165213ff981b802f2
 U drh
-Z cfc4096d1968e16f0aae201a0082ea68
+Z 830218d29106127a2f4cf14b2b59a5e2
