@@ -2909,9 +2909,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   ){
     char *zCmd;
     int i;
-    zCmd = sqlite3_mprintf("\"%s\"", azArg[1]);
+    zCmd = sqlite3_mprintf(strchr(azArg[1],' ')==0?"%s":"\"%s\"", azArg[1]);
     for(i=2; i<nArg; i++){
-      zCmd = sqlite3_mprintf("%z \"%s\"", zCmd, azArg[i]);
+      zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
+                             zCmd, azArg[i]);
     }
     system(zCmd);
     sqlite3_free(zCmd);
