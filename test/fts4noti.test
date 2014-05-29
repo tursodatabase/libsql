@@ -210,6 +210,23 @@ do_execsql_test 6.2.5 {
   SELECT * FROM t1 WHERE t1 MATCH '60*';
 } { Restaurant 6021 }
 
+do_execsql_test 6.3.1 {
+  DROP TABLE t1;
+  CREATE VIRTUAL TABLE t1 USING fts4(abc, ab, a, notindexed=abc);
+  CREATE VIRTUAL TABLE t2 USING fts4(a, ab, abc, notindexed=abc);
+
+  INSERT INTO t1 VALUES('no', 'yes', 'yep');
+  INSERT INTO t2 VALUES('yep', 'yes', 'no');
+
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'no';
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'yes';
+  SELECT count(*) FROM t1 WHERE t1 MATCH 'yep';
+
+  SELECT count(*) FROM t2 WHERE t2 MATCH 'no';
+  SELECT count(*) FROM t2 WHERE t2 MATCH 'yes';
+  SELECT count(*) FROM t2 WHERE t2 MATCH 'yep';
+} {0 1 1 0 1 1}
+
 finish_test
 
 
