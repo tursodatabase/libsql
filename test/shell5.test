@@ -40,29 +40,29 @@ forcedelete test.db test.db-journal test.db-wal
 # .import FILE TABLE     Import data from FILE into TABLE
 do_test shell5-1.1.1 {
   catchcmd "test.db" ".import"
-} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+} {1 {Usage: .import FILE TABLE}}
 do_test shell5-1.1.2 {
   catchcmd "test.db" ".import FOO"
-} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+} {1 {Usage: .import FILE TABLE}}
 #do_test shell5-1.1.2 {
 #  catchcmd "test.db" ".import FOO BAR"
 #} {1 {Error: no such table: BAR}}
 do_test shell5-1.1.3 {
   # too many arguments
   catchcmd "test.db" ".import FOO BAR BAD"
-} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+} {1 {Usage: .import FILE TABLE}}
 
 # .separator STRING      Change separator used by output mode and .import
-do_test shell1-1.2.1 {
+do_test shell5-1.2.1 {
   catchcmd "test.db" ".separator"
-} {1 {Error: unknown command or invalid arguments:  "separator". Enter ".help" for help}}
-do_test shell1-1.2.2 {
+} {1 {Usage: .separator STRING}}
+do_test shell5-1.2.2 {
   catchcmd "test.db" ".separator FOO"
 } {0 {}}
-do_test shell1-1.2.3 {
+do_test shell5-1.2.3 {
   # too many arguments
   catchcmd "test.db" ".separator FOO BAD"
-} {1 {Error: unknown command or invalid arguments:  "separator". Enter ".help" for help}}
+} {1 {Usage: .separator STRING}}
 
 # separator should default to "|"
 do_test shell5-1.3.1 {

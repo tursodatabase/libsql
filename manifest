@@ -1,5 +1,5 @@
-C Only\squote\sthe\sarguments\sto\sthe\s".shell"\sand\s".system"\scommands\sif\sthey\ncontain\sspaces.
-D 2014-05-29T03:17:29.412
+C Improvements\sto\serror\smessages\sfor\serrors\sin\sthe\sdot-commands\sof\sthe\ncommand-line\sshell.\s\sAdd\sthe\s".once"\scommand.\s\sThe\soutput\sof\s".help"\nnow\sgoes\sto\sthe\sdesignated\soutput\schannel.
+D 2014-05-29T12:36:14.908
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -221,7 +221,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 7df17ec5506c2427576d412bee0e6ea740e12563
-F src/shell.c f389c2bcae6192daad01b46169e63538456427fa
+F src/shell.c a94689054bc0a66608f3d75b3ced2b886c3d7f50
 F src/sqlite.h.in 564fc23db33870b5096b20d72df7491ce0b8b74f
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -813,11 +813,11 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test f2a1d471e5cd2b42f7a65b166dc1ace2b8d11583
+F test/shell1.test fb080d67c81e8a80a79ea04b36f127209b5bd112
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
-F test/shell4.test aa4eef8118b412d1a01477a53426ece169ea86a9
-F test/shell5.test fa5583230c0aea5c9ff33f0ac1e26b1e3f03d153
+F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
+F test/shell5.test 6b1a53c49a4ff5c3bd0bad17a85ecba505608278
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d018a34a05cec6adda61ed225d084c587343f2a6
-R c32df26ea35dc6668db5bcd28814662e
+P e58f4bd39d51c4c1a28684dab6427de81173d564
+R 7215154feb44506111be05bd24ee86a7
 U drh
-Z a04310abc4a1ec4cc8144d03b2ee32a5
+Z cfc4096d1968e16f0aae201a0082ea68
