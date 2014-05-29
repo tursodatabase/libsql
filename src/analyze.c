@@ -1002,7 +1002,7 @@ static void analyzeOneTable(
     if( aGotoChng==0 ) continue;
 
     /* Populate the register containing the index name. */
-    if( pIdx->autoIndex==2 && !HasRowid(pTab) ){
+    if( IsPrimaryKeyIndex(pIdx) && !HasRowid(pTab) ){
       zIdxName = pTab->zName;
     }else{
       zIdxName = pIdx->zName;

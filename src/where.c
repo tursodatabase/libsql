@@ -2722,7 +2722,7 @@ static void explainOneScan(
       Index *pIdx = pLoop->u.btree.pIndex;
       char *zWhere = explainIndexRange(db, pLoop, pItem->pTab);
       assert( !(flags&WHERE_AUTO_INDEX) || (flags&WHERE_IDX_ONLY) );
-      if( !HasRowid(pItem->pTab) && pIdx->autoIndex==2 ){
+      if( !HasRowid(pItem->pTab) && IsPrimaryKeyIndex(pIdx) ){
         zFmt = zWhere ? "%s USING PRIMARY KEY%.0s%s" : "%s%.0s%s";
       }else if( flags & WHERE_AUTO_INDEX ){
         zFmt = "%s USING AUTOMATIC COVERING INDEX%.0s%s";
@@ -3223,7 +3223,7 @@ static Bitmask codeOneLoopStart(
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
       sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
-    }else{
+    }else if( iCur!=iIdxCur ){
       Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
       iRowidReg = sqlite3GetTempRange(pParse, pPk->nKeyCol);
       for(j=0; j<pPk->nKeyCol; j++){
@@ -3293,6 +3293,10 @@ static Bitmask codeOneLoopStart(
     **
     **       B: <after the loop>
     **
+    ** Added 2014-05-26: If the table is a WITHOUT ROWID table, then
+    ** use an ephermeral index instead of a RowSet to record the primary
+    ** keys of the rows we have already seen.
+    **
     */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     SrcList *pOrTab;       /* Shortened table list or OR-clause generation */
@@ -3307,6 +3311,7 @@ static Bitmask codeOneLoopStart(
     int untestedTerms = 0;             /* Some terms not completely tested */
     int ii;                            /* Loop counter */
     Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
+    Table *pTab = pTabItem->pTab;
    
     pTerm = pLoop->aLTerm[0];
     assert( pTerm!=0 );
@@ -3339,7 +3344,8 @@ static Bitmask codeOneLoopStart(
     }
 
     /* Initialize the rowset register to contain NULL. An SQL NULL is 
-    ** equivalent to an empty rowset.
+    ** equivalent to an empty rowset.  Or, create an ephermeral index
+    ** capable of holding primary keys in the case of a WITHOUT ROWID.
     **
     ** Also initialize regReturn to contain the address of the instruction 
     ** immediately following the OP_Return at the bottom of the loop. This
@@ -3350,9 +3356,16 @@ static Bitmask codeOneLoopStart(
     ** called on an uninitialized cursor.
     */
     if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
-      regRowset = ++pParse->nMem;
+      if( HasRowid(pTab) ){
+        regRowset = ++pParse->nMem;
+        sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
+      }else{
+        Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+        regRowset = pParse->nTab++;
+        sqlite3VdbeAddOp2(v, OP_OpenEphemeral, regRowset, pPk->nKeyCol);
+        sqlite3VdbeSetP4KeyInfo(pParse, pPk);
+      }
       regRowid = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
     }
     iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
 
@@ -3388,11 +3401,16 @@ static Bitmask codeOneLoopStart(
       }
     }
 
+    /* Run a separate WHERE clause for each term of the OR clause.  After
+    ** eliminating duplicates from other WHERE clauses, the action for each
+    ** sub-WHERE clause is to to invoke the main loop body as a subroutine.
+    */
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
-        WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
-        Expr *pOrExpr = pOrTerm->pExpr;
+        WhereInfo *pSubWInfo;           /* Info for single OR-term scan */
+        Expr *pOrExpr = pOrTerm->pExpr; /* Current OR clause term */
+        int j1 = 0;                     /* Address of jump operation */
         if( pAndExpr && !ExprHasProperty(pOrExpr, EP_FromJoin) ){
           pAndExpr->pLeft = pOrExpr;
           pOrExpr = pAndExpr;
@@ -3407,16 +3425,62 @@ static Bitmask codeOneLoopStart(
           explainOneScan(
               pParse, pOrTab, &pSubWInfo->a[0], iLevel, pLevel->iFrom, 0
           );
+          /* This is the sub-WHERE clause body.  First skip over
+          ** duplicate rows from prior sub-WHERE clauses, and record the
+          ** rowid (or PRIMARY KEY) for the current row so that the same
+          ** row will be skipped in subsequent sub-WHERE clauses.
+          */
           if( (pWInfo->wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
-            int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             int r;
-            r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
-                                         regRowid, 0);
-            sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset,
-                                 sqlite3VdbeCurrentAddr(v)+2, r, iSet);
-            VdbeCoverage(v);
+            int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
+            if( HasRowid(pTab) ){
+              r = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, regRowid, 0);
+              j1 = sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset, 0, r,iSet);
+              VdbeCoverage(v);
+            }else{
+              Index *pPk = sqlite3PrimaryKeyIndex(pTab);
+              int nPk = pPk->nKeyCol;
+              int iPk;
+
+              /* Read the PK into an array of temp registers. */
+              r = sqlite3GetTempRange(pParse, nPk);
+              for(iPk=0; iPk<nPk; iPk++){
+                int iCol = pPk->aiColumn[iPk];
+                sqlite3ExprCodeGetColumn(pParse, pTab, iCol, iCur, r+iPk, 0);
+              }
+
+              /* Check if the temp table already contains this key. If so,
+              ** the row has already been included in the result set and
+              ** can be ignored (by jumping past the Gosub below). Otherwise,
+              ** insert the key into the temp table and proceed with processing
+              ** the row.
+              **
+              ** Use some of the same optimizations as OP_RowSetTest: If iSet
+              ** is zero, assume that the key cannot already be present in
+              ** the temp table. And if iSet is -1, assume that there is no 
+              ** need to insert the key into the temp table, as it will never 
+              ** be tested for.  */ 
+              if( iSet ){
+                j1 = sqlite3VdbeAddOp4Int(v, OP_Found, regRowset, 0, r, nPk);
+                VdbeCoverage(v);
+              }
+              if( iSet>=0 ){
+                sqlite3VdbeAddOp3(v, OP_MakeRecord, r, nPk, regRowid);
+                sqlite3VdbeAddOp3(v, OP_IdxInsert, regRowset, regRowid, 0);
+                if( iSet ) sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+              }
+
+              /* Release the array of temp registers */
+              sqlite3ReleaseTempRange(pParse, r, nPk);
+            }
           }
+
+          /* Invoke the main loop body as a subroutine */
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
+
+          /* Jump here (skipping the main loop body subroutine) if the
+          ** current sub-WHERE row is a duplicate from prior sub-WHEREs. */
+          if( j1 ) sqlite3VdbeJumpHere(v, j1);
 
           /* The pSubWInfo->untestedTerms flag means that this OR term
           ** contained one or more AND term from a notReady table.  The
@@ -3441,6 +3505,7 @@ static Bitmask codeOneLoopStart(
           assert( (pSubLoop->wsFlags & WHERE_AUTO_INDEX)==0 );
           if( (pSubLoop->wsFlags & WHERE_INDEXED)!=0
            && (ii==0 || pSubLoop->u.btree.pIndex==pCov)
+           && (HasRowid(pTab) || !IsPrimaryKeyIndex(pSubLoop->u.btree.pIndex))
           ){
             assert( pSubWInfo->a[0].iIdxCur==iCovCur );
             pCov = pSubLoop->u.btree.pIndex;
@@ -4766,7 +4831,6 @@ static int whereLoopAddOr(WhereLoopBuilder *pBuilder, Bitmask mExtra){
   pNew = pBuilder->pNew;
   memset(&sSum, 0, sizeof(sSum));
   pItem = pWInfo->pTabList->a + pNew->iTab;
-  if( !HasRowid(pItem->pTab) ) return SQLITE_OK;
   iCur = pItem->iCursor;
 
   for(pTerm=pWC->a; pTerm<pWCEnd && rc==SQLITE_OK; pTerm++){
@@ -6015,7 +6079,14 @@ WhereInfo *sqlite3WhereBegin(
       int op = OP_OpenRead;
       /* iIdxCur is always set if to a positive value if ONEPASS is possible */
       assert( iIdxCur!=0 || (pWInfo->wctrlFlags & WHERE_ONEPASS_DESIRED)==0 );
-      if( pWInfo->okOnePass ){
+      if( !HasRowid(pTab) && IsPrimaryKeyIndex(pIx)
+       && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0
+      ){
+        /* This is one term of an OR-optimization using the PRIMARY KEY of a
+        ** WITHOUT ROWID table.  No need for a separate index */
+        iIndexCur = pLevel->iTabCur;
+        op = 0;
+      }else if( pWInfo->okOnePass ){
         Index *pJ = pTabItem->pTab->pIndex;
         iIndexCur = iIdxCur;
         assert( wctrlFlags & WHERE_ONEPASS_DESIRED );
@@ -6033,9 +6104,11 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->iIdxCur = iIndexCur;
       assert( pIx->pSchema==pTab->pSchema );
       assert( iIndexCur>=0 );
-      sqlite3VdbeAddOp3(v, op, iIndexCur, pIx->tnum, iDb);
-      sqlite3VdbeSetP4KeyInfo(pParse, pIx);
-      VdbeComment((v, "%s", pIx->zName));
+      if( op ){
+        sqlite3VdbeAddOp3(v, op, iIndexCur, pIx->tnum, iDb);
+        sqlite3VdbeSetP4KeyInfo(pParse, pIx);
+        VdbeComment((v, "%s", pIx->zName));
+      }
     }
     if( iDb>=0 ) sqlite3CodeVerifySchema(pParse, iDb);
     notReady &= ~getMask(&pWInfo->sMaskSet, pTabItem->iCursor);

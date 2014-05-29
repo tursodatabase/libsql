@@ -637,7 +637,6 @@ static int vdbePmaReaderSeek(
       rc = sqlite3OsRead(
           pReadr->pFile, &pReadr->aBuffer[iBuf], nRead, pReadr->iReadOff
       );
-      assert( rc!=SQLITE_IOERR_SHORT_READ );
     }
   }
 
