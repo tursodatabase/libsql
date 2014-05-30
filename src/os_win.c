@@ -3177,6 +3177,17 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
       return SQLITE_OK;
     }
+#ifdef SQLITE_TEST
+    case SQLITE_FCNTL_WIN32_SET_HANDLE: {
+      LPHANDLE phFile = (LPHANDLE)pArg;
+      HANDLE hOldFile = pFile->h;
+      pFile->h = *phFile;
+      *phFile = hOldFile;
+      OSTRACE(("FCNTL oldFile=%p, newFile=%p, rc=SQLITE_OK\n",
+               hOldFile, pFile->h));
+      return SQLITE_OK;
+    }
+#endif
     case SQLITE_FCNTL_TEMPFILENAME: {
       char *zTFile = 0;
       int rc = winGetTempname(pFile->pVfs, &zTFile);
