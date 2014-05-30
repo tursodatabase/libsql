@@ -169,8 +169,8 @@ do_test win32lock-3.4 {
     BEGIN EXCLUSIVE;
     INSERT INTO t1 VALUES(6);
     COMMIT;
-  }] [file_control_win32_set_handle db $handle]
-} {{1 {disk I/O error}} {0 0}}
+  }] [file_control_win32_set_handle db $handle] [sqlite3_extended_errcode db]
+} {{1 {disk I/O error}} {0 0} SQLITE_IOERR_LOCK}
 
 db2 close
 db close
