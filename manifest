@@ -1,5 +1,5 @@
-C Revise\slocking\sretry\ssemantics\sin\sWin32\sVFS\sto\sabort\searly\sif\sthe\sfile\shandle\sis\sreported\sas\sinvalid.
-D 2014-05-30T21:01:41.061
+C Fix\sa\scompile\sof\sharmless\sstatic\sanalyzer\swarnings.
+D 2014-05-31T15:39:53.464
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
 F src/pragma.c 810ef31ccfaa233201dcf100637a9777cc24e897
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
-F src/printf.c e5a0005f8b3de21f85da6a709d2fbee76775bf4b
+F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
@@ -1137,7 +1137,7 @@ F tool/lemon.c 07aba6270d5a5016ba8107b09e431eea4ecdc123
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
-F tool/mkkeywordhash.c c9e05e4a7bcab8fab9f583d5b321fb72f565ad97
+F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkpragmatab.tcl 78a77b2c554d534c6f2dc903130186ed15715460
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a80527f60b4856e869f25e7b13afde351bc26a25 f2906c44519d76db5bc36013369ae498b80655a8
-R 43b1f325d24aa652957b56aa0239ea0b
-U mistachkin
-Z 56ea1620022ea76ba550a9a9fe3cd6a5
+P a4df4a5b34111f755ffd9ee6f089ff05d03ebc7a
+R 2d19a2ada3f5fefd918cda5ebc3435ec
+U drh
+Z 8c6dc131bc227333f4313c945c3b7bef

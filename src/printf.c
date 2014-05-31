@@ -756,6 +756,7 @@ static int sqlite3StrAccumEnlarge(StrAccum *p, int N){
       zNew = sqlite3_realloc(zOld, p->nAlloc);
     }
     if( zNew ){
+      assert( p->zText!=0 || p->nChar==0 );
       if( zOld==0 && p->nChar>0 ) memcpy(zNew, p->zText, p->nChar);
       p->zText = zNew;
     }else{
