@@ -4286,7 +4286,6 @@ static int whereLoopAddBtreeIndex(
         testcase( eOp & WO_IN );
         pNew->nOut += pTerm->truthProb;
         pNew->nOut -= nIn;
-        pNew->wsFlags |= WHERE_LIKELIHOOD;
       }else{
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
         tRowcnt nOut = 0;
@@ -4295,7 +4294,6 @@ static int whereLoopAddBtreeIndex(
          && pNew->u.btree.nEq<=pProbe->nSampleCol
          && OptimizationEnabled(db, SQLITE_Stat3) 
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
-         && (pNew->wsFlags & WHERE_LIKELIHOOD)==0
         ){
           Expr *pExpr = pTerm->pExpr;
           if( (eOp & (WO_EQ|WO_ISNULL))!=0 ){
