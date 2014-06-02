@@ -1,5 +1,5 @@
-C Add\sthe\s"valgrind-nolookaside"\spermutation\sto\spermutations.test.
-D 2014-06-02T09:39:24.180
+C Fix\sthe\squery\splanner\sso\sthat\sit\sonce\sagain\sknows\sthat\squeries\swithout\sa\nFROM\sclause\swill\snever\sreturn\smore\sthan\sone\srow\sand\shence\sdo\snot\srequire\nsorting.
+D 2014-06-02T11:26:33.102
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c b3be5eb4193b6327c4a02fe91411df503fe770e8
+F src/where.c 308ed08c648fb7e3d7ba5896363dd86b2a0cc616
 F src/whereInt.h 6804c2e5010378568c2bb1350477537755296a46
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -726,7 +726,7 @@ F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test 9b524aff9147288da43a6d7ddfdcff47fa2303c6
+F test/orderby1.test 2a6164169199ed53c99089b087ef653e480f63ac
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 39fafe0a19ff346a2354f00b03f8e8e4b8b0524c
-R 387ada14b86204efc12685ecd89ec07f
-U dan
-Z e06809476b8cf9300fa9e3eaa704baed
+P 8e8472d9b689d128eb11d3111e009161cf4580f7
+R 9d072715608349b4afa2f27606dc53c0
+U drh
+Z c7f9af8be8da856d6f5f7578b5205ca0

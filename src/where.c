@@ -5297,7 +5297,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   /* TUNING: For simple queries, only the best path is tracked.
   ** For 2-way joins, the 5 best paths are followed.
   ** For joins of 3 or more tables, track the 10 best paths */
-  mxChoice = (nLoop==1) ? 1 : (nLoop==2 ? 5 : 10);
+  mxChoice = (nLoop<=1) ? 1 : (nLoop==2 ? 5 : 10);
   assert( nLoop<=pWInfo->pTabList->nSrc );
   WHERETRACE(0x002, ("---- begin solver\n"));
 
@@ -5327,7 +5327,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     aFrom[0].isOrdered = 0;
     nOrderBy = 0;
   }else{
-    aFrom[0].isOrdered = -1;
+    aFrom[0].isOrdered = nLoop>0 ? -1 : 1;
     nOrderBy = pWInfo->pOrderBy->nExpr;
   }
 
