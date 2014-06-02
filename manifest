@@ -1,5 +1,5 @@
-C Fix\sthe\squery\splanner\sso\sthat\sit\sonce\sagain\sknows\sthat\squeries\swithout\sa\nFROM\sclause\swill\snever\sreturn\smore\sthan\sone\srow\sand\shence\sdo\snot\srequire\nsorting.
-D 2014-06-02T11:26:33.102
+C Fix\sa\stypo\sin\sa\srequirements\smark\scomment\sin\sa\stest\sscript.\s\sNo\schanges\sto\ncode.
+D 2014-06-02T18:24:55.152
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -444,7 +444,7 @@ F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
 F test/e_expr.test 5c71d183fbf519a4769fd2e2124afdc70b5b1f42
 F test/e_fkey.test a1783fe1f759e1990e6a11adfcf0702dac4d0707
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
-F test/e_insert.test 1e44f84d2abe44d66e4fbf198be4b20e3cc724a0
+F test/e_insert.test 7b2fa9cd1456f83474d6c5d27db3abaeb8be2023
 F test/e_reindex.test 396b7b4f0a66863b4e95116a67d93b227193e589
 F test/e_resolve.test dcce9308fb13b934ce29591105d031d3e14fbba6
 F test/e_select.test 52692ff3849541e828ad4661fe3773a9b8711763
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8e8472d9b689d128eb11d3111e009161cf4580f7
-R 9d072715608349b4afa2f27606dc53c0
+P 9f18b303cd1bc5779d82669884f802c7889b4947
+R d2860e47e4361323fe5044697b7809e3
 U drh
-Z c7f9af8be8da856d6f5f7578b5205ca0
+Z 3c888acab84366f73445c2218a0f8a8d
