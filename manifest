@@ -1,5 +1,5 @@
-C Fix\sa\sharmless\s"scan-build"\scompiler\swarning\sin\sthe\scommand-line\sshell.
-D 2014-05-31T15:43:33.950
+C Add\sthe\s"valgrind-nolookaside"\spermutation\sto\spermutations.test.
+D 2014-06-02T09:39:24.180
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -746,7 +746,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test d8946218493c77806ec1029df473d8ed4ad9aef6
+F test/permutations.test bc474bafb022cc5014ef3a9c3d5ab61d6d6f587c
 F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7e287f2055dcd82c92d1711aec97cb6552a354bb
-R 7e70d3d08723eec61780bac69ffa27e8
-U drh
-Z 0b7f4da5b5f8e964f7f7fb0aa6199d46
+P 39fafe0a19ff346a2354f00b03f8e8e4b8b0524c
+R 387ada14b86204efc12685ecd89ec07f
+U dan
+Z e06809476b8cf9300fa9e3eaa704baed

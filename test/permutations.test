@@ -158,6 +158,28 @@ test_suite "valgrind" -prefix "" -description {
   unset -nocomplain ::G(valgrind)
 }
 
+test_suite "valgrind-nolookaside" -prefix "" -description {
+  Run the "veryquick" test suite with a couple of multi-process tests (that
+  fail under valgrind) omitted.
+} -files [
+  test_set $allquicktests -exclude *malloc* *ioerr* *fault* wal.test atof1.test
+] -initialize {
+  set ::G(valgrind) 1
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_lookaside 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_lookaside 100 500
+  sqlite3_initialize
+  autoinstall_test_functions
+  unset -nocomplain ::G(valgrind)
+}
+
+
 test_suite "quick" -prefix "" -description {
   Quick test suite. Runs in around 10 minutes on a workstation.
 } -files [
