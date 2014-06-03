@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\sdouble-check\sthat\s[1cbe7a0883]\sdid\snot\saffect\sanything.
-D 2014-06-03T11:32:38.148
+C Avoid\sclosing\sa\spseudo-table\sassociated\swith\ssorting\sin\sa\sco-routine\ssince\nthat\spseudo-table\smight\sbe\sused\sagain\sin\san\souter\sloop.
+D 2014-06-03T14:42:34.857
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
-F src/select.c 7df17ec5506c2427576d412bee0e6ea740e12563
+F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
 F src/shell.c 98ce7f52445aa0c2eac3d4553a4cdcbb6402a670
 F src/sqlite.h.in a98eb3e8c86c934ea6f5bcfc6b69653dde2f4ed4
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
@@ -726,7 +726,7 @@ F test/notnull.test f8fcf58669ddba79274daa2770d61dfad8274f62
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/numcast.test 5d126f7f581432e86a90d1e35cac625164aec4a1
 F test/openv2.test 0d3040974bf402e19b7df4b783e447289d7ab394
-F test/orderby1.test 2a6164169199ed53c99089b087ef653e480f63ac
+F test/orderby1.test 12426f99518cde45f34215ca6a0ebc0e9bc5c77a
 F test/orderby2.test bc11009f7cd99d96b1b11e57b199b00633eb5b04
 F test/orderby3.test 8619d06a3debdcd80a27c0fdea5c40b468854b99
 F test/orderby4.test 4d39bfbaaa3ae64d026ca2ff166353d2edca4ba4
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1cbe7a0883e081611a50524517d70e0b6c5199d2
-R 88f7e0a0a79929d11635773b81944233
-U dan
-Z 719afb30fb3906ea3990e2a028510bfb
+P c6b512a724aebcd084aad2a80d020b95773b3012
+R 679d3413ba6dc377c3eacd5814f0f801
+U drh
+Z d6f5ccfdba8b994a53e0334e1b572467
