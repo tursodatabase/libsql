@@ -1226,9 +1226,6 @@ static void generateSortTail(
   }
   if( pSort->regReturn ) sqlite3VdbeAddOp1(v, OP_Return, pSort->regReturn);
   sqlite3VdbeResolveLabel(v, addrBreak);
-  if( eDest==SRT_Output || eDest==SRT_Coroutine ){
-    sqlite3VdbeAddOp2(v, OP_Close, pseudoTab, 0);
-  }
 }
 
 /*

@@ -4286,7 +4286,6 @@ static int whereLoopAddBtreeIndex(
         testcase( eOp & WO_IN );
         pNew->nOut += pTerm->truthProb;
         pNew->nOut -= nIn;
-        pNew->wsFlags |= WHERE_LIKELIHOOD;
       }else{
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
         tRowcnt nOut = 0;
@@ -4295,7 +4294,6 @@ static int whereLoopAddBtreeIndex(
          && pNew->u.btree.nEq<=pProbe->nSampleCol
          && OptimizationEnabled(db, SQLITE_Stat3) 
          && ((eOp & WO_IN)==0 || !ExprHasProperty(pTerm->pExpr, EP_xIsSelect))
-         && (pNew->wsFlags & WHERE_LIKELIHOOD)==0
         ){
           Expr *pExpr = pTerm->pExpr;
           if( (eOp & (WO_EQ|WO_ISNULL))!=0 ){
@@ -5297,7 +5295,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   /* TUNING: For simple queries, only the best path is tracked.
   ** For 2-way joins, the 5 best paths are followed.
   ** For joins of 3 or more tables, track the 10 best paths */
-  mxChoice = (nLoop==1) ? 1 : (nLoop==2 ? 5 : 10);
+  mxChoice = (nLoop<=1) ? 1 : (nLoop==2 ? 5 : 10);
   assert( nLoop<=pWInfo->pTabList->nSrc );
   WHERETRACE(0x002, ("---- begin solver\n"));
 
@@ -5327,7 +5325,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     aFrom[0].isOrdered = 0;
     nOrderBy = 0;
   }else{
-    aFrom[0].isOrdered = -1;
+    aFrom[0].isOrdered = nLoop>0 ? -1 : 1;
     nOrderBy = pWInfo->pOrderBy->nExpr;
   }
 

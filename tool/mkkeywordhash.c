@@ -370,7 +370,7 @@ int main(int argc, char **argv){
     Keyword *p = &aKeywordTable[i];
     p->len = (int)strlen(p->zName);
     assert( p->len<sizeof(p->zOrigName) );
-    strcpy(p->zOrigName, p->zName);
+    memcpy(p->zOrigName, p->zName, p->len+1);
     totalLen += p->len;
     p->hash = (UpperToLower[(int)p->zName[0]]*4) ^
               (UpperToLower[(int)p->zName[p->len-1]]*3) ^ p->len;
