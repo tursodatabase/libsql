@@ -117,6 +117,16 @@ int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
   return TCL_OK;
 }
 
+#if SQLITE_OS_WIN
+/*
+** Decode a Win32 HANDLE object.
+*/
+int getWin32Handle(Tcl_Interp *interp, const char *zA, LPHANDLE phFile){
+  *phFile = (HANDLE)sqlite3TestTextToPtr(zA);
+  return TCL_OK;
+}
+#endif
+
 extern const char *sqlite3ErrName(int);
 #define t1ErrorName sqlite3ErrName
 
@@ -5403,6 +5413,7 @@ static int path_is_dos(
   return TCL_OK;  
 }
 
+#if SQLITE_OS_WIN
 /*
 ** tclcmd:   file_control_win32_av_retry DB  NRETRY  DELAY
 **
@@ -5435,6 +5446,42 @@ static int file_control_win32_av_retry(
   Tcl_AppendResult(interp, z, (char*)0);
   return TCL_OK;  
 }
+
+/*
+** tclcmd:   file_control_win32_set_handle DB HANDLE
+**
+** This TCL command runs the sqlite3_file_control interface with
+** the SQLITE_FCNTL_WIN32_SET_HANDLE opcode.
+*/
+static int file_control_win32_set_handle(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+  HANDLE hFile = NULL;
+  char z[100];
+
+  if( objc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB HANDLE", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( getWin32Handle(interp, Tcl_GetString(objv[2]), &hFile) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3_file_control(db, NULL, SQLITE_FCNTL_WIN32_SET_HANDLE,
+                            (void*)&hFile);
+  sqlite3_snprintf(sizeof(z), z, "%d %p", rc, (void*)hFile);
+  Tcl_AppendResult(interp, z, (char*)0);
+  return TCL_OK;  
+}
+#endif
 
 /*
 ** tclcmd:   file_control_persist_wal DB PERSIST-FLAG
@@ -6669,7 +6716,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif 
      { "file_control_chunksize_test", file_control_chunksize_test,  0   },
      { "file_control_sizehint_test",  file_control_sizehint_test,   0   },
+#if SQLITE_OS_WIN
      { "file_control_win32_av_retry", file_control_win32_av_retry,  0   },
+     { "file_control_win32_set_handle", file_control_win32_set_handle, 0  },
+#endif
      { "file_control_persist_wal",    file_control_persist_wal,     0   },
      { "file_control_powersafe_overwrite",file_control_powersafe_overwrite,0},
      { "file_control_vfsname",        file_control_vfsname,         0   },

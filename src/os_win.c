@@ -2924,8 +2924,16 @@ static int winLock(sqlite3_file *id, int locktype){
       ** If you are using this code as a model for alternative VFSes, do not
       ** copy this retry logic.  It is a hack intended for Windows only.
       */
+      lastErrno = osGetLastError();
       OSTRACE(("LOCK-PENDING-FAIL file=%p, count=%d, result=%d\n",
                pFile->h, cnt, res));
+      if( lastErrno==ERROR_INVALID_HANDLE ){
+        pFile->lastErrno = lastErrno;
+        rc = SQLITE_IOERR_LOCK;
+        OSTRACE(("LOCK-FAIL file=%p, count=%d, rc=%s\n",
+                 pFile->h, cnt, sqlite3ErrName(rc)));
+        return rc;
+      }
       if( cnt ) sqlite3_win32_sleep(1);
     }
     gotPendingLock = res;
@@ -3178,6 +3186,17 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       OSTRACE(("FCNTL file=%p, rc=SQLITE_OK\n", pFile->h));
       return SQLITE_OK;
     }
+#ifdef SQLITE_TEST
+    case SQLITE_FCNTL_WIN32_SET_HANDLE: {
+      LPHANDLE phFile = (LPHANDLE)pArg;
+      HANDLE hOldFile = pFile->h;
+      pFile->h = *phFile;
+      *phFile = hOldFile;
+      OSTRACE(("FCNTL oldFile=%p, newFile=%p, rc=SQLITE_OK\n",
+               hOldFile, pFile->h));
+      return SQLITE_OK;
+    }
+#endif
     case SQLITE_FCNTL_TEMPFILENAME: {
       char *zTFile = 0;
       int rc = winGetTempname(pFile->pVfs, &zTFile);
