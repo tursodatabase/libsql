@@ -1,5 +1,5 @@
-C Version\s3.8.5
-D 2014-06-04T14:06:34.678
+C Fix\sa\sproblem\sthat\swas\scausing\sthe\sFTS4\sintegrity-check\scommand\sto\sfail\sif\sthe\stable\shad\sone\sor\smore\s"notindexed"\scolumns.
+D 2014-06-05T11:15:56.350
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -96,7 +96,7 @@ F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
 F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
-F ext/fts3/fts3_write.c 5ee9d894da74a5d15a3c317414fb8c84f1694fa4
+F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
@@ -567,7 +567,7 @@ F test/fts3tok1.test c551043de056b0b1582a54e878991f57bad074bc
 F test/fts3tok_err.test 52273cd193b9036282f7bacb43da78c6be87418d
 F test/fts3varint.test 752c08ed5d32c5d7dc211b056f4ed68a76b7e36e
 F test/fts4aa.test 0c3152322c7f0b548cc942ad763eaba0da87ccca
-F test/fts4check.test 66fa274cab2b615f2fb338b257713aba8fad88a8
+F test/fts4check.test 74d77f6cdb768ac49df5afda575cef14ae3d239a
 F test/fts4content.test 2e7252557d6d24afa101d9ba1de710d6140e6d06
 F test/fts4docid.test e33c383cfbdff0284685604d256f347a18fdbf01
 F test/fts4growth.test df10fde9f47cf5c71861e63fd8efcd573c4f7e53
@@ -1173,10 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6d81805298ea882f5fee99504d5a95f1a762a90b
-R 679d3413ba6dc377c3eacd5814f0f801
-T +bgcolor * #d0c0ff
-T +sym-release *
-T +sym-version-3.8.5 *
-U drh
-Z f323d41d3468066466323d34c9eb7587
+P b1ed4f2a34ba66c29b130f8d13e9092758019212
+R 377d24b74ba4106b5f52a423e2a5cf2f
+U dan
+Z 2cd68ab7b6aef503eef49b559771fe52
