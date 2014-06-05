@@ -152,4 +152,32 @@ foreach {tn disruption} {
   do_execsql_test  3.2.3.$tn "ROLLBACK"
 }
 
+#--------------------------------------------------------------------------
+# Test case 4.*
+#
+# Test that the integrity-check works if there are "notindexed" columns.
+#
+do_execsql_test 4.0 {
+  CREATE VIRTUAL TABLE t4 USING fts4(a, b, c, notindexed=b);
+  INSERT INTO t4 VALUES('text one', 'text two', 'text three');
+  INSERT INTO t4(t4) VALUES('integrity-check');
+}
+
+do_execsql_test 4.1 {
+  PRAGMA writable_schema = 1;
+  UPDATE sqlite_master 
+    SET sql = 'CREATE VIRTUAL TABLE t4 USING fts4(a, b, c)' 
+    WHERE name = 't4';
+}
+
+do_test 4.2 {
+  db close
+  sqlite3 db test.db
+  catchsql {
+    INSERT INTO t4(t4) VALUES('integrity-check');
+  }
+} {1 {database disk image is malformed}}
+reset_db
+
 finish_test
+

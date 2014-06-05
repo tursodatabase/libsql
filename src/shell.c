@@ -2425,8 +2425,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='i' && strncmp(azArg[0], "import", n)==0 ){
-    char *zTable = azArg[2];    /* Insert data into this table */
-    char *zFile = azArg[1];     /* Name of file to extra content from */
+    char *zTable;               /* Insert data into this table */
+    char *zFile;                /* Name of file to extra content from */
     sqlite3_stmt *pStmt = NULL; /* A statement */
     int nCol;                   /* Number of columns in the table */
     int nByte;                  /* Number of bytes in an SQL string */
@@ -2441,6 +2441,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       fprintf(stderr, "Usage: .import FILE TABLE\n");
       goto meta_command_exit;
     }
+    zFile = azArg[1];
+    zTable = azArg[2];
     seenInterrupt = 0;
     memset(&sCsv, 0, sizeof(sCsv));
     open_db(p, 0);
@@ -2998,7 +3000,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
                              zCmd, azArg[i]);
     }
-    system(zCmd);
+    (void)system(zCmd);
     sqlite3_free(zCmd);
   }else
 

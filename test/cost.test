@@ -244,6 +244,47 @@ foreach {tn nTerm nRow} {
 }
 
 
+#-------------------------------------------------------------------------
+#
+
+ifcapable stat4 {
+  do_execsql_test 10.1 {
+    CREATE TABLE t6(a, b, c);
+    CREATE INDEX t6i1 ON t6(a, b);
+    CREATE INDEX t6i2 ON t6(c);
+  }
+  
+  do_test 10.2 {
+    for {set i 0} {$i < 16} {incr i} {
+      execsql { INSERT INTO t6 VALUES($i%4, 'xyz', $i%8) }
+    }
+    execsql ANALYZE
+  } {}
+
+  do_eqp_test 10.3 {
+    SELECT rowid FROM t6 WHERE a=0 AND c=0
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
+  }
+
+  do_eqp_test 10.4 {
+    SELECT rowid FROM t6 WHERE a=0 AND b='xyz' AND c=0
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX t6i2 (c=?)}
+  }
+
+  do_eqp_test 10.5 {
+    SELECT rowid FROM t6 WHERE likelihood(a=0, 0.1) AND c=0
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX t6i1 (a=?)}
+  }
+
+  do_eqp_test 10.6 {
+    SELECT rowid FROM t6 WHERE likelihood(a=0, 0.1) AND b='xyz' AND c=0
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX t6i1 (a=? AND b=?)}
+  }
+}
 
 finish_test
 
