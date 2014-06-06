@@ -2035,9 +2035,9 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
 ** to account for the range contraints pLower and pUpper.
 ** 
 ** In the absence of sqlite_stat4 ANALYZE data, or if such data cannot be
-** used, each range inequality reduces the search space by a factor of 4. 
-** Hence a pair of constraints (x>? AND x<?) reduces the expected number of
-** rows visited by a factor of 16.
+** used, a single range inequality reduces the search space by a factor of 4. 
+** and a pair of constraints (x>? AND x<?) reduces the expected number of
+** rows visited by a factor of 64.
 */
 static int whereRangeScanEst(
   Parse *pParse,       /* Parsing & code generating context */
