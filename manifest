@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sestLog()\sroutine\sin\sthe\squery\splanner\shandles\snegative\nvalues\scorrectly\s(always\sreturning\s1).\s\sPrior\sto\sthis\schange,\sestLog(-1)\nwould\sreturn\sa\slarge\snumber\swhich\scould\sthrow\soff\sthe\scost\scomputations\nin\sthe\squery\splanner\sin\sobscure\scircumstances.
-D 2014-06-06T20:20:09.587
+C Add\sa\stest\scase\sto\sensure\sthat\sestLog()\sworks\sfor\snegative\snumbers.
+D 2014-06-06T20:49:19.299
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1107,6 +1107,7 @@ F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test 0ac23e5e8311b69d87245f4a85112de321031658
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
+F test/whereJ.test 7dde28284d20f358b559ca592e294db03e1d7103
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1173,7 +1174,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b16bf8518b7c50f6a939aa54900fea91b1098470
-R aa890a720553b08dcd5baa6682ecf12b
+P 75437bee4905949c66dc7694ea234d4d5aefd981
+R cd7c3066c722d9461c491648a12f3bbc
 U drh
-Z ae86adf92502bda11b2b40851a1bac03
+Z bd1ed1df3d77361aa69d91899562bfbf
