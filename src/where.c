@@ -1494,7 +1494,7 @@ static int isDistinctRedundant(
 ** Estimate the logarithm of the input value to base 2.
 */
 static LogEst estLog(LogEst N){
-  LogEst x = sqlite3LogEst(N);
+  LogEst x = N<0 ? 1 : sqlite3LogEst(N);
   return x>33 ? x - 33 : 0;
 }
 

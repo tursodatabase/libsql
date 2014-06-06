@@ -1,5 +1,5 @@
-C Fix\san\sobsolete\scomment\son\sthe\swhereRangeScanEst()\sroutine.\s\sNo\nchanges\sto\scode.
-D 2014-06-06T17:09:52.932
+C Make\ssure\sthe\sestLog()\sroutine\sin\sthe\squery\splanner\shandles\snegative\nvalues\scorrectly\s(always\sreturning\s1).\s\sPrior\sto\sthis\schange,\sestLog(-1)\nwould\sreturn\sa\slarge\snumber\swhich\scould\sthrow\soff\sthe\scost\scomputations\nin\sthe\squery\splanner\sin\sobscure\scircumstances.
+D 2014-06-06T20:20:09.587
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -294,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 76e7fc6de229bea8b30bb2539110f03a494dc3a8
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c b6dc818941e13210ae7c64b9b5198b1a693bf765
+F src/where.c 1c0a0b1f132915c8b9d2c6a4aecd45654d2a9708
 F src/whereInt.h 929c1349b5355fd44f22cee5c14d72b3329c58a6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1173,7 +1173,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7123bb2605216396f65db5d156431b3613f313b5
-R 47d6ccb6d1a86c986ab1ed05f4aba5d5
+P b16bf8518b7c50f6a939aa54900fea91b1098470
+R aa890a720553b08dcd5baa6682ecf12b
 U drh
-Z c4d23929c4a97c69fe369953e2b29d73
+Z ae86adf92502bda11b2b40851a1bac03
