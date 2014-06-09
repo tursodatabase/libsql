@@ -5794,7 +5794,7 @@ static int unixOpen(
   }
 
   if( isDelete ){
-    p->szFile = 0;
+    assert( p->szFile==0 );
 #if OS_VXWORKS
     zPath = zName;
 #else
