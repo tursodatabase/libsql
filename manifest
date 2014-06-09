@@ -1,5 +1,5 @@
-C Modify\sthe\s%nonassoc\sdirective\sin\slemon\sso\sthat\sit\sgenerates\sa\srun-time\nerror\srather\sthan\sa\sparsing\sconflict.\s\sThis\schanges\sis\sdue\sto\sa\sbug\sreport\non\sthe\smailing\slist.\s\sSQLite\sdoes\snot\suse\sthe\s%nonassoc\sdirective\sin\sits\ngrammar\sso\sthis\schange\sdoes\snot\saffect\sSQLite.
-D 2014-06-09T13:11:40.535
+C Enhance\sthe\sunix\sVFS\sso\sthat\sit\skeeps\strack\sof\sthe\ssize\sof\sunlinked\sfiles\ninternally\sand\sthus\savoids\sthe\sneed\sto\scall\sfstat()\son\sthose\sfiles,\ssince\nfstat()\sdoes\snot\swork\sreliably\son\sunlinked\sfiles\son\ssome\simplementations\nof\sFuseFS.
+D 2014-06-09T20:24:46.164
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -205,7 +205,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c ae4b5240af4619d711301d7992396e182585269f
+F src/os_unix.c e8c5f23bb6e9123b524cd0a87dd1e9263a4dd3be
 F src/os_win.c 8dbf6c11780fe2eb96c1f289e664d0c7b2911d37
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
@@ -1174,7 +1174,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 813469d98519b609669a004b7b604af78ef40c02
-R 17b9b9add2b8e980cb35f959c7029199
+P 1925f3a0a2caa709569df015a8e0d26412f1a9ff c41df393c6afbfbfdc4d1b885024e083c6f6de1f
+R ce653ef517f5e803383e83307c89c5db
 U drh
-Z c031771471155f639666c4eafbc642f6
+Z 51e75e681608f5fd7d1d480ee0a981d3
