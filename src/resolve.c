@@ -797,12 +797,23 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
 ** no match, or if pE is not a simple identifier, then this routine
 ** return 0.
 **
+** The sameNameOnly flag is set if pE comes from a GROUP BY clause.  The
+** arguments of a GROUP BY clause are not supposed to be able to match
+** against AS names in SQL.  But early versions of SQLite allowed this
+** behavior by mistake.  To provide backwards compatibility, a GROUP BY
+** term will match as AS alias only if the corresponding result set expression
+** refers to a table column by the same name.  In other words:
+**
+**        SELECT t1.x AS x, t2.x AS y FROM t1,t2 GROUP BY x;  -- match
+**        SELECT t1.y AS x, t2.y AS y FROM t1,t2 GROUP BY x;  -- no match
+**
 ** pEList has been resolved.  pE has not.
 */
 static int resolveAsName(
   Parse *pParse,     /* Parsing context for error messages */
   ExprList *pEList,  /* List of expressions to scan */
-  Expr *pE           /* Expression we are trying to match */
+  Expr *pE,          /* Expression we are trying to match */
+  int sameNameOnly   /* Only resolve if the alias matches the column name */
 ){
   int i;             /* Loop counter */
 
@@ -812,9 +823,16 @@ static int resolveAsName(
     char *zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
       char *zAs = pEList->a[i].zName;
-      if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
-        return i+1;
+      if( zAs==0 ) continue;
+      if( sqlite3StrICmp(zAs, zCol)!=0 ) continue;
+      if( sameNameOnly ){
+        Expr *p = pEList->a[i].pExpr;
+        Table *pTab;
+        if( p->op!=TK_COLUMN ) continue;
+        pTab = p->pTab;
+        if( sqlite3StrICmp(pTab->aCol[p->iColumn].zName, zAs)!=0 ) continue;
       }
+      return i+1;
     }
   }
   return 0;
@@ -954,7 +972,7 @@ static int resolveCompoundOrderBy(
           return 1;
         }
       }else{
-        iCol = resolveAsName(pParse, pEList, pE);
+        iCol = resolveAsName(pParse, pEList, pE, 0);
         if( iCol==0 ){
           pDup = sqlite3ExprDup(db, pE, 0);
           if( !db->mallocFailed ){
@@ -1075,16 +1093,14 @@ static int resolveOrderGroupBy(
   for(i=0, pItem=pOrderBy->a; i<pOrderBy->nExpr; i++, pItem++){
     Expr *pE = pItem->pExpr;
     Expr *pE2 = sqlite3ExprSkipCollate(pE);
-    if( zType[0]!='G' ){
-      iCol = resolveAsName(pParse, pSelect->pEList, pE2);
-      if( iCol>0 ){
-        /* If an AS-name match is found, mark this ORDER BY column as being
-        ** a copy of the iCol-th result-set column.  The subsequent call to
-        ** sqlite3ResolveOrderGroupBy() will convert the expression to a
-        ** copy of the iCol-th result-set expression. */
-        pItem->u.x.iOrderByCol = (u16)iCol;
-        continue;
-      }
+    iCol = resolveAsName(pParse, pSelect->pEList, pE2, zType[0]=='G');
+    if( iCol>0 ){
+      /* If an AS-name match is found, mark this ORDER BY column as being
+      ** a copy of the iCol-th result-set column.  The subsequent call to
+      ** sqlite3ResolveOrderGroupBy() will convert the expression to a
+      ** copy of the iCol-th result-set expression. */
+      pItem->u.x.iOrderByCol = (u16)iCol;
+      continue;
     }
     if( sqlite3ExprIsInteger(pE2, &iCol) ){
       /* The ORDER BY term is an integer constant.  Again, set the column

@@ -1,5 +1,5 @@
-C Avoid\san\sunnecessary\sinitialization\sof\sthe\sszFile\sfield\sof\sunixFile\sin\nthe\sunix\sVFS.
-D 2014-06-09T20:39:03.676
+C Proposed\schange\sto\sthe\sfix\sfor\sticket\s[1c69be2dafc28b]\ssuch\sthat\slegacy\napplications\sthat\swere\sexploiting\sthe\solder\sbuggy\sbehavior\sin\sSQLite\ncontinue\sto\swork.
+D 2014-06-10T20:18:17.534
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -218,7 +218,7 @@ F src/pragma.c 810ef31ccfaa233201dcf100637a9777cc24e897
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
-F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
+F src/resolve.c f0c6db38b85433a5cbb85f1591c708707f58ead1
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
 F src/shell.c 98ce7f52445aa0c2eac3d4553a4cdcbb6402a670
@@ -766,7 +766,7 @@ F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
 F test/releasetest.tcl 06d289d8255794073a58d2850742f627924545ce
-F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
+F test/resolver01.test 677dd35b245bdaef6403652feea073bb8f3c0a0c
 F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
 F test/rowid.test b78b30afb9537a73788ca1233a23a32190a3bb1f
@@ -1174,7 +1174,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 10707d35786403ea5392d980f593bfecdae063dd
-R 5c924f630188cdd6e1f0b84a36c79d61
+P 6484fb5a25c2a0e5d26694285a4908a22c67ba17
+R 806d58b917ca6c1092af86ab71330c36
+T *branch * group-by-name-resolution
+T *sym-group-by-name-resolution *
+T -sym-trunk *
 U drh
-Z b2fa1d596ef871591a5ab3a0251e8787
+Z 188b7f9184efcfb7e1d91d7e12607c6c
