@@ -2096,8 +2096,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   ** calls to sqlite3OsSleep() have a delay of 1 microsecond.  Really this
   ** is more of a scheduler yield than an actual delay.  But on the 10th
   ** an subsequent retries, the delays start becoming longer and longer, 
-  ** so that on the 100th (and last) RETRY we delay for 21 milliseconds.
-  ** The total delay time before giving up is less than 1 second.
+  ** so that on the 100th (and last) RETRY we delay for 323 milliseconds.
+  ** The total delay time before giving up is less than 10 seconds.
   */
   if( cnt>5 ){
     int nDelay = 1;                      /* Pause time in microseconds */
@@ -2105,7 +2105,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       VVA_ONLY( pWal->lockError = 1; )
       return SQLITE_PROTOCOL;
     }
-    if( cnt>=10 ) nDelay = (cnt-9)*238;  /* Max delay 21ms. Total delay 996ms */
+    if( cnt>=10 ) nDelay = (cnt-9)*(cnt-9)*39;
     sqlite3OsSleep(pWal->pVfs, nDelay);
   }
 
