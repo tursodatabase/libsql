@@ -1,5 +1,5 @@
-C Increase\sthe\sWAL-mode\sSQLITE_PROTOCOL\stimeout\sto\s10\sseconds.
-D 2014-06-12T17:10:18.787
+C Add\san\sextension\sthat\simplements\scompress()\sand\suncompress()\sSQL\sfunctions.
+D 2014-06-13T13:08:21.440
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -108,6 +108,7 @@ F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c 678056a4bfcd83c4e82dea81d37543cd1d6dbee1
 F ext/misc/closure.c 636024302cde41b2bf0c542f81c40c624cfb7012
+F ext/misc/compress.c 76e45655f4046e756064ab10c62e18f2eb846b9f
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -1174,7 +1175,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c68d758bce3752f044752404a76bf3ba3eec48f
-R 2f07fa98b6e908bc6502590dbe40f41c
+P 2aeacf81df92b4fe5d1825c1dc1cd176b8af8bd9
+R d1737f084b807e547e6c83682c2e8d71
 U drh
-Z 7ca1de307211ad47daac93b8be7d2faa
+Z 8447f1843125715fcf2f15ddbc0454fa
