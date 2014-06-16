@@ -1,5 +1,5 @@
-C Fix\sthe\sextension01.test\sscript\sso\sthat\sit\sworks\son\swindows.\s\sFix\sa\s\nharmless\scompiler\swarning\sin\sthe\sfileio\sextension.
-D 2014-06-16T12:51:56.200
+C Add\sthe\s".eqp"\sdot-command\sto\sthe\s".help"\soutput\sin\sthe\scommand-line\sshell.\nThis\swas\saccidently\somitted\swhen\sthe\s".eqp"\scommand\swas\soriginally\simplemented\nfor\sSQLite\s3.8.4\s(check-in\s[e6ecf7337658624]).
+D 2014-06-16T15:01:37.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
-F src/shell.c 98ce7f52445aa0c2eac3d4553a4cdcbb6402a670
+F src/shell.c d472576bc7f8a657212eac5b9a88afdaefc29a27
 F src/sqlite.h.in a98eb3e8c86c934ea6f5bcfc6b69653dde2f4ed4
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1177,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8634333127c4d868d3ec27e88b5818f6479774f3
-R 353afc7fd0abf06433e6eda5525663c7
+P baf95a190907d05a847ae8b6a3dd60625c2a078a
+R 77392df379cf094587c415a5e52c867e
 U drh
-Z c4508024fad1b2c6278c0f51a968dc30
+Z c37a319047179d2f3f16508cbd16fb41
