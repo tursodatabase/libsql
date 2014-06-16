@@ -1,5 +1,5 @@
-C In\sthe\s"wheretrace"\slogic\s(disabled\sfor\snormal\sbuilds)\sexpand\sthe\sprint\swidth\nof\sthe\sflags\sfield\sto\sbe\swide\senough\sfor\sall\s17\sbits.
-D 2014-06-16T21:30:29.402
+C Fix\sCSV\simport\sissue,\sreported\svia\sthe\smailing\slist,\sin\sthe\sshell\swhen\sthe\sfile\sto\sbe\simported\sends\swith\san\sempty\sline.
+D 2014-06-16T22:45:28.779
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
-F src/shell.c d472576bc7f8a657212eac5b9a88afdaefc29a27
+F src/shell.c 058940e8a7198ea15ae90f60ffb0e2d67287b46c
 F src/sqlite.h.in a98eb3e8c86c934ea6f5bcfc6b69653dde2f4ed4
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -820,7 +820,7 @@ F test/shell1.test fb080d67c81e8a80a79ea04b36f127209b5bd112
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
-F test/shell5.test 6b1a53c49a4ff5c3bd0bad17a85ecba505608278
+F test/shell5.test ef0c52952a4a96dc1d9ec3b1fa81ec897ca48154
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
@@ -1177,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e43a2f92b616ec885a1ee62911fa8f6991d277f7
-R ff2a1582a470d2ed61f9edf92dcfedf7
-U drh
-Z 5706b0908a4cefe3e401fd4592d23dda
+P 3181d2069a788adc719decf65dc1bd2e16650c87
+R e15c594b7f416cdaa03cc5ded52dfa16
+U mistachkin
+Z ca873ea75a4dc77a2f68671379d28791

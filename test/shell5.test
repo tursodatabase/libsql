@@ -356,6 +356,18 @@ CREATE TABLE t4(a, b);
   db eval { SELECT * FROM t4 }
 } {xy\" hello}
 
+do_test shell5-2.5 {
+  set fd [open shell5.csv w]
+  puts $fd {"one","2"}
+  puts $fd {}
+  close $fd
+  catchcmd test.db [string trim {
+.mode csv
+CREATE TABLE t4(a, b);
+.import shell5.csv t4
+  }]
+  db eval { SELECT * FROM t4 }
+} {xy\" hello one 2 {} {}}
 
 
 finish_test

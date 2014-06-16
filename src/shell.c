@@ -2554,7 +2554,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
                           "filling the rest with NULL\n",
                           sCsv.zFile, startLine, nCol, i+1);
           i++;
-          while( i<nCol ){ sqlite3_bind_null(pStmt, i); i++; }
+          while( i<=nCol ){ sqlite3_bind_null(pStmt, i); i++; }
         }
       }
       if( sCsv.cTerm==sCsv.cSeparator ){
