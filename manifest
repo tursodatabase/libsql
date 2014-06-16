@@ -1,9 +1,9 @@
-C Add\sthe\sfileio.c\sloadable\sextension,\sthat\simplements\sreadfile()\sand\swritefile()\nSQL\sfunctions.
-D 2014-06-13T13:43:25.488
+C Add\stest\scases\sfor\sthe\sfileio\sextension.
+D 2014-06-16T12:44:32.986
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in dd2b1aba364ff9b05de41086f74407f285c57670
+F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc 52911c6bfeaf9b40f47ef4615ab66d98ab0f2b3d
+F Makefile.msc b5ff082a24cd1e0694a0001891e13e3b56c8ef31
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -146,7 +146,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk cfa185eed4e0f7e9d28a2e3167cecaa9d6cb39f3
+F main.mk 0cb97ec3285474651736053ee741145ef8c5185f
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -232,7 +232,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e87c99e28a145943666b51b212dacae35fcea0bd
-F src/test1.c 4edf8810c86d77ae7ac6d56d563965a9beeea2ce
+F src/test1.c 3c8bc491d2f8de5adbbf306533cefc343c733927
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -466,6 +466,7 @@ F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
 F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
+F test/extension01.test 06b3c61d9c87e262b2a3b61abc080be5b29e1eb4
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
@@ -1176,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d5c17d1a423321f766616d82c9b27ef87c1d5afd
-R 1805f6a0ae3bbffdcfbcff54f7b6c6b0
+P 0ca104d821d5841ab0754113be074c520cf07f23
+R ccaa3e1a4ad97ab90dbd1c64a76fa424
 U drh
-Z 904e0ffbd1a81754412e5093211c823c
+Z a84943f6024adba9b7ed1466702addbc
