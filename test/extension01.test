@@ -60,13 +60,21 @@ do_test 1.5 {
 } {0}
 
 do_test 1.6 {
-  file attributes ./file2.txt -permissions r--r--r--
+  if {$::tcl_platform(platform)=="unix"} {
+    file attributes ./file2.txt -permissions r--r--r--
+  } else {
+    file attributes ./file2.txt -readonly 1
+  }
   db eval {
     SELECT writefile('./file2.txt', 'Another test');
   }
 } {nil}
 do_test 1.7 {
-  file attributes ./file2.txt -permissions rw-r--r--
+  if {$::tcl_platform(platform)=="unix"} {
+    file attributes ./file2.txt -permissions rw-r--r--
+  } else {
+    file attributes ./file2.txt -readonly 0
+  }
   db eval {
     SELECT writefile(NULL, 'Another test');
   }

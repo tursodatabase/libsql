@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\sthe\sfileio\sextension.
-D 2014-06-16T12:44:32.986
+C Fix\sthe\sextension01.test\sscript\sso\sthat\sit\sworks\son\swindows.\s\sFix\sa\s\nharmless\scompiler\swarning\sin\sthe\sfileio\sextension.
+D 2014-06-16T12:51:56.200
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -109,7 +109,7 @@ F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/misc/amatch.c 678056a4bfcd83c4e82dea81d37543cd1d6dbee1
 F ext/misc/closure.c 636024302cde41b2bf0c542f81c40c624cfb7012
 F ext/misc/compress.c 76e45655f4046e756064ab10c62e18f2eb846b9f
-F ext/misc/fileio.c 2927bf833edad966ed222f0552c0602ae473ca16
+F ext/misc/fileio.c beea82bb5055b6590cffe2d2e6d922905894f691
 F ext/misc/fuzzer.c 136533c53cfce0957f0b48fa11dba27e21c5c01d
 F ext/misc/ieee754.c b0362167289170627659e84173f5d2e8fee8566e
 F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
@@ -466,7 +466,7 @@ F test/exclusive2.test 32798111aae78a5deec980eee383213f189df308
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/exists.test 8f7b27b61c2fbe5822f0a1f899c715d14e416e30
 F test/expr.test 67c9fd6f8f829e239dc8b0f4a08a73c08b09196d
-F test/extension01.test 06b3c61d9c87e262b2a3b61abc080be5b29e1eb4
+F test/extension01.test 00d13cec817f331a687a243e0e5a2d87b0e358c9
 F test/fallocate.test 3e979af17dfa7e5e9dda5eba1a696c04fa9d47f7
 F test/filectrl.test 14fa712e42c4cb791e09dfd58a6a03efb47ef13a
 F test/filefmt.test cb34663f126cbc2d358af552dcaf5c72769b0146
@@ -1177,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0ca104d821d5841ab0754113be074c520cf07f23
-R ccaa3e1a4ad97ab90dbd1c64a76fa424
+P 8634333127c4d868d3ec27e88b5818f6479774f3
+R 353afc7fd0abf06433e6eda5525663c7
 U drh
-Z a84943f6024adba9b7ed1466702addbc
+Z c4508024fad1b2c6278c0f51a968dc30

@@ -62,7 +62,7 @@ static void writefileFunc(
   FILE *out;
   const char *z;
   int n;
-  long rc;
+  sqlite3_int64 rc;
   const char *zFile;
 
   zFile = (const char*)sqlite3_value_text(argv[0]);
