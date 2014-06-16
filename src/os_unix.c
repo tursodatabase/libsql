@@ -191,7 +191,6 @@ struct unixFile {
   UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
   const char *zPath;                  /* Name of the file */
   unixShm *pShm;                      /* Shared memory segment information */
-  sqlite3_int64 szFile;               /* File size for UNIXFILE_DELETE files */
   int szChunk;                        /* Configured by FCNTL_CHUNK_SIZE */
 #if SQLITE_MAX_MMAP_SIZE>0
   int nFetchOut;                      /* Number of outstanding xFetch refs */
@@ -1322,11 +1321,9 @@ static int fileHasMoved(unixFile *pFile){
 static void verifyDbFile(unixFile *pFile){
   struct stat buf;
   int rc;
-  if( pFile->ctrlFlags & (UNIXFILE_WARNED|UNIXFILE_DELETE) ){
-    /* UNIXFILE_WARNED means that one or more of the following warnings have
-    ** already been issued.  Do not* repeat them so as not to clutter the error
-    ** log.  Do not investigate unlinked files since fstat() does not always
-    ** work following an unlink(). */
+  if( pFile->ctrlFlags & UNIXFILE_WARNED ){
+    /* One or more of the following warnings have already been issued.  Do not
+    ** repeat them so as not to clutter the error log */
     return;
   }
   rc = osFstat(pFile->h, &buf);
@@ -1335,7 +1332,7 @@ static void verifyDbFile(unixFile *pFile){
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
   }
-  if( buf.st_nlink==0 ){
+  if( buf.st_nlink==0 && (pFile->ctrlFlags & UNIXFILE_DELETE)==0 ){
     sqlite3_log(SQLITE_WARNING, "file unlinked while open: %s", pFile->zPath);
     pFile->ctrlFlags |= UNIXFILE_WARNED;
     return;
@@ -3284,10 +3281,6 @@ static int unixWrite(
   assert( id );
   assert( amt>0 );
 
-  /* Update the internally tracked file size.  The internal file size is only
-  ** accurate for unlinked files */
-  if( offset+amt>pFile->szFile ) pFile->szFile = offset+amt;
-
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
 #if 0
@@ -3628,7 +3621,6 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     }
 #endif
 
-    pFile->szFile = nByte;
     return SQLITE_OK;
   }
 }
@@ -3638,27 +3630,12 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
 */
 static int unixFileSize(sqlite3_file *id, i64 *pSize){
   int rc;
-  unixFile *pFile = (unixFile*)id;
   struct stat buf;
-  assert( pFile );
-
-  /* For files that have been unlinked, simply return the szFile which we keep
-  ** track of internally.  There is no need to fstat() as SQLite has exclusive
-  ** access to the file and no other process can modify the file and thus change
-  ** the file size without our knowing it.  We do this because fstat() will
-  ** fail on unlinked files on some (broken) unix filesystems.
-  */
-  if( pFile->ctrlFlags & UNIXFILE_DELETE ){
-    *pSize = pFile->szFile;
-    /* The following assert() confirms that the internal filesize is correct */
-    assert( osFstat(pFile->h, &buf)!=0 || buf.st_size==pFile->szFile );
-    return SQLITE_OK;
-  }
-
-  rc = osFstat(pFile->h, &buf);
+  assert( id );
+  rc = osFstat(((unixFile*)id)->h, &buf);
   SimulateIOError( rc=1 );
   if( rc!=0 ){
-    pFile->lastErrno = errno;
+    ((unixFile*)id)->lastErrno = errno;
     return SQLITE_IOERR_FSTAT;
   }
   *pSize = buf.st_size;
@@ -3694,7 +3671,6 @@ static int fcntlSizeHint(unixFile *pFile, i64 nByte){
     i64 nSize;                    /* Required file size */
     struct stat buf;              /* Used to hold return values of fstat() */
    
-    if( pFile->ctrlFlags & UNIXFILE_DELETE ) return SQLITE_OK;
     if( osFstat(pFile->h, &buf) ) return SQLITE_IOERR_FSTAT;
 
     nSize = ((nByte+pFile->szChunk-1) / pFile->szChunk) * pFile->szChunk;
@@ -4243,7 +4219,6 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
   assert( pDbFd->pShm==0 );
-  assert( (pDbFd->ctrlFlags & UNIXFILE_DELETE)==0 );
 
   /* Check to see if a unixShmNode object already exists. Reuse an existing
   ** one if present. Create a new one if necessary.
@@ -4790,7 +4765,6 @@ static void unixRemapfile(
   }
   pFd->pMapRegion = (void *)pNew;
   pFd->mmapSize = pFd->mmapSizeActual = nNew;
-  if( nNew>pFd->szFile ) pFd->szFile = nNew;
 }
 
 /*
@@ -4817,10 +4791,12 @@ static int unixMapfile(unixFile *pFd, i64 nByte){
   if( pFd->nFetchOut>0 ) return SQLITE_OK;
 
   if( nMap<0 ){
-    rc = unixFileSize((sqlite3_file*)pFd, &nMap);
+    struct stat statbuf;          /* Low-level file information */
+    rc = osFstat(pFd->h, &statbuf);
     if( rc!=SQLITE_OK ){
       return SQLITE_IOERR_FSTAT;
     }
+    nMap = statbuf.st_size;
   }
   if( nMap>pFd->mmapSizeMax ){
     nMap = pFd->mmapSizeMax;
@@ -5794,7 +5770,6 @@ static int unixOpen(
   }
 
   if( isDelete ){
-    assert( p->szFile==0 );
 #if OS_VXWORKS
     zPath = zName;
 #else
