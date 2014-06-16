@@ -1,5 +1,5 @@
-C Back\sout\sthe\sunix\sVFS\schanges\sthat\sseeks\sto\savoid\sfstat()\scalls\safter\san\nunlink().\s\sThat\schange\sdid\snot\sclear\sthe\sproblem\son\sFuseFS.
-D 2014-06-16T16:41:52.046
+C Add\san\sapplication\sID\sfor\sMBTiles\stilesets.
+D 2014-06-16T18:17:21.276
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -145,7 +145,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
+F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
 F main.mk 0cb97ec3285474651736053ee741145ef8c5185f
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
@@ -1177,8 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b0b4c776c321ca4a792ef67efbc62351eeac247d
-Q -10707d35786403ea5392d980f593bfecdae063dd
-R e96aeed73bec47c3b8abfdb2818e21e8
+P 0617e20a33e08754aea14e60db44e557c13978e3
+R dfffbe0f43f71c007c108ea405a7d777
 U drh
-Z a60331639ee1b0609616a92f467c0973
+Z 9d670db05a88e1abc553c0c72f8664c9
