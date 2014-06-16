@@ -3686,7 +3686,7 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" %-19s", z);
     sqlite3_free(z);
   }
-  sqlite3DebugPrintf(" f %04x N %d", p->wsFlags, p->nLTerm);
+  sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
 #ifdef SQLITE_ENABLE_TREE_EXPLAIN
   /* If the 0x100 bit of wheretracing is set, then show all of the constraint
