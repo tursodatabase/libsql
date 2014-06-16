@@ -1919,6 +1919,13 @@ static int closeUnixFile(sqlite3_file *id){
     pFile->pId = 0;
   }
 #endif
+#ifdef SQLITE_UNLINK_AFTER_CLOSE
+  if( pFile->ctrlFlags & UNIXFILE_DELETE ){
+    osUnlink(pFile->zPath);
+    sqlite3_free(*(char**)&pFile->zPath);
+    pFile->zPath = 0;
+  }
+#endif
   OSTRACE(("CLOSE   %-3d\n", pFile->h));
   OpenCounter(-1);
   sqlite3_free(pFile->pUnused);
@@ -5772,6 +5779,12 @@ static int unixOpen(
   if( isDelete ){
 #if OS_VXWORKS
     zPath = zName;
+#elif defined(SQLITE_UNLINK_AFTER_CLOSE)
+    zPath = sqlite3_mprintf("%s", zName);
+    if( zPath==0 ){
+      robust_close(p, fd, __LINE__);
+      return SQLITE_NOMEM;
+    }
 #else
     osUnlink(zName);
 #endif
