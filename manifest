@@ -1,5 +1,5 @@
-C A\sdifferent\sapproach\sto\sthe\sautoindex\sproblem\sthat\sdeletes\squery-planner\scode\nrather\sthan\sadding\sit.
-D 2014-06-17T12:33:55.348
+C Add\sthe\sautoindex2.test\stesting\smodule.
+D 2014-06-17T13:23:36.416
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -335,6 +335,7 @@ F test/auth2.test c3b415b76c033bedb81292118fb7c01f5f10cbcd
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
 F test/autoindex1.test 762ff3f8e25d852aae55c6462ca166a80c0cde61
+F test/autoindex2.test 60d2fc6f38364308ce73a9beb01b47ded38697de
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1177,7 +1178,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 36d67e1dd2b4f4c22d02f3c3b8d372074de5523a
-R f31fb5c411bc798b3e39eb24696f39dc
+P f270fb6e9e0b5e77f918081962008c6195ab1e36
+R 4590197fe44138640af30c15c42aaab1
 U drh
-Z d63276e1ce6bb05efdbf1c4b12bc995b
+Z c2b8b2abeb08d5199560396ab0f820e5
