@@ -4529,7 +4529,6 @@ static int whereLoopAddBtree(
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
       if( pTerm->prereqRight & pNew->maskSelf ) continue;
-      if( sqlite3ExprIsConstant(pTerm->pExpr->pRight) ) continue;
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
         pNew->u.btree.nEq = 1;
         pNew->u.btree.nSkip = 0;
@@ -5279,7 +5278,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   LogEst rCost;             /* Cost of a path */
   LogEst nOut;              /* Number of outputs */
   LogEst mxCost = 0;        /* Maximum cost of a set of paths */
-  LogEst mxOut = 0;         /* Maximum nOut value on the set of paths */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
   WherePath *aTo;           /* The nTo best paths at the current level */
@@ -5389,8 +5387,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
           if( pTo->maskLoop==maskNew
            && ((pTo->isOrdered^isOrdered)&80)==0
-           && ((pTo->rCost<=rCost && pTo->nRow<=nOut) ||
-                (pTo->rCost>=rCost && pTo->nRow>=nOut))
           ){
             testcase( jj==nTo-1 );
             break;
@@ -5424,7 +5420,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           }
 #endif
         }else{
-          if( pTo->rCost<=rCost && pTo->nRow<=nOut ){
+          if( pTo->rCost<=rCost ){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
@@ -5464,11 +5460,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( nTo>=mxChoice ){
           mxI = 0;
           mxCost = aTo[0].rCost;
-          mxOut = aTo[0].nRow;
           for(jj=1, pTo=&aTo[1]; jj<mxChoice; jj++, pTo++){
-            if( pTo->rCost>mxCost || (pTo->rCost==mxCost && pTo->nRow>mxOut) ){
+            if( pTo->rCost>mxCost ){
               mxCost = pTo->rCost;
-              mxOut = pTo->nRow;
               mxI = jj;
             }
           }

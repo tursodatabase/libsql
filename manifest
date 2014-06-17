@@ -1,5 +1,5 @@
-C Simplification\sto\sthe\slogic\sthat\sprevents\sautomatic\sindexes\sfrom\sbeing\sformed\non\sconstant\sexpressions.
-D 2014-06-17T09:52:26.975
+C A\sdifferent\sapproach\sto\sthe\sautoindex\sproblem\sthat\sdeletes\squery-planner\scode\nrather\sthan\sadding\sit.
+D 2014-06-17T12:33:55.348
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -129,7 +129,7 @@ F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
 F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
-F ext/rtree/rtree6.test 83a997caf27eeca990291f66277e5a136428479a
+F ext/rtree/rtree6.test 0cfbdf27ee086bf16a3da2c6f2d5b3d6473cb27e
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
@@ -296,7 +296,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 3214e390ca5ff0b19fb5084e5bd5870da623389d
+F src/where.c cd3110c7dca304ecbdf2ed07b23205e90b10475b
 F src/whereInt.h 929c1349b5355fd44f22cee5c14d72b3329c58a6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1177,7 +1177,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 58acc2a8b38c5f13175c191697b4d2b663db1872
-R 91ed31168e6ce0a5afee4b984323de5e
+P 36d67e1dd2b4f4c22d02f3c3b8d372074de5523a
+R f31fb5c411bc798b3e39eb24696f39dc
 U drh
-Z ee443673993fc3ea86368d30ccfb6dad
+Z d63276e1ce6bb05efdbf1c4b12bc995b
