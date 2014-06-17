@@ -1,5 +1,5 @@
-C Fix\sCSV\simport\sissue,\sreported\svia\sthe\smailing\slist,\sin\sthe\sshell\swhen\sthe\sfile\sto\sbe\simported\sends\swith\san\sempty\sline.
-D 2014-06-16T22:45:28.779
+C Improvements\sto\squery\splanning,\sespecially\sin\sregards\sto\sestimating\sthe\ncost\sand\sbenefit\sof\sautomatic\sindexes.
+D 2014-06-17T15:53:33.099
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -129,7 +129,7 @@ F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
 F ext/rtree/rtree5.test 6a510494f12454bf57ef28f45bc7764ea279431e
-F ext/rtree/rtree6.test 756585abc51727fec97c77852476445c10c0ee95
+F ext/rtree/rtree6.test 0cfbdf27ee086bf16a3da2c6f2d5b3d6473cb27e
 F ext/rtree/rtree7.test 1fa710b9e6bf997a0c1a537b81be7bb6fded1971
 F ext/rtree/rtree8.test db79c812f9e4a11f9b1f3f9934007884610a713a
 F ext/rtree/rtree9.test d86ebf08ff6328895613ed577dd8a2a37c472c34
@@ -296,7 +296,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 5ee08882fdc1a4661766a6dae639bd79cabb28fa
+F src/where.c cd3110c7dca304ecbdf2ed07b23205e90b10475b
 F src/whereInt.h 929c1349b5355fd44f22cee5c14d72b3329c58a6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -335,6 +335,7 @@ F test/auth2.test c3b415b76c033bedb81292118fb7c01f5f10cbcd
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test c58912526998a39e11f66b533e23cfabea7f25b7
 F test/autoindex1.test 762ff3f8e25d852aae55c6462ca166a80c0cde61
+F test/autoindex2.test 60d2fc6f38364308ce73a9beb01b47ded38697de
 F test/autovacuum.test 941892505d2c0f410a0cb5970dfa1c7c4e5f6e74
 F test/autovacuum_ioerr2.test 8a367b224183ad801e0e24dcb7d1501f45f244b4
 F test/avtrans.test 0252654f4295ddda3b2cce0e894812259e655a85
@@ -1009,7 +1010,7 @@ F test/tkt3992.test f3e7d548ac26f763b47bc0f750da3d03c81071da
 F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
-F test/tpch01.test 8f4ac52f62f3e9f6bce0889105aecdf0275e331b
+F test/tpch01.test 04adbf8d8300fa60a222f28d901abd76e7be6dd4
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
 F test/trace2.test 93b47ca6996c66b47f57224cfb146f34e07df382
 F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
@@ -1177,7 +1178,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3181d2069a788adc719decf65dc1bd2e16650c87
-R e15c594b7f416cdaa03cc5ded52dfa16
-U mistachkin
-Z ca873ea75a4dc77a2f68671379d28791
+P fc918f7d332b8f7cabc79a0f1586bd6760d14d40 ffe3fea47b8ba8ec4557f68243ef3ef5aac00dfd
+R 4590197fe44138640af30c15c42aaab1
+U drh
+Z e1065b9ffc1f6e99c7ac540aed1bd3ee
