@@ -4213,6 +4213,7 @@ static int whereLoopAddBtree(
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
       if( pTerm->prereqRight & pNew->maskSelf ) continue;
+      if( sqlite3ExprIsConstant(pTerm->pExpr->pRight) ) continue;
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
         pNew->u.btree.nEq = 1;
         pNew->u.btree.nSkip = 0;
@@ -4972,7 +4973,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     ** number of output rows. The 48 is the expected size of a row to sort. 
     ** FIXME:  compute a better estimate of the 48 multiplier based on the
     ** result set expressions. */
-    rSortCost = nRowEst + estLog(nRowEst);
+    rSortCost = nRowEst + estLog(nRowEst) + 10;
     WHERETRACE(0x002,("---- sort cost=%-3d\n", rSortCost));
   }
 
