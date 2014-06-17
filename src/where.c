@@ -4053,7 +4053,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
       *ppTail = pToDel->pNextLoop;
 #if WHERETRACE_ENABLED /* 0x8 */
       if( sqlite3WhereTrace & 0x8 ){
-        sqlite3DebugPrintf("ins-del: ");
+        sqlite3DebugPrintf("ins-del:  ");
         whereLoopPrint(pToDel, pBuilder->pWC);
       }
 #endif
