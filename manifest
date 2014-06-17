@@ -1,5 +1,5 @@
-C Add\ssqlite3_log()\sdiagnostic\smessages\sfor\sa\sspecific\stype\sof\scorruption\nwhere\sthe\sfile\ssize\sis\sreported\sto\sbe\stoo\ssmall\srelative\sto\sthe\ssize\sin\nthe\sheader.\s\sThis\sbranch\sis\sintended\sto\shelp\sdebug\sa\sspecific\sproblem\nreported\sfrom\sthe\swild\sand\sis\snot\sfor\sgeneral\suse.
-D 2014-04-24T13:20:33.894
+C Experimental\schanges\sto\suse\sGetFileInformationByHandle\sinstead\sof\sGetFileSize\sin\sthe\sWin32\sVFS.
+D 2014-06-17T18:43:42.173
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in d314143fa6be24828021d3f583ad37d9afdce505
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -166,7 +166,7 @@ F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_os2.c 4a75888ba3dfc820ad5e8177025972d74d7f2440
 F src/os_unix.c 10e0c4dcdbec8d4189890fdf3e71b32efae194e3
-F src/os_win.c 0fc0f46c94b0385a940b0ee32992a833019a5985
+F src/os_win.c 20a15a885fc5947fe8f9fc175049b5f7d30621ab
 F src/pager.c ddf6e9950ccf70e2b7381d45120c14af910770b6
 F src/pager.h 996123976d473220d2a9c3e8f8609e9cce1c87ee
 F src/parse.y 12b7ebd61ea54f0e1b1083ff69cc2c8ce9353d58
@@ -963,10 +963,7 @@ F tool/symbols.sh caaf6ccc7300fd43353318b44524853e222557d5
 F tool/tostr.awk e75472c2f98dd76e06b8c9c1367f4ab07e122d06
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
 F tool/warnings.sh b7fdb2cc525f5ef4fa43c80e771636dd3690f9d2
-P 3e0da808d2f5b4d12046e05980ca04578f581177
-R d5f0790d7c68cdafa07773bb8ff37593
-T *branch * filesize-debug
-T *sym-filesize-debug *
-T -sym-trunk *
-U drh
-Z 1f0fd56c3eff1640d4907b3dac4ae63d
+P 34155c406c7135accdc25e4828cb28137d3840fb
+R 3058df9a712ad8bd7e6e0b38ee343f17
+U mistachkin
+Z 237e76772eab49f2aa7f7ab4b4f8db7b

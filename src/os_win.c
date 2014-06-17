@@ -1305,22 +1305,20 @@ static int winSync(sqlite3_file *id, int flags){
 ** Determine the current size of a file in bytes
 */
 static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
-  DWORD upperBits;
-  DWORD lowerBits;
+  BY_HANDLE_FILE_INFORMATION info;
   winFile *pFile = (winFile*)id;
-  DWORD error;
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_FSTAT);
-  lowerBits = GetFileSize(pFile->h, &upperBits);
-  if(   (lowerBits == INVALID_FILE_SIZE)
-     && ((error = GetLastError()) != NO_ERROR) )
-  {
-    pFile->lastErrno = error;
+
+  memset(&info, 0, sizeof(BY_HANDLE_FILE_INFORMATION));
+  if( GetFileInformationByHandle(pFile->h, &info) ){
+    *pSize = (((u64)info.nFileSizeHigh)<<32) + info.nFileSizeLow;
+    return SQLITE_OK;
+  }else{
+    pFile->lastErrno = GetLastError();
     return winLogError(SQLITE_IOERR_FSTAT, "winFileSize", pFile->zPath);
   }
-  *pSize = (((sqlite3_int64)upperBits)<<32) + lowerBits;
-  return SQLITE_OK;
 }
 
 /*
