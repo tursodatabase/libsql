@@ -1,5 +1,5 @@
-C Improvements\sto\squery\splanning,\sespecially\sin\sregards\sto\sestimating\sthe\ncost\sand\sbenefit\sof\sautomatic\sindexes.
-D 2014-06-17T15:53:33.099
+C Add\sthe\slikely()\sfunction\sfor\ssymmetry\swith\sunlikely().\s\sThe\slikely(X)\nfunction\smeans\sthe\ssame\sthing\sas\slikelihood(X,0.9375).
+D 2014-06-17T16:11:28.353
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -179,7 +179,7 @@ F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
 F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a549cff9fe8b736cdae21650ea0af6de29b77619
-F src/func.c 2e16316ec3a6365a0dc3e553c586f91b20f7f6c8
+F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
 F src/global.c 1e4bd956dc2f608f87d2a929abc4a20db65f30e4
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
@@ -220,7 +220,7 @@ F src/pragma.c 810ef31ccfaa233201dcf100637a9777cc24e897
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
-F src/resolve.c 273d5f47c4e2c05b2d3d2bffeda939551ab59e66
+F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
 F src/shell.c 058940e8a7198ea15ae90f60ffb0e2d67287b46c
@@ -587,7 +587,7 @@ F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
-F test/func3.test dbccee9133cfef1473c59ec07b5f0262b9d72f9a
+F test/func3.test e82d16b13739f1a0c5efb20048583c79b767b625
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -1108,7 +1108,7 @@ F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
 F test/whereD.test fd9120e262f9da3c45940f52aefeef4d15b904e5
 F test/whereE.test b3a055eef928c992b0a33198a7b8dc10eea5ad2f
 F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
-F test/whereG.test 0ac23e5e8311b69d87245f4a85112de321031658
+F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
 F test/whereJ.test 7dde28284d20f358b559ca592e294db03e1d7103
@@ -1178,7 +1178,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc918f7d332b8f7cabc79a0f1586bd6760d14d40 ffe3fea47b8ba8ec4557f68243ef3ef5aac00dfd
-R 4590197fe44138640af30c15c42aaab1
+P 1272fb8991b3888c72dcebf947415883d7727241
+R c1d0749541351617b104ca64007ba8f1
 U drh
-Z e1065b9ffc1f6e99c7ac540aed1bd3ee
+Z 26a05503f7dd3e6c9f856a3872db5b5a
