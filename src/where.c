@@ -4529,6 +4529,7 @@ static int whereLoopAddBtree(
     WhereTerm *pWCEnd = pWC->a + pWC->nTerm;
     for(pTerm=pWC->a; rc==SQLITE_OK && pTerm<pWCEnd; pTerm++){
       if( pTerm->prereqRight & pNew->maskSelf ) continue;
+      if( pTerm->prereqRight==0 ) continue;
       if( termCanDriveIndex(pTerm, pSrc, 0) ){
         pNew->u.btree.nEq = 1;
         pNew->u.btree.nSkip = 0;
