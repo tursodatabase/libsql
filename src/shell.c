@@ -1579,6 +1579,7 @@ static char zHelp[] =
   "                         If TABLE specified, only dump tables matching\n"
   "                         LIKE pattern TABLE.\n"
   ".echo on|off           Turn command echo on or off\n"
+  ".eqp on|off            Enable or disable automatic EXPLAIN QUERY PLAN\n"
   ".exit                  Exit this program\n"
   ".explain ?on|off?      Turn output mode suitable for EXPLAIN on or off.\n"
   "                         With no args, it turns EXPLAIN on.\n"
@@ -2553,7 +2554,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
                           "filling the rest with NULL\n",
                           sCsv.zFile, startLine, nCol, i+1);
           i++;
-          while( i<nCol ){ sqlite3_bind_null(pStmt, i); i++; }
+          while( i<=nCol ){ sqlite3_bind_null(pStmt, i); i++; }
         }
       }
       if( sCsv.cTerm==sCsv.cSeparator ){
