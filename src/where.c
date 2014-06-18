@@ -3923,6 +3923,17 @@ static WhereLoop **whereLoopFindLesser(
     ** rSetup. Call this SETUP-INVARIANT */
     assert( p->rSetup>=pTemplate->rSetup );
 
+    /* Any loop using an appliation-defined index (or PRIMARY KEY or
+    ** UNIQUE constraint) with one or more == constraints is better
+    ** than an automatic index. */
+    if( (p->wsFlags & WHERE_AUTO_INDEX)!=0
+     && (pTemplate->wsFlags & WHERE_INDEXED)!=0
+     && (pTemplate->wsFlags & WHERE_COLUMN_EQ)!=0
+     && (p->prereq & pTemplate->prereq)==pTemplate->prereq
+    ){
+      break;
+    }
+
     /* If existing WhereLoop p is better than pTemplate, pTemplate can be
     ** discarded.  WhereLoop p is better if:
     **   (1)  p has no more dependencies than pTemplate, and
@@ -4047,7 +4058,7 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     WhereLoop *pToDel;
     while( *ppTail ){
       ppTail = whereLoopFindLesser(ppTail, pTemplate);
-      if( NEVER(ppTail==0) ) break;
+      if( ppTail==0 ) break;
       pToDel = *ppTail;
       if( pToDel==0 ) break;
       *ppTail = pToDel->pNextLoop;
