@@ -1,5 +1,5 @@
-C Prevent\san\sautomatic\sindex\sfrom\staking\sthe\splace\sof\sa\sdeclared\sindex.
-D 2014-06-18T15:11:54.897
+C Fix\sa\scomment\son\sthe\ssqlite3Utf8Read()\sroutine.\s\sNo\schanges\sto\scode.
+D 2014-06-18T15:24:40.324
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -280,7 +280,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 6da2de6e12218ccb0aea5184b56727d011f4bee7
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 01564b3c430f6c7b0a35afaf7aba7987206fa3a5
-F src/utf.c 6dc9ec9f1b3db43ae8ba0365377f11df1ee4c01c
+F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 049fe1d3c0e2209c1bee107aec2fcff6285f909f
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 9bfe6becfc094382ae213656fbe511055ad83a54
@@ -1179,8 +1179,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b500f2a09721b49c95a69c47a0205bc2375af2cd 4ece839d445ff578a449a339ab579a32e64c9d28
-R 1a9a8498bcd344a9075e008919374ef9
-T +closed 4ece839d445ff578a449a339ab579a32e64c9d28
+P 0a52bddd9db49b2b79fc24888b50023d0fe74f7b
+R 1483fc05b60a54244db236c2feca8e58
 U drh
-Z c3c3ed7d30575f073ff51d887a334d78
+Z 0243b0be22165644a3d48f8093dd6d50
