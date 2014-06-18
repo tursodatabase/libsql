@@ -632,6 +632,9 @@ showdb$(EXE):	$(TOP)/tool/showdb.c sqlite3.c
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showdb$(EXE) \
 		$(TOP)/tool/showdb.c sqlite3.c
 
+LogEst$(EXE):	$(TOP)/tool/logest.c sqlite3.h
+	$(TCC) -o LogEst$(EXE) $(TOP)/tool/logest.c
+
 wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o wordcount$(EXE) \
 		$(TOP)/test/wordcount.c sqlite3.c

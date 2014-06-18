@@ -1,9 +1,9 @@
-C Fix\sa\scomment\son\sthe\ssqlite3Utf8Read()\sroutine.\s\sNo\schanges\sto\scode.
-D 2014-06-18T15:24:40.324
+C Add\sthe\s"LogEst"\sand\s"LogEst.exe"\starget\sto\sthe\smakefiles.
+D 2014-06-18T18:10:12.200
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in ed5e4aae4799f724699d5509fac2977786414dbb
+F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc b5ff082a24cd1e0694a0001891e13e3b56c8ef31
+F Makefile.msc b2d3ac211b479fa5a6c9aaf3b9c49fdea900d228
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -146,7 +146,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 0cb97ec3285474651736053ee741145ef8c5185f
+F main.mk 7b1d0be0840f213405c977c87917241158126a33
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1179,7 +1179,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0a52bddd9db49b2b79fc24888b50023d0fe74f7b
-R 1483fc05b60a54244db236c2feca8e58
+P 5e514f6acebcfad4f18300d1a34f4917f1a746d9
+R 608fed792452245bc29949099b24055c
 U drh
-Z 0243b0be22165644a3d48f8093dd6d50
+Z 8ecf2902c498abf367d738a353cfaa20
