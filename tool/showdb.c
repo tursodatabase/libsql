@@ -479,8 +479,27 @@ static void decodeCell(
            printf("%lld\n", v);
          }
        }else{
-         printf("%d bytes of %s\n", szCol[i],
-                (typeCol[i]&1)==0 ? "BLOB" : "TEXT");
+         int ii, jj;
+         char zConst[32];
+         if( (typeCol[i]&1)==0 ){
+           zConst[0] = 'x';
+           zConst[1] = '\'';
+           for(ii=2, jj=0; jj<szCol[i] && ii<24; jj++, ii+=2){
+             sprintf(zConst+ii, "%02x", pData[jj]);
+           }
+         }else{
+           zConst[0] = '\'';
+           for(ii=1, jj=0; jj<szCol[i] && ii<24; jj++, ii++){
+             zConst[ii] = isprint(pData[jj]) ? pData[jj] : '.';
+           }
+           zConst[ii] = 0;
+         }
+         if( jj<szCol[i] ){
+           memcpy(zConst+ii, "...'", 5);
+         }else{
+           memcpy(zConst+ii, "'", 2);
+         }
+         printf("%s\n", zConst);
        }
        j = ofstCol[i] + szCol[i];
     }
