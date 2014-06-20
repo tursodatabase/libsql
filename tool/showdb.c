@@ -383,9 +383,12 @@ static void decodeCell(
   unsigned char *x = a + ofst;
   unsigned char *end;
   unsigned char cType = a[0];
+  int nCol = 0;
+  int szCol[2000];
+  int ofstCol[2000];
+  int typeCol[2000];
 
-  printf("Decode cell[%d] on page %d offset %04x....\n",
-         iCell, pgno, szPgHdr+ofst);
+  printf("Cell[%d]:\n", iCell);
   if( cType<=5 ){
     leftChild = ((x[0]*256 + x[1])*256 + x[2])*256 + x[3];
     printBytes(a, x, 4);
@@ -396,7 +399,12 @@ static void decodeCell(
     i = decodeVarint(x, &nPayload);
     printBytes(a, x, i);
     nLocal = localPayload(nPayload, cType);
-    printf("bytes of payload: %d  (local: %d)\n", (int)nPayload, nLocal);
+    if( nLocal==nPayload ){
+      printf("payload-size: %d\n", (int)nPayload);
+    }else{
+      printf("payload-size: %d (%d local, %d overflow)\n",
+             (int)nPayload, nLocal, (int)(nPayload-nLocal));
+    }
     x += i;
   }else{
     nPayload = nLocal = 0;
@@ -411,16 +419,17 @@ static void decodeCell(
   if( nLocal>0 ){
     i = decodeVarint(x, &nHdr);
     printBytes(a, x, i);
-    printf("record header size: %d\n", (int)nHdr);
+    printf("record-header-size: %d\n", (int)nHdr);
     j = i;
-    k = 0;
+    nCol = 0;
+    k = nHdr;
     while( x+j<end && j<nHdr ){
        const char *zTypeName;
        int sz = 0;
        char zNm[30];
        i = decodeVarint(x+j, &iType);
        printBytes(a, x+j, i);
-       printf("column[%d] type code: %d - ", k++, (int)iType);
+       printf("typecode[%d]: %d - ", nCol, (int)iType);
        switch( iType ){
          case 0:  zTypeName = "NULL";    sz = 0;  break;
          case 1:  zTypeName = "int8";    sz = 1;  break;
@@ -442,16 +451,47 @@ static void decodeCell(
          }
        }
        printf("%s\n", zTypeName);
+       szCol[nCol] = sz;
+       ofstCol[nCol] = k;
+       typeCol[nCol] = (int)iType;
+       k += sz;
+       nCol++;
        j += i;
+    }
+    for(i=0; i<nCol && ofstCol[i]+szCol[i]<=nLocal; i++){
+       int s = ofstCol[i];
+       i64 v;
+       const unsigned char *pData;
+       if( szCol[i]==0 ) continue;
+       printBytes(a, x+s, szCol[i]);
+       printf("data[%d]: ", i);
+       pData = x+s;
+       if( typeCol[i]<=7 ){
+         v = (signed char)pData[0];
+         for(k=1; k<szCol[i]; k++){
+           v = (v<<8) + pData[k];
+         }
+         if( typeCol[i]==7 ){
+           double r;
+           memcpy(&r, &v, sizeof(r));
+           printf("%#g\n", r);
+         }else{
+           printf("%lld\n", v);
+         }
+       }else{
+         printf("%d bytes of %s\n", szCol[i],
+                (typeCol[i]&1)==0 ? "BLOB" : "TEXT");
+       }
+       j = ofstCol[i] + szCol[i];
     }
   }
   if( j<nLocal ){
     printBytes(a, x+j, 0);
-    printf("%d bytes of content\n", nLocal-j);
+    printf("... %d bytes of content ...\n", nLocal-j);
   }
   if( nLocal<nPayload ){
     printBytes(a, x+nLocal, 4);
-    printf("first overflow page: %d\n", decodeInt32(x+nLocal));
+    printf("overflow-page: %d\n", decodeInt32(x+nLocal));
   }
 }
 
@@ -500,22 +540,21 @@ static void decode_btree_page(
   }
   nCell = a[3]*256 + a[4];
   iCellPtr = (a[0]==2 || a[0]==5) ? 12 : 8;
-  if( cellToDecode==(-2) ){
-    printf("Decode of btree page %d:\n", pgno);
-    print_decode_line(a, 0, 1, zType);
-    print_decode_line(a, 1, 2, "Offset to first freeblock");
-    print_decode_line(a, 3, 2, "Number of cells on this page");
-    print_decode_line(a, 5, 2, "Offset to cell content area");
-    print_decode_line(a, 7, 1, "Fragmented byte count");
-    if( a[0]==2 || a[0]==5 ){
-      print_decode_line(a, 8, 4, "Right child");
-    }
-    if( nCell>0 ){
-      printf(" key: lx=left-child n=payload-size r=rowid\n");
-    }
-  }else if( cellToDecode>=nCell ){
+  if( cellToDecode>=nCell ){
     printf("Page %d has only %d cells\n", pgno, nCell);
     return;
+  }
+  printf("Header on btree page %d:\n", pgno);
+  print_decode_line(a, 0, 1, zType);
+  print_decode_line(a, 1, 2, "Offset to first freeblock");
+  print_decode_line(a, 3, 2, "Number of cells on this page");
+  print_decode_line(a, 5, 2, "Offset to cell content area");
+  print_decode_line(a, 7, 1, "Fragmented byte count");
+  if( a[0]==2 || a[0]==5 ){
+    print_decode_line(a, 8, 4, "Right child");
+  }
+  if( cellToDecode==(-2) && nCell>0 ){
+    printf(" key: lx=left-child n=payload-size r=rowid\n");
   }
   if( showMap ){
     zMap = malloc(pagesize);
@@ -547,6 +586,7 @@ static void decode_btree_page(
     }
   }
   if( showMap ){
+    printf("Page map:  (H=header P=cell-index 1=page-1-header .=free-space)\n");
     for(i=0; i<pagesize; i+=64){
       printf(" %03x: %.64s\n", i, &zMap[i]);
     }

@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sdecode\sthe\sheaders\sof\sindividual\scells,\sbyte-by-byte,\nin\sthe\s"showdb.exe"\sutility.
-D 2014-06-19T23:38:53.722
+C In\sthe\sshowdb.exe\sutility,\sfor\sthe\s"NNNbd"\scommand,\salso\sshow\sdata\sfields\nin\saddition\sto\sheader\sfields\son\seach\srecord\sdecoded.\s\sImprovements\sto\s\nformatting.
+D 2014-06-20T01:32:42.411
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1158,7 +1158,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c c080dea3addc8440191aef2c7cf222ee7959529c
+F tool/showdb.c eef4bd98ba995c6a9373cbc0e7b8a3201a658585
 F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1179,7 +1179,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7b91b0581d169a353462d96120a2e0d4dcc8e8ae
-R 80dc9f5b1256cb0818cbd9270f47db96
+P 306b461d7c0643b6ac4df944759ecc9ce8581634
+R 1d1b4729d93a91658ee348794dbfb980
 U drh
-Z ec7d321d3c2511a642cbe0539a129858
+Z 8ea506b1401ff81840cba469aab2c6cc
