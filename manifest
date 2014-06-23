@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sSQLITE_OMIT_WSD\sbuilds.
-D 2014-06-23T10:18:50.447
+C Add\sthe\s.fullschema\scommand\sto\sthe\ssqlite3.exe\sutility.\s\sThis\scommand\sshows\nthe\sschema\sand\sthe\scontent\sof\sthe\ssqlite_stat\stables,\sall\sin\sone\sgo.\s\sUseful\nwhen\sreporting\sproblems\swith\sthe\squery\splanner.
+D 2014-06-23T23:28:13.644
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
-F src/shell.c 058940e8a7198ea15ae90f60ffb0e2d67287b46c
+F src/shell.c 56de2dfa3f25def4bf03098f7e2256fbb42f6e3c
 F src/sqlite.h.in a98eb3e8c86c934ea6f5bcfc6b69653dde2f4ed4
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1179,7 +1179,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 612b6d1b1f74eaf618520b90811eca10f978fc71
-R 283ec0802d51fd4e82222d529f6a8475
-U dan
-Z de359222916ca6f6bd684ca986937509
+P 07dda49c1bf8997a18c3368acb81b6d863ea38d6
+R 4c1bf033e13f45ce881081fa1f198f33
+U drh
+Z 8c91ced329194a39e8cdf52b6d2ec4dd
