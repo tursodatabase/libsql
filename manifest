@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sSQLITE_OMIT_WSD\sbuilds.
-D 2014-06-23T10:18:50.447
+C Add\ssome\scode\sfor\san\sexperimental\sfts5\smodule.\sDoes\snot\swork\syet.
+D 2014-06-23T11:33:22.754
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -79,7 +79,7 @@ F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 20bc65862cfcea0a39bb64a819f8fe92a8e144c1
-F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
+F ext/fts3/fts3.h 62a77d880cf06a2865052726f8325c8fabcecad7
 F ext/fts3/fts3Int.h 16cddf2d7b0e5f3681615ae1d8ca0e45fca44918
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
 F ext/fts3/fts3_expr.c 351395fad6fcb16ecfc61db0861008a70101330c
@@ -103,6 +103,12 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
+F ext/fts5/fts5.c 2cb2cc3c1acefa36d9e8ce8e68bceaac8515059a
+F ext/fts5/fts5Int.h cc41cf776a3e612aa3a461e96463647fd3957bed
+F ext/fts5/fts5_config.c 94f1b4cb4de6a7cd5780c14adb0198e289df8cef
+F ext/fts5/fts5_expr.c bdfb98dab7729cf967022d7a4a815828bbad8c23
+F ext/fts5/fts5_index.c 0548e8925a0664cfa00b2477ebe9afa18bc7848f
+F ext/fts5/fts5_storage.c aa1ff4b6b283303ffd8c5dc57a45ebe55e62a7b2
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -146,7 +152,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 7b1d0be0840f213405c977c87917241158126a33
+F main.mk 2bb1ec703ac4f27743961764b59cfb5f91d72bfe
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -189,7 +195,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 7c2c3cafdd6313c8f9319ebec1565782e624372e
+F src/main.c e777879ad7c431f5b3b5d49c8419727b61d7c1be
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -585,6 +591,8 @@ F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
+F test/fts5aa.test bbea71fed733b1d433bf83dbc8d86077936d1efc
+F test/fts5ea.test 814287a2cb25ac3e59abbe4ccbcabf6bda821868
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -1179,7 +1187,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 612b6d1b1f74eaf618520b90811eca10f978fc71
-R 283ec0802d51fd4e82222d529f6a8475
+P 07dda49c1bf8997a18c3368acb81b6d863ea38d6
+R 66e5d0ccaa728e4d98b92edeb331ffb3
+T *branch * fts5
+T *sym-fts5 *
+T -sym-trunk *
 U dan
-Z de359222916ca6f6bd684ca986937509
+Z e3b7f827041011d2f1d78b39cdee11d7

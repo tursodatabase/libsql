@@ -47,6 +47,7 @@
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 TCCX += -I$(TOP)/ext/async
+TCCX += -I$(TOP)/ext/fts5
 
 # Object files for the SQLite library.
 #
@@ -70,6 +71,13 @@ LIBOBJ+= vdbe.o parse.o \
          update.o util.o vacuum.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
+
+LIBOBJ += fts5.o
+LIBOBJ += fts5_config.o
+LIBOBJ += fts5_expr.o
+LIBOBJ += fts5_index.o
+LIBOBJ += fts5_storage.o
+LIBOBJ += fts5parse.o
 
 
 
@@ -375,6 +383,8 @@ EXTHDR += \
   $(TOP)/ext/rtree/rtree.h
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
+EXTHDR += \
+  $(TOP)/ext/fts5/fts5Int.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -553,8 +563,31 @@ fts3_unicode2.o:	$(TOP)/ext/fts3/fts3_unicode2.c $(HDR) $(EXTHDR)
 fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c
 
+fts5.o:	$(TOP)/ext/fts5/fts5.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5.c
+
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
+
+
+# FTS5 things
+#
+fts5_config.o:	$(TOP)/ext/fts5/fts5_config.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_config.c
+
+fts5_expr.o:	$(TOP)/ext/fts5/fts5_expr.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_expr.c
+
+fts5_index.o:	$(TOP)/ext/fts5/fts5_index.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_index.c
+
+fts5_storage.o:	$(TOP)/ext/fts5/fts5_storage.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_storage.c
+
+fts5parse.c:	$(TOP)/ext/fts5/fts5parse.y lemon 
+	cp $(TOP)/ext/fts5/fts5parse.y .
+	rm -f fts5parse.h
+	./lemon $(OPTS) fts5parse.y
 
 
 # Rules for building test programs and for running tests

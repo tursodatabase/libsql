@@ -2609,6 +2609,7 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_FTS3
   if( !db->mallocFailed && rc==SQLITE_OK ){
     rc = sqlite3Fts3Init(db);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5Init(db);
   }
 #endif
 
