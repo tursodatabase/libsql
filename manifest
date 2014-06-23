@@ -1,5 +1,5 @@
-C Improved\sdisplay\sof\srecord\sdata\sin\sthe\s"NNNbd"\soutput\sof\sthe\sshowdb.exe\nutility\sprogram.
-D 2014-06-20T13:55:06.139
+C Fix\sa\sproblem\swith\sSQLITE_OMIT_WAL\sbuilds.
+D 2014-06-23T10:04:58.236
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -207,7 +207,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c 9a97268f1ea97ddea17f1c392f7c76197ac4cea9
+F src/os_unix.c a7baf1b30f3c58ba20b813e01aab23b18ae44f85
 F src/os_win.c 8dbf6c11780fe2eb96c1f289e664d0c7b2911d37
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
@@ -1179,7 +1179,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b451fe0cb92278deb7724e7995c1bd46ae83c119
-R ed297bdcc3956dc354f00523f5ca1d92
-U drh
-Z 0815d87a0909198bac782c1612f71277
+P f735c2497eaad15216c90c6b92fd5ceff460220a
+R d7976d2787b6fe6354165e317bb92fd4
+U dan
+Z fd6ff630a9de62a9d7a43a3d2f98ba30
