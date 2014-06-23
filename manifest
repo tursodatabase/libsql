@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sSQLITE_OMIT_WAL\sbuilds.
-D 2014-06-23T10:04:58.236
+C Fix\sa\sproblem\swith\sSQLITE_OMIT_WSD\sbuilds.
+D 2014-06-23T10:18:50.447
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 40d0837e5d0597eadc47c3acc2fc95bdbd9250b8
+F src/main.c 7c2c3cafdd6313c8f9319ebec1565782e624372e
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -1179,7 +1179,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f735c2497eaad15216c90c6b92fd5ceff460220a
-R d7976d2787b6fe6354165e317bb92fd4
+P 612b6d1b1f74eaf618520b90811eca10f978fc71
+R 283ec0802d51fd4e82222d529f6a8475
 U dan
-Z fd6ff630a9de62a9d7a43a3d2f98ba30
+Z de359222916ca6f6bd684ca986937509
