@@ -106,6 +106,8 @@ int main(int argc, char **argv){
       if( y+sz>nSample ) break;
       if( iVal==0 ){
         printf("%sNULL", zSep);
+      }else if( iVal==8 || iVal==9 ){
+        printf("%s%d", zSep, ((int)iVal)-8);
       }else if( iVal<=7 ){
         v = (signed char)aSample[y];
         for(j=1; j<sz; j++){
