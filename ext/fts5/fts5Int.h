@@ -226,6 +226,15 @@ int sqlite3Fts5StorageInsert(Fts5Storage *p, sqlite3_value **apVal, int, i64*);
 
 int sqlite3Fts5StorageIntegrity(Fts5Storage *p);
 
+#define FTS5_STMT_SCAN_ASC  0     /* SELECT rowid, * FROM ... ORDER BY 1 ASC */
+#define FTS5_STMT_SCAN_DESC 1     /* SELECT rowid, * FROM ... ORDER BY 1 DESC */
+#define FTS5_STMT_LOOKUP    2     /* SELECT rowid, * FROM ... WHERE rowid=? */
+
+int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **);
+void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);
+
+
+
 /*
 ** End of interface to code in fts5_storage.c.
 **************************************************************************/

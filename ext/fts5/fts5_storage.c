@@ -18,18 +18,26 @@ struct Fts5Storage {
   Fts5Config *pConfig;
   Fts5Index *pIndex;
 
-  sqlite3_stmt *aStmt[7];
+  sqlite3_stmt *aStmt[8];
 };
 
-#define FTS5_STMT_INSERT_CONTENT  0
-#define FTS5_STMT_REPLACE_CONTENT 1
 
-#define FTS5_STMT_DELETE_CONTENT  2
-#define FTS5_STMT_INSERT_DOCSIZE  3
-#define FTS5_STMT_DELETE_DOCSIZE  4
+#if FTS5_STMT_SCAN_ASC!=0 
+# error "FTS5_STMT_SCAN_ASC mismatch" 
+#endif
+#if FTS5_STMT_SCAN_DESC!=1 
+# error "FTS5_STMT_SCAN_DESC mismatch" 
+#endif
+#if FTS5_STMT_LOOKUP!=2
+# error "FTS5_STMT_LOOKUP mismatch" 
+#endif
 
-#define FTS5_STMT_SCAN_CONTENT    5
-#define FTS5_STMT_SEEK_CONTENT    6
+#define FTS5_STMT_INSERT_CONTENT  3
+#define FTS5_STMT_REPLACE_CONTENT 4
+
+#define FTS5_STMT_DELETE_CONTENT  5
+#define FTS5_STMT_INSERT_DOCSIZE  6
+#define FTS5_STMT_DELETE_DOCSIZE  7
 
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
@@ -47,13 +55,15 @@ static int fts5StorageGetStmt(
   assert( eStmt>=0 && eStmt<ArraySize(p->aStmt) );
   if( p->aStmt[eStmt]==0 ){
     const char *azStmt[] = {
-      "INSERT INTO %Q.'%q_content' VALUES(%s)",       /* INSERT_CONTENT  */
-      "REPLACE INTO %Q.'%q_content' VALUES(%s)",      /* REPLACE_CONTENT */
-      "DELETE FROM %Q.'%q_content' WHERE id=?",       /* DELETE_CONTENT  */
-      "INSERT INTO %Q.'%q_docsize' VALUES(?,?)",      /* INSERT_DOCSIZE  */
-      "DELETE FROM %Q.'%q_docsize' WHERE id=?",       /* DELETE_DOCSIZE  */
-      "SELECT * FROM %Q.'%q_content'",                /* SCAN_CONTENT  */
-      "SELECT * FROM %Q.'%q_content' WHERE rowid=?",  /* SEEK_CONTENT  */
+      "SELECT * FROM %Q.'%q_content' ORDER BY id ASC",  /* SCAN_ASC */
+      "SELECT * FROM %Q.'%q_content' ORDER BY id DESC", /* SCAN_DESC */
+      "SELECT * FROM %Q.'%q_content' WHERE rowid=?",    /* LOOKUP  */
+
+      "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
+      "REPLACE INTO %Q.'%q_content' VALUES(%s)",        /* REPLACE_CONTENT */
+      "DELETE FROM %Q.'%q_content' WHERE id=?",         /* DELETE_CONTENT  */
+      "INSERT INTO %Q.'%q_docsize' VALUES(?,?)",        /* INSERT_DOCSIZE  */
+      "DELETE FROM %Q.'%q_docsize' WHERE id=?",         /* DELETE_DOCSIZE  */
     };
     Fts5Config *pConfig = p->pConfig;
     char *zSql = 0;
@@ -253,7 +263,7 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
   sqlite3_stmt *pSeek;            /* SELECT to read row iDel from %_data */
   int rc;                         /* Return code */
 
-  rc = fts5StorageGetStmt(p, FTS5_STMT_SEEK_CONTENT, &pSeek);
+  rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP, &pSeek);
   if( rc==SQLITE_OK ){
     int rc2;
     sqlite3_bind_int64(pSeek, 1, iDel);
@@ -377,7 +387,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
 
   /* Generate the expected index checksum based on the contents of the
   ** %_content table. This block stores the checksum in ctx.cksum. */
-  rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN_CONTENT, &pScan);
+  rc = fts5StorageGetStmt(p, FTS5_STMT_SCAN_ASC, &pScan);
   if( rc==SQLITE_OK ){
     int rc2;
     while( SQLITE_ROW==sqlite3_step(pScan) ){
@@ -406,6 +416,46 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
   }
 
   return rc;
+}
+
+/*
+** Obtain an SQLite statement handle that may be used to read data from the
+** %_content table.
+*/
+int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **pp){
+  int rc;
+  assert( eStmt==FTS5_STMT_SCAN_ASC 
+       || eStmt==FTS5_STMT_SCAN_DESC
+       || eStmt==FTS5_STMT_LOOKUP
+  );
+  rc = fts5StorageGetStmt(p, eStmt, pp);
+  if( rc==SQLITE_OK ){
+    assert( p->aStmt[eStmt]==*pp );
+    p->aStmt[eStmt] = 0;
+  }
+  return rc;
+}
+
+/*
+** Release an SQLite statement handle obtained via an earlier call to
+** sqlite3Fts5StorageStmt(). The eStmt parameter passed to this function
+** must match that passed to the sqlite3Fts5StorageStmt() call.
+*/
+void sqlite3Fts5StorageStmtRelease(
+  Fts5Storage *p, 
+  int eStmt, 
+  sqlite3_stmt *pStmt
+){
+  assert( eStmt==FTS5_STMT_SCAN_ASC
+       || eStmt==FTS5_STMT_SCAN_DESC
+       || eStmt==FTS5_STMT_LOOKUP
+  );
+  if( p->aStmt[eStmt]==0 ){
+    sqlite3_reset(pStmt);
+    p->aStmt[eStmt] = pStmt;
+  }else{
+    sqlite3_finalize(pStmt);
+  }
 }
 
 
