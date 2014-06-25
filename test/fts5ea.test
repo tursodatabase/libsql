@@ -56,12 +56,12 @@ foreach {tn expr res} {
 
 breakpoint
 foreach {tn expr err} {
-  1 {AND}                          {syntax error near "AND"}
-  2 {abc def AND}                  {syntax error near ""}
-  3 {abc OR AND}                   {syntax error near "AND"}
-  4 {(a OR b) abc}                 {syntax error near "abc"}
-  5 {NEaR (a b)}                   {syntax error near "NEaR"}
-  6 {(a OR b) NOT c)}              {syntax error near ")"}
+  1 {AND}                          {fts5: syntax error near "AND"}
+  2 {abc def AND}                  {fts5: syntax error near ""}
+  3 {abc OR AND}                   {fts5: syntax error near "AND"}
+  4 {(a OR b) abc}                 {fts5: syntax error near "abc"}
+  5 {NEaR (a b)}                   {fts5: syntax error near "NEaR"}
+  6 {(a OR b) NOT c)}              {fts5: syntax error near ")"}
   7 {nosuch: a nosuch2: b}         {no such column: nosuch}
   8 {addr: a nosuch2: b}           {no such column: nosuch2}
 } {

@@ -29,6 +29,12 @@ void *sqlite3Fts5ParserAlloc(void *(*mallocProc)(size_t));
 void sqlite3Fts5ParserFree(void*, void (*freeProc)(void*));
 void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 
+struct Fts5Expr {
+  Fts5Index *pIndex;
+  Fts5ExprNode *pRoot;
+  int bAsc;
+};
+
 /*
 ** eType:
 **   Expression node type. Always one of:
@@ -38,11 +44,13 @@ void sqlite3Fts5Parser(void*, int, Fts5Token, Fts5Parse*);
 **       FTS5_NOT                 (pLeft, pRight valid)
 **       FTS5_STRING              (pNear valid)
 */
-struct Fts5Expr {
+struct Fts5ExprNode {
   int eType;                      /* Node type */
-  Fts5Expr *pLeft;                /* Left hand child node */
-  Fts5Expr *pRight;               /* Right hand child node */
+  Fts5ExprNode *pLeft;            /* Left hand child node */
+  Fts5ExprNode *pRight;           /* Right hand child node */
   Fts5ExprNearset *pNear;         /* For FTS5_STRING - cluster of phrases */
+  int bEof;                       /* True at EOF */
+  i64 iRowid;
 };
 
 /*
@@ -52,6 +60,7 @@ struct Fts5Expr {
 struct Fts5ExprTerm {
   int bPrefix;                    /* True for a prefix term */
   char *zTerm;                    /* nul-terminated term */
+  Fts5IndexIter *pIter;           /* Iterator for this term */
 };
 
 /*
@@ -82,7 +91,7 @@ struct Fts5Parse {
   Fts5Config *pConfig;
   char *zErr;
   int rc;
-  Fts5Expr *pExpr;                /* Result of a successful parse */
+  Fts5ExprNode *pExpr;            /* Result of a successful parse */
 };
 
 void sqlite3Fts5ParseError(Fts5Parse *pParse, const char *zFmt, ...){
@@ -168,8 +177,7 @@ static void *fts5ParseAlloc(size_t t){ return sqlite3_malloc((int)t); }
 static void fts5ParseFree(void *p){ sqlite3_free(p); }
 
 int sqlite3Fts5ExprNew(
-  Fts5Config *pConfig, 
-  Fts5Index *pIdx, 
+  Fts5Config *pConfig,            /* FTS5 Configuration */
   const char *zExpr,              /* Expression text */
   Fts5Expr **ppNew, 
   char **pzErr
@@ -179,12 +187,13 @@ int sqlite3Fts5ExprNew(
   const char *z = zExpr;
   int t;                          /* Next token type */
   void *pEngine;
+  Fts5Expr *pNew;
 
   *ppNew = 0;
   *pzErr = 0;
   memset(&sParse, 0, sizeof(sParse));
   pEngine = sqlite3Fts5ParserAlloc(fts5ParseAlloc);
-  if( pEngine==0 ) return SQLITE_NOMEM;
+  if( pEngine==0 ){ return SQLITE_NOMEM; }
   sParse.pConfig = pConfig;
 
   do {
@@ -194,21 +203,138 @@ int sqlite3Fts5ExprNew(
   sqlite3Fts5ParserFree(pEngine, fts5ParseFree);
 
   assert( sParse.pExpr==0 || (sParse.rc==SQLITE_OK && sParse.zErr==0) );
-  *ppNew = sParse.pExpr;
+  if( sParse.rc==SQLITE_OK ){
+    *ppNew = pNew = sqlite3_malloc(sizeof(Fts5Expr));
+    if( pNew==0 ){
+      sParse.rc = SQLITE_NOMEM;
+    }else{
+      pNew->pRoot = sParse.pExpr;
+      pNew->pIndex = 0;
+    }
+  }
+
   *pzErr = sParse.zErr;
   return sParse.rc;
 }
 
 /*
-** Free the object passed as the only argument.
+** Free the expression node object passed as the only argument.
 */
-void sqlite3Fts5ExprFree(Fts5Expr *p){
+void sqlite3Fts5ParseNodeFree(Fts5ExprNode *p){
   if( p ){
-    sqlite3Fts5ExprFree(p->pLeft);
-    sqlite3Fts5ExprFree(p->pRight);
+    sqlite3Fts5ParseNodeFree(p->pLeft);
+    sqlite3Fts5ParseNodeFree(p->pRight);
     sqlite3Fts5ParseNearsetFree(p->pNear);
     sqlite3_free(p);
   }
+}
+
+/*
+** Free the expression object passed as the only argument.
+*/
+void sqlite3Fts5ExprFree(Fts5Expr *p){
+  if( p ){
+    sqlite3Fts5ParseNodeFree(p->pRoot);
+    sqlite3_free(p);
+  }
+}
+
+/*
+**
+*/
+static int fts5ExprNodeTest(Fts5Expr *pExpr, Fts5ExprNode *pNode){
+  assert( 0 );
+  return SQLITE_OK;
+}
+ 
+static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
+  int rc = SQLITE_OK;
+
+  pNode->bEof = 0;
+  if( pNode->eType==FTS5_STRING ){
+    Fts5ExprPhrase *pPhrase = pNode->pNear->apPhrase[0];
+    Fts5ExprTerm *pTerm = &pPhrase->aTerm[0];
+    assert( pNode->pNear->nPhrase==1 && pPhrase->nTerm==1 );
+
+    pTerm->pIter = sqlite3Fts5IndexQuery(
+        pExpr->pIndex, pTerm->zTerm, strlen(pTerm->zTerm),
+        (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
+        (pExpr->bAsc ? FTS5INDEX_QUERY_ASC : 0)
+    );
+    if( sqlite3Fts5IterEof(pTerm->pIter) ){
+      pNode->bEof = 1;
+    }else{
+      pNode->iRowid = sqlite3Fts5IterRowid(pTerm->pIter);
+    }
+
+  }else{
+    rc = fts5ExprNodeFirst(pExpr, pNode->pLeft);
+    if( rc==SQLITE_OK ){
+      rc = fts5ExprNodeFirst(pExpr, pNode->pRight);
+    }
+    if( rc==SQLITE_OK ){
+      rc = fts5ExprNodeTest(pExpr, pNode);
+    }
+  }
+  return rc;
+}
+
+static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
+  int rc = SQLITE_OK;
+
+  if( pNode->eType==FTS5_STRING ){
+    Fts5ExprPhrase *pPhrase = pNode->pNear->apPhrase[0];
+    Fts5ExprTerm *pTerm = &pPhrase->aTerm[0];
+    assert( pNode->pNear->nPhrase==1 && pPhrase->nTerm==1 );
+    sqlite3Fts5IterNext(pTerm->pIter, 0);
+    if( sqlite3Fts5IterEof(pTerm->pIter) ){
+      pNode->bEof = 1;
+    }else{
+      pNode->iRowid = sqlite3Fts5IterRowid(pTerm->pIter);
+    }
+  }else{
+    assert( 0 );
+  }
+  return rc;
+}
+
+
+
+/*
+** Begin iterating through the set of documents in index pIdx matched by
+** the MATCH expression passed as the first argument. If the "bAsc" parameter
+** is passed a non-zero value, iteration is in ascending rowid order. Or,
+** if it is zero, in descending order.
+**
+** Return SQLITE_OK if successful, or an SQLite error code otherwise. It
+** is not considered an error if the query does not match any documents.
+*/
+int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bAsc){
+  int rc;
+  p->pIndex = pIdx;
+  p->bAsc = bAsc;
+  rc = fts5ExprNodeFirst(p, p->pRoot);
+  return rc;
+}
+
+/*
+** Move to the next document 
+**
+** Return SQLITE_OK if successful, or an SQLite error code otherwise. It
+** is not considered an error if the query does not match any documents.
+*/
+int sqlite3Fts5ExprNext(Fts5Expr *p){
+  int rc;
+  rc = fts5ExprNodeNext(p, p->pRoot);
+  return rc;
+}
+
+int sqlite3Fts5ExprEof(Fts5Expr *p){
+  return p->pRoot->bEof;
+}
+
+i64 sqlite3Fts5ExprRowid(Fts5Expr *p){
+  return p->pRoot->iRowid;
 }
 
 /*
@@ -229,7 +355,7 @@ static char *fts5Strdup(const char *pIn, int nIn){
 }
 
 static int fts5ParseStringFromToken(Fts5Token *pToken, char **pz){
-  *pz = sqlite3_mprintf("%.*s", pToken->n, pToken->p);
+  *pz = fts5Strdup(pToken->p, pToken->n);
   if( *pz==0 ) return SQLITE_NOMEM;
   return SQLITE_OK;
 }
@@ -241,7 +367,11 @@ static void fts5ExprPhraseFree(Fts5ExprPhrase *pPhrase){
   if( pPhrase ){
     int i;
     for(i=0; i<pPhrase->nTerm; i++){
-      sqlite3_free(pPhrase->aTerm[i].zTerm);
+      Fts5ExprTerm *pTerm = &pPhrase->aTerm[i];
+      sqlite3_free(pTerm->zTerm);
+      if( pTerm->pIter ){
+        sqlite3Fts5IterClose(pTerm->pIter);
+      }
     }
     sqlite3_free(pPhrase);
   }
@@ -357,7 +487,7 @@ void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset *pNear){
   }
 }
 
-void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5Expr *p){
+void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p){
   assert( pParse->pExpr==0 );
   pParse->pExpr = p;
 }
@@ -401,7 +531,7 @@ void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token *pTok){
   if( pParse->rc==SQLITE_OK ){
     if( pTok->n!=4 || memcmp("NEAR", pTok->p, 4) ){
       sqlite3Fts5ParseError(
-          pParse, "syntax error near \"%.*s\"", pTok->n, pTok->p
+          pParse, "fts5: syntax error near \"%.*s\"", pTok->n, pTok->p
       );
     }
   }
@@ -460,20 +590,20 @@ void sqlite3Fts5ParseSetColumn(
 ** Allocate and return a new expression object. If anything goes wrong (i.e.
 ** OOM error), leave an error code in pParse and return NULL.
 */
-Fts5Expr *sqlite3Fts5ParseExpr(
+Fts5ExprNode *sqlite3Fts5ParseNode(
   Fts5Parse *pParse,              /* Parse context */
   int eType,                      /* FTS5_STRING, AND, OR or NOT */
-  Fts5Expr *pLeft,                /* Left hand child expression */
-  Fts5Expr *pRight,               /* Right hand child expression */
+  Fts5ExprNode *pLeft,            /* Left hand child expression */
+  Fts5ExprNode *pRight,           /* Right hand child expression */
   Fts5ExprNearset *pNear          /* For STRING expressions, the near cluster */
 ){
-  Fts5Expr *pRet = 0;
+  Fts5ExprNode *pRet = 0;
 
   if( pParse->rc==SQLITE_OK ){
     assert( (eType!=FTS5_STRING && pLeft  && pRight  && !pNear)
         || (eType==FTS5_STRING && !pLeft && !pRight && pNear)
     );
-    pRet = (Fts5Expr*)sqlite3_malloc(sizeof(Fts5Expr));
+    pRet = (Fts5ExprNode*)sqlite3_malloc(sizeof(Fts5ExprNode));
     if( pRet==0 ){
       pParse->rc = SQLITE_NOMEM;
     }else{
@@ -487,8 +617,8 @@ Fts5Expr *sqlite3Fts5ParseExpr(
 
   if( pRet==0 ){
     assert( pParse->rc!=SQLITE_OK );
-    sqlite3Fts5ExprFree(pLeft);
-    sqlite3Fts5ExprFree(pRight);
+    sqlite3Fts5ParseNodeFree(pLeft);
+    sqlite3Fts5ParseNodeFree(pRight);
     sqlite3Fts5ParseNearsetFree(pNear);
   }
   return pRet;
@@ -529,7 +659,7 @@ static char *fts5PrintfAppend(char *zApp, const char *zFmt, ...){
   return zNew;
 }
 
-static char *fts5ExprPrint(Fts5Config *pConfig, Fts5Expr *pExpr){
+static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
   char *zRet = 0;
   if( pExpr->eType==FTS5_STRING ){
     Fts5ExprNearset *pNear = pExpr->pNear;
@@ -634,10 +764,10 @@ static void fts5ExprFunction(
 
   rc = sqlite3Fts5ConfigParse(db, nConfig, azConfig, &pConfig, &zErr);
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5ExprNew(pConfig, 0, zExpr, &pExpr, &zErr);
+    rc = sqlite3Fts5ExprNew(pConfig, zExpr, &pExpr, &zErr);
   }
   if( rc==SQLITE_OK ){
-    char *zText = fts5ExprPrint(pConfig, pExpr);
+    char *zText = fts5ExprPrint(pConfig, pExpr->pRoot);
     if( rc==SQLITE_OK ){
       sqlite3_result_text(pCtx, zText, -1, SQLITE_TRANSIENT);
       sqlite3_free(zText);

@@ -18,6 +18,9 @@
 typedef struct Fts5Table Fts5Table;
 typedef struct Fts5Cursor Fts5Cursor;
 
+/*
+** Virtual-table object.
+*/
 struct Fts5Table {
   sqlite3_vtab base;              /* Base class used by SQLite core */
   Fts5Config *pConfig;            /* Virtual table configuration */
@@ -25,11 +28,16 @@ struct Fts5Table {
   Fts5Storage *pStorage;          /* Document store */
 };
 
+/*
+** Virtual-table cursor object.
+*/
 struct Fts5Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
   int idxNum;                     /* idxNum passed to xFilter() */
   sqlite3_stmt *pStmt;            /* Statement used to read %_content */
   int bEof;                       /* True at EOF */
+  Fts5Expr *pExpr;                /* Expression for MATCH queries */
+  int bSeekRequired;
 };
 
 /*
@@ -165,15 +173,18 @@ static int fts5CreateMethod(
 #define FTS5_ORDER_DESC   8       /* ORDER BY rowid DESC */
 #define FTS5_ORDER_ASC   16       /* ORDER BY rowid ASC */
 
-
+/*
+** Search the object passed as the first argument for a usable constraint
+** on column iCol using operator eOp. If one is found, return its index in
+** the pInfo->aConstraint[] array. If no such constraint is found, return
+** a negative value.
+*/
 static int fts5FindConstraint(sqlite3_index_info *pInfo, int eOp, int iCol){
   int i;
-
   for(i=0; i<pInfo->nConstraint; i++){
     struct sqlite3_index_constraint *p = &pInfo->aConstraint[i];
     if( p->usable && p->iColumn==iCol && p->op==eOp ) return i;
   }
-
   return -1;
 }
 
@@ -253,6 +264,7 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     int eStmt = fts5StmtType(pCsr->idxNum);
     sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
   }
+  sqlite3Fts5ExprFree(pCsr->pExpr);
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -271,7 +283,6 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   int ePlan = FTS5_PLAN(pCsr->idxNum);
   int rc = SQLITE_OK;
 
-  assert( ePlan!=FTS5_PLAN_MATCH );
   if( ePlan!=FTS5_PLAN_MATCH ){
     rc = sqlite3_step(pCsr->pStmt);
     if( rc!=SQLITE_ROW ){
@@ -280,6 +291,10 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
     }else{
       rc = SQLITE_OK;
     }
+  }else{
+    rc = sqlite3Fts5ExprNext(pCsr->pExpr);
+    pCsr->bEof = sqlite3Fts5ExprEof(pCsr->pExpr);
+    pCsr->bSeekRequired = 1;
   }
   
   return rc;
@@ -302,19 +317,30 @@ static int fts5FilterMethod(
   int rc = SQLITE_OK;
   int ePlan = FTS5_PLAN(idxNum);
   int eStmt = fts5StmtType(idxNum);
+  int bAsc = ((idxNum & FTS5_ORDER_ASC) ? 1 : 0);
 
-  assert( ePlan!=FTS5_PLAN_MATCH );
   memset(&pCursor[1], 0, sizeof(Fts5Cursor) - sizeof(sqlite3_vtab_cursor));
   pCsr->idxNum = idxNum;
 
   rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
-  if( ePlan==FTS5_PLAN_ROWID ){
-    sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+  if( rc==SQLITE_OK ){
+    if( ePlan==FTS5_PLAN_MATCH ){
+      char **pzErr = &pTab->base.zErrMsg;
+      const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
+      rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, bAsc);
+        pCsr->bEof = sqlite3Fts5ExprEof(pCsr->pExpr);
+        pCsr->bSeekRequired = 1;
+      }
+    }else{
+      if( ePlan==FTS5_PLAN_ROWID ){
+        sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+      }
+      rc = fts5NextMethod(pCursor);
+    }
   }
 
-  if( rc==SQLITE_OK ){
-    rc = fts5NextMethod(pCursor);
-  }
   return rc;
 }
 
@@ -338,10 +364,10 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   int ePlan = FTS5_PLAN(pCsr->idxNum);
   
   assert( pCsr->bEof==0 );
-  assert( ePlan!=FTS5_PLAN_MATCH );
-
   if( ePlan!=FTS5_PLAN_MATCH ){
     *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
+  }else{
+    *pRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
   }
 
   return SQLITE_OK;
@@ -358,13 +384,28 @@ static int fts5ColumnMethod(
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int ePlan = FTS5_PLAN(pCsr->idxNum);
+  int rc = SQLITE_OK;
   
   assert( pCsr->bEof==0 );
-  assert( ePlan!=FTS5_PLAN_MATCH );
-  if( ePlan!=FTS5_PLAN_MATCH ){
+  if( pCsr->bSeekRequired ){
+    assert( ePlan==FTS5_PLAN_MATCH && pCsr->pExpr );
+    sqlite3_reset(pCsr->pStmt);
+    sqlite3_bind_int64(pCsr->pStmt, 1, sqlite3Fts5ExprRowid(pCsr->pExpr));
+    rc = sqlite3_step(pCsr->pStmt);
+    if( rc==SQLITE_ROW ){
+      rc = SQLITE_OK;
+    }else{
+      rc = sqlite3_reset(pCsr->pStmt);
+      if( rc==SQLITE_OK ){
+        rc = SQLITE_CORRUPT_VTAB;
+      }
+    }
+  }
+
+  if( rc==SQLITE_OK ){
     sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*

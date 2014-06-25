@@ -75,13 +75,13 @@ void sqlite3Fts5Dequote(char *z);
 typedef struct Fts5Index Fts5Index;
 typedef struct Fts5IndexIter Fts5IndexIter;
 
+
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
 */
 #define FTS5INDEX_QUERY_PREFIX 0x0001       /* Prefix query */
 #define FTS5INDEX_QUERY_ASC    0x0002       /* Docs in ascending rowid order */
 #define FTS5INDEX_QUERY_MATCH  0x0004       /* Use the iMatch arg to Next() */
-#define FTS5INDEX_QUERY_DELETE 0x0008       /* Visit delete markers */
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -114,8 +114,7 @@ Fts5IndexIter *sqlite3Fts5IndexQuery(
 */
 int  sqlite3Fts5IterEof(Fts5IndexIter*);
 void sqlite3Fts5IterNext(Fts5IndexIter*, i64 iMatch);
-int sqlite3Fts5IterSeek(Fts5IndexIter*, i64 iDocid);
-i64  sqlite3Fts5IterDocid(Fts5IndexIter*);
+i64  sqlite3Fts5IterRowid(Fts5IndexIter*);
 
 /*
 ** Position list iteration.
@@ -128,8 +127,8 @@ i64  sqlite3Fts5IterDocid(Fts5IndexIter*);
 **     // token appears at position iPos of column iCol of the current document
 **   }
 */
-int sqlite3Fts5IterFirstPos(Fts5IndexIter*, int iCol);
-int sqlite3Fts5IterNextPos(Fts5IndexIter*);
+// int sqlite3Fts5IterFirstPos(Fts5IndexIter*, int iCol);
+// int sqlite3Fts5IterNextPos(Fts5IndexIter*);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().
@@ -213,6 +212,11 @@ void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz);
 ** Interface to code in fts5_storage.c. fts5_storage.c contains contains 
 ** code to access the data stored in the %_content and %_docsize tables.
 */
+
+#define FTS5_STMT_SCAN_ASC  0     /* SELECT rowid, * FROM ... ORDER BY 1 ASC */
+#define FTS5_STMT_SCAN_DESC 1     /* SELECT rowid, * FROM ... ORDER BY 1 DESC */
+#define FTS5_STMT_LOOKUP    2     /* SELECT rowid, * FROM ... WHERE rowid=? */
+
 typedef struct Fts5Storage Fts5Storage;
 
 int sqlite3Fts5StorageOpen(Fts5Config*, Fts5Index*, int, Fts5Storage**, char**);
@@ -226,13 +230,8 @@ int sqlite3Fts5StorageInsert(Fts5Storage *p, sqlite3_value **apVal, int, i64*);
 
 int sqlite3Fts5StorageIntegrity(Fts5Storage *p);
 
-#define FTS5_STMT_SCAN_ASC  0     /* SELECT rowid, * FROM ... ORDER BY 1 ASC */
-#define FTS5_STMT_SCAN_DESC 1     /* SELECT rowid, * FROM ... ORDER BY 1 DESC */
-#define FTS5_STMT_LOOKUP    2     /* SELECT rowid, * FROM ... WHERE rowid=? */
-
 int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **);
 void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);
-
 
 
 /*
@@ -244,6 +243,7 @@ void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);
 ** Interface to code in fts5_expr.c. 
 */
 typedef struct Fts5Expr Fts5Expr;
+typedef struct Fts5ExprNode Fts5ExprNode;
 typedef struct Fts5Parse Fts5Parse;
 typedef struct Fts5Token Fts5Token;
 typedef struct Fts5ExprPhrase Fts5ExprPhrase;
@@ -254,23 +254,29 @@ struct Fts5Token {
   int n;                          /* Size of buffer p in bytes */
 };
 
+/* Parse a MATCH expression. */
 int sqlite3Fts5ExprNew(
   Fts5Config *pConfig, 
-  Fts5Index *pIdx, 
   const char *zExpr,
   Fts5Expr **ppNew, 
   char **pzErr
 );
 
-int sqlite3Fts5ExprFirst(Fts5Expr *p);
-int sqlite3Fts5ExprNext(Fts5Expr *p);
-int sqlite3Fts5ExprEof(Fts5Expr *p);
-i64 sqlite3Fts5ExprRowid(Fts5Expr *p);
+/*
+** for(rc = sqlite3Fts5ExprFirst(pExpr, pIdx, bAsc);
+**     rc==SQLITE_OK && 0==sqlite3Fts5ExprEof(pExpr);
+**     rc = sqlite3Fts5ExprNext(pExpr)
+** ){
+**   // The document with rowid iRowid matches the expression!
+**   i64 iRowid = sqlite3Fts5ExprRowid(pExpr);
+** }
+*/
+int sqlite3Fts5ExprFirst(Fts5Expr*, Fts5Index *pIdx, int bAsc);
+int sqlite3Fts5ExprNext(Fts5Expr*);
+int sqlite3Fts5ExprEof(Fts5Expr*);
+i64 sqlite3Fts5ExprRowid(Fts5Expr*);
 
-void sqlite3Fts5ExprFree(Fts5Expr *p);
-
-// int sqlite3Fts5IterFirstPos(Fts5Expr*, int iCol, int *piPos);
-// int sqlite3Fts5IterNextPos(Fts5Expr*, int *piPos);
+void sqlite3Fts5ExprFree(Fts5Expr*);
 
 /* Called during startup to register a UDF with SQLite */
 int sqlite3Fts5ExprInit(sqlite3*);
@@ -282,11 +288,11 @@ int sqlite3Fts5ExprInit(sqlite3*);
 
 void sqlite3Fts5ParseError(Fts5Parse *pParse, const char *zFmt, ...);
 
-Fts5Expr *sqlite3Fts5ParseExpr(
-  Fts5Parse *pParse, 
-  int eType, 
-  Fts5Expr *pLeft, 
-  Fts5Expr *pRight, 
+Fts5ExprNode *sqlite3Fts5ParseNode(
+  Fts5Parse *pParse,
+  int eType,
+  Fts5ExprNode *pLeft,
+  Fts5ExprNode *pRight,
   Fts5ExprNearset *pNear
 );
 
@@ -305,10 +311,11 @@ Fts5ExprNearset *sqlite3Fts5ParseNearset(
 
 void sqlite3Fts5ParsePhraseFree(Fts5ExprPhrase*);
 void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset*);
+void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
 void sqlite3Fts5ParseSetColumn(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
-void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5Expr *p);
+void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 
 
