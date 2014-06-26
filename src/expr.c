@@ -33,7 +33,7 @@
 char sqlite3ExprAffinity(Expr *pExpr){
   int op;
   pExpr = sqlite3ExprSkipCollate(pExpr);
-  if( pExpr->flags & EP_Generic ) return SQLITE_AFF_NONE;
+  if( pExpr->flags & EP_Generic ) return 0;
   op = pExpr->op;
   if( op==TK_SELECT ){
     assert( pExpr->flags&EP_xIsSelect );

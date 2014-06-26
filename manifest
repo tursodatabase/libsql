@@ -1,5 +1,5 @@
-C Fix\sshowstat4.c\sso\sthat\sit\sdecodes\stypecodes\s8\sand\s9\scorrectly.
-D 2014-06-24T20:19:21.030
+C Revise\sthe\saffinity\sreturned\sfor\sexpressions\sflagged\sas\s'generic'.\s\sFix\sfor\s[9a8b09f8e6].
+D 2014-06-26T21:28:21.292
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
+F src/expr.c 40d06d1543b1355aa02efa9666178f7642a96ed6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a549cff9fe8b736cdae21650ea0af6de29b77619
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -904,6 +904,7 @@ F test/tkt-868145d012.test a5f941107ece6a64410ca4755c6329b7eb57a356
 F test/tkt-8c63ff0ec.test 258b7fc8d7e4e1cb5362c7d65c143528b9c4cbed
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test f738c57c7f68ab8be1c054415af7774617cb6223
+F test/tkt-9a8b09f8e6.test 8b81b1fa5193246dbf5fe876929f71c3712ee755
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-9f2eb3abac.test 85bc63e749f050e6a61c8f9207f1eee65c9d3395
 F test/tkt-a7b7803e.test 159ef554234fa1f9fb318c751b284bd1cf858da4
@@ -1180,7 +1181,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b4d9f6053d1d95fdc1eab8ce610b51e7df8d896d
-R 508dd98757238bd14305734cabeeae37
-U drh
-Z 96b01d8567714808bc64d5917b4d4853
+P 9ca737c0b41f87998d842e7772c3e483bb291c50
+R 4121a5e953ac74e556013274c6ab2f95
+U mistachkin
+Z 9298eeb693f0be09657ca6e474114119
