@@ -461,8 +461,9 @@ static int fts5ParseTokenize(
 
   pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
   pTerm->bPrefix = 0;
-  
+  pTerm->pIter = 0;
   pTerm->zTerm = fts5Strdup(pToken, nToken);
+
   return pTerm->zTerm ? SQLITE_OK : SQLITE_NOMEM;
 }
 

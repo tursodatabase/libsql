@@ -59,6 +59,7 @@ do_execsql_test 1.6 {
 reset_db
 do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE t1 USING fts5(x);
+  INSERT INTO t1(t1) VALUES('pgsz=32');
   INSERT INTO t1 VALUES('one');
   INSERT INTO t1 VALUES('two');
   INSERT INTO t1 VALUES('three');
@@ -72,6 +73,32 @@ do_execsql_test 2.3 { SELECT rowid, * FROM t1 WHERE t1 MATCH 'two' } {2 two}
 do_execsql_test 2.4 { SELECT rowid, * FROM t1 WHERE t1 MATCH 'three' } {3 three}
 do_execsql_test 2.5 { SELECT rowid, * FROM t1 WHERE t1 MATCH 'one' } {1 one}
 
+do_execsql_test 2.6 {
+  INSERT INTO t1 VALUES('a b c d e f g');
+  INSERT INTO t1 VALUES('b d e a a a i');
+  INSERT INTO t1 VALUES('x y z b c c c');
+}
 
+foreach {tn expr res} {
+  1  a    {5 4}
+  2  b    {6 5 4}
+  3  c    {6 4}
+  4  d    {5 4}
+  5  e    {5 4}
+  6  f    {4}
+  7  g    {4}
+  8  x    {6}
+  9  y    {6}
+  10 z    {6}
+} {
+  do_execsql_test 2.7.$tn { SELECT rowid FROM t1 WHERE t1 MATCH $expr } $res
+}
+
+#db eval {
+#  SELECT fts5_decode(rowid, block) AS t FROM t1_data;
+#} {
+#  puts $t
+#}
 
 finish_test
+

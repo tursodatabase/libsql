@@ -1097,8 +1097,8 @@ static void fts5SegIterNextPage(
 ){
   Fts5StructureSegment *pSeg = pIter->pSeg;
   if( pIter->pLeaf ) fts5DataRelease(pIter->pLeaf);
-  if( pIter->iLeafPgno<pSeg->pgnoLast ){
-    pIter->iLeafPgno++;
+  pIter->iLeafPgno++;
+  if( pIter->iLeafPgno<=pSeg->pgnoLast ){
     pIter->pLeaf = fts5DataRead(p, 
         FTS5_SEGMENT_ROWID(pIter->iIdx, pSeg->iSegid, 0, pIter->iLeafPgno)
     );
@@ -1196,11 +1196,13 @@ static void fts5SegIterSeekInit(
 
     iPg = node.iChild;
     for(fts5NodeIterNext(&p->rc, &node);
-        node.aData && fts5BufferCompareBlob(&node.term, pTerm, nTerm)>=0;
+        node.aData && fts5BufferCompareBlob(&node.term, pTerm, nTerm)<=0;
         fts5NodeIterNext(&p->rc, &node)
     ){
       iPg = node.iChild;
     }
+    fts5NodeIterFree(&node);
+    fts5DataRelease(pNode);
   }
 
   if( iPg>=pSeg->pgnoFirst ){
@@ -1215,12 +1217,25 @@ static void fts5SegIterSeekInit(
       fts5SegIterLoadTerm(p, pIter, 0);
 
       while( (res = fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)) ){
-        if( res<0 ){
-          /* Search for the end of the position list within the current page. */
+        if( res<0 && pIter->iLeafPgno==iPg ){
+          /* Search for the end of the current doclist within the current
+          ** page. The end of a doclist is marked by a pair of successive
+          ** 0x00 bytes.  */
           int iOff;
-          for(iOff=pIter->iLeafOffset; iOff<n && a[iOff]; iOff++);
-          pIter->iLeafOffset = iOff+1;
-          if( iOff<n ) continue;
+          for(iOff=pIter->iLeafOffset+1; iOff<n; iOff++){
+            if( a[iOff]==0 && a[iOff-1]==0 ) break;
+          }
+          iOff++;
+
+          /* If the iterator is not yet at the end of the next page, load
+          ** the next term and jump to the next iteration of the while()
+          ** loop.  */
+          if( iOff<n ){
+            int nKeep;
+            pIter->iLeafOffset = iOff + getVarint32(&a[iOff], nKeep);
+            fts5SegIterLoadTerm(p, pIter, nKeep);
+            continue;
+          }
         }
 
         /* No matching term on this page. Set the iterator to EOF. */
