@@ -1,5 +1,5 @@
-C Revise\sthe\saffinity\sreturned\sfor\sexpressions\sflagged\sas\s'generic'.\s\sFix\sfor\s[9a8b09f8e6].
-D 2014-06-26T21:28:21.292
+C Add\ssome\smore\sIN\soperator\stests.
+D 2014-06-26T22:17:21.764
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -904,7 +904,7 @@ F test/tkt-868145d012.test a5f941107ece6a64410ca4755c6329b7eb57a356
 F test/tkt-8c63ff0ec.test 258b7fc8d7e4e1cb5362c7d65c143528b9c4cbed
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test f738c57c7f68ab8be1c054415af7774617cb6223
-F test/tkt-9a8b09f8e6.test 8b81b1fa5193246dbf5fe876929f71c3712ee755
+F test/tkt-9a8b09f8e6.test b2ef151d0984b2ebf237760dbeaa50724e5a0667
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-9f2eb3abac.test 85bc63e749f050e6a61c8f9207f1eee65c9d3395
 F test/tkt-a7b7803e.test 159ef554234fa1f9fb318c751b284bd1cf858da4
@@ -1181,7 +1181,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9ca737c0b41f87998d842e7772c3e483bb291c50
-R 4121a5e953ac74e556013274c6ab2f95
+P 92f7ad43dbfe4e02490df2f932c3c74fb89064d6
+R 61cea95999002249f7da20d93ec0602d
 U mistachkin
-Z 9298eeb693f0be09657ca6e474114119
+Z 2021f223ccdab7be5b0b3bf69eadf881

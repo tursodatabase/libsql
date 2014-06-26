@@ -46,6 +46,16 @@ do_test 1.4 {
   }
 } {}
 
+do_test 1.5 {
+  execsql {
+    CREATE TABLE t5(x, y);
+    INSERT INTO t5 VALUES('1', 'one');
+    INSERT INTO t5 VALUES(1, 'two');
+    INSERT INTO t5 VALUES('1.0', 'three');
+    INSERT INTO t5 VALUES(1.0, 'four');
+  }
+} {}
+
 do_test 2.1 {
   execsql {
     SELECT x FROM t1 WHERE x IN (1);
@@ -261,5 +271,53 @@ do_test 5.12 {
     SELECT x FROM t4 WHERE '1.11' IN (x);
   }
 } {}
+
+do_test 6.1 {
+  execsql {
+    SELECT x, y FROM t5 WHERE x IN (1);
+  }
+} {1 two 1.0 four}
+
+do_test 6.2 {
+  execsql {
+    SELECT x, y FROM t5 WHERE x IN (1.0);
+  }
+} {1 two 1.0 four}
+
+do_test 6.3 {
+  execsql {
+    SELECT x, y FROM t5 WHERE x IN ('1');
+  }
+} {1 one}
+
+do_test 6.4 {
+  execsql {
+    SELECT x, y FROM t5 WHERE x IN ('1.0');
+  }
+} {1.0 three}
+
+do_test 6.5 {
+  execsql {
+    SELECT x, y FROM t5 WHERE 1 IN (x);
+  }
+} {1 two 1.0 four}
+
+do_test 6.6 {
+  execsql {
+    SELECT x, y FROM t5 WHERE 1.0 IN (x);
+  }
+} {1 two 1.0 four}
+
+do_test 6.7 {
+  execsql {
+    SELECT x, y FROM t5 WHERE '1' IN (x);
+  }
+} {1 one}
+
+do_test 6.8 {
+  execsql {
+    SELECT x, y FROM t5 WHERE '1.0' IN (x);
+  }
+} {1.0 three}
 
 finish_test
