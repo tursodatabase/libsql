@@ -1999,6 +1999,7 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
   return nRet;
 }
 
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 /* 
 ** This function is called to estimate the number of rows visited by a
 ** range-scan on a skip-scan index. For example:
@@ -2091,6 +2092,7 @@ static int whereRangeSkipScanEst(
 
   return rc;
 }
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
 
 /*
 ** This function is used to estimate the number of rows that will be visited
