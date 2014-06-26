@@ -1152,6 +1152,50 @@ void sqlite3AnalyzeFunctions(void){
   }
 }
 
+static int stat4ValueFromExpr(
+  Parse *pParse,                  /* Parse context */
+  Expr *pExpr,                    /* The expression to extract a value from */
+  u8 affinity,                    /* Affinity to use */
+  struct ValueNewStat4Ctx *pAlloc,/* How to allocate space */
+  sqlite3_value **ppVal           /* OUT: New value object (or NULL) */
+){
+  int rc = SQLITE_OK;
+  sqlite3_value *pVal = 0;
+  sqlite3 *db = pParse->db;
+
+  /* Skip over any TK_COLLATE nodes */
+  pExpr = sqlite3ExprSkipCollate(pExpr);
+
+  if( !pExpr ){
+    pVal = valueNew(db, pAlloc);
+    if( pVal ){
+      sqlite3VdbeMemSetNull((Mem*)pVal);
+    }
+  }else if( pExpr->op==TK_VARIABLE
+        || NEVER(pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
+  ){
+    Vdbe *v;
+    int iBindVar = pExpr->iColumn;
+    sqlite3VdbeSetVarmask(pParse->pVdbe, iBindVar);
+    if( (v = pParse->pReprepare)!=0 ){
+      pVal = valueNew(db, pAlloc);
+      if( pVal ){
+        rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iBindVar-1]);
+        if( rc==SQLITE_OK ){
+          sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
+        }
+        pVal->db = pParse->db;
+      }
+    }
+  }else{
+    rc = valueFromExpr(db, pExpr, ENC(db), affinity, &pVal, pAlloc);
+  }
+
+  assert( pVal==0 || pVal->db==db );
+  *ppVal = pVal;
+  return rc;
+}
+
 /*
 ** This function is used to allocate and populate UnpackedRecord 
 ** structures intended to be compared against sample index keys stored 
@@ -1191,47 +1235,76 @@ int sqlite3Stat4ProbeSetValue(
   int iVal,                       /* Array element to populate */
   int *pbOk                       /* OUT: True if value was extracted */
 ){
-  int rc = SQLITE_OK;
+  int rc;
   sqlite3_value *pVal = 0;
-  sqlite3 *db = pParse->db;
-
-
   struct ValueNewStat4Ctx alloc;
+
   alloc.pParse = pParse;
   alloc.pIdx = pIdx;
   alloc.ppRec = ppRec;
   alloc.iVal = iVal;
 
-  /* Skip over any TK_COLLATE nodes */
-  pExpr = sqlite3ExprSkipCollate(pExpr);
-
-  if( !pExpr ){
-    pVal = valueNew(db, &alloc);
-    if( pVal ){
-      sqlite3VdbeMemSetNull((Mem*)pVal);
-    }
-  }else if( pExpr->op==TK_VARIABLE
-        || NEVER(pExpr->op==TK_REGISTER && pExpr->op2==TK_VARIABLE)
-  ){
-    Vdbe *v;
-    int iBindVar = pExpr->iColumn;
-    sqlite3VdbeSetVarmask(pParse->pVdbe, iBindVar);
-    if( (v = pParse->pReprepare)!=0 ){
-      pVal = valueNew(db, &alloc);
-      if( pVal ){
-        rc = sqlite3VdbeMemCopy((Mem*)pVal, &v->aVar[iBindVar-1]);
-        if( rc==SQLITE_OK ){
-          sqlite3ValueApplyAffinity(pVal, affinity, ENC(db));
-        }
-        pVal->db = pParse->db;
-      }
-    }
-  }else{
-    rc = valueFromExpr(db, pExpr, ENC(db), affinity, &pVal, &alloc);
-  }
+  rc = stat4ValueFromExpr(pParse, pExpr, affinity, &alloc, &pVal);
+  assert( pVal==0 || pVal->db==pParse->db );
   *pbOk = (pVal!=0);
+  return rc;
+}
 
-  assert( pVal==0 || pVal->db==db );
+/*
+** Attempt to extract a value from expression pExpr using the methods
+** as described for sqlite3Stat4ProbeSetValue() above. 
+**
+** If successful, set *ppVal to point to a new value object and return 
+** SQLITE_OK. If no value can be extracted, but no other error occurs
+** (e.g. OOM), return SQLITE_OK and set *ppVal to NULL. Or, if an error
+** does occur, return an SQLite error code. The final value of *ppVal
+** is undefined in this case.
+*/
+int sqlite3Stat4ValueFromExpr(
+  Parse *pParse,                  /* Parse context */
+  Expr *pExpr,                    /* The expression to extract a value from */
+  u8 affinity,                    /* Affinity to use */
+  sqlite3_value **ppVal           /* OUT: New value object (or NULL) */
+){
+  return stat4ValueFromExpr(pParse, pExpr, affinity, 0, ppVal);
+}
+
+int sqlite3Stat4Column(
+  sqlite3 *db,                    /* Database handle */
+  const void *pRec,               /* Pointer to buffer containing record */
+  int nRec,                       /* Size of buffer pRec in bytes */
+  int iCol,                       /* Column to extract */
+  sqlite3_value **ppVal           /* OUT: Extracted value */
+){
+  int rc = SQLITE_OK;
+  Mem *pMem = *ppVal;
+  if( pMem==0 ){
+    pMem = (Mem*)sqlite3ValueNew(db);
+    if( pMem==0 ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    u32 t;
+    int nHdr;
+    int iHdr;
+    int iField;
+    int i;
+    u8 *a = (u8*)pRec;
+
+    iHdr = getVarint32(a, nHdr);
+    iField = nHdr;
+    for(i=0; i<iCol; i++){
+      iHdr = getVarint32(&a[iHdr], t);
+      iField += sqlite3VdbeSerialTypeLen(t);
+    }
+
+    iHdr = getVarint32(&a[iHdr], t);
+    sqlite3VdbeSerialGet(&a[iField], t, pMem);
+  }
+
+  *ppVal = pMem;
   return rc;
 }
 
