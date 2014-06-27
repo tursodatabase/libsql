@@ -1,0 +1,95 @@
+# 2013-11-13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests of the "skip-scan" query strategy. In 
+# particular it tests that stat4 data can be used by a range query
+# that uses the skip-scan approach.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix skipscan5
+
+ifcapable !stat4 {
+  finish_test
+  return
+}
+
+do_execsql_test 1.1 {
+  CREATE TABLE t1(a INT, b INT, c INT);
+  CREATE INDEX i1 ON t1(a, b);
+} {}
+
+expr srand(4)
+do_test 1.2 {
+  for {set i 0} {$i < 100} {incr i} {
+    set a [expr int(rand()*4.0) + 1]
+    set b [expr int(rand()*20.0) + 1]
+    execsql { INSERT INTO t1 VALUES($a, $b, NULL) }
+  }
+  execsql ANALYZE
+} {}
+
+do_eqp_test 1.3 {
+  SELECT * FROM t1 WHERE b = 5;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (ANY(a) AND b=?)}
+}
+
+do_eqp_test 1.4 {
+  SELECT * FROM t1 WHERE b > 12 AND b < 16;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (ANY(a) AND b>? AND b<?)}
+}
+
+do_eqp_test 1.5 {
+  SELECT * FROM t1 WHERE b > 2 AND b < 16;
+} {
+  0 0 0 {SCAN TABLE t1}
+}
+
+do_eqp_test 1.6 {
+  SELECT * FROM t1 WHERE b > 18 AND b < 25;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (ANY(a) AND b>? AND b<?)}
+}
+
+do_eqp_test 1.7 {
+  SELECT * FROM t1 WHERE b > 18 AND b < 25;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (ANY(a) AND b>? AND b<?)}
+}
+
+do_eqp_test 1.8 {
+  SELECT * FROM t1 WHERE b > 15;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (ANY(a) AND b>?)}
+}
+
+do_eqp_test 1.9 {
+  SELECT * FROM t1 WHERE b > 5;
+} {
+  0 0 0 {SCAN TABLE t1}
+}
+
+do_eqp_test 1.10 {
+  SELECT * FROM t1 WHERE b < 5;
+} {
+  0 0 0 {SEARCH TABLE t1 USING INDEX i1 (ANY(a) AND b<?)}
+}
+
+do_eqp_test 1.11 {
+  SELECT * FROM t1 WHERE b < 15;
+} {
+  0 0 0 {SCAN TABLE t1}
+}
+
+finish_test

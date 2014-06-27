@@ -1296,7 +1296,7 @@ int sqlite3Stat4Column(
     iHdr = getVarint32(a, nHdr);
     iField = nHdr;
     for(i=0; i<iCol; i++){
-      iHdr = getVarint32(&a[iHdr], t);
+      iHdr += getVarint32(&a[iHdr], t);
       iField += sqlite3VdbeSerialTypeLen(t);
     }
 
