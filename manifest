@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sproblems\sin\sestimating\sthe\snumber\sof\srows\svisited\sby\sa\srange\squery\sthat\suses\sa\sskip-scan.
-D 2014-06-27T20:14:25.215
+C Merge\sfixes\sfrom\strunk\swith\sthis\sbranch.
+D 2014-06-28T14:25:32.570
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c 4f9e497c66e2f25a4d139357a778c84d5713207c
+F src/expr.c 40d06d1543b1355aa02efa9666178f7642a96ed6
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a549cff9fe8b736cdae21650ea0af6de29b77619
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -905,6 +905,7 @@ F test/tkt-868145d012.test a5f941107ece6a64410ca4755c6329b7eb57a356
 F test/tkt-8c63ff0ec.test 258b7fc8d7e4e1cb5362c7d65c143528b9c4cbed
 F test/tkt-91e2e8ba6f.test 08c4f94ae07696b05c9b822da0b4e5337a2f54c5
 F test/tkt-94c04eaadb.test f738c57c7f68ab8be1c054415af7774617cb6223
+F test/tkt-9a8b09f8e6.test b2ef151d0984b2ebf237760dbeaa50724e5a0667
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-9f2eb3abac.test 85bc63e749f050e6a61c8f9207f1eee65c9d3395
 F test/tkt-a7b7803e.test 159ef554234fa1f9fb318c751b284bd1cf858da4
@@ -1181,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 74a5454a710e1b7d8575cec2f872e6110aefce17
-R 02edb14d4ef805eea40e69e5acdf39b7
+P 219736f54dcd1448af3400e699f1c20755ac6876 fb32e374b75b160e7b535e732ced6c34dbb513eb
+R 638c04374a356a745d9c2d2f0fa602ad
 U dan
-Z bd7cb892a5b1d67344c0bf9079bc8afa
+Z fc19d5103e4b8e0f744c9b3dd9fc467e
