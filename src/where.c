@@ -2091,7 +2091,7 @@ static int whereRangeSkipScanEst(
       pLoop->nOut -= nAdjust;
       *pbDone = 1;
       WHERETRACE(0x10, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
-                           (u32)nLower, (u32)nUpper, nAdjust*-1, pLoop->nOut));
+                           nLower, nUpper, nAdjust*-1, pLoop->nOut));
     }
 
   }else{

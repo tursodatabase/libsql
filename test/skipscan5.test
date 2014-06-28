@@ -92,4 +92,60 @@ do_eqp_test 1.11 {
   0 0 0 {SCAN TABLE t1}
 }
 
+#-------------------------------------------------------------------------
+# Test that range-query/skip-scan estimation works with text values.
+# And on UTF-16 databases when there is no UTF-16 collation sequence
+# available.
+
+proc test_collate {enc lhs rhs} {
+  string compare $lhs $rhs
+}
+
+foreach {tn dbenc coll} {
+  1 UTF-8   { add_test_collate db 0 0 1 }
+  2 UTF-16  { add_test_collate db 1 0 0 }
+  3 UTF-8   { add_test_collate db 0 1 0 }
+} {
+  reset_db
+  eval $coll
+
+  do_execsql_test 2.$tn.1 " PRAGMA encoding = '$dbenc' "
+  do_execsql_test 2.$tn.2 {
+    CREATE TABLE t2(a TEXT, b TEXT, c TEXT COLLATE test_collate, d TEXT);
+    CREATE INDEX i2 ON t2(a, b, c);
+  }
+
+  set vocab(d) { :) }
+  set vocab(c) { a b c d e f g h i j k l m n o p q r s t }
+  set vocab(b) { one two three }
+  set vocab(a) { sql }
+
+  do_test 2.$tn.3 {
+    for {set i 0} {$i < 100} {incr i} {
+      foreach var {a b c d} { 
+        set $var [lindex $vocab($var) [expr $i % [llength $vocab($var)]]]
+      }
+      execsql { INSERT INTO t2 VALUES($a, $b, $c, $d) }
+    }
+    execsql ANALYZE
+  } {}
+
+  foreach {tn2 q res} {
+    1 { c BETWEEN 'd' AND 'e' }       {/*ANY(a) AND ANY(b) AND c>? AND c<?*/}
+    2 { c BETWEEN 'b' AND 'r' }       {/*SCAN TABLE t2*/}
+    3 { c > 'q' }                     {/*ANY(a) AND ANY(b) AND c>?*/}
+    4 { c > 'e' }                     {/*SCAN TABLE t2*/}
+    5 { c < 'q' }                     {/*SCAN TABLE t2*/}
+    4 { c < 'e' }                     {/*ANY(a) AND ANY(b) AND c<?*/}
+  } {
+    set sql "EXPLAIN QUERY PLAN SELECT * FROM t2 WHERE $q" 
+    do_execsql_test 2.$tn.$tn2 $sql $res
+  }
+
+}
+
 finish_test
+
+
+
+

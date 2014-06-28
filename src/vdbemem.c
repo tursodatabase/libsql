@@ -1301,6 +1301,7 @@ int sqlite3Stat4Column(
     }
 
     iHdr = getVarint32(&a[iHdr], t);
+    pMem->enc = ENC(db);
     sqlite3VdbeSerialGet(&a[iField], t, pMem);
   }
 
