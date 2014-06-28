@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sto\sskipscan5.test.
-D 2014-06-28T17:35:15.306
+C Add\san\sOOM\sfault\sinjection\stest\sfor\sthe\snew\scode\son\sthis\sbranch.
+D 2014-06-28T19:06:49.846
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -287,7 +287,7 @@ F src/vdbe.c 9bfe6becfc094382ae213656fbe511055ad83a54
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h 5df5e9afe9b7839cd17256220fc4f7af84b8b1cd
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c e493f38758c4b8f4ca2007cf6a700bd405d192f3
+F src/vdbeaux.c 8ce7dcdbb8c59e5c2194518ce3099b254ae94c15
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c d90a1e8acf8b63dc9d14cbbea12bfec6cec31394
 F src/vdbesort.c 44441d73b08b3a638dcdb725afffb87c6574ad27
@@ -693,7 +693,7 @@ F test/mallocG.test 0ff91b65c50bdaba680fb75d87fe4ad35bb7934f
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
-F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
+F test/mallocK.test 3cff7c0f64735f6883bacdd294e45a6ed5714817
 F test/malloc_common.tcl 58e54229c4132ef882a11fab6419ec4cd3073589
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ef5cdf949bb53a2958fa34e176b4b9eeda269de5
-R f17ac3e5a608781f5afc70c3d4b0020c
+P 4b8230e8fe93e73a615a46708aed5fa3557b6228
+R 626c4988935b78bcb3d2f8f34291bc5b
 U dan
-Z 86f494cb467655f573b06b5ade5b9c90
+Z 19d12a554b06297187fc9a292703f2d4
