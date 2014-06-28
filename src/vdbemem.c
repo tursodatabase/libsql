@@ -1152,11 +1152,29 @@ void sqlite3AnalyzeFunctions(void){
   }
 }
 
+/*
+** Attempt to extract a value from pExpr and use it to construct *ppVal.
+**
+** If pAlloc is not NULL, then an UnpackedRecord object is created for
+** pAlloc if one does not exist and the new value is added to the
+** UnpackedRecord object.
+**
+** A value is extracted in the following cases:
+**
+**  * (pExpr==0). In this case the value is assumed to be an SQL NULL,
+**
+**  * The expression is a bound variable, and this is a reprepare, or
+**
+**  * The expression is a literal value.
+**
+** On success, *ppVal is made to point to the extracted value.  The caller
+** is responsible for ensuring that the value is eventually freed.
+*/
 static int stat4ValueFromExpr(
   Parse *pParse,                  /* Parse context */
   Expr *pExpr,                    /* The expression to extract a value from */
   u8 affinity,                    /* Affinity to use */
-  struct ValueNewStat4Ctx *pAlloc,/* How to allocate space */
+  struct ValueNewStat4Ctx *pAlloc,/* How to allocate space.  Or NULL */
   sqlite3_value **ppVal           /* OUT: New value object (or NULL) */
 ){
   int rc = SQLITE_OK;
@@ -1269,6 +1287,14 @@ int sqlite3Stat4ValueFromExpr(
   return stat4ValueFromExpr(pParse, pExpr, affinity, 0, ppVal);
 }
 
+/*
+** Extract the iCol-th column from the nRec-byte record in pRec.  Write
+** the column value into *ppVal.  If *ppVal is initially NULL then a new
+** sqlite3_value object is allocated.
+**
+** If *ppVal is initially NULL then the caller is responsible for 
+** ensuring that the value written into *ppVal is eventually freed.
+*/
 int sqlite3Stat4Column(
   sqlite3 *db,                    /* Database handle */
   const void *pRec,               /* Pointer to buffer containing record */
@@ -1276,37 +1302,37 @@ int sqlite3Stat4Column(
   int iCol,                       /* Column to extract */
   sqlite3_value **ppVal           /* OUT: Extracted value */
 ){
-  int rc = SQLITE_OK;
-  Mem *pMem = *ppVal;
+  u32 t;                          /* a column type code */
+  int nHdr;                       /* Size of the header in the record */
+  int iHdr;                       /* Next unread header byte */
+  int iField;                     /* Next unread data byte */
+  int szField;                    /* Size of the current data field */
+  int i;                          /* Column index */
+  u8 *a = (u8*)pRec;              /* Typecast byte array */
+  Mem *pMem = *ppVal;             /* Write result into this Mem object */
+
+  assert( iCol>0 );
+  iHdr = getVarint32(a, nHdr);
+  if( nHdr>nRec || iHdr>=nHdr ) return SQLITE_CORRUPT_BKPT;
+  iField = nHdr;
+  for(i=0; i<=iCol; i++){
+    iHdr += getVarint32(&a[iHdr], t);
+    testcase( iHdr==nHdr );
+    testcase( iHdr==nHdr+1 );
+    if( iHdr>nHdr ) return SQLITE_CORRUPT_BKPT;
+    szField = sqlite3VdbeSerialTypeLen(t);
+    iField += szField;
+  }
+  testcase( iField==nRec );
+  testcase( iField==nRec+1 );
+  if( iField>nRec ) return SQLITE_CORRUPT_BKPT;
   if( pMem==0 ){
-    pMem = (Mem*)sqlite3ValueNew(db);
-    if( pMem==0 ){
-      rc = SQLITE_NOMEM;
-    }
+    pMem = *ppVal = sqlite3ValueNew(db);
+    if( pMem==0 ) return SQLITE_NOMEM;
   }
-
-  if( rc==SQLITE_OK ){
-    u32 t;
-    int nHdr;
-    int iHdr;
-    int iField;
-    int i;
-    u8 *a = (u8*)pRec;
-
-    iHdr = getVarint32(a, nHdr);
-    iField = nHdr;
-    for(i=0; i<iCol; i++){
-      iHdr += getVarint32(&a[iHdr], t);
-      iField += sqlite3VdbeSerialTypeLen(t);
-    }
-
-    iHdr = getVarint32(&a[iHdr], t);
-    pMem->enc = ENC(db);
-    sqlite3VdbeSerialGet(&a[iField], t, pMem);
-  }
-
-  *ppVal = pMem;
-  return rc;
+  sqlite3VdbeSerialGet(&a[iField-szField], t, pMem);
+  pMem->enc = ENC(db);
+  return SQLITE_OK;
 }
 
 /*
