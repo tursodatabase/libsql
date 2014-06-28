@@ -18,7 +18,6 @@
 */
 #include "sqliteInt.h"
 #include "whereInt.h"
-#include "vdbeInt.h"
 
 /*
 ** Return the estimated number of output rows from a WHERE clause
