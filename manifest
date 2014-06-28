@@ -1,5 +1,5 @@
-C Add\sheader\scomments\son\snew\sroutines.\s\sRework\sthe\ssqlite3Stat4Column()\sroutine\nso\sthat\sis\s(in\stheory)\sable\sto\sdeal\swith\scorrupt\ssamples.
-D 2014-06-28T16:06:44.822
+C Add\sfurther\stests\sto\sskipscan5.test.
+D 2014-06-28T17:35:15.306
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -829,7 +829,7 @@ F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test 28c7faa41a0d7265040ecb0a0abd90c0904270b2
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
-F test/skipscan5.test 4b83d803bb17bf922569ce8c3637d0558d6abc83
+F test/skipscan5.test d8b9692b702745a0e41c23f9da6beac81df01196
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dfb09db6d412f3bc2a71bda393813783580dbad1
-R a461409aefe23981a1fbdd4418e17b64
-U drh
-Z a2fad482dc40a73ef09e3690c963a5aa
+P ef5cdf949bb53a2958fa34e176b4b9eeda269de5
+R f17ac3e5a608781f5afc70c3d4b0020c
+U dan
+Z 86f494cb467655f573b06b5ade5b9c90
