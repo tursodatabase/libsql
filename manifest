@@ -1,5 +1,5 @@
-C Fix\swhere.c\sso\sthat\sthe\sprimary\skey\svalues\sappended\sto\severy\sindex\sentry\son\sa\sWITHOUT\sROWID\stable\smay\sbe\sused\swhen\suseful.
-D 2014-06-30T15:23:57.908
+C Fix\sthe\sSTAT4\sinformation\sfor\sWITHOUT\sROWID\stables.
+D 2014-06-30T17:07:39.466
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c b00900877f766f116f9e16116f1ccacdc21d82f1
-F src/analyze.c 0f9ee2f88f7c564cedb16f8e0236f2d5ac8429aa
+F src/analyze.c ec6e0691a6a23e0239dc733109b906ee04b89cc3
 F src/attach.c 3801129015ef59d76bf23c95ef9b0069d18a0c52
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
@@ -1181,7 +1181,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de826c31589258f0906f87d65796944103e36d5b
-R 8442f880f57a242b77225992393b657c
-U dan
-Z 6c9f8a4d0a3c007f8c2ac1857a8d9913
+P 6624a61d16e47ad691c4195ca8a1d68b7348118d
+R 54d510c828cc71c8f4dcbc102dfc2a66
+U drh
+Z 6aa7249d11aa6d73980f37e6212dc38c
