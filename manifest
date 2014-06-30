@@ -1,9 +1,9 @@
-C Add\ssome\smore\sIN\soperator\stests.
-D 2014-06-26T22:17:21.764
+C Add\smakefile\stargets\sfor\svarious\sdiagnostic\stools,\ssuch\sas\sshowstat4.\nFix\sharmless\scompiler\swarnings\sin\sdiagnostic\stools.
+D 2014-06-30T11:14:26.241
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
+F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc b2d3ac211b479fa5a6c9aaf3b9c49fdea900d228
+F Makefile.msc ad60c4d8be35f98fdcca614088b84a91612b2b4c
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
@@ -146,7 +146,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 7b1d0be0840f213405c977c87917241158126a33
+F main.mk 7850d834ca7f3c772e2b0087631868d5bfdeabb9
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1159,8 +1159,8 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c b018a8a69d07050fc0fe9afcf17313cdef0cc599
-F tool/showjournal.c b62cecaab86a4053d944c276bb5232e4d17ece02
+F tool/showdb.c 213e0288501b2cf67c1b2c72a9e5b8acda4738b3
+F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showstat4.c c39279d6bd37cb999b634f0064f6f86ad7af008f
 F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
@@ -1181,7 +1181,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 92f7ad43dbfe4e02490df2f932c3c74fb89064d6
-R 61cea95999002249f7da20d93ec0602d
-U mistachkin
-Z 2021f223ccdab7be5b0b3bf69eadf881
+P fb32e374b75b160e7b535e732ced6c34dbb513eb
+R 46fc4bdeeae8d59d2e02be8ec2b2e5ac
+U drh
+Z cf9f7f35abbae67619fbb464751389eb

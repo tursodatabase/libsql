@@ -66,7 +66,7 @@ static unsigned char *getContent(int ofst, int nByte){
   if( aData==0 ) out_of_memory();
   memset(aData, 0, nByte+32);
   lseek(db, ofst, SEEK_SET);
-  read(db, aData, nByte);
+  if( read(db, aData, nByte)<nByte ) memset(aData, 0, nByte);
   return aData;
 }
 
@@ -973,7 +973,7 @@ int main(int argc, char **argv){
   zPgSz[0] = 0;
   zPgSz[1] = 0;
   lseek(db, 16, SEEK_SET);
-  read(db, zPgSz, 2);
+  if( read(db, zPgSz, 2)<2 ) memset(zPgSz, 0, 2);
   pagesize = zPgSz[0]*256 + zPgSz[1]*65536;
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
