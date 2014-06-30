@@ -3602,7 +3602,10 @@ int sqlite3VdbeRecordCompare(
   /* rc==0 here means that one or both of the keys ran out of fields and
   ** all the fields up to that point were equal. Return the the default_rc
   ** value.  */
-  assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) );
+  assert( CORRUPT_DB 
+       || vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, pPKey2->default_rc) 
+       || pKeyInfo->db->mallocFailed
+  );
   return pPKey2->default_rc;
 }
 
@@ -3759,7 +3762,10 @@ static int vdbeRecordCompareString(
     }
   }
 
-  assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, res) );
+  assert( vdbeRecordCompareDebug(nKey1, pKey1, pPKey2, res)
+       || CORRUPT_DB
+       || pPKey2->pKeyInfo->db->mallocFailed
+  );
   return res;
 }
 

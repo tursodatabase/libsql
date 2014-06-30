@@ -445,10 +445,10 @@ static struct unix_syscall {
   { "mremap",       (sqlite3_syscall_ptr)0,               0 },
 #endif
 #define osMremap ((void*(*)(void*,size_t,size_t,int,...))aSyscall[23].pCurrent)
-#endif
-
   { "getpagesize",  (sqlite3_syscall_ptr)unixGetpagesize, 0 },
 #define osGetpagesize ((int(*)(void))aSyscall[24].pCurrent)
+
+#endif
 
 }; /* End of the overrideable system calls */
 
@@ -3964,8 +3964,25 @@ static int unixDeviceCharacteristics(sqlite3_file *id){
   return rc;
 }
 
-#ifndef SQLITE_OMIT_WAL
+#if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
 
+/*
+** Return the system page size.
+**
+** This function should not be called directly by other code in this file. 
+** Instead, it should be called via macro osGetpagesize().
+*/
+static int unixGetpagesize(void){
+#if defined(_BSD_SOURCE)
+  return getpagesize();
+#else
+  return (int)sysconf(_SC_PAGESIZE);
+#endif
+}
+
+#endif /* !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0 */
+
+#ifndef SQLITE_OMIT_WAL
 
 /*
 ** Object used to represent an shared memory buffer.  
@@ -4114,20 +4131,6 @@ static int unixShmSystemLock(
 #endif
 
   return rc;        
-}
-
-/*
-** Return the system page size.
-**
-** This function should not be called directly by other code in this file. 
-** Instead, it should be called via macro osGetpagesize().
-*/
-static int unixGetpagesize(void){
-#if defined(_BSD_SOURCE)
-  return getpagesize();
-#else
-  return (int)sysconf(_SC_PAGESIZE);
-#endif
 }
 
 /*

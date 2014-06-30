@@ -1583,6 +1583,7 @@ static char zHelp[] =
   ".exit                  Exit this program\n"
   ".explain ?on|off?      Turn output mode suitable for EXPLAIN on or off.\n"
   "                         With no args, it turns EXPLAIN on.\n"
+  ".fullschema            Show schema and the content of sqlite_stat tables\n"
   ".headers on|off        Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".import FILE TABLE     Import data from FILE into TABLE\n"
@@ -2410,6 +2411,44 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->showHeader = p->explainPrev.showHeader;
       memcpy(p->colWidth,p->explainPrev.colWidth,sizeof(p->colWidth));
     }
+  }else
+
+  if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
+    struct callback_data data;
+    char *zErrMsg = 0;
+    if( nArg!=1 ){
+      fprintf(stderr, "Usage: .fullschema\n");
+      rc = 1;
+      goto meta_command_exit;
+    }
+    open_db(p, 0);
+    memcpy(&data, p, sizeof(data));
+    data.showHeader = 0;
+    data.mode = MODE_Semi;
+    rc = sqlite3_exec(p->db,
+       "SELECT sql FROM"
+       "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
+       "     FROM sqlite_master UNION ALL"
+       "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
+       "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%'"
+       "ORDER BY rowid",
+       callback, &data, &zErrMsg
+    );
+    sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_master;'",
+                 callback, &data, &zErrMsg);
+    data.mode = MODE_Insert;
+    data.zDestTable = "sqlite_stat1";
+    shell_exec(p->db, "SELECT * FROM sqlite_stat1",
+               shell_callback, &data,&zErrMsg);
+    data.zDestTable = "sqlite_stat3";
+    shell_exec(p->db, "SELECT * FROM sqlite_stat3",
+               shell_callback, &data,&zErrMsg);
+    data.zDestTable = "sqlite_stat4";
+    shell_exec(p->db, "SELECT * FROM sqlite_stat4",
+               shell_callback, &data, &zErrMsg);
+    data.mode = MODE_Semi;
+    shell_exec(p->db, "SELECT 'ANALYZE sqlite_master;'",
+               shell_callback, &data, &zErrMsg);
   }else
 
   if( c=='h' && strncmp(azArg[0], "headers", n)==0 ){
