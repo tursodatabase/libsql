@@ -2201,7 +2201,7 @@ static int whereEqualScanEst(
   int bOk;
 
   assert( nEq>=1 );
-  assert( nEq<=(p->nKeyCol+1) );
+  assert( nEq<=p->nColumn );
   assert( p->aSample!=0 );
   assert( p->nSample>0 );
   assert( pBuilder->nRecValid<nEq );
@@ -2214,7 +2214,7 @@ static int whereEqualScanEst(
 
   /* This is an optimization only. The call to sqlite3Stat4ProbeSetValue()
   ** below would return the same value.  */
-  if( nEq>p->nKeyCol ){
+  if( nEq>=p->nColumn ){
     *pnRow = 1;
     return SQLITE_OK;
   }
