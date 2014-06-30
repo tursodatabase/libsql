@@ -1166,6 +1166,7 @@ static void analyzeOneTable(
       int regSampleRowid = regCol + nCol;
       int addrNext;
       int addrIsNull;
+      int nSampleCol;
       u8 seekOp = HasRowid(pTab) ? OP_NotExists : OP_NotFound;
 
       pParse->nMem = MAX(pParse->nMem, regCol+nCol+1);
@@ -1186,12 +1187,16 @@ static void analyzeOneTable(
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, 
                                       pIdx->aiColumn[0], regSample);
 #else
-      i = HasRowid(pTab) ? nCol-1 : pIdx->nColumn-1;
-      for(; i>=0; i--){
+      if( !HasRowid(pTab) && IsPrimaryKeyIndex(pIdx) ){
+        nSampleCol = pIdx->nKeyCol;
+      }else{
+        nSampleCol = pIdx->nColumn;
+      }
+      for(i=nSampleCol-1; i>=0; i--){
         i16 iCol = pIdx->aiColumn[i];
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regCol+i);
       }
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, pIdx->nColumn, regSample);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nSampleCol, regSample);
 #endif
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regTabname, 6, regTemp);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regNewRowid);

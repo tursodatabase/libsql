@@ -1,5 +1,5 @@
-C Generate\scomplete\ssamples\sfor\ssqlite_stat4\son\sWITHOUT\sROWID\stables.\nTicket\s[b2fa5424e6fcb15b5]
-D 2014-06-30T13:32:39.153
+C Omit\snon-primary-key\scolumns\sfrom\sthe\sSTAT4\ssamples\sfor\sWITHOUT\sROWID\stables.\nIndexes,\sboth\srowid\sand\swithout-rowid,\sstill\shold\san\sexact\scopy\nof\sthe\sindex\sentry.
+D 2014-06-30T13:56:34.968
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c b00900877f766f116f9e16116f1ccacdc21d82f1
-F src/analyze.c b53dddb5a1bc4c28877952cd9ea6943aea62215d
+F src/analyze.c 0f9ee2f88f7c564cedb16f8e0236f2d5ac8429aa
 F src/attach.c 3801129015ef59d76bf23c95ef9b0069d18a0c52
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
@@ -1181,10 +1181,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6f86d89b8800c50035da7809bff941d08a33a6a2
-R 63e5822670c3cf845c9d764a3e96a618
-T *branch * stat4-without-rowid
-T *sym-stat4-without-rowid *
-T -sym-trunk *
+P 8cb43eddab83c68b2163441df70e0e9496d5fa33
+R 76a8cf4e27cd1a26fe3722da49c987a3
 U drh
-Z 2446f0a421b05370ddd23634c032efe0
+Z d18fb0d5c10defb46f6f8aaff06ea5cb
