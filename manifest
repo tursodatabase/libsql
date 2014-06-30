@@ -1,5 +1,5 @@
-C Fix\sfor\sticket\s[b2fa5424e6fcb15]:\sBetter\sdefine\sthe\sformat\sof\sthe\ssqlite_stat4\nfile\sfor\sWITHOUT\sROWID\stables\sand\smake\ssure\sthe\sANALYZE\scommand\sgenerates\sa\nfile\sin\sthe\sappropriate\sformat.\s\sUse\sthe\ssqlite_stat4\sdata\sto\senable\sthe\suse\nof\sWHERE\sterms\sthat\scover\sall\sindexed\scolumns\splus\ssome\sprefix\sof\scolumns\nin\sthe\sprimary\skey.
-D 2014-06-30T18:57:53.330
+C Attempt\sto\suse\sSTAT4\sinformation\sto\sestimate\sthe\sselectivity\sof\sWHERE\sclause\nterms\swhen\susing\sthe\sskip-scan\soptimization.
+D 2014-06-30T19:07:58.197
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -227,7 +227,7 @@ F src/shell.c 56de2dfa3f25def4bf03098f7e2256fbb42f6e3c
 F src/sqlite.h.in a98eb3e8c86c934ea6f5bcfc6b69653dde2f4ed4
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h fccdc735c27b3dc12322fec7cdad8bc76be8d00b
+F src/sqliteInt.h e88614d7371b80ff69dbbb5e4b9813ee93dfd890
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -284,19 +284,19 @@ F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 049fe1d3c0e2209c1bee107aec2fcff6285f909f
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 9bfe6becfc094382ae213656fbe511055ad83a54
-F src/vdbe.h 394464909ed682334aa3d5831aae0c2fe2abef94
-F src/vdbeInt.h e6d83e5bfd62fc6685ba1ed6153f7099f82de9f7
+F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
+F src/vdbeInt.h 5df5e9afe9b7839cd17256220fc4f7af84b8b1cd
 F src/vdbeapi.c 0ed6053f947edd0b30f64ce5aeb811872a3450a4
-F src/vdbeaux.c e493f38758c4b8f4ca2007cf6a700bd405d192f3
+F src/vdbeaux.c 8ce7dcdbb8c59e5c2194518ce3099b254ae94c15
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
-F src/vdbemem.c 6fc77594c60f6155404f3f8d71bf36d1fdeb4447
+F src/vdbemem.c d90a1e8acf8b63dc9d14cbbea12bfec6cec31394
 F src/vdbesort.c 44441d73b08b3a638dcdb725afffb87c6574ad27
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 2bc0226fced128686c432748324351beb127829b
+F src/where.c 6ff6f7e3b272fad66eea601af489777adea3cc1f
 F src/whereInt.h 929c1349b5355fd44f22cee5c14d72b3329c58a6
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -693,7 +693,7 @@ F test/mallocG.test 0ff91b65c50bdaba680fb75d87fe4ad35bb7934f
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
-F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
+F test/mallocK.test 3cff7c0f64735f6883bacdd294e45a6ed5714817
 F test/malloc_common.tcl 58e54229c4132ef882a11fab6419ec4cd3073589
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
@@ -829,6 +829,7 @@ F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test 28c7faa41a0d7265040ecb0a0abd90c0904270b2
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
+F test/skipscan5.test d8b9692b702745a0e41c23f9da6beac81df01196
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
@@ -1181,8 +1182,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6f86d89b8800c50035da7809bff941d08a33a6a2 053a210e3169732c58f84cb54c9b6f6df3a8f4ea
-R 48fee5f306f007e5e5bc0779449b568d
-T +closed 053a210e3169732c58f84cb54c9b6f6df3a8f4ea
+P bc2de8095fa9c385db0adf22ca55b0298a33c284 c96de490ac77dd23c108004b95152cce4922fe27
+R 55c9ac9304448ee4805a54515b7a2134
+T +closed c96de490ac77dd23c108004b95152cce4922fe27
 U drh
-Z b0031b3eff85f5d5ff26a8a2fea67c94
+Z bab166b6f1bf8cfb185d9041a405176e
