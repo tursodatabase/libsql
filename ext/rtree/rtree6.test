@@ -92,7 +92,13 @@ do_eqp_test rtree6.2.3 {
   0 1 1 {SEARCH TABLE t2 USING INTEGER PRIMARY KEY (rowid=?)}
 }
 
-do_eqp_test rtree6.2.4 {
+do_eqp_test rtree6.2.4.1 {
+  SELECT * FROM t1,t2 WHERE v=+ii and x1<10 and x2>10
+} {
+  0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2:C0E1} 
+  0 1 1 {SEARCH TABLE t2 USING AUTOMATIC COVERING INDEX (v=?)}
+}
+do_eqp_test rtree6.2.4.2 {
   SELECT * FROM t1,t2 WHERE v=10 and x1<10 and x2>10
 } {
   0 0 0 {SCAN TABLE t1 VIRTUAL TABLE INDEX 2:C0E1} 

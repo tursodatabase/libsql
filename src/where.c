@@ -544,7 +544,7 @@ static WhereTerm *whereScanInit(
   if( pIdx && iColumn>=0 ){
     pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
     for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
-      if( NEVER(j>=pIdx->nKeyCol) ) return 0;
+      if( NEVER(j>pIdx->nColumn) ) return 0;
     }
     pScan->zCollName = pIdx->azColl[j];
   }else{
@@ -1494,8 +1494,7 @@ static int isDistinctRedundant(
 ** Estimate the logarithm of the input value to base 2.
 */
 static LogEst estLog(LogEst N){
-  LogEst x = sqlite3LogEst(N);
-  return x>33 ? x - 33 : 0;
+  return N<=10 ? 0 : sqlite3LogEst(N) - 33;
 }
 
 /*
@@ -1999,6 +1998,114 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
   return nRet;
 }
 
+#ifdef SQLITE_ENABLE_STAT3_OR_STAT4
+/* 
+** This function is called to estimate the number of rows visited by a
+** range-scan on a skip-scan index. For example:
+**
+**   CREATE INDEX i1 ON t1(a, b, c);
+**   SELECT * FROM t1 WHERE a=? AND c BETWEEN ? AND ?;
+**
+** Value pLoop->nOut is currently set to the estimated number of rows 
+** visited for scanning (a=? AND b=?). This function reduces that estimate 
+** by some factor to account for the (c BETWEEN ? AND ?) expression based
+** on the stat4 data for the index. this scan will be peformed multiple 
+** times (once for each (a,b) combination that matches a=?) is dealt with 
+** by the caller.
+**
+** It does this by scanning through all stat4 samples, comparing values
+** extracted from pLower and pUpper with the corresponding column in each
+** sample. If L and U are the number of samples found to be less than or
+** equal to the values extracted from pLower and pUpper respectively, and
+** N is the total number of samples, the pLoop->nOut value is adjusted
+** as follows:
+**
+**   nOut = nOut * ( min(U - L, 1) / N )
+**
+** If pLower is NULL, or a value cannot be extracted from the term, L is
+** set to zero. If pUpper is NULL, or a value cannot be extracted from it,
+** U is set to N.
+**
+** Normally, this function sets *pbDone to 1 before returning. However,
+** if no value can be extracted from either pLower or pUpper (and so the
+** estimate of the number of rows delivered remains unchanged), *pbDone
+** is left as is.
+**
+** If an error occurs, an SQLite error code is returned. Otherwise, 
+** SQLITE_OK.
+*/
+static int whereRangeSkipScanEst(
+  Parse *pParse,       /* Parsing & code generating context */
+  WhereTerm *pLower,   /* Lower bound on the range. ex: "x>123" Might be NULL */
+  WhereTerm *pUpper,   /* Upper bound on the range. ex: "x<455" Might be NULL */
+  WhereLoop *pLoop,    /* Update the .nOut value of this loop */
+  int *pbDone          /* Set to true if at least one expr. value extracted */
+){
+  Index *p = pLoop->u.btree.pIndex;
+  int nEq = pLoop->u.btree.nEq;
+  sqlite3 *db = pParse->db;
+  int nLower = -1;
+  int nUpper = p->nSample+1;
+  int rc = SQLITE_OK;
+  u8 aff = p->pTable->aCol[ p->aiColumn[nEq] ].affinity;
+  CollSeq *pColl;
+  
+  sqlite3_value *p1 = 0;          /* Value extracted from pLower */
+  sqlite3_value *p2 = 0;          /* Value extracted from pUpper */
+  sqlite3_value *pVal = 0;        /* Value extracted from record */
+
+  pColl = sqlite3LocateCollSeq(pParse, p->azColl[nEq]);
+  if( pLower ){
+    rc = sqlite3Stat4ValueFromExpr(pParse, pLower->pExpr->pRight, aff, &p1);
+    nLower = 0;
+  }
+  if( pUpper && rc==SQLITE_OK ){
+    rc = sqlite3Stat4ValueFromExpr(pParse, pUpper->pExpr->pRight, aff, &p2);
+    nUpper = p2 ? 0 : p->nSample;
+  }
+
+  if( p1 || p2 ){
+    int i;
+    int nDiff;
+    for(i=0; rc==SQLITE_OK && i<p->nSample; i++){
+      rc = sqlite3Stat4Column(db, p->aSample[i].p, p->aSample[i].n, nEq, &pVal);
+      if( rc==SQLITE_OK && p1 ){
+        int res = sqlite3MemCompare(p1, pVal, pColl);
+        if( res>=0 ) nLower++;
+      }
+      if( rc==SQLITE_OK && p2 ){
+        int res = sqlite3MemCompare(p2, pVal, pColl);
+        if( res>=0 ) nUpper++;
+      }
+    }
+    nDiff = (nUpper - nLower);
+    if( nDiff<=0 ) nDiff = 1;
+
+    /* If there is both an upper and lower bound specified, and the 
+    ** comparisons indicate that they are close together, use the fallback
+    ** method (assume that the scan visits 1/64 of the rows) for estimating
+    ** the number of rows visited. Otherwise, estimate the number of rows
+    ** using the method described in the header comment for this function. */
+    if( nDiff!=1 || pUpper==0 || pLower==0 ){
+      int nAdjust = (sqlite3LogEst(p->nSample) - sqlite3LogEst(nDiff));
+      pLoop->nOut -= nAdjust;
+      *pbDone = 1;
+      WHERETRACE(0x10, ("range skip-scan regions: %u..%u  adjust=%d est=%d\n",
+                           nLower, nUpper, nAdjust*-1, pLoop->nOut));
+    }
+
+  }else{
+    assert( *pbDone==0 );
+  }
+
+  sqlite3ValueFree(p1);
+  sqlite3ValueFree(p2);
+  sqlite3ValueFree(pVal);
+
+  return rc;
+}
+#endif /* SQLITE_ENABLE_STAT3_OR_STAT4 */
+
 /*
 ** This function is used to estimate the number of rows that will be visited
 ** by scanning an index for a range of values. The range may have an upper
@@ -2035,9 +2142,9 @@ static LogEst whereRangeAdjust(WhereTerm *pTerm, LogEst nNew){
 ** to account for the range contraints pLower and pUpper.
 ** 
 ** In the absence of sqlite_stat4 ANALYZE data, or if such data cannot be
-** used, each range inequality reduces the search space by a factor of 4. 
-** Hence a pair of constraints (x>? AND x<?) reduces the expected number of
-** rows visited by a factor of 16.
+** used, a single range inequality reduces the search space by a factor of 4. 
+** and a pair of constraints (x>? AND x<?) reduces the expected number of
+** rows visited by a factor of 64.
 */
 static int whereRangeScanEst(
   Parse *pParse,       /* Parsing & code generating context */
@@ -2055,95 +2162,100 @@ static int whereRangeScanEst(
   int nEq = pLoop->u.btree.nEq;
 
   if( p->nSample>0
-   && nEq==pBuilder->nRecValid
    && nEq<p->nSampleCol
    && OptimizationEnabled(pParse->db, SQLITE_Stat3) 
   ){
-    UnpackedRecord *pRec = pBuilder->pRec;
-    tRowcnt a[2];
-    u8 aff;
+    if( nEq==pBuilder->nRecValid ){
+      UnpackedRecord *pRec = pBuilder->pRec;
+      tRowcnt a[2];
+      u8 aff;
 
-    /* Variable iLower will be set to the estimate of the number of rows in 
-    ** the index that are less than the lower bound of the range query. The
-    ** lower bound being the concatenation of $P and $L, where $P is the
-    ** key-prefix formed by the nEq values matched against the nEq left-most
-    ** columns of the index, and $L is the value in pLower.
-    **
-    ** Or, if pLower is NULL or $L cannot be extracted from it (because it
-    ** is not a simple variable or literal value), the lower bound of the
-    ** range is $P. Due to a quirk in the way whereKeyStats() works, even
-    ** if $L is available, whereKeyStats() is called for both ($P) and 
-    ** ($P:$L) and the larger of the two returned values used.
-    **
-    ** Similarly, iUpper is to be set to the estimate of the number of rows
-    ** less than the upper bound of the range query. Where the upper bound
-    ** is either ($P) or ($P:$U). Again, even if $U is available, both values
-    ** of iUpper are requested of whereKeyStats() and the smaller used.
-    */
-    tRowcnt iLower;
-    tRowcnt iUpper;
+      /* Variable iLower will be set to the estimate of the number of rows in 
+      ** the index that are less than the lower bound of the range query. The
+      ** lower bound being the concatenation of $P and $L, where $P is the
+      ** key-prefix formed by the nEq values matched against the nEq left-most
+      ** columns of the index, and $L is the value in pLower.
+      **
+      ** Or, if pLower is NULL or $L cannot be extracted from it (because it
+      ** is not a simple variable or literal value), the lower bound of the
+      ** range is $P. Due to a quirk in the way whereKeyStats() works, even
+      ** if $L is available, whereKeyStats() is called for both ($P) and 
+      ** ($P:$L) and the larger of the two returned values used.
+      **
+      ** Similarly, iUpper is to be set to the estimate of the number of rows
+      ** less than the upper bound of the range query. Where the upper bound
+      ** is either ($P) or ($P:$U). Again, even if $U is available, both values
+      ** of iUpper are requested of whereKeyStats() and the smaller used.
+      */
+      tRowcnt iLower;
+      tRowcnt iUpper;
 
-    if( nEq==p->nKeyCol ){
-      aff = SQLITE_AFF_INTEGER;
-    }else{
-      aff = p->pTable->aCol[p->aiColumn[nEq]].affinity;
-    }
-    /* Determine iLower and iUpper using ($P) only. */
-    if( nEq==0 ){
-      iLower = 0;
-      iUpper = sqlite3LogEstToInt(p->aiRowLogEst[0]);
-    }else{
-      /* Note: this call could be optimized away - since the same values must 
-      ** have been requested when testing key $P in whereEqualScanEst().  */
-      whereKeyStats(pParse, p, pRec, 0, a);
-      iLower = a[0];
-      iUpper = a[0] + a[1];
-    }
-
-    /* If possible, improve on the iLower estimate using ($P:$L). */
-    if( pLower ){
-      int bOk;                    /* True if value is extracted from pExpr */
-      Expr *pExpr = pLower->pExpr->pRight;
-      assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
-      rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
-      if( rc==SQLITE_OK && bOk ){
-        tRowcnt iNew;
-        whereKeyStats(pParse, p, pRec, 0, a);
-        iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
-        if( iNew>iLower ) iLower = iNew;
-        nOut--;
-      }
-    }
-
-    /* If possible, improve on the iUpper estimate using ($P:$U). */
-    if( pUpper ){
-      int bOk;                    /* True if value is extracted from pExpr */
-      Expr *pExpr = pUpper->pExpr->pRight;
-      assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
-      rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
-      if( rc==SQLITE_OK && bOk ){
-        tRowcnt iNew;
-        whereKeyStats(pParse, p, pRec, 1, a);
-        iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
-        if( iNew<iUpper ) iUpper = iNew;
-        nOut--;
-      }
-    }
-
-    pBuilder->pRec = pRec;
-    if( rc==SQLITE_OK ){
-      if( iUpper>iLower ){
-        nNew = sqlite3LogEst(iUpper - iLower);
+      if( nEq==p->nKeyCol ){
+        aff = SQLITE_AFF_INTEGER;
       }else{
-        nNew = 10;        assert( 10==sqlite3LogEst(2) );
+        aff = p->pTable->aCol[p->aiColumn[nEq]].affinity;
       }
-      if( nNew<nOut ){
-        nOut = nNew;
+      /* Determine iLower and iUpper using ($P) only. */
+      if( nEq==0 ){
+        iLower = 0;
+        iUpper = sqlite3LogEstToInt(p->aiRowLogEst[0]);
+      }else{
+        /* Note: this call could be optimized away - since the same values must 
+        ** have been requested when testing key $P in whereEqualScanEst().  */
+        whereKeyStats(pParse, p, pRec, 0, a);
+        iLower = a[0];
+        iUpper = a[0] + a[1];
       }
-      pLoop->nOut = (LogEst)nOut;
-      WHERETRACE(0x10, ("range scan regions: %u..%u  est=%d\n",
-                         (u32)iLower, (u32)iUpper, nOut));
-      return SQLITE_OK;
+
+      /* If possible, improve on the iLower estimate using ($P:$L). */
+      if( pLower ){
+        int bOk;                    /* True if value is extracted from pExpr */
+        Expr *pExpr = pLower->pExpr->pRight;
+        assert( (pLower->eOperator & (WO_GT|WO_GE))!=0 );
+        rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
+        if( rc==SQLITE_OK && bOk ){
+          tRowcnt iNew;
+          whereKeyStats(pParse, p, pRec, 0, a);
+          iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
+          if( iNew>iLower ) iLower = iNew;
+          nOut--;
+        }
+      }
+
+      /* If possible, improve on the iUpper estimate using ($P:$U). */
+      if( pUpper ){
+        int bOk;                    /* True if value is extracted from pExpr */
+        Expr *pExpr = pUpper->pExpr->pRight;
+        assert( (pUpper->eOperator & (WO_LT|WO_LE))!=0 );
+        rc = sqlite3Stat4ProbeSetValue(pParse, p, &pRec, pExpr, aff, nEq, &bOk);
+        if( rc==SQLITE_OK && bOk ){
+          tRowcnt iNew;
+          whereKeyStats(pParse, p, pRec, 1, a);
+          iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
+          if( iNew<iUpper ) iUpper = iNew;
+          nOut--;
+        }
+      }
+
+      pBuilder->pRec = pRec;
+      if( rc==SQLITE_OK ){
+        if( iUpper>iLower ){
+          nNew = sqlite3LogEst(iUpper - iLower);
+        }else{
+          nNew = 10;        assert( 10==sqlite3LogEst(2) );
+        }
+        if( nNew<nOut ){
+          nOut = nNew;
+        }
+        pLoop->nOut = (LogEst)nOut;
+        WHERETRACE(0x10, ("range scan regions: %u..%u  est=%d\n",
+                           (u32)iLower, (u32)iUpper, nOut));
+        return SQLITE_OK;
+      }
+    }else{
+      int bDone = 0;
+      rc = whereRangeSkipScanEst(pParse, pLower, pUpper, pLoop, &bDone);
+      if( bDone ) return rc;
     }
   }
 #else
@@ -2202,7 +2314,7 @@ static int whereEqualScanEst(
   int bOk;
 
   assert( nEq>=1 );
-  assert( nEq<=(p->nKeyCol+1) );
+  assert( nEq<=p->nColumn );
   assert( p->aSample!=0 );
   assert( p->nSample>0 );
   assert( pBuilder->nRecValid<nEq );
@@ -2215,7 +2327,7 @@ static int whereEqualScanEst(
 
   /* This is an optimization only. The call to sqlite3Stat4ProbeSetValue()
   ** below would return the same value.  */
-  if( nEq>p->nKeyCol ){
+  if( nEq>=p->nColumn ){
     *pnRow = 1;
     return SQLITE_OK;
   }
@@ -2646,7 +2758,7 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   txt.db = db;
   sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
-    char *z = (i==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[i]].zName;
+    char *z = aiColumn[i] < 0 ? "rowid" : aCol[aiColumn[i]].zName;
     if( i>=nSkip ){
       explainAppendTerm(&txt, i, z, "=");
     }else{
@@ -2659,11 +2771,11 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
 
   j = i;
   if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
-    char *z = (j==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[j]].zName;
+    char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i++, z, ">");
   }
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
-    char *z = (j==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[j]].zName;
+    char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i, z, "<");
   }
   sqlite3StrAccumAppend(&txt, ")", 1);
@@ -3687,7 +3799,7 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" %-19s", z);
     sqlite3_free(z);
   }
-  sqlite3DebugPrintf(" f %04x N %d", p->wsFlags, p->nLTerm);
+  sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
 #ifdef SQLITE_ENABLE_TREE_EXPLAIN
   /* If the 0x100 bit of wheretracing is set, then show all of the constraint
@@ -3924,6 +4036,17 @@ static WhereLoop **whereLoopFindLesser(
     ** rSetup. Call this SETUP-INVARIANT */
     assert( p->rSetup>=pTemplate->rSetup );
 
+    /* Any loop using an appliation-defined index (or PRIMARY KEY or
+    ** UNIQUE constraint) with one or more == constraints is better
+    ** than an automatic index. */
+    if( (p->wsFlags & WHERE_AUTO_INDEX)!=0
+     && (pTemplate->wsFlags & WHERE_INDEXED)!=0
+     && (pTemplate->wsFlags & WHERE_COLUMN_EQ)!=0
+     && (p->prereq & pTemplate->prereq)==pTemplate->prereq
+    ){
+      break;
+    }
+
     /* If existing WhereLoop p is better than pTemplate, pTemplate can be
     ** discarded.  WhereLoop p is better if:
     **   (1)  p has no more dependencies than pTemplate, and
@@ -4048,13 +4171,13 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
     WhereLoop *pToDel;
     while( *ppTail ){
       ppTail = whereLoopFindLesser(ppTail, pTemplate);
-      if( NEVER(ppTail==0) ) break;
+      if( ppTail==0 ) break;
       pToDel = *ppTail;
       if( pToDel==0 ) break;
       *ppTail = pToDel->pNextLoop;
 #if WHERETRACE_ENABLED /* 0x8 */
       if( sqlite3WhereTrace & 0x8 ){
-        sqlite3DebugPrintf("ins-del: ");
+        sqlite3DebugPrintf("ins-del:  ");
         whereLoopPrint(pToDel, pBuilder->pWC);
       }
 #endif
@@ -4154,12 +4277,9 @@ static int whereLoopAddBtreeIndex(
   }
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
-  assert( pNew->u.btree.nEq<=pProbe->nKeyCol );
-  if( pNew->u.btree.nEq < pProbe->nKeyCol ){
-    iCol = pProbe->aiColumn[pNew->u.btree.nEq];
-  }else{
-    iCol = -1;
-  }
+  assert( pNew->u.btree.nEq<pProbe->nColumn );
+  iCol = pProbe->aiColumn[pNew->u.btree.nEq];
+
   pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
                         opMask, pProbe);
   saved_nEq = pNew->u.btree.nEq;
@@ -4349,7 +4469,7 @@ static int whereLoopAddBtreeIndex(
     }
 
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
-     && pNew->u.btree.nEq<(pProbe->nKeyCol + (pProbe->zName!=0))
+     && pNew->u.btree.nEq<pProbe->nColumn
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
@@ -4496,6 +4616,7 @@ static int whereLoopAddBtree(
     Index *pFirst;                  /* First of real indices on the table */
     memset(&sPk, 0, sizeof(Index));
     sPk.nKeyCol = 1;
+    sPk.nColumn = 1;
     sPk.aiColumn = &aiColumnPk;
     sPk.aiRowLogEst = aiRowEstPk;
     sPk.onError = OE_Replace;
@@ -5279,7 +5400,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   LogEst rCost;             /* Cost of a path */
   LogEst nOut;              /* Number of outputs */
   LogEst mxCost = 0;        /* Maximum cost of a set of paths */
-  LogEst mxOut = 0;         /* Maximum nOut value on the set of paths */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
   WherePath *aTo;           /* The nTo best paths at the current level */
@@ -5389,8 +5509,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
           if( pTo->maskLoop==maskNew
            && ((pTo->isOrdered^isOrdered)&80)==0
-           && ((pTo->rCost<=rCost && pTo->nRow<=nOut) ||
-                (pTo->rCost>=rCost && pTo->nRow>=nOut))
           ){
             testcase( jj==nTo-1 );
             break;
@@ -5424,7 +5542,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
           }
 #endif
         }else{
-          if( pTo->rCost<=rCost && pTo->nRow<=nOut ){
+          if( pTo->rCost<=rCost ){
 #ifdef WHERETRACE_ENABLED /* 0x4 */
             if( sqlite3WhereTrace&0x4 ){
               sqlite3DebugPrintf(
@@ -5464,11 +5582,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( nTo>=mxChoice ){
           mxI = 0;
           mxCost = aTo[0].rCost;
-          mxOut = aTo[0].nRow;
           for(jj=1, pTo=&aTo[1]; jj<mxChoice; jj++, pTo++){
-            if( pTo->rCost>mxCost || (pTo->rCost==mxCost && pTo->nRow>mxOut) ){
+            if( pTo->rCost>mxCost ){
               mxCost = pTo->rCost;
-              mxOut = pTo->nRow;
               mxI = jj;
             }
           }

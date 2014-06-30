@@ -213,5 +213,69 @@ do_execsql_test 4.1 {
 do_execsql_test 4.2 {
   SELECT t42.rowid FROM t42, t41;
 } {1}
+
+
+#--------------------------------------------------------------------------
+# The following tests verify that the trailing PK fields added to each
+# entry in an index on a WITHOUT ROWID table are used correctly.
+#
+do_execsql_test 5.0 {
+  CREATE TABLE t45(a PRIMARY KEY, b, c) WITHOUT ROWID;
+  CREATE INDEX i45 ON t45(b);
+
+  INSERT INTO t45 VALUES(2, 'one', 'x');
+  INSERT INTO t45 VALUES(4, 'one', 'x');
+  INSERT INTO t45 VALUES(6, 'one', 'x');
+  INSERT INTO t45 VALUES(8, 'one', 'x');
+  INSERT INTO t45 VALUES(10, 'one', 'x');
+
+  INSERT INTO t45 VALUES(1, 'two', 'x');
+  INSERT INTO t45 VALUES(3, 'two', 'x');
+  INSERT INTO t45 VALUES(5, 'two', 'x');
+  INSERT INTO t45 VALUES(7, 'two', 'x');
+  INSERT INTO t45 VALUES(9, 'two', 'x');
+}
+
+do_eqp_test 5.1 {
+  SELECT * FROM t45 WHERE b=? AND a>?
+} {/*USING INDEX i45 (b=? AND a>?)*/}
+
+do_execsql_test 5.2 {
+  SELECT * FROM t45 WHERE b='two' AND a>4
+} {5 two x 7 two x 9 two x}
+
+do_execsql_test 5.3 {
+  SELECT * FROM t45 WHERE b='one' AND a<8
+} { 2 one x 4 one x 6 one x }
+
+do_execsql_test 5.4 {
+  CREATE TABLE t46(a, b, c, d, PRIMARY KEY(a, b)) WITHOUT ROWID;
+  WITH r(x) AS (
+    SELECT 1 UNION ALL SELECT x+1 FROM r WHERE x<100
+  )
+  INSERT INTO t46 SELECT x / 20, x % 20, x % 10, x FROM r;
+}
+
+set queries {
+  1    2    "c = 5 AND a = 1"          {/*i46 (c=? AND a=?)*/}
+  2    6    "c = 4 AND a < 3"          {/*i46 (c=? AND a<?)*/}
+  3    4    "c = 2 AND a >= 3"         {/*i46 (c=? AND a>?)*/}
+  4    1    "c = 2 AND a = 1 AND b<10" {/*i46 (c=? AND a=? AND b<?)*/}
+  5    1    "c = 0 AND a = 0 AND b>5"  {/*i46 (c=? AND a=? AND b>?)*/}
+}
+
+foreach {tn cnt where eqp} $queries {
+  do_execsql_test 5.5.$tn.1 "SELECT count(*) FROM t46 WHERE $where" $cnt
+}
+
+do_execsql_test 5.6 {
+  CREATE INDEX i46 ON t46(c);
+}
+
+foreach {tn cnt where eqp} $queries {
+  do_execsql_test 5.7.$tn.1 "SELECT count(*) FROM t46 WHERE $where" $cnt
+  do_eqp_test 5.7.$tn.2  "SELECT count(*) FROM t46 WHERE $where" $eqp
+}
+
   
 finish_test

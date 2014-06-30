@@ -16,6 +16,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/malloc_common.tcl
+set testprefix mallocK
 
 set sql {SELECT * FROM t1, t2 WHERE (a=1 OR a=2)}
 for {set x 1} {$x<5} {incr x} {
@@ -68,5 +69,70 @@ ifcapable vtab {
   }
 }
 
+#-------------------------------------------------------------------------
+# Test that OOM errors are correctly handled by the code that uses stat4
+# data to estimate the number of rows visited by a skip-scan range query.
+#
+add_alignment_test_collations db
+do_execsql_test 6.0 {
+  CREATE TABLE t3(a TEXT, b TEXT COLLATE utf16_aligned, c);
+  INSERT INTO t3 VALUES('one', '.....', 0);
+  INSERT INTO t3 VALUES('one', '....x', 1);
+  INSERT INTO t3 VALUES('one', '...x.', 2);
+  INSERT INTO t3 VALUES('one', '...xx', 3);
+  INSERT INTO t3 VALUES('one', '..x..', 4);
+  INSERT INTO t3 VALUES('one', '..x.x', 5);
+  INSERT INTO t3 VALUES('one', '..xx.', 6);
+  INSERT INTO t3 VALUES('one', '..xxx', 7);
+  INSERT INTO t3 VALUES('one', '.x...', 8);
+  INSERT INTO t3 VALUES('one', '.x..x', 9);
+  INSERT INTO t3 VALUES('one', '.x.x.', 10);
+  INSERT INTO t3 VALUES('one', '.x.xx', 11);
+  INSERT INTO t3 VALUES('one', '.xx..', 12);
+  INSERT INTO t3 VALUES('one', '.xx.x', 13);
+  INSERT INTO t3 VALUES('one', '.xxx.', 14);
+  INSERT INTO t3 VALUES('one', '.xxxx', 15);
+
+  INSERT INTO t3 VALUES('two', 'x....', 16);
+  INSERT INTO t3 VALUES('two', 'x...x', 17);
+  INSERT INTO t3 VALUES('two', 'x..x.', 18);
+  INSERT INTO t3 VALUES('two', 'x..xx', 19);
+  INSERT INTO t3 VALUES('two', 'x.x..', 20);
+  INSERT INTO t3 VALUES('two', 'x.x.x', 21);
+  INSERT INTO t3 VALUES('two', 'x.xx.', 22);
+  INSERT INTO t3 VALUES('two', 'x.xxx', 23);
+  INSERT INTO t3 VALUES('two', 'xx...', 24);
+  INSERT INTO t3 VALUES('two', 'xx..x', 25);
+  INSERT INTO t3 VALUES('two', 'xx.x.', 26);
+  INSERT INTO t3 VALUES('two', 'xx.xx', 27);
+  INSERT INTO t3 VALUES('two', 'xxx..', 28);
+  INSERT INTO t3 VALUES('two', 'xxx.x', 29);
+  INSERT INTO t3 VALUES('two', 'xxxx.', 30);
+  INSERT INTO t3 VALUES('two', 'xxxxx', 31);
+
+  INSERT INTO t3 SELECT * FROM t3;
+
+  CREATE INDEX i3 ON t3(a, b);
+  ANALYZE;
+
+  SELECT 'x' > '.';
+} {1}
+
+ifcapable stat4 {
+  do_eqp_test 6.1 {
+    SELECT DISTINCT c FROM t3 WHERE b BETWEEN '.xx..' AND '.xxxx';
+  } {
+    0 0 0 {SEARCH TABLE t3 USING INDEX i3 (ANY(a) AND b>? AND b<?)} 
+    0 0 0 {USE TEMP B-TREE FOR DISTINCT}
+  }
+}
+
+do_faultsim_test 6 -faults oom* -body {
+  db cache flush
+  db eval { SELECT DISTINCT c FROM t3 WHERE b BETWEEN '.xx..' AND '.xxxx' }
+} -test {
+  faultsim_test_result {0 {12 13 14 15}} 
+}
 
 finish_test
+
