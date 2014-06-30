@@ -544,7 +544,7 @@ static WhereTerm *whereScanInit(
   if( pIdx && iColumn>=0 ){
     pScan->idxaff = pIdx->pTable->aCol[iColumn].affinity;
     for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
-      if( NEVER(j>=pIdx->nKeyCol) ) return 0;
+      if( NEVER(j>pIdx->nColumn) ) return 0;
     }
     pScan->zCollName = pIdx->azColl[j];
   }else{
@@ -2645,7 +2645,7 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
   txt.db = db;
   sqlite3StrAccumAppend(&txt, " (", 2);
   for(i=0; i<nEq; i++){
-    char *z = (i==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[i]].zName;
+    char *z = aiColumn[i] < 0 ? "rowid" : aCol[aiColumn[i]].zName;
     if( i>=nSkip ){
       explainAppendTerm(&txt, i, z, "=");
     }else{
@@ -2658,11 +2658,11 @@ static char *explainIndexRange(sqlite3 *db, WhereLoop *pLoop, Table *pTab){
 
   j = i;
   if( pLoop->wsFlags&WHERE_BTM_LIMIT ){
-    char *z = (j==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[j]].zName;
+    char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i++, z, ">");
   }
   if( pLoop->wsFlags&WHERE_TOP_LIMIT ){
-    char *z = (j==pIndex->nKeyCol ) ? "rowid" : aCol[aiColumn[j]].zName;
+    char *z = aiColumn[j] < 0 ? "rowid" : aCol[aiColumn[j]].zName;
     explainAppendTerm(&txt, i, z, "<");
   }
   sqlite3StrAccumAppend(&txt, ")", 1);
@@ -4164,12 +4164,9 @@ static int whereLoopAddBtreeIndex(
   }
   if( pProbe->bUnordered ) opMask &= ~(WO_GT|WO_GE|WO_LT|WO_LE);
 
-  assert( pNew->u.btree.nEq<=pProbe->nKeyCol );
-  if( pNew->u.btree.nEq < pProbe->nKeyCol ){
-    iCol = pProbe->aiColumn[pNew->u.btree.nEq];
-  }else{
-    iCol = -1;
-  }
+  assert( pNew->u.btree.nEq<pProbe->nColumn );
+  iCol = pProbe->aiColumn[pNew->u.btree.nEq];
+
   pTerm = whereScanInit(&scan, pBuilder->pWC, pSrc->iCursor, iCol,
                         opMask, pProbe);
   saved_nEq = pNew->u.btree.nEq;
@@ -4359,7 +4356,7 @@ static int whereLoopAddBtreeIndex(
     }
 
     if( (pNew->wsFlags & WHERE_TOP_LIMIT)==0
-     && pNew->u.btree.nEq<(pProbe->nKeyCol + (pProbe->zName!=0))
+     && pNew->u.btree.nEq<pProbe->nColumn
     ){
       whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nInMul+nIn);
     }
@@ -4506,6 +4503,7 @@ static int whereLoopAddBtree(
     Index *pFirst;                  /* First of real indices on the table */
     memset(&sPk, 0, sizeof(Index));
     sPk.nKeyCol = 1;
+    sPk.nColumn = 1;
     sPk.aiColumn = &aiColumnPk;
     sPk.aiRowLogEst = aiRowEstPk;
     sPk.onError = OE_Replace;
