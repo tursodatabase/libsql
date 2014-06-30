@@ -3441,7 +3441,9 @@ void sqlite3BackupUpdate(sqlite3_backup *, Pgno, const u8 *);
 #ifdef SQLITE_ENABLE_STAT3_OR_STAT4
 void sqlite3AnalyzeFunctions(void);
 int sqlite3Stat4ProbeSetValue(Parse*,Index*,UnpackedRecord**,Expr*,u8,int,int*);
+int sqlite3Stat4ValueFromExpr(Parse*, Expr*, u8, sqlite3_value**);
 void sqlite3Stat4ProbeFree(UnpackedRecord*);
+int sqlite3Stat4Column(sqlite3*, const void*, int, int, sqlite3_value**);
 #endif
 
 /*

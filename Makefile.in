@@ -396,6 +396,7 @@ TESTSRC = \
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/ieee754.c \
   $(TOP)/ext/misc/nextchar.c \
@@ -951,8 +952,23 @@ sqlite3_analyzer.c: sqlite3.c $(TOP)/src/test_stat.c $(TOP)/src/tclsqlite.c $(TO
 sqlite3_analyzer$(TEXE): sqlite3_analyzer.c
 	$(LTLINK) sqlite3_analyzer.c -o $@ $(LIBTCL) $(TLIBS)
 
-showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.c
-	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.c $(TLIBS)
+showdb$(TEXE):	$(TOP)/tool/showdb.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showdb.c sqlite3.lo $(TLIBS)
+
+showstat4$(TEXE):	$(TOP)/tool/showstat4.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showstat4.c sqlite3.lo $(TLIBS)
+
+showjournal$(TEXE):	$(TOP)/tool/showjournal.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showjournal.c sqlite3.lo $(TLIBS)
+
+showwal$(TEXE):	$(TOP)/tool/showwal.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/showwal.c sqlite3.lo $(TLIBS)
+
+rollback-test$(TEXE):	$(TOP)/tool/rollback-test.c sqlite3.lo
+	$(LTLINK) -o $@ $(TOP)/tool/rollback-test.c sqlite3.lo $(TLIBS)
+
+LogEst$(TEXE):	$(TOP)/tool/logest.c sqlite3.h
+	$(LTLINK) -I. -o $@ $(TOP)/tool/logest.c
 
 wordcount$(TEXE):	$(TOP)/test/wordcount.c sqlite3.c
 	$(LTLINK) -o $@ $(TOP)/test/wordcount.c sqlite3.c $(TLIBS)

@@ -862,6 +862,7 @@ TESTSRC = \
 TESTEXT = \
   $(TOP)\ext\misc\amatch.c \
   $(TOP)\ext\misc\closure.c \
+  $(TOP)\ext\misc\fileio.c \
   $(TOP)\ext\misc\fuzzer.c \
   $(TOP)\ext\misc\ieee754.c \
   $(TOP)\ext\misc\nextchar.c \
@@ -1433,6 +1434,25 @@ testloadext.dll: testloadext.lo
 showdb.exe:	$(TOP)\tool\showdb.c $(SQLITE3C)
 	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\showdb.c $(SQLITE3C)
+
+showstat4.exe:	$(TOP)\tool\showstat4.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showstat4.c $(SQLITE3C)
+
+showjournal.exe:	$(TOP)\tool\showjournal.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showjournal.c $(SQLITE3C)
+
+showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\showwal.c $(SQLITE3C)
+
+rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\tool\rollback-test.c $(SQLITE3C)
+
+LogEst.exe:	$(TOP)\tool\logest.c sqlite3.h
+	$(LTLINK) -Fe$@ $(TOP)\tool\LogEst.c
 
 wordcount.exe:	$(TOP)\test\wordcount.c $(SQLITE3C)
 	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \

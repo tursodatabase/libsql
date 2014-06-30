@@ -28,4 +28,5 @@
 >68  belong  =0x47504b47  OGC GeoPackage file -
 >68  belong  =0x47503130  OGC GeoPackage version 1.0 file -
 >68  belong  =0x45737269  Esri Spatially-Enabled Database -
+>68  belong  =0x4d504258  MBTiles tileset -
 >0   string  =SQLite      SQLite3 database

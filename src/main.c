@@ -3259,10 +3259,10 @@ int sqlite3_test_control(int op, ...){
     case SQLITE_TESTCTRL_FAULT_INSTALL: {
       /* MSVC is picky about pulling func ptrs from va lists.
       ** http://support.microsoft.com/kb/47961
-      ** sqlite3Config.xTestCallback = va_arg(ap, int(*)(int));
+      ** sqlite3GlobalConfig.xTestCallback = va_arg(ap, int(*)(int));
       */
       typedef int(*TESTCALLBACKFUNC_t)(int);
-      sqlite3Config.xTestCallback = va_arg(ap, TESTCALLBACKFUNC_t);
+      sqlite3GlobalConfig.xTestCallback = va_arg(ap, TESTCALLBACKFUNC_t);
       rc = sqlite3FaultSim(0);
       break;
     }

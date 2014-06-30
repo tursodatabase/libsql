@@ -149,8 +149,32 @@ do_execsql_test func3-5.35 {
 # the code generator optimizes away so that it consumes no CPU cycles at
 # run-time (that is, during calls to sqlite3_step()).
 #
-do_test func3-5.40 {
+do_test func3-5.39 {
   db eval {EXPLAIN SELECT unlikely(min(1.0+'2.0',4*11))}
 } [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
+
+do_execsql_test func3-5.40 {
+  SELECT likely(9223372036854775807);
+} {9223372036854775807}
+do_execsql_test func3-5.41 {
+  SELECT likely(-9223372036854775808);
+} {-9223372036854775808}
+do_execsql_test func3-5.42 {
+  SELECT likely(14.125);
+} {14.125}
+do_execsql_test func3-5.43 {
+  SELECT likely(NULL);
+} {{}}
+do_execsql_test func3-5.44 {
+  SELECT likely('test-string');
+} {test-string}
+do_execsql_test func3-5.45 {
+  SELECT quote(likely(x'010203000405'));
+} {X'010203000405'}
+do_test func3-5.49 {
+  db eval {EXPLAIN SELECT likely(min(1.0+'2.0',4*11))}
+} [db eval {EXPLAIN SELECT min(1.0+'2.0',4*11)}]
+
+
 
 finish_test

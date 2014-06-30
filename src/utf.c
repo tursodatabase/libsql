@@ -148,8 +148,8 @@ static const unsigned char sqlite3Utf8Trans1[] = {
 **     and rendered as themselves even though they are technically
 **     invalid characters.
 **
-**  *  This routine accepts an infinite number of different UTF8 encodings
-**     for unicode values 0x80 and greater.  It do not change over-length
+**  *  This routine accepts over-length UTF8 encodings
+**     for unicode values 0x80 and greater.  It does not change over-length
 **     encodings to 0xfffd as some systems recommend.
 */
 #define READ_UTF8(zIn, zTerm, c)                           \

@@ -3591,6 +3591,7 @@ int sqlite3VdbeRecordCompare(
   ** value.  */
   assert( CORRUPT_DB 
        || pPKey2->default_rc==vdbeRecordCompareDebug(nKey1, pKey1, pPKey2) 
+       || pKeyInfo->db->mallocFailed
   );
   return pPKey2->default_rc;
 }
@@ -3756,6 +3757,7 @@ static int vdbeRecordCompareString(
        || (res<0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)<0)
        || (res>0 && vdbeRecordCompareDebug(nKey1, pKey1, pPKey2)>0)
        || CORRUPT_DB
+       || pPKey2->pKeyInfo->db->mallocFailed
   );
   return res;
 }

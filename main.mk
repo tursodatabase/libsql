@@ -279,6 +279,7 @@ TESTSRC = \
 TESTSRC += \
   $(TOP)/ext/misc/amatch.c \
   $(TOP)/ext/misc/closure.c \
+  $(TOP)/ext/misc/fileio.c \
   $(TOP)/ext/misc/fuzzer.c \
   $(TOP)/ext/misc/ieee754.c \
   $(TOP)/ext/misc/nextchar.c \
@@ -614,9 +615,28 @@ $(TEST_EXTENSION): $(TOP)/src/test_loadext.c
 extensiontest: testfixture$(EXE) $(TEST_EXTENSION)
 	./testfixture$(EXE) $(TOP)/test/loadext.test
 
-showdb$(EXE):	$(TOP)/tool/showdb.c sqlite3.c
+showdb$(EXE):	$(TOP)/tool/showdb.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showdb$(EXE) \
-		$(TOP)/tool/showdb.c sqlite3.c
+		$(TOP)/tool/showdb.c sqlite3.o $(THREADLIB)
+
+showstat4$(EXE):	$(TOP)/tool/showstat4.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showstat4$(EXE) \
+		$(TOP)/tool/showstat4.c sqlite3.o $(THREADLIB)
+
+showjournal$(EXE):	$(TOP)/tool/showjournal.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showjournal$(EXE) \
+		$(TOP)/tool/showjournal.c sqlite3.o $(THREADLIB)
+
+showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
+		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
+
+rollback-test$(EXE):	$(TOP)/tool/rollback-test.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o rollback-test$(EXE) \
+		$(TOP)/tool/rollback-test.c sqlite3.o $(THREADLIB)
+
+LogEst$(EXE):	$(TOP)/tool/logest.c sqlite3.h
+	$(TCC) -o LogEst$(EXE) $(TOP)/tool/logest.c
 
 wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o wordcount$(EXE) \
