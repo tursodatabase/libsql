@@ -1,12 +1,12 @@
-C Attempt\sto\suse\sSTAT4\sinformation\sto\sestimate\sthe\sselectivity\sof\sWHERE\sclause\nterms\swhen\susing\sthe\sskip-scan\soptimization.
-D 2014-06-30T19:07:58.197
+C Bump\sthe\sversion\snumber\sto\s3.8.6.
+D 2014-06-30T19:28:57.595
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc ad60c4d8be35f98fdcca614088b84a91612b2b4c
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION 9f823c026c6a32fc5f84d212a8aae0a221dba45c
+F VERSION 1c877615a9db323e3cd301e3d57d853f9d5c4a07
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 5de98fac90452f876511fee8a35565a55dfb191f x
+F configure 513f1e2464c3673bcdb5471b13d98e7eeb6f5ca2 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1182,8 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc2de8095fa9c385db0adf22ca55b0298a33c284 c96de490ac77dd23c108004b95152cce4922fe27
-R 55c9ac9304448ee4805a54515b7a2134
-T +closed c96de490ac77dd23c108004b95152cce4922fe27
+P d09ca6d5efad3e4cfa93a4dc711e6ba6079d4b4b
+R 0b9fd011a99704759c36a48aebd29593
 U drh
-Z bab166b6f1bf8cfb185d9041a405176e
+Z 99f7c1257c18120424d63d4c4b9a073c
