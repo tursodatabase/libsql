@@ -1045,7 +1045,7 @@ static void analyzeOneTable(
     ** the regPrev array and a trailing rowid (the rowid slot is required
     ** when building a record to insert into the sample column of 
     ** the sqlite_stat4 table.  */
-    pParse->nMem = MAX(pParse->nMem, regPrev+nCol);
+    pParse->nMem = MAX(pParse->nMem, regPrev+pIdx->nColumn);
 
     /* Open a read-only cursor on the index being analyzed. */
     assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
@@ -1186,11 +1186,12 @@ static void analyzeOneTable(
       sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, 
                                       pIdx->aiColumn[0], regSample);
 #else
-      for(i=0; i<nCol; i++){
+      i = HasRowid(pTab) ? nCol-1 : pIdx->nColumn-1;
+      for(; i>=0; i--){
         i16 iCol = pIdx->aiColumn[i];
         sqlite3ExprCodeGetColumnOfTable(v, pTab, iTabCur, iCol, regCol+i);
       }
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, nCol+1, regSample);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regCol, pIdx->nColumn, regSample);
 #endif
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regTabname, 6, regTemp);
       sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regNewRowid);
