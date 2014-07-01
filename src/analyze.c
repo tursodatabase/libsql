@@ -1519,7 +1519,16 @@ static void initAvgEq(Index *pIdx){
     IndexSample *aSample = pIdx->aSample;
     IndexSample *pFinal = &aSample[pIdx->nSample-1];
     int iCol;
-    for(iCol=0; iCol<pIdx->nKeyCol; iCol++){
+    int nCol = 1;
+    if( pIdx->nSampleCol>1 ){
+      /* If this is stat4 data, then calculate aAvgEq[] values for all
+      ** sample columns except the last. The last is always set to 1, as
+      ** once the trailing PK fields are considered all index keys are
+      ** unique.  */
+      nCol = pIdx->nSampleCol-1;
+      pIdx->aAvgEq[nCol] = 1;
+    }
+    for(iCol=0; iCol<nCol; iCol++){
       int i;                    /* Used to iterate through samples */
       tRowcnt sumEq = 0;        /* Sum of the nEq values */
       tRowcnt nSum = 0;         /* Number of terms contributing to sumEq */
@@ -1542,7 +1551,6 @@ static void initAvgEq(Index *pIdx){
       }
       if( avgEq==0 ) avgEq = 1;
       pIdx->aAvgEq[iCol] = avgEq;
-      if( pIdx->nSampleCol==1 ) break;
     }
   }
 }
@@ -1601,7 +1609,6 @@ static int loadStatTbl(
 
   while( sqlite3_step(pStmt)==SQLITE_ROW ){
     int nIdxCol = 1;              /* Number of columns in stat4 records */
-    int nAvgCol = 1;              /* Number of entries in Index.aAvgEq */
 
     char *zIndex;   /* Index name */
     Index *pIdx;    /* Pointer to the index object */
@@ -1619,13 +1626,17 @@ static int loadStatTbl(
     ** loaded from the stat4 table. In this case ignore stat3 data.  */
     if( pIdx==0 || pIdx->nSample ) continue;
     if( bStat3==0 ){
-      nIdxCol = pIdx->nKeyCol+1;
-      nAvgCol = pIdx->nKeyCol;
+      assert( !HasRowid(pIdx->pTable) || pIdx->nColumn==pIdx->nKeyCol+1 );
+      if( !HasRowid(pIdx->pTable) && IsPrimaryKeyIndex(pIdx) ){
+        nIdxCol = pIdx->nKeyCol;
+      }else{
+        nIdxCol = pIdx->nColumn;
+      }
     }
     pIdx->nSampleCol = nIdxCol;
     nByte = sizeof(IndexSample) * nSample;
     nByte += sizeof(tRowcnt) * nIdxCol * 3 * nSample;
-    nByte += nAvgCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
+    nByte += nIdxCol * sizeof(tRowcnt);     /* Space for Index.aAvgEq[] */
 
     pIdx->aSample = sqlite3DbMallocZero(db, nByte);
     if( pIdx->aSample==0 ){
@@ -1633,7 +1644,7 @@ static int loadStatTbl(
       return SQLITE_NOMEM;
     }
     pSpace = (tRowcnt*)&pIdx->aSample[nSample];
-    pIdx->aAvgEq = pSpace; pSpace += nAvgCol;
+    pIdx->aAvgEq = pSpace; pSpace += nIdxCol;
     for(i=0; i<nSample; i++){
       pIdx->aSample[i].anEq = pSpace; pSpace += nIdxCol;
       pIdx->aSample[i].anLt = pSpace; pSpace += nIdxCol;

@@ -1959,7 +1959,7 @@ static void whereKeyStats(
       iUpper = i>=pIdx->nSample ? nRow0 : aSample[i].anLt[iCol];
       iLower = aSample[i-1].anEq[iCol] + aSample[i-1].anLt[iCol];
     }
-    aStat[1] = (pIdx->nKeyCol>iCol ? pIdx->aAvgEq[iCol] : 1);
+    aStat[1] = pIdx->aAvgEq[iCol];
     if( iLower>=iUpper ){
       iGap = 0;
     }else{
