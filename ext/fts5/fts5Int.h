@@ -75,7 +75,6 @@ void sqlite3Fts5Dequote(char *z);
 typedef struct Fts5Index Fts5Index;
 typedef struct Fts5IndexIter Fts5IndexIter;
 
-
 /*
 ** Values used as part of the flags argument passed to IndexQuery().
 */
@@ -117,18 +116,9 @@ void sqlite3Fts5IterNext(Fts5IndexIter*, i64 iMatch);
 i64  sqlite3Fts5IterRowid(Fts5IndexIter*);
 
 /*
-** Position list iteration.
-**
-**   for(
-**     iPos=sqlite3Fts5IterFirstPos(pIter, iCol); 
-**     iPos>=0; 
-**     iPos=sqlite3Fts5IterNextPos(pIter)
-**   ){
-**     // token appears at position iPos of column iCol of the current document
-**   }
+** Obtain the position list that corresponds to the current position.
 */
-// int sqlite3Fts5IterFirstPos(Fts5IndexIter*, int iCol);
-// int sqlite3Fts5IterNextPos(Fts5IndexIter*);
+const u8 *sqlite3Fts5IterPoslist(Fts5IndexIter*, int *pn);
 
 /*
 ** Close an iterator opened by sqlite3Fts5IndexQuery().

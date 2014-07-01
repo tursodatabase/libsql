@@ -110,13 +110,13 @@
 **
 **     poslist format:
 **
+**         varint: size of poslist in bytes. not including this field.
 **         collist: collist for column 0
 **         zero-or-more {
 **           0x01 byte
 **           varint: column number (I)
 **           collist: collist for column I
 **         }
-**         0x00 byte
 **
 **     collist format:
 **
@@ -255,6 +255,7 @@ static int fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
 typedef struct Fts5BtreeIter Fts5BtreeIter;
 typedef struct Fts5BtreeIterLevel Fts5BtreeIterLevel;
 typedef struct Fts5Buffer Fts5Buffer;
+typedef struct Fts5ChunkIter Fts5ChunkIter;
 typedef struct Fts5Data Fts5Data;
 typedef struct Fts5MultiSegIter Fts5MultiSegIter;
 typedef struct Fts5NodeIter Fts5NodeIter;
@@ -297,13 +298,6 @@ struct Fts5Index {
   sqlite3_stmt *pDeleter;         /* "DELETE FROM %_data ... id>=? AND id<=?" */
 };
 
-struct Fts5IndexIter {
-  Fts5Index *pIndex;
-  Fts5Structure *pStruct;
-  Fts5MultiSegIter *pMulti;
-};
-
-
 /*
 ** Buffer object for the incremental building of string data.
 */
@@ -311,6 +305,13 @@ struct Fts5Buffer {
   u8 *p;
   int n;
   int nSpace;
+};
+
+struct Fts5IndexIter {
+  Fts5Index *pIndex;
+  Fts5Structure *pStruct;
+  Fts5MultiSegIter *pMulti;
+  Fts5Buffer poslist;             /* Buffer containing current poslist */
 };
 
 /*
@@ -422,9 +423,9 @@ struct Fts5MultiSegIter {
 **
 ** iLeafOffset:
 **   Byte offset within the current leaf that is one byte past the end of the
-**   rowid field of the current entry. Usually this is the first byte of 
-**   the position list data. The exception is if the rowid for the current 
-**   entry is the last thing on the leaf page.
+**   rowid field of the current entry. Usually this is the size field of the
+**   position list data. The exception is if the rowid for the current entry 
+**   is the last thing on the leaf page.
 **
 ** pLeaf:
 **   Buffer containing current leaf page data. Set to NULL at EOF.
@@ -454,12 +455,24 @@ struct Fts5SegIter {
 };
 
 /*
+** Object for iterating through paginated data.
+*/
+struct Fts5ChunkIter {
+  Fts5Data *pLeaf;                /* Current leaf data. NULL -> EOF. */
+  i64 iLeafRowid;                 /* Absolute rowid of current leaf */
+  int nRem;                       /* Remaining bytes of data to read */
+
+  /* Output parameters */
+  u8 *p;                          /* Pointer to chunk of data */
+  int n;                          /* Size of buffer p in bytes */
+};
+
+/*
 ** Object for iterating through a single position list.
 */
 struct Fts5PosIter {
-  Fts5Data *pLeaf;                /* Current leaf data. NULL -> EOF. */
-  i64 iLeafRowid;                 /* Absolute rowid of current leaf */
-  int iLeafOffset;                /* Current offset within leaf */
+  Fts5ChunkIter chunk;            /* Current chunk of data */
+  int iOff;                       /* Offset within chunk data */
 
   int iCol;
   int iPos;
@@ -1107,6 +1120,10 @@ static void fts5SegIterNextPage(
   }
 }
 
+/*
+** Leave pIter->iLeafOffset as the offset to the size field of the first
+** position list. The position list belonging to document pIter->iRowid.
+*/
 static void fts5SegIterLoadTerm(Fts5Index *p, Fts5SegIter *pIter, int nKeep){
   u8 *a = pIter->pLeaf->p;        /* Buffer to read data from */
   int iOff = pIter->iLeafOffset;  /* Offset to read at */
@@ -1218,14 +1235,17 @@ static void fts5SegIterSeekInit(
 
       while( (res = fts5BufferCompareBlob(&pIter->term, pTerm, nTerm)) ){
         if( res<0 && pIter->iLeafPgno==iPg ){
-          /* Search for the end of the current doclist within the current
-          ** page. The end of a doclist is marked by a pair of successive
-          ** 0x00 bytes.  */
-          int iOff;
-          for(iOff=pIter->iLeafOffset+1; iOff<n; iOff++){
-            if( a[iOff]==0 && a[iOff-1]==0 ) break;
+          int iOff = pIter->iLeafOffset;
+          while( iOff<n ){
+            int nPos;
+            iOff += getVarint32(&a[iOff], nPos);
+            iOff += nPos;
+            if( iOff<n ){
+              u64 rowid;
+              iOff += getVarint(&a[iOff], &rowid);
+              if( rowid==0 ) break;
+            }
           }
-          iOff++;
 
           /* If the iterator is not yet at the end of the next page, load
           ** the next term and jump to the next iteration of the while()
@@ -1267,8 +1287,13 @@ static void fts5SegIterNext(
     /* Search for the end of the position list within the current page. */
     u8 *a = pLeaf->p;
     int n = pLeaf->n;
-    for(iOff=pIter->iLeafOffset; iOff<n && a[iOff]; iOff++);
-    iOff++;
+
+    iOff = pIter->iLeafOffset;
+    if( iOff<=n ){
+      int nPoslist;
+      iOff += getVarint32(&a[iOff], nPoslist);
+      iOff += nPoslist;
+    }
 
     if( iOff<n ){
       /* The next entry is on the current page */
@@ -1533,6 +1558,70 @@ static const u8 *fts5MultiIterTerm(Fts5MultiSegIter *pIter, int *pn){
 }
 
 /*
+** Return true if the chunk iterator passed as the second argument is
+** at EOF. Or if an error has already occurred. Otherwise, return false.
+*/
+static int fts5ChunkIterEof(Fts5Index *p, Fts5ChunkIter *pIter){
+  return (p->rc || pIter->pLeaf==0);
+}
+
+/*
+** Advance the chunk-iterator to the next chunk of data to read.
+*/
+static void fts5ChunkIterNext(Fts5Index *p, Fts5ChunkIter *pIter){
+  assert( pIter->nRem>=pIter->n );
+  pIter->nRem -= pIter->n;
+  fts5DataRelease(pIter->pLeaf);
+  pIter->pLeaf = 0;
+  pIter->p = 0;
+  if( pIter->nRem>0 ){
+    Fts5Data *pLeaf;
+    pIter->iLeafRowid++;
+    pLeaf = pIter->pLeaf = fts5DataRead(p, pIter->iLeafRowid);
+    if( pLeaf ){
+      pIter->n = MIN(pIter->nRem, pLeaf->n-4);
+      pIter->p = pLeaf->p+4;
+    }
+  }
+}
+
+/*
+** Intialize the chunk iterator to read the position list data for which 
+** the size field is at offset iOff of leaf pLeaf. 
+*/
+static void fts5ChunkIterInit(
+  Fts5Index *p,                   /* FTS5 backend object */
+  Fts5SegIter *pSeg,              /* Segment iterator to read poslist from */
+  Fts5ChunkIter *pIter            /* Initialize this object */
+){
+  int iId = pSeg->pSeg->iSegid;
+  i64 rowid = FTS5_SEGMENT_ROWID(pSeg->iIdx, iId, 0, pSeg->iLeafPgno);
+  Fts5Data *pLeaf = pSeg->pLeaf;
+  int iOff = pSeg->iLeafOffset;
+
+  memset(pIter, 0, sizeof(*pIter));
+  pIter->iLeafRowid = rowid;
+  if( iOff<pLeaf->n ){
+    fts5DataReference(pLeaf);
+    pIter->pLeaf = pLeaf;
+  }else{
+    pIter->nRem = 1;
+    fts5ChunkIterNext(p, pIter);
+    if( p->rc ) return;
+    iOff = 4;
+    pLeaf = pIter->pLeaf;
+  }
+
+  iOff += getVarint32(&pLeaf->p[iOff], pIter->nRem);
+  pIter->n = MIN(pLeaf->n - iOff, pIter->nRem);
+  pIter->p = pLeaf->p + iOff;
+
+  if( pIter->n==0 ){
+    fts5ChunkIterNext(p, pIter);
+  }
+}
+
+/*
 ** Read and return the next 32-bit varint from the position-list iterator 
 ** passed as the second argument.
 **
@@ -1543,17 +1632,12 @@ static const u8 *fts5MultiIterTerm(Fts5MultiSegIter *pIter, int *pn){
 static int fts5PosIterReadVarint(Fts5Index *p, Fts5PosIter *pIter){
   int iVal = 0;
   if( p->rc==SQLITE_OK ){
-    int iOff = pIter->iLeafOffset;
-    if( iOff < pIter->pLeaf->n ){
-      pIter->iLeafOffset += getVarint32(&pIter->pLeaf->p[iOff], iVal);
-    }else{
-      fts5DataRelease(pIter->pLeaf);
-      pIter->iLeafRowid++;
-      pIter->pLeaf = fts5DataRead(p, pIter->iLeafRowid);
-      if( pIter->pLeaf ){
-        pIter->iLeafOffset = 4 + getVarint32(&pIter->pLeaf->p[4], iVal);
-      }
+    if( pIter->iOff>=pIter->chunk.n ){
+      fts5ChunkIterNext(p, &pIter->chunk);
+      if( fts5ChunkIterEof(p, &pIter->chunk) ) return 0;
+      pIter->iOff = 0;
     }
+    pIter->iOff += getVarint32(&pIter->chunk.p[pIter->iOff], iVal);
   }
   return iVal;
 }
@@ -1563,16 +1647,15 @@ static int fts5PosIterReadVarint(Fts5Index *p, Fts5PosIter *pIter){
 */
 static void fts5PosIterNext(Fts5Index *p, Fts5PosIter *pIter){
   int iVal;
+  assert( fts5ChunkIterEof(p, &pIter->chunk)==0 );
   iVal = fts5PosIterReadVarint(p, pIter);
-  if( iVal==0 ){
-    fts5DataRelease(pIter->pLeaf);
-    pIter->pLeaf = 0;
-  }
-  else if( iVal==1 ){
-    pIter->iCol = fts5PosIterReadVarint(p, pIter);
-    pIter->iPos = fts5PosIterReadVarint(p, pIter) - 2;
-  }else{
-    pIter->iPos += (iVal - 2);
+  if( fts5ChunkIterEof(p, &pIter->chunk)==0 ){
+    if( iVal==1 ){
+      pIter->iCol = fts5PosIterReadVarint(p, pIter);
+      pIter->iPos = fts5PosIterReadVarint(p, pIter) - 2;
+    }else{
+      pIter->iPos += (iVal - 2);
+    }
   }
 }
 
@@ -1588,14 +1671,11 @@ static void fts5PosIterInit(
 ){
   if( p->rc==SQLITE_OK ){
     Fts5SegIter *pSeg = &pMulti->aSeg[ pMulti->aFirst[1] ];
-    int iId = pSeg->pSeg->iSegid;
-
     memset(pIter, 0, sizeof(*pIter));
-    pIter->pLeaf = pSeg->pLeaf;
-    pIter->iLeafOffset = pSeg->iLeafOffset;
-    pIter->iLeafRowid = FTS5_SEGMENT_ROWID(pSeg->iIdx, iId, 0, pSeg->iLeafPgno);
-    fts5DataReference(pIter->pLeaf);
-    fts5PosIterNext(p, pIter);
+    fts5ChunkIterInit(p, pSeg, &pIter->chunk);
+    if( fts5ChunkIterEof(p, &pIter->chunk)==0 ){
+      fts5PosIterNext(p, pIter);
+    }
   }
 }
 
@@ -1604,7 +1684,7 @@ static void fts5PosIterInit(
 ** at EOF. Or if an error has already occurred. Otherwise, return false.
 */
 static int fts5PosIterEof(Fts5Index *p, Fts5PosIter *pIter){
-  return (p->rc || pIter->pLeaf==0);
+  return (p->rc || pIter->chunk.pLeaf==0);
 }
 
 
@@ -2106,15 +2186,15 @@ static void fts5WritePendingDoclist(
     /* Append the rowid itself */
     fts5WriteAppendRowid(p, pWriter, pPoslist->iRowid);
 
+    /* Append the size of the position list in bytes */
+    fts5WriteAppendPoslistInt(p, pWriter, pPoslist->buf.n);
+
     /* Copy the position list to the output segment */
     while( i<pPoslist->buf.n){
       int iVal;
       i += getVarint32(&pPoslist->buf.p[i], iVal);
       fts5WriteAppendPoslistInt(p, pWriter, iVal);
     }
-
-    /* Write the position list terminator */
-    fts5WriteAppendZerobyte(p, pWriter);
   }
 
   /* Write the doclist terminator */
@@ -2297,9 +2377,8 @@ fflush(stdout);
       fts5MultiIterEof(p, pIter)==0;
       fts5MultiIterNext(p, pIter)
   ){
-    Fts5PosIter sPos;             /* Used to iterate through position list */
-    int iCol = 0;                 /* Current output column */
-    int iPos = 0;                 /* Current output position */
+    Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1] ];
+    Fts5ChunkIter sPos;           /* Used to iterate through position list */
     int nTerm;
     const u8 *pTerm = fts5MultiIterTerm(pIter, &nTerm);
 
@@ -2319,20 +2398,16 @@ fflush(stdout);
     fts5WriteAppendRowid(p, &writer, fts5MultiIterRowid(pIter));
 
     /* Copy the position list from input to output */
-    for(fts5PosIterInit(p, pIter, &sPos);
-        fts5PosIterEof(p, &sPos)==0;
-        fts5PosIterNext(p, &sPos)
-    ){
-      if( sPos.iCol!=iCol ){
-        fts5WriteAppendPoslistInt(p, &writer, 1);
-        fts5WriteAppendPoslistInt(p, &writer, sPos.iCol);
-        iCol = sPos.iCol;
-        iPos = 0;
+    fts5ChunkIterInit(p, pSeg, &sPos);
+    fts5WriteAppendPoslistInt(p, &writer, sPos.nRem);
+    for(/* noop */; fts5ChunkIterEof(p, &sPos)==0; fts5ChunkIterNext(p, &sPos)){
+      int iOff = 0;
+      while( iOff<sPos.n ){
+        int iVal;
+        iOff += getVarint32(&sPos.p[iOff], iVal);
+        fts5WriteAppendPoslistInt(p, &writer, iVal);
       }
-      fts5WriteAppendPoslistInt(p, &writer, (sPos.iPos-iPos) + 2);
-      iPos = sPos.iPos;
     }
-    fts5WriteAppendZerobyte(p, &writer);
   }
 
   /* Flush the last leaf page to disk. Set the output segment b-tree height
@@ -2910,7 +2985,6 @@ static int fts5DecodePoslist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
     int iVal;
     iOff += getVarint32(&a[iOff], iVal);
     fts5BufferAppendPrintf(pRc, pBuf, " %d", iVal);
-    if( iVal==0 ) break;
   }
   return iOff;
 }
@@ -2932,7 +3006,9 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
     fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
   }
   while( iOff<n ){
-    iOff += fts5DecodePoslist(pRc, pBuf, &a[iOff], n-iOff);
+    int nPos;
+    iOff += getVarint32(&a[iOff], nPos);
+    iOff += fts5DecodePoslist(pRc, pBuf, &a[iOff], MIN(n-iOff, nPos));
     if( iOff<n ){
       i64 iDelta;
       iOff += sqlite3GetVarint(&a[iOff], (u64*)&iDelta);
@@ -2989,11 +3065,16 @@ static void fts5DecodeFunction(
 
       iRowidOff = fts5GetU16(&a[0]);
       iTermOff = fts5GetU16(&a[2]);
-      iOff = 4;
-      if( iTermOff!=4 && iRowidOff!=4 ){
-        iOff += fts5DecodePoslist(&rc, &s, &a[iOff], n-iOff);
-        if( iRowidOff==0 ) iOff++;
+
+      if( iRowidOff ){
+        iOff = iRowidOff;
+      }else if( iTermOff ){
+        iOff = iTermOff;
+      }else{
+        iOff = n;
       }
+      fts5DecodePoslist(&rc, &s, &a[4], iOff-4);
+
 
       assert( iRowidOff==0 || iOff==iRowidOff );
       if( iRowidOff ){
@@ -3115,6 +3196,7 @@ int sqlite3Fts5IterEof(Fts5IndexIter *pIter){
 ** Move to the next matching rowid. 
 */
 void sqlite3Fts5IterNext(Fts5IndexIter *pIter, i64 iMatch){
+  fts5BufferZero(&pIter->poslist);
   fts5MultiIterNext(pIter->pIndex, pIter->pMulti);
 }
 
@@ -3123,6 +3205,21 @@ void sqlite3Fts5IterNext(Fts5IndexIter *pIter, i64 iMatch){
 */
 i64 sqlite3Fts5IterRowid(Fts5IndexIter *pIter){
   return fts5MultiIterRowid(pIter->pMulti);
+}
+
+/*
+** Return a pointer to a buffer containing a copy of the position list for
+** the current entry. Output variable *pn is set to the size of the buffer 
+** in bytes before returning.
+**
+** The returned buffer does not include the 0x00 terminator byte stored on
+** disk.
+*/
+const u8 *sqlite3Fts5IterPoslist(Fts5IndexIter *pIter, int *pn){
+  assert( sqlite3Fts5IterEof(pIter)==0 );
+
+  *pn = pIter->poslist.n;
+  return pIter->poslist.p;
 }
 
 /*

@@ -1,5 +1,5 @@
-C Fix\sminor\sproblems\sin\sterm\smatching.
-D 2014-06-26T12:31:41.784
+C Change\sthe\sposition\slist\sformat\sso\sthat\sits\ssize\sin\sbytes\sis\sstored\sat\sthe\sstart\sof\sthe\slist\sitself.
+D 2014-07-01T20:45:18.496
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -104,10 +104,10 @@ F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
 F ext/fts5/fts5.c 1af3184dd9c0e5c1686f71202d6b6cac8f225f05
-F ext/fts5/fts5Int.h 3fd1ebeb58963727cae0ccc8e4e80751bd870296
+F ext/fts5/fts5Int.h 80f3d38a69a0c58ccc94428c8fc8adbcf7561a2d
 F ext/fts5/fts5_config.c 94f1b4cb4de6a7cd5780c14adb0198e289df8cef
 F ext/fts5/fts5_expr.c 1874b17f10a38d0b21e0c38a28637f74e4d2570a
-F ext/fts5/fts5_index.c c8b21d12f15ca6fe028ede3f8e040dcb2aaef6f6
+F ext/fts5/fts5_index.c ea3dfe56a16813fcf59e03f6156965894b4b5e6f
 F ext/fts5/fts5_storage.c 7848d8f8528d798bba159900ea310a6d4a279da8
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 47a9f3cc92deefe163108e3507bd4614bf1f5da7
-R b3c853e0de2f65908d06e4caafc2bc71
+P 94eeb077d08a1d2607f3ff3a9fbf18229ba475bb
+R 5d9b8f6933c58725a24e426a963b0d97
 U dan
-Z 840b486e1cfb6171cd4015bc26a5f123
+Z bb8816e0d501865bff7c4c8da87350cb
