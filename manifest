@@ -1,5 +1,5 @@
-C Ensure\sthat\sall\sfields\sare\sloaded\sfrom\sthe\sstat4\stable\sfor\srecords\sthat\scorrespond\sto\sindexes\son\sWITHOUT\sROWID\stables\swith\scomposite\sprimary\skeys.
-D 2014-07-01T11:54:02.938
+C Add\sanother\stest\sto\sverify\sthat\sSQLite\sis\susing\sstat4\sdata\sfor\scomposite\sprimary\skeys\son\sWITHOUT\sROWID\stables.
+D 2014-07-01T15:22:11.950
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -316,7 +316,7 @@ F test/analyze5.test 765c4e284aa69ca172772aa940946f55629bc8c4
 F test/analyze6.test d31defa011a561b938b4608d3538c1b4e0b5e92c
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
-F test/analyze9.test 3129cc8a82c3d6c5dfd340143b18499219faebac
+F test/analyze9.test bd5aaf2a8fd2dd774b08251416897185531a8adf
 F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f925e9baafea625f63105f8013abb3807b418379
-R b0479b264ee66056e956ca8c9e5bfcd6
+P 21981e35062cc6b30e9576786cbf55265a7a4d41
+R e4440e4e4a98b796b4fa8322644ff7eb
 U dan
-Z 2688039829f2bbaff9c051901e2506da
+Z 9cb18e75f66a8c4075f21fee1b6ab8d9
