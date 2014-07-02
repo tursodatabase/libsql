@@ -73,6 +73,7 @@ LIBOBJ+= vdbe.o parse.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
 LIBOBJ += fts5.o
+LIBOBJ += fts5_buffer.o
 LIBOBJ += fts5_config.o
 LIBOBJ += fts5_expr.o
 LIBOBJ += fts5_index.o
@@ -572,6 +573,9 @@ rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 
 # FTS5 things
 #
+fts5_buffer.o:	$(TOP)/ext/fts5/fts5_buffer.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_buffer.c
+
 fts5_config.o:	$(TOP)/ext/fts5/fts5_config.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_config.c
 

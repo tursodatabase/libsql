@@ -254,7 +254,6 @@ static int fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
 
 typedef struct Fts5BtreeIter Fts5BtreeIter;
 typedef struct Fts5BtreeIterLevel Fts5BtreeIterLevel;
-typedef struct Fts5Buffer Fts5Buffer;
 typedef struct Fts5ChunkIter Fts5ChunkIter;
 typedef struct Fts5Data Fts5Data;
 typedef struct Fts5MultiSegIter Fts5MultiSegIter;
@@ -296,15 +295,6 @@ struct Fts5Index {
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
   sqlite3_stmt *pWriter;          /* "INSERT ... %_data VALUES(?,?)" */
   sqlite3_stmt *pDeleter;         /* "DELETE FROM %_data ... id>=? AND id<=?" */
-};
-
-/*
-** Buffer object for the incremental building of string data.
-*/
-struct Fts5Buffer {
-  u8 *p;
-  int n;
-  int nSpace;
 };
 
 struct Fts5IndexIter {
@@ -558,129 +548,6 @@ static void *fts5IdxMalloc(Fts5Index *p, int nByte){
   return pRet;
 }
 
-
-static int fts5BufferGrow(int *pRc, Fts5Buffer *pBuf, int nByte){
-  /* A no-op if an error has already occurred */
-  if( *pRc ) return 1;
-
-  if( (pBuf->n + nByte) > pBuf->nSpace ){
-    u8 *pNew;
-    int nNew = pBuf->nSpace ? pBuf->nSpace*2 : 64;
-    while( nNew<(pBuf->n + nByte) ){
-      nNew = nNew * 2;
-    }
-    pNew = sqlite3_realloc(pBuf->p, nNew);
-    if( pNew==0 ){
-      *pRc = SQLITE_NOMEM;
-      return 1;
-    }else{
-      pBuf->nSpace = nNew;
-      pBuf->p = pNew;
-    }
-  }
-  return 0;
-}
-
-/*
-** Encode value iVal as an SQLite varint and append it to the buffer object
-** pBuf. If an OOM error occurs, set the error code in p.
-*/
-static void fts5BufferAppendVarint(int *pRc, Fts5Buffer *pBuf, i64 iVal){
-  if( fts5BufferGrow(pRc, pBuf, 9) ) return;
-  pBuf->n += sqlite3PutVarint(&pBuf->p[pBuf->n], iVal);
-}
-
-/*
-** Append buffer nData/pData to buffer pBuf. If an OOM error occurs, set 
-** the error code in p. If an error has already occurred when this function
-** is called, it is a no-op.
-*/
-static void fts5BufferAppendBlob(
-  int *pRc,
-  Fts5Buffer *pBuf, 
-  int nData, 
-  const u8 *pData
-){
-  if( fts5BufferGrow(pRc, pBuf, nData) ) return;
-  memcpy(&pBuf->p[pBuf->n], pData, nData);
-  pBuf->n += nData;
-}
-
-/*
-** Append the nul-terminated string zStr to the buffer pBuf. This function
-** ensures that the byte following the buffer data is set to 0x00, even 
-** though this byte is not included in the pBuf->n count.
-*/
-static void fts5BufferAppendString(
-  int *pRc,
-  Fts5Buffer *pBuf, 
-  const char *zStr
-){
-  int nStr = strlen(zStr);
-  if( fts5BufferGrow(pRc, pBuf, nStr+1) ) return;
-  fts5BufferAppendBlob(pRc, pBuf, nStr, (const u8*)zStr);
-  if( *pRc==SQLITE_OK ) pBuf->p[pBuf->n] = 0x00;
-}
-
-/*
-** Argument zFmt is a printf() style format string. This function performs
-** the printf() style processing, then appends the results to buffer pBuf.
-**
-** Like fts5BufferAppendString(), this function ensures that the byte 
-** following the buffer data is set to 0x00, even though this byte is not
-** included in the pBuf->n count.
-*/ 
-static void fts5BufferAppendPrintf(
-  int *pRc,
-  Fts5Buffer *pBuf, 
-  char *zFmt, ...
-){
-  if( *pRc==SQLITE_OK ){
-    char *zTmp;
-    va_list ap;
-    va_start(ap, zFmt);
-    zTmp = sqlite3_vmprintf(zFmt, ap);
-    va_end(ap);
-
-    if( zTmp==0 ){
-      *pRc = SQLITE_NOMEM;
-    }else{
-      fts5BufferAppendString(pRc, pBuf, zTmp);
-      sqlite3_free(zTmp);
-    }
-  }
-}
-
-/*
-** Free any buffer allocated by pBuf. Zero the structure before returning.
-*/
-static void fts5BufferFree(Fts5Buffer *pBuf){
-  sqlite3_free(pBuf->p);
-  memset(pBuf, 0, sizeof(Fts5Buffer));
-}
-
-/*
-** Zero the contents of the buffer object. But do not free the associated 
-** memory allocation.
-*/
-static void fts5BufferZero(Fts5Buffer *pBuf){
-  pBuf->n = 0;
-}
-
-/*
-** Set the buffer to contain nData/pData. If an OOM error occurs, leave an
-** the error code in p. If an error has already occurred when this function
-** is called, it is a no-op.
-*/
-static void fts5BufferSet(
-  int *pRc,
-  Fts5Buffer *pBuf, 
-  int nData, 
-  const u8 *pData
-){
-  pBuf->n = 0;
-  fts5BufferAppendBlob(pRc, pBuf, nData, pData);
-}
 
 /*
 ** Compare the contents of the pLeft buffer with the pRight/nRight blob.
@@ -1619,6 +1486,11 @@ static void fts5ChunkIterInit(
   if( pIter->n==0 ){
     fts5ChunkIterNext(p, pIter);
   }
+}
+
+static void fts5ChunkIterRelease(Fts5ChunkIter *pIter){
+  fts5DataRelease(pIter->pLeaf);
+  pIter->pLeaf = 0;
 }
 
 /*
@@ -2935,15 +2807,17 @@ static void fts5DecodeStructure(
 
   for(iLvl=0; iLvl<p->nLevel; iLvl++){
     Fts5StructureLevel *pLvl = &p->aLevel[iLvl];
-    fts5BufferAppendPrintf(pRc, pBuf, " {lvl=%d nMerge=%d", iLvl, pLvl->nMerge);
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
+        " {lvl=%d nMerge=%d", iLvl, pLvl->nMerge
+    );
     for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
       Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
-      fts5BufferAppendPrintf(pRc, pBuf, 
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
           " {id=%d h=%d leaves=%d..%d}", pSeg->iSegid, pSeg->nHeight, 
           pSeg->pgnoFirst, pSeg->pgnoLast
       );
     }
-    fts5BufferAppendPrintf(pRc, pBuf, "}");
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
   }
 
   fts5StructureRelease(p);
@@ -2984,7 +2858,7 @@ static int fts5DecodePoslist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
   while( iOff<n ){
     int iVal;
     iOff += getVarint32(&a[iOff], iVal);
-    fts5BufferAppendPrintf(pRc, pBuf, " %d", iVal);
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " %d", iVal);
   }
   return iOff;
 }
@@ -3003,7 +2877,7 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
 
   if( iOff<n ){
     iOff += sqlite3GetVarint(&a[iOff], (u64*)&iDocid);
-    fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
   }
   while( iOff<n ){
     int nPos;
@@ -3014,7 +2888,7 @@ static int fts5DecodeDoclist(int *pRc, Fts5Buffer *pBuf, const u8 *a, int n){
       iOff += sqlite3GetVarint(&a[iOff], (u64*)&iDelta);
       if( iDelta==0 ) return iOff;
       iDocid -= iDelta;
-      fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, " rowid=%lld", iDocid);
     }
   }
 
@@ -3044,16 +2918,18 @@ static void fts5DecodeFunction(
 
   if( iSegid==0 ){
     if( iRowid==FTS5_AVERAGES_ROWID ){
-      fts5BufferAppendPrintf(&rc, &s, "{averages} ");
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, "{averages} ");
     }else{
-      fts5BufferAppendPrintf(&rc, &s, "{structure idx=%d}", (int)(iRowid-10));
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, 
+          "{structure idx=%d}", (int)(iRowid-10)
+      );
       fts5DecodeStructure(&rc, &s, a, n);
     }
   }else{
 
     Fts5Buffer term;
     memset(&term, 0, sizeof(Fts5Buffer));
-    fts5BufferAppendPrintf(&rc, &s, "(idx=%d segid=%d h=%d pgno=%d) ",
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, "(idx=%d segid=%d h=%d pgno=%d) ",
         iIdx, iSegid, iHeight, iPgno
     );
 
@@ -3089,7 +2965,7 @@ static void fts5DecodeFunction(
         fts5BufferAppendBlob(&rc, &term, nByte, &a[iOff]);
         iOff += nByte;
 
-        fts5BufferAppendPrintf(
+        sqlite3Fts5BufferAppendPrintf(
             &rc, &s, " term=%.*s", term.n, (const char*)term.p
         );
         iOff += fts5DecodeDoclist(&rc, &s, &a[iOff], n-iOff);
@@ -3102,12 +2978,14 @@ static void fts5DecodeFunction(
       Fts5NodeIter ss;
       for(fts5NodeIterInit(a, n, &ss); ss.aData; fts5NodeIterNext(&rc, &ss)){
         if( ss.term.n==0 ){
-          fts5BufferAppendPrintf(&rc, &s, " left=%d", ss.iChild);
+          sqlite3Fts5BufferAppendPrintf(&rc, &s, " left=%d", ss.iChild);
         }else{
-          fts5BufferAppendPrintf(&rc,&s, " \"%.*s\"", ss.term.n, ss.term.p);
+          sqlite3Fts5BufferAppendPrintf(&rc,&s, " \"%.*s\"", 
+              ss.term.n, ss.term.p
+          );
         }
         if( ss.nEmpty ){
-          fts5BufferAppendPrintf(&rc, &s, " empty=%d", ss.nEmpty);
+          sqlite3Fts5BufferAppendPrintf(&rc, &s, " empty=%d", ss.nEmpty);
         }
       }
       fts5NodeIterFree(&ss);
@@ -3169,6 +3047,7 @@ Fts5IndexIter *sqlite3Fts5IndexQuery(
 
   pRet = (Fts5IndexIter*)sqlite3_malloc(sizeof(Fts5IndexIter));
   if( pRet ){
+    memset(pRet, 0, sizeof(Fts5IndexIter));
     pRet->pStruct = fts5StructureRead(p, 0);
     if( pRet->pStruct ){
       fts5MultiIterNew(p, 
@@ -3216,8 +3095,23 @@ i64 sqlite3Fts5IterRowid(Fts5IndexIter *pIter){
 ** disk.
 */
 const u8 *sqlite3Fts5IterPoslist(Fts5IndexIter *pIter, int *pn){
-  assert( sqlite3Fts5IterEof(pIter)==0 );
+  Fts5ChunkIter iter;
+  Fts5Index *p = pIter->pIndex;
+  Fts5SegIter *pSeg = &pIter->pMulti->aSeg[ pIter->pMulti->aFirst[1] ];
 
+  assert( sqlite3Fts5IterEof(pIter)==0 );
+  fts5ChunkIterInit(p, pSeg, &iter);
+  if( fts5ChunkIterEof(p, &iter)==0 ){
+    fts5BufferZero(&pIter->poslist);
+    fts5BufferGrow(&p->rc, &pIter->poslist, iter.nRem);
+    while( fts5ChunkIterEof(p, &iter)==0 ){
+      fts5BufferAppendBlob(&p->rc, &pIter->poslist, iter.n, iter.p);
+      fts5ChunkIterNext(p, &iter);
+    }
+  }
+  fts5ChunkIterRelease(&iter);
+
+  if( p->rc ) return 0;
   *pn = pIter->poslist.n;
   return pIter->poslist.p;
 }
@@ -3230,6 +3124,7 @@ void sqlite3Fts5IterClose(Fts5IndexIter *pIter){
     fts5MultiIterFree(pIter->pIndex, pIter->pMulti);
     fts5StructureRelease(pIter->pStruct);
     fts5CloseReader(pIter->pIndex);
+    fts5BufferFree(&pIter->poslist);
     sqlite3_free(pIter);
   }
 }

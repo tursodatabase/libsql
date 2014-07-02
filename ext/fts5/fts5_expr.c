@@ -68,6 +68,8 @@ struct Fts5ExprTerm {
 ** within a document for it to match.
 */
 struct Fts5ExprPhrase {
+  Fts5Buffer poslist;             /* Current position list */
+  i64 iRowid;                     /* Current rowid */
   int nTerm;                      /* Number of entries in aTerm[] */
   Fts5ExprTerm aTerm[0];          /* Terms that make up this phrase */
 };
@@ -93,6 +95,43 @@ struct Fts5Parse {
   int rc;
   Fts5ExprNode *pExpr;            /* Result of a successful parse */
 };
+
+/*************************************************************************
+*/
+typedef struct Fts5PoslistIter Fts5PoslistIter;
+struct Fts5PoslistIter {
+  const u8 *a;                    /* Position list to iterate through */
+  int n;                          /* Size of buffer at a[] in bytes */
+  int i;                          /* Current offset in a[] */
+
+  /* Output variables */
+  int bEof;                       /* Set to true at EOF */
+  i64 iPos;                       /* (iCol<<32) + iPos */
+};
+
+static void fts5PoslistIterNext(Fts5PoslistIter *pIter){
+  if( pIter->i>=pIter->n ){
+    pIter->bEof = 1;
+  }else{
+    int iVal;
+    pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+    if( iVal==1 ){
+      pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+      pIter->iPos = ((u64)iVal << 32);
+      pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+    }
+    pIter->iPos += (iVal-2);
+  }
+}
+
+static void fts5PoslistIterInit(const u8 *a, int n, Fts5PoslistIter *pIter){
+  memset(pIter, 0, sizeof(*pIter));
+  pIter->a = a;
+  pIter->n = n;
+  fts5PoslistIterNext(pIter);
+}
+/*
+*************************************************************************/
 
 void sqlite3Fts5ParseError(Fts5Parse *pParse, const char *zFmt, ...){
   if( pParse->rc==SQLITE_OK ){
@@ -246,6 +285,259 @@ static int fts5ExprNodeTest(Fts5Expr *pExpr, Fts5ExprNode *pNode){
   assert( 0 );
   return SQLITE_OK;
 }
+
+/*
+** All individual term iterators in pPhrase are guaranteed to be valid and
+** pointing to the same rowid when this function is called. This function 
+** checks if the current rowid really is a match, and if so populates
+** the pPhrase->poslist buffer accordingly. Output parameter *pbMatch
+** is set to true if this is really a match, or false otherwise.
+**
+** SQLITE_OK is returned if an error occurs, or an SQLite error code 
+** otherwise. It is not considered an error code if the current rowid is 
+** not a match.
+*/
+static int fts5ExprPhraseIsMatch(
+  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
+  int *pbMatch                    /* OUT: Set to true if really a match */
+){
+  Fts5PoslistIter aStatic[4];
+  Fts5PoslistIter *aIter = aStatic;
+  int i;
+  int rc = SQLITE_OK;
+
+  if( pPhrase->nTerm>(sizeof(aStatic) / sizeof(aStatic[0])) ){
+    int nByte = sizeof(Fts5PoslistIter) * pPhrase->nTerm;
+    aIter = (Fts5PoslistIter*)sqlite3_malloc(nByte);
+    if( !aIter ) return SQLITE_NOMEM;
+  }
+
+  /* Initialize a term iterator for each term in the phrase */
+  for(i=0; i<pPhrase->nTerm; i++){
+    int n;
+    const u8 *a = sqlite3Fts5IterPoslist(pPhrase->aTerm[i].pIter, &n);
+    fts5PoslistIterInit(a, n, &aIter[i]);
+  }
+
+  *pbMatch = 0;
+  while( 1 ){
+
+    int bMatch = 1;
+    i64 iPos = aIter[0].iPos;
+    for(i=1; i<pPhrase->nTerm; i++){
+      Fts5PoslistIter *pPos = &aIter[i];
+      i64 iAdj = pPos->iPos-i;
+      if( (pPos->iPos-i)!=iPos ){
+        bMatch = 0;
+        if( iAdj>iPos ) iPos = iAdj;
+      }
+    }
+    if( bMatch ){
+      *pbMatch = 1;
+      break;
+    }
+
+    for(i=0; i<pPhrase->nTerm; i++){
+      Fts5PoslistIter *pPos = &aIter[i];
+      while( (pPos->iPos-i) < iPos ){
+        fts5PoslistIterNext(pPos);
+        if( pPos->bEof ) goto ismatch_out;
+      }
+    }
+  }
+
+ ismatch_out:
+  if( aIter!=aStatic ) sqlite3_free(aIter);
+  return rc;
+}
+
+/*
+** All individual term iterators in pPhrase are guaranteed to be valid when
+** this function is called. This function checks if all term iterators
+** point to the same rowid, and if not, advances them until they do.
+** If an EOF is reached before this happens, *pbEof is set to true before
+** returning.
+**
+** SQLITE_OK is returned if an error occurs, or an SQLite error code 
+** otherwise. It is not considered an error code if an iterator reaches
+** EOF.
+*/
+static int fts5ExprPhraseNextRowidMatch(
+  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
+  int *pbEof                      /* OUT: Set to true if phrase at EOF */
+){
+  assert( *pbEof==0 );
+  while( 1 ){
+    int i;
+    int bMatch = 1;
+    i64 iMin = sqlite3Fts5IterRowid(pPhrase->aTerm[0].pIter);
+    for(i=1; i<pPhrase->nTerm; i++){
+      i64 iRowid = sqlite3Fts5IterRowid(pPhrase->aTerm[i].pIter);
+      if( iRowid!=iMin ){
+        bMatch = 0;
+        if( iRowid<iMin ) iMin = iRowid;
+      }
+    }
+    if( bMatch ) break;
+
+    for(i=0; i<pPhrase->nTerm; i++){
+      Fts5IndexIter *pIter = pPhrase->aTerm[i].pIter;
+      while( sqlite3Fts5IterRowid(pIter)>iMin ){
+        sqlite3Fts5IterNext(pIter, 0);
+        if( sqlite3Fts5IterEof(pIter) ){
+          *pbEof = 1;
+          return SQLITE_OK;
+        }
+      }
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+static int fts5ExprPhraseAdvanceAll(
+  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
+  int *pbEof                      /* OUT: Set to true if phrase at EOF */
+){
+  int i;
+  int rc = SQLITE_OK;
+  for(i=0; i<pPhrase->nTerm; i++){
+    Fts5IndexIter *pIter = pPhrase->aTerm[i].pIter;
+    sqlite3Fts5IterNext(pIter, 0);
+    if( sqlite3Fts5IterEof(pIter) ){
+      *pbEof = 1;
+      break;
+    }
+  }
+  return rc;
+}
+
+/*
+** Argument pPhrase points to a multi-term phrase object. All individual
+** term iterators point to valid entries (not EOF).
+*
+** This function tests if the term iterators currently all point to the
+** same rowid, and if so, if the rowid matches the phrase constraint. If
+** so, the pPhrase->poslist buffer is populated and the pPhrase->iRowid
+** variable set before returning. Or, if the current combination of 
+** iterators is not a match, they are advanced until they are. If one of
+** the iterators reaches EOF before a match is found, *pbEof is set to
+** true before returning. The final values of the pPhrase->poslist and 
+** iRowid fields are undefined in this case.
+**
+** SQLITE_OK is returned if an error occurs, or an SQLite error code 
+** otherwise. It is not considered an error code if an iterator reaches
+** EOF.
+*/
+static int fts5ExprPhraseNextMatch(
+  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
+  int *pbEof                      /* OUT: Set to true if phrase at EOF */
+){
+  int i;                          /* Used to iterate through terms */
+  int rc = SQLITE_OK;             /* Return code */
+  int bMatch = 0;
+
+  assert( *pbEof==0 );
+
+  while( 1 ){
+    rc = fts5ExprPhraseNextRowidMatch(pExpr, pPhrase, pbEof);
+    if( rc!=SQLITE_OK || *pbEof ) break;
+
+    /* At this point, all term iterators are valid and point to the same rowid.
+    ** The following assert() statements verify this.  */
+#ifdef SQLITE_DEBUG
+    for(i=0; i<pPhrase->nTerm; i++){
+      Fts5IndexIter *pIter = pPhrase->aTerm[i].pIter;
+      Fts5IndexIter *pOne = pPhrase->aTerm[0].pIter;
+      assert( 0==sqlite3Fts5IterEof(pIter) );
+      assert( sqlite3Fts5IterRowid(pOne)==sqlite3Fts5IterRowid(pIter) );
+    }
+#endif
+
+    rc = fts5ExprPhraseIsMatch(pExpr, pPhrase, &bMatch);
+    if( rc!=SQLITE_OK || bMatch ) break;
+    rc = fts5ExprPhraseAdvanceAll(pExpr, pPhrase, pbEof);
+    if( rc!=SQLITE_OK || *pbEof ) break;
+  }
+
+  pPhrase->iRowid = sqlite3Fts5IterRowid(pPhrase->aTerm[0].pIter);
+  return rc;
+}
+
+/*
+** Advance the phrase iterator pPhrase to the next match.
+*/
+static int fts5ExprPhraseNext(
+  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
+  int *pbEof                      /* OUT: Set to true if phrase at EOF */
+){
+  int i;
+  for(i=0; i<pPhrase->nTerm; i++){
+    Fts5IndexIter *pIter = pPhrase->aTerm[i].pIter;
+    sqlite3Fts5IterNext(pIter, 0);
+    if( sqlite3Fts5IterEof(pIter) ){
+      *pbEof = 1;
+      return SQLITE_OK;
+    }
+  }
+
+  if( pPhrase->nTerm==1 ){
+    pPhrase->iRowid = sqlite3Fts5IterRowid(pPhrase->aTerm[0].pIter);
+  }else{
+    fts5ExprPhraseNextMatch(pExpr, pPhrase, pbEof);
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** Point phrase object pPhrase at the first matching document. Or, if there 
+** are no matching documents at all, move pPhrase to EOF and set *pbEof to
+** true before returning.
+**
+** If no error occurs, SQLITE_OK is returned. Otherwise, an SQLite error
+** code.
+*/
+static int fts5ExprPhraseFirst(
+  Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
+  int *pbEof                      /* OUT: Set to true if phrase at EOF */
+){
+  int i;                          /* Used to iterate through terms */
+  int rc = SQLITE_OK;
+
+  for(i=0; i<pPhrase->nTerm; i++){
+    Fts5ExprTerm *pTerm = &pPhrase->aTerm[i];
+    pTerm->pIter = sqlite3Fts5IndexQuery(
+        pExpr->pIndex, pTerm->zTerm, strlen(pTerm->zTerm),
+        (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
+        (pExpr->bAsc ? FTS5INDEX_QUERY_ASC : 0)
+    );
+    if( sqlite3Fts5IterEof(pTerm->pIter) ){
+      *pbEof = 1;
+      return SQLITE_OK;
+    }
+  }
+
+  if( pPhrase->nTerm==1 ){
+    const u8 *a; int n;
+    Fts5IndexIter *pIter = pPhrase->aTerm[0].pIter;
+    pPhrase->iRowid = sqlite3Fts5IterRowid(pIter);
+    a = sqlite3Fts5IterPoslist(pIter, &n);
+    if( a ){
+      sqlite3Fts5BufferSet(&rc, &pPhrase->poslist, n, a);
+    }
+  }else{
+    rc = fts5ExprPhraseNextMatch(pExpr, pPhrase, pbEof);
+  }
+
+  return rc;
+}
  
 static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
   int rc = SQLITE_OK;
@@ -253,20 +545,10 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
   pNode->bEof = 0;
   if( pNode->eType==FTS5_STRING ){
     Fts5ExprPhrase *pPhrase = pNode->pNear->apPhrase[0];
-    Fts5ExprTerm *pTerm = &pPhrase->aTerm[0];
-    assert( pNode->pNear->nPhrase==1 && pPhrase->nTerm==1 );
-
-    pTerm->pIter = sqlite3Fts5IndexQuery(
-        pExpr->pIndex, pTerm->zTerm, strlen(pTerm->zTerm),
-        (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
-        (pExpr->bAsc ? FTS5INDEX_QUERY_ASC : 0)
-    );
-    if( sqlite3Fts5IterEof(pTerm->pIter) ){
-      pNode->bEof = 1;
-    }else{
-      pNode->iRowid = sqlite3Fts5IterRowid(pTerm->pIter);
-    }
-
+    assert( pNode->pNear->nPhrase==1 );
+    assert( pNode->bEof==0 );
+    rc = fts5ExprPhraseFirst(pExpr, pPhrase, &pNode->bEof);
+    pNode->iRowid = pPhrase->iRowid;
   }else{
     rc = fts5ExprNodeFirst(pExpr, pNode->pLeft);
     if( rc==SQLITE_OK ){
@@ -284,14 +566,9 @@ static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 
   if( pNode->eType==FTS5_STRING ){
     Fts5ExprPhrase *pPhrase = pNode->pNear->apPhrase[0];
-    Fts5ExprTerm *pTerm = &pPhrase->aTerm[0];
-    assert( pNode->pNear->nPhrase==1 && pPhrase->nTerm==1 );
-    sqlite3Fts5IterNext(pTerm->pIter, 0);
-    if( sqlite3Fts5IterEof(pTerm->pIter) ){
-      pNode->bEof = 1;
-    }else{
-      pNode->iRowid = sqlite3Fts5IterRowid(pTerm->pIter);
-    }
+    assert( pNode->pNear->nPhrase==1 );
+    rc = fts5ExprPhraseNext(pExpr, pPhrase, &pNode->bEof);
+    pNode->iRowid = pPhrase->iRowid;
   }else{
     assert( 0 );
   }
@@ -373,6 +650,7 @@ static void fts5ExprPhraseFree(Fts5ExprPhrase *pPhrase){
         sqlite3Fts5IterClose(pTerm->pIter);
       }
     }
+    fts5BufferFree(&pPhrase->poslist);
     sqlite3_free(pPhrase);
   }
 }
@@ -455,13 +733,13 @@ static int fts5ParseTokenize(
         sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * nNew
     );
     if( pNew==0 ) return SQLITE_NOMEM;
+    if( pPhrase==0 ) memset(pNew, 0, sizeof(Fts5ExprPhrase));
     pCtx->pPhrase = pPhrase = pNew;
     pNew->nTerm = nNew - SZALLOC;
   }
 
   pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
-  pTerm->bPrefix = 0;
-  pTerm->pIter = 0;
+  memset(pTerm, 0, sizeof(Fts5ExprTerm));
   pTerm->zTerm = fts5Strdup(pToken, nToken);
 
   return pTerm->zTerm ? SQLITE_OK : SQLITE_NOMEM;

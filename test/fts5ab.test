@@ -94,11 +94,42 @@ foreach {tn expr res} {
   do_execsql_test 2.7.$tn { SELECT rowid FROM t1 WHERE t1 MATCH $expr } $res
 }
 
-#db eval {
-#  SELECT fts5_decode(rowid, block) AS t FROM t1_data;
-#} {
-#  puts $t
-#}
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 2.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(a,b);
+  INSERT INTO t1(t1) VALUES('pgsz=32');
+}
+
+foreach {tn a b} {
+   1 {abashed abandons abase abash abaft} {abases abased}
+   2 {abasing abases abaft abated abandons} {abases abandoned}
+   3 {abatement abash abash abated abase} {abasements abashing}
+   4 {abaft abasements abase abasement abasing} {abasement abases}
+   5 {abaft abashing abatement abash abasements} {abandons abandoning}
+   6 {aback abate abasements abashes abandoned} {abasement abased}
+   7 {abandons abated abased aback abandoning} {abases abandoned}
+   8 {abashing abases abasement abaft abashing} {abashed abate}
+   9 {abash abase abate abashing abashed} {abandon abandoned}
+   10 {abate abandoning abandons abasement aback} {abandon abandoning}
+} {
+  do_execsql_test 2.1.$tn.1 { INSERT INTO t1 VALUES($a, $b) } 
+  do_execsql_test 2.1.$tn.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+}
+
+foreach {tn expr res} {
+  1 {abash} {9 5 3 1}
+  2 {abase} {9 4 3 1}
+  3 {abase + abash} {1}
+  4 {abash + abase} {9}
+  5 {abaft + abashing} {8 5}
+  6 {abandon + abandoning} {10}
+  7 {"abashing abases abasement abaft abashing"} {8}
+} {
+  do_execsql_test 2.2.$tn {
+    SELECT rowid FROM t1 WHERE t1 MATCH $expr
+  } $res
+}
 
 finish_test
-

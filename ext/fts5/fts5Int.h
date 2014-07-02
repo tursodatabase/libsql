@@ -68,6 +68,39 @@ void sqlite3Fts5Dequote(char *z);
 **************************************************************************/
 
 /**************************************************************************
+*/
+
+/*
+** Buffer object for the incremental building of string data.
+*/
+typedef struct Fts5Buffer Fts5Buffer;
+struct Fts5Buffer {
+  u8 *p;
+  int n;
+  int nSpace;
+};
+
+int sqlite3Fts5BufferGrow(int*, Fts5Buffer*, int);
+void sqlite3Fts5BufferAppendVarint(int*, Fts5Buffer*, i64);
+void sqlite3Fts5BufferAppendBlob(int*, Fts5Buffer*, int, const u8*);
+void sqlite3Fts5BufferAppendString(int *, Fts5Buffer*, const char*);
+void sqlite3Fts5BufferFree(Fts5Buffer*);
+void sqlite3Fts5BufferZero(Fts5Buffer*);
+void sqlite3Fts5BufferSet(int*, Fts5Buffer*, int, const u8*);
+void sqlite3Fts5BufferAppendPrintf(int *, Fts5Buffer*, char *zFmt, ...);
+
+#define fts5BufferZero(x)             sqlite3Fts5BufferZero(x)
+#define fts5BufferGrow(a,b,c)         sqlite3Fts5BufferGrow(a,b,c)
+#define fts5BufferAppendVarint(a,b,c) sqlite3Fts5BufferAppendVarint(a,b,c)
+#define fts5BufferFree(a)             sqlite3Fts5BufferFree(a)
+#define fts5BufferAppendBlob(a,b,c,d) sqlite3Fts5BufferAppendBlob(a,b,c,d)
+#define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
+
+/*
+** End of interface to code in fts5_buffer.c.
+**************************************************************************/
+
+/**************************************************************************
 ** Interface to code in fts5_index.c. fts5_index.c contains contains code
 ** to access the data stored in the %_data table.
 */
