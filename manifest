@@ -1,5 +1,5 @@
-C Add\sanother\stest\sto\sverify\sthat\sSQLite\sis\susing\sstat4\sdata\sfor\scomposite\sprimary\skeys\son\sWITHOUT\sROWID\stables.
-D 2014-07-01T15:22:11.950
+C Change\sfts3/4\sso\sthat\sthe\s"unicode61"\sis\sincluded\sin\sbuilds\sby\sdefault.\sIt\smay\snow\sbe\sexcluded\sby\sdefining\sSQLITE_DISABLE_FTS3_UNICODE.
+D 2014-07-03T12:18:22.515
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -78,9 +78,9 @@ F ext/fts3/README.content fdc666a70d5257a64fee209f97cf89e0e6e32b51
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers e0a8b81383ea60d0334d274fadf305ea14a8c314
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 20bc65862cfcea0a39bb64a819f8fe92a8e144c1
+F ext/fts3/fts3.c 2f5e925bdb9d6d3e488c5a981af60cad4f9cdfe7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 16cddf2d7b0e5f3681615ae1d8ca0e45fca44918
+F ext/fts3/fts3Int.h 53d4eca1fb23eab00681fb028fb82eb5705c1e21
 F ext/fts3/fts3_aux.c 5c211e17a64885faeb16b9ba7772f9d5445c2365
 F ext/fts3/fts3_expr.c 351395fad6fcb16ecfc61db0861008a70101330c
 F ext/fts3/fts3_hash.c 29b986e43f4e9dd40110eafa377dc0d63c422c60
@@ -94,8 +94,8 @@ F ext/fts3/fts3_tokenize_vtab.c 011170fe9eba5ff062f1a31d3188e00267716706
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_unicode.c 92391b4b4fb043564c6539ea9b8661e3bcba47b9
-F ext/fts3/fts3_unicode2.c 0113d3acf13429e6dc38e0647d1bc71211c31a4d
+F ext/fts3/fts3_unicode.c 0f598fa4c96af1188e4d5f5e8e78e25500bd5922
+F ext/fts3/fts3_unicode2.c c8adda75aad0c6c252ef3dd555f811f437485044
 F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
@@ -245,7 +245,7 @@ F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
-F src/test_config.c dabaa32868974e1ae39770cc17d7e066a9c38e6d
+F src/test_config.c 42fb068a038c8684741522f551325228b1389e63
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 21981e35062cc6b30e9576786cbf55265a7a4d41
-R e4440e4e4a98b796b4fa8322644ff7eb
+P 0df1fe72f8271abc86cd552027d938c910f90967
+R ef308fba8a4f61e769b2e20d3673cd17
 U dan
-Z 9cb18e75f66a8c4075f21fee1b6ab8d9
+Z 86452bd7dda1f4219032eac6ac7bc6d3

@@ -13,7 +13,7 @@
 ** Implementation of the "unicode" full-text-search tokenizer.
 */
 
-#ifdef SQLITE_ENABLE_FTS4_UNICODE61
+#ifndef SQLITE_DISABLE_FTS3_UNICODE
 
 #include "fts3Int.h"
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
@@ -390,4 +390,4 @@ void sqlite3Fts3UnicodeTokenizer(sqlite3_tokenizer_module const **ppModule){
 }
 
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3) */
-#endif /* ifndef SQLITE_ENABLE_FTS4_UNICODE61 */
+#endif /* ifndef SQLITE_DISABLE_FTS3_UNICODE */
