@@ -1156,7 +1156,7 @@ static void fts5SegIterNext(
     int n = pLeaf->n;
 
     iOff = pIter->iLeafOffset;
-    if( iOff<=n ){
+    if( iOff<n ){
       int nPoslist;
       iOff += getVarint32(&a[iOff], nPoslist);
       iOff += nPoslist;

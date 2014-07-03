@@ -97,7 +97,7 @@ foreach {tn expr res} {
 #-------------------------------------------------------------------------
 #
 reset_db
-do_execsql_test 2.0 {
+do_execsql_test 3.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(a,b);
   INSERT INTO t1(t1) VALUES('pgsz=32');
 }
@@ -114,8 +114,8 @@ foreach {tn a b} {
    9 {abash abase abate abashing abashed} {abandon abandoned}
    10 {abate abandoning abandons abasement aback} {abandon abandoning}
 } {
-  do_execsql_test 2.1.$tn.1 { INSERT INTO t1 VALUES($a, $b) } 
-  do_execsql_test 2.1.$tn.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+  do_execsql_test 3.1.$tn.1 { INSERT INTO t1 VALUES($a, $b) } 
+  do_execsql_test 3.1.$tn.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
 }
 
 foreach {tn expr res} {
@@ -124,12 +124,19 @@ foreach {tn expr res} {
   3 {abase + abash} {1}
   4 {abash + abase} {9}
   5 {abaft + abashing} {8 5}
+
   6 {abandon + abandoning} {10}
   7 {"abashing abases abasement abaft abashing"} {8}
 } {
-  do_execsql_test 2.2.$tn {
+  do_execsql_test 3.2.$tn {
     SELECT rowid FROM t1 WHERE t1 MATCH $expr
   } $res
 }
+
+breakpoint
+do_execsql_test 3.3 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'NEAR(aback abate, 2)'
+} {6}
+
 
 finish_test
