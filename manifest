@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\sthe\s"colname\s:\s<nearset>"\ssyntax\sto\sfts5.
-D 2014-07-05T07:54:01.680
+C Add\ssupport\sfor\sAND,\sOR\sand\sNOT\sto\sfts5.
+D 2014-07-05T15:15:41.850
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -107,7 +107,7 @@ F ext/fts5/fts5.c 1af3184dd9c0e5c1686f71202d6b6cac8f225f05
 F ext/fts5/fts5Int.h b7a684ff3508ab24437886f8bc873a16f494a7db
 F ext/fts5/fts5_buffer.c f1a26a79e2943fe4388e531fa141941b5eb6d31a
 F ext/fts5/fts5_config.c 94f1b4cb4de6a7cd5780c14adb0198e289df8cef
-F ext/fts5/fts5_expr.c 618e6641c8dc428c146ec84bf30ff0b3da6b28c7
+F ext/fts5/fts5_expr.c a341fe4f6d49875a7aeaa443036a3dc6aa2bff52
 F ext/fts5/fts5_index.c d8ab9712e38dc1beb9a9145ec89e18dc083c0467
 F ext/fts5/fts5_storage.c 7848d8f8528d798bba159900ea310a6d4a279da8
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -594,7 +594,7 @@ F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/fts5aa.test c8d3b9694f6b2864161c7437408464a535d19343
 F test/fts5ab.test 4db86a9473ee2a8c2cb30e0d81df21c6022f99b6
-F test/fts5ac.test c7ca34a477d638195a839c961e1b572890dc5d0d
+F test/fts5ac.test d3aeb7a079d40093b34ac8053fc5e4c0ed7e88dc
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1190,7 +1190,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 250ae8d40115e2e47cc5a1e8a427fa8c0a89124d
-R 213fb14ea45e358dcb308401853c4570
+P 004667106e552e832a564b77e242b86f183d4441
+R 4ab8db5e873de873b3febadf2e9942c6
 U dan
-Z 0b8632fefc20738326985d3c409c9be8
+Z fcdcd2fcf8de98f33f86410b0c7d6d38

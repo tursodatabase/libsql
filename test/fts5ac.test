@@ -208,7 +208,7 @@ proc nearset {aCol args} {
   return $bMatch
 }
 
-proc matchdata {expr} {
+proc matchdata {expr {print 0}} {
   set tclexpr [db one {SELECT fts5_expr_tcl($expr, 'nearset $cols', 'x', 'y')}]
   set res [list]
   foreach {id x y} $::data {
@@ -216,6 +216,9 @@ proc matchdata {expr} {
     if $tclexpr {
       set res [concat $id $res]
     }
+  }
+  if {$print} {
+    puts $tclexpr
   }
   return $res
 }
@@ -272,10 +275,18 @@ foreach {tn expr} {
   9  { y : NEAR(r c) }
   10 { x : "r c" }
   11 { y : "r c" }
+  12 { a AND b }
+  13 { a AND b AND c }
+  14a { a }
+  14b { a OR b }
+  15 { a OR b AND c }
+  16 { c AND b OR a }
+  17 { c AND (b OR a) }
+  18 { c NOT (b OR a) }
+  19 { c NOT b OR a AND d }
 } {
-
   set res [matchdata $expr]
-  do_execsql_test 2.$tn.[llength $res] { 
+  do_execsql_test 4.$tn.[llength $res] { 
     SELECT rowid FROM xx WHERE xx match $expr
   } $res
 }

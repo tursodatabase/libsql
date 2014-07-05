@@ -318,14 +318,6 @@ void sqlite3Fts5ExprFree(Fts5Expr *p){
 }
 
 /*
-**
-*/
-static int fts5ExprNodeTest(Fts5Expr *pExpr, Fts5ExprNode *pNode){
-  assert( 0 );
-  return SQLITE_OK;
-}
-
-/*
 ** All individual term iterators in pPhrase are guaranteed to be valid and
 ** pointing to the same rowid when this function is called. This function 
 ** checks if the current rowid really is a match, and if so populates
@@ -462,8 +454,8 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
 }
 
 /*
-** Advance each phrase iterator in phrase pNear. If any reach EOF, set
-** output variable *pbEof to true before returning.
+** Advance each term iterator in each phrase in pNear. If any reach EOF, 
+** set output variable *pbEof to true before returning.
 */
 static int fts5ExprNearAdvanceAll(
   Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
@@ -650,17 +642,131 @@ static int fts5ExprNearInitAll(
   return SQLITE_OK;
 }
 
-static int fts5ExprNearNext(
-  Fts5Expr *pExpr,                /* Expression that pNear is a part of */
-  Fts5ExprNode *pNode
-){
-  int rc = fts5ExprNearAdvanceAll(pExpr, pNode->pNear, &pNode->bEof);
-  if( rc==SQLITE_OK && pNode->bEof==0 ){
-    rc = fts5ExprNearNextMatch(pExpr, pNode);
+/* fts3ExprNodeNext() calls fts5ExprNodeNextMatch(). And vice-versa. */
+static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*);
+
+/*
+** Nodes at EOF are considered larger than all other nodes. A node that
+** points to a *smaller* rowid is considered larger.
+** 
+**    res = (*p1) - (*p2)
+*/
+static int fts5NodeCompare(Fts5ExprNode *p1, Fts5ExprNode *p2){
+  if( p2->bEof ) return -1;
+  if( p1->bEof ) return +1;
+  if( p1->iRowid>p2->iRowid ) return -1;
+  return (p1->iRowid < p2->iRowid);
+}
+
+static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
+  int rc = SQLITE_OK;
+
+  if( pNode->bEof==0 ){
+    switch( pNode->eType ){
+      case FTS5_STRING: {
+        rc = fts5ExprNearAdvanceAll(pExpr, pNode->pNear, &pNode->bEof);
+        break;
+      };
+
+      case FTS5_AND: {
+        rc = fts5ExprNodeNext(pExpr, pNode->pLeft);
+        if( rc==SQLITE_OK ) rc = fts5ExprNodeNext(pExpr, pNode->pRight);
+        break;
+      }
+
+      case FTS5_OR: {
+        Fts5ExprNode *p1 = pNode->pLeft;
+        Fts5ExprNode *p2 = pNode->pRight;
+        int cmp = fts5NodeCompare(p1, p2);
+
+        if( cmp==0 ){
+          rc = fts5ExprNodeNext(pExpr, p1);
+          if( rc==SQLITE_OK ) rc = fts5ExprNodeNext(pExpr, p2);
+        }else{
+          rc = fts5ExprNodeNext(pExpr, (cmp < 0) ? p1 : p2);
+        }
+
+        break;
+      }
+
+      default: assert( pNode->eType==FTS5_NOT ); {
+        rc = fts5ExprNodeNext(pExpr, pNode->pLeft);
+        break;
+      }
+    }
+
+    if( rc==SQLITE_OK ){
+      rc = fts5ExprNodeNextMatch(pExpr, pNode);
+    }
+  }
+
+  return rc;
+}
+
+/*
+**
+*/
+static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
+  int rc = SQLITE_OK;
+  if( pNode->bEof==0 ){
+    switch( pNode->eType ){
+
+      case FTS5_STRING: {
+        rc = fts5ExprNearNextMatch(pExpr, pNode);
+        break;
+      }
+
+      case FTS5_AND: {
+        Fts5ExprNode *p1 = pNode->pLeft;
+        Fts5ExprNode *p2 = pNode->pRight;
+
+        while( p1->bEof==0 && p2->bEof==0 && p2->iRowid!=p1->iRowid ){
+          Fts5ExprNode *pAdv = (p1->iRowid > p2->iRowid) ? p1 : p2;
+          rc = fts5ExprNodeNext(pExpr, pAdv);
+          if( rc!=SQLITE_OK ) break;
+        }
+        pNode->bEof = p1->bEof || p2->bEof;
+        pNode->iRowid = p1->iRowid;
+        break;
+      }
+
+      case FTS5_OR: {
+        Fts5ExprNode *p1 = pNode->pLeft;
+        Fts5ExprNode *p2 = pNode->pRight;
+        Fts5ExprNode *pNext = (fts5NodeCompare(p1, p2) > 0 ? p2 : p1);
+        pNode->bEof = pNext->bEof;
+        pNode->iRowid = pNext->iRowid;
+        break;
+      }
+
+      default: assert( pNode->eType==FTS5_NOT ); {
+        Fts5ExprNode *p1 = pNode->pLeft;
+        Fts5ExprNode *p2 = pNode->pRight;
+        while( rc==SQLITE_OK ){
+          int cmp;
+          while( rc==SQLITE_OK && (cmp = fts5NodeCompare(p1, p2))>0 ){
+            rc = fts5ExprNodeNext(pExpr, p2);
+          }
+          if( rc || cmp ) break;
+          rc = fts5ExprNodeNext(pExpr, p1);
+        }
+        pNode->bEof = p1->bEof;
+        pNode->iRowid = p1->iRowid;
+        break;
+      }
+    }
   }
   return rc;
 }
+
  
+/*
+** Set node pNode, which is part of expression pExpr, to point to the first
+** match. If there are no matches, set the Node.bEof flag to indicate EOF.
+**
+** Return an SQLite error code if an error occurs, or SQLITE_OK otherwise.
+** It is not an error if there are no matches.
+*/
 static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
   int rc = SQLITE_OK;
   pNode->bEof = 0;
@@ -681,19 +787,8 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
       rc = fts5ExprNodeFirst(pExpr, pNode->pRight);
     }
     if( rc==SQLITE_OK ){
-      rc = fts5ExprNodeTest(pExpr, pNode);
+      rc = fts5ExprNodeNextMatch(pExpr, pNode);
     }
-  }
-  return rc;
-}
-
-static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
-  int rc = SQLITE_OK;
-
-  if( pNode->eType==FTS5_STRING ){
-    rc = fts5ExprNearNext(pExpr, pNode);
-  }else{
-    assert( 0 );
   }
   return rc;
 }
