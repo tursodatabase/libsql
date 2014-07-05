@@ -99,6 +99,7 @@ struct Fts5Parse {
 */
 typedef struct Fts5PoslistIter Fts5PoslistIter;
 struct Fts5PoslistIter {
+  int iCol;                       /* If (iCol>=0), this column only */
   const u8 *a;                    /* Position list to iterate through */
   int n;                          /* Size of buffer at a[] in bytes */
   int i;                          /* Current offset in a[] */
@@ -116,19 +117,31 @@ static int fts5PoslistIterNext(Fts5PoslistIter *pIter){
     pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
     if( iVal==1 ){
       pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
-      pIter->iPos = ((u64)iVal << 32);
-      pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+      if( pIter->iCol>=0 && iVal>pIter->iCol ){
+        pIter->bEof = 1;
+      }else{
+        pIter->iPos = ((u64)iVal << 32);
+        pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+      }
     }
     pIter->iPos += (iVal-2);
   }
   return pIter->bEof;
 }
 
-static void fts5PoslistIterInit(const u8 *a, int n, Fts5PoslistIter *pIter){
+static int fts5PoslistIterInit(
+  int iCol,                       /* If (iCol>=0), this column only */
+  const u8 *a, int n,             /* Poslist buffer to iterate through */
+  Fts5PoslistIter *pIter          /* Iterator object to initialize */
+){
   memset(pIter, 0, sizeof(*pIter));
   pIter->a = a;
   pIter->n = n;
-  fts5PoslistIterNext(pIter);
+  pIter->iCol = iCol;
+  do {
+    fts5PoslistIterNext(pIter);
+  }while( pIter->bEof==0 && (pIter->iPos >> 32)<iCol );
+  return pIter->bEof;
 }
 
 typedef struct Fts5PoslistWriter Fts5PoslistWriter;
@@ -325,6 +338,7 @@ static int fts5ExprNodeTest(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 */
 static int fts5ExprPhraseIsMatch(
   Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
+  int iCol,                       /* If >=0, search for matches in iCol only */
   Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
   int *pbMatch                    /* OUT: Set to true if really a match */
 ){
@@ -333,6 +347,8 @@ static int fts5ExprPhraseIsMatch(
   Fts5PoslistIter *aIter = aStatic;
   int i;
   int rc = SQLITE_OK;
+
+  fts5BufferZero(&pPhrase->poslist);
 
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
@@ -346,10 +362,9 @@ static int fts5ExprPhraseIsMatch(
   for(i=0; i<pPhrase->nTerm; i++){
     int n;
     const u8 *a = sqlite3Fts5IterPoslist(pPhrase->aTerm[i].pIter, &n);
-    fts5PoslistIterInit(a, n, &aIter[i]);
+    if( fts5PoslistIterInit(iCol, a, n, &aIter[i]) ) goto ismatch_out;
   }
 
-  fts5BufferZero(&pPhrase->poslist);
   while( 1 ){
     int bMatch;
     i64 iPos = aIter[0].iPos;
@@ -384,6 +399,22 @@ static int fts5ExprPhraseIsMatch(
 }
 
 
+/*
+** The near-set object passed as the first argument contains more than
+** one phrase. All phrases currently point to the same row. The
+** Fts5ExprPhrase.poslist buffers are populated accordingly. This function
+** tests if the current row contains instances of each phrase sufficiently
+** close together to meet the NEAR constraint. Output variable *pbMatch
+** is set to true if it does, or false otherwise.
+**
+** If no error occurs, SQLITE_OK is returned. Or, if an error does occur,
+** an SQLite error code. If a value other than SQLITE_OK is returned, the
+** final value of *pbMatch is undefined.
+**
+** TODO: This function should also edit the position lists associated
+** with each phrase to remove any phrase instances that are not part of
+** a set of intances that collectively matches the NEAR constraint.
+*/
 static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
   Fts5PoslistIter aStatic[4];
   Fts5PoslistIter *aIter = aStatic;
@@ -391,6 +422,8 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
   int rc = SQLITE_OK;
   int bMatch;
   i64 iMax;
+
+  assert( pNear->nPhrase>1 );
 
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
@@ -403,7 +436,7 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
   /* Initialize a term iterator for each phrase */
   for(i=0; i<pNear->nPhrase; i++){
     Fts5Buffer *pPoslist = &pNear->apPhrase[i]->poslist; 
-    fts5PoslistIterInit(pPoslist->p, pPoslist->n, &aIter[i]);
+    fts5PoslistIterInit(-1, pPoslist->p, pPoslist->n, &aIter[i]);
   }
 
   iMax = aIter[0].iPos;
@@ -557,14 +590,14 @@ static int fts5ExprNearNextMatch(
 
     for(i=0; i<pNear->nPhrase; i++){
       Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
-      if( pPhrase->nTerm>1 ){
+      if( pPhrase->nTerm>1 || pNear->iCol>=0 ){
         int bMatch = 0;
-        rc = fts5ExprPhraseIsMatch(pExpr, pPhrase, &bMatch);
+        rc = fts5ExprPhraseIsMatch(pExpr, pNear->iCol, pPhrase, &bMatch);
         if( rc!=SQLITE_OK ) return rc;
         if( bMatch==0 ) break;
       }else{
         int n;
-        u8 *a = sqlite3Fts5IterPoslist(pPhrase->aTerm[0].pIter, &n);
+        const u8 *a = sqlite3Fts5IterPoslist(pPhrase->aTerm[0].pIter, &n);
         fts5BufferSet(&rc, &pPhrase->poslist, n, a);
       }
     }
@@ -1033,6 +1066,82 @@ static char *fts5PrintfAppend(char *zApp, const char *zFmt, ...){
   return zNew;
 }
 
+/*
+** Compose a tcl-readable representation of expression pExpr. Return a 
+** pointer to a buffer containing that representation. It is the 
+** responsibility of the caller to at some point free the buffer using 
+** sqlite3_free().
+*/
+static char *fts5ExprPrintTcl(
+  Fts5Config *pConfig, 
+  const char *zNearsetCmd,
+  Fts5ExprNode *pExpr
+){
+  char *zRet = 0;
+  if( pExpr->eType==FTS5_STRING ){
+    Fts5ExprNearset *pNear = pExpr->pNear;
+    int i; 
+    int iTerm;
+
+    zRet = fts5PrintfAppend(zRet, "[%s ", zNearsetCmd);
+    if( pNear->iCol>=0 ){
+      zRet = fts5PrintfAppend(zRet, "-col %d ", pNear->iCol);
+      if( zRet==0 ) return 0;
+    }
+
+    if( pNear->nPhrase>1 ){
+      zRet = fts5PrintfAppend(zRet, "-near %d ", pNear->nNear);
+      if( zRet==0 ) return 0;
+    }
+
+    zRet = fts5PrintfAppend(zRet, "--");
+    if( zRet==0 ) return 0;
+
+    for(i=0; i<pNear->nPhrase; i++){
+      Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
+
+      zRet = fts5PrintfAppend(zRet, " {");
+      for(iTerm=0; zRet && iTerm<pPhrase->nTerm; iTerm++){
+        char *zTerm = pPhrase->aTerm[iTerm].zTerm;
+        zRet = fts5PrintfAppend(zRet, "%s%s", iTerm==0?"":" ", zTerm);
+      }
+
+      if( zRet ) zRet = fts5PrintfAppend(zRet, "}");
+      if( zRet==0 ) return 0;
+    }
+
+    if( zRet ) zRet = fts5PrintfAppend(zRet, "]");
+    if( zRet==0 ) return 0;
+
+  }else{
+    char *zOp = 0;
+    char *z1 = 0;
+    char *z2 = 0;
+    switch( pExpr->eType ){
+      case FTS5_AND: zOp = "&&"; break;
+      case FTS5_NOT: zOp = "&& !"; break;
+      case FTS5_OR:  zOp = "||"; break;
+      default: assert( 0 );
+    }
+
+    z1 = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->pLeft);
+    z2 = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->pRight);
+    if( z1 && z2 ){
+      int b1 = pExpr->pLeft->eType!=FTS5_STRING;
+      int b2 = pExpr->pRight->eType!=FTS5_STRING;
+      zRet = sqlite3_mprintf("%s%s%s %s %s%s%s", 
+          b1 ? "(" : "", z1, b1 ? ")" : "",
+          zOp, 
+          b2 ? "(" : "", z2, b2 ? ")" : ""
+      );
+    }
+    sqlite3_free(z1);
+    sqlite3_free(z2);
+  }
+
+  return zRet;
+}
+
 static char *fts5ExprPrint(Fts5Config *pConfig, Fts5ExprNode *pExpr){
   char *zRet = 0;
   if( pExpr->eType==FTS5_STRING ){
@@ -1117,12 +1226,18 @@ static void fts5ExprFunction(
   Fts5Expr *pExpr = 0;
   int rc;
   int i;
+  int bTcl = sqlite3_user_data(pCtx)!=0;
 
   const char **azConfig;          /* Array of arguments for Fts5Config */
+  const char *zNearsetCmd = "nearset";
   int nConfig;                    /* Size of azConfig[] */
   Fts5Config *pConfig = 0;
 
-  nConfig = nArg + 2;
+  if( bTcl && nArg>1 ){
+    zNearsetCmd = (const char*)sqlite3_value_text(apVal[1]);
+  }
+
+  nConfig = nArg + 2 - bTcl;
   azConfig = (const char**)sqlite3_malloc(sizeof(char*) * nConfig);
   if( azConfig==0 ){
     sqlite3_result_error_nomem(pCtx);
@@ -1131,8 +1246,8 @@ static void fts5ExprFunction(
   azConfig[0] = 0;
   azConfig[1] = "main";
   azConfig[2] = "tbl";
-  for(i=1; i<nArg; i++){
-    azConfig[i+2] = (const char*)sqlite3_value_text(apVal[i]);
+  for(i=1+bTcl; i<nArg; i++){
+    azConfig[i+2-bTcl] = (const char*)sqlite3_value_text(apVal[i]);
   }
   zExpr = (const char*)sqlite3_value_text(apVal[0]);
 
@@ -1141,7 +1256,12 @@ static void fts5ExprFunction(
     rc = sqlite3Fts5ExprNew(pConfig, zExpr, &pExpr, &zErr);
   }
   if( rc==SQLITE_OK ){
-    char *zText = fts5ExprPrint(pConfig, pExpr->pRoot);
+    char *zText;
+    if( bTcl ){
+      zText = fts5ExprPrintTcl(pConfig, zNearsetCmd, pExpr->pRoot);
+    }else{
+      zText = fts5ExprPrint(pConfig, pExpr->pRoot);
+    }
     if( rc==SQLITE_OK ){
       sqlite3_result_text(pCtx, zText, -1, SQLITE_TRANSIENT);
       sqlite3_free(zText);
@@ -1166,9 +1286,22 @@ static void fts5ExprFunction(
 ** UDF with the SQLite handle passed as the only argument.
 */
 int sqlite3Fts5ExprInit(sqlite3 *db){
-  int rc = sqlite3_create_function(
-      db, "fts5_expr", -1, SQLITE_UTF8, 0, fts5ExprFunction, 0, 0
-  );
+  struct Fts5ExprFunc {
+    const char *z;
+    void *p;
+    void (*x)(sqlite3_context*,int,sqlite3_value**);
+  } aFunc[] = {
+    { "fts5_expr", 0, fts5ExprFunction },
+    { "fts5_expr_tcl", (void*)1, fts5ExprFunction },
+  };
+  int i;
+  int rc = SQLITE_OK;
+
+  for(i=0; rc==SQLITE_OK && i<(sizeof(aFunc) / sizeof(aFunc[0])); i++){
+    struct Fts5ExprFunc *p = &aFunc[i];
+    rc = sqlite3_create_function(db, p->z, -1, SQLITE_UTF8, p->p, p->x, 0, 0);
+  }
+
   return rc;
 }
 

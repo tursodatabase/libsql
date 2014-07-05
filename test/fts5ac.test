@@ -137,6 +137,89 @@ do_test 1.1 {
   }
 } {}
 
+proc phrasematch {phrase value} {
+  if {[string first $phrase $value]>=0} {
+    return 1
+  }
+  return 0
+}
+
+# Usage:
+#
+proc nearmatch {nNear phraselist value} {
+  set nPhrase [llength $phraselist]
+
+  set phraselist [string tolower $phraselist]
+  set value [string tolower $value]
+
+  if {$nPhrase==1} {
+    set bMatch [phrasematch [lindex $phraselist 0] $value]
+  } else {
+    set nValue [llength $value]
+    if {$nNear >= $nValue} {set nNear [expr $nValue-1]}
+
+    for {set i $nNear} {$i < $nValue} {incr i} {
+      set bMatch 1
+      foreach phrase $phraselist {
+        set iMin [expr $i - $nNear - [llength $phrase]]
+        set iMax [expr $i - 1 + [llength $phrase]]
+        set subdoc [lrange $value $iMin $iMax]
+        if {![phrasematch $phrase $subdoc]} {
+          set bMatch 0
+          break
+        }
+      }
+      if {$bMatch} break
+    }
+  }
+  return $bMatch
+}
+
+# Usage:
+#
+#   nearset aCol ?-near N? ?-col C? -- phrase1 phrase2...
+#
+proc nearset {aCol args} {
+  set O(-near) 10
+  set O(-col)  -1
+
+  set nOpt [lsearch -exact $args --]
+  if {$nOpt<0} { error "no -- option" }
+
+  foreach {k v} [lrange $args 0 [expr $nOpt-1]] {
+    if {[info exists O($k)]==0} { error "unrecognized option $k" }
+    set O($k) $v
+  }
+
+  set phraselist [lrange $args [expr $nOpt+1] end]
+
+  set bMatch 0
+  set iCol -1
+  foreach col $aCol {
+    incr iCol
+    if {$O(-col)>=0 && $O(-col)!=$iCol} continue
+
+    if {[nearmatch $O(-near) $phraselist $col]} {
+      set bMatch 1
+      break
+    }
+  }
+
+  return $bMatch
+}
+
+proc matchdata {expr} {
+  set tclexpr [db one {SELECT fts5_expr_tcl($expr, 'nearset $cols', 'x', 'y')}]
+  set res [list]
+  foreach {id x y} $::data {
+    set cols [list $x $y]
+    if $tclexpr {
+      set res [concat $id $res]
+    }
+  }
+  return $res
+}
+
 foreach {tn phrase} {
   1 "o"
   2 "b q"
@@ -149,16 +232,51 @@ foreach {tn phrase} {
   9 "no"
   10 "L O O L V V K"
 } {
-  set res [list]
-  foreach {id x y} $data {
-    set pat [string tolower $phrase]
-    if {[string first $pat $x]>=0 || [string first $pat $y]>=0} {
-      set res [concat $id $res]
-    }
-  }
-  set n [llength $res]
-  do_execsql_test 1.2.$tn.$n { 
-    SELECT rowid FROM xx WHERE xx match '"' || $phrase || '"'
+
+  set expr "\"$phrase\""
+  set res [matchdata $expr]
+
+  do_execsql_test 1.2.$tn.[llength $res] { 
+    SELECT rowid FROM xx WHERE xx match $expr
+  } $res
+}
+
+# Test the "nearmatch" commnad.
+#
+do_test 2.0 { nearmatch 2 {a b} {a x x b} } 1
+do_test 2.1 { nearmatch 2 {b a} {a x x b} } 1
+do_test 2.2 { nearmatch 1 {b a} {a x x b} } 0
+do_test 2.3 { nearmatch 1 {"a b" "c d"} {x x a b x c d} } 1
+do_test 2.4 { nearmatch 1 {"a b" "c d"} {x a b x x c d} } 0
+do_test 2.5 { nearmatch 400 {a b} {a x x b} } 1
+do_test 2.6 { nearmatch 0 {a} {a x x b} } 1
+do_test 2.7 { nearmatch 0 {b} {a x x b} } 1
+
+foreach {tn expr tclexpr} {
+  1 {a b} {[N $x -- {a}] && [N $x -- {b}]}
+} {
+  do_execsql_test 3.$tn {SELECT fts5_expr_tcl($expr, 'N $x')} [list $tclexpr]
+}
+
+#-------------------------------------------------------------------------
+#
+foreach {tn expr} {
+  1 { NEAR(r c) }
+  2 { NEAR(r c, 5) }
+  3 { NEAR(r c, 3) }
+  4 { NEAR(r c, 2) }
+  5 { NEAR(r c, 0) }
+  6 { NEAR(a b c) }
+  7 { NEAR(a b c, 8) }
+  8  { x : NEAR(r c) }
+  9  { y : NEAR(r c) }
+  10 { x : "r c" }
+  11 { y : "r c" }
+} {
+
+  set res [matchdata $expr]
+  do_execsql_test 2.$tn.[llength $res] { 
+    SELECT rowid FROM xx WHERE xx match $expr
   } $res
 }
 
