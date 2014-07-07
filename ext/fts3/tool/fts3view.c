@@ -376,7 +376,7 @@ static void showSegmentStats(sqlite3 *db, const char *zTab){
   sqlite3_finalize(pStmt);
   nLeaf = nSeg - nIdx;
   printf("Leaf segments larger than %5d bytes.... %9d   %5.2f%%\n",
-         pgsz-45, n, n*100.0/nLeaf);
+         pgsz-45, n, nLeaf>0 ? n*100.0/nLeaf : 0.0);
 
   pStmt = prepare(db, "SELECT max(level%%1024) FROM '%q_segdir'", zTab);
   mxLevel = 0;

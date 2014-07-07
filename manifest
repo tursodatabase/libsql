@@ -1,5 +1,5 @@
-C Change\sfts3/4\sso\sthat\sthe\s"unicode61"\sis\sincluded\sin\sbuilds\sby\sdefault.\sIt\smay\snow\sbe\sexcluded\sby\sdefining\sSQLITE_DISABLE_FTS3_UNICODE.
-D 2014-07-03T12:18:22.515
+C Fix\sa\sdivision-by-zero\serror\sin\sthe\sfts3view\sutility\sprogram.\s\sAdd\sthe\nfts3view\sutility\sprogram\sto\sthe\s"main.mk"\smakefile.
+D 2014-07-07T16:07:43.091
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -99,7 +99,7 @@ F ext/fts3/fts3_unicode2.c c8adda75aad0c6c252ef3dd555f811f437485044
 F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
-F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
+F ext/fts3/tool/fts3view.c e2bc4c5c549541b74e367039399ce47320fbae57
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
@@ -146,7 +146,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 7850d834ca7f3c772e2b0087631868d5bfdeabb9
+F main.mk 0b5baabb84a5d212b40c244e9439329a542e1982
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0df1fe72f8271abc86cd552027d938c910f90967
-R ef308fba8a4f61e769b2e20d3673cd17
-U dan
-Z 86452bd7dda1f4219032eac6ac7bc6d3
+P 0cc0230ae9cfc9760fd8ef2c25e82576b052dbeb
+R 52eca07cc58a435942000a424a892b43
+U drh
+Z 228c9cd7cbfc8e1485536ecff5b51496
