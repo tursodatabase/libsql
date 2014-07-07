@@ -1,9 +1,9 @@
-C Fix\sa\sdivision-by-zero\serror\sin\sthe\sfts3view\sutility\sprogram.\s\sAdd\sthe\nfts3view\sutility\sprogram\sto\sthe\s"main.mk"\smakefile.
-D 2014-07-07T16:07:43.091
+C Add\sthe\sfts3view\sutility\sprogram\sto\sthe\sMSVC\smakefile.
+D 2014-07-07T17:57:50.539
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc ad60c4d8be35f98fdcca614088b84a91612b2b4c
+F Makefile.msc 0fc63e099a4f71fdeef31496b1f4ad04ab419884
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 1c877615a9db323e3cd301e3d57d853f9d5c4a07
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0cc0230ae9cfc9760fd8ef2c25e82576b052dbeb
-R 52eca07cc58a435942000a424a892b43
-U drh
-Z 228c9cd7cbfc8e1485536ecff5b51496
+P 64f02699b4bd747e4c2f0debf72d37ec275137d8
+R c90797aa6cbf897903a4492efeae675d
+U mistachkin
+Z 28a255fbc95b5b8b8da59816ed21faba
