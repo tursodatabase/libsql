@@ -1,5 +1,5 @@
-C Add\sthe\sfts3view\sutility\sprogram\sto\sthe\sMSVC\smakefile.
-D 2014-07-07T17:57:50.539
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sfts3view\sutility\sprogram\sthat\scan\soccur\swith\sMSVC.
+D 2014-07-07T18:03:38.442
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -99,7 +99,7 @@ F ext/fts3/fts3_unicode2.c c8adda75aad0c6c252ef3dd555f811f437485044
 F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
-F ext/fts3/tool/fts3view.c e2bc4c5c549541b74e367039399ce47320fbae57
+F ext/fts3/tool/fts3view.c 3986531f2fc0ceca0c89c31ec7d0589b6adb19d6
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 64f02699b4bd747e4c2f0debf72d37ec275137d8
-R c90797aa6cbf897903a4492efeae675d
+P b04751bd59fed513ab615e7f368fe25c64b3607c
+R 30e3947db20694bb71560953bb8a13c2
 U mistachkin
-Z 28a255fbc95b5b8b8da59816ed21faba
+Z 58c34cf56858b67c344e911b0fcd0cab
