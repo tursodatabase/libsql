@@ -95,83 +95,6 @@ struct Fts5Parse {
   Fts5ExprNode *pExpr;            /* Result of a successful parse */
 };
 
-/*************************************************************************
-*/
-typedef struct Fts5PoslistIter Fts5PoslistIter;
-struct Fts5PoslistIter {
-  int iCol;                       /* If (iCol>=0), this column only */
-  const u8 *a;                    /* Position list to iterate through */
-  int n;                          /* Size of buffer at a[] in bytes */
-  int i;                          /* Current offset in a[] */
-
-  /* Output variables */
-  int bEof;                       /* Set to true at EOF */
-  i64 iPos;                       /* (iCol<<32) + iPos */
-};
-
-static int fts5PoslistIterNext(Fts5PoslistIter *pIter){
-  if( pIter->i>=pIter->n ){
-    pIter->bEof = 1;
-  }else{
-    int iVal;
-    pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
-    if( iVal==1 ){
-      pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
-      if( pIter->iCol>=0 && iVal>pIter->iCol ){
-        pIter->bEof = 1;
-      }else{
-        pIter->iPos = ((u64)iVal << 32);
-        pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
-      }
-    }
-    pIter->iPos += (iVal-2);
-  }
-  return pIter->bEof;
-}
-
-static int fts5PoslistIterInit(
-  int iCol,                       /* If (iCol>=0), this column only */
-  const u8 *a, int n,             /* Poslist buffer to iterate through */
-  Fts5PoslistIter *pIter          /* Iterator object to initialize */
-){
-  memset(pIter, 0, sizeof(*pIter));
-  pIter->a = a;
-  pIter->n = n;
-  pIter->iCol = iCol;
-  do {
-    fts5PoslistIterNext(pIter);
-  }while( pIter->bEof==0 && (pIter->iPos >> 32)<iCol );
-  return pIter->bEof;
-}
-
-typedef struct Fts5PoslistWriter Fts5PoslistWriter;
-struct Fts5PoslistWriter {
-  int iCol;
-  int iOff;
-};
-
-static int fts5PoslistWriterAppend(
-  Fts5Buffer *pBuf, 
-  Fts5PoslistWriter *pWriter,
-  i64 iPos
-){
-  int rc = SQLITE_OK;
-  int iCol = (int)(iPos >> 32);
-  int iOff = (iPos & 0x7FFFFFFF);
-
-  if( iCol!=pWriter->iCol ){
-    fts5BufferAppendVarint(&rc, pBuf, 1);
-    fts5BufferAppendVarint(&rc, pBuf, iCol);
-    pWriter->iCol = iCol;
-    pWriter->iOff = 0;
-  }
-  fts5BufferAppendVarint(&rc, pBuf, (iOff - pWriter->iOff) + 2);
-
-  return rc;
-}
-/*
-*************************************************************************/
-
 void sqlite3Fts5ParseError(Fts5Parse *pParse, const char *zFmt, ...){
   if( pParse->rc==SQLITE_OK ){
     va_list ap;
@@ -335,8 +258,8 @@ static int fts5ExprPhraseIsMatch(
   int *pbMatch                    /* OUT: Set to true if really a match */
 ){
   Fts5PoslistWriter writer = {0, 0};
-  Fts5PoslistIter aStatic[4];
-  Fts5PoslistIter *aIter = aStatic;
+  Fts5PoslistReader aStatic[4];
+  Fts5PoslistReader *aIter = aStatic;
   int i;
   int rc = SQLITE_OK;
 
@@ -345,8 +268,8 @@ static int fts5ExprPhraseIsMatch(
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
   if( pPhrase->nTerm>(sizeof(aStatic) / sizeof(aStatic[0])) ){
-    int nByte = sizeof(Fts5PoslistIter) * pPhrase->nTerm;
-    aIter = (Fts5PoslistIter*)sqlite3_malloc(nByte);
+    int nByte = sizeof(Fts5PoslistReader) * pPhrase->nTerm;
+    aIter = (Fts5PoslistReader*)sqlite3_malloc(nByte);
     if( !aIter ) return SQLITE_NOMEM;
   }
 
@@ -354,7 +277,7 @@ static int fts5ExprPhraseIsMatch(
   for(i=0; i<pPhrase->nTerm; i++){
     int n;
     const u8 *a = sqlite3Fts5IterPoslist(pPhrase->aTerm[i].pIter, &n);
-    if( fts5PoslistIterInit(iCol, a, n, &aIter[i]) ) goto ismatch_out;
+    if( sqlite3Fts5PoslistReaderInit(iCol, a, n, &aIter[i]) ) goto ismatch_out;
   }
 
   while( 1 ){
@@ -363,12 +286,12 @@ static int fts5ExprPhraseIsMatch(
     do {
       bMatch = 1;
       for(i=0; i<pPhrase->nTerm; i++){
-        Fts5PoslistIter *pPos = &aIter[i];
+        Fts5PoslistReader *pPos = &aIter[i];
         i64 iAdj = iPos + i;
         if( pPos->iPos!=iAdj ){
           bMatch = 0;
           while( pPos->iPos<iAdj ){
-            if( fts5PoslistIterNext(pPos) ) goto ismatch_out;
+            if( sqlite3Fts5PoslistReaderNext(pPos) ) goto ismatch_out;
           }
           if( pPos->iPos>iAdj ) iPos = pPos->iPos-i;
         }
@@ -376,11 +299,11 @@ static int fts5ExprPhraseIsMatch(
     }while( bMatch==0 );
 
     /* Append position iPos to the output */
-    rc = fts5PoslistWriterAppend(&pPhrase->poslist, &writer, iPos);
+    rc = sqlite3Fts5PoslistWriterAppend(&pPhrase->poslist, &writer, iPos);
     if( rc!=SQLITE_OK ) goto ismatch_out;
 
     for(i=0; i<pPhrase->nTerm; i++){
-      if( fts5PoslistIterNext(&aIter[i]) ) goto ismatch_out;
+      if( sqlite3Fts5PoslistReaderNext(&aIter[i]) ) goto ismatch_out;
     }
   }
 
@@ -408,8 +331,8 @@ static int fts5ExprPhraseIsMatch(
 ** a set of intances that collectively matches the NEAR constraint.
 */
 static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
-  Fts5PoslistIter aStatic[4];
-  Fts5PoslistIter *aIter = aStatic;
+  Fts5PoslistReader aStatic[4];
+  Fts5PoslistReader *aIter = aStatic;
   int i;
   int rc = SQLITE_OK;
   int bMatch;
@@ -420,27 +343,27 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
   if( pNear->nPhrase>(sizeof(aStatic) / sizeof(aStatic[0])) ){
-    int nByte = sizeof(Fts5PoslistIter) * pNear->nPhrase;
-    aIter = (Fts5PoslistIter*)sqlite3_malloc(nByte);
+    int nByte = sizeof(Fts5PoslistReader) * pNear->nPhrase;
+    aIter = (Fts5PoslistReader*)sqlite3_malloc(nByte);
     if( !aIter ) return SQLITE_NOMEM;
   }
 
   /* Initialize a term iterator for each phrase */
   for(i=0; i<pNear->nPhrase; i++){
     Fts5Buffer *pPoslist = &pNear->apPhrase[i]->poslist; 
-    fts5PoslistIterInit(-1, pPoslist->p, pPoslist->n, &aIter[i]);
+    sqlite3Fts5PoslistReaderInit(-1, pPoslist->p, pPoslist->n, &aIter[i]);
   }
 
   iMax = aIter[0].iPos;
   do {
     bMatch = 1;
     for(i=0; i<pNear->nPhrase; i++){
-      Fts5PoslistIter *pPos = &aIter[i];
+      Fts5PoslistReader *pPos = &aIter[i];
       i64 iMin = iMax - pNear->apPhrase[i]->nTerm - pNear->nNear;
       if( pPos->iPos<iMin || pPos->iPos>iMax ){
         bMatch = 0;
         while( pPos->iPos<iMin ){
-          if( fts5PoslistIterNext(pPos) ) goto ismatch_out;
+          if( sqlite3Fts5PoslistReaderNext(pPos) ) goto ismatch_out;
         }
         if( pPos->iPos>iMax ) iMax = pPos->iPos;
       }

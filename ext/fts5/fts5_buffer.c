@@ -137,3 +137,63 @@ void sqlite3Fts5BufferSet(
   pBuf->n = 0;
   sqlite3Fts5BufferAppendBlob(pRc, pBuf, nData, pData);
 }
+
+
+/*
+** Advance the iterator object passed as the only argument. Return true
+** if the iterator reaches EOF, or false otherwise.
+*/
+int sqlite3Fts5PoslistReaderNext(Fts5PoslistReader *pIter){
+  if( pIter->i>=pIter->n ){
+    pIter->bEof = 1;
+  }else{
+    int iVal;
+    pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+    if( iVal==1 ){
+      pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+      if( pIter->iCol>=0 && iVal>pIter->iCol ){
+        pIter->bEof = 1;
+      }else{
+        pIter->iPos = ((u64)iVal << 32);
+        pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
+      }
+    }
+    pIter->iPos += (iVal-2);
+  }
+  return pIter->bEof;
+}
+
+int sqlite3Fts5PoslistReaderInit(
+  int iCol,                       /* If (iCol>=0), this column only */
+  const u8 *a, int n,             /* Poslist buffer to iterate through */
+  Fts5PoslistReader *pIter        /* Iterator object to initialize */
+){
+  memset(pIter, 0, sizeof(*pIter));
+  pIter->a = a;
+  pIter->n = n;
+  pIter->iCol = iCol;
+  do {
+    sqlite3Fts5PoslistReaderNext(pIter);
+  }while( pIter->bEof==0 && (pIter->iPos >> 32)<iCol );
+  return pIter->bEof;
+}
+
+int sqlite3Fts5PoslistWriterAppend(
+  Fts5Buffer *pBuf, 
+  Fts5PoslistWriter *pWriter,
+  i64 iPos
+){
+  int rc = SQLITE_OK;
+  int iCol = (int)(iPos >> 32);
+  int iOff = (iPos & 0x7FFFFFFF);
+
+  if( iCol!=pWriter->iCol ){
+    fts5BufferAppendVarint(&rc, pBuf, 1);
+    fts5BufferAppendVarint(&rc, pBuf, iCol);
+    pWriter->iCol = iCol;
+    pWriter->iOff = 0;
+  }
+  fts5BufferAppendVarint(&rc, pBuf, (iOff - pWriter->iOff) + 2);
+
+  return rc;
+}

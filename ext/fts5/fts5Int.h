@@ -96,6 +96,33 @@ void sqlite3Fts5BufferAppendPrintf(int *, Fts5Buffer*, char *zFmt, ...);
 #define fts5BufferAppendBlob(a,b,c,d) sqlite3Fts5BufferAppendBlob(a,b,c,d)
 #define fts5BufferSet(a,b,c,d)        sqlite3Fts5BufferSet(a,b,c,d)
 
+typedef struct Fts5PoslistReader Fts5PoslistReader;
+struct Fts5PoslistReader {
+  /* Variables used only by sqlite3Fts5PoslistIterXXX() functions. */
+  int iCol;                       /* If (iCol>=0), this column only */
+  const u8 *a;                    /* Position list to iterate through */
+  int n;                          /* Size of buffer at a[] in bytes */
+  int i;                          /* Current offset in a[] */
+
+  /* Output variables */
+  int bEof;                       /* Set to true at EOF */
+  i64 iPos;                       /* (iCol<<32) + iPos */
+};
+int sqlite3Fts5PoslistReaderInit(
+  int iCol,                       /* If (iCol>=0), this column only */
+  const u8 *a, int n,             /* Poslist buffer to iterate through */
+  Fts5PoslistReader *pIter        /* Iterator object to initialize */
+);
+int sqlite3Fts5PoslistReaderNext(Fts5PoslistReader*);
+
+typedef struct Fts5PoslistWriter Fts5PoslistWriter;
+struct Fts5PoslistWriter {
+  int iCol;
+  int iOff;
+};
+int sqlite3Fts5PoslistWriterAppend(Fts5Buffer*, Fts5PoslistWriter*, i64);
+
+
 /*
 ** End of interface to code in fts5_buffer.c.
 **************************************************************************/
