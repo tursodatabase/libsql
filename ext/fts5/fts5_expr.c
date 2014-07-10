@@ -414,21 +414,25 @@ static int fts5ExprNearAdvanceAll(
 */
 static int fts5ExprAdvanceto(
   Fts5IndexIter *pIter,           /* Iterator to advance */
-  i64 *piMin,                     /* IN/OUT: Minimum rowid seen so far */
+  int bAsc,                       /* True if iterator is "rowid ASC" */
+  i64 *piLast,                    /* IN/OUT: Lastest rowid seen so far */
   int *pRc,                       /* OUT: Error code */
   int *pbEof                      /* OUT: Set to true if EOF */
 ){
-  i64 iMin = *piMin;
+  i64 iLast = *piLast;
   i64 iRowid;
-  while( (iRowid = sqlite3Fts5IterRowid(pIter))>iMin ){
+  while( 1 ){
+    iRowid = sqlite3Fts5IterRowid(pIter);
+    if( (bAsc==0 && iRowid<=iLast) || (bAsc==1 && iRowid>=iLast) ) break;
     sqlite3Fts5IterNext(pIter, 0);
     if( sqlite3Fts5IterEof(pIter) ){
       *pbEof = 1;
       return 1;
     }
   }
-  if( iRowid<iMin ){
-    *piMin = iRowid;
+  if( iRowid!=iLast ){
+    assert( (bAsc==0 && iRowid<iLast) || (bAsc==1 && iRowid>iLast) );
+    *piLast = iRowid;
   }
 
   return 0;
@@ -452,10 +456,15 @@ static int fts5ExprNearNextRowidMatch(
   Fts5ExprNearset *pNear = pNode->pNear;
   int rc = SQLITE_OK;
   int i, j;                       /* Phrase and token index, respectively */
-  i64 iMin;                       /* Smallest rowid any iterator points to */
-  int bMatch;
+  i64 iLast;                      /* Lastest rowid any iterator points to */
+  int bMatch;                     /* True if all terms are at the same rowid */
 
-  iMin = sqlite3Fts5IterRowid(pNear->apPhrase[0]->aTerm[0].pIter);
+  /* Set iLast, the lastest rowid any iterator points to. If the iterator
+  ** skips through rowids in the default descending order, this means the
+  ** minimum rowid. Or, if the iterator is "ORDER BY rowid ASC", then it
+  ** means the maximum rowid.  */
+  iLast = sqlite3Fts5IterRowid(pNear->apPhrase[0]->aTerm[0].pIter);
+
   do {
     bMatch = 1;
     for(i=0; i<pNear->nPhrase; i++){
@@ -463,13 +472,15 @@ static int fts5ExprNearNextRowidMatch(
       for(j=0; j<pPhrase->nTerm; j++){
         Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
         i64 iRowid = sqlite3Fts5IterRowid(pIter);
-        if( iRowid!=iMin ) bMatch = 0;
-        if( fts5ExprAdvanceto(pIter, &iMin, &rc, &pNode->bEof) ) return rc;
+        if( iRowid!=iLast ) bMatch = 0;
+        if( fts5ExprAdvanceto(pIter, pExpr->bAsc, &iLast, &rc, &pNode->bEof) ){
+          return rc;
+        }
       }
     }
   }while( bMatch==0 );
 
-  pNode->iRowid = iMin;
+  pNode->iRowid = iLast;
   return rc;
 }
 
@@ -555,7 +566,7 @@ static int fts5ExprNearInitAll(
           (pTerm->bPrefix ? FTS5INDEX_QUERY_PREFIX : 0) |
           (pExpr->bAsc ? FTS5INDEX_QUERY_ASC : 0)
       );
-      if( sqlite3Fts5IterEof(pTerm->pIter) ){
+      if( pTerm->pIter && sqlite3Fts5IterEof(pTerm->pIter) ){
         pNode->bEof = 1;
         return SQLITE_OK;
       }
@@ -569,16 +580,31 @@ static int fts5ExprNearInitAll(
 static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*);
 
 /*
-** Nodes at EOF are considered larger than all other nodes. A node that
-** points to a *smaller* rowid is considered larger.
-** 
+** Compare the values currently indicated by the two nodes as follows:
+**
 **    res = (*p1) - (*p2)
+**
+** Nodes that point to values that come later in the iteration order are
+** considered to be larger. Nodes at EOF are the largest of all.
+**
+** This means that if the iteration order is ASC, then numerically larger
+** rowids are considered larger. Or if it is the default DESC, numerically
+** smaller rowids are larger.
 */
-static int fts5NodeCompare(Fts5ExprNode *p1, Fts5ExprNode *p2){
+static int fts5NodeCompare(
+  Fts5Expr *pExpr,
+  Fts5ExprNode *p1, 
+  Fts5ExprNode *p2
+){
   if( p2->bEof ) return -1;
   if( p1->bEof ) return +1;
-  if( p1->iRowid>p2->iRowid ) return -1;
-  return (p1->iRowid < p2->iRowid);
+  if( pExpr->bAsc ){
+    if( p1->iRowid<p2->iRowid ) return -1;
+    return (p1->iRowid > p2->iRowid);
+  }else{
+    if( p1->iRowid>p2->iRowid ) return -1;
+    return (p1->iRowid < p2->iRowid);
+  }
 }
 
 static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
@@ -600,7 +626,7 @@ static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
       case FTS5_OR: {
         Fts5ExprNode *p1 = pNode->pLeft;
         Fts5ExprNode *p2 = pNode->pRight;
-        int cmp = fts5NodeCompare(p1, p2);
+        int cmp = fts5NodeCompare(pExpr, p1, p2);
 
         if( cmp==0 ){
           rc = fts5ExprNodeNext(pExpr, p1);
@@ -644,7 +670,12 @@ static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
         Fts5ExprNode *p2 = pNode->pRight;
 
         while( p1->bEof==0 && p2->bEof==0 && p2->iRowid!=p1->iRowid ){
-          Fts5ExprNode *pAdv = (p1->iRowid > p2->iRowid) ? p1 : p2;
+          Fts5ExprNode *pAdv;
+          if( pExpr->bAsc ){
+            pAdv = (p1->iRowid < p2->iRowid) ? p1 : p2;
+          }else{
+            pAdv = (p1->iRowid > p2->iRowid) ? p1 : p2;
+          }
           rc = fts5ExprNodeNext(pExpr, pAdv);
           if( rc!=SQLITE_OK ) break;
         }
@@ -656,7 +687,7 @@ static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
       case FTS5_OR: {
         Fts5ExprNode *p1 = pNode->pLeft;
         Fts5ExprNode *p2 = pNode->pRight;
-        Fts5ExprNode *pNext = (fts5NodeCompare(p1, p2) > 0 ? p2 : p1);
+        Fts5ExprNode *pNext = (fts5NodeCompare(pExpr, p1, p2) > 0 ? p2 : p1);
         pNode->bEof = pNext->bEof;
         pNode->iRowid = pNext->iRowid;
         break;
@@ -667,7 +698,7 @@ static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
         Fts5ExprNode *p2 = pNode->pRight;
         while( rc==SQLITE_OK ){
           int cmp;
-          while( rc==SQLITE_OK && (cmp = fts5NodeCompare(p1, p2))>0 ){
+          while( rc==SQLITE_OK && (cmp = fts5NodeCompare(pExpr, p1, p2))>0 ){
             rc = fts5ExprNodeNext(pExpr, p2);
           }
           if( rc || cmp ) break;

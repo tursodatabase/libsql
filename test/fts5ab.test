@@ -124,7 +124,6 @@ foreach {tn expr res} {
   3 {abase + abash} {1}
   4 {abash + abase} {9}
   5 {abaft + abashing} {8 5}
-
   6 {abandon + abandoning} {10}
   7 {"abashing abases abasement abaft abashing"} {8}
 } {
@@ -133,10 +132,23 @@ foreach {tn expr res} {
   } $res
 }
 
-breakpoint
 do_execsql_test 3.3 {
   SELECT rowid FROM t1 WHERE t1 MATCH 'NEAR(aback abate, 2)'
 } {6}
+
+foreach {tn expr res} {
+  1 {abash} {1 3 5 9}
+  2 {abase} {1 3 4 9}
+  3 {abase + abash} {1}
+  4 {abash + abase} {9}
+  5 {abaft + abashing} {5 8}
+  6 {abandon + abandoning} {10}
+  7 {"abashing abases abasement abaft abashing"} {8}
+} {
+  do_execsql_test 3.4.$tn {
+    SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid ASC
+  } $res
+}
 
 
 finish_test

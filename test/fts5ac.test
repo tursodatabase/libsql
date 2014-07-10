@@ -208,18 +208,24 @@ proc nearset {aCol args} {
   return $bMatch
 }
 
-proc matchdata {expr {print 0}} {
+proc matchdata {expr {bAsc 0}} {
   set tclexpr [db one {SELECT fts5_expr_tcl($expr, 'nearset $cols', 'x', 'y')}]
   set res [list]
   foreach {id x y} $::data {
     set cols [list $x $y]
     if $tclexpr {
-      set res [concat $id $res]
+      lappend res $id
     }
   }
-  if {$print} {
-    puts $tclexpr
+
+  # puts $tclexpr
+
+  if {$bAsc} {
+    set res [lsort -integer -increasing $res]
+  } else {
+    set res [lsort -integer -decreasing $res]
   }
+
   return $res
 }
 
@@ -263,32 +269,37 @@ foreach {tn expr tclexpr} {
 
 #-------------------------------------------------------------------------
 #
-foreach {tn expr} {
-  1 { NEAR(r c) }
-  2 { NEAR(r c, 5) }
-  3 { NEAR(r c, 3) }
-  4 { NEAR(r c, 2) }
-  5 { NEAR(r c, 0) }
-  6 { NEAR(a b c) }
-  7 { NEAR(a b c, 8) }
-  8  { x : NEAR(r c) }
-  9  { y : NEAR(r c) }
-  10 { x : "r c" }
-  11 { y : "r c" }
-  12 { a AND b }
-  13 { a AND b AND c }
-  14a { a }
-  14b { a OR b }
-  15 { a OR b AND c }
-  16 { c AND b OR a }
-  17 { c AND (b OR a) }
-  18 { c NOT (b OR a) }
-  19 { c NOT b OR a AND d }
+foreach {bAsc sql} {
+  0 {SELECT rowid FROM xx WHERE xx MATCH $expr}
+  1 {SELECT rowid FROM xx WHERE xx MATCH $expr ORDER BY rowid ASC}
 } {
-  set res [matchdata $expr]
-  do_execsql_test 4.$tn.[llength $res] { 
-    SELECT rowid FROM xx WHERE xx match $expr
-  } $res
+  foreach {tn expr} {
+    0.1 x
+
+    1 { NEAR(r c) }
+    2 { NEAR(r c, 5) }
+    3 { NEAR(r c, 3) }
+    4 { NEAR(r c, 2) }
+    5 { NEAR(r c, 0) }
+    6 { NEAR(a b c) }
+    7 { NEAR(a b c, 8) }
+    8  { x : NEAR(r c) }
+    9  { y : NEAR(r c) }
+    10 { x : "r c" }
+    11 { y : "r c" }
+    12 { a AND b }
+    13 { a AND b AND c }
+    14a { a }
+    14b { a OR b }
+    15 { a OR b AND c }
+    16 { c AND b OR a }
+    17 { c AND (b OR a) }
+    18 { c NOT (b OR a) }
+    19 { c NOT b OR a AND d }
+  } {
+    set res [matchdata $expr $bAsc]
+    do_execsql_test 4.$bAsc.$tn.[llength $res] $sql $res
+  }
 }
 
 
