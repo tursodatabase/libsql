@@ -2716,6 +2716,41 @@ static void explainOneScan(
 #endif /* SQLITE_OMIT_EXPLAIN */
 
 #ifdef SQLITE_ENABLE_CURSOR_HINTS
+
+/*
+** This function is called on every node of an expression tree used as an
+** argument to the OP_CursorHint instruction. If the node is a TK_COLUMN
+** that accesses any cursor other than (pWalker->u.i), do the following:
+**
+**   1) allocate a register and code an OP_Column instruction to read 
+**      the specified column into the new register, and
+**
+**   2) transform the expression node to a TK_REGISTER node that reads 
+**      from the newly populated register.
+*/
+static int codeCursorHintFixExpr(Walker *pWalker, Expr *pExpr){
+  int rc = WRC_Continue;
+  if( pExpr->op==TK_COLUMN && pExpr->iTable!=pWalker->u.i ){
+    Vdbe *v = pWalker->pParse->pVdbe;
+    int reg = ++pWalker->pParse->nMem;   /* Register for column value */
+    sqlite3ExprCodeGetColumnOfTable(
+        v, pExpr->pTab, pExpr->iTable, pExpr->iColumn, reg
+    );
+    pExpr->op = TK_REGISTER;
+    pExpr->iTable = reg;
+  }else if( pExpr->op==TK_AGG_FUNCTION ){
+    /* An aggregate function in the WHERE clause of a query means this must
+    ** be a correlated sub-query, and expression pExpr is an aggregate from
+    ** the parent context. Do not walk the function arguments in this case.
+    **
+    ** todo: It should be possible to replace this node with a TK_REGISTER
+    ** expression, as the result of the expression must be stored in a 
+    ** register at this point. The same holds for TK_AGG_COLUMN nodes. */
+    rc = WRC_Prune;
+  }
+  return rc;
+}
+
 /*
 ** Insert an OP_CursorHint instruction if it is appropriate to do so.
 */
@@ -2739,20 +2774,26 @@ static void codeCursorHint(
   pLevel = &pWInfo->a[iLevel];
   pWLoop = pLevel->pWLoop;
   iCur = pWInfo->pTabList->a[pLevel->iFrom].iCursor;
-  msk = ~getMask(&pWInfo->sMaskSet, iCur);
   pWC = &pWInfo->sWC;
   for(i=0; i<pWC->nTerm; i++){
     pTerm = &pWC->a[i];
-    if( pTerm->prereqAll & msk ) continue;
+    if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
+    if( pTerm->prereqAll & pLevel->notReady ) continue;
     if( ExprHasProperty(pTerm->pExpr, EP_FromJoin) ) continue;
     if( sqlite3ExprContainsSubquery(pTerm->pExpr) ) continue;
     for(j=0; j<pWLoop->nLTerm && pWLoop->aLTerm[j]!=pTerm; j++){}
     if( j<pWLoop->nLTerm ) continue;
     pExpr = sqlite3ExprAnd(db, pExpr, sqlite3ExprDup(db, pTerm->pExpr, 0));
-  } 
+  }
   if( pExpr!=0 ){
-    sqlite3VdbeAddOp4(v, OP_CursorHint, pLevel->iTabCur, iCur, 0,
-                      (const char*)pExpr, P4_EXPR);
+    const char *a = (const char*)pExpr;
+    Walker sWalker;
+    memset(&sWalker, 0, sizeof(sWalker));
+    sWalker.xExprCallback = codeCursorHintFixExpr;
+    sWalker.pParse = pParse;
+    sWalker.u.i = pLevel->iTabCur;
+    sqlite3WalkExpr(&sWalker, pExpr);
+    sqlite3VdbeAddOp4(v, OP_CursorHint, pLevel->iTabCur, iCur, 0, a, P4_EXPR);
   }
 }
 #else
