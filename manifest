@@ -1,5 +1,5 @@
-C In\sthe\sexpression\spassed\sto\ssqlite3BtreeCursorHint()\sfor\sthe\sinner\sloops\sof\sjoins,\sreplace\sany\sTK_COLUMN\sreferences\sto\scolumns\sin\sthe\souter\sloops\swith\sTK_REGISTER\sexpressions\s(Expr.iTable\sindicates\sthe\sspecific\sregister\scontaining\sthe\svalue).
-D 2014-07-14T19:04:29.385
+C Add\ssimple\stests\sfor\snew\ssqlite3BtreeCursorHint()\sfunctionality.
+D 2014-07-15T11:59:44.612
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in e1a9b4258bbde53f5636f4e238c65b7e11459e2b
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -142,7 +142,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt f439556c5ce01ced70987e5ee86549a45165d9ff
-F main.mk 82fd90375561d7b66287ae5a8b09e1e027394019
+F main.mk a6fa2dee82ed65ef48edc82baa0b480366f53212
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh d2a981497b404d6498f5ff3e3b1f3816bdfcb338
@@ -228,7 +228,7 @@ F src/sqliteInt.h ccf72d12670132233750c6275a8ed978a95839aa
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 651b10698c87bbc3ae5772e2491e3444c5bbf153
+F src/tclsqlite.c 571af8d366a8c00106c8c4bfa5b2ab07a9e58baf
 F src/test1.c 760e0419705f712d80595f47199568cd7e3b57a4
 F src/test2.c 7355101c085304b90024f2261e056cdff13c6c35
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
@@ -243,6 +243,7 @@ F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 5b89601dcb42a33ba8b820a6b763cc9cb48bac16
 F src/test_config.c 10d0e00dd6315879a6d9fac20bd063c7bbbfb8f8
+F src/test_cursorhint.c 7c37315e15d6543689e8b48979a8eb370baa3cfc
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -280,7 +281,7 @@ F src/update.c d1c2477dcf14d90999d1935af4efb4806553250b
 F src/utf.c 6fc6c88d50448c469c5c196acf21617a24f90269
 F src/util.c 76ed0519296e3f62e97e57dab1999e34184c8e49
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 88a037e01278bd8c8093bb3399b250cb02c6e865
+F src/vdbe.c 54e269c6268a6f37697e27d6bc572674f14b1581
 F src/vdbe.h 57b87844270b2e92647b8b82a8948f7a29efae8d
 F src/vdbeInt.h 05fbda0e061dbc4aaa2709a8cccf3515c245b263
 F src/vdbeapi.c 93a22a9ba2abe292d5c2cf304d7eb2e894dde0ed
@@ -293,7 +294,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 7dc3966ef98b74422267e7e6e46e07ff6c6eb1b4
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c e9e593d5bb798c3e67fc3893dfe7055c9e7d8d74
-F src/where.c dcea6104452e837cc63bd1c3c5cb05868bb356ba
+F src/where.c 907fd82f4f8fc89d8a72d44caf5a5679c0769630
 F src/whereInt.h 96a75c61f1d2b9d4a8e4bb17d89deb0cf7cba358
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -420,6 +421,7 @@ F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test b5de160630b209c4b8925bdcbbaf48cc90b67fe8
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/ctime.test 7bd009071e242aac4f18521581536b652b789a47
+F test/cursorhint.test e55ad8c466327ffb3511b60007102bca22314d0a
 F test/date.test 42973251b9429f2c41b77eb98a7b0b0ba2d3b2c0
 F test/dbstatus.test 8de104bb5606f19537d23cd553b41349b5ab1204
 F test/dbstatus2.test 10418e62b3db5dca070f0c3eef3ea13946f339c2
@@ -1146,7 +1148,7 @@ F tool/vdbe-compress.tcl f12c884766bd14277f4fcedcae07078011717381
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh d1a6de74685f360ab718efda6265994b99bbea01
 F tool/win/sqlite.vsix 030f3eeaf2cb811a3692ab9c14d021a75ce41fff
-P bfefc57554853e467ee6aeaba8d08331406fa216
-R d30e9be65b11497e93ad990065d669d6
+P f9dddd008c6ef7940a1d66363fbb456cff7207c1
+R 9fb1051a18f0e187efee634c86c45e62
 U dan
-Z c72f8637bcd1205d8e636acedbe3ca98
+Z 04e07c13931dc702da8721e6980ca969

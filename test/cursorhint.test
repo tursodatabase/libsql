@@ -1,0 +1,72 @@
+# 2014 July 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix cursorhint
+
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a,b);
+  CREATE TABLE t2(x,y);
+  INSERT INTO t1 VALUES(10, 15);
+  INSERT INTO t1 VALUES(20, 25);
+  INSERT INTO t2 VALUES('ten', 'fifteen');
+  INSERT INTO t2 VALUES('twenty', 'twentyfive');
+  PRAGMA automatic_index = 0;
+}
+
+proc H {expr} {
+  lappend ::cursorhint $expr
+}
+
+proc do_cursorhint_test {tn sql hints} {
+  cursorhint_hook H
+  set ::cursorhint [list]
+  set testbody [subst {
+    execsql {$sql}
+    set ::cursorhint
+  }]
+  uplevel [list do_test $tn $testbody [list {*}$hints]]
+  cursorhint_hook
+}
+
+
+do_cursorhint_test 1.1 {
+  SELECT * FROM t1 CROSS JOIN t2 WHERE a=x;
+} {
+  {(10 == col(0))} 
+  {(20 == col(0))}
+}
+
+do_cursorhint_test 1.2 {
+  SELECT * FROM t2 CROSS JOIN t1 WHERE a=x;
+} {
+  {(col(0) == 'ten')} 
+  {(col(0) == 'twenty')}
+}
+
+do_cursorhint_test 1.3 {
+  SELECT * FROM t1 CROSS JOIN t2 WHERE b=15;
+} {
+  {(col(1) == 15)} 
+}
+
+do_cursorhint_test 1.3 {
+  SELECT * FROM t1 CROSS JOIN t2 WHERE y=b+1;
+} {
+  {(col(1) == (15 + 1))} 
+  {(col(1) == (25 + 1))} 
+}
+
+
+finish_test

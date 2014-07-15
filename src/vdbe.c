@@ -6184,7 +6184,13 @@ case OP_CursorHint: {
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p4type==P4_EXPR );
   pC = p->apCsr[pOp->p1];
-  if( pC )  sqlite3BtreeCursorHint(pC->pCursor, pOp->p2, pOp->p4.pExpr);
+  if( pC ){
+    sqlite3BtreeCursorHint(pC->pCursor, pOp->p2, pOp->p4.pExpr);
+#ifdef SQLITE_TEST
+    void sqlite3BtreeCursorHintTest(Mem*, Expr*);
+    sqlite3BtreeCursorHintTest(p->aMem, pOp->p4.pExpr);
+#endif
+  }
   break;
 }
 #endif /* SQLITE_ENABLE_CURSOR_HINTS */

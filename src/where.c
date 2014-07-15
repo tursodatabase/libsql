@@ -2764,7 +2764,6 @@ static void codeCursorHint(
   WhereLevel *pLevel;
   Expr *pExpr = 0;
   int iCur;
-  Bitmask msk;
   WhereClause *pWC;
   WhereTerm *pTerm;
   WhereLoop *pWLoop;
