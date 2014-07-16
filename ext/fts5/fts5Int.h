@@ -14,6 +14,7 @@
 #ifndef _FTS5INT_H
 #define _FTS5INT_H
 
+#include "fts5.h"
 #include "sqliteInt.h"
 #include "fts3_tokenizer.h"
 
@@ -122,6 +123,12 @@ struct Fts5PoslistWriter {
 };
 int sqlite3Fts5PoslistWriterAppend(Fts5Buffer*, Fts5PoslistWriter*, i64);
 
+int sqlite3Fts5PoslistNext(
+  const u8 *a, int n,             /* Buffer containing poslist */
+  int *pi,                        /* IN/OUT: Offset within a[] */
+  int *piCol,                     /* IN/OUT: Current column */
+  int *piOff                      /* IN/OUT: Current token offset */
+);
 
 /*
 ** End of interface to code in fts5_buffer.c.
@@ -331,6 +338,10 @@ void sqlite3Fts5ExprFree(Fts5Expr*);
 /* Called during startup to register a UDF with SQLite */
 int sqlite3Fts5ExprInit(sqlite3*);
 
+int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
+int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
+int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
+
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written
 ** C code in this module. The interfaces below this point are called by
@@ -369,6 +380,33 @@ void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 
 
+/*
+** End of interface to code in fts5_expr.c.
+**************************************************************************/
+
+
+/**************************************************************************
+** Interface to code in fts5.c. 
+*/
+typedef struct Fts5Global Fts5Global;
+
+int sqlite3Fts5CreateAux(
+    Fts5Global*, 
+    const char*, 
+    void*, 
+    fts5_extension_function, 
+    void(*)(void*)
+);
+/*
+** End of interface to code in fts5.c.
+**************************************************************************/
+
+
+/**************************************************************************
+** Interface to code in fts5_aux.c. 
+*/
+
+int sqlite3Fts5AuxInit(Fts5Global*);
 /*
 ** End of interface to code in fts5_expr.c.
 **************************************************************************/

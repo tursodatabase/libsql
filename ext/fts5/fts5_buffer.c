@@ -197,3 +197,29 @@ int sqlite3Fts5PoslistWriterAppend(
 
   return rc;
 }
+
+int sqlite3Fts5PoslistNext(
+  const u8 *a, int n,             /* Buffer containing poslist */
+  int *pi,                        /* IN/OUT: Offset within a[] */
+  int *piCol,                     /* IN/OUT: Current column */
+  int *piOff                      /* IN/OUT: Current token offset */
+){
+  int i = *pi;
+  int iVal;
+  if( i>=n ){
+    /* EOF */
+    return 1;  
+  }
+  i += getVarint32(&a[i], iVal);
+  if( iVal==1 ){
+    i += getVarint32(&a[i], iVal);
+    *piCol = iVal;
+    *piOff = 0;
+    i += getVarint32(&a[i], iVal);
+  }
+  *piOff += (iVal-2);
+  *pi = i;
+  return 0;
+}
+
+

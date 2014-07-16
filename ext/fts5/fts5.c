@@ -17,6 +17,34 @@
 
 typedef struct Fts5Table Fts5Table;
 typedef struct Fts5Cursor Fts5Cursor;
+typedef struct Fts5Global Fts5Global;
+typedef struct Fts5Auxiliary Fts5Auxiliary;
+
+/*
+** A single object of this type is allocated when the FTS5 module is 
+** registered with a database handle. It is used to store pointers to
+** all registered FTS5 extensions - tokenizers and auxiliary functions.
+*/
+struct Fts5Global {
+  sqlite3 *db;                    /* Associated database connection */ 
+  i64 iNextId;                    /* Used to allocate unique cursor ids */
+  Fts5Auxiliary *pAux;            /* First in list of all aux. functions */
+  Fts5Cursor *pCsr;               /* First in list of all open cursors */
+};
+
+/*
+** Each auxiliary function registered with the FTS5 module is represented
+** by an object of the following type. All such objects are stored as part
+** of the Fts5Global.pAux list.
+*/
+struct Fts5Auxiliary {
+  Fts5Global *pGlobal;            /* Global context for this function */
+  char *zFunc;                    /* Function name (nul-terminated) */
+  void *pUserData;                /* User-data pointer */
+  fts5_extension_function xFunc;  /* Callback function */
+  void (*xDestroy)(void*);        /* Destructor function */
+  Fts5Auxiliary *pNext;           /* Next registered auxiliary function */
+};
 
 /*
 ** Virtual-table object.
@@ -26,6 +54,12 @@ struct Fts5Table {
   Fts5Config *pConfig;            /* Virtual table configuration */
   Fts5Index *pIndex;              /* Full-text index */
   Fts5Storage *pStorage;          /* Document store */
+  Fts5Global *pGlobal;            /* Global (connection wide) data */
+};
+
+struct Fts5MatchPhrase {
+  Fts5Buffer *pPoslist;           /* Pointer to current poslist */
+  int nTerm;                      /* Size of phrase in terms */
 };
 
 /*
@@ -37,7 +71,12 @@ struct Fts5Cursor {
   sqlite3_stmt *pStmt;            /* Statement used to read %_content */
   int bEof;                       /* True at EOF */
   Fts5Expr *pExpr;                /* Expression for MATCH queries */
-  int bSeekRequired;
+  int bSeekRequired;              /* True if seek is required */
+  Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
+
+  /* Variables used by auxiliary functions */
+  i64 iCsrId;                     /* Cursor id */
+  Fts5Auxiliary *pAux;            /* Currently executing function */
 };
 
 /*
@@ -108,6 +147,7 @@ static int fts5InitVtab(
     }else{
       memset(pTab, 0, sizeof(Fts5Table));
       pTab->pConfig = pConfig;
+      pTab->pGlobal = (Fts5Global*)pAux;
     }
   }
 
@@ -234,11 +274,17 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 ** Implementation of xOpen method.
 */
 static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
-  Fts5Cursor *pCsr;
-  int rc = SQLITE_OK;
+  Fts5Table *pTab = (Fts5Table*)pVTab;
+  Fts5Cursor *pCsr;               /* New cursor object */
+  int rc = SQLITE_OK;             /* Return code */
+
   pCsr = (Fts5Cursor*)sqlite3_malloc(sizeof(Fts5Cursor));
   if( pCsr ){
+    Fts5Global *pGlobal = pTab->pGlobal;
     memset(pCsr, 0, sizeof(Fts5Cursor));
+    pCsr->pNext = pGlobal->pCsr;
+    pGlobal->pCsr = pCsr;
+    pCsr->iCsrId = ++pGlobal->iNextId;
   }else{
     rc = SQLITE_NOMEM;
   }
@@ -260,11 +306,17 @@ static int fts5StmtType(int idxNum){
 static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
+  Fts5Cursor **pp;
   if( pCsr->pStmt ){
     int eStmt = fts5StmtType(pCsr->idxNum);
     sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
   }
   sqlite3Fts5ExprFree(pCsr->pExpr);
+
+  /* Remove the cursor from the Fts5Global.pCsr list */
+  for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
+  *pp = pCsr->pNext;
+
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -373,22 +425,14 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   return SQLITE_OK;
 }
 
-/* 
-** This is the xColumn method, called by SQLite to request a value from
-** the row that the supplied cursor currently points to.
+/*
+** If the cursor requires seeking (bSeekRequired flag is set), seek it.
+** Return SQLITE_OK if no error occurs, or an SQLite error code otherwise.
 */
-static int fts5ColumnMethod(
-  sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
-  sqlite3_context *pCtx,          /* Context for sqlite3_result_xxx() calls */
-  int iCol                        /* Index of column to read value from */
-){
-  Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int ePlan = FTS5_PLAN(pCsr->idxNum);
+static int fts5SeekCursor(Fts5Cursor *pCsr){
   int rc = SQLITE_OK;
-  
-  assert( pCsr->bEof==0 );
   if( pCsr->bSeekRequired ){
-    assert( ePlan==FTS5_PLAN_MATCH && pCsr->pExpr );
+    assert( pCsr->pExpr );
     sqlite3_reset(pCsr->pStmt);
     sqlite3_bind_int64(pCsr->pStmt, 1, sqlite3Fts5ExprRowid(pCsr->pExpr));
     rc = sqlite3_step(pCsr->pStmt);
@@ -401,9 +445,35 @@ static int fts5ColumnMethod(
       }
     }
   }
+  return rc;
+}
 
-  if( rc==SQLITE_OK ){
-    sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
+/* 
+** This is the xColumn method, called by SQLite to request a value from
+** the row that the supplied cursor currently points to.
+*/
+static int fts5ColumnMethod(
+  sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
+  sqlite3_context *pCtx,          /* Context for sqlite3_result_xxx() calls */
+  int iCol                        /* Index of column to read value from */
+){
+  Fts5Config *pConfig = ((Fts5Table*)(pCursor->pVtab))->pConfig;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
+  int rc = SQLITE_OK;
+  
+  assert( pCsr->bEof==0 );
+
+  if( iCol==pConfig->nCol ){
+    /* User is requesting the value of the special column with the same name
+    ** as the table. Return the cursor integer id number. This value is only
+    ** useful in that it may be passed as the first argument to an FTS5
+    ** auxiliary function.  */
+    sqlite3_result_int64(pCtx, pCsr->iCsrId);
+  }else{
+    rc = fts5SeekCursor(pCsr);
+    if( rc==SQLITE_OK ){
+      sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
+    }
   }
   return rc;
 }
@@ -513,6 +583,121 @@ static int fts5RollbackMethod(sqlite3_vtab *pVtab){
   return rc;
 }
 
+static void *fts5ApiUserData(Fts5Context *pCtx){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  return pCsr->pAux->pUserData;
+}
+
+static int fts5ApiColumnCount(Fts5Context *pCtx){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  return ((Fts5Table*)(pCsr->base.pVtab))->pConfig->nCol;
+}
+
+static int fts5ApiColumnAvgSize(Fts5Context *pCtx, int iCol, int *pnToken){
+  assert( 0 );
+  return 0;
+}
+
+static int fts5ApiTokenize(
+  Fts5Context *pCtx, 
+  const char *pText, int nText, 
+  void *pUserData,
+  int (*xToken)(void*, const char*, int, int, int, int)
+){
+  assert( 0 );
+  return SQLITE_OK;
+}
+
+static int fts5ApiPhraseCount(Fts5Context *pCtx){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  return sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
+}
+
+static int fts5ApiPhraseSize(Fts5Context *pCtx, int iPhrase){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  return sqlite3Fts5ExprPhraseSize(pCsr->pExpr, iPhrase);
+}
+
+static sqlite3_int64 fts5ApiRowid(Fts5Context *pCtx){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  return sqlite3Fts5ExprRowid(pCsr->pExpr);
+}
+
+static int fts5ApiColumnText(
+  Fts5Context *pCtx, 
+  int iCol, 
+  const char **pz, 
+  int *pn
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  int rc = fts5SeekCursor(pCsr);
+  if( rc==SQLITE_OK ){
+    *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol);
+    *pn = sqlite3_column_bytes(pCsr->pStmt, iCol);
+  }
+  return rc;
+}
+
+static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
+  assert( 0 );
+  return 0;
+}
+
+static int fts5ApiPoslist(
+  Fts5Context *pCtx, 
+  int iPhrase, 
+  int *pi, 
+  int *piCol, 
+  int *piOff
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  const u8 *a; int n;             /* Poslist for phrase iPhrase */
+  n = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, &a);
+  return sqlite3Fts5PoslistNext(a, n, pi, piCol, piOff);
+}
+
+static void fts5ApiCallback(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  static const Fts5ExtensionApi sApi = {
+    1,                            /* iVersion */
+    fts5ApiUserData,
+    fts5ApiColumnCount,
+    fts5ApiColumnAvgSize,
+    fts5ApiTokenize,
+    fts5ApiPhraseCount,
+    fts5ApiPhraseSize,
+    fts5ApiRowid,
+    fts5ApiColumnText,
+    fts5ApiColumnSize,
+    fts5ApiPoslist,
+  };
+
+  Fts5Auxiliary *pAux;
+  Fts5Cursor *pCsr;
+  i64 iCsrId;
+
+  assert( argc>=1 );
+  pAux = (Fts5Auxiliary*)sqlite3_user_data(context);
+  iCsrId = sqlite3_value_int64(argv[0]);
+
+  for(pCsr=pAux->pGlobal->pCsr; pCsr; pCsr=pCsr->pNext){
+    if( pCsr->iCsrId==iCsrId ) break;
+  }
+  if( pCsr==0 ){
+    char *zErr = sqlite3_mprintf("no such cursor: %lld", iCsrId);
+    sqlite3_result_error(context, zErr, -1);
+  }else{
+    assert( pCsr->pAux==0 );
+    pCsr->pAux = pAux;
+    pAux->xFunc(&sApi, (Fts5Context*)pCsr, context, argc-1, &argv[1]);
+    pCsr->pAux = 0;
+  }
+}
+
+
 /*
 ** This routine implements the xFindFunction method for the FTS3
 ** virtual table.
@@ -522,8 +707,19 @@ static int fts5FindFunctionMethod(
   int nArg,                       /* Number of SQL function arguments */
   const char *zName,              /* Name of SQL function */
   void (**pxFunc)(sqlite3_context*,int,sqlite3_value**), /* OUT: Result */
-  void **ppArg                    /* Unused */
+  void **ppArg                    /* OUT: User data for *pxFunc */
 ){
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  Fts5Auxiliary *pAux;
+
+  for(pAux=pTab->pGlobal->pAux; pAux; pAux=pAux->pNext){
+    if( sqlite3_stricmp(zName, pAux->zFunc)==0 ){
+      *pxFunc = fts5ApiCallback;
+      *ppArg = (void*)pAux;
+      return 1;
+    }
+  }
+
   /* No function of the specified name was found. Return 0. */
   return 0;
 }
@@ -567,37 +763,99 @@ static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   return SQLITE_OK;
 }
 
-static const sqlite3_module fts5Module = {
-  /* iVersion      */ 2,
-  /* xCreate       */ fts5CreateMethod,
-  /* xConnect      */ fts5ConnectMethod,
-  /* xBestIndex    */ fts5BestIndexMethod,
-  /* xDisconnect   */ fts5DisconnectMethod,
-  /* xDestroy      */ fts5DestroyMethod,
-  /* xOpen         */ fts5OpenMethod,
-  /* xClose        */ fts5CloseMethod,
-  /* xFilter       */ fts5FilterMethod,
-  /* xNext         */ fts5NextMethod,
-  /* xEof          */ fts5EofMethod,
-  /* xColumn       */ fts5ColumnMethod,
-  /* xRowid        */ fts5RowidMethod,
-  /* xUpdate       */ fts5UpdateMethod,
-  /* xBegin        */ fts5BeginMethod,
-  /* xSync         */ fts5SyncMethod,
-  /* xCommit       */ fts5CommitMethod,
-  /* xRollback     */ fts5RollbackMethod,
-  /* xFindFunction */ fts5FindFunctionMethod,
-  /* xRename       */ fts5RenameMethod,
-  /* xSavepoint    */ fts5SavepointMethod,
-  /* xRelease      */ fts5ReleaseMethod,
-  /* xRollbackTo   */ fts5RollbackToMethod,
-};
+/*
+** Register a new auxiliary function with global context pGlobal.
+*/
+int sqlite3Fts5CreateAux(
+  Fts5Global *pGlobal,            /* Global context (one per db handle) */
+  const char *zName,              /* Name of new function */
+  void *pUserData,                /* User data for aux. function */
+  fts5_extension_function xFunc,  /* Aux. function implementation */
+  void(*xDestroy)(void*)          /* Destructor for pUserData */
+){
+  int rc = sqlite3_overload_function(pGlobal->db, zName, -1);
+  if( rc==SQLITE_OK ){
+    Fts5Auxiliary *pAux;
+    int nByte;                      /* Bytes of space to allocate */
 
-int sqlite3Fts5Init(sqlite3 *db){
-  int rc;
-  rc = sqlite3_create_module_v2(db, "fts5", &fts5Module, 0, 0);
-  if( rc==SQLITE_OK ) rc = sqlite3Fts5IndexInit(db);
-  if( rc==SQLITE_OK ) rc = sqlite3Fts5ExprInit(db);
+    nByte = sizeof(Fts5Auxiliary) + strlen(zName) + 1;
+    pAux = (Fts5Auxiliary*)sqlite3_malloc(nByte);
+    if( pAux ){
+      memset(pAux, 0, nByte);
+      pAux->zFunc = (char*)&pAux[1];
+      strcpy(pAux->zFunc, zName);
+      pAux->pGlobal = pGlobal;
+      pAux->pUserData = pUserData;
+      pAux->xFunc = xFunc;
+      pAux->xDestroy = xDestroy;
+      pAux->pNext = pGlobal->pAux;
+      pGlobal->pAux = pAux;
+    }else{
+      rc = SQLITE_NOMEM;
+    }
+  }
+
   return rc;
 }
+
+static void fts5ModuleDestroy(void *pCtx){
+  Fts5Auxiliary *pAux;
+  Fts5Auxiliary *pNext;
+  Fts5Global *pGlobal = (Fts5Global*)pCtx;
+  for(pAux=pGlobal->pAux; pAux; pAux=pNext){
+    pNext = pAux->pNext;
+    if( pAux->xDestroy ){
+      pAux->xDestroy(pAux->pUserData);
+    }
+    sqlite3_free(pAux);
+  }
+  sqlite3_free(pGlobal);
+}
+
+
+int sqlite3Fts5Init(sqlite3 *db){
+  static const sqlite3_module fts5Mod = {
+    /* iVersion      */ 2,
+    /* xCreate       */ fts5CreateMethod,
+    /* xConnect      */ fts5ConnectMethod,
+    /* xBestIndex    */ fts5BestIndexMethod,
+    /* xDisconnect   */ fts5DisconnectMethod,
+    /* xDestroy      */ fts5DestroyMethod,
+    /* xOpen         */ fts5OpenMethod,
+    /* xClose        */ fts5CloseMethod,
+    /* xFilter       */ fts5FilterMethod,
+    /* xNext         */ fts5NextMethod,
+    /* xEof          */ fts5EofMethod,
+    /* xColumn       */ fts5ColumnMethod,
+    /* xRowid        */ fts5RowidMethod,
+    /* xUpdate       */ fts5UpdateMethod,
+    /* xBegin        */ fts5BeginMethod,
+    /* xSync         */ fts5SyncMethod,
+    /* xCommit       */ fts5CommitMethod,
+    /* xRollback     */ fts5RollbackMethod,
+    /* xFindFunction */ fts5FindFunctionMethod,
+    /* xRename       */ fts5RenameMethod,
+    /* xSavepoint    */ fts5SavepointMethod,
+    /* xRelease      */ fts5ReleaseMethod,
+    /* xRollbackTo   */ fts5RollbackToMethod,
+  };
+
+  int rc;
+  Fts5Global *pGlobal = 0;
+  pGlobal = (Fts5Global*)sqlite3_malloc(sizeof(Fts5Global));
+
+  if( pGlobal==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    void *p = (void*)pGlobal;
+    memset(pGlobal, 0, sizeof(Fts5Global));
+    pGlobal->db = db;
+    rc = sqlite3_create_module_v2(db, "fts5", &fts5Mod, p, fts5ModuleDestroy);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5IndexInit(db);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5ExprInit(db);
+    if( rc==SQLITE_OK ) rc = sqlite3Fts5AuxInit(pGlobal);
+  }
+  return rc;
+}
+
 

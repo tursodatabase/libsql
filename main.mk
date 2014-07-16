@@ -73,6 +73,7 @@ LIBOBJ+= vdbe.o parse.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
 LIBOBJ += fts5.o
+LIBOBJ += fts5_aux.o
 LIBOBJ += fts5_buffer.o
 LIBOBJ += fts5_config.o
 LIBOBJ += fts5_expr.o
@@ -385,7 +386,8 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \
-  $(TOP)/ext/fts5/fts5Int.h
+  $(TOP)/ext/fts5/fts5Int.h  \
+  $(TOP)/ext/fts5/fts5.h 
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -573,6 +575,9 @@ rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 
 # FTS5 things
 #
+fts5_aux.o:	$(TOP)/ext/fts5/fts5_aux.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_aux.c
+
 fts5_buffer.o:	$(TOP)/ext/fts5/fts5_buffer.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_buffer.c
 

@@ -33,6 +33,8 @@ struct Fts5Expr {
   Fts5Index *pIndex;
   Fts5ExprNode *pRoot;
   int bAsc;
+  int nPhrase;                    /* Number of phrases in expression */
+  Fts5ExprPhrase **apPhrase;      /* Pointers to phrase objects */
 };
 
 /*
@@ -92,6 +94,8 @@ struct Fts5Parse {
   Fts5Config *pConfig;
   char *zErr;
   int rc;
+  int nPhrase;                    /* Size of apPhrase array */
+  Fts5ExprPhrase **apPhrase;      /* Array of all phrases */
   Fts5ExprNode *pExpr;            /* Result of a successful parse */
 };
 
@@ -211,9 +215,13 @@ int sqlite3Fts5ExprNew(
     }else{
       pNew->pRoot = sParse.pExpr;
       pNew->pIndex = 0;
+      pNew->apPhrase = sParse.apPhrase;
+      pNew->nPhrase = sParse.nPhrase;
+      sParse.apPhrase = 0;
     }
   }
 
+  sqlite3_free(sParse.apPhrase);
   *pzErr = sParse.zErr;
   return sParse.rc;
 }
@@ -236,6 +244,7 @@ void sqlite3Fts5ParseNodeFree(Fts5ExprNode *p){
 void sqlite3Fts5ExprFree(Fts5Expr *p){
   if( p ){
     sqlite3Fts5ParseNodeFree(p->pRoot);
+    sqlite3_free(p->apPhrase);
     sqlite3_free(p);
   }
 }
@@ -959,6 +968,17 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
   int rc;                         /* Tokenize return code */
   char *z = 0;
 
+  if( pPhrase==0 ){
+    if( (pParse->nPhrase % 8)==0 ){
+      int nByte = sizeof(Fts5ExprPhrase*) * (pParse->nPhrase + 8);
+      Fts5ExprPhrase **apNew;
+      apNew = (Fts5ExprPhrase**)sqlite3_realloc(pParse->apPhrase, nByte);
+      if( apNew==0 ) return 0;
+      pParse->apPhrase = apNew;
+    }
+    pParse->nPhrase++;
+  }
+
   pParse->rc = fts5ParseStringFromToken(pToken, &z);
   if( z==0 ) return 0;
   sqlite3Fts5Dequote(z);
@@ -974,6 +994,8 @@ Fts5ExprPhrase *sqlite3Fts5ParseTerm(
     sCtx.pPhrase->aTerm[sCtx.pPhrase->nTerm-1].bPrefix = bPrefix;
   }
 
+
+  pParse->apPhrase[pParse->nPhrase-1] = sCtx.pPhrase;
   sqlite3_free(z);
   return sCtx.pPhrase;
 }
@@ -1352,5 +1374,35 @@ int sqlite3Fts5ExprInit(sqlite3 *db){
   }
 
   return rc;
+}
+
+/*
+** Return the number of phrases in expression pExpr.
+*/
+int sqlite3Fts5ExprPhraseCount(Fts5Expr *pExpr){
+  return pExpr->nPhrase;
+}
+
+/*
+** Return the number of terms in the iPhrase'th phrase in pExpr.
+*/
+int sqlite3Fts5ExprPhraseSize(Fts5Expr *pExpr, int iPhrase){
+  if( iPhrase<0 || iPhrase>=pExpr->nPhrase ) return 0;
+  return pExpr->apPhrase[iPhrase]->nTerm;
+}
+
+/*
+** This function is used to access the current position list for phrase
+** iPhrase.
+*/
+int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
+  if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
+    *pa = 0;
+    return 0;
+  }else{
+    Fts5ExprPhrase *pPhrase = pExpr->apPhrase[iPhrase];
+    *pa = pPhrase->poslist.p;
+    return pPhrase->poslist.n;
+  }
 }
 

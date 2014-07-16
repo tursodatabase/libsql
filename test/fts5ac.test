@@ -138,9 +138,7 @@ do_test 1.1 {
 } {}
 
 proc phrasematch {phrase value} {
-  if {[string first $phrase $value]>=0} {
-    return 1
-  }
+  if {[string first $phrase $value]>=0} { return 1 }
   return 0
 }
 
@@ -177,9 +175,9 @@ proc nearmatch {nNear phraselist value} {
 
 # Usage:
 #
-#   nearset aCol ?-near N? ?-col C? -- phrase1 phrase2...
+#   poslist aCol ?-near N? ?-col C? -- phrase1 phrase2...
 #
-proc nearset {aCol args} {
+proc poslist {aCol args} {
   set O(-near) 10
   set O(-col)  -1
 
@@ -191,43 +189,120 @@ proc nearset {aCol args} {
     set O($k) $v
   }
 
+  # Set phraselist to be a list of phrases. nPhrase its length.
   set phraselist [lrange $args [expr $nOpt+1] end]
+  set nPhrase [llength $phraselist]
 
-  set bMatch 0
+  for {set j 0} {$j < [llength $aCol]} {incr j} {
+    for {set i 0} {$i < $nPhrase} {incr i} { 
+      set A($j,$i) [list]
+    }
+  }
+
   set iCol -1
   foreach col $aCol {
     incr iCol
     if {$O(-col)>=0 && $O(-col)!=$iCol} continue
 
-    if {[nearmatch $O(-near) $phraselist $col]} {
-      set bMatch 1
-      break
+    set nToken [llength $col]
+
+    set iFL [expr $O(-near) >= $nToken ? $nToken - 1 : $O(-near)]
+    for { } {$iFL < $nToken} {incr iFL} {
+      for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
+        set B($iPhrase) [list]
+      }
+      
+      for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
+        set p [lindex $phraselist $iPhrase]
+        set nPm1 [expr {[llength $p] - 1}]
+        set iFirst [expr $iFL - $O(-near) - [llength $p]]
+
+        for {set i $iFirst} {$i <= $iFL} {incr i} {
+          if {[lrange $col $i [expr $i+$nPm1]] == $p} { lappend B($iPhrase) $i }
+        }
+        if {[llength $B($iPhrase)] == 0} break
+      }
+
+      if {$iPhrase==$nPhrase} {
+        for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
+          set A($iCol,$iPhrase) [concat $A($iCol,$iPhrase) $B($iPhrase)]
+          set A($iCol,$iPhrase) [lsort -integer -uniq $A($iCol,$iPhrase)]
+        }
+      }
     }
   }
 
-  return $bMatch
-}
-
-proc matchdata {expr {bAsc 0}} {
-  set tclexpr [db one {SELECT fts5_expr_tcl($expr, 'nearset $cols', 'x', 'y')}]
   set res [list]
-  foreach {id x y} $::data {
-    set cols [list $x $y]
-    if $tclexpr {
-      lappend res $id
+  for {set iPhrase 0} {$iPhrase<$nPhrase} {incr iPhrase} {
+    set plist [list]
+    for {set iCol 0} {$iCol < [llength $aCol]} {incr iCol} {
+      foreach a $A($iCol,$iPhrase) {
+        lappend plist "$iCol.$a"
+      }
     }
-  }
-
-  # puts $tclexpr
-
-  if {$bAsc} {
-    set res [lsort -integer -increasing $res]
-  } else {
-    set res [lsort -integer -decreasing $res]
+    lappend res $plist
   }
 
   return $res
 }
+
+# Usage:
+#
+#   nearset aCol ?-near N? ?-col C? -- phrase1 phrase2...
+#
+proc nearset {args} {
+  set plist [poslist {*}$args]
+  return [expr [llength [lindex $plist 0]]>0]
+}
+
+# Argument $expr is an FTS5 match expression designed to be executed against
+# an FTS5 table with the following schema:
+# 
+#   CREATE VIRTUAL TABLE xy USING fts5(x, y);
+#
+# Assuming the table contains the same records as stored int the global 
+# $::data array (see above), this function returns a list containing one
+# element for each match in the dataset. The elements are themselves lists
+# formatted as follows:
+#
+#   <rowid> {<phrase 0 matches> <phrase 1 matches>...}
+#
+# where each <phrase X matches> element is a list of phrase matches in the
+# same form as returned by auxiliary scalar function fts5_test().
+#
+proc matchdata {bPos expr {bAsc 0}} {
+
+  set tclexpr [db one {SELECT fts5_expr_tcl($expr, 'nearset $cols', 'x', 'y')}]
+  set res [list]
+
+  #puts $tclexpr
+  foreach {id x y} $::data {
+    set cols [list $x $y]
+    if $tclexpr {
+      if {$bPos} {
+        set N [regexp -all -inline {\[nearset [^\]]*\]} $tclexpr]
+        set rowres [list]
+        foreach phrase $N {
+          set cmd "poslist [string range $phrase 9 end-1]"
+          lappend rowres [eval $cmd]
+        }
+        if {[string first "\{" $rowres]<0} { set rowres "{{$rowres}}" }
+        lappend res [list $id $rowres]
+      } else {
+        lappend res $id
+      }
+    }
+  }
+
+  if {$bAsc} {
+    set res [lsort -integer -increasing -index 0 $res]
+  } else {
+    set res [lsort -integer -decreasing -index 0 $res]
+  }
+
+  return [concat {*}$res]
+}
+
 
 foreach {tn phrase} {
   1 "o"
@@ -243,10 +318,10 @@ foreach {tn phrase} {
 } {
 
   set expr "\"$phrase\""
-  set res [matchdata $expr]
+  set res [matchdata 1 $expr]
 
   do_execsql_test 1.2.$tn.[llength $res] { 
-    SELECT rowid FROM xx WHERE xx match $expr
+    SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
   } $res
 }
 
@@ -260,6 +335,10 @@ do_test 2.4 { nearmatch 1 {"a b" "c d"} {x a b x x c d} } 0
 do_test 2.5 { nearmatch 400 {a b} {a x x b} } 1
 do_test 2.6 { nearmatch 0 {a} {a x x b} } 1
 do_test 2.7 { nearmatch 0 {b} {a x x b} } 1
+
+do_test 2.8  { poslist {{a b c}} -- a } {0.0}
+do_test 2.9  { poslist {{a b c}} -- c } {0.2}
+
 
 foreach {tn expr tclexpr} {
   1 {a b} {[N $x -- {a}] && [N $x -- {b}]}
@@ -275,7 +354,6 @@ foreach {bAsc sql} {
 } {
   foreach {tn expr} {
     0.1 x
-
     1 { NEAR(r c) }
     2 { NEAR(r c, 5) }
     3 { NEAR(r c, 3) }
@@ -297,12 +375,10 @@ foreach {bAsc sql} {
     18 { c NOT (b OR a) }
     19 { c NOT b OR a AND d }
   } {
-    set res [matchdata $expr $bAsc]
+    set res [matchdata 0 $expr $bAsc]
     do_execsql_test 4.$bAsc.$tn.[llength $res] $sql $res
   }
 }
-
-
 
 finish_test
 
