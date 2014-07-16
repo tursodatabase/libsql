@@ -81,22 +81,43 @@ static void fts5TestFunction(
     sqlite3Fts5BufferAppendPrintf(&rc, &s, " poslist ");
   }
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "poslist") ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, "{");
+    int bParen = 0;
+    Fts5Buffer s3;
+    memset(&s3, 0, sizeof(s3));
+
+
     for(i=0; i<nPhrase; i++){
+      Fts5Buffer s2;                  /* List of positions for phrase/column */
       int j = 0;
       int iOff = 0;
       int iCol = 0;
-      int bFirst = 1;
-      sqlite3Fts5BufferAppendPrintf(&rc, &s, "%s{", (i==0?"":" "));
+      int nElem = 0;
+
+      memset(&s2, 0, sizeof(s2));
       while( 0==pApi->xPoslist(pFts, i, &j, &iCol, &iOff) ){
-        sqlite3Fts5BufferAppendPrintf(
-            &rc, &s, "%s%d.%d", (bFirst?"":" "), iCol, iOff
-        );
-        bFirst = 0;
+        if( nElem!=0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s2, " ");
+        sqlite3Fts5BufferAppendPrintf(&rc, &s2, "%d.%d", iCol, iOff);
+        nElem++;
       }
-      sqlite3Fts5BufferAppendPrintf(&rc, &s, "}");
+
+      if( i!=0 ){
+        sqlite3Fts5BufferAppendPrintf(&rc, &s3, " ");
+      }
+      if( nElem==1 ){
+        sqlite3Fts5BufferAppendPrintf(&rc, &s3, "%s", (const char*)s2.p);
+      }else{
+        sqlite3Fts5BufferAppendPrintf(&rc, &s3, "{%s}", (const char*)s2.p);
+        bParen = 1;
+      }
+      sqlite3_free(s2.p);
     }
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, "}");
+
+    if(zReq==0 && (nPhrase>1 || bParen) ){
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, "{%s}", (const char*)s3.p);
+    }else{
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, "%s", (const char*)s3.p);
+    }
+    sqlite3_free(s3.p);
   }
 
   if( zReq==0 ){
