@@ -1,5 +1,5 @@
-C Fixes\sfor\stcl\slist\sgeneration\sin\sfts5_test().
-D 2014-07-16T20:07:59.378
+C Fix\sa\sproblem\swith\sposition\slist\sprocessing\sfor\sOR\squeries.
+D 2014-07-17T15:14:07.541
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -109,7 +109,7 @@ F ext/fts5/fts5Int.h 2d4c1e1ebdf18278776fcd8a64233ff3c04ea51f
 F ext/fts5/fts5_aux.c 27b082732fd76277fd7e9277f52903723d97f99b
 F ext/fts5/fts5_buffer.c b7aa6cdf4a63642fcc12359cedc4be748ca400cc
 F ext/fts5/fts5_config.c 94f1b4cb4de6a7cd5780c14adb0198e289df8cef
-F ext/fts5/fts5_expr.c e4e4e6d32beff1ab0d076f8fbf5cf3b2241d4dbc
+F ext/fts5/fts5_expr.c 52a1b47cfd30feb09c522392b1ba246eda7023f4
 F ext/fts5/fts5_index.c 9ff3008e903aa9077b0a7a7aa76ab6080eb07a36
 F ext/fts5/fts5_storage.c 7848d8f8528d798bba159900ea310a6d4a279da8
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
@@ -597,7 +597,7 @@ F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/fts5aa.test c8d3b9694f6b2864161c7437408464a535d19343
 F test/fts5ab.test dc04ed48cf93ca957d174406e6c192f2ff4f3397
-F test/fts5ac.test 14d05f412b99ccac34316b76861b5bfe3a33d0a1
+F test/fts5ac.test 84599f8253abc7e10b929b8ee0b47c5edd4eafbd
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
@@ -1194,7 +1194,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e2a7ba0889093416455f488fca893eaeb195d45
-R c6840136b0b681ac8e496da634d56e88
+P c1f9a4b76c0bbc1ef9f6cdb5d62aa5d536fdf38e
+R c3e4d3fb829636894b73dbf001062a3f
 U dan
-Z a290facfa88166ccaa147b2550745bf7
+Z 4c19ad3988f765a5de2b9174d276eba9

@@ -1396,13 +1396,14 @@ int sqlite3Fts5ExprPhraseSize(Fts5Expr *pExpr, int iPhrase){
 ** iPhrase.
 */
 int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
-  if( iPhrase<0 || iPhrase>=pExpr->nPhrase ){
-    *pa = 0;
-    return 0;
-  }else{
+  if( iPhrase>=0 && iPhrase<pExpr->nPhrase ){
     Fts5ExprPhrase *pPhrase = pExpr->apPhrase[iPhrase];
-    *pa = pPhrase->poslist.p;
-    return pPhrase->poslist.n;
+    if( sqlite3Fts5IterRowid(pPhrase->aTerm[0].pIter)==pExpr->pRoot->iRowid ){
+      *pa = pPhrase->poslist.p;
+      return pPhrase->poslist.n;
+    }
   }
+  *pa = 0;
+  return 0;
 }
 
