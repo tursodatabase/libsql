@@ -6,7 +6,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#else
+#include <io.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -273,14 +279,14 @@ static void print_wal_header(Cksum *pCksum){
 /*
 ** Describe cell content.
 */
-static int describeContent(
+static i64 describeContent(
   unsigned char *a,       /* Cell content */
-  int nLocal,             /* Bytes in a[] */
+  i64 nLocal,             /* Bytes in a[] */
   char *zDesc             /* Write description here */
 ){
   int nDesc = 0;
-  int n, i, j;
-  i64 x, v;
+  int n, j;
+  i64 i, x, v;
   const unsigned char *pData;
   const unsigned char *pLimit;
   char sep = ' ';
@@ -320,7 +326,7 @@ static int describeContent(
     }else if( x==9 ){
       sprintf(zDesc, "1");
     }else if( x>=12 ){
-      int size = (x-12)/2;
+      i64 size = (x-12)/2;
       if( (x&1)==0 ){
         sprintf(zDesc, "blob(%d)", size);
       }else{
@@ -339,11 +345,11 @@ static int describeContent(
 ** Compute the local payload size given the total payload size and
 ** the page size.
 */
-static int localPayload(i64 nPayload, char cType){
-  int maxLocal;
-  int minLocal;
-  int surplus;
-  int nLocal;
+static i64 localPayload(i64 nPayload, char cType){
+  i64 maxLocal;
+  i64 minLocal;
+  i64 surplus;
+  i64 nLocal;
   if( cType==13 ){
     /* Table leaf */
     maxLocal = pagesize-35;
@@ -370,19 +376,19 @@ static int localPayload(i64 nPayload, char cType){
 **
 ** The return value is the local cell size.
 */
-static int describeCell(
+static i64 describeCell(
   unsigned char cType,    /* Page type */
   unsigned char *a,       /* Cell content */
   int showCellContent,    /* Show cell content if true */
   char **pzDesc           /* Store description here */
 ){
   int i;
-  int nDesc = 0;
+  i64 nDesc = 0;
   int n = 0;
   int leftChild;
   i64 nPayload;
   i64 rowid;
-  int nLocal;
+  i64 nLocal;
   static char zDesc[1000];
   i = 0;
   if( cType<=5 ){
@@ -479,13 +485,13 @@ static void decode_btree_page(
   for(i=0; i<nCell; i++){
     int cofst = iCellPtr + i*2;
     char *zDesc;
-    int n;
+    i64 n;
 
     cofst = a[cofst]*256 + a[cofst+1];
     n = describeCell(a[0], &a[cofst-hdrSize], showCellContent, &zDesc);
     if( showMap ){
       char zBuf[30];
-      memset(&zMap[cofst], '*', n);
+      memset(&zMap[cofst], '*', (size_t)n);
       zMap[cofst] = '[';
       zMap[cofst+n-1] = ']';
       sprintf(zBuf, "%d", i);
