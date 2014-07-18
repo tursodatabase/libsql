@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\s".fullschema"\scommand\sin\sthe\scommand-line\sshell.
-D 2014-07-18T14:43:29.403
+C SQLite\shas\slong\saccepted\ssome\sunadvertised\sand\snon-standard\sjoin\ssyntax.\nAdd\sa\stest\sto\sensure\sthat\sfuture\sversions\scontinue\sto\saccept\sthis\snon-standard\nsyntax,\sto\savoid\sbreaking\slegacy\sapplications\sthat\suse\sthe\sundefined\ssyntax.
+D 2014-07-18T17:39:48.053
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -643,7 +643,7 @@ F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test f130fe9e71008577b342b8874d52984bd04ede2c
 F test/ioerr5.test 2edfa4fb0f896f733071303b42224df8bedd9da4
 F test/ioerr6.test a395a6ab144b26a9e3e21059a1ab6a7149cca65b
-F test/join.test 559b81eb56ae350246f9c25986aa52c81c725c7e
+F test/join.test 52d4d49f86d0cf46926672878c4eaf0da399104a
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1cec1e030035e5253fb7ebbdfe5c1a3029e4e29b
-R 3a5c863b5d4e43cf3d99c01f25a09c91
+P fa80c64caa573297bf43cb5b11d9e7db58567200
+R 98a05e82af602a262cecfbef5a77de2c
 U drh
-Z f91dd8693f049cec144fbd0b43e0e92a
+Z 99ce618698b83450b2fdb30e802ca3fb
