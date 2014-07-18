@@ -2032,9 +2032,13 @@ int sqlite3_complete16(const void *sql);
 /*
 ** CAPI3REF: Register A Callback To Handle SQLITE_BUSY Errors
 **
-** ^This routine sets a callback function that might be invoked whenever
-** an attempt is made to open a database table that another thread
-** or process has locked.
+** ^The sqlite3_busy_handler(D,X,P) routine sets a callback function X
+** that might be invoked with argument P whenever
+** an attempt is made to access a database table associated with
+** [database connection] D when another thread
+** or process has the table locked.
+** The sqlite3_busy_handler() interface is used to implement
+** [sqlite3_busy_timeout()] and [PRAGMA busy_timeout].
 **
 ** ^If the busy callback is NULL, then [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED]
 ** is returned immediately upon encountering the lock.  ^If the busy callback
@@ -2043,16 +2047,18 @@ int sqlite3_complete16(const void *sql);
 ** ^The first argument to the busy handler is a copy of the void* pointer which
 ** is the third argument to sqlite3_busy_handler().  ^The second argument to
 ** the busy handler callback is the number of times that the busy handler has
-** been invoked for this locking event.  ^If the
+** been invoked for the same locking event.  ^If the
 ** busy callback returns 0, then no additional attempts are made to
-** access the database and [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED] is returned.
+** access the database and [SQLITE_BUSY] or [SQLITE_IOERR_BLOCKED] is returned
+** to the application.
 ** ^If the callback returns non-zero, then another attempt
-** is made to open the database for reading and the cycle repeats.
+** is made to access the database and the cycle repeats.
 **
 ** The presence of a busy handler does not guarantee that it will be invoked
 ** when there is lock contention. ^If SQLite determines that invoking the busy
 ** handler could result in a deadlock, it will go ahead and return [SQLITE_BUSY]
-** or [SQLITE_IOERR_BLOCKED] instead of invoking the busy handler.
+** or [SQLITE_IOERR_BLOCKED] to the application instead of invoking the 
+** busy handler.
 ** Consider a scenario where one process is holding a read lock that
 ** it is trying to promote to a reserved lock and
 ** a second process is holding a reserved lock that it is trying
@@ -2084,10 +2090,12 @@ int sqlite3_complete16(const void *sql);
 ** ^(There can only be a single busy handler defined for each
 ** [database connection].  Setting a new busy handler clears any
 ** previously set handler.)^  ^Note that calling [sqlite3_busy_timeout()]
-** will also set or clear the busy handler.
+** or evaluating [PRAGMA busy_timeout=N] will change the
+** busy handler and thus clear any previously set busy handler.
 **
 ** The busy callback should not take any actions which modify the
-** database connection that invoked the busy handler.  Any such actions
+** database connection that invoked the busy handler.  In other words,
+** the busy handler is not reentrant.  Any such actions
 ** result in undefined behavior.
 ** 
 ** A busy handler must not close the database connection
@@ -2112,6 +2120,8 @@ int sqlite3_busy_handler(sqlite3*, int(*)(void*,int), void*);
 ** [database connection] any any given moment.  If another busy handler
 ** was defined  (using [sqlite3_busy_handler()]) prior to calling
 ** this routine, that other busy handler is cleared.)^
+**
+** See also:  [PRAGMA busy_timeout]
 */
 int sqlite3_busy_timeout(sqlite3*, int ms);
 
@@ -7139,6 +7149,9 @@ void *sqlite3_wal_hook(
 ** ^The [wal_autocheckpoint pragma] can be used to invoke this interface
 ** from SQL.
 **
+** ^Checkpoints initiated by this mechanism are
+** [sqlite3_wal_checkpoint_v2|PASSIVE].
+**
 ** ^Every new [database connection] defaults to having the auto-checkpoint
 ** enabled with a threshold of 1000 or [SQLITE_DEFAULT_WAL_AUTOCHECKPOINT]
 ** pages.  The use of this interface
@@ -7155,6 +7168,10 @@ int sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
 ** empty string, then a checkpoint is run on all databases of
 ** connection D.  ^If the database connection D is not in
 ** [WAL | write-ahead log mode] then this interface is a harmless no-op.
+** ^The [sqlite3_wal_checkpoint(D,X)] interface initiates a
+** [sqlite3_wal_checkpoint_v2|PASSIVE] checkpoint.
+** Use the [sqlite3_wal_checkpoint_v2()] interface to get a FULL
+** or RESET checkpoint.
 **
 ** ^The [wal_checkpoint pragma] can be used to invoke this interface
 ** from SQL.  ^The [sqlite3_wal_autocheckpoint()] interface and the
@@ -7177,10 +7194,12 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 **   Checkpoint as many frames as possible without waiting for any database 
 **   readers or writers to finish. Sync the db file if all frames in the log
 **   are checkpointed. This mode is the same as calling 
-**   sqlite3_wal_checkpoint(). The busy-handler callback is never invoked.
+**   sqlite3_wal_checkpoint(). The [sqlite3_busy_handler|busy-handler callback]
+**   is never invoked.
 **
 ** <dt>SQLITE_CHECKPOINT_FULL<dd>
-**   This mode blocks (calls the busy-handler callback) until there is no
+**   This mode blocks (it invokes the
+**   [sqlite3_busy_handler|busy-handler callback]) until there is no
 **   database writer and all readers are reading from the most recent database
 **   snapshot. It then checkpoints all frames in the log file and syncs the
 **   database file. This call blocks database writers while it is running,
@@ -7188,7 +7207,8 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 **
 ** <dt>SQLITE_CHECKPOINT_RESTART<dd>
 **   This mode works the same way as SQLITE_CHECKPOINT_FULL, except after 
-**   checkpointing the log file it blocks (calls the busy-handler callback)
+**   checkpointing the log file it blocks (calls the 
+**   [sqlite3_busy_handler|busy-handler callback])
 **   until all readers are reading from the database file only. This ensures 
 **   that the next client to write to the database file restarts the log file 
 **   from the beginning. This call blocks database writers while it is running,

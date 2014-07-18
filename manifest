@@ -1,5 +1,5 @@
-C SQLite\shas\slong\saccepted\ssome\sunadvertised\sand\snon-standard\sjoin\ssyntax.\nAdd\sa\stest\sto\sensure\sthat\sfuture\sversions\scontinue\sto\saccept\sthis\snon-standard\nsyntax,\sto\savoid\sbreaking\slegacy\sapplications\sthat\suse\sthe\sundefined\ssyntax.
-D 2014-07-18T17:39:48.053
+C Improved\sdocumentation\sfor\scheckpoints\sand\sthe\sbusy\shandler.\s\sNo\schanges\nto\scode.
+D 2014-07-18T19:06:39.261
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
 F src/shell.c 566aee8213372a2e81ba0eb34e9759f7b2574009
-F src/sqlite.h.in a98eb3e8c86c934ea6f5bcfc6b69653dde2f4ed4
+F src/sqlite.h.in fd8e3a36b0aded082dc93a4b89c1e85324b4cf75
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h e88614d7371b80ff69dbbb5e4b9813ee93dfd890
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fa80c64caa573297bf43cb5b11d9e7db58567200
-R 98a05e82af602a262cecfbef5a77de2c
+P 824dde7fc48dbca6d6c956c4eb79bbfa2d139ee5
+R e12aaadd86bb0f0252aac83b76e58ccc
 U drh
-Z 99ce618698b83450b2fdb30e802ca3fb
+Z 06586dc6d29c2abfb50a449af797bf0e
