@@ -52,7 +52,7 @@ struct Fts5ExprNode {
   Fts5ExprNode *pRight;           /* Right hand child node */
   Fts5ExprNearset *pNear;         /* For FTS5_STRING - cluster of phrases */
   int bEof;                       /* True at EOF */
-  i64 iRowid;
+  i64 iRowid;                     /* Current rowid */
 };
 
 /*
@@ -70,6 +70,7 @@ struct Fts5ExprTerm {
 ** within a document for it to match.
 */
 struct Fts5ExprPhrase {
+  Fts5ExprNode *pNode;            /* FTS5_STRING node this phrase is part of */
   Fts5Buffer poslist;             /* Current position list */
   int nTerm;                      /* Number of entries in aTerm[] */
   Fts5ExprTerm aTerm[0];          /* Terms that make up this phrase */
@@ -266,7 +267,7 @@ static int fts5ExprPhraseIsMatch(
   Fts5ExprPhrase *pPhrase,        /* Phrase object to initialize */
   int *pbMatch                    /* OUT: Set to true if really a match */
 ){
-  Fts5PoslistWriter writer = {0, 0};
+  Fts5PoslistWriter writer = {0};
   Fts5PoslistReader aStatic[4];
   Fts5PoslistReader *aIter = aStatic;
   int i;
@@ -322,6 +323,46 @@ static int fts5ExprPhraseIsMatch(
   return rc;
 }
 
+typedef struct Fts5LookaheadReader Fts5LookaheadReader;
+struct Fts5LookaheadReader {
+  const u8 *a;                    /* Buffer containing position list */
+  int n;                          /* Size of buffer a[] in bytes */
+  int i;                          /* Current offset in position list */
+  i64 iPos;                       /* Current position */
+  i64 iLookahead;                 /* Next position */
+};
+
+#define FTS5_LOOKAHEAD_EOF (((i64)1) << 62)
+
+static int fts5LookaheadReaderNext(Fts5LookaheadReader *p){
+  p->iPos = p->iLookahead;
+  if( sqlite3Fts5PoslistNext64(p->a, p->n, &p->i, &p->iLookahead) ){
+    p->iLookahead = FTS5_LOOKAHEAD_EOF;
+  }
+  return (p->iPos==FTS5_LOOKAHEAD_EOF);
+}
+
+static int fts5LookaheadReaderInit(
+  const u8 *a, int n,             /* Buffer to read position list from */
+  Fts5LookaheadReader *p          /* Iterator object to initialize */
+){
+  memset(p, 0, sizeof(Fts5LookaheadReader));
+  p->a = a;
+  p->n = n;
+  fts5LookaheadReaderNext(p);
+  return fts5LookaheadReaderNext(p);
+}
+
+static int fts5LookaheadReaderEof(Fts5LookaheadReader *p){
+  return (p->iPos==FTS5_LOOKAHEAD_EOF);
+}
+
+typedef struct Fts5NearTrimmer Fts5NearTrimmer;
+struct Fts5NearTrimmer {
+  Fts5LookaheadReader reader;     /* Input iterator */
+  Fts5PoslistWriter writer;       /* Writer context */
+  Fts5Buffer *pOut;               /* Output poslist */
+};
 
 /*
 ** The near-set object passed as the first argument contains more than
@@ -340,8 +381,11 @@ static int fts5ExprPhraseIsMatch(
 ** a set of intances that collectively matches the NEAR constraint.
 */
 static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
-  Fts5PoslistReader aStatic[4];
-  Fts5PoslistReader *aIter = aStatic;
+  Fts5NearTrimmer aStatic[4];
+  Fts5NearTrimmer *a = aStatic;
+
+  Fts5ExprPhrase **apPhrase = pNear->apPhrase;
+
   int i;
   int rc = SQLITE_OK;
   int bMatch;
@@ -352,36 +396,75 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
   /* If the aStatic[] array is not large enough, allocate a large array
   ** using sqlite3_malloc(). This approach could be improved upon. */
   if( pNear->nPhrase>(sizeof(aStatic) / sizeof(aStatic[0])) ){
-    int nByte = sizeof(Fts5PoslistReader) * pNear->nPhrase;
-    aIter = (Fts5PoslistReader*)sqlite3_malloc(nByte);
-    if( !aIter ) return SQLITE_NOMEM;
+    int nByte = sizeof(Fts5LookaheadReader) * pNear->nPhrase;
+    a = (Fts5NearTrimmer*)sqlite3_malloc(nByte);
+    if( !a ) return SQLITE_NOMEM;
+    memset(a, 0, nByte);
+  }else{
+    memset(aStatic, 0, sizeof(aStatic));
   }
 
-  /* Initialize a term iterator for each phrase */
+  /* Initialize a lookahead iterator for each phrase. After passing the
+  ** buffer and buffer size to the lookaside-reader init function, zero
+  ** the phrase poslist buffer. The new poslist for the phrase (containing
+  ** the same entries as the original with some entries removed on account 
+  ** of the NEAR constraint) is written over the original even as it is
+  ** being read. This is safe as the entries for the new poslist are a
+  ** subset of the old, so it is not possible for data yet to be read to
+  ** be overwritten.  */
   for(i=0; i<pNear->nPhrase; i++){
-    Fts5Buffer *pPoslist = &pNear->apPhrase[i]->poslist; 
-    sqlite3Fts5PoslistReaderInit(-1, pPoslist->p, pPoslist->n, &aIter[i]);
+    Fts5Buffer *pPoslist = &apPhrase[i]->poslist;
+    fts5LookaheadReaderInit(pPoslist->p, pPoslist->n, &a[i].reader);
+    pPoslist->n = 0;
+    a[i].pOut = pPoslist;
   }
 
-  iMax = aIter[0].iPos;
-  do {
-    bMatch = 1;
-    for(i=0; i<pNear->nPhrase; i++){
-      Fts5PoslistReader *pPos = &aIter[i];
-      i64 iMin = iMax - pNear->apPhrase[i]->nTerm - pNear->nNear;
-      if( pPos->iPos<iMin || pPos->iPos>iMax ){
-        bMatch = 0;
-        while( pPos->iPos<iMin ){
-          if( sqlite3Fts5PoslistReaderNext(pPos) ) goto ismatch_out;
+  while( 1 ){
+    int iAdv;
+    i64 iMin;
+    i64 iMax;
+
+    /* This block advances the phrase iterators until they point to a set of
+    ** entries that together comprise a match.  */
+    iMax = a[0].reader.iPos;
+    do {
+      bMatch = 1;
+      for(i=0; i<pNear->nPhrase; i++){
+        Fts5LookaheadReader *pPos = &a[i].reader;
+        iMin = iMax - pNear->apPhrase[i]->nTerm - pNear->nNear;
+        if( pPos->iPos<iMin || pPos->iPos>iMax ){
+          bMatch = 0;
+          while( pPos->iPos<iMin ){
+            if( fts5LookaheadReaderNext(pPos) ) goto ismatch_out;
+          }
+          if( pPos->iPos>iMax ) iMax = pPos->iPos;
         }
-        if( pPos->iPos>iMax ) iMax = pPos->iPos;
+      }
+    }while( bMatch==0 );
+
+    /* Add an entry to each output position list */
+    for(i=0; i<pNear->nPhrase; i++){
+      i64 iPos = a[i].reader.iPos;
+      Fts5PoslistWriter *pWriter = &a[i].writer;
+      if( a[i].pOut->n==0 || iPos!=pWriter->iPrev ){
+        sqlite3Fts5PoslistWriterAppend(a[i].pOut, pWriter, iPos);
       }
     }
-  }while( bMatch==0 );
+
+    iAdv = 0;
+    iMin = a[0].reader.iLookahead;
+    for(i=0; i<pNear->nPhrase; i++){
+      if( a[i].reader.iLookahead < iMin ){
+        iMin = a[i].reader.iLookahead;
+        iAdv = i;
+      }
+    }
+    if( fts5LookaheadReaderNext(&a[iAdv].reader) ) goto ismatch_out;
+  }
 
  ismatch_out:
-  *pbMatch = bMatch;
-  if( aIter!=aStatic ) sqlite3_free(aIter);
+  *pbMatch = (a[0].pOut->n>0);
+  if( a!=aStatic ) sqlite3_free(a);
   return rc;
 }
 
@@ -519,7 +602,7 @@ static int fts5ExprNearNextMatch(
   while( 1 ){
     int i;
 
-    /* Advance the iterators until they are a match */
+    /* Advance the iterators until they all point to the same rowid */
     rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
     if( pNode->bEof || rc!=SQLITE_OK ) break;
 
@@ -545,6 +628,8 @@ static int fts5ExprNearNextMatch(
       if( rc!=SQLITE_OK || bMatch ) break;
     }
 
+    /* If control flows to here, then the current rowid is not a match.
+    ** Advance all term iterators in all phrases to the next rowid. */
     rc = fts5ExprNearAdvanceAll(pExpr, pNear, &pNode->bEof);
     if( pNode->bEof || rc!=SQLITE_OK ) break;
   }
@@ -661,6 +746,14 @@ static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
   return rc;
 }
 
+static void fts5ExprSetEof(Fts5ExprNode *pNode){
+  if( pNode ){
+    pNode->bEof = 1;
+    fts5ExprSetEof(pNode->pLeft);
+    fts5ExprSetEof(pNode->pRight);
+  }
+}
+
 /*
 **
 */
@@ -688,7 +781,9 @@ static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
           rc = fts5ExprNodeNext(pExpr, pAdv);
           if( rc!=SQLITE_OK ) break;
         }
-        pNode->bEof = p1->bEof || p2->bEof;
+        if( p1->bEof || p2->bEof ){
+          fts5ExprSetEof(pNode);
+        }
         pNode->iRowid = p1->iRowid;
         break;
       }
@@ -1090,6 +1185,12 @@ Fts5ExprNode *sqlite3Fts5ParseNode(
       pRet->pLeft = pLeft;
       pRet->pRight = pRight;
       pRet->pNear = pNear;
+      if( eType==FTS5_STRING ){
+        int iPhrase;
+        for(iPhrase=0; iPhrase<pNear->nPhrase; iPhrase++){
+          pNear->apPhrase[iPhrase]->pNode = pRet;
+        }
+      }
     }
   }
 
@@ -1398,7 +1499,8 @@ int sqlite3Fts5ExprPhraseSize(Fts5Expr *pExpr, int iPhrase){
 int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
   if( iPhrase>=0 && iPhrase<pExpr->nPhrase ){
     Fts5ExprPhrase *pPhrase = pExpr->apPhrase[iPhrase];
-    if( sqlite3Fts5IterRowid(pPhrase->aTerm[0].pIter)==pExpr->pRoot->iRowid ){
+    Fts5ExprNode *pNode = pPhrase->pNode;
+    if( pNode->bEof==0 && pNode->iRowid==pExpr->pRoot->iRowid ){
       *pa = pPhrase->poslist.p;
       return pPhrase->poslist.n;
     }

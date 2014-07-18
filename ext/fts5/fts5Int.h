@@ -118,8 +118,7 @@ int sqlite3Fts5PoslistReaderNext(Fts5PoslistReader*);
 
 typedef struct Fts5PoslistWriter Fts5PoslistWriter;
 struct Fts5PoslistWriter {
-  int iCol;
-  int iOff;
+  i64 iPrev;
 };
 int sqlite3Fts5PoslistWriterAppend(Fts5Buffer*, Fts5PoslistWriter*, i64);
 
@@ -128,6 +127,12 @@ int sqlite3Fts5PoslistNext(
   int *pi,                        /* IN/OUT: Offset within a[] */
   int *piCol,                     /* IN/OUT: Current column */
   int *piOff                      /* IN/OUT: Current token offset */
+);
+
+int sqlite3Fts5PoslistNext64(
+  const u8 *a, int n,             /* Buffer containing poslist */
+  int *pi,                        /* IN/OUT: Offset within a[] */
+  i64 *piOff                      /* IN/OUT: Current offset */
 );
 
 /*

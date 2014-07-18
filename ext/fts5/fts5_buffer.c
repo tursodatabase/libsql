@@ -138,27 +138,40 @@ void sqlite3Fts5BufferSet(
   sqlite3Fts5BufferAppendBlob(pRc, pBuf, nData, pData);
 }
 
+int sqlite3Fts5PoslistNext64(
+  const u8 *a, int n,             /* Buffer containing poslist */
+  int *pi,                        /* IN/OUT: Offset within a[] */
+  i64 *piOff                      /* IN/OUT: Current offset */
+){
+  int i = *pi;
+  if( i>=n ){
+    /* EOF */
+    return 1;  
+  }else{
+    i64 iOff = *piOff;
+    int iVal;
+    i += getVarint32(&a[i], iVal);
+    if( iVal==1 ){
+      i += getVarint32(&a[i], iVal);
+      iOff = ((i64)iVal) << 32;
+      i += getVarint32(&a[i], iVal);
+    }
+    *piOff = iOff + (iVal-2);
+    *pi = i;
+    return 0;
+  }
+}
+
 
 /*
 ** Advance the iterator object passed as the only argument. Return true
 ** if the iterator reaches EOF, or false otherwise.
 */
 int sqlite3Fts5PoslistReaderNext(Fts5PoslistReader *pIter){
-  if( pIter->i>=pIter->n ){
+  if( sqlite3Fts5PoslistNext64(pIter->a, pIter->n, &pIter->i, &pIter->iPos) 
+   || (pIter->iCol>=0 && (pIter->iPos >> 32) > pIter->iCol)
+  ){
     pIter->bEof = 1;
-  }else{
-    int iVal;
-    pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
-    if( iVal==1 ){
-      pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
-      if( pIter->iCol>=0 && iVal>pIter->iCol ){
-        pIter->bEof = 1;
-      }else{
-        pIter->iPos = ((u64)iVal << 32);
-        pIter->i += getVarint32(&pIter->a[pIter->i], iVal);
-      }
-    }
-    pIter->iPos += (iVal-2);
   }
   return pIter->bEof;
 }
@@ -183,18 +196,15 @@ int sqlite3Fts5PoslistWriterAppend(
   Fts5PoslistWriter *pWriter,
   i64 iPos
 ){
+  static const i64 colmask = ((i64)(0x7FFFFFFF)) << 32;
   int rc = SQLITE_OK;
-  int iCol = (int)(iPos >> 32);
-  int iOff = (iPos & 0x7FFFFFFF);
-
-  if( iCol!=pWriter->iCol ){
+  if( (iPos & colmask) != (pWriter->iPrev & colmask) ){
     fts5BufferAppendVarint(&rc, pBuf, 1);
-    fts5BufferAppendVarint(&rc, pBuf, iCol);
-    pWriter->iCol = iCol;
-    pWriter->iOff = 0;
+    fts5BufferAppendVarint(&rc, pBuf, (iPos >> 32));
+    pWriter->iPrev = (iPos & colmask);
   }
-  fts5BufferAppendVarint(&rc, pBuf, (iOff - pWriter->iOff) + 2);
-
+  fts5BufferAppendVarint(&rc, pBuf, (iPos - pWriter->iPrev) + 2);
+  pWriter->iPrev = iPos;
   return rc;
 }
 

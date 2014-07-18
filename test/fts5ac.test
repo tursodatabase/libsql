@@ -309,21 +309,57 @@ foreach {tn expr} {
   2.3 "d+c OR u"
   2.4 "d+c OR u+d"
 
+  3.1 { a AND b AND c }
 } {
   set res [matchdata 1 $expr]
-  do_execsql_test 2.1.$tn.[llength $res] { 
+  do_execsql_test 2.$tn.[llength $res] { 
     SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
   } $res
 }
 
+#-------------------------------------------------------------------------
+# Queries on a specific column.
+#
+foreach {tn expr} {
+  1 "x:a"
+  2 "y:a"
+  3 "x:b"
+  4 "y:b"
+} {
+  set res [matchdata 1 $expr]
+  do_execsql_test 3.$tn.[llength $res] { 
+    SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
+  } $res
+}
 
-do_test 2.1  { poslist {{a b c}} -- a } {0.0}
-do_test 2.2  { poslist {{a b c}} -- c } {0.2}
+#-------------------------------------------------------------------------
+# Some NEAR queries.
+#
+foreach {tn expr} {
+  1 "NEAR(a b)"
+  2 "NEAR(r c)"
+  2 { NEAR(r c, 5) }
+  3 { NEAR(r c, 3) }
+  4 { NEAR(r c, 2) }
+  5 { NEAR(r c, 0) }
+  6 { NEAR(a b c) }
+  7 { NEAR(a b c, 8) }
+  8  { x : NEAR(r c) }
+  9  { y : NEAR(r c) }
+} {
+  set res [matchdata 1 $expr]
+  do_execsql_test 4.1.$tn.[llength $res] { 
+    SELECT rowid, fts5_test(xx, 'poslist') FROM xx WHERE xx match $expr
+  } $res
+}
+
+do_test 4.1  { poslist {{a b c}} -- a } {0.0}
+do_test 4.2  { poslist {{a b c}} -- c } {0.2}
 
 foreach {tn expr tclexpr} {
   1 {a b} {[N $x -- {a}] && [N $x -- {b}]}
 } {
-  do_execsql_test 3.$tn {SELECT fts5_expr_tcl($expr, 'N $x')} [list $tclexpr]
+  do_execsql_test 5.$tn {SELECT fts5_expr_tcl($expr, 'N $x')} [list $tclexpr]
 }
 
 #-------------------------------------------------------------------------
@@ -356,7 +392,7 @@ foreach {bAsc sql} {
     19 { c NOT b OR a AND d }
   } {
     set res [matchdata 0 $expr $bAsc]
-    do_execsql_test 4.$bAsc.$tn.[llength $res] $sql $res
+    do_execsql_test 6.$bAsc.$tn.[llength $res] $sql $res
   }
 }
 
