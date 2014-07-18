@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sin\sthe\sfts3view\sutility\sprogram\sthat\scan\soccur\swith\sMSVC.
-D 2014-07-07T18:03:38.442
+C Improvements\sto\sthe\s".fullschema"\scommand\sin\sthe\scommand-line\sshell.
+D 2014-07-18T14:43:29.403
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 1732320ecac3fee229d560d7ef2afa34681d1815
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
-F src/shell.c 56de2dfa3f25def4bf03098f7e2256fbb42f6e3c
+F src/shell.c 566aee8213372a2e81ba0eb34e9759f7b2574009
 F src/sqlite.h.in a98eb3e8c86c934ea6f5bcfc6b69653dde2f4ed4
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b04751bd59fed513ab615e7f368fe25c64b3607c
-R 30e3947db20694bb71560953bb8a13c2
-U mistachkin
-Z 58c34cf56858b67c344e911b0fcd0cab
+P 1cec1e030035e5253fb7ebbdfe5c1a3029e4e29b
+R 3a5c863b5d4e43cf3d99c01f25a09c91
+U drh
+Z f91dd8693f049cec144fbd0b43e0e92a

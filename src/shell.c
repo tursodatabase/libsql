@@ -2416,6 +2416,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='f' && strncmp(azArg[0], "fullschema", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
+    int doStats = 0;
     if( nArg!=1 ){
       fprintf(stderr, "Usage: .fullschema\n");
       rc = 1;
@@ -2434,21 +2435,33 @@ static int do_meta_command(char *zLine, struct callback_data *p){
        "ORDER BY rowid",
        callback, &data, &zErrMsg
     );
-    sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_master;'",
-                 callback, &data, &zErrMsg);
-    data.mode = MODE_Insert;
-    data.zDestTable = "sqlite_stat1";
-    shell_exec(p->db, "SELECT * FROM sqlite_stat1",
-               shell_callback, &data,&zErrMsg);
-    data.zDestTable = "sqlite_stat3";
-    shell_exec(p->db, "SELECT * FROM sqlite_stat3",
-               shell_callback, &data,&zErrMsg);
-    data.zDestTable = "sqlite_stat4";
-    shell_exec(p->db, "SELECT * FROM sqlite_stat4",
-               shell_callback, &data, &zErrMsg);
-    data.mode = MODE_Semi;
-    shell_exec(p->db, "SELECT 'ANALYZE sqlite_master;'",
-               shell_callback, &data, &zErrMsg);
+    if( rc==SQLITE_OK ){
+      sqlite3_stmt *pStmt;
+      rc = sqlite3_prepare_v2(p->db,
+               "SELECT rowid FROM sqlite_master"
+               " WHERE name GLOB 'sqlite_stat[134]'",
+               -1, &pStmt, 0);
+      doStats = sqlite3_step(pStmt)==SQLITE_ROW;
+      sqlite3_finalize(pStmt);
+    }
+    if( doStats==0 ){
+      fprintf(p->out, "/* No STAT tables available */\n");
+    }else{
+      fprintf(p->out, "ANALYZE sqlite_master;\n");
+      sqlite3_exec(p->db, "SELECT 'ANALYZE sqlite_master'",
+                   callback, &data, &zErrMsg);
+      data.mode = MODE_Insert;
+      data.zDestTable = "sqlite_stat1";
+      shell_exec(p->db, "SELECT * FROM sqlite_stat1",
+                 shell_callback, &data,&zErrMsg);
+      data.zDestTable = "sqlite_stat3";
+      shell_exec(p->db, "SELECT * FROM sqlite_stat3",
+                 shell_callback, &data,&zErrMsg);
+      data.zDestTable = "sqlite_stat4";
+      shell_exec(p->db, "SELECT * FROM sqlite_stat4",
+                 shell_callback, &data, &zErrMsg);
+      fprintf(p->out, "ANALYZE sqlite_master;\n");
+    }
   }else
 
   if( c=='h' && strncmp(azArg[0], "headers", n)==0 ){
