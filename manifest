@@ -1,5 +1,5 @@
-C Update\sthe\ssqlite3_stmt_busy()\sfunction\sso\sthat\sit\scorrectly\sreturns\strue\sfor\s"ROLLBACK"\sstatements\sthat\shave\sbeen\sstepped\sbut\snot\syet\sreset.
-D 2014-07-19T17:57:10.785
+C Add\snew\sASCII\smode\sto\sthe\sshell\scapable\sof\simporting\sand\sexporting\susing\sthe\sofficial\sunit\sand\srecord\sseparators\s(i.e.\s0x1F\sand\s0x1E,\srespectively).
+D 2014-07-19T20:15:16.631
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
-F src/shell.c 566aee8213372a2e81ba0eb34e9759f7b2574009
+F src/shell.c f1524cdcf12af7eeff98c7846518ce5424d38d60
 F src/sqlite.h.in fd8e3a36b0aded082dc93a4b89c1e85324b4cf75
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -818,11 +818,11 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test fb080d67c81e8a80a79ea04b36f127209b5bd112
+F test/shell1.test 4e4f8e6be18384f0bde93acc01947d7217e81774
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
-F test/shell5.test ef0c52952a4a96dc1d9ec3b1fa81ec897ca48154
+F test/shell5.test 3c9264ddf171d778d7d93bda5eea0bafe8a65069
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
@@ -1182,7 +1182,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 574cc8eb1448cff67390f2e16cc9b7c3ddd4658b
-R 3e17c7c287ebc0f7c8d4dc519939fd8f
-U dan
-Z 2190a4b1d8dc0a3facc078eb683578eb
+P 61cee3c0678f5abd9131a29ab946a5e71f55643e
+R 2620c0e44150895c6e6dda7db94cda7b
+T *branch * asciiMode
+T *sym-asciiMode *
+T -sym-trunk *
+U mistachkin
+Z 0122ab3028becc4213d4d02208439f07

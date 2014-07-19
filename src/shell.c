@@ -457,7 +457,8 @@ struct callback_data {
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int showHeader;        /* True to show column names in List or Column mode */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
-  char separator[20];    /* Separator character for MODE_List */
+  char colSeparator[20]; /* Column separator character for several modes */
+  char rowSeparator[20]; /* Row separator character for MODE_Ascii */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
   char nullvalue[20];    /* The text to print when a NULL comes back from
@@ -488,6 +489,7 @@ struct callback_data {
 #define MODE_Tcl      6  /* Generate ANSI-C or TCL quoted elements */
 #define MODE_Csv      7  /* Quote strings, numbers are plain */
 #define MODE_Explain  8  /* Like MODE_Column, but do not truncate data */
+#define MODE_Ascii    9  /* Use ASCII unit and record separators (0x1F/0x1E) */
 
 static const char *modeDescr[] = {
   "line",
@@ -499,7 +501,15 @@ static const char *modeDescr[] = {
   "tcl",
   "csv",
   "explain",
+  "ascii",
 };
+
+/*
+** These are the column/row separators used by the ASCII mode.
+*/
+#define SEP_Line      "\n"
+#define SEP_Column    "\x1F"
+#define SEP_Row       "\x1E"
 
 /*
 ** Number of elements in an array
@@ -667,11 +677,11 @@ static void output_csv(struct callback_data *p, const char *z, int bSep){
     fprintf(out,"%s",p->nullvalue);
   }else{
     int i;
-    int nSep = strlen30(p->separator);
+    int nSep = strlen30(p->colSeparator);
     for(i=0; z[i]; i++){
       if( needCsvQuote[((unsigned char*)z)[i]] 
-         || (z[i]==p->separator[0] && 
-             (nSep==1 || memcmp(z, p->separator, nSep)==0)) ){
+         || (z[i]==p->colSeparator[0] && 
+             (nSep==1 || memcmp(z, p->colSeparator, nSep)==0)) ){
         i = 0;
         break;
       }
@@ -688,7 +698,7 @@ static void output_csv(struct callback_data *p, const char *z, int bSep){
     }
   }
   if( bSep ){
-    fprintf(p->out, "%s", p->separator);
+    fprintf(p->out, "%s", p->colSeparator);
   }
 }
 
@@ -720,10 +730,10 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
         int len = strlen30(azCol[i] ? azCol[i] : "");
         if( len>w ) w = len;
       }
-      if( p->cnt++>0 ) fprintf(p->out,"\n");
+      if( p->cnt++>0 ) fprintf(p->out, "%s", p->rowSeparator);
       for(i=0; i<nArg; i++){
-        fprintf(p->out,"%*s = %s\n", w, azCol[i],
-                azArg[i] ? azArg[i] : p->nullvalue);
+        fprintf(p->out,"%*s = %s%s", w, azCol[i],
+                azArg[i] ? azArg[i] : p->nullvalue, p->rowSeparator);
       }
       break;
     }
@@ -748,9 +758,11 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
           }
           if( p->showHeader ){
             if( w<0 ){
-              fprintf(p->out,"%*.*s%s",-w,-w,azCol[i], i==nArg-1 ? "\n": "  ");
+              fprintf(p->out,"%*.*s%s",-w,-w,azCol[i],
+                      i==nArg-1 ? p->rowSeparator : "  ");
             }else{
-              fprintf(p->out,"%-*.*s%s",w,w,azCol[i], i==nArg-1 ? "\n": "  ");
+              fprintf(p->out,"%-*.*s%s",w,w,azCol[i],
+                      i==nArg-1 ? p->rowSeparator : "  ");
             }
           }
         }
@@ -765,7 +777,7 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
             }
             fprintf(p->out,"%-*.*s%s",w,w,"-----------------------------------"
                    "----------------------------------------------------------",
-                    i==nArg-1 ? "\n": "  ");
+                    i==nArg-1 ? p->rowSeparator : "  ");
           }
         }
       }
@@ -788,10 +800,12 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
         }
         if( w<0 ){
           fprintf(p->out,"%*.*s%s",-w,-w,
-              azArg[i] ? azArg[i] : p->nullvalue, i==nArg-1 ? "\n": "  ");
+              azArg[i] ? azArg[i] : p->nullvalue,
+              i==nArg-1 ? p->rowSeparator : "  ");
         }else{
           fprintf(p->out,"%-*.*s%s",w,w,
-              azArg[i] ? azArg[i] : p->nullvalue, i==nArg-1 ? "\n": "  ");
+              azArg[i] ? azArg[i] : p->nullvalue,
+              i==nArg-1 ? p->rowSeparator : "  ");
         }
       }
       break;
@@ -800,7 +814,8 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
     case MODE_List: {
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
-          fprintf(p->out,"%s%s",azCol[i], i==nArg-1 ? "\n" : p->separator);
+          fprintf(p->out,"%s%s",azCol[i],
+                  i==nArg-1 ? p->rowSeparator : p->colSeparator);
         }
       }
       if( azArg==0 ) break;
@@ -809,11 +824,11 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
         if( z==0 ) z = p->nullvalue;
         fprintf(p->out, "%s", z);
         if( i<nArg-1 ){
-          fprintf(p->out, "%s", p->separator);
+          fprintf(p->out, "%s", p->colSeparator);
         }else if( p->mode==MODE_Semi ){
-          fprintf(p->out, ";\n");
+          fprintf(p->out, ";%s", p->rowSeparator);
         }else{
-          fprintf(p->out, "\n");
+          fprintf(p->out, "%s", p->rowSeparator);
         }
       }
       break;
@@ -842,16 +857,16 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           output_c_string(p->out,azCol[i] ? azCol[i] : "");
-          if(i<nArg-1) fprintf(p->out, "%s", p->separator);
+          if(i<nArg-1) fprintf(p->out, "%s", p->colSeparator);
         }
-        fprintf(p->out,"\n");
+        fprintf(p->out, "%s", p->rowSeparator);
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         output_c_string(p->out, azArg[i] ? azArg[i] : p->nullvalue);
-        if(i<nArg-1) fprintf(p->out, "%s", p->separator);
+        if(i<nArg-1) fprintf(p->out, "%s", p->colSeparator);
       }
-      fprintf(p->out,"\n");
+      fprintf(p->out, "%s", p->rowSeparator);
       break;
     }
     case MODE_Csv: {
@@ -859,13 +874,13 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
         }
-        fprintf(p->out,"\n");
+        fprintf(p->out, "%s", p->rowSeparator);
       }
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
         output_csv(p, azArg[i], i<nArg-1);
       }
-      fprintf(p->out,"\n");
+      fprintf(p->out, "%s", p->rowSeparator);
       break;
     }
     case MODE_Insert: {
@@ -895,6 +910,22 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
         }
       }
       fprintf(p->out,");\n");
+      break;
+    }
+    case MODE_Ascii: {
+      if( p->cnt++==0 && p->showHeader ){
+        for(i=0; i<nArg; i++){
+          if( i>0 ) fprintf(p->out, "%s", p->colSeparator);
+          fprintf(p->out,"%s",azCol[i] ? azCol[i] : "");
+        }
+        fprintf(p->out, "%s", p->rowSeparator);
+      }
+      if( azArg==0 ) break;
+      for(i=0; i<nArg; i++){
+        if( i>0 ) fprintf(p->out, "%s", p->colSeparator);
+        fprintf(p->out,"%s",azArg[i] ? azArg[i] : p->nullvalue);
+      }
+      fprintf(p->out, "%s", p->rowSeparator);
       break;
     }
   }
@@ -1574,6 +1605,7 @@ static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
+  ".colseparator STRING   This is an alias for .separator\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   "                         If TABLE specified, only dump tables matching\n"
@@ -1598,6 +1630,7 @@ static char zHelp[] =
 #endif
   ".log FILE|off          Turn logging on or off.  FILE can be stderr/stdout\n"
   ".mode MODE ?TABLE?     Set output mode where MODE is one of:\n"
+  "                         ascii    Columns/rows delimited with 0x1F and 0x1E\n"
   "                         csv      Comma-separated values\n"
   "                         column   Left-aligned columns.  (See .width)\n"
   "                         html     HTML <table> code\n"
@@ -1615,11 +1648,12 @@ static char zHelp[] =
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
+  ".rowseparator STRING   Change row separator for output mode and .import\n"
   ".save FILE             Write in-memory database into FILE\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   "                         If TABLE specified, only show tables matching\n"
   "                         LIKE pattern TABLE.\n"
-  ".separator STRING      Change separator used by output mode and .import\n"
+  ".separator STRING      Change column separator for output mode and .import\n"
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
   ".show                  Show the current values for various settings\n"
   ".stats on|off          Turn stats on or off\n"
@@ -1832,10 +1866,10 @@ static void test_breakpoint(void){
 }
 
 /*
-** An object used to read a CSV file
+** An object used to read a CSV and other files for import.
 */
-typedef struct CSVReader CSVReader;
-struct CSVReader {
+typedef struct ImportCtx ImportCtx;
+struct ImportCtx {
   const char *zFile;  /* Name of the input file */
   FILE *in;           /* Read the CSV text from this input stream */
   char *z;            /* Accumulated text for a field */
@@ -1843,11 +1877,12 @@ struct CSVReader {
   int nAlloc;         /* Space allocated for z[] */
   int nLine;          /* Current line number */
   int cTerm;          /* Character that terminated the most recent field */
-  int cSeparator;     /* The separator character.  (Usually ",") */
+  int cColSep;        /* The column separator character.  (Usually ",") */
+  int cRowSep;        /* The row separator character.  (Usually "\n") */
 };
 
 /* Append a single byte to z[] */
-static void csv_append_char(CSVReader *p, int c){
+static void import_append_char(ImportCtx *p, int c){
   if( p->n+1>=p->nAlloc ){
     p->nAlloc += p->nAlloc + 100;
     p->z = sqlite3_realloc(p->z, p->nAlloc);
@@ -1865,15 +1900,17 @@ static void csv_append_char(CSVReader *p, int c){
 **   +  Input comes from p->in.
 **   +  Store results in p->z of length p->n.  Space to hold p->z comes
 **      from sqlite3_malloc().
-**   +  Use p->cSep as the separator.  The default is ",".
+**   +  Use p->cSep as the column separator.  The default is ",".
+**   +  Use p->rSep as the row separator.  The default is "\n".
 **   +  Keep track of the line number in p->nLine.
 **   +  Store the character that terminates the field in p->cTerm.  Store
 **      EOF on end-of-file.
 **   +  Report syntax errors on stderr
 */
-static char *csv_read_one_field(CSVReader *p){
-  int c, pc, ppc;
-  int cSep = p->cSeparator;
+static char *csv_read_one_field(ImportCtx *p){
+  int c;
+  int cSep = p->cColSep;
+  int rSep = p->cRowSep;
   p->n = 0;
   c = fgetc(p->in);
   if( c==EOF || seenInterrupt ){
@@ -1881,12 +1918,13 @@ static char *csv_read_one_field(CSVReader *p){
     return 0;
   }
   if( c=='"' ){
+    int pc, ppc;
     int startLine = p->nLine;
     int cQuote = c;
     pc = ppc = 0;
     while( 1 ){
       c = fgetc(p->in);
-      if( c=='\n' ) p->nLine++;
+      if( c==rSep ) p->nLine++;
       if( c==cQuote ){
         if( pc==cQuote ){
           pc = 0;
@@ -1894,8 +1932,8 @@ static char *csv_read_one_field(CSVReader *p){
         }
       }
       if( (c==cSep && pc==cQuote)
-       || (c=='\n' && pc==cQuote)
-       || (c=='\n' && pc=='\r' && ppc==cQuote)
+       || (c==rSep && pc==cQuote)
+       || (c==rSep && pc=='\r' && ppc==cQuote)
        || (c==EOF && pc==cQuote)
       ){
         do{ p->n--; }while( p->z[p->n]!=cQuote );
@@ -1909,24 +1947,58 @@ static char *csv_read_one_field(CSVReader *p){
       if( c==EOF ){
         fprintf(stderr, "%s:%d: unterminated %c-quoted field\n",
                 p->zFile, startLine, cQuote);
-        p->cTerm = EOF;
+        p->cTerm = c;
         break;
       }
-      csv_append_char(p, c);
+      import_append_char(p, c);
       ppc = pc;
       pc = c;
     }
   }else{
-    while( c!=EOF && c!=cSep && c!='\n' ){
-      csv_append_char(p, c);
+    while( c!=EOF && c!=cSep && c!=rSep ){
+      import_append_char(p, c);
       c = fgetc(p->in);
     }
-    if( c=='\n' ){
+    if( c==rSep ){
       p->nLine++;
       if( p->n>0 && p->z[p->n-1]=='\r' ) p->n--;
     }
     p->cTerm = c;
   }
+  if( p->z ) p->z[p->n] = 0;
+  return p->z;
+}
+
+/* Read a single field of ASCII delimited text.
+**
+**   +  Input comes from p->in.
+**   +  Store results in p->z of length p->n.  Space to hold p->z comes
+**      from sqlite3_malloc().
+**   +  Use p->cSep as the column separator.  The default is "\x1F".
+**   +  Use p->rSep as the row separator.  The default is "\x1E".
+**   +  Keep track of the row number in p->nLine.
+**   +  Store the character that terminates the field in p->cTerm.  Store
+**      EOF on end-of-file.
+**   +  Report syntax errors on stderr
+*/
+static char *ascii_read_one_field(ImportCtx *p){
+  int c;
+  int cSep = p->cColSep;
+  int rSep = p->cRowSep;
+  p->n = 0;
+  c = fgetc(p->in);
+  if( c==EOF || seenInterrupt ){
+    p->cTerm = EOF;
+    return 0;
+  }
+  while( c!=EOF && c!=cSep && c!=rSep ){
+    import_append_char(p, c);
+    c = fgetc(p->in);
+  }
+  if( c==rSep ){
+    p->nLine++;
+  }
+  p->cTerm = c;
   if( p->z ) p->z[p->n] = 0;
   return p->z;
 }
@@ -2485,9 +2557,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     int nByte;                  /* Number of bytes in an SQL string */
     int i, j;                   /* Loop counters */
     int needCommit;             /* True to COMMIT or ROLLBACK at end */
-    int nSep;                   /* Number of bytes in p->separator[] */
+    int nSep;                   /* Number of bytes in p->colSeparator[] */
     char *zSql;                 /* An SQL statement */
-    CSVReader sCsv;             /* Reader context */
+    ImportCtx sCtx;             /* Reader context */
+    char *(*xRead)(ImportCtx*); /* Procecure to read one value */
     int (*xCloser)(FILE*);      /* Procedure to close th3 connection */
 
     if( nArg!=3 ){
@@ -2497,55 +2570,71 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     zFile = azArg[1];
     zTable = azArg[2];
     seenInterrupt = 0;
-    memset(&sCsv, 0, sizeof(sCsv));
+    memset(&sCtx, 0, sizeof(sCtx));
     open_db(p, 0);
-    nSep = strlen30(p->separator);
+    nSep = strlen30(p->colSeparator);
     if( nSep==0 ){
-      fprintf(stderr, "Error: non-null separator required for import\n");
+      fprintf(stderr, "Error: non-null column separator required for import\n");
       return 1;
     }
     if( nSep>1 ){
-      fprintf(stderr, "Error: multi-character separators not allowed"
+      fprintf(stderr, "Error: multi-character column separators not allowed"
                       " for import\n");
       return 1;
     }
-    sCsv.zFile = zFile;
-    sCsv.nLine = 1;
-    if( sCsv.zFile[0]=='|' ){
-      sCsv.in = popen(sCsv.zFile+1, "r");
-      sCsv.zFile = "<pipe>";
+    nSep = strlen30(p->rowSeparator);
+    if( nSep==0 ){
+      fprintf(stderr, "Error: non-null row separator required for import\n");
+      return 1;
+    }
+    if( nSep>1 ){
+      fprintf(stderr, "Error: multi-character row separators not allowed"
+                      " for import\n");
+      return 1;
+    }
+    sCtx.zFile = zFile;
+    sCtx.nLine = 1;
+    if( sCtx.zFile[0]=='|' ){
+      sCtx.in = popen(sCtx.zFile+1, "r");
+      sCtx.zFile = "<pipe>";
       xCloser = pclose;
     }else{
-      sCsv.in = fopen(sCsv.zFile, "rb");
+      sCtx.in = fopen(sCtx.zFile, "rb");
       xCloser = fclose;
     }
-    if( sCsv.in==0 ){
+    if( p->mode==MODE_Ascii ){
+      xRead = ascii_read_one_field;
+    }else{
+      xRead = csv_read_one_field;
+    }
+    if( sCtx.in==0 ){
       fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
       return 1;
     }
-    sCsv.cSeparator = p->separator[0];
+    sCtx.cColSep = p->colSeparator[0];
+    sCtx.cRowSep = p->rowSeparator[0];
     zSql = sqlite3_mprintf("SELECT * FROM %s", zTable);
     if( zSql==0 ){
       fprintf(stderr, "Error: out of memory\n");
-      xCloser(sCsv.in);
+      xCloser(sCtx.in);
       return 1;
     }
     nByte = strlen30(zSql);
     rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
-    csv_append_char(&sCsv, 0);    /* To ensure sCsv.z is allocated */
+    import_append_char(&sCtx, 0);    /* To ensure sCtx.z is allocated */
     if( rc && sqlite3_strglob("no such table: *", sqlite3_errmsg(db))==0 ){
       char *zCreate = sqlite3_mprintf("CREATE TABLE %s", zTable);
       char cSep = '(';
-      while( csv_read_one_field(&sCsv) ){
-        zCreate = sqlite3_mprintf("%z%c\n  \"%s\" TEXT", zCreate, cSep, sCsv.z);
+      while( xRead(&sCtx) ){
+        zCreate = sqlite3_mprintf("%z%c\n  \"%s\" TEXT", zCreate, cSep, sCtx.z);
         cSep = ',';
-        if( sCsv.cTerm!=sCsv.cSeparator ) break;
+        if( sCtx.cTerm!=sCtx.cColSep ) break;
       }
       if( cSep=='(' ){
         sqlite3_free(zCreate);
-        sqlite3_free(sCsv.z);
-        xCloser(sCsv.in);
-        fprintf(stderr,"%s: empty file\n", sCsv.zFile);
+        sqlite3_free(sCtx.z);
+        xCloser(sCtx.in);
+        fprintf(stderr,"%s: empty file\n", sCtx.zFile);
         return 1;
       }
       zCreate = sqlite3_mprintf("%z\n)", zCreate);
@@ -2554,8 +2643,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       if( rc ){
         fprintf(stderr, "CREATE TABLE %s(...) failed: %s\n", zTable,
                 sqlite3_errmsg(db));
-        sqlite3_free(sCsv.z);
-        xCloser(sCsv.in);
+        sqlite3_free(sCtx.z);
+        xCloser(sCtx.in);
         return 1;
       }
       rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, 0);
@@ -2564,7 +2653,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( rc ){
       if (pStmt) sqlite3_finalize(pStmt);
       fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
-      xCloser(sCsv.in);
+      xCloser(sCtx.in);
       return 1;
     }
     nCol = sqlite3_column_count(pStmt);
@@ -2574,7 +2663,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     zSql = sqlite3_malloc( nByte*2 + 20 + nCol*2 );
     if( zSql==0 ){
       fprintf(stderr, "Error: out of memory\n");
-      xCloser(sCsv.in);
+      xCloser(sCtx.in);
       return 1;
     }
     sqlite3_snprintf(nByte+20, zSql, "INSERT INTO \"%w\" VALUES(?", zTable);
@@ -2590,46 +2679,56 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( rc ){
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
       if (pStmt) sqlite3_finalize(pStmt);
-      xCloser(sCsv.in);
+      xCloser(sCtx.in);
       return 1;
     }
     needCommit = sqlite3_get_autocommit(db);
     if( needCommit ) sqlite3_exec(db, "BEGIN", 0, 0, 0);
     do{
-      int startLine = sCsv.nLine;
+      int startLine = sCtx.nLine;
       for(i=0; i<nCol; i++){
-        char *z = csv_read_one_field(&sCsv);
+        char *z = xRead(&sCtx);
+        /*
+        ** Did we reach end-of-file before finding any columns?
+        ** If so, stop instead of NULL filling the remaining columns.
+        */
         if( z==0 && i==0 ) break;
+        /*
+        ** Did we reach end-of-file OR end-of-line before finding any
+        ** columns in ASCII mode?  If so, stop instead of NULL filling
+        ** the remaining columns.
+        */
+        if( p->mode==MODE_Ascii && (z==0 || z[0]==0) && i==0 ) break;
         sqlite3_bind_text(pStmt, i+1, z, -1, SQLITE_TRANSIENT);
-        if( i<nCol-1 && sCsv.cTerm!=sCsv.cSeparator ){
+        if( i<nCol-1 && sCtx.cTerm!=sCtx.cColSep ){
           fprintf(stderr, "%s:%d: expected %d columns but found %d - "
                           "filling the rest with NULL\n",
-                          sCsv.zFile, startLine, nCol, i+1);
+                          sCtx.zFile, startLine, nCol, i+1);
           i++;
           while( i<=nCol ){ sqlite3_bind_null(pStmt, i); i++; }
         }
       }
-      if( sCsv.cTerm==sCsv.cSeparator ){
+      if( sCtx.cTerm==sCtx.cColSep ){
         do{
-          csv_read_one_field(&sCsv);
+          xRead(&sCtx);
           i++;
-        }while( sCsv.cTerm==sCsv.cSeparator );
+        }while( sCtx.cTerm==sCtx.cColSep );
         fprintf(stderr, "%s:%d: expected %d columns but found %d - "
                         "extras ignored\n",
-                        sCsv.zFile, startLine, nCol, i);
+                        sCtx.zFile, startLine, nCol, i);
       }
       if( i>=nCol ){
         sqlite3_step(pStmt);
         rc = sqlite3_reset(pStmt);
         if( rc!=SQLITE_OK ){
-          fprintf(stderr, "%s:%d: INSERT failed: %s\n", sCsv.zFile, startLine,
+          fprintf(stderr, "%s:%d: INSERT failed: %s\n", sCtx.zFile, startLine,
                   sqlite3_errmsg(db));
         }
       }
-    }while( sCsv.cTerm!=EOF );
+    }while( sCtx.cTerm!=EOF );
 
-    xCloser(sCsv.in);
-    sqlite3_free(sCsv.z);
+    xCloser(sCtx.in);
+    sqlite3_free(sCtx.z);
     sqlite3_finalize(pStmt);
     if( needCommit ) sqlite3_exec(db, "COMMIT", 0, 0, 0);
   }else
@@ -2747,19 +2846,26 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->mode = MODE_Html;
     }else if( c2=='t' && strncmp(azArg[1],"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
-      sqlite3_snprintf(sizeof(p->separator), p->separator, " ");
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, " ");
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Line);
     }else if( c2=='c' && strncmp(azArg[1],"csv",n2)==0 ){
       p->mode = MODE_Csv;
-      sqlite3_snprintf(sizeof(p->separator), p->separator, ",");
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, ",");
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Line);
     }else if( c2=='t' && strncmp(azArg[1],"tabs",n2)==0 ){
       p->mode = MODE_List;
-      sqlite3_snprintf(sizeof(p->separator), p->separator, "\t");
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, "\t");
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Line);
     }else if( c2=='i' && strncmp(azArg[1],"insert",n2)==0 ){
       p->mode = MODE_Insert;
       set_table_name(p, nArg>=3 ? azArg[2] : "table");
+    }else if( c2=='a' && strncmp(azArg[1],"ascii",n2)==0 ){
+      p->mode = MODE_Ascii;
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else {
       fprintf(stderr,"Error: mode should be one of: "
-         "column csv html insert line list tabs tcl\n");
+         "ascii column csv html insert line list tabs tcl\n");
       rc = 1;
     }
   }else
@@ -3028,10 +3134,30 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 #endif
 
+  if( c=='r' && strncmp(azArg[0], "rowseparator", n)==0 ){
+    if( nArg==2 ){
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
+                       "%.*s", (int)sizeof(p->rowSeparator)-1, azArg[1]);
+    }else{
+      fprintf(stderr, "Usage: .rowseparator STRING\n");
+      rc = 1;
+    }
+  }else
+
+  if( c=='c' && strncmp(azArg[0], "colseparator", n)==0 ){
+    if( nArg==2 ){
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
+                       "%.*s", (int)sizeof(p->colSeparator)-1, azArg[1]);
+    }else{
+      fprintf(stderr, "Usage: .colseparator STRING\n");
+      rc = 1;
+    }
+  }else
+
   if( c=='s' && strncmp(azArg[0], "separator", n)==0 ){
     if( nArg==2 ){
-      sqlite3_snprintf(sizeof(p->separator), p->separator,
-                       "%.*s", (int)sizeof(p->separator)-1, azArg[1]);
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
+                       "%.*s", (int)sizeof(p->colSeparator)-1, azArg[1]);
     }else{
       fprintf(stderr, "Usage: .separator STRING\n");
       rc = 1;
@@ -3064,21 +3190,24 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       rc = 1;
       goto meta_command_exit;
     }
-    fprintf(p->out,"%9.9s: %s\n","echo", p->echoOn ? "on" : "off");
-    fprintf(p->out,"%9.9s: %s\n","eqp", p->autoEQP ? "on" : "off");
-    fprintf(p->out,"%9.9s: %s\n","explain", p->explainPrev.valid ? "on" :"off");
-    fprintf(p->out,"%9.9s: %s\n","headers", p->showHeader ? "on" : "off");
-    fprintf(p->out,"%9.9s: %s\n","mode", modeDescr[p->mode]);
-    fprintf(p->out,"%9.9s: ", "nullvalue");
+    fprintf(p->out,"%12.12s: %s\n","echo", p->echoOn ? "on" : "off");
+    fprintf(p->out,"%12.12s: %s\n","eqp", p->autoEQP ? "on" : "off");
+    fprintf(p->out,"%12.12s: %s\n","explain", p->explainPrev.valid ? "on" :"off");
+    fprintf(p->out,"%12.12s: %s\n","headers", p->showHeader ? "on" : "off");
+    fprintf(p->out,"%12.12s: %s\n","mode", modeDescr[p->mode]);
+    fprintf(p->out,"%12.12s: ", "nullvalue");
       output_c_string(p->out, p->nullvalue);
       fprintf(p->out, "\n");
-    fprintf(p->out,"%9.9s: %s\n","output",
+    fprintf(p->out,"%12.12s: %s\n","output",
             strlen30(p->outfile) ? p->outfile : "stdout");
-    fprintf(p->out,"%9.9s: ", "separator");
-      output_c_string(p->out, p->separator);
+    fprintf(p->out,"%12.12s: ", "colseparator");
+      output_c_string(p->out, p->colSeparator);
       fprintf(p->out, "\n");
-    fprintf(p->out,"%9.9s: %s\n","stats", p->statsOn ? "on" : "off");
-    fprintf(p->out,"%9.9s: ","width");
+    fprintf(p->out,"%12.12s: ", "rowseparator");
+      output_c_string(p->out, p->rowSeparator);
+      fprintf(p->out, "\n");
+    fprintf(p->out,"%12.12s: %s\n","stats", p->statsOn ? "on" : "off");
+    fprintf(p->out,"%12.12s: ","width");
     for (i=0;i<(int)ArraySize(p->colWidth) && p->colWidth[i] != 0;i++) {
       fprintf(p->out,"%d ",p->colWidth[i]);
     }
@@ -3672,8 +3801,10 @@ static int process_sqliterc(
 ** Show available command line options
 */
 static const char zOptions[] = 
+  "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
+  "   -colseparator SEP    same as -separator\n"
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
@@ -3693,6 +3824,7 @@ static const char zOptions[] =
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
+  "   -rowseparator SEP    set output line separator. Default: '\\n'\n"
   "   -separator SEP       set output field separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
@@ -3720,7 +3852,8 @@ static void usage(int showDetail){
 static void main_init(struct callback_data *data) {
   memset(data, 0, sizeof(*data));
   data->mode = MODE_List;
-  memcpy(data->separator,"|", 2);
+  memcpy(data->colSeparator,"|", 2);
+  memcpy(data->rowSeparator,"\n", 2);
   data->showHeader = 0;
   sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
@@ -3918,9 +4051,18 @@ int main(int argc, char **argv){
       data.mode = MODE_Column;
     }else if( strcmp(z,"-csv")==0 ){
       data.mode = MODE_Csv;
-      memcpy(data.separator,",",2);
-    }else if( strcmp(z,"-separator")==0 ){
-      sqlite3_snprintf(sizeof(data.separator), data.separator,
+      memcpy(data.colSeparator,",",2);
+    }else if( strcmp(z,"-ascii")==0 ){
+      data.mode = MODE_Ascii;
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
+                       SEP_Column);
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
+                       SEP_Row);
+    }else if( strcmp(z,"-separator")==0 || strcmp(z,"-colseparator")==0 ){
+      sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
+                       "%s",cmdline_option_value(argc,argv,++i));
+    }else if( strcmp(z,"-rowseparator")==0 ){
+      sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-nullvalue")==0 ){
       sqlite3_snprintf(sizeof(data.nullvalue), data.nullvalue,
