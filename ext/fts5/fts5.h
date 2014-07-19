@@ -42,8 +42,16 @@ typedef void (*fts5_extension_function)(
 );
 
 /*
+**
+** xUserData:
+**   Return a copy of the context pointer the extension function was 
+**   registered with.
+**
 ** xColumnCount:
 **   Returns the number of columns in the FTS5 table.
+**
+** xColumnSize:
+**   Reports the size in tokens of a column value from the current row.
 **
 ** xPhraseCount:
 **   Returns the number of phrases in the current query expression.

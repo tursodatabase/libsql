@@ -17,8 +17,7 @@
 struct Fts5Storage {
   Fts5Config *pConfig;
   Fts5Index *pIndex;
-
-  sqlite3_stmt *aStmt[8];
+  sqlite3_stmt *aStmt[9];
 };
 
 
@@ -36,8 +35,10 @@ struct Fts5Storage {
 #define FTS5_STMT_REPLACE_CONTENT 4
 
 #define FTS5_STMT_DELETE_CONTENT  5
-#define FTS5_STMT_INSERT_DOCSIZE  6
+#define FTS5_STMT_REPLACE_DOCSIZE  6
 #define FTS5_STMT_DELETE_DOCSIZE  7
+
+#define FTS5_STMT_LOOKUP_DOCSIZE  8
 
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
@@ -62,8 +63,10 @@ static int fts5StorageGetStmt(
       "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
       "REPLACE INTO %Q.'%q_content' VALUES(%s)",        /* REPLACE_CONTENT */
       "DELETE FROM %Q.'%q_content' WHERE id=?",         /* DELETE_CONTENT  */
-      "INSERT INTO %Q.'%q_docsize' VALUES(?,?)",        /* INSERT_DOCSIZE  */
+      "REPLACE INTO %Q.'%q_docsize' VALUES(?,?)",       /* REPLACE_DOCSIZE  */
       "DELETE FROM %Q.'%q_docsize' WHERE id=?",         /* DELETE_DOCSIZE  */
+
+      "SELECT sz FROM %Q.'%q_docsize' WHERE id=?",      /* LOOKUP_DOCSIZE  */
     };
     Fts5Config *pConfig = p->pConfig;
     char *zSql = 0;
@@ -234,6 +237,7 @@ typedef struct Fts5InsertCtx Fts5InsertCtx;
 struct Fts5InsertCtx {
   Fts5Storage *pStorage;
   int iCol;
+  int szCol;                      /* Size of column value in tokens */
 };
 
 /*
@@ -249,6 +253,7 @@ static int fts5StorageInsertCallback(
 ){
   Fts5InsertCtx *pCtx = (Fts5InsertCtx*)pContext;
   Fts5Index *pIdx = pCtx->pStorage->pIndex;
+  pCtx->szCol = iPos+1;
   sqlite3Fts5IndexWrite(pIdx, pCtx->iCol, iPos, pToken, nToken);
   return SQLITE_OK;
 }
@@ -290,6 +295,27 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
 }
 
 /*
+** Insert a record into the %_docsize table. Specifically, do:
+**
+**   INSERT OR REPLACE INTO %_docsize(id, sz) VALUES(iRowid, pBuf);
+*/
+static int fts5StorageInsertDocsize(
+  Fts5Storage *p,                 /* Storage module to write to */
+  i64 iRowid,                     /* id value */
+  Fts5Buffer *pBuf                /* sz value */
+){
+  sqlite3_stmt *pReplace = 0;
+  int rc = fts5StorageGetStmt(p, FTS5_STMT_REPLACE_DOCSIZE, &pReplace);
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pReplace, 1, iRowid);
+    sqlite3_bind_blob(pReplace, 2, pBuf->p, pBuf->n, SQLITE_STATIC);
+    sqlite3_step(pReplace);
+    rc = sqlite3_reset(pReplace);
+  }
+  return rc;
+}
+
+/*
 ** Insert a new row into the FTS table.
 */
 int sqlite3Fts5StorageInsert(
@@ -304,6 +330,9 @@ int sqlite3Fts5StorageInsert(
   int eStmt;                      /* Type of statement used on %_content */
   int i;                          /* Counter variable */
   Fts5InsertCtx ctx;              /* Tokenization callback context object */
+  Fts5Buffer buf;                 /* Buffer used to build up %_docsize blob */
+
+  memset(&buf, 0, sizeof(Fts5Buffer));
 
   /* Insert the new row into the %_content table. */
   if( eConflict==SQLITE_REPLACE ){
@@ -330,13 +359,21 @@ int sqlite3Fts5StorageInsert(
   sqlite3Fts5IndexBeginWrite(p->pIndex, *piRowid);
   ctx.pStorage = p;
   for(ctx.iCol=0; rc==SQLITE_OK && ctx.iCol<pConfig->nCol; ctx.iCol++){
+    ctx.szCol = 0;
     rc = sqlite3Fts5Tokenize(pConfig, 
         (const char*)sqlite3_value_text(apVal[ctx.iCol+2]),
         sqlite3_value_bytes(apVal[ctx.iCol+2]),
         (void*)&ctx,
         fts5StorageInsertCallback
     );
+    sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);
   }
+
+  /* Write the %_docsize record */
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageInsertDocsize(p, *piRowid, &buf);
+  }
+  sqlite3_free(buf.p);
 
   return rc;
 }
@@ -458,4 +495,50 @@ void sqlite3Fts5StorageStmtRelease(
   }
 }
 
+static int fts5StorageDecodeSizeArray(
+  int *aCol, int nCol,            /* Array to populate */
+  const u8 *aBlob, int nBlob      /* Record to read varints from */
+){
+  int i;
+  int iOff = 0;
+  for(i=0; i<nCol; i++){
+    if( iOff>=nBlob ) return 1;
+    iOff += getVarint32(&aBlob[iOff], aCol[i]);
+  }
+  return (iOff!=nBlob);
+}
+
+/*
+** Argument aCol points to an array of integers containing one entry for
+** each table column. This function reads the %_docsize record for the
+** specified rowid and populates aCol[] with the results.
+**
+** An SQLite error code is returned if an error occurs, or SQLITE_OK
+** otherwise.
+*/
+int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
+  int nCol = p->pConfig->nCol;
+  sqlite3_stmt *pLookup = 0;
+  int rc = fts5StorageGetStmt(p, FTS5_STMT_LOOKUP_DOCSIZE, &pLookup);
+  if( rc==SQLITE_OK ){
+    int bCorrupt = 1;
+    sqlite3_bind_int64(pLookup, 1, iRowid);
+    if( SQLITE_ROW==sqlite3_step(pLookup) ){
+      const u8 *aBlob = sqlite3_column_blob(pLookup, 0);
+      int nBlob = sqlite3_column_bytes(pLookup, 0);
+      if( 0==fts5StorageDecodeSizeArray(aCol, nCol, aBlob, nBlob) ){
+        bCorrupt = 0;
+      }
+    }
+    rc = sqlite3_reset(pLookup);
+    if( bCorrupt && rc==SQLITE_OK ){
+      rc = SQLITE_CORRUPT_VTAB;
+    }
+  }
+  return rc;
+}
+
+int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int *aCol){
+  return 0;
+}
 

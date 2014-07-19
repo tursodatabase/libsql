@@ -69,15 +69,29 @@ struct Fts5Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
   int idxNum;                     /* idxNum passed to xFilter() */
   sqlite3_stmt *pStmt;            /* Statement used to read %_content */
-  int bEof;                       /* True at EOF */
   Fts5Expr *pExpr;                /* Expression for MATCH queries */
-  int bSeekRequired;              /* True if seek is required */
+  int csrflags;                   /* Mask of cursor flags (see below) */
   Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
 
   /* Variables used by auxiliary functions */
   i64 iCsrId;                     /* Cursor id */
   Fts5Auxiliary *pAux;            /* Currently executing function */
+  int *aColumnSize;               /* Values for xColumnSize() */
 };
+
+/*
+** Values for Fts5Cursor.csrflags
+*/
+#define FTS5CSR_REQUIRE_CONTENT   0x01
+#define FTS5CSR_REQUIRE_DOCSIZE   0x02
+#define FTS5CSR_EOF               0x04
+
+/*
+** Macros to Set(), Clear() and Test() cursor flags.
+*/
+#define CsrFlagSet(pCsr, flag)   ((pCsr)->csrflags |= (flag))
+#define CsrFlagClear(pCsr, flag) ((pCsr)->csrflags &= ~(flag))
+#define CsrFlagTest(pCsr, flag)  ((pCsr)->csrflags & (flag))
 
 /*
 ** Close a virtual table handle opened by fts5InitVtab(). If the bDestroy
@@ -275,13 +289,17 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 */
 static int fts5OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
   Fts5Table *pTab = (Fts5Table*)pVTab;
+  Fts5Config *pConfig = pTab->pConfig;
   Fts5Cursor *pCsr;               /* New cursor object */
+  int nByte;                      /* Bytes of space to allocate */
   int rc = SQLITE_OK;             /* Return code */
 
-  pCsr = (Fts5Cursor*)sqlite3_malloc(sizeof(Fts5Cursor));
+  nByte = sizeof(Fts5Cursor) + pConfig->nCol * sizeof(int);
+  pCsr = (Fts5Cursor*)sqlite3_malloc(nByte);
   if( pCsr ){
     Fts5Global *pGlobal = pTab->pGlobal;
-    memset(pCsr, 0, sizeof(Fts5Cursor));
+    memset(pCsr, 0, nByte);
+    pCsr->aColumnSize = (int*)&pCsr[1];
     pCsr->pNext = pGlobal->pCsr;
     pGlobal->pCsr = pCsr;
     pCsr->iCsrId = ++pGlobal->iNextId;
@@ -338,15 +356,17 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   if( ePlan!=FTS5_PLAN_MATCH ){
     rc = sqlite3_step(pCsr->pStmt);
     if( rc!=SQLITE_ROW ){
-      pCsr->bEof = 1;
+      CsrFlagSet(pCsr, FTS5CSR_EOF);
       rc = sqlite3_reset(pCsr->pStmt);
     }else{
       rc = SQLITE_OK;
     }
   }else{
     rc = sqlite3Fts5ExprNext(pCsr->pExpr);
-    pCsr->bEof = sqlite3Fts5ExprEof(pCsr->pExpr);
-    pCsr->bSeekRequired = 1;
+    if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
+      CsrFlagSet(pCsr, FTS5CSR_EOF);
+    }
+    CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
   }
   
   return rc;
@@ -371,8 +391,10 @@ static int fts5FilterMethod(
   int eStmt = fts5StmtType(idxNum);
   int bAsc = ((idxNum & FTS5_ORDER_ASC) ? 1 : 0);
 
-  memset(&pCursor[1], 0, sizeof(Fts5Cursor) - sizeof(sqlite3_vtab_cursor));
   pCsr->idxNum = idxNum;
+  assert( pCsr->pStmt==0 );
+  assert( pCsr->pExpr==0 );
+  assert( pCsr->csrflags==0 );
 
   rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
   if( rc==SQLITE_OK ){
@@ -382,8 +404,10 @@ static int fts5FilterMethod(
       rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
       if( rc==SQLITE_OK ){
         rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, bAsc);
-        pCsr->bEof = sqlite3Fts5ExprEof(pCsr->pExpr);
-        pCsr->bSeekRequired = 1;
+        if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
+          CsrFlagSet(pCsr, FTS5CSR_EOF);
+        }
+        CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
       }
     }else{
       if( ePlan==FTS5_PLAN_ROWID ){
@@ -402,7 +426,7 @@ static int fts5FilterMethod(
 */
 static int fts5EofMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  return pCsr->bEof;
+  return (CsrFlagTest(pCsr, FTS5CSR_EOF) ? 1 : 0);
 }
 
 /* 
@@ -415,7 +439,7 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int ePlan = FTS5_PLAN(pCsr->idxNum);
   
-  assert( pCsr->bEof==0 );
+  assert( CsrFlagTest(pCsr, FTS5CSR_EOF)==0 );
   if( ePlan!=FTS5_PLAN_MATCH ){
     *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
   }else{
@@ -431,13 +455,14 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
 */
 static int fts5SeekCursor(Fts5Cursor *pCsr){
   int rc = SQLITE_OK;
-  if( pCsr->bSeekRequired ){
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) ){
     assert( pCsr->pExpr );
     sqlite3_reset(pCsr->pStmt);
     sqlite3_bind_int64(pCsr->pStmt, 1, sqlite3Fts5ExprRowid(pCsr->pExpr));
     rc = sqlite3_step(pCsr->pStmt);
     if( rc==SQLITE_ROW ){
       rc = SQLITE_OK;
+      CsrFlagClear(pCsr, FTS5CSR_REQUIRE_CONTENT);
     }else{
       rc = sqlite3_reset(pCsr->pStmt);
       if( rc==SQLITE_OK ){
@@ -461,7 +486,7 @@ static int fts5ColumnMethod(
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   int rc = SQLITE_OK;
   
-  assert( pCsr->bEof==0 );
+  assert( CsrFlagTest(pCsr, FTS5CSR_EOF)==0 );
 
   if( iCol==pConfig->nCol ){
     /* User is requesting the value of the special column with the same name
@@ -639,8 +664,20 @@ static int fts5ApiColumnText(
 }
 
 static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
-  assert( 0 );
-  return 0;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  int rc = SQLITE_OK;
+
+  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_DOCSIZE) ){
+    i64 iRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
+    rc = sqlite3Fts5StorageDocsize(pTab->pStorage, iRowid, pCsr->aColumnSize);
+  }
+  if( iCol>=0 && iCol<pTab->pConfig->nCol ){
+    *pnToken = pCsr->aColumnSize[iCol];
+  }else{
+    *pnToken = 0;
+  }
+  return rc;
 }
 
 static int fts5ApiPoslist(

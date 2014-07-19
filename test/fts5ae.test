@@ -121,16 +121,32 @@ do_execsql_test 4.0 {
   VALUES('k x j r m a d o i z j', 'r t t t f e b r x i v j v g o');
 }
 
-breakpoint
 do_execsql_test 4.1 {
   SELECT rowid, fts5_test(t4, 'poslist') FROM t4 WHERE t4 MATCH 'a OR b AND c';
 } {
   1 {0.5 {} {}} 
 }
 
-#93 {0.5 1.6 {}}
+#-------------------------------------------------------------------------
+# Test that the xColumnSize() API works.
+#
+
+reset_db
+do_execsql_test 5.1 {
+  CREATE VIRTUAL TABLE t5 USING fts5(x, y);
+  INSERT INTO t5 VALUES('a b c d', 'e f g h i j');
+  INSERT INTO t5 VALUES('', 'a');
+  INSERT INTO t5 VALUES('a', '');
+}
+do_execsql_test 5.2 {
+  SELECT rowid, fts5_test(t5, 'columnsize') FROM t5 WHERE t5 MATCH 'a'
+  ORDER BY rowid DESC;
+} {
+  3 {1 0}
+  2 {0 1}
+  1 {4 6}
+}
 
 
 finish_test
-
 

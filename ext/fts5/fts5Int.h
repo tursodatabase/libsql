@@ -295,6 +295,9 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p);
 int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **);
 void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);
 
+int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
+int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int *aCol);
+
 
 /*
 ** End of interface to code in fts5_storage.c.
