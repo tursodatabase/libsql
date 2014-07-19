@@ -328,9 +328,9 @@ static i64 describeContent(
     }else if( x>=12 ){
       i64 size = (x-12)/2;
       if( (x&1)==0 ){
-        sprintf(zDesc, "blob(%d)", size);
+        sprintf(zDesc, "blob(%lld)", size);
       }else{
-        sprintf(zDesc, "txt(%d)", size);
+        sprintf(zDesc, "txt(%lld)", size);
       }
       pData += size;
     }

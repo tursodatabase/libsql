@@ -241,9 +241,9 @@ static i64 describeContent(
     }else if( x>=12 ){
       i64 size = (x-12)/2;
       if( (x&1)==0 ){
-        sprintf(zDesc, "blob(%d)", size);
+        sprintf(zDesc, "blob(%lld)", size);
       }else{
-        sprintf(zDesc, "txt(%d)", size);
+        sprintf(zDesc, "txt(%lld)", size);
       }
       pData += size;
     }
@@ -403,10 +403,10 @@ static void decodeCell(
     printBytes(a, x, i);
     nLocal = localPayload(nPayload, cType);
     if( nLocal==nPayload ){
-      printf("payload-size: %d\n", (int)nPayload);
+      printf("payload-size: %lld\n", nPayload);
     }else{
-      printf("payload-size: %d (%d local, %d overflow)\n",
-             (int)nPayload, nLocal, (int)(nPayload-nLocal));
+      printf("payload-size: %lld (%lld local, %lld overflow)\n",
+             nPayload, nLocal, nPayload-nLocal);
     }
     x += i;
   }else{
@@ -509,7 +509,7 @@ static void decodeCell(
   }
   if( j<nLocal ){
     printBytes(a, x+j, 0);
-    printf("... %d bytes of content ...\n", nLocal-j);
+    printf("... %lld bytes of content ...\n", nLocal-j);
   }
   if( nLocal<nPayload ){
     printBytes(a, x+nLocal, 4);

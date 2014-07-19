@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sfor\sMSVC\sin\sthe\sshowdb/showwal\scommand\sline\stools.
-D 2014-07-18T21:16:37.850
+C Fix\swarnings\scaused\sby\sthe\sprevious\scommit.
+D 2014-07-19T15:30:01.552
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1160,10 +1160,10 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 3c78d10af9bb7ee667ceaa271e1d1ecbcdc3e69c
+F tool/showdb.c d7d354c52f259c06d84938fc2be095656e761b78
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showstat4.c c39279d6bd37cb999b634f0064f6f86ad7af008f
-F tool/showwal.c 6e98bc0fe0ae75f4b08e39d21ed90d7d78d307c0
+F tool/showwal.c 9c299ba842f1ac0364e95f9effbc3a5b3b2349f2
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl 8e50b217c56a6a086a1b47eac9d09c5cd65b996f
@@ -1182,10 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2beefa68c0c53f663321bebf0ac06f6c936be63f
-R 7c81b84c85a1fee51213cddde915664f
-T *branch * toolWarnings
-T *sym-toolWarnings *
-T -sym-trunk *
+P 6dc7b2f119eb92da17c9e914bdad30a9ceaebdb5
+R 7b842e4424a0effae20a64ee9f307907
 U mistachkin
-Z 6dc51fde6dee7a6bda251af41648d319
+Z c9d7c6fd91ebbbad7eb3b3a8b17ddccd
