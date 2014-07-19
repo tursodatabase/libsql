@@ -1,5 +1,5 @@
-C Fix\swarnings\srelated\sto\shaving\sa\s64-bit\ssize_t.
-D 2014-07-19T15:40:39.591
+C Fix\ssome\sharmess\scompiler\swarnings\sin\sthe\sFTS3\sUnicode\smodule.
+D 2014-07-19T15:44:29.116
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -94,7 +94,7 @@ F ext/fts3/fts3_tokenize_vtab.c 011170fe9eba5ff062f1a31d3188e00267716706
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_unicode.c 0f598fa4c96af1188e4d5f5e8e78e25500bd5922
+F ext/fts3/fts3_unicode.c e80eef8a11f2020dc9c1eb95c5b405b9012f2fbe
 F ext/fts3/fts3_unicode2.c c8adda75aad0c6c252ef3dd555f811f437485044
 F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 89634a419d0c1ef899d0591c7c6ab9290bf665d2
-R 7c73c160afe9efe974113734dfcd1ed9
+P 29ac9336dba2b62d13315cecfc5c4a74cc54087a
+R 4ac50ab96ea64a1527703075acfe4ff2
 U mistachkin
-Z 6a0ee89ac8bea8d9e5f887e8d36032b1
+Z ef640c9ada5ada1862dacc56c6ab494a
