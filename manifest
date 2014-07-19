@@ -1,5 +1,5 @@
-C Fixes\sfor\sthe\sxColumnSize()\sfts5\sextension\sAPI.
-D 2014-07-19T15:35:09.453
+C Add\ssimple\stests\sfor\sthe\sxColumnText()\sextension\sapi.
+D 2014-07-19T20:27:54.153
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,11 +103,11 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c 86655d1e2ba35c719d3cc480cb9fdd7f3887b74e
-F ext/fts5/fts5.h 844898034fa3e0458d93a6c34dd6ba6bd3c7e03a
-F ext/fts5/fts5Int.h cca221a5cf7234f92faf3b4b5f2e4cf43bce83ee
-F ext/fts5/fts5_aux.c 978a90fe90a6d34d9bd260948b5678caf5489894
-F ext/fts5/fts5_buffer.c 71cf2016b2881e7aea39f952995eafa510d96cbd
+F ext/fts5/fts5.c fbd94670336eb95a26c705c1e4c188818720c888
+F ext/fts5/fts5.h 84060c2fe91aa03a783cc993f313d8a5b22cbe11
+F ext/fts5/fts5Int.h 5105506a180942811aa7104867518bc84d36c17a
+F ext/fts5/fts5_aux.c 75f9abf7a7ccc7712357f04eeb6297c64095528d
+F ext/fts5/fts5_buffer.c 00361d4a70040ebd2c32bc349ab708ff613a1749
 F ext/fts5/fts5_config.c 94f1b4cb4de6a7cd5780c14adb0198e289df8cef
 F ext/fts5/fts5_expr.c 288b3e016253eab69ea8cefbff346a4697b44291
 F ext/fts5/fts5_index.c 9ff3008e903aa9077b0a7a7aa76ab6080eb07a36
@@ -599,7 +599,7 @@ F test/fts5aa.test c8d3b9694f6b2864161c7437408464a535d19343
 F test/fts5ab.test dc04ed48cf93ca957d174406e6c192f2ff4f3397
 F test/fts5ac.test 9be418d037763f4cc5d86f4239db41fc86bb4f85
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
-F test/fts5ae.test 7da37ac01debf2e238552d0ef2f61669fd232936
+F test/fts5ae.test c95b106236ea2f9f151715311ad0a2e45c49ccc1
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1195,7 +1195,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 16352d3654d5672cd0251db51dbe19f779373feb
-R a0466df485f1c616be1f64f0989b7925
+P 43fcb844726cfeeb1c8a0dbfaa0d2ca22e6ac16c
+R fe613ccf4d230813074cd2e3b5b79d5f
 U dan
-Z affe87335b53c4c8634348527de72153
+Z 057df6fbedf27e3f40e741066d4f0911

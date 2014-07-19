@@ -89,6 +89,7 @@ void sqlite3Fts5BufferFree(Fts5Buffer*);
 void sqlite3Fts5BufferZero(Fts5Buffer*);
 void sqlite3Fts5BufferSet(int*, Fts5Buffer*, int, const u8*);
 void sqlite3Fts5BufferAppendPrintf(int *, Fts5Buffer*, char *zFmt, ...);
+void sqlite3Fts5BufferAppendListElem(int*, Fts5Buffer*, const char*, int);
 
 #define fts5BufferZero(x)             sqlite3Fts5BufferZero(x)
 #define fts5BufferGrow(a,b,c)         sqlite3Fts5BufferGrow(a,b,c)

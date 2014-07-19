@@ -147,6 +147,15 @@ do_execsql_test 5.2 {
   1 {4 6}
 }
 
+do_execsql_test 5.2 {
+  SELECT rowid, fts5_test(t5, 'columntext') FROM t5 WHERE t5 MATCH 'a'
+  ORDER BY rowid DESC;
+} {
+  3 {a {}}
+  2 {{} a}
+  1 {{a b c d} {e f g h i j}}
+}
+
 
 finish_test
 

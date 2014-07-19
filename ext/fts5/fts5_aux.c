@@ -66,6 +66,19 @@ static void fts5TestFunction(
   }
 
   if( zReq==0 ){
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columntext ");
+  }
+  if( 0==zReq || 0==sqlite3_stricmp(zReq, "columntext") ){
+    for(i=0; rc==SQLITE_OK && i<nCol; i++){
+      const char *z;
+      int n;
+      rc = pApi->xColumnText(pFts, i, &z, &n);
+      if( i!=0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " ");
+      sqlite3Fts5BufferAppendListElem(&rc, &s, z, n);
+    }
+  }
+
+  if( zReq==0 ){
     sqlite3Fts5BufferAppendPrintf(&rc, &s, " phrasecount ");
   }
   nPhrase = pApi->xPhraseCount(pFts);

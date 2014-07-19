@@ -232,4 +232,35 @@ int sqlite3Fts5PoslistNext(
   return 0;
 }
 
+void sqlite3Fts5BufferAppendListElem(
+  int *pRc,                       /* IN/OUT: Error code */
+  Fts5Buffer *pBuf,               /* Buffer to append to */
+  const char *z, int n            /* Value to append to buffer */
+){
+  int bParen = (n==0);
+  int nMax = n*2 + 2 + 1;
+  u8 *pOut;
+  int i;
+
+  /* Ensure the buffer has space for the new list element */
+  if( sqlite3Fts5BufferGrow(pRc, pBuf, nMax) ) return;
+  pOut = &pBuf->p[pBuf->n];
+
+  /* Figure out if we need the enclosing {} */
+  for(i=0; i<n && bParen==0; i++){
+    if( z[i]=='"' || z[i]==' ' ){
+      bParen = 1;
+    }
+  }
+
+  if( bParen ) *pOut++ = '{';
+  for(i=0; i<n; i++){
+    *pOut++ = z[i];
+  }
+  if( bParen ) *pOut++ = '}';
+
+  pBuf->n = pOut - pBuf->p;
+  *pOut = '\0';
+}
+
 

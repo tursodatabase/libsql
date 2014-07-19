@@ -657,8 +657,8 @@ static int fts5ApiColumnText(
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   int rc = fts5SeekCursor(pCsr);
   if( rc==SQLITE_OK ){
-    *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol);
-    *pn = sqlite3_column_bytes(pCsr->pStmt, iCol);
+    *pz = (const char*)sqlite3_column_text(pCsr->pStmt, iCol+1);
+    *pn = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
   }
   return rc;
 }

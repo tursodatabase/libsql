@@ -53,6 +53,9 @@ typedef void (*fts5_extension_function)(
 ** xColumnSize:
 **   Reports the size in tokens of a column value from the current row.
 **
+** xColumnText:
+**   Reports the size in tokens of a column value from the current row.
+**
 ** xPhraseCount:
 **   Returns the number of phrases in the current query expression.
 **
