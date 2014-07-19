@@ -2143,7 +2143,7 @@ static void checkActiveVdbeCnt(sqlite3 *db){
   int nRead = 0;
   p = db->pVdbe;
   while( p ){
-    if( p->magic==VDBE_MAGIC_RUN && p->pc>=0 ){
+    if( sqlite3_stmt_busy((sqlite3_stmt*)p) ){
       cnt++;
       if( p->readOnly==0 ) nWrite++;
       if( p->bIsReader ) nRead++;
