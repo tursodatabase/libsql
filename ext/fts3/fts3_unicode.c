@@ -231,7 +231,7 @@ static int unicodeCreate(
 
   for(i=0; rc==SQLITE_OK && i<nArg; i++){
     const char *z = azArg[i];
-    int n = strlen(z);
+    int n = (int)strlen(z);
 
     if( n==19 && memcmp("remove_diacritics=1", z, 19)==0 ){
       pNew->bRemoveDiacritic = 1;
@@ -363,11 +363,11 @@ static int unicodeNext(
   );
 
   /* Set the output variables and return. */
-  pCsr->iOff = (z - pCsr->aInput);
+  pCsr->iOff = (int)(z - pCsr->aInput);
   *paToken = pCsr->zToken;
-  *pnToken = zOut - pCsr->zToken;
-  *piStart = (zStart - pCsr->aInput);
-  *piEnd = (zEnd - pCsr->aInput);
+  *pnToken = (int)(zOut - pCsr->zToken);
+  *piStart = (int)(zStart - pCsr->aInput);
+  *piEnd = (int)(zEnd - pCsr->aInput);
   *piPos = pCsr->iToken++;
   return SQLITE_OK;
 }

@@ -1,5 +1,5 @@
-C Update\sclean\stargets\swith\sthe\srecently\sadded\scommand-line\stools.
-D 2014-07-18T21:02:54.697
+C Fix\sharmless\scompiler\swarnings\sin\sthe\sshowdb\sand\sshowwal\stools\sand\sin\nthe\sunicode\stokenizer\sof\sFTS3.
+D 2014-07-19T17:49:40.535
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -94,7 +94,7 @@ F ext/fts3/fts3_tokenize_vtab.c 011170fe9eba5ff062f1a31d3188e00267716706
 F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
-F ext/fts3/fts3_unicode.c 0f598fa4c96af1188e4d5f5e8e78e25500bd5922
+F ext/fts3/fts3_unicode.c e80eef8a11f2020dc9c1eb95c5b405b9012f2fbe
 F ext/fts3/fts3_unicode2.c c8adda75aad0c6c252ef3dd555f811f437485044
 F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
@@ -1160,10 +1160,10 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c 213e0288501b2cf67c1b2c72a9e5b8acda4738b3
+F tool/showdb.c b9ee6b6c81a094bf33badbf7e9da34cdbc0cce25
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showstat4.c c39279d6bd37cb999b634f0064f6f86ad7af008f
-F tool/showwal.c 3f7f7da5ec0cba51b1449a75f700493377da57b5
+F tool/showwal.c 3209120269cdf9380f091459e47b776b4f81dfd3
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl 8e50b217c56a6a086a1b47eac9d09c5cd65b996f
@@ -1182,7 +1182,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ca92c0240681b199c4b8ecc557792b8aea71692d
-R 432f9d3a43bd2fc68603a985c53b9df5
-U mistachkin
-Z 7459013a6be89cfe73225b448eb2a655
+P 2beefa68c0c53f663321bebf0ac06f6c936be63f c01caea5d6ad7a570628b85fb3056ac955ff03dd
+R 4ac50ab96ea64a1527703075acfe4ff2
+T +closed c01caea5d6ad7a570628b85fb3056ac955ff03dd
+U drh
+Z cd2aeeb09b327b0fcacfc59206b5ba8f
