@@ -178,7 +178,7 @@ static void print_decode_line(
   int val = aData[ofst];
   char zBuf[100];
   sprintf(zBuf, " %03x: %02x", ofst, aData[ofst]);
-  i = strlen(zBuf);
+  i = (int)strlen(zBuf);
   for(j=1; j<4; j++){
     if( j>=nByte ){
       sprintf(&zBuf[i], "   ");
@@ -186,7 +186,7 @@ static void print_decode_line(
       sprintf(&zBuf[i], " %02x", aData[ofst+j]);
       val = val*256 + aData[ofst+j];
     }
-    i += strlen(&zBuf[i]);
+    i += (int)strlen(&zBuf[i]);
   }
   if( asHex ){
     sprintf(&zBuf[i], "  0x%08x", val);
@@ -334,7 +334,7 @@ static i64 describeContent(
       }
       pData += size;
     }
-    j = strlen(zDesc);
+    j = (int)strlen(zDesc);
     zDesc += j;
     nDesc += j;
   }
@@ -495,7 +495,7 @@ static void decode_btree_page(
       zMap[cofst] = '[';
       zMap[cofst+n-1] = ']';
       sprintf(zBuf, "%d", i);
-      j = strlen(zBuf);
+      j = (int)strlen(zBuf);
       if( j<=n-2 ) memcpy(&zMap[cofst+1], zBuf, j);
     }
     printf(" %03x: cell[%d] %s\n", cofst, i, zDesc);
