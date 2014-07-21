@@ -2392,9 +2392,19 @@ struct TriggerPrg {
 ** The yDbMask datatype for the bitmask of all attached databases.
 */
 #if SQLITE_MAX_ATTACHED>30
-  typedef sqlite3_uint64 yDbMask;
+  typedef unsigned char yDbMask[(SQLITE_MAX_ATTACHED+9)/8];
+# define DbMaskTest(M,I)    (((M)[(I)/8]&(1<<((I)&7)))!=0)
+# define DbMaskZero(M)      memset((M),0,sizeof(M))
+# define DbMaskSet(M,I)     (M)[(I)/8]|=(1<<((I)&7))
+# define DbMaskAllZero(M)   sqlite3DbMaskAllZero(M)
+# define DbMaskNonZero(M)   (sqlite3DbMaskAllZero(M)==0)
 #else
   typedef unsigned int yDbMask;
+# define DbMaskTest(M,I)    (((M)&(((yDbMask)1)<<(I)))!=0)
+# define DbMaskZero(M)      (M)=0
+# define DbMaskSet(M,I)     (M)|=(((yDbMask)1)<<(I))
+# define DbMaskAllZero(M)   (M)==0
+# define DbMaskNonZero(M)   (M)!=0
 #endif
 
 /*
@@ -3067,6 +3077,9 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
 # define sqlite3ViewGetColumnNames(A,B) 0
 #endif
 
+#if SQLITE_MAX_ATTACHED>30
+  int sqlite3DbMaskAllZero(yDbMask);
+#endif
 void sqlite3DropTable(Parse*, SrcList*, int, int);
 void sqlite3CodeDropTable(Parse*, Table*, int, int);
 void sqlite3DeleteTable(sqlite3*, Table*);
