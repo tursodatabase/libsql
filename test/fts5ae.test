@@ -175,7 +175,22 @@ do_execsql_test 5.4 {
   1 {2 3}
 }
 
+#-------------------------------------------------------------------------
+# Test the xTokenize() API
+#
+reset_db
+do_execsql_test 6.1 {
+  CREATE VIRTUAL TABLE t6 USING fts5(x, y);
+  INSERT INTO t6 VALUES('There are more', 'things in heaven and earth');
+  INSERT INTO t6 VALUES(', Horatio, Than are', 'dreamt of in your philosophy.');
+}
 
+do_execsql_test 6.2 {
+  SELECT rowid, fts5_test(t6, 'tokenize') FROM t6 WHERE t6 MATCH 't*'
+} {
+  2 {{horatio than are} {dreamt of in your philosophy}}
+  1 {{there are more} {things in heaven and earth}}
+}
 
 finish_test
 

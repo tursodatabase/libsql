@@ -630,8 +630,9 @@ static int fts5ApiTokenize(
   void *pUserData,
   int (*xToken)(void*, const char*, int, int, int, int)
 ){
-  assert( 0 );
-  return SQLITE_OK;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  return sqlite3Fts5Tokenize(pTab->pConfig, pText, nText, pUserData, xToken);
 }
 
 static int fts5ApiPhraseCount(Fts5Context *pCtx){

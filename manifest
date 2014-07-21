@@ -1,5 +1,5 @@
-C Fix\sthe\sxColumnSize()\sextension\sAPI.
-D 2014-07-21T11:44:47.659
+C Add\sthe\sxTokenize\sextension\sAPI.
+D 2014-07-21T14:22:38.753
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,10 +103,10 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c 5bf93402f9bafa55181dfa70c3a785a41af31025
-F ext/fts5/fts5.h 84060c2fe91aa03a783cc993f313d8a5b22cbe11
+F ext/fts5/fts5.c fda4dd1d2c3e1c6bcb0bf673428a23e4752c21f5
+F ext/fts5/fts5.h c77b6a4a56d80f70fc4f0444030c88724397ed10
 F ext/fts5/fts5Int.h 12d03496152b716e63a5380e396b776fbefa2065
-F ext/fts5/fts5_aux.c 9f0487715cd9933f2268620b41fb47f78a389297
+F ext/fts5/fts5_aux.c 14961135231dd50e6c17894e649c3bbc8c042829
 F ext/fts5/fts5_buffer.c 00361d4a70040ebd2c32bc349ab708ff613a1749
 F ext/fts5/fts5_config.c 94f1b4cb4de6a7cd5780c14adb0198e289df8cef
 F ext/fts5/fts5_expr.c 288b3e016253eab69ea8cefbff346a4697b44291
@@ -599,7 +599,7 @@ F test/fts5aa.test 0f5d29bf0a86b9dff0906c9e166d624c591d3437
 F test/fts5ab.test dc04ed48cf93ca957d174406e6c192f2ff4f3397
 F test/fts5ac.test 9be418d037763f4cc5d86f4239db41fc86bb4f85
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
-F test/fts5ae.test b856782549ae0c56628e0980444fc38cf20b41a0
+F test/fts5ae.test fe9db78201bbb87c6f82b72a14b946d0f7fc3026
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1195,7 +1195,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1e9053abdaf5e128d44504ee00dfd909dc25f378
-R 962590916dedf53a395813418f70a86f
+P 19504c4108472d2ad1281221642b8bd06eb69f4e
+R 5c4f852f4d425543d226dd267d759872
 U dan
-Z 393e4d18f784466676fdeef71a737c83
+Z 17df0b0e1c67547ce560ffb2b8c93af3

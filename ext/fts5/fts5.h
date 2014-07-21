@@ -68,6 +68,9 @@ typedef void (*fts5_extension_function)(
 **
 ** xPoslist:
 **   Iterate through instances of phrase iPhrase in the current row. 
+**
+** xTokenize:
+**   Tokenize text using the tokenizer belonging to the FTS5 table.
 */
 struct Fts5ExtensionApi {
   int iVersion;                   /* Currently always set to 1 */

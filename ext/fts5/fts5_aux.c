@@ -23,6 +23,24 @@ static void fts5SnippetFunction(
   assert( 0 );
 }
 
+static int fts5TestCallback(
+  void *pContext,                 /* Pointer to Fts5Buffer object */
+  const char *pToken,             /* Buffer containing token */
+  int nToken,                     /* Size of token in bytes */
+  int iStart,                     /* Start offset of token */
+  int iEnd,                       /* End offset of token */
+  int iPos                        /* Position offset of token */
+){
+  int rc = SQLITE_OK;
+  Fts5Buffer *pBuf = (Fts5Buffer*)pContext;
+  if( pBuf->n!=0 ){
+    sqlite3Fts5BufferAppendString(&rc, pBuf, " ");
+  }
+  sqlite3Fts5BufferAppendListElem(&rc, pBuf, pToken, nToken);
+  return rc;
+}
+
+
 static void fts5TestFunction(
   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   Fts5Context *pFts,              /* First arg to pass to pApi functions */
@@ -165,6 +183,33 @@ static void fts5TestFunction(
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "rowid") ){
     iRowid = pApi->xRowid(pFts);
     sqlite3Fts5BufferAppendPrintf(&rc, &s, "%lld", iRowid);
+  }
+
+  if( zReq==0 ){
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, " tokenize ");
+  }
+  if( 0==zReq || 0==sqlite3_stricmp(zReq, "tokenize") ){
+    Fts5Buffer buf;
+    memset(&buf, 0, sizeof(buf));
+    for(i=0; rc==SQLITE_OK && i<nCol; i++){
+      const char *z;
+      int n;
+      rc = pApi->xColumnText(pFts, i, &z, &n);
+      if( rc==SQLITE_OK ){
+        Fts5Buffer buf1;
+        memset(&buf1, 0, sizeof(Fts5Buffer));
+        rc = pApi->xTokenize(pFts, z, n, (void*)&buf1, fts5TestCallback);
+        if( i!=0 ) sqlite3Fts5BufferAppendPrintf(&rc, &buf, " ");
+        sqlite3Fts5BufferAppendListElem(&rc, &buf, (const char*)buf1.p, buf1.n);
+        sqlite3_free(buf1.p);
+      }
+    }
+    if( zReq==0 ){
+      sqlite3Fts5BufferAppendListElem(&rc, &s, (const char*)buf.p, buf.n);
+    }else{
+      sqlite3Fts5BufferAppendString(&rc, &s, (const char*)buf.p);
+    }
+    sqlite3_free(buf.p);
   }
 
   if( rc==SQLITE_OK ){
