@@ -1,5 +1,5 @@
-C Allow\sthe\sSQLITE_MAX_ATTACHED\scompile-time\soption\sto\sbe\slarger\sthan\s62.\s\sThe\ndefault\slimit\son\sthe\snumber\sof\sattached\sdatabases\sremains\s10.
-D 2014-07-21T15:44:39.054
+C Limit\sthe\smaximum\sSQLITE_MAX_ATTACHED\sto\s127,\ssince\sa\ssigned\scharacter\nis\ssometimes\sused\sto\sstore\sthe\sdatabase\sindex.
+D 2014-07-21T20:07:17.299
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c bba87834413394f43b1a211c38c282c7d4092d1d
+F src/main.c d0fa35a8582923730ab2113d34dddc061f59d211
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -1182,7 +1182,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 61cee3c0678f5abd9131a29ab946a5e71f55643e
-R 03bc11d876fd7682716b5fcb2f08b30c
+P 1a817ae2f35fa0396148dda2782cd4f919bf5c6f
+R 848516fae6f90d131f9449e42d77b0c0
 U drh
-Z 1b802be3c637c9b3363a3a4e9caf7d2a
+Z 0a273a2cc8050e8888f6349db4185a5f

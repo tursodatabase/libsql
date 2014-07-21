@@ -2101,8 +2101,8 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_FUNCTION_ARG<0 || SQLITE_MAX_FUNCTION_ARG>1000
 # error SQLITE_MAX_FUNCTION_ARG must be between 0 and 1000
 #endif
-#if SQLITE_MAX_ATTACHED<0
-# error SQLITE_MAX_ATTACHED must be greater than 0
+#if SQLITE_MAX_ATTACHED<0 || SQLITE_MAX_ATTACHED>127
+# error SQLITE_MAX_ATTACHED must be between 0 and 127
 #endif
 #if SQLITE_MAX_LIKE_PATTERN_LENGTH<1
 # error SQLITE_MAX_LIKE_PATTERN_LENGTH must be at least 1
