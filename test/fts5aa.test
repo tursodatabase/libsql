@@ -129,6 +129,7 @@ foreach {i x y} {
 
 #-------------------------------------------------------------------------
 #
+breakpoint
 reset_db
 do_execsql_test 6.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y);

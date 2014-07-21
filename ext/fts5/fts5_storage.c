@@ -17,6 +17,8 @@
 struct Fts5Storage {
   Fts5Config *pConfig;
   Fts5Index *pIndex;
+  i64 nTotalRow;                  /* Total number of rows in FTS table */
+  i64 *aTotalSize;                /* Total sizes of each column */ 
   sqlite3_stmt *aStmt[9];
 };
 
@@ -168,11 +170,15 @@ int sqlite3Fts5StorageOpen(
 ){
   int rc;
   Fts5Storage *p;                 /* New object */
+  int nByte;                      /* Bytes of space to allocate */
 
-  *pp = p = (Fts5Storage*)sqlite3_malloc(sizeof(Fts5Storage));
+  nByte = sizeof(Fts5Storage)               /* Fts5Storage object */
+        + pConfig->nCol * sizeof(i64);      /* Fts5Storage.aTotalSize[] */
+  *pp = p = (Fts5Storage*)sqlite3_malloc(nByte);
   if( !p ) return SQLITE_NOMEM;
 
-  memset(p, 0, sizeof(Fts5Storage));
+  memset(p, 0, nByte);
+  p->aTotalSize = (i64*)&p[1];
   p->pConfig = pConfig;
   p->pIndex = pIndex;
 
@@ -285,7 +291,9 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
             (void*)&ctx,
             fts5StorageInsertCallback
         );
+        p->aTotalSize[iCol-1] -= (i64)ctx.szCol;
       }
+      p->nTotalRow--;
     }
     rc2 = sqlite3_reset(pSeek);
     if( rc==SQLITE_OK ) rc = rc2;
@@ -316,6 +324,62 @@ static int fts5StorageInsertDocsize(
 }
 
 /*
+** Load the contents of the "averages" record from disk into the
+** p->nTotalRow and p->aTotalSize[] variables.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error
+** occurs.
+*/
+static int fts5StorageLoadTotals(Fts5Storage *p){
+  int nCol = p->pConfig->nCol;
+  Fts5Buffer buf;
+  int rc;
+  memset(&buf, 0, sizeof(buf));
+
+  memset(p->aTotalSize, 0, sizeof(i64) * nCol);
+  p->nTotalRow = 0;
+  rc = sqlite3Fts5IndexGetAverages(p->pIndex, &buf);
+  if( rc==SQLITE_OK && buf.n ){
+    int i = 0;
+    int iCol;
+    i += getVarint(&buf.p[i], (u64*)&p->nTotalRow);
+    for(iCol=0; i<buf.n && iCol<nCol; iCol++){
+      i += getVarint(&buf.p[i], (u64*)&p->aTotalSize[iCol]);
+    }
+  }
+  sqlite3_free(buf.p);
+
+  return rc;
+}
+
+/*
+** Store the current contents of the p->nTotalRow and p->aTotalSize[] 
+** variables in the "averages" record on disk.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if an error
+** occurs.
+*/
+static int fts5StorageSaveTotals(Fts5Storage *p){
+  int nCol = p->pConfig->nCol;
+  int i;
+  Fts5Buffer buf;
+  int rc = SQLITE_OK;
+  memset(&buf, 0, sizeof(buf));
+
+  sqlite3Fts5BufferAppendVarint(&rc, &buf, p->nTotalRow);
+  for(i=0; i<nCol; i++){
+    sqlite3Fts5BufferAppendVarint(&rc, &buf, p->aTotalSize[i]);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts5IndexSetAverages(p->pIndex, buf.p, buf.n);
+  }
+  sqlite3_free(buf.p);
+
+  return rc;
+}
+
+
+/*
 ** Insert a new row into the FTS table.
 */
 int sqlite3Fts5StorageInsert(
@@ -333,15 +397,18 @@ int sqlite3Fts5StorageInsert(
   Fts5Buffer buf;                 /* Buffer used to build up %_docsize blob */
 
   memset(&buf, 0, sizeof(Fts5Buffer));
+  rc = fts5StorageLoadTotals(p);
 
   /* Insert the new row into the %_content table. */
-  if( eConflict==SQLITE_REPLACE ){
-    eStmt = FTS5_STMT_REPLACE_CONTENT;
-    if( sqlite3_value_type(apVal[1])==SQLITE_INTEGER ){
-      rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
+  if( rc==SQLITE_OK ){
+    if( eConflict==SQLITE_REPLACE ){
+      eStmt = FTS5_STMT_REPLACE_CONTENT;
+      if( sqlite3_value_type(apVal[1])==SQLITE_INTEGER ){
+        rc = fts5StorageDeleteFromIndex(p, sqlite3_value_int64(apVal[1]));
+      }
+    }else{
+      eStmt = FTS5_STMT_INSERT_CONTENT;
     }
-  }else{
-    eStmt = FTS5_STMT_INSERT_CONTENT;
   }
   if( rc==SQLITE_OK ){
     rc = fts5StorageGetStmt(p, eStmt, &pInsert);
@@ -367,13 +434,20 @@ int sqlite3Fts5StorageInsert(
         fts5StorageInsertCallback
     );
     sqlite3Fts5BufferAppendVarint(&rc, &buf, ctx.szCol);
+    p->aTotalSize[ctx.iCol] += (i64)ctx.szCol;
   }
+  p->nTotalRow++;
 
   /* Write the %_docsize record */
   if( rc==SQLITE_OK ){
     rc = fts5StorageInsertDocsize(p, *piRowid, &buf);
   }
   sqlite3_free(buf.p);
+
+  /* Write the averages record */
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageSaveTotals(p);
+  }
 
   return rc;
 }
@@ -538,7 +612,16 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
   return rc;
 }
 
-int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int *aCol){
-  return 0;
+int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int iCol, int *pnAvg){
+  int rc = fts5StorageLoadTotals(p);
+  if( rc==SQLITE_OK ){
+    int nAvg = 1;
+    if( p->nTotalRow ){
+      nAvg = (int)((p->aTotalSize[iCol] + (p->nTotalRow/2)) / p->nTotalRow);
+      if( nAvg<1 ) nAvg = 1;
+      *pnAvg = nAvg;
+    }
+  }
+  return rc;
 }
 

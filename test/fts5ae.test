@@ -128,7 +128,7 @@ do_execsql_test 4.1 {
 }
 
 #-------------------------------------------------------------------------
-# Test that the xColumnSize() API works.
+# Test that the xColumnSize() and xColumnAvgsize() APIs work.
 #
 
 reset_db
@@ -155,6 +155,26 @@ do_execsql_test 5.2 {
   2 {{} a}
   1 {{a b c d} {e f g h i j}}
 }
+
+do_execsql_test 5.3 {
+  SELECT rowid, fts5_test(t5, 'columnavgsize') FROM t5 WHERE t5 MATCH 'a'
+  ORDER BY rowid DESC;
+} {
+  3 {2 2}
+  2 {2 2}
+  1 {2 2}
+}
+
+do_execsql_test 5.4 {
+  INSERT INTO t5 VALUES('x y z', 'v w x y z');
+  SELECT rowid, fts5_test(t5, 'columnavgsize') FROM t5 WHERE t5 MATCH 'a'
+  ORDER BY rowid DESC;
+} {
+  3 {2 3}
+  2 {2 3}
+  1 {2 3}
+}
+
 
 
 finish_test

@@ -267,6 +267,9 @@ int sqlite3Fts5IndexInit(sqlite3*);
 
 void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz);
 
+int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf);
+int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
+
 /*
 ** End of interface to code in fts5_index.c.
 **************************************************************************/
@@ -297,7 +300,7 @@ int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **);
 void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);
 
 int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
-int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int *aCol);
+int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int iCol, int *pnAvg);
 
 
 /*

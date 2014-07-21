@@ -619,8 +619,9 @@ static int fts5ApiColumnCount(Fts5Context *pCtx){
 }
 
 static int fts5ApiColumnAvgSize(Fts5Context *pCtx, int iCol, int *pnToken){
-  assert( 0 );
-  return 0;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  return sqlite3Fts5StorageAvgsize(pTab->pStorage, iCol, pnToken);
 }
 
 static int fts5ApiTokenize(

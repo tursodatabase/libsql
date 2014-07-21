@@ -734,7 +734,7 @@ static void fts5DataReference(Fts5Data *pData){
 /*
 ** INSERT OR REPLACE a record into the %_data table.
 */
-static void fts5DataWrite(Fts5Index *p, i64 iRowid, u8 *pData, int nData){
+static void fts5DataWrite(Fts5Index *p, i64 iRowid, const u8 *pData, int nData){
   if( p->rc!=SQLITE_OK ) return;
 
   if( p->pWriter==0 ){
@@ -2734,6 +2734,7 @@ int sqlite3Fts5IndexOpen(
       }
       rc = p->rc;
     }
+    sqlite3Fts5IndexSetAverages(p, (const u8*)"", 0);
   }
 
   if( rc ){
@@ -3617,5 +3618,24 @@ void sqlite3Fts5IterClose(Fts5IndexIter *pIter){
     fts5CloseReader(pIter->pIndex);
     sqlite3_free(pIter);
   }
+}
+
+/*
+** Read the "averages" record into the buffer supplied as the second 
+** argument. Return SQLITE_OK if successful, or an SQLite error code
+** if an error occurs.
+*/
+int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf){
+  fts5DataReadOrBuffer(p, pBuf, FTS5_AVERAGES_ROWID);
+  return p->rc;
+}
+
+/*
+** Replace the current "averages" record with the contents of the buffer 
+** supplied as the second argument.
+*/
+int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8 *pData, int nData){
+  fts5DataWrite(p, FTS5_AVERAGES_ROWID, pData, nData);
+  return p->rc;
 }
 

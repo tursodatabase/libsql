@@ -43,11 +43,24 @@ static void fts5TestFunction(
   }
 
   memset(&s, 0, sizeof(Fts5Buffer));
+  nCol = pApi->xColumnCount(pFts);
+
+  if( zReq==0 ){
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columnavgsize ");
+  }
+  if( 0==zReq || 0==sqlite3_stricmp(zReq, "columnavgsize") ){
+    if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "{");
+    for(i=0; rc==SQLITE_OK && i<nCol; i++){
+      int colsz = 0;
+      rc = pApi->xColumnAvgSize(pFts, i, &colsz);
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, "%s%d", i==0?"":" ", colsz);
+    }
+    if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "}");
+  }
 
   if( zReq==0 ){
     sqlite3Fts5BufferAppendPrintf(&rc, &s, "columncount ");
   }
-  nCol = pApi->xColumnCount(pFts);
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columncount") ){
     sqlite3Fts5BufferAppendPrintf(&rc, &s, "%d", nCol);
   }
