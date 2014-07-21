@@ -231,14 +231,6 @@ int sqlite3Fts5StorageClose(Fts5Storage *p, int bDestroy){
   return rc;
 }
 
-/*
-** Remove a row from the FTS table.
-*/
-int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
-  assert( !"do this" );
-  return SQLITE_OK;
-}
-
 typedef struct Fts5InsertCtx Fts5InsertCtx;
 struct Fts5InsertCtx {
   Fts5Storage *pStorage;
@@ -301,6 +293,7 @@ static int fts5StorageDeleteFromIndex(Fts5Storage *p, i64 iDel){
 
   return rc;
 }
+
 
 /*
 ** Insert a record into the %_docsize table. Specifically, do:
@@ -378,6 +371,47 @@ static int fts5StorageSaveTotals(Fts5Storage *p){
   return rc;
 }
 
+/*
+** Remove a row from the FTS table.
+*/
+int sqlite3Fts5StorageDelete(Fts5Storage *p, i64 iDel){
+  int rc;
+  sqlite3_stmt *pDel;
+
+  rc = fts5StorageLoadTotals(p);
+
+  /* Delete the index records */
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageDeleteFromIndex(p, iDel);
+  }
+
+  /* Delete the %_docsize record */
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_DOCSIZE, &pDel);
+  }
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pDel, 1, iDel);
+    sqlite3_step(pDel);
+    rc = sqlite3_reset(pDel);
+  }
+
+  /* Delete the %_content record */
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageGetStmt(p, FTS5_STMT_DELETE_CONTENT, &pDel);
+  }
+  if( rc==SQLITE_OK ){
+    sqlite3_bind_int64(pDel, 1, iDel);
+    sqlite3_step(pDel);
+    rc = sqlite3_reset(pDel);
+  }
+
+  /* Write the averages record */
+  if( rc==SQLITE_OK ){
+    rc = fts5StorageSaveTotals(p);
+  }
+
+  return rc;
+}
 
 /*
 ** Insert a new row into the FTS table.

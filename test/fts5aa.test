@@ -242,5 +242,39 @@ for {set i 1} {$i <= 10} {incr i} {
   if {[set_test_counter errors]} break
 }
 
+#-------------------------------------------------------------------------
+#
+reset_db
+do_execsql_test 10.0 {
+  CREATE VIRTUAL TABLE t1 USING fts5(x,y);
+}
+set d10 {
+   1  {g f d b f} {h h e i a}
+   2  {f i g j e} {i j c f f}
+   3  {e e i f a} {e h f d f}
+   4  {h j f j i} {h a c f j}
+   5  {d b j c g} {f e i b e}
+   6  {a j a e e} {j d f d e}
+   7  {g i j c h} {j d h c a}
+   8  {j j i d d} {e e d f b}
+   9  {c j j d c} {h j i f g}
+  10  {b f h i a} {c f b b j}
+}
+foreach {rowid x y} $d10 {
+  do_execsql_test 10.1.$rowid.1 { INSERT INTO t1 VALUES($x, $y) }
+  do_execsql_test 10.1.$rowid.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+}
+foreach rowid {5 9 8 1 2 4 10 7 3 5 6} {
+  do_execsql_test 10.2.$rowid.1 { DELETE FROM t1 WHERE rowid = $rowid }
+  do_execsql_test 10.2.$rowid.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+}
+foreach {rowid x y} $d10 {
+  do_execsql_test 10.3.$rowid.1 { INSERT INTO t1 VALUES($x, $y) }
+  do_execsql_test 10.3.$rowid.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+}
+
+do_execsql_test 10.4.1 { DELETE FROM t1 }
+do_execsql_test 10.4.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
+
 finish_test
 

@@ -551,7 +551,7 @@ static int fts5UpdateMethod(
 
   assert( nArg==1 || nArg==(2 + pConfig->nCol + 1) );
 
-  if( SQLITE_NULL!=sqlite3_value_type(apVal[2 + pConfig->nCol]) ){
+  if( nArg>1 && SQLITE_NULL!=sqlite3_value_type(apVal[2 + pConfig->nCol]) ){
     return fts5SpecialCommand(pTab, apVal[2 + pConfig->nCol]);
   }
 

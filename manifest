@@ -1,5 +1,5 @@
-C Add\sthe\sxTokenize\sextension\sAPI.
-D 2014-07-21T14:22:38.753
+C Fix\sDELETE\sand\sUPDATE\soperations\son\sfts5\stables.
+D 2014-07-21T15:45:26.584
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,7 +103,7 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c fda4dd1d2c3e1c6bcb0bf673428a23e4752c21f5
+F ext/fts5/fts5.c 35124fe8a49868808604c6a5264bf4f23587ac99
 F ext/fts5/fts5.h c77b6a4a56d80f70fc4f0444030c88724397ed10
 F ext/fts5/fts5Int.h 12d03496152b716e63a5380e396b776fbefa2065
 F ext/fts5/fts5_aux.c 14961135231dd50e6c17894e649c3bbc8c042829
@@ -111,7 +111,7 @@ F ext/fts5/fts5_buffer.c 00361d4a70040ebd2c32bc349ab708ff613a1749
 F ext/fts5/fts5_config.c 94f1b4cb4de6a7cd5780c14adb0198e289df8cef
 F ext/fts5/fts5_expr.c 288b3e016253eab69ea8cefbff346a4697b44291
 F ext/fts5/fts5_index.c 68d2d41b5c6d2f8838c3d6ebdc8b242718b8e997
-F ext/fts5/fts5_storage.c f722b080b9794f9e49cc4d36f0d9fb516cb7f309
+F ext/fts5/fts5_storage.c 7bb34138d134841cbe0a809467070d07013d8d7d
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
@@ -595,7 +595,7 @@ F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
-F test/fts5aa.test 0f5d29bf0a86b9dff0906c9e166d624c591d3437
+F test/fts5aa.test a2c7bbc18f25f0b57ea8fc483c8a8830273b9ed4
 F test/fts5ab.test dc04ed48cf93ca957d174406e6c192f2ff4f3397
 F test/fts5ac.test 9be418d037763f4cc5d86f4239db41fc86bb4f85
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
@@ -1195,7 +1195,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 19504c4108472d2ad1281221642b8bd06eb69f4e
-R 5c4f852f4d425543d226dd267d759872
+P 8c6b0aff3443fae4b7f0b9adcbf1514992b70653
+R ceadf07a7e21667d721f7d8d3cf93a59
 U dan
-Z 17df0b0e1c67547ce560ffb2b8c93af3
+Z 2d0ad058324af420450f942c4237ae4f
