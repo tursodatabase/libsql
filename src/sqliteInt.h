@@ -2136,6 +2136,7 @@ struct SrcList {
 #define WHERE_DISTINCTBY       0x0200 /* pOrderby is really a DISTINCT clause */
 #define WHERE_WANT_DISTINCT    0x0400 /* All output needs to be distinct */
 #define WHERE_SORTBYGROUP      0x0800 /* Support sqlite3WhereIsSorted() */
+#define WHERE_OR_INDEX_OPEN    0x1000 /* OP_OpenRead for the OR index exists */
 
 /* Allowed return values from sqlite3WhereIsDistinct()
 */
