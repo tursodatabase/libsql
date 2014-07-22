@@ -3422,6 +3422,7 @@ static Bitmask codeOneLoopStart(
     int iRetInit;                             /* Address of regReturn init */
     int untestedTerms = 0;             /* Some terms not completely tested */
     int ii;                            /* Loop counter */
+    u16 wctrlFlags;                    /* Flags for sub-WHERE clause */
     Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
     Table *pTab = pTabItem->pTab;
    
@@ -3517,6 +3518,8 @@ static Bitmask codeOneLoopStart(
     ** eliminating duplicates from other WHERE clauses, the action for each
     ** sub-WHERE clause is to to invoke the main loop body as a subroutine.
     */
+    wctrlFlags =  WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
+                  WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY;
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -3529,8 +3532,7 @@ static Bitmask codeOneLoopStart(
         }
         /* Loop through table entries that match term pOrTerm. */
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
-                        WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
-                        WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY, iCovCur);
+                                      wctrlFlags, iCovCur);
         assert( pSubWInfo || pParse->nErr || db->mallocFailed );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
@@ -3621,6 +3623,7 @@ static Bitmask codeOneLoopStart(
           ){
             assert( pSubWInfo->a[0].iIdxCur==iCovCur );
             pCov = pSubLoop->u.btree.pIndex;
+            wctrlFlags |= WHERE_REOPEN_IDX;
           }else{
             pCov = 0;
           }
@@ -6219,6 +6222,7 @@ WhereInfo *sqlite3WhereBegin(
         pWInfo->aiCurOnePass[1] = iIndexCur;
       }else if( iIdxCur && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
         iIndexCur = iIdxCur;
+        if( wctrlFlags & WHERE_REOPEN_IDX ) op = OP_ReopenIdx;
       }else{
         iIndexCur = pParse->nTab++;
       }

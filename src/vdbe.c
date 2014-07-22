@@ -3205,7 +3205,21 @@ case OP_SetCookie: {       /* in3 */
 ** sequence of the index being opened. Otherwise, if P4 is an integer 
 ** value, it is set to the number of columns in the table.
 **
-** See also OpenWrite.
+** See also: OpenWrite, ReopenIdx
+*/
+/* Opcode: ReopenIdx P1 P2 P3 P4 P5
+** Synopsis: root=P2 iDb=P3
+**
+** The ReopenIdx opcode works exactly like ReadOpen except that it first
+** checks to see if the cursor on P1 is already open with a root page
+** number of P2 and if it is this opcode becomes a no-op.  In other words,
+** if the cursor is already open, do not reopen it.
+**
+** The ReopenIdx opcode may only be used with P5==0 and with P4 being
+** a P4_KEYINFO object.  Furthermore, the P3 value must be the same as
+** every other ReopenIdx or OpenRead for the same cursor number.
+**
+** See the OpenRead opcode documentation for additional information.
 */
 /* Opcode: OpenWrite P1 P2 P3 P4 P5
 ** Synopsis: root=P2 iDb=P3
@@ -3227,6 +3241,19 @@ case OP_SetCookie: {       /* in3 */
 **
 ** See also OpenRead.
 */
+case OP_ReopenIdx: {
+  VdbeCursor *pCur;
+
+  assert( pOp->p5==0 );
+  assert( pOp->p4type==P4_KEYINFO );
+  pCur = p->apCsr[pOp->p1];
+  if( pCur && pCur->pgnoRoot==pOp->p2 ){
+    assert( pCur->iDb==pOp->p3 );      /* Guaranteed by the code generator */
+    break;
+  }
+  /* If the cursor is not currently open or is open on a different
+  ** index, then fall through into OP_OpenRead to force a reopen */
+}
 case OP_OpenRead:
 case OP_OpenWrite: {
   int nField;
@@ -3241,7 +3268,8 @@ case OP_OpenWrite: {
   assert( (pOp->p5&(OPFLAG_P2ISREG|OPFLAG_BULKCSR))==pOp->p5 );
   assert( pOp->opcode==OP_OpenWrite || pOp->p5==0 );
   assert( p->bIsReader );
-  assert( pOp->opcode==OP_OpenRead || p->readOnly==0 );
+  assert( pOp->opcode==OP_OpenRead || pOp->opcode==OP_ReopenIdx
+          || p->readOnly==0 );
 
   if( p->expired ){
     rc = SQLITE_ABORT;
@@ -3298,6 +3326,7 @@ case OP_OpenWrite: {
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
   pCur->isOrdered = 1;
+  pCur->pgnoRoot = p2;
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->pCursor);
   pCur->pKeyInfo = pKeyInfo;
   assert( OPFLAG_BULKCSR==BTREE_BULKLOAD );
