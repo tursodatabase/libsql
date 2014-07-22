@@ -1320,6 +1320,7 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
   Table *pTab;
   Index *pIdx;
   Token *pTableName;
+  Vdbe *v;
 
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
@@ -1367,6 +1368,8 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       }
     }   
   }
+  v = sqlite3GetVdbe(pParse);
+  if( v ) sqlite3VdbeAddOp0(v, OP_Expire);
 }
 
 /*

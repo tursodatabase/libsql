@@ -4426,7 +4426,6 @@ static int whereLoopAddBtreeIndex(
           }else{
             rc = whereInScanEst(pParse, pBuilder, pExpr->x.pList, &nOut);
           }
-          assert( rc!=SQLITE_OK || nOut>0 );
           if( rc==SQLITE_NOTFOUND ) rc = SQLITE_OK;
           if( rc!=SQLITE_OK ) break;          /* Jump out of the pTerm loop */
           if( nOut ){
