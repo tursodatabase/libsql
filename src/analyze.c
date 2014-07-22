@@ -1428,14 +1428,16 @@ static void decodeIntArray(
 #else
   if( pIndex )
 #endif
-  {
-    if( strcmp(z, "unordered")==0 ){
+  while( z[0] ){
+    if( sqlite3_strglob("unordered*", z)==0 ){
       pIndex->bUnordered = 1;
     }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
       int v32 = 0;
       sqlite3GetInt32(z+3, &v32);
       pIndex->szIdxRow = sqlite3LogEst(v32);
     }
+    while( z[0]!=0 && z[0]!=' ' ) z++;
+    while( z[0]==' ' ) z++;
   }
 }
 
@@ -1476,6 +1478,7 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   z = argv[2];
 
   if( pIndex ){
+    pIndex->bUnordered = 0;
     decodeIntArray((char*)z, pIndex->nKeyCol+1, 0, pIndex->aiRowLogEst, pIndex);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowLogEst = pIndex->aiRowLogEst[0];
   }else{

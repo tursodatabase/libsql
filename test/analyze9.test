@@ -1089,5 +1089,3 @@ foreach {tn where eqp} {
 }
 
 finish_test
-
-
