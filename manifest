@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite_stat1.stat\sparsing\sto\sallow\sadditional\stext\sparameters\nat\sthe\send.\s\sUnrecognized\sparameters\sare\ssilently\signored.
-D 2014-07-22T14:58:12.596
+C Correction:\s\sThe\smaximum\sSQLITE_MAX_ATTACHED\svalue\sto\savoid\soverflowing\sa\nsigned\s8-bit\sinteger\sis\s125,\snot\s127.
+D 2014-07-22T15:33:31.603
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c d0fa35a8582923730ab2113d34dddc061f59d211
+F src/main.c 1a420efa9a34e8603c4807886408cba5546b87f9
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -1183,7 +1183,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b083a961f8ac3a6158e822574d73cd63e3103b09
-R 5b14cb35846d5c4a5d2461874ff76990
+P ca2a5a2c770fa94cd8db1b1b241ede058a7c58e2
+R c3cff698f37a9f53c6d75b84d0e942cf
 U drh
-Z 267c7ac0e4de2238ef8d9515f94ccafd
+Z 54df2fe47e5bf7bb724052e4ddee7e12
