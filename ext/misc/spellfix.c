@@ -1893,7 +1893,7 @@ static int spellfix1Init(
   char **pzErr
 ){
   spellfix1_vtab *pNew = 0;
-  const char *zModule = argv[0];
+  /* const char *zModule = argv[0]; // not used */
   const char *zDbName = argv[1];
   const char *zTableName = argv[2];
   int nDbName;
@@ -1947,7 +1947,7 @@ static int spellfix1Init(
       spellfix1DbExec(&rc, db,
          "CREATE INDEX IF NOT EXISTS \"%w\".\"%w_vocab_index_langid_k2\" "
             "ON \"%w_vocab\"(langid,k2);",
-         zDbName, zModule, zTableName
+         zDbName, zTableName, zTableName
       );
     }
     for(i=3; rc==SQLITE_OK && i<argc; i++){
