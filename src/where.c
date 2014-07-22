@@ -4577,6 +4577,14 @@ static int whereUsablePartialIndex(int iTab, WhereClause *pWC, Expr *pWhere){
 ** Normally, nSeek is 1. nSeek values greater than 1 come about if the 
 ** WHERE clause includes "x IN (....)" terms used in place of "x=?". Or when 
 ** implicit "x IN (SELECT x FROM tbl)" terms are added for skip-scans.
+**
+** The estimated values (nRow, nVisit, nSeek) often contain a large amount
+** of uncertainty.  For this reason, scoring is designed to pick plans that
+** "do the least harm" if the estimates are inaccurate.  For example, a
+** log(nRow) factor is omitted from a non-covering index scan in order to
+** bias the scoring in favor of using an index, since the worst-case
+** performance of using an index is far better than the worst-case performance
+** of a full table scan.
 */
 static int whereLoopAddBtree(
   WhereLoopBuilder *pBuilder, /* WHERE clause information */
