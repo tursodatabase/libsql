@@ -3422,7 +3422,6 @@ static Bitmask codeOneLoopStart(
     int iRetInit;                             /* Address of regReturn init */
     int untestedTerms = 0;             /* Some terms not completely tested */
     int ii;                            /* Loop counter */
-    int subWctrlFlags;                 /* wctrlFlags for sub-queries */
     Expr *pAndExpr = 0;                /* An ".. AND (...)" expression */
     Table *pTab = pTabItem->pTab;
    
@@ -3518,8 +3517,6 @@ static Bitmask codeOneLoopStart(
     ** eliminating duplicates from other WHERE clauses, the action for each
     ** sub-WHERE clause is to to invoke the main loop body as a subroutine.
     */
-    subWctrlFlags = WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
-                    WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY;
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || (pOrTerm->eOperator & WO_AND)!=0 ){
@@ -3532,7 +3529,8 @@ static Bitmask codeOneLoopStart(
         }
         /* Loop through table entries that match term pOrTerm. */
         pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrExpr, 0, 0,
-                        subWctrlFlags, iCovCur);
+                        WHERE_OMIT_OPEN_CLOSE | WHERE_AND_ONLY |
+                        WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY, iCovCur);
         assert( pSubWInfo || pParse->nErr || db->mallocFailed );
         if( pSubWInfo ){
           WhereLoop *pSubLoop;
@@ -3623,7 +3621,6 @@ static Bitmask codeOneLoopStart(
           ){
             assert( pSubWInfo->a[0].iIdxCur==iCovCur );
             pCov = pSubLoop->u.btree.pIndex;
-            subWctrlFlags |= WHERE_OR_INDEX_OPEN;
           }else{
             pCov = 0;
           }
@@ -6222,18 +6219,6 @@ WhereInfo *sqlite3WhereBegin(
         pWInfo->aiCurOnePass[1] = iIndexCur;
       }else if( iIdxCur && (wctrlFlags & WHERE_ONETABLE_ONLY)!=0 ){
         iIndexCur = iIdxCur;
-        if( (wctrlFlags & WHERE_OR_INDEX_OPEN)!=0 ){
-          /* For 2nd and subsequent subqueries for processing OR terms,
-          ** try to reuse the previous OP_OpenRead, if there is one.  The
-          ** WHERE_OR_INDEX_OPEN bit will only be set if there is a prior
-          ** OP_OpenRead opcode on cursor iIndexCur, so the while() loop
-          ** below is guaranteed to terminate.
-          */
-          VdbeOp *pOp = sqlite3VdbeGetOp(v, -1);
-          while( pOp->opcode!=OP_OpenRead || pOp->p1!=iIndexCur ) pOp--;
-          assert( pOp->p3==iDb );
-          if( pOp->p2==pIx->tnum ) op = 0;
-        }
       }else{
         iIndexCur = pParse->nTab++;
       }
