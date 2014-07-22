@@ -1109,7 +1109,7 @@ static void analyzeOneTable(
     **   goto chng_addr_N
     */
     addrNextRow = sqlite3VdbeCurrentAddr(v);
-    for(i=0; i<nCol; i++){
+    for(i=0; i<nCol-1; i++){
       char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
       sqlite3VdbeAddOp2(v, OP_Integer, i, regChng);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regTemp);
@@ -1118,7 +1118,7 @@ static void analyzeOneTable(
       sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
       VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp2(v, OP_Integer, nCol, regChng);
+    sqlite3VdbeAddOp2(v, OP_Integer, nCol-1, regChng);
     aGotoChng[nCol] = sqlite3VdbeAddOp0(v, OP_Goto);
 
     /*
@@ -1129,7 +1129,7 @@ static void analyzeOneTable(
     **  ...
     */
     sqlite3VdbeJumpHere(v, addrGotoChng0);
-    for(i=0; i<nCol; i++){
+    for(i=0; i<nCol-1; i++){
       sqlite3VdbeJumpHere(v, aGotoChng[i]);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regPrev+i);
     }
