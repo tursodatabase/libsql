@@ -2085,9 +2085,12 @@ static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
 #ifdef SQLITE_OMIT_FLOATING_POINT
       sqlite3ErrorMsg(pParse, "oversized integer: %s%s", negFlag ? "-" : "", z);
 #else
+#ifndef SQLITE_OMIT_HEX_INTEGER
       if( sqlite3_strnicmp(z,"0x",2)==0 ){
         sqlite3ErrorMsg(pParse, "hex literal too big: %s", z);
-      }else{
+      }else
+#endif
+      {
         codeReal(v, z, negFlag, iMem);
       }
 #endif
