@@ -1,5 +1,5 @@
-C Updated\sdocumentation\son\ssqlite3_temp_directory.\s\sNo\schanges\sto\scode.
-D 2014-07-23T15:51:29.276
+C Improve\sthe\sperformance\sof\sthe\sANALYZE\scommand\sby\staking\sadvantage\sof\sthe\nfact\sthat\severy\srow\sof\sa\sUNIQUE\sindex\sis\sdistinct.
+D 2014-07-23T18:36:55.821
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c b00900877f766f116f9e16116f1ccacdc21d82f1
-F src/analyze.c ab1e44158c25490bfda557f3d690217b2bb509e2
+F src/analyze.c c72bb66997ebdbc76936cfe96d7cc9da6ffe2b22
 F src/attach.c 3801129015ef59d76bf23c95ef9b0069d18a0c52
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
@@ -1183,7 +1183,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 48f40861db4fbd10725a2b8b606d44fe16d5bd27
-R c881f4a63c48850e8a9fb96aa00a5db1
+P e6225a7bf77a700b318563b1a854b4b3a9e031e1
+R fa098d0ebca9c403761ac8a7cdd64221
 U drh
-Z cd8aaf55159956edb23d2b840f6a6165
+Z 71590bde4580a255d675842a920968d0
