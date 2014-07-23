@@ -1477,6 +1477,9 @@ struct Table {
   i16 nCol;            /* Number of columns in this table */
   u16 nRef;            /* Number of pointers to this Table */
   LogEst szTabRow;     /* Estimated size of each table row in bytes */
+#ifdef SQLITE_ENABLE_COSTMULT
+  LogEst costMult;     /* Cost multiplier for using this table */
+#endif
   u8 tabFlags;         /* Mask of TF_* values */
   u8 keyConf;          /* What to do in case of uniqueness conflict on iPKey */
 #ifndef SQLITE_OMIT_ALTERTABLE

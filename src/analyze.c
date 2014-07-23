@@ -1432,10 +1432,13 @@ static void decodeIntArray(
     if( sqlite3_strglob("unordered*", z)==0 ){
       pIndex->bUnordered = 1;
     }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
-      int v32 = 0;
-      sqlite3GetInt32(z+3, &v32);
-      pIndex->szIdxRow = sqlite3LogEst(v32);
+      pIndex->szIdxRow = sqlite3LogEst(sqlite3Atoi(z+3));
     }
+#ifdef SQLITE_ENABLE_COSTMULT
+    else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){
+      pIndex->pTable->costMult = sqlite3LogEst(sqlite3Atoi(z+9));
+    }
+#endif
     while( z[0]!=0 && z[0]!=' ' ) z++;
     while( z[0]==' ' ) z++;
   }
@@ -1484,6 +1487,9 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   }else{
     Index fakeIdx;
     fakeIdx.szIdxRow = pTable->szTabRow;
+#ifdef SQLITE_ENABLE_COSTMULT
+    fakeIdx.pTable = pTable;
+#endif
     decodeIntArray((char*)z, 1, 0, &pTable->nRowLogEst, &fakeIdx);
     pTable->szTabRow = fakeIdx.szIdxRow;
   }

@@ -4231,6 +4231,16 @@ static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop){
 }
 
 /*
+** Adjust the cost C by the costMult facter T.  This only occurs if
+** compiled with -DSQLITE_ENABLE_COSTMULT
+*/
+#ifdef SQLITE_ENABLE_COSTMULT
+# define ApplyCostMultiplier(C,T)  C += T
+#else
+# define ApplyCostMultiplier(C,T)
+#endif
+
+/*
 ** We have so far matched pBuilder->pNew->u.btree.nEq terms of the 
 ** index pIndex. Try to match one more.
 **
@@ -4457,6 +4467,7 @@ static int whereLoopAddBtreeIndex(
     if( (pNew->wsFlags & (WHERE_IDX_ONLY|WHERE_IPK))==0 ){
       pNew->rRun = sqlite3LogEstAdd(pNew->rRun, pNew->nOut + 16);
     }
+    ApplyCostMultiplier(pNew->rRun, pProbe->pTable->costMult);
 
     nOutUnadjusted = pNew->nOut;
     pNew->rRun += nInMul + nIn;
@@ -4671,6 +4682,7 @@ static int whereLoopAddBtree(
         ** approximately 7*N*log2(N) where N is the number of rows in
         ** the table being indexed. */
         pNew->rSetup = rLogSize + rSize + 28;  assert( 28==sqlite3LogEst(7) );
+        ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         /* TUNING: Each index lookup yields 20 rows in the table.  This
         ** is more than the usual guess of 10 rows, since we have no way
         ** of knowning how selective the index will ultimately be.  It would
@@ -4712,6 +4724,7 @@ static int whereLoopAddBtree(
       pNew->iSortIdx = b ? iSortIdx : 0;
       /* TUNING: Cost of full table scan is (N*3.0). */
       pNew->rRun = rSize + 16;
+      ApplyCostMultiplier(pNew->rRun, pTab->costMult);
       whereLoopOutputAdjust(pWC, pNew);
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
@@ -4747,7 +4760,7 @@ static int whereLoopAddBtree(
         if( m!=0 ){
           pNew->rRun = sqlite3LogEstAdd(pNew->rRun, rSize+16);
         }
-
+        ApplyCostMultiplier(pNew->rRun, pTab->costMult);
         whereLoopOutputAdjust(pWC, pNew);
         rc = whereLoopInsert(pBuilder, pNew);
         pNew->nOut = rSize;
