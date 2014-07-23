@@ -256,6 +256,22 @@ int sqlite3_strnicmp(const char *zLeft, const char *zRight, int N){
 }
 
 /*
+** Translate a single byte of Hex into an integer.
+** This routine only works if h really is a valid hexadecimal
+** character:  0..9a..fA..F
+*/
+u8 sqlite3HexToInt(int h){
+  assert( (h>='0' && h<='9') ||  (h>='a' && h<='f') ||  (h>='A' && h<='F') );
+#ifdef SQLITE_ASCII
+  h += 9*(1&(h>>6));
+#endif
+#ifdef SQLITE_EBCDIC
+  h += 9*(1&~(h>>4));
+#endif
+  return (u8)(h & 0xf);
+}
+
+/*
 ** The string z[] is an text representation of a real number.
 ** Convert this string to a double and write it into *pResult.
 **
@@ -318,6 +334,20 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
   }else if( *z=='+' ){
     z+=incr;
   }
+#ifndef SQLITE_OMIT_HEX_INTEGER
+  else if( *z==0
+        && &z[incr*2]<zEnd
+        && (z[incr]=='x' || z[incr]=='X')
+        && sqlite3Isxdigit(z[incr*2])
+  ){
+    result = 0.0;
+    for(z += incr*2; z<zEnd && sqlite3Isxdigit(z[0]); z += incr){
+      result = result*16.0 + sqlite3HexToInt(z[0]);
+    }
+    *pResult = result;
+    return z>=zEnd && nonNum==0;
+  }
+#endif
 
   /* skip leading zeroes */
   while( z<zEnd && z[0]=='0' ) z+=incr, nDigits++;
@@ -475,7 +505,6 @@ static int compare2pow63(const char *zNum, int incr){
   return c;
 }
 
-
 /*
 ** Convert zNum to a 64-bit signed integer.
 **
@@ -522,6 +551,21 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum, int length, u8 enc){
     }else if( *zNum=='+' ){
       zNum+=incr;
     }
+#ifndef SQLITE_OMIT_HEX_INTEGER
+    else if( *zNum=='0'
+          &&  &zNum[incr*2]<zEnd
+          && (zNum[incr]=='x' || zNum[incr]=='X')
+          && sqlite3Isxdigit(zNum[incr*2])
+    ){
+      zNum += incr*2;
+      while( zNum<zEnd && zNum[0]=='0' ) zNum += incr;
+      for(i=0; &zNum[i]<zEnd && sqlite3Isxdigit(zNum[i]); i+=incr){
+        u = u*16 + sqlite3HexToInt(zNum[i]);
+      }
+      memcpy(pNum, &u, 8);
+      return &zNum[i]<zEnd || i>16*incr || nonNum;
+    }
+#endif
   }
   zStart = zNum;
   while( zNum<zEnd && zNum[0]=='0' ){ zNum+=incr; } /* Skip leading zeros. */
@@ -583,7 +627,25 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
   }else if( zNum[0]=='+' ){
     zNum++;
   }
-  while( zNum[0]=='0' ) zNum++;
+#ifndef SQLITE_OMIT_HEX_INTEGER
+  else if( zNum[0]=='0'
+        && (zNum[1]=='x' || zNum[1]=='X')
+        && sqlite3Isxdigit(zNum[2])
+  ){
+    u32 u = 0;
+    zNum += 2;
+    while( zNum[0]=='0' ) zNum++;
+    for(i=0; sqlite3Isxdigit(zNum[i]) && i<8; i++){
+      u = u*16 + sqlite3HexToInt(zNum[i]);
+    }
+    if( (u&0x80000000)==0 && sqlite3Isxdigit(zNum[i])==0 ){
+      memcpy(pValue, &u, 4);
+      return 1;
+    }else{
+      return 0;
+    }
+  }
+#endif
   for(i=0; i<11 && (c = zNum[i] - '0')>=0 && c<=9; i++){
     v = v*10 + c;
   }
@@ -1027,24 +1089,6 @@ void sqlite3Put4byte(unsigned char *p, u32 v){
   p[1] = (u8)(v>>16);
   p[2] = (u8)(v>>8);
   p[3] = (u8)v;
-}
-
-
-
-/*
-** Translate a single byte of Hex into an integer.
-** This routine only works if h really is a valid hexadecimal
-** character:  0..9a..fA..F
-*/
-u8 sqlite3HexToInt(int h){
-  assert( (h>='0' && h<='9') ||  (h>='a' && h<='f') ||  (h>='A' && h<='F') );
-#ifdef SQLITE_ASCII
-  h += 9*(1&(h>>6));
-#endif
-#ifdef SQLITE_EBCDIC
-  h += 9*(1&~(h>>4));
-#endif
-  return (u8)(h & 0xf);
 }
 
 #if !defined(SQLITE_OMIT_BLOB_LITERAL) || defined(SQLITE_HAS_CODEC)
