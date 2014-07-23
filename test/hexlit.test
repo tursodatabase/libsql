@@ -108,7 +108,7 @@ hexlit1 219 0x00f 15
 hexlit1 220 0x00F 15
 
 proc hexlit2 {tnum hex ans} {
-  do_execsql_test hexlit-$tnum "SELECT printf('%7e',CAST($hex AS real))" $ans
+  do_execsql_test hexlit-$tnum "SELECT printf('%7e',CAST('$hex' AS real))" $ans
 }
 
 hexlit2 300 0x1 1.000000e+00
@@ -142,9 +142,9 @@ hexlit2 327 0x1000000000000000000000000000 3.245186e+32
 hexlit2 328 0x10000000000000000000000000000 5.192297e+33
 hexlit2 329 0x100000000000000000000000000000 8.307675e+34
 
-hexlit2 400 0x07fffffffffffffff  9.223372e+18
-hexlit2 401 0x08000000000000000 -9.223372e+18
-hexlit2 402 0x0ffffffffffffffff -1.000000e+00
-hexlit2 403 0x10000000000000000  1.844674e+19
+hexlit2 400 0x07fffffffffffffff 9.223372e+18
+hexlit2 401 0x08000000000000000 9.223372e+18
+hexlit2 402 0x0ffffffffffffffff 1.844674e+19
+hexlit2 403 0x10000000000000000 1.844674e+19
 
 finish_test
