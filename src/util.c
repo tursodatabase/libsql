@@ -335,7 +335,7 @@ int sqlite3AtoF(const char *z, double *pResult, int length, u8 enc){
     z+=incr;
   }
 #ifndef SQLITE_OMIT_HEX_INTEGER
-  else if( *z==0
+  else if( *z=='0'
         && &z[incr*2]<zEnd
         && (z[incr]=='x' || z[incr]=='X')
         && sqlite3Isxdigit(z[incr*2])
