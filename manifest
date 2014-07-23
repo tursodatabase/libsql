@@ -1,5 +1,5 @@
-C When\srunning\sANALYZE,\sit\sis\snot\snecessary\sto\scheck\sthe\sright-most\skey\scolumn\nfor\schanges\ssince\sthat\scolumn\swill\salways\schange\sif\snone\sof\sthe\sprevious\ncolumns\shave.
-D 2014-07-22T22:46:54.689
+C Updated\sdocumentation\son\ssqlite3_temp_directory.\s\sNo\schanges\sto\scode.
+D 2014-07-23T15:51:29.276
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
 F src/shell.c 566aee8213372a2e81ba0eb34e9759f7b2574009
-F src/sqlite.h.in fd8e3a36b0aded082dc93a4b89c1e85324b4cf75
+F src/sqlite.h.in ac4451c9da2771d2f4d702ef89722407242906d9
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h b72a09326d7cbd8375ec3d9a04ea5e0cf476beb3
@@ -1183,7 +1183,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 77f412caf0192d3e7fecb377d6d72123d8b64424
-R e38e472b4e4b7503ed49bdb3ca667f5c
+P 48f40861db4fbd10725a2b8b606d44fe16d5bd27
+R c881f4a63c48850e8a9fb96aa00a5db1
 U drh
-Z e390ae6bf708e4580525fb01df14fd1e
+Z cd8aaf55159956edb23d2b840f6a6165
