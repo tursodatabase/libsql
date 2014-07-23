@@ -84,28 +84,14 @@ hexlit1 160 0X1000000000000000 1152921504606846976
 hexlit1 161 0x2000000000000000 2305843009213693952
 hexlit1 162 0X4000000000000000 4611686018427387904
 hexlit1 163 0x8000000000000000 -9223372036854775808
+hexlit1 164 0XFFFFFFFFFFFFFFFF -1
 
-hexlit1 200 0x001 1
-hexlit1 201 0X002 2
-hexlit1 202 0x003 3
-hexlit1 203 0X004 4
-hexlit1 204 0x005 5
-hexlit1 205 0X006 6
-hexlit1 206 0x007 7
-hexlit1 207 0X008 8
-hexlit1 208 0x009 9
-hexlit1 209 0x00a 10
-hexlit1 210 0x00A 10
-hexlit1 211 0x00b 11
-hexlit1 212 0x00B 11
-hexlit1 213 0x00c 12
-hexlit1 214 0x00C 12
-hexlit1 215 0x00d 13
-hexlit1 216 0x00D 13
-hexlit1 217 0x00e 14
-hexlit1 218 0x00E 14 
-hexlit1 219 0x00f 15
-hexlit1 220 0x00F 15
+for {set n 1} {$n < 0x10} {incr n} {
+  hexlit1 200.$n.1 0X[format %03X $n] $n
+  hexlit1 200.$n.2 0x[format %03X $n] $n
+  hexlit1 200.$n.3 0X[format %03x $n] $n
+  hexlit1 200.$n.4 0x[format %03x $n] $n
+}
 
 # String literals that look like hex do not get cast or coerced.
 #

@@ -1,5 +1,5 @@
-C Remove\sa\ssurplus\sfunction\sprototype.\s\s#ifdef\scode\sthat\sis\snot\sused\swhen\nhex\sintegers\sare\somitted\sat\scompile\stime.
-D 2014-07-23T14:52:05.196
+C Enhancements\sto\sthe\shex\sliteral\stests.
+D 2014-07-23T19:04:25.426
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -601,7 +601,7 @@ F test/fuzz_malloc.test 328f70aaca63adf29b4c6f06505ed0cf57ca7c26
 F test/fuzzer1.test d4c52aaf3ef923da293a2653cfab33d02f718a36
 F test/fuzzerfault.test 8792cd77fd5bce765b05d0c8e01b9edcf8af8536
 F test/genesis.tcl 1e2e2e8e5cc4058549a154ff1892fe5c9de19f98
-F test/hexlit.test 1dc49cfd1c8938a8f028e392775bc3e61623ec46
+F test/hexlit.test f9ecde8145bfc2341573473256c74ae37a200497
 F test/hook.test 162d7cef7a2d2b04839fe14402934e6a1b79442f
 F test/icu.test 70df4faca133254c042d02ae342c0a141f2663f4
 F test/in.test 047c4671328e9032ab95666a67021adbbd36e98e
@@ -1184,7 +1184,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c6f0de59bf96b79c8ace8c9bfe48c7a6a306a50
-R 9da9b225ebea231badb4246df3d3d1b3
-U drh
-Z 6e030ade89af7e36cbcb367d7755ee7b
+P a5b383e077e4b277a65920f7cc202f32f07aa9ee
+R 623c41f29572bef99f944ba802bce57d
+U mistachkin
+Z 3da04c4e52c1109f378a2e2e3819b02f
