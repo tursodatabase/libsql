@@ -686,13 +686,12 @@ static int fts5ApiPoslist(
   Fts5Context *pCtx, 
   int iPhrase, 
   int *pi, 
-  int *piCol, 
-  int *piOff
+  i64 *piPos 
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   const u8 *a; int n;             /* Poslist for phrase iPhrase */
   n = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, &a);
-  return sqlite3Fts5PoslistNext(a, n, pi, piCol, piOff);
+  return sqlite3Fts5PoslistNext64(a, n, pi, piPos);
 }
 
 static void fts5ApiCallback(

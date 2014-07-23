@@ -389,7 +389,6 @@ static int fts5ExprNearIsMatch(Fts5ExprNearset *pNear, int *pbMatch){
   int i;
   int rc = SQLITE_OK;
   int bMatch;
-  i64 iMax;
 
   assert( pNear->nPhrase>1 );
 

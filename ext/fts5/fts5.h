@@ -69,6 +69,8 @@ typedef void (*fts5_extension_function)(
 ** xPoslist:
 **   Iterate through instances of phrase iPhrase in the current row. 
 **
+**   At EOF, a non-zero value is returned and output variable iPos set to -1.
+**
 ** xTokenize:
 **   Tokenize text using the tokenizer belonging to the FTS5 table.
 */
@@ -91,8 +93,11 @@ struct Fts5ExtensionApi {
   sqlite3_int64 (*xRowid)(Fts5Context*);
   int (*xColumnText)(Fts5Context*, int iCol, const char **pz, int *pn);
   int (*xColumnSize)(Fts5Context*, int iCol, int *pnToken);
-  int (*xPoslist)(Fts5Context*, int iPhrase, int *pi, int *piCol, int *piOff);
+  int (*xPoslist)(Fts5Context*, int iPhrase, int *pi, sqlite3_int64 *piPos);
 };
+
+#define FTS5_POS2COLUMN(iPos) (int)(iPos >> 32)
+#define FTS5_POS2OFFSET(iPos) (int)(iPos & 0xFFFFFFFF)
 
 /* 
 ** CUSTOM AUXILIARY FUNCTIONS

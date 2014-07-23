@@ -486,6 +486,29 @@ int sqlite3Fts5StorageInsert(
   return rc;
 }
 
+static int fts5StorageCount(Fts5Storage *p, const char *zSuffix, i64 *pnRow){
+  Fts5Config *pConfig = p->pConfig;
+  char *zSql;
+  int rc;
+
+  zSql = sqlite3_mprintf("SELECT count(*) FROM %Q.'%q_%s'", 
+      pConfig->zDb, pConfig->zName, zSuffix
+  );
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    sqlite3_stmt *pCnt = 0;
+    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pCnt, 0);
+    if( rc==SQLITE_OK && SQLITE_ROW==sqlite3_step(pCnt) ){
+      *pnRow = sqlite3_column_int64(pCnt, 0);
+    }
+    rc = sqlite3_finalize(pCnt);
+  }
+
+  sqlite3_free(zSql);
+  return rc;
+}
+
 /*
 ** Context object used by sqlite3Fts5StorageIntegrity().
 */
@@ -493,6 +516,7 @@ typedef struct Fts5IntegrityCtx Fts5IntegrityCtx;
 struct Fts5IntegrityCtx {
   i64 iRowid;
   int iCol;
+  int szCol;
   u64 cksum;
   Fts5Config *pConfig;
 };
@@ -512,6 +536,7 @@ static int fts5StorageIntegrityCallback(
   pCtx->cksum ^= sqlite3Fts5IndexCksum(
       pCtx->pConfig, pCtx->iRowid, pCtx->iCol, iPos, pToken, nToken
   );
+  pCtx->szCol = iPos+1;
   return SQLITE_OK;
 }
 
@@ -524,11 +549,17 @@ static int fts5StorageIntegrityCallback(
 int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
   Fts5Config *pConfig = p->pConfig;
   int rc;                         /* Return code */
+  int *aColSize;                  /* Array of size pConfig->nCol */
+  i64 *aTotalSize;                /* Array of size pConfig->nCol */
   Fts5IntegrityCtx ctx;
   sqlite3_stmt *pScan;
 
   memset(&ctx, 0, sizeof(Fts5IntegrityCtx));
   ctx.pConfig = p->pConfig;
+  aTotalSize = (i64*)sqlite3_malloc(pConfig->nCol * (sizeof(int)+sizeof(i64)));
+  if( !aTotalSize ) return SQLITE_NOMEM;
+  aColSize = (int*)&aTotalSize[pConfig->nCol];
+  memset(aTotalSize, 0, sizeof(i64) * pConfig->nCol);
 
   /* Generate the expected index checksum based on the contents of the
   ** %_content table. This block stores the checksum in ctx.cksum. */
@@ -538,6 +569,8 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
     while( SQLITE_ROW==sqlite3_step(pScan) ){
       int i;
       ctx.iRowid = sqlite3_column_int64(pScan, 0);
+      ctx.szCol = 0;
+      rc = sqlite3Fts5StorageDocsize(p, ctx.iRowid, aColSize);
       for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
         ctx.iCol = i;
         rc = sqlite3Fts5Tokenize(
@@ -547,10 +580,35 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
             (void*)&ctx,
             fts5StorageIntegrityCallback
         );
+        if( ctx.szCol!=aColSize[i] ) rc = SQLITE_CORRUPT_VTAB;
+        aTotalSize[i] += ctx.szCol;
       }
+      if( rc!=SQLITE_OK ) break;
     }
     rc2 = sqlite3_reset(pScan);
     if( rc==SQLITE_OK ) rc = rc2;
+  }
+
+  /* Test that the "totals" (sometimes called "averages") record looks Ok */
+  if( rc==SQLITE_OK ){
+    int i;
+    rc = fts5StorageLoadTotals(p);
+    for(i=0; rc==SQLITE_OK && i<pConfig->nCol; i++){
+      if( p->aTotalSize[i]!=aTotalSize[i] ) rc = SQLITE_CORRUPT_VTAB;
+    }
+  }
+
+  /* Check that the %_docsize and %_content tables contain the expected
+  ** number of rows.  */
+  if( rc==SQLITE_OK ){
+    i64 nRow;
+    rc = fts5StorageCount(p, "content", &nRow);
+    if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = SQLITE_CORRUPT_VTAB;
+  }
+  if( rc==SQLITE_OK ){
+    i64 nRow;
+    rc = fts5StorageCount(p, "docsize", &nRow);
+    if( rc==SQLITE_OK && nRow!=p->nTotalRow ) rc = SQLITE_CORRUPT_VTAB;
   }
 
   /* Pass the expected checksum down to the FTS index module. It will
@@ -560,6 +618,7 @@ int sqlite3Fts5StorageIntegrity(Fts5Storage *p){
     rc = sqlite3Fts5IndexIntegrityCheck(p->pIndex, ctx.cksum);
   }
 
+  sqlite3_free(aTotalSize);
   return rc;
 }
 

@@ -146,6 +146,7 @@ int sqlite3Fts5PoslistNext64(
   int i = *pi;
   if( i>=n ){
     /* EOF */
+    *piOff = -1;
     return 1;  
   }else{
     i64 iOff = *piOff;
