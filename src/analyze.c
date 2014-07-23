@@ -1029,7 +1029,7 @@ static void analyzeOneTable(
     }else{
       nCol = pIdx->nColumn;
       zIdxName = pIdx->zName;
-      nColTest = pIdx->onError==OE_None ? nCol-1 : pIdx->nKeyCol-1;
+      nColTest = pIdx->uniqNotNull ? pIdx->nKeyCol-1 : nCol-1;
     }
     aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*(nColTest+1));
     if( aGotoChng==0 ) continue;
