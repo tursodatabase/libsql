@@ -9,6 +9,8 @@
 
 #if !defined(_MSC_VER)
 #include <unistd.h>
+#else
+#include <io.h>
 #endif
 
 #include <stdlib.h>
@@ -141,7 +143,7 @@ static void print_decode_line(
   int val = aData[ofst];
   char zBuf[100];
   sprintf(zBuf, " %03x: %02x", ofst, aData[ofst]);
-  i = strlen(zBuf);
+  i = (int)strlen(zBuf);
   for(j=1; j<4; j++){
     if( j>=nByte ){
       sprintf(&zBuf[i], "   ");
@@ -149,7 +151,7 @@ static void print_decode_line(
       sprintf(&zBuf[i], " %02x", aData[ofst+j]);
       val = val*256 + aData[ofst+j];
     }
-    i += strlen(&zBuf[i]);
+    i += (int)strlen(&zBuf[i]);
   }
   sprintf(&zBuf[i], "   %9d", val);
   printf("%s  %s\n", zBuf, zMsg);
@@ -190,14 +192,14 @@ static void print_db_header(void){
 /*
 ** Describe cell content.
 */
-static int describeContent(
+static i64 describeContent(
   unsigned char *a,       /* Cell content */
-  int nLocal,             /* Bytes in a[] */
+  i64 nLocal,             /* Bytes in a[] */
   char *zDesc             /* Write description here */
 ){
-  int nDesc = 0;
-  int n, i, j;
-  i64 x, v;
+  i64 nDesc = 0;
+  int n, j;
+  i64 i, x, v;
   const unsigned char *pData;
   const unsigned char *pLimit;
   char sep = ' ';
@@ -237,15 +239,15 @@ static int describeContent(
     }else if( x==9 ){
       sprintf(zDesc, "1");
     }else if( x>=12 ){
-      int size = (x-12)/2;
+      i64 size = (x-12)/2;
       if( (x&1)==0 ){
-        sprintf(zDesc, "blob(%d)", size);
+        sprintf(zDesc, "blob(%lld)", size);
       }else{
-        sprintf(zDesc, "txt(%d)", size);
+        sprintf(zDesc, "txt(%lld)", size);
       }
       pData += size;
     }
-    j = strlen(zDesc);
+    j = (int)strlen(zDesc);
     zDesc += j;
     nDesc += j;
   }
@@ -256,11 +258,11 @@ static int describeContent(
 ** Compute the local payload size given the total payload size and
 ** the page size.
 */
-static int localPayload(i64 nPayload, char cType){
-  int maxLocal;
-  int minLocal;
-  int surplus;
-  int nLocal;
+static i64 localPayload(i64 nPayload, char cType){
+  i64 maxLocal;
+  i64 minLocal;
+  i64 surplus;
+  i64 nLocal;
   if( cType==13 ){
     /* Table leaf */
     maxLocal = pagesize-35;
@@ -288,19 +290,19 @@ static int localPayload(i64 nPayload, char cType){
 **
 ** The return value is the local cell size.
 */
-static int describeCell(
+static i64 describeCell(
   unsigned char cType,    /* Page type */
   unsigned char *a,       /* Cell content */
   int showCellContent,    /* Show cell content if true */
   char **pzDesc           /* Store description here */
 ){
   int i;
-  int nDesc = 0;
+  i64 nDesc = 0;
   int n = 0;
   int leftChild;
   i64 nPayload;
   i64 rowid;
-  int nLocal;
+  i64 nLocal;
   static char zDesc[1000];
   i = 0;
   if( cType<=5 ){
@@ -373,13 +375,14 @@ static void decodeCell(
   int szPgHdr,            /* Size of the page header.  0 or 100 */
   int ofst                /* Cell begins at a[ofst] */
 ){
-  int i, j, k;
+  int i, j;
   int leftChild;
+  i64 k;
   i64 nPayload;
   i64 rowid;
   i64 nHdr;
   i64 iType;
-  int nLocal;
+  i64 nLocal;
   unsigned char *x = a + ofst;
   unsigned char *end;
   unsigned char cType = a[0];
@@ -400,10 +403,10 @@ static void decodeCell(
     printBytes(a, x, i);
     nLocal = localPayload(nPayload, cType);
     if( nLocal==nPayload ){
-      printf("payload-size: %d\n", (int)nPayload);
+      printf("payload-size: %lld\n", nPayload);
     }else{
-      printf("payload-size: %d (%d local, %d overflow)\n",
-             (int)nPayload, nLocal, (int)(nPayload-nLocal));
+      printf("payload-size: %lld (%lld local, %lld overflow)\n",
+             nPayload, nLocal, nPayload-nLocal);
     }
     x += i;
   }else{
@@ -452,7 +455,7 @@ static void decodeCell(
        }
        printf("%s\n", zTypeName);
        szCol[nCol] = sz;
-       ofstCol[nCol] = k;
+       ofstCol[nCol] = (int)k;
        typeCol[nCol] = (int)iType;
        k += sz;
        nCol++;
@@ -506,7 +509,7 @@ static void decodeCell(
   }
   if( j<nLocal ){
     printBytes(a, x+j, 0);
-    printf("... %d bytes of content ...\n", nLocal-j);
+    printf("... %lld bytes of content ...\n", nLocal-j);
   }
   if( nLocal<nPayload ){
     printBytes(a, x+nLocal, 4);
@@ -585,17 +588,17 @@ static void decode_btree_page(
   for(i=0; i<nCell; i++){
     int cofst = iCellPtr + i*2;
     char *zDesc;
-    int n;
+    i64 n;
 
     cofst = a[cofst]*256 + a[cofst+1];
     n = describeCell(a[0], &a[cofst-hdrSize], showCellContent, &zDesc);
     if( showMap ){
       char zBuf[30];
-      memset(&zMap[cofst], '*', n);
+      memset(&zMap[cofst], '*', (size_t)n);
       zMap[cofst] = '[';
       zMap[cofst+n-1] = ']';
       sprintf(zBuf, "%d", i);
-      j = strlen(zBuf);
+      j = (int)strlen(zBuf);
       if( j<=n-2 ) memcpy(&zMap[cofst+1], zBuf, j);
     }
     if( cellToDecode==(-2) ){
@@ -692,7 +695,7 @@ static void page_usage_cell(
   int n = 0;
   i64 nPayload;
   i64 rowid;
-  int nLocal;
+  i64 nLocal;
   i = 0;
   if( cType<=5 ){
     a += 4;
@@ -893,12 +896,12 @@ static void page_usage_report(const char *zDbName){
 ** Try to figure out how every page in the database file is being used.
 */
 static void ptrmap_coverage_report(const char *zDbName){
-  unsigned int pgno;
+  int pgno;
   unsigned char *aHdr;
   unsigned char *a;
   int usable;
   int perPage;
-  unsigned int i;
+  int i;
 
   /* Avoid the pathological case */
   if( mxPage<1 ){

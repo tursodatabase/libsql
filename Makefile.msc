@@ -1447,6 +1447,10 @@ showwal.exe:	$(TOP)\tool\showwal.c $(SQLITE3C)
 	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\showwal.c $(SQLITE3C)
 
+fts3view.exe:	$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C)
+	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
+		$(TOP)\ext\fts3\tool\fts3view.c $(SQLITE3C)
+
 rollback-test.exe:	$(TOP)\tool\rollback-test.c $(SQLITE3C)
 	$(LTLINK) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -Fe$@ \
 		$(TOP)\tool\rollback-test.c $(SQLITE3C)
@@ -1479,6 +1483,9 @@ clean:
 	del /Q tclsqlite3.exe tclsqlite3.exp
 	del /Q testloadext.dll testloadext.exp
 	del /Q testfixture.exe testfixture.exp test.db
+	del /Q LogEst.exe fts3view.exe rollback-test.exe showdb.exe
+	del /Q showjournal.exe showstat4.exe showwal.exe speedtest1.exe
+	del /Q wordcount.exe
 	del /Q sqlite3.dll sqlite3.lib sqlite3.exp sqlite3.def
 	del /Q sqlite3.c sqlite3-*.c
 	del /Q sqlite3rc.h

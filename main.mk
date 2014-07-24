@@ -631,6 +631,10 @@ showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
 		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
 
+fts3view$(EXE):	$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o fts3view$(EXE) \
+		$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o $(THREADLIB)
+
 rollback-test$(EXE):	$(TOP)/tool/rollback-test.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o rollback-test$(EXE) \
 		$(TOP)/tool/rollback-test.c sqlite3.o $(THREADLIB)
@@ -678,10 +682,18 @@ clean:
 	rm -f fts3-testfixture fts3-testfixture.exe
 	rm -f testfixture testfixture.exe
 	rm -f threadtest3 threadtest3.exe
+	rm -f LogEst LogEst.exe
+	rm -f fts3view fts3view.exe
+	rm -f rollback-test rollback-test.exe
+	rm -f showdb showdb.exe
+	rm -f showjournal showjournal.exe
+	rm -f showstat4 showstat4.exe
+	rm -f showwal showwal.exe
+	rm -f speedtest1 speedtest1.exe
+	rm -f wordcount wordcount.exe
 	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
 	rm -f sqlite3rc.h
 	rm -f shell.c sqlite3ext.h
 	rm -f sqlite3_analyzer sqlite3_analyzer.exe sqlite3_analyzer.c
 	rm -f sqlite-*-output.vsix
 	rm -f mptester mptester.exe
-	rm -f showdb
