@@ -1014,7 +1014,6 @@ static void analyzeOneTable(
 
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
     int nCol;                     /* Number of columns in pIdx. "N" */
-    int *aGotoChng;               /* Array of jump instruction addresses */
     int addrRewind;               /* Address of "OP_Rewind iIdxCur" */
     int addrNextRow;              /* Address of "next_row:" */
     const char *zIdxName;         /* Name of the index */
@@ -1031,8 +1030,6 @@ static void analyzeOneTable(
       zIdxName = pIdx->zName;
       nColTest = pIdx->uniqNotNull ? pIdx->nKeyCol-1 : nCol-1;
     }
-    aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*nColTest);
-    if( aGotoChng==0 ) continue;
 
     /* Populate the register containing the index name. */
     sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, zIdxName, 0);
@@ -1116,6 +1113,10 @@ static void analyzeOneTable(
 
     if( nColTest>0 ){
       int endDistinctTest = sqlite3VdbeMakeLabel(v);
+      int *aGotoChng;               /* Array of jump instruction addresses */
+      aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*nColTest);
+      if( aGotoChng==0 ) continue;
+
       /*
       **  next_row:
       **   regChng = 0
@@ -1161,6 +1162,7 @@ static void analyzeOneTable(
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regPrev+i);
       }
       sqlite3VdbeResolveLabel(v, endDistinctTest);
+      sqlite3DbFree(db, aGotoChng);
     }
   
     /*
@@ -1247,7 +1249,6 @@ static void analyzeOneTable(
 
     /* End of analysis */
     sqlite3VdbeJumpHere(v, addrRewind);
-    sqlite3DbFree(db, aGotoChng);
   }
 
 
