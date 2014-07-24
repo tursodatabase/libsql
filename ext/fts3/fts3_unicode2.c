@@ -15,7 +15,7 @@
 ** DO NOT EDIT THIS MACHINE GENERATED FILE.
 */
 
-#if defined(SQLITE_ENABLE_FTS4_UNICODE61)
+#ifndef SQLITE_DISABLE_FTS3_UNICODE
 #if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)
 
 #include <assert.h>
@@ -362,4 +362,4 @@ int sqlite3FtsUnicodeFold(int c, int bRemoveDiacritic){
   return ret;
 }
 #endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */
-#endif /* !defined(SQLITE_ENABLE_FTS4_UNICODE61) */
+#endif /* !defined(SQLITE_DISABLE_FTS3_UNICODE) */

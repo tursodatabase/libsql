@@ -1323,7 +1323,7 @@ int sqlite3_stmt_readonly(sqlite3_stmt *pStmt){
 */
 int sqlite3_stmt_busy(sqlite3_stmt *pStmt){
   Vdbe *v = (Vdbe*)pStmt;
-  return v!=0 && v->pc>0 && v->magic==VDBE_MAGIC_RUN;
+  return v!=0 && v->pc>=0 && v->magic==VDBE_MAGIC_RUN;
 }
 
 /*

@@ -76,6 +76,7 @@ struct VdbeCursor {
   Bool useRandomRowid:1;/* Generate new record numbers semi-randomly */
   Bool isTable:1;       /* True if a table requiring integer keys */
   Bool isOrdered:1;     /* True if the underlying table is BTREE_UNORDERED */
+  Pgno pgnoRoot;        /* Root page of the open btree cursor */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
   i64 seqCount;         /* Sequence counter */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
