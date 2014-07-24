@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment\sand\supdate\shelp\stext.
-D 2014-07-24T22:20:23.336
+C Update\sa\sshell\stest\scase.
+D 2014-07-24T22:33:47.040
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -820,7 +820,7 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test d13ff516e3fcd4061bd072f56fd1551f2bf7fe52
+F test/shell1.test 1c0b7a79b1b91a56253ee0c4fbb309d39d16641e
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
@@ -1184,7 +1184,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8dc0cdf652f099d464d3de416dffd83efb895009
-R df3c0e791329cbe951d92033daed226e
+P 289092bb64463efe78a5f01b06b24aa664a31feb
+R 2dda198fecf0d2cc936f765b01233dec
 U mistachkin
-Z b422ee17d0b3078b84860803513f7cb8
+Z 05cc0be56c34ce76332247b4a337d27f

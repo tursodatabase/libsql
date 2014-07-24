@@ -612,9 +612,10 @@ do_test shell1-3.23.1 {
        [regexp {output:} $res] \
        [regexp {colseparator:} $res] \
        [regexp {rowseparator:} $res] \
+       [regexp {newline:} $res] \
        [regexp {stats:} $res] \
        [regexp {width:} $res]
-} {1 1 1 1 1 1 1 1 1 1}
+} {1 1 1 1 1 1 1 1 1 1 1}
 do_test shell1-3.23.2 {
   # too many arguments
   catchcmd "test.db" ".show BAD"
