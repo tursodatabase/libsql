@@ -3225,7 +3225,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='r' && strncmp(azArg[0], "rowseparator", n)==0 ){
     if( nArg==2 ){
       sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator,
-                       "%.*s", (int)sizeof(p->rowSeparator)-1, azArg[1]);
+                       "%.*s", (int)ArraySize(p->rowSeparator)-1, azArg[1]);
     }else{
       fprintf(stderr, "Usage: .rowseparator STRING\n");
       rc = 1;
@@ -3235,7 +3235,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='c' && strncmp(azArg[0], "colseparator", n)==0 ){
     if( nArg==2 ){
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
-                       "%.*s", (int)sizeof(p->colSeparator)-1, azArg[1]);
+                       "%.*s", (int)ArraySize(p->colSeparator)-1, azArg[1]);
     }else{
       fprintf(stderr, "Usage: .colseparator STRING\n");
       rc = 1;
@@ -3249,11 +3249,11 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
     if( nArg>=2 ){
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
-                       "%.*s", (int)sizeof(p->colSeparator)-1, azArg[1]);
+                       "%.*s", (int)ArraySize(p->colSeparator)-1, azArg[1]);
     }
     if( nArg>=3 ){
       sqlite3_snprintf(sizeof(p->newline), p->newline,
-                       "%.*s", (int)sizeof(p->newline)-1, azArg[2]);
+                       "%.*s", (int)ArraySize(p->newline)-1, azArg[2]);
     }
   }else
 
@@ -3900,7 +3900,7 @@ static const char zOptions[] =
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
-  "   -colseparator SEP    same as -separator with one argument\n"
+  "   -colseparator SEP    same as -separator\n"
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
