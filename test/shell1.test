@@ -588,14 +588,17 @@ db eval {DROP VIEW v1; DROP VIEW v2; DROP TABLE t1;}
 # .separator STRING      Change separator used by output mode and .import
 do_test shell1-3.22.1 {
   catchcmd "test.db" ".separator"
-} {1 {Usage: .separator STRING}}
+} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
 do_test shell1-3.22.2 {
   catchcmd "test.db" ".separator FOO"
 } {0 {}}
 do_test shell1-3.22.3 {
+  catchcmd "test.db" ".separator ABC XYZ"
+} {0 {}}
+do_test shell1-3.22.4 {
   # too many arguments
-  catchcmd "test.db" ".separator FOO BAD"
-} {1 {Usage: .separator STRING}}
+  catchcmd "test.db" ".separator FOO BAD BAD2"
+} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
 
 # .show                  Show the current values for various settings
 do_test shell1-3.23.1 {

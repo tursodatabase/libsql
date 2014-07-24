@@ -55,14 +55,17 @@ do_test shell5-1.1.3 {
 # .separator STRING      Change separator used by output mode and .import
 do_test shell5-1.2.1 {
   catchcmd "test.db" ".separator"
-} {1 {Usage: .separator STRING}}
+} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
 do_test shell5-1.2.2 {
-  catchcmd "test.db" ".separator FOO"
+  catchcmd "test.db" ".separator ONE"
 } {0 {}}
 do_test shell5-1.2.3 {
+  catchcmd "test.db" ".separator ONE TWO"
+} {0 {}}
+do_test shell5-1.2.4 {
   # too many arguments
-  catchcmd "test.db" ".separator FOO BAD"
-} {1 {Usage: .separator STRING}}
+  catchcmd "test.db" ".separator ONE TWO THREE"
+} {1 {Usage: .separator SEPARATOR ?NEWLINE?}}
 
 # separator should default to "|"
 do_test shell5-1.3.1 {

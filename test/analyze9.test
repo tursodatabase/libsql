@@ -1019,6 +1019,73 @@ foreach {tn where res} {
   do_eqp_test 22.2.$tn "SELECT * FROM t3 WHERE $where" $res
 }
 
+proc int_to_char {i} {
+  set ret ""
+  set char [list a b c d e f g h i j]
+  foreach {div} {1000 100 10 1} {
+    append ret [lindex $char [expr ($i / $div) % 10]]
+  }
+  set ret
+}
+db func int_to_char int_to_char
+
+do_execsql_test 23.0 {
+  CREATE TABLE t4(
+    a COLLATE nocase, b, c, 
+    d, e, f, 
+    PRIMARY KEY(c, b, a)
+  ) WITHOUT ROWID;
+  CREATE INDEX i41 ON t4(e);
+  CREATE INDEX i42 ON t4(f);
+
+  WITH data(a, b, c, d, e, f) AS (
+    SELECT int_to_char(0), 'xyz', 'zyx', '*', 0, 0
+    UNION ALL
+    SELECT 
+      int_to_char(f+1), b, c, d, (e+1) % 2, f+1
+    FROM data WHERE f<1024
+  )
+  INSERT INTO t4 SELECT a, b, c, d, e, f FROM data;
+  ANALYZE;
+} {}
+
+do_eqp_test 23.1 {
+  SELECT * FROM t4 WHERE 
+    (e=1 AND b='xyz' AND c='zyx' AND a<'AEA') AND f<300
+} {
+  0 0 0 {SEARCH TABLE t4 USING INDEX i41 (e=? AND c=? AND b=? AND a<?)}
+}
+do_eqp_test 23.2 {
+  SELECT * FROM t4 WHERE 
+    (e=1 AND b='xyz' AND c='zyx' AND a<'JJJ') AND f<300
+} {
+  0 0 0 {SEARCH TABLE t4 USING INDEX i42 (f<?)}
+}
+
+do_execsql_test 24.0 {
+  CREATE TABLE t5(c, d, b, e, a, PRIMARY KEY(a, b, c)) WITHOUT ROWID;
+  WITH data(a, b, c, d, e) AS (
+    SELECT 'z', 'y', 0, 0, 0
+    UNION ALL
+    SELECT 
+      a, CASE WHEN b='y' THEN 'n' ELSE 'y' END, c+1, e/250, e+1 
+    FROM data
+    WHERE e<1000
+  )
+  INSERT INTO t5(a, b, c, d, e) SELECT * FROM data;
+  CREATE INDEX t5d ON t5(d);
+  CREATE INDEX t5e ON t5(e);
+  ANALYZE;
+}
+
+foreach {tn where eqp} {
+  1 "d=0 AND a='z' AND b='n' AND e<200" {/*t5d (d=? AND a=? AND b=?)*/}
+  2 "d=0 AND a='z' AND b='n' AND e<100" {/*t5e (e<?)*/}
+
+  3 "d=0 AND e<300"                     {/*t5d (d=?)*/}
+  4 "d=0 AND e<200"                     {/*t5e (e<?)*/}
+} {
+  do_eqp_test 24.$tn "SeLeCt * FROM t5 WHERE $where" $eqp
+}
+
 finish_test
-
-

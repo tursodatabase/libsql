@@ -114,6 +114,19 @@ static void codeTableLocks(Parse *pParse){
 #endif
 
 /*
+** Return TRUE if the given yDbMask object is empty - if it contains no
+** 1 bits.  This routine is used by the DbMaskAllZero() and DbMaskNotZero()
+** macros when SQLITE_MAX_ATTACHED is greater than 30.
+*/
+#if SQLITE_MAX_ATTACHED>30
+int sqlite3DbMaskAllZero(yDbMask m){
+  int i;
+  for(i=0; i<sizeof(yDbMask); i++) if( m[i] ) return 0;
+  return 1;
+}
+#endif
+
+/*
 ** This routine is called after a single SQL statement has been
 ** parsed and a VDBE program to execute that statement has been
 ** prepared.  This routine puts the finishing touches on the
@@ -149,18 +162,19 @@ void sqlite3FinishCoding(Parse *pParse){
     ** transaction on each used database and to verify the schema cookie
     ** on each used database.
     */
-    if( db->mallocFailed==0 && (pParse->cookieMask || pParse->pConstExpr) ){
-      yDbMask mask;
+    if( db->mallocFailed==0 
+     && (DbMaskNonZero(pParse->cookieMask) || pParse->pConstExpr)
+    ){
       int iDb, i;
       assert( sqlite3VdbeGetOp(v, 0)->opcode==OP_Init );
       sqlite3VdbeJumpHere(v, 0);
-      for(iDb=0, mask=1; iDb<db->nDb; mask<<=1, iDb++){
-        if( (mask & pParse->cookieMask)==0 ) continue;
+      for(iDb=0; iDb<db->nDb; iDb++){
+        if( DbMaskTest(pParse->cookieMask, iDb)==0 ) continue;
         sqlite3VdbeUsesBtree(v, iDb);
         sqlite3VdbeAddOp4Int(v,
           OP_Transaction,                    /* Opcode */
           iDb,                               /* P1 */
-          (mask & pParse->writeMask)!=0,     /* P2 */
+          DbMaskTest(pParse->writeMask,iDb), /* P2 */
           pParse->cookieValue[iDb],          /* P3 */
           db->aDb[iDb].pSchema->iGeneration  /* P4 */
         );
@@ -216,7 +230,7 @@ void sqlite3FinishCoding(Parse *pParse){
   pParse->nMem = 0;
   pParse->nSet = 0;
   pParse->nVar = 0;
-  pParse->cookieMask = 0;
+  DbMaskZero(pParse->cookieMask);
 }
 
 /*
@@ -3843,15 +3857,13 @@ int sqlite3OpenTempDatabase(Parse *pParse){
 void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
   sqlite3 *db = pToplevel->db;
-  yDbMask mask;
 
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 || iDb==1 );
   assert( iDb<SQLITE_MAX_ATTACHED+2 );
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-  mask = ((yDbMask)1)<<iDb;
-  if( (pToplevel->cookieMask & mask)==0 ){
-    pToplevel->cookieMask |= mask;
+  if( DbMaskTest(pToplevel->cookieMask, iDb)==0 ){
+    DbMaskSet(pToplevel->cookieMask, iDb);
     pToplevel->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
     if( !OMIT_TEMPDB && iDb==1 ){
       sqlite3OpenTempDatabase(pToplevel);
@@ -3890,7 +3902,7 @@ void sqlite3CodeVerifyNamedSchema(Parse *pParse, const char *zDb){
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
   sqlite3CodeVerifySchema(pParse, iDb);
-  pToplevel->writeMask |= ((yDbMask)1)<<iDb;
+  DbMaskSet(pToplevel->writeMask, iDb);
   pToplevel->isMultiWrite |= setStatement;
 }
 
