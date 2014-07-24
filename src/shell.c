@@ -1650,6 +1650,69 @@ static char zHelp[] =
 
 /* Forward reference */
 static int process_input(struct callback_data *p, FILE *in);
+/*
+** Implementation of the "readfile(X)" SQL function.  The entire content
+** of the file named X is read and returned as a BLOB.  NULL is returned
+** if the file does not exist or is unreadable.
+*/
+static void readfileFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zName;
+  FILE *in;
+  long nIn;
+  void *pBuf;
+
+  zName = (const char*)sqlite3_value_text(argv[0]);
+  if( zName==0 ) return;
+  in = fopen(zName, "rb");
+  if( in==0 ) return;
+  fseek(in, 0, SEEK_END);
+  nIn = ftell(in);
+  rewind(in);
+  pBuf = sqlite3_malloc( nIn );
+  if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
+    sqlite3_result_blob(context, pBuf, nIn, sqlite3_free);
+  }else{
+    sqlite3_free(pBuf);
+  }
+  fclose(in);
+}
+
+/*
+** Implementation of the "writefile(X,Y)" SQL function.  The argument Y
+** is written into file X.  The number of bytes written is returned.  Or
+** NULL is returned if something goes wrong, such as being unable to open
+** file X for writing.
+*/
+static void writefileFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  FILE *out;
+  const char *z;
+  int n;
+  sqlite3_int64 rc;
+  const char *zFile;
+
+  zFile = (const char*)sqlite3_value_text(argv[0]);
+  if( zFile==0 ) return;
+  out = fopen(zFile, "wb");
+  if( out==0 ) return;
+  z = (const char*)sqlite3_value_blob(argv[1]);
+  if( z==0 ){
+    n = 0;
+    rc = 0;
+  }else{
+    n = sqlite3_value_bytes(argv[1]);
+    rc = fwrite(z, 1, n, out);
+  }
+  fclose(out);
+  sqlite3_result_int64(context, rc);
+}
 
 /*
 ** Make sure the database is open.  If it is not, then open it.  If
@@ -1673,6 +1736,10 @@ static void open_db(struct callback_data *p, int keepAlive){
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
 #endif
+    sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
+                            readfileFunc, 0, 0);
+    sqlite3_create_function(db, "writefile", 2, SQLITE_UTF8, 0,
+                            writefileFunc, 0, 0);
   }
 }
 

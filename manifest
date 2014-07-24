@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\shexadecimal\sinteger\sliterals\sin\sthe\sparser.
-D 2014-07-24T12:19:41.241
+C Add\sthe\sreadfile(FILENAME)\sand\swritefile(FILENAME,CONTENT)\sSQL\sfunctions\sto\nthe\scommand-line\sshell.
+D 2014-07-24T12:39:59.049
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
-F src/shell.c cca6ea15719f2a3f41b8a1e0030d0b67a8aae3ca
+F src/shell.c 191129c3f7a9cf241aea90ff6a6be3e74d3767f0
 F src/sqlite.h.in ac4451c9da2771d2f4d702ef89722407242906d9
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1184,8 +1184,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 16c8ce10e1530731441e6c4538691b71564684ed a3cc027fa7ca41da23ecd0770a075a48416af020
-R 800080a0f835a3b88d7f1d5c8ee5f8c1
-T +closed a3cc027fa7ca41da23ecd0770a075a48416af020
+P f8f79f28785db716b10c3bc9d6652b98253fd125
+R 3cb7c1591be4171f813333f040f9142c
 U drh
-Z c1345ae836570db977d9f440b563b830
+Z d6bf09c8f21a2381ecdf6b5a91f85057
