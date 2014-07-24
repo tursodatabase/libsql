@@ -1,5 +1,5 @@
-C Add\sexperimental\s"costmult"\slogic.\s\sOnly\senabled\swhen\scompiled\swith\n-DSQLITE_ENABLE_COSTMULT.
-D 2014-07-23T23:57:42.403
+C In\sthe\scommand-line\sshell,\sin\sCSV\soutput\smode,\sterminate\srows\swith\sCRNL\sbut\ndo\snot\sexpand\sNL\scharacters\sin\sdata\sinto\sCRNL.\s\sProvide\sthe\sextra\s-newline\ncommand-line\soption\sand\sthe\sextra\sargument\sto\s.separator\sto\sdesignate\san\nalternative\snewline\scharacter\ssequence\sfor\sCSV\soutput.
+D 2014-07-24T12:09:47.370
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
-F src/shell.c 566aee8213372a2e81ba0eb34e9759f7b2574009
+F src/shell.c cca6ea15719f2a3f41b8a1e0030d0b67a8aae3ca
 F src/sqlite.h.in ac4451c9da2771d2f4d702ef89722407242906d9
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -819,11 +819,11 @@ F test/shared9.test 5f2a8f79b4d6c7d107a01ffa1ed05ae7e6333e21
 F test/sharedA.test 0cdf1a76dfa00e6beee66af5b534b1e8df2720f5
 F test/shared_err.test 0079c05c97d88cfa03989b7c20a8b266983087aa
 F test/sharedlock.test 5ede3c37439067c43b0198f580fd374ebf15d304
-F test/shell1.test fb080d67c81e8a80a79ea04b36f127209b5bd112
+F test/shell1.test d60946b5fde4d85fe06db7331dfe89011f564350
 F test/shell2.test c57da3a381c099b02c813ba156298d5c2f5c93a3
 F test/shell3.test 5e8545ec72c4413a0e8d4c6be56496e3c257ca29
 F test/shell4.test 8a9c08976291e6c6c808b4d718f4a8b299f339f5
-F test/shell5.test ef0c52952a4a96dc1d9ec3b1fa81ec897ca48154
+F test/shell5.test 15a419cc1df21c892ed64f5596ae7a501f2816f2
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/show_speedtest1_rtree.tcl 32e6c5f073d7426148a6936a0408f4b5b169aba5
 F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
@@ -1183,7 +1183,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e6225a7bf77a700b318563b1a854b4b3a9e031e1
-R 07ca3465b9cbcf38e018d96848d50309
+P 729ece40885ed7f52c5981364833fc62281a388b
+R d4352ef214ae9bc2c731800627aed3f1
 U drh
-Z 5f4178ba82b72065a3c11af477d1e9bb
+Z ddfb7b81152d55231f21f3e3700ae2bf
