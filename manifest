@@ -1,5 +1,5 @@
-C Ugh.\s\sConsecutive\sUNIQUE\sindex\sentries\sare\sonly\sdistinct\sif\sthe\sindex\sis\non\sNOT\sNULL\scolumns.\s\sSo\sthe\sprevious\sversion\swas\snot\squite\sright.\s\sThis\ncheck-in\sfixes\sthe\sproblem.
-D 2014-07-23T19:37:21.314
+C Avoid\schange\stests\swhen\sanalyzing\ssingle-column\sunique\sindexes\safter\ngetting\spast\sthe\sinitial\sNULL\sentries.
+D 2014-07-24T19:54:20.150
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c b00900877f766f116f9e16116f1ccacdc21d82f1
-F src/analyze.c 7f893416d1e4375e31e497107e92b28c2f8f82d1
+F src/analyze.c 45216a14e7e71084859d2899cd323b2f597f8527
 F src/attach.c 3801129015ef59d76bf23c95ef9b0069d18a0c52
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
@@ -1183,7 +1183,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3e1e79e1335f7ad33cd35f384f2a063c4aa2253b
-R 8df862d446d339da769e0f44096b055d
+P 30033f965030a015fad15e532bcaba1314c8cc0f
+R e98a107e1f5891c465c70c3fe5e38f27
 U drh
-Z cc08889d86841af01a0687614b9dbde8
+Z 7cfd64b5f36044a7bdee3831c72ee79f

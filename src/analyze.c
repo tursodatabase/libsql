@@ -1031,7 +1031,7 @@ static void analyzeOneTable(
       zIdxName = pIdx->zName;
       nColTest = pIdx->uniqNotNull ? pIdx->nKeyCol-1 : nCol-1;
     }
-    aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*(nColTest+1));
+    aGotoChng = sqlite3DbMallocRaw(db, sizeof(int)*nColTest);
     if( aGotoChng==0 ) continue;
 
     /* Populate the register containing the index name. */
@@ -1061,7 +1061,7 @@ static void analyzeOneTable(
     **   regPrev(1) = idx(1)
     **  ...
     **
-    **  chng_addr_N:
+    **  endDistinctTest:
     **   regRowid = idx(rowid)
     **   stat_push(P, regChng, regRowid)
     **   Next csr
@@ -1115,6 +1115,7 @@ static void analyzeOneTable(
     addrNextRow = sqlite3VdbeCurrentAddr(v);
 
     if( nColTest>0 ){
+      int endDistinctTest = sqlite3VdbeMakeLabel(v);
       /*
       **  next_row:
       **   regChng = 0
@@ -1123,10 +1124,17 @@ static void analyzeOneTable(
       **   if( idx(1) != regPrev(1) ) goto chng_addr_1
       **   ...
       **   regChng = N
-      **   goto chng_addr_N
+      **   goto endDistinctTest
       */
       sqlite3VdbeAddOp0(v, OP_Goto);
       addrNextRow = sqlite3VdbeCurrentAddr(v);
+      if( nColTest==1 && pIdx->nKeyCol==1 && pIdx->onError!=OE_None ){
+        /* For a single-column UNIQUE index, once we have found a non-NULL
+        ** row, we know that all the rest will be distinct, so skip 
+        ** subsequent distinctness tests. */
+        sqlite3VdbeAddOp2(v, OP_NotNull, regPrev, endDistinctTest);
+        VdbeCoverage(v);
+      }
       for(i=0; i<nColTest; i++){
         char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
         sqlite3VdbeAddOp2(v, OP_Integer, i, regChng);
@@ -1137,7 +1145,7 @@ static void analyzeOneTable(
         VdbeCoverage(v);
       }
       sqlite3VdbeAddOp2(v, OP_Integer, nColTest, regChng);
-      aGotoChng[nColTest] = sqlite3VdbeAddOp0(v, OP_Goto);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, endDistinctTest);
   
   
       /*
@@ -1152,7 +1160,7 @@ static void analyzeOneTable(
         sqlite3VdbeJumpHere(v, aGotoChng[i]);
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regPrev+i);
       }
-      sqlite3VdbeJumpHere(v, aGotoChng[nColTest]);
+      sqlite3VdbeResolveLabel(v, endDistinctTest);
     }
   
     /*
