@@ -1623,7 +1623,8 @@ static char zHelp[] =
   ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail on|off           Stop after hitting an error.  Default OFF\n"
   ".clone NEWDB           Clone data into NEWDB from the existing database\n"
-  ".colseparator STRING   This is an alias for .separator\n"
+  ".colseparator STRING   This is an alias for the one argument version of\n"
+  "                         .separator\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
   "                         If TABLE specified, only dump tables matching\n"
@@ -2646,7 +2647,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     int nSep;                   /* Number of bytes in p->colSeparator[] */
     char *zSql;                 /* An SQL statement */
     ImportCtx sCtx;             /* Reader context */
-    char *(*xRead)(ImportCtx*); /* Procecure to read one value */
+    char *(*xRead)(ImportCtx*); /* Procedure to read one value */
     int (*xCloser)(FILE*);      /* Procedure to close th3 connection */
 
     if( nArg!=3 ){
@@ -3899,7 +3900,7 @@ static const char zOptions[] =
   "   -ascii               set output mode to 'ascii'\n"
   "   -bail                stop after hitting an error\n"
   "   -batch               force batch I/O\n"
-  "   -colseparator SEP    same as -separator\n"
+  "   -colseparator SEP    same as -separator with one argument\n"
   "   -column              set output mode to 'column'\n"
   "   -cmd COMMAND         run \"COMMAND\" before reading stdin\n"
   "   -csv                 set output mode to 'csv'\n"
