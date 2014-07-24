@@ -1109,7 +1109,7 @@ static void analyzeOneTable(
     **   goto chng_addr_N
     */
     addrNextRow = sqlite3VdbeCurrentAddr(v);
-    for(i=0; i<nCol; i++){
+    for(i=0; i<nCol-1; i++){
       char *pColl = (char*)sqlite3LocateCollSeq(pParse, pIdx->azColl[i]);
       sqlite3VdbeAddOp2(v, OP_Integer, i, regChng);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regTemp);
@@ -1118,7 +1118,7 @@ static void analyzeOneTable(
       sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
       VdbeCoverage(v);
     }
-    sqlite3VdbeAddOp2(v, OP_Integer, nCol, regChng);
+    sqlite3VdbeAddOp2(v, OP_Integer, nCol-1, regChng);
     aGotoChng[nCol] = sqlite3VdbeAddOp0(v, OP_Goto);
 
     /*
@@ -1129,7 +1129,7 @@ static void analyzeOneTable(
     **  ...
     */
     sqlite3VdbeJumpHere(v, addrGotoChng0);
-    for(i=0; i<nCol; i++){
+    for(i=0; i<nCol-1; i++){
       sqlite3VdbeJumpHere(v, aGotoChng[i]);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regPrev+i);
     }
@@ -1320,6 +1320,7 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
   Table *pTab;
   Index *pIdx;
   Token *pTableName;
+  Vdbe *v;
 
   /* Read the database schema. If an error occurs, leave an error message
   ** and code in pParse and return NULL. */
@@ -1367,6 +1368,8 @@ void sqlite3Analyze(Parse *pParse, Token *pName1, Token *pName2){
       }
     }   
   }
+  v = sqlite3GetVdbe(pParse);
+  if( v ) sqlite3VdbeAddOp0(v, OP_Expire);
 }
 
 /*
@@ -1425,14 +1428,19 @@ static void decodeIntArray(
 #else
   if( pIndex )
 #endif
-  {
-    if( strcmp(z, "unordered")==0 ){
+  while( z[0] ){
+    if( sqlite3_strglob("unordered*", z)==0 ){
       pIndex->bUnordered = 1;
     }else if( sqlite3_strglob("sz=[0-9]*", z)==0 ){
-      int v32 = 0;
-      sqlite3GetInt32(z+3, &v32);
-      pIndex->szIdxRow = sqlite3LogEst(v32);
+      pIndex->szIdxRow = sqlite3LogEst(sqlite3Atoi(z+3));
     }
+#ifdef SQLITE_ENABLE_COSTMULT
+    else if( sqlite3_strglob("costmult=[0-9]*",z)==0 ){
+      pIndex->pTable->costMult = sqlite3LogEst(sqlite3Atoi(z+9));
+    }
+#endif
+    while( z[0]!=0 && z[0]!=' ' ) z++;
+    while( z[0]==' ' ) z++;
   }
 }
 
@@ -1473,11 +1481,15 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   z = argv[2];
 
   if( pIndex ){
+    pIndex->bUnordered = 0;
     decodeIntArray((char*)z, pIndex->nKeyCol+1, 0, pIndex->aiRowLogEst, pIndex);
     if( pIndex->pPartIdxWhere==0 ) pTable->nRowLogEst = pIndex->aiRowLogEst[0];
   }else{
     Index fakeIdx;
     fakeIdx.szIdxRow = pTable->szTabRow;
+#ifdef SQLITE_ENABLE_COSTMULT
+    fakeIdx.pTable = pTable;
+#endif
     decodeIntArray((char*)z, 1, 0, &pTable->nRowLogEst, &fakeIdx);
     pTable->szTabRow = fakeIdx.szIdxRow;
   }

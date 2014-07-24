@@ -270,6 +270,12 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       testcase( z[0]=='6' );  testcase( z[0]=='7' );  testcase( z[0]=='8' );
       testcase( z[0]=='9' );
       *tokenType = TK_INTEGER;
+#ifndef SQLITE_OMIT_HEX_INTEGER
+      if( z[0]=='0' && (z[1]=='x' || z[1]=='X') && sqlite3Isxdigit(z[2]) ){
+        for(i=3; sqlite3Isxdigit(z[i]); i++){}
+        return i;
+      }
+#endif
       for(i=0; sqlite3Isdigit(z[i]); i++){}
 #ifndef SQLITE_OMIT_FLOATING_POINT
       if( z[i]=='.' ){

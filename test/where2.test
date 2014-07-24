@@ -751,5 +751,13 @@ do_execsql_test where2-12.1 {
 } {/.*SEARCH TABLE t12 AS b .*SEARCH TABLE t12 AS b .*/}
 }
 
+# Verify that all necessary OP_OpenRead opcodes occur in the OR optimization.
+#
+do_execsql_test where2-13.1 {
+  CREATE TABLE t13(a,b);
+  CREATE INDEX t13a ON t13(a);
+  INSERT INTO t13 VALUES(4,5);
+  SELECT * FROM t13 WHERE (1=2 AND a=3) OR a=4;
+} {4 5}
 
 finish_test

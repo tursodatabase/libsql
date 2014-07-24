@@ -64,6 +64,7 @@
 
 #if defined(_WIN32) || defined(WIN32)
 # include <io.h>
+# include <fcntl.h>
 #define isatty(h) _isatty(h)
 #ifndef access
 # define access(f,m) _access((f),(m))
@@ -459,6 +460,7 @@ struct callback_data {
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char colSeparator[20]; /* Column separator character for several modes */
   char rowSeparator[20]; /* Row separator character for MODE_Ascii */
+  char newline[20];      /* Record separator in MODE_Csv */
   int colWidth[100];     /* Requested width of each column when in column mode*/
   int actualWidth[100];  /* Actual width of each column */
   char nullvalue[20];    /* The text to print when a NULL comes back from
@@ -505,11 +507,17 @@ static const char *modeDescr[] = {
 };
 
 /*
-** These are the column/row separators used by the ASCII mode.
+** These are the column/row/line separators used by the various
+** import/export modes.
 */
-#define SEP_Line      "\n"
-#define SEP_Column    "\x1F"
-#define SEP_Row       "\x1E"
+#define SEP_Column    "|"
+#define SEP_Row       "\n"
+#define SEP_Tab       "\t"
+#define SEP_Space     " "
+#define SEP_Comma     ","
+#define SEP_CrLf      "\r\n"
+#define SEP_Unit      "\x1F"
+#define SEP_Record    "\x1E"
 
 /*
 ** Number of elements in an array
@@ -669,7 +677,8 @@ static const char needCsvQuote[] = {
 /*
 ** Output a single term of CSV.  Actually, p->separator is used for
 ** the separator, which may or may not be a comma.  p->nullvalue is
-** the null value.  Strings are quoted if necessary.
+** the null value.  Strings are quoted if necessary.  The separator
+** is only issued if bSep is true.
 */
 static void output_csv(struct callback_data *p, const char *z, int bSep){
   FILE *out = p->out;
@@ -870,17 +879,26 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
       break;
     }
     case MODE_Csv: {
+#if defined(WIN32) || defined(_WIN32)
+      fflush(p->out);
+      _setmode(_fileno(p->out), _O_BINARY);
+#endif
       if( p->cnt++==0 && p->showHeader ){
         for(i=0; i<nArg; i++){
           output_csv(p, azCol[i] ? azCol[i] : "", i<nArg-1);
         }
-        fprintf(p->out, "%s", p->rowSeparator);
+        fprintf(p->out, "%s", p->newline);
       }
-      if( azArg==0 ) break;
-      for(i=0; i<nArg; i++){
-        output_csv(p, azArg[i], i<nArg-1);
+      if( azArg>0 ){
+        for(i=0; i<nArg; i++){
+          output_csv(p, azArg[i], i<nArg-1);
+        }
+        fprintf(p->out, "%s", p->newline);
       }
-      fprintf(p->out, "%s", p->rowSeparator);
+#if defined(WIN32) || defined(_WIN32)
+      fflush(p->out);
+      _setmode(_fileno(p->out), _O_TEXT);
+#endif
       break;
     }
     case MODE_Insert: {
@@ -1653,7 +1671,8 @@ static char zHelp[] =
   ".schema ?TABLE?        Show the CREATE statements\n"
   "                         If TABLE specified, only show tables matching\n"
   "                         LIKE pattern TABLE.\n"
-  ".separator STRING      Change column separator for output mode and .import\n"
+  ".separator STRING ?NL? Change column separator for output mode and .import\n"
+  "                         NL is the end-of-line mark for CSV\n"
   ".shell CMD ARGS...     Run CMD ARGS... in a system shell\n"
   ".show                  Show the current values for various settings\n"
   ".stats on|off          Turn stats on or off\n"
@@ -1671,6 +1690,69 @@ static char zHelp[] =
 
 /* Forward reference */
 static int process_input(struct callback_data *p, FILE *in);
+/*
+** Implementation of the "readfile(X)" SQL function.  The entire content
+** of the file named X is read and returned as a BLOB.  NULL is returned
+** if the file does not exist or is unreadable.
+*/
+static void readfileFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zName;
+  FILE *in;
+  long nIn;
+  void *pBuf;
+
+  zName = (const char*)sqlite3_value_text(argv[0]);
+  if( zName==0 ) return;
+  in = fopen(zName, "rb");
+  if( in==0 ) return;
+  fseek(in, 0, SEEK_END);
+  nIn = ftell(in);
+  rewind(in);
+  pBuf = sqlite3_malloc( nIn );
+  if( pBuf && 1==fread(pBuf, nIn, 1, in) ){
+    sqlite3_result_blob(context, pBuf, nIn, sqlite3_free);
+  }else{
+    sqlite3_free(pBuf);
+  }
+  fclose(in);
+}
+
+/*
+** Implementation of the "writefile(X,Y)" SQL function.  The argument Y
+** is written into file X.  The number of bytes written is returned.  Or
+** NULL is returned if something goes wrong, such as being unable to open
+** file X for writing.
+*/
+static void writefileFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  FILE *out;
+  const char *z;
+  int n;
+  sqlite3_int64 rc;
+  const char *zFile;
+
+  zFile = (const char*)sqlite3_value_text(argv[0]);
+  if( zFile==0 ) return;
+  out = fopen(zFile, "wb");
+  if( out==0 ) return;
+  z = (const char*)sqlite3_value_blob(argv[1]);
+  if( z==0 ){
+    n = 0;
+    rc = 0;
+  }else{
+    n = sqlite3_value_bytes(argv[1]);
+    rc = fwrite(z, 1, n, out);
+  }
+  fclose(out);
+  sqlite3_result_int64(context, rc);
+}
 
 /*
 ** Make sure the database is open.  If it is not, then open it.  If
@@ -1694,6 +1776,10 @@ static void open_db(struct callback_data *p, int keepAlive){
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
     sqlite3_enable_load_extension(p->db, 1);
 #endif
+    sqlite3_create_function(db, "readfile", 1, SQLITE_UTF8, 0,
+                            readfileFunc, 0, 0);
+    sqlite3_create_function(db, "writefile", 2, SQLITE_UTF8, 0,
+                            writefileFunc, 0, 0);
   }
 }
 
@@ -2846,23 +2932,24 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       p->mode = MODE_Html;
     }else if( c2=='t' && strncmp(azArg[1],"tcl",n2)==0 ){
       p->mode = MODE_Tcl;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, " ");
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Line);
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Space);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='c' && strncmp(azArg[1],"csv",n2)==0 ){
       p->mode = MODE_Csv;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, ",");
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Line);
+      sqlite3_snprintf(sizeof(p->newline), p->newline, SEP_CrLf);
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Comma);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='t' && strncmp(azArg[1],"tabs",n2)==0 ){
       p->mode = MODE_List;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, "\t");
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Line);
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Tab);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
     }else if( c2=='i' && strncmp(azArg[1],"insert",n2)==0 ){
       p->mode = MODE_Insert;
       set_table_name(p, nArg>=3 ? azArg[2] : "table");
     }else if( c2=='a' && strncmp(azArg[1],"ascii",n2)==0 ){
       p->mode = MODE_Ascii;
-      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Column);
-      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Row);
+      sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator, SEP_Unit);
+      sqlite3_snprintf(sizeof(p->rowSeparator), p->rowSeparator, SEP_Record);
     }else {
       fprintf(stderr,"Error: mode should be one of: "
          "ascii column csv html insert line list tabs tcl\n");
@@ -3155,12 +3242,17 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   }else
 
   if( c=='s' && strncmp(azArg[0], "separator", n)==0 ){
-    if( nArg==2 ){
+    if( nArg<2 || nArg>3 ){
+      fprintf(stderr, "Usage: .separator SEPARATOR ?NEWLINE?\n");
+      rc = 1;
+    }
+    if( nArg>=2 ){
       sqlite3_snprintf(sizeof(p->colSeparator), p->colSeparator,
                        "%.*s", (int)sizeof(p->colSeparator)-1, azArg[1]);
-    }else{
-      fprintf(stderr, "Usage: .separator STRING\n");
-      rc = 1;
+    }
+    if( nArg>=3 ){
+      sqlite3_snprintf(sizeof(p->newline), p->newline,
+                       "%.*s", (int)sizeof(p->newline)-1, azArg[2]);
     }
   }else
 
@@ -3205,6 +3297,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       fprintf(p->out, "\n");
     fprintf(p->out,"%12.12s: ", "rowseparator");
       output_c_string(p->out, p->rowSeparator);
+      fprintf(p->out, "\n");
+    fprintf(p->out,"%12.12s: ", "newline");
+      output_c_string(p->out, p->newline);
       fprintf(p->out, "\n");
     fprintf(p->out,"%12.12s: %s\n","stats", p->statsOn ? "on" : "off");
     fprintf(p->out,"%12.12s: ","width");
@@ -3823,6 +3918,7 @@ static const char zOptions[] =
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
+  "   -newline SEP         set newline character(s) for CSV\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
   "   -rowseparator SEP    set output line separator. Default: '\\n'\n"
   "   -separator SEP       set output field separator. Default: '|'\n"
@@ -3852,8 +3948,9 @@ static void usage(int showDetail){
 static void main_init(struct callback_data *data) {
   memset(data, 0, sizeof(*data));
   data->mode = MODE_List;
-  memcpy(data->colSeparator,"|", 2);
-  memcpy(data->rowSeparator,"\n", 2);
+  memcpy(data->colSeparator,SEP_Column, 2);
+  memcpy(data->rowSeparator,SEP_Row, 2);
+  memcpy(data->newline,SEP_CrLf, 3);
   data->showHeader = 0;
   sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
@@ -3946,6 +4043,7 @@ int main(int argc, char **argv){
     if( z[1]=='-' ) z++;
     if( strcmp(z,"-separator")==0
      || strcmp(z,"-nullvalue")==0
+     || strcmp(z,"-newline")==0
      || strcmp(z,"-cmd")==0
     ){
       (void)cmdline_option_value(argc, argv, ++i);
@@ -4055,14 +4153,17 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-ascii")==0 ){
       data.mode = MODE_Ascii;
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
-                       SEP_Column);
+                       SEP_Unit);
       sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
-                       SEP_Row);
+                       SEP_Record);
     }else if( strcmp(z,"-separator")==0 || strcmp(z,"-colseparator")==0 ){
       sqlite3_snprintf(sizeof(data.colSeparator), data.colSeparator,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-rowseparator")==0 ){
       sqlite3_snprintf(sizeof(data.rowSeparator), data.rowSeparator,
+                       "%s",cmdline_option_value(argc,argv,++i));
+    }else if( strcmp(z,"-newline")==0 ){
+      sqlite3_snprintf(sizeof(data.newline), data.newline,
                        "%s",cmdline_option_value(argc,argv,++i));
     }else if( strcmp(z,"-nullvalue")==0 ){
       sqlite3_snprintf(sizeof(data.nullvalue), data.nullvalue,
