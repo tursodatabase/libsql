@@ -300,7 +300,8 @@ int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **);
 void sqlite3Fts5StorageStmtRelease(Fts5Storage *p, int eStmt, sqlite3_stmt*);
 
 int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
-int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int iCol, int *pnAvg);
+int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnAvg);
+int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 
 
 /*
@@ -353,6 +354,8 @@ int sqlite3Fts5ExprInit(sqlite3*);
 int sqlite3Fts5ExprPhraseCount(Fts5Expr*);
 int sqlite3Fts5ExprPhraseSize(Fts5Expr*, int iPhrase);
 int sqlite3Fts5ExprPoslist(Fts5Expr*, int, const u8 **);
+
+int sqlite3Fts5ExprPhraseExpr(Fts5Config*, Fts5Expr*, int, Fts5Expr**);
 
 /*******************************************
 ** The fts5_expr.c API above this point is used by the other hand-written

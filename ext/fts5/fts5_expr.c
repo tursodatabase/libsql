@@ -227,6 +227,106 @@ int sqlite3Fts5ExprNew(
   return sParse.rc;
 }
 
+static char *fts5ExprStrdup(int *pRc, const char *zIn){
+  char *zRet = 0;
+  if( *pRc==SQLITE_OK ){
+    int nByte = strlen(zIn) + 1;
+    zRet = sqlite3_malloc(nByte);
+    if( zRet ){
+      memcpy(zRet, zIn, nByte);
+    }else{
+      *pRc = SQLITE_NOMEM;
+    }
+  }
+  return zRet;
+}
+
+static void *fts5ExprMalloc(int *pRc, int nByte){
+  void *pRet = 0;
+  if( *pRc==SQLITE_OK ){
+    pRet = sqlite3_malloc(nByte);
+    if( pRet ){
+      memset(pRet, 0, nByte);
+    }else{
+      *pRc = SQLITE_NOMEM;
+    }
+  }
+  return pRet;
+}
+
+/*
+** Create a new FTS5 expression by cloning phrase iPhrase of the
+** expression passed as the second argument.
+*/
+int sqlite3Fts5ExprPhraseExpr(
+  Fts5Config *pConfig,
+  Fts5Expr *pExpr, 
+  int iPhrase, 
+  Fts5Expr **ppNew
+){
+  int rc = SQLITE_OK;             /* Return code */
+  Fts5ExprPhrase *pOrig = 0;      /* The phrase extracted from pExpr */
+  int i;                          /* Used to iterate through phrase terms */
+
+  /* Components of the new expression object */
+  Fts5Expr *pNew;
+  Fts5ExprPhrase **apPhrase;
+  Fts5ExprNode *pNode;
+  Fts5ExprNearset *pNear;
+  Fts5ExprPhrase *pCopy;
+
+  pOrig = pExpr->apPhrase[iPhrase];
+  pNew = (Fts5Expr*)fts5ExprMalloc(&rc, sizeof(Fts5Expr));
+  apPhrase = (Fts5ExprPhrase**)fts5ExprMalloc(&rc, sizeof(Fts5ExprPhrase*));
+  pNode = (Fts5ExprNode*)fts5ExprMalloc(&rc, sizeof(Fts5ExprNode));
+  pNear = (Fts5ExprNearset*)fts5ExprMalloc(&rc, 
+      sizeof(Fts5ExprNearset) + sizeof(Fts5ExprPhrase*)
+  );
+  pCopy = (Fts5ExprPhrase*)fts5ExprMalloc(&rc, 
+      sizeof(Fts5ExprPhrase) + sizeof(Fts5ExprTerm) * pOrig->nTerm
+  );
+
+  for(i=0; rc==SQLITE_OK && i<pOrig->nTerm; i++){
+    pCopy->aTerm[i].zTerm = fts5ExprStrdup(&rc, pOrig->aTerm[i].zTerm);
+    pCopy->aTerm[i].bPrefix = pOrig->aTerm[i].bPrefix;
+  }
+
+  if( rc==SQLITE_OK ){
+    /* All the allocations succeeded. Put the expression object together. */
+    pNew->pIndex = pExpr->pIndex;
+    pNew->pRoot = pNode;
+    pNew->nPhrase = 1;
+    pNew->apPhrase = apPhrase;
+    pNew->apPhrase[0] = pCopy;
+
+    pNode->eType = FTS5_STRING;
+    pNode->pNear = pNear;
+
+    pNear->iCol = -1;
+    pNear->nPhrase = 1;
+    pNear->apPhrase[0] = pCopy;
+
+    pCopy->nTerm = pOrig->nTerm;
+    pCopy->pNode = pNode;
+  }else{
+    /* At least one allocation failed. Free them all. */
+    if( pCopy ){
+      for(i=0; i<pOrig->nTerm; i++){
+        sqlite3_free(pCopy->aTerm[i].zTerm);
+      }
+      sqlite3_free(pCopy);
+      sqlite3_free(pNear);
+      sqlite3_free(pNode);
+      sqlite3_free(apPhrase);
+      sqlite3_free(pNew);
+      pNew = 0;
+    }
+  }
+
+  *ppNew = pNew;
+  return rc;
+}
+
 /*
 ** Free the expression node object passed as the only argument.
 */

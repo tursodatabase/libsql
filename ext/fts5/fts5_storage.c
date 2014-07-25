@@ -705,15 +705,18 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol){
   return rc;
 }
 
-int sqlite3Fts5StorageAvgsize(Fts5Storage *p, int iCol, int *pnAvg){
+int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnToken){
   int rc = fts5StorageLoadTotals(p);
   if( rc==SQLITE_OK ){
-    int nAvg = 1;
-    if( p->nTotalRow ){
-      nAvg = (int)((p->aTotalSize[iCol] + (p->nTotalRow/2)) / p->nTotalRow);
-      if( nAvg<1 ) nAvg = 1;
-      *pnAvg = nAvg;
-    }
+    *pnToken = p->aTotalSize[iCol];
+  }
+  return rc;
+}
+
+int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow){
+  int rc = fts5StorageLoadTotals(p);
+  if( rc==SQLITE_OK ){
+    *pnRow = p->nTotalRow;
   }
   return rc;
 }

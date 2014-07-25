@@ -19,6 +19,7 @@ typedef struct Fts5Table Fts5Table;
 typedef struct Fts5Cursor Fts5Cursor;
 typedef struct Fts5Global Fts5Global;
 typedef struct Fts5Auxiliary Fts5Auxiliary;
+typedef struct Fts5Auxdata Fts5Auxdata;
 
 /*
 ** A single object of this type is allocated when the FTS5 module is 
@@ -75,7 +76,8 @@ struct Fts5Cursor {
 
   /* Variables used by auxiliary functions */
   i64 iCsrId;                     /* Cursor id */
-  Fts5Auxiliary *pAux;            /* Currently executing function */
+  Fts5Auxiliary *pAux;            /* Currently executing extension function */
+  Fts5Auxdata *pAuxdata;          /* First in linked list of aux-data */
   int *aColumnSize;               /* Values for xColumnSize() */
 };
 
@@ -92,6 +94,13 @@ struct Fts5Cursor {
 #define CsrFlagSet(pCsr, flag)   ((pCsr)->csrflags |= (flag))
 #define CsrFlagClear(pCsr, flag) ((pCsr)->csrflags &= ~(flag))
 #define CsrFlagTest(pCsr, flag)  ((pCsr)->csrflags & (flag))
+
+struct Fts5Auxdata {
+  Fts5Auxiliary *pAux;            /* Extension to which this belongs */
+  void *pPtr;                     /* Pointer value */
+  void(*xDelete)(void*);          /* Destructor */
+  Fts5Auxdata *pNext;             /* Next object in linked list */
+};
 
 /*
 ** Close a virtual table handle opened by fts5InitVtab(). If the bDestroy
@@ -325,11 +334,20 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
   Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
   Fts5Cursor **pp;
+  Fts5Auxdata *pData;
+  Fts5Auxdata *pNext;
+
   if( pCsr->pStmt ){
     int eStmt = fts5StmtType(pCsr->idxNum);
     sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
   }
   sqlite3Fts5ExprFree(pCsr->pExpr);
+
+  for(pData=pCsr->pAuxdata; pData; pData=pNext){
+    pNext = pData->pNext;
+    if( pData->xDelete ) pData->xDelete(pData->pPtr);
+    sqlite3_free(pData);
+  }
 
   /* Remove the cursor from the Fts5Global.pCsr list */
   for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
@@ -372,6 +390,16 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   return rc;
 }
 
+static int fts5CursorFirst(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
+  int rc;
+  rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, bAsc);
+  if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
+    CsrFlagSet(pCsr, FTS5CSR_EOF);
+  }
+  CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+  return rc;
+}
+
 /*
 ** This is the xFilter interface for the virtual table.  See
 ** the virtual table xFilter method documentation for additional
@@ -403,11 +431,7 @@ static int fts5FilterMethod(
       const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
       rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
       if( rc==SQLITE_OK ){
-        rc = sqlite3Fts5ExprFirst(pCsr->pExpr, pTab->pIndex, bAsc);
-        if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
-          CsrFlagSet(pCsr, FTS5CSR_EOF);
-        }
-        CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+        rc = fts5CursorFirst(pTab, pCsr, bAsc);
       }
     }else{
       if( ePlan==FTS5_PLAN_ROWID ){
@@ -618,10 +642,20 @@ static int fts5ApiColumnCount(Fts5Context *pCtx){
   return ((Fts5Table*)(pCsr->base.pVtab))->pConfig->nCol;
 }
 
-static int fts5ApiColumnAvgSize(Fts5Context *pCtx, int iCol, int *pnToken){
+static int fts5ApiColumnTotalSize(
+  Fts5Context *pCtx, 
+  int iCol, 
+  sqlite3_int64 *pnToken
+){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
-  return sqlite3Fts5StorageAvgsize(pTab->pStorage, iCol, pnToken);
+  return sqlite3Fts5StorageSize(pTab->pStorage, iCol, pnToken);
+}
+
+static int fts5ApiRowCount(Fts5Context *pCtx, i64 *pnRow){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  return sqlite3Fts5StorageRowCount(pTab->pStorage, pnRow);
 }
 
 static int fts5ApiTokenize(
@@ -694,24 +728,123 @@ static int fts5ApiPoslist(
   return sqlite3Fts5PoslistNext64(a, n, pi, piPos);
 }
 
+static int fts5ApiSetAuxdata(
+  Fts5Context *pCtx,              /* Fts5 context */
+  void *pPtr,                     /* Pointer to save as auxdata */
+  void(*xDelete)(void*)           /* Destructor for pPtr (or NULL) */
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Auxdata *pData;
+
+  for(pData=pCsr->pAuxdata; pData; pData=pData->pNext){
+    if( pData->pAux==pCsr->pAux ) break;
+  }
+
+  if( pData ){
+    if( pData->xDelete ){
+      pData->xDelete(pData->pPtr);
+    }
+  }else{
+    pData = (Fts5Auxdata*)sqlite3_malloc(sizeof(Fts5Auxdata));
+    if( pData==0 ) return SQLITE_NOMEM;
+    memset(pData, 0, sizeof(Fts5Auxdata));
+    pData->pAux = pCsr->pAux;
+    pData->pNext = pCsr->pAuxdata;
+    pCsr->pAuxdata = pData;
+  }
+
+  pData->xDelete = xDelete;
+  pData->pPtr = pPtr;
+  return SQLITE_OK;
+}
+
+static void *fts5ApiGetAuxdata(Fts5Context *pCtx, int bClear){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Auxdata *pData;
+  void *pRet = 0;
+
+  for(pData=pCsr->pAuxdata; pData; pData=pData->pNext){
+    if( pData->pAux==pCsr->pAux ) break;
+  }
+
+  if( pData ){
+    pRet = pData->pPtr;
+    if( bClear ){
+      pData->pPtr = 0;
+      pData->xDelete = 0;
+    }
+  }
+
+  return pRet;
+}
+
+static int fts5ApiQueryPhrase(Fts5Context*, int, void*, 
+    int(*)(const Fts5ExtensionApi*, Fts5Context*, void*)
+);
+
+static const Fts5ExtensionApi sFts5Api = {
+  1,                            /* iVersion */
+  fts5ApiUserData,
+  fts5ApiColumnCount,
+  fts5ApiRowCount,
+  fts5ApiColumnTotalSize,
+  fts5ApiTokenize,
+  fts5ApiPhraseCount,
+  fts5ApiPhraseSize,
+  fts5ApiRowid,
+  fts5ApiColumnText,
+  fts5ApiColumnSize,
+  fts5ApiPoslist,
+  fts5ApiQueryPhrase,
+  fts5ApiSetAuxdata,
+  fts5ApiGetAuxdata,
+};
+
+
+/*
+** Implementation of API function xQueryPhrase().
+*/
+static int fts5ApiQueryPhrase(
+  Fts5Context *pCtx, 
+  int iPhrase, 
+  void *pUserData,
+  int(*xCallback)(const Fts5ExtensionApi*, Fts5Context*, void*)
+){
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
+  Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+  int rc;
+  Fts5Cursor *pNew = 0;
+
+  rc = fts5OpenMethod(pCsr->base.pVtab, (sqlite3_vtab_cursor**)&pNew);
+  if( rc==SQLITE_OK ){
+    Fts5Config *pConf = pTab->pConfig;
+    pNew->idxNum = FTS5_PLAN_MATCH;
+    pNew->base.pVtab = (sqlite3_vtab*)pTab;
+    rc = sqlite3Fts5ExprPhraseExpr(pConf, pCsr->pExpr, iPhrase, &pNew->pExpr);
+  }
+
+  if( rc==SQLITE_OK ){
+    for(rc = fts5CursorFirst(pTab, pNew, 0);
+        rc==SQLITE_OK && CsrFlagTest(pNew, FTS5CSR_EOF)==0;
+        rc = fts5NextMethod((sqlite3_vtab_cursor*)pNew)
+    ){
+      rc = xCallback(&sFts5Api, (Fts5Context*)pNew, pUserData);
+      if( rc!=SQLITE_OK ){
+        if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+        break;
+      }
+    }
+  }
+
+  fts5CloseMethod((sqlite3_vtab_cursor*)pNew);
+  return rc;
+}
+
 static void fts5ApiCallback(
   sqlite3_context *context,
   int argc,
   sqlite3_value **argv
 ){
-  static const Fts5ExtensionApi sApi = {
-    1,                            /* iVersion */
-    fts5ApiUserData,
-    fts5ApiColumnCount,
-    fts5ApiColumnAvgSize,
-    fts5ApiTokenize,
-    fts5ApiPhraseCount,
-    fts5ApiPhraseSize,
-    fts5ApiRowid,
-    fts5ApiColumnText,
-    fts5ApiColumnSize,
-    fts5ApiPoslist,
-  };
 
   Fts5Auxiliary *pAux;
   Fts5Cursor *pCsr;
@@ -730,7 +863,7 @@ static void fts5ApiCallback(
   }else{
     assert( pCsr->pAux==0 );
     pCsr->pAux = pAux;
-    pAux->xFunc(&sApi, (Fts5Context*)pCsr, context, argc-1, &argv[1]);
+    pAux->xFunc(&sFts5Api, (Fts5Context*)pCsr, context, argc-1, &argv[1]);
     pCsr->pAux = 0;
   }
 }

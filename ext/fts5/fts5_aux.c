@@ -12,6 +12,7 @@
 */
 
 #include "fts5Int.h"
+#include <math.h>
 
 typedef struct SnippetPhrase SnippetPhrase;
 typedef struct SnippetIter SnippetIter;
@@ -267,7 +268,6 @@ static int fts5SnippetText(
 
     int iPrint;
     int iMatchto;
-    int iBit0;
     int iLast;
 
     int *aiStart = ctx.aiStart - ctx.iFirst;
@@ -367,7 +367,6 @@ static void fts5SnippetFunction(
   const char *zEllip = "<b>...</b>";
   int nToken = -15;
   int nAbs;
-  int nFrag;                      /* Number of fragments to return */
   int rc;
   SnippetIter *pIter = 0;
 
@@ -384,8 +383,6 @@ static void fts5SnippetFunction(
   if( rc==SQLITE_OK ){
     Fts5Buffer buf;               /* Result buffer */
     int nBestScore = 0;           /* Score of best snippet found */
-    int n;                        /* Size of column snippet is from in bytes */
-    int i;                        /* Used to iterate through phrases */
 
     for(fts5SnippetIterFirst(pIter); 
         pIter->iLast>=0; 
@@ -414,6 +411,93 @@ static void fts5SnippetFunction(
   }
 }
 
+typedef struct Fts5GatherCtx Fts5GatherCtx;
+struct Fts5GatherCtx {
+  int nCol;
+  int iPhrase;
+  int *anVal;
+};
+
+static int fts5GatherCallback(
+  const Fts5ExtensionApi *pApi, 
+  Fts5Context *pFts,
+  void *pUserData
+){
+  Fts5GatherCtx *p = (Fts5GatherCtx*)pUserData;
+  int i = 0;
+  int iPrev = -1;
+  i64 iPos = 0;
+
+  while( 0==pApi->xPoslist(pFts, 0, &i, &iPos) ){
+    int iCol = FTS5_POS2COLUMN(iPos);
+    if( iCol!=iPrev ){
+      p->anVal[p->iPhrase * p->nCol + iCol]++;
+      iPrev = iCol;
+    }
+  }
+
+  return SQLITE_OK;
+}
+
+/*
+** This function returns a pointer to an array of integers containing entries
+** indicating the number of rows in the table for which each phrase features 
+** at least once in each column.
+**
+** If nCol is the number of matchable columns in the table, and nPhrase is
+** the number of phrases in the query, the array contains a total of
+** (nPhrase*nCol) entries.
+**
+** For phrase iPhrase and column iCol:
+**
+**   anVal[iPhrase * nCol + iCol]
+**
+** is set to the number of rows in the table for which column iCol contains 
+** at least one instance of phrase iPhrase.
+*/
+static int fts5GatherTotals(
+  const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
+  Fts5Context *pFts,              /* First arg to pass to pApi functions */
+  int **panVal
+){
+  int rc = SQLITE_OK;
+  int *anVal = 0;
+  int i;                          /* For iterating through expression phrases */
+  int nPhrase = pApi->xPhraseCount(pFts);
+  int nCol = pApi->xColumnCount(pFts);
+  int nByte = nCol * nPhrase * sizeof(int);
+  Fts5GatherCtx sCtx;
+
+  sCtx.nCol = nCol;
+  anVal = sCtx.anVal = (int*)sqlite3_malloc(nByte);
+  if( anVal==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    memset(anVal, 0, nByte);
+  }
+
+  for(i=0; i<nPhrase && rc==SQLITE_OK; i++){
+    sCtx.iPhrase = i;
+    rc = pApi->xQueryPhrase(pFts, i, (void*)&sCtx, fts5GatherCallback);
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(anVal);
+    anVal = 0;
+  }
+
+  *panVal = anVal;
+  return rc;
+}
+
+typedef struct Fts5Bm25Context Fts5Bm25Context;
+struct Fts5Bm25Context {
+  int nPhrase;
+  int nCol;
+  double *aIDF;                   /* Array of IDF values */
+  double *aAvg;                   /* Average size of each column in tokens */
+};
+
 static void fts5Bm25Function(
   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   Fts5Context *pFts,              /* First arg to pass to pApi functions */
@@ -421,7 +505,99 @@ static void fts5Bm25Function(
   int nVal,                       /* Number of values in apVal[] array */
   sqlite3_value **apVal           /* Array of trailing arguments */
 ){
-  assert( 0 );
+  const double k1 = 1.2;
+  const double B = 0.75;
+
+  int rc = SQLITE_OK;
+  Fts5Bm25Context *p;
+
+  p = pApi->xGetAuxdata(pFts, 0);
+  if( p==0 ){
+    int *anVal = 0;
+    int ic;                       /* For iterating through columns */
+    int ip;                       /* For iterating through phrases */
+    i64 nRow;                     /* Total number of rows in table */
+    int nPhrase = pApi->xPhraseCount(pFts);
+    int nCol = pApi->xColumnCount(pFts);
+    int nByte = sizeof(Fts5Bm25Context) 
+              + sizeof(double) * nPhrase * nCol       /* aIDF[] */
+              + sizeof(double) * nCol;                /* aAvg[] */
+
+    p = (Fts5Bm25Context*)sqlite3_malloc(nByte);
+    if( p==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(p, 0, nByte);
+      p->aAvg = (double*)&p[1];
+      p->aIDF = (double*)&p->aAvg[nCol];
+    }
+
+    if( rc==SQLITE_OK ){
+      rc = pApi->xRowCount(pFts, &nRow); 
+      assert( nRow>0 || rc!=SQLITE_OK );
+    }
+
+    for(ic=0; rc==SQLITE_OK && ic<nCol; ic++){
+      i64 nToken = 0;
+      rc = pApi->xColumnTotalSize(pFts, ic, &nToken);
+      p->aAvg[ic] = (double)nToken / (double)nRow;
+    }
+
+    if( rc==SQLITE_OK ){
+      rc = fts5GatherTotals(pApi, pFts, &anVal);
+    }
+    for(ic=0; ic<nCol; ic++){
+      for(ip=0; rc==SQLITE_OK && ip<nPhrase; ip++){
+        int idx = ip * nCol + ic;
+        p->aIDF[idx] = log( (0.5 + nRow - anVal[idx]) / (0.5 + anVal[idx]) );
+        if( p->aIDF[idx]<0.0 ) p->aIDF[idx] = 0.0;
+      }
+    }
+
+    sqlite3_free(anVal);
+    if( rc==SQLITE_OK ){
+      rc = pApi->xSetAuxdata(pFts, p, sqlite3_free);
+    }
+    if( rc!=SQLITE_OK ){
+      sqlite3_free(p);
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    int ip;
+    double score = 0.0;
+
+    for(ip=0; rc==SQLITE_OK && ip<p->nPhrase; ip++){
+      int iPrev = 0;
+      int nHit = 0;
+      int i = 0;
+      i64 iPos = 0;
+
+      while( rc==SQLITE_OK && 0==pApi->xPoslist(pFts, ip, &i, &iPos) ){
+        int iCol = FTS5_POS2COLUMN(iPos);
+        if( iCol!=iPrev && nHit>0 ){
+          int sz = 0;
+          int idx = ip * p->nCol + iPrev;
+          rc = pApi->xColumnSize(pFts, iPrev, &sz);
+
+          score += p->aIDF[idx] * nHit * (k1+1.0) / 
+                  (nHit + k1 * (1.0 - B + B * sz / p->aAvg[iCol]));
+          nHit = 0;
+        }
+        nHit++;
+        iPrev = iCol;
+      }
+    }
+    
+    if( rc==SQLITE_OK ){
+      sqlite3_result_double(pCtx, score);
+    }
+
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_result_error_code(pCtx, rc);
+  }
 }
 
 static int fts5TestCallback(
@@ -465,13 +641,13 @@ static void fts5TestFunction(
   nCol = pApi->xColumnCount(pFts);
 
   if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columnavgsize ");
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columntotalsize ");
   }
-  if( 0==zReq || 0==sqlite3_stricmp(zReq, "columnavgsize") ){
+  if( 0==zReq || 0==sqlite3_stricmp(zReq, "columntotalsize") ){
     if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "{");
     for(i=0; rc==SQLITE_OK && i<nCol; i++){
-      int colsz = 0;
-      rc = pApi->xColumnAvgSize(pFts, i, &colsz);
+      i64 colsz = 0;
+      rc = pApi->xColumnTotalSize(pFts, i, &colsz);
       sqlite3Fts5BufferAppendPrintf(&rc, &s, "%s%d", i==0?"":" ", colsz);
     }
     if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "}");
@@ -580,7 +756,44 @@ static void fts5TestFunction(
   }
 
   if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " rowid ");
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, " queryphrase ");
+  }
+  if( 0==zReq || 0==sqlite3_stricmp(zReq, "queryphrase") ){
+    int ic, ip;
+    int *anVal = 0;
+    Fts5Buffer buf1;
+    memset(&buf1, 0, sizeof(Fts5Buffer));
+
+    if( rc==SQLITE_OK ){
+      anVal = (int*)pApi->xGetAuxdata(pFts, 0);
+      if( anVal==0 ){
+        rc = fts5GatherTotals(pApi, pFts, &anVal);
+        if( rc==SQLITE_OK ){
+          rc = pApi->xSetAuxdata(pFts, (void*)anVal, sqlite3_free);
+        }
+      }
+    }
+
+    for(ip=0; rc==SQLITE_OK && ip<nPhrase; ip++){
+      if( ip>0 ) sqlite3Fts5BufferAppendString(&rc, &buf1, " ");
+      if( nCol>1 ) sqlite3Fts5BufferAppendString(&rc, &buf1, "{");
+      for(ic=0; ic<nCol; ic++){
+        int iVal = anVal[ip * nCol + ic];
+        sqlite3Fts5BufferAppendPrintf(&rc, &buf1, "%s%d", ic==0?"":" ", iVal);
+      }
+      if( nCol>1 ) sqlite3Fts5BufferAppendString(&rc, &buf1, "}");
+    }
+
+    if( zReq==0 ){
+      sqlite3Fts5BufferAppendListElem(&rc, &s, (const char*)buf1.p, buf1.n);
+    }else{
+      sqlite3Fts5BufferAppendString(&rc, &s, (const char*)buf1.p);
+    }
+    sqlite3_free(buf1.p);
+  }
+
+  if( zReq==0 ){
+    sqlite3Fts5BufferAppendString(&rc, &s, " rowid ");
   }
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "rowid") ){
     iRowid = pApi->xRowid(pFts);
@@ -588,7 +801,16 @@ static void fts5TestFunction(
   }
 
   if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " tokenize ");
+    sqlite3Fts5BufferAppendString(&rc, &s, " rowcount ");
+  }
+  if( 0==zReq || 0==sqlite3_stricmp(zReq, "rowcount") ){
+    i64 nRow;
+    rc = pApi->xRowCount(pFts, &nRow);
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, "%lld", nRow);
+  }
+
+  if( zReq==0 ){
+    sqlite3Fts5BufferAppendString(&rc, &s, " tokenize ");
   }
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "tokenize") ){
     Fts5Buffer buf;
@@ -629,8 +851,9 @@ int sqlite3Fts5AuxInit(Fts5Global *pGlobal){
     fts5_extension_function xFunc;/* Callback function */
     void (*xDestroy)(void*);      /* Destructor function */
   } aBuiltin [] = {
-    { "snippet", 0, fts5SnippetFunction, 0 },
-    { "fts5_test", 0, fts5TestFunction, 0 },
+    { "bm25",      0, fts5Bm25Function,    0 },
+    { "snippet",   0, fts5SnippetFunction, 0 },
+    { "fts5_test", 0, fts5TestFunction,    0 },
   };
 
   int rc = SQLITE_OK;             /* Return code */

@@ -30,6 +30,25 @@ do_execsql_test 1.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x, y);
 }
 
+proc do_snippet_test {tn doc match res} {
+
+  uplevel #0 [list set v1 $doc]
+  uplevel #0 [list set v2 $match]
+
+  do_execsql_test $tn.1 {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES($v1, NULL);
+    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2;
+  } [list $res]
+
+  do_execsql_test $tn.2 {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(NULL, $v1);
+    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH $v2;
+  } [list $res]
+
+}
+
 
 foreach {tn doc res} {
 
@@ -82,17 +101,7 @@ foreach {tn doc res} {
   7.5 {o o o o X o o X o} {...o o [X] o o [X] o}
   7.6 {o o o o o X o o X} {...o o o [X] o o [X]}
 } {
-  do_execsql_test 1.$tn.1 {
-    DELETE FROM t1;
-    INSERT INTO t1 VALUES($doc, NULL);
-    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH 'X';
-  } [list $res]
-
-  do_execsql_test 1.$tn.2 {
-    DELETE FROM t1;
-    INSERT INTO t1 VALUES(NULL, $doc);
-    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH 'X';
-  } [list $res]
+  do_snippet_test 1.$tn $doc X $res
 }
 
 foreach {tn doc res} {
@@ -121,17 +130,7 @@ foreach {tn doc res} {
   3.8 {o o o o o o o X Y} {...o o o o o [X Y]}
 
 } {
-  do_execsql_test 2.$tn.1 {
-    DELETE FROM t1;
-    INSERT INTO t1 VALUES($doc, NULL);
-    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH 'X+Y';
-  } [list $res]
-
-  do_execsql_test 2.$tn.2 {
-    DELETE FROM t1;
-    INSERT INTO t1 VALUES(NULL, $doc);
-    SELECT snippet(t1, '[', ']', '...', 7) FROM t1 WHERE t1 MATCH 'X+Y';
-  } [list $res]
+  do_snippet_test 1.$tn $doc "X + Y" $res
 }
 
 finish_test

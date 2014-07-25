@@ -157,22 +157,22 @@ do_execsql_test 5.2 {
 }
 
 do_execsql_test 5.3 {
-  SELECT rowid, fts5_test(t5, 'columnavgsize') FROM t5 WHERE t5 MATCH 'a'
+  SELECT rowid, fts5_test(t5, 'columntotalsize') FROM t5 WHERE t5 MATCH 'a'
   ORDER BY rowid DESC;
 } {
-  3 {2 2}
-  2 {2 2}
-  1 {2 2}
+  3 {5 7}
+  2 {5 7}
+  1 {5 7}
 }
 
 do_execsql_test 5.4 {
   INSERT INTO t5 VALUES('x y z', 'v w x y z');
-  SELECT rowid, fts5_test(t5, 'columnavgsize') FROM t5 WHERE t5 MATCH 'a'
+  SELECT rowid, fts5_test(t5, 'columntotalsize') FROM t5 WHERE t5 MATCH 'a'
   ORDER BY rowid DESC;
 } {
-  3 {2 3}
-  2 {2 3}
-  1 {2 3}
+  3 {8 12}
+  2 {8 12}
+  1 {8 12}
 }
 
 #-------------------------------------------------------------------------
@@ -191,6 +191,45 @@ do_execsql_test 6.2 {
   2 {{horatio than are} {dreamt of in your philosophy}}
   1 {{there are more} {things in heaven and earth}}
 }
+
+#-------------------------------------------------------------------------
+# Test the xQueryPhrase() API
+#
+reset_db
+do_execsql_test 7.1 {
+  CREATE VIRTUAL TABLE t7 USING fts5(x, y);
+}
+do_test 7.2 {
+  foreach {x y} {
+    {q i b w s a a e l o} {i b z a l f p t e u}
+    {b a z t a l o x d i} {b p a d b f h d w y}
+    {z m h n p p u i e g} {v h d v b x j j c z}
+    {a g i m v a u c b i} {p k s o t l r t b m}
+    {v v c j o d a s c p} {f f v o k p o f o g}
+  } {
+    execsql {INSERT INTO t7 VALUES($x, $y)}
+  }
+  execsql { SELECT count(*) FROM t7 }
+} {5}
+
+foreach {tn q res} {
+  1 a {{4 2}}
+  2 b {{3 4}}
+  3 c {{2 1}}
+  4 d {{2 2}}
+  5 {a AND b} {{4 2} {3 4}}
+  6 {a OR b OR c OR d} {{4 2} {3 4} {2 1} {2 2}}
+} {
+  do_execsql_test 7.3.$tn { 
+    SELECT fts5_test(t7, 'queryphrase') FROM t7 WHERE t7 MATCH $q LIMIT 1
+  } [list $res]
+}
+
+do_execsql_test 7.4 {
+  SELECT fts5_test(t7, 'rowcount') FROM t7 WHERE t7 MATCH 'a';
+} {5 5 5 5}
+
+
 
 finish_test
 
