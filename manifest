@@ -1,5 +1,5 @@
-C Improve\sthe\sperformance\sof\sthe\sANALYZE\scommand\sby\staking\sadvantage\sof\nUNIQUE\sconstraints\son\sindices.
-D 2014-07-24T23:23:26.687
+C Add\sconstraints\s(enforced\sonly\swhen\sSQLITE_DEBUG\sis\senabled)\son\sthe\suse\sof\nOP_Next\sand\sOP_Prev.
+D 2014-07-25T18:01:06.435
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,9 +283,9 @@ F src/update.c 01564b3c430f6c7b0a35afaf7aba7987206fa3a5
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c fa74c6563486022920db4d73897bd9b837c7441d
+F src/vdbe.c c6a9094a56b3dd4769243051a512f89763af7de5
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
-F src/vdbeInt.h f41a7cf5a40e7abd994d5fe3a04589ae3e1154e7
+F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 24e40422382beb774daab11fe9fe9d37e8a04949
 F src/vdbeaux.c 1ffe0bbc3a2c8aedd95622de9be6b6d07b3d3c6b
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
@@ -1184,8 +1184,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6aea2258dd7d3967900cefe4cd0af48a7ee7e169 85e2badeeb7f7599eb6fd35512f9bd524f0b1b3f
-R ac28d1873bd62cdf71787453262a0966
-T +closed 85e2badeeb7f7599eb6fd35512f9bd524f0b1b3f
+P 114dcf33670fd98a1ebbac0e44f66b2d8bcccddf
+R f27032fe9d592a52e4ec63c28d270176
 U drh
-Z 72b5de0db489041a156923cd906bfefb
+Z 96714d48e7c72e5d439e8f51e5a0d88e

@@ -3481,7 +3481,7 @@ case OP_Close: {
   break;
 }
 
-/* Opcode: SeekGe P1 P2 P3 P4 *
+/* Opcode: SeekGE P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
@@ -3493,9 +3493,13 @@ case OP_Close: {
 ** is greater than or equal to the key value. If there are no records 
 ** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
+** This opcode leaves the cursor configured to move in forward order,
+** from the begining toward the end.  In other words, the cursor is
+** configured to use OP_Next, not OP_Prev.
+**
 ** See also: Found, NotFound, SeekLt, SeekGt, SeekLe
 */
-/* Opcode: SeekGt P1 P2 P3 P4 *
+/* Opcode: SeekGT P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
@@ -3507,9 +3511,13 @@ case OP_Close: {
 ** is greater than the key value. If there are no records greater than 
 ** the key and P2 is not zero, then jump to P2.
 **
+** This opcode leaves the cursor configured to move in forward order,
+** from the begining toward the end.  In other words, the cursor is
+** configured to use OP_Next, not OP_Prev.
+**
 ** See also: Found, NotFound, SeekLt, SeekGe, SeekLe
 */
-/* Opcode: SeekLt P1 P2 P3 P4 * 
+/* Opcode: SeekLT P1 P2 P3 P4 * 
 ** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
@@ -3521,9 +3529,13 @@ case OP_Close: {
 ** is less than the key value. If there are no records less than 
 ** the key and P2 is not zero, then jump to P2.
 **
+** This opcode leaves the cursor configured to move in reverse order,
+** from the end toward the beginning.  In other words, the cursor is
+** configured to use OP_Prev, not OP_Next.
+**
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLe
 */
-/* Opcode: SeekLe P1 P2 P3 P4 *
+/* Opcode: SeekLE P1 P2 P3 P4 *
 ** Synopsis: key=r[P3@P4]
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
@@ -3534,6 +3546,10 @@ case OP_Close: {
 ** Reposition cursor P1 so that it points to the largest entry that 
 ** is less than or equal to the key value. If there are no records 
 ** less than or equal to the key and P2 is not zero, then jump to P2.
+**
+** This opcode leaves the cursor configured to move in reverse order,
+** from the end toward the beginning.  In other words, the cursor is
+** configured to use OP_Prev, not OP_Next.
 **
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
@@ -3560,6 +3576,9 @@ case OP_SeekGT: {       /* jump, in3 */
   assert( pC->pCursor!=0 );
   oc = pOp->opcode;
   pC->nullRow = 0;
+#ifdef SQLITE_DEBUG
+  pC->seekOp = pOp->opcode;
+#endif
   if( pC->isTable ){
     /* The input value in P3 might be of any type: integer, real, string,
     ** blob, or NULL.  But it needs to be an integer before we can do
@@ -3715,6 +3734,10 @@ case OP_Seek: {    /* in2 */
 ** is a prefix of any entry in P1 then a jump is made to P2 and
 ** P1 is left pointing at the matching entry.
 **
+** This operation leaves the cursor in a state where it cannot be
+** advanced in either direction.  In other words, the Next and Prev
+** opcodes do not work after this operation.
+**
 ** See also: NotFound, NoConflict, NotExists. SeekGe
 */
 /* Opcode: NotFound P1 P2 P3 P4 *
@@ -3729,6 +3752,10 @@ case OP_Seek: {    /* in2 */
 ** does contain an entry whose prefix matches the P3/P4 record then control
 ** falls through to the next instruction and P1 is left pointing at the
 ** matching entry.
+**
+** This operation leaves the cursor in a state where it cannot be
+** advanced in either direction.  In other words, the Next and Prev
+** opcodes do not work after this operation.
 **
 ** See also: Found, NotExists, NoConflict
 */
@@ -3748,6 +3775,10 @@ case OP_Seek: {    /* in2 */
 **
 ** This opcode is similar to OP_NotFound with the exceptions that the
 ** branch is always taken if any part of the search key input is NULL.
+**
+** This operation leaves the cursor in a state where it cannot be
+** advanced in either direction.  In other words, the Next and Prev
+** opcodes do not work after this operation.
 **
 ** See also: NotFound, Found, NotExists
 */
@@ -3771,6 +3802,9 @@ case OP_Found: {        /* jump, in3 */
   assert( pOp->p4type==P4_INT32 );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+#ifdef SQLITE_DEBUG
+  pC->seekOp = 0;
+#endif
   pIn3 = &aMem[pOp->p3];
   assert( pC->pCursor!=0 );
   assert( pC->isTable==0 );
@@ -3842,6 +3876,10 @@ case OP_Found: {        /* jump, in3 */
 ** The OP_NotFound opcode performs the same operation on index btrees
 ** (with arbitrary multi-value keys).
 **
+** This opcode leaves the cursor in a state where it cannot be advanced
+** in either direction.  In other words, the Next and Prev opcodes will
+** not work following this opcode.
+**
 ** See also: Found, NotFound, NoConflict
 */
 case OP_NotExists: {        /* jump, in3 */
@@ -3855,6 +3893,9 @@ case OP_NotExists: {        /* jump, in3 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+#ifdef SQLITE_DEBUG
+  pC->seekOp = 0;
+#endif
   assert( pC->isTable );
   assert( pC->pseudoTableReg==0 );
   pCrsr = pC->pCursor;
@@ -4421,11 +4462,15 @@ case OP_NullRow: {
 
 /* Opcode: Last P1 P2 * * *
 **
-** The next use of the Rowid or Column or Next instruction for P1 
+** The next use of the Rowid or Column or Prev instruction for P1 
 ** will refer to the last entry in the database table or index.
 ** If the table or index is empty and P2>0, then jump immediately to P2.
 ** If P2 is 0 or if the table or index is not empty, fall through
 ** to the following instruction.
+**
+** This opcode leaves the cursor configured to move in reverse order,
+** from the end toward the beginning.  In other words, the cursor is
+** configured to use OP_Prev, not OP_Next.
 */
 case OP_Last: {        /* jump */
   VdbeCursor *pC;
@@ -4443,6 +4488,9 @@ case OP_Last: {        /* jump */
   pC->deferredMoveto = 0;
   pC->rowidIsValid = 0;
   pC->cacheStatus = CACHE_STALE;
+#ifdef SQLITE_DEBUG
+  pC->seekOp = OP_Last;
+#endif
   if( pOp->p2>0 ){
     VdbeBranchTaken(res!=0,2);
     if( res ) pc = pOp->p2 - 1;
@@ -4479,6 +4527,10 @@ case OP_Sort: {        /* jump */
 ** If the table or index is empty and P2>0, then jump immediately to P2.
 ** If P2 is 0 or if the table or index is not empty, fall through
 ** to the following instruction.
+**
+** This opcode leaves the cursor configured to move in forward order,
+** from the begining toward the end.  In other words, the cursor is
+** configured to use OP_Next, not OP_Prev.
 */
 case OP_Rewind: {        /* jump */
   VdbeCursor *pC;
@@ -4490,6 +4542,9 @@ case OP_Rewind: {        /* jump */
   assert( pC!=0 );
   assert( isSorter(pC)==(pOp->opcode==OP_SorterSort) );
   res = 1;
+#ifdef SQLITE_DEBUG
+  pC->seekOp = OP_Rewind;
+#endif
   if( isSorter(pC) ){
     rc = sqlite3VdbeSorterRewind(db, pC, &res);
   }else{
@@ -4515,6 +4570,10 @@ case OP_Rewind: {        /* jump */
 ** table or index.  If there are no more key/value pairs then fall through
 ** to the following instruction.  But if the cursor advance was successful,
 ** jump immediately to P2.
+**
+** The OP_Next opcode is only valid following an OP_SeekGT, OP_SeekGE, or
+** OP_Rewind opcode used to position the cursor.  OP_Next is not allowed
+** to follow OP_SeekLT, OP_SeekLE, or OP_Last.
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.  P1 must have
 ** been opened prior to this opcode or the program will segfault.
@@ -4543,6 +4602,11 @@ case OP_Rewind: {        /* jump */
 ** table or index.  If there is no previous key/value pairs then fall through
 ** to the following instruction.  But if the cursor backup was successful,
 ** jump immediately to P2.
+**
+**
+** The OP_Prev opcode is only valid following an OP_SeekLT, OP_SeekLE, or
+** OP_Last opcode used to position the cursor.  OP_Prev is not allowed
+** to follow OP_SeekGT, OP_SeekGE, or OP_Rewind.
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.  If P1 is
 ** not open then the behavior is undefined.
@@ -4591,6 +4655,16 @@ case OP_Next:          /* jump */
   assert( pOp->opcode!=OP_Prev || pOp->p4.xAdvance==sqlite3BtreePrevious );
   assert( pOp->opcode!=OP_NextIfOpen || pOp->p4.xAdvance==sqlite3BtreeNext );
   assert( pOp->opcode!=OP_PrevIfOpen || pOp->p4.xAdvance==sqlite3BtreePrevious);
+
+  /* The Next opcode is only used after SeekGT, SeekGE, and Rewind.
+  ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
+  assert( pOp->opcode!=OP_Next || pOp->opcode!=OP_NextIfOpen
+       || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
+       || pC->seekOp==OP_Rewind );
+  assert( pOp->opcode!=OP_Prev || pOp->opcode!=OP_PrevIfOpen
+       || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
+       || pC->seekOp==OP_Last );
+
   rc = pOp->p4.xAdvance(pC->pCursor, &res);
 next_tail:
   pC->cacheStatus = CACHE_STALE;
