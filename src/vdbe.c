@@ -767,12 +767,14 @@ case OP_Return: {           /* in1 */
 
 /* Opcode: InitCoroutine P1 P2 P3 * *
 **
-** Set up register P1 so that it will OP_Yield to the co-routine
+** Set up register P1 so that it will Yield to the coroutine
 ** located at address P3.
 **
-** If P2!=0 then the co-routine implementation immediately follows
-** this opcode.  So jump over the co-routine implementation to
+** If P2!=0 then the coroutine implementation immediately follows
+** this opcode.  So jump over the coroutine implementation to
 ** address P2.
+**
+** See also: EndCoroutine
 */
 case OP_InitCoroutine: {     /* jump */
   assert( pOp->p1>0 &&  pOp->p1<=(p->nMem-p->nCursor) );
@@ -788,9 +790,11 @@ case OP_InitCoroutine: {     /* jump */
 
 /* Opcode:  EndCoroutine P1 * * * *
 **
-** The instruction at the address in register P1 is an OP_Yield.
-** Jump to the P2 parameter of that OP_Yield.
+** The instruction at the address in register P1 is an Yield.
+** Jump to the P2 parameter of that Yield.
 ** After the jump, register P1 becomes undefined.
+**
+** See also: InitCoroutine
 */
 case OP_EndCoroutine: {           /* in1 */
   VdbeOp *pCaller;
@@ -807,11 +811,16 @@ case OP_EndCoroutine: {           /* in1 */
 
 /* Opcode:  Yield P1 P2 * * *
 **
-** Swap the program counter with the value in register P1.
+** Swap the program counter with the value in register P1.  This
+** has the effect of yielding to a coroutine.
 **
-** If the co-routine ends with OP_Yield or OP_Return then continue
-** to the next instruction.  But if the co-routine ends with
-** OP_EndCoroutine, jump immediately to P2.
+** If the coroutine that is launched by this instruction ends with
+** Yield or Return then continue to the next instruction.  But if
+** the coroutine launched by this instruction ends with
+** EndCoroutine, then jump to P2 rather than continuing with the
+** next instruction.
+**
+** See also: InitCoroutine
 */
 case OP_Yield: {            /* in1, jump */
   int pcDest;
@@ -2196,10 +2205,14 @@ case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
 
 /* Opcode: Once P1 P2 * * *
 **
-** Check if OP_Once flag P1 is set. If so, jump to instruction P2. Otherwise,
-** set the flag and fall through to the next instruction.  In other words,
-** this opcode causes all following opcodes up through P2 (but not including
-** P2) to run just once and to be skipped on subsequent times through the loop.
+** Check the "once" flag number P1. If it is set, jump to instruction P2. 
+** Otherwise, set the flag and fall through to the next instruction.
+** In other words, this opcode causes all following opcodes up through P2
+** (but not including P2) to run just once and to be skipped on subsequent
+** times through the loop.
+**
+** All "once" flags are initially cleared whenever a prepared statement
+** first begins to run.
 */
 case OP_Once: {             /* jump */
   assert( pOp->p1<p->nOnceFlag );
@@ -3495,7 +3508,7 @@ case OP_Close: {
 **
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the begining toward the end.  In other words, the cursor is
-** configured to use OP_Next, not OP_Prev.
+** configured to use Next, not Prev.
 **
 ** See also: Found, NotFound, SeekLt, SeekGt, SeekLe
 */
@@ -3513,7 +3526,7 @@ case OP_Close: {
 **
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the begining toward the end.  In other words, the cursor is
-** configured to use OP_Next, not OP_Prev.
+** configured to use Next, not Prev.
 **
 ** See also: Found, NotFound, SeekLt, SeekGe, SeekLe
 */
@@ -3531,7 +3544,7 @@ case OP_Close: {
 **
 ** This opcode leaves the cursor configured to move in reverse order,
 ** from the end toward the beginning.  In other words, the cursor is
-** configured to use OP_Prev, not OP_Next.
+** configured to use Prev, not Next.
 **
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLe
 */
@@ -3549,7 +3562,7 @@ case OP_Close: {
 **
 ** This opcode leaves the cursor configured to move in reverse order,
 ** from the end toward the beginning.  In other words, the cursor is
-** configured to use OP_Prev, not OP_Next.
+** configured to use Prev, not Next.
 **
 ** See also: Found, NotFound, SeekGt, SeekGe, SeekLt
 */
@@ -4470,7 +4483,7 @@ case OP_NullRow: {
 **
 ** This opcode leaves the cursor configured to move in reverse order,
 ** from the end toward the beginning.  In other words, the cursor is
-** configured to use OP_Prev, not OP_Next.
+** configured to use Prev, not Next.
 */
 case OP_Last: {        /* jump */
   VdbeCursor *pC;
@@ -4530,7 +4543,7 @@ case OP_Sort: {        /* jump */
 **
 ** This opcode leaves the cursor configured to move in forward order,
 ** from the begining toward the end.  In other words, the cursor is
-** configured to use OP_Next, not OP_Prev.
+** configured to use Next, not Prev.
 */
 case OP_Rewind: {        /* jump */
   VdbeCursor *pC;
@@ -4571,9 +4584,9 @@ case OP_Rewind: {        /* jump */
 ** to the following instruction.  But if the cursor advance was successful,
 ** jump immediately to P2.
 **
-** The OP_Next opcode is only valid following an OP_SeekGT, OP_SeekGE, or
-** OP_Rewind opcode used to position the cursor.  OP_Next is not allowed
-** to follow OP_SeekLT, OP_SeekLE, or OP_Last.
+** The Next opcode is only valid following an SeekGT, SeekGE, or
+** OP_Rewind opcode used to position the cursor.  Next is not allowed
+** to follow SeekLT, SeekLE, or OP_Last.
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.  P1 must have
 ** been opened prior to this opcode or the program will segfault.
@@ -4593,7 +4606,7 @@ case OP_Rewind: {        /* jump */
 */
 /* Opcode: NextIfOpen P1 P2 P3 P4 P5
 **
-** This opcode works just like OP_Next except that if cursor P1 is not
+** This opcode works just like Next except that if cursor P1 is not
 ** open it behaves a no-op.
 */
 /* Opcode: Prev P1 P2 P3 P4 P5
@@ -4604,9 +4617,9 @@ case OP_Rewind: {        /* jump */
 ** jump immediately to P2.
 **
 **
-** The OP_Prev opcode is only valid following an OP_SeekLT, OP_SeekLE, or
-** OP_Last opcode used to position the cursor.  OP_Prev is not allowed
-** to follow OP_SeekGT, OP_SeekGE, or OP_Rewind.
+** The Prev opcode is only valid following an SeekLT, SeekLE, or
+** OP_Last opcode used to position the cursor.  Prev is not allowed
+** to follow SeekGT, SeekGE, or OP_Rewind.
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.  If P1 is
 ** not open then the behavior is undefined.
@@ -4624,7 +4637,7 @@ case OP_Rewind: {        /* jump */
 */
 /* Opcode: PrevIfOpen P1 P2 P3 P4 P5
 **
-** This opcode works just like OP_Prev except that if cursor P1 is not
+** This opcode works just like Prev except that if cursor P1 is not
 ** open it behaves a no-op.
 */
 case OP_SorterNext: {  /* jump */
@@ -5145,7 +5158,8 @@ case OP_LoadAnalysis: {
 **
 ** Remove the internal (in-memory) data structures that describe
 ** the table named P4 in database P1.  This is called after a table
-** is dropped in order to keep the internal representation of the
+** is dropped from disk (using the Destroy opcode) in order to keep 
+** the internal representation of the
 ** schema consistent with what is on disk.
 */
 case OP_DropTable: {
@@ -5157,7 +5171,8 @@ case OP_DropTable: {
 **
 ** Remove the internal (in-memory) data structures that describe
 ** the index named P4 in database P1.  This is called after an index
-** is dropped in order to keep the internal representation of the
+** is dropped from disk (using the Destroy opcode)
+** in order to keep the internal representation of the
 ** schema consistent with what is on disk.
 */
 case OP_DropIndex: {
@@ -5169,7 +5184,8 @@ case OP_DropIndex: {
 **
 ** Remove the internal (in-memory) data structures that describe
 ** the trigger named P4 in database P1.  This is called after a trigger
-** is dropped in order to keep the internal representation of the
+** is dropped from disk (using the Destroy opcode) in order to keep 
+** the internal representation of the
 ** schema consistent with what is on disk.
 */
 case OP_DropTrigger: {
