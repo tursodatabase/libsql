@@ -224,21 +224,21 @@ static VdbeCursor *allocateCursor(
 ** look like a number, leave it alone.
 */
 static void applyNumericAffinity(Mem *pRec){
-  if( (pRec->flags & (MEM_Real|MEM_Int))==0 ){
-    double rValue;
-    i64 iValue;
-    u8 enc = pRec->enc;
-    if( (pRec->flags&MEM_Str)==0 ) return;
-    if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
-    if( 0==sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
-      pRec->u.i = iValue;
-      pRec->flags |= MEM_Int;
-    }else{
-      pRec->r = rValue;
-      pRec->flags |= MEM_Real;
-    }
+  double rValue;
+  i64 iValue;
+  u8 enc = pRec->enc;
+  if( (pRec->flags&MEM_Str)==0 ) return;
+  if( sqlite3AtoF(pRec->z, &rValue, pRec->n, enc)==0 ) return;
+  if( 0==sqlite3Atoi64(pRec->z, &iValue, pRec->n, enc) ){
+    pRec->u.i = iValue;
+    pRec->flags |= MEM_Int;
+  }else{
+    pRec->r = rValue;
+    pRec->flags |= MEM_Real;
   }
 }
+#define ApplyNumericAffinity(X)  \
+   if(((X)->flags&(MEM_Real|MEM_Int))==0){applyNumericAffinity(X);}
 
 /*
 ** Processing is determine by the affinity parameter:
@@ -275,7 +275,7 @@ static void applyAffinity(
   }else if( affinity!=SQLITE_AFF_NONE ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
-    applyNumericAffinity(pRec);
+    ApplyNumericAffinity(pRec);
     if( pRec->flags & MEM_Real ){
       sqlite3VdbeIntegerAffinity(pRec);
     }
@@ -292,7 +292,7 @@ int sqlite3_value_numeric_type(sqlite3_value *pVal){
   int eType = sqlite3_value_type(pVal);
   if( eType==SQLITE_TEXT ){
     Mem *pMem = (Mem*)pVal;
-    applyNumericAffinity(pMem);
+    ApplyNumericAffinity(pMem);
     eType = sqlite3_value_type(pVal);
   }
   return eType;
@@ -3597,7 +3597,7 @@ case OP_SeekGT: {       /* jump, in3 */
     ** blob, or NULL.  But it needs to be an integer before we can do
     ** the seek, so covert it. */
     pIn3 = &aMem[pOp->p3];
-    applyNumericAffinity(pIn3);
+    ApplyNumericAffinity(pIn3);
     iKey = sqlite3VdbeIntValue(pIn3);
     pC->rowidIsValid = 0;
 
