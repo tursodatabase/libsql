@@ -229,6 +229,42 @@ do_execsql_test 7.4 {
   SELECT fts5_test(t7, 'rowcount') FROM t7 WHERE t7 MATCH 'a';
 } {5 5 5 5}
 
+#do_execsql_test 7.4 {
+#  SELECT rowid, bm25debug(t7) FROM t7 WHERE t7 MATCH 'a';
+#} {5 5 5 5}
+#
+
+#-------------------------------------------------------------------------
+#
+do_test 8.1 {
+  execsql { CREATE VIRTUAL TABLE t8 USING fts5(x, y) }
+  foreach {rowid x y} {
+     0 {A o}   {o o o C o o o o o o o o}
+     1 {o o B} {o o o C C o o o o o o o}
+     2 {A o o} {o o o o D D o o o o o o}
+     3 {o B}   {o o o o o D o o o o o o}
+     4 {E o G} {H o o o o o o o o o o o}
+     5 {F o G} {I o J o o o o o o o o o}
+     6 {E o o} {H o J o o o o o o o o o}
+     7 {o o o} {o o o o o o o o o o o o}
+     9 {o o o} {o o o o o o o o o o o o}
+  } {
+    execsql { INSERT INTO t8(rowid, x, y) VALUES($rowid, $x, $y) }
+  }
+} {}
+
+foreach {tn q res} {
+  1 {a} {0 2}
+  2 {b} {3 1}
+  3 {c} {1 0}
+  4 {d} {2 3}
+  5 {g AND (e OR f)} {5 4}
+  6 {j AND (h OR i)} {5 6}
+} {
+  do_execsql_test 8.2.$tn {
+    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY bm25(t8) DESC;
+  } $res
+}
 
 
 finish_test

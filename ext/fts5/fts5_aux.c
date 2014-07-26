@@ -411,19 +411,26 @@ static void fts5SnippetFunction(
   }
 }
 
-typedef struct Fts5GatherCtx Fts5GatherCtx;
+
+/*
+** Context object passed by fts5GatherTotals() to xQueryPhrase callback
+** fts5GatherCallback().
+*/
 struct Fts5GatherCtx {
-  int nCol;
-  int iPhrase;
-  int *anVal;
+  int nCol;                       /* Number of columns in FTS table */
+  int iPhrase;                    /* Phrase currently under investigation */
+  int *anVal;                     /* Array to populate */
 };
 
+/*
+** Callback used by fts5GatherTotals() with the xQueryPhrase() API.
+*/
 static int fts5GatherCallback(
   const Fts5ExtensionApi *pApi, 
   Fts5Context *pFts,
-  void *pUserData
+  void *pUserData                 /* Pointer to Fts5GatherCtx object */
 ){
-  Fts5GatherCtx *p = (Fts5GatherCtx*)pUserData;
+  struct Fts5GatherCtx *p = (struct Fts5GatherCtx*)pUserData;
   int i = 0;
   int iPrev = -1;
   i64 iPos = 0;
@@ -466,7 +473,7 @@ static int fts5GatherTotals(
   int nPhrase = pApi->xPhraseCount(pFts);
   int nCol = pApi->xColumnCount(pFts);
   int nByte = nCol * nPhrase * sizeof(int);
-  Fts5GatherCtx sCtx;
+  struct Fts5GatherCtx sCtx;
 
   sCtx.nCol = nCol;
   anVal = sCtx.anVal = (int*)sqlite3_malloc(nByte);
@@ -492,24 +499,19 @@ static int fts5GatherTotals(
 
 typedef struct Fts5Bm25Context Fts5Bm25Context;
 struct Fts5Bm25Context {
-  int nPhrase;
-  int nCol;
+  int nPhrase;                    /* Number of phrases in query */
+  int nCol;                       /* Number of columns in FTS table */
   double *aIDF;                   /* Array of IDF values */
   double *aAvg;                   /* Average size of each column in tokens */
 };
 
-static void fts5Bm25Function(
+static int fts5Bm25GetContext(
   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   Fts5Context *pFts,              /* First arg to pass to pApi functions */
-  sqlite3_context *pCtx,          /* Context for returning result/error */
-  int nVal,                       /* Number of values in apVal[] array */
-  sqlite3_value **apVal           /* Array of trailing arguments */
+  Fts5Bm25Context **pp            /* OUT: Context object */
 ){
-  const double k1 = 1.2;
-  const double B = 0.75;
-
-  int rc = SQLITE_OK;
   Fts5Bm25Context *p;
+  int rc = SQLITE_OK;
 
   p = pApi->xGetAuxdata(pFts, 0);
   if( p==0 ){
@@ -530,11 +532,14 @@ static void fts5Bm25Function(
       memset(p, 0, nByte);
       p->aAvg = (double*)&p[1];
       p->aIDF = (double*)&p->aAvg[nCol];
+      p->nCol = nCol;
+      p->nPhrase = nPhrase;
     }
 
     if( rc==SQLITE_OK ){
       rc = pApi->xRowCount(pFts, &nRow); 
       assert( nRow>0 || rc!=SQLITE_OK );
+      if( nRow<2 ) nRow = 2;
     }
 
     for(ic=0; rc==SQLITE_OK && ic<nCol; ic++){
@@ -548,9 +553,26 @@ static void fts5Bm25Function(
     }
     for(ic=0; ic<nCol; ic++){
       for(ip=0; rc==SQLITE_OK && ip<nPhrase; ip++){
-        int idx = ip * nCol + ic;
-        p->aIDF[idx] = log( (0.5 + nRow - anVal[idx]) / (0.5 + anVal[idx]) );
-        if( p->aIDF[idx]<0.0 ) p->aIDF[idx] = 0.0;
+        /* Calculate the IDF (Inverse Document Frequency) for phrase ip
+        ** in column ic. This is done using the standard BM25 formula as
+        ** found on wikipedia:
+        **
+        **   IDF = log( (N - nHit + 0.5) / (nHit + 0.5) )
+        **
+        ** where "N" is the total number of documents in the set and nHit
+        ** is the number that contain at least one instance of the phrase
+        ** under consideration.
+        **
+        ** The problem with this is that if (N < 2*nHit), the IDF is 
+        ** negative. Which is undesirable. So the mimimum allowable IDF is
+        ** (1e-6) - roughly the same as a term that appears in just over
+        ** half of set of 5,000,000 documents.  */
+        int idx = ip * nCol + ic; /* Index in aIDF[] and anVal[] arrays */
+        int nHit = anVal[idx];    /* Number of docs matching "ic: ip" */
+
+        p->aIDF[idx] = log( (0.5 + nRow - nHit) / (0.5 + nHit) );
+        if( p->aIDF[idx]<=0.0 ) p->aIDF[idx] = 1e-6;
+        assert( p->aIDF[idx]>=0.0 );
       }
     }
 
@@ -560,12 +582,85 @@ static void fts5Bm25Function(
     }
     if( rc!=SQLITE_OK ){
       sqlite3_free(p);
+      p = 0;
     }
   }
 
+  *pp = p;
+  return rc;
+}
+
+static void fts5Bm25DebugContext(
+  int *pRc,                       /* IN/OUT: Return code */
+  Fts5Buffer *pBuf,               /* Buffer to populate */
+  Fts5Bm25Context *p              /* Context object to decode */
+){
+  int ip;
+  int ic;
+
+  sqlite3Fts5BufferAppendString(pRc, pBuf, "idf ");
+  if( p->nPhrase>1 || p->nCol>1 ){
+    sqlite3Fts5BufferAppendString(pRc, pBuf, "{");
+  }
+  for(ip=0; ip<p->nPhrase; ip++){
+    if( ip>0 ) sqlite3Fts5BufferAppendString(pRc, pBuf, " ");
+    if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "{");
+    for(ic=0; ic<p->nCol; ic++){
+      if( ic>0 ) sqlite3Fts5BufferAppendString(pRc, pBuf, " ");
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "%f", p->aIDF[ip*p->nCol+ic]);
+    }
+    if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "}");
+  }
+  if( p->nPhrase>1 || p->nCol>1 ){
+    sqlite3Fts5BufferAppendString(pRc, pBuf, "}");
+  }
+
+  sqlite3Fts5BufferAppendString(pRc, pBuf, " avgdl ");
+  if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "{");
+  for(ic=0; ic<p->nCol; ic++){
+    if( ic>0 ) sqlite3Fts5BufferAppendString(pRc, pBuf, " ");
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "%f", p->aAvg[ic]);
+  }
+  if( p->nCol>1 ) sqlite3Fts5BufferAppendString(pRc, pBuf, "}");
+}
+
+static void fts5Bm25DebugRow(
+  int *pRc, 
+  Fts5Buffer *pBuf, 
+  Fts5Bm25Context *p, 
+  const Fts5ExtensionApi *pApi, 
+  Fts5Context *pFts
+){
+}
+
+static void fts5Bm25Function(
+  const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
+  Fts5Context *pFts,              /* First arg to pass to pApi functions */
+  sqlite3_context *pCtx,          /* Context for returning result/error */
+  int nVal,                       /* Number of values in apVal[] array */
+  sqlite3_value **apVal           /* Array of trailing arguments */
+){
+  const double k1 = 1.2;
+  const double B = 0.75;
+  int rc = SQLITE_OK;
+  Fts5Bm25Context *p;
+
+  rc = fts5Bm25GetContext(pApi, pFts, &p);
+
   if( rc==SQLITE_OK ){
+    /* If the bDebug flag is set, instead of returning a numeric rank, this
+    ** function returns a text value showing how the rank is calculated. */
+    Fts5Buffer debug;
+    int bDebug = (pApi->xUserData(pFts)!=0);
+    memset(&debug, 0, sizeof(Fts5Buffer));
+
     int ip;
     double score = 0.0;
+
+    if( bDebug ){
+      fts5Bm25DebugContext(&rc, &debug, p);
+      fts5Bm25DebugRow(&rc, &debug, p, pApi, pFts);
+    }
 
     for(ip=0; rc==SQLITE_OK && ip<p->nPhrase; ip++){
       int iPrev = 0;
@@ -573,26 +668,36 @@ static void fts5Bm25Function(
       int i = 0;
       i64 iPos = 0;
 
-      while( rc==SQLITE_OK && 0==pApi->xPoslist(pFts, ip, &i, &iPos) ){
+      while( rc==SQLITE_OK ){
+        int bDone = pApi->xPoslist(pFts, ip, &i, &iPos);
         int iCol = FTS5_POS2COLUMN(iPos);
-        if( iCol!=iPrev && nHit>0 ){
+        if( (iCol!=iPrev || bDone) && nHit>0 ){
           int sz = 0;
           int idx = ip * p->nCol + iPrev;
+          double bm25;
           rc = pApi->xColumnSize(pFts, iPrev, &sz);
 
-          score += p->aIDF[idx] * nHit * (k1+1.0) / 
-                  (nHit + k1 * (1.0 - B + B * sz / p->aAvg[iCol]));
+          bm25 = (p->aIDF[idx] * nHit * (k1+1.0)) /
+            (nHit + k1 * (1.0 - B + B * sz / p->aAvg[iPrev]));
+
+
+          score = score + bm25;
           nHit = 0;
         }
+        if( bDone ) break;
         nHit++;
         iPrev = iCol;
       }
     }
-    
-    if( rc==SQLITE_OK ){
-      sqlite3_result_double(pCtx, score);
-    }
 
+    if( rc==SQLITE_OK ){
+      if( bDebug ){
+        sqlite3_result_text(pCtx, (const char*)debug.p, -1, SQLITE_TRANSIENT);
+      }else{
+        sqlite3_result_double(pCtx, score);
+      }
+    }
+    sqlite3_free(debug.p);
   }
 
   if( rc!=SQLITE_OK ){
@@ -852,6 +957,7 @@ int sqlite3Fts5AuxInit(Fts5Global *pGlobal){
     void (*xDestroy)(void*);      /* Destructor function */
   } aBuiltin [] = {
     { "bm25",      0, fts5Bm25Function,    0 },
+    { "bm25debug", (void*)1, fts5Bm25Function,    0 },
     { "snippet",   0, fts5SnippetFunction, 0 },
     { "fts5_test", 0, fts5TestFunction,    0 },
   };
