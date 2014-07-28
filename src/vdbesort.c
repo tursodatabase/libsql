@@ -1861,7 +1861,7 @@ static void vdbeMergeEngineCompare(
 }
 
 /*
-** Allowed values for the eMode parameter to vdbeIncrMergerInit()
+** Allowed values for the eMode parameter to vdbeMergeEngineInit()
 ** and vdbePmaReaderIncrMergeInit().
 */
 #define INCRINIT_NORMAL 0
@@ -1892,7 +1892,7 @@ static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode);
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-static int vdbeIncrMergerInit(
+static int vdbeMergeEngineInit(
   SortSubtask *pTask,             /* Thread that will run pMerger */
   MergeEngine *pMerger,           /* MergeEngine to initialize */
   int eMode                       /* One of the INCRINIT_XXX constants */
@@ -1969,7 +1969,7 @@ static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode){
     SortSubtask *pTask = pIncr->pTask;
     sqlite3 *db = pTask->pSorter->db;
 
-    rc = vdbeIncrMergerInit(pTask, pIncr->pMerger, eMode);
+    rc = vdbeMergeEngineInit(pTask, pIncr->pMerger, eMode);
 
     /* Set up the required files for pIncr. A multi-theaded IncrMerge object
     ** requires two temp files to itself, whereas a single-threaded object
@@ -2299,7 +2299,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
     }else
 #endif
     {
-      rc = vdbeIncrMergerInit(pTask0, pMain, INCRINIT_NORMAL);
+      rc = vdbeMergeEngineInit(pTask0, pMain, INCRINIT_NORMAL);
       pSorter->pMerger = pMain;
       pMain = 0;
     }
