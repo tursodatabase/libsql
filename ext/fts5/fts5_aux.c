@@ -14,26 +14,26 @@
 #include "fts5Int.h"
 #include <math.h>
 
-typedef struct SnippetPhrase SnippetPhrase;
-typedef struct SnippetIter SnippetIter;
+typedef struct SnipPhrase SnipPhrase;
+typedef struct SnipIter SnipIter;
 typedef struct SnippetCtx SnippetCtx;
 
-struct SnippetPhrase {
+struct SnipPhrase {
   u64 mask;                       /* Current mask */
   int nToken;                     /* Tokens in this phrase */
   int i;                          /* Current offset in phrase poslist */
   i64 iPos;                       /* Next position in phrase (-ve -> EOF) */
 };
 
-struct SnippetIter {
+struct SnipIter {
   i64 iLast;                      /* Last token position of current snippet */
   int nScore;                     /* Score of current snippet */
 
   const Fts5ExtensionApi *pApi;
   Fts5Context *pFts;
-  u64 szmask;                     /* Mask used to on SnippetPhrase.mask */
+  u64 szmask;                     /* Mask used to on SnipPhrase.mask */
   int nPhrase;                    /* Number of phrases */
-  SnippetPhrase aPhrase[0];       /* Array of size nPhrase */
+  SnipPhrase aPhrase[0];       /* Array of size nPhrase */
 };
 
 struct SnippetCtx {
@@ -71,13 +71,13 @@ static int fts5SnippetCallback(
 /*
 ** Set pIter->nScore to the score for the current entry.
 */
-static void fts5SnippetCalculateScore(SnippetIter *pIter){
+static void fts5SnippetCalculateScore(SnipIter *pIter){
   int i;
   int nScore = 0;
   assert( pIter->iLast>=0 );
 
   for(i=0; i<pIter->nPhrase; i++){
-    SnippetPhrase *p = &pIter->aPhrase[i];
+    SnipPhrase *p = &pIter->aPhrase[i];
     u64 mask = p->mask;
     if( mask ){
       u64 j;
@@ -94,21 +94,21 @@ static void fts5SnippetCalculateScore(SnippetIter *pIter){
 /*
 ** Allocate a new snippet iter.
 */
-static int fts5SnippetIterNew(
+static int fts5SnipIterNew(
   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   Fts5Context *pFts,              /* First arg to pass to pApi functions */
   int nToken,                     /* Number of tokens in snippets */
-  SnippetIter **ppIter            /* OUT: New object */
+  SnipIter **ppIter            /* OUT: New object */
 ){
   int i;                          /* Counter variable */
-  SnippetIter *pIter;             /* New iterator object */
+  SnipIter *pIter;             /* New iterator object */
   int nByte;                      /* Bytes of space to allocate */
   int nPhrase;                    /* Number of phrases in query */
 
   *ppIter = 0;
   nPhrase = pApi->xPhraseCount(pFts);
-  nByte = sizeof(SnippetIter) + nPhrase * sizeof(SnippetPhrase);
-  pIter = (SnippetIter*)sqlite3_malloc(nByte);
+  nByte = sizeof(SnipIter) + nPhrase * sizeof(SnipPhrase);
+  pIter = (SnipIter*)sqlite3_malloc(nByte);
   if( pIter==0 ) return SQLITE_NOMEM;
   memset(pIter, 0, nByte);
 
@@ -129,16 +129,16 @@ static int fts5SnippetIterNew(
 /*
 ** Set the iterator to point to the first candidate snippet.
 */
-static void fts5SnippetIterFirst(SnippetIter *pIter){
+static void fts5SnipIterFirst(SnipIter *pIter){
   const Fts5ExtensionApi *pApi = pIter->pApi;
   Fts5Context *pFts = pIter->pFts;
   int i;                          /* Used to iterate through phrases */
-  SnippetPhrase *pMin = 0;        /* Phrase with first match */
+  SnipPhrase *pMin = 0;        /* Phrase with first match */
 
-  memset(pIter->aPhrase, 0, sizeof(SnippetPhrase) * pIter->nPhrase);
+  memset(pIter->aPhrase, 0, sizeof(SnipPhrase) * pIter->nPhrase);
 
   for(i=0; i<pIter->nPhrase; i++){
-    SnippetPhrase *p = &pIter->aPhrase[i];
+    SnipPhrase *p = &pIter->aPhrase[i];
     p->nToken = pApi->xPhraseSize(pFts, i);
     pApi->xPoslist(pFts, i, &p->i, &p->iPos);
     if( p->iPos>=0 && (pMin==0 || p->iPos<pMin->iPos) ){
@@ -156,26 +156,26 @@ static void fts5SnippetIterFirst(SnippetIter *pIter){
 /*
 ** Advance the snippet iterator to the next candidate snippet.
 */
-static void fts5SnippetIterNext(SnippetIter *pIter){
+static void fts5SnipIterNext(SnipIter *pIter){
   const Fts5ExtensionApi *pApi = pIter->pApi;
   Fts5Context *pFts = pIter->pFts;
   int nPhrase = pIter->nPhrase;
   int i;                          /* Used to iterate through phrases */
-  SnippetPhrase *pMin = 0;
+  SnipPhrase *pMin = 0;
 
   for(i=0; i<nPhrase; i++){
-    SnippetPhrase *p = &pIter->aPhrase[i];
+    SnipPhrase *p = &pIter->aPhrase[i];
     if( p->iPos>=0 && (pMin==0 || p->iPos<pMin->iPos) ) pMin = p;
   }
 
   if( pMin==0 ){
-    /* pMin==0 indicates that the SnippetIter is at EOF. */
+    /* pMin==0 indicates that the SnipIter is at EOF. */
     pIter->iLast = -1;
   }else{
     i64 nShift = pMin->iPos - pIter->iLast;
     assert( nShift>=0 );
     for(i=0; i<nPhrase; i++){
-      SnippetPhrase *p = &pIter->aPhrase[i];
+      SnipPhrase *p = &pIter->aPhrase[i];
       if( nShift>=63 ){
         p->mask = 0;
       }else{
@@ -191,7 +191,7 @@ static void fts5SnippetIterNext(SnippetIter *pIter){
   }
 }
 
-static void fts5SnippetIterFree(SnippetIter *pIter){
+static void fts5SnipIterFree(SnipIter *pIter){
   if( pIter ){
     sqlite3_free(pIter);
   }
@@ -200,7 +200,7 @@ static void fts5SnippetIterFree(SnippetIter *pIter){
 static int fts5SnippetText(
   const Fts5ExtensionApi *pApi,   /* API offered by current FTS version */
   Fts5Context *pFts,              /* First arg to pass to pApi functions */
-  SnippetIter *pIter,             /* Snippet to write to buffer */
+  SnipIter *pIter,             /* Snippet to write to buffer */
   int nToken,                     /* Size of desired snippet in tokens */
   const char *zStart,
   const char *zFinal,
@@ -299,7 +299,7 @@ static int fts5SnippetText(
       /* Check if this is the first token of any phrase match. */
       int ip;
       for(ip=0; ip<pIter->nPhrase; ip++){
-        SnippetPhrase *pPhrase = &pIter->aPhrase[ip];
+        SnipPhrase *pPhrase = &pIter->aPhrase[ip];
         u64 m = (1 << (iLast - i - pPhrase->nToken + 1));
 
         if( i<=iLast && (pPhrase->mask & m) ){
@@ -368,7 +368,7 @@ static void fts5SnippetFunction(
   int nToken = -15;
   int nAbs;
   int rc;
-  SnippetIter *pIter = 0;
+  SnipIter *pIter = 0;
 
   if( nVal>=1 ) zStart = (const char*)sqlite3_value_text(apVal[0]);
   if( nVal>=2 ) zFinal = (const char*)sqlite3_value_text(apVal[1]);
@@ -379,20 +379,20 @@ static void fts5SnippetFunction(
   }
   nAbs = nToken * (nToken<0 ? -1 : 1);
 
-  rc = fts5SnippetIterNew(pApi, pFts, nAbs, &pIter);
+  rc = fts5SnipIterNew(pApi, pFts, nAbs, &pIter);
   if( rc==SQLITE_OK ){
     Fts5Buffer buf;               /* Result buffer */
     int nBestScore = 0;           /* Score of best snippet found */
 
-    for(fts5SnippetIterFirst(pIter); 
+    for(fts5SnipIterFirst(pIter); 
         pIter->iLast>=0; 
-        fts5SnippetIterNext(pIter)
+        fts5SnipIterNext(pIter)
     ){
       if( pIter->nScore>nBestScore ) nBestScore = pIter->nScore;
     }
-    for(fts5SnippetIterFirst(pIter); 
+    for(fts5SnipIterFirst(pIter); 
         pIter->iLast>=0; 
-        fts5SnippetIterNext(pIter)
+        fts5SnipIterNext(pIter)
     ){
       if( pIter->nScore==nBestScore ) break;
     }
@@ -405,7 +405,7 @@ static void fts5SnippetFunction(
     sqlite3_free(buf.p);
   }
 
-  fts5SnippetIterFree(pIter);
+  fts5SnipIterFree(pIter);
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pCtx, rc);
   }

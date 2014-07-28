@@ -97,6 +97,8 @@ foreach hdr {
    fts3Int.h
    fts3_hash.h
    fts3_tokenizer.h
+   fts5.h
+   fts5Int.h
    hash.h
    hwtime.h
    keywordhash.h
@@ -327,6 +329,15 @@ foreach file {
    fts3_snippet.c
    fts3_unicode.c
    fts3_unicode2.c
+
+   fts5_aux.c
+   fts5_buffer.c
+   fts5.c
+   fts5_config.c
+   fts5_expr.c
+   fts5_index.c
+   fts5parse.c
+   fts5_storage.c
 
    rtree.c
    icu.c

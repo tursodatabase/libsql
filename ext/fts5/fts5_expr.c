@@ -997,7 +997,7 @@ i64 sqlite3Fts5ExprRowid(Fts5Expr *p){
 ** It is the responsibility of the caller to eventually free the returned
 ** buffer using sqlite3_free(). If an OOM error occurs, NULL is returned. 
 */
-static char *fts5Strdup(const char *pIn, int nIn){
+static char *fts5Strndup(const char *pIn, int nIn){
   char *zRet = (char*)sqlite3_malloc(nIn+1);
   if( zRet ){
     memcpy(zRet, pIn, nIn);
@@ -1007,7 +1007,7 @@ static char *fts5Strdup(const char *pIn, int nIn){
 }
 
 static int fts5ParseStringFromToken(Fts5Token *pToken, char **pz){
-  *pz = fts5Strdup(pToken->p, pToken->n);
+  *pz = fts5Strndup(pToken->p, pToken->n);
   if( *pz==0 ) return SQLITE_NOMEM;
   return SQLITE_OK;
 }
@@ -1115,7 +1115,7 @@ static int fts5ParseTokenize(
 
   pTerm = &pPhrase->aTerm[pPhrase->nTerm++];
   memset(pTerm, 0, sizeof(Fts5ExprTerm));
-  pTerm->zTerm = fts5Strdup(pToken, nToken);
+  pTerm->zTerm = fts5Strndup(pToken, nToken);
 
   return pTerm->zTerm ? SQLITE_OK : SQLITE_NOMEM;
 }

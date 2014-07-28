@@ -113,7 +113,7 @@ static char *fts5Strdup(const char *z){
   return sqlite3_mprintf("%s", z);
 }
 
-void sqlite3Fts3SimpleTokenizerModule(sqlite3_tokenizer_module**);
+void sqlite3Fts3SimpleTokenizerModule(sqlite3_tokenizer_module const**);
 
 /*
 ** Allocate an instance of the default tokenizer ("simple") at 
@@ -121,7 +121,7 @@ void sqlite3Fts3SimpleTokenizerModule(sqlite3_tokenizer_module**);
 ** code if an error occurs.
 */
 static int fts5ConfigDefaultTokenizer(Fts5Config *pConfig){
-  sqlite3_tokenizer_module *pMod; /* Tokenizer module "simple" */
+  const sqlite3_tokenizer_module *pMod; /* Tokenizer module "simple" */
   sqlite3_tokenizer *pTokenizer;  /* Tokenizer instance */
   int rc;                         /* Return code */
 

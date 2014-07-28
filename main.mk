@@ -224,6 +224,18 @@ SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
 
+SRC += \
+   $(TOP)/ext/fts5/fts5.h \
+   $(TOP)/ext/fts5/fts5Int.h \
+   $(TOP)/ext/fts5/fts5_aux.c \
+   $(TOP)/ext/fts5/fts5_buffer.c \
+   $(TOP)/ext/fts5/fts5.c \
+   $(TOP)/ext/fts5/fts5_config.c \
+   $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_index.c \
+   fts5parse.c \
+   $(TOP)/ext/fts5/fts5_storage.c 
+
 
 # Generated source code files
 #
@@ -683,6 +695,9 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 
 speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
 	$(TCC) -I. -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB)
+
+loadfts: $(TOP)/tool/loadfts.c libsqlite3.a
+	$(TCC) $(TOP)/tool/loadfts.c libsqlite3.a -o loadfts $(THREADLIB)
 
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the
