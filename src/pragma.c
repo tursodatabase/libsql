@@ -480,7 +480,7 @@ static const struct sPragmaNames {
 ** to support legacy SQL code.  The safety level used to be boolean
 ** and older scripts may have used numbers 0 for OFF and 1 for ON.
 */
-static u8 getSafetyLevel(const char *z, int omitFull, int dflt){
+static u8 getSafetyLevel(const char *z, int omitFull, u8 dflt){
                              /* 123456789 123456789 */
   static const char zText[] = "onoffalseyestruefull";
   static const u8 iOffset[] = {0, 1, 2, 4, 9, 12, 16};
@@ -502,7 +502,7 @@ static u8 getSafetyLevel(const char *z, int omitFull, int dflt){
 /*
 ** Interpret the given string as a boolean value.
 */
-u8 sqlite3GetBoolean(const char *z, int dflt){
+u8 sqlite3GetBoolean(const char *z, u8 dflt){
   return getSafetyLevel(z,1,dflt)!=0;
 }
 
