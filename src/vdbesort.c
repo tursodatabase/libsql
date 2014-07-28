@@ -609,7 +609,8 @@ static int vdbeSorterMapFile(SortSubtask *pTask, SorterFile *pFile, u8 **pp){
 }
 
 /*
-** Seek PmaReader pReadr to offset iOff within file pFile. Return SQLITE_OK 
+** Attach PmaReader pReadr to file pFile (if it is not already attached to
+** that file) and seek it to offset iOff within the file.  Return SQLITE_OK 
 ** if successful, or an SQLite error code if an error occurs.
 */
 static int vdbePmaReaderSeek(
@@ -757,56 +758,6 @@ static int vdbeSorterCompare(
     sqlite3VdbeRecordUnpack(pTask->pSorter->pKeyInfo, nKey2, pKey2, r2);
   }
   return sqlite3VdbeRecordCompare(nKey1, pKey1, r2, 0);
-}
-
-/*
-** This function is called to compare two PmaReader keys when merging 
-** multiple b-tree segments. Parameter iOut is the index of the aTree[] 
-** value to recalculate.
-*/
-static int vdbeSorterDoCompare(
-  SortSubtask *pTask, 
-  MergeEngine *pMerger, 
-  int iOut
-){
-  int i1;
-  int i2;
-  int iRes;
-  PmaReader *p1;
-  PmaReader *p2;
-
-  assert( iOut<pMerger->nTree && iOut>0 );
-
-  if( iOut>=(pMerger->nTree/2) ){
-    i1 = (iOut - pMerger->nTree/2) * 2;
-    i2 = i1 + 1;
-  }else{
-    i1 = pMerger->aTree[iOut*2];
-    i2 = pMerger->aTree[iOut*2+1];
-  }
-
-  p1 = &pMerger->aReadr[i1];
-  p2 = &pMerger->aReadr[i2];
-
-  if( p1->pFd==0 ){
-    iRes = i2;
-  }else if( p2->pFd==0 ){
-    iRes = i1;
-  }else{
-    int res;
-    assert( pTask->pUnpacked!=0 );  /* allocated in vdbeSortSubtaskMain() */
-    res = vdbeSorterCompare(
-        pTask, p1->aKey, p1->nKey, p2->aKey, p2->nKey
-    );
-    if( res<=0 ){
-      iRes = i1;
-    }else{
-      iRes = i2;
-    }
-  }
-
-  pMerger->aTree[iOut] = iRes;
-  return SQLITE_OK;
 }
 
 /*
@@ -1859,10 +1810,69 @@ static void vdbeIncrSetThreads(IncrMerger *pIncr){
 }
 #endif /* SQLITE_MAX_WORKER_THREADS>0 */
 
+
+
+/*
+** Recompute pMerger->aTree[iOut] by comparing the next keys on the
+** two PmaReaders that feed that entry.  Neither of the PmaReaders
+** are advanced.  This routine merely does the comparison.
+*/
+static void vdbeMergeEngineCompare(
+  MergeEngine *pMerger,  /* Merge engine containing PmaReaders to compare */
+  int iOut               /* Store the result in pMerger->aTree[iOut] */
+){
+  int i1;
+  int i2;
+  int iRes;
+  PmaReader *p1;
+  PmaReader *p2;
+
+  assert( iOut<pMerger->nTree && iOut>0 );
+
+  if( iOut>=(pMerger->nTree/2) ){
+    i1 = (iOut - pMerger->nTree/2) * 2;
+    i2 = i1 + 1;
+  }else{
+    i1 = pMerger->aTree[iOut*2];
+    i2 = pMerger->aTree[iOut*2+1];
+  }
+
+  p1 = &pMerger->aReadr[i1];
+  p2 = &pMerger->aReadr[i2];
+
+  if( p1->pFd==0 ){
+    iRes = i2;
+  }else if( p2->pFd==0 ){
+    iRes = i1;
+  }else{
+    int res;
+    assert( pMerger->pTask->pUnpacked!=0 );  /* from vdbeSortSubtaskMain() */
+    res = vdbeSorterCompare(
+        pMerger->pTask, p1->aKey, p1->nKey, p2->aKey, p2->nKey
+    );
+    if( res<=0 ){
+      iRes = i1;
+    }else{
+      iRes = i2;
+    }
+  }
+
+  pMerger->aTree[iOut] = iRes;
+}
+
+/*
+** Allowed values for the eMode parameter to vdbeIncrMergerInit()
+** and vdbePmaReaderIncrMergeInit().
+*/
 #define INCRINIT_NORMAL 0
 #define INCRINIT_TASK   1
 #define INCRINIT_ROOT   2
-static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode);
+
+/* Forward reference.
+** The vdbeIncrMergeInit() and vdbePmaReaderIncrMergeInit() routines call each
+** other (when building a merge tree).
+*/
+static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode);
 
 /*
 ** Initialize the MergeEngine object passed as the second argument. Once this
@@ -1877,12 +1887,12 @@ static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode);
 ** its first key.
 **
 ** Otherwise, if eMode is any value other than INCRINIT_ROOT, then use 
-** vdbePmaReaderIncrInit() to initialize each PmaReader that feeds data 
+** vdbePmaReaderIncrMergeInit() to initialize each PmaReader that feeds data 
 ** to pMerger.
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-static int vdbeIncrInitMerger(
+static int vdbeIncrMergerInit(
   SortSubtask *pTask,             /* Thread that will run pMerger */
   MergeEngine *pMerger,           /* MergeEngine to initialize */
   int eMode                       /* One of the INCRINIT_XXX constants */
@@ -1895,7 +1905,7 @@ static int vdbeIncrInitMerger(
   assert( pMerger->pTask==0 || pMerger->pTask==pTask );
   pMerger->pTask = pTask;
 
-  for(i=0; rc==SQLITE_OK && i<nTree; i++){
+  for(i=0; i<nTree; i++){
     if( eMode==INCRINIT_ROOT ){
       /* PmaReaders should be normally initialized in order, as if they are
       ** reading from the same temp file this makes for more linear file IO.
@@ -1906,18 +1916,20 @@ static int vdbeIncrInitMerger(
       ** better advantage of multi-processor hardware. */
       rc = vdbePmaReaderNext(&pMerger->aReadr[nTree-i-1]);
     }else{
-      rc = vdbePmaReaderIncrInit(&pMerger->aReadr[i], INCRINIT_NORMAL);
+      rc = vdbePmaReaderIncrMergeInit(&pMerger->aReadr[i], INCRINIT_NORMAL);
     }
+    if( rc!=SQLITE_OK ) return rc;
   }
 
-  for(i=pMerger->nTree-1; rc==SQLITE_OK && i>0; i--){
-    rc = vdbeSorterDoCompare(pTask, pMerger, i);
+  for(i=pMerger->nTree-1; i>0; i--){
+    vdbeMergeEngineCompare(pMerger, i);
   }
-
-  return (rc==SQLITE_OK ? pTask->pUnpacked->errCode : rc);
+  return pTask->pUnpacked->errCode;
 }
 
 /*
+** Initialize the IncrMerge field of a PmaReader.
+**
 ** If the PmaReader passed as the first argument is not an incremental-reader
 ** (if pReadr->pIncr==0), then this function is a no-op. Otherwise, it serves
 ** to open and/or initialize the temp file related fields of the IncrMerge
@@ -1950,14 +1962,14 @@ static int vdbeIncrInitMerger(
 **
 ** SQLITE_OK is returned if successful, or an SQLite error code otherwise.
 */
-static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode){
+static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode){
   int rc = SQLITE_OK;
   IncrMerger *pIncr = pReadr->pIncr;
   if( pIncr ){
     SortSubtask *pTask = pIncr->pTask;
     sqlite3 *db = pTask->pSorter->db;
 
-    rc = vdbeIncrInitMerger(pTask, pIncr->pMerger, eMode);
+    rc = vdbeIncrMergerInit(pTask, pIncr->pMerger, eMode);
 
     /* Set up the required files for pIncr. A multi-theaded IncrMerge object
     ** requires two temp files to itself, whereas a single-threaded object
@@ -2005,18 +2017,20 @@ static int vdbePmaReaderIncrInit(PmaReader *pReadr, int eMode){
 
 #if SQLITE_MAX_WORKER_THREADS>0
 /*
-** The main routine for vdbePmaReaderIncrInit() operations run in 
+** The main routine for vdbePmaReaderIncrMergeInit() operations run in 
 ** background threads.
 */
 static void *vdbePmaReaderBgInit(void *pCtx){
   PmaReader *pReader = (PmaReader*)pCtx;
-  void *pRet = SQLITE_INT_TO_PTR(vdbePmaReaderIncrInit(pReader,INCRINIT_TASK));
+  void *pRet = SQLITE_INT_TO_PTR(
+                  vdbePmaReaderIncrMergeInit(pReader,INCRINIT_TASK)
+               );
   pReader->pIncr->pTask->bDone = 1;
   return pRet;
 }
 
 /*
-** Use a background thread to invoke vdbePmaReaderIncrInit(INCRINIT_TASK) 
+** Use a background thread to invoke vdbePmaReaderIncrMergeInit(INCRINIT_TASK) 
 ** on the the PmaReader object passed as the first argument.
 **
 ** This call will initialize the various fields of the pReadr->pIncr 
@@ -2270,7 +2284,7 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
             assert( p->pIncr==0 || p->pIncr->pTask==&pSorter->aTask[iTask] );
             if( p->pIncr ){ 
               if( iTask==pSorter->nTask-1 ){
-                rc = vdbePmaReaderIncrInit(p, INCRINIT_TASK);
+                rc = vdbePmaReaderIncrMergeInit(p, INCRINIT_TASK);
               }else{
                 rc = vdbePmaReaderBgIncrInit(p);
               }
@@ -2280,12 +2294,12 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
         pMain = 0;
       }
       if( rc==SQLITE_OK ){
-        rc = vdbePmaReaderIncrInit(pReadr, INCRINIT_ROOT);
+        rc = vdbePmaReaderIncrMergeInit(pReadr, INCRINIT_ROOT);
       }
     }else
 #endif
     {
-      rc = vdbeIncrInitMerger(pTask0, pMain, INCRINIT_NORMAL);
+      rc = vdbeIncrMergerInit(pTask0, pMain, INCRINIT_NORMAL);
       pSorter->pMerger = pMain;
       pMain = 0;
     }
