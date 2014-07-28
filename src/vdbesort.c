@@ -1407,23 +1407,19 @@ static int vdbeSorterListToPMA(SortSubtask *pTask, SorterList *pList){
 }
 
 /*
-** Advance the MergeEngine pMerge (passed as the second argument) to
-** its next entry.  Set *pbEof to true there is no next entry because
+** Advance the MergeEngine to its next entry.
+** Set *pbEof to true there is no next entry because
 ** the MergeEngine has reached the end of all its inputs.
 **
 ** Return SQLITE_OK if successful or an error code if an error occurs.
 */
 static int vdbeMergeEngineStep(
-  SortSubtask *pTask,        /* The thread in which this MergeEngine runs */
   MergeEngine *pMerger,      /* The merge engine to advance to the next row */
   int *pbEof                 /* Set TRUE at EOF.  Set false for more content */
 ){
   int rc;
   int iPrev = pMerger->aTree[1];/* Index of PmaReader to advance */
-
-  /* A MergeEngine object is only used by a single thread */
-  assert( pMerger->pTask==0 || pMerger->pTask==pTask );
-  pMerger->pTask = pTask;
+  SortSubtask *pTask = pMerger->pTask;
 
   /* Advance the current PmaReader */
   rc = vdbePmaReaderNext(&pMerger->aReadr[iPrev]);
@@ -1693,7 +1689,8 @@ static int vdbeIncrPopulate(IncrMerger *pIncr){
     /* Write the next key to the output. */
     vdbePmaWriteVarint(&writer, nKey);
     vdbePmaWriteBlob(&writer, pReader->aKey, nKey);
-    rc = vdbeMergeEngineStep(pTask, pIncr->pMerger, &dummy);
+    assert( pIncr->pMerger->pTask==pTask );
+    rc = vdbeMergeEngineStep(pIncr->pMerger, &dummy);
   }
 
   rc2 = vdbePmaWriterFinish(&writer, &pOut->iEof);
@@ -1780,7 +1777,7 @@ static int vdbeIncrSwap(IncrMerger *pIncr){
 ** If an OOM condition is encountered, return NULL. In this case free the
 ** pMerger argument before returning.
 */
-static int vdbeIncrNew(
+static int vdbeIncrMergerNew(
   SortSubtask *pTask,     /* The thread that will be using the new IncrMerger */
   MergeEngine *pMerger,   /* The MergeEngine that the IncrMerger will control */
   IncrMerger **ppOut      /* Write the new IncrMerger here */
@@ -1804,7 +1801,7 @@ static int vdbeIncrNew(
 /*
 ** Set the "use-threads" flag on object pIncr.
 */
-static void vdbeIncrSetThreads(IncrMerger *pIncr){
+static void vdbeIncrMergerSetThreads(IncrMerger *pIncr){
   pIncr->bUseThread = 1;
   pIncr->pTask->file2.iEof -= pIncr->mxSz;
 }
@@ -1902,7 +1899,7 @@ static int vdbeMergeEngineInit(
   int nTree = pMerger->nTree;
 
   /* Verify that the MergeEngine is assigned to a single thread */
-  assert( pMerger->pTask==0 || pMerger->pTask==pTask );
+  assert( pMerger->pTask==0 ); // || pMerger->pTask==pTask );
   pMerger->pTask = pTask;
 
   for(i=0; i<nTree; i++){
@@ -2125,7 +2122,7 @@ static int vdbeSorterAddToTree(
   MergeEngine *p = pRoot;
   IncrMerger *pIncr;
 
-  rc = vdbeIncrNew(pTask, pLeaf, &pIncr);
+  rc = vdbeIncrMergerNew(pTask, pLeaf, &pIncr);
 
   for(i=1; i<nDepth; i++){
     nDiv = nDiv * SORTER_MAX_MERGE_COUNT;
@@ -2140,7 +2137,7 @@ static int vdbeSorterAddToTree(
       if( pNew==0 ){
         rc = SQLITE_NOMEM;
       }else{
-        rc = vdbeIncrNew(pTask, pNew, &pReadr->pIncr);
+        rc = vdbeIncrMergerNew(pTask, pNew, &pReadr->pIncr);
       }
     }
     if( rc==SQLITE_OK ){
@@ -2216,7 +2213,7 @@ static int vdbeSorterMergeTreeBuild(
       if( rc==SQLITE_OK ){
 #if SQLITE_MAX_WORKER_THREADS>0
         if( pMain!=0 ){
-          rc = vdbeIncrNew(pTask, pRoot, &pMain->aReadr[iTask].pIncr);
+          rc = vdbeIncrMergerNew(pTask, pRoot, &pMain->aReadr[iTask].pIncr);
         }else
 #endif
         {
@@ -2269,13 +2266,13 @@ static int vdbeSorterSetupMerge(VdbeSorter *pSorter){
         if( pReadr==0 ) rc = SQLITE_NOMEM;
       }
       if( rc==SQLITE_OK ){
-        rc = vdbeIncrNew(pLast, pMain, &pReadr->pIncr);
+        rc = vdbeIncrMergerNew(pLast, pMain, &pReadr->pIncr);
         if( rc==SQLITE_OK ){
-          vdbeIncrSetThreads(pReadr->pIncr);
+          vdbeIncrMergerSetThreads(pReadr->pIncr);
           for(iTask=0; iTask<(pSorter->nTask-1); iTask++){
             IncrMerger *pIncr;
             if( (pIncr = pMain->aReadr[iTask].pIncr) ){
-              vdbeIncrSetThreads(pIncr);
+              vdbeIncrMergerSetThreads(pIncr);
               assert( pIncr->pTask!=pLast );
             }
           }
@@ -2379,7 +2376,8 @@ int sqlite3VdbeSorterNext(sqlite3 *db, const VdbeCursor *pCsr, int *pbEof){
     }else
 #endif
     /*if( !pSorter->bUseThreads )*/ {
-      rc = vdbeMergeEngineStep(&pSorter->aTask[0], pSorter->pMerger, pbEof);
+      assert( pSorter->pMerger->pTask==(&pSorter->aTask[0]) );
+      rc = vdbeMergeEngineStep(pSorter->pMerger, pbEof);
     }
   }else{
     SorterRecord *pFree = pSorter->list.pList;
