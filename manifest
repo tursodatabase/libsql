@@ -1,5 +1,5 @@
-C Add\ssome\sasserts\sto\sthe\sWin32\smutex\ssubsystem.
-D 2014-07-29T00:42:39.711
+C Merge\sthe\sR-Tree\sfix\sand\sthe\snew\sSQLITE_TESTCTRL_ISINIT\stest\scontrol\sfrom\ntrunk.
+D 2014-07-29T14:16:42.855
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,9 +122,9 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 6f70db93e0e42c369325c5cddcf2024c5a87ca43
+F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test e2da4aaa426918d27122d1a1066c6ecf8409a514
+F ext/rtree/rtree1.test 541bbcab74613907fea08b2ecdcdd5b7aa724cc9
 F ext/rtree/rtree2.test acbb3a4ce0f4fbc2c304d2b4b784cfa161856bba
 F ext/rtree/rtree3.test a494da55c30ee0bc9b01a91c80c81b387b22d2dc
 F ext/rtree/rtree4.test c8fe384f60ebd49540a5fecc990041bf452eb6e0
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 0eda2715c59120ac1e940640ddd496ed16caa2f3
+F src/main.c e2fded3600437acd3faae4182648e846ccdc3c7c
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -224,7 +224,7 @@ F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 2657f35be771d14f56402e4aa8a7e26562415ae6
 F src/shell.c 05e9e7f667a6340643b647c4be0db15dd7627d92
-F src/sqlite.h.in a30af69fcbc8fab8b4a00032f9f1d24ba2f01c2c
+F src/sqlite.h.in 44b761ddf5362581617d08457f11ee582eb103a2
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 9c1e5b965191c54157b155e321fa473b9734e062
@@ -1189,7 +1189,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2773a5f9879a106a89a3d0bc3c5bfdcb2fe43c7c
-R 9e10c19fd0ddd3066b284eac0abe3eac
-U mistachkin
-Z 477d633de18b2c200b7eed3df7c1c412
+P e8f2dc5fadae96252649875c234fcdef1108bd48 8b651d4d6cde7efbc0cc7155948f477477be100e
+R cf6ae596a6404c515cc34a8685610ab8
+U drh
+Z da4425a950252cc837b6f80952633a27
