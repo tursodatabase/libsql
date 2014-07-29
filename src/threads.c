@@ -168,7 +168,9 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
   assert( ppOut!=0 );
   if( NEVER(p==0) ) return SQLITE_NOMEM;
   if( p->xTask==0 ){
+    assert( p->id==GetCurrentThreadId() );
     rc = WAIT_OBJECT_0;
+    assert( p->tid==0 );
   }else{
     assert( p->id!=0 && p->id!=GetCurrentThreadId() );
     rc = sqlite3Win32Wait((HANDLE)p->tid);
