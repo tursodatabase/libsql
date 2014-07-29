@@ -51,6 +51,7 @@ int sqlite3ThreadCreate(
   void *pIn                 /* Argument passed into xTask() */
 ){
   SQLiteThread *p;
+  int rc;
 
   assert( ppThread!=0 );
   assert( xTask!=0 );
@@ -63,7 +64,12 @@ int sqlite3ThreadCreate(
   memset(p, 0, sizeof(*p));
   p->xTask = xTask;
   p->pIn = pIn;
-  if( sqlite3FaultSim(200) ? 1 : pthread_create(&p->tid, 0, xTask, pIn) ){
+  if( sqlite3FaultSim(200) ){
+    rc = 1;
+  }else{    
+    rc = pthread_create(&p->tid, 0, xTask, pIn);
+  }
+  if( rc ){
     p->done = 1;
     p->pOut = xTask(pIn);
   }
@@ -76,7 +82,7 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
   int rc;
 
   assert( ppOut!=0 );
-  if( p==0 ) return SQLITE_NOMEM;
+  if( NEVER(p==0) ) return SQLITE_NOMEM;
   if( p->done ){
     *ppOut = p->pOut;
     rc = SQLITE_OK;
@@ -160,7 +166,7 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
   BOOL bRc;
 
   assert( ppOut!=0 );
-  if( p==0 ) return SQLITE_NOMEM;
+  if( NEVER(p==0) ) return SQLITE_NOMEM;
   if( p->xTask==0 ){
     rc = WAIT_OBJECT_0;
   }else{
@@ -222,7 +228,7 @@ int sqlite3ThreadCreate(
 int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 
   assert( ppOut!=0 );
-  if( p==0 ) return SQLITE_NOMEM;
+  if( NEVER(p==0) ) return SQLITE_NOMEM;
   if( p->xTask ){
     *ppOut = p->xTask(p->pIn);
   }else{

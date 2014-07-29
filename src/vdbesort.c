@@ -938,11 +938,11 @@ static int vdbeSorterJoinThread(SortSubtask *pTask){
 #ifdef SQLITE_DEBUG_SORTER_THREADS
     int bDone = pTask->bDone;
 #endif
-    void *pRet;
+    void *pRet = SQLITE_INT_TO_PTR(SQLITE_ERROR);
     vdbeSorterBlockDebug(pTask, !bDone, "enter");
-    rc = sqlite3ThreadJoin(pTask->pThread, &pRet);
+    (void)sqlite3ThreadJoin(pTask->pThread, &pRet);
     vdbeSorterBlockDebug(pTask, !bDone, "exit");
-    if( rc==SQLITE_OK ) rc = SQLITE_PTR_TO_INT(pRet);
+    rc = SQLITE_PTR_TO_INT(pRet);
     assert( pTask->bDone==1 );
     pTask->bDone = 0;
     pTask->pThread = 0;
