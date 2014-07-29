@@ -1275,13 +1275,6 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 #endif
 }
 
-DWORD sqlite3Win32Wait(HANDLE hObject){
-  DWORD rc;
-  while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,
-                                       TRUE))==WAIT_IO_COMPLETION ){}
-  return rc;
-}
-
 /*
 ** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
 ** or WinCE.  Return false (zero) for Win95, Win98, or WinME.

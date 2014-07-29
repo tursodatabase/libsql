@@ -147,6 +147,14 @@ int sqlite3ThreadCreate(
   return SQLITE_OK;
 }
 
+/* Wait on an object */
+DWORD sqlite3Win32Wait(HANDLE hObject){
+  DWORD rc;
+  while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,
+                                       TRUE))==WAIT_IO_COMPLETION ){}
+  return rc;
+}
+
 /* Get the results of the thread */
 int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
   DWORD rc;

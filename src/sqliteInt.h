@@ -3723,11 +3723,4 @@ int sqlite3ThreadCreate(SQLiteThread**,void*(*)(void*),void*);
 int sqlite3ThreadJoin(SQLiteThread*, void**);
 #endif
 
-/*
-** Win32 interface
-*/
-#if SQLITE_OS_WIN
-  DWORD sqlite3Win32Wait(HANDLE hObject);
-#endif
-
 #endif /* _SQLITEINT_H_ */
