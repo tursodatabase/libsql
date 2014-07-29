@@ -100,21 +100,25 @@ int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
 /* A running thread */
 struct SQLiteThread {
   uintptr_t tid;           /* The thread handle */
+  unsigned id;             /* The thread identifier */
   void *(*xTask)(void*);   /* The routine to run as a thread */
   void *pIn;               /* Argument to xTask */
   void *pResult;           /* Result of xTask */
 };
 
 /* Thread procedure Win32 compatibility shim */
-static void sqlite3ThreadProc(
+static unsigned __stdcall sqlite3ThreadProc(
   void *pArg  /* IN: Pointer to the SQLiteThread structure */
 ){
   SQLiteThread *p = (SQLiteThread *)pArg;
 
   assert( p!=0 );
+  assert( p->id==GetCurrentThreadId() );
   assert( p->xTask!=0 );
   p->pResult = p->xTask(p->pIn);
-  _endthread();
+
+  _endthreadex(0);
+  return 0; /* NOT REACHED */
 }
 
 /* Create a new thread */
@@ -135,37 +139,36 @@ int sqlite3ThreadCreate(
   }else{
     p->xTask = xTask;
     p->pIn = pIn;
-    p->tid = _beginthread(sqlite3ThreadProc, 0, p);
+    p->tid = _beginthreadex(0, 0, sqlite3ThreadProc, p, 0, &p->id);
     if( p->tid==(uintptr_t)-1 ){
       memset(p, 0, sizeof(*p));
     }
   }
   if( p->xTask==0 ){
+    p->id = GetCurrentThreadId();
     p->pResult = xTask(pIn);
   }
   *ppThread = p;
   return SQLITE_OK;
 }
 
-/* Wait on an object */
-DWORD sqlite3Win32Wait(HANDLE hObject){
-  DWORD rc;
-  while( (rc = WaitForSingleObjectEx(hObject, INFINITE,
-                                       TRUE))==WAIT_IO_COMPLETION ){}
-  return rc;
-}
+DWORD sqlite3Win32Wait(HANDLE hObject); /* os_win.c */
 
 /* Get the results of the thread */
 int sqlite3ThreadJoin(SQLiteThread *p, void **ppOut){
   DWORD rc;
+  BOOL bRc;
 
   assert( ppOut!=0 );
   if( p==0 ) return SQLITE_NOMEM;
   if( p->xTask==0 ){
     rc = WAIT_OBJECT_0;
   }else{
+    assert( p->id!=0 && p->id!=GetCurrentThreadId() );
     rc = sqlite3Win32Wait((HANDLE)p->tid);
     assert( rc!=WAIT_IO_COMPLETION );
+    bRc = CloseHandle((HANDLE)p->tid);
+    assert( bRc );
   }
   if( rc==WAIT_OBJECT_0 ) *ppOut = p->pResult;
   sqlite3_free(p);
