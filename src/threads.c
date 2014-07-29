@@ -150,7 +150,7 @@ int sqlite3ThreadCreate(
 /* Wait on an object */
 DWORD sqlite3Win32Wait(HANDLE hObject){
   DWORD rc;
-  while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,
+  while( (rc = WaitForSingleObjectEx(hObject, INFINITE,
                                        TRUE))==WAIT_IO_COMPLETION ){}
   return rc;
 }

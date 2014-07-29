@@ -1,5 +1,5 @@
-C Merge\sthe\sR-Tree\sfix\sand\sthe\snew\sSQLITE_TESTCTRL_ISINIT\stest\scontrol\sfrom\ntrunk.
-D 2014-07-29T14:16:42.855
+C Fix\sthe\sthreads\sbuild\son\sWindows\swhen\sSQLITE_MAX_WORKER_THREADS\sis\sgreater\nthan\s0.
+D 2014-07-29T15:18:00.197
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,7 +277,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c afdab9acbda8b96dd0e55052de59b87d972cadc1
+F src/threads.c 28c72cb7818fea8df83116c54d774e9541e60121
 F src/tokenize.c ae45399d6252b4d736af43bee1576ce7bff86aec
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 01564b3c430f6c7b0a35afaf7aba7987206fa3a5
@@ -1189,7 +1189,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e8f2dc5fadae96252649875c234fcdef1108bd48 8b651d4d6cde7efbc0cc7155948f477477be100e
-R cf6ae596a6404c515cc34a8685610ab8
+P b2f7eb3cc27ecf9a6a88907991148bca1a7d54b3
+R d111ee75a275c87deb7a4599506773e2
 U drh
-Z da4425a950252cc837b6f80952633a27
+Z e24fba9313c2b62a7de12b4c1acec1ff
