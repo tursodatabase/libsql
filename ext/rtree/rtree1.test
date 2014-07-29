@@ -33,6 +33,7 @@ set testprefix rtree1
 #   rtree-8.*: Test constrained scans of r-tree data.
 #
 #   rtree-12.*: Test that on-conflict clauses are supported.
+#   rtree-13.*: Test that bug [d2889096e7bdeac6d] has been fixed.
 #
 
 ifcapable !rtree {
@@ -513,4 +514,25 @@ foreach {tn sql_template testdata} {
     db close
   }
 }
+
+#-------------------------------------------------------------------------
+# Test that bug [d2889096e7bdeac6d] has been fixed.
+#
+reset_db
+do_execsql_test 13.1 {
+  CREATE VIRTUAL TABLE t9 USING rtree(id, xmin, xmax);
+  INSERT INTO t9 VALUES(1,0,0);            
+  INSERT INTO t9 VALUES(2,0,0);
+  SELECT * FROM t9 WHERE id IN (1, 2);
+} {1 0.0 0.0 2 0.0 0.0}
+
+do_execsql_test 13.2 {
+  WITH r(x) AS (
+    SELECT 1 UNION ALL
+    SELECT 2 UNION ALL
+    SELECT 3
+  )
+  SELECT * FROM r CROSS JOIN t9 WHERE id=x;
+} {1 1 0.0 0.0 2 2 0.0 0.0}
+
 finish_test

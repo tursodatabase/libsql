@@ -2047,7 +2047,8 @@ static int whereRangeSkipScanEst(
   int nLower = -1;
   int nUpper = p->nSample+1;
   int rc = SQLITE_OK;
-  u8 aff = p->pTable->aCol[ p->aiColumn[nEq] ].affinity;
+  int iCol = p->aiColumn[nEq];
+  u8 aff = iCol>=0 ? p->pTable->aCol[iCol].affinity : SQLITE_AFF_INTEGER;
   CollSeq *pColl;
   
   sqlite3_value *p1 = 0;          /* Value extracted from pLower */

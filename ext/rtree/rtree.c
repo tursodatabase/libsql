@@ -1533,9 +1533,13 @@ static int rtreeFilter(
 
   rtreeReference(pRtree);
 
+  /* Reset the cursor to the same state as rtreeOpen() leaves it in. */
   freeCursorConstraints(pCsr);
-  pCsr->iStrategy = idxNum;
+  sqlite3_free(pCsr->aPoint);
+  memset(pCsr, 0, sizeof(RtreeCursor));
+  pCsr->base.pVtab = (sqlite3_vtab*)pRtree;
 
+  pCsr->iStrategy = idxNum;
   if( idxNum==1 ){
     /* Special case - lookup by rowid. */
     RtreeNode *pLeaf;        /* Leaf on which the required cell resides */
