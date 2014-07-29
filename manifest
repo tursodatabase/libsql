@@ -1,5 +1,5 @@
-C Add\sa\scouple\smore\sassert\sstatements.
-D 2014-07-29T18:53:01.887
+C Update\sreturn\svalue\schecking\sto\sconform\sto\sthe\sbeginthreadex()\sspecs.
+D 2014-07-29T19:00:43.216
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -277,7 +277,7 @@ F src/test_thread.c 1e133a40b50e9c035b00174035b846e7eef481cb
 F src/test_vfs.c f84075a388527892ff184988f43b69ce69b8083c
 F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
-F src/threads.c c0c04b9c8beed10327412819126edbc6f3b3d4d7
+F src/threads.c d5812ef982cbd9f1a211142dba1a756a632adeea
 F src/tokenize.c ae45399d6252b4d736af43bee1576ce7bff86aec
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
 F src/update.c 01564b3c430f6c7b0a35afaf7aba7987206fa3a5
@@ -1189,7 +1189,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3175e366bbf7579ec9ab27214b0a4e5cd27ea204
-R f89aa137e4caaa8d5d9c03d775d53084
+P 4e816db235025c7998c649fddabfd807290a08b9
+R 5dbe393ae5ff45dc682e2cd252c64ea7
 U mistachkin
-Z 86b91bc53f3caa97895c33b5247f45da
+Z dbee73cad348dd0ed17a62d1c858d9f3

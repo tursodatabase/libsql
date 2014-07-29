@@ -146,7 +146,7 @@ int sqlite3ThreadCreate(
     p->xTask = xTask;
     p->pIn = pIn;
     p->tid = _beginthreadex(0, 0, sqlite3ThreadProc, p, 0, &p->id);
-    if( p->tid==(uintptr_t)-1 ){
+    if( p->tid==0 ){
       memset(p, 0, sizeof(*p));
     }
   }
