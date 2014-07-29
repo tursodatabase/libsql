@@ -119,7 +119,15 @@ static unsigned __stdcall sqlite3ThreadProc(
   SQLiteThread *p = (SQLiteThread *)pArg;
 
   assert( p!=0 );
+#if 0
+  /*
+  ** This assert appears to trigger spuriously on certain
+  ** versions of Windows, possibly due to _beginthreadex()
+  ** and/or CreateThread() not fully setting their thread
+  ** ID parameter before starting the thread.
+  */
   assert( p->id==GetCurrentThreadId() );
+#endif
   assert( p->xTask!=0 );
   p->pResult = p->xTask(p->pIn);
 
