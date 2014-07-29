@@ -1,5 +1,5 @@
-C Have\scalls\sto\sthe\sxFilter()\smethod\sof\srtree\svirtual\stables\sensure\sthat\scursor\sis\sinitialized\sbefore\sproceeding.\sFix\sfor\s[d2889096e7bdeac].
-D 2014-07-29T11:54:18.063
+C Add\sthe\sSQLITE_TESTCTRL_ISINIT\sfile\scontrol.
+D 2014-07-29T14:09:21.164
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c cfdb2aa5d248ff1af60227cc3f6d485ba86f92dc
+F src/main.c fbe7c756f8974c547f82396253dd507e877f411a
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -224,7 +224,7 @@ F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
 F src/shell.c 191129c3f7a9cf241aea90ff6a6be3e74d3767f0
-F src/sqlite.h.in ac4451c9da2771d2f4d702ef89722407242906d9
+F src/sqlite.h.in 5967719136e14183b2573ba619993438e2b9856e
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 068e42f41a09ce6b9edbe194ac8a470ab53145df
@@ -1184,7 +1184,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5350229b52b18a4961858a30538c5c75e5bd3048
-R 0da0b70a772b464fda61490d5328a931
-U dan
-Z f2b0f473c1ab5a411c1b4bc1349722f0
+P 8cc41b0bf365af47c2061ffe44c86018945dd239
+R 0a47475429662a9995bbe963fdd69743
+U drh
+Z e526885cd3c9012daec258cf388db74a
