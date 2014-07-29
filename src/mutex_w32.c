@@ -245,6 +245,7 @@ static void winMutexFree(sqlite3_mutex *p){
   assert( p );
   assert( p->nRef==0 && p->owner==0 );
   assert( p->id==SQLITE_MUTEX_FAST || p->id==SQLITE_MUTEX_RECURSIVE );
+  assert( winMutex_isInit==1 );
   DeleteCriticalSection(&p->mutex);
   sqlite3_free(p);
 }
@@ -265,6 +266,7 @@ static void winMutexEnter(sqlite3_mutex *p){
   DWORD tid = GetCurrentThreadId(); 
   assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld2(p, tid) );
 #endif
+  assert( winMutex_isInit==1 );
   EnterCriticalSection(&p->mutex);
 #ifdef SQLITE_DEBUG
   assert( p->nRef>0 || p->owner==0 );
@@ -293,6 +295,7 @@ static int winMutexTry(sqlite3_mutex *p){
   ** ticket #2685.
   */
 #if 0
+  assert( winMutex_isInit==1 );
   if( mutexIsNT() && TryEnterCriticalSection(&p->mutex) ){
     p->owner = tid;
     p->nRef++;
@@ -324,6 +327,7 @@ static void winMutexLeave(sqlite3_mutex *p){
   if( p->nRef==0 ) p->owner = 0;
   assert( p->nRef==0 || p->id==SQLITE_MUTEX_RECURSIVE );
 #endif
+  assert( winMutex_isInit==1 );
   LeaveCriticalSection(&p->mutex);
 #ifdef SQLITE_DEBUG
   if( p->trace ){
