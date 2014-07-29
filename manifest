@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sfrom\sthe\ssqlite3_value_numeric_type()\sinterface.
-D 2014-07-26T20:12:56.006
+C Enhancements\sand\supdates\sto\sthe\sWin32\smutex\ssubsystem.
+D 2014-07-29T05:49:02.604
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c cfdb2aa5d248ff1af60227cc3f6d485ba86f92dc
+F src/main.c 2c7647fd706cbb048e2b70429e552a7bf732d298
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -201,14 +201,14 @@ F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
 F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c 9bcab6e699fdb20eae784237c36b299830fb3316
+F src/mutex_w32.c 45020ed78735a202ff14efcf19415d29f556f16d
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a7baf1b30f3c58ba20b813e01aab23b18ae44f85
-F src/os_win.c 8dbf6c11780fe2eb96c1f289e664d0c7b2911d37
+F src/os_win.c c29e3a80b47ebdbabd61fc3d4015e52d2654d8c5
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1184,7 +1184,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 413d7287977702fa651c0140bd5cf29021fe3e79
-R 882befeb8b61995267c9bc4311daa690
-U drh
-Z 28fa8e103cbfa69958d1f03600e24fde
+P 5350229b52b18a4961858a30538c5c75e5bd3048
+R de509ee2752907682d663ce7b389c5a6
+T *branch * winMutex
+T *sym-winMutex *
+T -sym-trunk *
+U mistachkin
+Z 9395c7aaf9a6a0a0988325332158758a
