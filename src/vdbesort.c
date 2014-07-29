@@ -1113,7 +1113,7 @@ static void vdbeSorterExtendFile(sqlite3 *db, sqlite3_file *pFd, i64 nByte){
   }
 }
 #else
-# define vdbeSorterExtendFile(x,y,z) SQLITE_OK
+# define vdbeSorterExtendFile(x,y,z)
 #endif
 
 /*
