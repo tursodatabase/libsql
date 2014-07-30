@@ -34,7 +34,7 @@ struct Fts5Expr {
   Fts5ExprNode *pRoot;
   int bAsc;
   int nPhrase;                    /* Number of phrases in expression */
-  Fts5ExprPhrase **apPhrase;      /* Pointers to phrase objects */
+  Fts5ExprPhrase **apExprPhrase;  /* Pointers to phrase objects */
 };
 
 /*
@@ -216,7 +216,7 @@ int sqlite3Fts5ExprNew(
     }else{
       pNew->pRoot = sParse.pExpr;
       pNew->pIndex = 0;
-      pNew->apPhrase = sParse.apPhrase;
+      pNew->apExprPhrase = sParse.apPhrase;
       pNew->nPhrase = sParse.nPhrase;
       sParse.apPhrase = 0;
     }
@@ -275,7 +275,7 @@ int sqlite3Fts5ExprPhraseExpr(
   Fts5ExprNearset *pNear;
   Fts5ExprPhrase *pCopy;
 
-  pOrig = pExpr->apPhrase[iPhrase];
+  pOrig = pExpr->apExprPhrase[iPhrase];
   pNew = (Fts5Expr*)fts5ExprMalloc(&rc, sizeof(Fts5Expr));
   apPhrase = (Fts5ExprPhrase**)fts5ExprMalloc(&rc, sizeof(Fts5ExprPhrase*));
   pNode = (Fts5ExprNode*)fts5ExprMalloc(&rc, sizeof(Fts5ExprNode));
@@ -296,8 +296,8 @@ int sqlite3Fts5ExprPhraseExpr(
     pNew->pIndex = pExpr->pIndex;
     pNew->pRoot = pNode;
     pNew->nPhrase = 1;
-    pNew->apPhrase = apPhrase;
-    pNew->apPhrase[0] = pCopy;
+    pNew->apExprPhrase = apPhrase;
+    pNew->apExprPhrase[0] = pCopy;
 
     pNode->eType = FTS5_STRING;
     pNode->pNear = pNear;
@@ -345,7 +345,7 @@ void sqlite3Fts5ParseNodeFree(Fts5ExprNode *p){
 void sqlite3Fts5ExprFree(Fts5Expr *p){
   if( p ){
     sqlite3Fts5ParseNodeFree(p->pRoot);
-    sqlite3_free(p->apPhrase);
+    sqlite3_free(p->apExprPhrase);
     sqlite3_free(p);
   }
 }
@@ -1588,7 +1588,7 @@ int sqlite3Fts5ExprPhraseCount(Fts5Expr *pExpr){
 */
 int sqlite3Fts5ExprPhraseSize(Fts5Expr *pExpr, int iPhrase){
   if( iPhrase<0 || iPhrase>=pExpr->nPhrase ) return 0;
-  return pExpr->apPhrase[iPhrase]->nTerm;
+  return pExpr->apExprPhrase[iPhrase]->nTerm;
 }
 
 /*
@@ -1597,7 +1597,7 @@ int sqlite3Fts5ExprPhraseSize(Fts5Expr *pExpr, int iPhrase){
 */
 int sqlite3Fts5ExprPoslist(Fts5Expr *pExpr, int iPhrase, const u8 **pa){
   if( iPhrase>=0 && iPhrase<pExpr->nPhrase ){
-    Fts5ExprPhrase *pPhrase = pExpr->apPhrase[iPhrase];
+    Fts5ExprPhrase *pPhrase = pExpr->apExprPhrase[iPhrase];
     Fts5ExprNode *pNode = pPhrase->pNode;
     if( pNode->bEof==0 && pNode->iRowid==pExpr->pRoot->iRowid ){
       *pa = pPhrase->poslist.p;

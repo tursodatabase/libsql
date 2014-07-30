@@ -261,8 +261,16 @@ foreach {tn q res} {
   5 {g AND (e OR f)} {5 4}
   6 {j AND (h OR i)} {5 6}
 } {
-  do_execsql_test 8.2.$tn {
+  do_execsql_test 8.2.$tn.1 {
     SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY bm25(t8) DESC;
+  } $res
+
+  do_execsql_test 8.2.$tn.2 {
+    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY +rank DESC;
+  } $res
+
+  do_execsql_test 8.3.$tn.3 {
+    SELECT rowid FROM t8 WHERE t8 MATCH $q ORDER BY rank DESC;
   } $res
 }
 

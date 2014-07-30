@@ -165,7 +165,10 @@ int sqlite3Fts5ConfigParse(
   pRet->azCol = (char**)sqlite3_malloc(sizeof(char*) * nArg);
   pRet->zDb = fts5Strdup(azArg[1]);
   pRet->zName = fts5Strdup(azArg[2]);
-  if( pRet->azCol==0 || pRet->zDb==0 || pRet->zName==0 ){
+  if( sqlite3_stricmp(pRet->zName, FTS5_RANK_NAME)==0 ){
+    *pzErr = sqlite3_mprintf("reserved fts5 table name: %s", pRet->zName);
+    rc = SQLITE_ERROR;
+  }else if( pRet->azCol==0 || pRet->zDb==0 || pRet->zName==0 ){
     rc = SQLITE_NOMEM;
   }else{
     int i;
@@ -189,10 +192,15 @@ int sqlite3Fts5ConfigParse(
           }
         }
 
-        /* If it is not a special directive, it must be a column name */
+        /* If it is not a special directive, it must be a column name. In
+        ** this case, check that it is not the reserved column name "rank". */
         if( zDup ){
           sqlite3Fts5Dequote(zDup);
           pRet->azCol[pRet->nCol++] = zDup;
+          if( sqlite3_stricmp(zDup, FTS5_RANK_NAME)==0 ){
+            *pzErr = sqlite3_mprintf("reserved fts5 column name: %s", zDup);
+            rc = SQLITE_ERROR;
+          }
         }
       }
     }
@@ -249,7 +257,9 @@ int sqlite3Fts5ConfigDeclareVtab(Fts5Config *pConfig){
 
   if( zSql ){
     zOld = zSql;
-    zSql = sqlite3_mprintf("%s, %Q HIDDEN)", zOld, pConfig->zName);
+    zSql = sqlite3_mprintf("%s, %Q HIDDEN, %s HIDDEN)", 
+        zOld, pConfig->zName, FTS5_RANK_NAME
+    );
     sqlite3_free(zOld);
   }
 

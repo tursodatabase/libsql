@@ -276,5 +276,14 @@ foreach {rowid x y} $d10 {
 do_execsql_test 10.4.1 { DELETE FROM t1 }
 do_execsql_test 10.4.2 { INSERT INTO t1(t1) VALUES('integrity-check') }
 
+#-------------------------------------------------------------------------
+#
+do_catchsql_test 11.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(a, b, c, rank);
+} {1 {reserved fts5 column name: rank}}
+do_catchsql_test 11.2 {
+  CREATE VIRTUAL TABLE rank USING fts5(a, b, c);
+} {1 {reserved fts5 table name: rank}}
+
 finish_test
 

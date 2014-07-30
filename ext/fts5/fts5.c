@@ -56,11 +56,26 @@ struct Fts5Table {
   Fts5Index *pIndex;              /* Full-text index */
   Fts5Storage *pStorage;          /* Document store */
   Fts5Global *pGlobal;            /* Global (connection wide) data */
+  Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
 };
 
 struct Fts5MatchPhrase {
   Fts5Buffer *pPoslist;           /* Pointer to current poslist */
   int nTerm;                      /* Size of phrase in terms */
+};
+
+/*
+** Variable pStmt is set to a compiled SQL statement of the form:
+**
+**   SELECT rowid, <fts> FROM <fts> ORDER BY +rank;
+**
+*/
+struct Fts5Sorter {
+  sqlite3_stmt *pStmt;
+  i64 iRowid;                     /* Current rowid */
+  u8 *aPoslist;                   /* Position lists for current row */
+  int nIdx;                       /* Number of entries in aIdx[] */
+  int aIdx[0];                    /* Offsets into aPoslist for current row */
 };
 
 /*
@@ -71,13 +86,15 @@ struct Fts5Cursor {
   int idxNum;                     /* idxNum passed to xFilter() */
   sqlite3_stmt *pStmt;            /* Statement used to read %_content */
   Fts5Expr *pExpr;                /* Expression for MATCH queries */
+  Fts5Sorter *pSorter;            /* Sorter for "ORDER BY rank" queries */
   int csrflags;                   /* Mask of cursor flags (see below) */
   Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
+  Fts5Auxiliary *pRank;           /* Rank callback (or NULL) */
 
   /* Variables used by auxiliary functions */
   i64 iCsrId;                     /* Cursor id */
   Fts5Auxiliary *pAux;            /* Currently executing extension function */
-  Fts5Auxdata *pAuxdata;          /* First in linked list of aux-data */
+  Fts5Auxdata *pAuxdata;          /* First in linked list of saved aux-data */
   int *aColumnSize;               /* Values for xColumnSize() */
 };
 
@@ -227,9 +244,11 @@ static int fts5CreateMethod(
 /*
 ** The three query plans xBestIndex may choose between.
 */
-#define FTS5_PLAN_SCAN    1       /* No usable constraint */
-#define FTS5_PLAN_MATCH   2       /* (<tbl> MATCH ?) */
-#define FTS5_PLAN_ROWID   3       /* (rowid = ?) */
+#define FTS5_PLAN_SCAN           1       /* No usable constraint */
+#define FTS5_PLAN_MATCH          2       /* (<tbl> MATCH ?) */
+#define FTS5_PLAN_SORTED_MATCH   3       /* (<tbl> MATCH ? ORDER BY rank) */
+#define FTS5_PLAN_ROWID          4       /* (rowid = ?) */
+#define FTS5_PLAN_SOURCE         5       /* A source cursor for SORTED_MATCH */
 
 #define FTS5_PLAN(idxNum) ((idxNum) & 0x7)
 
@@ -284,9 +303,20 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     pInfo->estimatedCost = 10000000.0;
   }
 
-  if( pInfo->nOrderBy==1 && pInfo->aOrderBy[0].iColumn<0 ){
-    pInfo->orderByConsumed = 1;
-    ePlan |= pInfo->aOrderBy[0].desc ? FTS5_ORDER_DESC : FTS5_ORDER_ASC;
+  if( pInfo->nOrderBy==1 ){
+    int iSort = pInfo->aOrderBy[0].iColumn;
+    if( iSort<0 ){
+      /* ORDER BY rowid [ASC|DESC] */
+      pInfo->orderByConsumed = 1;
+    }else if( iSort==(pConfig->nCol+1) && ePlan==FTS5_PLAN_MATCH ){
+      /* ORDER BY rank [ASC|DESC] */
+      pInfo->orderByConsumed = 1;
+      ePlan = FTS5_PLAN_SORTED_MATCH;
+    }
+
+    if( pInfo->orderByConsumed ){
+      ePlan |= pInfo->aOrderBy[0].desc ? FTS5_ORDER_DESC : FTS5_ORDER_ASC;
+    }
   }
    
   pInfo->idxNum = ePlan;
@@ -341,7 +371,15 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     int eStmt = fts5StmtType(pCsr->idxNum);
     sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
   }
-  sqlite3Fts5ExprFree(pCsr->pExpr);
+  if( pCsr->pSorter ){
+    Fts5Sorter *pSorter = pCsr->pSorter;
+    sqlite3_finalize(pSorter->pStmt);
+    sqlite3_free(pSorter);
+  }
+  
+  if( pCsr->idxNum!=FTS5_PLAN_SOURCE ){
+    sqlite3Fts5ExprFree(pCsr->pExpr);
+  }
 
   for(pData=pCsr->pAuxdata; pData; pData=pNext){
     pNext = pData->pNext;
@@ -357,6 +395,21 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
+static int fts5SorterNext(Fts5Cursor *pCsr){
+  Fts5Sorter *pSorter = pCsr->pSorter;
+  int rc;
+
+  rc = sqlite3_step(pSorter->pStmt);
+  if( rc==SQLITE_DONE ){
+    rc = SQLITE_OK;
+    CsrFlagSet(pCsr, FTS5CSR_EOF);
+  }else if( rc==SQLITE_ROW ){
+    rc = SQLITE_OK;
+    pSorter->iRowid = sqlite3_column_int64(pSorter->pStmt, 0);
+  }
+
+  return rc;
+}
 
 /*
 ** Advance the cursor to the next row in the table that matches the 
@@ -371,22 +424,74 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
   int ePlan = FTS5_PLAN(pCsr->idxNum);
   int rc = SQLITE_OK;
 
-  if( ePlan!=FTS5_PLAN_MATCH ){
-    rc = sqlite3_step(pCsr->pStmt);
-    if( rc!=SQLITE_ROW ){
-      CsrFlagSet(pCsr, FTS5CSR_EOF);
-      rc = sqlite3_reset(pCsr->pStmt);
-    }else{
-      rc = SQLITE_OK;
+  switch( ePlan ){
+    case FTS5_PLAN_MATCH:
+    case FTS5_PLAN_SOURCE:
+      rc = sqlite3Fts5ExprNext(pCsr->pExpr);
+      if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
+        CsrFlagSet(pCsr, FTS5CSR_EOF);
+      }
+      CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+      break;
+
+    case FTS5_PLAN_SORTED_MATCH: {
+      rc = fts5SorterNext(pCsr);
+      break;
     }
-  }else{
-    rc = sqlite3Fts5ExprNext(pCsr->pExpr);
-    if( sqlite3Fts5ExprEof(pCsr->pExpr) ){
-      CsrFlagSet(pCsr, FTS5CSR_EOF);
-    }
-    CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
+
+    default:
+      rc = sqlite3_step(pCsr->pStmt);
+      if( rc!=SQLITE_ROW ){
+        CsrFlagSet(pCsr, FTS5CSR_EOF);
+        rc = sqlite3_reset(pCsr->pStmt);
+      }else{
+        rc = SQLITE_OK;
+      }
+      break;
   }
   
+  return rc;
+}
+
+static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
+  Fts5Config *pConfig = pTab->pConfig;
+  Fts5Sorter *pSorter;
+  int nPhrase;
+  int nByte;
+  int rc = SQLITE_OK;
+  char *zSql;
+  
+  nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
+  nByte = sizeof(Fts5Sorter) + sizeof(int) * nPhrase;
+  pSorter = (Fts5Sorter*)sqlite3_malloc(nByte);
+  if( pSorter==0 ) return SQLITE_NOMEM;
+  memset(pSorter, 0, nByte);
+
+  zSql = sqlite3_mprintf("SELECT rowid, %Q FROM %Q.%Q ORDER BY +%s %s",
+      pConfig->zName, pConfig->zDb, pConfig->zName, FTS5_RANK_NAME,
+      bAsc ? "ASC" : "DESC"
+  );
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pSorter->pStmt, 0);
+    sqlite3_free(zSql);
+  }
+
+  pCsr->pSorter = pSorter;
+  if( rc==SQLITE_OK ){
+    assert( pTab->pSortCsr==0 );
+    pTab->pSortCsr = pCsr;
+    rc = fts5SorterNext(pCsr);
+    pTab->pSortCsr = 0;
+  }
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_finalize(pSorter->pStmt);
+    sqlite3_free(pSorter);
+    pCsr->pSorter = 0;
+  }
+
   return rc;
 }
 
@@ -414,30 +519,43 @@ static int fts5FilterMethod(
 ){
   Fts5Table *pTab = (Fts5Table*)(pCursor->pVtab);
   Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int rc = SQLITE_OK;
-  int ePlan = FTS5_PLAN(idxNum);
-  int eStmt = fts5StmtType(idxNum);
   int bAsc = ((idxNum & FTS5_ORDER_ASC) ? 1 : 0);
+  int rc = SQLITE_OK;
 
-  pCsr->idxNum = idxNum;
   assert( pCsr->pStmt==0 );
   assert( pCsr->pExpr==0 );
   assert( pCsr->csrflags==0 );
+  assert( pCsr->pRank==0 );
 
-  rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
-  if( rc==SQLITE_OK ){
-    if( ePlan==FTS5_PLAN_MATCH ){
-      char **pzErr = &pTab->base.zErrMsg;
-      const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
-      rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
-      if( rc==SQLITE_OK ){
-        rc = fts5CursorFirst(pTab, pCsr, bAsc);
+  if( pTab->pSortCsr ){
+    pCsr->idxNum = FTS5_PLAN_SOURCE;
+    pCsr->pRank = pTab->pSortCsr->pRank;
+    pCsr->pExpr = pTab->pSortCsr->pExpr;
+    rc = fts5CursorFirst(pTab, pCsr, bAsc);
+  }else{
+    int ePlan = FTS5_PLAN(idxNum);
+    int eStmt = fts5StmtType(idxNum);
+    pCsr->idxNum = idxNum;
+    rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
+    if( rc==SQLITE_OK ){
+      if( ePlan==FTS5_PLAN_MATCH || ePlan==FTS5_PLAN_SORTED_MATCH ){
+        char **pzErr = &pTab->base.zErrMsg;
+        const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
+        pCsr->pRank = pTab->pGlobal->pAux;
+        rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
+        if( rc==SQLITE_OK ){
+          if( ePlan==FTS5_PLAN_MATCH ){
+            rc = fts5CursorFirst(pTab, pCsr, bAsc);
+          }else{
+            rc = fts5CursorFirstSorted(pTab, pCsr, bAsc);
+          }
+        }
+      }else{
+        if( ePlan==FTS5_PLAN_ROWID ){
+          sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
+        }
+        rc = fts5NextMethod(pCursor);
       }
-    }else{
-      if( ePlan==FTS5_PLAN_ROWID ){
-        sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
-      }
-      rc = fts5NextMethod(pCursor);
     }
   }
 
@@ -464,10 +582,19 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   int ePlan = FTS5_PLAN(pCsr->idxNum);
   
   assert( CsrFlagTest(pCsr, FTS5CSR_EOF)==0 );
-  if( ePlan!=FTS5_PLAN_MATCH ){
-    *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
-  }else{
-    *pRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
+  switch( ePlan ){
+    case FTS5_PLAN_SOURCE:
+    case FTS5_PLAN_MATCH:
+      *pRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
+      break;
+
+    case FTS5_PLAN_SORTED_MATCH:
+      *pRowid = pCsr->pSorter->iRowid;
+      break;
+
+    default:
+      *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
+      break;
   }
 
   return SQLITE_OK;
@@ -492,36 +619,6 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
       if( rc==SQLITE_OK ){
         rc = SQLITE_CORRUPT_VTAB;
       }
-    }
-  }
-  return rc;
-}
-
-/* 
-** This is the xColumn method, called by SQLite to request a value from
-** the row that the supplied cursor currently points to.
-*/
-static int fts5ColumnMethod(
-  sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
-  sqlite3_context *pCtx,          /* Context for sqlite3_result_xxx() calls */
-  int iCol                        /* Index of column to read value from */
-){
-  Fts5Config *pConfig = ((Fts5Table*)(pCursor->pVtab))->pConfig;
-  Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
-  int rc = SQLITE_OK;
-  
-  assert( CsrFlagTest(pCsr, FTS5CSR_EOF)==0 );
-
-  if( iCol==pConfig->nCol ){
-    /* User is requesting the value of the special column with the same name
-    ** as the table. Return the cursor integer id number. This value is only
-    ** useful in that it may be passed as the first argument to an FTS5
-    ** auxiliary function.  */
-    sqlite3_result_int64(pCtx, pCsr->iCsrId);
-  }else{
-    rc = fts5SeekCursor(pCsr);
-    if( rc==SQLITE_OK ){
-      sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
   }
   return rc;
@@ -573,7 +670,15 @@ static int fts5UpdateMethod(
   int eConflict;                  /* ON CONFLICT for this DML */
   int rc = SQLITE_OK;             /* Return code */
 
-  assert( nArg==1 || nArg==(2 + pConfig->nCol + 1) );
+  /* A delete specifies a single argument - the rowid of the row to remove.
+  ** Update and insert operations pass:
+  **
+  **   1. The "old" rowid, or NULL.
+  **   2. The "new" rowid.
+  **   3. Values for each of the nCol matchable columns.
+  **   4. Values for the two hidden columns (<tablename> and "rank").
+  */
+  assert( nArg==1 || nArg==(2 + pConfig->nCol + 2) );
 
   if( nArg>1 && SQLITE_NULL!=sqlite3_value_type(apVal[2 + pConfig->nCol]) ){
     return fts5SpecialCommand(pTab, apVal[2 + pConfig->nCol]);
@@ -840,6 +945,19 @@ static int fts5ApiQueryPhrase(
   return rc;
 }
 
+static void fts5ApiInvoke(
+  Fts5Auxiliary *pAux,
+  Fts5Cursor *pCsr,
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  assert( pCsr->pAux==0 );
+  pCsr->pAux = pAux;
+  pAux->xFunc(&sFts5Api, (Fts5Context*)pCsr, context, argc, argv);
+  pCsr->pAux = 0;
+}
+
 static void fts5ApiCallback(
   sqlite3_context *context,
   int argc,
@@ -861,11 +979,47 @@ static void fts5ApiCallback(
     char *zErr = sqlite3_mprintf("no such cursor: %lld", iCsrId);
     sqlite3_result_error(context, zErr, -1);
   }else{
-    assert( pCsr->pAux==0 );
-    pCsr->pAux = pAux;
-    pAux->xFunc(&sFts5Api, (Fts5Context*)pCsr, context, argc-1, &argv[1]);
-    pCsr->pAux = 0;
+    fts5ApiInvoke(pAux, pCsr, context, argc-1, &argv[1]);
   }
+}
+
+/* 
+** This is the xColumn method, called by SQLite to request a value from
+** the row that the supplied cursor currently points to.
+*/
+static int fts5ColumnMethod(
+  sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
+  sqlite3_context *pCtx,          /* Context for sqlite3_result_xxx() calls */
+  int iCol                        /* Index of column to read value from */
+){
+  Fts5Config *pConfig = ((Fts5Table*)(pCursor->pVtab))->pConfig;
+  Fts5Cursor *pCsr = (Fts5Cursor*)pCursor;
+  int rc = SQLITE_OK;
+  
+  assert( CsrFlagTest(pCsr, FTS5CSR_EOF)==0 );
+
+  if( iCol==pConfig->nCol ){
+    if( FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_SOURCE ){
+      /* todo */
+    }else{
+      /* User is requesting the value of the special column with the same name
+      ** as the table. Return the cursor integer id number. This value is only
+      ** useful in that it may be passed as the first argument to an FTS5
+      ** auxiliary function.  */
+      sqlite3_result_int64(pCtx, pCsr->iCsrId);
+    }
+  }else if( iCol==pConfig->nCol+1 ){
+    /* The value of the "rank" column. */
+    if( pCsr->pRank ){
+      fts5ApiInvoke(pCsr->pRank, pCsr, pCtx, 0, 0);
+    }
+  }else{
+    rc = fts5SeekCursor(pCsr);
+    if( rc==SQLITE_OK ){
+      sqlite3_result_value(pCtx, sqlite3_column_value(pCsr->pStmt, iCol+1));
+    }
+  }
+  return rc;
 }
 
 

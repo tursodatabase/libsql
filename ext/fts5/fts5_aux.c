@@ -956,10 +956,10 @@ int sqlite3Fts5AuxInit(Fts5Global *pGlobal){
     fts5_extension_function xFunc;/* Callback function */
     void (*xDestroy)(void*);      /* Destructor function */
   } aBuiltin [] = {
-    { "bm25",      0, fts5Bm25Function,    0 },
     { "bm25debug", (void*)1, fts5Bm25Function,    0 },
     { "snippet",   0, fts5SnippetFunction, 0 },
     { "fts5_test", 0, fts5TestFunction,    0 },
+    { "bm25",      0, fts5Bm25Function,    0 },
   };
 
   int rc = SQLITE_OK;             /* Return code */

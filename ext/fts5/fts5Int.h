@@ -28,6 +28,9 @@
 
 #define FTS5_DEFAULT_NEARDIST 10
 
+/* Name of rank column */
+#define FTS5_RANK_NAME "rank"
+
 /**************************************************************************
 ** Interface to code in fts5_config.c. fts5_config.c contains contains code
 ** to parse the arguments passed to the CREATE VIRTUAL TABLE statement.
@@ -394,7 +397,6 @@ void sqlite3Fts5ParseSetColumn(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
 void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
 
-
 /*
 ** End of interface to code in fts5_expr.c.
 **************************************************************************/
@@ -423,7 +425,18 @@ int sqlite3Fts5CreateAux(
 
 int sqlite3Fts5AuxInit(Fts5Global*);
 /*
-** End of interface to code in fts5_expr.c.
+** End of interface to code in fts5_aux.c.
+**************************************************************************/
+
+/**************************************************************************
+** Interface to code in fts5_sorter.c. 
+*/
+typedef struct Fts5Sorter Fts5Sorter;
+
+int sqlite3Fts5SorterNew(Fts5Expr *pExpr, Fts5Sorter **pp);
+
+/*
+** End of interface to code in fts5_sorter.c.
 **************************************************************************/
 
 #endif
