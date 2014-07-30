@@ -1860,6 +1860,10 @@ static void vdbeMergeEngineCompare(
 /*
 ** Allowed values for the eMode parameter to vdbeMergeEngineInit()
 ** and vdbePmaReaderIncrMergeInit().
+**
+** Only INCRINIT_NORMAL is valid in single-threaded builds (when
+** SQLITE_MAX_WORKER_THREADS==0).  The other values are only used
+** when there exists one or more separate worker threads.
 */
 #define INCRINIT_NORMAL 0
 #define INCRINIT_TASK   1
@@ -1898,12 +1902,15 @@ static int vdbeMergeEngineInit(
   int i;                          /* For looping over PmaReader objects */
   int nTree = pMerger->nTree;
 
+  /* eMode is always INCRINIT_NORMAL in single-threaded mode */
+  assert( SQLITE_MAX_WORKER_THREADS>0 || eMode==INCRINIT_NORMAL );
+
   /* Verify that the MergeEngine is assigned to a single thread */
   assert( pMerger->pTask==0 ); // || pMerger->pTask==pTask );
   pMerger->pTask = pTask;
 
   for(i=0; i<nTree; i++){
-    if( eMode==INCRINIT_ROOT ){
+    if( SQLITE_MAX_WORKER_THREADS>0 && eMode==INCRINIT_ROOT ){
       /* PmaReaders should be normally initialized in order, as if they are
       ** reading from the same temp file this makes for more linear file IO.
       ** However, in the INCRINIT_ROOT case, if PmaReader aReadr[nTask-1] is
@@ -1962,6 +1969,10 @@ static int vdbeMergeEngineInit(
 static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode){
   int rc = SQLITE_OK;
   IncrMerger *pIncr = pReadr->pIncr;
+
+  /* eMode is always INCRINIT_NORMAL in single-threaded mode */
+  assert( SQLITE_MAX_WORKER_THREADS>0 || eMode==INCRINIT_NORMAL );
+
   if( pIncr ){
     SortSubtask *pTask = pIncr->pTask;
     sqlite3 *db = pTask->pSorter->db;
@@ -2005,7 +2016,9 @@ static int vdbePmaReaderIncrMergeInit(PmaReader *pReadr, int eMode){
     }
 #endif
 
-    if( rc==SQLITE_OK && eMode!=INCRINIT_TASK ){
+    if( rc==SQLITE_OK
+     && (SQLITE_MAX_WORKER_THREADS==0 || eMode!=INCRINIT_TASK)
+    ){
       rc = vdbePmaReaderNext(pReadr);
     }
   }
@@ -2186,7 +2199,8 @@ static int vdbeSorterMergeTreeBuild(
 
   for(iTask=0; rc==SQLITE_OK && iTask<pSorter->nTask; iTask++){
     SortSubtask *pTask = &pSorter->aTask[iTask];
-    if( pTask->nPMA ){
+    assert( pTask->nPMA>0 || SQLITE_MAX_WORKER_THREADS>0 );
+    if( SQLITE_MAX_WORKER_THREADS==0 || pTask->nPMA ){
       MergeEngine *pRoot = 0;     /* Root node of tree for this task */
       int nDepth = vdbeSorterTreeDepth(pTask->nPMA);
       i64 iReadOff = 0;
