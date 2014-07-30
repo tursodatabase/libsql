@@ -623,6 +623,7 @@ static int vdbePmaReaderSeek(
 
   assert( pReadr->pIncr==0 || pReadr->pIncr->bEof==0 );
 
+  if( sqlite3FaultSim(201) ) return SQLITE_IOERR_READ;
   if( pReadr->aMap ){
     sqlite3OsUnfetch(pReadr->pFd, 0, pReadr->aMap);
     pReadr->aMap = 0;

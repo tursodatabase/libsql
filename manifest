@@ -1,5 +1,5 @@
-C Mark\ssome\sinvariants\sin\sthe\svdbesort.c\slogic\swhen\sSQLITE_MAX_WORKER_THREADS==0.
-D 2014-07-30T17:21:37.320
+C Add\sa\snew\ssqlite3FaultSim()\scall\sto\svdbePmaReaderSeek()\sto\sfacilitate\ntests\sof\serror\shandling\sin\sthe\ssorter.
+D 2014-07-30T18:47:12.395
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -291,7 +291,7 @@ F src/vdbeapi.c 24e40422382beb774daab11fe9fe9d37e8a04949
 F src/vdbeaux.c 3f1d2baa4a8cbdad33cb255a5f4fd1af7a414683
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c d90a1e8acf8b63dc9d14cbbea12bfec6cec31394
-F src/vdbesort.c e37e494274fb9a05955b44eb61ead2230ae3e321
+F src/vdbesort.c b9a830685826c057cfd41993902a5afc6fe436e1
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
@@ -1190,7 +1190,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5b50a8380b2b678c1646ff303e3696efc1d7d92c
-R 79135dabbf9021221308446429439ade
+P 721cd965859c9ccc24d2a1d2851c914229e584b3
+R 1fd8d4a346a6db9102e067303c7fe957
 U drh
-Z af737cf3847cc90d4e2e364aefe53a30
+Z a72347f7edf8a1215db60e10b80e325d
