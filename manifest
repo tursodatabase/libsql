@@ -1,5 +1,5 @@
-C Add\shidden\scolumn\s"rank".\sCurrently\sthis\salways\sreturns\sthe\ssame\svalue\sas\sthe\sbm25()\sfunction.
-D 2014-07-30T19:41:58.841
+C Fix\sthings\sso\sthat\sthe\sfts5\sextension\sAPI\sworks\swith\s"ORDER\sBY\srank"\squeries.
+D 2014-07-30T20:26:24.443
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,7 +103,7 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c f786dd1a3d091f7cb6572f6ee95f10f09de52224
+F ext/fts5/fts5.c f322286c6a37dcea4b46b00677e9aad2e59abe9d
 F ext/fts5/fts5.h 8ace10d5b249a3baa983c79e7a1306d2a79cfd6a
 F ext/fts5/fts5Int.h 9a195c1706876c538902f007149b39e982e9da53
 F ext/fts5/fts5_aux.c 3cae4225d458af41b64bb40ed9dcc052eb41b9a0
@@ -600,7 +600,7 @@ F test/fts5ab.test dc04ed48cf93ca957d174406e6c192f2ff4f3397
 F test/fts5ac.test 9be418d037763f4cc5d86f4239db41fc86bb4f85
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
 F test/fts5ae.test cb37b3135a00d3afd5492ec534ecf654be5ff69e
-F test/fts5af.test 5f53d0a52280b63caf5a519d6994c4d428835155
+F test/fts5af.test 9ebe23aa3875896076952c7bc6e8308813a63c74
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1197,7 +1197,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 770b9540c19ad1e3d24adff382332bf032065efd
-R b6911e3c357a5fea00c97182f6d0088b
+P 4cc048c3651e830a6aeded924c7f3a60b634e133
+R e80b35a7b7fca0c8edda241edc415407
 U dan
-Z 526c63f1e91d68c01d64fde27fedef0b
+Z fdc04c3e2e7e600dae907e07830ae6e8

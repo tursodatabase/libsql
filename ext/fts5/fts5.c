@@ -73,7 +73,7 @@ struct Fts5MatchPhrase {
 struct Fts5Sorter {
   sqlite3_stmt *pStmt;
   i64 iRowid;                     /* Current rowid */
-  u8 *aPoslist;                   /* Position lists for current row */
+  const u8 *aPoslist;             /* Position lists for current row */
   int nIdx;                       /* Number of entries in aIdx[] */
   int aIdx[0];                    /* Offsets into aPoslist for current row */
 };
@@ -404,8 +404,22 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
     rc = SQLITE_OK;
     CsrFlagSet(pCsr, FTS5CSR_EOF);
   }else if( rc==SQLITE_ROW ){
+    const u8 *a;
+    const u8 *aBlob;
+    int nBlob;
+    int i;
     rc = SQLITE_OK;
+
     pSorter->iRowid = sqlite3_column_int64(pSorter->pStmt, 0);
+    nBlob = sqlite3_column_bytes(pSorter->pStmt, 1);
+    aBlob = a = sqlite3_column_blob(pSorter->pStmt, 1);
+
+    for(i=0; i<(pSorter->nIdx-1); i++){
+      a += getVarint32(a, pSorter->aIdx[i]);
+    }
+    pSorter->aIdx[i] = &aBlob[nBlob] - a;
+    pSorter->aPoslist = a;
+    CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
   }
 
   return rc;
@@ -467,7 +481,7 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   if( pSorter==0 ) return SQLITE_NOMEM;
   memset(pSorter, 0, nByte);
 
-  zSql = sqlite3_mprintf("SELECT rowid, %Q FROM %Q.%Q ORDER BY +%s %s",
+  zSql = sqlite3_mprintf("SELECT rowid, %s FROM %Q.%Q ORDER BY +%s %s",
       pConfig->zName, pConfig->zDb, pConfig->zName, FTS5_RANK_NAME,
       bAsc ? "ASC" : "DESC"
   );
@@ -571,6 +585,21 @@ static int fts5EofMethod(sqlite3_vtab_cursor *pCursor){
   return (CsrFlagTest(pCsr, FTS5CSR_EOF) ? 1 : 0);
 }
 
+/*
+** Return the rowid that the cursor currently points to.
+*/
+static i64 fts5CursorRowid(Fts5Cursor *pCsr){
+  assert( FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_MATCH 
+       || FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_SORTED_MATCH 
+       || FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_SOURCE 
+  );
+  if( pCsr->pSorter ){
+    return pCsr->pSorter->iRowid;
+  }else{
+    return sqlite3Fts5ExprRowid(pCsr->pExpr);
+  }
+}
+
 /* 
 ** This is the xRowid method. The SQLite core calls this routine to
 ** retrieve the rowid for the current row of the result set. fts5
@@ -585,11 +614,8 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   switch( ePlan ){
     case FTS5_PLAN_SOURCE:
     case FTS5_PLAN_MATCH:
-      *pRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
-      break;
-
     case FTS5_PLAN_SORTED_MATCH:
-      *pRowid = pCsr->pSorter->iRowid;
+      *pRowid = fts5CursorRowid(pCsr);
       break;
 
     default:
@@ -609,7 +635,7 @@ static int fts5SeekCursor(Fts5Cursor *pCsr){
   if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) ){
     assert( pCsr->pExpr );
     sqlite3_reset(pCsr->pStmt);
-    sqlite3_bind_int64(pCsr->pStmt, 1, sqlite3Fts5ExprRowid(pCsr->pExpr));
+    sqlite3_bind_int64(pCsr->pStmt, 1, fts5CursorRowid(pCsr));
     rc = sqlite3_step(pCsr->pStmt);
     if( rc==SQLITE_ROW ){
       rc = SQLITE_OK;
@@ -786,7 +812,7 @@ static int fts5ApiPhraseSize(Fts5Context *pCtx, int iPhrase){
 
 static sqlite3_int64 fts5ApiRowid(Fts5Context *pCtx){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
-  return sqlite3Fts5ExprRowid(pCsr->pExpr);
+  return fts5CursorRowid((Fts5Cursor*)pCtx);
 }
 
 static int fts5ApiColumnText(
@@ -810,7 +836,7 @@ static int fts5ApiColumnSize(Fts5Context *pCtx, int iCol, int *pnToken){
   int rc = SQLITE_OK;
 
   if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_DOCSIZE) ){
-    i64 iRowid = sqlite3Fts5ExprRowid(pCsr->pExpr);
+    i64 iRowid = fts5CursorRowid(pCsr);
     rc = sqlite3Fts5StorageDocsize(pTab->pStorage, iRowid, pCsr->aColumnSize);
   }
   if( iCol>=0 && iCol<pTab->pConfig->nCol ){
@@ -829,7 +855,14 @@ static int fts5ApiPoslist(
 ){
   Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   const u8 *a; int n;             /* Poslist for phrase iPhrase */
-  n = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, &a);
+  if( pCsr->pSorter ){
+    Fts5Sorter *pSorter = pCsr->pSorter;
+    int i1 = (iPhrase ? 0 : pSorter->aIdx[iPhrase-1]);
+    n = pSorter->aIdx[iPhrase] - i1;
+    a = &pSorter->aPoslist[i1];
+  }else{
+    n = sqlite3Fts5ExprPoslist(pCsr->pExpr, iPhrase, &a);
+  }
   return sqlite3Fts5PoslistNext64(a, n, pi, piPos);
 }
 
@@ -983,6 +1016,31 @@ static void fts5ApiCallback(
   }
 }
 
+static int fts5PoslistBlob(sqlite3_context *pCtx, Fts5Cursor *pCsr){
+  int i;
+  int rc = SQLITE_OK;
+  int nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
+  Fts5Buffer val;
+  int iOff = 0;
+
+  memset(&val, 0, sizeof(Fts5Buffer));
+  for(i=0; i<nPhrase; i++){
+    const u8 *dummy;
+    if( i ) sqlite3Fts5BufferAppendVarint(&rc, &val, iOff);
+    iOff += sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &dummy);
+  }
+
+  for(i=0; i<nPhrase; i++){
+    const u8 *pPoslist;
+    int nPoslist;
+    nPoslist = sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &pPoslist);
+    sqlite3Fts5BufferAppendBlob(&rc, &val, nPoslist, pPoslist);
+  }
+
+  sqlite3_result_blob(pCtx, val.p, val.n, sqlite3_free);
+  return rc;
+}
+
 /* 
 ** This is the xColumn method, called by SQLite to request a value from
 ** the row that the supplied cursor currently points to.
@@ -1000,7 +1058,7 @@ static int fts5ColumnMethod(
 
   if( iCol==pConfig->nCol ){
     if( FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_SOURCE ){
-      /* todo */
+      fts5PoslistBlob(pCtx, pCsr);
     }else{
       /* User is requesting the value of the special column with the same name
       ** as the table. Return the cursor integer id number. This value is only
