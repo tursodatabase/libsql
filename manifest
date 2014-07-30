@@ -1,5 +1,5 @@
-C Add\sthree\snew\sstatic\smutexes\sfor\suse\sby\sthe\sapplication.\s\sThis\sis\sa\spartial\nimport\sof\schanges\sfrom\sthe\sthreads\sbranch.
-D 2014-07-30T21:10:12.606
+C Re-integrate\sthe\srecent\schanges\sfrom\sthe\s'winMutex'\sbranch\sback\sinto\sthe\sWin32\smutex\ssubsystem.
+D 2014-07-30T23:11:16.516
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -201,7 +201,7 @@ F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
 F src/mutex_unix.c 1b10d5413dfc794364a8adf3eb3a192926b43fa3
-F src/mutex_w32.c 92e8ead41598a289c93ac64dfd5e78820c4dabc1
+F src/mutex_w32.c 08890085b81ce181d2cbc6fc2636e3444ae30b27
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c7303d0139f7e7f4fa7060b52942e6c6c6d4b622
-R 9a0604d781d4eb725027fc152740bd2b
-U drh
-Z b2c6542aa553cebe25ffe186e01d871a
+P 3aad01960f92c5e77dba64ac1a6c6b063378fb97
+R 30d9c6511ca3c35312cef2a09e79ecbc
+U mistachkin
+Z c0143953af6d35d374b1fbf6a22594a7
