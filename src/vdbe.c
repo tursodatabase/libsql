@@ -4271,12 +4271,12 @@ case OP_ResetCount: {
 }
 
 /* Opcode: SorterCompare P1 P2 P3 P4
-** Synopsis:  if key(P1)!=rtrim(r[P3],P4) goto P2
+** Synopsis:  if key(P1)!=trim(r[P3],P4) goto P2
 **
 ** P1 is a sorter cursor. This instruction compares a prefix of the
 ** the record blob in register P3 against a prefix of the entry that 
-** the sorter cursor currently points to.  The final P4 fields of both
-** the P3 and sorter record are ignored.
+** the sorter cursor currently points to.  Only the first P4 fields
+** of r[P3] and the sorter record are compared.
 **
 ** If either P3 or the sorter contains a NULL in one of their significant
 ** fields (not counting the P4 fields at the end which are ignored) then
@@ -4288,14 +4288,14 @@ case OP_ResetCount: {
 case OP_SorterCompare: {
   VdbeCursor *pC;
   int res;
-  int nIgnore;
+  int nKeyCol;
 
   pC = p->apCsr[pOp->p1];
   assert( isSorter(pC) );
   assert( pOp->p4type==P4_INT32 );
   pIn3 = &aMem[pOp->p3];
-  nIgnore = pOp->p4.i;
-  rc = sqlite3VdbeSorterCompare(pC, pIn3, nIgnore, &res);
+  nKeyCol = pOp->p4.i;
+  rc = sqlite3VdbeSorterCompare(pC, pIn3, nKeyCol, &res);
   VdbeBranchTaken(res!=0,2);
   if( res ){
     pc = pOp->p2-1;
