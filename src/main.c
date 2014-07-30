@@ -1063,7 +1063,7 @@ void sqlite3RollbackAll(sqlite3 *db, int tripCode){
 ** Return a static string containing the name corresponding to the error code
 ** specified in the argument.
 */
-#if defined(SQLITE_TEST)
+#if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
 const char *sqlite3ErrName(int rc){
   const char *zName = 0;
   int i, origRc = rc;
@@ -3489,6 +3489,16 @@ int sqlite3_test_control(int op, ...){
       sqlite3GlobalConfig.xVdbeBranch = va_arg(ap,branch_callback);
       sqlite3GlobalConfig.pVdbeBranchArg = va_arg(ap,void*);
 #endif
+      break;
+    }
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_ISINIT);
+    **
+    ** Return SQLITE_OK if SQLite has been initialized and SQLITE_ERROR if
+    ** not.
+    */
+    case SQLITE_TESTCTRL_ISINIT: {
+      if( sqlite3GlobalConfig.isInit==0 ) rc = SQLITE_ERROR;
       break;
     }
 

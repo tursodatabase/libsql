@@ -1298,22 +1298,28 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 #elif !defined(SQLITE_WIN32_HAS_WIDE)
 # define osIsNT()  (0)
 #else
-  static int osIsNT(void){
-    if( sqlite3_os_type==0 ){
+# define osIsNT()  (sqlite3_win32_is_nt())
+#endif
+
+/*
+** This function determines if the machine is running a version of Windows
+** based on the NT kernel.
+*/
+int sqlite3_win32_is_nt(void){
+  if( sqlite3_os_type==0 ){
 #if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WIN8
-      OSVERSIONINFOW sInfo;
-      sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-      osGetVersionExW(&sInfo);
+    OSVERSIONINFOW sInfo;
+    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+    osGetVersionExW(&sInfo);
 #else
-      OSVERSIONINFOA sInfo;
-      sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-      osGetVersionExA(&sInfo);
+    OSVERSIONINFOA sInfo;
+    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+    osGetVersionExA(&sInfo);
 #endif
-      sqlite3_os_type = sInfo.dwPlatformId==VER_PLATFORM_WIN32_NT ? 2 : 1;
-    }
-    return sqlite3_os_type==2;
+    sqlite3_os_type = (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1;
   }
-#endif
+  return (sqlite3_os_type == 2);
+}
 
 #ifdef SQLITE_WIN32_MALLOC
 /*

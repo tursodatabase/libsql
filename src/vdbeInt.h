@@ -68,6 +68,9 @@ struct VdbeCursor {
   int pseudoTableReg;   /* Register holding pseudotable content. */
   i16 nField;           /* Number of fields in the header */
   u16 nHdrParsed;       /* Number of header fields parsed so far */
+#ifdef SQLITE_DEBUG
+  u8 seekOp;            /* Most recent seek operation on this cursor */
+#endif
   i8 iDb;               /* Index of cursor database in db->aDb[] (or -1) */
   u8 nullRow;           /* True if pointing to a row with no data */
   u8 rowidIsValid;      /* True if lastRowid is valid */

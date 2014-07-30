@@ -2788,7 +2788,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
 */
 u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   int flags = pMem->flags;
-  int n;
+  u32 n;
 
   if( flags&MEM_Null ){
     return 0;
@@ -2818,11 +2818,11 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
     return 7;
   }
   assert( pMem->db->mallocFailed || flags&(MEM_Str|MEM_Blob) );
-  n = pMem->n;
+  assert( pMem->n>=0 );
+  n = (u32)pMem->n;
   if( flags & MEM_Zero ){
     n += pMem->u.nZero;
   }
-  assert( n>=0 );
   return ((n*2) + 12 + ((flags&MEM_Str)!=0));
 }
 
