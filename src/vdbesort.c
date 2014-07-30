@@ -2455,7 +2455,7 @@ int sqlite3VdbeSorterRowkey(const VdbeCursor *pCsr, Mem *pOut){
 int sqlite3VdbeSorterCompare(
   const VdbeCursor *pCsr,         /* Sorter cursor */
   Mem *pVal,                      /* Value to compare to current sorter key */
-  int nIgnore,                    /* Ignore this many fields at the end */
+  int nKeyCol,                    /* Compare this many columns */
   int *pRes                       /* OUT: Result of comparison */
 ){
   VdbeSorter *pSorter = pCsr->pSorter;
@@ -2469,13 +2469,13 @@ int sqlite3VdbeSorterCompare(
     r2 = pSorter->pUnpacked = sqlite3VdbeAllocUnpackedRecord(pKeyInfo,0,0,&p);
     assert( pSorter->pUnpacked==(UnpackedRecord*)p );
     if( r2==0 ) return SQLITE_NOMEM;
-    r2->nField = pKeyInfo->nField-nIgnore;
+    r2->nField = nKeyCol;
   }
-  assert( r2->nField>=pKeyInfo->nField-nIgnore );
+  assert( r2->nField==nKeyCol );
 
   pKey = vdbeSorterRowkey(pSorter, &nKey);
   sqlite3VdbeRecordUnpack(pKeyInfo, nKey, pKey, r2);
-  for(i=0; i<r2->nField; i++){
+  for(i=0; i<nKeyCol; i++){
     if( r2->aMem[i].flags & MEM_Null ){
       *pRes = -1;
       return SQLITE_OK;
