@@ -96,10 +96,13 @@ static int pthreadMutexEnd(void){ return SQLITE_OK; }
 ** <li>  SQLITE_MUTEX_RECURSIVE
 ** <li>  SQLITE_MUTEX_STATIC_MASTER
 ** <li>  SQLITE_MUTEX_STATIC_MEM
-** <li>  SQLITE_MUTEX_STATIC_MEM2
+** <li>  SQLITE_MUTEX_STATIC_OPEN
 ** <li>  SQLITE_MUTEX_STATIC_PRNG
 ** <li>  SQLITE_MUTEX_STATIC_LRU
 ** <li>  SQLITE_MUTEX_STATIC_PMEM
+** <li>  SQLITE_MUTEX_STATIC_APP1
+** <li>  SQLITE_MUTEX_STATIC_APP2
+** <li>  SQLITE_MUTEX_STATIC_APP3
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -128,6 +131,9 @@ static int pthreadMutexEnd(void){ return SQLITE_OK; }
 */
 static sqlite3_mutex *pthreadMutexAlloc(int iType){
   static sqlite3_mutex staticMutexes[] = {
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
+    SQLITE3_MUTEX_INITIALIZER,
     SQLITE3_MUTEX_INITIALIZER,
     SQLITE3_MUTEX_INITIALIZER,
     SQLITE3_MUTEX_INITIALIZER,

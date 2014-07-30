@@ -1,5 +1,5 @@
-C Add\sthe\s"eForce"\sparameter\sto\sthe\ssqlite3_multiplex_shutdown()\sentry\spoint\nin\stest_multiplex.c.\s\sShutdown\sis\sforced\sif\strue.\s\sShutdown\sis\snot\sdone\sif\nthere\sare\spending\sdatabase\sconnections\sand\seForce\sis\sfalse,\sbut\san\serror\slog\nentry\sis\smade\sinstead.
-D 2014-07-30T15:43:05.568
+C Add\sthree\snew\sstatic\smutexes\sfor\suse\sby\sthe\sapplication.\s\sThis\sis\sa\spartial\nimport\sof\schanges\sfrom\sthe\sthreads\sbranch.
+D 2014-07-30T21:10:12.606
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -197,11 +197,11 @@ F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
 F src/mem3.c 61c9d47b792908c532ca3a62b999cf21795c6534
 F src/mem5.c 74670012946c4adc8a6ad84d03acc80959c3e529
 F src/memjournal.c 0683aac6cab6ec2b5374c0db37c0deb2436a3785
-F src/mutex.c d3b66a569368015e0fcb1ac15f81c119f504d3bc
+F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
-F src/mutex_noop.c 7682796b7d8d39bf1c138248858efcd10c9e1553
-F src/mutex_unix.c c3a4e00f96ba068a8dbef34084465979aaf369cc
-F src/mutex_w32.c 45020ed78735a202ff14efcf19415d29f556f16d
+F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
+F src/mutex_unix.c 1b10d5413dfc794364a8adf3eb3a192926b43fa3
+F src/mutex_w32.c 92e8ead41598a289c93ac64dfd5e78820c4dabc1
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
@@ -224,7 +224,7 @@ F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 6762c62e11b504aa014edceab8886495165e3a77
 F src/shell.c 191129c3f7a9cf241aea90ff6a6be3e74d3767f0
-F src/sqlite.h.in 5967719136e14183b2573ba619993438e2b9856e
+F src/sqlite.h.in 9bbc5815c73b0e77e68b5275481a5e3e7814a804
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 068e42f41a09ce6b9edbe194ac8a470ab53145df
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6b785e92f279cb65746834d5cd25594fd3333342
-R 91be173298089741f719dedf8b4f59f4
+P c7303d0139f7e7f4fa7060b52942e6c6c6d4b622
+R 9a0604d781d4eb725027fc152740bd2b
 U drh
-Z 69b6c3f54a5e9094db9af1965ce3b4cb
+Z b2c6542aa553cebe25ffe186e01d871a
