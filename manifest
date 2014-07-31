@@ -1,5 +1,5 @@
-C Optimizations\sto\sthe\sOS\ssub-type\schecking\sin\sthe\sWin32\sVFS.
-D 2014-07-31T18:54:01.916
+C Omit\sa\spointless\sOP_Null\swhen\sprocessing\sa\svalue-list\sRHS\sof\san\sIN\soperator\nwhere\sthe\sLHS\sis\sa\srowid.
+D 2014-07-31T20:16:08.031
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c 77ca517a25a589f8088df88ace671e1c1d7dd3de
+F src/expr.c 0e2a6c1cd3b752bea188a92bd826a2304c79e7bf
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a549cff9fe8b736cdae21650ea0af6de29b77619
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0708f9df23a325349f658741358c5994b5c4c873
-R 33905802a155aabab7e0415ce706b3b1
-U mistachkin
-Z f67dc40e0d7f1ad1a9a6019eb7b3fb85
+P 1e5489faff093d6a8e538061e45532f9050e9459
+R cbfd634bf9c7df43faab424574b6f5df
+U drh
+Z a5f816e75181f7c6a373a521ba2c396b
