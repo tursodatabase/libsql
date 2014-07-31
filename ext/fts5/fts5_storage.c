@@ -19,7 +19,7 @@ struct Fts5Storage {
   Fts5Index *pIndex;
   i64 nTotalRow;                  /* Total number of rows in FTS table */
   i64 *aTotalSize;                /* Total sizes of each column */ 
-  sqlite3_stmt *aStmt[9];
+  sqlite3_stmt *aStmt[11];
 };
 
 
@@ -32,15 +32,20 @@ struct Fts5Storage {
 #if FTS5_STMT_LOOKUP!=2
 # error "FTS5_STMT_LOOKUP mismatch" 
 #endif
+#if FTS5_STMT_SORTER_DESC!=3
+# error "FTS5_STMT_SORTER_DESC mismatch" 
+#endif
+#if FTS5_STMT_SORTER_ASC!=4
+# error "FTS5_STMT_SORTER_ASC mismatch" 
+#endif
 
-#define FTS5_STMT_INSERT_CONTENT  3
-#define FTS5_STMT_REPLACE_CONTENT 4
+#define FTS5_STMT_INSERT_CONTENT  5
+#define FTS5_STMT_REPLACE_CONTENT 6
 
-#define FTS5_STMT_DELETE_CONTENT  5
-#define FTS5_STMT_REPLACE_DOCSIZE  6
-#define FTS5_STMT_DELETE_DOCSIZE  7
-
-#define FTS5_STMT_LOOKUP_DOCSIZE  8
+#define FTS5_STMT_DELETE_CONTENT  7
+#define FTS5_STMT_REPLACE_DOCSIZE 8
+#define FTS5_STMT_DELETE_DOCSIZE  9
+#define FTS5_STMT_LOOKUP_DOCSIZE  10
 
 /*
 ** Prepare the two insert statements - Fts5Storage.pInsertContent and
@@ -61,6 +66,10 @@ static int fts5StorageGetStmt(
       "SELECT * FROM %Q.'%q_content' ORDER BY id ASC",  /* SCAN_ASC */
       "SELECT * FROM %Q.'%q_content' ORDER BY id DESC", /* SCAN_DESC */
       "SELECT * FROM %Q.'%q_content' WHERE rowid=?",    /* LOOKUP  */
+
+      /* SORTER_DESC and SORTER_ASC: */
+      "SELECT rowid, \"%s\" FROM %Q.%Q ORDER BY +" FTS5_RANK_NAME " DESC",
+      "SELECT rowid, \"%s\" FROM %Q.%Q ORDER BY +" FTS5_RANK_NAME " ASC",
 
       "INSERT INTO %Q.'%q_content' VALUES(%s)",         /* INSERT_CONTENT  */
       "REPLACE INTO %Q.'%q_content' VALUES(%s)",        /* REPLACE_CONTENT */
@@ -88,6 +97,10 @@ static int fts5StorageGetStmt(
         zSql = sqlite3_mprintf(azStmt[eStmt],pConfig->zDb,pConfig->zName,zBind);
         sqlite3_free(zBind);
       }
+    }else if( eStmt==FTS5_STMT_SORTER_ASC || eStmt==FTS5_STMT_SORTER_DESC ){
+      zSql = sqlite3_mprintf(azStmt[eStmt], 
+          pConfig->zName, pConfig->zDb, pConfig->zName
+      );
     }else{
       zSql = sqlite3_mprintf(azStmt[eStmt], pConfig->zDb, pConfig->zName);
     }
@@ -631,6 +644,8 @@ int sqlite3Fts5StorageStmt(Fts5Storage *p, int eStmt, sqlite3_stmt **pp){
   assert( eStmt==FTS5_STMT_SCAN_ASC 
        || eStmt==FTS5_STMT_SCAN_DESC
        || eStmt==FTS5_STMT_LOOKUP
+       || eStmt==FTS5_STMT_SORTER_DESC
+       || eStmt==FTS5_STMT_SORTER_ASC
   );
   rc = fts5StorageGetStmt(p, eStmt, pp);
   if( rc==SQLITE_OK ){
@@ -653,6 +668,8 @@ void sqlite3Fts5StorageStmtRelease(
   assert( eStmt==FTS5_STMT_SCAN_ASC
        || eStmt==FTS5_STMT_SCAN_DESC
        || eStmt==FTS5_STMT_LOOKUP
+       || eStmt==FTS5_STMT_SORTER_DESC
+       || eStmt==FTS5_STMT_SORTER_ASC
   );
   if( p->aStmt[eStmt]==0 ){
     sqlite3_reset(pStmt);

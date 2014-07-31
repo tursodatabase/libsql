@@ -1,5 +1,5 @@
-C Add\sfurther\stests\sfor\sthe\sextension\sAPIs\swith\s"ORDER\sBY\srank"\squeries.
-D 2014-07-31T11:57:59.052
+C Try\sto\sreuse\ssorter\sstatements\sin\sfts5.\sDoes\snot\swork\sdue\sto\scircular\sreferences\son\sVTable\sobject.
+D 2014-07-31T17:47:04.870
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,15 +103,15 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c b54b776771d1e965bac02bffcf875a0bfc3660db
+F ext/fts5/fts5.c 85b0d66a927ce160ca226b121cd5ae24affa5b85
 F ext/fts5/fts5.h 8ace10d5b249a3baa983c79e7a1306d2a79cfd6a
-F ext/fts5/fts5Int.h 9a195c1706876c538902f007149b39e982e9da53
+F ext/fts5/fts5Int.h 2adf0ca39d9764cb2114725f5a1c8c7a0fdcd698
 F ext/fts5/fts5_aux.c 366057c7186bc3615deb5ecc0ff61de50b6d2dbc
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c e764d75c58a3accda795f1da1b45960ac87dc77a
 F ext/fts5/fts5_index.c 68d2d41b5c6d2f8838c3d6ebdc8b242718b8e997
-F ext/fts5/fts5_storage.c 2866e7e1de9dc851756c3a9c76b6e1d75e0facb7
+F ext/fts5/fts5_storage.c 7036cf22baa00780860fc35cc2573d36cdc03f7b
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
@@ -1198,7 +1198,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f1b4e1a98d49ecaba962beba16f8224175e4ba59
-R bf2807e3a776f0c27fe888a62861bcb4
+P 37a417d27e4ebafd4783f62728d7467316b75b17
+R 534b5c94a0bdd15a21f4d009040d2019
+T *branch * save_sorter_stmt
+T *sym-save_sorter_stmt *
+T -sym-fts5 *
 U dan
-Z 17018f27d9e25b34230168ffaec13df5
+Z b48f3961f977602946001c5dfc0bf2c0

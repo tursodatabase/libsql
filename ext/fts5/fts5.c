@@ -74,6 +74,7 @@ struct Fts5MatchPhrase {
 **   byte of the position list for the corresponding phrase.
 */
 struct Fts5Sorter {
+  int eStmt;
   sqlite3_stmt *pStmt;
   i64 iRowid;                     /* Current rowid */
   const u8 *aPoslist;             /* Position lists for current row */
@@ -376,9 +377,19 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
     sqlite3Fts5StorageStmtRelease(pTab->pStorage, eStmt, pCsr->pStmt);
   }
   if( pCsr->pSorter ){
-    Fts5Sorter *pSorter = pCsr->pSorter;
-    sqlite3_finalize(pSorter->pStmt);
-    sqlite3_free(pSorter);
+    Fts5Sorter *p = pCsr->pSorter;
+
+    /* TODO: It would be better here to use sqlite3Fts5StorageStmtRelease() 
+    ** so that the statement may be reused by subsequent queries. But that 
+    ** is not possible as SQLite reference counts the virtual table objects.
+    ** And since pStmt reads from this very virtual table, saving it here
+    ** creates a circular reference.
+    **
+    ** We wouldn't worry so much if SQLite had a built-in statement cache.
+    */
+    /* sqlite3Fts5StorageStmtRelease(pTab->pStorage, p->eStmt, p->pStmt); */
+    sqlite3_finalize(p->pStmt);
+    sqlite3_free(p);
   }
   
   if( pCsr->idxNum!=FTS5_PLAN_SOURCE ){
@@ -481,6 +492,7 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   Fts5Sorter *pSorter;
   int nPhrase;
   int nByte;
+  int eStmt;
   int rc = SQLITE_OK;
   char *zSql;
   
@@ -491,16 +503,11 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   memset(pSorter, 0, nByte);
   pSorter->nIdx = nPhrase;
 
-  zSql = sqlite3_mprintf("SELECT rowid, %s FROM %Q.%Q ORDER BY +%s %s",
-      pConfig->zName, pConfig->zDb, pConfig->zName, FTS5_RANK_NAME,
-      bAsc ? "ASC" : "DESC"
-  );
-  if( zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pSorter->pStmt, 0);
-    sqlite3_free(zSql);
-  }
+  assert( FTS5_STMT_SORTER_ASC==1+FTS5_STMT_SORTER_DESC );
+  assert( bAsc==0 || bAsc==1 );
+
+  pSorter->eStmt = FTS5_STMT_SORTER_DESC+bAsc;
+  rc = sqlite3Fts5StorageStmt(pTab->pStorage, pSorter->eStmt, &pSorter->pStmt);
 
   pCsr->pSorter = pSorter;
   if( rc==SQLITE_OK ){

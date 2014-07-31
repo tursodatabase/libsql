@@ -282,9 +282,11 @@ int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
 ** code to access the data stored in the %_content and %_docsize tables.
 */
 
-#define FTS5_STMT_SCAN_ASC  0     /* SELECT rowid, * FROM ... ORDER BY 1 ASC */
-#define FTS5_STMT_SCAN_DESC 1     /* SELECT rowid, * FROM ... ORDER BY 1 DESC */
-#define FTS5_STMT_LOOKUP    2     /* SELECT rowid, * FROM ... WHERE rowid=? */
+#define FTS5_STMT_SCAN_ASC   0    /* SELECT rowid, * FROM ... ORDER BY 1 ASC */
+#define FTS5_STMT_SCAN_DESC  1    /* SELECT rowid, * FROM ... ORDER BY 1 DESC */
+#define FTS5_STMT_LOOKUP     2    /* SELECT rowid, * FROM ... WHERE rowid=? */
+#define FTS5_STMT_SORTER_DESC 3   /* SELECT ... ORDER BY rank ASC */
+#define FTS5_STMT_SORTER_ASC  4   /* SELECT ... ORDER BY rank ASC */
 
 typedef struct Fts5Storage Fts5Storage;
 
