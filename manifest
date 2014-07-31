@@ -1,5 +1,5 @@
-C Re-integrate\sthe\srecent\schanges\sfrom\sthe\s'winMutex'\sbranch\sback\sinto\sthe\sWin32\smutex\ssubsystem.
-D 2014-07-30T23:11:16.516
+C Deactivate\sthe\sDISTINCT\sin\sa\sSELECT\son\sthe\sright-hand\sside\sof\san\sIN\soperator,\nsince\sit\sshould\snot\smake\sany\sdifference\sin\sthe\soutput\sbut\sdues\sconsume\sextra\nmemory\sand\sCPU\stime.
+D 2014-07-31T15:44:44.199
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c b989d07fc7c8780fff77365a4fc59881223e340c
+F src/expr.c 77ca517a25a589f8088df88ace671e1c1d7dd3de
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c a549cff9fe8b736cdae21650ea0af6de29b77619
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3aad01960f92c5e77dba64ac1a6c6b063378fb97
-R 30d9c6511ca3c35312cef2a09e79ecbc
-U mistachkin
-Z c0143953af6d35d374b1fbf6a22594a7
+P 5360ecb0b8891d0c27f3f02d81b6c7b548361a10
+R fa406e6fe8ac4b7f1ba9a949d0399141
+U drh
+Z ae156d6c18fec68cfd3675b456914b76

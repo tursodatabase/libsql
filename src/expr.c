@@ -1624,7 +1624,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   }
 
   if( eType==0 ){
-    /* Could not found an existing table or index to use as the RHS b-tree.
+    /* Could not find an existing table or index to use as the RHS b-tree.
     ** We will have to generate an ephemeral table to do the job.
     */
     u32 savedNQueryLoop = pParse->nQueryLoop;
@@ -1754,6 +1754,7 @@ int sqlite3CodeSubselect(
         ** Generate code to write the results of the select into the temporary
         ** table allocated and opened above.
         */
+        Select *pSelect = pExpr->x.pSelect;
         SelectDest dest;
         ExprList *pEList;
 
@@ -1761,13 +1762,15 @@ int sqlite3CodeSubselect(
         sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
         dest.affSdst = (u8)affinity;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
-        pExpr->x.pSelect->iLimit = 0;
+        pSelect->iLimit = 0;
+        testcase( pSelect->selFlags & SF_Distinct );
+        pSelect->selFlags &= ~SF_Distinct;
         testcase( pKeyInfo==0 ); /* Caused by OOM in sqlite3KeyInfoAlloc() */
-        if( sqlite3Select(pParse, pExpr->x.pSelect, &dest) ){
+        if( sqlite3Select(pParse, pSelect, &dest) ){
           sqlite3KeyInfoUnref(pKeyInfo);
           return 0;
         }
-        pEList = pExpr->x.pSelect->pEList;
+        pEList = pSelect->pEList;
         assert( pKeyInfo!=0 ); /* OOM will cause exit after sqlite3Select() */
         assert( pEList!=0 );
         assert( pEList->nExpr>0 );
