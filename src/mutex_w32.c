@@ -93,12 +93,13 @@ static sqlite3_mutex winMutex_staticMutexes[] = {
 };
 
 static int winMutex_isInit = 0;
+static int winMutex_isNt = -1; /* <0 means "need to query" */
 
 /* As the winMutexInit() and winMutexEnd() functions are called as part
 ** of the sqlite3_initialize() and sqlite3_shutdown() processing, the
 ** "interlocked" magic used here is probably not strictly necessary.
 */
-static LONG winMutex_lock = 0;
+static LONG volatile winMutex_lock = 0;
 
 int sqlite3_win32_is_nt(void); /* os_win.c */
 void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
@@ -295,7 +296,12 @@ static int winMutexTry(sqlite3_mutex *p){
   */
 #if defined(_WIN32_WINNT) && _WIN32_WINNT >= 0x0400
   assert( winMutex_isInit==1 );
-  if( sqlite3_win32_is_nt() && TryEnterCriticalSection(&p->mutex) ){
+  assert( winMutex_isNt>=-1 && winMutex_isNt<=1 );
+  if( winMutex_isNt<0 ){
+    winMutex_isNt = sqlite3_win32_is_nt();
+  }
+  assert( winMutex_isNt==0 || winMutex_isNt==1 );
+  if( winMutex_isNt && TryEnterCriticalSection(&p->mutex) ){
 #ifdef SQLITE_DEBUG
     p->owner = tid;
     p->nRef++;

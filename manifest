@@ -1,5 +1,5 @@
-C Add\sa\smissing\scall\sto\s"test_sqlite3_log"\sto\smultiplex.test.
-D 2014-07-31T18:14:37.512
+C Optimizations\sto\sthe\sOS\ssub-type\schecking\sin\sthe\sWin32\sVFS.
+D 2014-07-31T18:54:01.916
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -201,14 +201,14 @@ F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
 F src/mutex_unix.c 1b10d5413dfc794364a8adf3eb3a192926b43fa3
-F src/mutex_w32.c 08890085b81ce181d2cbc6fc2636e3444ae30b27
+F src/mutex_w32.c c50939b72368f1cfbddb58520372081a50558548
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a7baf1b30f3c58ba20b813e01aab23b18ae44f85
-F src/os_win.c c29e3a80b47ebdbabd61fc3d4015e52d2654d8c5
+F src/os_win.c c67bec43e5dadde8029470ab7b7825ccc9abe578
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -232,7 +232,7 @@ F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c e87c99e28a145943666b51b212dacae35fcea0bd
-F src/test1.c 3c8bc491d2f8de5adbbf306533cefc343c733927
+F src/test1.c 14409a611e9c27c6c522c610bbff5561f05c1558
 F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 47457b0488abcbec2137abf706c1d677563b9ea5
-R 40079bb444b74388b9936aaa1a8a8059
-U dan
-Z a0b960eb92c17485651b9cbc9a7c3b70
+P 0708f9df23a325349f658741358c5994b5c4c873
+R 33905802a155aabab7e0415ce706b3b1
+U mistachkin
+Z f67dc40e0d7f1ad1a9a6019eb7b3fb85
