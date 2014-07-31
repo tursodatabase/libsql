@@ -1,5 +1,5 @@
-C Fix\sa\sleaked\sstatement\shandle\sin\spager2.test.
-D 2014-07-31T17:35:40.036
+C Add\sa\smissing\scall\sto\s"test_sqlite3_log"\sto\smultiplex.test.
+D 2014-07-31T18:14:37.512
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -719,7 +719,7 @@ F test/mmap1.test 93d167b328255cbe6679fe1e1a23be1b1197d07b
 F test/mmap2.test 9d6dd9ddb4ad2379f29cc78f38ce1e63ed418022
 F test/mmap3.test c92273e16eb8d23c1d55c9815b446bb72ef0512e
 F test/mmapfault.test d4c9eff9cd8c2dc14bc43e71e042f175b0a26fe3
-F test/multiplex.test 4a0d07a2490dc958e6b676a6825cf761be33d869
+F test/multiplex.test efd015ca0b5b4a57dc9535b8feb1273eebeadb60
 F test/multiplex2.test 580ca5817c7edbe4cc68fa150609c9473393003a
 F test/multiplex3.test d228f59eac91839a977eac19f21d053f03e4d101
 F test/mutex1.test 78b2b9bb320e51d156c4efdb71b99b051e7a4b41
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f4cb53651b1e352fae7378878b830a902bcd9248
-R 6cb5ac9ad4e6d98c300e9ffde83ac7f3
+P 47457b0488abcbec2137abf706c1d677563b9ea5
+R 40079bb444b74388b9936aaa1a8a8059
 U dan
-Z 2d65f06df1c6f3ff1350a732b5e2220f
+Z a0b960eb92c17485651b9cbc9a7c3b70
