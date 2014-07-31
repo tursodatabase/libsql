@@ -65,10 +65,13 @@ struct Fts5MatchPhrase {
 };
 
 /*
-** Variable pStmt is set to a compiled SQL statement of the form:
-**
+** pStmt:
 **   SELECT rowid, <fts> FROM <fts> ORDER BY +rank;
 **
+** aIdx[]:
+**   There is one entry in the aIdx[] array for each phrase in the query,
+**   the value of which is the offset within aPoslist[] following the last 
+**   byte of the position list for the corresponding phrase.
 */
 struct Fts5Sorter {
   sqlite3_stmt *pStmt;
@@ -77,6 +80,7 @@ struct Fts5Sorter {
   int nIdx;                       /* Number of entries in aIdx[] */
   int aIdx[0];                    /* Offsets into aPoslist for current row */
 };
+
 
 /*
 ** Virtual-table cursor object.
@@ -408,6 +412,7 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
     const u8 *aBlob;
     int nBlob;
     int i;
+    int iOff = 0;
     rc = SQLITE_OK;
 
     pSorter->iRowid = sqlite3_column_int64(pSorter->pStmt, 0);
@@ -415,9 +420,13 @@ static int fts5SorterNext(Fts5Cursor *pCsr){
     aBlob = a = sqlite3_column_blob(pSorter->pStmt, 1);
 
     for(i=0; i<(pSorter->nIdx-1); i++){
-      a += getVarint32(a, pSorter->aIdx[i]);
+      int iVal;
+      a += getVarint32(a, iVal);
+      iOff += iVal;
+      pSorter->aIdx[i] = iOff;
     }
     pSorter->aIdx[i] = &aBlob[nBlob] - a;
+
     pSorter->aPoslist = a;
     CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
   }
@@ -480,6 +489,7 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   pSorter = (Fts5Sorter*)sqlite3_malloc(nByte);
   if( pSorter==0 ) return SQLITE_NOMEM;
   memset(pSorter, 0, nByte);
+  pSorter->nIdx = nPhrase;
 
   zSql = sqlite3_mprintf("SELECT rowid, %s FROM %Q.%Q ORDER BY +%s %s",
       pConfig->zName, pConfig->zDb, pConfig->zName, FTS5_RANK_NAME,
@@ -811,7 +821,6 @@ static int fts5ApiPhraseSize(Fts5Context *pCtx, int iPhrase){
 }
 
 static sqlite3_int64 fts5ApiRowid(Fts5Context *pCtx){
-  Fts5Cursor *pCsr = (Fts5Cursor*)pCtx;
   return fts5CursorRowid((Fts5Cursor*)pCtx);
 }
 
@@ -857,7 +866,7 @@ static int fts5ApiPoslist(
   const u8 *a; int n;             /* Poslist for phrase iPhrase */
   if( pCsr->pSorter ){
     Fts5Sorter *pSorter = pCsr->pSorter;
-    int i1 = (iPhrase ? 0 : pSorter->aIdx[iPhrase-1]);
+    int i1 = (iPhrase==0 ? 0 : pSorter->aIdx[iPhrase-1]);
     n = pSorter->aIdx[iPhrase] - i1;
     a = &pSorter->aPoslist[i1];
   }else{
@@ -1016,20 +1025,37 @@ static void fts5ApiCallback(
   }
 }
 
+/*
+** Return a "position-list blob" corresponding to the current position of
+** cursor pCsr via sqlite3_result_blob(). A position-list blob contains
+** the current position-list for each phrase in the query associated with
+** cursor pCsr.
+**
+** A position-list blob begins with (nPhrase-1) varints, where nPhrase is
+** the number of phrases in the query. Following the varints are the
+** concatenated position lists for each phrase, in order.
+**
+** The first varint (if it exists) contains the size of the position list
+** for phrase 0. The second (same disclaimer) contains the size of position
+** list 1. And so on. There is no size field for the final position list,
+** as it can be derived from the total size of the blob.
+*/
 static int fts5PoslistBlob(sqlite3_context *pCtx, Fts5Cursor *pCsr){
   int i;
   int rc = SQLITE_OK;
   int nPhrase = sqlite3Fts5ExprPhraseCount(pCsr->pExpr);
   Fts5Buffer val;
-  int iOff = 0;
 
   memset(&val, 0, sizeof(Fts5Buffer));
-  for(i=0; i<nPhrase; i++){
+
+  /* Append the varints */
+  for(i=0; i<(nPhrase-1); i++){
     const u8 *dummy;
-    if( i ) sqlite3Fts5BufferAppendVarint(&rc, &val, iOff);
-    iOff += sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &dummy);
+    int nByte = sqlite3Fts5ExprPoslist(pCsr->pExpr, i, &dummy);
+    sqlite3Fts5BufferAppendVarint(&rc, &val, nByte);
   }
 
+  /* Append the position lists */
   for(i=0; i<nPhrase; i++){
     const u8 *pPoslist;
     int nPoslist;

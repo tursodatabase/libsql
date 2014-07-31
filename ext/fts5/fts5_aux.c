@@ -759,14 +759,14 @@ static void fts5TestFunction(
   }
 
   if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columncount ");
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, " columncount ");
   }
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columncount") ){
     sqlite3Fts5BufferAppendPrintf(&rc, &s, "%d", nCol);
   }
 
   if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columnsize ");
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, " columnsize ");
   }
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columnsize") ){
     if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "{");
@@ -779,7 +779,7 @@ static void fts5TestFunction(
   }
 
   if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columntext ");
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, " columntext ");
   }
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columntext") ){
     for(i=0; rc==SQLITE_OK && i<nCol; i++){

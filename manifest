@@ -1,5 +1,5 @@
-C Fix\sthings\sso\sthat\sthe\sfts5\sextension\sAPI\sworks\swith\s"ORDER\sBY\srank"\squeries.
-D 2014-07-30T20:26:24.443
+C Add\sfurther\stests\sfor\sthe\sextension\sAPIs\swith\s"ORDER\sBY\srank"\squeries.
+D 2014-07-31T11:57:59.052
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,10 +103,10 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c f322286c6a37dcea4b46b00677e9aad2e59abe9d
+F ext/fts5/fts5.c b54b776771d1e965bac02bffcf875a0bfc3660db
 F ext/fts5/fts5.h 8ace10d5b249a3baa983c79e7a1306d2a79cfd6a
 F ext/fts5/fts5Int.h 9a195c1706876c538902f007149b39e982e9da53
-F ext/fts5/fts5_aux.c 3cae4225d458af41b64bb40ed9dcc052eb41b9a0
+F ext/fts5/fts5_aux.c 366057c7186bc3615deb5ecc0ff61de50b6d2dbc
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c e764d75c58a3accda795f1da1b45960ac87dc77a
@@ -601,6 +601,7 @@ F test/fts5ac.test 9be418d037763f4cc5d86f4239db41fc86bb4f85
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
 F test/fts5ae.test cb37b3135a00d3afd5492ec534ecf654be5ff69e
 F test/fts5af.test 9ebe23aa3875896076952c7bc6e8308813a63c74
+F test/fts5ag.test 0747bf3bade16d5165810cf891f875933b28b420
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -768,7 +769,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test e6e951c816199693676d8c3d22d6bf54bcd719fc
+F test/permutations.test 5f1f942bae4139b33626b82627aa262c0f72d936
 F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1197,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 4cc048c3651e830a6aeded924c7f3a60b634e133
-R e80b35a7b7fca0c8edda241edc415407
+P f1b4e1a98d49ecaba962beba16f8224175e4ba59
+R bf2807e3a776f0c27fe888a62861bcb4
 U dan
-Z fdc04c3e2e7e600dae907e07830ae6e8
+Z 17018f27d9e25b34230168ffaec13df5
