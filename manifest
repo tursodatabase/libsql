@@ -1,5 +1,5 @@
-C Deactivate\sthe\sDISTINCT\sin\sa\sSELECT\son\sthe\sright-hand\sside\sof\san\sIN\soperator,\nsince\sit\sshould\snot\smake\sany\sdifference\sin\sthe\soutput\sbut\sdues\sconsume\sextra\nmemory\sand\sCPU\stime.
-D 2014-07-31T15:44:44.199
+C Fix\sa\sleaked\sstatement\shandle\sin\spager2.test.
+D 2014-07-31T17:35:40.036
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -863,7 +863,7 @@ F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
 F test/tempdb.test 19d0f66e2e3eeffd68661a11c83ba5e6ace9128c
 F test/temptable.test d2c9b87a54147161bcd1822e30c1d1cd891e5b30
 F test/temptrigger.test 8ec228b0db5d7ebc4ee9b458fc28cb9e7873f5e1
-F test/tester.tcl f31bea1483ea1d39620f982130026e76f872d744
+F test/tester.tcl b4ff83a8b069633f4aca788236d10a7086112a49
 F test/thread001.test 9f22fd3525a307ff42a326b6bc7b0465be1745a5
 F test/thread002.test e630504f8a06c00bf8bbe68528774dd96aeb2e58
 F test/thread003.test ee4c9efc3b86a6a2767516a37bd64251272560a7
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5360ecb0b8891d0c27f3f02d81b6c7b548361a10
-R fa406e6fe8ac4b7f1ba9a949d0399141
-U drh
-Z ae156d6c18fec68cfd3675b456914b76
+P f4cb53651b1e352fae7378878b830a902bcd9248
+R 6cb5ac9ad4e6d98c300e9ffde83ac7f3
+U dan
+Z 2d65f06df1c6f3ff1350a732b5e2220f
