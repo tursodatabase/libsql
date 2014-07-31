@@ -1604,7 +1604,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
       for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
         if( (pIdx->aiColumn[0]==iCol)
          && sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0)==pReq
-         && (!mustBeUnique || (pIdx->nKeyCol==1 && pIdx->onError!=OE_None))
+         && (!mustBeUnique || (pIdx->nKeyCol==1 && IsUniqueIndex(pIdx)))
         ){
           int iAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
           sqlite3VdbeAddOp3(v, OP_OpenRead, iTab, pIdx->tnum, iDb);

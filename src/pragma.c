@@ -1544,7 +1544,7 @@ void sqlite3Pragma(
       for(pIdx=pTab->pIndex, i=0; pIdx; pIdx=pIdx->pNext, i++){
         sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
         sqlite3VdbeAddOp4(v, OP_String8, 0, 2, 0, pIdx->zName, 0);
-        sqlite3VdbeAddOp2(v, OP_Integer, pIdx->onError!=OE_None, 3);
+        sqlite3VdbeAddOp2(v, OP_Integer, IsUniqueIndex(pIdx), 3);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 3);
       }
     }

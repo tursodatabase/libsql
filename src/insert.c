@@ -1886,7 +1886,7 @@ static int xferOptimization(
     }
   }
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
-    if( pDestIdx->onError!=OE_None ){
+    if( IsUniqueIndex(pDestIdx) ){
       destHasUniqueIdx = 1;
     }
     for(pSrcIdx=pSrc->pIndex; pSrcIdx; pSrcIdx=pSrcIdx->pNext){
