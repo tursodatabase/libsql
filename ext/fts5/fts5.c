@@ -491,6 +491,13 @@ static int fts5CursorFirstSorted(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
   memset(pSorter, 0, nByte);
   pSorter->nIdx = nPhrase;
 
+  /* TODO: It would be better to have some system for reusing statement
+  ** handles here, rather than preparing a new one for each query. But that
+  ** is not possible as SQLite reference counts the virtual table objects.
+  ** And since the statement required here reads from this very virtual 
+  ** table, saving it creates a circular reference.
+  **
+  ** If SQLite a built-in statement cache, this wouldn't be a problem. */
   zSql = sqlite3_mprintf("SELECT rowid, %s FROM %Q.%Q ORDER BY +%s %s",
       pConfig->zName, pConfig->zDb, pConfig->zName, FTS5_RANK_NAME,
       bAsc ? "ASC" : "DESC"
