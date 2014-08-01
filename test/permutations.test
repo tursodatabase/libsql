@@ -226,7 +226,7 @@ test_suite "fts5" -prefix "" -description {
   All FTS5 tests.
 } -files {
   fts5aa.test fts5ab.test fts5ac.test fts5ad.test fts5ae.test fts5ea.test
-  fts5af.test fts5ag.test
+  fts5af.test fts5ag.test fts5ah.test
 }
 
 test_suite "nofaultsim" -prefix "" -description {

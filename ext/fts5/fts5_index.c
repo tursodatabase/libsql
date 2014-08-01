@@ -255,6 +255,12 @@ static int fts5Corrupt() { return SQLITE_CORRUPT_VTAB; }
 # define FTS5_CORRUPT SQLITE_CORRUPT_VTAB
 #endif
 
+#ifdef SQLITE_DEBUG
+static int fts5MissingData() { return 0; }
+#else
+# define fts5MissingData() 
+#endif
+
 
 typedef struct Fts5BtreeIter Fts5BtreeIter;
 typedef struct Fts5BtreeIterLevel Fts5BtreeIterLevel;
@@ -530,6 +536,7 @@ struct Fts5NodeIter {
   Fts5Buffer term;
   int nEmpty;
   int iChild;
+  int bDlidx;
 };
 
 /*
@@ -566,6 +573,7 @@ struct Fts5BtreeIter {
   int iLeaf;                      /* Leaf containing terms >= current term */
   int nEmpty;                     /* Number of "empty" leaves following iLeaf */
   int bEof;                       /* Set to true at EOF */
+  int bDlidx;                     /* True if there exists a dlidx */
 };
 
 static void fts5PutU16(u8 *aOut, u16 iVal){
@@ -669,6 +677,8 @@ static Fts5Data *fts5DataReadOrBuffer(
     }else{
       rc = sqlite3_blob_reopen(p->pReader, iRowid);
     }
+
+    if( rc ) fts5MissingData();
 
     if( rc==SQLITE_OK ){
       int nByte = sqlite3_blob_bytes(p->pReader);
@@ -980,10 +990,12 @@ static void fts5StructureWrite(Fts5Index *p, int iIdx, Fts5Structure *pStruct){
 */
 static void fts5NodeIterGobbleNEmpty(Fts5NodeIter *pIter){
   if( pIter->iOff<pIter->nData && 0==(pIter->aData[pIter->iOff] & 0xfe) ){
+    pIter->bDlidx = pIter->aData[pIter->iOff] & 0x01;
     pIter->iOff++;
     pIter->iOff += getVarint32(&pIter->aData[pIter->iOff], pIter->nEmpty);
   }else{
     pIter->nEmpty = 0;
+    pIter->bDlidx = 0;
   }
 }
 
@@ -2082,13 +2094,15 @@ static int fts5PrefixCompress(
 */
 static void fts5WriteBtreeNEmpty(Fts5Index *p, Fts5SegWriter *pWriter){
   if( pWriter->nEmpty ){
-    Fts5PageWriter *pPg = &pWriter->aWriter[1];
     int bFlag = 0;
+    Fts5PageWriter *pPg;
+    pPg = &pWriter->aWriter[1];
     if( pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
       i64 iKey = FTS5_DOCLIST_IDX_ROWID(
           pWriter->iIdx, pWriter->iSegid, 
           pWriter->aWriter[0].pgno - 1 - pWriter->nEmpty
       );
+      assert( pWriter->dlidx.n>0 );
       fts5DataWrite(p, iKey, pWriter->dlidx.p, pWriter->dlidx.n);
       bFlag = 1;
     }
@@ -2103,6 +2117,22 @@ static void fts5WriteBtreeNEmpty(Fts5Index *p, Fts5SegWriter *pWriter){
   pWriter->bDlidxPrevValid = 0;
 }
 
+static void fts5WriteBtreeGrow(Fts5Index *p, Fts5SegWriter *pWriter){
+  Fts5PageWriter *aNew;
+  Fts5PageWriter *pNew;
+  int nNew = sizeof(Fts5PageWriter) * (pWriter->nWriter+1);
+
+  aNew = (Fts5PageWriter*)sqlite3_realloc(pWriter->aWriter, nNew);
+  if( aNew==0 ) return;
+
+  pNew = &aNew[pWriter->nWriter];
+  memset(pNew, 0, sizeof(Fts5PageWriter));
+  pNew->pgno = 1;
+  fts5BufferAppendVarint(&p->rc, &pNew->buf, 1);
+
+  pWriter->nWriter++;
+  pWriter->aWriter = aNew;
+}
 
 /*
 ** This is called once for each leaf page except the first that contains
@@ -2123,19 +2153,8 @@ static void fts5WriteBtreeTerm(
     Fts5PageWriter *pPage;
 
     if( iHeight>=pWriter->nWriter ){
-      Fts5PageWriter *aNew;
-      Fts5PageWriter *pNew;
-      int nNew = sizeof(Fts5PageWriter) * (pWriter->nWriter+1);
-      aNew = (Fts5PageWriter*)sqlite3_realloc(pWriter->aWriter, nNew);
-      if( aNew==0 ) return;
-
-      pNew = &aNew[pWriter->nWriter];
-      memset(pNew, 0, sizeof(Fts5PageWriter));
-      pNew->pgno = 1;
-      fts5BufferAppendVarint(&p->rc, &pNew->buf, 1);
-
-      pWriter->nWriter++;
-      pWriter->aWriter = aNew;
+      fts5WriteBtreeGrow(p, pWriter);
+      if( p->rc ) return;
     }
     pPage = &pWriter->aWriter[iHeight];
 
@@ -2202,6 +2221,7 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
 
   if( pPage->term.n==0 ){
     /* No term was written to this page. */
+    assert( 0==fts5GetU16(&pPage->buf.p[2]) );
     fts5WriteBtreeNoTerm(p, pWriter);
   }
 
@@ -2379,11 +2399,15 @@ static void fts5WriteFinish(
 ){
   int i;
   *pnLeaf = pWriter->aWriter[0].pgno;
-  *pnHeight = pWriter->nWriter;
   fts5WriteFlushLeaf(p, pWriter);
+  if( pWriter->nWriter==1 && pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
+    fts5WriteBtreeGrow(p, pWriter);
+  }
   if( pWriter->nWriter>1 ){
     fts5WriteBtreeNEmpty(p, pWriter);
   }
+  *pnHeight = pWriter->nWriter;
+
   for(i=1; i<pWriter->nWriter; i++){
     Fts5PageWriter *pPg = &pWriter->aWriter[i];
     i64 iRow = FTS5_SEGMENT_ROWID(pWriter->iIdx, pWriter->iSegid, i, pPg->pgno);
@@ -2905,6 +2929,7 @@ static void fts5BtreeIterInit(
   }else{
     pIter->nEmpty = pIter->aLvl[0].s.nEmpty;
     pIter->iLeaf = pIter->aLvl[0].s.iChild;
+    pIter->bDlidx = pIter->aLvl[0].s.bDlidx;
   }
 }
 
@@ -2940,6 +2965,7 @@ static void fts5BtreeIterNext(Fts5BtreeIter *pIter){
   }
 
   pIter->nEmpty = pIter->aLvl[0].s.nEmpty;
+  pIter->bDlidx = pIter->aLvl[0].s.bDlidx;
   pIter->iLeaf = pIter->aLvl[0].s.iChild;
   assert( p->rc==SQLITE_OK || pIter->bEof );
 }
@@ -2958,6 +2984,37 @@ static void fts5BtreeIterFree(Fts5BtreeIter *pIter){
   fts5BufferFree(&pIter->term);
 }
 
+typedef struct DoclistIdxIter DoclistIdxIter;
+struct DoclistIdxIter {
+  Fts5Data *pDlidx;             /* Data for doclist index, if any */
+  int iOff;                     /* Current offset into pDlidx */
+  int bRowidValid;              /* iRowid is valid */
+
+  int bZero;                    /* True if current leaf has no rowid */
+  i64 iRowid;                   /* If bZero==0, first rowid on leaf */
+};
+
+/*
+** Return non-zero if EOF is reached.
+*/
+static int fts5IndexDoclistIterNext(DoclistIdxIter *pIter){
+  i64 iVal;
+  if( pIter->iOff>=pIter->pDlidx->n ) return 1;
+  pIter->iOff += getVarint(&pIter->pDlidx->p[pIter->iOff], (u64*)&iVal);
+  if( iVal==0 ){
+    pIter->bZero = 1;
+  }else{
+    pIter->bZero = 0;
+    if( pIter->bRowidValid ){
+      pIter->iRowid -= iVal;
+    }else{
+      pIter->bRowidValid = 1;
+      pIter->iRowid = iVal;
+    }
+  }
+  return 0;
+}
+
 static void fts5IndexIntegrityCheckSegment(
   Fts5Index *p,                   /* FTS5 backend object */
   int iIdx,                       /* Index that pSeg is a part of */
@@ -2974,6 +3031,7 @@ static void fts5IndexIntegrityCheckSegment(
     Fts5Data *pLeaf;              /* Data for this leaf */
     int iOff;                     /* Offset of first term on leaf */
     int i;                        /* Used to iterate through empty leaves */
+    DoclistIdxIter dliter;        /* For iterating through any doclist index */
 
     /* If the leaf in question has already been trimmed from the segment, 
     ** ignore this b-tree entry. Otherwise, load it into memory. */
@@ -3000,6 +3058,12 @@ static void fts5IndexIntegrityCheckSegment(
     fts5DataRelease(pLeaf);
     if( p->rc ) break;
 
+    memset(&dliter, 0, sizeof(DoclistIdxIter));
+    if( iter.bDlidx ){
+      i64 iDlidxRowid = FTS5_DOCLIST_IDX_ROWID(iIdx, pSeg->iSegid, iter.iLeaf);
+      dliter.pDlidx = fts5DataRead(p, iDlidxRowid);
+    }
+
     /* Now check that the iter.nEmpty leaves following the current leaf
     ** (a) exist and (b) contain no terms. */
     for(i=1; i<=iter.nEmpty; i++){
@@ -3007,8 +3071,23 @@ static void fts5IndexIntegrityCheckSegment(
       if( pLeaf && 0!=fts5GetU16(&pLeaf->p[2]) ){
         p->rc = FTS5_CORRUPT;
       }
+      if( pLeaf && dliter.pDlidx ){
+        if( fts5IndexDoclistIterNext(&dliter) ){
+          p->rc = FTS5_CORRUPT;
+        }else{
+          int iRowidOff = fts5GetU16(&pLeaf->p[0]);
+          if( dliter.bZero ){
+            if( iRowidOff!=0 ) p->rc = FTS5_CORRUPT;
+          }else{
+            i64 iRowid;
+            getVarint(&pLeaf->p[iRowidOff], (u64*)&iRowid);
+            if( iRowid!=dliter.iRowid ) p->rc = FTS5_CORRUPT;
+          }
+        }
+      }
       fts5DataRelease(pLeaf);
     }
+    fts5DataRelease(dliter.pDlidx);
   }
 
   if( p->rc==SQLITE_OK && iter.iLeaf!=pSeg->pgnoLast ){
@@ -3218,7 +3297,7 @@ static void fts5DecodeFunction(
     int i = 0;
     i64 iPrev;
     sqlite3Fts5BufferAppendPrintf(&rc, &s, "(dlidx idx=%d segid=%d pgno=%d)",
-        iIdx, iSegid, iHeight, iPgno
+        iIdx, iSegid, iPgno
     );
     if( n>0 ){
       i = getVarint(&a[i], (u64*)&iPrev);
@@ -3305,7 +3384,9 @@ static void fts5DecodeFunction(
           );
         }
         if( ss.nEmpty ){
-          sqlite3Fts5BufferAppendPrintf(&rc, &s, " empty=%d", ss.nEmpty);
+          sqlite3Fts5BufferAppendPrintf(&rc, &s, " empty=%d%s", ss.nEmpty,
+              ss.bDlidx ? "*" : ""
+          );
         }
       }
       fts5NodeIterFree(&ss);
