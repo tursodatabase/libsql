@@ -1,0 +1,58 @@
+# 2014 June 17
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing the FTS5 module.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+set testprefix fts5ah
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 {
+  finish_test
+  return
+}
+
+#-------------------------------------------------------------------------
+# This file contains tests for very large doclists.
+#
+
+do_test 1.0 {
+  execsql { CREATE VIRTUAL TABLE t1 USING fts5(a) }
+  execsql { INSERT INTO t1(t1) VALUES('pgsz=128') }
+  for {set i 1} {$i <= 10000} {incr i} {
+    set v {x x x x x x x x x x x x x x x x x x x x}
+    if {($i % 2139)==0} {lset v 3 Y ; lappend Y $i}
+    if {($i % 1577)==0} {lset v 5 W ; lappend W $i}
+    execsql { INSERT INTO t1 VALUES($v) }
+  }
+} {}
+
+do_execsql_test 1.1 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'x AND w'
+} [lsort -integer -decr $W]
+
+do_execsql_test 1.2 {
+  SELECT rowid FROM t1 WHERE t1 MATCH 'y AND x'
+} [lsort -integer -decr $Y]
+
+do_execsql_test 1.3 {
+  INSERT INTO t1(t1) VALUES('integrity-check');
+}
+
+do_execsql_test 1.4 {
+  SELECT count(*) FROM t1_data
+}
+
+
+finish_test
+

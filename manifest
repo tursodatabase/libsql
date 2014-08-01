@@ -1,5 +1,5 @@
-C Add\sa\scomment\sexplaining\swhy\sfts5\scannot\scache\s"sorter\sstatements".
-D 2014-07-31T17:53:03.405
+C Add\s"doclist\sindex"\srecords\sto\sthe\sdatabase.\sThese\sare\sto\smake\snavigating\swithin\svery\slarge\sdoclists\sfaster.\sThey\sare\snot\syet\sused\sby\squeries.
+D 2014-08-01T11:16:25.207
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5_aux.c 366057c7186bc3615deb5ecc0ff61de50b6d2dbc
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c e764d75c58a3accda795f1da1b45960ac87dc77a
-F ext/fts5/fts5_index.c 68d2d41b5c6d2f8838c3d6ebdc8b242718b8e997
+F ext/fts5/fts5_index.c 618d54ecf41887b6db59491b71e654ae3315f8c9
 F ext/fts5/fts5_storage.c 2866e7e1de9dc851756c3a9c76b6e1d75e0facb7
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -602,6 +602,7 @@ F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
 F test/fts5ae.test cb37b3135a00d3afd5492ec534ecf654be5ff69e
 F test/fts5af.test 9ebe23aa3875896076952c7bc6e8308813a63c74
 F test/fts5ag.test 0747bf3bade16d5165810cf891f875933b28b420
+F test/fts5ah.test bfa6ebd7ee87f73c4146b9e316a105fd0e43d01a
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1198,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 37a417d27e4ebafd4783f62728d7467316b75b17
-R e0b14b9e45e7f8113c4d7a699a937c5a
+P e6af3b7a3cf331210f4c87848e2af007dbd5ef30
+R a017a4de54c141d4f4f840978af83e33
 U dan
-Z cd0e862a57439796abd2a3aa1ce5c8f8
+Z 90f2786a7e9f28e43c6798f77c65d6dc

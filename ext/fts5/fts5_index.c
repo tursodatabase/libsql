@@ -47,6 +47,8 @@
 #define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
 #define FTS5_MIN_MERGE       4    /* Minimum number of segments to merge */
 
+#define FTS5_MIN_DLIDX_SIZE  4    /* Add dlidx if this many empty pages */
+
 /*
 ** Details:
 **
@@ -184,8 +186,10 @@
 ** 5. Segment doclist indexes:
 **
 **   A list of varints - the first docid on each page (starting with the
-**   second) of the doclist. First element in the list is a literal docid.
-**   Each docid thereafter is a (negative) delta.
+**   first termless page) of the doclist. First element in the list is a
+**   literal docid. Each docid thereafter is a (negative) delta. If there
+**   are no docids at all on a page, a 0x00 byte takes the place of the
+**   delta value.
 */
 
 /*
@@ -235,7 +239,7 @@
 ** (1<<HEIGHT_BITS). This is because the rowid address space for nodes
 ** with such a height is used by doclist indexes.
 */
-#define FTS5_SEGMENT_MAX_HEIGHT ((1 << FTS5_SEGMENT_HEIGHT_BITS)-1)
+#define FTS5_SEGMENT_MAX_HEIGHT ((1 << FTS5_DATA_HEIGHT_B)-1)
 
 /*
 ** The rowid for the doclist index associated with leaf page pgno of segment
@@ -377,7 +381,6 @@ struct Fts5PageWriter {
   Fts5Buffer buf;                 /* Buffer containing page data */
   Fts5Buffer term;                /* Buffer containing previous term on page */
 };
-
 struct Fts5SegWriter {
   int iIdx;                       /* Index to write to */
   int iSegid;                     /* Segid to write to */
@@ -388,6 +391,9 @@ struct Fts5SegWriter {
   u8 bFirstRowidInPage;           /* True if next rowid is first in page */
   int nLeafWritten;               /* Number of leaf pages written */
   int nEmpty;                     /* Number of contiguous term-less nodes */
+  Fts5Buffer dlidx;               /* Doclist index */
+  i64 iDlidxPrev;                 /* Previous rowid appended to dlidx */
+  int bDlidxPrevValid;            /* True if iDlidxPrev is valid */
 };
 
 /*
@@ -534,7 +540,7 @@ struct Fts5NodeIter {
 **
 **   iLeaf:  The page number of the leaf page the entry points to.
 **
-**   term:   A split-key that all terms on leaf page $leaf must be greater
+**   term:   A split-key that all terms on leaf page $iLeaf must be greater
 **           than or equal to. The "term" associated with the first b-tree
 **           hierarchy entry (the one that points to leaf page 1) is always 
 **           an empty string.
@@ -1082,6 +1088,15 @@ static void fts5SegIterInit(
   Fts5StructureSegment *pSeg,     /* Description of segment */
   Fts5SegIter *pIter              /* Object to populate */
 ){
+  if( pSeg->pgnoFirst==0 ){
+    /* This happens if the segment is being used as an input to an incremental
+    ** merge and all data has already been "trimmed". See function
+    ** fts5TrimSegments() for details. In this case leave the iterator empty.
+    ** The caller will see the (pIter->pLeaf==0) and assume the iterator is
+    ** at EOF already. */
+    assert( pIter->pLeaf==0 );
+    return;
+  }
 
   if( p->rc==SQLITE_OK ){
     memset(pIter, 0, sizeof(*pIter));
@@ -2061,6 +2076,33 @@ static int fts5PrefixCompress(
   return i;
 }
 
+/*
+** If an "nEmpty" record must be written to the b-tree before the next
+** term, write it now.
+*/
+static void fts5WriteBtreeNEmpty(Fts5Index *p, Fts5SegWriter *pWriter){
+  if( pWriter->nEmpty ){
+    Fts5PageWriter *pPg = &pWriter->aWriter[1];
+    int bFlag = 0;
+    if( pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
+      i64 iKey = FTS5_DOCLIST_IDX_ROWID(
+          pWriter->iIdx, pWriter->iSegid, 
+          pWriter->aWriter[0].pgno - 1 - pWriter->nEmpty
+      );
+      fts5DataWrite(p, iKey, pWriter->dlidx.p, pWriter->dlidx.n);
+      bFlag = 1;
+    }
+    fts5BufferAppendVarint(&p->rc, &pPg->buf, bFlag);
+    fts5BufferAppendVarint(&p->rc, &pPg->buf, pWriter->nEmpty);
+    pWriter->nEmpty = 0;
+  }
+
+  /* Whether or not it was written to disk, zero the doclist index at this
+  ** point */
+  sqlite3Fts5BufferZero(&pWriter->dlidx);
+  pWriter->bDlidxPrevValid = 0;
+}
+
 
 /*
 ** This is called once for each leaf page except the first that contains
@@ -2097,12 +2139,7 @@ static void fts5WriteBtreeTerm(
     }
     pPage = &pWriter->aWriter[iHeight];
 
-    if( pWriter->nEmpty ){
-      assert( iHeight==1 );
-      fts5BufferAppendVarint(&p->rc, &pPage->buf, 0);
-      fts5BufferAppendVarint(&p->rc, &pPage->buf, pWriter->nEmpty);
-      pWriter->nEmpty = 0;
-    }
+    fts5WriteBtreeNEmpty(p, pWriter);
 
     if( pPage->buf.n>=p->pgsz ){
       /* pPage will be written to disk. The term will be written into the
@@ -2130,7 +2167,32 @@ static void fts5WriteBtreeNoTerm(
   Fts5Index *p,                   /* FTS5 backend object */
   Fts5SegWriter *pWriter          /* Writer object */
 ){
+  if( pWriter->bFirstRowidInPage ){
+    /* No rowids on this page. Append an 0x00 byte to the current 
+    ** doclist-index */
+    sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->dlidx, 0);
+  }
   pWriter->nEmpty++;
+}
+
+/*
+** Rowid iRowid has just been appended to the current leaf page. As it is
+** the first on its page, append an entry to the current doclist-index.
+*/
+static void fts5WriteDlidxAppend(
+  Fts5Index *p, 
+  Fts5SegWriter *pWriter, 
+  i64 iRowid
+){
+  i64 iVal;
+  if( pWriter->bDlidxPrevValid ){
+    iVal = pWriter->iDlidxPrev - iRowid;
+  }else{
+    iVal = iRowid;
+  }
+  sqlite3Fts5BufferAppendVarint(&p->rc, &pWriter->dlidx, iVal);
+  pWriter->bDlidxPrevValid = 1;
+  pWriter->iDlidxPrev = iRowid;
 }
 
 static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
@@ -2226,8 +2288,12 @@ static void fts5WriteAppendRowid(
   Fts5PageWriter *pPage = &pWriter->aWriter[0];
 
   /* If this is to be the first docid written to the page, set the 
-  ** docid-pointer in the page-header.  */
-  if( pWriter->bFirstRowidInPage ) fts5PutU16(pPage->buf.p, pPage->buf.n);
+  ** docid-pointer in the page-header. Also append a value to the dlidx
+  ** buffer, in case a doclist-index is required.  */
+  if( pWriter->bFirstRowidInPage ){
+    fts5PutU16(pPage->buf.p, pPage->buf.n);
+    fts5WriteDlidxAppend(p, pWriter, iRowid);
+  }
 
   /* Write the docid. */
   if( pWriter->bFirstRowidInDoclist || pWriter->bFirstRowidInPage ){
@@ -2301,20 +2367,22 @@ static void fts5WritePendingDoclist(
   fts5WriteAppendZerobyte(p, pWriter);
 }
 
+/*
+** Flush any data cached by the writer object to the database. Free any
+** allocations associated with the writer.
+*/
 static void fts5WriteFinish(
   Fts5Index *p, 
-  Fts5SegWriter *pWriter, 
-  int *pnHeight,
-  int *pnLeaf
+  Fts5SegWriter *pWriter,         /* Writer object */
+  int *pnHeight,                  /* OUT: Height of the b-tree */
+  int *pnLeaf                     /* OUT: Number of leaf pages in b-tree */
 ){
   int i;
   *pnLeaf = pWriter->aWriter[0].pgno;
   *pnHeight = pWriter->nWriter;
   fts5WriteFlushLeaf(p, pWriter);
-  if( pWriter->nWriter>1 && pWriter->nEmpty ){
-    Fts5PageWriter *pPg = &pWriter->aWriter[1];
-    fts5BufferAppendVarint(&p->rc, &pPg->buf, 0);
-    fts5BufferAppendVarint(&p->rc, &pPg->buf, pWriter->nEmpty);
+  if( pWriter->nWriter>1 ){
+    fts5WriteBtreeNEmpty(p, pWriter);
   }
   for(i=1; i<pWriter->nWriter; i++){
     Fts5PageWriter *pPg = &pWriter->aWriter[i];
@@ -2327,6 +2395,7 @@ static void fts5WriteFinish(
     fts5BufferFree(&pPg->buf);
   }
   sqlite3_free(pWriter->aWriter);
+  sqlite3Fts5BufferFree(&pWriter->dlidx);
 }
 
 static void fts5WriteInit(
@@ -3145,6 +3214,28 @@ static void fts5DecodeFunction(
   a = sqlite3_value_blob(apVal[1]);
   fts5DecodeRowid(iRowid, &iIdx, &iSegid, &iHeight, &iPgno);
 
+  if( iHeight==FTS5_SEGMENT_MAX_HEIGHT ){
+    int i = 0;
+    i64 iPrev;
+    sqlite3Fts5BufferAppendPrintf(&rc, &s, "(dlidx idx=%d segid=%d pgno=%d)",
+        iIdx, iSegid, iHeight, iPgno
+    );
+    if( n>0 ){
+      i = getVarint(&a[i], (u64*)&iPrev);
+      sqlite3Fts5BufferAppendPrintf(&rc, &s, " %lld", iPrev);
+    }
+    while( i<n ){
+      i64 iVal;
+      i += getVarint(&a[i], (u64*)&iVal);
+      if( iVal==0 ){
+        sqlite3Fts5BufferAppendPrintf(&rc, &s, " x");
+      }else{
+        iPrev = iPrev - iVal;
+        sqlite3Fts5BufferAppendPrintf(&rc, &s, " %lld", iPrev);
+      }
+    }
+
+  }else
   if( iSegid==0 ){
     if( iRowid==FTS5_AVERAGES_ROWID ){
       sqlite3Fts5BufferAppendPrintf(&rc, &s, "{averages} ");
