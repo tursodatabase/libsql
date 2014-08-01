@@ -1476,6 +1476,22 @@ int sqlite3CodeOnce(Parse *pParse){
 }
 
 /*
+** Generate code that checks the single-column index table iCur to see if
+** contains any NULL entries.  Cause the register at regHasNull to be set
+** to a non-NULL value if iCur contains no NULLs.  Cause register regHasNull
+** to be set to NULL if iCur contains one or more NULL values.
+*/
+static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
+  int j1;
+  sqlite3VdbeAddOp2(v, OP_Integer, 0, regHasNull);
+  j1 = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
+  sqlite3VdbeAddOp3(v, OP_Column, iCur, 0, regHasNull);
+  sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
+  VdbeComment((v, "<maybe-NULL?>"));
+  sqlite3VdbeJumpHere(v, j1);
+}
+
+/*
 ** This function is used by the implementation of the IN (...) operator.
 ** The pX parameter is the expression on the RHS of the IN operator, which
 ** might be either a list of expressions or a subquery.
@@ -1532,24 +1548,9 @@ int sqlite3CodeOnce(Parse *pParse){
 ** NULL value, then *prRhsHasNull is left unchanged.
 **
 ** If a register is allocated and its location stored in *prRhsHasNull, then
-** the value in that register will be:
-**
-**          0      if the (...) contains no NULL values
-**          1      if the (...) does not contain NULL values
-**       NULL      if we do not yet know if (...) contains NULLs
-**
-** If the (...) does not remain constant for the duration of the query
-** (i.e. the SELECT within the (...) is a correlated subquery) then the
-** value of the allocated register is reset to NULL each time the subquery
-** is rerun. This allows the caller to use vdbe code equivalent to the
-** following:
-**
-**   if( r[*prRhsHasNull] IS NULL ){
-**     r[*prRhsHasNull] = <test if data structure contains null>
-**   }
-**
-** in order to avoid running the <test if data structure contains null>
-** test more often than is necessary.
+** the value in that register will be NULL if the b-tree contains one or more
+** NULL values, and it will be some non-NULL value if the b-tree contains no
+** NULL values.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
@@ -1628,7 +1629,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
 
           if( prRhsHasNull && !pTab->aCol[iCol].notNull ){
             *prRhsHasNull = ++pParse->nMem;
-            sqlite3VdbeAddOp2(v, OP_Null, 0, *prRhsHasNull);
+            sqlite3SetHasNullFlag(v, iTab, *prRhsHasNull);
           }
           sqlite3VdbeJumpHere(v, iAddr);
         }
@@ -1691,10 +1692,10 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
 int sqlite3CodeSubselect(
   Parse *pParse,          /* Parsing context */
   Expr *pExpr,            /* The IN, SELECT, or EXISTS operator */
-  int rMayHaveNull,       /* Register that records whether NULLs exist in RHS */
+  int rHasNullFlag,       /* Register that records whether NULLs exist in RHS */
   int isRowid             /* If true, LHS of IN operator is a rowid */
 ){
-  int testAddr = -1;                      /* One-time test address */
+  int jmpIfDynamic = -1;                      /* One-time test address */
   int rReg = 0;                           /* Register storing resulting */
   Vdbe *v = sqlite3GetVdbe(pParse);
   if( NEVER(v==0) ) return 0;
@@ -1711,13 +1712,13 @@ int sqlite3CodeSubselect(
   ** save the results, and reuse the same result on subsequent invocations.
   */
   if( !ExprHasProperty(pExpr, EP_VarSelect) ){
-    testAddr = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+    jmpIfDynamic = sqlite3CodeOnce(pParse); VdbeCoverage(v);
   }
 
 #ifndef SQLITE_OMIT_EXPLAIN
   if( pParse->explain==2 ){
     char *zMsg = sqlite3MPrintf(
-        pParse->db, "EXECUTE %s%s SUBQUERY %d", testAddr>=0?"":"CORRELATED ",
+        pParse->db, "EXECUTE %s%s SUBQUERY %d", jmpIfDynamic>=0?"":"CORRELATED ",
         pExpr->op==TK_IN?"LIST":"SCALAR", pParse->iNextSelectId
     );
     sqlite3VdbeAddOp4(v, OP_Explain, pParse->iSelectId, 0, 0, zMsg, P4_DYNAMIC);
@@ -1730,10 +1731,6 @@ int sqlite3CodeSubselect(
       int addr;                   /* Address of OP_OpenEphemeral instruction */
       Expr *pLeft = pExpr->pLeft; /* the LHS of the IN operator */
       KeyInfo *pKeyInfo = 0;      /* Key information */
-
-      if( rMayHaveNull ){
-        sqlite3VdbeAddOp2(v, OP_Null, 0, rMayHaveNull);
-      }
 
       affinity = sqlite3ExprAffinity(pLeft);
 
@@ -1817,9 +1814,9 @@ int sqlite3CodeSubselect(
           ** this code only executes once.  Because for a non-constant
           ** expression we need to rerun this code each time.
           */
-          if( testAddr>=0 && !sqlite3ExprIsConstant(pE2) ){
-            sqlite3VdbeChangeToNoop(v, testAddr);
-            testAddr = -1;
+          if( jmpIfDynamic>=0 && !sqlite3ExprIsConstant(pE2) ){
+            sqlite3VdbeChangeToNoop(v, jmpIfDynamic);
+            jmpIfDynamic = -1;
           }
 
           /* Evaluate the expression and insert it into the temp table */
@@ -1889,8 +1886,12 @@ int sqlite3CodeSubselect(
     }
   }
 
-  if( testAddr>=0 ){
-    sqlite3VdbeJumpHere(v, testAddr);
+  if( rHasNullFlag ){
+    sqlite3SetHasNullFlag(v, pExpr->iTable, rHasNullFlag);
+  }
+
+  if( jmpIfDynamic>=0 ){
+    sqlite3VdbeJumpHere(v, jmpIfDynamic);
   }
   sqlite3ExprCachePop(pParse);
 
@@ -1911,7 +1912,7 @@ int sqlite3CodeSubselect(
 ** if the LHS is NULL or if the LHS is not contained within the RHS and the
 ** RHS contains one or more NULL values.
 **
-** This routine generates code will jump to destIfFalse if the LHS is not 
+** This routine generates code that jumps to destIfFalse if the LHS is not 
 ** contained within the RHS.  If due to NULLs we cannot determine if the LHS
 ** is contained in the RHS then jump to destIfNull.  If the LHS is contained
 ** within the RHS then fall through.
@@ -1997,34 +1998,19 @@ static void sqlite3ExprCodeIN(
       ** the presence of a NULL on the RHS makes a difference in the
       ** outcome.
       */
-      int j1, j2;
+      int j1;
 
       /* First check to see if the LHS is contained in the RHS.  If so,
-      ** then the presence of NULLs in the RHS does not matter, so jump
-      ** over all of the code that follows.
+      ** then the answer is TRUE the presence of NULLs in the RHS does
+      ** not matter.  If the LHS is not contained in the RHS, then the
+      ** answer is NULL if the RHS contains NULLs and the answer is
+      ** FALSE if the RHS is NULL-free.
       */
       j1 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, r1, 1);
       VdbeCoverage(v);
-
-      /* Here we begin generating code that runs if the LHS is not
-      ** contained within the RHS.  Generate additional code that
-      ** tests the RHS for NULLs.  If the RHS contains a NULL then
-      ** jump to destIfNull.  If there are no NULLs in the RHS then
-      ** jump to destIfFalse.
-      */
-      sqlite3VdbeAddOp2(v, OP_If, rRhsHasNull, destIfNull); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_IfNot, rRhsHasNull, destIfFalse); VdbeCoverage(v);
-      j2 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, rRhsHasNull, 1);
+      sqlite3VdbeAddOp2(v, OP_IsNull, rRhsHasNull, destIfNull);
       VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, rRhsHasNull);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
-      sqlite3VdbeJumpHere(v, j2);
-      sqlite3VdbeAddOp2(v, OP_Integer, 1, rRhsHasNull);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
-
-      /* The OP_Found at the top of this branch jumps here when true, 
-      ** causing the overall IN expression evaluation to fall through.
-      */
       sqlite3VdbeJumpHere(v, j1);
     }
   }
