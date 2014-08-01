@@ -1494,8 +1494,6 @@ int sqlite3CodeOnce(Parse *pParse){
 **   IN_INDEX_INDEX_DESC - The cursor was opened on a descending index.
 **   IN_INDEX_EPH        - The cursor was opened on a specially created and
 **                         populated epheremal table.
-**   IN_INDEX_NOOP       - No cursor was allocated.  The in operator must be
-**                         implemented as a sequence of comparisons.
 **
 ** An existing b-tree might be used if the RHS expression pX is a simple
 ** subquery such as:
@@ -1524,13 +1522,6 @@ int sqlite3CodeOnce(Parse *pParse){
 ** for fast set membership tests) then an epheremal table must 
 ** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
 ** be found with <column> as its left-most column.
-**
-** If the IN_INDEX_NOOP_OK and IN_INDEX_MEMBERSHIP are both set and
-** if the RHS of the IN operator is a list (not a subquery) then this
-** routine might decide that creating an ephemeral b-tree for membership
-** testing is too expensive and return IN_INDEX_NOOP.  IN that case, the
-** calling routine should implement the IN operator using a sequence
-** of Eq or Ne comparison operations.
 **
 ** When the b-tree is being used for membership tests, the calling function
 ** might need to know whether or not the RHS side of the IN operator
@@ -1939,7 +1930,7 @@ static void sqlite3ExprCodeIN(
   v = pParse->pVdbe;
   assert( v!=0 );       /* OOM detected prior to this routine */
   VdbeNoopComment((v, "begin IN expr"));
-  eType = sqlite3FindInIndex(pParse, pExpr, 0,
+  eType = sqlite3FindInIndex(pParse, pExpr, IN_INDEX_MEMBERSHIP,
                              destIfFalse==destIfNull ? 0 : &rRhsHasNull);
 
   /* Figure out the affinity to use to create a key from the results
@@ -1986,7 +1977,8 @@ static void sqlite3ExprCodeIN(
     ** contains one or more NULL values, then the result of the
     ** expression is also NULL.
     */
-    if( rRhsHasNull==0 || destIfFalse==destIfNull ){
+    assert( destIfFalse!=destIfNull || rRhsHasNull==0 );
+    if( rRhsHasNull==0 ){
       /* This branch runs if it is known at compile time that the RHS
       ** cannot contain NULL values. This happens as the result
       ** of a "NOT NULL" constraint in the database schema.

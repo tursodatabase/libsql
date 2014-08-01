@@ -1,5 +1,5 @@
-C Begin\smaking\schanges\sto\sthe\sIN\soperator\sin\san\sattempt\sto\smake\sit\srun\sfaster\nand\sto\smake\sthe\scode\seasier\sto\sunderstand.
-D 2014-08-01T14:46:57.155
+C The\sidea\sof\scoding\sIN\soperator\swith\sa\sshort\slist\son\sthe\sRHS\sas\san\sOR\sexpression\nturns\sout\sto\sbe\shelpful.\s\sIf\sthe\slist\sis\sof\slength\s1\sor\s2,\sthe\sOR\sexpression\nis\svery\sslightly\sfaster,\sbut\sthe\sephemeral\stable\sapproach\sis\sclearly\sbetter\sfor\nall\slist\slengths\sgreater\sthan\s2.\s\sBetter\sto\skeep\sthe\scode\ssimple.
+D 2014-08-01T15:34:36.551
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c 7c52ea8b322992a91a241c0092a5bf97b141d353
+F src/expr.c 1f7fa7ddbdffd89898a3ce5ff1e57d137ec87aa5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 8545f3b36da47473e10800ea4fb0810fd4062514
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -227,7 +227,7 @@ F src/shell.c 191129c3f7a9cf241aea90ff6a6be3e74d3767f0
 F src/sqlite.h.in 9bbc5815c73b0e77e68b5275481a5e3e7814a804
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 17ece600d3c9d36cc0ee2b74a30507507f3e0937
+F src/sqliteInt.h 5cee19f34f6efe6e6f7733d55a5c59e3a35a378a
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1185,10 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9abcf2698c09f4f6a44a68e74f9f6b538f3253d6
-R 1cc42777f2b661f6d0caf162eadc6d85
-T *branch * IN-operator-improvements
-T *sym-IN-operator-improvements *
-T -sym-trunk *
+P ee0fd6aaf94cda1dce3fe752bfe3b0f83e0043f1
+R b49330a02feffafe84f051ae1dbb9076
 U drh
-Z 08adfdc6013d75458685b1e962a583ca
+Z f695386e744e4159654587b52ac0d789
