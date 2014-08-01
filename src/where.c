@@ -2522,7 +2522,7 @@ static int codeEqualityTerm(
     }
     assert( pX->op==TK_IN );
     iReg = iTarget;
-    eType = sqlite3FindInIndex(pParse, pX, 0);
+    eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0);
     if( eType==IN_INDEX_INDEX_DESC ){
       testcase( bRev );
       bRev = !bRev;

@@ -1484,7 +1484,7 @@ int sqlite3CodeOnce(Parse *pParse){
 ** be used either to test for membership in the RHS set or to iterate through
 ** all members of the RHS set, skipping duplicates.
 **
-** A cursor is opened on the b-tree object that the RHS of the IN operator
+** A cursor is opened on the b-tree object that is the RHS of the IN operator
 ** and pX->iTable is set to the index of that cursor.
 **
 ** The returned value of this function indicates the b-tree type, as follows:
@@ -1503,23 +1503,30 @@ int sqlite3CodeOnce(Parse *pParse){
 ** If the RHS of the IN operator is a list or a more complex subquery, then
 ** an ephemeral table might need to be generated from the RHS and then
 ** pX->iTable made to point to the ephermeral table instead of an
-** existing table.  
+** existing table.
 **
-** If the prNotFound parameter is 0, then the b-tree will be used to iterate
-** through the set members, skipping any duplicates. In this case an
-** epheremal table must be used unless the selected <column> is guaranteed
+** The inFlags parameter must contain exactly one of the bits
+** IN_INDEX_MEMBERSHIP or IN_INDEX_LOOP.  If inFlags contains
+** IN_INDEX_MEMBERSHIP, then the generated table will be used for a
+** fast membership test.  When the IN_INDEX_LOOP bit is set, the
+** IN index will be used to loop over all values of the RHS of the
+** IN operator.
+**
+** When IN_INDEX_LOOP is used (and the b-tree will be used to iterate
+** through the set members) then the b-tree must not contain duplicates.
+** An epheremal table must be used unless the selected <column> is guaranteed
 ** to be unique - either because it is an INTEGER PRIMARY KEY or it
 ** has a UNIQUE constraint or UNIQUE index.
 **
-** If the prNotFound parameter is not 0, then the b-tree will be used 
-** for fast set membership tests. In this case an epheremal table must 
+** When IN_INDEX_MEMBERSHIP is used (and the b-tree will be used 
+** for fast set membership tests) then an epheremal table must 
 ** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
 ** be found with <column> as its left-most column.
 **
 ** When the b-tree is being used for membership tests, the calling function
-** needs to know whether or not the structure contains an SQL NULL 
-** value in order to correctly evaluate expressions like "X IN (Y, Z)".
-** If there is any chance that the (...) might contain a NULL value at
+** might need to know whether or not the RHS side of the IN operator
+** contains a NULL.  If prNotFound is not NULL and 
+** if there is any chance that the (...) might contain a NULL value at
 ** runtime, then a register is allocated and the register number written
 ** to *prNotFound. If there is no chance that the (...) contains a
 ** NULL value, then *prNotFound is left unchanged.
@@ -1540,14 +1547,15 @@ int sqlite3CodeOnce(Parse *pParse){
 ** test more often than is necessary.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
+int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prNotFound){
   Select *p;                            /* SELECT to the right of IN operator */
   int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
   int iTab = pParse->nTab++;            /* Cursor of the RHS table */
-  int mustBeUnique = (prNotFound==0);   /* True if RHS must be unique */
+  int mustBeUnique;                     /* True if RHS must be unique */
   Vdbe *v = sqlite3GetVdbe(pParse);     /* Virtual machine being coded */
 
   assert( pX->op==TK_IN );
+  mustBeUnique = (inFlags & IN_INDEX_LOOP)!=0;
 
   /* Check to see if an existing table or index can be used to
   ** satisfy the query.  This is preferable to generating a new 
@@ -1630,14 +1638,14 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     u32 savedNQueryLoop = pParse->nQueryLoop;
     int rMayHaveNull = 0;
     eType = IN_INDEX_EPH;
-    if( prNotFound ){
-      *prNotFound = rMayHaveNull = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
-    }else{
+    if( inFlags & IN_INDEX_LOOP ){
       pParse->nQueryLoop = 0;
       if( pX->pLeft->iColumn<0 && !ExprHasProperty(pX, EP_xIsSelect) ){
         eType = IN_INDEX_ROWID;
       }
+    }else if( prNotFound ){
+      *prNotFound = rMayHaveNull = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, rMayHaveNull);
     }
     sqlite3CodeSubselect(pParse, pX, rMayHaveNull, eType==IN_INDEX_ROWID);
     pParse->nQueryLoop = savedNQueryLoop;
@@ -1668,15 +1676,9 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 **
 ** If rMayHaveNull is non-zero, that means that the operation is an IN
 ** (not a SELECT or EXISTS) and that the RHS might contains NULLs.
-** Furthermore, the IN is in a WHERE clause and that we really want
-** to iterate over the RHS of the IN operator in order to quickly locate
-** all corresponding LHS elements.  All this routine does is initialize
-** the register given by rMayHaveNull to NULL.  Calling routines will take
-** care of changing this register value to non-NULL if the RHS is NULL-free.
-**
-** If rMayHaveNull is zero, that means that the subquery is being used
-** for membership testing only.  There is no need to initialize any
-** registers to indicate the presence or absence of NULLs on the RHS.
+** All this routine does is initialize the register given by rMayHaveNull
+** to NULL.  Calling routines will take care of changing this register
+** value to non-NULL if the RHS is NULL-free.
 **
 ** For a SELECT or EXISTS operator, return the register that holds the
 ** result.  For IN operators or if an error occurs, the return value is 0.
@@ -1928,7 +1930,8 @@ static void sqlite3ExprCodeIN(
   v = pParse->pVdbe;
   assert( v!=0 );       /* OOM detected prior to this routine */
   VdbeNoopComment((v, "begin IN expr"));
-  eType = sqlite3FindInIndex(pParse, pExpr, &rRhsHasNull);
+  eType = sqlite3FindInIndex(pParse, pExpr, IN_INDEX_MEMBERSHIP,
+                             destIfFalse==destIfNull ? 0 : &rRhsHasNull);
 
   /* Figure out the affinity to use to create a key from the results
   ** of the expression. affinityStr stores a static string suitable for
@@ -1974,7 +1977,8 @@ static void sqlite3ExprCodeIN(
     ** contains one or more NULL values, then the result of the
     ** expression is also NULL.
     */
-    if( rRhsHasNull==0 || destIfFalse==destIfNull ){
+    assert( destIfFalse!=destIfNull || rRhsHasNull==0 );
+    if( rRhsHasNull==0 ){
       /* This branch runs if it is known at compile time that the RHS
       ** cannot contain NULL values. This happens as the result
       ** of a "NOT NULL" constraint in the database schema.
