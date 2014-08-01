@@ -2229,13 +2229,13 @@ case OP_Once: {             /* jump */
 **
 ** Jump to P2 if the value in register P1 is true.  The value
 ** is considered true if it is numeric and non-zero.  If the value
-** in P1 is NULL then take the jump if P3 is non-zero.
+** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
 /* Opcode: IfNot P1 P2 P3 * *
 **
 ** Jump to P2 if the value in register P1 is False.  The value
 ** is considered false if it has a numeric value of zero.  If the value
-** in P1 is NULL then take the jump if P3 is zero.
+** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
 case OP_If:                 /* jump, in1 */
 case OP_IfNot: {            /* jump, in1 */

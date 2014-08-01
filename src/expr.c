@@ -1525,29 +1525,34 @@ int sqlite3CodeOnce(Parse *pParse){
 **
 ** When the b-tree is being used for membership tests, the calling function
 ** might need to know whether or not the RHS side of the IN operator
-** contains a NULL.  If prNotFound is not NULL and 
+** contains a NULL.  If prRhsHasNull is not a NULL pointer and 
 ** if there is any chance that the (...) might contain a NULL value at
 ** runtime, then a register is allocated and the register number written
-** to *prNotFound. If there is no chance that the (...) contains a
-** NULL value, then *prNotFound is left unchanged.
+** to *prRhsHasNull. If there is no chance that the (...) contains a
+** NULL value, then *prRhsHasNull is left unchanged.
 **
-** If a register is allocated and its location stored in *prNotFound, then
-** its initial value is NULL.  If the (...) does not remain constant
-** for the duration of the query (i.e. the SELECT within the (...)
-** is a correlated subquery) then the value of the allocated register is
-** reset to NULL each time the subquery is rerun. This allows the
-** caller to use vdbe code equivalent to the following:
+** If a register is allocated and its location stored in *prRhsHasNull, then
+** the value in that register will be:
 **
-**   if( register==NULL ){
-**     has_null = <test if data structure contains null>
-**     register = 1
+**          0      if the (...) contains no NULL values
+**          1      if the (...) does not contain NULL values
+**       NULL      if we do not yet know if (...) contains NULLs
+**
+** If the (...) does not remain constant for the duration of the query
+** (i.e. the SELECT within the (...) is a correlated subquery) then the
+** value of the allocated register is reset to NULL each time the subquery
+** is rerun. This allows the caller to use vdbe code equivalent to the
+** following:
+**
+**   if( r[*prRhsHasNull] IS NULL ){
+**     r[*prRhsHasNull] = <test if data structure contains null>
 **   }
 **
 ** in order to avoid running the <test if data structure contains null>
 ** test more often than is necessary.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prNotFound){
+int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
   Select *p;                            /* SELECT to the right of IN operator */
   int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
   int iTab = pParse->nTab++;            /* Cursor of the RHS table */
@@ -1621,9 +1626,9 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prNotFound){
           assert( IN_INDEX_INDEX_DESC == IN_INDEX_INDEX_ASC+1 );
           eType = IN_INDEX_INDEX_ASC + pIdx->aSortOrder[0];
 
-          if( prNotFound && !pTab->aCol[iCol].notNull ){
-            *prNotFound = ++pParse->nMem;
-            sqlite3VdbeAddOp2(v, OP_Null, 0, *prNotFound);
+          if( prRhsHasNull && !pTab->aCol[iCol].notNull ){
+            *prRhsHasNull = ++pParse->nMem;
+            sqlite3VdbeAddOp2(v, OP_Null, 0, *prRhsHasNull);
           }
           sqlite3VdbeJumpHere(v, iAddr);
         }
@@ -1643,9 +1648,8 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prNotFound){
       if( pX->pLeft->iColumn<0 && !ExprHasProperty(pX, EP_xIsSelect) ){
         eType = IN_INDEX_ROWID;
       }
-    }else if( prNotFound ){
-      *prNotFound = rMayHaveNull = ++pParse->nMem;
-      sqlite3VdbeAddOp2(v, OP_Null, 0, rMayHaveNull);
+    }else if( prRhsHasNull ){
+      *prRhsHasNull = rMayHaveNull = ++pParse->nMem;
     }
     sqlite3CodeSubselect(pParse, pX, rMayHaveNull, eType==IN_INDEX_ROWID);
     pParse->nQueryLoop = savedNQueryLoop;
