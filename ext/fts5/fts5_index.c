@@ -3087,6 +3087,35 @@ static void fts5IndexIntegrityCheckSegment(
       }
       fts5DataRelease(pLeaf);
     }
+
+    /* There may (or may not be) a final entry in the doclist. The entry
+    ** is only present if the page following the nEmpty termless pages
+    ** (a) exists and (b) contains at least one rowid that is part of
+    ** the doclist.  */
+    if( dliter.pDlidx ){
+      if( (iter.iLeaf + iter.nEmpty)==pSeg->pgnoLast ){
+        /* The next page does not exist. So the iterator should be at EOF. */
+        if( fts5IndexDoclistIterNext(&dliter)==0 ) p->rc = FTS5_CORRUPT;
+      }else{
+        Fts5Data *pLeaf = fts5DataRead(p, iRow+i);
+        if( pLeaf ){
+          int iRowidOff = fts5GetU16(&pLeaf->p[0]);
+          if( iRowidOff==0 ){
+            if( fts5IndexDoclistIterNext(&dliter)==0 ) p->rc = FTS5_CORRUPT;
+          }else{
+            if( fts5IndexDoclistIterNext(&dliter) ){
+              p->rc = FTS5_CORRUPT;
+            }else{
+              i64 iRowid;
+              getVarint(&pLeaf->p[iRowidOff], (u64*)&iRowid);
+              if( iRowid!=dliter.iRowid ) p->rc = FTS5_CORRUPT;
+            }
+          }
+          fts5DataRelease(pLeaf);
+        }
+      }
+    }
+
     fts5DataRelease(dliter.pDlidx);
   }
 
