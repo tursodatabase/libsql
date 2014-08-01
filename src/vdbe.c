@@ -3747,9 +3747,9 @@ case OP_Seek: {    /* in2 */
 ** is a prefix of any entry in P1 then a jump is made to P2 and
 ** P1 is left pointing at the matching entry.
 **
-** This operation leaves the cursor in a state where it cannot be
-** advanced in either direction.  In other words, the Next and Prev
-** opcodes do not work after this operation.
+** This operation leaves the cursor in a state where it can be
+** advanced in the forward direction.  The Next instruction will work,
+** but not the Prev instruction.
 **
 ** See also: NotFound, NoConflict, NotExists. SeekGe
 */
@@ -3816,7 +3816,7 @@ case OP_Found: {        /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifdef SQLITE_DEBUG
-  pC->seekOp = 0;
+  pC->seekOp = pOp->opcode;
 #endif
   pIn3 = &aMem[pOp->p3];
   assert( pC->pCursor!=0 );
@@ -4673,7 +4673,7 @@ case OP_Next:          /* jump */
   ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
   assert( pOp->opcode!=OP_Next || pOp->opcode!=OP_NextIfOpen
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
-       || pC->seekOp==OP_Rewind );
+       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found);
   assert( pOp->opcode!=OP_Prev || pOp->opcode!=OP_PrevIfOpen
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
        || pC->seekOp==OP_Last );

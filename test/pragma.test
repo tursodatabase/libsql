@@ -431,7 +431,32 @@ Page 6 is never used} {row 1 missing from index i2}}
     db eval {PRAGMA integrity_check}
   } {ok}
 }
-#exit
+
+# Verify that PRAGMA integrity_check catches UNIQUE and NOT NULL
+# constraint violations.
+#
+do_execsql_test pragma-3.20 {
+  CREATE TABLE t1(a,b);
+  CREATE INDEX t1a ON t1(a);
+  INSERT INTO t1 VALUES(1,1),(2,2),(3,3),(2,4),(NULL,5),(NULL,6);
+  PRAGMA writable_schema=ON;
+  UPDATE sqlite_master SET sql='CREATE UNIQUE INDEX t1a ON t1(a)'
+   WHERE name='t1a';
+  UPDATE sqlite_master SET sql='CREATE TABLE t1(a NOT NULL,b)'
+   WHERE name='t1';
+  PRAGMA writable_schema=OFF;
+  ALTER TABLE t1 RENAME TO t1x;
+  PRAGMA integrity_check;
+} {{non-unique entry in index t1a} {NULL value in t1x.a} {non-unique entry in index t1a} {NULL value in t1x.a}}
+do_execsql_test pragma-3.21 {
+  PRAGMA integrity_check(3);
+} {{non-unique entry in index t1a} {NULL value in t1x.a} {non-unique entry in index t1a}}
+do_execsql_test pragma-3.22 {
+  PRAGMA integrity_check(2);
+} {{non-unique entry in index t1a} {NULL value in t1x.a}}
+do_execsql_test pragma-3.21 {
+  PRAGMA integrity_check(1);
+} {{non-unique entry in index t1a}}
 
 # Test modifying the cache_size of an attached database.
 ifcapable pager_pragmas&&attach {

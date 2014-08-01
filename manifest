@@ -1,5 +1,5 @@
-C Refactoring:\s\sChange\s"pIndex->onError!=OE_None"\sto\suse\sa\smacro:\n"IsUniqueIndex(pIndex)".\s\sEasier\sto\sunderstand\sthat\sway.
-D 2014-07-31T22:59:04.121
+C Enhance\sthe\sPRAGMA\sintegrity_check\scommand\sto\sdetect\sUNIQUE\sand\sNOT\sNULL\nconstraint\sviolations.
+D 2014-08-01T01:40:33.869
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
-F src/pragma.c f9268bd5fa072afb3a174149129859727efb4326
+F src/pragma.c d4a33151f057e35e5a2024adf8e41d2817b5c105
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
@@ -283,7 +283,7 @@ F src/update.c 01564b3c430f6c7b0a35afaf7aba7987206fa3a5
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c f87f77b0049cbef1fa68b331c3551d82b4d9fba4
+F src/vdbe.c 115e08834b883964d9a480f685d8601826c5792a
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 24e40422382beb774daab11fe9fe9d37e8a04949
@@ -754,7 +754,7 @@ F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
 F test/permutations.test bc474bafb022cc5014ef3a9c3d5ab61d6d6f587c
-F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
+F test/pragma.test 19d0241a007bcdd77fc2606ec60fc60357e7fc8b
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
 F test/printf2.test bed79b4c3e5da08ba88ad637c0bf62586843cfb1
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1361450a9dfe9476e8df98f370a3695752252245
-R 114928731acdabb64615a67d8eb69386
+P e75b26ee357bb3d3c1a539b05d633ebf314726d7
+R 50d518176c08d9fef67243df4085599b
 U drh
-Z 0cd7191a5ffc11f0c0a8249763204863
+Z ae546b77e53655a859301e9ce422b440
