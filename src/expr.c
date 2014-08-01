@@ -1476,8 +1476,8 @@ int sqlite3CodeOnce(Parse *pParse){
 }
 
 /*
-** Generate code that checks the single-column index table iCur to see if
-** contains any NULL entries.  Cause the register at regHasNull to be set
+** Generate code that checks the left-most column of index table iCur to see if
+** it contains any NULL entries.  Cause the register at regHasNull to be set
 ** to a non-NULL value if iCur contains no NULLs.  Cause register regHasNull
 ** to be set to NULL if iCur contains one or more NULL values.
 */
@@ -1487,7 +1487,7 @@ static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
   j1 = sqlite3VdbeAddOp1(v, OP_Rewind, iCur); VdbeCoverage(v);
   sqlite3VdbeAddOp3(v, OP_Column, iCur, 0, regHasNull);
   sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
-  VdbeComment((v, "<maybe-NULL?>"));
+  VdbeComment((v, "first_entry_in(%d)", iCur));
   sqlite3VdbeJumpHere(v, j1);
 }
 
