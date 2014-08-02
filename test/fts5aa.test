@@ -285,5 +285,20 @@ do_catchsql_test 11.2 {
   CREATE VIRTUAL TABLE rank USING fts5(a, b, c);
 } {1 {reserved fts5 table name: rank}}
 
+#-------------------------------------------------------------------------
+#
+do_execsql_test 12.1 {
+  CREATE VIRTUAL TABLE t2 USING fts5(x,y);
+} {}
+
+do_catchsql_test 12.2 {
+  SELECT t2 FROM t2 WHERE t2 MATCH '*stuff'
+} {1 {unknown special query: stuff}}
+
+do_test 12.3 {
+  set res [db one { SELECT t2 FROM t2 WHERE t2 MATCH '* reads ' }]
+  string is integer $res
+} {1}
+
 finish_test
 

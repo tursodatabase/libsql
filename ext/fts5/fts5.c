@@ -84,6 +84,12 @@ struct Fts5Sorter {
 
 /*
 ** Virtual-table cursor object.
+**
+** zSpecial:
+**   If this is a 'special' query (refer to function fts5SpecialMatch()), 
+**   then this variable points to a nul-terminated buffer containing the
+**   result to return through the table-name column. It is nul-terminated
+**   and should eventually be freed using sqlite3_free().
 */
 struct Fts5Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
@@ -94,6 +100,7 @@ struct Fts5Cursor {
   int csrflags;                   /* Mask of cursor flags (see below) */
   Fts5Cursor *pNext;              /* Next cursor in Fts5Cursor.pCsr list */
   Fts5Auxiliary *pRank;           /* Rank callback (or NULL) */
+  char *zSpecial;                 /* Result of special query */
 
   /* Variables used by auxiliary functions */
   i64 iCsrId;                     /* Cursor id */
@@ -253,6 +260,7 @@ static int fts5CreateMethod(
 #define FTS5_PLAN_SORTED_MATCH   3       /* (<tbl> MATCH ? ORDER BY rank) */
 #define FTS5_PLAN_ROWID          4       /* (rowid = ?) */
 #define FTS5_PLAN_SOURCE         5       /* A source cursor for SORTED_MATCH */
+#define FTS5_PLAN_SPECIAL        6       /* An internal query */
 
 #define FTS5_PLAN(idxNum) ((idxNum) & 0x7)
 
@@ -395,6 +403,7 @@ static int fts5CloseMethod(sqlite3_vtab_cursor *pCursor){
   for(pp=&pTab->pGlobal->pCsr; (*pp)!=pCsr; pp=&(*pp)->pNext);
   *pp = pCsr->pNext;
 
+  sqlite3_free(pCsr->zSpecial);
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -456,6 +465,11 @@ static int fts5NextMethod(sqlite3_vtab_cursor *pCursor){
       }
       CsrFlagSet(pCsr, FTS5CSR_REQUIRE_CONTENT | FTS5CSR_REQUIRE_DOCSIZE );
       break;
+
+    case FTS5_PLAN_SPECIAL: {
+      CsrFlagSet(pCsr, FTS5CSR_EOF);
+      break;
+    }
 
     case FTS5_PLAN_SORTED_MATCH: {
       rc = fts5SorterNext(pCsr);
@@ -537,6 +551,42 @@ static int fts5CursorFirst(Fts5Table *pTab, Fts5Cursor *pCsr, int bAsc){
 }
 
 /*
+** Process a "special" query. A special query is identified as one with a
+** MATCH expression that begins with a '*' character. The remainder of
+** the text passed to the MATCH operator are used as  the special query
+** parameters.
+*/
+static int fts5SpecialMatch(
+  Fts5Table *pTab, 
+  Fts5Cursor *pCsr, 
+  const char *zQuery
+){
+  int rc = SQLITE_OK;             /* Return code */
+  const char *z = zQuery;         /* Special query text */
+  int n;                          /* Number of bytes in text at z */
+
+  while( z[0]==' ' ) z++;
+  for(n=0; z[n] && z[n]!=' '; n++);
+
+  assert( pTab->base.zErrMsg==0 );
+  assert( pCsr->zSpecial==0 );
+
+  if( 0==sqlite3_strnicmp("reads", z, n) ){
+    pCsr->zSpecial = sqlite3_mprintf("%d", sqlite3Fts5IndexReads(pTab->pIndex));
+    pCsr->idxNum = FTS5_PLAN_SPECIAL;
+    if( pCsr->zSpecial==0 ) rc = SQLITE_NOMEM;
+  }
+  else{
+    /* An unrecognized directive. Return an error message. */
+    pTab->base.zErrMsg = sqlite3_mprintf("unknown special query: %.*s", n, z);
+    rc = SQLITE_ERROR;
+  }
+
+  return rc;
+}
+
+
+/*
 ** This is the xFilter interface for the virtual table.  See
 ** the virtual table xFilter method documentation for additional
 ** information.
@@ -559,19 +609,30 @@ static int fts5FilterMethod(
   assert( pCsr->pRank==0 );
 
   if( pTab->pSortCsr ){
+    /* If pSortCsr is non-NULL, then this call is being made as part of 
+    ** processing for a "... MATCH <expr> ORDER BY rank" query (ePlan is
+    ** set to FTS5_PLAN_SORTED_MATCH). pSortCsr is the cursor that will
+    ** return results to the user for this query. The current cursor 
+    ** (pCursor) is used to execute the query issued by function 
+    ** fts5CursorFirstSorted() above.  */
+    assert( FTS5_PLAN(idxNum)==FTS5_PLAN_SCAN );
     pCsr->idxNum = FTS5_PLAN_SOURCE;
     pCsr->pRank = pTab->pSortCsr->pRank;
     pCsr->pExpr = pTab->pSortCsr->pExpr;
     rc = fts5CursorFirst(pTab, pCsr, bAsc);
   }else{
     int ePlan = FTS5_PLAN(idxNum);
-    int eStmt = fts5StmtType(idxNum);
     pCsr->idxNum = idxNum;
-    rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
-    if( rc==SQLITE_OK ){
-      if( ePlan==FTS5_PLAN_MATCH || ePlan==FTS5_PLAN_SORTED_MATCH ){
+    if( ePlan==FTS5_PLAN_MATCH || ePlan==FTS5_PLAN_SORTED_MATCH ){
+      const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
+
+      if( zExpr[0]=='*' ){
+        /* The user has issued a query of the form "MATCH '*...'". This
+        ** indicates that the MATCH expression is not a full text query,
+        ** but a request for an internal parameter.  */
+        rc = fts5SpecialMatch(pTab, pCsr, &zExpr[1]);
+      }else{
         char **pzErr = &pTab->base.zErrMsg;
-        const char *zExpr = (const char*)sqlite3_value_text(apVal[0]);
         pCsr->pRank = pTab->pGlobal->pAux;
         rc = sqlite3Fts5ExprNew(pTab->pConfig, zExpr, &pCsr->pExpr, pzErr);
         if( rc==SQLITE_OK ){
@@ -581,7 +642,13 @@ static int fts5FilterMethod(
             rc = fts5CursorFirstSorted(pTab, pCsr, bAsc);
           }
         }
-      }else{
+      }
+    }else{
+      /* This is either a full-table scan (ePlan==FTS5_PLAN_SCAN) or a lookup
+      ** by rowid (ePlan==FTS5_PLAN_ROWID).  */
+      int eStmt = fts5StmtType(idxNum);
+      rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
+      if( rc==SQLITE_OK ){
         if( ePlan==FTS5_PLAN_ROWID ){
           sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
         }
@@ -629,6 +696,10 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   
   assert( CsrFlagTest(pCsr, FTS5CSR_EOF)==0 );
   switch( ePlan ){
+    case FTS5_PLAN_SPECIAL:
+      *pRowid = 0;
+      break;
+
     case FTS5_PLAN_SOURCE:
     case FTS5_PLAN_MATCH:
     case FTS5_PLAN_SORTED_MATCH:
@@ -649,7 +720,16 @@ static int fts5RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
 */
 static int fts5SeekCursor(Fts5Cursor *pCsr){
   int rc = SQLITE_OK;
-  if( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) ){
+
+  /* If the cursor does not yet have a statement handle, obtain one now. */ 
+  if( pCsr->pStmt==0 ){
+    Fts5Table *pTab = (Fts5Table*)(pCsr->base.pVtab);
+    int eStmt = fts5StmtType(pCsr->idxNum);
+    rc = sqlite3Fts5StorageStmt(pTab->pStorage, eStmt, &pCsr->pStmt);
+    assert( CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) );
+  }
+
+  if( rc==SQLITE_OK && CsrFlagTest(pCsr, FTS5CSR_REQUIRE_CONTENT) ){
     assert( pCsr->pExpr );
     sqlite3_reset(pCsr->pStmt);
     sqlite3_bind_int64(pCsr->pStmt, 1, fts5CursorRowid(pCsr));
@@ -1088,6 +1168,12 @@ static int fts5ColumnMethod(
   int rc = SQLITE_OK;
   
   assert( CsrFlagTest(pCsr, FTS5CSR_EOF)==0 );
+
+  if( pCsr->idxNum==FTS5_PLAN_SPECIAL ){
+    if( iCol==pConfig->nCol ){
+      sqlite3_result_text(pCtx, pCsr->zSpecial, -1, SQLITE_TRANSIENT);
+    }
+  }else
 
   if( iCol==pConfig->nCol ){
     if( FTS5_PLAN(pCsr->idxNum)==FTS5_PLAN_SOURCE ){

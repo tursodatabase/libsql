@@ -188,7 +188,8 @@ Fts5IndexIter *sqlite3Fts5IndexQuery(
 ** Docid list iteration.
 */
 int  sqlite3Fts5IterEof(Fts5IndexIter*);
-void sqlite3Fts5IterNext(Fts5IndexIter*, i64 iMatch);
+void sqlite3Fts5IterNext(Fts5IndexIter*);
+void sqlite3Fts5IterNextFrom(Fts5IndexIter*, i64 iMatch);
 i64  sqlite3Fts5IterRowid(Fts5IndexIter*);
 
 /*
@@ -272,6 +273,8 @@ void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz);
 
 int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf);
 int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
+
+int sqlite3Fts5IndexReads(Fts5Index *p);
 
 /*
 ** End of interface to code in fts5_index.c.

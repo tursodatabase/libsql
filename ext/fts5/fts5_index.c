@@ -306,6 +306,7 @@ struct Fts5Index {
   sqlite3_blob *pReader;          /* RO incr-blob open on %_data table */
   sqlite3_stmt *pWriter;          /* "INSERT ... %_data VALUES(?,?)" */
   sqlite3_stmt *pDeleter;         /* "DELETE FROM %_data ... id>=? AND id<=?" */
+  int nRead;                      /* Total number of blocks read */
 };
 
 struct Fts5DoclistIter {
@@ -702,6 +703,7 @@ static Fts5Data *fts5DataReadOrBuffer(
       }
     }
     p->rc = rc;
+    p->nRead++;
   }
 
   return pRet;
@@ -1666,7 +1668,26 @@ static int fts5MultiIterEof(Fts5Index *p, Fts5MultiSegIter *pIter){
 ** results are undefined.
 */
 static i64 fts5MultiIterRowid(Fts5MultiSegIter *pIter){
+  assert( pIter->aSeg[ pIter->aFirst[1] ].pLeaf );
   return pIter->aSeg[ pIter->aFirst[1] ].iRowid;
+}
+
+/*
+** Move the iterator to the next entry at or following iMatch.
+*/
+static void fts5MultiIterNextFrom(
+  Fts5Index *p, 
+  Fts5MultiSegIter *pIter, 
+  i64 iMatch
+){
+  while( 1 ){
+    i64 iRowid;
+    fts5MultiIterNext(p, pIter);
+    if( fts5MultiIterEof(p, pIter) ) break;
+    iRowid = fts5MultiIterRowid(pIter);
+    if( pIter->bRev==0 && iRowid<=iMatch ) break;
+    if( pIter->bRev!=0 && iRowid>=iMatch ) break;
+  }
 }
 
 /*
@@ -3759,12 +3780,26 @@ int sqlite3Fts5IterEof(Fts5IndexIter *pIter){
 /*
 ** Move to the next matching rowid. 
 */
-void sqlite3Fts5IterNext(Fts5IndexIter *pIter, i64 iMatch){
+void sqlite3Fts5IterNext(Fts5IndexIter *pIter){
   if( pIter->pDoclist ){
     fts5DoclistIterNext(pIter->pDoclist);
   }else{
     fts5BufferZero(&pIter->poslist);
     fts5MultiIterNext(pIter->pIndex, pIter->pMulti);
+  }
+}
+
+/*
+** Move to the next matching rowid that occurs at or after iMatch. The
+** definition of "at or after" depends on whether this iterator iterates
+** in ascending or descending rowid order.
+*/
+void sqlite3Fts5IterNextFrom(Fts5IndexIter *pIter, i64 iMatch){
+  if( pIter->pDoclist ){
+    assert( 0 );
+    /* fts5DoclistIterNextFrom(pIter->pDoclist, iMatch); */
+  }else{
+    fts5MultiIterNextFrom(pIter->pIndex, pIter->pMulti, iMatch);
   }
 }
 
@@ -3838,5 +3873,13 @@ int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf){
 int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8 *pData, int nData){
   fts5DataWrite(p, FTS5_AVERAGES_ROWID, pData, nData);
   return p->rc;
+}
+
+/*
+** Return the total number of blocks this module has read from the %_data
+** table since it was created.
+*/
+int sqlite3Fts5IndexReads(Fts5Index *p){
+  return p->nRead;
 }
 

@@ -583,7 +583,7 @@ static int fts5ExprNearAdvanceAll(
     Fts5ExprPhrase *pPhrase = pNear->apPhrase[i];
     for(j=0; j<pPhrase->nTerm; j++){
       Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
-      sqlite3Fts5IterNext(pIter, 0);
+      sqlite3Fts5IterNext(pIter);
       if( sqlite3Fts5IterEof(pIter) ){
         *pbEof = 1;
         return rc;
@@ -612,19 +612,18 @@ static int fts5ExprAdvanceto(
 ){
   i64 iLast = *piLast;
   i64 iRowid;
-  while( 1 ){
-    iRowid = sqlite3Fts5IterRowid(pIter);
-    if( (bAsc==0 && iRowid<=iLast) || (bAsc==1 && iRowid>=iLast) ) break;
-    sqlite3Fts5IterNext(pIter, 0);
+
+  iRowid = sqlite3Fts5IterRowid(pIter);
+  if( (bAsc==0 && iRowid>iLast) || (bAsc && iRowid<iLast) ){
+    sqlite3Fts5IterNextFrom(pIter, iLast);
     if( sqlite3Fts5IterEof(pIter) ){
       *pbEof = 1;
       return 1;
     }
+    iRowid = sqlite3Fts5IterRowid(pIter);
+    assert( (bAsc==0 && iRowid<=iLast) || (bAsc==1 && iRowid>=iLast) );
   }
-  if( iRowid!=iLast ){
-    assert( (bAsc==0 && iRowid<iLast) || (bAsc==1 && iRowid>iLast) );
-    *piLast = iRowid;
-  }
+  *piLast = iRowid;
 
   return 0;
 }
@@ -769,7 +768,7 @@ static int fts5ExprNearInitAll(
   return SQLITE_OK;
 }
 
-/* fts3ExprNodeNext() calls fts5ExprNodeNextMatch(). And vice-versa. */
+/* fts5ExprNodeNext() calls fts5ExprNodeNextMatch(). And vice-versa. */
 static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*);
 
 /*
