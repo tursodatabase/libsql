@@ -415,8 +415,7 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 */
 #ifdef SQLITE_TEST
 LONG volatile sqlite3_os_type = 0;
-#elif !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
-      defined(SQLITE_WIN32_HAS_ANSI) && defined(SQLITE_WIN32_HAS_WIDE)
+#else
 static LONG volatile sqlite3_os_type = 0;
 #endif
 
