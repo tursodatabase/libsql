@@ -2006,14 +2006,13 @@ static void sqlite3ExprCodeIN(
     int regCkNull = 0;
     int ii;
     assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-    sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
     if( destIfNull!=destIfFalse ){
       regCkNull = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp2(v, OP_Integer, 0, regCkNull);
+      sqlite3VdbeAddOp3(v, OP_BitAnd, r1, r1, regCkNull);
     }
     for(ii=0; ii<pList->nExpr; ii++){
       r2 = sqlite3ExprCodeTemp(pParse, pList->a[ii].pExpr, &regToFree);
-      if( regCkNull ){
+      if( regCkNull && sqlite3ExprCanBeNull(pList->a[ii].pExpr) ){
         sqlite3VdbeAddOp3(v, OP_BitAnd, regCkNull, r2, regCkNull);
       }
       if( ii<pList->nExpr-1 || destIfNull!=destIfFalse ){
@@ -2722,7 +2721,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       addr = sqlite3VdbeAddOp1(v, op, r1);
       VdbeCoverageIf(v, op==TK_ISNULL);
       VdbeCoverageIf(v, op==TK_NOTNULL);
-      sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
       sqlite3VdbeJumpHere(v, addr);
       break;
     }

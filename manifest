@@ -1,5 +1,5 @@
-C Enhancements\sto\sthe\scode\sgenerator\sfor\sthe\sIN\soperator\sthat\sresult\sin\smuch\nfaster\squeries\sin\ssome\scases,\sfor\sexample\swhen\sthe\sRHS\sof\sthe\sIN\soperator\nchanges\sfor\seach\srow\sof\sa\slarge\stable\sscan.
-D 2014-08-02T21:03:33.699
+C Refinements\sto\sthe\senhanced\sIN-operator\slogic.
+D 2014-08-04T16:39:39.657
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c 89574df1ed8ca967fdd5be0e370722e508b91c2b
+F src/expr.c 8f5e763623d79e71d60998a4e714324ca0e9380d
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 8545f3b36da47473e10800ea4fb0810fd4062514
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -1185,10 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ba7826542908eac2e14789d183d0b3e35b143fed
-R 93a5c3d553517a616682ed62728bfb2c
-T *branch * IN-operator-improvements
-T *sym-IN-operator-improvements *
-T -sym-trunk *
+P 436e884215e2b33ca3fbb555362237b12827c07a
+R 0000d96605770a7d4078c73a9916f937
 U drh
-Z c474e62d8861a07a170ddf9e71c3b1a9
+Z 246e982e6330087cd1ec561e7d991220
