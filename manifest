@@ -1,5 +1,5 @@
-C Further\senhancements\sto\sIN-operator\sprocessing.
-D 2014-08-04T18:50:54.734
+C Part\sof\sthe\schange\sin\sthe\sprevious\scheck-in\swas\sincorrect\sand\scan\sresult\nin\san\sincorrect\sUPDATE\sfor\sWITHOUT\sROWID\stables.\s\sThis\scheck-in\sfixes\sthe\nproblem.
+D 2014-08-04T21:26:58.927
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -279,7 +279,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ae45399d6252b4d736af43bee1576ce7bff86aec
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
-F src/update.c 510c59a21bd8ba315db173b38d79688cc15261df
+F src/update.c ea336ce7b8b3fc5e316ba8f082e6445babf81059
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 92ba2821468ecbfac2469161d81c873de67b2243
-R d7c5ed9f11c47855b5c64fea1267f119
+P 7fdf26da1d2f40b80f9e44ff6f5af22ace8f95f3
+R bbb8ed3fbc770a15faae84bee68a96b7
 U drh
-Z 6f0f219998d1d32472de07ef9dc89d8e
+Z dee92a9842f8b9e58ec243da3f9d9eb9

@@ -437,9 +437,9 @@ void sqlite3Update(
       VdbeCoverageNeverTaken(v);
     }
     labelContinue = labelBreak;
-    if( pPk==0 ){
-      sqlite3VdbeAddOp2(v, OP_IsNull, regOldRowid, labelBreak); VdbeCoverage(v);
-    }
+    sqlite3VdbeAddOp2(v, OP_IsNull, pPk ? regKey : regOldRowid, labelBreak);
+    VdbeCoverageIf(v, pPk==0);
+    VdbeCoverageIf(v, pPk!=0);
   }else if( pPk ){
     labelContinue = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iEph, labelBreak); VdbeCoverage(v);
