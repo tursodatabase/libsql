@@ -1,5 +1,5 @@
-C Refinements\sto\sthe\senhanced\sIN-operator\slogic.
-D 2014-08-04T16:39:39.657
+C Further\senhancements\sto\sIN-operator\sprocessing.
+D 2014-08-04T18:50:54.734
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c 8f5e763623d79e71d60998a4e714324ca0e9380d
+F src/expr.c 8ac2d0e8a0c1bc84eba94ab39867ba4d07d84f75
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 8545f3b36da47473e10800ea4fb0810fd4062514
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -279,7 +279,7 @@ F src/test_vfstrace.c bab9594adc976cbe696ff3970728830b4c5ed698
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ae45399d6252b4d736af43bee1576ce7bff86aec
 F src/trigger.c 66f3470b03b52b395e839155786966e3e037fddb
-F src/update.c 01564b3c430f6c7b0a35afaf7aba7987206fa3a5
+F src/update.c 510c59a21bd8ba315db173b38d79688cc15261df
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 436e884215e2b33ca3fbb555362237b12827c07a
-R 0000d96605770a7d4078c73a9916f937
+P 92ba2821468ecbfac2469161d81c873de67b2243
+R d7c5ed9f11c47855b5c64fea1267f119
 U drh
-Z 246e982e6330087cd1ec561e7d991220
+Z 6f0f219998d1d32472de07ef9dc89d8e

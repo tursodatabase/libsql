@@ -1368,6 +1368,9 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_FLOAT:
     case TK_BLOB:
       return 0;
+    case TK_COLUMN:
+      assert( p->pTab!=0 );
+      return p->iColumn>=0 && p->pTab->aCol[p->iColumn].notNull==0;
     default:
       return 1;
   }
@@ -2038,16 +2041,18 @@ static void sqlite3ExprCodeIN(
     /* If the LHS is NULL, then the result is either false or NULL depending
     ** on whether the RHS is empty or not, respectively.
     */
-    if( destIfNull==destIfFalse ){
-      /* Shortcut for the common case where the false and NULL outcomes are
-      ** the same. */
-      sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
-    }else{
-      int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
-      VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
-      sqlite3VdbeJumpHere(v, addr1);
+    if( sqlite3ExprCanBeNull(pExpr->pLeft) ){
+      if( destIfNull==destIfFalse ){
+        /* Shortcut for the common case where the false and NULL outcomes are
+        ** the same. */
+        sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
+      }else{
+        int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+        VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
+        sqlite3VdbeJumpHere(v, addr1);
+      }
     }
   
     if( eType==IN_INDEX_ROWID ){
