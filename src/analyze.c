@@ -1133,7 +1133,7 @@ static void analyzeOneTable(
         /* For a single-column UNIQUE index, once we have found a non-NULL
         ** row, we know that all the rest will be distinct, so skip 
         ** subsequent distinctness tests. */
-        sqlite3VdbeAddOp2(v, OP_NotNull, regPrev, endDistinctTest);
+        sqlite3VdbeAddOp2(v, OP_IfNotNull, regPrev, endDistinctTest);
         VdbeCoverage(v);
       }
       for(i=0; i<nColTest; i++){
@@ -1219,7 +1219,7 @@ static void analyzeOneTable(
 
       addrNext = sqlite3VdbeCurrentAddr(v);
       callStatGet(v, regStat4, STAT_GET_ROWID, regSampleRowid);
-      addrIsNull = sqlite3VdbeAddOp1(v, OP_IsNull, regSampleRowid);
+      addrIsNull = sqlite3VdbeAddOp1(v, OP_IfNull, regSampleRowid);
       VdbeCoverage(v);
       callStatGet(v, regStat4, STAT_GET_NEQ, regEq);
       callStatGet(v, regStat4, STAT_GET_NLT, regLt);

@@ -1349,7 +1349,7 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
 ** If the expression might be NULL or if the expression is too complex
 ** to tell return TRUE.  
 **
-** This routine is used as an optimization, to skip OP_IsNull opcodes
+** This routine is used as an optimization, to skip OP_IfNull opcodes
 ** when we know that a value cannot be NULL.  Hence, a false positive
 ** (returning TRUE when in fact the expression can never be NULL) might
 ** be a small performance hit but is otherwise harmless.  On the other
@@ -1956,9 +1956,9 @@ static void sqlite3ExprCodeIN(
   if( destIfNull==destIfFalse ){
     /* Shortcut for the common case where the false and NULL outcomes are
     ** the same. */
-    sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_IfNull, r1, destIfNull); VdbeCoverage(v);
   }else{
-    int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
+    int addr1 = sqlite3VdbeAddOp1(v, OP_IfNotNull, r1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
     VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
@@ -2008,7 +2008,7 @@ static void sqlite3ExprCodeIN(
       */
       j1 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, r1, 1);
       VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_IsNull, rRhsHasNull, destIfNull);
+      sqlite3VdbeAddOp2(v, OP_IfNull, rRhsHasNull, destIfNull);
       VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
       sqlite3VdbeJumpHere(v, j1);
@@ -2627,8 +2627,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_ISNULL:
     case TK_NOTNULL: {
       int addr;
-      assert( TK_ISNULL==OP_IsNull );   testcase( op==TK_ISNULL );
-      assert( TK_NOTNULL==OP_NotNull ); testcase( op==TK_NOTNULL );
+      assert( TK_ISNULL==OP_IfNull );   testcase( op==TK_ISNULL );
+      assert( TK_NOTNULL==OP_IfNotNull ); testcase( op==TK_NOTNULL );
       sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       testcase( regFree1==0 );
@@ -2685,7 +2685,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         assert( nFarg>=2 );
         sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
         for(i=1; i<nFarg; i++){
-          sqlite3VdbeAddOp2(v, OP_NotNull, target, endCoalesce);
+          sqlite3VdbeAddOp2(v, OP_IfNotNull, target, endCoalesce);
           VdbeCoverage(v);
           sqlite3ExprCacheRemove(pParse, target, 1);
           sqlite3ExprCachePush(pParse);
@@ -3603,8 +3603,8 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     case TK_ISNULL:
     case TK_NOTNULL: {
-      assert( TK_ISNULL==OP_IsNull );   testcase( op==TK_ISNULL );
-      assert( TK_NOTNULL==OP_NotNull ); testcase( op==TK_NOTNULL );
+      assert( TK_ISNULL==OP_IfNull );   testcase( op==TK_ISNULL );
+      assert( TK_NOTNULL==OP_IfNotNull ); testcase( op==TK_NOTNULL );
       r1 = sqlite3ExprCodeTemp(pParse, pExpr->pLeft, &regFree1);
       sqlite3VdbeAddOp2(v, op, r1, dest);
       VdbeCoverageIf(v, op==TK_ISNULL);
@@ -3670,8 +3670,8 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   **
   **       pExpr->op            op
   **       ---------          ----------
-  **       TK_ISNULL          OP_NotNull
-  **       TK_NOTNULL         OP_IsNull
+  **       TK_ISNULL          OP_IfNotNull
+  **       TK_NOTNULL         OP_IfNull
   **       TK_NE              OP_Eq
   **       TK_EQ              OP_Ne
   **       TK_GT              OP_Le
@@ -3688,8 +3688,8 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 
   /* Verify correct alignment of TK_ and OP_ constants
   */
-  assert( pExpr->op!=TK_ISNULL || op==OP_NotNull );
-  assert( pExpr->op!=TK_NOTNULL || op==OP_IsNull );
+  assert( pExpr->op!=TK_ISNULL || op==OP_IfNotNull );
+  assert( pExpr->op!=TK_NOTNULL || op==OP_IfNull );
   assert( pExpr->op!=TK_NE || op==OP_Eq );
   assert( pExpr->op!=TK_EQ || op==OP_Ne );
   assert( pExpr->op!=TK_LT || op==OP_Ge );

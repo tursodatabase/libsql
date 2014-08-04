@@ -2258,12 +2258,12 @@ case OP_IfNot: {            /* jump, in1 */
   break;
 }
 
-/* Opcode: IsNull P1 P2 * * *
+/* Opcode: IfNull P1 P2 * * *
 ** Synopsis:  if r[P1]==NULL goto P2
 **
 ** Jump to P2 if the value in register P1 is NULL.
 */
-case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
+case OP_IfNull: {            /* same as TK_ISNULL, jump, in1 */
   pIn1 = &aMem[pOp->p1];
   VdbeBranchTaken( (pIn1->flags & MEM_Null)!=0, 2);
   if( (pIn1->flags & MEM_Null)!=0 ){
@@ -2272,12 +2272,12 @@ case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
   break;
 }
 
-/* Opcode: NotNull P1 P2 * * *
+/* Opcode: IfNotNull P1 P2 * * *
 ** Synopsis: if r[P1]!=NULL goto P2
 **
 ** Jump to P2 if the value in register P1 is not NULL.  
 */
-case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
+case OP_IfNotNull: {            /* same as TK_NOTNULL, jump, in1 */
   pIn1 = &aMem[pOp->p1];
   VdbeBranchTaken( (pIn1->flags & MEM_Null)==0, 2);
   if( (pIn1->flags & MEM_Null)==0 ){

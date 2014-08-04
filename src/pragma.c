@@ -1715,7 +1715,7 @@ void sqlite3Pragma(
           if( iKey!=pTab->iPKey ){
             sqlite3VdbeAddOp3(v, OP_Column, 0, iKey, regRow);
             sqlite3ColumnDefault(v, pTab, iKey, regRow);
-            sqlite3VdbeAddOp2(v, OP_IsNull, regRow, addrOk); VdbeCoverage(v);
+            sqlite3VdbeAddOp2(v, OP_IfNull, regRow, addrOk); VdbeCoverage(v);
             sqlite3VdbeAddOp2(v, OP_MustBeInt, regRow, 
                sqlite3VdbeCurrentAddr(v)+3); VdbeCoverage(v);
           }else{
@@ -1728,7 +1728,7 @@ void sqlite3Pragma(
           for(j=0; j<pFK->nCol; j++){
             sqlite3ExprCodeGetColumnOfTable(v, pTab, 0,
                             aiCols ? aiCols[j] : pFK->aCol[j].iFrom, regRow+j);
-            sqlite3VdbeAddOp2(v, OP_IsNull, regRow+j, addrOk); VdbeCoverage(v);
+            sqlite3VdbeAddOp2(v, OP_IfNull, regRow+j, addrOk); VdbeCoverage(v);
           }
           if( pParent ){
             sqlite3VdbeAddOp4(v, OP_MakeRecord, regRow, pFK->nCol, regKey,
@@ -1873,7 +1873,7 @@ void sqlite3Pragma(
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
       sqlite3VdbeChangeP5(v, (u8)i);
-      addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2); VdbeCoverage(v);
+      addr = sqlite3VdbeAddOp1(v, OP_IfNull, 2); VdbeCoverage(v);
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zName),
          P4_DYNAMIC);
@@ -1916,7 +1916,7 @@ void sqlite3Pragma(
           if( pTab->aCol[j].notNull==0 ) continue;
           sqlite3ExprCodeGetColumnOfTable(v, pTab, iDataCur, j, 3);
           sqlite3VdbeChangeP5(v, OPFLAG_TYPEOFARG);
-          jmp2 = sqlite3VdbeAddOp1(v, OP_NotNull, 3); VdbeCoverage(v);
+          jmp2 = sqlite3VdbeAddOp1(v, OP_IfNotNull, 3); VdbeCoverage(v);
           sqlite3VdbeAddOp2(v, OP_AddImm, 1, -1); /* Decrement error limit */
           zErr = sqlite3MPrintf(db, "NULL value in %s.%s", pTab->zName,
                               pTab->aCol[j].zName);
@@ -1963,7 +1963,7 @@ void sqlite3Pragma(
               int iCol = pIdx->aiColumn[kk];
               assert( iCol>=0 && iCol<pTab->nCol );
               if( pTab->aCol[iCol].notNull ) continue;
-              sqlite3VdbeAddOp2(v, OP_IsNull, r1+kk, uniqOk);
+              sqlite3VdbeAddOp2(v, OP_IfNull, r1+kk, uniqOk);
               VdbeCoverage(v);
             }
             jmp6 = sqlite3VdbeAddOp1(v, OP_Next, iIdxCur+j); VdbeCoverage(v);

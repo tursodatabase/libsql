@@ -344,7 +344,7 @@ static void fkLookupParent(
   }
   for(i=0; i<pFKey->nCol; i++){
     int iReg = aiCol[i] + regData + 1;
-    sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iOk); VdbeCoverage(v);
+    sqlite3VdbeAddOp2(v, OP_IfNull, iReg, iOk); VdbeCoverage(v);
   }
 
   if( isIgnore==0 ){
@@ -896,7 +896,7 @@ void sqlite3FkCheck(
         int iJump = sqlite3VdbeCurrentAddr(v) + pFKey->nCol + 1;
         for(i=0; i<pFKey->nCol; i++){
           int iReg = pFKey->aCol[i].iFrom + regOld + 1;
-          sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iJump); VdbeCoverage(v);
+          sqlite3VdbeAddOp2(v, OP_IfNull, iReg, iJump); VdbeCoverage(v);
         }
         sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, -1);
       }

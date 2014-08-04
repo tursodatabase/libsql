@@ -310,7 +310,7 @@ void sqlite3AutoincrementEnd(Parse *pParse){
     iRec = sqlite3GetTempReg(pParse);
     assert( sqlite3SchemaMutexHeld(db, 0, pDb->pSchema) );
     sqlite3OpenTable(pParse, 0, p->iDb, pDb->pSchema->pSeqTab, OP_OpenWrite);
-    j1 = sqlite3VdbeAddOp1(v, OP_NotNull, memId+1); VdbeCoverage(v);
+    j1 = sqlite3VdbeAddOp1(v, OP_IfNotNull, memId+1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_NewRowid, 0, memId+1);
     sqlite3VdbeJumpHere(v, j1);
     sqlite3VdbeAddOp3(v, OP_MakeRecord, memId-1, 2, iRec);
@@ -806,7 +806,7 @@ void sqlite3Insert(
         assert( pSelect==0 );  /* Otherwise useTempTable is true */
         sqlite3ExprCode(pParse, pList->a[ipkColumn].pExpr, regCols);
       }
-      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regCols); VdbeCoverage(v);
+      j1 = sqlite3VdbeAddOp1(v, OP_IfNotNull, regCols); VdbeCoverage(v);
       sqlite3VdbeAddOp2(v, OP_Integer, -1, regCols);
       sqlite3VdbeJumpHere(v, j1);
       sqlite3VdbeAddOp1(v, OP_MustBeInt, regCols); VdbeCoverage(v);
@@ -884,12 +884,12 @@ void sqlite3Insert(
       if( !appendFlag ){
         int j1;
         if( !IsVirtual(pTab) ){
-          j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regRowid); VdbeCoverage(v);
+          j1 = sqlite3VdbeAddOp1(v, OP_IfNotNull, regRowid); VdbeCoverage(v);
           sqlite3VdbeAddOp3(v, OP_NewRowid, iDataCur, regRowid, regAutoinc);
           sqlite3VdbeJumpHere(v, j1);
         }else{
           j1 = sqlite3VdbeCurrentAddr(v);
-          sqlite3VdbeAddOp2(v, OP_IsNull, regRowid, j1+2); VdbeCoverage(v);
+          sqlite3VdbeAddOp2(v, OP_IfNull, regRowid, j1+2); VdbeCoverage(v);
         }
         sqlite3VdbeAddOp1(v, OP_MustBeInt, regRowid); VdbeCoverage(v);
       }
@@ -1208,13 +1208,13 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       case OE_Ignore: {
-        sqlite3VdbeAddOp2(v, OP_IsNull, regNewData+1+i, ignoreDest);
+        sqlite3VdbeAddOp2(v, OP_IfNull, regNewData+1+i, ignoreDest);
         VdbeCoverage(v);
         break;
       }
       default: {
         assert( onError==OE_Replace );
-        j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regNewData+1+i); VdbeCoverage(v);
+        j1 = sqlite3VdbeAddOp1(v, OP_IfNotNull, regNewData+1+i); VdbeCoverage(v);
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regNewData+1+i);
         sqlite3VdbeJumpHere(v, j1);
         break;
@@ -1558,7 +1558,7 @@ void sqlite3CompleteInsertion(
     if( aRegIdx[i]==0 ) continue;
     bAffinityDone = 1;
     if( pIdx->pPartIdxWhere ){
-      sqlite3VdbeAddOp2(v, OP_IsNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
+      sqlite3VdbeAddOp2(v, OP_IfNull, aRegIdx[i], sqlite3VdbeCurrentAddr(v)+2);
       VdbeCoverage(v);
     }
     sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdxCur+i, aRegIdx[i]);

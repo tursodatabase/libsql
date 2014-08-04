@@ -2550,7 +2550,7 @@ static int codeEqualityTerm(
         pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
       }
       pIn->eEndLoopOp = bRev ? OP_PrevIfOpen : OP_NextIfOpen;
-      sqlite3VdbeAddOp1(v, OP_IsNull, iReg); VdbeCoverage(v);
+      sqlite3VdbeAddOp1(v, OP_IfNull, iReg); VdbeCoverage(v);
     }else{
       pLevel->u.in.nIn = 0;
     }
@@ -2686,7 +2686,7 @@ static int codeAllEqualityTerms(
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
       if( sqlite3ExprCanBeNull(pRight) ){
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
+        sqlite3VdbeAddOp2(v, OP_IfNull, regBase+j, pLevel->addrBrk);
         VdbeCoverage(v);
       }
       if( zAff ){
@@ -3251,7 +3251,7 @@ static Bitmask codeOneLoopStart(
       if( (pRangeStart->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
+        sqlite3VdbeAddOp2(v, OP_IfNull, regBase+nEq, addrNxt);
         VdbeCoverage(v);
       }
       if( zStartAff ){
@@ -3296,7 +3296,7 @@ static Bitmask codeOneLoopStart(
       if( (pRangeEnd->wtFlags & TERM_VNULL)==0
        && sqlite3ExprCanBeNull(pRight)
       ){
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
+        sqlite3VdbeAddOp2(v, OP_IfNull, regBase+nEq, addrNxt);
         VdbeCoverage(v);
       }
       if( sqlite3CompareAffinity(pRight, cEndAff)!=SQLITE_AFF_NONE
