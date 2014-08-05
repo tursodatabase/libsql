@@ -53,11 +53,25 @@ proc reads {} {
   db one {SELECT t1 FROM t1 WHERE t1 MATCH '*reads'}
 }
 
+proc execsql_reads {sql} {
+  set nRead [reads]
+  execsql $sql
+  expr [reads] - $nRead
+}
+
 do_test 1.4 {
   set nRead [reads]
   execsql { SELECT rowid FROM t1 WHERE t1 MATCH 'x' }
   set nReadX [expr [reads] - $nRead]
   expr $nReadX>1000
+} {1}
+
+do_test 1.5 {
+  set fwd [execsql_reads {SELECT rowid FROM t1 WHERE t1 MATCH 'x' }]
+  set bwd [execsql_reads {
+    SELECT rowid FROM t1 WHERE t1 MATCH 'x' ORDER BY 1 ASC 
+  }]
+  expr {$bwd < $fwd + 10}
 } {1}
 
 foreach {tn q res} "
@@ -67,22 +81,18 @@ foreach {tn q res} "
   4 { SELECT rowid FROM t1 WHERE t1 MATCH 'y AND x' }  [list $Y]
 " {
 
-  do_test 1.5.$tn.1 {
-    set nRead [reads]
-    execsql $q
-    set n [expr [reads] - $nRead]
+  do_test 1.6.$tn.1 {
+    set n [execsql_reads $q]
     expr {$n < ($nReadX / 10)}
   } {1}
 
-  do_test 1.5.$tn.2 {
-    set nRead [reads]
-    execsql "$q ORDER BY rowid ASC"
-    set n [expr [reads] - $nRead]
+  do_test 1.6.$tn.2 {
+    set n [execsql_reads "$q ORDER BY rowid ASC"]
     expr {$n < ($nReadX / 10)}
   } {1}
 
-  do_execsql_test 1.5.$tn.3 $q [lsort -int -decr $res]
-  do_execsql_test 1.5.$tn.4 "$q ORDER BY rowid ASC" [lsort -int -incr $res]
+  do_execsql_test 1.6.$tn.3 $q [lsort -int -decr $res]
+  do_execsql_test 1.6.$tn.4 "$q ORDER BY rowid ASC" [lsort -int -incr $res]
 }
 
 #db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}

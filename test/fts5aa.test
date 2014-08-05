@@ -148,6 +148,7 @@ do_execsql_test 6.2 {
 #-------------------------------------------------------------------------
 #
 reset_db
+expr srand(0)
 do_execsql_test 7.0 {
   CREATE VIRTUAL TABLE t1 USING fts5(x,y,z);
   INSERT INTO t1(t1) VALUES('pgsz=32');
@@ -173,7 +174,7 @@ proc dump_structure {} {
 
 for {set i 1} {$i <= 10} {incr i} {
   do_test 7.$i {
-    for {set j 0} {$j < 100} {incr j} {
+    for {set j 0} {$j < 10} {incr j} {
       set x [doc]
       set y [doc]
       set z [doc]

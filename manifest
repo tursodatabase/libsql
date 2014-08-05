@@ -1,5 +1,5 @@
-C Fix\sfts5_index.c\sto\suse\sdoclist-indexes\swhen\spossible.\sOnly\ssome\scases\swork\sso\sfar.
-D 2014-08-04T20:07:40.532
+C Use\sdoclist-indexes\swith\s"ORDER\sBY\srowid\sASC"\sfts5\squeries\sas\swell.
+D 2014-08-05T19:00:22.438
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5_aux.c 366057c7186bc3615deb5ecc0ff61de50b6d2dbc
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c 9402474456732ddb5019f83a77907852f108a96a
-F ext/fts5/fts5_index.c 3578823a9a43fcc77ce46c7f6efddfd155544053
+F ext/fts5/fts5_index.c 40d9086948d6f1420a078bd9fb0b5372e54ec791
 F ext/fts5/fts5_storage.c 2866e7e1de9dc851756c3a9c76b6e1d75e0facb7
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -595,14 +595,14 @@ F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
-F test/fts5aa.test f54245091fee924030722234070fcba95a493549
+F test/fts5aa.test 2d136b61c4523ec018699e59b35c005313569b9e
 F test/fts5ab.test dc04ed48cf93ca957d174406e6c192f2ff4f3397
-F test/fts5ac.test 9be418d037763f4cc5d86f4239db41fc86bb4f85
+F test/fts5ac.test 399533fe52b7383053368ab8ba01ae182391e5d7
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
 F test/fts5ae.test cb37b3135a00d3afd5492ec534ecf654be5ff69e
 F test/fts5af.test 9ebe23aa3875896076952c7bc6e8308813a63c74
 F test/fts5ag.test 0747bf3bade16d5165810cf891f875933b28b420
-F test/fts5ah.test ca1f12b5738992c2edbdeb6c16133d41cfb9c031
+F test/fts5ah.test 009b993a9b7ebc43f84c10e53bd778b1dc8ffbe7
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1199,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b8864da95db2c0e611116304d607e35a86c9247d
-R 2807aba63fb0a8821d708dc4cbc7f577
+P 90b82d3ef613b2915e0e280dc1d2e5a2b617d59c
+R 0266e2e08ce753d75d582fc91e12512e
 U dan
-Z 6114a7973c3151dffa74bd597b78489f
+Z 1a32a19af984c36e1b27a239a8950f8a

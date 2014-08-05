@@ -364,6 +364,10 @@ foreach {tn expr tclexpr} {
 
 #-------------------------------------------------------------------------
 #
+do_execsql_test 6.integrity {
+  INSERT INTO xx(xx) VALUES('integrity-check');
+}
+#db eval {SELECT rowid, fts5_decode(rowid, block) aS r FROM xx_data} {puts $r}
 foreach {bAsc sql} {
   0 {SELECT rowid FROM xx WHERE xx MATCH $expr}
   1 {SELECT rowid FROM xx WHERE xx MATCH $expr ORDER BY rowid ASC}
