@@ -2130,7 +2130,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       pSelTab->aCol = 0;
       sqlite3DeleteTable(db, pSelTab);
       assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
-      pTable->pSchema->flags |= DB_UnresetViews;
+      pTable->pSchema->schemaFlags |= DB_UnresetViews;
     }else{
       pTable->nCol = 0;
       nErr++;

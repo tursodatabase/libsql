@@ -1,5 +1,5 @@
-C Remove\s(newly)\sincorrect\spreprocessor\scheck\sto\sfix\sbuild\son\sWinRT.
-D 2014-08-02T20:44:13.563
+C Rename\sthe\sinternal\sSchema.flags\sfield\sto\sSchema.schemaFlags.
+D 2014-08-05T11:04:21.126
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,11 +167,11 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c b5531339cd826af46b9621e4a9323971a9380e12
+F src/btree.c 99d162e57af6e72ffd7db5bf79568a134cd87d5b
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
-F src/build.c c67a915cd5aabda9ac170f2af8ea25434476b66f
-F src/callback.c 174e3c8656bc29f91d710ab61550d16eea34be98
+F src/build.c 5abf794fe8a605f2005b422e98a3cedad9b9ef5b
+F src/callback.c fcff28cf0df2403dd2f313bb8d1b8f31f6f3cd64
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
@@ -227,7 +227,7 @@ F src/shell.c 191129c3f7a9cf241aea90ff6a6be3e74d3767f0
 F src/sqlite.h.in 9bbc5815c73b0e77e68b5275481a5e3e7814a804
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 5cee19f34f6efe6e6f7733d55a5c59e3a35a378a
+F src/sqliteInt.h 85c03beef501eb79db37f7d963597810aaa581a5
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9bc1c730a366e75b760b58e7a343d39165b2a469
-R 8c9bd54f21254a5c39cdbf67a68f6f01
-U mistachkin
-Z a3832f522ef0a90c3ccd915e060c6930
+P ba7826542908eac2e14789d183d0b3e35b143fed
+R 5db7ff3ac4350fd50475a1b030dd8291
+U drh
+Z 42ccecdc76986fb0ef00d15b10cbc956
