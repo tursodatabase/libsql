@@ -1,5 +1,5 @@
-C Use\sdoclist-indexes\swith\s"ORDER\sBY\srowid\sASC"\sfts5\squeries\sas\swell.
-D 2014-08-05T19:00:22.438
+C Use\sdoclist\sindexes\sfor\sAND\squeries\sas\swell\sas\sphrases.
+D 2014-08-05T19:35:20.490
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -109,7 +109,7 @@ F ext/fts5/fts5Int.h aef50f3078e60707aeb2e4b2787d8c5eecdd02dc
 F ext/fts5/fts5_aux.c 366057c7186bc3615deb5ecc0ff61de50b6d2dbc
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
-F ext/fts5/fts5_expr.c 9402474456732ddb5019f83a77907852f108a96a
+F ext/fts5/fts5_expr.c 7b8e380233176053841904a86006696ee8f6cd24
 F ext/fts5/fts5_index.c 40d9086948d6f1420a078bd9fb0b5372e54ec791
 F ext/fts5/fts5_storage.c 2866e7e1de9dc851756c3a9c76b6e1d75e0facb7
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
@@ -1199,7 +1199,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 90b82d3ef613b2915e0e280dc1d2e5a2b617d59c
-R 0266e2e08ce753d75d582fc91e12512e
+P d028ba6589f3122b635474c2683c0f93d5bc6c7c
+R df749c2987e3f7fa39a4c1c54f5a22e6
 U dan
-Z 1a32a19af984c36e1b27a239a8950f8a
+Z 78f1e7641fc2b68987e4a3c99853c1c0

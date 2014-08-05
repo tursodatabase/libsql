@@ -641,7 +641,9 @@ static int fts5ExprAdvanceto(
 */
 static int fts5ExprNearNextRowidMatch(
   Fts5Expr *pExpr,                /* Expression pPhrase belongs to */
-  Fts5ExprNode *pNode
+  Fts5ExprNode *pNode,
+  int bFromValid,
+  i64 iFrom
 ){
   Fts5ExprNearset *pNear = pNode->pNear;
   int rc = SQLITE_OK;
@@ -654,6 +656,9 @@ static int fts5ExprNearNextRowidMatch(
   ** minimum rowid. Or, if the iterator is "ORDER BY rowid ASC", then it
   ** means the maximum rowid.  */
   iLast = sqlite3Fts5IterRowid(pNear->apPhrase[0]->aTerm[0].pIter);
+  if( bFromValid && (iFrom>iLast)==(pExpr->bAsc!=0) ){
+    iLast = iFrom;
+  }
 
   do {
     bMatch = 1;
@@ -693,7 +698,9 @@ static int fts5ExprNearNextRowidMatch(
 */
 static int fts5ExprNearNextMatch(
   Fts5Expr *pExpr,                /* Expression that pNear is a part of */
-  Fts5ExprNode *pNode
+  Fts5ExprNode *pNode,
+  int bFromValid,
+  i64 iFrom
 ){
   int rc = SQLITE_OK;
   Fts5ExprNearset *pNear = pNode->pNear;
@@ -701,7 +708,7 @@ static int fts5ExprNearNextMatch(
     int i;
 
     /* Advance the iterators until they all point to the same rowid */
-    rc = fts5ExprNearNextRowidMatch(pExpr, pNode);
+    rc = fts5ExprNearNextRowidMatch(pExpr, pNode, bFromValid, iFrom);
     if( pNode->bEof || rc!=SQLITE_OK ) break;
 
     for(i=0; i<pNear->nPhrase; i++){
@@ -769,7 +776,7 @@ static int fts5ExprNearInitAll(
 }
 
 /* fts5ExprNodeNext() calls fts5ExprNodeNextMatch(). And vice-versa. */
-static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*);
+static int fts5ExprNodeNextMatch(Fts5Expr*, Fts5ExprNode*, int, i64);
 
 /*
 ** Compare the values currently indicated by the two nodes as follows:
@@ -799,7 +806,19 @@ static int fts5NodeCompare(
   }
 }
 
-static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
+/*
+** Advance node iterator pNode, part of expression pExpr. If argument
+** bFromValid is zero, then pNode is advanced exactly once. Or, if argument
+** bFromValid is non-zero, then pNode is advanced until it is at or past
+** rowid value iFrom. Whether "past" means "less than" or "greater than"
+** depends on whether this is an ASC or DESC iterator.
+*/
+static int fts5ExprNodeNext(
+  Fts5Expr *pExpr, 
+  Fts5ExprNode *pNode,
+  int bFromValid,
+  i64 iFrom
+){
   int rc = SQLITE_OK;
 
   if( pNode->bEof==0 ){
@@ -810,8 +829,11 @@ static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
       };
 
       case FTS5_AND: {
-        rc = fts5ExprNodeNext(pExpr, pNode->pLeft);
-        if( rc==SQLITE_OK ) rc = fts5ExprNodeNext(pExpr, pNode->pRight);
+        rc = fts5ExprNodeNext(pExpr, pNode->pLeft, bFromValid, iFrom);
+        if( rc==SQLITE_OK ){
+          /* todo: update (iFrom/bFromValid) here */
+          rc = fts5ExprNodeNext(pExpr, pNode->pRight, bFromValid, iFrom);
+        }
         break;
       }
 
@@ -821,23 +843,25 @@ static int fts5ExprNodeNext(Fts5Expr *pExpr, Fts5ExprNode *pNode){
         int cmp = fts5NodeCompare(pExpr, p1, p2);
 
         if( cmp==0 ){
-          rc = fts5ExprNodeNext(pExpr, p1);
-          if( rc==SQLITE_OK ) rc = fts5ExprNodeNext(pExpr, p2);
+          rc = fts5ExprNodeNext(pExpr, p1, bFromValid, iFrom);
+          if( rc==SQLITE_OK ){
+            rc = fts5ExprNodeNext(pExpr, p2, bFromValid, iFrom);
+          }
         }else{
-          rc = fts5ExprNodeNext(pExpr, (cmp < 0) ? p1 : p2);
+          rc = fts5ExprNodeNext(pExpr, (cmp < 0) ? p1 : p2, bFromValid, iFrom);
         }
 
         break;
       }
 
       default: assert( pNode->eType==FTS5_NOT ); {
-        rc = fts5ExprNodeNext(pExpr, pNode->pLeft);
+        rc = fts5ExprNodeNext(pExpr, pNode->pLeft, bFromValid, iFrom);
         break;
       }
     }
 
     if( rc==SQLITE_OK ){
-      rc = fts5ExprNodeNextMatch(pExpr, pNode);
+      rc = fts5ExprNodeNextMatch(pExpr, pNode, bFromValid, iFrom);
     }
   }
 
@@ -855,13 +879,18 @@ static void fts5ExprSetEof(Fts5ExprNode *pNode){
 /*
 **
 */
-static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
+static int fts5ExprNodeNextMatch(
+  Fts5Expr *pExpr, 
+  Fts5ExprNode *pNode,
+  int bFromValid,
+  i64 iFrom
+){
   int rc = SQLITE_OK;
   if( pNode->bEof==0 ){
     switch( pNode->eType ){
 
       case FTS5_STRING: {
-        rc = fts5ExprNearNextMatch(pExpr, pNode);
+        rc = fts5ExprNearNextMatch(pExpr, pNode, bFromValid, iFrom);
         break;
       }
 
@@ -869,14 +898,22 @@ static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
         Fts5ExprNode *p1 = pNode->pLeft;
         Fts5ExprNode *p2 = pNode->pRight;
 
+
         while( p1->bEof==0 && p2->bEof==0 && p2->iRowid!=p1->iRowid ){
           Fts5ExprNode *pAdv;
-          if( pExpr->bAsc ){
-            pAdv = (p1->iRowid < p2->iRowid) ? p1 : p2;
+          assert( pExpr->bAsc==0 || pExpr->bAsc==1 );
+          if( pExpr->bAsc==(p1->iRowid < p2->iRowid) ){
+            pAdv = p1;
+            if( bFromValid==0 || pExpr->bAsc==(p2->iRowid > iFrom) ){
+              iFrom = p2->iRowid;
+            }
           }else{
-            pAdv = (p1->iRowid > p2->iRowid) ? p1 : p2;
+            pAdv = p2;
+            if( bFromValid==0 || pExpr->bAsc==(p1->iRowid > iFrom) ){
+              iFrom = p1->iRowid;
+            }
           }
-          rc = fts5ExprNodeNext(pExpr, pAdv);
+          rc = fts5ExprNodeNext(pExpr, pAdv, 1, iFrom);
           if( rc!=SQLITE_OK ) break;
         }
         if( p1->bEof || p2->bEof ){
@@ -901,10 +938,10 @@ static int fts5ExprNodeNextMatch(Fts5Expr *pExpr, Fts5ExprNode *pNode){
         while( rc==SQLITE_OK ){
           int cmp;
           while( rc==SQLITE_OK && (cmp = fts5NodeCompare(pExpr, p1, p2))>0 ){
-            rc = fts5ExprNodeNext(pExpr, p2);
+            rc = fts5ExprNodeNext(pExpr, p2, bFromValid, iFrom);
           }
           if( rc || cmp ) break;
-          rc = fts5ExprNodeNext(pExpr, p1);
+          rc = fts5ExprNodeNext(pExpr, p1, bFromValid, iFrom);
         }
         pNode->bEof = p1->bEof;
         pNode->iRowid = p1->iRowid;
@@ -934,7 +971,7 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
 
     /* Attempt to advance to the first match */
     if( rc==SQLITE_OK && pNode->bEof==0 ){
-      rc = fts5ExprNearNextMatch(pExpr, pNode);
+      rc = fts5ExprNearNextMatch(pExpr, pNode, 0, 0);
     }
 
   }else{
@@ -943,7 +980,7 @@ static int fts5ExprNodeFirst(Fts5Expr *pExpr, Fts5ExprNode *pNode){
       rc = fts5ExprNodeFirst(pExpr, pNode->pRight);
     }
     if( rc==SQLITE_OK ){
-      rc = fts5ExprNodeNextMatch(pExpr, pNode);
+      rc = fts5ExprNodeNextMatch(pExpr, pNode, 0, 0);
     }
   }
   return rc;
@@ -976,7 +1013,7 @@ int sqlite3Fts5ExprFirst(Fts5Expr *p, Fts5Index *pIdx, int bAsc){
 */
 int sqlite3Fts5ExprNext(Fts5Expr *p){
   int rc;
-  rc = fts5ExprNodeNext(p, p->pRoot);
+  rc = fts5ExprNodeNext(p, p->pRoot, 0, 0);
   return rc;
 }
 
