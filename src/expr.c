@@ -1368,6 +1368,9 @@ int sqlite3ExprCanBeNull(const Expr *p){
     case TK_FLOAT:
     case TK_BLOB:
       return 0;
+    case TK_COLUMN:
+      assert( p->pTab!=0 );
+      return p->iColumn>=0 && p->pTab->aCol[p->iColumn].notNull==0;
     default:
       return 1;
   }
@@ -1491,6 +1494,24 @@ static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
   sqlite3VdbeJumpHere(v, j1);
 }
 
+
+#ifndef SQLITE_OMIT_SUBQUERY
+/*
+** The argument is an IN operator with a list (not a subquery) on the 
+** right-hand side.  Return TRUE if that list is constant.
+*/
+static int sqlite3InRhsIsConstant(Expr *pIn){
+  Expr *pLHS;
+  int res;
+  assert( !ExprHasProperty(pIn, EP_xIsSelect) );
+  pLHS = pIn->pLeft;
+  pIn->pLeft = 0;
+  res = sqlite3ExprIsConstant(pIn);
+  pIn->pLeft = pLHS;
+  return res;
+}
+#endif
+
 /*
 ** This function is used by the implementation of the IN (...) operator.
 ** The pX parameter is the expression on the RHS of the IN operator, which
@@ -1510,6 +1531,8 @@ static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
 **   IN_INDEX_INDEX_DESC - The cursor was opened on a descending index.
 **   IN_INDEX_EPH        - The cursor was opened on a specially created and
 **                         populated epheremal table.
+**   IN_INDEX_NOOP       - No cursor was allocated.  The IN operator must be
+**                         implemented as a sequence of comparisons.
 **
 ** An existing b-tree might be used if the RHS expression pX is a simple
 ** subquery such as:
@@ -1538,6 +1561,13 @@ static void sqlite3SetHasNullFlag(Vdbe *v, int iCur, int regHasNull){
 ** for fast set membership tests) then an epheremal table must 
 ** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
 ** be found with <column> as its left-most column.
+**
+** If the IN_INDEX_NOOP_OK and IN_INDEX_MEMBERSHIP are both set and
+** if the RHS of the IN operator is a list (not a subquery) then this
+** routine might decide that creating an ephemeral b-tree for membership
+** testing is too expensive and return IN_INDEX_NOOP.  In that case, the
+** calling routine should implement the IN operator using a sequence
+** of Eq or Ne comparison operations.
 **
 ** When the b-tree is being used for membership tests, the calling function
 ** might need to know whether or not the RHS side of the IN operator
@@ -1636,6 +1666,22 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, u32 inFlags, int *prRhsHasNull){
       }
     }
   }
+
+  /* If no preexisting index is available for the IN clause
+  ** and IN_INDEX_NOOP is an allowed reply
+  ** and the RHS of the IN operator is a list, not a subquery
+  ** and the RHS is not contant or has two or fewer terms,
+  ** then it is not worth creating an ephermeral table to evaluate
+  ** the IN operator so return IN_INDEX_NOOP.
+  */
+  if( eType==0
+   && (inFlags & IN_INDEX_NOOP_OK)
+   && !ExprHasProperty(pX, EP_xIsSelect)
+   && (!sqlite3InRhsIsConstant(pX) || pX->x.pList->nExpr<=2)
+  ){
+    eType = IN_INDEX_NOOP;
+  }
+     
 
   if( eType==0 ){
     /* Could not find an existing table or index to use as the RHS b-tree.
@@ -1935,7 +1981,8 @@ static void sqlite3ExprCodeIN(
   v = pParse->pVdbe;
   assert( v!=0 );       /* OOM detected prior to this routine */
   VdbeNoopComment((v, "begin IN expr"));
-  eType = sqlite3FindInIndex(pParse, pExpr, IN_INDEX_MEMBERSHIP,
+  eType = sqlite3FindInIndex(pParse, pExpr,
+                             IN_INDEX_MEMBERSHIP | IN_INDEX_NOOP_OK,
                              destIfFalse==destIfNull ? 0 : &rRhsHasNull);
 
   /* Figure out the affinity to use to create a key from the results
@@ -1950,68 +1997,114 @@ static void sqlite3ExprCodeIN(
   r1 = sqlite3GetTempReg(pParse);
   sqlite3ExprCode(pParse, pExpr->pLeft, r1);
 
-  /* If the LHS is NULL, then the result is either false or NULL depending
-  ** on whether the RHS is empty or not, respectively.
+  /* If sqlite3FindInIndex() did not find or create an index that is
+  ** suitable for evaluating the IN operator, then evaluate using a
+  ** sequence of comparisons.
   */
-  if( destIfNull==destIfFalse ){
-    /* Shortcut for the common case where the false and NULL outcomes are
-    ** the same. */
-    sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
+  if( eType==IN_INDEX_NOOP ){
+    ExprList *pList = pExpr->x.pList;
+    CollSeq *pColl = sqlite3ExprCollSeq(pParse, pExpr->pLeft);
+    int labelOk = sqlite3VdbeMakeLabel(v);
+    int r2, regToFree;
+    int regCkNull = 0;
+    int ii;
+    assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+    if( destIfNull!=destIfFalse ){
+      regCkNull = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp3(v, OP_BitAnd, r1, r1, regCkNull);
+    }
+    for(ii=0; ii<pList->nExpr; ii++){
+      r2 = sqlite3ExprCodeTemp(pParse, pList->a[ii].pExpr, &regToFree);
+      if( regCkNull && sqlite3ExprCanBeNull(pList->a[ii].pExpr) ){
+        sqlite3VdbeAddOp3(v, OP_BitAnd, regCkNull, r2, regCkNull);
+      }
+      if( ii<pList->nExpr-1 || destIfNull!=destIfFalse ){
+        sqlite3VdbeAddOp4(v, OP_Eq, r1, labelOk, r2,
+                          (void*)pColl, P4_COLLSEQ);
+        VdbeCoverageIf(v, ii<pList->nExpr-1);
+        VdbeCoverageIf(v, ii==pList->nExpr-1);
+        sqlite3VdbeChangeP5(v, affinity);
+      }else{
+        assert( destIfNull==destIfFalse );
+        sqlite3VdbeAddOp4(v, OP_Ne, r1, destIfFalse, r2,
+                          (void*)pColl, P4_COLLSEQ); VdbeCoverage(v);
+        sqlite3VdbeChangeP5(v, affinity | SQLITE_JUMPIFNULL);
+      }
+      sqlite3ReleaseTempReg(pParse, regToFree);
+    }
+    if( regCkNull ){
+      sqlite3VdbeAddOp2(v, OP_IsNull, regCkNull, destIfNull); VdbeCoverage(v);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
+    }
+    sqlite3VdbeResolveLabel(v, labelOk);
+    sqlite3ReleaseTempReg(pParse, regCkNull);
   }else{
-    int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
-    VdbeCoverage(v);
-    sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
-    sqlite3VdbeJumpHere(v, addr1);
-  }
-
-  if( eType==IN_INDEX_ROWID ){
-    /* In this case, the RHS is the ROWID of table b-tree
+  
+    /* If the LHS is NULL, then the result is either false or NULL depending
+    ** on whether the RHS is empty or not, respectively.
     */
-    sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, destIfFalse); VdbeCoverage(v);
-    sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, destIfFalse, r1);
-    VdbeCoverage(v);
-  }else{
-    /* In this case, the RHS is an index b-tree.
-    */
-    sqlite3VdbeAddOp4(v, OP_Affinity, r1, 1, 0, &affinity, 1);
-
-    /* If the set membership test fails, then the result of the 
-    ** "x IN (...)" expression must be either 0 or NULL. If the set
-    ** contains no NULL values, then the result is 0. If the set 
-    ** contains one or more NULL values, then the result of the
-    ** expression is also NULL.
-    */
-    assert( destIfFalse!=destIfNull || rRhsHasNull==0 );
-    if( rRhsHasNull==0 ){
-      /* This branch runs if it is known at compile time that the RHS
-      ** cannot contain NULL values. This happens as the result
-      ** of a "NOT NULL" constraint in the database schema.
-      **
-      ** Also run this branch if NULL is equivalent to FALSE
-      ** for this particular IN operator.
+    if( sqlite3ExprCanBeNull(pExpr->pLeft) ){
+      if( destIfNull==destIfFalse ){
+        /* Shortcut for the common case where the false and NULL outcomes are
+        ** the same. */
+        sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull); VdbeCoverage(v);
+      }else{
+        int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1); VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+        VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
+        sqlite3VdbeJumpHere(v, addr1);
+      }
+    }
+  
+    if( eType==IN_INDEX_ROWID ){
+      /* In this case, the RHS is the ROWID of table b-tree
       */
-      sqlite3VdbeAddOp4Int(v, OP_NotFound, pExpr->iTable, destIfFalse, r1, 1);
+      sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, destIfFalse); VdbeCoverage(v);
+      sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, destIfFalse, r1);
       VdbeCoverage(v);
     }else{
-      /* In this branch, the RHS of the IN might contain a NULL and
-      ** the presence of a NULL on the RHS makes a difference in the
-      ** outcome.
+      /* In this case, the RHS is an index b-tree.
       */
-      int j1;
-
-      /* First check to see if the LHS is contained in the RHS.  If so,
-      ** then the answer is TRUE the presence of NULLs in the RHS does
-      ** not matter.  If the LHS is not contained in the RHS, then the
-      ** answer is NULL if the RHS contains NULLs and the answer is
-      ** FALSE if the RHS is NULL-free.
+      sqlite3VdbeAddOp4(v, OP_Affinity, r1, 1, 0, &affinity, 1);
+  
+      /* If the set membership test fails, then the result of the 
+      ** "x IN (...)" expression must be either 0 or NULL. If the set
+      ** contains no NULL values, then the result is 0. If the set 
+      ** contains one or more NULL values, then the result of the
+      ** expression is also NULL.
       */
-      j1 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, r1, 1);
-      VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_IsNull, rRhsHasNull, destIfNull);
-      VdbeCoverage(v);
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
-      sqlite3VdbeJumpHere(v, j1);
+      assert( destIfFalse!=destIfNull || rRhsHasNull==0 );
+      if( rRhsHasNull==0 ){
+        /* This branch runs if it is known at compile time that the RHS
+        ** cannot contain NULL values. This happens as the result
+        ** of a "NOT NULL" constraint in the database schema.
+        **
+        ** Also run this branch if NULL is equivalent to FALSE
+        ** for this particular IN operator.
+        */
+        sqlite3VdbeAddOp4Int(v, OP_NotFound, pExpr->iTable, destIfFalse, r1, 1);
+        VdbeCoverage(v);
+      }else{
+        /* In this branch, the RHS of the IN might contain a NULL and
+        ** the presence of a NULL on the RHS makes a difference in the
+        ** outcome.
+        */
+        int j1;
+  
+        /* First check to see if the LHS is contained in the RHS.  If so,
+        ** then the answer is TRUE the presence of NULLs in the RHS does
+        ** not matter.  If the LHS is not contained in the RHS, then the
+        ** answer is NULL if the RHS contains NULLs and the answer is
+        ** FALSE if the RHS is NULL-free.
+        */
+        j1 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, r1, 1);
+        VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_IsNull, rRhsHasNull, destIfNull);
+        VdbeCoverage(v);
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
+        sqlite3VdbeJumpHere(v, j1);
+      }
     }
   }
   sqlite3ReleaseTempReg(pParse, r1);
@@ -2635,7 +2728,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       addr = sqlite3VdbeAddOp1(v, op, r1);
       VdbeCoverageIf(v, op==TK_ISNULL);
       VdbeCoverageIf(v, op==TK_NOTNULL);
-      sqlite3VdbeAddOp2(v, OP_AddImm, target, -1);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
       sqlite3VdbeJumpHere(v, addr);
       break;
     }

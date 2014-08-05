@@ -1794,9 +1794,8 @@ void sqlite3Pragma(
     */
     static const int iLn = VDBE_OFFSET_LINENO(2);
     static const VdbeOpList endCode[] = {
-      { OP_AddImm,      1, 0,        0},    /* 0 */
-      { OP_IfNeg,       1, 0,        0},    /* 1 */
-      { OP_String8,     0, 3,        0},    /* 2 */
+      { OP_IfNeg,       1, 0,        0},    /* 0 */
+      { OP_String8,     0, 3,        0},    /* 1 */
       { OP_ResultRow,   3, 1,        0},
     };
 
@@ -2002,9 +2001,9 @@ void sqlite3Pragma(
       } 
     }
     addr = sqlite3VdbeAddOpList(v, ArraySize(endCode), endCode, iLn);
-    sqlite3VdbeChangeP2(v, addr, -mxErr);
-    sqlite3VdbeJumpHere(v, addr+1);
-    sqlite3VdbeChangeP4(v, addr+2, "ok", P4_STATIC);
+    sqlite3VdbeChangeP3(v, addr, -mxErr);
+    sqlite3VdbeJumpHere(v, addr);
+    sqlite3VdbeChangeP4(v, addr+1, "ok", P4_STATIC);
   }
   break;
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
