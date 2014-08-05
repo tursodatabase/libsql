@@ -2768,6 +2768,11 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3ErrorMsg(pParse, "unknown function: %.*s()", nId, zId);
         break;
       }
+      if( pDef->xFunc==0 ){
+        sqlite3ErrorMsg(pParse, "misuse of aggregate function: %.*s()",
+                        nId, zId);
+        break;
+      }
 
       /* Attempt a direct implementation of the built-in COALESCE() and
       ** IFNULL() functions.  This avoids unnecessary evalation of

@@ -1,5 +1,5 @@
-C Add\sthe\sability\sto\sevaluate\sIN\soperators\sas\sa\ssequence\sof\scomparisons\sas\nan\salternative\sto\sthe\slong-standing\salgorithm\sof\sbuilding\sa\slookup\stable.\nUse\sthe\snew\simplementation\sin\scircumstances\swhere\sit\sis\slikely\sto\sbe\sfaster,\nsuch\sas\swhen\sthe\sRHS\sof\sthe\sIN\schanges\sbetween\ssuccessive\sevaluations.
-D 2014-08-05T19:16:22.008
+C Ensure\sthat\saggregate\sfunctions\sare\snot\sused\swhen\sevaluating\sa\sdefault\nvalue\sfor\sa\stable\scolumn.\nCandidate\sfix\sfor\sticket\s[3a88d85f36704eebe134f7].
+D 2014-08-05T21:31:08.768
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -176,7 +176,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
-F src/expr.c ef474fc0e73a2fc14835a2dc5282d3c28f8e1eaa
+F src/expr.c 94d26c8e47bb25957e3963cc3d116b09ed8e12cd
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 8545f3b36da47473e10800ea4fb0810fd4062514
 F src/func.c 3bc223ea36cd29a91c481485343d0ee4257ab8dc
@@ -856,7 +856,7 @@ F test/superlock.test 1cde669f68d2dd37d6c9bd35eee1d95491ae3fc2
 F test/sync.test a34cd43e98b7fb84eabbf38f7ed8f7349b3f3d85
 F test/syscall.test d2fdaad713f103ac611fe7ef9b724c7b69f8149c
 F test/sysfault.test fa776e60bf46bdd3ae69f0b73e46ee3977a58ae6
-F test/table.test 580d23530187026d4502fae74a490f0408cf2cc7
+F test/table.test 5b985827973a7b7b24ce155c8bda5fe3544e8442
 F test/tableapi.test 2674633fa95d80da917571ebdd759a14d9819126
 F test/tableopts.test dba698ba97251017b7c80d738c198d39ab747930
 F test/tclsqlite.test 37a61c2da7e3bfe3b8c1a2867199f6b860df5d43
@@ -1185,8 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5ae80b3c8f032528359c8c762505ce24da8db96f 01f60027ad1841051fa493a646141445f8971357
-R c68854702374dc69a486e042d017018d
-T +closed 01f60027ad1841051fa493a646141445f8971357
+P 952868216854e8355edf57af62bd1a6bcb70ce61
+R cc49bc1b5436eaa2e754c5d5e9ba9fd5
 U drh
-Z d50dbb21b6962a7518b2d56fd33bd762
+Z 79f28300cbbdd20d7d6bedff33de2779
