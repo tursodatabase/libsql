@@ -2020,7 +2020,9 @@ static void sqlite3ExprCodeIN(
       }
       if( ii<pList->nExpr-1 || destIfNull!=destIfFalse ){
         sqlite3VdbeAddOp4(v, OP_Eq, r1, labelOk, r2,
-                          (void*)pColl, P4_COLLSEQ); VdbeCoverage(v);
+                          (void*)pColl, P4_COLLSEQ);
+        VdbeCoverageIf(v, ii<pList->nExpr-1);
+        VdbeCoverageIf(v, ii==pList->nExpr-1);
         sqlite3VdbeChangeP5(v, affinity);
       }else{
         assert( destIfNull==destIfFalse );

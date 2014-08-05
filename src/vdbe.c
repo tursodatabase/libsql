@@ -116,6 +116,12 @@ int sqlite3_found_count = 0;
 ** branch can go.  It is usually 2.  "I" is the direction the branch
 ** goes.  0 means falls through.  1 means branch is taken.  2 means the
 ** second alternative branch is taken.
+**
+** iSrcLine is the source code line (from the __LINE__ macro) that
+** generated the VDBE instruction.  This instrumentation assumes that all
+** source code is in a single file (the amalgamation).  Special values 1
+** and 2 for the iSrcLine parameter mean that this particular branch is
+** always taken or never taken, respectively.
 */
 #if !defined(SQLITE_VDBE_COVERAGE)
 # define VdbeBranchTaken(I,M)
@@ -5600,17 +5606,16 @@ case OP_IfPos: {        /* jump, in1 */
   break;
 }
 
-/* Opcode: IfNeg P1 P2 * * *
-** Synopsis: if r[P1]<0 goto P2
+/* Opcode: IfNeg P1 P2 P3 * *
+** Synopsis: r[P1]+=P3, if r[P1]<0 goto P2
 **
-** If the value of register P1 is less than zero, jump to P2. 
-**
-** It is illegal to use this instruction on a register that does
-** not contain an integer.  An assertion fault will result if you try.
+** Register P1 must contain an intger.  Add literal P3 to the value in
+** register P1 then if the value of register P1 is less than zero, jump to P2. 
 */
 case OP_IfNeg: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
+  pIn1->u.i += pOp->p3;
   VdbeBranchTaken(pIn1->u.i<0, 2);
   if( pIn1->u.i<0 ){
      pc = pOp->p2 - 1;
@@ -5623,9 +5628,6 @@ case OP_IfNeg: {        /* jump, in1 */
 **
 ** The register P1 must contain an integer.  Add literal P3 to the
 ** value in register P1.  If the result is exactly 0, jump to P2. 
-**
-** It is illegal to use this instruction on a register that does
-** not contain an integer.  An assertion fault will result if you try.
 */
 case OP_IfZero: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
