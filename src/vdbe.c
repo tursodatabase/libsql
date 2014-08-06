@@ -796,7 +796,7 @@ case OP_InitCoroutine: {     /* jump */
 
 /* Opcode:  EndCoroutine P1 * * * *
 **
-** The instruction at the address in register P1 is an Yield.
+** The instruction at the address in register P1 is a Yield.
 ** Jump to the P2 parameter of that Yield.
 ** After the jump, register P1 becomes undefined.
 **
@@ -989,7 +989,7 @@ case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
 ** Synopsis: r[P2]='P4'
 **
 ** P4 points to a nul terminated UTF-8 string. This opcode is transformed 
-** into an OP_String before it is executed for the first time.  During
+** into a String before it is executed for the first time.  During
 ** this transformation, the length of string P4 is computed and stored
 ** as the P1 parameter.
 */
@@ -3513,7 +3513,7 @@ case OP_Close: {
 ** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
 ** This opcode leaves the cursor configured to move in forward order,
-** from the begining toward the end.  In other words, the cursor is
+** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 **
 ** See also: Found, NotFound, SeekLt, SeekGt, SeekLe
@@ -4217,7 +4217,7 @@ case OP_InsertInt: {
 ** The cursor will be left pointing at either the next or the previous
 ** record in the table. If it is left pointing at the next record, then
 ** the next Next instruction will be a no-op.  Hence it is OK to delete
-** a record from within an Next loop.
+** a record from within a Next loop.
 **
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
 ** incremented (otherwise not).
@@ -4280,7 +4280,7 @@ case OP_ResetCount: {
 ** Synopsis:  if key(P1)!=trim(r[P3],P4) goto P2
 **
 ** P1 is a sorter cursor. This instruction compares a prefix of the
-** the record blob in register P3 against a prefix of the entry that 
+** record blob in register P3 against a prefix of the entry that 
 ** the sorter cursor currently points to.  Only the first P4 fields
 ** of r[P3] and the sorter record are compared.
 **
@@ -5609,7 +5609,7 @@ case OP_IfPos: {        /* jump, in1 */
 /* Opcode: IfNeg P1 P2 P3 * *
 ** Synopsis: r[P1]+=P3, if r[P1]<0 goto P2
 **
-** Register P1 must contain an intger.  Add literal P3 to the value in
+** Register P1 must contain an integer.  Add literal P3 to the value in
 ** register P1 then if the value of register P1 is less than zero, jump to P2. 
 */
 case OP_IfNeg: {        /* jump, in1 */
