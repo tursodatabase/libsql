@@ -72,6 +72,7 @@ void sqlite3Fts5Dequote(char *z);
 **************************************************************************/
 
 /**************************************************************************
+** Interface to code in fts5_buffer.c.
 */
 
 /*
@@ -156,7 +157,6 @@ typedef struct Fts5IndexIter Fts5IndexIter;
 */
 #define FTS5INDEX_QUERY_PREFIX 0x0001       /* Prefix query */
 #define FTS5INDEX_QUERY_ASC    0x0002       /* Docs in ascending rowid order */
-#define FTS5INDEX_QUERY_MATCH  0x0004       /* Use the iMatch arg to Next() */
 
 /*
 ** Create/destroy an Fts5Index object.
@@ -230,22 +230,15 @@ void sqlite3Fts5IndexBeginWrite(
 
 /*
 ** Flush any data stored in the in-memory hash tables to the database.
-**
-** This is called whenever (a) the main transaction is committed or (b) a 
-** new sub-transaction is opened.
+** If the bCommit flag is true, also close any open blob handles.
 */
-void sqlite3Fts5IndexFlush(Fts5Index *p);
-
-int sqlite3Fts5IndexSync(Fts5Index *p);
+int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit);
 
 /*
 ** Discard any data stored in the in-memory hash tables. Do not write it
 ** to the database. Additionally, assume that the contents of the %_data
 ** table may have changed on disk. So any in-memory caches of %_data 
 ** records must be invalidated.
-**
-** This is called (a) whenever a main or sub-transaction is rolled back, 
-** and (b) whenever the read transaction is closed.
 */
 int sqlite3Fts5IndexRollback(Fts5Index *p);
 
@@ -256,9 +249,10 @@ int sqlite3Fts5IndexErrcode(Fts5Index*);
 void sqlite3Fts5IndexReset(Fts5Index*);
 
 /*
-** Get (bSet==0) or set (bSet!=0) the "averages" record.
+** Get or set the "averages" record.
 */
-void sqlite3Fts5IndexAverages(Fts5Index *p, int bSet, int nAvg, int *aAvg);
+int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf);
+int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
 
 /*
 ** Functions called by the storage module as part of integrity-check.
@@ -266,14 +260,23 @@ void sqlite3Fts5IndexAverages(Fts5Index *p, int bSet, int nAvg, int *aAvg);
 u64 sqlite3Fts5IndexCksum(Fts5Config*,i64,int,int,const char*,int);
 int sqlite3Fts5IndexIntegrityCheck(Fts5Index*, u64 cksum);
 
-/* Called during startup to register a UDF with SQLite */
+/* 
+** Called during virtual module initialization to register UDF 
+** fts5_decode() with SQLite 
+*/
 int sqlite3Fts5IndexInit(sqlite3*);
 
+/*
+** Set the page size to use when writing. It doesn't matter if this
+** changes mid-transaction, or if inconsistent values are used by 
+** multiple clients.
+*/
 void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz);
 
-int sqlite3Fts5IndexGetAverages(Fts5Index *p, Fts5Buffer *pBuf);
-int sqlite3Fts5IndexSetAverages(Fts5Index *p, const u8*, int);
-
+/*
+** Return the total number of entries read from the %_data table by 
+** this connection since it was created.
+*/
 int sqlite3Fts5IndexReads(Fts5Index *p);
 
 /*

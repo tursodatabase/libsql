@@ -754,6 +754,16 @@ fprintf(stdout, "read: %s\n", buf.p);
 fflush(stdout);
 sqlite3_free(buf.p);
 #endif
+    if( p->pReader ){
+      /* This call may return SQLITE_ABORT if there has been a savepoint
+      ** rollback since it was last used. In this case a new blob handle
+      ** is required.  */
+      rc = sqlite3_blob_reopen(p->pReader, iRowid);
+      if( rc==SQLITE_ABORT ){
+        fts5CloseReader(p);
+        rc = SQLITE_OK;
+      }
+    }
 
     /* If the blob handle is not yet open, open and seek it. Otherwise, use
     ** the blob_reopen() API to reseek the existing blob handle.  */
@@ -762,8 +772,6 @@ sqlite3_free(buf.p);
       rc = sqlite3_blob_open(pConfig->db, 
           pConfig->zDb, p->zDataTbl, "block", iRowid, 0, &p->pReader
       );
-    }else{
-      rc = sqlite3_blob_reopen(p->pReader, iRowid);
     }
 
     if( rc ) fts5MissingData();
@@ -2482,6 +2490,25 @@ static Fts5PendingDoclist *fts5PendingList(Fts5Index *p, int iHash){
   return pList;
 }
 
+
+/*
+** Discard all data currently cached in the hash-tables.
+*/
+static void fts5IndexDiscardData(Fts5Index *p){
+  Fts5Config *pConfig = p->pConfig;
+  int i;
+  for(i=0; i<=pConfig->nPrefix; i++){
+    Fts3Hash *pHash = &p->aHash[i];
+    Fts3HashElem *pE;               /* Iterator variable */
+    for(pE=fts3HashFirst(pHash); pE; pE=fts3HashNext(pE)){
+      Fts5PendingDoclist *pDoclist = (Fts5PendingDoclist*)fts3HashData(pE);
+      fts5FreePendingDoclist(pDoclist);
+    }
+    fts3HashClear(pHash);
+  }
+  p->nPendingData = 0;
+}
+
 /*
 ** Return the size of the prefix, in bytes, that buffer (nNew/pNew) shares
 ** with buffer (nOld/pOld).
@@ -3146,20 +3173,9 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
 }
 
 /*
-** Indicate that all subsequent calls to sqlite3Fts5IndexWrite() pertain
-** to the document with rowid iRowid.
-*/
-void sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
-  if( iRowid<=p->iWriteRowid ){
-    sqlite3Fts5IndexFlush(p);
-  }
-  p->iWriteRowid = iRowid;
-}
-
-/*
 ** Flush any data stored in the in-memory hash tables to the database.
 */
-void sqlite3Fts5IndexFlush(Fts5Index *p){
+static void fts5IndexFlush(Fts5Index *p){
   Fts5Config *pConfig = p->pConfig;
   int i;                          /* Used to iterate through indexes */
   int nLeaf = 0;                  /* Number of leaves written */
@@ -3176,11 +3192,22 @@ void sqlite3Fts5IndexFlush(Fts5Index *p){
 }
 
 /*
+** Indicate that all subsequent calls to sqlite3Fts5IndexWrite() pertain
+** to the document with rowid iRowid.
+*/
+void sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
+  if( iRowid<=p->iWriteRowid ){
+    fts5IndexFlush(p);
+  }
+  p->iWriteRowid = iRowid;
+}
+
+/*
 ** Commit data to disk.
 */
-int sqlite3Fts5IndexSync(Fts5Index *p){
-  sqlite3Fts5IndexFlush(p);
-  fts5CloseReader(p);
+int sqlite3Fts5IndexSync(Fts5Index *p, int bCommit){
+  fts5IndexFlush(p);
+  if( bCommit ) fts5CloseReader(p);
   return p->rc;
 }
 
@@ -3192,6 +3219,7 @@ int sqlite3Fts5IndexSync(Fts5Index *p){
 */
 int sqlite3Fts5IndexRollback(Fts5Index *p){
   fts5CloseReader(p);
+  fts5IndexDiscardData(p);
   return SQLITE_OK;
 }
 

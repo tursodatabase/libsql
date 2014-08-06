@@ -13,13 +13,51 @@
 ** This is an SQLite module implementing full-text search.
 */
 
+
 #include "fts5Int.h"
+
 
 typedef struct Fts5Table Fts5Table;
 typedef struct Fts5Cursor Fts5Cursor;
 typedef struct Fts5Global Fts5Global;
 typedef struct Fts5Auxiliary Fts5Auxiliary;
 typedef struct Fts5Auxdata Fts5Auxdata;
+
+/*
+** NOTES ON TRANSACTIONS: 
+**
+** SQLite invokes the following virtual table methods as transactions are 
+** opened and closed by the user:
+**
+**     xBegin():    Start of a new transaction.
+**     xSync():     Initial part of two-phase commit.
+**     xCommit():   Final part of two-phase commit.
+**     xRollback(): Rollback the transaction.
+**
+** Anything that is required as part of a commit that may fail is performed
+** in the xSync() callback. Current versions of SQLite ignore any errors 
+** returned by xCommit().
+**
+** And as sub-transactions are opened/closed:
+**
+**     xSavepoint(int S):  Open savepoint S.
+**     xRelease(int S):    Commit and close savepoint S.
+**     xRollbackTo(int S): Rollback to start of savepoint S.
+**
+** During a write-transaction the fts5_index.c module may cache some data 
+** in-memory. It is flushed to disk whenever xSync(), xRelease() or
+** xSavepoint() is called. And discarded whenever xRollback() or xRollbackTo() 
+** is called.
+**
+** Additionally, if SQLITE_DEBUG is defined, an instance of the following
+** structure is used to record the current transaction state. This information
+** is not required, but it is used in the assert() statements executed by
+** function fts5CheckTransactionState() (see below).
+*/
+struct Fts5TransactionState {
+  int eState;                     /* 0==closed, 1==open, 2==synced */
+  int iSavepoint;                 /* Number of open savepoints (0 -> none) */
+};
 
 /*
 ** A single object of this type is allocated when the FTS5 module is 
@@ -57,6 +95,9 @@ struct Fts5Table {
   Fts5Storage *pStorage;          /* Document store */
   Fts5Global *pGlobal;            /* Global (connection wide) data */
   Fts5Cursor *pSortCsr;           /* Sort data from this cursor */
+#ifdef SQLITE_DEBUG
+  struct Fts5TransactionState ts;
+#endif
 };
 
 struct Fts5MatchPhrase {
@@ -129,6 +170,64 @@ struct Fts5Auxdata {
   void(*xDelete)(void*);          /* Destructor */
   Fts5Auxdata *pNext;             /* Next object in linked list */
 };
+
+#ifdef SQLITE_DEBUG
+#define FTS5_BEGIN      1
+#define FTS5_SYNC       2
+#define FTS5_COMMIT     3
+#define FTS5_ROLLBACK   4
+#define FTS5_SAVEPOINT  5
+#define FTS5_RELEASE    6
+#define FTS5_ROLLBACKTO 7
+static void fts5CheckTransactionState(Fts5Table *p, int op, int iSavepoint){
+  switch( op ){
+    case FTS5_BEGIN:
+      assert( p->ts.eState==0 );
+      p->ts.eState = 1;
+      p->ts.iSavepoint = -1;
+      break;
+
+    case FTS5_SYNC:
+      assert( p->ts.eState==1 );
+      p->ts.eState = 2;
+      break;
+
+    case FTS5_COMMIT:
+      assert( p->ts.eState==2 );
+      p->ts.eState = 0;
+      break;
+
+    case FTS5_ROLLBACK:
+      assert( p->ts.eState==1 || p->ts.eState==2 );
+      p->ts.eState = 0;
+      break;
+
+    case FTS5_SAVEPOINT:
+      assert( p->ts.eState==1 );
+      assert( iSavepoint>=0 );
+      assert( iSavepoint>p->ts.iSavepoint );
+      p->ts.iSavepoint = iSavepoint;
+      break;
+      
+    case FTS5_RELEASE:
+      assert( p->ts.eState==1 );
+      assert( iSavepoint>=0 );
+      assert( iSavepoint<=p->ts.iSavepoint );
+      p->ts.iSavepoint = iSavepoint-1;
+      break;
+
+    case FTS5_ROLLBACKTO:
+      assert( p->ts.eState==1 );
+      assert( iSavepoint>=0 );
+      assert( iSavepoint<=p->ts.iSavepoint );
+      p->ts.iSavepoint = iSavepoint;
+      break;
+  }
+}
+#else
+# define fts5CheckTransactionState(x,y,z)
+#endif
+
 
 /*
 ** Close a virtual table handle opened by fts5InitVtab(). If the bDestroy
@@ -222,6 +321,8 @@ static int fts5InitVtab(
   if( rc!=SQLITE_OK ){
     fts5FreeVtab(pTab, 0);
     pTab = 0;
+  }else if( bCreate ){
+    fts5CheckTransactionState(pTab, FTS5_BEGIN, 0);
   }
   *ppVTab = (sqlite3_vtab*)pTab;
   return rc;
@@ -793,6 +894,9 @@ static int fts5UpdateMethod(
   int eConflict;                  /* ON CONFLICT for this DML */
   int rc = SQLITE_OK;             /* Return code */
 
+  /* A transaction must be open when this is called. */
+  assert( pTab->ts.eState==1 );
+
   /* A delete specifies a single argument - the rowid of the row to remove.
   ** Update and insert operations pass:
   **
@@ -829,7 +933,8 @@ static int fts5UpdateMethod(
 static int fts5SyncMethod(sqlite3_vtab *pVtab){
   int rc;
   Fts5Table *pTab = (Fts5Table*)pVtab;
-  rc = sqlite3Fts5IndexSync(pTab->pIndex);
+  fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
+  rc = sqlite3Fts5IndexSync(pTab->pIndex, 1);
   return rc;
 }
 
@@ -837,6 +942,7 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. 
 */
 static int fts5BeginMethod(sqlite3_vtab *pVtab){
+  fts5CheckTransactionState((Fts5Table*)pVtab, FTS5_BEGIN, 0);
   return SQLITE_OK;
 }
 
@@ -846,6 +952,7 @@ static int fts5BeginMethod(sqlite3_vtab *pVtab){
 ** by fts5SyncMethod().
 */
 static int fts5CommitMethod(sqlite3_vtab *pVtab){
+  fts5CheckTransactionState((Fts5Table*)pVtab, FTS5_COMMIT, 0);
   return SQLITE_OK;
 }
 
@@ -854,8 +961,9 @@ static int fts5CommitMethod(sqlite3_vtab *pVtab){
 ** hash-table. Any changes made to the database are reverted by SQLite.
 */
 static int fts5RollbackMethod(sqlite3_vtab *pVtab){
-  Fts5Table *pTab = (Fts5Table*)pVtab;
   int rc;
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  fts5CheckTransactionState(pTab, FTS5_ROLLBACK, 0);
   rc = sqlite3Fts5IndexRollback(pTab->pIndex);
   return rc;
 }
@@ -1243,8 +1351,9 @@ static int fts5RenameMethod(
 ** Flush the contents of the pending-terms table to disk.
 */
 static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  int rc = SQLITE_OK;
-  return rc;
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
+  return sqlite3Fts5IndexSync(pTab->pIndex, 0);
 }
 
 /*
@@ -1253,7 +1362,9 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 ** This is a no-op.
 */
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  return SQLITE_OK;
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
+  return sqlite3Fts5IndexSync(pTab->pIndex, 0);
 }
 
 /*
@@ -1262,7 +1373,9 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 ** Discard the contents of the pending terms table.
 */
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
-  return SQLITE_OK;
+  Fts5Table *pTab = (Fts5Table*)pVtab;
+  fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
+  return sqlite3Fts5IndexRollback(pTab->pIndex);
 }
 
 /*

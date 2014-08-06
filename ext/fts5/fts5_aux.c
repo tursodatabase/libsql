@@ -745,9 +745,10 @@ static void fts5TestFunction(
   memset(&s, 0, sizeof(Fts5Buffer));
   nCol = pApi->xColumnCount(pFts);
 
-  if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, "columntotalsize ");
-  }
+  /*
+  ** xColumnTotalSize()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "columntotalsize ");
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columntotalsize") ){
     if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "{");
     for(i=0; rc==SQLITE_OK && i<nCol; i++){
@@ -758,16 +759,19 @@ static void fts5TestFunction(
     if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "}");
   }
 
-  if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " columncount ");
-  }
+  /*
+  ** xColumnCount()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " columncount ");
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columncount") ){
+    nCol = pApi->xColumnCount(pFts);
     sqlite3Fts5BufferAppendPrintf(&rc, &s, "%d", nCol);
   }
 
-  if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " columnsize ");
-  }
+  /*
+  ** xColumnSize()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " columnsize ");
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columnsize") ){
     if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "{");
     for(i=0; rc==SQLITE_OK && i<nCol; i++){
@@ -778,9 +782,10 @@ static void fts5TestFunction(
     if( zReq==0 && nCol>1 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, "}");
   }
 
-  if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " columntext ");
-  }
+  /*
+  ** xColumnText()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " columntext ");
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "columntext") ){
     for(i=0; rc==SQLITE_OK && i<nCol; i++){
       const char *z;
@@ -791,17 +796,19 @@ static void fts5TestFunction(
     }
   }
 
-  if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " phrasecount ");
-  }
+  /*
+  ** xPhraseCount()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " phrasecount ");
   nPhrase = pApi->xPhraseCount(pFts);
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "phrasecount") ){
     sqlite3Fts5BufferAppendPrintf(&rc, &s, "%d", nPhrase);
   }
 
-  if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " phrasesize ");
-  }
+  /*
+  ** xPhraseSize()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " phrasesize ");
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "phrasesize") ){
     if( nPhrase==1 ){
       int nSize = pApi->xPhraseSize(pFts, 0);
@@ -816,14 +823,14 @@ static void fts5TestFunction(
     }
   }
 
-  if( zReq==0 ){
-    sqlite3Fts5BufferAppendPrintf(&rc, &s, " poslist ");
-  }
+  /*
+  ** xPoslist()
+  */
+  if( zReq==0 ) sqlite3Fts5BufferAppendPrintf(&rc, &s, " poslist ");
   if( 0==zReq || 0==sqlite3_stricmp(zReq, "poslist") ){
     int bParen = 0;
     Fts5Buffer s3;
     memset(&s3, 0, sizeof(s3));
-
 
     for(i=0; i<nPhrase; i++){
       Fts5Buffer s2;                  /* List of positions for phrase/column */
