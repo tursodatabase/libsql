@@ -90,7 +90,7 @@ extern int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefaul
 ** THIS ROUTINE IS NOT THREADSAFE.  Call this routine exactly once while
 ** shutting down in order to free all remaining multiplex groups.
 */
-extern int sqlite3_multiplex_shutdown(void);
+extern int sqlite3_multiplex_shutdown(int eForce);
 
 #ifdef __cplusplus
 }  /* End of the 'extern "C"' block */
