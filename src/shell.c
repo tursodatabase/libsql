@@ -3126,7 +3126,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
    && (strncmp(azArg[0], "shell", n)==0 || strncmp(azArg[0],"system",n)==0)
   ){
     char *zCmd;
-    int i;
+    int i, x;
     if( nArg<2 ){
       fprintf(stderr, "Usage: .system COMMAND\n");
       rc = 1;
@@ -3137,8 +3137,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       zCmd = sqlite3_mprintf(strchr(azArg[i],' ')==0?"%z %s":"%z \"%s\"",
                              zCmd, azArg[i]);
     }
-    (void)system(zCmd);
+    x = system(zCmd);
     sqlite3_free(zCmd);
+    if( x ) fprintf(stderr, "System command returns %d\n", x);
   }else
 
   if( c=='s' && strncmp(azArg[0], "show", n)==0 ){

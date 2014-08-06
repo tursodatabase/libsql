@@ -1,5 +1,5 @@
-C Fix\san\sobsolete\scomment\sin\sthe\sfunc.c\ssource\sfile.\s\sNo\schanges\sto\scode.
-D 2014-08-06T11:58:40.249
+C Fix\sharmless\scompiler\swarnings.\s\sIn\sthe\scommand-line\sshell,\sreport\sif\sthe\n".system"\scommand\sreturns\sa\snon-zero\sresult.
+D 2014-08-06T14:36:53.910
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c bbf7f993843fc3fc496089747f6849272d77e824
+F src/main.c 6bc7cd1b896a47f2803f69a56737191abf76918a
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 1529c49075464c5a95fde77314073612b1b8d595
-F src/shell.c 191129c3f7a9cf241aea90ff6a6be3e74d3767f0
+F src/shell.c 4af71e7f25af6da6debda87dcbd6be37da710916
 F src/sqlite.h.in 9bbc5815c73b0e77e68b5275481a5e3e7814a804
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1185,8 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ab1a751e1304749bef5bc5c833f9abed8950f7d0
-Q +7a145c9409e70b92946534eb44c2e205f7309897
-R c5d9492d210d0878e8d4fad26b1bb9f1
+P 5c6bb57d90bad32785d6d9cdf110a825bbc5ec73
+R 70e92229f0d1d2ca5063839c778d94a2
 U drh
-Z c0ef6bc5c4f2711fca6f4933f6dbf08d
+Z 832222a1addbce429c4a8001874a3f39
