@@ -1,5 +1,5 @@
-C Fix\san\sobsolete\scomment\sin\sthe\sfunc.c\ssource\sfile.\s\sNo\schanges\sto\scode.
-D 2014-08-06T11:49:31.740
+C Merge\sthe\ssecond\sInterlockedCompareExchange()\sfix\sfrom\strunk.
+D 2014-08-06T12:00:08.042
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 639859a6f81bd15921ccd56ddbd6dfd335278377
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -222,7 +222,7 @@ F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c a7baf1b30f3c58ba20b813e01aab23b18ae44f85
-F src/os_win.c dddffe56dd21fd3687eaec36e01499988918a4fb
+F src/os_win.c 3fca1bfdf78338705bf536059a407d0fb04016d5
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1200,7 +1200,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 091aa5f1047f0ec984a69ab1f356c1960813b77b
-R f8322f66146340bee955eb1bc05e0bbb
+P 7a145c9409e70b92946534eb44c2e205f7309897 5c6bb57d90bad32785d6d9cdf110a825bbc5ec73
+R f7c4de536b9a92bc8dd6b703c04d01eb
 U drh
-Z 2907f648c6e2ceca10c49409542f13ae
+Z cae7acdddd6dd26c0313d812b71090a2
