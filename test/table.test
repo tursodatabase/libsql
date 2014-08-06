@@ -726,4 +726,51 @@ do_test table-15.2 {
   execsql {COMMIT}
 } {}
 
+# Ticket 3a88d85f36704eebe134f7f48aebf00cd6438c1a (2014-08-05)
+# The following SQL script segfaults while running the INSERT statement:
+#
+#    CREATE TABLE t1(x DEFAULT(max(1)));
+#    INSERT INTO t1(rowid) VALUES(1);
+#
+# The problem appears to be the use of an aggregate function as part of
+# the default value for a column. This problem has been in the code since
+# at least 2006-01-01 and probably before that. This problem was detected
+# and reported on the sqlite-users@sqlite.org mailing list by Zsbán Ambrus. 
+#
+do_execsql_test table-16.1 {
+  CREATE TABLE t16(x DEFAULT(max(1)));
+  INSERT INTO t16(x) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 123}
+do_catchsql_test table-16.2 {
+  INSERT INTO t16(rowid) VALUES(4);
+} {1 {unknown function: max()}}
+do_execsql_test table-16.3 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(abs(1)));
+  INSERT INTO t16(rowid) VALUES(4);
+  SELECT rowid, x FROM t16;
+} {4 1}
+do_catchsql_test table-16.4 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(avg(1)));
+  INSERT INTO t16(rowid) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 {unknown function: avg()}}
+do_catchsql_test table-16.5 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(count()));
+  INSERT INTO t16(rowid) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 {unknown function: count()}}
+do_catchsql_test table-16.6 {
+  DROP TABLE t16;
+  CREATE TABLE t16(x DEFAULT(group_concat('x',',')));
+  INSERT INTO t16(rowid) VALUES(123);
+  SELECT rowid, x FROM t16;
+} {1 {unknown function: group_concat()}}
+do_catchsql_test table-16.7 {
+  INSERT INTO t16 DEFAULT VALUES;
+} {1 {unknown function: group_concat()}}
+
 finish_test

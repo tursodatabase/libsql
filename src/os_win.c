@@ -414,10 +414,9 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 ** can manually set this value to 1 to emulate Win98 behavior.
 */
 #ifdef SQLITE_TEST
-int sqlite3_os_type = 0;
-#elif !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && \
-      defined(SQLITE_WIN32_HAS_ANSI) && defined(SQLITE_WIN32_HAS_WIDE)
-static int sqlite3_os_type = 0;
+LONG volatile sqlite3_os_type = 0;
+#else
+static LONG volatile sqlite3_os_type = 0;
 #endif
 
 #ifndef SYSCALL
@@ -1048,6 +1047,11 @@ static struct win_syscall {
 #define osCreateFileMappingFromApp ((HANDLE(WINAPI*)(HANDLE, \
         LPSECURITY_ATTRIBUTES,ULONG,ULONG64,LPCWSTR))aSyscall[75].pCurrent)
 
+  { "InterlockedCompareExchange", (SYSCALL)InterlockedCompareExchange, 0 },
+
+#define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG volatile*, \
+        LONG,LONG))aSyscall[76].pCurrent)
+
 }; /* End of the overrideable system calls */
 
 /*
@@ -1298,7 +1302,7 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 #elif !defined(SQLITE_WIN32_HAS_WIDE)
 # define osIsNT()  (0)
 #else
-# define osIsNT()  (sqlite3_win32_is_nt())
+# define osIsNT()  ((sqlite3_os_type==2) || sqlite3_win32_is_nt())
 #endif
 
 /*
@@ -1306,7 +1310,7 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 ** based on the NT kernel.
 */
 int sqlite3_win32_is_nt(void){
-  if( sqlite3_os_type==0 ){
+  if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
 #if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WIN8
     OSVERSIONINFOW sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
@@ -1316,9 +1320,10 @@ int sqlite3_win32_is_nt(void){
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     osGetVersionExA(&sInfo);
 #endif
-    sqlite3_os_type = (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1;
+    osInterlockedCompareExchange(&sqlite3_os_type,
+        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
   }
-  return (sqlite3_os_type == 2);
+  return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
 }
 
 #ifdef SQLITE_WIN32_MALLOC
@@ -5484,7 +5489,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==76 );
+  assert( ArraySize(aSyscall)==77 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));

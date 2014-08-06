@@ -886,7 +886,7 @@ struct Schema {
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
   u8 file_format;      /* Schema format version for this file */
   u8 enc;              /* Text encoding used by this database */
-  u16 flags;           /* Flags associated with this schema */
+  u16 schemaFlags;     /* Flags associated with this schema */
   int cache_size;      /* Number of pages to use in the cache */
 };
 
@@ -894,10 +894,10 @@ struct Schema {
 ** These macros can be used to test, set, or clear bits in the 
 ** Db.pSchema->flags field.
 */
-#define DbHasProperty(D,I,P)     (((D)->aDb[I].pSchema->flags&(P))==(P))
-#define DbHasAnyProperty(D,I,P)  (((D)->aDb[I].pSchema->flags&(P))!=0)
-#define DbSetProperty(D,I,P)     (D)->aDb[I].pSchema->flags|=(P)
-#define DbClearProperty(D,I,P)   (D)->aDb[I].pSchema->flags&=~(P)
+#define DbHasProperty(D,I,P)     (((D)->aDb[I].pSchema->schemaFlags&(P))==(P))
+#define DbHasAnyProperty(D,I,P)  (((D)->aDb[I].pSchema->schemaFlags&(P))!=0)
+#define DbSetProperty(D,I,P)     (D)->aDb[I].pSchema->schemaFlags|=(P)
+#define DbClearProperty(D,I,P)   (D)->aDb[I].pSchema->schemaFlags&=~(P)
 
 /*
 ** Allowed values for the DB.pSchema->flags field.
@@ -1729,6 +1729,9 @@ struct Index {
 
 /* Return true if index X is a PRIMARY KEY index */
 #define IsPrimaryKeyIndex(X)  ((X)->idxType==SQLITE_IDXTYPE_PRIMARYKEY)
+
+/* Return true if index X is a UNIQUE index */
+#define IsUniqueIndex(X)      ((X)->onError!=OE_None)
 
 /*
 ** Each sample stored in the sqlite_stat3 table is represented in memory 
@@ -3598,11 +3601,21 @@ const char *sqlite3JournalModename(int);
   #define sqlite3EndBenignMalloc()
 #endif
 
-#define IN_INDEX_ROWID           1
-#define IN_INDEX_EPH             2
-#define IN_INDEX_INDEX_ASC       3
-#define IN_INDEX_INDEX_DESC      4
-int sqlite3FindInIndex(Parse *, Expr *, int*);
+/*
+** Allowed return values from sqlite3FindInIndex()
+*/
+#define IN_INDEX_ROWID        1   /* Search the rowid of the table */
+#define IN_INDEX_EPH          2   /* Search an ephemeral b-tree */
+#define IN_INDEX_INDEX_ASC    3   /* Existing index ASCENDING */
+#define IN_INDEX_INDEX_DESC   4   /* Existing index DESCENDING */
+#define IN_INDEX_NOOP         5   /* No table available. Use comparisons */
+/*
+** Allowed flags for the 3rd parameter to sqlite3FindInIndex().
+*/
+#define IN_INDEX_NOOP_OK     0x0001  /* OK to return IN_INDEX_NOOP */
+#define IN_INDEX_MEMBERSHIP  0x0002  /* IN operator used for membership test */
+#define IN_INDEX_LOOP        0x0004  /* IN operator used as a loop */
+int sqlite3FindInIndex(Parse *, Expr *, u32, int*);
 
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   int sqlite3JournalOpen(sqlite3_vfs *, const char *, sqlite3_file *, int, int);

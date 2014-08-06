@@ -116,6 +116,12 @@ int sqlite3_found_count = 0;
 ** branch can go.  It is usually 2.  "I" is the direction the branch
 ** goes.  0 means falls through.  1 means branch is taken.  2 means the
 ** second alternative branch is taken.
+**
+** iSrcLine is the source code line (from the __LINE__ macro) that
+** generated the VDBE instruction.  This instrumentation assumes that all
+** source code is in a single file (the amalgamation).  Special values 1
+** and 2 for the iSrcLine parameter mean that this particular branch is
+** always taken or never taken, respectively.
 */
 #if !defined(SQLITE_VDBE_COVERAGE)
 # define VdbeBranchTaken(I,M)
@@ -790,7 +796,7 @@ case OP_InitCoroutine: {     /* jump */
 
 /* Opcode:  EndCoroutine P1 * * * *
 **
-** The instruction at the address in register P1 is an Yield.
+** The instruction at the address in register P1 is a Yield.
 ** Jump to the P2 parameter of that Yield.
 ** After the jump, register P1 becomes undefined.
 **
@@ -983,7 +989,7 @@ case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
 ** Synopsis: r[P2]='P4'
 **
 ** P4 points to a nul terminated UTF-8 string. This opcode is transformed 
-** into an OP_String before it is executed for the first time.  During
+** into a String before it is executed for the first time.  During
 ** this transformation, the length of string P4 is computed and stored
 ** as the P1 parameter.
 */
@@ -2229,13 +2235,13 @@ case OP_Once: {             /* jump */
 **
 ** Jump to P2 if the value in register P1 is true.  The value
 ** is considered true if it is numeric and non-zero.  If the value
-** in P1 is NULL then take the jump if P3 is non-zero.
+** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
 /* Opcode: IfNot P1 P2 P3 * *
 **
 ** Jump to P2 if the value in register P1 is False.  The value
 ** is considered false if it has a numeric value of zero.  If the value
-** in P1 is NULL then take the jump if P3 is zero.
+** in P1 is NULL then take the jump if and only if P3 is non-zero.
 */
 case OP_If:                 /* jump, in1 */
 case OP_IfNot: {            /* jump, in1 */
@@ -3507,7 +3513,7 @@ case OP_Close: {
 ** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
 ** This opcode leaves the cursor configured to move in forward order,
-** from the begining toward the end.  In other words, the cursor is
+** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 **
 ** See also: Found, NotFound, SeekLt, SeekGt, SeekLe
@@ -3747,9 +3753,9 @@ case OP_Seek: {    /* in2 */
 ** is a prefix of any entry in P1 then a jump is made to P2 and
 ** P1 is left pointing at the matching entry.
 **
-** This operation leaves the cursor in a state where it cannot be
-** advanced in either direction.  In other words, the Next and Prev
-** opcodes do not work after this operation.
+** This operation leaves the cursor in a state where it can be
+** advanced in the forward direction.  The Next instruction will work,
+** but not the Prev instruction.
 **
 ** See also: NotFound, NoConflict, NotExists. SeekGe
 */
@@ -3816,7 +3822,7 @@ case OP_Found: {        /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
 #ifdef SQLITE_DEBUG
-  pC->seekOp = 0;
+  pC->seekOp = pOp->opcode;
 #endif
   pIn3 = &aMem[pOp->p3];
   assert( pC->pCursor!=0 );
@@ -4211,7 +4217,7 @@ case OP_InsertInt: {
 ** The cursor will be left pointing at either the next or the previous
 ** record in the table. If it is left pointing at the next record, then
 ** the next Next instruction will be a no-op.  Hence it is OK to delete
-** a record from within an Next loop.
+** a record from within a Next loop.
 **
 ** If the OPFLAG_NCHANGE flag of P2 is set, then the row change count is
 ** incremented (otherwise not).
@@ -4274,7 +4280,7 @@ case OP_ResetCount: {
 ** Synopsis:  if key(P1)!=trim(r[P3],P4) goto P2
 **
 ** P1 is a sorter cursor. This instruction compares a prefix of the
-** the record blob in register P3 against a prefix of the entry that 
+** record blob in register P3 against a prefix of the entry that 
 ** the sorter cursor currently points to.  Only the first P4 fields
 ** of r[P3] and the sorter record are compared.
 **
@@ -4673,7 +4679,7 @@ case OP_Next:          /* jump */
   ** The Prev opcode is only used after SeekLT, SeekLE, and Last. */
   assert( pOp->opcode!=OP_Next || pOp->opcode!=OP_NextIfOpen
        || pC->seekOp==OP_SeekGT || pC->seekOp==OP_SeekGE
-       || pC->seekOp==OP_Rewind );
+       || pC->seekOp==OP_Rewind || pC->seekOp==OP_Found);
   assert( pOp->opcode!=OP_Prev || pOp->opcode!=OP_PrevIfOpen
        || pC->seekOp==OP_SeekLT || pC->seekOp==OP_SeekLE
        || pC->seekOp==OP_Last );
@@ -5600,17 +5606,16 @@ case OP_IfPos: {        /* jump, in1 */
   break;
 }
 
-/* Opcode: IfNeg P1 P2 * * *
-** Synopsis: if r[P1]<0 goto P2
+/* Opcode: IfNeg P1 P2 P3 * *
+** Synopsis: r[P1]+=P3, if r[P1]<0 goto P2
 **
-** If the value of register P1 is less than zero, jump to P2. 
-**
-** It is illegal to use this instruction on a register that does
-** not contain an integer.  An assertion fault will result if you try.
+** Register P1 must contain an integer.  Add literal P3 to the value in
+** register P1 then if the value of register P1 is less than zero, jump to P2. 
 */
 case OP_IfNeg: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];
   assert( pIn1->flags&MEM_Int );
+  pIn1->u.i += pOp->p3;
   VdbeBranchTaken(pIn1->u.i<0, 2);
   if( pIn1->u.i<0 ){
      pc = pOp->p2 - 1;
@@ -5623,9 +5628,6 @@ case OP_IfNeg: {        /* jump, in1 */
 **
 ** The register P1 must contain an integer.  Add literal P3 to the
 ** value in register P1.  If the result is exactly 0, jump to P2. 
-**
-** It is illegal to use this instruction on a register that does
-** not contain an integer.  An assertion fault will result if you try.
 */
 case OP_IfZero: {        /* jump, in1 */
   pIn1 = &aMem[pOp->p1];

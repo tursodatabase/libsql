@@ -1176,14 +1176,20 @@ int sqlite3_multiplex_initialize(const char *zOrigVfsName, int makeDefault){
 ** THIS ROUTINE IS NOT THREADSAFE.  Call this routine exactly once while
 ** shutting down in order to free all remaining multiplex groups.
 */
-int sqlite3_multiplex_shutdown(void){
+int sqlite3_multiplex_shutdown(int eForce){
+  int rc = SQLITE_OK;
   if( gMultiplex.isInitialized==0 ) return SQLITE_MISUSE;
-  if( gMultiplex.pGroups ) return SQLITE_MISUSE;
+  if( gMultiplex.pGroups ){
+    sqlite3_log(SQLITE_MISUSE, "sqlite3_multiplex_shutdown() called "
+                "while database connections are still open");
+    if( !eForce ) return SQLITE_MISUSE;
+    rc = SQLITE_MISUSE;
+  }
   gMultiplex.isInitialized = 0;
   sqlite3_mutex_free(gMultiplex.pMutex);
   sqlite3_vfs_unregister(&gMultiplex.sThisVfs);
   memset(&gMultiplex, 0, sizeof(gMultiplex));
-  return SQLITE_OK;
+  return rc;
 }
 
 /***************************** Test Code ***********************************/
@@ -1236,13 +1242,16 @@ static int test_multiplex_shutdown(
 
   UNUSED_PARAMETER(clientData);
 
-  if( objc!=1 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "");
+  if( objc==2 && strcmp(Tcl_GetString(objv[1]),"-force")!=0 ){
+    objc = 3;
+  }
+  if( (objc!=1 && objc!=2) ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-force?");
     return TCL_ERROR;
   }
 
   /* Call sqlite3_multiplex_shutdown() */
-  rc = sqlite3_multiplex_shutdown();
+  rc = sqlite3_multiplex_shutdown(objc==2);
   Tcl_SetResult(interp, (char *)sqlite3ErrName(rc), TCL_STATIC);
 
   return TCL_OK;

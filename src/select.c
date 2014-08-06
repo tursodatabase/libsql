@@ -541,8 +541,7 @@ static void codeOffset(
 ){
   if( iOffset>0 ){
     int addr;
-    sqlite3VdbeAddOp2(v, OP_AddImm, iOffset, -1);
-    addr = sqlite3VdbeAddOp1(v, OP_IfNeg, iOffset); VdbeCoverage(v);
+    addr = sqlite3VdbeAddOp3(v, OP_IfNeg, iOffset, 0, -1); VdbeCoverage(v);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iContinue);
     VdbeComment((v, "skip OFFSET records"));
     sqlite3VdbeJumpHere(v, addr);

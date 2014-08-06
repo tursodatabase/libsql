@@ -231,11 +231,11 @@ do_execsql_test in4-3.44 {
   SELECT * FROM t3 WHERE x IN (10);
 } {~/OpenEphemeral/}
 do_execsql_test in4-3.45 {
-  SELECT * FROM t3 WHERE x NOT IN (10,11);
+  SELECT * FROM t3 WHERE x NOT IN (10,11,99999);
 } {1 1 1}
 do_execsql_test in4-3.46 {
   EXPLAIN
-  SELECT * FROM t3 WHERE x NOT IN (10,11);
+  SELECT * FROM t3 WHERE x NOT IN (10,11,99999);
 } {/OpenEphemeral/}
 do_execsql_test in4-3.47 {
   SELECT * FROM t3 WHERE x NOT IN (10);

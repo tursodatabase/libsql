@@ -6780,7 +6780,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_pager_writedb_count;
   extern int sqlite3_pager_writej_count;
 #if SQLITE_OS_WIN
-  extern int sqlite3_os_type;
+  extern LONG volatile sqlite3_os_type;
 #endif
 #ifdef SQLITE_DEBUG
   extern int sqlite3WhereTrace;
@@ -6838,7 +6838,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #endif
 #if SQLITE_OS_WIN
   Tcl_LinkVar(interp, "sqlite_os_type",
-      (char*)&sqlite3_os_type, TCL_LINK_INT);
+      (char*)&sqlite3_os_type, TCL_LINK_LONG);
 #endif
 #ifdef SQLITE_TEST
   {
