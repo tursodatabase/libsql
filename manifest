@@ -1,5 +1,5 @@
-C Fix\stwo\smore\sharmless\scompiler\swarnings.\s\sMake\ssure\sthe\sfts3_unicode2.c\sfile\nis\sin\ssync\swith\smkunicode.tcl.
-D 2014-08-06T17:49:13.360
+C A\scouple\smore\sharmless\scompiler\swarnings\seliminated.
+D 2014-08-06T18:50:51.299
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -95,14 +95,14 @@ F ext/fts3/fts3_tokenizer.c bbdc731bc91338050675c6d1da9ab82147391e16
 F ext/fts3/fts3_tokenizer.h 64c6ef6c5272c51ebe60fc607a896e84288fcbc3
 F ext/fts3/fts3_tokenizer1.c 5c98225a53705e5ee34824087478cf477bdb7004
 F ext/fts3/fts3_unicode.c e80eef8a11f2020dc9c1eb95c5b405b9012f2fbe
-F ext/fts3/fts3_unicode2.c b81e5f0f7991e5f706544f7f7a9931c491f8ac07
+F ext/fts3/fts3_unicode2.c c3d01968d497bd7001e7dc774ba75b372738c057
 F ext/fts3/fts3_write.c 8260388626516a7005d06a9dce94f9e55c6c2a41
 F ext/fts3/fts3speed.tcl b54caf6a18d38174f1a6e84219950d85e98bb1e9
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/fts3/tool/fts3view.c 3986531f2fc0ceca0c89c31ec7d0589b6adb19d6
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
-F ext/fts3/unicode/mkunicode.tcl ddeb6629fbcd5eb9b55f8999dbad5e4c63e5dd5a
+F ext/fts3/unicode/mkunicode.tcl a2567f9d6ad6779879a2e394c120ad8718557e65
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1202e9771f6d699dbf5268368108a3527d06d799
-R d4b78aa6bcc5216879daa10572b102f7
+P a2a60307ea68a3230952a56cb65369ba0a208967
+R 1442001d079992194e2cf55642b869fa
 U drh
-Z 6c4725b3b555727ccd6e011265bbf365
+Z bb5786216c21ae2a69b537cdb50bf939
