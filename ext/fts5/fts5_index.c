@@ -640,7 +640,7 @@ static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
       sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "(averages) ");
     }else{
       sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
-          "(structure idx=%d)", (int)(iKey-10)
+          "{structure idx=%d}", (int)(iKey-10)
       );
     }
   }
@@ -1066,6 +1066,7 @@ static void fts5StructureWrite(Fts5Index *p, int iIdx, Fts5Structure *pStruct){
     Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
     fts5BufferAppendVarint(&p->rc, &buf, pLvl->nMerge);
     fts5BufferAppendVarint(&p->rc, &buf, pLvl->nSeg);
+    assert( pLvl->nMerge<=pLvl->nSeg );
 
     for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
       fts5BufferAppendVarint(&p->rc, &buf, pLvl->aSeg[iSeg].iSegid);
@@ -1228,7 +1229,9 @@ static int fts5DlidxIterPrev(Fts5DlidxIter *pIter){
     pIter->iRowid += iVal;
     pIter->iLeafPgno--;
 
-    while( a[iOff-1]==0x00 ){
+    while( iOff>pIter->iFirstOff 
+        && a[iOff-1]==0x00 && (a[iOff-2] & 0x80)==0 
+    ){
       iOff--;
       pIter->iLeafPgno--;
     }
@@ -2835,19 +2838,26 @@ static void fts5WriteFinish(
 ){
   int i;
   *pnLeaf = pWriter->aWriter[0].pgno;
-  fts5WriteFlushLeaf(p, pWriter);
-  if( pWriter->nWriter==1 && pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
-    fts5WriteBtreeGrow(p, pWriter);
-  }
-  if( pWriter->nWriter>1 ){
-    fts5WriteBtreeNEmpty(p, pWriter);
-  }
-  *pnHeight = pWriter->nWriter;
+  if( *pnLeaf==1 && pWriter->aWriter[0].buf.n==0 ){
+    *pnLeaf = 0;
+    *pnHeight = 0;
+  }else{
+    fts5WriteFlushLeaf(p, pWriter);
+    if( pWriter->nWriter==1 && pWriter->nEmpty>=FTS5_MIN_DLIDX_SIZE ){
+      fts5WriteBtreeGrow(p, pWriter);
+    }
+    if( pWriter->nWriter>1 ){
+      fts5WriteBtreeNEmpty(p, pWriter);
+    }
+    *pnHeight = pWriter->nWriter;
 
-  for(i=1; i<pWriter->nWriter; i++){
-    Fts5PageWriter *pPg = &pWriter->aWriter[i];
-    i64 iRow = FTS5_SEGMENT_ROWID(pWriter->iIdx, pWriter->iSegid, i, pPg->pgno);
-    fts5DataWrite(p, iRow, pPg->buf.p, pPg->buf.n);
+    for(i=1; i<pWriter->nWriter; i++){
+      Fts5PageWriter *pPg = &pWriter->aWriter[i];
+      fts5DataWrite(p, 
+          FTS5_SEGMENT_ROWID(pWriter->iIdx, pWriter->iSegid, i, pPg->pgno), 
+          pPg->buf.p, pPg->buf.n
+      );
+    }
   }
   for(i=0; i<pWriter->nWriter; i++){
     Fts5PageWriter *pPg = &pWriter->aWriter[i];
@@ -2970,7 +2980,8 @@ static void fts5IndexMergeLevel(
   Fts5SegWriter writer;           /* Writer object */
   Fts5StructureSegment *pSeg;     /* Output segment */
   Fts5Buffer term;
-  int bRequireDoclistTerm = 0;
+  int bRequireDoclistTerm = 0;    /* Doclist terminator (0x00) required */
+  int bOldest;                    /* True if the output segment is the oldest */
 
   assert( iLvl<pStruct->nLevel );
   assert( pLvl->nMerge<=pLvl->nSeg );
@@ -2997,6 +3008,8 @@ static void fts5IndexMergeLevel(
     /* Read input from all segments in the input level */
     nInput = pLvl->nSeg;
   }
+  bOldest = (pLvlOut->nSeg==1 && pStruct->nLevel==iLvl+2);
+
 #if 0
 fprintf(stdout, "merging %d segments from level %d!", nInput, iLvl);
 fflush(stdout);
@@ -3008,35 +3021,45 @@ fflush(stdout);
   ){
     Fts5SegIter *pSeg = &pIter->aSeg[ pIter->aFirst[1] ];
     Fts5ChunkIter sPos;           /* Used to iterate through position list */
-    int nTerm;
-    const u8 *pTerm = fts5MultiIterTerm(pIter, &nTerm);
 
-    if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
-      if( writer.nLeafWritten>nRem ) break;
-
-      /* This is a new term. Append a term to the output segment. */
-      if( bRequireDoclistTerm ){
-        fts5WriteAppendZerobyte(p, &writer);
-      }
-      fts5WriteAppendTerm(p, &writer, nTerm, pTerm);
-      fts5BufferSet(&p->rc, &term, nTerm, pTerm);
-      bRequireDoclistTerm = 1;
-    }
-
-    /* Append the rowid to the output */
-    fts5WriteAppendRowid(p, &writer, fts5MultiIterRowid(pIter));
-
-    /* Copy the position list from input to output */
+    /* If the segment being written is the oldest in the entire index and
+    ** the position list is empty (i.e. the entry is a delete marker), no
+    ** entry need be written to the output.  */
     fts5ChunkIterInit(p, pSeg, &sPos);
-    fts5WriteAppendPoslistInt(p, &writer, sPos.nRem);
-    for(/* noop */; fts5ChunkIterEof(p, &sPos)==0; fts5ChunkIterNext(p, &sPos)){
-      int iOff = 0;
-      while( iOff<sPos.n ){
-        int iVal;
-        iOff += getVarint32(&sPos.p[iOff], iVal);
-        fts5WriteAppendPoslistInt(p, &writer, iVal);
+    if( bOldest==0 || sPos.nRem>0 ){
+      int nTerm;
+      const u8 *pTerm = fts5MultiIterTerm(pIter, &nTerm);
+      if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
+        if( writer.nLeafWritten>nRem ){
+          fts5ChunkIterRelease(&sPos);
+          break;
+        }
+
+        /* This is a new term. Append a term to the output segment. */
+        if( bRequireDoclistTerm ){
+          fts5WriteAppendZerobyte(p, &writer);
+        }
+        fts5WriteAppendTerm(p, &writer, nTerm, pTerm);
+        fts5BufferSet(&p->rc, &term, nTerm, pTerm);
+        bRequireDoclistTerm = 1;
+      }
+
+      /* Append the rowid to the output */
+      fts5WriteAppendRowid(p, &writer, fts5MultiIterRowid(pIter));
+
+      /* Copy the position list from input to output */
+      fts5WriteAppendPoslistInt(p, &writer, sPos.nRem);
+      for(/* noop */; !fts5ChunkIterEof(p, &sPos); fts5ChunkIterNext(p, &sPos)){
+        int iOff = 0;
+        while( iOff<sPos.n ){
+          int iVal;
+          iOff += getVarint32(&sPos.p[iOff], iVal);
+          fts5WriteAppendPoslistInt(p, &writer, iVal);
+        }
       }
     }
+
+    fts5ChunkIterRelease(&sPos);
   }
 
   /* Flush the last leaf page to disk. Set the output segment b-tree height
@@ -3058,7 +3081,11 @@ fflush(stdout);
     }
     pLvl->nSeg -= nInput;
     pLvl->nMerge = 0;
+    if( pSeg->pgnoLast==0 ){
+      pLvlOut->nSeg--;
+    }
   }else{
+    assert( pSeg->nHeight>0 && pSeg->pgnoLast>0 );
     fts5TrimSegments(p, pIter);
     pLvl->nMerge = nInput;
   }
@@ -3095,10 +3122,11 @@ static void fts5IndexWork(
 
   while( nRem>0 ){
     int iLvl;                   /* To iterate through levels */
-    int iBestLvl = -1;          /* Level offering the most input segments */
+    int iBestLvl = 0;           /* Level offering the most input segments */
     int nBest = 0;              /* Number of input segments on best level */
 
     /* Set iBestLvl to the level to read input segments from. */
+    assert( pStruct->nLevel>0 );
     for(iLvl=0; iLvl<pStruct->nLevel; iLvl++){
       Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
       if( pLvl->nMerge ){
@@ -3113,7 +3141,13 @@ static void fts5IndexWork(
         iBestLvl = iLvl;
       }
     }
-    assert( iBestLvl>=0 && nBest>0 );
+
+    /* If nBest is still 0, then the index must be empty. */
+#ifdef SQLITE_DEBUG
+    for(iLvl=0; nBest==0 && iLvl<pStruct->nLevel; iLvl++){
+      assert( pStruct->aLevel[iLvl].nSeg==0 );
+    }
+#endif
 
     if( nBest<p->nMinMerge && pStruct->aLevel[iBestLvl].nMerge==0 ) break;
     fts5IndexMergeLevel(p, iIdx, pStruct, iBestLvl, &nRem);
@@ -3444,6 +3478,7 @@ static void fts5DlidxIterTestReverse(
       fts5DlidxIterEof(p, pDlidx)==0;
       fts5DlidxIterNext(pDlidx)
   ){
+    assert( pDlidx->iLeafPgno>iLeaf );
     cksum1 = (cksum1 ^ ( (i64)(pDlidx->iLeafPgno) << 32 ));
     cksum1 = (cksum1 ^ pDlidx->iRowid);
   }
@@ -3454,6 +3489,7 @@ static void fts5DlidxIterTestReverse(
       fts5DlidxIterEof(p, pDlidx)==0;
       fts5DlidxIterPrev(pDlidx)
   ){
+    assert( pDlidx->iLeafPgno>iLeaf );
     cksum2 = (cksum2 ^ ( (i64)(pDlidx->iLeafPgno) << 32 ));
     cksum2 = (cksum2 ^ pDlidx->iRowid);
   }

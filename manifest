@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\ssavepoints\sto\sfts5.
-D 2014-08-06T16:30:21.057
+C Avoid\swriting\sdelete\smarkers\sto\sthe\soldest\ssegment\sin\san\sFTS\sindex.
+D 2014-08-06T20:04:14.831
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5_aux.c 31e581413ecab0962ce2b37468f9f658f36f4b0e
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c 7b8e380233176053841904a86006696ee8f6cd24
-F ext/fts5/fts5_index.c 6a9f851490562d8843edc4d54b27eb9472c62d68
+F ext/fts5/fts5_index.c dab399c67cb6bdd23009d2f1280ea60a9585b47c
 F ext/fts5/fts5_storage.c 2866e7e1de9dc851756c3a9c76b6e1d75e0facb7
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -595,7 +595,7 @@ F test/fts4merge3.test aab02a09f50fe6baaddc2e159c3eabc116d45fc7
 F test/fts4merge4.test d895b1057a7798b67e03455d0fa50e9ea836c47b
 F test/fts4noti.test 524807f0c36d49deea7920cdd4cd687408b58849
 F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
-F test/fts5aa.test 2d136b61c4523ec018699e59b35c005313569b9e
+F test/fts5aa.test 4c7cbf1d38d30e7aaa8febf44958dd13bbb53bf8
 F test/fts5ab.test dc04ed48cf93ca957d174406e6c192f2ff4f3397
 F test/fts5ac.test 399533fe52b7383053368ab8ba01ae182391e5d7
 F test/fts5ad.test 2ed38bbc865678cb2905247120d02ebba7f20e07
@@ -604,6 +604,7 @@ F test/fts5af.test 9ebe23aa3875896076952c7bc6e8308813a63c74
 F test/fts5ag.test 0747bf3bade16d5165810cf891f875933b28b420
 F test/fts5ah.test 009b993a9b7ebc43f84c10e53bd778b1dc8ffbe7
 F test/fts5ai.test 4dee71c23ddbcf2b0fc5d5586f241002b883c10e
+F test/fts5aj.test d16f44bd1f7da9714ef99bd8b1996c5867aee8f5
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -771,7 +772,7 @@ F test/pagesize.test 1dd51367e752e742f58e861e65ed7390603827a0
 F test/pcache.test b09104b03160aca0d968d99e8cd2c5b1921a993d
 F test/pcache2.test a83efe2dec0d392f814bfc998def1d1833942025
 F test/percentile.test b98fc868d71eb5619d42a1702e9ab91718cbed54
-F test/permutations.test 9875e7bacd0ab0cf78525e4b2d287840f284599b
+F test/permutations.test 4f71bc5c9ce9a249cc94ad415cda809ce7f2360b
 F test/pragma.test adb21a90875bc54a880fa939c4d7c46598905aa0
 F test/pragma2.test aea7b3d82c76034a2df2b38a13745172ddc0bc13
 F test/printf.test ec9870c4dce8686a37818e0bf1aba6e6a1863552
@@ -1200,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 5d38e6edc40ef188fbf96505073797036aa6783a
-R e4475b88a5ed55985c58ff03d579a6b6
+P 3b19eba042bb2eeb1be60f8d58ebaa0a045d6a5c
+R 26f7f3d5f6581939b65c2ce6e063db0c
 U dan
-Z 1737719499cd3c712a0cb60804b1642b
+Z 78bed80e24eecafbae841451888b9b1c
