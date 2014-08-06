@@ -1050,16 +1050,9 @@ static struct win_syscall {
 /*
 ** NOTE: On some sub-platforms, the InterlockedCompareExchange "function"
 **       is really just a macro that uses a compiler intrinsic (e.g. x64).
+**       So do not try to make this is into a redefinable interface.
 */
-
-#if defined(InterlockedCompareExchange)
 #define osInterlockedCompareExchange InterlockedCompareExchange
-#else
-  { "InterlockedCompareExchange", (SYSCALL)InterlockedCompareExchange, 0 },
-
-#define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG volatile*, \
-        LONG,LONG))aSyscall[76].pCurrent)
-#endif /* defined(InterlockedCompareExchange) */
 
 }; /* End of the overrideable system calls */
 
@@ -5489,7 +5482,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==77 );
+  assert( ArraySize(aSyscall)==76 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
