@@ -39,7 +39,7 @@ int sqlite3FtsUnicodeIsalnum(int c){
   ** C. It is not possible to represent a range larger than 1023 codepoints 
   ** using this format.
   */
-  const static unsigned int aEntry[] = {
+  static const unsigned int aEntry[] = {
     0x00000030, 0x0000E807, 0x00016C06, 0x0001EC2F, 0x0002AC07,
     0x0002D001, 0x0002D803, 0x0002EC01, 0x0002FC01, 0x00035C01,
     0x0003DC01, 0x000B0804, 0x000B480E, 0x000B9407, 0x000BB401,

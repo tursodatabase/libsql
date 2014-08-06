@@ -3266,7 +3266,7 @@ case OP_ReopenIdx: {
   assert( pOp->p5==0 );
   assert( pOp->p4type==P4_KEYINFO );
   pCur = p->apCsr[pOp->p1];
-  if( pCur && pCur->pgnoRoot==pOp->p2 ){
+  if( pCur && pCur->pgnoRoot==(u32)pOp->p2 ){
     assert( pCur->iDb==pOp->p3 );      /* Guaranteed by the code generator */
     break;
   }

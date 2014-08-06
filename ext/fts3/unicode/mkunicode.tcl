@@ -298,7 +298,7 @@ proc an_print_range_array {lRange} {
   ** using this format.
   */
   }]
-  puts -nonewline "  const static unsigned int aEntry\[\] = \{"
+  puts -nonewline "  static const unsigned int aEntry\[\] = \{"
   set i 0
   foreach range $lRange {
     foreach {iFirst nRange} $range {}
@@ -732,7 +732,7 @@ proc print_fileheader {} {
 */
   }]
   puts ""
-  puts "#if defined(SQLITE_ENABLE_FTS4_UNICODE61)"
+  puts "#ifndef SQLITE_DISABLE_FTS3_UNICODE"
   puts "#if defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4)"
   puts ""
   puts "#include <assert.h>"
@@ -808,4 +808,4 @@ if {$::generate_test_code} {
 }
 
 puts "#endif /* defined(SQLITE_ENABLE_FTS3) || defined(SQLITE_ENABLE_FTS4) */"
-puts "#endif /* !defined(SQLITE_ENABLE_FTS4_UNICODE61) */"
+puts "#endif /* !defined(SQLITE_DISABLE_FTS3_UNICODE) */"
