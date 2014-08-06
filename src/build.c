@@ -2130,7 +2130,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
       pSelTab->aCol = 0;
       sqlite3DeleteTable(db, pSelTab);
       assert( sqlite3SchemaMutexHeld(db, 0, pTable->pSchema) );
-      pTable->pSchema->flags |= DB_UnresetViews;
+      pTable->pSchema->schemaFlags |= DB_UnresetViews;
     }else{
       pTable->nCol = 0;
       nErr++;
@@ -2707,7 +2707,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 
   addr1 = sqlite3VdbeAddOp2(v, OP_SorterSort, iSorter, 0); VdbeCoverage(v);
   assert( pKey!=0 || db->mallocFailed || pParse->nErr );
-  if( pIndex->onError!=OE_None && pKey!=0 ){
+  if( IsUniqueIndex(pIndex) && pKey!=0 ){
     int j2 = sqlite3VdbeCurrentAddr(v) + 3;
     sqlite3VdbeAddOp2(v, OP_Goto, 0, j2);
     addr2 = sqlite3VdbeCurrentAddr(v);
@@ -3104,9 +3104,9 @@ Index *sqlite3CreateIndex(
     Index *pIdx;
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       int k;
-      assert( pIdx->onError!=OE_None );
+      assert( IsUniqueIndex(pIdx) );
       assert( pIdx->idxType!=SQLITE_IDXTYPE_APPDEF );
-      assert( pIndex->onError!=OE_None );
+      assert( IsUniqueIndex(pIndex) );
 
       if( pIdx->nKeyCol!=pIndex->nKeyCol ) continue;
       for(k=0; k<pIdx->nKeyCol; k++){
@@ -3297,7 +3297,7 @@ void sqlite3DefaultRowEst(Index *pIdx){
   }
 
   assert( 0==sqlite3LogEst(1) );
-  if( pIdx->onError!=OE_None ) a[pIdx->nKeyCol] = 0;
+  if( IsUniqueIndex(pIdx) ) a[pIdx->nKeyCol] = 0;
 }
 
 /*

@@ -863,6 +863,7 @@ proc speed_trial_summary {name} {
 #
 proc finish_test {} {
   catch {db close}
+  catch {db1 close}
   catch {db2 close}
   catch {db3 close}
   if {0==[info exists ::SLAVE]} { finalize_testing }
