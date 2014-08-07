@@ -5547,7 +5547,6 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         }
         if( jj>=nTo ){
           /* None of the existing best-so-far paths match the candidate. */
-if( nTo>=mxChoice && rCost==mxCost ) printf("nOut=%d mxOut=%d\n", nOut, mxOut);
           if( nTo>=mxChoice
            && (rCost>mxCost || (rCost==mxCost && nOut>=mxOut))
           ){
