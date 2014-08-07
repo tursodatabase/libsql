@@ -655,6 +655,30 @@ static void fts5DebugRowid(int *pRc, Fts5Buffer *pBuf, i64 iKey){
   }
 }
 
+static void fts5DebugStructure(
+  int *pRc,                       /* IN/OUT: error code */
+  Fts5Buffer *pBuf,
+  Fts5Structure *p
+){
+  int iLvl, iSeg;                 /* Iterate through levels, segments */
+
+  for(iLvl=0; iLvl<p->nLevel; iLvl++){
+    Fts5StructureLevel *pLvl = &p->aLevel[iLvl];
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
+        " {lvl=%d nMerge=%d", iLvl, pLvl->nMerge
+    );
+    for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
+      Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
+      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
+          " {id=%d h=%d leaves=%d..%d}", pSeg->iSegid, pSeg->nHeight, 
+          pSeg->pgnoFirst, pSeg->pgnoLast
+      );
+    }
+    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
+  }
+}
+
+
 
 static void fts5PutU16(u8 *aOut, u16 iVal){
   aOut[0] = (iVal>>8);
@@ -1078,6 +1102,181 @@ static void fts5StructureWrite(Fts5Index *p, int iIdx, Fts5Structure *pStruct){
 
   fts5DataWrite(p, FTS5_STRUCTURE_ROWID(iIdx), buf.p, buf.n);
   fts5BufferFree(&buf);
+}
+
+#if 0
+static void fts5PrintStructure(const char *zCaption, Fts5Structure *pStruct){
+  int rc = SQLITE_OK;
+  Fts5Buffer buf;
+  memset(&buf, 0, sizeof(buf));
+  fts5DebugStructure(&rc, &buf, pStruct);
+  fprintf(stdout, "%s: %s\n", zCaption, buf.p);
+  fflush(stdout);
+  fts5BufferFree(&buf);
+}
+#else
+# define fts5PrintStructure(x,y)
+#endif
+
+/*
+** Return a copy of index structure pStruct. Except, promote as many segments
+** as possible to level iPromote. If an OOM occurs, NULL is returned.
+*/
+static void fts5StructurePromoteTo(
+  Fts5Index *p,
+  int iPromote,
+  int szPromote,
+  Fts5Structure *pStruct
+){
+  Fts5Structure *pNew;
+  u8 *pSpace;
+  int nSeg = fts5StructureCountSegments(pStruct);
+  int nLvl = pStruct->nLevel;
+  int nByte = (
+      sizeof(Fts5Structure) + 
+      sizeof(Fts5StructureLevel) * (nLvl+1) +
+      sizeof(Fts5StructureSegment) * (nSeg+nLvl+1)
+  );
+  int iTst;
+
+  pNew = fts5IdxMalloc(p, nByte);
+  if( !pNew ) return;
+  pNew->nWriteCounter = pStruct->nWriteCounter;
+  pNew->nLevel = pStruct->nLevel;
+  pSpace = (u8*)&pNew->aLevel[nLvl+1];
+
+  for(iTst=0; iTst<nLvl; iTst++){
+    int nCopy;
+    Fts5StructureLevel *pLvlOut = &pNew->aLevel[iTst];
+    pLvlOut->aSeg = (Fts5StructureSegment*)pSpace;
+
+    if( iTst==iPromote ){
+      int il, is;
+      int nSegCopy = 0;
+
+      /* Figure out the number of segments that will be promoted. */
+      for(il=iTst+1; il<pStruct->nLevel; il++){
+        Fts5StructureLevel *pLvl = &pStruct->aLevel[il];
+        if( pLvl->nMerge ) break;
+        for(is=pLvl->nSeg-1; is>=0; is--){
+          Fts5StructureSegment *pSeg = &pLvl->aSeg[is];
+          int sz = pSeg->pgnoLast - pSeg->pgnoFirst + 1;
+          if( sz>szPromote ){
+            il = pStruct->nLevel;
+            break;
+          }
+          nSegCopy++;
+        }
+      }
+      assert( nSegCopy>0 );
+      pSpace += (nSegCopy * sizeof(Fts5StructureSegment));
+      pLvlOut->nSeg = nSegCopy;
+
+      for(il=iTst+1; il<pStruct->nLevel && nSegCopy>0; il++){
+        Fts5StructureLevel *pLvl = &pStruct->aLevel[il];
+        for(is=pLvl->nSeg-1; is>=0 && nSegCopy>0; is--){
+          Fts5StructureSegment *pSeg = &pLvl->aSeg[is];
+          nSegCopy--;
+          memcpy(&pLvlOut->aSeg[nSegCopy], pSeg, sizeof(Fts5StructureSegment));
+          pLvl->nSeg--;
+        }
+      }
+      assert( nSegCopy==0 );
+    }
+
+    nCopy = pStruct->aLevel[iTst].nSeg * sizeof(Fts5StructureSegment);
+    if( nCopy ) memcpy(pSpace, pStruct->aLevel[iTst].aSeg, nCopy);
+    pSpace += (nCopy + sizeof(Fts5StructureSegment));
+    pLvlOut->nSeg += pStruct->aLevel[iTst].nSeg;
+  }
+
+  fts5PrintStructure("NEW", pNew);
+  memcpy(pStruct, pNew, nByte);
+  for(iTst=0; iTst<pNew->nLevel; iTst++){
+    int iOff = pNew->aLevel[iTst].aSeg - (Fts5StructureSegment*)pNew;
+    pStruct->aLevel[iTst].aSeg = &((Fts5StructureSegment*)pStruct)[iOff];
+  }
+  sqlite3_free(pNew);
+}
+
+/*
+** A new segment has just been written to level iLvl of index structure
+** pStruct. This function determines if any segments should be promoted
+** as a result. Segments are promoted in two scenarios:
+**
+**   a) If the segment just written is smaller than one or more segments
+**      within the previous populated level, it is promoted to the previous
+**      populated level.
+**
+**   b) If the segment just written is larger than the newest segment on
+**      the next populated level, then that segment, and any other adjacent
+**      segments that are also smaller than the one just written, are 
+**      promoted. 
+**
+** If one or more segments are promoted, the structure object is updated
+** to reflect this.
+*/
+static void fts5StructurePromote(
+  Fts5Index *p,                   /* FTS5 backend object */
+  int iLvl,                       /* Index level just updated */
+  Fts5Structure *pStruct          /* Index structure */
+){
+  if( p->rc==SQLITE_OK ){
+    int iTst;
+    int iPromote = -1;
+    int szPromote;                /* Promote anything this size or smaller */
+    Fts5StructureSegment *pSeg;   /* Segment just written */
+    Fts5StructureLevel *pTst;
+    int szSeg;                    /* Size of segment just written */
+
+
+    pSeg = &pStruct->aLevel[iLvl].aSeg[pStruct->aLevel[iLvl].nSeg-1];
+    szSeg = (1 + pSeg->pgnoLast - pSeg->pgnoFirst);
+
+    /* Check for condition (a) */
+    for(iTst=iLvl-1; iTst>=0 && pStruct->aLevel[iTst].nSeg==0; iTst--);
+    pTst = &pStruct->aLevel[iTst];
+    if( iTst>=0 && pTst->nMerge==0 ){
+      int i;
+      int szMax = 0;
+      for(i=0; i<pTst->nSeg; i++){
+        int sz = pTst->aSeg[i].pgnoLast - pTst->aSeg[i].pgnoFirst + 1;
+        if( sz>szMax ) szMax = sz;
+      }
+      if( szMax>=szSeg ){
+        /* Condition (a) is true. Promote the newest segment on level 
+        ** iLvl to level iTst.  */
+        iPromote = iTst;
+        szPromote = szMax;
+      }
+    }
+
+    /* Check for condition (b) */
+    if( iPromote<0 ){
+      Fts5StructureLevel *pTst;
+      for(iTst=iLvl+1; iTst<pStruct->nLevel; iTst++){
+        pTst = &pStruct->aLevel[iTst];
+        if( pTst->nSeg ) break;
+      }
+      if( iTst<pStruct->nLevel && pTst->nMerge==0 ){
+        Fts5StructureSegment *pSeg2 = &pTst->aSeg[pTst->nSeg-1];
+        int sz = pSeg2->pgnoLast - pSeg2->pgnoFirst + 1;
+        if( sz<=szSeg ){
+          iPromote = iLvl;
+          szPromote = szSeg;
+        }
+      }
+    }
+
+    /* If iPromote is greater than or equal to zero at this point, then it
+    ** is the level number of a level to which segments that consist of
+    ** szPromote or fewer pages should be promoted. */ 
+    if( iPromote>=0 ){
+      fts5PrintStructure("BEFORE", pStruct);
+      fts5StructurePromoteTo(p, iPromote, szPromote, pStruct);
+      fts5PrintStructure("AFTER", pStruct);
+    }
+  }
 }
 
 
@@ -3151,6 +3350,7 @@ static void fts5IndexWork(
 
     if( nBest<p->nMinMerge && pStruct->aLevel[iBestLvl].nMerge==0 ) break;
     fts5IndexMergeLevel(p, iIdx, pStruct, iBestLvl, &nRem);
+    fts5StructurePromote(p, iBestLvl+1, pStruct);
     assert( nRem==0 || p->rc==SQLITE_OK );
   }
 }
@@ -3689,7 +3889,6 @@ static void fts5DecodeStructure(
   const u8 *pBlob, int nBlob
 ){
   int rc;                         /* Return code */
-  int iLvl, iSeg;                 /* Iterate through levels, segments */
   Fts5Structure *p = 0;           /* Decoded structure object */
 
   rc = fts5StructureDecode(pBlob, nBlob, &p);
@@ -3698,21 +3897,7 @@ static void fts5DecodeStructure(
     return;
   }
 
-  for(iLvl=0; iLvl<p->nLevel; iLvl++){
-    Fts5StructureLevel *pLvl = &p->aLevel[iLvl];
-    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
-        " {lvl=%d nMerge=%d", iLvl, pLvl->nMerge
-    );
-    for(iSeg=0; iSeg<pLvl->nSeg; iSeg++){
-      Fts5StructureSegment *pSeg = &pLvl->aSeg[iSeg];
-      sqlite3Fts5BufferAppendPrintf(pRc, pBuf, 
-          " {id=%d h=%d leaves=%d..%d}", pSeg->iSegid, pSeg->nHeight, 
-          pSeg->pgnoFirst, pSeg->pgnoLast
-      );
-    }
-    sqlite3Fts5BufferAppendPrintf(pRc, pBuf, "}");
-  }
-
+  fts5DebugStructure(pRc, pBuf, p);
   fts5StructureRelease(p);
 }
 

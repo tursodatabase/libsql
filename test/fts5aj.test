@@ -57,14 +57,13 @@ for {set iTest 0} {$iTest < 50000} {incr iTest} {
   if {0==($iTest % 1000)} {
     set sz [db one {SELECT count(*) FROM t1_data}]
     set s [structure]
-    do_test 1.$iTest.$sz.{$s} {} {}
+    do_execsql_test 1.$iTest.$sz.{$s} {
+      INSERT INTO t1(t1) VALUES('integrity-check') 
+    }
   }
 }
 
-#db eval { SELECT rowid, fts5_decode(rowid, block) aS r FROM t1_data} {puts $r}
-
 do_execsql_test 2.0 { INSERT INTO t1(t1) VALUES('integrity-check') }
-
 
 
 finish_test

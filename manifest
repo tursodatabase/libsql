@@ -1,5 +1,5 @@
-C Avoid\swriting\sdelete\smarkers\sto\sthe\soldest\ssegment\sin\san\sFTS\sindex.
-D 2014-08-06T20:04:14.831
+C Add\s"segment\spromotion"\sto\sfts5.\sThis\sprevents\sthe\sFTS\sindex\sfrom\sgrowing\sindefinitely\sas\sdata\sis\sadded\sand\sdeleted.
+D 2014-08-07T18:47:33.788
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -110,7 +110,7 @@ F ext/fts5/fts5_aux.c 31e581413ecab0962ce2b37468f9f658f36f4b0e
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c 7b8e380233176053841904a86006696ee8f6cd24
-F ext/fts5/fts5_index.c dab399c67cb6bdd23009d2f1280ea60a9585b47c
+F ext/fts5/fts5_index.c 1e001ed7dd4650a0a853b986f34b71c8d3f71ec1
 F ext/fts5/fts5_storage.c 2866e7e1de9dc851756c3a9c76b6e1d75e0facb7
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -604,7 +604,7 @@ F test/fts5af.test 9ebe23aa3875896076952c7bc6e8308813a63c74
 F test/fts5ag.test 0747bf3bade16d5165810cf891f875933b28b420
 F test/fts5ah.test 009b993a9b7ebc43f84c10e53bd778b1dc8ffbe7
 F test/fts5ai.test 4dee71c23ddbcf2b0fc5d5586f241002b883c10e
-F test/fts5aj.test d16f44bd1f7da9714ef99bd8b1996c5867aee8f5
+F test/fts5aj.test 67014e9fc7c069425d67d549b133742b67755047
 F test/fts5ea.test ff43b40f8879ba50b82def70f2ab67c195d1a1d4
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
@@ -1201,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3b19eba042bb2eeb1be60f8d58ebaa0a045d6a5c
-R 26f7f3d5f6581939b65c2ce6e063db0c
+P 1baeb1cee61d9c56c718b50af034a24f1018a322
+R c515f8340a51bac4920372c5a517f13d
 U dan
-Z 78bed80e24eecafbae841451888b9b1c
+Z e9b5b5b15db061fad6b53bb80e61f761
