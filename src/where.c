@@ -5536,10 +5536,14 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         ** First look for an existing path among best-so-far paths
         ** that covers the same set of loops and has the same isOrdered
         ** setting as the current path candidate.
+        **
+        ** The term "((pTo->isOrdered^isOrdered)&0x80)==0" is equivalent
+        ** to (pTo->isOrdered==(-1))==(isOrdered==(-1))" for the range
+        ** of legal values for isOrdered, -1..64.
         */
         for(jj=0, pTo=aTo; jj<nTo; jj++, pTo++){
           if( pTo->maskLoop==maskNew
-           && ((pTo->isOrdered^isOrdered)&80)==0
+           && ((pTo->isOrdered^isOrdered)&0x80)==0
           ){
             testcase( jj==nTo-1 );
             break;
