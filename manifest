@@ -1,5 +1,5 @@
-C The\sSQLITE_IOERR_BLOCKED\sextended\serror\scode\sis\snot\slonger\sused,\sso\sremove\nassert()\sstatements\sand\sdocumentation\sfor\sthat\serror\scode.\s\sAlso\smake\sother\ndocumentation\simprovements.
-D 2014-08-08T15:38:11.174
+C Improvements\sto\sthe\sway\sthe\squery\splanner\shandles\ssorting\scosts,\sso\sthat\nvery\slarge\ssorting\scosts\sdo\snot\soverwhelm\sthe\sloop\scosts.
+D 2014-08-08T17:49:55.898
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,8 +296,8 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 4cd4b3622caa81b71ebce8fea8f7811ae052d664
-F src/whereInt.h 929c1349b5355fd44f22cee5c14d72b3329c58a6
+F src/where.c ab20f9c24a422ee8900831b343c3d1e5e7aca87b
+F src/whereInt.h 923820bee9726033a501a08d2fc69b9c1ee4feb3
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/aggnested.test 45c0201e28045ad38a530b5a144b73cd4aa2cfd6
@@ -1185,7 +1185,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 54f1df7b63166f14b2f0d5955c546820e5cbdec9
-R 7baa54a57d0f22faa98f7b7348dc4b71
+P 36b7c5cefcad6bad044806092593c84876fee8bc 43c59c85436dc8001c81f4aac7f5231b13d741cb
+R 1f8265817308d29fd5a420f3d8d1525f
+T +closed 43c59c85436dc8001c81f4aac7f5231b13d741cb
 U drh
-Z 8357d07b76c5300f8dd47c47cbfcc4a1
+Z 45c189f6c18b0be836f726dcb23b5c12
