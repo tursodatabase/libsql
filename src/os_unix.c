@@ -761,16 +761,6 @@ static int sqliteErrorFromPosixError(int posixError, int sqliteIOErr) {
   case EPERM: 
     return SQLITE_PERM;
     
-  /* EDEADLK is only possible if a call to fcntl(F_SETLKW) is made. And
-  ** this module never makes such a call. And the code in SQLite itself 
-  ** asserts that SQLITE_IOERR_BLOCKED is never returned. For these reasons
-  ** this case is also commented out. If the system does set errno to EDEADLK,
-  ** the default SQLITE_IOERR_XXX code will be returned. */
-#if 0
-  case EDEADLK:
-    return SQLITE_IOERR_BLOCKED;
-#endif
-    
 #if EOPNOTSUPP!=ENOTSUP
   case EOPNOTSUPP: 
     /* something went terribly awry, unless during file system support 

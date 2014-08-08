@@ -1091,7 +1091,6 @@ const char *sqlite3ErrName(int rc){
       case SQLITE_IOERR_UNLOCK:       zName = "SQLITE_IOERR_UNLOCK";      break;
       case SQLITE_IOERR_RDLOCK:       zName = "SQLITE_IOERR_RDLOCK";      break;
       case SQLITE_IOERR_DELETE:       zName = "SQLITE_IOERR_DELETE";      break;
-      case SQLITE_IOERR_BLOCKED:      zName = "SQLITE_IOERR_BLOCKED";     break;
       case SQLITE_IOERR_NOMEM:        zName = "SQLITE_IOERR_NOMEM";       break;
       case SQLITE_IOERR_ACCESS:       zName = "SQLITE_IOERR_ACCESS";      break;
       case SQLITE_IOERR_CHECKRESERVEDLOCK:

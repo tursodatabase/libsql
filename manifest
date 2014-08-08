@@ -1,5 +1,5 @@
-C Reworking\sthe\sdocumentation\son\sinteger\sresult\scodes.\s\sThis\sis\sa\scomment\nand\sdocumentation\schange\sonly.\s\sThere\sare\sno\schanges\sto\scode.
-D 2014-08-08T12:51:42.280
+C The\sSQLITE_IOERR_BLOCKED\sextended\serror\scode\sis\snot\slonger\sused,\sso\sremove\nassert()\sstatements\sand\sdocumentation\sfor\sthat\serror\scode.\s\sAlso\smake\sother\ndocumentation\simprovements.
+D 2014-08-08T15:38:11.174
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 6bc7cd1b896a47f2803f69a56737191abf76918a
+F src/main.c 5cd4d5037e07af703d12035fdfdaf802abf2b7f8
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -207,7 +207,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c a7baf1b30f3c58ba20b813e01aab23b18ae44f85
+F src/os_unix.c f0a58d439d58b207c06f4a25463113dcba7bd9da
 F src/os_win.c 3fca1bfdf78338705bf536059a407d0fb04016d5
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
@@ -224,7 +224,7 @@ F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 1529c49075464c5a95fde77314073612b1b8d595
 F src/shell.c 4af71e7f25af6da6debda87dcbd6be37da710916
-F src/sqlite.h.in c9c7328b51a94633c229b435eda8092fcd4e1ea3
+F src/sqlite.h.in 66a923e0d8a3a771a7050f292cc8028b8c711652
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 641f8fbb65ca2084c8df95b525f6f82c7a1e91ae
@@ -287,7 +287,7 @@ F src/vdbe.c cd8d7e3ecd3e0e0684f6bf48469966335c666883
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 24e40422382beb774daab11fe9fe9d37e8a04949
-F src/vdbeaux.c ac063f36c929f88bf6cecdbcc413000e272265bb
+F src/vdbeaux.c bbe934b0d472c98f57433829db91fc052e90fa17
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c d90a1e8acf8b63dc9d14cbbea12bfec6cec31394
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2af630c5720a4d71f22a952af29346a09bd8dfd0
-R b6800f247d253d726e2d1b70eaab6208
+P 54f1df7b63166f14b2f0d5955c546820e5cbdec9
+R 7baa54a57d0f22faa98f7b7348dc4b71
 U drh
-Z 92cc627e0fe24841ecb93d0e5157435c
+Z 8357d07b76c5300f8dd47c47cbfcc4a1
