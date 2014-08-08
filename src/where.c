@@ -5471,6 +5471,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   WhereLoop **pX;           /* Used to divy up the pSpace memory */
   LogEst *aSortCost = 0;    /* Sorting and partial sorting costs */
   char *pSpace;             /* Temporary memory used by this routine */
+  int nSpace;               /* Bytes of space allocated at pSpace */
 
   pParse = pWInfo->pParse;
   db = pParse->db;
@@ -5494,9 +5495,9 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   }
 
   /* Allocate and initialize space for aTo, aFrom and aSortCost[] */
-  ii = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
-  ii += sizeof(LogEst) * nOrderBy;
-  pSpace = sqlite3DbMallocRaw(db, ii);
+  nSpace = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
+  nSpace += sizeof(LogEst) * nOrderBy;
+  pSpace = sqlite3DbMallocRaw(db, nSpace);
   if( pSpace==0 ) return SQLITE_NOMEM;
   aTo = (WherePath*)pSpace;
   aFrom = aTo+mxChoice;
@@ -5513,8 +5514,10 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     ** the ORDER BY clause are already in order, where X is the array 
     ** index.  */
     aSortCost = (LogEst*)pX;
-    memset(aSortCost, 0, sizeof(LogEst) * (nOrderBy+1));
+    memset(aSortCost, 0, sizeof(LogEst) * nOrderBy);
   }
+  assert( aSortCost==0 || &pSpace[nSpace]==(char*)&aSortCost[nOrderBy] );
+  assert( aSortCost!=0 || &pSpace[nSpace]==(char*)pX );
 
   /* Seed the search with a single WherePath containing zero WhereLoops.
   **
