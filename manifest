@@ -1,5 +1,5 @@
-C When\sthe\sestimated\ssorting\scost\soverwhelms\sthe\sestimated\slookup\scost,\sensure\nthat\slookup\scosts\sare\sstill\staken\sinto\saccount\swhen\sselecting\sa\slookup\nalgorithm.
-D 2014-08-07T20:42:33.655
+C Reworking\sthe\sdocumentation\son\sinteger\sresult\scodes.\s\sThis\sis\sa\scomment\nand\sdocumentation\schange\sonly.\s\sThere\sare\sno\schanges\sto\scode.
+D 2014-08-08T12:51:42.280
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 1529c49075464c5a95fde77314073612b1b8d595
 F src/shell.c 4af71e7f25af6da6debda87dcbd6be37da710916
-F src/sqlite.h.in 9bbc5815c73b0e77e68b5275481a5e3e7814a804
+F src/sqlite.h.in c9c7328b51a94633c229b435eda8092fcd4e1ea3
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 641f8fbb65ca2084c8df95b525f6f82c7a1e91ae
@@ -1185,8 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bcf6d775f90f4d1ba018a1b965f2f710df130f01 b5e8fd575a80334160de0aac8084ed5cd28816a5
-R 444666601d1d38c7f4902aa29891f8d2
-T +closed b5e8fd575a80334160de0aac8084ed5cd28816a5
+P 2af630c5720a4d71f22a952af29346a09bd8dfd0
+R b6800f247d253d726e2d1b70eaab6208
 U drh
-Z f100e3a960f67faf0129a27666ad7927
+Z 92cc627e0fe24841ecb93d0e5157435c
