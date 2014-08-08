@@ -5401,6 +5401,45 @@ static const char *wherePathName(WherePath *pPath, int nLoop, WhereLoop *pLast){
 #endif
 
 /*
+** Return the cost of sorting nRow rows, assuming that the keys have 
+** nOrderby columns and that the first nSorted columns are already in
+** order.
+*/
+static LogEst whereSortingCost(
+  WhereInfo *pWInfo,
+  LogEst nRow,
+  int nOrderBy,
+  int nSorted
+){
+  /* TUNING: Estimated cost of a full external sort, where N is 
+  ** the number of rows to sort is:
+  **
+  **   cost = (3.0 * N * log(N)).
+  ** 
+  ** Or, if the order-by clause has X terms but only the last Y 
+  ** terms are out of order, then block-sorting will reduce the 
+  ** sorting cost to:
+  **
+  **   cost = (3.0 * N * log(N)) * (Y/X)
+  **
+  ** The (Y/X) term is implemented using stack variable rScale
+  ** below.  */
+  LogEst rScale, rSortCost;
+  assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
+  rScale = sqlite3LogEst((nOrderBy-nSorted)*100/nOrderBy) - 66;
+  rSortCost = nRow + estLog(nRow) + rScale + 16;
+
+  /* TUNING: The cost of implementing DISTINCT using a B-TREE is
+  ** similar but with a larger constant of proportionality. 
+  ** Multiply by an additional factor of 3.0.  */
+  if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
+    rSortCost += 16;
+  }
+
+  return rSortCost;
+}
+
+/*
 ** Given the list of WhereLoop objects at pWInfo->pLoops, this routine
 ** attempts to find the lowest cost path that visits each WhereLoop
 ** once.  This path is then loaded into the pWInfo->a[].pWLoop fields.
@@ -5421,10 +5460,8 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   int ii, jj;               /* Loop counters */
   int mxI = 0;              /* Index of next entry to replace */
   int nOrderBy;             /* Number of ORDER BY clause terms */
-  LogEst rCost;             /* Cost of a path */
-  LogEst nOut;              /* Number of outputs */
   LogEst mxCost = 0;        /* Maximum cost of a set of paths */
-  LogEst mxOut = 0;         /* nOut value for maximum cost path */
+  LogEst mxUnsorted = 0;    /* Maximum unsorted cost of a set of path */
   int nTo, nFrom;           /* Number of valid entries in aTo[] and aFrom[] */
   WherePath *aFrom;         /* All nFrom paths at the previous level */
   WherePath *aTo;           /* The nTo best paths at the current level */
@@ -5432,6 +5469,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   WherePath *pTo;           /* An element of aTo[] that we are working on */
   WhereLoop *pWLoop;        /* One of the WhereLoop objects */
   WhereLoop **pX;           /* Used to divy up the pSpace memory */
+  LogEst *aSortCost = 0;    /* Sorting and partial sorting costs */
   char *pSpace;             /* Temporary memory used by this routine */
 
   pParse = pWInfo->pParse;
@@ -5444,8 +5482,20 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   assert( nLoop<=pWInfo->pTabList->nSrc );
   WHERETRACE(0x002, ("---- begin solver.  (nRowEst=%d)\n", nRowEst));
 
-  /* Allocate and initialize space for aTo and aFrom */
+  /* If nRowEst is zero and there is an ORDER BY clause, ignore it. In this
+  ** case the purpose of this call is to estimate the number of rows returned
+  ** by the overall query. Once this estimate has been obtained, the caller
+  ** will invoke this function a second time, passing the estimate as the
+  ** nRowEst parameter.  */
+  if( pWInfo->pOrderBy==0 || nRowEst==0 ){
+    nOrderBy = 0;
+  }else{
+    nOrderBy = pWInfo->pOrderBy->nExpr;
+  }
+
+  /* Allocate and initialize space for aTo, aFrom and aSortCost[] */
   ii = (sizeof(WherePath)+sizeof(WhereLoop*)*nLoop)*mxChoice*2;
+  ii += sizeof(LogEst) * nOrderBy;
   pSpace = sqlite3DbMallocRaw(db, ii);
   if( pSpace==0 ) return SQLITE_NOMEM;
   aTo = (WherePath*)pSpace;
@@ -5455,6 +5505,16 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   for(ii=mxChoice*2, pFrom=aTo; ii>0; ii--, pFrom++, pX += nLoop){
     pFrom->aLoop = pX;
   }
+  if( nOrderBy ){
+    /* If there is an ORDER BY clause and it is not being ignored, set up
+    ** space for the aSortCost[] array. Each element of the aSortCost array
+    ** is either zero - meaning it has not yet been initialized - or the
+    ** cost of sorting nRowEst rows of data where the first X terms of
+    ** the ORDER BY clause are already in order, where X is the array 
+    ** index.  */
+    aSortCost = (LogEst*)pX;
+    memset(aSortCost, 0, sizeof(LogEst) * (nOrderBy+1));
+  }
 
   /* Seed the search with a single WherePath containing zero WhereLoops.
   **
@@ -5463,15 +5523,15 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
   ** rows, then do not use the automatic index. */
   aFrom[0].nRow = MIN(pParse->nQueryLoop, 46);  assert( 46==sqlite3LogEst(25) );
   nFrom = 1;
-
-  /* Precompute the cost of sorting the final result set, if the caller
-  ** to sqlite3WhereBegin() was concerned about sorting */
-  if( pWInfo->pOrderBy==0 || nRowEst==0 ){
-    aFrom[0].isOrdered = 0;
-    nOrderBy = 0;
-  }else{
-    aFrom[0].isOrdered = nLoop>0 ? -1 : 1;
-    nOrderBy = pWInfo->pOrderBy->nExpr;
+  assert( aFrom[0].isOrdered==0 );
+  if( nOrderBy ){
+    /* If nLoop is zero, then there are no FROM terms in the query. Since
+    ** in this case the query may return a maximum of one row, the results
+    ** are already in the requested order. Set isOrdered to nOrderBy to
+    ** indicate this. Or, if nLoop is greater than zero, set isOrdered to
+    ** -1, indicating that the result set may or may not be ordered, 
+    ** depending on the loops added to the current plan.  */
+    aFrom[0].isOrdered = nLoop>0 ? -1 : nOrderBy;
   }
 
   /* Compute successively longer WherePaths using the previous generation
@@ -5481,55 +5541,44 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
     nTo = 0;
     for(ii=0, pFrom=aFrom; ii<nFrom; ii++, pFrom++){
       for(pWLoop=pWInfo->pLoops; pWLoop; pWLoop=pWLoop->pNextLoop){
-        Bitmask maskNew;
-        Bitmask revMask = 0;
-        i8 isOrdered = pFrom->isOrdered;
+        LogEst nOut;                      /* Rows visited by (pFrom+pWLoop) */
+        LogEst rCost;                     /* Cost of path (pFrom+pWLoop) */
+        LogEst rUnsorted;                 /* Unsorted cost of (pFrom+pWLoop) */
+        i8 isOrdered = pFrom->isOrdered;  /* isOrdered for (pFrom+pWLoop) */
+        Bitmask maskNew;                  /* Mask of src visited by (..) */
+        Bitmask revMask = 0;              /* Mask of rev-order loops for (..) */
+
         if( (pWLoop->prereq & ~pFrom->maskLoop)!=0 ) continue;
         if( (pWLoop->maskSelf & pFrom->maskLoop)!=0 ) continue;
         /* At this point, pWLoop is a candidate to be the next loop. 
         ** Compute its cost */
-        rCost = sqlite3LogEstAdd(pWLoop->rSetup,pWLoop->rRun + pFrom->nRow);
-        rCost = sqlite3LogEstAdd(rCost, pFrom->rCost);
+        rUnsorted = sqlite3LogEstAdd(pWLoop->rSetup,pWLoop->rRun + pFrom->nRow);
+        rUnsorted = sqlite3LogEstAdd(rUnsorted, pFrom->rUnsorted);
         nOut = pFrom->nRow + pWLoop->nOut;
         maskNew = pFrom->maskLoop | pWLoop->maskSelf;
         if( isOrdered<0 ){
           isOrdered = wherePathSatisfiesOrderBy(pWInfo,
                        pWInfo->pOrderBy, pFrom, pWInfo->wctrlFlags,
                        iLoop, pWLoop, &revMask);
-          if( isOrdered>=0 && isOrdered<nOrderBy ){
-            /* TUNING: Estimated cost of a full external sort, where N is 
-            ** the number of rows to sort is:
-            **
-            **   cost = (3.0 * N * log(N)).
-            ** 
-            ** Or, if the order-by clause has X terms but only the last Y 
-            ** terms are out of order, then block-sorting will reduce the 
-            ** sorting cost to:
-            **
-            **   cost = (3.0 * N * log(N)) * (Y/X)
-            **
-            ** The (Y/X) term is implemented using stack variable rScale
-            ** below.  */
-            LogEst rScale, rSortCost;
-            assert( nOrderBy>0 && 66==sqlite3LogEst(100) );
-            rScale = sqlite3LogEst((nOrderBy-isOrdered)*100/nOrderBy) - 66;
-            rSortCost = nRowEst + estLog(nRowEst) + rScale + 16;
-
-            /* TUNING: The cost of implementing DISTINCT using a B-TREE is
-            ** similar but with a larger constant of proportionality. 
-            ** Multiply by an additional factor of 3.0.  */
-            if( pWInfo->wctrlFlags & WHERE_WANT_DISTINCT ){
-              rSortCost += 16;
-            }
-            WHERETRACE(0x002,
-               ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
-                rSortCost, (nOrderBy-isOrdered), nOrderBy, rCost,
-                sqlite3LogEstAdd(rCost,rSortCost)));
-            rCost = sqlite3LogEstAdd(rCost, rSortCost);
-          }
         }else{
           revMask = pFrom->revLoop;
         }
+        if( isOrdered>=0 && isOrdered<nOrderBy ){
+          if( aSortCost[isOrdered]==0 ){
+            aSortCost[isOrdered] = whereSortingCost(
+                pWInfo, nRowEst, nOrderBy, isOrdered
+            );
+          }
+          rCost = sqlite3LogEstAdd(rUnsorted, aSortCost[isOrdered]);
+
+          WHERETRACE(0x002,
+              ("---- sort cost=%-3d (%d/%d) increases cost %3d to %-3d\n",
+               aSortCost[isOrdered], (nOrderBy-isOrdered), nOrderBy, 
+               rUnsorted, rCost));
+        }else{
+          rCost = rUnsorted;
+        }
+
         /* Check to see if pWLoop should be added to the set of
         ** mxChoice best-so-far paths.
         **
@@ -5552,7 +5601,7 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         if( jj>=nTo ){
           /* None of the existing best-so-far paths match the candidate. */
           if( nTo>=mxChoice
-           && (rCost>mxCost || (rCost==mxCost && nOut>=mxOut))
+           && (rCost>mxCost || (rCost==mxCost && rUnsorted>=mxUnsorted))
           ){
             /* The current candidate is no better than any of the mxChoice
             ** paths currently in the best-so-far buffer.  So discard
@@ -5624,17 +5673,20 @@ static int wherePathSolver(WhereInfo *pWInfo, LogEst nRowEst){
         pTo->revLoop = revMask;
         pTo->nRow = nOut;
         pTo->rCost = rCost;
+        pTo->rUnsorted = rUnsorted;
         pTo->isOrdered = isOrdered;
         memcpy(pTo->aLoop, pFrom->aLoop, sizeof(WhereLoop*)*iLoop);
         pTo->aLoop[iLoop] = pWLoop;
         if( nTo>=mxChoice ){
           mxI = 0;
           mxCost = aTo[0].rCost;
-          mxOut = aTo[0].nRow;
+          mxUnsorted = aTo[0].nRow;
           for(jj=1, pTo=&aTo[1]; jj<mxChoice; jj++, pTo++){
-            if( pTo->rCost>mxCost || (pTo->rCost==mxCost && pTo->nRow>mxOut) ){
+            if( pTo->rCost>mxCost 
+             || (pTo->rCost==mxCost && pTo->rUnsorted>mxUnsorted) 
+            ){
               mxCost = pTo->rCost;
-              mxOut = pTo->nRow;
+              mxUnsorted = pTo->rUnsorted;
               mxI = jj;
             }
           }
