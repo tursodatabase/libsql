@@ -450,7 +450,7 @@ do_execsql_test e_expr-10.3.4 { SELECT typeof('isn''t') } {text}
 # containing hexadecimal data and preceded by a single "x" or "X"
 # character.
 #
-# EVIDENCE-OF: R-39344-59787 For example: X'53514C697465'
+# EVIDENCE-OF: R-19836-11244 Example: X'53514C697465'
 #
 do_execsql_test e_expr-10.4.1 { SELECT typeof(X'0123456789ABCDEF') } blob
 do_execsql_test e_expr-10.4.2 { SELECT typeof(x'0123456789ABCDEF') } blob

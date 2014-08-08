@@ -1,5 +1,5 @@
-C Improvements\sto\sthe\sway\sthe\squery\splanner\shandles\ssorting\scosts,\sso\sthat\nvery\slarge\ssorting\scosts\sdo\snot\soverwhelm\sthe\sloop\scosts.
-D 2014-08-08T17:49:55.898
+C Update\srequirements\smarks.\s\sNo\schanges\sto\scode.
+D 2014-08-08T18:26:20.575
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -220,7 +220,7 @@ F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
-F src/resolve.c 5fc110baeacf120a73fe34e103f052632ff11a02
+F src/resolve.c 44e2e434deaef2b41d4410ede695d867deb89886
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 1529c49075464c5a95fde77314073612b1b8d595
 F src/shell.c 4af71e7f25af6da6debda87dcbd6be37da710916
@@ -442,11 +442,11 @@ F test/descidx3.test 09ddbe3f5295f482d2f8b687cf6db8bad7acd9a2
 F test/diskfull.test 106391384780753ea6896b7b4f005d10e9866b6e
 F test/distinct.test 086e70c765f172e8974e9f83b9ac5ca03c154e77
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_createtable.test ed82efcedc4b3656b27a5fcd12335cdb7e20eeee
+F test/e_createtable.test 181653f6f45e3adde73f8686600ce5ad7515466b
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
-F test/e_expr.test 5c71d183fbf519a4769fd2e2124afdc70b5b1f42
+F test/e_expr.test 5f4528f3dea1c3c401d19ab1d543ec7959e67464
 F test/e_fkey.test a1783fe1f759e1990e6a11adfcf0702dac4d0707
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 7b2fa9cd1456f83474d6c5d27db3abaeb8be2023
@@ -1185,8 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 36b7c5cefcad6bad044806092593c84876fee8bc 43c59c85436dc8001c81f4aac7f5231b13d741cb
-R 1f8265817308d29fd5a420f3d8d1525f
-T +closed 43c59c85436dc8001c81f4aac7f5231b13d741cb
+P bdaa6947371a60a31b6a13267b0ba6e46df2a8ce
+R 72bdb7fa5001d300e89054929fd995d2
 U drh
-Z 45c189f6c18b0be836f726dcb23b5c12
+Z 671dba8d2ee0bfa11f311df8108f5873
