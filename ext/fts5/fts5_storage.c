@@ -168,7 +168,7 @@ int sqlite3Fts5StorageOpen(
   Fts5Storage **pp,
   char **pzErr                    /* OUT: Error message */
 ){
-  int rc;
+  int rc = SQLITE_OK;
   Fts5Storage *p;                 /* New object */
   int nByte;                      /* Bytes of space to allocate */
 

@@ -1,5 +1,5 @@
-C Use\smultiple\smemory\sallocations\sfor\sa\ssingle\sFts5Structure\sobject.\sThis\sis\sprobably\sless\sefficient\sbut\smuch\seasier\sto\sget\sright.
-D 2014-08-09T18:02:27.223
+C Fix\san\suninitialized\svariable\scausing\sa\sproblem\sduring\sfts5\stable\sinitialization.
+D 2014-08-09T18:22:59.679
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -111,7 +111,7 @@ F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c 7b8e380233176053841904a86006696ee8f6cd24
 F ext/fts5/fts5_index.c 75b2ebfa97ad6054bba98cb923cd2d3c6cc5b112
-F ext/fts5/fts5_storage.c 2866e7e1de9dc851756c3a9c76b6e1d75e0facb7
+F ext/fts5/fts5_storage.c fa3c8fc4766d850a4977bf1d4b71c37e7b07ab8b
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
@@ -1201,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ba359d78e166d78e0dc89e3c63a9a41e9ffea989
-R 6a35c04d12672be9d9a3f97537e4f2d1
+P 2821825f7a481755a333dcdcad780b3e24448f20
+R c0a232bfa9626e6e9a9c306fc05ca763
 U dan
-Z fa46d6698c1e1fd549eedd5dc298f36b
+Z 9113dc9c4d427c4fad9a129f5cfa7a9b
