@@ -66,7 +66,13 @@
 **   recorded in a single record within the %_data table. The record is a list
 **   of SQLite varints. 
 **
-**   For each level from 0 to nMax:
+**   The record begins with three varints:
+**
+**     + number of levels,
+**     + total number of segments on all levels,
+**     + value of write counter.
+**
+**   Then, for each level from 0 to nMax:
 **
 **     + number of input segments in ongoing merge.
 **     + total number of segments in level.
@@ -707,6 +713,18 @@ static void *fts5IdxMalloc(Fts5Index *p, int nByte){
   return pRet;
 }
 
+static void *fts5MallocZero(int *pRc, int nByte){
+  void *pRet = 0;
+  if( *pRc==SQLITE_OK ){
+    pRet = sqlite3_malloc(nByte);
+    if( pRet==0 && nByte>0 ){
+      *pRc = SQLITE_NOMEM;
+    }else{
+      memset(pRet, 0, nByte);
+    }
+  }
+  return pRet;
+}
 
 /*
 ** Compare the contents of the pLeft buffer with the pRight/nRight blob.
@@ -973,27 +991,24 @@ static int fts5StructureDecode(
   int iLvl;
   int nLevel = 0;
   int nSegment = 0;
-  int nByte;                      /* Bytes of space to allocate */
-  Fts5Structure *pRet = 0;
+  int nByte;                      /* Bytes of space to allocate at pRet */
+  Fts5Structure *pRet = 0;        /* Structure object to return */
 
   /* Read the total number of levels and segments from the start of the
-  ** structure record. Use these values to allocate space for the deserialized
-  ** version of the record. */
+  ** structure record.  */
   i = getVarint32(&pData[i], nLevel);
   i += getVarint32(&pData[i], nSegment);
   nByte = (
-      sizeof(Fts5Structure) + 
-      sizeof(Fts5StructureLevel) * (nLevel+1) +
-      sizeof(Fts5StructureSegment) * (nSegment+nLevel+1)
+      sizeof(Fts5Structure) +                    /* Main structure */
+      sizeof(Fts5StructureLevel) * (nLevel)      /* aLevel[] array */
   );
-  pRet = (Fts5Structure*)sqlite3_malloc(nByte);
+  pRet = (Fts5Structure*)fts5MallocZero(&rc, nByte);
 
   if( pRet ){
-    u8 *pSpace = (u8*)&pRet->aLevel[nLevel+1];
-    memset(pRet, 0, nByte);
     pRet->nLevel = nLevel;
     i += sqlite3GetVarint(&pData[i], &pRet->nWriteCounter);
-    for(iLvl=0; iLvl<nLevel; iLvl++){
+
+    for(iLvl=0; rc==SQLITE_OK && iLvl<nLevel; iLvl++){
       Fts5StructureLevel *pLvl = &pRet->aLevel[iLvl];
       int nTotal;
       int iSeg;
@@ -1001,24 +1016,80 @@ static int fts5StructureDecode(
       i += getVarint32(&pData[i], pLvl->nMerge);
       i += getVarint32(&pData[i], nTotal);
       assert( nTotal>=pLvl->nMerge );
-      pLvl->nSeg = nTotal;
-      pLvl->aSeg = (Fts5StructureSegment*)pSpace;
-      pSpace += ((nTotal+1) * sizeof(Fts5StructureSegment));
+      pLvl->aSeg = (Fts5StructureSegment*)fts5MallocZero(&rc, 
+          nTotal * sizeof(Fts5StructureSegment)
+      );
 
-      for(iSeg=0; iSeg<nTotal; iSeg++){
-        i += getVarint32(&pData[i], pLvl->aSeg[iSeg].iSegid);
-        i += getVarint32(&pData[i], pLvl->aSeg[iSeg].nHeight);
-        i += getVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoFirst);
-        i += getVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoLast);
+      if( rc==SQLITE_OK ){
+        pLvl->nSeg = nTotal;
+        for(iSeg=0; iSeg<nTotal; iSeg++){
+          i += getVarint32(&pData[i], pLvl->aSeg[iSeg].iSegid);
+          i += getVarint32(&pData[i], pLvl->aSeg[iSeg].nHeight);
+          i += getVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoFirst);
+          i += getVarint32(&pData[i], pLvl->aSeg[iSeg].pgnoLast);
+        }
       }
     }
-    pRet->aLevel[nLevel].aSeg = (Fts5StructureSegment*)pSpace;
-  }else{
-    rc = SQLITE_NOMEM;
   }
 
   *ppOut = pRet;
   return rc;
+}
+
+/*
+**
+*/
+static void fts5StructureAddLevel(int *pRc, Fts5Structure **ppStruct){
+  if( *pRc==SQLITE_OK ){
+    Fts5Structure *pStruct = *ppStruct;
+    int nLevel = pStruct->nLevel;
+    int nByte = (
+        sizeof(Fts5Structure) +                  /* Main structure */
+        sizeof(Fts5StructureLevel) * (nLevel+1)  /* aLevel[] array */
+    );
+
+    pStruct = sqlite3_realloc(pStruct, nByte);
+    if( pStruct ){
+      memset(&pStruct->aLevel[nLevel], 0, sizeof(Fts5StructureLevel));
+      pStruct->nLevel++;
+      *ppStruct = pStruct;
+    }else{
+      *pRc = SQLITE_NOMEM;
+    }
+  }
+}
+
+/*
+** Extend level iLvl so that there is room for at least nExtra more
+** segments.
+*/
+static void fts5StructureExtendLevel(
+  int *pRc, 
+  Fts5Structure *pStruct, 
+  int iLvl, 
+  int nExtra, 
+  int bInsert
+){
+  if( *pRc==SQLITE_OK ){
+    Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
+    Fts5StructureSegment *aNew;
+    int nByte;
+
+    nByte = (pLvl->nSeg + nExtra) * sizeof(Fts5StructureSegment);
+    aNew = sqlite3_realloc(pLvl->aSeg, nByte);
+    if( aNew ){
+      if( bInsert==0 ){
+        memset(&aNew[pLvl->nSeg], 0, sizeof(Fts5StructureSegment) * nExtra);
+      }else{
+        int nMove = pLvl->nSeg * sizeof(Fts5StructureSegment);
+        memmove(&aNew[nExtra], aNew, nMove);
+        memset(aNew, 0, sizeof(Fts5StructureSegment) * nExtra);
+      }
+      pLvl->aSeg = aNew;
+    }else{
+      *pRc = SQLITE_NOMEM;
+    }
+  }
 }
 
 /*
@@ -1051,6 +1122,10 @@ static Fts5Structure *fts5StructureRead(Fts5Index *p, int iIdx){
 ** call to fts5StructureRead() or fts5StructureDecode().
 */
 static void fts5StructureRelease(Fts5Structure *pStruct){
+  int i;
+  for(i=0; i<pStruct->nLevel; i++){
+    sqlite3_free(pStruct->aLevel[i].aSeg);
+  }
   sqlite3_free(pStruct);
 }
 
@@ -1118,6 +1193,10 @@ static void fts5PrintStructure(const char *zCaption, Fts5Structure *pStruct){
 # define fts5PrintStructure(x,y)
 #endif
 
+static int fts5SegmentSize(Fts5StructureSegment *pSeg){
+  return 1 + pSeg->pgnoLast - pSeg->pgnoFirst;
+}
+
 /*
 ** Return a copy of index structure pStruct. Except, promote as many segments
 ** as possible to level iPromote. If an OOM occurs, NULL is returned.
@@ -1128,75 +1207,21 @@ static void fts5StructurePromoteTo(
   int szPromote,
   Fts5Structure *pStruct
 ){
-  Fts5Structure *pNew;
-  u8 *pSpace;
-  int nSeg = fts5StructureCountSegments(pStruct);
-  int nLvl = pStruct->nLevel;
-  int nByte = (
-      sizeof(Fts5Structure) + 
-      sizeof(Fts5StructureLevel) * (nLvl+1) +
-      sizeof(Fts5StructureSegment) * (nSeg+nLvl+1)
-  );
-  int iTst;
+  int il, is;
+  Fts5StructureLevel *pOut = &pStruct->aLevel[iPromote];
 
-  pNew = fts5IdxMalloc(p, nByte);
-  if( !pNew ) return;
-  pNew->nWriteCounter = pStruct->nWriteCounter;
-  pNew->nLevel = pStruct->nLevel;
-  pSpace = (u8*)&pNew->aLevel[nLvl+1];
-
-  for(iTst=0; iTst<nLvl; iTst++){
-    int nCopy;
-    Fts5StructureLevel *pLvlOut = &pNew->aLevel[iTst];
-    pLvlOut->aSeg = (Fts5StructureSegment*)pSpace;
-
-    if( iTst==iPromote ){
-      int il, is;
-      int nSegCopy = 0;
-
-      /* Figure out the number of segments that will be promoted. */
-      for(il=iTst+1; il<pStruct->nLevel; il++){
-        Fts5StructureLevel *pLvl = &pStruct->aLevel[il];
-        if( pLvl->nMerge ) break;
-        for(is=pLvl->nSeg-1; is>=0; is--){
-          Fts5StructureSegment *pSeg = &pLvl->aSeg[is];
-          int sz = pSeg->pgnoLast - pSeg->pgnoFirst + 1;
-          if( sz>szPromote ){
-            il = pStruct->nLevel;
-            break;
-          }
-          nSegCopy++;
-        }
-      }
-      assert( nSegCopy>0 );
-      pSpace += (nSegCopy * sizeof(Fts5StructureSegment));
-      pLvlOut->nSeg = nSegCopy;
-
-      for(il=iTst+1; il<pStruct->nLevel && nSegCopy>0; il++){
-        Fts5StructureLevel *pLvl = &pStruct->aLevel[il];
-        for(is=pLvl->nSeg-1; is>=0 && nSegCopy>0; is--){
-          Fts5StructureSegment *pSeg = &pLvl->aSeg[is];
-          nSegCopy--;
-          memcpy(&pLvlOut->aSeg[nSegCopy], pSeg, sizeof(Fts5StructureSegment));
-          pLvl->nSeg--;
-        }
-      }
-      assert( nSegCopy==0 );
+  for(il=iPromote+1; il<pStruct->nLevel; il++){
+    Fts5StructureLevel *pLvl = &pStruct->aLevel[il];
+    for(is=pLvl->nSeg-1; is>=0; is--){
+      int sz = fts5SegmentSize(&pLvl->aSeg[is]);
+      if( sz>szPromote ) return;
+      fts5StructureExtendLevel(&p->rc, pStruct, iPromote, 1, 1);
+      if( p->rc ) return;
+      memcpy(pOut->aSeg, &pLvl->aSeg[is], sizeof(Fts5StructureSegment));
+      pOut->nSeg++;
+      pLvl->nSeg--;
     }
-
-    nCopy = pStruct->aLevel[iTst].nSeg * sizeof(Fts5StructureSegment);
-    if( nCopy ) memcpy(pSpace, pStruct->aLevel[iTst].aSeg, nCopy);
-    pSpace += (nCopy + sizeof(Fts5StructureSegment));
-    pLvlOut->nSeg += pStruct->aLevel[iTst].nSeg;
   }
-
-  fts5PrintStructure("NEW", pNew);
-  memcpy(pStruct, pNew, nByte);
-  for(iTst=0; iTst<pNew->nLevel; iTst++){
-    int iOff = pNew->aLevel[iTst].aSeg - (Fts5StructureSegment*)pNew;
-    pStruct->aLevel[iTst].aSeg = &((Fts5StructureSegment*)pStruct)[iOff];
-  }
-  sqlite3_free(pNew);
 }
 
 /*
@@ -3306,9 +3331,10 @@ fflush(stdout);
 static void fts5IndexWork(
   Fts5Index *p,                   /* FTS5 backend object */
   int iIdx,                       /* Index to work on */
-  Fts5Structure *pStruct,         /* Current structure of index */
+  Fts5Structure **ppStruct,       /* IN/OUT: Current structure of index */
   int nLeaf                       /* Number of output leaves just written */
 ){
+  Fts5Structure *pStruct = *ppStruct;
   i64 nWrite;                     /* Initial value of write-counter */
   int nWork;                      /* Number of work-quanta to perform */
   int nRem;                       /* Number of leaf pages left to write */
@@ -3349,9 +3375,14 @@ static void fts5IndexWork(
 #endif
 
     if( nBest<p->nMinMerge && pStruct->aLevel[iBestLvl].nMerge==0 ) break;
+    if( iBestLvl==pStruct->nLevel-1 ){
+      fts5StructureAddLevel(&p->rc, &pStruct);
+    }
+    fts5StructureExtendLevel(&p->rc, pStruct, iBestLvl+1, 1, 0);
     fts5IndexMergeLevel(p, iIdx, pStruct, iBestLvl, &nRem);
     fts5StructurePromote(p, iBestLvl+1, pStruct);
     assert( nRem==0 || p->rc==SQLITE_OK );
+    *ppStruct = pStruct;
   }
 }
 
@@ -3393,15 +3424,20 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
     fts5WriteFinish(p, &writer, &nHeight, &pgnoLast);
 
     /* Edit the Fts5Structure and write it back to the database. */
-    if( pStruct->nLevel==0 ) pStruct->nLevel = 1;
-    pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
-    pSeg->iSegid = iSegid;
-    pSeg->nHeight = nHeight;
-    pSeg->pgnoFirst = 1;
-    pSeg->pgnoLast = pgnoLast;
+    if( pStruct->nLevel==0 ){
+      fts5StructureAddLevel(&p->rc, &pStruct);
+    }
+    fts5StructureExtendLevel(&p->rc, pStruct, 0, 1, 0);
+    if( p->rc==SQLITE_OK ){
+      pSeg = &pStruct->aLevel[0].aSeg[ pStruct->aLevel[0].nSeg++ ];
+      pSeg->iSegid = iSegid;
+      pSeg->nHeight = nHeight;
+      pSeg->pgnoFirst = 1;
+      pSeg->pgnoLast = pgnoLast;
+    }
   }
 
-  fts5IndexWork(p, iHash, pStruct, pgnoLast);
+  fts5IndexWork(p, iHash, &pStruct, pgnoLast);
   fts5StructureWrite(p, iHash, pStruct);
   fts5StructureRelease(pStruct);
 }
