@@ -73,7 +73,7 @@
 
 /*
 ** Check to see if the GetVersionEx[AW] functions are deprecated on the
-** target.  GetVersionEx[AW] were first deprecated in Win8.1.  The
+** target system.  GetVersionEx was first deprecated in Win8.1.
 */
 #ifndef SQLITE_WIN32_GETVERSIONEX
 #  if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WINBLUE
