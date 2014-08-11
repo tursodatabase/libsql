@@ -1,5 +1,5 @@
-C Updates\sto\sevidence\smarks\sand\srequirements.\s\sNo\schanges\sto\scode.
-D 2014-08-11T15:54:11.189
+C Add\sa\sfew\smore\srequirements\stests.
+D 2014-08-11T17:37:27.183
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -189,7 +189,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c febc2a9e7ad6c1a6191c7b5b9170b325d263f343
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c f86a887bf46a3df0058eae1af991a12f59e5d1ef
+F src/main.c 1cf92c5c6468f2b6ed99b638706781ccc9c60b42
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -446,7 +446,7 @@ F test/e_createtable.test 181653f6f45e3adde73f8686600ce5ad7515466b
 F test/e_delete.test d5186e2f5478b659f16a2c8b66c09892823e542a
 F test/e_droptrigger.test 3cd080807622c13e5bbb61fc9a57bd7754da2412
 F test/e_dropview.test 0c9f7f60989164a70a67a9d9c26d1083bc808306
-F test/e_expr.test 5f4528f3dea1c3c401d19ab1d543ec7959e67464
+F test/e_expr.test 8f5fdd7261e2d746813b0c6a1c0e34824ad3c5ad
 F test/e_fkey.test a1783fe1f759e1990e6a11adfcf0702dac4d0707
 F test/e_fts3.test 5c02288842e4f941896fd44afdef564dd5fc1459
 F test/e_insert.test 7b2fa9cd1456f83474d6c5d27db3abaeb8be2023
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 52b03f045edf6fc29f9ba9a5cac53a59f0feb0eb
-R 8606a5b0f380536d0eae822aaf63b02e
+P 62d38308b519a5362f559b296a0cf1acccf8f673
+R 02be8e57f1690f8a6be367e01ea8228e
 U drh
-Z 15a1264271dfbd20eedca74e84319e8d
+Z 0a8f19538bd793702427af9b3a2d2400

@@ -1596,6 +1596,13 @@ do_expr_test e_expr-30.4.1 { CAST('' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.2 { CAST('not a number' AS INTEGER) } integer 0
 do_expr_test e_expr-30.4.3 { CAST('XXI' AS INTEGER) } integer 0
 
+# EVIDENCE-OF: R-08980-53124 The CAST operator understands decimal
+# integers only &mdash; conversion of hexadecimal integers stops at
+# the "x" in the "0x" prefix of the hexadecimal integer string and thus
+# result of the CAST is always zero.
+do_expr_test e_expr-30.5.1 { CAST('0x1234' AS INTEGER) } integer 0
+do_expr_test e_expr-30.5.2 { CAST('0X1234' AS INTEGER) } integer 0
+
 # EVIDENCE-OF: R-02752-50091 A cast of a REAL value into an INTEGER
 # results in the integer between the REAL value and zero that is closest
 # to the REAL value.
