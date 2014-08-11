@@ -2813,6 +2813,34 @@ static void fts5WriteAppendPoslistInt(
   }
 }
 
+static void fts5WriteAppendPoslistData(
+  Fts5Index *p, 
+  Fts5SegWriter *pWriter, 
+  const u8 *aData, 
+  int nData
+){
+  Fts5PageWriter *pPage = &pWriter->aWriter[0];
+  const u8 *a = aData;
+  int n = nData;
+  
+  while( p->rc==SQLITE_OK && (pPage->buf.n + n)>=p->pgsz ){
+    int nReq = p->pgsz - pPage->buf.n;
+    int nCopy = 0;
+    while( nCopy<nReq ){
+      i64 dummy;
+      nCopy += getVarint(&a[nCopy], (u64*)&dummy);
+    }
+    fts5BufferAppendBlob(&p->rc, &pPage->buf, nCopy, a);
+    a += nCopy;
+    n -= nCopy;
+    fts5WriteFlushLeaf(p, pWriter);
+    pWriter->bFirstRowidInPage = 1;
+  }
+  if( n>0 ){
+    fts5BufferAppendBlob(&p->rc, &pPage->buf, n, a);
+  }
+}
+
 static void fts5WriteAppendZerobyte(Fts5Index *p, Fts5SegWriter *pWriter){
   fts5BufferAppendVarint(&p->rc, &pWriter->aWriter[0].buf, 0);
 }
@@ -3041,12 +3069,7 @@ fflush(stdout);
       /* Copy the position list from input to output */
       fts5WriteAppendPoslistInt(p, &writer, sPos.nRem);
       for(/* noop */; !fts5ChunkIterEof(p, &sPos); fts5ChunkIterNext(p, &sPos)){
-        int iOff = 0;
-        while( iOff<sPos.n ){
-          int iVal;
-          iOff += getVarint32(&sPos.p[iOff], iVal);
-          fts5WriteAppendPoslistInt(p, &writer, iVal);
-        }
+        fts5WriteAppendPoslistData(p, &writer, sPos.p, sPos.n);
       }
     }
 
@@ -3180,9 +3203,9 @@ static int fts5FlushNewEntry(
   const u8 *aPoslist, 
   int nPoslist
 ){
+  Fts5Buffer *pBuf;
   Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
   int rc = SQLITE_OK;
-  int i = 0;
 
   /* Append the rowid itself */
   fts5WriteAppendRowid(p->pIdx, &p->writer, iRowid);
@@ -3190,13 +3213,8 @@ static int fts5FlushNewEntry(
   /* Append the size of the position list in bytes */
   fts5WriteAppendPoslistInt(p->pIdx, &p->writer, nPoslist);
 
-  /* Copy the position list to the output segment */
-  while( i<nPoslist ){
-    int iVal;
-    i += getVarint32(&aPoslist[i], iVal);
-    fts5WriteAppendPoslistInt(p->pIdx, &p->writer, iVal);
-  }
-
+  /* And the poslist data */
+  fts5WriteAppendPoslistData(p->pIdx, &p->writer, aPoslist, nPoslist);
   return rc;
 }
 
