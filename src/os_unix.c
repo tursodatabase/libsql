@@ -94,11 +94,10 @@
 #include <sys/time.h>
 #include <errno.h>
 #if !defined(SQLITE_OMIT_WAL) || SQLITE_MAX_MMAP_SIZE>0
-#include <sys/mman.h>
+# include <sys/mman.h>
 #endif
 
-
-#if SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_ENABLE_LOCKING_STYLE || OS_VXWORKS
 # include <sys/ioctl.h>
 # if OS_VXWORKS
 #  include <semaphore.h>
@@ -318,7 +317,11 @@ static int posixOpen(const char *zFile, int flags, int mode){
 ** we are not running as root.
 */
 static int posixFchown(int fd, uid_t uid, gid_t gid){
+#if OS_VXWORKS
+  return 0;
+#else
   return geteuid() ? 0 : fchown(fd,uid,gid);
+#endif
 }
 
 /* Forward reference */
@@ -374,7 +377,7 @@ static struct unix_syscall {
   { "read",         (sqlite3_syscall_ptr)read,       0  },
 #define osRead      ((ssize_t(*)(int,void*,size_t))aSyscall[8].pCurrent)
 
-#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
+#if defined(USE_PREAD) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
   { "pread",        (sqlite3_syscall_ptr)pread,      0  },
 #else
   { "pread",        (sqlite3_syscall_ptr)0,          0  },
@@ -391,7 +394,7 @@ static struct unix_syscall {
   { "write",        (sqlite3_syscall_ptr)write,      0  },
 #define osWrite     ((ssize_t(*)(int,const void*,size_t))aSyscall[11].pCurrent)
 
-#if defined(USE_PREAD) || SQLITE_ENABLE_LOCKING_STYLE
+#if defined(USE_PREAD) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
   { "pwrite",       (sqlite3_syscall_ptr)pwrite,     0  },
 #else
   { "pwrite",       (sqlite3_syscall_ptr)0,          0  },
@@ -1295,7 +1298,11 @@ static int findInodeInfo(
 static int fileHasMoved(unixFile *pFile){
   struct stat buf;
   return pFile->pInode!=0 &&
+#if OS_VXWORKS
+         pFile->pId!=pFile->pInode->fileId.Pid;
+#else
          (osStat(pFile->zPath, &buf)!=0 || buf.st_ino!=pFile->pInode->fileId.ino);
+#endif
 }
 
 
@@ -2438,7 +2445,6 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
   /* Otherwise see if some other process holds it. */
   if( !reserved ){
     sem_t *pSem = pFile->pInode->pSem;
-    struct stat statBuf;
 
     if( sem_trywait(pSem)==-1 ){
       int tErrno = errno;
@@ -2491,7 +2497,6 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
 */
 static int semLock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
-  int fd;
   sem_t *pSem = pFile->pInode->pSem;
   int rc = SQLITE_OK;
 
