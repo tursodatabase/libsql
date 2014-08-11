@@ -1,5 +1,5 @@
-C Fix\san\suninitialized\svariable\scausing\sa\sproblem\sduring\sfts5\stable\sinitialization.
-D 2014-08-09T18:22:59.679
+C Replace\sthe\shash\stable\sborrowed\sfrom\sfts3.
+D 2014-08-11T19:44:52.686
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -105,12 +105,13 @@ F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
 F ext/fts5/fts5.c 15e585ed0194f94a1da360808f29184f9d44554c
 F ext/fts5/fts5.h 8ace10d5b249a3baa983c79e7a1306d2a79cfd6a
-F ext/fts5/fts5Int.h 410001da21bcc3d09b4290d4858352d0985ac7a6
+F ext/fts5/fts5Int.h f17a25546d598fdc5cc47f576d38063fd9290963
 F ext/fts5/fts5_aux.c 31e581413ecab0962ce2b37468f9f658f36f4b0e
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c 7b8e380233176053841904a86006696ee8f6cd24
-F ext/fts5/fts5_index.c 75b2ebfa97ad6054bba98cb923cd2d3c6cc5b112
+F ext/fts5/fts5_hash.c 2af412d00f65ad427f18acbe421c113413cdef06
+F ext/fts5/fts5_index.c ccef8703b6228a39090b0a03b83f163e69627ff2
 F ext/fts5/fts5_storage.c fa3c8fc4766d850a4977bf1d4b71c37e7b07ab8b
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -156,7 +157,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 8118631727a27fa88eb38a07ac3b86ecb86e9eb0
+F main.mk c4fff232b880b91bf665cd2951465de61178e444
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1162,7 +1163,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 3ff0fec22f92dfb54e62eeb48772eddffdbeb0d6
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/loadfts.c 3bdd46090112c84df44a4fbae740af3836108b3f
+F tool/loadfts.c b5b3206ddd58d89ec8d54038c784bcadd6195915
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
@@ -1201,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2821825f7a481755a333dcdcad780b3e24448f20
-R c0a232bfa9626e6e9a9c306fc05ca763
+P a14fa876f0eb66028e302b908967cc4a05ede9fc
+R b81a5fabd4e838059b5d12635ffcd939
 U dan
-Z 9113dc9c4d427c4fad9a129f5cfa7a9b
+Z 39c621bf94a400035f58731d1ee0f6cd

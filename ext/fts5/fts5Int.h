@@ -284,6 +284,47 @@ int sqlite3Fts5IndexReads(Fts5Index *p);
 **************************************************************************/
 
 /**************************************************************************
+** Interface to code in fts5_hash.c. 
+*/
+typedef struct Fts5Hash Fts5Hash;
+
+/*
+** Create a hash table, free a hash table.
+*/
+int sqlite3Fts5HashNew(Fts5Hash**, int *pnSize);
+void sqlite3Fts5HashFree(Fts5Hash*);
+
+int sqlite3Fts5HashWrite(
+  Fts5Hash*,
+  i64 iRowid,                     /* Rowid for this entry */
+  int iCol,                       /* Column token appears in (-ve -> delete) */
+  int iPos,                       /* Position of token within column */
+  const char *pToken, int nToken  /* Token to add or remove to or from index */
+);
+
+/*
+** Empty (but do not delete) a hash table.
+*/
+void sqlite3Fts5HashClear(Fts5Hash*);
+
+/*
+** Iterate through the contents of the hash table.
+*/
+int sqlite3Fts5HashIterate(
+  Fts5Hash*,
+  void *pCtx,
+  int (*xTerm)(void*, const char*, int),
+  int (*xEntry)(void*, i64, const u8*, int),
+  int (*xTermDone)(void*)
+);
+
+
+
+/*
+** End of interface to code in fts5_hash.c.
+**************************************************************************/
+
+/**************************************************************************
 ** Interface to code in fts5_storage.c. fts5_storage.c contains contains 
 ** code to access the data stored in the %_content and %_docsize tables.
 */

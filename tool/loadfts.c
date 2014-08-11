@@ -69,6 +69,7 @@ static void showHelp(const char *zArgv0){
 "  -fts [345]       FTS version to use (default=5)\n"
 "  -idx [01]        Create a mapping from filename to rowid (default=0)\n"
 "  -dir <path>      Root of directory tree to load data from (default=.)\n"
+"  -trans <integer> Number of inserts per transaction (default=1)\n"
 , zArgv0
 );
   exit(1);
@@ -96,6 +97,7 @@ static void sqlite_error_out(const char *zText, sqlite3 *db){
 */
 typedef struct VisitContext VisitContext;
 struct VisitContext {
+  int nRowPerTrans;
   sqlite3 *db;                    /* Database handle */
   sqlite3_stmt *pInsert;          /* INSERT INTO fts VALUES(readtext(:1)) */
 };
@@ -112,7 +114,13 @@ void visit_file(void *pCtx, const char *zPath){
   sqlite3_bind_text(p->pInsert, 1, zPath, -1, SQLITE_STATIC);
   sqlite3_step(p->pInsert);
   rc = sqlite3_reset(p->pInsert);
-  if( rc!=SQLITE_OK ) sqlite_error_out("insert", p->db);
+  if( rc!=SQLITE_OK ){
+    sqlite_error_out("insert", p->db);
+  }else if( p->nRowPerTrans>0 
+         && (sqlite3_last_insert_rowid(p->db) % p->nRowPerTrans)==0 
+  ){
+    sqlite3_exec(p->db, "COMMIT ; BEGIN", 0, 0, 0);
+  }
 }
 
 /*
@@ -150,6 +158,7 @@ int main(int argc, char **argv){
   const char *zDir = ".";         /* Directory to scan */
   int i;
   int rc;
+  int nRowPerTrans = 0;
   sqlite3 *db;
   char *zSql;
   VisitContext sCtx;
@@ -162,6 +171,9 @@ int main(int argc, char **argv){
     if( strcmp(zOpt, "-fts")==0 ){
       iFts = atoi(zArg);
       if( iFts!=3 && iFts!=4 && iFts!= 5) showHelp(argv[0]);
+    }
+    if( strcmp(zOpt, "-trans")==0 ){
+      nRowPerTrans = atoi(zArg);
     }
     else if( strcmp(zOpt, "-idx")==0 ){
       bMap = atoi(zArg);
@@ -189,13 +201,16 @@ int main(int argc, char **argv){
   /* Compile the INSERT statement to write data to the FTS table. */
   memset(&sCtx, 0, sizeof(VisitContext));
   sCtx.db = db;
+  sCtx.nRowPerTrans = nRowPerTrans;
   rc = sqlite3_prepare_v2(db, 
       "INSERT INTO fts VALUES(readtext(?))", -1, &sCtx.pInsert, 0
   );
   if( rc!=SQLITE_OK ) sqlite_error_out("sqlite3_prepare_v2(1)", db);
 
   /* Load all files in the directory hierarchy into the FTS table. */
+  if( sCtx.nRowPerTrans>0 ) sqlite3_exec(db, "BEGIN", 0, 0, 0);
   traverse(zDir, (void*)&sCtx, visit_file);
+  if( sCtx.nRowPerTrans>0 ) sqlite3_exec(db, "COMMIT", 0, 0, 0);
 
   /* Clean up and exit. */
   sqlite3_finalize(sCtx.pInsert);

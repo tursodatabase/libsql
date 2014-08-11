@@ -77,6 +77,7 @@ LIBOBJ += fts5_aux.o
 LIBOBJ += fts5_buffer.o
 LIBOBJ += fts5_config.o
 LIBOBJ += fts5_expr.o
+LIBOBJ += fts5_hash.o
 LIBOBJ += fts5_index.o
 LIBOBJ += fts5_storage.o
 LIBOBJ += fts5parse.o
@@ -232,6 +233,7 @@ SRC += \
    $(TOP)/ext/fts5/fts5.c \
    $(TOP)/ext/fts5/fts5_config.c \
    $(TOP)/ext/fts5/fts5_expr.c \
+   $(TOP)/ext/fts5/fts5_hash.c \
    $(TOP)/ext/fts5/fts5_index.c \
    fts5parse.c \
    $(TOP)/ext/fts5/fts5_storage.c 
@@ -598,6 +600,9 @@ fts5_config.o:	$(TOP)/ext/fts5/fts5_config.c $(HDR) $(EXTHDR)
 
 fts5_expr.o:	$(TOP)/ext/fts5/fts5_expr.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_expr.c
+
+fts5_hash.o:	$(TOP)/ext/fts5/fts5_hash.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_hash.c
 
 fts5_index.o:	$(TOP)/ext/fts5/fts5_index.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts5/fts5_index.c

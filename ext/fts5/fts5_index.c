@@ -17,7 +17,6 @@
 */
 
 #include "fts5Int.h"
-#include "fts3_hash.h"
 
 /*
 ** Overview:
@@ -276,8 +275,6 @@ typedef struct Fts5DlidxIter Fts5DlidxIter;
 typedef struct Fts5MultiSegIter Fts5MultiSegIter;
 typedef struct Fts5NodeIter Fts5NodeIter;
 typedef struct Fts5PageWriter Fts5PageWriter;
-typedef struct Fts5PendingDoclist Fts5PendingDoclist;
-typedef struct Fts5PendingPoslist Fts5PendingPoslist;
 typedef struct Fts5PosIter Fts5PosIter;
 typedef struct Fts5SegIter Fts5SegIter;
 typedef struct Fts5DoclistIter Fts5DoclistIter;
@@ -300,7 +297,7 @@ struct Fts5Index {
   ** Variables related to the accumulation of tokens and doclists within the
   ** in-memory hash tables before they are flushed to disk.
   */
-  Fts3Hash *aHash;                /* One hash for terms, one for each prefix */
+  Fts5Hash **apHash;              /* Array of hash tables */
   int nMaxPendingData;            /* Max pending data before flush to disk */
   int nPendingData;               /* Current bytes of pending data */
   i64 iWriteRowid;                /* Rowid for current doc being written */
@@ -345,26 +342,6 @@ struct Fts5Data {
   u8 *p;                          /* Pointer to buffer containing record */
   int n;                          /* Size of record in bytes */
   int nRef;                       /* Ref count */
-};
-
-/*
-** Before it is flushed to a level-0 segment, term data is collected in
-** the hash tables in the Fts5Index.aHash[] array. Hash table keys are
-** terms (or, for prefix indexes, term prefixes) and values are instances
-** of type Fts5PendingDoclist.
-*/
-struct Fts5PendingDoclist {
-  u8 *pTerm;                      /* Term for this entry */
-  int nTerm;                      /* Bytes of data at pTerm */
-  Fts5PendingPoslist *pPoslist;   /* Linked list of position lists */
-  int iCol;                       /* Column for last entry in pPending */
-  int iPos;                       /* Pos value for last entry in pPending */
-  Fts5PendingDoclist *pNext;      /* Used during merge sort */
-};
-struct Fts5PendingPoslist {
-  i64 iRowid;                     /* Rowid for this doclist entry */
-  Fts5Buffer buf;                 /* Current doclist contents */
-  Fts5PendingPoslist *pNext;      /* Previous poslist for same term */
 };
 
 /*
@@ -2458,18 +2435,6 @@ static int fts5PosIterEof(Fts5Index *p, Fts5PosIter *pIter){
   return (p->rc || pIter->chunk.pLeaf==0);
 }
 
-
-/*
-** Allocate memory. The difference between this function and fts5IdxMalloc()
-** is that this increments the Fts5Index.nPendingData variable by the
-** number of bytes allocated. It should be used for all allocations used
-** to store pending-data within the in-memory hash tables.
-*/
-static void *fts5PendingMalloc(Fts5Index *p, int nByte){
-  p->nPendingData += nByte;
-  return fts5IdxMalloc(p, nByte);
-}
-
 /*
 ** Add an entry for (iRowid/iCol/iPos) to the doclist for (pToken/nToken)
 ** in hash table for index iIdx. If iIdx is zero, this is the main terms 
@@ -2485,78 +2450,11 @@ static void fts5AddTermToHash(
   int iPos,                       /* Position of token within column */
   const char *pToken, int nToken  /* Token to add or remove to or from index */
 ){
-  Fts5Config *pConfig = p->pConfig;
-  Fts3Hash *pHash;
-  Fts5PendingDoclist *pDoclist;
-  Fts5PendingPoslist *pPoslist;
-  i64 iRowid = p->iWriteRowid;     /* Rowid associated with these tokens */
-
-  /* If an error has already occured this call is a no-op. */
-  if( p->rc!=SQLITE_OK ) return;
-
-  /* Find the hash table to use. It has already been allocated. */
-  assert( iIdx<=pConfig->nPrefix );
-  assert( iIdx==0 || nToken==pConfig->aPrefix[iIdx-1] );
-  pHash = &p->aHash[iIdx];
-
-  /* Find the doclist to append to. Allocate a new doclist object if
-  ** required. */
-  pDoclist = (Fts5PendingDoclist*)fts3HashFind(pHash, pToken, nToken);
-  if( pDoclist==0 ){
-    Fts5PendingDoclist *pDel;
-    pDoclist = fts5PendingMalloc(p, sizeof(Fts5PendingDoclist) + nToken);
-    if( pDoclist==0 ) return;
-    pDoclist->pTerm = (u8*)&pDoclist[1];
-    pDoclist->nTerm = nToken;
-    memcpy(pDoclist->pTerm, pToken, nToken);
-    pDel = fts3HashInsert(pHash, pDoclist->pTerm, nToken, pDoclist);
-    if( pDel ){
-      assert( pDoclist==pDel );
-      sqlite3_free(pDel);
-      p->rc = SQLITE_NOMEM;
-      return;
-    }
+  if( p->rc==SQLITE_OK ){
+    p->rc = sqlite3Fts5HashWrite(
+        p->apHash[iIdx], p->iWriteRowid, iCol, iPos, pToken, nToken
+    );
   }
-
-  /* Find the poslist to append to. Allocate a new object if required. */
-  pPoslist = pDoclist->pPoslist;
-  if( pPoslist==0 || pPoslist->iRowid!=iRowid ){
-    pPoslist = fts5PendingMalloc(p, sizeof(Fts5PendingPoslist));
-    if( pPoslist==0 ) return;
-    pPoslist->pNext = pDoclist->pPoslist;
-    pPoslist->iRowid = iRowid;
-    pDoclist->pPoslist = pPoslist;
-    pDoclist->iCol = 0;
-    pDoclist->iPos = 0;
-  }
-
-  /* Append the values to the position list. */
-  if( iCol>=0 ){
-    p->nPendingData -= pPoslist->buf.nSpace;
-    if( iCol!=pDoclist->iCol ){
-      fts5BufferAppendVarint(&p->rc, &pPoslist->buf, 1);
-      fts5BufferAppendVarint(&p->rc, &pPoslist->buf, iCol);
-      pDoclist->iCol = iCol;
-      pDoclist->iPos = 0;
-    }
-    fts5BufferAppendVarint(&p->rc, &pPoslist->buf, iPos + 2 - pDoclist->iPos);
-    p->nPendingData += pPoslist->buf.nSpace;
-    pDoclist->iPos = iPos;
-  }
-}
-
-/*
-** Free the pending-doclist object passed as the only argument.
-*/
-static void fts5FreePendingDoclist(Fts5PendingDoclist *p){
-  Fts5PendingPoslist *pPoslist;
-  Fts5PendingPoslist *pNext;
-  for(pPoslist=p->pPoslist; pPoslist; pPoslist=pNext){
-    pNext = pPoslist->pNext;
-    fts5BufferFree(&pPoslist->buf);
-    sqlite3_free(pPoslist);
-  }
-  sqlite3_free(p);
 }
 
 /*
@@ -2582,15 +2480,11 @@ void sqlite3Fts5IndexWrite(
   if( p->rc!=SQLITE_OK ) return;
 
   /* Allocate hash tables if they have not already been allocated */
-  if( p->aHash==0 ){
+  if( p->apHash==0 ){
     int nHash = pConfig->nPrefix + 1;
-    p->aHash = (Fts3Hash*)sqlite3_malloc(sizeof(Fts3Hash) * nHash);
-    if( p->aHash==0 ){
-      p->rc = SQLITE_NOMEM;
-    }else{
-      for(i=0; i<nHash; i++){
-        fts3HashInit(&p->aHash[i], FTS3_HASH_STRING, 0);
-      }
+    p->apHash = (Fts5Hash**)fts5IdxMalloc(p, sizeof(Fts5Hash*) * nHash);
+    for(i=0; p->rc==SQLITE_OK && i<nHash; i++){
+      p->rc = sqlite3Fts5HashNew(&p->apHash[i], &p->nPendingData);
     }
   }
 
@@ -2635,89 +2529,6 @@ static int fts5AllocateSegid(Fts5Index *p, Fts5Structure *pStruct){
   return 0;
 }
 
-static Fts5PendingDoclist *fts5PendingMerge(
-  Fts5Index *p, 
-  Fts5PendingDoclist *pLeft,
-  Fts5PendingDoclist *pRight
-){
-  Fts5PendingDoclist *p1 = pLeft;
-  Fts5PendingDoclist *p2 = pRight;
-  Fts5PendingDoclist *pRet = 0;
-  Fts5PendingDoclist **ppOut = &pRet;
-
-  while( p1 || p2 ){
-    if( p1==0 ){
-      *ppOut = p2;
-      p2 = 0;
-    }else if( p2==0 ){
-      *ppOut = p1;
-      p1 = 0;
-    }else{
-      int nCmp = MIN(p1->nTerm, p2->nTerm);
-      int res = memcmp(p1->pTerm, p2->pTerm, nCmp);
-      if( res==0 ) res = p1->nTerm - p2->nTerm;
-
-      if( res>0 ){
-        /* p2 is smaller */
-        *ppOut = p2;
-        ppOut = &p2->pNext;
-        p2 = p2->pNext;
-      }else{
-        /* p1 is smaller */
-        *ppOut = p1;
-        ppOut = &p1->pNext;
-        p1 = p1->pNext;
-      }
-      *ppOut = 0;
-    }
-  }
-
-  return pRet;
-}
-
-/*
-** Extract all tokens from hash table iHash and link them into a list
-** in sorted order. The hash table is cleared before returning. It is
-** the responsibility of the caller to free the elements of the returned
-** list.
-**
-** If an error occurs, set the Fts5Index.rc error code. If an error has 
-** already occurred, this function is a no-op.
-*/
-static Fts5PendingDoclist *fts5PendingList(Fts5Index *p, int iHash){
-  const int nMergeSlot = 32;
-  Fts3Hash *pHash;
-  Fts3HashElem *pE;               /* Iterator variable */
-  Fts5PendingDoclist **ap;
-  Fts5PendingDoclist *pList;
-  int i;
-
-  ap = fts5IdxMalloc(p, sizeof(Fts5PendingDoclist*) * nMergeSlot);
-  if( !ap ) return 0;
-
-  pHash = &p->aHash[iHash];
-  for(pE=fts3HashFirst(pHash); pE; pE=fts3HashNext(pE)){
-    int i;
-    Fts5PendingDoclist *pDoclist = (Fts5PendingDoclist*)fts3HashData(pE);
-    assert( pDoclist->pNext==0 );
-    for(i=0; ap[i]; i++){
-      pDoclist = fts5PendingMerge(p, pDoclist, ap[i]);
-      ap[i] = 0;
-    }
-    ap[i] = pDoclist;
-  }
-
-  pList = 0;
-  for(i=0; i<nMergeSlot; i++){
-    pList = fts5PendingMerge(p, pList, ap[i]);
-  }
-
-  sqlite3_free(ap);
-  fts3HashClear(pHash);
-  return pList;
-}
-
-
 /*
 ** Discard all data currently cached in the hash-tables.
 */
@@ -2725,13 +2536,7 @@ static void fts5IndexDiscardData(Fts5Index *p){
   Fts5Config *pConfig = p->pConfig;
   int i;
   for(i=0; i<=pConfig->nPrefix; i++){
-    Fts3Hash *pHash = &p->aHash[i];
-    Fts3HashElem *pE;               /* Iterator variable */
-    for(pE=fts3HashFirst(pHash); pE; pE=fts3HashNext(pE)){
-      Fts5PendingDoclist *pDoclist = (Fts5PendingDoclist*)fts3HashData(pE);
-      fts5FreePendingDoclist(pDoclist);
-    }
-    fts3HashClear(pHash);
+    sqlite3Fts5HashClear(p->apHash[i]);
   }
   p->nPendingData = 0;
 }
@@ -3010,44 +2815,6 @@ static void fts5WriteAppendPoslistInt(
 
 static void fts5WriteAppendZerobyte(Fts5Index *p, Fts5SegWriter *pWriter){
   fts5BufferAppendVarint(&p->rc, &pWriter->aWriter[0].buf, 0);
-}
-
-/*
-** Write the contents of pending-doclist object pDoclist to writer pWriter.
-**
-** If an error occurs, set the Fts5Index.rc error code. If an error has 
-** already occurred, this function is a no-op.
-*/
-static void fts5WritePendingDoclist(
-  Fts5Index *p,                   /* FTS5 backend object */
-  Fts5SegWriter *pWriter,         /* Write to this writer object */
-  Fts5PendingDoclist *pDoclist    /* Doclist to write to pWriter */
-){
-  Fts5PendingPoslist *pPoslist;   /* Used to iterate through the doclist */
-
-  /* Append the term */
-  fts5WriteAppendTerm(p, pWriter, pDoclist->nTerm, pDoclist->pTerm);
-
-  /* Append the position list for each rowid */
-  for(pPoslist=pDoclist->pPoslist; pPoslist; pPoslist=pPoslist->pNext){
-    int i = 0;
-
-    /* Append the rowid itself */
-    fts5WriteAppendRowid(p, pWriter, pPoslist->iRowid);
-
-    /* Append the size of the position list in bytes */
-    fts5WriteAppendPoslistInt(p, pWriter, pPoslist->buf.n);
-
-    /* Copy the position list to the output segment */
-    while( i<pPoslist->buf.n){
-      int iVal;
-      i += getVarint32(&pPoslist->buf.p[i], iVal);
-      fts5WriteAppendPoslistInt(p, pWriter, iVal);
-    }
-  }
-
-  /* Write the doclist terminator */
-  fts5WriteAppendZerobyte(p, pWriter);
 }
 
 /*
@@ -3386,6 +3153,53 @@ static void fts5IndexWork(
   }
 }
 
+typedef struct Fts5FlushCtx Fts5FlushCtx;
+struct Fts5FlushCtx {
+  Fts5Index *pIdx;
+  Fts5SegWriter writer; 
+};
+
+static int fts5FlushNewTerm(void *pCtx, const char *zTerm, int nTerm){
+  Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
+  int rc = SQLITE_OK;
+  fts5WriteAppendTerm(p->pIdx, &p->writer, nTerm, (const u8*)zTerm);
+  return rc;
+}
+
+static int fts5FlushTermDone(void *pCtx){
+  Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
+  int rc = SQLITE_OK;
+  /* Write the doclist terminator */
+  fts5WriteAppendZerobyte(p->pIdx, &p->writer);
+  return rc;
+}
+
+static int fts5FlushNewEntry(
+  void *pCtx, 
+  i64 iRowid, 
+  const u8 *aPoslist, 
+  int nPoslist
+){
+  Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
+  int rc = SQLITE_OK;
+  int i = 0;
+
+  /* Append the rowid itself */
+  fts5WriteAppendRowid(p->pIdx, &p->writer, iRowid);
+
+  /* Append the size of the position list in bytes */
+  fts5WriteAppendPoslistInt(p->pIdx, &p->writer, nPoslist);
+
+  /* Copy the position list to the output segment */
+  while( i<nPoslist ){
+    int iVal;
+    i += getVarint32(&aPoslist[i], iVal);
+    fts5WriteAppendPoslistInt(p->pIdx, &p->writer, iVal);
+  }
+
+  return rc;
+}
+
 /*
 ** Flush the contents of in-memory hash table iHash to a new level-0 
 ** segment on disk. Also update the corresponding structure record.
@@ -3404,24 +3218,19 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
   iSegid = fts5AllocateSegid(p, pStruct);
 
   if( iSegid ){
-    Fts5SegWriter writer;
-    Fts5PendingDoclist *pList;
-    Fts5PendingDoclist *pIter;
-    Fts5PendingDoclist *pNext;
-
     Fts5StructureSegment *pSeg;   /* New segment within pStruct */
     int nHeight;                  /* Height of new segment b-tree */
+    int rc;
+    Fts5FlushCtx ctx;
 
-    pList = fts5PendingList(p, iHash);
-    assert( pList!=0 || p->rc!=SQLITE_OK );
-    fts5WriteInit(p, &writer, iHash, iSegid);
+    fts5WriteInit(p, &ctx.writer, iHash, iSegid);
+    ctx.pIdx = p;
 
-    for(pIter=pList; pIter; pIter=pNext){
-      pNext = pIter->pNext;
-      fts5WritePendingDoclist(p, &writer, pIter);
-      fts5FreePendingDoclist(pIter);
-    }
-    fts5WriteFinish(p, &writer, &nHeight, &pgnoLast);
+    rc = sqlite3Fts5HashIterate( p->apHash[iHash], (void*)&ctx, 
+        fts5FlushNewTerm, fts5FlushNewEntry, fts5FlushTermDone
+    );
+    if( p->rc==SQLITE_OK ) p->rc = rc;
+    fts5WriteFinish(p, &ctx.writer, &nHeight, &pgnoLast);
 
     /* Edit the Fts5Structure and write it back to the database. */
     if( pStruct->nLevel==0 ){
@@ -3452,7 +3261,7 @@ static void fts5IndexFlush(Fts5Index *p){
 
   /* If an error has already occured this call is a no-op. */
   if( p->rc!=SQLITE_OK || p->nPendingData==0 ) return;
-  assert( p->aHash );
+  assert( p->apHash );
 
   /* Flush the terms and each prefix index to disk */
   for(i=0; i<=pConfig->nPrefix; i++){
@@ -3555,7 +3364,13 @@ int sqlite3Fts5IndexClose(Fts5Index *p, int bDestroy){
   assert( p->pReader==0 );
   sqlite3_finalize(p->pWriter);
   sqlite3_finalize(p->pDeleter);
-  sqlite3_free(p->aHash);
+  if( p->apHash ){
+    int i;
+    for(i=0; i<=p->pConfig->nPrefix; i++){
+      sqlite3Fts5HashFree(p->apHash[i]);
+    }
+    sqlite3_free(p->apHash);
+  }
   sqlite3_free(p->zDataTbl);
   sqlite3_free(p);
   return rc;
@@ -4315,7 +4130,7 @@ static void fts5SetupPrefixIter(
   if( aBuf && pStruct ){
     Fts5DoclistIter *pDoclist;
     int i;
-    i64 iLastRowid;
+    i64 iLastRowid = 0;
     Fts5MultiSegIter *p1 = 0;     /* Iterator used to gather data from index */
     Fts5Buffer doclist;
 
