@@ -1333,6 +1333,8 @@ int sqlite3_win32_is_nt(void){
         (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
   }
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
+#elif SQLITE_TEST
+  return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
 #else
   return 1;
 #endif

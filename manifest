@@ -1,5 +1,5 @@
-C Further\sclarification\sand\stypo\sfixes\sfor\sthe\sprevious\scomment\schange.
-D 2014-08-11T17:41:53.298
+C Modify\sGetVersionEx\sWin32\sVFS\sfix\sfor\suse\swith\sthe\stest\ssuite.
+D 2014-08-11T17:51:23.396
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -208,7 +208,7 @@ F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 17e7ab0f9160a78c964d615b15b1658ab2090d42
-F src/os_win.c 80e4b93cd46b6c4c6375c68faf61ef5cbb0a251a
+F src/os_win.c e0260a7ba735b4a30b5eccf1a3ace9d6b9718204
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 69714287dbbdbf4ef2a2c5e99ed740ae7d27e051
-R b95f2777181460436236a8c0d3ecfe02
-U drh
-Z 9211ee242443aa3aa6c7a0b0186317b6
+P 87ef9e2f293afd89901fed6be45b0f0052df6846
+R e0e522e37a27751d028bda9decd5982c
+U mistachkin
+Z eaad92a848e90bf0dd1d823726bec5b2
