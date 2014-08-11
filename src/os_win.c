@@ -72,18 +72,14 @@
 #endif
 
 /*
-** Check if the GetVersionEx[AW] functions should be considered deprecated
-** and avoid using them in that case.  It should be noted here that if the
-** value of the SQLITE_WIN32_GETVERSIONEX pre-processor macro is zero
-** (whether via this block or via being manually specified), that implies
-** the underlying operating system will always be based on the Windows NT
-** Kernel.
+** Check to see if the GetVersionEx[AW] functions are deprecated on the
+** target.  GetVersionEx[AW] were first deprecated in Win8.1.  The
 */
 #ifndef SQLITE_WIN32_GETVERSIONEX
 #  if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WINBLUE
-#    define SQLITE_WIN32_GETVERSIONEX   0
+#    define SQLITE_WIN32_GETVERSIONEX   0   /* GetVersionEx() is deprecated */
 #  else
-#    define SQLITE_WIN32_GETVERSIONEX   1
+#    define SQLITE_WIN32_GETVERSIONEX   1   /* GetVersionEx() is current */
 #  endif
 #endif
 
