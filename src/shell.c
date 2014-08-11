@@ -1694,7 +1694,6 @@ static void writefileFunc(
 ){
   FILE *out;
   const char *z;
-  int n;
   sqlite3_int64 rc;
   const char *zFile;
 
@@ -1704,11 +1703,9 @@ static void writefileFunc(
   if( out==0 ) return;
   z = (const char*)sqlite3_value_blob(argv[1]);
   if( z==0 ){
-    n = 0;
     rc = 0;
   }else{
-    n = sqlite3_value_bytes(argv[1]);
-    rc = fwrite(z, 1, n, out);
+    rc = fwrite(z, 1, sqlite3_value_bytes(argv[1]), out);
   }
   fclose(out);
   sqlite3_result_int64(context, rc);
