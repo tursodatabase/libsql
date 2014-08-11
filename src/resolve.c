@@ -710,7 +710,11 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
             /* EVIDENCE-OF: R-61304-29449 The unlikely(X) function is equivalent to
             ** likelihood(X, 0.0625).
             ** EVIDENCE-OF: R-01283-11636 The unlikely(X) function is short-hand for
-            ** likelihood(X,0.0625). */
+            ** likelihood(X,0.0625).
+            ** EVIDENCE-OF: R-36850-34127 The likely(X) function is short-hand for
+            ** likelihood(X,0.9375).
+            ** EVIDENCE-OF: R-53436-40973 The likely(X) function is equivalent to
+            ** likelihood(X,0.9375). */
             /* TUNING: unlikely() probability is 0.0625.  likely() is 0.9375 */
             pExpr->iTable = pDef->zName[0]=='u' ? 62 : 938;
           }             

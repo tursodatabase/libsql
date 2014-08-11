@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings.
-D 2014-08-11T14:21:32.900
+C Updates\sto\sevidence\smarks\sand\srequirements.\s\sNo\schanges\sto\scode.
+D 2014-08-11T15:54:11.189
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -186,10 +186,10 @@ F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 991e4964e9295da3993e2c0f81c7faf642371848
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
-F src/legacy.c 0df0b1550b9cc1f58229644735e317ac89131f12
+F src/legacy.c febc2a9e7ad6c1a6191c7b5b9170b325d263f343
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 867c7b330b740c6c917af9956b13b81d0a048303
-F src/main.c 5cd4d5037e07af703d12035fdfdaf802abf2b7f8
+F src/main.c f86a887bf46a3df0058eae1af991a12f59e5d1ef
 F src/malloc.c 0203ebce9152c6a0e5de520140b8ba65187350be
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -220,11 +220,11 @@ F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
 F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
-F src/resolve.c 44e2e434deaef2b41d4410ede695d867deb89886
+F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 1529c49075464c5a95fde77314073612b1b8d595
 F src/shell.c 75bb7bd2c80bb44861598f322a417c4bafe98fd7
-F src/sqlite.h.in 66a923e0d8a3a771a7050f292cc8028b8c711652
+F src/sqlite.h.in ed9d35990c61f0388ca6405706455c4095310553
 F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 641f8fbb65ca2084c8df95b525f6f82c7a1e91ae
@@ -589,7 +589,7 @@ F test/fts4unicode.test 01ec3fe2a7c3cfff3b4c0581b83caa11b33efa36
 F test/full.test 6b3c8fb43c6beab6b95438c1675374b95fab245d
 F test/func.test ae97561957aba6ca9e3a7b8a13aac41830d701ef
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
-F test/func3.test e82d16b13739f1a0c5efb20048583c79b767b625
+F test/func3.test d202a7606d23f90988a664e88e268aed1087c11c
 F test/func4.test 6beacdfcb0e18c358e6c2dcacf1b65d1fa80955f
 F test/func5.test cdd224400bc3e48d891827cc913a57051a426fa4
 F test/fuzz-oss1.test 4912e528ec9cf2f42134456933659d371c9e0d74
@@ -1185,7 +1185,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P de27c742c0dcda20b51339598bf6094a8dcf5fb9
-R b22e48d145e96418fb870a5b38049ca4
+P 52b03f045edf6fc29f9ba9a5cac53a59f0feb0eb
+R 8606a5b0f380536d0eae822aaf63b02e
 U drh
-Z 67a30f4afb77c4b424be11cabe826966
+Z 15a1264271dfbd20eedca74e84319e8d
