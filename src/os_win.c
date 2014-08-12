@@ -1324,13 +1324,15 @@ int sqlite3_win32_is_nt(void){
     OSVERSIONINFOW sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     osGetVersionExW(&sInfo);
+    osInterlockedCompareExchange(&sqlite3_os_type,
+        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
 #elif defined(SQLITE_WIN32_HAS_ANSI)
     OSVERSIONINFOA sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     osGetVersionExA(&sInfo);
-#endif
     osInterlockedCompareExchange(&sqlite3_os_type,
         (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
+#endif
   }
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
 #elif SQLITE_TEST
