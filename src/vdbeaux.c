@@ -84,18 +84,30 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
 }
 
 /*
-** Resize the Vdbe.aOp array so that it is at least one op larger than 
-** it was.
+** Resize the Vdbe.aOp array so that it is at least nOp elements larger 
+** its current size. nOp is guaranteed to be less than or equal to 1024.
 **
 ** If an out-of-memory error occurs while resizing the array, return
-** SQLITE_NOMEM. In this case Vdbe.aOp and Vdbe.nOpAlloc remain 
+** SQLITE_NOMEM. In this case Vdbe.aOp and Parse.nOpAlloc remain 
 ** unchanged (this is so that any opcodes already allocated can be 
 ** correctly deallocated along with the rest of the Vdbe).
 */
-static int growOpArray(Vdbe *v){
+static int growOpArray(Vdbe *v, int nOp){
   VdbeOp *pNew;
   Parse *p = v->pParse;
+
+  /* If SQLITE_TEST_REALLOC_STRESS is defined and the current op array is
+  ** less than 512 entries in size, grow the op array by the minimum amount 
+  ** required. Otherwise, allocate either double the current size of the 
+  ** array or 1KB of space, whichever is smaller.  */
+#ifdef SQLITE_TEST_REALLOC_STRESS
+  int nNew = (p->nOpAlloc>=512 ? p->nOpAlloc*2 : p->nOpAlloc+nOp);
+#else
   int nNew = (p->nOpAlloc ? p->nOpAlloc*2 : (int)(1024/sizeof(Op)));
+  UNUSED_PARAMETER(nOp);
+#endif
+
+  assert( nNew>=(p->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
     p->nOpAlloc = sqlite3DbMallocSize(p->db, pNew)/sizeof(Op);
@@ -139,7 +151,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   assert( p->magic==VDBE_MAGIC_INIT );
   assert( op>0 && op<0xff );
   if( p->pParse->nOpAlloc<=i ){
-    if( growOpArray(p) ){
+    if( growOpArray(p, 1) ){
       return 1;
     }
   }
@@ -541,7 +553,7 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
 int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp, int iLineno){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p) ){
+  if( p->nOp + nOp > p->pParse->nOpAlloc && growOpArray(p, nOp) ){
     return 0;
   }
   addr = p->nOp;
@@ -726,7 +738,7 @@ void sqlite3VdbeLinkSubProgram(Vdbe *pVdbe, SubProgram *p){
 ** Change the opcode at addr into OP_Noop
 */
 void sqlite3VdbeChangeToNoop(Vdbe *p, int addr){
-  if( p->aOp ){
+  if( addr<p->nOp ){
     VdbeOp *pOp = &p->aOp[addr];
     sqlite3 *db = p->db;
     freeP4(db, pOp->p4type, pOp->p4.p);

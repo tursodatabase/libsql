@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\sVxWorks\scode\sof\sos_unix.c.
-D 2014-08-12T12:19:25.484
+C If\sSQLITE_TEST_REALLOC_STRESS\sis\sdefined,\sextend\sthe\sop-code\sarray\sused\sby\svirtual-machine\sprograms\sby\sone\selement\sat\sa\stime,\sinstead\sof\sdoubling\sits\ssize\swith\seach\srealloc().
+D 2014-08-12T13:38:52.837
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -287,7 +287,7 @@ F src/vdbe.c cd8d7e3ecd3e0e0684f6bf48469966335c666883
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 24e40422382beb774daab11fe9fe9d37e8a04949
-F src/vdbeaux.c bbe934b0d472c98f57433829db91fc052e90fa17
+F src/vdbeaux.c d83ca171e5df5fdea95e61b6e935d78c02b9d982
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c d90a1e8acf8b63dc9d14cbbea12bfec6cec31394
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
@@ -613,7 +613,7 @@ F test/incrblob.test e81846d214f3637622620fbde7cd526781cfe328
 F test/incrblob2.test bf4d549aa4a466d7fbe3e3a3693d3861263d5600
 F test/incrblob3.test d8d036fde015d4a159cd3cbae9d29003b37227a4
 F test/incrblob4.test f26502a5697893e5acea268c910f16478c2f0fab
-F test/incrblob_err.test d2562d2771ebffd4b3af89ef64c140dd44371597
+F test/incrblob_err.test af1f12ba60d220c9752073ff2bda2ad59e88960d
 F test/incrblobfault.test 280474078f6da9e732cd2a215d3d854969014b6e
 F test/incrvacuum.test d2a6ddf5e429720b5fe502766af747915ccf6c32
 F test/incrvacuum2.test 379eeb8740b0ef60c372c439ad4cbea20b34bb9b
@@ -676,7 +676,7 @@ F test/lock_common.tcl 0c270b121d40959fa2f3add382200c27045b3d95
 F test/lookaside.test 93f07bac140c5bb1d49f3892d2684decafdc7af2
 F test/main.test 39c4bb8a157f57298ed1659d6df89d9f35aaf2c8
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test fd368e31fe98d4779ed80442f311ed9f03bcd1f7
+F test/malloc.test 4eb83876dfe4915766c179b687b8640437f14abf
 F test/malloc3.test e3b32c724b5a124b57cb0ed177f675249ad0c66a
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test fafce0aa9157060445cd1a56ad50fc79d82f28c3
@@ -697,7 +697,7 @@ F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 3cff7c0f64735f6883bacdd294e45a6ed5714817
 F test/mallocL.test 252ddc7eb4fbf75364eab17b938816085ff1fc17
-F test/malloc_common.tcl 58e54229c4132ef882a11fab6419ec4cd3073589
+F test/malloc_common.tcl 3663f9001ce3e29bbaa9677ffe15cd468e3ec7e3
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
 F test/memdb.test fcb5297b321b562084fc79d64d5a12a1cd2b639b
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 31356f2cae26278660e6bd360ad35e57261d977c
-R 3b3addf1401dd2b7481a8053af2cf7fe
-U drh
-Z 2e7aab7a2b3236c3b8e957ada63bd33e
+P 19682e8fdc4a3b7884dba3e4387763e435ec16e6
+R c6c0e18a93e2092b23f216934f9dfe20
+U dan
+Z 311715db7c795982c324ba776d8b3111
