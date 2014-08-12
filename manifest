@@ -1,5 +1,5 @@
-C If\sSQLITE_TEST_REALLOC_STRESS\sis\sdefined,\sextend\sthe\sop-code\sarray\sused\sby\svirtual-machine\sprograms\sby\sone\selement\sat\sa\stime,\sinstead\sof\sdoubling\sits\ssize\swith\seach\srealloc().
-D 2014-08-12T13:38:52.837
+C Run\sa\stest\swith\sTEST_REALLOC_STRESS\sand\sOMIT_LOOKASIDE\sdefined\sas\spart\sof\sreleasetest.tcl\son\sLinux/x86-64.
+D 2014-08-12T14:06:13.039
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -773,7 +773,7 @@ F test/rdonly.test dd30a4858d8e0fbad2304c2bd74a33d4df36412a
 F test/regexp1.test 497ea812f264d12b6198d6e50a76be4a1973a9d8
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/releasetest.mk 2eced2f9ae701fd0a29e714a241760503ccba25a
-F test/releasetest.tcl 06d289d8255794073a58d2850742f627924545ce
+F test/releasetest.tcl a0df0dfc5e3ee83ade87b9cc96db41b52d590b9e
 F test/resolver01.test 33abf37ff8335e6bf98f2b45a0af3e06996ccd9a
 F test/rollback.test e9504a009a202c3ed711da2e6879ff60c5a4669c
 F test/rowhash.test 0bc1d31415e4575d10cacf31e1a66b5cc0f8be81
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 19682e8fdc4a3b7884dba3e4387763e435ec16e6
-R c6c0e18a93e2092b23f216934f9dfe20
+P 4c291827224b84487a38e7ccba2edabc0f15b5ba
+R 1284079e980f8822b336e39d17ba6126
 U dan
-Z 311715db7c795982c324ba776d8b3111
+Z b89cd6a3a53bd57f0d4f91bd2d9a8d6b
