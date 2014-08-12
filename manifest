@@ -1,5 +1,5 @@
-C Fix\scompilation\sissue\sin\sthe\sWin32\sVFS\swhen\smanually\sdefining\sSQLITE_WIN32_NO_ANSI.
-D 2014-08-12T16:13:37.205
+C Fix\swhere9.test\sso\sthat\sit\sworks\swith\sthe\s"no_optimization"\spermutation.
+D 2014-08-12T20:13:22.252
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1108,7 +1108,7 @@ F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test 5a4b0abc207d71da4deecd734ad8579e8dd40aa8
 F test/where8.test 806f1dcec4088be2b826b33f757fe6e17c3236a1
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
-F test/where9.test 4f3eab951353a3ae164befc521c777dfa903e46c
+F test/where9.test 729c3ba9b47e8f9f1aab96bae7dad2a524f1d1a2
 F test/whereA.test 4d253178d135ec46d1671e440cd8f2b916aa6e6b
 F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/whereC.test d6f4ecd4fa2d9429681a5b22a25d2bda8e86ab8a
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 35c454616321d480ecbc4efdf6869bbcdf0d3aa2
-R b496e5fc455ad86aa746ec5d2b99190f
-U mistachkin
-Z fae056f6598b8171729329dfe1ec3668
+P 6715991296886c2a02b9a285a1e61189ad1f79c0
+R 710d8f15d7faf7079d5cbb8c78df8572
+U dan
+Z 37c0d23955a964bca892f819d09ecb97
