@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sstatement\sin\sthe\sSELECT\scode\sgenerator\sthat\swas\nincorrect\sfollowing\san\sOOM\serror.
-D 2014-08-12T01:23:07.241
+C Add\sa\stest\sto\sensure\sthat\sthe\sproblem\sfixed\sby\s[a179e41e40]\sdoes\snot\srecur.
+D 2014-08-12T09:36:08.939
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -696,6 +696,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test a88c2b9627c8506bf4703d8397420043a786cdb6
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test 3cff7c0f64735f6883bacdd294e45a6ed5714817
+F test/mallocL.test 252ddc7eb4fbf75364eab17b938816085ff1fc17
 F test/malloc_common.tcl 58e54229c4132ef882a11fab6419ec4cd3073589
 F test/manydb.test 28385ae2087967aa05c38624cec7d96ec74feb3e
 F test/mem5.test c6460fba403c5703141348cd90de1c294188c68f
@@ -1185,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fd2221768b45d9006bbb2919a4977cf2791826d6
-R b6cc4377208f7ed66435f59cee05c5c1
-U drh
-Z b6d2068c4cafb891d688b19239264b19
+P a179e41e40dba4c19a488985f77777acd27b689d
+R fc85cc8ab2d6ab6a18c32ae79fed8287
+U dan
+Z 3ae13b57bd03139bdf57f8a227f614c2
