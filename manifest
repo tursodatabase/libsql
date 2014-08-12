@@ -1,5 +1,5 @@
-C Automatically\sresize\sthe\shash\stable\sused\sby\sfts5.
-D 2014-08-12T08:36:00.189
+C Cache\sthe\svalue\sof\sthe\s"totals"\srecord\sin\smemory\sduring\stransactions.
+D 2014-08-12T16:07:35.119
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,16 +103,16 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c 15e585ed0194f94a1da360808f29184f9d44554c
+F ext/fts5/fts5.c 31db0b90774201820915db17916a9a4d9ac1c80b
 F ext/fts5/fts5.h 8ace10d5b249a3baa983c79e7a1306d2a79cfd6a
-F ext/fts5/fts5Int.h f17a25546d598fdc5cc47f576d38063fd9290963
+F ext/fts5/fts5Int.h b0eb5cd422ba74148b30753f01031d546ffb98e4
 F ext/fts5/fts5_aux.c 31e581413ecab0962ce2b37468f9f658f36f4b0e
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c 7b8e380233176053841904a86006696ee8f6cd24
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
 F ext/fts5/fts5_index.c 0453bb593fe0ef6245762b6823e88839757fdc75
-F ext/fts5/fts5_storage.c fa3c8fc4766d850a4977bf1d4b71c37e7b07ab8b
+F ext/fts5/fts5_storage.c 5913aa01a1dada1c5e1a39e4cbb44e84c5f7f350
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
 F ext/icu/icu.c d415ccf984defeb9df2c0e1afcfaa2f6dc05eacb
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9f8d678a0ea75e169daf8b3f00bd05f52a050ea6
-R 0ec55f1e05fde288099bbb5e345c2533
+P f1cb48f412a5f200f1fe04f91072864f379db08f
+R 6321f5990f75eb3b76570e3e341050f0
 U dan
-Z 0fd4a4dea7b2432712fcac248306942e
+Z f483f9b1471761b27d0fa8b15d969ed4

@@ -934,7 +934,7 @@ static int fts5SyncMethod(sqlite3_vtab *pVtab){
   int rc;
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SYNC, 0);
-  rc = sqlite3Fts5IndexSync(pTab->pIndex, 1);
+  rc = sqlite3Fts5StorageSync(pTab->pStorage, 1);
   return rc;
 }
 
@@ -964,7 +964,7 @@ static int fts5RollbackMethod(sqlite3_vtab *pVtab){
   int rc;
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACK, 0);
-  rc = sqlite3Fts5IndexRollback(pTab->pIndex);
+  rc = sqlite3Fts5StorageRollback(pTab->pStorage);
   return rc;
 }
 
@@ -1353,7 +1353,7 @@ static int fts5RenameMethod(
 static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_SAVEPOINT, iSavepoint);
-  return sqlite3Fts5IndexSync(pTab->pIndex, 0);
+  return sqlite3Fts5StorageSync(pTab->pStorage, 0);
 }
 
 /*
@@ -1364,7 +1364,7 @@ static int fts5SavepointMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_RELEASE, iSavepoint);
-  return sqlite3Fts5IndexSync(pTab->pIndex, 0);
+  return sqlite3Fts5StorageSync(pTab->pStorage, 0);
 }
 
 /*
@@ -1375,7 +1375,7 @@ static int fts5ReleaseMethod(sqlite3_vtab *pVtab, int iSavepoint){
 static int fts5RollbackToMethod(sqlite3_vtab *pVtab, int iSavepoint){
   Fts5Table *pTab = (Fts5Table*)pVtab;
   fts5CheckTransactionState(pTab, FTS5_ROLLBACKTO, iSavepoint);
-  return sqlite3Fts5IndexRollback(pTab->pIndex);
+  return sqlite3Fts5StorageRollback(pTab->pStorage);
 }
 
 /*

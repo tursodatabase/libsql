@@ -353,6 +353,8 @@ int sqlite3Fts5StorageDocsize(Fts5Storage *p, i64 iRowid, int *aCol);
 int sqlite3Fts5StorageSize(Fts5Storage *p, int iCol, i64 *pnAvg);
 int sqlite3Fts5StorageRowCount(Fts5Storage *p, i64 *pnRow);
 
+int sqlite3Fts5StorageSync(Fts5Storage *p, int bCommit);
+int sqlite3Fts5StorageRollback(Fts5Storage *p);
 
 /*
 ** End of interface to code in fts5_storage.c.
