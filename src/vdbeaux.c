@@ -85,7 +85,8 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
 
 /*
 ** Resize the Vdbe.aOp array so that it is at least nOp elements larger 
-** its current size. nOp is guaranteed to be less than or equal to 1024.
+** than its current size. nOp is guaranteed to be less than or equal
+** to 1024/sizeof(Op).
 **
 ** If an out-of-memory error occurs while resizing the array, return
 ** SQLITE_NOMEM. In this case Vdbe.aOp and Parse.nOpAlloc remain 
@@ -96,10 +97,13 @@ static int growOpArray(Vdbe *v, int nOp){
   VdbeOp *pNew;
   Parse *p = v->pParse;
 
-  /* If SQLITE_TEST_REALLOC_STRESS is defined and the current op array is
-  ** less than 512 entries in size, grow the op array by the minimum amount 
-  ** required. Otherwise, allocate either double the current size of the 
-  ** array or 1KB of space, whichever is smaller.  */
+  /* The SQLITE_TEST_REALLOC_STRESS compile-time option is designed to force
+  ** more frequent reallocs and hence provide more opportunities for 
+  ** simulated OOM faults.  SQLITE_TEST_REALLOC_STRESS is generally used
+  ** during testing only.  With SQLITE_TEST_REALLOC_STRESS grow the op array
+  ** by the minimum* amount required until the size reaches 512.  Normal
+  ** operation (without SQLITE_TEST_REALLOC_STRESS) is to double the current
+  ** size of the op array or add 1KB of space, whichever is smaller. */
 #ifdef SQLITE_TEST_REALLOC_STRESS
   int nNew = (p->nOpAlloc>=512 ? p->nOpAlloc*2 : p->nOpAlloc+nOp);
 #else
@@ -107,6 +111,7 @@ static int growOpArray(Vdbe *v, int nOp){
   UNUSED_PARAMETER(nOp);
 #endif
 
+  assert( nOp<=(1024/sizeof(Op)) );
   assert( nNew>=(p->nOpAlloc+nOp) );
   pNew = sqlite3DbRealloc(p->db, v->aOp, nNew*sizeof(Op));
   if( pNew ){
