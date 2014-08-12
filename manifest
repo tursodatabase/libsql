@@ -1,5 +1,5 @@
-C Fix\stypos\sin\sthe\sVxWorks\scode\sof\sos_unix.c.
-D 2014-08-12T12:19:25.484
+C Remove\ssupport\sfor\sWin9x.
+D 2014-08-12T13:32:11.676
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -201,14 +201,14 @@ F src/mutex.c 84a073c9a23a8d7bdd2ea832522d1730df18812c
 F src/mutex.h 5bc526e19dccc412b7ff04642f6fdad3fdfdabea
 F src/mutex_noop.c f3f09fd7a2eb4287cfc799753ffc30380e7b71a1
 F src/mutex_unix.c 1b10d5413dfc794364a8adf3eb3a192926b43fa3
-F src/mutex_w32.c c50939b72368f1cfbddb58520372081a50558548
+F src/mutex_w32.c c4955b57c21a9937007039c85e3082aa3679a36b
 F src/notify.c 976dd0f6171d4588e89e874fcc765e92914b6d30
 F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 119f4f1fb94e74373d53e4946d33e4bc31e91b26
-F src/os_win.c e0260a7ba735b4a30b5eccf1a3ace9d6b9718204
+F src/os_win.c 71e08fd8c25d499624bb3ae545523f5d969f4ec8
 F src/os_win.h 057344a6720b4c8405d9bd98f58cb37a6ee46c25
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1186,7 +1186,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 31356f2cae26278660e6bd360ad35e57261d977c
-R 3b3addf1401dd2b7481a8053af2cf7fe
+P 19682e8fdc4a3b7884dba3e4387763e435ec16e6
+R c759db1b98e6d4a2c6a6cf98d9b98581
+T *branch * drop-win9x-support
+T *sym-drop-win9x-support *
+T -sym-trunk *
 U drh
-Z 2e7aab7a2b3236c3b8e957ada63bd33e
+Z 12bf9d613b9fa1b2fefaa9591577ee7f

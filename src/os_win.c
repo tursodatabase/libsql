@@ -26,40 +26,6 @@
 #include "os_win.h"
 
 /*
-** Compiling and using WAL mode requires several APIs that are only
-** available in Windows platforms based on the NT kernel.
-*/
-#if !SQLITE_OS_WINNT && !defined(SQLITE_OMIT_WAL)
-#  error "WAL mode requires support from the Windows NT kernel, compile\
- with SQLITE_OMIT_WAL."
-#endif
-
-/*
-** Are most of the Win32 ANSI APIs available (i.e. with certain exceptions
-** based on the sub-platform)?
-*/
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && !defined(SQLITE_WIN32_NO_ANSI)
-#  define SQLITE_WIN32_HAS_ANSI
-#endif
-
-/*
-** Are most of the Win32 Unicode APIs available (i.e. with certain exceptions
-** based on the sub-platform)?
-*/
-#if (SQLITE_OS_WINCE || SQLITE_OS_WINNT || SQLITE_OS_WINRT) && \
-    !defined(SQLITE_WIN32_NO_WIDE)
-#  define SQLITE_WIN32_HAS_WIDE
-#endif
-
-/*
-** Make sure at least one set of Win32 APIs is available.
-*/
-#if !defined(SQLITE_WIN32_HAS_ANSI) && !defined(SQLITE_WIN32_HAS_WIDE)
-#  error "At least one of SQLITE_WIN32_HAS_ANSI and SQLITE_WIN32_HAS_WIDE\
- must be defined."
-#endif
-
-/*
 ** Define the required Windows SDK version constants if they are not
 ** already available.
 */
@@ -69,18 +35,6 @@
 
 #ifndef NTDDI_WINBLUE
 #  define NTDDI_WINBLUE                     0x06030000
-#endif
-
-/*
-** Check to see if the GetVersionEx[AW] functions are deprecated on the
-** target system.  GetVersionEx was first deprecated in Win8.1.
-*/
-#ifndef SQLITE_WIN32_GETVERSIONEX
-#  if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WINBLUE
-#    define SQLITE_WIN32_GETVERSIONEX   0   /* GetVersionEx() is deprecated */
-#  else
-#    define SQLITE_WIN32_GETVERSIONEX   1   /* GetVersionEx() is current */
-#  endif
 #endif
 
 /*
@@ -174,19 +128,10 @@
 #if SQLITE_OS_WINRT
 WINBASEAPI HANDLE WINAPI CreateFileMappingFromApp(HANDLE, \
         LPSECURITY_ATTRIBUTES, ULONG, ULONG64, LPCWSTR);
-
 WINBASEAPI LPVOID WINAPI MapViewOfFileFromApp(HANDLE, ULONG, ULONG64, SIZE_T);
 #else
-#if defined(SQLITE_WIN32_HAS_ANSI)
-WINBASEAPI HANDLE WINAPI CreateFileMappingA(HANDLE, LPSECURITY_ATTRIBUTES, \
-        DWORD, DWORD, DWORD, LPCSTR);
-#endif /* defined(SQLITE_WIN32_HAS_ANSI) */
-
-#if defined(SQLITE_WIN32_HAS_WIDE)
 WINBASEAPI HANDLE WINAPI CreateFileMappingW(HANDLE, LPSECURITY_ATTRIBUTES, \
         DWORD, DWORD, DWORD, LPCWSTR);
-#endif /* defined(SQLITE_WIN32_HAS_WIDE) */
-
 WINBASEAPI LPVOID WINAPI MapViewOfFile(HANDLE, DWORD, DWORD, DWORD, SIZE_T);
 #endif /* SQLITE_OS_WINRT */
 
@@ -420,14 +365,6 @@ static LONG volatile sqlite3_os_type = 0;
 #endif
 
 /*
-** This function is not available on Windows CE or WinRT.
- */
-
-#if SQLITE_OS_WINCE || SQLITE_OS_WINRT
-#  define osAreFileApisANSI()       1
-#endif
-
-/*
 ** Many system calls are accessed through pointer-to-functions so that
 ** they may be overridden at runtime to facilitate fault injection during
 ** testing and sandboxing.  The following array holds the names and pointers
@@ -440,221 +377,125 @@ static struct win_syscall {
 } aSyscall[] = {
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "AreFileApisANSI",         (SYSCALL)AreFileApisANSI,         0 },
+#define osAreFileApisANSI ((BOOL(WINAPI*)(VOID))aSyscall[0].pCurrent)
 #else
   { "AreFileApisANSI",         (SYSCALL)0,                       0 },
+#define osAreFileApisANSI()       1
 #endif
 
-#ifndef osAreFileApisANSI
-#define osAreFileApisANSI ((BOOL(WINAPI*)(VOID))aSyscall[0].pCurrent)
-#endif
-
-#if SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_WIDE)
+#if SQLITE_OS_WINCE
   { "CharLowerW",              (SYSCALL)CharLowerW,              0 },
 #else
   { "CharLowerW",              (SYSCALL)0,                       0 },
 #endif
-
 #define osCharLowerW ((LPWSTR(WINAPI*)(LPWSTR))aSyscall[1].pCurrent)
 
-#if SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_WIDE)
+#if SQLITE_OS_WINCE
   { "CharUpperW",              (SYSCALL)CharUpperW,              0 },
 #else
   { "CharUpperW",              (SYSCALL)0,                       0 },
 #endif
-
 #define osCharUpperW ((LPWSTR(WINAPI*)(LPWSTR))aSyscall[2].pCurrent)
 
   { "CloseHandle",             (SYSCALL)CloseHandle,             0 },
-
 #define osCloseHandle ((BOOL(WINAPI*)(HANDLE))aSyscall[3].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI)
-  { "CreateFileA",             (SYSCALL)CreateFileA,             0 },
-#else
-  { "CreateFileA",             (SYSCALL)0,                       0 },
-#endif
-
-#define osCreateFileA ((HANDLE(WINAPI*)(LPCSTR,DWORD,DWORD, \
-        LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[4].pCurrent)
-
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT
   { "CreateFileW",             (SYSCALL)CreateFileW,             0 },
 #else
   { "CreateFileW",             (SYSCALL)0,                       0 },
 #endif
-
 #define osCreateFileW ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD, \
-        LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[5].pCurrent)
+        LPSECURITY_ATTRIBUTES,DWORD,DWORD,HANDLE))aSyscall[4].pCurrent)
 
-#if (!SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_ANSI) && \
-        !defined(SQLITE_OMIT_WAL))
-  { "CreateFileMappingA",      (SYSCALL)CreateFileMappingA,      0 },
-#else
-  { "CreateFileMappingA",      (SYSCALL)0,                       0 },
-#endif
-
-#define osCreateFileMappingA ((HANDLE(WINAPI*)(HANDLE,LPSECURITY_ATTRIBUTES, \
-        DWORD,DWORD,DWORD,LPCSTR))aSyscall[6].pCurrent)
-
-#if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        !defined(SQLITE_OMIT_WAL))
+#if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && !defined(SQLITE_OMIT_WAL))
   { "CreateFileMappingW",      (SYSCALL)CreateFileMappingW,      0 },
 #else
   { "CreateFileMappingW",      (SYSCALL)0,                       0 },
 #endif
-
 #define osCreateFileMappingW ((HANDLE(WINAPI*)(HANDLE,LPSECURITY_ATTRIBUTES, \
-        DWORD,DWORD,DWORD,LPCWSTR))aSyscall[7].pCurrent)
+        DWORD,DWORD,DWORD,LPCWSTR))aSyscall[5].pCurrent)
 
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT
   { "CreateMutexW",            (SYSCALL)CreateMutexW,            0 },
 #else
   { "CreateMutexW",            (SYSCALL)0,                       0 },
 #endif
-
 #define osCreateMutexW ((HANDLE(WINAPI*)(LPSECURITY_ATTRIBUTES,BOOL, \
-        LPCWSTR))aSyscall[8].pCurrent)
+        LPCWSTR))aSyscall[6].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI)
-  { "DeleteFileA",             (SYSCALL)DeleteFileA,             0 },
-#else
-  { "DeleteFileA",             (SYSCALL)0,                       0 },
-#endif
-
-#define osDeleteFileA ((BOOL(WINAPI*)(LPCSTR))aSyscall[9].pCurrent)
-
-#if defined(SQLITE_WIN32_HAS_WIDE)
   { "DeleteFileW",             (SYSCALL)DeleteFileW,             0 },
-#else
-  { "DeleteFileW",             (SYSCALL)0,                       0 },
-#endif
-
-#define osDeleteFileW ((BOOL(WINAPI*)(LPCWSTR))aSyscall[10].pCurrent)
+#define osDeleteFileW ((BOOL(WINAPI*)(LPCWSTR))aSyscall[7].pCurrent)
 
 #if SQLITE_OS_WINCE
   { "FileTimeToLocalFileTime", (SYSCALL)FileTimeToLocalFileTime, 0 },
 #else
   { "FileTimeToLocalFileTime", (SYSCALL)0,                       0 },
 #endif
-
 #define osFileTimeToLocalFileTime ((BOOL(WINAPI*)(CONST FILETIME*, \
-        LPFILETIME))aSyscall[11].pCurrent)
+        LPFILETIME))aSyscall[8].pCurrent)
 
 #if SQLITE_OS_WINCE
   { "FileTimeToSystemTime",    (SYSCALL)FileTimeToSystemTime,    0 },
 #else
   { "FileTimeToSystemTime",    (SYSCALL)0,                       0 },
 #endif
-
 #define osFileTimeToSystemTime ((BOOL(WINAPI*)(CONST FILETIME*, \
-        LPSYSTEMTIME))aSyscall[12].pCurrent)
+        LPSYSTEMTIME))aSyscall[9].pCurrent)
 
   { "FlushFileBuffers",        (SYSCALL)FlushFileBuffers,        0 },
+#define osFlushFileBuffers ((BOOL(WINAPI*)(HANDLE))aSyscall[10].pCurrent)
 
-#define osFlushFileBuffers ((BOOL(WINAPI*)(HANDLE))aSyscall[13].pCurrent)
-
-#if defined(SQLITE_WIN32_HAS_ANSI)
-  { "FormatMessageA",          (SYSCALL)FormatMessageA,          0 },
-#else
-  { "FormatMessageA",          (SYSCALL)0,                       0 },
-#endif
-
-#define osFormatMessageA ((DWORD(WINAPI*)(DWORD,LPCVOID,DWORD,DWORD,LPSTR, \
-        DWORD,va_list*))aSyscall[14].pCurrent)
-
-#if defined(SQLITE_WIN32_HAS_WIDE)
   { "FormatMessageW",          (SYSCALL)FormatMessageW,          0 },
-#else
-  { "FormatMessageW",          (SYSCALL)0,                       0 },
-#endif
-
 #define osFormatMessageW ((DWORD(WINAPI*)(DWORD,LPCVOID,DWORD,DWORD,LPWSTR, \
-        DWORD,va_list*))aSyscall[15].pCurrent)
+        DWORD,va_list*))aSyscall[11].pCurrent)
 
 #if !defined(SQLITE_OMIT_LOAD_EXTENSION)
   { "FreeLibrary",             (SYSCALL)FreeLibrary,             0 },
 #else
   { "FreeLibrary",             (SYSCALL)0,                       0 },
 #endif
-
-#define osFreeLibrary ((BOOL(WINAPI*)(HMODULE))aSyscall[16].pCurrent)
+#define osFreeLibrary ((BOOL(WINAPI*)(HMODULE))aSyscall[12].pCurrent)
 
   { "GetCurrentProcessId",     (SYSCALL)GetCurrentProcessId,     0 },
+#define osGetCurrentProcessId ((DWORD(WINAPI*)(VOID))aSyscall[13].pCurrent)
 
-#define osGetCurrentProcessId ((DWORD(WINAPI*)(VOID))aSyscall[17].pCurrent)
-
-#if !SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_ANSI)
-  { "GetDiskFreeSpaceA",       (SYSCALL)GetDiskFreeSpaceA,       0 },
-#else
-  { "GetDiskFreeSpaceA",       (SYSCALL)0,                       0 },
-#endif
-
-#define osGetDiskFreeSpaceA ((BOOL(WINAPI*)(LPCSTR,LPDWORD,LPDWORD,LPDWORD, \
-        LPDWORD))aSyscall[18].pCurrent)
-
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "GetDiskFreeSpaceW",       (SYSCALL)GetDiskFreeSpaceW,       0 },
 #else
   { "GetDiskFreeSpaceW",       (SYSCALL)0,                       0 },
 #endif
-
 #define osGetDiskFreeSpaceW ((BOOL(WINAPI*)(LPCWSTR,LPDWORD,LPDWORD,LPDWORD, \
-        LPDWORD))aSyscall[19].pCurrent)
+        LPDWORD))aSyscall[14].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI)
-  { "GetFileAttributesA",      (SYSCALL)GetFileAttributesA,      0 },
-#else
-  { "GetFileAttributesA",      (SYSCALL)0,                       0 },
-#endif
-
-#define osGetFileAttributesA ((DWORD(WINAPI*)(LPCSTR))aSyscall[20].pCurrent)
-
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT
   { "GetFileAttributesW",      (SYSCALL)GetFileAttributesW,      0 },
 #else
   { "GetFileAttributesW",      (SYSCALL)0,                       0 },
 #endif
+#define osGetFileAttributesW ((DWORD(WINAPI*)(LPCWSTR))aSyscall[15].pCurrent)
 
-#define osGetFileAttributesW ((DWORD(WINAPI*)(LPCWSTR))aSyscall[21].pCurrent)
-
-#if defined(SQLITE_WIN32_HAS_WIDE)
   { "GetFileAttributesExW",    (SYSCALL)GetFileAttributesExW,    0 },
-#else
-  { "GetFileAttributesExW",    (SYSCALL)0,                       0 },
-#endif
-
 #define osGetFileAttributesExW ((BOOL(WINAPI*)(LPCWSTR,GET_FILEEX_INFO_LEVELS, \
-        LPVOID))aSyscall[22].pCurrent)
+        LPVOID))aSyscall[16].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "GetFileSize",             (SYSCALL)GetFileSize,             0 },
 #else
   { "GetFileSize",             (SYSCALL)0,                       0 },
 #endif
+#define osGetFileSize ((DWORD(WINAPI*)(HANDLE,LPDWORD))aSyscall[17].pCurrent)
 
-#define osGetFileSize ((DWORD(WINAPI*)(HANDLE,LPDWORD))aSyscall[23].pCurrent)
-
-#if !SQLITE_OS_WINCE && defined(SQLITE_WIN32_HAS_ANSI)
-  { "GetFullPathNameA",        (SYSCALL)GetFullPathNameA,        0 },
-#else
-  { "GetFullPathNameA",        (SYSCALL)0,                       0 },
-#endif
-
-#define osGetFullPathNameA ((DWORD(WINAPI*)(LPCSTR,DWORD,LPSTR, \
-        LPSTR*))aSyscall[24].pCurrent)
-
-#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "GetFullPathNameW",        (SYSCALL)GetFullPathNameW,        0 },
 #else
   { "GetFullPathNameW",        (SYSCALL)0,                       0 },
 #endif
-
 #define osGetFullPathNameW ((DWORD(WINAPI*)(LPCWSTR,DWORD,LPWSTR, \
-        LPWSTR*))aSyscall[25].pCurrent)
+        LPWSTR*))aSyscall[18].pCurrent)
 
   { "GetLastError",            (SYSCALL)GetLastError,            0 },
-
-#define osGetLastError ((DWORD(WINAPI*)(VOID))aSyscall[26].pCurrent)
+#define osGetLastError ((DWORD(WINAPI*)(VOID))aSyscall[19].pCurrent)
 
 #if !defined(SQLITE_OMIT_LOAD_EXTENSION)
 #if SQLITE_OS_WINCE
@@ -668,162 +509,108 @@ static struct win_syscall {
 #else
   { "GetProcAddressA",         (SYSCALL)0,                       0 },
 #endif
-
 #define osGetProcAddressA ((FARPROC(WINAPI*)(HMODULE, \
-        LPCSTR))aSyscall[27].pCurrent)
+        LPCSTR))aSyscall[20].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "GetSystemInfo",           (SYSCALL)GetSystemInfo,           0 },
 #else
   { "GetSystemInfo",           (SYSCALL)0,                       0 },
 #endif
-
-#define osGetSystemInfo ((VOID(WINAPI*)(LPSYSTEM_INFO))aSyscall[28].pCurrent)
+#define osGetSystemInfo ((VOID(WINAPI*)(LPSYSTEM_INFO))aSyscall[21].pCurrent)
 
   { "GetSystemTime",           (SYSCALL)GetSystemTime,           0 },
-
-#define osGetSystemTime ((VOID(WINAPI*)(LPSYSTEMTIME))aSyscall[29].pCurrent)
+#define osGetSystemTime ((VOID(WINAPI*)(LPSYSTEMTIME))aSyscall[22].pCurrent)
 
 #if !SQLITE_OS_WINCE
   { "GetSystemTimeAsFileTime", (SYSCALL)GetSystemTimeAsFileTime, 0 },
 #else
   { "GetSystemTimeAsFileTime", (SYSCALL)0,                       0 },
 #endif
-
 #define osGetSystemTimeAsFileTime ((VOID(WINAPI*)( \
-        LPFILETIME))aSyscall[30].pCurrent)
+        LPFILETIME))aSyscall[23].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI)
-  { "GetTempPathA",            (SYSCALL)GetTempPathA,            0 },
-#else
-  { "GetTempPathA",            (SYSCALL)0,                       0 },
-#endif
-
-#define osGetTempPathA ((DWORD(WINAPI*)(DWORD,LPSTR))aSyscall[31].pCurrent)
-
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE)
+#if !SQLITE_OS_WINRT
   { "GetTempPathW",            (SYSCALL)GetTempPathW,            0 },
 #else
   { "GetTempPathW",            (SYSCALL)0,                       0 },
 #endif
-
-#define osGetTempPathW ((DWORD(WINAPI*)(DWORD,LPWSTR))aSyscall[32].pCurrent)
+#define osGetTempPathW ((DWORD(WINAPI*)(DWORD,LPWSTR))aSyscall[24].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "GetTickCount",            (SYSCALL)GetTickCount,            0 },
 #else
   { "GetTickCount",            (SYSCALL)0,                       0 },
 #endif
-
-#define osGetTickCount ((DWORD(WINAPI*)(VOID))aSyscall[33].pCurrent)
-
-#if defined(SQLITE_WIN32_HAS_ANSI) && defined(SQLITE_WIN32_GETVERSIONEX) && \
-        SQLITE_WIN32_GETVERSIONEX
-  { "GetVersionExA",           (SYSCALL)GetVersionExA,           0 },
-#else
-  { "GetVersionExA",           (SYSCALL)0,                       0 },
-#endif
-
-#define osGetVersionExA ((BOOL(WINAPI*)( \
-        LPOSVERSIONINFOA))aSyscall[34].pCurrent)
-
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
-  { "GetVersionExW",           (SYSCALL)GetVersionExW,           0 },
-#else
-  { "GetVersionExW",           (SYSCALL)0,                       0 },
-#endif
-
-#define osGetVersionExW ((BOOL(WINAPI*)( \
-        LPOSVERSIONINFOW))aSyscall[35].pCurrent)
+#define osGetTickCount ((DWORD(WINAPI*)(VOID))aSyscall[25].pCurrent)
 
   { "HeapAlloc",               (SYSCALL)HeapAlloc,               0 },
-
 #define osHeapAlloc ((LPVOID(WINAPI*)(HANDLE,DWORD, \
-        SIZE_T))aSyscall[36].pCurrent)
+        SIZE_T))aSyscall[26].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "HeapCreate",              (SYSCALL)HeapCreate,              0 },
 #else
   { "HeapCreate",              (SYSCALL)0,                       0 },
 #endif
-
 #define osHeapCreate ((HANDLE(WINAPI*)(DWORD,SIZE_T, \
-        SIZE_T))aSyscall[37].pCurrent)
+        SIZE_T))aSyscall[27].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "HeapDestroy",             (SYSCALL)HeapDestroy,             0 },
 #else
   { "HeapDestroy",             (SYSCALL)0,                       0 },
 #endif
-
-#define osHeapDestroy ((BOOL(WINAPI*)(HANDLE))aSyscall[38].pCurrent)
+#define osHeapDestroy ((BOOL(WINAPI*)(HANDLE))aSyscall[28].pCurrent)
 
   { "HeapFree",                (SYSCALL)HeapFree,                0 },
-
-#define osHeapFree ((BOOL(WINAPI*)(HANDLE,DWORD,LPVOID))aSyscall[39].pCurrent)
+#define osHeapFree ((BOOL(WINAPI*)(HANDLE,DWORD,LPVOID))aSyscall[29].pCurrent)
 
   { "HeapReAlloc",             (SYSCALL)HeapReAlloc,             0 },
-
 #define osHeapReAlloc ((LPVOID(WINAPI*)(HANDLE,DWORD,LPVOID, \
-        SIZE_T))aSyscall[40].pCurrent)
+        SIZE_T))aSyscall[30].pCurrent)
 
   { "HeapSize",                (SYSCALL)HeapSize,                0 },
-
 #define osHeapSize ((SIZE_T(WINAPI*)(HANDLE,DWORD, \
-        LPCVOID))aSyscall[41].pCurrent)
+        LPCVOID))aSyscall[31].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "HeapValidate",            (SYSCALL)HeapValidate,            0 },
 #else
   { "HeapValidate",            (SYSCALL)0,                       0 },
 #endif
-
 #define osHeapValidate ((BOOL(WINAPI*)(HANDLE,DWORD, \
-        LPCVOID))aSyscall[42].pCurrent)
+        LPCVOID))aSyscall[32].pCurrent)
 
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "HeapCompact",             (SYSCALL)HeapCompact,             0 },
 #else
   { "HeapCompact",             (SYSCALL)0,                       0 },
 #endif
+#define osHeapCompact ((UINT(WINAPI*)(HANDLE,DWORD))aSyscall[33].pCurrent)
 
-#define osHeapCompact ((UINT(WINAPI*)(HANDLE,DWORD))aSyscall[43].pCurrent)
-
-#if defined(SQLITE_WIN32_HAS_ANSI) && !defined(SQLITE_OMIT_LOAD_EXTENSION)
-  { "LoadLibraryA",            (SYSCALL)LoadLibraryA,            0 },
-#else
-  { "LoadLibraryA",            (SYSCALL)0,                       0 },
-#endif
-
-#define osLoadLibraryA ((HMODULE(WINAPI*)(LPCSTR))aSyscall[44].pCurrent)
-
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        !defined(SQLITE_OMIT_LOAD_EXTENSION)
+#if !SQLITE_OS_WINRT && !defined(SQLITE_OMIT_LOAD_EXTENSION)
   { "LoadLibraryW",            (SYSCALL)LoadLibraryW,            0 },
 #else
   { "LoadLibraryW",            (SYSCALL)0,                       0 },
 #endif
-
-#define osLoadLibraryW ((HMODULE(WINAPI*)(LPCWSTR))aSyscall[45].pCurrent)
+#define osLoadLibraryW ((HMODULE(WINAPI*)(LPCWSTR))aSyscall[34].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "LocalFree",               (SYSCALL)LocalFree,               0 },
 #else
   { "LocalFree",               (SYSCALL)0,                       0 },
 #endif
-
-#define osLocalFree ((HLOCAL(WINAPI*)(HLOCAL))aSyscall[46].pCurrent)
+#define osLocalFree ((HLOCAL(WINAPI*)(HLOCAL))aSyscall[35].pCurrent)
 
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "LockFile",                (SYSCALL)LockFile,                0 },
 #else
   { "LockFile",                (SYSCALL)0,                       0 },
 #endif
-
 #ifndef osLockFile
 #define osLockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
-        DWORD))aSyscall[47].pCurrent)
+        DWORD))aSyscall[36].pCurrent)
 #endif
 
 #if !SQLITE_OS_WINCE
@@ -831,10 +618,9 @@ static struct win_syscall {
 #else
   { "LockFileEx",              (SYSCALL)0,                       0 },
 #endif
-
 #ifndef osLockFileEx
 #define osLockFileEx ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD,DWORD, \
-        LPOVERLAPPED))aSyscall[48].pCurrent)
+        LPOVERLAPPED))aSyscall[37].pCurrent)
 #endif
 
 #if SQLITE_OS_WINCE || (!SQLITE_OS_WINRT && !defined(SQLITE_OMIT_WAL))
@@ -842,60 +628,51 @@ static struct win_syscall {
 #else
   { "MapViewOfFile",           (SYSCALL)0,                       0 },
 #endif
-
 #define osMapViewOfFile ((LPVOID(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
-        SIZE_T))aSyscall[49].pCurrent)
+        SIZE_T))aSyscall[38].pCurrent)
 
   { "MultiByteToWideChar",     (SYSCALL)MultiByteToWideChar,     0 },
-
 #define osMultiByteToWideChar ((int(WINAPI*)(UINT,DWORD,LPCSTR,int,LPWSTR, \
-        int))aSyscall[50].pCurrent)
+        int))aSyscall[39].pCurrent)
 
   { "QueryPerformanceCounter", (SYSCALL)QueryPerformanceCounter, 0 },
-
 #define osQueryPerformanceCounter ((BOOL(WINAPI*)( \
-        LARGE_INTEGER*))aSyscall[51].pCurrent)
+        LARGE_INTEGER*))aSyscall[40].pCurrent)
 
   { "ReadFile",                (SYSCALL)ReadFile,                0 },
-
 #define osReadFile ((BOOL(WINAPI*)(HANDLE,LPVOID,DWORD,LPDWORD, \
-        LPOVERLAPPED))aSyscall[52].pCurrent)
+        LPOVERLAPPED))aSyscall[41].pCurrent)
 
   { "SetEndOfFile",            (SYSCALL)SetEndOfFile,            0 },
-
-#define osSetEndOfFile ((BOOL(WINAPI*)(HANDLE))aSyscall[53].pCurrent)
+#define osSetEndOfFile ((BOOL(WINAPI*)(HANDLE))aSyscall[42].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "SetFilePointer",          (SYSCALL)SetFilePointer,          0 },
 #else
   { "SetFilePointer",          (SYSCALL)0,                       0 },
 #endif
-
 #define osSetFilePointer ((DWORD(WINAPI*)(HANDLE,LONG,PLONG, \
-        DWORD))aSyscall[54].pCurrent)
+        DWORD))aSyscall[43].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "Sleep",                   (SYSCALL)Sleep,                   0 },
 #else
   { "Sleep",                   (SYSCALL)0,                       0 },
 #endif
-
-#define osSleep ((VOID(WINAPI*)(DWORD))aSyscall[55].pCurrent)
+#define osSleep ((VOID(WINAPI*)(DWORD))aSyscall[44].pCurrent)
 
   { "SystemTimeToFileTime",    (SYSCALL)SystemTimeToFileTime,    0 },
-
 #define osSystemTimeToFileTime ((BOOL(WINAPI*)(CONST SYSTEMTIME*, \
-        LPFILETIME))aSyscall[56].pCurrent)
+        LPFILETIME))aSyscall[45].pCurrent)
 
 #if !SQLITE_OS_WINCE && !SQLITE_OS_WINRT
   { "UnlockFile",              (SYSCALL)UnlockFile,              0 },
 #else
   { "UnlockFile",              (SYSCALL)0,                       0 },
 #endif
-
 #ifndef osUnlockFile
 #define osUnlockFile ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
-        DWORD))aSyscall[57].pCurrent)
+        DWORD))aSyscall[46].pCurrent)
 #endif
 
 #if !SQLITE_OS_WINCE
@@ -903,145 +680,116 @@ static struct win_syscall {
 #else
   { "UnlockFileEx",            (SYSCALL)0,                       0 },
 #endif
-
 #define osUnlockFileEx ((BOOL(WINAPI*)(HANDLE,DWORD,DWORD,DWORD, \
-        LPOVERLAPPED))aSyscall[58].pCurrent)
+        LPOVERLAPPED))aSyscall[47].pCurrent)
 
 #if SQLITE_OS_WINCE || !defined(SQLITE_OMIT_WAL)
   { "UnmapViewOfFile",         (SYSCALL)UnmapViewOfFile,         0 },
 #else
   { "UnmapViewOfFile",         (SYSCALL)0,                       0 },
 #endif
-
-#define osUnmapViewOfFile ((BOOL(WINAPI*)(LPCVOID))aSyscall[59].pCurrent)
+#define osUnmapViewOfFile ((BOOL(WINAPI*)(LPCVOID))aSyscall[48].pCurrent)
 
   { "WideCharToMultiByte",     (SYSCALL)WideCharToMultiByte,     0 },
-
 #define osWideCharToMultiByte ((int(WINAPI*)(UINT,DWORD,LPCWSTR,int,LPSTR,int, \
-        LPCSTR,LPBOOL))aSyscall[60].pCurrent)
+        LPCSTR,LPBOOL))aSyscall[49].pCurrent)
 
   { "WriteFile",               (SYSCALL)WriteFile,               0 },
-
 #define osWriteFile ((BOOL(WINAPI*)(HANDLE,LPCVOID,DWORD,LPDWORD, \
-        LPOVERLAPPED))aSyscall[61].pCurrent)
+        LPOVERLAPPED))aSyscall[50].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "CreateEventExW",          (SYSCALL)CreateEventExW,          0 },
 #else
   { "CreateEventExW",          (SYSCALL)0,                       0 },
 #endif
-
 #define osCreateEventExW ((HANDLE(WINAPI*)(LPSECURITY_ATTRIBUTES,LPCWSTR, \
-        DWORD,DWORD))aSyscall[62].pCurrent)
+        DWORD,DWORD))aSyscall[51].pCurrent)
 
 #if !SQLITE_OS_WINRT
   { "WaitForSingleObject",     (SYSCALL)WaitForSingleObject,     0 },
 #else
   { "WaitForSingleObject",     (SYSCALL)0,                       0 },
 #endif
-
 #define osWaitForSingleObject ((DWORD(WINAPI*)(HANDLE, \
-        DWORD))aSyscall[63].pCurrent)
+        DWORD))aSyscall[52].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "WaitForSingleObjectEx",   (SYSCALL)WaitForSingleObjectEx,   0 },
 #else
   { "WaitForSingleObjectEx",   (SYSCALL)0,                       0 },
 #endif
-
 #define osWaitForSingleObjectEx ((DWORD(WINAPI*)(HANDLE,DWORD, \
-        BOOL))aSyscall[64].pCurrent)
+        BOOL))aSyscall[53].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "SetFilePointerEx",        (SYSCALL)SetFilePointerEx,        0 },
 #else
   { "SetFilePointerEx",        (SYSCALL)0,                       0 },
 #endif
-
 #define osSetFilePointerEx ((BOOL(WINAPI*)(HANDLE,LARGE_INTEGER, \
-        PLARGE_INTEGER,DWORD))aSyscall[65].pCurrent)
+        PLARGE_INTEGER,DWORD))aSyscall[54].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "GetFileInformationByHandleEx", (SYSCALL)GetFileInformationByHandleEx, 0 },
 #else
   { "GetFileInformationByHandleEx", (SYSCALL)0,                  0 },
 #endif
-
 #define osGetFileInformationByHandleEx ((BOOL(WINAPI*)(HANDLE, \
-        FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD))aSyscall[66].pCurrent)
+        FILE_INFO_BY_HANDLE_CLASS,LPVOID,DWORD))aSyscall[55].pCurrent)
 
 #if SQLITE_OS_WINRT && !defined(SQLITE_OMIT_WAL)
   { "MapViewOfFileFromApp",    (SYSCALL)MapViewOfFileFromApp,    0 },
 #else
   { "MapViewOfFileFromApp",    (SYSCALL)0,                       0 },
 #endif
-
 #define osMapViewOfFileFromApp ((LPVOID(WINAPI*)(HANDLE,ULONG,ULONG64, \
-        SIZE_T))aSyscall[67].pCurrent)
+        SIZE_T))aSyscall[56].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "CreateFile2",             (SYSCALL)CreateFile2,             0 },
 #else
   { "CreateFile2",             (SYSCALL)0,                       0 },
 #endif
-
 #define osCreateFile2 ((HANDLE(WINAPI*)(LPCWSTR,DWORD,DWORD,DWORD, \
-        LPCREATEFILE2_EXTENDED_PARAMETERS))aSyscall[68].pCurrent)
+        LPCREATEFILE2_EXTENDED_PARAMETERS))aSyscall[57].pCurrent)
 
 #if SQLITE_OS_WINRT && !defined(SQLITE_OMIT_LOAD_EXTENSION)
   { "LoadPackagedLibrary",     (SYSCALL)LoadPackagedLibrary,     0 },
 #else
   { "LoadPackagedLibrary",     (SYSCALL)0,                       0 },
 #endif
-
 #define osLoadPackagedLibrary ((HMODULE(WINAPI*)(LPCWSTR, \
-        DWORD))aSyscall[69].pCurrent)
+        DWORD))aSyscall[58].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "GetTickCount64",          (SYSCALL)GetTickCount64,          0 },
 #else
   { "GetTickCount64",          (SYSCALL)0,                       0 },
 #endif
-
-#define osGetTickCount64 ((ULONGLONG(WINAPI*)(VOID))aSyscall[70].pCurrent)
+#define osGetTickCount64 ((ULONGLONG(WINAPI*)(VOID))aSyscall[59].pCurrent)
 
 #if SQLITE_OS_WINRT
   { "GetNativeSystemInfo",     (SYSCALL)GetNativeSystemInfo,     0 },
 #else
   { "GetNativeSystemInfo",     (SYSCALL)0,                       0 },
 #endif
-
 #define osGetNativeSystemInfo ((VOID(WINAPI*)( \
-        LPSYSTEM_INFO))aSyscall[71].pCurrent)
+        LPSYSTEM_INFO))aSyscall[60].pCurrent)
 
-#if defined(SQLITE_WIN32_HAS_ANSI)
-  { "OutputDebugStringA",      (SYSCALL)OutputDebugStringA,      0 },
-#else
-  { "OutputDebugStringA",      (SYSCALL)0,                       0 },
-#endif
-
-#define osOutputDebugStringA ((VOID(WINAPI*)(LPCSTR))aSyscall[72].pCurrent)
-
-#if defined(SQLITE_WIN32_HAS_WIDE)
   { "OutputDebugStringW",      (SYSCALL)OutputDebugStringW,      0 },
-#else
-  { "OutputDebugStringW",      (SYSCALL)0,                       0 },
-#endif
-
-#define osOutputDebugStringW ((VOID(WINAPI*)(LPCWSTR))aSyscall[73].pCurrent)
+#define osOutputDebugStringW ((VOID(WINAPI*)(LPCWSTR))aSyscall[61].pCurrent)
 
   { "GetProcessHeap",          (SYSCALL)GetProcessHeap,          0 },
-
-#define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[74].pCurrent)
+#define osGetProcessHeap ((HANDLE(WINAPI*)(VOID))aSyscall[62].pCurrent)
 
 #if SQLITE_OS_WINRT && !defined(SQLITE_OMIT_WAL)
   { "CreateFileMappingFromApp", (SYSCALL)CreateFileMappingFromApp, 0 },
 #else
   { "CreateFileMappingFromApp", (SYSCALL)0,                      0 },
 #endif
-
 #define osCreateFileMappingFromApp ((HANDLE(WINAPI*)(HANDLE, \
-        LPSECURITY_ATTRIBUTES,ULONG,ULONG64,LPCWSTR))aSyscall[75].pCurrent)
+        LPSECURITY_ATTRIBUTES,ULONG,ULONG64,LPCWSTR))aSyscall[63].pCurrent)
 
 /*
 ** NOTE: On some sub-platforms, the InterlockedCompareExchange "function"
@@ -1050,13 +798,11 @@ static struct win_syscall {
 */
 #if defined(InterlockedCompareExchange)
   { "InterlockedCompareExchange", (SYSCALL)0,                    0 },
-
 #define osInterlockedCompareExchange InterlockedCompareExchange
 #else
   { "InterlockedCompareExchange", (SYSCALL)InterlockedCompareExchange, 0 },
-
 #define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG volatile*, \
-        LONG,LONG))aSyscall[76].pCurrent)
+        LONG,LONG))aSyscall[64].pCurrent)
 #endif /* defined(InterlockedCompareExchange) */
 
 }; /* End of the overrideable system calls */
@@ -1242,15 +988,6 @@ void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
   int nMin = MIN(nBuf, (SQLITE_WIN32_DBG_BUF_SIZE - 1)); /* may be negative. */
   if( nMin<-1 ) nMin = -1; /* all negative values become -1. */
   assert( nMin==-1 || nMin==0 || nMin<SQLITE_WIN32_DBG_BUF_SIZE );
-#if defined(SQLITE_WIN32_HAS_ANSI)
-  if( nMin>0 ){
-    memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
-    memcpy(zDbgBuf, zBuf, nMin);
-    osOutputDebugStringA(zDbgBuf);
-  }else{
-    osOutputDebugStringA(zBuf);
-  }
-#elif defined(SQLITE_WIN32_HAS_WIDE)
   memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
   if ( osMultiByteToWideChar(
           osAreFileApisANSI() ? CP_ACP : CP_OEMCP, 0, zBuf,
@@ -1258,15 +995,6 @@ void sqlite3_win32_write_debug(const char *zBuf, int nBuf){
     return;
   }
   osOutputDebugStringW((LPCWSTR)zDbgBuf);
-#else
-  if( nMin>0 ){
-    memset(zDbgBuf, 0, SQLITE_WIN32_DBG_BUF_SIZE);
-    memcpy(zDbgBuf, zBuf, nMin);
-    fprintf(stderr, "%s", zDbgBuf);
-  }else{
-    fprintf(stderr, "%s", zBuf);
-  }
-#endif
 }
 
 /*
@@ -1287,56 +1015,6 @@ void sqlite3_win32_sleep(DWORD milliseconds){
   osWaitForSingleObjectEx(sleepObj, milliseconds, FALSE);
 #else
   osSleep(milliseconds);
-#endif
-}
-
-/*
-** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
-** or WinCE.  Return false (zero) for Win95, Win98, or WinME.
-**
-** Here is an interesting observation:  Win95, Win98, and WinME lack
-** the LockFileEx() API.  But we can still statically link against that
-** API as long as we don't call it when running Win95/98/ME.  A call to
-** this routine is used to determine if the host is Win95/98/ME or
-** WinNT/2K/XP so that we will know whether or not we can safely call
-** the LockFileEx() API.
-*/
-
-#if !defined(SQLITE_WIN32_GETVERSIONEX) || !SQLITE_WIN32_GETVERSIONEX
-# define osIsNT()  (1)
-#elif SQLITE_OS_WINCE || SQLITE_OS_WINRT || !defined(SQLITE_WIN32_HAS_ANSI)
-# define osIsNT()  (1)
-#elif !defined(SQLITE_WIN32_HAS_WIDE)
-# define osIsNT()  (0)
-#else
-# define osIsNT()  ((sqlite3_os_type==2) || sqlite3_win32_is_nt())
-#endif
-
-/*
-** This function determines if the machine is running a version of Windows
-** based on the NT kernel.
-*/
-int sqlite3_win32_is_nt(void){
-#if defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
-  if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WIN8
-    OSVERSIONINFOW sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    osGetVersionExW(&sInfo);
-#elif defined(SQLITE_WIN32_HAS_ANSI)
-    OSVERSIONINFOA sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    osGetVersionExA(&sInfo);
-#endif
-    osInterlockedCompareExchange(&sqlite3_os_type,
-        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
-  }
-  return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
-#elif SQLITE_TEST
-  return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
-#else
-  return 1;
 #endif
 }
 
@@ -1739,62 +1417,38 @@ static int winGetLastErrorMsg(DWORD lastErrno, int nBuf, char *zBuf){
   DWORD dwLen = 0;
   char *zOut = 0;
 
-  if( osIsNT() ){
 #if SQLITE_OS_WINRT
-    WCHAR zTempWide[SQLITE_WIN32_MAX_ERRMSG_CHARS+1];
-    dwLen = osFormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
-                             FORMAT_MESSAGE_IGNORE_INSERTS,
-                             NULL,
-                             lastErrno,
-                             0,
-                             zTempWide,
-                             SQLITE_WIN32_MAX_ERRMSG_CHARS,
-                             0);
+  WCHAR zTempWide[SQLITE_WIN32_MAX_ERRMSG_CHARS+1];
+  dwLen = osFormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM |
+                           FORMAT_MESSAGE_IGNORE_INSERTS,
+                           NULL,
+                           lastErrno,
+                           0,
+                           zTempWide,
+                           SQLITE_WIN32_MAX_ERRMSG_CHARS,
+                           0);
 #else
-    LPWSTR zTempWide = NULL;
-    dwLen = osFormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                             FORMAT_MESSAGE_FROM_SYSTEM |
-                             FORMAT_MESSAGE_IGNORE_INSERTS,
-                             NULL,
-                             lastErrno,
-                             0,
-                             (LPWSTR) &zTempWide,
-                             0,
-                             0);
+  LPWSTR zTempWide = NULL;
+  dwLen = osFormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                           FORMAT_MESSAGE_FROM_SYSTEM |
+                           FORMAT_MESSAGE_IGNORE_INSERTS,
+                           NULL,
+                           lastErrno,
+                           0,
+                           (LPWSTR) &zTempWide,
+                           0,
+                           0);
 #endif
-    if( dwLen > 0 ){
-      /* allocate a buffer and convert to UTF8 */
-      sqlite3BeginBenignMalloc();
-      zOut = winUnicodeToUtf8(zTempWide);
-      sqlite3EndBenignMalloc();
+  if( dwLen > 0 ){
+    /* allocate a buffer and convert to UTF8 */
+    sqlite3BeginBenignMalloc();
+    zOut = winUnicodeToUtf8(zTempWide);
+    sqlite3EndBenignMalloc();
 #if !SQLITE_OS_WINRT
-      /* free the system buffer allocated by FormatMessage */
-      osLocalFree(zTempWide);
+    /* free the system buffer allocated by FormatMessage */
+    osLocalFree(zTempWide);
 #endif
-    }
   }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    char *zTemp = NULL;
-    dwLen = osFormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                             FORMAT_MESSAGE_FROM_SYSTEM |
-                             FORMAT_MESSAGE_IGNORE_INSERTS,
-                             NULL,
-                             lastErrno,
-                             0,
-                             (LPSTR) &zTemp,
-                             0,
-                             0);
-    if( dwLen > 0 ){
-      /* allocate a buffer and convert to UTF8 */
-      sqlite3BeginBenignMalloc();
-      zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
-      sqlite3EndBenignMalloc();
-      /* free the system buffer allocated by FormatMessage */
-      osLocalFree(zTemp);
-    }
-  }
-#endif
   if( 0 == dwLen ){
     sqlite3_snprintf(nBuf, zBuf, "OsError 0x%lx (%lu)", lastErrno, lastErrno);
   }else{
@@ -2262,16 +1916,11 @@ static BOOL winLockFile(
   return winceLockFile(phFile, offsetLow, offsetHigh,
                        numBytesLow, numBytesHigh);
 #else
-  if( osIsNT() ){
-    OVERLAPPED ovlp;
-    memset(&ovlp, 0, sizeof(OVERLAPPED));
-    ovlp.Offset = offsetLow;
-    ovlp.OffsetHigh = offsetHigh;
-    return osLockFileEx(*phFile, flags, 0, numBytesLow, numBytesHigh, &ovlp);
-  }else{
-    return osLockFile(*phFile, offsetLow, offsetHigh, numBytesLow,
-                      numBytesHigh);
-  }
+  OVERLAPPED ovlp;
+  memset(&ovlp, 0, sizeof(OVERLAPPED));
+  ovlp.Offset = offsetLow;
+  ovlp.OffsetHigh = offsetHigh;
+  return osLockFileEx(*phFile, flags, 0, numBytesLow, numBytesHigh, &ovlp);
 #endif
 }
 
@@ -2293,16 +1942,11 @@ static BOOL winUnlockFile(
   return winceUnlockFile(phFile, offsetLow, offsetHigh,
                          numBytesLow, numBytesHigh);
 #else
-  if( osIsNT() ){
-    OVERLAPPED ovlp;
-    memset(&ovlp, 0, sizeof(OVERLAPPED));
-    ovlp.Offset = offsetLow;
-    ovlp.OffsetHigh = offsetHigh;
-    return osUnlockFileEx(*phFile, 0, numBytesLow, numBytesHigh, &ovlp);
-  }else{
-    return osUnlockFile(*phFile, offsetLow, offsetHigh, numBytesLow,
-                        numBytesHigh);
-  }
+  OVERLAPPED ovlp;
+  memset(&ovlp, 0, sizeof(OVERLAPPED));
+  ovlp.Offset = offsetLow;
+  ovlp.OffsetHigh = offsetHigh;
+  return osUnlockFileEx(*phFile, 0, numBytesLow, numBytesHigh, &ovlp);
 #endif
 }
 
@@ -2825,26 +2469,15 @@ static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
 static int winGetReadLock(winFile *pFile){
   int res;
   OSTRACE(("READ-LOCK file=%p, lock=%d\n", pFile->h, pFile->locktype));
-  if( osIsNT() ){
 #if SQLITE_OS_WINCE
-    /*
-    ** NOTE: Windows CE is handled differently here due its lack of the Win32
-    **       API LockFileEx.
-    */
-    res = winceLockFile(&pFile->h, SHARED_FIRST, 0, 1, 0);
+  /*
+  ** NOTE: Windows CE is handled differently here due its lack of the Win32
+  **       API LockFileEx.
+  */
+  res = winceLockFile(&pFile->h, SHARED_FIRST, 0, 1, 0);
 #else
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
-                      SHARED_SIZE, 0);
-#endif
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    int lk;
-    sqlite3_randomness(sizeof(lk), &lk);
-    pFile->sharedLockByte = (short)((lk & 0x7fffffff)%(SHARED_SIZE - 1));
-    res = winLockFile(&pFile->h, SQLITE_LOCKFILE_FLAGS,
-                      SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
-  }
+  res = winLockFile(&pFile->h, SQLITE_LOCKFILEEX_FLAGS, SHARED_FIRST, 0,
+                    SHARED_SIZE, 0);
 #endif
   if( res == 0 ){
     pFile->lastErrno = osGetLastError();
@@ -2861,14 +2494,7 @@ static int winUnlockReadLock(winFile *pFile){
   int res;
   DWORD lastErrno;
   OSTRACE(("READ-UNLOCK file=%p, lock=%d\n", pFile->h, pFile->locktype));
-  if( osIsNT() ){
-    res = winUnlockFile(&pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    res = winUnlockFile(&pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
-  }
-#endif
+  res = winUnlockFile(&pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
   if( res==0 && ((lastErrno = osGetLastError())!=ERROR_NOT_LOCKED) ){
     pFile->lastErrno = lastErrno;
     winLogError(SQLITE_IOERR_UNLOCK, pFile->lastErrno,
@@ -3852,12 +3478,8 @@ static int winShmMap(
       hMap = osCreateFileMappingFromApp(pShmNode->hFile.h,
           NULL, PAGE_READWRITE, nByte, NULL
       );
-#elif defined(SQLITE_WIN32_HAS_WIDE)
+#else
       hMap = osCreateFileMappingW(pShmNode->hFile.h,
-          NULL, PAGE_READWRITE, 0, nByte, NULL
-      );
-#elif defined(SQLITE_WIN32_HAS_ANSI)
-      hMap = osCreateFileMappingA(pShmNode->hFile.h,
           NULL, PAGE_READWRITE, 0, nByte, NULL
       );
 #endif
@@ -4006,12 +3628,8 @@ static int winMapfile(winFile *pFd, sqlite3_int64 nByte){
     }
 #if SQLITE_OS_WINRT
     pFd->hMap = osCreateFileMappingFromApp(pFd->h, NULL, protect, nMap, NULL);
-#elif defined(SQLITE_WIN32_HAS_WIDE)
+#else
     pFd->hMap = osCreateFileMappingW(pFd->h, NULL, protect,
-                                (DWORD)((nMap>>32) & 0xffffffff),
-                                (DWORD)(nMap & 0xffffffff), NULL);
-#elif defined(SQLITE_WIN32_HAS_ANSI)
-    pFd->hMap = osCreateFileMappingA(pFd->h, NULL, protect,
                                 (DWORD)((nMap>>32) & 0xffffffff),
                                 (DWORD)(nMap & 0xffffffff), NULL);
 #endif
@@ -4185,17 +3803,7 @@ static const sqlite3_io_methods winIoMethod = {
 ** obtained from malloc and must be freed by the calling function.
 */
 static char *winConvertToUtf8Filename(const void *zFilename){
-  char *zConverted = 0;
-  if( osIsNT() ){
-    zConverted = winUnicodeToUtf8(zFilename);
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    zConverted = sqlite3_win32_mbcs_to_utf8(zFilename);
-  }
-#endif
-  /* caller will handle out of memory */
-  return zConverted;
+  return winUnicodeToUtf8(zFilename);
 }
 #endif
 
@@ -4206,17 +3814,7 @@ static char *winConvertToUtf8Filename(const void *zFilename){
 ** function.
 */
 static void *winConvertFromUtf8Filename(const char *zFilename){
-  void *zConverted = 0;
-  if( osIsNT() ){
-    zConverted = winUtf8ToUnicode(zFilename);
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    zConverted = sqlite3_win32_utf8_to_mbcs(zFilename);
-  }
-#endif
-  /* caller will handle out of memory */
-  return zConverted;
+  return winUtf8ToUnicode(zFilename);
 }
 
 /*
@@ -4290,8 +3888,8 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       sqlite3_snprintf(nMax, zBuf, "%s", sqlite3_temp_directory);
     }
   }
-#if defined(__CYGWIN__)
   else{
+#if defined(__CYGWIN__)
     static const char *azDirs[] = {
        0, /* getenv("SQLITE_TMPDIR") */
        0, /* getenv("TMPDIR") */
@@ -4340,9 +3938,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
           return SQLITE_IOERR_NOMEM;
         }
-        if( cygwin_conv_path(
-                osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A, zDir,
-                zConverted, nMax+1)<0 ){
+        if( cygwin_conv_path(CCP_POSIX_TO_WIN_W, zDir, zConverted, nMax+1)<0 ){
           sqlite3_free(zConverted);
           sqlite3_free(zBuf);
           OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_CONVPATH\n"));
@@ -4369,9 +3965,7 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
         sqlite3_free(zConverted);
       }
     }
-  }
 #elif !SQLITE_OS_WINRT && !defined(__CYGWIN__)
-  else if( osIsNT() ){
     char *zMulti;
     LPWSTR zWidePath = sqlite3MallocZero( nMax*sizeof(WCHAR) );
     if( !zWidePath ){
@@ -4397,34 +3991,8 @@ static int winGetTempname(sqlite3_vfs *pVfs, char **pzBuf){
       OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
       return SQLITE_IOERR_NOMEM;
     }
+#endif
   }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    char *zUtf8;
-    char *zMbcsPath = sqlite3MallocZero( nMax );
-    if( !zMbcsPath ){
-      sqlite3_free(zBuf);
-      OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-      return SQLITE_IOERR_NOMEM;
-    }
-    if( osGetTempPathA(nMax, zMbcsPath)==0 ){
-      sqlite3_free(zBuf);
-      OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_GETTEMPPATH\n"));
-      return winLogError(SQLITE_IOERR_GETTEMPPATH, osGetLastError(),
-                         "winGetTempname3", 0);
-    }
-    zUtf8 = sqlite3_win32_mbcs_to_utf8(zMbcsPath);
-    if( zUtf8 ){
-      sqlite3_snprintf(nMax, zBuf, "%s", zUtf8);
-      sqlite3_free(zUtf8);
-    }else{
-      sqlite3_free(zBuf);
-      OSTRACE(("TEMP-FILENAME rc=SQLITE_IOERR_NOMEM\n"));
-      return SQLITE_IOERR_NOMEM;
-    }
-  }
-#endif /* SQLITE_WIN32_HAS_ANSI */
-#endif /* !SQLITE_OS_WINRT */
 
   /*
   ** Check to make sure the temporary directory ends with an appropriate
@@ -4479,23 +4047,16 @@ static int winIsDir(const void *zConverted){
   DWORD attr;
   int rc = 0;
   DWORD lastErrno;
-
-  if( osIsNT() ){
-    int cnt = 0;
-    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
-    memset(&sAttrData, 0, sizeof(sAttrData));
-    while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
-                             GetFileExInfoStandard,
-                             &sAttrData)) && winRetryIoerr(&cnt, &lastErrno) ){}
-    if( !rc ){
-      return 0; /* Invalid name? */
-    }
-    attr = sAttrData.dwFileAttributes;
-#if SQLITE_OS_WINCE==0
-  }else{
-    attr = osGetFileAttributesA((char*)zConverted);
-#endif
+  int cnt = 0;
+  WIN32_FILE_ATTRIBUTE_DATA sAttrData;
+  memset(&sAttrData, 0, sizeof(sAttrData));
+  while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
+                           GetFileExInfoStandard,
+                           &sAttrData)) && winRetryIoerr(&cnt, &lastErrno) ){}
+  if( !rc ){
+    return 0; /* Invalid name? */
   }
+  attr = sAttrData.dwFileAttributes;
   return (attr!=INVALID_FILE_ATTRIBUTES) && (attr&FILE_ATTRIBUTE_DIRECTORY);
 }
 
@@ -4664,7 +4225,7 @@ static int winOpen(
   dwFlagsAndAttributes |= FILE_FLAG_RANDOM_ACCESS;
 #endif
 
-  if( osIsNT() ){
+  {
 #if SQLITE_OS_WINRT
     CREATEFILE2_EXTENDED_PARAMETERS extendedParameters;
     extendedParameters.dwSize = sizeof(CREATEFILE2_EXTENDED_PARAMETERS);
@@ -4694,19 +4255,6 @@ static int winOpen(
     }
 #endif
   }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    while( (h = osCreateFileA((LPCSTR)zConverted,
-                              dwDesiredAccess,
-                              dwShareMode, NULL,
-                              dwCreationDisposition,
-                              dwFlagsAndAttributes,
-                              NULL))==INVALID_HANDLE_VALUE &&
-                              winRetryIoerr(&cnt, &lastErrno) ){
-               /* Noop */
-    }
-  }
-#endif
   winLogIoerr(cnt);
 
   OSTRACE(("OPEN file=%p, name=%s, access=%lx, rc=%s\n", h, zUtf8Name,
@@ -4814,80 +4362,49 @@ static int winDelete(
     OSTRACE(("DELETE name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
     return SQLITE_IOERR_NOMEM;
   }
-  if( osIsNT() ){
-    do {
+  do {
 #if SQLITE_OS_WINRT
-      WIN32_FILE_ATTRIBUTE_DATA sAttrData;
-      memset(&sAttrData, 0, sizeof(sAttrData));
-      if ( osGetFileAttributesExW(zConverted, GetFileExInfoStandard,
-                                  &sAttrData) ){
-        attr = sAttrData.dwFileAttributes;
+    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
+    memset(&sAttrData, 0, sizeof(sAttrData));
+    if ( osGetFileAttributesExW(zConverted, GetFileExInfoStandard,
+                                &sAttrData) ){
+      attr = sAttrData.dwFileAttributes;
+    }else{
+      lastErrno = osGetLastError();
+      if( lastErrno==ERROR_FILE_NOT_FOUND
+       || lastErrno==ERROR_PATH_NOT_FOUND ){
+        rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
       }else{
-        lastErrno = osGetLastError();
-        if( lastErrno==ERROR_FILE_NOT_FOUND
-         || lastErrno==ERROR_PATH_NOT_FOUND ){
-          rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
-        }else{
-          rc = SQLITE_ERROR;
-        }
-        break;
+        rc = SQLITE_ERROR;
       }
+      break;
+    }
 #else
-      attr = osGetFileAttributesW(zConverted);
+    attr = osGetFileAttributesW(zConverted);
 #endif
-      if ( attr==INVALID_FILE_ATTRIBUTES ){
-        lastErrno = osGetLastError();
-        if( lastErrno==ERROR_FILE_NOT_FOUND
-         || lastErrno==ERROR_PATH_NOT_FOUND ){
-          rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
-        }else{
-          rc = SQLITE_ERROR;
-        }
-        break;
+    if ( attr==INVALID_FILE_ATTRIBUTES ){
+      lastErrno = osGetLastError();
+      if( lastErrno==ERROR_FILE_NOT_FOUND
+       || lastErrno==ERROR_PATH_NOT_FOUND ){
+        rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
+      }else{
+        rc = SQLITE_ERROR;
       }
-      if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
-        rc = SQLITE_ERROR; /* Files only. */
-        break;
-      }
-      if ( osDeleteFileW(zConverted) ){
-        rc = SQLITE_OK; /* Deleted OK. */
-        break;
-      }
-      if ( !winRetryIoerr(&cnt, &lastErrno) ){
-        rc = SQLITE_ERROR; /* No more retries. */
-        break;
-      }
-    } while(1);
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    do {
-      attr = osGetFileAttributesA(zConverted);
-      if ( attr==INVALID_FILE_ATTRIBUTES ){
-        lastErrno = osGetLastError();
-        if( lastErrno==ERROR_FILE_NOT_FOUND
-         || lastErrno==ERROR_PATH_NOT_FOUND ){
-          rc = SQLITE_IOERR_DELETE_NOENT; /* Already gone? */
-        }else{
-          rc = SQLITE_ERROR;
-        }
-        break;
-      }
-      if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
-        rc = SQLITE_ERROR; /* Files only. */
-        break;
-      }
-      if ( osDeleteFileA(zConverted) ){
-        rc = SQLITE_OK; /* Deleted OK. */
-        break;
-      }
-      if ( !winRetryIoerr(&cnt, &lastErrno) ){
-        rc = SQLITE_ERROR; /* No more retries. */
-        break;
-      }
-    } while(1);
-  }
-#endif
+      break;
+    }
+    if ( attr&FILE_ATTRIBUTE_DIRECTORY ){
+      rc = SQLITE_ERROR; /* Files only. */
+      break;
+    }
+    if ( osDeleteFileW(zConverted) ){
+      rc = SQLITE_OK; /* Deleted OK. */
+      break;
+    }
+    if ( !winRetryIoerr(&cnt, &lastErrno) ){
+      rc = SQLITE_ERROR; /* No more retries. */
+      break;
+    }
+  } while(1);
   if( rc && rc!=SQLITE_IOERR_DELETE_NOENT ){
     rc = winLogError(SQLITE_IOERR_DELETE, lastErrno, "winDelete", zFilename);
   }else{
@@ -4911,6 +4428,8 @@ static int winAccess(
   int rc = 0;
   DWORD lastErrno = 0;
   void *zConverted;
+  int cnt = 0;
+  WIN32_FILE_ATTRIBUTE_DATA sAttrData;
   UNUSED_PARAMETER(pVfs);
 
   SimulateIOError( return SQLITE_IOERR_ACCESS; );
@@ -4922,40 +4441,31 @@ static int winAccess(
     OSTRACE(("ACCESS name=%s, rc=SQLITE_IOERR_NOMEM\n", zFilename));
     return SQLITE_IOERR_NOMEM;
   }
-  if( osIsNT() ){
-    int cnt = 0;
-    WIN32_FILE_ATTRIBUTE_DATA sAttrData;
-    memset(&sAttrData, 0, sizeof(sAttrData));
-    while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
-                             GetFileExInfoStandard,
-                             &sAttrData)) && winRetryIoerr(&cnt, &lastErrno) ){}
-    if( rc ){
-      /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
-      ** as if it does not exist.
-      */
-      if(    flags==SQLITE_ACCESS_EXISTS
-          && sAttrData.nFileSizeHigh==0
-          && sAttrData.nFileSizeLow==0 ){
-        attr = INVALID_FILE_ATTRIBUTES;
-      }else{
-        attr = sAttrData.dwFileAttributes;
-      }
+  memset(&sAttrData, 0, sizeof(sAttrData));
+  while( !(rc = osGetFileAttributesExW((LPCWSTR)zConverted,
+                           GetFileExInfoStandard,
+                           &sAttrData)) && winRetryIoerr(&cnt, &lastErrno) ){}
+  if( rc ){
+    /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
+    ** as if it does not exist.
+    */
+    if(    flags==SQLITE_ACCESS_EXISTS
+        && sAttrData.nFileSizeHigh==0
+        && sAttrData.nFileSizeLow==0 ){
+      attr = INVALID_FILE_ATTRIBUTES;
     }else{
-      winLogIoerr(cnt);
-      if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
-        sqlite3_free(zConverted);
-        return winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess",
-                           zFilename);
-      }else{
-        attr = INVALID_FILE_ATTRIBUTES;
-      }
+      attr = sAttrData.dwFileAttributes;
+    }
+  }else{
+    winLogIoerr(cnt);
+    if( lastErrno!=ERROR_FILE_NOT_FOUND && lastErrno!=ERROR_PATH_NOT_FOUND ){
+      sqlite3_free(zConverted);
+      return winLogError(SQLITE_IOERR_ACCESS, lastErrno, "winAccess",
+                         zFilename);
+    }else{
+      attr = INVALID_FILE_ATTRIBUTES;
     }
   }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    attr = osGetFileAttributesA((char*)zConverted);
-  }
-#endif
   sqlite3_free(zConverted);
   switch( flags ){
     case SQLITE_ACCESS_READ:
@@ -5049,9 +4559,8 @@ static int winFullPathname(
     if( !zOut ){
       return SQLITE_IOERR_NOMEM;
     }
-    if( cygwin_conv_path(
-            (osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A) |
-            CCP_RELATIVE, zRelative, zOut, pVfs->mxPathname+1)<0 ){
+    if( cygwin_conv_path(CCP_POSIX_TO_WIN_W|CCP_RELATIVE,
+                         zRelative, zOut, pVfs->mxPathname+1)<0 ){
       sqlite3_free(zOut);
       return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
                          "winFullPathname1", zRelative);
@@ -5071,8 +4580,7 @@ static int winFullPathname(
     if( !zOut ){
       return SQLITE_IOERR_NOMEM;
     }
-    if( cygwin_conv_path(
-            (osIsNT() ? CCP_POSIX_TO_WIN_W : CCP_POSIX_TO_WIN_A),
+    if( cygwin_conv_path(CCP_POSIX_TO_WIN_W,
             zRelative, zOut, pVfs->mxPathname+1)<0 ){
       sqlite3_free(zOut);
       return winLogError(SQLITE_CANTOPEN_CONVPATH, (DWORD)errno,
@@ -5114,6 +4622,7 @@ static int winFullPathname(
   DWORD nByte;
   void *zConverted;
   char *zOut;
+  LPWSTR zTemp;
 
   /* If this path name begins with "/X:", where "X" is any alphabetic
   ** character, discard the initial "/" from the pathname.
@@ -5143,58 +4652,28 @@ static int winFullPathname(
   if( zConverted==0 ){
     return SQLITE_IOERR_NOMEM;
   }
-  if( osIsNT() ){
-    LPWSTR zTemp;
-    nByte = osGetFullPathNameW((LPCWSTR)zConverted, 0, 0, 0);
-    if( nByte==0 ){
-      sqlite3_free(zConverted);
-      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
-                         "winFullPathname1", zRelative);
-    }
-    nByte += 3;
-    zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
-    if( zTemp==0 ){
-      sqlite3_free(zConverted);
-      return SQLITE_IOERR_NOMEM;
-    }
-    nByte = osGetFullPathNameW((LPCWSTR)zConverted, nByte, zTemp, 0);
-    if( nByte==0 ){
-      sqlite3_free(zConverted);
-      sqlite3_free(zTemp);
-      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
-                         "winFullPathname2", zRelative);
-    }
+  nByte = osGetFullPathNameW((LPCWSTR)zConverted, 0, 0, 0);
+  if( nByte==0 ){
     sqlite3_free(zConverted);
-    zOut = winUnicodeToUtf8(zTemp);
-    sqlite3_free(zTemp);
+    return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
+                       "winFullPathname1", zRelative);
   }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    char *zTemp;
-    nByte = osGetFullPathNameA((char*)zConverted, 0, 0, 0);
-    if( nByte==0 ){
-      sqlite3_free(zConverted);
-      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
-                         "winFullPathname3", zRelative);
-    }
-    nByte += 3;
-    zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
-    if( zTemp==0 ){
-      sqlite3_free(zConverted);
-      return SQLITE_IOERR_NOMEM;
-    }
-    nByte = osGetFullPathNameA((char*)zConverted, nByte, zTemp, 0);
-    if( nByte==0 ){
-      sqlite3_free(zConverted);
-      sqlite3_free(zTemp);
-      return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
-                         "winFullPathname4", zRelative);
-    }
+  nByte += 3;
+  zTemp = sqlite3MallocZero( nByte*sizeof(zTemp[0]) );
+  if( zTemp==0 ){
     sqlite3_free(zConverted);
-    zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
-    sqlite3_free(zTemp);
+    return SQLITE_IOERR_NOMEM;
   }
-#endif
+  nByte = osGetFullPathNameW((LPCWSTR)zConverted, nByte, zTemp, 0);
+  if( nByte==0 ){
+    sqlite3_free(zConverted);
+    sqlite3_free(zTemp);
+    return winLogError(SQLITE_CANTOPEN_FULLPATH, osGetLastError(),
+                       "winFullPathname2", zRelative);
+  }
+  sqlite3_free(zConverted);
+  zOut = winUnicodeToUtf8(zTemp);
+  sqlite3_free(zTemp);
   if( zOut ){
     sqlite3_snprintf(MIN(nFull, pVfs->mxPathname), zFull, "%s", zOut);
     sqlite3_free(zOut);
@@ -5235,17 +4714,10 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
     OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)0));
     return 0;
   }
-  if( osIsNT() ){
 #if SQLITE_OS_WINRT
-    h = osLoadPackagedLibrary((LPCWSTR)zConverted, 0);
+  h = osLoadPackagedLibrary((LPCWSTR)zConverted, 0);
 #else
-    h = osLoadLibraryW((LPCWSTR)zConverted);
-#endif
-  }
-#ifdef SQLITE_WIN32_HAS_ANSI
-  else{
-    h = osLoadLibraryA((char*)zConverted);
-  }
+  h = osLoadLibraryW((LPCWSTR)zConverted);
 #endif
   OSTRACE(("DLOPEN name=%s, handle=%p\n", zFilename, (void*)h));
   sqlite3_free(zConverted);
@@ -5465,7 +4937,6 @@ int sqlite3_os_init(void){
     winGetSystemCall,    /* xGetSystemCall */
     winNextSystemCall,   /* xNextSystemCall */
   };
-#if defined(SQLITE_WIN32_HAS_WIDE)
   static sqlite3_vfs winLongPathVfs = {
     3,                   /* iVersion */
     sizeof(winFile),     /* szOsFile */
@@ -5490,11 +4961,10 @@ int sqlite3_os_init(void){
     winGetSystemCall,    /* xGetSystemCall */
     winNextSystemCall,   /* xNextSystemCall */
   };
-#endif
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==77 );
+  assert( ArraySize(aSyscall)==65 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
@@ -5507,10 +4977,7 @@ int sqlite3_os_init(void){
   assert( winSysInfo.dwPageSize>0 );
 
   sqlite3_vfs_register(&winVfs, 1);
-
-#if defined(SQLITE_WIN32_HAS_WIDE)
   sqlite3_vfs_register(&winLongPathVfs, 0);
-#endif
 
   return SQLITE_OK;
 }
