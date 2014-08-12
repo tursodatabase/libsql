@@ -3293,7 +3293,7 @@ static void fts5IndexFlush(Fts5Index *p){
 ** to the document with rowid iRowid.
 */
 void sqlite3Fts5IndexBeginWrite(Fts5Index *p, i64 iRowid){
-  if( iRowid<=p->iWriteRowid ){
+  if( iRowid<=p->iWriteRowid || (p->nPendingData > p->nMaxPendingData) ){
     fts5IndexFlush(p);
   }
   p->iWriteRowid = iRowid;

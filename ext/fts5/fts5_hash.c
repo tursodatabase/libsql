@@ -116,15 +116,46 @@ void sqlite3Fts5HashClear(Fts5Hash *pHash){
       pHash->aSlot[i] = 0;
     }
   }
+  pHash->nEntry = 0;
 }
 
-static unsigned int fts5HashKey(Fts5Hash *pHash, const char *p, int n){
+static unsigned int fts5HashKey(int nSlot, const char *p, int n){
   int i;
   unsigned int h = 13;
   for(i=n-1; i>=0; i--){
     h = (h << 3) ^ h ^ p[i];
   }
-  return (h % pHash->nSlot);
+  return (h % nSlot);
+}
+
+/*
+** Resize the hash table by doubling the number of slots.
+*/
+static int fts5HashResize(Fts5Hash *pHash){
+  int nNew = pHash->nSlot*2;
+  int i;
+  Fts5HashEntry **apNew;
+  Fts5HashEntry **apOld = pHash->aSlot;
+
+  apNew = (Fts5HashEntry**)sqlite3_malloc(nNew*sizeof(Fts5HashEntry*));
+  if( !apNew ) return SQLITE_NOMEM;
+  memset(apNew, 0, nNew*sizeof(Fts5HashEntry*));
+
+  for(i=0; i<pHash->nSlot; i++){
+    while( apOld[i] ){
+      int iHash;
+      Fts5HashEntry *p = apOld[i];
+      apOld[i] = p->pNext;
+      iHash = fts5HashKey(nNew, p->zKey, strlen(p->zKey));
+      p->pNext = apNew[iHash];
+      apNew[iHash] = p;
+    }
+  }
+
+  sqlite3_free(apOld);
+  pHash->nSlot = nNew;
+  pHash->aSlot = apNew;
+  return SQLITE_OK;
 }
 
 /*
@@ -153,7 +184,7 @@ int sqlite3Fts5HashWrite(
   int iPos,                       /* Position of token within column */
   const char *pToken, int nToken  /* Token to add or remove to or from index */
 ){
-  unsigned int iHash = fts5HashKey(pHash, pToken, nToken);
+  unsigned int iHash = fts5HashKey(pHash->nSlot, pToken, nToken);
   Fts5HashEntry *p;
   u8 *pPtr;
   int nIncr = 0;                  /* Amount to increment (*pHash->pnByte) by */
@@ -168,6 +199,12 @@ int sqlite3Fts5HashWrite(
     int nByte = sizeof(Fts5HashEntry) + nToken + 1 + 64;
     if( nByte<128 ) nByte = 128;
 
+    if( (pHash->nEntry*2)>=pHash->nSlot ){
+      int rc = fts5HashResize(pHash);
+      if( rc!=SQLITE_OK ) return rc;
+      iHash = fts5HashKey(pHash->nSlot, pToken, nToken);
+    }
+
     p = (Fts5HashEntry*)sqlite3_malloc(nByte);
     if( !p ) return SQLITE_NOMEM;
     memset(p, 0, sizeof(Fts5HashEntry));
@@ -179,6 +216,7 @@ int sqlite3Fts5HashWrite(
     p->iRowid = iRowid;
     p->pNext = pHash->aSlot[iHash];
     pHash->aSlot[iHash] = p;
+    pHash->nEntry++;
 
     nIncr += p->nData;
   }
@@ -317,6 +355,7 @@ static int fts5HashEntrySort(Fts5Hash *pHash, Fts5HashEntry **ppSorted){
     pList = fts5HashEntryMerge(pList, ap[i]);
   }
 
+  pHash->nEntry = 0;
   sqlite3_free(ap);
   *ppSorted = pList;
   return SQLITE_OK;
