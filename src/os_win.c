@@ -72,18 +72,14 @@
 #endif
 
 /*
-** Check if the GetVersionEx[AW] functions should be considered deprecated
-** and avoid using them in that case.  It should be noted here that if the
-** value of the SQLITE_WIN32_GETVERSIONEX pre-processor macro is zero
-** (whether via this block or via being manually specified), that implies
-** the underlying operating system will always be based on the Windows NT
-** Kernel.
+** Check to see if the GetVersionEx[AW] functions are deprecated on the
+** target system.  GetVersionEx was first deprecated in Win8.1.
 */
 #ifndef SQLITE_WIN32_GETVERSIONEX
 #  if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WINBLUE
-#    define SQLITE_WIN32_GETVERSIONEX   0
+#    define SQLITE_WIN32_GETVERSIONEX   0   /* GetVersionEx() is deprecated */
 #  else
-#    define SQLITE_WIN32_GETVERSIONEX   1
+#    define SQLITE_WIN32_GETVERSIONEX   1   /* GetVersionEx() is current */
 #  endif
 #endif
 
@@ -155,7 +151,7 @@
 ** [sometimes] not used by the code (e.g. via conditional compilation).
 */
 #ifndef UNUSED_VARIABLE_VALUE
-#  define UNUSED_VARIABLE_VALUE(x) (void)(x)
+#  define UNUSED_VARIABLE_VALUE(x)      (void)(x)
 #endif
 
 /*
@@ -1052,7 +1048,16 @@ static struct win_syscall {
 **       is really just a macro that uses a compiler intrinsic (e.g. x64).
 **       So do not try to make this is into a redefinable interface.
 */
+#if defined(InterlockedCompareExchange)
+  { "InterlockedCompareExchange", (SYSCALL)0,                    0 },
+
 #define osInterlockedCompareExchange InterlockedCompareExchange
+#else
+  { "InterlockedCompareExchange", (SYSCALL)InterlockedCompareExchange, 0 },
+
+#define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG volatile*, \
+        LONG,LONG))aSyscall[76].pCurrent)
+#endif /* defined(InterlockedCompareExchange) */
 
 }; /* End of the overrideable system calls */
 
@@ -1312,20 +1317,29 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 ** based on the NT kernel.
 */
 int sqlite3_win32_is_nt(void){
+#if defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
   if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
-#if defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WIN8
+#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
+        defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WIN8
     OSVERSIONINFOW sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     osGetVersionExW(&sInfo);
-#else
+    osInterlockedCompareExchange(&sqlite3_os_type,
+        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
+#elif defined(SQLITE_WIN32_HAS_ANSI)
     OSVERSIONINFOA sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     osGetVersionExA(&sInfo);
-#endif
     osInterlockedCompareExchange(&sqlite3_os_type,
         (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
+#endif
   }
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
+#elif SQLITE_TEST
+  return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
+#else
+  return 1;
+#endif
 }
 
 #ifdef SQLITE_WIN32_MALLOC
@@ -5482,7 +5496,7 @@ int sqlite3_os_init(void){
 
   /* Double-check that the aSyscall[] array has been constructed
   ** correctly.  See ticket [bb3a86e890c8e96ab] */
-  assert( ArraySize(aSyscall)==76 );
+  assert( ArraySize(aSyscall)==77 );
 
   /* get memory map allocation granularity */
   memset(&winSysInfo, 0, sizeof(SYSTEM_INFO));
