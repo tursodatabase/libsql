@@ -1,5 +1,5 @@
-C Minor\schange\sto\sunixDelete\sfor\sVxWorks\swith\sa\sDOS\sfilesystem.
-D 2014-08-13T11:39:42.875
+C Add\sicon\sto\sthe\sWindows\sshell\sexecutable.\s\sThis\sis\sa\sresource\schange\sonly,\sno\schanges\sto\scode.
+D 2014-08-14T02:59:51.389
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c ea48e891406ccdf748f3eb02893e056d134a0fea
 F src/shell.c 75bb7bd2c80bb44861598f322a417c4bafe98fd7
 F src/sqlite.h.in ed9d35990c61f0388ca6405706455c4095310553
-F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
+F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 641f8fbb65ca2084c8df95b525f6f82c7a1e91ae
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d46adf9d8f741838b9c30f915231d6a3986c3591
-R 0bcddbf637a1ae28dd56c0df43bdd1a6
-U drh
-Z a0023172094bb1f589643de5ae500c6e
+P f01d42cc8b00d2b7c4f14defcb05fdc493cf1bfd
+R 3949cef84e476358af94bafdce6dc1cb
+U mistachkin
+Z 4ed18721cd3f6e17fb0699ef60e0d747
