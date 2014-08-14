@@ -1,5 +1,5 @@
-C Add\sicon\sto\sthe\sWindows\sshell\sexecutable.\s\sThis\sis\sa\sresource\schange\sonly,\sno\schanges\sto\scode.
-D 2014-08-14T02:59:51.389
+C Fix\stypos\sin\scomments\sused\sto\shelp\sgenerate\sdocumentation.\s\sNo\schanges\sto\scode.
+D 2014-08-14T13:06:25.245
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -283,7 +283,7 @@ F src/update.c ea336ce7b8b3fc5e316ba8f082e6445babf81059
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c cd8d7e3ecd3e0e0684f6bf48469966335c666883
+F src/vdbe.c f7f4066e4d6e3858878d76ce9288ea603e12ddf6
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 24e40422382beb774daab11fe9fe9d37e8a04949
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f01d42cc8b00d2b7c4f14defcb05fdc493cf1bfd
-R 3949cef84e476358af94bafdce6dc1cb
-U mistachkin
-Z 4ed18721cd3f6e17fb0699ef60e0d747
+P f5cce9db109a2bbe9a05b4c01b076a51d5fad8ba
+R b4842944a4c3679f5b3af787e9b322df
+U drh
+Z 52db703ea373cd617fd2c598672c0ab8

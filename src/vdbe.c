@@ -3531,7 +3531,7 @@ case OP_Close: {
 ** the key and P2 is not zero, then jump to P2.
 **
 ** This opcode leaves the cursor configured to move in forward order,
-** from the begining toward the end.  In other words, the cursor is
+** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 **
 ** See also: Found, NotFound, SeekLt, SeekGe, SeekLe
@@ -4548,7 +4548,7 @@ case OP_Sort: {        /* jump */
 ** to the following instruction.
 **
 ** This opcode leaves the cursor configured to move in forward order,
-** from the begining toward the end.  In other words, the cursor is
+** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 */
 case OP_Rewind: {        /* jump */
