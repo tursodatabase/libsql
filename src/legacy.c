@@ -96,6 +96,9 @@ int sqlite3_exec(
           }
         }
         if( xCallback(pArg, nCol, azVals, azCols) ){
+          /* EVIDENCE-OF: R-38229-40159 If the callback function to
+          ** sqlite3_exec() returns non-zero, then sqlite3_exec() will
+          ** return SQLITE_ABORT. */
           rc = SQLITE_ABORT;
           sqlite3VdbeFinalize((Vdbe *)pStmt);
           pStmt = 0;

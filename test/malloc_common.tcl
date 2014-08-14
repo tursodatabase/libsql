@@ -409,6 +409,7 @@ proc do_malloc_test {tn args} {
 
   if {[string is integer $tn]} {
     set tn malloc-$tn
+    catch { set tn $::testprefix-$tn }
   }
   if {[info exists ::mallocopts(-start)]} {
     set start $::mallocopts(-start)
