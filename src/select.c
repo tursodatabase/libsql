@@ -706,7 +706,7 @@ static void selectInnerLoop(
           sqlite3VdbeChangeP4(v, -1, (const char *)pColl, P4_COLLSEQ);
           sqlite3VdbeChangeP5(v, SQLITE_NULLEQ);
         }
-        assert( sqlite3VdbeCurrentAddr(v)==iJump );
+        assert( sqlite3VdbeCurrentAddr(v)==iJump || pParse->db->mallocFailed );
         sqlite3VdbeAddOp3(v, OP_Copy, regResult, regPrev, nResultCol-1);
         break;
       }

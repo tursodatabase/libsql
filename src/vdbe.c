@@ -3266,7 +3266,7 @@ case OP_ReopenIdx: {
   assert( pOp->p5==0 );
   assert( pOp->p4type==P4_KEYINFO );
   pCur = p->apCsr[pOp->p1];
-  if( pCur && pCur->pgnoRoot==pOp->p2 ){
+  if( pCur && pCur->pgnoRoot==(u32)pOp->p2 ){
     assert( pCur->iDb==pOp->p3 );      /* Guaranteed by the code generator */
     break;
   }
@@ -3531,7 +3531,7 @@ case OP_Close: {
 ** the key and P2 is not zero, then jump to P2.
 **
 ** This opcode leaves the cursor configured to move in forward order,
-** from the begining toward the end.  In other words, the cursor is
+** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 **
 ** See also: Found, NotFound, SeekLt, SeekGe, SeekLe
@@ -4548,7 +4548,7 @@ case OP_Sort: {        /* jump */
 ** to the following instruction.
 **
 ** This opcode leaves the cursor configured to move in forward order,
-** from the begining toward the end.  In other words, the cursor is
+** from the beginning toward the end.  In other words, the cursor is
 ** configured to use Next, not Prev.
 */
 case OP_Rewind: {        /* jump */

@@ -9,12 +9,9 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains the C functions that implement various SQL
-** functions of SQLite.  
-**
-** There is only one exported symbol in this file - the function
-** sqliteRegisterBuildinFunctions() found at the bottom of the file.
-** All other code has file scope.
+** This file contains the C-language implementions for many of the SQL
+** functions of SQLite.  (Some function, and in particular the date and
+** time functions, are implemented separately.)
 */
 #include "sqliteInt.h"
 #include <stdlib.h>

@@ -1175,9 +1175,9 @@ do_createtable_tests 4.2 -repair {
 # EVIDENCE-OF: R-59124-61339 Each row in a table with a primary key must
 # have a unique combination of values in its primary key columns.
 #
-# EVIDENCE-OF: R-39102-06737 If an INSERT or UPDATE statement attempts
-# to modify the table content so that two or more rows feature identical
-# primary key values, it is a constraint violation.
+# EVIDENCE-OF: R-06471-16287 If an INSERT or UPDATE statement attempts
+# to modify the table content so that two or more rows have identical
+# primary key values, that is a constraint violation.
 #
 drop_all_tables
 do_execsql_test 4.3.0 {
