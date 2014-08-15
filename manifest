@@ -1,5 +1,5 @@
-C Fix\san\sassert\sthat\scan\sfail\sif\sthe\sdatabase\sfile\sis\scorrupted.
-D 2014-08-14T19:53:37.748
+C Version\s3.8.6
+D 2014-08-15T11:46:33.931
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1186,7 +1186,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 13a2d90a2869c53b79754de39045bbbdbc7688e3
+P 3f45b8192dad7fb1f027cbaa694046e3c1b3e278
 R be8bb3bca247e348b90f7388fee24972
-U dan
-Z 1fbc222a1bef7c1b8874e0319a4338ee
+T +bgcolor * #d0c0ff
+T +sym-release *
+T +sym-version-3.8.6 *
+U drh
+Z 74d8dd4d4aac0ae87245b4bcefd8b172
