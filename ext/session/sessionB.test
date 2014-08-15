@@ -1,0 +1,233 @@
+# 2014 August 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements regression tests for sessions SQLite extension.
+# Specifically, this file contains tests for "patchset" changes.
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname [info script]] .. .. test]
+} 
+source [file join [file dirname [info script]] session_common.tcl]
+source $testdir/tester.tcl
+ifcapable !session {finish_test; return}
+
+set testprefix sessionB
+
+#
+# 1.*: Test that the blobs returned by the session_patchset() API are 
+#      as expected. Also the sqlite3_changeset_iter functions.
+#
+# 2.*: Test that patchset blobs are handled by sqlite3changeset_apply().
+#
+# 3.*: Test that sqlite3changeset_invert() works with patchset blobs. 
+#      Correct behaviour is to return SQLITE_CORRUPT.
+
+proc do_patchset_test {tn session res} {
+  set r [list]
+  foreach x $res {lappend r $x}
+  uplevel do_test $tn [list [subst -nocommands {
+    set x [list]
+    sqlite3session_foreach c [$session patchset] { lappend x [set c] }
+    set x
+  }]] [list $r]
+}
+
+proc do_sql2patchset_test {tn sql res} {
+  sqlite3session S db main
+  S attach *
+  execsql $sql
+  uplevel [list do_patchset_test $tn S $res]
+  S delete
+}
+
+#-------------------------------------------------------------------------
+# Run simple tests of the _patchset() API.
+#
+do_execsql_test 1.0 {
+  CREATE TABLE t1(a, b, c, d, PRIMARY KEY(d, a));
+  INSERT INTO t1 VALUES(1, 2, 3, 4);
+  INSERT INTO t1 VALUES(5, 6, 7, 8);
+  INSERT INTO t1 VALUES(9, 10, 11, 12);
+}
+
+do_test 1.1 {
+  sqlite3session S db main
+  S attach t1
+  execsql {
+    INSERT INTO t1 VALUES('w', 'x', 'y', 'z');
+    DELETE FROM t1 WHERE d=4;
+    UPDATE t1 SET c = 14 WHERE a=5;
+  }
+} {}
+
+do_patchset_test 1.2 S {
+  {UPDATE t1 0 X..X {i 5 {} {} {} {} i 8} {{} {} {} {} i 14 {} {}}}
+  {INSERT t1 0 X..X {} {t w t x t y t z}}
+  {DELETE t1 0 X..X {i 1 {} {} {} {} i 4} {}}
+}
+
+do_test 1.3 {
+  S delete
+} {}
+
+do_sql2patchset_test 1.4 {
+  DELETE FROM t1;
+} {
+  {DELETE t1 0 X..X {i 5 {} {} {} {} i 8} {}}
+  {DELETE t1 0 X..X {t w {} {} {} {} t z} {}}
+  {DELETE t1 0 X..X {i 9 {} {} {} {} i 12} {}}
+}
+
+do_sql2patchset_test 1.5 {
+  INSERT INTO t1 VALUES(X'61626364', NULL, NULL, 4.2);
+  INSERT INTO t1 VALUES(4.2, NULL, NULL, X'61626364');
+} {
+  {INSERT t1 0 X..X {} {f 4.2 n {} n {} b abcd}} 
+  {INSERT t1 0 X..X {} {b abcd n {} n {} f 4.2}}
+}
+
+do_sql2patchset_test 1.6 {
+  UPDATE t1 SET b=45 WHERE typeof(a)=='blob';
+  UPDATE t1 SET c='zzzz' WHERE typeof(a)!='blob';
+} {
+  {UPDATE t1 0 X..X {f 4.2 {} {} {} {} b abcd} {{} {} {} {} t zzzz {} {}}}
+  {UPDATE t1 0 X..X {b abcd {} {} {} {} f 4.2} {{} {} i 45 {} {} {} {}}}
+}
+
+do_sql2patchset_test 1.7 {
+  UPDATE t1 SET b='xyz' WHERE typeof(a)=='blob';
+  UPDATE t1 SET c='xyz' WHERE typeof(a)!='blob';
+  UPDATE t1 SET b=45 WHERE typeof(a)=='blob';
+  UPDATE t1 SET c='zzzz' WHERE typeof(a)!='blob';
+} {
+}
+
+do_sql2patchset_test 1.8 {
+  DELETE FROM t1;
+} {
+  {DELETE t1 0 X..X {f 4.2 {} {} {} {} b abcd} {}} 
+  {DELETE t1 0 X..X {b abcd {} {} {} {} f 4.2} {}}
+}
+
+#-------------------------------------------------------------------------
+# Run simple tests of _apply() with patchset objects.
+#
+reset_db
+
+proc noop {args} { error $args }
+proc exec_rollback_replay {sql} {
+  sqlite3session S db main
+  S attach *
+  execsql BEGIN
+  execsql $sql
+  set patchset [S patchset]
+  S delete
+  execsql ROLLBACK
+  sqlite3changeset_apply db $patchset noop
+}
+
+do_execsql_test 2.0 {
+  CREATE TABLE t2(a, b, c, d, PRIMARY KEY(b,c));
+  CREATE TABLE t3(w, x, y, z, PRIMARY KEY(w));
+}
+
+do_test 2.1 {
+  exec_rollback_replay {
+    INSERT INTO t2 VALUES(1, 2, 3, 4);
+    INSERT INTO t2 VALUES('w', 'x', 'y', 'z');
+  }
+  execsql { SELECT * FROM t2 }
+} {1 2 3 4 w x y z}
+
+do_test 2.2 {
+  exec_rollback_replay {
+    DELETE FROM t2 WHERE a=1;
+    UPDATE t2 SET d = 'a';
+  }
+  execsql { SELECT * FROM t2 }
+} {w x y a}
+
+#-------------------------------------------------------------------------
+# sqlite3changeset_invert()
+#
+reset_db
+
+do_execsql_test 3.1 { CREATE TABLE t1(x PRIMARY KEY, y) }
+do_test 3.2 {
+  sqlite3session S db main
+  S attach *
+  execsql { INSERT INTO t1 VALUES(1, 2) }
+  set patchset [S patchset]
+  S delete
+  list [catch { sqlite3changeset_invert $patchset } msg] [set msg]
+} {1 SQLITE_CORRUPT}
+
+
+#-------------------------------------------------------------------------
+# sqlite3changeset_concat()
+#
+reset_db
+
+proc do_patchconcat_test {tn args} {
+  set nSql [expr [llength $args]-1]
+  set res [lindex $args $nSql]
+  set patchlist [list]
+
+  execsql BEGIN
+  foreach sql [lrange $args 0 end-1] {
+    sqlite3session S db main
+    S attach *
+    execsql $sql
+    lappend patchlist [S patchset]
+    S delete
+  }
+  execsql ROLLBACK
+
+  set patch [lindex $patchlist 0]
+  foreach p [lrange $patchlist 1 end] {
+    set patch [sqlite3changeset_concat $patch $p]
+  }
+
+  set x [list]
+  sqlite3session_foreach c $patch { lappend x $c }
+
+  uplevel [list do_test $tn [list set {} $x] [list {*}$res]]
+}
+
+do_execsql_test 4.1.1 {
+  CREATE TABLE t1(x PRIMARY KEY, y, z);
+}
+do_patchconcat_test 4.1.2 {
+  INSERT INTO t1 VALUES(1, 2, 3);
+} {
+  INSERT INTO t1 VALUES(4, 5, 6);
+} {
+  {INSERT t1 0 X.. {} {i 1 i 2 i 3}} 
+  {INSERT t1 0 X.. {} {i 4 i 5 i 6}}
+}
+
+if 0 {
+do_execsql_test 4.2.1 {
+  INSERT INTO t1 VALUES(1, 2, 3);
+  INSERT INTO t1 VALUES(4, 5, 6);
+}
+do_patchconcat_test 4.2.2 {
+  UPDATE t1 SET z = 'abc' WHERE x=1
+} {
+  UPDATE t1 SET z = 'def' WHERE x=4
+} {
+}
+}
+
+finish_test
+
+

@@ -73,6 +73,7 @@ static int test_session_cmd(
     { "indirect",     1, "BOOL",   }, /* 4 */
     { "isempty",      0, "",       }, /* 5 */
     { "table_filter", 1, "SCRIPT", }, /* 6 */
+    { "patchset",     0, "",       }, /* 7 */
     { 0 }
   };
   int iSub;
@@ -102,10 +103,15 @@ static int test_session_cmd(
       break;
     }
 
+    case 7:        /* patchset */
     case 1: {      /* changeset */
       int nChange;
       void *pChange;
-      rc = sqlite3session_changeset(pSession, &nChange, &pChange);
+      if( iSub==7 ){
+        rc = sqlite3session_patchset(pSession, &nChange, &pChange);
+      }else{
+        rc = sqlite3session_changeset(pSession, &nChange, &pChange);
+      }
       if( rc==SQLITE_OK ){
         Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pChange, nChange)); 
         sqlite3_free(pChange);

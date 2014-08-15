@@ -274,6 +274,15 @@ int sqlite3session_changeset(
 );
 
 /*
+** CAPI3REF: Generate A Patchset From A Session Object
+*/
+int sqlite3session_patchset(
+  sqlite3_session *pSession,      /* Session object */
+  int *pnPatchset,                /* OUT: Size of buffer at *ppChangeset */
+  void **ppPatchset               /* OUT: Buffer containing changeset */
+);
+
+/*
 ** CAPI3REF: Test if a changeset has recorded any changes.
 **
 ** Return non-zero if no changes to attached tables have been recorded by 
