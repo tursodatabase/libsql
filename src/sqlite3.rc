@@ -36,6 +36,14 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #endif /* defined(_WIN32) */
 
 /*
+ * Icon
+ */
+
+#define IDI_SQLITE 101
+
+IDI_SQLITE ICON "..\\art\\sqlite370.ico"
+
+/*
  * Version
  */
 

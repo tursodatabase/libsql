@@ -1,5 +1,5 @@
-C Merge\sthe\strunk\schanges\sfor\s3.8.6\sbeta3\sinto\sthe\ssessions\sbranch.
-D 2014-08-13T14:43:32.382
+C Update\sthe\ssessions\sbranch\sfor\sversion\s3.8.6.
+D 2014-08-15T15:10:46.167
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 639859a6f81bd15921ccd56ddbd6dfd335278377
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -181,7 +181,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c 99d162e57af6e72ffd7db5bf79568a134cd87d5b
+F src/btree.c fa057e30794bfd867963b44a3a42710a45c335a1
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 5abf794fe8a605f2005b422e98a3cedad9b9ef5b
@@ -239,7 +239,7 @@ F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c ea48e891406ccdf748f3eb02893e056d134a0fea
 F src/shell.c 75bb7bd2c80bb44861598f322a417c4bafe98fd7
 F src/sqlite.h.in 021a1f5c50e83060675d994a6014fd409e611d9e
-F src/sqlite3.rc 11094cc6a157a028b301a9f06b3d03089ea37c3e
+F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h d60dbbadfd64374a5a2f362fc6f45899540c2c8e
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
@@ -297,7 +297,7 @@ F src/update.c b0f38fda25d532343d54b7dc49f55ab73e92ca45
 F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
 F src/util.c 3076bdd51cdbf60a6e2e57fada745be37133c73e
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c b23574edc8ccda95f1b00e263a6c82927fbcdccf
+F src/vdbe.c ff9bec31cc128e98d852ebee6e5d4e160846e0c5
 F src/vdbe.h ca3b6df299adce6e2f499c57e42ae54f142ae823
 F src/vdbeInt.h 5eee1752eff410de9373196e2b327f7deefb3920
 F src/vdbeapi.c 52335de5ff97bba93d6779d8df87feab5d53d7df
@@ -427,7 +427,7 @@ F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
-F test/corruptI.test b3e4203d420490fc3d3062711597bc1dea06a789
+F test/corruptI.test 0afbba50bfae006094cc548b4605f521c1179502
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
@@ -1201,7 +1201,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 69018967f6e38521dd9b0fa9ce05c9b947635335 f01d42cc8b00d2b7c4f14defcb05fdc493cf1bfd
-R bd5030744f9ce407da63815c443bb97c
+P d49455d9a972fc2224d9beb97165a998ca56e838 9491ba7d738528f168657adb43a198238abde19e
+R f94212c9f19d7229cfd6e84a8137e8b7
 U drh
-Z eeb6d5c5bf1539cd0d4aa93b68a7c80f
+Z 80e27e19ffdd26307df7b50bec8606de
