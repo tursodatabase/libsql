@@ -1,5 +1,5 @@
-C Merge\sthe\spre-3.8.6\schanges\sinto\sthe\sthreads\sbranch.
-D 2014-08-14T14:02:48.852
+C Merge\sthe\s3.8.6\srelease\sinto\sthe\sthreads\sbranch.
+D 2014-08-15T15:46:21.010
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c f3d64fe70d61b2c970b3633506ad5e7fc684c6a1
+F src/btree.c 691d09b5d243b0d42c071d2ad0e2476aebdeea92
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 6aa8134d18fe1746b5d2885a361ee093e5145ae2
@@ -414,7 +414,7 @@ F test/corruptE.test 193b4ca4e927e77c1d5f4f56203ddc998432a7ee
 F test/corruptF.test be9fde98e4c93648f1ba52b74e5318edc8f59fe4
 F test/corruptG.test 1ab3bf97ee7bdba70e0ff3ba2320657df55d1804
 F test/corruptH.test 88ed71a086e13591c917aac6de32750e7c7281cb
-F test/corruptI.test b3e4203d420490fc3d3062711597bc1dea06a789
+F test/corruptI.test 0afbba50bfae006094cc548b4605f521c1179502
 F test/cost.test 19d314526616ce4473eb4e4e450fcb94499ce318
 F test/count.test 42a251178e32f617eda33f76236a7f79825a50b5
 F test/coveridxscan.test cdb47d01acc4a634a34fd25abe85189e0d0f1e62
@@ -1191,7 +1191,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a353a8515fb2eff86042d0c33e39772f4d04e0b3 13a2d90a2869c53b79754de39045bbbdbc7688e3
-R 64b417b620c9f6c58aeb23fe611b07d3
+P a608fd1d52606a009c3acc7f1d184b86a7df3c82 9491ba7d738528f168657adb43a198238abde19e
+R 2da06d5c8da6ea94aeb00428a88d4808
 U drh
-Z b2ed58163bf8c58a60958e9dca71f3dd
+Z 1c5f8fe63924bc5d5031f6b27d8e1190
