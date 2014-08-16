@@ -443,9 +443,13 @@ static int sessionSerialLen(u8 *a){
 ** hash key. Assume the has table has nBucket buckets. The hash keys
 ** calculated by this function are compatible with those calculated by
 ** sessionPreupdateHash().
+**
+** The bPkOnly argument is non-zero if the record at aRecord[] is from
+** a patchset DELETE. In this case the non-PK fields are omitted entirely.
 */
 static unsigned int sessionChangeHash(
   SessionTable *pTab,             /* Table handle */
+  int bPkOnly,                    /* Record consists of PK fields only */
   u8 *aRecord,                    /* Change record */
   int nBucket                     /* Assume this many buckets in hash table */
 ){
@@ -456,6 +460,7 @@ static unsigned int sessionChangeHash(
   for(i=0; i<pTab->nCol; i++){
     int eType = *a;
     int isPK = pTab->abPK[i];
+    if( bPkOnly && isPK==0 ) continue;
 
     /* It is not possible for eType to be SQLITE_NULL here. The session 
     ** module does not record changes for rows with NULL values stored in
@@ -493,7 +498,9 @@ static unsigned int sessionChangeHash(
 */
 static int sessionChangeEqual(
   SessionTable *pTab,             /* Table used for PK definition */
+  int bLeftPkOnly,
   u8 *aLeft,                      /* Change record */
+  int bRightPkOnly,
   u8 *aRight                      /* Change record */
 ){
   u8 *a1 = aLeft;                 /* Cursor to iterate through aLeft */
@@ -507,8 +514,8 @@ static int sessionChangeEqual(
     if( pTab->abPK[iCol] && (n1!=n2 || memcmp(a1, a2, n1)) ){
       return 0;
     }
-    a1 += n1;
-    a2 += n2;
+    if( pTab->abPK[iCol] || bLeftPkOnly==0 ) a1 += n1;
+    if( pTab->abPK[iCol] || bRightPkOnly==0 ) a2 += n2;
   }
 
   return 1;
@@ -606,6 +613,7 @@ static u8 *sessionMergeValue(
 static int sessionMergeUpdate(
   u8 **paOut,                     /* IN/OUT: Pointer to output buffer */
   SessionTable *pTab,             /* Table change pertains to */
+  int bPatchset,
   u8 *aOldRecord1,                /* old.* record for first change */
   u8 *aOldRecord2,                /* old.* record for second change */
   u8 *aNewRecord1,                /* new.* record for first change */
@@ -618,29 +626,32 @@ static int sessionMergeUpdate(
 
   u8 *aOut = *paOut;
   int i;
-  int bRequired = 0;
 
-  assert( aOldRecord1 && aNewRecord1 );
+  if( bPatchset==0 ){
+    int bRequired = 0;
 
-  /* Write the old.* vector first. */
-  for(i=0; i<pTab->nCol; i++){
-    int nOld;
-    u8 *aOld;
-    int nNew;
-    u8 *aNew;
+    assert( aOldRecord1 && aNewRecord1 );
 
-    aOld = sessionMergeValue(&aOld1, &aOld2, &nOld);
-    aNew = sessionMergeValue(&aNew1, &aNew2, &nNew);
-    if( pTab->abPK[i] || nOld!=nNew || memcmp(aOld, aNew, nNew) ){
-      if( pTab->abPK[i]==0 ) bRequired = 1;
-      memcpy(aOut, aOld, nOld);
-      aOut += nOld;
-    }else{
-      *(aOut++) = '\0';
+    /* Write the old.* vector first. */
+    for(i=0; i<pTab->nCol; i++){
+      int nOld;
+      u8 *aOld;
+      int nNew;
+      u8 *aNew;
+
+      aOld = sessionMergeValue(&aOld1, &aOld2, &nOld);
+      aNew = sessionMergeValue(&aNew1, &aNew2, &nNew);
+      if( pTab->abPK[i] || nOld!=nNew || memcmp(aOld, aNew, nNew) ){
+        if( pTab->abPK[i]==0 ) bRequired = 1;
+        memcpy(aOut, aOld, nOld);
+        aOut += nOld;
+      }else{
+        *(aOut++) = '\0';
+      }
     }
-  }
 
-  if( !bRequired ) return 0;
+    if( !bRequired ) return 0;
+  }
 
   /* Write the new.* vector */
   aOld1 = aOldRecord1;
@@ -655,7 +666,9 @@ static int sessionMergeUpdate(
 
     aOld = sessionMergeValue(&aOld1, &aOld2, &nOld);
     aNew = sessionMergeValue(&aNew1, &aNew2, &nNew);
-    if( pTab->abPK[i] || (nOld==nNew && 0==memcmp(aOld, aNew, nNew)) ){
+    if( bPatchset==0 
+     && (pTab->abPK[i] || (nOld==nNew && 0==memcmp(aOld, aNew, nNew))) 
+    ){
       *(aOut++) = '\0';
     }else{
       memcpy(aOut, aNew, nNew);
@@ -754,7 +767,7 @@ static int sessionPreupdateEqual(
 ** Growing the hash table in this case is a performance optimization only,
 ** it is not required for correct operation.
 */
-static int sessionGrowHash(SessionTable *pTab){
+static int sessionGrowHash(int bPatchset, SessionTable *pTab){
   if( pTab->nChange==0 || pTab->nEntry>=(pTab->nChange/2) ){
     int i;
     SessionChange **apNew;
@@ -773,7 +786,8 @@ static int sessionGrowHash(SessionTable *pTab){
       SessionChange *p;
       SessionChange *pNext;
       for(p=pTab->apChange[i]; p; p=pNext){
-        int iHash = sessionChangeHash(pTab, p->aRecord, nNew);
+        int bPkOnly = (p->op==SQLITE_DELETE && bPatchset);
+        int iHash = sessionChangeHash(pTab, bPkOnly, p->aRecord, nNew);
         pNext = p->pNext;
         p->pNext = apNew[iHash];
         apNew[iHash] = p;
@@ -960,7 +974,7 @@ static void sessionPreupdateOneChange(
   if( sessionInitTable(pSession, pTab) ) return;
 
   /* Grow the hash table if required */
-  if( sessionGrowHash(pTab) ){
+  if( sessionGrowHash(0, pTab) ){
     pSession->rc = SQLITE_NOMEM;
     return;
   }
@@ -3174,6 +3188,7 @@ int sqlite3changeset_apply(
 */
 static int sessionChangeMerge(
   SessionTable *pTab,             /* Table structure */
+  int bPatchset,                  /* True for patchsets */
   SessionChange *pExist,          /* Existing change */
   int op2,                        /* Second change operation */
   int bIndirect,                  /* True if second change is indirect */
@@ -3219,9 +3234,13 @@ static int sessionChangeMerge(
       sqlite3_free(pExist);
       assert( pNew==0 );
     }else{
+      u8 *aExist = pExist->aRecord;
       int nByte;
       u8 *aCsr;
 
+      /* Allocate a new SessionChange object. Ensure that the aRecord[]
+      ** buffer of the new object is large enough to hold any record that
+      ** may be generated by combining the input records.  */
       nByte = sizeof(SessionChange) + pExist->nRecord + nRec;
       pNew = (SessionChange *)sqlite3_malloc(nByte);
       if( !pNew ){
@@ -3236,30 +3255,37 @@ static int sessionChangeMerge(
         u8 *a1 = aRec;
         assert( op2==SQLITE_UPDATE );
         pNew->op = SQLITE_INSERT;
-        sessionReadRecord(&a1, pTab->nCol, 0, 0);
-        sessionMergeRecord(&aCsr, pTab->nCol, pExist->aRecord, a1);
+        if( bPatchset==0 ) sessionReadRecord(&a1, pTab->nCol, 0, 0);
+        sessionMergeRecord(&aCsr, pTab->nCol, aExist, a1);
       }else if( op1==SQLITE_DELETE ){       /* DELETE + INSERT */
         assert( op2==SQLITE_INSERT );
         pNew->op = SQLITE_UPDATE;
-        if( 0==sessionMergeUpdate(&aCsr, pTab, pExist->aRecord, 0, aRec, 0) ){
+        if( 0==sessionMergeUpdate(&aCsr, pTab, bPatchset, aExist, 0, aRec, 0) ){
           sqlite3_free(pNew);
           pNew = 0;
         }
       }else if( op2==SQLITE_UPDATE ){       /* UPDATE + UPDATE */
-        u8 *a1 = pExist->aRecord;
+        u8 *a1 = aExist;
         u8 *a2 = aRec;
         assert( op1==SQLITE_UPDATE );
-        sessionReadRecord(&a1, pTab->nCol, 0, 0);
-        sessionReadRecord(&a2, pTab->nCol, 0, 0);
+        if( bPatchset==0 ){
+          sessionReadRecord(&a1, pTab->nCol, 0, 0);
+          sessionReadRecord(&a2, pTab->nCol, 0, 0);
+        }
         pNew->op = SQLITE_UPDATE;
-        if( 0==sessionMergeUpdate(&aCsr, pTab, aRec, pExist->aRecord, a1, a2) ){
+        if( 0==sessionMergeUpdate(&aCsr, pTab, bPatchset, aRec, aExist,a1,a2) ){
           sqlite3_free(pNew);
           pNew = 0;
         }
       }else{                                /* UPDATE + DELETE */
         assert( op1==SQLITE_UPDATE && op2==SQLITE_DELETE );
         pNew->op = SQLITE_DELETE;
-        sessionMergeRecord(&aCsr, pTab->nCol, aRec, pExist->aRecord);
+        if( bPatchset ){
+          memcpy(aCsr, aRec, nRec);
+          aCsr += nRec;
+        }else{
+          sessionMergeRecord(&aCsr, pTab->nCol, aRec, aExist);
+        }
       }
 
       if( pNew ){
@@ -3278,6 +3304,7 @@ static int sessionChangeMerge(
 ** hash tables.
 */
 static int sessionConcatChangeset(
+  int bPatchset,                  /* True to expect patchsets */
   int nChangeset,                 /* Number of bytes in pChangeset */
   void *pChangeset,               /* Changeset buffer */
   SessionTable **ppTabList        /* IN/OUT: List of table objects */
@@ -3300,6 +3327,13 @@ static int sessionConcatChangeset(
     SessionChange *pChange;
     SessionChange *pExist = 0;
     SessionChange **pp;
+
+    assert( bPatchset==0 || bPatchset==1 );
+    assert( pIter->bPatchset==0 || pIter->bPatchset==1 );
+    if( pIter->bPatchset!=bPatchset ){
+      rc = SQLITE_ERROR;
+      break;
+    }
 
     assert( pIter->apValue==0 );
     sqlite3changeset_op(pIter, &zNew, &nCol, &op, &bIndirect);
@@ -3335,17 +3369,25 @@ static int sessionConcatChangeset(
       pTab->zName = (char *)zNew;
     }
 
-    if( sessionGrowHash(pTab) ){
+    if( sessionGrowHash(bPatchset, pTab) ){
       rc = SQLITE_NOMEM;
       break;
     }
-    iHash = sessionChangeHash(pTab, aRec, pTab->nChange);
+    iHash = sessionChangeHash(
+        pTab, (bPatchset && op==SQLITE_DELETE), aRec, pTab->nChange
+    );
 
     /* Search for existing entry. If found, remove it from the hash table. 
     ** Code below may link it back in.
     */
     for(pp=&pTab->apChange[iHash]; *pp; pp=&(*pp)->pNext){
-      if( sessionChangeEqual(pTab, (*pp)->aRecord, aRec) ){
+      int bPkOnly1 = 0;
+      int bPkOnly2 = 0;
+      if( bPatchset ){
+        bPkOnly1 = (*pp)->op==SQLITE_DELETE;
+        bPkOnly2 = op==SQLITE_DELETE;
+      }
+      if( sessionChangeEqual(pTab, bPkOnly1, (*pp)->aRecord, bPkOnly2, aRec) ){
         pExist = *pp;
         *pp = (*pp)->pNext;
         pTab->nEntry--;
@@ -3353,7 +3395,9 @@ static int sessionConcatChangeset(
       }
     }
 
-    rc = sessionChangeMerge(pTab, pExist, op, bIndirect, aRec, nRec, &pChange);
+    rc = sessionChangeMerge(pTab, 
+        bPatchset, pExist, op, bIndirect, aRec, nRec, &pChange
+    );
     if( rc ) break;
     if( pChange ){
       pChange->pNext = pTab->apChange[iHash];
@@ -3392,13 +3436,15 @@ int sqlite3changeset_concat(
 ){
   SessionTable *pList = 0;        /* List of SessionTable objects */
   int rc;                         /* Return code */
+  int bPatch;                     /* True for a patchset */
 
   *pnOut = 0;
   *ppOut = 0;
+  bPatch = (nLeft>0 && *(char*)pLeft=='P') || (nRight>0 && *(char*)pRight=='P');
 
-  rc = sessionConcatChangeset(nLeft, pLeft, &pList);
+  rc = sessionConcatChangeset(bPatch, nLeft, pLeft, &pList);
   if( rc==SQLITE_OK ){
-    rc = sessionConcatChangeset(nRight, pRight, &pList);
+    rc = sessionConcatChangeset(bPatch, nRight, pRight, &pList);
   }
 
   /* Create the serialized output changeset based on the contents of the
@@ -3411,7 +3457,7 @@ int sqlite3changeset_concat(
       int i;
       if( pTab->nEntry==0 ) continue;
 
-      sessionAppendTableHdr(&buf, 0, pTab, &rc);
+      sessionAppendTableHdr(&buf, bPatch, pTab, &rc);
       for(i=0; i<pTab->nChange; i++){
         SessionChange *p;
         for(p=pTab->apChange[i]; p; p=p->pNext){

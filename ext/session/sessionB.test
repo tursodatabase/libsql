@@ -178,17 +178,24 @@ do_test 3.2 {
 reset_db
 
 proc do_patchconcat_test {tn args} {
+  set bRevert 0
+  if {[lindex $args 0] == "-revert"} {
+    set bRevert 1
+    set args [lrange $args 1 end]
+  }
   set nSql [expr [llength $args]-1]
   set res [lindex $args $nSql]
   set patchlist [list]
 
   execsql BEGIN
+  if {$bRevert} { execsql { SAVEPOINT x } }
   foreach sql [lrange $args 0 end-1] {
     sqlite3session S db main
     S attach *
     execsql $sql
     lappend patchlist [S patchset]
     S delete
+    if {$bRevert} { execsql { ROLLBACK TO x } }
   }
   execsql ROLLBACK
 
@@ -215,17 +222,109 @@ do_patchconcat_test 4.1.2 {
   {INSERT t1 0 X.. {} {i 4 i 5 i 6}}
 }
 
-if 0 {
 do_execsql_test 4.2.1 {
   INSERT INTO t1 VALUES(1, 2, 3);
   INSERT INTO t1 VALUES(4, 5, 6);
 }
+
 do_patchconcat_test 4.2.2 {
   UPDATE t1 SET z = 'abc' WHERE x=1
 } {
   UPDATE t1 SET z = 'def' WHERE x=4
 } {
+  {UPDATE t1 0 X.. {i 1 {} {} {} {}} {{} {} {} {} t abc}} 
+  {UPDATE t1 0 X.. {i 4 {} {} {} {}} {{} {} {} {} t def}}
 }
+
+do_patchconcat_test 4.2.3 {
+  DELETE FROM t1 WHERE x=1;
+} {
+  DELETE FROM t1 WHERE x=4;
+} {
+  {DELETE t1 0 X.. {i 1 {} {} {} {}} {}} 
+  {DELETE t1 0 X.. {i 4 {} {} {} {}} {}}
+}
+
+
+do_execsql_test 4.3.1 {
+  CREATE TABLE t2(a, b, c, d, PRIMARY KEY(c, b));
+  INSERT INTO t2 VALUES('.', 1, 1, '.');
+  INSERT INTO t2 VALUES('.', 1, 2, '.');
+  INSERT INTO t2 VALUES('.', 2, 1, '.');
+  INSERT INTO t2 VALUES('.', 2, 2, '.');
+}
+
+# INSERT + INSERT 
+do_patchconcat_test 4.3.2 -revert {
+  INSERT INTO t2 VALUES('a', 'a', 'a', 'a');
+} {
+  INSERT INTO t2 VALUES('b', 'a', 'a', 'b');
+} {
+  {INSERT t2 0 .XX. {} {t a t a t a t a}}
+}
+
+# INSERT + DELETE 
+do_patchconcat_test 4.3.3 {
+  INSERT INTO t2 VALUES('a', 'a', 'a', 'a');
+} {
+  DELETE FROM t2 WHERE c = 'a';
+} {
+}
+
+# INSERT + UPDATE
+do_patchconcat_test 4.3.4 {
+  INSERT INTO t2 VALUES('a', 'a', 'a', 'a');
+} {
+  UPDATE t2 SET d = 'b' WHERE c='a';
+} {
+  {INSERT t2 0 .XX. {} {t a t a t a t b}}
+}
+
+# UPDATE + UPDATE
+do_patchconcat_test 4.3.5 {
+  UPDATE t2 SET a = 'a' WHERE c=1 AND b=2;
+} {
+  UPDATE t2 SET d = 'd' WHERE c=1 AND b=2;
+} {
+  {UPDATE t2 0 .XX. {{} {} i 2 i 1 {} {}} {t a {} {} {} {} t d}}
+}
+
+# UPDATE + DELETE
+do_patchconcat_test 4.3.6 {
+  UPDATE t2 SET a = 'a' WHERE c=1 AND b=2;
+} {
+  DELETE FROM t2 WHERE c=1 AND b=2;
+} {
+  {DELETE t2 0 .XX. {{} {} i 2 i 1 {} {}} {}}
+}
+
+# DELETE + INSERT
+do_patchconcat_test 4.3.7 {
+  DELETE FROM t2 WHERE b=1;
+} {
+  INSERT INTO t2 VALUES('x', 1, 2, '.');
+} {
+  {DELETE t2 0 .XX. {{} {} i 1 i 1 {} {}} {}} 
+  {UPDATE t2 0 .XX. {{} {} i 1 i 2 {} {}} {t x {} {} {} {} t .}}
+}
+
+# DELETE + UPDATE
+do_patchconcat_test 4.3.8 -revert {
+  DELETE FROM t2 WHERE b=1 AND c=2;
+} {
+  UPDATE t2 SET a=5 WHERE b=1 AND c=2;
+} {
+  {DELETE t2 0 .XX. {{} {} i 1 i 2 {} {}} {}} 
+}
+
+# DELETE + UPDATE
+do_patchconcat_test 4.3.9 -revert {
+  DELETE FROM t2 WHERE b=1 AND c=2;
+} {
+  DELETE FROM t2 WHERE b=1;
+} {
+  {DELETE t2 0 .XX. {{} {} i 1 i 1 {} {}} {}} 
+  {DELETE t2 0 .XX. {{} {} i 1 i 2 {} {}} {}} 
 }
 
 finish_test
