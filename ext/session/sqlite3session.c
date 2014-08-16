@@ -498,9 +498,9 @@ static unsigned int sessionChangeHash(
 */
 static int sessionChangeEqual(
   SessionTable *pTab,             /* Table used for PK definition */
-  int bLeftPkOnly,
+  int bLeftPkOnly,                /* True if aLeft[] contains PK fields only */
   u8 *aLeft,                      /* Change record */
-  int bRightPkOnly,
+  int bRightPkOnly,               /* True if aRight[] contains PK fields only */
   u8 *aRight                      /* Change record */
 ){
   u8 *a1 = aLeft;                 /* Cursor to iterate through aLeft */
@@ -613,7 +613,7 @@ static u8 *sessionMergeValue(
 static int sessionMergeUpdate(
   u8 **paOut,                     /* IN/OUT: Pointer to output buffer */
   SessionTable *pTab,             /* Table change pertains to */
-  int bPatchset,
+  int bPatchset,                  /* True if records are patchset records */
   u8 *aOldRecord1,                /* old.* record for first change */
   u8 *aOldRecord2,                /* old.* record for second change */
   u8 *aNewRecord1,                /* new.* record for first change */
@@ -1576,11 +1576,16 @@ static int sessionAppendUpdate(
   return rc;
 }
 
+/*
+** Append a DELETE change to the buffer passed as the first argument. Use
+** the changeset format if argument bPatchset is zero, or the patchset
+** format otherwise.
+*/
 static int sessionAppendDelete(
   SessionBuffer *pBuf,            /* Buffer to append to */
   int bPatchset,                  /* True for "patchset", 0 for "changeset" */
-  sqlite3_stmt *pStmt,            /* Statement handle pointing at new row */
   SessionChange *p,               /* Object containing old values */
+  int nCol,                       /* Number of columns in table */
   u8 *abPK                        /* Boolean array - true for PK columns */
 ){
   int rc = SQLITE_OK;
@@ -1591,7 +1596,6 @@ static int sessionAppendDelete(
   if( bPatchset==0 ){
     sessionAppendBlob(pBuf, p->aRecord, p->nRecord, &rc);
   }else{
-    int nCol = sqlite3_column_count(pStmt);
     int i;
     u8 *a = p->aRecord;
     for(i=0; i<nCol; i++){
@@ -1747,10 +1751,10 @@ static int sessionSelectBind(
 ** SQLite error code before returning.
 */
 static void sessionAppendTableHdr(
-  SessionBuffer *pBuf, 
-  int bPatchset,
-  SessionTable *pTab, 
-  int *pRc
+  SessionBuffer *pBuf,            /* Append header to this buffer */
+  int bPatchset,                  /* Use the patchset format if true */
+  SessionTable *pTab,             /* Table object to append header for */
+  int *pRc                        /* IN/OUT: Error code */
 ){
   /* Write a table header */
   sessionAppendByte(pBuf, (bPatchset ? 'P' : 'T'), pRc);
@@ -1759,6 +1763,16 @@ static void sessionAppendTableHdr(
   sessionAppendBlob(pBuf, (u8 *)pTab->zName, (int)strlen(pTab->zName)+1, pRc);
 }
 
+/*
+** Generate either a changeset (if argument bPatchset is zero) or a patchset
+** (if it is non-zero) based on the current contents of the session object
+** passed as the first argument.
+**
+** If no error occurs, SQLITE_OK is returned and the new changeset/patchset
+** stored in output variables *pnChangeset and *ppChangeset. Or, if an error
+** occurs, an SQLite error code is returned and both output variables set 
+** to 0.
+*/
 int sessionGenerateChangeset(
   sqlite3_session *pSession,      /* Session object */
   int bPatchset,                  /* True for patchset, false for changeset */
@@ -1827,7 +1841,7 @@ int sessionGenerateChangeset(
               rc = sessionAppendUpdate(&buf, bPatchset, pSel, p, abPK);
             }
           }else if( p->op!=SQLITE_INSERT ){
-            rc = sessionAppendDelete(&buf, bPatchset, pSel, p, abPK);
+            rc = sessionAppendDelete(&buf, bPatchset, p, nCol, abPK);
           }
           if( rc==SQLITE_OK ){
             rc = sqlite3_reset(pSel);
@@ -1965,6 +1979,9 @@ int sqlite3changeset_start(
 ** When this function is called, *paChange points to the start of the record
 ** to deserialize. Assuming no error occurs, *paChange is set to point to
 ** one byte after the end of the same record before this function returns.
+** If the argument abPK is NULL, then the record contains nCol values. Or,
+** if abPK is other than NULL, then the record contains only the PK fields
+** (in other words, it is a patchset DELETE record).
 **
 ** If successful, each element of the apOut[] array (allocated by the caller)
 ** is set to point to an sqlite3_value object containing the value read

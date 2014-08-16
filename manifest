@@ -1,5 +1,5 @@
-C Fixes\sfor\sthe\ssqlite3changeset_concat()\sAPI\sregarding\spatchsets.
-D 2014-08-16T16:47:55.133
+C Fix\ssome\smissing\sand\sout-of-date\scomments\sin\sthe\ssessions\smodule.
+D 2014-08-16T19:01:00.672
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 639859a6f81bd15921ccd56ddbd6dfd335278377
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -155,8 +155,8 @@ F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
 F ext/session/sessionB.test 51c70394bc04ac72d72f54bd0879614b9c34240c
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
-F ext/session/sqlite3session.c eed0f0510859e564f9f8c886d22a299579b5c6c1
-F ext/session/sqlite3session.h c99445ea9918343d3e62acafdf82bc5502cfba29
+F ext/session/sqlite3session.c f2385ab5ebac94d8e54cc3aa8dc9ca77f8cdf0d9
+F ext/session/sqlite3session.h ef0dbcd599ab8b83e3f3f2e9912e1734519a3ef4
 F ext/session/test_session.c 920ccb6d6e1df263cd9099563328094c230b2925
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 60a4565a8c44762a002cd02979317df5ca47e899
-R 1bd074b437e8898f047cce1541823103
+P dccb34859508eac8146ae5b19c447673d04be3b0
+R 7605cd9723f946167ef7a988888841f4
 U dan
-Z 66bd65019d7460afe376babf330097ba
+Z 7c34f49d718669db325837ce5da84317

@@ -275,6 +275,26 @@ int sqlite3session_changeset(
 
 /*
 ** CAPI3REF: Generate A Patchset From A Session Object
+**
+** The differences between a patchset and a changeset are that:
+**
+** <ul>
+**   <li> DELETE records consist of the primary key fields only. The 
+**        original values of other fields are omitted.
+**   <li> The original values of any modified fields are omitted from 
+**        UPDATE records.
+** </ul>
+**
+** A patchset blob may be used with up to date versions of all 
+** sqlite3changeset_xxx API functions except for sqlite3changeset_invert(), 
+** which returns SQLITE_CORRUPT if it is passed a patchset. Similarly,
+** attempting to use a patchset blob with old versions of the
+** sqlite3changeset_xxx APIs also provokes an SQLITE_CORRUPT error. 
+**
+** Because the non-primary key "old.*" fields are omitted, no 
+** SQLITE_CHANGESET_DATA conflicts can be detected or reported if a patchset
+** is passed to the sqlite3changeset_apply() API. Other conflict types work
+** in the same way as for changesets.
 */
 int sqlite3session_patchset(
   sqlite3_session *pSession,      /* Session object */
