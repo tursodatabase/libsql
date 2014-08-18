@@ -1621,7 +1621,7 @@ static int sessionAppendDelete(
         }
       }
       if( abPK[i] ){
-        sessionAppendBlob(pBuf, pStart, a-pStart, &rc);
+        sessionAppendBlob(pBuf, pStart, (int)(a-pStart), &rc);
       }
     }
     assert( (a - p->aRecord)==p->nRecord );
