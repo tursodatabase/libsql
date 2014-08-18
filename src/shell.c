@@ -3169,6 +3169,7 @@ static int do_meta_command(char *zLine, ShellState *p){
     int nCmd = nArg - 1;
     int i;
     if( nArg<=1 ) goto session_syntax_error;
+    open_db(p, 0);
     if( nArg>=3 ){
       for(iSes=0; iSes<p->nSession; iSes++){
         if( strcmp(p->aSession[iSes].zName, azArg[1])==0 ) break;
@@ -3182,6 +3183,53 @@ static int do_meta_command(char *zLine, ShellState *p){
         iSes = 0;
       }
     }
+
+    /* .session attach TABLE
+    ** Invoke the sqlite3session_attach() interface to attach a particular
+    ** table so that it is never filtered.
+    */
+    if( strcmp(azCmd[0],"attach")==0 ){
+      if( nCmd!=2 ) goto session_syntax_error;
+      if( pSession->p==0 ){
+        session_not_open:
+        fprintf(stderr, "ERROR: No sessions are open\n");
+      }else{
+        rc = sqlite3session_attach(pSession->p, azCmd[1]);
+        if( rc ){
+          fprintf(stderr, "ERROR: sqlite3session_attach() returns %d\n", rc);
+          rc = 0;
+        }
+      }
+    }else
+
+    /* .session changeset FILE
+    ** .session patchset FILE
+    ** Write a changeset or patchset into a file.  The file is overwritten.
+    */
+    if( strcmp(azCmd[0],"changeset")==0 || strcmp(azCmd[0],"patchset")==0 ){
+      FILE *out = 0;
+      if( nCmd!=2 ) goto session_syntax_error;
+      if( pSession->p==0 ) goto session_not_open;
+      out = fopen(azCmd[1], "wb");
+      if( out==0 ){
+        fprintf(stderr, "ERROR: cannot open \"%s\" for writing\n", azCmd[1]);
+      }else{
+        int szChng;
+        void *pChng;
+        if( azCmd[0][0]=='c' ){
+          sqlite3session_changeset(pSession->p, &szChng, &pChng);
+        }else{
+          sqlite3session_patchset(pSession->p, &szChng, &pChng);
+        }
+        if( pChng 
+          && fwrite(pChng, szChng, 1, out)!=1 ){
+          fprintf(stderr, "ERROR: Failed to write entire %d-byte output\n",
+                  szChng);
+        }
+        sqlite3_free(pChng);
+        fclose(out);
+      }
+    }else
 
     /* .session close
     ** Close the identified session
@@ -3225,6 +3273,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = sqlite3session_create(p->db, azCmd[1], &pSession->p);
       if( rc ){
         fprintf(stderr, "Cannot open session: error code=%d\n", rc);
+        rc = 0;
         goto meta_command_exit;
       }
       p->nSession++;
