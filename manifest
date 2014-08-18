@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\son\sWinCE.
-D 2014-08-15T16:13:07.749
+C Refactor\sthe\snames\sof\sstate\sobjects\sin\sthe\scommand-line\sshell\simplementation..
+D 2014-08-18T13:45:42.156
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -223,7 +223,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c ea48e891406ccdf748f3eb02893e056d134a0fea
-F src/shell.c 75bb7bd2c80bb44861598f322a417c4bafe98fd7
+F src/shell.c 41df1103617331e023301d943977f8c06bd1486f
 F src/sqlite.h.in ed9d35990c61f0388ca6405706455c4095310553
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1186,8 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9491ba7d738528f168657adb43a198238abde19e cc910b8e0c45e7387024f3a729003e2fef08b198
-R ad15e862b2dc4bc2854071509d952976
-T +closed cc910b8e0c45e7387024f3a729003e2fef08b198
+P 28a379fcd43389ad3249eff51a621d0bb7c81640
+R ef518fe403795d3b06bbe754ecf5c125
 U drh
-Z 7367bc305ed9789e95517eb698c37af7
+Z e00f86954fa90c49bf5a476ef91fbb0c
