@@ -72,6 +72,8 @@ LIBOBJ+= vdbe.o parse.o \
          vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbesort.o \
 	 vdbetrace.o wal.o walker.o where.o utf.o vtab.o
 
+LIBOBJ += sqlite3session.o
+
 
 
 # All of the source code files.
@@ -563,6 +565,9 @@ fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c
 
+sqlite3session.o:	$(TOP)/ext/session/sqlite3session.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/session/sqlite3session.c
+
 
 # Rules for building test programs and for running tests
 #
@@ -654,6 +659,10 @@ showjournal$(EXE):	$(TOP)/tool/showjournal.c sqlite3.o
 showwal$(EXE):	$(TOP)/tool/showwal.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o showwal$(EXE) \
 		$(TOP)/tool/showwal.c sqlite3.o $(THREADLIB)
+
+changeset$(EXE):	$(TOP)/ext/session/changeset.c sqlite3.o
+	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o changeset$(EXE) \
+		$(TOP)/ext/session/changeset.c sqlite3.o $(THREADLIB)
 
 fts3view$(EXE):	$(TOP)/ext/fts3/tool/fts3view.c sqlite3.o
 	$(TCC) -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -o fts3view$(EXE) \
