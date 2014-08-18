@@ -26,7 +26,7 @@
 /*************************************************************************
 ** CUSTOM AUXILIARY FUNCTIONS
 **
-** Virtual table implemenations may overload SQL functions by implementing
+** Virtual table implementations may overload SQL functions by implementing
 ** the sqlite3_module.xFindFunction() method.
 */
 
@@ -42,7 +42,6 @@ typedef void (*fts5_extension_function)(
 );
 
 /*
-**
 ** xUserData(pFts):
 **
 **   Return a copy of the context pointer the extension function was 

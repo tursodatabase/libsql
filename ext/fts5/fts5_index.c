@@ -45,6 +45,7 @@
 
 #define FTS5_WORK_UNIT      64    /* Number of leaf pages in unit of work */
 #define FTS5_MIN_MERGE       4    /* Minimum number of segments to merge */
+#define FTS5_CRISIS_MERGE   16    /* Maximum number of segments to merge */
 
 #define FTS5_MIN_DLIDX_SIZE  4    /* Add dlidx if this many empty pages */
 
@@ -291,6 +292,7 @@ struct Fts5Index {
   char *zDataTbl;                 /* Name of %_data table */
   int pgsz;                       /* Target page size for this index */
   int nMinMerge;                  /* Minimum input segments in a merge */
+  int nCrisisMerge;               /* Maximum allowed segments per level */
   int nWorkUnit;                  /* Leaf pages in a "unit" of work */
 
   /*
@@ -2987,14 +2989,15 @@ static void fts5TrimSegments(Fts5Index *p, Fts5MultiSegIter *pIter){
 static void fts5IndexMergeLevel(
   Fts5Index *p,                   /* FTS5 backend object */
   int iIdx,                       /* Index to work on */
-  Fts5Structure *pStruct,         /* Stucture of index iIdx */
+  Fts5Structure **ppStruct,       /* IN/OUT: Stucture of index iIdx */
   int iLvl,                       /* Level to read input from */
   int *pnRem                      /* Write up to this many output leaves */
 ){
+  Fts5Structure *pStruct = *ppStruct;
   Fts5StructureLevel *pLvl = &pStruct->aLevel[iLvl];
-  Fts5StructureLevel *pLvlOut = &pStruct->aLevel[iLvl+1];
+  Fts5StructureLevel *pLvlOut;
   Fts5MultiSegIter *pIter = 0;    /* Iterator to read input data */
-  int nRem = *pnRem;              /* Output leaf pages left to write */
+  int nRem = pnRem ? *pnRem : 0;  /* Output leaf pages left to write */
   int nInput;                     /* Number of input segments */
   Fts5SegWriter writer;           /* Writer object */
   Fts5StructureSegment *pSeg;     /* Output segment */
@@ -3009,12 +3012,24 @@ static void fts5IndexMergeLevel(
   memset(&term, 0, sizeof(Fts5Buffer));
   writer.iIdx = iIdx;
   if( pLvl->nMerge ){
+    pLvlOut = &pStruct->aLevel[iLvl+1];
     assert( pLvlOut->nSeg>0 );
     nInput = pLvl->nMerge;
     fts5WriteInitForAppend(p, &writer, iIdx, &pLvlOut->aSeg[pLvlOut->nSeg-1]);
     pSeg = &pLvlOut->aSeg[pLvlOut->nSeg-1];
   }else{
     int iSegid = fts5AllocateSegid(p, pStruct);
+
+    /* Extend the Fts5Structure object as required to ensure the output
+    ** segment exists. */
+    if( iLvl==pStruct->nLevel-1 ){
+      fts5StructureAddLevel(&p->rc, ppStruct);
+      pStruct = *ppStruct;
+    }
+    fts5StructureExtendLevel(&p->rc, pStruct, iLvl+1, 1, 0);
+    pLvl = &pStruct->aLevel[iLvl];
+    pLvlOut = &pStruct->aLevel[iLvl+1];
+
     fts5WriteInit(p, &writer, iIdx, iSegid);
 
     /* Add the new segment to the output level */
@@ -3049,7 +3064,7 @@ fflush(stdout);
       int nTerm;
       const u8 *pTerm = fts5MultiIterTerm(pIter, &nTerm);
       if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
-        if( writer.nLeafWritten>nRem ){
+        if( pnRem && writer.nLeafWritten>nRem ){
           fts5ChunkIterRelease(&sPos);
           break;
         }
@@ -3106,7 +3121,7 @@ fflush(stdout);
 
   fts5MultiIterFree(p, pIter);
   fts5BufferFree(&term);
-  *pnRem -= writer.nLeafWritten;
+  if( pnRem ) *pnRem -= writer.nLeafWritten;
 }
 
 /*
@@ -3165,15 +3180,29 @@ static void fts5IndexWork(
 #endif
 
     if( nBest<p->nMinMerge && pStruct->aLevel[iBestLvl].nMerge==0 ) break;
-    if( iBestLvl==pStruct->nLevel-1 ){
-      fts5StructureAddLevel(&p->rc, &pStruct);
-    }
-    fts5StructureExtendLevel(&p->rc, pStruct, iBestLvl+1, 1, 0);
-    fts5IndexMergeLevel(p, iIdx, pStruct, iBestLvl, &nRem);
+    fts5IndexMergeLevel(p, iIdx, &pStruct, iBestLvl, &nRem);
     fts5StructurePromote(p, iBestLvl+1, pStruct);
     assert( nRem==0 || p->rc==SQLITE_OK );
     *ppStruct = pStruct;
   }
+}
+
+static void fts5IndexCrisisMerge(
+  Fts5Index *p,                   /* FTS5 backend object */
+  int iIdx,                       /* Index to work on */
+  Fts5Structure **ppStruct        /* IN/OUT: Current structure of index */
+){
+  Fts5Structure *pStruct = *ppStruct;
+  int iLvl = 0;
+  while( p->rc==SQLITE_OK 
+      && iLvl<pStruct->nLevel
+      && pStruct->aLevel[iLvl].nSeg>=p->nCrisisMerge 
+  ){
+    fts5IndexMergeLevel(p, iIdx, &pStruct, iLvl, 0);
+    fts5StructurePromote(p, iLvl+1, pStruct);
+    iLvl++;
+  }
+  *ppStruct = pStruct;
 }
 
 typedef struct Fts5FlushCtx Fts5FlushCtx;
@@ -3203,7 +3232,6 @@ static int fts5FlushNewEntry(
   const u8 *aPoslist, 
   int nPoslist
 ){
-  Fts5Buffer *pBuf;
   Fts5FlushCtx *p = (Fts5FlushCtx*)pCtx;
   int rc = SQLITE_OK;
 
@@ -3250,7 +3278,8 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
     if( p->rc==SQLITE_OK ) p->rc = rc;
     fts5WriteFinish(p, &ctx.writer, &nHeight, &pgnoLast);
 
-    /* Edit the Fts5Structure and write it back to the database. */
+    /* Update the Fts5Structure. It is written back to the database by the
+    ** fts5StructureRelease() call below.  */
     if( pStruct->nLevel==0 ){
       fts5StructureAddLevel(&p->rc, &pStruct);
     }
@@ -3264,7 +3293,8 @@ static void fts5FlushOneHash(Fts5Index *p, int iHash, int *pnLeaf){
     }
   }
 
-  fts5IndexWork(p, iHash, &pStruct, pgnoLast);
+  if( p->nMinMerge>0 ) fts5IndexWork(p, iHash, &pStruct, pgnoLast);
+  fts5IndexCrisisMerge(p, iHash, &pStruct);
   fts5StructureWrite(p, iHash, pStruct);
   fts5StructureRelease(pStruct);
 }
@@ -3343,6 +3373,7 @@ int sqlite3Fts5IndexOpen(
   p->pConfig = pConfig;
   p->pgsz = 1000;
   p->nMinMerge = FTS5_MIN_MERGE;
+  p->nCrisisMerge = FTS5_CRISIS_MERGE;
   p->nWorkUnit = FTS5_WORK_UNIT;
   p->nMaxPendingData = 1024*1024;
   p->zDataTbl = sqlite3_mprintf("%s_data", pConfig->zName);
@@ -3960,6 +3991,19 @@ int sqlite3Fts5IndexInit(sqlite3 *db){
 */
 void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz){
   p->pgsz = pgsz;
+}
+
+/*
+** Set the minimum number of segments that an auto-merge operation should
+** attempt to merge together. A value of 1 sets the object to use the 
+** compile time default. Zero or less disables auto-merge altogether.
+*/
+void sqlite3Fts5IndexAutomerge(Fts5Index *p, int nMinMerge){
+  if( nMinMerge==1 ){
+    p->nMinMerge = FTS5_MIN_MERGE;
+  }else{
+    p->nMinMerge = nMinMerge;
+  }
 }
 
 /*

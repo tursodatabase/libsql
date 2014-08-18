@@ -163,6 +163,9 @@ int main(int argc, char **argv){
   char *zSql;
   VisitContext sCtx;
 
+  int nCmd = 0;
+  char **aCmd = 0;
+
   if( argc % 2 ) showHelp(argv[0]);
 
   for(i=1; i<(argc-1); i+=2){
@@ -172,7 +175,7 @@ int main(int argc, char **argv){
       iFts = atoi(zArg);
       if( iFts!=3 && iFts!=4 && iFts!= 5) showHelp(argv[0]);
     }
-    if( strcmp(zOpt, "-trans")==0 ){
+    else if( strcmp(zOpt, "-trans")==0 ){
       nRowPerTrans = atoi(zArg);
     }
     else if( strcmp(zOpt, "-idx")==0 ){
@@ -181,6 +184,14 @@ int main(int argc, char **argv){
     }
     else if( strcmp(zOpt, "-dir")==0 ){
       zDir = zArg;
+    }
+    else if( strcmp(zOpt, "-special")==0 ){
+      nCmd++;
+      aCmd = sqlite3_realloc(aCmd, sizeof(char*) * nCmd);
+      aCmd[nCmd-1] = zArg;
+    }
+    else{
+      showHelp(argv[0]);
     }
   }
 
@@ -197,6 +208,13 @@ int main(int argc, char **argv){
   rc = sqlite3_exec(db, zSql, 0, 0, 0);
   if( rc!=SQLITE_OK ) sqlite_error_out("sqlite3_exec(1)", db);
   sqlite3_free(zSql);
+
+  for(i=0; i<nCmd; i++){
+    zSql = sqlite3_mprintf("INSERT INTO fts(fts) VALUES(%Q)", aCmd[i]);
+    rc = sqlite3_exec(db, zSql, 0, 0, 0);
+    if( rc!=SQLITE_OK ) sqlite_error_out("sqlite3_exec(1)", db);
+    sqlite3_free(zSql);
+  }
 
   /* Compile the INSERT statement to write data to the FTS table. */
   memset(&sCtx, 0, sizeof(VisitContext));
@@ -215,5 +233,6 @@ int main(int argc, char **argv){
   /* Clean up and exit. */
   sqlite3_finalize(sCtx.pInsert);
   sqlite3_close(db);
+  sqlite3_free(aCmd);
   return 0;
 }

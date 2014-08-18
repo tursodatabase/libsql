@@ -273,6 +273,8 @@ int sqlite3Fts5IndexInit(sqlite3*);
 */
 void sqlite3Fts5IndexPgsz(Fts5Index *p, int pgsz);
 
+void sqlite3Fts5IndexAutomerge(Fts5Index *p, int nMerge);
+
 /*
 ** Return the total number of entries read from the %_data table by 
 ** this connection since it was created.

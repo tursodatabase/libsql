@@ -1,5 +1,5 @@
-C Cache\sthe\svalue\sof\sthe\s"totals"\srecord\sin\smemory\sduring\stransactions.
-D 2014-08-12T16:07:35.119
+C Add\san\s"automerge=0"\smode\sthat\sdisables\sauto-merging\sand\sfalls\sback\sto\sfts4-style\scrisis\smerges.
+D 2014-08-18T19:30:01.020
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,15 +103,15 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
-F ext/fts5/fts5.c 31db0b90774201820915db17916a9a4d9ac1c80b
-F ext/fts5/fts5.h 8ace10d5b249a3baa983c79e7a1306d2a79cfd6a
-F ext/fts5/fts5Int.h b0eb5cd422ba74148b30753f01031d546ffb98e4
+F ext/fts5/fts5.c dd56525d45b354218b86c9accab2ed12ea4b4f4f
+F ext/fts5/fts5.h 1c501ea7c5c686b8aa7fba0382badc5df6026aa7
+F ext/fts5/fts5Int.h bc6fa374a42c6121ae8276b20f141d6cd6d8d9f9
 F ext/fts5/fts5_aux.c 31e581413ecab0962ce2b37468f9f658f36f4b0e
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
 F ext/fts5/fts5_config.c f4ebf143e141b8c77355e3b15aba81b7be51d710
 F ext/fts5/fts5_expr.c 7b8e380233176053841904a86006696ee8f6cd24
 F ext/fts5/fts5_hash.c 63fa8379c5f2ac107d47c2b7d9ac04c95ef8a279
-F ext/fts5/fts5_index.c 0453bb593fe0ef6245762b6823e88839757fdc75
+F ext/fts5/fts5_index.c 3f4d84a1762e4284319739d4672b90b18b91060a
 F ext/fts5/fts5_storage.c 5913aa01a1dada1c5e1a39e4cbb44e84c5f7f350
 F ext/fts5/fts5parse.y 777da8e5819f75c217982c79c29d014c293acac9
 F ext/icu/README.txt d9fbbad0c2f647c3fdf715fc9fd64af53aedfc43
@@ -1163,7 +1163,7 @@ F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/getlock.c f4c39b651370156cae979501a7b156bdba50e7ce
 F tool/lemon.c 3ff0fec22f92dfb54e62eeb48772eddffdbeb0d6
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
-F tool/loadfts.c b5b3206ddd58d89ec8d54038c784bcadd6195915
+F tool/loadfts.c 76b6589ab5efcdc9cfe16d43ab5a6c2618e44bd4
 F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh f8d8dbf7d62f409ebed5134998bf5b51d7266383
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f1cb48f412a5f200f1fe04f91072864f379db08f
-R 6321f5990f75eb3b76570e3e341050f0
+P 05dfdad445b22f375b71abe0b1fa1bf7ca331be7
+R a4a2c1b7e4d79c30cafb117d4f31d356
 U dan
-Z f483f9b1471761b27d0fa8b15d969ed4
+Z a836ac39870a35d2f8436dd5e99c8845

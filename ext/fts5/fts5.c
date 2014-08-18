@@ -872,6 +872,12 @@ static int fts5SpecialCommand(Fts5Table *pTab, sqlite3_value *pVal){
     if( pgsz<32 ) pgsz = 32;
     sqlite3Fts5IndexPgsz(pTab->pIndex, pgsz);
     rc = SQLITE_OK;
+  }else
+  
+  if( n>10 && 0==sqlite3_strnicmp("automerge=", z, 10) ){
+    int nAutomerge = atoi(&z[10]);
+    sqlite3Fts5IndexAutomerge(pTab->pIndex, nAutomerge);
+    rc = SQLITE_OK;
   }
 
   return rc;
