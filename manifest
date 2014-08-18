@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges,\sand\sin\sparticular\sthe\srefactoring\sof\sthe\nobject\snames\sin\sthe\scommand-line\sshell.
-D 2014-08-18T13:48:41.625
+C Begin\sadding\scommands\sto\sthe\scommand-line\sinterface\sfor\sinteracting\swith\nthe\ssessions\sextension.\s\sThis\sis\sthe\sfirst\scheck-in\sof\sa\swork-in-progress.
+D 2014-08-18T15:08:26.073
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 639859a6f81bd15921ccd56ddbd6dfd335278377
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -161,7 +161,7 @@ F ext/session/test_session.c 920ccb6d6e1df263cd9099563328094c230b2925
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 152593de5d19eeab0fdaacfdedd5eafdfdd83d5a
+F main.mk eb6742eba7ebb8dc18401220e7ce21788d41aaef
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -238,7 +238,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c ea48e891406ccdf748f3eb02893e056d134a0fea
-F src/shell.c 41df1103617331e023301d943977f8c06bd1486f
+F src/shell.c 6378fc281ab6c2c5ee46cf13f2657e8a187c3ce7
 F src/sqlite.h.in 021a1f5c50e83060675d994a6014fd409e611d9e
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1202,7 +1202,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 82fdb1975f5b29a751089a8582713372999ae56e 11a70e1ae7f05d06e4e09c9d20db0444b8881584
-R 9eb07c2c47c345635567e1ec3d8ef22d
+P 419d286a2fc465f6e0f9662909d0cc52a18eefa4
+R 23a3bfb6cd8e3a34baca1f6d98151d23
+T *branch * sessions_from_cli
+T *sym-sessions_from_cli *
+T -sym-sessions *
 U drh
-Z 44d5fceffc6c6ae323a3b362c9fccbd4
+Z dbfbe7f80e47f8918e41f67c20d63911
