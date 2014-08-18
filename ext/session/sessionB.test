@@ -453,9 +453,11 @@ proc do_patchset_changeset_test {tn initsql args} {
   foreach tstcmd {patchset changeset} {
     reset_db
     execsql $initsql
+    set x 0
     foreach sql $args {
+      incr x
       set lSql [split $sql ";"]
-      uplevel [list do_patchset_test $tn.$tstcmd $tstcmd $lSql]
+      uplevel [list do_patchset_test $tn.$tstcmd.$x $tstcmd $lSql]
     }
   }
 }
@@ -500,6 +502,17 @@ do_patchset_changeset_test 5.2 {
   UPDATE t1 SET b = b+1;
   UPDATE t1 SET b = b+1;
 }
+
+set initsql { CREATE TABLE t1(a, b, c, PRIMARY KEY(c, b)); }
+for {set i 0} {$i < 1000} {incr i} {
+  append insert "INSERT INTO t1 VALUES($i, $i, $i);"
+  append delete "DELETE FROM t1 WHERE b=$i;"
+}
+do_patchset_changeset_test 5.3 \
+  $initsql $insert $delete     \
+  $insert $delete              \
+  "$insert $delete"            \
+  $delete
 
 
 finish_test

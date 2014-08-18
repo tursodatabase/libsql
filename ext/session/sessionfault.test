@@ -20,8 +20,6 @@ source $testdir/tester.tcl
 
 set testprefix sessionfault
 
-if 1 {
-
 forcedelete test.db2
 sqlite3 db2 test.db2
 do_common_sql {
@@ -399,8 +397,6 @@ do_faultsim_test 9.1 -faults oom-transient -prep {
   }
 }
 
-}
-
 faultsim_delete_and_reopen
 do_test 9.2.prep {
   execsql { 
@@ -437,6 +433,54 @@ do_faultsim_test 9.2 -faults oom-transient -prep {
     }
   }
 }
+
+#-------------------------------------------------------------------------
+# Test that if a conflict-handler encounters an OOM in 
+# sqlite3_value_text() but goes on to return SQLITE_CHANGESET_REPLACE
+# anyway, the OOM is picked up by the sessions module.
+set bigstr [string repeat abcdefghij 100]
+faultsim_delete_and_reopen
+do_test 10.prep.1  {
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES($bigstr, $bigstr);
+  }
+
+  sqlite3session S db main
+  S attach *
+  execsql { UPDATE t1 SET b = b||'x' }
+  set C [S changeset]
+  S delete
+  execsql { UPDATE t1 SET b = b||'xyz' }
+} {}
+faultsim_save_and_close
+
+faultsim_restore_and_reopen
+do_test 10.prep.2  {
+  proc xConflict {args} { return "ABORT" }
+  list [catch { sqlite3changeset_apply db $C xConflict } msg] $msg
+} {1 SQLITE_ABORT}
+do_execsql_test 10.prep.3 { SELECT b=$bigstr||'x' FROM t1 } 0
+do_test 10.prep.4  {
+  proc xConflict {args} { return "REPLACE" }
+  list [catch { sqlite3changeset_apply db $C xConflict } msg] $msg
+} {0 {}}
+do_execsql_test 10.prep.5 { SELECT b=$bigstr||'x' FROM t1 } 1
+db close
+
+do_faultsim_test 10 -faults oom-tra* -prep {
+  faultsim_restore_and_reopen
+} -body {
+  sqlite3changeset_apply_replace_all db $::C 
+} -test {
+  faultsim_test_result {0 {}} {1 SQLITE_NOMEM}
+  if {$testrc==0} {
+    if {[db one {SELECT b=$bigstr||'x' FROM t1}]==0} {
+      error "data does not look right"
+    }
+  }
+}
+
 
 
 

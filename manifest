@@ -1,5 +1,5 @@
-C Merge\sthe\slatest\strunk\schanges,\sand\sin\sparticular\sthe\srefactoring\sof\sthe\nobject\snames\sin\sthe\scommand-line\sshell.
-D 2014-08-18T13:48:41.625
+C Add\smiscellaneous\stest\scases\sto\simprove\scoverage\sof\ssessions\smodule.
+D 2014-08-18T16:03:46.849
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 639859a6f81bd15921ccd56ddbd6dfd335278377
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -143,7 +143,7 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 83349d519fe5f518b3ea025d18dd1fe51b1684bd
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/session/session1.test 894e3bc9f497c4fa07a2aa3271e3911f3670c3d8
+F ext/session/session1.test 3733d71eb9a99b14d51fa5219d5b8a82407c3be8
 F ext/session/session2.test 99ca0da7ddb617d42bafd83adccf99f18ae0384b
 F ext/session/session3.test a7a9ce59b8d1e49e2cc23d81421ac485be0eea01
 F ext/session/session4.test a6ed685da7a5293c5d6f99855bcf41dbc352ca84
@@ -152,12 +152,12 @@ F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session9.test 776e46785c29c11cda01f5205d0f1e8f8f9a46bf
 F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
-F ext/session/sessionB.test 77fca512719c136b8e1f4cb77b77e4c62b9d09ad
+F ext/session/sessionB.test 276267cd7fc37c2e2dd03f1e2ed9ada336a8bdb4
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
-F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
-F ext/session/sqlite3session.c f2385ab5ebac94d8e54cc3aa8dc9ca77f8cdf0d9
-F ext/session/sqlite3session.h ef0dbcd599ab8b83e3f3f2e9912e1734519a3ef4
-F ext/session/test_session.c 920ccb6d6e1df263cd9099563328094c230b2925
+F ext/session/sessionfault.test e7965159a73d385c1a4af12d82c3a039ebdd71a6
+F ext/session/sqlite3session.c b7cc5645ee3de77c650cf7e05161f320ebaa997f
+F ext/session/sqlite3session.h 66c14a2f6193c47773770307636e88c43db6f839
+F ext/session/test_session.c a252fb669d3a1b3552ee7b87fe610debc0afeb7b
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 82fdb1975f5b29a751089a8582713372999ae56e 11a70e1ae7f05d06e4e09c9d20db0444b8881584
-R 9eb07c2c47c345635567e1ec3d8ef22d
-U drh
-Z 44d5fceffc6c6ae323a3b362c9fccbd4
+P 419d286a2fc465f6e0f9662909d0cc52a18eefa4
+R 317ae23cec852c0c0a1e8f934088d0af
+U dan
+Z 05b5d773ef95bfd2114231b8fc3c0f06

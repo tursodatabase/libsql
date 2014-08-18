@@ -735,6 +735,10 @@ int sqlite3changeset_concat(
 ** invoked. A description of exactly when the conflict handler is invoked for 
 ** each type of change is below.
 **
+** Unlike the xFilter argument, xConflict may not be passed NULL. The results
+** of passing anything other than a valid function pointer as the xConflict
+** argument are undefined.
+**
 ** Each time the conflict handler function is invoked, it must return one
 ** of [SQLITE_CHANGESET_OMIT], [SQLITE_CHANGESET_ABORT] or 
 ** [SQLITE_CHANGESET_REPLACE]. SQLITE_CHANGESET_REPLACE may only be returned

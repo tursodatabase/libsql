@@ -2703,10 +2703,14 @@ static int sessionBindValue(
   sqlite3_value *pVal             /* Value to bind */
 ){
   int eType = sqlite3_value_type(pVal);
+  /* COVERAGE: The (pVal->z==0) branch is never true using current versions
+  ** of SQLite. If a malloc fails in an sqlite3_value_xxx() function, either
+  ** the (pVal->z) variable remains as it was or the type of the value is
+  ** set to SQLITE_NULL.  */
   if( (eType==SQLITE_TEXT || eType==SQLITE_BLOB) && pVal->z==0 ){
     /* This condition occurs when an earlier OOM in a call to
     ** sqlite3_value_text() or sqlite3_value_blob() (perhaps from within
-    ** a conflict-hanler) has zeroed the pVal->z pointer. Return NOMEM. */
+    ** a conflict-handler) has zeroed the pVal->z pointer. Return NOMEM. */
     return SQLITE_NOMEM;
   }
   return sqlite3_bind_value(pStmt, i, pVal);
@@ -3052,6 +3056,8 @@ int sqlite3changeset_apply(
   int nTab = 0;                   /* Result of sqlite3Strlen30(zTab) */
   SessionApplyCtx sApply;         /* changeset_apply() context object */
 
+  assert( xConflict!=0 );
+
   memset(&sApply, 0, sizeof(sApply));
   rc = sqlite3changeset_start(&pIter, nChangeset, pChangeset);
   if( rc!=SQLITE_OK ) return rc;
@@ -3169,12 +3175,10 @@ int sqlite3changeset_apply(
     sqlite3_db_status(db, SQLITE_DBSTATUS_DEFERRED_FKS, &nFk, &notUsed, 0);
     if( nFk!=0 ){
       int res = SQLITE_CHANGESET_ABORT;
-      if( xConflict ){
-        sqlite3_changeset_iter sIter;
-        memset(&sIter, 0, sizeof(sIter));
-        sIter.nCol = nFk;
-        res = xConflict(pCtx, SQLITE_CHANGESET_FOREIGN_KEY, &sIter);
-      }
+      sqlite3_changeset_iter sIter;
+      memset(&sIter, 0, sizeof(sIter));
+      sIter.nCol = nFk;
+      res = xConflict(pCtx, SQLITE_CHANGESET_FOREIGN_KEY, &sIter);
       if( res!=SQLITE_CHANGESET_OMIT ){
         rc = SQLITE_CONSTRAINT;
       }

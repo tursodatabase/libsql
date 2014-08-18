@@ -417,6 +417,13 @@ static int test_conflict_handler(
       rc = sqlite3changeset_old(pIter, nCol, &pVal);
       assert( rc==SQLITE_RANGE );
     }
+    if( eConf!=SQLITE_CHANGESET_FOREIGN_KEY ){
+      /* eConf!=FOREIGN_KEY is always true at this point. The condition is 
+      ** just there to make it clearer what is being tested.  */
+      int nDummy;
+      int rc = sqlite3changeset_fk_conflicts(pIter, &nDummy);
+      assert( rc==SQLITE_MISUSE );
+    }
     /* End of testing block
     ***********************************************************************/
   }
@@ -438,6 +445,51 @@ static int test_conflict_handler(
 
   Tcl_DecrRefCount(pEval);
   return ret;
+}
+
+/*
+** The conflict handler used by sqlite3changeset_apply_replace_all(). 
+** This conflict handler calls sqlite3_value_text16() on all available
+** sqlite3_value objects and then returns CHANGESET_REPLACE, or 
+** CHANGESET_OMIT if REPLACE is not applicable. This is used to test the
+** effect of a malloc failure within an sqlite3_value_xxx() function
+** invoked by a conflict-handler callback.
+*/
+static int replace_handler(
+  void *pCtx,                     /* Pointer to TestConflictHandler structure */
+  int eConf,                      /* DATA, MISSING, CONFLICT, CONSTRAINT */
+  sqlite3_changeset_iter *pIter   /* Handle describing change and conflict */
+){
+  int op;                         /* SQLITE_UPDATE, DELETE or INSERT */
+  const char *zTab;               /* Name of table conflict is on */
+  int nCol;                       /* Number of columns in table zTab */
+  int i;
+  int x = 0;
+
+  sqlite3changeset_op(pIter, &zTab, &nCol, &op, 0);
+
+  if( op!=SQLITE_INSERT ){
+    for(i=0; i<nCol; i++){
+      sqlite3_value *pVal;
+      sqlite3changeset_old(pIter, i, &pVal);
+      sqlite3_value_text16(pVal);
+      x++;
+    }
+  }
+
+  if( op!=SQLITE_DELETE ){
+    for(i=0; i<nCol; i++){
+      sqlite3_value *pVal;
+      sqlite3changeset_new(pIter, i, &pVal);
+      sqlite3_value_text16(pVal);
+      x++;
+    }
+  }
+
+  if( eConf==SQLITE_CHANGESET_DATA ){
+    return SQLITE_CHANGESET_REPLACE;
+  }
+  return SQLITE_CHANGESET_OMIT;
 }
 
 /*
@@ -481,6 +533,41 @@ static int test_sqlite3changeset_apply(
   Tcl_ResetResult(interp);
   return TCL_OK;
 }
+
+/*
+** sqlite3changeset_apply_replace_all DB CHANGESET 
+*/
+static int test_sqlite3changeset_apply_replace_all(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;                    /* Database handle */
+  Tcl_CmdInfo info;               /* Database Tcl command (objv[1]) info */
+  int rc;                         /* Return code from changeset_invert() */
+  void *pChangeset;               /* Buffer containing changeset */
+  int nChangeset;                 /* Size of buffer aChangeset in bytes */
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB CHANGESET");
+    return TCL_ERROR;
+  }
+  if( 0==Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &info) ){
+    Tcl_AppendResult(interp, "no such handle: ", Tcl_GetString(objv[2]), 0);
+    return TCL_ERROR;
+  }
+  db = *(sqlite3 **)info.objClientData;
+  pChangeset = (void *)Tcl_GetByteArrayFromObj(objv[2], &nChangeset);
+
+  rc = sqlite3changeset_apply(db, nChangeset, pChangeset, 0, replace_handler,0);
+  if( rc!=SQLITE_OK ){
+    return test_session_error(interp, rc);
+  }
+  Tcl_ResetResult(interp);
+  return TCL_OK;
+}
+
 
 /*
 ** sqlite3changeset_invert CHANGESET
@@ -596,6 +683,14 @@ static int test_sqlite3session_foreach(
     unsigned char *abPK;
     int i;
 
+    /* Test that _fk_conflicts() returns SQLITE_MISUSE if called on this
+    ** iterator. */
+    int nDummy;
+    if( SQLITE_MISUSE!=sqlite3changeset_fk_conflicts(pIter, &nDummy) ){
+      sqlite3changeset_finalize(pIter);
+      return TCL_ERROR;
+    }
+
     sqlite3changeset_op(pIter, &zTab, &nCol, &op, &bIndirect);
     pVar = Tcl_NewObj();
     Tcl_ListObjAppendElement(0, pVar, Tcl_NewStringObj(
@@ -673,6 +768,10 @@ int TestSession_Init(Tcl_Interp *interp){
   );
   Tcl_CreateObjCommand(
       interp, "sqlite3changeset_apply", test_sqlite3changeset_apply, 0, 0
+  );
+  Tcl_CreateObjCommand(
+      interp, "sqlite3changeset_apply_replace_all", 
+      test_sqlite3changeset_apply_replace_all, 0, 0
   );
   return TCL_OK;
 }
