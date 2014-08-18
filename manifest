@@ -1,9 +1,9 @@
-C Fix\sa\sharmless\scompiler\swarning\sin\sthe\ssessionAppendDelete()\sfunction.
-D 2014-08-18T20:14:30.667
+C Fix\sthe\sautoconf\sand\sMSVC\smakefiles\sso\sthat\sthey\sconstruct\sthe\schangeset\ncommand-line\sutility\supon\srequest.\s\sDelete\sthat\sutility\sprogram\swhen\n"make\sclean"\sis\srun.
+D 2014-08-18T20:23:29.435
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
-F Makefile.in 639859a6f81bd15921ccd56ddbd6dfd335278377
+F Makefile.in d5ad373b7a23525414b8843b3084cf90c560d92f
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
-F Makefile.msc d389ce1d436d21a93a9f5f6211dc45e4b8860962
+F Makefile.msc f1bbf555916b6e60887d86cea62f27e6a26cdb24
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
 F VERSION 1c877615a9db323e3cd301e3d57d853f9d5c4a07
@@ -162,7 +162,7 @@ F ext/session/test_session.c a252fb669d3a1b3552ee7b87fe610debc0afeb7b
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 95de2e32fbe62b10e28bd7a131e2b003b923a8b3
+F main.mk a9987b6655610e663e9f055e0f1646227f45cddd
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1203,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 31addb627fdbaeb908e0611ad82f6db7537428ea
-R 0c1b981f1387fdad5168bd8925d76ab9
+P 1324d08d0c639378cf1b03bd6410db81947747ac
+R fdaf7ebc782210d979a62294e31e9051
 U drh
-Z 34dce636dabda531b1c7f9aae0a417c1
+Z e19e0e50f2717082ee6e33a1c9b88ce5

@@ -722,6 +722,7 @@ clean:
 	rm -f showjournal showjournal.exe
 	rm -f showstat4 showstat4.exe
 	rm -f showwal showwal.exe
+	rm -f changeset changeset.exe
 	rm -f speedtest1 speedtest1.exe
 	rm -f wordcount wordcount.exe
 	rm -f sqlite3.c sqlite3-*.c fts?amal.c tclsqlite3.c
