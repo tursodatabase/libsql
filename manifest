@@ -1,5 +1,5 @@
-C Fix\ssome\smissing\sand\sout-of-date\scomments\sin\sthe\ssessions\smodule.
-D 2014-08-16T19:01:00.672
+C Add\stests\sfor\ssessions\smodule.
+D 2014-08-18T08:42:36.985
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 639859a6f81bd15921ccd56ddbd6dfd335278377
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -152,7 +152,7 @@ F ext/session/session6.test 443789bc2fca12e4f7075cf692c60b8a2bea1a26
 F ext/session/session8.test 7d35947ad329b8966f095d34f9617a9eff52dc65
 F ext/session/session9.test 776e46785c29c11cda01f5205d0f1e8f8f9a46bf
 F ext/session/sessionA.test eb05c13e4ef1ca8046a3a6dbf2d5f6f5b04a11d4
-F ext/session/sessionB.test 51c70394bc04ac72d72f54bd0879614b9c34240c
+F ext/session/sessionB.test 77fca512719c136b8e1f4cb77b77e4c62b9d09ad
 F ext/session/session_common.tcl 1539d8973b2aea0025c133eb0cc4c89fcef541a5
 F ext/session/sessionfault.test 496291b287ba3c0b14ca2e074425e29cc92a64a6
 F ext/session/sqlite3session.c f2385ab5ebac94d8e54cc3aa8dc9ca77f8cdf0d9
@@ -1202,7 +1202,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P dccb34859508eac8146ae5b19c447673d04be3b0
-R 7605cd9723f946167ef7a988888841f4
+P 05c1d9149b27c68e2654ed28491722927d2176f5
+R 03b8d5b2540614bccade3685e83e41dc
 U dan
-Z 7c34f49d718669db325837ce5da84317
+Z cda8ef5f85a6d704893f36da729451e0
