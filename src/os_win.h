@@ -64,4 +64,14 @@
 # define SQLITE_OS_WINRT 0
 #endif
 
+/*
+** For WinCE, some API function parameters do not appear to be declared as
+** volatile.
+*/
+#if SQLITE_OS_WINCE
+# define SQLITE_WIN32_VOLATILE
+#else
+# define SQLITE_WIN32_VOLATILE volatile
+#endif
+
 #endif /* _OS_WIN_H_ */

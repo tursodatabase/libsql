@@ -99,7 +99,7 @@ static int winMutex_isNt = -1; /* <0 means "need to query" */
 ** of the sqlite3_initialize() and sqlite3_shutdown() processing, the
 ** "interlocked" magic used here is probably not strictly necessary.
 */
-static LONG volatile winMutex_lock = 0;
+static LONG SQLITE_WIN32_VOLATILE winMutex_lock = 0;
 
 int sqlite3_win32_is_nt(void); /* os_win.c */
 void sqlite3_win32_sleep(DWORD milliseconds); /* os_win.c */
