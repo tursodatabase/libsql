@@ -1789,6 +1789,21 @@ static void session_close_all(ShellState *p){
 }
 
 /*
+** Implementation of the xFilter function for an open session.  Omit
+** any tables named by ".session filter" but let all other table through.
+*/
+#if defined(SQLITE_ENABLE_SESSION)
+static int session_filter(void *pCtx, const char *zTab){
+  OpenSession *pSession = (OpenSession*)pCtx;
+  int i;
+  for(i=0; i<pSession->nFilter; i++){
+    if( sqlite3_strglob(pSession->azFilter[i], zTab)==0 ) return 0;
+  }
+  return 1;
+}
+#endif
+
+/*
 ** Make sure the database is open.  If it is not, then open it.  If
 ** the database fails to open, print an error message and exit.
 */
@@ -3235,9 +3250,72 @@ static int do_meta_command(char *zLine, ShellState *p){
     ** Close the identified session
     */
     if( strcmp(azCmd[0], "close")==0 ){
+      if( nCmd!=1 ) goto session_syntax_error;
       if( p->nSession ){
         session_close(pSession);
         p->aSession[iSes] = p->aSession[--p->nSession];
+      }
+    }else
+
+    /* .session enable ?BOOLEAN?
+    ** Query or set the enable flag
+    */
+    if( strcmp(azCmd[0], "enable")==0 ){
+      int ii;
+      if( nCmd>2 ) goto session_syntax_error;
+      ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
+      if( p->nSession ){
+        ii = sqlite3session_enable(pSession->p, ii);
+        fprintf(p->out, "session %s enable flag = %d\n", pSession->zName, ii);
+      }
+    }else
+
+    /* .session filter GLOB ....
+    ** Set a list of GLOB patterns of table names to be excluded.
+    */
+    if( strcmp(azCmd[0], "filter")==0 ){
+      int ii, nByte;
+      if( nCmd<2 ) goto session_syntax_error;
+      if( p->nSession ){
+        for(ii=0; ii<pSession->nFilter; ii++){
+          sqlite3_free(pSession->azFilter[ii]);
+        }
+        sqlite3_free(pSession->azFilter);
+        nByte = sizeof(pSession->azFilter[0])*(nCmd-1);
+        pSession->azFilter = sqlite3_malloc( nByte );
+        if( pSession->azFilter==0 ){
+          fprintf(stderr, "Error: out or memory\n");
+          exit(1);
+        }
+        for(ii=1; ii<nCmd; ii++){
+          pSession->azFilter[ii-1] = sqlite3_mprintf("%s", azCmd[ii]); 
+        }
+        pSession->nFilter = ii-1;
+      }
+    }else
+
+    /* .session indirect ?BOOLEAN?
+    ** Query or set the indirect flag
+    */
+    if( strcmp(azCmd[0], "indirect")==0 ){
+      int ii;
+      if( nCmd>2 ) goto session_syntax_error;
+      ii = nCmd==1 ? -1 : booleanValue(azCmd[1]);
+      if( p->nSession ){
+        ii = sqlite3session_indirect(pSession->p, ii);
+        fprintf(p->out, "session %s indirect flag = %d\n", pSession->zName,ii);
+      }
+    }else
+
+    /* .session isempty
+    ** Determine if the session is empty
+    */
+    if( strcmp(azCmd[0], "isempty")==0 ){
+      int ii;
+      if( nCmd!=1 ) goto session_syntax_error;
+      if( p->nSession ){
+        ii = sqlite3session_isempty(pSession->p);
+        fprintf(p->out, "session %s isempty flag = %d\n", pSession->zName, ii);
       }
     }else
 
@@ -3276,6 +3354,8 @@ static int do_meta_command(char *zLine, ShellState *p){
         rc = 0;
         goto meta_command_exit;
       }
+      pSession->nFilter = 0;
+      sqlite3session_table_filter(pSession->p, session_filter, pSession);
       p->nSession++;
       pSession->zName = sqlite3_mprintf("%s", zName);
     }else

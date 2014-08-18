@@ -124,6 +124,58 @@ static void renderValue(sqlite3_value *pVal){
   }
 }
 
+/*
+** Number of conflicts seen
+*/
+static int nConflict = 0;
+
+/*
+** The conflict callback
+*/
+static int conflictCallback(
+  void *pCtx,
+  int eConflict,
+  sqlite3_changeset_iter *pIter
+){
+  int op, bIndirect, nCol, i;
+  const char *zTab;
+  unsigned char *abPK;
+  const char *zType = "";
+  const char *zOp = "";
+  const char *zSep = " ";
+
+  nConflict++;
+  sqlite3changeset_op(pIter, &zTab, &nCol, &op, &bIndirect);
+  sqlite3changeset_pk(pIter, &abPK, 0);
+  switch( eConflict ){
+    case SQLITE_CHANGESET_DATA:         zType = "DATA";         break;
+    case SQLITE_CHANGESET_NOTFOUND:     zType = "NOTFOUND";     break;
+    case SQLITE_CHANGESET_CONFLICT:     zType = "PRIMARY KEY";  break;
+    case SQLITE_CHANGESET_FOREIGN_KEY:  zType = "FOREIGN KEY";  break;
+    case SQLITE_CHANGESET_CONSTRAINT:   zType = "CONSTRAINT";   break;
+  }
+  switch( op ){
+    case SQLITE_UPDATE:     zOp = "UPDATE of";     break;
+    case SQLITE_INSERT:     zOp = "INSERT into";   break;
+    case SQLITE_DELETE:     zOp = "DELETE from";   break;
+  }
+  printf("%s conflict on %s table %s with primary key", zType, zOp, zTab);
+  for(i=0; i<nCol; i++){
+    sqlite3_value *pVal;
+    if( abPK[i]==0 ) continue;
+    printf("%s", zSep);
+    if( op==SQLITE_INSERT ){
+      sqlite3changeset_new(pIter, i, &pVal);
+    }else{
+      sqlite3changeset_old(pIter, i, &pVal);
+    }
+    renderValue(pVal);
+    zSep = ",";
+  }
+  printf("\n");
+  return SQLITE_CHANGESET_OMIT;
+}
+
 int main(int argc, char **argv){
   int sz, rc;
   void *pBuf = 0;
@@ -134,7 +186,32 @@ int main(int argc, char **argv){
   ** Apply the changeset in FILENAME to the database file DB
   */
   if( strcmp(argv[2],"apply")==0 ){
-    fprintf(stderr, "not yet implemented\n");
+    sqlite3 *db;
+    if( argc!=4 ) usage(argv[0]);
+    rc = sqlite3_open(argv[3], &db);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "unable to open database file \"%s\": %s\n",
+              argv[3], sqlite3_errmsg(db));
+      sqlite3_close(db);
+      exit(1);
+    }
+    sqlite3_exec(db, "BEGIN", 0, 0, 0);
+    nConflict = 0;
+    rc = sqlite3changeset_apply(db, sz, pBuf, 0, conflictCallback, 0);
+    if( rc ){
+      fprintf(stderr, "sqlite3changeset_apply() returned %d\n", rc);
+    }
+    if( nConflict ){
+      fprintf(stderr, "%d conflicts - no changes applied\n", nConflict);
+      sqlite3_exec(db, "ROLLBACK", 0, 0, 0);
+    }else if( rc ){
+      fprintf(stderr, "sqlite3changeset_apply() returns %d "
+                      "- no changes applied\n", rc);
+      sqlite3_exec(db, "ROLLBACK", 0, 0, 0);
+    }else{
+      sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    }
+    sqlite3_close(db);
   }else
 
   /* changeset FILENAME concat FILE2 OUT
@@ -142,7 +219,27 @@ int main(int argc, char **argv){
   ** and write the result into OUT.
   */
   if( strcmp(argv[2],"concat")==0 ){
-    fprintf(stderr, "not yet implemented\n");
+    int szB;
+    void *pB;
+    int szOut;
+    void *pOutBuf;
+    FILE *out;
+    const char *zOut = argv[4];
+    if( argc!=5 ) usage(argv[0]);
+    out = fopen(zOut, "wb");
+    if( out==0 ){
+      fprintf(stderr, "cannot open \"%s\" for writing\n", zOut);
+      exit(1);
+    }
+    readFile(argv[3], &szB, &pB);
+    sqlite3changeset_concat(sz, pBuf, szB, pB, &szOut, &pOutBuf);
+    if( fwrite(pOutBuf, szOut, 1, out)!=1 ){
+      fprintf(stderr, "unable to write all %d bytes of output to \"%s\"\n",
+              szOut, zOut);
+    }
+    fclose(out);
+    sqlite3_free(pOutBuf);
+    sqlite3_free(pB);
   }else
 
   /* changeset FILENAME dump
@@ -196,16 +293,17 @@ int main(int argc, char **argv){
     FILE *out;
     int szOut = 0;
     void *pOutBuf = 0;
+    const char *zOut = argv[3];
     if( argc!=4 ) usage(argv[0]);
-    out = fopen(argv[3], "wb");
+    out = fopen(zOut, "wb");
     if( out==0 ){
-      fprintf(stderr, "cannot open \"%s\" for writing\n", argv[3]);
+      fprintf(stderr, "cannot open \"%s\" for writing\n", zOut);
       exit(1);
     }
     sqlite3changeset_invert(sz, pBuf, &szOut, &pOutBuf);
     if( fwrite(pOutBuf, szOut, 1, out)!=1 ){
       fprintf(stderr, "unable to write all %d bytes of output to \"%s\"\n",
-              szOut, argv[3]);
+              szOut, zOut);
     }
     fclose(out);
     sqlite3_free(pOutBuf);
