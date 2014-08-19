@@ -518,7 +518,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     rc2 = rc = sqlite3Reprepare(v);
     if( rc!=SQLITE_OK) break;
     sqlite3_reset(pStmt);
-    v->doingRerun = savedPc>=0;
+    if( savedPc>=0 ) v->doingRerun = 1;
     assert( v->expired==0 );
   }
   if( rc2!=SQLITE_OK ){
