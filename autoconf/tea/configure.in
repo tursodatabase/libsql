@@ -166,8 +166,10 @@ AC_DEFINE(USE_TCL_STUBS, 1, [Use Tcl stubs])
 #--------------------------------------------------------------------
 # Redefine fdatasync as fsync on systems that lack fdatasync
 #--------------------------------------------------------------------
-
-AC_CHECK_FUNC(fdatasync, , AC_DEFINE(fdatasync, fsync))
+#
+#AC_CHECK_FUNC(fdatasync, , AC_DEFINE(fdatasync, fsync))
+# Check for library functions that SQLite can optionally use.
+AC_CHECK_FUNCS([fdatasync usleep fullfsync localtime_r gmtime_r])
 
 AC_FUNC_STRERROR_R
 
