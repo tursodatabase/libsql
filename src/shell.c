@@ -3232,9 +3232,13 @@ static int do_meta_command(char *zLine, ShellState *p){
         int szChng;
         void *pChng;
         if( azCmd[0][0]=='c' ){
-          sqlite3session_changeset(pSession->p, &szChng, &pChng);
+          rc = sqlite3session_changeset(pSession->p, &szChng, &pChng);
         }else{
-          sqlite3session_patchset(pSession->p, &szChng, &pChng);
+          rc = sqlite3session_patchset(pSession->p, &szChng, &pChng);
+        }
+        if( rc ){
+          printf("Error: error code %d\n", rc);
+          rc = 0;
         }
         if( pChng 
           && fwrite(pChng, szChng, 1, out)!=1 ){

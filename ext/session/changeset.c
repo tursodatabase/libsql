@@ -232,8 +232,10 @@ int main(int argc, char **argv){
       exit(1);
     }
     readFile(argv[3], &szB, &pB);
-    sqlite3changeset_concat(sz, pBuf, szB, pB, &szOut, &pOutBuf);
-    if( fwrite(pOutBuf, szOut, 1, out)!=1 ){
+    rc = sqlite3changeset_concat(sz, pBuf, szB, pB, &szOut, &pOutBuf);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "sqlite3changeset_concat() returns %d\n", rc);
+    }else if( szOut>0 && fwrite(pOutBuf, szOut, 1, out)!=1 ){
       fprintf(stderr, "unable to write all %d bytes of output to \"%s\"\n",
               szOut, zOut);
     }
@@ -300,8 +302,10 @@ int main(int argc, char **argv){
       fprintf(stderr, "cannot open \"%s\" for writing\n", zOut);
       exit(1);
     }
-    sqlite3changeset_invert(sz, pBuf, &szOut, &pOutBuf);
-    if( fwrite(pOutBuf, szOut, 1, out)!=1 ){
+    rc = sqlite3changeset_invert(sz, pBuf, &szOut, &pOutBuf);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "sqlite3changeset_invert() returns %d\n", rc);
+    }else if( szOut>0 && fwrite(pOutBuf, szOut, 1, out)!=1 ){
       fprintf(stderr, "unable to write all %d bytes of output to \"%s\"\n",
               szOut, zOut);
     }
