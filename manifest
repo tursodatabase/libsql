@@ -1,12 +1,12 @@
-C Enhancements\sto\sskip-scan\ssuch\sthat\sit\sis\soperable\swhen\sa\smiddle\scolumn\sof\nan\sindex\sis\sskipped\swhile\sthe\sleft-most\scolumn\sis\sconstrained\sin\sthe\sWHERE\nclause.
-D 2014-08-20T23:38:07.310
+C Increase\sthe\sversion\snumber\sto\s3.8.7
+D 2014-08-20T23:42:50.860
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
 F Makefile.msc 5b04e657cf08a9ac7fc47d876c5c8be962c47d6b
 F Makefile.vxworks 034289efa9d591b04b1a73598623119c306cbba0
 F README.md 64f270c43c38c46de749e419c22f0ae2f4499fe8
-F VERSION 1c877615a9db323e3cd301e3d57d853f9d5c4a07
+F VERSION 53a0b870e7f16d3b06623c31d233a304c163a6af
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 9eb448a552d5c0185cf62c463f9c173cedae3811
 F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
@@ -38,7 +38,7 @@ F autoconf/tea/win/rules.vc c511f222b80064096b705dbeb97060ee1d6b6d63
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 0921066a13130082764ab4ab6456f7b5bebe56de
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 513f1e2464c3673bcdb5471b13d98e7eeb6f5ca2 x
+F configure ad59a5f48b3c59a92b5506040a22fbe3f733a9d8 x
 F configure.ac 4cf9f60785143fa141b10962ccc885d973792e9a
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html 334dbf6621b8fb8790297ec1abf3cfa4621709d1
@@ -1187,7 +1187,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 49f44d355ff70744e4951baca2481c7c2b6c02b3
-R 96923099996337b045b25027695cfca6
+P bc985caa7816f1f873ad8e4467c5278399f315ce
+R 69e5d59c0ae1acccebd6955e02833316
 U drh
-Z 1b9938878e462b798940573e6153541a
+Z 5338496858d2cbdf1a890a2630150d12
