@@ -1267,7 +1267,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
 defragment_page:
-    assert( pPage->nCell>0 );
+    testcase( pPage->nCell==0 );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
@@ -1306,7 +1306,7 @@ static int freeSpace(MemPage *pPage, int start, int size){
   assert( start>=pPage->hdrOffset+6+pPage->childPtrSize );
   assert( (start + size) <= (int)pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  assert( size>=0 );   /* Minimum cell size is 4 */
+  assert( size>=4 );   /* Minimum cell size is 4 */
 
   if( pPage->pBt->btsFlags & BTS_SECURE_DELETE ){
     /* Overwrite deleted information with zeros when the secure_delete
