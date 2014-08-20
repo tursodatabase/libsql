@@ -1,5 +1,5 @@
-C Refactor\slocal\svariable\snames\sin\sthe\sfreeSpace()\sroutine\sof\sbtree.c\sfor\nimproved\sunderstandability.
-D 2014-08-20T14:37:09.167
+C Reimplement\sthe\sfreeSpace()\sroutine\sin\sbtree.c\sso\sthat\sit\sruns\sfaster.
+D 2014-08-20T17:56:27.585
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c c1235eacb8d4de12850daccb1636763218da3381
+F src/btree.c fe2d11c8c0d99e324614141ad012b37d0601cf59
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 5abf794fe8a605f2005b422e98a3cedad9b9ef5b
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 121308fa869ad490a6924798d276c0ff32759acc
-R 332118792b6ef82f7eceb02b0d545622
+P 7e63089a191f29aefde05e89bb612f3036cfa034
+R cbff1ae81d05ca3b78b420deaaa6083f
 U drh
-Z accc32db7c4714707b5e7cc22312c49c
+Z d684bbbc1bfe7cdee532398c2232ddf8

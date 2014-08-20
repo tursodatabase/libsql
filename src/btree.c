@@ -1293,92 +1293,93 @@ defragment_page:
 ** The first byte of the new free block is pPage->aData[iStart]
 ** and the size of the block is iSize bytes.
 **
-** Most of the effort here is involved in coalesing adjacent
-** free blocks into a single big free block.
+** Adjacent freeblocks are coalesced.
+**
+** Note that even though the freeblock list was checked by btreeInitPage(),
+** that routine will not detect overlap between cells or freeblocks.  Nor
+** does it detect cells or freeblocks that encrouch into the reserved bytes
+** at the end of the page.  So do additional corruption checks inside this
+** routine and return SQLITE_CORRUPT if any problems are found.
 */
-static int freeSpace(MemPage *pPage, int iStart, int iSize){
-  int iPtr;                  /* Address of pointer to next freeblock */
-  int iFreeBlk;              /* Address of the next freeblock */
-  int hdr;                   /* Page header size.  0 or 100 */
-  int iLast;                 /* Largest possible freeblock offset */
+static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
+  u16 iPtr;                             /* Address of pointer to next freeblock */
+  u16 iFreeBlk;                         /* Address of the next freeblock */
+  u8 hdr;                               /* Page header size.  0 or 100 */
+  u8 nFrag = 0;                         /* Reduction in fragmentation */
+  u16 iOrigSize = iSize;                /* Original value of iSize */
+  u32 iLast = pPage->pBt->usableSize-4; /* Largest possible freeblock offset */
+  u32 iEnd = iStart + iSize;            /* First byte past the iStart buffer */
   unsigned char *data = pPage->aData;   /* Page content */
 
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( iStart>=pPage->hdrOffset+6+pPage->childPtrSize );
-  assert( (iStart + iSize) <= (int)pPage->pBt->usableSize );
+  assert( iEnd <= pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( iSize>=4 );   /* Minimum cell size is 4 */
+  assert( iStart<=iLast );
 
+  /* Overwrite deleted information with zeros when the secure_delete
+  ** option is enabled */
   if( pPage->pBt->btsFlags & BTS_SECURE_DELETE ){
-    /* Overwrite deleted information with zeros when the secure_delete
-    ** option is enabled */
     memset(&data[iStart], 0, iSize);
   }
 
-  /* Add the space back into the linked list of freeblocks.  Note that
-  ** even though the freeblock list was checked by btreeInitPage(),
-  ** btreeInitPage() did not detect overlapping cells or
-  ** freeblocks that overlapped cells.   Nor does it detect when the
-  ** cell content area exceeds the value in the page header.  If these
-  ** situations arise, then subsequent insert operations might corrupt
-  ** the freelist.  So we do need to check for corruption while scanning
-  ** the freelist.
+  /* The list of freeblocks must be in ascending order.  Find the 
+  ** spot on the list where iStart should be inserted.
   */
   hdr = pPage->hdrOffset;
   iPtr = hdr + 1;
-  iLast = pPage->pBt->usableSize - 4;
-  assert( iStart<=iLast );
-  while( (iFreeBlk = get2byte(&data[iPtr]))<iStart && iFreeBlk>0 ){
-    if( iFreeBlk<iPtr+4 ){
-      return SQLITE_CORRUPT_BKPT;
-    }
+  while( (iFreeBlk = get2byte(&data[iPtr]))>0 && iFreeBlk<iStart ){
+    if( iFreeBlk<iPtr+4 ) return SQLITE_CORRUPT_BKPT;
     iPtr = iFreeBlk;
   }
-  if( iFreeBlk>iLast ){
-    return SQLITE_CORRUPT_BKPT;
-  }
+  if( iFreeBlk>iLast ) return SQLITE_CORRUPT_BKPT;
   assert( iFreeBlk>iPtr || iFreeBlk==0 );
-  put2byte(&data[iPtr], iStart);
-  put2byte(&data[iStart], iFreeBlk);
-  put2byte(&data[iStart+2], iSize);
-  pPage->nFree = pPage->nFree + (u16)iSize;
 
-  /* Coalesce adjacent free blocks */
-  iPtr = hdr + 1;
-  while( (iFreeBlk = get2byte(&data[iPtr]))>0 ){
-    int iNextBlk;      /* Next freeblock after iFreeBlk */
-    int szFreeBlk;     /* Size of iFreeBlk */
-    assert( iFreeBlk>iPtr );
-    assert( iFreeBlk <= (int)pPage->pBt->usableSize-4 );
-    iNextBlk = get2byte(&data[iFreeBlk]);
-    szFreeBlk = get2byte(&data[iFreeBlk+2]);
-    if( iFreeBlk + szFreeBlk + 3 >= iNextBlk && iNextBlk>0 ){
-      int nFrag;     /* Fragment bytes in between iFreeBlk and iNextBlk */
-      int x;         /* Temp value */
-      nFrag = iNextBlk - (iFreeBlk+szFreeBlk);
-      if( (nFrag<0) || (nFrag>(int)data[hdr+7]) ){
-        return SQLITE_CORRUPT_BKPT;
-      }
-      data[hdr+7] -= (u8)nFrag;
-      x = get2byte(&data[iNextBlk]);
-      put2byte(&data[iFreeBlk], x);
-      x = iNextBlk + get2byte(&data[iNextBlk+2]) - iFreeBlk;
-      put2byte(&data[iFreeBlk+2], x);
-    }else{
-      iPtr = iFreeBlk;
+  /* At this point:
+  **    iFreeBlk:   First freeblock after iStart, or zero if none
+  **    iPtr:       The address of a pointer iFreeBlk
+  **
+  ** Check to see if iFreeBlk should be coalesced onto the end of iStart.
+  */
+  if( iFreeBlk && iEnd+3>=iFreeBlk ){
+    nFrag = iFreeBlk - iEnd;
+    if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
+    iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
+    iSize = iEnd - iStart;
+    iFreeBlk = get2byte(&data[iFreeBlk]);
+  }
+
+  /* If iPtr is another freeblock (that is, if iPtr is not the freelist pointer
+  ** in the page header) then check to see if iStart should be coalesced 
+  ** onto the end of iPtr.
+  */
+  if( iPtr>hdr+1 ){
+    int iPtrEnd = iPtr + get2byte(&data[iPtr+2]);
+    if( iPtrEnd+3>=iStart ){
+      if( iPtrEnd>iStart ) return SQLITE_CORRUPT_BKPT;
+      nFrag += iStart - iPtrEnd;
+      iSize = iEnd - iPtr;
+      iStart = iPtr;
     }
   }
+  if( nFrag>data[hdr+7] ) return SQLITE_CORRUPT_BKPT;
 
-  /* If the cell content area begins with a freeblock, remove it. */
-  if( data[hdr+1]==data[hdr+5] && data[hdr+2]==data[hdr+6] ){
-    int top;
-    iFreeBlk = get2byte(&data[hdr+1]);
-    memcpy(&data[hdr+1], &data[iFreeBlk], 2);
-    top = get2byte(&data[hdr+5]) + get2byte(&data[iFreeBlk+2]);
-    put2byte(&data[hdr+5], top);
+  data[hdr+7] -= nFrag;
+  if( iPtr==hdr+1 && iStart==get2byte(&data[hdr+5]) ){
+    /* The new freeblock is at the beginning of the cell content area,
+    ** so just extend the cell content area rather than create another
+    ** freelist entry */
+    put2byte(&data[hdr+1], iFreeBlk);
+    put2byte(&data[hdr+5], iEnd);
+  }else{
+    /* Insert the new freeblock into the freelist */
+    put2byte(&data[iPtr], iStart);
+    put2byte(&data[iStart], iFreeBlk);
+    put2byte(&data[iStart+2], iSize);
   }
-  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
+  pPage->nFree += iOrigSize;
   return SQLITE_OK;
 }
 
