@@ -1,5 +1,5 @@
-C Minor\sperformance\simprovement\sand\ssize\sreduction\sfor\sthe\sbtree-page\sspace\nallocator.
-D 2014-08-20T00:54:46.809
+C Fix\sa\stypo\sin\sthe\sshowdb\susage\smessage.
+D 2014-08-20T10:42:16.102
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1164,7 +1164,7 @@ F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/pagesig.c ff0ca355fd3c2398e933da5e22439bbff89b803b
 F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
-F tool/showdb.c b9ee6b6c81a094bf33badbf7e9da34cdbc0cce25
+F tool/showdb.c bd073a78bce714a0e42d92ea474b3eb8cb53be5d
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showstat4.c c39279d6bd37cb999b634f0064f6f86ad7af008f
 F tool/showwal.c 3209120269cdf9380f091459e47b776b4f81dfd3
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d280157da0b5275f3e3c875d2dcfb9998d374ac0
-R 020501de111b3b2380806f2152969bc3
-U drh
-Z 17df18c00e8e514c309dda1b0357fb11
+P 73637d12e31f5489efe37d8cf4ab50a1911d4c75
+R d268dbd0231a0e3f9784dd51ed74231a
+U dan
+Z b16b223d7974024b463d42100aaa47bd
