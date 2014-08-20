@@ -1290,28 +1290,30 @@ defragment_page:
 
 /*
 ** Return a section of the pPage->aData to the freelist.
-** The first byte of the new free block is pPage->aDisk[start]
-** and the size of the block is "size" bytes.
+** The first byte of the new free block is pPage->aData[iStart]
+** and the size of the block is iSize bytes.
 **
 ** Most of the effort here is involved in coalesing adjacent
 ** free blocks into a single big free block.
 */
-static int freeSpace(MemPage *pPage, int start, int size){
-  int addr, pbegin, hdr;
-  int iLast;                        /* Largest possible freeblock offset */
-  unsigned char *data = pPage->aData;
+static int freeSpace(MemPage *pPage, int iStart, int iSize){
+  int iPtr;                  /* Address of pointer to next freeblock */
+  int iFreeBlk;              /* Address of the next freeblock */
+  int hdr;                   /* Page header size.  0 or 100 */
+  int iLast;                 /* Largest possible freeblock offset */
+  unsigned char *data = pPage->aData;   /* Page content */
 
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-  assert( start>=pPage->hdrOffset+6+pPage->childPtrSize );
-  assert( (start + size) <= (int)pPage->pBt->usableSize );
+  assert( iStart>=pPage->hdrOffset+6+pPage->childPtrSize );
+  assert( (iStart + iSize) <= (int)pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  assert( size>=4 );   /* Minimum cell size is 4 */
+  assert( iSize>=4 );   /* Minimum cell size is 4 */
 
   if( pPage->pBt->btsFlags & BTS_SECURE_DELETE ){
     /* Overwrite deleted information with zeros when the secure_delete
     ** option is enabled */
-    memset(&data[start], 0, size);
+    memset(&data[iStart], 0, iSize);
   }
 
   /* Add the space back into the linked list of freeblocks.  Note that
@@ -1324,53 +1326,56 @@ static int freeSpace(MemPage *pPage, int start, int size){
   ** the freelist.
   */
   hdr = pPage->hdrOffset;
-  addr = hdr + 1;
+  iPtr = hdr + 1;
   iLast = pPage->pBt->usableSize - 4;
-  assert( start<=iLast );
-  while( (pbegin = get2byte(&data[addr]))<start && pbegin>0 ){
-    if( pbegin<addr+4 ){
+  assert( iStart<=iLast );
+  while( (iFreeBlk = get2byte(&data[iPtr]))<iStart && iFreeBlk>0 ){
+    if( iFreeBlk<iPtr+4 ){
       return SQLITE_CORRUPT_BKPT;
     }
-    addr = pbegin;
+    iPtr = iFreeBlk;
   }
-  if( pbegin>iLast ){
+  if( iFreeBlk>iLast ){
     return SQLITE_CORRUPT_BKPT;
   }
-  assert( pbegin>addr || pbegin==0 );
-  put2byte(&data[addr], start);
-  put2byte(&data[start], pbegin);
-  put2byte(&data[start+2], size);
-  pPage->nFree = pPage->nFree + (u16)size;
+  assert( iFreeBlk>iPtr || iFreeBlk==0 );
+  put2byte(&data[iPtr], iStart);
+  put2byte(&data[iStart], iFreeBlk);
+  put2byte(&data[iStart+2], iSize);
+  pPage->nFree = pPage->nFree + (u16)iSize;
 
   /* Coalesce adjacent free blocks */
-  addr = hdr + 1;
-  while( (pbegin = get2byte(&data[addr]))>0 ){
-    int pnext, psize, x;
-    assert( pbegin>addr );
-    assert( pbegin <= (int)pPage->pBt->usableSize-4 );
-    pnext = get2byte(&data[pbegin]);
-    psize = get2byte(&data[pbegin+2]);
-    if( pbegin + psize + 3 >= pnext && pnext>0 ){
-      int frag = pnext - (pbegin+psize);
-      if( (frag<0) || (frag>(int)data[hdr+7]) ){
+  iPtr = hdr + 1;
+  while( (iFreeBlk = get2byte(&data[iPtr]))>0 ){
+    int iNextBlk;      /* Next freeblock after iFreeBlk */
+    int szFreeBlk;     /* Size of iFreeBlk */
+    assert( iFreeBlk>iPtr );
+    assert( iFreeBlk <= (int)pPage->pBt->usableSize-4 );
+    iNextBlk = get2byte(&data[iFreeBlk]);
+    szFreeBlk = get2byte(&data[iFreeBlk+2]);
+    if( iFreeBlk + szFreeBlk + 3 >= iNextBlk && iNextBlk>0 ){
+      int nFrag;     /* Fragment bytes in between iFreeBlk and iNextBlk */
+      int x;         /* Temp value */
+      nFrag = iNextBlk - (iFreeBlk+szFreeBlk);
+      if( (nFrag<0) || (nFrag>(int)data[hdr+7]) ){
         return SQLITE_CORRUPT_BKPT;
       }
-      data[hdr+7] -= (u8)frag;
-      x = get2byte(&data[pnext]);
-      put2byte(&data[pbegin], x);
-      x = pnext + get2byte(&data[pnext+2]) - pbegin;
-      put2byte(&data[pbegin+2], x);
+      data[hdr+7] -= (u8)nFrag;
+      x = get2byte(&data[iNextBlk]);
+      put2byte(&data[iFreeBlk], x);
+      x = iNextBlk + get2byte(&data[iNextBlk+2]) - iFreeBlk;
+      put2byte(&data[iFreeBlk+2], x);
     }else{
-      addr = pbegin;
+      iPtr = iFreeBlk;
     }
   }
 
   /* If the cell content area begins with a freeblock, remove it. */
   if( data[hdr+1]==data[hdr+5] && data[hdr+2]==data[hdr+6] ){
     int top;
-    pbegin = get2byte(&data[hdr+1]);
-    memcpy(&data[hdr+1], &data[pbegin], 2);
-    top = get2byte(&data[hdr+5]) + get2byte(&data[pbegin+2]);
+    iFreeBlk = get2byte(&data[hdr+1]);
+    memcpy(&data[hdr+1], &data[iFreeBlk], 2);
+    top = get2byte(&data[hdr+5]) + get2byte(&data[iFreeBlk+2]);
     put2byte(&data[hdr+5], top);
   }
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
