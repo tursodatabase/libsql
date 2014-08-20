@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\sthe\sshowdb\susage\smessage.
-D 2014-08-20T10:42:16.102
+C Add\sSQLITE_API\smacros\sin\sfront\sof\sinterface\sroutines\sin\sthe\stest_intarray.c\nextension.
+D 2014-08-20T13:25:06.147
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -252,8 +252,8 @@ F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
 F src/test_func.c d3013ce36f19ac72a99c73864930fd1fa41832f8
 F src/test_hexio.c abfdecb6fa58c354623978efceb088ca18e379cd
 F src/test_init.c 66b33120ffe9cd853b5a905ec850d51151337b32
-F src/test_intarray.c 87847c71c3c36889c0bcc9c4baf9d31881665d61
-F src/test_intarray.h 2ece66438cfd177b78d1bfda7a4180cd3a10844d
+F src/test_intarray.c db4614c2262a06abc4409dc048d59c580c38320f
+F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
 F src/test_malloc.c 1ff5b1243d96124c9a180f3b89424820a1f337f3
@@ -1186,7 +1186,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 73637d12e31f5489efe37d8cf4ab50a1911d4c75
-R d268dbd0231a0e3f9784dd51ed74231a
-U dan
-Z b16b223d7974024b463d42100aaa47bd
+P 6c66beae97ba1799c908d3a33371dedbc7f3f58c
+R 0e361fd9748a232cee30a1097c2f8f6b
+U drh
+Z c85b6dec89d4d1dc359d8501fa41031d
