@@ -1222,20 +1222,15 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
       return SQLITE_CORRUPT_BKPT;
     }
   }
+
+  /* If there is enough space between gap and top for one more cell pointer
+  ** array entry offset, and if the freelist is not empty, then search the
+  ** freelist looking for a free slot big enough to satisfy the request.
+  */
   testcase( gap+2==top );
   testcase( gap+1==top );
   testcase( gap==top );
-
-  if( data[hdr+7]>=60 ){
-    /* Always defragment highly fragmented pages */
-    rc = defragmentPage(pPage);
-    if( rc ) return rc;
-    top = get2byteNotZero(&data[hdr+5]);
-  }else if( gap+2<=top ){
-    /* Search the freelist looking for a free slot big enough to satisfy 
-    ** the request. The allocation is made from the first free slot in 
-    ** the list that is large enough to accommodate it.
-    */
+  if( gap+2<=top && (data[hdr+1] || data[hdr+2]) ){
     int pc, addr;
     for(addr=hdr+1; (pc = get2byte(&data[addr]))>0; addr=pc){
       int size;            /* Size of the free slot */
@@ -1248,6 +1243,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
         testcase( x==4 );
         testcase( x==3 );
         if( x<4 ){
+          if( data[hdr+7]>=60 ) goto defragment_page;
           /* Remove the slot from the free-list. Update the number of
           ** fragmented bytes within the page. */
           memcpy(&data[addr], &data[pc], 2);
@@ -1265,11 +1261,13 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     }
   }
 
-  /* Check to make sure there is enough space in the gap to satisfy
-  ** the allocation.  If not, defragment.
+  /* The request could not be fulfilled using a freelist slot.  Check
+  ** to see if defragmentation is necessary.
   */
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
+defragment_page:
+    testcase( pPage->nCell==0 );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
@@ -1308,7 +1306,7 @@ static int freeSpace(MemPage *pPage, int start, int size){
   assert( start>=pPage->hdrOffset+6+pPage->childPtrSize );
   assert( (start + size) <= (int)pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  assert( size>=0 );   /* Minimum cell size is 4 */
+  assert( size>=4 );   /* Minimum cell size is 4 */
 
   if( pPage->pBt->btsFlags & BTS_SECURE_DELETE ){
     /* Overwrite deleted information with zeros when the secure_delete

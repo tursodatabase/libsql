@@ -1,5 +1,5 @@
-C Add\sSQLITE_API\smacros\sin\sfront\sof\sinterface\sroutines\sin\sthe\stest_intarray.c\nextension.
-D 2014-08-20T13:25:06.147
+C Size\sreduction\sand\sperformance\simprovements\sin\sbtree.c\sand\sthe\nallocateSpace()\sroutine.\s\sAlso\sfix\san\sassert()\sin\sfreeSpace().
+D 2014-08-20T13:35:45.034
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -167,7 +167,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a729e63cf5cd1829507cb7b8e89f99b95141bb53
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c 976f45a12e37293e32cae0281b15a21d48a8aaa7
-F src/btree.c c580f3fb3b3d1bf968e5c7e6a0ad48b7b0bd4366
+F src/btree.c 53eb576f72093d5138f5b7468994121c6eb6fe98
 F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 5abf794fe8a605f2005b422e98a3cedad9b9ef5b
@@ -1186,7 +1186,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 6c66beae97ba1799c908d3a33371dedbc7f3f58c
-R 0e361fd9748a232cee30a1097c2f8f6b
+P eea0661798e10018615854c871f24be0f8bb2ff9 fe51d3aa0ce7021213293a0647e31164073e78f7
+R 3c51b363f531f6f6895a1e7e29ea4492
+T +closed fe51d3aa0ce7021213293a0647e31164073e78f7
 U drh
-Z c85b6dec89d4d1dc359d8501fa41031d
+Z 25da1aeccb4d6e0fa0390c2ee1a22b6e
