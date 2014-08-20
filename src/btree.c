@@ -1330,47 +1330,51 @@ static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
   */
   hdr = pPage->hdrOffset;
   iPtr = hdr + 1;
-  while( (iFreeBlk = get2byte(&data[iPtr]))>0 && iFreeBlk<iStart ){
-    if( iFreeBlk<iPtr+4 ) return SQLITE_CORRUPT_BKPT;
-    iPtr = iFreeBlk;
-  }
-  if( iFreeBlk>iLast ) return SQLITE_CORRUPT_BKPT;
-  assert( iFreeBlk>iPtr || iFreeBlk==0 );
-
-  /* At this point:
-  **    iFreeBlk:   First freeblock after iStart, or zero if none
-  **    iPtr:       The address of a pointer iFreeBlk
-  **
-  ** Check to see if iFreeBlk should be coalesced onto the end of iStart.
-  */
-  if( iFreeBlk && iEnd+3>=iFreeBlk ){
-    nFrag = iFreeBlk - iEnd;
-    if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
-    iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
-    iSize = iEnd - iStart;
-    iFreeBlk = get2byte(&data[iFreeBlk]);
-  }
-
-  /* If iPtr is another freeblock (that is, if iPtr is not the freelist pointer
-  ** in the page header) then check to see if iStart should be coalesced 
-  ** onto the end of iPtr.
-  */
-  if( iPtr>hdr+1 ){
-    int iPtrEnd = iPtr + get2byte(&data[iPtr+2]);
-    if( iPtrEnd+3>=iStart ){
-      if( iPtrEnd>iStart ) return SQLITE_CORRUPT_BKPT;
-      nFrag += iStart - iPtrEnd;
-      iSize = iEnd - iPtr;
-      iStart = iPtr;
+  if( data[iPtr+1]==0 && data[iPtr]==0 ){
+    iFreeBlk = 0;  /* Shortcut for the case when the freelist is empty */
+  }else{
+    while( (iFreeBlk = get2byte(&data[iPtr]))>0 && iFreeBlk<iStart ){
+      if( iFreeBlk<iPtr+4 ) return SQLITE_CORRUPT_BKPT;
+      iPtr = iFreeBlk;
     }
+    if( iFreeBlk>iLast ) return SQLITE_CORRUPT_BKPT;
+    assert( iFreeBlk>iPtr || iFreeBlk==0 );
+  
+    /* At this point:
+    **    iFreeBlk:   First freeblock after iStart, or zero if none
+    **    iPtr:       The address of a pointer iFreeBlk
+    **
+    ** Check to see if iFreeBlk should be coalesced onto the end of iStart.
+    */
+    if( iFreeBlk && iEnd+3>=iFreeBlk ){
+      nFrag = iFreeBlk - iEnd;
+      if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
+      iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
+      iSize = iEnd - iStart;
+      iFreeBlk = get2byte(&data[iFreeBlk]);
+    }
+  
+    /* If iPtr is another freeblock (that is, if iPtr is not the freelist pointer
+    ** in the page header) then check to see if iStart should be coalesced 
+    ** onto the end of iPtr.
+    */
+    if( iPtr>hdr+1 ){
+      int iPtrEnd = iPtr + get2byte(&data[iPtr+2]);
+      if( iPtrEnd+3>=iStart ){
+        if( iPtrEnd>iStart ) return SQLITE_CORRUPT_BKPT;
+        nFrag += iStart - iPtrEnd;
+        iSize = iEnd - iPtr;
+        iStart = iPtr;
+      }
+    }
+    if( nFrag>data[hdr+7] ) return SQLITE_CORRUPT_BKPT;
+    data[hdr+7] -= nFrag;
   }
-  if( nFrag>data[hdr+7] ) return SQLITE_CORRUPT_BKPT;
-
-  data[hdr+7] -= nFrag;
-  if( iPtr==hdr+1 && iStart==get2byte(&data[hdr+5]) ){
+  if( iStart==get2byte(&data[hdr+5]) ){
     /* The new freeblock is at the beginning of the cell content area,
     ** so just extend the cell content area rather than create another
     ** freelist entry */
+    if( iPtr!=hdr+1 ) return SQLITE_CORRUPT_BKPT;
     put2byte(&data[hdr+1], iFreeBlk);
     put2byte(&data[hdr+5], iEnd);
   }else{
