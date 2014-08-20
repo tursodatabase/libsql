@@ -1197,7 +1197,6 @@ static int defragmentPage(MemPage *pPage){
 static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   const int hdr = pPage->hdrOffset;    /* Local cache of pPage->hdrOffset */
   u8 * const data = pPage->aData;      /* Local cache of pPage->aData */
-  int nFrag;                           /* Number of fragmented bytes on pPage */
   int top;                             /* First byte of cell content area */
   int gap;        /* First byte of gap between cell pointers and cell content */
   int rc;         /* Integer return code */
@@ -1212,16 +1211,22 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   usableSize = pPage->pBt->usableSize;
   assert( nByte < usableSize-8 );
 
-  nFrag = data[hdr+7];
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
   gap = pPage->cellOffset + 2*pPage->nCell;
-  top = get2byteNotZero(&data[hdr+5]);
-  if( gap>top ) return SQLITE_CORRUPT_BKPT;
+  assert( gap<=65536 );
+  top = get2byte(&data[hdr+5]);
+  if( gap>top ){
+    if( top==0 ){
+      top = 65536;
+    }else{
+      return SQLITE_CORRUPT_BKPT;
+    }
+  }
   testcase( gap+2==top );
   testcase( gap+1==top );
   testcase( gap==top );
 
-  if( nFrag>=60 ){
+  if( data[hdr+7]>=60 ){
     /* Always defragment highly fragmented pages */
     rc = defragmentPage(pPage);
     if( rc ) return rc;
@@ -1246,7 +1251,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
           /* Remove the slot from the free-list. Update the number of
           ** fragmented bytes within the page. */
           memcpy(&data[addr], &data[pc], 2);
-          data[hdr+7] = (u8)(nFrag + x);
+          data[hdr+7] += (u8)x;
         }else if( size+pc > usableSize ){
           return SQLITE_CORRUPT_BKPT;
         }else{
