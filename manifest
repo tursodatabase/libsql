@@ -1,5 +1,5 @@
-C A\ssmall\sperformance\simprovement\sin\sfreeSpace()\sby\sspecial-casing\sthe\nrelatively\scommon\scase\sof\san\sempty\sfreelist.
-D 2014-08-20T18:43:44.510
+C Enhancements\sto\sskip-scan\ssuch\sthat\sit\sis\soperable\swhen\sa\smiddle\scolumn\sof\nan\sindex\sis\sskipped\swhile\sthe\sleft-most\scolumn\sis\sconstrained\sin\sthe\sWHERE\nclause.
+D 2014-08-20T23:38:07.310
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -296,7 +296,7 @@ F src/vtab.c 21b932841e51ebd7d075e2d0ad1415dce8d2d5fd
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c ab20f9c24a422ee8900831b343c3d1e5e7aca87b
+F src/where.c 4c499d185827a492643cf017ae5e3aa0523f9f18
 F src/whereInt.h 923820bee9726033a501a08d2fc69b9c1ee4feb3
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -832,6 +832,7 @@ F test/shrink.test 8c70f62b6e8eb4d54533de6d65bd06b1b9a17868
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/skipscan1.test 28c7faa41a0d7265040ecb0a0abd90c0904270b2
 F test/skipscan2.test d1d1450952b7275f0b0a3a981f0230532743951a
+F test/skipscan3.test ec5bab3f81c7038b43450e7b3062e04a198bdbb5
 F test/skipscan5.test d8b9692b702745a0e41c23f9da6beac81df01196
 F test/soak.test 0b5b6375c9f4110c828070b826b3b4b0bb65cd5f
 F test/softheap1.test 40562fe6cac6d9827b7b42b86d45aedf12c15e24
@@ -1186,7 +1187,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fe4fd014b42b7b158ca968f1535b5636c67769f6
-R 865eceb09aea170bb70d44b771b85e6e
+P 49f44d355ff70744e4951baca2481c7c2b6c02b3
+R 96923099996337b045b25027695cfca6
 U drh
-Z 0631afdcc5729e41fc50a75336710200
+Z 1b9938878e462b798940573e6153541a
