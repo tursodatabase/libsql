@@ -1998,7 +1998,6 @@ static int createCollation(
 ){
   CollSeq *pColl;
   int enc2;
-  int nName = sqlite3Strlen30(zName);
   
   assert( sqlite3_mutex_held(db->mutex) );
 
@@ -2037,7 +2036,7 @@ static int createCollation(
     ** to be called.
     */ 
     if( (pColl->enc & ~SQLITE_UTF16_ALIGNED)==enc2 ){
-      CollSeq *aColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
+      CollSeq *aColl = sqlite3HashFind(&db->aCollSeq, zName);
       int j;
       for(j=0; j<3; j++){
         CollSeq *p = &aColl[j];
