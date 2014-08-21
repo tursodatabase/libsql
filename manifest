@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.8.7
-D 2014-08-20T23:42:50.860
+C Fix\sa\sfaulty\sassert()\sstatement.\s\sAdd\scomments\sto\sclarify\sthe\sbehavior\sof\nthe\ssqlite3OpenTableAndIndices()\sroutine\sin\sinsert.c.\s\sAdd\stest\scases\sto\nverify\sthat\sthe\sassert()\sstatement\sis\snot\sfiring\sinappropriately.\nTicket\s[369d57fb8e5ccdff06f1].
+D 2014-08-21T14:10:23.770
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -138,6 +138,7 @@ F ext/rtree/rtreeB.test c85f9ce78766c4e68b8b89fbf2979ee9cfa82b4e
 F ext/rtree/rtreeC.test df158dcc81f1a43ce7eef361af03c48ec91f1e06
 F ext/rtree/rtreeD.test 636630357638f5983701550b37f0f5867130d2ca
 F ext/rtree/rtreeE.test 388c1c8602c3ce55c15f03b509e9cf545fb7c41f
+F ext/rtree/rtreeF.test 66deb9fd1611c7ca2e374adba63debdc2dbb12b4
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 83349d519fe5f518b3ea025d18dd1fe51b1684bd
@@ -175,7 +176,7 @@ F src/callback.c fcff28cf0df2403dd2f313bb8d1b8f31f6f3cd64
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c bcf8f72126cea80fc3d5bc5494cf19b3f8935aaf
+F src/delete.c 5adcd322c6b08fc25d215d780ca62cebce66304d
 F src/expr.c f749009cf4a8534efb5e0d5cd7c9fb1fb0f2836c
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 8545f3b36da47473e10800ea4fb0810fd4062514
@@ -184,7 +185,7 @@ F src/global.c 1e4bd956dc2f608f87d2a929abc4a20db65f30e4
 F src/hash.c d139319967164f139c8d1bb8a11b14db9c4ba3cd
 F src/hash.h 8890a25af81fb85a9ad7790d32eedab4b994da22
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 991e4964e9295da3993e2c0f81c7faf642371848
+F src/insert.c d1a104e67b33314d4cc5c1356147446086ab9fc8
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c febc2a9e7ad6c1a6191c7b5b9170b325d263f343
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
@@ -1187,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bc985caa7816f1f873ad8e4467c5278399f315ce
-R 69e5d59c0ae1acccebd6955e02833316
+P 91594aae0725388765070c80039dfe1bf126392d
+R 25e887863ed8cfd2c8a241fac46385f1
 U drh
-Z 5338496858d2cbdf1a890a2630150d12
+Z ed55b6e966354470a11e6c95fe10b90c
