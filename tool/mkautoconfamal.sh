@@ -62,7 +62,7 @@ mkdir -p tea/generic
 echo "#ifdef USE_SYSTEM_SQLITE"      > tea/generic/tclsqlite3.c 
 echo "# include <sqlite3.h>"        >> tea/generic/tclsqlite3.c
 echo "#else"                        >> tea/generic/tclsqlite3.c
-echo "#include \"../../sqlite3.c\"" >> tea/generic/tclsqlite3.c
+echo "#include \"sqlite3.c\""       >> tea/generic/tclsqlite3.c
 echo "#endif"                       >> tea/generic/tclsqlite3.c
 cat  $TOP/src/tclsqlite.c           >> tea/generic/tclsqlite3.c
 

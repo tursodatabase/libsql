@@ -1988,7 +1988,11 @@ static FILE *output_file_open(const char *zFile){
 */
 static void sql_trace_callback(void *pArg, const char *z){
   FILE *f = (FILE*)pArg;
-  if( f ) fprintf(f, "%s\n", z);
+  if( f ){
+    int i = (int)strlen(z);
+    while( i>0 && z[i-1]==';' ){ i--; }
+    fprintf(f, "%.*s;\n", i, z);
+  }
 }
 
 /*
@@ -2600,7 +2604,7 @@ static int do_meta_command(char *zLine, ShellState *p){
        "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
        "     FROM sqlite_master UNION ALL"
        "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-       "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%'"
+       "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
        "ORDER BY rowid",
        callback, &data, &zErrMsg
     );
@@ -3155,7 +3159,7 @@ static int do_meta_command(char *zLine, ShellState *p){
          "  (SELECT sql sql, type type, tbl_name tbl_name, name name, rowid x"
          "     FROM sqlite_master UNION ALL"
          "   SELECT sql, type, tbl_name, name, rowid FROM sqlite_temp_master) "
-         "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%'"
+         "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%' "
          "ORDER BY rowid",
          callback, &data, &zErrMsg
       );

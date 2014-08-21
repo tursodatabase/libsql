@@ -513,10 +513,12 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   sqlite3_mutex_enter(db->mutex);
   v->doingRerun = 0;
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
-         && cnt++ < SQLITE_MAX_SCHEMA_RETRY
-         && (rc2 = rc = sqlite3Reprepare(v))==SQLITE_OK ){
+         && cnt++ < SQLITE_MAX_SCHEMA_RETRY ){
+    int savedPc = v->pc;
+    rc2 = rc = sqlite3Reprepare(v);
+    if( rc!=SQLITE_OK) break;
     sqlite3_reset(pStmt);
-    v->doingRerun = 1;
+    if( savedPc>=0 ) v->doingRerun = 1;
     assert( v->expired==0 );
   }
   if( rc2!=SQLITE_OK ){

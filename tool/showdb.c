@@ -957,7 +957,7 @@ static void usage(const char *argv0){
     "    NNNbdCCC        Decode cell CCC on btree page NNN\n"
     "    NNNt            Decode freelist trunk page NNN\n"
     "    NNNtd           Show leaf freelist pages on the decode\n"
-    "    NNNtr           Recurisvely decode freelist starting at NNN\n"
+    "    NNNtr           Recursively decode freelist starting at NNN\n"
   );
 }
 
