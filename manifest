@@ -1,5 +1,5 @@
-C For\ssqlite3_win32_is_nt(),\sassume\sWinRT\sis\sNT-based.
-D 2014-08-21T19:11:17.859
+C Revise\s#ifdef\sordering\sto\sprefer\sthe\sANSI\sversion\sof\sGetVersionEx,\swhen\savailable.
+D 2014-08-22T19:12:16.818
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -209,7 +209,7 @@ F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bd7df3094a60915c148517504c76df4fca24e542
-F src/os_win.c 817005660016dcaee908b44e4437c000f3666b4c
+F src/os_win.c b979aabc18857645ea3bdc7eaa38df1c5678fae0
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
@@ -1188,10 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7029b3404d3f5f698a496934f3a3f2972051b257
-R 2bf9f3345de9d3c6f464f51024249e55
-T *branch * winrt
-T *sym-winrt *
-T -sym-trunk *
+P 2f59e71fbf31d2bd788d11197943b2ff3f4046e1
+R 01ec23265c3130f55ace673019fe8500
 U mistachkin
-Z 677c2dec084bbb63edeb1740996a4b29
+Z 9a72fd0590798f8454637a5afefb97ac
