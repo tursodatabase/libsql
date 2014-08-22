@@ -629,16 +629,42 @@ static int saveCursorPosition(BtCursor *pCur){
   return rc;
 }
 
+/* Forward reference */
+static int SQLITE_NOINLINE saveCursorsOnList(BtCursor*,Pgno,BtCursor*);
+
 /*
 ** Save the positions of all cursors (except pExcept) that are open on
-** the table  with root-page iRoot. Usually, this is called just before cursor
-** pExcept is used to modify the table (BtreeDelete() or BtreeInsert()).
+** the table with root-page iRoot.  "Saving the cursor position" means that
+** the location in the btree is remembered in such a way that it can be
+** moved back to the same spot after the btree has been modified.  This
+** routine is called just before cursor pExcept is used to modify the
+** table, for example in BtreeDelete() or BtreeInsert().
+**
+** Implementation note:  This routine merely checks to see if any cursors
+** need to be saved.  It calls out to saveCursorsOnList() in the (unusual)
+** event that cursors are in need to being saved.
 */
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
-  BtCursor *p;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pExcept==0 || pExcept->pBt==pBt );
+  BtCursor *p;
   for(p=pBt->pCursor; p; p=p->pNext){
+    if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ) break;
+  }
+  return p ? saveCursorsOnList(p, iRoot, pExcept) : SQLITE_OK;
+}
+
+/* This helper routine to saveAllCursors does the actual work of saving
+** the cursors if and when a cursor is found that actually requires saving.
+** The common case is that no cursors need to be saved, so this routine is
+** broken out from its caller to avoid unnecessary stack pointer movement.
+*/
+static int SQLITE_NOINLINE saveCursorsOnList(
+  BtCursor *p,           /* The first cursor that needs saving */
+  Pgno iRoot,            /* Only save cursor with this iRoot.  Save all if zero */
+  BtCursor *pExcept      /* Do not save this cursor */
+){
+  do{
     if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ){
       if( p->eState==CURSOR_VALID ){
         int rc = saveCursorPosition(p);
@@ -650,7 +676,8 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
         btreeReleaseAllCursorPages(p);
       }
     }
-  }
+    p = p->pNext;
+  }while( p );
   return SQLITE_OK;
 }
 
