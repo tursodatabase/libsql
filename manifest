@@ -1,5 +1,5 @@
-C Factor\sthe\ssaveAllCursors()\sroutine\sof\sbtree.c\sinto\stwo\sseparate\sroutines,\nfor\sa\snoticable\sperformance\simprovement.
-D 2014-08-22T22:26:07.834
+C Another\sperformance\stweak:\sSplit\sthe\ssqlite3BtreeCursorHasMoved()\sroutine\s\ninto\stwo\swith\sthe\ssecond\sroutine\snamed\ssqlite3BtreeCursorRestore().\s\sThe\sfirst\nnow\sonly\sreports\swhether\sor\snot\sthe\scursor\shas\smoved\sand\sthe\ssecond\stries\sto\nrestore\sthe\scursor.\s\sThis\sallows\sthe\ssqlite3VdbeCursorMoveto()\sroutine\sto\sbe\nrefactored\sto\savoid\sstack\spointer\smovements,\sfor\sa\snoticable\sperformance\sgain.
+D 2014-08-22T23:33:03.189
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,8 +168,8 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c ec9d3f1295dafeb278c3830211cc5584132468f4
-F src/btree.c 776885dfef3033af7e8eabbf004481f219870a1d
-F src/btree.h 4245a349bfe09611d7ff887dbc3a80cee8b7955a
+F src/btree.c c4b4e1c9524ba7b7dab840e6f8b29e2379a3bdd2
+F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 058e3aadb1376521ff291735237edf4c10f438fb
 F src/callback.c b97d0695ffcf6a8710ee445ffe56ee387d4d8a6f
@@ -288,7 +288,7 @@ F src/vdbe.c f7f4066e4d6e3858878d76ce9288ea603e12ddf6
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 49b8d2943d02d276b4efef114578251a3277f47d
-F src/vdbeaux.c f7fdc59e2eefa6fc4ba7324b03ea6f8f66e98d62
+F src/vdbeaux.c dba006f67c9fd1b1d07ee7fb0fb38aa1905161d1
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 4a64659ed8e4c3b18a9238e038145ab1bdcd146f
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8914530644f938a7a98e25ea1fb0bca1f9d79101
-R 036983fb95199f1ba06f1397f389a453
+P 3eb084390382c108e9b0ff0b29dede58ebb149bc
+R 356d2e894dc7576ad768e53fab77ee5b
 U drh
-Z 9ea20fed62648c22294e9e322338cabb
+Z 78a9bc2b7c59c5e05ea01f499ba8646b

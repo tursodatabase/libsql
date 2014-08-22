@@ -762,37 +762,48 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
          SQLITE_OK)
 
 /*
-** Determine whether or not a cursor has moved from the position it
-** was last placed at.  Cursors can move when the row they are pointing
-** at is deleted out from under them.
+** Determine whether or not a cursor has moved from the position where
+** it was last placed, or has been invalidated for any other reason.
+** Cursors can move when the row they are pointing at is deleted out
+** from under them, for example.  Cursor might also move if a btree
+** is rebalanced.
 **
-** This routine returns an error code if something goes wrong.  The
-** integer *pHasMoved is set as follows:
+** Calling this routine with a NULL cursor pointer returns false.
 **
-**    0:   The cursor is unchanged
-**    1:   The cursor is still pointing at the same row, but the pointers
-**         returned by sqlite3BtreeKeyFetch() or sqlite3BtreeDataFetch()
-**         might now be invalid because of a balance() or other change to the
-**         b-tree.
-**    2:   The cursor is no longer pointing to the row.  The row might have
-**         been deleted out from under the cursor.
+** Use the separate sqlite3BtreeCursorRestore() routine to restore a cursor
+** back to where it ought to be if this routine returns true.
 */
-int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
+int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
+  return pCur && pCur->eState!=CURSOR_VALID;
+}
+
+/*
+** This routine restores a cursor back to its original position after it
+** has been moved by some outside activity (such as a btree rebalance or
+** a row having been deleted out from under the cursor).  
+**
+** On success, the *pDifferentRow parameter is false if the cursor is left
+** pointing at exactly the same row.  *pDifferntRow is the row the cursor
+** was pointing to has been deleted, forcing the cursor to point to some
+** nearby row.
+**
+** This routine should only be called for a cursor that just returned
+** TRUE from sqlite3BtreeCursorHasMoved().
+*/
+int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
   int rc;
 
-  if( pCur->eState==CURSOR_VALID ){
-    *pHasMoved = 0;
-    return SQLITE_OK;
-  }
+  assert( pCur!=0 );
+  assert( pCur->eState!=CURSOR_VALID );
   rc = restoreCursorPosition(pCur);
   if( rc ){
-    *pHasMoved = 2;
+    *pDifferentRow = 1;
     return rc;
   }
   if( pCur->eState!=CURSOR_VALID || NEVER(pCur->skipNext!=0) ){
-    *pHasMoved = 2;
+    *pDifferentRow = 1;
   }else{
-    *pHasMoved = 1;
+    *pDifferentRow = 0;
   }
   return SQLITE_OK;
 }

@@ -2714,6 +2714,48 @@ void sqlite3VdbeDelete(Vdbe *p){
 }
 
 /*
+** The cursor "p" has a pending seek operation that has not yet been
+** carried out.  Seek the cursor now.  If an error occurs, return
+** the appropriate error code.
+*/
+static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
+  int res, rc;
+#ifdef SQLITE_TEST
+  extern int sqlite3_search_count;
+#endif
+  assert( p->deferredMoveto );
+  assert( p->isTable );
+  rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
+  if( rc ) return rc;
+  p->lastRowid = p->movetoTarget;
+  if( res!=0 ) return SQLITE_CORRUPT_BKPT;
+  p->rowidIsValid = 1;
+#ifdef SQLITE_TEST
+  sqlite3_search_count++;
+#endif
+  p->deferredMoveto = 0;
+  p->cacheStatus = CACHE_STALE;
+  return SQLITE_OK;
+}
+
+/*
+** Something has moved cursor "p" out of place.  Maybe the row it was
+** pointed to was deleted out from under it.  Or maybe the btree was
+** rebalanced.  Whatever the cause, try to restore "p" to the place it
+** is suppose to be pointing.  If the row was deleted out from under the
+** cursor, set the cursor to point to a NULL row.
+*/
+static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
+  int isDifferentRow, rc;
+  assert( p->pCursor!=0 );
+  assert( sqlite3BtreeCursorHasMoved(p->pCursor) );
+  rc = sqlite3BtreeCursorRestore(p->pCursor, &isDifferentRow);
+  p->cacheStatus = CACHE_STALE;
+  if( isDifferentRow ) p->nullRow = 1;
+  return rc;
+}
+
+/*
 ** Make sure the cursor p is ready to read or write the row to which it
 ** was last positioned.  Return an error code if an OOM fault or I/O error
 ** prevents us from positioning the cursor to its correct position.
@@ -2728,29 +2770,10 @@ void sqlite3VdbeDelete(Vdbe *p){
 */
 int sqlite3VdbeCursorMoveto(VdbeCursor *p){
   if( p->deferredMoveto ){
-    int res, rc;
-#ifdef SQLITE_TEST
-    extern int sqlite3_search_count;
-#endif
-    assert( p->isTable );
-    rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
-    if( rc ) return rc;
-    p->lastRowid = p->movetoTarget;
-    if( res!=0 ) return SQLITE_CORRUPT_BKPT;
-    p->rowidIsValid = 1;
-#ifdef SQLITE_TEST
-    sqlite3_search_count++;
-#endif
-    p->deferredMoveto = 0;
-    p->cacheStatus = CACHE_STALE;
-  }else if( p->pCursor ){
-    int hasMoved;
-    int rc = sqlite3BtreeCursorHasMoved(p->pCursor, &hasMoved);
-    if( rc ) return rc;
-    if( hasMoved ){
-      p->cacheStatus = CACHE_STALE;
-      if( hasMoved==2 ) p->nullRow = 1;
-    }
+    return handleDeferredMoveto(p);
+  }
+  if( sqlite3BtreeCursorHasMoved(p->pCursor) ){
+    return handleMovedCursor(p);
   }
   return SQLITE_OK;
 }
