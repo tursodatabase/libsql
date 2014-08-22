@@ -1,5 +1,5 @@
-C Simplify\sthe\sinterface\sto\sthe\ssymbol\stable,\ssaving\s600\sbytes\sof\scode\sspace.
-D 2014-08-21T20:26:37.728
+C Enhance\sthe\sspellfix\sextension\swith\sthe\sability\sto\sspecify\sa\srowid\swhen\ninserting\snew\srows.
+D 2014-08-22T11:11:30.047
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -116,7 +116,7 @@ F ext/misc/nextchar.c 35c8b8baacb96d92abbb34a83a997b797075b342
 F ext/misc/percentile.c bcbee3c061b884eccb80e21651daaae8e1e43c63
 F ext/misc/regexp.c af92cdaa5058fcec1451e49becc7ba44dba023dc
 F ext/misc/rot13.c 1ac6f95f99b575907b9b09c81a349114cf9be45a
-F ext/misc/spellfix.c cb016c2dab951ffd7b819a7bc8a750ebd6c26c0f
+F ext/misc/spellfix.c 56739fab8c2ed6a9e2dac5592a88d281a999c43b
 F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
@@ -847,7 +847,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/speedtest1.c d29c8048beb7ea9254191f3fde9414709166a920
-F test/spellfix.test 61309f5efbec53603b3f86457d34a504f80abafe
+F test/spellfix.test 24f676831acddd2f4056a598fd731a72c6311f49
 F test/sqllimits1.test b1aae27cc98eceb845e7f7adf918561256e31298
 F test/stat.test 76fd746b85459e812a0193410fb599f0531f22de
 F test/stmt.test 25d64e3dbf9a3ce89558667d7f39d966fe2a71b9
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 7029b3404d3f5f698a496934f3a3f2972051b257
-R 818f77c3be876451b2dad41de8a59565
+P 14b0f561fe15622b61c6676c9c455dca6b9ba5f0
+R e9738e2157edd7ced31f8162753e2f5b
 U drh
-Z cb34ea9e2178e12926edef43b644d982
+Z 9671128edfd421e5d7e75c6453894b1f
