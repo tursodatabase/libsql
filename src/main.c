@@ -852,7 +852,7 @@ static int sqlite3Close(sqlite3 *db, int forceZombie){
   ** SQLITE_BUSY if the connection can not be closed immediately.
   */
   if( !forceZombie && connectionIsBusy(db) ){
-    sqlite3Error(db, SQLITE_BUSY, "unable to close due to unfinalized "
+    sqlite3ErrorWithMsg(db, SQLITE_BUSY, "unable to close due to unfinalized "
        "statements or unfinished backups");
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_BUSY;
@@ -982,7 +982,7 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   sqlite3HashClear(&db->aModule);
 #endif
 
-  sqlite3Error(db, SQLITE_OK, 0); /* Deallocates any cached error strings. */
+  sqlite3Error(db, SQLITE_OK); /* Deallocates any cached error strings. */
   sqlite3ValueFree(db->pErr);
   sqlite3CloseExtensions(db);
 
@@ -1415,7 +1415,7 @@ int sqlite3CreateFunc(
   p = sqlite3FindFunction(db, zFunctionName, nName, nArg, (u8)enc, 0);
   if( p && (p->funcFlags & SQLITE_FUNC_ENCMASK)==enc && p->nArg==nArg ){
     if( db->nVdbeActive ){
-      sqlite3Error(db, SQLITE_BUSY, 
+      sqlite3ErrorWithMsg(db, SQLITE_BUSY, 
         "unable to delete/modify user-function due to active statements");
       assert( !db->mallocFailed );
       return SQLITE_BUSY;
@@ -1753,10 +1753,10 @@ int sqlite3_wal_checkpoint_v2(
   }
   if( iDb<0 ){
     rc = SQLITE_ERROR;
-    sqlite3Error(db, SQLITE_ERROR, "unknown database: %s", zDb);
+    sqlite3ErrorWithMsg(db, SQLITE_ERROR, "unknown database: %s", zDb);
   }else{
     rc = sqlite3Checkpoint(db, iDb, eMode, pnLog, pnCkpt);
-    sqlite3Error(db, rc, 0);
+    sqlite3Error(db, rc);
   }
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
@@ -1911,7 +1911,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
   }else{
     z = sqlite3_value_text16(db->pErr);
     if( z==0 ){
-      sqlite3Error(db, db->errCode, sqlite3ErrStr(db->errCode));
+      sqlite3ErrorWithMsg(db, db->errCode, sqlite3ErrStr(db->errCode));
       z = sqlite3_value_text16(db->pErr);
     }
     /* A malloc() may have failed within the call to sqlite3_value_text16()
@@ -2022,7 +2022,7 @@ static int createCollation(
   pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, 0);
   if( pColl && pColl->xCmp ){
     if( db->nVdbeActive ){
-      sqlite3Error(db, SQLITE_BUSY, 
+      sqlite3ErrorWithMsg(db, SQLITE_BUSY, 
         "unable to delete/modify collation sequence due to active statements");
       return SQLITE_BUSY;
     }
@@ -2056,7 +2056,7 @@ static int createCollation(
   pColl->pUser = pCtx;
   pColl->xDel = xDel;
   pColl->enc = (u8)(enc2 | (enc & SQLITE_UTF16_ALIGNED));
-  sqlite3Error(db, SQLITE_OK, 0);
+  sqlite3Error(db, SQLITE_OK);
   return SQLITE_OK;
 }
 
@@ -2541,7 +2541,7 @@ static int openDatabase(
   rc = sqlite3ParseUri(zVfs, zFilename, &flags, &db->pVfs, &zOpen, &zErrMsg);
   if( rc!=SQLITE_OK ){
     if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
-    sqlite3Error(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
+    sqlite3ErrorWithMsg(db, rc, zErrMsg ? "%s" : 0, zErrMsg);
     sqlite3_free(zErrMsg);
     goto opendb_out;
   }
@@ -2553,7 +2553,7 @@ static int openDatabase(
     if( rc==SQLITE_IOERR_NOMEM ){
       rc = SQLITE_NOMEM;
     }
-    sqlite3Error(db, rc, 0);
+    sqlite3Error(db, rc);
     goto opendb_out;
   }
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
@@ -2577,7 +2577,7 @@ static int openDatabase(
   ** database schema yet. This is delayed until the first time the database
   ** is accessed.
   */
-  sqlite3Error(db, SQLITE_OK, 0);
+  sqlite3Error(db, SQLITE_OK);
   sqlite3RegisterBuiltinFunctions(db);
 
   /* Load automatic extensions - extensions that have been registered
@@ -2634,7 +2634,7 @@ static int openDatabase(
                           SQLITE_DEFAULT_LOCKING_MODE);
 #endif
 
-  if( rc ) sqlite3Error(db, rc, 0);
+  if( rc ) sqlite3Error(db, rc);
 
   /* Enable the lookaside-malloc subsystem */
   setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
@@ -2996,7 +2996,7 @@ error_out:
         zColumnName);
     rc = SQLITE_ERROR;
   }
-  sqlite3Error(db, rc, (zErrMsg?"%s":0), zErrMsg);
+  sqlite3ErrorWithMsg(db, rc, (zErrMsg?"%s":0), zErrMsg);
   sqlite3DbFree(db, zErrMsg);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);

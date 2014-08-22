@@ -699,7 +699,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
 
   sqlite3_mutex_enter(db->mutex);
   if( !db->pVtabCtx || !(pTab = db->pVtabCtx->pTab) ){
-    sqlite3Error(db, SQLITE_MISUSE, 0);
+    sqlite3Error(db, SQLITE_MISUSE);
     sqlite3_mutex_leave(db->mutex);
     return SQLITE_MISUSE_BKPT;
   }
@@ -727,7 +727,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       }
       db->pVtabCtx->pTab = 0;
     }else{
-      sqlite3Error(db, SQLITE_ERROR, (zErr ? "%s" : 0), zErr);
+      sqlite3ErrorWithMsg(db, SQLITE_ERROR, (zErr ? "%s" : 0), zErr);
       sqlite3DbFree(db, zErr);
       rc = SQLITE_ERROR;
     }
@@ -1088,7 +1088,7 @@ int sqlite3_vtab_config(sqlite3 *db, int op, ...){
   }
   va_end(ap);
 
-  if( rc!=SQLITE_OK ) sqlite3Error(db, rc, 0);
+  if( rc!=SQLITE_OK ) sqlite3Error(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
 }

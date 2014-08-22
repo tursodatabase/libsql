@@ -776,7 +776,7 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   */
   assert( !db || sqlite3_mutex_held(db->mutex) );
   if( db && (db->mallocFailed || rc==SQLITE_IOERR_NOMEM) ){
-    sqlite3Error(db, SQLITE_NOMEM, 0);
+    sqlite3Error(db, SQLITE_NOMEM);
     db->mallocFailed = 0;
     rc = SQLITE_NOMEM;
   }

@@ -112,6 +112,15 @@ int sqlite3Strlen30(const char *z){
 }
 
 /*
+** Set the current error code to err_code and clear any prior error message.
+*/
+void sqlite3Error(sqlite3 *db, int err_code){
+  assert( db!=0 );
+  db->errCode = err_code;
+  if( db->pErr ) sqlite3ValueSetNull(db->pErr);
+}
+
+/*
 ** Set the most recent error code and error string for the sqlite
 ** handle "db". The error code is set to "err_code".
 **
@@ -132,18 +141,18 @@ int sqlite3Strlen30(const char *z){
 ** should be called with err_code set to SQLITE_OK and zFormat set
 ** to NULL.
 */
-void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
+void sqlite3ErrorWithMsg(sqlite3 *db, int err_code, const char *zFormat, ...){
   assert( db!=0 );
   db->errCode = err_code;
-  if( zFormat && (db->pErr || (db->pErr = sqlite3ValueNew(db))!=0) ){
+  if( zFormat==0 ){
+    sqlite3Error(db, err_code);
+  }else if( db->pErr || (db->pErr = sqlite3ValueNew(db))!=0 ){
     char *z;
     va_list ap;
     va_start(ap, zFormat);
     z = sqlite3VMPrintf(db, zFormat, ap);
     va_end(ap);
     sqlite3ValueSetStr(db->pErr, -1, z, SQLITE_UTF8, SQLITE_DYNAMIC);
-  }else if( db->pErr ){
-    sqlite3ValueSetNull(db->pErr);
   }
 }
 
@@ -157,12 +166,12 @@ void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
 **      %T      Insert a token
 **      %S      Insert the first element of a SrcList
 **
-** This function should be used to report any error that occurs whilst
+** This function should be used to report any error that occurs while
 ** compiling an SQL statement (i.e. within sqlite3_prepare()). The
 ** last thing the sqlite3_prepare() function does is copy the error
 ** stored by this function into the database handle using sqlite3Error().
-** Function sqlite3Error() should be used during statement execution
-** (sqlite3_step() etc.).
+** Functions sqlite3Error() or sqlite3ErrorWithMsg() should be used
+** during statement execution (sqlite3_step() etc.).
 */
 void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   char *zMsg;
