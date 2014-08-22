@@ -1130,7 +1130,7 @@ static void recordFunc(
     sqlite3_result_error_nomem(context);
   }else{
     aRet[0] = nSerial+1;
-    sqlite3PutVarint(&aRet[1], iSerial);
+    putVarint32(&aRet[1], iSerial);
     sqlite3VdbeSerialPut(&aRet[1+nSerial], argv[0], iSerial);
     sqlite3_result_blob(context, aRet, nRet, SQLITE_TRANSIENT);
     sqlite3DbFree(db, aRet);

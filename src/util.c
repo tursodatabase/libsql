@@ -708,7 +708,7 @@ int sqlite3Atoi(const char *z){
 ** bit clear.  Except, if we get to the 9th byte, it stores the full
 ** 8 bits and is the last byte.
 */
-int sqlite3PutVarint(unsigned char *p, u64 v){
+static int SQLITE_NOINLINE putVarint64(unsigned char *p, u64 v){
   int i, j, n;
   u8 buf[10];
   if( v & (((u64)0xff000000)<<32) ){
@@ -732,28 +732,17 @@ int sqlite3PutVarint(unsigned char *p, u64 v){
   }
   return n;
 }
-
-/*
-** This routine is a faster version of sqlite3PutVarint() that only
-** works for 32-bit positive integers and which is optimized for
-** the common case of small integers.  A MACRO version, putVarint32,
-** is provided which inlines the single-byte case.  All code should use
-** the MACRO version as this function assumes the single-byte case has
-** already been handled.
-*/
-int sqlite3PutVarint32(unsigned char *p, u32 v){
-#ifndef putVarint32
-  if( (v & ~0x7f)==0 ){
-    p[0] = v;
+int sqlite3PutVarint(unsigned char *p, u64 v){
+  if( v<=0x7f ){
+    p[0] = v&0x7f;
     return 1;
   }
-#endif
-  if( (v & ~0x3fff)==0 ){
-    p[0] = (u8)((v>>7) | 0x80);
-    p[1] = (u8)(v & 0x7f);
+  if( v<=0x3fff ){
+    p[0] = ((v>>7)&0x7f)|0x80;
+    p[1] = v&0x7f;
     return 2;
   }
-  return sqlite3PutVarint(p, v);
+  return putVarint64(p,v);
 }
 
 /*
