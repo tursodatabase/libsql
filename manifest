@@ -1,5 +1,5 @@
-C Performance\senhancement\sin\ssqlite3PutVarint().
-D 2014-08-22T18:48:25.634
+C Combine\sthe\spcacheAddToDirtyList()\sand\spcacheRemoveFromDirtyList()\sroutines\ninto\sa\ssingle\spcacheManageDirtyList()\sroutine.\s\sThe\sresulting\sbinary\scode\sis\nslightly\sfaster\sand\sa\sfew\sbytes\ssmaller.
+D 2014-08-22T20:35:29.948
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -214,7 +214,7 @@ F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c f6bb1fa6cdf2062f2d8aec3e64db302bca519ab8
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
-F src/pcache.c d8eafac28290d4bb80332005435db44991d07fc2
+F src/pcache.c da602c5447051705cab41604bf3276815eb569d0
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
 F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P cf561d1f0bb60b3d638632d20bd686dda4fa4a04
-R 892fbe852e37f91de1b9f5afa35c0502
+P a929be551924144c9bc7aab608404d59e479abb5
+R 2ac5f67b7ba10391163889b9ff4c4145
 U drh
-Z c70614e9322ab39ef4e9fbe07eb13b05
+Z 6bffc4c72a94895b60e52defb6944efd
