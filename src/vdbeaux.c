@@ -2961,18 +2961,54 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
 #define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
 #define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
 #define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define FOUR_BYTE_INT(x) (16777216*(i8)((x)[0])|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
 
 /*
 ** Deserialize the data blob pointed to by buf as serial type serial_type
 ** and store the result in pMem.  Return the number of bytes read.
+**
+** This function is implemented as two separate routines for performance.
+** The few cases that require local variables are broken out into a separate
+** routine so that in most cases the overhead of moving the stack pointer
+** is avoided.
 */ 
+static u32 SQLITE_NOINLINE serialGet(
+  const unsigned char *buf,     /* Buffer to deserialize from */
+  u32 serial_type,              /* Serial type to deserialize */
+  Mem *pMem                     /* Memory cell to write value into */
+){
+  u64 x = FOUR_BYTE_UINT(buf);
+  u32 y = FOUR_BYTE_UINT(buf+4);
+  x = (x<<32) + y;
+  if( serial_type==6 ){
+    pMem->u.i = *(i64*)&x;
+    pMem->flags = MEM_Int;
+    testcase( pMem->u.i<0 );
+  }else{
+#if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
+    /* Verify that integers and floating point values use the same
+    ** byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
+    ** defined that 64-bit floating point values really are mixed
+    ** endian.
+    */
+    static const u64 t1 = ((u64)0x3ff00000)<<32;
+    static const double r1 = 1.0;
+    u64 t2 = t1;
+    swapMixedEndianFloat(t2);
+    assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
+#endif
+    assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
+    swapMixedEndianFloat(x);
+    memcpy(&pMem->r, &x, sizeof(x));
+    pMem->flags = sqlite3IsNaN(pMem->r) ? MEM_Null : MEM_Real;
+  }
+  return 8;
+}
 u32 sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
-  u64 x;
-  u32 y;
   switch( serial_type ){
     case 10:   /* Reserved for future use */
     case 11:   /* Reserved for future use */
@@ -2999,8 +3035,7 @@ u32 sqlite3VdbeSerialGet(
       return 3;
     }
     case 4: { /* 4-byte signed integer */
-      y = FOUR_BYTE_UINT(buf);
-      pMem->u.i = (i64)*(int*)&y;
+      pMem->u.i = FOUR_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
       return 4;
@@ -3013,32 +3048,9 @@ u32 sqlite3VdbeSerialGet(
     }
     case 6:   /* 8-byte signed integer */
     case 7: { /* IEEE floating point */
-#if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
-      /* Verify that integers and floating point values use the same
-      ** byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
-      ** defined that 64-bit floating point values really are mixed
-      ** endian.
-      */
-      static const u64 t1 = ((u64)0x3ff00000)<<32;
-      static const double r1 = 1.0;
-      u64 t2 = t1;
-      swapMixedEndianFloat(t2);
-      assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
-#endif
-      x = FOUR_BYTE_UINT(buf);
-      y = FOUR_BYTE_UINT(buf+4);
-      x = (x<<32) | y;
-      if( serial_type==6 ){
-        pMem->u.i = *(i64*)&x;
-        pMem->flags = MEM_Int;
-        testcase( pMem->u.i<0 );
-      }else{
-        assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
-        swapMixedEndianFloat(x);
-        memcpy(&pMem->r, &x, sizeof(x));
-        pMem->flags = sqlite3IsNaN(pMem->r) ? MEM_Null : MEM_Real;
-      }
-      return 8;
+      /* These use local variables, so do them in a separate routine
+      ** to avoid having to move the frame pointer in the common case */
+      return serialGet(buf,serial_type,pMem);
     }
     case 8:    /* Integer 0 */
     case 9: {  /* Integer 1 */
@@ -3048,17 +3060,15 @@ u32 sqlite3VdbeSerialGet(
     }
     default: {
       static const u16 aFlag[] = { MEM_Blob|MEM_Ephem, MEM_Str|MEM_Ephem };
-      u32 len = (serial_type-12)/2;
       pMem->z = (char *)buf;
-      pMem->n = len;
+      pMem->n = (serial_type-12)/2;
       pMem->xDel = 0;
       pMem->flags = aFlag[serial_type&1];
-      return len;
+      return pMem->n;
     }
   }
   return 0;
 }
-
 /*
 ** This routine is used to allocate sufficient space for an UnpackedRecord
 ** structure large enough to be used with sqlite3VdbeRecordUnpack() if

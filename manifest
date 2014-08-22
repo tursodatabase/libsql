@@ -1,5 +1,5 @@
-C Change\sa\swhile-loop\sinto\sa\sdo-loop\sin\ssqlite3VdbeSerialPut()\sfor\sa\ssmall\nsize\sreduction\sand\sperformance\simprovement.
-D 2014-08-22T13:22:32.819
+C Improve\sthe\sperformance\sand\sreduce\sthe\ssize\sof\sthe\ssqlite3VdbeSerialGet()\nroutine\sby\savoiding\sthe\suse\sof\sstack.
+D 2014-08-22T15:19:59.113
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -228,7 +228,7 @@ F src/shell.c 728d2226594d356bf4fbdbdfd08538fd78fd06f3
 F src/sqlite.h.in ed9d35990c61f0388ca6405706455c4095310553
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 641f8fbb65ca2084c8df95b525f6f82c7a1e91ae
+F src/sqliteInt.h 99bd20e5a12dce7ba290e938123d27e87b5eae27
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -288,7 +288,7 @@ F src/vdbe.c f7f4066e4d6e3858878d76ce9288ea603e12ddf6
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h f5513f2b5ac1e2c5128996c7ea23add256a301df
 F src/vdbeapi.c 7858d7e7cd23267d3fbca18e3a28cce8e0d162a8
-F src/vdbeaux.c 9c9571706aaf0e5debab5b01629ef569cde40920
+F src/vdbeaux.c d0b20a85d1ab8c951e5c8b2400a45252d6d2750c
 F src/vdbeblob.c 9205ce9d3b064d9600f8418a897fc88b5687d9ac
 F src/vdbemem.c d90a1e8acf8b63dc9d14cbbea12bfec6cec31394
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
@@ -1188,7 +1188,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 369c480cda6fa66394b995346bbf51f3298446e1
-R 9c1a6f648ddd3ddf03093ccb99facf2b
+P 750bb0a0960606ab24037e0992e9f7a17524cc3e 3f55484e81000c75e231f5580632a68e782ded4f
+R 3e2300d1a615c65baf7081c06688a5fd
+T +closed 3f55484e81000c75e231f5580632a68e782ded4f
 U drh
-Z 453b7d6a328e84b291043b75c1b3327d
+Z 0797c3bb55e4f93e4c54043857e85ca3
