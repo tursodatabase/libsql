@@ -1,5 +1,5 @@
-C Improve\sthe\sperformance\sand\sreduce\sthe\ssize\sof\sthe\ssqlite3VdbeSerialGet()\nroutine\sby\savoiding\sthe\suse\sof\sstack.
-D 2014-08-22T15:19:59.113
+C Performance\simprovement\sin\sthe\sprintf()\slogic\sby\savoiding\sunnecessary\sstack\npointer\smovement.
+D 2014-08-22T15:40:20.728
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -219,7 +219,7 @@ F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c 102e6f5a2fbc646154463eb856d1fd716867b64c
 F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
 F src/prepare.c 677521ab7132615a8a26107a1d1c3132f44ae337
-F src/printf.c af06f66927919730f03479fed6ae9854f73419f4
+F src/printf.c 00986c86ddfffefc2fd3c73667ff51b3b9709c74
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
@@ -1188,8 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 750bb0a0960606ab24037e0992e9f7a17524cc3e 3f55484e81000c75e231f5580632a68e782ded4f
-R 3e2300d1a615c65baf7081c06688a5fd
-T +closed 3f55484e81000c75e231f5580632a68e782ded4f
+P ebc10e46c15017d7cd232b5f4f3ef67ef740d87f
+R 200d7eb44581fc5fc17c5cd337adb810
 U drh
-Z 0797c3bb55e4f93e4c54043857e85ca3
+Z f2b0948089d8fe6b11165afcc09478da
