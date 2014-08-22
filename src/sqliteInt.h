@@ -154,6 +154,18 @@
 #endif
 
 /*
+** A macro to hint to the compiler that a function should not be
+** inlined.
+*/
+#if defined(__GNUC__)
+#  define SQLITE_NOINLINE  __attribute__((noinline))
+#elif defined(_MSC_VER)
+#  define SQLITE_NOINLINE  __declspec(noinline)
+#else
+#  define SQLITE_NOINLINE
+#endif
+
+/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
