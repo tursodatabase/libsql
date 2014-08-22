@@ -2961,6 +2961,7 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
 #define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
 #define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
 #define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define FOUR_BYTE_INT(x) (16777216*(i8)((x)[0])|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
 
 /*
 ** Deserialize the data blob pointed to by buf as serial type serial_type
@@ -2976,15 +2977,9 @@ static u32 SQLITE_NOINLINE serialGet(
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
-  u64 x;
-  u32 y = FOUR_BYTE_UINT(buf);
-  if( serial_type==4 ){
-    pMem->u.i = (i64)*(int*)&y;
-    pMem->flags = MEM_Int;
-    testcase( pMem->u.i<0 );
-    return 4;
-  }
-  x = (((u64)y)<<32)|FOUR_BYTE_UINT(buf+4);
+  u64 x = FOUR_BYTE_UINT(buf);
+  u32 y = FOUR_BYTE_UINT(buf+4);
+  x = (x<<32) + y;
   if( serial_type==6 ){
     pMem->u.i = *(i64*)&x;
     pMem->flags = MEM_Int;
@@ -3039,18 +3034,22 @@ u32 sqlite3VdbeSerialGet(
       testcase( pMem->u.i<0 );
       return 3;
     }
+    case 4: { /* 4-byte signed integer */
+      pMem->u.i = FOUR_BYTE_INT(buf);
+      pMem->flags = MEM_Int;
+      testcase( pMem->u.i<0 );
+      return 4;
+    }
     case 5: { /* 6-byte signed integer */
       pMem->u.i = FOUR_BYTE_UINT(buf+2) + (((i64)1)<<32)*TWO_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
       return 6;
     }
-    case 4:   /* 4-byte signed integer */
     case 6:   /* 8-byte signed integer */
     case 7: { /* IEEE floating point */
-      /* These three cases require local variables, so do them in a 
-      ** separate routine to avoid having to move the frame pointer in
-      ** the common case */
+      /* These use local variables, so do them in a separate routine
+      ** to avoid having to move the frame pointer in the common case */
       return serialGet(buf,serial_type,pMem);
     }
     case 8:    /* Integer 0 */
