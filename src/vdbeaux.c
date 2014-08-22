@@ -2933,10 +2933,11 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
       v = pMem->u.i;
     }
     len = i = sqlite3VdbeSerialTypeLen(serial_type);
-    while( i-- ){
-      buf[i] = (u8)(v&0xFF);
+    assert( i>0 );
+    do{
+      buf[--i] = (u8)(v&0xFF);
       v >>= 8;
-    }
+    }while( i );
     return len;
   }
 
