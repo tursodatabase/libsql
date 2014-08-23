@@ -223,7 +223,8 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 ** are converted using sqlite3_snprintf().  Converting a BLOB to a string
 ** is a no-op.
 **
-** Existing representations MEM_Int and MEM_Real are *not* invalidated.
+** Existing representations MEM_Int and MEM_Real are invalidated if
+** bForce is true but are retained if bForce is false.
 **
 ** A MEM_Null value will never be passed to this function. This function is
 ** used for converting values to text for returning to the user (i.e. via
@@ -231,8 +232,7 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 ** keys are strings. In the former case a NULL pointer is returned the
 ** user and the later is an internal programming error.
 */
-int sqlite3VdbeMemStringify(Mem *pMem, int enc){
-  int rc = SQLITE_OK;
+int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
   int fg = pMem->flags;
   const int nByte = 32;
 
@@ -248,7 +248,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
     return SQLITE_NOMEM;
   }
 
-  /* For a Real or Integer, use sqlite3_mprintf() to produce the UTF-8
+  /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
   ** string representation of the value. Then, if the required encoding
   ** is UTF-16le or UTF-16be do a translation.
   ** 
@@ -263,8 +263,9 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
   pMem->n = sqlite3Strlen30(pMem->z);
   pMem->enc = SQLITE_UTF8;
   pMem->flags |= MEM_Str|MEM_Term;
+  if( bForce ) pMem->flags &= ~(MEM_Int|MEM_Real);
   sqlite3VdbeChangeEncoding(pMem, enc);
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
@@ -877,7 +878,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
     sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
   }else{
     assert( (pVal->flags&MEM_Blob)==0 );
-    sqlite3VdbeMemStringify(pVal, enc);
+    sqlite3VdbeMemStringify(pVal, enc, 0);
     assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
   }
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
