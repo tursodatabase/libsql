@@ -1,5 +1,5 @@
-C Fix\sa\svariable-declaration\safter\scode\sproblem\sin\sbtree.c.\s\sHarmless\sin\nGCC\sand\sCLANG\sbut\sunacceptable\sfor\sMSVC.
-D 2014-08-23T19:08:09.445
+C Another\smemory\sallocator\sperformance\soptimization.
+D 2014-08-23T19:42:06.737
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -191,7 +191,7 @@ F src/legacy.c 87c92f4a08e2f70220e3b22a9c3b2482d36a134a
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 31c2122b7dd05a179049bbf163fd4839f181cbab
 F src/main.c 900dd06e41d22795cbb23ab0240397f1e2901bf7
-F src/malloc.c 7f26fcedc42b93bb49c4c12a77aa0d891182392e
+F src/malloc.c 06f8507831d04d2830237bf0c9f2fd04623f9868
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
 F src/mem2.c dce31758da87ec2cfa52ba4c5df1aed6e07d8e8f
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f83daa16f65ef35062412e88c214852a4aeb3da2
-R 964769625a1b08555f23e3f40e4e1b01
+P 45abd5c0bad2847861f3b26a7040490aa9bb1332
+R 863f9a5c456ee79d86d610ec7db424be
 U drh
-Z 8bbf37cac5a7f4ae4955d0f942660ce9
+Z 2076d0986bc3817907a655695f4a8b4e

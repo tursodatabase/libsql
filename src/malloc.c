@@ -478,6 +478,14 @@ void sqlite3_free(void *p){
 }
 
 /*
+** Add the size of memory allocation "p" to the count in
+** *db->pnBytesFreed.
+*/
+static SQLITE_NOINLINE void measureAllocationSize(sqlite3 *db, void *p){
+  *db->pnBytesFreed += sqlite3DbMallocSize(db,p);
+}
+
+/*
 ** Free memory that might be associated with a particular database
 ** connection.
 */
@@ -486,7 +494,7 @@ void sqlite3DbFree(sqlite3 *db, void *p){
   if( p==0 ) return;
   if( db ){
     if( db->pnBytesFreed ){
-      *db->pnBytesFreed += sqlite3DbMallocSize(db, p);
+      measureAllocationSize(db, p);
       return;
     }
     if( isLookaside(db, p) ){
