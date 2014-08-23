@@ -327,6 +327,24 @@ void sqlite3ValueApplyAffinity(
 }
 
 /*
+** pMem currently only holds a string type (or maybe a BLOB that we can
+** interpret as a string if we want to).  Compute its corresponding
+** numeric type, if has one.  Set the pMem->r and pMem->u.i fields
+** accordingly.
+*/
+static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
+  assert( (pMem->flags & (MEM_Int|MEM_Real))==0 );
+  assert( (pMem->flags & (MEM_Str|MEM_Blob))!=0 );
+  if( sqlite3AtoF(pMem->z, &pMem->r, pMem->n, pMem->enc)==0 ){
+    return 0;
+  }
+  if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==SQLITE_OK ){
+    return MEM_Int;
+  }
+  return MEM_Real;
+}
+
+/*
 ** Return the numeric type for pMem, either MEM_Int or MEM_Real or both or
 ** none.  
 **
@@ -338,13 +356,7 @@ static u16 numericType(Mem *pMem){
     return pMem->flags & (MEM_Int|MEM_Real);
   }
   if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    if( sqlite3AtoF(pMem->z, &pMem->r, pMem->n, pMem->enc)==0 ){
-      return 0;
-    }
-    if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==SQLITE_OK ){
-      return MEM_Int;
-    }
-    return MEM_Real;
+    return computeNumericType(pMem);
   }
   return 0;
 }
