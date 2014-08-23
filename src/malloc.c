@@ -761,6 +761,14 @@ void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
   *pz = z;
 }
 
+/*
+** Take actions at the end of an API call to indicate an OOM error
+*/
+static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
+  db->mallocFailed = 0;
+  sqlite3Error(db, SQLITE_NOMEM);
+  return SQLITE_NOMEM;
+}
 
 /*
 ** This function must be called before exiting any API function (i.e. 
@@ -781,10 +789,9 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   ** is unsafe, as is the call to sqlite3Error().
   */
   assert( !db || sqlite3_mutex_held(db->mutex) );
-  if( db && (db->mallocFailed || rc==SQLITE_IOERR_NOMEM) ){
-    sqlite3Error(db, SQLITE_NOMEM);
-    db->mallocFailed = 0;
-    rc = SQLITE_NOMEM;
+  if( db==0 ) return rc & 0xff;
+  if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
+    return apiOomError(db);
   }
-  return rc & (db ? db->errMask : 0xff);
+  return rc & db->errMask;
 }
