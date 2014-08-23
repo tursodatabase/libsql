@@ -607,31 +607,41 @@ void sqlite3InvalidFunction(
 }
 
 /*
+** Create a new aggregate context for p and return a pointer to
+** its pMem->z element.
+*/
+static SQLITE_NOINLINE void *createAggContext(sqlite3_context *p, int nByte){
+  Mem *pMem = p->pMem;
+  assert( (pMem->flags & MEM_Agg)==0 );
+  if( nByte<=0 ){
+    sqlite3VdbeMemReleaseExternal(pMem);
+    pMem->flags = MEM_Null;
+    pMem->z = 0;
+  }else{
+    sqlite3VdbeMemGrow(pMem, nByte, 0);
+    pMem->flags = MEM_Agg;
+    pMem->u.pDef = p->pFunc;
+    if( pMem->z ){
+      memset(pMem->z, 0, nByte);
+    }
+  }
+  return (void*)pMem->z;
+}
+
+/*
 ** Allocate or return the aggregate context for a user function.  A new
 ** context is allocated on the first call.  Subsequent calls return the
 ** same context that was returned on prior calls.
 */
 void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
-  Mem *pMem;
   assert( p && p->pFunc && p->pFunc->xStep );
   assert( sqlite3_mutex_held(p->s.db->mutex) );
-  pMem = p->pMem;
   testcase( nByte<0 );
-  if( (pMem->flags & MEM_Agg)==0 ){
-    if( nByte<=0 ){
-      sqlite3VdbeMemReleaseExternal(pMem);
-      pMem->flags = MEM_Null;
-      pMem->z = 0;
-    }else{
-      sqlite3VdbeMemGrow(pMem, nByte, 0);
-      pMem->flags = MEM_Agg;
-      pMem->u.pDef = p->pFunc;
-      if( pMem->z ){
-        memset(pMem->z, 0, nByte);
-      }
-    }
+  if( (p->pMem->flags & MEM_Agg)==0 ){
+    return createAggContext(p, nByte);
+  }else{
+    return (void*)p->pMem->z;
   }
-  return (void*)pMem->z;
 }
 
 /*
