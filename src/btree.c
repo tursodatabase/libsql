@@ -645,9 +645,9 @@ static int SQLITE_NOINLINE saveCursorsOnList(BtCursor*,Pgno,BtCursor*);
 ** event that cursors are in need to being saved.
 */
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
+  BtCursor *p;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pExcept==0 || pExcept->pBt==pBt );
-  BtCursor *p;
   for(p=pBt->pCursor; p; p=p->pNext){
     if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ) break;
   }
