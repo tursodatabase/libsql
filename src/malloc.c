@@ -352,22 +352,20 @@ void *sqlite3ScratchMalloc(int n){
   assert( n>0 );
 
   sqlite3_mutex_enter(mem0.mutex);
+  sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
   if( mem0.nScratchFree && sqlite3GlobalConfig.szScratch>=n ){
     p = mem0.pScratchFree;
     mem0.pScratchFree = mem0.pScratchFree->pNext;
     mem0.nScratchFree--;
     sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, 1);
-    sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
     sqlite3_mutex_leave(mem0.mutex);
   }else{
-    if( sqlite3GlobalConfig.bMemstat ){
-      sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
-      n = mallocWithAlarm(n, &p);
-      if( p ) sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
+    sqlite3_mutex_leave(mem0.mutex);
+    p = sqlite3Malloc(n);
+    if( sqlite3GlobalConfig.bMemstat && p ){
+      sqlite3_mutex_enter(mem0.mutex);
+      sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, sqlite3MallocSize(p));
       sqlite3_mutex_leave(mem0.mutex);
-    }else{
-      sqlite3_mutex_leave(mem0.mutex);
-      p = sqlite3GlobalConfig.m.xMalloc(n);
     }
     sqlite3MemdebugSetType(p, MEMTYPE_SCRATCH);
   }
