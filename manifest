@@ -1,5 +1,5 @@
-C Patch\sthe\ssqlite3PagerWrite()\smethod\sin\sthe\sPager\sto\srun\sa\sbit\sfaster.
-D 2014-08-24T01:32:43.379
+C The\ssqlite3VdbeChangeEncoding()\sroutine\sgoes\sabout\s3x\sfaster\sif\sthe\nsqlite3VdbeMemTranslate()\ssubroutine\sis\snot\sinlined.
+D 2014-08-24T02:53:23.646
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -281,7 +281,7 @@ F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c ae45399d6252b4d736af43bee1576ce7bff86aec
 F src/trigger.c 4bddd12803275aa98f1c7ce0118fceb02b2167f6
 F src/update.c ea336ce7b8b3fc5e316ba8f082e6445babf81059
-F src/utf.c a0314e637768a030e6e84a957d0c4f6ba910cc05
+F src/utf.c 77abb5e6d27f3d236e50f7c8fff1d00e15262359
 F src/util.c 068dcd26354a3898ccc64ad5c4bdb95a7a15d33a
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
 F src/vdbe.c 52ee5d589cbb171a8b096f210b69deb4a33c4369
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 0371cc3bb07448bcd64fd671f3e71bb7f30deb4d
-R 2fe545d9c9446b3adf94c91625adc119
+P c63311e2f3344363a5ed99838fb5850004eaee30
+R 195c0a9c31ce9f43b0d460b5ca896167
 U drh
-Z 79e99766e8b4bdebd57118e507ef67dc
+Z 7685d4da1bf506f63008f6a3d5e2d0bd
