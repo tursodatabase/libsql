@@ -1783,6 +1783,12 @@ case OP_RealAffinity: {                  /* in1 */
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
 case OP_Cast: {                  /* in1 */
+  assert( pOp->p2>=SQLITE_AFF_TEXT && pOp->p2<=SQLITE_AFF_REAL );
+  testcase( pOp->p2==SQLITE_AFF_TEXT );
+  testcase( pOp->p2==SQLITE_AFF_NONE );
+  testcase( pOp->p2==SQLITE_AFF_NUMERIC );
+  testcase( pOp->p2==SQLITE_AFF_INTEGER );
+  testcase( pOp->p2==SQLITE_AFF_REAL );
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
   rc = ExpandBlob(pIn1);
