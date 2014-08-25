@@ -1,5 +1,5 @@
-C In\scases\swhere\sstat4\sdata\sis\savailable\sbut\scannot\sbe\sused\sbecause\sthe\srhs\sof\sa\srange\sconstraint\sis\stoo\scomplex\sa\sexpression,\sfall\sback\sto\susing\sthe\sdefault\sestimates\sfor\snumber\sof\srows\sscanned.
-D 2014-08-25T18:29:38.998
+C Allow\sCAST\sexpressions\sand\sunary\s"+"\soperators\sto\sbe\sused\sin\sthe\sDEFAULT\nargument\sof\san\sALTER\sTABLE\sADD\sCOLUMN\sand\sto\sbe\sunderstand\son\sthe\sRHS\sof\nrange\sconstraints\sinterpreted\sby\sSTAT3/4.\s\sThis\sinvolves\sa\srewrite\sof\sthe\nimplementation\sof\sthe\sCAST\soperator.
+D 2014-08-25T20:11:52.974
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -177,7 +177,7 @@ F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
 F src/delete.c 5adcd322c6b08fc25d215d780ca62cebce66304d
-F src/expr.c f749009cf4a8534efb5e0d5cd7c9fb1fb0f2836c
+F src/expr.c 358634f4ddeeb4e69643cb6db5819104a7834c60
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 8d81a780ad78d16ec9082585758a8f1d6bf02ca3
 F src/func.c bbb724b74ed96ca42675a7274646a71dd52bcda7
@@ -284,13 +284,13 @@ F src/update.c ea336ce7b8b3fc5e316ba8f082e6445babf81059
 F src/utf.c 77abb5e6d27f3d236e50f7c8fff1d00e15262359
 F src/util.c 068dcd26354a3898ccc64ad5c4bdb95a7a15d33a
 F src/vacuum.c 3728d74919d4fb1356f9e9a13e27773db60b7179
-F src/vdbe.c 0fe4b47668b36a50bd9f7fd7b15cbeeb69d54b37
+F src/vdbe.c 2b3420d22410089b95a1555872dbc35183927a25
 F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
-F src/vdbeInt.h 20056cd59ff93ef9eb91009ece726d65dd7ed322
+F src/vdbeInt.h df58400454823954cfb241e5858f07f37fc1fd78
 F src/vdbeapi.c cda974083d7597f807640d344ffcf76d872201ce
 F src/vdbeaux.c dba006f67c9fd1b1d07ee7fb0fb38aa1905161d1
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 4c9d686da474957d2e78834f13cc5f141fe6b87f
+F src/vdbemem.c 5b5e296ac25f7458b6496fbee2756a087e8d569d
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -307,7 +307,7 @@ F test/all.test 6ff7b43c2b4b905c74dc4a813d201d0fa64c5783
 F test/alter.test 547dc2d292644301ac9a7dda22b319b74f9c08d2
 F test/alter2.test 7ea05c7d92ac99349a802ef7ada17294dd647060
 F test/alter3.test 49c9d9fba2b8fcdce2dedeca97bbf1f369cc548d
-F test/alter4.test d6c011fa0d6227abba762498cafbb607c9609e93
+F test/alter4.test c461150723ac957f3b2214aa0b11552cd72023ec
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/amatch1.test b5ae7065f042b7f4c1c922933f4700add50cdb9f
 F test/analyze.test 1772936d66471c65221e437b6d1999c3a03166c4
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 54164ce47cfc3ad5dd8797114e4ba78811f23bef
-R 2f8cc3122e94f945065c591b14dad548
-U dan
-Z ef14939a1b480c479e36ded151638132
+P e06dc6f0c35f87c44292c71677111b74f073a5c4
+R 9f2d5499974a5fb7517d1c1150241c64
+U drh
+Z 9fb020703498fe8e63fa568755e6ee4e

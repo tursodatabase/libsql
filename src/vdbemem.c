@@ -523,6 +523,51 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
 }
 
 /*
+** Cast the datatype of the value in pMem according to the affinity
+** "aff".  Casting is different from applying affinity in that a cast
+** is forced.  In other words, the value is converted into the desired
+** affinity even if that results in loss of data.  This routine is
+** used (for example) to implement the SQL "cast()" operator.
+*/
+void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
+  if( pMem->flags & MEM_Null ) return;
+  switch( aff ){
+    case SQLITE_AFF_NONE: {   /* Really a cast to BLOB */
+      if( (pMem->flags & MEM_Blob)==0 ){
+        sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
+        assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
+        MemSetTypeFlag(pMem, MEM_Blob);
+      }else{
+        pMem->flags &= ~(MEM_TypeMask&~MEM_Blob);
+      }
+      break;
+    }
+    case SQLITE_AFF_NUMERIC: {
+      sqlite3VdbeMemNumerify(pMem);
+      break;
+    }
+    case SQLITE_AFF_INTEGER: {
+      sqlite3VdbeMemIntegerify(pMem);
+      break;
+    }
+    case SQLITE_AFF_REAL: {
+      sqlite3VdbeMemRealify(pMem);
+      break;
+    }
+    default: {
+      assert( aff==SQLITE_AFF_TEXT );
+      assert( MEM_Str==(MEM_Blob>>3) );
+      pMem->flags |= (pMem->flags&MEM_Blob)>>3;
+      sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
+      assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
+      pMem->flags &= ~(MEM_Int|MEM_Real|MEM_Blob|MEM_Zero);
+      break;
+    }
+  }
+}
+
+
+/*
 ** Delete any previous value and set the value stored in *pMem to NULL.
 */
 void sqlite3VdbeMemSetNull(Mem *pMem){
@@ -1015,8 +1060,18 @@ static int valueFromExpr(
     *ppVal = 0;
     return SQLITE_OK;
   }
-  op = pExpr->op;
+  while( (op = pExpr->op)==TK_UPLUS ) pExpr = pExpr->pLeft;
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
+
+  if( op==TK_CAST ){
+    u8 aff = sqlite3AffinityType(pExpr->u.zToken,0);
+    rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
+    if( rc==SQLITE_OK && *ppVal ){
+      sqlite3VdbeMemCast(*ppVal, aff, SQLITE_UTF8);
+      sqlite3ValueApplyAffinity(*ppVal, affinity, SQLITE_UTF8);
+    }
+    return rc;
+  }
 
   /* Handle negative integers in a single step.  This is needed in the
   ** case when the value is -9223372036854775808.
