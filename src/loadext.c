@@ -749,7 +749,7 @@ void sqlite3AutoLoadExtensions(sqlite3 *db){
     sqlite3_mutex_leave(mutex);
     zErrmsg = 0;
     if( xInit && (rc = xInit(db, &zErrmsg, &sqlite3Apis))!=0 ){
-      sqlite3Error(db, rc,
+      sqlite3ErrorWithMsg(db, rc,
             "automatic extension loading failed: %s", zErrmsg);
       go = 0;
     }

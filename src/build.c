@@ -286,16 +286,14 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
 Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   Table *p = 0;
   int i;
-  int nName;
   assert( zName!=0 );
-  nName = sqlite3Strlen30(zName);
   /* All mutexes are required for schema access.  Make sure we hold them. */
   assert( zDatabase!=0 || sqlite3BtreeHoldsAllMutexes(db) );
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
     assert( sqlite3SchemaMutexHeld(db, j, 0) );
-    p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName, nName);
+    p = sqlite3HashFind(&db->aDb[j].pSchema->tblHash, zName);
     if( p ) break;
   }
   return p;
@@ -378,7 +376,6 @@ Table *sqlite3LocateTableItem(
 Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
-  int nName = sqlite3Strlen30(zName);
   /* All mutexes are required for schema access.  Make sure we hold them. */
   assert( zDb!=0 || sqlite3BtreeHoldsAllMutexes(db) );
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
@@ -387,7 +384,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
     assert( pSchema );
     if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zName) ) continue;
     assert( sqlite3SchemaMutexHeld(db, j, 0) );
-    p = sqlite3HashFind(&pSchema->idxHash, zName, nName);
+    p = sqlite3HashFind(&pSchema->idxHash, zName);
     if( p ) break;
   }
   return p;
@@ -415,13 +412,11 @@ static void freeIndex(sqlite3 *db, Index *p){
 */
 void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
   Index *pIndex;
-  int len;
   Hash *pHash;
 
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   pHash = &db->aDb[iDb].pSchema->idxHash;
-  len = sqlite3Strlen30(zIdxName);
-  pIndex = sqlite3HashInsert(pHash, zIdxName, len, 0);
+  pIndex = sqlite3HashInsert(pHash, zIdxName, 0);
   if( ALWAYS(pIndex) ){
     if( pIndex->pTable->pIndex==pIndex ){
       pIndex->pTable->pIndex = pIndex->pNext;
@@ -581,7 +576,7 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
     if( !db || db->pnBytesFreed==0 ){
       char *zName = pIndex->zName; 
       TESTONLY ( Index *pOld = ) sqlite3HashInsert(
-         &pIndex->pSchema->idxHash, zName, sqlite3Strlen30(zName), 0
+         &pIndex->pSchema->idxHash, zName, 0
       );
       assert( db==0 || sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
       assert( pOld==pIndex || pOld==0 );
@@ -624,8 +619,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
   testcase( zTabName[0]==0 );  /* Zero-length table names are allowed */
   pDb = &db->aDb[iDb];
-  p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName,
-                        sqlite3Strlen30(zTabName),0);
+  p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName, 0);
   sqlite3DeleteTable(db, p);
   db->flags |= SQLITE_InternChanges;
 }
@@ -1947,8 +1941,7 @@ void sqlite3EndTable(
     Table *pOld;
     Schema *pSchema = p->pSchema;
     assert( sqlite3SchemaMutexHeld(db, iDb, 0) );
-    pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName,
-                             sqlite3Strlen30(p->zName),p);
+    pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName, p);
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       db->mallocFailed = 1;
@@ -2598,7 +2591,7 @@ void sqlite3CreateForeignKey(
 
   assert( sqlite3SchemaMutexHeld(db, 0, p->pSchema) );
   pNextTo = (FKey *)sqlite3HashInsert(&p->pSchema->fkeyHash, 
-      pFKey->zTo, sqlite3Strlen30(pFKey->zTo), (void *)pFKey
+      pFKey->zTo, (void *)pFKey
   );
   if( pNextTo==pFKey ){
     db->mallocFailed = 1;
@@ -3146,8 +3139,7 @@ Index *sqlite3CreateIndex(
     Index *p;
     assert( sqlite3SchemaMutexHeld(db, 0, pIndex->pSchema) );
     p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
-                          pIndex->zName, sqlite3Strlen30(pIndex->zName),
-                          pIndex);
+                          pIndex->zName, pIndex);
     if( p ){
       assert( p==pIndex );  /* Malloc must have failed */
       db->mallocFailed = 1;

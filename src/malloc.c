@@ -352,22 +352,20 @@ void *sqlite3ScratchMalloc(int n){
   assert( n>0 );
 
   sqlite3_mutex_enter(mem0.mutex);
+  sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
   if( mem0.nScratchFree && sqlite3GlobalConfig.szScratch>=n ){
     p = mem0.pScratchFree;
     mem0.pScratchFree = mem0.pScratchFree->pNext;
     mem0.nScratchFree--;
     sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_USED, 1);
-    sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
     sqlite3_mutex_leave(mem0.mutex);
   }else{
-    if( sqlite3GlobalConfig.bMemstat ){
-      sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
-      n = mallocWithAlarm(n, &p);
-      if( p ) sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, n);
+    sqlite3_mutex_leave(mem0.mutex);
+    p = sqlite3Malloc(n);
+    if( sqlite3GlobalConfig.bMemstat && p ){
+      sqlite3_mutex_enter(mem0.mutex);
+      sqlite3StatusAdd(SQLITE_STATUS_SCRATCH_OVERFLOW, sqlite3MallocSize(p));
       sqlite3_mutex_leave(mem0.mutex);
-    }else{
-      sqlite3_mutex_leave(mem0.mutex);
-      p = sqlite3GlobalConfig.m.xMalloc(n);
     }
     sqlite3MemdebugSetType(p, MEMTYPE_SCRATCH);
   }
@@ -480,6 +478,14 @@ void sqlite3_free(void *p){
 }
 
 /*
+** Add the size of memory allocation "p" to the count in
+** *db->pnBytesFreed.
+*/
+static SQLITE_NOINLINE void measureAllocationSize(sqlite3 *db, void *p){
+  *db->pnBytesFreed += sqlite3DbMallocSize(db,p);
+}
+
+/*
 ** Free memory that might be associated with a particular database
 ** connection.
 */
@@ -488,7 +494,7 @@ void sqlite3DbFree(sqlite3 *db, void *p){
   if( p==0 ) return;
   if( db ){
     if( db->pnBytesFreed ){
-      *db->pnBytesFreed += sqlite3DbMallocSize(db, p);
+      measureAllocationSize(db, p);
       return;
     }
     if( isLookaside(db, p) ){
@@ -755,6 +761,14 @@ void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
   *pz = z;
 }
 
+/*
+** Take actions at the end of an API call to indicate an OOM error
+*/
+static SQLITE_NOINLINE int apiOomError(sqlite3 *db){
+  db->mallocFailed = 0;
+  sqlite3Error(db, SQLITE_NOMEM);
+  return SQLITE_NOMEM;
+}
 
 /*
 ** This function must be called before exiting any API function (i.e. 
@@ -775,10 +789,9 @@ int sqlite3ApiExit(sqlite3* db, int rc){
   ** is unsafe, as is the call to sqlite3Error().
   */
   assert( !db || sqlite3_mutex_held(db->mutex) );
-  if( db && (db->mallocFailed || rc==SQLITE_IOERR_NOMEM) ){
-    sqlite3Error(db, SQLITE_NOMEM, 0);
-    db->mallocFailed = 0;
-    rc = SQLITE_NOMEM;
+  if( db==0 ) return rc & 0xff;
+  if( db->mallocFailed || rc==SQLITE_IOERR_NOMEM ){
+    return apiOomError(db);
   }
-  return rc & (db ? db->errMask : 0xff);
+  return rc & db->errMask;
 }

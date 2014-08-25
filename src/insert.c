@@ -1612,6 +1612,9 @@ void sqlite3CompleteInsertion(
 ** For a WITHOUT ROWID table, *piDataCur will be somewhere in the range
 ** of *piIdxCurs, depending on where the PRIMARY KEY index appears on the
 ** pTab->pIndex list.
+**
+** If pTab is a virtual table, then this routine is a no-op and the
+** *piDataCur and *piIdxCur values are left uninitialized.
 */
 int sqlite3OpenTableAndIndices(
   Parse *pParse,   /* Parsing context */
@@ -1630,9 +1633,9 @@ int sqlite3OpenTableAndIndices(
 
   assert( op==OP_OpenRead || op==OP_OpenWrite );
   if( IsVirtual(pTab) ){
-    assert( aToOpen==0 );
-    *piDataCur = 0;
-    *piIdxCur = 1;
+    /* This routine is a no-op for virtual tables. Leave the output
+    ** variables *piDataCur and *piIdxCur uninitialized so that valgrind
+    ** can detect if they are used by mistake in the caller. */
     return 0;
   }
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);

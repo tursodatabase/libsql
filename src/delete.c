@@ -466,10 +466,11 @@ void sqlite3DeleteFrom(
     ** triggers.
     */
     if( !isView ){
+      testcase( IsVirtual(pTab) );
       sqlite3OpenTableAndIndices(pParse, pTab, OP_OpenWrite, iTabCur, aToOpen,
                                  &iDataCur, &iIdxCur);
-      assert( pPk || iDataCur==iTabCur );
-      assert( pPk || iIdxCur==iDataCur+1 );
+      assert( pPk || IsVirtual(pTab) || iDataCur==iTabCur );
+      assert( pPk || IsVirtual(pTab) || iIdxCur==iDataCur+1 );
     }
   
     /* Set up a loop over the rowids/primary-keys that were found in the
@@ -477,7 +478,8 @@ void sqlite3DeleteFrom(
     */
     if( okOnePass ){
       /* Just one row.  Hence the top-of-loop is a no-op */
-      assert( nKey==nPk ); /* OP_Found will use an unpacked key */
+      assert( nKey==nPk );  /* OP_Found will use an unpacked key */
+      assert( !IsVirtual(pTab) );
       if( aToOpen[iDataCur-iTabCur] ){
         assert( pPk!=0 );
         sqlite3VdbeAddOp4Int(v, OP_NotFound, iDataCur, addrBypass, iKey, nKey);

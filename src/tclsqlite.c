@@ -2381,7 +2381,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
     if( rc==TCL_OK ){
       rc = createIncrblobChannel(
-          interp, pDb, zDb, zTable, zColumn, iRow, isReadonly
+          interp, pDb, zDb, zTable, zColumn, (sqlite3_int64)iRow, isReadonly
       );
     }
 #endif
