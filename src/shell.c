@@ -3817,10 +3817,10 @@ static void main_init(ShellState *data) {
   data->showHeader = 0;
   sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
+  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
+  sqlite3_config(SQLITE_CONFIG_WORKER_THREADS, 64);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
-  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
-  sqlite3_config(SQLITE_CONFIG_WORKER_THREADS, 4);
 }
 
 /*

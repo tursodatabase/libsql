@@ -1012,6 +1012,7 @@ struct sqlite3 {
   u8 suppressErr;               /* Do not issue error messages if true */
   u8 vtabOnConflict;            /* Value to return for s3_vtab_on_conflict() */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
+  u8 mxWorker;                  /* Maximum number of worker threads */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */

@@ -1,5 +1,5 @@
-C Merge\sthe\srecent\sperformance\senhancements\simplemented\son\strunk\sinto\sthe\nthreads\sbranch.
-D 2014-08-25T13:27:02.036
+C Query\sor\schange\sthe\smaximum\snumber\sof\sworker\sthreads\sallowed\son\seach\ndatabase\sconnection\sseparately\susing\sthe\s"PRAGMA\sthreads"\scommand.
+D 2014-08-25T15:13:22.455
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -217,18 +217,18 @@ F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c da602c5447051705cab41604bf3276815eb569d0
 F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
 F src/pcache1.c c5af6403a55178c9d1c09e4f77b0f9c88822762c
-F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
+F src/pragma.c 4ed8bc86d1a9ee336e66bc441b30abb702f4de33
 F src/prepare.c 3842c1dfc0b053458e3adcf9f6efc48e03e3fe3d
 F src/printf.c 00986c86ddfffefc2fd3c73667ff51b3b9709c74
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c f8b0b6c43bee15f4e239ead1c9c9e3009e507e39
-F src/shell.c 200772eebd7b0fcf2072fc3dbd95d694389d5efa
+F src/shell.c 6dab215a30f7ca4d5fc31338c44b007bb6ef0dee
 F src/sqlite.h.in fef15a64d1358f5c365bd3f46f4c1915d5a5e5f0
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h 80d0bb053ef728896142c4e808bfcdc49494e9be
+F src/sqliteInt.h d8eb2d4d4ce26365dc9d49efee3bc880618e87c2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -292,7 +292,7 @@ F src/vdbeapi.c cda974083d7597f807640d344ffcf76d872201ce
 F src/vdbeaux.c cef5d34a64ae3a65b56d96d3fd663246ec8e1c36
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
 F src/vdbemem.c 4c9d686da474957d2e78834f13cc5f141fe6b87f
-F src/vdbesort.c b9a830685826c057cfd41993902a5afc6fe436e1
+F src/vdbesort.c 3a76f51efdf0790fd3d26afabdd81e0a21f52ae7
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
@@ -1158,7 +1158,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh 5dc5010e2e748a9e1bba67baca5956a2c2deda7b
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl 78a77b2c554d534c6f2dc903130186ed15715460
+F tool/mkpragmatab.tcl cce51d8f60c7f145d8fccabe6b5dfdedf31c5f5c
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 88a1e3b0c769773fb7a9ebb363ffc603a4ac21d8
 F tool/mksqlite3c.tcl e72c0c97fe1a105fa9616483e652949be2199fe6
@@ -1193,7 +1193,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 05807c4122505567ec64fb2d142077f48a0a10b1 54164ce47cfc3ad5dd8797114e4ba78811f23bef
-R c157557aea90a1674d041ac0f1de2f68
+P dfdc900f5d1a31ee5c5f35a630c4a8253e69093b
+R 4c161b4070e5a7022237a28172d6e331
 U drh
-Z 10ad80e0aa78a5fbf32d4d843030da4f
+Z 1c68bfb86ec54e7d60991aea6df8a67a

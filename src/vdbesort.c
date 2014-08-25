@@ -795,8 +795,10 @@ int sqlite3VdbeSorterInit(
   int rc = SQLITE_OK;
 #if SQLITE_MAX_WORKER_THREADS==0
 # define nWorker 0
+#elif SQLITE_MAX_WORKER_THREADS>=SORTER_MAX_MERGE_COUNT
+  int nWorker = MIN(SORTER_MAX_MERGE_COUNT-1, db->mxWorker);
 #else
-  int nWorker = (sqlite3GlobalConfig.bCoreMutex?sqlite3GlobalConfig.nWorker:0);
+  int nWorker = db->mxWorker;
 #endif
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
