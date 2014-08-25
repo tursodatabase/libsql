@@ -1,5 +1,5 @@
-C Allow\sCAST\sexpressions\sand\sunary\s"+"\soperators\sto\sbe\sused\sin\sthe\sDEFAULT\nargument\sof\san\sALTER\sTABLE\sADD\sCOLUMN\sand\sto\sbe\sunderstand\son\sthe\sRHS\sof\nrange\sconstraints\sinterpreted\sby\sSTAT3/4.\s\sThis\sinvolves\sa\srewrite\sof\sthe\nimplementation\sof\sthe\sCAST\soperator.
-D 2014-08-25T20:11:52.974
+C Test\scases\sadded\sfor\susing\sunary\s"+"\sand\sCAST\soperators\son\sthe\sRHS\sof\srange\nconstraints\sand\sverifying\sthat\sSTAT3/4\scan\suse\sthose\sconstraints.
+D 2014-08-25T20:21:07.683
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -318,7 +318,7 @@ F test/analyze6.test f1c552ce39cca4ec922a7e4e0e5d0203d6b3281f
 F test/analyze7.test bb1409afc9e8629e414387ef048b8e0e3e0bdc4f
 F test/analyze8.test 093d15c1c888eed5034304a98c992f7360130b88
 F test/analyze9.test 72795c8113604b5dcd47a1498a61d6d7fb5d041a
-F test/analyzeA.test 1a5c40079894847976d983ca39c707aaa44b6944
+F test/analyzeA.test 3335697f6700c7052295cfd0067fc5b2aacddf9a
 F test/analyzeB.test 8bf35ee0a548aea831bf56762cb8e7fdb1db083d
 F test/analyzeC.test 555a6cc388b9818b6eda6df816f01ce0a75d3a93
 F test/async.test 1d0e056ba1bb9729283a0f22718d3a25e82c277b
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e06dc6f0c35f87c44292c71677111b74f073a5c4
-R 9f2d5499974a5fb7517d1c1150241c64
+P 91d8a8d0b792ea5c4fe68fd9caaf3345eddea486
+R 12fb957b1fcac5280a480acdbd82e25d
 U drh
-Z 9fb020703498fe8e63fa568755e6ee4e
+Z dc13f49ba965d3549e28167f01462351
