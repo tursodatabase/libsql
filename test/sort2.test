@@ -22,9 +22,8 @@ foreach {tn script} {
   1 { }
   2 {
     catch { db close }
-    sqlite3_shutdown
-    sqlite3_config_worker_threads 7
     reset_db
+    catch { db eval {PRAGMA threads=7} }
   }
 } {
 
@@ -76,13 +75,6 @@ foreach {tn script} {
   } {
     200000 100 200000 100 200000 100 200000 100 200000 100
   }
-  
-  db close
-  sqlite3_shutdown
-  sqlite3_config_worker_threads 0
-  sqlite3_initialize
-
 }
 
 finish_test
-

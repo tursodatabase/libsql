@@ -19,11 +19,7 @@ source $testdir/tester.tcl
 set testprefix sort4
 
 # Configure the sorter to use 3 background threads.
-catch { db close }
-sqlite3_shutdown
-sqlite3_config_worker_threads 3
-sqlite3_initialize
-reset_db
+db eval {PRAGMA threads=3}
 
 # Minimum number of seconds to run for. If the value is 0, each test
 # is run exactly once. Otherwise, tests are repeated until the timeout
@@ -190,9 +186,4 @@ for {set t 2} {1} {incr tn} {
   do_test "$testprefix-([expr $iTimeLimit-$iNow] seconds remain)" {} {}
 }
 
-catch { db close }
-sqlite3_shutdown
-sqlite3_config_worker_threads 0
-sqlite3_initialize
 finish_test
-

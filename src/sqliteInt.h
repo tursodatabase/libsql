@@ -441,9 +441,10 @@
 */
 #if SQLITE_TEMP_STORE==3
 # undef SQLITE_MAX_WORKER_THREADS
+# define SQLITE_MAX_WORKER_THREADS 0
 #endif
 #ifndef SQLITE_MAX_WORKER_THREADS
-# define SQLITE_MAX_WORKER_THREADS 0
+# define SQLITE_MAX_WORKER_THREADS 4
 #endif
 #ifndef SQLITE_DEFAULT_WORKER_THREADS
 # define SQLITE_DEFAULT_WORKER_THREADS 0
@@ -2764,7 +2765,6 @@ struct Sqlite3Config {
   int nPage;                        /* Number of pages in pPage[] */
   int mxParserStack;                /* maximum depth of the parser stack */
   int sharedCacheEnabled;           /* true if shared-cache mode enabled */
-  int nWorker;                      /* Number of worker threads to use */
   /* The above might be initialized to non-zero.  The following need to always
   ** initially be zero, however. */
   int isInit;                       /* True after initialization has finished */

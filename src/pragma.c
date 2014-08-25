@@ -2292,7 +2292,7 @@ void sqlite3Pragma(
      && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK
      && N>=0
     ){
-      if( N>sqlite3GlobalConfig.nWorker ) N = sqlite3GlobalConfig.nWorker;
+      if( N>SQLITE_MAX_WORKER_THREADS ) N = SQLITE_MAX_WORKER_THREADS;
       db->mxWorker = N&0xff;
     }
     returnSingleInt(pParse, "soft_heap_limit",  db->mxWorker);

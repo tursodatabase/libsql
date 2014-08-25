@@ -30,9 +30,7 @@ foreach {tn mmap_limit nWorker tmpstore threadsmode fakeheap lookaside} {
 } {
   if {$sqlite_options(threadsafe)} { set threadsmode singlethread }
 
-  catch { db close }
-  sqlite3_shutdown
-  sqlite3_config_worker_threads $nWorker
+  db eval "PRAGMA threads=$nWorker"
   sqlite3_config $threadsmode
   if { $lookaside } {
     sqlite3_config_lookaside 100 500
@@ -110,7 +108,6 @@ foreach {tn mmap_limit nWorker tmpstore threadsmode fakeheap lookaside} {
 
 catch { db close }
 sqlite3_shutdown
-sqlite3_config_worker_threads 0
 set t(0) singlethread
 set t(1) multithread
 set t(2) serialized
@@ -166,4 +163,3 @@ do_faultsim_test 5.1 -faults oom* -body {
 }
 
 finish_test
-

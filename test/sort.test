@@ -544,7 +544,6 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap softheaplimit} {
 } {
   db close
   sqlite3_shutdown
-  sqlite3_config_worker_threads $nWorker
   if {$coremutex} {
     sqlite3_config multithread
   } else {
@@ -556,7 +555,8 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap softheaplimit} {
 
   reset_db
   sqlite3_test_control SQLITE_TESTCTRL_SORTER_MMAP db $mmap_limit
-  execsql "PRAGMA temp_store = $tmpstore"
+  execsql "PRAGMA temp_store = $tmpstore; PRAGMA threads = $nWorker"
+  
   
   set ten [string repeat X 10300]
   set one [string repeat y   200]
@@ -602,7 +602,6 @@ foreach {tn mmap_limit nWorker tmpstore coremutex fakeheap softheaplimit} {
 
 db close
 sqlite3_shutdown
-sqlite3_config_worker_threads 0
 set t(0) singlethread
 set t(1) multithread
 set t(2) serialized
@@ -637,4 +636,3 @@ do_execsql_test 17.1 {
 } {}
 
 finish_test
-

@@ -795,10 +795,16 @@ int sqlite3VdbeSorterInit(
   int rc = SQLITE_OK;
 #if SQLITE_MAX_WORKER_THREADS==0
 # define nWorker 0
-#elif SQLITE_MAX_WORKER_THREADS>=SORTER_MAX_MERGE_COUNT
-  int nWorker = MIN(SORTER_MAX_MERGE_COUNT-1, db->mxWorker);
 #else
-  int nWorker = db->mxWorker;
+  int nWorker = sqlite3TempInMemory(db) ? 0 : db->mxWorker ;
+#endif
+
+  /* Do not allow the total number of threads (main thread + all workers)
+  ** to exceed the maximum merge count */
+#if SQLITE_MAX_WORKER_THREADS>=SORTER_MAX_MERGE_COUNT
+  if( nWorker>=SORTER_MAX_MERGE_COUNT ){
+    nWorker = SORTER_MAX_MERGE_COUNT-1;
+  }
 #endif
 
   assert( pCsr->pKeyInfo && pCsr->pBt==0 );
