@@ -1,5 +1,5 @@
-C Add\san\s"automerge=0"\smode\sthat\sdisables\sauto-merging\sand\sfalls\sback\sto\sfts4-style\scrisis\smerges.
-D 2014-08-18T19:30:01.020
+C Add\sdocumentation\sfor\stokenizer\sapi\sto\sfts5.h.\sAlso\sadd\sa\sscript\sto\sextract\sextension\sAPI\sdocs\sand\sformat\sthem\sas\shtml.
+D 2014-08-25T19:58:54.559
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in b03432313a3aad96c706f8164fb9f5307eaf19f5
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -103,8 +103,9 @@ F ext/fts3/tool/fts3view.c 6cfc5b67a5f0e09c0d698f9fd012c784bfaa9197
 F ext/fts3/unicode/CaseFolding.txt 8c678ca52ecc95e16bc7afc2dbf6fc9ffa05db8c
 F ext/fts3/unicode/UnicodeData.txt cd07314edb62d49fde34debdaf92fa2aa69011e7
 F ext/fts3/unicode/mkunicode.tcl dc6f268eb526710e2c6e496c372471d773d0c368
+F ext/fts5/extract_api_docs.tcl c30b9aa60260b3a208b0b89df3d8dbf92c6d460c
 F ext/fts5/fts5.c dd56525d45b354218b86c9accab2ed12ea4b4f4f
-F ext/fts5/fts5.h 1c501ea7c5c686b8aa7fba0382badc5df6026aa7
+F ext/fts5/fts5.h 064f9bf705e59d23abaa2191b3950604dad98b9f
 F ext/fts5/fts5Int.h bc6fa374a42c6121ae8276b20f141d6cd6d8d9f9
 F ext/fts5/fts5_aux.c 31e581413ecab0962ce2b37468f9f658f36f4b0e
 F ext/fts5/fts5_buffer.c 248c61ac9fec001602efc72a45704f3b8d367c00
@@ -1202,7 +1203,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 05dfdad445b22f375b71abe0b1fa1bf7ca331be7
-R a4a2c1b7e4d79c30cafb117d4f31d356
+P 2397404e152b908d838e6491294b263b05943b3f
+R f1a35566903c71a22822fa6dd6758208
 U dan
-Z a836ac39870a35d2f8436dd5e99c8845
+Z 8c301746cf7784949ad4603ff5681e4e
