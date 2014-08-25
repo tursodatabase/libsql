@@ -2220,6 +2220,7 @@ static int whereRangeScanEst(
           iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
           if( iNew>iLower ) iLower = iNew;
           nOut--;
+          pLower = 0;
         }
       }
 
@@ -2235,6 +2236,7 @@ static int whereRangeScanEst(
           iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
           if( iNew<iUpper ) iUpper = iNew;
           nOut--;
+          pUpper = 0;
         }
       }
 
@@ -2248,10 +2250,8 @@ static int whereRangeScanEst(
         if( nNew<nOut ){
           nOut = nNew;
         }
-        pLoop->nOut = (LogEst)nOut;
         WHERETRACE(0x10, ("range scan regions: %u..%u  est=%d\n",
                            (u32)iLower, (u32)iUpper, nOut));
-        return SQLITE_OK;
       }
     }else{
       int bDone = 0;
@@ -2262,8 +2262,8 @@ static int whereRangeScanEst(
 #else
   UNUSED_PARAMETER(pParse);
   UNUSED_PARAMETER(pBuilder);
-#endif
   assert( pLower || pUpper );
+#endif
   assert( pUpper==0 || (pUpper->wtFlags & TERM_VNULL)==0 );
   nNew = whereRangeAdjust(pLower, nOut);
   nNew = whereRangeAdjust(pUpper, nNew);
