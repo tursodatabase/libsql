@@ -1678,21 +1678,6 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
 }
 
 /*
-** Find a page in the hash table given its page number. Return
-** a pointer to the page or NULL if the requested page is not 
-** already in memory.
-*/
-static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
-  PgHdr *p = 0;                     /* Return value */
-
-  /* It is not possible for a call to PcacheFetch() with createFlag==0 to
-  ** fail, since no attempt to allocate dynamic memory will be made.
-  */
-  (void)sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &p);
-  return p;
-}
-
-/*
 ** Discard the entire contents of the in-memory page-cache.
 */
 static void pager_reset(Pager *pPager){
@@ -1984,7 +1969,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster, int bCommit){
 #ifdef SQLITE_CHECK_PAGES
   sqlite3PcacheIterateDirty(pPager->pPCache, pager_set_pagehash);
   if( pPager->dbSize==0 && sqlite3PcacheRefCount(pPager->pPCache)>0 ){
-    PgHdr *p = pager_lookup(pPager, 1);
+    PgHdr *p = sqlite3PagerLookup(pPager, 1);
     if( p ){
       p->pageHash = 0;
       sqlite3PagerUnrefNotNull(p);
@@ -2263,7 +2248,7 @@ static int pager_playback_one_page(
   if( pagerUseWal(pPager) ){
     pPg = 0;
   }else{
-    pPg = pager_lookup(pPager, pgno);
+    pPg = sqlite3PagerLookup(pPager, pgno);
   }
   assert( pPg || !MEMDB );
   assert( pPager->eState!=PAGER_OPEN || pPg==0 );
@@ -5434,7 +5419,6 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
   assert( pPager!=0 );
   assert( pgno!=0 );
   assert( pPager->pPCache!=0 );
-  assert( pPager->eState>=PAGER_READER && pPager->eState!=PAGER_ERROR );
   sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &pPg);
   return pPg;
 }
@@ -5833,7 +5817,7 @@ static SQLITE_NOINLINE int pagerWriteLargeSector(PgHdr *pPg){
           sqlite3PagerUnrefNotNull(pPage);
         }
       }
-    }else if( (pPage = pager_lookup(pPager, pg))!=0 ){
+    }else if( (pPage = sqlite3PagerLookup(pPager, pg))!=0 ){
       if( pPage->flags&PGHDR_NEED_SYNC ){
         needSync = 1;
       }
@@ -5850,7 +5834,7 @@ static SQLITE_NOINLINE int pagerWriteLargeSector(PgHdr *pPg){
   if( rc==SQLITE_OK && needSync ){
     assert( !MEMDB );
     for(ii=0; ii<nPage; ii++){
-      PgHdr *pPage = pager_lookup(pPager, pg1+ii);
+      PgHdr *pPage = sqlite3PagerLookup(pPager, pg1+ii);
       if( pPage ){
         pPage->flags |= PGHDR_NEED_SYNC;
         sqlite3PagerUnrefNotNull(pPage);
@@ -6782,7 +6766,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** for the page moved there.
   */
   pPg->flags &= ~PGHDR_NEED_SYNC;
-  pPgOld = pager_lookup(pPager, pgno);
+  pPgOld = sqlite3PagerLookup(pPager, pgno);
   assert( !pPgOld || pPgOld->nRef==1 );
   if( pPgOld ){
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
