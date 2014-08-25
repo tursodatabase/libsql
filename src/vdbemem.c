@@ -121,7 +121,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
       pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
     if( pMem->zMalloc==0 ){
-      VdbeMemRelease(pMem);
+      VdbeMemReleaseExtern(pMem);
       pMem->z = 0;
       pMem->flags = MEM_Null;  
       return SQLITE_NOMEM;
@@ -300,6 +300,9 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 ** If the memory cell contains a string value that must be freed by
 ** invoking an external callback, free it now. Calling this function
 ** does not free any Mem.zMalloc buffer.
+**
+** The VdbeMemReleaseExtern() macro invokes this routine if only if there
+** is work for this routine to do.
 */
 void sqlite3VdbeMemReleaseExternal(Mem *p){
   assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
@@ -320,19 +323,37 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 }
 
 /*
+** Release memory held by the Mem p, both external memory cleared
+** by p->xDel and memory in p->zMalloc.
+**
+** This is a helper routine invoked by sqlite3VdbeMemRelease() in
+** the uncommon case when there really is memory in p that is
+** need of freeing.
+*/
+static SQLITE_NOINLINE void vdbeMemRelease(Mem *p){
+  if( VdbeMemDynamic(p) ){
+    sqlite3VdbeMemReleaseExternal(p);
+  }
+  if( p->zMalloc ){
+    sqlite3DbFree(p->db, p->zMalloc);
+    p->zMalloc = 0;
+  }
+  p->z = 0;
+}
+
+/*
 ** Release any memory held by the Mem. This may leave the Mem in an
 ** inconsistent state, for example with (Mem.z==0) and
 ** (Mem.flags==MEM_Str).
 */
 void sqlite3VdbeMemRelease(Mem *p){
   assert( sqlite3VdbeCheckMemInvariants(p) );
-  VdbeMemRelease(p);
-  if( p->zMalloc ){
-    sqlite3DbFree(p->db, p->zMalloc);
-    p->zMalloc = 0;
+  if( VdbeMemDynamic(p) || p->zMalloc ){
+    vdbeMemRelease(p);
+  }else{
+    p->z = 0;
   }
-  p->z = 0;
-  assert( p->xDel==0 );  /* Zeroed by VdbeMemRelease() above */
+  assert( p->xDel==0 );
 }
 
 /*
@@ -638,7 +659,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  VdbeMemRelease(pTo);
+  VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->xDel = 0;
   if( (pFrom->flags&MEM_Static)==0 ){
@@ -656,7 +677,7 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  VdbeMemRelease(pTo);
+  VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
   pTo->xDel = 0;

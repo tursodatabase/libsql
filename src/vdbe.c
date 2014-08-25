@@ -640,7 +640,7 @@ int sqlite3VdbeExec(
       assert( pOp->p2<=(p->nMem-p->nCursor) );
       pOut = &aMem[pOp->p2];
       memAboutToChange(p, pOut);
-      VdbeMemRelease(pOut);
+      VdbeMemReleaseExtern(pOut);
       pOut->flags = MEM_Int;
     }
 
@@ -1079,7 +1079,7 @@ case OP_Null: {           /* out2-prerelease */
   while( cnt>0 ){
     pOut++;
     memAboutToChange(p, pOut);
-    VdbeMemRelease(pOut);
+    VdbeMemReleaseExtern(pOut);
     pOut->flags = nullFlag;
     cnt--;
   }
@@ -1165,7 +1165,7 @@ case OP_Move: {
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
-    VdbeMemRelease(pOut);
+    VdbeMemReleaseExtern(pOut);
     zMalloc = pOut->zMalloc;
     memcpy(pOut, pIn1, sizeof(Mem));
 #ifdef SQLITE_DEBUG
@@ -2538,7 +2538,7 @@ case OP_Column: {
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
-    VdbeMemRelease(pDest);
+    VdbeMemReleaseExtern(pDest);
     sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
     /* This branch happens only when content is on overflow pages */
