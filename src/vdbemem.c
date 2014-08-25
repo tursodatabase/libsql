@@ -409,7 +409,6 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
   }else if( flags & (MEM_Str|MEM_Blob) ){
     i64 value = 0;
     assert( pMem->z || pMem->n==0 );
-    testcase( pMem->z==0 );
     sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
     return value;
   }else{
@@ -1066,7 +1065,8 @@ static int valueFromExpr(
   if( op==TK_CAST ){
     u8 aff = sqlite3AffinityType(pExpr->u.zToken,0);
     rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
-    if( rc==SQLITE_OK && *ppVal ){
+    testcase( rc!=SQLITE_OK );
+    if( *ppVal ){
       sqlite3VdbeMemCast(*ppVal, aff, SQLITE_UTF8);
       sqlite3ValueApplyAffinity(*ppVal, affinity, SQLITE_UTF8);
     }

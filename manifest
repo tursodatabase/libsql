@@ -1,5 +1,5 @@
-C Test\scases\sadded\sfor\susing\sunary\s"+"\sand\sCAST\soperators\son\sthe\sRHS\sof\srange\nconstraints\sand\sverifying\sthat\sSTAT3/4\scan\suse\sthose\sconstraints.
-D 2014-08-25T20:21:07.683
+C Minor\schanges\sto\sthe\sCAST\slogic\sto\smake\sit\smore\stestable.
+D 2014-08-25T21:11:01.892
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vdbeInt.h df58400454823954cfb241e5858f07f37fc1fd78
 F src/vdbeapi.c cda974083d7597f807640d344ffcf76d872201ce
 F src/vdbeaux.c dba006f67c9fd1b1d07ee7fb0fb38aa1905161d1
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 5b5e296ac25f7458b6496fbee2756a087e8d569d
+F src/vdbemem.c 4e08ea087aea367dae7c45129b75487e0056e819
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 91d8a8d0b792ea5c4fe68fd9caaf3345eddea486
-R 12fb957b1fcac5280a480acdbd82e25d
+P 42505e5a810832442699ca54a46637c50e7f9e71
+R 64d7800c0b3c56b546428f1dfa98a8bd
 U drh
-Z dc13f49ba965d3549e28167f01462351
+Z 2062d1773620f0a49c6fdbe873cdd5f6
