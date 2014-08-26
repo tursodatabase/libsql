@@ -1,5 +1,5 @@
-C Add\san\sassert()\sand\sfive\stestcase()\smacros\sto\sthe\sOP_Cast\sopcode\simplementation\nto\shelp\sverify\sthat\sit\sis\sfully\stested.
-D 2014-08-25T22:37:19.150
+C Change\sthe\spage\scache\sso\sthat\sa\snew\ssqlite3_pcache\sobject\sis\sallocated\sas\nsoon\sas\sthe\spage\scache\sis\sopened,\snot\sdelayed\suntil\sthe\sfirst\sfetch\srequest.\nThis\sgive\sa\snoticable\sperformance\sboost.\s\sThe\sinterface\sbetween\spager\sand\nthe\spage\scache\shas\schanged\sslightly,\swhich\smight\sbreak\sZIPVFS.
+D 2014-08-26T15:06:49.829
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,11 +211,11 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bd7df3094a60915c148517504c76df4fca24e542
 F src/os_win.c d067fce558a5032e6e6afe62899e5397bf63cf3e
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c 53cc5e9d73afb74add79f49755c8ee240fbdbef7
+F src/pager.c 27fb89e62e0ccf10218805ed31315ccb2d56c0ce
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
-F src/pcache.c da602c5447051705cab41604bf3276815eb569d0
-F src/pcache.h a5e4f5d9f5d592051d91212c5949517971ae6222
+F src/pcache.c c216e4077449be57e9752a348490ffa467b85599
+F src/pcache.h 80a9c3f7d7b7080388e8654717cb45e7b99f14a6
 F src/pcache1.c c5af6403a55178c9d1c09e4f77b0f9c88822762c
 F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
 F src/prepare.c 3842c1dfc0b053458e3adcf9f6efc48e03e3fe3d
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1ad70ec550c004160d9c0c57e6c416812cdead5e
-R b751a4133861a7b502aa405ba96eea49
+P af364cce9da0961593ef876b646197f82df08ad5
+R e52a11dddfc2629a8399ec2b801365c3
 U drh
-Z 0bd8a75e39f468a6e4b9b4599a579487
+Z 1a77b3226c1f56b49ad44674617b7aa6

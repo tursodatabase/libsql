@@ -3622,7 +3622,7 @@ int sqlite3PagerSetPagesize(Pager *pPager, u32 *pPageSize, int nReserve){
       pPager->pageSize = pageSize;
       sqlite3PageFree(pPager->pTmpSpace);
       pPager->pTmpSpace = pNew;
-      sqlite3PcacheSetPageSize(pPager->pPCache, pageSize);
+      rc = sqlite3PcacheSetPageSize(pPager->pPCache, pageSize);
     }
   }
 
@@ -4385,7 +4385,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   **
   ** Spilling is also prohibited when in an error state since that could
   ** lead to database corruption.   In the current implementaton it 
-  ** is impossible for sqlite3PcacheFetch() to be called with createFlag==1
+  ** is impossible for sqlite3PcacheFetch() to be called with createFlag==3
   ** while in the error state, hence it is impossible for this routine to
   ** be called in the error state.  Nevertheless, we include a NEVER()
   ** test for the error state as a safeguard against future changes.
@@ -4721,21 +4721,22 @@ act_like_temp_file:
     testcase( rc!=SQLITE_OK );
   }
 
-  /* If an error occurred in either of the blocks above, free the 
-  ** Pager structure and close the file.
+  /* Initialize the PCache object. */
+  if( rc==SQLITE_OK ){
+    assert( nExtra<1000 );
+    nExtra = ROUND8(nExtra);
+    rc = sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
+                           !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
+  }
+
+  /* If an error occurred above, free the  Pager structure and close the file.
   */
   if( rc!=SQLITE_OK ){
-    assert( !pPager->pTmpSpace );
     sqlite3OsClose(pPager->fd);
+    sqlite3PageFree(pPager->pTmpSpace);
     sqlite3_free(pPager);
     return rc;
   }
-
-  /* Initialize the PCache object. */
-  assert( nExtra<1000 );
-  nExtra = ROUND8(nExtra);
-  sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
-                    !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
 
   PAGERTRACE(("OPEN %d %s\n", FILEHANDLEID(pPager->fd), pPager->zFilename));
   IOTRACE(("OPEN %p %s\n", pPager, pPager->zFilename))
@@ -5318,7 +5319,7 @@ int sqlite3PagerAcquire(
       }
     }
 
-    rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 1, ppPage);
+    rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 3, ppPage);
   }
 
   if( rc!=SQLITE_OK ){

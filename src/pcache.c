@@ -144,6 +144,17 @@ static void pcacheUnpin(PgHdr *p){
   }
 }
 
+/*
+** Compute the number of pages of cache requested.
+*/
+static int numberOfCachePages(PCache *p){
+  if( p->szCache>=0 ){
+    return p->szCache;
+  }else{
+    return (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
+  }
+}
+
 /*************************************************** General Interfaces ******
 **
 ** Initialize and shutdown the page cache subsystem. Neither of these 
@@ -176,7 +187,7 @@ int sqlite3PcacheSize(void){ return sizeof(PCache); }
 ** The caller discovers how much space needs to be allocated by 
 ** calling sqlite3PcacheSize().
 */
-void sqlite3PcacheOpen(
+int sqlite3PcacheOpen(
   int szPage,                  /* Size of every page */
   int szExtra,                 /* Extra space associated with each page */
   int bPurgeable,              /* True if pages are on backing store */
@@ -185,38 +196,37 @@ void sqlite3PcacheOpen(
   PCache *p                    /* Preallocated space for the PCache */
 ){
   memset(p, 0, sizeof(PCache));
-  p->szPage = szPage;
+  p->szPage = 1;
   p->szExtra = szExtra;
   p->bPurgeable = bPurgeable;
   p->eCreate = 2;
   p->xStress = xStress;
   p->pStress = pStress;
   p->szCache = 100;
+  return sqlite3PcacheSetPageSize(p, szPage);
 }
 
 /*
 ** Change the page size for PCache object. The caller must ensure that there
 ** are no outstanding page references when this function is called.
 */
-void sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
+int sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
   assert( pCache->nRef==0 && pCache->pDirty==0 );
-  if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
-    pCache->pCache = 0;
+  if( pCache->szPage ){
+    sqlite3_pcache *pNew;
+    pNew = sqlite3GlobalConfig.pcache2.xCreate(
+                szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
+    );
+    if( pNew==0 ) return SQLITE_NOMEM;
+    sqlite3GlobalConfig.pcache2.xCachesize(pNew, numberOfCachePages(pCache));
+    if( pCache->pCache ){
+      sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
+    }
+    pCache->pCache = pNew;
     pCache->pPage1 = 0;
+    pCache->szPage = szPage;
   }
-  pCache->szPage = szPage;
-}
-
-/*
-** Compute the number of pages of cache requested.
-*/
-static int numberOfCachePages(PCache *p){
-  if( p->szCache>=0 ){
-    return p->szCache;
-  }else{
-    return (int)((-1024*(i64)p->szCache)/(p->szPage+p->szExtra));
-  }
+  return SQLITE_OK;
 }
 
 /*
@@ -233,27 +243,9 @@ int sqlite3PcacheFetch(
   int eCreate;
 
   assert( pCache!=0 );
-  assert( createFlag==1 || createFlag==0 );
+  assert( pCache->pCache!=0 );
+  assert( createFlag==3 || createFlag==0 );
   assert( pgno>0 );
-
-  /* If the pluggable cache (sqlite3_pcache*) has not been allocated,
-  ** allocate it now.
-  */
-  if( !pCache->pCache ){
-    sqlite3_pcache *p;
-    if( !createFlag ){
-      *ppPage = 0;
-      return SQLITE_OK;
-    }
-    p = sqlite3GlobalConfig.pcache2.xCreate(
-        pCache->szPage, pCache->szExtra + sizeof(PgHdr), pCache->bPurgeable
-    );
-    if( !p ){
-      return SQLITE_NOMEM;
-    }
-    sqlite3GlobalConfig.pcache2.xCachesize(p, numberOfCachePages(pCache));
-    pCache->pCache = p;
-  }
 
   /* eCreate defines what to do if the page does not exist.
   **    0     Do not allocate a new page.  (createFlag==0)
@@ -262,8 +254,10 @@ int sqlite3PcacheFetch(
   **    2     Allocate a new page even it doing so is difficult.
   **          (createFlag==1 AND !(bPurgeable AND pDirty)
   */
-  eCreate = createFlag==0 ? 0 : pCache->eCreate;
-  assert( (createFlag*(1+(!pCache->bPurgeable||!pCache->pDirty)))==eCreate );
+  eCreate = createFlag & pCache->eCreate;
+  assert( eCreate==0 || eCreate==1 || eCreate==2 );
+  assert( createFlag==0 || pCache->eCreate==eCreate );
+  assert( createFlag==0 || eCreate==1+(!pCache->bPurgeable||!pCache->pDirty) );
   pPage = sqlite3GlobalConfig.pcache2.xFetch(pCache->pCache, pgno, eCreate);
   if( !pPage && eCreate==1 ){
     PgHdr *pPg;
@@ -471,9 +465,8 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
 ** Close a cache.
 */
 void sqlite3PcacheClose(PCache *pCache){
-  if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
-  }
+  assert( pCache->pCache!=0 );
+  sqlite3GlobalConfig.pcache2.xDestroy(pCache->pCache);
 }
 
 /* 
@@ -582,11 +575,8 @@ int sqlite3PcachePageRefcount(PgHdr *p){
 ** Return the total number of pages in the cache.
 */
 int sqlite3PcachePagecount(PCache *pCache){
-  int nPage = 0;
-  if( pCache->pCache ){
-    nPage = sqlite3GlobalConfig.pcache2.xPagecount(pCache->pCache);
-  }
-  return nPage;
+  assert( pCache->pCache!=0 );
+  return sqlite3GlobalConfig.pcache2.xPagecount(pCache->pCache);
 }
 
 #ifdef SQLITE_TEST
@@ -602,20 +592,18 @@ int sqlite3PcacheGetCachesize(PCache *pCache){
 ** Set the suggested cache-size value.
 */
 void sqlite3PcacheSetCachesize(PCache *pCache, int mxPage){
+  assert( pCache->pCache!=0 );
   pCache->szCache = mxPage;
-  if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache2.xCachesize(pCache->pCache,
-                                           numberOfCachePages(pCache));
-  }
+  sqlite3GlobalConfig.pcache2.xCachesize(pCache->pCache,
+                                         numberOfCachePages(pCache));
 }
 
 /*
 ** Free up as much memory as possible from the page cache.
 */
 void sqlite3PcacheShrink(PCache *pCache){
-  if( pCache->pCache ){
-    sqlite3GlobalConfig.pcache2.xShrink(pCache->pCache);
-  }
+  assert( pCache->pCache!=0 );
+  sqlite3GlobalConfig.pcache2.xShrink(pCache->pCache);
 }
 
 #if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)

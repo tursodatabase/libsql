@@ -68,7 +68,7 @@ void sqlite3PCacheBufferSetup(void *, int sz, int n);
 ** Under memory stress, invoke xStress to try to make pages clean.
 ** Only clean and unpinned pages can be reclaimed.
 */
-void sqlite3PcacheOpen(
+int sqlite3PcacheOpen(
   int szPage,                    /* Size of every page */
   int szExtra,                   /* Extra space associated with each page */
   int bPurgeable,                /* True if pages are on backing store */
@@ -78,7 +78,7 @@ void sqlite3PcacheOpen(
 );
 
 /* Modify the page-size after the cache has been created. */
-void sqlite3PcacheSetPageSize(PCache *, int);
+int sqlite3PcacheSetPageSize(PCache *, int);
 
 /* Return the size in bytes of a PCache object.  Used to preallocate
 ** storage space.
