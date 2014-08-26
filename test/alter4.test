@@ -145,7 +145,7 @@ do_test alter4-2.6 {
 } {1 {Cannot add a column with non-constant default}}
 do_test alter4-2.7 {
   catchsql {
-    alter table t1 add column d default (-+1);
+    alter table t1 add column d default (-5+1);
   }
 } {1 {Cannot add a column with non-constant default}}
 do_test alter4-2.99 {

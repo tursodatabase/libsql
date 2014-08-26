@@ -629,16 +629,42 @@ static int saveCursorPosition(BtCursor *pCur){
   return rc;
 }
 
+/* Forward reference */
+static int SQLITE_NOINLINE saveCursorsOnList(BtCursor*,Pgno,BtCursor*);
+
 /*
 ** Save the positions of all cursors (except pExcept) that are open on
-** the table  with root-page iRoot. Usually, this is called just before cursor
-** pExcept is used to modify the table (BtreeDelete() or BtreeInsert()).
+** the table with root-page iRoot.  "Saving the cursor position" means that
+** the location in the btree is remembered in such a way that it can be
+** moved back to the same spot after the btree has been modified.  This
+** routine is called just before cursor pExcept is used to modify the
+** table, for example in BtreeDelete() or BtreeInsert().
+**
+** Implementation note:  This routine merely checks to see if any cursors
+** need to be saved.  It calls out to saveCursorsOnList() in the (unusual)
+** event that cursors are in need to being saved.
 */
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   BtCursor *p;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pExcept==0 || pExcept->pBt==pBt );
   for(p=pBt->pCursor; p; p=p->pNext){
+    if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ) break;
+  }
+  return p ? saveCursorsOnList(p, iRoot, pExcept) : SQLITE_OK;
+}
+
+/* This helper routine to saveAllCursors does the actual work of saving
+** the cursors if and when a cursor is found that actually requires saving.
+** The common case is that no cursors need to be saved, so this routine is
+** broken out from its caller to avoid unnecessary stack pointer movement.
+*/
+static int SQLITE_NOINLINE saveCursorsOnList(
+  BtCursor *p,           /* The first cursor that needs saving */
+  Pgno iRoot,            /* Only save cursor with this iRoot.  Save all if zero */
+  BtCursor *pExcept      /* Do not save this cursor */
+){
+  do{
     if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ){
       if( p->eState==CURSOR_VALID ){
         int rc = saveCursorPosition(p);
@@ -650,7 +676,8 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
         btreeReleaseAllCursorPages(p);
       }
     }
-  }
+    p = p->pNext;
+  }while( p );
   return SQLITE_OK;
 }
 
@@ -735,37 +762,48 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
          SQLITE_OK)
 
 /*
-** Determine whether or not a cursor has moved from the position it
-** was last placed at.  Cursors can move when the row they are pointing
-** at is deleted out from under them.
+** Determine whether or not a cursor has moved from the position where
+** it was last placed, or has been invalidated for any other reason.
+** Cursors can move when the row they are pointing at is deleted out
+** from under them, for example.  Cursor might also move if a btree
+** is rebalanced.
 **
-** This routine returns an error code if something goes wrong.  The
-** integer *pHasMoved is set as follows:
+** Calling this routine with a NULL cursor pointer returns false.
 **
-**    0:   The cursor is unchanged
-**    1:   The cursor is still pointing at the same row, but the pointers
-**         returned by sqlite3BtreeKeyFetch() or sqlite3BtreeDataFetch()
-**         might now be invalid because of a balance() or other change to the
-**         b-tree.
-**    2:   The cursor is no longer pointing to the row.  The row might have
-**         been deleted out from under the cursor.
+** Use the separate sqlite3BtreeCursorRestore() routine to restore a cursor
+** back to where it ought to be if this routine returns true.
 */
-int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
+int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
+  return pCur && pCur->eState!=CURSOR_VALID;
+}
+
+/*
+** This routine restores a cursor back to its original position after it
+** has been moved by some outside activity (such as a btree rebalance or
+** a row having been deleted out from under the cursor).  
+**
+** On success, the *pDifferentRow parameter is false if the cursor is left
+** pointing at exactly the same row.  *pDifferntRow is the row the cursor
+** was pointing to has been deleted, forcing the cursor to point to some
+** nearby row.
+**
+** This routine should only be called for a cursor that just returned
+** TRUE from sqlite3BtreeCursorHasMoved().
+*/
+int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
   int rc;
 
-  if( pCur->eState==CURSOR_VALID ){
-    *pHasMoved = 0;
-    return SQLITE_OK;
-  }
+  assert( pCur!=0 );
+  assert( pCur->eState!=CURSOR_VALID );
   rc = restoreCursorPosition(pCur);
   if( rc ){
-    *pHasMoved = 2;
+    *pDifferentRow = 1;
     return rc;
   }
   if( pCur->eState!=CURSOR_VALID || NEVER(pCur->skipNext!=0) ){
-    *pHasMoved = 2;
+    *pDifferentRow = 1;
   }else{
-    *pHasMoved = 1;
+    *pDifferentRow = 0;
   }
   return SQLITE_OK;
 }

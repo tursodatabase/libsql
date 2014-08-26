@@ -1088,4 +1088,50 @@ foreach {tn where eqp} {
   do_eqp_test 24.$tn "SeLeCt * FROM t5 WHERE $where" $eqp
 }
 
+#-------------------------------------------------------------------------
+# Test that if stat4 data is available but cannot be used because the
+# rhs of a range constraint is a complex expression, the default estimates
+# are used instead.
+ifcapable stat4&&cte {
+  do_execsql_test 25.1 {
+    CREATE TABLE t6(a, b);
+    WITH ints(i,j) AS (
+      SELECT 1,1 UNION ALL SELECT i+1,j+1 FROM ints WHERE i<100
+    ) INSERT INTO t6 SELECT * FROM ints;
+    CREATE INDEX aa ON t6(a);
+    CREATE INDEX bb ON t6(b);
+    ANALYZE;
+  }
+
+  # Term (b<?) is estimated at 25%. Better than (a<30) but not as
+  # good as (a<20).
+  do_eqp_test 25.2.1 { SELECT * FROM t6 WHERE a<30 AND b<? } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX bb (b<?)}
+  }
+  do_eqp_test 25.2.2 { SELECT * FROM t6 WHERE a<20 AND b<? } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX aa (a<?)}
+  }
+
+  # Term (b BETWEEN ? AND ?) is estimated at 1/64.
+  do_eqp_test 25.3.1 { 
+    SELECT * FROM t6 WHERE a BETWEEN 5 AND 10 AND b BETWEEN ? AND ? 
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX bb (b>? AND b<?)}
+  }
+  
+  # Term (b BETWEEN ? AND 60) is estimated to return roughly 15 rows -
+  # 60 from (b<=60) multiplied by 0.25 for the b>=? term. Better than
+  # (a<20) but not as good as (a<10).
+  do_eqp_test 25.4.1 { 
+    SELECT * FROM t6 WHERE a < 10 AND (b BETWEEN ? AND 60)
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX aa (a<?)}
+  }
+  do_eqp_test 25.4.2 { 
+    SELECT * FROM t6 WHERE a < 20 AND (b BETWEEN ? AND 60)
+  } {
+    0 0 0 {SEARCH TABLE t6 USING INDEX bb (b>? AND b<?)}
+  }
+}
+
 finish_test

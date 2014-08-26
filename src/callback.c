@@ -154,11 +154,11 @@ static CollSeq *findCollSeqEntry(
   int create            /* Create a new entry if true */
 ){
   CollSeq *pColl;
-  int nName = sqlite3Strlen30(zName);
-  pColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
+  pColl = sqlite3HashFind(&db->aCollSeq, zName);
 
   if( 0==pColl && create ){
-    pColl = sqlite3DbMallocZero(db, 3*sizeof(*pColl) + nName + 1 );
+    int nName = sqlite3Strlen30(zName);
+    pColl = sqlite3DbMallocZero(db, 3*sizeof(*pColl) + nName + 1);
     if( pColl ){
       CollSeq *pDel = 0;
       pColl[0].zName = (char*)&pColl[3];
@@ -169,7 +169,7 @@ static CollSeq *findCollSeqEntry(
       pColl[2].enc = SQLITE_UTF16BE;
       memcpy(pColl[0].zName, zName, nName);
       pColl[0].zName[nName] = 0;
-      pDel = sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, nName, pColl);
+      pDel = sqlite3HashInsert(&db->aCollSeq, pColl[0].zName, pColl);
 
       /* If a malloc() failure occurred in sqlite3HashInsert(), it will 
       ** return the pColl pointer to be deleted (because it wasn't added

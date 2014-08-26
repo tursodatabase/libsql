@@ -199,7 +199,7 @@ u32 sqlite3Utf8Read(
 ** desiredEnc. It is an error if the string is already of the desired
 ** encoding, or if *pMem does not contain a string value.
 */
-int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
+SQLITE_NOINLINE int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
   int len;                    /* Maximum length of output string in bytes */
   unsigned char *zOut;                  /* Output buffer */
   unsigned char *zIn;                   /* Input iterator */

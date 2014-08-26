@@ -607,31 +607,41 @@ void sqlite3InvalidFunction(
 }
 
 /*
+** Create a new aggregate context for p and return a pointer to
+** its pMem->z element.
+*/
+static SQLITE_NOINLINE void *createAggContext(sqlite3_context *p, int nByte){
+  Mem *pMem = p->pMem;
+  assert( (pMem->flags & MEM_Agg)==0 );
+  if( nByte<=0 ){
+    sqlite3VdbeMemReleaseExternal(pMem);
+    pMem->flags = MEM_Null;
+    pMem->z = 0;
+  }else{
+    sqlite3VdbeMemGrow(pMem, nByte, 0);
+    pMem->flags = MEM_Agg;
+    pMem->u.pDef = p->pFunc;
+    if( pMem->z ){
+      memset(pMem->z, 0, nByte);
+    }
+  }
+  return (void*)pMem->z;
+}
+
+/*
 ** Allocate or return the aggregate context for a user function.  A new
 ** context is allocated on the first call.  Subsequent calls return the
 ** same context that was returned on prior calls.
 */
 void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
-  Mem *pMem;
   assert( p && p->pFunc && p->pFunc->xStep );
   assert( sqlite3_mutex_held(p->s.db->mutex) );
-  pMem = p->pMem;
   testcase( nByte<0 );
-  if( (pMem->flags & MEM_Agg)==0 ){
-    if( nByte<=0 ){
-      sqlite3VdbeMemReleaseExternal(pMem);
-      pMem->flags = MEM_Null;
-      pMem->z = 0;
-    }else{
-      sqlite3VdbeMemGrow(pMem, nByte, 0);
-      pMem->flags = MEM_Agg;
-      pMem->u.pDef = p->pFunc;
-      if( pMem->z ){
-        memset(pMem->z, 0, nByte);
-      }
-    }
+  if( (p->pMem->flags & MEM_Agg)==0 ){
+    return createAggContext(p, nByte);
+  }else{
+    return (void*)p->pMem->z;
   }
-  return (void*)pMem->z;
 }
 
 /*
@@ -770,7 +780,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   }else{
     if( pVm && ALWAYS(pVm->db) ){
       sqlite3_mutex_enter(pVm->db->mutex);
-      sqlite3Error(pVm->db, SQLITE_RANGE, 0);
+      sqlite3Error(pVm->db, SQLITE_RANGE);
     }
     pOut = (Mem*)columnNullValue();
   }
@@ -1035,14 +1045,14 @@ static int vdbeUnbind(Vdbe *p, int i){
   }
   sqlite3_mutex_enter(p->db->mutex);
   if( p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
-    sqlite3Error(p->db, SQLITE_MISUSE, 0);
+    sqlite3Error(p->db, SQLITE_MISUSE);
     sqlite3_mutex_leave(p->db->mutex);
     sqlite3_log(SQLITE_MISUSE, 
         "bind on a busy prepared statement: [%s]", p->zSql);
     return SQLITE_MISUSE_BKPT;
   }
   if( i<1 || i>p->nVar ){
-    sqlite3Error(p->db, SQLITE_RANGE, 0);
+    sqlite3Error(p->db, SQLITE_RANGE);
     sqlite3_mutex_leave(p->db->mutex);
     return SQLITE_RANGE;
   }
@@ -1050,7 +1060,7 @@ static int vdbeUnbind(Vdbe *p, int i){
   pVar = &p->aVar[i];
   sqlite3VdbeMemRelease(pVar);
   pVar->flags = MEM_Null;
-  sqlite3Error(p->db, SQLITE_OK, 0);
+  sqlite3Error(p->db, SQLITE_OK);
 
   /* If the bit corresponding to this variable in Vdbe.expmask is set, then 
   ** binding a new value to this variable invalidates the current query plan.
@@ -1092,7 +1102,7 @@ static int bindText(
       if( rc==SQLITE_OK && encoding!=0 ){
         rc = sqlite3VdbeChangeEncoding(pVar, ENC(p->db));
       }
-      sqlite3Error(p->db, rc, 0);
+      sqlite3Error(p->db, rc);
       rc = sqlite3ApiExit(p->db, rc);
     }
     sqlite3_mutex_leave(p->db->mutex);
@@ -1428,7 +1438,7 @@ int sqlite3_preupdate_old(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   }
 
  preupdate_old_out:
-  sqlite3Error(db, rc, 0);
+  sqlite3Error(db, rc);
   return sqlite3ApiExit(db, rc);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
@@ -1532,7 +1542,7 @@ int sqlite3_preupdate_new(sqlite3 *db, int iIdx, sqlite3_value **ppValue){
   *ppValue = pMem;
 
  preupdate_new_out:
-  sqlite3Error(db, rc, 0);
+  sqlite3Error(db, rc);
   return sqlite3ApiExit(db, rc);
 }
 #endif /* SQLITE_ENABLE_PREUPDATE_HOOK */
