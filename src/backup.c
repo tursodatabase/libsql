@@ -87,12 +87,12 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
     int rc = 0;
     pParse = sqlite3StackAllocZero(pErrorDb, sizeof(*pParse));
     if( pParse==0 ){
-      sqlite3Error(pErrorDb, SQLITE_NOMEM, "out of memory");
+      sqlite3ErrorWithMsg(pErrorDb, SQLITE_NOMEM, "out of memory");
       rc = SQLITE_NOMEM;
     }else{
       pParse->db = pDb;
       if( sqlite3OpenTempDatabase(pParse) ){
-        sqlite3Error(pErrorDb, pParse->rc, "%s", pParse->zErrMsg);
+        sqlite3ErrorWithMsg(pErrorDb, pParse->rc, "%s", pParse->zErrMsg);
         rc = SQLITE_ERROR;
       }
       sqlite3DbFree(pErrorDb, pParse->zErrMsg);
@@ -105,7 +105,7 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
   }
 
   if( i<0 ){
-    sqlite3Error(pErrorDb, SQLITE_ERROR, "unknown database %s", zDb);
+    sqlite3ErrorWithMsg(pErrorDb, SQLITE_ERROR, "unknown database %s", zDb);
     return 0;
   }
 
@@ -150,7 +150,7 @@ sqlite3_backup *sqlite3_backup_init(
   sqlite3_mutex_enter(pDestDb->mutex);
 
   if( pSrcDb==pDestDb ){
-    sqlite3Error(
+    sqlite3ErrorWithMsg(
         pDestDb, SQLITE_ERROR, "source and destination must be distinct"
     );
     p = 0;
@@ -161,7 +161,7 @@ sqlite3_backup *sqlite3_backup_init(
     ** sqlite3_backup_finish(). */
     p = (sqlite3_backup *)sqlite3MallocZero(sizeof(sqlite3_backup));
     if( !p ){
-      sqlite3Error(pDestDb, SQLITE_NOMEM, 0);
+      sqlite3Error(pDestDb, SQLITE_NOMEM);
     }
   }
 
@@ -602,7 +602,7 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   /* Set the error code of the destination database handle. */
   rc = (p->rc==SQLITE_DONE) ? SQLITE_OK : p->rc;
   if( p->pDestDb ){
-    sqlite3Error(p->pDestDb, rc, 0);
+    sqlite3Error(p->pDestDb, rc);
 
     /* Exit the mutexes and free the backup context structure. */
     sqlite3LeaveMutexAndCloseZombie(p->pDestDb);

@@ -62,71 +62,73 @@ static int pcacheCheckSynced(PCache *pCache){
 }
 #endif /* !NDEBUG && SQLITE_ENABLE_EXPENSIVE_ASSERT */
 
-/*
-** Remove page pPage from the list of dirty pages.
-*/
-static void pcacheRemoveFromDirtyList(PgHdr *pPage){
-  PCache *p = pPage->pCache;
-
-  assert( pPage->pDirtyNext || pPage==p->pDirtyTail );
-  assert( pPage->pDirtyPrev || pPage==p->pDirty );
-
-  /* Update the PCache1.pSynced variable if necessary. */
-  if( p->pSynced==pPage ){
-    PgHdr *pSynced = pPage->pDirtyPrev;
-    while( pSynced && (pSynced->flags&PGHDR_NEED_SYNC) ){
-      pSynced = pSynced->pDirtyPrev;
-    }
-    p->pSynced = pSynced;
-  }
-
-  if( pPage->pDirtyNext ){
-    pPage->pDirtyNext->pDirtyPrev = pPage->pDirtyPrev;
-  }else{
-    assert( pPage==p->pDirtyTail );
-    p->pDirtyTail = pPage->pDirtyPrev;
-  }
-  if( pPage->pDirtyPrev ){
-    pPage->pDirtyPrev->pDirtyNext = pPage->pDirtyNext;
-  }else{
-    assert( pPage==p->pDirty );
-    p->pDirty = pPage->pDirtyNext;
-    if( p->pDirty==0 && p->bPurgeable ){
-      assert( p->eCreate==1 );
-      p->eCreate = 2;
-    }
-  }
-  pPage->pDirtyNext = 0;
-  pPage->pDirtyPrev = 0;
-
-  expensive_assert( pcacheCheckSynced(p) );
-}
+/* Allowed values for second argument to pcacheManageDirtyList() */
+#define PCACHE_DIRTYLIST_REMOVE   1    /* Remove pPage from dirty list */
+#define PCACHE_DIRTYLIST_ADD      2    /* Add pPage to the dirty list */
+#define PCACHE_DIRTYLIST_FRONT    3    /* Move pPage to the front of the list */
 
 /*
-** Add page pPage to the head of the dirty list (PCache1.pDirty is set to
-** pPage).
+** Manage pPage's participation on the dirty list.  Bits of the addRemove
+** argument determines what operation to do.  The 0x01 bit means first
+** remove pPage from the dirty list.  The 0x02 means add pPage back to
+** the dirty list.  Doing both moves pPage to the front of the dirty list.
 */
-static void pcacheAddToDirtyList(PgHdr *pPage){
+static void pcacheManageDirtyList(PgHdr *pPage, u8 addRemove){
   PCache *p = pPage->pCache;
 
-  assert( pPage->pDirtyNext==0 && pPage->pDirtyPrev==0 && p->pDirty!=pPage );
-
-  pPage->pDirtyNext = p->pDirty;
-  if( pPage->pDirtyNext ){
-    assert( pPage->pDirtyNext->pDirtyPrev==0 );
-    pPage->pDirtyNext->pDirtyPrev = pPage;
-  }else if( p->bPurgeable ){
-    assert( p->eCreate==2 );
-    p->eCreate = 1;
+  if( addRemove & PCACHE_DIRTYLIST_REMOVE ){
+    assert( pPage->pDirtyNext || pPage==p->pDirtyTail );
+    assert( pPage->pDirtyPrev || pPage==p->pDirty );
+  
+    /* Update the PCache1.pSynced variable if necessary. */
+    if( p->pSynced==pPage ){
+      PgHdr *pSynced = pPage->pDirtyPrev;
+      while( pSynced && (pSynced->flags&PGHDR_NEED_SYNC) ){
+        pSynced = pSynced->pDirtyPrev;
+      }
+      p->pSynced = pSynced;
+    }
+  
+    if( pPage->pDirtyNext ){
+      pPage->pDirtyNext->pDirtyPrev = pPage->pDirtyPrev;
+    }else{
+      assert( pPage==p->pDirtyTail );
+      p->pDirtyTail = pPage->pDirtyPrev;
+    }
+    if( pPage->pDirtyPrev ){
+      pPage->pDirtyPrev->pDirtyNext = pPage->pDirtyNext;
+    }else{
+      assert( pPage==p->pDirty );
+      p->pDirty = pPage->pDirtyNext;
+      if( p->pDirty==0 && p->bPurgeable ){
+        assert( p->eCreate==1 );
+        p->eCreate = 2;
+      }
+    }
+    pPage->pDirtyNext = 0;
+    pPage->pDirtyPrev = 0;
+    expensive_assert( pcacheCheckSynced(p) );
   }
-  p->pDirty = pPage;
-  if( !p->pDirtyTail ){
-    p->pDirtyTail = pPage;
+  if( addRemove & PCACHE_DIRTYLIST_ADD ){
+    assert( pPage->pDirtyNext==0 && pPage->pDirtyPrev==0 && p->pDirty!=pPage );
+  
+    pPage->pDirtyNext = p->pDirty;
+    if( pPage->pDirtyNext ){
+      assert( pPage->pDirtyNext->pDirtyPrev==0 );
+      pPage->pDirtyNext->pDirtyPrev = pPage;
+    }else if( p->bPurgeable ){
+      assert( p->eCreate==2 );
+      p->eCreate = 1;
+    }
+    p->pDirty = pPage;
+    if( !p->pDirtyTail ){
+      p->pDirtyTail = pPage;
+    }
+    if( !p->pSynced && 0==(pPage->flags&PGHDR_NEED_SYNC) ){
+      p->pSynced = pPage;
+    }
+    expensive_assert( pcacheCheckSynced(p) );
   }
-  if( !p->pSynced && 0==(pPage->flags&PGHDR_NEED_SYNC) ){
-    p->pSynced = pPage;
-  }
-  expensive_assert( pcacheCheckSynced(p) );
 }
 
 /*
@@ -134,12 +136,11 @@ static void pcacheAddToDirtyList(PgHdr *pPage){
 ** being used for an in-memory database, this function is a no-op.
 */
 static void pcacheUnpin(PgHdr *p){
-  PCache *pCache = p->pCache;
-  if( pCache->bPurgeable ){
+  if( p->pCache->bPurgeable ){
     if( p->pgno==1 ){
-      pCache->pPage1 = 0;
+      p->pCache->pPage1 = 0;
     }
-    sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, p->pPage, 0);
+    sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 0);
   }
 }
 
@@ -332,18 +333,16 @@ int sqlite3PcacheFetch(
 ** Decrement the reference count on a page. If the page is clean and the
 ** reference count drops to 0, then it is made elible for recycling.
 */
-void sqlite3PcacheRelease(PgHdr *p){
+void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   assert( p->nRef>0 );
   p->nRef--;
   if( p->nRef==0 ){
-    PCache *pCache = p->pCache;
-    pCache->nRef--;
+    p->pCache->nRef--;
     if( (p->flags&PGHDR_DIRTY)==0 ){
       pcacheUnpin(p);
     }else{
       /* Move the page to the head of the dirty list. */
-      pcacheRemoveFromDirtyList(p);
-      pcacheAddToDirtyList(p);
+      pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
     }
   }
 }
@@ -362,17 +361,15 @@ void sqlite3PcacheRef(PgHdr *p){
 ** page pointed to by p is invalid.
 */
 void sqlite3PcacheDrop(PgHdr *p){
-  PCache *pCache;
   assert( p->nRef==1 );
   if( p->flags&PGHDR_DIRTY ){
-    pcacheRemoveFromDirtyList(p);
+    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
   }
-  pCache = p->pCache;
-  pCache->nRef--;
+  p->pCache->nRef--;
   if( p->pgno==1 ){
-    pCache->pPage1 = 0;
+    p->pCache->pPage1 = 0;
   }
-  sqlite3GlobalConfig.pcache2.xUnpin(pCache->pCache, p->pPage, 1);
+  sqlite3GlobalConfig.pcache2.xUnpin(p->pCache->pCache, p->pPage, 1);
 }
 
 /*
@@ -384,7 +381,7 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
   assert( p->nRef>0 );
   if( 0==(p->flags & PGHDR_DIRTY) ){
     p->flags |= PGHDR_DIRTY;
-    pcacheAddToDirtyList( p);
+    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_ADD);
   }
 }
 
@@ -394,7 +391,7 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
 */
 void sqlite3PcacheMakeClean(PgHdr *p){
   if( (p->flags & PGHDR_DIRTY) ){
-    pcacheRemoveFromDirtyList(p);
+    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_REMOVE);
     p->flags &= ~(PGHDR_DIRTY|PGHDR_NEED_SYNC);
     if( p->nRef==0 ){
       pcacheUnpin(p);
@@ -433,8 +430,7 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   sqlite3GlobalConfig.pcache2.xRekey(pCache->pCache, p->pPage, p->pgno,newPgno);
   p->pgno = newPgno;
   if( (p->flags&PGHDR_DIRTY) && (p->flags&PGHDR_NEED_SYNC) ){
-    pcacheRemoveFromDirtyList(p);
-    pcacheAddToDirtyList(p);
+    pcacheManageDirtyList(p, PCACHE_DIRTYLIST_FRONT);
   }
 }
 

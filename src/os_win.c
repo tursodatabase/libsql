@@ -410,9 +410,9 @@ const sqlite3_mem_methods *sqlite3MemGetWin32(void);
 ** can manually set this value to 1 to emulate Win98 behavior.
 */
 #ifdef SQLITE_TEST
-LONG volatile sqlite3_os_type = 0;
+LONG SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
 #else
-static LONG volatile sqlite3_os_type = 0;
+static LONG SQLITE_WIN32_VOLATILE sqlite3_os_type = 0;
 #endif
 
 #ifndef SYSCALL
@@ -1055,8 +1055,8 @@ static struct win_syscall {
 #else
   { "InterlockedCompareExchange", (SYSCALL)InterlockedCompareExchange, 0 },
 
-#define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG volatile*, \
-        LONG,LONG))aSyscall[76].pCurrent)
+#define osInterlockedCompareExchange ((LONG(WINAPI*)(LONG \
+        SQLITE_WIN32_VOLATILE*, LONG,LONG))aSyscall[76].pCurrent)
 #endif /* defined(InterlockedCompareExchange) */
 
 }; /* End of the overrideable system calls */

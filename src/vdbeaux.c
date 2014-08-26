@@ -2499,7 +2499,7 @@ int sqlite3VdbeTransferError(Vdbe *p){
     db->mallocFailed = mallocFailed;
     db->errCode = rc;
   }else{
-    sqlite3Error(db, rc, 0);
+    sqlite3Error(db, rc);
   }
   return rc;
 }
@@ -2562,7 +2562,7 @@ int sqlite3VdbeReset(Vdbe *p){
     ** to sqlite3_step(). For consistency (since sqlite3_step() was
     ** called), set the database error in this case as well.
     */
-    sqlite3Error(db, p->rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
+    sqlite3ErrorWithMsg(db, p->rc, p->zErrMsg ? "%s" : 0, p->zErrMsg);
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = 0;
   }
@@ -2716,6 +2716,48 @@ void sqlite3VdbeDelete(Vdbe *p){
 }
 
 /*
+** The cursor "p" has a pending seek operation that has not yet been
+** carried out.  Seek the cursor now.  If an error occurs, return
+** the appropriate error code.
+*/
+static int SQLITE_NOINLINE handleDeferredMoveto(VdbeCursor *p){
+  int res, rc;
+#ifdef SQLITE_TEST
+  extern int sqlite3_search_count;
+#endif
+  assert( p->deferredMoveto );
+  assert( p->isTable );
+  rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
+  if( rc ) return rc;
+  p->lastRowid = p->movetoTarget;
+  if( res!=0 ) return SQLITE_CORRUPT_BKPT;
+  p->rowidIsValid = 1;
+#ifdef SQLITE_TEST
+  sqlite3_search_count++;
+#endif
+  p->deferredMoveto = 0;
+  p->cacheStatus = CACHE_STALE;
+  return SQLITE_OK;
+}
+
+/*
+** Something has moved cursor "p" out of place.  Maybe the row it was
+** pointed to was deleted out from under it.  Or maybe the btree was
+** rebalanced.  Whatever the cause, try to restore "p" to the place it
+** is suppose to be pointing.  If the row was deleted out from under the
+** cursor, set the cursor to point to a NULL row.
+*/
+static int SQLITE_NOINLINE handleMovedCursor(VdbeCursor *p){
+  int isDifferentRow, rc;
+  assert( p->pCursor!=0 );
+  assert( sqlite3BtreeCursorHasMoved(p->pCursor) );
+  rc = sqlite3BtreeCursorRestore(p->pCursor, &isDifferentRow);
+  p->cacheStatus = CACHE_STALE;
+  if( isDifferentRow ) p->nullRow = 1;
+  return rc;
+}
+
+/*
 ** Make sure the cursor p is ready to read or write the row to which it
 ** was last positioned.  Return an error code if an OOM fault or I/O error
 ** prevents us from positioning the cursor to its correct position.
@@ -2730,29 +2772,10 @@ void sqlite3VdbeDelete(Vdbe *p){
 */
 int sqlite3VdbeCursorMoveto(VdbeCursor *p){
   if( p->deferredMoveto ){
-    int res, rc;
-#ifdef SQLITE_TEST
-    extern int sqlite3_search_count;
-#endif
-    assert( p->isTable );
-    rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
-    if( rc ) return rc;
-    p->lastRowid = p->movetoTarget;
-    if( res!=0 ) return SQLITE_CORRUPT_BKPT;
-    p->rowidIsValid = 1;
-#ifdef SQLITE_TEST
-    sqlite3_search_count++;
-#endif
-    p->deferredMoveto = 0;
-    p->cacheStatus = CACHE_STALE;
-  }else if( p->pCursor ){
-    int hasMoved;
-    int rc = sqlite3BtreeCursorHasMoved(p->pCursor, &hasMoved);
-    if( rc ) return rc;
-    if( hasMoved ){
-      p->cacheStatus = CACHE_STALE;
-      if( hasMoved==2 ) p->nullRow = 1;
-    }
+    return handleDeferredMoveto(p);
+  }
+  if( sqlite3BtreeCursorHasMoved(p->pCursor) ){
+    return handleMovedCursor(p);
   }
   return SQLITE_OK;
 }
@@ -2935,10 +2958,11 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
       v = pMem->u.i;
     }
     len = i = sqlite3VdbeSerialTypeLen(serial_type);
-    while( i-- ){
-      buf[i] = (u8)(v&0xFF);
+    assert( i>0 );
+    do{
+      buf[--i] = (u8)(v&0xFF);
       v >>= 8;
-    }
+    }while( i );
     return len;
   }
 
@@ -2962,18 +2986,54 @@ u32 sqlite3VdbeSerialPut(u8 *buf, Mem *pMem, u32 serial_type){
 #define TWO_BYTE_INT(x)    (256*(i8)((x)[0])|(x)[1])
 #define THREE_BYTE_INT(x)  (65536*(i8)((x)[0])|((x)[1]<<8)|(x)[2])
 #define FOUR_BYTE_UINT(x)  (((u32)(x)[0]<<24)|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
+#define FOUR_BYTE_INT(x) (16777216*(i8)((x)[0])|((x)[1]<<16)|((x)[2]<<8)|(x)[3])
 
 /*
 ** Deserialize the data blob pointed to by buf as serial type serial_type
 ** and store the result in pMem.  Return the number of bytes read.
+**
+** This function is implemented as two separate routines for performance.
+** The few cases that require local variables are broken out into a separate
+** routine so that in most cases the overhead of moving the stack pointer
+** is avoided.
 */ 
+static u32 SQLITE_NOINLINE serialGet(
+  const unsigned char *buf,     /* Buffer to deserialize from */
+  u32 serial_type,              /* Serial type to deserialize */
+  Mem *pMem                     /* Memory cell to write value into */
+){
+  u64 x = FOUR_BYTE_UINT(buf);
+  u32 y = FOUR_BYTE_UINT(buf+4);
+  x = (x<<32) + y;
+  if( serial_type==6 ){
+    pMem->u.i = *(i64*)&x;
+    pMem->flags = MEM_Int;
+    testcase( pMem->u.i<0 );
+  }else{
+#if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
+    /* Verify that integers and floating point values use the same
+    ** byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
+    ** defined that 64-bit floating point values really are mixed
+    ** endian.
+    */
+    static const u64 t1 = ((u64)0x3ff00000)<<32;
+    static const double r1 = 1.0;
+    u64 t2 = t1;
+    swapMixedEndianFloat(t2);
+    assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
+#endif
+    assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
+    swapMixedEndianFloat(x);
+    memcpy(&pMem->r, &x, sizeof(x));
+    pMem->flags = sqlite3IsNaN(pMem->r) ? MEM_Null : MEM_Real;
+  }
+  return 8;
+}
 u32 sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
 ){
-  u64 x;
-  u32 y;
   switch( serial_type ){
     case 10:   /* Reserved for future use */
     case 11:   /* Reserved for future use */
@@ -3000,8 +3060,7 @@ u32 sqlite3VdbeSerialGet(
       return 3;
     }
     case 4: { /* 4-byte signed integer */
-      y = FOUR_BYTE_UINT(buf);
-      pMem->u.i = (i64)*(int*)&y;
+      pMem->u.i = FOUR_BYTE_INT(buf);
       pMem->flags = MEM_Int;
       testcase( pMem->u.i<0 );
       return 4;
@@ -3014,32 +3073,9 @@ u32 sqlite3VdbeSerialGet(
     }
     case 6:   /* 8-byte signed integer */
     case 7: { /* IEEE floating point */
-#if !defined(NDEBUG) && !defined(SQLITE_OMIT_FLOATING_POINT)
-      /* Verify that integers and floating point values use the same
-      ** byte order.  Or, that if SQLITE_MIXED_ENDIAN_64BIT_FLOAT is
-      ** defined that 64-bit floating point values really are mixed
-      ** endian.
-      */
-      static const u64 t1 = ((u64)0x3ff00000)<<32;
-      static const double r1 = 1.0;
-      u64 t2 = t1;
-      swapMixedEndianFloat(t2);
-      assert( sizeof(r1)==sizeof(t2) && memcmp(&r1, &t2, sizeof(r1))==0 );
-#endif
-      x = FOUR_BYTE_UINT(buf);
-      y = FOUR_BYTE_UINT(buf+4);
-      x = (x<<32) | y;
-      if( serial_type==6 ){
-        pMem->u.i = *(i64*)&x;
-        pMem->flags = MEM_Int;
-        testcase( pMem->u.i<0 );
-      }else{
-        assert( sizeof(x)==8 && sizeof(pMem->r)==8 );
-        swapMixedEndianFloat(x);
-        memcpy(&pMem->r, &x, sizeof(x));
-        pMem->flags = sqlite3IsNaN(pMem->r) ? MEM_Null : MEM_Real;
-      }
-      return 8;
+      /* These use local variables, so do them in a separate routine
+      ** to avoid having to move the frame pointer in the common case */
+      return serialGet(buf,serial_type,pMem);
     }
     case 8:    /* Integer 0 */
     case 9: {  /* Integer 1 */
@@ -3049,17 +3085,15 @@ u32 sqlite3VdbeSerialGet(
     }
     default: {
       static const u16 aFlag[] = { MEM_Blob|MEM_Ephem, MEM_Str|MEM_Ephem };
-      u32 len = (serial_type-12)/2;
       pMem->z = (char *)buf;
-      pMem->n = len;
+      pMem->n = (serial_type-12)/2;
       pMem->xDel = 0;
       pMem->flags = aFlag[serial_type&1];
-      return len;
+      return pMem->n;
     }
   }
   return 0;
 }
-
 /*
 ** This routine is used to allocate sufficient space for an UnpackedRecord
 ** structure large enough to be used with sqlite3VdbeRecordUnpack() if

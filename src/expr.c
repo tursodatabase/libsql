@@ -2595,26 +2595,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
 #ifndef SQLITE_OMIT_CAST
     case TK_CAST: {
       /* Expressions of the form:   CAST(pLeft AS token) */
-      int aff, to_op;
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
-      assert( !ExprHasProperty(pExpr, EP_IntValue) );
-      aff = sqlite3AffinityType(pExpr->u.zToken, 0);
-      to_op = aff - SQLITE_AFF_TEXT + OP_ToText;
-      assert( to_op==OP_ToText    || aff!=SQLITE_AFF_TEXT    );
-      assert( to_op==OP_ToBlob    || aff!=SQLITE_AFF_NONE    );
-      assert( to_op==OP_ToNumeric || aff!=SQLITE_AFF_NUMERIC );
-      assert( to_op==OP_ToInt     || aff!=SQLITE_AFF_INTEGER );
-      assert( to_op==OP_ToReal    || aff!=SQLITE_AFF_REAL    );
-      testcase( to_op==OP_ToText );
-      testcase( to_op==OP_ToBlob );
-      testcase( to_op==OP_ToNumeric );
-      testcase( to_op==OP_ToInt );
-      testcase( to_op==OP_ToReal );
       if( inReg!=target ){
         sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
         inReg = target;
       }
-      sqlite3VdbeAddOp1(v, to_op, inReg);
+      sqlite3VdbeAddOp2(v, OP_Cast, target,
+                        sqlite3AffinityType(pExpr->u.zToken, 0));
       testcase( usedAsColumnCache(pParse, inReg, inReg) );
       sqlite3ExprCacheAffinityChange(pParse, inReg, 1);
       break;

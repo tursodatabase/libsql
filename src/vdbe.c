@@ -146,7 +146,7 @@ int sqlite3_found_count = 0;
 ** already. Return non-zero if a malloc() fails.
 */
 #define Stringify(P, enc) \
-   if(((P)->flags&(MEM_Str|MEM_Blob))==0 && sqlite3VdbeMemStringify(P,enc)) \
+   if(((P)->flags&(MEM_Str|MEM_Blob))==0 && sqlite3VdbeMemStringify(P,enc,0)) \
      { goto no_mem; }
 
 /*
@@ -228,8 +228,17 @@ static VdbeCursor *allocateCursor(
 ** do so without loss of information.  In other words, if the string
 ** looks like a number, convert it into a number.  If it does not
 ** look like a number, leave it alone.
+**
+** If the bTryForInt flag is true, then extra effort is made to give
+** an integer representation.  Strings that look like floating point
+** values but which have no fractional component (example: '48.00')
+** will have a MEM_Int representation when bTryForInt is true.
+**
+** If bTryForInt is false, then if the input string contains a decimal
+** point or exponential notation, the result is only MEM_Real, even
+** if there is an exact integer representation of the quantity.
 */
-static void applyNumericAffinity(Mem *pRec){
+static void applyNumericAffinity(Mem *pRec, int bTryForInt){
   double rValue;
   i64 iValue;
   u8 enc = pRec->enc;
@@ -241,10 +250,9 @@ static void applyNumericAffinity(Mem *pRec){
   }else{
     pRec->r = rValue;
     pRec->flags |= MEM_Real;
+    if( bTryForInt ) sqlite3VdbeIntegerAffinity(pRec);
   }
 }
-#define ApplyNumericAffinity(X)  \
-   if(((X)->flags&(MEM_Real|MEM_Int))==0){applyNumericAffinity(X);}
 
 /*
 ** Processing is determine by the affinity parameter:
@@ -275,15 +283,17 @@ static void applyAffinity(
     ** representation.
     */
     if( 0==(pRec->flags&MEM_Str) && (pRec->flags&(MEM_Real|MEM_Int)) ){
-      sqlite3VdbeMemStringify(pRec, enc);
+      sqlite3VdbeMemStringify(pRec, enc, 1);
     }
-    pRec->flags &= ~(MEM_Real|MEM_Int);
   }else if( affinity!=SQLITE_AFF_NONE ){
     assert( affinity==SQLITE_AFF_INTEGER || affinity==SQLITE_AFF_REAL
              || affinity==SQLITE_AFF_NUMERIC );
-    ApplyNumericAffinity(pRec);
-    if( pRec->flags & MEM_Real ){
-      sqlite3VdbeIntegerAffinity(pRec);
+    if( (pRec->flags & MEM_Int)==0 ){
+      if( (pRec->flags & MEM_Real)==0 ){
+        applyNumericAffinity(pRec,1);
+      }else{
+        sqlite3VdbeIntegerAffinity(pRec);
+      }
     }
   }
 }
@@ -298,7 +308,7 @@ int sqlite3_value_numeric_type(sqlite3_value *pVal){
   int eType = sqlite3_value_type(pVal);
   if( eType==SQLITE_TEXT ){
     Mem *pMem = (Mem*)pVal;
-    applyNumericAffinity(pMem);
+    applyNumericAffinity(pMem, 0);
     eType = sqlite3_value_type(pVal);
   }
   return eType;
@@ -317,6 +327,24 @@ void sqlite3ValueApplyAffinity(
 }
 
 /*
+** pMem currently only holds a string type (or maybe a BLOB that we can
+** interpret as a string if we want to).  Compute its corresponding
+** numeric type, if has one.  Set the pMem->r and pMem->u.i fields
+** accordingly.
+*/
+static u16 SQLITE_NOINLINE computeNumericType(Mem *pMem){
+  assert( (pMem->flags & (MEM_Int|MEM_Real))==0 );
+  assert( (pMem->flags & (MEM_Str|MEM_Blob))!=0 );
+  if( sqlite3AtoF(pMem->z, &pMem->r, pMem->n, pMem->enc)==0 ){
+    return 0;
+  }
+  if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==SQLITE_OK ){
+    return MEM_Int;
+  }
+  return MEM_Real;
+}
+
+/*
 ** Return the numeric type for pMem, either MEM_Int or MEM_Real or both or
 ** none.  
 **
@@ -328,13 +356,7 @@ static u16 numericType(Mem *pMem){
     return pMem->flags & (MEM_Int|MEM_Real);
   }
   if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    if( sqlite3AtoF(pMem->z, &pMem->r, pMem->n, pMem->enc)==0 ){
-      return 0;
-    }
-    if( sqlite3Atoi64(pMem->z, &pMem->u.i, pMem->n, pMem->enc)==SQLITE_OK ){
-      return MEM_Int;
-    }
-    return MEM_Real;
+    return computeNumericType(pMem);
   }
   return 0;
 }
@@ -618,7 +640,7 @@ int sqlite3VdbeExec(
       assert( pOp->p2<=(p->nMem-p->nCursor) );
       pOut = &aMem[pOp->p2];
       memAboutToChange(p, pOut);
-      VdbeMemRelease(pOut);
+      VdbeMemReleaseExtern(pOut);
       pOut->flags = MEM_Int;
     }
 
@@ -1057,7 +1079,7 @@ case OP_Null: {           /* out2-prerelease */
   while( cnt>0 ){
     pOut++;
     memAboutToChange(p, pOut);
-    VdbeMemRelease(pOut);
+    VdbeMemReleaseExtern(pOut);
     pOut->flags = nullFlag;
     cnt--;
   }
@@ -1143,7 +1165,7 @@ case OP_Move: {
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
-    VdbeMemRelease(pOut);
+    VdbeMemReleaseExtern(pOut);
     zMalloc = pOut->zMalloc;
     memcpy(pOut, pIn1, sizeof(Mem));
 #ifdef SQLITE_DEBUG
@@ -1746,105 +1768,35 @@ case OP_RealAffinity: {                  /* in1 */
 #endif
 
 #ifndef SQLITE_OMIT_CAST
-/* Opcode: ToText P1 * * * *
+/* Opcode: Cast P1 P2 * * *
 **
-** Force the value in register P1 to be text.
-** If the value is numeric, convert it to a string using the
-** equivalent of sprintf().  Blob values are unchanged and
-** are afterwards simply interpreted as text.
+** Force the value in register P1 to be the type defined by P2.
+** 
+** <ul>
+** <li value="97"> TEXT
+** <li value="98"> BLOB
+** <li value="99"> NUMERIC
+** <li value="100"> INTEGER
+** <li value="101"> REAL
+** </ul>
 **
 ** A NULL value is not changed by this routine.  It remains NULL.
 */
-case OP_ToText: {                  /* same as TK_TO_TEXT, in1 */
+case OP_Cast: {                  /* in1 */
+  assert( pOp->p2>=SQLITE_AFF_TEXT && pOp->p2<=SQLITE_AFF_REAL );
+  testcase( pOp->p2==SQLITE_AFF_TEXT );
+  testcase( pOp->p2==SQLITE_AFF_NONE );
+  testcase( pOp->p2==SQLITE_AFF_NUMERIC );
+  testcase( pOp->p2==SQLITE_AFF_INTEGER );
+  testcase( pOp->p2==SQLITE_AFF_REAL );
   pIn1 = &aMem[pOp->p1];
   memAboutToChange(p, pIn1);
-  if( pIn1->flags & MEM_Null ) break;
-  assert( MEM_Str==(MEM_Blob>>3) );
-  pIn1->flags |= (pIn1->flags&MEM_Blob)>>3;
-  applyAffinity(pIn1, SQLITE_AFF_TEXT, encoding);
   rc = ExpandBlob(pIn1);
-  assert( pIn1->flags & MEM_Str || db->mallocFailed );
-  pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_Blob|MEM_Zero);
+  sqlite3VdbeMemCast(pIn1, pOp->p2, encoding);
   UPDATE_MAX_BLOBSIZE(pIn1);
-  break;
-}
-
-/* Opcode: ToBlob P1 * * * *
-**
-** Force the value in register P1 to be a BLOB.
-** If the value is numeric, convert it to a string first.
-** Strings are simply reinterpreted as blobs with no change
-** to the underlying data.
-**
-** A NULL value is not changed by this routine.  It remains NULL.
-*/
-case OP_ToBlob: {                  /* same as TK_TO_BLOB, in1 */
-  pIn1 = &aMem[pOp->p1];
-  if( pIn1->flags & MEM_Null ) break;
-  if( (pIn1->flags & MEM_Blob)==0 ){
-    applyAffinity(pIn1, SQLITE_AFF_TEXT, encoding);
-    assert( pIn1->flags & MEM_Str || db->mallocFailed );
-    MemSetTypeFlag(pIn1, MEM_Blob);
-  }else{
-    pIn1->flags &= ~(MEM_TypeMask&~MEM_Blob);
-  }
-  UPDATE_MAX_BLOBSIZE(pIn1);
-  break;
-}
-
-/* Opcode: ToNumeric P1 * * * *
-**
-** Force the value in register P1 to be numeric (either an
-** integer or a floating-point number.)
-** If the value is text or blob, try to convert it to an using the
-** equivalent of atoi() or atof() and store 0 if no such conversion 
-** is possible.
-**
-** A NULL value is not changed by this routine.  It remains NULL.
-*/
-case OP_ToNumeric: {                  /* same as TK_TO_NUMERIC, in1 */
-  pIn1 = &aMem[pOp->p1];
-  sqlite3VdbeMemNumerify(pIn1);
   break;
 }
 #endif /* SQLITE_OMIT_CAST */
-
-/* Opcode: ToInt P1 * * * *
-**
-** Force the value in register P1 to be an integer.  If
-** The value is currently a real number, drop its fractional part.
-** If the value is text or blob, try to convert it to an integer using the
-** equivalent of atoi() and store 0 if no such conversion is possible.
-**
-** A NULL value is not changed by this routine.  It remains NULL.
-*/
-case OP_ToInt: {                  /* same as TK_TO_INT, in1 */
-  pIn1 = &aMem[pOp->p1];
-  if( (pIn1->flags & MEM_Null)==0 ){
-    sqlite3VdbeMemIntegerify(pIn1);
-  }
-  break;
-}
-
-#if !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_FLOATING_POINT)
-/* Opcode: ToReal P1 * * * *
-**
-** Force the value in register P1 to be a floating point number.
-** If The value is currently an integer, convert it.
-** If the value is text or blob, try to convert it to an integer using the
-** equivalent of atoi() and store 0.0 if no such conversion is possible.
-**
-** A NULL value is not changed by this routine.  It remains NULL.
-*/
-case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
-  pIn1 = &aMem[pOp->p1];
-  memAboutToChange(p, pIn1);
-  if( (pIn1->flags & MEM_Null)==0 ){
-    sqlite3VdbeMemRealify(pIn1);
-  }
-  break;
-}
-#endif /* !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_FLOATING_POINT) */
 
 /* Opcode: Lt P1 P2 P3 P4 P5
 ** Synopsis: if r[P1]<r[P3] goto P2
@@ -2516,7 +2468,7 @@ case OP_Column: {
   if( pC->szRow>=aOffset[p2+1] ){
     /* This is the common case where the desired content fits on the original
     ** page - where the content is not on an overflow page */
-    VdbeMemRelease(pDest);
+    VdbeMemReleaseExtern(pDest);
     sqlite3VdbeSerialGet(pC->aRow+aOffset[p2], aType[p2], pDest);
   }else{
     /* This branch happens only when content is on overflow pages */
@@ -3603,7 +3555,9 @@ case OP_SeekGT: {       /* jump, in3 */
     ** blob, or NULL.  But it needs to be an integer before we can do
     ** the seek, so covert it. */
     pIn3 = &aMem[pOp->p3];
-    ApplyNumericAffinity(pIn3);
+    if( (pIn3->flags & (MEM_Int|MEM_Real))==0 ){
+      applyNumericAffinity(pIn3, 0);
+    }
     iKey = sqlite3VdbeIntValue(pIn3);
     pC->rowidIsValid = 0;
 

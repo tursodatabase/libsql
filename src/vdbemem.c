@@ -121,7 +121,7 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int bPreserve){
       pMem->zMalloc = sqlite3DbMallocRaw(pMem->db, n);
     }
     if( pMem->zMalloc==0 ){
-      VdbeMemRelease(pMem);
+      VdbeMemReleaseExtern(pMem);
       pMem->z = 0;
       pMem->flags = MEM_Null;  
       return SQLITE_NOMEM;
@@ -223,7 +223,8 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 ** are converted using sqlite3_snprintf().  Converting a BLOB to a string
 ** is a no-op.
 **
-** Existing representations MEM_Int and MEM_Real are *not* invalidated.
+** Existing representations MEM_Int and MEM_Real are invalidated if
+** bForce is true but are retained if bForce is false.
 **
 ** A MEM_Null value will never be passed to this function. This function is
 ** used for converting values to text for returning to the user (i.e. via
@@ -231,8 +232,7 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 ** keys are strings. In the former case a NULL pointer is returned the
 ** user and the later is an internal programming error.
 */
-int sqlite3VdbeMemStringify(Mem *pMem, int enc){
-  int rc = SQLITE_OK;
+int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
   int fg = pMem->flags;
   const int nByte = 32;
 
@@ -248,7 +248,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
     return SQLITE_NOMEM;
   }
 
-  /* For a Real or Integer, use sqlite3_mprintf() to produce the UTF-8
+  /* For a Real or Integer, use sqlite3_snprintf() to produce the UTF-8
   ** string representation of the value. Then, if the required encoding
   ** is UTF-16le or UTF-16be do a translation.
   ** 
@@ -263,8 +263,9 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
   pMem->n = sqlite3Strlen30(pMem->z);
   pMem->enc = SQLITE_UTF8;
   pMem->flags |= MEM_Str|MEM_Term;
+  if( bForce ) pMem->flags &= ~(MEM_Int|MEM_Real);
   sqlite3VdbeChangeEncoding(pMem, enc);
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
@@ -299,6 +300,9 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 ** If the memory cell contains a string value that must be freed by
 ** invoking an external callback, free it now. Calling this function
 ** does not free any Mem.zMalloc buffer.
+**
+** The VdbeMemReleaseExtern() macro invokes this routine if only if there
+** is work for this routine to do.
 */
 void sqlite3VdbeMemReleaseExternal(Mem *p){
   assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
@@ -319,19 +323,37 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
 }
 
 /*
+** Release memory held by the Mem p, both external memory cleared
+** by p->xDel and memory in p->zMalloc.
+**
+** This is a helper routine invoked by sqlite3VdbeMemRelease() in
+** the uncommon case when there really is memory in p that is
+** need of freeing.
+*/
+static SQLITE_NOINLINE void vdbeMemRelease(Mem *p){
+  if( VdbeMemDynamic(p) ){
+    sqlite3VdbeMemReleaseExternal(p);
+  }
+  if( p->zMalloc ){
+    sqlite3DbFree(p->db, p->zMalloc);
+    p->zMalloc = 0;
+  }
+  p->z = 0;
+}
+
+/*
 ** Release any memory held by the Mem. This may leave the Mem in an
 ** inconsistent state, for example with (Mem.z==0) and
 ** (Mem.flags==MEM_Str).
 */
 void sqlite3VdbeMemRelease(Mem *p){
   assert( sqlite3VdbeCheckMemInvariants(p) );
-  VdbeMemRelease(p);
-  if( p->zMalloc ){
-    sqlite3DbFree(p->db, p->zMalloc);
-    p->zMalloc = 0;
+  if( VdbeMemDynamic(p) || p->zMalloc ){
+    vdbeMemRelease(p);
+  }else{
+    p->z = 0;
   }
-  p->z = 0;
-  assert( p->xDel==0 );  /* Zeroed by VdbeMemRelease() above */
+  assert( p->xDel==0 );
 }
 
 /*
@@ -387,7 +409,6 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
   }else if( flags & (MEM_Str|MEM_Blob) ){
     i64 value = 0;
     assert( pMem->z || pMem->n==0 );
-    testcase( pMem->z==0 );
     sqlite3Atoi64(pMem->z, &value, pMem->n, pMem->enc);
     return value;
   }else{
@@ -499,6 +520,51 @@ int sqlite3VdbeMemNumerify(Mem *pMem){
   pMem->flags &= ~(MEM_Str|MEM_Blob);
   return SQLITE_OK;
 }
+
+/*
+** Cast the datatype of the value in pMem according to the affinity
+** "aff".  Casting is different from applying affinity in that a cast
+** is forced.  In other words, the value is converted into the desired
+** affinity even if that results in loss of data.  This routine is
+** used (for example) to implement the SQL "cast()" operator.
+*/
+void sqlite3VdbeMemCast(Mem *pMem, u8 aff, u8 encoding){
+  if( pMem->flags & MEM_Null ) return;
+  switch( aff ){
+    case SQLITE_AFF_NONE: {   /* Really a cast to BLOB */
+      if( (pMem->flags & MEM_Blob)==0 ){
+        sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
+        assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
+        MemSetTypeFlag(pMem, MEM_Blob);
+      }else{
+        pMem->flags &= ~(MEM_TypeMask&~MEM_Blob);
+      }
+      break;
+    }
+    case SQLITE_AFF_NUMERIC: {
+      sqlite3VdbeMemNumerify(pMem);
+      break;
+    }
+    case SQLITE_AFF_INTEGER: {
+      sqlite3VdbeMemIntegerify(pMem);
+      break;
+    }
+    case SQLITE_AFF_REAL: {
+      sqlite3VdbeMemRealify(pMem);
+      break;
+    }
+    default: {
+      assert( aff==SQLITE_AFF_TEXT );
+      assert( MEM_Str==(MEM_Blob>>3) );
+      pMem->flags |= (pMem->flags&MEM_Blob)>>3;
+      sqlite3ValueApplyAffinity(pMem, SQLITE_AFF_TEXT, encoding);
+      assert( pMem->flags & MEM_Str || pMem->db->mallocFailed );
+      pMem->flags &= ~(MEM_Int|MEM_Real|MEM_Blob|MEM_Zero);
+      break;
+    }
+  }
+}
+
 
 /*
 ** Delete any previous value and set the value stored in *pMem to NULL.
@@ -637,7 +703,7 @@ void sqlite3VdbeMemAboutToChange(Vdbe *pVdbe, Mem *pMem){
 */
 void sqlite3VdbeMemShallowCopy(Mem *pTo, const Mem *pFrom, int srcType){
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  VdbeMemRelease(pTo);
+  VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->xDel = 0;
   if( (pFrom->flags&MEM_Static)==0 ){
@@ -655,7 +721,7 @@ int sqlite3VdbeMemCopy(Mem *pTo, const Mem *pFrom){
   int rc = SQLITE_OK;
 
   assert( (pFrom->flags & MEM_RowSet)==0 );
-  VdbeMemRelease(pTo);
+  VdbeMemReleaseExtern(pTo);
   memcpy(pTo, pFrom, MEMCELLSIZE);
   pTo->flags &= ~MEM_Dyn;
   pTo->xDel = 0;
@@ -877,7 +943,7 @@ const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
     sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
   }else{
     assert( (pVal->flags&MEM_Blob)==0 );
-    sqlite3VdbeMemStringify(pVal, enc);
+    sqlite3VdbeMemStringify(pVal, enc, 0);
     assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
   }
   assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
@@ -993,8 +1059,19 @@ static int valueFromExpr(
     *ppVal = 0;
     return SQLITE_OK;
   }
-  op = pExpr->op;
+  while( (op = pExpr->op)==TK_UPLUS ) pExpr = pExpr->pLeft;
   if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
+
+  if( op==TK_CAST ){
+    u8 aff = sqlite3AffinityType(pExpr->u.zToken,0);
+    rc = valueFromExpr(db, pExpr->pLeft, enc, aff, ppVal, pCtx);
+    testcase( rc!=SQLITE_OK );
+    if( *ppVal ){
+      sqlite3VdbeMemCast(*ppVal, aff, SQLITE_UTF8);
+      sqlite3ValueApplyAffinity(*ppVal, affinity, SQLITE_UTF8);
+    }
+    return rc;
+  }
 
   /* Handle negative integers in a single step.  This is needed in the
   ** case when the value is -9223372036854775808.
@@ -1130,7 +1207,7 @@ static void recordFunc(
     sqlite3_result_error_nomem(context);
   }else{
     aRet[0] = nSerial+1;
-    sqlite3PutVarint(&aRet[1], iSerial);
+    putVarint32(&aRet[1], iSerial);
     sqlite3VdbeSerialPut(&aRet[1+nSerial], argv[0], iSerial);
     sqlite3_result_blob(context, aRet, nRet, SQLITE_TRANSIENT);
     sqlite3DbFree(db, aRet);

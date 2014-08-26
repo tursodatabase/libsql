@@ -784,7 +784,7 @@ void sqlite3AppendSpace(StrAccum *p, int N){
 ** work (enlarging the buffer) using tail recursion, so that the
 ** sqlite3StrAccumAppend() routine can use fast calling semantics.
 */
-static void enlargeAndAppend(StrAccum *p, const char *z, int N){
+static void SQLITE_NOINLINE enlargeAndAppend(StrAccum *p, const char *z, int N){
   N = sqlite3StrAccumEnlarge(p, N);
   if( N>0 ){
     memcpy(&p->zText[p->nChar], z, N);
@@ -803,11 +803,11 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   assert( p->accError==0 || p->nAlloc==0 );
   if( p->nChar+N >= p->nAlloc ){
     enlargeAndAppend(p,z,N);
-    return;
+  }else{
+    assert( p->zText );
+    p->nChar += N;
+    memcpy(&p->zText[p->nChar-N], z, N);
   }
-  assert( p->zText );
-  memcpy(&p->zText[p->nChar], z, N);
-  p->nChar += N;
 }
 
 /*

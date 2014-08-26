@@ -635,16 +635,42 @@ static int saveCursorPosition(BtCursor *pCur){
   return rc;
 }
 
+/* Forward reference */
+static int SQLITE_NOINLINE saveCursorsOnList(BtCursor*,Pgno,BtCursor*);
+
 /*
 ** Save the positions of all cursors (except pExcept) that are open on
-** the table  with root-page iRoot. Usually, this is called just before cursor
-** pExcept is used to modify the table (BtreeDelete() or BtreeInsert()).
+** the table with root-page iRoot.  "Saving the cursor position" means that
+** the location in the btree is remembered in such a way that it can be
+** moved back to the same spot after the btree has been modified.  This
+** routine is called just before cursor pExcept is used to modify the
+** table, for example in BtreeDelete() or BtreeInsert().
+**
+** Implementation note:  This routine merely checks to see if any cursors
+** need to be saved.  It calls out to saveCursorsOnList() in the (unusual)
+** event that cursors are in need to being saved.
 */
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
   BtCursor *p;
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pExcept==0 || pExcept->pBt==pBt );
   for(p=pBt->pCursor; p; p=p->pNext){
+    if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ) break;
+  }
+  return p ? saveCursorsOnList(p, iRoot, pExcept) : SQLITE_OK;
+}
+
+/* This helper routine to saveAllCursors does the actual work of saving
+** the cursors if and when a cursor is found that actually requires saving.
+** The common case is that no cursors need to be saved, so this routine is
+** broken out from its caller to avoid unnecessary stack pointer movement.
+*/
+static int SQLITE_NOINLINE saveCursorsOnList(
+  BtCursor *p,           /* The first cursor that needs saving */
+  Pgno iRoot,            /* Only save cursor with this iRoot.  Save all if zero */
+  BtCursor *pExcept      /* Do not save this cursor */
+){
+  do{
     if( p!=pExcept && (0==iRoot || p->pgnoRoot==iRoot) ){
       if( p->eState==CURSOR_VALID ){
         int rc = saveCursorPosition(p);
@@ -656,7 +682,8 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
         btreeReleaseAllCursorPages(p);
       }
     }
-  }
+    p = p->pNext;
+  }while( p );
   return SQLITE_OK;
 }
 
@@ -741,37 +768,48 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
          SQLITE_OK)
 
 /*
-** Determine whether or not a cursor has moved from the position it
-** was last placed at.  Cursors can move when the row they are pointing
-** at is deleted out from under them.
+** Determine whether or not a cursor has moved from the position where
+** it was last placed, or has been invalidated for any other reason.
+** Cursors can move when the row they are pointing at is deleted out
+** from under them, for example.  Cursor might also move if a btree
+** is rebalanced.
 **
-** This routine returns an error code if something goes wrong.  The
-** integer *pHasMoved is set as follows:
+** Calling this routine with a NULL cursor pointer returns false.
 **
-**    0:   The cursor is unchanged
-**    1:   The cursor is still pointing at the same row, but the pointers
-**         returned by sqlite3BtreeKeyFetch() or sqlite3BtreeDataFetch()
-**         might now be invalid because of a balance() or other change to the
-**         b-tree.
-**    2:   The cursor is no longer pointing to the row.  The row might have
-**         been deleted out from under the cursor.
+** Use the separate sqlite3BtreeCursorRestore() routine to restore a cursor
+** back to where it ought to be if this routine returns true.
 */
-int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
+int sqlite3BtreeCursorHasMoved(BtCursor *pCur){
+  return pCur && pCur->eState!=CURSOR_VALID;
+}
+
+/*
+** This routine restores a cursor back to its original position after it
+** has been moved by some outside activity (such as a btree rebalance or
+** a row having been deleted out from under the cursor).  
+**
+** On success, the *pDifferentRow parameter is false if the cursor is left
+** pointing at exactly the same row.  *pDifferntRow is the row the cursor
+** was pointing to has been deleted, forcing the cursor to point to some
+** nearby row.
+**
+** This routine should only be called for a cursor that just returned
+** TRUE from sqlite3BtreeCursorHasMoved().
+*/
+int sqlite3BtreeCursorRestore(BtCursor *pCur, int *pDifferentRow){
   int rc;
 
-  if( pCur->eState==CURSOR_VALID ){
-    *pHasMoved = 0;
-    return SQLITE_OK;
-  }
+  assert( pCur!=0 );
+  assert( pCur->eState!=CURSOR_VALID );
   rc = restoreCursorPosition(pCur);
   if( rc ){
-    *pHasMoved = 2;
+    *pDifferentRow = 1;
     return rc;
   }
   if( pCur->eState!=CURSOR_VALID || NEVER(pCur->skipNext!=0) ){
-    *pHasMoved = 2;
+    *pDifferentRow = 1;
   }else{
-    *pHasMoved = 1;
+    *pDifferentRow = 0;
   }
   return SQLITE_OK;
 }
@@ -1203,7 +1241,6 @@ static int defragmentPage(MemPage *pPage){
 static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   const int hdr = pPage->hdrOffset;    /* Local cache of pPage->hdrOffset */
   u8 * const data = pPage->aData;      /* Local cache of pPage->aData */
-  int nFrag;                           /* Number of fragmented bytes on pPage */
   int top;                             /* First byte of cell content area */
   int gap;        /* First byte of gap between cell pointers and cell content */
   int rc;         /* Integer return code */
@@ -1218,25 +1255,26 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   usableSize = pPage->pBt->usableSize;
   assert( nByte < usableSize-8 );
 
-  nFrag = data[hdr+7];
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
   gap = pPage->cellOffset + 2*pPage->nCell;
-  top = get2byteNotZero(&data[hdr+5]);
-  if( gap>top ) return SQLITE_CORRUPT_BKPT;
+  assert( gap<=65536 );
+  top = get2byte(&data[hdr+5]);
+  if( gap>top ){
+    if( top==0 ){
+      top = 65536;
+    }else{
+      return SQLITE_CORRUPT_BKPT;
+    }
+  }
+
+  /* If there is enough space between gap and top for one more cell pointer
+  ** array entry offset, and if the freelist is not empty, then search the
+  ** freelist looking for a free slot big enough to satisfy the request.
+  */
   testcase( gap+2==top );
   testcase( gap+1==top );
   testcase( gap==top );
-
-  if( nFrag>=60 ){
-    /* Always defragment highly fragmented pages */
-    rc = defragmentPage(pPage);
-    if( rc ) return rc;
-    top = get2byteNotZero(&data[hdr+5]);
-  }else if( gap+2<=top ){
-    /* Search the freelist looking for a free slot big enough to satisfy 
-    ** the request. The allocation is made from the first free slot in 
-    ** the list that is large enough to accommodate it.
-    */
+  if( gap+2<=top && (data[hdr+1] || data[hdr+2]) ){
     int pc, addr;
     for(addr=hdr+1; (pc = get2byte(&data[addr]))>0; addr=pc){
       int size;            /* Size of the free slot */
@@ -1249,10 +1287,11 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
         testcase( x==4 );
         testcase( x==3 );
         if( x<4 ){
+          if( data[hdr+7]>=60 ) goto defragment_page;
           /* Remove the slot from the free-list. Update the number of
           ** fragmented bytes within the page. */
           memcpy(&data[addr], &data[pc], 2);
-          data[hdr+7] = (u8)(nFrag + x);
+          data[hdr+7] += (u8)x;
         }else if( size+pc > usableSize ){
           return SQLITE_CORRUPT_BKPT;
         }else{
@@ -1266,11 +1305,13 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     }
   }
 
-  /* Check to make sure there is enough space in the gap to satisfy
-  ** the allocation.  If not, defragment.
+  /* The request could not be fulfilled using a freelist slot.  Check
+  ** to see if defragmentation is necessary.
   */
   testcase( gap+2+nByte==top );
   if( gap+2+nByte>top ){
+defragment_page:
+    testcase( pPage->nCell==0 );
     rc = defragmentPage(pPage);
     if( rc ) return rc;
     top = get2byteNotZero(&data[hdr+5]);
@@ -1293,90 +1334,100 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
 
 /*
 ** Return a section of the pPage->aData to the freelist.
-** The first byte of the new free block is pPage->aDisk[start]
-** and the size of the block is "size" bytes.
+** The first byte of the new free block is pPage->aData[iStart]
+** and the size of the block is iSize bytes.
 **
-** Most of the effort here is involved in coalesing adjacent
-** free blocks into a single big free block.
+** Adjacent freeblocks are coalesced.
+**
+** Note that even though the freeblock list was checked by btreeInitPage(),
+** that routine will not detect overlap between cells or freeblocks.  Nor
+** does it detect cells or freeblocks that encrouch into the reserved bytes
+** at the end of the page.  So do additional corruption checks inside this
+** routine and return SQLITE_CORRUPT if any problems are found.
 */
-static int freeSpace(MemPage *pPage, int start, int size){
-  int addr, pbegin, hdr;
-  int iLast;                        /* Largest possible freeblock offset */
-  unsigned char *data = pPage->aData;
+static int freeSpace(MemPage *pPage, u16 iStart, u16 iSize){
+  u16 iPtr;                             /* Address of pointer to next freeblock */
+  u16 iFreeBlk;                         /* Address of the next freeblock */
+  u8 hdr;                               /* Page header size.  0 or 100 */
+  u8 nFrag = 0;                         /* Reduction in fragmentation */
+  u16 iOrigSize = iSize;                /* Original value of iSize */
+  u32 iLast = pPage->pBt->usableSize-4; /* Largest possible freeblock offset */
+  u32 iEnd = iStart + iSize;            /* First byte past the iStart buffer */
+  unsigned char *data = pPage->aData;   /* Page content */
 
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-  assert( start>=pPage->hdrOffset+6+pPage->childPtrSize );
-  assert( (start + size) <= (int)pPage->pBt->usableSize );
+  assert( iStart>=pPage->hdrOffset+6+pPage->childPtrSize );
+  assert( iEnd <= pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  assert( size>=0 );   /* Minimum cell size is 4 */
+  assert( iSize>=4 );   /* Minimum cell size is 4 */
+  assert( iStart<=iLast );
 
+  /* Overwrite deleted information with zeros when the secure_delete
+  ** option is enabled */
   if( pPage->pBt->btsFlags & BTS_SECURE_DELETE ){
-    /* Overwrite deleted information with zeros when the secure_delete
-    ** option is enabled */
-    memset(&data[start], 0, size);
+    memset(&data[iStart], 0, iSize);
   }
 
-  /* Add the space back into the linked list of freeblocks.  Note that
-  ** even though the freeblock list was checked by btreeInitPage(),
-  ** btreeInitPage() did not detect overlapping cells or
-  ** freeblocks that overlapped cells.   Nor does it detect when the
-  ** cell content area exceeds the value in the page header.  If these
-  ** situations arise, then subsequent insert operations might corrupt
-  ** the freelist.  So we do need to check for corruption while scanning
-  ** the freelist.
+  /* The list of freeblocks must be in ascending order.  Find the 
+  ** spot on the list where iStart should be inserted.
   */
   hdr = pPage->hdrOffset;
-  addr = hdr + 1;
-  iLast = pPage->pBt->usableSize - 4;
-  assert( start<=iLast );
-  while( (pbegin = get2byte(&data[addr]))<start && pbegin>0 ){
-    if( pbegin<addr+4 ){
-      return SQLITE_CORRUPT_BKPT;
+  iPtr = hdr + 1;
+  if( data[iPtr+1]==0 && data[iPtr]==0 ){
+    iFreeBlk = 0;  /* Shortcut for the case when the freelist is empty */
+  }else{
+    while( (iFreeBlk = get2byte(&data[iPtr]))>0 && iFreeBlk<iStart ){
+      if( iFreeBlk<iPtr+4 ) return SQLITE_CORRUPT_BKPT;
+      iPtr = iFreeBlk;
     }
-    addr = pbegin;
-  }
-  if( pbegin>iLast ){
-    return SQLITE_CORRUPT_BKPT;
-  }
-  assert( pbegin>addr || pbegin==0 );
-  put2byte(&data[addr], start);
-  put2byte(&data[start], pbegin);
-  put2byte(&data[start+2], size);
-  pPage->nFree = pPage->nFree + (u16)size;
-
-  /* Coalesce adjacent free blocks */
-  addr = hdr + 1;
-  while( (pbegin = get2byte(&data[addr]))>0 ){
-    int pnext, psize, x;
-    assert( pbegin>addr );
-    assert( pbegin <= (int)pPage->pBt->usableSize-4 );
-    pnext = get2byte(&data[pbegin]);
-    psize = get2byte(&data[pbegin+2]);
-    if( pbegin + psize + 3 >= pnext && pnext>0 ){
-      int frag = pnext - (pbegin+psize);
-      if( (frag<0) || (frag>(int)data[hdr+7]) ){
-        return SQLITE_CORRUPT_BKPT;
+    if( iFreeBlk>iLast ) return SQLITE_CORRUPT_BKPT;
+    assert( iFreeBlk>iPtr || iFreeBlk==0 );
+  
+    /* At this point:
+    **    iFreeBlk:   First freeblock after iStart, or zero if none
+    **    iPtr:       The address of a pointer iFreeBlk
+    **
+    ** Check to see if iFreeBlk should be coalesced onto the end of iStart.
+    */
+    if( iFreeBlk && iEnd+3>=iFreeBlk ){
+      nFrag = iFreeBlk - iEnd;
+      if( iEnd>iFreeBlk ) return SQLITE_CORRUPT_BKPT;
+      iEnd = iFreeBlk + get2byte(&data[iFreeBlk+2]);
+      iSize = iEnd - iStart;
+      iFreeBlk = get2byte(&data[iFreeBlk]);
+    }
+  
+    /* If iPtr is another freeblock (that is, if iPtr is not the freelist pointer
+    ** in the page header) then check to see if iStart should be coalesced 
+    ** onto the end of iPtr.
+    */
+    if( iPtr>hdr+1 ){
+      int iPtrEnd = iPtr + get2byte(&data[iPtr+2]);
+      if( iPtrEnd+3>=iStart ){
+        if( iPtrEnd>iStart ) return SQLITE_CORRUPT_BKPT;
+        nFrag += iStart - iPtrEnd;
+        iSize = iEnd - iPtr;
+        iStart = iPtr;
       }
-      data[hdr+7] -= (u8)frag;
-      x = get2byte(&data[pnext]);
-      put2byte(&data[pbegin], x);
-      x = pnext + get2byte(&data[pnext+2]) - pbegin;
-      put2byte(&data[pbegin+2], x);
-    }else{
-      addr = pbegin;
     }
+    if( nFrag>data[hdr+7] ) return SQLITE_CORRUPT_BKPT;
+    data[hdr+7] -= nFrag;
   }
-
-  /* If the cell content area begins with a freeblock, remove it. */
-  if( data[hdr+1]==data[hdr+5] && data[hdr+2]==data[hdr+6] ){
-    int top;
-    pbegin = get2byte(&data[hdr+1]);
-    memcpy(&data[hdr+1], &data[pbegin], 2);
-    top = get2byte(&data[hdr+5]) + get2byte(&data[pbegin+2]);
-    put2byte(&data[hdr+5], top);
+  if( iStart==get2byte(&data[hdr+5]) ){
+    /* The new freeblock is at the beginning of the cell content area,
+    ** so just extend the cell content area rather than create another
+    ** freelist entry */
+    if( iPtr!=hdr+1 ) return SQLITE_CORRUPT_BKPT;
+    put2byte(&data[hdr+1], iFreeBlk);
+    put2byte(&data[hdr+5], iEnd);
+  }else{
+    /* Insert the new freeblock into the freelist */
+    put2byte(&data[iPtr], iStart);
+    put2byte(&data[iStart], iFreeBlk);
+    put2byte(&data[iStart+2], iSize);
   }
-  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
+  pPage->nFree += iOrigSize;
   return SQLITE_OK;
 }
 

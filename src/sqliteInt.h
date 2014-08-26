@@ -154,6 +154,18 @@
 #endif
 
 /*
+** A macro to hint to the compiler that a function should not be
+** inlined.
+*/
+#if defined(__GNUC__)
+#  define SQLITE_NOINLINE  __attribute__((noinline))
+#elif defined(_MSC_VER)
+#  define SQLITE_NOINLINE  __declspec(noinline)
+#else
+#  define SQLITE_NOINLINE
+#endif
+
+/*
 ** The SQLITE_THREADSAFE macro must be defined as 0, 1, or 2.
 ** 0 means mutexes are permanently disable and the library is never
 ** threadsafe.  1 means the library is serialized which is the highest
@@ -3305,38 +3317,23 @@ u64 sqlite3LogEstToInt(LogEst);
 /*
 ** Routines to read and write variable-length integers.  These used to
 ** be defined locally, but now we use the varint routines in the util.c
-** file.  Code should use the MACRO forms below, as the Varint32 versions
-** are coded to assume the single byte case is already handled (which 
-** the MACRO form does).
+** file.
 */
 int sqlite3PutVarint(unsigned char*, u64);
-int sqlite3PutVarint32(unsigned char*, u32);
 u8 sqlite3GetVarint(const unsigned char *, u64 *);
 u8 sqlite3GetVarint32(const unsigned char *, u32 *);
 int sqlite3VarintLen(u64 v);
 
 /*
-** The header of a record consists of a sequence variable-length integers.
-** These integers are almost always small and are encoded as a single byte.
-** The following macros take advantage this fact to provide a fast encode
-** and decode of the integers in a record header.  It is faster for the common
-** case where the integer is a single byte.  It is a little slower when the
-** integer is two or more bytes.  But overall it is faster.
-**
-** The following expressions are equivalent:
-**
-**     x = sqlite3GetVarint32( A, &B );
-**     x = sqlite3PutVarint32( A, B );
-**
-**     x = getVarint32( A, B );
-**     x = putVarint32( A, B );
-**
+** The common case is for a varint to be a single byte.  They following
+** macros handle the common case without a procedure call, but then call
+** the procedure for larger varints.
 */
 #define getVarint32(A,B)  \
   (u8)((*(A)<(u8)0x80)?((B)=(u32)*(A)),1:sqlite3GetVarint32((A),(u32 *)&(B)))
 #define putVarint32(A,B)  \
   (u8)(((u32)(B)<(u32)0x80)?(*(A)=(unsigned char)(B)),1:\
-  sqlite3PutVarint32((A),(B)))
+  sqlite3PutVarint((A),(B)))
 #define getVarint    sqlite3GetVarint
 #define putVarint    sqlite3PutVarint
 
@@ -3348,7 +3345,8 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity);
 char sqlite3ExprAffinity(Expr *pExpr);
 int sqlite3Atoi64(const char*, i64*, int, u8);
 int sqlite3DecOrHexToI64(const char*, i64*);
-void sqlite3Error(sqlite3*, int, const char*,...);
+void sqlite3ErrorWithMsg(sqlite3*, int, const char*,...);
+void sqlite3Error(sqlite3*,int);
 void *sqlite3HexToBlob(sqlite3*, const char *z, int n);
 u8 sqlite3HexToInt(int h);
 int sqlite3TwoPartName(Parse *, Token *, Token *, Token **);

@@ -127,7 +127,13 @@ if !$::sqlite_options(enable_purgeable_pcache) {
   } 0
   do_test memsubsys1-3.1.4 {
     set overflow [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 2]
-  } $max_pagecache
+    # Note: The measured PAGECACHE_OVERFLOW is amount malloc() returns, not what
+    # was requested.  System malloc() implementations might (arbitrarily) return
+    # slightly different oversize buffers, which can result in different
+    # PAGECACHE_OVERFLOW sizes between consecutive runs.  So we cannot do an
+    # exact comparison.  Simply verify that the amount is within 5%.
+    expr {$overflow>=$max_pagecache*0.95 && $overflow<=$max_pagecache*1.05}
+  } 1
 }
 do_test memsubsys1-3.1.5 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]

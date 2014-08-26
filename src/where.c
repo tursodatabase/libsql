@@ -2220,6 +2220,7 @@ static int whereRangeScanEst(
           iNew = a[0] + ((pLower->eOperator & WO_GT) ? a[1] : 0);
           if( iNew>iLower ) iLower = iNew;
           nOut--;
+          pLower = 0;
         }
       }
 
@@ -2235,6 +2236,7 @@ static int whereRangeScanEst(
           iNew = a[0] + ((pUpper->eOperator & WO_LE) ? a[1] : 0);
           if( iNew<iUpper ) iUpper = iNew;
           nOut--;
+          pUpper = 0;
         }
       }
 
@@ -2248,10 +2250,8 @@ static int whereRangeScanEst(
         if( nNew<nOut ){
           nOut = nNew;
         }
-        pLoop->nOut = (LogEst)nOut;
         WHERETRACE(0x10, ("range scan regions: %u..%u  est=%d\n",
                            (u32)iLower, (u32)iUpper, nOut));
-        return SQLITE_OK;
       }
     }else{
       int bDone = 0;
@@ -2262,8 +2262,8 @@ static int whereRangeScanEst(
 #else
   UNUSED_PARAMETER(pParse);
   UNUSED_PARAMETER(pBuilder);
-#endif
   assert( pLower || pUpper );
+#endif
   assert( pUpper==0 || (pUpper->wtFlags & TERM_VNULL)==0 );
   nNew = whereRangeAdjust(pLower, nOut);
   nNew = whereRangeAdjust(pUpper, nNew);
@@ -3781,8 +3781,8 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
   sqlite3DebugPrintf(" %12s",
                      pItem->zAlias ? pItem->zAlias : pTab->zName);
   if( (p->wsFlags & WHERE_VIRTUALTABLE)==0 ){
-     const char *zName;
-     if( p->u.btree.pIndex && (zName = p->u.btree.pIndex->zName)!=0 ){
+    const char *zName;
+    if( p->u.btree.pIndex && (zName = p->u.btree.pIndex->zName)!=0 ){
       if( strncmp(zName, "sqlite_autoindex_", 17)==0 ){
         int i = sqlite3Strlen30(zName) - 1;
         while( zName[i]!='_' ) i--;
@@ -3803,7 +3803,11 @@ static void whereLoopPrint(WhereLoop *p, WhereClause *pWC){
     sqlite3DebugPrintf(" %-19s", z);
     sqlite3_free(z);
   }
-  sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
+  if( p->wsFlags & WHERE_SKIPSCAN ){
+    sqlite3DebugPrintf(" f %05x %d-%d", p->wsFlags, p->nLTerm,p->u.btree.nSkip);
+  }else{
+    sqlite3DebugPrintf(" f %05x N %d", p->wsFlags, p->nLTerm);
+  }
   sqlite3DebugPrintf(" cost %d,%d,%d\n", p->rSetup, p->rRun, p->nOut);
 #ifdef SQLITE_ENABLE_TREE_EXPLAIN
   /* If the 0x100 bit of wheretracing is set, then show all of the constraint
@@ -4316,8 +4320,7 @@ static int whereLoopAddBtreeIndex(
   ** On the other hand, the extra seeks could end up being significantly
   ** more expensive.  */
   assert( 42==sqlite3LogEst(18) );
-  if( pTerm==0
-   && saved_nEq==saved_nSkip
+  if( saved_nEq==saved_nSkip
    && saved_nEq+1<pProbe->nKeyCol
    && pProbe->aiRowLogEst[saved_nEq+1]>=42  /* TUNING: Minimum for skip-scan */
    && (rc = whereLoopResize(db, pNew, pNew->nLTerm+1))==SQLITE_OK
@@ -4328,9 +4331,17 @@ static int whereLoopAddBtreeIndex(
     pNew->aLTerm[pNew->nLTerm++] = 0;
     pNew->wsFlags |= WHERE_SKIPSCAN;
     nIter = pProbe->aiRowLogEst[saved_nEq] - pProbe->aiRowLogEst[saved_nEq+1];
+    if( pTerm ){
+      /* TUNING:  When estimating skip-scan for a term that is also indexable,
+      ** increase the cost of the skip-scan by 2x, to make it a little less
+      ** desirable than the regular index lookup. */
+      nIter += 10;  assert( 10==sqlite3LogEst(2) );
+    }
     pNew->nOut -= nIter;
     whereLoopAddBtreeIndex(pBuilder, pSrc, pProbe, nIter + nInMul);
     pNew->nOut = saved_nOut;
+    pNew->u.btree.nEq = saved_nEq;
+    pNew->u.btree.nSkip = saved_nSkip;
   }
   for(; rc==SQLITE_OK && pTerm!=0; pTerm = whereScanNext(&scan)){
     u16 eOp = pTerm->eOperator;   /* Shorthand for pTerm->eOperator */
