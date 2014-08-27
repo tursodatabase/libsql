@@ -1,5 +1,5 @@
-C Change\sthe\spage\scache\sso\sthat\sa\snew\ssqlite3_pcache\sobject\sis\sallocated\sas\nsoon\sas\sthe\spage\scache\sis\sopened,\snot\sdelayed\suntil\sthe\sfirst\sfetch\srequest.\nThis\sgive\sa\snoticable\sperformance\sboost.\s\sThe\sinterface\sbetween\spager\sand\nthe\spage\scache\shas\schanged\sslightly,\swhich\smight\sbreak\sZIPVFS.
-D 2014-08-26T15:06:49.829
+C Performance\senhancement\sin\ssqlite3VdbeMemNulTerminate().
+D 2014-08-27T00:50:11.231
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vdbeInt.h df58400454823954cfb241e5858f07f37fc1fd78
 F src/vdbeapi.c cda974083d7597f807640d344ffcf76d872201ce
 F src/vdbeaux.c dba006f67c9fd1b1d07ee7fb0fb38aa1905161d1
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 4e08ea087aea367dae7c45129b75487e0056e819
+F src/vdbemem.c 39cde2d8ddaa391055885caba9cb137ec2750474
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P af364cce9da0961593ef876b646197f82df08ad5
-R e52a11dddfc2629a8399ec2b801365c3
+P f1f94a971e031e784f8c30a6faf829df58709329
+R a4b7581e490aa7d71b634e963210e5ae
 U drh
-Z 1a77b3226c1f56b49ad44674617b7aa6
+Z d9bb31c0fee81f84beaf0ed2a801edba

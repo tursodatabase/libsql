@@ -200,15 +200,11 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
 }
 #endif
 
-
 /*
-** Make sure the given Mem is \u0000 terminated.
+** It is already known that pMem contains an unterminated string.
+** Add the zero terminator.
 */
-int sqlite3VdbeMemNulTerminate(Mem *pMem){
-  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  if( (pMem->flags & MEM_Term)!=0 || (pMem->flags & MEM_Str)==0 ){
-    return SQLITE_OK;   /* Nothing to do */
-  }
+static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
   if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
     return SQLITE_NOMEM;
   }
@@ -216,6 +212,20 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
   pMem->z[pMem->n+1] = 0;
   pMem->flags |= MEM_Term;
   return SQLITE_OK;
+}
+
+/*
+** Make sure the given Mem is \u0000 terminated.
+*/
+int sqlite3VdbeMemNulTerminate(Mem *pMem){
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  testcase( (pMem->flags & (MEM_Term|MEM_Str))==(MEM_Term|MEM_Str) );
+  testcase( (pMem->flags & (MEM_Term|MEM_Str))==0 );
+  if( (pMem->flags & (MEM_Term|MEM_Str))!=MEM_Str ){
+    return SQLITE_OK;   /* Nothing to do */
+  }else{
+    return vdbeMemAddTerminator(pMem);
+  }
 }
 
 /*
