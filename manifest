@@ -1,5 +1,5 @@
-C Add\sa\sVDBE\ssynopsis\scomment\sfor\sclarification.
-D 2014-08-27T17:53:40.315
+C Refactor\sthe\ssqlite3PcacheFetch()\sroutine\sinto\sthree\sseparate\sroutines,\nwhich\sare\ssignificantly\sfaster\soverall\sand\sabout\s100\sbytes\ssmaller\sin\nsize\sas\swell.
+D 2014-08-27T23:18:01.324
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,11 +211,11 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c bd7df3094a60915c148517504c76df4fca24e542
 F src/os_win.c d067fce558a5032e6e6afe62899e5397bf63cf3e
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c 27fb89e62e0ccf10218805ed31315ccb2d56c0ce
+F src/pager.c 3e732d2bbdd8d8d95fed0c5ae7e718d73153c4c5
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
-F src/pcache.c c216e4077449be57e9752a348490ffa467b85599
-F src/pcache.h 80a9c3f7d7b7080388e8654717cb45e7b99f14a6
+F src/pcache.c 3b3791297e8977002e56b4a9b8916f2039abad9b
+F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c c5af6403a55178c9d1c09e4f77b0f9c88822762c
 F src/pragma.c d10ef67c4de79f78188b965b4b7988aff1d66f2e
 F src/prepare.c 3842c1dfc0b053458e3adcf9f6efc48e03e3fe3d
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P d8b1c4336145d436241863c3525530e24a24799b
-R 34521287dadc9603bb93e0f806afdcf3
-U mistachkin
-Z d8914cdf39bc88ab4bc7c63f9115cf85
+P 029a6dc744c24e7be482298c678af8a115d6a87b
+R dd4d11ad7a65bf573cc08ce3e7bd3aa7
+U drh
+Z c0c64dee6940e13662884c6ed139ac1a

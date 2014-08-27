@@ -5286,7 +5286,6 @@ int sqlite3PagerAcquire(
   if( pPager->errCode!=SQLITE_OK ){
     rc = pPager->errCode;
   }else{
-
     if( bMmapOk && pagerUseWal(pPager) ){
       rc = sqlite3WalFindFrame(pPager->pWal, pgno, &iFrame);
       if( rc!=SQLITE_OK ) goto pager_acquire_err;
@@ -5301,7 +5300,7 @@ int sqlite3PagerAcquire(
 
       if( rc==SQLITE_OK && pData ){
         if( pPager->eState>PAGER_READER ){
-          (void)sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &pPg);
+          pPg = sqlite3PagerLookup(pPager, pgno);
         }
         if( pPg==0 ){
           rc = pagerAcquireMapPage(pPager, pgno, pData, &pPg);
@@ -5319,7 +5318,16 @@ int sqlite3PagerAcquire(
       }
     }
 
-    rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 3, ppPage);
+    {
+      sqlite3_pcache_page *pBase;
+      pBase = sqlite3PcacheFetch(pPager->pPCache, pgno, 3);
+      if( pBase==0 ){
+        rc = sqlite3PcacheFetchStress(pPager->pPCache, pgno, &pBase);
+        if( rc!=SQLITE_OK ) goto pager_acquire_err;
+      }
+      pPg = *ppPage = sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pBase);
+      if( pPg==0 ) rc = SQLITE_NOMEM;
+    }
   }
 
   if( rc!=SQLITE_OK ){
@@ -5416,12 +5424,12 @@ pager_acquire_err:
 ** has ever happened.
 */
 DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
-  PgHdr *pPg = 0;
+  sqlite3_pcache_page *pPage;
   assert( pPager!=0 );
   assert( pgno!=0 );
   assert( pPager->pPCache!=0 );
-  sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &pPg);
-  return pPg;
+  pPage = sqlite3PcacheFetch(pPager->pPCache, pgno, 0);
+  return sqlite3PcacheFetchFinish(pPager->pPCache, pgno, pPage);
 }
 
 /*

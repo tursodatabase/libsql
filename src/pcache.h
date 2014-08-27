@@ -88,7 +88,9 @@ int sqlite3PcacheSize(void);
 /* One release per successful fetch.  Page is pinned until released.
 ** Reference counted. 
 */
-int sqlite3PcacheFetch(PCache*, Pgno, int createFlag, PgHdr**);
+sqlite3_pcache_page *sqlite3PcacheFetch(PCache*, Pgno, int createFlag);
+int sqlite3PcacheFetchStress(PCache*, Pgno, sqlite3_pcache_page**);
+PgHdr *sqlite3PcacheFetchFinish(PCache*, Pgno, sqlite3_pcache_page *pPage);
 void sqlite3PcacheRelease(PgHdr*);
 
 void sqlite3PcacheDrop(PgHdr*);         /* Remove page from cache */
