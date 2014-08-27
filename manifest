@@ -1,5 +1,5 @@
-C In\sthe\ssqlite3_context\sobject,\skeep\sa\spointer\sto\sthe\sresult\svalue\srather\nthan\sstoring\sthe\sresult\svalue\sin\sthe\ssqlite3_context\sobject\sand\susing\nmemcpy()\sto\smove\sthe\svalue\sback\sinto\sits\sregister\nafter\sthe\sfunction\sreturns.\s\sThis\sruns\sfaster\sand\ssaves\sover\s500\sbytes\nof\scode\sspace.
-D 2014-08-27T14:14:06.320
+C When\sdetermining\swhether\sor\snot\sa\spartial\sindex\sis\susable,\sdo\snot\sassume\sthat\sthe\scursor\snumber\sassigned\sto\seach\stable\sin\sthe\squery\sis\sthe\ssame\sas\sits\sindex\sin\sthe\sFROM\sclause.\sFix\sfor\sticket\s[98d973b8f5].
+D 2014-08-27T17:37:20.006
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -297,7 +297,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 4e2770a1914b8ce30f3e44ad954b720eca3b5efd
+F src/where.c b80cb72645390ba6d8b715a47f5696d27b4fc6c9
 F src/whereInt.h 923820bee9726033a501a08d2fc69b9c1ee4feb3
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -626,7 +626,7 @@ F test/index3.test 55a90cff99834305e8141df7afaef39674b57062
 F test/index4.test ab92e736d5946840236cd61ac3191f91a7856bf6
 F test/index5.test fc07c14193c0430814e7a08b5da46888ee795c33
 F test/index6.test fb370966ac3cd0989053dd5385757b5c3e24ab6a
-F test/index7.test a3baf9a625bda7fd49471e99aeae04095fbfeecf
+F test/index7.test 4a1d3707e95067dfa069786baab124adedd55945
 F test/indexedby.test b2f22f3e693a53813aa3f50b812eb609ba6df1ec
 F test/indexfault.test 31d4ab9a7d2f6e9616933eb079722362a883eb1d
 F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1624916c6e9bc5dbcfa146b316a99ac8fecb13a9
-R d81ba05103ba02a6e3d94271217446d4
-U drh
-Z 3300f3f8d44a1fbcab3339e234a49760
+P 6c1ee3e388eb110de815270467b1e50592c0ba6c
+R 464ad42e9750481b657eb9d5845e92c2
+U dan
+Z e49f678a3d5ba39b1ed4a3e5b185dc37

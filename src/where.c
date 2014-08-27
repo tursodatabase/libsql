@@ -4713,7 +4713,8 @@ static int whereLoopAddBtree(
   */
   for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
     if( pProbe->pPartIdxWhere!=0
-     && !whereUsablePartialIndex(pNew->iTab, pWC, pProbe->pPartIdxWhere) ){
+     && !whereUsablePartialIndex(pSrc->iCursor, pWC, pProbe->pPartIdxWhere) ){
+      testcase( pNew->iTab!=pSrc->iCursor );  /* See ticket [98d973b8f5] */
       continue;  /* Partial index inappropriate for this query */
     }
     rSize = pProbe->aiRowLogEst[0];
