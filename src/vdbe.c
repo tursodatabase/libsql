@@ -1740,6 +1740,7 @@ case OP_RealAffinity: {                  /* in1 */
 
 #ifndef SQLITE_OMIT_CAST
 /* Opcode: Cast P1 P2 * * *
+** Synopsis: affinity(r[P1])
 **
 ** Force the value in register P1 to be the type defined by P2.
 ** 
