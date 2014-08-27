@@ -290,17 +290,20 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
   int rc = SQLITE_OK;
   if( ALWAYS(pFunc && pFunc->xFinalize) ){
     sqlite3_context ctx;
+    Mem t;
     assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
     memset(&ctx, 0, sizeof(ctx));
-    ctx.s.flags = MEM_Null;
-    ctx.s.db = pMem->db;
+    memset(&t, 0, sizeof(t));
+    t.flags = MEM_Null;
+    t.db = pMem->db;
+    ctx.pOut = &t;
     ctx.pMem = pMem;
     ctx.pFunc = pFunc;
     pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
     assert( 0==(pMem->flags&MEM_Dyn) && !pMem->xDel );
     sqlite3DbFree(pMem->db, pMem->zMalloc);
-    memcpy(pMem, &ctx.s, sizeof(ctx.s));
+    memcpy(pMem, &t, sizeof(t));
     rc = ctx.isError;
   }
   return rc;
@@ -616,13 +619,27 @@ void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
 }
 
 /*
+** The pMem is known to contain content that needs to be destroyed prior
+** to a value change.  So invoke the destructor, then set the value to
+** a 64-bit integer.
+*/
+static SQLITE_NOINLINE void vdbeReleaseAndSetInt64(Mem *pMem, i64 val){
+  sqlite3VdbeMemReleaseExternal(pMem);
+  pMem->u.i = val;
+  pMem->flags = MEM_Int;
+}
+
+/*
 ** Delete any previous value and set the value stored in *pMem to val,
 ** manifest type INTEGER.
 */
 void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
-  sqlite3VdbeMemRelease(pMem);
-  pMem->u.i = val;
-  pMem->flags = MEM_Int;
+  if( VdbeMemDynamic(pMem) ){
+    vdbeReleaseAndSetInt64(pMem, val);
+  }else{
+    pMem->u.i = val;
+    pMem->flags = MEM_Int;
+  }
 }
 
 #ifndef SQLITE_OMIT_FLOATING_POINT

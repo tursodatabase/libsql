@@ -266,8 +266,8 @@ struct AuxData {
 ** (Mem) which are only defined there.
 */
 struct sqlite3_context {
+  Mem *pOut;            /* The return value is stored here */
   FuncDef *pFunc;       /* Pointer to function information.  MUST BE FIRST */
-  Mem s;                /* The return value is stored here */
   Mem *pMem;            /* Memory cell used to store aggregate context */
   CollSeq *pColl;       /* Collating sequence */
   Vdbe *pVdbe;          /* The VM that owns this context */
