@@ -919,6 +919,45 @@ int sqlite3VdbeMemFromBtree(
   return rc;
 }
 
+/*
+** The pVal argument is known to be a value other than NULL.
+** Convert it into a string with encoding enc and return a pointer
+** to a zero-terminated version of that string.
+*/
+SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
+  assert( pVal!=0 );
+  assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
+  assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
+  assert( (pVal->flags & MEM_RowSet)==0 );
+  assert( (pVal->flags & (MEM_Null))==0 );
+  if( pVal->flags & (MEM_Blob|MEM_Str) ){
+    pVal->flags |= MEM_Str;
+    if( pVal->flags & MEM_Zero ){
+      sqlite3VdbeMemExpandBlob(pVal);
+    }
+    if( pVal->enc != (enc & ~SQLITE_UTF16_ALIGNED) ){
+      sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
+    }
+    if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&SQLITE_PTR_TO_INT(pVal->z)) ){
+      assert( (pVal->flags & (MEM_Ephem|MEM_Static))!=0 );
+      if( sqlite3VdbeMemMakeWriteable(pVal)!=SQLITE_OK ){
+        return 0;
+      }
+    }
+    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
+  }else{
+    sqlite3VdbeMemStringify(pVal, enc, 0);
+    assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
+  }
+  assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
+              || pVal->db->mallocFailed );
+  if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
+    return pVal->z;
+  }else{
+    return 0;
+  }
+}
+
 /* This function is only available internally, it is not part of the
 ** external API. It works in a similar way to sqlite3_value_text(),
 ** except the data returned is in the encoding specified by the second
@@ -931,38 +970,16 @@ int sqlite3VdbeMemFromBtree(
 */
 const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   if( !pVal ) return 0;
-
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
   assert( (pVal->flags & MEM_RowSet)==0 );
-
+  if( (pVal->flags&(MEM_Str|MEM_Term))==(MEM_Str|MEM_Term) && pVal->enc==enc ){
+    return pVal->z;
+  }
   if( pVal->flags&MEM_Null ){
     return 0;
   }
-  assert( (MEM_Blob>>3) == MEM_Str );
-  pVal->flags |= (pVal->flags & MEM_Blob)>>3;
-  ExpandBlob(pVal);
-  if( pVal->flags&MEM_Str ){
-    sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
-    if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&SQLITE_PTR_TO_INT(pVal->z)) ){
-      assert( (pVal->flags & (MEM_Ephem|MEM_Static))!=0 );
-      if( sqlite3VdbeMemMakeWriteable(pVal)!=SQLITE_OK ){
-        return 0;
-      }
-    }
-    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
-  }else{
-    assert( (pVal->flags&MEM_Blob)==0 );
-    sqlite3VdbeMemStringify(pVal, enc, 0);
-    assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
-  }
-  assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
-              || pVal->db->mallocFailed );
-  if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
-    return pVal->z;
-  }else{
-    return 0;
-  }
+  return valueToText(pVal, enc);
 }
 
 /*

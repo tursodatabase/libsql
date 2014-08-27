@@ -1,5 +1,5 @@
-C Performance\senhancement\sin\ssqlite3VdbeMemNulTerminate().
-D 2014-08-27T00:50:11.231
+C Factor\sout\sthe\sexception\spaths\sfrom\ssqlite3ValueToText()\sinto\sa\sseparate\nfunction\sso\sthat\sthe\smain\sroutine\sis\smuch\sfaster\sfor\sthe\scommon\scase\sof\nno\srequired\stype\sor\sencoding\sconversions.
+D 2014-08-27T03:28:50.316
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -290,7 +290,7 @@ F src/vdbeInt.h df58400454823954cfb241e5858f07f37fc1fd78
 F src/vdbeapi.c cda974083d7597f807640d344ffcf76d872201ce
 F src/vdbeaux.c dba006f67c9fd1b1d07ee7fb0fb38aa1905161d1
 F src/vdbeblob.c 848238dc73e93e48432991bb5651bf87d865eca4
-F src/vdbemem.c 39cde2d8ddaa391055885caba9cb137ec2750474
+F src/vdbemem.c 9fc61d0860fd23399715fc436b2645154df08ce8
 F src/vdbesort.c f7f5563bf7d4695ca8f3203f3bf9de96d04ed0b3
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f1f94a971e031e784f8c30a6faf829df58709329
-R a4b7581e490aa7d71b634e963210e5ae
+P f94cacc393e895522b92c9717c53357afc918d60
+R 0d26b1eecc3f76fc31005918debb0d62
 U drh
-Z d9bb31c0fee81f84beaf0ed2a801edba
+Z 03245edbdb5b11cf6bf42be492d2d8e5
