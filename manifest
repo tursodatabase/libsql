@@ -1,5 +1,5 @@
-C Fix\sa\sformatting\serror\s("%d"\sneeded\sin\splace\sof\s"%g")\son\sa\sWHERETRACE\nmacro\sinside\sof\sthe\squery\splanner.\s\sThis\sfix\sapplies\sto\sdebugging\slogic\nonly.
-D 2014-08-28T13:42:13.503
+C Fix\sa\sproblem\scausing\san\sinaccurate\sstat4-based\sestimate\sfor\sthe\nnumber\sof\srows\svisited\sby\sa\srange\sscan.
+D 2014-08-28T17:30:28.372
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -297,7 +297,7 @@ F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 264df50a1b33124130b23180ded2e2c5663c652a
 F src/wal.h df01efe09c5cb8c8e391ff1715cca294f89668a4
 F src/walker.c 11edb74d587bc87b33ca96a5173e3ec1b8389e45
-F src/where.c 2fd5cfaf260d020e87053be8fb3741782c941adc
+F src/where.c 8214c30123537c5ae49f5775f7298dbb1c64d676
 F src/whereInt.h 923820bee9726033a501a08d2fc69b9c1ee4feb3
 F test/8_3_names.test ebbb5cd36741350040fd28b432ceadf495be25b2
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -1120,7 +1120,7 @@ F test/whereF.test 5b2ba0dbe8074aa13e416b37c753991f0a2492d7
 F test/whereG.test 69f5ec4b15760a8c860f80e2d55525669390aab3
 F test/whereH.test e4b07f7a3c2f5d31195cd33710054c78667573b2
 F test/whereI.test 1d89199697919d4930be05a71e7fe620f114e622
-F test/whereJ.test 35a40a50d0e13aa6b0de7cc5d4b204e5f9f9669f
+F test/whereJ.test 8880784c211c459595f734a35bcc5f2061fce987
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/wild001.test bca33f499866f04c24510d74baf1e578d4e44b1c
 F test/win32heap.test ea19770974795cff26e11575e12d422dbd16893c
@@ -1188,7 +1188,8 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P bdb6e4978d1a26d5f795262172605184264ede9c
-R 34004330a355f02374768ce4f339cc8f
+P c931ca2b7763cf894ece26ca4775d638876107e9 6ba609522ea7325341fad93bdb5f869c6506dea4
+R 3ae9c7f00ac4ed418fd1e37d2965b964
+T +closed 6ba609522ea7325341fad93bdb5f869c6506dea4
 U drh
-Z aa80dcf0253dbc225958d679762190fc
+Z 21e61dd5628a06df27222872476717f3

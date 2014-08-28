@@ -371,5 +371,52 @@ do_execsql_test whereJ-2.2 {
   ORDER BY t4.x;
 } {~/SCAN/}
 
+############################################################################
+
+ifcapable stat4 {
+  # Create and populate table.
+  do_execsql_test 3.1 { CREATE TABLE t1(a, b, c) }
+  for {set i 0} {$i < 32} {incr i 2} {
+    for {set x 0} {$x < 100} {incr x} {
+      execsql { INSERT INTO t1 VALUES($i, $x, $c) }
+      incr c
+    }
+    execsql { INSERT INTO t1 VALUES($i+1, 5, $c) }
+    incr c
+  }
+  
+  do_execsql_test 3.2 {
+    SELECT a, count(*) FROM t1 GROUP BY a HAVING a < 8;
+  } {
+    0 100 1 1 2 100 3 1 4 100 5 1 6 100 7 1
+  }
+  
+  do_execsql_test 3.3 {
+    CREATE INDEX idx_ab ON t1(a, b);
+    CREATE INDEX idx_c ON t1(c);
+    ANALYZE;
+  } {}
+  
+  # This one should use index "idx_c".
+  do_eqp_test 3.4 {
+    SELECT * FROM t1 WHERE 
+      a = 4 AND b BETWEEN 20 AND 80           -- Matches 80 rows
+        AND
+      c BETWEEN 150 AND 160                   -- Matches 10 rows
+  } {
+    0 0 0 {SEARCH TABLE t1 USING INDEX idx_c (c>? AND c<?)}
+  }
+  
+  # This one should use index "idx_ab".
+  do_eqp_test 3.5 {
+    SELECT * FROM t1 WHERE 
+      a = 5 AND b BETWEEN 20 AND 80           -- Matches 1 row
+        AND
+      c BETWEEN 150 AND 160                   -- Matches 10 rows
+  } {
+    0 0 0 {SEARCH TABLE t1 USING INDEX idx_ab (a=? AND b>? AND b<?)}
+  }
+}
+
 
 finish_test
