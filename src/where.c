@@ -2191,6 +2191,7 @@ static int whereRangeScanEst(
       tRowcnt iLower;
       tRowcnt iUpper;
 
+      if( pRec ) pRec->nField = pBuilder->nRecValid;
       if( nEq==p->nKeyCol ){
         aff = SQLITE_AFF_INTEGER;
       }else{
