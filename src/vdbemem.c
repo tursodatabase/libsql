@@ -200,15 +200,11 @@ int sqlite3VdbeMemExpandBlob(Mem *pMem){
 }
 #endif
 
-
 /*
-** Make sure the given Mem is \u0000 terminated.
+** It is already known that pMem contains an unterminated string.
+** Add the zero terminator.
 */
-int sqlite3VdbeMemNulTerminate(Mem *pMem){
-  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  if( (pMem->flags & MEM_Term)!=0 || (pMem->flags & MEM_Str)==0 ){
-    return SQLITE_OK;   /* Nothing to do */
-  }
+static SQLITE_NOINLINE int vdbeMemAddTerminator(Mem *pMem){
   if( sqlite3VdbeMemGrow(pMem, pMem->n+2, 1) ){
     return SQLITE_NOMEM;
   }
@@ -216,6 +212,20 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
   pMem->z[pMem->n+1] = 0;
   pMem->flags |= MEM_Term;
   return SQLITE_OK;
+}
+
+/*
+** Make sure the given Mem is \u0000 terminated.
+*/
+int sqlite3VdbeMemNulTerminate(Mem *pMem){
+  assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  testcase( (pMem->flags & (MEM_Term|MEM_Str))==(MEM_Term|MEM_Str) );
+  testcase( (pMem->flags & (MEM_Term|MEM_Str))==0 );
+  if( (pMem->flags & (MEM_Term|MEM_Str))!=MEM_Str ){
+    return SQLITE_OK;   /* Nothing to do */
+  }else{
+    return vdbeMemAddTerminator(pMem);
+  }
 }
 
 /*
@@ -280,17 +290,20 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
   int rc = SQLITE_OK;
   if( ALWAYS(pFunc && pFunc->xFinalize) ){
     sqlite3_context ctx;
+    Mem t;
     assert( (pMem->flags & MEM_Null)!=0 || pFunc==pMem->u.pDef );
     assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
     memset(&ctx, 0, sizeof(ctx));
-    ctx.s.flags = MEM_Null;
-    ctx.s.db = pMem->db;
+    memset(&t, 0, sizeof(t));
+    t.flags = MEM_Null;
+    t.db = pMem->db;
+    ctx.pOut = &t;
     ctx.pMem = pMem;
     ctx.pFunc = pFunc;
     pFunc->xFinalize(&ctx); /* IMP: R-24505-23230 */
     assert( 0==(pMem->flags&MEM_Dyn) && !pMem->xDel );
     sqlite3DbFree(pMem->db, pMem->zMalloc);
-    memcpy(pMem, &ctx.s, sizeof(ctx.s));
+    memcpy(pMem, &t, sizeof(t));
     rc = ctx.isError;
   }
   return rc;
@@ -606,13 +619,27 @@ void sqlite3VdbeMemSetZeroBlob(Mem *pMem, int n){
 }
 
 /*
+** The pMem is known to contain content that needs to be destroyed prior
+** to a value change.  So invoke the destructor, then set the value to
+** a 64-bit integer.
+*/
+static SQLITE_NOINLINE void vdbeReleaseAndSetInt64(Mem *pMem, i64 val){
+  sqlite3VdbeMemReleaseExternal(pMem);
+  pMem->u.i = val;
+  pMem->flags = MEM_Int;
+}
+
+/*
 ** Delete any previous value and set the value stored in *pMem to val,
 ** manifest type INTEGER.
 */
 void sqlite3VdbeMemSetInt64(Mem *pMem, i64 val){
-  sqlite3VdbeMemRelease(pMem);
-  pMem->u.i = val;
-  pMem->flags = MEM_Int;
+  if( VdbeMemDynamic(pMem) ){
+    vdbeReleaseAndSetInt64(pMem, val);
+  }else{
+    pMem->u.i = val;
+    pMem->flags = MEM_Int;
+  }
 }
 
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -909,6 +936,45 @@ int sqlite3VdbeMemFromBtree(
   return rc;
 }
 
+/*
+** The pVal argument is known to be a value other than NULL.
+** Convert it into a string with encoding enc and return a pointer
+** to a zero-terminated version of that string.
+*/
+SQLITE_NOINLINE const void *valueToText(sqlite3_value* pVal, u8 enc){
+  assert( pVal!=0 );
+  assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
+  assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
+  assert( (pVal->flags & MEM_RowSet)==0 );
+  assert( (pVal->flags & (MEM_Null))==0 );
+  if( pVal->flags & (MEM_Blob|MEM_Str) ){
+    pVal->flags |= MEM_Str;
+    if( pVal->flags & MEM_Zero ){
+      sqlite3VdbeMemExpandBlob(pVal);
+    }
+    if( pVal->enc != (enc & ~SQLITE_UTF16_ALIGNED) ){
+      sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
+    }
+    if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&SQLITE_PTR_TO_INT(pVal->z)) ){
+      assert( (pVal->flags & (MEM_Ephem|MEM_Static))!=0 );
+      if( sqlite3VdbeMemMakeWriteable(pVal)!=SQLITE_OK ){
+        return 0;
+      }
+    }
+    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
+  }else{
+    sqlite3VdbeMemStringify(pVal, enc, 0);
+    assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
+  }
+  assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
+              || pVal->db->mallocFailed );
+  if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
+    return pVal->z;
+  }else{
+    return 0;
+  }
+}
+
 /* This function is only available internally, it is not part of the
 ** external API. It works in a similar way to sqlite3_value_text(),
 ** except the data returned is in the encoding specified by the second
@@ -921,38 +987,16 @@ int sqlite3VdbeMemFromBtree(
 */
 const void *sqlite3ValueText(sqlite3_value* pVal, u8 enc){
   if( !pVal ) return 0;
-
   assert( pVal->db==0 || sqlite3_mutex_held(pVal->db->mutex) );
   assert( (enc&3)==(enc&~SQLITE_UTF16_ALIGNED) );
   assert( (pVal->flags & MEM_RowSet)==0 );
-
+  if( (pVal->flags&(MEM_Str|MEM_Term))==(MEM_Str|MEM_Term) && pVal->enc==enc ){
+    return pVal->z;
+  }
   if( pVal->flags&MEM_Null ){
     return 0;
   }
-  assert( (MEM_Blob>>3) == MEM_Str );
-  pVal->flags |= (pVal->flags & MEM_Blob)>>3;
-  ExpandBlob(pVal);
-  if( pVal->flags&MEM_Str ){
-    sqlite3VdbeChangeEncoding(pVal, enc & ~SQLITE_UTF16_ALIGNED);
-    if( (enc & SQLITE_UTF16_ALIGNED)!=0 && 1==(1&SQLITE_PTR_TO_INT(pVal->z)) ){
-      assert( (pVal->flags & (MEM_Ephem|MEM_Static))!=0 );
-      if( sqlite3VdbeMemMakeWriteable(pVal)!=SQLITE_OK ){
-        return 0;
-      }
-    }
-    sqlite3VdbeMemNulTerminate(pVal); /* IMP: R-31275-44060 */
-  }else{
-    assert( (pVal->flags&MEM_Blob)==0 );
-    sqlite3VdbeMemStringify(pVal, enc, 0);
-    assert( 0==(1&SQLITE_PTR_TO_INT(pVal->z)) );
-  }
-  assert(pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) || pVal->db==0
-              || pVal->db->mallocFailed );
-  if( pVal->enc==(enc & ~SQLITE_UTF16_ALIGNED) ){
-    return pVal->z;
-  }else{
-    return 0;
-  }
+  return valueToText(pVal, enc);
 }
 
 /*
