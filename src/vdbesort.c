@@ -796,7 +796,16 @@ int sqlite3VdbeSorterInit(
 #if SQLITE_MAX_WORKER_THREADS==0
 # define nWorker 0
 #else
-  int nWorker = sqlite3TempInMemory(db) ? 0 : db->mxWorker ;
+  int nWorker;
+#endif
+
+  /* Initialize the upper limit on the number of worker threads */
+#if SQLITE_MAX_WORKER_THREADS>0
+  if( sqlite3TempInMemory(db) || sqlite3GlobalConfig.bCoreMutex==0 ){
+    nWorker = 0;
+  }else{
+    nWorker = db->aLimit[SQLITE_LIMIT_WORKER_THREADS];
+  }
 #endif
 
   /* Do not allow the total number of threads (main thread + all workers)

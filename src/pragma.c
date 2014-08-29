@@ -2287,15 +2287,14 @@ void sqlite3Pragma(
   */
   case PragTyp_THREADS: {
     sqlite3_int64 N;
-    if( sqlite3GlobalConfig.bCoreMutex
-     && zRight
+    if( zRight
      && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK
      && N>=0
     ){
-      if( N>SQLITE_MAX_WORKER_THREADS ) N = SQLITE_MAX_WORKER_THREADS;
-      db->mxWorker = N&0xff;
+      sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, (int)(N&0x7fffffff));
     }
-    returnSingleInt(pParse, "soft_heap_limit",  db->mxWorker);
+    returnSingleInt(pParse, "threads",
+                    sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1));
     break;
   }
 

@@ -941,7 +941,7 @@ struct Schema {
 ** The number of different kinds of things that can be limited
 ** using the sqlite3_limit() interface.
 */
-#define SQLITE_N_LIMIT (SQLITE_LIMIT_TRIGGER_DEPTH+1)
+#define SQLITE_N_LIMIT (SQLITE_LIMIT_WORKER_THREADS+1)
 
 /*
 ** Lookaside malloc is a set of fixed-size buffers that can be used
@@ -1013,7 +1013,6 @@ struct sqlite3 {
   u8 suppressErr;               /* Do not issue error messages if true */
   u8 vtabOnConflict;            /* Value to return for s3_vtab_on_conflict() */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
-  u8 mxWorker;                  /* Maximum number of worker threads */
   int nextPagesize;             /* Pagesize after VACUUM if >0 */
   u32 magic;                    /* Magic number for detect library misuse */
   int nChange;                  /* Value returned by sqlite3_changes() */
