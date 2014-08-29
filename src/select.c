@@ -829,7 +829,7 @@ static void selectInnerLoop(
       if( pSort ){
         pushOntoSorter(pParse, pSort, p, regResult);
       }else{
-        sqlite3ExprCodeMove(pParse, regResult, iParm, 1);
+        assert( regResult==iParm );
         /* The LIMIT clause will jump out of the loop for us */
       }
       break;
