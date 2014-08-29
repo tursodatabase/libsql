@@ -1278,11 +1278,6 @@ int main(int argc, char **argv){
     rc = sqlite3_config(SQLITE_CONFIG_SCRATCH, pScratch, szScratch, nScratch);
     if( rc ) fatal_error("scratch configuration failed: %d\n", rc);
   }
-#ifdef SQLITE_CONFIG_WORKER_THREADS
-  if( nThread>0 ){
-    sqlite3_config(SQLITE_CONFIG_WORKER_THREADS, nThread);
-  }
-#endif
   if( nLook>0 ){
     sqlite3_config(SQLITE_CONFIG_LOOKASIDE, 0, 0);
   }
@@ -1300,6 +1295,7 @@ int main(int argc, char **argv){
   /* Set database connection options */
   sqlite3_create_function(g.db, "random", 0, SQLITE_UTF8, 0, randomFunc, 0, 0);
   if( doTrace ) sqlite3_trace(g.db, traceCallback, 0);
+  speedtest1_exec("PRAGMA threads=%d", nThread);
   if( zKey ){
     speedtest1_exec("PRAGMA key('%s')", zKey);
   }
