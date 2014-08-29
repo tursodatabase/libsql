@@ -2498,7 +2498,7 @@ static int openDatabase(
 
   assert( sizeof(db->aLimit)==sizeof(aHardLimit) );
   memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
-  db->aLimit[SQLITE_LIMIT_WORKER_THREADS] = 0;
+  db->aLimit[SQLITE_LIMIT_WORKER_THREADS] = SQLITE_DEFAULT_WORKER_THREADS;
   db->autoCommit = 1;
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;

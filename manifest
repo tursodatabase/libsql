@@ -1,5 +1,5 @@
-C Fix\sthe\sspeedtest1.c\stest\sprogram\sto\sset\sthe\sworker\sthread\scount\susing\nthe\sthreads\spragma.
-D 2014-08-29T18:06:33.187
+C Disable\sworker\sthreads\swhen\sSQLITE_THREADSAFE=0.\s\sSet\sthe\sdefault\scompile-time\nmaximum\snumber\sof\sworker\sthreads\sto\s8\sand\shonor\sthe\nSQLITE_DEFAULT_WORKER_THREADS\scompile-time\sconstant\s(which\sdefaults\sto\s0).
+D 2014-08-29T19:06:07.922
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -190,7 +190,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 87c92f4a08e2f70220e3b22a9c3b2482d36a134a
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 31c2122b7dd05a179049bbf163fd4839f181cbab
-F src/main.c e71d7c8b415e3b54d729aabb876f39f7aa35b000
+F src/main.c d2ef03a45552e11813c68326d5edfda992e319d4
 F src/malloc.c 954de5f998c23237e04474a3f2159bf483bba65a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c c0c990fcaddff810ea277b4fb5d9138603dd5d4b
@@ -228,7 +228,7 @@ F src/shell.c 88378cef39aba4b4a1df82793dcb1daf9276bb81
 F src/sqlite.h.in 74b42237f0d2b010779cc1b1a00190452b31a2ec
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
-F src/sqliteInt.h e539938b3504520da5cefe225712452abea6795a
+F src/sqliteInt.h 6244ee9052752e26d1275ab20c9b774385aa57d2
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -1193,7 +1193,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 1b598c68f32db635d1cea1373bedc434aa60cf08
-R 0f5325539e5516baa4a3f930643f73d7
+P 2ab4b5adc60b52bf2d2b79968d226b8dd7d2ab3b
+R 97462c8661f494fef9aea0705c0547b9
 U drh
-Z 8e5082b548f72bf30dfd81cfdd246c1c
+Z 369e082ce9db2aa4e0cc673a60a91a43
