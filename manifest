@@ -1,5 +1,5 @@
-C Note\sa\sfault\safter\sall,\srather\sa\stesting\smistake.\nMove\sthis\schange\sback\sto\strunk.\nWas:\sAvoid\san\sunnecessary\sOP_Move\soperation\sfor\sexpression\ssubqueries.
-D 2014-08-29T14:20:46.550
+C In\sthe\scommand-line\sshell,\sadded\soptions\s--lookaside,\s--pagecache,\sand\n--scratch\sused\sto\sconfigure\sauxiliary\smemories.
+D 2014-08-30T15:49:25.923
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -224,7 +224,7 @@ F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 1c4667571f2c9e339b5a5c5b152a9ea7b0bc4163
-F src/shell.c 728d2226594d356bf4fbdbdfd08538fd78fd06f3
+F src/shell.c 10b3bbf929aca5f33815444f03c9eac17e3c6daf
 F src/sqlite.h.in ed9d35990c61f0388ca6405706455c4095310553
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
@@ -1188,8 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fdd478bb11eb9e244a7a1fb628ac27c53830fb24 462f42af52f146fd328ddcbbe78c8444ef7bd2c3
-R ee023126020f0faa82dce1872da63eb6
-T +closed 462f42af52f146fd328ddcbbe78c8444ef7bd2c3
+P 2a74129a21f9745f1363f844807e2d10201a3f40
+R 3444e463c529c6a0145dadfcb31aa003
 U drh
-Z 4973cc497d9d5b46eb65808e822ee62c
+Z 5a770ceaa0af97ce932adfe78ff7c68a
