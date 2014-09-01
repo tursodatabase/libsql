@@ -1320,19 +1320,24 @@ DWORD sqlite3Win32Wait(HANDLE hObject){
 ** based on the NT kernel.
 */
 int sqlite3_win32_is_nt(void){
-#if defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
+#if SQLITE_OS_WINRT
+  /*
+  ** NOTE: The WinRT sub-platform is always assumed to be based on the NT
+  **       kernel.
+  */
+  return 1;
+#elif defined(SQLITE_WIN32_GETVERSIONEX) && SQLITE_WIN32_GETVERSIONEX
   if( osInterlockedCompareExchange(&sqlite3_os_type, 0, 0)==0 ){
-#if !SQLITE_OS_WINRT && defined(SQLITE_WIN32_HAS_WIDE) && \
-        defined(NTDDI_VERSION) && NTDDI_VERSION >= NTDDI_WIN8
-    OSVERSIONINFOW sInfo;
-    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
-    osGetVersionExW(&sInfo);
-    osInterlockedCompareExchange(&sqlite3_os_type,
-        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
-#elif defined(SQLITE_WIN32_HAS_ANSI)
+#if defined(SQLITE_WIN32_HAS_ANSI)
     OSVERSIONINFOA sInfo;
     sInfo.dwOSVersionInfoSize = sizeof(sInfo);
     osGetVersionExA(&sInfo);
+    osInterlockedCompareExchange(&sqlite3_os_type,
+        (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
+#elif defined(SQLITE_WIN32_HAS_WIDE)
+    OSVERSIONINFOW sInfo;
+    sInfo.dwOSVersionInfoSize = sizeof(sInfo);
+    osGetVersionExW(&sInfo);
     osInterlockedCompareExchange(&sqlite3_os_type,
         (sInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) ? 2 : 1, 0);
 #endif
@@ -1341,6 +1346,10 @@ int sqlite3_win32_is_nt(void){
 #elif SQLITE_TEST
   return osInterlockedCompareExchange(&sqlite3_os_type, 2, 2)==2;
 #else
+  /*
+  ** NOTE: All sub-platforms where the GetVersionEx[AW] functions are
+  **       deprecated are always assumed to be based on the NT kernel.
+  */
   return 1;
 #endif
 }
