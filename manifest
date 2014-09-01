@@ -1,5 +1,5 @@
-C Micro-optimizations\sin\ssqlite3BtreeNext()\sand\ssqlite3BtreePrevious().
-D 2014-09-01T13:29:32.250
+C Attempt\sto\smake\sthe\sxDelete\smethod\sof\sthe\sunix\sVFS\smore\srobust\son\sVxWorks.
+D 2014-09-01T13:37:55.088
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -208,7 +208,7 @@ F src/os.c 1b147e4cf7cc39e618115c14a086aed44bc91ace
 F src/os.h 60d419395e32a8029fa380a80a3da2e9030f635e
 F src/os_common.h 92815ed65f805560b66166e3583470ff94478f04
 F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
-F src/os_unix.c bd7df3094a60915c148517504c76df4fca24e542
+F src/os_unix.c 8525ca79457c5b4673a5fda2774ee39fe155f40f
 F src/os_win.c d067fce558a5032e6e6afe62899e5397bf63cf3e
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
 F src/pager.c 3e732d2bbdd8d8d95fed0c5ae7e718d73153c4c5
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 3ef3246120d72dffe469733bb21667a548af0a44
-R 8a87472d819e62a6d7e88f3d5e77ba23
+P 839c7996eecd5480152c514555b9aa1121a69ce0
+R aa6b1a81952b002633810b3bb14c199e
 U drh
-Z 5b0c8a527e1dec5d8cc1bbd203422489
+Z 8d5a13ba98607c42fffb4d1d92841eac
