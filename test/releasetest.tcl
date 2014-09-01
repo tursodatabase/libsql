@@ -176,6 +176,12 @@ array set ::Configs {
     -DSQLITE_DISABLE_FTS4_DEFERRED
     -DSQLITE_ENABLE_RTREE
   }
+
+  "No-lookaside" {
+    -DSQLITE_TEST_REALLOC_STRESS=1
+    -DSQLITE_OMIT_LOOKASIDE=1
+    -DHAVE_USLEEP=1
+  }
 }
 
 array set ::Platforms {
@@ -188,6 +194,7 @@ array set ::Platforms {
     "Extra-Robustness"        test
     "Device-Two"              test
     "Ftrapv"                  test
+    "No-lookaside"            test
     "Default"                 "threadtest test"
     "Device-One"              fulltest
   }

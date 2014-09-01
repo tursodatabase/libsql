@@ -48,6 +48,22 @@ do_test trace-1.5 {
   db trace {}
   db trace
 } {}
+do_test trace-1.6 {
+  db eval {
+     CREATE TABLE t1b(x TEXT PRIMARY KEY, y);
+     INSERT INTO t1b VALUES('abc','def'),('ghi','jkl'),('mno','pqr');
+  }
+  set ::stmtlist {}
+  set xyzzy a*
+  db trace trace_proc
+  db eval {
+     SELECT y FROM t1b WHERE x GLOB $xyzzy
+  }
+} {def}
+do_test trace-1.7 {
+  set ::stmtlist
+} {{SELECT y FROM t1b WHERE x GLOB 'a*'}}
+db trace {}
 
 # If we prepare a statement and execute it multiple times, the trace
 # happens on each execution.

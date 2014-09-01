@@ -117,7 +117,7 @@ foreach {tn analyze_cmd} {
 } {
   reset_db
   do_test 1.$tn.1 {
-    execsql { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c) }
+    execsql { CREATE TABLE t1(a INTEGER PRIMARY KEY, b INT, c INT) }
     for {set i 0} {$i < 100} {incr i} {
       set c [expr int(pow(1.1,$i)/100)]
       set b [expr 125 - int(pow(1.1,99-$i))/100]
@@ -161,7 +161,26 @@ foreach {tn analyze_cmd} {
   do_eqp_test 1.$tn.3.6 {
     SELECT * FROM t1 WHERE b BETWEEN 75 AND 125 AND c BETWEEN 75 AND 125
   } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
+
+  do_eqp_test 1.$tn.3.7 {
+    SELECT * FROM t1 WHERE b BETWEEN +0 AND +50 AND c BETWEEN +0 AND +50
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
+
+  do_eqp_test 1.$tn.3.8 {
+    SELECT * FROM t1
+     WHERE b BETWEEN cast('0' AS int) AND cast('50.0' AS real)
+       AND c BETWEEN cast('0' AS numeric) AND cast('50.0' AS real)
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1b (b>? AND b<?)}}
+
+  do_eqp_test 1.$tn.3.9 {
+    SELECT * FROM t1 WHERE b BETWEEN +75 AND +125 AND c BETWEEN +75 AND +125
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
+
+  do_eqp_test 1.$tn.3.10 {
+    SELECT * FROM t1
+     WHERE b BETWEEN cast('75' AS int) AND cast('125.0' AS real)
+       AND c BETWEEN cast('75' AS numeric) AND cast('125.0' AS real)
+  } {0 0 0 {SEARCH TABLE t1 USING INDEX t1c (c>? AND c<?)}}
 }
 
 finish_test
-

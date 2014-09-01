@@ -124,6 +124,22 @@ do_execsql_test 1.23 {
   SELECT next_char('ab','vocab2','w',null,'binary');
 } {c}
 
+do_execsql_test 1.30 {
+  SELECT rowid FROM t1 WHERE word='rabbit';
+} {2}
+do_execsql_test 1.31 {
+  UPDATE t1 SET rowid=2000 WHERE word='rabbit';
+  SELECT rowid FROM t1 WHERE word='rabbit';
+} {2000}
+do_execsql_test 1.32 {
+  INSERT INTO t1(rowid, word) VALUES(3000,'melody');
+  SELECT rowid, word, matchlen FROM t1 WHERE word MATCH 'melotti'
+   ORDER BY score LIMIT 3;
+} {3000 melody 6}
+do_test 1.33 {
+  catchsql {INSERT INTO t1(rowid, word) VALUES(3000,'garden');}
+} {1 {constraint failed}}
+
 do_execsql_test 2.1 {
   CREATE VIRTUAL TABLE t2 USING spellfix1;
   INSERT INTO t2 (word, soundslike) VALUES('school', 'skuul');

@@ -44,7 +44,7 @@ int sqlite3_exec(
   if( zSql==0 ) zSql = "";
 
   sqlite3_mutex_enter(db->mutex);
-  sqlite3Error(db, SQLITE_OK, 0);
+  sqlite3Error(db, SQLITE_OK);
   while( rc==SQLITE_OK && zSql[0] ){
     int nCol;
     char **azVals = 0;
@@ -96,10 +96,13 @@ int sqlite3_exec(
           }
         }
         if( xCallback(pArg, nCol, azVals, azCols) ){
+          /* EVIDENCE-OF: R-38229-40159 If the callback function to
+          ** sqlite3_exec() returns non-zero, then sqlite3_exec() will
+          ** return SQLITE_ABORT. */
           rc = SQLITE_ABORT;
           sqlite3VdbeFinalize((Vdbe *)pStmt);
           pStmt = 0;
-          sqlite3Error(db, SQLITE_ABORT, 0);
+          sqlite3Error(db, SQLITE_ABORT);
           goto exec_out;
         }
       }
@@ -129,7 +132,7 @@ exec_out:
       memcpy(*pzErrMsg, sqlite3_errmsg(db), nErrMsg);
     }else{
       rc = SQLITE_NOMEM;
-      sqlite3Error(db, SQLITE_NOMEM, 0);
+      sqlite3Error(db, SQLITE_NOMEM);
     }
   }else if( pzErrMsg ){
     *pzErrMsg = 0;
