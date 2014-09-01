@@ -1077,6 +1077,7 @@ proc explain_i {sql {db db}} {
   foreach opcode {
       Seek SeekGe SeekGt SeekLe SeekLt NotFound Last Rewind
       NoConflict Next Prev VNext VPrev VFilter
+      SorterSort SorterNext
   } {
     set color($opcode) $B
   }
@@ -1099,6 +1100,7 @@ proc explain_i {sql {db db}} {
 
     if {$opcode=="Next"  || $opcode=="Prev" 
      || $opcode=="VNext" || $opcode=="VPrev"
+     || $opcode=="SorterNext"
     } {
       for {set i $p2} {$i<$addr} {incr i} {
         incr x($i) 2

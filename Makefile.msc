@@ -636,7 +636,7 @@ LIBOBJS0 = vdbe.lo parse.lo alter.lo analyze.lo attach.lo auth.lo \
          notify.lo opcodes.lo os.lo os_unix.lo os_win.lo \
          pager.lo pcache.lo pcache1.lo pragma.lo prepare.lo printf.lo \
          random.lo resolve.lo rowset.lo rtree.lo select.lo status.lo \
-         table.lo tokenize.lo trigger.lo \
+         table.lo threads.lo tokenize.lo trigger.lo \
          update.lo util.lo vacuum.lo \
          vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbesort.lo \
          vdbetrace.lo wal.lo walker.lo where.lo utf.lo vtab.lo
@@ -733,6 +733,7 @@ SRC = \
   $(TOP)\src\sqliteInt.h \
   $(TOP)\src\sqliteLimit.h \
   $(TOP)\src\table.c \
+  $(TOP)\src\threads.c \
   $(TOP)\src\tclsqlite.c \
   $(TOP)\src\tokenize.c \
   $(TOP)\src\trigger.c \
@@ -1215,6 +1216,9 @@ status.lo:	$(TOP)\src\status.c $(HDR)
 
 table.lo:	$(TOP)\src\table.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\table.c
+
+threads.lo:	$(TOP)\src\threads.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)\src\threads.c
 
 tokenize.lo:	$(TOP)\src\tokenize.c keywordhash.h $(HDR)
 	$(LTCOMPILE) -c $(TOP)\src\tokenize.c

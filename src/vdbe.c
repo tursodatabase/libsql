@@ -1165,7 +1165,7 @@ case OP_Move: {
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
-    VdbeMemReleaseExtern(pOut);
+    sqlite3VdbeMemRelease(pOut);
     zMalloc = pOut->zMalloc;
     memcpy(pOut, pIn1, sizeof(Mem));
 #ifdef SQLITE_DEBUG
@@ -3362,11 +3362,15 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: SorterOpen P1 P2 * P4 *
+/* Opcode: SorterOpen P1 P2 P3 P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large
 ** tables using an external merge-sort algorithm.
+**
+** If argument P3 is non-zero, then it indicates that the sorter may
+** assume that a stable sort considering the first P3 fields of each
+** key is sufficient to produce the required results.
 */
 case OP_SorterOpen: {
   VdbeCursor *pCx;
@@ -3378,7 +3382,25 @@ case OP_SorterOpen: {
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
   assert( pCx->pKeyInfo->db==db );
   assert( pCx->pKeyInfo->enc==ENC(db) );
-  rc = sqlite3VdbeSorterInit(db, pCx);
+  rc = sqlite3VdbeSorterInit(db, pOp->p3, pCx);
+  break;
+}
+
+/* Opcode: SequenceTest P1 P2 * * *
+** Synopsis: if( cursor[P1].ctr++ ) pc = P2
+**
+** P1 is a sorter cursor. If the sequence counter is currently zero, jump
+** to P2. Regardless of whether or not the jump is taken, increment the
+** the sequence value.
+*/
+case OP_SequenceTest: {
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC->pSorter );
+  if( (pC->seqCount++)==0 ){
+    pc = pOp->p2 - 1;
+  }
   break;
 }
 
@@ -4227,6 +4249,7 @@ case OP_SorterCompare: {
   assert( pOp->p4type==P4_INT32 );
   pIn3 = &aMem[pOp->p3];
   nKeyCol = pOp->p4.i;
+  res = 0;
   rc = sqlite3VdbeSorterCompare(pC, pIn3, nKeyCol, &res);
   VdbeBranchTaken(res!=0,2);
   if( res ){
@@ -4491,7 +4514,7 @@ case OP_Rewind: {        /* jump */
   pC->seekOp = OP_Rewind;
 #endif
   if( isSorter(pC) ){
-    rc = sqlite3VdbeSorterRewind(db, pC, &res);
+    rc = sqlite3VdbeSorterRewind(pC, &res);
   }else{
     pCrsr = pC->pCursor;
     assert( pCrsr );
@@ -4669,7 +4692,7 @@ case OP_IdxInsert: {        /* in2 */
   rc = ExpandBlob(pIn2);
   if( rc==SQLITE_OK ){
     if( isSorter(pC) ){
-      rc = sqlite3VdbeSorterWrite(db, pC, pIn2);
+      rc = sqlite3VdbeSorterWrite(pC, pIn2);
     }else{
       nKey = pIn2->n;
       zKey = pIn2->z;

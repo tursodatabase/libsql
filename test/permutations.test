@@ -112,7 +112,7 @@ set allquicktests [test_set $alltests -exclude {
   incrvacuum_ioerr.test autovacuum_crash.test btree8.test shared_err.test
   vtab_err.test walslow.test walcrash.test walcrash3.test
   walthread.test rtree3.test indexfault.test securedel2.test
-  fts4growth.test fts4growth2.test
+  sort3.test sort4.test fts4growth.test fts4growth2.test
 }]
 if {[info exists ::env(QUICKTEST_INCLUDE)]} {
   set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
@@ -355,6 +355,12 @@ test_suite "coverage-analyze" -description {
   analyze.test analyzeB.test mallocA.test
 } 
 
+test_suite "coverage-sorter" -description {
+  Coverage tests for file vdbesort.c.
+} -files {
+  sort.test sortfault.test
+} 
+
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
@@ -486,7 +492,7 @@ test_suite "multithread" -description {
 } -files {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
-  types2.test   types3.test
+  types2.test   types3.test   sort4.test
 } -shutdown {
   catch {db close}
   sqlite3_shutdown
