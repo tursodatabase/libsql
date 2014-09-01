@@ -1,5 +1,5 @@
-C Fix\sharmless\scompiler\swarnings\sfor\sMSVC.
-D 2014-09-01T01:16:49.641
+C Micro-optimizations\sin\ssqlite3BtreeNext()\sand\ssqlite3BtreePrevious().
+D 2014-09-01T13:29:32.250
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in 5eb79e334a5de69c87740edd56af6527dd219308
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -168,7 +168,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c ec9d3f1295dafeb278c3830211cc5584132468f4
-F src/btree.c 4737cb5bdb2eb8989cb292f6ff921f7ff45f0c46
+F src/btree.c 4d0427bab54229030fc5b8577d2e5ffdc8129030
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c 058e3aadb1376521ff291735237edf4c10f438fb
@@ -1188,7 +1188,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P f61db04be4d7fb21b7f721647c37c45e283ffbea
-R fb90b1156ce26645b130e94c9528a286
-U mistachkin
-Z ab89ed2842a9e03f7299dfc1fb42f5cb
+P 3ef3246120d72dffe469733bb21667a548af0a44
+R 8a87472d819e62a6d7e88f3d5e77ba23
+U drh
+Z 5b0c8a527e1dec5d8cc1bbd203422489
