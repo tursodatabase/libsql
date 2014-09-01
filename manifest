@@ -1,5 +1,5 @@
-C Add\ssupport\sfor\susing\sseparate\sworker\sthreads\sto\sspeed\slarge\ssorts.\nThe\sSQLITE_MAX_WORKER_THREADS\sand\sSQLITE_DEFAULT_WORKER_THREADS\scompile-time\noptions\sand\sthe\sSQLITE_LIMIT_WORKER_THREADS\sargument\sto\s\nsqlite3_limit()\sand\sthe\s"PRAGMA\sthreads=N"\spragma\sare\sadded.
-D 2014-09-01T17:36:46.754
+C Tweak\sthe\sdocumentation\sfor\sSQLITE_LIMIT_WORKER_THREADS.\s\sNo\schanges\sto\nexecutable\scode.
+D 2014-09-01T18:21:27.480
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -225,7 +225,7 @@ F src/resolve.c 0ea356d32a5e884add23d1b9b4e8736681dd5697
 F src/rowset.c a9c9aae3234b44a6d7c6f5a3cadf90dce1e627be
 F src/select.c 89e569b263535662f54b537eb9118b2c554ae7aa
 F src/shell.c 713cef4d73c05fc8e12f4960072329d767a05d50
-F src/sqlite.h.in 74b42237f0d2b010779cc1b1a00190452b31a2ec
+F src/sqlite.h.in 43852c8b68b4c579948cb37182918078836c5c06
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 886f5a34de171002ad46fae8c36a7d8051c190fc
 F src/sqliteInt.h 6244ee9052752e26d1275ab20c9b774385aa57d2
@@ -1193,8 +1193,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P b0f6b91f36b503d8ba8d5257bb194f8c1afb4833 33fa0410499900dd8beb44b9a8ffbd9f4b68c8d8
-R 91d41afdb912bf253c979082c1abeeae
-T +closed 33fa0410499900dd8beb44b9a8ffbd9f4b68c8d8
+P b1c0f0bc1bd8a3477cd7a7ab510f0442ac88b517
+R e35acb2d59911a863984f6391f72c8a4
 U drh
-Z 8ac04e78c2df72246f6a97d0d813c221
+Z 81654d2ebb78f72eec51a460f9ce0ce5

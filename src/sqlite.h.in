@@ -3075,8 +3075,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dd>The maximum depth of recursion for triggers.</dd>)^
 **
 ** [[SQLITE_LIMIT_WORKER_THREADS]] ^(<dt>SQLITE_LIMIT_WORKER_THREADS</dt>
-** <dd>The maximum number of separate worker threads that a single
-** [database connection] may start to help it with a computation.</dd>)^
+** <dd>The maximum number of auxiliary worker threads that a single
+** [prepared statement] may start.</dd>)^
 ** </dl>
 */
 #define SQLITE_LIMIT_LENGTH                    0
