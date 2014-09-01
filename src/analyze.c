@@ -467,7 +467,7 @@ static void statInit(
 #endif
 
   /* Return a pointer to the allocated object to the caller */
-  sqlite3_result_blob(context, p, sizeof(p), stat4Destructor);
+  sqlite3_result_blob(context, p, sizeof(*p), stat4Destructor);
 }
 static const FuncDef statInitFuncdef = {
   2+IsStat34,      /* nArg */
