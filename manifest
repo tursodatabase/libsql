@@ -1,5 +1,5 @@
-C Avoid\sa\sconfusing\s(though\scorrect)\sargument\sto\sthe\ssqlite3_result_blob()\nfunction\sin\sthe\simplementation\sof\sANALYZE.
-D 2014-09-01T22:34:54.079
+C Update\scomments\sin\sthe\sANALYZE\scommand\sthat\sdescribe\show\sthe\sStat4Accum\nobjecct\sis\spassed\saround\swithin\sthe\sVDBE.\s\sNo\schanges\sto\sfunctional\scode.
+D 2014-09-01T23:06:44.401
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -162,7 +162,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 3d8b83c91651f53472ca17599dae3457b8b89494
 F sqlite3.pc.in 48fed132e7cb71ab676105d2a4dc77127d8c1f3a
 F src/alter.c b00900877f766f116f9e16116f1ccacdc21d82f1
-F src/analyze.c 75345fa58d5d044614bedff9d758e3483a4f4522
+F src/analyze.c f00f06e6ef66c61b41f154889fe7caf5ed55a0ce
 F src/attach.c 3801129015ef59d76bf23c95ef9b0069d18a0c52
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
@@ -1193,7 +1193,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P be0a037244762cc0f5ff4a6d7822902f862767bd
-R 5498da01c32f540309f235f11a91d5bf
+P 4cae93f8ae8fb3fe38fd5dc7d3a5ea0d11552841
+R fe37d23fb1f96547febf2ff7c0ba49b9
 U drh
-Z 21cb2c2a001f5844bb20a699e6bc27e5
+Z 29e2a2847ff584a00093c5b89ffca704
