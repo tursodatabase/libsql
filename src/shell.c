@@ -3942,28 +3942,28 @@ int main(int argc, char **argv){
 #endif
     }else if( strcmp(z,"-scratch")==0 ){
       int n, sz;
-      sz = integerValue(cmdline_option_value(argc,argv,++i));
+      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( sz>400000 ) sz = 400000;
       if( sz<2500 ) sz = 2500;
-      n = integerValue(cmdline_option_value(argc,argv,++i));
+      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( n>10 ) n = 10;
       if( n<1 ) n = 1;
       sqlite3_config(SQLITE_CONFIG_SCRATCH, malloc(n*sz+1), sz, n);
       data.shellFlgs |= SHFLG_Scratch;
     }else if( strcmp(z,"-pagecache")==0 ){
       int n, sz;
-      sz = integerValue(cmdline_option_value(argc,argv,++i));
+      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( sz>70000 ) sz = 70000;
       if( sz<800 ) sz = 800;
-      n = integerValue(cmdline_option_value(argc,argv,++i));
+      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( n<10 ) n = 10;
       sqlite3_config(SQLITE_CONFIG_PAGECACHE, malloc(n*sz+1), sz, n);
       data.shellFlgs |= SHFLG_Pagecache;
     }else if( strcmp(z,"-lookaside")==0 ){
       int n, sz;
-      sz = integerValue(cmdline_option_value(argc,argv,++i));
+      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( sz<0 ) sz = 0;
-      n = integerValue(cmdline_option_value(argc,argv,++i));
+      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
       if( n<0 ) n = 0;
       sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, n);
       if( sz*n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
