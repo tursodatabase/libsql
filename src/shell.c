@@ -462,6 +462,7 @@ struct ShellState {
   int mode;              /* An output mode setting */
   int writableSchema;    /* True if PRAGMA writable_schema=ON */
   int showHeader;        /* True to show column names in List or Column mode */
+  unsigned shellFlgs;    /* Various flags */
   char *zDestTable;      /* Name of destination table when MODE_Insert */
   char separator[20];    /* Separator character for MODE_List */
   char newline[20];      /* Record separator in MODE_Csv */
@@ -480,6 +481,13 @@ struct ShellState {
   int nIndent;           /* Size of array aiIndent[] */
   int iIndent;           /* Index of current op in aiIndent[] */
 };
+
+/*
+** These are the allowed shellFlgs values
+*/
+#define SHFLG_Scratch     0x00001     /* The --scratch option is used */
+#define SHFLG_Pagecache   0x00002     /* The --pagecache option is used */
+#define SHFLG_Lookaside   0x00004     /* Lookaside memory is used */
 
 /*
 ** These are the allowed modes.
@@ -1097,21 +1105,19 @@ static int display_stats(
     iHiwtr = iCur = -1;
     sqlite3_status(SQLITE_STATUS_MALLOC_COUNT, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Number of Outstanding Allocations:   %d (max %d)\n", iCur, iHiwtr);
-/*
-** Not currently used by the CLI.
-**    iHiwtr = iCur = -1;
-**    sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
-**    fprintf(pArg->out, "Number of Pcache Pages Used:         %d (max %d) pages\n", iCur, iHiwtr);
-*/
+    if( pArg->shellFlgs & SHFLG_Pagecache ){
+      iHiwtr = iCur = -1;
+      sqlite3_status(SQLITE_STATUS_PAGECACHE_USED, &iCur, &iHiwtr, bReset);
+      fprintf(pArg->out, "Number of Pcache Pages Used:         %d (max %d) pages\n", iCur, iHiwtr);
+    }
     iHiwtr = iCur = -1;
     sqlite3_status(SQLITE_STATUS_PAGECACHE_OVERFLOW, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Number of Pcache Overflow Bytes:     %d (max %d) bytes\n", iCur, iHiwtr);
-/*
-** Not currently used by the CLI.
-**    iHiwtr = iCur = -1;
-**    sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
-**    fprintf(pArg->out, "Number of Scratch Allocations Used:  %d (max %d)\n", iCur, iHiwtr);
-*/
+    if( pArg->shellFlgs & SHFLG_Scratch ){
+      iHiwtr = iCur = -1;
+      sqlite3_status(SQLITE_STATUS_SCRATCH_USED, &iCur, &iHiwtr, bReset);
+      fprintf(pArg->out, "Number of Scratch Allocations Used:  %d (max %d)\n", iCur, iHiwtr);
+    }
     iHiwtr = iCur = -1;
     sqlite3_status(SQLITE_STATUS_SCRATCH_OVERFLOW, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Number of Scratch Overflow Bytes:    %d (max %d) bytes\n", iCur, iHiwtr);
@@ -1132,15 +1138,17 @@ static int display_stats(
   }
 
   if( pArg && pArg->out && db ){
-    iHiwtr = iCur = -1;
-    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHiwtr, bReset);
-    fprintf(pArg->out, "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
-    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT, &iCur, &iHiwtr, bReset);
-    fprintf(pArg->out, "Successful lookaside attempts:       %d\n", iHiwtr);
-    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE, &iCur, &iHiwtr, bReset);
-    fprintf(pArg->out, "Lookaside failures due to size:      %d\n", iHiwtr);
-    sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL, &iCur, &iHiwtr, bReset);
-    fprintf(pArg->out, "Lookaside failures due to OOM:       %d\n", iHiwtr);
+    if( pArg->shellFlgs & SHFLG_Lookaside ){
+      iHiwtr = iCur = -1;
+      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_USED, &iCur, &iHiwtr, bReset);
+      fprintf(pArg->out, "Lookaside Slots Used:                %d (max %d)\n", iCur, iHiwtr);
+      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_HIT, &iCur, &iHiwtr, bReset);
+      fprintf(pArg->out, "Successful lookaside attempts:       %d\n", iHiwtr);
+      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_SIZE, &iCur, &iHiwtr, bReset);
+      fprintf(pArg->out, "Lookaside failures due to size:      %d\n", iHiwtr);
+      sqlite3_db_status(db, SQLITE_DBSTATUS_LOOKASIDE_MISS_FULL, &iCur, &iHiwtr, bReset);
+      fprintf(pArg->out, "Lookaside failures due to OOM:       %d\n", iHiwtr);
+    }
     iHiwtr = iCur = -1;
     sqlite3_db_status(db, SQLITE_DBSTATUS_CACHE_USED, &iCur, &iHiwtr, bReset);
     fprintf(pArg->out, "Pager Heap Usage:                    %d bytes\n", iCur);    iHiwtr = iCur = -1;
@@ -3779,12 +3787,15 @@ static const char zOptions[] =
   "   -interactive         force interactive I/O\n"
   "   -line                set output mode to 'line'\n"
   "   -list                set output mode to 'list'\n"
+  "   -lookaside SIZE N    use N entries of SZ bytes for lookaside memory\n"
   "   -mmap N              default mmap size set to N\n"
 #ifdef SQLITE_ENABLE_MULTIPLEX
   "   -multiplex           enable the multiplexor VFS\n"
 #endif
   "   -newline SEP         set newline character(s) for CSV\n"
   "   -nullvalue TEXT      set text string for NULL values. Default ''\n"
+  "   -pagecache SIZE N    use N slots of SZ bytes each for page cache memory\n"
+  "   -scratch SIZE N      use N slots of SZ bytes each for scratch memory\n"
   "   -separator SEP       set output field separator. Default: '|'\n"
   "   -stats               print memory stats before each finalize\n"
   "   -version             show SQLite version\n"
@@ -3815,11 +3826,12 @@ static void main_init(ShellState *data) {
   memcpy(data->separator,"|", 2);
   memcpy(data->newline,"\r\n", 3);
   data->showHeader = 0;
+  data->shellFlgs = SHFLG_Lookaside;
   sqlite3_config(SQLITE_CONFIG_URI, 1);
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
+  sqlite3_config(SQLITE_CONFIG_MULTITHREAD);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
-  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
 }
 
 /*
@@ -3928,6 +3940,33 @@ int main(int argc, char **argv){
       if( szHeap>0x7fff0000 ) szHeap = 0x7fff0000;
       sqlite3_config(SQLITE_CONFIG_HEAP, malloc((int)szHeap), (int)szHeap, 64);
 #endif
+    }else if( strcmp(z,"-scratch")==0 ){
+      int n, sz;
+      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      if( sz>400000 ) sz = 400000;
+      if( sz<2500 ) sz = 2500;
+      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      if( n>10 ) n = 10;
+      if( n<1 ) n = 1;
+      sqlite3_config(SQLITE_CONFIG_SCRATCH, malloc(n*sz+1), sz, n);
+      data.shellFlgs |= SHFLG_Scratch;
+    }else if( strcmp(z,"-pagecache")==0 ){
+      int n, sz;
+      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      if( sz>70000 ) sz = 70000;
+      if( sz<800 ) sz = 800;
+      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      if( n<10 ) n = 10;
+      sqlite3_config(SQLITE_CONFIG_PAGECACHE, malloc(n*sz+1), sz, n);
+      data.shellFlgs |= SHFLG_Pagecache;
+    }else if( strcmp(z,"-lookaside")==0 ){
+      int n, sz;
+      sz = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      if( sz<0 ) sz = 0;
+      n = (int)integerValue(cmdline_option_value(argc,argv,++i));
+      if( n<0 ) n = 0;
+      sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, n);
+      if( sz*n==0 ) data.shellFlgs &= ~SHFLG_Lookaside;
 #ifdef SQLITE_ENABLE_VFSTRACE
     }else if( strcmp(z,"-vfstrace")==0 ){
       extern int vfstrace_register(
@@ -4043,6 +4082,12 @@ int main(int argc, char **argv){
       stdin_is_interactive = 0;
     }else if( strcmp(z,"-heap")==0 ){
       i++;
+    }else if( strcmp(z,"-scratch")==0 ){
+      i+=2;
+    }else if( strcmp(z,"-pagecache")==0 ){
+      i+=2;
+    }else if( strcmp(z,"-lookaside")==0 ){
+      i+=2;
     }else if( strcmp(z,"-mmap")==0 ){
       i++;
     }else if( strcmp(z,"-vfs")==0 ){

@@ -2191,6 +2191,10 @@ static int whereRangeScanEst(
       tRowcnt iLower;
       tRowcnt iUpper;
 
+      if( pRec ){
+        testcase( pRec->nField!=pBuilder->nRecValid );
+        pRec->nField = pBuilder->nRecValid;
+      }
       if( nEq==p->nKeyCol ){
         aff = SQLITE_AFF_INTEGER;
       }else{
@@ -2250,7 +2254,7 @@ static int whereRangeScanEst(
         if( nNew<nOut ){
           nOut = nNew;
         }
-        WHERETRACE(0x10, ("range scan regions: %u..%u  est=%d\n",
+        WHERETRACE(0x10, ("STAT4 range scan: %u..%u  est=%d\n",
                            (u32)iLower, (u32)iUpper, nOut));
       }
     }else{
@@ -2278,6 +2282,12 @@ static int whereRangeScanEst(
   nOut -= (pLower!=0) + (pUpper!=0);
   if( nNew<10 ) nNew = 10;
   if( nNew<nOut ) nOut = nNew;
+#if defined(WHERETRACE_ENABLED)
+  if( pLoop->nOut>nOut ){
+    WHERETRACE(0x10,("Range scan lowers nOut from %d to %d\n",
+                    pLoop->nOut, nOut));
+  }
+#endif
   pLoop->nOut = (LogEst)nOut;
   return rc;
 }
@@ -2390,7 +2400,7 @@ static int whereInScanEst(
   if( rc==SQLITE_OK ){
     if( nRowEst > nRow0 ) nRowEst = nRow0;
     *pnRow = nRowEst;
-    WHERETRACE(0x10,("IN row estimate: est=%g\n", nRowEst));
+    WHERETRACE(0x10,("IN row estimate: est=%d\n", nRowEst));
   }
   assert( pBuilder->nRecValid==nRecValid );
   return rc;
@@ -4713,7 +4723,8 @@ static int whereLoopAddBtree(
   */
   for(; rc==SQLITE_OK && pProbe; pProbe=pProbe->pNext, iSortIdx++){
     if( pProbe->pPartIdxWhere!=0
-     && !whereUsablePartialIndex(pNew->iTab, pWC, pProbe->pPartIdxWhere) ){
+     && !whereUsablePartialIndex(pSrc->iCursor, pWC, pProbe->pPartIdxWhere) ){
+      testcase( pNew->iTab!=pSrc->iCursor );  /* See ticket [98d973b8f5] */
       continue;  /* Partial index inappropriate for this query */
     }
     rSize = pProbe->aiRowLogEst[0];

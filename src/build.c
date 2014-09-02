@@ -2679,7 +2679,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
 
   /* Open the sorter cursor if we are to use one. */
   iSorter = pParse->nTab++;
-  sqlite3VdbeAddOp4(v, OP_SorterOpen, iSorter, 0, 0, (char*)
+  sqlite3VdbeAddOp4(v, OP_SorterOpen, iSorter, 0, pIndex->nKeyCol, (char*)
                     sqlite3KeyInfoRef(pKey), P4_KEYINFO);
 
   /* Open the table. Loop through all rows of the table, inserting index
@@ -3028,7 +3028,7 @@ Index *sqlite3CreateIndex(
       pParse->checkSchema = 1;
       goto exit_create_index;
     }
-    assert( pTab->nCol<=0x7fff && j<=0x7fff );
+    assert( j<=0x7fff );
     pIndex->aiColumn[i] = (i16)j;
     if( pListItem->pExpr ){
       int nColl;

@@ -387,8 +387,9 @@ static void stat4Destructor(void *pOld){
 ** original WITHOUT ROWID table as N==K as a special case.
 **
 ** This routine allocates the Stat4Accum object in heap memory. The return 
-** value is a pointer to the the Stat4Accum object encoded as a blob (i.e. 
-** the size of the blob is sizeof(void*) bytes). 
+** value is a pointer to the the Stat4Accum object.  The datatype of the
+** return value is BLOB, but it is really just a pointer to the Stat4Accum
+** object.
 */
 static void statInit(
   sqlite3_context *context,
@@ -466,8 +467,11 @@ static void statInit(
   }
 #endif
 
-  /* Return a pointer to the allocated object to the caller */
-  sqlite3_result_blob(context, p, sizeof(p), stat4Destructor);
+  /* Return a pointer to the allocated object to the caller.  Note that
+  ** only the pointer (the 2nd parameter) matters.  The size of the object
+  ** (given by the 3rd parameter) is never used and can be any positive
+  ** value. */
+  sqlite3_result_blob(context, p, sizeof(*p), stat4Destructor);
 }
 static const FuncDef statInitFuncdef = {
   2+IsStat34,      /* nArg */
@@ -793,7 +797,7 @@ static const FuncDef statPushFuncdef = {
 ** Implementation of the stat_get(P,J) SQL function.  This routine is
 ** used to query statistical information that has been gathered into
 ** the Stat4Accum object by prior calls to stat_push().  The P parameter
-** is a BLOB which is decoded into a pointer to the Stat4Accum objects.
+** has type BLOB but it is really just a pointer to the Stat4Accum object.
 ** The content to returned is determined by the parameter J
 ** which is one of the STAT_GET_xxxx values defined above.
 **

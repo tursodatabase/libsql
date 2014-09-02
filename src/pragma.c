@@ -61,14 +61,15 @@
 #define PragTyp_TABLE_INFO                    30
 #define PragTyp_TEMP_STORE                    31
 #define PragTyp_TEMP_STORE_DIRECTORY          32
-#define PragTyp_WAL_AUTOCHECKPOINT            33
-#define PragTyp_WAL_CHECKPOINT                34
-#define PragTyp_ACTIVATE_EXTENSIONS           35
-#define PragTyp_HEXKEY                        36
-#define PragTyp_KEY                           37
-#define PragTyp_REKEY                         38
-#define PragTyp_LOCK_STATUS                   39
-#define PragTyp_PARSER_TRACE                  40
+#define PragTyp_THREADS                       33
+#define PragTyp_WAL_AUTOCHECKPOINT            34
+#define PragTyp_WAL_CHECKPOINT                35
+#define PragTyp_ACTIVATE_EXTENSIONS           36
+#define PragTyp_HEXKEY                        37
+#define PragTyp_KEY                           38
+#define PragTyp_REKEY                         39
+#define PragTyp_LOCK_STATUS                   40
+#define PragTyp_PARSER_TRACE                  41
 #define PragFlag_NeedSchema           0x01
 static const struct sPragmaNames {
   const char *const zName;  /* Name of pragma */
@@ -418,6 +419,10 @@ static const struct sPragmaNames {
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
 #endif
+  { /* zName:     */ "threads",
+    /* ePragTyp:  */ PragTyp_THREADS,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ 0 },
 #if !defined(SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS)
   { /* zName:     */ "user_version",
     /* ePragTyp:  */ PragTyp_HEADER_VALUE,
@@ -465,7 +470,7 @@ static const struct sPragmaNames {
     /* iArg:      */ SQLITE_WriteSchema|SQLITE_RecoveryMode },
 #endif
 };
-/* Number of pragmas: 56 on by default, 69 total. */
+/* Number of pragmas: 57 on by default, 70 total. */
 /* End of the automatically generated pragma table.
 ***************************************************************************/
 
@@ -2286,6 +2291,26 @@ void sqlite3Pragma(
       sqlite3_soft_heap_limit64(N);
     }
     returnSingleInt(pParse, "soft_heap_limit",  sqlite3_soft_heap_limit64(-1));
+    break;
+  }
+
+  /*
+  **   PRAGMA threads
+  **   PRAGMA threads = N
+  **
+  ** Configure the maximum number of worker threads.  Return the new
+  ** maximum, which might be less than requested.
+  */
+  case PragTyp_THREADS: {
+    sqlite3_int64 N;
+    if( zRight
+     && sqlite3DecOrHexToI64(zRight, &N)==SQLITE_OK
+     && N>=0
+    ){
+      sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, (int)(N&0x7fffffff));
+    }
+    returnSingleInt(pParse, "threads",
+                    sqlite3_limit(db, SQLITE_LIMIT_WORKER_THREADS, -1));
     break;
   }
 

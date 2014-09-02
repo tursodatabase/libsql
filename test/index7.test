@@ -248,4 +248,34 @@ do_execsql_test index7-5.0 {
   SELECT stat+0 FROM sqlite_stat1 WHERE idx='t3b';
 } {6 6}
 
+# Verify that the problem identified by ticket [98d973b8f5] has been fixed.
+#
+do_execsql_test index7-6.1 {
+  CREATE TABLE t5(a, b);
+  CREATE TABLE t4(c, d);
+  INSERT INTO t5 VALUES(1, 'xyz');
+  INSERT INTO t4 VALUES('abc', 'not xyz');
+  SELECT * FROM (SELECT * FROM t5 WHERE a=1 AND b='xyz'), t4 WHERE c='abc';
+} {
+  1 xyz abc {not xyz}
+}
+do_execsql_test index7-6.2 {
+  CREATE INDEX i4 ON t4(c) WHERE d='xyz';
+  SELECT * FROM (SELECT * FROM t5 WHERE a=1 AND b='xyz'), t4 WHERE c='abc';
+} {
+  1 xyz abc {not xyz}
+}
+do_execsql_test index7-6.3 {
+  CREATE VIEW v4 AS SELECT * FROM t4;
+  INSERT INTO t4 VALUES('def', 'xyz');
+  SELECT * FROM v4 WHERE d='xyz' AND c='def'
+} {
+  def xyz
+}
+do_eqp_test index7-6.4 {
+  SELECT * FROM v4 WHERE d='xyz' AND c='def'
+} {
+  0 0 0 {SEARCH TABLE t4 USING INDEX i4 (c=?)}
+}
+
 finish_test

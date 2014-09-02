@@ -2085,6 +2085,7 @@ static const int aHardLimit[] = {
   SQLITE_MAX_LIKE_PATTERN_LENGTH,
   SQLITE_MAX_VARIABLE_NUMBER,      /* IMP: R-38091-32352 */
   SQLITE_MAX_TRIGGER_DEPTH,
+  SQLITE_MAX_WORKER_THREADS,
 };
 
 /*
@@ -2120,6 +2121,9 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_TRIGGER_DEPTH<1
 # error SQLITE_MAX_TRIGGER_DEPTH must be at least 1
 #endif
+#if SQLITE_MAX_WORKER_THREADS<0 || SQLITE_MAX_WORKER_THREADS>50
+# error SQLITE_MAX_WORKER_THREADS must be between 0 and 50
+#endif
 
 
 /*
@@ -2153,7 +2157,8 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
                                                SQLITE_MAX_LIKE_PATTERN_LENGTH );
   assert( aHardLimit[SQLITE_LIMIT_VARIABLE_NUMBER]==SQLITE_MAX_VARIABLE_NUMBER);
   assert( aHardLimit[SQLITE_LIMIT_TRIGGER_DEPTH]==SQLITE_MAX_TRIGGER_DEPTH );
-  assert( SQLITE_LIMIT_TRIGGER_DEPTH==(SQLITE_N_LIMIT-1) );
+  assert( aHardLimit[SQLITE_LIMIT_WORKER_THREADS]==SQLITE_MAX_WORKER_THREADS );
+  assert( SQLITE_LIMIT_WORKER_THREADS==(SQLITE_N_LIMIT-1) );
 
 
   if( limitId<0 || limitId>=SQLITE_N_LIMIT ){
@@ -2589,10 +2594,12 @@ static int openDatabase(
 
   assert( sizeof(db->aLimit)==sizeof(aHardLimit) );
   memcpy(db->aLimit, aHardLimit, sizeof(db->aLimit));
+  db->aLimit[SQLITE_LIMIT_WORKER_THREADS] = SQLITE_DEFAULT_WORKER_THREADS;
   db->autoCommit = 1;
   db->nextAutovac = -1;
   db->szMmap = sqlite3GlobalConfig.szMmap;
   db->nextPagesize = 0;
+  db->nMaxSorterMmap = 0x7FFFFFFF;
   db->flags |= SQLITE_ShortColNames | SQLITE_EnableTrigger | SQLITE_CacheSpill
 #if !defined(SQLITE_DEFAULT_AUTOMATIC_INDEX) || SQLITE_DEFAULT_AUTOMATIC_INDEX
                  | SQLITE_AutoIndex
@@ -3492,6 +3499,13 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_SORTER_MMAP, db, nMax); */
+    case SQLITE_TESTCTRL_SORTER_MMAP: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      db->nMaxSorterMmap = va_arg(ap, int);
+      break;
+    }
+
     /*   sqlite3_test_control(SQLITE_TESTCTRL_ISINIT);
     **
     ** Return SQLITE_OK if SQLite has been initialized and SQLITE_ERROR if
@@ -3501,7 +3515,6 @@ int sqlite3_test_control(int op, ...){
       if( sqlite3GlobalConfig.isInit==0 ) rc = SQLITE_ERROR;
       break;
     }
-
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

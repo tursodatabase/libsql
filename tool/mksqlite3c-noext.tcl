@@ -239,6 +239,7 @@ foreach file {
    malloc.c
    printf.c
    random.c
+   threads.c
    utf.c
    util.c
    hash.c

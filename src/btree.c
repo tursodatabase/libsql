@@ -4540,17 +4540,16 @@ static int moveToRightmost(BtCursor *pCur){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
-  while( rc==SQLITE_OK && !(pPage = pCur->apPage[pCur->iPage])->leaf ){
+  while( !(pPage = pCur->apPage[pCur->iPage])->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     pCur->aiIdx[pCur->iPage] = pPage->nCell;
     rc = moveToChild(pCur, pgno);
+    if( rc ) return rc;
   }
-  if( rc==SQLITE_OK ){
-    pCur->aiIdx[pCur->iPage] = pPage->nCell-1;
-    pCur->info.nSize = 0;
-    pCur->curFlags &= ~BTCF_ValidNKey;
-  }
-  return rc;
+  pCur->aiIdx[pCur->iPage] = pPage->nCell-1;
+  assert( pCur->info.nSize==0 );
+  assert( (pCur->curFlags & BTCF_ValidNKey)==0 );
+  return SQLITE_OK;
 }
 
 /* Move the cursor to the first entry in the table.  Return SQLITE_OK
@@ -4681,7 +4680,7 @@ int sqlite3BtreeMovetoUnpacked(
 
   if( pIdxKey ){
     xRecordCompare = sqlite3VdbeFindCompare(pIdxKey);
-    pIdxKey->isCorrupt = 0;
+    pIdxKey->errCode = 0;
     assert( pIdxKey->default_rc==1 
          || pIdxKey->default_rc==0 
          || pIdxKey->default_rc==-1
@@ -4805,7 +4804,10 @@ int sqlite3BtreeMovetoUnpacked(
           c = xRecordCompare(nCell, pCellKey, pIdxKey, 0);
           sqlite3_free(pCellKey);
         }
-        assert( pIdxKey->isCorrupt==0 || c==0 );
+        assert( 
+            (pIdxKey->errCode!=SQLITE_CORRUPT || c==0)
+         && (pIdxKey->errCode!=SQLITE_NOMEM || pCur->pBtree->db->mallocFailed)
+        );
         if( c<0 ){
           lwr = idx+1;
         }else if( c>0 ){
@@ -4815,7 +4817,7 @@ int sqlite3BtreeMovetoUnpacked(
           *pRes = 0;
           rc = SQLITE_OK;
           pCur->aiIdx[pCur->iPage] = (u16)idx;
-          if( pIdxKey->isCorrupt ) rc = SQLITE_CORRUPT;
+          if( pIdxKey->errCode ) rc = SQLITE_CORRUPT;
           goto moveto_finish;
         }
         if( lwr>upr ) break;
@@ -4870,6 +4872,12 @@ int sqlite3BtreeEof(BtCursor *pCur){
 ** was already pointing to the last entry in the database before
 ** this routine was called, then set *pRes=1.
 **
+** The main entry point is sqlite3BtreeNext().  That routine is optimized
+** for the common case of merely incrementing the cell counter BtCursor.aiIdx
+** to the next cell on the current page.  The (slower) btreeNext() helper
+** routine is called when it is necessary to move to a different page or
+** to restore the cursor.
+**
 ** The calling function will set *pRes to 0 or 1.  The initial *pRes value
 ** will be 1 if the cursor being stepped corresponds to an SQL index and
 ** if this routine could have been skipped if that SQL index had been
@@ -4879,20 +4887,18 @@ int sqlite3BtreeEof(BtCursor *pCur){
 ** SQLite btree implementation does not. (Note that the comdb2 btree
 ** implementation does use this hint, however.)
 */
-int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
+static SQLITE_NOINLINE int btreeNext(BtCursor *pCur, int *pRes){
   int rc;
   int idx;
   MemPage *pPage;
 
   assert( cursorHoldsMutex(pCur) );
-  assert( pRes!=0 );
-  assert( *pRes==0 || *pRes==1 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
+  assert( *pRes==0 );
   if( pCur->eState!=CURSOR_VALID ){
-    invalidateOverflowCache(pCur);
+    assert( (pCur->curFlags & BTCF_ValidOvfl)==0 );
     rc = restoreCursorPosition(pCur);
     if( rc!=SQLITE_OK ){
-      *pRes = 0;
       return rc;
     }
     if( CURSOR_INVALID==pCur->eState ){
@@ -4904,7 +4910,6 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
       pCur->eState = CURSOR_VALID;
       if( pCur->skipNext>0 ){
         pCur->skipNext = 0;
-        *pRes = 0;
         return SQLITE_OK;
       }
       pCur->skipNext = 0;
@@ -4922,18 +4927,11 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
   ** page into more than one b-tree structure. */
   testcase( idx>pPage->nCell );
 
-  pCur->info.nSize = 0;
-  pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
   if( idx>=pPage->nCell ){
     if( !pPage->leaf ){
       rc = moveToChild(pCur, get4byte(&pPage->aData[pPage->hdrOffset+8]));
-      if( rc ){
-        *pRes = 0;
-        return rc;
-      }
-      rc = moveToLeftmost(pCur);
-      *pRes = 0;
-      return rc;
+      if( rc ) return rc;
+      return moveToLeftmost(pCur);
     }
     do{
       if( pCur->iPage==0 ){
@@ -4944,28 +4942,51 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
       moveToParent(pCur);
       pPage = pCur->apPage[pCur->iPage];
     }while( pCur->aiIdx[pCur->iPage]>=pPage->nCell );
-    *pRes = 0;
     if( pPage->intKey ){
-      rc = sqlite3BtreeNext(pCur, pRes);
+      return sqlite3BtreeNext(pCur, pRes);
     }else{
-      rc = SQLITE_OK;
+      return SQLITE_OK;
     }
-    return rc;
   }
-  *pRes = 0;
   if( pPage->leaf ){
     return SQLITE_OK;
+  }else{
+    return moveToLeftmost(pCur);
   }
-  rc = moveToLeftmost(pCur);
-  return rc;
 }
-
+int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
+  MemPage *pPage;
+  assert( cursorHoldsMutex(pCur) );
+  assert( pRes!=0 );
+  assert( *pRes==0 || *pRes==1 );
+  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
+  pCur->info.nSize = 0;
+  pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
+  *pRes = 0;
+  if( pCur->eState!=CURSOR_VALID ) return btreeNext(pCur, pRes);
+  pPage = pCur->apPage[pCur->iPage];
+  if( (++pCur->aiIdx[pCur->iPage])>=pPage->nCell ){
+    pCur->aiIdx[pCur->iPage]--;
+    return btreeNext(pCur, pRes);
+  }
+  if( pPage->leaf ){
+    return SQLITE_OK;
+  }else{
+    return moveToLeftmost(pCur);
+  }
+}
 
 /*
 ** Step the cursor to the back to the previous entry in the database.  If
 ** successful then set *pRes=0.  If the cursor
 ** was already pointing to the first entry in the database before
 ** this routine was called, then set *pRes=1.
+**
+** The main entry point is sqlite3BtreePrevious().  That routine is optimized
+** for the common case of merely decrementing the cell counter BtCursor.aiIdx
+** to the previous cell on the current page.  The (slower) btreePrevious() helper
+** routine is called when it is necessary to move to a different page or
+** to restore the cursor.
 **
 ** The calling function will set *pRes to 0 or 1.  The initial *pRes value
 ** will be 1 if the cursor being stepped corresponds to an SQL index and
@@ -4976,22 +4997,21 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
 ** SQLite btree implementation does not. (Note that the comdb2 btree
 ** implementation does use this hint, however.)
 */
-int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
+static SQLITE_NOINLINE int btreePrevious(BtCursor *pCur, int *pRes){
   int rc;
   MemPage *pPage;
 
   assert( cursorHoldsMutex(pCur) );
   assert( pRes!=0 );
-  assert( *pRes==0 || *pRes==1 );
+  assert( *pRes==0 );
   assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
-  pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidOvfl);
+  assert( (pCur->curFlags & (BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey))==0 );
+  assert( pCur->info.nSize==0 );
   if( pCur->eState!=CURSOR_VALID ){
-    if( ALWAYS(pCur->eState>=CURSOR_REQUIRESEEK) ){
-      rc = btreeRestoreCursorPosition(pCur);
-      if( rc!=SQLITE_OK ){
-        *pRes = 0;
-        return rc;
-      }
+    assert( pCur->eState>=CURSOR_REQUIRESEEK );
+    rc = btreeRestoreCursorPosition(pCur);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
     if( CURSOR_INVALID==pCur->eState ){
       *pRes = 1;
@@ -5002,7 +5022,6 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
       pCur->eState = CURSOR_VALID;
       if( pCur->skipNext<0 ){
         pCur->skipNext = 0;
-        *pRes = 0;
         return SQLITE_OK;
       }
       pCur->skipNext = 0;
@@ -5014,10 +5033,7 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
   if( !pPage->leaf ){
     int idx = pCur->aiIdx[pCur->iPage];
     rc = moveToChild(pCur, get4byte(findCell(pPage, idx)));
-    if( rc ){
-      *pRes = 0;
-      return rc;
-    }
+    if( rc ) return rc;
     rc = moveToRightmost(pCur);
   }else{
     while( pCur->aiIdx[pCur->iPage]==0 ){
@@ -5028,8 +5044,8 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
       }
       moveToParent(pCur);
     }
-    pCur->info.nSize = 0;
-    pCur->curFlags &= ~(BTCF_ValidNKey|BTCF_ValidOvfl);
+    assert( pCur->info.nSize==0 );
+    assert( (pCur->curFlags & (BTCF_ValidNKey|BTCF_ValidOvfl))==0 );
 
     pCur->aiIdx[pCur->iPage]--;
     pPage = pCur->apPage[pCur->iPage];
@@ -5039,8 +5055,24 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
       rc = SQLITE_OK;
     }
   }
-  *pRes = 0;
   return rc;
+}
+int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
+  assert( cursorHoldsMutex(pCur) );
+  assert( pRes!=0 );
+  assert( *pRes==0 || *pRes==1 );
+  assert( pCur->skipNext==0 || pCur->eState!=CURSOR_VALID );
+  *pRes = 0;
+  pCur->curFlags &= ~(BTCF_AtLast|BTCF_ValidOvfl|BTCF_ValidNKey);
+  pCur->info.nSize = 0;
+  if( pCur->eState!=CURSOR_VALID
+   || pCur->aiIdx[pCur->iPage]==0
+   || pCur->apPage[pCur->iPage]->leaf==0
+  ){
+    return btreePrevious(pCur, pRes);
+  }
+  pCur->aiIdx[pCur->iPage]--;
+  return SQLITE_OK;
 }
 
 /*

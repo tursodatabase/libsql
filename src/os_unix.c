@@ -7073,7 +7073,7 @@ static int unixDelete(
   if( osUnlink(zPath)==(-1) ){
     if( errno==ENOENT
 #if OS_VXWORKS
-        || errno==0x380003
+        || osAccess(zPath,0)!=0
 #endif
     ){
       rc = SQLITE_IOERR_DELETE_NOENT;

@@ -1165,7 +1165,7 @@ case OP_Move: {
     assert( pIn1<=&aMem[(p->nMem-p->nCursor)] );
     assert( memIsValid(pIn1) );
     memAboutToChange(p, pOut);
-    VdbeMemReleaseExtern(pOut);
+    sqlite3VdbeMemRelease(pOut);
     zMalloc = pOut->zMalloc;
     memcpy(pOut, pIn1, sizeof(Mem));
 #ifdef SQLITE_DEBUG
@@ -1545,8 +1545,8 @@ case OP_Function: {
   apVal = p->apArg;
   assert( apVal || n==0 );
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
-  pOut = &aMem[pOp->p3];
-  memAboutToChange(p, pOut);
+  ctx.pOut = &aMem[pOp->p3];
+  memAboutToChange(p, ctx.pOut);
 
   assert( n==0 || (pOp->p2>0 && pOp->p2+n<=(p->nMem-p->nCursor)+1) );
   assert( pOp->p3<pOp->p2 || pOp->p3>=pOp->p2+n );
@@ -1562,16 +1562,7 @@ case OP_Function: {
   ctx.pFunc = pOp->p4.pFunc;
   ctx.iOp = pc;
   ctx.pVdbe = p;
-
-  /* The output cell may already have a buffer allocated. Move
-  ** the pointer to ctx.s so in case the user-function can use
-  ** the already allocated buffer instead of allocating a new one.
-  */
-  memcpy(&ctx.s, pOut, sizeof(Mem));
-  pOut->flags = MEM_Null;
-  pOut->xDel = 0;
-  pOut->zMalloc = 0;
-  MemSetTypeFlag(&ctx.s, MEM_Null);
+  MemSetTypeFlag(ctx.pOut, MEM_Null);
 
   ctx.fErrorOrAux = 0;
   if( ctx.pFunc->funcFlags & SQLITE_FUNC_NEEDCOLL ){
@@ -1584,43 +1575,23 @@ case OP_Function: {
   (*ctx.pFunc->xFunc)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   lastRowid = db->lastRowid;
 
-  if( db->mallocFailed ){
-    /* Even though a malloc() has failed, the implementation of the
-    ** user function may have called an sqlite3_result_XXX() function
-    ** to return a value. The following call releases any resources
-    ** associated with such a value.
-    */
-    sqlite3VdbeMemRelease(&ctx.s);
-    goto no_mem;
-  }
-
   /* If the function returned an error, throw an exception */
   if( ctx.fErrorOrAux ){
     if( ctx.isError ){
-      sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
+      sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(ctx.pOut));
       rc = ctx.isError;
     }
     sqlite3VdbeDeleteAuxData(p, pc, pOp->p1);
   }
 
   /* Copy the result of the function into register P3 */
-  sqlite3VdbeChangeEncoding(&ctx.s, encoding);
-  assert( pOut->flags==MEM_Null );
-  memcpy(pOut, &ctx.s, sizeof(Mem));
-  if( sqlite3VdbeMemTooBig(pOut) ){
+  sqlite3VdbeChangeEncoding(ctx.pOut, encoding);
+  if( sqlite3VdbeMemTooBig(ctx.pOut) ){
     goto too_big;
   }
 
-#if 0
-  /* The app-defined function has done something that as caused this
-  ** statement to expire.  (Perhaps the function called sqlite3_exec()
-  ** with a CREATE TABLE statement.)
-  */
-  if( p->expired ) rc = SQLITE_ABORT;
-#endif
-
-  REGISTER_TRACE(pOp->p3, pOut);
-  UPDATE_MAX_BLOBSIZE(pOut);
+  REGISTER_TRACE(pOp->p3, ctx.pOut);
+  UPDATE_MAX_BLOBSIZE(ctx.pOut);
   break;
 }
 
@@ -1769,6 +1740,7 @@ case OP_RealAffinity: {                  /* in1 */
 
 #ifndef SQLITE_OMIT_CAST
 /* Opcode: Cast P1 P2 * * *
+** Synopsis: affinity(r[P1])
 **
 ** Force the value in register P1 to be the type defined by P2.
 ** 
@@ -3390,11 +3362,15 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: SorterOpen P1 P2 * P4 *
+/* Opcode: SorterOpen P1 P2 P3 P4 *
 **
 ** This opcode works like OP_OpenEphemeral except that it opens
 ** a transient index that is specifically designed to sort large
 ** tables using an external merge-sort algorithm.
+**
+** If argument P3 is non-zero, then it indicates that the sorter may
+** assume that a stable sort considering the first P3 fields of each
+** key is sufficient to produce the required results.
 */
 case OP_SorterOpen: {
   VdbeCursor *pCx;
@@ -3406,7 +3382,25 @@ case OP_SorterOpen: {
   pCx->pKeyInfo = pOp->p4.pKeyInfo;
   assert( pCx->pKeyInfo->db==db );
   assert( pCx->pKeyInfo->enc==ENC(db) );
-  rc = sqlite3VdbeSorterInit(db, pCx);
+  rc = sqlite3VdbeSorterInit(db, pOp->p3, pCx);
+  break;
+}
+
+/* Opcode: SequenceTest P1 P2 * * *
+** Synopsis: if( cursor[P1].ctr++ ) pc = P2
+**
+** P1 is a sorter cursor. If the sequence counter is currently zero, jump
+** to P2. Regardless of whether or not the jump is taken, increment the
+** the sequence value.
+*/
+case OP_SequenceTest: {
+  VdbeCursor *pC;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC->pSorter );
+  if( (pC->seqCount++)==0 ){
+    pc = pOp->p2 - 1;
+  }
   break;
 }
 
@@ -4255,6 +4249,7 @@ case OP_SorterCompare: {
   assert( pOp->p4type==P4_INT32 );
   pIn3 = &aMem[pOp->p3];
   nKeyCol = pOp->p4.i;
+  res = 0;
   rc = sqlite3VdbeSorterCompare(pC, pIn3, nKeyCol, &res);
   VdbeBranchTaken(res!=0,2);
   if( res ){
@@ -4519,7 +4514,7 @@ case OP_Rewind: {        /* jump */
   pC->seekOp = OP_Rewind;
 #endif
   if( isSorter(pC) ){
-    rc = sqlite3VdbeSorterRewind(db, pC, &res);
+    rc = sqlite3VdbeSorterRewind(pC, &res);
   }else{
     pCrsr = pC->pCursor;
     assert( pCrsr );
@@ -4697,7 +4692,7 @@ case OP_IdxInsert: {        /* in2 */
   rc = ExpandBlob(pIn2);
   if( rc==SQLITE_OK ){
     if( isSorter(pC) ){
-      rc = sqlite3VdbeSorterWrite(db, pC, pIn2);
+      rc = sqlite3VdbeSorterWrite(pC, pIn2);
     }else{
       nKey = pIn2->n;
       zKey = pIn2->z;
@@ -5610,6 +5605,7 @@ case OP_AggStep: {
   int i;
   Mem *pMem;
   Mem *pRec;
+  Mem t;
   sqlite3_context ctx;
   sqlite3_value **apVal;
 
@@ -5627,11 +5623,12 @@ case OP_AggStep: {
   assert( pOp->p3>0 && pOp->p3<=(p->nMem-p->nCursor) );
   ctx.pMem = pMem = &aMem[pOp->p3];
   pMem->n++;
-  ctx.s.flags = MEM_Null;
-  ctx.s.z = 0;
-  ctx.s.zMalloc = 0;
-  ctx.s.xDel = 0;
-  ctx.s.db = db;
+  t.flags = MEM_Null;
+  t.z = 0;
+  t.zMalloc = 0;
+  t.xDel = 0;
+  t.db = db;
+  ctx.pOut = &t;
   ctx.isError = 0;
   ctx.pColl = 0;
   ctx.skipFlag = 0;
@@ -5643,7 +5640,7 @@ case OP_AggStep: {
   }
   (ctx.pFunc->xStep)(&ctx, n, apVal); /* IMP: R-24505-23230 */
   if( ctx.isError ){
-    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&ctx.s));
+    sqlite3SetString(&p->zErrMsg, db, "%s", sqlite3_value_text(&t));
     rc = ctx.isError;
   }
   if( ctx.skipFlag ){
@@ -5651,9 +5648,7 @@ case OP_AggStep: {
     i = pOp[-1].p1;
     if( i ) sqlite3VdbeMemSetInt64(&aMem[i], 1);
   }
-
-  sqlite3VdbeMemRelease(&ctx.s);
-
+  sqlite3VdbeMemRelease(&t);
   break;
 }
 
@@ -6103,27 +6098,14 @@ case OP_VColumn: {
   pModule = pVtab->pModule;
   assert( pModule->xColumn );
   memset(&sContext, 0, sizeof(sContext));
-
-  /* The output cell may already have a buffer allocated. Move
-  ** the current contents to sContext.s so in case the user-function 
-  ** can use the already allocated buffer instead of allocating a 
-  ** new one.
-  */
-  sqlite3VdbeMemMove(&sContext.s, pDest);
-  MemSetTypeFlag(&sContext.s, MEM_Null);
-
+  sContext.pOut = pDest;
+  MemSetTypeFlag(pDest, MEM_Null);
   rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
   sqlite3VtabImportErrmsg(p, pVtab);
   if( sContext.isError ){
     rc = sContext.isError;
   }
-
-  /* Copy the result of the function to the P3 register. We
-  ** do this regardless of whether or not an error occurred to ensure any
-  ** dynamic allocation in sContext.s (a Mem struct) is  released.
-  */
-  sqlite3VdbeChangeEncoding(&sContext.s, encoding);
-  sqlite3VdbeMemMove(pDest, &sContext.s);
+  sqlite3VdbeChangeEncoding(pDest, encoding);
   REGISTER_TRACE(pOp->p3, pDest);
   UPDATE_MAX_BLOBSIZE(pDest);
 

@@ -455,28 +455,43 @@ static KeyInfo *keyInfoFromExprList(
 );
 
 /*
-** Insert code into "v" that will push the record in register regData
-** into the sorter.
+** Generate code that will push the record in registers regData
+** through regData+nData-1 onto the sorter.
 */
 static void pushOntoSorter(
   Parse *pParse,         /* Parser context */
   SortCtx *pSort,        /* Information about the ORDER BY clause */
   Select *pSelect,       /* The whole SELECT statement */
-  int regData            /* Register holding data to be sorted */
+  int regData,           /* First register holding data to be sorted */
+  int nData,             /* Number of elements in the data array */
+  int nPrefixReg         /* No. of reg prior to regData available for use */
 ){
-  Vdbe *v = pParse->pVdbe;
-  int nExpr = pSort->pOrderBy->nExpr;
-  int regRecord = ++pParse->nMem;
-  int regBase = pParse->nMem+1;
-  int nOBSat = pSort->nOBSat;
-  int op;
+  Vdbe *v = pParse->pVdbe;                         /* Stmt under construction */
+  int bSeq = ((pSort->sortFlags & SORTFLAG_UseSorter)==0);
+  int nExpr = pSort->pOrderBy->nExpr;              /* No. of ORDER BY terms */
+  int nBase = nExpr + bSeq + nData;                /* Fields in sorter record */
+  int regBase;                                     /* Regs for sorter record */
+  int regRecord = ++pParse->nMem;                  /* Assembled sorter record */
+  int nOBSat = pSort->nOBSat;                      /* ORDER BY terms to skip */
+  int op;                            /* Opcode to add sorter record to sorter */
 
-  pParse->nMem += nExpr+2;        /* nExpr+2 registers allocated at regBase */
-  sqlite3ExprCacheClear(pParse);
-  sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, 0);
-  sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
-  sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+1, 1);
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nExpr+2-nOBSat,regRecord);
+  assert( bSeq==0 || bSeq==1 );
+  if( nPrefixReg ){
+    assert( nPrefixReg==nExpr+bSeq );
+    regBase = regData - nExpr - bSeq;
+  }else{
+    regBase = pParse->nMem + 1;
+    pParse->nMem += nBase;
+  }
+  sqlite3ExprCodeExprList(pParse, pSort->pOrderBy, regBase, SQLITE_ECEL_DUP);
+  if( bSeq ){
+    sqlite3VdbeAddOp2(v, OP_Sequence, pSort->iECursor, regBase+nExpr);
+  }
+  if( nPrefixReg==0 ){
+    sqlite3VdbeAddOp3(v, OP_Move, regData, regBase+nExpr+bSeq, nData);
+  }
+
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase+nOBSat, nBase-nOBSat, regRecord);
   if( nOBSat>0 ){
     int regPrevKey;   /* The first nOBSat columns of the previous row */
     int addrFirst;    /* Address of the OP_IfNot opcode */
@@ -487,12 +502,17 @@ static void pushOntoSorter(
 
     regPrevKey = pParse->nMem+1;
     pParse->nMem += pSort->nOBSat;
-    nKey = nExpr - pSort->nOBSat + 1;
-    addrFirst = sqlite3VdbeAddOp1(v, OP_IfNot, regBase+nExpr); VdbeCoverage(v);
+    nKey = nExpr - pSort->nOBSat + bSeq;
+    if( bSeq ){
+      addrFirst = sqlite3VdbeAddOp1(v, OP_IfNot, regBase+nExpr); 
+    }else{
+      addrFirst = sqlite3VdbeAddOp1(v, OP_SequenceTest, pSort->iECursor);
+    }
+    VdbeCoverage(v);
     sqlite3VdbeAddOp3(v, OP_Compare, regPrevKey, regBase, pSort->nOBSat);
     pOp = sqlite3VdbeGetOp(v, pSort->addrSortIndex);
     if( pParse->db->mallocFailed ) return;
-    pOp->p2 = nKey + 1;
+    pOp->p2 = nKey + nData;
     pKI = pOp->p4.pKeyInfo;
     memset(pKI->aSortOrder, 0, pKI->nField); /* Makes OP_Jump below testable */
     sqlite3VdbeChangeP4(v, -1, (char*)pKI, P4_KEYINFO);
@@ -626,6 +646,7 @@ static void selectInnerLoop(
   int eDest = pDest->eDest;   /* How to dispose of results */
   int iParm = pDest->iSDParm; /* First argument to disposal method */
   int nResultCol;             /* Number of result columns */
+  int nPrefixReg = 0;         /* Number of extra registers before regResult */
 
   assert( v );
   assert( pEList!=0 );
@@ -641,6 +662,11 @@ static void selectInnerLoop(
   nResultCol = pEList->nExpr;
 
   if( pDest->iSdst==0 ){
+    if( pSort ){
+      nPrefixReg = pSort->pOrderBy->nExpr;
+      if( !(pSort->sortFlags & SORTFLAG_UseSorter) ) nPrefixReg++;
+      pParse->nMem += nPrefixReg;
+    }
     pDest->iSdst = pParse->nMem+1;
     pParse->nMem += nResultCol;
   }else if( pDest->iSdst+nResultCol > pParse->nMem ){
@@ -757,10 +783,10 @@ static void selectInnerLoop(
     case SRT_DistFifo:
     case SRT_Table:
     case SRT_EphemTab: {
-      int r1 = sqlite3GetTempReg(pParse);
+      int r1 = sqlite3GetTempRange(pParse, nPrefixReg+1);
       testcase( eDest==SRT_Table );
       testcase( eDest==SRT_EphemTab );
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1);
+      sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1+nPrefixReg);
 #ifndef SQLITE_OMIT_CTE
       if( eDest==SRT_DistFifo ){
         /* If the destination is DistFifo, then cursor (iParm+1) is open
@@ -775,7 +801,7 @@ static void selectInnerLoop(
       }
 #endif
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, r1);
+        pushOntoSorter(pParse, pSort, p, r1+nPrefixReg, 1, nPrefixReg);
       }else{
         int r2 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp2(v, OP_NewRowid, iParm, r2);
@@ -783,7 +809,7 @@ static void selectInnerLoop(
         sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
         sqlite3ReleaseTempReg(pParse, r2);
       }
-      sqlite3ReleaseTempReg(pParse, r1);
+      sqlite3ReleaseTempRange(pParse, r1, nPrefixReg+1);
       break;
     }
 
@@ -801,7 +827,7 @@ static void selectInnerLoop(
         ** ORDER BY in this case since the order of entries in the set
         ** does not matter.  But there might be a LIMIT clause, in which
         ** case the order does matter */
-        pushOntoSorter(pParse, pSort, p, regResult);
+        pushOntoSorter(pParse, pSort, p, regResult, 1, nPrefixReg);
       }else{
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regResult,1,r1, &pDest->affSdst, 1);
@@ -827,9 +853,9 @@ static void selectInnerLoop(
     case SRT_Mem: {
       assert( nResultCol==1 );
       if( pSort ){
-        pushOntoSorter(pParse, pSort, p, regResult);
+        pushOntoSorter(pParse, pSort, p, regResult, 1, nPrefixReg);
       }else{
-        sqlite3ExprCodeMove(pParse, regResult, iParm, 1);
+        assert( regResult==iParm );
         /* The LIMIT clause will jump out of the loop for us */
       }
       break;
@@ -841,10 +867,7 @@ static void selectInnerLoop(
       testcase( eDest==SRT_Coroutine );
       testcase( eDest==SRT_Output );
       if( pSort ){
-        int r1 = sqlite3GetTempReg(pParse);
-        sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nResultCol, r1);
-        pushOntoSorter(pParse, pSort, p, r1);
-        sqlite3ReleaseTempReg(pParse, r1);
+        pushOntoSorter(pParse, pSort, p, regResult, nResultCol, nPrefixReg);
       }else if( eDest==SRT_Coroutine ){
         sqlite3VdbeAddOp1(v, OP_Yield, pDest->iSDParm);
       }else{
@@ -1124,46 +1147,62 @@ static void generateSortTail(
   int addr;
   int addrOnce = 0;
   int iTab;
-  int pseudoTab = 0;
   ExprList *pOrderBy = pSort->pOrderBy;
   int eDest = pDest->eDest;
   int iParm = pDest->iSDParm;
   int regRow;
   int regRowid;
   int nKey;
+  int iSortTab;                   /* Sorter cursor to read from */
+  int nSortData;                  /* Trailing values to read from sorter */
+  u8 p5;                          /* p5 parameter for 1st OP_Column */
+  int i;
+  int bSeq;                       /* True if sorter record includes seq. no. */
+#ifdef SQLITE_ENABLE_EXPLAIN_COMMENTS
+  struct ExprList_item *aOutEx = p->pEList->a;
+#endif
 
   if( pSort->labelBkOut ){
     sqlite3VdbeAddOp2(v, OP_Gosub, pSort->regReturn, pSort->labelBkOut);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, addrBreak);
     sqlite3VdbeResolveLabel(v, pSort->labelBkOut);
-    addrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
   }
   iTab = pSort->iECursor;
-  regRow = sqlite3GetTempReg(pParse);
   if( eDest==SRT_Output || eDest==SRT_Coroutine ){
-    pseudoTab = pParse->nTab++;
-    sqlite3VdbeAddOp3(v, OP_OpenPseudo, pseudoTab, regRow, nColumn);
     regRowid = 0;
+    regRow = pDest->iSdst;
+    nSortData = nColumn;
   }else{
     regRowid = sqlite3GetTempReg(pParse);
+    regRow = sqlite3GetTempReg(pParse);
+    nSortData = 1;
   }
   nKey = pOrderBy->nExpr - pSort->nOBSat;
   if( pSort->sortFlags & SORTFLAG_UseSorter ){
     int regSortOut = ++pParse->nMem;
-    int ptab2 = pParse->nTab++;
-    sqlite3VdbeAddOp3(v, OP_OpenPseudo, ptab2, regSortOut, nKey+2);
+    iSortTab = pParse->nTab++;
+    if( pSort->labelBkOut ){
+      addrOnce = sqlite3CodeOnce(pParse); VdbeCoverage(v);
+    }
+    sqlite3VdbeAddOp3(v, OP_OpenPseudo, iSortTab, regSortOut, nKey+1+nSortData);
     if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_SorterSort, iTab, addrBreak);
     VdbeCoverage(v);
     codeOffset(v, p->iOffset, addrContinue);
     sqlite3VdbeAddOp2(v, OP_SorterData, iTab, regSortOut);
-    sqlite3VdbeAddOp3(v, OP_Column, ptab2, nKey+1, regRow);
-    sqlite3VdbeChangeP5(v, OPFLAG_CLEARCACHE);
+    p5 = OPFLAG_CLEARCACHE;
+    bSeq = 0;
   }else{
-    if( addrOnce ) sqlite3VdbeJumpHere(v, addrOnce);
     addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak); VdbeCoverage(v);
     codeOffset(v, p->iOffset, addrContinue);
-    sqlite3VdbeAddOp3(v, OP_Column, iTab, nKey+1, regRow);
+    iSortTab = iTab;
+    p5 = 0;
+    bSeq = 1;
+  }
+  for(i=0; i<nSortData; i++){
+    sqlite3VdbeAddOp3(v, OP_Column, iSortTab, nKey+bSeq+i, regRow+i);
+    if( i==0 ) sqlite3VdbeChangeP5(v, p5);
+    VdbeComment((v, "%s", aOutEx[i].zName ? aOutEx[i].zName : aOutEx[i].zSpan));
   }
   switch( eDest ){
     case SRT_Table:
@@ -1192,17 +1231,9 @@ static void generateSortTail(
     }
 #endif
     default: {
-      int i;
       assert( eDest==SRT_Output || eDest==SRT_Coroutine ); 
       testcase( eDest==SRT_Output );
       testcase( eDest==SRT_Coroutine );
-      for(i=0; i<nColumn; i++){
-        assert( regRow!=pDest->iSdst+i );
-        sqlite3VdbeAddOp3(v, OP_Column, pseudoTab, i, pDest->iSdst+i);
-        if( i==0 ){
-          sqlite3VdbeChangeP5(v, OPFLAG_CLEARCACHE);
-        }
-      }
       if( eDest==SRT_Output ){
         sqlite3VdbeAddOp2(v, OP_ResultRow, pDest->iSdst, nColumn);
         sqlite3ExprCacheAffinityChange(pParse, pDest->iSdst, nColumn);
@@ -1212,9 +1243,10 @@ static void generateSortTail(
       break;
     }
   }
-  sqlite3ReleaseTempReg(pParse, regRow);
-  sqlite3ReleaseTempReg(pParse, regRowid);
-
+  if( regRowid ){
+    sqlite3ReleaseTempReg(pParse, regRow);
+    sqlite3ReleaseTempReg(pParse, regRowid);
+  }
   /* The bottom of the loop
   */
   sqlite3VdbeResolveLabel(v, addrContinue);
@@ -4755,8 +4787,9 @@ int sqlite3Select(
     sSort.iECursor = pParse->nTab++;
     sSort.addrSortIndex =
       sqlite3VdbeAddOp4(v, OP_OpenEphemeral,
-                           sSort.iECursor, sSort.pOrderBy->nExpr+2, 0,
-                           (char*)pKeyInfo, P4_KEYINFO);
+          sSort.iECursor, sSort.pOrderBy->nExpr+1+pEList->nExpr, 0,
+          (char*)pKeyInfo, P4_KEYINFO
+      );
   }else{
     sSort.addrSortIndex = -1;
   }
@@ -4887,7 +4920,7 @@ int sqlite3Select(
     sNC.pSrcList = pTabList;
     sNC.pAggInfo = &sAggInfo;
     sAggInfo.mnReg = pParse->nMem+1;
-    sAggInfo.nSortingColumn = pGroupBy ? pGroupBy->nExpr+1 : 0;
+    sAggInfo.nSortingColumn = pGroupBy ? pGroupBy->nExpr : 0;
     sAggInfo.pGroupBy = pGroupBy;
     sqlite3ExprAnalyzeAggList(&sNC, pEList);
     sqlite3ExprAnalyzeAggList(&sNC, sSort.pOrderBy);
@@ -4980,8 +5013,8 @@ int sqlite3Select(
 
         groupBySort = 1;
         nGroupBy = pGroupBy->nExpr;
-        nCol = nGroupBy + 1;
-        j = nGroupBy+1;
+        nCol = nGroupBy;
+        j = nGroupBy;
         for(i=0; i<sAggInfo.nColumn; i++){
           if( sAggInfo.aCol[i].iSorterColumn>=j ){
             nCol++;
@@ -4991,8 +5024,7 @@ int sqlite3Select(
         regBase = sqlite3GetTempRange(pParse, nCol);
         sqlite3ExprCacheClear(pParse);
         sqlite3ExprCodeExprList(pParse, pGroupBy, regBase, 0);
-        sqlite3VdbeAddOp2(v, OP_Sequence, sAggInfo.sortingIdx,regBase+nGroupBy);
-        j = nGroupBy+1;
+        j = nGroupBy;
         for(i=0; i<sAggInfo.nColumn; i++){
           struct AggInfo_col *pCol = &sAggInfo.aCol[i];
           if( pCol->iSorterColumn>=j ){
