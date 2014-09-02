@@ -294,6 +294,8 @@ set pragma_def {
   IF:   defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
 
   NAME: soft_heap_limit
+
+  NAME: threads
 }
 fconfigure stdout -translation lf
 set name {}

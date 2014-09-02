@@ -1912,6 +1912,7 @@ int sqlite3CodeSubselect(
       sqlite3SelectDestInit(&dest, 0, ++pParse->nMem);
       if( pExpr->op==TK_SELECT ){
         dest.eDest = SRT_Mem;
+        dest.iSdst = dest.iSDParm;
         sqlite3VdbeAddOp2(v, OP_Null, 0, dest.iSDParm);
         VdbeComment((v, "Init subquery result"));
       }else{

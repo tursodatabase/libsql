@@ -266,8 +266,8 @@ struct AuxData {
 ** (Mem) which are only defined there.
 */
 struct sqlite3_context {
+  Mem *pOut;            /* The return value is stored here */
   FuncDef *pFunc;       /* Pointer to function information.  MUST BE FIRST */
-  Mem s;                /* The return value is stored here */
   Mem *pMem;            /* Memory cell used to store aggregate context */
   CollSeq *pColl;       /* Collating sequence */
   Vdbe *pVdbe;          /* The VM that owns this context */
@@ -462,13 +462,13 @@ void sqlite3VdbePreUpdateHook(
     Vdbe *, VdbeCursor *, int, const char*, Table *, i64, int);
 int sqlite3VdbeTransferError(Vdbe *p);
 
-int sqlite3VdbeSorterInit(sqlite3 *, VdbeCursor *);
+int sqlite3VdbeSorterInit(sqlite3 *, int, VdbeCursor *);
 void sqlite3VdbeSorterReset(sqlite3 *, VdbeSorter *);
 void sqlite3VdbeSorterClose(sqlite3 *, VdbeCursor *);
 int sqlite3VdbeSorterRowkey(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterNext(sqlite3 *, const VdbeCursor *, int *);
-int sqlite3VdbeSorterRewind(sqlite3 *, const VdbeCursor *, int *);
-int sqlite3VdbeSorterWrite(sqlite3 *, const VdbeCursor *, Mem *);
+int sqlite3VdbeSorterRewind(const VdbeCursor *, int *);
+int sqlite3VdbeSorterWrite(const VdbeCursor *, Mem *);
 int sqlite3VdbeSorterCompare(const VdbeCursor *, Mem *, int, int *);
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && SQLITE_THREADSAFE>0
