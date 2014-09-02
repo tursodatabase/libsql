@@ -308,6 +308,12 @@ static const struct sPragmaNames {
     /* ePragTyp:  */ PragTyp_MMAP_SIZE,
     /* ePragFlag: */ 0,
     /* iArg:      */ 0 },
+#endif
+  { /* zName:     */ "ota_mode",
+    /* ePragTyp:  */ PragTyp_FLAG,
+    /* ePragFlag: */ 0,
+    /* iArg:      */ SQLITE_OtaMode },
+#if !defined(SQLITE_OMIT_PAGER_PRAGMAS)
   { /* zName:     */ "page_count",
     /* ePragTyp:  */ PragTyp_PAGE_COUNT,
     /* ePragFlag: */ PragFlag_NeedSchema,
@@ -1467,7 +1473,11 @@ void sqlite3Pragma(
         }else if( pPk==0 ){
           k = 1;
         }else{
-          for(k=1; ALWAYS(k<=pTab->nCol) && pPk->aiColumn[k-1]!=i; k++){}
+          if( (db->flags & SQLITE_OtaMode) && HasRowid(pTab) ){
+            k = 0;
+          }else{
+            for(k=1; ALWAYS(k<=pTab->nCol) && pPk->aiColumn[k-1]!=i; k++){}
+          }
         }
         sqlite3VdbeAddOp2(v, OP_Integer, k, 6);
         sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 6);

@@ -89,7 +89,7 @@ static int pager_close(
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
-  rc = sqlite3PagerClose(pPager);
+  rc = sqlite3PagerClose(pPager, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, sqlite3ErrName(rc), 0);
     return TCL_ERROR;

@@ -1141,6 +1141,8 @@ struct sqlite3 {
 #define SQLITE_QueryOnly      0x02000000  /* Disable database changes */
 #define SQLITE_VdbeEQP        0x04000000  /* Debug EXPLAIN QUERY PLAN */
 
+#define SQLITE_OtaMode        0x08000000  /* True in "ota mode" */
+
 
 /*
 ** Bits of the sqlite3.dbOptFlags field that are used by the
@@ -3725,6 +3727,7 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 #define MEMTYPE_SCRATCH    0x04  /* Scratch allocations */
 #define MEMTYPE_PCACHE     0x08  /* Page cache allocations */
 #define MEMTYPE_DB         0x10  /* Uses sqlite3DbMalloc, not sqlite_malloc */
+
 
 /*
 ** Threading interface

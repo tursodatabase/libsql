@@ -1,0 +1,181 @@
+# 2014 August 30
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file join [file dirname $argv0] .. .. test]
+source $testdir/tester.tcl
+set ::testprefix ota1
+
+
+# Create a simple OTA database. That expects to write to a table:
+#
+#   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+#
+proc create_ota1 {filename} {
+  forcedelete $filename
+  sqlite3 ota1 $filename  
+  ota1 eval {
+    CREATE TABLE data_t1(a, b, c, ota_control);
+    INSERT INTO data_t1 VALUES(1, 2, 3, 0);
+    INSERT INTO data_t1 VALUES(2, 'two', 'three', 0);
+    INSERT INTO data_t1 VALUES(3, NULL, 8.2, 0);
+  }
+  ota1 close
+  return $filename
+}
+
+# Create an empty target database suitable for the OTA created by 
+# [create_ota1].
+#
+#   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+#
+proc create_target1 {filename} {
+  forcedelete $filename
+  sqlite3 target1 $filename  
+  target1 eval { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c) }
+  target1 close
+  return $filename
+}
+
+# Run the OTA in file $ota on target database $target until completion.
+#
+proc run_ota {target ota} {
+  sqlite3ota ota $target $ota
+  while { [ota step]=="SQLITE_OK" } {}
+  ota close
+}
+
+proc step_ota {target ota} {
+  while 1 {
+    sqlite3ota ota $target $ota
+    set rc [ota step]
+    ota close
+    if {$rc != "SQLITE_OK"} break
+  }
+  set rc
+}
+
+foreach {tn2 cmd} {1 step_ota 2 run_ota} {
+  foreach {tn schema} {
+    1 {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    }
+    2 { 
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b);
+    }
+    3 { 
+      CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
+    }
+    4 { 
+      CREATE TABLE t1(a PRIMARY KEY, b, c) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b);
+    }
+    5 { 
+      CREATE TABLE t1(a, b, c, PRIMARY KEY(a, c)) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b);
+    }
+    6 { 
+      CREATE TABLE t1(a, b, c, PRIMARY KEY(c)) WITHOUT ROWID;
+      CREATE INDEX i1 ON t1(b, a);
+    }
+    7 { 
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b, c);
+      CREATE INDEX i2 ON t1(c, b);
+      CREATE INDEX i3 ON t1(a, b, c, a, b, c);
+    }
+  } {
+    reset_db
+    execsql $schema
+  
+    do_test 1.$tn2.$tn.1 {
+      create_ota1 ota.db
+      $cmd test.db ota.db
+    } {SQLITE_DONE}
+    
+    do_execsql_test 1.$tn2.$tn.2 {
+      SELECT * FROM t1 ORDER BY a ASC;
+    } {
+      1 2 3 
+      2 two three 
+      3 {} 8.2
+    }
+  
+    do_execsql_test 1.$tn2.$tn.3 { PRAGMA integrity_check } ok
+  }
+}
+
+#-------------------------------------------------------------------------
+# Check that an OTA cannot be applied to a table that has no PK.
+#
+reset_db
+create_ota1 ota.db
+do_execsql_test 2.1 { CREATE TABLE t1(a, b, c) }
+do_test 2.2 {
+  sqlite3ota ota test.db ota.db
+  ota step
+} {SQLITE_ERROR}
+do_test 2.3 {
+  list [catch { ota close } msg] $msg
+} {1 {SQLITE_ERROR - table t1 has no PRIMARY KEY}}
+
+reset_db
+do_execsql_test 2.4 { CREATE TABLE t1(a PRIMARY KEY, b, c) }
+do_test 2.5 {
+  sqlite3ota ota test.db ota.db
+  ota step
+} {SQLITE_ERROR}
+do_test 2.6 {
+  list [catch { ota close } msg] $msg
+} {1 {SQLITE_ERROR - table t1 has no PRIMARY KEY}}
+
+#-------------------------------------------------------------------------
+# Check that if a UNIQUE constraint is violated the current and all 
+# subsequent [ota step] calls return SQLITE_CONSTRAINT. And that the OTA 
+# transaction is rolled back by the [ota close] that deletes the ota 
+# handle.
+#
+foreach {tn errcode errmsg schema} {
+  1 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.a" {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    INSERT INTO t1 VALUES(3, 2, 1);
+  } 
+
+  2 SQLITE_CONSTRAINT "UNIQUE constraint failed: t1.c" {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c UNIQUE);
+    INSERT INTO t1 VALUES(4, 2, 'three');
+  } 
+
+} {
+  reset_db
+  execsql $schema
+  set cksum [dbcksum db main]
+
+  do_test 3.$tn.1 {
+    create_ota1 ota.db
+    sqlite3ota ota test.db ota.db
+    while {[set res [ota step]]=="SQLITE_OK"} {}
+    set res
+  } $errcode
+
+  do_test 3.$tn.2 { ota step } $errcode
+
+  do_test 3.$tn.3 { 
+    list [catch { ota close } msg] $msg
+  } [list 1 "$errcode - $errmsg"]
+
+  do_test 3.$tn.4 { dbcksum db main } $cksum
+}
+
+
+finish_test
+

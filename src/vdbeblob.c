@@ -463,4 +463,116 @@ int sqlite3_blob_reopen(sqlite3_blob *pBlob, sqlite3_int64 iRow){
   return rc;
 }
 
+int sqlite3_index_writer(
+  sqlite3 *db, 
+  int bDelete,
+  const char *zIndex, 
+  sqlite3_stmt **ppStmt,
+  int **paiCol, int *pnCol
+){
+  int rc = SQLITE_OK;
+  Parse *pParse = 0;
+  Index *pIdx = 0;                /* The index to write to */
+  Table *pTab;
+  int i;                          /* Used to iterate through index columns */
+  Vdbe *v = 0;
+  int regRec;                     /* Register to assemble record in */
+  int *aiCol = 0;
+
+  sqlite3_mutex_enter(db->mutex);
+  sqlite3BtreeEnterAll(db);
+
+  /* Allocate the parse context */
+  pParse = sqlite3StackAllocRaw(db, sizeof(*pParse));
+  if( !pParse ) goto index_writer_out;
+  memset(pParse, 0, sizeof(Parse));
+  pParse->db = db;
+
+  /* Allocate the Vdbe */
+  v = sqlite3GetVdbe(pParse);
+  if( v==0 ) goto index_writer_out;
+
+  /* Find the index to write to */
+  pIdx = sqlite3FindIndex(db, zIndex, "main");
+  if( pIdx==0 ){
+    sqlite3ErrorMsg(pParse, "no such index: %s", zIndex);
+    goto index_writer_out;
+  }
+  pTab = pIdx->pTable;
+
+  /* Populate the two output variables, *pnCol and *pnAiCol. */
+  *pnCol = pIdx->nColumn;
+  *paiCol = aiCol = sqlite3DbMallocZero(db, sizeof(int) * pIdx->nColumn);
+  if( aiCol==0 ){
+    rc = SQLITE_NOMEM;
+    goto index_writer_out;
+  }
+  for(i=0; i<pIdx->nKeyCol; i++){
+    aiCol[i] = pIdx->aiColumn[i];
+  }
+  if( !HasRowid(pTab) ){
+    Index *pPk = sqlite3PrimaryKeyIndex(pIdx->pTable);
+    assert( pIdx->nColumn==pIdx->nKeyCol+pPk->nKeyCol );
+    if( pPk==pIdx ){
+      rc = SQLITE_ERROR;
+      goto index_writer_out;
+    }
+    for(i=0; i<pPk->nKeyCol; i++){
+      aiCol[pIdx->nKeyCol+i] = pPk->aiColumn[i];
+    }
+  }else{
+    assert( pIdx->nColumn==pIdx->nKeyCol+1 );
+    aiCol[i] = pTab->iPKey;
+  }
+
+  /* Add an OP_Noop to the VDBE program. Then store a pointer to the 
+  ** output array *paiCol as its P4 value. This is so that the array
+  ** is automatically deleted when the user finalizes the statement. The
+  ** OP_Noop serves no other purpose. */
+  sqlite3VdbeAddOp0(v, OP_Noop);
+  sqlite3VdbeChangeP4(v, -1, (const char*)aiCol, P4_INTARRAY);
+
+  sqlite3BeginWriteOperation(pParse, 0, 0);
+
+  /* Open a write cursor on the index */
+  pParse->nTab = 1;
+  sqlite3VdbeAddOp3(v, OP_OpenWrite, 0, pIdx->tnum, 0);
+  sqlite3VdbeSetP4KeyInfo(pParse, pIdx);
+
+  /* Create the record to insert into the index. Store it in register regRec. */
+  pParse->nVar = pIdx->nColumn;
+  pParse->nMem = pIdx->nColumn;
+  for(i=1; i<=pIdx->nColumn; i++){
+    sqlite3VdbeAddOp2(v, OP_Variable, i, i);
+  }
+  regRec = ++pParse->nMem;
+  sqlite3VdbeAddOp3(v, OP_MakeRecord, 1, pIdx->nColumn, regRec);
+
+  /* If this is a UNIQUE index, check the constraint. */
+  if( pIdx->onError ){
+    int addr = sqlite3VdbeAddOp4Int(v, OP_NoConflict, 0, 0, 1, pIdx->nKeyCol);
+    sqlite3UniqueConstraint(pParse, SQLITE_ABORT, pIdx);
+    sqlite3VdbeJumpHere(v, addr);
+  }
+
+  /* Code the IdxInsert to write to the b-tree index. */
+  sqlite3VdbeAddOp2(v, OP_IdxInsert, 0, regRec);
+  sqlite3FinishCoding(pParse);
+
+index_writer_out:
+  if( rc==SQLITE_OK && db->mallocFailed==0 ){
+    *ppStmt = (sqlite3_stmt*)v;
+  }else{
+    *ppStmt = 0;
+    if( v ) sqlite3VdbeFinalize(v);
+  }
+
+  sqlite3ParserReset(pParse);
+  sqlite3StackFree(db, pParse);
+  sqlite3BtreeLeaveAll(db);
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+}
+
 #endif /* #ifndef SQLITE_OMIT_INCRBLOB */

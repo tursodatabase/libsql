@@ -3947,7 +3947,7 @@ static void pagerFreeMapHdrs(Pager *pPager){
 ** a hot journal may be left in the filesystem but no error is returned
 ** to the caller.
 */
-int sqlite3PagerClose(Pager *pPager){
+int sqlite3PagerClose(Pager *pPager, int bOtaMode){
   u8 *pTmp = (u8 *)pPager->pTmpSpace;
 
   assert( assert_pager_state(pPager) );
@@ -3957,7 +3957,9 @@ int sqlite3PagerClose(Pager *pPager){
   /* pPager->errCode = 0; */
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal, pPager->ckptSyncFlags, pPager->pageSize, pTmp);
+  sqlite3WalClose(
+      pPager->pWal, pPager->ckptSyncFlags, pPager->pageSize, (bOtaMode?0:pTmp)
+  );
   pPager->pWal = 0;
 #endif
   pager_reset(pPager);
@@ -7214,6 +7216,41 @@ int sqlite3PagerCloseWal(Pager *pPager){
       pagerFixMaplimit(pPager);
     }
   }
+  return rc;
+}
+
+int sqlite3PagerSaveState(Pager *pPager, void **ppState, int *pnState){
+  int rc = SQLITE_OK;
+  *ppState = 0;
+  *pnState = 0;
+  if( pPager->pWal==0 || pPager->eState<PAGER_WRITER_LOCKED ){
+    rc = SQLITE_ERROR;
+  }else{
+    /* Flush all dirty pages to the wal. */
+    PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+    rc = sqlite3WalFrames(pPager->pWal, 
+        pPager->pageSize, pList, 0, 0, pPager->walSyncFlags
+    );
+    if( rc==SQLITE_OK ){
+      rc = sqlite3WalSaveState(pPager->pWal, ppState, pnState);
+    }
+  }
+  return rc;
+}
+
+int sqlite3PagerRestoreState(Pager *pPager, const void *pState, int nState){
+  int rc = SQLITE_OK;
+  if( pPager->pWal==0 
+   || pPager->eState<PAGER_WRITER_LOCKED 
+   || sqlite3PcacheDirtyList(pPager->pPCache)
+  ){
+    rc = SQLITE_ERROR;
+  }else{
+    sqlite3PcacheTruncate(pPager->pPCache, 1);
+    rc = sqlite3WalRestoreState(pPager->pWal, pState, nState);
+    pPager->eState = PAGER_WRITER_CACHEMOD;
+  }
+
   return rc;
 }
 

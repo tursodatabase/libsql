@@ -151,7 +151,8 @@ static int hasSharedCacheTableLock(
   ** and has the read-uncommitted flag set, then no lock is required. 
   ** Return true immediately.
   */
-  if( (pBtree->sharable==0)
+  if( (pBtree->db->flags & SQLITE_OtaMode)
+   || (pBtree->sharable==0)
    || (eLockType==READ_LOCK && (pBtree->db->flags & SQLITE_ReadUncommitted))
   ){
     return 1;
@@ -2045,7 +2046,7 @@ int sqlite3BtreeOpen(
 btree_open_out:
   if( rc!=SQLITE_OK ){
     if( pBt && pBt->pPager ){
-      sqlite3PagerClose(pBt->pPager);
+      sqlite3PagerClose(pBt->pPager, 0);
     }
     sqlite3_free(pBt);
     sqlite3_free(p);
@@ -2174,7 +2175,7 @@ int sqlite3BtreeClose(Btree *p){
     ** Clean out and delete the BtShared object.
     */
     assert( !pBt->pCursor );
-    sqlite3PagerClose(pBt->pPager);
+    sqlite3PagerClose(pBt->pPager, (p->db->flags & SQLITE_OtaMode)!=0);
     if( pBt->xFreeSchema && pBt->pSchema ){
       pBt->xFreeSchema(pBt->pSchema);
     }
