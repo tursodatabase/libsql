@@ -14,49 +14,60 @@ set testdir [file join [file dirname $argv0] .. .. test]
 source $testdir/tester.tcl
 set ::testprefix ota2
 
+forcedelete test.db-oal 
 
 do_execsql_test 1.0 {
-  PRAGMA ota_mode = 1;
-  PRAGMA journal_mode = wal;
   CREATE TABLE t1(a, b);
-  BEGIN;
-    INSERT INTO t1 VALUES(1, 2);
-} {wal}
-
-do_test 1.1 {
-  set state [sqlite3_transaction_save db]
-  db close
-  file exists test.db-wal
-} {1}
-
-do_test 1.2 {
-  sqlite3 db test.db
-  db eval {SELECT * FROM t1}
+  INSERT INTO t1 VALUES(1, 2);
 } {}
+do_test 1.1 { glob test.db* } {test.db}
 
-do_test 1.3 {
-  execsql {BEGIN IMMEDIATE}
-  sqlite3_transaction_restore db $::state
-  db eval {SELECT * FROM t1}
-} {1 2}
+do_execsql_test 1.2 {
+  PRAGMA pager_ota_mode = 1;
+  INSERT INTO t1 VALUES(3, 4);
+  INSERT INTO t1 VALUES(5, 6);
+  SELECT * FROM t1;
+} {1 2 3 4 5 6}
+
+do_test 1.3 { glob test.db* } {test.db test.db-oal}
 
 do_test 1.4 {
-  execsql {
-    INSERT INTO t1 VALUES(3, 4);
-    COMMIT;
-    SELECT * FROM t1;
-  }
-} {1 2 3 4}
+  sqlite3 db2 test.db
+  db2 eval { SELECT * FROM t1 }
+} {1 2}
 
 do_test 1.5 {
-  db close
-  file exists test.db-wal
-} {0}
+  catchsql { INSERT INTO t1 VALUES(7, 8) } db2
+} {1 {database is locked}}
 
-do_test 1.5 {
-  sqlite3 db test.db
-  db eval {SELECT * FROM t1}
-} {1 2 3 4}
+db2 close
+db close
+
+sqlite3 db test.db
+do_execsql_test 1.6 {
+  PRAGMA pager_ota_mode = 1;
+  SELECT * FROM t1;
+} {1 2 3 4 5 6}
+
+do_execsql_test 1.7 {
+  INSERT INTO t1 VALUES(7,8);
+  SELECT * FROM t1;
+} {1 2 3 4 5 6 7 8}
+
+db close
+sqlite3 db2 test.db
+
+do_test 1.8 {
+  execsql { BEGIN; SELECT * FROM t1 } db2
+} {1 2}
+do_test 1.9 {
+  file rename test.db-oal test.db-wal
+  execsql { SELECT * FROM t1 } db2
+} {1 2}
+do_test 1.10 {
+  execsql { COMMIT; SELECT * FROM t1 } db2
+} {1 2 3 4 5 6 7 8}
+
 
 finish_test
 

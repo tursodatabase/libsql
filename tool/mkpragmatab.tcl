@@ -296,6 +296,12 @@ set pragma_def {
   NAME: soft_heap_limit
 
   NAME: threads
+
+  NAME: pager_ota_mode
+
+  NAME: ota_mode
+  TYPE: FLAG
+  ARG:  SQLITE_OtaMode
 }
 fconfigure stdout -translation lf
 set name {}

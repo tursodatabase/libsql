@@ -2046,7 +2046,7 @@ int sqlite3BtreeOpen(
 btree_open_out:
   if( rc!=SQLITE_OK ){
     if( pBt && pBt->pPager ){
-      sqlite3PagerClose(pBt->pPager, 0);
+      sqlite3PagerClose(pBt->pPager);
     }
     sqlite3_free(pBt);
     sqlite3_free(p);
@@ -2175,7 +2175,7 @@ int sqlite3BtreeClose(Btree *p){
     ** Clean out and delete the BtShared object.
     */
     assert( !pBt->pCursor );
-    sqlite3PagerClose(pBt->pPager, (p->db->flags & SQLITE_OtaMode)!=0);
+    sqlite3PagerClose(pBt->pPager);
     if( pBt->xFreeSchema && pBt->pSchema ){
       pBt->xFreeSchema(pBt->pSchema);
     }

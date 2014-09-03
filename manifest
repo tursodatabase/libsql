@@ -1,5 +1,5 @@
-C Add\sa\scommand\sline\sprogram\sthat\suses\sthe\sextension.\sThis\sserves\sas\sexample\scode\sand\sis\salso\suseful\sfor\sperformance\stesting.
-D 2014-09-03T08:25:09.548
+C Split\spart\sof\s"PRAGMA\sota_mode"\soff\sinto\s"PRAGMA\spager_ota_mode".\sThis\sallows\ssome\sspecialized\scustom\sVFS\simplementations\sto\sintercept\sand\simplement\sthe\sexpected\spager-related\seffects\sof\sthis\spragma.
+D 2014-09-03T19:30:32.283
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -123,8 +123,8 @@ F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c 4b48add9494f29144343f513aaac226ca5782189
 F ext/ota/ota1.test ea2865997ce573fadaf12eb0a0f80ef22d9dd77f
-F ext/ota/ota2.test 4f7abfe1dfb7c3709bf45e94f3e65f3839b4f115
-F ext/ota/sqlite3ota.c ad55821883e4110367a30ffca282032d2bf36e45
+F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
+F ext/ota/sqlite3ota.c 3e05e3fa5791977eb88261731a6be6d98935efb3
 F ext/ota/sqlite3ota.h 545f0008b5f02f2595899cb9841caddada5c17c0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -173,7 +173,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c a31809c65623cc41849b94d368917f8bb66e6a7e
 F src/bitvec.c 19a4ba637bd85f8f63fc8c9bae5ade9fb05ec1cb
 F src/btmutex.c ec9d3f1295dafeb278c3830211cc5584132468f4
-F src/btree.c c46043fbb09c18a19bdb96eadde6e724901d6fcf
+F src/btree.c 9cb1989073502a9d2f18fbb0e7df8ad89dda2dcf
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h cf180d86b2e9e418f638d65baa425c4c69c0e0e3
 F src/build.c c26b233dcdb1e2c8f468d49236c266f9f3de96d8
@@ -216,13 +216,13 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 8525ca79457c5b4673a5fda2774ee39fe155f40f
 F src/os_win.c 2aa8aa7780d7cf03e912d2088ab2ec5c32f33dc5
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c a3caa08db8227c5a32f388be67f33d8cb44d5e35
-F src/pager.h 1acd367a0ffb63026b0461ea5eaeeb8046414a71
+F src/pager.c ed122b1346a40d6b53cec28fa63bf9af4a7dc8d7
+F src/pager.h 6a08df06b7edc3684375c0fab40602c695a044f2
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c 3b3791297e8977002e56b4a9b8916f2039abad9b
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c c5af6403a55178c9d1c09e4f77b0f9c88822762c
-F src/pragma.c d252459fb3ce19448d1a2f41000c780fac4c0c26
+F src/pragma.c e1b8049c059ccab0afc2a483ff2e0dd599fcb124
 F src/prepare.c 314961aa6650cc860394cb2f31931cf2de93baa8
 F src/printf.c 00986c86ddfffefc2fd3c73667ff51b3b9709c74
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
@@ -239,7 +239,7 @@ F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 29357f2be7b0d00e8ea900eaf727e0c5ffeaa660
 F src/test1.c e9a0e5804b078532e69e69ec14c8326bf2cfc318
-F src/test2.c 84f6a786aa7ffa12fff83acb52660e337ffe642a
+F src/test2.c 98049e51a17dc62606a99a9eb95ee477f9996712
 F src/test3.c 1c0e5d6f080b8e33c1ce8b3078e7013fdbcd560c
 F src/test4.c 9b32d22f5f150abe23c1830e2057c4037c45b3df
 F src/test5.c 5a34feec76d9b3a86aab30fd4f6cc9c48cbab4c1
@@ -1163,7 +1163,7 @@ F tool/logest.c eef612f8adf4d0993dafed0416064cf50d5d33c6
 F tool/mkautoconfamal.sh 5dc5010e2e748a9e1bba67baca5956a2c2deda7b
 F tool/mkkeywordhash.c dfff09dbbfaf950e89af294f48f902181b144670
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkpragmatab.tcl cce51d8f60c7f145d8fccabe6b5dfdedf31c5f5c
+F tool/mkpragmatab.tcl 22c85e67987ad7d2e8789c48506ec95b99a90c08
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c-noext.tcl 88a1e3b0c769773fb7a9ebb363ffc603a4ac21d8
 F tool/mksqlite3c.tcl e72c0c97fe1a105fa9616483e652949be2199fe6
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 2954ab501049968430011b63d046eb42ff37a56c
-R 7bee98aca78bdb17f817d7637df95f18
+P ffa1524ef2a4c32652183eb4745685f0d1c93af2
+R 58c81bcc907452bbe01138bf831636b2
 U dan
-Z 3a37163be54ffa74ee7c4647ff1214ea
+Z 0213bc6d6444959e54104d228d32668b

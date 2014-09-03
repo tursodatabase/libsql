@@ -112,7 +112,7 @@ int sqlite3PagerOpen(
   int,
   void(*)(DbPage*)
 );
-int sqlite3PagerClose(Pager *pPager, int);
+int sqlite3PagerClose(Pager *pPager);
 int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 
 /* Functions used to configure a Pager object. */
@@ -209,5 +209,7 @@ void *sqlite3PagerCodec(DbPage *);
 
 int sqlite3PagerSaveState(Pager *pPager, void **ppState, int *pnState);
 int sqlite3PagerRestoreState(Pager *pPager, const void *pState, int nState);
+
+int sqlite3PagerSetOtaMode(Pager *pPager, int bOta);
 
 #endif /* _PAGER_H_ */
