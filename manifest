@@ -1,5 +1,5 @@
-C Add\san\sexperimental\sextension\sfor\sapplying\sbulk\supdates\sto\sdatabases.
-D 2014-09-02T19:59:40.729
+C Add\sa\scommand\sline\sprogram\sthat\suses\sthe\sextension.\sThis\sserves\sas\sexample\scode\sand\sis\salso\suseful\sfor\sperformance\stesting.
+D 2014-09-03T08:25:09.548
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,10 +121,11 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
+F ext/ota/ota.c 4b48add9494f29144343f513aaac226ca5782189
 F ext/ota/ota1.test ea2865997ce573fadaf12eb0a0f80ef22d9dd77f
 F ext/ota/ota2.test 4f7abfe1dfb7c3709bf45e94f3e65f3839b4f115
 F ext/ota/sqlite3ota.c ad55821883e4110367a30ffca282032d2bf36e45
-F ext/ota/sqlite3ota.h d3187a98fe1e3445c58f7a27d96ac385b78486a1
+F ext/ota/sqlite3ota.h 545f0008b5f02f2595899cb9841caddada5c17c0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
@@ -151,7 +152,7 @@ F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk 566c36f247d19525264e584466b5f07c0a48302e
+F main.mk ed2e37f6cd016ecc614165b3392bdbf89a129b4a
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -1197,10 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 9779c7a9eb1e2bd36e9286331a9314f064014d80
-R 5df4197c767caad19feca7391f16a42d
-T *branch * experimental-bulk-update
-T *sym-experimental-bulk-update *
-T -sym-trunk *
+P 2954ab501049968430011b63d046eb42ff37a56c
+R 7bee98aca78bdb17f817d7637df95f18
 U dan
-Z 195de077202fec58ba90fc725d7305e7
+Z 3a37163be54ffa74ee7c4647ff1214ea

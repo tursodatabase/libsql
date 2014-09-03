@@ -107,7 +107,7 @@
 ** corresponding columns of the data_% table. The values stored in the
 ** other columns are not used.
 **
-** For each row to DELETE from the target database as part of the OTA 
+** For each row to UPDATE from the target database as part of the OTA 
 ** update, the corresponding data_% table should contain a single record
 ** with the "ota_control" column set to contain a value of type text.
 ** The real primary key values identifying the row to update should be 
@@ -162,6 +162,8 @@
 
 #ifndef _SQLITE3OTA_H
 #define _SQLITE3OTA_H
+
+#include <sqlite3.h>              /* Required for error code definitions */
 
 typedef struct sqlite3ota sqlite3ota;
 

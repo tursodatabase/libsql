@@ -665,6 +665,11 @@ wordcount$(EXE):	$(TOP)/test/wordcount.c sqlite3.c
 speedtest1$(EXE):	$(TOP)/test/speedtest1.c sqlite3.o
 	$(TCC) -I. -o speedtest1$(EXE) $(TOP)/test/speedtest1.c sqlite3.o $(THREADLIB)
 
+ota$(EXE): $(TOP)/ext/ota/ota.c $(TOP)/ext/ota/sqlite3ota.c sqlite3.o 
+	$(TCC) -I. -o ota$(EXE) \
+	  $(TOP)/ext/ota/ota.c $(TOP)/ext/ota/sqlite3ota.c sqlite3.o \
+	  $(THREADLIB)
+
 # This target will fail if the SQLite amalgamation contains any exported
 # symbols that do not begin with "sqlite3_". It is run as part of the
 # releasetest.tcl script.
