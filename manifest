@@ -1,5 +1,5 @@
-C Fix\sshowwal.c\sso\sthat\sit\sworks\swith\s64KiB\spages.
-D 2014-09-04T18:05:42.326
+C Avoid\sever\srunning\sa\scheckpoint\sin\sota\smode.
+D 2014-09-04T19:05:31.658
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -216,7 +216,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 8525ca79457c5b4673a5fda2774ee39fe155f40f
 F src/os_win.c 2aa8aa7780d7cf03e912d2088ab2ec5c32f33dc5
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c ed122b1346a40d6b53cec28fa63bf9af4a7dc8d7
+F src/pager.c 9611de7c00ea3cfe35295d88ebda1a096b71b41d
 F src/pager.h 6a08df06b7edc3684375c0fab40602c695a044f2
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c 3b3791297e8977002e56b4a9b8916f2039abad9b
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 071f7f2decd2f786c0201a4219e9c2cc9d227085
-R 3582d6e2777f5293f1910720c4563e98
+P fc4f7c115207b786e3cac8cb6be4db3131b99a46
+R 43c0251327b6a5ac610420013b39a3a5
 U dan
-Z fe920deec8beedfbfd168cc475660b1e
+Z a71ca63f1bbe8e3a7e1c7cbaa054e55c
