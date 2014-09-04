@@ -1,5 +1,5 @@
-C Avoid\scalling\ssqlite3OsFetch()\son\sa\sfile-handle\sfor\swhich\sthe\sxFetch\smethod\sis\sNULL.
-D 2014-09-04T11:03:35.509
+C Fix\sshowwal.c\sso\sthat\sit\sworks\swith\s64KiB\spages.
+D 2014-09-04T18:05:42.326
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -1179,7 +1179,7 @@ F tool/rollback-test.c 9fc98427d1e23e84429d7e6d07d9094fbdec65a5
 F tool/showdb.c bd073a78bce714a0e42d92ea474b3eb8cb53be5d
 F tool/showjournal.c 053eb1cc774710c6890b7dd6293300cc297b16a5
 F tool/showstat4.c c39279d6bd37cb999b634f0064f6f86ad7af008f
-F tool/showwal.c 3209120269cdf9380f091459e47b776b4f81dfd3
+F tool/showwal.c 85cb36d4fe3e93e2fbd63e786e0d1ce42d0c4fad
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
 F tool/spaceanal.tcl 8e50b217c56a6a086a1b47eac9d09c5cd65b996f
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 209f672e588b54dfbfb83c7859cacdc4497f0f2b
-R 20b7eba6ff5020d8a6df728a74ee9194
+P 071f7f2decd2f786c0201a4219e9c2cc9d227085
+R 3582d6e2777f5293f1910720c4563e98
 U dan
-Z bb146242a51e5fe849d114706a1de049
+Z fe920deec8beedfbfd168cc475660b1e

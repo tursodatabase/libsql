@@ -510,7 +510,7 @@ static void decode_btree_page(
 
 int main(int argc, char **argv){
   struct stat sbuf;
-  unsigned char zPgSz[2];
+  unsigned char zPgSz[4];
   if( argc<2 ){
     fprintf(stderr,"Usage: %s FILENAME ?PAGE? ...\n", argv[0]);
     exit(1);
@@ -522,9 +522,9 @@ int main(int argc, char **argv){
   }
   zPgSz[0] = 0;
   zPgSz[1] = 0;
-  lseek(fd, 10, SEEK_SET);
-  read(fd, zPgSz, 2);
-  pagesize = zPgSz[0]*256 + zPgSz[1];
+  lseek(fd, 8, SEEK_SET);
+  read(fd, zPgSz, 4);
+  pagesize = zPgSz[1]*65536 + zPgSz[2]*256 + zPgSz[3];
   if( pagesize==0 ) pagesize = 1024;
   printf("Pagesize: %d\n", pagesize);
   fstat(fd, &sbuf);
