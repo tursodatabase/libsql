@@ -42,6 +42,11 @@ void usage(const char *zArgv0){
   exit(1);
 }
 
+void report_default_vfs(){
+  sqlite3_vfs *pVfs = sqlite3_vfs_find(0);
+  fprintf(stdout, "using vfs \"%s\"\n", pVfs->zName);
+}
+
 int main(int argc, char **argv){
   int i;
   const char *zTarget;            /* Target database to apply OTA to */
@@ -62,6 +67,8 @@ int main(int argc, char **argv){
   }
   zTarget = argv[argc-2];
   zOta = argv[argc-1];
+
+  report_default_vfs();
 
   /* Open an OTA handle. If nStep is less than or equal to zero, call
   ** sqlite3ota_step() until either the OTA has been completely applied

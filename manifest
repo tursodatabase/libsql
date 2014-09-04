@@ -1,5 +1,5 @@
-C Split\spart\sof\s"PRAGMA\sota_mode"\soff\sinto\s"PRAGMA\spager_ota_mode".\sThis\sallows\ssome\sspecialized\scustom\sVFS\simplementations\sto\sintercept\sand\simplement\sthe\sexpected\spager-related\seffects\sof\sthis\spragma.
-D 2014-09-03T19:30:32.283
+C Avoid\scalling\ssqlite3OsFetch()\son\sa\sfile-handle\sfor\swhich\sthe\sxFetch\smethod\sis\sNULL.
+D 2014-09-04T11:03:35.509
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -121,7 +121,7 @@ F ext/misc/totype.c 4a167594e791abeed95e0a8db028822b5e8fe512
 F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
-F ext/ota/ota.c 4b48add9494f29144343f513aaac226ca5782189
+F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
 F ext/ota/ota1.test ea2865997ce573fadaf12eb0a0f80ef22d9dd77f
 F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
 F ext/ota/sqlite3ota.c 3e05e3fa5791977eb88261731a6be6d98935efb3
@@ -297,7 +297,7 @@ F src/vdbeapi.c 09677a53dd8c71bcd670b0bd073bb9aefa02b441
 F src/vdbeaux.c cef5d34a64ae3a65b56d96d3fd663246ec8e1c36
 F src/vdbeblob.c 0bc9d22578d87ad9ff1c16e20a36863326f34fd7
 F src/vdbemem.c 921d5468a68ac06f369810992e84ca22cc730a62
-F src/vdbesort.c 02646a9f86421776ae5d7594f620f9ed669d3698
+F src/vdbesort.c 7c45bfcd823f30d172bbbc1b9f51ef4402fbfe8d
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
 F src/vtab.c 019dbfd0406a7447c990e1f7bd1dfcdb8895697f
 F src/wal.c 93b4fcb56a98f435a2cb66024bb2b12d66d1ff53
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P ffa1524ef2a4c32652183eb4745685f0d1c93af2
-R 58c81bcc907452bbe01138bf831636b2
+P 209f672e588b54dfbfb83c7859cacdc4497f0f2b
+R 20b7eba6ff5020d8a6df728a74ee9194
 U dan
-Z 0213bc6d6444959e54104d228d32668b
+Z bb146242a51e5fe849d114706a1de049
