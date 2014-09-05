@@ -1,5 +1,5 @@
-C Avoid\sever\srunning\sa\scheckpoint\sin\sota\smode.
-D 2014-09-04T19:05:31.658
+C Reorganize\sthe\scode\sin\ssqlite3ota.c\sin\spreparation\sfor\sadding\ssupport\sfor\supdate\sand\sdelete\soperations.
+D 2014-09-05T19:31:15.782
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,9 +122,9 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
-F ext/ota/ota1.test ea2865997ce573fadaf12eb0a0f80ef22d9dd77f
+F ext/ota/ota1.test 0bbdffa5cb4c4bc26be5dae55c834830c7e8e5e3
 F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
-F ext/ota/sqlite3ota.c 3e05e3fa5791977eb88261731a6be6d98935efb3
+F ext/ota/sqlite3ota.c c400c9e9ef188cedb9bada263145aaad47d90e75
 F ext/ota/sqlite3ota.h 545f0008b5f02f2595899cb9841caddada5c17c0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P fc4f7c115207b786e3cac8cb6be4db3131b99a46
-R 43c0251327b6a5ac610420013b39a3a5
+P 9ae44447256b425b5704a1cab3f6796befb92251
+R f29d93e4faa0368c9015e32b108d56ba
 U dan
-Z a71ca63f1bbe8e3a7e1c7cbaa054e55c
+Z f9daeef70873e6c36444c084d50eac94
