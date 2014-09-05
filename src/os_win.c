@@ -1286,12 +1286,14 @@ void sqlite3_win32_sleep(DWORD milliseconds){
 #endif
 }
 
+#if SQLITE_MAX_WORKER_THREADS>0 && !SQLITE_OS_WINRT && SQLITE_THREADSAFE>0
 DWORD sqlite3Win32Wait(HANDLE hObject){
   DWORD rc;
   while( (rc = osWaitForSingleObjectEx(hObject, INFINITE,
                                        TRUE))==WAIT_IO_COMPLETION ){}
   return rc;
 }
+#endif
 
 /*
 ** Return true (non-zero) if we are running under WinNT, Win2K, WinXP,
