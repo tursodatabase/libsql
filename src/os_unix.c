@@ -300,6 +300,14 @@ static int randomnessPid = 0;
 #endif
 
 /*
+** Explicitly call the 64-bit version of lseek() on Android. Otherwise, lseek()
+** is the 32-bit version, even if _FILE_OFFSET_BITS=64 is defined.
+*/
+#ifdef __ANDROID__
+# define lseek lseek64
+#endif
+
+/*
 ** Different Unix systems declare open() in different ways.  Same use
 ** open(const char*,int,mode_t).  Others use open(const char*,int,...).
 ** The difference is important when using a pointer to the function.
@@ -708,9 +716,22 @@ static int lockTrace(int fd, int op, struct flock *p){
 
 /*
 ** Retry ftruncate() calls that fail due to EINTR
+**
+** All calls to ftruncate() within this file should be made through this wrapper.
+** On the Android platform, bypassing the logic below could lead to a corrupt
+** database.
 */
 static int robust_ftruncate(int h, sqlite3_int64 sz){
   int rc;
+#ifdef __ANDROID__
+  /* On Android, ftruncate() always uses 32-bit offsets, even if 
+  ** _FILE_OFFSET_BITS=64 is defined. This means it is unsafe to attempt to
+  ** truncate a file to any size smaller than 2GiB. Silently ignore any
+  ** such attempts.  */
+  if( sz>(sqlite3_int64)0x7FFFFFFF ){
+    rc = SQLITE_OK;
+  }else
+#endif
   do{ rc = osFtruncate(h,sz); }while( rc<0 && errno==EINTR );
   return rc;
 }
@@ -3595,7 +3616,7 @@ static int unixTruncate(sqlite3_file *id, i64 nByte){
     nByte = ((nByte + pFile->szChunk - 1)/pFile->szChunk) * pFile->szChunk;
   }
 
-  rc = robust_ftruncate(pFile->h, (off_t)nByte);
+  rc = robust_ftruncate(pFile->h, nByte);
   if( rc ){
     pFile->lastErrno = errno;
     return unixLogError(SQLITE_IOERR_TRUNCATE, "ftruncate", pFile->zPath);
