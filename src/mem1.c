@@ -188,7 +188,7 @@ static int sqlite3MemSize(void *pPrior){
 **
 ** For this low-level interface, we know that pPrior!=0.  Cases where
 ** pPrior==0 while have been intercepted by higher-level routine and
-** redirected to xMalloc.  Similarly, we know that nByte>0 becauses
+** redirected to xMalloc.  Similarly, we know that nByte>0 because
 ** cases where nByte<=0 will have been intercepted by higher-level
 ** routines and redirected to xFree.
 */

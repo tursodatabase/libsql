@@ -64,7 +64,7 @@ static int findNextHostParameter(const char *zSql, int *pnToken){
 ** ALGORITHM:  Scan the input string looking for host parameters in any of
 ** these forms:  ?, ?N, $A, @A, :A.  Take care to avoid text within
 ** string literals, quoted identifier names, and comments.  For text forms,
-** the host parameter index is found by scanning the perpared
+** the host parameter index is found by scanning the prepared
 ** statement for the corresponding OP_Variable opcode.  Once the host
 ** parameter index is known, locate the value in p->aVar[].  Then render
 ** the value as a literal in place of the host parameter name.

@@ -701,7 +701,7 @@ static int isLikeOrGlob(
           ** value of the variable means there is no need to invoke the LIKE
           ** function, then no OP_Variable will be added to the program.
           ** This causes problems for the sqlite3_bind_parameter_name()
-          ** API. To workaround them, add a dummy OP_Variable here.
+          ** API. To work around them, add a dummy OP_Variable here.
           */ 
           int r1 = sqlite3GetTempReg(pParse);
           sqlite3ExprCodeTarget(pParse, pRight, r1);
@@ -821,7 +821,7 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 ** appropriate for indexing exist.
 **
 ** All examples A through E above satisfy case 2.  But if a term
-** also statisfies case 1 (such as B) we know that the optimizer will
+** also satisfies case 1 (such as B) we know that the optimizer will
 ** always prefer case 1, so in that case we pretend that case 2 is not
 ** satisfied.
 **
@@ -979,7 +979,7 @@ static void exprAnalyzeOrTerm(
         }
         if( (chngToIN & getMask(&pWInfo->sMaskSet, pOrTerm->leftCursor))==0 ){
           /* This term must be of the form t1.a==t2.b where t2 is in the
-          ** chngToIN set but t1 is not.  This term will be either preceeded
+          ** chngToIN set but t1 is not.  This term will be either preceded
           ** or follwed by an inverted copy (t2.b==t1.a).  Skip this term 
           ** and use its inversion. */
           testcase( pOrTerm->wtFlags & TERM_COPIED );
@@ -1390,7 +1390,7 @@ static void exprAnalyze(
 }
 
 /*
-** This function searches pList for a entry that matches the iCol-th column
+** This function searches pList for an entry that matches the iCol-th column
 ** of index pIdx.
 **
 ** If such an expression is found, its index in pList->a[] is returned. If
@@ -2140,7 +2140,7 @@ static int whereRangeSkipScanEst(
 ** number of rows that the index scan is expected to visit without 
 ** considering the range constraints. If nEq is 0, this is the number of 
 ** rows in the index. Assuming no error occurs, *pnOut is adjusted (reduced)
-** to account for the range contraints pLower and pUpper.
+** to account for the range constraints pLower and pUpper.
 ** 
 ** In the absence of sqlite_stat4 ANALYZE data, or if such data cannot be
 ** used, a single range inequality reduces the search space by a factor of 4. 
@@ -3417,7 +3417,7 @@ static Bitmask codeOneLoopStart(
     **       B: <after the loop>
     **
     ** Added 2014-05-26: If the table is a WITHOUT ROWID table, then
-    ** use an ephermeral index instead of a RowSet to record the primary
+    ** use an ephemeral index instead of a RowSet to record the primary
     ** keys of the rows we have already seen.
     **
     */
@@ -3468,7 +3468,7 @@ static Bitmask codeOneLoopStart(
     }
 
     /* Initialize the rowset register to contain NULL. An SQL NULL is 
-    ** equivalent to an empty rowset.  Or, create an ephermeral index
+    ** equivalent to an empty rowset.  Or, create an ephemeral index
     ** capable of holding primary keys in the case of a WITHOUT ROWID.
     **
     ** Also initialize regReturn to contain the address of the instruction 
@@ -4723,7 +4723,7 @@ static int whereLoopAddBtree(
         ApplyCostMultiplier(pNew->rSetup, pTab->costMult);
         /* TUNING: Each index lookup yields 20 rows in the table.  This
         ** is more than the usual guess of 10 rows, since we have no way
-        ** of knowning how selective the index will ultimately be.  It would
+        ** of knowing how selective the index will ultimately be.  It would
         ** not be unreasonable to make this value much larger. */
         pNew->nOut = 43;  assert( 43==sqlite3LogEst(20) );
         pNew->rRun = sqlite3LogEstAdd(rLogSize,pNew->nOut);
@@ -5153,7 +5153,7 @@ static int whereLoopAddAll(WhereLoopBuilder *pBuilder){
 ** strict.  With GROUP BY and DISTINCT the only requirement is that
 ** equivalent rows appear immediately adjacent to one another.  GROUP BY
 ** and DISTINCT do not require rows to appear in any particular order as long
-** as equivelent rows are grouped together.  Thus for GROUP BY and DISTINCT
+** as equivalent rows are grouped together.  Thus for GROUP BY and DISTINCT
 ** the pOrderBy terms can be matched in any order.  With ORDER BY, the 
 ** pOrderBy terms must be matched in strict left-to-right order.
 */

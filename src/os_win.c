@@ -3128,7 +3128,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
 }
 
 /*
-** If *pArg is inititially negative then this is a query.  Set *pArg to
+** If *pArg is initially negative then this is a query.  Set *pArg to
 ** 1 or 0 depending on whether or not bit mask of pFile->ctrlFlags is set.
 **
 ** If *pArg is 0 or 1, then clear or set the mask bit of pFile->ctrlFlags.
@@ -4142,7 +4142,7 @@ static int winUnfetch(sqlite3_file *fd, i64 iOff, void *p){
   }else{
     /* FIXME:  If Windows truly always prevents truncating or deleting a
     ** file while a mapping is held, then the following winUnmapfile() call
-    ** is unnecessary can can be omitted - potentially improving
+    ** is unnecessary can be omitted - potentially improving
     ** performance.  */
     winUnmapfile(pFd);
   }

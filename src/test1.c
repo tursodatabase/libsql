@@ -2605,7 +2605,7 @@ static int test_bind(
 ** SQLite selected to call. The TCL test script implements the
 ** "test_collate" proc.
 **
-** Note that this will only work with one intepreter at a time, as the
+** Note that this will only work with one interpreter at a time, as the
 ** interp pointer to use when evaluating the TCL script is stored in
 ** pTestCollateInterp.
 */
@@ -3758,7 +3758,7 @@ static int test_prepare_v2(
 ** Usage: sqlite3_prepare_tkt3134 DB
 **
 ** Generate a prepared statement for a zero-byte string as a test
-** for ticket #3134.  The string should be preceeded by a zero byte.
+** for ticket #3134.  The string should be preceded by a zero byte.
 */
 static int test_prepare_tkt3134(
   void * clientData,

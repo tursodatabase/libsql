@@ -35,7 +35,7 @@
 ** not possible to enable both STAT3 and STAT4 at the same time.  If they
 ** are both enabled, then STAT4 takes precedence.
 **
-** For most applications, sqlite_stat1 provides all the statisics required
+** For most applications, sqlite_stat1 provides all the statistics required
 ** for the query planner to make good choices.
 **
 ** Format of sqlite_stat1:
@@ -387,7 +387,7 @@ static void stat4Destructor(void *pOld){
 ** original WITHOUT ROWID table as N==K as a special case.
 **
 ** This routine allocates the Stat4Accum object in heap memory. The return 
-** value is a pointer to the the Stat4Accum object.  The datatype of the
+** value is a pointer to the Stat4Accum object.  The datatype of the
 ** return value is BLOB, but it is really just a pointer to the Stat4Accum
 ** object.
 */
@@ -1583,7 +1583,7 @@ static void initAvgEq(Index *pIdx){
       /* Set nSum to the number of distinct (iCol+1) field prefixes that
       ** occur in the stat4 table for this index before pFinal. Set
       ** sumEq to the sum of the nEq values for column iCol for the same
-      ** set (adding the value only once where there exist dupicate 
+      ** set (adding the value only once where there exist duplicate 
       ** prefixes).  */
       for(i=0; i<(pIdx->nSample-1); i++){
         if( aSample[i].anDLt[iCol]!=aSample[i+1].anDLt[iCol] ){

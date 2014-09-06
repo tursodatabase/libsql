@@ -28,7 +28,7 @@
 **   1.  All memory allocations sizes are rounded up to a power of 2.
 **
 **   2.  If two adjacent free blocks are the halves of a larger block,
-**       then the two blocks are coalesed into the single larger block.
+**       then the two blocks are coalesced into the single larger block.
 **
 **   3.  New memory is allocated from the first available free block.
 **

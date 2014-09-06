@@ -50,7 +50,7 @@
 ** No INSERTs may occurs after a SMALLEST.  An assertion will fail if
 ** that is attempted.
 **
-** The cost of an INSERT is roughly constant.  (Sometime new memory
+** The cost of an INSERT is roughly constant.  (Sometimes new memory
 ** has to be allocated on an INSERT.)  The cost of a TEST with a new
 ** batch number is O(NlogN) where N is the number of elements in the RowSet.
 ** The cost of a TEST using the same batch number is O(logN).  The cost
@@ -443,8 +443,8 @@ int sqlite3RowSetNext(RowSet *p, i64 *pRowid){
 ** Check to see if element iRowid was inserted into the rowset as
 ** part of any insert batch prior to iBatch.  Return 1 or 0.
 **
-** If this is the first test of a new batch and if there exist entires
-** on pRowSet->pEntry, then sort those entires into the forest at
+** If this is the first test of a new batch and if there exist entries
+** on pRowSet->pEntry, then sort those entries into the forest at
 ** pRowSet->pForest so that they can be tested.
 */
 int sqlite3RowSetTest(RowSet *pRowSet, int iBatch, sqlite3_int64 iRowid){

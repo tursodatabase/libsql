@@ -142,7 +142,7 @@ int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
 **
 ** Each pointer stored in the sqlite3.aCollSeq hash table contains an
 ** array of three CollSeq structures. The first is the collation sequence
-** prefferred for UTF-8, the second UTF-16le, and the third UTF-16be.
+** preferred for UTF-8, the second UTF-16le, and the third UTF-16be.
 **
 ** Stored immediately after the three collation sequences is a copy of
 ** the collation sequence name. A pointer to this string is stored in
