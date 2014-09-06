@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_memdebug_title_count\sglobal\svariable,\sused\sduring\sdebugging\nto\scount\sthe\snumber\sof\sinvocations\sof\stest_memdebug_settitle.\s\sBy\sexamining\nthis\svariable\sin\sthe\sdebugger\safter\sa\ssegfault,\sone\scan\sthen\sset\sa\sbreakpoint\non\stest_memdebug_settitle\sthat\swill\sfire\sjust\sbefore\sthe\sproblem.
-D 2014-09-06T03:16:28.654
+C Do\snot\srequire\sa\spage-size\schange\sif\sthe\sattempt\sto\schange\sthe\spage\ssize\nfailed\sdue\sto\san\sOOM\serror.
+D 2014-09-06T03:38:51.792
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -211,7 +211,7 @@ F src/os_setup.h c9d4553b5aaa6f73391448b265b89bed0b890faa
 F src/os_unix.c 8525ca79457c5b4673a5fda2774ee39fe155f40f
 F src/os_win.c 3c9f7df710cb6c757b04b78bf3d98f03830e67b9
 F src/os_win.h 09e751b20bbc107ffbd46e13555dc73576d88e21
-F src/pager.c 3e732d2bbdd8d8d95fed0c5ae7e718d73153c4c5
+F src/pager.c a5e1a498696c96799a84b1c0c7dcd8c6dda80620
 F src/pager.h ffd5607f7b3e4590b415b007a4382f693334d428
 F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c 3b3791297e8977002e56b4a9b8916f2039abad9b
@@ -1193,7 +1193,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P a758465e3cfa7e0cb8749d097cd6fb5f86b60955
-R 2db0351830e46d232702315b1a375c8e
+P 27e3ca3e0f1da54e3527704a8601bb9003b086bf
+R 3c6eecd4803891788e881a3031c570ff
 U drh
-Z b61df9da0225ca7d80ceab8d31d99aad
+Z b558ffb0132cb5c0f9f09b23281337a0
