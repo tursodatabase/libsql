@@ -32,16 +32,21 @@ proc create_ota1 {filename} {
   return $filename
 }
 
-# Create an empty target database suitable for the OTA created by 
-# [create_ota1].
+# Create a simple OTA database. That expects to write to a table:
 #
 #   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
 #
-proc create_target1 {filename} {
+proc create_ota4 {filename} {
   forcedelete $filename
-  sqlite3 target1 $filename  
-  target1 eval { CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c) }
-  target1 close
+  sqlite3 ota1 $filename  
+  ota1 eval {
+    CREATE TABLE data_t1(a, b, c, ota_control);
+    INSERT INTO data_t1 VALUES(1, 2, 3, 0);
+    INSERT INTO data_t1 VALUES(2, NULL, 5, 1);
+    INSERT INTO data_t1 VALUES(3, 8, 9, 0);
+    INSERT INTO data_t1 VALUES(4, NULL, 11, 1);
+  }
+  ota1 close
   return $filename
 }
 
@@ -174,6 +179,49 @@ foreach {tn errcode errmsg schema} {
   } [list 1 "$errcode - $errmsg"]
 
   do_test 3.$tn.4 { dbcksum db main } $cksum
+}
+
+#-------------------------------------------------------------------------
+#
+foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+  foreach {tn schema} {
+    1 {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+    }
+    2 {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b);
+    }
+    3 {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
+      CREATE INDEX i1 ON t1(b);
+      CREATE INDEX i2 ON t1(c, b);
+      CREATE INDEX i3 ON t1(c, b, c);
+    }
+  } {
+    reset_db
+    execsql $schema
+    execsql {
+      INSERT INTO t1 VALUES(2, 'hello', 'world');
+      INSERT INTO t1 VALUES(4, 'hello', 'planet');
+      INSERT INTO t1 VALUES(6, 'hello', 'xyz');
+    }
+  
+    do_test 4.$tn2.$tn.1 {
+      create_ota4 ota.db
+      $cmd test.db ota.db
+    } {SQLITE_DONE}
+    
+    do_execsql_test 4.$tn2.$tn.2 {
+      SELECT * FROM t1 ORDER BY a ASC;
+    } {
+      1 2 3 
+      3 8 9
+      6 hello xyz
+    }
+  
+    do_execsql_test 4.$tn2.$tn.3 { PRAGMA integrity_check } ok
+  }
 }
 
 

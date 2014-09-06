@@ -1,5 +1,5 @@
-C Switch\sback\sto\susing\sa\ssingle\sdatabase\sconnection\sin\ssqlite3ota.c.
-D 2014-09-05T19:52:42.359
+C Add\ssupport\sfor\sdelete\soperations\sto\sthe\sota\sextension.
+D 2014-09-06T20:19:38.006
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -122,9 +122,9 @@ F ext/misc/vfslog.c fe40fab5c077a40477f7e5eba994309ecac6cc95
 F ext/misc/vtshim.c babb0dc2bf116029e3e7c9a618b8a1377045303e
 F ext/misc/wholenumber.c 784b12543d60702ebdd47da936e278aa03076212
 F ext/ota/ota.c d37097e92a005d3915883adefbb93019ea6f8841
-F ext/ota/ota1.test 0bbdffa5cb4c4bc26be5dae55c834830c7e8e5e3
+F ext/ota/ota1.test 47317179125b5e65289a9f59753c9f895186e6d5
 F ext/ota/ota2.test 13f76922446c62ed96192e938b8e625ebf0142fa
-F ext/ota/sqlite3ota.c 3ddf5f8122f9ab3270541f61bde5d95ef7b631d5
+F ext/ota/sqlite3ota.c ceb0f77dc6a958d299f532319f6477e5599dc59d
 F ext/ota/sqlite3ota.h 545f0008b5f02f2595899cb9841caddada5c17c0
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
 F ext/rtree/rtree.c 57bec53e1a677ab74217fe1f20a58c3a47261d6b
@@ -181,7 +181,7 @@ F src/callback.c b97d0695ffcf6a8710ee445ffe56ee387d4d8a6f
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
 F src/date.c 593c744b2623971e45affd0bde347631bdfa4625
-F src/delete.c 5adcd322c6b08fc25d215d780ca62cebce66304d
+F src/delete.c 3c2a375c0329247d01222170ae19ad8a52ecbf9a
 F src/expr.c e1691ab0fe6be7247ef073b0038fb8ecd9944fad
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c 8d81a780ad78d16ec9082585758a8f1d6bf02ca3
@@ -295,7 +295,7 @@ F src/vdbe.h c63fad052c9e7388d551e556e119c0bcf6bebdf8
 F src/vdbeInt.h cdc8e421f85beb1ac9b4669ec5beadab6faa15e0
 F src/vdbeapi.c 09677a53dd8c71bcd670b0bd073bb9aefa02b441
 F src/vdbeaux.c cef5d34a64ae3a65b56d96d3fd663246ec8e1c36
-F src/vdbeblob.c 0bc9d22578d87ad9ff1c16e20a36863326f34fd7
+F src/vdbeblob.c b1b8b2cd86617db009f027f116b335f86e95b617
 F src/vdbemem.c 921d5468a68ac06f369810992e84ca22cc730a62
 F src/vdbesort.c 7c45bfcd823f30d172bbbc1b9f51ef4402fbfe8d
 F src/vdbetrace.c 6f52bc0c51e144b7efdcfb2a8f771167a8816767
@@ -1198,7 +1198,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 98387f05697526c7740e91d8a846a31f77639406
-R cd4982d2f447b7a01026d09e8721c98f
+P 3c2f4a078132992e33cc675173c84f8385af9cb5
+R eeedfe1c92df64758f3e97de2d55d43b
 U dan
-Z 303c253ac0315bace60d825e70dc4fdd
+Z 3317be7135040205f21e9375db1283ea

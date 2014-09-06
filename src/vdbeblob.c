@@ -546,17 +546,23 @@ int sqlite3_index_writer(
     sqlite3VdbeAddOp2(v, OP_Variable, i, i);
   }
   regRec = ++pParse->nMem;
-  sqlite3VdbeAddOp3(v, OP_MakeRecord, 1, pIdx->nColumn, regRec);
 
-  /* If this is a UNIQUE index, check the constraint. */
-  if( pIdx->onError ){
-    int addr = sqlite3VdbeAddOp4Int(v, OP_NoConflict, 0, 0, 1, pIdx->nKeyCol);
-    sqlite3UniqueConstraint(pParse, SQLITE_ABORT, pIdx);
-    sqlite3VdbeJumpHere(v, addr);
+  if( bDelete==0 ){
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, 1, pIdx->nColumn, regRec);
+
+    /* If this is a UNIQUE index, check the constraint. */
+    if( pIdx->onError ){
+      int addr = sqlite3VdbeAddOp4Int(v, OP_NoConflict, 0, 0, 1, pIdx->nKeyCol);
+      sqlite3UniqueConstraint(pParse, SQLITE_ABORT, pIdx);
+      sqlite3VdbeJumpHere(v, addr);
+    }
+
+    /* Code the IdxInsert to write to the b-tree index. */
+    sqlite3VdbeAddOp2(v, OP_IdxInsert, 0, regRec);
+  }else{
+    /* Code the IdxDelete to remove the entry from the b-tree index. */
+    sqlite3VdbeAddOp3(v, OP_IdxDelete, 0, 1, pIdx->nColumn);
   }
-
-  /* Code the IdxInsert to write to the b-tree index. */
-  sqlite3VdbeAddOp2(v, OP_IdxInsert, 0, regRec);
   sqlite3FinishCoding(pParse);
 
 index_writer_out:
