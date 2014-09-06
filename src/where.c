@@ -4221,14 +4221,16 @@ static int whereLoopInsert(WhereLoopBuilder *pBuilder, WhereLoop *pTemplate){
 ** the number of output rows by a factor of 10 and each additional term
 ** reduces the number of output rows by sqrt(2).
 */
-static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop){
+static void whereLoopOutputAdjust(
+  WhereClause *pWC,      /* The WHERE clause */
+  WhereLoop *pLoop,      /* The loop to adjust downward */
+  LogEst nRow            /* Number of rows in the entire table */
+){
   WhereTerm *pTerm, *pX;
   Bitmask notAllowed = ~(pLoop->prereq|pLoop->maskSelf);
   int i, j;
+  int nEq = 0;    /* Number of = constraints not within likely()/unlike() */
 
-  if( !OptimizationEnabled(pWC->pWInfo->pParse->db, SQLITE_AdjustOutEst) ){
-    return;
-  }
   for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
     if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) break;
     if( (pTerm->prereqAll & pLoop->maskSelf)==0 ) continue;
@@ -4240,8 +4242,20 @@ static void whereLoopOutputAdjust(WhereClause *pWC, WhereLoop *pLoop){
       if( pX->iParent>=0 && (&pWC->a[pX->iParent])==pTerm ) break;
     }
     if( j<0 ){
-      pLoop->nOut += (pTerm->truthProb<=0 ? pTerm->truthProb : -1);
+      if( pTerm->truthProb<=0 ){
+        pLoop->nOut += pTerm->truthProb;
+      }else{
+        pLoop->nOut--;
+        if( pTerm->eOperator&WO_EQ ) nEq++;
+      }
     }
+  }
+  /* TUNING:  If there is at least one equality constraint in the WHERE
+  ** clause that does not have a likelihood() explicitly assigned to it
+  ** then do not let the estimated number of output rows exceed half 
+  ** the number of rows in the table. */
+  if( nEq && pLoop->nOut>nRow-10 ){
+    pLoop->nOut = nRow - 10;
   }
 }
 
@@ -4288,6 +4302,7 @@ static int whereLoopAddBtreeIndex(
   LogEst saved_nOut;              /* Original value of pNew->nOut */
   int iCol;                       /* Index of the column in the table */
   int rc = SQLITE_OK;             /* Return code */
+  LogEst rSize;                   /* Number of rows in the table */
   LogEst rLogSize;                /* Logarithm of table size */
   WhereTerm *pTop = 0, *pBtm = 0; /* Top and bottom range constraints */
 
@@ -4317,7 +4332,8 @@ static int whereLoopAddBtreeIndex(
   saved_prereq = pNew->prereq;
   saved_nOut = pNew->nOut;
   pNew->rSetup = 0;
-  rLogSize = estLog(pProbe->aiRowLogEst[0]);
+  rSize = pProbe->aiRowLogEst[0];
+  rLogSize = estLog(rSize);
 
   /* Consider using a skip-scan if there are no WHERE clause constraints
   ** available for the left-most terms of the index, and if the average
@@ -4494,7 +4510,7 @@ static int whereLoopAddBtreeIndex(
     nOutUnadjusted = pNew->nOut;
     pNew->rRun += nInMul + nIn;
     pNew->nOut += nInMul + nIn;
-    whereLoopOutputAdjust(pBuilder->pWC, pNew);
+    whereLoopOutputAdjust(pBuilder->pWC, pNew, rSize);
     rc = whereLoopInsert(pBuilder, pNew);
 
     if( pNew->wsFlags & WHERE_COLUMN_RANGE ){
@@ -4748,7 +4764,7 @@ static int whereLoopAddBtree(
       /* TUNING: Cost of full table scan is (N*3.0). */
       pNew->rRun = rSize + 16;
       ApplyCostMultiplier(pNew->rRun, pTab->costMult);
-      whereLoopOutputAdjust(pWC, pNew);
+      whereLoopOutputAdjust(pWC, pNew, rSize);
       rc = whereLoopInsert(pBuilder, pNew);
       pNew->nOut = rSize;
       if( rc ) break;
@@ -4784,7 +4800,7 @@ static int whereLoopAddBtree(
           pNew->rRun = sqlite3LogEstAdd(pNew->rRun, rSize+16);
         }
         ApplyCostMultiplier(pNew->rRun, pTab->costMult);
-        whereLoopOutputAdjust(pWC, pNew);
+        whereLoopOutputAdjust(pWC, pNew, rSize);
         rc = whereLoopInsert(pBuilder, pNew);
         pNew->nOut = rSize;
         if( rc ) break;
