@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\stypos\sin\scomments.\s\sNo\schanges\sto\scode.
-D 2014-09-06T02:00:41.865
+C Add\sthe\ssqlite3_memdebug_title_count\sglobal\svariable,\sused\sduring\sdebugging\nto\scount\sthe\snumber\sof\sinvocations\sof\stest_memdebug_settitle.\s\sBy\sexamining\nthis\svariable\sin\sthe\sdebugger\safter\sa\ssegfault,\sone\scan\sthen\sset\sa\sbreakpoint\non\stest_memdebug_settitle\sthat\swill\sfire\sjust\sbefore\sthe\sproblem.
+D 2014-09-06T03:16:28.654
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -257,7 +257,7 @@ F src/test_intarray.c db4614c2262a06abc4409dc048d59c580c38320f
 F src/test_intarray.h 9dc57417fb65bc7835cc18548852cc08cc062202
 F src/test_journal.c f5c0a05b7b3d5930db769b5ee6c3766dc2221a64
 F src/test_loadext.c a5251f956ab6af21e138dc1f9c0399394a510cb4
-F src/test_malloc.c 5368fb1de77246da1ae0ff59cba0d30cb0e5812f
+F src/test_malloc.c fdac9732bd5ad6ae21d6b36cc265cca467caefb1
 F src/test_multiplex.c ca90057438b63bf0840ebb84d0ef050624519a76
 F src/test_multiplex.h c08e4e8f8651f0c5e0509b138ff4d5b43ed1f5d3
 F src/test_mutex.c 293042d623ebba969160f471a82aa1551626454f
@@ -1193,7 +1193,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 73954f93c4c6f880c6e01d0d130e3fed40fd4106
-R fbb4555bc7385b94054e7551d7f50581
-U mistachkin
-Z 680a54f7aef088a3bc667976a8b39ee7
+P a758465e3cfa7e0cb8749d097cd6fb5f86b60955
+R 2db0351830e46d232702315b1a375c8e
+U drh
+Z b61df9da0225ca7d80ceab8d31d99aad

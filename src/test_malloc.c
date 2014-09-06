@@ -696,6 +696,12 @@ static int test_memdebug_pending(
   return TCL_OK;
 }
 
+/*
+** The following global variable keeps track of the number of tests
+** that have run.  This variable is only useful when running in the
+** debugger.
+*/
+static int sqlite3_memdebug_title_count = 0;
 
 /*
 ** Usage:    sqlite3_memdebug_settitle TITLE
@@ -713,6 +719,7 @@ static int test_memdebug_settitle(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+  sqlite3_memdebug_title_count++;
   if( objc!=2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "TITLE");
     return TCL_ERROR;
