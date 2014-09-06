@@ -120,7 +120,7 @@
 ** shared locks begins at SHARED_FIRST. 
 **
 ** The same locking strategy and
-** byte ranges are used for Unix.  This leaves open the possiblity of having
+** byte ranges are used for Unix.  This leaves open the possibility of having
 ** clients on win95, winNT, and unix all talking to the same shared file
 ** and all locking correctly.  To do so would require that samba (or whatever
 ** tool is being used for file sharing) implements locks correctly between

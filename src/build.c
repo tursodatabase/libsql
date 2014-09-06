@@ -1619,7 +1619,7 @@ static int hasColumn(const i16 *aiCol, int nCol, int x){
 **          no rowid btree for a WITHOUT ROWID.  Instead, the canonical
 **          data storage is a covering index btree.
 **     (2)  Bypass the creation of the sqlite_master table entry
-**          for the PRIMARY KEY as the the primary key index is now
+**          for the PRIMARY KEY as the primary key index is now
 **          identified by the sqlite_master table entry of the table itself.
 **     (3)  Set the Index.tnum of the PRIMARY KEY Index object in the
 **          schema to the rootpage from the main table.
@@ -1640,7 +1640,7 @@ static void convertToWithoutRowidTable(Parse *pParse, Table *pTab){
   Vdbe *v = pParse->pVdbe;
 
   /* Convert the OP_CreateTable opcode that would normally create the
-  ** root-page for the table into a OP_CreateIndex opcode.  The index
+  ** root-page for the table into an OP_CreateIndex opcode.  The index
   ** created will become the PRIMARY KEY index.
   */
   if( pParse->addrCrTab ){
@@ -2654,7 +2654,7 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   int iPartIdxLabel;             /* Jump to this label to skip a row */
   Vdbe *v;                       /* Generate code into this virtual machine */
   KeyInfo *pKey;                 /* KeyInfo for index */
-  int regRecord;                 /* Register holding assemblied index record */
+  int regRecord;                 /* Register holding assembled index record */
   sqlite3 *db = pParse->db;      /* The database connection */
   int iDb = sqlite3SchemaToIndex(db, pIndex->pSchema);
 
@@ -3254,7 +3254,7 @@ exit_create_index:
 ** Fill the Index.aiRowEst[] array with default information - information
 ** to be used when we have not run the ANALYZE command.
 **
-** aiRowEst[0] is suppose to contain the number of elements in the index.
+** aiRowEst[0] is supposed to contain the number of elements in the index.
 ** Since we do not know, guess 1 million.  aiRowEst[1] is an estimate of the
 ** number of rows in the table that match any particular value of the
 ** first column of the index.  aiRowEst[2] is an estimate of the number
@@ -3633,7 +3633,7 @@ void sqlite3SrcListDelete(sqlite3 *db, SrcList *pList){
 ** if this is the first term of the FROM clause.  pTable and pDatabase
 ** are the name of the table and database named in the FROM clause term.
 ** pDatabase is NULL if the database name qualifier is missing - the
-** usual case.  If the term has a alias, then pAlias points to the
+** usual case.  If the term has an alias, then pAlias points to the
 ** alias token.  If the term is a subquery, then pSubquery is the
 ** SELECT statement that the subquery encodes.  The pTable and
 ** pDatabase parameters are NULL for subqueries.  The pOn and pUsing

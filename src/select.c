@@ -1010,7 +1010,7 @@ int sqlite3KeyInfoIsWriteable(KeyInfo *p){ return p->nRef==1; }
 ** then the KeyInfo structure is appropriate for initializing a virtual
 ** index to implement a DISTINCT test.
 **
-** Space to hold the KeyInfo structure is obtain from malloc.  The calling
+** Space to hold the KeyInfo structure is obtained from malloc.  The calling
 ** function is responsible for seeing that this structure is eventually
 ** freed.
 */
@@ -1541,7 +1541,7 @@ static void generateColumnNames(
 }
 
 /*
-** Given a an expression list (which is really the list of expressions
+** Given an expression list (which is really the list of expressions
 ** that form the result set of a SELECT statement) compute appropriate
 ** column names for a table that would hold the expression list.
 **
@@ -1614,7 +1614,7 @@ static int selectColumnsFromExprList(
     }
 
     /* Make sure the column name is unique.  If the name is not unique,
-    ** append a integer to the name so that it becomes unique.
+    ** append an integer to the name so that it becomes unique.
     */
     nName = sqlite3Strlen30(zName);
     for(j=cnt=0; j<i; j++){
@@ -3098,7 +3098,7 @@ static void substSelect(
 **
 **     SELECT x+y AS a FROM t1 WHERE z<100 AND a>5
 **
-** The code generated for this simpification gives the same result
+** The code generated for this simplification gives the same result
 ** but only has to scan the data once.  And because indices might 
 ** exist on the table t1, a complete scan of the data might be
 ** avoided.
@@ -3242,7 +3242,7 @@ static int flattenSubquery(
   pSubSrc = pSub->pSrc;
   assert( pSubSrc );
   /* Prior to version 3.1.2, when LIMIT and OFFSET had to be simple constants,
-  ** not arbitrary expresssions, we allowed some combining of LIMIT and OFFSET
+  ** not arbitrary expressions, we allowed some combining of LIMIT and OFFSET
   ** because they could be computed at compile-time.  But when LIMIT and OFFSET
   ** became arbitrary expressions, we were forced to add restrictions (13)
   ** and (14). */
@@ -3628,7 +3628,7 @@ static u8 minMaxQuery(AggInfo *pAggInfo, ExprList **ppMinMax){
 
 /*
 ** The select statement passed as the first argument is an aggregate query.
-** The second argment is the associated aggregate-info object. This 
+** The second argument is the associated aggregate-info object. This 
 ** function tests if the SELECT is of the form:
 **
 **   SELECT count(*) FROM <tbl>
@@ -3958,10 +3958,10 @@ static void selectPopWith(Walker *pWalker, Select *p){
 **         fill pTabList->a[].pSelect with a copy of the SELECT statement
 **         that implements the view.  A copy is made of the view's SELECT
 **         statement so that we can freely modify or delete that statement
-**         without worrying about messing up the presistent representation
+**         without worrying about messing up the persistent representation
 **         of the view.
 **
-**    (3)  Add terms to the WHERE clause to accomodate the NATURAL keyword
+**    (3)  Add terms to the WHERE clause to accommodate the NATURAL keyword
 **         on joins and the ON and USING clause of joins.
 **
 **    (4)  Scan the list of columns in the result set (pEList) looking

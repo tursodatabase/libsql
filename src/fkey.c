@@ -173,7 +173,7 @@
 **
 **   4) No parent key columns were provided explicitly as part of the
 **      foreign key definition, and the PRIMARY KEY of the parent table 
-**      consists of a a different number of columns to the child key in 
+**      consists of a different number of columns to the child key in 
 **      the child table.
 **
 ** then non-zero is returned, and a "foreign key mismatch" error loaded

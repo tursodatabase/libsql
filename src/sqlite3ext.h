@@ -28,7 +28,7 @@ typedef struct sqlite3_api_routines sqlite3_api_routines;
 ** WARNING:  In order to maintain backwards compatibility, add new
 ** interfaces to the end of this structure only.  If you insert new
 ** interfaces in the middle of this structure, then older different
-** versions of SQLite will not be able to load each others' shared
+** versions of SQLite will not be able to load each other's shared
 ** libraries!
 */
 struct sqlite3_api_routines {
@@ -254,7 +254,7 @@ struct sqlite3_api_routines {
 
 /*
 ** The following macros redefine the API routines so that they are
-** redirected throught the global sqlite3_api structure.
+** redirected through the global sqlite3_api structure.
 **
 ** This header file is also used by the loadext.c source file
 ** (part of the main SQLite library - not an extension) so that

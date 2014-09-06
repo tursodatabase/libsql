@@ -238,7 +238,7 @@ struct Mem {
 #endif
 
 /*
-** Each auxilliary data pointer stored by a user defined function 
+** Each auxiliary data pointer stored by a user defined function 
 ** implementation calling sqlite3_set_auxdata() is stored in an instance
 ** of this structure. All such structures associated with a single VM
 ** are stored in a linked list headed at Vdbe.pAuxData. All are destroyed
@@ -253,7 +253,7 @@ struct AuxData {
 };
 
 /*
-** The "context" argument for a installable function.  A pointer to an
+** The "context" argument for an installable function.  A pointer to an
 ** instance of this structure is the first argument to the routines used
 ** implement the SQL functions.
 **

@@ -1118,7 +1118,7 @@ static int resolveOrderGroupBy(
 }
 
 /*
-** Resolve names in the SELECT statement p and all of its descendents.
+** Resolve names in the SELECT statement p and all of its descendants.
 */
 static int resolveSelectStep(Walker *pWalker, Select *p){
   NameContext *pOuterNC;  /* Context that contains this SELECT */

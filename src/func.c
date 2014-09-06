@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** This file contains the C-language implementions for many of the SQL
+** This file contains the C-language implementations for many of the SQL
 ** functions of SQLite.  (Some function, and in particular the date and
 ** time functions, are implemented separately.)
 */
@@ -1638,7 +1638,7 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
 }
 
 /*
-** All all of the FuncDef structures in the aBuiltinFunc[] array above
+** All of the FuncDef structures in the aBuiltinFunc[] array above
 ** to the global function hash table.  This occurs at start-time (as
 ** a consequence of calling sqlite3_initialize()).
 **

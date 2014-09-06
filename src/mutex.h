@@ -25,7 +25,7 @@
 ** Figure out what version of the code to use.  The choices are
 **
 **   SQLITE_MUTEX_OMIT         No mutex logic.  Not even stubs.  The
-**                             mutexes implemention cannot be overridden
+**                             mutexes implementation cannot be overridden
 **                             at start-time.
 **
 **   SQLITE_MUTEX_NOOP         For single-threaded applications.  No

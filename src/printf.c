@@ -904,7 +904,7 @@ char *sqlite3MPrintf(sqlite3 *db, const char *zFormat, ...){
 
 /*
 ** Like sqlite3MPrintf(), but call sqlite3DbFree() on zStr after formatting
-** the string and before returnning.  This routine is intended to be used
+** the string and before returning.  This routine is intended to be used
 ** to modify an existing string.  For example:
 **
 **       x = sqlite3MPrintf(db, x, "prefix %s suffix", x);

@@ -390,7 +390,7 @@ PgHdr *sqlite3PcacheFetchFinish(
 
 /*
 ** Decrement the reference count on a page. If the page is clean and the
-** reference count drops to 0, then it is made elible for recycling.
+** reference count drops to 0, then it is made eligible for recycling.
 */
 void SQLITE_NOINLINE sqlite3PcacheRelease(PgHdr *p){
   assert( p->nRef>0 );

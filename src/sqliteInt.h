@@ -351,7 +351,7 @@
 #endif
 
 /*
-** Return true (non-zero) if the input is a integer that is too large
+** Return true (non-zero) if the input is an integer that is too large
 ** to fit in 32-bits.  This macro is used inside of various testcase()
 ** macros to verify that we have tested SQLite for large-file support.
 */
@@ -639,7 +639,7 @@ extern const int sqlite3one;
 ** all alignment restrictions correct.
 **
 ** Except, if SQLITE_4_BYTE_ALIGNED_MALLOC is defined, then the
-** underlying malloc() implemention might return us 4-byte aligned
+** underlying malloc() implementation might return us 4-byte aligned
 ** pointers.  In that case, only verify 4-byte alignment.
 */
 #ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
@@ -1159,7 +1159,6 @@ struct sqlite3 {
 #define SQLITE_Transitive     0x0200   /* Transitive constraints */
 #define SQLITE_OmitNoopJoin   0x0400   /* Omit unused tables in joins */
 #define SQLITE_Stat3          0x0800   /* Use the SQLITE_STAT3 table */
-#define SQLITE_AdjustOutEst   0x1000   /* Adjust output estimates using WHERE */
 #define SQLITE_AllOpts        0xffff   /* All optimizations */
 
 /*
@@ -2884,8 +2883,8 @@ int sqlite3CantopenError(int);
 
 /*
 ** FTS4 is really an extension for FTS3.  It is enabled using the
-** SQLITE_ENABLE_FTS3 macro.  But to avoid confusion we also all
-** the SQLITE_ENABLE_FTS4 macro to serve as an alisse for SQLITE_ENABLE_FTS3.
+** SQLITE_ENABLE_FTS3 macro.  But to avoid confusion we also call
+** the SQLITE_ENABLE_FTS4 macro to serve as an alias for SQLITE_ENABLE_FTS3.
 */
 #if defined(SQLITE_ENABLE_FTS4) && !defined(SQLITE_ENABLE_FTS3)
 # define SQLITE_ENABLE_FTS3

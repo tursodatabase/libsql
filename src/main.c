@@ -2853,9 +2853,9 @@ int sqlite3_get_autocommit(sqlite3 *db){
 }
 
 /*
-** The following routines are subtitutes for constants SQLITE_CORRUPT,
+** The following routines are substitutes for constants SQLITE_CORRUPT,
 ** SQLITE_MISUSE, SQLITE_CANTOPEN, SQLITE_IOERR and possibly other error
-** constants.  They server two purposes:
+** constants.  They serve two purposes:
 **
 **   1.  Serve as a convenient place to set a breakpoint in a debugger
 **       to detect when version error conditions occurs.
@@ -3169,7 +3169,7 @@ int sqlite3_test_control(int op, ...){
     ** IMPORTANT:  Changing the PENDING byte from 0x40000000 results in
     ** an incompatible database file format.  Changing the PENDING byte
     ** while any database connection is open results in undefined and
-    ** dileterious behavior.
+    ** deleterious behavior.
     */
     case SQLITE_TESTCTRL_PENDING_BYTE: {
       rc = PENDING_BYTE;

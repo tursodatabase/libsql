@@ -2560,7 +2560,7 @@ case OP_MakeRecord: {
   ** ------------------------------------------------------------------------
   **
   ** Data(0) is taken from register P1.  Data(1) comes from register P1+1
-  ** and so froth.
+  ** and so forth.
   **
   ** Each type field is a varint representing the serial type of the 
   ** corresponding data element (see sqlite3VdbeSerialType()). The
@@ -3547,7 +3547,7 @@ case OP_SeekGT: {       /* jump, in3 */
   if( pC->isTable ){
     /* The input value in P3 might be of any type: integer, real, string,
     ** blob, or NULL.  But it needs to be an integer before we can do
-    ** the seek, so covert it. */
+    ** the seek, so convert it. */
     pIn3 = &aMem[pOp->p3];
     if( (pIn3->flags & (MEM_Int|MEM_Real))==0 ){
       applyNumericAffinity(pIn3, 0);
