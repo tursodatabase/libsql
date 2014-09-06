@@ -4229,7 +4229,7 @@ static void whereLoopOutputAdjust(
   WhereTerm *pTerm, *pX;
   Bitmask notAllowed = ~(pLoop->prereq|pLoop->maskSelf);
   int i, j;
-  int nEq = 0;    /* Number of = constraints not within likely()/unlike() */
+  int nEq = 0;    /* Number of = constraints not within likely()/unlikely() */
 
   for(i=pWC->nTerm, pTerm=pWC->a; i>0; i--, pTerm++){
     if( (pTerm->wtFlags & TERM_VIRTUAL)!=0 ) break;

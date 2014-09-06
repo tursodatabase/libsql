@@ -418,7 +418,7 @@ do_eqp_test 3.5 {
 
 ###########################################################################################
 
-# Reset the database and setup for a test case derived from an actual SQLite users
+# Reset the database and setup for a test case derived from actual SQLite users
 #
 db close
 sqlite3 db test.db
@@ -618,7 +618,7 @@ do_execsql_test 4.2 {
   ANALYZE sqlite_master;
 } {}
 
-# The following query should do a ful ltable scan of cx in the outer loop.
+# The following query should do a full table scan of cx in the outer loop.
 # It is not correct to search table px using indx p_pt in the outer loop
 # with cx in the middle loop.  Test case from Bloomberg on 2014-09-05.
 #
