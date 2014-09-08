@@ -78,6 +78,10 @@ struct OtaObjIter {
   sqlite3_stmt *pSelect;          /* Source data */
   sqlite3_stmt *pInsert;          /* Statement for INSERT operations */
   sqlite3_stmt *pDelete;          /* Statement for DELETE ops */
+
+  /* Last UPDATE used (for PK b-tree updates only), or NULL. */
+  char *zMask;                    /* Copy of update mask used with pUpdate */
+  sqlite3_stmt *pUpdate;          /* Last update statement (or NULL) */
 };
 
 /*
@@ -179,6 +183,24 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
   pIter->azTblCol = 0;
   pIter->abTblPk = 0;
   pIter->nTblCol = 0;
+  sqlite3_free(pIter->zMask);
+  pIter->zMask = 0;
+}
+
+/*
+** Finalize all statements and free all allocations that are specific to
+** the current object (table/index pair).
+*/
+static void otaObjIterClearStatements(OtaObjIter *pIter){
+  sqlite3_finalize(pIter->pSelect);
+  sqlite3_finalize(pIter->pInsert);
+  sqlite3_finalize(pIter->pDelete);
+  sqlite3_finalize(pIter->pUpdate);
+  pIter->pSelect = 0;
+  pIter->pInsert = 0;
+  pIter->pDelete = 0;
+  pIter->pUpdate = 0;
+  pIter->nCol = 0;
 }
 
 /*
@@ -186,11 +208,9 @@ static void otaObjIterFreeCols(OtaObjIter *pIter){
 ** as the only argument.
 */
 static void otaObjIterFinalize(OtaObjIter *pIter){
+  otaObjIterClearStatements(pIter);
   sqlite3_finalize(pIter->pTblIter);
   sqlite3_finalize(pIter->pIdxIter);
-  sqlite3_finalize(pIter->pSelect);
-  sqlite3_finalize(pIter->pInsert);
-  sqlite3_finalize(pIter->pDelete);
   otaObjIterFreeCols(pIter);
   memset(pIter, 0, sizeof(OtaObjIter));
 }
@@ -208,13 +228,7 @@ static int otaObjIterNext(sqlite3ota *p, OtaObjIter *pIter){
   if( rc==SQLITE_OK ){
 
     /* Free any SQLite statements used while processing the previous object */ 
-    sqlite3_finalize(pIter->pSelect);
-    sqlite3_finalize(pIter->pInsert);
-    sqlite3_finalize(pIter->pDelete);
-    pIter->pSelect = 0;
-    pIter->pInsert = 0;
-    pIter->pDelete = 0;
-    pIter->nCol = 0;
+    otaObjIterClearStatements(pIter);
 
     if( pIter->bCleanup ){
       otaObjIterFreeCols(pIter);
@@ -412,15 +426,16 @@ static char *otaObjIterGetCollist(
 
 static char *otaObjIterGetOldlist(
   sqlite3ota *p, 
-  OtaObjIter *pIter
+  OtaObjIter *pIter,
+  const char *zObj
 ){
   char *zList = 0;
   if( p->rc==SQLITE_OK ){
-    const char *zSep = "";
+    const char *zS = "";
     int i;
     for(i=0; i<pIter->nTblCol; i++){
-      zList = sqlite3_mprintf("%z%sold.%s", zList, zSep, pIter->azTblCol[i]);
-      zSep = ", ";
+      zList = sqlite3_mprintf("%z%s%s.%s", zList, zS, zObj, pIter->azTblCol[i]);
+      zS = ", ";
       if( zList==0 ){
         p->rc = SQLITE_NOMEM;
         break;
@@ -440,11 +455,50 @@ static char *otaObjIterGetWhere(
     int i;
     for(i=0; i<pIter->nTblCol; i++){
       if( pIter->abTblPk[i] ){
-        zList = sqlite3_mprintf("%z%s%s=?", zList, zSep, pIter->azTblCol[i]);
+        const char *zCol = pIter->azTblCol[i];
+        zList = sqlite3_mprintf("%z%s%s=?%d", zList, zSep, zCol, i+1);
         zSep = " AND ";
         if( zList==0 ){
           p->rc = SQLITE_NOMEM;
           break;
+        }
+      }
+    }
+  }
+  return zList;
+}
+
+/*
+** The SELECT statement iterating through the keys for the current object
+** (p->objiter.pSelect) currently points to a valid row. However, there
+** is something wrong with the ota_control value in the ota_control value
+** stored in the (p->nCol+1)'th column. Set the error code and error message
+** of the OTA handle to something reflecting this.
+*/
+static void otaBadControlError(sqlite3ota *p){
+  p->rc = SQLITE_ERROR;
+  p->zErrmsg = sqlite3_mprintf("Invalid ota_control value");
+}
+
+static char *otaObjIterGetSetlist(
+  sqlite3ota *p,
+  OtaObjIter *pIter,
+  const char *zMask
+){
+  char *zList = 0;
+  if( p->rc==SQLITE_OK ){
+    int i;
+
+    if( strlen(zMask)!=pIter->nTblCol ){
+      otaBadControlError(p);
+    }else{
+      const char *zSep = "";
+      for(i=0; i<pIter->nTblCol; i++){
+        if( zMask[i]=='x' ){
+          zList = sqlite3_mprintf("%z%s%s=?%d", 
+              zList, zSep, pIter->azTblCol[i], i+1
+          );
+          zSep = ", ";
         }
       }
     }
@@ -513,6 +567,7 @@ static int otaObjIterPrepareAll(
         p->rc = prepareFreeAndCollectError(p->db, &pIter->pSelect, pz,
             sqlite3_mprintf(
               "SELECT %s, ota_control FROM ota.'data_%q' "
+              "WHERE typeof(ota_control)='integer' AND ota_control!=1 "
                 "UNION ALL "
               "SELECT %s, ota_control FROM ota.'ota_tmp_%q' "
               "ORDER BY %s%s",
@@ -525,7 +580,8 @@ static int otaObjIterPrepareAll(
     }else{
       char *zBindings = otaObjIterGetBindlist(p, pIter->nTblCol);
       char *zWhere = otaObjIterGetWhere(p, pIter);
-      char *zOldlist = otaObjIterGetOldlist(p, pIter);
+      char *zOldlist = otaObjIterGetOldlist(p, pIter, "old");
+      char *zNewlist = otaObjIterGetOldlist(p, pIter, "new");
       zCollist = otaObjIterGetCollist(p, pIter, pIter->nTblCol, 0);
       pIter->nCol = pIter->nTblCol;
 
@@ -561,17 +617,43 @@ static int otaObjIterPrepareAll(
         otaMPrintfExec(p, 
             "CREATE TABLE IF NOT EXISTS ota.'ota_tmp_%q' AS "
             "SELECT * FROM ota.'data_%q' WHERE 0;"
+
             "CREATE TEMP TRIGGER ota_delete_%q BEFORE DELETE ON main.%Q "
             "BEGIN "
             "  INSERT INTO 'ota_tmp_%q'(ota_control, %s) VALUES(2, %s);"
             "END;"
-            , pIter->zTbl, pIter->zTbl, pIter->zTbl, pIter->zTbl, pIter->zTbl,
-            zCollist, zOldlist
+
+            "CREATE TEMP TRIGGER ota_update1_%q BEFORE UPDATE ON main.%Q "
+            "BEGIN "
+            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s) VALUES(2, %s);"
+            "END;"
+
+            "CREATE TEMP TRIGGER ota_update2_%q AFTER UPDATE ON main.%Q "
+            "BEGIN "
+            "  INSERT INTO 'ota_tmp_%q'(ota_control, %s) VALUES(3, %s);"
+            "END;"
+
+            , pIter->zTbl, pIter->zTbl, 
+            pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zOldlist, 
+            pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zOldlist, 
+            pIter->zTbl, pIter->zTbl, pIter->zTbl, zCollist, zNewlist
         );
+      }
+
+      /* Allocate space required for the zMask field. */
+      if( p->rc==SQLITE_OK ){
+        int nMask = pIter->nTblCol+1;
+        pIter->zMask = (char*)sqlite3_malloc(nMask);
+        if( pIter->zMask==0 ){
+          p->rc = SQLITE_NOMEM;
+        }else{
+          memset(pIter->zMask, 0, nMask);
+        }
       }
 
       sqlite3_free(zWhere);
       sqlite3_free(zOldlist);
+      sqlite3_free(zNewlist);
       sqlite3_free(zBindings);
     }
     sqlite3_free(zCollist);
@@ -584,18 +666,39 @@ static int otaObjIterPrepareAll(
 #define OTA_INSERT     1
 #define OTA_DELETE     2
 #define OTA_IDX_DELETE 3
-#define OTA_UPDATE     4
+#define OTA_IDX_INSERT 4
+#define OTA_UPDATE     5
 
-/*
-** The SELECT statement iterating through the keys for the current object
-** (p->objiter.pSelect) currently points to a valid row. However, there
-** is something wrong with the ota_control value in the ota_control value
-** stored in the (p->nCol+1)'th column. Set the error code and error message
-** of the OTA handle to something reflecting this.
-*/
-static void otaBadControlError(sqlite3ota *p){
-  p->rc = SQLITE_ERROR;
-  p->zErrmsg = sqlite3_mprintf("Invalid ota_control value");
+static int otaGetUpdateStmt(
+  sqlite3ota *p, 
+  OtaObjIter *pIter, 
+  const char *zMask,
+  sqlite3_stmt **ppStmt
+){
+  if( pIter->pUpdate && strcmp(zMask, pIter->zMask)==0 ){
+    *ppStmt = pIter->pUpdate;
+  }else{
+    char *zWhere = otaObjIterGetWhere(p, pIter);
+    char *zSet = otaObjIterGetSetlist(p, pIter, zMask);
+    char *zUpdate = 0;
+    sqlite3_finalize(pIter->pUpdate);
+    pIter->pUpdate = 0;
+    if( p->rc==SQLITE_OK ){
+      zUpdate = sqlite3_mprintf("UPDATE %Q SET %s WHERE %s", 
+          pIter->zTbl, zSet, zWhere
+      );
+      p->rc = prepareFreeAndCollectError(
+          p->db, &pIter->pUpdate, &p->zErrmsg, zUpdate
+      );
+      *ppStmt = pIter->pUpdate;
+    }
+    if( p->rc==SQLITE_OK ){
+      memcpy(pIter->zMask, zMask, pIter->nTblCol);
+    }
+    sqlite3_free(zWhere);
+    sqlite3_free(zSet);
+  }
+  return p->rc;
 }
 
 /*
@@ -628,6 +731,8 @@ static int otaStepType(sqlite3ota *p, const char **pzMask){
         res = OTA_DELETE;
       }else if( iVal==2 ){
         res = OTA_IDX_DELETE;
+      }else if( iVal==3 ){
+        res = OTA_IDX_INSERT;
       }
       break;
     }
@@ -670,33 +775,43 @@ static int otaStep(sqlite3ota *p){
     if( pIter->zIdx==0 && eType==OTA_IDX_DELETE ){
       otaBadControlError(p);
     }
-    else if( eType==OTA_INSERT || eType==OTA_IDX_DELETE ){
+    else if( 
+        eType==OTA_INSERT 
+     || eType==OTA_DELETE
+     || eType==OTA_IDX_DELETE 
+     || eType==OTA_IDX_INSERT
+    ){
       sqlite3_stmt *pWriter;
-      assert( eType!=OTA_UPDATE );
 
-      pWriter = (eType==OTA_INSERT)?pIter->pInsert:pIter->pDelete;
+      assert( eType!=OTA_UPDATE );
+      assert( eType!=OTA_DELETE || pIter->zIdx==0 );
+
+      if( eType==OTA_IDX_DELETE || eType==OTA_DELETE ){
+        pWriter = pIter->pDelete;
+      }else{
+        pWriter = pIter->pInsert;
+      }
+
       for(i=0; i<pIter->nCol; i++){
+        if( eType==SQLITE_DELETE && pIter->zIdx==0 && pIter->abTblPk[i]==0 ){
+          continue;
+        }
         sqlite3_value *pVal = sqlite3_column_value(pIter->pSelect, i);
         sqlite3_bind_value(pWriter, i+1, pVal);
       }
       sqlite3_step(pWriter);
       p->rc = resetAndCollectError(pWriter, &p->zErrmsg);
-    }
-    else if( eType==OTA_DELETE && pIter->zIdx==0 ){
-      int iVar = 1;
-      assert( pIter->zIdx==0 );
-      assert( pIter->nCol==pIter->nTblCol );
-      for(i=0; i<pIter->nCol; i++){
-        if( pIter->abTblPk[i] ){
-          sqlite3_value *pVal = sqlite3_column_value(pIter->pSelect, i);
-          sqlite3_bind_value(pIter->pDelete, iVar++, pVal);
-        }
-      }
-      sqlite3_step(pIter->pDelete);
-      p->rc = resetAndCollectError(pIter->pDelete, &p->zErrmsg);
     }else if( eType==OTA_UPDATE ){
-      p->rc = SQLITE_ERROR;
-      p->zErrmsg = sqlite3_mprintf("not yet");
+      sqlite3_stmt *pUpdate = 0;
+      otaGetUpdateStmt(p, pIter, zMask, &pUpdate);
+      if( pUpdate ){
+        for(i=0; i<pIter->nCol; i++){
+          sqlite3_value *pVal = sqlite3_column_value(pIter->pSelect, i);
+          sqlite3_bind_value(pUpdate, i+1, pVal);
+        }
+        sqlite3_step(pUpdate);
+        p->rc = resetAndCollectError(pUpdate, &p->zErrmsg);
+      }
     }else{
       /* no-op */
       assert( eType==OTA_DELETE && pIter->zIdx );
@@ -718,7 +833,7 @@ int sqlite3ota_step(sqlite3ota *p){
         /* Clean up the ota_tmp_xxx table for the previous table. It 
         ** cannot be dropped as there are currently active SQL statements.
         ** But the contents can be deleted.  */
-        otaMPrintfExec(p, "DELETE FROM ota.'ota_tmp_%q'", pIter->zTbl);
+        // otaMPrintfExec(p, "DELETE FROM ota.'ota_tmp_%q'", pIter->zTbl);
       }else{
         otaObjIterPrepareAll(p, pIter, 0);
         

@@ -36,6 +36,8 @@ proc create_ota1 {filename} {
 #
 #   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c);
 #
+# This OTA includes both insert and delete operations.
+#
 proc create_ota4 {filename} {
   forcedelete $filename
   sqlite3 ota1 $filename  
@@ -47,6 +49,25 @@ proc create_ota4 {filename} {
     INSERT INTO data_t1 VALUES(4, NULL, 11, 1);
   }
   ota1 close
+  return $filename
+}
+
+# Create a simple OTA database. That expects to write to a table:
+#
+#   CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+#
+# This OTA includes update statements.
+#
+proc create_ota5 {filename} {
+  forcedelete $filename
+  sqlite3 ota5 $filename  
+  ota5 eval {
+    CREATE TABLE data_t1(a, b, c, d, ota_control);
+    INSERT INTO data_t1 VALUES(1, NULL, NULL, 5, '...x');  -- SET d = 5
+    INSERT INTO data_t1 VALUES(2, NULL, 10, 5, '..xx');    -- SET c=10, d = 5
+    INSERT INTO data_t1 VALUES(3, 11, NULL, NULL, '.x..'); -- SET b=11
+  }
+  ota5 close
   return $filename
 }
 
@@ -224,6 +245,47 @@ foreach {tn2 cmd} {1 run_ota 2 step_ota} {
   }
 }
 
+#-------------------------------------------------------------------------
+#
+foreach {tn2 cmd} {1 run_ota 2 step_ota} {
+  foreach {tn schema} {
+    1 {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+    }
+    2 {
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, d);
+      CREATE INDEX i1 ON t1(d);
+      CREATE INDEX i2 ON t1(d, c);
+      CREATE INDEX i3 ON t1(d, c, b);
+      CREATE INDEX i4 ON t1(b);
+      CREATE INDEX i5 ON t1(c);
+      CREATE INDEX i6 ON t1(c, b);
+    }
+  } {
+    reset_db
+    execsql $schema
+    execsql {
+      INSERT INTO t1 VALUES(1, 2, 3, 4);
+      INSERT INTO t1 VALUES(2, 5, 6, 7);
+      INSERT INTO t1 VALUES(3, 8, 9, 10);
+    }
+  
+    do_test 5.$tn2.$tn.1 {
+      create_ota5 ota.db
+      $cmd test.db ota.db
+    } {SQLITE_DONE}
+    
+    do_execsql_test 5.$tn2.$tn.2 {
+      SELECT * FROM t1 ORDER BY a ASC;
+    } {
+      1 2 3 5
+      2 5 10 5
+      3 11 9 10
+    }
+  
+    do_execsql_test 5.$tn2.$tn.3 { PRAGMA integrity_check } ok
+  }
+}
 
 finish_test
 
