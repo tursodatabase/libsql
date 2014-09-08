@@ -37,7 +37,7 @@ int sqlite3VdbeCheckMemInvariants(Mem *p){
   **
   **   (1) Memory in Mem.zMalloc and managed by the Mem object
   **   (2) Memory to be freed using Mem.xDel
-  **   (3) An ephermal string or blob
+  **   (3) An ephemeral string or blob
   **   (4) A static string or blob
   */
   if( (p->flags & (MEM_Str|MEM_Blob)) && p->z!=0 ){
@@ -240,7 +240,7 @@ int sqlite3VdbeMemNulTerminate(Mem *pMem){
 ** used for converting values to text for returning to the user (i.e. via
 ** sqlite3_value_text()), or for ensuring that values to be used as btree
 ** keys are strings. In the former case a NULL pointer is returned the
-** user and the later is an internal programming error.
+** user and the latter is an internal programming error.
 */
 int sqlite3VdbeMemStringify(Mem *pMem, u8 enc, u8 bForce){
   int fg = pMem->flags;
@@ -405,7 +405,7 @@ static i64 doubleToInt64(double r){
 ** If pMem is an integer, then the value is exact.  If pMem is
 ** a floating-point then the value returned is the integer part.
 ** If pMem is a string or blob, then we make an attempt to convert
-** it into a integer and return that.  If pMem represents an
+** it into an integer and return that.  If pMem represents an
 ** an SQL-NULL value, return 0.
 **
 ** If pMem represents a string value, its encoding might be changed.
@@ -697,7 +697,7 @@ int sqlite3VdbeMemTooBig(Mem *p){
 
 #ifdef SQLITE_DEBUG
 /*
-** This routine prepares a memory cell for modication by breaking
+** This routine prepares a memory cell for modification by breaking
 ** its link to a shallow copy and by marking any current shallow
 ** copies of this cell as invalid.
 **

@@ -182,7 +182,7 @@ int sqlite3_get_table(
 ** This routine frees the space the sqlite3_get_table() malloced.
 */
 void sqlite3_free_table(
-  char **azResult            /* Result returned from from sqlite3_get_table() */
+  char **azResult            /* Result returned from sqlite3_get_table() */
 ){
   if( azResult ){
     int i, n;
