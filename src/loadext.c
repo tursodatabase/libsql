@@ -394,7 +394,7 @@ static const sqlite3_api_routines sqlite3Apis = {
   /* Version 3.8.7 and later */
   sqlite3_auto_extension,
   sqlite3_bind_blob64,
-  sqlite3_bind_texte64,
+  sqlite3_bind_text64,
   sqlite3_cancel_auto_extension,
   sqlite3_load_extension,
   sqlite3_malloc64,
@@ -402,7 +402,7 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_realloc64,
   sqlite3_reset_auto_extension,
   sqlite3_result_blob64,
-  sqlite3_result_texte64,
+  sqlite3_result_text64,
   sqlite3_strglob
 };
 

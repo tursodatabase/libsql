@@ -3385,7 +3385,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** If the fourth parameter to sqlite3_bind_blob() is negative, then
 ** the behavior is undefined.
 ** If a non-negative fourth parameter is provided to sqlite3_bind_text()
-** or sqlite3_bind_text16() or sqlite3_bind_texte64() then
+** or sqlite3_bind_text16() or sqlite3_bind_text64() then
 ** that parameter must be the byte offset
 ** where the NUL terminator would occur assuming the string were NUL
 ** terminated.  If any NUL characters occur at byte offsets less than 
@@ -3405,10 +3405,10 @@ typedef struct sqlite3_context sqlite3_context;
 ** SQLite makes its own private copy of the data immediately, before
 ** the sqlite3_bind_*() routine returns.
 **
-** ^The sixth argument to sqlite3_bind_texte64() must be one of
+** ^The sixth argument to sqlite3_bind_text64() must be one of
 ** [SQLITE_UTF8], [SQLITE_UTF16], [SQLITE_UTF16BE], or [SQLITE_UTF16LE]
 ** to specify the encoding of the text in the third parameter.  If
-** the sixth argument to sqlite3_bind_texte64() is not how of the
+** the sixth argument to sqlite3_bind_text64() is not how of the
 ** allowed values shown above, or if the text encoding is different
 ** from the encoding specified by the sixth parameter, then the behavior
 ** is undefined.
@@ -3451,7 +3451,7 @@ int sqlite3_bind_int64(sqlite3_stmt*, int, sqlite3_int64);
 int sqlite3_bind_null(sqlite3_stmt*, int);
 int sqlite3_bind_text(sqlite3_stmt*,int,const char*,int,void(*)(void*));
 int sqlite3_bind_text16(sqlite3_stmt*, int, const void*, int, void(*)(void*));
-int sqlite3_bind_texte64(sqlite3_stmt*, int, const char*, sqlite3_uint64,
+int sqlite3_bind_text64(sqlite3_stmt*, int, const char*, sqlite3_uint64,
                          void(*)(void*), unsigned char encoding);
 int sqlite3_bind_value(sqlite3_stmt*, int, const sqlite3_value*);
 int sqlite3_bind_zeroblob(sqlite3_stmt*, int, int n);
@@ -4448,7 +4448,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** set the return value of the application-defined function to be
 ** a text string which is represented as UTF-8, UTF-16 native byte order,
 ** UTF-16 little endian, or UTF-16 big endian, respectively.
-** ^The sqlite3_result_texte64() interface sets the return value of an
+** ^The sqlite3_result_text64() interface sets the return value of an
 ** application-defined function to be a text string in an encoding
 ** specified by the fifth (and last) parameter, which must be one
 ** of [SQLITE_UTF8], [SQLITE_UTF16], [SQLITE_UTF16BE], or [SQLITE_UTF16LE].
@@ -4506,8 +4506,8 @@ void sqlite3_result_int(sqlite3_context*, int);
 void sqlite3_result_int64(sqlite3_context*, sqlite3_int64);
 void sqlite3_result_null(sqlite3_context*);
 void sqlite3_result_text(sqlite3_context*, const char*, int, void(*)(void*));
-void sqlite3_result_texte64(sqlite3_context*, const char*,sqlite3_uint64,
-                            void(*)(void*), unsigned char encoding);
+void sqlite3_result_text64(sqlite3_context*, const char*,sqlite3_uint64,
+                           void(*)(void*), unsigned char encoding);
 void sqlite3_result_text16(sqlite3_context*, const void*, int, void(*)(void*));
 void sqlite3_result_text16le(sqlite3_context*, const void*, int,void(*)(void*));
 void sqlite3_result_text16be(sqlite3_context*, const void*, int,void(*)(void*));

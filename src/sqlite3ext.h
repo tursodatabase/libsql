@@ -254,7 +254,7 @@ struct sqlite3_api_routines {
   int (*auto_extension)(void(*)(void));
   int (*bind_blob64)(sqlite3_stmt*,int,const void*,sqlite3_uint64,
                      void(*)(void*));
-  int (*bind_texte64)(sqlite3_stmt*,int,const char*,sqlite3_uint64,
+  int (*bind_text64)(sqlite3_stmt*,int,const char*,sqlite3_uint64,
                       void(*)(void*),unsigned char);
   int (*cancel_auto_extension)(void(*)(void));
   int (*load_extension)(sqlite3*,const char*,const char*,char**);
@@ -264,7 +264,7 @@ struct sqlite3_api_routines {
   void (*reset_auto_extension)(void);
   void (*result_blob64)(sqlite3_context*,const void*,sqlite3_uint64,
                         void(*)(void*));
-  void (*result_texte64)(sqlite3_context*,const char*,sqlite3_uint64,
+  void (*result_text64)(sqlite3_context*,const char*,sqlite3_uint64,
                          void(*)(void*), unsigned char);
   int (*strglob)(const char*,const char*);
 };
@@ -487,7 +487,7 @@ struct sqlite3_api_routines {
 /* Version 3.8.7 and later */
 #define sqlite3_auto_extension         sqlite3_api->auto_extension
 #define sqlite3_bind_blob64            sqlite3_api->bind_blob64
-#define sqlite3_bind_texte64           sqlite3_api->bind_texte64
+#define sqlite3_bind_text64            sqlite3_api->bind_text64
 #define sqlite3_cancel_auto_extension  sqlite3_api->cancel_auto_extension
 #define sqlite3_load_extension         sqlite3_api->load_extension
 #define sqlite3_malloc64               sqlite3_api->malloc64
@@ -495,7 +495,7 @@ struct sqlite3_api_routines {
 #define sqlite3_realloc64              sqlite3_api->realloc64
 #define sqlite3_reset_auto_extension   sqlite3_api->reset_auto_extension
 #define sqlite3_result_blob64          sqlite3_api->result_blob64
-#define sqlite3_result_texte64         sqlite3_api->result_texte64
+#define sqlite3_result_text64          sqlite3_api->result_text64
 #define sqlite3_strglob                sqlite3_api->strglob
 #endif /* SQLITE_CORE */
 

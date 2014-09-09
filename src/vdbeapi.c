@@ -309,7 +309,7 @@ void sqlite3_result_text(
   assert( sqlite3_mutex_held(pCtx->pOut->db->mutex) );
   setResultStrOrError(pCtx, z, n, SQLITE_UTF8, xDel);
 }
-void sqlite3_result_texte64(
+void sqlite3_result_text64(
   sqlite3_context *pCtx, 
   const char *z, 
   sqlite3_uint64 n,
@@ -1226,7 +1226,7 @@ int sqlite3_bind_text(
 ){
   return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF8);
 }
-int sqlite3_bind_texte64( 
+int sqlite3_bind_text64( 
   sqlite3_stmt *pStmt, 
   int i, 
   const char *zData, 
