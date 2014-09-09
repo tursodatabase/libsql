@@ -2428,7 +2428,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   rc = sqlite3OsFileSize(pMaster, &nMasterJournal);
   if( rc!=SQLITE_OK ) goto delmaster_out;
   nMasterPtr = pVfs->mxPathname+1;
-  zMasterJournal = sqlite3Malloc((int)nMasterJournal + nMasterPtr + 1);
+  zMasterJournal = sqlite3Malloc(nMasterJournal + nMasterPtr + 1);
   if( !zMasterJournal ){
     rc = SQLITE_NOMEM;
     goto delmaster_out;
