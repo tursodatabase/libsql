@@ -1,5 +1,5 @@
-C Fixes\sto\sos_unix.c\sto\ssupport\sdatabase\s(and\sother)\sfiles\slarger\sthan\s2GiB\son\sAndroid.
-D 2014-09-06T17:06:13.410
+C Non-working\spreliminary\simplementation\sattempts\son\suser\sauthentication.
+D 2014-09-09T14:47:53.726
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,6 +144,9 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 83349d519fe5f518b3ea025d18dd1fe51b1684bd
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
+F ext/userauth/user-auth.txt f471c5a363ab0682b109d85982ea857f9a144ccc
+F ext/userauth/userauth.c cea064a9b66d7497c74cc504b3a01d7f390cbe6e
+F ext/userauth/userauth.h efbfb68ff083749ad63b12dcb5877b936c3458d6
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -171,7 +174,7 @@ F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
 F src/btree.c b1c1cd1cc3ae2e433a23b9a6c9ab53805707d8cd
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h e0ecb5dba292722039a7540beb3fc448103273cc
-F src/build.c 8cb237719c185eec7bd8449b2e747491ded11932
+F src/build.c 8b4c67c9fb638fb2e64b2bcd24677e71a5d61bfc
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
@@ -190,7 +193,7 @@ F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
 F src/legacy.c 87c92f4a08e2f70220e3b22a9c3b2482d36a134a
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 31c2122b7dd05a179049bbf163fd4839f181cbab
-F src/main.c e48517e3da289d93ad86e8b7b4f68078df5e6e51
+F src/main.c 26299e9d9a72239f0652ac9a23e04ced3f536e70
 F src/malloc.c 954de5f998c23237e04474a3f2159bf483bba65a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c faf615aafd8be74a71494dfa027c113ea5c6615f
@@ -217,8 +220,8 @@ F src/parse.y 22d6a074e5f5a7258947a1dc55a9bf946b765dd0
 F src/pcache.c 2048affdb09a04478b5fc6e64cb1083078d369be
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
-F src/pragma.c 14bcdb504128a476cce5bbc086d5226c5e46c225
-F src/prepare.c 3842c1dfc0b053458e3adcf9f6efc48e03e3fe3d
+F src/pragma.c e4f6421d7a1f23cd21bf281f2d8c56874879e1d0
+F src/prepare.c 9548c8efb80dbc14b0d54d58574c8a7414cde4db
 F src/printf.c e74925089a85e3c9f0e315595f41c139d3d118c2
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0d1621e45fffe4b4396477cf46e41a84b0145ffb
@@ -228,7 +231,7 @@ F src/shell.c 713cef4d73c05fc8e12f4960072329d767a05d50
 F src/sqlite.h.in 64a77f2822f1325b12050972003184f99b655a0f
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 1f40357fb9b12a80c5a3b2b109fd249b009213d4
-F src/sqliteInt.h 4d1b0488f097aa7be346176c4d5e3cc1e25d99da
+F src/sqliteInt.h 883f905f17a78bb09061a8efa4f2708faa6ffacc
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 4e28a53e66bad8d014a510ef0205f5497c712b08
@@ -1193,7 +1196,10 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P e62aab5e9290503869e1f4d5e0fefd2b4dee0a69 9dca7ce55797b3eb617859f6189c1a2ec6f66566
-R 4eacabb789e62917f709201f03eadd53
-U dan
-Z f60ed4f30cad7188918c7dd18fc1b985
+P ad7063aa1a0db32cdbe71815545b2edca57d3bcc
+R 8d9410cfb98bb3b10637c181b910724f
+T *branch * user-auth
+T *sym-user-auth *
+T -sym-trunk *
+U drh
+Z 7af3a6ca660957a95167232843af8c9e

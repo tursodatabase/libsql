@@ -988,6 +988,35 @@ struct FuncDefHash {
   FuncDef *a[23];       /* Hash table for functions */
 };
 
+#ifdef SQLITE_USER_AUTHENTICATION
+/*
+** Information held in the "sqlite3" database connection object and used
+** to manage user authentication.
+*/
+typedef struct sqlite3_userauth sqlite3_userauth;
+struct sqlite3_userauth {
+  u8 authFlags;                 /* Status flags for user authentication */
+  int nAuthPW;                  /* Size of the zAuthPW in bytes */
+  char *zAuthPW;                /* Password used to authenticate */
+  char *zAuthUser;              /* User name used to authenticate */
+};
+
+/* Allowed values for sqlite3_userauth.authFlags */
+#define UAUTH_Ovrd        0x01  /* Do not enforce access restrictions */
+#define UAUTH_Auth        0x02  /* True if the user has authenticated */
+#define UAUTH_Admin       0x04  /* True if the user is an administrator */
+#define UAUTH_AuthReqd    0x08  /* True if main has an sqlite_user table */
+
+/* Macros for accessing sqlite3.auth.authFlags */
+#define DbIsAuth(D)       (((D)->auth.authFlags&UAUTH_Auth)!=0)
+#define DbIsAdmin(D)      (((D)->auth.authFlags&UAUTH_Admin)!=0)
+
+/* Functions used only by user authorization logic */
+int sqlite3UserAuthTable(const char*);
+
+#endif /* SQLITE_USER_AUTHENTICATION */
+
+
 /*
 ** Each database connection is an instance of the following structure.
 */
@@ -1082,7 +1111,6 @@ struct sqlite3 {
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
   i64 nDeferredImmCons;         /* Net deferred immediate constraints */
   int *pnBytesFreed;            /* If not NULL, increment this in DbFree() */
-
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   /* The following variables are all protected by the STATIC_MASTER 
   ** mutex, not by sqlite3.mutex. They are used by code in notify.c. 
@@ -1099,6 +1127,9 @@ struct sqlite3 {
   void *pUnlockArg;                     /* Argument to xUnlockNotify */
   void (*xUnlockNotify)(void **, int);  /* Unlock notify callback */
   sqlite3 *pNextBlocked;        /* Next in list of all blocked connections */
+#endif
+#ifdef SQLITE_USER_AUTHENTICATION
+  sqlite3_userauth auth;        /* User authentication information */
 #endif
 };
 

@@ -271,6 +271,16 @@ void sqlite3NestedParse(Parse *pParse, const char *zFormat, ...){
   pParse->nested--;
 }
 
+#if SQLITE_USER_AUTHENTICATION
+/*
+** Return TRUE if zTable is the name of the system table that stores the
+** list of users and their access credentials.
+*/
+int sqlite3UserAuthTable(const char *zTable){
+  return sqlite3_stricmp(zTable, "sqlite_user")==0;
+}
+#endif
+
 /*
 ** Locate the in-memory structure that describes a particular database
 ** table given the name of that table and (optionally) the name of the
@@ -289,6 +299,11 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   assert( zName!=0 );
   /* All mutexes are required for schema access.  Make sure we hold them. */
   assert( zDatabase!=0 || sqlite3BtreeHoldsAllMutexes(db) );
+#if SQLITE_USER_AUTHENTICATION
+  /* Only the admin user is allowed to know that the sqlite_user table
+  ** exists */
+  if( DbIsAdmin(db)==0 && sqlite3UserAuthTable(zName)!=0 ) return 0;
+#endif
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
@@ -2867,6 +2882,9 @@ Index *sqlite3CreateIndex(
   assert( pTab!=0 );
   assert( pParse->nErr==0 );
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
+#if SQLITE_USER_AUTHENTICATION
+       && sqlite3UserAuthTable(pTab->zName)==0
+#endif
        && sqlite3StrNICmp(&pTab->zName[7],"altertab_",9)!=0 ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;
