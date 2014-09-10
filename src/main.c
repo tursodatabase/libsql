@@ -2570,10 +2570,6 @@ static int openDatabase(
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(db, 0);
 
-#if SQLITE_USER_AUTHENTICATION
-  db->auth.authFlags = UAUTH_Auth|UAUTH_Admin;
-#endif
-
   /* The default safety_level for the main database is 'full'; for the temp
   ** database it is 'NONE'. This matches the pager layer defaults.  
   */

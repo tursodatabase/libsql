@@ -995,24 +995,21 @@ struct FuncDefHash {
 */
 typedef struct sqlite3_userauth sqlite3_userauth;
 struct sqlite3_userauth {
-  u8 authFlags;                 /* Status flags for user authentication */
+  u8 authLevel;                 /* Current authentication level */
   int nAuthPW;                  /* Size of the zAuthPW in bytes */
   char *zAuthPW;                /* Password used to authenticate */
   char *zAuthUser;              /* User name used to authenticate */
 };
 
-/* Allowed values for sqlite3_userauth.authFlags */
-#define UAUTH_Ovrd        0x01  /* Do not enforce access restrictions */
-#define UAUTH_Auth        0x02  /* True if the user has authenticated */
-#define UAUTH_Admin       0x04  /* True if the user is an administrator */
-#define UAUTH_AuthReqd    0x08  /* True if main has an sqlite_user table */
-
-/* Macros for accessing sqlite3.auth.authFlags */
-#define DbIsAuth(D)       (((D)->auth.authFlags&UAUTH_Auth)!=0)
-#define DbIsAdmin(D)      (((D)->auth.authFlags&UAUTH_Admin)!=0)
+/* Allowed values for sqlite3_userauth.authLevel */
+#define UAUTH_Unknown     0     /* Authentication not yet checked */
+#define UAUTH_Fail        1     /* User authentication failed */
+#define UAUTH_User        2     /* Authenticated as a normal user */
+#define UAUTH_Admin       3     /* Authenticated as an administrator */
 
 /* Functions used only by user authorization logic */
 int sqlite3UserAuthTable(const char*);
+int sqlite3UserAuthCheckLogin(sqlite3*,const char*,u8*);
 
 #endif /* SQLITE_USER_AUTHENTICATION */
 

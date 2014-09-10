@@ -302,7 +302,9 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
 #if SQLITE_USER_AUTHENTICATION
   /* Only the admin user is allowed to know that the sqlite_user table
   ** exists */
-  if( DbIsAdmin(db)==0 && sqlite3UserAuthTable(zName)!=0 ) return 0;
+  if( db->auth.authLevel<UAUTH_Admin && sqlite3UserAuthTable(zName)!=0 ){
+    return 0;
+  }
 #endif
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
@@ -348,6 +350,12 @@ Table *sqlite3LocateTable(
     }
     pParse->checkSchema = 1;
   }
+#if SQLITE_USER_AUTHENICATION
+  else if( pParse->db->auth.authLevel<UAUTH_User ){
+    sqlite3ErrorMsg(pParse, "user not authenticated");
+    p = 0;
+  }
+#endif
   return p;
 }
 

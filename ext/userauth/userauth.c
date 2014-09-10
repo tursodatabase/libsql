@@ -22,6 +22,7 @@
 ** directory as this file for additional information.
 */
 #ifdef SQLITE_USER_AUTHENTICATION
+#include "sqliteInt.h"
 
 /*
 ** Prepare an SQL statement for use by the user authentication logic.
@@ -42,10 +43,7 @@ static sqlite3_stmt *sqlite3UserAuthPrepare(
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( zSql==0 ) return 0;
-  savedFlags = db->auth.authFlags;
-  db->auth.authFlags |= UAUTH_Ovrd;
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  db->auth.authFlags = savedFlags;
   sqlite3_free(zSql);
   if( rc ){
     sqlite3_finalize(pStmt);
@@ -56,49 +54,67 @@ static sqlite3_stmt *sqlite3UserAuthPrepare(
 
 /*
 ** Check to see if database zDb has a "sqlite_user" table and if it does
-** whether that table can authenticate zUser with nPw,zPw.  
+** whether that table can authenticate zUser with nPw,zPw.  Write one of
+** the UAUTH_* user authorization level codes into *peAuth and return a
+** result code.
 */
-static int sqlite3UserAuthCheckLogin(
+static int userAuthCheckLogin(
   sqlite3 *db,               /* The database connection to check */
   const char *zDb,           /* Name of specific database to check */
-  const char *zUser,         /* User name */
-  int nPw,                   /* Size of password in bytes */
-  const char *zPw,           /* Password */
-  int *pbOk                  /* OUT: write boolean result here */
+  u8 *peAuth                 /* OUT: One of UAUTH_* constants */
 ){
   sqlite3_stmt *pStmt;
-  char *zSql;
   int rc;
-  int iResult;
 
-  *pbOk = 0;
-  iResult = 0;
+  *peAuth = UAUTH_Unknown;
   pStmt = sqlite3UserAuthPrepare(db, 
               "SELECT 1 FROM \"%w\".sqlite_master "
               " WHERE name='sqlite_user' AND type='table'", zDb);
-  if( pStmt==0 ) return SQLITE_NOMEM;
-  rc = sqlite3_step(pStmt):
+  if( pStmt==0 ){
+    return SQLITE_NOMEM;
+  }
+  rc = sqlite3_step(pStmt);
   sqlite3_finalize(pStmt);
   if( rc==SQLITE_DONE ){
-    *pbOk = 1;
+    *peAuth = UAUTH_Admin;  /* No sqlite_user table.  Everybody is admin. */
     return SQLITE_OK;
   }
-  if( rc!=SQLITE_OK ){
+  if( rc!=SQLITE_ROW ){
     return rc;
+  }
+  if( db->auth.zAuthUser==0 ){
+    *peAuth = UAUTH_Fail;
+    return SQLITE_OK;
   }
   pStmt = sqlite3UserAuthPrepare(db,
             "SELECT pw=sqlite_crypt(?1,pw), isAdmin FROM \"%w\".sqlite_user"
             " WHERE uname=?2", zDb);
   if( pStmt==0 ) return SQLITE_NOMEM;
-  sqlite3_bind_blob(pStmt, 1, zPw, nPw, SQLITE_STATIC);
-  sqlite3_bind_text(pStmt, 2, zUser, -1, SQLITE_STATIC);
-  rc = sqlite_step(pStmt);
+  sqlite3_bind_blob(pStmt, 1, db->auth.zAuthPW, db->auth.nAuthPW,SQLITE_STATIC);
+  sqlite3_bind_text(pStmt, 2, db->auth.zAuthUser, -1, SQLITE_STATIC);
+  rc = sqlite3_step(pStmt);
   if( rc==SQLITE_ROW && sqlite3_column_int(pStmt,0) ){
-    *pbOk = sqlite3_column_int(pStmt, 1);
+    *peAuth = sqlite3_column_int(pStmt, 1) + UAUTH_User;
+  }else{
+    *peAuth = UAUTH_Fail;
   }
   sqlite3_finalize(pStmt);
   return rc;
 }
+int sqlite3UserAuthCheckLogin(
+  sqlite3 *db,               /* The database connection to check */
+  const char *zDb,           /* Name of specific database to check */
+  u8 *peAuth                 /* OUT: One of UAUTH_* constants */
+){
+  int rc;
+  u8 savedAuthLevel;
+  savedAuthLevel = db->auth.authLevel;
+  db->auth.authLevel = UAUTH_Admin;
+  rc = userAuthCheckLogin(db, zDb, peAuth);
+  db->auth.authLevel = savedAuthLevel;
+  return rc;
+}
+
 
 /*
 ** If a database contains the SQLITE_USER table, then the
@@ -116,29 +132,29 @@ int sqlite3_user_authenticate(
   sqlite3 *db,           /* The database connection */
   const char *zUsername, /* Username */
   int nPW,               /* Number of bytes in aPW[] */
-  const void *aPW        /* Password or credentials */
+  const char *zPW        /* Password or credentials */
 ){
-  int bOk = 0;
   int rc;
-
-  rc = sqlite3UserAuthCheckLogin(db, zUsername, nPw, zPw, &bOk);
-  if( bOk ){
-    db->auth.authFlags = bOk==2 ? UAUTH_Auth|UAUTH_Admin : UAUTH_Auth;
-    sqlite3_free(db->auth.zAuthUser);
-    db->auth.zAuthUser = sqlite3_malloc("%s", zUsername);
-    sqlite3_free(db->auth.zPw);
-    db->auth.zPw = sqlite3_malloc( nPw+1 );
-    if( db->auth.zPw ){
-      memcpy(db->auth.zPw,zPw,nPw);
-      db->auth.nPw = nPw;
-      rc = SQLITE_OK;
-    }else{
-      rc = SQLITE_NOMEM;
-    }
-  }else{
-    db->auth.authFlags = 0;
+  u8 authLevel = UAUTH_Fail;
+  db->auth.authLevel = UAUTH_Unknown;
+  sqlite3_free(db->auth.zAuthUser);
+  sqlite3_free(db->auth.zAuthPW);
+  memset(&db->auth, 0, sizeof(db->auth));
+  db->auth.zAuthUser = sqlite3_mprintf("%s", zUsername);
+  if( db->auth.zAuthUser==0 ) return SQLITE_NOMEM;
+  db->auth.zAuthPW = sqlite3_malloc( nPW+1 );
+  if( db->auth.zAuthPW==0 ) return SQLITE_NOMEM;
+  memcpy(db->auth.zAuthPW,zPW,nPW);
+  db->auth.nAuthPW = nPW;
+  rc = sqlite3UserAuthCheckLogin(db, "main", &authLevel);
+  db->auth.authLevel = authLevel;
+  if( rc ){
+    return rc;           /* OOM error, I/O error, etc. */
   }
-  return rc;
+  if( authLevel<UAUTH_User ){
+    return SQLITE_AUTH;  /* Incorrect username and/or password */
+  }
+  return SQLITE_OK;      /* Successful login */
 }
 
 /*
@@ -158,8 +174,7 @@ int sqlite3_user_add(
   int nPW,               /* Number of bytes in aPW[] */
   const void *aPW        /* Password or credentials */
 ){
-  if( !DbIsAdmin(db) ) return SQLITE_ERROR;
-  
+  if( db->auth.authLevel<UAUTH_Admin ) return SQLITE_ERROR;
   return SQLITE_OK;
 }
 
@@ -177,6 +192,9 @@ int sqlite3_user_change(
   int nPW,               /* Number of bytes in aPW[] */
   const void *aPW        /* Modified password or credentials */
 ){
+  if( db->auth.authLevel<UAUTH_User ) return SQLITE_ERROR;
+  if( strcmp(db->auth.zAuthUser, zUsername)!=0
+       && db->auth.authLevel<UAUTH_Admin ) return SQLITE_ERROR;
   return SQLITE_OK;
 }
 
@@ -191,6 +209,7 @@ int sqlite3_user_delete(
   sqlite3 *db,           /* Database connection */
   const char *zUsername  /* Username to remove */
 ){
+  if( db->auth.authLevel<UAUTH_Admin ) return SQLITE_ERROR;
   return SQLITE_OK;
 }
 

@@ -206,9 +206,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   if( ALWAYS(pTab) ){
     pTab->tabFlags |= TF_Readonly;
   }
-#if SQLITE_USER_AUTHENTICATION
-  db->auth.authFlags = UAUTH_Auth|UAUTH_Admin;
-#endif
 
   /* Create a cursor to hold the database open
   */
@@ -364,14 +361,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     DbSetProperty(db, iDb, DB_SchemaLoaded);
     rc = SQLITE_OK;
   }
-#if SQLITE_USER_AUTHENTICATION
-  if( rc==SQLITE_OK && iDb!=1 ){
-    if( sqlite3FindTable(db, "sqlite_user", db->aDb[iDb].zName)!=0 ){
-      db->auth.authFlags = UAUTH_AuthReqd;
-    }
-  }
-#endif
-
 
   /* Jump here for an error that occurs after successfully allocating
   ** curMain and calling sqlite3BtreeEnter(). For an error that occurs
@@ -420,8 +409,8 @@ int sqlite3Init(sqlite3 *db, char **pzErrMsg){
   ** schema may contain references to objects in other databases.
   */
 #ifndef SQLITE_OMIT_TEMPDB
-  if( rc==SQLITE_OK && ALWAYS(db->nDb>1)
-                    && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
+  assert( db->nDb>1 );
+  if( rc==SQLITE_OK && !DbHasProperty(db, 1, DB_SchemaLoaded) ){
     rc = sqlite3InitOne(db, 1, pzErrMsg);
     if( rc ){
       sqlite3ResetOneSchema(db, 1);
@@ -725,23 +714,26 @@ static int sqlite3LockAndPrepare(
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
+#if SQLITE_USER_AUTHENTICATION
+  if( db->auth.authLevel<UAUTH_User ){
+    if( db->auth.authLevel==UAUTH_Unknown ){
+      u8 authLevel = UAUTH_Fail;
+      sqlite3UserAuthCheckLogin(db, "main", &authLevel);
+      db->auth.authLevel = authLevel;
+    }
+    if( db->auth.authLevel<UAUTH_User ){
+      sqlite3ErrorWithMsg(db, SQLITE_ERROR, "user not authenticated");
+      sqlite3_mutex_leave(db->mutex);
+      return SQLITE_ERROR;
+    }
+  }
+#endif
   sqlite3BtreeEnterAll(db);
   rc = sqlite3Prepare(db, zSql, nBytes, saveSqlFlag, pOld, ppStmt, pzTail);
   if( rc==SQLITE_SCHEMA ){
     sqlite3_finalize(*ppStmt);
     rc = sqlite3Prepare(db, zSql, nBytes, saveSqlFlag, pOld, ppStmt, pzTail);
   }
-#if SQLITE_USER_AUTHENTICATION
-  assert( rc==SQLITE_OK || *ppStmt==0 );
-printf("rc=%d init=%d auth=%d sql=[%.50s]\n", rc, db->init.busy, db->auth.authFlags, zSql);
-fflush(stdout);
-  if( rc==SQLITE_OK && !DbIsAuth(db) && db->init.busy==0 ){
-    sqlite3_finalize(*ppStmt);
-    *ppStmt = 0;
-    sqlite3ErrorWithMsg(db, SQLITE_ERROR, "user not authenticated");
-    rc = SQLITE_ERROR;
-  }
-#endif
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
   assert( rc==SQLITE_OK || *ppStmt==0 );
