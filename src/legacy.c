@@ -125,7 +125,7 @@ exec_out:
   sqlite3DbFree(db, azCols);
 
   rc = sqlite3ApiExit(db, rc);
-  if( rc!=SQLITE_OK && ALWAYS(rc==sqlite3_errcode(db)) && pzErrMsg ){
+  if( rc!=SQLITE_OK && pzErrMsg ){
     int nErrMsg = 1 + sqlite3Strlen30(sqlite3_errmsg(db));
     *pzErrMsg = sqlite3Malloc(nErrMsg);
     if( *pzErrMsg ){

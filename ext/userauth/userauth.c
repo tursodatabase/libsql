@@ -39,12 +39,15 @@ static sqlite3_stmt *sqlite3UserAuthPrepare(
   char *zSql;
   int rc;
   va_list ap;
+  int savedFlags = db->flags;
 
   va_start(ap, zFormat);
   zSql = sqlite3_vmprintf(zFormat, ap);
   va_end(ap);
   if( zSql==0 ) return 0;
+  db->flags |= SQLITE_WriteSchema;
   rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
+  db->flags = savedFlags;
   sqlite3_free(zSql);
   if( rc ){
     sqlite3_finalize(pStmt);
@@ -60,6 +63,11 @@ static int userTableExists(sqlite3 *db, const char *zDb){
   int rc;
   sqlite3_mutex_enter(db->mutex);
   sqlite3BtreeEnterAll(db);
+  if( db->init.busy==0 ){
+    char *zErr = 0;
+    sqlite3Init(db, &zErr);
+    sqlite3DbFree(db, zErr);
+  }
   rc = sqlite3FindTable(db, "sqlite_user", zDb)!=0;
   sqlite3BtreeLeaveAll(db);
   sqlite3_mutex_leave(db->mutex);
@@ -83,6 +91,7 @@ static int userAuthCheckLogin(
   *peAuth = UAUTH_Unknown;
   if( !userTableExists(db, "main") ){
     *peAuth = UAUTH_Admin;  /* No sqlite_user table.  Everybody is admin. */
+    return SQLITE_OK;
   }
   if( db->auth.zAuthUser==0 ){
     *peAuth = UAUTH_Fail;
@@ -100,8 +109,7 @@ static int userAuthCheckLogin(
   }else{
     *peAuth = UAUTH_Fail;
   }
-  sqlite3_finalize(pStmt);
-  return rc;
+  return sqlite3_finalize(pStmt);
 }
 int sqlite3UserAuthCheckLogin(
   sqlite3 *db,               /* The database connection to check */
@@ -230,8 +238,8 @@ int sqlite3_user_add(
     if( rc ) return rc;
   }
   pStmt = sqlite3UserAuthPrepare(db, 
-            "INSERT INTO sqlite_user(uname,isAdmin,sqlite_crypt(pw,NULL))"
-            " VALUES(%Q,%d,?1)",
+            "INSERT INTO sqlite_user(uname,isAdmin,pw)"
+            " VALUES(%Q,%d,sqlite_crypt(?1,NULL))",
             zUsername, isAdmin!=0);
   if( pStmt==0 ) return SQLITE_NOMEM;
   sqlite3_bind_blob(pStmt, 1, aPW, nPW, SQLITE_STATIC);
@@ -259,10 +267,31 @@ int sqlite3_user_change(
   int nPW,               /* Number of bytes in aPW[] */
   const char *aPW        /* Modified password or credentials */
 ){
-  if( db->auth.authLevel<UAUTH_User ) return SQLITE_AUTH;
-  if( strcmp(db->auth.zAuthUser, zUsername)!=0
-       && db->auth.authLevel<UAUTH_Admin ) return SQLITE_AUTH;
-  return SQLITE_OK;
+  sqlite3_stmt *pStmt;
+  if( db->auth.authLevel<UAUTH_User ){
+    /* Must be logged in to make a change */
+    return SQLITE_AUTH;
+  }
+  if( strcmp(db->auth.zAuthUser, zUsername)!=0 ){
+    if( db->auth.authLevel<UAUTH_Admin ){
+      /* Must be an administrator to change a different user */
+      return SQLITE_AUTH;
+    }
+  }else if( isAdmin!=(db->auth.authLevel==UAUTH_Admin) ){
+    /* Cannot change the isAdmin setting for self */
+    return SQLITE_AUTH;
+  }
+  if( !userTableExists(db, "main") ){
+    /* This routine is a no-op if the user to be modified does not exist */
+    return SQLITE_OK;
+  }
+  pStmt = sqlite3UserAuthPrepare(db,
+            "UPDATE sqlite_user SET isAdmin=%d, pw=sqlite_crypt(?1,NULL)"
+            " WHERE uname=%Q", isAdmin, zUsername);
+  if( pStmt==0 ) return SQLITE_NOMEM;
+  sqlite3_bind_blob(pStmt, 1, aPW, nPW, SQLITE_STATIC);
+  sqlite3_step(pStmt);
+  return sqlite3_finalize(pStmt);
 }
 
 /*
@@ -276,9 +305,24 @@ int sqlite3_user_delete(
   sqlite3 *db,           /* Database connection */
   const char *zUsername  /* Username to remove */
 ){
-  if( db->auth.authLevel<UAUTH_Admin ) return SQLITE_AUTH;
-  if( strcmp(db->auth.zAuthUser, zUsername)==0 ) return SQLITE_AUTH;
-  return SQLITE_OK;
+  sqlite3_stmt *pStmt;
+  if( db->auth.authLevel<UAUTH_Admin ){
+    /* Must be an administrator to delete a user */
+    return SQLITE_AUTH;
+  }
+  if( strcmp(db->auth.zAuthUser, zUsername)==0 ){
+    /* Cannot delete self */
+    return SQLITE_AUTH;
+  }
+  if( !userTableExists(db, "main") ){
+    /* This routine is a no-op if the user to be deleted does not exist */
+    return SQLITE_OK;
+  }
+  pStmt = sqlite3UserAuthPrepare(db,
+              "SELECT FROM sqlite_user WHERE uname=%Q", zUsername);
+  if( pStmt==0 ) return SQLITE_NOMEM;
+  sqlite3_step(pStmt);
+  return sqlite3_finalize(pStmt);
 }
 
 #endif /* SQLITE_USER_AUTHENTICATION */

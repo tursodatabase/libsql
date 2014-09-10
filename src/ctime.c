@@ -368,6 +368,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_USE_ALLOCA
   "USE_ALLOCA",
 #endif
+#ifdef SQLITE_USER_AUTHENTICATION
+  "USER_AUTHENTICATION",
+#endif
 #ifdef SQLITE_WIN32_MALLOC
   "WIN32_MALLOC",
 #endif

@@ -1,5 +1,5 @@
-C Add\sthe\s".user"\sshell\scommand\sand\simplement\sthe\ssqlite3_user_add()\nroutine.\s\sIncremental\scheck-in.\s\sThe\scode\scompiles\sbut\sdoes\snot\swork.
-D 2014-09-10T19:01:14.206
+C Complete\sthe\simplementation\sof\sthe\svarious\sAPIs.\s\sFix\sseveral\sproblems.\nThis\sis\sanother\sincremental\scheck-in\sthat\sdoes\snot\scompletely\swork.
+D 2014-09-10T22:46:46.526
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,9 +144,9 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 83349d519fe5f518b3ea025d18dd1fe51b1684bd
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F ext/userauth/sqlite3userauth.h 6e15b0006e7b07b7b008c9f9297b3781a7514337 w ext/userauth/userauth.h
+F ext/userauth/sqlite3userauth.h 6e15b0006e7b07b7b008c9f9297b3781a7514337
 F ext/userauth/user-auth.txt f471c5a363ab0682b109d85982ea857f9a144ccc
-F ext/userauth/userauth.c 5a3f8a7ac79eb1315c7e0313ff87d8c30e33d837
+F ext/userauth/userauth.c e14ab212e1e2cd3f3a5d324f2c3e0b0c5a950c86
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -177,7 +177,7 @@ F src/btreeInt.h e0ecb5dba292722039a7540beb3fc448103273cc
 F src/build.c 3a61555d469de2e0f5bcd1ac4d58a2a19ab093d5
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
-F src/ctime.c 0231df905e2c4abba4483ee18ffc05adc321df2a
+F src/ctime.c 16cd19215d9fd849ee2b7509b092f2e0bbd6a958
 F src/date.c 57a7f9ba9f6b4d5268f5e411739066a611f99036
 F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
 F src/expr.c 441a7e24e2f7bea9475778fa8acce9e8a69ca8f0
@@ -190,7 +190,7 @@ F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 0b073fade178d9dbd990bbb32b4438e50b884a06
 F src/journal.c b4124532212b6952f42eb2c12fa3c25701d8ba8d
-F src/legacy.c 87c92f4a08e2f70220e3b22a9c3b2482d36a134a
+F src/legacy.c ba1863ea58c4c840335a84ec276fc2b25e22bc4e
 F src/lempar.c cdf0a000315332fc9b50b62f3b5e22e080a0952b
 F src/loadext.c 31c2122b7dd05a179049bbf163fd4839f181cbab
 F src/main.c d15621461fb0c52675eba2b650492ed1beef69ab
@@ -221,7 +221,7 @@ F src/pcache.c 2048affdb09a04478b5fc6e64cb1083078d369be
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
 F src/pragma.c 3b7b1a5e90804006f44c65464c7032ee6a1d24e3
-F src/prepare.c 8c2f992a3b3949ab0bf9d4862f7a271f0af0bd5b
+F src/prepare.c 10dd9833d7aa992baf84b8640224853576119d84
 F src/printf.c e74925089a85e3c9f0e315595f41c139d3d118c2
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0d1621e45fffe4b4396477cf46e41a84b0145ffb
@@ -249,7 +249,7 @@ F src/test_async.c 21e11293a2f72080eda70e1124e9102044531cd8
 F src/test_autoext.c dea8a01a7153b9adc97bd26161e4226329546e12
 F src/test_backup.c 3875e899222b651e18b662f86e0e50daa946344e
 F src/test_btree.c 2e9978eca99a9a4bfa8cae949efb00886860a64f
-F src/test_config.c d5f00627c4f47515a57f905806558153cccd7253
+F src/test_config.c 6f721f0337b96d58e81ff69bba101113c8168c2b
 F src/test_demovfs.c 69b2085076654ebc18014cbc6386f04409c959a9
 F src/test_devsym.c e7498904e72ba7491d142d5c83b476c4e76993bc
 F src/test_fs.c ced436e3d4b8e4681328409b8081051ce614e28f
@@ -1196,7 +1196,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P c8171ecd0d6f097c9e95d5f6643bae8d67f44750
-R f252935e505dbc9ddcbfc78d0487cc51
+P a0455f9deb603bf91684158d911269622720fc1a
+R 7c5d50077d463af5ab8f09588f919ad0
 U drh
-Z 5adba3159d6bf335715850631d1526a9
+Z 0eb3e0d5d27e81783efc050a8d458d7f
