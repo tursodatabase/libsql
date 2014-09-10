@@ -1,5 +1,5 @@
-C Further\sideas\son\suser\sauthentication.\s\sNot\syet\sworking\scode.
-D 2014-09-10T17:34:28.937
+C Add\sthe\s".user"\sshell\scommand\sand\simplement\sthe\ssqlite3_user_add()\nroutine.\s\sIncremental\scheck-in.\s\sThe\scode\scompiles\sbut\sdoes\snot\swork.
+D 2014-09-10T19:01:14.206
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -144,13 +144,13 @@ F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/sqlite3rtree.h 83349d519fe5f518b3ea025d18dd1fe51b1684bd
 F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
+F ext/userauth/sqlite3userauth.h 6e15b0006e7b07b7b008c9f9297b3781a7514337 w ext/userauth/userauth.h
 F ext/userauth/user-auth.txt f471c5a363ab0682b109d85982ea857f9a144ccc
-F ext/userauth/userauth.c 0d24bcd4a18b354797b9cc6f8e4ba152d385cebe
-F ext/userauth/userauth.h efbfb68ff083749ad63b12dcb5877b936c3458d6
+F ext/userauth/userauth.c 5a3f8a7ac79eb1315c7e0313ff87d8c30e33d837
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
-F main.mk ac53fd5d61941c0ff1f05e710999b64ffd03f069
+F main.mk bbc8b6000ed143a1a8d31d3b4995c359a3188fa1
 F mkopcodec.awk c2ff431854d702cdd2d779c9c0d1f58fa16fa4ea
 F mkopcodeh.awk c6b3fa301db6ef7ac916b14c60868aeaec1337b5
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
@@ -183,7 +183,7 @@ F src/delete.c fae81cc2eb14b75267d4f47d3cfc9ae02aae726f
 F src/expr.c 441a7e24e2f7bea9475778fa8acce9e8a69ca8f0
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c da985ae673efef2c712caef825a5d2edb087ead7
-F src/func.c 0517037766e18eff7dce298e6b3a8e6311df75ec
+F src/func.c 1b7ac915eb83255eba90906cc2e317b1f29ae5c9
 F src/global.c 5110fa12e09729b84eee0191c984ec4008e21937
 F src/hash.c 4263fbc955f26c2e8cdc0cf214bc42435aa4e4f5
 F src/hash.h c8f3c31722cf3277d03713909761e152a5b81094
@@ -221,17 +221,17 @@ F src/pcache.c 2048affdb09a04478b5fc6e64cb1083078d369be
 F src/pcache.h 9b559127b83f84ff76d735c8262f04853be0c59a
 F src/pcache1.c dab8ab930d4a73b99768d881185994f34b80ecaa
 F src/pragma.c 3b7b1a5e90804006f44c65464c7032ee6a1d24e3
-F src/prepare.c 51ca716a2f73364d8f57c69c89423a0831d17572
+F src/prepare.c 8c2f992a3b3949ab0bf9d4862f7a271f0af0bd5b
 F src/printf.c e74925089a85e3c9f0e315595f41c139d3d118c2
 F src/random.c d10c1f85b6709ca97278428fd5db5bbb9c74eece
 F src/resolve.c 0d1621e45fffe4b4396477cf46e41a84b0145ffb
 F src/rowset.c eccf6af6d620aaa4579bd3b72c1b6395d9e9fa1e
 F src/select.c b4457526cee73c0b69fad42f799f619b1d5a8a8a
-F src/shell.c 713cef4d73c05fc8e12f4960072329d767a05d50
-F src/sqlite.h.in 64a77f2822f1325b12050972003184f99b655a0f
+F src/shell.c 4dac2ec625fb15a51b06ab998e7cec8c1e6a40eb
+F src/sqlite.h.in 577876beef2264a0b031c0d744c81855983088f9
 F src/sqlite3.rc 992c9f5fb8285ae285d6be28240a7e8d3a7f2bad
 F src/sqlite3ext.h 1f40357fb9b12a80c5a3b2b109fd249b009213d4
-F src/sqliteInt.h 10a1f056b6b40449a81cf5d708bc0d9fac053c53
+F src/sqliteInt.h fdc23ef0c5475888d0e532204a7451507ce17206
 F src/sqliteLimit.h 164b0e6749d31e0daa1a4589a169d31c0dec7b3d
 F src/status.c 7ac05a5c7017d0b9f0b4bcd701228b784f987158
 F src/table.c 4e28a53e66bad8d014a510ef0205f5497c712b08
@@ -1196,7 +1196,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 8440f093bac19a41d44ee352744354eab897fe4e
-R 6f268f8f48a352ef36f94cb71204780d
+P c8171ecd0d6f097c9e95d5f6643bae8d67f44750
+R f252935e505dbc9ddcbfc78d0487cc51
 U drh
-Z 6484e1728dcc8ed1c2a7dbcf5e6f2393
+Z 5adba3159d6bf335715850631d1526a9

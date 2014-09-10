@@ -46,7 +46,7 @@
 #
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
-TCCX += -I$(TOP)/ext/async
+TCCX += -I$(TOP)/ext/async -I$(TOP)/ext/userauth
 
 # Object files for the SQLite library.
 #
@@ -216,7 +216,7 @@ SRC += \
   $(TOP)/ext/rtree/rtree.c
 SRC += \
   $(TOP)/ext/userauth/userauth.c \
-  $(TOP)/ext/userauth/userauth.h
+  $(TOP)/ext/userauth/sqlite3userauth.h
 
 # Generated source code files
 #
@@ -380,7 +380,7 @@ EXTHDR += \
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
 EXTHDR += \
-  $(TOP)/ext/userauth/userauth.h
+  $(TOP)/ext/userauth/sqlite3userauth.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.

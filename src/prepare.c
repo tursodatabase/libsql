@@ -722,7 +722,7 @@ static int sqlite3LockAndPrepare(
       db->auth.authLevel = authLevel;
     }
     if( db->auth.authLevel<UAUTH_User ){
-      sqlite3ErrorWithMsg(db, SQLITE_ERROR, "user not authenticated");
+      sqlite3ErrorWithMsg(db, SQLITE_AUTH_USER, "user not authenticated");
       sqlite3_mutex_leave(db->mutex);
       return SQLITE_ERROR;
     }
