@@ -118,11 +118,26 @@ int sqlite3UserAuthCheckLogin(
 ){
   int rc;
   u8 savedAuthLevel;
+  assert( zDb!=0 );
+  assert( peAuth!=0 );
   savedAuthLevel = db->auth.authLevel;
   db->auth.authLevel = UAUTH_Admin;
   rc = userAuthCheckLogin(db, zDb, peAuth);
   db->auth.authLevel = savedAuthLevel;
   return rc;
+}
+
+/*
+** If the current authLevel is UAUTH_Unknown, the take actions to figure
+** out what authLevel should be
+*/
+void sqlite3UserAuthInit(sqlite3 *db){
+  if( db->auth.authLevel==UAUTH_Unknown ){
+    u8 authLevel = UAUTH_Fail;
+    sqlite3UserAuthCheckLogin(db, "main", &authLevel);
+    db->auth.authLevel = authLevel;
+    if( authLevel<UAUTH_Admin ) db->flags &= ~SQLITE_WriteSchema;
+  }
 }
 
 /*
@@ -223,6 +238,7 @@ int sqlite3_user_add(
 ){
   sqlite3_stmt *pStmt;
   int rc;
+  sqlite3UserAuthInit(db);
   if( db->auth.authLevel<UAUTH_Admin ) return SQLITE_AUTH;
   if( !userTableExists(db, "main") ){
     if( !isAdmin ) return SQLITE_AUTH;

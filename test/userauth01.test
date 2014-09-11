@@ -209,14 +209,14 @@ do_test userauth01-1.51 {
 do_test userauth01-1.60 {
   forcedelete test3.db
   sqlite3 db3 test3.db
+  sqlite3_user_add db3 alice xyzzy-alice 1
+} {SQLITE_OK}
+do_test userauth01-1.61 {
   db3 eval {
     CREATE TABLE t3(a,b,c); INSERT INTO t3 VALUES(1,2,3);
     SELECT * FROM t3;
   }
 } {1 2 3}
-do_test userauth01-1.61 {
-  sqlite3_user_add db3 alice xyzzy-alice 1
-} {SQLITE_OK}
 do_test userauth01-1.62 {
   db eval {
     ATTACH 'test3.db' AS aux;
@@ -237,5 +237,21 @@ do_test userauth01-1.64 {
 do_test userauth01-1.65 {
   db eval {PRAGMA database_list}
 } {~/test3.db/}
+
+# The sqlite3_set_authorizer() callback is modified to take a 7th parameter
+# which is the username of the currently logged in user, or NULL for a
+# no-authentication-required database.
+#
+proc auth {args} {
+  lappend ::authargs $args
+  return SQLITE_OK
+}
+do_test authuser01-2.1 {
+  unset -nocomplain ::authargs
+  db auth auth
+  db eval {SELECT x FROM t1}
+  set ::authargs
+} {/SQLITE_SELECT {} {} {} {} alice/}  
+
 
 finish_test

@@ -158,18 +158,11 @@ void sqlite3FinishCoding(Parse *pParse){
 
 #if SQLITE_USER_AUTHENTICATION
     if( pParse->nTableLock>0 && db->init.busy==0 ){
+      sqlite3UserAuthInit(db);
       if( db->auth.authLevel<UAUTH_User ){
-        if( db->auth.authLevel==UAUTH_Unknown ){
-          u8 authLevel = UAUTH_Fail;
-          sqlite3UserAuthCheckLogin(db, "main", &authLevel);
-          db->auth.authLevel = authLevel;
-          if( authLevel<UAUTH_Admin ) db->flags &= ~SQLITE_WriteSchema;
-        }
-        if( db->auth.authLevel<UAUTH_User ){
-          pParse->rc = SQLITE_AUTH_USER;
-          sqlite3ErrorMsg(pParse, "user not authenticated");
-          return;
-        }
+        pParse->rc = SQLITE_AUTH_USER;
+        sqlite3ErrorMsg(pParse, "user not authenticated");
+        return;
       }
     }
 #endif

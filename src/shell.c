@@ -3445,6 +3445,7 @@ static int do_meta_command(char *zLine, ShellState *p){
       rc = 1;
       goto meta_command_exit;
     }
+    open_db(p, 0);
     if( strcmp(azArg[1],"login")==0 ){
       if( nArg!=4 ){
         fprintf(stderr, "Usage: .user login USER PASSWORD\n");

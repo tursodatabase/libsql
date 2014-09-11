@@ -1010,6 +1010,7 @@ struct sqlite3_userauth {
 /* Functions used only by user authorization logic */
 int sqlite3UserAuthTable(const char*);
 int sqlite3UserAuthCheckLogin(sqlite3*,const char*,u8*);
+void sqlite3UserAuthInit(sqlite3*);
 void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 
 #endif /* SQLITE_USER_AUTHENTICATION */
