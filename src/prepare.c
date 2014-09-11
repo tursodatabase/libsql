@@ -715,20 +715,6 @@ static int sqlite3LockAndPrepare(
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
-#if SQLITE_USER_AUTHENTICATION
-  if( db->auth.authLevel<UAUTH_User ){
-    if( db->auth.authLevel==UAUTH_Unknown ){
-      u8 authLevel = UAUTH_Fail;
-      sqlite3UserAuthCheckLogin(db, "main", &authLevel);
-      db->auth.authLevel = authLevel;
-    }
-    if( db->auth.authLevel<UAUTH_User ){
-      sqlite3ErrorWithMsg(db, SQLITE_AUTH_USER, "user not authenticated");
-      sqlite3_mutex_leave(db->mutex);
-      return SQLITE_ERROR;
-    }
-  }
-#endif
   sqlite3BtreeEnterAll(db);
   rc = sqlite3Prepare(db, zSql, nBytes, saveSqlFlag, pOld, ppStmt, pzTail);
   if( rc==SQLITE_SCHEMA ){

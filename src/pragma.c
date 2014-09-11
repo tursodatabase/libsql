@@ -1398,7 +1398,7 @@ void sqlite3Pragma(
         mask &= ~(SQLITE_ForeignKeys);
       }
 #if SQLITE_USER_AUTHENTICATION
-      if( db->auth.authLevel<UAUTH_Admin ){
+      if( db->auth.authLevel==UAUTH_User ){
         /* Do not allow non-admin users to modify the schema arbitrarily */
         mask &= ~(SQLITE_WriteSchema);
       }
