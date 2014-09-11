@@ -201,5 +201,41 @@ do_test userauth01-1.51 {
   db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
 } {alice 1 cindy 0 david 0}
 
+# When ATTACH-ing new database files to a connection, each newly attached
+# database that is an authentication-required database is checked using
+# the same username and password as supplied to the main database.  If that
+# check fails, then the ATTACH command fails with an SQLITE_AUTH error.
+#
+do_test userauth01-1.60 {
+  forcedelete test3.db
+  sqlite3 db3 test3.db
+  db3 eval {
+    CREATE TABLE t3(a,b,c); INSERT INTO t3 VALUES(1,2,3);
+    SELECT * FROM t3;
+  }
+} {1 2 3}
+do_test userauth01-1.61 {
+  sqlite3_user_add db3 alice xyzzy-alice 1
+} {SQLITE_OK}
+do_test userauth01-1.62 {
+  db eval {
+    ATTACH 'test3.db' AS aux;
+    SELECT * FROM t1, t3 ORDER BY x LIMIT 1;
+    DETACH aux;
+  }
+} {{} 1 2 3}
+do_test userauth01-1.63 {
+  sqlite3_user_change db alice pw-4-alice 1
+  sqlite3_user_authenticate db alice pw-4-alice
+  catchsql {
+    ATTACH 'test3.db' AS aux;
+  }
+} {1 {unable to open database: test3.db}}
+do_test userauth01-1.64 {
+  sqlite3_extended_errcode db
+} {SQLITE_AUTH}
+do_test userauth01-1.65 {
+  db eval {PRAGMA database_list}
+} {~/test3.db/}
 
 finish_test

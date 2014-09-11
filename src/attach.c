@@ -212,7 +212,7 @@ static void attachFunc(
     u8 newAuth = 0;
     rc = sqlite3UserAuthCheckLogin(db, zName, &newAuth);
     if( newAuth<db->auth.authLevel ){
-      rc = SQLITE_AUTH;
+      rc = SQLITE_AUTH_USER;
     }
   }
 #endif
