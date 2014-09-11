@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite3_user_add()\sinterface\sto\sinitialize\sthe\suser\nauthentication\slogic.\s\sAdd\stest\scases\sfor\sthe\sextra\sargument\son\sthe\nend\sof\sthe\sauthorizer\scallback.
-D 2014-09-11T16:19:31.719
+C Suppress\sthe\spotential\sschema\serror\sthat\soccurs\swhen\sa\snon-user-auth\nSQLite\slibrary\stries\sto\sparse\sthe\ssqlite_user\stable\sdefinition\sin\sa\nuser-auth\sdatabase.
+D 2014-09-11T16:36:43.549
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -174,7 +174,7 @@ F src/btmutex.c 49ca66250c7dfa844a4d4cb8272b87420d27d3a5
 F src/btree.c b1c1cd1cc3ae2e433a23b9a6c9ab53805707d8cd
 F src/btree.h a79aa6a71e7f1055f01052b7f821bd1c2dce95c8
 F src/btreeInt.h e0ecb5dba292722039a7540beb3fc448103273cc
-F src/build.c 555826ae03c3bc589a7b09b279c2e5ba989a4178
+F src/build.c 047d7e1d2d89fa55134fa1d6b669c9c2983c0d11
 F src/callback.c 7b44ce59674338ad48b0e84e7b72f935ea4f68b0
 F src/complete.c 535183afb3c75628b78ce82612931ac7cdf26f14
 F src/ctime.c 16cd19215d9fd849ee2b7509b092f2e0bbd6a958
@@ -1197,7 +1197,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 96ea5c0b3cd1dec81d490f2f958ebd2e47a24921
-R 279311d0c4a57cb81a913da29cc5dd35
+P 842c6da8f1a62bd13a1b4089a98b0835a46a2285
+R 7de809a255ed1cf8a77cea399ddd7268
 U drh
-Z cf3239448d4f92059057a29736710c2c
+Z 0b3d163c7ef70d6122b5132c30860c28
