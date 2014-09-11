@@ -325,13 +325,14 @@ static void substrFunc(
     for(z2=z; *z2 && p2; p2--){
       SQLITE_SKIP_UTF8(z2);
     }
-    sqlite3_result_text(context, (char*)z, (int)(z2-z), SQLITE_TRANSIENT);
+    sqlite3_result_text64(context, (char*)z, z2-z, SQLITE_TRANSIENT,
+                          SQLITE_UTF8);
   }else{
     if( p1+p2>len ){
       p2 = len-p1;
       if( p2<0 ) p2 = 0;
     }
-    sqlite3_result_blob(context, (char*)&z[p1], (int)p2, SQLITE_TRANSIENT);
+    sqlite3_result_blob64(context, (char*)&z[p1], (u64)p2, SQLITE_TRANSIENT);
   }
 }
 
@@ -390,7 +391,7 @@ static void *contextMalloc(sqlite3_context *context, i64 nByte){
     sqlite3_result_error_toobig(context);
     z = 0;
   }else{
-    z = sqlite3Malloc((int)nByte);
+    z = sqlite3Malloc(nByte);
     if( !z ){
       sqlite3_result_error_nomem(context);
     }
@@ -1041,7 +1042,7 @@ static void charFunc(
       *zOut++ = 0x80 + (u8)(c & 0x3F);
     }                                                    \
   }
-  sqlite3_result_text(context, (char*)z, (int)(zOut-z), sqlite3_free);
+  sqlite3_result_text64(context, (char*)z, zOut-z, sqlite3_free, SQLITE_UTF8);
 }
 
 /*
