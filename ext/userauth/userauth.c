@@ -329,7 +329,7 @@ int sqlite3_user_delete(
     return SQLITE_OK;
   }
   pStmt = sqlite3UserAuthPrepare(db,
-              "SELECT FROM sqlite_user WHERE uname=%Q", zUsername);
+              "DELETE FROM sqlite_user WHERE uname=%Q", zUsername);
   if( pStmt==0 ) return SQLITE_NOMEM;
   sqlite3_step(pStmt);
   return sqlite3_finalize(pStmt);

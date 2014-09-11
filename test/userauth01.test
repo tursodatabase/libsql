@@ -110,7 +110,96 @@ do_test userauth01-1.10 {
 do_test userauth01-1.11 {
   sqlite3_user_authenticate db2 cindy xyzzy-cindy
 } {SQLITE_OK}
+do_test userauth01-1.12 {
+  sqlite3_user_change db alice xyzzy-alice 1
+} {SQLITE_OK}
+do_test userauth01-1.13 {
+  sqlite3_user_authenticate db alice pw-4-alice
+} {SQLITE_AUTH}
+do_test userauth01-1.14 {
+  sqlite3_user_authenticate db alice xyzzy-alice
+} {SQLITE_OK}
 
+# No user may change their own admin privilege setting.
+#
+do_test userauth01-1.15 {
+  sqlite3_user_change db alice xyzzy-alice 0
+} {SQLITE_AUTH}
+do_test userauth01-1.16 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 bob 0 cindy 0 david 0}
+do_test userauth01-1.17 {
+  sqlite3_user_change db2 cindy xyzzy-cindy 1
+} {SQLITE_AUTH}
+do_test userauth01-1.18 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 bob 0 cindy 0 david 0}
+
+# The sqlite3_user_change() interface can be used to change a users
+# login credentials or admin privilege.
+#
+do_test userauth01-1.20 {
+  sqlite3_user_change db david xyzzy-david 1
+} {SQLITE_OK}
+do_test userauth01-1.21 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 bob 0 cindy 0 david 1}
+do_test userauth01-1.22 {
+  sqlite3_user_authenticate db2 david xyzzy-david
+} {SQLITE_OK}
+do_test userauth01-1.23 {
+  db2 eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 bob 0 cindy 0 david 1}
+do_test userauth01-1.24 {
+  sqlite3_user_change db david pw-4-david 0
+} {SQLITE_OK}
+do_test userauth01-1.25 {
+  sqlite3_user_authenticate db2 david pw-4-david
+} {SQLITE_OK}
+do_test userauth01-1.26 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 bob 0 cindy 0 david 0}
+do_test userauth01-1.27 {
+  catchsql {SELECT uname, isadmin FROM sqlite_user ORDER BY uname} db2
+} {1 {no such table: sqlite_user}}
+
+# Only an admin user can change another users login
+# credentials or admin privilege setting.
+#
+do_test userauth01-1.30 {
+  sqlite3_user_change db2 bob xyzzy-bob 1
+} {SQLITE_AUTH}
+do_test userauth01-1.31 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 bob 0 cindy 0 david 0}
+
+# The sqlite3_user_delete() interface can be used (by an admin user only)
+# to delete a user.
+#
+do_test userauth01-1.40 {
+  sqlite3_user_delete db bob
+} {SQLITE_OK}
+do_test userauth01-1.41 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 cindy 0 david 0}
+do_test userauth01-1.42 {
+  sqlite3_user_delete db2 cindy
+} {SQLITE_AUTH}
+do_test userauth01-1.43 {
+  sqlite3_user_delete db2 alice
+} {SQLITE_AUTH}
+do_test userauth01-1.44 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 cindy 0 david 0}
+
+# The currently logged-in user cannot be deleted
+#
+do_test userauth01-1.50 {
+  sqlite3_user_delete db alice
+} {SQLITE_AUTH}
+do_test userauth01-1.51 {
+  db eval {SELECT uname, isadmin FROM sqlite_user ORDER BY uname}
+} {alice 1 cindy 0 david 0}
 
 
 finish_test
