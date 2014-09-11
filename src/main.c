@@ -985,6 +985,10 @@ void sqlite3LeaveMutexAndCloseZombie(sqlite3 *db){
   sqlite3Error(db, SQLITE_OK); /* Deallocates any cached error strings. */
   sqlite3ValueFree(db->pErr);
   sqlite3CloseExtensions(db);
+#if SQLITE_USER_AUTHENTICATION
+  sqlite3_free(db->auth.zAuthUser);
+  sqlite3_free(db->auth.zAuthPW);
+#endif
 
   db->magic = SQLITE_MAGIC_ERROR;
 
@@ -2565,7 +2569,6 @@ static int openDatabase(
   }
   db->aDb[0].pSchema = sqlite3SchemaGet(db, db->aDb[0].pBt);
   db->aDb[1].pSchema = sqlite3SchemaGet(db, 0);
-
 
   /* The default safety_level for the main database is 'full'; for the temp
   ** database it is 'NONE'. This matches the pager layer defaults.  
