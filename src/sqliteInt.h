@@ -1012,8 +1012,18 @@ int sqlite3UserAuthTable(const char*);
 int sqlite3UserAuthCheckLogin(sqlite3*,const char*,u8*);
 void sqlite3CryptFunc(sqlite3_context*,int,sqlite3_value**);
 
-
 #endif /* SQLITE_USER_AUTHENTICATION */
+
+/*
+** typedef for the authorization callback function.
+*/
+#ifdef SQLITE_USER_AUTHENTICATION
+  typedef int (*sqlite3_xauth)(void*,int,const char*,const char*,const char*,
+                               const char*, const char*);
+#else
+  typedef int (*sqlite3_xauth)(void*,int,const char*,const char*,const char*,
+                               const char*);
+#endif
 
 
 /*
@@ -1083,8 +1093,7 @@ struct sqlite3 {
   } u1;
   Lookaside lookaside;          /* Lookaside malloc configuration */
 #ifndef SQLITE_OMIT_AUTHORIZATION
-  int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
-                                /* Access authorization function */
+  sqlite3_xauth xAuth;          /* Access authorization function */
   void *pAuthArg;               /* 1st argument to the access auth function */
 #endif
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK

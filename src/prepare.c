@@ -328,7 +328,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
         db->aDb[iDb].zName, zMasterName);
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {
-      int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
+      sqlite3_xauth xAuth;
       xAuth = db->xAuth;
       db->xAuth = 0;
 #endif

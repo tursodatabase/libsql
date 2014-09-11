@@ -36,7 +36,7 @@ proc_real proc {name arguments script} {
 do_test auth-1.1.1 {
   db close
   set ::DB [sqlite3 db test.db]
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
@@ -61,7 +61,7 @@ do_test auth-1.2 {
   execsql {SELECT name FROM sqlite_master}
 } {}
 do_test auth-1.3.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -82,7 +82,7 @@ do_test auth-1.4 {
 
 ifcapable tempdb {
   do_test auth-1.5 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
         return SQLITE_DENY
       }
@@ -94,7 +94,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {}
   do_test auth-1.7.1 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TEMP_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -112,7 +112,7 @@ ifcapable tempdb {
 }
 
 do_test auth-1.9 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
@@ -124,7 +124,7 @@ do_test auth-1.10 {
   execsql {SELECT name FROM sqlite_master}
 } {}
 do_test auth-1.11 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -139,7 +139,7 @@ do_test auth-1.12 {
 
 ifcapable tempdb {
   do_test auth-1.13 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
         return SQLITE_IGNORE
       }
@@ -151,7 +151,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {}
   do_test auth-1.15 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TEMP_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -165,7 +165,7 @@ ifcapable tempdb {
   } {}
   
   do_test auth-1.17 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -181,7 +181,7 @@ ifcapable tempdb {
 
 do_test auth-1.19.1 {
   set ::authargs {}
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TEMP_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -198,7 +198,7 @@ do_test auth-1.20 {
 } {t2}
 
 do_test auth-1.21.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -214,7 +214,7 @@ do_test auth-1.22 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.23.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -232,7 +232,7 @@ do_test auth-1.24 {
 
 ifcapable tempdb {
   do_test auth-1.25 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -245,7 +245,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.27 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -260,7 +260,7 @@ ifcapable tempdb {
 }
 
 do_test auth-1.29 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="t2"} {
       return SQLITE_DENY
     }
@@ -272,7 +272,7 @@ do_test auth-1.30 {
   execsql {SELECT * FROM t2}
 } {}
 do_test auth-1.31 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="t2"} {
       return SQLITE_IGNORE
     }
@@ -284,7 +284,7 @@ do_test auth-1.32 {
   execsql {SELECT * FROM t2}
 } {}
 do_test auth-1.33 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="t1"} {
       return SQLITE_IGNORE
     }
@@ -297,7 +297,7 @@ do_test auth-1.34 {
 } {1 2 3}
 
 do_test auth-1.35.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_DENY
     }
@@ -313,7 +313,7 @@ ifcapable attach {
   execsql {DETACH DATABASE two}
 }
 do_test auth-1.36 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_IGNORE
     }
@@ -322,7 +322,7 @@ do_test auth-1.36 {
   catchsql {SELECT * FROM t2}
 } {0 {1 {} 3}}
 do_test auth-1.37 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_IGNORE
     }
@@ -331,7 +331,7 @@ do_test auth-1.37 {
   catchsql {SELECT * FROM t2 WHERE b=2}
 } {0 {}}
 do_test auth-1.38 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="a"} {
       return SQLITE_IGNORE
     }
@@ -340,7 +340,7 @@ do_test auth-1.38 {
   catchsql {SELECT * FROM t2 WHERE b=2}
 } {0 {{} 2 3}}
 do_test auth-1.39 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_IGNORE
     }
@@ -349,7 +349,7 @@ do_test auth-1.39 {
   catchsql {SELECT * FROM t2 WHERE b IS NULL}
 } {0 {1 {} 3}}
 do_test auth-1.40 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_DENY
     }
@@ -359,7 +359,7 @@ do_test auth-1.40 {
 } {1 {access to t2.b is prohibited}}
   
 do_test auth-1.41 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_UPDATE" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_DENY
     }
@@ -371,7 +371,7 @@ do_test auth-1.42 {
   execsql {SELECT * FROM t2}
 } {11 2 3}
 do_test auth-1.43 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_UPDATE" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_DENY
     }
@@ -383,7 +383,7 @@ do_test auth-1.44 {
   execsql {SELECT * FROM t2}
 } {11 2 3}
 do_test auth-1.45 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_UPDATE" && $arg1=="t2" && $arg2=="b"} {
       return SQLITE_IGNORE
     }
@@ -396,7 +396,7 @@ do_test auth-1.46 {
 } {11 2 33}
 
 do_test auth-1.47 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
       return SQLITE_DENY
     }
@@ -408,7 +408,7 @@ do_test auth-1.48 {
   execsql {SELECT * FROM t2}
 } {11 2 33}
 do_test auth-1.49 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
       return SQLITE_IGNORE
     }
@@ -424,7 +424,7 @@ do_test auth-1.50.2 {
 } {}
 
 do_test auth-1.51 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_SELECT"} {
       return SQLITE_DENY
     }
@@ -433,7 +433,7 @@ do_test auth-1.51 {
   catchsql {SELECT * FROM t2}
 } {1 {not authorized}}
 do_test auth-1.52 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_SELECT"} {
       return SQLITE_IGNORE
     }
@@ -442,7 +442,7 @@ do_test auth-1.52 {
   catchsql {SELECT * FROM t2}
 } {0 {}}
 do_test auth-1.53 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_SELECT"} {
       return SQLITE_OK
     }
@@ -462,7 +462,7 @@ do_test auth-1.55 {
 } {11 2 33 7 8 9}
 
 do_test auth-1.63 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
        return SQLITE_DENY
     }
@@ -474,7 +474,7 @@ do_test auth-1.64 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.65 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
        return SQLITE_DENY
     }
@@ -488,7 +488,7 @@ do_test auth-1.66 {
 
 ifcapable tempdb {
   do_test auth-1.67 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
          return SQLITE_DENY
       }
@@ -500,7 +500,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.69 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="t1"} {
          return SQLITE_DENY
       }
@@ -514,7 +514,7 @@ ifcapable tempdb {
 }
 
 do_test auth-1.71 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
        return SQLITE_IGNORE
     }
@@ -526,7 +526,7 @@ do_test auth-1.72 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.73 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="t2"} {
        return SQLITE_IGNORE
     }
@@ -540,7 +540,7 @@ do_test auth-1.74 {
 
 ifcapable tempdb {
   do_test auth-1.75 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
          return SQLITE_IGNORE
       }
@@ -552,7 +552,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.77 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="t1"} {
          return SQLITE_IGNORE
       }
@@ -569,7 +569,7 @@ ifcapable tempdb {
 # Omit these if the library was compiled with views omitted.
 ifcapable view {
 do_test auth-1.79 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_VIEW"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4] 
       return SQLITE_DENY
@@ -585,7 +585,7 @@ do_test auth-1.81 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.82 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_VIEW"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4] 
       return SQLITE_IGNORE
@@ -603,7 +603,7 @@ do_test auth-1.84 {
 
 ifcapable tempdb {
   do_test auth-1.85 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TEMP_VIEW"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4] 
         return SQLITE_DENY
@@ -619,7 +619,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.88 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TEMP_VIEW"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4] 
         return SQLITE_IGNORE
@@ -637,7 +637,7 @@ ifcapable tempdb {
 }
 
 do_test auth-1.91 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
@@ -649,7 +649,7 @@ do_test auth-1.92 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.93 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
@@ -663,7 +663,7 @@ do_test auth-1.94 {
 
 ifcapable tempdb {
   do_test auth-1.95 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
         return SQLITE_DENY
       }
@@ -675,7 +675,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.97 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
         return SQLITE_IGNORE
       }
@@ -689,7 +689,7 @@ ifcapable tempdb {
 }
 
 do_test auth-1.99 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
@@ -704,7 +704,7 @@ do_test auth-1.100 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 v2}
 do_test auth-1.101 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_VIEW"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -720,7 +720,7 @@ do_test auth-1.103 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 v2}
 do_test auth-1.104 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
@@ -732,7 +732,7 @@ do_test auth-1.105 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 v2}
 do_test auth-1.106 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_VIEW"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -748,7 +748,7 @@ do_test auth-1.108 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 v2}
 do_test auth-1.109 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_VIEW"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -767,7 +767,7 @@ do_test auth-1.111 {
 
 ifcapable tempdb {
   do_test auth-1.112 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
         return SQLITE_DENY
       }
@@ -782,7 +782,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 v1}
   do_test auth-1.114 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_VIEW"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -798,7 +798,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 v1}
   do_test auth-1.117 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
         return SQLITE_IGNORE
       }
@@ -810,7 +810,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 v1}
   do_test auth-1.119 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_VIEW"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -826,7 +826,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 v1}
   do_test auth-1.122 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_VIEW"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_OK
@@ -849,7 +849,7 @@ ifcapable tempdb {
 #
 ifcapable trigger&&tempdb {
 do_test auth-1.125 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -869,7 +869,7 @@ do_test auth-1.127 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.128 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
@@ -885,7 +885,7 @@ do_test auth-1.129 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.130 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -905,7 +905,7 @@ do_test auth-1.132 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.133 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
@@ -921,7 +921,7 @@ do_test auth-1.134 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.135 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -944,7 +944,7 @@ do_test auth-1.136.2 {
   }
 } {r2}
 do_test auth-1.136.3 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     lappend ::authargs $code $arg1 $arg2 $arg3 $arg4
     return SQLITE_OK
   }
@@ -963,7 +963,7 @@ do_test auth-1.137 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 tx r2}
 do_test auth-1.138 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TEMP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -983,7 +983,7 @@ do_test auth-1.140 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1}
 do_test auth-1.141 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
       return SQLITE_DENY
     }
@@ -999,7 +999,7 @@ do_test auth-1.142 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1}
 do_test auth-1.143 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TEMP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -1019,7 +1019,7 @@ do_test auth-1.145 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1}
 do_test auth-1.146 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
       return SQLITE_IGNORE
     }
@@ -1035,7 +1035,7 @@ do_test auth-1.147 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1}
 do_test auth-1.148 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_TEMP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1056,7 +1056,7 @@ do_test auth-1.150 {
 } {t1 r1}
 
 do_test auth-1.151 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
@@ -1068,7 +1068,7 @@ do_test auth-1.152 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 tx r2}
 do_test auth-1.153 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1084,7 +1084,7 @@ do_test auth-1.155 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 tx r2}
 do_test auth-1.156 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
@@ -1096,7 +1096,7 @@ do_test auth-1.157 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 tx r2}
 do_test auth-1.158 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -1112,7 +1112,7 @@ do_test auth-1.160 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 tx r2}
 do_test auth-1.161 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1133,7 +1133,7 @@ do_test auth-1.163 {
 } {t2}
 
 do_test auth-1.164 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
       return SQLITE_DENY
     }
@@ -1145,7 +1145,7 @@ do_test auth-1.165 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1 r1}
 do_test auth-1.166 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TEMP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1161,7 +1161,7 @@ do_test auth-1.168 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1 r1}
 do_test auth-1.169 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
       return SQLITE_IGNORE
     }
@@ -1173,7 +1173,7 @@ do_test auth-1.170 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1 r1}
 do_test auth-1.171 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TEMP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -1189,7 +1189,7 @@ do_test auth-1.173 {
   execsql {SELECT name FROM sqlite_temp_master}
 } {t1 r1}
 do_test auth-1.174 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_TEMP_TRIGGER"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1207,7 +1207,7 @@ do_test auth-1.176 {
 } ;# ifcapable trigger
 
 do_test auth-1.177 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_INDEX"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1223,7 +1223,7 @@ do_test auth-1.179 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.180 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
@@ -1235,7 +1235,7 @@ do_test auth-1.181 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.182 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_INDEX"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -1251,7 +1251,7 @@ do_test auth-1.184 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.185 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_INSERT" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
@@ -1263,7 +1263,7 @@ do_test auth-1.186 {
   execsql {SELECT name FROM sqlite_master}
 } {t2}
 do_test auth-1.187 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_CREATE_INDEX"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1281,7 +1281,7 @@ do_test auth-1.189 {
 
 ifcapable tempdb {
   do_test auth-1.190 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TEMP_INDEX"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -1297,7 +1297,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.193 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
         return SQLITE_DENY
       }
@@ -1309,7 +1309,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.195 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TEMP_INDEX"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -1325,7 +1325,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.198 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_INSERT" && $arg1=="sqlite_temp_master"} {
         return SQLITE_IGNORE
       }
@@ -1337,7 +1337,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1}
   do_test auth-1.200 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_CREATE_TEMP_INDEX"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_OK
@@ -1355,7 +1355,7 @@ ifcapable tempdb {
 }
 
 do_test auth-1.203 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
       return SQLITE_DENY
     }
@@ -1367,7 +1367,7 @@ do_test auth-1.204 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 i2}
 do_test auth-1.205 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_INDEX"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1383,7 +1383,7 @@ do_test auth-1.207 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 i2}
 do_test auth-1.208 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DELETE" && $arg1=="sqlite_master"} {
       return SQLITE_IGNORE
     }
@@ -1395,7 +1395,7 @@ do_test auth-1.209 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 i2}
 do_test auth-1.210 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_INDEX"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -1411,7 +1411,7 @@ do_test auth-1.212 {
   execsql {SELECT name FROM sqlite_master}
 } {t2 i2}
 do_test auth-1.213 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_DROP_INDEX"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1429,7 +1429,7 @@ do_test auth-1.215 {
 
 ifcapable tempdb {
   do_test auth-1.216 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
         return SQLITE_DENY
       }
@@ -1441,7 +1441,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 i1}
   do_test auth-1.218 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_INDEX"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -1457,7 +1457,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 i1}
   do_test auth-1.221 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DELETE" && $arg1=="sqlite_temp_master"} {
         return SQLITE_IGNORE
       }
@@ -1469,7 +1469,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 i1}
   do_test auth-1.223 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_INDEX"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -1485,7 +1485,7 @@ ifcapable tempdb {
     execsql {SELECT name FROM sqlite_temp_master}
   } {t1 i1}
   do_test auth-1.226 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DROP_TEMP_INDEX"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_OK
@@ -1503,7 +1503,7 @@ ifcapable tempdb {
 }
 
 do_test auth-1.229 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_PRAGMA"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1519,7 +1519,7 @@ do_test auth-1.231 {
   execsql2 {SELECT a FROM t2}
 } {a 11 a 7}
 do_test auth-1.232 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_PRAGMA"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -1535,7 +1535,7 @@ do_test auth-1.234 {
   execsql2 {SELECT a FROM t2}
 } {a 11 a 7}
 do_test auth-1.235 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_PRAGMA"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1548,7 +1548,7 @@ do_test auth-1.236 {
   execsql2 {SELECT a FROM t2}
 } {t2.a 11 t2.a 7}
 do_test auth-1.237 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_PRAGMA"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1565,7 +1565,7 @@ do_test auth-1.239 {
 } {a 11 a 7}
 
 do_test auth-1.240 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_TRANSACTION"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1578,7 +1578,7 @@ do_test auth-1.241 {
   set ::authargs
 } {BEGIN {} {} {}}
 do_test auth-1.242 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_TRANSACTION" && $arg1!="BEGIN"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1618,7 +1618,7 @@ do_test auth-1.250 {
 ifcapable attach {
   do_test auth-1.251 {
     db authorizer ::auth
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ATTACH"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       }
@@ -1644,7 +1644,7 @@ ifcapable attach {
   } {{} {} {} {}}
   do_test auth-1.253 {
     catchsql {DETACH DATABASE test1}
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ATTACH"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -1660,7 +1660,7 @@ ifcapable attach {
   } {}
   do_test auth-1.255 {
     catchsql {DETACH DATABASE test1}
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ATTACH"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -1675,7 +1675,7 @@ ifcapable attach {
     lindex [execsql {PRAGMA database_list}] 7
   } {}
   do_test auth-1.257 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DETACH"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_OK
@@ -1692,7 +1692,7 @@ ifcapable attach {
   } {}
   do_test auth-1.259 {
     execsql {ATTACH DATABASE ':memory:' AS test1}
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_DETACH"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -1710,7 +1710,7 @@ ifcapable attach {
     } {test1}
     } ;# ifcapable schema_pragmas
     do_test auth-1.261 {
-      proc auth {code arg1 arg2 arg3 arg4} {
+      proc auth {code arg1 arg2 arg3 arg4 args} {
         if {$code=="SQLITE_DETACH"} {
           set ::authargs [list $arg1 $arg2 $arg3 $arg4]
           return SQLITE_DENY
@@ -1735,7 +1735,7 @@ ifcapable attach {
     ifcapable altertable {
     
       do_test auth-1.263 {
-        proc auth {code arg1 arg2 arg3 arg4} {
+        proc auth {code arg1 arg2 arg3 arg4 args} {
           if {$code=="SQLITE_ALTER_TABLE"} {
             set ::authargs [list $arg1 $arg2 $arg3 $arg4]
             return SQLITE_OK
@@ -1753,7 +1753,7 @@ ifcapable attach {
         set authargs
       } {temp t1 {} {}}
       do_test auth-1.266 {
-        proc auth {code arg1 arg2 arg3 arg4} {
+        proc auth {code arg1 arg2 arg3 arg4 args} {
           if {$code=="SQLITE_ALTER_TABLE"} {
             set ::authargs [list $arg1 $arg2 $arg3 $arg4]
             return SQLITE_IGNORE
@@ -1771,7 +1771,7 @@ ifcapable attach {
         set authargs
       } {temp t1x {} {}}
       do_test auth-1.269 {
-        proc auth {code arg1 arg2 arg3 arg4} {
+        proc auth {code arg1 arg2 arg3 arg4 args} {
           if {$code=="SQLITE_ALTER_TABLE"} {
             set ::authargs [list $arg1 $arg2 $arg3 $arg4]
             return SQLITE_DENY
@@ -1804,7 +1804,7 @@ db authorizer {}
 catchsql {ALTER TABLE t1x RENAME TO t1}
 db authorizer ::auth
 do_test auth-1.272 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_ALTER_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_OK
@@ -1822,7 +1822,7 @@ do_test auth-1.274 {
   set authargs
 } {main t2 {} {}}
 do_test auth-1.275 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_ALTER_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_IGNORE
@@ -1840,7 +1840,7 @@ do_test auth-1.277 {
   set authargs
 } {main t2x {} {}}
 do_test auth-1.278 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_ALTER_TABLE"} {
       set ::authargs [list $arg1 $arg2 $arg3 $arg4]
       return SQLITE_DENY
@@ -1867,7 +1867,7 @@ ifcapable reindex {
 
 proc auth {code args} {
   if {$code=="SQLITE_REINDEX"} {
-    set ::authargs [concat $::authargs $args]
+    set ::authargs [concat $::authargs [lrange $args 0 3]]
   }
   return SQLITE_OK
 }
@@ -1950,7 +1950,7 @@ ifcapable tempdb {
   } {t3_idx2 {} temp {} t3_idx1 {} temp {} sqlite_autoindex_t3_1 {} temp {}}
   proc auth {code args} {
     if {$code=="SQLITE_REINDEX"} {
-      set ::authargs [concat $::authargs $args]
+      set ::authargs [concat $::authargs [lrange $args 0 3]]
       return SQLITE_DENY
     }
     return SQLITE_OK
@@ -1973,7 +1973,7 @@ ifcapable tempdb {
 ifcapable analyze {
   proc auth {code args} {
     if {$code=="SQLITE_ANALYZE"} {
-      set ::authargs [concat $::authargs $args]
+      set ::authargs [concat $::authargs [lrange $args 0 3]]
     }
     return SQLITE_OK
   }
@@ -2020,7 +2020,7 @@ ifcapable analyze {
 ifcapable {altertable} {
   do_test auth-1.300 {
     execsql {CREATE TABLE t5(x)}
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_OK
@@ -2039,7 +2039,7 @@ ifcapable {altertable} {
     set authargs
   } {main t5 {} {}}
   do_test auth-1.303 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_IGNORE
@@ -2058,7 +2058,7 @@ ifcapable {altertable} {
     set authargs
   } {main t5 {} {}}
   do_test auth-1.306 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_ALTER_TABLE"} {
         set ::authargs [list $arg1 $arg2 $arg3 $arg4]
         return SQLITE_DENY
@@ -2082,7 +2082,7 @@ ifcapable {altertable} {
 
 ifcapable {cte} {
   do_test auth-1.310 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_RECURSIVE"} {
         return SQLITE_DENY
       }
@@ -2117,7 +2117,7 @@ ifcapable {cte} {
 } ;# ifcapable cte
 
 do_test auth-2.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="x"} {
       return SQLITE_DENY
     }
@@ -2137,7 +2137,7 @@ do_test auth-2.3 {
   catchsql {SELECT OID,y,z FROM t3}
 } {1 {access to t3.x is prohibited}}
 do_test auth-2.4 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="x"} {
       return SQLITE_IGNORE
     }
@@ -2150,7 +2150,7 @@ do_test auth-2.5 {
   catchsql {SELECT rowid,y,z FROM t3}
 } {0 {{} 55 66}}
 do_test auth-2.6 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t3" && $arg2=="ROWID"} {
       return SQLITE_IGNORE
     }
@@ -2162,7 +2162,7 @@ do_test auth-2.7 {
   catchsql {SELECT ROWID,y,z FROM t3}
 } {0 {44 55 66}}
 do_test auth-2.8 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="ROWID"} {
       return SQLITE_IGNORE
     }
@@ -2181,7 +2181,7 @@ do_test auth-2.9.1 {
   #
   db cache flush
 
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="ROWID"} {
       return bogus
     }
@@ -2193,7 +2193,7 @@ do_test auth-2.9.2 {
   db errorcode
 } {1}
 do_test auth-2.10 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_SELECT"} {
       return bogus
     }
@@ -2202,7 +2202,7 @@ do_test auth-2.10 {
   catchsql {SELECT ROWID,b,c FROM t2}
 } {1 {authorizer malfunction}}
 do_test auth-2.11.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg2=="a"} {
       return SQLITE_IGNORE
     }
@@ -2211,7 +2211,7 @@ do_test auth-2.11.1 {
   catchsql {SELECT * FROM t2, t3}
 } {0 {{} 2 33 44 55 66 {} 8 9 44 55 66}}
 do_test auth-2.11.2 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     if {$code=="SQLITE_READ" && $arg2=="x"} {
       return SQLITE_IGNORE
     }
@@ -2224,7 +2224,7 @@ do_test auth-2.11.2 {
 #
 ifcapable trigger {
   do_test auth-3.1 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       return SQLITE_OK
     }
     execsql {
@@ -2237,7 +2237,7 @@ ifcapable trigger {
     }
   } {11 12 2 2 33 33 7 8 8 8 9 9}
   do_test auth-3.2 {
-    proc auth {code arg1 arg2 arg3 arg4} {
+    proc auth {code arg1 arg2 arg3 arg4 args} {
       if {$code=="SQLITE_READ" && $arg1=="t2" && $arg2=="c"} {
         return SQLITE_IGNORE
       }
@@ -2255,7 +2255,7 @@ ifcapable trigger {
 #
 ifcapable trigger {
 do_test auth-4.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     lappend ::authargs $code $arg1 $arg2 $arg3 $arg4
     return SQLITE_OK
   }
@@ -2340,7 +2340,7 @@ do_test auth-4.5 {
 # clause.
 #
 do_test auth-5.1 {
-  proc auth {code arg1 arg2 arg3 arg4} {
+  proc auth {code arg1 arg2 arg3 arg4 args} {
     return SQLITE_OK
   }
   execsql {
@@ -2393,7 +2393,7 @@ ifcapable trigger {
   } {}
   set ::authargs [list]
   proc auth {args} {
-    eval lappend ::authargs $args
+    eval lappend ::authargs [lrange $args 0 4]
     return SQLITE_OK
   }
   do_test auth-5.3.2 {
@@ -2419,7 +2419,7 @@ do_test auth-6.1 {
 } {}
 set ::authargs [list]
 proc auth {args} {
-  eval lappend ::authargs $args
+  eval lappend ::authargs [lrange $args 0 4]
   return SQLITE_OK
 }
 do_test auth-6.2 {
