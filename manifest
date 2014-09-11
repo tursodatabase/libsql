@@ -1,5 +1,5 @@
-C Suppress\sthe\spotential\sschema\serror\sthat\soccurs\swhen\sa\snon-user-auth\nSQLite\slibrary\stries\sto\sparse\sthe\ssqlite_user\stable\sdefinition\sin\sa\nuser-auth\sdatabase.
-D 2014-09-11T16:36:43.549
+C Clean\sup\ssome\s#includes\sin\sthe\sextension\sAPI\simplementation.
+D 2014-09-11T17:14:54.772
 F Makefile.arm-wince-mingw32ce-gcc d6df77f1f48d690bd73162294bbba7f59507c72f
 F Makefile.in cf57f673d77606ab0f2d9627ca52a9ba1464146a
 F Makefile.linux-gcc 91d710bdc4998cb015f39edf3cb314ec4f4d7e23
@@ -146,7 +146,7 @@ F ext/rtree/tkt3363.test 142ab96eded44a3615ec79fba98c7bde7d0f96de
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F ext/userauth/sqlite3userauth.h 19cb6f0e31316d0ee4afdfb7a85ef9da3333a220
 F ext/userauth/user-auth.txt e6641021a9210364665fe625d067617d03f27b04
-F ext/userauth/userauth.c 02a52c3c345a8dede3a1018c08840b74230acc51
+F ext/userauth/userauth.c 5fa3bdb492f481bbc1709fc83c91ebd13460c69e
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F magic.txt 8273bf49ba3b0c8559cb2774495390c31fd61c60
@@ -1197,7 +1197,7 @@ F tool/vdbe_profile.tcl 67746953071a9f8f2f668b73fe899074e2c6d8c1
 F tool/warnings-clang.sh f6aa929dc20ef1f856af04a730772f59283631d4
 F tool/warnings.sh 0abfd78ceb09b7f7c27c688c8e3fe93268a13b32
 F tool/win/sqlite.vsix deb315d026cc8400325c5863eef847784a219a2f
-P 842c6da8f1a62bd13a1b4089a98b0835a46a2285
-R 7de809a255ed1cf8a77cea399ddd7268
+P cda33c1ef35416a155af602c0b4e9d42ccf8633f
+R 6795c3f7d8a461e29887bf50932299a0
 U drh
-Z 0b3d163c7ef70d6122b5132c30860c28
+Z 25539858b9c10651bb38a3461b6abb42

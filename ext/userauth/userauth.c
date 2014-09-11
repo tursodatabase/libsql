@@ -22,8 +22,9 @@
 ** directory as this file for additional information.
 */
 #ifdef SQLITE_USER_AUTHENTICATION
-#include "sqliteInt.h"
-#include "sqlite3userauth.h"
+#ifndef _SQLITEINT_H_
+# include "sqliteInt.h"
+#endif
 
 /*
 ** Prepare an SQL statement for use by the user authentication logic.
